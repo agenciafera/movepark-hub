@@ -5,14 +5,9 @@ import { Calendar } from "@/components/ui/calendar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { Calendar as CalendarIcon, Clock, MapPin, Search } from "lucide-react"
 import { TimePickerDemo } from "./time-picker"
-
-interface SearchBarProps {
-  onSearch: (searchParams: SearchParams) => void
-}
 
 interface SearchParams {
   location: string
@@ -26,12 +21,25 @@ interface SearchParams {
   }
 }
 
-export function SearchBar({ onSearch }: SearchBarProps) {
-  const [location, setLocation] = useState("")
-  const [arrivalDate, setArrivalDate] = useState<Date>()
-  const [departureDate, setDepartureDate] = useState<Date>()
-  const [arrivalTime, setArrivalTime] = useState("10:00")
-  const [departureTime, setDepartureTime] = useState("12:00")
+interface SearchBarProps {
+  onSearch: (searchParams: SearchParams) => void
+  defaultValues?: SearchParams
+}
+
+export function SearchBar({ onSearch, defaultValues }: SearchBarProps) {
+  const [location, setLocation] = useState(defaultValues?.location || "")
+  const [arrivalDate, setArrivalDate] = useState<Date | undefined>(
+    defaultValues?.arrival.date || undefined
+  )
+  const [departureDate, setDepartureDate] = useState<Date | undefined>(
+    defaultValues?.departure.date || undefined
+  )
+  const [arrivalTime, setArrivalTime] = useState(
+    defaultValues?.arrival.time || "10:00"
+  )
+  const [departureTime, setDepartureTime] = useState(
+    defaultValues?.departure.time || "12:00"
+  )
 
   const handleSearch = () => {
     onSearch({
@@ -125,7 +133,12 @@ export function SearchBar({ onSearch }: SearchBarProps) {
         </div>
       </div>
 
-      <Button onClick={handleSearch} size="icon" className="rounded-full">
+      <Button 
+        onClick={handleSearch} 
+        size="icon" 
+        className="rounded-full"
+        aria-label="Search for parking"
+      >
         <Search className="h-4 w-4" />
       </Button>
     </div>

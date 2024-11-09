@@ -9,6 +9,26 @@ You will use NextJS 15, shadcn, tailwind, Lucid icon
 ### RF001 - Fetch parks using a intuitive search bar
 - Users can use the search bar by location, arrival date(including time), departure date(including time)
 - Users can clicking on and search button, witch should send the search with queries params to a result page
+- When the user clicks on the search button, the search should be redirected to the result page(RF002)
+
+### RF002 - List all results by list and map
+- The project should have a list and a map on the result page
+- On the top of the page, there should be the search bar(RF001)
+- The result page must be splitted in two columns, the left column is the list and the right column is the map
+- Users can see the results of search by list and map
+- Users can view the information from each park like name, address, price, rating(by stars)
+- The map is based on MapBox component
+- When the user clicks on a park from the list, the map should show the location of the park
+
+### RF003 - On the homepage we must show our features
+- We must show our features
+- Each feature should have a title, a description and an icon
+- All images that we will use must use the placeholder online service
+- The page must have a list on the left and a image on the right side
+
+### RF004 - On the homepage we must show our KPIs
+- The page must have a title and a description
+- The KPIs must be shown in a horizontal list
 
 ## Docs
 
@@ -20,6 +40,10 @@ Bun is an all-in-one toolkit for JavaScript and TypeScript apps. It ships as a s
 For add a new project with shadcn use `bunx shadcn@latest init` 
 For add new components with bun aways use `bunx shadcn@latest`  
 For init Shadcn configuration aways use `bun x --bun shadcn@latest init`
+
+### Placeholder
+
+For images that we will use, we will use the placeholder online service https://placehold.co
 
 
 ## Current File Structure

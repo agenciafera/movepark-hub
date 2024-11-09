@@ -70,3 +70,17 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Add these to your existing globals.css */
+.marker {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.marker:hover {
+  transform: scale(1.1);
+}
+
+.mapboxgl-map {
+  border-radius: 0.5rem;
+}
