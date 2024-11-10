@@ -49,14 +49,13 @@ export function KPIs(): JSX.Element {
       <div className="container mx-auto px-4 py-32">
         <div className="max-w-3xl mx-auto lg:ml-[10%] mb-20">
           <h2 className="text-6xl font-bold leading-tight mb-4">
-            We&apos;re nearly everywhere in Europe.
+            Estamos presentes nos principais aeroportos do Brasil.
           </h2>
-          <h3 className="text-6xl font-bold leading-tight mb-8">
-            And we want to be everywhere.
+          <h3 className="text-4xl font-bold leading-tight mb-8">
+            E queremos chegar ainda mais longe!
           </h3>
           <p className="text-xl leading-relaxed">
-            Right now, you can find us in Spain, France, Italy, Portugal, Belgium, the Netherlands,
-            Germany, and Switzerland. And we&apos;re working so you can park in many more places soon.
+            Nosso objetivo é claro: estar ao seu lado em todos os destinos, trazendo comodidade e segurança a cada viagem.
           </p>
         </div>
 
