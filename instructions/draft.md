@@ -30,6 +30,16 @@ You will use NextJS 15, shadcn, tailwind, Lucid icon
 - The page must have a title and a description
 - The KPIs must be shown in a horizontal list
 
+### RNF001 - The project must have color palette
+- The project must have a color palette
+- The colors must be defined in the tailwind.config.ts file
+- The main colors of project are:
+    {
+        "ROSINHA": "#DA455E",
+        "AZUL_ESCURO": "#29263F",
+        "ROXO_MOVE": "#5D5FEF"
+    }
+
 ## Docs
 
 ### Bun

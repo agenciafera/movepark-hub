@@ -29,7 +29,7 @@ const kpis: KPI[] = [
 export function KPIs(): JSX.Element {
   return (
     <section 
-      className="relative bg-rose-500 text-white"
+      className="relative bg-roxo-move text-white"
       aria-label="Key Performance Indicators"
     >
       {/* Top diagonal shape */}
