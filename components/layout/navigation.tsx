@@ -37,7 +37,7 @@ export function Navigation() {
 
           {/* Login Button */}
           <Button
-            variant={isTransparent ? 'secondary' : 'default'}
+            variant={isTransparent ? 'secondary' : 'primary'}
             className={isTransparent ? 'bg-white/10 hover:bg-white/20' : ''}
           >
             Login

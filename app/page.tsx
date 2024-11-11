@@ -34,13 +34,13 @@ export default function Home() {
         </div>
 
         <div className="mb-8 flex flex-wrap justify-center gap-4 px-4">
-          <button className="rounded-full bg-purple-100 px-6 py-2 text-purple-700">
+          <button className="rounded-full bg-roxo-move/10 px-6 py-2 text-roxo-move">
             Tickets
           </button>
-          <button className="rounded-full bg-gray-100 px-6 py-2 text-gray-700">
+          <button className="rounded-full bg-azul-escuro/10 px-6 py-2 text-azul-escuro">
             Monthly subscription
           </button>
-          <button className="rounded-full bg-orange-100 px-6 py-2 text-orange-700">
+          <button className="rounded-full bg-rosinha/10 px-6 py-2 text-rosinha">
             Airport
           </button>
         </div>

@@ -102,9 +102,7 @@ export function UserDetailsForm() {
         </div>
       </div>
 
-      <Button className="w-full bg-[#DA455E] hover:bg-[#DA455E]/90">
-        Payment Review
-      </Button>
+      <Button className="w-full">Payment Review</Button>
     </div>
   )
 }

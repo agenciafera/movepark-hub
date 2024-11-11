@@ -29,8 +29,8 @@ export function ParkingList({
           onClick={() => onSpotSelect(spot)}
           className={`p-4 rounded-lg border cursor-pointer transition-colors ${
             selectedSpot?.id === spot.id
-              ? 'border-blue-500 bg-blue-50'
-              : 'border-gray-200 hover:border-blue-300'
+              ? 'border-rosinha-500 bg-rosinha-50'
+              : 'border-gray-200 hover:border-rosinha-300'
           }`}
         >
           <div className="flex justify-between items-start">
@@ -45,7 +45,7 @@ export function ParkingList({
               <p className="font-bold">${spot.price}</p>
               <button
                 onClick={(e) => handleDetailsClick(e, spot)}
-                className="mt-2 px-4 py-2 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                className="mt-2 px-4 py-2 text-sm bg-rosinha-500 text-white rounded-md hover:bg-rosinha-600 transition-colors"
               >
                 Details
               </button>

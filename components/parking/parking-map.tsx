@@ -48,7 +48,7 @@ export function ParkingMap({
     spots.forEach((spot) => {
       const el = document.createElement('div')
       el.className = 'marker'
-      el.innerHTML = `<div class="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center">${spot.price}€</div>`
+      el.innerHTML = `<div class="w-10 h-10 bg-rosinha-500 text-white rounded-full flex items-center justify-center">${spot.price}€</div>`
 
       const marker = new mapboxgl.Marker(el)
         .setLngLat([spot.coordinates.lng, spot.coordinates.lat])

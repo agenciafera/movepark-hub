@@ -74,10 +74,7 @@ export function ReservationSummary() {
           <ChevronDownIcon className="ml-2 h-4 w-4" />
         </Button>
 
-        <Button
-          onClick={handleContinue}
-          className="w-full bg-[#DA455E] hover:bg-[#DA455E]/90 text-white"
-        >
+        <Button onClick={handleContinue} className="w-full">
           Continue
         </Button>
       </div>
