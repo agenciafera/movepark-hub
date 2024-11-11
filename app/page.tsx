@@ -1,10 +1,10 @@
-"use client"
+'use client'
 
-import { SearchBar } from "@/components/search/search-bar"
-import { Features } from "@/components/home/features"
-import { KPIs } from "@/components/home/kpis"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
+import { SearchBar } from '@/components/search/search-bar'
+import { Features } from '@/components/home/features'
+import { KPIs } from '@/components/home/kpis'
+import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 
 export default function Home() {
   const router = useRouter()
@@ -25,10 +25,14 @@ export default function Home() {
         </div>
 
         <div className="mb-8 flex flex-col items-center space-y-4 text-center">
-          <h1 className="text-4xl font-bold text-white">Find your perfect parking spot</h1>
-          <p className="text-xl text-gray-200">Select what type of parking you&apos;re looking for:</p>
+          <h1 className="text-4xl font-bold text-white">
+            Find your perfect parking spot
+          </h1>
+          <p className="text-xl text-gray-200">
+            Select what type of parking you&apos;re looking for:
+          </p>
         </div>
-        
+
         <div className="mb-8 flex gap-4">
           <button className="rounded-full bg-purple-100 px-6 py-2 text-purple-700">
             Tickets

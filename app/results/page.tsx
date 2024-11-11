@@ -18,37 +18,37 @@ const MOCK_RESULTS = [
       hasElevator: true,
       hasWheelchairAccess: true,
       hasCovered: true,
-      hasContactless: true
+      hasContactless: true,
     },
-    distanceInMeters: 286
+    distanceInMeters: 286,
   },
   {
     id: '2',
     name: 'SAEMES Lagrange-Maubert',
     address: 'Rue Lagrange, 19',
     rating: 4.3,
-    price: 9.40,
+    price: 9.4,
     coordinates: { lat: 48.8505, lng: 2.3488 },
     amenities: {
       hasElevator: true,
       hasWheelchairAccess: true,
       hasCovered: true,
-      hasContactless: true
+      hasContactless: true,
     },
-    distanceInMeters: 324
-  }
+    distanceInMeters: 324,
+  },
 ]
 
 interface SearchParams {
-  location: string;
+  location: string
   arrival: {
-    date?: Date;
-    time: string;
-  };
+    date?: Date
+    time: string
+  }
   departure: {
-    date?: Date;
-    time: string;
-  };
+    date?: Date
+    time: string
+  }
 }
 
 export default function ResultsPage() {
@@ -63,7 +63,7 @@ export default function ResultsPage() {
         arrival: params.get('arrival') || '',
         'arrival.time': params.get('arrival.time') || '10:00',
         departure: params.get('departure') || '',
-        'departure.time': params.get('departure.time') || '12:00'
+        'departure.time': params.get('departure.time') || '12:00',
       }
     }
     return {}
@@ -79,24 +79,28 @@ export default function ResultsPage() {
     })
     router.push(`/results?${searchParams.toString()}`, { scroll: false })
   }
-  
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Search Bar Section */}
       <div className="border-b bg-white">
         <div className="container mx-auto py-4 flex justify-center">
-          <SearchBar 
+          <SearchBar
             onSearch={handleSearch}
             defaultValues={{
               location: searchParams.location || '',
               arrival: {
-                date: searchParams.arrival ? new Date(searchParams.arrival) : new Date(),
-                time: searchParams['arrival.time'] || '10:00'
+                date: searchParams.arrival
+                  ? new Date(searchParams.arrival)
+                  : new Date(),
+                time: searchParams['arrival.time'] || '10:00',
               },
               departure: {
-                date: searchParams.departure ? new Date(searchParams.departure) : new Date(),
-                time: searchParams['departure.time'] || '12:00'
-              }
+                date: searchParams.departure
+                  ? new Date(searchParams.departure)
+                  : new Date(),
+                time: searchParams['departure.time'] || '12:00',
+              },
             }}
           />
         </div>
@@ -108,4 +112,4 @@ export default function ResultsPage() {
       </main>
     </div>
   )
-} 
+}

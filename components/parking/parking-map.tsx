@@ -11,7 +11,11 @@ interface ParkingMapProps {
   onSpotSelect: (spot: ParkingSpot) => void
 }
 
-export function ParkingMap({ spots, selectedSpot, onSpotSelect }: ParkingMapProps) {
+export function ParkingMap({
+  spots,
+  selectedSpot,
+  onSpotSelect,
+}: ParkingMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
   const markers = useRef<mapboxgl.Marker[]>([])
@@ -25,7 +29,7 @@ export function ParkingMap({ spots, selectedSpot, onSpotSelect }: ParkingMapProp
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v12',
       center: [2.3522, 48.8566], // Paris coordinates
-      zoom: 13
+      zoom: 13,
     })
 
     return () => {
@@ -37,11 +41,11 @@ export function ParkingMap({ spots, selectedSpot, onSpotSelect }: ParkingMapProp
     if (!map.current) return
 
     // Clear existing markers
-    markers.current.forEach(marker => marker.remove())
+    markers.current.forEach((marker) => marker.remove())
     markers.current = []
 
     // Add new markers
-    spots.forEach(spot => {
+    spots.forEach((spot) => {
       const el = document.createElement('div')
       el.className = 'marker'
       el.innerHTML = `<div class="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center">${spot.price}€</div>`
@@ -63,11 +67,9 @@ export function ParkingMap({ spots, selectedSpot, onSpotSelect }: ParkingMapProp
 
     map.current.flyTo({
       center: [selectedSpot.coordinates.lng, selectedSpot.coordinates.lat],
-      zoom: 15
+      zoom: 15,
     })
   }, [selectedSpot])
 
-  return (
-    <div ref={mapContainer} className="w-full h-full rounded-lg" />
-  )
-} 
+  return <div ref={mapContainer} className="w-full h-full rounded-lg" />
+}

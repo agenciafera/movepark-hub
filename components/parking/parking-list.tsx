@@ -1,14 +1,7 @@
 'use client'
 
 import { ParkingSpot } from '@/types/parking'
-import { 
-  Star, 
-  Accessibility,
-  ArrowUpDown,
-  Car, 
-  CreditCard 
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { useRouter } from 'next/navigation'
 
 interface ParkingListProps {
   spots: ParkingSpot[]
@@ -16,66 +9,50 @@ interface ParkingListProps {
   onSpotSelect: (spot: ParkingSpot) => void
 }
 
-export function ParkingList({ spots, selectedSpot, onSpotSelect }: ParkingListProps) {
+export function ParkingList({
+  spots,
+  selectedSpot,
+  onSpotSelect,
+}: ParkingListProps) {
+  const router = useRouter()
+
+  const handleDetailsClick = (e: React.MouseEvent, spot: ParkingSpot) => {
+    e.stopPropagation() // Prevent the parent onClick from firing
+    router.push(`/parking/${spot.id}`)
+  }
+
   return (
     <div className="space-y-4">
       {spots.map((spot) => (
         <div
           key={spot.id}
-          className={cn(
-            "p-4 border rounded-lg cursor-pointer hover:border-primary transition-colors",
-            selectedSpot?.id === spot.id && "border-primary bg-primary/5"
-          )}
           onClick={() => onSpotSelect(spot)}
+          className={`p-4 rounded-lg border cursor-pointer transition-colors ${
+            selectedSpot?.id === spot.id
+              ? 'border-blue-500 bg-blue-50'
+              : 'border-gray-200 hover:border-blue-300'
+          }`}
         >
           <div className="flex justify-between items-start">
             <div>
               <h3 className="font-semibold">{spot.name}</h3>
-              <p className="text-sm text-muted-foreground">{spot.address}</p>
+              <p className="text-sm text-gray-600">{spot.address}</p>
+              <p className="text-sm text-gray-600">
+                {(spot.distanceInMeters / 1000).toFixed(1)} km away
+              </p>
             </div>
             <div className="text-right">
-              <div className="font-bold">{spot.price}€</div>
-              <div className="text-sm text-muted-foreground">Price for 2 hours</div>
+              <p className="font-bold">${spot.price}</p>
+              <button
+                onClick={(e) => handleDetailsClick(e, spot)}
+                className="mt-2 px-4 py-2 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+              >
+                Details
+              </button>
             </div>
           </div>
-          
-          <div className="mt-2 flex items-center gap-1">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={cn(
-                  "w-4 h-4",
-                  i < Math.floor(spot.rating) 
-                    ? "text-yellow-400 fill-yellow-400" 
-                    : "text-gray-300"
-                )}
-              />
-            ))}
-            <span className="ml-1 text-sm">{spot.rating}</span>
-          </div>
-
-          <div className="mt-2 flex gap-2">
-            {spot.amenities.hasElevator && (
-              <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
-            )}
-            {spot.amenities.hasWheelchairAccess && (
-              <Accessibility className="w-4 h-4 text-muted-foreground" />
-            )}
-            {spot.amenities.hasCovered && (
-              <Car className="w-4 h-4 text-muted-foreground" />
-            )}
-            {spot.amenities.hasContactless && (
-              <CreditCard className="w-4 h-4 text-muted-foreground" />
-            )}
-          </div>
-
-          {spot.distanceInMeters && (
-            <div className="mt-2 text-sm text-muted-foreground">
-              {(spot.distanceInMeters / 1000).toFixed(1)} km
-            </div>
-          )}
         </div>
       ))}
     </div>
   )
-} 
+}

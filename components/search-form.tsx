@@ -3,7 +3,11 @@
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { format } from 'date-fns'
 import { Calendar as CalendarIcon, Search } from 'lucide-react'
@@ -23,15 +27,19 @@ interface SearchFormProps {
 export function SearchForm({ defaultValues }: SearchFormProps) {
   const router = useRouter()
   const [location, setLocation] = useState(defaultValues?.location || '')
-  const [arrival, setArrival] = useState<Date>(defaultValues?.arrival || new Date())
-  const [departure, setDeparture] = useState<Date>(defaultValues?.departure || new Date())
+  const [arrival, setArrival] = useState<Date>(
+    defaultValues?.arrival || new Date(),
+  )
+  const [departure, setDeparture] = useState<Date>(
+    defaultValues?.departure || new Date(),
+  )
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const searchParams = new URLSearchParams({
-      location: location,
+      location,
       arrival: arrival.toISOString(),
-      departure: departure.toISOString()
+      departure: departure.toISOString(),
     })
 
     router.push(`/results?${searchParams.toString()}`)
@@ -53,12 +61,12 @@ export function SearchForm({ defaultValues }: SearchFormProps) {
           <Button
             variant="outline"
             className={cn(
-              "justify-start text-left font-normal",
-              !arrival && "text-muted-foreground"
+              'justify-start text-left font-normal',
+              !arrival && 'text-muted-foreground',
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {arrival ? format(arrival, "PPp") : <span>Arrival</span>}
+            {arrival ? format(arrival, 'PPp') : <span>Arrival</span>}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0">
@@ -76,12 +84,12 @@ export function SearchForm({ defaultValues }: SearchFormProps) {
           <Button
             variant="outline"
             className={cn(
-              "justify-start text-left font-normal",
-              !departure && "text-muted-foreground"
+              'justify-start text-left font-normal',
+              !departure && 'text-muted-foreground',
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {departure ? format(departure, "PPp") : <span>Departure</span>}
+            {departure ? format(departure, 'PPp') : <span>Departure</span>}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0">
@@ -99,4 +107,4 @@ export function SearchForm({ defaultValues }: SearchFormProps) {
       </Button>
     </form>
   )
-} 
+}

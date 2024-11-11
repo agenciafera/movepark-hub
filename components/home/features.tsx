@@ -11,24 +11,28 @@ interface Feature {
 const features: Feature[] = [
   {
     icon: <Smartphone className="h-5 w-5 text-red-500" />,
-    title: "More convenient",
-    description: "Do it all from your mobile. Enter the app, find parking, and reserve. It's that easy. Oh, and if your plans change, update your reservation."
+    title: 'More convenient',
+    description:
+      "Do it all from your mobile. Enter the app, find parking, and reserve. It's that easy. Oh, and if your plans change, update your reservation.",
   },
   {
     icon: <Clock className="h-5 w-5 text-red-500" />,
-    title: "Faster",
-    description: "Stop stressing, circling, or being late because we always have a spot for you. With Parclick, reserve before you go out and always park on the first try."
+    title: 'Faster',
+    description:
+      'Stop stressing, circling, or being late because we always have a spot for you. With Parclick, reserve before you go out and always park on the first try.',
   },
   {
     icon: <PiggyBank className="h-5 w-5 text-red-500" />,
-    title: "Cheaper",
-    description: "No last-minute surprises here. Compare prices, choose the best parking you find, and save every time you park."
+    title: 'Cheaper',
+    description:
+      'No last-minute surprises here. Compare prices, choose the best parking you find, and save every time you park.',
   },
   {
     icon: <Lock className="h-5 w-5 text-red-500" />,
-    title: "And safer",
-    description: "Pay through the app, park only in verified car parks, and if you ever need help, contact us."
-  }
+    title: 'And safer',
+    description:
+      'Pay through the app, park only in verified car parks, and if you ever need help, contact us.',
+  },
 ]
 
 export function Features() {
@@ -51,4 +55,4 @@ export function Features() {
       ))}
     </div>
   )
-} 
+}

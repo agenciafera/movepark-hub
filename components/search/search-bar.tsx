@@ -1,13 +1,17 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { Calendar } from "@/components/ui/calendar"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { format } from "date-fns"
-import { Calendar as CalendarIcon, Clock, MapPin, Search } from "lucide-react"
-import { TimePickerDemo } from "./time-picker"
+import { useState } from 'react'
+import { Calendar } from '@/components/ui/calendar'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { format } from 'date-fns'
+import { Calendar as CalendarIcon, Clock, MapPin, Search } from 'lucide-react'
+import { TimePickerDemo } from './time-picker'
 
 interface SearchParams {
   location: string
@@ -27,18 +31,18 @@ interface SearchBarProps {
 }
 
 export function SearchBar({ onSearch, defaultValues }: SearchBarProps) {
-  const [location, setLocation] = useState(defaultValues?.location || "")
+  const [location, setLocation] = useState(defaultValues?.location || '')
   const [arrivalDate, setArrivalDate] = useState<Date | undefined>(
-    defaultValues?.arrival.date || undefined
+    defaultValues?.arrival.date || undefined,
   )
   const [departureDate, setDepartureDate] = useState<Date | undefined>(
-    defaultValues?.departure.date || undefined
+    defaultValues?.departure.date || undefined,
   )
   const [arrivalTime, setArrivalTime] = useState(
-    defaultValues?.arrival.time || "10:00"
+    defaultValues?.arrival.time || '10:00',
   )
   const [departureTime, setDepartureTime] = useState(
-    defaultValues?.departure.time || "12:00"
+    defaultValues?.departure.time || '12:00',
   )
 
   const handleSearch = () => {
@@ -73,7 +77,9 @@ export function SearchBar({ onSearch, defaultValues }: SearchBarProps) {
             <PopoverTrigger asChild>
               <Button variant="ghost" className="gap-2">
                 <CalendarIcon className="h-4 w-4" />
-                {arrivalDate ? format(arrivalDate, "MM/dd/yyyy") : "Select date"}
+                {arrivalDate
+                  ? format(arrivalDate, 'MM/dd/yyyy')
+                  : 'Select date'}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
@@ -94,7 +100,10 @@ export function SearchBar({ onSearch, defaultValues }: SearchBarProps) {
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
-              <TimePickerDemo selected={arrivalTime} onTimeChange={setArrivalTime} />
+              <TimePickerDemo
+                selected={arrivalTime}
+                onTimeChange={setArrivalTime}
+              />
             </PopoverContent>
           </Popover>
         </div>
@@ -106,7 +115,9 @@ export function SearchBar({ onSearch, defaultValues }: SearchBarProps) {
             <PopoverTrigger asChild>
               <Button variant="ghost" className="gap-2">
                 <CalendarIcon className="h-4 w-4" />
-                {departureDate ? format(departureDate, "MM/dd/yyyy") : "Select date"}
+                {departureDate
+                  ? format(departureDate, 'MM/dd/yyyy')
+                  : 'Select date'}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
@@ -127,15 +138,18 @@ export function SearchBar({ onSearch, defaultValues }: SearchBarProps) {
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
-              <TimePickerDemo selected={departureTime} onTimeChange={setDepartureTime} />
+              <TimePickerDemo
+                selected={departureTime}
+                onTimeChange={setDepartureTime}
+              />
             </PopoverContent>
           </Popover>
         </div>
       </div>
 
-      <Button 
-        onClick={handleSearch} 
-        size="icon" 
+      <Button
+        onClick={handleSearch}
+        size="icon"
         className="rounded-full"
         aria-label="Search for parking"
       >
@@ -143,4 +157,4 @@ export function SearchBar({ onSearch, defaultValues }: SearchBarProps) {
       </Button>
     </div>
   )
-} 
+}
