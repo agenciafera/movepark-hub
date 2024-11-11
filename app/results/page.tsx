@@ -81,10 +81,10 @@ export default function ResultsPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex flex-col h-screen">
       {/* Search Bar Section */}
       <div className="border-b bg-white">
-        <div className="container mx-auto py-4 flex justify-center">
+        <div className="container mx-auto py-4">
           <SearchBar
             onSearch={handleSearch}
             defaultValues={{
@@ -106,10 +106,10 @@ export default function ResultsPage() {
         </div>
       </div>
 
-      {/* Results Section */}
-      <main className="container mx-auto flex-1 p-4">
+      {/* Results Section - Full width with 1/3 list and 2/3 map */}
+      <div className="flex-1 flex">
         <ParkingResults results={results} />
-      </main>
+      </div>
     </div>
   )
 }

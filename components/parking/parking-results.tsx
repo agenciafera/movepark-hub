@@ -17,26 +17,31 @@ export function ParkingResults({ results }: ParkingResultsProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-120px)]">
-      <div className="overflow-y-auto">
-        <div className="mb-4">
-          <h1 className="text-2xl font-semibold">
-            {results.length} results for 2 hours
-          </h1>
+    <>
+      {/* List - 1/3 width */}
+      <div className="w-1/3 overflow-y-auto border-r">
+        <div className="p-4">
+          <div className="mb-4">
+            <h1 className="text-2xl font-semibold">
+              {results.length} results for 2 hours
+            </h1>
+          </div>
+          <ParkingList
+            spots={results}
+            onSpotSelect={handleSpotSelect}
+            selectedSpot={selectedSpot}
+          />
         </div>
-        <ParkingList
-          spots={results}
-          onSpotSelect={handleSpotSelect}
-          selectedSpot={selectedSpot}
-        />
       </div>
-      <div className="h-full sticky top-0">
+
+      {/* Map - 2/3 width */}
+      <div className="w-2/3">
         <ParkingMap
           spots={results}
           selectedSpot={selectedSpot}
           onSpotSelect={handleSpotSelect}
         />
       </div>
-    </div>
+    </>
   )
 }

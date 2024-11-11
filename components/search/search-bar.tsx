@@ -60,7 +60,7 @@ export function SearchBar({ onSearch, defaultValues }: SearchBarProps) {
   }
 
   return (
-    <div className="flex w-full max-w-4xl items-center gap-2 rounded-full bg-white p-2 shadow-lg">
+    <div className="flex w-full items-center gap-2 rounded-full bg-white p-2 shadow-lg">
       <div className="flex flex-1 items-center gap-2 px-4">
         <MapPin className="h-5 w-5 text-gray-500" />
         <Input
