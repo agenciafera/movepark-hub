@@ -12,7 +12,7 @@ export default function Home() {
   return (
     <main>
       {/* Hero Section */}
-      <section className="relative flex min-h-[600px] flex-col items-center justify-center p-24">
+      <section className="relative flex h-screen flex-col items-center justify-center">
         {/* Background Image */}
         <div className="absolute inset-0 -z-10">
           <Image
@@ -24,7 +24,7 @@ export default function Home() {
           />
         </div>
 
-        <div className="mb-8 flex flex-col items-center space-y-4 text-center">
+        <div className="mb-8 flex flex-col items-center space-y-4 text-center px-4">
           <h1 className="text-4xl font-bold text-white">
             Find your perfect parking spot
           </h1>
@@ -33,7 +33,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="mb-8 flex gap-4">
+        <div className="mb-8 flex flex-wrap justify-center gap-4 px-4">
           <button className="rounded-full bg-purple-100 px-6 py-2 text-purple-700">
             Tickets
           </button>
@@ -45,18 +45,20 @@ export default function Home() {
           </button>
         </div>
 
-        <SearchBar
-          onSearch={(params) => {
-            const searchParams = new URLSearchParams({
-              location: params.location,
-              arrival: params.arrival.date?.toISOString() || '',
-              'arrival.time': params.arrival.time,
-              departure: params.departure.date?.toISOString() || '',
-              'departure.time': params.departure.time,
-            })
-            router.push(`/results?${searchParams.toString()}`)
-          }}
-        />
+        <div className="w-full max-w-5xl px-4">
+          <SearchBar
+            onSearch={(params) => {
+              const searchParams = new URLSearchParams({
+                location: params.location,
+                arrival: params.arrival.date?.toISOString() || '',
+                'arrival.time': params.arrival.time,
+                departure: params.departure.date?.toISOString() || '',
+                'departure.time': params.departure.time,
+              })
+              router.push(`/results?${searchParams.toString()}`)
+            }}
+          />
+        </div>
       </section>
 
       {/* Features Section */}

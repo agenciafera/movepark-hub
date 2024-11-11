@@ -73,6 +73,35 @@ You will use NextJS 15, shadcn, tailwind, Lucid icon
   - Include a section displaying the most-booked car parks in other cities (e.g., “Parking in Barcelona,” “Parking in Milan”).
   - Responsive Design: Ensure that the layout adapts well to mobile devices and tablets. Essential elements, such as the reservation summary and images, should be easily accessible on smaller screens.
 
+### RF006 - User Details and Reservation Summary
+
+- The project must include a User Details page where users can enter and review their personal and reservation information.
+- Reuse the same reservation summary component(RF005)
+- Quick Access Login:
+  - Provide options for users to sign in or register with third-party services, such as Continue with Facebook and Continue with Google.
+  - User Information Section:
+  - The form should include the following mandatory fields: First Name, Last Name, City of Residence, Email, and Phone (with a dropdown for country prefix selection).
+  - A checkbox labeled “The reservation is for another person” should allow users to input details if the booking is for someone else.
+  - Include a privacy statement with a link for More information about data security.
+- Additional Details Section:
+  - Add a checkbox labeled Rental Car to specify if the vehicle is rented.
+  - A field for Vehicle Registration Number with an example format (e.g., “1234ABC”) should be displayed.
+  - Include checkboxes for Terms and Conditions acceptance and a Marketing Opt-in for receiving news and promotions, with a friendly assurance about limited messaging.
+- Reservation Summary:
+  - Display a reservation summary on the right side of the page, which includes:
+  - Parking location name (e.g., “INDIGO Harlay Pont Neuf”), time duration (e.g., “2 hours”), and the total price (e.g., “8,50 €”).
+  - Details of the selected pass (e.g., Unlimited pass with unlimited entry and exit).
+  - Arrival and departure dates and times.
+  - Vehicle type and maximum height allowed in the car park.
+  - A section to expand Car park features for additional information.
+- Cancellation Policy:
+  - Clearly display the cancellation policy, specifying the deadline for free cancellation (e.g., “before 09:00 on 12/11/2024”).
+  - Payment Review Button:
+  - Include a prominent Payment Review button for users to proceed with the payment.
+  - Show icons for supported payment methods and app ratings (e.g., App Store, Google Play).
+- Responsive Design:
+  - Ensure the layout is optimized for mobile and desktop views, maintaining clarity and ease of use.
+
 ### RNF001 - The project must have color palette
 
 - The project must have a color palette

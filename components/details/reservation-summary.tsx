@@ -1,16 +1,7 @@
-'use client'
-
 import { Button } from '@/components/ui/button'
 import { ChevronDownIcon } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 
 export function ReservationSummary() {
-  const router = useRouter()
-
-  const handleContinue = () => {
-    router.push('/details')
-  }
-
   return (
     <div className="bg-white p-6 rounded-lg border space-y-6">
       <div>
@@ -72,13 +63,6 @@ export function ReservationSummary() {
         <Button variant="outline" className="w-full">
           Car park features
           <ChevronDownIcon className="ml-2 h-4 w-4" />
-        </Button>
-
-        <Button
-          onClick={handleContinue}
-          className="w-full bg-[#DA455E] hover:bg-[#DA455E]/90 text-white"
-        >
-          Continue
         </Button>
       </div>
     </div>
