@@ -2,6 +2,7 @@
 
 import { ParkingSpot } from '@/types/parking'
 import { useRouter } from 'next/navigation'
+import { StarRating } from './star-rating'
 
 interface ParkingListProps {
   spots: ParkingSpot[]
@@ -37,9 +38,16 @@ export function ParkingList({
             <div>
               <h3 className="font-semibold">{spot.name}</h3>
               <p className="text-sm text-gray-600">{spot.address}</p>
-              <p className="text-sm text-gray-600">
-                {(spot.distanceInMeters / 1000).toFixed(1)} km away
-              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <StarRating
+                  rating={spot.rating}
+                  showScore={false}
+                  className="scale-75 -ml-1"
+                />
+                <p className="text-sm text-gray-600">
+                  {(spot.distanceInMeters / 1000).toFixed(1)} km away
+                </p>
+              </div>
             </div>
             <div className="text-right">
               <p className="font-bold">${spot.price}</p>

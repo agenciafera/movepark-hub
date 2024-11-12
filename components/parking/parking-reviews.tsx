@@ -1,7 +1,7 @@
 'use client'
 
-import { Star } from 'lucide-react'
 import { Card } from '@/components/ui/card'
+import { StarRating } from './star-rating'
 import type { Review } from '@/types/parking'
 
 export function ParkingReviews() {
@@ -26,19 +26,7 @@ export function ParkingReviews() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold">Reviews</h2>
         <div className="flex items-center gap-2">
-          <span className="text-lg font-semibold">4.3</span>
-          <div className="flex">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Star
-                key={star}
-                className={`w-4 h-4 ${
-                  star <= 4
-                    ? 'fill-yellow-400 text-yellow-400'
-                    : 'fill-yellow-100 text-yellow-400'
-                }`}
-              />
-            ))}
-          </div>
+          <StarRating rating={4.3} />
         </div>
       </div>
 

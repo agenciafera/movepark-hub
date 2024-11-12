@@ -1,7 +1,7 @@
 'use client'
 
-import { Star } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { StarRating } from './star-rating'
 
 export function ParkingDetails() {
   return (
@@ -12,16 +12,7 @@ export function ParkingDetails() {
           SAEMES Lagrange-Maubert Car park
         </h1>
         <div className="flex items-center gap-2">
-          <div className="flex items-center">
-            <span className="text-lg font-semibold">4.3</span>
-            {[1, 2, 3, 4].map((star) => (
-              <Star
-                key={star}
-                className="w-4 h-4 fill-yellow-400 text-yellow-400"
-              />
-            ))}
-            <Star className="w-4 h-4 fill-yellow-100 text-yellow-400" />
-          </div>
+          <StarRating rating={4.3} />
           <Badge variant="secondary">8 min</Badge>
         </div>
       </div>
