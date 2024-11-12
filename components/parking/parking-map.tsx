@@ -28,7 +28,7 @@ export function ParkingMap({
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v12',
-      center: [2.3522, 48.8566], // Paris coordinates
+      center: [-46.6333, -23.5505], // São Paulo coordinates
       zoom: 13,
     })
 

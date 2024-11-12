@@ -4,40 +4,7 @@ import { ParkingResults } from '@/components/parking/parking-results'
 import { SearchBar } from '@/components/search/search-bar'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-
-// This is temporary mock data - replace with actual API call
-const MOCK_RESULTS = [
-  {
-    id: '1',
-    name: 'INDIGO Lutèce-Cité',
-    address: 'Boulevard du Palais, 2',
-    rating: 3.8,
-    price: 8,
-    coordinates: { lat: 48.8566, lng: 2.3522 },
-    amenities: {
-      hasElevator: true,
-      hasWheelchairAccess: true,
-      hasCovered: true,
-      hasContactless: true,
-    },
-    distanceInMeters: 286,
-  },
-  {
-    id: '2',
-    name: 'SAEMES Lagrange-Maubert',
-    address: 'Rue Lagrange, 19',
-    rating: 4.3,
-    price: 9.4,
-    coordinates: { lat: 48.8505, lng: 2.3488 },
-    amenities: {
-      hasElevator: true,
-      hasWheelchairAccess: true,
-      hasCovered: true,
-      hasContactless: true,
-    },
-    distanceInMeters: 324,
-  },
-]
+import parkingData from '@/mocks/parking-data.json'
 
 interface SearchParams {
   location: string
@@ -53,7 +20,7 @@ interface SearchParams {
 
 export default function ResultsPage() {
   const router = useRouter()
-  const [results] = useState(MOCK_RESULTS)
+  const [results] = useState(parkingData.parkingSpots)
   const [searchParams] = useState(() => {
     // Get URL search params on initial load
     if (typeof window !== 'undefined') {
@@ -106,7 +73,7 @@ export default function ResultsPage() {
         </div>
       </div>
 
-      {/* Results Section - Full width with 1/3 list and 2/3 map */}
+      {/* Results Section */}
       <div className="flex-1 flex">
         <ParkingResults results={results} />
       </div>

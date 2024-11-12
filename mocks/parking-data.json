@@ -1,0 +1,324 @@
+{
+    "parkingSpots": [
+      {
+        "id": "1",
+        "name": "Urban Park",
+        "address": "Avenida Ministro Evandro Lins e Silva, 140, Guarulhos, SP",
+        "rating": 4.5,
+        "price": 20.9,
+        "coordinates": {
+          "lat": -23.4253,
+          "lng": -46.4786
+        },
+        "amenities": {
+          "hasElevator": false,
+          "hasWheelchairAccess": true,
+          "hasCovered": true,
+          "hasContactless": false
+        },
+        "distanceInMeters": 500,
+        "details": "Located just 3 minutes from Guarulhos Airport, Urban Park offers 24-hour shuttle service to and from the terminals.",
+        "hours": "24/7",
+        "maxHeight": "2.10m",
+        "features": {
+          "contactlessAccess": false,
+          "freeCancellation": false,
+          "securityCameras": true,
+          "wheelchairAccessible": true
+        },
+        "images": [
+          "/parking/urban-park-1.jpg",
+          "/parking/urban-park-2.jpg",
+          "/parking/urban-park-3.jpg"
+        ]
+      },
+      {
+        "id": "2",
+        "name": "Grand Parking Congonhas",
+        "address": "Rua Baronesa de Bela Vista, 228, São Paulo, SP",
+        "rating": 4.2,
+        "price": 25.0,
+        "coordinates": {
+          "lat": -23.6261,
+          "lng": -46.6595
+        },
+        "amenities": {
+          "hasElevator": false,
+          "hasWheelchairAccess": true,
+          "hasCovered": true,
+          "hasContactless": false
+        },
+        "distanceInMeters": 100,
+        "details": "Located just 100 meters from Congonhas Airport, Grand Parking offers free and immediate shuttle service to and from the airport.",
+        "hours": "05:00 - 00:00",
+        "maxHeight": "2.20m",
+        "features": {
+          "contactlessAccess": false,
+          "freeCancellation": false,
+          "securityCameras": true,
+          "wheelchairAccessible": true
+        },
+        "images": [
+          "/parking/grand-parking-1.jpg",
+          "/parking/grand-parking-2.jpg",
+          "/parking/grand-parking-3.jpg"
+        ]
+      },
+      {
+        "id": "3",
+        "name": "Airport Park GRU",
+        "address": "Rodovia Hélio Smidt, s/n, Guarulhos, SP",
+        "rating": 4.0,
+        "price": 45.9,
+        "coordinates": {
+          "lat": -23.4356,
+          "lng": -46.4731
+        },
+        "amenities": {
+          "hasElevator": false,
+          "hasWheelchairAccess": true,
+          "hasCovered": true,
+          "hasContactless": false
+        },
+        "distanceInMeters": 800,
+        "details": "Situated just 5 minutes from Guarulhos International Airport, Airport Park offers a unique and privileged location with the shortest route to the terminals.",
+        "hours": "24/7",
+        "maxHeight": "2.10m",
+        "features": {
+          "contactlessAccess": false,
+          "freeCancellation": false,
+          "securityCameras": true,
+          "wheelchairAccessible": true
+        },
+        "images": [
+          "/parking/airport-park-1.jpg",
+          "/parking/airport-park-2.jpg",
+          "/parking/airport-park-3.jpg"
+        ]
+      },
+      {
+        "id": "4",
+        "name": "Estapar Aeroporto de Congonhas",
+        "address": "Praça Comandante Lineu Gomes, 100, São Paulo, SP",
+        "rating": 4.3,
+        "price": 30.0,
+        "coordinates": {
+          "lat": -23.6267,
+          "lng": -46.6592
+        },
+        "amenities": {
+          "hasElevator": true,
+          "hasWheelchairAccess": true,
+          "hasCovered": true,
+          "hasContactless": true
+        },
+        "distanceInMeters": 200,
+        "details": "Located within Congonhas Airport, Estapar offers premium parking services with wider spaces and a VIP lounge.",
+        "hours": "24/7",
+        "maxHeight": "2.20m",
+        "features": {
+          "contactlessAccess": true,
+          "freeCancellation": false,
+          "securityCameras": true,
+          "wheelchairAccessible": true
+        },
+        "images": [
+          "/parking/estapar-congonhas-1.jpg",
+          "/parking/estapar-congonhas-2.jpg",
+          "/parking/estapar-congonhas-3.jpg"
+        ]
+      },
+      {
+        "id": "5",
+        "name": "Decolar Park",
+        "address": "Avenida Natália Zarif, 2915, Guarulhos, SP",
+        "rating": 4.1,
+        "price": 14.9,
+        "coordinates": {
+          "lat": -23.4445,
+          "lng": -46.4958
+        },
+        "amenities": {
+          "hasElevator": false,
+          "hasWheelchairAccess": true,
+          "hasCovered": false,
+          "hasContactless": false
+        },
+        "distanceInMeters": 1000,
+        "details": "Located less than 10 minutes from Guarulhos Airport, Decolar Park offers affordable rates with free shuttle service to the terminals.",
+        "hours": "24/7",
+        "maxHeight": "2.10m",
+        "features": {
+          "contactlessAccess": false,
+          "freeCancellation": false,
+          "securityCameras": true,
+          "wheelchairAccessible": true
+        },
+        "images": [
+          "/parking/decolar-park-1.jpg",
+          "/parking/decolar-park-2.jpg",
+          "/parking/decolar-park-3.jpg"
+        ]
+      },
+      {
+        "id": "6",
+        "name": "Virapark",
+        "address": "Rua Antônio Luchiari, 900, Campinas, SP",
+        "rating": 4.7,
+        "price": 14.99,
+        "coordinates": {
+          "lat": -23.0073,
+          "lng": -47.1346
+        },
+        "amenities": {
+          "hasElevator": false,
+          "hasWheelchairAccess": true,
+          "hasCovered": true,
+          "hasContactless": false
+        },
+        "distanceInMeters": 500,
+        "details": "Located near Viracopos Airport, Virapark offers covered parking spaces with 24-hour security and free shuttle service to the terminal.",
+        "hours": "24/7",
+        "maxHeight": "2.10m",
+        "features": {
+          "contactlessAccess": false,
+          "freeCancellation": true,
+          "securityCameras": true,
+          "wheelchairAccessible": true
+        },
+        "images": [
+          "/parking/virapark-1.jpg",
+          "/parking/virapark-2.jpg",
+          "/parking/virapark-3.jpg"
+        ]
+      },
+      {
+        "id": "7",
+        "name": "Bandeira Park VCP",
+        "address": "Rua Antônio Luchiari, 1100, Campinas, SP",
+        "rating": 4.5,
+        "price": 15.0,
+        "coordinates": {
+          "lat": -23.0065,
+          "lng": -47.1350
+        },
+        "amenities": {
+          "hasElevator": false,
+          "hasWheelchairAccess": true,
+          "hasCovered": true,
+          "hasContactless": false
+        },
+        "distanceInMeters": 600,
+        "details": "Bandeira Park offers secure parking with insurance coverage up to R$700,000 and promotional rates for online reservations.",
+        "hours": "24/7",
+        "maxHeight": "2.20m",
+        "features": {
+          "contactlessAccess": false,
+          "freeCancellation": true,
+          "securityCameras": true,
+          "wheelchairAccessible": true
+        },
+        "images": [
+          "/parking/bandeira-park-vcp-1.jpg",
+          "/parking/bandeira-park-vcp-2.jpg",
+          "/parking/bandeira-park-vcp-3.jpg"
+        ]
+      },
+      {
+        "id": "8",
+        "name": "Estapar Aeroporto de Viracopos",
+        "address": "Rodovia Santos Dumont, s/n, Campinas, SP",
+        "rating": 4.3,
+        "price": 20.0,
+        "coordinates": {
+          "lat": -23.0078,
+          "lng": -47.1340
+        },
+        "amenities": {
+          "hasElevator": true,
+          "hasWheelchairAccess": true,
+          "hasCovered": true,
+          "hasContactless": true
+        },
+        "distanceInMeters": 300,
+        "details": "Estapar offers parking within Viracopos Airport with easy access to the terminal and options for online reservations.",
+        "hours": "24/7",
+        "maxHeight": "2.10m",
+        "features": {
+          "contactlessAccess": true,
+          "freeCancellation": true,
+          "securityCameras": true,
+          "wheelchairAccessible": true
+        },
+        "images": [
+          "/parking/estapar-viracopos-1.jpg",
+          "/parking/estapar-viracopos-2.jpg",
+          "/parking/estapar-viracopos-3.jpg"
+        ]
+      },
+      {
+        "id": "9",
+        "name": "Bandeira Park CGH",
+        "address": "Rua Vieira de Morais, 2110, São Paulo, SP",
+        "rating": 4.6,
+        "price": 25.0,
+        "coordinates": {
+          "lat": -23.6265,
+          "lng": -46.6590
+        },
+        "amenities": {
+          "hasElevator": false,
+          "hasWheelchairAccess": true,
+          "hasCovered": true,
+          "hasContactless": false
+        },
+        "distanceInMeters": 200,
+        "details": "Bandeira Park offers secure parking near Congonhas Airport with insurance coverage up to R$700,000 and promotional rates for online reservations.",
+        "hours": "24/7",
+        "maxHeight": "2.20m",
+        "features": {
+          "contactlessAccess": false,
+          "freeCancellation": true,
+          "securityCameras": true,
+          "wheelchairAccessible": true
+        },
+        "images": [
+          "/parking/bandeira-park-cgh-1.jpg",
+          "/parking/bandeira-park-cgh-2.jpg",
+          "/parking/bandeira-park-cgh-3.jpg"
+        ]
+      },
+      {
+        "id": "10",
+        "name": "One Parking Congonhas",
+        "address": "Avenida Washington Luís, 6901, São Paulo, SP",
+        "rating": 4.4,
+        "price": 30.0,
+        "coordinates": {
+          "lat": -23.6260,
+          "lng": -46.6592
+        },
+        "amenities": {
+          "hasElevator": false,
+          "hasWheelchairAccess": true,
+          "hasCovered": true,
+          "hasContactless": false
+        },
+        "distanceInMeters": 100,
+        "details": "One Parking offers quick access to Congonhas Airport with free shuttle service and a focus on security and efficiency.",
+        "hours": "05:00 - 23:00",
+        "maxHeight": "2.10m",
+        "features": {
+          "contactlessAccess": false,
+          "freeCancellation": true,
+          "securityCameras": true,
+          "wheelchairAccessible": true
+        },
+        "images": [
+          "/parking/one-parking-congonhas-1.jpg",
+          "/parking/one-parking-congonhas-2.jpg",
+          "/parking/one-parking-congonhas-3.jpg"
+        ]
+      }
+    ]
+}
