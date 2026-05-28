@@ -1,0 +1,35 @@
+<!-- @dsCard group="Components" -->
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  .card { padding: 28px 32px; display:flex; align-items:center; justify-content:center; }
+  .pill {
+    display:flex; align-items:center; height: 64px;
+    background: #fff; border-radius: 9999px;
+    box-shadow: var(--shadow-card);
+    padding: 4px;
+  }
+  .seg {
+    display:flex; flex-direction:column; justify-content:center;
+    padding: 8px 22px; cursor:pointer;
+    border-right: 1px solid var(--colors-hairline);
+  }
+  .seg:last-of-type { border-right: 0; }
+  .seg .lab { font-size: 12px; font-weight: 700; color: var(--colors-ink); letter-spacing: 0.1px; }
+  .seg .val { font-size: 14px; font-weight: 400; color: var(--colors-muted); margin-top: 2px; }
+  .orb {
+    width: 48px; height: 48px; background: #DA455E; border-radius: 9999px;
+    display:flex; align-items:center; justify-content:center; margin-left: 8px;
+    color: #fff;
+  }
+</style>
+</head><body>
+<div class="card">
+  <div class="pill">
+    <div class="seg"><div class="lab">Onde</div><div class="val">Buscar vagas</div></div>
+    <div class="seg"><div class="lab">Quando</div><div class="val">Adicionar data</div></div>
+    <div class="seg"><div class="lab">Duração</div><div class="val">Por quanto tempo</div></div>
+    <div class="orb"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></div>
+  </div>
+</div>
+</body></html>

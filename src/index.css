@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ============================================================
+       Movepark palette
+       ============================================================ */
+
+    /* Brand */
+    --mp-navy: 248 26% 20%;            /* #29263F */
+    --mp-indigo: 239 44% 45%;          /* #4041A3 */
+    --mp-violet: 239 82% 65%;          /* #5D5FEF */
+    --mp-pale: 210 100% 95%;           /* #E4F2FF */
+    --mp-red: 350 67% 56%;             /* #DA455E — primary CTA */
+    --mp-red-deep: 350 52% 45%;        /* #AE374B */
+    --mp-teal: 184 44% 76%;            /* #A6DBDF */
+
+    /* Primary semantic aliases (Movepark red carries the CTA load) */
+    --mp-primary: var(--mp-red);
+    --mp-primary-active: 350 64% 47%;  /* #C32B45 */
+    --mp-primary-disabled: 351 70% 90%;/* #F6D2D8 */
+
+    /* Surface */
+    --canvas: 0 0% 100%;
+    --surface-soft: 240 7% 97%;        /* #F7F7F8 */
+    --surface-strong: 220 30% 92%;     /* #E0E5F2 */
+    --surface-pale: var(--mp-pale);
+
+    /* Hairlines & borders */
+    --hairline: 0 0% 88%;              /* #E0E0E0 */
+    --hairline-soft: 0 0% 92%;         /* #EBEBEB */
+    --border-strong: 220 21% 59%;      /* #818FAF */
+
+    /* Text — ink is navy, not pure black */
+    --ink: var(--mp-navy);
+    --body: 0 0% 26%;                  /* #424242 */
+    --muted: 0 0% 42%;                 /* #6A6A6A */
+    --muted-soft: 0 0% 57%;            /* #929292 */
+    --muted-steel: 220 21% 59%;        /* #818FAF */
+    --on-primary: 0 0% 100%;
+
+    /* Semantic */
+    --success: 150 60% 30%;            /* #1F7A4D */
+    --warning: 34 100% 36%;            /* #B96A00 */
+    --error: 13 80% 42%;               /* #C13515 */
+    --info: var(--mp-indigo);
+
+    /* Status badges */
+    --badge-confirmed-bg: 135 38% 93%;
+    --badge-confirmed-fg: var(--success);
+    --badge-active-bg: var(--mp-pale);
+    --badge-active-fg: var(--mp-indigo);
+    --badge-pending-bg: 38 100% 92%;
+    --badge-pending-fg: var(--warning);
+    --badge-completed-bg: var(--surface-soft);
+    --badge-completed-fg: var(--muted);
+    --badge-cancelled-bg: 6 73% 94%;
+    --badge-cancelled-fg: var(--error);
+
+    /* Scrim — navy-tinted, not pure black */
+    --scrim: 248 26% 20% / 0.55;
+
+    /* shadcn radius alias */
+    --radius: 14px;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-hairline;
+  }
+  html,
+  body,
+  #root {
+    @apply h-full;
+  }
+  body {
+    @apply bg-canvas text-ink font-sans antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+@layer utilities {
+  .bg-brand-gradient {
+    background-image: linear-gradient(
+      135deg,
+      hsl(var(--mp-indigo)) 0%,
+      hsl(var(--mp-violet)) 60%,
+      hsl(var(--mp-indigo)) 100%
+    );
+  }
+  .bg-soft-gradient {
+    background-image: linear-gradient(
+      180deg,
+      hsl(var(--canvas)) 0%,
+      hsl(var(--mp-pale)) 100%
+    );
+  }
+}

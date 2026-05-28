@@ -1,0 +1,413 @@
+/* ============================================================
+   Movepark Design System
+   Foundations: Color + Type
+   ============================================================
+   Movepark's visual identity (logo, palette, Roboto) wrapped
+   in the structural language of the Airbnb design system —
+   pill-shaped global search, photo-first cards, single-shadow
+   elevation, generous white canvas, modest display weights.
+   ============================================================ */
+
+/* ---------- Fonts ---------- */
+
+@font-face {
+  font-family: "Roboto";
+  src: url("fonts/Roboto-Thin.ttf") format("truetype");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Roboto";
+  src: url("fonts/Roboto-ThinItalic.ttf") format("truetype");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Roboto";
+  src: url("fonts/Roboto-ExtraLight.ttf") format("truetype");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Roboto";
+  src: url("fonts/Roboto-ExtraLightItalic.ttf") format("truetype");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Roboto";
+  src: url("fonts/Roboto-Light.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Roboto";
+  src: url("fonts/Roboto-LightItalic.ttf") format("truetype");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Roboto";
+  src: url("fonts/Roboto-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Roboto";
+  src: url("fonts/Roboto-Italic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Roboto";
+  src: url("fonts/Roboto-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Roboto";
+  src: url("fonts/Roboto-MediumItalic.ttf") format("truetype");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Roboto";
+  src: url("fonts/Roboto-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Roboto";
+  src: url("fonts/Roboto-SemiBoldItalic.ttf") format("truetype");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Roboto";
+  src: url("fonts/Roboto-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Roboto";
+  src: url("fonts/Roboto-BoldItalic.ttf") format("truetype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Roboto";
+  src: url("fonts/Roboto-ExtraBold.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Roboto";
+  src: url("fonts/Roboto-ExtraBoldItalic.ttf") format("truetype");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Roboto";
+  src: url("fonts/Roboto-Black.ttf") format("truetype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Roboto";
+  src: url("fonts/Roboto-BlackItalic.ttf") format("truetype");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  /* ============================================================
+     COLORS — Movepark palette
+     ============================================================ */
+
+  /* Brand */
+  --mp-navy:        #29263F; /* primary ink, logo body, headlines        */
+  --mp-indigo:      #4041A3; /* deep brand blue, used as secondary accent */
+  --mp-violet:      #5D5FEF; /* bright blue-violet, gradient terminus    */
+  --mp-pale:        #E4F2FF; /* pale blue tint surface                   */
+  --mp-red:         #DA455E; /* primary CTA red — the "Rausch" of Movepark*/
+  --mp-red-deep:    #AE374B; /* shadow tone of the M monogram            */
+  --mp-teal:        #A6DBDF; /* teal stripe in the M monogram            */
+
+  /* Brand — semantic aliases mapped to Airbnb-style tokens */
+  --colors-primary:           var(--mp-red);
+  --colors-primary-active:    #C32B45;            /* darker red for press     */
+  --colors-primary-disabled:  #F6D2D8;            /* pale red tint disabled   */
+  --colors-secondary:         var(--mp-indigo);   /* sub-brand purple-blue    */
+  --colors-secondary-soft:    var(--mp-violet);
+  --colors-on-primary:        #FFFFFF;
+
+  /* Surface */
+  --colors-canvas:            #FFFFFF;
+  --colors-surface-soft:      #F7F7F8;
+  --colors-surface-strong:    #E0E5F2;
+  --colors-surface-pale:      var(--mp-pale);  /* gentle brand-tinted surface */
+  --colors-surface-inverse:   var(--mp-navy);
+
+  /* Hairlines & borders */
+  --colors-hairline:          #E0E0E0;
+  --colors-hairline-soft:     #EBEBEB;
+  --colors-border-strong:     #818FAF;          /* Movepark steel-blue stroke */
+  --colors-border-focus:      var(--mp-navy);
+
+  /* Text */
+  --colors-ink:               var(--mp-navy);   /* dominant text color        */
+  --colors-body:              #424242;          /* secondary running text     */
+  --colors-muted:             #6A6A6A;
+  --colors-muted-soft:        #929292;
+  --colors-muted-steel:       #818FAF;          /* Movepark steel-blue muted  */
+  --colors-star-rating:       var(--mp-navy);
+
+  /* Semantic */
+  --colors-error:             #C13515;
+  --colors-error-hover:       #B32505;
+  --colors-success:           #1F7A4D;
+  --colors-warning:           #B96A00;
+  --colors-info:              var(--mp-indigo);
+  --colors-legal-link:        var(--mp-indigo);
+
+  /* Scrim */
+  --colors-scrim:             rgba(41, 38, 63, 0.55);
+
+  /* Brand gradient (from the identity board) */
+  --mp-gradient-brand:        linear-gradient(135deg, #4041A3 0%, #5D5FEF 60%, #4041A3 100%);
+  --mp-gradient-soft:         linear-gradient(180deg, #FFFFFF 0%, #E4F2FF 100%);
+
+  /* ============================================================
+     TYPE
+     ============================================================ */
+  --font-sans: "Roboto", -apple-system, system-ui, "Segoe UI",
+               "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Type tokens — sizes / weights / line-heights / tracking */
+  --type-rating-display-size:   64px;
+  --type-rating-display-weight: 900;
+  --type-rating-display-lh:     1.05;
+  --type-rating-display-track:  -1.5px;
+
+  --type-display-xl-size:       28px;
+  --type-display-xl-weight:     700;
+  --type-display-xl-lh:         1.32;
+  --type-display-xl-track:      -0.2px;
+
+  --type-display-lg-size:       22px;
+  --type-display-lg-weight:     500;
+  --type-display-lg-lh:         1.2;
+  --type-display-lg-track:      -0.3px;
+
+  --type-display-md-size:       21px;
+  --type-display-md-weight:     700;
+  --type-display-md-lh:         1.4;
+
+  --type-display-sm-size:       20px;
+  --type-display-sm-weight:     600;
+  --type-display-sm-lh:         1.22;
+  --type-display-sm-track:      -0.15px;
+
+  --type-title-md-size:         16px;
+  --type-title-md-weight:       600;
+  --type-title-md-lh:           1.25;
+
+  --type-title-sm-size:         16px;
+  --type-title-sm-weight:       500;
+  --type-title-sm-lh:           1.25;
+
+  --type-body-md-size:          16px;
+  --type-body-md-weight:        400;
+  --type-body-md-lh:            1.5;
+
+  --type-body-sm-size:          14px;
+  --type-body-sm-weight:        400;
+  --type-body-sm-lh:            1.43;
+
+  --type-caption-size:          14px;
+  --type-caption-weight:        500;
+  --type-caption-lh:            1.29;
+
+  --type-caption-sm-size:       13px;
+  --type-caption-sm-weight:     400;
+  --type-caption-sm-lh:         1.23;
+
+  --type-badge-size:            11px;
+  --type-badge-weight:          700;
+  --type-badge-lh:              1.18;
+  --type-badge-track:           0.1px;
+
+  --type-micro-label-size:      12px;
+  --type-micro-label-weight:    700;
+  --type-micro-label-lh:        1.33;
+
+  --type-uppercase-tag-size:    8px;
+  --type-uppercase-tag-weight:  900;
+  --type-uppercase-tag-lh:      1.25;
+  --type-uppercase-tag-track:   0.4px;
+
+  --type-button-md-size:        16px;
+  --type-button-md-weight:      500;
+  --type-button-md-lh:          1.25;
+
+  --type-button-sm-size:        14px;
+  --type-button-sm-weight:      500;
+  --type-button-sm-lh:          1.29;
+
+  --type-link-size:             14px;
+  --type-link-weight:           400;
+  --type-link-lh:               1.43;
+
+  --type-nav-link-size:         16px;
+  --type-nav-link-weight:       600;
+  --type-nav-link-lh:           1.25;
+
+  /* ============================================================
+     SPACING — 4px base
+     ============================================================ */
+  --space-xxs:        2px;
+  --space-xs:         4px;
+  --space-sm:         8px;
+  --space-md:         12px;
+  --space-base:       16px;
+  --space-lg:         24px;
+  --space-xl:         32px;
+  --space-xxl:        48px;
+  --space-section:    64px;
+
+  /* ============================================================
+     RADII
+     ============================================================ */
+  --radius-xs:        4px;
+  --radius-sm:        8px;
+  --radius-md:        14px;
+  --radius-lg:        20px;
+  --radius-xl:        32px;
+  --radius-full:      9999px;
+
+  /* ============================================================
+     ELEVATION — single shadow tier
+     ============================================================ */
+  --shadow-card:
+      rgba(41, 38, 63, 0.04) 0 0 0 1px,
+      rgba(41, 38, 63, 0.06) 0 2px 6px 0,
+      rgba(41, 38, 63, 0.10) 0 4px 12px 0;
+  --shadow-focus-ring: 0 0 0 2px var(--mp-navy);
+
+  /* ============================================================
+     LAYOUT
+     ============================================================ */
+  --container-max:    1280px;
+  --container-narrow: 1080px;
+  --nav-height:       80px;
+
+  /* ============================================================
+     MOTION (Airbnb-quiet; modest fades, no bounces)
+     ============================================================ */
+  --easing-standard:  cubic-bezier(0.2, 0, 0, 1);
+  --easing-emphasize: cubic-bezier(0.3, 0, 0, 1);
+  --duration-fast:    120ms;
+  --duration-base:    200ms;
+  --duration-slow:    320ms;
+}
+
+/* ============================================================
+   SEMANTIC ELEMENT BASELINES
+   ============================================================ */
+
+html, body {
+  background: var(--colors-canvas);
+  color: var(--colors-ink);
+  font-family: var(--font-sans);
+  font-size: var(--type-body-md-size);
+  line-height: var(--type-body-md-lh);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, .h1 {
+  font-family: var(--font-sans);
+  font-size: var(--type-display-xl-size);
+  font-weight: var(--type-display-xl-weight);
+  line-height: var(--type-display-xl-lh);
+  letter-spacing: var(--type-display-xl-track);
+  color: var(--colors-ink);
+  margin: 0;
+}
+h2, .h2 {
+  font-family: var(--font-sans);
+  font-size: var(--type-display-md-size);
+  font-weight: var(--type-display-md-weight);
+  line-height: var(--type-display-md-lh);
+  color: var(--colors-ink);
+  margin: 0;
+}
+h3, .h3 {
+  font-family: var(--font-sans);
+  font-size: var(--type-display-sm-size);
+  font-weight: var(--type-display-sm-weight);
+  line-height: var(--type-display-sm-lh);
+  letter-spacing: var(--type-display-sm-track);
+  color: var(--colors-ink);
+  margin: 0;
+}
+h4, .h4 {
+  font-family: var(--font-sans);
+  font-size: var(--type-title-md-size);
+  font-weight: var(--type-title-md-weight);
+  line-height: var(--type-title-md-lh);
+  color: var(--colors-ink);
+  margin: 0;
+}
+
+p, .body {
+  font-size: var(--type-body-md-size);
+  line-height: var(--type-body-md-lh);
+  color: var(--colors-body);
+  margin: 0;
+}
+
+small, .caption {
+  font-size: var(--type-caption-sm-size);
+  font-weight: var(--type-caption-sm-weight);
+  line-height: var(--type-caption-sm-lh);
+  color: var(--colors-muted);
+}
+
+a {
+  color: var(--colors-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+a:hover { color: var(--colors-error); }
+
+/* Utility classes */
+.mp-ink      { color: var(--colors-ink); }
+.mp-body     { color: var(--colors-body); }
+.mp-muted    { color: var(--colors-muted); }
+.mp-red      { color: var(--mp-red); }
+.mp-indigo   { color: var(--mp-indigo); }
+.mp-canvas   { background: var(--colors-canvas); }
+.mp-surface  { background: var(--colors-surface-soft); }
+.mp-pale     { background: var(--mp-pale); }
+.mp-shadow   { box-shadow: var(--shadow-card); }
+.mp-pill     { border-radius: var(--radius-full); }

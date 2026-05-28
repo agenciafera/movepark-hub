@@ -1,0 +1,32 @@
+<!-- @dsCard group="Components" -->
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  .card { padding: 28px 32px; display:flex; gap: 16px; align-items:center; flex-wrap:wrap; }
+  .input {
+    display:flex; flex-direction:column; gap: 4px; padding: 10px 14px;
+    background: #fff; border-radius: 8px;
+    box-shadow: inset 0 0 0 1px var(--colors-hairline);
+    width: 220px; height: 56px; justify-content:center;
+  }
+  .input.focused { box-shadow: inset 0 0 0 2px var(--colors-ink); }
+  .input.error   { box-shadow: inset 0 0 0 2px #C13515; }
+  .lab { font-size: 12px; font-weight: 500; color: var(--colors-muted); }
+  .val { font-size: 16px; color: var(--colors-ink); }
+  .err-text { font-size: 12px; color: #C13515; margin-top: 4px; }
+  .col { display:flex; flex-direction:column; gap: 4px; }
+</style>
+</head><body>
+<div class="card">
+  <div class="col">
+    <div class="input"><div class="lab">Nome</div><div class="val">Ana Souza</div></div>
+  </div>
+  <div class="col">
+    <div class="input focused"><div class="lab">E-mail</div><div class="val" style="color:#222">ana@…</div></div>
+  </div>
+  <div class="col">
+    <div class="input error"><div class="lab">CPF</div><div class="val" style="color:#929292">000.000.000-00</div></div>
+    <div class="err-text">CPF inválido</div>
+  </div>
+</div>
+</body></html>

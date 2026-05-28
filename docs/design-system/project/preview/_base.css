@@ -1,0 +1,31 @@
+/* Shared card base — used by every preview/ card */
+@import url("../colors_and_type.css");
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--colors-canvas);
+  font-family: var(--font-sans);
+  color: var(--colors-ink);
+  -webkit-font-smoothing: antialiased;
+}
+.card {
+  padding: 24px;
+  min-height: 120px;
+}
+.row { display: flex; align-items: center; gap: 16px; }
+.col { display: flex; flex-direction: column; gap: 8px; }
+.wrap { display: flex; flex-wrap: wrap; gap: 12px; }
+.label-token {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--colors-muted);
+}
+.label-mono {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--colors-muted);
+}

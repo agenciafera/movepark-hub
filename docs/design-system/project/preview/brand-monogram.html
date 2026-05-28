@@ -1,0 +1,21 @@
+<!-- @dsCard group="Brand" -->
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  .card { display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; align-items:center; padding: 28px 32px; }
+  .swatch { display:flex; align-items:center; justify-content:center; height: 120px; border-radius: 14px; }
+  .swatch img { height: 84px; width: auto; }
+  .light { background: #ffffff; box-shadow: inset 0 0 0 1px var(--colors-hairline); }
+  .pale  { background: var(--mp-pale); }
+  .navy  { background: var(--mp-navy); }
+  .navy img { filter: brightness(0) invert(1) saturate(0); }
+  /* keep monogram colors on dark — render straight */
+  .navy.straight img { filter:none; }
+</style>
+</head><body>
+<div class="card">
+  <div class="swatch light"><img src="../assets/simbolo-movepark.svg" alt="Monogram on white"></div>
+  <div class="swatch pale"><img src="../assets/simbolo-movepark.svg" alt="Monogram on pale"></div>
+  <div class="swatch navy straight"><img src="../assets/simbolo-movepark.svg" alt="Monogram on navy"></div>
+</div>
+</body></html>

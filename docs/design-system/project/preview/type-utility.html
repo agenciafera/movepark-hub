@@ -1,0 +1,19 @@
+<!-- @dsCard group="Type" -->
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  .card { padding: 28px 32px; display:grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items:center; }
+  .cell { display:flex; flex-direction: column; gap: 8px; align-items:flex-start; }
+  .lab { font-size: 11px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; color: var(--colors-muted); }
+  .btn-label { font-size: 16px; font-weight: 500; color: #ffffff; background: #DA455E; padding: 10px 18px; border-radius: 8px; }
+  .badge { font-size: 11px; font-weight: 700; padding: 4px 10px; background: #fff; box-shadow: var(--shadow-card); border-radius: 999px; color: var(--colors-ink); }
+  .tag { font-size: 8px; font-weight: 900; letter-spacing: 0.4px; text-transform: uppercase; color: #fff; background: #DA455E; padding: 3px 7px; border-radius: 999px; }
+  .spec { font-family: var(--font-mono); font-size: 11px; color: var(--colors-muted); }
+</style>
+</head><body>
+<div class="card">
+  <div class="cell"><div class="btn-label">Reservar agora</div><div class="lab">button-md</div><div class="spec">16 / 500</div></div>
+  <div class="cell"><div class="badge">Guest favorite</div><div class="lab">badge</div><div class="spec">11 / 700</div></div>
+  <div class="cell"><div class="tag">NEW</div><div class="lab">uppercase-tag</div><div class="spec">8 / 900 · 0.4px</div></div>
+</div>
+</body></html>

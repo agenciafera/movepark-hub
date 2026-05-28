@@ -1,0 +1,90 @@
+import * as React from "react";
+import { Link } from "react-router-dom";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { useOperatorLocations } from "@/features/locations/api";
+import { LocationForm } from "@/features/locations/LocationForm";
+import { useAuth } from "@/auth/context";
+import type { Location, EntityStatus } from "@/types/domain";
+
+const statusTone: Record<EntityStatus, "confirmed" | "pending" | "cancelled"> = {
+  active: "confirmed",
+  inactive: "pending",
+  suspended: "cancelled",
+};
+
+export default function OperatorLocations() {
+  const { impersonatedCompanyId } = useAuth();
+  const { data, isLoading } = useOperatorLocations(impersonatedCompanyId);
+  const [editing, setEditing] = React.useState<(Location & { company_id: string }) | null>(null);
+
+  return (
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Localizações"
+        description="Edite informações de exibição das suas unidades."
+      />
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-40 w-full" />
+          ))}
+        </div>
+      ) : (data ?? []).length === 0 ? (
+        <EmptyState
+          title="Sem localizações vinculadas"
+          description="Solicite à equipe MovePark para cadastrar suas unidades."
+        />
+      ) : (
+        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
+          {data?.map((loc) => (
+            <Card key={loc.id}>
+              <CardContent className="flex flex-col gap-3 p-6">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="text-title-md text-ink">{loc.name}</div>
+                    <div className="text-caption text-muted">{loc.address ?? "Sem endereço"}</div>
+                  </div>
+                  <Badge tone={statusTone[loc.status]}>{loc.status}</Badge>
+                </div>
+                <div className="text-body-sm text-muted">
+                  Fuso: {loc.timezone}
+                  {loc.phone ? ` · Tel ${loc.phone}` : ""}
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setEditing(loc as Location & { company_id: string })}
+                  >
+                    Editar
+                  </Button>
+                  <Button size="sm" variant="ghost" asChild>
+                    <Link to={`/operator/locations/${loc.id}/parking-types`}>
+                      Tipos de vaga
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {editing && (
+        <LocationForm
+          open={!!editing}
+          companyId={editing.company_id}
+          location={editing}
+          onOpenChange={(open) => !open && setEditing(null)}
+          editableScope="operator"
+        />
+      )}
+    </div>
+  );
+}

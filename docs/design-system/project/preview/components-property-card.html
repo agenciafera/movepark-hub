@@ -1,0 +1,88 @@
+<!-- @dsCard group="Components" -->
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  .card { padding: 24px; display:flex; gap: 22px; align-items:flex-start; }
+  .pcard { width: 220px; }
+  .photo {
+    position: relative; aspect-ratio: 1 / 1; border-radius: 14px; overflow:hidden;
+    background: linear-gradient(135deg, #4041A3 0%, #5D5FEF 60%, #29263F 100%);
+  }
+  .photo img { width:100%; height:100%; object-fit:cover; display:block; }
+  .fav {
+    position:absolute; top: 10px; left: 10px;
+    background: #fff; color: var(--colors-ink);
+    font-size: 11px; font-weight: 700;
+    padding: 5px 10px; border-radius: 9999px;
+    box-shadow: var(--shadow-card);
+  }
+  .heart {
+    position:absolute; top: 10px; right: 10px;
+    width: 28px; height: 28px;
+    display:flex; align-items:center; justify-content:center;
+    color: #fff;
+  }
+  .meta { padding-top: 10px; display:flex; flex-direction:column; gap: 2px; }
+  .title-row { display:flex; justify-content:space-between; align-items:center; }
+  .title { font-size: 15px; font-weight: 600; color: var(--colors-ink); }
+  .rating { font-size: 13px; color: var(--colors-ink); display:flex; align-items:center; gap: 3px; }
+  .sub { font-size: 14px; color: #6A6A6A; }
+  .price { font-size: 14px; color: var(--colors-ink); margin-top: 4px; }
+  .price b { font-weight: 600; }
+</style>
+</head><body>
+<div class="card">
+  <div class="pcard">
+    <div class="photo">
+      <div class="fav">Guest favorite</div>
+      <div class="heart">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(0,0,0,0.4)" stroke="#fff" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+      </div>
+    </div>
+    <div class="meta">
+      <div class="title-row">
+        <div class="title">Garagem · Centro</div>
+        <div class="rating">★ 4.92</div>
+      </div>
+      <div class="sub">Hosted by Ana</div>
+      <div class="sub">0.8 km · 24h</div>
+      <div class="price"><b>R$ 12</b> / hora</div>
+    </div>
+  </div>
+
+  <div class="pcard">
+    <div class="photo" style="background:linear-gradient(160deg,#818FAF 0%, #29263F 100%);">
+      <div class="heart">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="#DA455E" stroke="#fff" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+      </div>
+    </div>
+    <div class="meta">
+      <div class="title-row">
+        <div class="title">Vaga aberta · Jardins</div>
+        <div class="rating">★ 4.74</div>
+      </div>
+      <div class="sub">Hosted by Marco</div>
+      <div class="sub">1.4 km · Seg–Sex</div>
+      <div class="price"><b>R$ 8</b> / hora</div>
+    </div>
+  </div>
+
+  <div class="pcard">
+    <div class="photo" style="background:linear-gradient(140deg,#E0E5F2 0%,#818FAF 100%);">
+      <div class="fav">Guest favorite</div>
+      <div class="heart">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(0,0,0,0.4)" stroke="#fff" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+      </div>
+    </div>
+    <div class="meta">
+      <div class="title-row">
+        <div class="title">Edifício · Pinheiros</div>
+        <div class="rating">★ 4.88</div>
+      </div>
+      <div class="sub">Hosted by Bia</div>
+      <div class="sub">0.3 km · 24h</div>
+      <div class="price"><b>R$ 18</b> / hora</div>
+    </div>
+  </div>
+</div>
+</body></html>

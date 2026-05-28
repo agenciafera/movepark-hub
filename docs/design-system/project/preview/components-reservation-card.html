@@ -1,0 +1,43 @@
+<!-- @dsCard group="Components" -->
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  .card { padding: 28px 32px; display:flex; align-items:center; justify-content:center; }
+  .res {
+    width: 360px;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: var(--shadow-card);
+    padding: 24px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .price-row { display:flex; align-items:baseline; gap: 8px; }
+  .price { font-size: 22px; font-weight: 700; color: var(--colors-ink); }
+  .per { font-size: 16px; color: var(--colors-muted); }
+  .picker { display:grid; grid-template-columns: 1fr 1fr; box-shadow: inset 0 0 0 1px var(--colors-hairline); border-radius: 8px; overflow: hidden; }
+  .picker > div { padding: 10px 12px; }
+  .picker .left { border-right: 1px solid var(--colors-hairline); }
+  .picker .lab { font-size: 11px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; color: var(--colors-ink); }
+  .picker .val { font-size: 13px; color: var(--colors-muted); margin-top:2px; }
+  .stepper { display:flex; justify-content: space-between; padding: 10px 12px; box-shadow: inset 0 0 0 1px var(--colors-hairline); border-radius: 8px; align-items:center; }
+  .stepper .lab { font-size: 13px; color: var(--colors-ink); }
+  .reserve { background:#DA455E; color:#fff; font-size:16px; font-weight:500; padding: 14px; border:0; border-radius: 8px; cursor:pointer; }
+  .fee-row { display:flex; justify-content: space-between; font-size: 14px; color: var(--colors-body); }
+  .total { display:flex; justify-content: space-between; font-size: 15px; font-weight: 600; color: var(--colors-ink); padding-top:12px; border-top: 1px solid var(--colors-hairline); }
+</style>
+</head><body>
+<div class="card">
+  <div class="res">
+    <div class="price-row"><span class="price">R$ 24</span><span class="per">/ hora</span></div>
+    <div class="picker">
+      <div class="left"><div class="lab">Chegada</div><div class="val">27 mai · 14:00</div></div>
+      <div><div class="lab">Saída</div><div class="val">27 mai · 18:00</div></div>
+    </div>
+    <div class="stepper"><span class="lab">Veículos</span><span class="lab">1 carro</span></div>
+    <button class="reserve">Reservar</button>
+    <div class="fee-row"><span>R$ 24 × 4 horas</span><span>R$ 96</span></div>
+    <div class="fee-row"><span>Taxa de serviço</span><span>R$ 8</span></div>
+    <div class="total"><span>Total</span><span>R$ 104</span></div>
+  </div>
+</div>
+</body></html>

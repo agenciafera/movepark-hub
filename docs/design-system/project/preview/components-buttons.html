@@ -1,0 +1,23 @@
+<!-- @dsCard group="Components" -->
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  .card { padding: 28px 32px; display:flex; gap: 16px; flex-wrap:wrap; align-items:center; }
+  .btn { font-family: var(--font-sans); font-size: 16px; font-weight: 500; padding: 12px 22px; border-radius: 8px; cursor: pointer; border: 0; line-height: 1.25; }
+  .primary  { background: #DA455E; color: #fff; }
+  .primary-active { background: #C32B45; color: #fff; }
+  .primary-disabled { background: #F6D2D8; color: #fff; cursor: not-allowed; }
+  .secondary { background: #fff; color: var(--colors-ink); box-shadow: inset 0 0 0 1px var(--colors-ink); }
+  .tertiary  { background: transparent; color: var(--colors-ink); text-decoration: underline; padding: 12px 6px; }
+  .pill      { background: #DA455E; color: #fff; padding: 10px 20px; border-radius: 9999px; font-size: 14px; }
+</style>
+</head><body>
+<div class="card">
+  <button class="btn primary">Reservar</button>
+  <button class="btn primary-active">Pressed</button>
+  <button class="btn primary-disabled">Indisponível</button>
+  <button class="btn secondary">Salvar</button>
+  <button class="btn tertiary">Ver mais</button>
+  <button class="btn pill">Seja um operador</button>
+</div>
+</body></html>

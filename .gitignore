@@ -1,0 +1,29 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/
+*.swp
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+
+# MCP — contém access token, não versionar
+.mcp.json
+
+# Supabase
+supabase/.temp/
+supabase/.branches/
+
+# Node (caso vire app depois)
+node_modules/
+dist/
+build/
+*.log
+
+# TypeScript build info
+*.tsbuildinfo

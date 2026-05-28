@@ -1,0 +1,319 @@
+# Operator Panel — Spec
+
+> Painel para os estacionamentos parceiros gerenciarem suas próprias operações.  
+> Design base: Airbnb design system (a ser recolorido com brand MovePark).
+
+---
+
+## 1. Visão Geral
+
+O **Operator Panel** é o painel de cada empresa parceira (ex: Nationpark, Aerovalet). O operador enxerga **apenas os dados da sua própria empresa** — sem acesso a outras empresas ou configurações globais da plataforma.
+
+**Acesso:** usuários com role `company_operator` vinculados a uma empresa.
+
+---
+
+## 2. Roles & Permissões
+
+| Role | Descrição |
+|---|---|
+| `company_operator` | Acesso total à própria empresa — único role neste painel |
+
+> Isolamento por empresa é garantido no backend — o token JWT carrega o `company_id`.
+
+---
+
+## 3. Navegação
+
+### Sidebar (desktop)
+
+```
+Logo MovePark Hub
+[Nome da Empresa]
+────────────────
+Dashboard
+Reservas
+Localizações
+  └─ Tipos de Vaga
+Relatórios
+Configurações
+────────────────
+[Avatar] Operador name
+```
+
+### Top Bar
+
+- Logo + nome da empresa (breadcrumb leve)
+- Seletor de localização (se a empresa tiver mais de uma) — dropdown pill
+- Ícone de notificações
+- Avatar + menu
+
+---
+
+## 4. Screens
+
+---
+
+### 4.1 Dashboard
+
+**Rota:** `/operator`
+
+**Objetivo:** visão do dia-a-dia operacional da empresa.
+
+#### KPI Cards (topo, 4 colunas)
+
+| Card | Valor | Período |
+|---|---|---|
+| Reservas Hoje | `int` | Hoje |
+| Check-ins Hoje | `int` | Hoje |
+| Check-outs Hoje | `int` | Hoje |
+| Receita do Mês | `R$ xxx` | Mês atual |
+
+> Se houver múltiplas localizações, os cards refletem a localização selecionada no seletor global (ou "Todas").
+
+#### Timeline do Dia
+
+- Lista cronológica de check-ins e check-outs previstos para hoje
+- Cada linha: horário · nome do cliente · tipo de vaga · placa (se disponível) · status
+- Atualização em tempo real (ou polling a cada 30s)
+
+#### Gráfico de Ocupação
+
+- Barras por período do dia (manhã/tarde/noite) ou por hora
+- Comparativo com mesmo dia da semana anterior
+- Filtro por localização
+
+#### Reservas Pendentes de Confirmação
+
+- Lista das reservas aguardando ação do operador (se o fluxo exigir confirmação manual)
+- Botões inline: "Confirmar" / "Recusar"
+
+---
+
+### 4.2 Reservas
+
+**Rota:** `/operator/bookings`
+
+**Objetivo:** gestão completa das reservas da empresa.
+
+#### Filtros
+
+- Localização (se múltiplas)
+- Status: `pending` · `confirmed` · `active` · `completed` · `cancelled`
+- Tipo de vaga
+- Período (date range picker)
+- Busca por nome, e-mail ou ID
+
+#### Tabela de Reservas
+
+Colunas: `#ID` · `Cliente` · `Localização` · `Tipo de Vaga` · `Check-in` · `Check-out` · `Dias` · `Valor` · `Status` · `Ações`
+
+- Sort por qualquer coluna
+- Export CSV
+- Click na linha → drawer lateral (ver 4.2.1)
+- Ações inline: confirmar · cancelar (com permissão)
+
+#### 4.2.1 Drawer — Detalhe da Reserva
+
+Layout em 2 colunas:
+
+**Esquerda — Dados do Cliente**
+- Nome, e-mail, telefone
+- Foto do veículo (se disponível)
+- Placa
+- Observações
+
+**Direita — Dados da Reserva**
+- Tipo de vaga, localização
+- Datas e horários
+- Valor total + breakdown de taxas
+- Timeline de status (histórico de eventos)
+
+**Ações no drawer:**
+- Confirmar reserva
+- Marcar como check-in realizado
+- Marcar como check-out realizado
+- Cancelar (com motivo) — abre modal de confirmação
+- Adicionar nota interna
+
+---
+
+### 4.3 Localizações
+
+**Rota:** `/operator/locations`
+
+**Objetivo:** visualizar e editar dados das próprias localizações.
+
+#### Lista de Localizações
+
+Cards com: nome · endereço · status · capacidade total · ocupação atual
+
+> Criar/deletar localização não está disponível para o operador — apenas a MovePark gerencia isso.
+
+#### Editar Localização
+
+Campos editáveis pelo operador:
+- `name` (nome de exibição)
+- `address`
+- Horários de funcionamento (abertura/fechamento por dia da semana)
+- Instruções de acesso (texto livre — exibido ao cliente após reserva)
+- Fotos (upload, ordenável)
+
+---
+
+### 4.4 Tipos de Vaga
+
+**Rota:** `/operator/locations/:id/parking-types`
+
+**Objetivo:** visualizar e ajustar preços dos próprios tipos de vaga.
+
+#### Lista de Tipos de Vaga
+
+Tabela com: `Nome` · `Code` · `Estratégia` · `Preço` · `Status`
+
+> Operador pode **editar preços** e **ativar/desativar** tipos de vaga, mas não pode criar novos codes — apenas a MovePark cria codes novos.
+
+#### Editar Tipo de Vaga
+
+Campos editáveis:
+- `name` (nome de exibição para o cliente)
+- `status` — toggle
+- **Precificação** (dependendo da estratégia configurada pela MovePark):
+  - `fixed_daily`: edita `price_per_day`
+  - `fixed_bracket`: edita tabela de faixas
+
+---
+
+### 4.5 Relatórios
+
+**Rota:** `/operator/reports`
+
+**Objetivo:** análise de desempenho da empresa.
+
+#### Abas
+
+**Receita**
+- Gráfico de linha — receita diária no período
+- Selector de período: últimos 7d · 30d · 90d · personalizado
+- Breakdown por tipo de vaga (stacked bar)
+- Total do período, média diária, crescimento vs. período anterior
+
+**Ocupação**
+- Taxa de ocupação por localização e tipo de vaga
+- Heatmap por dia da semana × hora do dia
+
+**Reservas**
+- Total de reservas por status no período
+- Funil: criadas → confirmadas → concluídas → canceladas
+- Tempo médio de estadia
+
+**Export**
+- Download CSV / XLSX para qualquer relatório
+- Período configurável
+
+---
+
+### 4.6 Configurações
+
+**Rota:** `/operator/settings`
+
+#### Aba — Perfil da Empresa
+
+- Nome de exibição
+- Logo
+- E-mail de contato
+- Telefone de suporte
+
+#### Aba — Notificações
+
+- Toggle por tipo de evento:
+  - Nova reserva criada → notificar por e-mail
+  - Cancelamento → notificar por e-mail / push
+  - Check-in pendente (X min antes) → notificar
+
+#### Aba — Usuários da Empresa
+
+- Lista de operadores vinculados
+- Convidar novo operador (por e-mail)
+- Revogar acesso
+
+> Operadores adicionados aqui recebem role `company_operator` com o mesmo `company_id`.
+
+---
+
+## 5. Componentes Adaptados do Design System
+
+| Airbnb Token | Uso no Operator Panel |
+|---|---|
+| `{colors.primary}` | substituir por `{colors.mp-primary}` |
+| `{colors.canvas}` (#ffffff) | mantém |
+| `{colors.surface-soft}` (#f7f7f7) | sidebar, rows pares de tabela |
+| `{rounded.md}` (14px) | cards de KPI, drawer, modais |
+| `{rounded.sm}` (8px) | botões, inputs, badges |
+| `{component.reservation-card}` | KPI cards do dashboard |
+| `{component.date-picker-day}` | filtros de período |
+| `{typography.display-xl}` | número destacado de KPI |
+| `{typography.body-sm}` | meta de tabelas e timelines |
+| `{component.button-primary}` | confirmar reserva, check-in/out |
+| `{component.button-secondary}` | cancelar, exportar |
+
+---
+
+## 6. Estados de UI
+
+- **Loading:** skeleton nas tabelas, KPI cards e timeline
+- **Empty state:** por contexto
+  - Sem reservas hoje: "Nenhuma reserva para hoje — aproveite para organizar sua localização" + ilustração
+  - Sem dados no relatório: "Selecione um período com movimentação"
+- **Error state:** toast de erro com mensagem clara
+- **Success:** toast bottom-right, auto-dismiss 4s
+- **Real-time:** badge de "atualizado agora" na timeline do dia
+
+---
+
+## 7. Responsividade
+
+| Breakpoint | Comportamento |
+|---|---|
+| Mobile < 744px | Sidebar → bottom navigation (ícones); drawer vira full-screen sheet; tabelas viram lista de cards |
+| Tablet 744–1128px | Sidebar colapsa para ícones; drawer ocupa 60% da tela |
+| Desktop > 1128px | Sidebar completa (240px); drawer lateral (480px) |
+
+---
+
+## 8. Fluxos Críticos
+
+### Fluxo — Confirmar Check-in
+
+```
+Timeline do dia
+  → Clica na reserva
+    → Drawer abre
+      → Botão "Registrar Check-in"
+        → Modal de confirmação (placa, observações)
+          → Confirma
+            → Status atualiza para `active`
+              → Toast "Check-in registrado"
+```
+
+### Fluxo — Cancelar Reserva
+
+```
+Tabela de Reservas
+  → Ação "Cancelar"
+    → Modal: "Tem certeza? Essa ação não pode ser desfeita."
+      → Campo obrigatório: motivo (select + texto livre)
+        → Confirma
+          → Status → `cancelled`
+            → Cliente notificado automaticamente
+```
+
+---
+
+## 9. Open Points
+
+- [ ] Confirmação manual de reservas: fluxo obrigatório ou opcional por empresa?
+- [ ] Política de cancelamento: quem define — MovePark ou operador?
+- [ ] Integração de acesso (cancela/portão): escopo futuro ou MVP?
+- [ ] Operador pode editar uma reserva já confirmada?
+- [ ] App mobile para operadores ou apenas web responsivo?

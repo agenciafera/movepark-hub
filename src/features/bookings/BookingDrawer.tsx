@@ -1,0 +1,149 @@
+import { toast } from "sonner";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { formatBRL, formatDateTime } from "@/lib/format";
+import type { BookingStatus, BookingWithRelations } from "@/types/domain";
+import { useUpdateBookingStatus } from "./api";
+
+type Props = {
+  booking: BookingWithRelations | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+};
+
+const allowed: Record<BookingStatus, BookingStatus[]> = {
+  pending: ["confirmed", "cancelled"],
+  confirmed: ["checked_in", "cancelled"],
+  checked_in: ["completed", "cancelled"],
+  completed: [],
+  cancelled: [],
+  no_show: [],
+};
+
+export function BookingDrawer({ booking, open, onOpenChange }: Props) {
+  const mutation = useUpdateBookingStatus();
+
+  if (!booking) return null;
+
+  function transition(status: BookingStatus, label: string) {
+    const patch: Parameters<typeof mutation.mutate>[0] = {
+      bookingId: booking!.id,
+      status,
+    };
+    if (status === "checked_in")
+      patch.timestamp = { field: "checked_in_at", value: new Date().toISOString() };
+    if (status === "completed")
+      patch.timestamp = { field: "checked_out_at", value: new Date().toISOString() };
+
+    mutation.mutate(patch, {
+      onSuccess: () => toast.success(`${label} com sucesso`),
+      onError: (err) =>
+        toast.error(err instanceof Error ? err.message : "Falha ao atualizar"),
+    });
+  }
+
+  const next = allowed[booking.status];
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle>Reserva {booking.code}</SheetTitle>
+          <div className="flex items-center gap-2">
+            <StatusBadge status={booking.status} />
+            <span className="text-body-sm text-muted">{booking.location?.name}</span>
+          </div>
+        </SheetHeader>
+
+        <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 pb-6">
+          <section className="space-y-2">
+            <h4 className="text-title-md">Cliente</h4>
+            <Field label="Nome" value={booking.profile?.full_name ?? "—"} />
+            <Field label="Telefone" value={booking.profile?.phone ?? "—"} />
+            <Field label="CPF" value={booking.profile?.tax_id ?? "—"} />
+          </section>
+
+          <Separator />
+
+          <section className="space-y-2">
+            <h4 className="text-title-md">Veículo</h4>
+            <Field label="Placa" value={booking.vehicle?.license_plate ?? "—"} />
+            <Field label="Modelo" value={booking.vehicle?.model ?? "—"} />
+            <Field label="Cor" value={booking.vehicle?.color ?? "—"} />
+          </section>
+
+          <Separator />
+
+          <section className="space-y-2">
+            <h4 className="text-title-md">Reserva</h4>
+            <Field label="Check-in" value={formatDateTime(booking.check_in_at)} />
+            <Field label="Check-out" value={formatDateTime(booking.check_out_at)} />
+            <Field label="Total" value={formatBRL(booking.total_amount)} />
+            {booking.notes && <Field label="Notas" value={booking.notes} />}
+          </section>
+
+          {next.length > 0 && (
+            <>
+              <Separator />
+              <section className="flex flex-wrap gap-2">
+                {next.includes("confirmed") && (
+                  <Button
+                    size="sm"
+                    disabled={mutation.isPending}
+                    onClick={() => transition("confirmed", "Reserva confirmada")}
+                  >
+                    Confirmar
+                  </Button>
+                )}
+                {next.includes("checked_in") && (
+                  <Button
+                    size="sm"
+                    disabled={mutation.isPending}
+                    onClick={() => transition("checked_in", "Check-in registrado")}
+                  >
+                    Check-in
+                  </Button>
+                )}
+                {next.includes("completed") && (
+                  <Button
+                    size="sm"
+                    disabled={mutation.isPending}
+                    onClick={() => transition("completed", "Check-out registrado")}
+                  >
+                    Check-out
+                  </Button>
+                )}
+                {next.includes("cancelled") && (
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    disabled={mutation.isPending}
+                    onClick={() => transition("cancelled", "Reserva cancelada")}
+                  >
+                    Cancelar
+                  </Button>
+                )}
+              </section>
+            </>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function Field({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex justify-between text-body-sm">
+      <span className="text-muted">{label}</span>
+      <span className="text-ink">{value}</span>
+    </div>
+  );
+}

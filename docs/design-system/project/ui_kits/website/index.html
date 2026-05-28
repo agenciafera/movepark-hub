@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Movepark — UI Kit</title>
+  <link rel="icon" href="../../assets/simbolo-movepark.svg">
+  <link rel="stylesheet" href="styles.css">
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" src="TopNav.jsx"></script>
+  <script type="text/babel" src="SearchBar.jsx"></script>
+  <script type="text/babel" src="CategoryStrip.jsx"></script>
+  <script type="text/babel" src="PropertyCard.jsx"></script>
+  <script type="text/babel" src="ListingDetail.jsx"></script>
+  <script type="text/babel" src="Footer.jsx"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const LISTINGS = [
+      { id: 1, title: "Garagem · Centro",      host: "Hosted by Ana",   meta: "0.8 km · 24h",        price: 12, rating: 4.92, favorite: true,  gradient: "linear-gradient(140deg, #29263F 0%, #4041A3 100%)", spotType: "coberta", neighborhood: "Centro · São Paulo", reviews: 248 },
+      { id: 2, title: "Vaga aberta · Jardins", host: "Hosted by Marco", meta: "1.4 km · Seg–Sex",    price: 8,  rating: 4.74, favorite: false, gradient: "linear-gradient(160deg, #818FAF 0%, #29263F 100%)", spotType: "aberta", neighborhood: "Jardins · São Paulo", reviews: 134 },
+      { id: 3, title: "Edifício · Pinheiros",  host: "Hosted by Bia",   meta: "0.3 km · 24h",        price: 18, rating: 4.88, favorite: true,  gradient: "linear-gradient(140deg, #E0E5F2 0%, #818FAF 100%)", spotType: "em edifício", neighborhood: "Pinheiros · São Paulo", reviews: 312 },
+      { id: 4, title: "Subsolo · Itaim",       host: "Hosted by Pedro", meta: "0.9 km · 24h",        price: 22, rating: 4.95, favorite: true,  gradient: "linear-gradient(140deg, #4041A3 0%, #5D5FEF 100%)", spotType: "subsolo", neighborhood: "Itaim Bibi · São Paulo", reviews: 401 },
+      { id: 5, title: "Vaga rotativa · Sé",    host: "Hosted by Vania", meta: "2.1 km · Seg–Sáb",    price: 6,  rating: 4.61, favorite: false, gradient: "linear-gradient(135deg, #DA455E 0%, #AE374B 100%)", spotType: "rotativa", neighborhood: "Sé · São Paulo", reviews: 92 },
+      { id: 6, title: "Garagem · Moema",       host: "Hosted by Lara",  meta: "1.1 km · 24h",        price: 15, rating: 4.83, favorite: true,  gradient: "linear-gradient(135deg, #29263F 0%, #818FAF 100%)", spotType: "coberta", neighborhood: "Moema · São Paulo", reviews: 188 },
+      { id: 7, title: "Estacionamento · Vila Madalena", host: "Hosted by Hugo", meta: "0.4 km · 24h", price: 14, rating: 4.79, favorite: false, gradient: "linear-gradient(160deg, #5D5FEF 0%, #29263F 100%)", spotType: "público", neighborhood: "Vila Madalena · São Paulo", reviews: 73 },
+      { id: 8, title: "Vaga coberta · Brooklin", host: "Hosted by Júlia", meta: "1.6 km · 24h",     price: 10, rating: 4.86, favorite: true,  gradient: "linear-gradient(135deg, #A6DBDF 0%, #4041A3 100%)", spotType: "coberta", neighborhood: "Brooklin · São Paulo", reviews: 221 }
+    ];
+
+    const CATEGORIES = [
+      { id: "covered",     label: "Cobertas",     icon: "covered" },
+      { id: "near",        label: "Próximas",     icon: "near" },
+      { id: "twentyfour",  label: "24 horas",     icon: "twentyfour" },
+      { id: "valet",       label: "Com valet",    icon: "valet" },
+      { id: "suv",         label: "Para SUV",     icon: "suv" },
+      { id: "van",         label: "Para van",     icon: "van" },
+      { id: "ev",          label: "Carregamento", icon: "ev" },
+      { id: "secured",     label: "Vigilância",   icon: "secured" },
+      { id: "airport",     label: "Aeroporto",    icon: "airport" },
+      { id: "downtown",    label: "Centro",       icon: "downtown" }
+    ];
+
+    function CloseIcon() {
+      return (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6"  y1="6" x2="18" y2="18"/>
+        </svg>
+      );
+    }
+
+    function LoginModal({ onClose, onAuthenticated }) {
+      const [email, setEmail] = useState("");
+      return (
+        <div className="mp-scrim" onClick={onClose}>
+          <div className="mp-modal-wrap" onClick={e => e.stopPropagation()}>
+            <div className="mp-modal">
+              <button className="mp-modal-close" onClick={onClose} aria-label="Fechar"><CloseIcon /></button>
+              <h3>Entre ou cadastre-se</h3>
+              <div style={{fontSize:14, color:"var(--colors-muted)", marginBottom:16}}>Bem-vindo ao Movepark</div>
+              <input className="mp-input" type="email" placeholder="E-mail" value={email} onChange={e => setEmail(e.target.value)} />
+              <button className="mp-btn" onClick={() => onAuthenticated(email || "guest@movepark.com")}>Continuar</button>
+              <div style={{textAlign:"center", fontSize:13, color:"var(--colors-muted)", margin:"18px 0 8px"}}>ou</div>
+              <button className="mp-btn" style={{background:"#fff",color:"var(--colors-ink)",boxShadow:"inset 0 0 0 1px var(--colors-ink)"}}>Continuar com Google</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function Toast({ children }) {
+      return <div className="mp-toast">{children}</div>;
+    }
+
+    function HomePage({ onOpenListing, savedIds, onToggleSave }) {
+      return (
+        <main data-screen-label="Home">
+          <SearchBar />
+          <CategoryStrip categories={CATEGORIES} active="covered" onChange={() => {}} />
+
+          <section className="mp-section">
+            <div className="mp-hero" data-screen-label="Hero">
+              <div>
+                <h1>Estacione com confiança em qualquer canto da cidade</h1>
+                <p>Mais de 12 mil vagas verificadas, com reserva instantânea e operadores avaliados pela comunidade.</p>
+                <button className="mp-hero-cta">
+                  Explorar vagas próximas
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </button>
+              </div>
+              <div className="mp-hero-mark"><img src="../../assets/simbolo-movepark.svg" alt=""/></div>
+            </div>
+          </section>
+
+          <section className="mp-section">
+            <div className="mp-section-head">
+              <h2>Em destaque perto de você</h2>
+              <span className="mp-section-link">Ver tudo</span>
+            </div>
+            <div className="mp-grid">
+              {LISTINGS.slice(0, 4).map(l => (
+                <PropertyCard
+                  key={l.id} listing={l}
+                  onOpen={onOpenListing}
+                  saved={savedIds.has(l.id)}
+                  onToggleSave={onToggleSave}
+                />
+              ))}
+            </div>
+          </section>
+
+          <section className="mp-section">
+            <div className="mp-section-head">
+              <h2>Continue explorando São Paulo</h2>
+              <span className="mp-section-link">Ver tudo</span>
+            </div>
+            <div className="mp-grid">
+              {LISTINGS.slice(4).map(l => (
+                <PropertyCard
+                  key={l.id} listing={l}
+                  onOpen={onOpenListing}
+                  saved={savedIds.has(l.id)}
+                  onToggleSave={onToggleSave}
+                />
+              ))}
+            </div>
+          </section>
+        </main>
+      );
+    }
+
+    function App() {
+      const [route, setRoute] = useState({ view: "home" }); // { view: "home" | "detail", listing? }
+      const [activeTab, setActiveTab] = useState("parking");
+      const [savedIds, setSavedIds] = useState(new Set());
+      const [showLogin, setShowLogin] = useState(false);
+      const [toast, setToast] = useState(null);
+
+      const toggleSave = (id) => {
+        setSavedIds(prev => {
+          const next = new Set(prev);
+          next.has(id) ? next.delete(id) : next.add(id);
+          return next;
+        });
+      };
+
+      const showToast = (msg) => {
+        setToast(msg);
+        setTimeout(() => setToast(null), 3000);
+      };
+
+      const handleReserve = (listing) => {
+        showToast(`Reserva confirmada — ${listing.title}`);
+        setRoute({ view: "home" });
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      };
+
+      return (
+        <React.Fragment>
+          <TopNav
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            onAccountClick={() => setShowLogin(true)}
+          />
+          {route.view === "home" ? (
+            <HomePage
+              onOpenListing={l => { setRoute({ view: "detail", listing: l }); window.scrollTo({ top: 0 }); }}
+              savedIds={savedIds}
+              onToggleSave={toggleSave}
+            />
+          ) : (
+            <ListingDetail
+              listing={route.listing}
+              onBack={() => { setRoute({ view: "home" }); window.scrollTo({ top: 0 }); }}
+              onReserve={handleReserve}
+            />
+          )}
+          <Footer />
+          {showLogin ? (
+            <LoginModal
+              onClose={() => setShowLogin(false)}
+              onAuthenticated={(email) => { setShowLogin(false); showToast(`Bem-vindo, ${email.split("@")[0]}`); }}
+            />
+          ) : null}
+          {toast ? <Toast>{toast}</Toast> : null}
+        </React.Fragment>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>

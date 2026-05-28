@@ -1,0 +1,23 @@
+<!-- @dsCard group="Colors" -->
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  .card { padding: 24px 32px; }
+  .row { display:grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  .item { display:flex; align-items:center; gap: 12px; }
+  .chip { width: 48px; height: 48px; border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(41,38,63,0.08); flex-shrink:0; }
+  .meta { display:flex; flex-direction:column; gap:2px; }
+  .name { font-size: 13px; font-weight: 600; }
+  .hex  { font-family: var(--font-mono); font-size: 11px; color: var(--colors-muted); }
+  .role { font-size: 11px; color: var(--colors-muted); }
+</style>
+</head><body>
+<div class="card">
+  <div class="row">
+    <div class="item"><div class="chip" style="background:#29263F"></div><div class="meta"><div class="name">Ink</div><div class="hex">#29263F</div><div class="role">Headlines · body</div></div></div>
+    <div class="item"><div class="chip" style="background:#424242"></div><div class="meta"><div class="name">Body</div><div class="hex">#424242</div><div class="role">Long-form copy</div></div></div>
+    <div class="item"><div class="chip" style="background:#6A6A6A"></div><div class="meta"><div class="name">Muted</div><div class="hex">#6A6A6A</div><div class="role">Sub-labels</div></div></div>
+    <div class="item"><div class="chip" style="background:#818FAF"></div><div class="meta"><div class="name">Steel</div><div class="hex">#818FAF</div><div class="role">Muted brand</div></div></div>
+  </div>
+</div>
+</body></html>
