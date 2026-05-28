@@ -153,8 +153,9 @@ Botão "Ver todas as 248 avaliações" abre modal scroll vertical.
 
 ### 5.5 Onde fica
 - Endereço completo em `body-md ink`.
-- Mini-mapa estático (256 px altura, full-width da coluna). Pin = operadora.
-- Botão "Como chegar" → abre Google Maps em nova aba com endereço.
+- Mini-mapa interativo de 256 px altura, full-width da coluna. **Mesma stack do search** (MapLibre + MapTiler — ver [search-results.md §7](search-results.md#stack-do-mapa--decis%C3%A3o-t%C3%A9cnica)). Pin centralizado na operadora, zoom fixo (~15), interação limitada (sem rolagem; pan permitido). Mesmo style "Movepark Light".
+- Para reduzir tile loads, considerar **MapTiler Static Maps API** (imagem PNG renderizada server-side) em vez do mapa interativo — mais barato e suficiente pra esse contexto.
+- Botão "Como chegar" → abre Google Maps em nova aba com endereço (handoff externo é OK; nosso mapa não precisa ter routing).
 - Linha de informações: "Shuttle gratuito 24h até o terminal · 2 min de trajeto".
 
 ### 5.6 Política de cancelamento

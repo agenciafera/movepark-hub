@@ -150,6 +150,40 @@ Click no toggle `[Mapa ▭]` no header. Layout vira split 50/50:
 - Click no pin: abre **mini-card flutuante** sobre o mapa com foto, título, preço, "Ver detalhes".
 - Bounds change → URL ganha `bbox=lat1,lng1,lat2,lng2`. Botão "Buscar nesta área" aparece quando o usuário move o mapa significativamente.
 
+### Stack do mapa — decisão técnica
+
+**Cliente**: [MapLibre GL JS](https://maplibre.org/) — fork open-source do Mapbox GL JS, mantido por fundação independente. Bundle ~200KB gzipped, renderiza via WebGL, suporta vector tiles, estilo via JSON. Trocar de tile provider depois é mudar 1 URL no style.
+
+**Tile provider (Fase 1 — MVP)**: [MapTiler Cloud](https://www.maptiler.com/cloud/).
+- **Free tier**: 100k tile loads / mês (~10k sessões com mapa).
+- Acima: **US$ 0,50 / 1000 tile loads** (5–10× mais barato que Mapbox ou Google).
+- **MapTiler Studio** permite criar style customizado "Movepark Light" e exportar JSON.
+- Geocoder embutido — reaproveitável no autocomplete de aeroportos/endereços da search bar.
+
+**Tile provider (Fase 3 — escala, > 100k sessões/mês)**: [Protomaps](https://protomaps.com/) self-hosted (`.pmtiles` em Cloudflare R2 ou S3).
+- Migração trivial — só troca a URL da source no MapLibre.
+- Custo despenca pra ~US$ 20/mês mesmo com 50M+ tile loads.
+
+**Por que não Google Maps / Mapbox**:
+- Google: US$ 7 / 1000 map loads + paleta engessada + branding obrigatório.
+- Mapbox: ~3× mais caro que MapTiler, sem vantagem técnica relevante (MapLibre dá o mesmo client gratuito).
+- Airbnb usou Mapbox historicamente (saiu do Google em 2017 por custo), mas tem squad dedicado e volume que justifica enterprise deal. Não é o nosso caso.
+
+### Style do mapa
+Discreto — o destaque visual deve ser **os pins**, não o terreno.
+
+| Camada | Cor |
+|---|---|
+| Fundo terrestre | `#ffffff` / `#f7f7f8` |
+| Água | `--mp-pale` (`#E4F2FF`) |
+| Parques / áreas verdes | tom muito claro de `surface-soft` |
+| Ruas principais | `hairline` 1px |
+| Rótulos | `body-sm muted` em Roboto (se MapTiler aceitar custom font; senão Inter) |
+| Pin de operadora | gota 32×40 `mp-red` `#DA455E` com ícone car branco |
+| Pin do aeroporto / destino | ícone outline em `mp-navy`, não-clicável |
+| Cluster | círculo `mp-navy` 40px com contador branco |
+| Pin em hover | mesmo pin com anel 2px `mp-navy` ao redor |
+
 ### Mobile
 View mapa em mobile: lista colapsa em **bottom sheet drag-up**. Mapa preenche viewport. Pode arrastar pra cima pra ver cards.
 
@@ -249,4 +283,4 @@ Card com badge "Esgotado pro seu período" em `pending` (orange). Card fica em `
 - [ ] **Amenidades**: precisa modelar como? Tabela `location_amenity (location_id, amenity_code)` ou campo JSON em `location.amenities`?
 - [ ] **Pricing por card**: pra cada card no resultado, precisamos chamar `simulate_price(operator_slug, location_slug, parking_type_code, days)`. Se temos 17 resultados → 17 RPCs. Solução: criar uma RPC `simulate_price_batch` ou retornar tudo numa Edge Function `/search`.
 - [ ] **Wishlist persistente**: tabela `profile_saved (profile_id, location_parking_type_id, created_at)`. Anônimo: localStorage.
-- [ ] Provider de mapa: MapLibre (gratuito, tiles via MapTiler free tier) — confirmar antes de prosseguir.
+- [x] **Provider de mapa**: decidido — MapLibre GL JS + MapTiler Cloud no MVP, migra pra Protomaps self-hosted quando escalar. Ver §7 acima.

@@ -138,32 +138,59 @@ Se `location.has_notice = true`:
 
 ## 5. Step 3 — Pagamento
 
-### Métodos suportados (MVP)
-1. **PIX** (recomendado para BR — confirmação instantânea)
-2. **Cartão de crédito** (Stripe / Pagar.me — definir)
-3. **Boleto** (BR — confirmação D+1 a D+3)
+> ⚠️ **MVP: pagamento mockado.** Gateway real ainda não definido (Stripe BR vs Pagar.me vs Mercado Pago — decisão de negócio em aberto). Por enquanto o front simula o fluxo e o back confirma automaticamente.
+
+### Métodos exibidos no MVP mockado
+1. **PIX** — gera QR placeholder, confirma em ~3 segundos.
+2. **Cartão de crédito** — aceita qualquer número que passe validação Luhn, confirma instantaneamente.
+
+Boleto omitido no MVP (pra adicionar quando houver gateway real).
 
 ### Layout
 Tabs no topo:
 ```
-[💳 Cartão] [📱 PIX] [📄 Boleto]
+[📱 PIX] [💳 Cartão]
 ```
 
-#### Cartão
-- Número, validade, CVV, nome impresso.
-- Parcelas (até 12x sem juros — config por operadora ou fixo no Hub).
-- Tokenização via gateway (jamais armazenamos o número bruto).
-- Logado com cartões salvos: lista de cards radio + "Adicionar outro".
+#### PIX (mock)
+- Botão **"Gerar PIX"** → chama Edge Function `POST /functions/v1/mock-payment` com `booking_code` e `method='pix'`.
+- A function:
+  1. Cria registro em `payment` com `provider='mock'`, `status='pending'`, `provider_payment_id='mock_<uuid>'`.
+  2. Agenda confirmação automática em **3 segundos** (via `pg_sleep` inline ou `setTimeout` no client antes de chamar a confirmação).
+  3. Retorna QR code SVG **placeholder** (pode ser uma imagem genérica com "PIX MOCK" sobreposto) + linha "copia e cola" fake.
+- UI mostra QR grande (256×256), botão "Copiar código", countdown "Confirmando pagamento… 00:03".
+- Após 3s, polling detecta `payment.status = 'paid'` e avança pro Step 4.
+- Botão extra **"⚡ Confirmar agora (mock)"** visível apenas em dev pra pular a espera.
 
-#### PIX
-- Botão "Gerar PIX" → chama gateway, recebe QR code base64 + copy-paste.
-- Mostra QR grande (256×256) + botão "Copiar código".
-- Countdown "Pagamento expira em 15:00 minutos".
-- Polling do status do `payment` a cada 3 s. Quando `paid`, avança pro Step 4 automaticamente.
+#### Cartão (mock)
+- Form com número, validade, CVV, nome.
+- Validação client-side: Luhn check no número, MM/YY válido, CVV 3-4 dígitos.
+- Cartões de teste sugeridos no helper text:
+  ```
+  Aprovado: 4111 1111 1111 1111
+  Recusado: 4000 0000 0000 0002
+  ```
+- Click "Confirmar pagamento" → chama mesma Edge Function `mock-payment` com `method='card'`.
+  - Se número termina em `0002` → simula recusa, mostra banner "Cartão recusado".
+  - Caso contrário → confirma em ~1 segundo.
+- Logado: salva cartão **mocked** em `payment_method` (só `last4` + `brand` — sem token real).
 
-#### Boleto
-- Botão "Gerar boleto" → linha digitável + PDF.
-- Banner "A reserva ficará pendente até a confirmação do pagamento (até 3 dias úteis)."
+### Edge Function `mock-payment` (referência)
+```
+POST /functions/v1/mock-payment
+{
+  "booking_code": "MP-A8K7P2",
+  "method": "pix" | "card",
+  "fail": false  // opcional, força recusa pra teste
+}
+→ { payment_id, status: "pending" }
+
+depois (após delay simulado): UPDATE payment SET status='paid', paid_at=now()
+                              UPDATE booking SET status='confirmed'
+                              INSERT location_parking_availability +1 (todas as datas)
+```
+
+Quando o gateway real entrar, troca a implementação dessa function — o front continua igual.
 
 ### Cupom de desconto
 Acima das tabs (ou na sticky card):
@@ -348,8 +375,8 @@ Eventos pra rastrear no funil:
 
 ## 14. Open points
 
-- [ ] **Gateway de pagamento**: escolher entre Stripe BR, Pagar.me, Mercado Pago. Cada um tem trade-offs de PIX/boleto/cartão.
-- [ ] **PIX direto via BCB**: requer integração técnica mais complexa (DICT, certificados) — provavelmente fica via gateway.
+- [ ] **Gateway de pagamento**: MVP mockado (ver §5). Decisão entre Stripe BR / Pagar.me / Mercado Pago fica para depois — quando entrar, troca só a Edge Function `mock-payment`, front fica igual.
+- [ ] **PIX direto via BCB**: descartado pra MVP (requer DICT + certificados). Fica via gateway no futuro.
 - [ ] **Endpoint de criação de booking**: Edge Function `POST /functions/v1/create-booking` ou tabela direta com policy? Precisa de validação atômica de capacidade (`SELECT FOR UPDATE`).
 - [ ] **Job de expiração**: precisa de cron job (pg_cron ou Edge scheduled function) que transiciona bookings `pending` expirados.
 - [ ] **Antifraude**: para cartão, validar 3DS quando disponível. Bloquear CPFs com histórico de chargeback (sem implementação MVP).
