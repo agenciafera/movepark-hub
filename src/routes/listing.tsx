@@ -1,0 +1,222 @@
+import { Link, useParams, useSearchParams } from "react-router-dom";
+import { ArrowLeft, Building2, MapPin, Heart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { PhotoGrid } from "@/features/listing/PhotoGrid";
+import { AmenityList } from "@/features/listing/AmenityList";
+import { OperatorCard } from "@/features/listing/OperatorCard";
+import { MiniMap } from "@/features/listing/MiniMap";
+import { ReservationCard } from "@/features/listing/ReservationCard";
+import { useListing } from "@/features/listing/api";
+import { useSavedListings } from "@/features/search/useSavedListings";
+import { formatBRL } from "@/lib/format";
+import { cn } from "@/lib/utils";
+
+export default function ListingPage() {
+  const params = useParams<{
+    operatorSlug: string;
+    locationSlug: string;
+    parkingTypeCode: string;
+  }>();
+  const [searchParams] = useSearchParams();
+  const saved = useSavedListings();
+
+  const { data: listing, isLoading, error } = useListing(
+    params.operatorSlug,
+    params.locationSlug,
+    params.parkingTypeCode,
+  );
+
+  const fromStr = searchParams.get("from");
+  const toStr = searchParams.get("to");
+  const initialFrom = fromStr ? new Date(fromStr) : null;
+  const initialTo = toStr ? new Date(toStr) : null;
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto w-full max-w-[1080px] px-4 py-6 desktop:px-8">
+        <Skeleton className="mb-6 h-6 w-32" />
+        <Skeleton className="mb-3 h-8 w-2/3" />
+        <Skeleton className="mb-6 h-4 w-1/2" />
+        <Skeleton className="mb-8 h-[420px] w-full rounded-md" />
+        <div className="grid grid-cols-1 gap-8 desktop:grid-cols-[1fr_360px]">
+          <div className="space-y-4">
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-48 w-full" />
+          </div>
+          <Skeleton className="h-96 w-full rounded-md" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto w-full max-w-[1080px] px-4 py-12 desktop:px-8">
+        <div className="rounded-md border border-error bg-badge-cancelled-bg p-4 text-body-sm text-error">
+          {(error as Error).message}
+        </div>
+      </div>
+    );
+  }
+
+  if (!listing) {
+    return (
+      <div className="mx-auto w-full max-w-[1080px] px-4 py-12 desktop:px-8">
+        <EmptyState
+          title="Vaga não encontrada"
+          description="Pode ter sido removida pela operadora. Volte pra busca."
+          action={
+            <Button asChild>
+              <Link to="/">Voltar pra home</Link>
+            </Button>
+          }
+        />
+      </div>
+    );
+  }
+
+  const isSaved = saved.isSaved(listing.id);
+
+  return (
+    <div className="mx-auto w-full max-w-[1080px] px-4 py-6 desktop:px-8">
+      {/* Voltar */}
+      <Button variant="ghost" size="sm" asChild className="mb-4 -ml-3">
+        <Link to={`/search?${searchParams.toString()}`}>
+          <ArrowLeft className="h-4 w-4" />
+          Voltar pra busca
+        </Link>
+      </Button>
+
+      {/* Header */}
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div className="space-y-2">
+          <h1 className="text-display-lg text-ink">
+            {listing.parking_type.name} · {listing.company.name} {listing.location.name}
+          </h1>
+          <div className="flex flex-wrap items-center gap-2 text-body-md text-muted">
+            <Building2 className="h-4 w-4" />
+            <span>Operada por {listing.company.name}</span>
+            {listing.location.address && (
+              <>
+                <span>·</span>
+                <MapPin className="h-4 w-4" />
+                <span className="line-clamp-1">{listing.location.address}</span>
+              </>
+            )}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => saved.toggle(listing.id)}
+          aria-label={isSaved ? "Remover dos salvos" : "Salvar nos favoritos"}
+          className="inline-flex shrink-0 items-center gap-2 rounded-full border border-hairline px-3 py-2 text-body-sm text-ink hover:shadow-tier"
+        >
+          <Heart className={cn("h-4 w-4", isSaved ? "fill-mp-red stroke-mp-red" : "")} />
+          <span className="hidden tablet:inline">{isSaved ? "Salvo" : "Salvar"}</span>
+        </button>
+      </div>
+
+      {/* Photo grid */}
+      <PhotoGrid title={listing.location.name} />
+
+      {/* Body 2-col */}
+      <div className="mt-8 grid grid-cols-1 gap-12 desktop:grid-cols-[1fr_360px]">
+        <div className="space-y-8">
+          {/* Sub-header */}
+          <section className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2 text-body-md text-ink">
+              <strong>{listing.parking_type.name}</strong>
+              <span className="text-muted">·</span>
+              <span className="text-muted">{listing.capacity} vagas disponíveis</span>
+              <span className="text-muted">·</span>
+              <span className="text-muted">
+                Preço base {formatBRL(listing.company_parking_type.base_price)}
+              </span>
+            </div>
+            {(listing.location.notice || listing.parking_type.description) && (
+              <p className="text-body-md text-body">
+                {listing.location.notice ?? listing.parking_type.description}
+              </p>
+            )}
+          </section>
+
+          <Separator />
+
+          {/* O que oferece */}
+          <section className="space-y-4">
+            <h2 className="text-display-sm text-ink">O que essa vaga oferece</h2>
+            <AmenityList amenities={listing.amenities} />
+          </section>
+
+          <Separator />
+
+          {/* Onde fica */}
+          <section className="space-y-4">
+            <h2 className="text-display-sm text-ink">Onde fica</h2>
+            <MiniMap
+              address={listing.location.address}
+              latitude={listing.location.latitude}
+              longitude={listing.location.longitude}
+            />
+          </section>
+
+          <Separator />
+
+          {/* Política */}
+          <section className="space-y-3">
+            <h2 className="text-display-sm text-ink">Política de cancelamento</h2>
+            <ul className="space-y-2 text-body-md text-body">
+              <li>
+                <strong className="text-success">Grátis</strong> até 24h antes
+                da reserva.
+              </li>
+              <li>
+                Reembolso parcial (80%) entre 24h e 4h antes.
+              </li>
+              <li>Sem reembolso após esse prazo.</li>
+            </ul>
+            {listing.location.reservation_policy && (
+              <p className="text-body-sm text-muted">
+                {listing.location.reservation_policy}
+              </p>
+            )}
+          </section>
+
+          <Separator />
+
+          {/* Operadora */}
+          <section className="space-y-4">
+            <h2 className="text-display-sm text-ink">Conheça a operadora</h2>
+            <OperatorCard
+              company={listing.company}
+              others={listing.other_locations}
+            />
+          </section>
+        </div>
+
+        {/* Reservation card sticky */}
+        <aside className="hidden desktop:block">
+          <div className="sticky top-24">
+            <ReservationCard
+              listing={listing}
+              initialFrom={initialFrom}
+              initialTo={initialTo}
+            />
+          </div>
+        </aside>
+      </div>
+
+      {/* Mobile/tablet: card no fim do conteúdo */}
+      <div className="mt-12 desktop:hidden">
+        <ReservationCard
+          listing={listing}
+          initialFrom={initialFrom}
+          initialTo={initialTo}
+        />
+      </div>
+    </div>
+  );
+}

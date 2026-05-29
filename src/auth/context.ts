@@ -11,6 +11,15 @@ export type AuthContextValue = {
   /** IDs das empresas em escopo ativo (próprio operador ou alvo da impersonation). */
   effectiveCompanyIds: string[];
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: (redirectTo?: string) => Promise<void>;
+  /** Dispara OTP por e-mail (cria conta se primeiro acesso). */
+  sendEmailOtp: (email: string) => Promise<void>;
+  /** Verifica OTP de e-mail e cria sessão. */
+  verifyEmailOtp: (email: string, token: string) => Promise<void>;
+  /** Dispara OTP por WhatsApp (cria conta se primeiro acesso). */
+  sendWhatsappOtp: (phoneE164: string) => Promise<void>;
+  /** Verifica OTP de telefone e cria sessão. */
+  verifyPhoneOtp: (phoneE164: string, token: string) => Promise<void>;
   signOut: () => Promise<void>;
   startImpersonation: (companyId: string) => void;
   stopImpersonation: () => void;

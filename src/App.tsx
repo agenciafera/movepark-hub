@@ -6,9 +6,28 @@ import { hasSupabaseEnv } from "@/lib/supabase";
 import { AuthProvider } from "@/auth/AuthProvider";
 import { RequireRole } from "@/auth/RequireRole";
 
-import RoleRedirect from "@/routes/index";
 import LoginPage from "@/routes/login";
 import DesignSystemPage from "@/routes/design-system";
+import HomePage from "@/routes/home";
+import SearchResultsPage from "@/routes/search";
+import ListingPage from "@/routes/listing";
+import CheckoutPage from "@/routes/checkout";
+import ForgotPasswordPage from "@/routes/forgot-password";
+import EntrarPage from "@/routes/entrar";
+import BookingsListPage from "@/routes/bookings-list";
+import BookingDetailPage from "@/routes/bookings-detail";
+import AuthCallbackPage from "@/routes/auth/callback";
+import { ConsumerAppShell } from "@/components/shared/ConsumerAppShell";
+import { AccountAppShell } from "@/components/shared/AccountAppShell";
+import AccountIndexPage from "@/routes/account/index";
+import AccountProfilePage from "@/routes/account/profile";
+import AccountVehiclesPage from "@/routes/account/vehicles";
+import AccountAddressesPage from "@/routes/account/addresses";
+import AccountCardsPage from "@/routes/account/cards";
+import AccountSavedPage from "@/routes/account/saved";
+import AccountPreferencesPage from "@/routes/account/preferences";
+import AccountSecurityPage from "@/routes/account/security";
+import CompleteProfilePage from "@/routes/account/complete-profile";
 
 import ManagerLayout from "@/routes/manager/layout";
 import ManagerDashboard from "@/routes/manager/dashboard";
@@ -77,9 +96,50 @@ export default function App() {
         <AuthProvider>
           <Toaster position="bottom-right" richColors />
           <Routes>
-            <Route path="/" element={<RoleRedirect />} />
+            {/* Rotas públicas do consumer (sem auth obrigatório) */}
+            <Route element={<ConsumerAppShell />}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/search" element={<SearchResultsPage />} />
+              <Route
+                path="/p/:operatorSlug/:locationSlug/:parkingTypeCode"
+                element={<ListingPage />}
+              />
+              <Route path="/checkout/:code" element={<CheckoutPage />} />
+
+              {/* Customer-only — RequireRole protege dentro */}
+              <Route element={<RequireRole roles={["customer"]} />}>
+                <Route path="/bookings" element={<BookingsListPage />} />
+                <Route path="/bookings/:code" element={<BookingDetailPage />} />
+              </Route>
+            </Route>
+
+            {/* Auth customer (passwordless) */}
+            <Route path="/entrar" element={<EntrarPage />} />
+            <Route path="/signup" element={<Navigate to="/entrar" replace />} />
+            <Route path="/auth/callback" element={<AuthCallbackPage />} />
+
+            {/* Auth backoffice (e-mail+senha) */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/design-system" element={<DesignSystemPage />} />
+
+            {/* Área de conta (customer-only) */}
+            <Route element={<RequireRole roles={["customer"]} />}>
+              <Route
+                path="/account/complete-profile"
+                element={<CompleteProfilePage />}
+              />
+              <Route path="/account" element={<AccountAppShell />}>
+                <Route index element={<AccountIndexPage />} />
+                <Route path="profile" element={<AccountProfilePage />} />
+                <Route path="vehicles" element={<AccountVehiclesPage />} />
+                <Route path="addresses" element={<AccountAddressesPage />} />
+                <Route path="cards" element={<AccountCardsPage />} />
+                <Route path="saved" element={<AccountSavedPage />} />
+                <Route path="preferences" element={<AccountPreferencesPage />} />
+                <Route path="security" element={<AccountSecurityPage />} />
+              </Route>
+            </Route>
 
             <Route element={<RequireRole roles={["hub_admin"]} />}>
               <Route path="/manager" element={<ManagerLayout />}>

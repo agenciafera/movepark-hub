@@ -1,0 +1,65 @@
+import { NavLink } from "react-router-dom";
+import { Search, Calendar, User2, HelpCircle, LogIn } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/auth/context";
+
+const baseItem =
+  "flex flex-col items-center gap-1 py-2 text-caption-sm text-muted transition-colors";
+const activeItem = "text-ink";
+
+export function ConsumerBottomNav() {
+  const { session } = useAuth();
+  return (
+    <nav className="tablet:hidden fixed bottom-0 left-0 right-0 z-40 grid grid-cols-4 border-t border-hairline bg-canvas">
+      <NavLink
+        to="/"
+        end
+        className={({ isActive }) => cn(baseItem, isActive && activeItem)}
+      >
+        <Search className="h-5 w-5" />
+        <span>Buscar</span>
+      </NavLink>
+      {session ? (
+        <NavLink
+          to="/bookings"
+          className={({ isActive }) => cn(baseItem, isActive && activeItem)}
+        >
+          <Calendar className="h-5 w-5" />
+          <span>Reservas</span>
+        </NavLink>
+      ) : (
+        <NavLink
+          to="/entrar"
+          className={({ isActive }) => cn(baseItem, isActive && activeItem)}
+        >
+          <LogIn className="h-5 w-5" />
+          <span>Entrar</span>
+        </NavLink>
+      )}
+      {session ? (
+        <NavLink
+          to="/account"
+          className={({ isActive }) => cn(baseItem, isActive && activeItem)}
+        >
+          <User2 className="h-5 w-5" />
+          <span>Conta</span>
+        </NavLink>
+      ) : (
+        <NavLink
+          to="/ajuda"
+          className={({ isActive }) => cn(baseItem, isActive && activeItem)}
+        >
+          <HelpCircle className="h-5 w-5" />
+          <span>Ajuda</span>
+        </NavLink>
+      )}
+      <NavLink
+        to="/ajuda"
+        className={({ isActive }) => cn(baseItem, isActive && activeItem)}
+      >
+        <HelpCircle className="h-5 w-5" />
+        <span>Ajuda</span>
+      </NavLink>
+    </nav>
+  );
+}

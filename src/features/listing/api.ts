@@ -1,0 +1,240 @@
+import * as React from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
+
+export type ListingDetail = {
+  id: string; // location_parking_type_id
+  capacity: number;
+  is_active: boolean;
+  company: {
+    id: string;
+    slug: string;
+    name: string;
+    legal_name: string | null;
+    created_at: string;
+  };
+  location: {
+    id: string;
+    slug: string;
+    name: string;
+    address: string | null;
+    phone: string | null;
+    email: string | null;
+    notice: string | null;
+    has_notice: boolean;
+    reservation_policy: string | null;
+    timezone: string;
+    latitude: number | null;
+    longitude: number | null;
+    has_pcd_config: boolean;
+    has_passenger_quantity: boolean;
+  };
+  parking_type: {
+    code: string;
+    name: string;
+    description: string | null;
+  };
+  company_parking_type: {
+    base_price: number;
+  };
+  amenities: { code: string; name: string; icon: string | null; category: string }[];
+  other_locations: { id: string; name: string; slug: string }[];
+};
+
+const baseSelect = `
+  id, capacity, is_active,
+  location:location!inner(
+    id, slug, name, address, phone, email, notice, has_notice,
+    reservation_policy, timezone, latitude, longitude,
+    has_pcd_config, has_passenger_quantity,
+    company:company!inner(id, slug, name, legal_name, created_at),
+    amenities:location_amenity(
+      amenity:amenity(code, name, icon, category, sort_order)
+    )
+  ),
+  company_parking_type:company_parking_type!inner(
+    base_price,
+    parking_type:parking_type!inner(code, name, description)
+  )
+`;
+
+export function useListing(
+  operatorSlug: string | undefined,
+  locationSlug: string | undefined,
+  parkingTypeCode: string | undefined,
+) {
+  return useQuery({
+    queryKey: ["listing", operatorSlug, locationSlug, parkingTypeCode] as const,
+    queryFn: async (): Promise<ListingDetail | null> => {
+      if (!operatorSlug || !locationSlug || !parkingTypeCode) return null;
+
+      const { data, error } = await supabase
+        .from("location_parking_type")
+        .select(baseSelect)
+        .eq("is_active", true)
+        .limit(50);
+      if (error) throw error;
+
+      // deno-lint-ignore no-explicit-any
+      const match = (data ?? []).find((r: any) => {
+        return (
+          r.location?.slug === locationSlug &&
+          r.location?.company?.slug === operatorSlug &&
+          r.company_parking_type?.parking_type?.code === parkingTypeCode
+        );
+      });
+      if (!match) return null;
+
+      // Outras localizações do mesmo operador
+      const companyId = (match as { location: { company: { id: string } } }).location
+        .company.id;
+      const { data: others } = await supabase
+        .from("location")
+        .select("id, name, slug")
+        .eq("company_id", companyId)
+        .neq("id", (match as { location: { id: string } }).location.id)
+        .is("deleted_at", null)
+        .limit(6);
+
+      // deno-lint-ignore no-explicit-any
+      const m = match as any;
+      const amenitiesRaw = (m.location.amenities ?? [])
+        // deno-lint-ignore no-explicit-any
+        .map((a: any) => a.amenity)
+        .filter(Boolean)
+        // deno-lint-ignore no-explicit-any
+        .sort((a: any, b: any) => (a.sort_order ?? 999) - (b.sort_order ?? 999));
+
+      return {
+        id: m.id,
+        capacity: m.capacity,
+        is_active: m.is_active,
+        company: m.location.company,
+        location: {
+          id: m.location.id,
+          slug: m.location.slug,
+          name: m.location.name,
+          address: m.location.address,
+          phone: m.location.phone,
+          email: m.location.email,
+          notice: m.location.notice,
+          has_notice: m.location.has_notice,
+          reservation_policy: m.location.reservation_policy,
+          timezone: m.location.timezone,
+          latitude: m.location.latitude != null ? Number(m.location.latitude) : null,
+          longitude: m.location.longitude != null ? Number(m.location.longitude) : null,
+          has_pcd_config: m.location.has_pcd_config,
+          has_passenger_quantity: m.location.has_passenger_quantity,
+        },
+        parking_type: m.company_parking_type.parking_type,
+        company_parking_type: {
+          base_price: Number(m.company_parking_type.base_price),
+        },
+        amenities: amenitiesRaw,
+        other_locations: (others ?? []) as { id: string; name: string; slug: string }[],
+      };
+    },
+    enabled: !!operatorSlug && !!locationSlug && !!parkingTypeCode,
+    staleTime: 60_000,
+  });
+}
+
+export type SimulatedPrice = {
+  price: number | null;
+  old_price: number | null;
+  days: number;
+  error?: string | null;
+};
+
+/**
+ * Simula preço chamando simulate_price RPC.
+ * Recalcula automaticamente quando `args` mudam (com debounce no consumer).
+ */
+export function useSimulatePrice(args: {
+  companySlug: string | undefined;
+  locationSlug: string | undefined;
+  parkingTypeCode: string | undefined;
+  days: number;
+}) {
+  return useQuery({
+    queryKey: ["simulate-price", args.companySlug, args.locationSlug, args.parkingTypeCode, args.days] as const,
+    queryFn: async (): Promise<SimulatedPrice> => {
+      const { data, error } = await supabase.rpc("simulate_price", {
+        p_company: args.companySlug!,
+        p_location: args.locationSlug!,
+        p_parking_type: args.parkingTypeCode!,
+        p_days: args.days,
+      });
+      if (error) throw error;
+      // deno-lint-ignore no-explicit-any
+      const r = data as any;
+      return {
+        price: r?.price != null ? Number(r.price) : null,
+        old_price: r?.old_price != null ? Number(r.old_price) : null,
+        days: args.days,
+        error: r?.error ?? null,
+      };
+    },
+    enabled: !!args.companySlug && !!args.locationSlug && !!args.parkingTypeCode && args.days > 0,
+    staleTime: 30_000,
+  });
+}
+
+/** Hook utilitário: debounce de um valor por X ms. */
+export function useDebounced<T>(value: T, ms = 300): T {
+  const [debounced, setDebounced] = React.useState(value);
+  React.useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), ms);
+    return () => clearTimeout(id);
+  }, [value, ms]);
+  return debounced;
+}
+
+/**
+ * Cria booking via Edge Function /functions/v1/create-booking.
+ */
+export function useCreateBooking() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: {
+      location_parking_type_id: string;
+      check_in_at: string;
+      check_out_at: string;
+      vehicle_id?: string | null;
+      passenger_count?: number | null;
+      has_pcd?: boolean;
+      add_on_service_ids?: string[];
+      coupon_code?: string | null;
+      origin?: string | null;
+    }): Promise<{
+      code: string;
+      booking_id: string;
+      total_amount: number;
+      days: number;
+      expires_at: string;
+    }> => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Você precisa entrar pra reservar.");
+
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-booking`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? `Falha (HTTP ${res.status})`);
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-bookings"] });
+    },
+  });
+}

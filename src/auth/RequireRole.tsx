@@ -13,7 +13,10 @@ export function RequireRole({ roles }: { roles: UserRole[] }) {
   }
 
   if (!session || !effectiveRole) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+    const next = encodeURIComponent(location.pathname + location.search);
+    // Rotas customer mandam pra /entrar; backoffice continua em /login
+    const loginPath = roles.includes("customer") ? "/entrar" : "/login";
+    return <Navigate to={`${loginPath}?next=${next}`} replace />;
   }
 
   if (!roles.includes(effectiveRole)) {
@@ -22,7 +25,7 @@ export function RequireRole({ roles }: { roles: UserRole[] }) {
         ? "/manager"
         : effectiveRole === "company_operator"
           ? "/operator"
-          : "/login";
+          : "/";
     return <Navigate to={fallback} replace />;
   }
 

@@ -1,276 +1,268 @@
 # Fluxos de autenticação — Customer
 
-> Login, cadastro, recuperação de senha, verificação de e-mail.
-> Auth provider: **Supabase Auth** (já em uso pro Manager/Operator).
+> Login passwordless. Três métodos: **Google**, **OTP por e-mail**, **OTP por WhatsApp**.
+> Auth provider: **Supabase Auth** (e-mail OTP nativo; WhatsApp via Send SMS Hook customizado).
+
+> **Backoffice (manager/operator)** continua com **e-mail + senha** em `/login` — escopo separado, não muda nesta fase.
 
 ---
 
 ## 1. Princípios
 
-- **Não obrigar conta no checkout** — guest checkout é first-class.
-- **Login social como atalho** — Google e Apple (futuro), nunca obrigar.
-- **E-mail + senha** como método base (compatível com a base existente).
-- **Magic link** como fallback para "esqueci a senha" (Supabase suporta).
+- **Sem senhas pro cliente.** Reduz fricção e elimina classe inteira de bugs (esqueci senha, força, vazamento).
+- **Guest checkout** continua first-class. Conta só vira obrigatória ao confirmar reserva.
+- **Google OAuth** como atalho. Quem prefere senha social não precisa pegar OTP.
+- **Tela única `/entrar`.** Não tem mais "signup" vs "login" — a primeira verificação cria a conta automaticamente.
+- **Pós-login**, se o profile ainda não tem `full_name + tax_id`, redireciona pra `/account/complete-profile` antes de liberar checkout.
 
 ---
 
 ## 2. Rotas e estado
 
 ```
-/login                       login (público)
-/signup                      cadastro (público)
-/forgot-password             pedir reset
-/reset-password?token=…      formar nova senha
-/verify-email?token=…        confirmar e-mail
+/entrar                      tela única customer (público)
+/login                       login backoffice (e-mail+senha, manager/operator)
+/auth/callback               retorno OAuth Google
+/account/complete-profile    onboarding pós-OTP (customer)
 /logout                      action — redireciona pra /
+
+# Removidas
+/signup                      ← redireciona pra /entrar
+/forgot-password             ← removida (sem senha p/ esquecer)
+/reset-password              ← removida
 ```
 
 Query param `?next=/rota/protegida` é preservado e usado pós-login.
 
 ---
 
-## 3. `/login`
+## 3. `/entrar` — máquina de estados
 
-### Layout
-Centralized card 480px width, fundo `bg-soft-gradient`.
+```
+choice → email → email-code → ✓
+       → phone → phone-code → ✓
+       → google → callback → ✓
+```
+
+### 3.1 Modo `choice`
 
 ```
 ┌──────────────────────────────────────┐
 │        [Wordmark Movepark]           │
 │              Hub                     │
 ├──────────────────────────────────────┤
-│  Entre na sua conta                  │  display-md
-│  Continue sua reserva de onde parou. │  body-md muted
+│  Entre na Movepark                   │  display-md
+│  Reserve em segundos.                │  body-md muted
 │                                      │
-│  E-mail                              │
-│  [                                 ] │
-│                                      │
-│  Senha                               │
-│  [                              👁 ] │
-│                                      │
-│  □ Lembrar de mim                    │
-│  Esqueceu a senha?         [link]    │
-│                                      │
-│  [        Entrar          ]          │
+│  [G  Continuar com Google ]          │  primary
 │                                      │
 │  ── ou ──                            │
 │                                      │
-│  [G  Continuar com Google ]          │  futuro
-│  [   Continuar com Apple  ]          │  futuro
+│  [✉   Entrar com e-mail   ]          │  secondary
+│  [📱  Entrar com WhatsApp ]          │  secondary
 │                                      │
-│  Ainda não tem conta? [Cadastre-se]  │
+│  Ao continuar, aceita os Termos e a  │
+│  Política de privacidade.            │  caption muted
 └──────────────────────────────────────┘
 ```
 
-### Validação
-- E-mail: formato.
-- Senha: min 6 chars (UI não revela regras complexas pra não-leaker info de produção).
-
-### Submit
-- Chama `supabase.auth.signInWithPassword({ email, password })`.
-- Erro genérico se credencial inválida: **"E-mail ou senha incorretos."** (sem revelar qual).
-- Sucesso: redireciona pra `next` ou `/` (se customer), `/manager` (se hub_admin), `/operator` (se company_operator).
-
-### "Lembrar de mim"
-- Marcado: `persistSession: true` (já default no Supabase JS).
-- Desmarcado: sessão expira ao fechar o navegador. (Implementar via `sessionStorage` em vez de `localStorage` se possível.)
-
----
-
-## 4. `/signup`
-
-### Form
-- **Nome completo** (obrigatório)
-- **CPF** (obrigatório no BR; opcional no PT)
-- **E-mail** (obrigatório, validação)
-- **Senha** (obrigatório, mín 8 chars, indicador visual de força)
-- **Telefone** (opcional)
-- **Termos** (checkbox obrigatório com links)
-- **Marketing** (checkbox opcional "Quero receber ofertas")
-
-### Indicador de força da senha
-Barra horizontal:
-- Vazia: cinza.
-- Fraca (< 8 chars): vermelho.
-- Média (8+ chars): amarelo.
-- Forte (8+ chars + número + maiúscula): verde.
-
-### Submit
-- Chama `supabase.auth.signUp({ email, password, options: { data: { full_name, phone, tax_id } } })`.
-- Trigger no banco (`on_auth_user_created`) cria `profiles` com role `customer` automaticamente.
-- Envia e-mail de verificação (Supabase faz).
-- Mostra tela "Confirme seu e-mail":
+### 3.2 Modo `email`
 
 ```
-Quase lá!
-Mandamos um link de confirmação pra maria@email.com.
-Cheque sua caixa de entrada (ou spam) e clique no link.
-
-[Reenviar e-mail]    [Mudar e-mail]
-```
-
-- Após confirmar (`/verify-email?token=…`), redireciona pra `next` ou `/`.
-
-### Validações inline
-- Conforme digita.
-- CPF inválido: borda vermelha + helper text "CPF inválido. Confira os números."
-- E-mail já cadastrado: helper text "Esse e-mail já tem conta. [Fazer login]".
-
----
-
-## 5. `/forgot-password`
-
-### Form
-```
-Esqueceu sua senha?
-Sem problemas — vamos te ajudar a recuperar.
+← Voltar
 
 E-mail
 [                                    ]
 
-[Enviar link de recuperação]
+[       Enviar código        ]
 ```
 
-### Submit
-- Chama `supabase.auth.resetPasswordForEmail(email, { redirectTo: '/reset-password' })`.
-- Mostra confirmação independente de existir ou não (não vazar info):
+- Submit: `supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } })`.
+- Avança pra `email-code`.
+
+### 3.3 Modo `email-code`
 
 ```
-Pronto.
-Se houver uma conta com esse e-mail, você vai receber um link
-para criar uma nova senha em alguns minutos.
+← Voltar
 
-[Voltar para o login]
+Digite o código que mandamos pra
+maria@email.com
+
+┌──┐┌──┐┌──┐┌──┐┌──┐┌──┐
+│  ││  ││  ││  ││  ││  │      6 inputs auto-advance
+└──┘└──┘└──┘└──┘└──┘└──┘
+
+[      Verificar       ]
+
+Não chegou? Reenviar em 30s
 ```
 
----
+- Submit: `supabase.auth.verifyOtp({ email, token, type: 'email' })`.
+- Sucesso → trigger no banco cria `profiles` (se primeiro acesso). Avança pra `/account/complete-profile` se incompleto, ou destino (`next` / `/`).
+- Reenvio: botão habilita após 30s.
 
-## 6. `/reset-password?token=…`
+### 3.4 Modo `phone`
 
-### Form
 ```
-Crie uma nova senha
+← Voltar
 
-Nova senha
-[                              👁 ]
-[indicador de força]
+WhatsApp
+[+55] [(11) 99999-9999          ]
 
-Confirmar nova senha
-[                              👁 ]
+[       Enviar código        ]
 
-[Salvar nova senha]
+Você vai receber um código pelo WhatsApp.
 ```
 
-### Submit
-- Valida que as duas senhas batem.
-- Chama `supabase.auth.updateUser({ password })`.
-- Sucesso → redireciona pra `/login` com toast "Senha alterada. Faça login com a nova senha."
+- Input com máscara BR (padrão). Aceita formato livre, normaliza pra E.164 antes do submit.
+- Submit: `supabase.auth.signInWithOtp({ phone: '+55...', options: { shouldCreateUser: true, channel: 'whatsapp' } })`.
+- Avança pra `phone-code`.
 
-### Token expirado
-Banner vermelho "Esse link expirou. [Pedir um novo]".
+### 3.5 Modo `phone-code`
 
----
+Mesmo layout do `email-code`, texto: "Digite o código que mandamos pelo WhatsApp pra +55…".
 
-## 7. `/verify-email?token=…`
+- Submit: `supabase.auth.verifyOtp({ phone, token, type: 'sms' })`.
 
-Endpoint que chama `supabase.auth.verifyOtp({ token_hash, type: 'email' })`.
+### 3.6 Google
 
-### Estados
-- **Loading**: spinner "Confirmando seu e-mail…".
-- **Sucesso**: "E-mail confirmado! Redirecionando…" + redireciona pra `/account/profile` (logado) ou `/login` (caso a sessão tenha caducado).
-- **Erro**: "Não conseguimos confirmar. O link pode ter expirado." + `[Reenviar e-mail]`.
+- Botão único no modo `choice`. Vai pra `/auth/callback` igual hoje.
 
 ---
 
-## 8. Login social (futuro)
+## 4. Envio de OTP — backend
 
-### Google
-- Botão Google no `/login` e `/signup` (mesmo design).
-- `supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: ... } })`.
-- Callback `/auth/callback` (componente que faz `exchangeCodeForSession`).
-- Se primeiro login: pede CPF + telefone numa tela de complemento `/account/complete-profile` antes de liberar `/checkout`.
+### 4.1 E-mail
+- **Nativo do Supabase.** Configurar SMTP custom em Dashboard → Authentication → Emails → SMTP.
+- Template do e-mail OTP customizado em Dashboard → Authentication → Email Templates → "Magic Link" (mesmo template, conteúdo passa `{{ .Token }}`).
+- Variáveis necessárias: nenhuma do nosso lado. Supabase gerencia geração, expiração (1h default, podemos reduzir), validação.
 
-### Apple
-- Mesma lógica, provider `apple`.
+### 4.2 WhatsApp
+- Supabase **Send SMS Hook** (Dashboard → Authentication → Hooks → Send SMS Hook).
+- Webhook aponta pra Edge Function `send-whatsapp-otp`.
+- Quando o cliente chama `signInWithOtp({ phone })`, Supabase gera OTP e dispara POST pra Edge Function com payload:
 
----
+```json
+{
+  "user": { "id": "uuid", "phone": "5511999999999" },
+  "sms": { "otp": "123456" }
+}
+```
 
-## 9. Logout
+- A Edge Function chama a **WhatsApp Business Cloud API** (Meta) com template OTP aprovado:
 
-`POST /logout`:
-- `supabase.auth.signOut()`
-- Limpa caches React Query (`queryClient.clear()`)
-- Redireciona pra `/`
+```
+POST https://graph.facebook.com/v21.0/{PHONE_NUMBER_ID}/messages
+Authorization: Bearer {ACCESS_TOKEN}
 
-Disponível em:
-- Avatar dropdown da topbar logada.
-- `/account/profile` (botão "Sair de todos os dispositivos").
+{
+  "messaging_product": "whatsapp",
+  "to": "5511999999999",
+  "type": "template",
+  "template": {
+    "name": "movepark_otp",
+    "language": { "code": "pt_BR" },
+    "components": [
+      { "type": "body", "parameters": [{ "type": "text", "text": "123456" }] },
+      { "type": "button", "sub_type": "url", "index": "0",
+        "parameters": [{ "type": "text", "text": "123456" }] }
+    ]
+  }
+}
+```
 
----
+- Secrets esperadas (Supabase Edge Function → secrets):
+  - `META_PHONE_NUMBER_ID`
+  - `META_ACCESS_TOKEN` (System User Token permanente)
+  - `META_TEMPLATE_NAME` (ex: `movepark_otp`)
+  - `META_TEMPLATE_LANGUAGE` (ex: `pt_BR`)
+  - `SEND_SMS_HOOK_SECRET` (HMAC pra verificar que o request veio do Supabase)
 
-## 10. Auth no checkout (guest)
+- Verificação da assinatura: Supabase assina o payload com HMAC SHA-256 do header `x-supabase-signature`. Edge Function valida antes de chamar Meta.
 
-Já documentado em [checkout.md §3](checkout.md#3-step-1--identifica%C3%A7%C3%A3o), mas resumindo:
+### 4.3 Template OTP no Meta
+Categoria: **Authentication**. Tipo: **One-time password**. Texto sugerido:
 
-- Permite continuar sem conta.
-- Ao final do checkout (Step 4), oferece **claim**: "Crie uma senha pra acompanhar sua reserva: [campo senha] [Criar conta]". Usa o e-mail que ele já informou + dispara verificação.
+```
+Body:
+{{1}} é seu código Movepark. Não compartilhe com ninguém.
+O código expira em 5 minutos.
 
----
+Button (Copy code): {{1}}
+```
 
-## 11. Convite "Você foi indicado"
-
-Link compartilhável `/signup?ref=ABC123` populando código de indicação no form. Tracking pra atribuir crédito ao indicador. **Fora do MVP**.
-
----
-
-## 12. Segurança
-
-### Rate limiting
-- 5 tentativas de login por IP em 15 min → bloqueia 30 min com mensagem "Muitas tentativas. Tente novamente em 30 minutos."
-- Implementar via Supabase Edge Function ou middleware no gateway.
-
-### Sessão
-- Token JWT padrão Supabase (1h, refresh automatico).
-- Sessão revogável via `/account/security`.
-
-### Senha
-- Hash bcrypt (Supabase já faz).
-- Mín 8 chars na criação. Sem rotação obrigatória.
-
-### Auditoria
-- Eventos `login_success`, `login_failed`, `signup`, `password_reset_requested`, `password_changed` em `auth.audit_log_entries` (Supabase nativo).
-- Lista visível em `/account/security`.
-
----
-
-## 13. Acessibilidade
-
-- Inputs com `<label>` explícito.
-- Show/hide password com `aria-pressed` + `aria-label="Mostrar senha"`.
-- Indicador de força com `role="meter"` e `aria-valuenow/min/max`.
-- Erro de campo: `aria-invalid="true"` + `aria-describedby="error-{field}"`.
-- Anúncio `aria-live="polite"` ao receber resposta do servidor.
+Meta aprova em geral em ~30 minutos pra templates Authentication.
 
 ---
 
-## 14. Componentes referenciados
+## 5. `/account/complete-profile`
+
+Gate que aparece pós-primeiro-login se `profiles.full_name = null OR profiles.tax_id = null`.
+
+```
+Falta pouco
+
+Conta nome e CPF pra emitir notas das suas reservas.
+
+Nome completo
+[                                  ]
+
+CPF
+[                                  ]
+
+Telefone (opcional, se entrou por e-mail/Google)
+[                                  ]
+
+[        Continuar         ]
+```
+
+- `RequireRole(['customer'])` + verificação de `profile.full_name && profile.tax_id`; se incompleto, redireciona pra cá com `?next=` preservando destino original.
+- Pula esta tela só se ambos os campos estiverem preenchidos (caso Google já populou `full_name`).
+
+---
+
+## 6. Logout
+
+Mesmo de antes: `supabase.auth.signOut()` + limpa caches + redireciona pra `/`.
+
+---
+
+## 7. Sessão e segurança
+
+- Token JWT padrão Supabase (1h, refresh automático).
+- OTP expira em **5 minutos** (configurável em Auth → Email/Phone settings).
+- Rate limit nativo Supabase: 1 OTP por minuto por destino, 5 tentativas por hora.
+- Sair de todos os dispositivos: `/account/security` chama `signOut({ scope: 'global' })`.
+
+---
+
+## 8. Acessibilidade
+
+- 6 inputs OTP têm `aria-label="Dígito N"` e `inputMode="numeric" pattern="[0-9]*"`.
+- Auto-advance focar próximo input ao digitar; backspace volta um.
+- Paste no primeiro input distribui pelos seis.
+- Telefone com máscara visível (display) mas valor real em E.164.
+
+---
+
+## 9. Open points
+
+- [ ] **2FA pra customer**: ainda faz sentido com OTP sendo o método primário? Talvez só pra Google (que pula OTP).
+- [ ] **Refresh do token de WhatsApp**: token permanente do Meta + monitorar Webhook de "account_update" caso revogue.
+- [ ] **Fallback se WhatsApp falhar**: hoje retorna erro; futuramente cair pra SMS como backup (precisa Twilio).
+- [ ] **Anti-bot**: hCaptcha ou Turnstile na tela `/entrar` se virar alvo de scraping.
+- [ ] **i18n dos templates**: criar variantes `movepark_otp_en`, `movepark_otp_pt_PT` quando for ativar outros locales.
+
+---
+
+## 10. Componentes referenciados
 
 | Componente | Uso |
 |---|---|
 | `{component.text-input}` | Forms |
-| `{component.button-primary}` | "Entrar" / "Criar conta" |
-| `{component.button-tertiary-text}` | Links inline |
+| `{component.button-primary}` | "Enviar código" |
+| `{component.button-secondary}` | Botões de método e Voltar |
+| `OtpInputGroup` (novo) | 6 dígitos auto-advance |
+| `PhoneInput` (novo) | Input com prefixo +55 + máscara |
 | Card | Wrapper |
 | Wordmark + Monogram | Header |
-
----
-
-## 15. Open points
-
-- [ ] **Login social**: priorizar Google ou Apple? Sintaxe difere por provider.
-- [ ] **Magic link**: oferecer como método principal junto com senha? Mais simples mas exige acesso a e-mail toda vez.
-- [ ] **Telefone com OTP**: Brasil usa muito SMS. Considerar como método de login alternativo? Custos de SMS.
-- [ ] **2FA pra customer**: obrigatório ou opt-in? MVP: opt-in (Account → Security).
-- [ ] **Recovery codes**: implementar geração de 10 códigos pra fallback do 2FA.
-- [ ] **CAPTCHA**: necessário no signup pra evitar bots? hCaptcha ou Turnstile (Cloudflare)?
-- [ ] **i18n dos e-mails de auth**: Supabase tem templates editáveis. Customizar pt-BR/pt-PT/en.

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,15 +11,23 @@ import { useAuth } from "@/auth/context";
 export default function LoginPage() {
   const { signIn, session, effectiveRole } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const next = searchParams.get("next");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
 
   React.useEffect(() => {
     if (!session || !effectiveRole) return;
+    // Se veio com ?next= preserva o destino original (qualquer role)
+    if (next) {
+      navigate(next, { replace: true });
+      return;
+    }
     if (effectiveRole === "hub_admin") navigate("/manager", { replace: true });
     else if (effectiveRole === "company_operator") navigate("/operator", { replace: true });
-  }, [session, effectiveRole, navigate]);
+    else navigate("/", { replace: true }); // customer
+  }, [session, effectiveRole, next, navigate]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,9 +55,13 @@ export default function LoginPage() {
       </div>
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-display-md">Bem-vindo de volta</CardTitle>
+          <CardTitle className="text-display-md">Acesso ao painel</CardTitle>
           <CardDescription>
-            Entre com seu e-mail e senha para acessar o painel.
+            Login operacional (manager / operator). Clientes entram em{" "}
+            <Link to="/entrar" className="text-ink underline">
+              /entrar
+            </Link>
+            .
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -75,6 +87,15 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
+            </div>
+            <div className="flex items-center justify-between">
+              <span />
+              <Link
+                to="/forgot-password"
+                className="text-body-sm text-muted no-underline hover:text-ink"
+              >
+                Esqueci a senha
+              </Link>
             </div>
             <Button type="submit" disabled={submitting} className="mt-2">
               {submitting ? "Entrando…" : "Entrar"}

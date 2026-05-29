@@ -82,6 +82,28 @@
   }
 }
 
+@media print {
+  /* Esconde topbar, footer, bottom nav, sidebars, botões de ação */
+  header,
+  footer,
+  nav,
+  aside,
+  button,
+  .print\:hidden {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+  }
+  /* O voucher deve ocupar tela inteira em print */
+  main,
+  article,
+  section {
+    box-shadow: none !important;
+    border: none !important;
+  }
+}
+
 @layer utilities {
   .bg-brand-gradient {
     background-image: linear-gradient(

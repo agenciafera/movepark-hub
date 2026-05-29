@@ -89,6 +89,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       },
+      async signInWithGoogle(redirectTo) {
+        const callback = `${window.location.origin}/auth/callback${
+          redirectTo ? `?next=${encodeURIComponent(redirectTo)}` : ""
+        }`;
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: callback,
+            queryParams: { prompt: "select_account" },
+          },
+        });
+        if (error) throw error;
+      },
+      async sendEmailOtp(email) {
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: { shouldCreateUser: true },
+        });
+        if (error) throw error;
+      },
+      async verifyEmailOtp(email, token) {
+        const { error } = await supabase.auth.verifyOtp({
+          email,
+          token,
+          type: "email",
+        });
+        if (error) throw error;
+      },
+      async sendWhatsappOtp(phoneE164) {
+        const { error } = await supabase.auth.signInWithOtp({
+          phone: phoneE164,
+          options: {
+            shouldCreateUser: true,
+            channel: "whatsapp",
+          },
+        });
+        if (error) throw error;
+      },
+      async verifyPhoneOtp(phoneE164, token) {
+        const { error } = await supabase.auth.verifyOtp({
+          phone: phoneE164,
+          token,
+          type: "sms",
+        });
+        if (error) throw error;
+      },
       async signOut() {
         setImpersonatedCompanyId(null);
         await supabase.auth.signOut();

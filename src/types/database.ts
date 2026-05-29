@@ -7,6 +7,8 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
@@ -55,6 +57,92 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      address: {
+        Row: {
+          city: string
+          complement: string | null
+          country: string
+          created_at: string
+          district: string | null
+          id: string
+          is_default: boolean
+          label: string | null
+          number: string | null
+          postal_code: string | null
+          profile_id: string
+          state: string | null
+          street: string
+          updated_at: string
+        }
+        Insert: {
+          city: string
+          complement?: string | null
+          country?: string
+          created_at?: string
+          district?: string | null
+          id?: string
+          is_default?: boolean
+          label?: string | null
+          number?: string | null
+          postal_code?: string | null
+          profile_id: string
+          state?: string | null
+          street: string
+          updated_at?: string
+        }
+        Update: {
+          city?: string
+          complement?: string | null
+          country?: string
+          created_at?: string
+          district?: string | null
+          id?: string
+          is_default?: boolean
+          label?: string | null
+          number?: string | null
+          postal_code?: string | null
+          profile_id?: string
+          state?: string | null
+          street?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "address_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      amenity: {
+        Row: {
+          category: string
+          code: string
+          description: string | null
+          icon: string | null
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          category: string
+          code: string
+          description?: string | null
+          icon?: string | null
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          category?: string
+          code?: string
+          description?: string | null
+          icon?: string | null
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
       }
       booking: {
         Row: {
@@ -163,10 +251,40 @@ export type Database = {
         ]
       }
       booking_coupon: {
-        Row: { booking_id: string; coupon_id: string; created_at: string; discount_applied: number }
-        Insert: { booking_id: string; coupon_id: string; created_at?: string; discount_applied: number }
-        Update: { booking_id?: string; coupon_id?: string; created_at?: string; discount_applied?: number }
-        Relationships: []
+        Row: {
+          booking_id: string
+          coupon_id: string
+          created_at: string
+          discount_applied: number
+        }
+        Insert: {
+          booking_id: string
+          coupon_id: string
+          created_at?: string
+          discount_applied: number
+        }
+        Update: {
+          booking_id?: string
+          coupon_id?: string
+          created_at?: string
+          discount_applied?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_coupon_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_coupon_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupon"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       booking_item: {
         Row: {
@@ -205,7 +323,29 @@ export type Database = {
           unit_price?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "booking_item_add_on_service_id_fkey"
+            columns: ["add_on_service_id"]
+            isOneToOne: false
+            referencedRelation: "add_on_service"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_item_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_item_parking_type_id_fkey"
+            columns: ["parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "parking_type"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       company: {
         Row: {
@@ -274,7 +414,22 @@ export type Database = {
           parking_type_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "company_parking_type_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_parking_type_parking_type_id_fkey"
+            columns: ["parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "parking_type"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       coupon: {
         Row: {
@@ -318,6 +473,65 @@ export type Database = {
           updated_at?: string
           valid_from?: string | null
           valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      destination: {
+        Row: {
+          city: string
+          code: string
+          country: string
+          created_at: string
+          id: string
+          is_popular: boolean
+          latitude: number
+          longitude: number
+          name: string
+          short_name: string | null
+          sort_order: number
+          state: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          city: string
+          code: string
+          country?: string
+          created_at?: string
+          id?: string
+          is_popular?: boolean
+          latitude: number
+          longitude: number
+          name: string
+          short_name?: string | null
+          sort_order?: number
+          state?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          city?: string
+          code?: string
+          country?: string
+          created_at?: string
+          id?: string
+          is_popular?: boolean
+          latitude?: number
+          longitude?: number
+          name?: string
+          short_name?: string | null
+          sort_order?: number
+          state?: string | null
+          type?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -385,7 +599,15 @@ export type Database = {
           timezone?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "location_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       location_add_on_service: {
         Row: {
@@ -415,7 +637,55 @@ export type Database = {
           price_override?: number | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "location_add_on_service_add_on_service_id_fkey"
+            columns: ["add_on_service_id"]
+            isOneToOne: false
+            referencedRelation: "add_on_service"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_add_on_service_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      location_amenity: {
+        Row: {
+          amenity_code: string
+          location_id: string
+          notes: string | null
+        }
+        Insert: {
+          amenity_code: string
+          location_id: string
+          notes?: string | null
+        }
+        Update: {
+          amenity_code?: string
+          location_id?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_amenity_amenity_code_fkey"
+            columns: ["amenity_code"]
+            isOneToOne: false
+            referencedRelation: "amenity"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "location_amenity_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       location_parking_availability: {
         Row: {
@@ -436,7 +706,15 @@ export type Database = {
           id?: string
           location_parking_type_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "location_parking_availability_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "location_parking_type"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       location_parking_type: {
         Row: {
@@ -449,7 +727,9 @@ export type Database = {
           is_active: boolean
           location_id: string
           minimum_date: string | null
-          minimum_stay_unit: Database["public"]["Enums"]["minimum_stay_unit"] | null
+          minimum_stay_unit:
+            | Database["public"]["Enums"]["minimum_stay_unit"]
+            | null
           minimum_stay_value: number | null
           near_capacity_message: string | null
           near_capacity_threshold: number | null
@@ -465,7 +745,9 @@ export type Database = {
           is_active?: boolean
           location_id: string
           minimum_date?: string | null
-          minimum_stay_unit?: Database["public"]["Enums"]["minimum_stay_unit"] | null
+          minimum_stay_unit?:
+            | Database["public"]["Enums"]["minimum_stay_unit"]
+            | null
           minimum_stay_value?: number | null
           near_capacity_message?: string | null
           near_capacity_threshold?: number | null
@@ -481,13 +763,68 @@ export type Database = {
           is_active?: boolean
           location_id?: string
           minimum_date?: string | null
-          minimum_stay_unit?: Database["public"]["Enums"]["minimum_stay_unit"] | null
+          minimum_stay_unit?:
+            | Database["public"]["Enums"]["minimum_stay_unit"]
+            | null
           minimum_stay_value?: number | null
           near_capacity_message?: string | null
           near_capacity_threshold?: number | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "location_parking_type_company_parking_type_id_fkey"
+            columns: ["company_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "company_parking_type"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_parking_type_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      location_photo: {
+        Row: {
+          alt_text: string | null
+          created_at: string
+          id: string
+          is_primary: boolean
+          location_id: string
+          sort_order: number
+          url: string
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          location_id: string
+          sort_order?: number
+          url: string
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          location_id?: string
+          sort_order?: number
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_photo_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       parking_type: {
         Row: {
@@ -553,7 +890,68 @@ export type Database = {
           status?: Database["public"]["Enums"]["payment_status"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "payment_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_method: {
+        Row: {
+          brand: string
+          created_at: string
+          deleted_at: string | null
+          expiry_month: number | null
+          expiry_year: number | null
+          holder_name: string | null
+          id: string
+          is_default: boolean
+          last4: string
+          profile_id: string
+          provider: string
+          provider_token: string | null
+        }
+        Insert: {
+          brand: string
+          created_at?: string
+          deleted_at?: string | null
+          expiry_month?: number | null
+          expiry_year?: number | null
+          holder_name?: string | null
+          id?: string
+          is_default?: boolean
+          last4: string
+          profile_id: string
+          provider?: string
+          provider_token?: string | null
+        }
+        Update: {
+          brand?: string
+          created_at?: string
+          deleted_at?: string | null
+          expiry_month?: number | null
+          expiry_year?: number | null
+          holder_name?: string | null
+          id?: string
+          is_default?: boolean
+          last4?: string
+          profile_id?: string
+          provider?: string
+          provider_token?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_method_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pricing_hourly_bracket: {
         Row: {
@@ -580,7 +978,15 @@ export type Database = {
           pricing_rule_id?: string
           to_minutes?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pricing_hourly_bracket_pricing_rule_id_fkey"
+            columns: ["pricing_rule_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_rule"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pricing_rule: {
         Row: {
@@ -609,12 +1015,74 @@ export type Database = {
           surcharge_source_id: string | null
           updated_at: string
         }
-        Insert: Partial<Database["public"]["Tables"]["pricing_rule"]["Row"]> & {
+        Insert: {
+          advance_booking_minutes?: number | null
+          created_at?: string
+          fractional_day_policy?: string
+          fractional_day_tolerance?: number | null
+          hourly_daily_rate?: number | null
+          hourly_fraction_rate?: number | null
+          hourly_hours_per_day?: number | null
+          hourly_initial_rate?: number | null
+          hourly_one_hour_rate?: number | null
+          id?: string
+          incremental_base?: number | null
+          incremental_multiplier?: number | null
+          incremental_one_day_price?: number | null
+          incremental_two_days_price?: number | null
           location_parking_type_id: string
+          monthly_daily_rate?: number | null
+          monthly_fixed_price?: number | null
+          old_price_multiplier?: number | null
+          old_price_strategy?: string
+          operating_hours?: Json | null
           strategy: string
+          surcharge_multiplier?: number | null
+          surcharge_source_id?: string | null
+          updated_at?: string
         }
-        Update: Partial<Database["public"]["Tables"]["pricing_rule"]["Row"]>
-        Relationships: []
+        Update: {
+          advance_booking_minutes?: number | null
+          created_at?: string
+          fractional_day_policy?: string
+          fractional_day_tolerance?: number | null
+          hourly_daily_rate?: number | null
+          hourly_fraction_rate?: number | null
+          hourly_hours_per_day?: number | null
+          hourly_initial_rate?: number | null
+          hourly_one_hour_rate?: number | null
+          id?: string
+          incremental_base?: number | null
+          incremental_multiplier?: number | null
+          incremental_one_day_price?: number | null
+          incremental_two_days_price?: number | null
+          location_parking_type_id?: string
+          monthly_daily_rate?: number | null
+          monthly_fixed_price?: number | null
+          old_price_multiplier?: number | null
+          old_price_strategy?: string
+          operating_hours?: Json | null
+          strategy?: string
+          surcharge_multiplier?: number | null
+          surcharge_source_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_rule_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: true
+            referencedRelation: "location_parking_type"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_rule_surcharge_source_id_fkey"
+            columns: ["surcharge_source_id"]
+            isOneToOne: false
+            referencedRelation: "location_parking_type"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pricing_tier: {
         Row: {
@@ -644,13 +1112,81 @@ export type Database = {
           total_price?: number | null
           unit_price?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pricing_tier_pricing_rule_id_fkey"
+            columns: ["pricing_rule_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_rule"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profile_company: {
-        Row: { company_id: string; created_at: string; profile_id: string }
-        Insert: { company_id: string; created_at?: string; profile_id: string }
-        Update: { company_id?: string; created_at?: string; profile_id?: string }
-        Relationships: []
+        Row: {
+          company_id: string
+          created_at: string
+          profile_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          profile_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_company_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_company_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_saved: {
+        Row: {
+          created_at: string
+          location_parking_type_id: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          location_parking_type_id: string
+          profile_id: string
+        }
+        Update: {
+          created_at?: string
+          location_parking_type_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_saved_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "location_parking_type"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_saved_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -660,6 +1196,7 @@ export type Database = {
           full_name: string | null
           id: string
           phone: string | null
+          preferences: Json
           role: Database["public"]["Enums"]["user_role"]
           tax_id: string | null
           updated_at: string
@@ -671,6 +1208,7 @@ export type Database = {
           full_name?: string | null
           id: string
           phone?: string | null
+          preferences?: Json
           role?: Database["public"]["Enums"]["user_role"]
           tax_id?: string | null
           updated_at?: string
@@ -682,11 +1220,82 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          preferences?: Json
           role?: Database["public"]["Enums"]["user_role"]
           tax_id?: string | null
           updated_at?: string
         }
         Relationships: []
+      }
+      review: {
+        Row: {
+          booking_id: string
+          comment: string | null
+          created_at: string
+          id: string
+          is_published: boolean
+          location_id: string
+          profile_id: string
+          rating: number
+          rating_access: number | null
+          rating_cleanliness: number | null
+          rating_service: number | null
+          rating_value: number | null
+          updated_at: string
+        }
+        Insert: {
+          booking_id: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          location_id: string
+          profile_id: string
+          rating: number
+          rating_access?: number | null
+          rating_cleanliness?: number | null
+          rating_service?: number | null
+          rating_value?: number | null
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          location_id?: string
+          profile_id?: string
+          rating?: number
+          rating_access?: number | null
+          rating_cleanliness?: number | null
+          rating_service?: number | null
+          rating_value?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "booking"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vehicle: {
         Row: {
@@ -694,6 +1303,7 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           id: string
+          is_default: boolean
           license_plate: string
           model: string | null
           profile_id: string
@@ -704,6 +1314,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           id?: string
+          is_default?: boolean
           license_plate: string
           model?: string | null
           profile_id: string
@@ -714,21 +1325,119 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           id?: string
+          is_default?: boolean
           license_plate?: string
           model?: string | null
           profile_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
-    Views: Record<never, never>
+    Views: {
+      [_ in never]: never
+    }
     Functions: {
-      current_user_role: { Args: never; Returns: Database["public"]["Enums"]["user_role"] }
+      _apply_pricing:
+        | {
+            Args: {
+              p_days?: number
+              p_source_strategy?: string
+              p_source_tiers?: Json
+              p_strategy: string
+              p_surcharge_multiplier?: number
+              p_tiers: Json
+            }
+            Returns: number
+          }
+        | {
+            Args: {
+              p_days?: number
+              p_hourly_daily?: number
+              p_inc_base?: number
+              p_inc_mult?: number
+              p_inc_one_day?: number
+              p_inc_two_days?: number
+              p_monthly_daily?: number
+              p_monthly_fixed?: number
+              p_source_strategy?: string
+              p_source_tiers?: Json
+              p_strategy: string
+              p_surcharge_multiplier?: number
+              p_tiers: Json
+            }
+            Returns: number
+          }
+      create_booking_atomic: {
+        Args: {
+          p_add_on_ids?: string[]
+          p_check_in_at: string
+          p_check_out_at: string
+          p_coupon_code?: string
+          p_has_pcd?: boolean
+          p_location_parking_type_id: string
+          p_origin?: string
+          p_passenger_count?: number
+          p_profile_id: string
+          p_vehicle_id?: string
+        }
+        Returns: Json
+      }
       current_company_ids: { Args: never; Returns: string[] }
+      current_user_role: {
+        Args: never
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
+      get_pricing_data: {
+        Args: {
+          p_company: string
+          p_location?: string
+          p_parking_type?: string
+        }
+        Returns: {
+          company_name: string
+          company_slug: string
+          hourly_daily_rate: number
+          hourly_hours_per_day: number
+          incremental_base: number
+          incremental_multiplier: number
+          incremental_one_day_price: number
+          incremental_two_days_price: number
+          location_name: string
+          location_slug: string
+          monthly_daily_rate: number
+          monthly_fixed_price: number
+          old_price_multiplier: number
+          old_price_strategy: string
+          parking_type_code: string
+          parking_type_name: string
+          source_strategy: string
+          source_tiers: Json
+          strategy: string
+          surcharge_multiplier: number
+          tiers: Json
+        }[]
+      }
       is_hub_admin: { Args: never; Returns: boolean }
+      release_booking_capacity: {
+        Args: { p_booking_id: string }
+        Returns: undefined
+      }
       simulate_price: {
-        Args: { p_company: string; p_days?: number; p_location?: string; p_parking_type?: string }
+        Args: {
+          p_company: string
+          p_days?: number
+          p_location?: string
+          p_parking_type?: string
+        }
         Returns: Json
       }
     }
@@ -744,14 +1453,162 @@ export type Database = {
       discount_type: "percent" | "fixed"
       entity_status: "active" | "inactive" | "suspended"
       minimum_stay_unit: "minutes" | "hours" | "days" | "months"
-      payment_status: "pending" | "authorized" | "paid" | "refunded" | "failed" | "cancelled"
+      payment_status:
+        | "pending"
+        | "authorized"
+        | "paid"
+        | "refunded"
+        | "failed"
+        | "cancelled"
       user_role: "hub_admin" | "company_operator" | "customer"
     }
-    CompositeTypes: Record<never, never>
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
 }
 
-export type Tables<T extends keyof Database["public"]["Tables"]> =
-  Database["public"]["Tables"][T]["Row"]
-export type Enums<T extends keyof Database["public"]["Enums"]> =
-  Database["public"]["Enums"][T]
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      booking_item_type: ["parking", "add_on"],
+      booking_status: [
+        "pending",
+        "confirmed",
+        "checked_in",
+        "completed",
+        "cancelled",
+        "no_show",
+      ],
+      discount_type: ["percent", "fixed"],
+      entity_status: ["active", "inactive", "suspended"],
+      minimum_stay_unit: ["minutes", "hours", "days", "months"],
+      payment_status: [
+        "pending",
+        "authorized",
+        "paid",
+        "refunded",
+        "failed",
+        "cancelled",
+      ],
+      user_role: ["hub_admin", "company_operator", "customer"],
+    },
+  },
+} as const
