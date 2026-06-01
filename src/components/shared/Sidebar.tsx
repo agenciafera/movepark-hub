@@ -8,6 +8,7 @@ import {
   Settings,
   MapPin,
   Wallet,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Monogram, Wordmark } from "./Brand";
@@ -23,6 +24,7 @@ const managerItems: Item[] = [
   { to: "/manager/companies", label: "Empresas", icon: Building2 },
   { to: "/manager/bookings", label: "Reservas", icon: Calendar },
   { to: "/manager/finance/billing", label: "Financeiro", icon: Wallet },
+  { to: "/manager/faq", label: "FAQ", icon: HelpCircle },
   { to: "/manager/users", label: "Usuários", icon: Users },
   { to: "/manager/settings", label: "Configurações", icon: Settings },
 ];
@@ -31,6 +33,7 @@ const operatorItems: Item[] = [
   { to: "/operator", label: "Dashboard", icon: LayoutDashboard },
   { to: "/operator/bookings", label: "Reservas", icon: Calendar },
   { to: "/operator/locations", label: "Localizações", icon: MapPin },
+  { to: "/operator/faq", label: "FAQ", icon: HelpCircle },
   { to: "/operator/reports", label: "Relatórios", icon: BarChart3 },
   { to: "/operator/settings", label: "Configurações", icon: Settings },
 ];

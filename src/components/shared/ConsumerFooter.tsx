@@ -5,7 +5,7 @@ const groups = [
   {
     title: "Suporte",
     links: [
-      { to: "/ajuda", label: "Central de ajuda" },
+      { to: "/faq", label: "Perguntas frequentes" },
       { to: "/ajuda/como-funciona", label: "Como funciona" },
       { to: "/ajuda/cancelamento", label: "Política de cancelamento" },
       { to: "/contato", label: "Fale conosco" },

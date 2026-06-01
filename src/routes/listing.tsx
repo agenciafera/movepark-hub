@@ -11,6 +11,8 @@ import { MiniMap } from "@/features/listing/MiniMap";
 import { ReservationCard } from "@/features/listing/ReservationCard";
 import { useListing } from "@/features/listing/api";
 import { useSavedListings } from "@/features/search/useSavedListings";
+import { useFaqCombined } from "@/features/faqs/api";
+import { FaqList } from "@/features/faqs/FaqList";
 import { formatBRL } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -187,6 +189,11 @@ export default function ListingPage() {
 
           <Separator />
 
+          {/* FAQ — global + da unidade */}
+          <ListingFaqSection locationId={listing.location.id} />
+
+          <Separator />
+
           {/* Operadora */}
           <section className="space-y-4">
             <h2 className="text-display-sm text-ink">Conheça a operadora</h2>
@@ -218,5 +225,16 @@ export default function ListingPage() {
         />
       </div>
     </div>
+  );
+}
+
+function ListingFaqSection({ locationId }: { locationId: string }) {
+  const { data, isLoading } = useFaqCombined({ locationId });
+  if (!isLoading && (data ?? []).length === 0) return null;
+  return (
+    <section className="space-y-4">
+      <h2 className="text-display-sm text-ink">Perguntas frequentes</h2>
+      <FaqList items={data} isLoading={isLoading} groupByScope />
+    </section>
   );
 }

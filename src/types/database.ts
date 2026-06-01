@@ -535,6 +535,110 @@ export type Database = {
         }
         Relationships: []
       }
+      faq: {
+        Row: {
+          answer: string
+          category_id: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          id: string
+          is_published: boolean
+          location_id: string | null
+          question: string
+          scope: Database["public"]["Enums"]["faq_scope"]
+          sort_order: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          answer: string
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          is_published?: boolean
+          location_id?: string | null
+          question: string
+          scope: Database["public"]["Enums"]["faq_scope"]
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          answer?: string
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          is_published?: boolean
+          location_id?: string | null
+          question?: string
+          scope?: Database["public"]["Enums"]["faq_scope"]
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faq_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "faq_category"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "faq_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "faq_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "faq_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      faq_category: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       location: {
         Row: {
           address: string | null
@@ -1455,6 +1559,7 @@ export type Database = {
         | "no_show"
       discount_type: "percent" | "fixed"
       entity_status: "active" | "inactive" | "suspended"
+      faq_scope: "global" | "location"
       minimum_stay_unit: "minutes" | "hours" | "days" | "months"
       payment_status:
         | "pending"
@@ -1602,6 +1707,7 @@ export const Constants = {
       ],
       discount_type: ["percent", "fixed"],
       entity_status: ["active", "inactive", "suspended"],
+      faq_scope: ["global", "location"],
       minimum_stay_unit: ["minutes", "hours", "days", "months"],
       payment_status: [
         "pending",

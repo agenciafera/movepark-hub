@@ -38,6 +38,8 @@ import ManagerUsers from "@/routes/manager/users";
 import ManagerFinanceBilling from "@/routes/manager/finance-billing";
 import ManagerFinanceCommissions from "@/routes/manager/finance-commissions";
 import ManagerSettings from "@/routes/manager/settings";
+import ManagerFaq from "@/routes/manager/faq";
+import ManagerFaqCategorias from "@/routes/manager/faq-categorias";
 
 import OperatorLayout from "@/routes/operator/layout";
 import OperatorDashboard from "@/routes/operator/dashboard";
@@ -45,8 +47,10 @@ import OperatorBookings from "@/routes/operator/bookings";
 import OperatorLocations from "@/routes/operator/locations";
 import OperatorReports from "@/routes/operator/reports";
 import OperatorSettings from "@/routes/operator/settings";
+import OperatorFaq from "@/routes/operator/faq";
 
 import ParkingTypesPage from "@/routes/parking-types";
+import FaqPage from "@/routes/faq";
 
 function EnvMissing() {
   return (
@@ -105,6 +109,7 @@ export default function App() {
                 element={<ListingPage />}
               />
               <Route path="/checkout/:code" element={<CheckoutPage />} />
+              <Route path="/faq" element={<FaqPage />} />
 
               {/* Customer-only — RequireRole protege dentro */}
               <Route element={<RequireRole roles={["customer"]} />}>
@@ -154,6 +159,8 @@ export default function App() {
                 <Route path="users" element={<ManagerUsers />} />
                 <Route path="finance/billing" element={<ManagerFinanceBilling />} />
                 <Route path="finance/commissions" element={<ManagerFinanceCommissions />} />
+                <Route path="faq" element={<ManagerFaq />} />
+                <Route path="faq/categorias" element={<ManagerFaqCategorias />} />
                 <Route path="settings" element={<ManagerSettings />} />
               </Route>
             </Route>
@@ -167,6 +174,7 @@ export default function App() {
                   path="locations/:locationId/parking-types"
                   element={<ParkingTypesPage />}
                 />
+                <Route path="faq" element={<OperatorFaq />} />
                 <Route path="reports" element={<OperatorReports />} />
                 <Route path="settings" element={<OperatorSettings />} />
               </Route>
