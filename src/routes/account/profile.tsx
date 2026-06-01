@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PhoneField } from "@/components/ui/phone-field";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
@@ -32,7 +33,8 @@ export default function ProfilePage() {
     if (!profileQ.data) return;
     setFullName(profileQ.data.full_name ?? "");
     setTaxId(profileQ.data.tax_id ?? "");
-    setPhone(profileQ.data.phone ?? "");
+    const rawPhone = profileQ.data.phone ?? "";
+    setPhone(rawPhone && !rawPhone.startsWith("+") ? `+${rawPhone}` : rawPhone);
     setBirthDate(profileQ.data.birth_date ?? "");
     setLanguage(profileQ.data.preferences.language ?? "pt-BR");
     setDirty(false);
@@ -100,11 +102,10 @@ export default function ProfilePage() {
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="phone">Telefone</Label>
-          <Input
+          <PhoneField
             id="phone"
-            value={phone}
-            placeholder="(11) 91234-5678"
-            onChange={(e) => markDirty(setPhone)(e.target.value)}
+            value={phone || undefined}
+            onChange={(v) => markDirty(setPhone)(v ?? "")}
           />
         </div>
         <div className="flex flex-col gap-1.5">

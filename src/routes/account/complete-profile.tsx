@@ -14,8 +14,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Monogram, Wordmark } from "@/components/shared/Brand";
 import { useAuth } from "@/auth/context";
+import { PhoneField } from "@/components/ui/phone-field";
 import { useProfile, useUpdateProfile } from "@/features/profile/api";
-import { maskPhoneBR } from "@/lib/phone";
 
 export default function CompleteProfilePage() {
   const navigate = useNavigate();
@@ -34,7 +34,8 @@ export default function CompleteProfilePage() {
     if (!profileQ.data) return;
     setFullName(profileQ.data.full_name ?? "");
     setTaxId(profileQ.data.tax_id ?? "");
-    setPhone(profileQ.data.phone ?? "");
+    const rawPhone = profileQ.data.phone ?? "";
+    setPhone(rawPhone && !rawPhone.startsWith("+") ? `+${rawPhone}` : rawPhone);
     // Se já está completo, manda pra next
     if (profileQ.data.full_name && profileQ.data.tax_id) {
       navigate(next, { replace: true });
@@ -58,7 +59,7 @@ export default function CompleteProfilePage() {
         id: session.userId,
         full_name: fullName.trim(),
         tax_id: taxId.replace(/\D/g, ""),
-        phone: phone.replace(/\D/g, "") || null,
+        phone: phone.trim() || null,
       });
       toast.success("Pronto!");
       navigate(next, { replace: true });
@@ -114,12 +115,10 @@ export default function CompleteProfilePage() {
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="phone">Telefone (opcional)</Label>
-                <Input
+                <PhoneField
                   id="phone"
-                  value={maskPhoneBR(phone)}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="(11) 91234-5678"
-                  inputMode="numeric"
+                  value={phone || undefined}
+                  onChange={(v) => setPhone(v ?? "")}
                 />
               </div>
               <Button type="submit" disabled={submitting} className="w-full">

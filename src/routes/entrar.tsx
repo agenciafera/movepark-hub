@@ -5,6 +5,8 @@ import { ArrowLeft, Mail, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PhoneField } from "@/components/ui/phone-field";
+import { isValidPhoneNumber, formatPhoneNumberIntl } from "react-phone-number-input";
 import {
   Card,
   CardContent,
@@ -16,7 +18,6 @@ import { OtpInput } from "@/components/ui/otp-input";
 import { Monogram, Wordmark } from "@/components/shared/Brand";
 import { GoogleButton } from "@/auth/GoogleButton";
 import { useAuth } from "@/auth/context";
-import { maskPhoneBR, toE164BR } from "@/lib/phone";
 
 type Mode = "choice" | "email" | "email-code" | "phone" | "phone-code";
 
@@ -37,7 +38,7 @@ export default function EntrarPage() {
 
   const [mode, setMode] = React.useState<Mode>("choice");
   const [email, setEmail] = React.useState("");
-  const [phoneRaw, setPhoneRaw] = React.useState("");
+  const [phone, setPhone] = React.useState<string | undefined>(undefined);
   const [code, setCode] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
   const [resendIn, setResendIn] = React.useState(0);
@@ -94,14 +95,13 @@ export default function EntrarPage() {
   }
 
   async function handleSendPhone() {
-    const e164 = toE164BR(phoneRaw);
-    if (!e164) {
-      toast.error("Digite o número com DDD");
+    if (!phone || !isValidPhoneNumber(phone)) {
+      toast.error("Número inválido");
       return;
     }
     setSubmitting(true);
     try {
-      await sendWhatsappOtp(e164);
+      await sendWhatsappOtp(phone);
       setMode("phone-code");
       setResendIn(RESEND_SECONDS);
       setCode("");
@@ -113,11 +113,10 @@ export default function EntrarPage() {
   }
 
   async function handleVerifyPhone(token: string) {
-    const e164 = toE164BR(phoneRaw);
-    if (!e164) return;
+    if (!phone) return;
     setSubmitting(true);
     try {
-      await verifyPhoneOtp(e164, token);
+      await verifyPhoneOtp(phone, token);
       toast.success("Tudo certo, entrando…");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Código inválido");
@@ -175,7 +174,10 @@ export default function EntrarPage() {
             {mode === "phone-code" && (
               <>
                 Código enviado pelo WhatsApp pra{" "}
-                <span className="text-ink">{maskPhoneBR(phoneRaw)}</span>.
+                <span className="text-ink">
+                  {phone ? formatPhoneNumberIntl(phone) : ""}
+                </span>
+                .
               </>
             )}
           </CardDescription>
@@ -250,24 +252,15 @@ export default function EntrarPage() {
             >
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="phone">WhatsApp</Label>
-                <div className="flex gap-2">
-                  <div className="inline-flex h-10 items-center rounded-md border border-hairline bg-surface-soft px-3 text-body-md text-muted">
-                    +55
-                  </div>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    inputMode="numeric"
-                    autoComplete="tel-national"
-                    autoFocus
-                    value={maskPhoneBR(phoneRaw)}
-                    onChange={(e) => setPhoneRaw(e.target.value)}
-                    placeholder="(11) 91234-5678"
-                    required
-                  />
-                </div>
+                <PhoneField
+                  id="phone"
+                  value={phone}
+                  onChange={setPhone}
+                  autoFocus
+                  required
+                />
                 <span className="text-caption-sm text-muted">
-                  Você vai receber um código pelo WhatsApp.
+                  Escolhe o país e digita seu número. O código vem pelo WhatsApp.
                 </span>
               </div>
               <Button type="submit" disabled={submitting} className="w-full">
