@@ -169,7 +169,8 @@ const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export type FaqCombinedItem = {
   id: string;
-  scope: "global" | "location";
+  /** `auto` = gerado a partir dos dados do estacionamento (endereço, vagas, etc). */
+  scope: "global" | "location" | "auto";
   location_id: string | null;
   question: string;
   answer: string;

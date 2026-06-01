@@ -101,7 +101,9 @@ export function FaqList({
     return <RenderAccordion items={items} query={query} />;
   }
 
-  const locationItems = items.filter((i) => i.scope === "location");
+  const locationItems = items.filter(
+    (i) => i.scope === "location" || i.scope === "auto",
+  );
   const globalItems = items.filter((i) => i.scope === "global");
 
   return (
