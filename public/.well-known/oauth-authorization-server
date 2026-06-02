@@ -1,0 +1,17 @@
+{
+  "issuer": "https://mgaigbezdalbyuqiofcf.supabase.co/auth/v1",
+  "authorization_endpoint": "https://mgaigbezdalbyuqiofcf.supabase.co/auth/v1/authorize",
+  "token_endpoint": "https://mgaigbezdalbyuqiofcf.supabase.co/auth/v1/token",
+  "jwks_uri": "https://mgaigbezdalbyuqiofcf.supabase.co/auth/v1/.well-known/jwks.json",
+  "userinfo_endpoint": "https://mgaigbezdalbyuqiofcf.supabase.co/auth/v1/user",
+  "grant_types_supported": ["authorization_code", "refresh_token", "password"],
+  "response_types_supported": ["code"],
+  "subject_types_supported": ["public"],
+  "scopes_supported": ["openid", "email", "profile"],
+  "agent_auth": {
+    "register_uri": "https://movepark.com.br/auth.md",
+    "identity_types": ["oauth2"],
+    "credential_types": ["bearer_token"],
+    "claim_uri": "https://mgaigbezdalbyuqiofcf.supabase.co/auth/v1/authorize"
+  }
+}

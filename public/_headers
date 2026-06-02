@@ -19,3 +19,6 @@
 
 /.well-known/oauth-protected-resource
   Content-Type: application/json
+
+/.well-known/oauth-authorization-server
+  Content-Type: application/json

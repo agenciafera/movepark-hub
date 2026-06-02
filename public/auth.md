@@ -2,6 +2,26 @@
 
 Movepark is a parking reservation platform for airports and travel destinations in Brazil.
 
+## Agent Registration
+
+Agents can authenticate with Movepark using OAuth 2.0 via Supabase Auth.
+
+```agent_auth
+register_uri: https://mgaigbezdalbyuqiofcf.supabase.co/auth/v1/authorize
+identity_types: [oauth2, email_otp]
+credential_types: [bearer_token]
+claim_uri: https://mgaigbezdalbyuqiofcf.supabase.co/auth/v1/token
+revocation_uri: https://mgaigbezdalbyuqiofcf.supabase.co/auth/v1/logout
+```
+
+## Authorization server
+
+- **Issuer**: `https://mgaigbezdalbyuqiofcf.supabase.co/auth/v1`
+- **Authorization endpoint**: `https://mgaigbezdalbyuqiofcf.supabase.co/auth/v1/authorize`
+- **Token endpoint**: `https://mgaigbezdalbyuqiofcf.supabase.co/auth/v1/token`
+- **JWKS**: `https://mgaigbezdalbyuqiofcf.supabase.co/auth/v1/.well-known/jwks.json`
+- **OIDC discovery**: `https://mgaigbezdalbyuqiofcf.supabase.co/auth/v1/.well-known/openid-configuration`
+
 ## Public access (no auth required)
 
 The MCP server is publicly readable — no authentication needed to:
@@ -12,18 +32,17 @@ The MCP server is publicly readable — no authentication needed to:
 
 See: [/.well-known/mcp/server-card.json](https://movepark.com.br/.well-known/mcp/server-card.json)
 
-## Protected resources
+## Scopes
 
-Booking creation requires a user account. The authorization server is Supabase Auth:
+| Scope | Description |
+|---|---|
+| `openid` | Basic identity |
+| `email` | Email address |
+| `profile` | Full name and profile |
 
-- **Authorization server**: `https://mgaigbezdalbyuqiofcf.supabase.co/auth/v1`
-- **OIDC configuration**: `https://mgaigbezdalbyuqiofcf.supabase.co/auth/v1/.well-known/openid-configuration`
+## Notes
 
-Consumer authentication methods:
-- Passwordless OTP (email or WhatsApp)
-- Google OAuth (`provider=google`)
-
-There is currently no agent-to-agent OAuth flow for booking on behalf of users. Agents should direct users to [movepark.com.br](https://movepark.com.br) to complete reservations.
+Booking creation requires a user-delegated token. There is no machine-to-machine flow for creating bookings on behalf of users — agents should direct users to [movepark.com.br](https://movepark.com.br) to complete reservations.
 
 ## Contact
 
