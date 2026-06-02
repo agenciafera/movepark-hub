@@ -7,8 +7,7 @@ Thumbs.db
 .vscode/
 *.swp
 
-# Env / secrets
-.env
+# Env / secrets — .env é versionado (só contém chaves públicas VITE_*)
 .env.local
 .env.*.local
 
