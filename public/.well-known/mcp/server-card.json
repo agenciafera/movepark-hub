@@ -1,0 +1,28 @@
+{
+  "name": "Movepark Hub",
+  "description": "API para consultar estacionamentos, listar tipos de vaga, simular preços e acessar perguntas frequentes da plataforma Movepark.",
+  "url": "https://movepark.com.br",
+  "contact": "contato@movepark.com.br",
+  "tools": [
+    {
+      "name": "get_locations",
+      "description": "Lista estacionamentos disponíveis com endereço, coordenadas e comodidades"
+    },
+    {
+      "name": "get_parking_types",
+      "description": "Retorna os tipos de vaga disponíveis em uma localização (coberto, descoberto, valet)"
+    },
+    {
+      "name": "simulate_price",
+      "description": "Simula o preço de uma reserva dado o estacionamento, tipo de vaga e período"
+    },
+    {
+      "name": "get_faq",
+      "description": "Busca perguntas frequentes globais ou de uma unidade específica"
+    },
+    {
+      "name": "list_companies",
+      "description": "Lista as operadoras parceiras cadastradas na plataforma"
+    }
+  ]
+}

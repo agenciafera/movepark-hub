@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { Inbox } from "lucide-react";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,6 +35,13 @@ export default function SearchResultsPage() {
   const saved = useSavedListings();
 
   const dest = params.get("dest") ?? undefined;
+
+  const searchTitle = dest
+    ? `Estacionamentos em ${dest} | Movepark`
+    : "Busca de Estacionamentos | Movepark";
+  const searchDesc = dest
+    ? `Veja e reserve estacionamentos próximos a ${dest}. Coberto, descoberto, valet e mais.`
+    : "Busque e compare estacionamentos nos melhores destinos do Brasil.";
   const from = params.get("from") ?? "";
   const to = params.get("to") ?? "";
   const vehicle = (params.get("vehicle") as SearchVehicle | null) ?? "car";
@@ -99,6 +107,10 @@ export default function SearchResultsPage() {
 
   return (
     <div className="mx-auto w-full max-w-[1280px] px-4 py-6 desktop:px-8">
+      <Helmet>
+        <title>{searchTitle}</title>
+        <meta name="description" content={searchDesc} />
+      </Helmet>
       <ResultsHeader
         data={data}
         isLoading={isLoading}

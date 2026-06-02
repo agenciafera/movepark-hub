@@ -58,84 +58,88 @@ const baseSelect = `
   )
 `;
 
+export async function fetchListing(
+  operatorSlug: string,
+  locationSlug: string,
+  parkingTypeCode: string,
+): Promise<ListingDetail | null> {
+  const { data, error } = await supabase
+    .from("location_parking_type")
+    .select(baseSelect)
+    .eq("is_active", true)
+    .limit(50);
+  if (error) throw error;
+
+  // deno-lint-ignore no-explicit-any
+  const match = (data ?? []).find((r: any) => {
+    return (
+      r.location?.slug === locationSlug &&
+      r.location?.company?.slug === operatorSlug &&
+      r.company_parking_type?.parking_type?.code === parkingTypeCode
+    );
+  });
+  if (!match) return null;
+
+  const companyId = (match as { location: { company: { id: string } } }).location.company.id;
+  const { data: others } = await supabase
+    .from("location")
+    .select("id, name, slug")
+    .eq("company_id", companyId)
+    .neq("id", (match as { location: { id: string } }).location.id)
+    .is("deleted_at", null)
+    .limit(6);
+
+  // deno-lint-ignore no-explicit-any
+  const m = match as any;
+  const amenitiesRaw = (m.location.amenities ?? [])
+    // deno-lint-ignore no-explicit-any
+    .map((a: any) => a.amenity)
+    .filter(Boolean)
+    // deno-lint-ignore no-explicit-any
+    .sort((a: any, b: any) => (a.sort_order ?? 999) - (b.sort_order ?? 999));
+
+  return {
+    id: m.id,
+    capacity: m.capacity,
+    is_active: m.is_active,
+    company: m.location.company,
+    location: {
+      id: m.location.id,
+      slug: m.location.slug,
+      name: m.location.name,
+      address: m.location.address,
+      phone: m.location.phone,
+      email: m.location.email,
+      notice: m.location.notice,
+      has_notice: m.location.has_notice,
+      reservation_policy: m.location.reservation_policy,
+      timezone: m.location.timezone,
+      latitude: m.location.latitude != null ? Number(m.location.latitude) : null,
+      longitude: m.location.longitude != null ? Number(m.location.longitude) : null,
+      has_pcd_config: m.location.has_pcd_config,
+      has_passenger_quantity: m.location.has_passenger_quantity,
+    },
+    parking_type: m.company_parking_type.parking_type,
+    company_parking_type: {
+      base_price: Number(m.company_parking_type.base_price),
+    },
+    amenities: amenitiesRaw,
+    other_locations: (others ?? []) as { id: string; name: string; slug: string }[],
+  };
+}
+
 export function useListing(
   operatorSlug: string | undefined,
   locationSlug: string | undefined,
   parkingTypeCode: string | undefined,
+  options?: { initialData?: ListingDetail },
 ) {
   return useQuery({
     queryKey: ["listing", operatorSlug, locationSlug, parkingTypeCode] as const,
-    queryFn: async (): Promise<ListingDetail | null> => {
-      if (!operatorSlug || !locationSlug || !parkingTypeCode) return null;
-
-      const { data, error } = await supabase
-        .from("location_parking_type")
-        .select(baseSelect)
-        .eq("is_active", true)
-        .limit(50);
-      if (error) throw error;
-
-      // deno-lint-ignore no-explicit-any
-      const match = (data ?? []).find((r: any) => {
-        return (
-          r.location?.slug === locationSlug &&
-          r.location?.company?.slug === operatorSlug &&
-          r.company_parking_type?.parking_type?.code === parkingTypeCode
-        );
-      });
-      if (!match) return null;
-
-      // Outras localizações do mesmo operador
-      const companyId = (match as { location: { company: { id: string } } }).location
-        .company.id;
-      const { data: others } = await supabase
-        .from("location")
-        .select("id, name, slug")
-        .eq("company_id", companyId)
-        .neq("id", (match as { location: { id: string } }).location.id)
-        .is("deleted_at", null)
-        .limit(6);
-
-      // deno-lint-ignore no-explicit-any
-      const m = match as any;
-      const amenitiesRaw = (m.location.amenities ?? [])
-        // deno-lint-ignore no-explicit-any
-        .map((a: any) => a.amenity)
-        .filter(Boolean)
-        // deno-lint-ignore no-explicit-any
-        .sort((a: any, b: any) => (a.sort_order ?? 999) - (b.sort_order ?? 999));
-
-      return {
-        id: m.id,
-        capacity: m.capacity,
-        is_active: m.is_active,
-        company: m.location.company,
-        location: {
-          id: m.location.id,
-          slug: m.location.slug,
-          name: m.location.name,
-          address: m.location.address,
-          phone: m.location.phone,
-          email: m.location.email,
-          notice: m.location.notice,
-          has_notice: m.location.has_notice,
-          reservation_policy: m.location.reservation_policy,
-          timezone: m.location.timezone,
-          latitude: m.location.latitude != null ? Number(m.location.latitude) : null,
-          longitude: m.location.longitude != null ? Number(m.location.longitude) : null,
-          has_pcd_config: m.location.has_pcd_config,
-          has_passenger_quantity: m.location.has_passenger_quantity,
-        },
-        parking_type: m.company_parking_type.parking_type,
-        company_parking_type: {
-          base_price: Number(m.company_parking_type.base_price),
-        },
-        amenities: amenitiesRaw,
-        other_locations: (others ?? []) as { id: string; name: string; slug: string }[],
-      };
-    },
+    queryFn: () => fetchListing(operatorSlug!, locationSlug!, parkingTypeCode!),
     enabled: !!operatorSlug && !!locationSlug && !!parkingTypeCode,
     staleTime: 60_000,
+    initialData: options?.initialData,
   });
 }
 

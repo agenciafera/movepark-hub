@@ -1,0 +1,24 @@
+# Movepark
+
+> Plataforma de reserva de estacionamentos em aeroportos e destinos do Brasil. Reserve com antecedência, escolha o tipo de vaga e pague online — sem surpresas na hora de viajar.
+
+## O que é o Movepark
+
+O Movepark é um hub centralizado que conecta viajantes a estacionamentos credenciados próximos a aeroportos, rodoviárias e destinos turísticos. O usuário busca pelo destino, compara opções (coberto, descoberto, valet), escolhe as datas e confirma a reserva em menos de dois minutos.
+
+## Como funciona
+
+- [Busca de estacionamentos](https://movepark.com.br/search): filtre por destino, datas, tipo de vaga e comodidades
+- [Página de listagem](https://movepark.com.br/p/): detalhes do estacionamento, preços, mapa e FAQ da unidade
+- [Perguntas frequentes](https://movepark.com.br/faq): dúvidas sobre reservas, pagamentos e check-in
+
+## Tipos de vaga disponíveis
+
+- **Coberto**: vaga em estrutura fechada, protegida do sol e chuva
+- **Descoberto**: vaga em área aberta, opção econômica
+- **Valet**: entrega do carro na entrada, sem necessidade de estacionar
+
+## Integrações para agentes
+
+- [MCP Server](https://movepark.com.br/.well-known/mcp/server-card.json): API acessível por agentes de IA para consultar estacionamentos, tipos de vaga e simular preços
+- [API Catalog](https://movepark.com.br/.well-known/api-catalog): catálogo de endpoints públicos

@@ -1,11 +1,13 @@
 import * as React from "react";
 import { useSearchParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useFaqCategories, useFaqs } from "@/features/faqs/api";
 import { FaqList } from "@/features/faqs/FaqList";
 import type { FaqCombinedItem } from "@/features/faqs/api";
+import { faqSchema } from "@/lib/jsonld";
 
 export default function FaqPage() {
   const [params, setParams] = useSearchParams();
@@ -38,6 +40,7 @@ export default function FaqPage() {
     query: query || undefined,
   });
 
+
   // Adapta o shape pro FaqList (que espera FaqCombinedItem)
   const items: FaqCombinedItem[] = React.useMemo(
     () =>
@@ -66,8 +69,31 @@ export default function FaqPage() {
     setParams(next, { replace: true });
   }
 
+  const faqJsonLd = list.data?.length
+    ? JSON.stringify(
+        faqSchema((list.data ?? []).map((f) => ({ question: f.question, answer: f.answer }))),
+      )
+    : null;
+
   return (
     <div className="mx-auto w-full max-w-[1080px] px-4 py-10 desktop:px-8">
+      <Helmet>
+        <title>Perguntas Frequentes | Movepark</title>
+        <meta
+          name="description"
+          content="Tire suas dúvidas sobre reservas, pagamentos, check-in e mais. FAQ completo do Movepark."
+        />
+        <meta property="og:title" content="Perguntas Frequentes | Movepark" />
+        <meta
+          property="og:description"
+          content="Tire suas dúvidas sobre reservas, pagamentos, check-in e mais."
+        />
+        <meta property="og:url" content="https://movepark.com.br/faq" />
+        <link rel="canonical" href="https://movepark.com.br/faq" />
+        {faqJsonLd && (
+          <script type="application/ld+json">{faqJsonLd}</script>
+        )}
+      </Helmet>
       <header className="mb-8 space-y-3">
         <h1 className="text-display-lg text-ink">Perguntas frequentes</h1>
         <p className="text-body-lg text-muted">

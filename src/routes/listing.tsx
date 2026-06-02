@@ -1,4 +1,5 @@
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useLoaderData, useParams, useSearchParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { ArrowLeft, Building2, MapPin, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,12 +10,13 @@ import { AmenityList } from "@/features/listing/AmenityList";
 import { OperatorCard } from "@/features/listing/OperatorCard";
 import { MiniMap } from "@/features/listing/MiniMap";
 import { ReservationCard } from "@/features/listing/ReservationCard";
-import { useListing } from "@/features/listing/api";
+import { useListing, type ListingDetail } from "@/features/listing/api";
 import { useSavedListings } from "@/features/search/useSavedListings";
 import { useFaqCombined } from "@/features/faqs/api";
 import { FaqList } from "@/features/faqs/FaqList";
 import { formatBRL } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { localBusinessSchema, productOfferSchema, breadcrumbSchema } from "@/lib/jsonld";
 
 export default function ListingPage() {
   const params = useParams<{
@@ -24,17 +26,30 @@ export default function ListingPage() {
   }>();
   const [searchParams] = useSearchParams();
   const saved = useSavedListings();
+  const loaderData = useLoaderData() as ListingDetail | null | undefined;
 
   const { data: listing, isLoading, error } = useListing(
     params.operatorSlug,
     params.locationSlug,
     params.parkingTypeCode,
+    { initialData: loaderData ?? undefined },
   );
 
   const fromStr = searchParams.get("from");
   const toStr = searchParams.get("to");
   const initialFrom = fromStr ? new Date(fromStr) : null;
   const initialTo = toStr ? new Date(toStr) : null;
+
+  const pageTitle = listing
+    ? `${listing.parking_type.name} — ${listing.location.name} | Movepark`
+    : "Estacionamento | Movepark";
+  const pageDesc = listing
+    ? `Reserve ${listing.parking_type.name} em ${listing.location.name}. ${listing.location.address ?? ""}`
+    : "";
+  const pageUrl = listing
+    ? `https://movepark.com.br/p/${listing.company.slug}/${listing.location.slug}/${listing.parking_type.code}`
+    : "";
+
 
   if (isLoading) {
     return (
@@ -84,6 +99,25 @@ export default function ListingPage() {
 
   return (
     <div className="mx-auto w-full max-w-[1080px] px-4 py-6 desktop:px-8">
+      <Helmet>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDesc} />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDesc} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={pageUrl} />
+        <link rel="canonical" href={pageUrl} />
+        <script type="application/ld+json">{JSON.stringify(localBusinessSchema(listing))}</script>
+        <script type="application/ld+json">{JSON.stringify(productOfferSchema(listing))}</script>
+        <script type="application/ld+json">
+          {JSON.stringify(
+            breadcrumbSchema([
+              { name: "Home", url: "https://movepark.com.br" },
+              { name: listing.location.name, url: pageUrl },
+            ]),
+          )}
+        </script>
+      </Helmet>
       {/* Voltar */}
       <Button variant="ghost" size="sm" asChild className="mb-4 -ml-3">
         <Link to={`/search?${searchParams.toString()}`}>

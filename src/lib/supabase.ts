@@ -6,14 +6,16 @@ const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const hasSupabaseEnv = !!url && !!anonKey;
 
+const isServer = import.meta.env.SSR ?? false;
+
 export const supabase = createClient<Database>(
   url ?? "https://placeholder.supabase.co",
   anonKey ?? "placeholder",
   {
     auth: {
-      persistSession: hasSupabaseEnv,
-      autoRefreshToken: hasSupabaseEnv,
-      detectSessionInUrl: hasSupabaseEnv,
+      persistSession: hasSupabaseEnv && !isServer,
+      autoRefreshToken: hasSupabaseEnv && !isServer,
+      detectSessionInUrl: hasSupabaseEnv && !isServer,
     },
   },
 );

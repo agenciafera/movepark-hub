@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { Hero } from "@/features/home/Hero";
 import { CategoryStrip } from "@/features/home/CategoryStrip";
 import { PopularDestinations } from "@/features/home/PopularDestinations";
@@ -7,6 +8,21 @@ import { HowItWorks } from "@/features/home/HowItWorks";
 export default function HomePage() {
   return (
     <div>
+      <Helmet>
+        <title>Movepark — Estacionamentos em aeroportos e destinos</title>
+        <meta
+          name="description"
+          content="Reserve sua vaga com antecedência. Estacionamentos cobertos, descobertos e valet nos principais aeroportos e destinos do Brasil."
+        />
+        <meta property="og:title" content="Movepark — Estacionamentos em aeroportos e destinos" />
+        <meta
+          property="og:description"
+          content="Reserve sua vaga com antecedência. Estacionamentos cobertos, descobertos e valet nos principais aeroportos e destinos do Brasil."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://movepark.com.br" />
+        <link rel="canonical" href="https://movepark.com.br" />
+      </Helmet>
       <Hero />
       <CategoryStrip />
       <PopularDestinations />
