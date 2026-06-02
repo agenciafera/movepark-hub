@@ -1,4 +1,4 @@
-# Movepark — Agent Authentication
+# Auth.md
 
 Movepark is a parking reservation platform for airports and travel destinations in Brazil.
 
@@ -12,14 +12,19 @@ The MCP server is publicly readable — no authentication needed to:
 
 See: [/.well-known/mcp/server-card.json](https://movepark.com.br/.well-known/mcp/server-card.json)
 
-## Authenticated actions
+## Protected resources
 
-Booking creation requires a user account token. Consumer authentication is done via:
+Booking creation requires a user account. The authorization server is Supabase Auth:
+
+- **Authorization server**: `https://mgaigbezdalbyuqiofcf.supabase.co/auth/v1`
+- **OIDC configuration**: `https://mgaigbezdalbyuqiofcf.supabase.co/auth/v1/.well-known/openid-configuration`
+
+Consumer authentication methods:
 - Passwordless OTP (email or WhatsApp)
-- Google OAuth
+- Google OAuth (`provider=google`)
 
 There is currently no agent-to-agent OAuth flow for booking on behalf of users. Agents should direct users to [movepark.com.br](https://movepark.com.br) to complete reservations.
 
 ## Contact
 
-For API access or integration inquiries: contato@movepark.com.br
+contato@movepark.com.br

@@ -1,0 +1,9 @@
+{
+  "resource": "https://movepark.com.br",
+  "authorization_servers": [
+    "https://mgaigbezdalbyuqiofcf.supabase.co/auth/v1"
+  ],
+  "scopes_supported": ["openid", "email", "profile"],
+  "bearer_methods_supported": ["header"],
+  "resource_documentation": "https://movepark.com.br/auth.md"
+}

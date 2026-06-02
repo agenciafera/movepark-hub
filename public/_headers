@@ -16,3 +16,6 @@
 
 /llms.txt
   Content-Type: text/plain; charset=utf-8
+
+/.well-known/oauth-protected-resource
+  Content-Type: application/json
