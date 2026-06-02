@@ -1,15 +1,25 @@
 {
-  "apis": [
+  "linkset": [
     {
-      "title": "Movepark MCP API",
-      "description": "API principal da plataforma Movepark acessível via Model Context Protocol",
-      "contact": {
-        "email": "contato@movepark.com.br"
-      },
-      "documents": [
+      "anchor": "https://movepark.com.br",
+      "service-desc": [
         {
-          "type": "mcp-server-card",
-          "url": "https://movepark.com.br/.well-known/mcp/server-card.json"
+          "href": "https://movepark.com.br/.well-known/mcp/server-card.json",
+          "type": "application/json",
+          "title": "Movepark MCP Server Card"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://movepark.com.br/faq",
+          "type": "text/html",
+          "title": "Documentação e FAQ"
+        }
+      ],
+      "status": [
+        {
+          "href": "https://movepark.com.br/.well-known/mcp/server-card.json",
+          "type": "application/json"
         }
       ]
     }
