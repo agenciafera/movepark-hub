@@ -18,8 +18,11 @@ Thumbs.db
 supabase/.temp/
 supabase/.branches/
 
-# Node (caso vire app depois)
+# Deps — usamos bun; o lockfile versionado é bun.lockb
 node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
 dist/
 build/
 *.log
