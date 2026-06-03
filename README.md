@@ -15,28 +15,30 @@ Cada **empresa** (tenant) opera N **unidades** (estacionamentos físicos), cada 
 
 ## Setup local
 
+Usamos **bun** (lockfile `bun.lockb`). Use sempre `bun` — não `npm`/`yarn`/`pnpm`.
+
 ```bash
 # 1. Instalar dependências
-npm install
+bun install
 
 # 2. Copiar variáveis de ambiente
 cp .env.local.example .env.local
 # preencher VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY
 
 # 3. Rodar em dev
-npm run dev
+bun run dev
 ```
 
 Scripts disponíveis:
 
 | Script | Ação |
 |---|---|
-| `npm run dev` | Vite dev server |
-| `npm run build` | `tsc -b && vite build` |
-| `npm run preview` | Serve o build |
-| `npm run lint` | ESLint |
-| `npm run typecheck` | TypeScript sem emitir |
-| `npm run gen:types` | Gera [`src/types/database.ts`](src/types/database.ts) a partir do projeto Supabase linkado |
+| `bun run dev` | Vite dev server |
+| `bun run build` | `tsc -b && vite-react-ssg build` |
+| `bun run preview` | Serve o build |
+| `bun run lint` | ESLint |
+| `bun run typecheck` | TypeScript sem emitir |
+| `bun run gen:types` | Gera [`src/types/database.ts`](src/types/database.ts) a partir do projeto Supabase linkado |
 
 ## Estrutura do projeto
 

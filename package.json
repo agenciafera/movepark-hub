@@ -6,11 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && node --import ./scripts/ws-polyfill.mjs node_modules/.bin/vite-react-ssg build",
-    "preview": "npm run build && wrangler dev",
+    "preview": "bun run build && wrangler dev",
     "lint": "eslint .",
     "typecheck": "tsc -b --noEmit",
     "gen:types": "supabase gen types typescript --linked > src/types/database.ts",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "bun run build && wrangler deploy"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
