@@ -1,4 +1,4 @@
-# Move Park Hub — Consumer App
+# Movepark Hub — Consumer App
 
 > Frontend voltado para o cliente final que reserva uma vaga.
 > Linguagem visual: **Movepark + Airbnb** (ver [design-tokens.md](../design-tokens.md)).

@@ -93,7 +93,7 @@ export default function OnboardingPage() {
           <XCircle className="h-12 w-12 text-error" />
           <h1 className="text-display-md text-ink">Cadastro não aprovado</h1>
           <p className="max-w-md text-body-sm text-muted">
-            Seu cadastro não foi aprovado neste momento. Em caso de dúvidas, entre em contato com a equipe MovePark.
+            Seu cadastro não foi aprovado neste momento. Em caso de dúvidas, entre em contato com a equipe Movepark.
           </p>
           <Button variant="secondary" onClick={() => signOut()}>Sair</Button>
         </div>
@@ -116,7 +116,7 @@ export default function OnboardingPage() {
   return (
     <>
       <Helmet>
-        <title>Concluir cadastro — MovePark</title>
+        <title>Concluir cadastro — Movepark</title>
       </Helmet>
       <Centered>
         <div className="mb-6">

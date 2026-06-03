@@ -1,7 +1,7 @@
-# Design Tokens — MovePark Hub
+# Design Tokens — Movepark Hub
 
-> Adaptação do Airbnb design system para a brand MovePark.  
-> **TODO:** substituir os valores `{PENDING}` quando a paleta oficial MovePark for definida.
+> Adaptação do Airbnb design system para a brand Movepark.  
+> **TODO:** substituir os valores `{PENDING}` quando a paleta oficial Movepark for definida.
 
 ---
 
@@ -66,7 +66,7 @@
 
 ## Typography
 
-> Usar **Inter** enquanto fonte MovePark não estiver disponível.  
+> Usar **Inter** enquanto fonte Movepark não estiver disponível.  
 > Ajustar line-height display em -2% em relação ao Airbnb Cereal ao usar Inter.
 
 | Token | Size | Weight | Line Height | Uso |
@@ -181,7 +181,7 @@ white fill · rounded.md · hairline border · shadow tier · padding lg (24px)
 
 ## Open Points
 
-- [ ] Definir paleta oficial MovePark (primary, eventual secondary)
+- [ ] Definir paleta oficial Movepark (primary, eventual secondary)
 - [ ] Confirmar fonte oficial (custom ou Inter como definitiva)
 - [ ] Logo em SVG nas variações: full color, white, icon-only
 - [ ] Dark mode: fora do escopo por ora

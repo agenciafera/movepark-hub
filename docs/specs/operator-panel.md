@@ -1,7 +1,7 @@
 # Operator Panel — Spec
 
 > Painel para os estacionamentos parceiros gerenciarem suas próprias operações.  
-> Design base: Airbnb design system (a ser recolorido com brand MovePark).
+> Design base: Airbnb design system (a ser recolorido com brand Movepark).
 
 ---
 
@@ -28,7 +28,7 @@ O **Operator Panel** é o painel de cada empresa parceira (ex: Nationpark, Aerov
 ### Sidebar (desktop)
 
 ```
-Logo MovePark Hub
+Logo Movepark Hub
 [Nome da Empresa]
 ────────────────
 Dashboard
@@ -148,7 +148,7 @@ Layout em 2 colunas:
 
 Cards com: nome · endereço · status · capacidade total · ocupação atual
 
-> Criar/deletar localização não está disponível para o operador — apenas a MovePark gerencia isso.
+> Criar/deletar localização não está disponível para o operador — apenas a Movepark gerencia isso.
 
 #### Editar Localização
 
@@ -171,14 +171,14 @@ Campos editáveis pelo operador:
 
 Tabela com: `Nome` · `Code` · `Estratégia` · `Preço` · `Status`
 
-> Operador pode **editar preços** e **ativar/desativar** tipos de vaga, mas não pode criar novos codes — apenas a MovePark cria codes novos.
+> Operador pode **editar preços** e **ativar/desativar** tipos de vaga, mas não pode criar novos codes — apenas a Movepark cria codes novos.
 
 #### Editar Tipo de Vaga
 
 Campos editáveis:
 - `name` (nome de exibição para o cliente)
 - `status` — toggle
-- **Precificação** (dependendo da estratégia configurada pela MovePark):
+- **Precificação** (dependendo da estratégia configurada pela Movepark):
   - `fixed_daily`: edita `price_per_day`
   - `fixed_bracket`: edita tabela de faixas
 
@@ -313,7 +313,7 @@ Tabela de Reservas
 ## 9. Open Points
 
 - [ ] Confirmação manual de reservas: fluxo obrigatório ou opcional por empresa?
-- [ ] Política de cancelamento: quem define — MovePark ou operador?
+- [ ] Política de cancelamento: quem define — Movepark ou operador?
 - [ ] Integração de acesso (cancela/portão): escopo futuro ou MVP?
 - [ ] Operador pode editar uma reserva já confirmada?
 - [ ] App mobile para operadores ou apenas web responsivo?

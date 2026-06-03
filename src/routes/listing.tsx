@@ -47,7 +47,7 @@ export default function ListingPage() {
     ? `Reserve ${listing.parking_type.name} em ${listing.location.name}. ${listing.location.address ?? ""}`
     : "";
   const pageUrl = listing
-    ? `https://movepark.com.br/p/${listing.company.slug}/${listing.location.slug}/${listing.parking_type.code}`
+    ? `https://hub.movepark.co/p/${listing.company.slug}/${listing.location.slug}/${listing.parking_type.code}`
     : "";
 
 
@@ -112,7 +112,7 @@ export default function ListingPage() {
         <script type="application/ld+json">
           {JSON.stringify(
             breadcrumbSchema([
-              { name: "Home", url: "https://movepark.com.br" },
+              { name: "Home", url: "https://hub.movepark.co" },
               { name: listing.location.name, url: pageUrl },
             ]),
           )}

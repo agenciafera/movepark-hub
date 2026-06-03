@@ -1,8 +1,8 @@
-# Move Park Hub
+# Movepark Hub
 
 SaaS centralizado para gestão de estacionamentos parceiros — o "Airbnb dos estacionamentos". Substitui os sistemas legados ([`movepark-backoffice-v4`](https://github.com/agenciafera) — October CMS e [`movepark-nextjs`](https://github.com/agenciafera) — site público) por uma plataforma multi-tenant moderna.
 
-Cada **empresa** (tenant) opera N **unidades** (estacionamentos físicos), cada uma com seus **tipos de vaga** e regras próprias de preço, capacidade e cupom. A equipe MovePark administra a plataforma via Manager Panel; cada parceiro acessa o seu próprio Operator Panel.
+Cada **empresa** (tenant) opera N **unidades** (estacionamentos físicos), cada uma com seus **tipos de vaga** e regras próprias de preço, capacidade e cupom. A equipe Movepark administra a plataforma via Manager Panel; cada parceiro acessa o seu próprio Operator Panel.
 
 ## Stack
 
@@ -76,7 +76,7 @@ A pasta [`docs/specs/`](docs/specs/README.md) é a fonte de verdade técnica. Se
 | [booking-flow.md](docs/specs/booking-flow.md) | State machine da reserva, checkout, expiração, cancelamento |
 | [coupon-rules.md](docs/specs/coupon-rules.md) | Validação de cupons e cálculo de desconto |
 | [voucher-qrcode.md](docs/specs/voucher-qrcode.md) | Geração do voucher PDF e check-in por QR code |
-| [manager-panel.md](docs/specs/manager-panel.md) | Painel interno MovePark (`hub_admin`) |
+| [manager-panel.md](docs/specs/manager-panel.md) | Painel interno Movepark (`hub_admin`) |
 | [operator-panel.md](docs/specs/operator-panel.md) | Painel do parceiro (`company_operator`) |
 | [design-tokens.md](docs/specs/design-tokens.md) | Tokens de cor, tipografia e espaçamento |
 

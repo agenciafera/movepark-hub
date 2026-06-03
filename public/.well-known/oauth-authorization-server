@@ -9,7 +9,7 @@
   "subject_types_supported": ["public"],
   "scopes_supported": ["openid", "email", "profile"],
   "agent_auth": {
-    "register_uri": "https://movepark.com.br/auth.md",
+    "register_uri": "https://hub.movepark.co/auth.md",
     "identity_types": ["oauth2"],
     "credential_types": ["bearer_token"],
     "claim_uri": "https://mgaigbezdalbyuqiofcf.supabase.co/auth/v1/authorize"

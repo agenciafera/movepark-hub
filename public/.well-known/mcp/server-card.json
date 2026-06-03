@@ -1,8 +1,8 @@
 {
   "name": "Movepark Hub",
   "description": "API para consultar estacionamentos, listar tipos de vaga, simular preços e acessar perguntas frequentes da plataforma Movepark.",
-  "url": "https://movepark.com.br",
-  "contact": "contato@movepark.com.br",
+  "url": "https://hub.movepark.co",
+  "contact": "contato@movepark.co",
   "tools": [
     {
       "name": "get_locations",

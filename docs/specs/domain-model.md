@@ -1,4 +1,4 @@
-# Domain Model — Move Park Hub
+# Domain Model — Movepark Hub
 
 ## Mapeamento legado → Hub
 

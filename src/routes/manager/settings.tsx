@@ -46,7 +46,7 @@ function PartnerEmailSettings() {
             id="from"
             value={from}
             onChange={(e) => setFrom(e.target.value)}
-            placeholder="MovePark Hub <hub@movepark.co>"
+            placeholder="Movepark Hub <hub@movepark.co>"
             disabled={isLoading}
           />
           <span className="text-caption text-muted">
@@ -97,11 +97,11 @@ export default function ManagerSettings() {
             <CardContent className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="platform-name">Nome</Label>
-                <Input id="platform-name" defaultValue="Move Park Hub" />
+                <Input id="platform-name" defaultValue="Movepark Hub" />
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="support">E-mail de suporte</Label>
-                <Input id="support" type="email" defaultValue="suporte@movepark.com" />
+                <Input id="support" type="email" defaultValue="suporte@movepark.co" />
               </div>
             </CardContent>
           </Card>

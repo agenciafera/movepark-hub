@@ -1,15 +1,15 @@
 # Manager Panel — Spec
 
-> Painel interno da MovePark Hub para controle total da plataforma.  
-> Design base: Airbnb design system (a ser recolorido com brand MovePark).
+> Painel interno da Movepark Hub para controle total da plataforma.  
+> Design base: Airbnb design system (a ser recolorido com brand Movepark).
 
 ---
 
 ## 1. Visão Geral
 
-O **Manager Panel** é o backoffice da equipe MovePark. Ele permite gerenciar empresas parceiras, visualizar receita consolidada, controlar configurações globais e auditar qualquer operação da plataforma.
+O **Manager Panel** é o backoffice da equipe Movepark. Ele permite gerenciar empresas parceiras, visualizar receita consolidada, controlar configurações globais e auditar qualquer operação da plataforma.
 
-**Acesso:** somente usuários internos da MovePark (role `hub_admin`).
+**Acesso:** somente usuários internos da Movepark (role `hub_admin`).
 
 ---
 
@@ -26,7 +26,7 @@ O **Manager Panel** é o backoffice da equipe MovePark. Ele permite gerenciar em
 ### Sidebar (desktop)
 
 ```
-Logo MovePark Hub
+Logo Movepark Hub
 ────────────────
 Dashboard
 Empresas
@@ -269,7 +269,7 @@ Campos:
 
 | Airbnb Token | Uso no Manager Panel |
 |---|---|
-| `{colors.primary}` (#ff385c) | substituir por `{colors.mp-primary}` (MovePark brand) |
+| `{colors.primary}` (#ff385c) | substituir por `{colors.mp-primary}` (Movepark brand) |
 | `{colors.canvas}` (#ffffff) | mantém white |
 | `{colors.ink}` (#222222) | mantém |
 | `{colors.surface-soft}` (#f7f7f7) | sidebar background, table rows alternados |
@@ -303,7 +303,7 @@ Campos:
 
 ## 8. Open Points
 
-- [ ] Definir paleta de cores MovePark (primary, secondary)
+- [ ] Definir paleta de cores Movepark (primary, secondary)
 - [ ] Definir fonte (Inter como substituto do Cereal até ter fonte própria)
 - [ ] Estratégia de `dynamic` pricing — escopo futuro ou MVP?
 - [ ] Integração com gateway de pagamento para faturamento automático

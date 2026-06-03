@@ -182,7 +182,7 @@ export function LeadForm({ onSuccess }: Props) {
       <label className="flex items-start gap-2 tablet:col-span-2">
         <Checkbox checked={acceptTerms} onCheckedChange={(v) => setAcceptTerms(v === true)} />
         <span className="text-body-sm text-muted">
-          Concordo em ser contatado pela MovePark e com o tratamento dos meus dados conforme a
+          Concordo em ser contatado pela Movepark e com o tratamento dos meus dados conforme a
           política de privacidade.
         </span>
       </label>

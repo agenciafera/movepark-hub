@@ -1,6 +1,6 @@
-# Move Park Hub — Specs
+# Movepark Hub — Specs
 
-Documentação técnica de referência para o design do Move Park Hub.
+Documentação técnica de referência para o design do Movepark Hub.
 Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-nextjs`.
 
 ## Índice

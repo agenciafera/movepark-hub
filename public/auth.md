@@ -30,7 +30,7 @@ The MCP server is publicly readable — no authentication needed to:
 - Simulate prices
 - Read FAQs
 
-See: [/.well-known/mcp/server-card.json](https://movepark.com.br/.well-known/mcp/server-card.json)
+See: [/.well-known/mcp/server-card.json](https://hub.movepark.co/.well-known/mcp/server-card.json)
 
 ## Scopes
 
@@ -42,8 +42,8 @@ See: [/.well-known/mcp/server-card.json](https://movepark.com.br/.well-known/mcp
 
 ## Notes
 
-Booking creation requires a user-delegated token. There is no machine-to-machine flow for creating bookings on behalf of users — agents should direct users to [movepark.com.br](https://movepark.com.br) to complete reservations.
+Booking creation requires a user-delegated token. There is no machine-to-machine flow for creating bookings on behalf of users — agents should direct users to [hub.movepark.co](https://hub.movepark.co) to complete reservations.
 
 ## Contact
 
-contato@movepark.com.br
+contato@movepark.co

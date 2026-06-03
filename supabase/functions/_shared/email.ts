@@ -89,12 +89,12 @@ export async function sendEmail({ from, to, subject, html, replyTo }: SendArgs):
 function shell(title: string, bodyHtml: string): string {
   return `<!doctype html><html lang="pt-BR"><body style="margin:0;background:#f7f7f7;font-family:Roboto,Arial,sans-serif;color:${BRAND.navy}">
   <div style="max-width:560px;margin:0 auto;padding:32px 24px">
-    <div style="font-size:20px;font-weight:800;color:${BRAND.navy};margin-bottom:24px">Move<span style="color:${BRAND.red}">Park</span> Hub</div>
+    <div style="font-size:20px;font-weight:800;color:${BRAND.navy};margin-bottom:24px">Move<span style="color:${BRAND.red}">park</span> Hub</div>
     <div style="background:#fff;border:1px solid #eee;border-radius:14px;padding:28px">
       <h1 style="font-size:20px;margin:0 0 16px">${title}</h1>
       ${bodyHtml}
     </div>
-    <p style="color:${BRAND.muted};font-size:12px;margin-top:24px">MovePark Hub — a plataforma que conecta estacionamentos a clientes.</p>
+    <p style="color:${BRAND.muted};font-size:12px;margin-top:24px">Movepark Hub — a plataforma que conecta estacionamentos a clientes.</p>
   </div></body></html>`;
 }
 
@@ -107,7 +107,7 @@ export function tplLeadReceived(contactName: string): { subject: string; html: s
     subject: "Recebemos seu cadastro 🎉",
     html: shell("Recebemos seu cadastro!", `
       <p>Olá, ${escapeHtml(contactName)}!</p>
-      <p>Obrigado pelo interesse em ter seu estacionamento na MovePark. Nossa equipe vai analisar as informações e <strong>entrar em contato em até 2 dias úteis</strong> para validar e liberar a próxima etapa do cadastro.</p>
+      <p>Obrigado pelo interesse em ter seu estacionamento na Movepark. Nossa equipe vai analisar as informações e <strong>entrar em contato em até 2 dias úteis</strong> para validar e liberar a próxima etapa do cadastro.</p>
       <p>Enquanto isso, não precisa fazer nada. 😉</p>`),
   };
 }
@@ -137,7 +137,7 @@ export function tplApprovalInvite(contactName: string, actionLink: string): { su
     subject: "Seu cadastro foi aprovado — continue o cadastro",
     html: shell("Cadastro aprovado! 🚗", `
       <p>Olá, ${escapeHtml(contactName)}!</p>
-      <p>Boa notícia: aprovamos seu estacionamento na MovePark. Agora é só concluir a configuração — localização, tipos de vaga e preços — para publicar e começar a receber reservas.</p>
+      <p>Boa notícia: aprovamos seu estacionamento na Movepark. Agora é só concluir a configuração — localização, tipos de vaga e preços — para publicar e começar a receber reservas.</p>
       <p>${button(actionLink, "Continuar meu cadastro")}</p>
       <p style="color:${BRAND.muted};font-size:13px">Se o botão não funcionar, copie e cole este link no navegador:<br>${actionLink}</p>`),
   };
@@ -145,10 +145,10 @@ export function tplApprovalInvite(contactName: string, actionLink: string): { su
 
 export function tplRejection(contactName: string, reason?: string | null): { subject: string; html: string } {
   return {
-    subject: "Sobre seu cadastro na MovePark",
+    subject: "Sobre seu cadastro na Movepark",
     html: shell("Sobre seu cadastro", `
       <p>Olá, ${escapeHtml(contactName)}.</p>
-      <p>Agradecemos o interesse em fazer parte da MovePark. Após análise, não seguiremos com o cadastro neste momento.</p>
+      <p>Agradecemos o interesse em fazer parte da Movepark. Após análise, não seguiremos com o cadastro neste momento.</p>
       ${reason ? `<p style="color:${BRAND.muted}"><strong>Observação:</strong> ${escapeHtml(reason)}</p>` : ""}
       <p>Você pode se cadastrar novamente no futuro. Ficamos à disposição.</p>`),
   };
@@ -159,7 +159,7 @@ export function tplWentLive(contactName: string): { subject: string; html: strin
     subject: "Seu estacionamento está no ar! 🚗",
     html: shell("Tudo pronto — você está no ar!", `
       <p>Olá, ${escapeHtml(contactName)}!</p>
-      <p>Seu estacionamento já aparece na busca da MovePark e está pronto para receber reservas.</p>
+      <p>Seu estacionamento já aparece na busca da Movepark e está pronto para receber reservas.</p>
       <p>${button(`${siteUrl()}/operator`, "Acessar meu painel")}</p>`),
   };
 }

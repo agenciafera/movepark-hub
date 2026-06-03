@@ -1,24 +1,24 @@
 {
   "linkset": [
     {
-      "anchor": "https://movepark.com.br",
+      "anchor": "https://hub.movepark.co",
       "service-desc": [
         {
-          "href": "https://movepark.com.br/.well-known/mcp/server-card.json",
+          "href": "https://hub.movepark.co/.well-known/mcp/server-card.json",
           "type": "application/json",
           "title": "Movepark MCP Server Card"
         }
       ],
       "service-doc": [
         {
-          "href": "https://movepark.com.br/faq",
+          "href": "https://hub.movepark.co/faq",
           "type": "text/html",
           "title": "Documentação e FAQ"
         }
       ],
       "status": [
         {
-          "href": "https://movepark.com.br/.well-known/mcp/server-card.json",
+          "href": "https://hub.movepark.co/.well-known/mcp/server-card.json",
           "type": "application/json"
         }
       ]

@@ -17,10 +17,10 @@ export default function SejaParceiroPage() {
   return (
     <>
       <Helmet>
-        <title>Seja parceiro — MovePark</title>
+        <title>Seja parceiro — Movepark</title>
         <meta
           name="description"
-          content="Cadastre seu estacionamento na MovePark e comece a receber reservas online."
+          content="Cadastre seu estacionamento na Movepark e comece a receber reservas online."
         />
       </Helmet>
 
@@ -33,7 +33,7 @@ export default function SejaParceiroPage() {
                 Para estacionamentos
               </span>
               <h1 className="text-display-xl text-ink">
-                Cadastre seu estacionamento na MovePark
+                Cadastre seu estacionamento na Movepark
               </h1>
               <p className="text-body-md text-muted">
                 Aumente a ocupação das suas vagas com reservas online. Preencha o cadastro e nossa

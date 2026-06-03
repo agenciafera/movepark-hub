@@ -1,6 +1,6 @@
 import type { ListingDetail } from "@/features/listing/api";
 
-const SITE_URL = "https://movepark.com.br";
+const SITE_URL = "https://hub.movepark.co";
 
 export function localBusinessSchema(listing: ListingDetail) {
   return {

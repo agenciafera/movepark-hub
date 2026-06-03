@@ -145,7 +145,7 @@ Auth obrigatória.
 ## 4. Voucher
 
 ### Conteúdo do QR
-URL: `https://app.movepark.com.br/voucher/validate?code=MP-A8K7P2`
+URL: `https://hub.movepark.co/voucher/validate?code=MP-A8K7P2`
 
 Ao escanear no acesso à vaga, abre a página de validação operacional que confere:
 - `booking.status == 'confirmed'`
@@ -287,7 +287,7 @@ Persistido em tabela `review (booking_id, profile_id, rating, criteria_json, com
 
 Bloco "Precisa de ajuda?" no detalhe da reserva:
 - **Falar com a operadora** → modal com telefone + e-mail + nota "Atendimento das 6h às 22h".
-- **Falar com a Movepark** → abre chat (Zendesk / Intercom no futuro) ou e-mail `suporte@movepark.com.br`.
+- **Falar com a Movepark** → abre chat (Zendesk / Intercom no futuro) ou e-mail `suporte@movepark.co`.
 
 Mensagens automáticas:
 - 24h antes do check-in → e-mail "Sua reserva é amanhã. Confira o voucher."

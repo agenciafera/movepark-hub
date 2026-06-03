@@ -5,14 +5,18 @@ O README cobre setup e visão geral; este arquivo define **convenções e padrõ
 
 ## O que é o projeto
 
-**Move Park Hub** — SaaS multi-tenant para gestão de estacionamentos parceiros (o "Airbnb dos estacionamentos"). Substitui dois sistemas legados: `movepark-backoffice-v4` (October CMS/PHP) e `movepark-nextjs` (site público).
+**Movepark Hub** — SaaS multi-tenant para gestão de estacionamentos parceiros (o "Airbnb dos estacionamentos"). Substitui dois sistemas legados: `movepark-backoffice-v4` (October CMS/PHP) e `movepark-nextjs` (site público).
+
+> **Nome da marca:** escreva sempre **"Movepark"** — uma palavra só, `M` maiúsculo e o resto minúsculo. **Nunca** "MovePark", "Move Park" ou "MOVEPARK" em texto de exibição. Identificadores técnicos em minúsculo permanecem como estão (slug/repo `movepark-hub`, tokens `mp-*`, nomes dos sistemas legados).
+>
+> **Domínios:** este projeto inteiro (site do consumidor + hub/admin/operator) é servido em **`hub.movepark.co`** — é o domínio canônico para SEO, `og:url`, `sitemap`, `.well-known/*`, `PUBLIC_SITE_URL` e links de e-mail. **`movepark.co`** é a landing/marketing (redireciona); o e-mail da marca fica nesse domínio (`contato@movepark.co`, `hub@movepark.co`). **Nunca** use `movepark.com.br` (domínio antigo) nem outros subdomínios (`app.`, `www.`).
 
 Três audiências, um único app React:
 
 | Audiência | Área / rota base | Role | Shell |
 |---|---|---|---|
 | Cliente final (consumidor) | `/`, `/search`, `/p/...`, `/checkout`, `/account` | `customer` | `ConsumerAppShell` / `AccountAppShell` |
-| Equipe MovePark | `/manager` | `hub_admin` | `ManagerLayout` |
+| Equipe Movepark | `/manager` | `hub_admin` | `ManagerLayout` |
 | Parceiro (estacionamento) | `/operator` | `company_operator` | `OperatorLayout` |
 
 Hierarquia de domínio (ver glossário completo em `docs/specs/domain-model.md`):

@@ -20,8 +20,8 @@ export default function HomePage() {
           content="Reserve sua vaga com antecedência. Estacionamentos cobertos, descobertos e valet nos principais aeroportos e destinos do Brasil."
         />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://movepark.com.br" />
-        <link rel="canonical" href="https://movepark.com.br" />
+        <meta property="og:url" content="https://hub.movepark.co" />
+        <link rel="canonical" href="https://hub.movepark.co" />
       </Helmet>
       <Hero />
       <CategoryStrip />

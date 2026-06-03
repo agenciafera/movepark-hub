@@ -78,7 +78,7 @@ export default function ManagerFinanceBilling() {
               <div className="text-display-sm text-ink">{formatBRL(totalGross)}</div>
             </div>
             <div className="text-right">
-              <div className="text-caption text-muted">Comissão MovePark</div>
+              <div className="text-caption text-muted">Comissão Movepark</div>
               <div className="text-display-sm text-mp-primary">{formatBRL(totalCommission)}</div>
             </div>
           </div>

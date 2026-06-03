@@ -38,7 +38,7 @@ export default function OperatorLocations() {
       ) : (data ?? []).length === 0 ? (
         <EmptyState
           title="Sem localizações vinculadas"
-          description="Solicite à equipe MovePark para cadastrar suas unidades."
+          description="Solicite à equipe Movepark para cadastrar suas unidades."
         />
       ) : (
         <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">

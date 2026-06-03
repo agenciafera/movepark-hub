@@ -4,7 +4,7 @@ import path from "node:path";
 import sitemap from "vite-plugin-sitemap";
 import { createClient } from "@supabase/supabase-js";
 
-const SITE_URL = "https://movepark.com.br";
+const SITE_URL = "https://hub.movepark.co";
 
 async function getDynamicRoutes(): Promise<string[]> {
   const url = process.env.VITE_SUPABASE_URL;

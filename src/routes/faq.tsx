@@ -88,8 +88,8 @@ export default function FaqPage() {
           property="og:description"
           content="Tire suas dúvidas sobre reservas, pagamentos, check-in e mais."
         />
-        <meta property="og:url" content="https://movepark.com.br/faq" />
-        <link rel="canonical" href="https://movepark.com.br/faq" />
+        <meta property="og:url" content="https://hub.movepark.co/faq" />
+        <link rel="canonical" href="https://hub.movepark.co/faq" />
         {faqJsonLd && (
           <script type="application/ld+json">{faqJsonLd}</script>
         )}

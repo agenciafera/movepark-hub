@@ -2,13 +2,13 @@
 
 > Cadastro de novos estacionamentos parceiros na plataforma, em **duas etapas**:
 > captura de lead (público) → aprovação manual (Manager) → onboarding de configuração (parceiro).
-> Design base: Airbnb design system (recolorido com brand MovePark).
+> Design base: Airbnb design system (recolorido com brand Movepark).
 
 ---
 
 ## 1. Visão Geral
 
-O onboarding de parceiro é o fluxo disparado pelo botão **"Cadastre seu estacionamento"** (CTA público no site). Ele é dividido em dois momentos separados por uma **aprovação manual** da equipe MovePark:
+O onboarding de parceiro é o fluxo disparado pelo botão **"Cadastre seu estacionamento"** (CTA público no site). Ele é dividido em dois momentos separados por uma **aprovação manual** da equipe Movepark:
 
 | Etapa | Quem faz | O que acontece |
 |---|---|---|
@@ -203,11 +203,11 @@ Por `location_parking_type`, define a estratégia (MVP: `fixed_daily` / `fixed_b
 #### Step 6 — Revisão & Envio
 - Resumo de tudo cadastrado (empresa, localizações, vagas, preços)
 - Botão **"Enviar para análise"** → `onboarding_status → submitted`, `submitted_at = now()`
-- Notifica a equipe MovePark (§7)
+- Notifica a equipe Movepark (§7)
 
 ### 5.3 Go-Live
 
-Após `submitted`, a equipe MovePark faz a revisão final no Manager:
+Após `submitted`, a equipe Movepark faz a revisão final no Manager:
 - **Aprovar go-live** → `onboarding_status → active`, `company.status → active`, `location.status → active`. Empresa passa a aparecer na busca pública.
 - **Devolver para ajustes** → volta a `in_progress` com comentários.
 
@@ -279,10 +279,10 @@ company_member
 | Evento | Destinatário | Conteúdo |
 |---|---|---|
 | Lead recebido (Stage 1) | Parceiro | "Recebemos seu cadastro, entraremos em contato" |
-| Lead recebido (Stage 1) | Equipe MovePark | Alerta interno com dados do lead + link para o drawer |
+| Lead recebido (Stage 1) | Equipe Movepark | Alerta interno com dados do lead + link para o drawer |
 | Aprovação | Parceiro | Convite com link para criar senha + iniciar Stage 2 |
 | Rejeição | Parceiro | Recusa educada (com/sem motivo) |
-| Setup enviado (Stage 2) | Equipe MovePark | "Empresa X enviou o setup para revisão" |
+| Setup enviado (Stage 2) | Equipe Movepark | "Empresa X enviou o setup para revisão" |
 | Go-live aprovado | Parceiro | "Sua empresa está no ar! 🚗" + link para o Operator Panel |
 | Devolvido para ajustes | Parceiro | Comentários do que corrigir |
 

@@ -8,9 +8,9 @@ O Movepark é um hub centralizado que conecta viajantes a estacionamentos creden
 
 ## Como funciona
 
-- [Busca de estacionamentos](https://movepark.com.br/search): filtre por destino, datas, tipo de vaga e comodidades
-- [Página de listagem](https://movepark.com.br/p/): detalhes do estacionamento, preços, mapa e FAQ da unidade
-- [Perguntas frequentes](https://movepark.com.br/faq): dúvidas sobre reservas, pagamentos e check-in
+- [Busca de estacionamentos](https://hub.movepark.co/search): filtre por destino, datas, tipo de vaga e comodidades
+- [Página de listagem](https://hub.movepark.co/p/): detalhes do estacionamento, preços, mapa e FAQ da unidade
+- [Perguntas frequentes](https://hub.movepark.co/faq): dúvidas sobre reservas, pagamentos e check-in
 
 ## Tipos de vaga disponíveis
 
@@ -20,5 +20,5 @@ O Movepark é um hub centralizado que conecta viajantes a estacionamentos creden
 
 ## Integrações para agentes
 
-- [MCP Server](https://movepark.com.br/.well-known/mcp/server-card.json): API acessível por agentes de IA para consultar estacionamentos, tipos de vaga e simular preços
-- [API Catalog](https://movepark.com.br/.well-known/api-catalog): catálogo de endpoints públicos
+- [MCP Server](https://hub.movepark.co/.well-known/mcp/server-card.json): API acessível por agentes de IA para consultar estacionamentos, tipos de vaga e simular preços
+- [API Catalog](https://hub.movepark.co/.well-known/api-catalog): catálogo de endpoints públicos

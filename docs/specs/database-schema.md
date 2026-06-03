@@ -1,4 +1,4 @@
-# Database Schema — Move Park Hub
+# Database Schema — Movepark Hub
 
 ## Stack
 

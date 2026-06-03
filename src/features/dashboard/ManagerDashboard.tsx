@@ -28,7 +28,7 @@ export default function ManagerDashboard() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Dashboard"
-        description="Visão geral da plataforma MovePark."
+        description="Visão geral da plataforma Movepark."
       />
 
       <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-4">
