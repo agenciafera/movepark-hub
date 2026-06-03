@@ -4,6 +4,7 @@ export type BookingStatus = Enums<"booking_status">;
 export type PaymentStatus = Enums<"payment_status">;
 export type EntityStatus = Enums<"entity_status">;
 export type UserRole = Enums<"user_role">;
+export type OnboardingStatus = Enums<"onboarding_status">;
 
 export type Booking = Tables<"booking">;
 export type Company = Tables<"company">;
@@ -12,6 +13,12 @@ export type Profile = Tables<"profiles">;
 export type Vehicle = Tables<"vehicle">;
 export type Payment = Tables<"payment">;
 export type ParkingType = Tables<"parking_type">;
+export type CompanyOnboarding = Tables<"company_onboarding">;
+
+/** Lead/onboarding + dados básicos da empresa, como exibido no Manager. */
+export type PartnerApplication = CompanyOnboarding & {
+  company: Pick<Company, "id" | "name" | "slug" | "onboarding_status" | "status"> | null;
+};
 
 export type BookingWithRelations = Booking & {
   profile: Pick<Profile, "id" | "full_name" | "phone" | "tax_id"> | null;

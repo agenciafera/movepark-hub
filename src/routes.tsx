@@ -22,6 +22,8 @@ import AuthCallbackPage from "@/routes/auth/callback";
 import LoginPage from "@/routes/login";
 import ForgotPasswordPage from "@/routes/forgot-password";
 import DesignSystemPage from "@/routes/design-system";
+import SejaParceiroPage from "@/routes/seja-parceiro";
+import OnboardingPage from "@/routes/onboarding";
 
 import AccountIndexPage from "@/routes/account/index";
 import AccountProfilePage from "@/routes/account/profile";
@@ -44,6 +46,7 @@ import ManagerFinanceCommissions from "@/routes/manager/finance-commissions";
 import ManagerSettings from "@/routes/manager/settings";
 import ManagerFaq from "@/routes/manager/faq";
 import ManagerFaqCategorias from "@/routes/manager/faq-categorias";
+import ManagerPartners from "@/routes/manager/partners";
 
 import OperatorLayout from "@/routes/operator/layout";
 import OperatorDashboard from "@/routes/operator/dashboard";
@@ -108,6 +111,7 @@ export const routes: RouteRecord[] = [
           },
           { path: "/checkout/:code", element: <CheckoutPage /> },
           { path: "/faq", element: <FaqPage /> },
+          { path: "/seja-parceiro", element: <SejaParceiroPage /> },
           {
             element: <RequireRole roles={["customer"]} />,
             children: [
@@ -161,6 +165,7 @@ export const routes: RouteRecord[] = [
               { index: true, element: <ManagerDashboard /> },
               { path: "bookings", element: <ManagerBookings /> },
               { path: "companies", element: <ManagerCompanies /> },
+              { path: "partners", element: <ManagerPartners /> },
               { path: "companies/:id/locations", element: <ManagerLocations /> },
               {
                 path: "companies/:companyId/locations/:locationId/parking-types",
@@ -198,6 +203,12 @@ export const routes: RouteRecord[] = [
             ],
           },
         ],
+      },
+
+      // Onboarding do parceiro (Stage 2) — full-page, fora do shell do operador
+      {
+        element: <RequireRole roles={["company_operator"]} />,
+        children: [{ path: "/onboarding", element: <OnboardingPage /> }],
       },
 
       { path: "*", element: <Navigate to="/" replace /> },

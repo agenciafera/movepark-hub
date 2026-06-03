@@ -14,6 +14,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | [booking-flow.md](./booking-flow.md) | Ciclo de vida da reserva: state machine, sequência de checkout, expiração, cancelamento |
 | [coupon-rules.md](./coupon-rules.md) | Algoritmo de validação de cupons, cálculo de desconto, regras de incremento |
 | [voucher-qrcode.md](./voucher-qrcode.md) | Geração de voucher PDF, check-in por QR code, notificações |
+| [partner-onboarding.md](./partner-onboarding.md) | Onboarding de parceiro em 2 etapas: captura de lead → aprovação manual → wizard de setup |
 
 ## Status
 
@@ -26,6 +27,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | booking-flow | ✅ Definido |
 | coupon-rules | ✅ Definido |
 | voucher-qrcode | ✅ Definido |
+| partner-onboarding | ✅ Implementado — migrations `20260603120000`–`20260603120400`, edge functions `submit-partner-lead`/`approve-partner`, UI Stage 1/Manager/Stage 2 |
 
 ## Migrations
 
@@ -39,6 +41,12 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | `20260526100001_add_capacity_rules.sql` | Disponibilidade por data + colunas de config em `location` e `location_parking_type` |
 | `20260526100002_extend_booking_schema.sql` | Colunas faltantes em `booking` (expires_at, UTM, voucher, check-in real) |
 | `20260526100003_seed_pricing_rules.sql` | Seed: 17 `pricing_rule` + tiers para todas as empresas do seed inicial |
+| `20260603120000_add_onboarding_status_and_company_onboarding.sql` | Enum `onboarding_status`, colunas `company.onboarding_status`/`logo_url`, `location.photos`, tabela `company_onboarding` |
+| `20260603120100_onboarding_rls.sql` | RLS de `company_onboarding` + defesa em profundidade no `catalog_read_company` |
+| `20260603120200_onboarding_rpcs.sql` | RPCs `submit_partner_lead` + writes do wizard + `onboarding_submit` (go-live) |
+| `20260603120300_partner_assets_storage.sql` | Bucket `partner-assets` + policies de escrita por empresa |
+| `20260603120400_onboarding_harden.sql` | Hardening: `search_path`, revogação de PUBLIC nas RPCs, listing do bucket |
+| `20260603130000_app_setting.sql` | Configurações globais (key/value) editáveis pelo hub_admin — remetente/caixa de e-mail dos parceiros |
 
 ## Pendências
 

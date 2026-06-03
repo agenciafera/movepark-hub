@@ -144,6 +144,24 @@ export type Database = {
         }
         Relationships: []
       }
+      app_setting: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       booking: {
         Row: {
           check_in_at: string
@@ -353,7 +371,9 @@ export type Database = {
           deleted_at: string | null
           id: string
           legal_name: string | null
+          logo_url: string | null
           name: string
+          onboarding_status: Database["public"]["Enums"]["onboarding_status"]
           slug: string
           status: Database["public"]["Enums"]["entity_status"]
           tax_id: string | null
@@ -364,7 +384,9 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           legal_name?: string | null
+          logo_url?: string | null
           name: string
+          onboarding_status?: Database["public"]["Enums"]["onboarding_status"]
           slug: string
           status?: Database["public"]["Enums"]["entity_status"]
           tax_id?: string | null
@@ -375,13 +397,104 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           legal_name?: string | null
+          logo_url?: string | null
           name?: string
+          onboarding_status?: Database["public"]["Enums"]["onboarding_status"]
           slug?: string
           status?: Database["public"]["Enums"]["entity_status"]
           tax_id?: string | null
           updated_at?: string
         }
         Relationships: []
+      }
+      company_onboarding: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          city: string | null
+          company_id: string
+          contact_email: string
+          contact_name: string
+          contact_phone: string
+          contact_role: string | null
+          created_at: string
+          current_step: number
+          estimated_spots: number | null
+          internal_note: string | null
+          message: string | null
+          referrer: string | null
+          rejected_at: string | null
+          rejection_reason: string | null
+          setup_submitted_at: string | null
+          state: string | null
+          submitted_at: string
+          updated_at: string
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          went_live_at: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          city?: string | null
+          company_id: string
+          contact_email: string
+          contact_name: string
+          contact_phone: string
+          contact_role?: string | null
+          created_at?: string
+          current_step?: number
+          estimated_spots?: number | null
+          internal_note?: string | null
+          message?: string | null
+          referrer?: string | null
+          rejected_at?: string | null
+          rejection_reason?: string | null
+          setup_submitted_at?: string | null
+          state?: string | null
+          submitted_at?: string
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          went_live_at?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          city?: string | null
+          company_id?: string
+          contact_email?: string
+          contact_name?: string
+          contact_phone?: string
+          contact_role?: string | null
+          created_at?: string
+          current_step?: number
+          estimated_spots?: number | null
+          internal_note?: string | null
+          message?: string | null
+          referrer?: string | null
+          rejected_at?: string | null
+          rejection_reason?: string | null
+          setup_submitted_at?: string | null
+          state?: string | null
+          submitted_at?: string
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          went_live_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_onboarding_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       company_parking_type: {
         Row: {
@@ -655,6 +768,7 @@ export type Database = {
           name: string
           notice: string | null
           phone: string | null
+          photos: Json
           reservation_policy: string | null
           slug: string
           status: Database["public"]["Enums"]["entity_status"]
@@ -676,6 +790,7 @@ export type Database = {
           name: string
           notice?: string | null
           phone?: string | null
+          photos?: Json
           reservation_policy?: string | null
           slug: string
           status?: Database["public"]["Enums"]["entity_status"]
@@ -697,6 +812,7 @@ export type Database = {
           name?: string
           notice?: string | null
           phone?: string | null
+          photos?: Json
           reservation_policy?: string | null
           slug?: string
           status?: Database["public"]["Enums"]["entity_status"]
@@ -1503,6 +1619,14 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      generate_unique_company_slug: {
+        Args: { p_name: string }
+        Returns: string
+      }
+      generate_unique_location_slug: {
+        Args: { p_company_id: string; p_name: string }
+        Returns: string
+      }
       get_pricing_data: {
         Args: {
           p_company: string
@@ -1534,6 +1658,58 @@ export type Database = {
         }[]
       }
       is_hub_admin: { Args: never; Returns: boolean }
+      onboarding_assert_editable: {
+        Args: { p_company_id: string }
+        Returns: undefined
+      }
+      onboarding_bump_step: {
+        Args: { p_company_id: string; p_step: number }
+        Returns: undefined
+      }
+      onboarding_set_addons: {
+        Args: { p_company_id: string; p_items: Json; p_location_id: string }
+        Returns: undefined
+      }
+      onboarding_set_parking_types: {
+        Args: { p_company_id: string; p_items: Json; p_location_id: string }
+        Returns: undefined
+      }
+      onboarding_set_pricing: {
+        Args: {
+          p_company_id: string
+          p_location_parking_type_id: string
+          p_strategy: string
+          p_tiers: Json
+        }
+        Returns: undefined
+      }
+      onboarding_submit: { Args: { p_company_id: string }; Returns: undefined }
+      onboarding_update_company: {
+        Args: {
+          p_company_id: string
+          p_legal_name?: string
+          p_logo_url?: string
+          p_name: string
+          p_tax_id?: string
+        }
+        Returns: undefined
+      }
+      onboarding_upsert_location: {
+        Args: {
+          p_address?: string
+          p_company_id: string
+          p_email?: string
+          p_latitude?: number
+          p_location_id: string
+          p_longitude?: number
+          p_name: string
+          p_phone?: string
+          p_photos?: Json
+          p_reservation_policy?: string
+          p_timezone?: string
+        }
+        Returns: string
+      }
       release_booking_capacity: {
         Args: { p_booking_id: string }
         Returns: undefined
@@ -1546,6 +1722,26 @@ export type Database = {
           p_parking_type?: string
         }
         Returns: Json
+      }
+      slugify: { Args: { p_text: string }; Returns: string }
+      submit_partner_lead: {
+        Args: {
+          p_city?: string
+          p_company_name: string
+          p_contact_email: string
+          p_contact_name: string
+          p_contact_phone: string
+          p_contact_role?: string
+          p_estimated_spots?: number
+          p_message?: string
+          p_referrer?: string
+          p_state?: string
+          p_tax_id?: string
+          p_utm_campaign?: string
+          p_utm_medium?: string
+          p_utm_source?: string
+        }
+        Returns: string
       }
     }
     Enums: {
@@ -1561,6 +1757,12 @@ export type Database = {
       entity_status: "active" | "inactive" | "suspended"
       faq_scope: "global" | "location"
       minimum_stay_unit: "minutes" | "hours" | "days" | "months"
+      onboarding_status:
+        | "pending_review"
+        | "approved"
+        | "in_progress"
+        | "active"
+        | "rejected"
       payment_status:
         | "pending"
         | "authorized"
@@ -1709,6 +1911,13 @@ export const Constants = {
       entity_status: ["active", "inactive", "suspended"],
       faq_scope: ["global", "location"],
       minimum_stay_unit: ["minutes", "hours", "days", "months"],
+      onboarding_status: [
+        "pending_review",
+        "approved",
+        "in_progress",
+        "active",
+        "rejected",
+      ],
       payment_status: [
         "pending",
         "authorized",
