@@ -5,12 +5,17 @@ on:
   push:
     branches: [main]
 
+# Força ações JS (ex: supabase/setup-cli@v1) a rodar no Node 24 — silencia o
+# aviso de deprecação do Node 20 sem depender de release das ações upstream.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   # Gate obrigatório: rápido, determinístico, sem rede.
   quality:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
@@ -21,7 +26,7 @@ jobs:
   db:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: supabase/setup-cli@v1
         with:
           version: latest
@@ -32,7 +37,7 @@ jobs:
   edge:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
@@ -47,7 +52,7 @@ jobs:
       VITE_SUPABASE_URL: https://mgaigbezdalbyuqiofcf.supabase.co
       VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nYWlnYmV6ZGFsYnl1cWlvZmNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MTcxOTksImV4cCI6MjA5NTI5MzE5OX0.H7f344gtsOeMF3dyCQTpfBNvjPhQkKXVrhlIDmZ85LE
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bun run test:int
