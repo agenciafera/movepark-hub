@@ -39,15 +39,15 @@ jobs:
       - run: deno test --no-check --allow-env --allow-net supabase/functions
 
   # Não-bloqueante: bate na função simulate_price do banco vivo (read-only).
-  # Pula sozinho se os secrets não estiverem definidos.
+  # URL + anon key são públicos (anon key já vai embutida no frontend / .env versionado).
   pricing-integration:
     runs-on: ubuntu-latest
     continue-on-error: true
+    env:
+      VITE_SUPABASE_URL: https://mgaigbezdalbyuqiofcf.supabase.co
+      VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nYWlnYmV6ZGFsYnl1cWlvZmNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MTcxOTksImV4cCI6MjA5NTI5MzE5OX0.H7f344gtsOeMF3dyCQTpfBNvjPhQkKXVrhlIDmZ85LE
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bun run test:int
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
