@@ -29,7 +29,7 @@ export const PercentInput = React.forwardRef<HTMLInputElement, Props>(
     function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
       const raw = e.target.value;
       setDisplay(raw);
-      const cleaned = raw.replace(/[^0-9,.\-]/g, "").replace(",", ".");
+      const cleaned = raw.replace(/[^0-9,.-]/g, "").replace(",", ".");
       if (cleaned === "" || cleaned === "-") {
         onChange(null);
         return;

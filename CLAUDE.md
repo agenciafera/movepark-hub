@@ -47,11 +47,35 @@ Sempre via **bun**:
 | `bun run dev` | Dev server (porta 5173). |
 | `bun run typecheck` | `tsc -b --noEmit` — **rode antes de concluir qualquer tarefa.** |
 | `bun run lint` | ESLint. |
+| `bun run test` | Vitest (unit/componente) — **gate; rode antes de concluir.** |
+| `bun run test:watch` | Vitest em watch durante o desenvolvimento. |
+| `bun run test:int` | Integração do motor de preço contra o banco vivo (read-only; precisa de `VITE_SUPABASE_*`). |
+| `bun run test:db` | pgTAP (`supabase test db`) — `supabase start` primeiro; stack vem do baseline + seed. Ver `supabase/tests/README.md`. |
 | `bun run build` | `tsc -b && vite-react-ssg build` (gera SSG; puxa rotas dinâmicas do Supabase). |
 | `bun run gen:types` | Regenera `src/types/database.ts` do Supabase linkado. **Rode após toda migration.** |
 | `bun run deploy` | Build + `wrangler deploy`. |
 
-Não há suíte de testes automatizada hoje — validação é via `typecheck` + `lint` + verificação manual no app.
+## Testes
+
+**Todo código novo ou modificado precisa de teste automatizado.** Pirâmide:
+
+| Camada | Runner | Onde | Comando |
+|---|---|---|---|
+| Unitário / lógica pura | Vitest (happy-dom) | `src/**/*.test.ts(x)` co-localizado | `bun run test` |
+| Componente / form / gating de role | Vitest + Testing Library + MSW | `src/**/*.test.tsx` | `bun run test` |
+| Banco / regra (pricing, RPC, RLS, capacidade) | pgTAP | `supabase/tests/*.test.sql` | `bun run test:db` |
+| Integração de preço (banco vivo) | Vitest | `test/pricing/*.int.test.ts` | `bun run test:int` |
+| Edge Function | `deno test` | `supabase/functions/**/index.test.ts` | `bun run test:edge` |
+
+**Regras:**
+- **Lógica pura** (format, cálculo, slug, máquinas de estado) → teste unitário Vitest. Se a lógica estiver dentro de um componente, extraia para um `*.logic.ts` testável (ex: `Step4Pricing.logic.ts`).
+- **Função SQL / RPC / mudança de RLS** → teste pgTAP em `supabase/tests/`. O motor de preço tem casos golden em `docs/simulacao-precos.md` (verdade vs. produção) — qualquer mudança em pricing roda contra eles (`test:int` no banco vivo + `pricing.test.sql` no pgTAP). **Nunca** gere o esperado a partir de um snapshot da função (cravaria bug como esperado).
+- **Componente com form ou gating de role** → Testing Library; chamadas a Edge Function/Supabase mockadas via MSW (`src/test/msw/`).
+- **Edge Function** → teste de branch (validação/honeypot/erros) com `deno test`; e-mail/SMTP é mockável.
+- **Bug corrigido entra com um teste de regressão** (que falha sem o fix).
+- `bun run test` é o **gate** — precisa estar verde antes de concluir e roda no CI a cada PR (`.github/workflows/ci.yml`, job `quality`: typecheck + lint + test).
+
+Mocks: `import.meta.env` é stubado em `src/test/setup.ts`; o client Supabase já degrada via `hasSupabaseEnv`. Para pgTAP local: `supabase start` + `bun run test:db` (o stack é construído do baseline `supabase/migrations/2026010100*_baseline_from_live.sql` + `supabase/seed.sql`). O repo foi rebaselineado do banco vivo — ver `supabase/tests/README.md`.
 
 ## Estrutura
 
@@ -169,6 +193,7 @@ Deno + imports remotos. Cada função abre com um bloco de comentário documenta
 
 1. `bun run typecheck` limpo.
 2. `bun run lint` limpo.
-3. Mudou schema? → migration nova + `bun run gen:types` + spec atualizada.
-4. Mudou regra de negócio? → spec correspondente em `docs/specs/` atualizada no mesmo PR.
-5. Tipos vindos de `@/types/domain`, imports via `@/`, soft-delete respeitado.
+3. **`bun run test` verde** — e há teste novo/atualizado cobrindo o que você mudou (regra de negócio → pgTAP/`test:int`; lógica pura/UI → Vitest; bug → teste de regressão).
+4. Mudou schema? → migration nova + `bun run gen:types` + spec atualizada.
+5. Mudou regra de negócio? → spec correspondente em `docs/specs/` atualizada no mesmo PR.
+6. Tipos vindos de `@/types/domain`, imports via `@/`, soft-delete respeitado.

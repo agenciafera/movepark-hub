@@ -13,32 +13,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { StepShell } from "../StepShell";
-import { useSetPricing, type OnboardingData, type WizardParkingItem } from "../wizardApi";
+import { useSetPricing, type OnboardingData } from "../wizardApi";
+import { buildPricingTiers, initState, type Bracket, type PriceState } from "./Step4Pricing.logic";
 
 type Props = { data: OnboardingData; companyId: string; onNext: () => void; onBack: () => void };
-
-type Bracket = { from_day: string; to_day: string; total_price: number | null };
-type PriceState = { mode: "fixed_daily" | "fixed_bracket"; daily: number | null; brackets: Bracket[] };
-
-function initState(item: WizardParkingItem): PriceState {
-  if (item.strategy === "fixed_bracket" && item.tiers.length) {
-    return {
-      mode: "fixed_bracket",
-      daily: item.base_price,
-      brackets: item.tiers.map((t) => ({
-        from_day: String(t.from_day),
-        to_day: t.to_day != null ? String(t.to_day) : "",
-        total_price: t.total_price,
-      })),
-    };
-  }
-  const uniform = item.tiers.find((t) => t.unit_price != null);
-  return {
-    mode: "fixed_daily",
-    daily: uniform?.unit_price ?? item.base_price ?? null,
-    brackets: [{ from_day: "1", to_day: "", total_price: null }],
-  };
-}
 
 export function Step4Pricing({ data, companyId, onNext, onBack }: Props) {
   const save = useSetPricing(companyId);
@@ -74,29 +52,19 @@ export function Step4Pricing({ data, companyId, onNext, onBack }: Props) {
     if (!data.items.length) return toast.error("Cadastre os tipos de vaga primeiro.");
     try {
       for (const item of data.items) {
-        const ps = state[item.location_parking_type_id];
-        let strategy: string;
-        let tiers: { from_day: number; to_day: number | null; unit_price: number | null; total_price: number | null }[];
-        if (ps.mode === "fixed_daily") {
-          if (!ps.daily || ps.daily <= 0) throw new Error(`Informe o preço diário de ${item.name}.`);
-          strategy = "uniform_by_duration";
-          tiers = [{ from_day: 1, to_day: null, unit_price: ps.daily, total_price: null }];
-        } else {
-          const valid = ps.brackets.filter((b) => b.from_day && b.total_price);
-          if (!valid.length) throw new Error(`Defina ao menos uma faixa para ${item.name}.`);
-          strategy = "fixed_bracket";
-          tiers = valid.map((b) => ({
-            from_day: Number(b.from_day),
-            to_day: b.to_day ? Number(b.to_day) : null,
-            unit_price: null,
-            total_price: b.total_price,
-          }));
+        const built = buildPricingTiers(state[item.location_parking_type_id]);
+        if (!built.ok) {
+          throw new Error(
+            built.reason === "daily"
+              ? `Informe o preço diário de ${item.name}.`
+              : `Defina ao menos uma faixa para ${item.name}.`,
+          );
         }
         await save.mutateAsync({
           p_company_id: companyId,
           p_location_parking_type_id: item.location_parking_type_id,
-          p_strategy: strategy,
-          p_tiers: tiers,
+          p_strategy: built.strategy,
+          p_tiers: built.tiers,
         });
       }
       onNext();

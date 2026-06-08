@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  # Gate obrigatório: rápido, determinístico, sem rede.
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun run lint
+      - run: bun run test:unit
+
+  # pgTAP contra o stack local (schema do baseline + seed). Sem segredos.
+  db:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: supabase db start
+      - run: supabase test db
+
+  # Não-bloqueante: bate na função simulate_price do banco vivo (read-only).
+  # Pula sozinho se os secrets não estiverem definidos.
+  pricing-integration:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run test:int
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
