@@ -28,6 +28,16 @@ jobs:
       - run: supabase db start
       - run: supabase test db
 
+  # Testes das Edge Functions (Deno) — lógica pura de validação + templates.
+  edge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno test --no-check --allow-env --allow-net supabase/functions
+
   # Não-bloqueante: bate na função simulate_price do banco vivo (read-only).
   # Pula sozinho se os secrets não estiverem definidos.
   pricing-integration:

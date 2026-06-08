@@ -14,6 +14,7 @@
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendEmail, getEmailConfig, tplLeadReceived, tplLeadAlert } from "../_shared/email.ts";
+import { validateLead, type LeadInput } from "./validate.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,27 +29,6 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
-interface LeadInput {
-  company_name?: string;
-  contact_name?: string;
-  contact_email?: string;
-  contact_phone?: string;
-  tax_id?: string | null;
-  contact_role?: string | null;
-  city?: string | null;
-  state?: string | null;
-  estimated_spots?: number | null;
-  message?: string | null;
-  accept_terms?: boolean;
-  utm_source?: string | null;
-  utm_medium?: string | null;
-  utm_campaign?: string | null;
-  referrer?: string | null;
-  hp_field?: string | null; // honeypot — precisa vir vazio
-}
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 // @ts-expect-error - Deno global
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -61,26 +41,13 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "Invalid JSON" }, 400);
   }
 
-  // Anti-spam: honeypot preenchido → finge sucesso e descarta.
-  if (input.hp_field && String(input.hp_field).trim() !== "") {
-    return jsonResponse({ ok: true }, 201);
+  // Validação pura (honeypot, obrigatórios, e-mail, termos) — ver validate.ts.
+  const v = validateLead(input);
+  if (!v.ok) {
+    if (v.status === 201) return jsonResponse({ ok: true }, 201); // honeypot
+    return jsonResponse({ error: v.error }, 400);
   }
-
-  const companyName = (input.company_name ?? "").trim();
-  const contactName = (input.contact_name ?? "").trim();
-  const contactEmail = (input.contact_email ?? "").trim().toLowerCase();
-  const contactPhone = (input.contact_phone ?? "").trim();
-  const taxId = (input.tax_id ?? "").trim();
-
-  if (!companyName || !contactName || !contactEmail || !contactPhone) {
-    return jsonResponse({ error: "Preencha empresa, nome, e-mail e telefone." }, 400);
-  }
-  if (!EMAIL_RE.test(contactEmail)) {
-    return jsonResponse({ error: "E-mail inválido." }, 400);
-  }
-  if (input.accept_terms !== true) {
-    return jsonResponse({ error: "É necessário aceitar os termos." }, 400);
-  }
+  const { companyName, contactName, contactEmail, contactPhone, taxId } = v.clean;
 
   const admin = createClient(
     // @ts-expect-error - Deno env
