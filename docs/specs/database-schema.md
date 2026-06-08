@@ -9,14 +9,15 @@
 
 ---
 
-## Migrations aplicadas
+## Migrations
 
-| Arquivo | Conteúdo |
-|---|---|
-| `20260525142111_init_movepark_hub_schema.sql` | Schema base completo |
-| `20260525142247_harden_security_definer_functions.sql` | Hardening da função `handle_new_auth_user` |
-| `20260525143531_seed_parking_type_catalog.sql` | Seed: catálogo de tipos de vaga |
-| `20260525155000_seed_companies_locations.sql` | Seed: empresas, unidades, company_parking_type, location_parking_type |
+> **Rebaseline (2026-06-03):** o histórico de migrations foi consolidado num único
+> **baseline** gerado do banco vivo — `supabase/migrations/20260101000000_baseline_from_live.sql`
+> (schema completo) + `supabase/seed.sql` (catálogo/pricing, sem dados de cliente). O
+> histórico anterior estava divergente (várias migrations aplicadas direto via MCP/dashboard,
+> nunca commitadas, e timestamps fora de sincronia). Os arquivos antigos seguem no histórico
+> do git. Daqui pra frente, mudanças de schema são novas migrations em `supabase/migrations/`
+> a partir do baseline.
 
 ---
 
