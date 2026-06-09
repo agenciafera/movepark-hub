@@ -45,6 +45,36 @@ export function productOfferSchema(listing: ListingDetail) {
   };
 }
 
+export function destinationSchema(d: {
+  name: string;
+  slug: string;
+  city: string;
+  state: string | null;
+  country: string;
+  latitude: number;
+  longitude: number;
+  meta_description?: string | null;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Place",
+    name: d.name,
+    description: d.meta_description ?? undefined,
+    url: `${SITE_URL}/destinos/${d.slug}`,
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: d.city,
+      addressRegion: d.state ?? undefined,
+      addressCountry: d.country,
+    },
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: d.latitude,
+      longitude: d.longitude,
+    },
+  };
+}
+
 export function breadcrumbSchema(
   crumbs: { name: string; url: string }[],
 ) {

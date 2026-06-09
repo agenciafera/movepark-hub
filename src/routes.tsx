@@ -24,6 +24,7 @@ import ForgotPasswordPage from "@/routes/forgot-password";
 import DesignSystemPage from "@/routes/design-system";
 import SejaParceiroPage from "@/routes/seja-parceiro";
 import OnboardingPage from "@/routes/onboarding";
+import DestinoPage from "@/routes/destino";
 
 import AccountIndexPage from "@/routes/account/index";
 import AccountProfilePage from "@/routes/account/profile";
@@ -47,6 +48,7 @@ import ManagerSettings from "@/routes/manager/settings";
 import ManagerFaq from "@/routes/manager/faq";
 import ManagerFaqCategorias from "@/routes/manager/faq-categorias";
 import ManagerPartners from "@/routes/manager/partners";
+import ManagerDestinations from "@/routes/manager/destinations";
 
 import OperatorLayout from "@/routes/operator/layout";
 import OperatorDashboard from "@/routes/operator/dashboard";
@@ -93,6 +95,24 @@ async function fetchAllListingPaths(): Promise<string[]> {
   );
 }
 
+async function destinoLoader({ params }: LoaderFunctionArgs) {
+  const { data } = await supabase
+    .from("destination")
+    .select("*")
+    .eq("slug", params.slug!)
+    .eq("is_published", true)
+    .maybeSingle();
+  return data ?? null;
+}
+
+async function fetchAllDestinationPaths(): Promise<string[]> {
+  const { data } = await supabase
+    .from("destination")
+    .select("slug")
+    .eq("is_published", true);
+  return (data ?? []).map((d) => `/destinos/${d.slug as string}`);
+}
+
 export const routes: RouteRecord[] = [
   {
     element: <AppProviders />,
@@ -112,6 +132,12 @@ export const routes: RouteRecord[] = [
           { path: "/checkout/:code", element: <CheckoutPage /> },
           { path: "/faq", element: <FaqPage /> },
           { path: "/seja-parceiro", element: <SejaParceiroPage /> },
+          {
+            path: "/destinos/:slug",
+            element: <DestinoPage />,
+            loader: destinoLoader,
+            getStaticPaths: fetchAllDestinationPaths,
+          },
           {
             element: <RequireRole roles={["customer"]} />,
             children: [
@@ -166,6 +192,7 @@ export const routes: RouteRecord[] = [
               { path: "bookings", element: <ManagerBookings /> },
               { path: "companies", element: <ManagerCompanies /> },
               { path: "partners", element: <ManagerPartners /> },
+              { path: "destinations", element: <ManagerDestinations /> },
               { path: "companies/:id/locations", element: <ManagerLocations /> },
               {
                 path: "companies/:companyId/locations/:locationId/parking-types",

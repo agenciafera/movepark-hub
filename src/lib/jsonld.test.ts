@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { ListingDetail } from "@/features/listing/api";
-import { breadcrumbSchema, faqSchema, localBusinessSchema, productOfferSchema } from "./jsonld";
+import {
+  breadcrumbSchema,
+  destinationSchema,
+  faqSchema,
+  localBusinessSchema,
+  productOfferSchema,
+} from "./jsonld";
 
 type Overrides = {
   address?: string | null;
@@ -72,6 +78,44 @@ describe("breadcrumbSchema", () => {
     expect(s.itemListElement).toHaveLength(2);
     expect(s.itemListElement[0]).toMatchObject({ position: 1, name: "Home" });
     expect(s.itemListElement[1]).toMatchObject({ position: 2, item: "https://hub.movepark.co/search" });
+  });
+});
+
+describe("destinationSchema", () => {
+  const base = {
+    name: "Aeroporto de Guarulhos",
+    slug: "aeroporto-de-guarulhos",
+    city: "Guarulhos",
+    state: "SP" as string | null,
+    country: "BR",
+    latitude: -23.43,
+    longitude: -46.47,
+    meta_description: "Estacionamento perto do GRU.",
+  };
+
+  it("monta Place com url canônica de /destinos e endereço/geo", () => {
+    const s = destinationSchema(base);
+    expect(s["@type"]).toBe("Place");
+    expect(s.name).toBe("Aeroporto de Guarulhos");
+    expect(s.url).toBe("https://hub.movepark.co/destinos/aeroporto-de-guarulhos");
+    expect(s.description).toBe("Estacionamento perto do GRU.");
+    expect(s.address).toMatchObject({
+      "@type": "PostalAddress",
+      addressLocality: "Guarulhos",
+      addressRegion: "SP",
+      addressCountry: "BR",
+    });
+    expect(s.geo).toMatchObject({
+      "@type": "GeoCoordinates",
+      latitude: -23.43,
+      longitude: -46.47,
+    });
+  });
+
+  it("omite description e addressRegion quando ausentes", () => {
+    const s = destinationSchema({ ...base, state: null, meta_description: null });
+    expect(s.description).toBeUndefined();
+    expect(s.address.addressRegion).toBeUndefined();
   });
 });
 

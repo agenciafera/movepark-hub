@@ -14,6 +14,7 @@ export type Vehicle = Tables<"vehicle">;
 export type Payment = Tables<"payment">;
 export type ParkingType = Tables<"parking_type">;
 export type CompanyOnboarding = Tables<"company_onboarding">;
+export type Destination = Tables<"destination">;
 
 /** Lead/onboarding + dados básicos da empresa, como exibido no Manager. */
 export type PartnerApplication = CompanyOnboarding & {

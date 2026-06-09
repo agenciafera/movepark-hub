@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       add_on_service: {
@@ -603,12 +628,18 @@ export type Database = {
           code: string
           country: string
           created_at: string
+          hero_image_url: string | null
           id: string
+          intro: string | null
           is_popular: boolean
+          is_published: boolean
           latitude: number
           longitude: number
+          meta_description: string | null
+          meta_title: string | null
           name: string
           short_name: string | null
+          slug: string
           sort_order: number
           state: string | null
           type: string
@@ -619,12 +650,18 @@ export type Database = {
           code: string
           country?: string
           created_at?: string
+          hero_image_url?: string | null
           id?: string
+          intro?: string | null
           is_popular?: boolean
+          is_published?: boolean
           latitude: number
           longitude: number
+          meta_description?: string | null
+          meta_title?: string | null
           name: string
           short_name?: string | null
+          slug: string
           sort_order?: number
           state?: string | null
           type: string
@@ -635,12 +672,18 @@ export type Database = {
           code?: string
           country?: string
           created_at?: string
+          hero_image_url?: string | null
           id?: string
+          intro?: string | null
           is_popular?: boolean
+          is_published?: boolean
           latitude?: number
           longitude?: number
+          meta_description?: string | null
+          meta_title?: string | null
           name?: string
           short_name?: string | null
+          slug?: string
           sort_order?: number
           state?: string | null
           type?: string
@@ -1896,6 +1939,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       booking_item_type: ["parking", "add_on"],

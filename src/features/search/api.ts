@@ -6,6 +6,7 @@ export type Destination = {
   code: string;
   name: string;
   short_name: string | null;
+  slug: string;
   type: "airport" | "bus_terminal" | "city_center" | "district" | "custom";
   city: string;
   state: string | null;
@@ -41,8 +42,9 @@ export function useDestinations() {
       const { data, error } = await supabase
         .from("destination")
         .select(
-          "id, code, name, short_name, type, city, state, country, latitude, longitude, is_popular, sort_order",
+          "id, code, name, short_name, slug, type, city, state, country, latitude, longitude, is_popular, sort_order",
         )
+        .eq("is_published", true)
         .order("sort_order");
       if (error) throw error;
       return ((data ?? []) as unknown as Destination[]).map((d) => ({
@@ -62,8 +64,9 @@ export function usePopularDestinations(limit = 8) {
       const { data, error } = await supabase
         .from("destination")
         .select(
-          "id, code, name, short_name, type, city, state, country, latitude, longitude, is_popular, sort_order",
+          "id, code, name, short_name, slug, type, city, state, country, latitude, longitude, is_popular, sort_order",
         )
+        .eq("is_published", true)
         .eq("is_popular", true)
         .order("sort_order")
         .limit(limit);

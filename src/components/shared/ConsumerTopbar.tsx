@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Search, Heart, User2, LogOut, LayoutDashboard, Calendar } from "lucide-react";
+import { Search, Heart, User2, LogOut, LayoutDashboard, Calendar, ChevronDown, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Avatar,
@@ -14,7 +14,58 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/auth/context";
+import { useDestinations } from "@/features/search/api";
 import { Monogram, Wordmark } from "./Brand";
+import type { Destination } from "@/features/search/api";
+
+function DestinoItem({ d }: { d: Destination }) {
+  return (
+    <DropdownMenuItem asChild>
+      <Link to={`/destinos/${d.slug}`} className="flex items-center gap-2">
+        <MapPin className="h-4 w-4 text-muted" />
+        <span className="flex flex-col">
+          <span>{d.short_name ?? d.name}</span>
+          <span className="text-caption text-muted">
+            {d.city}
+            {d.state ? ` · ${d.state}` : ""}
+          </span>
+        </span>
+      </Link>
+    </DropdownMenuItem>
+  );
+}
+
+/** Menu "Destinos" com submenu de aeroportos/destinos publicados. */
+function DestinosMenu() {
+  const { data: destinations } = useDestinations();
+  const popular = (destinations ?? []).filter((d) => d.is_popular);
+  const others = (destinations ?? []).filter((d) => !d.is_popular);
+  if (!destinations?.length) return null;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="hidden items-center gap-1 rounded-sm px-2 py-1.5 text-body-sm text-ink hover:bg-surface-soft tablet:inline-flex">
+          Destinos <ChevronDown className="h-4 w-4" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="max-h-[70vh] min-w-[260px] overflow-y-auto">
+        {popular.length > 0 && <DropdownMenuLabel>Mais buscados</DropdownMenuLabel>}
+        {popular.map((d) => (
+          <DestinoItem key={d.id} d={d} />
+        ))}
+        {others.length > 0 && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Outros destinos</DropdownMenuLabel>
+            {others.map((d) => (
+              <DestinoItem key={d.id} d={d} />
+            ))}
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 /**
  * Topbar pública do consumer.
@@ -43,6 +94,8 @@ export function ConsumerTopbar() {
       <Link to="/" className="tablet:hidden shrink-0" aria-label="Movepark">
         <Monogram size={28} />
       </Link>
+
+      <DestinosMenu />
 
       <div className="flex flex-1 justify-center">
         {/* Pill placeholder — Fase 2 substitui pela SearchBarPill real */}
