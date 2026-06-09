@@ -123,3 +123,34 @@ Com a entidade de destinos virando conteúdo de primeira classe, o MCP deve ganh
   opcionalmente, os estacionamentos próximos (reusando o `search`).
 
 Fonte de verdade: tabela `public.destination` com `deleted_at is null and is_published = true`.
+
+### SQL pronto para o workflow n8n (turnkey)
+
+O MCP é um workflow n8n com um nó por tool (Postgres/Supabase → Respond). Para adicionar
+as duas tools, replique o padrão das existentes (`list_companies` etc.) com estes SELECTs:
+
+```sql
+-- list_destinations  (params opcionais: type text, only_popular bool)
+select code, name, short_name, slug, type, city, state, country,
+       latitude, longitude, is_popular, sort_order
+from public.destination
+where deleted_at is null
+  and is_published = true
+  and ($1::text is null or type = $1)         -- type
+  and ($2::bool  is null or is_popular = $2)  -- only_popular
+order by is_popular desc, sort_order, name;
+
+-- get_destination  (param: identifier text = slug OU code)
+select code, name, short_name, slug, type, city, state, country,
+       latitude, longitude, is_popular, sort_order,
+       meta_title, meta_description, intro, hero_image_url
+from public.destination
+where deleted_at is null
+  and is_published = true
+  and (slug = $1 or code = $1)                -- identifier
+limit 1;
+```
+
+> Ambas só expõem destinos publicados (`is_published = true`) — coerente com a página
+> pública e o `getStaticPaths`. Para os estacionamentos próximos em `get_destination`,
+> encadeie a Edge Function `search` passando `dest = code` (mesmo caminho da página).
