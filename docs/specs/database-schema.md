@@ -60,6 +60,13 @@ location_add_on_service  (serviço habilitado na unidade)
 ├── id, location_id → location, add_on_service_id → add_on_service
 ├── price_override (nullable), is_active
 └── unique(location_id, add_on_service_id)
+
+destination  (aeroporto/etc — âncora de busca + página de conteúdo SEO)
+├── id, code, name, short_name, type (airport|bus_terminal|city_center|district|custom)
+├── city, state, country, latitude, longitude
+├── is_popular, sort_order
+├── slug (unique), meta_title, meta_description, intro, hero_image_url, is_published
+└── created_at, updated_at, deleted_at        — ver spec destinations.md
 ```
 
 ### Usuários & Veículos
@@ -133,6 +140,7 @@ booking_coupon  (pivot)
 | Tabela | Regras aplicadas |
 |---|---|
 | `company`, `location`, `parking_type`, `company_parking_type`, `location_parking_type`, `add_on_service`, `location_add_on_service`, `coupon` | Leitura pública (`anon` + `authenticated`) para registros ativos |
+| `destination` | Leitura pública (`SELECT USING true`); escrita só `hub_admin` (`is_hub_admin()`). Filtro de publicação (`is_published`) é na query, não na RLS — ver destinations.md |
 | `profiles` | Owner-only: SELECT e UPDATE apenas para `auth.uid() = id` |
 | `vehicle` | Owner-only: todas as operações para `profile_id = auth.uid()` |
 | `booking` | Owner-only: SELECT/INSERT/UPDATE para `profile_id = auth.uid()` |

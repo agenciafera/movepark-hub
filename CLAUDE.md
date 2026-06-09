@@ -180,6 +180,7 @@ Deno + imports remotos. Cada função abre com um bloco de comentário documenta
 | `coupon-rules.md` | validação de cupom e desconto |
 | `voucher-qrcode.md` | voucher PDF e check-in por QR |
 | `manager-panel.md` / `operator-panel.md` | escopo de cada painel |
+| `destinations.md` | destinos (aeroportos): catálogo de busca, páginas SEO `/destinos/<slug>`, CRUD no Manager, RLS |
 | `design-tokens.md` + `docs/design-system/` | cores, tipografia, espaçamento, UI kit |
 
 ## Pendências conhecidas (ver `docs/specs/README.md`)

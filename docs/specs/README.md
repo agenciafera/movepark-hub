@@ -15,6 +15,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | [coupon-rules.md](./coupon-rules.md) | Algoritmo de validação de cupons, cálculo de desconto, regras de incremento |
 | [voucher-qrcode.md](./voucher-qrcode.md) | Geração de voucher PDF, check-in por QR code, notificações |
 | [partner-onboarding.md](./partner-onboarding.md) | Onboarding de parceiro em 2 etapas: captura de lead → aprovação manual → wizard de setup |
+| [destinations.md](./destinations.md) | Destinos (aeroportos/etc): catálogo de busca + páginas de conteúdo SEO `/destinos/<slug>` + CRUD no Manager |
 
 ## Status
 
@@ -28,6 +29,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | coupon-rules | ✅ Definido |
 | voucher-qrcode | ✅ Definido |
 | partner-onboarding | ✅ Implementado — migrations `20260603120000`–`20260603120400`, edge functions `submit-partner-lead`/`approve-partner`, UI Stage 1/Manager/Stage 2 |
+| destinations | ✅ Implementado — migration `20260609120000`, página SSG `/destinos/<slug>`, CRUD `/manager/destinations`, menu "Destinos" no header |
 
 ## Migrations
 
@@ -47,6 +49,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | `20260603120300_partner_assets_storage.sql` | Bucket `partner-assets` + policies de escrita por empresa |
 | `20260603120400_onboarding_harden.sql` | Hardening: `search_path`, revogação de PUBLIC nas RPCs, listing do bucket |
 | `20260603130000_app_setting.sql` | Configurações globais (key/value) editáveis pelo hub_admin — remetente/caixa de e-mail dos parceiros |
+| `20260609120000_destination_seo.sql` | `destination`: colunas SEO/conteúdo (`slug` único + backfill, `meta_title`/`meta_description`, `intro`, `hero_image_url`, `is_published`), índice e trigger de slug |
 
 ## Pendências
 
