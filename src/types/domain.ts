@@ -15,6 +15,13 @@ export type Payment = Tables<"payment">;
 export type ParkingType = Tables<"parking_type">;
 export type CompanyOnboarding = Tables<"company_onboarding">;
 export type Destination = Tables<"destination">;
+export type AddOnService = Tables<"add_on_service">;
+export type LocationAddOnService = Tables<"location_add_on_service">;
+
+/** Serviço adicional + sua disponibilidade/preço em cada unidade da empresa. */
+export type AddOnServiceWithAvailability = AddOnService & {
+  availability: LocationAddOnService[];
+};
 
 /** Lead/onboarding + dados básicos da empresa, como exibido no Manager. */
 export type PartnerApplication = CompanyOnboarding & {

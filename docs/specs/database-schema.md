@@ -54,12 +54,17 @@ location_parking_type  (instância do tipo de vaga na unidade)
 add_on_service  (serviços adicionais definidos pela empresa)
 ├── id, company_id → company
 ├── code (unique per company), name, description, base_price, is_active
+├── sort_order (ordenação no painel/site)
 └── created_at, updated_at
 
 location_add_on_service  (serviço habilitado na unidade)
 ├── id, location_id → location, add_on_service_id → add_on_service
 ├── price_override (nullable), is_active
 └── unique(location_id, add_on_service_id)
+
+> Escrita sem RLS direta: gerida pelo operator via RPCs `SECURITY DEFINER`
+> `operator_upsert_addon` / `operator_set_location_addon` / `operator_delete_addon`
+> (migration `20260610000000`). Ver [operator-panel.md](./operator-panel.md) §4.5.
 
 destination  (aeroporto/etc — âncora de busca + página de conteúdo SEO)
 ├── id, code, name, short_name, type (airport|bus_terminal|city_center|district|custom)

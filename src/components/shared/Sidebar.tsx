@@ -11,6 +11,7 @@ import {
   HelpCircle,
   Handshake,
   Plane,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Monogram, Wordmark } from "./Brand";
@@ -37,6 +38,7 @@ const operatorItems: Item[] = [
   { to: "/operator", label: "Dashboard", icon: LayoutDashboard },
   { to: "/operator/bookings", label: "Reservas", icon: Calendar },
   { to: "/operator/locations", label: "Localizações", icon: MapPin },
+  { to: "/operator/addons", label: "Serviços", icon: Sparkles },
   { to: "/operator/faq", label: "FAQ", icon: HelpCircle },
   { to: "/operator/reports", label: "Relatórios", icon: BarChart3 },
   { to: "/operator/settings", label: "Configurações", icon: Settings },

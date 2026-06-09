@@ -30,6 +30,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | voucher-qrcode | ✅ Definido |
 | partner-onboarding | ✅ Implementado — migrations `20260603120000`–`20260603120400`, edge functions `submit-partner-lead`/`approve-partner`, UI Stage 1/Manager/Stage 2 |
 | destinations | ✅ Implementado — migration `20260609120000`, página SSG `/destinos/<slug>`, CRUD `/manager/destinations`, menu "Destinos" no header |
+| operator add-ons | ✅ Implementado — migration `20260610000000`, RPCs `operator_upsert_addon`/`operator_set_location_addon`/`operator_delete_addon`, CRUD `/operator/addons` (ver [operator-panel.md](./operator-panel.md) §4.5) |
 
 ## Migrations
 
@@ -50,6 +51,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | `20260603120400_onboarding_harden.sql` | Hardening: `search_path`, revogação de PUBLIC nas RPCs, listing do bucket |
 | `20260603130000_app_setting.sql` | Configurações globais (key/value) editáveis pelo hub_admin — remetente/caixa de e-mail dos parceiros |
 | `20260609120000_destination_seo.sql` | `destination`: colunas SEO/conteúdo (`slug` único + backfill, `meta_title`/`meta_description`, `intro`, `hero_image_url`, `is_published`), índice e trigger de slug |
+| `20260610000000_add_on_management.sql` | Serviços adicionais geridos pelo operator: coluna `add_on_service.sort_order` + índice; RPCs `SECURITY DEFINER` `operator_upsert_addon`/`operator_set_location_addon`/`operator_delete_addon` + guard `addon_assert_company_access` |
 
 ## Pendências
 

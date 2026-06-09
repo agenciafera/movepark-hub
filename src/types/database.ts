@@ -49,6 +49,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          sort_order: number
           updated_at: string
         }
         Insert: {
@@ -60,6 +61,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          sort_order?: number
           updated_at?: string
         }
         Update: {
@@ -71,6 +73,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          sort_order?: number
           updated_at?: string
         }
         Relationships: [
@@ -1642,6 +1645,10 @@ export type Database = {
             }
             Returns: number
           }
+      addon_assert_company_access: {
+        Args: { p_company_id: string }
+        Returns: undefined
+      }
       create_booking_atomic: {
         Args: {
           p_add_on_ids?: string[]
@@ -1750,6 +1757,32 @@ export type Database = {
           p_photos?: Json
           p_reservation_policy?: string
           p_timezone?: string
+        }
+        Returns: string
+      }
+      operator_delete_addon: {
+        Args: { p_add_on_service_id: string }
+        Returns: undefined
+      }
+      operator_set_location_addon: {
+        Args: {
+          p_add_on_service_id: string
+          p_is_active: boolean
+          p_location_id: string
+          p_price_override: number
+        }
+        Returns: undefined
+      }
+      operator_upsert_addon: {
+        Args: {
+          p_base_price: number
+          p_code: string
+          p_company_id: string
+          p_description: string
+          p_id: string
+          p_is_active: boolean
+          p_name: string
+          p_sort_order: number
         }
         Returns: string
       }

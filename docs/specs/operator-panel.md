@@ -35,6 +35,8 @@ Dashboard
 Reservas
 Localizações
   └─ Tipos de Vaga
+Serviços
+FAQ
 Relatórios
 Configurações
 ────────────────
@@ -184,7 +186,27 @@ Campos editáveis:
 
 ---
 
-### 4.5 Relatórios
+### 4.5 Serviços Adicionais
+
+**Rota:** `/operator/addons`
+
+**Objetivo:** o operador gerencia o catálogo de serviços extras da empresa (ex: lava-jato) e habilita/precifica cada um por unidade — fora do onboarding.
+
+#### Catálogo (tabela)
+
+Colunas: `Serviço` (nome + descrição) · `Preço base` · `Unidades ativas` · `Status` · `Ações`.
+
+- **Novo serviço / Editar** → dialog com `name` (obrigatório), `description`, `base_price`, `is_active` (toggle) e `sort_order`. Persiste via RPC `operator_upsert_addon` (o `code` é slugificado do nome na criação).
+- **Disponibilidade** → dialog que lista todas as unidades da empresa, cada uma com toggle de ativação e preço opcional por unidade (em branco = usa o `base_price`). Persiste via RPC `operator_set_location_addon` (`price_override`).
+- **Excluir** → RPC `operator_delete_addon`. Bloqueado se o serviço já foi usado em alguma reserva (`booking_item`) — nesse caso, oriente a desativar em vez de excluir.
+
+> **Escopo & escrita:** as tabelas `add_on_service` / `location_add_on_service` não têm RLS de escrita direta. Toda escrita passa pelas RPCs `SECURITY DEFINER` acima, que validam o vínculo `profile_company` (ou `hub_admin`) via `addon_assert_company_access`. Leitura: o operador vê os próprios serviços (inclusive inativos); o catálogo público (`anon`) só vê `is_active = true`.
+
+> Os serviços selecionados pelo cliente entram na reserva como `booking_item` (`item_type = 'add_on'`) — ver [booking-flow.md](./booking-flow.md) e [database-schema.md](./database-schema.md).
+
+---
+
+### 4.6 Relatórios
 
 **Rota:** `/operator/reports`
 
@@ -213,7 +235,7 @@ Campos editáveis:
 
 ---
 
-### 4.6 Configurações
+### 4.7 Configurações
 
 **Rota:** `/operator/settings`
 
