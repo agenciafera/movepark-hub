@@ -185,6 +185,8 @@ export function useListing(
 export type SimulatedPrice = {
   price: number | null;
   old_price: number | null;
+  /** Desconto automático aplicado (regra), com rótulo "-20%". Null se não houver. */
+  discount: { amount: number; label: string } | null;
   days: number;
   error?: string | null;
 };
@@ -214,6 +216,9 @@ export function useSimulatePrice(args: {
       return {
         price: r?.price != null ? Number(r.price) : null,
         old_price: r?.old_price != null ? Number(r.old_price) : null,
+        discount: r?.discount
+          ? { amount: Number(r.discount.amount), label: String(r.discount.label) }
+          : null,
         days: args.days,
         error: r?.error ?? null,
       };

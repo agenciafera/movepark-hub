@@ -12,7 +12,7 @@ import {
   Handshake,
   Plane,
   Sparkles,
-  Ticket,
+  Tag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Monogram, Wordmark } from "./Brand";
@@ -40,7 +40,7 @@ const operatorItems: Item[] = [
   { to: "/operator/bookings", label: "Reservas", icon: Calendar },
   { to: "/operator/locations", label: "Localizações", icon: MapPin },
   { to: "/operator/addons", label: "Serviços", icon: Sparkles },
-  { to: "/operator/coupons", label: "Cupons", icon: Ticket },
+  { to: "/operator/coupons", label: "Promoções", icon: Tag },
   { to: "/operator/faq", label: "FAQ", icon: HelpCircle },
   { to: "/operator/reports", label: "Relatórios", icon: BarChart3 },
   { to: "/operator/settings", label: "Configurações", icon: Settings },

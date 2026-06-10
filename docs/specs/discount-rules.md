@@ -12,8 +12,13 @@
 > atual (âncora **estática** de marketing) porque é uma **regra dinâmica** com janela, condições e
 > que **de fato reduz o total cobrado**.
 
-**Status:** 🔲 não implementado. Schema de preço + `simulate_price` + `old_price` estático existem
-(ver [pricing-engine.md](./pricing-engine.md)); falta a camada de regras de desconto. Plano em §12.
+**Status:** ✅ implementado (Fase 1 + Fase 2) na migration `20260612000000_discount_engine.sql`.
+Tabelas `discount_rule`/`discount_rule_parking_type`/`booking_discount`; `discount_evaluate` (best-pick,
+janela/`min_days`/`min_amount`/`advance_days`/tipo de vaga); RPCs de gestão; `simulate_price` aplica o
+desconto (preview) e `create_booking_atomic` re-avalia com `check_in` (autoritativo) + snapshot +
+empilha cupom (`allow_coupon_stack`); aba **Descontos** em `/operator/coupons` ("Promoções"); selo no
+listing; pgTAP `discount_rpc.test.sql` + Vitest + anti-regressão `test:int` (preço inalterado sem regra).
+§§ abaixo ficam como registro do desenho entregue.
 
 Relacionado: [pricing-engine.md](./pricing-engine.md) · [coupon-rules.md](./coupon-rules.md) ·
 [booking-flow.md](./booking-flow.md) · [operator-panel.md](./operator-panel.md) §4.6.

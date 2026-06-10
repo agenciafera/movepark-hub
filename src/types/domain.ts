@@ -25,6 +25,13 @@ export type CouponWithRestrictions = Coupon & {
   parking_type_ids: string[];
 };
 
+export type DiscountRule = Tables<"discount_rule">;
+
+/** Regra de desconto automático + restrição por tipo de vaga (vazio = todos). */
+export type DiscountRuleWithRestrictions = DiscountRule & {
+  parking_type_ids: string[];
+};
+
 /** Serviço adicional + sua disponibilidade/preço em cada unidade da empresa. */
 export type AddOnServiceWithAvailability = AddOnService & {
   availability: LocationAddOnService[];

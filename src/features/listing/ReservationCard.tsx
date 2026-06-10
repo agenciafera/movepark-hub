@@ -155,8 +155,15 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
       {/* Preço */}
       <div className="space-y-1">
         {sim.data?.old_price != null && sim.data.old_price > (sim.data.price ?? 0) && (
-          <div className="text-body-sm text-muted line-through tabular-nums">
-            {formatBRL(sim.data.old_price)}
+          <div className="flex items-center gap-2">
+            <span className="text-body-sm text-muted line-through tabular-nums">
+              {formatBRL(sim.data.old_price)}
+            </span>
+            {sim.data.discount && (
+              <span className="rounded-sm bg-badge-confirmed-bg px-1.5 py-0.5 text-caption font-bold text-badge-confirmed-fg">
+                {sim.data.discount.label}
+              </span>
+            )}
           </div>
         )}
         {sim.isLoading || pricingStale ? (

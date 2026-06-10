@@ -332,6 +332,42 @@ export type Database = {
           },
         ]
       }
+      booking_discount: {
+        Row: {
+          booking_id: string
+          created_at: string
+          discount_applied: number
+          discount_rule_id: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          discount_applied: number
+          discount_rule_id: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          discount_applied?: number
+          discount_rule_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_discount_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_discount_discount_rule_id_fkey"
+            columns: ["discount_rule_id"]
+            isOneToOne: false
+            referencedRelation: "discount_rule"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_item: {
         Row: {
           add_on_service_id: string | null
@@ -738,6 +774,114 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      discount_rule: {
+        Row: {
+          advance_days: number | null
+          allow_coupon_stack: boolean
+          company_id: string
+          created_at: string
+          description: string | null
+          discount_type: Database["public"]["Enums"]["discount_type"]
+          discount_value: number
+          id: string
+          is_active: boolean
+          location_id: string | null
+          min_amount: number | null
+          min_days: number | null
+          name: string
+          priority: number
+          sort_order: number
+          updated_at: string
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          advance_days?: number | null
+          allow_coupon_stack?: boolean
+          company_id: string
+          created_at?: string
+          description?: string | null
+          discount_type: Database["public"]["Enums"]["discount_type"]
+          discount_value: number
+          id?: string
+          is_active?: boolean
+          location_id?: string | null
+          min_amount?: number | null
+          min_days?: number | null
+          name: string
+          priority?: number
+          sort_order?: number
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          advance_days?: number | null
+          allow_coupon_stack?: boolean
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          discount_type?: Database["public"]["Enums"]["discount_type"]
+          discount_value?: number
+          id?: string
+          is_active?: boolean
+          location_id?: string | null
+          min_amount?: number | null
+          min_days?: number | null
+          name?: string
+          priority?: number
+          sort_order?: number
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discount_rule_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discount_rule_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      discount_rule_parking_type: {
+        Row: {
+          company_parking_type_id: string
+          discount_rule_id: string
+        }
+        Insert: {
+          company_parking_type_id: string
+          discount_rule_id: string
+        }
+        Update: {
+          company_parking_type_id?: string
+          discount_rule_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discount_rule_parking_type_company_parking_type_id_fkey"
+            columns: ["company_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "company_parking_type"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discount_rule_parking_type_discount_rule_id_fkey"
+            columns: ["discount_rule_id"]
+            isOneToOne: false
+            referencedRelation: "discount_rule"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       faq: {
         Row: {
@@ -1733,6 +1877,25 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      discount_assert_company_access: {
+        Args: { p_company_id: string }
+        Returns: undefined
+      }
+      discount_evaluate: {
+        Args: {
+          p_base_price: number
+          p_check_in_at: string
+          p_company_parking_type_id: string
+          p_days: number
+          p_location_id: string
+        }
+        Returns: {
+          allow_coupon_stack: boolean
+          discount: number
+          discount_rule_id: string
+          label: string
+        }[]
+      }
       generate_unique_company_slug: {
         Args: { p_name: string }
         Returns: string
@@ -1832,8 +1995,16 @@ export type Database = {
         Args: { p_coupon_id: string }
         Returns: undefined
       }
+      operator_delete_discount: {
+        Args: { p_discount_rule_id: string }
+        Returns: undefined
+      }
       operator_set_coupon_active: {
         Args: { p_coupon_id: string; p_is_active: boolean }
+        Returns: undefined
+      }
+      operator_set_discount_active: {
+        Args: { p_discount_rule_id: string; p_is_active: boolean }
         Returns: undefined
       }
       operator_set_location_addon: {
@@ -1872,6 +2043,28 @@ export type Database = {
           p_min_days: number
           p_parking_type_ids: string[]
           p_per_user_limit: number
+          p_sort_order: number
+          p_valid_from: string
+          p_valid_until: string
+        }
+        Returns: string
+      }
+      operator_upsert_discount: {
+        Args: {
+          p_advance_days: number
+          p_allow_coupon_stack: boolean
+          p_company_id: string
+          p_description: string
+          p_discount_type: string
+          p_discount_value: number
+          p_id: string
+          p_is_active: boolean
+          p_location_id: string
+          p_min_amount: number
+          p_min_days: number
+          p_name: string
+          p_parking_type_ids: string[]
+          p_priority: number
           p_sort_order: number
           p_valid_from: string
           p_valid_until: string
