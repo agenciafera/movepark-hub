@@ -7,6 +7,13 @@ export const onboardingKeys = {
   data: (companyId: string) => [...onboardingKeys.all, companyId] as const,
 };
 
+// Select dos tipos de vaga + preço do wizard. O embed de `pricing_rule` PRECISA do
+// hint do FK `pricing_rule_location_parking_type_id_fkey` — pricing_rule tem 2 FKs
+// p/ location_parking_type (location_parking_type_id e surcharge_source_id) e sem o
+// hint o PostgREST retorna PGRST201 (relação ambígua), zerando os itens/preços.
+export const WIZARD_LPT_SELECT =
+  "id, capacity, company_parking_type:company_parking_type!inner(id, parking_type_id, base_price, parking_type:parking_type!inner(code, name)), pricing_rule:pricing_rule!pricing_rule_location_parking_type_id_fkey(id, strategy, pricing_tier(from_day, to_day, unit_price, total_price, is_old_price))";
+
 // ── Tipos de visão do wizard ────────────────────────────────────────────────
 export type WizardTier = {
   from_day: number;
@@ -87,12 +94,14 @@ export function useOnboardingData(companyId: string | undefined) {
       let addons: WizardAddon[] = [];
 
       if (loc) {
-        const { data: lpts } = await supabase
+        // pricing_rule tem 2 FKs p/ location_parking_type (location_parking_type_id e
+        // surcharge_source_id) → o embed precisa do hint do FK, senão o PostgREST
+        // retorna PGRST201 (relação ambígua) e os itens (com preços) não carregam.
+        const { data: lpts, error: lptsErr } = await supabase
           .from("location_parking_type")
-          .select(
-            "id, capacity, company_parking_type:company_parking_type!inner(id, parking_type_id, base_price, parking_type:parking_type!inner(code, name)), pricing_rule(id, strategy, pricing_tier(from_day, to_day, unit_price, total_price, is_old_price))",
-          )
+          .select(WIZARD_LPT_SELECT)
           .eq("location_id", loc.id);
+        if (lptsErr) throw lptsErr;
 
         // deno-lint-ignore no-explicit-any
         items = (lpts ?? []).map((r: any) => {

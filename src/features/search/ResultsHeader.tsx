@@ -15,6 +15,8 @@ type Props = {
   isLoading: boolean;
   from: Date | null;
   to: Date | null;
+  /** true quando as datas são um período padrão (usuário chegou sem escolher). */
+  datesAreEstimate?: boolean;
   sort: SearchSort;
   onSortChange: (s: SearchSort) => void;
   onEditSearch: () => void;
@@ -25,6 +27,7 @@ export function ResultsHeader({
   isLoading,
   from,
   to,
+  datesAreEstimate,
   sort,
   onSortChange,
   onEditSearch,
@@ -39,6 +42,11 @@ export function ResultsHeader({
         </h1>
         {from && to && (
           <div className="flex flex-wrap items-center gap-2 text-body-sm text-muted">
+            {datesAreEstimate && (
+              <span className="rounded-sm bg-surface-soft px-1.5 py-0.5 text-caption font-medium text-muted-steel">
+                Estimativa
+              </span>
+            )}
             <span>{formatDateTime(from)} → {formatDateTime(to)}</span>
             <span className="hidden tablet:inline">·</span>
             <span>{formatDuration(from, to)}</span>
@@ -49,7 +57,7 @@ export function ResultsHeader({
               className="h-auto p-0 underline-offset-2 hover:underline"
             >
               <Edit3 className="h-3.5 w-3.5" />
-              Editar
+              {datesAreEstimate ? "Escolher datas" : "Editar"}
             </Button>
           </div>
         )}

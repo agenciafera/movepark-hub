@@ -18,6 +18,7 @@ import {
   type SearchSort,
   type SearchVehicle,
 } from "@/features/search/useSearchResults";
+import { resolveSearchDates } from "@/features/search/dates";
 import { useSavedListings } from "@/features/search/useSavedListings";
 
 function parseCsv(value: string | null): string[] {
@@ -52,15 +53,18 @@ export default function SearchResultsPage() {
   const maxDistanceRaw = params.get("max_distance_km");
   const maxDistanceKm = maxDistanceRaw ? Number(maxDistanceRaw) : null;
 
-  const fromDate = from ? new Date(from) : null;
-  const toDate = to ? new Date(to) : null;
+  // Datas: usa as da URL; sem elas (link de destino/categoria) cai num período
+  // padrão (estimativa) pra já listar as vagas em vez de bloquear a tela.
+  const [now] = React.useState(() => new Date());
+  const dates = React.useMemo(() => resolveSearchDates(from, to, now), [from, to, now]);
+  const fromDate = new Date(dates.from);
+  const toDate = new Date(dates.to);
 
-  const filters: SearchFilters | null = React.useMemo(() => {
-    if (!from || !to) return null;
+  const filters: SearchFilters = React.useMemo(() => {
     return {
       dest,
-      from,
-      to,
+      from: dates.from,
+      to: dates.to,
       vehicle,
       sort,
       category: category.length ? category : undefined,
@@ -72,8 +76,8 @@ export default function SearchResultsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     dest,
-    from,
-    to,
+    dates.from,
+    dates.to,
     vehicle,
     sort,
     category.join(","),
@@ -116,6 +120,7 @@ export default function SearchResultsPage() {
         isLoading={isLoading}
         from={fromDate}
         to={toDate}
+        datesAreEstimate={dates.isEstimate}
         sort={sort}
         onSortChange={(s) => patch({ sort: s })}
         onEditSearch={editSearch}
@@ -178,24 +183,13 @@ export default function SearchResultsPage() {
         />
 
         <section className="min-w-0 flex-1">
-          {!filters && (
-            <EmptyState
-              icon={<Inbox className="h-10 w-10" />}
-              title="Defina datas pra ver vagas"
-              description="Volte pra home e escolha quando você vai."
-              action={
-                <Button onClick={() => navigate("/")}>Voltar pra home</Button>
-              }
-            />
-          )}
-
-          {filters && error && (
+          {error && (
             <div className="rounded-md border border-error bg-badge-cancelled-bg p-4 text-body-sm text-error">
               Não conseguimos buscar agora. {(error as Error).message}
             </div>
           )}
 
-          {filters && isLoading && (
+          {isLoading && (
             <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
               {Array.from({ length: 6 }).map((_, i) => (
                 <Skeleton key={i} className="h-72 w-full rounded-md" />
@@ -203,7 +197,7 @@ export default function SearchResultsPage() {
             </div>
           )}
 
-          {filters && !isLoading && !error && data && data.results.length === 0 && (
+          {!isLoading && !error && data && data.results.length === 0 && (
             <EmptyState
               icon={<Inbox className="h-10 w-10" />}
               title="Nenhuma vaga pra esse período"
@@ -225,7 +219,7 @@ export default function SearchResultsPage() {
             />
           )}
 
-          {filters && !isLoading && data && data.results.length > 0 && (
+          {!isLoading && data && data.results.length > 0 && (
             <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
               {data.results.map((r) => (
                 <ResultCard

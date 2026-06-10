@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import { queryClient } from "@/lib/query-client";
 import { AuthProvider } from "@/auth/AuthProvider";
 import { hasSupabaseEnv } from "@/lib/supabase";
+import { ScrollToTop } from "@/components/shared/ScrollToTop";
 
 function EnvMissing() {
   return (
@@ -42,6 +43,7 @@ export function AppProviders() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <ScrollToTop />
         <Toaster position="bottom-right" richColors />
         <Outlet />
       </AuthProvider>
