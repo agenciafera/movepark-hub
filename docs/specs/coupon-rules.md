@@ -1,6 +1,12 @@
-# Motor de Cupons & Descontos — Spec de Engenharia
+# Cupons — Spec de Engenharia (pilar de código do motor de Cupons & Descontos)
 
-> Fonte de verdade do módulo de cupons. Cobre modelo de dados, regras de validação,
+> O motor de promoções tem **dois pilares**: **cupom** (código que o cliente digita — **este doc**)
+> e **desconto automático** (regra da empresa aplicada direto no preço, sem código —
+> [discount-rules.md](./discount-rules.md)). Eles **empilham**: o desconto automático entra no
+> `simulate_price` e vira o subtotal; o cupom reduz o subtotal já descontado (ver
+> [discount-rules.md](./discount-rules.md) §8).
+>
+> Fonte de verdade do **pilar de cupons**. Cobre modelo de dados, regras de validação,
 > ciclo de vida do uso, RPCs, RLS, UI (checkout + operator + manager) e o plano de
 > implementação/testes. **Ao mudar uma regra, atualize esta spec no mesmo PR.**
 

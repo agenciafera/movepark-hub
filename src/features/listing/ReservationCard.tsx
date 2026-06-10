@@ -15,9 +15,11 @@ import {
   useDebounced,
   useCreateBooking,
   useValidateCoupon,
+  useLocationAddOns,
   type ListingDetail,
 } from "./api";
 import { couponDiscountLabel, couponErrorMessage, type CouponPreview } from "./coupon.logic";
+import { addOnsTotal, bookingTotal, selectedAddOns } from "./reservation.logic";
 
 type Props = {
   listing: ListingDetail;
@@ -46,6 +48,16 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
   const [couponInput, setCouponInput] = React.useState<string>("");
   const [applied, setApplied] = React.useState<CouponPreview | null>(null);
   const [couponMsg, setCouponMsg] = React.useState<string | null>(null);
+
+  const addOnsQuery = useLocationAddOns(listing.location.id);
+  const addOns = addOnsQuery.data ?? [];
+  const [selectedAddOnIds, setSelectedAddOnIds] = React.useState<string[]>([]);
+
+  function toggleAddOn(id: string) {
+    setSelectedAddOnIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }
 
   const days = daysBetween(from, to);
   const debouncedDays = useDebounced(days, 300);
@@ -121,6 +133,7 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
         check_out_at: to.toISOString(),
         passenger_count: listing.location.has_passenger_quantity ? passengers : null,
         has_pcd: listing.location.has_pcd_config ? hasPcd : false,
+        add_on_service_ids: selectedAddOnIds,
         coupon_code: applied?.code ?? null,
         origin: "listing",
       });
@@ -129,6 +142,13 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
       toast.error(err instanceof Error ? err.message : "Falha ao criar reserva");
     }
   }
+
+  const parkingPrice = sim.data?.price ?? 0;
+  const chosenAddOns = selectedAddOns(addOns, selectedAddOnIds);
+  const addOnsSum = addOnsTotal(addOns, selectedAddOnIds);
+  const discount = applied?.discount ?? 0;
+  const total = bookingTotal(parkingPrice, discount, addOnsSum);
+  const showBreakdown = sim.data?.price != null && (applied != null || chosenAddOns.length > 0);
 
   return (
     <div className="rounded-md border border-hairline bg-canvas p-6 shadow-tier">
@@ -202,6 +222,39 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
         </div>
       )}
 
+      {/* Serviços adicionais */}
+      {addOns.length > 0 && (
+        <div className="mt-4 space-y-2">
+          <div className="text-caption font-bold uppercase tracking-[0.4px] text-muted-steel">
+            Serviços adicionais
+          </div>
+          {addOns.map((a) => (
+            <label
+              key={a.id}
+              className="flex cursor-pointer items-start justify-between gap-3 rounded-sm border border-hairline p-2.5"
+            >
+              <span className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={selectedAddOnIds.includes(a.id)}
+                  onChange={() => toggleAddOn(a.id)}
+                />
+                <span>
+                  <span className="block text-body-sm text-ink">{a.name}</span>
+                  {a.description && (
+                    <span className="block text-caption text-muted">{a.description}</span>
+                  )}
+                </span>
+              </span>
+              <span className="shrink-0 text-body-sm text-ink tabular-nums">
+                {formatBRL(a.price)}
+              </span>
+            </label>
+          ))}
+        </div>
+      )}
+
       {/* Cupom de desconto */}
       {canReserve && (
         <div className="mt-4">
@@ -242,22 +295,28 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
         </div>
       )}
 
-      {/* Breakdown com desconto */}
-      {applied && sim.data?.price != null && (
+      {/* Breakdown: estacionamento + add-ons + desconto */}
+      {showBreakdown && (
         <div className="mt-4 space-y-1.5 border-t border-hairline pt-4">
           <div className="flex justify-between text-body-sm text-muted">
-            <span>Subtotal</span>
-            <span className="tabular-nums">{formatBRL(sim.data.price)}</span>
+            <span>Estacionamento</span>
+            <span className="tabular-nums">{formatBRL(parkingPrice)}</span>
           </div>
-          <div className="flex justify-between text-body-sm text-badge-confirmed-fg">
-            <span>Desconto ({applied.code})</span>
-            <span className="tabular-nums">−{formatBRL(applied.discount)}</span>
-          </div>
+          {chosenAddOns.map((a) => (
+            <div key={a.id} className="flex justify-between text-body-sm text-muted">
+              <span>{a.name}</span>
+              <span className="tabular-nums">{formatBRL(a.price)}</span>
+            </div>
+          ))}
+          {applied && (
+            <div className="flex justify-between text-body-sm text-badge-confirmed-fg">
+              <span>Desconto ({applied.code})</span>
+              <span className="tabular-nums">−{formatBRL(discount)}</span>
+            </div>
+          )}
           <div className="flex items-baseline justify-between pt-1">
             <span className="text-title-sm text-ink">Total</span>
-            <span className="text-title-md text-ink tabular-nums">
-              {formatBRL(applied.total_preview)}
-            </span>
+            <span className="text-title-md text-ink tabular-nums">{formatBRL(total)}</span>
           </div>
         </div>
       )}

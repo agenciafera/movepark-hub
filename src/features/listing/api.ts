@@ -2,6 +2,7 @@ import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { CouponPreview } from "./coupon.logic";
+import type { AddOnOption } from "./reservation.logic";
 
 export type ListingDetail = {
   id: string; // location_parking_type_id
@@ -127,6 +128,43 @@ export async function fetchListing(
     amenities: amenitiesRaw,
     other_locations: (others ?? []) as { id: string; name: string; slug: string }[],
   };
+}
+
+/**
+ * Serviços adicionais ativos disponíveis numa unidade (catálogo público).
+ * Preço efetivo = price_override da unidade, senão base_price do serviço.
+ */
+export function useLocationAddOns(locationId: string | undefined) {
+  return useQuery({
+    queryKey: ["location-add-ons", locationId ?? "none"] as const,
+    enabled: !!locationId,
+    staleTime: 60_000,
+    queryFn: async (): Promise<AddOnOption[]> => {
+      const { data, error } = await supabase
+        .from("location_add_on_service")
+        .select(
+          "price_override, add_on_service:add_on_service!inner(id, name, description, base_price, is_active, sort_order)",
+        )
+        .eq("location_id", locationId!)
+        .eq("is_active", true);
+      if (error) throw error;
+      return (data ?? [])
+        // deno-lint-ignore no-explicit-any
+        .filter((r: any) => r.add_on_service?.is_active)
+        // deno-lint-ignore no-explicit-any
+        .sort((a: any, b: any) => (a.add_on_service.sort_order ?? 0) - (b.add_on_service.sort_order ?? 0))
+        // deno-lint-ignore no-explicit-any
+        .map((r: any) => ({
+          id: r.add_on_service.id,
+          name: r.add_on_service.name,
+          description: r.add_on_service.description,
+          price:
+            r.price_override != null
+              ? Number(r.price_override)
+              : Number(r.add_on_service.base_price),
+        }));
+    },
+  });
 }
 
 export function useListing(

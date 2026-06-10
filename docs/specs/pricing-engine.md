@@ -145,13 +145,20 @@ Todos os cálculos baseados em dias precisam decidir o que fazer com horas/minut
 
 ### Old Price / Preço de Balcão (`old_price_strategy`)
 
-Preço "de" exibido riscado na UI para mostrar desconto online.
+Preço "de" exibido riscado na UI para mostrar desconto online. **Âncora estática** (marketing) —
+não reduz o total cobrado.
 
 | Valor | Comportamento |
 |---|---|
 | `none` | Não exibe old price |
 | `multiplier` | `old_price = calculate() × old_price_multiplier` (ex: 1.10, 1.20) |
 | `own_table` | Old price tem sua própria tabela de faixas (`pricing_tier.is_old_price = true`) |
+
+> **Camada de desconto automático (ver [discount-rules.md](./discount-rules.md)):** além do old_price
+> estático, há (especificado, a implementar) um motor de **regras de desconto** avaliado **dentro do
+> `simulate_price`** que **de fato reduz** o preço. Quando uma regra aplica, ela tem **precedência**:
+> `price = base − desconto` e `old_price = base` (âncora real, riscada). Sem regra ativa, vale o
+> `old_price_strategy` estático acima. O cupom (código) empilha **depois**, sobre o preço já descontado.
 
 **Casos com `own_table`:**
 - Plenty Congonhas: preço online 1-6d = R$30/d; balcão 1-6d = R$40/d (tabela separada)

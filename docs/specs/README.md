@@ -12,7 +12,8 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | [capacity-rules.md](./capacity-rules.md) | Regras de capacidade e controle de disponibilidade por data |
 | [database-schema.md](./database-schema.md) | Visão geral do schema atual, decisões de modelagem, migrations existentes |
 | [booking-flow.md](./booking-flow.md) | Ciclo de vida da reserva: state machine, sequência de checkout, expiração, cancelamento |
-| [coupon-rules.md](./coupon-rules.md) | Motor de cupons & descontos: modelo de dados, validação, ciclo de uso, RPCs, RLS, UI (checkout + operator) e plano de implementação/testes |
+| [coupon-rules.md](./coupon-rules.md) | Motor de Cupons & Descontos — **pilar cupom** (código): validação, ciclo de uso, RPCs, RLS, UI, testes |
+| [discount-rules.md](./discount-rules.md) | Motor de Cupons & Descontos — **pilar desconto automático** (regra sem código no `simulate_price`, alimenta `old_price`): modelo, avaliação, empilhamento com cupom, UI, testes |
 | [voucher-qrcode.md](./voucher-qrcode.md) | Geração de voucher PDF, check-in por QR code, notificações |
 | [partner-onboarding.md](./partner-onboarding.md) | Onboarding de parceiro em 2 etapas: captura de lead → aprovação manual → wizard de setup |
 | [destinations.md](./destinations.md) | Destinos (aeroportos/etc): catálogo de busca + páginas de conteúdo SEO `/destinos/<slug>` + CRUD no Manager |
@@ -27,6 +28,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | database-schema | ✅ Schema base + extensões aplicadas (`20260526100002`) |
 | booking-flow | ✅ Definido |
 | coupon-rules | ✅ Implementado (Fase 1 + Fase 2) — migration `20260611000000`, RPCs `operator_*_coupon`/`coupon_evaluate`/`validate_coupon` + trigger de incremento, painel `/operator/coupons`, cupom no listing + desconto no checkout, pgTAP `coupon_rpc.test.sql`. Ver [coupon-rules.md](./coupon-rules.md) |
+| discount-rules | 🔲 Especificado — desconto automático (regra sem código) no `simulate_price` que reduz o total e alimenta `old_price`; empilha com cupom. Tabelas `discount_rule`/`discount_rule_parking_type`/`booking_discount`, `discount_evaluate`, RPCs de gestão, tela operator. Plano em [discount-rules.md](./discount-rules.md) §12 |
 | voucher-qrcode | ✅ Definido |
 | partner-onboarding | ✅ Implementado — migrations `20260603120000`–`20260603120400`, edge functions `submit-partner-lead`/`approve-partner`, UI Stage 1/Manager/Stage 2 |
 | destinations | ✅ Implementado — migration `20260609120000`, página SSG `/destinos/<slug>`, CRUD `/manager/destinations`, menu "Destinos" no header |
