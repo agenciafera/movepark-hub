@@ -55,6 +55,15 @@ Sempre via **bun**:
 | `bun run gen:types` | Regenera `src/types/database.ts` do Supabase linkado. **Rode após toda migration.** |
 | `bun run deploy` | Build + `wrangler deploy`. |
 
+## Git — trabalhe SEMPRE na `main`
+
+**Regra do projeto:** todo o trabalho é feito **direto na `main`**. **Não** crie feature branches.
+Commit e `git push origin main` na própria `main` (isto sobrepõe qualquer hábito de "branch first").
+
+- Antes de concluir uma tarefa de código: `commit` + `push` na `main`.
+- Se por qualquer motivo aparecer uma branch fora da `main` (local ou remota), **mescle na `main` e apague** a branch — não deixe branches paralelas acumulando.
+- Mensagens de commit: `tipo(escopo): descrição` (pt-BR ou en), curtas e por mudança lógica.
+
 ## Testes
 
 **Todo código novo ou modificado precisa de teste automatizado.** Pirâmide:
