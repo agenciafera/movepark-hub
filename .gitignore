@@ -18,7 +18,7 @@ Thumbs.db
 supabase/.temp/
 supabase/.branches/
 
-# Deps — usamos bun; o lockfile versionado é bun.lockb
+# Deps — usamos bun; o lockfile versionado é bun.lock (texto)
 node_modules/
 package-lock.json
 yarn.lock

@@ -35,7 +35,7 @@ company (tenant)
 - **Rotas:** React Router 6, definidas em `src/routes.tsx` como `RouteRecord[]`.
 - **Backend:** Supabase (PostgreSQL + Auth + RLS) + Edge Functions (Deno).
 - **Deploy:** Cloudflare Worker (`src/worker.ts`, `wrangler.jsonc`) servindo o build estático com content-negotiation de Markdown para agentes.
-- **Gerenciador de pacotes:** **bun** (lockfile `bun.lockb`). Use sempre `bun` — não use `npm`/`yarn`/`pnpm`. Instalar deps: `bun install`; adicionar: `bun add <pkg>`.
+- **Gerenciador de pacotes:** **bun** (lockfile de texto `bun.lock` — versionado; o binário `bun.lockb` foi descontinuado por incompatibilidade entre versões de bun no CI/Cloudflare). Use sempre `bun` — não use `npm`/`yarn`/`pnpm`. Instalar deps: `bun install`; adicionar: `bun add <pkg>`.
 
 ## Comandos
 

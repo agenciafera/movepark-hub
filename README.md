@@ -15,7 +15,7 @@ Cada **empresa** (tenant) opera N **unidades** (estacionamentos físicos), cada 
 
 ## Setup local
 
-Usamos **bun** (lockfile `bun.lockb`). Use sempre `bun` — não `npm`/`yarn`/`pnpm`.
+Usamos **bun** (lockfile de texto `bun.lock`). Use sempre `bun` — não `npm`/`yarn`/`pnpm`.
 
 ```bash
 # 1. Instalar dependências
