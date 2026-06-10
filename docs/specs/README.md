@@ -12,7 +12,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | [capacity-rules.md](./capacity-rules.md) | Regras de capacidade e controle de disponibilidade por data |
 | [database-schema.md](./database-schema.md) | Visão geral do schema atual, decisões de modelagem, migrations existentes |
 | [booking-flow.md](./booking-flow.md) | Ciclo de vida da reserva: state machine, sequência de checkout, expiração, cancelamento |
-| [coupon-rules.md](./coupon-rules.md) | Algoritmo de validação de cupons, cálculo de desconto, regras de incremento |
+| [coupon-rules.md](./coupon-rules.md) | Motor de cupons & descontos: modelo de dados, validação, ciclo de uso, RPCs, RLS, UI (checkout + operator) e plano de implementação/testes |
 | [voucher-qrcode.md](./voucher-qrcode.md) | Geração de voucher PDF, check-in por QR code, notificações |
 | [partner-onboarding.md](./partner-onboarding.md) | Onboarding de parceiro em 2 etapas: captura de lead → aprovação manual → wizard de setup |
 | [destinations.md](./destinations.md) | Destinos (aeroportos/etc): catálogo de busca + páginas de conteúdo SEO `/destinos/<slug>` + CRUD no Manager |
@@ -26,7 +26,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | capacity-rules | ✅ Analisado — migration aplicada (`20260526100001`) |
 | database-schema | ✅ Schema base + extensões aplicadas (`20260526100002`) |
 | booking-flow | ✅ Definido |
-| coupon-rules | ✅ Definido |
+| coupon-rules | ✅ Implementado (Fase 1 + Fase 2) — migration `20260611000000`, RPCs `operator_*_coupon`/`coupon_evaluate`/`validate_coupon` + trigger de incremento, painel `/operator/coupons`, cupom no listing + desconto no checkout, pgTAP `coupon_rpc.test.sql`. Ver [coupon-rules.md](./coupon-rules.md) |
 | voucher-qrcode | ✅ Definido |
 | partner-onboarding | ✅ Implementado — migrations `20260603120000`–`20260603120400`, edge functions `submit-partner-lead`/`approve-partner`, UI Stage 1/Manager/Stage 2 |
 | destinations | ✅ Implementado — migration `20260609120000`, página SSG `/destinos/<slug>`, CRUD `/manager/destinations`, menu "Destinos" no header |
@@ -52,6 +52,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | `20260603130000_app_setting.sql` | Configurações globais (key/value) editáveis pelo hub_admin — remetente/caixa de e-mail dos parceiros |
 | `20260609120000_destination_seo.sql` | `destination`: colunas SEO/conteúdo (`slug` único + backfill, `meta_title`/`meta_description`, `intro`, `hero_image_url`, `is_published`), índice e trigger de slug |
 | `20260610000000_add_on_management.sql` | Serviços adicionais geridos pelo operator: coluna `add_on_service.sort_order` + índice; RPCs `SECURITY DEFINER` `operator_upsert_addon`/`operator_set_location_addon`/`operator_delete_addon` + guard `addon_assert_company_access` |
+| `20260611000000_coupon_engine.sql` | Motor de cupons (Fase 1+2): colunas `coupon.sort_order`/`description`/`per_user_limit`/`min_amount`/`min_days`, tabela `coupon_parking_type`; `coupon_evaluate`, RPCs `operator_upsert_coupon`/`operator_set_coupon_active`/`operator_delete_coupon`, `validate_coupon`, guard `coupon_assert_company_access`, trigger `payment_bump_coupon` (incrementa `times_used`); refactor de `create_booking_atomic` p/ usar `coupon_evaluate` |
 
 ## Pendências
 

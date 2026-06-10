@@ -577,11 +577,16 @@ export type Database = {
           code: string
           company_id: string
           created_at: string
+          description: string | null
           discount_type: Database["public"]["Enums"]["discount_type"]
           discount_value: number
           id: string
           is_active: boolean
           max_uses: number | null
+          min_amount: number | null
+          min_days: number | null
+          per_user_limit: number | null
+          sort_order: number
           times_used: number
           updated_at: string
           valid_from: string | null
@@ -591,11 +596,16 @@ export type Database = {
           code: string
           company_id: string
           created_at?: string
+          description?: string | null
           discount_type: Database["public"]["Enums"]["discount_type"]
           discount_value: number
           id?: string
           is_active?: boolean
           max_uses?: number | null
+          min_amount?: number | null
+          min_days?: number | null
+          per_user_limit?: number | null
+          sort_order?: number
           times_used?: number
           updated_at?: string
           valid_from?: string | null
@@ -605,11 +615,16 @@ export type Database = {
           code?: string
           company_id?: string
           created_at?: string
+          description?: string | null
           discount_type?: Database["public"]["Enums"]["discount_type"]
           discount_value?: number
           id?: string
           is_active?: boolean
           max_uses?: number | null
+          min_amount?: number | null
+          min_days?: number | null
+          per_user_limit?: number | null
+          sort_order?: number
           times_used?: number
           updated_at?: string
           valid_from?: string | null
@@ -621,6 +636,36 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupon_parking_type: {
+        Row: {
+          company_parking_type_id: string
+          coupon_id: string
+        }
+        Insert: {
+          company_parking_type_id: string
+          coupon_id: string
+        }
+        Update: {
+          company_parking_type_id?: string
+          coupon_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_parking_type_company_parking_type_id_fkey"
+            columns: ["company_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "company_parking_type"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_parking_type_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupon"
             referencedColumns: ["id"]
           },
         ]
@@ -1649,6 +1694,25 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: undefined
       }
+      coupon_assert_company_access: {
+        Args: { p_company_id: string }
+        Returns: undefined
+      }
+      coupon_evaluate: {
+        Args: {
+          p_code: string
+          p_company_parking_type_id: string
+          p_days: number
+          p_location_id: string
+          p_profile_id: string
+          p_subtotal: number
+        }
+        Returns: {
+          coupon_id: string
+          discount: number
+          error_code: string
+        }[]
+      }
       create_booking_atomic: {
         Args: {
           p_add_on_ids?: string[]
@@ -1764,6 +1828,14 @@ export type Database = {
         Args: { p_add_on_service_id: string }
         Returns: undefined
       }
+      operator_delete_coupon: {
+        Args: { p_coupon_id: string }
+        Returns: undefined
+      }
+      operator_set_coupon_active: {
+        Args: { p_coupon_id: string; p_is_active: boolean }
+        Returns: undefined
+      }
       operator_set_location_addon: {
         Args: {
           p_add_on_service_id: string
@@ -1783,6 +1855,26 @@ export type Database = {
           p_is_active: boolean
           p_name: string
           p_sort_order: number
+        }
+        Returns: string
+      }
+      operator_upsert_coupon: {
+        Args: {
+          p_code: string
+          p_company_id: string
+          p_description: string
+          p_discount_type: string
+          p_discount_value: number
+          p_id: string
+          p_is_active: boolean
+          p_max_uses: number
+          p_min_amount: number
+          p_min_days: number
+          p_parking_type_ids: string[]
+          p_per_user_limit: number
+          p_sort_order: number
+          p_valid_from: string
+          p_valid_until: string
         }
         Returns: string
       }
@@ -1818,6 +1910,15 @@ export type Database = {
           p_utm_source?: string
         }
         Returns: string
+      }
+      validate_coupon: {
+        Args: {
+          p_check_in_at: string
+          p_check_out_at: string
+          p_code: string
+          p_location_parking_type_id: string
+        }
+        Returns: Json
       }
     }
     Enums: {

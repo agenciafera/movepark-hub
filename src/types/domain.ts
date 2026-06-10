@@ -17,6 +17,13 @@ export type CompanyOnboarding = Tables<"company_onboarding">;
 export type Destination = Tables<"destination">;
 export type AddOnService = Tables<"add_on_service">;
 export type LocationAddOnService = Tables<"location_add_on_service">;
+export type Coupon = Tables<"coupon">;
+export type DiscountType = Enums<"discount_type">;
+
+/** Cupom + os tipos de vaga aos quais está restrito (vazio = vale para todos). */
+export type CouponWithRestrictions = Coupon & {
+  parking_type_ids: string[];
+};
 
 /** Serviço adicional + sua disponibilidade/preço em cada unidade da empresa. */
 export type AddOnServiceWithAvailability = AddOnService & {

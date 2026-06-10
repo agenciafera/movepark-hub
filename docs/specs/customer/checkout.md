@@ -193,19 +193,20 @@ depois (após delay simulado): UPDATE payment SET status='paid', paid_at=now()
 Quando o gateway real entrar, troca a implementação dessa function — o front continua igual.
 
 ### Cupom de desconto
-Acima das tabs (ou na sticky card):
-```
-[Aplicar cupom]
-```
-Click expande:
+> **Implementado:** o cupom é aplicado **no listing** (`ReservationCard`), antes de criar a
+> reserva — a RPC `validate_coupon` faz o preview e o `coupon_code` segue para
+> `create_booking_atomic`. O checkout então **exibe** o cupom já aplicado no `SummaryCard`
+> (linha "Cupom CODE — −R$ Z"). Ver [coupon-rules.md](../coupon-rules.md) §11.
+
+No `ReservationCard`:
 ```
 ┌──────────────────────────────────┐
-│ Código:                          │
 │ [PROMO10            ] [Aplicar]  │
 └──────────────────────────────────┘
 ```
-Se válido: badge verde "Cupom aplicado — 10% OFF". Recalcula total no resumo.
-Se inválido: mensagem `text-error` "Cupom inválido ou expirado".
+Se válido: badge verde "PROMO10 — 10% OFF" + breakdown Subtotal/Desconto/Total.
+Se inválido: mensagem `text-error` mapeada do `error_code` (ex: "Cupom expirado",
+"Cupom esgotado", "Cupom inválido ou expirado").
 
 ### Validação antes de cobrar
 - Reserva ainda em status `pending` e `expires_at > now()`.

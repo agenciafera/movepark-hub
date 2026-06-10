@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import type { CouponPreview } from "./coupon.logic";
 
 export type ListingDetail = {
   id: string; // location_parking_type_id
@@ -181,6 +182,41 @@ export function useSimulatePrice(args: {
     },
     enabled: !!args.companySlug && !!args.locationSlug && !!args.parkingTypeCode && args.days > 0,
     staleTime: 30_000,
+  });
+}
+
+/**
+ * Pré-valida um cupom (RPC validate_coupon) sem criar reserva.
+ * Requer sessão (a RPC usa auth.uid()); retorna preview do desconto ou error_code.
+ */
+export function useValidateCoupon() {
+  return useMutation({
+    mutationFn: async (args: {
+      code: string;
+      location_parking_type_id: string;
+      check_in_at: string;
+      check_out_at: string;
+    }): Promise<CouponPreview> => {
+      const { data, error } = await supabase.rpc("validate_coupon", {
+        p_code: args.code,
+        p_location_parking_type_id: args.location_parking_type_id,
+        p_check_in_at: args.check_in_at,
+        p_check_out_at: args.check_out_at,
+      });
+      if (error) throw new Error(error.message);
+      // deno-lint-ignore no-explicit-any
+      const r = data as any;
+      return {
+        valid: !!r?.valid,
+        discount: Number(r?.discount ?? 0),
+        subtotal: Number(r?.subtotal ?? 0),
+        total_preview: Number(r?.total_preview ?? 0),
+        code: r?.code ?? args.code.toUpperCase(),
+        error_code: r?.error_code ?? null,
+        discount_type: r?.discount_type,
+        discount_value: r?.discount_value != null ? Number(r.discount_value) : undefined,
+      };
+    },
   });
 }
 

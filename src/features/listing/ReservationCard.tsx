@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
@@ -14,8 +14,10 @@ import {
   useSimulatePrice,
   useDebounced,
   useCreateBooking,
+  useValidateCoupon,
   type ListingDetail,
 } from "./api";
+import { couponDiscountLabel, couponErrorMessage, type CouponPreview } from "./coupon.logic";
 
 type Props = {
   listing: ListingDetail;
@@ -40,6 +42,11 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
   const [passengers, setPassengers] = React.useState<number>(1);
   const [hasPcd, setHasPcd] = React.useState<boolean>(false);
 
+  const validateCoupon = useValidateCoupon();
+  const [couponInput, setCouponInput] = React.useState<string>("");
+  const [applied, setApplied] = React.useState<CouponPreview | null>(null);
+  const [couponMsg, setCouponMsg] = React.useState<string | null>(null);
+
   const days = daysBetween(from, to);
   const debouncedDays = useDebounced(days, 300);
   const debouncedFrom = useDebounced(from, 300);
@@ -56,6 +63,45 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
   const pricingStale = sim.isFetching && (from !== debouncedFrom || to !== debouncedTo);
 
   const canReserve = !!from && !!to && days > 0 && sim.data?.price != null && !sim.isFetching;
+
+  // Cupom depende de datas/preço: ao mudar o período, invalida o cupom aplicado.
+  React.useEffect(() => {
+    setApplied(null);
+    setCouponMsg(null);
+  }, [from, to]);
+
+  async function applyCoupon() {
+    const code = couponInput.trim();
+    if (!code || !from || !to) return;
+    if (!session) {
+      toast.error("Entre para aplicar um cupom.");
+      return;
+    }
+    setCouponMsg(null);
+    try {
+      const preview = await validateCoupon.mutateAsync({
+        code,
+        location_parking_type_id: listing.id,
+        check_in_at: from.toISOString(),
+        check_out_at: to.toISOString(),
+      });
+      if (preview.valid) {
+        setApplied(preview);
+      } else {
+        setApplied(null);
+        setCouponMsg(couponErrorMessage(preview.error_code));
+      }
+    } catch (err) {
+      setApplied(null);
+      setCouponMsg(err instanceof Error ? err.message : "Não foi possível validar o cupom");
+    }
+  }
+
+  function clearCoupon() {
+    setApplied(null);
+    setCouponInput("");
+    setCouponMsg(null);
+  }
 
   async function handleReserve() {
     if (!from || !to) return;
@@ -75,6 +121,7 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
         check_out_at: to.toISOString(),
         passenger_count: listing.location.has_passenger_quantity ? passengers : null,
         has_pcd: listing.location.has_pcd_config ? hasPcd : false,
+        coupon_code: applied?.code ?? null,
         origin: "listing",
       });
       navigate(`/checkout/${result.code}`);
@@ -152,6 +199,66 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
       {sim.data?.error && (
         <div className="mt-4 rounded-sm border border-error bg-badge-cancelled-bg p-2 text-caption text-error">
           {sim.data.error}
+        </div>
+      )}
+
+      {/* Cupom de desconto */}
+      {canReserve && (
+        <div className="mt-4">
+          {applied ? (
+            <div className="flex items-center justify-between gap-2 rounded-sm border border-badge-confirmed-fg/30 bg-badge-confirmed-bg p-2.5">
+              <span className="text-caption font-medium text-badge-confirmed-fg">
+                {applied.code} — {couponDiscountLabel(applied)}
+              </span>
+              <button
+                type="button"
+                onClick={clearCoupon}
+                className="inline-flex items-center gap-1 text-caption text-badge-confirmed-fg hover:underline"
+              >
+                <X className="h-3 w-3" /> Remover
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Input
+                value={couponInput}
+                onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                placeholder="Tem um cupom?"
+                className="h-10 flex-1 uppercase"
+                aria-label="Código do cupom"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={applyCoupon}
+                disabled={!couponInput.trim() || validateCoupon.isPending}
+              >
+                {validateCoupon.isPending ? "…" : "Aplicar"}
+              </Button>
+            </div>
+          )}
+          {couponMsg && <p className="mt-1.5 text-caption text-error">{couponMsg}</p>}
+        </div>
+      )}
+
+      {/* Breakdown com desconto */}
+      {applied && sim.data?.price != null && (
+        <div className="mt-4 space-y-1.5 border-t border-hairline pt-4">
+          <div className="flex justify-between text-body-sm text-muted">
+            <span>Subtotal</span>
+            <span className="tabular-nums">{formatBRL(sim.data.price)}</span>
+          </div>
+          <div className="flex justify-between text-body-sm text-badge-confirmed-fg">
+            <span>Desconto ({applied.code})</span>
+            <span className="tabular-nums">−{formatBRL(applied.discount)}</span>
+          </div>
+          <div className="flex items-baseline justify-between pt-1">
+            <span className="text-title-sm text-ink">Total</span>
+            <span className="text-title-md text-ink tabular-nums">
+              {formatBRL(applied.total_preview)}
+            </span>
+          </div>
         </div>
       )}
 

@@ -72,6 +72,12 @@ export function SummaryCard({ booking, onEdit }: Props) {
             <span className="text-ink tabular-nums">{formatBRL(a.subtotal)}</span>
           </div>
         ))}
+        {booking.coupon && (
+          <div className="flex justify-between text-body-sm text-badge-confirmed-fg">
+            <span>Cupom {booking.coupon.code}</span>
+            <span className="tabular-nums">−{formatBRL(booking.coupon.discount_applied)}</span>
+          </div>
+        )}
       </div>
 
       <div className="my-4 h-px bg-hairline" />

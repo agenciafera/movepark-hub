@@ -37,6 +37,12 @@ export type BookingForCheckout = {
     method?: string;
     paid_at: string | null;
   } | null;
+  coupon: {
+    code: string;
+    discount_applied: number;
+    discount_type: "percent" | "fixed";
+    discount_value: number;
+  } | null;
 };
 
 const checkoutKey = (code: string) => ["checkout-booking", code] as const;
@@ -61,6 +67,9 @@ export function useCheckoutBooking(code: string | undefined) {
              parking_type:parking_type(code, name),
              add_on_service:add_on_service(name)
            ),
+           coupons:booking_coupon(discount_applied,
+             coupon:coupon(code, discount_type, discount_value)
+           ),
            payments:payment(id, status, provider, paid_at, created_at)`,
         )
         .eq("code", code)
@@ -74,6 +83,7 @@ export function useCheckoutBooking(code: string | undefined) {
         // deno-lint-ignore no-explicit-any
         .sort((a: any, b: any) => b.created_at.localeCompare(a.created_at));
       const lastPayment = payments[0] ?? null;
+      const bc = (row.coupons ?? [])[0] ?? null;
       return {
         id: row.id,
         code: row.code,
@@ -106,6 +116,14 @@ export function useCheckoutBooking(code: string | undefined) {
               status: lastPayment.status,
               provider: lastPayment.provider,
               paid_at: lastPayment.paid_at,
+            }
+          : null,
+        coupon: bc?.coupon
+          ? {
+              code: bc.coupon.code,
+              discount_applied: Number(bc.discount_applied),
+              discount_type: bc.coupon.discount_type,
+              discount_value: Number(bc.coupon.discount_value),
             }
           : null,
       };
