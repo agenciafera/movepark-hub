@@ -279,7 +279,7 @@ Card com badge "Esgotado pro seu período" em `pending` (orange). Card fica em `
 
 - [ ] **Cálculo de distância**: precisa de coordenadas no `location` (lat/lng — já temos colunas). Calcular distância via PostGIS no Postgres OU client-side. Provavelmente backend via Edge Function que retorna `distance_km` por result.
 - [ ] **Tempo de shuttle**: virou um campo em `location` no Hub? Hoje não temos — precisa adicionar `shuttle_minutes` em `location` (futuro).
-- [ ] **Reviews/Rating**: tabela `review` ainda não existe. Pra MVP, podemos exibir rating fake ou ocultar a feature.
+- [x] **Reviews/Rating**: implementado (PRD-08 — ver [reviews.md](../reviews.md)). Card mostra `★ avg · N avaliações` (some sem dados); `sort=rating_desc` e filtro `min_rating` no edge `search`.
 - [ ] **Amenidades**: precisa modelar como? Tabela `location_amenity (location_id, amenity_code)` ou campo JSON em `location.amenities`?
 - [ ] **Pricing por card**: pra cada card no resultado, precisamos chamar `simulate_price(operator_slug, location_slug, parking_type_code, days)`. Se temos 17 resultados → 17 RPCs. Solução: criar uma RPC `simulate_price_batch` ou retornar tudo numa Edge Function `/search`.
 - [ ] **Wishlist persistente**: tabela `profile_saved (profile_id, location_parking_type_id, created_at)`. Anônimo: localStorage.

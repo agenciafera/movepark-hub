@@ -39,7 +39,8 @@ interface SearchParams {
   operator?: string[];
   amenities?: string[];
   max_distance_km?: number;
-  sort?: "price_asc" | "price_desc" | "distance_asc";
+  min_rating?: number;
+  sort?: "price_asc" | "price_desc" | "distance_asc" | "rating_desc";
   limit?: number;
   offset?: number;
 }
@@ -127,6 +128,7 @@ Deno.serve(async (req: Request) => {
       id, capacity, is_active,
       location:location!inner(
         id, slug, name, address, latitude, longitude, status, deleted_at,
+        review_avg, review_count,
         company:company!inner(id, slug, name, status)
       ),
       company_parking_type:company_parking_type!inner(
@@ -201,6 +203,11 @@ Deno.serve(async (req: Request) => {
       (r) => r._distance != null && r._distance <= params.max_distance_km!,
     );
   }
+  if (params.min_rating != null) {
+    distanceFiltered = distanceFiltered.filter(
+      (r) => r.location.review_avg != null && Number(r.location.review_avg) >= params.min_rating!,
+    );
+  }
 
   // 9. Run simulate_price in parallel
   const priced = await Promise.all(
@@ -233,6 +240,9 @@ Deno.serve(async (req: Request) => {
   withPrice.sort((a, b) => {
     if (sort === "price_asc") return (a._price ?? Infinity) - (b._price ?? Infinity);
     if (sort === "price_desc") return (b._price ?? -Infinity) - (a._price ?? -Infinity);
+    if (sort === "rating_desc") {
+      return (Number(b.location.review_avg) || 0) - (Number(a.location.review_avg) || 0);
+    }
     if (sort === "distance_asc") {
       const ad = a._distance ?? Infinity;
       const bd = b._distance ?? Infinity;
@@ -262,6 +272,8 @@ Deno.serve(async (req: Request) => {
       latitude: r.location.latitude != null ? Number(r.location.latitude) : null,
       longitude: r.location.longitude != null ? Number(r.location.longitude) : null,
       distance_km: r._distance != null ? Number(r._distance.toFixed(2)) : null,
+      review_avg: r.location.review_avg != null ? Number(r.location.review_avg) : null,
+      review_count: r.location.review_count ?? 0,
     },
     parking_type: {
       code: r.company_parking_type.parking_type.code,

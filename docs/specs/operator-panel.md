@@ -238,7 +238,15 @@ Colunas: `Nome` · `Desconto` (% ou R$) · `Unidade` (todas/uma) · `Janela` · 
 
 ---
 
-### 4.7 Relatórios
+### 4.7 Avaliações
+
+**Rota:** `/operator/reviews` (nav "Avaliações"). ✅ implementado — ver [reviews.md](./reviews.md).
+
+Lista as avaliações publicadas das unidades da empresa (nota, autor, data, comentário) e permite **responder publicamente** via RPC `operator_respond_review`. A resposta aparece no bloco de avaliações da página da unidade. Moderação (despublicar) é da equipe Movepark (hub_admin).
+
+---
+
+### 4.8 Relatórios
 
 **Rota:** `/operator/reports`
 
@@ -267,7 +275,7 @@ Colunas: `Nome` · `Desconto` (% ou R$) · `Unidade` (todas/uma) · `Janela` · 
 
 ---
 
-### 4.8 Configurações
+### 4.9 Configurações
 
 **Rota:** `/operator/settings`
 

@@ -324,7 +324,7 @@ Sua reserva atual: 2 dias — não disponível.
 ## 12. Open points
 
 - [ ] **Galeria de fotos**: cada `location` precisa de tabela `location_photo (location_id, url, order)`. Falta migration.
-- [ ] **Reviews**: tabela ainda não existe. Pra MVP, ocultar bloco se não houver dados.
+- [x] **Reviews**: implementado (PRD-08 — ver [reviews.md](../reviews.md)). `review` + agregado `location.review_avg/count`; o bloco e o selo do topo somem sem avaliações.
 - [ ] **Geolocalização da operadora**: já temos `location.lat/lng`. Mas pra mostrar "1,2 km do terminal" precisamos da coord do **terminal**, não da vaga. Catálogo de aeroportos com lat/lng necessário.
 - [ ] **Outras localizações da operadora**: query simples `location WHERE company_id = c.id AND id != current.id`. OK.
 - [ ] **"Operador verificado"**: precisa de flag `company.is_verified` (boolean). Default true por enquanto, futuro pra moderação.

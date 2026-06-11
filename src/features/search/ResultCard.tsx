@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Heart, Car } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatBRL, formatDistance } from "@/lib/format";
+import { RatingBadge } from "@/features/reviews/RatingStars";
 import type { SearchResultItem } from "./useSearchResults";
 
 type Props = {
@@ -92,6 +93,11 @@ export function ResultCard({ item, isSaved, onToggleSave, searchParams }: Props)
             <h3 className="line-clamp-1 text-title-md text-ink">
               {item.parking_type.name} · {item.operator.name}
             </h3>
+            <RatingBadge
+              avg={item.location.review_avg}
+              count={item.location.review_count}
+              className="text-body-sm"
+            />
             <p className="line-clamp-1 text-body-sm text-muted">
               {item.location.name}
               {item.location.distance_km != null && (

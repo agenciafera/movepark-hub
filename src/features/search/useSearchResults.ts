@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
-export type SearchSort = "price_asc" | "price_desc" | "distance_asc";
+export type SearchSort = "price_asc" | "price_desc" | "distance_asc" | "rating_desc";
 export type SearchVehicle = "car" | "motorcycle";
 
 export type SearchFilters = {
@@ -13,6 +13,7 @@ export type SearchFilters = {
   operator?: string[];
   amenities?: string[];
   max_distance_km?: number;
+  min_rating?: number;
   sort?: SearchSort;
   limit?: number;
   offset?: number;
@@ -29,6 +30,8 @@ export type SearchResultItem = {
     latitude: number | null;
     longitude: number | null;
     distance_km: number | null;
+    review_avg: number | null;
+    review_count: number;
   };
   parking_type: { code: string; name: string };
   capacity: number;

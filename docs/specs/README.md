@@ -14,6 +14,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | [booking-flow.md](./booking-flow.md) | Ciclo de vida da reserva: state machine, sequência de checkout, expiração, cancelamento |
 | [coupon-rules.md](./coupon-rules.md) | Motor de Cupons & Descontos — **pilar cupom** (código): validação, ciclo de uso, RPCs, RLS, UI, testes |
 | [discount-rules.md](./discount-rules.md) | Motor de Cupons & Descontos — **pilar desconto automático** (regra sem código no `simulate_price`, alimenta `old_price`): modelo, avaliação, empilhamento com cupom, UI, testes |
+| [reviews.md](./reviews.md) | Avaliações por estacionamento (PRD-08): modelo, agregado, coleta pós-estadia, exibição, resposta do dono, JSON-LD |
 | [voucher-qrcode.md](./voucher-qrcode.md) | Geração de voucher PDF, check-in por QR code, notificações |
 | [partner-onboarding.md](./partner-onboarding.md) | Onboarding de parceiro em 2 etapas: captura de lead → aprovação manual → wizard de setup |
 | [destinations.md](./destinations.md) | Destinos (aeroportos/etc): catálogo de busca + páginas de conteúdo SEO `/destinos/<slug>` + CRUD no Manager |
@@ -29,6 +30,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | booking-flow | ✅ Definido |
 | coupon-rules | ✅ Implementado (Fase 1 + Fase 2) — migration `20260611000000`, RPCs `operator_*_coupon`/`coupon_evaluate`/`validate_coupon` + trigger de incremento, painel `/operator/coupons`, cupom no listing + desconto no checkout, pgTAP `coupon_rpc.test.sql`. Ver [coupon-rules.md](./coupon-rules.md) |
 | discount-rules | ✅ Implementado (Fase 1 + Fase 2) — migration `20260612000000`, `discount_evaluate` (best-pick) + RPCs `operator_*_discount`, `simulate_price`/`create_booking_atomic` aplicam o desconto + snapshot `booking_discount`, empilha cupom (`allow_coupon_stack`), aba Descontos em `/operator/coupons` ("Promoções"), selo no listing, pgTAP `discount_rpc.test.sql`. Ver [discount-rules.md](./discount-rules.md) |
+| reviews | ✅ Implementado (Fase 1, PRD-08.1–08.4) — migration `20260613000000`, agregado + RPCs `submit_review`/`operator_respond_review`, coleta por e-mail (`review-request` + pg_cron), exibição (card/detalhe/bloco), JSON-LD AggregateRating/Review, painel `/operator/reviews`. Moderação ativa (08.5) e curadoria (08.6) = fase 2. Ver [reviews.md](./reviews.md) |
 | voucher-qrcode | ✅ Definido |
 | partner-onboarding | ✅ Implementado — migrations `20260603120000`–`20260603120400`, edge functions `submit-partner-lead`/`approve-partner`, UI Stage 1/Manager/Stage 2 |
 | destinations | ✅ Implementado — migration `20260609120000`, página SSG `/destinos/<slug>`, CRUD `/manager/destinations`, menu "Destinos" no header |
@@ -56,6 +58,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | `20260610000000_add_on_management.sql` | Serviços adicionais geridos pelo operator: coluna `add_on_service.sort_order` + índice; RPCs `SECURITY DEFINER` `operator_upsert_addon`/`operator_set_location_addon`/`operator_delete_addon` + guard `addon_assert_company_access` |
 | `20260611000000_coupon_engine.sql` | Motor de cupons (Fase 1+2): colunas `coupon.sort_order`/`description`/`per_user_limit`/`min_amount`/`min_days`, tabela `coupon_parking_type`; `coupon_evaluate`, RPCs `operator_upsert_coupon`/`operator_set_coupon_active`/`operator_delete_coupon`, `validate_coupon`, guard `coupon_assert_company_access`, trigger `payment_bump_coupon` (incrementa `times_used`); refactor de `create_booking_atomic` p/ usar `coupon_evaluate` |
 | `20260612000000_discount_engine.sql` | Motor de descontos automáticos (Fase 1+2): tabelas `discount_rule`/`discount_rule_parking_type`/`booking_discount`, `discount_evaluate` (best-pick + janela/`min_days`/`min_amount`/`advance_days`/tipo de vaga), RPCs `operator_upsert_discount`/`operator_set_discount_active`/`operator_delete_discount`, guard `discount_assert_company_access`; `simulate_price` aplica o desconto (preview, `base_price`/`old_price`/`discount` no retorno) e `create_booking_atomic` re-avalia (autoritativo) + snapshot + empilha cupom |
+| `20260613000000_reviews_engine.sql` | Avaliações (PRD-08 Fase 1): agregado `location.review_avg`/`review_count` + trigger `review_bump_rating`, colunas `review.owner_response*` e `booking.review_request_sent_at`, RPCs `submit_review`/`operator_respond_review`, automação `cron_complete_bookings` (pg_cron) + edge `review-request` (coleta por e-mail) |
 
 ## Pendências
 

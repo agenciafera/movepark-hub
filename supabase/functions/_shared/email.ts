@@ -164,6 +164,21 @@ export function tplWentLive(contactName: string): { subject: string; html: strin
   };
 }
 
+export function tplReviewRequest(
+  contactName: string,
+  locationName: string,
+  reviewLink: string,
+): { subject: string; html: string } {
+  return {
+    subject: `Como foi seu estacionamento em ${locationName}?`,
+    html: shell("Conta pra gente como foi? ⭐", `
+      <p>Olá, ${escapeHtml(contactName)}!</p>
+      <p>Você usou o <strong>${escapeHtml(locationName)}</strong> pela Movepark. Sua avaliação ajuda outros motoristas a escolherem com confiança — leva menos de 1 minuto.</p>
+      <p>${button(reviewLink, "Avaliar meu estacionamento")}</p>
+      <p style="color:${BRAND.muted};font-size:13px">Se o botão não funcionar, copie e cole este link no navegador:<br>${reviewLink}</p>`),
+  };
+}
+
 function row(label: string, value: string): string {
   return `<tr><td style="padding:6px 0;color:${BRAND.muted};width:120px">${label}</td><td style="padding:6px 0;font-weight:600">${escapeHtml(value)}</td></tr>`;
 }

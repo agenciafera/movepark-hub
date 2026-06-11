@@ -10,13 +10,21 @@ import { AmenityList } from "@/features/listing/AmenityList";
 import { OperatorCard } from "@/features/listing/OperatorCard";
 import { MiniMap } from "@/features/listing/MiniMap";
 import { ReservationCard } from "@/features/listing/ReservationCard";
+import { ReviewsBlock } from "@/features/reviews/ReviewsBlock";
+import { RatingBadge } from "@/features/reviews/RatingStars";
+import { useLocationReviews } from "@/features/reviews/api";
 import { useListing, type ListingDetail } from "@/features/listing/api";
 import { useSavedListings } from "@/features/search/useSavedListings";
 import { useFaqCombined } from "@/features/faqs/api";
 import { FaqList } from "@/features/faqs/FaqList";
 import { formatBRL } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { localBusinessSchema, productOfferSchema, breadcrumbSchema } from "@/lib/jsonld";
+import {
+  localBusinessSchema,
+  productOfferSchema,
+  breadcrumbSchema,
+  type SchemaReview,
+} from "@/lib/jsonld";
 
 export default function ListingPage() {
   const params = useParams<{
@@ -34,6 +42,17 @@ export default function ListingPage() {
     params.parkingTypeCode,
     { initialData: loaderData ?? undefined },
   );
+
+  const { data: reviews } = useLocationReviews(
+    (listing?.location.review_count ?? 0) > 0 ? listing?.location.id : undefined,
+    8,
+  );
+  const schemaReviews: SchemaReview[] = (reviews ?? []).map((r) => ({
+    author: r.author_name,
+    rating: r.rating,
+    comment: r.comment,
+    date: r.created_at,
+  }));
 
   const fromStr = searchParams.get("from");
   const toStr = searchParams.get("to");
@@ -108,7 +127,7 @@ export default function ListingPage() {
         <meta property="og:url" content={pageUrl} />
         <link rel="canonical" href={pageUrl} />
         <script type="application/ld+json">{JSON.stringify(localBusinessSchema(listing))}</script>
-        <script type="application/ld+json">{JSON.stringify(productOfferSchema(listing))}</script>
+        <script type="application/ld+json">{JSON.stringify(productOfferSchema(listing, schemaReviews))}</script>
         <script type="application/ld+json">
           {JSON.stringify(
             breadcrumbSchema([
@@ -133,6 +152,11 @@ export default function ListingPage() {
             {listing.parking_type.name} · {listing.company.name} {listing.location.name}
           </h1>
           <div className="flex flex-wrap items-center gap-2 text-body-md text-muted">
+            <RatingBadge
+              avg={listing.location.review_avg}
+              count={listing.location.review_count}
+            />
+            {(listing.location.review_count ?? 0) > 0 && <span>·</span>}
             <Building2 className="h-4 w-4" />
             <span>Operada por {listing.company.name}</span>
             {listing.location.address && (
@@ -198,6 +222,16 @@ export default function ListingPage() {
               longitude={listing.location.longitude}
             />
           </section>
+
+          {listing.location.review_count > 0 && (
+            <>
+              <Separator />
+              <ReviewsBlock
+                locationId={listing.location.id}
+                totalCount={listing.location.review_count}
+              />
+            </>
+          )}
 
           <Separator />
 

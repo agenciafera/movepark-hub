@@ -70,6 +70,7 @@ export function ResultsHeader({
           <SelectContent>
             <SelectItem value="price_asc">Menor preço</SelectItem>
             <SelectItem value="price_desc">Maior preço</SelectItem>
+            <SelectItem value="rating_desc">Melhor avaliação</SelectItem>
             <SelectItem value="distance_asc">Mais próximo</SelectItem>
           </SelectContent>
         </Select>

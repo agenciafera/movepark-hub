@@ -1,0 +1,59 @@
+// Lógica pura das avaliações. Sem React/Supabase → testável (Vitest).
+import { formatRating } from "@/lib/format";
+
+export type ReviewFormValues = {
+  rating: number; // 1-5; 0 = não escolhido
+  comment: string;
+  cleanliness: number | null;
+  service: number | null;
+  value: number | null;
+  access: number | null;
+};
+
+export type SubmitReviewArgs = {
+  p_booking_id: string;
+  p_rating: number;
+  p_comment: string | null;
+  p_cleanliness: number | null;
+  p_service: number | null;
+  p_value: number | null;
+  p_access: number | null;
+};
+
+export const EMPTY_REVIEW_FORM: ReviewFormValues = {
+  rating: 0,
+  comment: "",
+  cleanliness: null,
+  service: null,
+  value: null,
+  access: null,
+};
+
+/** Valida o form. Retorna a mensagem de erro ou `null` se válido. */
+export function validateReviewForm(v: ReviewFormValues): string | null {
+  if (v.rating < 1 || v.rating > 5) return "Escolha uma nota de 1 a 5 estrelas.";
+  return null;
+}
+
+/** Monta os argumentos da RPC `submit_review`. */
+export function buildSubmitReviewArgs(bookingId: string, v: ReviewFormValues): SubmitReviewArgs {
+  return {
+    p_booking_id: bookingId,
+    p_rating: v.rating,
+    p_comment: v.comment.trim() || null,
+    p_cleanliness: v.cleanliness,
+    p_service: v.service,
+    p_value: v.value,
+    p_access: v.access,
+  };
+}
+
+/**
+ * Rótulo do rating agregado: "4,8 · 248 avaliações". `null` quando não há
+ * avaliações (a UI esconde o rating, não mostra "sem avaliações").
+ */
+export function ratingLabel(avg: number | null | undefined, count: number | null | undefined): string | null {
+  if (!count || avg == null) return null;
+  const n = count === 1 ? "avaliação" : "avaliações";
+  return `${formatRating(avg)} · ${count} ${n}`;
+}

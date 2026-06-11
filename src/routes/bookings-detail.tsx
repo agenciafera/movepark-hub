@@ -9,6 +9,9 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { Voucher } from "@/features/bookings/Voucher";
 import { CancelBookingDialog } from "@/features/bookings/CancelBookingDialog";
 import { useBookingDetail } from "@/features/bookings/customerApi";
+import { useMyReview } from "@/features/reviews/api";
+import { ReviewForm } from "@/features/reviews/ReviewForm";
+import { RatingStars } from "@/features/reviews/RatingStars";
 import { formatBRL, formatDateTime, formatDuration } from "@/lib/format";
 
 export default function BookingDetailPage() {
@@ -16,6 +19,8 @@ export default function BookingDetailPage() {
   const navigate = useNavigate();
   const { data: booking, isLoading, error } = useBookingDetail(code);
   const [cancelOpen, setCancelOpen] = React.useState(false);
+  const [reviewOpen, setReviewOpen] = React.useState(false);
+  const myReview = useMyReview(booking?.status === "completed" ? booking?.id : undefined);
 
   if (isLoading) {
     return (
@@ -194,6 +199,34 @@ export default function BookingDetailPage() {
             </div>
           </section>
 
+          {booking.status === "completed" && (
+            <section className="rounded-md border border-hairline bg-canvas p-6">
+              <h3 className="text-title-md text-ink">Sua avaliação</h3>
+              {myReview.data ? (
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-col gap-1">
+                    <RatingStars value={myReview.data.rating} />
+                    {myReview.data.comment && (
+                      <p className="text-body-sm text-muted">{myReview.data.comment}</p>
+                    )}
+                  </div>
+                  <Button variant="secondary" size="sm" onClick={() => setReviewOpen(true)}>
+                    Editar avaliação
+                  </Button>
+                </div>
+              ) : (
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-body-sm text-muted">
+                    Como foi sua estadia? Sua avaliação ajuda outros motoristas.
+                  </p>
+                  <Button size="sm" onClick={() => setReviewOpen(true)}>
+                    Avaliar
+                  </Button>
+                </div>
+              )}
+            </section>
+          )}
+
           {(canContinuePayment || canCancel) && (
             <section className="flex flex-wrap gap-3">
               {canContinuePayment && (
@@ -234,6 +267,14 @@ export default function BookingDetailPage() {
         open={cancelOpen}
         onOpenChange={setCancelOpen}
         onCancelled={() => navigate("/bookings")}
+      />
+
+      <ReviewForm
+        open={reviewOpen}
+        bookingId={booking.id}
+        locationName={booking.location.name}
+        existing={myReview.data}
+        onOpenChange={setReviewOpen}
       />
     </div>
   );

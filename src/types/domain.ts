@@ -25,6 +25,13 @@ export type CouponWithRestrictions = Coupon & {
   parking_type_ids: string[];
 };
 
+export type Review = Tables<"review">;
+
+/** Review publicado + nome do autor (p/ o bloco na página da unidade). */
+export type ReviewWithAuthor = Review & {
+  author_name: string | null;
+};
+
 export type DiscountRule = Tables<"discount_rule">;
 
 /** Regra de desconto automático + restrição por tipo de vaga (vazio = todos). */

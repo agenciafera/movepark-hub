@@ -30,6 +30,8 @@ export type ListingDetail = {
     longitude: number | null;
     has_pcd_config: boolean;
     has_passenger_quantity: boolean;
+    review_avg: number | null;
+    review_count: number;
   };
   parking_type: {
     code: string;
@@ -48,7 +50,7 @@ const baseSelect = `
   location:location!inner(
     id, slug, name, address, phone, email, notice, has_notice,
     reservation_policy, timezone, latitude, longitude,
-    has_pcd_config, has_passenger_quantity,
+    has_pcd_config, has_passenger_quantity, review_avg, review_count,
     company:company!inner(id, slug, name, legal_name, created_at),
     amenities:location_amenity(
       amenity:amenity(code, name, icon, category, sort_order)
@@ -120,6 +122,8 @@ export async function fetchListing(
       longitude: m.location.longitude != null ? Number(m.location.longitude) : null,
       has_pcd_config: m.location.has_pcd_config,
       has_passenger_quantity: m.location.has_passenger_quantity,
+      review_avg: m.location.review_avg != null ? Number(m.location.review_avg) : null,
+      review_count: m.location.review_count ?? 0,
     },
     parking_type: m.company_parking_type.parking_type,
     company_parking_type: {

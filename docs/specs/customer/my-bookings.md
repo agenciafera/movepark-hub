@@ -279,7 +279,7 @@ Após `completed`, mostra CTA "Como foi sua experiência?". Click:
 └─────────────────────────────────────┘
 ```
 
-Persistido em tabela `review (booking_id, profile_id, rating, criteria_json, comment, created_at)`. **Tabela ainda não existe** — criar migration.
+Persistido via RPC `submit_review` na tabela `review` (rating 1-5 + sub-notas + comment, 1 por reserva, reserva própria `completed`). ✅ Implementado — ver [reviews.md](../reviews.md).
 
 ---
 
@@ -331,7 +331,7 @@ Mensagens automáticas:
 
 - [ ] **Editar reserva**: requer recalcular `location_parking_availability.booked_count` na transição. Edge Function pra atomicidade.
 - [ ] **Refund**: depende do gateway. Stripe tem `refund` API direta; Pagar.me tem `transactions/:id/refund`. Tempo de processamento varia.
-- [ ] **Avaliações**: tabela `review` não existe. Modelo: `(booking_id PK, rating int, criteria_json jsonb, comment text)`.
+- [x] **Avaliações**: implementado (PRD-08 — ver [reviews.md](../reviews.md)). CTA "Avaliar" no detalhe da reserva `completed` → RPC `submit_review`.
 - [ ] **Chat com operadora**: MVP é só link/telefone. Futuro: chat real-time via Supabase Realtime.
 - [ ] **Push notifications**: requer PWA + service worker + provider (Firebase, OneSignal). Fora do MVP.
 - [ ] **Receipt PDF**: similar ao voucher, mas com info fiscal completa (CNPJ operadora, valor, impostos quando aplicável).

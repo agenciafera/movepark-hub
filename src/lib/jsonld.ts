@@ -29,7 +29,21 @@ export function localBusinessSchema(listing: ListingDetail) {
   };
 }
 
-export function productOfferSchema(listing: ListingDetail) {
+export type SchemaReview = {
+  author: string | null;
+  rating: number;
+  comment: string | null;
+  date: string;
+};
+
+// Modelado como Product/Offer (não LocalBusiness) — a regra "self-serving" do Google
+// só habilita o rich snippet de estrela em avaliações de produto. AggregateRating/Review
+// só entram quando há avaliações publicadas (count > 0).
+export function productOfferSchema(listing: ListingDetail, reviews: SchemaReview[] = []) {
+  const count = listing.location.review_count ?? 0;
+  const avg = listing.location.review_avg;
+  const hasRating = count > 0 && avg != null;
+
   return {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -42,6 +56,24 @@ export function productOfferSchema(listing: ListingDetail) {
       availability: "https://schema.org/InStock",
       url: `${SITE_URL}/p/${listing.company.slug}/${listing.location.slug}/${listing.parking_type.code}`,
     },
+    aggregateRating: hasRating
+      ? {
+          "@type": "AggregateRating",
+          ratingValue: avg,
+          reviewCount: count,
+          bestRating: 5,
+          worstRating: 1,
+        }
+      : undefined,
+    review: hasRating && reviews.length
+      ? reviews.map((r) => ({
+          "@type": "Review",
+          author: { "@type": "Person", name: r.author ?? "Cliente Movepark" },
+          datePublished: r.date.slice(0, 10),
+          reviewRating: { "@type": "Rating", ratingValue: r.rating, bestRating: 5, worstRating: 1 },
+          reviewBody: r.comment ?? undefined,
+        }))
+      : undefined,
   };
 }
 

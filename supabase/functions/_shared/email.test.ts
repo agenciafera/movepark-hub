@@ -1,5 +1,5 @@
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert";
-import { siteUrl, tplApprovalInvite, tplLeadAlert, tplLeadReceived, tplRejection } from "./email.ts";
+import { siteUrl, tplApprovalInvite, tplLeadAlert, tplLeadReceived, tplRejection, tplReviewRequest } from "./email.ts";
 
 Deno.test("siteUrl remove barra(s) final(is)", () => {
   Deno.env.set("PUBLIC_SITE_URL", "https://hub.movepark.co//");
@@ -36,6 +36,13 @@ Deno.test("tplLeadAlert: tabela com dados do lead", () => {
   });
   assertStringIncludes(m.subject, "Estac X");
   assertStringIncludes(m.html, "op@x.com");
+});
+
+Deno.test("tplReviewRequest: assunto com a unidade + link de avaliação", () => {
+  const m = tplReviewRequest("Kallef", "Aeropark GRU", "https://hub.movepark.co/bookings/MP-ABC123");
+  assertStringIncludes(m.subject, "Aeropark GRU");
+  assertStringIncludes(m.html, "https://hub.movepark.co/bookings/MP-ABC123");
+  assertStringIncludes(m.html, "Kallef");
 });
 
 Deno.test("escapeHtml: nome com < > é escapado (anti-injeção)", () => {

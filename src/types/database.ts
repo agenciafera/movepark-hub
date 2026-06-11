@@ -209,6 +209,7 @@ export type Database = {
           origin: string | null
           passenger_count: number | null
           profile_id: string
+          review_request_sent_at: string | null
           status: Database["public"]["Enums"]["booking_status"]
           total_amount: number
           updated_at: string
@@ -236,6 +237,7 @@ export type Database = {
           origin?: string | null
           passenger_count?: number | null
           profile_id: string
+          review_request_sent_at?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
           total_amount?: number
           updated_at?: string
@@ -263,6 +265,7 @@ export type Database = {
           origin?: string | null
           passenger_count?: number | null
           profile_id?: string
+          review_request_sent_at?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
           total_amount?: number
           updated_at?: string
@@ -1005,6 +1008,8 @@ export type Database = {
           phone: string | null
           photos: Json
           reservation_policy: string | null
+          review_avg: number | null
+          review_count: number
           slug: string
           status: Database["public"]["Enums"]["entity_status"]
           timezone: string
@@ -1027,6 +1032,8 @@ export type Database = {
           phone?: string | null
           photos?: Json
           reservation_policy?: string | null
+          review_avg?: number | null
+          review_count?: number
           slug: string
           status?: Database["public"]["Enums"]["entity_status"]
           timezone?: string
@@ -1049,6 +1056,8 @@ export type Database = {
           phone?: string | null
           photos?: Json
           reservation_policy?: string | null
+          review_avg?: number | null
+          review_count?: number
           slug?: string
           status?: Database["public"]["Enums"]["entity_status"]
           timezone?: string
@@ -1693,6 +1702,8 @@ export type Database = {
           id: string
           is_published: boolean
           location_id: string
+          owner_response: string | null
+          owner_response_at: string | null
           profile_id: string
           rating: number
           rating_access: number | null
@@ -1708,6 +1719,8 @@ export type Database = {
           id?: string
           is_published?: boolean
           location_id: string
+          owner_response?: string | null
+          owner_response_at?: string | null
           profile_id: string
           rating: number
           rating_access?: number | null
@@ -1723,6 +1736,8 @@ export type Database = {
           id?: string
           is_published?: boolean
           location_id?: string
+          owner_response?: string | null
+          owner_response_at?: string | null
           profile_id?: string
           rating?: number
           rating_access?: number | null
@@ -1872,6 +1887,7 @@ export type Database = {
         }
         Returns: Json
       }
+      cron_complete_bookings: { Args: never; Returns: number }
       current_company_ids: { Args: never; Returns: string[] }
       current_user_role: {
         Args: never
@@ -1999,6 +2015,10 @@ export type Database = {
         Args: { p_discount_rule_id: string }
         Returns: undefined
       }
+      operator_respond_review: {
+        Args: { p_response: string; p_review_id: string }
+        Returns: undefined
+      }
       operator_set_coupon_active: {
         Args: { p_coupon_id: string; p_is_active: boolean }
         Returns: undefined
@@ -2075,6 +2095,10 @@ export type Database = {
         Args: { p_booking_id: string }
         Returns: undefined
       }
+      review_recompute_location: {
+        Args: { p_location_id: string }
+        Returns: undefined
+      }
       simulate_price: {
         Args: {
           p_company: string
@@ -2101,6 +2125,18 @@ export type Database = {
           p_utm_campaign?: string
           p_utm_medium?: string
           p_utm_source?: string
+        }
+        Returns: string
+      }
+      submit_review: {
+        Args: {
+          p_access: number
+          p_booking_id: string
+          p_cleanliness: number
+          p_comment: string
+          p_rating: number
+          p_service: number
+          p_value: number
         }
         Returns: string
       }

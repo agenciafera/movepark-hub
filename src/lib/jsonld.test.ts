@@ -13,6 +13,8 @@ type Overrides = {
   latitude?: number | null;
   longitude?: number | null;
   description?: string | null;
+  review_avg?: number | null;
+  review_count?: number;
 };
 
 function makeListing(o: Overrides = {}): ListingDetail {
@@ -31,6 +33,8 @@ function makeListing(o: Overrides = {}): ListingDetail {
       address,
       latitude,
       longitude,
+      review_avg: "review_avg" in o ? o.review_avg : null,
+      review_count: o.review_count ?? 0,
     },
     parking_type: { name: "Vaga Coberta", code: "covered", description },
     company_parking_type: { base_price: 30 },
@@ -65,6 +69,43 @@ describe("productOfferSchema", () => {
       price: "30.00",
       availability: "https://schema.org/InStock",
     });
+  });
+
+  it("sem avaliações não inclui aggregateRating nem review", () => {
+    const s = productOfferSchema(makeListing());
+    expect(s.aggregateRating).toBeUndefined();
+    expect(s.review).toBeUndefined();
+  });
+
+  it("com avaliações inclui AggregateRating (regra self-serving do Google)", () => {
+    const s = productOfferSchema(makeListing({ review_avg: 4.8, review_count: 248 }));
+    expect(s.aggregateRating).toMatchObject({
+      "@type": "AggregateRating",
+      ratingValue: 4.8,
+      reviewCount: 248,
+      bestRating: 5,
+    });
+  });
+
+  it("inclui review[] quando há reviews e avaliações", () => {
+    const s = productOfferSchema(makeListing({ review_avg: 5, review_count: 2 }), [
+      { author: "Ana", rating: 5, comment: "Ótimo", date: "2026-06-01T10:00:00Z" },
+    ]);
+    expect(s.review).toHaveLength(1);
+    expect(s.review![0]).toMatchObject({
+      "@type": "Review",
+      author: { "@type": "Person", name: "Ana" },
+      datePublished: "2026-06-01",
+      reviewRating: { "@type": "Rating", ratingValue: 5, bestRating: 5 },
+      reviewBody: "Ótimo",
+    });
+  });
+
+  it("ignora review[] quando não há avaliações publicadas", () => {
+    const s = productOfferSchema(makeListing({ review_count: 0 }), [
+      { author: "X", rating: 4, comment: "y", date: "2026-06-01T10:00:00Z" },
+    ]);
+    expect(s.review).toBeUndefined();
   });
 });
 
