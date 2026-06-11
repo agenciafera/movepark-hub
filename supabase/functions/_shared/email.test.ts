@@ -38,11 +38,14 @@ Deno.test("tplLeadAlert: tabela com dados do lead", () => {
   assertStringIncludes(m.html, "op@x.com");
 });
 
-Deno.test("tplReviewRequest: assunto com a unidade + link de avaliação", () => {
+Deno.test("tplReviewRequest: assunto + estrelas clicáveis com deep link de 1 clique (?rating=N)", () => {
   const m = tplReviewRequest("Kallef", "Aeropark GRU", "https://hub.movepark.co/bookings/MP-ABC123");
   assertStringIncludes(m.subject, "Aeropark GRU");
-  assertStringIncludes(m.html, "https://hub.movepark.co/bookings/MP-ABC123");
   assertStringIncludes(m.html, "Kallef");
+  // 5 estrelas, cada uma com ?rating=N (deep link de 1 clique já com a nota)
+  for (let n = 1; n <= 5; n++) {
+    assertStringIncludes(m.html, `https://hub.movepark.co/bookings/MP-ABC123?rating=${n}`);
+  }
 });
 
 Deno.test("escapeHtml: nome com < > é escapado (anti-injeção)", () => {

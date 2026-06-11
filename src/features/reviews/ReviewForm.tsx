@@ -19,6 +19,8 @@ type Props = {
   bookingId: string;
   locationName: string;
   existing?: Review | null;
+  /** Nota pré-selecionada (deep link de 1 clique do e-mail: ?rating=N). */
+  initialRating?: number;
   onOpenChange: (open: boolean) => void;
 };
 
@@ -29,7 +31,14 @@ const CRITERIA: { key: keyof ReviewFormValues; label: string }[] = [
   { key: "access", label: "Acesso" },
 ];
 
-export function ReviewForm({ open, bookingId, locationName, existing, onOpenChange }: Props) {
+export function ReviewForm({
+  open,
+  bookingId,
+  locationName,
+  existing,
+  initialRating,
+  onOpenChange,
+}: Props) {
   const submit = useSubmitReview();
   const [f, setF] = React.useState<ReviewFormValues>(EMPTY_REVIEW_FORM);
 
@@ -45,9 +54,12 @@ export function ReviewForm({ open, bookingId, locationName, existing, onOpenChan
             value: existing.rating_value,
             access: existing.rating_access,
           }
-        : EMPTY_REVIEW_FORM,
+        : {
+            ...EMPTY_REVIEW_FORM,
+            rating: initialRating && initialRating >= 1 && initialRating <= 5 ? initialRating : 0,
+          },
     );
-  }, [open, existing]);
+  }, [open, existing, initialRating]);
 
   function set<K extends keyof ReviewFormValues>(k: K, v: ReviewFormValues[K]) {
     setF((prev) => ({ ...prev, [k]: v }));

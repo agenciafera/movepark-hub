@@ -169,13 +169,24 @@ export function tplReviewRequest(
   locationName: string,
   reviewLink: string,
 ): { subject: string; html: string } {
+  // Estrelas clicáveis: cada uma é um deep link de 1 clique que já abre a
+  // avaliação com aquela nota pré-selecionada (?rating=N) — menos fricção.
+  const sep = reviewLink.includes("?") ? "&" : "?";
+  const stars = [1, 2, 3, 4, 5]
+    .map(
+      (n) =>
+        `<a href="${reviewLink}${sep}rating=${n}" style="text-decoration:none;font-size:32px;color:${BRAND.navy};margin:0 3px" aria-label="${n} estrela${n > 1 ? "s" : ""}">★</a>`,
+    )
+    .join("");
   return {
     subject: `Como foi seu estacionamento em ${locationName}?`,
     html: shell("Conta pra gente como foi? ⭐", `
       <p>Olá, ${escapeHtml(contactName)}!</p>
       <p>Você usou o <strong>${escapeHtml(locationName)}</strong> pela Movepark. Sua avaliação ajuda outros motoristas a escolherem com confiança — leva menos de 1 minuto.</p>
-      <p>${button(reviewLink, "Avaliar meu estacionamento")}</p>
-      <p style="color:${BRAND.muted};font-size:13px">Se o botão não funcionar, copie e cole este link no navegador:<br>${reviewLink}</p>`),
+      <p style="margin:8px 0 4px">Toque numa estrela para avaliar:</p>
+      <div style="text-align:center;margin:4px 0 12px">${stars}</div>
+      <p style="text-align:center">${button(reviewLink, "Avaliar meu estacionamento")}</p>
+      <p style="color:${BRAND.muted};font-size:13px">Se as estrelas não funcionarem, copie e cole este link no navegador:<br>${reviewLink}</p>`),
   };
 }
 

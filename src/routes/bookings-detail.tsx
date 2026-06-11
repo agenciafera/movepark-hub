@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Inbox, ExternalLink, Phone, Mail } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,9 +18,27 @@ export default function BookingDetailPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { data: booking, isLoading, error } = useBookingDetail(code);
+  const [searchParams] = useSearchParams();
   const [cancelOpen, setCancelOpen] = React.useState(false);
   const [reviewOpen, setReviewOpen] = React.useState(false);
   const myReview = useMyReview(booking?.status === "completed" ? booking?.id : undefined);
+
+  // Deep link de 1 clique do e-mail de coleta (?rating=N) → abre o form com a nota.
+  const deepRating = Number(searchParams.get("rating")) || 0;
+  const [autoOpened, setAutoOpened] = React.useState(false);
+  React.useEffect(() => {
+    if (
+      !autoOpened &&
+      deepRating >= 1 &&
+      deepRating <= 5 &&
+      booking?.status === "completed" &&
+      !myReview.isLoading &&
+      !myReview.data
+    ) {
+      setReviewOpen(true);
+      setAutoOpened(true);
+    }
+  }, [autoOpened, deepRating, booking?.status, myReview.isLoading, myReview.data]);
 
   if (isLoading) {
     return (
@@ -274,6 +292,7 @@ export default function BookingDetailPage() {
         bookingId={booking.id}
         locationName={booking.location.name}
         existing={myReview.data}
+        initialRating={deepRating}
         onOpenChange={setReviewOpen}
       />
     </div>
