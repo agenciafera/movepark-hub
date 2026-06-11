@@ -68,7 +68,11 @@ Relacionado: [booking-flow.md](./booking-flow.md) · [customer/listing-detail.md
 - Vitest: `reviews.logic.ts`, `jsonld.test.ts` (aggregateRating/review só com count>0).
 - Edge `review-request`: `deno test` (template + honeypot via `review_request_sent_at`).
 
-## 8. Deploy / ops
-- Edge functions a redeployar: `search` (campos de rating) e `review-request` (nova) —
-  `supabase functions deploy search review-request`.
-- Vault: `select vault.create_secret('<service_role_jwt>','review_request_key');` (one-time) p/ ativar o cron de coleta.
+## 8. Deploy / ops — ✅ feito em staging
+- Edge `search` redeployada (v13, `verify_jwt=false`) e `review-request` deployada (`verify_jwt=false`,
+  função interna de cron, idempotente via `review_request_sent_at`).
+- Cron ativo: `complete-bookings-hourly` (marca `completed`) + `review-request-hourly` (pg_net →
+  `review-request` com a anon key) — coleta por e-mail rodando (SES já configurado via `app_setting`).
+- **Hardening (follow-up):** a `review-request` é pública (`verify_jwt=false`); o risco é baixo
+  (idempotente, só envia 1 e-mail por reserva). Para produção, proteger com um header-segredo
+  (`x-cron-secret` validado na função + guardado p/ o cron) ou usar o service-role via Vault.
