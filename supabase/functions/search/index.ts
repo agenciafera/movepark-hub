@@ -129,13 +129,13 @@ Deno.serve(async (req: Request) => {
       location:location!inner(
         id, slug, name, address, latitude, longitude, status, deleted_at,
         review_avg, review_count,
-        company:company!inner(id, slug, name, status)
+        company:company!inner(id, slug, name, status),
+        amenities:location_amenity(amenity_code)
       ),
       company_parking_type:company_parking_type!inner(
         id, base_price,
         parking_type:parking_type!inner(id, code, name)
-      ),
-      amenities:location_amenity(amenity_code)
+      )
     `,
     )
     .eq("is_active", true);
@@ -172,7 +172,7 @@ Deno.serve(async (req: Request) => {
     filtered = filtered.filter((r) => {
       const codes = new Set(
         // deno-lint-ignore no-explicit-any
-        (r.amenities ?? []).map((a: any) => a.amenity_code),
+        (r.location.amenities ?? []).map((a: any) => a.amenity_code),
       );
       return params.amenities!.every((c) => codes.has(c));
     });
@@ -287,7 +287,7 @@ Deno.serve(async (req: Request) => {
       days,
     },
     // deno-lint-ignore no-explicit-any
-    amenities: (r.amenities ?? []).map((a: any) => a.amenity_code),
+    amenities: (r.location.amenities ?? []).map((a: any) => a.amenity_code),
   }));
 
   return jsonResponse({
