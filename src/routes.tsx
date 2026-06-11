@@ -49,6 +49,7 @@ import ManagerFaq from "@/routes/manager/faq";
 import ManagerFaqCategorias from "@/routes/manager/faq-categorias";
 import ManagerPartners from "@/routes/manager/partners";
 import ManagerDestinations from "@/routes/manager/destinations";
+import ManagerReviews from "@/routes/manager/reviews";
 
 import OperatorLayout from "@/routes/operator/layout";
 import OperatorDashboard from "@/routes/operator/dashboard";
@@ -204,6 +205,7 @@ export const routes: RouteRecord[] = [
               { path: "users", element: <ManagerUsers /> },
               { path: "finance/billing", element: <ManagerFinanceBilling /> },
               { path: "finance/commissions", element: <ManagerFinanceCommissions /> },
+              { path: "reviews", element: <ManagerReviews /> },
               { path: "faq", element: <ManagerFaq /> },
               { path: "faq/categorias", element: <ManagerFaqCategorias /> },
               { path: "settings", element: <ManagerSettings /> },

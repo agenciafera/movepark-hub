@@ -254,7 +254,18 @@ Campos:
 
 ---
 
-### 4.9 Configurações
+### 4.9 Avaliações (moderação)
+
+**Rota:** `/manager/reviews` (nav "Avaliações"). ✅ implementado — ver [reviews.md](./reviews.md) §5.
+
+Lista **todas** as avaliações (o hub_admin vê até as despublicadas via RLS) com Nota · Autor ·
+Unidade/Empresa · Comentário · Status. Toggle **Publicar/Despublicar** (UPDATE gateado por
+`review_admin_moderate`; o trigger recomputa a nota da unidade) + filtro "só despublicadas".
+Moderação **pós-publicação**: a review já entra publicada; o Manager remove abusos.
+
+---
+
+### 4.10 Configurações
 
 **Rota:** `/manager/settings`
 

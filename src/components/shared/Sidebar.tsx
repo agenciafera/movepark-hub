@@ -31,6 +31,7 @@ const managerItems: Item[] = [
   { to: "/manager/destinations", label: "Destinos", icon: Plane },
   { to: "/manager/bookings", label: "Reservas", icon: Calendar },
   { to: "/manager/finance/billing", label: "Financeiro", icon: Wallet },
+  { to: "/manager/reviews", label: "Avaliações", icon: Star },
   { to: "/manager/faq", label: "FAQ", icon: HelpCircle },
   { to: "/manager/users", label: "Usuários", icon: Users },
   { to: "/manager/settings", label: "Configurações", icon: Settings },

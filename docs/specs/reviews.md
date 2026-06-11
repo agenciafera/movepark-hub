@@ -4,9 +4,9 @@
 > JSON-LD (rich snippet de estrela + citação por IA). **Ao mudar uma regra, atualize esta
 > spec no mesmo PR.**
 
-**Status:** ✅ Fase 1 (PRD-08.1–08.4) na migration `20260613000000_reviews_engine.sql`.
-Pendente (fase 2): moderação ativa no Manager (08.5), curadoria "Mais bem avaliados em
-[aeroporto]" (08.6). Coleta por **e-mail** (WhatsApp = fast-follow). Moderação **pós-publicação**.
+**Status:** ✅ Fase 1 (PRD-08.1–08.4) na migration `20260613000000_reviews_engine.sql` +
+✅ Fase 2 (08.5 moderação no Manager, 08.6 curadoria "Mais bem avaliados") — só UI/reuso, sem
+migration nova. Coleta por **e-mail** (WhatsApp = fast-follow). Moderação **pós-publicação**.
 
 Relacionado: [booking-flow.md](./booking-flow.md) · [customer/listing-detail.md](./customer/listing-detail.md) ·
 [customer/search-results.md](./customer/search-results.md) · [customer/my-bookings.md](./customer/my-bookings.md) ·
@@ -43,10 +43,19 @@ Relacionado: [booking-flow.md](./booking-flow.md) · [customer/listing-detail.md
 - UI `/operator/reviews` (nav "Avaliações"): lista reviews das unidades + responder.
 - A resposta aparece publicamente no `ReviewsBlock`.
 
-## 5. Moderação (pós-publicação)
-- `is_published=true` por padrão. `hub_admin` despublica via RLS `review_admin_moderate`
-  (despublicar recomputa o agregado pelo trigger). Antifraude: 1 review por reserva (UNIQUE) +
-  só reserva própria `completed` (RLS `review_insert` + RPC). Fila ativa no Manager = fase 2.
+## 5. Moderação (pós-publicação) — ✅ 08.5
+- `is_published=true` por padrão. `hub_admin` modera em **`/manager/reviews`** (nav "Avaliações"):
+  lista todas as reviews (RLS deixa o hub_admin ver até as despublicadas), com toggle
+  **Publicar/Despublicar** (UPDATE direto gateado pela RLS `review_admin_moderate`; o trigger
+  recomputa o agregado). Filtro "só despublicadas".
+- Antifraude: 1 review por reserva (UNIQUE `booking_id`) + só reserva própria `completed`
+  (RLS `review_insert` + RPC `submit_review`) — sem código adicional.
+
+## 5b. Curadoria "Mais bem avaliados em [aeroporto]" — ✅ 08.6
+- Módulo na página de destino (`/destinos/:slug`) que reusa a busca (`sort=rating_desc` +
+  `min_rating`, edge `search`) filtrando `review_count > 0` (`topRated()`); mostra os 4 mais bem
+  avaliados perto do aeroporto, acima da lista geral. Cross-sell + prova social citável por IA.
+  Some quando não há unidades avaliadas.
 
 ## 6. JSON-LD (SEO/GEO)
 - `productOfferSchema` (Product/Offer — regra "self-serving" do Google) ganha **`aggregateRating`**

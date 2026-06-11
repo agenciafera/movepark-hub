@@ -49,6 +49,14 @@ export function buildSubmitReviewArgs(bookingId: string, v: ReviewFormValues): S
 }
 
 /**
+ * Filtra itens de busca que têm avaliação (count > 0) — usado na curadoria
+ * "Mais bem avaliados em [aeroporto]" (08.6), que só mostra unidades já avaliadas.
+ */
+export function topRated<T extends { location: { review_count: number | null } }>(items: T[]): T[] {
+  return items.filter((i) => (i.location.review_count ?? 0) > 0);
+}
+
+/**
  * Rótulo do rating agregado: "4,8 · 248 avaliações". `null` quando não há
  * avaliações (a UI esconde o rating, não mostra "sem avaliações").
  */

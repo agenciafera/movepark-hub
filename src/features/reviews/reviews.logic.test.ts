@@ -3,6 +3,7 @@ import {
   buildSubmitReviewArgs,
   EMPTY_REVIEW_FORM,
   ratingLabel,
+  topRated,
   validateReviewForm,
   type ReviewFormValues,
 } from "./reviews.logic";
@@ -38,6 +39,20 @@ describe("buildSubmitReviewArgs", () => {
       p_value: null,
       p_access: 3,
     });
+  });
+});
+
+describe("topRated", () => {
+  const items = [
+    { id: "a", location: { review_count: 0 } },
+    { id: "b", location: { review_count: 3 } },
+    { id: "c", location: { review_count: null } },
+  ];
+  it("mantém só itens com avaliação (count > 0)", () => {
+    expect(topRated(items).map((i) => i.id)).toEqual(["b"]);
+  });
+  it("vazio quando nenhum tem avaliação", () => {
+    expect(topRated([{ id: "x", location: { review_count: 0 } }])).toEqual([]);
   });
 });
 

@@ -7,6 +7,7 @@ import { useDestinationBySlug } from "@/features/destinations/api";
 import { useSearchResults } from "@/features/search/useSearchResults";
 import { useFaqs } from "@/features/faqs/api";
 import { ResultCard } from "@/features/search/ResultCard";
+import { topRated } from "@/features/reviews/reviews.logic";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { breadcrumbSchema, destinationSchema, faqSchema } from "@/lib/jsonld";
@@ -34,6 +35,12 @@ export default function DestinoPage() {
   const win = React.useMemo(defaultWindow, []);
   const search = useSearchResults(
     destination ? { dest: destination.code, from: win.from, to: win.to, sort: "price_asc", limit: 12 } : null,
+  );
+  // Curadoria "Mais bem avaliados" (08.6): só unidades já avaliadas, por nota desc.
+  const topSearch = useSearchResults(
+    destination
+      ? { dest: destination.code, from: win.from, to: win.to, sort: "rating_desc", min_rating: 1, limit: 4 }
+      : null,
   );
   const faqs = useFaqs({ scope: "global" });
 
@@ -67,6 +74,7 @@ export default function DestinoPage() {
     `Reserve estacionamento próximo a ${destination.name}, em ${destination.city}. Compare preços, comodidades e garanta sua vaga com antecedência.`;
   const canonical = `${SITE_URL}/destinos/${destination.slug}`;
   const results = search.data?.results ?? [];
+  const topResults = topRated(topSearch.data?.results ?? []);
   const faqItems = (faqs.data ?? []).map((f) => ({ question: f.question, answer: f.answer }));
   const lat = Number(destination.latitude);
   const lng = Number(destination.longitude);
@@ -128,6 +136,26 @@ export default function DestinoPage() {
             className="mt-6 aspect-[21/9] w-full rounded-md object-cover"
             loading="lazy"
           />
+        )}
+
+        {/* Mais bem avaliados (curadoria) */}
+        {topResults.length > 0 && (
+          <section className="mt-10">
+            <h2 className="mb-4 text-display-md text-ink">
+              Mais bem avaliados em {destination.short_name ?? destination.name}
+            </h2>
+            <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
+              {topResults.map((item) => (
+                <ResultCard
+                  key={`top-${item.id}`}
+                  item={item}
+                  isSaved={false}
+                  onToggleSave={() => {}}
+                  searchParams={new URLSearchParams({ dest: destination.code, from: win.from, to: win.to })}
+                />
+              ))}
+            </div>
+          </section>
         )}
 
         {/* Estacionamentos */}
