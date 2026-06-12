@@ -13,6 +13,14 @@ export default defineConfig({
     alias: { "@": srcAlias },
   },
   test: {
+    // Pool de forks (processos) em vez de threads: o pool de threads padrão crashava no
+    // teardown nesta combinação de macOS + runtime (erro "Channel closed"/uv__stream_destroy),
+    // deixando workers órfãos (PPID 1) presos consumindo memória. Forks encerram de forma limpa.
+    // maxForks limita o paralelismo para não estourar a RAM (cada worker carrega o ambiente).
+    pool: "forks",
+    poolOptions: {
+      forks: { minForks: 1, maxForks: 4 },
+    },
     projects: [
       {
         extends: true,
