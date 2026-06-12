@@ -227,6 +227,11 @@ Card com:
 - Quando o usuário altera datas/passageiros, **re-chama `simulate_price`** (com debounce 300 ms) e atualiza o preço total.
 - **Loading state**: skeleton no número grande enquanto recalcula.
 - **Old price**: se a regra tem `old_price`, mostra acima do preço atual riscado.
+- **Ver preços por duração (PRD-10, ✅):** link "Ver preços por duração" abre um diálogo
+  (`PriceTableDialog`) com a tabela **Duração · Total · Por dia** para buckets `[1,2,3,5,7,10,15,30]` +
+  a duração buscada (destacada). Reusa `simulate_price` por bucket (`useDurationPrices` via `useQueries`,
+  mesma cache key do reservation card) — total + por-dia (ancoragem honesta), `old_price` riscado.
+  Ver [pricing-engine.md](../pricing-engine.md).
 
 ### Validações antes do botão "Reservar agora"
 - `from` e `to` preenchidos e válidos.

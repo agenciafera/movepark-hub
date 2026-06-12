@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { CouponPreview } from "./coupon.logic";
 import type { AddOnOption } from "./reservation.logic";
@@ -232,23 +232,24 @@ export type SimulatedPrice = {
 };
 
 /**
- * Simula preço chamando simulate_price RPC.
- * Recalcula automaticamente quando `args` mudam (com debounce no consumer).
+ * Opções de query do simulate_price para uma duração. Fonte única usada por
+ * `useSimulatePrice` (uma duração) e `useDurationPrices` (tabela) — mesma key,
+ * então o cache é compartilhado entre o reservation card e a tabela de preços.
  */
-export function useSimulatePrice(args: {
-  companySlug: string | undefined;
-  locationSlug: string | undefined;
-  parkingTypeCode: string | undefined;
-  days: number;
-}) {
-  return useQuery({
-    queryKey: ["simulate-price", args.companySlug, args.locationSlug, args.parkingTypeCode, args.days] as const,
+function simulatePriceQueryOptions(
+  companySlug: string | undefined,
+  locationSlug: string | undefined,
+  parkingTypeCode: string | undefined,
+  days: number,
+) {
+  return {
+    queryKey: ["simulate-price", companySlug, locationSlug, parkingTypeCode, days] as const,
     queryFn: async (): Promise<SimulatedPrice> => {
       const { data, error } = await supabase.rpc("simulate_price", {
-        p_company: args.companySlug!,
-        p_location: args.locationSlug!,
-        p_parking_type: args.parkingTypeCode!,
-        p_days: args.days,
+        p_company: companySlug!,
+        p_location: locationSlug!,
+        p_parking_type: parkingTypeCode!,
+        p_days: days,
       });
       if (error) throw error;
       // deno-lint-ignore no-explicit-any
@@ -259,12 +260,52 @@ export function useSimulatePrice(args: {
         discount: r?.discount
           ? { amount: Number(r.discount.amount), label: String(r.discount.label) }
           : null,
-        days: args.days,
+        days,
         error: r?.error ?? null,
       };
     },
-    enabled: !!args.companySlug && !!args.locationSlug && !!args.parkingTypeCode && args.days > 0,
+    enabled: !!companySlug && !!locationSlug && !!parkingTypeCode && days > 0,
     staleTime: 30_000,
+  };
+}
+
+/**
+ * Simula preço chamando simulate_price RPC.
+ * Recalcula automaticamente quando `args` mudam (com debounce no consumer).
+ */
+export function useSimulatePrice(args: {
+  companySlug: string | undefined;
+  locationSlug: string | undefined;
+  parkingTypeCode: string | undefined;
+  days: number;
+}) {
+  return useQuery(
+    simulatePriceQueryOptions(args.companySlug, args.locationSlug, args.parkingTypeCode, args.days),
+  );
+}
+
+/**
+ * Preços para várias durações (tabela "ver preços"). Cada duração é uma query
+ * independente — compartilha cache com `useSimulatePrice` (mesma key) e carrega
+ * incrementalmente. Retorna os resultados na ordem de `durations`.
+ */
+export function useDurationPrices(args: {
+  companySlug: string | undefined;
+  locationSlug: string | undefined;
+  parkingTypeCode: string | undefined;
+  durations: number[];
+  enabled?: boolean;
+}) {
+  return useQueries({
+    queries: args.durations.map((days) => {
+      const opts = simulatePriceQueryOptions(
+        args.companySlug,
+        args.locationSlug,
+        args.parkingTypeCode,
+        days,
+      );
+      return { ...opts, enabled: opts.enabled && (args.enabled ?? true) };
+    }),
   });
 }
 

@@ -266,6 +266,14 @@ create index on public.pricing_hourly_bracket (pricing_rule_id);
 
 ---
 
+## Consumidores do motor (reuso, sem regra nova)
+
+- **Tabela "Ver preços por duração" (PRD-10, ✅):** o listing reusa `simulate_price` para vários
+  buckets de dias (`[1,2,3,5,7,10,15,30]` + a duração buscada) via `useDurationPrices` (`useQueries`,
+  mesma cache key do reservation card) e mostra total + por-dia. Não há regra nova nem batch RPC — são
+  N chamadas client-side cacheadas (mesmo padrão do `PricingSimulationDialog` do operador). Preço
+  sazonal (Tábua de Marés) é v2 do motor.
+
 ## Algoritmo de cálculo (pseudocódigo)
 
 ```

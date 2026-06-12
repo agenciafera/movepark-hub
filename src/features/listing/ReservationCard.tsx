@@ -21,6 +21,7 @@ import {
 } from "./api";
 import { availabilityUi } from "./availability.logic";
 import { GuaranteeBadge } from "@/features/guarantee/GuaranteeBadge";
+import { PriceTableDialog } from "./PriceTableDialog";
 import { couponDiscountLabel, couponErrorMessage, type CouponPreview } from "./coupon.logic";
 import { addOnsTotal, bookingTotal, selectedAddOns } from "./reservation.logic";
 
@@ -46,6 +47,7 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
   const [to, setTo] = React.useState<Date | null>(initialTo);
   const [passengers, setPassengers] = React.useState<number>(1);
   const [hasPcd, setHasPcd] = React.useState<boolean>(false);
+  const [priceTableOpen, setPriceTableOpen] = React.useState<boolean>(false);
 
   const validateCoupon = useValidateCoupon();
   const [couponInput, setCouponInput] = React.useState<string>("");
@@ -194,7 +196,24 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
           {days > 0 ? `${days} ${days === 1 ? "diária" : "diárias"}` : "Escolha as datas"}
           {from && to ? ` · ${formatDuration(from, to)}` : ""}
         </div>
+        <button
+          type="button"
+          onClick={() => setPriceTableOpen(true)}
+          className="text-body-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
+        >
+          Ver preços por duração
+        </button>
       </div>
+
+      <PriceTableDialog
+        open={priceTableOpen}
+        onOpenChange={setPriceTableOpen}
+        companySlug={listing.company.slug}
+        locationSlug={listing.location.slug}
+        parkingTypeCode={listing.parking_type.code}
+        selectedDays={days}
+        title={listing.parking_type.name}
+      />
 
       <div className="my-4 h-px bg-hairline" />
 
