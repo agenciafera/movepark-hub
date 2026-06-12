@@ -4,13 +4,17 @@ import { Heart, Car, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatBRL, formatDistance } from "@/lib/format";
 import { RatingBadge } from "@/features/reviews/RatingStars";
+import { ResultBadges } from "./ResultBadges";
 import type { SearchResultItem } from "./useSearchResults";
+import type { SearchBadge } from "./searchBadges";
 
 type Props = {
   item: SearchResultItem;
   isSaved: boolean;
   onToggleSave: () => void;
   searchParams: URLSearchParams;
+  /** Badges comparativos calculados sobre o conjunto de resultados (PRD-13). */
+  badges?: SearchBadge[];
 };
 
 const amenityShortLabel: Record<string, string> = {
@@ -75,7 +79,7 @@ function CardLink({
   );
 }
 
-export function ResultCard({ item, isSaved, onToggleSave, searchParams }: Props) {
+export function ResultCard({ item, isSaved, onToggleSave, searchParams, badges = [] }: Props) {
   const url = `/p/${item.operator.slug}/${item.location.slug}/${item.parking_type.code}?${searchParams.toString()}`;
   const meta = topAmenities(item.amenities);
   const soldOut = item.availability?.sold_out ?? false;
@@ -109,6 +113,9 @@ export function ResultCard({ item, isSaved, onToggleSave, searchParams }: Props)
             {nearMsg}
           </span>
         ) : null}
+        {!soldOut && badges.length > 0 && (
+          <ResultBadges badges={badges} className="absolute bottom-3 left-3 right-3" />
+        )}
       </CardLink>
 
       {/* Heart */}

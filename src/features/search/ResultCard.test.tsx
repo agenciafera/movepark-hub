@@ -79,6 +79,32 @@ describe("ResultCard", () => {
     expect(screen.queryByText(/mais perto do/i)).toBeNull();
   });
 
+  it("renderiza os badges comparativos quando passados (PRD-13)", () => {
+    renderWithProviders(
+      <ResultCard
+        item={item()}
+        isSaved={false}
+        onToggleSave={vi.fn()}
+        searchParams={new URLSearchParams()}
+        badges={[{ kind: "cheapest", label: "Mais barato" }]}
+      />,
+    );
+    expect(screen.getByText("Mais barato")).toBeInTheDocument();
+  });
+
+  it("esgotado: não renderiza badges comparativos", () => {
+    renderWithProviders(
+      <ResultCard
+        item={item({ sold_out: true, remaining: 0 })}
+        isSaved={false}
+        onToggleSave={vi.fn()}
+        searchParams={new URLSearchParams()}
+        badges={[{ kind: "cheapest", label: "Mais barato" }]}
+      />,
+    );
+    expect(screen.queryByText("Mais barato")).toBeNull();
+  });
+
   it("quase-lotação: mostra a mensagem e continua clicável", () => {
     const { container } = renderWithProviders(
       <ResultCard

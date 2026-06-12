@@ -18,6 +18,7 @@ import {
   type SearchSort,
   type SearchVehicle,
 } from "@/features/search/useSearchResults";
+import { computeResultBadges } from "@/features/search/searchBadges";
 import { resolveSearchDates } from "@/features/search/dates";
 import { useSavedListings } from "@/features/search/useSavedListings";
 
@@ -228,6 +229,7 @@ export default function SearchResultsPage() {
                   isSaved={saved.isSaved(r.id)}
                   onToggleSave={() => saved.toggle(r.id)}
                   searchParams={params}
+                  badges={computeResultBadges(r, data.results)}
                 />
               ))}
             </div>

@@ -129,6 +129,33 @@ Footer da sidebar: botão `[Limpar tudo]` + contador "12 filtros ativos".
 - **Preço**: total da estadia em `display-sm ink`, com "5 diárias" abaixo em caption muted. Se há `old_price`, mostra riscado acima.
 - **Hover**: `shadow-tier`, sem transform.
 
+### Badges comparativos (PRD-13)
+
+✅ **Implementado.** Pills sobrepostos no canto **inferior-esquerdo** da foto que
+destacam o critério de compra vencedor de cada card — tiram o foco do "só preço".
+
+- **Relativos ao conjunto** de resultados, não fixos por unidade:
+  - **"Mais barato"** (🏷️ `Tag`): menor `price.total` da lista.
+  - **"Mais perto"** / **"Mais perto do {terminal}"** (📍 `MapPin`): menor distância
+    (`location.distance_km`, com fallback pro `nearest_terminal.distance_km`). O rótulo
+    cita o terminal quando há `nearest_terminal` (PRD-09).
+- **De atributo** (flags do `parking_type`/amenidades):
+  - **"Traslado grátis"** (🚐 `BusFront`): amenidade `shuttle_free`.
+  - **"Coberto"** (`Umbrella`): `parking_type.code === "covered"` ou amenidade `covered`.
+  - **"Valet"** (`ConciergeBell`): `parking_type.code === "valet"` ou amenidade `valet`.
+- **Regras de ruído**: no máximo **2 badges por card**, comparativos primeiro
+  (ordem: `cheapest → closest → shuttle → covered → valet`). Comparativos só aparecem
+  com **≥2 lotes compráveis** e quando há **variação real** (se todos têm o mesmo
+  preço/distância, ninguém ganha o badge). Lote **esgotado não recebe badge**, e o
+  universo comparável ignora esgotados (o "mais barato" é o mais barato entre os
+  disponíveis).
+- **Estilo**: comparativos em pill sólido `bg-mp-red text-white`; atributos em pill
+  claro `bg-canvas/95 text-ink`. Ambos com `shadow-tier`.
+
+Cálculo em `src/features/search/searchBadges.ts` (lógica pura, testada em Vitest),
+render em `ResultBadges.tsx`. Computado na rota `/search` sobre `data.results` e passado
+ao `ResultCard` via prop `badges`. Referência de UX: Parclick (Closer / Cheaper / Free shuttle).
+
 ### Click
 Click no card → `/p/:operatorSlug/:locationSlug/:parkingTypeCode?from=…&to=…&pax=…` (passa params da busca).
 
