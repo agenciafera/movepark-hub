@@ -49,6 +49,12 @@ function DestinosMenu() {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="max-h-[70vh] min-w-[260px] overflow-y-auto">
+        <DropdownMenuItem asChild>
+          <Link to="/destinos" className="font-medium text-mp-primary">
+            Ver todos os destinos
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         {popular.length > 0 && <DropdownMenuLabel>Mais buscados</DropdownMenuLabel>}
         {popular.map((d) => (
           <DestinoItem key={d.id} d={d} />

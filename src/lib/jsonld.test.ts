@@ -4,6 +4,7 @@ import {
   breadcrumbSchema,
   destinationSchema,
   faqSchema,
+  itemListSchema,
   localBusinessSchema,
   productOfferSchema,
 } from "./jsonld";
@@ -119,6 +120,24 @@ describe("breadcrumbSchema", () => {
     expect(s.itemListElement).toHaveLength(2);
     expect(s.itemListElement[0]).toMatchObject({ position: 1, name: "Home" });
     expect(s.itemListElement[1]).toMatchObject({ position: 2, item: "https://hub.movepark.co/search" });
+  });
+});
+
+describe("itemListSchema", () => {
+  it("monta ItemList numerando posições a partir de 1", () => {
+    const s = itemListSchema([
+      { name: "Aeroporto de Guarulhos", url: "https://hub.movepark.co/destinos/aeroporto-de-guarulhos" },
+      { name: "Congonhas", url: "https://hub.movepark.co/destinos/congonhas" },
+    ]);
+    expect(s["@type"]).toBe("ItemList");
+    expect(s.itemListElement).toHaveLength(2);
+    expect(s.itemListElement[0]).toMatchObject({
+      "@type": "ListItem",
+      position: 1,
+      name: "Aeroporto de Guarulhos",
+      url: "https://hub.movepark.co/destinos/aeroporto-de-guarulhos",
+    });
+    expect(s.itemListElement[1]).toMatchObject({ position: 2, name: "Congonhas" });
   });
 });
 

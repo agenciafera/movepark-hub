@@ -1,7 +1,8 @@
 # Destinos (Destinations)
 
 > Status: ✅ Implementado — migration `20260609120000_destination_seo.sql`, CRUD no
-> Manager, página pública SSG `/destinos/<slug>`, menu "Destinos" no header do consumer.
+> Manager, índice SSG `/destinos` + página pública SSG `/destinos/<slug>` (ambos no sitemap),
+> menu "Destinos" no header do consumer.
 >
 > **Vínculo com lotes:** cada `location` aponta para o seu destino-âncora via
 > `location.destination_id`, e a proximidade lote→destino sai por **PostGIS** `ST_Distance`
@@ -75,6 +76,7 @@ e inserts manuais sem slug continuam funcionando. Índice `destination_published
 
 | Rota | Shell / Role | Descrição |
 |---|---|---|
+| `/destinos` | `ConsumerAppShell` (público) | **Índice** de destinos (`src/routes/destinos.tsx`). Página-hub que lista os destinos publicados (populares + demais), com link interno para cada `/destinos/<slug>` — alvo do breadcrumb e ponto de descoberta para o crawler. SSG via `loader` (`destinosLoader`). |
 | `/destinos/:slug` | `ConsumerAppShell` (público) | Página de conteúdo SEO. SSG: `getStaticPaths` busca slugs publicados; `loader` busca o destino por slug+publicado. |
 | `/manager/destinations` | `ManagerLayout` / `hub_admin` | Lista + criar/editar/excluir destinos (`DestinationForm`). |
 
@@ -89,9 +91,15 @@ e inserts manuais sem slug continuam funcionando. Índice `destination_published
   com `sort=rating_desc`/`min_rating`, filtrada por `review_count > 0` (`topRated()`), acima da
   lista geral e oculta sem dados; **FAQ** global via `useFaqs({ scope: "global" })`; **mapa** OSM
   embed centrado em lat/lng.
-- **Header do consumer** (`ConsumerTopbar`): dropdown **"Destinos"** com submenus —
-  `is_popular` sob "Mais buscados", o resto sob "Outros destinos". Some no mobile;
-  escondido se não houver destinos.
+- **Índice** (`src/routes/destinos.tsx`): `<Helmet>` com title/description próprios,
+  canonical/og para `https://hub.movepark.co/destinos` e dois blocos **JSON-LD**
+  (`breadcrumbSchema` Início→Destinos e `itemListSchema` com a coleção de destinos); H1
+  "Destinos atendidos pela Movepark"; grade de cards (populares + demais) linkando cada
+  `/destinos/<slug>`. Existe para que o breadcrumb das páginas de detalhe aponte para uma
+  URL real (não 404) e para dar ao crawler uma página de descoberta dos destinos.
+- **Header do consumer** (`ConsumerTopbar`): dropdown **"Destinos"** com item topo
+  "Ver todos os destinos" (→ `/destinos`) e submenus — `is_popular` sob "Mais buscados", o
+  resto sob "Outros destinos". Some no mobile; escondido se não houver destinos.
 - **Manager** (`src/routes/manager/destinations.tsx` + `DestinationForm`): tabela com
   status (Publicado/Rascunho), popular, ordem e link para a página pública; form com
   slug auto-derivado do nome, seletor de tipo, flags `is_popular`/`is_published` e o bloco
@@ -108,16 +116,23 @@ e inserts manuais sem slug continuam funcionando. Índice `destination_published
 
 ## SSG / build
 
-As páginas `/destinos/*` são **pré-renderizadas no build** (`vite-react-ssg`). Ao
-publicar/despublicar um destino, o efeito na malha de páginas estáticas só aparece no
-**próximo build/deploy** — não é dinâmico em runtime. `getStaticPaths` (`fetchAllDestinationPaths`
-em `routes.tsx`) só emite slugs com `is_published = true`.
+As páginas `/destinos/*` e o índice `/destinos` são **pré-renderizados no build**
+(`vite-react-ssg`). Ao publicar/despublicar um destino, o efeito na malha de páginas
+estáticas só aparece no **próximo build/deploy** — não é dinâmico em runtime.
+`getStaticPaths` (`fetchAllDestinationPaths` em `routes.tsx`) só emite slugs com
+`is_published = true`.
+
+**Sitemap** (`vite.config.ts`): além das listagens `/p/...`, `getDestinationRoutes()`
+adiciona `/destinos` e uma URL por destino publicado às `dynamicRoutes` do
+`vite-plugin-sitemap` — sem isso o Google não descobre as páginas de destino pelo
+`sitemap.xml`.
 
 ## Testes
 
 | Camada | Arquivo | Cobre |
 |---|---|---|
-| Unitário (Vitest) | `src/lib/jsonld.test.ts` | `destinationSchema`: `@type: Place`, URL canônica `/destinos/<slug>`, address/geo, coalescing de `state`/`meta_description` nulos. |
+| Unitário (Vitest) | `src/lib/jsonld.test.ts` | `destinationSchema`: `@type: Place`, URL canônica `/destinos/<slug>`, address/geo, coalescing de `state`/`meta_description` nulos; `itemListSchema`: `@type: ItemList`, posições a partir de 1. |
+| Componente (Vitest) | `src/routes/destinos.test.tsx` | Índice `/destinos`: H1, separação populares/outros e links internos para cada `/destinos/<slug>`; estado vazio sem destinos. |
 | Banco / RLS (pgTAP) | `supabase/tests/destination.test.sql` | Leitura pública (anon lê publicado); escrita bloqueada para anon (42501) e customer (UPDATE filtrado pelo USING); `hub_admin` insere/edita. |
 
 Ambos rodam no CI (`quality` → `test:unit`; `db` → `supabase test db` auto-descobre o

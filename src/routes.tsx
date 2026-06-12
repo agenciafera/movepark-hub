@@ -26,6 +26,7 @@ import SejaParceiroPage from "@/routes/seja-parceiro";
 import OnboardingPage from "@/routes/onboarding";
 import VoucherValidatePage from "@/routes/voucher-validate";
 import DestinoPage from "@/routes/destino";
+import DestinosPage from "@/routes/destinos";
 
 import AccountIndexPage from "@/routes/account/index";
 import AccountProfilePage from "@/routes/account/profile";
@@ -119,6 +120,18 @@ async function fetchAllDestinationPaths(): Promise<string[]> {
   return (data ?? []).map((d) => `/destinos/${d.slug as string}`);
 }
 
+// Índice de destinos: carrega os publicados no build (SSG) p/ o crawler ver os links.
+async function destinosLoader() {
+  const { data } = await supabase
+    .from("destination")
+    .select(
+      "id, code, name, short_name, slug, type, city, state, country, latitude, longitude, is_popular, sort_order",
+    )
+    .eq("is_published", true)
+    .order("sort_order");
+  return data ?? [];
+}
+
 export const routes: RouteRecord[] = [
   {
     element: <AppProviders />,
@@ -138,6 +151,7 @@ export const routes: RouteRecord[] = [
           { path: "/checkout/:code", element: <CheckoutPage /> },
           { path: "/faq", element: <FaqPage /> },
           { path: "/seja-parceiro", element: <SejaParceiroPage /> },
+          { path: "/destinos", element: <DestinosPage />, loader: destinosLoader },
           {
             path: "/destinos/:slug",
             element: <DestinoPage />,

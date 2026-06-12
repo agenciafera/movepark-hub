@@ -30,8 +30,27 @@ async function getDynamicRoutes(): Promise<string[]> {
   );
 }
 
+// Páginas de destino (SEO) — /destinos/<slug> de cada destino publicado.
+async function getDestinationRoutes(): Promise<string[]> {
+  const url = process.env.VITE_SUPABASE_URL;
+  const key = process.env.VITE_SUPABASE_ANON_KEY;
+  if (!url || !key) return [];
+
+  const sb = createClient(url, key);
+
+  const { data } = await sb.from("destination").select("slug").eq("is_published", true);
+
+  // deno-lint-ignore no-explicit-any
+  return (data ?? []).map((d: any) => `/destinos/${d.slug}`);
+}
+
 export default defineConfig(async () => {
-  const dynamicRoutes = await getDynamicRoutes();
+  const [listingRoutes, destinationRoutes] = await Promise.all([
+    getDynamicRoutes(),
+    getDestinationRoutes(),
+  ]);
+  // Índice de destinos + uma URL por destino publicado, além das listagens /p/...
+  const dynamicRoutes = ["/destinos", ...listingRoutes, ...destinationRoutes];
 
   return {
     plugins: [
