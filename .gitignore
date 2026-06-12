@@ -21,6 +21,7 @@ supabase/.branches/
 # Deps — usamos bun; o lockfile versionado é bun.lock (texto)
 node_modules/
 package-lock.json
+bun.lockb
 yarn.lock
 pnpm-lock.yaml
 dist/

@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { StateSelect } from "@/components/shared/StateSelect";
 import { useCreateDestination, useUpdateDestination } from "./api";
 import type { Destination } from "@/types/domain";
 
@@ -181,7 +182,7 @@ export function DestinationForm({ open, destination, onOpenChange }: Props) {
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="d-state">UF</Label>
-            <Input id="d-state" value={f.state} onChange={(e) => set("state", e.target.value)} placeholder="SP" />
+            <StateSelect id="d-state" value={f.state} onValueChange={(v) => set("state", v)} />
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="d-lat">Latitude *</Label>

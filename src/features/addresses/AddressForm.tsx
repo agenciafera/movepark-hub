@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { StateSelect } from "@/components/shared/StateSelect";
 import { useAuth } from "@/auth/context";
 import type { Database } from "@/types/database";
 import {
@@ -193,7 +194,7 @@ export function AddressForm({ open, onOpenChange, address }: Props) {
               onChange={(e) => setDistrict(e.target.value)}
             />
           </div>
-          <div className="grid grid-cols-[1fr_80px] gap-3">
+          <div className="grid grid-cols-[1fr_120px] gap-3">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="city">Cidade</Label>
               <Input
@@ -205,14 +206,7 @@ export function AddressForm({ open, onOpenChange, address }: Props) {
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="state">UF</Label>
-              <Input
-                id="state"
-                value={state}
-                onChange={(e) =>
-                  setState(e.target.value.toUpperCase().slice(0, 2))
-                }
-                placeholder="SP"
-              />
+              <StateSelect id="state" value={state} onValueChange={setState} />
             </div>
           </div>
           <label className="flex items-center gap-2.5 text-body-sm">

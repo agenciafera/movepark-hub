@@ -7,19 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PhoneField } from "@/components/ui/phone-field";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { StateSelect } from "@/components/shared/StateSelect";
 import { useSubmitLead, type LeadResult } from "./leadApi";
-
-const UFS = [
-  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG",
-  "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO",
-];
 
 type Props = {
   onSuccess: (result: LeadResult) => void;
@@ -128,19 +117,8 @@ export function LeadForm({ onSuccess }: Props) {
         <Input id="city" required value={city} onChange={(e) => setCity(e.target.value)} />
       </div>
       <div className="flex flex-col gap-1.5">
-        <Label>Estado *</Label>
-        <Select value={uf} onValueChange={setUf} required>
-          <SelectTrigger>
-            <SelectValue placeholder="UF" />
-          </SelectTrigger>
-          <SelectContent>
-            {UFS.map((s) => (
-              <SelectItem key={s} value={s}>
-                {s}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Label htmlFor="lead-uf">Estado *</Label>
+        <StateSelect id="lead-uf" value={uf} onValueChange={setUf} required />
       </div>
 
       <div className="flex flex-col gap-1.5 tablet:col-span-2">
