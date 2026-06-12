@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { Heart, Car } from "lucide-react";
+import { Heart, Car, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatBRL, formatDistance } from "@/lib/format";
 import { RatingBadge } from "@/features/reviews/RatingStars";
@@ -148,6 +148,15 @@ export function ResultCard({ item, isSaved, onToggleSave, searchParams }: Props)
                 <> · {formatDistance(item.location.distance_km)}</>
               )}
             </p>
+            {item.location.nearest_terminal && (
+              <p className="line-clamp-1 inline-flex items-center gap-1 text-body-sm font-medium text-ink">
+                <MapPin className="h-3.5 w-3.5 text-mp-red" />
+                mais perto do {item.location.nearest_terminal.name}
+                <span className="font-normal text-muted">
+                  · {formatDistance(item.location.nearest_terminal.distance_km)}
+                </span>
+              </p>
+            )}
             {meta.length > 0 && (
               <p className="line-clamp-1 text-body-sm text-muted">
                 {meta.join(" · ")}

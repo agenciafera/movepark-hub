@@ -172,6 +172,41 @@ export function useLocationAddOns(locationId: string | undefined) {
   });
 }
 
+/** Distância do lote a cada terminal do seu destino (view location_point_proximity, DAT-05). */
+export type TerminalDistance = {
+  point_name: string;
+  point_type: string;
+  distance_km: number | null;
+  is_nearest: boolean;
+};
+
+/**
+ * Distância por terminal de uma unidade (PRD-09). Lê a view `location_point_proximity`
+ * (haversine em SQL, DAT-05) — vazia quando o destino do lote não tem terminais.
+ */
+export function useLocationTerminals(locationId: string | undefined) {
+  return useQuery({
+    queryKey: ["location-terminals", locationId ?? "none"] as const,
+    enabled: !!locationId,
+    staleTime: 5 * 60_000,
+    queryFn: async (): Promise<TerminalDistance[]> => {
+      const { data, error } = await supabase
+        .from("location_point_proximity")
+        .select("point_name, point_type, distance_km, is_nearest, sort_order")
+        .eq("location_id", locationId!)
+        .order("sort_order");
+      if (error) throw error;
+      // deno-lint-ignore no-explicit-any
+      return (data ?? []).map((r: any) => ({
+        point_name: r.point_name as string,
+        point_type: r.point_type as string,
+        distance_km: r.distance_km != null ? Number(r.distance_km) : null,
+        is_nearest: !!r.is_nearest,
+      }));
+    },
+  });
+}
+
 export function useListing(
   operatorSlug: string | undefined,
   locationSlug: string | undefined,

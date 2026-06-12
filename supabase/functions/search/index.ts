@@ -26,6 +26,7 @@ import {
   soldOutTiebreak,
   type AvailabilityRow,
 } from "./availability.ts";
+import { haversineKm, nearestTerminal, type TerminalPoint } from "./proximity.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -49,17 +50,6 @@ interface SearchParams {
   sort?: "price_asc" | "price_desc" | "distance_asc" | "rating_desc";
   limit?: number;
   offset?: number;
-}
-
-function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number) {
-  const R = 6371;
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(a));
 }
 
 function jsonResponse(body: unknown, status = 200) {
@@ -105,20 +95,34 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "to must be after from" }, 400);
   }
 
-  // 1. Resolve destination coordinates if dest code provided
+  // 1. Resolve destination coordinates if dest code provided.
+  //    Quando há destino, carrega também os terminais (DAT-05) p/ a proximidade por terminal.
   let destLat = params.dest_lat;
   let destLng = params.dest_lng;
   let destInfo: { code: string; name: string } | null = null;
-  if (params.dest && destLat == null) {
+  let terminals: TerminalPoint[] = [];
+  if (params.dest) {
     const { data: dest } = await supabase
       .from("destination")
-      .select("code, name, latitude, longitude")
+      .select("id, code, name, latitude, longitude")
       .eq("code", params.dest)
       .maybeSingle();
     if (dest) {
-      destLat = Number(dest.latitude);
-      destLng = Number(dest.longitude);
+      if (destLat == null) {
+        destLat = Number(dest.latitude);
+        destLng = Number(dest.longitude);
+      }
       destInfo = { code: dest.code, name: dest.name };
+      const { data: pts } = await supabase
+        .from("destination_point")
+        .select("name, latitude, longitude")
+        .eq("destination_id", dest.id)
+        .order("sort_order");
+      terminals = (pts ?? []).map((p) => ({
+        name: p.name as string,
+        latitude: p.latitude != null ? Number(p.latitude) : null,
+        longitude: p.longitude != null ? Number(p.longitude) : null,
+      }));
     }
   }
 
@@ -292,6 +296,13 @@ Deno.serve(async (req: Request) => {
       latitude: r.location.latitude != null ? Number(r.location.latitude) : null,
       longitude: r.location.longitude != null ? Number(r.location.longitude) : null,
       distance_km: r._distance != null ? Number(r._distance.toFixed(2)) : null,
+      // Terminal mais próximo do destino buscado (PRD-09 · DAT-05). null se o destino não
+      // tem terminais ou o lote não tem geo — aí vale a proximidade ao centro (distance_km).
+      nearest_terminal: nearestTerminal(
+        r.location.latitude != null ? Number(r.location.latitude) : null,
+        r.location.longitude != null ? Number(r.location.longitude) : null,
+        terminals,
+      ),
       review_avg: r.location.review_avg != null ? Number(r.location.review_avg) : null,
       review_count: r.location.review_count ?? 0,
     },

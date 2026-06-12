@@ -125,8 +125,9 @@ para ordenar/rotular, não exige precisão de metro.
 - **DAT-04** ([location-destination-proximity.md](./location-destination-proximity.md)) — define o
   elo lote ↔ destino e a proximidade ao **centro**. Esta DAT-05 refina para a proximidade ao
   **ponto** (terminal). Mesma `haversine_km`.
-- **PRD-09 / PRD-13** — consomem `location_point_proximity` para "X km do T2" e o badge
-  "mais perto do T2". A granularidade por terminal vem daqui.
+- **PRD-09** ([distance-display.md](./distance-display.md)) — **exibe** esta proximidade: badge
+  "mais perto do T2" no card (via `search`) e lista por terminal no detalhe (via esta view).
+- **PRD-13** — consome `is_nearest`/`nearest_terminal` para o badge "mais perto do T2".
 - **`search` (Edge Function)** — autocomplete/filtro por terminal pode usar os pontos no futuro;
   o `search` não muda nesta DAT-05.
 - **PRD-11 (traslado)** — tempo exibido ao cliente é campo operacional **separado**; não confundir

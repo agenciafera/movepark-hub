@@ -30,6 +30,8 @@ export type SearchResultItem = {
     latitude: number | null;
     longitude: number | null;
     distance_km: number | null;
+    /** Terminal mais próximo do destino buscado (PRD-09 · DAT-05). null sem terminais/geo. */
+    nearest_terminal: { name: string; distance_km: number } | null;
     review_avg: number | null;
     review_count: number;
   };

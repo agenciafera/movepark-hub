@@ -9,6 +9,7 @@ import { PhotoGrid } from "@/features/listing/PhotoGrid";
 import { AmenityList } from "@/features/listing/AmenityList";
 import { OperatorCard } from "@/features/listing/OperatorCard";
 import { MiniMap } from "@/features/listing/MiniMap";
+import { TerminalDistances } from "@/features/listing/TerminalDistances";
 import { ReservationCard } from "@/features/listing/ReservationCard";
 import { GuaranteeSection } from "@/features/guarantee/GuaranteeSection";
 import { ReviewsBlock } from "@/features/reviews/ReviewsBlock";
@@ -222,6 +223,7 @@ export default function ListingPage() {
               latitude={listing.location.latitude}
               longitude={listing.location.longitude}
             />
+            <TerminalDistances locationId={listing.location.id} />
           </section>
 
           {listing.location.review_count > 0 && (

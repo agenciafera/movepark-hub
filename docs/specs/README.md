@@ -21,6 +21,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | [destinations.md](./destinations.md) | Destinos (aeroportos/etc): catálogo de busca + páginas de conteúdo SEO `/destinos/<slug>` + CRUD no Manager |
 | [location-destination-proximity.md](./location-destination-proximity.md) | Vínculo `location.destination_id` + proximidade por haversine em SQL (view `location_proximity`) — fundação de PRD-09/PRD-13 |
 | [destination-points.md](./destination-points.md) | Pontos do destino (terminais T1/T2/T3) + distância por terminal por haversine (view `location_point_proximity`) — granularidade por terminal de PRD-09/PRD-13 |
+| [distance-display.md](./distance-display.md) | Exibição de distância/proximidade ao aeroporto e terminal (PRD-09): badge "mais perto do Tx" no card + lista por terminal no detalhe — consome DAT-04/DAT-05 |
 
 ## Status
 
@@ -40,6 +41,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | destinations | ✅ Implementado — migration `20260609120000`, página SSG `/destinos/<slug>`, CRUD `/manager/destinations`, menu "Destinos" no header |
 | location-destination-proximity | ✅ Implementado — migration `20260616000000`, FK `location.destination_id` + backfill dos 17 lotes, `haversine_km`/`nearest_destination`, trigger auto-fill, view `location_proximity`, override no `LocationForm`. Ver [location-destination-proximity.md](./location-destination-proximity.md) |
 | destination-points | ✅ Implementado — migration `20260617000000`, tabela `destination_point` (RLS espelha `destination`), `nearest_destination_point`, view `location_point_proximity` (`is_nearest`), seed T1/T2/T3 do GRU, dialog "Terminais" no Manager. Ver [destination-points.md](./destination-points.md) |
+| distance-display | ✅ Implementado (PRD-09) — Edge `search` devolve `location.nearest_terminal` (módulo `proximity.ts`), badge "mais perto do Tx" no `ResultCard`, lista por terminal no detalhe via `useLocationTerminals`. Ver [distance-display.md](./distance-display.md) |
 | operator add-ons | ✅ Implementado — migration `20260610000000`, RPCs `operator_upsert_addon`/`operator_set_location_addon`/`operator_delete_addon`, CRUD `/operator/addons` (ver [operator-panel.md](./operator-panel.md) §4.5) |
 
 ## Migrations
