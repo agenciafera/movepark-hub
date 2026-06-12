@@ -266,6 +266,7 @@ Já mostrado no §2. Detalhes:
   - Cupom: − R$ Z
   - **Total: R$ TOTAL**
 - Mensagem do cancelamento ("Cancele grátis até 24h antes")
+- Selo **"Vaga garantida"** (PRD-14, ✅) — reforço de confiança no fechamento. Ver [spot-guarantee.md](../spot-guarantee.md).
 
 ### Ações
 - `[✏ Editar reserva]` → volta pro listing detail com os params populados (sem perder o booking, apenas re-cria).

@@ -158,6 +158,11 @@ Botão "Ver todas as 248 avaliações" abre modal scroll vertical.
 - Botão "Como chegar" → abre Google Maps em nova aba com endereço (handoff externo é OK; nosso mapa não precisa ter routing).
 - Linha de informações: "Shuttle gratuito 24h até o terminal · 2 min de trajeto".
 
+### 5.5b Sobre a garantia
+✅ **Implementado (PRD-14).** Seção "Sobre a garantia" + selo "Vaga garantida" no reservation card,
+**oculto quando esgotado** para o período (amarrado ao `check_availability`). Ver
+[spot-guarantee.md](../spot-guarantee.md).
+
 ### 5.6 Política de cancelamento
 Lista em 3-4 linhas com ícone outline:
 - ✅ Cancelamento grátis até 24h antes da reserva

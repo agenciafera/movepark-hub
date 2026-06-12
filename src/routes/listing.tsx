@@ -10,6 +10,7 @@ import { AmenityList } from "@/features/listing/AmenityList";
 import { OperatorCard } from "@/features/listing/OperatorCard";
 import { MiniMap } from "@/features/listing/MiniMap";
 import { ReservationCard } from "@/features/listing/ReservationCard";
+import { GuaranteeSection } from "@/features/guarantee/GuaranteeSection";
 import { ReviewsBlock } from "@/features/reviews/ReviewsBlock";
 import { RatingBadge } from "@/features/reviews/RatingStars";
 import { useLocationReviews } from "@/features/reviews/api";
@@ -254,6 +255,11 @@ export default function ListingPage() {
               </p>
             )}
           </section>
+
+          <Separator />
+
+          {/* Garantia de vaga */}
+          <GuaranteeSection />
 
           <Separator />
 

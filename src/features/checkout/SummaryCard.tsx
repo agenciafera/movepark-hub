@@ -1,6 +1,7 @@
 import { Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatBRL, formatDateTime, formatDuration } from "@/lib/format";
+import { GuaranteeBadge } from "@/features/guarantee/GuaranteeBadge";
 import type { BookingForCheckout } from "./api";
 
 type Props = {
@@ -87,6 +88,10 @@ export function SummaryCard({ booking, onEdit }: Props) {
         <span className="text-display-sm text-ink tabular-nums">
           {formatBRL(booking.total_amount)}
         </span>
+      </div>
+
+      <div className="mt-4 flex justify-center">
+        <GuaranteeBadge />
       </div>
 
       {onEdit && (

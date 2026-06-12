@@ -20,6 +20,7 @@ import {
   type ListingDetail,
 } from "./api";
 import { availabilityUi } from "./availability.logic";
+import { GuaranteeBadge } from "@/features/guarantee/GuaranteeBadge";
 import { couponDiscountLabel, couponErrorMessage, type CouponPreview } from "./coupon.logic";
 import { addOnsTotal, bookingTotal, selectedAddOns } from "./reservation.logic";
 
@@ -367,6 +368,12 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
             ? "Escolher datas"
             : "Reservar agora"}
       </Button>
+
+      {!avail.data?.sold_out && (
+        <div className="mt-3 flex justify-center">
+          <GuaranteeBadge />
+        </div>
+      )}
 
       <p className="mt-3 flex items-center justify-center gap-1.5 text-caption text-muted">
         <ShieldCheck className="h-3.5 w-3.5" />

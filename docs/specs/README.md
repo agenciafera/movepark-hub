@@ -16,6 +16,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | [discount-rules.md](./discount-rules.md) | Motor de Cupons & Descontos — **pilar desconto automático** (regra sem código no `simulate_price`, alimenta `old_price`): modelo, avaliação, empilhamento com cupom, UI, testes |
 | [reviews.md](./reviews.md) | Avaliações por estacionamento (PRD-08): modelo, agregado, coleta pós-estadia, exibição, resposta do dono, JSON-LD |
 | [voucher-qrcode.md](./voucher-qrcode.md) | Geração de voucher PDF, check-in por QR code, notificações |
+| [spot-guarantee.md](./spot-guarantee.md) | Garantia de vaga (PRD-14): promessa de plataforma, regra operacional, selo + acionamento (WhatsApp) |
 | [partner-onboarding.md](./partner-onboarding.md) | Onboarding de parceiro em 2 etapas: captura de lead → aprovação manual → wizard de setup |
 | [destinations.md](./destinations.md) | Destinos (aeroportos/etc): catálogo de busca + páginas de conteúdo SEO `/destinos/<slug>` + CRUD no Manager |
 
@@ -32,6 +33,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | discount-rules | ✅ Implementado (Fase 1 + Fase 2) — migration `20260612000000`, `discount_evaluate` (best-pick) + RPCs `operator_*_discount`, `simulate_price`/`create_booking_atomic` aplicam o desconto + snapshot `booking_discount`, empilha cupom (`allow_coupon_stack`), aba Descontos em `/operator/coupons` ("Promoções"), selo no listing, pgTAP `discount_rpc.test.sql`. Ver [discount-rules.md](./discount-rules.md) |
 | reviews | ✅ Implementado (Fase 1+2, PRD-08.1–08.6) — migration `20260613000000`, agregado + RPCs `submit_review`/`operator_respond_review`, coleta por e-mail (`review-request` + pg_cron), exibição (card/detalhe/bloco), JSON-LD AggregateRating/Review, painel `/operator/reviews`, **moderação `/manager/reviews` (08.5)** e **curadoria "Mais bem avaliados" no destino (08.6)**. Ver [reviews.md](./reviews.md) |
 | voucher-qrcode | ✅ Implementado — migration `20260615000000` (bucket `vouchers`), edge `voucher-pdf` (PDF + signed URL), página `/voucher/validate` (check-in por QR do operador, confirmed→checked_in via RLS). Ver [voucher-qrcode.md](./voucher-qrcode.md) |
+| spot-guarantee (PRD-14) | ✅ Implementado (MVP, front-end) — selo "Vaga garantida" no listing (gateado por disponibilidade) + checkout, seção "Sobre a garantia", e acionamento por WhatsApp da unidade (fallback suporte) no detalhe da reserva. Sem migration. Ver [spot-guarantee.md](./spot-guarantee.md) |
 | partner-onboarding | ✅ Implementado — migrations `20260603120000`–`20260603120400`, edge functions `submit-partner-lead`/`approve-partner`, UI Stage 1/Manager/Stage 2 |
 | destinations | ✅ Implementado — migration `20260609120000`, página SSG `/destinos/<slug>`, CRUD `/manager/destinations`, menu "Destinos" no header |
 | operator add-ons | ✅ Implementado — migration `20260610000000`, RPCs `operator_upsert_addon`/`operator_set_location_addon`/`operator_delete_addon`, CRUD `/operator/addons` (ver [operator-panel.md](./operator-panel.md) §4.5) |

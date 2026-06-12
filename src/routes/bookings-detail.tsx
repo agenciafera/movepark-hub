@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Inbox, ExternalLink, Phone, Mail } from "lucide-react";
+import { ArrowLeft, Inbox, ExternalLink, Phone, Mail, ShieldCheck } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { Voucher } from "@/features/bookings/Voucher";
 import { CancelBookingDialog } from "@/features/bookings/CancelBookingDialog";
 import { useBookingDetail } from "@/features/bookings/customerApi";
+import { guaranteeChannel } from "@/features/guarantee/whatsapp";
 import { useMyReview } from "@/features/reviews/api";
 import { ReviewForm } from "@/features/reviews/ReviewForm";
 import { RatingStars } from "@/features/reviews/RatingStars";
@@ -215,6 +216,28 @@ export default function BookingDetailPage() {
                 </a>
               )}
             </div>
+
+            {(booking.status === "confirmed" || booking.status === "checked_in") &&
+              (() => {
+                const ch = guaranteeChannel({
+                  unitPhone: booking.location_detail.phone,
+                  code: booking.code,
+                  unitName: booking.location.name,
+                });
+                return (
+                  <div className="mt-4 border-t border-hairline-soft pt-4">
+                    <p className="text-body-sm text-muted">
+                      Chegou e não tinha vaga? Você tem a garantia Movepark.
+                    </p>
+                    <Button variant="secondary" size="sm" className="mt-2" asChild>
+                      <a href={ch.href} target="_blank" rel="noreferrer">
+                        <ShieldCheck className="h-4 w-4" />
+                        {ch.label}
+                      </a>
+                    </Button>
+                  </div>
+                );
+              })()}
           </section>
 
           {booking.status === "completed" && (
