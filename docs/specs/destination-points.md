@@ -1,9 +1,13 @@
 # Pontos do destino (terminais) + distância por terminal (DAT-05)
 
-> Status: ✅ Implementado — migration `20260617000000_destination_point.sql`.
+> Status: ✅ Implementado — migrations `20260617000000_destination_point.sql` +
+> `20260618000000_geo_postgis.sql` (distância por terminal em PostGIS · **ADR-001**).
 > Fundação de dados (Onda 1). Complementa [DAT-04](./location-destination-proximity.md) (lote ↔
 > destino) e destrava a **granularidade por terminal** de PRD-09/PRD-13 e o autocomplete por
 > terminal na busca. Lê-se junto de [destinations.md](./destinations.md).
+>
+> **ADR-001 · Geo no banco com PostGIS.** A distância por terminal é `ST_Distance` em
+> `geography` (índice GiST) — **nunca no frontend**.
 
 ## O que é
 
@@ -12,8 +16,8 @@ proximidade ao **seu terminal**, não ao centro — "estacionamento do **Termina
 é busca de alta intenção. O **`destination_point`** modela os **pontos físicos** de um destino
 (T1/T2/T3, píer, plataforma) para responder "📍 mais perto do T2" e "6 min ao T3".
 
-A distância lote → terminal é **haversine em SQL** — a mesma do DAT-04, só trocando o alvo (o
-ponto, não o centro). **Sem API externa, sem PostGIS, calculada.**
+A distância lote → terminal é **`ST_Distance` (PostGIS)** — a mesma infra do DAT-04, só trocando o
+alvo (o ponto, não o centro). **Sem API externa, calculada no banco** (ADR-001).
 
 > O que o **cliente vê** como tempo de chegada é o **traslado** (operacional, PRD-11). A distância
 > por terminal serve para **ordenar/rotular** e para o **autocomplete por terminal** — não é o
@@ -45,6 +49,7 @@ destination (dono da geo: 1 centro)
     ├── type            text   check in (terminal | gate | pier | platform | other)  default 'terminal'
     ├── latitude        numeric not null
     ├── longitude       numeric not null
+    ├── geog            geography(Point,4326)  generated  (índice GiST)  ← ADR-001
     ├── sort_order      int    default 100
     └── unique (destination_id, name)
 ```
@@ -68,7 +73,7 @@ Espelha `destination`: leitura pública, escrita só `hub_admin`.
 
 ## Distância por terminal
 
-Reaproveita **`haversine_km`** do DAT-04. Dois objetos novos:
+Reaproveita a infra **PostGIS** do DAT-04 (`ST_Distance` em `geography`). Dois objetos novos:
 
 | Objeto | Assinatura | Uso |
 |---|---|---|
@@ -85,7 +90,7 @@ location_point_proximity
 ├── point_name            -- "Terminal 2"
 ├── point_type            -- terminal | pier | …
 ├── sort_order
-├── distance_km           -- haversine(location.geo, point.geo), 2 casas
+├── distance_km           -- ST_Distance(location.geog, point.geog)/1000, 2 casas
 └── is_nearest            -- true no ponto mais perto deste lote (badge "mais perto do T2")
 ```
 
@@ -124,7 +129,7 @@ para ordenar/rotular, não exige precisão de metro.
 
 - **DAT-04** ([location-destination-proximity.md](./location-destination-proximity.md)) — define o
   elo lote ↔ destino e a proximidade ao **centro**. Esta DAT-05 refina para a proximidade ao
-  **ponto** (terminal). Mesma `haversine_km`.
+  **ponto** (terminal). Mesma infra PostGIS (`ST_Distance`).
 - **PRD-09** ([distance-display.md](./distance-display.md)) — **exibe** esta proximidade: badge
   "mais perto do T2" no card (via `search`) e lista por terminal no detalhe (via esta view).
 - **PRD-13** — consome `is_nearest`/`nearest_terminal` para o badge "mais perto do T2".

@@ -1,6 +1,6 @@
--- pgTAP: DAT-05 — destination_point (terminais), nearest_destination_point,
+-- pgTAP: DAT-05 (PostGIS · ADR-001) — destination_point (terminais), nearest_destination_point,
 -- view location_point_proximity (distância por terminal + is_nearest), constraints e RLS.
--- Roda em transação com rollback. Reaproveita haversine_km do DAT-04.
+-- Distância via ST_Distance (geography) — sem haversine manual. Roda em transação com rollback.
 
 begin;
 select plan(12);

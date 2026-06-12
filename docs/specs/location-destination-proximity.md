@@ -1,18 +1,23 @@
 # Vínculo location ↔ destination + proximidade (DAT-04)
 
-> Status: ✅ Implementado — migration `20260616000000_location_destination_link.sql`.
+> Status: ✅ Implementado — migrations `20260616000000_location_destination_link.sql` +
+> `20260618000000_geo_postgis.sql` (migrou a proximidade para PostGIS · **ADR-001**).
 > Fundação de dados (Onda 1). Destrava **PRD-09** (exibir distância) e **PRD-13** (badge
 > "mais perto"). Lê-se junto de [destinations.md](./destinations.md). A granularidade por
-> **terminal** (T1/T2/T3) vem da [DAT-05](./destination-points.md), que reaproveita o
-> `haversine_km` daqui.
+> **terminal** (T1/T2/T3) vem da [DAT-05](./destination-points.md), que reaproveita a infra
+> PostGIS daqui.
+>
+> **ADR-001 · Geo no banco com PostGIS.** Toda distância/proximidade ("mais próximo", raio) é
+> calculada no Postgres com PostGIS (`geography(Point)`, `ST_Distance`/`ST_DWithin`, índice GiST)
+> — **nunca no frontend**. O frontend só exibe; o valor existe em query e em build (SSG/JSON-LD).
 
 ## O que é
 
 O **`destination`** (aeroporto, rodoviária, centro…) é o **dono da geo**: já tem
 `latitude`/`longitude`/`type`/`slug`/SEO. Cada **`location`** (lote/unidade física) passa a
 **apontar** para o seu destino-âncora via **`location.destination_id`**. Com o elo no lugar, a
-**proximidade** (lote → destino) sai **automática** por **haversine em SQL** — sem API externa,
-sem custo, sem ninguém digitar distância em 17 lotes.
+**proximidade** (lote → destino) sai **automática** por **`ST_Distance` (PostGIS)** sobre as
+colunas `geography` — sem API externa, sem ninguém digitar distância em 17 lotes.
 
 A proximidade aqui é a distância **geográfica** lote→destino, usada para **ranquear** resultados
 ("mais perto de Guarulhos") e renderizar o **badge "mais perto"**. O que o **cliente vê** como
@@ -45,21 +50,26 @@ location
 > O re-vínculo é ação **manual** no Manager (ou re-rodar o backfill) — decisão deliberada para
 > não desfazer overrides silenciosamente.
 
-## Haversine em SQL
+## Distância no banco — PostGIS (ADR-001)
 
-Fórmula manual, **sem PostGIS** e sem `cube`/`earthdistance` (evita dependência de extensão):
+Cada `destination`, `location` e `destination_point` ganha uma coluna **gerada**
+`geog geography(Point, 4326)` (derivada de `latitude`/`longitude`, `null` sem geo) com **índice
+GiST**. `ST_Distance` em `geography` já devolve **metros corretos** (curvatura) — sem haversine
+na mão, sem `cube`/`earthdistance`. O `haversine_km` manual da 1ª versão foi **removido**.
 
 ```sql
-public.haversine_km(lat1, lng1, lat2, lng2) returns numeric   -- IMMUTABLE
--- null em qualquer argumento → null. R = 6371 km.
+-- coluna gerada (idem em location e destination_point)
+alter table destination add column geog geography(Point,4326)
+  generated always as (st_setsrid(st_makepoint(longitude, latitude), 4326)::geography) stored;
+create index destination_geog_idx on destination using gist (geog);
 ```
 
-Funções de apoio:
+Funções de apoio (todas em PostGIS):
 
 | Função | Assinatura | Uso |
 |---|---|---|
-| `haversine_km` | `(numeric,numeric,numeric,numeric) → numeric` | distância em km entre dois pontos. Núcleo. |
-| `nearest_destination` | `(p_lat numeric, p_lng numeric, p_max_km numeric default 100) → uuid` | id do destino **publicado** mais próximo dentro do teto; `null` se nenhum. STABLE. Usada no backfill, na trigger e pelo Manager ("detectar mais próximo"). |
+| `nearest_destination` | `(p_lat numeric, p_lng numeric, p_max_km numeric default 100) → uuid` | id do destino **publicado** mais próximo dentro do teto (`ST_DWithin` + `ST_Distance`); `null` se nenhum. STABLE. Usada no backfill, na trigger e pelo Manager ("detectar mais próximo"). |
+| `locations_proximity` | `(p_lat numeric, p_lng numeric, p_destination_id uuid default null) → setof (location_id, distance_km, nearest_terminal_name, nearest_terminal_distance_km)` | proximidade de **todos os lotes** a um ponto buscado + terminal mais próximo (DAT-05), tudo em PostGIS. Consumida pelo Edge `search` (PRD-09) — o frontend só repassa. |
 
 ## Exposição da proximidade — view `location_proximity`
 
@@ -72,7 +82,7 @@ public.location_proximity  (security_invoker = true)
 ├── location_id
 ├── destination_id
 ├── destination_code, destination_name, destination_short_name, destination_type
-└── distance_km            -- haversine(location.geo, destination.geo), 2 casas; null sem geo/sem destino
+└── distance_km            -- ST_Distance(location.geog, destination.geog)/1000, 2 casas; null sem geo/sem destino
 ```
 
 - **`security_invoker = true`**: a view respeita a RLS das tabelas-base. `location` é legível
@@ -99,9 +109,9 @@ public.location_proximity  (security_invoker = true)
 
 - **PRD-09 / PRD-13** — consomem `location_proximity` (ou a relação embarcada) para exibir
   "a X km de <destino>" e o badge "mais perto". Foundation entregue aqui.
-- **`search` (Edge Function)** — já calcula haversine em TS contra o **destino buscado**
-  (distância dinâmica do filtro). A `location_proximity` é a distância **fixa** lote→destino-dono,
-  complementar; o `search` não muda nesta DAT-04.
+- **`search` (Edge Function)** — chama a RPC **`locations_proximity`** (PostGIS) para a distância
+  ao **destino buscado** + terminal mais próximo; **não** calcula geo em TS (ADR-001). A view
+  `location_proximity` é a distância **fixa** lote→destino-dono, complementar.
 - **PRD-11 (traslado)** — tempo de traslado exibido ao cliente é campo operacional **separado**;
   não confundir com a proximidade geográfica desta spec.
 
@@ -109,7 +119,7 @@ public.location_proximity  (security_invoker = true)
 
 | Camada | Arquivo | Cobre |
 |---|---|---|
-| Banco / regra (pgTAP) | `supabase/tests/location_destination.test.sql` | `haversine_km` (distância conhecida ≈ 0 e valor golden), `nearest_destination` (escolhe o destino certo + respeita o teto), trigger auto-fill no INSERT, override não é sobrescrito, view `location_proximity` (distância + nulos), RLS (anon lê a view de lote ativo). |
+| Banco / regra (pgTAP) | `supabase/tests/location_destination.test.sql` | `nearest_destination` (escolhe o destino certo + respeita o teto via `ST_DWithin`), trigger auto-fill no INSERT, override não é sobrescrito, view `location_proximity` (distância + nulos), RPC `locations_proximity` (distância pequena, `nearest_terminal` null sem pontos, lote sem geo ausente), RLS (anon lê a view de lote ativo). |
 | Componente (Vitest + RTL) | `src/features/locations/LocationForm.test.tsx` | gating de role: seletor de destino aparece no full scope e some no operator scope. |
 
 Mudou a regra de vínculo/proximidade → atualize esta spec no mesmo PR.

@@ -287,6 +287,13 @@ export type Database = {
             foreignKeyName: "booking_location_id_fkey"
             columns: ["location_id"]
             isOneToOne: false
+            referencedRelation: "location_point_proximity"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "booking_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
             referencedRelation: "location_proximity"
             referencedColumns: ["location_id"]
           },
@@ -722,6 +729,7 @@ export type Database = {
           code: string
           country: string
           created_at: string
+          geog: unknown
           hero_image_url: string | null
           id: string
           intro: string | null
@@ -744,6 +752,7 @@ export type Database = {
           code: string
           country?: string
           created_at?: string
+          geog?: unknown
           hero_image_url?: string | null
           id?: string
           intro?: string | null
@@ -766,6 +775,7 @@ export type Database = {
           code?: string
           country?: string
           created_at?: string
+          geog?: unknown
           hero_image_url?: string | null
           id?: string
           intro?: string | null
@@ -789,6 +799,7 @@ export type Database = {
         Row: {
           created_at: string
           destination_id: string
+          geog: unknown
           id: string
           latitude: number
           longitude: number
@@ -800,6 +811,7 @@ export type Database = {
         Insert: {
           created_at?: string
           destination_id: string
+          geog?: unknown
           id?: string
           latitude: number
           longitude: number
@@ -811,6 +823,7 @@ export type Database = {
         Update: {
           created_at?: string
           destination_id?: string
+          geog?: unknown
           id?: string
           latitude?: number
           longitude?: number
@@ -904,6 +917,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discount_rule_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_point_proximity"
+            referencedColumns: ["location_id"]
           },
           {
             foreignKeyName: "discount_rule_location_id_fkey"
@@ -1016,6 +1036,13 @@ export type Database = {
             foreignKeyName: "faq_location_id_fkey"
             columns: ["location_id"]
             isOneToOne: false
+            referencedRelation: "location_point_proximity"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "faq_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
             referencedRelation: "location_proximity"
             referencedColumns: ["location_id"]
           },
@@ -1063,6 +1090,7 @@ export type Database = {
           deleted_at: string | null
           destination_id: string | null
           email: string | null
+          geog: unknown
           has_notice: boolean
           has_passenger_quantity: boolean
           has_pcd_config: boolean
@@ -1088,6 +1116,7 @@ export type Database = {
           deleted_at?: string | null
           destination_id?: string | null
           email?: string | null
+          geog?: unknown
           has_notice?: boolean
           has_passenger_quantity?: boolean
           has_pcd_config?: boolean
@@ -1113,6 +1142,7 @@ export type Database = {
           deleted_at?: string | null
           destination_id?: string | null
           email?: string | null
+          geog?: unknown
           has_notice?: boolean
           has_passenger_quantity?: boolean
           has_pcd_config?: boolean
@@ -1195,6 +1225,13 @@ export type Database = {
             foreignKeyName: "location_add_on_service_location_id_fkey"
             columns: ["location_id"]
             isOneToOne: false
+            referencedRelation: "location_point_proximity"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "location_add_on_service_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
             referencedRelation: "location_proximity"
             referencedColumns: ["location_id"]
           },
@@ -1230,6 +1267,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_amenity_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_point_proximity"
+            referencedColumns: ["location_id"]
           },
           {
             foreignKeyName: "location_amenity_location_id_fkey"
@@ -1343,6 +1387,13 @@ export type Database = {
             foreignKeyName: "location_parking_type_location_id_fkey"
             columns: ["location_id"]
             isOneToOne: false
+            referencedRelation: "location_point_proximity"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "location_parking_type_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
             referencedRelation: "location_proximity"
             referencedColumns: ["location_id"]
           },
@@ -1383,6 +1434,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_photo_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_point_proximity"
+            referencedColumns: ["location_id"]
           },
           {
             foreignKeyName: "location_photo_location_id_fkey"
@@ -1868,6 +1926,13 @@ export type Database = {
             foreignKeyName: "review_location_id_fkey"
             columns: ["location_id"]
             isOneToOne: false
+            referencedRelation: "location_point_proximity"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "review_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
             referencedRelation: "location_proximity"
             referencedColumns: ["location_id"]
           },
@@ -2126,11 +2191,16 @@ export type Database = {
           tiers: Json
         }[]
       }
-      haversine_km: {
-        Args: { lat1: number; lat2: number; lng1: number; lng2: number }
-        Returns: number
-      }
       is_hub_admin: { Args: never; Returns: boolean }
+      locations_proximity: {
+        Args: { p_destination_id?: string; p_lat: number; p_lng: number }
+        Returns: {
+          distance_km: number
+          location_id: string
+          nearest_terminal_distance_km: number
+          nearest_terminal_name: string
+        }[]
+      }
       min_stay_satisfied: {
         Args: {
           p_days: number
@@ -2509,9 +2579,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       booking_item_type: ["parking", "add_on"],

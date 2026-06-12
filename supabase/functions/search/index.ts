@@ -26,7 +26,6 @@ import {
   soldOutTiebreak,
   type AvailabilityRow,
 } from "./availability.ts";
-import { haversineKm, nearestTerminal, type TerminalPoint } from "./proximity.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -96,11 +95,10 @@ Deno.serve(async (req: Request) => {
   }
 
   // 1. Resolve destination coordinates if dest code provided.
-  //    Quando há destino, carrega também os terminais (DAT-05) p/ a proximidade por terminal.
   let destLat = params.dest_lat;
   let destLng = params.dest_lng;
   let destInfo: { code: string; name: string } | null = null;
-  let terminals: TerminalPoint[] = [];
+  let destId: string | null = null;
   if (params.dest) {
     const { data: dest } = await supabase
       .from("destination")
@@ -113,16 +111,35 @@ Deno.serve(async (req: Request) => {
         destLng = Number(dest.longitude);
       }
       destInfo = { code: dest.code, name: dest.name };
-      const { data: pts } = await supabase
-        .from("destination_point")
-        .select("name, latitude, longitude")
-        .eq("destination_id", dest.id)
-        .order("sort_order");
-      terminals = (pts ?? []).map((p) => ({
-        name: p.name as string,
-        latitude: p.latitude != null ? Number(p.latitude) : null,
-        longitude: p.longitude != null ? Number(p.longitude) : null,
-      }));
+      destId = dest.id as string;
+    }
+  }
+
+  // 1b. Proximidade calculada no banco (PostGIS · ADR-001): distância de cada lote ao destino
+  //     buscado + terminal mais próximo (DAT-04/DAT-05). O Edge só repassa — nenhum cálculo de
+  //     geo aqui no frontend. nearest_terminal vem null se o destino não tem terminais.
+  const proximity = new Map<
+    string,
+    { distance: number | null; nearest_terminal: { name: string; distance_km: number } | null }
+  >();
+  if (destLat != null && destLng != null) {
+    const { data: prox } = await supabase.rpc("locations_proximity", {
+      p_lat: destLat,
+      p_lng: destLng,
+      p_destination_id: destId,
+    });
+    // deno-lint-ignore no-explicit-any
+    for (const p of (prox ?? []) as any[]) {
+      proximity.set(p.location_id, {
+        distance: p.distance_km != null ? Number(p.distance_km) : null,
+        nearest_terminal:
+          p.nearest_terminal_name != null
+            ? {
+                name: p.nearest_terminal_name as string,
+                distance_km: Number(p.nearest_terminal_distance_km),
+              }
+            : null,
+      });
     }
   }
 
@@ -188,24 +205,11 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  // 8. Compute distance + filter by max_distance_km
-  const withDistance = filtered.map((r) => {
-    let distance: number | null = null;
-    if (
-      destLat != null &&
-      destLng != null &&
-      r.location.latitude != null &&
-      r.location.longitude != null
-    ) {
-      distance = haversineKm(
-        destLat,
-        destLng,
-        Number(r.location.latitude),
-        Number(r.location.longitude),
-      );
-    }
-    return { ...r, _distance: distance };
-  });
+  // 8. Distância (calculada no banco, PostGIS) + filtro por max_distance_km
+  const withDistance = filtered.map((r) => ({
+    ...r,
+    _distance: proximity.get(r.location.id)?.distance ?? null,
+  }));
 
   let distanceFiltered = withDistance;
   if (params.max_distance_km != null && destLat != null) {
@@ -296,13 +300,9 @@ Deno.serve(async (req: Request) => {
       latitude: r.location.latitude != null ? Number(r.location.latitude) : null,
       longitude: r.location.longitude != null ? Number(r.location.longitude) : null,
       distance_km: r._distance != null ? Number(r._distance.toFixed(2)) : null,
-      // Terminal mais próximo do destino buscado (PRD-09 · DAT-05). null se o destino não
-      // tem terminais ou o lote não tem geo — aí vale a proximidade ao centro (distance_km).
-      nearest_terminal: nearestTerminal(
-        r.location.latitude != null ? Number(r.location.latitude) : null,
-        r.location.longitude != null ? Number(r.location.longitude) : null,
-        terminals,
-      ),
+      // Terminal mais próximo do destino buscado (PRD-09 · DAT-05), calculado no banco (PostGIS).
+      // null se o destino não tem terminais ou o lote não tem geo — aí vale a proximidade ao centro.
+      nearest_terminal: proximity.get(r.location.id)?.nearest_terminal ?? null,
       review_avg: r.location.review_avg != null ? Number(r.location.review_avg) : null,
       review_count: r.location.review_count ?? 0,
     },

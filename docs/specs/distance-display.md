@@ -2,8 +2,9 @@
 
 > Status: ✅ Implementado. Camada de **exibição** — consome as fundações de dados
 > [DAT-04](./location-destination-proximity.md) (lote ↔ destino) e
-> [DAT-05](./destination-points.md) (terminais). **Tudo calculado, nada digitado.**
-> Destrava os badges de [PRD-13] e alimenta a ordenação por proximidade.
+> [DAT-05](./destination-points.md) (terminais). **Tudo calculado no banco (PostGIS · ADR-001),
+> nada digitado, nada calculado no frontend.** Destrava os badges de [PRD-13] e alimenta a
+> ordenação por proximidade.
 
 ## O que é
 
@@ -28,9 +29,10 @@ aeroporto e ao terminal no **card de busca** e no **detalhe**, e usa a proximida
 
 ### Edge `search` — `location.nearest_terminal`
 
-Quando a busca tem um **destino** (`dest=GRU`), o `search` carrega os **terminais** do destino
-(`destination_point`, DAT-05) e calcula, por lote, o **terminal mais próximo** (haversine, módulo
-`supabase/functions/search/proximity.ts`). Acrescenta ao shape de cada resultado:
+Quando a busca tem um ponto (`dest=GRU` ou `dest_lat/lng`), o `search` chama a RPC
+**`locations_proximity(p_lat, p_lng, p_destination_id)`** (PostGIS, `ST_Distance`) que devolve, por
+lote, a distância ao destino **e** o terminal mais próximo (DAT-05). O Edge **só repassa** — nenhum
+cálculo de geo em TS (ADR-001). Acrescenta ao shape de cada resultado:
 
 ```jsonc
 "location": {
@@ -41,8 +43,8 @@ Quando a busca tem um **destino** (`dest=GRU`), o `search` carrega os **terminai
 
 - `nearest_terminal` é **null** quando: o destino não tem terminais (aeroporto de 1 terminal —
   vale a distância ao centro), o lote não tem geo, ou a busca foi por lat/lng sem `dest`.
-- O `proximity.ts` espelha `public.haversine_km` (mesma fórmula, R = 6371) e é **testado**
-  isoladamente (`proximity.test.ts`, deno) — sem API, calculado.
+- A distância sai de `ST_Distance` em `geography` (metros corretos, curvatura) — a RPC é
+  **testada** em pgTAP (`location_destination.test.sql`). Sem API, sem haversine manual.
 
 ### Detalhe — view `location_point_proximity`
 
@@ -52,8 +54,8 @@ o terminal mais perto **daquele** lote — o componente o destaca com o selo "ma
 
 ## Camada de aplicação
 
-- **`supabase/functions/search/proximity.ts`** — `haversineKm` + `nearestTerminal(lat,lng,points)`
-  (puro, testável). O `index.ts` resolve os terminais do destino e devolve `nearest_terminal`.
+- **`public.locations_proximity` (RPC, PostGIS)** — distância + terminal mais próximo por lote,
+  no banco. O Edge `search/index.ts` chama a RPC e só **repassa** o resultado (sem geo em TS).
 - **`src/features/search/useSearchResults.ts`** — tipo `location.nearest_terminal`.
 - **`src/features/search/ResultCard.tsx`** — badge "📍 mais perto do {Tx} · {dist}".
 - **`src/features/listing/api.ts`** — `useLocationTerminals(locationId)` lê
@@ -72,7 +74,7 @@ o terminal mais perto **daquele** lote — o componente o destaca com o selo "ma
 
 | Camada | Arquivo | Cobre |
 |---|---|---|
-| Edge (deno) | `supabase/functions/search/proximity.test.ts` | `haversineKm` (0 e ~111 km/grau), `nearestTerminal` (escolhe o mais perto, null sem geo/sem pontos, ignora ponto sem geo). |
+| Banco / regra (pgTAP) | `supabase/tests/location_destination.test.sql` | RPC `locations_proximity` (PostGIS): distância pequena ao destino, `nearest_terminal` null quando o destino não tem pontos, lote sem geo ausente. |
 | Componente (Vitest + RTL) | `src/features/search/ResultCard.test.tsx` | badge "mais perto do Tx" aparece com `nearest_terminal` e some sem ele. |
 | Componente (Vitest + RTL) | `src/features/listing/TerminalDistances.test.tsx` | lista por terminal, destaque do mais perto, distância formatada; vazio → não renderiza. |
 

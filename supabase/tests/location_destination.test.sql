@@ -1,8 +1,10 @@
--- pgTAP: DAT-04 — haversine_km, nearest_destination, trigger de auto-fill,
--- view location_proximity e RLS da view. Roda em transação com rollback.
+-- pgTAP: DAT-04 (PostGIS · ADR-001) — proximidade lote↔destino calculada no banco.
+-- Cobre nearest_destination (ST_Distance/ST_DWithin), o trigger de auto-fill, a view
+-- location_proximity, a RPC locations_proximity (usada pelo Edge search) e a RLS da view.
+-- Distância via PostGIS (geography) — sem haversine manual. Roda em transação com rollback.
 
 begin;
-select plan(10);
+select plan(11);
 
 -- ── fixtures (como postgres; RLS não se aplica a superuser) ──────────────────
 -- Destinos de teste em local remoto (Atlântico Sul) p/ não colidir com o seed/baseline.
@@ -40,15 +42,7 @@ begin
   perform set_config('request.jwt.claims', null, true);
 end $$;
 
--- ── haversine_km ─────────────────────────────────────────────────────────────
-select is(public.haversine_km(-23.5, -46.6, -23.5, -46.6), 0::numeric,
-  'haversine: mesmo ponto = 0');
-select is(public.haversine_km(null, -46.6, -23.5, -46.6), null::numeric,
-  'haversine: argumento nulo = null');
-select ok(public.haversine_km(0, 0, 1, 0) between 111 and 112,
-  'haversine: 1 grau de latitude ≈ 111 km');
-
--- ── nearest_destination ──────────────────────────────────────────────────────
+-- ── nearest_destination (PostGIS ST_DWithin/ST_Distance) ─────────────────────
 select is(public.nearest_destination(-50.0100, -30.0100),
   current_setting('test.d1')::uuid,
   'nearest_destination: escolhe o destino publicado mais próximo (d1)');
@@ -70,7 +64,7 @@ select is(
   null::uuid,
   'trigger: lote sem geo fica sem destino');
 
--- ── view location_proximity ──────────────────────────────────────────────────
+-- ── view location_proximity (distância via ST_Distance) ──────────────────────
 select ok(
   (select distance_km from public.location_proximity lp
    join public.location l on l.id = lp.location_id
@@ -82,6 +76,26 @@ select is(
    where l.slug = 'lote-c-sem-geo'),
   null::numeric,
   'view: lote sem geo tem distance_km null');
+
+-- ── RPC locations_proximity (usada pelo Edge search) ─────────────────────────
+select ok(
+  (select lp.distance_km
+   from public.locations_proximity(-50.0000, -30.0000, current_setting('test.d1')::uuid) lp
+   where lp.location_id = (select id from public.location where slug = 'lote-a-auto'))
+   between 0 and 5,
+  'rpc: distância do lote ao destino buscado é pequena e não-nula');
+select is(
+  (select lp.nearest_terminal_name
+   from public.locations_proximity(-50.0000, -30.0000, current_setting('test.d1')::uuid) lp
+   where lp.location_id = (select id from public.location where slug = 'lote-a-auto')),
+  null::text,
+  'rpc: destino sem terminais → nearest_terminal_name null (vale a proximidade ao centro)');
+select is(
+  (select count(*)::bigint
+   from public.locations_proximity(-50.0000, -30.0000, current_setting('test.d1')::uuid) lp
+   where lp.location_id = (select id from public.location where slug = 'lote-c-sem-geo')),
+  0::bigint,
+  'rpc: lote sem geo não entra no resultado (filtro geog not null)');
 
 -- ── RLS: anon lê a view de um lote ativo (security_invoker) ───────────────────
 set local role anon;

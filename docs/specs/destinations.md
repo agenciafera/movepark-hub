@@ -4,8 +4,8 @@
 > Manager, página pública SSG `/destinos/<slug>`, menu "Destinos" no header do consumer.
 >
 > **Vínculo com lotes:** cada `location` aponta para o seu destino-âncora via
-> `location.destination_id`, e a proximidade lote→destino sai por haversine em SQL — ver
-> [location-destination-proximity.md](./location-destination-proximity.md) (DAT-04).
+> `location.destination_id`, e a proximidade lote→destino sai por **PostGIS** `ST_Distance`
+> (ADR-001) — ver [location-destination-proximity.md](./location-destination-proximity.md) (DAT-04).
 >
 > **Pontos (terminais):** destinos multi-terminal (GRU: T1/T2/T3) têm pontos próprios em
 > `destination_point`, com distância por terminal e badge "mais perto do Tx" — ver
