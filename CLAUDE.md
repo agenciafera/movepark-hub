@@ -37,6 +37,25 @@ company (tenant)
 - **Deploy:** Cloudflare Worker (`src/worker.ts`, `wrangler.jsonc`) servindo o build estático com content-negotiation de Markdown para agentes.
 - **Gerenciador de pacotes:** **bun** (lockfile de texto `bun.lock` — versionado; o binário `bun.lockb` foi descontinuado por incompatibilidade entre versões de bun no CI/Cloudflare). Use sempre `bun` — não use `npm`/`yarn`/`pnpm`. Instalar deps: `bun install`; adicionar: `bun add <pkg>`.
 
+## Regras de arquitetura (ADRs)
+
+Regras **fixas** do projeto, não sugestões. Se algo conflitar com elas, **siga a regra e sinalize**.
+
+> **Toda atividade do ClickUp que traga um bloco de "regra de arquitetura" (ADR) deve ter essa
+> regra incorporada aqui** — não basta cumprir na entrega; a regra passa a valer para todo o
+> projeto e mora neste arquivo. Ao implementar uma tarefa com ADR, adicione/atualize a regra
+> nesta seção no mesmo PR.
+
+- **ADR-001 · Geo no banco com PostGIS.** Todo cálculo de geolocalização — distância,
+  proximidade, raio, "mais próximo", ordenação por distância — é feito no **Postgres com PostGIS**
+  (`geography(Point)`, `ST_Distance`/`ST_DWithin`, índice **GiST**), **nunca no frontend nem em TS
+  no Edge**. O frontend/Edge só **exibe ou repassa**; o valor calculado existe em **query e em
+  build** (SSG/JSON-LD). Geo é quase estática — materialize/indexe (coluna gerada `geog` + GiST) e
+  recalcule só quando a geo muda. **Não** escreva haversine na mão nem use `cube`/`earthdistance`.
+  Implementado em `supabase/migrations/20260618000000_geo_postgis.sql`; ver
+  [`docs/specs/location-destination-proximity.md`](docs/specs/location-destination-proximity.md) e
+  [`destination-points.md`](docs/specs/destination-points.md).
+
 ## Comandos
 
 Sempre via **bun**:
