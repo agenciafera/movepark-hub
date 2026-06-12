@@ -1,5 +1,34 @@
 # Voucher & QR Code — Comprovante de Reserva
 
+> **Status: ✅ Implementado** — migration `20260615000000_voucher_storage.sql` (bucket privado
+> `vouchers`), edge `voucher-pdf`, página `/voucher/validate` (check-in por QR do operador).
+> **Ao mudar uma regra, atualize esta spec no mesmo PR.**
+
+## Estado implementado (fonte de verdade)
+
+- **Voucher PDF (server-side):** edge **`voucher-pdf`** (`supabase/functions/voucher-pdf/`) — recebe
+  `{ code }` com JWT, lê o booking escopado pela RLS (dono **ou** operador da empresa), gera o PDF com
+  `pdf-lib` (wordmark, código, QR da página de validação, operadora/unidade/endereço, datas, veículo,
+  valor — helper puro `fields.ts`), sobe no bucket **privado `vouchers`** em `${booking_id}.pdf`
+  (service_role), grava `booking.voucher_url` e devolve uma **signed URL** (1h). Só para status
+  `confirmed`/`checked_in`/`completed`. No cliente: hook `useVoucherPdf()` + botão "Baixar voucher PDF"
+  no [Voucher](../../src/features/bookings/Voucher.tsx) e na confirmação do checkout (substitui o
+  `window.print()`).
+- **Check-in por QR:** o QR do voucher aponta para **`/voucher/validate?code=<code>`**
+  ([voucher-validate.tsx](../../src/routes/voucher-validate.tsx)) — rota **pública** com conteúdo por
+  papel (`useAuth().effectiveRole`): **operador/hub_admin** vê a validação + "Registrar entrada"
+  (confirmed → `checked_in` + `checked_in_at`, via UPDATE direto gateado pela RLS
+  `booking_operator_update`); **cliente** vê aviso + link para a própria reserva; **anônimo** vê CTA de
+  login. Validade em `voucher.logic.ts` (estado por status + janela -30min/+2h, pura/testável). A
+  **saída** (checked_in → completed) segue no drawer do painel do operador.
+- **Cliente vê a entrada:** `useBookingDetail` carrega `checked_in_at`; o voucher mostra "Entrada
+  registrada às HH:MM" quando `checked_in`.
+
+Testes: Vitest `voucher.logic.test.ts` (máquina de validade) + componente `voucher-validate.test.tsx`
+(papéis/estados); deno `voucher-pdf/fields.test.ts`. Sem RPC/migration de schema (reuso de RLS).
+
+---
+
 ## Visão geral
 
 O voucher é o comprovante digital da reserva. É gerado após a confirmação do pagamento
@@ -55,13 +84,13 @@ Ação:
 
 ---
 
-## Campos necessários no schema
+## Campos no schema (✅ já existem no baseline)
 
 | Campo | Tabela | Tipo | Descrição |
 |---|---|---|---|
-| `voucher_url` | `booking` | `text` | URL do PDF gerado |
-| `checked_in_at` | `booking` | `timestamptz` | Timestamp real de entrada (vs agendado) |
-| `checked_out_at` | `booking` | `timestamptz` | Timestamp real de saída |
+| `voucher_url` | `booking` | `text` | Caminho do PDF no bucket `vouchers` (populado pela edge `voucher-pdf`) |
+| `checked_in_at` | `booking` | `timestamptz` | Timestamp real de entrada (set no check-in por QR) |
+| `checked_out_at` | `booking` | `timestamptz` | Timestamp real de saída (set no drawer do operador) |
 
 > `checked_in_at` e `checked_out_at` são distintos de `check_in_at` / `check_out_at`:
 > os primeiros são o **agendamento**, os segundos são o **evento real**.

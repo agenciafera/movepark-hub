@@ -1,10 +1,12 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import { Check, Download, Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toDataUrl } from "@/lib/qr";
 import { formatDateTime } from "@/lib/format";
+import { useVoucherPdf } from "@/features/bookings/customerApi";
 import type { BookingForCheckout } from "./api";
 
 type Props = {
@@ -13,11 +15,21 @@ type Props = {
 
 export function Step4Confirmation({ booking }: Props) {
   const [qrUrl, setQrUrl] = React.useState<string | null>(null);
+  const pdf = useVoucherPdf();
 
   React.useEffect(() => {
     const validateUrl = `${window.location.origin}/voucher/validate?code=${booking.code}`;
     toDataUrl(validateUrl, 240).then(setQrUrl);
   }, [booking.code]);
+
+  async function downloadPdf() {
+    try {
+      const { url } = await pdf.mutateAsync(booking.code);
+      window.open(url, "_blank");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao baixar o voucher");
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -53,10 +65,11 @@ export function Step4Confirmation({ booking }: Props) {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => window.print()}
+            onClick={downloadPdf}
+            disabled={pdf.isPending}
           >
             <Download className="h-4 w-4" />
-            Baixar voucher
+            {pdf.isPending ? "Gerando…" : "Baixar voucher PDF"}
           </Button>
           <Button
             variant="secondary"

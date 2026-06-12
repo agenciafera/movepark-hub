@@ -24,6 +24,7 @@ import ForgotPasswordPage from "@/routes/forgot-password";
 import DesignSystemPage from "@/routes/design-system";
 import SejaParceiroPage from "@/routes/seja-parceiro";
 import OnboardingPage from "@/routes/onboarding";
+import VoucherValidatePage from "@/routes/voucher-validate";
 import DestinoPage from "@/routes/destino";
 
 import AccountIndexPage from "@/routes/account/index";
@@ -157,6 +158,9 @@ export const routes: RouteRecord[] = [
       { path: "/entrar", element: <EntrarPage /> },
       { path: "/signup", element: <Navigate to="/entrar" replace /> },
       { path: "/auth/callback", element: <AuthCallbackPage /> },
+
+      // Validação de voucher / check-in por QR (público, conteúdo por papel)
+      { path: "/voucher/validate", element: <VoucherValidatePage /> },
 
       // Auth backoffice
       { path: "/login", element: <LoginPage /> },

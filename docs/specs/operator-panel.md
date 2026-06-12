@@ -256,6 +256,16 @@ Colunas: `Nome` · `Desconto` (% ou R$) · `Unidade` (todas/uma) · `Janela` · 
 
 ---
 
+### 4.6b Check-in por QR (`/voucher/validate`)
+
+✅ implementado — ver [voucher-qrcode.md](./voucher-qrcode.md). O operador escaneia o QR do voucher no
+portão e cai em `/voucher/validate?code=<code>` (rota pública, conteúdo por papel). Logado como operador,
+vê a validação (código, veículo, datas, status + janela prevista) e o botão **"Registrar entrada"**
+(confirmed → `checked_in` + `checked_in_at`, via RLS `booking_operator_update`). A **saída** continua no
+drawer de Reservas (§4.2.1). Cliente que abrir a URL vê um aviso e link para a própria reserva.
+
+---
+
 ### 4.7 Avaliações
 
 **Rota:** `/operator/reviews` (nav "Avaliações"). ✅ implementado — ver [reviews.md](./reviews.md).

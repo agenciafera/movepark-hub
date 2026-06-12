@@ -1,11 +1,12 @@
 import * as React from "react";
-import { Download, Calendar as CalendarIcon } from "lucide-react";
+import { toast } from "sonner";
+import { Download, Calendar as CalendarIcon, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toDataUrl } from "@/lib/qr";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, formatTime } from "@/lib/format";
 import { Wordmark } from "@/components/shared/Brand";
-import type { MyBookingDetail } from "./customerApi";
+import { useVoucherPdf, type MyBookingDetail } from "./customerApi";
 
 type Props = {
   booking: MyBookingDetail;
@@ -13,11 +14,21 @@ type Props = {
 
 export function Voucher({ booking }: Props) {
   const [qrUrl, setQrUrl] = React.useState<string | null>(null);
+  const pdf = useVoucherPdf();
 
   React.useEffect(() => {
     const validateUrl = `${window.location.origin}/voucher/validate?code=${booking.code}`;
     toDataUrl(validateUrl, 240).then(setQrUrl);
   }, [booking.code]);
+
+  async function downloadPdf() {
+    try {
+      const { url } = await pdf.mutateAsync(booking.code);
+      window.open(url, "_blank");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao baixar o voucher");
+    }
+  }
 
   return (
     <div className="rounded-md border border-hairline bg-canvas p-6 print:border-0 print:p-0">
@@ -27,10 +38,11 @@ export function Voucher({ booking }: Props) {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => window.print()}
+            onClick={downloadPdf}
+            disabled={pdf.isPending}
           >
             <Download className="h-4 w-4" />
-            Baixar
+            {pdf.isPending ? "Gerando…" : "Baixar PDF"}
           </Button>
           <Button variant="secondary" size="sm" asChild>
             <a
@@ -70,9 +82,16 @@ export function Voucher({ booking }: Props) {
           )}
         </div>
 
-        <p className="text-body-sm text-muted">
-          Apresente esse QR na chegada à vaga.
-        </p>
+        {booking.status === "checked_in" && booking.checked_in_at ? (
+          <p className="inline-flex items-center gap-1.5 rounded-sm bg-badge-confirmed-bg px-2 py-1 text-body-sm text-badge-confirmed-fg">
+            <CheckCircle2 className="h-4 w-4" />
+            Entrada registrada às {formatTime(booking.checked_in_at)}
+          </p>
+        ) : (
+          <p className="text-body-sm text-muted">
+            Apresente esse QR na chegada à vaga.
+          </p>
+        )}
       </div>
 
       <div className="mt-6 space-y-2 border-t border-hairline-soft pt-5 text-body-sm">

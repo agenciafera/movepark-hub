@@ -96,6 +96,7 @@ export function useMyBookings(
 export type MyBookingDetail = MyBookingListItem & {
   passenger_count: number | null;
   has_pcd: boolean;
+  checked_in_at: string | null;
   vehicle: { license_plate: string; model: string | null; color: string | null } | null;
   items: {
     id: string;
@@ -125,7 +126,7 @@ export function useBookingDetail(code: string | undefined) {
         .from("booking")
         .select(
           `id, code, status, check_in_at, check_out_at, expires_at, total_amount, created_at,
-           passenger_count, has_pcd,
+           passenger_count, has_pcd, checked_in_at,
            location:location!inner(
              name, slug, address, phone, email, notice, reservation_policy,
              latitude, longitude,
@@ -166,6 +167,7 @@ export function useBookingDetail(code: string | undefined) {
         created_at: r.created_at,
         passenger_count: r.passenger_count,
         has_pcd: r.has_pcd,
+        checked_in_at: r.checked_in_at ?? null,
         location: {
           name: r.location.name,
           slug: r.location.slug,
@@ -204,6 +206,36 @@ export function useBookingDetail(code: string | undefined) {
     },
     enabled: !!code,
     staleTime: 30_000,
+  });
+}
+
+/**
+ * Gera/recupera o PDF do voucher via Edge Function `voucher-pdf` (JWT do usuário)
+ * e devolve a signed URL para download. Ver supabase/functions/voucher-pdf.
+ */
+export function useVoucherPdf() {
+  return useMutation({
+    mutationFn: async (code: string): Promise<{ url: string; code: string }> => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Você precisa entrar pra baixar o voucher.");
+
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/voucher-pdf`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ code }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? `Falha ao gerar voucher (HTTP ${res.status})`);
+      }
+      return res.json();
+    },
   });
 }
 

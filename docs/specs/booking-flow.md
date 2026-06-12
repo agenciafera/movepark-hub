@@ -101,15 +101,17 @@ POST /webhooks/payment/{provider}
 - Gera voucher / QR code (ver [voucher-qrcode.md](./voucher-qrcode.md))
 - Envia e-mail de confirmação
 
-### 5. Check-in (QR escaneado)
+### 5. Check-in (QR escaneado) — ✅ implementado
 
 ```
-GET /voucher/validate?code={booking_code}
+/voucher/validate?code={booking_code}   (página, não endpoint)
 ```
 
-- Valida se booking está `confirmed`
-- Valida se check_in_at está dentro da janela permitida
-- Atualiza `booking.status` → `checked_in`
+- Página **operador-gated** (rota pública, conteúdo por papel). O operador escaneia o QR no portão.
+- Valida pelo status (`confirmed` libera; `pending`/`cancelled`/`no_show`/`completed` bloqueiam) e
+  exibe a janela prevista (-30min/+2h de `check_in_at`) — fora da janela é aviso, não bloqueio.
+- "Registrar entrada" → `booking.status → checked_in` + `checked_in_at = now()` (UPDATE direto gateado
+  pela RLS `booking_operator_update`; sem RPC). Ver [voucher-qrcode.md](./voucher-qrcode.md).
 
 ### 6. Saída / Conclusão
 

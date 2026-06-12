@@ -155,6 +155,10 @@ Ao escanear no acesso à vaga, abre a página de validação operacional que con
 Transiciona `booking.status → 'checked_in'`. (Ver `voucher-qrcode.md`.)
 
 ### Baixar PDF
+✅ **Implementado.** Botão "Baixar voucher PDF" → hook `useVoucherPdf()` → edge `voucher-pdf` (gera o
+PDF no servidor, guarda no bucket privado `vouchers`, devolve signed URL). Quando a reserva está
+`checked_in`, o voucher mostra "Entrada registrada às HH:MM". Ver [voucher-qrcode.md](../voucher-qrcode.md).
+
 PDF inclui:
 - Logo Movepark + operadora
 - Código booking grande
