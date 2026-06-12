@@ -2,7 +2,9 @@
 
 > Status: ✅ Implementado — migration `20260616000000_location_destination_link.sql`.
 > Fundação de dados (Onda 1). Destrava **PRD-09** (exibir distância) e **PRD-13** (badge
-> "mais perto"). Lê-se junto de [destinations.md](./destinations.md).
+> "mais perto"). Lê-se junto de [destinations.md](./destinations.md). A granularidade por
+> **terminal** (T1/T2/T3) vem da [DAT-05](./destination-points.md), que reaproveita o
+> `haversine_km` daqui.
 
 ## O que é
 

@@ -153,6 +153,23 @@ INSERT INTO "public"."destination" ("id", "code", "name", "short_name", "type", 
 
 
 --
+-- Data for Name: destination_point; Type: TABLE DATA; Schema: public; Owner: postgres
+-- DAT-05 — terminais do GRU (único multi-terminal). Geo por code (não cravar id).
+--
+
+INSERT INTO "public"."destination_point" ("destination_id", "name", "type", "latitude", "longitude", "sort_order")
+SELECT d.id, v.name, 'terminal', v.lat, v.lng, v.sort
+FROM "public"."destination" d
+CROSS JOIN (VALUES
+	('Terminal 1', -23.4336::numeric, -46.4806::numeric, 1),
+	('Terminal 2', -23.4327::numeric, -46.4730::numeric, 2),
+	('Terminal 3', -23.4316::numeric, -46.4690::numeric, 3)
+) AS v(name, lat, lng, sort)
+WHERE d.code = 'GRU'
+ON CONFLICT (destination_id, name) DO NOTHING;
+
+
+--
 -- Data for Name: faq_category; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 

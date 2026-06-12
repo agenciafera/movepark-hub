@@ -19,6 +19,7 @@ import {
   useDeleteDestination,
 } from "@/features/destinations/api";
 import { DestinationForm } from "@/features/destinations/DestinationForm";
+import { DestinationPointsDialog } from "@/features/destinations/DestinationPointsDialog";
 import type { Destination } from "@/types/domain";
 
 export default function ManagerDestinations() {
@@ -26,6 +27,7 @@ export default function ManagerDestinations() {
   const del = useDeleteDestination();
   const [editing, setEditing] = React.useState<Destination | null>(null);
   const [formOpen, setFormOpen] = React.useState(false);
+  const [pointsOf, setPointsOf] = React.useState<Destination | null>(null);
 
   function openCreate() {
     setEditing(null);
@@ -107,6 +109,9 @@ export default function ManagerDestinations() {
                       <Button size="sm" variant="secondary" onClick={() => openEdit(d)}>
                         Editar
                       </Button>
+                      <Button size="sm" variant="secondary" onClick={() => setPointsOf(d)}>
+                        Terminais
+                      </Button>
                       <Button size="sm" variant="ghost" onClick={() => remove(d)} disabled={del.isPending}>
                         Excluir
                       </Button>
@@ -120,6 +125,11 @@ export default function ManagerDestinations() {
       )}
 
       <DestinationForm open={formOpen} destination={editing} onOpenChange={setFormOpen} />
+      <DestinationPointsDialog
+        open={!!pointsOf}
+        destination={pointsOf}
+        onOpenChange={(o) => !o && setPointsOf(null)}
+      />
     </div>
   );
 }

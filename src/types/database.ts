@@ -785,6 +785,50 @@ export type Database = {
         }
         Relationships: []
       }
+      destination_point: {
+        Row: {
+          created_at: string
+          destination_id: string
+          id: string
+          latitude: number
+          longitude: number
+          name: string
+          sort_order: number
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          destination_id: string
+          id?: string
+          latitude: number
+          longitude: number
+          name: string
+          sort_order?: number
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          destination_id?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          name?: string
+          sort_order?: number
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "destination_point_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destination"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       discount_rule: {
         Row: {
           advance_days: number | null
@@ -1882,6 +1926,27 @@ export type Database = {
       }
     }
     Views: {
+      location_point_proximity: {
+        Row: {
+          destination_id: string | null
+          destination_point_id: string | null
+          distance_km: number | null
+          is_nearest: boolean | null
+          location_id: string | null
+          point_name: string | null
+          point_type: string | null
+          sort_order: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destination"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       location_proximity: {
         Row: {
           destination_code: string | null
@@ -2077,6 +2142,10 @@ export type Database = {
       }
       nearest_destination: {
         Args: { p_lat: number; p_lng: number; p_max_km?: number }
+        Returns: string
+      }
+      nearest_destination_point: {
+        Args: { p_destination_id: string; p_lat: number; p_lng: number }
         Returns: string
       }
       onboarding_assert_editable: {

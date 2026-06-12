@@ -15,8 +15,12 @@ export type Payment = Tables<"payment">;
 export type ParkingType = Tables<"parking_type">;
 export type CompanyOnboarding = Tables<"company_onboarding">;
 export type Destination = Tables<"destination">;
+/** Ponto físico de um destino (terminal/píer/plataforma). DAT-05. */
+export type DestinationPoint = Tables<"destination_point">;
 /** Proximidade lote → destino-âncora (view location_proximity, haversine em SQL). */
 export type LocationProximity = Tables<"location_proximity">;
+/** Proximidade lote → cada ponto do destino (view location_point_proximity). DAT-05. */
+export type LocationPointProximity = Tables<"location_point_proximity">;
 /** Location com a relação destination embarcada (subset de campos de geo/rotulagem). */
 export type LocationWithDestination = Location & {
   destination: Pick<

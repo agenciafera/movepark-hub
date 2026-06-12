@@ -20,6 +20,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | [partner-onboarding.md](./partner-onboarding.md) | Onboarding de parceiro em 2 etapas: captura de lead → aprovação manual → wizard de setup |
 | [destinations.md](./destinations.md) | Destinos (aeroportos/etc): catálogo de busca + páginas de conteúdo SEO `/destinos/<slug>` + CRUD no Manager |
 | [location-destination-proximity.md](./location-destination-proximity.md) | Vínculo `location.destination_id` + proximidade por haversine em SQL (view `location_proximity`) — fundação de PRD-09/PRD-13 |
+| [destination-points.md](./destination-points.md) | Pontos do destino (terminais T1/T2/T3) + distância por terminal por haversine (view `location_point_proximity`) — granularidade por terminal de PRD-09/PRD-13 |
 
 ## Status
 
@@ -38,6 +39,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | partner-onboarding | ✅ Implementado — migrations `20260603120000`–`20260603120400`, edge functions `submit-partner-lead`/`approve-partner`, UI Stage 1/Manager/Stage 2 |
 | destinations | ✅ Implementado — migration `20260609120000`, página SSG `/destinos/<slug>`, CRUD `/manager/destinations`, menu "Destinos" no header |
 | location-destination-proximity | ✅ Implementado — migration `20260616000000`, FK `location.destination_id` + backfill dos 17 lotes, `haversine_km`/`nearest_destination`, trigger auto-fill, view `location_proximity`, override no `LocationForm`. Ver [location-destination-proximity.md](./location-destination-proximity.md) |
+| destination-points | ✅ Implementado — migration `20260617000000`, tabela `destination_point` (RLS espelha `destination`), `nearest_destination_point`, view `location_point_proximity` (`is_nearest`), seed T1/T2/T3 do GRU, dialog "Terminais" no Manager. Ver [destination-points.md](./destination-points.md) |
 | operator add-ons | ✅ Implementado — migration `20260610000000`, RPCs `operator_upsert_addon`/`operator_set_location_addon`/`operator_delete_addon`, CRUD `/operator/addons` (ver [operator-panel.md](./operator-panel.md) §4.5) |
 
 ## Migrations
@@ -66,6 +68,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | `20260614000000_capacity_real.sql` | Capacidade real: `min_stay_satisfied`, `check_availability` + `availability_batch` (disponibilidade por período), `create_booking_atomic` passa a aplicar `minimum_stay`/`minimum_date`/antecedência, `cron_expire_pending_bookings` + pg_cron `expire-pending-bookings` (pending abandonado → `cancelled`, libera hold), `operator_location_occupancy` (ocupação por data, gateada por empresa). `simulate_price` intacto |
 | `20260615000000_voucher_storage.sql` | Voucher PDF: cria o bucket **privado** `vouchers`. PDF gerado pela edge `voucher-pdf` (signed URL, `booking.voucher_url`); check-in por QR em `/voucher/validate` reusa RLS (sem RPC nova) |
 | `20260616000000_location_destination_link.sql` | Vínculo location↔destination (DAT-04): coluna `location.destination_id` (FK→`destination`, `on delete set null`) + índice; `haversine_km` (IMMUTABLE) e `nearest_destination` (teto 100 km); trigger `location_set_destination_trg` (auto-fill no INSERT); backfill dos 17 lotes pelo destino mais próximo; view `location_proximity` (`security_invoker`, `distance_km` on-the-fly) |
+| `20260617000000_destination_point.sql` | Pontos do destino (DAT-05): tabela `destination_point` (FK→`destination` `on delete cascade`, `type` text+CHECK, `unique(destination_id,name)`, RLS espelha `destination`); `nearest_destination_point`; view `location_point_proximity` (`security_invoker`, `distance_km`+`is_nearest`); seed T1/T2/T3 do GRU por `code` |
 
 ## Pendências
 
