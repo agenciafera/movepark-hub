@@ -1,17 +1,14 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "node:path";
 import sitemap from "vite-plugin-sitemap";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const SITE_URL = "https://hub.movepark.co";
 
-async function getDynamicRoutes(): Promise<string[]> {
-  const url = process.env.VITE_SUPABASE_URL;
-  const key = process.env.VITE_SUPABASE_ANON_KEY;
-  if (!url || !key) return [];
-
-  const sb = createClient(url, key);
+// Listagens /p/<company>/<location>/<parkingType> ativas (sitemap).
+async function getDynamicRoutes(sb: SupabaseClient | null): Promise<string[]> {
+  if (!sb) return [];
 
   const { data } = await sb
     .from("location_parking_type")
@@ -31,12 +28,8 @@ async function getDynamicRoutes(): Promise<string[]> {
 }
 
 // Páginas de destino (SEO) — /destinos/<slug> de cada destino publicado.
-async function getDestinationRoutes(): Promise<string[]> {
-  const url = process.env.VITE_SUPABASE_URL;
-  const key = process.env.VITE_SUPABASE_ANON_KEY;
-  if (!url || !key) return [];
-
-  const sb = createClient(url, key);
+async function getDestinationRoutes(sb: SupabaseClient | null): Promise<string[]> {
+  if (!sb) return [];
 
   const { data } = await sb.from("destination").select("slug").eq("is_published", true);
 
@@ -44,10 +37,17 @@ async function getDestinationRoutes(): Promise<string[]> {
   return (data ?? []).map((d: any) => `/destinos/${d.slug}`);
 }
 
-export default defineConfig(async () => {
+export default defineConfig(async ({ mode }) => {
+  // `loadEnv` lê os .env (versionados; a anon key é pública) — o Vite NÃO injeta o
+  // .env em process.env, então sem isto o sitemap sairia vazio no build local/deploy.
+  const env = loadEnv(mode, process.cwd(), "");
+  const url = env.VITE_SUPABASE_URL;
+  const key = env.VITE_SUPABASE_ANON_KEY;
+  const sb = url && key ? createClient(url, key) : null;
+
   const [listingRoutes, destinationRoutes] = await Promise.all([
-    getDynamicRoutes(),
-    getDestinationRoutes(),
+    getDynamicRoutes(sb),
+    getDestinationRoutes(sb),
   ]);
   // Índice de destinos + uma URL por destino publicado, além das listagens /p/...
   const dynamicRoutes = ["/destinos", ...listingRoutes, ...destinationRoutes];
