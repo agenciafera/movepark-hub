@@ -1,11 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -17,8 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useCreateLocation, useUpdateLocation } from "./api";
+import { useCreateLocation, useNearestDestination, useUpdateLocation } from "./api";
+import { useAdminDestinations } from "@/features/destinations/api";
 import type { EntityStatus, Location } from "@/types/domain";
+
+// Sentinela do <Select> para "sem âncora" (o Radix Select não aceita value="").
+const NO_DESTINATION = "__none__";
 
 function slugify(s: string) {
   return s
@@ -58,6 +57,15 @@ export function LocationForm({
   const [email, setEmail] = React.useState("");
   const [notice, setNotice] = React.useState("");
   const [reservationPolicy, setReservationPolicy] = React.useState("");
+  const [destinationId, setDestinationId] = React.useState<string | null>(null);
+
+  // Âncora de proximidade só é editável no full scope (hub_admin); operator não toca o vínculo.
+  const destinations = useAdminDestinations();
+  const hasGeo = location?.latitude != null && location?.longitude != null;
+  const nearest = useNearestDestination(
+    !operatorMode ? (location?.latitude ?? null) : null,
+    !operatorMode ? (location?.longitude ?? null) : null,
+  );
 
   React.useEffect(() => {
     if (open) {
@@ -70,6 +78,7 @@ export function LocationForm({
       setEmail(location?.email ?? "");
       setNotice(location?.notice ?? "");
       setReservationPolicy(location?.reservation_policy ?? "");
+      setDestinationId(location?.destination_id ?? null);
     }
   }, [open, location]);
 
@@ -86,6 +95,7 @@ export function LocationForm({
       notice: notice || null,
       reservation_policy: reservationPolicy || null,
       has_notice: !!notice,
+      destination_id: destinationId,
       company_id: companyId,
     };
 
@@ -186,6 +196,43 @@ export function LocationForm({
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
+          {!operatorMode && (
+            <div className="flex flex-col gap-1.5 tablet:col-span-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="destination">Destino (âncora de proximidade)</Label>
+                {hasGeo && nearest.data && nearest.data !== destinationId && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDestinationId(nearest.data ?? null)}
+                  >
+                    Detectar mais próximo
+                  </Button>
+                )}
+              </div>
+              <Select
+                value={destinationId ?? NO_DESTINATION}
+                onValueChange={(v) => setDestinationId(v === NO_DESTINATION ? null : v)}
+              >
+                <SelectTrigger id="destination">
+                  <SelectValue placeholder="Selecione um destino" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_DESTINATION}>Nenhum</SelectItem>
+                  {(destinations.data ?? []).map((d) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      {d.short_name ?? d.name} ({d.code})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-caption text-muted">
+                Usado para ranquear e exibir a distância do lote ao destino. Lotes novos com geo são
+                ligados ao mais próximo automaticamente.
+              </p>
+            </div>
+          )}
           <div className="flex flex-col gap-1.5 tablet:col-span-2">
             <Label htmlFor="notice">Aviso ao cliente</Label>
             <Textarea

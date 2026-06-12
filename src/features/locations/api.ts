@@ -1,33 +1,59 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { Database } from "@/types/database";
-import type { Location } from "@/types/domain";
+import type { Location, LocationWithDestination } from "@/types/domain";
 
 type LocationInsert = Database["public"]["Tables"]["location"]["Insert"];
 type LocationUpdate = Database["public"]["Tables"]["location"]["Update"];
+
+// Subset de destination embarcado nas leituras de lote (rotulagem + geo da âncora).
+const destinationEmbed =
+  "destination:destination(id, code, name, short_name, type, latitude, longitude)";
 
 export const locationsKeys = {
   all: ["locations"] as const,
   byCompany: (companyId: string) => [...locationsKeys.all, "company", companyId] as const,
   detail: (id: string) => [...locationsKeys.all, "detail", id] as const,
   forOperator: () => [...locationsKeys.all, "operator"] as const,
+  nearestDestination: (lat: number, lng: number) =>
+    [...locationsKeys.all, "nearest-destination", lat, lng] as const,
 };
 
 export function useLocationsByCompany(companyId: string | undefined) {
   return useQuery({
     queryKey: companyId ? locationsKeys.byCompany(companyId) : ["locations", "company", "none"],
-    queryFn: async (): Promise<Location[]> => {
+    queryFn: async (): Promise<LocationWithDestination[]> => {
       if (!companyId) return [];
       const { data, error } = await supabase
         .from("location")
-        .select("*")
+        .select(`*, ${destinationEmbed}`)
         .eq("company_id", companyId)
         .is("deleted_at", null)
         .order("name");
       if (error) throw error;
-      return (data ?? []) as Location[];
+      return (data ?? []) as unknown as LocationWithDestination[];
     },
     enabled: !!companyId,
+  });
+}
+
+/** Resolve o destino publicado mais próximo de um ponto (RPC nearest_destination → uuid|null). */
+export function useNearestDestination(lat: number | null, lng: number | null) {
+  return useQuery({
+    queryKey:
+      lat != null && lng != null
+        ? locationsKeys.nearestDestination(lat, lng)
+        : ["locations", "nearest-destination", "none"],
+    queryFn: async (): Promise<string | null> => {
+      if (lat == null || lng == null) return null;
+      const { data, error } = await supabase.rpc("nearest_destination", {
+        p_lat: lat,
+        p_lng: lng,
+      });
+      if (error) throw error;
+      return (data as string | null) ?? null;
+    },
+    enabled: lat != null && lng != null,
   });
 }
 

@@ -284,6 +284,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "booking_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_proximity"
+            referencedColumns: ["location_id"]
+          },
+          {
             foreignKeyName: "booking_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
@@ -854,6 +861,13 @@ export type Database = {
             referencedRelation: "location"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "discount_rule_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_proximity"
+            referencedColumns: ["location_id"]
+          },
         ]
       }
       discount_rule_parking_type: {
@@ -955,6 +969,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "faq_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_proximity"
+            referencedColumns: ["location_id"]
+          },
+          {
             foreignKeyName: "faq_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
@@ -996,6 +1017,7 @@ export type Database = {
           company_id: string
           created_at: string
           deleted_at: string | null
+          destination_id: string | null
           email: string | null
           has_notice: boolean
           has_passenger_quantity: boolean
@@ -1020,6 +1042,7 @@ export type Database = {
           company_id: string
           created_at?: string
           deleted_at?: string | null
+          destination_id?: string | null
           email?: string | null
           has_notice?: boolean
           has_passenger_quantity?: boolean
@@ -1044,6 +1067,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           deleted_at?: string | null
+          destination_id?: string | null
           email?: string | null
           has_notice?: boolean
           has_passenger_quantity?: boolean
@@ -1069,6 +1093,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destination"
             referencedColumns: ["id"]
           },
         ]
@@ -1116,6 +1147,13 @@ export type Database = {
             referencedRelation: "location"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "location_add_on_service_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_proximity"
+            referencedColumns: ["location_id"]
+          },
         ]
       }
       location_amenity: {
@@ -1148,6 +1186,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_amenity_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_proximity"
+            referencedColumns: ["location_id"]
           },
         ]
       }
@@ -1250,6 +1295,13 @@ export type Database = {
             referencedRelation: "location"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "location_parking_type_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_proximity"
+            referencedColumns: ["location_id"]
+          },
         ]
       }
       location_photo: {
@@ -1287,6 +1339,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_photo_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_proximity"
+            referencedColumns: ["location_id"]
           },
         ]
       }
@@ -1762,6 +1821,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "review_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_proximity"
+            referencedColumns: ["location_id"]
+          },
+          {
             foreignKeyName: "review_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
@@ -1816,7 +1882,26 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      location_proximity: {
+        Row: {
+          destination_code: string | null
+          destination_id: string | null
+          destination_name: string | null
+          destination_short_name: string | null
+          destination_type: string | null
+          distance_km: number | null
+          location_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destination"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       _apply_pricing:
@@ -1976,6 +2061,10 @@ export type Database = {
           tiers: Json
         }[]
       }
+      haversine_km: {
+        Args: { lat1: number; lat2: number; lng1: number; lng2: number }
+        Returns: number
+      }
       is_hub_admin: { Args: never; Returns: boolean }
       min_stay_satisfied: {
         Args: {
@@ -1985,6 +2074,10 @@ export type Database = {
           p_value: number
         }
         Returns: boolean
+      }
+      nearest_destination: {
+        Args: { p_lat: number; p_lng: number; p_max_km?: number }
+        Returns: string
       }
       onboarding_assert_editable: {
         Args: { p_company_id: string }

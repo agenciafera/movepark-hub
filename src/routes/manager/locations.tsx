@@ -71,6 +71,7 @@ export default function ManagerLocations() {
                 <TableHead>Nome</TableHead>
                 <TableHead>Slug</TableHead>
                 <TableHead>Endereço</TableHead>
+                <TableHead>Destino</TableHead>
                 <TableHead>Fuso</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -82,6 +83,11 @@ export default function ManagerLocations() {
                   <TableCell className="text-ink">{loc.name}</TableCell>
                   <TableCell className="text-caption text-muted">/{loc.slug}</TableCell>
                   <TableCell>{loc.address ?? "—"}</TableCell>
+                  <TableCell>
+                    {loc.destination
+                      ? `${loc.destination.short_name ?? loc.destination.name} (${loc.destination.code})`
+                      : "—"}
+                  </TableCell>
                   <TableCell>{loc.timezone}</TableCell>
                   <TableCell>
                     <Badge tone={statusTone[loc.status]}>{loc.status}</Badge>

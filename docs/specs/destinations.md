@@ -2,6 +2,10 @@
 
 > Status: ✅ Implementado — migration `20260609120000_destination_seo.sql`, CRUD no
 > Manager, página pública SSG `/destinos/<slug>`, menu "Destinos" no header do consumer.
+>
+> **Vínculo com lotes:** cada `location` aponta para o seu destino-âncora via
+> `location.destination_id`, e a proximidade lote→destino sai por haversine em SQL — ver
+> [location-destination-proximity.md](./location-destination-proximity.md) (DAT-04).
 
 ## O que é
 

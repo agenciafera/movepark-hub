@@ -15,6 +15,15 @@ export type Payment = Tables<"payment">;
 export type ParkingType = Tables<"parking_type">;
 export type CompanyOnboarding = Tables<"company_onboarding">;
 export type Destination = Tables<"destination">;
+/** Proximidade lote → destino-âncora (view location_proximity, haversine em SQL). */
+export type LocationProximity = Tables<"location_proximity">;
+/** Location com a relação destination embarcada (subset de campos de geo/rotulagem). */
+export type LocationWithDestination = Location & {
+  destination: Pick<
+    Destination,
+    "id" | "code" | "name" | "short_name" | "type" | "latitude" | "longitude"
+  > | null;
+};
 export type AddOnService = Tables<"add_on_service">;
 export type LocationAddOnService = Tables<"location_add_on_service">;
 export type Coupon = Tables<"coupon">;
@@ -62,9 +71,11 @@ export type PartnerApplication = CompanyOnboarding & {
 
 export type BookingWithRelations = Booking & {
   profile: Pick<Profile, "id" | "full_name" | "phone" | "tax_id"> | null;
-  location: (Pick<Location, "id" | "name" | "slug" | "timezone"> & {
-    company: Pick<Company, "id" | "name" | "slug">;
-  }) | null;
+  location:
+    | (Pick<Location, "id" | "name" | "slug" | "timezone"> & {
+        company: Pick<Company, "id" | "name" | "slug">;
+      })
+    | null;
   vehicle: Pick<Vehicle, "id" | "license_plate" | "model" | "color"> | null;
 };
 
