@@ -1,4 +1,5 @@
 import { Outlet, useLocation } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { queryClient } from "@/lib/query-client";
@@ -42,6 +43,9 @@ export function AppProviders() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      {/* Título-padrão (fallback). Páginas que definem o próprio <title> via Helmet
+          sobrescrevem; assim cada página tem exatamente um <title>. */}
+      <Helmet defaultTitle="Movepark Hub" />
       <AuthProvider>
         <ScrollToTop />
         <Toaster position="bottom-right" richColors />
