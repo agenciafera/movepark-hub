@@ -12,12 +12,14 @@ import { useAuth } from "@/auth/context";
 import { formatBRL, formatDuration } from "@/lib/format";
 import {
   useSimulatePrice,
+  useAvailability,
   useDebounced,
   useCreateBooking,
   useValidateCoupon,
   useLocationAddOns,
   type ListingDetail,
 } from "./api";
+import { availabilityUi } from "./availability.logic";
 import { couponDiscountLabel, couponErrorMessage, type CouponPreview } from "./coupon.logic";
 import { addOnsTotal, bookingTotal, selectedAddOns } from "./reservation.logic";
 
@@ -71,10 +73,20 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
     days: debouncedDays,
   });
 
+  const avail = useAvailability({
+    companySlug: listing.company.slug,
+    locationSlug: listing.location.slug,
+    parkingTypeCode: listing.parking_type.code,
+    from: debouncedFrom,
+    to: debouncedTo,
+  });
+  const availUi = availabilityUi(avail.data);
+
   // Recalcula stale flag — pricing está sendo recarregado pra novos valores
   const pricingStale = sim.isFetching && (from !== debouncedFrom || to !== debouncedTo);
 
-  const canReserve = !!from && !!to && days > 0 && sim.data?.price != null && !sim.isFetching;
+  const canReserve =
+    !!from && !!to && days > 0 && sim.data?.price != null && !sim.isFetching && availUi.canReserve;
 
   // Cupom depende de datas/preço: ao mudar o período, invalida o cupom aplicado.
   React.useEffect(() => {
@@ -226,6 +238,20 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
       {sim.data?.error && (
         <div className="mt-4 rounded-sm border border-error bg-badge-cancelled-bg p-2 text-caption text-error">
           {sim.data.error}
+        </div>
+      )}
+
+      {/* Disponibilidade / regras de reserva (esgotado, estadia mínima, antecedência, quase-lotação) */}
+      {availUi.message && (
+        <div
+          className={
+            availUi.tone === "error"
+              ? "mt-4 rounded-sm border border-error bg-badge-cancelled-bg p-2 text-caption text-error"
+              : "mt-4 rounded-sm border border-hairline bg-badge-pending-bg p-2 text-caption text-badge-pending-fg"
+          }
+          role="status"
+        >
+          {availUi.message}
         </div>
       )}
 

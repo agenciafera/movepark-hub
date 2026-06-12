@@ -1,5 +1,46 @@
 # Capacity Rules — Controle de Disponibilidade
 
+> **Status: ✅ Implementado** — migration `20260614000000_capacity_real.sql` (sobre a infra de
+> hold/release já existente no baseline). **Ao mudar uma regra, atualize esta spec no mesmo PR.**
+
+## Estado implementado (fonte de verdade)
+
+O hold por data **já existia** no baseline; esta entrega o tornou confiável de ponta a ponta:
+
+- **Hold na criação da reserva.** `create_booking_atomic` segura a vaga **ao criar o `pending`**
+  (loop por data em `location_parking_availability`, `SELECT … FOR UPDATE`, `booked_count++`,
+  rejeita se `booked_count >= capacity`) e grava `expires_at = now() + 30 min`.
+- **Release do hold:** `release_booking_capacity(booking_id)` decrementa cada data. Chamado no
+  **cancelamento manual** (checkout/my-bookings) **e** pela expiração automática.
+- **Expiração de pending abandonado (novo):** `cron_expire_pending_bookings()` (pg_cron
+  `expire-pending-bookings`, a cada 5 min) pega `pending` com `expires_at < now()`, chama
+  `release_booking_capacity` e marca **`cancelled`** + `deleted_at` (não `no_show`). Sem isso o
+  hold vazava para sempre em todo checkout abandonado.
+- **Regras de reserva aplicadas (novo):** `create_booking_atomic` agora bloqueia (`P0001`) antes
+  do hold quando viola `minimum_stay` (`min_stay_satisfied`), `minimum_date` ou a antecedência
+  mínima (`pricing_rule.advance_booking_minutes`).
+- **Disponibilidade exposta no produto (novo):**
+  - `check_availability(company, location, parking_type, check_in, check_out)` → jsonb com
+    `remaining` (= `capacity − max(booked_count nas datas)`), `sold_out`, `near_capacity`,
+    `near_capacity_message`, `min_stay_ok`/`min_date_ok`/`advance_ok`, `ok` e `reasons[]`. Usado
+    pelo `ReservationCard` do listing.
+  - `availability_batch(lpt_ids[], check_in, check_out)` — uma query agregada para a edge
+    `search` (sem N+1); cards marcam "Esgotado pro seu período"/quase-lotação e esgotados vão
+    para o fim da lista.
+- **Operador (novo):** edita `near_capacity_threshold`/`near_capacity_message` e
+  `minimum_stay`/`minimum_date` em "Tipos de vaga" → diálogo **Regras de reserva** (UPDATE direto,
+  RLS `lpt_operator_update`); vê ocupação por data em **`/operator/occupancy`** via
+  `operator_location_occupancy(location_id, from, to)` (SECURITY DEFINER, gateada por empresa).
+- **Capacidade real** já está no seed (`location_parking_type.capacity`, valores 15–1100) — a
+  antiga pendência de "placeholder 0" estava desatualizada.
+
+Testes: pgTAP `capacity.test.sql` (hold/esgotado/release + min_stay/min_date + expiração) e
+`availability_rpc.test.sql` (`check_availability`/`availability_batch`/guard de ocupação); Vitest
+`availability.logic`/`occupancy.logic`/`capacity-rules.logic` + componente `ResultCard`; deno
+`search/availability.test.ts`; `test:int` garante os golden de preço inalterados.
+
+---
+
 ## Como o legado funciona
 
 O legado usa duas tabelas:
@@ -46,7 +87,7 @@ Esta coluna representa o **teto total de vagas físicas** da unidade para aquele
 Precisamos do equivalente ao `order_count` do legado:
 
 ```sql
--- Nova tabela necessária
+-- ✅ tabela existente (baseline) — ocupação por data
 create table public.location_parking_availability (
   id            uuid primary key default gen_random_uuid(),
   location_parking_type_id uuid not null

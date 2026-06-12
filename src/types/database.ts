@@ -1853,6 +1853,31 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: undefined
       }
+      availability_batch: {
+        Args: {
+          p_check_in_at: string
+          p_check_out_at: string
+          p_lpt_ids: string[]
+        }
+        Returns: {
+          capacity: number
+          location_parking_type_id: string
+          near_capacity: boolean
+          near_capacity_message: string
+          remaining: number
+          sold_out: boolean
+        }[]
+      }
+      check_availability: {
+        Args: {
+          p_check_in_at: string
+          p_check_out_at: string
+          p_company: string
+          p_location: string
+          p_parking_type: string
+        }
+        Returns: Json
+      }
       coupon_assert_company_access: {
         Args: { p_company_id: string }
         Returns: undefined
@@ -1888,6 +1913,7 @@ export type Database = {
         Returns: Json
       }
       cron_complete_bookings: { Args: never; Returns: number }
+      cron_expire_pending_bookings: { Args: never; Returns: number }
       current_company_ids: { Args: never; Returns: string[] }
       current_user_role: {
         Args: never
@@ -1951,6 +1977,15 @@ export type Database = {
         }[]
       }
       is_hub_admin: { Args: never; Returns: boolean }
+      min_stay_satisfied: {
+        Args: {
+          p_days: number
+          p_total_minutes: number
+          p_unit: Database["public"]["Enums"]["minimum_stay_unit"]
+          p_value: number
+        }
+        Returns: boolean
+      }
       onboarding_assert_editable: {
         Args: { p_company_id: string }
         Returns: undefined
@@ -2014,6 +2049,16 @@ export type Database = {
       operator_delete_discount: {
         Args: { p_discount_rule_id: string }
         Returns: undefined
+      }
+      operator_location_occupancy: {
+        Args: { p_from: string; p_location_id: string; p_to: string }
+        Returns: {
+          booked_count: number
+          capacity: number
+          date: string
+          location_parking_type_id: string
+          parking_type_name: string
+        }[]
       }
       operator_respond_review: {
         Args: { p_response: string; p_review_id: string }

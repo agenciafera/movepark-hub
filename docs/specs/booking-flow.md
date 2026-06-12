@@ -1,5 +1,14 @@
 # Booking Flow — Ciclo de Vida da Reserva
 
+> **Modelo de capacidade (implementado):** a vaga é **reservada na criação do `pending`**
+> (`create_booking_atomic` segura `location_parking_availability.booked_count` por data, com
+> `expires_at = now() + 30 min`) — **não** na confirmação do pagamento. A confirmação **não**
+> re-incrementa. O hold é liberado (`release_booking_capacity`) no **cancelamento** e na
+> **expiração** de `pending` não pago, que vira **`cancelled`** (não `no_show`) via
+> `cron_expire_pending_bookings` (pg_cron `expire-pending-bookings`, a cada 5 min).
+> `minimum_stay`/`minimum_date`/antecedência são validados na criação. Ver
+> [capacity-rules.md](./capacity-rules.md).
+
 ## State Machine
 
 ### Estados
@@ -21,7 +30,7 @@
 ```
 pending ──────→ confirmed   (pagamento aprovado)
 pending ──────→ cancelled   (falha no pagamento / cancelamento antes do pagamento)
-pending ──────→ no_show     (expires_at ultrapassado sem pagamento)
+pending ──────→ cancelled   (expires_at ultrapassado sem pagamento — job libera o hold)
 
 confirmed ────→ checked_in  (QR escaneado na entrada)
 confirmed ────→ cancelled   (cancelamento após pagamento — inicia reembolso)
@@ -87,7 +96,8 @@ POST /webhooks/payment/{provider}
 - Verifica assinatura do webhook
 - Atualiza `payment.status` → `paid`
 - Atualiza `booking.status` → `confirmed`
-- **Incrementa** `location_parking_availability.booked_count` para cada data do período
+- **Não** mexe em `location_parking_availability.booked_count` — a vaga já foi segurada na criação
+  do `pending` (ver nota de capacidade no topo); confirmar só consolida o hold
 - Gera voucher / QR code (ver [voucher-qrcode.md](./voucher-qrcode.md))
 - Envia e-mail de confirmação
 
@@ -113,17 +123,14 @@ GET /voucher/validate?code={booking_code}
 Reservas com `expires_at` preenchido (pagamentos assíncronos como PIX) precisam
 ser expiradas automaticamente.
 
-**Regra:**
-- Se `status = pending` E `expires_at < now()` → transição para `no_show`
-- Executado por job agendado (cron)
-- Ao expirar: **não** incrementa `booked_count` (vaga nunca foi ocupada)
-- Notificação opcional ao usuário
+**Regra (implementada):**
+- Se `status = pending` E `expires_at < now()` → `cron_expire_pending_bookings()` chama
+  `release_booking_capacity` (devolve o hold de cada data) e marca **`cancelled`** + `deleted_at`
+- Executado por pg_cron `expire-pending-bookings` (a cada 5 min)
+- O hold **foi** criado na reserva, então expirar **precisa** liberá-lo (senão a vaga vaza)
 
-**Campo `expires_at` na `booking`:**
-```sql
-expires_at  timestamptz  -- preenchido pelo gateway (ex: PIX tem 30min de validade)
-```
-> Esta coluna ainda não existe no schema atual — adicionar na próxima migration.
+**Campo `expires_at` na `booking`:** já existe (`timestamptz`); `create_booking_atomic` grava
+`now() + 30 min` na criação.
 
 ---
 

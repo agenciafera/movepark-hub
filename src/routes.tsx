@@ -55,6 +55,7 @@ import OperatorLayout from "@/routes/operator/layout";
 import OperatorDashboard from "@/routes/operator/dashboard";
 import OperatorBookings from "@/routes/operator/bookings";
 import OperatorLocations from "@/routes/operator/locations";
+import OperatorOccupancy from "@/routes/operator/occupancy";
 import OperatorReports from "@/routes/operator/reports";
 import OperatorSettings from "@/routes/operator/settings";
 import OperatorFaq from "@/routes/operator/faq";
@@ -225,6 +226,7 @@ export const routes: RouteRecord[] = [
               { index: true, element: <OperatorDashboard /> },
               { path: "bookings", element: <OperatorBookings /> },
               { path: "locations", element: <OperatorLocations /> },
+              { path: "occupancy", element: <OperatorOccupancy /> },
               {
                 path: "locations/:locationId/parking-types",
                 element: <ParkingTypesPage />,

@@ -19,6 +19,17 @@ export type AddOnService = Tables<"add_on_service">;
 export type LocationAddOnService = Tables<"location_add_on_service">;
 export type Coupon = Tables<"coupon">;
 export type DiscountType = Enums<"discount_type">;
+export type MinimumStayUnit = Enums<"minimum_stay_unit">;
+export type LocationParkingType = Tables<"location_parking_type">;
+
+/** Linha de ocupação por data (retorno de operator_location_occupancy). */
+export type LocationOccupancyRow = {
+  location_parking_type_id: string;
+  parking_type_name: string;
+  date: string;
+  capacity: number;
+  booked_count: number;
+};
 
 /** Cupom + os tipos de vaga aos quais está restrito (vazio = vale para todos). */
 export type CouponWithRestrictions = Coupon & {

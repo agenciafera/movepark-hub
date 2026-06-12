@@ -267,6 +267,11 @@ Ao marcar/desmarcar, recalcula preço (não chama RPC, soma client-side dos valo
 
 ## 9. Estados especiais
 
+> ✅ **Implementado** via RPC `check_availability` (hook `useAvailability`, lógica pura
+> `listing/availability.logic.ts`). Os estados abaixo — esgotado, estadia mínima, antecedência —
+> desabilitam "Reservar agora" e exibem a mensagem; quase-lotação exibe aviso sem bloquear.
+> Ver [capacity-rules.md](../capacity-rules.md).
+
 ### Datas não escolhidas
 Reservation card mostra:
 ```

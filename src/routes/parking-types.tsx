@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useParams, useLocation, Link } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, SlidersHorizontal, Table2 } from "lucide-react";
+import { ArrowLeft, Plus, SlidersHorizontal, Table2, CalendarClock } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,6 +18,7 @@ import {
   type LocationParkingTypeWithRelations,
 } from "@/features/parking-types/api";
 import { ParkingTypeForm } from "@/features/parking-types/ParkingTypeForm";
+import { CapacityRulesForm } from "@/features/parking-types/CapacityRulesForm";
 import { PricingRuleEditor } from "@/features/parking-types/PricingRuleEditor";
 import { PricingSimulationDialog } from "@/features/parking-types/PricingSimulationTable";
 import { PricingSummary, StrategyChip } from "@/features/parking-types/PricingSummary";
@@ -33,6 +34,9 @@ export default function ParkingTypesPage() {
   const updateLpt = useUpdateLocationParkingType();
   const [createOpen, setCreateOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<LocationParkingTypeWithRelations | null>(null);
+  const [editingRules, setEditingRules] = React.useState<LocationParkingTypeWithRelations | null>(
+    null,
+  );
   const [simulating, setSimulating] = React.useState<LocationParkingTypeWithRelations | null>(
     null,
   );
@@ -114,6 +118,7 @@ export default function ParkingTypesPage() {
               onToggleActive={(v) => toggleActive(lpt.id, v)}
               onUpdateCapacity={(c) => updateCapacity(lpt.id, c)}
               onEditPricing={() => setEditing(lpt)}
+              onEditRules={() => setEditingRules(lpt)}
               onOpenSimulation={() => setSimulating(lpt)}
             />
           ))}
@@ -129,6 +134,14 @@ export default function ParkingTypesPage() {
           companySlug={company.data.slug}
           locationSlug={location.data.slug}
           parkingTypeCode={editing.company_parking_type.parking_type.code}
+        />
+      )}
+
+      {editingRules && (
+        <CapacityRulesForm
+          open={!!editingRules}
+          lpt={editingRules}
+          onOpenChange={(open) => !open && setEditingRules(null)}
         />
       )}
 
@@ -151,6 +164,7 @@ type CardProps = {
   onToggleActive: (v: boolean) => void;
   onUpdateCapacity: (capacity: number) => void;
   onEditPricing: () => void;
+  onEditRules: () => void;
   onOpenSimulation: () => void;
 };
 
@@ -159,6 +173,7 @@ function ParkingTypeCard({
   onToggleActive,
   onUpdateCapacity,
   onEditPricing,
+  onEditRules,
   onOpenSimulation,
 }: CardProps) {
   const [capacity, setCapacity] = React.useState(lpt.capacity);
@@ -217,6 +232,10 @@ function ParkingTypeCard({
             </div>
           </div>
           <div className="flex-1" />
+          <Button size="sm" variant="secondary" onClick={onEditRules}>
+            <CalendarClock className="h-4 w-4" />
+            Regras de reserva
+          </Button>
           <Button
             size="sm"
             variant="secondary"

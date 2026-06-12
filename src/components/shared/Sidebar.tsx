@@ -14,6 +14,7 @@ import {
   Sparkles,
   Tag,
   Star,
+  CalendarRange,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Monogram, Wordmark } from "./Brand";
@@ -41,6 +42,7 @@ const operatorItems: Item[] = [
   { to: "/operator", label: "Dashboard", icon: LayoutDashboard },
   { to: "/operator/bookings", label: "Reservas", icon: Calendar },
   { to: "/operator/locations", label: "Localizações", icon: MapPin },
+  { to: "/operator/occupancy", label: "Ocupação", icon: CalendarRange },
   { to: "/operator/addons", label: "Serviços", icon: Sparkles },
   { to: "/operator/coupons", label: "Promoções", icon: Tag },
   { to: "/operator/reviews", label: "Avaliações", icon: Star },

@@ -3,7 +3,7 @@
 -- se booked_count >= capacity → erro. Roda em transação com rollback.
 
 begin;
-select plan(7);
+select plan(11);
 
 -- ── fixture: customer + um tipo de vaga do seed com capacidade = 1 ──────────
 do $$
@@ -57,6 +57,58 @@ select is(
   coalesce((select booked_count from public.location_parking_availability
    where location_parking_type_id = current_setting('test.lpt')::uuid and date = '2026-09-10'), 0),
   0, 'release_booking_capacity zera o booked_count');
+
+-- ── 4) estadia mínima bloqueia a reserva ───────────────────────────────────
+update public.location_parking_type
+   set has_minimum_stay = true, minimum_stay_value = 5, minimum_stay_unit = 'days'
+ where id = current_setting('test.lpt')::uuid;
+
+select throws_ok(
+  format($q$ select public.create_booking_atomic(%L::uuid, %L::uuid,
+    '2026-09-10T12:00:00Z'::timestamptz, '2026-09-12T12:00:00Z'::timestamptz) $q$,
+    current_setting('test.u'), current_setting('test.lpt')),
+  'P0001', NULL,
+  'estadia abaixo do mínimo é bloqueada');
+
+update public.location_parking_type set has_minimum_stay = false where id = current_setting('test.lpt')::uuid;
+
+-- ── 5) data mínima de entrada bloqueia a reserva ───────────────────────────
+update public.location_parking_type
+   set has_minimum_date = true, minimum_date = '2027-01-01'
+ where id = current_setting('test.lpt')::uuid;
+
+select throws_ok(
+  format($q$ select public.create_booking_atomic(%L::uuid, %L::uuid,
+    '2026-09-10T12:00:00Z'::timestamptz, '2026-09-12T12:00:00Z'::timestamptz) $q$,
+    current_setting('test.u'), current_setting('test.lpt')),
+  'P0001', NULL,
+  'entrada antes da data mínima é bloqueada');
+
+update public.location_parking_type set has_minimum_date = false where id = current_setting('test.lpt')::uuid;
+
+-- ── 6) expiração de pending abandonado libera o hold e cancela ─────────────
+do $$
+declare r jsonb;
+begin
+  r := public.create_booking_atomic(
+    current_setting('test.u')::uuid, current_setting('test.lpt')::uuid,
+    '2026-09-25T12:00:00Z', '2026-09-27T12:00:00Z');
+  -- backdata o vencimento p/ simular abandono
+  update public.booking set expires_at = now() - interval '1 hour'
+   where id = (r ->> 'booking_id')::uuid;
+  perform set_config('test.exp', r::text, false);
+  perform public.cron_expire_pending_bookings();
+end $$;
+
+select is(
+  coalesce((select booked_count from public.location_parking_availability
+   where location_parking_type_id = current_setting('test.lpt')::uuid and date = '2026-09-25'), 0),
+  0, 'cron_expire_pending_bookings devolve a vaga');
+
+select is(
+  (select status::text from public.booking
+   where id = (current_setting('test.exp')::jsonb ->> 'booking_id')::uuid),
+  'cancelled', 'cron_expire_pending_bookings marca a reserva como cancelled');
 
 select * from finish();
 rollback;

@@ -20,6 +20,12 @@
 
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  availabilityFor,
+  buildAvailabilityMap,
+  soldOutTiebreak,
+  type AvailabilityRow,
+} from "./availability.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -209,6 +215,18 @@ Deno.serve(async (req: Request) => {
     );
   }
 
+  // 8b. Disponibilidade em lote (1 query, sem N+1) para o período pedido
+  const lptIds = distanceFiltered.map((r) => r.id as string);
+  let availMap = buildAvailabilityMap(null);
+  if (lptIds.length > 0) {
+    const { data: availRows } = await supabase.rpc("availability_batch", {
+      p_lpt_ids: lptIds,
+      p_check_in_at: params.from,
+      p_check_out_at: params.to,
+    });
+    availMap = buildAvailabilityMap((availRows ?? null) as AvailabilityRow[] | null);
+  }
+
   // 9. Run simulate_price in parallel
   const priced = await Promise.all(
     distanceFiltered.map(async (r) => {
@@ -235,9 +253,11 @@ Deno.serve(async (req: Request) => {
   // 10. Drop unpriceable results
   const withPrice = priced.filter((r) => r._price != null);
 
-  // 11. Sort
+  // 11. Sort — esgotados sempre por último, depois o critério escolhido
   const sort = params.sort ?? "price_asc";
   withPrice.sort((a, b) => {
+    const soldOut = soldOutTiebreak(availabilityFor(availMap, a.id), availabilityFor(availMap, b.id));
+    if (soldOut !== 0) return soldOut;
     if (sort === "price_asc") return (a._price ?? Infinity) - (b._price ?? Infinity);
     if (sort === "price_desc") return (b._price ?? -Infinity) - (a._price ?? -Infinity);
     if (sort === "rating_desc") {
@@ -280,6 +300,7 @@ Deno.serve(async (req: Request) => {
       name: r.company_parking_type.parking_type.name,
     },
     capacity: r.capacity,
+    availability: availabilityFor(availMap, r.id),
     price: {
       total: r._price,
       old_price: r._old_price,

@@ -35,6 +35,12 @@ export type SearchResultItem = {
   };
   parking_type: { code: string; name: string };
   capacity: number;
+  availability: {
+    remaining: number | null;
+    sold_out: boolean;
+    near_capacity: boolean;
+    near_capacity_message: string | null;
+  };
   price: {
     total: number;
     old_price: number | null;

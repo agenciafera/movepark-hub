@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { CouponPreview } from "./coupon.logic";
 import type { AddOnOption } from "./reservation.logic";
+import type { AvailabilityCheck, MinStayUnit } from "./availability.logic";
 
 export type ListingDetail = {
   id: string; // location_parking_type_id
@@ -229,6 +230,64 @@ export function useSimulatePrice(args: {
     },
     enabled: !!args.companySlug && !!args.locationSlug && !!args.parkingTypeCode && args.days > 0,
     staleTime: 30_000,
+  });
+}
+
+/**
+ * Disponibilidade + regras de reserva para o período escolhido (RPC check_availability).
+ * Recalcula quando as datas mudam (com debounce no consumer).
+ */
+export function useAvailability(args: {
+  companySlug: string | undefined;
+  locationSlug: string | undefined;
+  parkingTypeCode: string | undefined;
+  from: Date | null;
+  to: Date | null;
+}) {
+  const fromIso = args.from ? args.from.toISOString() : null;
+  const toIso = args.to ? args.to.toISOString() : null;
+  return useQuery({
+    queryKey: ["check-availability", args.companySlug, args.locationSlug, args.parkingTypeCode, fromIso, toIso] as const,
+    enabled:
+      !!args.companySlug &&
+      !!args.locationSlug &&
+      !!args.parkingTypeCode &&
+      !!fromIso &&
+      !!toIso &&
+      !!args.from &&
+      !!args.to &&
+      args.to > args.from,
+    staleTime: 30_000,
+    queryFn: async (): Promise<AvailabilityCheck> => {
+      const { data, error } = await supabase.rpc("check_availability", {
+        p_company: args.companySlug!,
+        p_location: args.locationSlug!,
+        p_parking_type: args.parkingTypeCode!,
+        p_check_in_at: fromIso!,
+        p_check_out_at: toIso!,
+      });
+      if (error) throw error;
+      // deno-lint-ignore no-explicit-any
+      const r = data as any;
+      return {
+        ok: !!r?.ok,
+        capacity: Number(r?.capacity ?? 0),
+        remaining: Number(r?.remaining ?? 0),
+        sold_out: !!r?.sold_out,
+        near_capacity: !!r?.near_capacity,
+        near_capacity_message: r?.near_capacity_message ?? null,
+        min_stay_ok: r?.min_stay_ok ?? true,
+        min_stay_value: r?.min_stay_value != null ? Number(r.min_stay_value) : null,
+        min_stay_unit: (r?.min_stay_unit ?? null) as MinStayUnit | null,
+        min_date_ok: r?.min_date_ok ?? true,
+        minimum_date: r?.minimum_date ?? null,
+        advance_ok: r?.advance_ok ?? true,
+        advance_minutes: r?.advance_minutes != null ? Number(r.advance_minutes) : null,
+        days: Number(r?.days ?? 0),
+        reasons: Array.isArray(r?.reasons) ? r.reasons : [],
+        error: r?.error ?? null,
+      };
+    },
   });
 }
 

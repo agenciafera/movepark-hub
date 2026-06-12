@@ -35,6 +35,7 @@ Dashboard
 Reservas
 Localizações
   └─ Tipos de Vaga
+Ocupação
 Serviços
 Cupons
 FAQ
@@ -181,9 +182,26 @@ Tabela com: `Nome` · `Code` · `Estratégia` · `Preço` · `Status`
 Campos editáveis:
 - `name` (nome de exibição para o cliente)
 - `status` — toggle
+- **Capacidade** (`capacity`) — edição inline.
+- **Regras de reserva** (diálogo "Regras de reserva", ✅ implementado): `near_capacity_threshold` +
+  `near_capacity_message` (aviso de quase-lotação), `has_minimum_stay`/`minimum_stay_value`/
+  `minimum_stay_unit` (estadia mínima) e `has_minimum_date`/`minimum_date` (data mínima de entrada).
+  Persistem via UPDATE direto (RLS `lpt_operator_update`); são aplicados no `create_booking_atomic`
+  e exibidos ao cliente via `check_availability`. Ver [capacity-rules.md](./capacity-rules.md).
 - **Precificação** (dependendo da estratégia configurada pela Movepark):
   - `fixed_daily`: edita `price_per_day`
   - `fixed_bracket`: edita tabela de faixas
+
+---
+
+### 4.4b Ocupação
+
+**Rota:** `/operator/occupancy` (nav "Ocupação"). ✅ implementado — ver [capacity-rules.md](./capacity-rules.md).
+
+Seletor de unidade + intervalo de datas → tabela/heatmap de **vagas reservadas por data**
+(`booked/capacity`, % cheio) por tipo de vaga, via RPC `operator_location_occupancy(location_id,
+from, to)` (`SECURITY DEFINER`, gateada por `profile_company`/`hub_admin`). Reservas `pending`
+seguram a vaga até pagar ou expirar (o cron `expire-pending-bookings` libera abandonadas).
 
 ---
 

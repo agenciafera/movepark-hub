@@ -25,7 +25,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 |---|---|
 | domain-model | ✅ Definido |
 | pricing-engine | ✅ Analisado — migration aplicada (`20260526100000`) |
-| capacity-rules | ✅ Analisado — migration aplicada (`20260526100001`) |
+| capacity-rules | ✅ Implementado — migration `20260614000000`. Hold na criação + release; `cron_expire_pending_bookings` (pending abandonado → `cancelled`); enforce de `minimum_stay`/`minimum_date`/antecedência; `check_availability`/`availability_batch` (disponibilidade no listing/busca, "esgotado"+quase-lotação); `operator_location_occupancy` + tela `/operator/occupancy`. Ver [capacity-rules.md](./capacity-rules.md) |
 | database-schema | ✅ Schema base + extensões aplicadas (`20260526100002`) |
 | booking-flow | ✅ Definido |
 | coupon-rules | ✅ Implementado (Fase 1 + Fase 2) — migration `20260611000000`, RPCs `operator_*_coupon`/`coupon_evaluate`/`validate_coupon` + trigger de incremento, painel `/operator/coupons`, cupom no listing + desconto no checkout, pgTAP `coupon_rpc.test.sql`. Ver [coupon-rules.md](./coupon-rules.md) |
@@ -59,12 +59,13 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | `20260611000000_coupon_engine.sql` | Motor de cupons (Fase 1+2): colunas `coupon.sort_order`/`description`/`per_user_limit`/`min_amount`/`min_days`, tabela `coupon_parking_type`; `coupon_evaluate`, RPCs `operator_upsert_coupon`/`operator_set_coupon_active`/`operator_delete_coupon`, `validate_coupon`, guard `coupon_assert_company_access`, trigger `payment_bump_coupon` (incrementa `times_used`); refactor de `create_booking_atomic` p/ usar `coupon_evaluate` |
 | `20260612000000_discount_engine.sql` | Motor de descontos automáticos (Fase 1+2): tabelas `discount_rule`/`discount_rule_parking_type`/`booking_discount`, `discount_evaluate` (best-pick + janela/`min_days`/`min_amount`/`advance_days`/tipo de vaga), RPCs `operator_upsert_discount`/`operator_set_discount_active`/`operator_delete_discount`, guard `discount_assert_company_access`; `simulate_price` aplica o desconto (preview, `base_price`/`old_price`/`discount` no retorno) e `create_booking_atomic` re-avalia (autoritativo) + snapshot + empilha cupom |
 | `20260613000000_reviews_engine.sql` | Avaliações (PRD-08 Fase 1): agregado `location.review_avg`/`review_count` + trigger `review_bump_rating`, colunas `review.owner_response*` e `booking.review_request_sent_at`, RPCs `submit_review`/`operator_respond_review`, automação `cron_complete_bookings` (pg_cron) + edge `review-request` (coleta por e-mail) |
+| `20260614000000_capacity_real.sql` | Capacidade real: `min_stay_satisfied`, `check_availability` + `availability_batch` (disponibilidade por período), `create_booking_atomic` passa a aplicar `minimum_stay`/`minimum_date`/antecedência, `cron_expire_pending_bookings` + pg_cron `expire-pending-bookings` (pending abandonado → `cancelled`, libera hold), `operator_location_occupancy` (ocupação por data, gateada por empresa). `simulate_price` intacto |
 
 ## Pendências
 
 | Item | Prioridade | Motivo |
 |---|---|---|
 | ~~**[BUG-001]** Corrigir seed Aerovalet Valet GRU~~ | ~~Alta~~ | ✅ Resolvido — `fix_aerovalet_valet_surcharge_seed` + `fix_aerovalet_valet_surcharge_source` |
-| Seed de capacidade real em `location_parking_type.capacity` | Alta | Valores ainda são 0 (placeholder) |
+| ~~Seed de capacidade real em `location_parking_type.capacity`~~ | ~~Alta~~ | ✅ Resolvido — seed já tem valores reais (15–1100); capacidade aplicada de ponta a ponta (`20260614000000`) |
 | Decisão sobre modelo de staff/backoffice | Média | Necessário para políticas RLS de escrita |
 | Preço dinâmico por janela/dia da semana/feriado | Baixa | Definido como v2, fora do MVP |

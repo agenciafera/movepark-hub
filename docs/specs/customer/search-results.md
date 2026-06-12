@@ -240,7 +240,12 @@ Banner inline no topo do listing:
 Mantém cards previamente carregados se houver.
 
 ### Sold out parcial
-Card com badge "Esgotado pro seu período" em `pending` (orange). Card fica em `opacity-60`, sem CTA. Aparece junto com sugestões "Disponíveis em datas próximas (ver)".
+✅ **Implementado.** A edge `search` calcula disponibilidade do período em lote
+(`availability_batch`) e devolve `availability { remaining, sold_out, near_capacity,
+near_capacity_message }` por result. O `ResultCard` mostra badge "Esgotado pro seu período",
+card em `opacity-60` e sem clique quando `sold_out`; pill de quase-lotação caso contrário.
+Esgotados vão para o fim da lista (qualquer `sort`). Ver [capacity-rules.md](../capacity-rules.md).
+(Sugestões "datas próximas" seguem como evolução.)
 
 ---
 

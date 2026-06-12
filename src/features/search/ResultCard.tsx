@@ -1,3 +1,4 @@
+import * as React from "react";
 import { Link } from "react-router-dom";
 import { Heart, Car } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -49,15 +50,49 @@ function topAmenities(codes: string[], n = 3): string[] {
   return out;
 }
 
+function CardLink({
+  to,
+  soldOut,
+  className,
+  children,
+}: {
+  to: string;
+  soldOut: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  if (soldOut) {
+    return (
+      <div className={className} aria-disabled="true">
+        {children}
+      </div>
+    );
+  }
+  return (
+    <Link to={to} className={className}>
+      {children}
+    </Link>
+  );
+}
+
 export function ResultCard({ item, isSaved, onToggleSave, searchParams }: Props) {
   const url = `/p/${item.operator.slug}/${item.location.slug}/${item.parking_type.code}?${searchParams.toString()}`;
   const meta = topAmenities(item.amenities);
+  const soldOut = item.availability?.sold_out ?? false;
+  const nearCapacity = !soldOut && (item.availability?.near_capacity ?? false);
+  const nearMsg = item.availability?.near_capacity_message ?? "Restam poucas vagas";
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-md border border-hairline bg-canvas transition-shadow hover:shadow-tier">
+    <article
+      className={cn(
+        "group relative flex flex-col overflow-hidden rounded-md border border-hairline bg-canvas transition-shadow hover:shadow-tier",
+        soldOut && "opacity-60",
+      )}
+    >
       {/* Foto placeholder */}
-      <Link
+      <CardLink
         to={url}
+        soldOut={soldOut}
         className="relative block aspect-[4/3] overflow-hidden bg-surface-soft"
       >
         <div className="absolute inset-0 flex items-center justify-center">
@@ -65,7 +100,16 @@ export function ResultCard({ item, isSaved, onToggleSave, searchParams }: Props)
         </div>
         {/* Hide foto placeholder — usar gradiente subtle de fundo */}
         <div className="absolute inset-0 bg-soft-gradient opacity-60" aria-hidden />
-      </Link>
+        {soldOut ? (
+          <span className="absolute left-3 top-3 rounded-sm bg-badge-cancelled-bg px-2 py-0.5 text-caption font-bold text-badge-cancelled-fg shadow-tier">
+            Esgotado pro seu período
+          </span>
+        ) : nearCapacity ? (
+          <span className="absolute left-3 top-3 rounded-sm bg-badge-pending-bg px-2 py-0.5 text-caption font-bold text-badge-pending-fg shadow-tier">
+            {nearMsg}
+          </span>
+        ) : null}
+      </CardLink>
 
       {/* Heart */}
       <button
@@ -87,7 +131,7 @@ export function ResultCard({ item, isSaved, onToggleSave, searchParams }: Props)
         />
       </button>
 
-      <Link to={url} className="flex flex-col gap-1 p-4">
+      <CardLink to={url} soldOut={soldOut} className="flex flex-col gap-1 p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1 space-y-1">
             <h3 className="line-clamp-1 text-title-md text-ink">
@@ -124,7 +168,7 @@ export function ResultCard({ item, isSaved, onToggleSave, searchParams }: Props)
             </div>
           </div>
         </div>
-      </Link>
+      </CardLink>
     </article>
   );
 }
