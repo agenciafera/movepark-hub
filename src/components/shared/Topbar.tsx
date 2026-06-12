@@ -33,7 +33,7 @@ export function Topbar({ rightSlot }: { rightSlot?: React.ReactNode }) {
         <Search className="h-4 w-4" />
         <span>Buscar reservas, empresas, usuários…</span>
       </div>
-      <div className="flex-1 tablet:hidden" />
+      <div className="flex-1" />
       {rightSlot}
       <Button variant="outline" size="icon" aria-label="Notificações">
         <Bell className="h-4 w-4" />
