@@ -83,7 +83,9 @@ e inserts manuais sem slug continuam funcionando. Índice `destination_published
   (`destinationSchema` → `@type: Place`, `breadcrumbSchema`, `faqSchema`); H1
   "Estacionamento em <short_name ?? name>"; `intro` dividido em parágrafos; hero opcional;
   **lista de estacionamentos** via `useSearchResults({ dest: code, … })` (próximos 7 dias,
-  ordenado por preço); módulo **"Mais bem avaliados em <name>"** (PRD-08.6) — 2ª chamada de busca
+  ordenado por preço) — o Edge `search` restringe ao destino pelo vínculo
+  `location.destination_id` (DAT-04), listando só os lotes **ancorados** àquele destino, não o
+  catálogo inteiro; módulo **"Mais bem avaliados em <name>"** (PRD-08.6) — 2ª chamada de busca
   com `sort=rating_desc`/`min_rating`, filtrada por `review_count > 0` (`topRated()`), acima da
   lista geral e oculta sem dados; **FAQ** global via `useFaqs({ scope: "global" })`; **mapa** OSM
   embed centrado em lat/lng.

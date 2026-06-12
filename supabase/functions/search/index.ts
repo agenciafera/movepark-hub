@@ -148,7 +148,7 @@ Deno.serve(async (req: Request) => {
   const days = Math.max(1, Math.ceil(totalMinutes / (60 * 24)));
 
   // 3. Query candidates
-  const { data: rows, error } = await supabase
+  let candidateQuery = supabase
     .from("location_parking_type")
     .select(
       `
@@ -166,6 +166,16 @@ Deno.serve(async (req: Request) => {
     `,
     )
     .eq("is_active", true);
+
+  // Restringe aos lotes ANCORADOS ao destino buscado (DAT-04 · location.destination_id, ligado por
+  // PostGIS na ingestão). Sem este filtro, uma busca por destino devolveria TODOS os lotes ativos —
+  // a página /destinos/<slug> listaria "tudo" em vez das opções daquele destino. Só filtra quando o
+  // code resolveu um destino real; busca por lat/lng avulsa (sem âncora) segue no ranking por distância.
+  if (destId != null) {
+    candidateQuery = candidateQuery.eq("location.destination_id", destId);
+  }
+
+  const { data: rows, error } = await candidateQuery;
 
   if (error) {
     return jsonResponse({ error: error.message }, 500);

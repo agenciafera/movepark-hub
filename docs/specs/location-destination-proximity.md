@@ -109,9 +109,13 @@ public.location_proximity  (security_invoker = true)
 
 - **PRD-09 / PRD-13** — consomem `location_proximity` (ou a relação embarcada) para exibir
   "a X km de <destino>" e o badge "mais perto". Foundation entregue aqui.
-- **`search` (Edge Function)** — chama a RPC **`locations_proximity`** (PostGIS) para a distância
-  ao **destino buscado** + terminal mais próximo; **não** calcula geo em TS (ADR-001). A view
-  `location_proximity` é a distância **fixa** lote→destino-dono, complementar.
+- **`search` (Edge Function)** — quando o `dest` (code) resolve um destino, **restringe os
+  candidatos aos lotes ancorados** a ele (`location.destination_id = <destino>`); sem isso a
+  busca por destino devolveria todos os lotes ativos (a página `/destinos/<slug>` listaria
+  "tudo"). Em seguida chama a RPC **`locations_proximity`** (PostGIS) para a distância ao
+  **destino buscado** + terminal mais próximo; **não** calcula geo em TS (ADR-001). Busca por
+  `dest_lat`/`dest_lng` avulsa (sem âncora) não filtra por destino — segue só no ranking por
+  distância. A view `location_proximity` é a distância **fixa** lote→destino-dono, complementar.
 - **PRD-11 (traslado)** — tempo de traslado exibido ao cliente é campo operacional **separado**;
   não confundir com a proximidade geográfica desta spec.
 
