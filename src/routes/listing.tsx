@@ -12,6 +12,7 @@ import { MiniMap } from "@/features/listing/MiniMap";
 import { TerminalDistances } from "@/features/listing/TerminalDistances";
 import { ReservationCard } from "@/features/listing/ReservationCard";
 import { GuaranteeSection } from "@/features/guarantee/GuaranteeSection";
+import { CancellationPolicy } from "@/features/bookings/CancellationPolicy";
 import { ReviewsBlock } from "@/features/reviews/ReviewsBlock";
 import { RatingBadge } from "@/features/reviews/RatingStars";
 import { useLocationReviews } from "@/features/reviews/api";
@@ -241,21 +242,7 @@ export default function ListingPage() {
           {/* Política */}
           <section className="space-y-3">
             <h2 className="text-display-sm text-ink">Política de cancelamento</h2>
-            <ul className="space-y-2 text-body-md text-body">
-              <li>
-                <strong className="text-success">Grátis</strong> até 24h antes
-                da reserva.
-              </li>
-              <li>
-                Reembolso parcial (80%) entre 24h e 4h antes.
-              </li>
-              <li>Sem reembolso após esse prazo.</li>
-            </ul>
-            {listing.location.reservation_policy && (
-              <p className="text-body-sm text-muted">
-                {listing.location.reservation_policy}
-              </p>
-            )}
+            <CancellationPolicy operatorPolicy={listing.location.reservation_policy} />
           </section>
 
           <Separator />

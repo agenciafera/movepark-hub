@@ -234,6 +234,10 @@ Quando o usuário muda datas:
 
 ## 7. Cancelar reserva
 
+> ✅ **Implementado (PRD-12):** o `CancelBookingDialog` usa `cancellationStatus(check_in_at, now)` —
+> dentro da janela (≥24h) mostra reembolso integral + o prazo concreto; fora dela, "cancela sem
+> reembolso". Mesma regra do listing/checkout (`cancellation.logic.ts`).
+
 Modal:
 
 ```

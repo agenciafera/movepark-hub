@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useCancelMyBooking } from "./customerApi";
 import { formatBRL, formatDateTime } from "@/lib/format";
+import { cancellationStatus, freeCancelDeadlineLabel } from "./cancellation.logic";
 import type { MyBookingDetail } from "./customerApi";
 
 type Props = {
@@ -27,10 +28,8 @@ export function CancelBookingDialog({
   const cancelMutation = useCancelMyBooking();
   if (!booking) return null;
 
-  // 24h policy: cancela grátis se ainda faltam >= 24h
-  const hoursUntilCheckIn =
-    (new Date(booking.check_in_at).getTime() - Date.now()) / (1000 * 60 * 60);
-  const isFree = hoursUntilCheckIn >= 24;
+  // Política padrão de 24h (PRD-12)
+  const isFree = cancellationStatus(booking.check_in_at, new Date()).free;
 
   async function handleCancel() {
     try {
@@ -71,8 +70,8 @@ export function CancelBookingDialog({
             }
           >
             {isFree
-              ? `Cancelamento grátis. Reembolso integral de ${formatBRL(booking.total_amount)} em até 10 dias úteis.`
-              : "Faltam menos de 24h pro check-in — sem reembolso conforme política."}
+              ? `Cancelamento grátis. Reembolso integral de ${formatBRL(booking.total_amount)} em até 10 dias úteis. ${freeCancelDeadlineLabel(booking.check_in_at)}.`
+              : "Faltam menos de 24h pro check-in — você pode cancelar, mas sem reembolso."}
           </div>
         </div>
 

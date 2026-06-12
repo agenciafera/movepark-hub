@@ -164,12 +164,13 @@ Botão "Ver todas as 248 avaliações" abre modal scroll vertical.
 [spot-guarantee.md](../spot-guarantee.md).
 
 ### 5.6 Política de cancelamento
-Lista em 3-4 linhas com ícone outline:
-- ✅ Cancelamento grátis até 24h antes da reserva
-- 💸 Após 24h: 80% de reembolso até 4h antes
-- ❌ Após 4h: sem reembolso
+✅ **Implementado (PRD-12).** Regra única de plataforma (decisão PO jun/2026), via
+`<CancellationPolicy>` (fonte única `cancellation.logic.ts`):
+- **Cancelamento grátis até 24 horas antes do check-in** — reembolso integral.
+- Após esse prazo: ainda pode cancelar, **mas sem reembolso**.
 
-Texto-base configurável por operadora em `location.reservation_policy`.
+Texto-base do operador (`location.reservation_policy`) entra como **adendo**. A janela estendida paga
+(**Superflex**, cancelar até 1 min antes) é futura — depende do upsell **MON-11**.
 
 ### 5.7 Conheça a operadora
 Card com:

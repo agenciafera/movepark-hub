@@ -265,7 +265,8 @@ Já mostrado no §2. Detalhes:
   - Add-ons: + R$ Y cada
   - Cupom: − R$ Z
   - **Total: R$ TOTAL**
-- Mensagem do cancelamento ("Cancele grátis até 24h antes")
+- Política de cancelamento (PRD-12, ✅) — `<CancellationPolicy checkInAt={…}>` mostra o prazo concreto
+  ("Cancele grátis até DD/MM HH:MM") + a regra de 24h. Fonte única `cancellation.logic.ts`.
 - Selo **"Vaga garantida"** (PRD-14, ✅) — reforço de confiança no fechamento. Ver [spot-guarantee.md](../spot-guarantee.md).
 
 ### Ações

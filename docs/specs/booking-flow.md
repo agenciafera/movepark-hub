@@ -141,10 +141,13 @@ ser expiradas automaticamente.
 ### Cancelamento pelo usuário
 
 - Permitido enquanto `status IN (pending, confirmed)`
-- Se `confirmed` (pagamento já feito): cria solicitação de reembolso
-  - No legado havia o status `refund-requested`
-  - No Hub: o campo `payment.status` → `refunded` cobre esse caso
-- Ao cancelar: **decrementa** `booked_count` para cada data do período
+- **Política de 24h (PRD-12, ✅):** cancelamento **grátis até 24h antes do check-in** → reembolso
+  integral; **após** esse prazo, ainda pode cancelar **sem reembolso**. Regra única em
+  `cancellation.logic.ts` (`cancellationStatus(check_in_at, now)`), exibida no listing, no checkout e no
+  diálogo de cancelar. A janela estendida paga (**Superflex**) é futura (depende do upsell **MON-11**).
+- Se `confirmed` (pagamento já feito) e dentro da janela: o `payment.status` → `refunded` cobre o
+  reembolso (gateway real é futuro; hoje o valor é informativo).
+- Ao cancelar: **decrementa** `booked_count` para cada data do período (`release_booking_capacity`).
 
 ### Cancelamento automático
 
