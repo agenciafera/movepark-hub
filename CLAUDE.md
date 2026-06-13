@@ -56,6 +56,23 @@ Regras **fixas** do projeto, não sugestões. Se algo conflitar com elas, **siga
   [`docs/specs/location-destination-proximity.md`](docs/specs/location-destination-proximity.md) e
   [`destination-points.md`](docs/specs/destination-points.md).
 
+- **ADR-002 · FAQ em camadas.** A FAQ é resolvida por **escopo** (`global → destination →
+  location`) e **mesclada na renderização — nunca duplicada**. A `global` é escrita **uma vez** e
+  **referenciada** em toda página (cancelamento, PIX, como reservar…); a página do aeroporto recebe
+  um bloco **`destination`** (traslado, voo atrasado, coberto/descoberto, valet vs self-park,
+  segurança, gabarito); `location` só **sobrescreve** quando o lote diverge do padrão do destino.
+  **Render:** página de destino = `global + destination`; detalhe da unidade = `global +
+  destination + location`. Dedupe por pergunta mantendo a camada mais específica
+  (`location > destination > global`); ordena por categoria → `sort_order`; `is_published` é a
+  moderação. **Um único `FAQPage` (JSON-LD)** por página, com respostas **idênticas** às visíveis.
+  Edição: a `global` mora no **admin central de FAQ** (fonte da verdade); a aba **FAQ** do admin do
+  destino edita só as `destination` daquele aeroporto e mostra a `global` como referência
+  somente-leitura. Modelagem: enum `faq_scope` inclui `destination` + coluna `faq.destination_id`
+  (FK → `destination`), com `CHECK` de consistência por escopo. A mescla acontece na Edge `get-faq`
+  (que resolve o destino da `location` via `location.destination_id`), **nunca duplicando** linhas.
+  Implementado em `supabase/migrations/20260619000000_faq_destination_scope.sql`; ver
+  [`docs/specs/destinations.md`](docs/specs/destinations.md).
+
 ## Comandos
 
 Sempre via **bun**:

@@ -5,7 +5,7 @@ import { renderWithProviders } from "@/test/utils";
 import DestinoPage from "@/routes/destino";
 import { useDestinationBySlug } from "@/features/destinations/api";
 import { useSearchResults } from "@/features/search/useSearchResults";
-import { useFaqs } from "@/features/faqs/api";
+import { useFaqCombined } from "@/features/faqs/api";
 import type { Destination } from "@/types/domain";
 
 // useLoaderData lança fora de um data router; no teste o caminho é via hook (useDestinationBySlug).
@@ -16,7 +16,7 @@ vi.mock("react-router-dom", async () => {
 
 vi.mock("@/features/destinations/api", () => ({ useDestinationBySlug: vi.fn() }));
 vi.mock("@/features/search/useSearchResults", () => ({ useSearchResults: vi.fn() }));
-vi.mock("@/features/faqs/api", () => ({ useFaqs: vi.fn() }));
+vi.mock("@/features/faqs/api", () => ({ useFaqCombined: vi.fn() }));
 
 function dest(overrides: Partial<Destination> = {}): Destination {
   return {
@@ -57,7 +57,7 @@ function render() {
 
 beforeEach(() => {
   vi.mocked(useSearchResults).mockReturnValue({ data: { results: [] }, isLoading: false } as never);
-  vi.mocked(useFaqs).mockReturnValue({ data: [] } as never);
+  vi.mocked(useFaqCombined).mockReturnValue({ data: [] } as never);
 });
 
 describe("DestinoPage — detalhe do destino (SEO/institucional)", () => {

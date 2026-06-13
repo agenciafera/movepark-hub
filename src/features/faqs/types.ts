@@ -15,6 +15,7 @@ export type Faq = FaqRow & {
 export type FaqListFilters = {
   scope?: FaqScope;
   locationId?: string | null;
+  destinationId?: string | null;
   companyId?: string;
   categorySlug?: string;
   query?: string;

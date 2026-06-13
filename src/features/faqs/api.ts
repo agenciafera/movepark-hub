@@ -13,7 +13,7 @@ const FAQ_KEY = ["faqs"] as const;
 const CAT_KEY = ["faq-categories"] as const;
 
 const FAQ_SELECT =
-  "id, scope, location_id, category_id, question, answer, sort_order, is_published, created_at, updated_at, deleted_at, created_by, updated_by, category:faq_category(id, slug, label, sort_order)";
+  "id, scope, location_id, destination_id, category_id, question, answer, sort_order, is_published, created_at, updated_at, deleted_at, created_by, updated_by, category:faq_category(id, slug, label, sort_order)";
 
 // ---------- Categories ----------
 
@@ -64,6 +64,7 @@ export function useFaqs(filters: FaqListFilters = {}) {
     ...FAQ_KEY,
     filters.scope ?? "any",
     filters.locationId ?? "none",
+    filters.destinationId ?? "none",
     filters.companyId ?? "none",
     filters.categorySlug ?? "any",
     filters.query ?? "",
@@ -78,6 +79,7 @@ export function useFaqs(filters: FaqListFilters = {}) {
       if (!filters.includeUnpublished) q = q.eq("is_published", true);
       if (filters.scope) q = q.eq("scope", filters.scope);
       if (filters.locationId) q = q.eq("location_id", filters.locationId);
+      if (filters.destinationId) q = q.eq("destination_id", filters.destinationId);
       if (filters.companyId) {
         // Operator vê todas as FAQs das locations da empresa
         const { data: locs } = await supabase
@@ -170,8 +172,9 @@ const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 export type FaqCombinedItem = {
   id: string;
   /** `auto` = gerado a partir dos dados do estacionamento (endereço, vagas, etc). */
-  scope: "global" | "location" | "auto";
+  scope: "global" | "location" | "destination" | "auto";
   location_id: string | null;
+  destination_id: string | null;
   question: string;
   answer: string;
   sort_order: number;
@@ -180,6 +183,7 @@ export type FaqCombinedItem = {
 
 export function useFaqCombined(args: {
   locationId?: string;
+  destinationId?: string;
   categorySlug?: string;
   query?: string;
   enabled?: boolean;
@@ -188,6 +192,7 @@ export function useFaqCombined(args: {
     queryKey: [
       "faq-combined",
       args.locationId ?? "none",
+      args.destinationId ?? "none",
       args.categorySlug ?? "any",
       args.query ?? "",
     ],
@@ -201,6 +206,7 @@ export function useFaqCombined(args: {
         },
         body: JSON.stringify({
           location_id: args.locationId,
+          destination_id: args.destinationId,
           category_slug: args.categorySlug,
           query: args.query,
         }),

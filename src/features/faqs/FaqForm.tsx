@@ -29,15 +29,22 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   faq?: Faq | null;
-  /** Define o scope do FAQ. Travado em forms de manager (global) e operator (location). */
+  /**
+   * Define o scope do FAQ ao criar. Travado em forms de manager (global),
+   * operator (location) e na aba do destino (destination). Ao editar, o scope
+   * vem do próprio FAQ.
+   */
   scope: FaqScope;
   /** Quando scope='location', limita as locations disponíveis a uma empresa. */
   lockCompanyId?: string;
   /** Pré-seleciona uma location quando scope='location'. */
   defaultLocationId?: string;
+  /** Pré-seleciona (e trava) um destino quando scope='destination'. */
+  defaultDestinationId?: string;
 };
 
 type LocationOpt = { id: string; name: string; company_id: string };
+type DestinationOpt = { id: string; name: string; short_name: string | null };
 
 function useEditableLocations(companyId: string | undefined, enabled: boolean) {
   return useQuery({
@@ -54,25 +61,46 @@ function useEditableLocations(companyId: string | undefined, enabled: boolean) {
   });
 }
 
+function useDestinationOptions(enabled: boolean) {
+  return useQuery({
+    queryKey: ["faq-form-destinations"],
+    queryFn: async (): Promise<DestinationOpt[]> => {
+      const { data, error } = await supabase
+        .from("destination")
+        .select("id, name, short_name")
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as DestinationOpt[];
+    },
+    enabled,
+    staleTime: 5 * 60_000,
+  });
+}
+
 export function FaqForm({
   open,
   onOpenChange,
   faq,
-  scope,
+  scope: createScope,
   lockCompanyId,
   defaultLocationId,
+  defaultDestinationId,
 }: Props) {
   const { session } = useAuth();
   const create = useCreateFaq();
   const update = useUpdateFaq();
   const cats = useFaqCategories();
+  // Ao editar, o scope é o do próprio FAQ; ao criar, o passado pela tela.
+  const scope: FaqScope = faq?.scope ?? createScope;
   const locs = useEditableLocations(lockCompanyId, scope === "location" && open);
+  const dests = useDestinationOptions(scope === "destination" && open && !defaultDestinationId);
 
   const editing = !!faq;
   const [question, setQuestion] = React.useState("");
   const [answer, setAnswer] = React.useState("");
   const [categoryId, setCategoryId] = React.useState<string>("");
   const [locationId, setLocationId] = React.useState<string>("");
+  const [destinationId, setDestinationId] = React.useState<string>("");
   const [sortOrder, setSortOrder] = React.useState<string>("0");
   const [isPublished, setIsPublished] = React.useState(true);
 
@@ -82,9 +110,10 @@ export function FaqForm({
     setAnswer(faq?.answer ?? "");
     setCategoryId(faq?.category_id ?? "");
     setLocationId(faq?.location_id ?? defaultLocationId ?? "");
+    setDestinationId(faq?.destination_id ?? defaultDestinationId ?? "");
     setSortOrder(String(faq?.sort_order ?? 0));
     setIsPublished(faq?.is_published ?? true);
-  }, [open, faq, defaultLocationId]);
+  }, [open, faq, defaultLocationId, defaultDestinationId]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -97,10 +126,15 @@ export function FaqForm({
       toast.error("Escolha o estacionamento");
       return;
     }
+    if (scope === "destination" && !destinationId) {
+      toast.error("Escolha o destino");
+      return;
+    }
     try {
       const basePayload = {
         scope,
         location_id: scope === "location" ? locationId : null,
+        destination_id: scope === "destination" ? destinationId : null,
         category_id: categoryId || null,
         question: question.trim(),
         answer: answer.trim(),
@@ -138,7 +172,9 @@ export function FaqForm({
           <DialogDescription>
             {scope === "global"
               ? "Pergunta global — aparece em todos os estacionamentos e na página /faq."
-              : "Pergunta específica desse estacionamento. As gerais da Movepark continuam aparecendo abaixo."}
+              : scope === "destination"
+                ? "Pergunta do aeroporto/destino — aparece na página do destino e nas unidades dele. As gerais da Movepark continuam aparecendo junto."
+                : "Pergunta específica desse estacionamento. As gerais da Movepark continuam aparecendo abaixo."}
           </DialogDescription>
         </DialogHeader>
 
@@ -154,6 +190,24 @@ export function FaqForm({
                   {(locs.data ?? []).map((l) => (
                     <SelectItem key={l.id} value={l.id}>
                       {l.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {scope === "destination" && !defaultDestinationId && (
+            <div className="flex flex-col gap-1.5">
+              <Label>Destino</Label>
+              <Select value={destinationId} onValueChange={setDestinationId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(dests.data ?? []).map((d) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      {d.short_name ?? d.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

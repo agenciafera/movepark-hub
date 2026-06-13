@@ -9,12 +9,15 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import type { FaqCombinedItem } from "./api";
+import { groupFaqsByScope } from "./FaqList.logic";
 
 type Props = {
   items: FaqCombinedItem[] | undefined;
   isLoading?: boolean;
-  /** Quando true, mostra dois grupos: "Sobre este estacionamento" e "Perguntas gerais". */
+  /** Quando true, agrupa por camada: unidade, destino e perguntas gerais. */
   groupByScope?: boolean;
+  /** Rótulo do grupo de destino (ex.: "Sobre Viracopos"). Default: "Sobre o destino". */
+  destinationLabel?: string;
   /** Quando true, filtra silenciosamente FAQs sem categoria pra agrupar por categoria. */
   groupByCategory?: boolean;
   query?: string;
@@ -72,6 +75,7 @@ export function FaqList({
   items,
   isLoading,
   groupByScope = false,
+  destinationLabel,
   query,
 }: Props) {
   if (isLoading) {
@@ -101,23 +105,26 @@ export function FaqList({
     return <RenderAccordion items={items} query={query} />;
   }
 
-  const locationItems = items.filter(
-    (i) => i.scope === "location" || i.scope === "auto",
-  );
-  const globalItems = items.filter((i) => i.scope === "global");
+  const groups = groupFaqsByScope(items);
 
   return (
     <div className="space-y-6">
-      {locationItems.length > 0 && (
+      {groups.location.length > 0 && (
         <div className="space-y-2">
           <h3 className="text-title-md text-ink">Sobre este estacionamento</h3>
-          <RenderAccordion items={locationItems} query={query} idPrefix="loc" />
+          <RenderAccordion items={groups.location} query={query} idPrefix="loc" />
         </div>
       )}
-      {globalItems.length > 0 && (
+      {groups.destination.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-title-md text-ink">{destinationLabel ?? "Sobre o destino"}</h3>
+          <RenderAccordion items={groups.destination} query={query} idPrefix="dest" />
+        </div>
+      )}
+      {groups.global.length > 0 && (
         <div className="space-y-2">
           <h3 className="text-title-md text-ink">Perguntas gerais</h3>
-          <RenderAccordion items={globalItems} query={query} idPrefix="gen" />
+          <RenderAccordion items={groups.global} query={query} idPrefix="gen" />
         </div>
       )}
     </div>

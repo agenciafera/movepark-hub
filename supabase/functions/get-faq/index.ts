@@ -1,16 +1,24 @@
 // Edge Function: /get-faq
-// Retorna FAQ pública combinando 3 fontes (quando recebe location_id):
+// Retorna FAQ pública em camadas (ADR-002 · global → destination → location),
+// mesclada e deduplicada — nunca duplicada. Fontes combinadas:
 //   1) Q&As autogeradas a partir dos dados do estacionamento (endereço, tipos de vaga,
-//      capacidade, amenidades, contato) — scope='auto'
-//   2) FAQs cadastradas no banco específicas daquela location  — scope='location'
-//   3) FAQs globais da Movepark                                 — scope='global'
+//      capacidade, amenidades, contato)                          — scope='auto'
+//   2) FAQs cadastradas específicas daquela location             — scope='location'
+//   3) FAQs do aeroporto/destino (da location ou via destination_id) — scope='destination'
+//   4) FAQs globais da Movepark                                  — scope='global'
 //
-// Sem location_id, devolve só (3).
+// Resolução por entrada:
+//   - location_id  → auto + location + destination(da location) + global
+//   - destination_id (sem location) → destination + global   (página do destino)
+//   - nada         → só global
+//
+// Dedupe: mesma pergunta em mais de um escopo mantém a mais específica
+// (location > destination > global). Um único FAQPage por página é montado no front.
 //
 // POST /functions/v1/get-faq
-// { "location_id"?, "category_slug"?, "query"?, "limit"? }
+// { "location_id"?, "destination_id"?, "category_slug"?, "query"?, "limit"? }
 //
-// Usada pelo consumer (listing detail) e pela tool `get_faq` do MCP n8n.
+// Usada pelo consumer (listing detail + página de destino) e pela tool `get_faq` do MCP n8n.
 
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -24,6 +32,7 @@ const CORS_HEADERS = {
 
 type Body = {
   location_id?: string;
+  destination_id?: string;
   category_slug?: string;
   query?: string;
   limit?: number;
@@ -33,8 +42,9 @@ type Category = { slug: string; label: string; sort_order: number };
 
 type FaqItem = {
   id: string;
-  scope: "global" | "location" | "auto";
+  scope: "global" | "location" | "destination" | "auto";
   location_id: string | null;
+  destination_id: string | null;
   question: string;
   answer: string;
   sort_order: number;
@@ -143,6 +153,7 @@ async function buildAutoFaq(supa, locationId: string): Promise<FaqItem[]> {
       id: `auto:${L.id}:address`,
       scope: "auto",
       location_id: L.id,
+      destination_id: null,
       question: `Onde fica o estacionamento ${L.name}?`,
       answer: lines.join("\n"),
       sort_order: 1,
@@ -167,6 +178,7 @@ async function buildAutoFaq(supa, locationId: string): Promise<FaqItem[]> {
       id: `auto:${L.id}:parking-types`,
       scope: "auto",
       location_id: L.id,
+      destination_id: null,
       question: "Quais tipos de vaga este estacionamento oferece?",
       answer: lines.join("\n"),
       sort_order: 2,
@@ -184,6 +196,7 @@ async function buildAutoFaq(supa, locationId: string): Promise<FaqItem[]> {
       id: `auto:${L.id}:capacity`,
       scope: "auto",
       location_id: L.id,
+      destination_id: null,
       question: "Quantas vagas tem este estacionamento?",
       answer: `Total de ${totalCapacity} vagas distribuídas entre os tipos de vaga disponíveis.`,
       sort_order: 3,
@@ -205,6 +218,7 @@ async function buildAutoFaq(supa, locationId: string): Promise<FaqItem[]> {
       id: `auto:${L.id}:min-stay`,
       scope: "auto",
       location_id: L.id,
+      destination_id: null,
       question: "Existe estadia mínima neste estacionamento?",
       answer: minStays.join("\n"),
       sort_order: 4,
@@ -223,6 +237,7 @@ async function buildAutoFaq(supa, locationId: string): Promise<FaqItem[]> {
       id: `auto:${L.id}:amenities`,
       scope: "auto",
       location_id: L.id,
+      destination_id: null,
       question: "Quais comodidades este estacionamento oferece?",
       answer: lines.join("\n"),
       sort_order: 5,
@@ -239,6 +254,7 @@ async function buildAutoFaq(supa, locationId: string): Promise<FaqItem[]> {
       id: `auto:${L.id}:contact`,
       scope: "auto",
       location_id: L.id,
+      destination_id: null,
       question: "Como entro em contato com este estacionamento?",
       answer: parts.join("\n"),
       sort_order: 6,
@@ -252,6 +268,7 @@ async function buildAutoFaq(supa, locationId: string): Promise<FaqItem[]> {
       id: `auto:${L.id}:notice`,
       scope: "auto",
       location_id: L.id,
+      destination_id: null,
       question: "Há algum aviso importante sobre este estacionamento?",
       answer: L.notice,
       sort_order: 7,
@@ -265,6 +282,7 @@ async function buildAutoFaq(supa, locationId: string): Promise<FaqItem[]> {
       id: `auto:${L.id}:policy`,
       scope: "auto",
       location_id: L.id,
+      destination_id: null,
       question: "Qual a política de reserva deste estacionamento?",
       answer: L.reservation_policy,
       sort_order: 8,
@@ -303,17 +321,31 @@ Deno.serve(async (req: Request) => {
 
   const limit = Math.min(Math.max(body.limit ?? 100, 1), 200);
 
-  // --- 1) FAQs cadastradas (global + location-specific)
+  // Resolve o destino: explícito (página do destino) ou herdado da location (listing).
+  let destinationId = body.destination_id?.trim() || undefined;
+  if (locationId && !destinationId) {
+    const { data: locRow } = await supa
+      .from("location")
+      .select("destination_id")
+      .eq("id", locationId)
+      .maybeSingle();
+    destinationId = (locRow?.destination_id as string | null) ?? undefined;
+  }
+
+  // --- 1) FAQs cadastradas (global + destination + location-specific)
   let q = supa
     .from("faq")
     .select(
-      "id, scope, location_id, question, answer, sort_order, category:faq_category(slug, label, sort_order)",
+      "id, scope, location_id, destination_id, question, answer, sort_order, category:faq_category(slug, label, sort_order)",
     )
     .eq("is_published", true)
     .is("deleted_at", null);
 
-  if (locationId) {
-    q = q.or(`scope.eq.global,location_id.eq.${locationId}`);
+  const ors = ["scope.eq.global"];
+  if (locationId) ors.push(`location_id.eq.${locationId}`);
+  if (destinationId) ors.push(`and(scope.eq.destination,destination_id.eq.${destinationId})`);
+  if (ors.length > 1) {
+    q = q.or(ors.join(","));
   } else {
     q = q.eq("scope", "global");
   }
@@ -355,8 +387,21 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // Ordenação custom: auto → location → global, depois sort_order
-  const scopeWeight: Record<string, number> = { auto: 0, location: 1, global: 2 };
+  // Dedupe (ADR-002): mesma pergunta em mais de um escopo → mantém a mais específica
+  // (location sobrescreve destination sobrescreve global). 'auto' nunca colide.
+  const specificity: Record<string, number> = { location: 0, destination: 1, global: 2, auto: 3 };
+  const byQuestion = new Map<string, FaqItem>();
+  for (const it of combined) {
+    const k = it.question.trim().toLowerCase();
+    const cur = byQuestion.get(k);
+    if (!cur || (specificity[it.scope] ?? 9) < (specificity[cur.scope] ?? 9)) {
+      byQuestion.set(k, it);
+    }
+  }
+  combined = [...byQuestion.values()];
+
+  // Ordenação custom: auto → location → destination → global, depois categoria e sort_order
+  const scopeWeight: Record<string, number> = { auto: 0, location: 1, destination: 2, global: 3 };
   combined.sort((a, b) => {
     const sa = scopeWeight[a.scope] ?? 9;
     const sb = scopeWeight[b.scope] ?? 9;

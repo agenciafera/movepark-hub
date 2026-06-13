@@ -5,7 +5,7 @@ import { MapPin } from "lucide-react";
 import type { Destination } from "@/types/domain";
 import { useDestinationBySlug } from "@/features/destinations/api";
 import { useSearchResults } from "@/features/search/useSearchResults";
-import { useFaqs } from "@/features/faqs/api";
+import { useFaqCombined } from "@/features/faqs/api";
 import { ResultCard } from "@/features/search/ResultCard";
 import { topRated } from "@/features/reviews/reviews.logic";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -43,7 +43,8 @@ export default function DestinoPage() {
       ? { dest: destination.code, from: win.from, to: win.to, sort: "rating_desc", min_rating: 1, limit: 4 }
       : null,
   );
-  const faqs = useFaqs({ scope: "global" });
+  // FAQ em camadas (ADR-002): global + destination, mesclado/deduplicado no edge.
+  const faqs = useFaqCombined({ destinationId: destination?.id, enabled: !!destination });
 
   if (!destination) {
     if (query.isLoading) {

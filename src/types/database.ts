@@ -971,6 +971,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           deleted_at: string | null
+          destination_id: string | null
           id: string
           is_published: boolean
           location_id: string | null
@@ -986,6 +987,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
+          destination_id?: string | null
           id?: string
           is_published?: boolean
           location_id?: string | null
@@ -1001,6 +1003,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
+          destination_id?: string | null
           id?: string
           is_published?: boolean
           location_id?: string | null
@@ -1016,6 +1019,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "faq_category"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "faq_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destination"
             referencedColumns: ["id"]
           },
           {
@@ -2447,7 +2457,7 @@ export type Database = {
         | "no_show"
       discount_type: "percent" | "fixed"
       entity_status: "active" | "inactive" | "suspended"
-      faq_scope: "global" | "location"
+      faq_scope: "global" | "location" | "destination"
       minimum_stay_unit: "minutes" | "hours" | "days" | "months"
       onboarding_status:
         | "pending_review"
@@ -2601,7 +2611,7 @@ export const Constants = {
       ],
       discount_type: ["percent", "fixed"],
       entity_status: ["active", "inactive", "suspended"],
-      faq_scope: ["global", "location"],
+      faq_scope: ["global", "location", "destination"],
       minimum_stay_unit: ["minutes", "hours", "days", "months"],
       onboarding_status: [
         "pending_review",

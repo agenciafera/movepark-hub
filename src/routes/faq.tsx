@@ -48,6 +48,7 @@ export default function FaqPage() {
         id: f.id,
         scope: f.scope,
         location_id: f.location_id,
+        destination_id: f.destination_id,
         question: f.question,
         answer: f.answer,
         sort_order: f.sort_order,

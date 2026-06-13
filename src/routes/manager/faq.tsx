@@ -14,14 +14,15 @@ import {
 import { FaqAdminTable } from "@/features/faqs/FaqAdminTable";
 import { FaqForm } from "@/features/faqs/FaqForm";
 import { useFaqCategories, useFaqs } from "@/features/faqs/api";
-import type { Faq } from "@/features/faqs/types";
+import type { Faq, FaqScope } from "@/features/faqs/types";
 
 export default function ManagerFaq() {
   const cats = useFaqCategories();
   const [query, setQuery] = React.useState("");
   const [categorySlug, setCategorySlug] = React.useState<string>("all");
+  const [scope, setScope] = React.useState<"all" | FaqScope>("all");
   const list = useFaqs({
-    scope: "global",
+    scope: scope === "all" ? undefined : scope,
     includeUnpublished: true,
     query,
     categorySlug: categorySlug === "all" ? undefined : categorySlug,
@@ -43,7 +44,7 @@ export default function ManagerFaq() {
     <div className="space-y-6">
       <PageHeader
         title="FAQ"
-        description="Perguntas e respostas globais da Movepark. Aparecem no /faq e nas páginas de estacionamento."
+        description="Fonte da verdade da FAQ em camadas. As gerais (global) são geridas aqui; destino e unidade aparecem para referência. Nova pergunta cria uma global."
         actions={
           <div className="flex gap-2">
             <Button variant="secondary" size="sm" asChild>
@@ -70,6 +71,17 @@ export default function ManagerFaq() {
             className="pl-9"
           />
         </div>
+        <Select value={scope} onValueChange={(v) => setScope(v as "all" | FaqScope)}>
+          <SelectTrigger className="tablet:w-[180px]">
+            <SelectValue placeholder="Todos os escopos" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os escopos</SelectItem>
+            <SelectItem value="global">Geral</SelectItem>
+            <SelectItem value="destination">Destino</SelectItem>
+            <SelectItem value="location">Unidade</SelectItem>
+          </SelectContent>
+        </Select>
         <Select value={categorySlug} onValueChange={setCategorySlug}>
           <SelectTrigger className="tablet:w-[220px]">
             <SelectValue placeholder="Todas as categorias" />
@@ -88,6 +100,7 @@ export default function ManagerFaq() {
       <FaqAdminTable
         rows={list.data}
         isLoading={list.isLoading}
+        showScope
         onEdit={openEdit}
       />
 

@@ -89,8 +89,38 @@ e inserts manuais sem slug continuam funcionando. Índice `destination_published
   `location.destination_id` (DAT-04), listando só os lotes **ancorados** àquele destino, não o
   catálogo inteiro; módulo **"Mais bem avaliados em <name>"** (PRD-08.6) — 2ª chamada de busca
   com `sort=rating_desc`/`min_rating`, filtrada por `review_count > 0` (`topRated()`), acima da
-  lista geral e oculta sem dados; **FAQ** global via `useFaqs({ scope: "global" })`; **mapa** OSM
+  lista geral e oculta sem dados; **FAQ em camadas** (`global + destination`, ADR-002) via
+  `useFaqCombined({ destinationId })` — a Edge `get-faq` mescla e deduplica, e o `faqSchema`
+  é montado do mesmo conjunto (um único `FAQPage`, respostas idênticas às visíveis); **mapa** OSM
   embed centrado em lat/lng.
+
+### FAQ por destino (GEO-07 · ADR-002)
+
+A FAQ é resolvida por **escopo** e mesclada na renderização — **nunca duplicada**:
+
+- **`global`** — vale pro hub inteiro (cancelamento, PIX, como reservar). Escrita uma vez,
+  referenciada em toda página.
+- **`destination`** — específica do aeroporto (traslado, voo atrasado, coberto/descoberto, valet
+  vs self-park, segurança, gabarito). Camada adicionada por GEO-07.
+- **`location`** — exceção da unidade, só quando o lote diverge do padrão do destino.
+
+**Render:** página de destino = `global + destination`; detalhe da unidade
+(`src/routes/listing.tsx`) = `global + destination + location` (+ `auto`), agrupado por
+`FaqList`/`FaqList.logic`. A Edge `get-faq` resolve o `destination` da `location` via
+`location.destination_id`, deduplica por pergunta mantendo a camada mais específica
+(`location > destination > global`) e ordena por categoria → `sort_order`.
+
+**Schema:** enum `faq_scope` inclui `destination`; `faq.destination_id` (FK → `destination`, nullable)
+com `CHECK` de consistência por escopo. RLS: leitura pública de FAQ publicada; escrita de
+`destination` é do `hub_admin`. Migration `20260619000000_faq_destination_scope.sql`.
+
+**Admin:** o **admin central de FAQ** (`/manager/faq`) é a fonte da `global` e lista todos os
+escopos (filtro de escopo). A aba **FAQ** do admin do destino (`DestinationFaqDialog`) edita só as
+`destination` daquele aeroporto e mostra a `global` como referência somente-leitura.
+
+**Pendência de conteúdo:** as FAQs `destination` por aeroporto (Viracopos primeiro) saem de
+`gestao/conteudo-onda1.md` (conteúdo manual Pedro/Peu + parceiro) — ainda não no repo. A
+engenharia (schema + render + admin + JSON-LD) está pronta para recebê-las.
 - **Índice** (`src/routes/destinos.tsx`): `<Helmet>` com title/description próprios,
   canonical/og para `https://hub.movepark.co/destinos` e dois blocos **JSON-LD**
   (`breadcrumbSchema` Início→Destinos e `itemListSchema` com a coleção de destinos); H1

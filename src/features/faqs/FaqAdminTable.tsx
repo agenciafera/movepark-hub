@@ -87,7 +87,11 @@ export function FaqAdminTable({
               )}
               {showScope && (
                 <Badge tone={faq.scope === "global" ? "neutral" : "active"} className="shrink-0">
-                  {faq.scope === "global" ? "Geral" : "Da unidade"}
+                  {faq.scope === "global"
+                    ? "Geral"
+                    : faq.scope === "destination"
+                      ? "Destino"
+                      : "Da unidade"}
                 </Badge>
               )}
               {showLocation && faq.location_id && (
