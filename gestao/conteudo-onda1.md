@@ -59,7 +59,51 @@ Se você dirige um veículo alto (SUV grande, van, furgão), confira as comodida
 observações do estacionamento ou fale com a unidade antes de reservar para garantir o
 encaixe.
 
+### 2.2 Aeroporto de Guarulhos (GRU) — `aeroporto-internacional-de-sao-paulo-guarulhos`
+
+Mesmo gabarito de 6 perguntas; Q1 especializada (3 terminais T1/T2/T3).
+
+**1. O estacionamento em Guarulhos oferece traslado até o terminal?**
+Depende do estacionamento. O GRU tem três terminais (T1, T2 e T3) e os estacionamentos
+parceiros costumam ficar a poucos minutos deles, a maioria com traslado (transfer) de ida
+e volta — em vários casos já incluído na diária. A página de cada estacionamento mostra se
+o traslado está incluso, o horário e para qual terminal ele leva. Confira o do seu voo
+antes de reservar.
+
+**2–6.** Iguais ao gabarito (voo atrasado/voltar antes, coberto×descoberto, valet×self-park,
+segurança/monitoramento, gabarito), com "Guarulhos" no lugar do aeroporto.
+
+### 2.3 Aeroporto de Congonhas (CGH) — `aeroporto-de-congonhas`
+
+**1. O estacionamento em Congonhas oferece traslado até o terminal?**
+Depende do estacionamento. Congonhas fica dentro de São Paulo, então os lotes parceiros
+costumam ser bem próximos do terminal — muitos com traslado (transfer) de ida e volta, em
+vários casos já incluso na diária. A página de cada estacionamento mostra se o traslado
+está incluído, o horário e a distância até o terminal.
+
+**2–6.** Gabarito padrão com "Congonhas".
+
+### 2.4 Aeroporto Santos Dumont (SDU) — `aeroporto-santos-dumont`
+
+**1. O estacionamento no Santos Dumont oferece traslado até o terminal?**
+Depende do estacionamento. O Santos Dumont fica no centro do Rio, junto à orla, e os lotes
+parceiros costumam ser bem próximos — muitos com traslado (transfer) de ida e volta, às
+vezes já incluso na diária. Veja na página de cada estacionamento se o traslado está
+incluído, o horário e a distância até o terminal.
+
+**2–6.** Gabarito padrão com "Santos Dumont".
+
+### 2.5 Aeroporto do Galeão (GIG) — `aeroporto-do-galeao`
+
+**1. O estacionamento no Galeão oferece traslado até o terminal?**
+Depende do estacionamento. O Galeão tem dois terminais (T1 e T2) e os lotes parceiros ficam
+a poucos minutos deles, a maioria com traslado (transfer) de ida e volta — em vários casos
+já incluído na diária. A página de cada estacionamento mostra se o traslado está incluso, o
+horário e para qual terminal ele leva.
+
+**2–6.** Gabarito padrão com "Galeão".
+
 ---
 
-_Próximos aeroportos (GRU, CGH, SDU, GIG…) seguem o mesmo gabarito de 6 perguntas,
-especializando traslado/segurança/gabarito conforme a realidade de cada um._
+_Próximos aeroportos (CWB, BSB, CNF, POA, LIS, OPO, FAO…) seguem o mesmo gabarito de 6
+perguntas, especializando traslado/segurança/gabarito conforme a realidade de cada um._
