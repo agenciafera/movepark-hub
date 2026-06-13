@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { assertPublicImage, publicAssetDir, PUBLIC_IMAGE_ACCEPT } from "./storage";
+import {
+  assertPublicImage,
+  imageSrcSet,
+  isTransformableAsset,
+  optimizedImageUrl,
+  publicAssetDir,
+  PUBLIC_IMAGE_ACCEPT,
+} from "./storage";
+
+const STORAGE_URL =
+  "https://proj.supabase.co/storage/v1/object/public/assets-public/destinations/GRU/hero-abc.png";
 
 function fakeFile(name: string, type: string, size = 1024): File {
   const f = new File(["x"], name, { type });
@@ -36,5 +46,50 @@ describe("PUBLIC_IMAGE_ACCEPT", () => {
   it("reflete os mimes aceitos pelo bucket", () => {
     expect(PUBLIC_IMAGE_ACCEPT).toContain("image/webp");
     expect(PUBLIC_IMAGE_ACCEPT).toContain("image/svg+xml");
+  });
+});
+
+describe("optimizedImageUrl", () => {
+  it("reescreve URL do Storage para o endpoint de transform com os params", () => {
+    const out = optimizedImageUrl(STORAGE_URL, { width: 1024, quality: 70 });
+    expect(out).toContain("/storage/v1/render/image/public/");
+    expect(out).not.toContain("/storage/v1/object/public/");
+    expect(out).toContain("width=1024");
+    expect(out).toContain("quality=70");
+  });
+
+  it("inclui resize quando informado", () => {
+    expect(optimizedImageUrl(STORAGE_URL, { width: 1200, height: 630, resize: "cover" })).toContain(
+      "resize=cover",
+    );
+  });
+
+  it("não altera URL externa (colada) nem retorna undefined p/ vazio", () => {
+    expect(optimizedImageUrl("https://cdn.externo/x.jpg", { width: 100 })).toBe(
+      "https://cdn.externo/x.jpg",
+    );
+    expect(optimizedImageUrl(null)).toBeUndefined();
+  });
+});
+
+describe("isTransformableAsset", () => {
+  it("distingue objeto do Storage de URL externa", () => {
+    expect(isTransformableAsset(STORAGE_URL)).toBe(true);
+    expect(isTransformableAsset("https://cdn.externo/x.jpg")).toBe(false);
+    expect(isTransformableAsset(null)).toBe(false);
+  });
+});
+
+describe("imageSrcSet", () => {
+  it("monta srcset com descritores w para imagem do Storage", () => {
+    const set = imageSrcSet(STORAGE_URL, [640, 1024]);
+    expect(set).toContain("width=640");
+    expect(set).toContain("640w");
+    expect(set).toContain("1024w");
+    expect(set).toContain("/render/image/public/");
+  });
+
+  it("retorna undefined p/ URL externa (sem transform)", () => {
+    expect(imageSrcSet("https://cdn.externo/x.jpg", [640])).toBeUndefined();
   });
 });

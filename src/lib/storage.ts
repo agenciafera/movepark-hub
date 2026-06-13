@@ -72,3 +72,51 @@ export function uploadDestinationImage(codeOrSlug: string, name: string, file: F
 export function uploadCompanyAsset(companyId: string, name: string, file: File): Promise<string> {
   return uploadPublicAsset(publicAssetDir.company(companyId), name, file);
 }
+
+// ── Otimização de imagem (Supabase Image Transformation) ─────────────────────
+// O upload NÃO converte formato — o ganho de SEO/LCP (WebP/AVIF + resize) vem ao
+// servir, pelo endpoint de render, que negocia o formato pelo header Accept.
+
+const OBJECT_PUBLIC_SEG = "/storage/v1/object/public/";
+const RENDER_PUBLIC_SEG = "/storage/v1/render/image/public/";
+
+export type ImageTransform = {
+  width?: number;
+  height?: number;
+  quality?: number; // 20–100 (default do Supabase: 80)
+  resize?: "cover" | "contain" | "fill";
+};
+
+/** True se a URL é um objeto público do nosso Storage (pode ser transformada). */
+export function isTransformableAsset(url: string | null | undefined): boolean {
+  return !!url && url.includes(OBJECT_PUBLIC_SEG);
+}
+
+/**
+ * Reescreve uma URL pública do nosso Storage para o endpoint de transform
+ * (WebP/AVIF automático por `Accept` + resize). URLs externas (coladas) ou vazias
+ * passam direto, sem alteração.
+ */
+export function optimizedImageUrl(
+  url: string | null | undefined,
+  t: ImageTransform = {},
+): string | undefined {
+  if (!url) return undefined;
+  if (!isTransformableAsset(url)) return url;
+  const base = url.replace(OBJECT_PUBLIC_SEG, RENDER_PUBLIC_SEG);
+  const params = new URLSearchParams();
+  if (t.width) params.set("width", String(t.width));
+  if (t.height) params.set("height", String(t.height));
+  if (t.quality) params.set("quality", String(t.quality));
+  if (t.resize) params.set("resize", t.resize);
+  const qs = params.toString();
+  return qs ? `${base}?${qs}` : base;
+}
+
+/** Monta um `srcset` responsivo (em `w`) a partir de uma imagem do Storage. */
+export function imageSrcSet(url: string | null | undefined, widths: number[], quality?: number): string | undefined {
+  if (!isTransformableAsset(url)) return undefined; // sem transform p/ URLs externas
+  return widths
+    .map((w) => `${optimizedImageUrl(url, { width: w, quality })} ${w}w`)
+    .join(", ");
+}

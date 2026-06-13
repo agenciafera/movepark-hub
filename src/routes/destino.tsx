@@ -11,6 +11,7 @@ import { topRated } from "@/features/reviews/reviews.logic";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { breadcrumbSchema, destinationSchema, faqSchema } from "@/lib/jsonld";
+import { imageSrcSet, optimizedImageUrl } from "@/lib/storage";
 
 const SITE_URL = "https://hub.movepark.co";
 
@@ -73,6 +74,9 @@ export default function DestinoPage() {
     destination.meta_description ??
     `Reserve estacionamento próximo a ${destination.name}, em ${destination.city}. Compare preços, comodidades e garanta sua vaga com antecedência.`;
   const canonical = `${SITE_URL}/destinos/${destination.slug}`;
+  // Imagem otimizada (WebP/resize via transform); og:image dimensionado 1200×630.
+  const heroUrl = destination.hero_image_url;
+  const ogImage = optimizedImageUrl(heroUrl, { width: 1200, height: 630, resize: "cover" });
   const results = search.data?.results ?? [];
   const topResults = topRated(topSearch.data?.results ?? []);
   const faqItems = (faqs.data ?? []).map((f) => ({ question: f.question, answer: f.answer }));
@@ -90,7 +94,7 @@ export default function DestinoPage() {
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
-        {destination.hero_image_url && <meta property="og:image" content={destination.hero_image_url} />}
+        {ogImage && <meta property="og:image" content={ogImage} />}
         <script type="application/ld+json">
           {JSON.stringify(destinationSchema({ ...destination, latitude: lat, longitude: lng }))}
         </script>
@@ -129,12 +133,18 @@ export default function DestinoPage() {
           )}
         </header>
 
-        {destination.hero_image_url && (
+        {heroUrl && (
           <img
-            src={destination.hero_image_url}
+            src={optimizedImageUrl(heroUrl, { width: 1024 })}
+            srcSet={imageSrcSet(heroUrl, [640, 1024, 1536])}
+            sizes="(min-width: 1024px) 1024px, 100vw"
             alt={destination.name}
+            width={1024}
+            height={439}
             className="mt-6 aspect-[21/9] w-full rounded-md object-cover"
-            loading="lazy"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
           />
         )}
 

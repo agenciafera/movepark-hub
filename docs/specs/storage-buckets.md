@@ -84,6 +84,22 @@ campo de URL/paste + remover) e `ImageGalleryField` (N imagens: grade + remover)
 - **Voucher:** edge `voucher-pdf` (service_role) → `vouchers` + signed URL
   (ver [voucher-qrcode.md](./voucher-qrcode.md)).
 
+## Otimização de imagem (WebP/AVIF + resize)
+
+O **upload não converte formato** — o objeto fica como veio. O ganho de SEO/LCP vem ao
+**servir**, pela **Image Transformation** do Supabase (endpoint `/storage/v1/render/image/public/…`),
+que negocia WebP/AVIF pelo header `Accept` e redimensiona na URL. Está habilitado no projeto
+(recurso do plano Pro).
+
+`@/lib/storage` expõe:
+- `optimizedImageUrl(url, { width, height, quality, resize })` — reescreve uma URL pública do
+  nosso Storage para o endpoint de transform; **URLs externas (coladas) passam direto**.
+- `imageSrcSet(url, [larguras])` — `srcset` responsivo; `isTransformableAsset(url)`.
+
+Aplicado na página de destino (`src/routes/destino.tsx`): hero com `srcSet`/`sizes`/`width`/`height`
+(evita CLS) + `loading="eager"`/`fetchPriority="high"` (LCP), e `og:image` dimensionado 1200×630.
+Reutilizável para logos/fotos de unidade e cards de busca.
+
 ## Comparativo Supabase × S3 × R2
 
 | Critério | Supabase Storage | S3 puro | Cloudflare R2 |
