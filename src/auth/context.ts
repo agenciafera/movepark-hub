@@ -1,5 +1,5 @@
 import * as React from "react";
-import type { Session, UserRole } from "@/types/domain";
+import type { CompanyRole, Session, UserRole } from "@/types/domain";
 
 export type AuthContextValue = {
   session: Session | null;
@@ -10,6 +10,13 @@ export type AuthContextValue = {
   effectiveRole: UserRole | null;
   /** IDs das empresas em escopo ativo (próprio operador ou alvo da impersonation). */
   effectiveCompanyIds: string[];
+  /**
+   * Papel do usuário DENTRO de uma empresa (E1.6). hub_admin e impersonation
+   * contam como `owner` (acesso total). `null` se não for membro.
+   */
+  companyRoleFor: (companyId: string) => CompanyRole | null;
+  /** Atalho: é dono da empresa em escopo ativo? (governa gestão de usuários etc.) */
+  isCompanyOwner: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: (redirectTo?: string) => Promise<void>;
   /** Dispara OTP por e-mail (cria conta se primeiro acesso). */

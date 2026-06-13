@@ -4,6 +4,8 @@ export type BookingStatus = Enums<"booking_status">;
 export type PaymentStatus = Enums<"payment_status">;
 export type EntityStatus = Enums<"entity_status">;
 export type UserRole = Enums<"user_role">;
+/** Papel DENTRO de uma empresa (E1.6): dono vs. operacional. */
+export type CompanyRole = Enums<"company_role">;
 export type OnboardingStatus = Enums<"onboarding_status">;
 
 export type Booking = Tables<"booking">;
@@ -89,4 +91,15 @@ export type Session = {
   role: UserRole;
   fullName: string | null;
   companyIds: string[];
+  /** Papel do usuário em cada empresa vinculada (E1.6). */
+  companyRoles: Record<string, CompanyRole>;
+};
+
+/** Membro de uma empresa (retorno de company_list_members). */
+export type CompanyMember = {
+  profile_id: string;
+  full_name: string | null;
+  email: string | null;
+  role: CompanyRole;
+  created_at: string;
 };

@@ -347,13 +347,28 @@ Lista as avaliações publicadas das unidades da empresa (nota, autor, data, com
   - Cancelamento → notificar por e-mail / push
   - Check-in pendente (X min antes) → notificar
 
-#### Aba — Usuários da Empresa
+### 4.10 Usuários da empresa ✅ (E1.6)
 
-- Lista de operadores vinculados
-- Convidar novo operador (por e-mail)
-- Revogar acesso
+Tela `/operator/users` (item "Usuários" na sidebar). Lista os membros vinculados à
+empresa em escopo (`company_list_members`, RPC `SECURITY DEFINER` — qualquer membro vê
+o roster com nome, e-mail e papel).
 
-> Operadores adicionados aqui recebem role `company_operator` com o mesmo `company_id`.
+**Sub-papéis (E1.6):** cada vínculo em `profile_company` tem um `company_role`:
+- **Dono (`owner`)** — acesso total: operação, financeiro e gestão de usuários.
+- **Operacional (`operator`)** — operação do dia a dia, sem gestão de usuários.
+
+Quem é dono (`useAuth().isCompanyOwner`) vê controles para **alterar o papel**
+(`company_set_member_role`) e **remover** (`company_remove_member`) — ambos owner-only no
+banco, com **guarda de "último dono"** (a empresa nunca fica sem dono; espelhada no client
+por `team.logic.ts → canModifyMember`). Operacional vê só os papéis (badge), sem controles.
+`hub_admin` (inclusive impersonando) conta como dono. Default da coluna é `owner`, então
+todos os vínculos pré-existentes seguem com acesso total.
+
+**Adiado (follow-ups):**
+- **Convidar usuário novo por e-mail** — exige Edge `SECURITY DEFINER` criando o auth user
+  (padrão `approve-partner`); hoje a tela gere apenas membros já existentes.
+- **Gating de financeiro/repasses por papel** — depende do painel de extrato/repasses
+  (E1.5), ainda não construído.
 
 ---
 

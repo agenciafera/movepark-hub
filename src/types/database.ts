@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       add_on_service: {
@@ -1022,17 +997,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "faq_destination_id_fkey"
-            columns: ["destination_id"]
-            isOneToOne: false
-            referencedRelation: "destination"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "faq_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "faq_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destination"
             referencedColumns: ["id"]
           },
           {
@@ -1771,16 +1746,19 @@ export type Database = {
           company_id: string
           created_at: string
           profile_id: string
+          role: Database["public"]["Enums"]["company_role"]
         }
         Insert: {
           company_id: string
           created_at?: string
           profile_id: string
+          role?: Database["public"]["Enums"]["company_role"]
         }
         Update: {
           company_id?: string
           created_at?: string
           profile_id?: string
+          role?: Database["public"]["Enums"]["company_role"]
         }
         Relationships: [
           {
@@ -2112,6 +2090,28 @@ export type Database = {
         }
         Returns: Json
       }
+      company_list_members: {
+        Args: { p_company_id: string }
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          profile_id: string
+          role: Database["public"]["Enums"]["company_role"]
+        }[]
+      }
+      company_remove_member: {
+        Args: { p_company_id: string; p_profile_id: string }
+        Returns: undefined
+      }
+      company_set_member_role: {
+        Args: {
+          p_company_id: string
+          p_profile_id: string
+          p_role: Database["public"]["Enums"]["company_role"]
+        }
+        Returns: undefined
+      }
       coupon_assert_company_access: {
         Args: { p_company_id: string }
         Returns: undefined
@@ -2149,6 +2149,7 @@ export type Database = {
       cron_complete_bookings: { Args: never; Returns: number }
       cron_expire_pending_bookings: { Args: never; Returns: number }
       current_company_ids: { Args: never; Returns: string[] }
+      current_owner_company_ids: { Args: never; Returns: string[] }
       current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
@@ -2210,6 +2211,7 @@ export type Database = {
           tiers: Json
         }[]
       }
+      is_company_owner: { Args: { p_company_id: string }; Returns: boolean }
       is_hub_admin: { Args: never; Returns: boolean }
       locations_proximity: {
         Args: { p_destination_id?: string; p_lat: number; p_lng: number }
@@ -2455,6 +2457,7 @@ export type Database = {
         | "completed"
         | "cancelled"
         | "no_show"
+      company_role: "owner" | "operator"
       discount_type: "percent" | "fixed"
       entity_status: "active" | "inactive" | "suspended"
       faq_scope: "global" | "location" | "destination"
@@ -2609,6 +2612,7 @@ export const Constants = {
         "cancelled",
         "no_show",
       ],
+      company_role: ["owner", "operator"],
       discount_type: ["percent", "fixed"],
       entity_status: ["active", "inactive", "suspended"],
       faq_scope: ["global", "location", "destination"],

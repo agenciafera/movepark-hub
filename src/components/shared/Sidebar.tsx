@@ -46,6 +46,7 @@ const operatorItems: Item[] = [
   { to: "/operator/addons", label: "Serviços", icon: Sparkles },
   { to: "/operator/coupons", label: "Promoções", icon: Tag },
   { to: "/operator/reviews", label: "Avaliações", icon: Star },
+  { to: "/operator/users", label: "Usuários", icon: Users },
   { to: "/operator/faq", label: "FAQ", icon: HelpCircle },
   { to: "/operator/reports", label: "Relatórios", icon: BarChart3 },
   { to: "/operator/settings", label: "Configurações", icon: Settings },

@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import type { Session, UserRole } from "@/types/domain";
+import type { CompanyRole, Session, UserRole } from "@/types/domain";
 import { AuthContext, type AuthContextValue } from "./context";
 
 const IMPERSONATION_KEY = "mp:impersonated-company-id";
@@ -16,8 +16,11 @@ async function loadSession(): Promise<Session | null> {
       .select("id, full_name, role")
       .eq("id", auth.user.id)
       .maybeSingle(),
-    supabase.from("profile_company").select("company_id").eq("profile_id", auth.user.id),
+    supabase.from("profile_company").select("company_id, role").eq("profile_id", auth.user.id),
   ]);
+
+  const companyRoles: Record<string, CompanyRole> = {};
+  for (const l of links ?? []) companyRoles[l.company_id] = l.role;
 
   return {
     userId: auth.user.id,
@@ -25,6 +28,7 @@ async function loadSession(): Promise<Session | null> {
     role: profile?.role ?? "customer",
     fullName: profile?.full_name ?? null,
     companyIds: (links ?? []).map((l) => l.company_id),
+    companyRoles,
   };
 }
 
@@ -68,6 +72,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ? [effectiveImpersonation]
       : session.companyIds;
 
+  const companyRoleFor = React.useCallback(
+    (companyId: string): CompanyRole | null => {
+      if (!session) return null;
+      // hub_admin (direto ou impersonando) tem acesso total → conta como dono.
+      if (session.role === "hub_admin") return "owner";
+      return session.companyRoles[companyId] ?? null;
+    },
+    [session],
+  );
+
+  const isCompanyOwner = effectiveCompanyIds.some((id) => companyRoleFor(id) === "owner");
+
   function setImpersonatedCompanyId(id: string | null) {
     if (typeof window !== "undefined") {
       if (id) window.localStorage.setItem(IMPERSONATION_KEY, id);
@@ -85,6 +101,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       impersonatedCompanyId: effectiveImpersonation,
       effectiveRole,
       effectiveCompanyIds,
+      companyRoleFor,
+      isCompanyOwner,
       async signIn(email, password) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -149,7 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [session, isLoading, effectiveImpersonation, effectiveRole, canImpersonate],
+    [session, isLoading, effectiveImpersonation, effectiveRole, canImpersonate, companyRoleFor, isCompanyOwner],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

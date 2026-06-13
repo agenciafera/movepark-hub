@@ -15,6 +15,7 @@ export function mockSession(role: UserRole, overrides?: Partial<Session>): Sessi
     role,
     fullName: "Teste",
     companyIds: role === "company_operator" ? ["company-1"] : [],
+    companyRoles: role === "company_operator" ? { "company-1": "owner" } : {},
     ...overrides,
   };
 }
@@ -27,6 +28,8 @@ export function mockAuth(overrides?: Partial<AuthContextValue>): AuthContextValu
     impersonatedCompanyId: null,
     effectiveRole: null,
     effectiveCompanyIds: [],
+    companyRoleFor: () => null,
+    isCompanyOwner: false,
     signIn: vi.fn(),
     signInWithGoogle: vi.fn(),
     sendEmailOtp: vi.fn(),
