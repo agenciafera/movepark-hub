@@ -1,10 +1,13 @@
 import * as React from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/format";
 import type { ReviewWithAuthor } from "@/types/domain";
 import { useLocationReviews } from "./api";
 import { RatingStars } from "./RatingStars";
+import { type ReviewSort, sortReviews } from "./reviews.logic";
+
+const PAGE_SIZE = 6;
 
 function ReviewCard({ r }: { r: ReviewWithAuthor }) {
   return (
@@ -27,7 +30,12 @@ function ReviewCard({ r }: { r: ReviewWithAuthor }) {
   );
 }
 
-/** Bloco de avaliações da unidade (grid 2-col + modal "ver todas"). Some sem reviews. */
+const SORT_OPTIONS: { value: ReviewSort; label: string }[] = [
+  { value: "recent", label: "Mais recentes" },
+  { value: "best", label: "Melhor avaliadas" },
+];
+
+/** Bloco de avaliações da unidade (grid 2-col, ordenável e paginado). Some sem reviews. */
 export function ReviewsBlock({
   locationId,
   totalCount,
@@ -36,38 +44,52 @@ export function ReviewsBlock({
   totalCount: number;
 }) {
   const { data } = useLocationReviews(locationId);
-  const [open, setOpen] = React.useState(false);
-  const reviews = data ?? [];
+  const [sort, setSort] = React.useState<ReviewSort>("recent");
+  const [visible, setVisible] = React.useState(PAGE_SIZE);
+  const reviews = React.useMemo(() => data ?? [], [data]);
+
+  const sorted = React.useMemo(() => sortReviews(reviews, sort), [reviews, sort]);
+
   if (reviews.length === 0) return null;
 
-  const preview = reviews.slice(0, 6);
+  const shown = sorted.slice(0, visible);
 
   return (
-    <section className="space-y-4">
-      <h2 className="text-display-sm text-ink">Avaliações ({totalCount})</h2>
+    <section id="avaliacoes" className="scroll-mt-24 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-display-sm text-ink">Avaliações ({totalCount})</h2>
+        {reviews.length > 1 && (
+          <div className="flex gap-1" role="group" aria-label="Ordenar avaliações">
+            {SORT_OPTIONS.map((opt) => (
+              <Button
+                key={opt.value}
+                variant={sort === opt.value ? "secondary" : "ghost"}
+                size="sm"
+                aria-pressed={sort === opt.value}
+                onClick={() => {
+                  setSort(opt.value);
+                  setVisible(PAGE_SIZE);
+                }}
+                className={cn(sort === opt.value && "font-medium")}
+              >
+                {opt.label}
+              </Button>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
-        {preview.map((r) => (
+        {shown.map((r) => (
           <ReviewCard key={r.id} r={r} />
         ))}
       </div>
-      {reviews.length > preview.length && (
-        <Button variant="outline" onClick={() => setOpen(true)}>
-          Ver todas as {totalCount} avaliações
+
+      {visible < sorted.length && (
+        <Button variant="outline" onClick={() => setVisible((v) => v + PAGE_SIZE)}>
+          Ver mais avaliações ({sorted.length - visible} restantes)
         </Button>
       )}
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Avaliações ({totalCount})</DialogTitle>
-          </DialogHeader>
-          <div className="grid grid-cols-1 gap-4">
-            {reviews.map((r) => (
-              <ReviewCard key={r.id} r={r} />
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
     </section>
   );
 }

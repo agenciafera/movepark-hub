@@ -149,7 +149,17 @@ Lista de avaliações em **2 colunas** (desktop), cards com:
                               [Ler mais]
 ```
 
-Botão "Ver todas as 248 avaliações" abre modal scroll vertical.
+Lista paginada **6 por vez** (`ReviewsBlock`): botão "Ver mais avaliações (N restantes)" amplia a
+lista in-place (substituiu o modal "ver todas"). Quando há >1 review, um **toggle de ordenação**
+("Mais recentes" ↔ "Melhor avaliadas") reordena a lista — recentes primeiro é o default (freshness
+para GEO). Ordenação é lógica pura testável (`reviews.logic.ts → sortReviews`).
+
+O **selo de rating no topo do detalhe** é um link-âncora (`#avaliacoes`) que rola até este bloco
+(`RatingBadge href`). A seção tem `id="avaliacoes"` + `scroll-mt`.
+
+> **Contexto de estadia no card ("estacionou de X a Y") — adiado.** Exige denormalizar as datas da
+> reserva na tabela `review` (no `submit_review`) + backfill, porque o RLS de `booking` bloqueia o
+> join público a partir do read de reviews. É um follow-up com migration, fora do nice-to-have atual.
 
 ### 5.5 Como chegar ✅ (PRD-11)
 

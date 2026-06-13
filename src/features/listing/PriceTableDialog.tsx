@@ -1,4 +1,10 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -52,11 +58,10 @@ export function PriceTableDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Preços por duração{title ? ` — ${title}` : ""}</DialogTitle>
+          <DialogDescription>
+            O preço por diária cai nas estadias mais longas. A linha destacada é a sua busca.
+          </DialogDescription>
         </DialogHeader>
-
-        <p className="mb-1 text-caption text-muted">
-          O preço por diária cai nas estadias mais longas. A linha destacada é a sua busca.
-        </p>
 
         <div className="overflow-hidden rounded-md border border-hairline">
           <Table>

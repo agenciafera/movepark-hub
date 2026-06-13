@@ -15,11 +15,37 @@ O **Operator Panel** é o painel de cada empresa parceira (ex: Nationpark, Aerov
 
 ## 2. Roles & Permissões
 
+### Modelo de papéis da plataforma (decisão jun/2026 — Pedro/PO)
+
+O Hub tem **três papéis** no enum `user_role`, que cobrem as três audiências do produto:
+
+| Role | Audiência | Onde loga | Painel |
+|---|---|---|---|
+| `customer` | Cliente final (usuário comum) | `/entrar` (passwordless) | Conta do cliente (`/account`) |
+| `company_operator` | **Dono do estacionamento** (parceiro) | `/login` (senha) | Operator Panel (`/operator`) |
+| `hub_admin` | **Super admin Movepark** (equipe interna) | `/login` (senha) | Manager (`/manager`) |
+
+> **Por quê só esses três:** as três figuras de negócio — usuário comum, dono do
+> estacionamento e super admin da Movepark — **já estão resolvidas pelo login**: cada
+> papel cai no seu painel via `RequireRole`/`effectiveRole`, com RLS isolando por
+> empresa (`current_company_ids()`) e `is_hub_admin()` para o backoffice. Não há
+> distinção formal **dono vs. operacional** *dentro* de uma mesma empresa hoje:
+> todo usuário vinculado a uma `company` via `profile_company` é `company_operator`
+> com acesso total à empresa.
+
+**Sub-papéis dentro da empresa (dono vs. operacional) — adiado.** Quando o parceiro
+precisar de usuários com permissões diferentes (ex.: operacional sem acesso a
+financeiro/repasses), será preciso um modelo de staff: coluna de papel em
+`profile_company` (ou enum estendido), reflexo em `effectiveRole`/escopo, RLS de
+escrita por papel e UI de "Usuários da Empresa". Planejado em atividade dedicada
+(ver Backlog) e na pendência do `CLAUDE.md` ("Decisão sobre modelo de staff/backoffice").
+
 | Role | Descrição |
 |---|---|
 | `company_operator` | Acesso total à própria empresa — único role neste painel |
 
-> Isolamento por empresa é garantido no backend — o token JWT carrega o `company_id`.
+> Isolamento por empresa é garantido no backend — o token JWT carrega o `company_id`
+> e o RLS resolve a empresa via `current_company_ids()`.
 
 ---
 

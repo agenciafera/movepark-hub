@@ -65,3 +65,20 @@ export function ratingLabel(avg: number | null | undefined, count: number | null
   const n = count === 1 ? "avaliação" : "avaliações";
   return `${formatRating(avg)} · ${count} ${n}`;
 }
+
+export type ReviewSort = "recent" | "best";
+
+type SortableReview = { rating: number; created_at: string };
+
+/**
+ * Ordena reviews para o bloco da unidade. "recent" = mais novas primeiro
+ * (freshness, bom p/ GEO); "best" = maior nota primeiro, desempata pela mais
+ * nova. Não muta o array de entrada.
+ */
+export function sortReviews<T extends SortableReview>(reviews: T[], mode: ReviewSort): T[] {
+  const copy = [...reviews];
+  if (mode === "best") {
+    return copy.sort((a, b) => b.rating - a.rating || b.created_at.localeCompare(a.created_at));
+  }
+  return copy.sort((a, b) => b.created_at.localeCompare(a.created_at));
+}

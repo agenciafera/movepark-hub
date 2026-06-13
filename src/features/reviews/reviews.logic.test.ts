@@ -3,6 +3,7 @@ import {
   buildSubmitReviewArgs,
   EMPTY_REVIEW_FORM,
   ratingLabel,
+  sortReviews,
   topRated,
   validateReviewForm,
   type ReviewFormValues,
@@ -53,6 +54,25 @@ describe("topRated", () => {
   });
   it("vazio quando nenhum tem avaliação", () => {
     expect(topRated([{ id: "x", location: { review_count: 0 } }])).toEqual([]);
+  });
+});
+
+describe("sortReviews", () => {
+  const reviews = [
+    { id: "a", rating: 3, created_at: "2026-06-01T00:00:00Z" },
+    { id: "b", rating: 5, created_at: "2026-05-01T00:00:00Z" },
+    { id: "c", rating: 5, created_at: "2026-06-10T00:00:00Z" },
+  ];
+  it("recent: mais novas primeiro", () => {
+    expect(sortReviews(reviews, "recent").map((r) => r.id)).toEqual(["c", "a", "b"]);
+  });
+  it("best: maior nota primeiro, desempata pela mais nova", () => {
+    expect(sortReviews(reviews, "best").map((r) => r.id)).toEqual(["c", "b", "a"]);
+  });
+  it("não muta o array de entrada", () => {
+    const original = [...reviews];
+    sortReviews(reviews, "best");
+    expect(reviews).toEqual(original);
   });
 });
 

@@ -34,7 +34,7 @@ company (tenant)
 - **Dados:** TanStack Query (server state) + React Hook Form + Zod (forms/validação).
 - **Rotas:** React Router 6, definidas em `src/routes.tsx` como `RouteRecord[]`.
 - **Backend:** Supabase (PostgreSQL + Auth + RLS) + Edge Functions (Deno).
-- **Deploy:** Cloudflare Worker (`src/worker.ts`, `wrangler.jsonc`) servindo o build estático com content-negotiation de Markdown para agentes.
+- **Deploy:** **Cloudflare Pages** (deploy ativo desde jun/2026, conectado ao GitHub; build estático em `dist`). A content-negotiation de Markdown para agentes roda na borda via `src/worker.ts` (Pages Functions / `_worker.js`); `wrangler.jsonc` + `bun run deploy` permanecem para deploy direto via Workers/`wrangler`.
 - **Gerenciador de pacotes:** **bun** (lockfile de texto `bun.lock` — versionado; o binário `bun.lockb` foi descontinuado por incompatibilidade entre versões de bun no CI/Cloudflare). Use sempre `bun` — não use `npm`/`yarn`/`pnpm`. Instalar deps: `bun install`; adicionar: `bun add <pkg>`.
 
 ## Regras de arquitetura (ADRs)

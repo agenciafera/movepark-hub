@@ -46,15 +46,27 @@ export function RatingBadge({
   avg,
   count,
   className,
+  href,
 }: {
   avg: number | null | undefined;
   count: number | null | undefined;
   className?: string;
+  /** Quando informado, vira link-âncora (ex.: "#avaliacoes") para a seção de reviews. */
+  href?: string;
 }) {
   const label = ratingLabel(avg, count);
   if (!label) return null;
+  const base = "inline-flex items-center gap-1 tabular-nums text-ink";
+  if (href) {
+    return (
+      <a href={href} className={cn(base, "underline-offset-2 hover:underline", className)}>
+        <Star className="h-3.5 w-3.5 fill-ink text-ink" />
+        {label}
+      </a>
+    );
+  }
   return (
-    <span className={cn("inline-flex items-center gap-1 tabular-nums text-ink", className)}>
+    <span className={cn(base, className)}>
       <Star className="h-3.5 w-3.5 fill-ink text-ink" />
       {label}
     </span>

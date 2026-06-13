@@ -4,6 +4,15 @@
 > Baseada em pesquisa de jun/2026 (fontes ao final). A decisão de arquitetura de renderização é do
 > Kallef (com Pedro). Esta spec recomenda e justifica; o "como" final é dele.
 
+> **✅ Status (jun/2026) — fundação implementada e no ar.** Renderização rastreável via
+> **`vite-react-ssg`** (`getStaticPaths` + `loader` puxando do Supabase no build), `head`/JSON-LD
+> por rota (`src/lib/jsonld.ts`), descoberta (`robots.txt` com Content Signals, `llms.txt`,
+> sitemap dinâmico, `.well-known/*`) e **Markdown content negotiation** em `src/worker.ts`.
+> **Deploy ativo no Cloudflare Pages** (conectado ao GitHub). A arquitetura de renderização adotada
+> foi `vite-react-ssg` (não Vike); o `head` usa `react-helmet-async` (a spec sugeria `@unhead/react`
+> — escolha legítima do Kallef). Pendente apenas o scan recorrente do `isitagentready.com` como
+> acompanhamento, agora que o site está no ar.
+
 ## Problema (por que isso é prioridade zero)
 
 O projeto hoje é um **SPA client-rendered**: o HTML servido é uma casca (`<div id="root">` + JS),

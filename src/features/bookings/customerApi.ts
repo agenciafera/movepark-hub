@@ -1,11 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { bucketBooking, type MyBookingStatus } from "./bookings.logic";
 
-export type MyBookingStatus =
-  | "upcoming" // pending + confirmed futuro
-  | "active" // checked_in
-  | "history" // completed
-  | "cancelled"; // cancelled + no_show + pending expirado
+export type { MyBookingStatus };
 
 export type MyBookingListItem = {
   id: string;
@@ -35,21 +32,6 @@ const baseSelect = `
     item_type, parking_type:parking_type(name, code)
   )
 `;
-
-function bucketBooking(
-  b: { status: string; check_in_at: string; check_out_at: string; expires_at: string | null },
-): MyBookingStatus {
-  if (b.status === "checked_in") return "active";
-  if (b.status === "completed") return "history";
-  if (b.status === "cancelled" || b.status === "no_show") return "cancelled";
-  if (b.status === "pending") {
-    if (b.expires_at && new Date(b.expires_at) < new Date()) return "cancelled";
-    return "upcoming";
-  }
-  // confirmed
-  if (new Date(b.check_out_at) < new Date()) return "history";
-  return "upcoming";
-}
 
 export function useMyBookings(
   profileId: string | undefined,

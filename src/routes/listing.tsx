@@ -158,6 +158,7 @@ export default function ListingPage() {
             <RatingBadge
               avg={listing.location.review_avg}
               count={listing.location.review_count}
+              href="#avaliacoes"
             />
             {(listing.location.review_count ?? 0) > 0 && <span>·</span>}
             <Building2 className="h-4 w-4" />

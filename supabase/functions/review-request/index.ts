@@ -10,6 +10,7 @@
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendEmail, siteUrl, getEmailConfig, tplReviewRequest } from "../_shared/email.ts";
+import { pendingReviewRequests } from "./pending.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -61,7 +62,7 @@ Deno.serve(async (req: Request) => {
   if (error) return json({ error: error.message }, 500);
 
   // deno-lint-ignore no-explicit-any
-  const pending = (rows ?? []).filter((b: any) => !(b.review?.length));
+  const pending = pendingReviewRequests(rows as any[]);
   const cfg = await getEmailConfig(admin);
 
   let sent = 0;
