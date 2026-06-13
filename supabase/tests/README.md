@@ -16,6 +16,7 @@ Por isso o schema e os dados de preço batem com produção.
 - `pricing.test.sql` — motor de preço (`simulate_price`), valores golden de `docs/simulacao-precos.md`,
   cobrindo as 7 estratégias + flips ⚠️ + a regressão do BUG-001. Espelha `test/pricing/cases.ts`.
 - `onboarding_rpc.test.sql` — cadeia de RPCs do onboarding (lead → wizard → go-live) + `slugify`/slug único.
+- `storage_buckets.test.sql` — OPS-05: visibilidade dos buckets (`assets-public` público; `vouchers`/`partner-uploads` privados) e RLS de `storage.objects` (escopo por prefixo `company_id`, admin vê tudo, anon não escreve/lê privado).
 
 ## Nota sobre o histórico de migrations
 O repo foi **rebaselineado** a partir do banco vivo (o histórico anterior estava divergente — várias

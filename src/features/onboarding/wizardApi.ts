@@ -185,16 +185,19 @@ export const useSetPricing = (cid?: string) => useRpc("onboarding_set_pricing", 
 export const useSetAddons = (cid?: string) => useRpc("onboarding_set_addons", cid);
 export const useSubmitOnboarding = (cid?: string) => useRpc("onboarding_submit", cid);
 
-// ── Upload de assets (logo/fotos) para o bucket partner-assets ──────────────
+// ── Upload de assets públicos (logo/fotos) — bucket `assets-public` (OPS-05) ──
+// Path por empresa (<company_id>/…) → a RLS de `assets-public` autoriza o operador
+// a escrever só sob o prefixo da sua própria empresa. Leitura é pública (CDN).
+const PUBLIC_ASSETS_BUCKET = "assets-public";
 export async function uploadPartnerAsset(companyId: string, file: File, prefix: string): Promise<string> {
   const ext = file.name.split(".").pop() ?? "bin";
   const rand = Math.random().toString(36).slice(2, 9);
   const path = `${companyId}/${prefix}-${rand}.${ext}`;
-  const { error } = await supabase.storage.from("partner-assets").upload(path, file, {
+  const { error } = await supabase.storage.from(PUBLIC_ASSETS_BUCKET).upload(path, file, {
     cacheControl: "3600",
     upsert: true,
   });
   if (error) throw new Error(error.message);
-  const { data } = supabase.storage.from("partner-assets").getPublicUrl(path);
+  const { data } = supabase.storage.from(PUBLIC_ASSETS_BUCKET).getPublicUrl(path);
   return data.publicUrl;
 }
