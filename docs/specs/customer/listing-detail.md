@@ -151,12 +151,32 @@ Lista de avaliações em **2 colunas** (desktop), cards com:
 
 Botão "Ver todas as 248 avaliações" abre modal scroll vertical.
 
-### 5.5 Onde fica
-- Endereço completo em `body-md ink`.
-- Mini-mapa interativo de 256 px altura, full-width da coluna. **Mesma stack do search** (MapLibre + MapTiler — ver [search-results.md §7](search-results.md#stack-do-mapa--decis%C3%A3o-t%C3%A9cnica)). Pin centralizado na operadora, zoom fixo (~15), interação limitada (sem rolagem; pan permitido). Mesmo style "Movepark Light".
-- Para reduzir tile loads, considerar **MapTiler Static Maps API** (imagem PNG renderizada server-side) em vez do mapa interativo — mais barato e suficiente pra esse contexto.
-- Botão "Como chegar" → abre Google Maps em nova aba com endereço (handoff externo é OK; nosso mapa não precisa ter routing).
-- Linha de informações: "Shuttle gratuito 24h até o terminal · 2 min de trajeto".
+### 5.5 Como chegar ✅ (PRD-11)
+
+> **Regra:** o estruturado responde **O QUÊ/ONDE** (já existia: `address`, geo, contato); o texto
+> aberto responde **COMO** (o delta do PRD-11). Esse bloco mata a "ansiedade de chegada" (dor nº 1),
+> derruba suporte e é conteúdo único → SEO/GEO. Componente puro `HowToArrive` (+ `howToArrive.logic.ts`
+> pro traslado); a distância por terminal (DAT-04) é renderizada à parte logo abaixo.
+
+Ordem de renderização dentro da seção "Como chegar":
+
+1. **Aviso crítico de entrada** — `location.notice` (gate `has_notice`) num alerta destacado
+   (border/ícone `error`). É o "o GPS erra a entrada", **não** mais o parágrafo "sobre a vaga"
+   (que passou a usar só `parking_type.description`). Ex.: "Use a Rua Padre Celestino Pavan — o GPS
+   erra a entrada."
+2. **Passo-a-passo** — `location.directions_text` (markdown leve; hoje renderizado preservando
+   quebras com `whitespace-pre-line`, sem dependência de parser — upgrade pós-MVP). O COMO chegar /
+   o que fazer ao chegar. Ex.: "Entre pela rua lateral (não a entrada principal). Recepção à direita."
+3. **Traslado** — linha honesta composta de `shuttle_frequency_minutes` + `shuttle_to_terminal_minutes`
+   via `formatShuttle()` → "a cada 15 min · ~6 min ao terminal". Cada parte é opcional; sem dados, a
+   linha some. Números positivos garantidos por CHECK no banco.
+4. **Endereço + mini-mapa** (`MiniMap`) — endereço em `body-md`. Hoje placeholder com botão
+   "Ver no Google Maps" (handoff externo); MapLibre + MapTiler é upgrade pós-MVP (mesma stack do
+   search — ver [search-results.md §7](search-results.md#stack-do-mapa--decis%C3%A3o-t%C3%A9cnica)).
+
+Campos novos do PRD-11 são editáveis no `LocationForm` (admin **e** operador — conteúdo do parceiro).
+Distância **não** vem daqui — é proximidade calculada (DAT-04). Migration
+`20260620000000_location_directions_prd11.sql`.
 
 ### 5.5b Sobre a garantia
 ✅ **Implementado (PRD-14).** Seção "Sobre a garantia" + selo "Vaga garantida" no reservation card,

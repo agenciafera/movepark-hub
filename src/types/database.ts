@@ -1089,6 +1089,7 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           destination_id: string | null
+          directions_text: string | null
           email: string | null
           geog: unknown
           has_notice: boolean
@@ -1104,6 +1105,8 @@ export type Database = {
           reservation_policy: string | null
           review_avg: number | null
           review_count: number
+          shuttle_frequency_minutes: number | null
+          shuttle_to_terminal_minutes: number | null
           slug: string
           status: Database["public"]["Enums"]["entity_status"]
           timezone: string
@@ -1115,6 +1118,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           destination_id?: string | null
+          directions_text?: string | null
           email?: string | null
           geog?: unknown
           has_notice?: boolean
@@ -1130,6 +1134,8 @@ export type Database = {
           reservation_policy?: string | null
           review_avg?: number | null
           review_count?: number
+          shuttle_frequency_minutes?: number | null
+          shuttle_to_terminal_minutes?: number | null
           slug: string
           status?: Database["public"]["Enums"]["entity_status"]
           timezone?: string
@@ -1141,6 +1147,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           destination_id?: string | null
+          directions_text?: string | null
           email?: string | null
           geog?: unknown
           has_notice?: boolean
@@ -1156,6 +1163,8 @@ export type Database = {
           reservation_policy?: string | null
           review_avg?: number | null
           review_count?: number
+          shuttle_frequency_minutes?: number | null
+          shuttle_to_terminal_minutes?: number | null
           slug?: string
           status?: Database["public"]["Enums"]["entity_status"]
           timezone?: string

@@ -34,6 +34,9 @@ company
 location
 ├── id, company_id → company
 ├── name, slug (unique per company), address, latitude, longitude, timezone
+├── phone, email, notice/has_notice, reservation_policy, photos (jsonb)
+├── destination_id → destination (âncora de proximidade, DAT-04), geog (PostGIS)
+├── directions_text, shuttle_frequency_minutes, shuttle_to_terminal_minutes  — "Como chegar" (PRD-11)
 ├── status: entity_status
 └── created_at, updated_at, deleted_at
 

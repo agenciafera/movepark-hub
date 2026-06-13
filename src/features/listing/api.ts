@@ -25,6 +25,9 @@ export type ListingDetail = {
     email: string | null;
     notice: string | null;
     has_notice: boolean;
+    directions_text: string | null;
+    shuttle_frequency_minutes: number | null;
+    shuttle_to_terminal_minutes: number | null;
     reservation_policy: string | null;
     timezone: string;
     latitude: number | null;
@@ -50,6 +53,7 @@ const baseSelect = `
   id, capacity, is_active,
   location:location!inner(
     id, slug, name, address, phone, email, notice, has_notice,
+    directions_text, shuttle_frequency_minutes, shuttle_to_terminal_minutes,
     reservation_policy, timezone, latitude, longitude,
     has_pcd_config, has_passenger_quantity, review_avg, review_count,
     company:company!inner(id, slug, name, legal_name, created_at),
@@ -117,6 +121,15 @@ export async function fetchListing(
       email: m.location.email,
       notice: m.location.notice,
       has_notice: m.location.has_notice,
+      directions_text: m.location.directions_text ?? null,
+      shuttle_frequency_minutes:
+        m.location.shuttle_frequency_minutes != null
+          ? Number(m.location.shuttle_frequency_minutes)
+          : null,
+      shuttle_to_terminal_minutes:
+        m.location.shuttle_to_terminal_minutes != null
+          ? Number(m.location.shuttle_to_terminal_minutes)
+          : null,
       reservation_policy: m.location.reservation_policy,
       timezone: m.location.timezone,
       latitude: m.location.latitude != null ? Number(m.location.latitude) : null,

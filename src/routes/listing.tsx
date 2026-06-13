@@ -8,7 +8,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { PhotoGrid } from "@/features/listing/PhotoGrid";
 import { AmenityList } from "@/features/listing/AmenityList";
 import { OperatorCard } from "@/features/listing/OperatorCard";
-import { MiniMap } from "@/features/listing/MiniMap";
+import { HowToArrive } from "@/features/listing/HowToArrive";
 import { TerminalDistances } from "@/features/listing/TerminalDistances";
 import { ReservationCard } from "@/features/listing/ReservationCard";
 import { GuaranteeSection } from "@/features/guarantee/GuaranteeSection";
@@ -199,10 +199,8 @@ export default function ListingPage() {
                 Preço base {formatBRL(listing.company_parking_type.base_price)}
               </span>
             </div>
-            {(listing.location.notice || listing.parking_type.description) && (
-              <p className="text-body-md text-body">
-                {listing.location.notice ?? listing.parking_type.description}
-              </p>
+            {listing.parking_type.description && (
+              <p className="text-body-md text-body">{listing.parking_type.description}</p>
             )}
           </section>
 
@@ -216,13 +214,18 @@ export default function ListingPage() {
 
           <Separator />
 
-          {/* Onde fica */}
+          {/* Como chegar (PRD-11): aviso de entrada + passo-a-passo + traslado + mapa */}
           <section className="space-y-4">
-            <h2 className="text-display-sm text-ink">Onde fica</h2>
-            <MiniMap
+            <h2 className="text-display-sm text-ink">Como chegar</h2>
+            <HowToArrive
               address={listing.location.address}
               latitude={listing.location.latitude}
               longitude={listing.location.longitude}
+              notice={listing.location.notice}
+              hasNotice={listing.location.has_notice}
+              directionsText={listing.location.directions_text}
+              shuttleFrequencyMinutes={listing.location.shuttle_frequency_minutes}
+              shuttleToTerminalMinutes={listing.location.shuttle_to_terminal_minutes}
             />
             <TerminalDistances locationId={listing.location.id} />
           </section>

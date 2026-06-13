@@ -21,6 +21,12 @@ import type { EntityStatus, Location } from "@/types/domain";
 // Sentinela do <Select> para "sem âncora" (o Radix Select não aceita value="").
 const NO_DESTINATION = "__none__";
 
+/** Minutos do traslado: inteiro positivo ou null (vazio/0/negativo → null, casa com o CHECK do banco). */
+function parsePositiveInt(value: string): number | null {
+  const n = Number.parseInt(value, 10);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 function slugify(s: string) {
   return s
     .toLowerCase()
@@ -58,6 +64,9 @@ export function LocationForm({
   const [phone, setPhone] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [notice, setNotice] = React.useState("");
+  const [directionsText, setDirectionsText] = React.useState("");
+  const [shuttleFrequency, setShuttleFrequency] = React.useState("");
+  const [shuttleToTerminal, setShuttleToTerminal] = React.useState("");
   const [reservationPolicy, setReservationPolicy] = React.useState("");
   const [destinationId, setDestinationId] = React.useState<string | null>(null);
   const [photos, setPhotos] = React.useState<string[]>([]);
@@ -80,6 +89,17 @@ export function LocationForm({
       setPhone(location?.phone ?? "");
       setEmail(location?.email ?? "");
       setNotice(location?.notice ?? "");
+      setDirectionsText(location?.directions_text ?? "");
+      setShuttleFrequency(
+        location?.shuttle_frequency_minutes != null
+          ? String(location.shuttle_frequency_minutes)
+          : "",
+      );
+      setShuttleToTerminal(
+        location?.shuttle_to_terminal_minutes != null
+          ? String(location.shuttle_to_terminal_minutes)
+          : "",
+      );
       setReservationPolicy(location?.reservation_policy ?? "");
       setDestinationId(location?.destination_id ?? null);
       setPhotos(Array.isArray(location?.photos) ? (location.photos as string[]) : []);
@@ -88,6 +108,13 @@ export function LocationForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // Conteúdo "Como chegar" (PRD-11) — passo-a-passo + traslado honesto (frequência/tempo).
+    const arrivalFields = {
+      directions_text: directionsText.trim() || null,
+      shuttle_frequency_minutes: parsePositiveInt(shuttleFrequency),
+      shuttle_to_terminal_minutes: parsePositiveInt(shuttleToTerminal),
+    };
+
     const fullPayload = {
       name,
       slug: slug || slugify(name),
@@ -102,6 +129,7 @@ export function LocationForm({
       destination_id: destinationId,
       company_id: companyId,
       photos,
+      ...arrivalFields,
     };
 
     const operatorPatch = {
@@ -113,6 +141,7 @@ export function LocationForm({
       reservation_policy: reservationPolicy || null,
       has_notice: !!notice,
       photos,
+      ...arrivalFields,
     };
 
     try {
@@ -240,12 +269,49 @@ export function LocationForm({
             </div>
           )}
           <div className="flex flex-col gap-1.5 tablet:col-span-2">
-            <Label htmlFor="notice">Aviso ao cliente</Label>
+            <Label htmlFor="notice">Aviso crítico de entrada</Label>
             <Textarea
               id="notice"
               value={notice}
               onChange={(e) => setNotice(e.target.value)}
-              placeholder="Exibido após a reserva (instruções de acesso, observações)"
+              placeholder="Ex.: Use a Rua Padre Celestino Pavan — o GPS erra a entrada."
+            />
+            <p className="text-caption text-muted">
+              Destacado em alerta no bloco "Como chegar". Use para o que o cliente erra na chegada.
+            </p>
+          </div>
+          <div className="flex flex-col gap-1.5 tablet:col-span-2">
+            <Label htmlFor="directions">Como chegar (passo a passo)</Label>
+            <Textarea
+              id="directions"
+              value={directionsText}
+              onChange={(e) => setDirectionsText(e.target.value)}
+              placeholder="Ex.: Entre pela rua lateral (não pela entrada principal). Recepção coberta à direita."
+            />
+            <p className="text-caption text-muted">
+              O passo-a-passo de chegada. O endereço diz onde fica; aqui você diz como entrar.
+            </p>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="shuttle-freq">Traslado · frequência (min)</Label>
+            <Input
+              id="shuttle-freq"
+              type="number"
+              min={1}
+              value={shuttleFrequency}
+              onChange={(e) => setShuttleFrequency(e.target.value)}
+              placeholder="15"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="shuttle-terminal">Traslado · tempo até o terminal (min)</Label>
+            <Input
+              id="shuttle-terminal"
+              type="number"
+              min={1}
+              value={shuttleToTerminal}
+              onChange={(e) => setShuttleToTerminal(e.target.value)}
+              placeholder="6"
             />
           </div>
           <div className="flex flex-col gap-1.5 tablet:col-span-2">
