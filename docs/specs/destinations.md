@@ -103,7 +103,11 @@ e inserts manuais sem slug continuam funcionando. Índice `destination_published
 - **Manager** (`src/routes/manager/destinations.tsx` + `DestinationForm`): tabela com
   status (Publicado/Rascunho), popular, ordem e link para a página pública; form com
   slug auto-derivado do nome, seletor de tipo, flags `is_popular`/`is_published` e o bloco
-  de SEO (meta_title, meta_description, intro, hero_image_url).
+  de SEO (meta_title, meta_description, intro). O **hero** usa `ImageUploadField`
+  (`@/components/shared/ImageUpload`) → `uploadDestinationImage(code, "hero", file)` sobe em
+  `assets-public/destinations/<code>/…` (bucket OPS-05) e grava a URL em `hero_image_url`;
+  também aceita colar URL. O envio fica travado até o `code` estar preenchido (define a pasta).
+  Ver [storage-buckets.md](./storage-buckets.md).
 
 ## Acesso a dados
 

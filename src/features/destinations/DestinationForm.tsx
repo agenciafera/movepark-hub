@@ -14,6 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { StateSelect } from "@/components/shared/StateSelect";
+import { ImageUploadField } from "@/components/shared/ImageUpload";
+import { uploadDestinationImage } from "@/lib/storage";
 import { useCreateDestination, useUpdateDestination } from "./api";
 import type { Destination } from "@/types/domain";
 
@@ -214,9 +216,16 @@ export function DestinationForm({ open, destination, onOpenChange }: Props) {
             <Label htmlFor="d-mt">Meta title</Label>
             <Input id="d-mt" value={f.meta_title} onChange={(e) => set("meta_title", e.target.value)} placeholder="Estacionamento em ... | Movepark" />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="d-hero">Imagem (URL)</Label>
-            <Input id="d-hero" value={f.hero_image_url} onChange={(e) => set("hero_image_url", e.target.value)} />
+          <div className="flex flex-col gap-1.5 tablet:col-span-2">
+            <ImageUploadField
+              label="Imagem (hero)"
+              value={f.hero_image_url || null}
+              onChange={(url) => set("hero_image_url", url ?? "")}
+              onUpload={(file) => uploadDestinationImage(f.code.trim(), "hero", file)}
+              aspectClass="aspect-[21/9]"
+              disabled={!f.code.trim()}
+              disabledHint="Preencha o Code antes de enviar a imagem (define a pasta do destino)."
+            />
           </div>
           <div className="flex flex-col gap-1.5 tablet:col-span-2">
             <Label htmlFor="d-md">Meta description</Label>

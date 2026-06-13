@@ -12,6 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ImageGalleryField } from "@/components/shared/ImageUpload";
+import { uploadCompanyAsset } from "@/lib/storage";
 import { useCreateLocation, useNearestDestination, useUpdateLocation } from "./api";
 import { useAdminDestinations } from "@/features/destinations/api";
 import type { EntityStatus, Location } from "@/types/domain";
@@ -58,6 +60,7 @@ export function LocationForm({
   const [notice, setNotice] = React.useState("");
   const [reservationPolicy, setReservationPolicy] = React.useState("");
   const [destinationId, setDestinationId] = React.useState<string | null>(null);
+  const [photos, setPhotos] = React.useState<string[]>([]);
 
   // Âncora de proximidade só é editável no full scope (hub_admin); operator não toca o vínculo.
   const destinations = useAdminDestinations();
@@ -79,6 +82,7 @@ export function LocationForm({
       setNotice(location?.notice ?? "");
       setReservationPolicy(location?.reservation_policy ?? "");
       setDestinationId(location?.destination_id ?? null);
+      setPhotos(Array.isArray(location?.photos) ? (location.photos as string[]) : []);
     }
   }, [open, location]);
 
@@ -97,6 +101,7 @@ export function LocationForm({
       has_notice: !!notice,
       destination_id: destinationId,
       company_id: companyId,
+      photos,
     };
 
     const operatorPatch = {
@@ -107,6 +112,7 @@ export function LocationForm({
       notice: notice || null,
       reservation_policy: reservationPolicy || null,
       has_notice: !!notice,
+      photos,
     };
 
     try {
@@ -248,6 +254,14 @@ export function LocationForm({
               id="policy"
               value={reservationPolicy}
               onChange={(e) => setReservationPolicy(e.target.value)}
+            />
+          </div>
+          <div className="tablet:col-span-2">
+            <ImageGalleryField
+              label="Fotos da unidade"
+              values={photos}
+              onChange={setPhotos}
+              onUpload={(file) => uploadCompanyAsset(companyId, "photo", file)}
             />
           </div>
           <div className="flex justify-end gap-2 pt-2 tablet:col-span-2">

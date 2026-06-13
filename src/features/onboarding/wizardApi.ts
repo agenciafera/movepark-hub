@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { uploadCompanyAsset } from "@/lib/storage";
 import type { ParkingType } from "@/types/domain";
 
 export const onboardingKeys = {
@@ -188,16 +189,7 @@ export const useSubmitOnboarding = (cid?: string) => useRpc("onboarding_submit",
 // ── Upload de assets públicos (logo/fotos) — bucket `assets-public` (OPS-05) ──
 // Path por empresa (<company_id>/…) → a RLS de `assets-public` autoriza o operador
 // a escrever só sob o prefixo da sua própria empresa. Leitura é pública (CDN).
-const PUBLIC_ASSETS_BUCKET = "assets-public";
-export async function uploadPartnerAsset(companyId: string, file: File, prefix: string): Promise<string> {
-  const ext = file.name.split(".").pop() ?? "bin";
-  const rand = Math.random().toString(36).slice(2, 9);
-  const path = `${companyId}/${prefix}-${rand}.${ext}`;
-  const { error } = await supabase.storage.from(PUBLIC_ASSETS_BUCKET).upload(path, file, {
-    cacheControl: "3600",
-    upsert: true,
-  });
-  if (error) throw new Error(error.message);
-  const { data } = supabase.storage.from(PUBLIC_ASSETS_BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+// A lógica de bucket/path/validação mora em `@/lib/storage` (fonte única).
+export function uploadPartnerAsset(companyId: string, file: File, prefix: string): Promise<string> {
+  return uploadCompanyAsset(companyId, prefix, file);
 }

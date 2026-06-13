@@ -66,11 +66,21 @@ Reusa os helpers do banco: `public.is_hub_admin()` e `public.current_company_ids
 
 ## Uso no código
 
-- **Front (operador/onboarding):** `uploadPartnerAsset()` em
-  `src/features/onboarding/wizardApi.ts` sobe logo/fotos para `assets-public` no path
-  `<company_id>/…` e devolve `getPublicUrl`.
-- **Heros de destino:** subir em `assets-public/destinations/<slug>/…` (hub_admin) e
-  gravar a URL pública em `destination.hero_image_url` (ver [destinations.md](./destinations.md)).
+Fonte única do bucket/convenção/validação: **`src/lib/storage.ts`** — `uploadPublicAsset(dir, name, file)`
+(+ atalhos `uploadDestinationImage`, `uploadCompanyAsset`), `assertPublicImage`, `publicAssetDir`,
+`PUBLIC_IMAGE_ACCEPT`/`PUBLIC_IMAGE_MAX_BYTES` (espelham os limites do bucket).
+
+Componentes de UI reutilizáveis (agnósticos de bucket — recebem `onUpload`):
+**`src/components/shared/ImageUpload.tsx`** → `ImageUploadField` (1 imagem: preview + envio +
+campo de URL/paste + remover) e `ImageGalleryField` (N imagens: grade + remover).
+
+- **Heros de destino (hub_admin):** `DestinationForm` usa `ImageUploadField` +
+  `uploadDestinationImage(code, "hero", file)` → `assets-public/destinations/<code>/…`; a URL
+  pública vai em `destination.hero_image_url` (ver [destinations.md](./destinations.md)).
+- **Logo/fotos da empresa (operador/onboarding):** `uploadPartnerAsset()` em
+  `wizardApi.ts` agora delega para `uploadCompanyAsset()` (path `<company_id>/…`). Usado nos
+  passos do wizard (logo/fotos) e na galeria **"Fotos da unidade"** do `LocationForm`
+  (`ImageGalleryField`, grava em `location.photos`).
 - **Voucher:** edge `voucher-pdf` (service_role) → `vouchers` + signed URL
   (ver [voucher-qrcode.md](./voucher-qrcode.md)).
 
