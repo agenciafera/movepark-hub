@@ -36,6 +36,7 @@ export type ListingDetail = {
     has_passenger_quantity: boolean;
     review_avg: number | null;
     review_count: number;
+    photos: string[];
   };
   parking_type: {
     code: string;
@@ -55,7 +56,7 @@ const baseSelect = `
     id, slug, name, address, phone, email, notice, has_notice,
     directions_text, shuttle_frequency_minutes, shuttle_to_terminal_minutes,
     reservation_policy, timezone, latitude, longitude,
-    has_pcd_config, has_passenger_quantity, review_avg, review_count,
+    has_pcd_config, has_passenger_quantity, review_avg, review_count, photos,
     company:company!inner(id, slug, name, legal_name, created_at),
     amenities:location_amenity(
       amenity:amenity(code, name, icon, category, sort_order)
@@ -138,6 +139,7 @@ export async function fetchListing(
       has_passenger_quantity: m.location.has_passenger_quantity,
       review_avg: m.location.review_avg != null ? Number(m.location.review_avg) : null,
       review_count: m.location.review_count ?? 0,
+      photos: Array.isArray(m.location.photos) ? (m.location.photos as string[]) : [],
     },
     parking_type: m.company_parking_type.parking_type,
     company_parking_type: {

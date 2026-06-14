@@ -184,7 +184,7 @@ export default function ListingPage() {
       </div>
 
       {/* Photo grid */}
-      <PhotoGrid title={listing.location.name} />
+      <PhotoGrid title={listing.location.name} photoUrls={listing.location.photos} />
 
       {/* Body 2-col */}
       <div className="mt-8 grid grid-cols-1 gap-12 desktop:grid-cols-[1fr_360px]">
