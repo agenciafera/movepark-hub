@@ -16,6 +16,7 @@ type Overrides = {
   description?: string | null;
   review_avg?: number | null;
   review_count?: number;
+  photos?: string[];
 };
 
 function makeListing(o: Overrides = {}): ListingDetail {
@@ -36,6 +37,7 @@ function makeListing(o: Overrides = {}): ListingDetail {
       longitude,
       review_avg: "review_avg" in o ? o.review_avg : null,
       review_count: o.review_count ?? 0,
+      photos: o.photos ?? [],
     },
     parking_type: { name: "Vaga Coberta", code: "covered", description },
     company_parking_type: { base_price: 30 },
@@ -58,6 +60,12 @@ describe("localBusinessSchema", () => {
     expect(s.address).toBeUndefined();
     expect(s.geo).toBeUndefined();
   });
+
+  it("inclui image com as fotos da unidade quando há fotos; omite quando não há", () => {
+    const fotos = ["https://cdn/p1.jpg", "https://cdn/p2.jpg"];
+    expect(localBusinessSchema(makeListing({ photos: fotos })).image).toEqual(fotos);
+    expect(localBusinessSchema(makeListing()).image).toBeUndefined();
+  });
 });
 
 describe("productOfferSchema", () => {
@@ -76,6 +84,12 @@ describe("productOfferSchema", () => {
     const s = productOfferSchema(makeListing());
     expect(s.aggregateRating).toBeUndefined();
     expect(s.review).toBeUndefined();
+  });
+
+  it("inclui image (exigido pelo rich result de Product) quando há fotos", () => {
+    const fotos = ["https://cdn/p1.jpg"];
+    expect(productOfferSchema(makeListing({ photos: fotos })).image).toEqual(fotos);
+    expect(productOfferSchema(makeListing()).image).toBeUndefined();
   });
 
   it("com avaliações inclui AggregateRating (regra self-serving do Google)", () => {

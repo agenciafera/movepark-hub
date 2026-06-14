@@ -8,6 +8,7 @@ export function localBusinessSchema(listing: ListingDetail) {
     "@type": ["LocalBusiness", "ParkingFacility"],
     name: `${listing.location.name} — ${listing.parking_type.name}`,
     description: listing.parking_type.description ?? undefined,
+    image: listing.location.photos?.length ? listing.location.photos : undefined,
     url: `${SITE_URL}/p/${listing.company.slug}/${listing.location.slug}/${listing.parking_type.code}`,
     telephone: listing.location.phone ?? undefined,
     email: listing.location.email ?? undefined,
@@ -49,6 +50,8 @@ export function productOfferSchema(listing: ListingDetail, reviews: SchemaReview
     "@type": "Product",
     name: `${listing.parking_type.name} — ${listing.location.name}`,
     description: listing.parking_type.description ?? undefined,
+    // `image` é exigido pelo Google pro rich result de Product — usa as fotos da unidade.
+    image: listing.location.photos?.length ? listing.location.photos : undefined,
     offers: {
       "@type": "Offer",
       priceCurrency: "BRL",

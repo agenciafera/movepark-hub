@@ -21,6 +21,7 @@ import { useSavedListings } from "@/features/search/useSavedListings";
 import { useFaqCombined } from "@/features/faqs/api";
 import { FaqList } from "@/features/faqs/FaqList";
 import { formatBRL } from "@/lib/format";
+import { optimizedImageUrl } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import {
   localBusinessSchema,
@@ -71,6 +72,11 @@ export default function ListingPage() {
   const pageUrl = listing
     ? `https://hub.movepark.co/p/${listing.company.slug}/${listing.location.slug}/${listing.parking_type.code}`
     : "";
+  // og:image/twitter — usa a 1ª foto da unidade, recortada pro formato de card (1200x630).
+  const ogImage =
+    listing && listing.location.photos[0]
+      ? optimizedImageUrl(listing.location.photos[0], { width: 1200, height: 630, resize: "cover" })
+      : undefined;
 
 
   if (isLoading) {
@@ -128,6 +134,11 @@ export default function ListingPage() {
         <meta property="og:description" content={pageDesc} />
         <meta property="og:type" content="website" />
         <meta property="og:url" content={pageUrl} />
+        <meta name="twitter:card" content={ogImage ? "summary_large_image" : "summary"} />
+        {ogImage && <meta property="og:image" content={ogImage} />}
+        {ogImage && <meta property="og:image:width" content="1200" />}
+        {ogImage && <meta property="og:image:height" content="630" />}
+        {ogImage && <meta name="twitter:image" content={ogImage} />}
         <link rel="canonical" href={pageUrl} />
         <script type="application/ld+json">{JSON.stringify(localBusinessSchema(listing))}</script>
         <script type="application/ld+json">{JSON.stringify(productOfferSchema(listing, schemaReviews))}</script>
