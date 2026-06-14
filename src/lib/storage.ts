@@ -18,14 +18,6 @@ export const PUBLIC_IMAGE_MIME = [
 /** `accept` para <input type=file> de imagem pública (mesma lista do bucket). */
 export const PUBLIC_IMAGE_ACCEPT = PUBLIC_IMAGE_MIME.join(",");
 
-function extOf(file: File): string {
-  return (file.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "") || "bin";
-}
-
-function randomSuffix(): string {
-  return Math.random().toString(36).slice(2, 9);
-}
-
 /** Valida tipo/tamanho contra os limites do bucket público. Lança Error legível. */
 export function assertPublicImage(file: File): void {
   if (!(PUBLIC_IMAGE_MIME as readonly string[]).includes(file.type)) {
@@ -50,17 +42,38 @@ export const publicAssetDir = {
 
 /**
  * Sobe um arquivo para `assets-public` em `<dir>/<name>-<rand>.<ext>` e devolve a
- * URL pública (CDN). A RLS do bucket decide quem pode escrever em cada prefixo.
+ * URL pública (CDN). Vai pela Edge Function `upload-asset` (escreve via
+ * service_role após validar hub_admin/membro da empresa) — a RLS de Storage não
+ * aplica a identidade do JWT assimétrico de forma confiável, então o upload
+ * direto do browser falhava mesmo para admin. A Edge valida o escopo do `dir`.
  */
 export async function uploadPublicAsset(dir: string, name: string, file: File): Promise<string> {
   assertPublicImage(file);
-  const path = `${dir.replace(/\/+$/, "")}/${name}-${randomSuffix()}.${extOf(file)}`;
-  const { error } = await supabase.storage.from(PUBLIC_ASSETS_BUCKET).upload(path, file, {
-    cacheControl: "3600",
-    upsert: true,
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) throw new Error("Você precisa entrar para enviar imagens.");
+
+  const form = new FormData();
+  form.append("file", file);
+  form.append("dir", dir.replace(/\/+$/, ""));
+  form.append("name", name);
+
+  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-asset`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${token}`,
+    },
+    body: form, // sem Content-Type: o browser define o boundary do multipart
   });
-  if (error) throw new Error(error.message);
-  return supabase.storage.from(PUBLIC_ASSETS_BUCKET).getPublicUrl(path).data.publicUrl;
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error ?? `Falha ao enviar imagem (HTTP ${res.status})`);
+  }
+  const data = (await res.json()) as { url: string };
+  return data.url;
 }
 
 /** Hero/imagens de um destino (hub_admin). Path: assets-public/destinations/<codeOrSlug>/. */

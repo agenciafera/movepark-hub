@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   assertPublicImage,
   imageSrcSet,
@@ -6,7 +6,10 @@ import {
   optimizedImageUrl,
   publicAssetDir,
   PUBLIC_IMAGE_ACCEPT,
+  uploadCompanyAsset,
+  uploadPublicAsset,
 } from "./storage";
+import { supabase } from "./supabase";
 
 const STORAGE_URL =
   "https://proj.supabase.co/storage/v1/object/public/assets-public/destinations/GRU/hero-abc.png";
@@ -77,6 +80,66 @@ describe("isTransformableAsset", () => {
     expect(isTransformableAsset(STORAGE_URL)).toBe(true);
     expect(isTransformableAsset("https://cdn.externo/x.jpg")).toBe(false);
     expect(isTransformableAsset(null)).toBe(false);
+  });
+});
+
+describe("uploadPublicAsset", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  function mockSession(token: string | null) {
+    vi.spyOn(supabase.auth, "getSession").mockResolvedValue({
+      // shape parcial — só usamos access_token
+      data: { session: token ? ({ access_token: token } as never) : null },
+      error: null,
+    } as never);
+  }
+
+  it("envia multipart pra Edge upload-asset com Bearer e devolve a URL", async () => {
+    mockSession("jwt-123");
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ url: "https://cdn/x.png" }), { status: 201 }),
+    );
+
+    const url = await uploadCompanyAsset("comp-1", "photo", fakeFile("a.png", "image/png"));
+
+    expect(url).toBe("https://cdn/x.png");
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [calledUrl, init] = fetchSpy.mock.calls[0];
+    expect(String(calledUrl)).toMatch(/\/functions\/v1\/upload-asset$/);
+    const headers = (init?.headers ?? {}) as Record<string, string>;
+    expect(headers.Authorization).toBe("Bearer jwt-123");
+    const body = init?.body as FormData;
+    expect(body.get("dir")).toBe("comp-1");
+    expect(body.get("name")).toBe("photo");
+    expect(body.get("file")).toBeInstanceOf(File);
+  });
+
+  it("sem sessão → erro pedindo login (não chama a rede)", async () => {
+    mockSession(null);
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    await expect(uploadPublicAsset("comp-1", "photo", fakeFile("a.png", "image/png"))).rejects.toThrow(
+      /entrar/i,
+    );
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("propaga a mensagem de erro da Edge", async () => {
+    mockSession("jwt-123");
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ error: "Sem acesso a esta empresa." }), { status: 403 }),
+    );
+    await expect(
+      uploadCompanyAsset("outra", "photo", fakeFile("a.png", "image/png")),
+    ).rejects.toThrow(/Sem acesso/);
+  });
+
+  it("valida o arquivo antes de chamar a rede", async () => {
+    mockSession("jwt-123");
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    await expect(
+      uploadCompanyAsset("comp-1", "photo", fakeFile("a.pdf", "application/pdf")),
+    ).rejects.toThrow(/Formato/);
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
 
