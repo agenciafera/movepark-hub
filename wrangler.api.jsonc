@@ -1,0 +1,21 @@
+{
+  // Worker da Public API — servido em api.movepark.co (E0.7). Ver docs/specs/public-api.md.
+  // Deploy: `bun run deploy:api`. Segredos: `wrangler secret put SUPABASE_ANON_KEY -c wrangler.api.jsonc`.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "movepark-api",
+  "main": "src/api-worker.ts",
+  "compatibility_date": "2026-06-02",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  },
+  "routes": [
+    { "pattern": "api.movepark.co", "custom_domain": true }
+  ],
+  "vars": {
+    "SUPABASE_FUNCTIONS_URL": "https://mgaigbezdalbyuqiofcf.supabase.co/functions/v1",
+    "SITE_URL": "https://hub.movepark.co"
+  }
+  // SUPABASE_ANON_KEY é secret (não versionar). Rate-limit opcional:
+  // adicione um binding KV "API_RATELIMIT" via `kv_namespaces` quando ativar.
+}

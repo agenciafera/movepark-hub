@@ -1,0 +1,241 @@
+openapi: 3.1.0
+info:
+  title: Movepark Public API
+  version: "1.0.0"
+  description: >
+    API pública do Movepark Hub. Autenticada por chave de API com escopos; toda chamada
+    é tenant-scoped (só enxerga dados da empresa dona da chave). Fonte de verdade:
+    docs/specs/public-api.md. Atualize este arquivo ao criar/alterar endpoint (ADR-003).
+  contact:
+    name: Movepark
+    email: contato@movepark.co
+servers:
+  - url: https://api.movepark.co
+security:
+  - apiKey: []
+tags:
+  - name: locations
+  - name: parking-types
+  - name: availability
+  - name: pricing
+  - name: bookings
+  - name: faq
+paths:
+  /v1/locations:
+    get:
+      tags: [locations]
+      summary: Lista as unidades da empresa
+      security: [{ apiKey: [locations:read] }]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 20, maximum: 100 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses:
+        "200": { $ref: "#/components/responses/List" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /v1/locations/{id}:
+    get:
+      tags: [locations]
+      summary: Detalhe de uma unidade
+      security: [{ apiKey: [locations:read] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /v1/locations/{id}/parking-types:
+    get:
+      tags: [parking-types]
+      summary: Tipos de vaga de uma unidade
+      security: [{ apiKey: [parking-types:read] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200": { $ref: "#/components/responses/List" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /v1/availability:
+    get:
+      tags: [availability]
+      summary: Disponibilidade de um tipo de vaga num período
+      security: [{ apiKey: [availability:read] }]
+      parameters:
+        - { name: location_parking_type_id, in: query, required: true, schema: { type: string, format: uuid } }
+        - { name: from, in: query, required: true, schema: { type: string, format: date-time } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date-time } }
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /v1/pricing/simulate:
+    post:
+      tags: [pricing]
+      summary: Simula o preço de uma reserva
+      security: [{ apiKey: [pricing:read] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [location_parking_type_id]
+              properties:
+                location_parking_type_id: { type: string, format: uuid }
+                days: { type: integer, minimum: 1, default: 1 }
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /v1/bookings:
+    get:
+      tags: [bookings]
+      summary: Lista reservas da empresa
+      security: [{ apiKey: [bookings:read] }]
+      parameters:
+        - { name: status, in: query, schema: { type: string } }
+        - { name: from, in: query, schema: { type: string, format: date-time } }
+        - { name: to, in: query, schema: { type: string, format: date-time } }
+        - { name: limit, in: query, schema: { type: integer, default: 20, maximum: 100 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses:
+        "200": { $ref: "#/components/responses/List" }
+    post:
+      tags: [bookings]
+      summary: Cria uma reserva (atribuída à empresa)
+      description: >
+        Cria uma reserva em nome da empresa (sem JWT de consumidor). Idempotente via
+        header Idempotency-Key.
+      security: [{ apiKey: [bookings:write] }]
+      parameters:
+        - { name: Idempotency-Key, in: header, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [location_parking_type_id, check_in_at, check_out_at]
+              properties:
+                location_parking_type_id: { type: string, format: uuid }
+                check_in_at: { type: string, format: date-time }
+                check_out_at: { type: string, format: date-time }
+                customer_name: { type: string }
+                customer_email: { type: string, format: email }
+                customer_phone: { type: string }
+                passenger_count: { type: integer }
+                has_pcd: { type: boolean }
+                add_on_service_ids: { type: array, items: { type: string, format: uuid } }
+                coupon_code: { type: string }
+                origin: { type: string }
+      responses:
+        "201": { $ref: "#/components/responses/Object" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /v1/bookings/{id}:
+    get:
+      tags: [bookings]
+      summary: Detalhe de uma reserva
+      security: [{ apiKey: [bookings:read] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /v1/bookings/{id}/cancel:
+    post:
+      tags: [bookings]
+      summary: Cancela uma reserva
+      security: [{ apiKey: [bookings:cancel] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { reason: { type: string } } }
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /v1/bookings/{id}/check-in:
+    post:
+      tags: [bookings]
+      summary: Registra check-in (confirmed → checked_in)
+      security: [{ apiKey: [bookings:checkin] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /v1/bookings/{id}/check-out:
+    post:
+      tags: [bookings]
+      summary: Registra check-out (checked_in → completed)
+      security: [{ apiKey: [bookings:checkin] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /v1/faq:
+    get:
+      tags: [faq]
+      summary: FAQ (global ou por unidade)
+      security: [{ apiKey: [faq:read] }]
+      parameters:
+        - { name: location_id, in: query, schema: { type: string, format: uuid } }
+        - { name: query, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 20 } }
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+components:
+  securitySchemes:
+    apiKey:
+      type: http
+      scheme: bearer
+      description: >
+        Chave de API da empresa no formato `mp_live_…` / `mp_test_…`
+        (Authorization: Bearer …; alias X-API-Key). Escopos por endpoint conforme `security`.
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  responses:
+    List:
+      description: Lista
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data: { type: array, items: { type: object } }
+              meta: { $ref: "#/components/schemas/Meta" }
+    Object:
+      description: Objeto
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data: { type: object }
+              meta: { $ref: "#/components/schemas/Meta" }
+    Unauthorized:
+      description: Chave ausente/inválida/revogada/expirada
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    Forbidden:
+      description: Escopo insuficiente
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    NotFound:
+      description: Recurso não encontrado nesta empresa
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    Conflict:
+      description: Conflito (ex.: sem disponibilidade)
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    ValidationError:
+      description: Erro de validação
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  schemas:
+    Meta:
+      type: object
+      properties:
+        request_id: { type: string }
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code: { type: string }
+            message: { type: string }
+            request_id: { type: string }

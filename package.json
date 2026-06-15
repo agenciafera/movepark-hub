@@ -17,7 +17,9 @@
     "test:edge": "deno test --no-check --allow-env --allow-net supabase/functions",
     "coverage": "vitest run --project unit --coverage",
     "gen:types": "supabase gen types typescript --linked > src/types/database.ts",
-    "deploy": "bun run build && wrangler deploy"
+    "deploy": "bun run build && wrangler deploy",
+    "deploy:api": "wrangler deploy -c wrangler.api.jsonc",
+    "lint:openapi": "node scripts/check-openapi-drift.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

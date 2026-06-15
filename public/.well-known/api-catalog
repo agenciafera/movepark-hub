@@ -4,6 +4,11 @@
       "anchor": "https://hub.movepark.co",
       "service-desc": [
         {
+          "href": "https://hub.movepark.co/openapi.yaml",
+          "type": "application/yaml",
+          "title": "Movepark Public API — OpenAPI 3.1"
+        },
+        {
           "href": "https://hub.movepark.co/.well-known/mcp/server-card.json",
           "type": "application/json",
           "title": "Movepark MCP Server Card"
@@ -11,9 +16,9 @@
       ],
       "service-doc": [
         {
-          "href": "https://hub.movepark.co/faq",
+          "href": "https://api.movepark.co/docs",
           "type": "text/html",
-          "title": "Documentação e FAQ"
+          "title": "Documentação da Public API"
         }
       ],
       "status": [

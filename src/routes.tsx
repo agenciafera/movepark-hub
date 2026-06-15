@@ -65,6 +65,7 @@ import OperatorAddons from "@/routes/operator/addons";
 import OperatorCoupons from "@/routes/operator/coupons";
 import OperatorReviews from "@/routes/operator/reviews";
 import OperatorUsers from "@/routes/operator/users";
+import OperatorApiKeys from "@/routes/operator/api-keys";
 
 import ParkingTypesPage from "@/routes/parking-types";
 
@@ -256,6 +257,7 @@ export const routes: RouteRecord[] = [
               { path: "users", element: <OperatorUsers /> },
               { path: "faq", element: <OperatorFaq /> },
               { path: "reports", element: <OperatorReports /> },
+              { path: "api-keys", element: <OperatorApiKeys /> },
               { path: "settings", element: <OperatorSettings /> },
             ],
           },

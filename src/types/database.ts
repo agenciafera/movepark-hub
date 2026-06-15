@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       add_on_service: {
@@ -147,6 +172,90 @@ export type Database = {
         }
         Relationships: []
       }
+      api_key: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          environment: string
+          expires_at: string | null
+          id: string
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          revoked_at: string | null
+          scopes: string[]
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          environment: string
+          expires_at?: string | null
+          id?: string
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name: string
+          revoked_at?: string | null
+          scopes?: string[]
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          environment?: string
+          expires_at?: string | null
+          id?: string
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          revoked_at?: string | null
+          scopes?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_key_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_key_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_scope: {
+        Row: {
+          description: string
+          module: string
+          scope: string
+        }
+        Insert: {
+          description: string
+          module: string
+          scope: string
+        }
+        Update: {
+          description?: string
+          module?: string
+          scope?: string
+        }
+        Relationships: []
+      }
       app_setting: {
         Row: {
           key: string
@@ -173,17 +282,22 @@ export type Database = {
           checked_out_at: string | null
           code: string
           created_at: string
+          created_via_api_key_id: string | null
           currency: string
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
           deleted_at: string | null
           expires_at: string | null
           external_id: string | null
           has_pcd: boolean
           id: string
+          idempotency_key: string | null
           location_id: string
           notes: string | null
           origin: string | null
           passenger_count: number | null
-          profile_id: string
+          profile_id: string | null
           review_request_sent_at: string | null
           status: Database["public"]["Enums"]["booking_status"]
           total_amount: number
@@ -201,17 +315,22 @@ export type Database = {
           checked_out_at?: string | null
           code: string
           created_at?: string
+          created_via_api_key_id?: string | null
           currency?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           deleted_at?: string | null
           expires_at?: string | null
           external_id?: string | null
           has_pcd?: boolean
           id?: string
+          idempotency_key?: string | null
           location_id: string
           notes?: string | null
           origin?: string | null
           passenger_count?: number | null
-          profile_id: string
+          profile_id?: string | null
           review_request_sent_at?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
           total_amount?: number
@@ -229,17 +348,22 @@ export type Database = {
           checked_out_at?: string | null
           code?: string
           created_at?: string
+          created_via_api_key_id?: string | null
           currency?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           deleted_at?: string | null
           expires_at?: string | null
           external_id?: string | null
           has_pcd?: boolean
           id?: string
+          idempotency_key?: string | null
           location_id?: string
           notes?: string | null
           origin?: string | null
           passenger_count?: number | null
-          profile_id?: string
+          profile_id?: string | null
           review_request_sent_at?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
           total_amount?: number
@@ -251,6 +375,13 @@ export type Database = {
           voucher_url?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "booking_created_via_api_key_id_fkey"
+            columns: ["created_via_api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_key"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "booking_location_id_fkey"
             columns: ["location_id"]
@@ -2061,9 +2192,107 @@ export type Database = {
             }
             Returns: number
           }
+      _create_booking_core: {
+        Args: {
+          p_add_on_ids: string[]
+          p_check_in_at: string
+          p_check_out_at: string
+          p_coupon_code: string
+          p_created_via_api_key_id: string
+          p_customer_email: string
+          p_customer_name: string
+          p_customer_phone: string
+          p_has_pcd: boolean
+          p_location_parking_type_id: string
+          p_origin: string
+          p_passenger_count: number
+          p_profile_id: string
+          p_vehicle_id: string
+        }
+        Returns: Json
+      }
       addon_assert_company_access: {
         Args: { p_company_id: string }
         Returns: undefined
+      }
+      api_assert_lpt_company: {
+        Args: { p_company_id: string; p_lpt_id: string }
+        Returns: undefined
+      }
+      api_assert_scopes: { Args: { p_scopes: string[] }; Returns: undefined }
+      api_cancel_booking: {
+        Args: { p_booking_id: string; p_company_id: string; p_reason?: string }
+        Returns: Json
+      }
+      api_checkin_booking: {
+        Args: { p_booking_id: string; p_company_id: string }
+        Returns: Json
+      }
+      api_checkout_booking: {
+        Args: { p_booking_id: string; p_company_id: string }
+        Returns: Json
+      }
+      api_create_booking: {
+        Args: {
+          p_add_on_ids?: string[]
+          p_api_key_id: string
+          p_check_in_at: string
+          p_check_out_at: string
+          p_company_id: string
+          p_coupon_code?: string
+          p_customer_email?: string
+          p_customer_name?: string
+          p_customer_phone?: string
+          p_has_pcd?: boolean
+          p_idempotency_key?: string
+          p_location_parking_type_id: string
+          p_origin?: string
+          p_passenger_count?: number
+        }
+        Returns: Json
+      }
+      api_get_booking: {
+        Args: { p_booking_id: string; p_company_id: string }
+        Returns: Json
+      }
+      api_get_location: {
+        Args: { p_company_id: string; p_location_id: string }
+        Returns: Json
+      }
+      api_key_assert_company_access: {
+        Args: { p_company_id: string }
+        Returns: undefined
+      }
+      api_key_verify: {
+        Args: { p_key_hash: string; p_key_prefix: string }
+        Returns: Json
+      }
+      api_list_bookings: {
+        Args: {
+          p_company_id: string
+          p_from?: string
+          p_limit?: number
+          p_offset?: number
+          p_status?: string
+          p_to?: string
+        }
+        Returns: Json
+      }
+      api_list_locations: {
+        Args: { p_company_id: string; p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
+      api_list_parking_types: {
+        Args: { p_company_id: string; p_location_id: string }
+        Returns: Json
+      }
+      api_simulate_price: {
+        Args: {
+          p_company_id: string
+          p_days: number
+          p_location_parking_type_id: string
+        }
+        Returns: Json
       }
       availability_batch: {
         Args: {
@@ -2291,6 +2520,16 @@ export type Database = {
         }
         Returns: string
       }
+      operator_create_api_key: {
+        Args: {
+          p_company_id: string
+          p_environment: string
+          p_expires_at?: string
+          p_name: string
+          p_scopes: string[]
+        }
+        Returns: Json
+      }
       operator_delete_addon: {
         Args: { p_add_on_service_id: string }
         Returns: undefined
@@ -2303,6 +2542,7 @@ export type Database = {
         Args: { p_discount_rule_id: string }
         Returns: undefined
       }
+      operator_list_api_keys: { Args: { p_company_id: string }; Returns: Json }
       operator_location_occupancy: {
         Args: { p_from: string; p_location_id: string; p_to: string }
         Returns: {
@@ -2317,6 +2557,11 @@ export type Database = {
         Args: { p_response: string; p_review_id: string }
         Returns: undefined
       }
+      operator_revoke_api_key: {
+        Args: { p_api_key_id: string }
+        Returns: undefined
+      }
+      operator_rotate_api_key: { Args: { p_api_key_id: string }; Returns: Json }
       operator_set_coupon_active: {
         Args: { p_coupon_id: string; p_is_active: boolean }
         Returns: undefined
@@ -2332,6 +2577,10 @@ export type Database = {
           p_location_id: string
           p_price_override: number
         }
+        Returns: undefined
+      }
+      operator_update_api_key_scopes: {
+        Args: { p_api_key_id: string; p_scopes: string[] }
         Returns: undefined
       }
       operator_upsert_addon: {
@@ -2601,6 +2850,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       booking_item_type: ["parking", "add_on"],

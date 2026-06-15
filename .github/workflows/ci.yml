@@ -20,6 +20,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
       - run: bun run lint
+      - run: bun run lint:openapi
       - run: bun run test:unit
 
   # pgTAP contra o stack local (schema do baseline + seed). Sem segredos.

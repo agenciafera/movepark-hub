@@ -15,6 +15,7 @@ import {
   Tag,
   Star,
   CalendarRange,
+  KeyRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Monogram, Wordmark } from "./Brand";
@@ -49,6 +50,7 @@ const operatorItems: Item[] = [
   { to: "/operator/users", label: "Usuários", icon: Users },
   { to: "/operator/faq", label: "FAQ", icon: HelpCircle },
   { to: "/operator/reports", label: "Relatórios", icon: BarChart3 },
+  { to: "/operator/api-keys", label: "API", icon: KeyRound },
   { to: "/operator/settings", label: "Configurações", icon: Settings },
 ];
 

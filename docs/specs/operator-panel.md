@@ -372,6 +372,31 @@ todos os vínculos pré-existentes seguem com acesso total.
 
 ---
 
+### 4.10 Chaves de API (Desenvolvedores)
+
+**Rota:** `/operator/api-keys` (nav "API"). 📝 Especificado — ver [public-api.md](./public-api.md) §8.
+
+**Objetivo:** o operador cria e gerencia **chaves de API** da empresa para integrar sistemas externos
+(ex.: WPS — E2.6) com a Public API do Hub. Cada chave carrega **escopos** (permissões por módulo:
+`bookings:read`, `bookings:write`, `locations:read`, …) — princípio do menor privilégio.
+
+#### Catálogo (tabela)
+
+Colunas: `Nome` · `Prefixo` (ex.: `mp_live_8Kf2c1…`) · `Ambiente` (live/test) · `Escopos` (chips) ·
+`Último uso` · `Status` · `Ações`.
+
+- **Criar chave** → dialog: `name`, `environment`, seleção de **escopos** (catálogo §7 da spec),
+  `expires_at` opcional. O **segredo é exibido uma única vez** (copiar + aviso). Persiste via RPC
+  `operator_create_api_key`.
+- **Rotacionar** → `operator_rotate_api_key`. **Revogar** → `operator_revoke_api_key` (imediato).
+  **Editar escopos** → `operator_update_api_key_scopes`.
+
+> **Escopo & escrita:** `api_key` não tem RLS de escrita direta — tudo passa pelas RPCs
+> `SECURITY DEFINER` acima (validam o vínculo com a empresa). A UI **nunca** recebe `key_hash` nem o
+> segredo após a criação. Ver [public-api.md](./public-api.md).
+
+---
+
 ## 5. Componentes Adaptados do Design System
 
 | Airbnb Token | Uso no Operator Panel |

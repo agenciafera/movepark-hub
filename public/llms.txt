@@ -18,6 +18,11 @@ O Movepark é um hub centralizado que conecta viajantes a estacionamentos creden
 - **Descoberto**: vaga em área aberta, opção econômica
 - **Valet**: entrega do carro na entrada, sem necessidade de estacionar
 
+## API pública
+
+- [Documentação da API](https://api.movepark.co/docs): API REST autenticada por chave (`mp_live_…`/`mp_test_…`) com escopos; tenant-scoped por empresa
+- [OpenAPI 3.1](https://hub.movepark.co/openapi.yaml): contrato dos endpoints `/v1` (unidades, tipos de vaga, disponibilidade, preço, reservas, FAQ)
+
 ## Integrações para agentes
 
 - [MCP Server](https://hub.movepark.co/.well-known/mcp/server-card.json): API acessível por agentes de IA para consultar estacionamentos, tipos de vaga e simular preços

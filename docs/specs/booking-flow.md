@@ -75,6 +75,15 @@ POST /api/bookings
 - Se coupon: cria `booking_coupon` com `discount_applied`
 - **Não** ocupa vaga ainda — só na confirmação do pagamento
 
+> **Reserva criada por parceiro (Public API, E0.7):** além do consumidor (com JWT), uma reserva
+> pode ser criada **em nome da empresa** via chave de API (`POST /v1/bookings`). Nesse caso
+> `booking.profile_id` é **null** e `created_via_api_key_id` aponta para a chave usada; o contato do
+> cliente vai nas colunas denormalizadas `customer_name/email/phone`. O `CHECK booking_actor_check`
+> garante `profile_id IS NOT NULL OR created_via_api_key_id IS NOT NULL`. O núcleo é o mesmo
+> (`_create_booking_core`, reusado por `create_booking_atomic` e `api_create_booking`), então hold de
+> capacidade, pricing, desconto e cupom são idênticos. Idempotência por `(api_key, Idempotency-Key)`.
+> Ver [public-api.md](./public-api.md).
+
 ### 3. Pagamento
 
 ```

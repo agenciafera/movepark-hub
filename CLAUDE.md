@@ -9,7 +9,7 @@ O README cobre setup e visão geral; este arquivo define **convenções e padrõ
 
 > **Nome da marca:** escreva sempre **"Movepark"** — uma palavra só, `M` maiúsculo e o resto minúsculo. **Nunca** "MovePark", "Move Park" ou "MOVEPARK" em texto de exibição. Identificadores técnicos em minúsculo permanecem como estão (slug/repo `movepark-hub`, tokens `mp-*`, nomes dos sistemas legados).
 >
-> **Domínios:** este projeto inteiro (site do consumidor + hub/admin/operator) é servido em **`hub.movepark.co`** — é o domínio canônico para SEO, `og:url`, `sitemap`, `.well-known/*`, `PUBLIC_SITE_URL` e links de e-mail. **`movepark.co`** é a landing/marketing (redireciona); o e-mail da marca fica nesse domínio (`contato@movepark.co`, `hub@movepark.co`). **Nunca** use `movepark.com.br` (domínio antigo) nem outros subdomínios (`app.`, `www.`).
+> **Domínios:** este projeto inteiro (site do consumidor + hub/admin/operator) é servido em **`hub.movepark.co`** — é o domínio canônico para SEO, `og:url`, `sitemap`, `.well-known/*`, `PUBLIC_SITE_URL` e links de e-mail. **`movepark.co`** é a landing/marketing (redireciona); o e-mail da marca fica nesse domínio (`contato@movepark.co`, `hub@movepark.co`). **Nunca** use `movepark.com.br` (domínio antigo) nem outros subdomínios (`app.`, `www.`). **Exceção:** a **Public API** é servida em **`api.movepark.co`** (proxy via Cloudflare Worker, fora da superfície de SEO/consumidor) — ver `docs/specs/public-api.md`.
 
 Três audiências, um único app React:
 
