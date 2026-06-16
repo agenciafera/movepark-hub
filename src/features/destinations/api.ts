@@ -34,6 +34,23 @@ export function useDestinationBySlug(slug: string | undefined) {
   });
 }
 
+/** Público: destinos publicados (lista enxuta) — usado p/ cross-links entre destinos. */
+export function usePublishedDestinations() {
+  return useQuery({
+    queryKey: [...destinationsKeys.all, "public-list"] as const,
+    queryFn: async (): Promise<Destination[]> => {
+      const { data, error } = await supabase
+        .from("destination")
+        .select("*")
+        .eq("is_published", true)
+        .order("sort_order");
+      if (error) throw error;
+      return (data ?? []) as Destination[];
+    },
+    staleTime: 5 * 60_000,
+  });
+}
+
 /** Admin (hub_admin): todos os destinos, inclusive não publicados. */
 export function useAdminDestinations() {
   return useQuery({

@@ -3,7 +3,7 @@ import { Link, useLoaderData, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { MapPin } from "lucide-react";
 import type { Destination } from "@/types/domain";
-import { useDestinationBySlug } from "@/features/destinations/api";
+import { useDestinationBySlug, usePublishedDestinations } from "@/features/destinations/api";
 import { useSearchResults } from "@/features/search/useSearchResults";
 import { useFaqCombined } from "@/features/faqs/api";
 import { ResultCard } from "@/features/search/ResultCard";
@@ -12,6 +12,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { breadcrumbSchema, destinationSchema, faqSchema } from "@/lib/jsonld";
 import { imageSrcSet, optimizedImageUrl } from "@/lib/storage";
+import { formatBRL } from "@/lib/format";
+import { lowestPerDay, pickRelatedDestinations } from "./destino.logic";
 
 const SITE_URL = "https://hub.movepark.co";
 
@@ -45,6 +47,8 @@ export default function DestinoPage() {
   );
   // FAQ em camadas (ADR-002): global + destination, mesclado/deduplicado no edge.
   const faqs = useFaqCombined({ destinationId: destination?.id, enabled: !!destination });
+  // Destinos publicados p/ cross-link (internal linking entre /destinos).
+  const allDestinations = usePublishedDestinations();
 
   if (!destination) {
     if (query.isLoading) {
@@ -89,6 +93,8 @@ export default function DestinoPage() {
     ? ([heroUrl, ogImage, squareImage].filter(Boolean) as string[])
     : undefined;
   const results = search.data?.results ?? [];
+  const fromPrice = lowestPerDay(results);
+  const related = pickRelatedDestinations(allDestinations.data ?? [], destination.id, 6);
   const topResults = topRated(topSearch.data?.results ?? []);
   const faqItems = (faqs.data ?? []).map((f) => ({ question: f.question, answer: f.answer }));
   const lat = Number(destination.latitude);
@@ -133,6 +139,31 @@ export default function DestinoPage() {
       </Helmet>
 
       <article className="mx-auto w-full max-w-5xl px-4 py-8 tablet:py-12">
+        {/* Breadcrumb (espelha o BreadcrumbList do JSON-LD, agora visível) */}
+        <nav aria-label="Trilha de navegação" className="mb-4">
+          <ol className="flex flex-wrap items-center gap-1.5 text-body-sm text-muted">
+            <li>
+              <Link to="/" className="hover:text-ink">
+                Início
+              </Link>
+            </li>
+            <li aria-hidden className="text-muted-steel">
+              ›
+            </li>
+            <li>
+              <Link to="/destinos" className="hover:text-ink">
+                Destinos
+              </Link>
+            </li>
+            <li aria-hidden className="text-muted-steel">
+              ›
+            </li>
+            <li aria-current="page" className="text-ink">
+              {destination.short_name ?? destination.name}
+            </li>
+          </ol>
+        </nav>
+
         {/* Hero */}
         <header className="flex flex-col gap-3">
           <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-muted-steel">
@@ -150,6 +181,12 @@ export default function DestinoPage() {
             </div>
           ) : (
             <p className="max-w-3xl text-body-md text-muted">{description}</p>
+          )}
+          {fromPrice != null && (
+            <p className="text-body-md text-ink">
+              A partir de <strong className="text-display-sm">{formatBRL(fromPrice)}</strong>
+              <span className="text-muted"> / diária</span>
+            </p>
           )}
         </header>
 
@@ -245,6 +282,25 @@ export default function DestinoPage() {
                 </details>
               ))}
             </div>
+          </section>
+        )}
+
+        {/* Outros destinos — internal linking entre páginas de destino */}
+        {related.length > 0 && (
+          <section className="mt-12 border-t border-hairline pt-8">
+            <h2 className="mb-4 text-display-md text-ink">Estacionamento em outros destinos</h2>
+            <ul className="flex flex-wrap gap-2">
+              {related.map((d) => (
+                <li key={d.id}>
+                  <Link
+                    to={`/destinos/${d.slug}`}
+                    className="inline-flex items-center rounded-full border border-hairline px-3 py-1.5 text-body-sm text-ink transition hover:border-mp-primary hover:text-mp-primary"
+                  >
+                    {d.short_name ?? d.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </section>
         )}
       </article>

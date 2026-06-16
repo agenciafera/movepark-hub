@@ -3,7 +3,7 @@ import { screen } from "@testing-library/react";
 import { HelmetProvider } from "react-helmet-async";
 import { renderWithProviders } from "@/test/utils";
 import DestinoPage from "@/routes/destino";
-import { useDestinationBySlug } from "@/features/destinations/api";
+import { useDestinationBySlug, usePublishedDestinations } from "@/features/destinations/api";
 import { useSearchResults } from "@/features/search/useSearchResults";
 import { useFaqCombined } from "@/features/faqs/api";
 import type { Destination } from "@/types/domain";
@@ -14,7 +14,10 @@ vi.mock("react-router-dom", async () => {
   return { ...actual, useLoaderData: vi.fn(() => null), useParams: vi.fn(() => ({ slug: "aeroporto-de-guarulhos" })) };
 });
 
-vi.mock("@/features/destinations/api", () => ({ useDestinationBySlug: vi.fn() }));
+vi.mock("@/features/destinations/api", () => ({
+  useDestinationBySlug: vi.fn(),
+  usePublishedDestinations: vi.fn(),
+}));
 vi.mock("@/features/search/useSearchResults", () => ({ useSearchResults: vi.fn() }));
 vi.mock("@/features/faqs/api", () => ({ useFaqCombined: vi.fn() }));
 
@@ -58,6 +61,7 @@ function render() {
 beforeEach(() => {
   vi.mocked(useSearchResults).mockReturnValue({ data: { results: [] }, isLoading: false } as never);
   vi.mocked(useFaqCombined).mockReturnValue({ data: [] } as never);
+  vi.mocked(usePublishedDestinations).mockReturnValue({ data: [] } as never);
 });
 
 describe("DestinoPage — detalhe do destino (SEO/institucional)", () => {
@@ -78,6 +82,38 @@ describe("DestinoPage — detalhe do destino (SEO/institucional)", () => {
     expect(
       screen.getByRole("link", { name: /Ver todos os estacionamentos/i }),
     ).toHaveAttribute("href", "/search?dest=GRU");
+  });
+
+  it("renderiza breadcrumb visível (Início › Destinos › destino)", () => {
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
+
+    render();
+
+    const trilha = screen.getByRole("navigation", { name: /Trilha/i });
+    expect(trilha).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Início" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Destinos" })).toHaveAttribute("href", "/destinos");
+  });
+
+  it("cross-link pra outros destinos (exclui o atual)", () => {
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
+    vi.mocked(usePublishedDestinations).mockReturnValue({
+      data: [
+        dest(), // atual (id d1) — deve ser excluído
+        dest({ id: "d2", slug: "aeroporto-de-viracopos", name: "Aeroporto de Viracopos", short_name: "Viracopos" }),
+        dest({ id: "d3", slug: "aeroporto-de-congonhas", name: "Aeroporto de Congonhas", short_name: "Congonhas" }),
+      ],
+    } as never);
+
+    render();
+
+    expect(screen.getByRole("link", { name: "Viracopos" })).toHaveAttribute(
+      "href",
+      "/destinos/aeroporto-de-viracopos",
+    );
+    expect(screen.getByRole("link", { name: "Congonhas" })).toBeInTheDocument();
+    // o destino atual (Guarulhos) não aparece como cross-link
+    expect(screen.queryByRole("link", { name: "Guarulhos" })).not.toBeInTheDocument();
   });
 
   it("mostra estado vazio quando o destino não existe / não está publicado", () => {
