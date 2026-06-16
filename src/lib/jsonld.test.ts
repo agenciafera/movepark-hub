@@ -191,6 +191,13 @@ describe("destinationSchema", () => {
     expect(s.description).toBeUndefined();
     expect(s.address.addressRegion).toBeUndefined();
   });
+
+  it("inclui image (várias proporções) quando há hero; omite quando vazio/ausente", () => {
+    const imgs = ["https://cdn/hero-1200x630.jpg", "https://cdn/hero-1200x1200.jpg"];
+    expect(destinationSchema({ ...base, image: imgs }).image).toEqual(imgs);
+    expect(destinationSchema({ ...base, image: [] }).image).toBeUndefined();
+    expect(destinationSchema(base).image).toBeUndefined();
+  });
 });
 
 describe("faqSchema", () => {

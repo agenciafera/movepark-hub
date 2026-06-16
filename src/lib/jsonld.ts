@@ -89,12 +89,15 @@ export function destinationSchema(d: {
   latitude: number;
   longitude: number;
   meta_description?: string | null;
+  image?: string | string[] | null;
 }) {
+  const image = Array.isArray(d.image) ? (d.image.length ? d.image : undefined) : (d.image ?? undefined);
   return {
     "@context": "https://schema.org",
     "@type": "Place",
     name: d.name,
     description: d.meta_description ?? undefined,
+    image,
     url: `${SITE_URL}/destinos/${d.slug}`,
     address: {
       "@type": "PostalAddress",

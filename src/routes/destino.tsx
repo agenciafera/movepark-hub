@@ -75,9 +75,14 @@ export default function DestinoPage() {
     destination.meta_description ??
     `Reserve estacionamento próximo a ${destination.name}, em ${destination.city}. Compare preços, comodidades e garanta sua vaga com antecedência.`;
   const canonical = `${SITE_URL}/destinos/${destination.slug}`;
-  // Imagem otimizada (WebP/resize via transform); og:image dimensionado 1200×630.
+  // Imagem otimizada (resize/transform do Supabase). O og:image é 1.91:1 (1200×630,
+  // padrão de card social); pro JSON-LD damos também a versão quadrada (1:1), porque o
+  // Google aceita múltiplas proporções e prefere ter 16:9/4:3/1:1. Tudo gerado on-the-fly
+  // pelo endpoint de resize — não precisa subir um asset quadrado separado.
   const heroUrl = destination.hero_image_url;
   const ogImage = optimizedImageUrl(heroUrl, { width: 1200, height: 630, resize: "cover" });
+  const squareImage = optimizedImageUrl(heroUrl, { width: 1200, height: 1200, resize: "cover" });
+  const schemaImages = heroUrl && ogImage && squareImage ? [ogImage, squareImage] : undefined;
   const results = search.data?.results ?? [];
   const topResults = topRated(topSearch.data?.results ?? []);
   const faqItems = (faqs.data ?? []).map((f) => ({ question: f.question, answer: f.answer }));
@@ -92,12 +97,21 @@ export default function DestinoPage() {
         <title>{title}</title>
         <meta name="description" content={description} />
         <link rel="canonical" href={canonical} />
+        <meta property="og:type" content="website" />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
+        <meta name="twitter:card" content={ogImage ? "summary_large_image" : "summary"} />
         {ogImage && <meta property="og:image" content={ogImage} />}
+        {ogImage && <meta property="og:image:type" content="image/jpeg" />}
+        {ogImage && <meta property="og:image:width" content="1200" />}
+        {ogImage && <meta property="og:image:height" content="630" />}
+        {ogImage && <meta property="og:image:alt" content={`Estacionamento em ${destination.name}`} />}
+        {ogImage && <meta name="twitter:image" content={ogImage} />}
         <script type="application/ld+json">
-          {JSON.stringify(destinationSchema({ ...destination, latitude: lat, longitude: lng }))}
+          {JSON.stringify(
+            destinationSchema({ ...destination, latitude: lat, longitude: lng, image: schemaImages }),
+          )}
         </script>
         <script type="application/ld+json">
           {JSON.stringify(
