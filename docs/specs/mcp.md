@@ -87,6 +87,15 @@ Métodos suportados: `initialize`, `ping`, `tools/list`, `tools/call`, e `notifi
 | `create_booking` | `bookings:write` | `api_create_booking` |
 | `cancel_booking` | `bookings:cancel` | `api_cancel_booking` |
 | `check_in_booking` / `check_out_booking` | `bookings:checkin` | `api_checkin_booking` / `api_checkout_booking` |
+| `list_coupons` / `upsert_coupon` / `set_coupon_active` / `delete_coupon` | `coupons:read` / `coupons:write` | `api_*_coupon` |
+| `list_discounts` / `upsert_discount` / `set_discount_active` / `delete_discount` | `discounts:read` / `discounts:write` | `api_*_discount` |
+| `list_addons` / `upsert_addon` / `set_location_addon` / `delete_addon` | `addons:read` / `addons:write` | `api_*_addon` |
+| `list_reviews` / `respond_review` | `reviews:read` / `reviews:write` | `api_list_reviews` / `api_respond_review` |
+| `get_occupancy` | `occupancy:read` | `api_location_occupancy` |
+| `update_location` | `locations:write` | `api_update_location` |
+| `update_parking_type` | `parking-types:write` | `api_update_parking_type` |
+
+Consumidor ganhou ainda `list_destinations` / `get_destination` (destinos + terminais; anon).
 
 > Escopos = catálogo `api_scope` (ver [public-api.md](./public-api.md) §7). Tool parceiro nova ⇒ escopo
 > existente (ou novo no catálogo) + entrada em `tools.ts` + `partner-card.json`.

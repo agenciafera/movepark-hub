@@ -183,8 +183,11 @@ exige; o gateway nega (`403 insufficient_scope`) se faltar.
 | `bookings:write` | criar reserva via API |
 | `bookings:cancel` | cancelar reserva |
 | `bookings:checkin` | registrar check-in/check-out |
-| `coupons:read` / `coupons:write` | ler/gerir cupons e descontos |
+| `coupons:read` / `coupons:write` | ler/gerir cupons |
+| `discounts:read` / `discounts:write` | ler/gerir descontos automáticos |
+| `addons:read` / `addons:write` | ler/gerir serviços adicionais (+ por unidade) |
 | `reviews:read` / `reviews:write` | ler avaliações / responder |
+| `occupancy:read` | consultar ocupação por data |
 | `faq:read` | ler FAQ |
 | `webhooks:write` | registrar/gerir webhooks de integração (E2.6) |
 
@@ -243,10 +246,20 @@ vai na URL). Respostas em JSON com envelope estável (§10). Mapeamento para a l
 | `POST /bookings/{id}/check-out` | `bookings:checkin` | transição de saída | |
 | `GET /coupons` · `POST /coupons` … | `coupons:*` | `operator_*_coupon`/`*_discount` | espelha §4.6 do operator |
 | `GET /faq` | `faq:read` | `get-faq` | |
+| `GET/POST /coupons` · `/coupons/{id}/active` · `/delete` | `coupons:*` | `api_*_coupon` | CRUD |
+| `GET/POST /discounts` · `/discounts/{id}/active` · `/delete` | `discounts:*` | `api_*_discount` | CRUD |
+| `GET/POST /addons` · `/addons/{id}/locations` · `/delete` | `addons:*` | `api_*_addon` | CRUD + por unidade |
+| `GET /reviews` · `POST /reviews/{id}/respond` | `reviews:*` | `api_list_reviews`/`api_respond_review` | |
+| `GET /occupancy` | `occupancy:read` | `api_location_occupancy` | `?location_id&from&to` |
+| `POST /locations/{id}` | `locations:write` | `api_update_location` | PATCH (campos ausentes = mantém) |
+| `POST /parking-types/{id}` | `parking-types:write` | `api_update_parking_type` | status/capacidade/regras |
 
+> **Paridade:** os endpoints acima espelham as capacidades do operator panel. As RPCs `api_*` espelham
+> as `operator_*` keyed por `company_id` (o gateway já autorizou empresa+escopo) — mantenha as duas em
+> sincronia ao mudar a regra. Webhooks (E2.6, `webhooks:write`) entram quando aquele épico for feito.
+>
 > Esta tabela **cresce por doc-as-you-build** (§12): endpoint novo ⇒ linha aqui + path no OpenAPI +
-> escopo no catálogo. Webhooks de integração (E2.6, `webhooks:write`) entram quando aquele épico for
-> implementado.
+> escopo no catálogo.
 
 ---
 
