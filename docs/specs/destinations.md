@@ -103,12 +103,18 @@ A sidebar de filtros (`src/features/search/SearchFilters.tsx`) usa **facetas cal
   atual, com contagem). Antes listava **todas** as empresas ativas globalmente, então escolher uma
   operadora sem lote no destino zerava a busca; agora só aparece quem tem resultado. A seção só
   renderiza com 2+ operadoras.
-- **Destino** — vem da faceta `facets.destinations`; filtro multi-destino via param `destinations`
-  (CSV de `code`), **independente** do `dest` (que é a âncora de proximidade). Só renderiza quando
-  há **mais de um** destino no resultado — numa busca ancorada a um único destino
-  (`/destinos/<slug>` ou home com destino escolhido) a seção some por ser redundante. É útil nas
-  buscas sem âncora (`/search?category=…`, conta → "salvos"). Cada linha mostra o **ícone do tipo**
-  do destino.
+- **Destino** — **sempre visível** (com 2+ destinos no catálogo), permitindo **trocar/ampliar** o
+  destino da busca. A lista vem do **catálogo** (`useDestinations()`, todos os publicados) para o
+  usuário poder mudar de destino, não só da faceta; a **contagem** por linha vem da faceta
+  `facets.destinations` (só os destinos em cena no resultado atual têm contagem) e some quando 0.
+  Cada linha mostra o **ícone do tipo**. O destino atual aparece marcado — é assim que a sidebar
+  mostra "o que está sendo filtrado".
+  - **1 destino marcado** → mantém a âncora `dest` (proximidade + ordenação por distância).
+  - **2+ marcados** → vira filtro multi `destinations` (CSV de `code`), **sem** âncora — a seção
+    "Distância do destino" some e a ordenação por distância deixa de valer.
+  - **0 marcados** → todos os destinos (busca geral).
+  - Estado marcado (`activeDestCodes`): `destinations` tem prioridade; senão a âncora `dest`.
+    Destino é **escopo** da busca, não um "filtro a limpar" — fica fora do `activeCount`/"Limpar".
 
 **Facetas (Edge):** cada eixo é agregado considerando os demais filtros, mas **não a si mesmo**
 (`facets.ts` · `aggregate*`/`filterBy*`), para a lista não colapsar ao selecionar. Operadora e

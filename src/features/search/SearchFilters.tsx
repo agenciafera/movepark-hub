@@ -80,8 +80,8 @@ function FilterContent({
     return acc;
   }, {});
 
-  // Filtro de destino só aparece quando há mais de um destino no resultado — numa busca
-  // ancorada a um único destino (link /destinos/<slug>) seria redundante.
+  // Filtro de destino: lista o catálogo (pra poder TROCAR de destino). O destino atual fica
+  // marcado; 1 marcado mantém a âncora de proximidade, 2+ vira filtro multi (sem âncora).
   const showDestinations = destinationOptions.length > 1;
   // Operadora idem: só faz sentido escolher quando há 2+ no resultado.
   const showOperators = facetsLoading || operatorOptions.length > 1;
@@ -146,7 +146,9 @@ function FilterContent({
                     >
                       <Icon className="h-4 w-4 shrink-0 text-mp-indigo" />
                       <span className="flex-1">{d.name}</span>
-                      <span className="text-caption-sm text-muted">{d.count}</span>
+                      {d.count > 0 && (
+                        <span className="text-caption-sm text-muted">{d.count}</span>
+                      )}
                     </label>
                   </li>
                 );
