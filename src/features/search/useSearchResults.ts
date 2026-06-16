@@ -11,6 +11,8 @@ export type SearchFilters = {
   vehicle?: SearchVehicle;
   category?: string[];
   operator?: string[];
+  /** Filtro multi-destino (códigos). Independe do `dest` (âncora de proximidade). */
+  destinations?: string[];
   amenities?: string[];
   max_distance_km?: number;
   min_rating?: number;
@@ -64,6 +66,11 @@ export type SearchResponse = {
   limit: number;
   offset: number;
   results: SearchResultItem[];
+  /** Facetas para a sidebar de filtros (operadora/destino presentes no resultado). */
+  facets?: {
+    operators: { slug: string; name: string; count: number }[];
+    destinations: { code: string; name: string; type: string; count: number }[];
+  };
 };
 
 const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/search`;

@@ -11,14 +11,26 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { useAmenityCatalog, useCompanyOptions } from "./useFilterCatalogs";
+import { destinationTypeIcon } from "@/lib/destination-types";
+import { useAmenityCatalog } from "./useFilterCatalogs";
+
+export type OperatorOption = { slug: string; name: string; count: number };
+export type DestinationOption = { code: string; name: string; type: string; count: number };
 
 type Props = {
   hasDestCoords: boolean;
   operator: string[];
+  destinations: string[];
   amenities: string[];
   maxDistanceKm: number | null;
+  /** Operadoras presentes no resultado atual (faceta da Edge), com contagem. */
+  operatorOptions: OperatorOption[];
+  /** Destinos presentes no resultado atual (faceta da Edge), com contagem. */
+  destinationOptions: DestinationOption[];
+  /** Resultado/facetas ainda carregando — mostra skeleton no lugar das listas. */
+  facetsLoading: boolean;
   onOperatorChange: (next: string[]) => void;
+  onDestinationsChange: (next: string[]) => void;
   onAmenitiesChange: (next: string[]) => void;
   onMaxDistanceChange: (km: number | null) => void;
   onClearAll: () => void;
@@ -46,15 +58,19 @@ function toggleIn(list: string[], value: string): string[] {
 function FilterContent({
   hasDestCoords,
   operator,
+  destinations,
   amenities,
   maxDistanceKm,
+  operatorOptions,
+  destinationOptions,
+  facetsLoading,
   onOperatorChange,
+  onDestinationsChange,
   onAmenitiesChange,
   onMaxDistanceChange,
   onClearAll,
   activeCount,
 }: Props) {
-  const operatorsQ = useCompanyOptions();
   const amenitiesQ = useAmenityCatalog();
 
   const amenitiesByCategory = (amenitiesQ.data ?? []).reduce<
@@ -63,6 +79,12 @@ function FilterContent({
     (acc[a.category] ??= [] as never).push(a as never);
     return acc;
   }, {});
+
+  // Filtro de destino só aparece quando há mais de um destino no resultado — numa busca
+  // ancorada a um único destino (link /destinos/<slug>) seria redundante.
+  const showDestinations = destinationOptions.length > 1;
+  // Operadora idem: só faz sentido escolher quando há 2+ no resultado.
+  const showOperators = facetsLoading || operatorOptions.length > 1;
 
   return (
     <div className="flex flex-col gap-6 px-1">
@@ -101,36 +123,73 @@ function FilterContent({
         </section>
       )}
 
-      <Separator />
+      {showDestinations && (
+        <>
+          {hasDestCoords && <Separator />}
+          <section className="space-y-3">
+            <Label className="text-title-md text-ink">Destino</Label>
+            <ul className="space-y-2">
+              {destinationOptions.map((d) => {
+                const Icon = destinationTypeIcon(d.type);
+                return (
+                  <li key={d.code} className="flex items-center gap-2.5">
+                    <Checkbox
+                      id={`dest-${d.code}`}
+                      checked={destinations.includes(d.code)}
+                      onCheckedChange={() =>
+                        onDestinationsChange(toggleIn(destinations, d.code))
+                      }
+                    />
+                    <label
+                      htmlFor={`dest-${d.code}`}
+                      className="flex flex-1 cursor-pointer items-center gap-2 text-body-sm text-ink"
+                    >
+                      <Icon className="h-4 w-4 shrink-0 text-mp-indigo" />
+                      <span className="flex-1">{d.name}</span>
+                      <span className="text-caption-sm text-muted">{d.count}</span>
+                    </label>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        </>
+      )}
 
-      <section className="space-y-3">
-        <Label className="text-title-md text-ink">Operadora</Label>
-        {operatorsQ.isLoading ? (
-          <div className="space-y-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-6 w-40" />
-            ))}
-          </div>
-        ) : (
-          <ul className="space-y-2">
-            {operatorsQ.data?.map((c) => (
-              <li key={c.slug} className="flex items-center gap-2.5">
-                <Checkbox
-                  id={`op-${c.slug}`}
-                  checked={operator.includes(c.slug)}
-                  onCheckedChange={() => onOperatorChange(toggleIn(operator, c.slug))}
-                />
-                <label
-                  htmlFor={`op-${c.slug}`}
-                  className="cursor-pointer text-body-sm text-ink"
-                >
-                  {c.name}
-                </label>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      {showOperators && (
+        <>
+          <Separator />
+          <section className="space-y-3">
+            <Label className="text-title-md text-ink">Operadora</Label>
+            {facetsLoading && operatorOptions.length === 0 ? (
+              <div className="space-y-2">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-6 w-40" />
+                ))}
+              </div>
+            ) : (
+              <ul className="space-y-2">
+                {operatorOptions.map((c) => (
+                  <li key={c.slug} className="flex items-center gap-2.5">
+                    <Checkbox
+                      id={`op-${c.slug}`}
+                      checked={operator.includes(c.slug)}
+                      onCheckedChange={() => onOperatorChange(toggleIn(operator, c.slug))}
+                    />
+                    <label
+                      htmlFor={`op-${c.slug}`}
+                      className="flex flex-1 cursor-pointer items-center gap-2 text-body-sm text-ink"
+                    >
+                      <span className="flex-1">{c.name}</span>
+                      <span className="text-caption-sm text-muted">{c.count}</span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </>
+      )}
 
       <Separator />
 

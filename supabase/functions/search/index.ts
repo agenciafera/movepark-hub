@@ -11,6 +11,7 @@
 //   "vehicle": "car" | "motorcycle",
 //   "category": ["covered","valet"],
 //   "operator": ["aerovalet","plenty"],
+//   "destinations": ["GRU","CGH"],            // filtro multi-destino (códigos); independe de `dest`
 //   "amenities": ["shuttle_free","cameras_24h"],
 //   "max_distance_km": 5,
 //   "sort": "price_asc" | "price_desc" | "distance_asc",
@@ -26,6 +27,13 @@ import {
   soldOutTiebreak,
   type AvailabilityRow,
 } from "./availability.ts";
+import {
+  aggregateDestinations,
+  aggregateOperators,
+  filterByDestinations,
+  filterByOperators,
+  type FacetItem,
+} from "./facets.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -43,6 +51,7 @@ interface SearchParams {
   vehicle?: "car" | "motorcycle";
   category?: string[];
   operator?: string[];
+  destinations?: string[];
   amenities?: string[];
   max_distance_km?: number;
   min_rating?: number;
@@ -157,6 +166,7 @@ Deno.serve(async (req: Request) => {
         id, slug, name, address, latitude, longitude, status, deleted_at,
         review_avg, review_count,
         company:company!inner(id, slug, name, status),
+        destination:destination(code, name, type),
         amenities:location_amenity(amenity_code)
       ),
       company_parking_type:company_parking_type!inner(
@@ -197,12 +207,9 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // 6. Apply operator filter
-  if (params.operator?.length) {
-    filtered = filtered.filter((r) =>
-      params.operator!.includes(r.location.company.slug),
-    );
-  }
+  // Operadora e destino NÃO são filtrados aqui — viram facetas (passo 10b) e só então
+  // recortam o resultado. Manter os candidatos largos até a precificação permite calcular
+  // cada faceta considerando os DEMAIS filtros sem colapsar o próprio eixo.
 
   // 7. Apply amenities filter (must include all)
   if (params.amenities?.length) {
@@ -268,8 +275,33 @@ Deno.serve(async (req: Request) => {
     }),
   );
 
-  // 10. Drop unpriceable results
-  const withPrice = priced.filter((r) => r._price != null);
+  // 10. Drop unpriceable results — conjunto base das facetas (sem filtro de operadora/destino)
+  // deno-lint-ignore no-explicit-any
+  const priceable: Array<any & FacetItem> = priced
+    .filter((r) => r._price != null)
+    .map((r) => ({
+      ...r,
+      operator: { slug: r.location.company.slug, name: r.location.company.name },
+      destination: r.location.destination
+        ? {
+            code: r.location.destination.code,
+            name: r.location.destination.name,
+            type: r.location.destination.type,
+          }
+        : null,
+    }));
+
+  // 10b. Facetas — cada eixo considera os DEMAIS filtros, mas não a si mesmo (não colapsa
+  // ao selecionar). A faceta de operadora reflete a operadora que de fato tem lote aqui
+  // (corrige o filtro que antes listava todas as empresas globalmente).
+  const operatorFacet = aggregateOperators(filterByDestinations(priceable, params.destinations));
+  const destinationFacet = aggregateDestinations(filterByOperators(priceable, params.operator));
+
+  // 10c. Resultado final — aplica os dois filtros escolhidos.
+  const withPrice = filterByOperators(
+    filterByDestinations(priceable, params.destinations),
+    params.operator,
+  );
 
   // 11. Sort — esgotados sempre por último, depois o critério escolhido
   const sort = params.sort ?? "price_asc";
@@ -343,5 +375,9 @@ Deno.serve(async (req: Request) => {
     limit,
     offset,
     results,
+    facets: {
+      operators: operatorFacet,
+      destinations: destinationFacet,
+    },
   });
 });

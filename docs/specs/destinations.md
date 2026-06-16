@@ -94,6 +94,32 @@ e inserts manuais sem slug continuam funcionando. Índice `destination_published
   é montado do mesmo conjunto (um único `FAQPage`, respostas idênticas às visíveis); **mapa** OSM
   embed centrado em lat/lng.
 
+### Filtros na busca (sidebar de `/search`)
+
+A sidebar de filtros (`src/features/search/SearchFilters.tsx`) usa **facetas calculadas na Edge
+`search`**, não catálogos globais:
+
+- **Operadora** — vem da faceta `facets.operators` (operadoras que de fato têm lote no resultado
+  atual, com contagem). Antes listava **todas** as empresas ativas globalmente, então escolher uma
+  operadora sem lote no destino zerava a busca; agora só aparece quem tem resultado. A seção só
+  renderiza com 2+ operadoras.
+- **Destino** — vem da faceta `facets.destinations`; filtro multi-destino via param `destinations`
+  (CSV de `code`), **independente** do `dest` (que é a âncora de proximidade). Só renderiza quando
+  há **mais de um** destino no resultado — numa busca ancorada a um único destino
+  (`/destinos/<slug>` ou home com destino escolhido) a seção some por ser redundante. É útil nas
+  buscas sem âncora (`/search?category=…`, conta → "salvos"). Cada linha mostra o **ícone do tipo**
+  do destino.
+
+**Facetas (Edge):** cada eixo é agregado considerando os demais filtros, mas **não a si mesmo**
+(`facets.ts` · `aggregate*`/`filterBy*`), para a lista não colapsar ao selecionar. Operadora e
+destino deixam de ser filtrados antes da precificação e passam a recortar o resultado só no fim
+(passo 10b/10c de `supabase/functions/search/index.ts`).
+
+**Ícones de tipo de destino:** registro central em `src/lib/destination-types.ts`
+(`destinationTypeMeta` → `{ label, icon }` por tipo; `destinationTypeIcon`/`destinationTypeLabel`
+com fallback `MapPin`). Fonte única usada pelo `DestinationCombobox` e pela sidebar de filtros —
+ao adicionar um tipo novo ao enum `destination.type`, atualize esse mapa.
+
 ### FAQ por destino (GEO-07 · ADR-002)
 
 A FAQ é resolvida por **escopo** e mesclada na renderização — **nunca duplicada**:
@@ -167,6 +193,9 @@ adiciona `/destinos` e uma URL por destino publicado às `dynamicRoutes` do
 |---|---|---|
 | Unitário (Vitest) | `src/lib/jsonld.test.ts` | `destinationSchema`: `@type: Place`, URL canônica `/destinos/<slug>`, address/geo, coalescing de `state`/`meta_description` nulos; `itemListSchema`: `@type: ItemList`, posições a partir de 1. |
 | Componente (Vitest) | `src/routes/destinos.test.tsx` | Índice `/destinos`: H1, separação populares/outros e links internos para cada `/destinos/<slug>`; estado vazio sem destinos. |
+| Unitário (Vitest) | `src/lib/destination-types.test.ts` | Registro central de tipos: ícone/label por tipo do enum e fallback (`MapPin`/code) para tipo desconhecido/nulo. |
+| Componente (Vitest) | `src/features/search/SearchFilters.test.tsx` | Sidebar de busca: operadora vem da faceta (não global), filtro de destino aparece com 2+ destinos e some com 1, toggles disparam os callbacks. |
+| Edge (deno test) | `supabase/functions/search/facets.test.ts` | `aggregate*`/`filterBy*`: contagem, ordenação, descarte de destino nulo e independência de eixo (operadora reflete destino escolhido). |
 | Banco / RLS (pgTAP) | `supabase/tests/destination.test.sql` | Leitura pública (anon lê publicado); escrita bloqueada para anon (42501) e customer (UPDATE filtrado pelo USING); `hub_admin` insere/edita. |
 
 Ambos rodam no CI (`quality` → `test:unit`; `db` → `supabase test db` auto-descobre o

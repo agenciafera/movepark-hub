@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Plane, Bus, Building2, MapPin, Compass, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import {
   Command,
   CommandEmpty,
@@ -10,15 +10,8 @@ import {
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useDestinations, type Destination } from "./api";
+import { destinationTypeIcon } from "@/lib/destination-types";
 import { cn } from "@/lib/utils";
-
-const typeIcon: Record<Destination["type"], React.ComponentType<{ className?: string }>> = {
-  airport: Plane,
-  bus_terminal: Bus,
-  city_center: Building2,
-  district: MapPin,
-  custom: Compass,
-};
 
 type Props = {
   value: string | null;
@@ -90,7 +83,7 @@ export function DestinationCombobox({
                 heading={country === "BR" ? "Brasil" : country === "PT" ? "Portugal" : country}
               >
                 {list.map((d) => {
-                  const Icon = typeIcon[d.type] ?? MapPin;
+                  const Icon = destinationTypeIcon(d.type);
                   return (
                     <CommandItem
                       key={d.id}
