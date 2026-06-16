@@ -127,6 +127,7 @@ export default function SearchResultsPage() {
         initialFrom={fromDate}
         initialTo={toDate}
         initialVehicle={vehicle}
+        preserveParams
       />
 
       <ResultsHeader

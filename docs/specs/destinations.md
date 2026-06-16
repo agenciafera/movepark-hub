@@ -104,7 +104,11 @@ combobox), e a **barra lateral refina dentro** do destino escolhido. O catálogo
   (variant `compact`), semeado com a busca atual (`initialDest`/`initialFrom`/`initialTo`/
   `initialVehicle` vindos da URL; `key` força re-seed quando o escopo muda). Trocar destino/datas/
   veículo ali re-busca direto (`/search?...`), sem voltar pra home. É a única forma de mudar o
-  destino — não há combobox de destino na sidebar nem na home com props faltando.
+  destino — não há combobox de destino na sidebar nem na home com props faltando. Com
+  `preserveParams`, a re-busca **mantém os filtros já aplicados** (operadora, comodidades,
+  ordenação, categoria, distância) e só sobrescreve o escopo — lógica pura em
+  `SearchBarPill.logic.ts` (`buildSearchParams`), testada. Na home (`preserveParams` off) a busca é
+  do zero.
 - **Sidebar (`SearchFilters.tsx`)** — só refinamentos dentro do destino: **operadora** (faceta),
   **distância do destino**, **comodidades**, **categoria** (pills). **Não** há filtro de destino na
   sidebar.

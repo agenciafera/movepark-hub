@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { addDays, addHours, set } from "date-fns";
 import { Search, Car, Bike } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,9 +12,8 @@ import {
 } from "@/components/ui/select";
 import { DestinationCombobox } from "./DestinationCombobox";
 import { DateRangeField } from "./DateRangeField";
+import { buildSearchParams, type Vehicle } from "./SearchBarPill.logic";
 import { cn } from "@/lib/utils";
-
-type Vehicle = "car" | "motorcycle";
 
 type Props = {
   /** Estilo "hero" (expandido) ou "compact" (mais baixo, sem sombra forte). */
@@ -24,6 +23,9 @@ type Props = {
   initialFrom?: Date | null;
   initialTo?: Date | null;
   initialVehicle?: Vehicle;
+  /** Preserva os filtros já na URL (operadora, comodidades, ordenação…) na re-busca. Usado na
+   *  página de resultados; na home fica false (busca nova). */
+  preserveParams?: boolean;
 };
 
 function nextWeekendDefaults(): { from: Date; to: Date } {
@@ -42,8 +44,10 @@ export function SearchBarPill({
   initialFrom = null,
   initialTo = null,
   initialVehicle = "car",
+  preserveParams = false,
 }: Props) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const defaults = React.useMemo(nextWeekendDefaults, []);
   const [dest, setDest] = React.useState<string | null>(initialDest);
   const [from, setFrom] = React.useState<Date | null>(initialFrom ?? defaults.from);
@@ -51,12 +55,14 @@ export function SearchBarPill({
   const [vehicle, setVehicle] = React.useState<Vehicle>(initialVehicle);
 
   function submit() {
-    const params = new URLSearchParams();
-    if (dest) params.set("dest", dest);
-    if (from) params.set("from", from.toISOString());
-    if (to) params.set("to", to.toISOString());
-    params.set("vehicle", vehicle);
-    navigate(`/search?${params.toString()}`);
+    const next = buildSearchParams({
+      base: preserveParams ? searchParams : null,
+      dest,
+      from,
+      to,
+      vehicle,
+    });
+    navigate(`/search?${next.toString()}`);
   }
 
   return (
