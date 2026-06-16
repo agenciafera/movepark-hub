@@ -94,37 +94,37 @@ e inserts manuais sem slug continuam funcionando. Índice `destination_published
   é montado do mesmo conjunto (um único `FAQPage`, respostas idênticas às visíveis); **mapa** OSM
   embed centrado em lat/lng.
 
-### Filtros na busca (sidebar de `/search`)
+### Busca: destino é escopo (topo), sidebar refina
 
-A sidebar de filtros (`src/features/search/SearchFilters.tsx`) usa **facetas calculadas na Edge
-`search`**, não catálogos globais:
+Modelo tipo Booking/Airbnb: o **destino é o escopo macro** da busca (escolhido no topo, no
+combobox), e a **barra lateral refina dentro** do destino escolhido. O catálogo de destinos vive
+**só no autocomplete** (`DestinationCombobox`), nunca como lista chapada na sidebar.
 
+- **Trocar destino no header** (`src/features/search/ResultsHeader.tsx`): além do H1 "N vagas em
+  <destino>", há um `DestinationCombobox` compacto que reescopa a busca (atualiza o param `dest`)
+  sem voltar pra home. Mostra o destino atual com o **ícone do tipo** (registro central) e abre o
+  catálogo buscável pra trocar.
+- **Sidebar (`SearchFilters.tsx`)** — só refinamentos dentro do destino: **operadora** (faceta),
+  **distância do destino**, **comodidades**, **categoria** (pills). **Não** há filtro de destino na
+  sidebar.
 - **Operadora** — vem da faceta `facets.operators` (operadoras que de fato têm lote no resultado
   atual, com contagem). Antes listava **todas** as empresas ativas globalmente, então escolher uma
   operadora sem lote no destino zerava a busca; agora só aparece quem tem resultado. A seção só
   renderiza com 2+ operadoras.
-- **Destino** — **sempre visível** (com 2+ destinos no catálogo), permitindo **trocar/ampliar** o
-  destino da busca. A lista vem do **catálogo** (`useDestinations()`, todos os publicados) para o
-  usuário poder mudar de destino, não só da faceta; a **contagem** por linha vem da faceta
-  `facets.destinations` (só os destinos em cena no resultado atual têm contagem) e some quando 0.
-  Cada linha mostra o **ícone do tipo**. O destino atual aparece marcado — é assim que a sidebar
-  mostra "o que está sendo filtrado".
-  - **1 destino marcado** → mantém a âncora `dest` (proximidade + ordenação por distância).
-  - **2+ marcados** → vira filtro multi `destinations` (CSV de `code`), **sem** âncora — a seção
-    "Distância do destino" some e a ordenação por distância deixa de valer.
-  - **0 marcados** → todos os destinos (busca geral).
-  - Estado marcado (`activeDestCodes`): `destinations` tem prioridade; senão a âncora `dest`.
-    Destino é **escopo** da busca, não um "filtro a limpar" — fica fora do `activeCount`/"Limpar".
+- **Editar datas** ("Editar"/"Escolher datas" no header) volta pra home com os params na URL; o
+  `Hero` semeia o `SearchBarPill` com `dest`/`from`/`to` da URL pra não perder a busca.
 
-**Facetas (Edge):** cada eixo é agregado considerando os demais filtros, mas **não a si mesmo**
-(`facets.ts` · `aggregate*`/`filterBy*`), para a lista não colapsar ao selecionar. Operadora e
-destino deixam de ser filtrados antes da precificação e passam a recortar o resultado só no fim
-(passo 10b/10c de `supabase/functions/search/index.ts`).
+**Facetas (Edge `search`):** cada eixo é agregado considerando os demais filtros, mas **não a si
+mesmo** (`facets.ts` · `aggregate*`/`filterBy*`), pra lista não colapsar ao selecionar. Operadora e
+destino deixam de ser filtrados antes da precificação e recortam o resultado só no fim (passo
+10b/10c de `supabase/functions/search/index.ts`). A faceta/param `destinations` (multi) continua
+disponível na Edge (capacidade de backend / Public API), mas o front de consumidor não usa —
+busca é escopada a **um** destino via `dest`.
 
 **Ícones de tipo de destino:** registro central em `src/lib/destination-types.ts`
 (`destinationTypeMeta` → `{ label, icon }` por tipo; `destinationTypeIcon`/`destinationTypeLabel`
-com fallback `MapPin`). Fonte única usada pelo `DestinationCombobox` e pela sidebar de filtros —
-ao adicionar um tipo novo ao enum `destination.type`, atualize esse mapa.
+com fallback `MapPin`). Fonte única usada pelo `DestinationCombobox` (autocomplete + header) — ao
+adicionar um tipo novo ao enum `destination.type`, atualize esse mapa.
 
 ### FAQ por destino (GEO-07 · ADR-002)
 
@@ -200,7 +200,7 @@ adiciona `/destinos` e uma URL por destino publicado às `dynamicRoutes` do
 | Unitário (Vitest) | `src/lib/jsonld.test.ts` | `destinationSchema`: `@type: Place`, URL canônica `/destinos/<slug>`, address/geo, coalescing de `state`/`meta_description` nulos; `itemListSchema`: `@type: ItemList`, posições a partir de 1. |
 | Componente (Vitest) | `src/routes/destinos.test.tsx` | Índice `/destinos`: H1, separação populares/outros e links internos para cada `/destinos/<slug>`; estado vazio sem destinos. |
 | Unitário (Vitest) | `src/lib/destination-types.test.ts` | Registro central de tipos: ícone/label por tipo do enum e fallback (`MapPin`/code) para tipo desconhecido/nulo. |
-| Componente (Vitest) | `src/features/search/SearchFilters.test.tsx` | Sidebar de busca: operadora vem da faceta (não global), filtro de destino aparece com 2+ destinos e some com 1, toggles disparam os callbacks. |
+| Componente (Vitest) | `src/features/search/SearchFilters.test.tsx` | Sidebar de busca: operadora vem da faceta (não global) com contagem, some com ≤1 opção, toggle dispara callback; sem seção de destino (destino é escopo, fica no header). |
 | Edge (deno test) | `supabase/functions/search/facets.test.ts` | `aggregate*`/`filterBy*`: contagem, ordenação, descarte de destino nulo e independência de eixo (operadora reflete destino escolhido). |
 | Banco / RLS (pgTAP) | `supabase/tests/destination.test.sql` | Leitura pública (anon lê publicado); escrita bloqueada para anon (42501) e customer (UPDATE filtrado pelo USING); `hub_admin` insere/edita. |
 

@@ -21,7 +21,6 @@ import {
 import { computeResultBadges } from "@/features/search/searchBadges";
 import { resolveSearchDates } from "@/features/search/dates";
 import { useSavedListings } from "@/features/search/useSavedListings";
-import { useDestinations } from "@/features/search/api";
 
 function parseCsv(value: string | null): string[] {
   if (!value) return [];
@@ -51,7 +50,6 @@ export default function SearchResultsPage() {
   const sort = (params.get("sort") as SearchSort | null) ?? "price_asc";
   const category = parseCsv(params.get("category"));
   const operator = parseCsv(params.get("operator"));
-  const destinations = parseCsv(params.get("destinations"));
   const amenities = parseCsv(params.get("amenities"));
   const maxDistanceRaw = params.get("max_distance_km");
   const maxDistanceKm = maxDistanceRaw ? Number(maxDistanceRaw) : null;
@@ -72,7 +70,6 @@ export default function SearchResultsPage() {
       sort,
       category: category.length ? category : undefined,
       operator: operator.length ? operator : undefined,
-      destinations: destinations.length ? destinations : undefined,
       amenities: amenities.length ? amenities : undefined,
       max_distance_km: maxDistanceKm ?? undefined,
       limit: 50,
@@ -86,13 +83,11 @@ export default function SearchResultsPage() {
     sort,
     category.join(","),
     operator.join(","),
-    destinations.join(","),
     amenities.join(","),
     maxDistanceKm,
   ]);
 
   const { data, isLoading, error } = useSearchResults(filters);
-  const destCatalog = useDestinations();
 
   function patch(updates: Record<string, string | null>) {
     const next = new URLSearchParams(params);
@@ -103,7 +98,8 @@ export default function SearchResultsPage() {
     setParams(next, { replace: false });
   }
 
-  // Destino é o ESCOPO da busca, não um "filtro a limpar" — fica fora do activeCount/clearAll.
+  // Destino é o ESCOPO da busca (combobox no topo), não um filtro de barra lateral. A sidebar só
+  // refina dentro do destino escolhido: operadora, distância, comodidades, categoria.
   const activeCount =
     operator.length +
     amenities.length +
@@ -112,27 +108,6 @@ export default function SearchResultsPage() {
 
   const hasDestCoords = !!data?.destination;
   const operatorOptions = data?.facets?.operators ?? [];
-
-  // Lista de destinos = catálogo completo (pra poder TROCAR de destino), com a contagem
-  // vinda da faceta do resultado atual (só os destinos em cena têm contagem).
-  const destCountMap = new Map(
-    (data?.facets?.destinations ?? []).map((d) => [d.code, d.count] as const),
-  );
-  const destinationOptions = (destCatalog.data ?? []).map((d) => ({
-    code: d.code,
-    name: d.short_name ?? d.name,
-    type: d.type,
-    count: destCountMap.get(d.code) ?? 0,
-  }));
-  // O que está marcado: o filtro multi (`destinations`) tem prioridade; senão a âncora `dest`.
-  const activeDestCodes = destinations.length ? destinations : dest ? [dest] : [];
-
-  // 1 destino → mantém a âncora `dest` (proximidade/ordenação por distância); 2+ vira filtro
-  // multi `destinations` (sem âncora); 0 → todos os destinos.
-  function changeDestinations(next: string[]) {
-    if (next.length === 1) patch({ dest: next[0], destinations: null });
-    else patch({ dest: null, destinations: toCsv(next) });
-  }
 
   function editSearch() {
     navigate(`/?${params.toString()}`);
@@ -147,6 +122,8 @@ export default function SearchResultsPage() {
       <ResultsHeader
         data={data}
         isLoading={isLoading}
+        dest={dest ?? null}
+        onDestChange={(code) => patch({ dest: code })}
         from={fromDate}
         to={toDate}
         datesAreEstimate={dates.isEstimate}
@@ -170,14 +147,11 @@ export default function SearchResultsPage() {
         <SearchFiltersSheet
           hasDestCoords={hasDestCoords}
           operator={operator}
-          destinations={activeDestCodes}
           amenities={amenities}
           maxDistanceKm={maxDistanceKm}
           operatorOptions={operatorOptions}
-          destinationOptions={destinationOptions}
           facetsLoading={isLoading}
           onOperatorChange={(next) => patch({ operator: toCsv(next) })}
-          onDestinationsChange={changeDestinations}
           onAmenitiesChange={(next) => patch({ amenities: toCsv(next) })}
           onMaxDistanceChange={(km) =>
             patch({ max_distance_km: km == null ? null : String(km) })
@@ -198,14 +172,11 @@ export default function SearchResultsPage() {
         <SearchFiltersSidebar
           hasDestCoords={hasDestCoords}
           operator={operator}
-          destinations={activeDestCodes}
           amenities={amenities}
           maxDistanceKm={maxDistanceKm}
           operatorOptions={operatorOptions}
-          destinationOptions={destinationOptions}
           facetsLoading={isLoading}
           onOperatorChange={(next) => patch({ operator: toCsv(next) })}
-          onDestinationsChange={changeDestinations}
           onAmenitiesChange={(next) => patch({ amenities: toCsv(next) })}
           onMaxDistanceChange={(km) =>
             patch({ max_distance_km: km == null ? null : String(km) })

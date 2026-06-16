@@ -1,10 +1,20 @@
+import { useSearchParams } from "react-router-dom";
 import { SearchBarPill } from "@/features/search/SearchBarPill";
+
+function parseDate(value: string | null): Date | null {
+  if (!value) return null;
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? null : d;
+}
 
 /**
  * Hero da home — foto de fundo + headline + pill de busca.
  * Placeholder photo: Unsplash neutro (estacionamento/aeroporto).
  */
 export function Hero() {
+  // Ao "Editar" a busca, o results manda de volta pra /?dest=...&from=...&to=... — semeia o pill
+  // com esses valores pra não perder o que o usuário já tinha escolhido.
+  const [params] = useSearchParams();
   return (
     <section
       className="relative flex min-h-[480px] items-center justify-center overflow-hidden bg-mp-navy"
@@ -30,7 +40,12 @@ export function Hero() {
             Compare vagas de várias operadoras num só lugar, com reserva instantânea.
           </p>
         </div>
-        <SearchBarPill className="mx-auto" />
+        <SearchBarPill
+          className="mx-auto"
+          initialDest={params.get("dest")}
+          initialFrom={parseDate(params.get("from"))}
+          initialTo={parseDate(params.get("to"))}
+        />
       </div>
     </section>
   );
