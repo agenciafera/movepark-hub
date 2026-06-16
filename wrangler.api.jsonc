@@ -4,6 +4,8 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "movepark-api",
   "main": "src/api-worker.ts",
+  // conta Cloudflare dona da zona movepark.co (Financeiro@fera.ag)
+  "account_id": "d124ffde17489256e3417b4e82275c6c",
   "compatibility_date": "2026-06-02",
   "compatibility_flags": ["nodejs_compat"],
   "observability": {
