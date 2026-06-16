@@ -1,7 +1,10 @@
 import { Link } from "react-router-dom";
 import { Wordmark } from "./Brand";
 
-const groups = [
+type FooterLink = { to: string; label: string; external?: boolean };
+type FooterGroup = { title: string; links: FooterLink[] };
+
+const groups: FooterGroup[] = [
   {
     title: "Suporte",
     links: [
@@ -19,6 +22,13 @@ const groups = [
     ],
   },
   {
+    title: "Desenvolvedores",
+    links: [
+      { to: "https://api.movepark.co/docs", label: "Documentação da API", external: true },
+      { to: "https://mcp.movepark.co", label: "API para agentes (MCP)", external: true },
+    ],
+  },
+  {
     title: "Movepark",
     links: [
       { to: "/sobre", label: "Sobre nós" },
@@ -28,22 +38,27 @@ const groups = [
   },
 ];
 
+const linkClass = "text-body-sm text-muted no-underline hover:text-ink";
+
 export function ConsumerFooter() {
   return (
     <footer className="border-t border-hairline bg-canvas">
-      <div className="mx-auto grid w-full max-w-[1280px] grid-cols-1 gap-8 px-6 py-12 tablet:grid-cols-3 desktop:px-8">
+      <div className="mx-auto grid w-full max-w-[1280px] grid-cols-1 gap-8 px-6 py-12 tablet:grid-cols-2 desktop:grid-cols-4 desktop:px-8">
         {groups.map((g) => (
           <div key={g.title} className="space-y-3">
             <h4 className="text-title-sm text-ink">{g.title}</h4>
             <ul className="space-y-2">
               {g.links.map((l) => (
                 <li key={l.label}>
-                  <Link
-                    to={l.to}
-                    className="text-body-sm text-muted no-underline hover:text-ink"
-                  >
-                    {l.label}
-                  </Link>
+                  {l.external ? (
+                    <a href={l.to} target="_blank" rel="noopener noreferrer" className={linkClass}>
+                      {l.label}
+                    </a>
+                  ) : (
+                    <Link to={l.to} className={linkClass}>
+                      {l.label}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
