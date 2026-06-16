@@ -72,6 +72,16 @@
         "properties": { "location_id": { "type": "string" } },
         "required": ["location_id"]
       }
+    },
+    {
+      "name": "list_destinations",
+      "description": "Destinos (aeroportos/cidades) atendidos, com slug e localização.",
+      "inputSchema": { "type": "object", "properties": { "limit": { "type": "integer" } } }
+    },
+    {
+      "name": "get_destination",
+      "description": "Detalhe de um destino pelo slug, com seus pontos/terminais.",
+      "inputSchema": { "type": "object", "properties": { "slug": { "type": "string" } }, "required": ["slug"] }
     }
   ]
 }

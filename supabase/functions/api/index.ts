@@ -274,6 +274,160 @@ async function dispatch(handler: string, d: Dispatch): Promise<Response> {
       return ok(data, requestId);
     }
 
+    // ── Promoções: cupons ────────────────────────────────────────────────
+    case "list_coupons":
+      return ok(await call("api_list_coupons", { p_company_id: company }), requestId);
+    case "upsert_coupon":
+      return ok(
+        await call("api_upsert_coupon", {
+          p_company_id: company,
+          p_id: (body.id as string) ?? null,
+          p_code: body.code,
+          p_description: (body.description as string) ?? null,
+          p_discount_type: body.discount_type ?? "percent",
+          p_discount_value: body.discount_value ?? 0,
+          p_valid_from: (body.valid_from as string) ?? null,
+          p_valid_until: (body.valid_until as string) ?? null,
+          p_max_uses: (body.max_uses as number) ?? null,
+          p_is_active: (body.is_active as boolean) ?? true,
+          p_sort_order: (body.sort_order as number) ?? 0,
+          p_per_user_limit: (body.per_user_limit as number) ?? null,
+          p_min_amount: (body.min_amount as number) ?? null,
+          p_min_days: (body.min_days as number) ?? null,
+          p_parking_type_ids: (body.parking_type_ids as string[]) ?? null,
+        }),
+        requestId,
+        201,
+      );
+    case "set_coupon_active":
+      return ok(
+        await call("api_set_coupon_active", { p_company_id: company, p_coupon_id: params.id, p_is_active: body.is_active }),
+        requestId,
+      );
+    case "delete_coupon":
+      return ok(await call("api_delete_coupon", { p_company_id: company, p_coupon_id: params.id }), requestId);
+
+    // ── Promoções: descontos ─────────────────────────────────────────────
+    case "list_discounts":
+      return ok(await call("api_list_discounts", { p_company_id: company }), requestId);
+    case "upsert_discount":
+      return ok(
+        await call("api_upsert_discount", {
+          p_company_id: company,
+          p_id: (body.id as string) ?? null,
+          p_location_id: (body.location_id as string) ?? null,
+          p_name: body.name,
+          p_description: (body.description as string) ?? null,
+          p_discount_type: body.discount_type ?? "percent",
+          p_discount_value: body.discount_value ?? 0,
+          p_valid_from: (body.valid_from as string) ?? null,
+          p_valid_until: (body.valid_until as string) ?? null,
+          p_min_days: (body.min_days as number) ?? null,
+          p_min_amount: (body.min_amount as number) ?? null,
+          p_advance_days: (body.advance_days as number) ?? null,
+          p_allow_coupon_stack: (body.allow_coupon_stack as boolean) ?? true,
+          p_priority: (body.priority as number) ?? 0,
+          p_is_active: (body.is_active as boolean) ?? true,
+          p_sort_order: (body.sort_order as number) ?? 0,
+          p_parking_type_ids: (body.parking_type_ids as string[]) ?? null,
+        }),
+        requestId,
+        201,
+      );
+    case "set_discount_active":
+      return ok(
+        await call("api_set_discount_active", { p_company_id: company, p_discount_rule_id: params.id, p_is_active: body.is_active }),
+        requestId,
+      );
+    case "delete_discount":
+      return ok(await call("api_delete_discount", { p_company_id: company, p_discount_rule_id: params.id }), requestId);
+
+    // ── Serviços adicionais ──────────────────────────────────────────────
+    case "list_addons":
+      return ok(await call("api_list_addons", { p_company_id: company }), requestId);
+    case "upsert_addon":
+      return ok(
+        await call("api_upsert_addon", {
+          p_company_id: company,
+          p_id: (body.id as string) ?? null,
+          p_code: (body.code as string) ?? null,
+          p_name: body.name,
+          p_description: (body.description as string) ?? null,
+          p_base_price: body.base_price ?? 0,
+          p_is_active: (body.is_active as boolean) ?? true,
+          p_sort_order: (body.sort_order as number) ?? 0,
+        }),
+        requestId,
+        201,
+      );
+    case "set_location_addon":
+      return ok(
+        await call("api_set_location_addon", {
+          p_company_id: company,
+          p_add_on_service_id: params.id,
+          p_location_id: body.location_id,
+          p_is_active: body.is_active ?? false,
+          p_price_override: (body.price_override as number) ?? null,
+        }),
+        requestId,
+      );
+    case "delete_addon":
+      return ok(await call("api_delete_addon", { p_company_id: company, p_add_on_service_id: params.id }), requestId);
+
+    // ── Avaliações ───────────────────────────────────────────────────────
+    case "list_reviews":
+      return ok(await call("api_list_reviews", { p_company_id: company, p_limit: intParam(q.get("limit"), 50) }), requestId);
+    case "respond_review":
+      return ok(
+        await call("api_respond_review", { p_company_id: company, p_review_id: params.id, p_response: (body.response as string) ?? null }),
+        requestId,
+      );
+
+    // ── Ocupação ─────────────────────────────────────────────────────────
+    case "occupancy": {
+      const loc = q.get("location_id");
+      const from = q.get("from");
+      const to = q.get("to");
+      if (!loc || !from || !to) {
+        return fail("validation_error", "Parâmetros obrigatórios: location_id, from, to.", 422, requestId);
+      }
+      return ok(await call("api_location_occupancy", { p_company_id: company, p_location_id: loc, p_from: from, p_to: to }), requestId);
+    }
+
+    // ── Escritas ─────────────────────────────────────────────────────────
+    case "update_location":
+      return ok(
+        await call("api_update_location", {
+          p_company_id: company,
+          p_location_id: params.id,
+          p_name: (body.name as string) ?? null,
+          p_address: (body.address as string) ?? null,
+          p_phone: (body.phone as string) ?? null,
+          p_email: (body.email as string) ?? null,
+          p_reservation_policy: (body.reservation_policy as string) ?? null,
+          p_has_notice: (body.has_notice as boolean) ?? null,
+          p_notice: (body.notice as string) ?? null,
+        }),
+        requestId,
+      );
+    case "update_parking_type":
+      return ok(
+        await call("api_update_parking_type", {
+          p_company_id: company,
+          p_location_parking_type_id: params.id,
+          p_is_active: (body.is_active as boolean) ?? null,
+          p_capacity: (body.capacity as number) ?? null,
+          p_near_capacity_threshold: (body.near_capacity_threshold as number) ?? null,
+          p_near_capacity_message: (body.near_capacity_message as string) ?? null,
+          p_has_minimum_stay: (body.has_minimum_stay as boolean) ?? null,
+          p_minimum_stay_value: (body.minimum_stay_value as number) ?? null,
+          p_minimum_stay_unit: (body.minimum_stay_unit as string) ?? null,
+          p_has_minimum_date: (body.has_minimum_date as boolean) ?? null,
+          p_minimum_date: (body.minimum_date as string) ?? null,
+        }),
+        requestId,
+      );
+
     default:
       return fail("not_found", "Handler desconhecido.", 404, requestId);
   }

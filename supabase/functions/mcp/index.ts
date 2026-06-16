@@ -285,6 +285,30 @@ async function callPublic(name: string, a: Record<string, unknown>): Promise<unk
           .select("id, capacity, is_active, company_parking_type:company_parking_type_id(parking_type:parking_type_id(code, name))")
           .eq("location_id", a.location_id as string),
       );
+    case "list_destinations":
+      return unwrap(
+        await sb
+          .from("destination")
+          .select("id, code, name, short_name, slug, type, city, state, country, latitude, longitude")
+          .eq("is_published", true)
+          .order("sort_order")
+          .limit(Number(a.limit ?? 50)),
+      );
+    case "get_destination": {
+      const dest = unwrap(
+        await sb
+          .from("destination")
+          .select("id, code, name, short_name, slug, type, city, state, country, latitude, longitude, intro")
+          .eq("slug", a.slug as string)
+          .eq("is_published", true)
+          .maybeSingle(),
+      ) as { id?: string } | null;
+      if (!dest?.id) throw new Error("Destino não encontrado.");
+      const points = unwrap(
+        await sb.from("destination_point").select("id, name, type, latitude, longitude").eq("destination_id", dest.id),
+      );
+      return { ...dest, points };
+    }
     default:
       throw new Error(`Tool desconhecida: ${name}`);
   }
@@ -353,6 +377,76 @@ async function callPartner(admin: any, ctx: PartnerCtx, name: string, a: Record<
       return call("api_checkin_booking", { p_company_id: c, p_booking_id: a.booking_id });
     case "check_out_booking":
       return call("api_checkout_booking", { p_company_id: c, p_booking_id: a.booking_id });
+    // Promoções — cupons
+    case "list_coupons":
+      return call("api_list_coupons", { p_company_id: c });
+    case "upsert_coupon":
+      return call("api_upsert_coupon", {
+        p_company_id: c, p_id: a.id ?? null, p_code: a.code, p_description: a.description ?? null,
+        p_discount_type: a.discount_type ?? "percent", p_discount_value: a.discount_value ?? 0,
+        p_valid_from: a.valid_from ?? null, p_valid_until: a.valid_until ?? null, p_max_uses: a.max_uses ?? null,
+        p_is_active: a.is_active ?? true, p_sort_order: a.sort_order ?? 0, p_per_user_limit: a.per_user_limit ?? null,
+        p_min_amount: a.min_amount ?? null, p_min_days: a.min_days ?? null, p_parking_type_ids: a.parking_type_ids ?? null,
+      });
+    case "set_coupon_active":
+      return call("api_set_coupon_active", { p_company_id: c, p_coupon_id: a.id, p_is_active: a.is_active });
+    case "delete_coupon":
+      return call("api_delete_coupon", { p_company_id: c, p_coupon_id: a.id });
+    // Promoções — descontos
+    case "list_discounts":
+      return call("api_list_discounts", { p_company_id: c });
+    case "upsert_discount":
+      return call("api_upsert_discount", {
+        p_company_id: c, p_id: a.id ?? null, p_location_id: a.location_id ?? null, p_name: a.name,
+        p_description: a.description ?? null, p_discount_type: a.discount_type ?? "percent",
+        p_discount_value: a.discount_value ?? 0, p_valid_from: a.valid_from ?? null, p_valid_until: a.valid_until ?? null,
+        p_min_days: a.min_days ?? null, p_min_amount: a.min_amount ?? null, p_advance_days: a.advance_days ?? null,
+        p_allow_coupon_stack: a.allow_coupon_stack ?? true, p_priority: a.priority ?? 0,
+        p_is_active: a.is_active ?? true, p_sort_order: a.sort_order ?? 0, p_parking_type_ids: a.parking_type_ids ?? null,
+      });
+    case "set_discount_active":
+      return call("api_set_discount_active", { p_company_id: c, p_discount_rule_id: a.id, p_is_active: a.is_active });
+    case "delete_discount":
+      return call("api_delete_discount", { p_company_id: c, p_discount_rule_id: a.id });
+    // Serviços adicionais
+    case "list_addons":
+      return call("api_list_addons", { p_company_id: c });
+    case "upsert_addon":
+      return call("api_upsert_addon", {
+        p_company_id: c, p_id: a.id ?? null, p_code: a.code ?? null, p_name: a.name,
+        p_description: a.description ?? null, p_base_price: a.base_price ?? 0,
+        p_is_active: a.is_active ?? true, p_sort_order: a.sort_order ?? 0,
+      });
+    case "set_location_addon":
+      return call("api_set_location_addon", {
+        p_company_id: c, p_add_on_service_id: a.id, p_location_id: a.location_id,
+        p_is_active: a.is_active ?? false, p_price_override: a.price_override ?? null,
+      });
+    case "delete_addon":
+      return call("api_delete_addon", { p_company_id: c, p_add_on_service_id: a.id });
+    // Avaliações
+    case "list_reviews":
+      return call("api_list_reviews", { p_company_id: c, p_limit: Number(a.limit ?? 50) });
+    case "respond_review":
+      return call("api_respond_review", { p_company_id: c, p_review_id: a.id, p_response: a.response ?? null });
+    // Ocupação
+    case "get_occupancy":
+      return call("api_location_occupancy", { p_company_id: c, p_location_id: a.location_id, p_from: a.from, p_to: a.to });
+    // Escritas
+    case "update_location":
+      return call("api_update_location", {
+        p_company_id: c, p_location_id: a.location_id, p_name: a.name ?? null, p_address: a.address ?? null,
+        p_phone: a.phone ?? null, p_email: a.email ?? null, p_reservation_policy: a.reservation_policy ?? null,
+        p_has_notice: a.has_notice ?? null, p_notice: a.notice ?? null,
+      });
+    case "update_parking_type":
+      return call("api_update_parking_type", {
+        p_company_id: c, p_location_parking_type_id: a.location_parking_type_id, p_is_active: a.is_active ?? null,
+        p_capacity: a.capacity ?? null, p_near_capacity_threshold: a.near_capacity_threshold ?? null,
+        p_near_capacity_message: a.near_capacity_message ?? null, p_has_minimum_stay: a.has_minimum_stay ?? null,
+        p_minimum_stay_value: a.minimum_stay_value ?? null, p_minimum_stay_unit: a.minimum_stay_unit ?? null,
+        p_has_minimum_date: a.has_minimum_date ?? null, p_minimum_date: a.minimum_date ?? null,
+      });
     default:
       throw new Error(`Tool desconhecida: ${name}`);
   }

@@ -75,6 +75,16 @@ export const PUBLIC_TOOLS: ToolDef[] = [
     description: "Tipos de vaga de uma unidade (coberto, descoberto, valet…).",
     inputSchema: obj({ location_id: S }, ["location_id"]),
   },
+  {
+    name: "list_destinations",
+    description: "Lista destinos (aeroportos/cidades) atendidos, com slug e localização.",
+    inputSchema: obj({ limit: INT }),
+  },
+  {
+    name: "get_destination",
+    description: "Detalhe de um destino pelo slug, com seus pontos/terminais.",
+    inputSchema: obj({ slug: S }, ["slug"]),
+  },
 ];
 
 // ── Parceiro (autenticado por chave + escopo) — sobre a API v1 ────────────────
@@ -163,6 +173,97 @@ export const PARTNER_TOOLS: ToolDef[] = [
     description: "Registra check-out (checked_in → completed).",
     scope: "bookings:checkin",
     inputSchema: obj({ booking_id: S }, ["booking_id"]),
+  },
+  // Promoções — cupons
+  { name: "list_coupons", description: "Lista os cupons da empresa.", scope: "coupons:read", inputSchema: obj({}) },
+  {
+    name: "upsert_coupon",
+    description: "Cria/atualiza um cupom (id ausente = novo).",
+    scope: "coupons:write",
+    inputSchema: obj(
+      {
+        id: S, code: S, description: S, discount_type: { type: "string", enum: ["percent", "fixed"] },
+        discount_value: { type: "number" }, valid_from: DT, valid_until: DT, max_uses: INT,
+        is_active: { type: "boolean" }, per_user_limit: INT, min_amount: { type: "number" }, min_days: INT,
+        parking_type_ids: { type: "array", items: S },
+      },
+      ["code", "discount_type", "discount_value"],
+    ),
+  },
+  { name: "set_coupon_active", description: "Ativa/desativa um cupom.", scope: "coupons:write",
+    inputSchema: obj({ id: S, is_active: { type: "boolean" } }, ["id", "is_active"]) },
+  { name: "delete_coupon", description: "Exclui um cupom (bloqueado se já usado).", scope: "coupons:write",
+    inputSchema: obj({ id: S }, ["id"]) },
+  // Promoções — descontos
+  { name: "list_discounts", description: "Lista os descontos automáticos da empresa.", scope: "discounts:read", inputSchema: obj({}) },
+  {
+    name: "upsert_discount",
+    description: "Cria/atualiza um desconto automático (id ausente = novo).",
+    scope: "discounts:write",
+    inputSchema: obj(
+      {
+        id: S, location_id: S, name: S, description: S, discount_type: { type: "string", enum: ["percent", "fixed"] },
+        discount_value: { type: "number" }, valid_from: DT, valid_until: DT, min_days: INT,
+        min_amount: { type: "number" }, advance_days: INT, allow_coupon_stack: { type: "boolean" },
+        priority: INT, is_active: { type: "boolean" }, parking_type_ids: { type: "array", items: S },
+      },
+      ["name", "discount_type", "discount_value"],
+    ),
+  },
+  { name: "set_discount_active", description: "Ativa/desativa um desconto.", scope: "discounts:write",
+    inputSchema: obj({ id: S, is_active: { type: "boolean" } }, ["id", "is_active"]) },
+  { name: "delete_discount", description: "Exclui um desconto (bloqueado se já usado).", scope: "discounts:write",
+    inputSchema: obj({ id: S }, ["id"]) },
+  // Serviços adicionais
+  { name: "list_addons", description: "Lista os serviços adicionais da empresa.", scope: "addons:read", inputSchema: obj({}) },
+  {
+    name: "upsert_addon",
+    description: "Cria/atualiza um serviço adicional (id ausente = novo).",
+    scope: "addons:write",
+    inputSchema: obj(
+      { id: S, code: S, name: S, description: S, base_price: { type: "number" }, is_active: { type: "boolean" } },
+      ["name"],
+    ),
+  },
+  {
+    name: "set_location_addon",
+    description: "Habilita/precifica um serviço adicional numa unidade.",
+    scope: "addons:write",
+    inputSchema: obj(
+      { id: S, location_id: S, is_active: { type: "boolean" }, price_override: { type: "number" } },
+      ["id", "location_id"],
+    ),
+  },
+  { name: "delete_addon", description: "Exclui um serviço adicional (bloqueado se já usado).", scope: "addons:write",
+    inputSchema: obj({ id: S }, ["id"]) },
+  // Avaliações
+  { name: "list_reviews", description: "Lista avaliações das unidades da empresa.", scope: "reviews:read",
+    inputSchema: obj({ limit: INT }) },
+  { name: "respond_review", description: "Responde publicamente a uma avaliação.", scope: "reviews:write",
+    inputSchema: obj({ id: S, response: S }, ["id", "response"]) },
+  // Ocupação
+  { name: "get_occupancy", description: "Ocupação por data de uma unidade (booked/capacity).", scope: "occupancy:read",
+    inputSchema: obj({ location_id: S, from: { type: "string", format: "date" }, to: { type: "string", format: "date" } },
+      ["location_id", "from", "to"]) },
+  // Escritas
+  {
+    name: "update_location",
+    description: "Edita dados de uma unidade (campos ausentes = mantém).",
+    scope: "locations:write",
+    inputSchema: obj({ location_id: S, name: S, address: S, phone: S, email: S, reservation_policy: S, has_notice: { type: "boolean" }, notice: S }, ["location_id"]),
+  },
+  {
+    name: "update_parking_type",
+    description: "Edita um tipo de vaga: status, capacidade e regras (campos ausentes = mantém).",
+    scope: "parking-types:write",
+    inputSchema: obj(
+      {
+        location_parking_type_id: S, is_active: { type: "boolean" }, capacity: INT,
+        near_capacity_threshold: INT, near_capacity_message: S, has_minimum_stay: { type: "boolean" },
+        minimum_stay_value: INT, minimum_stay_unit: S, has_minimum_date: { type: "boolean" }, minimum_date: { type: "string", format: "date" },
+      },
+      ["location_parking_type_id"],
+    ),
   },
 ];
 

@@ -177,6 +177,129 @@ paths:
         - { name: limit, in: query, schema: { type: integer, default: 20 } }
       responses:
         "200": { $ref: "#/components/responses/Object" }
+  /v1/coupons:
+    get:
+      tags: [coupons]
+      summary: Lista os cupons da empresa
+      security: [{ apiKey: [coupons:read] }]
+      responses: { "200": { $ref: "#/components/responses/List" } }
+    post:
+      tags: [coupons]
+      summary: Cria/atualiza um cupom (id no corpo = edição)
+      security: [{ apiKey: [coupons:write] }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
+      responses: { "201": { $ref: "#/components/responses/Object" }, "422": { $ref: "#/components/responses/ValidationError" } }
+  /v1/coupons/{id}/active:
+    post:
+      tags: [coupons]
+      summary: Ativa/desativa um cupom
+      security: [{ apiKey: [coupons:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody: { content: { application/json: { schema: { type: object, properties: { is_active: { type: boolean } } } } } }
+      responses: { "200": { $ref: "#/components/responses/Object" } }
+  /v1/coupons/{id}/delete:
+    post:
+      tags: [coupons]
+      summary: Exclui um cupom (bloqueado se já usado)
+      security: [{ apiKey: [coupons:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses: { "200": { $ref: "#/components/responses/Object" }, "422": { $ref: "#/components/responses/ValidationError" } }
+  /v1/discounts:
+    get:
+      tags: [discounts]
+      summary: Lista os descontos automáticos
+      security: [{ apiKey: [discounts:read] }]
+      responses: { "200": { $ref: "#/components/responses/List" } }
+    post:
+      tags: [discounts]
+      summary: Cria/atualiza um desconto automático
+      security: [{ apiKey: [discounts:write] }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
+      responses: { "201": { $ref: "#/components/responses/Object" }, "422": { $ref: "#/components/responses/ValidationError" } }
+  /v1/discounts/{id}/active:
+    post:
+      tags: [discounts]
+      summary: Ativa/desativa um desconto
+      security: [{ apiKey: [discounts:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody: { content: { application/json: { schema: { type: object, properties: { is_active: { type: boolean } } } } } }
+      responses: { "200": { $ref: "#/components/responses/Object" } }
+  /v1/discounts/{id}/delete:
+    post:
+      tags: [discounts]
+      summary: Exclui um desconto (bloqueado se já usado)
+      security: [{ apiKey: [discounts:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses: { "200": { $ref: "#/components/responses/Object" }, "422": { $ref: "#/components/responses/ValidationError" } }
+  /v1/addons:
+    get:
+      tags: [addons]
+      summary: Lista os serviços adicionais
+      security: [{ apiKey: [addons:read] }]
+      responses: { "200": { $ref: "#/components/responses/List" } }
+    post:
+      tags: [addons]
+      summary: Cria/atualiza um serviço adicional
+      security: [{ apiKey: [addons:write] }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
+      responses: { "201": { $ref: "#/components/responses/Object" }, "422": { $ref: "#/components/responses/ValidationError" } }
+  /v1/addons/{id}/locations:
+    post:
+      tags: [addons]
+      summary: Habilita/precifica um serviço numa unidade
+      security: [{ apiKey: [addons:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, properties: { location_id: { type: string }, is_active: { type: boolean }, price_override: { type: number } }, required: [location_id] } } } }
+      responses: { "200": { $ref: "#/components/responses/Object" } }
+  /v1/addons/{id}/delete:
+    post:
+      tags: [addons]
+      summary: Exclui um serviço adicional (bloqueado se já usado)
+      security: [{ apiKey: [addons:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses: { "200": { $ref: "#/components/responses/Object" }, "422": { $ref: "#/components/responses/ValidationError" } }
+  /v1/reviews:
+    get:
+      tags: [reviews]
+      summary: Lista avaliações das unidades da empresa
+      security: [{ apiKey: [reviews:read] }]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+      responses: { "200": { $ref: "#/components/responses/List" } }
+  /v1/reviews/{id}/respond:
+    post:
+      tags: [reviews]
+      summary: Responde publicamente a uma avaliação
+      security: [{ apiKey: [reviews:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, properties: { response: { type: string } } } } } }
+      responses: { "200": { $ref: "#/components/responses/Object" } }
+  /v1/occupancy:
+    get:
+      tags: [occupancy]
+      summary: Ocupação por data de uma unidade
+      security: [{ apiKey: [occupancy:read] }]
+      parameters:
+        - { name: location_id, in: query, required: true, schema: { type: string, format: uuid } }
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+      responses: { "200": { $ref: "#/components/responses/List" }, "422": { $ref: "#/components/responses/ValidationError" } }
+  /v1/locations/{id}:
+    post:
+      tags: [locations]
+      summary: Edita dados de uma unidade (campos ausentes = mantém)
+      security: [{ apiKey: [locations:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
+      responses: { "200": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/NotFound" } }
+  /v1/parking-types/{id}:
+    post:
+      tags: [parking-types]
+      summary: Edita um tipo de vaga (status, capacidade, regras)
+      security: [{ apiKey: [parking-types:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
+      responses: { "200": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/NotFound" } }
 components:
   securitySchemes:
     apiKey:

@@ -2311,6 +2311,18 @@ export type Database = {
         }
         Returns: Json
       }
+      api_delete_addon: {
+        Args: { p_add_on_service_id: string; p_company_id: string }
+        Returns: undefined
+      }
+      api_delete_coupon: {
+        Args: { p_company_id: string; p_coupon_id: string }
+        Returns: undefined
+      }
+      api_delete_discount: {
+        Args: { p_company_id: string; p_discount_rule_id: string }
+        Returns: undefined
+      }
       api_get_booking: {
         Args: { p_booking_id: string; p_company_id: string }
         Returns: Json
@@ -2327,6 +2339,7 @@ export type Database = {
         Args: { p_key_hash: string; p_key_prefix: string }
         Returns: Json
       }
+      api_list_addons: { Args: { p_company_id: string }; Returns: Json }
       api_list_bookings: {
         Args: {
           p_company_id: string
@@ -2338,6 +2351,8 @@ export type Database = {
         }
         Returns: Json
       }
+      api_list_coupons: { Args: { p_company_id: string }; Returns: Json }
+      api_list_discounts: { Args: { p_company_id: string }; Returns: Json }
       api_list_locations: {
         Args: { p_company_id: string; p_limit?: number; p_offset?: number }
         Returns: Json
@@ -2346,6 +2361,49 @@ export type Database = {
         Args: { p_company_id: string; p_location_id: string }
         Returns: Json
       }
+      api_list_reviews: {
+        Args: { p_company_id: string; p_limit?: number }
+        Returns: Json
+      }
+      api_location_occupancy: {
+        Args: {
+          p_company_id: string
+          p_from: string
+          p_location_id: string
+          p_to: string
+        }
+        Returns: Json
+      }
+      api_respond_review: {
+        Args: { p_company_id: string; p_response: string; p_review_id: string }
+        Returns: undefined
+      }
+      api_set_coupon_active: {
+        Args: {
+          p_company_id: string
+          p_coupon_id: string
+          p_is_active: boolean
+        }
+        Returns: undefined
+      }
+      api_set_discount_active: {
+        Args: {
+          p_company_id: string
+          p_discount_rule_id: string
+          p_is_active: boolean
+        }
+        Returns: undefined
+      }
+      api_set_location_addon: {
+        Args: {
+          p_add_on_service_id: string
+          p_company_id: string
+          p_is_active: boolean
+          p_location_id: string
+          p_price_override: number
+        }
+        Returns: undefined
+      }
       api_simulate_price: {
         Args: {
           p_company_id: string
@@ -2353,6 +2411,91 @@ export type Database = {
           p_location_parking_type_id: string
         }
         Returns: Json
+      }
+      api_update_location: {
+        Args: {
+          p_address?: string
+          p_company_id: string
+          p_email?: string
+          p_has_notice?: boolean
+          p_location_id: string
+          p_name?: string
+          p_notice?: string
+          p_phone?: string
+          p_reservation_policy?: string
+        }
+        Returns: Json
+      }
+      api_update_parking_type: {
+        Args: {
+          p_capacity?: number
+          p_company_id: string
+          p_has_minimum_date?: boolean
+          p_has_minimum_stay?: boolean
+          p_is_active?: boolean
+          p_location_parking_type_id: string
+          p_minimum_date?: string
+          p_minimum_stay_unit?: string
+          p_minimum_stay_value?: number
+          p_near_capacity_message?: string
+          p_near_capacity_threshold?: number
+        }
+        Returns: Json
+      }
+      api_upsert_addon: {
+        Args: {
+          p_base_price: number
+          p_code: string
+          p_company_id: string
+          p_description: string
+          p_id: string
+          p_is_active: boolean
+          p_name: string
+          p_sort_order: number
+        }
+        Returns: string
+      }
+      api_upsert_coupon: {
+        Args: {
+          p_code: string
+          p_company_id: string
+          p_description: string
+          p_discount_type: string
+          p_discount_value: number
+          p_id: string
+          p_is_active: boolean
+          p_max_uses: number
+          p_min_amount: number
+          p_min_days: number
+          p_parking_type_ids: string[]
+          p_per_user_limit: number
+          p_sort_order: number
+          p_valid_from: string
+          p_valid_until: string
+        }
+        Returns: string
+      }
+      api_upsert_discount: {
+        Args: {
+          p_advance_days: number
+          p_allow_coupon_stack: boolean
+          p_company_id: string
+          p_description: string
+          p_discount_type: string
+          p_discount_value: number
+          p_id: string
+          p_is_active: boolean
+          p_location_id: string
+          p_min_amount: number
+          p_min_days: number
+          p_name: string
+          p_parking_type_ids: string[]
+          p_priority: number
+          p_sort_order: number
+          p_valid_from: string
+          p_valid_until: string
+        }
+        Returns: string
       }
       availability_batch: {
         Args: {

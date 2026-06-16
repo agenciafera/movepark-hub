@@ -29,6 +29,29 @@ const ROUTES: RouteDef[] = [
   def("POST", "/v1/bookings/:id/check-in", ["id"], "bookings:checkin", "checkin_booking"),
   def("POST", "/v1/bookings/:id/check-out", ["id"], "bookings:checkin", "checkout_booking"),
   def("GET", "/v1/faq", [], "faq:read", "faq"),
+  // Promoções — cupons
+  def("GET", "/v1/coupons", [], "coupons:read", "list_coupons"),
+  def("POST", "/v1/coupons", [], "coupons:write", "upsert_coupon"),
+  def("POST", "/v1/coupons/:id/active", ["id"], "coupons:write", "set_coupon_active"),
+  def("POST", "/v1/coupons/:id/delete", ["id"], "coupons:write", "delete_coupon"),
+  // Promoções — descontos automáticos
+  def("GET", "/v1/discounts", [], "discounts:read", "list_discounts"),
+  def("POST", "/v1/discounts", [], "discounts:write", "upsert_discount"),
+  def("POST", "/v1/discounts/:id/active", ["id"], "discounts:write", "set_discount_active"),
+  def("POST", "/v1/discounts/:id/delete", ["id"], "discounts:write", "delete_discount"),
+  // Serviços adicionais
+  def("GET", "/v1/addons", [], "addons:read", "list_addons"),
+  def("POST", "/v1/addons", [], "addons:write", "upsert_addon"),
+  def("POST", "/v1/addons/:id/locations", ["id"], "addons:write", "set_location_addon"),
+  def("POST", "/v1/addons/:id/delete", ["id"], "addons:write", "delete_addon"),
+  // Avaliações
+  def("GET", "/v1/reviews", [], "reviews:read", "list_reviews"),
+  def("POST", "/v1/reviews/:id/respond", ["id"], "reviews:write", "respond_review"),
+  // Ocupação
+  def("GET", "/v1/occupancy", [], "occupancy:read", "occupancy"),
+  // Escritas de unidade / tipo de vaga
+  def("POST", "/v1/locations/:id", ["id"], "locations:write", "update_location"),
+  def("POST", "/v1/parking-types/:id", ["id"], "parking-types:write", "update_parking_type"),
 ];
 
 function def(method: string, pattern: string, keys: string[], scope: string, handler: string): RouteDef {
