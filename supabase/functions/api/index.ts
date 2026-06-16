@@ -39,6 +39,7 @@ interface AuthCtx {
 // @ts-expect-error - Deno global
 Deno.serve(async (req: Request) => {
   const requestId = req.headers.get("x-request-id") ?? newRequestId();
+  const started = Date.now();
 
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders() });
@@ -94,28 +95,50 @@ Deno.serve(async (req: Request) => {
   };
 
   // 2) checagem de escopo
+  let resp: Response;
   if (!hasScope(ctx.scopes, route.scope)) {
-    return fail("insufficient_scope", `Esta chave não tem o escopo "${route.scope}".`, 403, requestId);
-  }
-
-  // 3) corpo (mutações)
-  let body: Record<string, unknown> = {};
-  if (req.method === "POST") {
-    try {
-      const txt = await req.text();
-      body = txt ? JSON.parse(txt) : {};
-    } catch {
-      return fail("validation_error", "JSON inválido.", 422, requestId);
+    resp = fail("insufficient_scope", `Esta chave não tem o escopo "${route.scope}".`, 403, requestId);
+  } else {
+    // 3) corpo (mutações)
+    let body: Record<string, unknown> = {};
+    let badJson = false;
+    if (req.method === "POST") {
+      try {
+        const txt = await req.text();
+        body = txt ? JSON.parse(txt) : {};
+      } catch {
+        badJson = true;
+      }
+    }
+    if (badJson) {
+      resp = fail("validation_error", "JSON inválido.", 422, requestId);
+    } else {
+      // 4) dispatch
+      try {
+        resp = await dispatch(route.handler, { admin, ctx, url, params: route.params, body, req, requestId });
+      } catch (e) {
+        const pg = pgErrorToHttp({ code: (e as { code?: string }).code, message: (e as Error).message });
+        resp = fail(pg.code, pg.message, pg.status, requestId);
+      }
     }
   }
 
-  // 4) dispatch
-  try {
-    return await dispatch(route.handler, { admin, ctx, url, params: route.params, body, req, requestId });
-  } catch (e) {
-    const pg = pgErrorToHttp({ code: (e as { code?: string }).code, message: (e as Error).message });
-    return fail(pg.code, pg.message, pg.status, requestId);
-  }
+  // 5) auditoria (Fase 1.1) — não bloqueia a resposta
+  background(
+    logRequest(admin, {
+      api_key_id: ctx.api_key_id,
+      company_id: ctx.company_id,
+      surface: "rest",
+      method: req.method,
+      path: normalizePath(url.pathname),
+      scope: route.scope,
+      status: resp.status,
+      request_id: requestId,
+      ip: clientIp(req),
+      latency_ms: Date.now() - started,
+    }),
+  );
+  return resp;
 });
 
 interface Dispatch {
@@ -259,4 +282,51 @@ async function dispatch(handler: string, d: Dispatch): Promise<Response> {
 function intParam(v: string | null, fallback: number): number {
   const n = v == null ? NaN : parseInt(v, 10);
   return Number.isFinite(n) ? n : fallback;
+}
+
+// ── Auditoria (Fase 1.1) ─────────────────────────────────────────────────────
+export interface ApiLogRow {
+  api_key_id: string;
+  company_id: string;
+  surface: "rest" | "mcp";
+  method: string;
+  path: string;
+  scope: string | null;
+  status: number;
+  request_id: string;
+  ip: string | null;
+  latency_ms: number;
+}
+
+export function clientIp(req: Request): string | null {
+  return (
+    req.headers.get("cf-connecting-ip") ??
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    null
+  );
+}
+
+// Insere o log de uso (service_role bypassa RLS). Best-effort.
+// deno-lint-ignore no-explicit-any
+export async function logRequest(admin: any, row: ApiLogRow): Promise<void> {
+  try {
+    await admin.from("api_request_log").insert(row);
+  } catch {
+    // auditoria nunca derruba a request
+  }
+}
+
+// Executa em background (não bloqueia a resposta) quando o runtime suporta.
+export function background(p: Promise<unknown>): void {
+  const safe = p.catch(() => {});
+  try {
+    // @ts-expect-error - EdgeRuntime é global no Supabase Edge
+    if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) {
+      // @ts-expect-error - idem
+      EdgeRuntime.waitUntil(safe);
+    }
+  } catch {
+    // fallback: fire-and-forget (safe já trata rejeições)
+  }
 }

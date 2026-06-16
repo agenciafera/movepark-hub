@@ -238,6 +238,66 @@ export type Database = {
           },
         ]
       }
+      api_request_log: {
+        Row: {
+          api_key_id: string | null
+          company_id: string | null
+          created_at: string
+          id: string
+          ip: string | null
+          latency_ms: number | null
+          method: string | null
+          path: string | null
+          request_id: string | null
+          scope: string | null
+          status: number | null
+          surface: string
+        }
+        Insert: {
+          api_key_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          latency_ms?: number | null
+          method?: string | null
+          path?: string | null
+          request_id?: string | null
+          scope?: string | null
+          status?: number | null
+          surface: string
+        }
+        Update: {
+          api_key_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          latency_ms?: number | null
+          method?: string | null
+          path?: string | null
+          request_id?: string | null
+          scope?: string | null
+          status?: number | null
+          surface?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_request_log_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_key"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_request_log_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_scope: {
         Row: {
           description: string
@@ -2377,6 +2437,7 @@ export type Database = {
       }
       cron_complete_bookings: { Args: never; Returns: number }
       cron_expire_pending_bookings: { Args: never; Returns: number }
+      cron_prune_api_request_log: { Args: never; Returns: number }
       current_company_ids: { Args: never; Returns: string[] }
       current_owner_company_ids: { Args: never; Returns: string[] }
       current_user_role: {
@@ -2519,6 +2580,10 @@ export type Database = {
           p_timezone?: string
         }
         Returns: string
+      }
+      operator_api_usage: {
+        Args: { p_company_id: string; p_limit?: number; p_since?: string }
+        Returns: Json
       }
       operator_create_api_key: {
         Args: {

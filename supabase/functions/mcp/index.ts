@@ -50,6 +50,7 @@ interface PartnerCtx {
 
 // @ts-expect-error - Deno global
 Deno.serve(async (req: Request) => {
+  const started = Date.now();
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
 
   const url = new URL(req.url);
@@ -103,17 +104,21 @@ Deno.serve(async (req: Request) => {
     return new Response(null, { status: 202, headers: CORS });
   }
 
+  let resp: Response;
   try {
     switch (reqMsg.method) {
       case "initialize": {
         const cp = (reqMsg.params as { protocolVersion?: string } | undefined)?.protocolVersion;
         const name = endpoint === "partner" ? "movepark-partner" : "movepark";
-        return json(rpcResult(id, initializeResult(name, cp)));
+        resp = json(rpcResult(id, initializeResult(name, cp)));
+        break;
       }
       case "ping":
-        return json(rpcResult(id, {}));
+        resp = json(rpcResult(id, {}));
+        break;
       case "tools/list":
-        return json(rpcResult(id, { tools: listTools(endpoint, partner?.scopes ?? []) }));
+        resp = json(rpcResult(id, { tools: listTools(endpoint, partner?.scopes ?? []) }));
+        break;
       case "tools/call": {
         const p = (reqMsg.params ?? {}) as { name?: string; arguments?: Record<string, unknown> };
         const toolName = p.name ?? "";
@@ -121,29 +126,101 @@ Deno.serve(async (req: Request) => {
         const tool = findTool(endpoint, toolName);
         // out-of-scope no parceiro = tratado como inexistente (não revela)
         if (!tool || (endpoint === "partner" && tool.scope && !partner!.scopes.includes(tool.scope))) {
-          return json(rpcError(id, JSONRPC.INVALID_PARAMS, `Tool indisponível: ${toolName}`));
+          resp = json(rpcError(id, JSONRPC.INVALID_PARAMS, `Tool indisponível: ${toolName}`));
+          break;
         }
         const miss = missingRequired(tool, args);
         if (miss) {
-          return json(rpcError(id, JSONRPC.INVALID_PARAMS, `Parâmetro obrigatório ausente: ${miss}`));
+          resp = json(rpcError(id, JSONRPC.INVALID_PARAMS, `Parâmetro obrigatório ausente: ${miss}`));
+          break;
         }
         const data =
           endpoint === "public"
             ? await callPublic(toolName, args)
             : await callPartner(admin!, partner!, toolName, args);
-        return json(rpcResult(id, toolTextContent(data)));
+        resp = json(rpcResult(id, toolTextContent(data)));
+        break;
       }
       default:
-        return json(rpcError(id, JSONRPC.METHOD_NOT_FOUND, `Método não suportado: ${reqMsg.method}`));
+        resp = json(rpcError(id, JSONRPC.METHOD_NOT_FOUND, `Método não suportado: ${reqMsg.method}`));
     }
   } catch (e) {
     // erro de execução de tool → result.isError (convenção MCP), não erro de protocolo
-    if (reqMsg.method === "tools/call") {
-      return json(rpcResult(id, toolTextContent({ error: (e as Error).message }, true)));
-    }
-    return json(rpcError(id, JSONRPC.INTERNAL_ERROR, (e as Error).message));
+    resp =
+      reqMsg.method === "tools/call"
+        ? json(rpcResult(id, toolTextContent({ error: (e as Error).message }, true)))
+        : json(rpcError(id, JSONRPC.INTERNAL_ERROR, (e as Error).message));
   }
+
+  // Auditoria (Fase 1.1) — só parceiro autenticado; não bloqueia a resposta.
+  if (endpoint === "partner" && partner && admin) {
+    const toolName =
+      reqMsg.method === "tools/call"
+        ? ((reqMsg.params as { name?: string } | undefined)?.name ?? null)
+        : null;
+    const tool = toolName ? findTool("partner", toolName) : null;
+    background(
+      logRequest(admin, {
+        api_key_id: partner.api_key_id,
+        company_id: partner.company_id,
+        surface: "mcp",
+        method: reqMsg.method,
+        path: toolName ?? reqMsg.method,
+        scope: tool?.scope ?? null,
+        status: resp.status,
+        request_id: req.headers.get("x-request-id") ?? "",
+        ip: clientIp(req),
+        latency_ms: Date.now() - started,
+      }),
+    );
+  }
+  return resp;
 });
+
+// ── Auditoria (Fase 1.1) ─────────────────────────────────────────────────────
+interface ApiLogRow {
+  api_key_id: string;
+  company_id: string;
+  surface: "rest" | "mcp";
+  method: string;
+  path: string;
+  scope: string | null;
+  status: number;
+  request_id: string;
+  ip: string | null;
+  latency_ms: number;
+}
+
+function clientIp(req: Request): string | null {
+  return (
+    req.headers.get("cf-connecting-ip") ??
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    null
+  );
+}
+
+// deno-lint-ignore no-explicit-any
+async function logRequest(admin: any, row: ApiLogRow): Promise<void> {
+  try {
+    await admin.from("api_request_log").insert(row);
+  } catch {
+    // auditoria nunca derruba a request
+  }
+}
+
+function background(p: Promise<unknown>): void {
+  const safe = p.catch(() => {});
+  try {
+    // @ts-expect-error - EdgeRuntime é global no Supabase Edge
+    if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) {
+      // @ts-expect-error - idem
+      EdgeRuntime.waitUntil(safe);
+    }
+  } catch {
+    // fallback: fire-and-forget
+  }
+}
 
 // ── Handlers consumidor (anon) ───────────────────────────────────────────────
 function anonClient() {

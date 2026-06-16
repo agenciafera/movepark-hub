@@ -150,11 +150,14 @@ Nova migration (`AAAAMMDDHHMMSS_public_api_keys.sql`). Tabelas no singular, padr
 
 Índices: `unique(key_prefix)`, `index(company_id) where deleted_at is null`.
 
-### `api_request_log` (uso/auditoria — pode entrar na Fase 1.1)
+### `api_request_log` (uso/auditoria) — ✅ Fase 1.1 (migration `20260625000000`)
 
-`id`, `api_key_id`, `company_id`, `method`, `path`, `status`, `scope_used`, `ip`, `request_id`,
-`latency_ms`, `created_at`. Alimenta métricas de uso por chave e troubleshooting. Retenção/rollup a
-definir (conecta com observabilidade — E4.1).
+`id`, `api_key_id`, `company_id`, `surface` (`rest`/`mcp`), `method`, `path`, `scope`, `status`, `ip`,
+`request_id`, `latency_ms`, `created_at`. O **gateway REST** e o **MCP parceiro** gravam uma linha por
+request **autenticado** (via service_role, em background — não bloqueia a resposta). RLS: operator lê
+só os da própria empresa; sem escrita direta. Leitura agregada/recente pelo operator via RPC
+`operator_api_usage(p_company_id, p_limit, p_since)` (summary + recent). **Retenção 90 dias** via
+pg_cron `prune-api-request-log` (`cron_prune_api_request_log`). pgTAP `api_request_log_rpc.test.sql`.
 
 **RLS / escrita:** `api_key` **não tem escrita direta** por RLS. Toda gestão passa por RPCs
 `SECURITY DEFINER` (§9), espelhando o padrão de `coupon`/`add_on_service`. Leitura pelo operador:
@@ -270,8 +273,9 @@ deduplica por `(api_key_id, idempotency_key)` numa janela curta para evitar rese
 
 **Paginação:** `limit` (default 20, máx 100) + `offset` (ou cursor onde fizer sentido).
 
-**Rate-limit:** por `key_prefix`, na borda (Cloudflare). Default sugerido: 60 req/min (live),
-mais folgado em `test`. `429` com `Retry-After`. Limites finos ⇒ Fase 1.1 / E4.1.
+**Rate-limit:** por `key_prefix`, na borda (Cloudflare Worker + KV `API_RATELIMIT`, janela fixa de
+60s). Default **60 req/min**; `429` com `Retry-After`. Best-effort (não-transacional). Limites por
+plano/parceiro ⇒ E4.1.
 
 **Datas:** ISO-8601 UTC, igual ao resto do sistema.
 

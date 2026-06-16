@@ -18,7 +18,11 @@
   "vars": {
     "SUPABASE_FUNCTIONS_URL": "https://mgaigbezdalbyuqiofcf.supabase.co/functions/v1",
     "SITE_URL": "https://hub.movepark.co"
-  }
+  },
+  // Rate-limit best-effort por prefixo de chave (janela fixa de 60s) no handler /v1/*.
+  "kv_namespaces": [
+    { "binding": "API_RATELIMIT", "id": "667e4a747a054ba68ec01d9fff17956d" }
+  ]
   // SUPABASE_ANON_KEY é secret (não versionar). Rate-limit opcional:
   // adicione um binding KV "API_RATELIMIT" via `kv_namespaces` quando ativar.
 }
