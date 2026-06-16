@@ -24,8 +24,9 @@ const groups: FooterGroup[] = [
   {
     title: "Desenvolvedores",
     links: [
-      { to: "https://api.movepark.co/docs", label: "Documentação da API", external: true },
-      { to: "https://mcp.movepark.co", label: "API para agentes (MCP)", external: true },
+      { to: "/docs", label: "Documentação da API" },
+      { to: "/docs#mcp", label: "API para agentes (MCP)" },
+      { to: "https://hub.movepark.co/openapi.yaml", label: "OpenAPI", external: true },
     ],
   },
   {

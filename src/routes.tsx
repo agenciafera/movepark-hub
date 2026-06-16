@@ -15,6 +15,7 @@ import SearchResultsPage from "@/routes/search";
 import ListingPage from "@/routes/listing";
 import CheckoutPage from "@/routes/checkout";
 import FaqPage from "@/routes/faq";
+import DocsPage from "@/routes/docs";
 import BookingsListPage from "@/routes/bookings-list";
 import BookingDetailPage from "@/routes/bookings-detail";
 import EntrarPage from "@/routes/entrar";
@@ -152,6 +153,7 @@ export const routes: RouteRecord[] = [
           },
           { path: "/checkout/:code", element: <CheckoutPage /> },
           { path: "/faq", element: <FaqPage /> },
+          { path: "/docs", element: <DocsPage /> },
           { path: "/seja-parceiro", element: <SejaParceiroPage /> },
           { path: "/destinos", element: <DestinosPage />, loader: destinosLoader },
           {
