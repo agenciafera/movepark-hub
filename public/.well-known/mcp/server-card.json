@@ -1,28 +1,77 @@
 {
-  "name": "Movepark Hub",
-  "description": "API para consultar estacionamentos, listar tipos de vaga, simular preços e acessar perguntas frequentes da plataforma Movepark.",
-  "url": "https://hub.movepark.co",
+  "name": "Movepark",
+  "description": "MCP do Movepark (consumidor): buscar estacionamentos em aeroportos/destinos, simular preços, ler FAQ e listar empresas e unidades. Dados públicos; sem autenticação.",
+  "url": "https://mcp.movepark.co",
+  "transport": "streamable-http",
   "contact": "contato@movepark.co",
   "tools": [
     {
-      "name": "get_locations",
-      "description": "Lista estacionamentos disponíveis com endereço, coordenadas e comodidades"
-    },
-    {
-      "name": "get_parking_types",
-      "description": "Retorna os tipos de vaga disponíveis em uma localização (coberto, descoberto, valet)"
+      "name": "search_parking",
+      "description": "Busca estacionamentos por destino e período, com preço, distância e disponibilidade.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "dest": { "type": "string", "description": "Código do aeroporto (ex.: GRU) ou cidade" },
+          "from": { "type": "string", "format": "date-time" },
+          "to": { "type": "string", "format": "date-time" },
+          "vehicle": { "type": "string", "enum": ["car", "motorcycle"] },
+          "category": { "type": "array", "items": { "type": "string" } },
+          "max_distance_km": { "type": "number" },
+          "limit": { "type": "integer" }
+        },
+        "required": ["dest", "from", "to"]
+      }
     },
     {
       "name": "simulate_price",
-      "description": "Simula o preço de uma reserva dado o estacionamento, tipo de vaga e período"
+      "description": "Simula o preço de uma reserva por empresa/unidade/tipo de vaga e nº de diárias.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "company": { "type": "string", "description": "slug da empresa" },
+          "location": { "type": "string", "description": "slug da unidade" },
+          "parking_type": { "type": "string", "description": "code do tipo de vaga" },
+          "days": { "type": "integer", "minimum": 1, "default": 1 }
+        },
+        "required": ["company"]
+      }
     },
     {
       "name": "get_faq",
-      "description": "Busca perguntas frequentes globais ou de uma unidade específica"
+      "description": "Perguntas frequentes globais ou de uma unidade específica.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location_id": { "type": "string" },
+          "query": { "type": "string" },
+          "limit": { "type": "integer" }
+        }
+      }
     },
     {
       "name": "list_companies",
-      "description": "Lista as operadoras parceiras cadastradas na plataforma"
+      "description": "Lista as operadoras parceiras (empresas) da plataforma.",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "limit": { "type": "integer" } }
+      }
+    },
+    {
+      "name": "list_locations",
+      "description": "Lista unidades (estacionamentos) públicas.",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "limit": { "type": "integer" } }
+      }
+    },
+    {
+      "name": "get_parking_types",
+      "description": "Tipos de vaga de uma unidade (coberto, descoberto, valet).",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "location_id": { "type": "string" } },
+        "required": ["location_id"]
+      }
     }
   ]
 }

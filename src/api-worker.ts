@@ -1,12 +1,9 @@
-// Cloudflare Worker da Public API — servido em https://api.movepark.co (E0.7).
-// Proxy/borda para a Edge Function `api` do Supabase, escondendo a URL crua do Supabase
-// e injetando o header `apikey` (anon) que o gateway exige. Ver docs/specs/public-api.md.
-//
-// Rotas:
-//   /v1/*          → proxy para ${SUPABASE_FUNCTIONS_URL}/api/v1/*  (cliente só manda Bearer mp_*)
-//   /openapi.yaml  → contrato OpenAPI (proxiado do site)
-//   /docs          → documentação human-friendly (Scalar) apontando para /openapi.yaml
-//   /              → redireciona para /docs
+// Cloudflare Worker da plataforma de borda do Movepark (E0.7). Serve dois domínios:
+//   api.movepark.co  → Public API REST (Edge Function `api`, gateway /v1/* por chave + escopo)
+//   mcp.movepark.co  → Servidor MCP (Edge Function `mcp`): / = consumidor (anon),
+//                      /partner = parceiro (Authorization: Bearer mp_…)
+// Esconde a URL crua do Supabase e injeta o header `apikey` (anon) que o gateway exige.
+// Ver docs/specs/public-api.md e docs/specs/mcp.md.
 
 interface Env {
   SUPABASE_FUNCTIONS_URL: string; // ex.: https://<ref>.supabase.co/functions/v1
@@ -17,7 +14,8 @@ interface Env {
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-api-key, content-type, idempotency-key, x-request-id",
+  "Access-Control-Allow-Headers":
+    "authorization, x-api-key, content-type, idempotency-key, x-request-id, mcp-session-id, mcp-protocol-version",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Max-Age": "86400",
 };
@@ -32,59 +30,86 @@ export default {
       return new Response(null, { headers: CORS });
     }
 
-    if (url.pathname === "/" || url.pathname === "") {
-      return Response.redirect(new URL("/docs", url).toString(), 302);
+    // mcp.movepark.co → servidor MCP
+    if (url.hostname.startsWith("mcp.")) {
+      return handleMcp(request, env, url);
     }
-    if (url.pathname === "/docs") {
-      return new Response(docsHtml(), {
-        headers: { "Content-Type": "text/html; charset=utf-8", ...CORS },
-      });
-    }
-    if (url.pathname === "/openapi.yaml" || url.pathname === "/openapi.json") {
-      const site = env.SITE_URL ?? "https://hub.movepark.co";
-      const res = await fetch(new URL(url.pathname, site).toString());
-      return new Response(res.body, {
-        status: res.status,
-        headers: { "Content-Type": "application/yaml; charset=utf-8", ...CORS },
-      });
-    }
-
-    if (!url.pathname.startsWith("/v1")) {
-      return json({ error: { code: "not_found", message: "Recurso não encontrado." } }, 404);
-    }
-
-    // Rate-limit best-effort por prefixo de chave (se o KV estiver vinculado).
-    const key = bearer(request);
-    if (env.API_RATELIMIT && key) {
-      const limited = await rateLimited(env.API_RATELIMIT, key.slice(0, 16));
-      if (limited) {
-        return json({ error: { code: "rate_limited", message: "Limite de requisições excedido." } }, 429, {
-          "Retry-After": "60",
-        });
-      }
-    }
-
-    // Proxy para a Edge Function `api`. O caminho /v1/* vira /api/v1/* no Supabase.
-    const target = new URL(env.SUPABASE_FUNCTIONS_URL.replace(/\/$/, "") + "/api" + url.pathname + url.search);
-
-    const headers = new Headers(request.headers);
-    headers.set("apikey", env.SUPABASE_ANON_KEY); // exigido pelo gateway do Supabase na borda
-    if (!headers.get("Authorization") && key) headers.set("Authorization", `Bearer ${key}`);
-    headers.set("x-request-id", request.headers.get("x-request-id") ?? crypto.randomUUID());
-    headers.delete("host");
-
-    const upstream = await fetch(target.toString(), {
-      method: request.method,
-      headers,
-      body: request.method === "GET" || request.method === "HEAD" ? undefined : await request.arrayBuffer(),
-    });
-
-    // Repassa a resposta com CORS; nunca expõe a URL do Supabase ao cliente.
-    const respHeaders = new Headers(upstream.headers);
-    for (const [k, v] of Object.entries(CORS)) respHeaders.set(k, v);
-    return new Response(upstream.body, { status: upstream.status, headers: respHeaders });
+    // api.movepark.co (default) → Public API REST
+    return handleApi(request, env, url);
   },
 };
+
+// ── MCP (mcp.movepark.co) ────────────────────────────────────────────────────
+async function handleMcp(request: Request, env: Env, url: URL): Promise<Response> {
+  // "/" → /mcp (consumidor); "/partner" → /mcp/partner
+  const sub = url.pathname === "/" ? "" : url.pathname;
+  const target = env.SUPABASE_FUNCTIONS_URL.replace(/\/$/, "") + "/mcp" + sub + url.search;
+
+  const headers = new Headers(request.headers);
+  headers.set("apikey", env.SUPABASE_ANON_KEY);
+  headers.delete("host");
+
+  const upstream = await fetch(target, {
+    method: request.method,
+    headers,
+    body: request.method === "GET" || request.method === "HEAD" ? undefined : await request.arrayBuffer(),
+  });
+  return withCors(upstream);
+}
+
+// ── Public API REST (api.movepark.co) ────────────────────────────────────────
+async function handleApi(request: Request, env: Env, url: URL): Promise<Response> {
+  if (url.pathname === "/" || url.pathname === "") {
+    return Response.redirect(new URL("/docs", url).toString(), 302);
+  }
+  if (url.pathname === "/docs") {
+    return new Response(docsHtml(), {
+      headers: { "Content-Type": "text/html; charset=utf-8", ...CORS },
+    });
+  }
+  if (url.pathname === "/openapi.yaml" || url.pathname === "/openapi.json") {
+    const site = env.SITE_URL ?? "https://hub.movepark.co";
+    const res = await fetch(new URL(url.pathname, site).toString());
+    return new Response(res.body, {
+      status: res.status,
+      headers: { "Content-Type": "application/yaml; charset=utf-8", ...CORS },
+    });
+  }
+
+  if (!url.pathname.startsWith("/v1")) {
+    return json({ error: { code: "not_found", message: "Recurso não encontrado." } }, 404);
+  }
+
+  const key = bearer(request);
+  if (env.API_RATELIMIT && key) {
+    const limited = await rateLimited(env.API_RATELIMIT, key.slice(0, 16));
+    if (limited) {
+      return json({ error: { code: "rate_limited", message: "Limite de requisições excedido." } }, 429, {
+        "Retry-After": "60",
+      });
+    }
+  }
+
+  const target = new URL(env.SUPABASE_FUNCTIONS_URL.replace(/\/$/, "") + "/api" + url.pathname + url.search);
+  const headers = new Headers(request.headers);
+  headers.set("apikey", env.SUPABASE_ANON_KEY);
+  if (!headers.get("Authorization") && key) headers.set("Authorization", `Bearer ${key}`);
+  headers.set("x-request-id", request.headers.get("x-request-id") ?? crypto.randomUUID());
+  headers.delete("host");
+
+  const upstream = await fetch(target.toString(), {
+    method: request.method,
+    headers,
+    body: request.method === "GET" || request.method === "HEAD" ? undefined : await request.arrayBuffer(),
+  });
+  return withCors(upstream);
+}
+
+function withCors(upstream: Response): Response {
+  const respHeaders = new Headers(upstream.headers);
+  for (const [k, v] of Object.entries(CORS)) respHeaders.set(k, v);
+  return new Response(upstream.body, { status: upstream.status, headers: respHeaders });
+}
 
 function bearer(request: Request): string | null {
   const auth = request.headers.get("Authorization");
@@ -99,7 +124,6 @@ function json(body: unknown, status: number, extra: Record<string, string> = {})
   });
 }
 
-// Janela fixa de 60s por prefixo de chave. Best-effort (não é transacional).
 async function rateLimited(kv: KVNamespace, prefix: string): Promise<boolean> {
   const bucket = `rl:${prefix}`;
   const current = parseInt((await kv.get(bucket)) ?? "0", 10);
@@ -123,7 +147,6 @@ function docsHtml(): string {
 </html>`;
 }
 
-// Tipagem mínima do KV (evita depender de @cloudflare/workers-types no build).
 interface KVNamespace {
   get(key: string): Promise<string | null>;
   put(key: string, value: string, opts?: { expirationTtl?: number }): Promise<void>;

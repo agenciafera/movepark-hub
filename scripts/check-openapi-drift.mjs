@@ -29,3 +29,34 @@ if (missing.length > 0) {
 }
 
 console.log(`✓ OpenAPI em sincronia com o gateway (${new Set(routePaths).size} rotas).`);
+
+// ── MCP: tools.ts (PUBLIC_TOOLS/PARTNER_TOOLS) ↔ server-card.json/partner-card.json ──
+const toolsSrc = readFileSync("supabase/functions/mcp/tools.ts", "utf8");
+const splitIdx = toolsSrc.indexOf("PARTNER_TOOLS");
+const publicSrc = toolsSrc.slice(0, splitIdx);
+const partnerSrc = toolsSrc.slice(splitIdx);
+const toolNames = (s) => [...s.matchAll(/name:\s*"([a-z_]+)"/g)].map((m) => m[1]);
+const cardNames = (path) =>
+  new Set((JSON.parse(readFileSync(path, "utf8")).tools ?? []).map((t) => t.name));
+
+const checks = [
+  { label: "consumidor", tools: toolNames(publicSrc), card: cardNames("public/.well-known/mcp/server-card.json") },
+  { label: "parceiro", tools: toolNames(partnerSrc), card: cardNames("public/.well-known/mcp/partner-card.json") },
+];
+
+let mcpDrift = false;
+for (const { label, tools, card } of checks) {
+  const absent = [...new Set(tools)].filter((t) => !card.has(t));
+  if (absent.length) {
+    mcpDrift = true;
+    console.error(`❌ Tools do MCP (${label}) sem entrada no card:`);
+    for (const t of absent) console.error("   - " + t);
+  }
+}
+if (mcpDrift) {
+  console.error("\nADR-003: documente a tool no server-card/partner-card na mesma entrega.");
+  process.exit(1);
+}
+
+const total = checks.reduce((n, c) => n + new Set(c.tools).size, 0);
+console.log(`✓ MCP em sincronia (tools.ts ↔ cards): ${total} tools.`);

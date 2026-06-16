@@ -1,0 +1,36 @@
+{
+  "name": "Movepark Partner",
+  "description": "MCP do Movepark (parceiro): tools tenant-scoped sobre a Public API v1 — unidades, tipos de vaga, disponibilidade, preço e reservas DA SUA EMPRESA. Autenticação por chave de API (Authorization: Bearer mp_…); cada tool exige o escopo correspondente. As tools visíveis dependem dos escopos da chave.",
+  "url": "https://mcp.movepark.co/partner",
+  "transport": "streamable-http",
+  "contact": "contato@movepark.co",
+  "authentication": {
+    "type": "http-bearer",
+    "scheme": "Bearer mp_live_… / mp_test_…",
+    "note": "Crie e gerencie chaves em /operator/api-keys. Escopos por tool conforme `scope`."
+  },
+  "tools": [
+    { "name": "list_locations", "scope": "locations:read", "description": "Lista as unidades da sua empresa.",
+      "inputSchema": { "type": "object", "properties": { "limit": { "type": "integer" }, "offset": { "type": "integer" } } } },
+    { "name": "get_location", "scope": "locations:read", "description": "Detalhe de uma unidade da sua empresa.",
+      "inputSchema": { "type": "object", "properties": { "location_id": { "type": "string" } }, "required": ["location_id"] } },
+    { "name": "list_parking_types", "scope": "parking-types:read", "description": "Tipos de vaga de uma unidade.",
+      "inputSchema": { "type": "object", "properties": { "location_id": { "type": "string" } }, "required": ["location_id"] } },
+    { "name": "get_availability", "scope": "availability:read", "description": "Disponibilidade de um tipo de vaga num período.",
+      "inputSchema": { "type": "object", "properties": { "location_parking_type_id": { "type": "string" }, "from": { "type": "string", "format": "date-time" }, "to": { "type": "string", "format": "date-time" } }, "required": ["location_parking_type_id", "from", "to"] } },
+    { "name": "simulate_price", "scope": "pricing:read", "description": "Simula o preço de uma reserva de um tipo de vaga da sua empresa.",
+      "inputSchema": { "type": "object", "properties": { "location_parking_type_id": { "type": "string" }, "days": { "type": "integer", "minimum": 1, "default": 1 } }, "required": ["location_parking_type_id"] } },
+    { "name": "list_bookings", "scope": "bookings:read", "description": "Lista reservas da sua empresa.",
+      "inputSchema": { "type": "object", "properties": { "status": { "type": "string" }, "from": { "type": "string", "format": "date-time" }, "to": { "type": "string", "format": "date-time" }, "limit": { "type": "integer" }, "offset": { "type": "integer" } } } },
+    { "name": "get_booking", "scope": "bookings:read", "description": "Detalhe de uma reserva da sua empresa.",
+      "inputSchema": { "type": "object", "properties": { "booking_id": { "type": "string" } }, "required": ["booking_id"] } },
+    { "name": "create_booking", "scope": "bookings:write", "description": "Cria uma reserva atribuída à sua empresa (idempotente por idempotency_key).",
+      "inputSchema": { "type": "object", "properties": { "location_parking_type_id": { "type": "string" }, "check_in_at": { "type": "string", "format": "date-time" }, "check_out_at": { "type": "string", "format": "date-time" }, "customer_name": { "type": "string" }, "customer_email": { "type": "string", "format": "email" }, "customer_phone": { "type": "string" }, "add_on_service_ids": { "type": "array", "items": { "type": "string" } }, "coupon_code": { "type": "string" }, "idempotency_key": { "type": "string" } }, "required": ["location_parking_type_id", "check_in_at", "check_out_at"] } },
+    { "name": "cancel_booking", "scope": "bookings:cancel", "description": "Cancela uma reserva da sua empresa.",
+      "inputSchema": { "type": "object", "properties": { "booking_id": { "type": "string" }, "reason": { "type": "string" } }, "required": ["booking_id"] } },
+    { "name": "check_in_booking", "scope": "bookings:checkin", "description": "Registra check-in (confirmed → checked_in).",
+      "inputSchema": { "type": "object", "properties": { "booking_id": { "type": "string" } }, "required": ["booking_id"] } },
+    { "name": "check_out_booking", "scope": "bookings:checkin", "description": "Registra check-out (checked_in → completed).",
+      "inputSchema": { "type": "object", "properties": { "booking_id": { "type": "string" } }, "required": ["booking_id"] } }
+  ]
+}

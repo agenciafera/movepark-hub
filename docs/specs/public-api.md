@@ -330,9 +330,10 @@ rota servida pelo gateway (`supabase/functions/api/router.ts`) tem path correspo
 5. UI `/operator/api-keys` (criar/rotacionar/revogar/escopos) + testes de componente.
 6. ADR-003 ativado no `CLAUDE.md` (§12).
 
-**Fase 2 — MCP (conecta E4.1):** derivar as **tools do MCP** a partir da mesma superfície da API,
-preencher `mcp/server-card.json` e descrições, e expor via o MCP da Movepark. A API v1 é o substrato;
-o MCP é uma fachada para agentes sobre ela.
+**Fase 2 — MCP (✅ implementada; conecta E4.1):** servidor MCP in-repo (Edge `mcp`, Streamable HTTP)
+com duas superfícies — **consumidor** (`mcp.movepark.co`, anon) e **parceiro** (`/partner`, chave `mp_`
++ escopo) sobre as RPCs `api_*`/`api_key_verify`. Substitui o MCP n8n. Detalhes, catálogo de tools e
+checklist próprio em **[mcp.md](./mcp.md)**.
 
 ---
 

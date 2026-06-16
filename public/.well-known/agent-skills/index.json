@@ -4,9 +4,16 @@
     {
       "name": "movepark-mcp",
       "type": "mcp",
-      "description": "MCP server for Movepark: list parking locations, parking types, simulate prices, get FAQs, and list companies.",
+      "description": "MCP do Movepark (consumidor): buscar estacionamentos, tipos de vaga, simular preços, FAQ e listar empresas/unidades. Endpoint: https://mcp.movepark.co",
       "url": "https://hub.movepark.co/.well-known/mcp/server-card.json",
-      "sha256": "2905f1ef68b8c848e2c8d87cce384e1ce33f0db97909fbb995504231ed83b134"
+      "sha256": "2a56adca2a9f6961955d71fcc2b64a2eac04a5b1c1045d6dee33b187caa4ee80"
+    },
+    {
+      "name": "movepark-partner-mcp",
+      "type": "mcp",
+      "description": "MCP do Movepark (parceiro, autenticado por chave mp_): reservas, disponibilidade e preço da própria empresa. Endpoint: https://mcp.movepark.co/partner",
+      "url": "https://hub.movepark.co/.well-known/mcp/partner-card.json",
+      "sha256": "d29ac227fd9efe219d95805c558ec87aa7c0d9373443b4d9cc4e5ac598ef22b6"
     }
   ]
 }

@@ -12,7 +12,8 @@
     "enabled": true
   },
   "routes": [
-    { "pattern": "api.movepark.co", "custom_domain": true }
+    { "pattern": "api.movepark.co", "custom_domain": true },
+    { "pattern": "mcp.movepark.co", "custom_domain": true }
   ],
   "vars": {
     "SUPABASE_FUNCTIONS_URL": "https://mgaigbezdalbyuqiofcf.supabase.co/functions/v1",

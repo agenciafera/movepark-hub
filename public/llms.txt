@@ -25,5 +25,6 @@ O Movepark é um hub centralizado que conecta viajantes a estacionamentos creden
 
 ## Integrações para agentes
 
-- [MCP Server](https://hub.movepark.co/.well-known/mcp/server-card.json): API acessível por agentes de IA para consultar estacionamentos, tipos de vaga e simular preços
+- [MCP Server (consumidor)](https://mcp.movepark.co): servidor MCP público (Streamable HTTP) para buscar estacionamentos, simular preços, FAQ e listar empresas/unidades — [server-card](https://hub.movepark.co/.well-known/mcp/server-card.json)
+- [MCP Server (parceiro)](https://mcp.movepark.co/partner): servidor MCP autenticado por chave (`mp_`) com tools tenant-scoped — [partner-card](https://hub.movepark.co/.well-known/mcp/partner-card.json)
 - [API Catalog](https://hub.movepark.co/.well-known/api-catalog): catálogo de endpoints públicos
