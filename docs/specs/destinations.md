@@ -100,10 +100,11 @@ Modelo tipo Booking/Airbnb: o **destino é o escopo macro** da busca (escolhido 
 combobox), e a **barra lateral refina dentro** do destino escolhido. O catálogo de destinos vive
 **só no autocomplete** (`DestinationCombobox`), nunca como lista chapada na sidebar.
 
-- **Trocar destino no header** (`src/features/search/ResultsHeader.tsx`): além do H1 "N vagas em
-  <destino>", há um `DestinationCombobox` compacto que reescopa a busca (atualiza o param `dest`)
-  sem voltar pra home. Mostra o destino atual com o **ícone do tipo** (registro central) e abre o
-  catálogo buscável pra trocar.
+- **Editar a busca no topo** — a página `/search` reaproveita o **mesmo `SearchBarPill` da home**
+  (variant `compact`), semeado com a busca atual (`initialDest`/`initialFrom`/`initialTo`/
+  `initialVehicle` vindos da URL; `key` força re-seed quando o escopo muda). Trocar destino/datas/
+  veículo ali re-busca direto (`/search?...`), sem voltar pra home. É a única forma de mudar o
+  destino — não há combobox de destino na sidebar nem na home com props faltando.
 - **Sidebar (`SearchFilters.tsx`)** — só refinamentos dentro do destino: **operadora** (faceta),
   **distância do destino**, **comodidades**, **categoria** (pills). **Não** há filtro de destino na
   sidebar.
@@ -111,8 +112,9 @@ combobox), e a **barra lateral refina dentro** do destino escolhido. O catálogo
   atual, com contagem). Antes listava **todas** as empresas ativas globalmente, então escolher uma
   operadora sem lote no destino zerava a busca; agora só aparece quem tem resultado. A seção só
   renderiza com 2+ operadoras.
-- **Editar datas** ("Editar"/"Escolher datas" no header) volta pra home com os params na URL; o
-  `Hero` semeia o `SearchBarPill` com `dest`/`from`/`to` da URL pra não perder a busca.
+- **`ResultsHeader`** vira só resumo (H1 "N vagas em <destino>" + datas/duração + ordenação) — sem
+  editar busca (quem edita é o `SearchBarPill`). O `Hero` da home também semeia o pill com os params
+  da URL, então qualquer link pra `/?dest=…&from=…&to=…` chega preenchido.
 
 **Facetas (Edge `search`):** cada eixo é agregado considerando os demais filtros, mas **não a si
 mesmo** (`facets.ts` · `aggregate*`/`filterBy*`), pra lista não colapsar ao selecionar. Operadora e

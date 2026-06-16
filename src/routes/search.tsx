@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Inbox } from "lucide-react";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { CategoryPills } from "@/features/search/CategoryPills";
 import { ResultCard } from "@/features/search/ResultCard";
 import { ResultsHeader } from "@/features/search/ResultsHeader";
+import { SearchBarPill } from "@/features/search/SearchBarPill";
 import {
   SearchFiltersSheet,
   SearchFiltersSidebar,
@@ -33,7 +34,6 @@ function toCsv(arr: string[]): string | null {
 
 export default function SearchResultsPage() {
   const [params, setParams] = useSearchParams();
-  const navigate = useNavigate();
   const saved = useSavedListings();
 
   const dest = params.get("dest") ?? undefined;
@@ -109,27 +109,34 @@ export default function SearchResultsPage() {
   const hasDestCoords = !!data?.destination;
   const operatorOptions = data?.facets?.operators ?? [];
 
-  function editSearch() {
-    navigate(`/?${params.toString()}`);
-  }
-
   return (
     <div className="mx-auto w-full max-w-[1280px] px-4 py-6 desktop:px-8">
       <Helmet>
         <title>{searchTitle}</title>
         <meta name="description" content={searchDesc} />
       </Helmet>
+
+      {/* Mesma barra de busca da home, reaproveitada e semeada com a busca atual. Editar
+          destino/datas/veículo acontece aqui (re-busca), sem voltar pra home. O `key` força
+          re-seed quando o escopo da URL muda. */}
+      <SearchBarPill
+        variant="compact"
+        className="mb-6 max-w-none"
+        key={`${dest ?? ""}|${from}|${to}|${vehicle}`}
+        initialDest={dest ?? null}
+        initialFrom={fromDate}
+        initialTo={toDate}
+        initialVehicle={vehicle}
+      />
+
       <ResultsHeader
         data={data}
         isLoading={isLoading}
-        dest={dest ?? null}
-        onDestChange={(code) => patch({ dest: code })}
         from={fromDate}
         to={toDate}
         datesAreEstimate={dates.isEstimate}
         sort={sort}
         onSortChange={(s) => patch({ sort: s })}
-        onEditSearch={editSearch}
       />
 
       <div className="mt-6 flex items-center justify-between gap-3">

@@ -23,6 +23,7 @@ type Props = {
   initialDest?: string | null;
   initialFrom?: Date | null;
   initialTo?: Date | null;
+  initialVehicle?: Vehicle;
 };
 
 function nextWeekendDefaults(): { from: Date; to: Date } {
@@ -40,13 +41,14 @@ export function SearchBarPill({
   initialDest = null,
   initialFrom = null,
   initialTo = null,
+  initialVehicle = "car",
 }: Props) {
   const navigate = useNavigate();
   const defaults = React.useMemo(nextWeekendDefaults, []);
   const [dest, setDest] = React.useState<string | null>(initialDest);
   const [from, setFrom] = React.useState<Date | null>(initialFrom ?? defaults.from);
   const [to, setTo] = React.useState<Date | null>(initialTo ?? defaults.to);
-  const [vehicle, setVehicle] = React.useState<Vehicle>("car");
+  const [vehicle, setVehicle] = React.useState<Vehicle>(initialVehicle);
 
   function submit() {
     const params = new URLSearchParams();
