@@ -82,7 +82,12 @@ export default function DestinoPage() {
   const heroUrl = destination.hero_image_url;
   const ogImage = optimizedImageUrl(heroUrl, { width: 1200, height: 630, resize: "cover" });
   const squareImage = optimizedImageUrl(heroUrl, { width: 1200, height: 1200, resize: "cover" });
-  const schemaImages = heroUrl && ogImage && squareImage ? [ogImage, squareImage] : undefined;
+  // 1ª imagem = original (canônica, full-res, sem /transform); seguida das versões
+  // recortadas 1.91:1 e 1:1. O Google aceita múltiplas proporções e trata a 1ª como
+  // principal — por isso a original vem na frente.
+  const schemaImages = heroUrl
+    ? ([heroUrl, ogImage, squareImage].filter(Boolean) as string[])
+    : undefined;
   const results = search.data?.results ?? [];
   const topResults = topRated(topSearch.data?.results ?? []);
   const faqItems = (faqs.data ?? []).map((f) => ({ question: f.question, answer: f.answer }));
