@@ -100,15 +100,15 @@ Modelo tipo Booking/Airbnb: o **destino é o escopo macro** da busca (escolhido 
 combobox), e a **barra lateral refina dentro** do destino escolhido. O catálogo de destinos vive
 **só no autocomplete** (`DestinationCombobox`), nunca como lista chapada na sidebar.
 
-- **Editar a busca no topo** — a página `/search` reaproveita o **mesmo `SearchBarPill` da home**
-  (variant `compact`), semeado com a busca atual (`initialDest`/`initialFrom`/`initialTo`/
-  `initialVehicle` vindos da URL; `key` força re-seed quando o escopo muda). Trocar destino/datas/
-  veículo ali re-busca direto (`/search?...`), sem voltar pra home. É a única forma de mudar o
-  destino — não há combobox de destino na sidebar nem na home com props faltando. Com
-  `preserveParams`, a re-busca **mantém os filtros já aplicados** (operadora, comodidades,
-  ordenação, categoria, distância) e só sobrescreve o escopo — lógica pura em
-  `SearchBarPill.logic.ts` (`buildSearchParams`), testada. Na home (`preserveParams` off) a busca é
-  do zero.
+- **Busca no header (sticky)** — em páginas de consumer que **não** são a home, o `ConsumerTopbar`
+  renderiza o **mesmo `SearchBarPill`** (variant `compact`) no centro, **persistente no scroll**
+  (header `sticky`). Ele é semeado com o escopo da URL (`initialDest`/`initialFrom`/`initialTo`/
+  `initialVehicle`; `key` força re-seed quando o escopo muda) e usa `preserveParams`, então re-buscar
+  **mantém os filtros já aplicados** (operadora, comodidades, ordenação, categoria, distância) e só
+  sobrescreve o escopo — lógica pura testada em `SearchBarPill.logic.ts` (`buildSearchParams`). Em
+  mobile, o header mostra uma pill compacta que leva pra busca grande na home. Na home, a barra é o
+  hero (`preserveParams` off, busca do zero); não há barra duplicada no corpo da `/search`. É a
+  única forma de trocar destino — não há combobox de destino na sidebar.
 - **Sidebar (`SearchFilters.tsx`)** — só refinamentos dentro do destino: **operadora** (faceta),
   **distância do destino**, **comodidades**, **categoria** (pills). **Não** há filtro de destino na
   sidebar.

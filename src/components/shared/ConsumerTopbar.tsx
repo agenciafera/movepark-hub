@@ -1,6 +1,7 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Search, Heart, User2, LogOut, LayoutDashboard, Calendar, ChevronDown, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SearchBarPill } from "@/features/search/SearchBarPill";
 import {
   Avatar,
   AvatarFallback,
@@ -17,6 +18,12 @@ import { useAuth } from "@/auth/context";
 import { useDestinations } from "@/features/search/api";
 import { Monogram, Wordmark } from "./Brand";
 import type { Destination } from "@/features/search/api";
+
+function parseDate(value: string | null): Date | null {
+  if (!value) return null;
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? null : d;
+}
 
 function DestinoItem({ d }: { d: Destination }) {
   return (
@@ -83,7 +90,16 @@ export function ConsumerTopbar() {
   const { session, effectiveRole, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const isHome = location.pathname === "/";
+
+  // Escopo da busca lido da URL pra semear a barra do header (na /search vem preenchido; em outras
+  // páginas começa do padrão). vehicle pode ser car|motorcycle.
+  const destParam = searchParams.get("dest");
+  const fromParam = searchParams.get("from");
+  const toParam = searchParams.get("to");
+  const vehicleParam =
+    searchParams.get("vehicle") === "motorcycle" ? "motorcycle" : "car";
 
   const initials = (session?.fullName ?? session?.email ?? "?")
     .split(" ")
@@ -104,16 +120,33 @@ export function ConsumerTopbar() {
       <DestinosMenu />
 
       <div className="flex flex-1 justify-center">
-        {/* Pill placeholder — Fase 2 substitui pela SearchBarPill real */}
+        {/* Busca real e persistente no header (sticky). Na home o hero já traz a barra grande. */}
         {!isHome && (
-          <button
-            type="button"
-            onClick={() => navigate("/")}
-            className="flex h-12 items-center gap-3 rounded-full border border-hairline bg-canvas px-4 text-body-sm text-muted shadow-tier transition-shadow hover:shadow-tier tablet:max-w-md tablet:w-full"
-          >
-            <Search className="h-4 w-4" />
-            <span className="truncate">Onde · Quando · Veículo</span>
-          </button>
+          <>
+            {/* Desktop/tablet: a SearchBarPill funcional, semeada com a busca atual e preservando
+                os filtros já aplicados (operadora, comodidades, ordenação…). */}
+            <SearchBarPill
+              variant="compact"
+              className="hidden w-full max-w-3xl tablet:flex"
+              key={`${destParam ?? ""}|${fromParam ?? ""}|${toParam ?? ""}|${vehicleParam}`}
+              initialDest={destParam}
+              initialFrom={parseDate(fromParam)}
+              initialTo={parseDate(toParam)}
+              initialVehicle={vehicleParam}
+              preserveParams
+            />
+            {/* Mobile: pill compacta que leva pra busca grande na home. */}
+            <button
+              type="button"
+              onClick={() => navigate("/")}
+              className="flex h-12 w-full items-center gap-3 rounded-full border border-hairline bg-canvas px-4 text-body-sm text-muted shadow-tier transition-shadow hover:shadow-tier tablet:hidden"
+            >
+              <Search className="h-4 w-4 shrink-0" />
+              <span className="truncate">
+                {destParam ? destParam : "Onde · Quando · Veículo"}
+              </span>
+            </button>
+          </>
         )}
       </div>
 

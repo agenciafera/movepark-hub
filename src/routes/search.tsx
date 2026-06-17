@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { CategoryPills } from "@/features/search/CategoryPills";
 import { ResultCard } from "@/features/search/ResultCard";
 import { ResultsHeader } from "@/features/search/ResultsHeader";
-import { SearchBarPill } from "@/features/search/SearchBarPill";
 import {
   SearchFiltersSheet,
   SearchFiltersSidebar,
@@ -116,20 +115,7 @@ export default function SearchResultsPage() {
         <meta name="description" content={searchDesc} />
       </Helmet>
 
-      {/* Mesma barra de busca da home, reaproveitada e semeada com a busca atual. Editar
-          destino/datas/veículo acontece aqui (re-busca), sem voltar pra home. O `key` força
-          re-seed quando o escopo da URL muda. */}
-      <SearchBarPill
-        variant="compact"
-        className="mb-6 max-w-none"
-        key={`${dest ?? ""}|${from}|${to}|${vehicle}`}
-        initialDest={dest ?? null}
-        initialFrom={fromDate}
-        initialTo={toDate}
-        initialVehicle={vehicle}
-        preserveParams
-      />
-
+      {/* A barra de busca vive no header (ConsumerTopbar), sticky e persistente no scroll. */}
       <ResultsHeader
         data={data}
         isLoading={isLoading}
