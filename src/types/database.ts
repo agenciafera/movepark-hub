@@ -1744,7 +1744,11 @@ export type Database = {
           pix_qr_code: string | null
           pix_qr_code_url: string | null
           provider: string
+          provider_charge_id: string | null
           provider_payment_id: string | null
+          refund_reason: string | null
+          refunded_amount: number | null
+          refunded_at: string | null
           split: Json | null
           status: Database["public"]["Enums"]["payment_status"]
           updated_at: string
@@ -1761,7 +1765,11 @@ export type Database = {
           pix_qr_code?: string | null
           pix_qr_code_url?: string | null
           provider: string
+          provider_charge_id?: string | null
           provider_payment_id?: string | null
+          refund_reason?: string | null
+          refunded_amount?: number | null
+          refunded_at?: string | null
           split?: Json | null
           status?: Database["public"]["Enums"]["payment_status"]
           updated_at?: string
@@ -1778,7 +1786,11 @@ export type Database = {
           pix_qr_code?: string | null
           pix_qr_code_url?: string | null
           provider?: string
+          provider_charge_id?: string | null
           provider_payment_id?: string | null
+          refund_reason?: string | null
+          refunded_amount?: number | null
+          refunded_at?: string | null
           split?: Json | null
           status?: Database["public"]["Enums"]["payment_status"]
           updated_at?: string
@@ -2703,6 +2715,10 @@ export type Database = {
           remaining: number
           sold_out: boolean
         }[]
+      }
+      cancel_booking_with_release: {
+        Args: { p_booking_id: string; p_reason?: string }
+        Returns: Database["public"]["Enums"]["booking_status"]
       }
       check_availability: {
         Args: {

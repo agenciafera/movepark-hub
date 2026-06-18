@@ -220,6 +220,8 @@ onSuccess: () => qc.invalidateQueries({ queryKey: bookingsKeys.all })
 - Catálogo de migrations e specs em `docs/specs/README.md` e `docs/specs/database-schema.md`. Mantenha a tabela de migrations e o status dos specs atualizados ao adicionar.
 - Aplique migrations via Supabase CLI ou MCP (`mcp__claude_ai_Supabase__apply_migration`). Antes de mexer no schema, `list_tables`; ao debugar, comece por `get_logs` / `get_advisors`.
 
+> **Quem roda migration/deploy do Supabase é o Claude — não o usuário.** Ao terminar uma tarefa que mexe em schema ou Edge Functions, **eu** aplico a migration no projeto linkado (`mgaigbezdalbyuqiofcf`) e faço o deploy das Edges, sem deixar como "passo pendente" para o usuário. Migration: `mcp__*_Supabase__apply_migration` (não-interativo) ou `supabase db push` (linkado, **sem** `--project-ref`). Depois: `bun run gen:types` + commit do `database.ts`. Edges: `supabase functions deploy <nome>` (a CLI empacota o `_shared`); webhooks/funções públicas com `--no-verify-jwt`. O deploy do front é separado (Cloudflare Pages via GitHub). Se algum passo for bloqueado, aí sim peço autorização.
+
 ### Edge Functions (`supabase/functions/`)
 
 Deno + imports remotos. Cada função abre com um bloco de comentário documentando rota, payload e comportamento — **mantenha esse cabeçalho**. Funções-chave: `create-booking` (wrapper sobre a SQL `create_booking_atomic`), `search` (preço+distância+amenidades), `get-faq` (auto+location+global), `mock-payment` (pagamento mockado do MVP), `send-whatsapp-otp`.
