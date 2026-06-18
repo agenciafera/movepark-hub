@@ -13,9 +13,11 @@ import { Step2Location } from "@/features/onboarding/steps/Step2Location";
 import { Step3ParkingTypes } from "@/features/onboarding/steps/Step3ParkingTypes";
 import { Step4Pricing } from "@/features/onboarding/steps/Step4Pricing";
 import { Step5AddOns } from "@/features/onboarding/steps/Step5AddOns";
+import { StepPayout } from "@/features/onboarding/steps/StepPayout";
 import { Step6Review } from "@/features/onboarding/steps/Step6Review";
 
-const STEP_LABELS = ["Empresa", "Localização", "Tipos de vaga", "Precificação", "Serviços", "Revisão"];
+const STEP_LABELS = ["Empresa", "Localização", "Tipos de vaga", "Precificação", "Serviços", "Recebimento", "Revisão"];
+const LAST_STEP = STEP_LABELS.length;
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
@@ -41,7 +43,7 @@ export default function OnboardingPage() {
 
   React.useEffect(() => {
     if (data && !initialized) {
-      const resume = Math.min(6, Math.max(1, (data.currentStep ?? 0) + 1));
+      const resume = Math.min(LAST_STEP, Math.max(1, (data.currentStep ?? 0) + 1));
       setCurrent(resume);
       setInitialized(true);
     }
@@ -103,7 +105,7 @@ export default function OnboardingPage() {
 
   // approved | in_progress → wizard
   function goNext() {
-    setCurrent((c) => Math.min(6, c + 1));
+    setCurrent((c) => Math.min(LAST_STEP, c + 1));
   }
   function goBack() {
     setCurrent((c) => Math.max(1, c - 1));
@@ -128,7 +130,8 @@ export default function OnboardingPage() {
         {current === 3 && <Step3ParkingTypes data={data} companyId={companyId} onNext={goNext} onBack={goBack} />}
         {current === 4 && <Step4Pricing data={data} companyId={companyId} onNext={goNext} onBack={goBack} />}
         {current === 5 && <Step5AddOns data={data} companyId={companyId} onNext={goNext} onBack={goBack} />}
-        {current === 6 && <Step6Review data={data} companyId={companyId} onBack={goBack} onSubmitted={onSubmitted} />}
+        {current === 6 && <StepPayout data={data} companyId={companyId} onNext={goNext} onBack={goBack} />}
+        {current === 7 && <Step6Review data={data} companyId={companyId} onBack={goBack} onSubmitted={onSubmitted} />}
       </Centered>
     </>
   );

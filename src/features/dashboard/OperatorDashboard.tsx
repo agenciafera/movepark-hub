@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { useOperatorStats } from "./api";
+import { RecipientKycBanner } from "@/features/payouts/RecipientKycBanner";
 import { useAuth } from "@/auth/context";
 import { useScopedLocationIds } from "@/auth/useScopedLocationIds";
 import { supabase } from "@/lib/supabase";
@@ -42,7 +43,7 @@ function useTodayTimeline(locationIds: string[] | undefined) {
 }
 
 export default function OperatorDashboard() {
-  const { session } = useAuth();
+  const { session, effectiveCompanyIds } = useAuth();
   const { ids: scopedLocationIds } = useScopedLocationIds();
   const stats = useOperatorStats(scopedLocationIds);
   const timeline = useTodayTimeline(scopedLocationIds);
@@ -57,6 +58,8 @@ export default function OperatorDashboard() {
             : "Você ainda não está vinculado a uma empresa."
         }
       />
+
+      <RecipientKycBanner companyId={effectiveCompanyIds[0]} />
 
       <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-4">
         <KpiCard

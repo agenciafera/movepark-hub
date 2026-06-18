@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PhoneField } from "@/components/ui/phone-field";
 import { StateSelect } from "@/components/shared/StateSelect";
+import { cnpjMask } from "@/lib/masks";
 import { useSubmitLead, type LeadResult } from "./leadApi";
 
 type Props = {
@@ -46,7 +47,7 @@ export function LeadForm({ onSuccess }: Props) {
         contact_name: contactName,
         contact_email: contactEmail,
         contact_phone: contactPhone,
-        tax_id: taxId || null,
+        tax_id: taxId.replace(/\D/g, "") || null,
         city: city || null,
         state: uf || null,
         estimated_spots: estimatedSpots ? Number(estimatedSpots) : null,
@@ -107,7 +108,7 @@ export function LeadForm({ onSuccess }: Props) {
         <Input
           id="tax_id"
           value={taxId}
-          onChange={(e) => setTaxId(e.target.value)}
+          onChange={(e) => setTaxId(cnpjMask(e.target.value))}
           placeholder="Opcional neste momento"
         />
       </div>

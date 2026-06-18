@@ -7,6 +7,8 @@ export type UserRole = Enums<"user_role">;
 /** Papel DENTRO de uma empresa (E1.6): dono vs. operacional. */
 export type CompanyRole = Enums<"company_role">;
 export type OnboardingStatus = Enums<"onboarding_status">;
+/** Ciclo da ficha do recebedor no gateway de pagamento (E0.1.1, ADR-004). */
+export type PayoutRecipientStatus = Enums<"payout_recipient_status">;
 
 export type Booking = Tables<"booking">;
 export type Company = Tables<"company">;
@@ -16,6 +18,10 @@ export type Vehicle = Tables<"vehicle">;
 export type Payment = Tables<"payment">;
 export type ParkingType = Tables<"parking_type">;
 export type CompanyOnboarding = Tables<"company_onboarding">;
+/** Recebedor do parceiro no gateway (id externo, status, link de KYC, pendências). */
+export type PayoutRecipient = Tables<"payout_recipient">;
+/** Dados de repasse (banco/KYC) do parceiro — agnóstico ao gateway. */
+export type CompanyPayoutAccount = Tables<"company_payout_account">;
 export type Destination = Tables<"destination">;
 /** Ponto físico de um destino (terminal/píer/plataforma). DAT-05. */
 export type DestinationPoint = Tables<"destination_point">;

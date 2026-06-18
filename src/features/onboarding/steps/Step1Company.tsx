@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { StepShell } from "../StepShell";
+import { cnpjMask } from "@/lib/masks";
+import { isValidCnpj } from "@/lib/documents";
 import { useUpdateCompanyStep, uploadPartnerAsset, type OnboardingData } from "../wizardApi";
 
 type Props = { data: OnboardingData; companyId: string; onNext: () => void };
@@ -12,7 +14,7 @@ export function Step1Company({ data, companyId, onNext }: Props) {
   const save = useUpdateCompanyStep(companyId);
   const [name, setName] = React.useState(data.company.name ?? "");
   const [legalName, setLegalName] = React.useState(data.company.legal_name ?? "");
-  const [taxId, setTaxId] = React.useState(data.company.tax_id ?? "");
+  const [taxId, setTaxId] = React.useState(cnpjMask(data.company.tax_id ?? ""));
   const [logoUrl, setLogoUrl] = React.useState<string | null>(data.company.logo_url ?? null);
   const [uploading, setUploading] = React.useState(false);
 
@@ -33,12 +35,13 @@ export function Step1Company({ data, companyId, onNext }: Props) {
   async function handleNext() {
     if (!name.trim()) return toast.error("Informe o nome da empresa.");
     if (!taxId.trim()) return toast.error("Informe o CNPJ.");
+    if (!isValidCnpj(taxId)) return toast.error("CNPJ inválido.");
     try {
       await save.mutateAsync({
         p_company_id: companyId,
         p_name: name,
         p_legal_name: legalName || null,
-        p_tax_id: taxId,
+        p_tax_id: taxId.replace(/\D/g, ""),
         p_logo_url: logoUrl,
       });
       onNext();
@@ -83,7 +86,13 @@ export function Step1Company({ data, companyId, onNext }: Props) {
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="tax">CNPJ *</Label>
-          <Input id="tax" value={taxId} onChange={(e) => setTaxId(e.target.value)} required />
+          <Input
+            id="tax"
+            value={taxId}
+            onChange={(e) => setTaxId(cnpjMask(e.target.value))}
+            placeholder="00.000.000/0000-00"
+            required
+          />
         </div>
       </div>
     </StepShell>

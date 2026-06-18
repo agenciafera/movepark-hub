@@ -623,6 +623,7 @@ export type Database = {
           onboarding_status: Database["public"]["Enums"]["onboarding_status"]
           slug: string
           status: Database["public"]["Enums"]["entity_status"]
+          take_rate_bps: number
           tax_id: string | null
           updated_at: string
         }
@@ -636,6 +637,7 @@ export type Database = {
           onboarding_status?: Database["public"]["Enums"]["onboarding_status"]
           slug: string
           status?: Database["public"]["Enums"]["entity_status"]
+          take_rate_bps?: number
           tax_id?: string | null
           updated_at?: string
         }
@@ -649,6 +651,7 @@ export type Database = {
           onboarding_status?: Database["public"]["Enums"]["onboarding_status"]
           slug?: string
           status?: Database["public"]["Enums"]["entity_status"]
+          take_rate_bps?: number
           tax_id?: string | null
           updated_at?: string
         }
@@ -787,6 +790,71 @@ export type Database = {
             columns: ["parking_type_id"]
             isOneToOne: false
             referencedRelation: "parking_type"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_payout_account: {
+        Row: {
+          account_check_digit: string | null
+          account_number: string | null
+          account_type: string | null
+          bank_code: string | null
+          branch_check_digit: string | null
+          branch_number: string | null
+          company_id: string
+          created_at: string
+          deleted_at: string | null
+          document: string | null
+          document_type: string | null
+          holder_document: string | null
+          holder_name: string | null
+          kyc_details: Json
+          legal_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_check_digit?: string | null
+          account_number?: string | null
+          account_type?: string | null
+          bank_code?: string | null
+          branch_check_digit?: string | null
+          branch_number?: string | null
+          company_id: string
+          created_at?: string
+          deleted_at?: string | null
+          document?: string | null
+          document_type?: string | null
+          holder_document?: string | null
+          holder_name?: string | null
+          kyc_details?: Json
+          legal_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_check_digit?: string | null
+          account_number?: string | null
+          account_type?: string | null
+          bank_code?: string | null
+          branch_check_digit?: string | null
+          branch_number?: string | null
+          company_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          document?: string | null
+          document_type?: string | null
+          holder_document?: string | null
+          holder_name?: string | null
+          kyc_details?: Json
+          legal_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_payout_account_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "company"
             referencedColumns: ["id"]
           },
         ]
@@ -1763,6 +1831,94 @@ export type Database = {
           },
         ]
       }
+      payout_recipient: {
+        Row: {
+          company_id: string
+          created_at: string
+          deleted_at: string | null
+          external_recipient_id: string | null
+          id: string
+          kyc_url: string | null
+          last_provider_status: string | null
+          provider: string
+          requirements: Json
+          status: Database["public"]["Enums"]["payout_recipient_status"]
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          deleted_at?: string | null
+          external_recipient_id?: string | null
+          id?: string
+          kyc_url?: string | null
+          last_provider_status?: string | null
+          provider?: string
+          requirements?: Json
+          status?: Database["public"]["Enums"]["payout_recipient_status"]
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          external_recipient_id?: string | null
+          id?: string
+          kyc_url?: string | null
+          last_provider_status?: string | null
+          provider?: string
+          requirements?: Json
+          status?: Database["public"]["Enums"]["payout_recipient_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_recipient_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payout_recipient_event: {
+        Row: {
+          created_at: string
+          http_status: number | null
+          id: string
+          kind: string
+          payout_recipient_id: string
+          request: Json | null
+          response: Json | null
+        }
+        Insert: {
+          created_at?: string
+          http_status?: number | null
+          id?: string
+          kind: string
+          payout_recipient_id: string
+          request?: Json | null
+          response?: Json | null
+        }
+        Update: {
+          created_at?: string
+          http_status?: number | null
+          id?: string
+          kind?: string
+          payout_recipient_id?: string
+          request?: Json | null
+          response?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_recipient_event_payout_recipient_id_fkey"
+            columns: ["payout_recipient_id"]
+            isOneToOne: false
+            referencedRelation: "payout_recipient"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pricing_hourly_bracket: {
         Row: {
           from_minutes: number
@@ -2724,6 +2880,10 @@ export type Database = {
         }
         Returns: string
       }
+      onboarding_upsert_payout_account: {
+        Args: { p_account: Json; p_company_id: string }
+        Returns: undefined
+      }
       operator_api_usage: {
         Args: { p_company_id: string; p_limit?: number; p_since?: string }
         Returns: Json
@@ -2932,6 +3092,13 @@ export type Database = {
         | "refunded"
         | "failed"
         | "cancelled"
+      payout_recipient_status:
+        | "draft"
+        | "pending"
+        | "action_required"
+        | "active"
+        | "refused"
+        | "suspended"
       user_role: "hub_admin" | "company_operator" | "customer"
     }
     CompositeTypes: {
@@ -3091,6 +3258,14 @@ export const Constants = {
         "refunded",
         "failed",
         "cancelled",
+      ],
+      payout_recipient_status: [
+        "draft",
+        "pending",
+        "action_required",
+        "active",
+        "refused",
+        "suspended",
       ],
       user_role: ["hub_admin", "company_operator", "customer"],
     },

@@ -73,6 +73,19 @@ Regras **fixas** do projeto, não sugestões. Se algo conflitar com elas, **siga
   Implementado em `supabase/migrations/20260619000000_faq_destination_scope.sql`; ver
   [`docs/specs/destinations.md`](docs/specs/destinations.md).
 
+- **ADR-004 · Gateway = Pagar.me (recebedores), atrás de uma camada de abstração.** O gateway de
+  pagamento é o **Pagar.me**, com split por **Recebedores** geridos na conta da Movepark — o parceiro
+  **não cria conta** no gateway nem é abordado por ele (**fica invisível**). **PIX + cartão,
+  PIX-first.** O KYC do recebedor é coletado na **UI da Movepark** (E1.3), **nunca** redirecionando
+  pro Pagar.me. **Camada de abstração obrigatória:** o domínio fala apenas pela interface
+  `PaymentGateway` (`supabase/functions/_shared/payments`, `getGateway(provider)`); o Pagar.me existe
+  só no adapter — trocar de gateway = novo adapter, sem tocar no domínio. O **estado da ficha para
+  receber** (`payout_recipient.status`) é **separado** do `onboarding_status` de catálogo; `take_rate`
+  (comissão da Movepark) é por **empresa** (`company.take_rate_bps`). Dados de banco/KYC e
+  `recebedor_id` ficam **no banco, nunca no front**. Implementado em
+  `supabase/migrations/20260627000000_payout_recipients.sql` + Edge `sync-recipient`; ver
+  [`docs/specs/payment-split.md`](docs/specs/payment-split.md).
+
 ## Comandos
 
 Sempre via **bun**:

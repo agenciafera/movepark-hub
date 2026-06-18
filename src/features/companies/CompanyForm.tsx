@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCreateCompany, useUpdateCompany } from "./api";
+import { cnpjMask } from "@/lib/masks";
 import type { Company, EntityStatus } from "@/types/domain";
 
 function slugify(name: string) {
@@ -50,7 +51,7 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
       setName(company?.name ?? "");
       setSlug(company?.slug ?? "");
       setLegalName(company?.legal_name ?? "");
-      setTaxId(company?.tax_id ?? "");
+      setTaxId(cnpjMask(company?.tax_id ?? ""));
       setStatus(company?.status ?? "active");
     }
   }, [open, company]);
@@ -61,7 +62,7 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
       name,
       slug: slug || slugify(name),
       legal_name: legalName || null,
-      tax_id: taxId || null,
+      tax_id: taxId.replace(/\D/g, "") || null,
       status,
     };
     try {
@@ -114,7 +115,12 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="tax">CNPJ</Label>
-            <Input id="tax" value={taxId} onChange={(e) => setTaxId(e.target.value)} />
+            <Input
+              id="tax"
+              value={taxId}
+              onChange={(e) => setTaxId(cnpjMask(e.target.value))}
+              placeholder="00.000.000/0000-00"
+            />
           </div>
           <div className="flex flex-col gap-1.5">
             <Label>Status</Label>

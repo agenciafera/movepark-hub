@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { usePartnerAction } from "./managerApi";
 import { onboardingStatusLabel, onboardingStatusTone } from "./status";
+import { RecipientPanel } from "@/features/payouts/RecipientPanel";
 import type { PartnerApplication } from "@/types/domain";
 
 type Props = {
@@ -88,6 +89,13 @@ export function ApplicationDrawer({ application, open, onOpenChange, onReject }:
               <span className="text-caption text-muted-steel">Motivo da recusa</span>
               <p className="text-body-sm text-ink">{application.rejection_reason}</p>
             </div>
+          )}
+
+          {(status === "approved" || status === "in_progress" || status === "active") && (
+            <RecipientPanel
+              companyId={application.company_id}
+              companyName={application.company?.name}
+            />
           )}
 
           <div className="flex flex-wrap gap-2 border-t border-hairline pt-4">

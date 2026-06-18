@@ -184,6 +184,7 @@ export const useUpsertLocation = (cid?: string) => useRpc("onboarding_upsert_loc
 export const useSetParkingTypes = (cid?: string) => useRpc("onboarding_set_parking_types", cid);
 export const useSetPricing = (cid?: string) => useRpc("onboarding_set_pricing", cid);
 export const useSetAddons = (cid?: string) => useRpc("onboarding_set_addons", cid);
+export const useUpsertPayoutAccount = (cid?: string) => useRpc("onboarding_upsert_payout_account", cid);
 export const useSubmitOnboarding = (cid?: string) => useRpc("onboarding_submit", cid);
 
 // ── Upload de assets públicos (logo/fotos) — bucket `assets-public` (OPS-05) ──
