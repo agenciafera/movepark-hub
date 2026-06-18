@@ -142,6 +142,15 @@ Deno.serve(async (req: Request) => {
   const email = authUser?.user?.email ?? null;
   if (!email) return jsonResponse({ error: "Cliente sem e-mail para a cobrança." }, 422);
 
+  // PIX no Pagar.me exige telefone do cliente.
+  const phone = parseBrPhone(profile?.phone);
+  if (!phone) {
+    return jsonResponse(
+      { error: "Cliente sem telefone (com DDD) para a cobrança PIX. Atualize o cadastro." },
+      422,
+    );
+  }
+
   // 6. Cobrança no gateway
   let gateway;
   try {
@@ -159,7 +168,7 @@ Deno.serve(async (req: Request) => {
       email,
       document: profile?.tax_id ?? null,
       type: "individual",
-      phone: parseBrPhone(profile?.phone),
+      phone,
     },
     items: buildPixItems(booking.code, totalCents),
     split,

@@ -56,9 +56,10 @@ active ───────────────→ suspended            (bl
   `RecipientResult` (`externalId`/`status`/`rawStatus`/`kycUrl`/`requirements`/`raw`/`httpStatus`),
   `RecipientStatus` (espelha o enum SQL), `GatewayConfigError`. Cobranças (`createCharge`/`refund`)
   entram em E0.1.2/.3 — a interface reserva o lugar.
-- **`pagarme.ts`** — `PagarmeGateway` + helpers puros testáveis: `pagarmeBaseUrl` (sandbox
-  `sdx-api` por prefixo `sk_test_`, senão produção `api`), `pagarmeAuthHeader` (Basic
-  `base64(secret:)`), `mapRecipientStatus`, `normalizeRequirements`, `extractKycUrl`,
+- **`pagarme.ts`** — `PagarmeGateway` + helpers puros testáveis: `pagarmeBaseUrl` (host ÚNICO da
+  Core v5 `api.pagar.me`; o ambiente teste/produção é definido pela **chave** `sk_test_`/`sk_live_`,
+  não por host — `sdx-api` é da skill de Checkout e **não** atende a Core v5), `pagarmeAuthHeader`
+  (Basic `base64(secret:)`), `mapRecipientStatus`, `normalizeRequirements`, `extractKycUrl`,
   `buildCreateRecipientBody`, `buildRecipientResult`.
 - **`mock.ts`** — `MockGateway` (aprova na hora; paridade com `payment.provider='mock'`).
 - **`index.ts`** — `getGateway(provider)`: **único ponto de dispatch** por provider.

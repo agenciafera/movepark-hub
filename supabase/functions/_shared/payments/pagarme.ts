@@ -20,12 +20,13 @@ import type {
 } from "./types.ts";
 import { GatewayConfigError } from "./types.ts";
 
-const SANDBOX_BASE = "https://sdx-api.pagar.me/core/v5";
-const LIVE_BASE = "https://api.pagar.me/core/v5";
+// Core API v5: host ÚNICO. O ambiente (teste vs produção) é definido pela CHAVE
+// (sk_test_ vs sk_live_), não por host separado — `sdx-api` não atende a Core v5.
+const CORE_BASE = "https://api.pagar.me/core/v5";
 
-/** Base URL pelo prefixo da chave — segrega staging (`sk_test_`) de produção. */
-export function pagarmeBaseUrl(secretKey: string): string {
-  return secretKey.startsWith("sk_test_") ? SANDBOX_BASE : LIVE_BASE;
+/** Base URL da Core API v5 (mesma para teste e produção; a chave define o ambiente). */
+export function pagarmeBaseUrl(_secretKey: string): string {
+  return CORE_BASE;
 }
 
 /** Basic auth do Pagar.me: secret key como usuário, senha vazia. */

@@ -14,10 +14,9 @@ import {
 } from "./pagarme.ts";
 import type { PixChargeInput, RecipientInput } from "./types.ts";
 
-Deno.test("pagarmeBaseUrl: sandbox para sk_test_, produção caso contrário", () => {
-  assertEquals(pagarmeBaseUrl("sk_test_abc"), "https://sdx-api.pagar.me/core/v5");
+Deno.test("pagarmeBaseUrl: host único da Core v5 (a chave define o ambiente)", () => {
+  assertEquals(pagarmeBaseUrl("sk_test_abc"), "https://api.pagar.me/core/v5");
   assertEquals(pagarmeBaseUrl("sk_live_abc"), "https://api.pagar.me/core/v5");
-  assertEquals(pagarmeBaseUrl("qualquer"), "https://api.pagar.me/core/v5");
 });
 
 Deno.test("pagarmeAuthHeader: Basic base64(secret:)", () => {
