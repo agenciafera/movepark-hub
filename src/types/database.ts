@@ -1742,6 +1742,7 @@ export type Database = {
           currency: string
           expires_at: string | null
           id: string
+          installments: number | null
           method: string | null
           paid_at: string | null
           pix_qr_code: string | null
@@ -1763,6 +1764,7 @@ export type Database = {
           currency?: string
           expires_at?: string | null
           id?: string
+          installments?: number | null
           method?: string | null
           paid_at?: string | null
           pix_qr_code?: string | null
@@ -1784,6 +1786,7 @@ export type Database = {
           currency?: string
           expires_at?: string | null
           id?: string
+          installments?: number | null
           method?: string | null
           paid_at?: string | null
           pix_qr_code?: string | null
