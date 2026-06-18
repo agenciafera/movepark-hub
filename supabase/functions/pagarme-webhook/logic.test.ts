@@ -1,5 +1,11 @@
 import { assertEquals } from "jsr:@std/assert";
-import { parseWebhookEvent, timingSafeEqual, verifyBasicAuth } from "./logic.ts";
+import {
+  parseTransferEvent,
+  parseWebhookEvent,
+  timingSafeEqual,
+  transferStatusToWithdrawalStatus,
+  verifyBasicAuth,
+} from "./logic.ts";
 
 Deno.test("verifyBasicAuth: sem credencial configurada → aceita só fora de produção", () => {
   assertEquals(verifyBasicAuth(null, undefined), true); // required=false (default/staging)
@@ -46,4 +52,38 @@ Deno.test("parseWebhookEvent: charge.paid → orderId = data.order_id", () => {
     data: { id: "ch_1", order_id: "or_9", status: "paid" },
   });
   assertEquals(ev.orderId, "or_9");
+});
+
+Deno.test("parseTransferEvent: extrai transfer/recipient/amount/fee/status", () => {
+  const tr = parseTransferEvent({
+    id: "hook_t1",
+    type: "transfer.paid",
+    data: { id: "tr_1", recipient_id: "rp_a", amount: 8500, fee: 367, status: "paid" },
+  });
+  assertEquals(tr.type, "transfer.paid");
+  assertEquals(tr.transferId, "tr_1");
+  assertEquals(tr.recipientId, "rp_a");
+  assertEquals(tr.amountCents, 8500);
+  assertEquals(tr.feeCents, 367);
+  assertEquals(tr.rawStatus, "paid");
+});
+
+Deno.test("parseTransferEvent: recipient aninhado e payload malformado", () => {
+  assertEquals(
+    parseTransferEvent({ type: "transfer.created", data: { id: "tr_2", recipient: { id: "rp_b" } } }).recipientId,
+    "rp_b",
+  );
+  const empty = parseTransferEvent(null);
+  assertEquals(empty.transferId, null);
+  assertEquals(empty.recipientId, null);
+  assertEquals(empty.amountCents, null);
+});
+
+Deno.test("transferStatusToWithdrawalStatus: mapeia os status crus", () => {
+  assertEquals(transferStatusToWithdrawalStatus("paid"), "paid");
+  assertEquals(transferStatusToWithdrawalStatus("transferred"), "paid");
+  assertEquals(transferStatusToWithdrawalStatus("failed"), "failed");
+  assertEquals(transferStatusToWithdrawalStatus("processing"), "processing");
+  assertEquals(transferStatusToWithdrawalStatus("created"), "created");
+  assertEquals(transferStatusToWithdrawalStatus(null), "created");
 });

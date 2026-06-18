@@ -278,6 +278,23 @@ Deno.test("buildRefundResult: body vazio/erro → campos nulos", () => {
   assertEquals(r.httpStatus, 422);
 });
 
+Deno.test("buildCreateRecipientBody: emite transfer_settings só quando configurado", () => {
+  const base: RecipientInput = {
+    externalCode: "company-1", legalName: "X", document: "11222333000181", documentType: "cnpj",
+    email: null,
+    bank: { code: "341", branchNumber: "1", branchCheckDigit: "1", accountNumber: "1", accountCheckDigit: "1", type: "checking" },
+    holderName: "X", holderDocument: "11222333000181",
+  };
+  const without = buildCreateRecipientBody(base) as Record<string, any>;
+  assertEquals(without.transfer_settings, undefined);
+
+  const withT = buildCreateRecipientBody({
+    ...base,
+    transferSettings: { enabled: true, interval: "Daily", day: 0 },
+  }) as Record<string, any>;
+  assertEquals(withT.transfer_settings, { transfer_enabled: true, transfer_interval: "Daily", transfer_day: 0 });
+});
+
 Deno.test("buildRecipientResult: kyc/pendências em status pending → action_required", () => {
   const r = buildRecipientResult(200, {
     id: "rp_1",

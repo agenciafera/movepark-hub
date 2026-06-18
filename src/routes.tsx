@@ -47,6 +47,7 @@ import ManagerLocations from "@/routes/manager/locations";
 import ManagerUsers from "@/routes/manager/users";
 import ManagerFinanceBilling from "@/routes/manager/finance-billing";
 import ManagerFinanceCommissions from "@/routes/manager/finance-commissions";
+import ManagerFinancePayouts from "@/routes/manager/finance-payouts";
 import ManagerSettings from "@/routes/manager/settings";
 import ManagerFaq from "@/routes/manager/faq";
 import ManagerFaqCategorias from "@/routes/manager/faq-categorias";
@@ -228,6 +229,7 @@ export const routes: RouteRecord[] = [
               { path: "users", element: <ManagerUsers /> },
               { path: "finance/billing", element: <ManagerFinanceBilling /> },
               { path: "finance/commissions", element: <ManagerFinanceCommissions /> },
+              { path: "finance/payouts", element: <ManagerFinancePayouts /> },
               { path: "reviews", element: <ManagerReviews /> },
               { path: "faq", element: <ManagerFaq /> },
               { path: "faq/categorias", element: <ManagerFaqCategorias /> },

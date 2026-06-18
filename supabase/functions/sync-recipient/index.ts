@@ -190,6 +190,23 @@ Deno.serve(async (req: Request) => {
     account as PayoutAccountRow,
     contactEmail,
   );
+
+  // Cadência de saque agregada (E0.3.3) — diluir a taxa: transferir agregado, não por transação.
+  const { data: transferCfg } = await admin
+    .from("app_setting")
+    .select("key, value")
+    .in("key", ["payout_transfer_enabled", "payout_transfer_interval", "payout_transfer_day"]);
+  const cfg = Object.fromEntries((transferCfg ?? []).map((s) => [s.key, s.value]));
+  if (cfg.payout_transfer_interval) {
+    const interval = cfg.payout_transfer_interval.toLowerCase();
+    recipientInput.transferSettings = {
+      enabled: cfg.payout_transfer_enabled !== "false",
+      // Pagar.me espera Capitalizado (Daily/Weekly/Monthly).
+      interval: interval.charAt(0).toUpperCase() + interval.slice(1),
+      day: Number(cfg.payout_transfer_day ?? 0) || 0,
+    };
+  }
+
   const result = await gateway.createRecipient(recipientInput);
 
   await admin

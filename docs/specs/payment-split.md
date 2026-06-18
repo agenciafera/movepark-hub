@@ -236,6 +236,26 @@ installment_policy }` — o `app_setting` é bloqueado por RLS pro consumidor. *
 checkout grava `payment_method` (provider=pagarme, `card_id`, brand/last4 — nunca PAN). Coluna nova:
 `payment.installments` (migration `20260702000000`).
 
+### Reconciliação do split + extrato de repasses (E0.3.3)
+
+**Reconciliação INTERNA** (nossos registros, confirmada pelos webhooks — sem Balance API). A RPC
+**`payout_statement(p_from, p_to, p_company_id?, p_include_lines?)`** (SECURITY DEFINER; hub_admin → todas,
+operator → só as suas, senão `42501`) deriva o repasse do snapshot `payment.split`: o **parceiro** é a perna
+`liable=true`, a **Movepark** `liable=false` (robusto, não depende do `app_setting`). Por empresa/período
+(`coalesce(paid_at, refunded_at)`): `gross_partner` (paid+refunded), `refunded_partner`, `net_partner`
+(= só paid), `movepark_commission`. **`payout_balance(company)`** = líquido − saques pagos. Exclui
+`provider='mock'`. Tudo em **centavos** (o front divide por 100). Surface: hooks `usePayoutStatement`/
+`usePayoutBalance`/`usePayoutWithdrawals` + view **Manager → Repasses** (`finance/payouts`); o painel do
+parceiro + NFs é a E1.5.2.
+
+**Saques reais:** tabela **`payout_withdrawal`** (RLS: operator lê o seu, escrita só service_role)
+alimentada pelos eventos **`transfer.*`** do Pagar.me no `pagarme-webhook` (upsert idempotente por
+`(provider, external_transfer_id)`; casa empresa por `external_recipient_id`). **Diluir a taxa** (R$3,67,
+`app_setting.payout_withdrawal_fee_cents`): `transfer_settings` (cadência agregada) no recebedor,
+configurável via `app_setting` e aplicado no `sync-recipient`. **Correção:** o webhook deixou de zerar
+`paid_at` em estorno (preserva a data do pagamento para a reconciliação por período). Migration
+`20260703000000`.
+
 ## Fora de escopo (próximas subtarefas)
 
 3DS com challenge/redirect (assume cartão sem challenge nesta fase), **estorno parcial**

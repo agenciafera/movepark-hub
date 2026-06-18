@@ -14,7 +14,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { chargeStatusToPaymentStatus } from "../_shared/payments/index.ts";
 import { mapChargeStatus } from "../_shared/payments/pagarme.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
-import { parseWebhookEvent, verifyBasicAuth } from "./logic.ts";
+import {
+  parseTransferEvent,
+  parseWebhookEvent,
+  transferStatusToWithdrawalStatus,
+  verifyBasicAuth,
+} from "./logic.ts";
 
 /** Em produção (chave sk_live_) o webhook exige Basic auth; em staging (sk_test_) é opcional. */
 function isProduction(): boolean {
@@ -75,6 +80,56 @@ Deno.serve(async (req: Request) => {
     return json({ error: dupErr.message }, 500);
   }
 
+  // Evento de transferência (saque do recebedor → banco do parceiro): registra em
+  // payout_withdrawal (E0.3.3). Idempotente por (provider, external_transfer_id).
+  if (ev.type.startsWith("transfer.")) {
+    const tr = parseTransferEvent(body);
+    if (!tr.transferId || !tr.recipientId) return json({ ok: true, matched: false });
+
+    const { data: rec } = await admin
+      .from("payout_recipient")
+      .select("company_id")
+      .eq("provider", "pagarme")
+      .eq("external_recipient_id", tr.recipientId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (!rec) {
+      console.warn("[pagarme-webhook] transfer sem recebedor casado:", tr.recipientId);
+      return json({ ok: true, matched: false });
+    }
+
+    const wStatus = transferStatusToWithdrawalStatus(tr.rawStatus ?? ev.type.split(".")[1]);
+    let feeCents = tr.feeCents;
+    if (feeCents == null) {
+      const { data: feeSetting } = await admin
+        .from("app_setting")
+        .select("value")
+        .eq("key", "payout_withdrawal_fee_cents")
+        .maybeSingle();
+      feeCents = Number(feeSetting?.value ?? 0) || 0;
+    }
+
+    const nowIso = new Date().toISOString();
+    const row: Record<string, unknown> = {
+      company_id: rec.company_id,
+      provider: "pagarme",
+      external_transfer_id: tr.transferId,
+      external_recipient_id: tr.recipientId,
+      amount_cents: tr.amountCents ?? 0,
+      fee_cents: feeCents,
+      status: wStatus,
+      raw: body,
+    };
+    if (wStatus === "created") row.requested_at = nowIso;
+    if (wStatus === "paid") row.paid_at = nowIso;
+
+    const { error: wErr } = await admin
+      .from("payout_withdrawal")
+      .upsert(row, { onConflict: "provider,external_transfer_id" });
+    if (wErr) return json({ error: wErr.message }, 500);
+    return json({ ok: true, withdrawal: wStatus });
+  }
+
   // Localiza o payment pela order; fallback pelo booking.
   let payment: { id: string; booking_id: string } | null = null;
   if (ev.orderId) {
@@ -102,13 +157,11 @@ Deno.serve(async (req: Request) => {
   const status = mapChargeStatus(ev.rawStatus ?? ev.type.split(".")[1]);
   const paymentStatus = chargeStatusToPaymentStatus(status);
 
-  await admin
-    .from("payment")
-    .update({
-      status: paymentStatus,
-      paid_at: status === "paid" ? new Date().toISOString() : null,
-    })
-    .eq("id", payment.id);
+  // Preserva paid_at: um pagamento pago e depois estornado mantém a data do pagamento
+  // (necessário para a reconciliação por período — E0.3.3).
+  const paymentPatch: Record<string, unknown> = { status: paymentStatus };
+  if (status === "paid") paymentPatch.paid_at = new Date().toISOString();
+  await admin.from("payment").update(paymentPatch).eq("id", payment.id);
 
   // Pagamento aprovado → confirma a reserva (só se ainda pendente) e emite o voucher.
   if (status === "paid") {

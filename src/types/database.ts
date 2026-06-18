@@ -1973,6 +1973,65 @@ export type Database = {
           },
         ]
       }
+      payout_withdrawal: {
+        Row: {
+          amount_cents: number
+          company_id: string
+          created_at: string
+          deleted_at: string | null
+          external_recipient_id: string | null
+          external_transfer_id: string
+          fee_cents: number
+          id: string
+          paid_at: string | null
+          provider: string
+          raw: Json | null
+          requested_at: string | null
+          status: Database["public"]["Enums"]["payout_withdrawal_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          company_id: string
+          created_at?: string
+          deleted_at?: string | null
+          external_recipient_id?: string | null
+          external_transfer_id: string
+          fee_cents?: number
+          id?: string
+          paid_at?: string | null
+          provider?: string
+          raw?: Json | null
+          requested_at?: string | null
+          status?: Database["public"]["Enums"]["payout_withdrawal_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          company_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          external_recipient_id?: string | null
+          external_transfer_id?: string
+          fee_cents?: number
+          id?: string
+          paid_at?: string | null
+          provider?: string
+          raw?: Json | null
+          requested_at?: string | null
+          status?: Database["public"]["Enums"]["payout_withdrawal_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_withdrawal_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pricing_hourly_bracket: {
         Row: {
           from_minutes: number
@@ -3064,6 +3123,19 @@ export type Database = {
         }
         Returns: string
       }
+      payout_balance: {
+        Args: { p_company_id: string; p_provider?: string }
+        Returns: Json
+      }
+      payout_statement: {
+        Args: {
+          p_company_id?: string
+          p_from: string
+          p_include_lines?: boolean
+          p_to: string
+        }
+        Returns: Json
+      }
       release_booking_capacity: {
         Args: { p_booking_id: string }
         Returns: undefined
@@ -3157,6 +3229,12 @@ export type Database = {
         | "active"
         | "refused"
         | "suspended"
+      payout_withdrawal_status:
+        | "created"
+        | "processing"
+        | "paid"
+        | "failed"
+        | "canceled"
       user_role: "hub_admin" | "company_operator" | "customer"
     }
     CompositeTypes: {
@@ -3324,6 +3402,13 @@ export const Constants = {
         "active",
         "refused",
         "suspended",
+      ],
+      payout_withdrawal_status: [
+        "created",
+        "processing",
+        "paid",
+        "failed",
+        "canceled",
       ],
       user_role: ["hub_admin", "company_operator", "customer"],
     },

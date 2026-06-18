@@ -189,6 +189,7 @@ export function buildCreateRecipientBody(input: RecipientInput): Record<string, 
         document: undef(input.document),
       };
 
+  const t = input.transferSettings;
   return {
     code: input.externalCode,
     register_information: register,
@@ -203,6 +204,10 @@ export function buildCreateRecipientBody(input: RecipientInput): Record<string, 
       account_check_digit: undef(input.bank.accountCheckDigit),
       type: undef(input.bank.type),
     },
+    // Cadência de saque agregada (E0.3.3) — só quando configurado no Manager.
+    transfer_settings: t
+      ? { transfer_enabled: t.enabled, transfer_interval: t.interval, transfer_day: t.day }
+      : undefined,
   };
 }
 

@@ -84,6 +84,8 @@ export interface RecipientInput {
   holderDocument: string | null;
   /** register_information completo (endereço, telefone, representante…) quando coletado (E1.3). */
   kyc?: RecipientKyc | null;
+  /** Cadência de saque (diluir a taxa: transferir agregado, não por transação — E0.3.3). */
+  transferSettings?: { enabled: boolean; interval: string; day: number } | null;
 }
 
 /** Resultado normalizado de qualquer operação de recebedor. */

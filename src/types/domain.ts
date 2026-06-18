@@ -22,6 +22,8 @@ export type CompanyOnboarding = Tables<"company_onboarding">;
 export type PayoutRecipient = Tables<"payout_recipient">;
 /** Dados de repasse (banco/KYC) do parceiro — agnóstico ao gateway. */
 export type CompanyPayoutAccount = Tables<"company_payout_account">;
+/** Saque real (transferência recebedor → banco do parceiro), E0.3.3. */
+export type PayoutWithdrawal = Tables<"payout_withdrawal">;
 export type Destination = Tables<"destination">;
 /** Ponto físico de um destino (terminal/píer/plataforma). DAT-05. */
 export type DestinationPoint = Tables<"destination_point">;

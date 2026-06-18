@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import type { CompanyPayoutAccount, PayoutRecipient } from "@/types/domain";
+import type { CompanyPayoutAccount, PayoutRecipient, PayoutWithdrawal } from "@/types/domain";
 import type { toPayoutAccountPayload } from "./kyc";
 
 /** Payload de upsert da conta de repasse (saída de `toPayoutAccountPayload`). */
@@ -107,5 +107,92 @@ export function useSyncRecipient() {
   return useMutation({
     mutationFn: callSyncRecipient,
     onSuccess: () => qc.invalidateQueries({ queryKey: payoutKeys.all }),
+  });
+}
+
+// ── Reconciliação do split / extrato de repasses (E0.3.3) ───────────────────
+
+export type PayoutStatementLine = {
+  booking_code: string;
+  event_at: string;
+  status: string;
+  partner_cents: number;
+  movepark_cents: number;
+};
+
+export type PayoutStatementCompany = {
+  company_id: string;
+  company_name: string;
+  gross_partner_cents: number;
+  refunded_partner_cents: number;
+  net_partner_cents: number;
+  movepark_commission_cents: number;
+  paid_count: number;
+  refunded_count: number;
+  lines: PayoutStatementLine[] | null;
+};
+
+export type PayoutStatement = {
+  period: { from: string; to: string };
+  companies: PayoutStatementCompany[];
+};
+
+export type PayoutBalance = {
+  company_id: string;
+  net_partner_cents: number;
+  withdrawn_cents: number;
+  balance_cents: number;
+};
+
+/** Extrato de repasse reconciliado do split (RPC payout_statement). */
+export function usePayoutStatement(args: {
+  from: string;
+  to: string;
+  companyId?: string | null;
+  includeLines?: boolean;
+}) {
+  return useQuery({
+    queryKey: ["payout-statement", args.from, args.to, args.companyId ?? "all", !!args.includeLines],
+    queryFn: async (): Promise<PayoutStatement> => {
+      const { data, error } = await supabase.rpc("payout_statement", {
+        p_from: args.from,
+        p_to: args.to,
+        p_company_id: args.companyId ?? undefined,
+        p_include_lines: args.includeLines ?? false,
+      });
+      if (error) throw error;
+      return data as unknown as PayoutStatement;
+    },
+  });
+}
+
+/** Saques (transferências) registrados — RLS escopa por empresa. */
+export function usePayoutWithdrawals(companyId?: string) {
+  return useQuery({
+    queryKey: ["payout-withdrawals", companyId ?? "all"],
+    queryFn: async (): Promise<PayoutWithdrawal[]> => {
+      let q = supabase
+        .from("payout_withdrawal")
+        .select("*")
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
+      if (companyId) q = q.eq("company_id", companyId);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as PayoutWithdrawal[];
+    },
+  });
+}
+
+/** Saldo a repassar = líquido − saques pagos (RPC payout_balance). */
+export function usePayoutBalance(companyId: string | undefined) {
+  return useQuery({
+    queryKey: ["payout-balance", companyId ?? ""],
+    enabled: !!companyId,
+    queryFn: async (): Promise<PayoutBalance> => {
+      const { data, error } = await supabase.rpc("payout_balance", { p_company_id: companyId! });
+      if (error) throw error;
+      return data as unknown as PayoutBalance;
+    },
   });
 }
