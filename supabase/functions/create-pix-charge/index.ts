@@ -123,7 +123,8 @@ Deno.serve(async (req: Request) => {
   let split;
   try {
     split = buildSplit({
-      totalCents,
+      chargedCents: totalCents,
+      baseCents: totalCents, // PIX não tem juros: cobrado == base
       takeRateBps: company?.take_rate_bps ?? 0,
       moveparkRecipientId,
       partnerRecipientId: recipient.external_recipient_id,

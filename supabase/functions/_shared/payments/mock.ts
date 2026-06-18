@@ -2,6 +2,7 @@
 // Útil para testes da camada de vínculo e para ambientes sem credencial de gateway.
 
 import type {
+  CardChargeInput,
   ChargeResult,
   PaymentGateway,
   PixChargeInput,
@@ -38,6 +39,22 @@ export class MockGateway implements PaymentGateway {
       expiresAt: null,
       raw: { mock: true },
       httpStatus: 200,
+    });
+  }
+
+  createCardCharge(input: CardChargeInput): Promise<ChargeResult> {
+    // token/cardId com marcador "mock_decline" → recusa; senão aprova na hora.
+    const ref = input.card.cardId ?? input.card.cardToken ?? "";
+    const declined = ref.includes("mock_decline");
+    return Promise.resolve({
+      orderId: `mock_or_${input.externalCode}`,
+      chargeId: `mock_ch_${input.externalCode}`,
+      status: declined ? "failed" : "paid",
+      qrCode: null,
+      qrCodeUrl: null,
+      expiresAt: null,
+      raw: { mock: true, installments: input.installments },
+      httpStatus: declined ? 402 : 200,
     });
   }
 

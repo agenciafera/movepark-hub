@@ -147,6 +147,21 @@ export interface PixChargeInput {
   metadata?: Record<string, string>;
 }
 
+/** Cobrança com cartão de crédito (E0.1.3). Token é single-use; cartão salvo usa cardId. */
+export interface CardChargeInput {
+  externalCode: string;
+  /** Total efetivamente cobrado (com juros de parcelamento, se houver). */
+  amountCents: number;
+  customer: ChargeCustomer;
+  items: ChargeItem[];
+  split: SplitRule[];
+  /** token (tokenização client-side, single-use) OU cardId (cartão salvo). */
+  card: { cardToken?: string; cardId?: string };
+  installments: number;
+  statementDescriptor?: string;
+  metadata?: Record<string, string>;
+}
+
 /** Resultado normalizado de uma cobrança. */
 export interface ChargeResult {
   orderId: string | null;
@@ -189,6 +204,8 @@ export interface PaymentGateway {
   getRecipient(externalId: string): Promise<RecipientResult>;
   /** Cria uma cobrança PIX com split. */
   createPixCharge(input: PixChargeInput): Promise<ChargeResult>;
+  /** Cria uma cobrança com cartão de crédito (parcelado) + split. */
+  createCardCharge(input: CardChargeInput): Promise<ChargeResult>;
   /** Relê o estado atual de uma cobrança (pelo id da order). */
   getCharge(orderId: string): Promise<ChargeResult>;
   /** Estorna uma cobrança (total ou parcial). O split é revertido proporcionalmente pelo gateway. */

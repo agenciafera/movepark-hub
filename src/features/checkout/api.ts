@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { parseInstallmentPolicy, type InstallmentPolicy } from "@/lib/installments";
 
 export type PriceBreakdown = {
   currency: string;
@@ -251,6 +252,79 @@ export function useCreatePixCharge() {
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error ?? `Falha ao gerar PIX (HTTP ${res.status})`);
+      }
+      return res.json();
+    },
+  });
+}
+
+export type PaymentConfig = {
+  public_key: string;
+  installment_policy: InstallmentPolicy;
+};
+
+/** Config pública de pagamento (public key + política de parcelamento) — Edge get-payment-config. */
+export function usePaymentConfig() {
+  return useQuery({
+    queryKey: ["payment-config"],
+    staleTime: 5 * 60_000,
+    queryFn: async (): Promise<PaymentConfig> => {
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-payment-config`;
+      const res = await fetch(url, {
+        headers: { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY },
+      });
+      if (!res.ok) throw new Error(`Falha ao carregar config de pagamento (HTTP ${res.status})`);
+      const body = await res.json();
+      return {
+        public_key: body.public_key ?? "",
+        installment_policy: parseInstallmentPolicy(body.installment_policy),
+      };
+    },
+  });
+}
+
+export type CardChargeArgs = {
+  booking_code: string;
+  installments: number;
+  card_token?: string;
+  payment_method_id?: string;
+  save_card?: boolean;
+  holder_name?: string;
+  brand?: string;
+  last4?: string;
+  exp_month?: number;
+  exp_year?: number;
+};
+
+export type CardChargeResponse = {
+  payment_id: string;
+  status: "pending" | "paid" | "failed" | "refunded" | "canceled";
+  installments: number;
+  charged_amount: number;
+  interest_amount: number;
+  saved_card: boolean;
+};
+
+/** Cobrança cartão real com split + parcelamento (E0.1.3) — Edge create-card-charge. */
+export function useCreateCardCharge() {
+  return useMutation({
+    mutationFn: async (args: CardChargeArgs): Promise<CardChargeResponse> => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Você precisa estar logado");
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-card-charge`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(args),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? `Falha ao processar o cartão (HTTP ${res.status})`);
       }
       return res.json();
     },

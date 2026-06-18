@@ -1,5 +1,6 @@
 import { assertEquals } from "jsr:@std/assert";
 import {
+  buildCardOrderBody,
   buildChargeResult,
   buildCreateRecipientBody,
   buildOrderBody,
@@ -13,7 +14,7 @@ import {
   pagarmeBaseUrl,
   recipientCanNeedKyc,
 } from "./pagarme.ts";
-import type { PixChargeInput, RecipientInput } from "./types.ts";
+import type { CardChargeInput, PixChargeInput, RecipientInput } from "./types.ts";
 
 Deno.test("pagarmeBaseUrl: host único da Core v5 (a chave define o ambiente)", () => {
   assertEquals(pagarmeBaseUrl("sk_test_abc"), "https://api.pagar.me/core/v5");
@@ -118,6 +119,45 @@ Deno.test("buildOrderBody monta PIX + split", () => {
   assertEquals(body.payments[0].split[0].options.charge_processing_fee, true);
   assertEquals(body.customer.phones.mobile_phone.area_code, "11");
   assertEquals(body.metadata.booking_id, "b1");
+});
+
+Deno.test("buildCardOrderBody: cartão novo (token) com parcelas + split", () => {
+  const input: CardChargeInput = {
+    externalCode: "MP-CARD1",
+    amountCents: 33000,
+    customer: { name: "Cliente", email: "c@ex.com", document: "39053344705", type: "individual" },
+    items: [{ amount: 33000, description: "Reserva MP-CARD1", quantity: 1 }],
+    split: [
+      { recipientId: "rp_partner", amount: 28500, type: "flat", liable: true, chargeProcessingFee: true, chargeRemainderFee: true },
+      { recipientId: "rp_mp", amount: 4500, type: "flat", liable: false, chargeProcessingFee: false, chargeRemainderFee: false },
+    ],
+    card: { cardToken: "token_abc" },
+    installments: 6,
+    metadata: { booking_id: "b9" },
+  };
+  const body = buildCardOrderBody(input) as Record<string, any>;
+  assertEquals(body.code, "MP-CARD1");
+  assertEquals(body.payments[0].payment_method, "credit_card");
+  assertEquals(body.payments[0].credit_card.installments, 6);
+  assertEquals(body.payments[0].credit_card.statement_descriptor, "MOVEPARK");
+  assertEquals(body.payments[0].credit_card.card.token, "token_abc");
+  assertEquals(body.payments[0].credit_card.card_id, undefined);
+  assertEquals(body.payments[0].credit_card.split.length, 2);
+  assertEquals(body.payments[0].credit_card.split[0].recipient_id, "rp_partner");
+});
+
+Deno.test("buildCardOrderBody: cartão salvo usa card_id (não token)", () => {
+  const body = buildCardOrderBody({
+    externalCode: "MP-CARD2",
+    amountCents: 10000,
+    customer: { name: "C", email: "c@ex.com", document: null, type: "individual" },
+    items: [{ amount: 10000, description: "x", quantity: 1 }],
+    split: [{ recipientId: "rp_p", amount: 10000, type: "flat", liable: true, chargeProcessingFee: true, chargeRemainderFee: true }],
+    card: { cardId: "card_saved_1" },
+    installments: 1,
+  }) as Record<string, any>;
+  assertEquals(body.payments[0].credit_card.card_id, "card_saved_1");
+  assertEquals(body.payments[0].credit_card.card, undefined);
 });
 
 Deno.test("buildChargeResult extrai qr_code e status do charge", () => {

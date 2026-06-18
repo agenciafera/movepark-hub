@@ -82,8 +82,12 @@ Regras **fixas** do projeto, não sugestões. Se algo conflitar com elas, **siga
   só no adapter — trocar de gateway = novo adapter, sem tocar no domínio. O **estado da ficha para
   receber** (`payout_recipient.status`) é **separado** do `onboarding_status` de catálogo; `take_rate`
   (comissão da Movepark) é por **empresa** (`company.take_rate_bps`). Dados de banco/KYC e
-  `recebedor_id` ficam **no banco, nunca no front**. Implementado em
-  `supabase/migrations/20260627000000_payout_recipients.sql` + Edge `sync-recipient`; ver
+  `recebedor_id` ficam **no banco, nunca no front**. **Cartão:** PAN **nunca** trafega o backend —
+  tokenização é **client-side** (`POST api.pagar.me/.../tokens` com a public key). **Parcelamento é
+  config dinâmica**, não código: `app_setting.card_installment_policy` (JSON), editável no Manager;
+  a Edge `create-card-charge` é **server-authoritative** (revalida parcela + recalcula o financiado).
+  Implementado em `supabase/migrations/20260627000000_payout_recipients.sql` + Edge `sync-recipient`
+  (recebedores) e `..._card_charges.sql` + Edges `create-card-charge`/`get-payment-config` (cartão); ver
   [`docs/specs/payment-split.md`](docs/specs/payment-split.md).
 
 ## Comandos

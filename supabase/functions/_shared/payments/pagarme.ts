@@ -7,6 +7,7 @@
 // completos (endereço, sócios, nascimento, etc.) são coletados em E1.3.
 
 import type {
+  CardChargeInput,
   ChargeResult,
   ChargeStatus,
   PaymentGateway,
@@ -19,6 +20,7 @@ import type {
   RecipientStatus,
   RefundInput,
   RefundResult,
+  SplitRule,
 } from "./types.ts";
 import { GatewayConfigError } from "./types.ts";
 
@@ -283,16 +285,64 @@ export function buildOrderBody(input: PixChargeInput): Record<string, unknown> {
       {
         payment_method: "pix",
         pix: { expires_in: input.expiresInSeconds },
-        split: input.split.map((s) => ({
-          amount: s.amount,
-          type: s.type,
-          recipient_id: s.recipientId,
-          options: {
-            liable: s.liable,
-            charge_processing_fee: s.chargeProcessingFee,
-            charge_remainder_fee: s.chargeRemainderFee,
-          },
-        })),
+        split: mapGatewaySplit(input.split),
+      },
+    ],
+    metadata: input.metadata,
+  };
+}
+
+/** Mapeia SplitRule[] (agnóstico) → o formato `split[]` do Pagar.me. */
+function mapGatewaySplit(split: SplitRule[]) {
+  return split.map((s) => ({
+    amount: s.amount,
+    type: s.type,
+    recipient_id: s.recipientId,
+    options: {
+      liable: s.liable,
+      charge_processing_fee: s.chargeProcessingFee,
+      charge_remainder_fee: s.chargeRemainderFee,
+    },
+  }));
+}
+
+/** Monta o body do POST /orders para CARTÃO de crédito (parcelado) com split. */
+export function buildCardOrderBody(input: CardChargeInput): Record<string, unknown> {
+  // Cartão novo → token (single-use); cartão salvo → card_id.
+  const cardRef = input.card.cardId
+    ? { card_id: input.card.cardId }
+    : { card: { token: input.card.cardToken } };
+  return {
+    code: input.externalCode,
+    customer: {
+      name: input.customer.name,
+      email: input.customer.email,
+      document: input.customer.document ?? undefined,
+      type: input.customer.type,
+      phones: input.customer.phone
+        ? {
+            mobile_phone: {
+              country_code: "55",
+              area_code: input.customer.phone.ddd,
+              number: input.customer.phone.number,
+            },
+          }
+        : undefined,
+    },
+    items: input.items.map((i) => ({
+      amount: i.amount,
+      description: i.description,
+      quantity: i.quantity,
+    })),
+    payments: [
+      {
+        payment_method: "credit_card",
+        credit_card: {
+          installments: input.installments,
+          statement_descriptor: input.statementDescriptor ?? "MOVEPARK",
+          ...cardRef,
+          split: mapGatewaySplit(input.split),
+        },
       },
     ],
     metadata: input.metadata,
@@ -434,6 +484,10 @@ export class PagarmeGateway implements PaymentGateway {
 
   createPixCharge(input: PixChargeInput): Promise<ChargeResult> {
     return this.charge("POST", "/orders", buildOrderBody(input));
+  }
+
+  createCardCharge(input: CardChargeInput): Promise<ChargeResult> {
+    return this.charge("POST", "/orders", buildCardOrderBody(input));
   }
 
   getCharge(orderId: string): Promise<ChargeResult> {

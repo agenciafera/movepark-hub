@@ -9,6 +9,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useAppSettings, useUpdateAppSettings } from "@/features/settings/api";
+import {
+  DEFAULT_INSTALLMENT_POLICY,
+  parseInstallmentPolicy,
+  type InstallmentAbsorb,
+} from "@/lib/installments";
 
 function PartnerEmailSettings() {
   const { data, isLoading } = useAppSettings();
@@ -128,6 +133,128 @@ function PaymentsSettings() {
   );
 }
 
+function InstallmentPolicySettings() {
+  const { data, isLoading } = useAppSettings();
+  const update = useUpdateAppSettings();
+  const [form, setForm] = React.useState(DEFAULT_INSTALLMENT_POLICY);
+  const [ready, setReady] = React.useState(false);
+
+  React.useEffect(() => {
+    if (data && !ready) {
+      setForm(parseInstallmentPolicy(data.card_installment_policy));
+      setReady(true);
+    }
+  }, [data, ready]);
+
+  function num(v: string, fallback: number) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : fallback;
+  }
+
+  async function save() {
+    // normaliza/clampa antes de salvar (mesma regra do servidor)
+    const policy = parseInstallmentPolicy(form);
+    try {
+      await update.mutateAsync({ card_installment_policy: JSON.stringify(policy) });
+      toast.success("Política de parcelamento salva");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao salvar");
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Parcelamento no cartão</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="card-enabled">Aceitar cartão parcelado</Label>
+          <Switch
+            id="card-enabled"
+            checked={form.enabled}
+            onCheckedChange={(v) => setForm((f) => ({ ...f, enabled: v }))}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="max-inst">Máximo de parcelas</Label>
+            <Input
+              id="max-inst"
+              type="number"
+              min={1}
+              max={24}
+              value={form.maxInstallments}
+              onChange={(e) => setForm((f) => ({ ...f, maxInstallments: num(e.target.value, f.maxInstallments) }))}
+              disabled={isLoading}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="free-inst">Parcelas sem juros (até)</Label>
+            <Input
+              id="free-inst"
+              type="number"
+              min={1}
+              value={form.interestFreeUpTo}
+              onChange={(e) => setForm((f) => ({ ...f, interestFreeUpTo: num(e.target.value, f.interestFreeUpTo) }))}
+              disabled={isLoading}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="interest">Juros ao mês (%)</Label>
+            <Input
+              id="interest"
+              type="number"
+              min={0}
+              step="0.01"
+              value={form.monthlyInterestPct}
+              onChange={(e) => setForm((f) => ({ ...f, monthlyInterestPct: num(e.target.value, f.monthlyInterestPct) }))}
+              disabled={isLoading}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="min-inst">Parcela mínima (R$)</Label>
+            <Input
+              id="min-inst"
+              type="number"
+              min={0}
+              step="0.01"
+              value={(form.minInstallmentCents / 100).toFixed(2)}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, minInstallmentCents: Math.round(num(e.target.value, f.minInstallmentCents / 100) * 100) }))
+              }
+              disabled={isLoading}
+            />
+          </div>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="absorb">Quem paga o juros</Label>
+          <select
+            id="absorb"
+            className="h-10 rounded-md border border-hairline bg-canvas px-3 text-body-sm"
+            value={form.absorb}
+            onChange={(e) => setForm((f) => ({ ...f, absorb: e.target.value as InstallmentAbsorb }))}
+            disabled={isLoading}
+          >
+            <option value="customer">Cliente (juros no preço)</option>
+            <option value="movepark">Movepark absorve (preço fixo)</option>
+            <option value="partner">Parceiro absorve (preço fixo)</option>
+          </select>
+          <span className="text-caption text-muted">
+            "Cliente" embute o juros nas parcelas acima da faixa sem juros. "Absorve" mantém o preço
+            fixo ao cliente.
+          </span>
+        </div>
+        <div>
+          <Button onClick={save} disabled={update.isPending || isLoading}>
+            {update.isPending ? "Salvando…" : "Salvar"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function ManagerSettings() {
   const [twoFactor, setTwoFactor] = React.useState(false);
   return (
@@ -164,8 +291,9 @@ export default function ManagerSettings() {
           <PartnerEmailSettings />
         </TabsContent>
 
-        <TabsContent value="payments">
+        <TabsContent value="payments" className="flex flex-col gap-6">
           <PaymentsSettings />
+          <InstallmentPolicySettings />
         </TabsContent>
 
         <TabsContent value="notifications">

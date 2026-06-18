@@ -209,9 +209,35 @@ reflete `payment.refunded` (com `refunded_at`/`refunded_amount` via `coalesce`, 
 marcou) e chama a RPC idempotente `cancel_booking_with_release`. Colunas novas em `payment`:
 `provider_charge_id`, `refunded_amount`, `refunded_at`, `refund_reason` (migration `20260630000000`).
 
+### Cartão de crédito + parcelamento (E0.1.3)
+
+**Cobrança** `createCardCharge` na interface → `PagarmeGateway.buildCardOrderBody` monta `POST /orders`
+com `payments[0] = { payment_method:"credit_card", credit_card:{ installments, statement_descriptor,
+card:{token} | card_id, split[] } }`. **Tokenização é client-side** (`src/lib/pagarme-tokenize.ts` →
+`POST api.pagar.me/core/v5/tokens?appId=<pk>`): o PAN **nunca** toca nosso backend; trafegamos só o token
+(single-use) ou o `card_id` (cartão salvo).
+
+**Parcelamento — política dinâmica (resolve a Q-001):** vive em `app_setting.card_installment_policy`
+(JSON), editável no **Manager → Configurações → Pagamentos** sem code change: `enabled`, `maxInstallments`,
+`interestFreeUpTo`, `monthlyInterestPct` (PMT/Price), `minInstallmentCents`, `absorb`
+(`customer` = juros no preço | `movepark`/`partner` = preço fixo). A lógica pura
+`computeInstallmentPlan` vive em `_shared/payments/installments.ts` (verdade) com **espelho** em
+`src/lib/installments.ts` (exibição) e teste de paridade. **Server-authoritative:** a Edge
+**`create-card-charge`** revalida a parcela escolhida e **recalcula** o valor financiado — o cliente nunca
+informa o valor.
+
+**Split com juros:** `buildSplit({ chargedCents, baseCents, ... })` — o parceiro recebe sempre sobre o
+**preço base** (`baseCents − comissão`); o **excedente** (juros, quando `absorb=customer`) vai pra
+Movepark. PIX passa `chargedCents == baseCents` → comportamento idêntico. Invariante: soma do split ==
+valor cobrado.
+
+**Config pública:** a Edge **`get-payment-config`** (sem auth, service_role) devolve `{ public_key,
+installment_policy }` — o `app_setting` é bloqueado por RLS pro consumidor. **Cartão salvo:** opt-in no
+checkout grava `payment_method` (provider=pagarme, `card_id`, brand/last4 — nunca PAN). Coluna nova:
+`payment.installments` (migration `20260702000000`).
+
 ## Fora de escopo (próximas subtarefas)
 
-E0.1.3 (cartão com split + parcelamento Q-001 + tokenização), **estorno parcial** (interface/coluna já
-prontos), `api_cancel_booking` (public API) ainda sem refund, trigger automático de criação do recebedor
-ao concluir o KYC, e o
-`base64_qrcode` da prova de vida (hoje exibimos só a `url`).
+3DS com challenge/redirect (assume cartão sem challenge nesta fase), **estorno parcial**
+(interface/coluna já prontos), `api_cancel_booking` (public API) ainda sem refund, trigger automático de
+criação do recebedor ao concluir o KYC, e o `base64_qrcode` da prova de vida (hoje exibimos só a `url`).
