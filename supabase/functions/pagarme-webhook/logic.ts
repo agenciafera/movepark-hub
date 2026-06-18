@@ -1,8 +1,27 @@
 // Lógica pura do webhook do Pagar.me (testável sem rede): auth básica e parsing do evento.
 
-/** Verifica o header Basic auth contra o esperado ("user:pass"). Sem esperado → não exige (staging). */
-export function verifyBasicAuth(header: string | null, expectedUserPass: string | undefined): boolean {
-  if (!expectedUserPass) return true; // sem credencial configurada → aceita (staging)
+/** Comparação de strings em tempo (quase) constante — evita vazar o segredo por timing. */
+export function timingSafeEqual(a: string, b: string): boolean {
+  // O XOR do comprimento garante que strings de tamanhos diferentes nunca casem,
+  // sem retornar cedo (o loop sempre roda sobre o esperado).
+  let mismatch = a.length ^ b.length;
+  for (let i = 0; i < b.length; i++) {
+    mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return mismatch === 0;
+}
+
+/**
+ * Verifica o header Basic auth do Pagar.me contra o esperado ("user:pass").
+ * - `expectedUserPass` ausente: em staging (`required=false`) aceita; em produção
+ *   (`required=true`) **rejeita** (fail-closed — nunca aceitar webhook sem credencial).
+ */
+export function verifyBasicAuth(
+  header: string | null,
+  expectedUserPass: string | undefined,
+  required = false,
+): boolean {
+  if (!expectedUserPass) return !required; // sem credencial: aceita só fora de produção
   if (!header) return false;
   const m = header.match(/^Basic\s+(.+)$/i);
   if (!m) return false;
@@ -12,8 +31,7 @@ export function verifyBasicAuth(header: string | null, expectedUserPass: string 
   } catch {
     return false;
   }
-  // comparação simples (segredo de staging); produção pode usar timing-safe
-  return m[1].trim() === expectedB64;
+  return timingSafeEqual(m[1].trim(), expectedB64);
 }
 
 export interface ParsedEvent {

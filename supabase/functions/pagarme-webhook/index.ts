@@ -1,8 +1,10 @@
 // Edge Function: /pagarme-webhook
 // Recebe os webhooks do Pagar.me (E0.1.2/.4) e reflete o status no payment + booking.
 // Autenticação: Basic auth configurado no painel do Pagar.me (secret PAGARME_WEBHOOK_BASIC_AUTH,
-// formato "user:pass"). Idempotência por id do evento (tabela payment_webhook_event).
+// formato "user:pass"), comparado em tempo constante e EXIGIDO em produção (sk_live_).
+// Idempotência por id do evento (tabela payment_webhook_event).
 // verify_jwt = false (o Pagar.me não envia JWT do Supabase).
+// No `pago`: confirma a reserva e pré-gera o voucher (service role, pós-resposta).
 //
 // POST /functions/v1/pagarme-webhook
 // Authorization: Basic <base64(user:pass)>
@@ -11,7 +13,21 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { chargeStatusToPaymentStatus } from "../_shared/payments/index.ts";
 import { mapChargeStatus } from "../_shared/payments/pagarme.ts";
+import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 import { parseWebhookEvent, verifyBasicAuth } from "./logic.ts";
+
+/** Em produção (chave sk_live_) o webhook exige Basic auth; em staging (sk_test_) é opcional. */
+function isProduction(): boolean {
+  return (Deno.env.get("PAGARME_SECRET_KEY") ?? "").startsWith("sk_live_");
+}
+
+/** Agenda uma tarefa pós-resposta (não bloqueia o 2xx); cai pra await se indisponível. */
+async function runAfterResponse(task: Promise<unknown>): Promise<void> {
+  // @ts-ignore - EdgeRuntime existe no runtime do Supabase
+  const waitUntil = typeof EdgeRuntime !== "undefined" ? EdgeRuntime?.waitUntil : undefined;
+  if (typeof waitUntil === "function") waitUntil(task);
+  else await task;
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -23,8 +39,14 @@ function json(body: unknown, status = 200) {
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  // Auth básica (se configurada)
-  if (!verifyBasicAuth(req.headers.get("Authorization"), Deno.env.get("PAGARME_WEBHOOK_BASIC_AUTH"))) {
+  // Auth básica: exigida em produção (fail-closed), opcional em staging.
+  if (
+    !verifyBasicAuth(
+      req.headers.get("Authorization"),
+      Deno.env.get("PAGARME_WEBHOOK_BASIC_AUTH"),
+      isProduction(),
+    )
+  ) {
     return json({ error: "Não autorizado" }, 401);
   }
 
@@ -88,13 +110,21 @@ Deno.serve(async (req: Request) => {
     })
     .eq("id", payment.id);
 
-  // Pagamento aprovado → confirma a reserva (só se ainda pendente).
+  // Pagamento aprovado → confirma a reserva (só se ainda pendente) e emite o voucher.
   if (status === "paid") {
     await admin
       .from("booking")
       .update({ status: "confirmed" })
       .eq("id", payment.booking_id)
       .eq("status", "pending");
+
+    // Pré-gera o voucher (server-side, service role) sem segurar o 2xx do webhook.
+    const siteUrl = Deno.env.get("PUBLIC_SITE_URL") ?? "https://hub.movepark.co";
+    await runAfterResponse(
+      generateAndStoreVoucher(admin, payment.booking_id, siteUrl).catch((e) =>
+        console.error("[pagarme-webhook] falha ao gerar voucher:", payment!.booking_id, e),
+      ),
+    );
   }
 
   return json({ ok: true, status: paymentStatus });

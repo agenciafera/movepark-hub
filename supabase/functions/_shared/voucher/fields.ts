@@ -1,4 +1,6 @@
 // Mapeamento puro booking → campos do voucher (sem Deno/PDF), para ser testável.
+// Compartilhado entre a Edge `voucher-pdf` (geração sob demanda, com JWT do dono) e o
+// `pagarme-webhook` (pré-geração server-side no `pago`).
 
 export interface VoucherBooking {
   code: string;
@@ -55,4 +57,35 @@ export function voucherFields(b: VoucherBooking): VoucherLine[] {
   }
   lines.push({ label: "Valor", value: formatBRL(b.total_amount, b.currency ?? "BRL") });
   return lines;
+}
+
+/** Statuses da reserva em que o voucher pode existir (pós-confirmação de pagamento). */
+export const VOUCHER_BOOKING_STATUSES = ["confirmed", "checked_in", "completed"] as const;
+
+/** Select padrão para montar o voucher (mesmas colunas no caminho RLS e no service role). */
+export const VOUCHER_BOOKING_SELECT =
+  `id, code, status, check_in_at, check_out_at, total_amount, currency,
+   location:location!inner(name, address, company:company!inner(name)),
+   vehicle:vehicle(license_plate, model),
+   items:booking_item(item_type, parking_type:parking_type(name))`;
+
+/** Mapeia a linha de `booking` (com VOUCHER_BOOKING_SELECT) → VoucherBooking. */
+// deno-lint-ignore no-explicit-any
+export function mapBookingRowToVoucher(b: any): VoucherBooking {
+  // deno-lint-ignore no-explicit-any
+  const parkingItem = (b.items ?? []).find((i: any) => i.item_type === "parking");
+  return {
+    code: b.code,
+    check_in_at: b.check_in_at,
+    check_out_at: b.check_out_at,
+    total_amount: Number(b.total_amount),
+    currency: b.currency,
+    company_name: b.location.company.name,
+    location_name: b.location.name,
+    location_address: b.location.address,
+    parking_type_name: parkingItem?.parking_type?.name ?? null,
+    vehicle: b.vehicle
+      ? { license_plate: b.vehicle.license_plate, model: b.vehicle.model }
+      : null,
+  };
 }

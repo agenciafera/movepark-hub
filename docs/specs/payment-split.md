@@ -183,15 +183,23 @@ service_role).
 ### Webhook de status (E0.1.2/.4)
 
 Edge **`pagarme-webhook`** (`verify_jwt=false`, deploy com `--no-verify-jwt`): valida **Basic auth**
-(secret `PAGARME_WEBHOOK_BASIC_AUTH` = `user:pass`, configurado no painel do Pagar.me), **idempotência**
-por id do evento (`payment_webhook_event`), casa o `payment` por `provider_payment_id` (order id, ou
-`metadata.booking_id`) e reflete o status: `order.paid`/`charge.paid` → `payment.paid` +
-`booking.confirmed` (só se pendente); refunded/failed/canceled refletem no `payment`. O polling do
-checkout (`useCheckoutBooking`) detecta a confirmação no banco. **Setup:** cadastrar a URL do webhook
-+ Basic auth no painel do Pagar.me e setar o secret.
+(secret `PAGARME_WEBHOOK_BASIC_AUTH` = `user:pass`, configurado no painel do Pagar.me) com **comparação
+em tempo constante** e **fail-closed em produção** (chave `sk_live_` exige o secret; sem ele → 401.
+Em staging `sk_test_` continua opcional). **Idempotência** por id do evento (`payment_webhook_event`),
+casa o `payment` por `provider_payment_id` (order id, ou `metadata.booking_id`) e reflete o status:
+`order.paid`/`charge.paid` → `payment.paid` + `booking.confirmed` (só se pendente); refunded/failed/canceled
+refletem no `payment`. O polling do checkout (`useCheckoutBooking`) detecta a confirmação no banco.
+
+**Emissão do voucher no `pago` (E0.1.4):** ao confirmar, o webhook **pré-gera o voucher** com service
+role e persiste `booking.voucher_url`, sem segurar o 2xx (`EdgeRuntime.waitUntil`). A geração do PDF
+mora em `_shared/voucher/` (`fields.ts` puro + `pdf.ts` com `buildVoucherPdf`/`generateAndStoreVoucher`),
+**reutilizada** pela Edge `voucher-pdf` (download sob demanda, leitura RLS pelo dono/operador). Falha de
+voucher é logada e **não** derruba o webhook (status já refletido).
+
+**Setup:** cadastrar a URL do webhook + Basic auth no painel do Pagar.me e setar o secret.
 
 ## Fora de escopo (próximas subtarefas)
 
-E0.1.3 (cartão com split + parcelamento Q-001 + tokenização), endurecer o webhook (retry/assinatura
-extra) se necessário, trigger automático de criação do recebedor ao concluir o KYC, e o
+E0.1.3 (cartão com split + parcelamento Q-001 + tokenização), o fluxo de **estorno/refund** movendo
+`booking.status` (E0.3.2), trigger automático de criação do recebedor ao concluir o KYC, e o
 `base64_qrcode` da prova de vida (hoje exibimos só a `url`).

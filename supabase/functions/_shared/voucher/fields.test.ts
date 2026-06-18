@@ -1,5 +1,11 @@
 import { assertEquals, assertStringIncludes } from "jsr:@std/assert";
-import { voucherFields, voucherFilename, formatBRL, type VoucherBooking } from "./fields.ts";
+import {
+  formatBRL,
+  mapBookingRowToVoucher,
+  voucherFields,
+  voucherFilename,
+  type VoucherBooking,
+} from "./fields.ts";
 
 const base: VoucherBooking = {
   code: "MP-A8K7P2",
@@ -52,4 +58,27 @@ Deno.test("omite endereço e veículo quando ausentes; fallback de tipo", () => 
 Deno.test("veículo sem modelo mostra só a placa", () => {
   const lines = voucherFields({ ...base, vehicle: { license_plate: "XYZ-7K89", model: null } });
   assertEquals(lines.find((l) => l.label === "Veículo")?.value, "XYZ-7K89");
+});
+
+Deno.test("mapBookingRowToVoucher extrai a vaga do item 'parking' e relações aninhadas", () => {
+  const v = mapBookingRowToVoucher({
+    id: "b1",
+    code: "MP-Z9",
+    status: "confirmed",
+    check_in_at: base.check_in_at,
+    check_out_at: base.check_out_at,
+    total_amount: "200.00",
+    currency: "BRL",
+    location: { name: "GRU", address: "Rua X", company: { name: "Aeropark" } },
+    vehicle: { license_plate: "AAA-1B11", model: "Onix" },
+    items: [
+      { item_type: "service", parking_type: null },
+      { item_type: "parking", parking_type: { name: "Coberta" } },
+    ],
+  });
+  assertEquals(v.company_name, "Aeropark");
+  assertEquals(v.location_name, "GRU");
+  assertEquals(v.parking_type_name, "Coberta");
+  assertEquals(v.total_amount, 200);
+  assertEquals(v.vehicle?.license_plate, "AAA-1B11");
 });

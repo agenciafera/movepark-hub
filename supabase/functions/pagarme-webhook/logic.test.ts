@@ -1,18 +1,28 @@
 import { assertEquals } from "jsr:@std/assert";
-import { parseWebhookEvent, verifyBasicAuth } from "./logic.ts";
+import { parseWebhookEvent, timingSafeEqual, verifyBasicAuth } from "./logic.ts";
 
-Deno.test("verifyBasicAuth: sem credencial configurada → aceita (staging)", () => {
-  assertEquals(verifyBasicAuth(null, undefined), true);
+Deno.test("verifyBasicAuth: sem credencial configurada → aceita só fora de produção", () => {
+  assertEquals(verifyBasicAuth(null, undefined), true); // required=false (default/staging)
   assertEquals(verifyBasicAuth(null, ""), true);
+  assertEquals(verifyBasicAuth(null, undefined, true), false); // produção fail-closed
+  assertEquals(verifyBasicAuth(null, "", true), false);
 });
 
 Deno.test("verifyBasicAuth: valida o header contra user:pass", () => {
   const expected = "hook:s3cret";
   const header = "Basic " + btoa(expected);
   assertEquals(verifyBasicAuth(header, expected), true);
+  assertEquals(verifyBasicAuth(header, expected, true), true); // credencial presente → ok em produção
   assertEquals(verifyBasicAuth("Basic " + btoa("hook:wrong"), expected), false);
   assertEquals(verifyBasicAuth(null, expected), false);
   assertEquals(verifyBasicAuth("Bearer x", expected), false);
+});
+
+Deno.test("timingSafeEqual: igual/diferente, inclusive comprimentos distintos", () => {
+  assertEquals(timingSafeEqual("abc", "abc"), true);
+  assertEquals(timingSafeEqual("abc", "abd"), false);
+  assertEquals(timingSafeEqual("abc", "abcd"), false);
+  assertEquals(timingSafeEqual("", ""), true);
 });
 
 Deno.test("parseWebhookEvent: order.paid → orderId = data.id", () => {
