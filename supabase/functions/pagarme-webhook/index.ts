@@ -127,5 +127,31 @@ Deno.serve(async (req: Request) => {
     );
   }
 
+  // Estorno confirmado pelo gateway (E0.3.2): reflete no payment e garante booking cancelado +
+  // capacidade liberada. Idempotente: a RPC é noop se o booking já está cancelado (ex.: a Edge
+  // cancel-booking iniciou o estorno) e o coalesce preserva o que ela já marcou.
+  if (status === "refunded") {
+    const { data: pay } = await admin
+      .from("payment")
+      .select("amount, refunded_at, refunded_amount")
+      .eq("id", payment.id)
+      .maybeSingle();
+    await admin
+      .from("payment")
+      .update({
+        refunded_at: pay?.refunded_at ?? new Date().toISOString(),
+        refunded_amount: pay?.refunded_amount ?? pay?.amount ?? null,
+      })
+      .eq("id", payment.id);
+
+    const { error: rpcErr } = await admin.rpc("cancel_booking_with_release", {
+      p_booking_id: payment.booking_id,
+      p_reason: "estorno confirmado pelo gateway",
+    });
+    if (rpcErr) {
+      console.error("[pagarme-webhook] cancel_booking_with_release falhou:", rpcErr.message);
+    }
+  }
+
   return json({ ok: true, status: paymentStatus });
 });

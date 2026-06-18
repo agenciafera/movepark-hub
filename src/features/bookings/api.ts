@@ -95,3 +95,43 @@ export function useUpdateBookingStatus() {
     },
   });
 }
+
+export type CancelBookingResult = {
+  status: string;
+  refunded: boolean;
+  refund_pending: boolean;
+};
+
+/**
+ * Cancela uma reserva como staff (operador/hub_admin) via Edge `cancel-booking`, que estorna o
+ * pagamento quando aplicável (E0.3.2). Staff pode estornar como override (fora da janela de 24h).
+ */
+export function useCancelBookingStaff() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (bookingCode: string): Promise<CancelBookingResult> => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Sessão expirada. Entre novamente.");
+
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cancel-booking`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ booking_code: bookingCode }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? `Falha ao cancelar (HTTP ${res.status})`);
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: bookingsKeys.all });
+    },
+  });
+}

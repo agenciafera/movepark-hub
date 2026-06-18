@@ -221,21 +221,39 @@ export function useVoucherPdf() {
   });
 }
 
+export type CancelBookingResult = {
+  status: string;
+  refunded: boolean;
+  refund_pending: boolean;
+};
+
+/**
+ * Cancela a reserva pela Edge `cancel-booking` (que orquestra o estorno via gateway, E0.3.2).
+ * Recebe o `code` da reserva — a Edge resolve dono/staff, política de 24h e split.
+ */
 export function useCancelMyBooking() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (bookingId: string) => {
-      await supabase.rpc("release_booking_capacity", {
-        p_booking_id: bookingId,
+    mutationFn: async (bookingCode: string): Promise<CancelBookingResult> => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Você precisa entrar pra cancelar a reserva.");
+
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cancel-booking`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ booking_code: bookingCode }),
       });
-      const { error } = await supabase
-        .from("booking")
-        .update({
-          status: "cancelled",
-          deleted_at: new Date().toISOString(),
-        })
-        .eq("id", bookingId);
-      if (error) throw error;
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? `Falha ao cancelar (HTTP ${res.status})`);
+      }
+      return res.json();
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["my-bookings"] });

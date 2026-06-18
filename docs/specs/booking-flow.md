@@ -151,12 +151,22 @@ ser expiradas automaticamente.
 
 - Permitido enquanto `status IN (pending, confirmed)`
 - **Política de 24h (PRD-12, ✅):** cancelamento **grátis até 24h antes do check-in** → reembolso
-  integral; **após** esse prazo, ainda pode cancelar **sem reembolso**. Regra única em
-  `cancellation.logic.ts` (`cancellationStatus(check_in_at, now)`), exibida no listing, no checkout e no
-  diálogo de cancelar. A janela estendida paga (**Superflex**) é futura (depende do upsell **MON-11**).
-- Se `confirmed` (pagamento já feito) e dentro da janela: o `payment.status` → `refunded` cobre o
-  reembolso (gateway real é futuro; hoje o valor é informativo).
-- Ao cancelar: **decrementa** `booked_count` para cada data do período (`release_booking_capacity`).
+  integral; **após** esse prazo, ainda pode cancelar **sem reembolso**. A janela estendida paga
+  (**Superflex**) é futura (depende do upsell **MON-11**).
+- **Estorno real (E0.3.2, ✅):** o cancelamento passa pela Edge **`cancel-booking`** (a verdade da
+  elegibilidade é o servidor; o front só exibe). Ela autoriza **dono** (cliente) ou **staff**
+  (hub_admin / operador da empresa), decide via `refundDecision({actor, ...})` e, quando há `payment`
+  pago e elegível, chama `gateway.refundCharge(chargeId)` (`DELETE /charges/{id}`) — a Pagar.me
+  **reverte o split proporcionalmente**. **Cliente** estorna só dentro da janela 24h; **staff** estorna
+  como **override** (a qualquer momento). Estorno **total** nesta etapa. Se o gateway falhar, a reserva
+  **não** é cancelada (nunca cancelar sem estornar). Para PIX o estorno é **assíncrono**: o `payment`
+  fica `paid` + `refunded_at` setado (`refund_pending`) e vira `refunded` quando o webhook
+  `charge.refunded` confirma.
+- **Capacidade:** cancelar + liberar a vaga é uma RPC única e **idempotente por status**,
+  `cancel_booking_with_release` (noop se já `cancelled`), chamada **tanto** pela Edge **quanto** pelo
+  webhook — a vaga nunca é liberada em dobro (`release_booking_capacity` não é idempotente sozinha).
+- **Taxa no estorno:** como o parceiro é `liable`/`charge_processing_fee` no split, a taxa de
+  processamento já retida normalmente **não** volta e recai no parceiro (consistente com o ADR-004).
 
 ### Cancelamento automático
 

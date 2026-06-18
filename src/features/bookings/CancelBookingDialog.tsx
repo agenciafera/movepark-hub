@@ -33,8 +33,14 @@ export function CancelBookingDialog({
 
   async function handleCancel() {
     try {
-      await cancelMutation.mutateAsync(booking!.id);
-      toast.success("Reserva cancelada");
+      const result = await cancelMutation.mutateAsync(booking!.code);
+      if (result.refunded && result.refund_pending) {
+        toast.success("Reserva cancelada. O estorno do PIX será devolvido pelo seu banco em alguns dias.");
+      } else if (result.refunded) {
+        toast.success("Reserva cancelada e valor estornado.");
+      } else {
+        toast.success("Reserva cancelada");
+      }
       onOpenChange(false);
       onCancelled?.();
     } catch (err) {

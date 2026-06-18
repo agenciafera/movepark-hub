@@ -198,8 +198,20 @@ voucher é logada e **não** derruba o webhook (status já refletido).
 
 **Setup:** cadastrar a URL do webhook + Basic auth no painel do Pagar.me e setar o secret.
 
+### Estorno / refund (E0.3.2)
+
+`refundCharge` na interface `PaymentGateway` → `PagarmeGateway` faz `DELETE /charges/{chargeId}` (body
+`{ amount }` só no parcial; aqui sempre **total**). **Não** reenvia split — a Pagar.me reverte
+proporcionalmente. O `provider_charge_id` é gravado na criação da cobrança (`create-pix-charge`); a Edge
+resolve via `getCharge(orderId)` como fallback. A orquestração mora na Edge **`cancel-booking`**
+(dono ou staff; política por ator — ver `booking-flow.md`). O **webhook** `charge.refunded` confirma:
+reflete `payment.refunded` (com `refunded_at`/`refunded_amount` via `coalesce`, preservando o que a Edge
+marcou) e chama a RPC idempotente `cancel_booking_with_release`. Colunas novas em `payment`:
+`provider_charge_id`, `refunded_amount`, `refunded_at`, `refund_reason` (migration `20260630000000`).
+
 ## Fora de escopo (próximas subtarefas)
 
-E0.1.3 (cartão com split + parcelamento Q-001 + tokenização), o fluxo de **estorno/refund** movendo
-`booking.status` (E0.3.2), trigger automático de criação do recebedor ao concluir o KYC, e o
+E0.1.3 (cartão com split + parcelamento Q-001 + tokenização), **estorno parcial** (interface/coluna já
+prontos), `api_cancel_booking` (public API) ainda sem refund, trigger automático de criação do recebedor
+ao concluir o KYC, e o
 `base64_qrcode` da prova de vida (hoje exibimos só a `url`).

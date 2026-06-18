@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { formatBRL, formatDateTime } from "@/lib/format";
 import type { BookingStatus, BookingWithRelations } from "@/types/domain";
-import { useUpdateBookingStatus } from "./api";
+import { useCancelBookingStaff, useUpdateBookingStatus } from "./api";
 
 type Props = {
   booking: BookingWithRelations | null;
@@ -29,6 +29,8 @@ const allowed: Record<BookingStatus, BookingStatus[]> = {
 
 export function BookingDrawer({ booking, open, onOpenChange }: Props) {
   const mutation = useUpdateBookingStatus();
+  const cancelMutation = useCancelBookingStaff();
+  const busy = mutation.isPending || cancelMutation.isPending;
 
   if (!booking) return null;
 
@@ -46,6 +48,21 @@ export function BookingDrawer({ booking, open, onOpenChange }: Props) {
       onSuccess: () => toast.success(`${label} com sucesso`),
       onError: (err) =>
         toast.error(err instanceof Error ? err.message : "Falha ao atualizar"),
+    });
+  }
+
+  // Cancelar passa pela Edge cancel-booking (estorna o pagamento quando aplicável, E0.3.2).
+  function cancel() {
+    cancelMutation.mutate(booking!.code, {
+      onSuccess: (r) =>
+        toast.success(
+          r.refunded
+            ? r.refund_pending
+              ? "Reserva cancelada. Estorno do PIX em processamento."
+              : "Reserva cancelada e valor estornado."
+            : "Reserva cancelada",
+        ),
+      onError: (err) => toast.error(err instanceof Error ? err.message : "Falha ao cancelar"),
     });
   }
 
@@ -96,7 +113,7 @@ export function BookingDrawer({ booking, open, onOpenChange }: Props) {
                 {next.includes("confirmed") && (
                   <Button
                     size="sm"
-                    disabled={mutation.isPending}
+                    disabled={busy}
                     onClick={() => transition("confirmed", "Reserva confirmada")}
                   >
                     Confirmar
@@ -105,7 +122,7 @@ export function BookingDrawer({ booking, open, onOpenChange }: Props) {
                 {next.includes("checked_in") && (
                   <Button
                     size="sm"
-                    disabled={mutation.isPending}
+                    disabled={busy}
                     onClick={() => transition("checked_in", "Check-in registrado")}
                   >
                     Check-in
@@ -114,7 +131,7 @@ export function BookingDrawer({ booking, open, onOpenChange }: Props) {
                 {next.includes("completed") && (
                   <Button
                     size="sm"
-                    disabled={mutation.isPending}
+                    disabled={busy}
                     onClick={() => transition("completed", "Check-out registrado")}
                   >
                     Check-out
@@ -124,10 +141,10 @@ export function BookingDrawer({ booking, open, onOpenChange }: Props) {
                   <Button
                     size="sm"
                     variant="danger"
-                    disabled={mutation.isPending}
-                    onClick={() => transition("cancelled", "Reserva cancelada")}
+                    disabled={busy}
+                    onClick={cancel}
                   >
-                    Cancelar
+                    {cancelMutation.isPending ? "Cancelando…" : "Cancelar"}
                   </Button>
                 )}
               </section>

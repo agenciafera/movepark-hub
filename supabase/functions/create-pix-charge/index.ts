@@ -189,6 +189,7 @@ Deno.serve(async (req: Request) => {
     provider: "pagarme",
     method: "pix",
     provider_payment_id: result.orderId,
+    provider_charge_id: result.chargeId,
     amount: booking.total_amount,
     status: chargeStatusToPaymentStatus(result.status),
     pix_qr_code: result.qrCode,

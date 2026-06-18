@@ -7,6 +7,8 @@ import type {
   PixChargeInput,
   RecipientInput,
   RecipientResult,
+  RefundInput,
+  RefundResult,
 } from "./types.ts";
 
 export class MockGateway implements PaymentGateway {
@@ -34,6 +36,16 @@ export class MockGateway implements PaymentGateway {
       qrCode: null,
       qrCodeUrl: null,
       expiresAt: null,
+      raw: { mock: true },
+      httpStatus: 200,
+    });
+  }
+
+  refundCharge({ chargeId, amountCents }: RefundInput): Promise<RefundResult> {
+    return Promise.resolve({
+      chargeId,
+      status: "refunded",
+      refundedAmountCents: amountCents ?? null,
       raw: { mock: true },
       httpStatus: 200,
     });

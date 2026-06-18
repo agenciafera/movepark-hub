@@ -161,6 +161,25 @@ export interface ChargeResult {
   httpStatus: number | null;
 }
 
+// ── Estorno (E0.3.2) ────────────────────────────────────────────────────────
+
+/** Entrada do estorno. amountCents omitido = estorno total; presente = parcial. */
+export interface RefundInput {
+  /** charge.id do gateway (NÃO o order id). */
+  chargeId: string;
+  amountCents?: number;
+}
+
+/** Resultado normalizado de um estorno. */
+export interface RefundResult {
+  chargeId: string | null;
+  /** Status da cobrança após o estorno (esperado "refunded"; PIX pode vir "pending"). */
+  status: ChargeStatus;
+  refundedAmountCents: number | null;
+  raw: unknown;
+  httpStatus: number | null;
+}
+
 /** Contrato que todo gateway de pagamento deve implementar. */
 export interface PaymentGateway {
   readonly provider: string;
@@ -172,6 +191,8 @@ export interface PaymentGateway {
   createPixCharge(input: PixChargeInput): Promise<ChargeResult>;
   /** Relê o estado atual de uma cobrança (pelo id da order). */
   getCharge(orderId: string): Promise<ChargeResult>;
+  /** Estorna uma cobrança (total ou parcial). O split é revertido proporcionalmente pelo gateway. */
+  refundCharge(input: RefundInput): Promise<RefundResult>;
 }
 
 /** Erro de configuração do gateway (ex.: secret ausente) — separado de erro de negócio. */

@@ -17,6 +17,8 @@ import type {
   RecipientRequirement,
   RecipientResult,
   RecipientStatus,
+  RefundInput,
+  RefundResult,
 } from "./types.ts";
 import { GatewayConfigError } from "./types.ts";
 
@@ -318,6 +320,23 @@ export function buildChargeResult(httpStatus: number, body: unknown): ChargeResu
   };
 }
 
+/**
+ * Extrai o RefundResult da resposta de DELETE /charges/{id}. Diferente de `buildChargeResult`,
+ * o corpo aqui é UM charge (`{ id, status, amount, last_transaction }`), não uma order com `charges[]`.
+ */
+export function buildRefundResult(httpStatus: number, body: unknown): RefundResult {
+  const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
+  const tx = (b.last_transaction ?? {}) as Record<string, unknown>;
+  const status = mapChargeStatus((b.status as string) ?? (tx.status as string));
+  return {
+    chargeId: (b.id as string) ?? null,
+    status,
+    refundedAmountCents: typeof b.amount === "number" ? (b.amount as number) : null,
+    raw: body,
+    httpStatus,
+  };
+}
+
 export class PagarmeGateway implements PaymentGateway {
   readonly provider = "pagarme";
   private readonly secretKey: string;
@@ -386,7 +405,11 @@ export class PagarmeGateway implements PaymentGateway {
     return this.withKycLink(result);
   }
 
-  private async charge(method: string, path: string, body?: unknown): Promise<ChargeResult> {
+  private async rawFetch(
+    method: string,
+    path: string,
+    body?: unknown,
+  ): Promise<{ httpStatus: number; parsed: unknown }> {
     const res = await fetch(`${pagarmeBaseUrl(this.secretKey)}${path}`, {
       method,
       headers: {
@@ -401,7 +424,12 @@ export class PagarmeGateway implements PaymentGateway {
     } catch {
       parsed = null;
     }
-    return buildChargeResult(res.status, parsed);
+    return { httpStatus: res.status, parsed };
+  }
+
+  private async charge(method: string, path: string, body?: unknown): Promise<ChargeResult> {
+    const { httpStatus, parsed } = await this.rawFetch(method, path, body);
+    return buildChargeResult(httpStatus, parsed);
   }
 
   createPixCharge(input: PixChargeInput): Promise<ChargeResult> {
@@ -410,5 +438,16 @@ export class PagarmeGateway implements PaymentGateway {
 
   getCharge(orderId: string): Promise<ChargeResult> {
     return this.charge("GET", `/orders/${orderId}`);
+  }
+
+  /**
+   * Estorna a cobrança: DELETE /charges/{chargeId}. body { amount } só no estorno parcial.
+   * NÃO envia split — a Pagar.me reverte o split proporcionalmente sozinha. PIX devolve ao
+   * pagador automaticamente (não precisa de bank_account, ao contrário do boleto).
+   */
+  async refundCharge({ chargeId, amountCents }: RefundInput): Promise<RefundResult> {
+    const body = amountCents != null ? { amount: amountCents } : undefined;
+    const { httpStatus, parsed } = await this.rawFetch("DELETE", `/charges/${chargeId}`, body);
+    return buildRefundResult(httpStatus, parsed);
   }
 }

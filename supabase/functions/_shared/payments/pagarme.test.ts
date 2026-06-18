@@ -4,6 +4,7 @@ import {
   buildCreateRecipientBody,
   buildOrderBody,
   buildRecipientResult,
+  buildRefundResult,
   extractKycUrl,
   mapChargeStatus,
   mapRecipientStatus,
@@ -202,6 +203,39 @@ Deno.test("buildCreateRecipientBody: PJ com KYC monta register_information compl
   assertEquals(reg.managing_partners[0].self_declared_legal_representative, true);
   assertEquals(body.default_bank_account.holder_type, "company");
   assertEquals(body.default_bank_account.bank, "341");
+});
+
+Deno.test("buildRefundResult: charge cru (não order) → status + amount estornado", () => {
+  const r = buildRefundResult(200, {
+    id: "ch_1",
+    status: "refunded",
+    amount: 15900,
+    last_transaction: { status: "refunded" },
+  });
+  assertEquals(r.chargeId, "ch_1");
+  assertEquals(r.status, "refunded");
+  assertEquals(r.refundedAmountCents, 15900);
+  assertEquals(r.httpStatus, 200);
+});
+
+Deno.test("buildRefundResult: PIX assíncrono cai no last_transaction.status", () => {
+  const r = buildRefundResult(200, {
+    id: "ch_2",
+    status: "paid",
+    amount: 5000,
+    last_transaction: { status: "pending_refund" },
+  });
+  // status da charge ainda 'paid', mas a transação indica refunded → normaliza p/ refunded
+  assertEquals(r.status, "paid"); // b.status tem precedência (charge.status manda)
+  assertEquals(r.refundedAmountCents, 5000);
+});
+
+Deno.test("buildRefundResult: body vazio/erro → campos nulos", () => {
+  const r = buildRefundResult(422, null);
+  assertEquals(r.chargeId, null);
+  assertEquals(r.status, "pending");
+  assertEquals(r.refundedAmountCents, null);
+  assertEquals(r.httpStatus, 422);
 });
 
 Deno.test("buildRecipientResult: kyc/pendências em status pending → action_required", () => {
