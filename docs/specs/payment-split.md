@@ -155,8 +155,42 @@ hub_admin direto na tabela (RLS). O adapter `pagarme.ts` monta o `register_infor
 `main_address`, `phone_numbers`, `managing_partners[0]`) a partir do `kyc_details` na hora de criar o
 recebedor (`founding_date` convertido para `YYYY-MM-DD`).
 
+## Cobrança PIX com split (E0.1.2)
+
+Migration `20260629000000_pix_charges.sql`: colunas em `payment` (`method`, `pix_qr_code`,
+`pix_qr_code_url`, `expires_at`, `split` jsonb), `app_setting.pagarme_movepark_recipient_id`
+(editável no Manager → Configurações → Pagamentos) e `payment_webhook_event` (idempotência, só
+service_role).
+
+**Fluxo:**
+1. Cliente no checkout → Edge **`create-pix-charge`** (JWT). Carrega a reserva (dona, pendente, não
+   expirada), o recebedor do parceiro (`payout_recipient.external_recipient_id`, precisa existir) e o
+   `company.take_rate_bps`.
+2. **Split** (`_shared/payments/split.ts`, puro/testado): comissão = `round(total * take_rate_bps/10000)`
+   → recebedor master da Movepark; restante → recebedor do parceiro. **O parceiro absorve as taxas**
+   (`liable`/`charge_processing_fee`/`charge_remainder_fee` = true na perna dele; Movepark = false).
+   `type: "flat"` em centavos; a soma é sempre o total. Comissão 0 → só a perna do parceiro.
+3. `getGateway("pagarme").createPixCharge(...)` → `POST /orders` com `payments[].pix` (`expires_in`)
+   + `payments[].split[]`. Grava `payment` (provider=pagarme, `provider_payment_id`=order id, QR,
+   `expires_at`, snapshot do split) e devolve `qr_code` (copia-e-cola) + `qr_code_url`.
+4. Front: aba **PIX** do `Step3Payment` gera a cobrança real e renderiza o QR (via `lib/qr`); cartão
+   segue no `mock-payment` até a E0.1.3.
+
+> **Recebedor master da Movepark:** configurável em `app_setting.pagarme_movepark_recipient_id`
+> (Manager). Use o de staging agora; trocar para produção é só editar o valor.
+
+### Webhook de status (E0.1.2/.4)
+
+Edge **`pagarme-webhook`** (`verify_jwt=false`, deploy com `--no-verify-jwt`): valida **Basic auth**
+(secret `PAGARME_WEBHOOK_BASIC_AUTH` = `user:pass`, configurado no painel do Pagar.me), **idempotência**
+por id do evento (`payment_webhook_event`), casa o `payment` por `provider_payment_id` (order id, ou
+`metadata.booking_id`) e reflete o status: `order.paid`/`charge.paid` → `payment.paid` +
+`booking.confirmed` (só se pendente); refunded/failed/canceled refletem no `payment`. O polling do
+checkout (`useCheckoutBooking`) detecta a confirmação no banco. **Setup:** cadastrar a URL do webhook
++ Basic auth no painel do Pagar.me e setar o secret.
+
 ## Fora de escopo (próximas subtarefas)
 
-E0.1.2/.3 (cobrança PIX/cartão com split usando `take_rate_bps` + `external_recipient_id`),
-E0.1.4 (webhooks → `booking.status`), trigger automático de criação do recebedor ao concluir o KYC,
-e o `base64_qrcode` da prova de vida (hoje exibimos só a `url`).
+E0.1.3 (cartão com split + parcelamento Q-001 + tokenização), endurecer o webhook (retry/assinatura
+extra) se necessário, trigger automático de criação do recebedor ao concluir o KYC, e o
+`base64_qrcode` da prova de vida (hoje exibimos só a `url`).

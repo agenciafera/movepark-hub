@@ -7,7 +7,10 @@
 // completos (endereço, sócios, nascimento, etc.) são coletados em E1.3.
 
 import type {
+  ChargeResult,
+  ChargeStatus,
   PaymentGateway,
+  PixChargeInput,
   RecipientInput,
   RecipientKycAddress,
   RecipientKycPhone,
@@ -221,6 +224,99 @@ export function buildRecipientResult(httpStatus: number, body: unknown): Recipie
   };
 }
 
+// ── Cobrança PIX com split ──────────────────────────────────────────────────
+
+/** Mapeia o status cru (order/charge/last_transaction) → status normalizado da cobrança. */
+export function mapChargeStatus(raw: string | null | undefined): ChargeStatus {
+  switch ((raw ?? "").toLowerCase()) {
+    case "paid":
+      return "paid";
+    case "canceled":
+    case "cancelled":
+      return "canceled";
+    case "refunded":
+    case "pending_refund":
+      return "refunded";
+    case "failed":
+    case "with_error":
+    case "not_authorized":
+      return "failed";
+    case "pending":
+    case "processing":
+    case "waiting_payment":
+    case "created":
+    case "":
+      return "pending";
+    default:
+      return "pending";
+  }
+}
+
+/** Monta o corpo de POST /orders com PIX + split. */
+export function buildOrderBody(input: PixChargeInput): Record<string, unknown> {
+  return {
+    code: input.externalCode,
+    customer: {
+      name: input.customer.name,
+      email: input.customer.email,
+      document: input.customer.document ?? undefined,
+      type: input.customer.type,
+      phones: input.customer.phone
+        ? {
+            mobile_phone: {
+              country_code: "55",
+              area_code: input.customer.phone.ddd,
+              number: input.customer.phone.number,
+            },
+          }
+        : undefined,
+    },
+    items: input.items.map((i) => ({
+      amount: i.amount,
+      description: i.description,
+      quantity: i.quantity,
+    })),
+    payments: [
+      {
+        payment_method: "pix",
+        pix: { expires_in: input.expiresInSeconds },
+        split: input.split.map((s) => ({
+          amount: s.amount,
+          type: s.type,
+          recipient_id: s.recipientId,
+          options: {
+            liable: s.liable,
+            charge_processing_fee: s.chargeProcessingFee,
+            charge_remainder_fee: s.chargeRemainderFee,
+          },
+        })),
+      },
+    ],
+    metadata: input.metadata,
+  };
+}
+
+/** Extrai o ChargeResult normalizado da resposta de order do Pagar.me. */
+export function buildChargeResult(httpStatus: number, body: unknown): ChargeResult {
+  const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
+  const charges = Array.isArray(b.charges) ? (b.charges as Record<string, unknown>[]) : [];
+  const charge = charges[0] ?? {};
+  const tx = (charge.last_transaction ?? {}) as Record<string, unknown>;
+  const status = mapChargeStatus(
+    (b.status as string) ?? (charge.status as string) ?? (tx.status as string),
+  );
+  return {
+    orderId: (b.id as string) ?? null,
+    chargeId: (charge.id as string) ?? null,
+    status,
+    qrCode: (tx.qr_code as string) ?? null,
+    qrCodeUrl: (tx.qr_code_url as string) ?? null,
+    expiresAt: (tx.expires_at as string) ?? null,
+    raw: body,
+    httpStatus,
+  };
+}
+
 export class PagarmeGateway implements PaymentGateway {
   readonly provider = "pagarme";
   private readonly secretKey: string;
@@ -287,5 +383,31 @@ export class PagarmeGateway implements PaymentGateway {
   async getRecipient(externalId: string): Promise<RecipientResult> {
     const result = await this.request("GET", `/recipients/${externalId}`);
     return this.withKycLink(result);
+  }
+
+  private async charge(method: string, path: string, body?: unknown): Promise<ChargeResult> {
+    const res = await fetch(`${pagarmeBaseUrl(this.secretKey)}${path}`, {
+      method,
+      headers: {
+        Authorization: pagarmeAuthHeader(this.secretKey),
+        "Content-Type": "application/json",
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    let parsed: unknown = null;
+    try {
+      parsed = await res.json();
+    } catch {
+      parsed = null;
+    }
+    return buildChargeResult(res.status, parsed);
+  }
+
+  createPixCharge(input: PixChargeInput): Promise<ChargeResult> {
+    return this.charge("POST", "/orders", buildOrderBody(input));
+  }
+
+  getCharge(orderId: string): Promise<ChargeResult> {
+    return this.charge("GET", `/orders/${orderId}`);
   }
 }

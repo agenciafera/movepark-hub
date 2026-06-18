@@ -1,15 +1,18 @@
 import { assertEquals } from "jsr:@std/assert";
 import {
+  buildChargeResult,
   buildCreateRecipientBody,
+  buildOrderBody,
   buildRecipientResult,
   extractKycUrl,
+  mapChargeStatus,
   mapRecipientStatus,
   normalizeRequirements,
   pagarmeAuthHeader,
   pagarmeBaseUrl,
   recipientCanNeedKyc,
 } from "./pagarme.ts";
-import type { RecipientInput } from "./types.ts";
+import type { PixChargeInput, RecipientInput } from "./types.ts";
 
 Deno.test("pagarmeBaseUrl: sandbox para sk_test_, produção caso contrário", () => {
   assertEquals(pagarmeBaseUrl("sk_test_abc"), "https://sdx-api.pagar.me/core/v5");
@@ -82,6 +85,52 @@ Deno.test("buildCreateRecipientBody: CNPJ vira corporation; CPF vira individual"
   assertEquals(ind.register_information.type, "individual");
   assertEquals(ind.register_information.name, "Estac. LTDA");
   assertEquals(ind.default_bank_account.holder_type, "individual");
+});
+
+Deno.test("mapChargeStatus normaliza status de cobrança", () => {
+  assertEquals(mapChargeStatus("paid"), "paid");
+  assertEquals(mapChargeStatus("waiting_payment"), "pending");
+  assertEquals(mapChargeStatus("pending"), "pending");
+  assertEquals(mapChargeStatus("canceled"), "canceled");
+  assertEquals(mapChargeStatus("refunded"), "refunded");
+  assertEquals(mapChargeStatus("with_error"), "failed");
+});
+
+Deno.test("buildOrderBody monta PIX + split", () => {
+  const input: PixChargeInput = {
+    externalCode: "MP-ABC123",
+    amountCents: 10000,
+    customer: { name: "Cliente", email: "c@ex.com", document: "39053344705", type: "individual", phone: { ddd: "11", number: "999998888" } },
+    items: [{ amount: 10000, description: "Reserva MP-ABC123", quantity: 1 }],
+    split: [
+      { recipientId: "rp_partner", amount: 8500, type: "flat", liable: true, chargeProcessingFee: true, chargeRemainderFee: true },
+      { recipientId: "rp_mp", amount: 1500, type: "flat", liable: false, chargeProcessingFee: false, chargeRemainderFee: false },
+    ],
+    expiresInSeconds: 3600,
+    metadata: { booking_id: "b1" },
+  };
+  const body = buildOrderBody(input) as Record<string, any>;
+  assertEquals(body.code, "MP-ABC123");
+  assertEquals(body.payments[0].payment_method, "pix");
+  assertEquals(body.payments[0].pix.expires_in, 3600);
+  assertEquals(body.payments[0].split.length, 2);
+  assertEquals(body.payments[0].split[0].recipient_id, "rp_partner");
+  assertEquals(body.payments[0].split[0].options.charge_processing_fee, true);
+  assertEquals(body.customer.phones.mobile_phone.area_code, "11");
+  assertEquals(body.metadata.booking_id, "b1");
+});
+
+Deno.test("buildChargeResult extrai qr_code e status do charge", () => {
+  const r = buildChargeResult(200, {
+    id: "or_1",
+    status: "pending",
+    charges: [{ id: "ch_1", status: "pending", last_transaction: { qr_code: "00020126...", qr_code_url: "https://qr", expires_at: "2026-06-19T12:00:00Z", status: "waiting_payment" } }],
+  });
+  assertEquals(r.orderId, "or_1");
+  assertEquals(r.chargeId, "ch_1");
+  assertEquals(r.status, "pending");
+  assertEquals(r.qrCode, "00020126...");
+  assertEquals(r.qrCodeUrl, "https://qr");
 });
 
 Deno.test("recipientCanNeedKyc: só pending/action_required consultam prova de vida", () => {

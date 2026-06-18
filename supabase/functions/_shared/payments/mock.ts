@@ -1,10 +1,43 @@
 // Gateway mock — paridade com `payment.provider = 'mock'`. Não chama rede; aprova na hora.
 // Útil para testes da camada de vínculo e para ambientes sem credencial de gateway.
 
-import type { PaymentGateway, RecipientInput, RecipientResult } from "./types.ts";
+import type {
+  ChargeResult,
+  PaymentGateway,
+  PixChargeInput,
+  RecipientInput,
+  RecipientResult,
+} from "./types.ts";
 
 export class MockGateway implements PaymentGateway {
   readonly provider = "mock";
+
+  createPixCharge(input: PixChargeInput): Promise<ChargeResult> {
+    const orderId = `mock_or_${input.externalCode}`;
+    return Promise.resolve({
+      orderId,
+      chargeId: `mock_ch_${input.externalCode}`,
+      status: "pending",
+      qrCode: `00020126mock-${input.externalCode}5204000053039865802BR6304MOCK`,
+      qrCodeUrl: null,
+      expiresAt: null,
+      raw: { mock: true },
+      httpStatus: 200,
+    });
+  }
+
+  getCharge(orderId: string): Promise<ChargeResult> {
+    return Promise.resolve({
+      orderId,
+      chargeId: orderId.replace("mock_or_", "mock_ch_"),
+      status: "paid",
+      qrCode: null,
+      qrCodeUrl: null,
+      expiresAt: null,
+      raw: { mock: true },
+      httpStatus: 200,
+    });
+  }
 
   createRecipient(input: RecipientInput): Promise<RecipientResult> {
     return Promise.resolve({

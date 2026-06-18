@@ -102,6 +102,65 @@ export interface RecipientResult {
   httpStatus: number | null;
 }
 
+// ── Cobrança (E0.1.2: PIX com split) ────────────────────────────────────────
+
+/** Status normalizado da cobrança (espelha o enum SQL `payment_status`). */
+export type ChargeStatus = "pending" | "paid" | "failed" | "refunded" | "canceled";
+
+/** Uma perna do split: quanto vai pra qual recebedor e quem arca taxa/risco. */
+export interface SplitRule {
+  recipientId: string;
+  /** Em centavos quando type='flat'; em % (0–100) quando type='percentage'. */
+  amount: number;
+  type: "flat" | "percentage";
+  /** Responsável por chargeback/estorno. */
+  liable: boolean;
+  /** Arca (parte d)a taxa de processamento do gateway. */
+  chargeProcessingFee: boolean;
+  /** Recebe o restante de centavos não divisível. */
+  chargeRemainderFee: boolean;
+}
+
+export interface ChargeCustomer {
+  name: string;
+  email: string;
+  document: string | null;
+  type: "individual" | "company";
+  phone?: { ddd: string; number: string } | null;
+}
+
+export interface ChargeItem {
+  amount: number; // centavos
+  description: string;
+  quantity: number;
+}
+
+export interface PixChargeInput {
+  /** Referência no nosso lado (código da reserva) → vira `code` na order. */
+  externalCode: string;
+  amountCents: number;
+  customer: ChargeCustomer;
+  items: ChargeItem[];
+  split: SplitRule[];
+  expiresInSeconds: number;
+  /** Repassado em metadata da order (p/ casar no webhook). */
+  metadata?: Record<string, string>;
+}
+
+/** Resultado normalizado de uma cobrança. */
+export interface ChargeResult {
+  orderId: string | null;
+  chargeId: string | null;
+  status: ChargeStatus;
+  /** PIX copia-e-cola. */
+  qrCode: string | null;
+  /** URL da imagem do QR. */
+  qrCodeUrl: string | null;
+  expiresAt: string | null;
+  raw: unknown;
+  httpStatus: number | null;
+}
+
 /** Contrato que todo gateway de pagamento deve implementar. */
 export interface PaymentGateway {
   readonly provider: string;
@@ -109,6 +168,10 @@ export interface PaymentGateway {
   createRecipient(input: RecipientInput): Promise<RecipientResult>;
   /** Relê o estado atual do recebedor no gateway. */
   getRecipient(externalId: string): Promise<RecipientResult>;
+  /** Cria uma cobrança PIX com split. */
+  createPixCharge(input: PixChargeInput): Promise<ChargeResult>;
+  /** Relê o estado atual de uma cobrança (pelo id da order). */
+  getCharge(orderId: string): Promise<ChargeResult>;
 }
 
 /** Erro de configuração do gateway (ex.: secret ausente) — separado de erro de negócio. */

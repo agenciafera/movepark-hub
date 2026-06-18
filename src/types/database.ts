@@ -1737,10 +1737,15 @@ export type Database = {
           booking_id: string
           created_at: string
           currency: string
+          expires_at: string | null
           id: string
+          method: string | null
           paid_at: string | null
+          pix_qr_code: string | null
+          pix_qr_code_url: string | null
           provider: string
           provider_payment_id: string | null
+          split: Json | null
           status: Database["public"]["Enums"]["payment_status"]
           updated_at: string
         }
@@ -1749,10 +1754,15 @@ export type Database = {
           booking_id: string
           created_at?: string
           currency?: string
+          expires_at?: string | null
           id?: string
+          method?: string | null
           paid_at?: string | null
+          pix_qr_code?: string | null
+          pix_qr_code_url?: string | null
           provider: string
           provider_payment_id?: string | null
+          split?: Json | null
           status?: Database["public"]["Enums"]["payment_status"]
           updated_at?: string
         }
@@ -1761,10 +1771,15 @@ export type Database = {
           booking_id?: string
           created_at?: string
           currency?: string
+          expires_at?: string | null
           id?: string
+          method?: string | null
           paid_at?: string | null
+          pix_qr_code?: string | null
+          pix_qr_code_url?: string | null
           provider?: string
           provider_payment_id?: string | null
+          split?: Json | null
           status?: Database["public"]["Enums"]["payment_status"]
           updated_at?: string
         }
@@ -1830,6 +1845,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payment_webhook_event: {
+        Row: {
+          id: string
+          provider: string
+          received_at: string
+          type: string | null
+        }
+        Insert: {
+          id: string
+          provider?: string
+          received_at?: string
+          type?: string | null
+        }
+        Update: {
+          id?: string
+          provider?: string
+          received_at?: string
+          type?: string | null
+        }
+        Relationships: []
       }
       payout_recipient: {
         Row: {

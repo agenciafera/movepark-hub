@@ -1,11 +1,17 @@
 // Fábrica de gateway — ÚNICO ponto de dispatch por provider. O resto do código pede
 // `getGateway(provider)` e fala só pela interface `PaymentGateway` (ADR-004).
 
-import type { PaymentGateway } from "./types.ts";
+import type { ChargeStatus, PaymentGateway } from "./types.ts";
 import { PagarmeGateway } from "./pagarme.ts";
 import { MockGateway } from "./mock.ts";
 
 export * from "./types.ts";
+export { buildSplit } from "./split.ts";
+
+/** ChargeStatus (gateway) → enum SQL `payment_status` ('canceled' vira 'cancelled'). */
+export function chargeStatusToPaymentStatus(status: ChargeStatus): string {
+  return status === "canceled" ? "cancelled" : status;
+}
 
 /** Provider de recebedor padrão da plataforma. */
 export const DEFAULT_PROVIDER = "pagarme";

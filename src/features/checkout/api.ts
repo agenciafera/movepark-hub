@@ -207,3 +207,37 @@ export function useMockPayment() {
     },
   });
 }
+
+export type PixChargeResponse = {
+  payment_id: string;
+  status: "pending" | "paid" | "failed" | "refunded" | "canceled";
+  qr_code: string | null;
+  qr_code_url: string | null;
+  expires_at: string | null;
+};
+
+/** Cobrança PIX real com split (E0.1.2) — Edge create-pix-charge. */
+export function useCreatePixCharge() {
+  return useMutation({
+    mutationFn: async (args: { booking_code: string }): Promise<PixChargeResponse> => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Você precisa estar logado");
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-pix-charge`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(args),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? `Falha ao gerar PIX (HTTP ${res.status})`);
+      }
+      return res.json();
+    },
+  });
+}

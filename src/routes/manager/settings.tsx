@@ -76,6 +76,58 @@ function PartnerEmailSettings() {
   );
 }
 
+function PaymentsSettings() {
+  const { data, isLoading } = useAppSettings();
+  const update = useUpdateAppSettings();
+  const [recipientId, setRecipientId] = React.useState("");
+  const [ready, setReady] = React.useState(false);
+
+  React.useEffect(() => {
+    if (data && !ready) {
+      setRecipientId(data.pagarme_movepark_recipient_id ?? "");
+      setReady(true);
+    }
+  }, [data, ready]);
+
+  async function save() {
+    try {
+      await update.mutateAsync({ pagarme_movepark_recipient_id: recipientId.trim() });
+      toast.success("Configuração de pagamento salva");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao salvar");
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Split de pagamento (Pagar.me)</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="movepark-recipient">Recebedor master da Movepark</Label>
+          <Input
+            id="movepark-recipient"
+            value={recipientId}
+            onChange={(e) => setRecipientId(e.target.value)}
+            placeholder="rp_xxxxxxxxxxxxxxxx"
+            disabled={isLoading}
+          />
+          <span className="text-caption text-muted">
+            ID do recebedor da Movepark no Pagar.me que recebe a comissão (take_rate) no split. Use o
+            de staging agora e troque pelo de produção quando for ao ar.
+          </span>
+        </div>
+        <div>
+          <Button onClick={save} disabled={update.isPending || isLoading}>
+            {update.isPending ? "Salvando…" : "Salvar"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function ManagerSettings() {
   const [twoFactor, setTwoFactor] = React.useState(false);
   return (
@@ -85,6 +137,7 @@ export default function ManagerSettings() {
         <TabsList>
           <TabsTrigger value="general">Geral</TabsTrigger>
           <TabsTrigger value="partners">Parceiros</TabsTrigger>
+          <TabsTrigger value="payments">Pagamentos</TabsTrigger>
           <TabsTrigger value="notifications">Notificações</TabsTrigger>
           <TabsTrigger value="security">Segurança</TabsTrigger>
         </TabsList>
@@ -109,6 +162,10 @@ export default function ManagerSettings() {
 
         <TabsContent value="partners">
           <PartnerEmailSettings />
+        </TabsContent>
+
+        <TabsContent value="payments">
+          <PaymentsSettings />
         </TabsContent>
 
         <TabsContent value="notifications">

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useMockPayment } from "./api";
+import { useCreatePixCharge, useMockPayment } from "./api";
 import { toSvgString } from "@/lib/qr";
 
 type Props = {
@@ -23,6 +23,7 @@ const SUGGESTED = {
 
 export function Step3Payment({ bookingCode, paymentStatus, onBack }: Props) {
   const mock = useMockPayment();
+  const pix = useCreatePixCharge();
   const [pixPayload, setPixPayload] = React.useState<string | null>(null);
   const [pixSvg, setPixSvg] = React.useState<string | null>(null);
   const [cardNumber, setCardNumber] = React.useState("");
@@ -32,16 +33,13 @@ export function Step3Payment({ bookingCode, paymentStatus, onBack }: Props) {
 
   async function initPix() {
     try {
-      const res = await mock.mutateAsync({
-        booking_code: bookingCode,
-        method: "pix",
-      });
-      setPixPayload(res.pix_payload);
-      if (res.pix_payload) {
-        const svg = await toSvgString(res.pix_payload, 256);
+      const res = await pix.mutateAsync({ booking_code: bookingCode });
+      setPixPayload(res.qr_code);
+      if (res.qr_code) {
+        const svg = await toSvgString(res.qr_code, 256);
         setPixSvg(svg);
       }
-      toast.success("PIX gerado — confirme no seu app de banco");
+      toast.success("PIX gerado — pague no seu app de banco");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao gerar PIX");
     }
@@ -67,17 +65,15 @@ export function Step3Payment({ bookingCode, paymentStatus, onBack }: Props) {
     toast.success("Código copiado");
   }
 
-  // Quando payment status já é pending (mock_payment foi disparado), mostra estado de espera
-  const waitingForConfirmation =
-    paymentStatus === "pending" || mock.isPending;
+  // Quando o payment já está pending, mostra estado de espera
+  const waitingForConfirmation = paymentStatus === "pending";
 
   return (
     <div className="space-y-6">
       <div className="space-y-1">
         <h2 className="text-display-sm text-ink">Pagamento</h2>
         <p className="text-body-md text-muted">
-          Pagamento mockado pra essa fase — confirma sozinho em alguns
-          segundos.
+          PIX com confirmação automática. Cartão ainda em modo de teste nesta fase.
         </p>
       </div>
 
@@ -98,11 +94,10 @@ export function Step3Payment({ bookingCode, paymentStatus, onBack }: Props) {
             {!pixPayload && !waitingForConfirmation && (
               <div className="space-y-4 text-center">
                 <p className="text-body-md text-body">
-                  Gere o código PIX e o pagamento confirma sozinho em ~3
-                  segundos.
+                  Gere o código PIX, pague no app do seu banco e a confirmação chega automaticamente.
                 </p>
-                <Button onClick={initPix} disabled={mock.isPending}>
-                  {mock.isPending ? "Gerando…" : "Gerar PIX"}
+                <Button onClick={initPix} disabled={pix.isPending}>
+                  {pix.isPending ? "Gerando…" : "Gerar PIX"}
                 </Button>
               </div>
             )}
