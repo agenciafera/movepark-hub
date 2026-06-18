@@ -357,6 +357,7 @@ export type Database = {
           notes: string | null
           origin: string | null
           passenger_count: number | null
+          price_breakdown: Json | null
           profile_id: string | null
           review_request_sent_at: string | null
           status: Database["public"]["Enums"]["booking_status"]
@@ -390,6 +391,7 @@ export type Database = {
           notes?: string | null
           origin?: string | null
           passenger_count?: number | null
+          price_breakdown?: Json | null
           profile_id?: string | null
           review_request_sent_at?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
@@ -423,6 +425,7 @@ export type Database = {
           notes?: string | null
           origin?: string | null
           passenger_count?: number | null
+          price_breakdown?: Json | null
           profile_id?: string | null
           review_request_sent_at?: string | null
           status?: Database["public"]["Enums"]["booking_status"]

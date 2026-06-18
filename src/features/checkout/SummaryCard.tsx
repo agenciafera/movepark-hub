@@ -14,6 +14,13 @@ export function SummaryCard({ booking, onEdit }: Props) {
   const parkingItem = booking.items.find((i) => i.item_type === "parking");
   const addOns = booking.items.filter((i) => i.item_type === "add_on");
 
+  // Snapshot do preço: mostra o "de R$X" riscado quando há promoção (sem alterar o total).
+  const breakdown = booking.price_breakdown;
+  const oldPrice =
+    breakdown?.old_price != null && parkingItem && breakdown.old_price > parkingItem.subtotal
+      ? breakdown.old_price
+      : null;
+
   return (
     <div className="rounded-md border border-hairline bg-canvas p-6 shadow-tier">
       <div className="space-y-1">
@@ -63,8 +70,11 @@ export function SummaryCard({ booking, onEdit }: Props) {
             <span className="text-ink">
               {parkingItem.parking_type?.name} × {parkingItem.quantity}
             </span>
-            <span className="text-ink tabular-nums">
-              {formatBRL(parkingItem.subtotal)}
+            <span className="tabular-nums">
+              {oldPrice && (
+                <span className="mr-1.5 text-muted line-through">{formatBRL(oldPrice)}</span>
+              )}
+              <span className="text-ink">{formatBRL(parkingItem.subtotal)}</span>
             </span>
           </div>
         )}

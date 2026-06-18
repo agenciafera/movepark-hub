@@ -1,12 +1,26 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
+export type PriceBreakdown = {
+  currency: string;
+  days: number;
+  strategy: string | null;
+  base_price: number;
+  old_price: number | null;
+  subtotal: number;
+  auto_discount: { amount: number; rule_id: string | null; label: string | null } | null;
+  coupon: { code: string; discount: number } | null;
+  total: number;
+  line_items: unknown[];
+};
+
 export type BookingForCheckout = {
   id: string;
   code: string;
   status: "pending" | "confirmed" | "checked_in" | "completed" | "cancelled" | "no_show";
   total_amount: number;
   currency: string;
+  price_breakdown: PriceBreakdown | null;
   check_in_at: string;
   check_out_at: string;
   expires_at: string | null;
@@ -59,7 +73,7 @@ export function useCheckoutBooking(code: string | undefined) {
       const { data, error } = await supabase
         .from("booking")
         .select(
-          `id, code, status, total_amount, currency, check_in_at, check_out_at,
+          `id, code, status, total_amount, currency, price_breakdown, check_in_at, check_out_at,
            expires_at, passenger_count, has_pcd, vehicle_id, profile_id,
            location:location!inner(id, slug, name, address,
              company:company!inner(slug, name)),
@@ -90,6 +104,7 @@ export function useCheckoutBooking(code: string | undefined) {
         status: row.status,
         total_amount: Number(row.total_amount),
         currency: row.currency,
+        price_breakdown: (row.price_breakdown as PriceBreakdown | null) ?? null,
         check_in_at: row.check_in_at,
         check_out_at: row.check_out_at,
         expires_at: row.expires_at,

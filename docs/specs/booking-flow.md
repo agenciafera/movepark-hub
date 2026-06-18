@@ -72,6 +72,12 @@ POST /api/bookings
 - Cria `booking` com status `pending`
 - Cria `booking_item` para a vaga e para cada serviço adicional
 - Preços são **snapshot** no momento da criação (unit_price, subtotal)
+- **Snapshot completo do preço (E2.2.1):** `_create_booking_core` grava `booking.price_breakdown`
+  (jsonb **imutável**) com o **contexto que o cliente viu** — `base_price`, `old_price`, `subtotal`,
+  `auto_discount` (+ `label`), `coupon` (+ `code`), `strategy`, `days`, `total` e `line_items`. Como é
+  derivado de `simulate_price` (que é **STABLE** e muda com a Tábua de Marés), persistir o breakdown
+  garante que summary/voucher/histórico mostrem sempre **o que foi cobrado**, sem re-simular. O
+  `SummaryCard` usa o `old_price` do snapshot pra exibir o "de R$X" riscado sem mexer no total.
 - Se coupon: cria `booking_coupon` com `discount_applied`
 - **Não** ocupa vaga ainda — só na confirmação do pagamento
 
