@@ -51,6 +51,7 @@ const operatorItems: Item[] = [
   { to: "/operator/reviews", label: "Avaliações", icon: Star },
   { to: "/operator/users", label: "Usuários", icon: Users },
   { to: "/operator/faq", label: "FAQ", icon: HelpCircle },
+  { to: "/operator/finance", label: "Repasses", icon: Receipt },
   { to: "/operator/reports", label: "Relatórios", icon: BarChart3 },
   { to: "/operator/api-keys", label: "API", icon: KeyRound },
   { to: "/operator/settings", label: "Configurações", icon: Settings },

@@ -61,6 +61,7 @@ import OperatorBookings from "@/routes/operator/bookings";
 import OperatorLocations from "@/routes/operator/locations";
 import OperatorOccupancy from "@/routes/operator/occupancy";
 import OperatorReports from "@/routes/operator/reports";
+import OperatorFinance from "@/routes/operator/finance";
 import OperatorSettings from "@/routes/operator/settings";
 import OperatorFaq from "@/routes/operator/faq";
 import OperatorAddons from "@/routes/operator/addons";
@@ -261,6 +262,7 @@ export const routes: RouteRecord[] = [
               { path: "users", element: <OperatorUsers /> },
               { path: "faq", element: <OperatorFaq /> },
               { path: "reports", element: <OperatorReports /> },
+              { path: "finance", element: <OperatorFinance /> },
               { path: "api-keys", element: <OperatorApiKeys /> },
               { path: "settings", element: <OperatorSettings /> },
             ],

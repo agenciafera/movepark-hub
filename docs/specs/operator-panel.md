@@ -476,6 +476,15 @@ Tabela de Reservas
 - Check-in por QR também disponível em `/voucher/validate` (escaneando o voucher). Dashboard do operador
   resume check-ins/check-outs do dia.
 
+## 8.z Extrato de repasses (E1.5.2)
+
+- `/operator/finance` ("Repasses") mostra ao parceiro, da **sua** empresa: **saldo a receber**
+  (`payout_balance`), o **extrato do mês** (`payout_statement` com `includeLines` — bruto, estornos,
+  **líquido a receber**, comissão da Movepark + linhas por reserva) e o **histórico de saques**
+  (`payout_withdrawal`, taxa diluída). Consome a reconciliação da **E0.3.3**; o escopo é garantido pelas
+  RPCs (operator só a sua empresa) e exibe o **status do recebedor** (`payout_recipient`).
+- **NFs** ficam como **placeholder** — dependem da camada fiscal (**E0.2**, em definição com a contabilidade).
+
 ## 8.x Preço e disponibilidade na extranet (E1.4)
 
 - **Editar preço (E1.4.1):** o operador edita a precificação da sua unidade em
