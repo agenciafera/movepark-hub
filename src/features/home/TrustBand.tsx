@@ -4,40 +4,42 @@ const items = [
   {
     icon: ShieldCheck,
     title: "Cancelamento grátis",
-    text: "Até 24h antes da reserva.",
+    text: "Até 24h antes da reserva, sem custo.",
   },
   {
     icon: Tag,
     title: "Preço travado",
-    text: "Sem surpresas no balcão.",
+    text: "Sem surpresas no balcão. O valor é o da reserva.",
   },
   {
     icon: BadgeCheck,
     title: "Operadoras verificadas",
-    text: "Parceiros aprovados pela Movepark.",
+    text: "Parceiros aprovados e avaliados pela Movepark.",
   },
   {
     icon: Headphones,
     title: "Atendimento 24h",
-    text: "Suporte por e-mail e telefone.",
+    text: "Suporte por e-mail e telefone antes e durante sua viagem.",
   },
 ];
 
 export function TrustBand() {
   return (
-    <section className="bg-surface-soft">
-      <div className="mx-auto grid w-full max-w-[1280px] grid-cols-1 gap-6 px-6 py-10 tablet:grid-cols-2 desktop:grid-cols-4 desktop:px-8">
-        {items.map((it) => (
-          <div key={it.title} className="flex items-start gap-3">
-            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-canvas text-mp-indigo shadow-tier">
-              <it.icon className="h-5 w-5" />
-            </span>
-            <div className="flex flex-col">
-              <span className="text-title-md text-ink">{it.title}</span>
-              <span className="text-body-sm text-muted">{it.text}</span>
+    <section className="border-y border-hairline py-14">
+      <div className="mx-auto max-w-[1280px] px-6 desktop:px-8">
+        <div className="grid grid-cols-1 gap-8 tablet:grid-cols-2 desktop:grid-cols-4">
+          {items.map((it) => (
+            <div key={it.title} className="flex flex-col gap-3">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-mp-pale text-mp-indigo">
+                <it.icon className="h-6 w-6" />
+              </span>
+              <div>
+                <div className="text-title-md text-ink">{it.title}</div>
+                <p className="mt-1 text-body-sm text-muted">{it.text}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   );

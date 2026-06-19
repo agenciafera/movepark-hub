@@ -1,9 +1,12 @@
 import { Helmet } from "react-helmet-async";
 import { Hero } from "@/features/home/Hero";
 import { CategoryStrip } from "@/features/home/CategoryStrip";
+import { DestinationsGallery } from "@/features/home/DestinationsGallery";
 import { PopularDestinations } from "@/features/home/PopularDestinations";
-import { TrustBand } from "@/features/home/TrustBand";
+import { Testimonials } from "@/features/home/Testimonials";
 import { HowItWorks } from "@/features/home/HowItWorks";
+import { TrustBand } from "@/features/home/TrustBand";
+import { CtaBanner } from "@/features/home/CtaBanner";
 
 export default function HomePage() {
   return (
@@ -25,9 +28,12 @@ export default function HomePage() {
       </Helmet>
       <Hero />
       <CategoryStrip />
+      <DestinationsGallery />
       <PopularDestinations />
-      <TrustBand />
+      <Testimonials />
       <HowItWorks />
+      <TrustBand />
+      <CtaBanner />
     </div>
   );
 }
