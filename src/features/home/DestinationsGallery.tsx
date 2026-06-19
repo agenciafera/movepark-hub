@@ -17,7 +17,7 @@ const loop = [...items, ...items];
 function PhotoCard({ label, city, h, dy }: { label: string; city: string; h: number; dy: number }) {
   return (
     <div
-      className="relative w-[230px] shrink-0 cursor-pointer overflow-hidden rounded-2xl bg-gradient-to-br from-mp-pale via-surface-soft to-blue-50 transition-shadow hover:shadow-tier"
+      className="relative w-[360px] shrink-0 cursor-pointer overflow-hidden rounded-2xl bg-gradient-to-br from-mp-pale via-surface-soft to-blue-50 transition-shadow hover:shadow-tier"
       style={{ height: h, transform: `translateY(${dy}px)` }}
     >
       {/* Gradiente de fundo decorativo */}
@@ -64,11 +64,11 @@ export function DestinationsGallery() {
       </div>
 
       {/* Faixa full-width — altura fixa para clipar cards acima/abaixo */}
-      <div className="group overflow-hidden" style={{ height: 520 }}>
+      <div className="group overflow-hidden" style={{ height: 620 }}>
         {/* Margem extra no topo para dar espaço aos cards deslocados para cima */}
         <div
-          className="flex items-center gap-4 px-4 animate-marquee [animation-play-state:paused] group-hover:[animation-play-state:running]"
-          style={{ marginTop: 80 }}
+          className="flex items-center gap-6 px-6 animate-marquee [animation-play-state:paused] group-hover:[animation-play-state:running]"
+          style={{ marginTop: 90 }}
         >
           {loop.map((item, i) => (
             <PhotoCard key={`${item.label}-${i}`} {...item} />
