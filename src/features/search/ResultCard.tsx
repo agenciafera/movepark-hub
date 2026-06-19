@@ -132,7 +132,7 @@ export function ResultCard({ item, isSaved, onToggleSave, searchParams, badges =
           className={cn(
             "h-4 w-4 transition-colors",
             isSaved
-              ? "fill-mp-red stroke-mp-red"
+              ? "fill-mp-primary stroke-mp-primary"
               : "text-ink",
           )}
         />
@@ -157,7 +157,7 @@ export function ResultCard({ item, isSaved, onToggleSave, searchParams, badges =
             </p>
             {item.location.nearest_terminal && (
               <p className="line-clamp-1 inline-flex items-center gap-1 text-body-sm font-medium text-ink">
-                <MapPin className="h-3.5 w-3.5 text-mp-red" />
+                <MapPin className="h-3.5 w-3.5 text-mp-primary" />
                 mais perto do {item.location.nearest_terminal.name}
                 <span className="font-normal text-muted">
                   · {formatDistance(item.location.nearest_terminal.distance_km)}

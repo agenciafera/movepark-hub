@@ -33,9 +33,9 @@ type ColorChip = {
 const brandColors: ColorChip[] = [
   { name: "Navy", hex: "#29263F", token: "--mp-navy", role: "Ink, headlines" },
   { name: "Indigo", hex: "#4041A3", token: "--mp-indigo", role: "Secondary brand" },
-  { name: "Violet", hex: "#5D5FEF", token: "--mp-violet", role: "Gradient terminus" },
+  { name: "Violet", hex: "#5D5FEF", token: "--mp-violet", role: "Primary CTA" },
   { name: "Pale", hex: "#E4F2FF", token: "--mp-pale", role: "Brand surface" },
-  { name: "Red", hex: "#DA455E", token: "--mp-red", role: "Primary CTA" },
+  { name: "Red", hex: "#DA455E", token: "--mp-red", role: "Brand accent" },
   { name: "Red Deep", hex: "#AE374B", token: "--mp-red-deep", role: "Monogram shadow" },
   { name: "Teal", hex: "#A6DBDF", token: "--mp-teal", role: "Monogram stripe" },
 ];
@@ -243,7 +243,7 @@ function NavTab({
         <span className="absolute -bottom-1 left-2 right-2 h-0.5 rounded bg-ink" />
       )}
       {badge && (
-        <span className="absolute -right-3 top-0 rounded-full bg-mp-red px-1.5 py-[2px] text-[8px] font-black uppercase tracking-[0.4px] text-on-primary">
+        <span className="absolute -right-3 top-0 rounded-full bg-mp-primary px-1.5 py-[2px] text-[8px] font-black uppercase tracking-[0.4px] text-on-primary">
           {badge}
         </span>
       )}
@@ -286,7 +286,7 @@ function PropertyCard({
             className="h-5 w-5"
             stroke="#fff"
             strokeWidth={2}
-            fill={saved ? "#DA455E" : "rgba(0,0,0,0.4)"}
+            fill={saved ? "hsl(var(--mp-primary))" : "rgba(0,0,0,0.4)"}
           />
         </div>
       </div>
@@ -483,9 +483,9 @@ export default function DesignSystemPage() {
             </h1>
             <p className="max-w-2xl text-body-md text-body">
               A identidade Movepark — navy{" "}
-              <span className="font-mono text-ink">#29263F</span>, indigo{" "}
-              <span className="font-mono text-ink">#4041A3</span>, violet, pale e o
-              vermelho <span className="font-mono text-mp-red">#DA455E</span> —
+              <span className="font-mono text-ink">#29263F</span>, violet{" "}
+              <span className="font-mono text-mp-primary">#5D5FEF</span> (CTA), indigo{" "}
+              <span className="font-mono text-ink">#4041A3</span>, pale —
               sobre a linguagem estrutural de marketplaces de consumo (cards
               foto-first, busca em pílula, elevação suave, tipografia Roboto em
               pesos moderados).
@@ -751,7 +751,7 @@ export default function DesignSystemPage() {
                   <Token>badge · 11 / 700</Token>
                 </div>
                 <div className="flex flex-col items-start gap-2">
-                  <span className="rounded-full bg-mp-red px-2 py-[3px] text-[8px] font-black uppercase tracking-[0.4px] text-on-primary">
+                  <span className="rounded-full bg-mp-primary px-2 py-[3px] text-[8px] font-black uppercase tracking-[0.4px] text-on-primary">
                     NEW
                   </span>
                   <Token>uppercase-tag · 8 / 900</Token>
@@ -879,7 +879,7 @@ export default function DesignSystemPage() {
                 <span className="rounded-full bg-canvas px-3 py-1 text-[11px] font-bold text-ink shadow-tier">
                   Guest favorite
                 </span>
-                <span className="rounded-full bg-mp-red px-2 py-[3px] text-[8px] font-black uppercase tracking-[0.4px] text-on-primary">
+                <span className="rounded-full bg-mp-primary px-2 py-[3px] text-[8px] font-black uppercase tracking-[0.4px] text-on-primary">
                   NEW
                 </span>
                 <span className="rounded-full bg-canvas px-3.5 py-2 text-body-sm font-medium text-ink ring-1 ring-inset ring-hairline">
@@ -1054,7 +1054,7 @@ export default function DesignSystemPage() {
                 title="Um acento"
                 body={
                   <>
-                    Apenas o vermelho <span className="text-mp-red">#DA455E</span>{" "}
+                    Apenas o violet <span className="text-mp-primary">#5D5FEF</span>{" "}
                     Movepark — CTA principal, orb de busca e coração salvo. Usado
                     com parcimônia.
                   </>
@@ -1134,7 +1134,7 @@ function Rule({ title, body }: { title: string; body: React.ReactNode }) {
   return (
     <div className="rounded-md border border-hairline bg-canvas p-5">
       <div className="mb-1.5 flex items-center gap-2">
-        <span className="h-1.5 w-1.5 rounded-full bg-mp-red" />
+        <span className="h-1.5 w-1.5 rounded-full bg-mp-primary" />
         <span className="text-title-md text-ink">{title}</span>
       </div>
       <p className="text-body-sm text-body">{body}</p>

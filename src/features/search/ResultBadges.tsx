@@ -41,7 +41,7 @@ export function ResultBadges({
             className={cn(
               "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-caption font-semibold shadow-tier",
               ACCENT[badge.kind]
-                ? "bg-mp-red text-white"
+                ? "bg-mp-primary text-white"
                 : "bg-canvas/95 text-ink backdrop-blur",
             )}
           >

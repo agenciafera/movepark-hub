@@ -131,7 +131,7 @@ export default function SavedPage() {
                   className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-canvas/95 backdrop-blur transition-transform hover:scale-105"
                   aria-label="Remover dos salvos"
                 >
-                  <Heart className="h-4 w-4 fill-mp-red stroke-mp-red" />
+                  <Heart className="h-4 w-4 fill-mp-primary stroke-mp-primary" />
                 </button>
 
                 <Link to={url} className="flex flex-col gap-1 p-4">

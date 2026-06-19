@@ -104,7 +104,7 @@ export function SearchBarPill({
       <div className="hidden tablet:block w-[140px] border-r border-hairline">
         <VehicleField value={vehicle} onChange={setVehicle} />
       </div>
-      <div className="flex items-center pr-2">
+      <div className="flex items-center px-2">
         <Button
           type="submit"
           size="icon"

@@ -38,7 +38,7 @@ export function MiniMap({ address, latitude, longitude }: Props) {
           </svg>
         </div>
         <div className="relative flex flex-col items-center gap-2">
-          <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-mp-red text-white shadow-tier">
+          <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-mp-primary text-white shadow-tier">
             <MapPin className="h-6 w-6" />
           </span>
           <span className="rounded-full bg-canvas px-3 py-1 text-caption text-muted shadow-tier">

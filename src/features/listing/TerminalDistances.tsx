@@ -15,14 +15,14 @@ export function TerminalDistancesView({ terminals }: { terminals: TerminalDistan
             key={t.point_name}
             className={cn(
               "inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-body-sm",
-              t.is_nearest ? "border-mp-red/40 bg-mp-pale text-ink" : "border-hairline text-muted",
+              t.is_nearest ? "border-mp-primary/40 bg-mp-pale text-ink" : "border-hairline text-muted",
             )}
           >
-            <MapPin className={cn("h-3.5 w-3.5", t.is_nearest ? "text-mp-red" : "text-muted-soft")} />
+            <MapPin className={cn("h-3.5 w-3.5", t.is_nearest ? "text-mp-primary" : "text-muted-soft")} />
             <span className="font-medium text-ink">{t.point_name}</span>
             <span>· {formatDistance(t.distance_km)}</span>
             {t.is_nearest && (
-              <span className="ml-0.5 rounded-sm bg-mp-red/10 px-1.5 text-caption font-bold text-mp-red">
+              <span className="ml-0.5 rounded-sm bg-mp-primary/10 px-1.5 text-caption font-bold text-mp-primary">
                 mais perto
               </span>
             )}

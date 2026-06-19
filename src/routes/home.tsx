@@ -1,6 +1,5 @@
 import { Helmet } from "react-helmet-async";
 import { Hero } from "@/features/home/Hero";
-import { CategoryStrip } from "@/features/home/CategoryStrip";
 import { DestinationsGallery } from "@/features/home/DestinationsGallery";
 import { PopularParkingLots } from "@/features/home/PopularParkingLots";
 import { Testimonials } from "@/features/home/Testimonials";
@@ -27,8 +26,7 @@ export default function HomePage() {
         <link rel="canonical" href="https://hub.movepark.co" />
       </Helmet>
       <Hero />
-      <CategoryStrip />
-      <DestinationsGallery />
+<DestinationsGallery />
       <PopularParkingLots />
       <Testimonials />
       <HowItWorks />

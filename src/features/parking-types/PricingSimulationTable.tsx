@@ -278,7 +278,7 @@ export function PricingSimulationDialog({
                             {formatBRL(Number(dateResult.oldPrice))}
                           </span>
                         )}
-                      <span className="text-display-md text-mp-red tabular-nums">
+                      <span className="text-display-md text-mp-primary tabular-nums">
                         {formatBRL(Number(dateResult.price))}
                       </span>
                       <span className="text-body-sm text-muted">

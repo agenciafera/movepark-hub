@@ -13,14 +13,14 @@
     --mp-indigo: 239 44% 45%;          /* #4041A3 */
     --mp-violet: 239 82% 65%;          /* #5D5FEF */
     --mp-pale: 210 100% 95%;           /* #E4F2FF */
-    --mp-red: 350 67% 56%;             /* #DA455E — primary CTA */
+    --mp-red: 350 67% 56%;             /* #DA455E — brand accent / warning */
     --mp-red-deep: 350 52% 45%;        /* #AE374B */
     --mp-teal: 184 44% 76%;            /* #A6DBDF */
 
-    /* Primary semantic aliases (Movepark red carries the CTA load) */
-    --mp-primary: var(--mp-red);
-    --mp-primary-active: 350 64% 47%;  /* #C32B45 */
-    --mp-primary-disabled: 351 70% 90%;/* #F6D2D8 */
+    /* Primary semantic aliases (Movepark violet carries the CTA load) */
+    --mp-primary: var(--mp-violet);
+    --mp-primary-active: 239 44% 45%;  /* #4041A3 indigo */
+    --mp-primary-disabled: 241 74% 87%;/* #C5C4F6 light violet */
 
     /* Surface */
     --canvas: 0 0% 100%;

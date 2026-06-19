@@ -27,7 +27,7 @@ const config: Config = {
         "mp-red": "hsl(var(--mp-red))",
         "mp-red-deep": "hsl(var(--mp-red-deep))",
 
-        // Primary semantic aliases (CTA red)
+        // Primary semantic aliases (CTA violet)
         "mp-primary": "hsl(var(--mp-primary))",
         "mp-primary-active": "hsl(var(--mp-primary-active))",
         "mp-primary-disabled": "hsl(var(--mp-primary-disabled))",
@@ -127,6 +127,8 @@ const config: Config = {
       },
       fontSize: {
         "rating-display": ["64px", { lineHeight: "1.05", fontWeight: "900", letterSpacing: "-1.5px" }],
+        "display-3xl": ["56px", { lineHeight: "1.08", fontWeight: "700", letterSpacing: "-0.8px" }],
+        "display-2xl": ["44px", { lineHeight: "1.10", fontWeight: "700", letterSpacing: "-0.5px" }],
         "display-xl": ["28px", { lineHeight: "1.32", fontWeight: "700", letterSpacing: "-0.2px" }],
         "display-lg": ["22px", { lineHeight: "1.20", fontWeight: "500", letterSpacing: "-0.3px" }],
         "display-md": ["21px", { lineHeight: "1.40", fontWeight: "700" }],

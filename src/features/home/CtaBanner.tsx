@@ -28,7 +28,7 @@ export function CtaBanner() {
         <p className="mb-3 text-caption-sm font-bold uppercase tracking-widest text-mp-pale/70">
           Reserve com antecedência
         </p>
-        <h2 className="mb-5 text-[32px] font-bold leading-[1.1] tracking-tight text-white tablet:text-[48px]">
+        <h2 className="mb-5 text-display-2xl font-bold text-white tablet:text-display-3xl">
           Garanta sua vaga antes
           <br className="hidden tablet:block" /> da sua próxima viagem
         </h2>

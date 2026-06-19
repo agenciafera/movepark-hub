@@ -1,5 +1,3 @@
-import { Image } from "lucide-react";
-
 const steps = [
   {
     title: "Escolha o destino",
@@ -27,40 +25,23 @@ export function HowItWorks() {
         <p className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
           Simples e rápido
         </p>
-        <h2 className="text-[28px] font-bold tracking-tight text-ink tablet:text-[36px]">
+        <h2 className="text-[36px] font-bold text-ink tablet:text-display-2xl">
           Como reservar em 4 passos
         </h2>
 
-        {/* Step indicator */}
-        <div className="mt-6 flex items-center justify-center gap-0">
-          {steps.map((s, i) => (
-            <div key={s.title} className="flex items-center">
-              <div className="flex flex-col items-center">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-mp-navy text-[13px] font-bold text-white">
-                  {i + 1}
-                </span>
-                <span className="mt-1 hidden max-w-[80px] text-center text-[11px] font-medium text-muted tablet:block">
-                  {s.title.split(" ").slice(0, 2).join(" ")}
-                </span>
-              </div>
-              {i < steps.length - 1 && (
-                <div className="mx-2 h-px w-8 bg-hairline tablet:w-16" aria-hidden="true" />
-              )}
-            </div>
-          ))}
-        </div>
+
       </div>
 
       {/* Layout lado a lado */}
       <div className="mx-auto max-w-[1280px] px-6 desktop:px-8">
         <div className="grid grid-cols-1 gap-10 tablet:grid-cols-2 tablet:items-center">
-          {/* Placeholder de imagem */}
-          <div className="relative flex min-h-[320px] flex-col items-center justify-center overflow-hidden rounded-md border-2 border-dashed border-hairline bg-gradient-to-br from-mp-pale to-surface-soft desktop:min-h-[400px]">
-            <Image className="mb-4 h-12 w-12 text-mp-indigo/30" aria-hidden="true" />
-            <span className="text-caption text-muted">Foto do processo de reserva</span>
-            <span className="absolute bottom-4 right-4 rounded-full bg-white/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted backdrop-blur-sm">
-              placeholder
-            </span>
+          {/* Imagem ilustrativa */}
+          <div className="relative overflow-hidden rounded-md desktop:min-h-[400px]">
+            <img
+              src="/images/como-reservar.jpg"
+              alt="Mulher sorrindo ao celular após concluir reserva no aeroporto"
+              className="h-full w-full object-cover"
+            />
 
             {/* Floating booking card decorativo */}
             <div className="absolute bottom-8 left-8 rounded-md border border-hairline bg-canvas p-4 shadow-tier tablet:bottom-10 tablet:left-10">

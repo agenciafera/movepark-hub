@@ -73,7 +73,7 @@ export function PriceSimulator({ companySlug, locationSlug, parkingTypeCode }: P
               {formatBRL(Number(oldPrice))}
             </span>
           )}
-          <span className="text-display-md text-mp-red">{formatBRL(Number(price))}</span>
+          <span className="text-display-md text-mp-primary">{formatBRL(Number(price))}</span>
           <span className="text-body-sm text-muted">
             ({days} {days === 1 ? "dia" : "dias"})
           </span>

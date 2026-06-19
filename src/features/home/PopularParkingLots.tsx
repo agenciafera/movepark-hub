@@ -152,7 +152,7 @@ export function PopularParkingLots() {
       <p className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
         Os mais reservados
       </p>
-      <h2 className="mb-8 text-[28px] font-bold tracking-tight text-ink tablet:text-[36px]">
+      <h2 className="mb-8 text-[36px] font-bold text-ink tablet:text-display-2xl">
         Estacionamentos populares
       </h2>
 

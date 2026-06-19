@@ -48,7 +48,7 @@ export function Hero() {
           <span className="text-caption-sm text-white/90">5.000+ reservas concluídas</span>
         </div>
 
-        <h1 className="mb-4 max-w-3xl text-[36px] font-bold leading-[1.12] tracking-[-0.5px] text-white tablet:text-[52px]">
+        <h1 className="mb-4 max-w-3xl text-display-2xl font-bold text-white tablet:text-display-3xl">
           Estacione com confiança em qualquer aeroporto
         </h1>
         <p className="mb-10 max-w-xl text-[17px] leading-relaxed text-white/80">

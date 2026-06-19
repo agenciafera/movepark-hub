@@ -69,12 +69,14 @@
 > **Inter é a fonte definitiva** (não placeholder). Sem custo de licença, legível em interfaces
 > densas, diferente do Airbnb Cereal. Ajustar line-height display em -2% em relação ao Cereal.
 
-| Token | Size | Weight | Line Height | Uso |
-|---|---|---|---|---|
-| `{typography.display-xl}` | 28px | 700 | 1.43 | KPI numbers grandes |
-| `{typography.display-lg}` | 22px | 500 | 1.18 | Títulos de página |
-| `{typography.display-md}` | 21px | 700 | 1.43 | Títulos de seção |
-| `{typography.display-sm}` | 20px | 600 | 1.20 | Sub-títulos |
+| Token | Size | Weight | Line Height | Letter Spacing | Uso |
+|---|---|---|---|---|---|
+| `{typography.display-3xl}` | 56px | 700 | 1.08 | -0.8px | Hero H1 desktop, CtaBanner desktop |
+| `{typography.display-2xl}` | 44px | 700 | 1.10 | -0.5px | Hero H1 mobile, section H2 desktop, CtaBanner mobile |
+| `{typography.display-xl}` | 28px | 700 | 1.32 | -0.2px | KPI numbers grandes |
+| `{typography.display-lg}` | 22px | 500 | 1.20 | -0.3px | Títulos de página |
+| `{typography.display-md}` | 21px | 700 | 1.40 | — | Títulos de seção |
+| `{typography.display-sm}` | 20px | 600 | 1.22 | -0.15px | Sub-títulos |
 | `{typography.title-md}` | 16px | 600 | 1.25 | Cabeçalhos de card, colunas de tabela |
 | `{typography.body-md}` | 16px | 400 | 1.50 | Texto corrido |
 | `{typography.body-sm}` | 14px | 400 | 1.43 | Meta de tabelas, datas, valores secundários |

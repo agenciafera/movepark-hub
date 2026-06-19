@@ -64,15 +64,15 @@ export function DestinationsGallery() {
   return (
     <section className="py-16 desktop:py-20">
       {/* Cabeçalho com largura máxima */}
-      <div className="mx-auto mb-12 max-w-[1280px] px-6 desktop:px-8">
+      <div className="mx-auto mb-12 max-w-[1280px] px-6 text-center desktop:px-8">
         <p className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
           Destinos em destaque
         </p>
-        <h2 className="text-[28px] font-bold tracking-tight text-ink tablet:text-[36px]">
+        <h2 className="text-[36px] font-bold text-ink tablet:text-display-2xl">
           Estacione nos principais
           <br className="hidden tablet:block" /> aeroportos do Brasil
         </h2>
-        <p className="mt-3 max-w-xl text-body-md text-muted">
+        <p className="mx-auto mt-3 max-w-xl text-body-md text-muted">
           Cobertura nas maiores capitais, com operadoras verificadas e vagas garantidas para você
           viajar tranquilo.
         </p>

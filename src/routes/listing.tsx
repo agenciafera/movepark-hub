@@ -189,7 +189,7 @@ export default function ListingPage() {
           aria-label={isSaved ? "Remover dos salvos" : "Salvar nos favoritos"}
           className="inline-flex shrink-0 items-center gap-2 rounded-full border border-hairline px-3 py-2 text-body-sm text-ink hover:shadow-tier"
         >
-          <Heart className={cn("h-4 w-4", isSaved ? "fill-mp-red stroke-mp-red" : "")} />
+          <Heart className={cn("h-4 w-4", isSaved ? "fill-mp-primary stroke-mp-primary" : "")} />
           <span className="hidden tablet:inline">{isSaved ? "Salvo" : "Salvar"}</span>
         </button>
       </div>

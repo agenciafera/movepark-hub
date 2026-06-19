@@ -104,7 +104,7 @@ export function DestinationCombobox({
                         </span>
                       </div>
                       {value === d.code && (
-                        <Check className="h-4 w-4 text-mp-red" />
+                        <Check className="h-4 w-4 text-mp-primary" />
                       )}
                     </CommandItem>
                   );
