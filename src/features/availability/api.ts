@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { LocationOccupancyRow } from "@/types/domain";
 
@@ -30,5 +30,21 @@ export function useLocationOccupancy(
       if (error) throw error;
       return (data ?? []) as LocationOccupancyRow[];
     },
+  });
+}
+
+/** Bloqueia/desbloqueia uma data de um tipo de vaga (E1.4.2) — via RPC operator_set_date_blocked. */
+export function useSetDateBlocked() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { locationParkingTypeId: string; date: string; blocked: boolean }) => {
+      const { error } = await supabase.rpc("operator_set_date_blocked", {
+        p_location_parking_type_id: args.locationParkingTypeId,
+        p_date: args.date,
+        p_blocked: args.blocked,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: occupancyKeys.all }),
   });
 }

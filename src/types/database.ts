@@ -1542,18 +1542,21 @@ export type Database = {
       }
       location_parking_availability: {
         Row: {
+          blocked: boolean
           booked_count: number
           date: string
           id: string
           location_parking_type_id: string
         }
         Insert: {
+          blocked?: boolean
           booked_count?: number
           date: string
           id?: string
           location_parking_type_id: string
         }
         Update: {
+          blocked?: boolean
           booked_count?: number
           date?: string
           id?: string
@@ -3031,6 +3034,7 @@ export type Database = {
       operator_location_occupancy: {
         Args: { p_from: string; p_location_id: string; p_to: string }
         Returns: {
+          blocked: boolean
           booked_count: number
           capacity: number
           date: string
@@ -3051,6 +3055,14 @@ export type Database = {
         Args: { p_coupon_id: string; p_is_active: boolean }
         Returns: undefined
       }
+      operator_set_date_blocked: {
+        Args: {
+          p_blocked: boolean
+          p_date: string
+          p_location_parking_type_id: string
+        }
+        Returns: undefined
+      }
       operator_set_discount_active: {
         Args: { p_discount_rule_id: string; p_is_active: boolean }
         Returns: undefined
@@ -3061,6 +3073,15 @@ export type Database = {
           p_is_active: boolean
           p_location_id: string
           p_price_override: number
+        }
+        Returns: undefined
+      }
+      operator_set_pricing: {
+        Args: {
+          p_base_price: number
+          p_location_parking_type_id: string
+          p_rule: Json
+          p_tiers?: Json
         }
         Returns: undefined
       }

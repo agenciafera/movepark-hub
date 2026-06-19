@@ -3,10 +3,10 @@ import { buildOccupancyMatrix, occupancyTone } from "./occupancy.logic";
 import type { LocationOccupancyRow } from "@/types/domain";
 
 const rows: LocationOccupancyRow[] = [
-  { location_parking_type_id: "b", parking_type_name: "Valet", date: "2026-10-02", capacity: 10, booked_count: 2 },
-  { location_parking_type_id: "a", parking_type_name: "Coberta", date: "2026-10-01", capacity: 4, booked_count: 4 },
-  { location_parking_type_id: "a", parking_type_name: "Coberta", date: "2026-10-02", capacity: 4, booked_count: 1 },
-  { location_parking_type_id: "b", parking_type_name: "Valet", date: "2026-10-01", capacity: 10, booked_count: 0 },
+  { location_parking_type_id: "b", parking_type_name: "Valet", date: "2026-10-02", capacity: 10, booked_count: 2, blocked: false },
+  { location_parking_type_id: "a", parking_type_name: "Coberta", date: "2026-10-01", capacity: 4, booked_count: 4, blocked: false },
+  { location_parking_type_id: "a", parking_type_name: "Coberta", date: "2026-10-02", capacity: 4, booked_count: 1, blocked: true },
+  { location_parking_type_id: "b", parking_type_name: "Valet", date: "2026-10-01", capacity: 10, booked_count: 0, blocked: false },
 ];
 
 describe("buildOccupancyMatrix", () => {
@@ -24,13 +24,21 @@ describe("buildOccupancyMatrix", () => {
       capacity: 4,
       booked: 4,
       pct: 1,
+      blocked: false,
     });
     expect(coberta.cells["2026-10-02"].pct).toBeCloseTo(0.25, 5);
   });
 
+  it("propaga o estado de bloqueio da data", () => {
+    const m = buildOccupancyMatrix(rows);
+    const coberta = m.rows.find((r) => r.name === "Coberta")!;
+    expect(coberta.cells["2026-10-02"].blocked).toBe(true);
+    expect(coberta.cells["2026-10-01"].blocked).toBe(false);
+  });
+
   it("pct = 0 quando capacity = 0 (sem divisão por zero)", () => {
     const m = buildOccupancyMatrix([
-      { location_parking_type_id: "x", parking_type_name: "Z", date: "2026-10-01", capacity: 0, booked_count: 0 },
+      { location_parking_type_id: "x", parking_type_name: "Z", date: "2026-10-01", capacity: 0, booked_count: 0, blocked: false },
     ]);
     expect(m.rows[0].cells["2026-10-01"].pct).toBe(0);
   });

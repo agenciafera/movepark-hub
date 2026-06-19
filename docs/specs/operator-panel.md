@@ -466,6 +466,21 @@ Tabela de Reservas
 
 ---
 
+## 8.x Preço e disponibilidade na extranet (E1.4)
+
+- **Editar preço (E1.4.1):** o operador edita a precificação da sua unidade em
+  `/operator/locations/:id/parking-types` → "Configurar precificação". Como `pricing_rule`/`pricing_tier`
+  têm RLS só de leitura, a escrita passa pela RPC **`operator_set_pricing`** (SECURITY DEFINER, valida a
+  posse via `current_company_ids()`) — grava a regra + as faixas + o `base_price` numa transação. Mesmo
+  padrão do `onboarding_set_pricing`.
+- **Capacidade (E1.4.2):** edição inline de `location_parking_type.capacity` (RLS `lpt_operator_update`)
+  e regras de reserva (estadia/data mínima, near-capacity) via `CapacityRulesForm`.
+- **Bloqueio de datas (E1.4.2):** na grade de **Ocupação** (`/operator/occupancy`) o operador clica numa
+  data para **bloquear/liberar** reservas (reforma, evento, lotação por fora). Persiste em
+  `location_parking_availability.blocked` via RPC **`operator_set_date_blocked`**; o motor de reserva
+  (`_create_booking_core`) **rejeita** datas bloqueadas (antes do cálculo de preço). A RPC
+  `operator_location_occupancy` devolve `blocked` para a grade exibir o estado.
+
 ## 9. Open Points
 
 - [ ] Confirmação manual de reservas: fluxo obrigatório ou opcional por empresa?

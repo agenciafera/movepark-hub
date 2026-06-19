@@ -6,6 +6,8 @@ export type OccupancyCell = {
   booked: number;
   /** Ocupação 0..1 (booked/capacity; 0 quando capacity = 0). */
   pct: number;
+  /** Data bloqueada pelo estacionamento (não aceita reservas). */
+  blocked: boolean;
 };
 
 export type OccupancyMatrixRow = {
@@ -32,7 +34,13 @@ export function buildOccupancyMatrix(rows: LocationOccupancyRow[]): OccupancyMat
       byLpt.set(r.location_parking_type_id, row);
     }
     const pct = r.capacity > 0 ? r.booked_count / r.capacity : 0;
-    row.cells[r.date] = { date: r.date, capacity: r.capacity, booked: r.booked_count, pct };
+    row.cells[r.date] = {
+      date: r.date,
+      capacity: r.capacity,
+      booked: r.booked_count,
+      pct,
+      blocked: r.blocked ?? false,
+    };
   }
 
   const dates = Array.from(dateSet).sort();

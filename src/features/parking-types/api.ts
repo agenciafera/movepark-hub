@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import type { Database } from "@/types/database";
+import type { Database, Json } from "@/types/database";
 import type { ParkingType } from "@/types/domain";
 
 type LocationParkingTypeRow = Database["public"]["Tables"]["location_parking_type"]["Row"];
@@ -168,6 +168,33 @@ export function useUpsertPricingRule() {
         .single();
       if (error) throw error;
       return data as PricingRuleRow;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: parkingTypesKeys.all }),
+  });
+}
+
+/**
+ * Salva a precificação (regra + faixas + base) numa única RPC SECURITY DEFINER, que valida a posse
+ * da empresa (E1.4.1). As tabelas pricing_rule/pricing_tier têm RLS só de leitura — escrita direta
+ * pelo operador dava 403; a RPC é o caminho server-authoritative.
+ */
+export function useOperatorSetPricing() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: {
+      locationParkingTypeId: string;
+      basePrice: number | null;
+      rule: Record<string, unknown>;
+      tiers: { from_day: number; to_day: number | null; unit_price: number | null; total_price: number | null }[];
+    }) => {
+      const { error } = await supabase.rpc("operator_set_pricing", {
+        p_location_parking_type_id: args.locationParkingTypeId,
+        // a RPC aceita null (numeric); o tipo gerado não reflete a nulidade do parâmetro
+        p_base_price: args.basePrice as number,
+        p_rule: args.rule as Json,
+        p_tiers: args.tiers as unknown as Json,
+      });
+      if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: parkingTypesKeys.all }),
   });

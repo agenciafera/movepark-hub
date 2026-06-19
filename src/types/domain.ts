@@ -52,6 +52,7 @@ export type LocationOccupancyRow = {
   date: string;
   capacity: number;
   booked_count: number;
+  blocked: boolean;
 };
 
 /** Cupom + os tipos de vaga aos quais está restrito (vazio = vale para todos). */

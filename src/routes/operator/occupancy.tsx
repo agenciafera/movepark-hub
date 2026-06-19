@@ -1,4 +1,5 @@
 import * as React from "react";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -6,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { useOperatorLocations } from "@/features/locations/api";
-import { useLocationOccupancy } from "@/features/availability/api";
+import { useLocationOccupancy, useSetDateBlocked } from "@/features/availability/api";
 import { buildOccupancyMatrix, occupancyTone } from "@/features/availability/occupancy.logic";
 import { useAuth } from "@/auth/context";
 import { cn } from "@/lib/utils";
@@ -54,11 +55,21 @@ export default function OperatorOccupancy() {
   );
   const matrix = React.useMemo(() => buildOccupancyMatrix(rows ?? []), [rows]);
 
+  const setBlocked = useSetDateBlocked();
+  async function toggleBlock(lptId: string, date: string, blocked: boolean) {
+    try {
+      await setBlocked.mutateAsync({ locationParkingTypeId: lptId, date, blocked: !blocked });
+      toast.success(blocked ? "Data liberada" : "Data bloqueada");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao atualizar a data");
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Ocupação"
-        description="Vagas reservadas por data em cada tipo de vaga. Reservas pendentes seguram a vaga até pagar ou expirar."
+        description="Vagas reservadas por data em cada tipo de vaga. Clique numa data para bloquear/liberar reservas (reforma, evento, lotação por fora)."
       />
 
       <Card>
@@ -144,15 +155,24 @@ export default function OperatorOccupancy() {
                       }
                       return (
                         <td key={d} className="px-1.5 py-1.5">
-                          <div
+                          <button
+                            type="button"
+                            onClick={() => toggleBlock(row.lptId, d, cell.blocked)}
+                            disabled={setBlocked.isPending}
                             className={cn(
-                              "rounded-sm px-1 py-1 text-center tabular-nums",
-                              toneClass[occupancyTone(cell.pct)],
+                              "w-full rounded-sm px-1 py-1 text-center tabular-nums transition hover:ring-1 hover:ring-mp-primary/40 disabled:opacity-60",
+                              cell.blocked
+                                ? "bg-badge-cancelled-bg text-badge-cancelled-fg line-through"
+                                : toneClass[occupancyTone(cell.pct)],
                             )}
-                            title={`${cell.booked}/${cell.capacity} (${Math.round(cell.pct * 100)}%)`}
+                            title={
+                              cell.blocked
+                                ? "Bloqueada — clique para liberar"
+                                : `${cell.booked}/${cell.capacity} (${Math.round(cell.pct * 100)}%) — clique para bloquear`
+                            }
                           >
-                            {cell.booked}/{cell.capacity}
-                          </div>
+                            {cell.blocked ? "Bloq." : `${cell.booked}/${cell.capacity}`}
+                          </button>
                         </td>
                       );
                     })}

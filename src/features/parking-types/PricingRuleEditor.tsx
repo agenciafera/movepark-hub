@@ -37,14 +37,10 @@ import {
 } from "./PricingTierEditor";
 import { PriceSimulator } from "./PriceSimulator";
 import {
-  useUpsertPricingRule,
-  useCreatePricingTier,
-  useUpdatePricingTier,
-  useDeletePricingTier,
+  useOperatorSetPricing,
   useLocationParkingTypesByCompany,
   type LocationParkingTypeWithRelations,
 } from "./api";
-import { useUpdateCompanyParkingType } from "./api";
 
 type Props = {
   open: boolean;
@@ -78,11 +74,7 @@ export function PricingRuleEditor({
   locationSlug,
   parkingTypeCode,
 }: Props) {
-  const upsertRule = useUpsertPricingRule();
-  const createTier = useCreatePricingTier();
-  const updateTier = useUpdatePricingTier();
-  const deleteTier = useDeletePricingTier();
-  const updateCpt = useUpdateCompanyParkingType();
+  const setPricing = useOperatorSetPricing();
 
   const [strategy, setStrategy] = React.useState<PricingStrategy>("uniform_by_duration");
   const [fractionalPolicy, setFractionalPolicy] = React.useState<FractionalDayPolicy>("any_extra");
@@ -158,68 +150,40 @@ export function PricingRuleEditor({
   async function handleSave() {
     if (!lpt) return;
     try {
-      // 1. Atualiza base_price no company_parking_type
-      if (basePrice !== null && basePrice !== lpt.company_parking_type.base_price) {
-        await updateCpt.mutateAsync({
-          id: lpt.company_parking_type.id,
-          patch: { base_price: basePrice },
-        });
-      }
-
-      // 2. Upsert pricing_rule
-      const rule = await upsertRule.mutateAsync({
-        location_parking_type_id: lpt.id,
-        strategy,
-        fractional_day_policy: fractionalPolicy,
-        fractional_day_tolerance: fractionalTolerance,
-        old_price_strategy: oldPriceStrategy,
-        old_price_multiplier: oldPriceStrategy === "multiplier" ? oldPriceMultiplier : null,
-        advance_booking_minutes: advanceMinutes,
-        incremental_one_day_price: strategy === "incremental_formula" ? oneDay : null,
-        incremental_two_days_price: strategy === "incremental_formula" ? twoDays : null,
-        incremental_base: strategy === "incremental_formula" ? incBase : null,
-        incremental_multiplier: strategy === "incremental_formula" ? incMultiplier : null,
-        monthly_fixed_price: strategy === "monthly_remainder" ? monthlyFixed : null,
-        monthly_daily_rate: strategy === "monthly_remainder" ? monthlyDaily : null,
-        hourly_initial_rate: strategy === "hourly_capped" ? hourlyInitial : null,
-        hourly_one_hour_rate: strategy === "hourly_capped" ? hourlyOneHour : null,
-        hourly_fraction_rate: strategy === "hourly_capped" ? hourlyFraction : null,
-        hourly_daily_rate: strategy === "hourly_capped" ? hourlyDaily : null,
-        hourly_hours_per_day: strategy === "hourly_capped" ? hourlyHoursPerDay : null,
-        surcharge_source_id: strategy === "surcharge" ? surchargeSourceId : null,
-        surcharge_multiplier: strategy === "surcharge" ? surchargeMultiplier : null,
+      await setPricing.mutateAsync({
+        locationParkingTypeId: lpt.id,
+        basePrice,
+        rule: {
+          strategy,
+          fractional_day_policy: fractionalPolicy,
+          fractional_day_tolerance: fractionalTolerance,
+          old_price_strategy: oldPriceStrategy,
+          old_price_multiplier: oldPriceStrategy === "multiplier" ? oldPriceMultiplier : null,
+          advance_booking_minutes: advanceMinutes,
+          incremental_one_day_price: strategy === "incremental_formula" ? oneDay : null,
+          incremental_two_days_price: strategy === "incremental_formula" ? twoDays : null,
+          incremental_base: strategy === "incremental_formula" ? incBase : null,
+          incremental_multiplier: strategy === "incremental_formula" ? incMultiplier : null,
+          monthly_fixed_price: strategy === "monthly_remainder" ? monthlyFixed : null,
+          monthly_daily_rate: strategy === "monthly_remainder" ? monthlyDaily : null,
+          hourly_initial_rate: strategy === "hourly_capped" ? hourlyInitial : null,
+          hourly_one_hour_rate: strategy === "hourly_capped" ? hourlyOneHour : null,
+          hourly_fraction_rate: strategy === "hourly_capped" ? hourlyFraction : null,
+          hourly_daily_rate: strategy === "hourly_capped" ? hourlyDaily : null,
+          hourly_hours_per_day: strategy === "hourly_capped" ? hourlyHoursPerDay : null,
+          surcharge_source_id: strategy === "surcharge" ? surchargeSourceId : null,
+          surcharge_multiplier: strategy === "surcharge" ? surchargeMultiplier : null,
+        },
+        // só envia faixas quando a estratégia as usa (senão limpa)
+        tiers: showTiers
+          ? tiers.map((t) => ({
+              from_day: t.from_day,
+              to_day: t.to_day,
+              unit_price: t.unit_price,
+              total_price: t.total_price,
+            }))
+          : [],
       });
-
-      // 3. Sincroniza tiers (insert/update/delete)
-      if (showTiers) {
-        const existing = lpt.pricing_rule?.tiers ?? [];
-        const existingIds = new Set(existing.filter((t) => !t.is_old_price).map((t) => t.id));
-        const draftIds = new Set(tiers.map((t) => t.id));
-
-        // Deletar removidas
-        for (const t of existing) {
-          if (!t.is_old_price && !draftIds.has(t.id)) {
-            await deleteTier.mutateAsync(t.id);
-          }
-        }
-
-        // Inserir/atualizar
-        for (const t of tiers) {
-          const payload = {
-            pricing_rule_id: rule.id,
-            from_day: t.from_day,
-            to_day: t.to_day,
-            unit_price: t.unit_price,
-            total_price: t.total_price,
-            is_old_price: false,
-          };
-          if (t.id.startsWith("tmp_") || !existingIds.has(t.id)) {
-            await createTier.mutateAsync(payload);
-          } else {
-            await updateTier.mutateAsync({ id: t.id, patch: payload });
-          }
-        }
-      }
 
       toast.success("Precificação salva");
       onOpenChange(false);
@@ -228,12 +192,7 @@ export function PricingRuleEditor({
     }
   }
 
-  const submitting =
-    upsertRule.isPending ||
-    createTier.isPending ||
-    updateTier.isPending ||
-    deleteTier.isPending ||
-    updateCpt.isPending;
+  const submitting = setPricing.isPending;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
