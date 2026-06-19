@@ -2,7 +2,7 @@ import { Helmet } from "react-helmet-async";
 import { Hero } from "@/features/home/Hero";
 import { CategoryStrip } from "@/features/home/CategoryStrip";
 import { DestinationsGallery } from "@/features/home/DestinationsGallery";
-import { PopularDestinations } from "@/features/home/PopularDestinations";
+import { PopularParkingLots } from "@/features/home/PopularParkingLots";
 import { Testimonials } from "@/features/home/Testimonials";
 import { HowItWorks } from "@/features/home/HowItWorks";
 import { TrustBand } from "@/features/home/TrustBand";
@@ -29,7 +29,7 @@ export default function HomePage() {
       <Hero />
       <CategoryStrip />
       <DestinationsGallery />
-      <PopularDestinations />
+      <PopularParkingLots />
       <Testimonials />
       <HowItWorks />
       <TrustBand />

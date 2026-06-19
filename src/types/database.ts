@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       add_on_service: {
@@ -1343,12 +1318,14 @@ export type Database = {
           has_passenger_quantity: boolean
           has_pcd_config: boolean
           id: string
+          is_popular: boolean
           latitude: number | null
           longitude: number | null
           name: string
           notice: string | null
           phone: string | null
           photos: Json
+          popular_sort_order: number
           reservation_policy: string | null
           review_avg: number | null
           review_count: number
@@ -1372,12 +1349,14 @@ export type Database = {
           has_passenger_quantity?: boolean
           has_pcd_config?: boolean
           id?: string
+          is_popular?: boolean
           latitude?: number | null
           longitude?: number | null
           name: string
           notice?: string | null
           phone?: string | null
           photos?: Json
+          popular_sort_order?: number
           reservation_policy?: string | null
           review_avg?: number | null
           review_count?: number
@@ -1401,12 +1380,14 @@ export type Database = {
           has_passenger_quantity?: boolean
           has_pcd_config?: boolean
           id?: string
+          is_popular?: boolean
           latitude?: number | null
           longitude?: number | null
           name?: string
           notice?: string | null
           phone?: string | null
           photos?: Json
+          popular_sort_order?: number
           reservation_policy?: string | null
           review_avg?: number | null
           review_count?: number
@@ -3382,9 +3363,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       booking_item_type: ["parking", "add_on"],
