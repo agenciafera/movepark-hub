@@ -20,7 +20,8 @@ type Props = {
 
 const allowed: Record<BookingStatus, BookingStatus[]> = {
   pending: ["confirmed", "cancelled"],
-  confirmed: ["checked_in", "cancelled"],
+  // confirmada: cliente chegou (check-in) / não compareceu (no-show) / cancelar (estorno)
+  confirmed: ["checked_in", "no_show", "cancelled"],
   checked_in: ["completed", "cancelled"],
   completed: [],
   cancelled: [],
@@ -135,6 +136,16 @@ export function BookingDrawer({ booking, open, onOpenChange }: Props) {
                     onClick={() => transition("completed", "Check-out registrado")}
                   >
                     Check-out
+                  </Button>
+                )}
+                {next.includes("no_show") && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={busy}
+                    onClick={() => transition("no_show", "Reserva marcada como não comparecimento")}
+                  >
+                    Não compareceu
                   </Button>
                 )}
                 {next.includes("cancelled") && (

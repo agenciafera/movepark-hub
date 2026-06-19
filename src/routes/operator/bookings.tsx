@@ -28,6 +28,8 @@ const statusOptions: { value: BookingStatus | "all"; label: string }[] = [
 export default function OperatorBookings() {
   const [search, setSearch] = React.useState("");
   const [status, setStatus] = React.useState<BookingStatus | "all">("all");
+  const [from, setFrom] = React.useState("");
+  const [to, setTo] = React.useState("");
   const [selected, setSelected] = React.useState<BookingWithRelations | null>(null);
   const { ids: scopedLocationIds } = useScopedLocationIds();
 
@@ -36,8 +38,11 @@ export default function OperatorBookings() {
       status: status === "all" ? undefined : [status],
       search: search || undefined,
       locationIds: scopedLocationIds,
+      // filtra por data de check-in (inclui o dia inteiro do "até")
+      from: from ? `${from}T00:00:00` : undefined,
+      to: to ? `${to}T23:59:59` : undefined,
     }),
-    [status, search, scopedLocationIds],
+    [status, search, scopedLocationIds, from, to],
   );
 
   const { data, isLoading } = useBookings(filters);
@@ -56,6 +61,14 @@ export default function OperatorBookings() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="from">Check-in de</Label>
+            <Input id="from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="to">até</Label>
+            <Input id="to" type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} className="w-40" />
           </div>
           <div className="flex w-full tablet:w-60 flex-col gap-1.5">
             <Label>Status</Label>

@@ -466,6 +466,16 @@ Tabela de Reservas
 
 ---
 
+## 8.y Reservas + status de check-in (E1.5.1)
+
+- O operador vê as reservas da sua unidade em `/operator/bookings` (escopo por `useScopedLocationIds`),
+  filtra por **status**, **busca por código** e **período de check-in** (date pickers `from`/`to`).
+- No `BookingDrawer` aciona a máquina de estados: confirmar, **check-in** (`checked_in` + `checked_in_at`),
+  **check-out** (`completed` + `checked_out_at`), **não compareceu** (`no_show`, terminal, sem estorno) e
+  cancelar+estornar (E0.3.2). `StatusBadge` mostra o estado (chegou/em uso/concluída/não-compareceu).
+- Check-in por QR também disponível em `/voucher/validate` (escaneando o voucher). Dashboard do operador
+  resume check-ins/check-outs do dia.
+
 ## 8.x Preço e disponibilidade na extranet (E1.4)
 
 - **Editar preço (E1.4.1):** o operador edita a precificação da sua unidade em
