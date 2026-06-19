@@ -88,7 +88,9 @@ export function PopularParkingLots() {
     );
   }
 
-  if (!featured && grid.length === 0) return null;
+  if (!featured && grid.length === 0) {
+    return null;
+  }
 
   return (
     <section className="mx-auto w-full max-w-[1280px] px-6 py-16 desktop:px-8">

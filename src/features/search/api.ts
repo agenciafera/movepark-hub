@@ -101,25 +101,39 @@ export function usePopularDestinations(limit = 8) {
   });
 }
 
+const POPULAR_LOCATION_SELECT = `
+  id, name, slug, review_avg, review_count, popular_sort_order,
+  company:company_id (id, name, slug, logo_url),
+  destination:destination_id (id, code, name, short_name, slug, type),
+  amenities:location_amenity (amenity_code)
+`;
+
 export function usePopularLocations(limit = 5) {
   return useQuery({
     queryKey: [...searchKeys.popularLocations(), limit],
     queryFn: async (): Promise<PopularLocation[]> => {
-      const { data, error } = await supabase
+      // Tenta curadoria editorial primeiro
+      const { data: curated, error } = await supabase
         .from("location")
-        .select(
-          `id, name, slug, review_avg, review_count, popular_sort_order,
-           company:company_id (id, name, slug, logo_url),
-           destination:destination_id (id, code, name, short_name, slug, type),
-           amenities:location_amenity (amenity_code)`,
-        )
+        .select(POPULAR_LOCATION_SELECT)
         .eq("is_popular", true)
         .eq("status", "active")
         .is("deleted_at", null)
         .order("popular_sort_order")
         .limit(limit);
       if (error) throw error;
-      return (data ?? []) as unknown as PopularLocation[];
+      if (curated && curated.length > 0) return curated as unknown as PopularLocation[];
+
+      // Fallback: locations ativas com mais avaliações enquanto curadoria não é configurada
+      const { data: fallback, error: fallbackError } = await supabase
+        .from("location")
+        .select(POPULAR_LOCATION_SELECT)
+        .eq("status", "active")
+        .is("deleted_at", null)
+        .order("review_count", { ascending: false })
+        .limit(limit);
+      if (fallbackError) throw fallbackError;
+      return (fallback ?? []) as unknown as PopularLocation[];
     },
     staleTime: 5 * 60_000,
   });
