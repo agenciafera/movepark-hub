@@ -1,7 +1,8 @@
 # Design Tokens — Movepark Hub
 
-> Adaptação do Airbnb design system para a brand Movepark.  
-> **TODO:** substituir os valores `{PENDING}` quando a paleta oficial Movepark for definida.
+> Direção visual própria da Movepark: whitespace e hierarquia tipográfica do Airbnb + paleta
+> violet/indigo/navy da brand Movepark. Benchmark completo em
+> [`docs/design-system/visual-benchmark.md`](../design-system/visual-benchmark.md).
 
 ---
 
@@ -9,13 +10,12 @@
 
 ### Brand & Accent
 
-| Token | Valor Provisório | Airbnb Equiv. | Uso |
-|---|---|---|---|
-| `{colors.mp-primary}` | `{PENDING}` | `{colors.primary}` #ff385c | CTAs principais, elementos de destaque |
-| `{colors.mp-primary-active}` | `{PENDING}` | `{colors.primary-active}` #e00b41 | Estado pressed do CTA |
-| `{colors.mp-primary-disabled}` | `{PENDING}` | `{colors.primary-disabled}` #ffd1da | CTA desabilitado |
-
-> Até a paleta ser definida, usar `#0057ff` (azul neutro) como placeholder para visualização.
+| Token | Valor | Uso |
+|---|---|---|
+| `{colors.mp-primary}` | `#5D5FEF` | CTAs principais, elementos de destaque |
+| `{colors.mp-primary-active}` | `#4041A3` | Estado hover/pressed do CTA |
+| `{colors.mp-primary-disabled}` | `#C5C4F6` | CTA desabilitado |
+| `{colors.mp-navy}` | `#29263F` | Headings principais, sidebar, logotipo dark |
 
 ### Surface (mantidos do Airbnb)
 
@@ -66,8 +66,8 @@
 
 ## Typography
 
-> Usar **Inter** enquanto fonte Movepark não estiver disponível.  
-> Ajustar line-height display em -2% em relação ao Airbnb Cereal ao usar Inter.
+> **Inter é a fonte definitiva** (não placeholder). Sem custo de licença, legível em interfaces
+> densas, diferente do Airbnb Cereal. Ajustar line-height display em -2% em relação ao Cereal.
 
 | Token | Size | Weight | Line Height | Uso |
 |---|---|---|---|---|
@@ -181,7 +181,7 @@ white fill · rounded.md · hairline border · shadow tier · padding lg (24px)
 
 ## Open Points
 
-- [ ] Definir paleta oficial Movepark (primary, eventual secondary)
-- [ ] Confirmar fonte oficial (custom ou Inter como definitiva)
+- [x] Paleta oficial Movepark definida — violet `#5D5FEF` / indigo `#4041A3` / navy `#29263F`
+- [x] Fonte oficial: Inter (definitiva)
 - [ ] Logo em SVG nas variações: full color, white, icon-only
 - [ ] Dark mode: fora do escopo por ora
