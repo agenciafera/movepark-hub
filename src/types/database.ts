@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       add_on_service: {
@@ -604,6 +629,9 @@ export type Database = {
           take_rate_bps: number
           tax_id: string | null
           updated_at: string
+          wl_base_url: string | null
+          wl_sync_enabled: boolean
+          wl_tenant_key: string | null
         }
         Insert: {
           created_at?: string
@@ -618,6 +646,9 @@ export type Database = {
           take_rate_bps?: number
           tax_id?: string | null
           updated_at?: string
+          wl_base_url?: string | null
+          wl_sync_enabled?: boolean
+          wl_tenant_key?: string | null
         }
         Update: {
           created_at?: string
@@ -632,6 +663,9 @@ export type Database = {
           take_rate_bps?: number
           tax_id?: string | null
           updated_at?: string
+          wl_base_url?: string | null
+          wl_sync_enabled?: boolean
+          wl_tenant_key?: string | null
         }
         Relationships: []
       }
@@ -3363,6 +3397,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       booking_item_type: ["parking", "add_on"],
