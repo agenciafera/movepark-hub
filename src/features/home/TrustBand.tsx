@@ -127,7 +127,7 @@ export function TrustBand() {
         </div>
 
         {/* Grid 2×2 */}
-        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-4">
           {items.map((it) => (
             <div
               key={it.title}
