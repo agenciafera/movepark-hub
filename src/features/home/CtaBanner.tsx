@@ -19,22 +19,28 @@ export function CtaBanner() {
   const navigate = useNavigate();
   return (
     <section className="relative overflow-hidden">
-      {/* Fundo navy */}
-      <div className="absolute inset-0 bg-mp-navy" aria-hidden="true" />
-      {/* Grid pattern sutil */}
-      <div
-        className="absolute inset-0 opacity-[0.035]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}
+      {/* Foto de fundo */}
+      <img
+        src="/images/bg_cta-section-movepark-hub.png"
+        alt=""
         aria-hidden="true"
+        className="absolute inset-0 h-full w-full object-cover object-center"
       />
-      {/* Gradiente radial de acento */}
+      {/* Overlay escuro para legibilidade do texto */}
       <div
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse at 70% 50%, hsl(239 82% 65% / 0.35) 0%, transparent 65%)",
+            "linear-gradient(to bottom, rgba(8,12,40,0.72) 0%, rgba(8,12,40,0.60) 50%, rgba(8,12,40,0.78) 100%)",
+        }}
+        aria-hidden="true"
+      />
+      {/* Acento roxo sutil */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse at 70% 50%, hsl(239 82% 65% / 0.20) 0%, transparent 60%)",
         }}
         aria-hidden="true"
       />

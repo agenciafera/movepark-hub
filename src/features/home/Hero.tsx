@@ -65,7 +65,7 @@ export function Hero() {
         </div>
 
         <h1 className="mb-4 max-w-3xl text-display-2xl font-bold text-white tablet:text-display-3xl">
-          Estacione com confiança em qualquer aeroporto
+          Estacione em qualquer aeroporto do Brasil
         </h1>
         <p className="mb-10 max-w-xl text-[17px] leading-relaxed text-white/80">
           Compare vagas de várias operadoras num só lugar, com reserva instantânea.

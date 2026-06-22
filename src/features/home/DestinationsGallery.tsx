@@ -73,8 +73,7 @@ export function DestinationsGallery() {
           <br className="hidden tablet:block" /> aeroportos do Brasil
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-body-md text-muted">
-          Cobertura nas maiores capitais, com operadoras verificadas e vagas garantidas para você
-          viajar tranquilo.
+          Cobertura nos principais aeroportos do Brasil, com operadoras verificadas.
         </p>
       </div>
 

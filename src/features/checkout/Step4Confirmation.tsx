@@ -39,7 +39,7 @@ export function Step4Confirmation({ booking }: Props) {
         </span>
         <h2 className="text-display-md text-ink">Reserva confirmada!</h2>
         <p className="text-body-md text-muted">
-          Você já pode chegar tranquilo. Guarde o voucher abaixo.
+          Mostre o QR Code ou informe o código na entrada do estacionamento.
         </p>
       </div>
 

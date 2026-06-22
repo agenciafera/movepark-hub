@@ -111,7 +111,7 @@ export default function OnboardingPage() {
     setCurrent((c) => Math.max(1, c - 1));
   }
   function onSubmitted() {
-    toast.success("Tudo pronto! Seu estacionamento está no ar. 🚗");
+    toast.success("Tudo pronto. Seu estacionamento está no ar.");
     navigate("/operator", { replace: true });
   }
 

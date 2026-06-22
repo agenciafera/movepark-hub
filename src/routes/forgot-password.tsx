@@ -51,7 +51,7 @@ export default function ForgotPasswordPage() {
           <CardDescription>
             {sent
               ? "Se houver conta com esse e-mail, enviamos um link de recuperação. Confira spam também."
-              : "Sem problemas — vamos te ajudar a criar uma nova."}
+              : "Digite o e-mail da sua conta para receber um link de redefinição."}
           </CardDescription>
         </CardHeader>
         <CardContent>

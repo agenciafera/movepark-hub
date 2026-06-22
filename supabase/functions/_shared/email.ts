@@ -104,11 +104,11 @@ function button(href: string, label: string): string {
 
 export function tplLeadReceived(contactName: string): { subject: string; html: string } {
   return {
-    subject: "Recebemos seu cadastro 🎉",
-    html: shell("Recebemos seu cadastro!", `
+    subject: "Recebemos seu cadastro",
+    html: shell("Recebemos seu cadastro", `
       <p>Olá, ${escapeHtml(contactName)}!</p>
       <p>Obrigado pelo interesse em ter seu estacionamento na Movepark. Nossa equipe vai analisar as informações e <strong>entrar em contato em até 2 dias úteis</strong> para validar e liberar a próxima etapa do cadastro.</p>
-      <p>Enquanto isso, não precisa fazer nada. 😉</p>`),
+      <p>Enquanto isso, não precisa fazer nada.</p>`),
   };
 }
 
@@ -135,7 +135,7 @@ export function tplLeadAlert(lead: {
 export function tplApprovalInvite(contactName: string, actionLink: string): { subject: string; html: string } {
   return {
     subject: "Seu cadastro foi aprovado — continue o cadastro",
-    html: shell("Cadastro aprovado! 🚗", `
+    html: shell("Cadastro aprovado", `
       <p>Olá, ${escapeHtml(contactName)}!</p>
       <p>Boa notícia: aprovamos seu estacionamento na Movepark. Agora é só concluir a configuração — localização, tipos de vaga e preços — para publicar e começar a receber reservas.</p>
       <p>${button(actionLink, "Continuar meu cadastro")}</p>
@@ -156,8 +156,8 @@ export function tplRejection(contactName: string, reason?: string | null): { sub
 
 export function tplWentLive(contactName: string): { subject: string; html: string } {
   return {
-    subject: "Seu estacionamento está no ar! 🚗",
-    html: shell("Tudo pronto — você está no ar!", `
+    subject: "Seu estacionamento está no ar",
+    html: shell("Tudo pronto — você está no ar", `
       <p>Olá, ${escapeHtml(contactName)}!</p>
       <p>Seu estacionamento já aparece na busca da Movepark e está pronto para receber reservas.</p>
       <p>${button(`${siteUrl()}/operator`, "Acessar meu painel")}</p>`),
@@ -180,9 +180,9 @@ export function tplReviewRequest(
     .join("");
   return {
     subject: `Como foi seu estacionamento em ${locationName}?`,
-    html: shell("Conta pra gente como foi? ⭐", `
+    html: shell("Como foi a sua visita?", `
       <p>Olá, ${escapeHtml(contactName)}!</p>
-      <p>Você usou o <strong>${escapeHtml(locationName)}</strong> pela Movepark. Sua avaliação ajuda outros motoristas a escolherem com confiança — leva menos de 1 minuto.</p>
+      <p>Você usou o <strong>${escapeHtml(locationName)}</strong> pela Movepark. Sua avaliação ajuda outros motoristas a escolher — leva menos de 1 minuto.</p>
       <p style="margin:8px 0 4px">Toque numa estrela para avaliar:</p>
       <div style="text-align:center;margin:4px 0 12px">${stars}</div>
       <p style="text-align:center">${button(reviewLink, "Avaliar meu estacionamento")}</p>

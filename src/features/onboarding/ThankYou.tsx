@@ -18,7 +18,7 @@ export function ThankYou({ alreadySubmitted }: Props) {
       </div>
       <div className="space-y-2">
         <h2 className="text-display-md text-ink">
-          {alreadySubmitted ? "Já recebemos seu cadastro" : "Recebemos seu cadastro! 🎉"}
+          {alreadySubmitted ? "Já recebemos seu cadastro" : "Recebemos seu cadastro"}
         </h2>
         <p className="mx-auto max-w-md text-body-md text-muted">
           {alreadySubmitted

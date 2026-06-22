@@ -122,7 +122,7 @@ export function TrustBand() {
             Por que a Movepark
           </span>
           <h2 className="mt-3 max-w-2xl text-display-2xl text-ink">
-            Estacione com confiança e tranquilidade
+            O que você tem em toda reserva
           </h2>
         </div>
 
