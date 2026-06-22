@@ -33,7 +33,7 @@ function PhotoCard({
   return (
     <Link
       to={`/search?dest=${dest}`}
-      className="relative block w-[360px] shrink-0 overflow-hidden rounded-2xl bg-mp-pale transition-shadow hover:shadow-tier"
+      className="group relative block w-[360px] shrink-0 overflow-hidden rounded-2xl bg-mp-pale transition-shadow hover:shadow-tier"
       style={{ height: h, transform: `translateY(${dy}px)` }}
     >
       {/* Foto de fundo */}
@@ -82,7 +82,7 @@ export function DestinationsGallery() {
       <div className="group overflow-hidden" style={{ height: 620 }}>
         {/* Margem extra no topo para dar espaço aos cards deslocados para cima */}
         <div
-          className="flex items-center gap-6 px-6 animate-marquee [animation-play-state:paused] group-hover:[animation-play-state:running]"
+          className="flex items-center gap-6 px-6 animate-marquee group-hover:[animation-play-state:paused]"
           style={{ marginTop: 90 }}
         >
           {loop.map((item, i) => (

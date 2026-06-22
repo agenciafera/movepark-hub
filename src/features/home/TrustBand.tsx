@@ -127,11 +127,11 @@ export function TrustBand() {
         </div>
 
         {/* Grid 2×2 */}
-        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-4">
           {items.map((it) => (
             <div
               key={it.title}
-              className="overflow-hidden rounded-md bg-surface-soft p-6"
+              className="overflow-hidden rounded-xl bg-surface-soft p-6 transition-shadow hover:shadow-tier"
             >
               <it.icon className="h-5 w-5 text-mp-primary" />
               <h3 className="mt-5 text-[18px] font-semibold leading-snug text-ink">{it.title}</h3>

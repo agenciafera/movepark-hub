@@ -1,4 +1,9 @@
-import { UserCircle2 } from "lucide-react";
+const AVATAR_COLORS = [
+  "bg-mp-violet text-white",
+  "bg-mp-teal/40 text-mp-navy",
+  "bg-mp-pale text-mp-indigo",
+  "bg-mp-navy text-white",
+];
 
 function StarIcon({ filled }: { filled: boolean }) {
   return (
@@ -18,6 +23,17 @@ function Stars({ rating }: { rating: number }) {
         <StarIcon key={n} filled={n <= rating} />
       ))}
     </span>
+  );
+}
+
+function Avatar({ name, index }: { name: string; index: number }) {
+  const color = AVATAR_COLORS[index % AVATAR_COLORS.length];
+  return (
+    <div
+      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[15px] font-bold ${color}`}
+    >
+      {name.charAt(0)}
+    </div>
   );
 }
 
@@ -55,21 +71,29 @@ export function Testimonials() {
         <p className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
           Avaliações verificadas
         </p>
-        <h2 className="mb-10 text-[36px] font-bold text-ink tablet:text-display-2xl">
+        <h2 className="mb-4 text-[36px] font-bold text-ink tablet:text-display-2xl">
           O que nossos clientes dizem
         </h2>
 
+        {/* Stats agregados */}
+        <div className="mb-10 flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <Stars rating={5} />
+            <span className="text-title-md font-bold text-ink">4.9</span>
+          </div>
+          <span className="text-muted-soft">·</span>
+          <span className="text-body-sm text-muted">1.200+ avaliações verificadas</span>
+        </div>
+
         <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-4">
-          {reviews.map((r) => (
+          {reviews.map((r, i) => (
             <div
               key={r.name}
-              className="flex flex-col gap-4 rounded-md border border-hairline bg-canvas p-5 shadow-tier"
+              className="flex flex-col gap-4 rounded-xl border border-hairline bg-canvas p-5 shadow-tier"
             >
-              {/* Avatar placeholder */}
+              {/* Avatar com inicial colorida */}
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-hairline bg-surface-soft">
-                  <UserCircle2 className="h-6 w-6 text-muted-soft" />
-                </div>
+                <Avatar name={r.name} index={i} />
                 <div>
                   <div className="text-caption font-semibold text-ink">{r.name}</div>
                   <div className="text-caption-sm text-muted">{r.destination}</div>

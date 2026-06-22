@@ -15,6 +15,20 @@ function StarIcon() {
   );
 }
 
+function CheckIcon() {
+  return (
+    <svg className="h-3.5 w-3.5 shrink-0 text-mp-teal" fill="currentColor" viewBox="0 0 20 20">
+      <path
+        fillRule="evenodd"
+        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+}
+
+const trustPills = ["Cancelamento grátis", "Preço travado", "Operadoras verificadas"];
+
 export function Hero() {
   const [params] = useSearchParams();
   return (
@@ -32,20 +46,22 @@ export function Hero() {
         className="absolute inset-0"
         style={{
           background:
-            "linear-gradient(to top, hsl(248 26% 20% / 0.92) 0%, hsl(248 26% 20% / 0.55) 45%, hsl(248 26% 20% / 0.18) 100%)",
+            "linear-gradient(to top, hsl(248 26% 20% / 0.95) 0%, hsl(248 26% 20% / 0.60) 45%, hsl(248 26% 20% / 0.25) 100%)",
         }}
         aria-hidden="true"
       />
 
       <div className="relative z-10 mx-auto w-full max-w-5xl px-6 pb-20 pt-36 desktop:px-8 desktop:pb-24">
-        {/* Badge de prova social */}
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 backdrop-blur-sm">
+        {/* Badge de prova social enriquecida */}
+        <div className="mb-6 inline-flex items-center gap-2.5 rounded-full bg-white/15 px-4 py-1.5 backdrop-blur-sm">
           <span className="flex gap-0.5">
             {[...Array(5)].map((_, i) => (
               <StarIcon key={i} />
             ))}
           </span>
-          <span className="text-caption-sm text-white/90">5.000+ reservas concluídas</span>
+          <span className="text-caption-sm font-semibold text-white/95">4.9</span>
+          <span className="h-3 w-px bg-white/30" />
+          <span className="text-caption-sm text-white/80">5.000+ reservas concluídas</span>
         </div>
 
         <h1 className="mb-4 max-w-3xl text-display-2xl font-bold text-white tablet:text-display-3xl">
@@ -60,6 +76,16 @@ export function Hero() {
           initialFrom={parseDate(params.get("from"))}
           initialTo={parseDate(params.get("to"))}
         />
+
+        {/* Trust pills abaixo da busca */}
+        <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2">
+          {trustPills.map((label) => (
+            <span key={label} className="inline-flex items-center gap-1.5 text-[13px] text-white/70">
+              <CheckIcon />
+              {label}
+            </span>
+          ))}
+        </div>
       </div>
     </section>
   );

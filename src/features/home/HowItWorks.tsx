@@ -20,7 +20,7 @@ const steps = [
 export function HowItWorks() {
   return (
     <section className="py-16 desktop:py-20">
-      {/* Breadcrumb de etapas */}
+      {/* Cabeçalho */}
       <div className="mx-auto mb-12 max-w-[1280px] px-6 text-center desktop:px-8">
         <p className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
           Simples e rápido
@@ -28,15 +28,16 @@ export function HowItWorks() {
         <h2 className="text-[36px] font-bold text-ink tablet:text-display-2xl">
           Como reservar em 4 passos
         </h2>
-
-
+        <p className="mx-auto mt-3 max-w-xl text-body-md text-muted">
+          Do destino ao voucher em menos de 2 minutos. Sem cadastro obrigatório para buscar.
+        </p>
       </div>
 
       {/* Layout lado a lado */}
       <div className="mx-auto max-w-[1280px] px-6 desktop:px-8">
         <div className="grid grid-cols-1 gap-10 tablet:grid-cols-2 tablet:items-center">
           {/* Imagem ilustrativa */}
-          <div className="relative overflow-hidden rounded-md desktop:min-h-[400px]">
+          <div className="relative min-h-[280px] overflow-hidden rounded-xl bg-surface-strong desktop:min-h-[400px]">
             <img
               src="/images/como-reservar.jpg"
               alt="Mulher sorrindo ao celular após concluir reserva no aeroporto"
@@ -44,7 +45,7 @@ export function HowItWorks() {
             />
 
             {/* Floating booking card decorativo */}
-            <div className="absolute bottom-8 left-8 rounded-md border border-hairline bg-canvas p-4 shadow-tier tablet:bottom-10 tablet:left-10">
+            <div className="absolute bottom-8 left-8 rounded-xl border border-hairline bg-canvas p-4 shadow-tier tablet:bottom-10 tablet:left-10">
               <div className="mb-2 text-caption font-semibold text-ink">Reserva confirmada</div>
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-success" />

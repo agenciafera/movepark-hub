@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Car, BusFront, Umbrella, ConciergeBell, Star } from "lucide-react";
+import { BusFront, Umbrella, ConciergeBell, Star, ArrowRight } from "lucide-react";
 import { usePopularLocations, type PopularLocation } from "@/features/search/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -39,6 +39,13 @@ const amenityShortLabel: Record<string, string> = {
   motorcycle: "Vagas moto",
 };
 
+// Gradientes para o placeholder de imagem — rotação por índice
+const PLACEHOLDER_GRADIENTS = [
+  "from-mp-pale to-surface-strong",
+  "from-mp-teal/20 to-mp-pale",
+  "from-surface-strong to-mp-pale",
+];
+
 function topAmenityLabels(amenities: { amenity_code: string }[], n = 3): string[] {
   const set = new Set(amenities.map((a) => a.amenity_code));
   const out: string[] = [];
@@ -58,18 +65,26 @@ function destLink(loc: PopularLocation): string {
   return loc.destination ? `/search?dest=${loc.destination.code}` : "/search";
 }
 
-function PopularParkingCard({ loc }: { loc: PopularLocation }) {
+function ImagePlaceholder({ name, index }: { name: string; index: number }) {
+  const initial = name.charAt(0).toUpperCase();
+  const gradient = PLACEHOLDER_GRADIENTS[index % PLACEHOLDER_GRADIENTS.length];
+  return (
+    <div className={cn("absolute inset-0 flex items-center justify-center bg-gradient-to-br", gradient)}>
+      <span className="select-none text-6xl font-black text-mp-indigo/15">{initial}</span>
+    </div>
+  );
+}
+
+function PopularParkingCard({ loc, index }: { loc: PopularLocation; index: number }) {
   const badges = activeBadges(loc.amenities);
   const amenityLabels = topAmenityLabels(loc.amenities);
   const to = destLink(loc);
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-md border border-hairline bg-canvas transition-shadow hover:shadow-tier">
+    <article className="group relative flex flex-col overflow-hidden rounded-xl border border-hairline bg-canvas transition-shadow hover:shadow-tier">
       {/* Área de foto */}
       <Link to={to} className="relative block aspect-[4/3] overflow-hidden bg-surface-soft">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Car className="h-14 w-14 text-muted-soft" />
-        </div>
+        <ImagePlaceholder name={loc.name} index={index} />
         <div className="absolute inset-0 bg-soft-gradient opacity-60" aria-hidden />
 
         {/* Badges de amenidade sobreposto (fundo da foto) */}
@@ -98,7 +113,7 @@ function PopularParkingCard({ loc }: { loc: PopularLocation }) {
         {/* Rating */}
         {loc.review_avg != null && loc.review_count > 0 && (
           <span className="inline-flex items-center gap-1 text-body-sm text-muted">
-            <Star className="h-3.5 w-3.5 fill-mp-amber stroke-mp-amber" />
+            <Star className="h-3.5 w-3.5 fill-yellow-400 stroke-yellow-400" />
             {loc.review_avg.toFixed(1)}
             <span className="text-muted-soft">({loc.review_count})</span>
           </span>
@@ -124,10 +139,11 @@ function LoadingSkeleton() {
   return (
     <section className="mx-auto w-full max-w-[1280px] px-6 py-16 desktop:px-8">
       <Skeleton className="mb-2 h-4 w-32" />
-      <Skeleton className="mb-8 h-9 w-72" />
+      <Skeleton className="mb-3 h-9 w-72" />
+      <Skeleton className="mb-8 h-5 w-96" />
       <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="flex flex-col overflow-hidden rounded-md border border-hairline">
+          <div key={i} className="flex flex-col overflow-hidden rounded-xl border border-hairline">
             <Skeleton className="aspect-[4/3] w-full" />
             <div className="flex flex-col gap-2 p-4">
               <Skeleton className="h-5 w-3/4" />
@@ -152,19 +168,33 @@ export function PopularParkingLots() {
       <p className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
         Os mais reservados
       </p>
-      <h2 className="mb-8 text-[36px] font-bold text-ink tablet:text-display-2xl">
+      <h2 className="mb-2 text-[36px] font-bold text-ink tablet:text-display-2xl">
         Estacionamentos populares
       </h2>
+      <p className="mb-8 max-w-xl text-body-md text-muted">
+        Escolhidos por milhares de viajantes em todo o Brasil — com avaliações verificadas.
+      </p>
 
-      <div className={cn(
-        "grid gap-4",
-        data.length <= 2
-          ? "grid-cols-1 tablet:grid-cols-2"
-          : "grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3",
-      )}>
-        {data.map((loc) => (
-          <PopularParkingCard key={loc.id} loc={loc} />
+      <div
+        className={cn(
+          "grid gap-4",
+          data.length <= 2
+            ? "grid-cols-1 tablet:grid-cols-2"
+            : "grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3",
+        )}
+      >
+        {data.map((loc, i) => (
+          <PopularParkingCard key={loc.id} loc={loc} index={i} />
         ))}
+      </div>
+
+      <div className="mt-10 flex justify-center">
+        <Link
+          to="/search"
+          className="inline-flex items-center gap-2 rounded-full border border-hairline bg-canvas px-6 py-3 text-button-sm font-semibold text-ink transition-shadow hover:shadow-tier"
+        >
+          Ver todos os estacionamentos <ArrowRight className="h-4 w-4" />
+        </Link>
       </div>
     </section>
   );
