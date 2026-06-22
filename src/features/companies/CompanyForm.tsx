@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCreateCompany, useUpdateCompany } from "./api";
+import { normalizeWlDomain, wlApiBaseUrl } from "./wl";
 import { cnpjMask } from "@/lib/masks";
 import type { Company, EntityStatus } from "@/types/domain";
 
@@ -46,7 +47,7 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
   const [legalName, setLegalName] = React.useState("");
   const [taxId, setTaxId] = React.useState("");
   const [status, setStatus] = React.useState<EntityStatus>("active");
-  const [wlBaseUrl, setWlBaseUrl] = React.useState("");
+  const [wlDomain, setWlDomain] = React.useState("");
   const [wlTenantKey, setWlTenantKey] = React.useState("");
   const [wlSyncEnabled, setWlSyncEnabled] = React.useState(false);
 
@@ -57,7 +58,7 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
       setLegalName(company?.legal_name ?? "");
       setTaxId(cnpjMask(company?.tax_id ?? ""));
       setStatus(company?.status ?? "active");
-      setWlBaseUrl(company?.wl_base_url ?? "");
+      setWlDomain(company?.wl_domain ?? "");
       setWlTenantKey(company?.wl_tenant_key ?? "");
       setWlSyncEnabled(company?.wl_sync_enabled ?? false);
     }
@@ -65,10 +66,10 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const wlUrl = wlBaseUrl.trim() || null;
+    const wlHost = normalizeWlDomain(wlDomain);
     const wlTenant = wlTenantKey.trim() || null;
-    if (wlSyncEnabled && (!wlUrl || !wlTenant)) {
-      toast.error("Para ligar a sincronização, preencha a URL base e o tenant (X-Tenant) do white-label.");
+    if (wlSyncEnabled && (!wlHost || !wlTenant)) {
+      toast.error("Para ligar a sincronização, preencha o domínio e o tenant (X-Tenant) do white-label.");
       return;
     }
     const payload = {
@@ -77,7 +78,7 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
       legal_name: legalName || null,
       tax_id: taxId.replace(/\D/g, "") || null,
       status,
-      wl_base_url: wlUrl,
+      wl_domain: wlHost,
       wl_tenant_key: wlTenant,
       wl_sync_enabled: wlSyncEnabled,
     };
@@ -164,14 +165,18 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
               <Switch checked={wlSyncEnabled} onCheckedChange={setWlSyncEnabled} />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="wl-url">URL base da API do WL</Label>
+              <Label htmlFor="wl-domain">Domínio do backend WL</Label>
               <Input
-                id="wl-url"
-                type="url"
-                value={wlBaseUrl}
-                onChange={(e) => setWlBaseUrl(e.target.value)}
-                placeholder="https://tenant.movepark.com.br/api/v3/backend"
+                id="wl-domain"
+                value={wlDomain}
+                onChange={(e) => setWlDomain(e.target.value)}
+                placeholder="ferapark.movepark.com.br"
               />
+              {normalizeWlDomain(wlDomain) && (
+                <p className="text-caption text-muted">
+                  API: <code>{wlApiBaseUrl(wlDomain)}</code>
+                </p>
+              )}
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="wl-tenant">Tenant (header X-Tenant / whitelabel key)</Label>

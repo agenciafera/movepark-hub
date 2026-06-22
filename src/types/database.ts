@@ -629,7 +629,7 @@ export type Database = {
           take_rate_bps: number
           tax_id: string | null
           updated_at: string
-          wl_base_url: string | null
+          wl_domain: string | null
           wl_sync_enabled: boolean
           wl_tenant_key: string | null
         }
@@ -646,7 +646,7 @@ export type Database = {
           take_rate_bps?: number
           tax_id?: string | null
           updated_at?: string
-          wl_base_url?: string | null
+          wl_domain?: string | null
           wl_sync_enabled?: boolean
           wl_tenant_key?: string | null
         }
@@ -663,7 +663,7 @@ export type Database = {
           take_rate_bps?: number
           tax_id?: string | null
           updated_at?: string
-          wl_base_url?: string | null
+          wl_domain?: string | null
           wl_sync_enabled?: boolean
           wl_tenant_key?: string | null
         }

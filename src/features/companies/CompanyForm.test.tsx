@@ -21,7 +21,7 @@ function makeCompany(over: Partial<Company>): Company {
     id: "c1",
     name: "Ferapark",
     slug: "ferapark",
-    wl_base_url: null,
+    wl_domain: null,
     wl_tenant_key: null,
     wl_sync_enabled: false,
     ...over,
@@ -41,16 +41,14 @@ describe("CompanyForm — integração White-label", () => {
         open
         onOpenChange={() => {}}
         company={makeCompany({
-          wl_base_url: "https://ferapark.movepark.com.br/api/v3/backend",
+          wl_domain: "ferapark.movepark.com.br",
           wl_tenant_key: "ferapark",
           wl_sync_enabled: true,
         })}
       />,
     );
     expect(screen.getByText("Integração White-label")).toBeInTheDocument();
-    expect(screen.getByLabelText(/URL base da API do WL/i)).toHaveValue(
-      "https://ferapark.movepark.com.br/api/v3/backend",
-    );
+    expect(screen.getByLabelText(/Domínio do backend WL/i)).toHaveValue("ferapark.movepark.com.br");
     expect(screen.getByLabelText(/Tenant/i)).toHaveValue("ferapark");
   });
 
@@ -59,7 +57,7 @@ describe("CompanyForm — integração White-label", () => {
       <CompanyForm
         open
         onOpenChange={() => {}}
-        company={makeCompany({ wl_sync_enabled: true, wl_base_url: null, wl_tenant_key: null })}
+        company={makeCompany({ wl_sync_enabled: true, wl_domain: null, wl_tenant_key: null })}
       />,
     );
     fireEvent.click(screen.getByRole("button", { name: /salvar/i }));

@@ -2,7 +2,7 @@ begin;
 select plan(5);
 
 -- Colunas de integração WL existem
-select has_column('public', 'company', 'wl_base_url', 'company.wl_base_url existe');
+select has_column('public', 'company', 'wl_domain', 'company.wl_domain existe');
 select has_column('public', 'company', 'wl_tenant_key', 'company.wl_tenant_key existe');
 select has_column('public', 'company', 'wl_sync_enabled', 'company.wl_sync_enabled existe');
 
