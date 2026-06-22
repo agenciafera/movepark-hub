@@ -190,6 +190,26 @@ Campos identificados no legado que ainda não existem no Hub:
 | `expires_at` | `booking` | `timestamptz` | Prazo para pagamento (PIX/boleto) |
 | `passenger_count` | `booking` | `integer` | Número de passageiros |
 | `has_pcd` | `booking` | `boolean` | Reserva com necessidade especial |
-| `origin` | `booking` | `text` | Canal de origem (web, app, parceiro) |
-| `utm_source` / `utm_medium` / `utm_campaign` | `booking` | `text` | Rastreamento de marketing |
+| `origin` | `booking` | `text` | Canal de origem (web, app, parceiro) — **já existe**, ver "Origem da reserva" |
+| `utm_source` / `utm_medium` / `utm_campaign` | `booking` | `text` | Rastreamento de marketing (colunas existem; preenchimento na E2.4) |
 | `external_id` | `booking` | `text` | ID externo (integração com parceiros) |
+
+## Origem da reserva (E2.1.1 · venda direta)
+
+Pra medir a migração da venda do white-label pro hub, toda reserva carrega uma **origem**:
+
+| Sinal | O que indica | Como |
+|---|---|---|
+| `booking.created_via_api_key_id` | **externo vs hub** (sinal forte) | `NOT NULL` = criada via Public API (parceiro/white-label); `NULL` = nasceu no próprio hub |
+| `booking.origin` | **sub-fonte** dentro do hub (funil) | `hub_search`, `hub_destino`, `hub_direct`; via API: `api` (default) / `white_label` |
+
+**Taxonomia centralizada** em `src/lib/bookingOrigin.ts` (`BOOKING_ORIGIN`, `originFromSrc`, `isHubOrigin`).
+No consumo direto, a busca (`/search`) e as páginas de destino (`/destinos/:slug`) anexam `?src=search|destino`
+ao link da listagem (`ResultCard`); o `ReservationCard` lê esse `src` e grava o `origin` ao criar a reserva
+(`originFromSrc`), default `hub_direct` quando a listagem é aberta direta.
+
+**Medição hub × white-label** (painel fica na **E2.4**): `created_via_api_key_id IS NULL AND origin LIKE 'hub%'`
+= hub; o resto = externo. **Sem CHECK rígido** em `origin` (não quebrar o default `api` da Public API).
+
+> **Cutover/go-live é tarefa separada:** apontar `movepark.co` + o tráfego do consumidor pro Hub (301/SEO)
+> é atividade de **lançamento**, fora da E2.1, dependente da publicação do Hub.
