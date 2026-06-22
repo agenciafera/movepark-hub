@@ -478,7 +478,7 @@ export default function DesignSystemPage() {
             <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-muted-steel">
               Movepark Design System · v0.1
             </span>
-            <h1 className="max-w-3xl text-display-xl text-ink desktop:text-[44px] desktop:leading-[1.1]">
+            <h1 className="max-w-3xl text-display-2xl text-ink desktop:text-display-3xl">
               Estacione com confiança. <br />A linguagem visual do Movepark.
             </h1>
             <p className="max-w-2xl text-body-md text-body">
@@ -637,16 +637,22 @@ export default function DesignSystemPage() {
             <h3 className="mb-3 text-display-sm text-ink">Display</h3>
             <Specimen>
               <div className="flex flex-col gap-6">
-                <TypeRow size="text-[52px] leading-[1.1] font-bold tracking-[-0.6px]" spec="display-xl · 52 / 700">
+                <TypeRow size="text-display-3xl" spec="display-3xl · 56 / 700 · -0.8px">
                   Estacione com confiança
                 </TypeRow>
-                <TypeRow size="text-[40px] leading-[1.15] font-medium tracking-[-0.5px]" spec="display-lg · 40 / 500">
+                <TypeRow size="text-display-2xl" spec="display-2xl · 44 / 700 · -0.5px">
                   Vagas perto de você, agora
                 </TypeRow>
-                <TypeRow size="text-[32px] leading-[1.25] font-bold" spec="display-md · 32 / 700">
+                <TypeRow size="text-display-xl" spec="display-xl · 28 / 700 · -0.2px">
+                  KPI · R$ 84.210
+                </TypeRow>
+                <TypeRow size="text-display-lg" spec="display-lg · 22 / 500 · -0.3px">
+                  Título de página
+                </TypeRow>
+                <TypeRow size="text-display-md" spec="display-md · 21 / 700">
                   O que esta vaga oferece
                 </TypeRow>
-                <TypeRow size="text-[26px] leading-[1.22] font-semibold tracking-[-0.2px]" spec="display-sm · 26 / 600">
+                <TypeRow size="text-display-sm" spec="display-sm · 20 / 600 · -0.15px">
                   Coisas pra saber antes
                 </TypeRow>
               </div>
@@ -667,6 +673,9 @@ export default function DesignSystemPage() {
                 </TypeRow>
                 <TypeRow size="text-body-sm text-body" spec="body-sm · 14 / 400">
                   Hosted by Ana · 0.8 km · 24h disponível
+                </TypeRow>
+                <TypeRow size="text-caption text-muted" spec="caption · 14 / 500">
+                  Nome · CPF · Data de entrada
                 </TypeRow>
                 <TypeRow size="text-caption-sm text-muted" spec="caption-sm · 13 / 400">
                   © 2026 Movepark, Inc.
@@ -745,16 +754,34 @@ export default function DesignSystemPage() {
                   <Token>button-md · 16 / 500</Token>
                 </div>
                 <div className="flex flex-col items-start gap-2">
-                  <span className="rounded-full bg-canvas px-3 py-1 text-[11px] font-bold text-ink shadow-tier">
+                  <span className="rounded-full bg-canvas px-3 py-1 text-badge font-bold text-ink shadow-tier">
                     Destaque
                   </span>
                   <Token>badge · 11 / 700</Token>
                 </div>
                 <div className="flex flex-col items-start gap-2">
-                  <span className="rounded-full bg-mp-primary px-2 py-[3px] text-[8px] font-black uppercase tracking-[0.4px] text-on-primary">
+                  <span className="rounded-full bg-mp-primary px-2 py-[3px] text-uppercase-tag font-black uppercase tracking-[0.4px] text-on-primary">
                     NEW
                   </span>
                   <Token>uppercase-tag · 8 / 900</Token>
+                </div>
+                <div className="flex flex-col items-start gap-2">
+                  <span className="text-micro-label font-bold uppercase tracking-[0.3px] text-muted-steel">
+                    Chegada
+                  </span>
+                  <Token>micro-label · 12 / 700</Token>
+                </div>
+                <div className="flex flex-col items-start gap-2">
+                  <a href="#typography" className="text-link text-mp-indigo underline underline-offset-2 no-underline hover:underline">
+                    Ver todos os destinos
+                  </a>
+                  <Token>link · 14 / 400</Token>
+                </div>
+                <div className="flex flex-col items-start gap-2">
+                  <span className="text-nav-link text-ink">
+                    Vagas
+                  </span>
+                  <Token>nav-link · 16 / 600</Token>
                 </div>
               </div>
             </Specimen>

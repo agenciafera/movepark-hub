@@ -66,23 +66,44 @@
 
 ## Typography
 
-> **Inter é a fonte definitiva.** Sem custo de licença, legível em interfaces densas, pesos 100–900 disponíveis via Google Fonts (variable font `ital,opsz,wght`).
+> **Inter é a fonte definitiva.** Sem custo de licença, legível em interfaces densas, pesos 100–900 disponíveis via Google Fonts (variable font `ital,opsz,wght`). Carregada em `index.html` com `display=swap`.
+>
+> Pesos em uso: 400 (corpo), 500 (medium — subtítulo, botão, nav), 600 (semibold — título de card, display-sm), 700 (bold — headings, display), 900 (black — rating, tag).
+
+### Display
 
 | Token | Size | Weight | Line Height | Letter Spacing | Uso |
 |---|---|---|---|---|---|
-| `{typography.display-3xl}` | 56px | 700 | 1.08 | -0.8px | Hero H1 desktop, CtaBanner desktop |
-| `{typography.display-2xl}` | 44px | 700 | 1.10 | -0.5px | Hero H1 mobile, section H2 desktop, CtaBanner mobile |
-| `{typography.display-xl}` | 28px | 700 | 1.32 | -0.2px | KPI numbers grandes |
-| `{typography.display-lg}` | 22px | 500 | 1.20 | -0.3px | Títulos de página |
-| `{typography.display-md}` | 21px | 700 | 1.40 | — | Títulos de seção |
-| `{typography.display-sm}` | 20px | 600 | 1.22 | -0.15px | Sub-títulos |
-| `{typography.title-md}` | 16px | 600 | 1.25 | Cabeçalhos de card, colunas de tabela |
-| `{typography.body-md}` | 16px | 400 | 1.50 | Texto corrido |
-| `{typography.body-sm}` | 14px | 400 | 1.43 | Meta de tabelas, datas, valores secundários |
-| `{typography.caption}` | 14px | 500 | 1.29 | Labels de campos, badges |
-| `{typography.caption-sm}` | 13px | 400 | 1.23 | Footer, copyright |
-| `{typography.button-md}` | 16px | 500 | 1.25 | Labels de botões primários |
-| `{typography.button-sm}` | 14px | 500 | 1.29 | Labels de botões secundários/pill |
+| `display-3xl` | 56px | 700 | 1.08 | -0.8px | Hero H1 desktop, CtaBanner desktop |
+| `display-2xl` | 44px | 700 | 1.10 | -0.5px | Hero H1 mobile, section H2 desktop |
+| `display-xl` | 28px | 700 | 1.32 | -0.2px | KPI numbers, destaques numéricos |
+| `display-lg` | 22px | 500 | 1.20 | -0.3px | Títulos de página |
+| `display-md` | 21px | 700 | 1.40 | — | Títulos de seção |
+| `display-sm` | 20px | 600 | 1.22 | -0.15px | Sub-títulos |
+
+### Corpo
+
+| Token | Size | Weight | Line Height | Uso |
+|---|---|---|---|---|
+| `title-md` | 16px | 600 | 1.25 | Cabeçalhos de card, colunas de tabela |
+| `title-sm` | 16px | 500 | 1.25 | Subtítulo, nav section headers |
+| `body-md` | 16px | 400 | 1.50 | Texto corrido |
+| `body-sm` | 14px | 400 | 1.43 | Meta de tabelas, datas, valores secundários |
+| `caption` | 14px | 500 | 1.29 | Labels de campos, rótulos de formulário |
+| `caption-sm` | 13px | 400 | 1.23 | Footer, copyright, timestamps |
+
+### Utilitárias
+
+| Token | Size | Weight | Line Height | Letter Spacing | Uso |
+|---|---|---|---|---|---|
+| `rating-display` | 64px | 900 | 1.05 | -1.5px | Único momento "alto" — detalhe de vaga |
+| `badge` | 11px | 700 | 1.18 | 0.1px | Chips de destaque, badges de status |
+| `micro-label` | 12px | 700 | 1.33 | — | Labels uppercase pequenas (Chegada, Saída) |
+| `uppercase-tag` | 8px | 900 | 1.25 | 0.4px | Tags NEW, NOVO uppercase |
+| `button-md` | 16px | 500 | 1.25 | — | Labels de botões primários |
+| `button-sm` | 14px | 500 | 1.29 | — | Labels de botões secundários/pill |
+| `link` | 14px | 400 | 1.43 | — | Links inline em texto corrido |
+| `nav-link` | 16px | 600 | 1.25 | — | Links de navegação principal |
 
 ---
 

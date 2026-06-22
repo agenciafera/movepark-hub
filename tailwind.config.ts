@@ -145,6 +145,8 @@ const config: Config = {
         "uppercase-tag": ["8px", { lineHeight: "1.25", fontWeight: "900", letterSpacing: "0.4px" }],
         "button-md": ["16px", { lineHeight: "1.25", fontWeight: "500" }],
         "button-sm": ["14px", { lineHeight: "1.29", fontWeight: "500" }],
+        link: ["14px", { lineHeight: "1.43", fontWeight: "400" }],
+        "nav-link": ["16px", { lineHeight: "1.25", fontWeight: "600" }],
       },
       keyframes: {
         "accordion-down": {
