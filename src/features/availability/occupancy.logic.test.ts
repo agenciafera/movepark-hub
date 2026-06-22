@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildOccupancyMatrix, occupancyTone, withExternal } from "./occupancy.logic";
+import {
+  buildOccupancyMatrix,
+  monthGrid,
+  monthsInRange,
+  occupancyTone,
+  withExternal,
+} from "./occupancy.logic";
 import type { LocationOccupancyRow } from "@/types/domain";
 
 const rows: LocationOccupancyRow[] = [
@@ -57,6 +63,33 @@ describe("withExternal", () => {
   });
   it("capacity 0 → pct 0 (evita divisão por zero)", () => {
     expect(withExternal(2, 1, 0)).toEqual({ count: 3, pct: 0 });
+  });
+});
+
+describe("monthsInRange", () => {
+  it("lista os meses do intervalo, virando o ano", () => {
+    expect(monthsInRange("2026-06-22", "2026-08-05")).toEqual([
+      { year: 2026, month: 6 },
+      { year: 2026, month: 7 },
+      { year: 2026, month: 8 },
+    ]);
+    expect(monthsInRange("2026-12-20", "2027-01-10")).toEqual([
+      { year: 2026, month: 12 },
+      { year: 2027, month: 1 },
+    ]);
+    expect(monthsInRange("2026-06-01", "2026-06-30")).toEqual([{ year: 2026, month: 6 }]);
+  });
+});
+
+describe("monthGrid", () => {
+  it("alinha o 1º dia no dia da semana certo e completa a grade", () => {
+    // junho/2026: dia 1 é segunda-feira (getUTCDay = 1)
+    const weeks = monthGrid(2026, 6);
+    expect(weeks[0][0]).toBeNull(); // domingo vazio
+    expect(weeks[0][1]).toBe("2026-06-01"); // segunda
+    expect(weeks.flat().filter(Boolean)).toHaveLength(30); // junho tem 30 dias
+    expect(weeks[weeks.length - 1].length).toBe(7); // última semana completa
+    expect(weeks.flat().filter(Boolean)).toContain("2026-06-30");
   });
 });
 

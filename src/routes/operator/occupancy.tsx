@@ -12,29 +12,17 @@ import {
   useSetDateBlocked,
   useWlExternalOccupancy,
 } from "@/features/availability/api";
+import { buildOccupancyMatrix, withExternal } from "@/features/availability/occupancy.logic";
 import {
-  buildOccupancyMatrix,
-  occupancyTone,
-  withExternal,
-} from "@/features/availability/occupancy.logic";
+  OccupancyCalendar,
+  OccupancyLegend,
+  type CalendarDay,
+} from "@/features/availability/OccupancyCalendar";
 import { useAuth } from "@/auth/context";
-import { cn } from "@/lib/utils";
 
 function isoDate(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
-
-function shortDate(iso: string): string {
-  const [, m, d] = iso.split("-");
-  return `${d}/${m}`;
-}
-
-const toneClass: Record<"low" | "mid" | "high" | "full", string> = {
-  low: "bg-surface-soft text-muted",
-  mid: "bg-mp-pale text-mp-indigo",
-  high: "bg-badge-pending-bg text-badge-pending-fg",
-  full: "bg-badge-cancelled-bg text-badge-cancelled-fg font-bold",
-};
 
 export default function OperatorOccupancy() {
   const { impersonatedCompanyId, effectiveCompanyIds } = useAuth();
@@ -152,63 +140,42 @@ export default function OperatorOccupancy() {
           description="Escolha uma unidade e um período com vagas ativas."
         />
       ) : (
-        <Card>
-          <CardContent className="overflow-x-auto p-0">
-            <table className="w-full border-collapse text-caption">
-              <thead>
-                <tr>
-                  <th className="sticky left-0 z-10 bg-canvas px-3 py-2 text-left text-body-sm text-muted">
-                    Tipo de vaga
-                  </th>
-                  {matrix.dates.map((d) => (
-                    <th key={d} className="px-2 py-2 text-center font-medium text-muted tabular-nums">
-                      {shortDate(d)}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {matrix.rows.map((row) => (
-                  <tr key={row.lptId} className="border-t border-hairline">
-                    <td className="sticky left-0 z-10 bg-canvas px-3 py-2 text-body-sm text-ink">
-                      {row.name}
-                    </td>
-                    {matrix.dates.map((d) => {
-                      const cell = row.cells[d];
-                      if (!cell) {
-                        return <td key={d} className="px-2 py-2" />;
-                      }
-                      const ext = wlByLpt[row.lptId]?.[d] ?? 0;
-                      const eff = withExternal(cell.booked, ext, cell.capacity);
-                      return (
-                        <td key={d} className="px-1.5 py-1.5">
-                          <button
-                            type="button"
-                            onClick={() => toggleBlock(row.lptId, d, cell.blocked)}
-                            disabled={setBlocked.isPending}
-                            className={cn(
-                              "w-full rounded-sm px-1 py-1 text-center tabular-nums transition hover:ring-1 hover:ring-mp-primary/40 disabled:opacity-60",
-                              cell.blocked
-                                ? "bg-badge-cancelled-bg text-badge-cancelled-fg line-through"
-                                : toneClass[occupancyTone(eff.pct)],
-                            )}
-                            title={
-                              cell.blocked
-                                ? "Bloqueada — clique para liberar"
-                                : `hub ${cell.booked}${ext ? ` + WL ${ext}` : ""} = ${eff.count}/${cell.capacity} (${Math.round(eff.pct * 100)}%) — clique para bloquear`
-                            }
-                          >
-                            {cell.blocked ? "Bloq." : `${eff.count}/${cell.capacity}`}
-                          </button>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col gap-6">
+          {matrix.rows.map((row) => {
+            const data: Record<string, CalendarDay> = {};
+            for (const d of matrix.dates) {
+              const cell = row.cells[d];
+              if (!cell) continue;
+              const ext = wlByLpt[row.lptId]?.[d] ?? 0;
+              const eff = withExternal(cell.booked, ext, cell.capacity);
+              data[d] = {
+                count: eff.count,
+                capacity: cell.capacity,
+                pct: eff.pct,
+                booked: cell.booked,
+                external: ext,
+                blocked: cell.blocked,
+              };
+            }
+            return (
+              <Card key={row.lptId}>
+                <CardContent className="flex flex-col gap-4 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-body font-medium text-ink">{row.name}</h3>
+                    <OccupancyLegend />
+                  </div>
+                  <OccupancyCalendar
+                    from={from}
+                    to={to <= from ? from : to}
+                    data={data}
+                    onToggle={(date, blocked) => toggleBlock(row.lptId, date, blocked)}
+                    disabled={setBlocked.isPending}
+                  />
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       )}
     </div>
   );
