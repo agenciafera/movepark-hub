@@ -13,7 +13,13 @@
 
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { wlGetAvailability, wlReady, type WlConfig } from "../_shared/wl/client.ts";
+import {
+  wlGetAvailability,
+  wlGetCategories,
+  wlGetProducts,
+  wlReady,
+  type WlConfig,
+} from "../_shared/wl/client.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,6 +36,7 @@ function jsonResponse(body: unknown, status = 200) {
 
 interface Input {
   company_id?: string;
+  mode?: "availability" | "catalog";
   category_slug?: string;
   product_slug?: string | null;
   start_date?: string;
@@ -53,8 +60,12 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "Invalid JSON" }, 400);
   }
 
-  if (!input.company_id || !input.category_slug || !input.start_date) {
-    return jsonResponse({ error: "company_id, category_slug e start_date são obrigatórios" }, 400);
+  const mode = input.mode ?? "availability";
+  if (!input.company_id) {
+    return jsonResponse({ error: "company_id é obrigatório" }, 400);
+  }
+  if (mode === "availability" && (!input.category_slug || !input.start_date)) {
+    return jsonResponse({ error: "category_slug e start_date são obrigatórios" }, 400);
   }
 
   // Cliente com o JWT do usuário → wl_company_config aplica o gating por auth.uid().
@@ -85,11 +96,27 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ ready: false, days: [], error: "WL_BACKEND_TOKEN ausente no servidor" }, 500);
   }
 
+  if (mode === "catalog") {
+    try {
+      const [categories, products] = await Promise.all([
+        wlGetCategories(cfg!, token),
+        wlGetProducts(cfg!, token),
+      ]);
+      return jsonResponse({ ready: true, categories, products });
+    } catch (e) {
+      // Endpoints de listagem podem não existir ainda no WL → front cai no texto livre.
+      return jsonResponse(
+        { ready: false, categories: [], products: [], error: e instanceof Error ? e.message : String(e) },
+        200,
+      );
+    }
+  }
+
   try {
     const days = await wlGetAvailability(cfg!, token, {
-      category_slug: input.category_slug,
+      category_slug: input.category_slug!,
       product_slug: input.product_slug ?? null,
-      start_date: input.start_date,
+      start_date: input.start_date!,
       end_date: input.end_date ?? null,
     });
     return jsonResponse({ ready: true, days });

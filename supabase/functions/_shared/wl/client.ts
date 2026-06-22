@@ -37,6 +37,17 @@ export interface SyncBody {
   end_date?: string | null;
 }
 
+export interface WlCategory {
+  slug: string;
+  name: string;
+}
+
+export interface WlProduct {
+  slug: string;
+  name: string;
+  category_slug: string;
+}
+
 /** Normaliza o que estiver salvo no domínio para apenas o host. */
 export function normalizeWlDomain(input: string | null | undefined): string | null {
   if (!input) return null;
@@ -118,4 +129,48 @@ export async function wlPostSync(
   const json = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(`WL sync ${res.status}: ${JSON.stringify(json)}`);
   return json as { status?: string };
+}
+
+/** Desembrulha listas do WL (array, {data:[...]}, {items:[...]}, {categories|products:[...]}). */
+function unwrapList(json: unknown, key: string): Record<string, unknown>[] {
+  let arr: unknown = json;
+  if (json && typeof json === "object" && !Array.isArray(json)) {
+    const o = json as Record<string, unknown>;
+    arr = o.data ?? o.items ?? o[key] ?? [];
+  }
+  return Array.isArray(arr) ? (arr as Record<string, unknown>[]) : [];
+}
+
+export function parseCategories(json: unknown): WlCategory[] {
+  return unwrapList(json, "categories")
+    .map((r) => ({ slug: String(r.slug ?? ""), name: String(r.name ?? r.slug ?? "") }))
+    .filter((c) => c.slug);
+}
+
+export function parseProducts(json: unknown): WlProduct[] {
+  return unwrapList(json, "products")
+    .map((r) => ({
+      slug: String(r.slug ?? ""),
+      name: String(r.name ?? r.slug ?? ""),
+      category_slug: String(r.category_slug ?? r.category ?? ""),
+    }))
+    .filter((p) => p.slug);
+}
+
+export async function wlGetCategories(c: WlConfig, token: string): Promise<WlCategory[]> {
+  const host = normalizeWlDomain(c.wl_domain);
+  const res = await fetch(`https://${host}${WL_API_PATH}/categories`, {
+    headers: wlHeaders(c.wl_tenant_key!, token),
+  });
+  if (!res.ok) throw new Error(`WL categories ${res.status}`);
+  return parseCategories(await res.json());
+}
+
+export async function wlGetProducts(c: WlConfig, token: string): Promise<WlProduct[]> {
+  const host = normalizeWlDomain(c.wl_domain);
+  const res = await fetch(`https://${host}${WL_API_PATH}/products`, {
+    headers: wlHeaders(c.wl_tenant_key!, token),
+  });
+  if (!res.ok) throw new Error(`WL products ${res.status}`);
+  return parseProducts(await res.json());
 }

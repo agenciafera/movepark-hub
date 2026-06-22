@@ -23,8 +23,14 @@ Sincronização de disponibilidade entre o **Movepark Hub** (novo) e o **white-l
 ## Mapa de SKU (por tipo de vaga)
 
 O WL conta por `(category, product)`. Cada `location_parking_type` guarda
-`wl_category_slug` (unidade) + `wl_product_slug` (tipo de vaga). Editável em
-**Operador/Manager → Tipos de vaga → Mapeamento White-label**. Sem mapeamento, a lpt não sincroniza.
+`wl_category_slug` (unidade) + `wl_product_slug` (tipo de vaga). Editável **só no Manager**
+(Movepark) → **Tipos de vaga → Mapeamento White-label** — nunca no painel do operador. Sem
+mapeamento, a lpt não sincroniza.
+
+**Dropdown via catálogo do WL:** quando o WL expõe `GET /categories` e `GET /products`
+(ver tarefa WL), o Manager mostra **dois selects em cascata** (unidade → tipo) populados ao vivo
+pela Edge `wl-sync` modo `catalog`. Enquanto esses endpoints não existem, cai no **fallback de
+texto livre** (digitar os slugs). O catálogo é buscado só no Manager (`useWlCatalog`).
 
 ## API do WL consumida (contrato do lado legado)
 

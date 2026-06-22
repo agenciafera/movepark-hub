@@ -4,6 +4,8 @@ import {
   buildAvailabilityUrl,
   normalizeWlDomain,
   parseAvailabilityResponse,
+  parseCategories,
+  parseProducts,
   wlReady,
 } from "./client.ts";
 
@@ -56,4 +58,24 @@ Deno.test("parseAvailabilityResponse coage tipos/ausências", () => {
   assertEquals(parseAvailabilityResponse([{ date: "2026-06-22" }]), [
     { date: "2026-06-22", capacity: 0, sold_wl: 0, sold_external: 0, available: 0 },
   ]);
+});
+
+Deno.test("parseCategories desembrulha e filtra sem slug", () => {
+  assertEquals(parseCategories({ data: [{ slug: "unidade-aeroporto", name: "Aeroporto" }] }), [
+    { slug: "unidade-aeroporto", name: "Aeroporto" },
+  ]);
+  // sem name → usa slug; sem slug → descartado
+  assertEquals(parseCategories([{ slug: "x" }, { name: "sem slug" }]), [{ slug: "x", name: "x" }]);
+  assertEquals(parseCategories(null), []);
+});
+
+Deno.test("parseProducts aceita category_slug ou category", () => {
+  assertEquals(
+    parseProducts({ products: [{ slug: "vaga-coberta", name: "Coberta", category: "unidade-aeroporto" }] }),
+    [{ slug: "vaga-coberta", name: "Coberta", category_slug: "unidade-aeroporto" }],
+  );
+  assertEquals(
+    parseProducts([{ slug: "vaga-descoberta", name: "Descoberta", category_slug: "u" }]),
+    [{ slug: "vaga-descoberta", name: "Descoberta", category_slug: "u" }],
+  );
 });

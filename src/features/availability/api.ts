@@ -33,6 +33,38 @@ export function useLocationOccupancy(
   });
 }
 
+export interface WlCatalog {
+  ready: boolean;
+  categories: { slug: string; name: string }[];
+  products: { slug: string; name: string; category_slug: string }[];
+}
+
+/**
+ * Catálogo do WL (categorias + produtos) pra montar os dropdowns do mapeamento no Manager.
+ * Best-effort: se o WL ainda não expõe os endpoints de listagem, volta ready=false e o
+ * Manager cai no input de texto livre.
+ */
+export function useWlCatalog(companyId: string | undefined) {
+  return useQuery({
+    queryKey: ["wl-catalog", companyId],
+    enabled: !!companyId,
+    staleTime: 5 * 60_000,
+    retry: false,
+    queryFn: async (): Promise<WlCatalog> => {
+      const { data, error } = await supabase.functions.invoke("wl-sync", {
+        body: { company_id: companyId, mode: "catalog" },
+      });
+      if (error) return { ready: false, categories: [], products: [] };
+      const res = data as Partial<WlCatalog> | null;
+      return {
+        ready: !!res?.ready,
+        categories: res?.categories ?? [],
+        products: res?.products ?? [],
+      };
+    },
+  });
+}
+
 /** lptId → (date → vagas vendidas no WL) puxado ao vivo. */
 export type WlExternalMap = Record<string, Record<string, number>>;
 

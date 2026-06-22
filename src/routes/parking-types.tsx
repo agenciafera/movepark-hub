@@ -9,7 +9,15 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { useWlCatalog, type WlCatalog } from "@/features/availability/api";
 import { useLocation as useLocationData } from "@/features/locations/api";
 import { useCompany } from "@/features/companies/api";
 import {
@@ -43,6 +51,8 @@ export default function ParkingTypesPage() {
 
   const companyId = params.companyId ?? location.data?.company_id;
   const company = useCompany(companyId);
+  // Catálogo do WL só faz sentido no Manager (mapeamento é da Movepark, não do operador).
+  const wlCatalog = useWlCatalog(isOperator ? undefined : companyId);
 
   async function toggleActive(id: string, isActive: boolean) {
     try {
@@ -131,6 +141,7 @@ export default function ParkingTypesPage() {
               onUpdateCapacity={(c) => updateCapacity(lpt.id, c)}
               onUpdateWlMapping={(cat, prod) => updateWlMapping(lpt.id, cat, prod)}
               showWlMapping={!isOperator}
+              wlCatalog={wlCatalog.data}
               onEditPricing={() => setEditing(lpt)}
               onEditRules={() => setEditingRules(lpt)}
               onOpenSimulation={() => setSimulating(lpt)}
@@ -179,6 +190,7 @@ type CardProps = {
   onUpdateCapacity: (capacity: number) => void;
   onUpdateWlMapping: (category: string | null, product: string | null) => void;
   showWlMapping: boolean;
+  wlCatalog?: WlCatalog;
   onEditPricing: () => void;
   onEditRules: () => void;
   onOpenSimulation: () => void;
@@ -190,6 +202,7 @@ function ParkingTypeCard({
   onUpdateCapacity,
   onUpdateWlMapping,
   showWlMapping,
+  wlCatalog,
   onEditPricing,
   onEditRules,
   onOpenSimulation,
@@ -291,26 +304,71 @@ function ParkingTypeCard({
               casar disponibilidade.
             </span>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor={`wlcat-${lpt.id}`}>category_slug</Label>
-            <Input
-              id={`wlcat-${lpt.id}`}
-              value={wlCat}
-              onChange={(e) => setWlCat(e.target.value)}
-              placeholder="unidade-aeroporto"
-              className="h-10 w-48"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor={`wlprod-${lpt.id}`}>product_slug</Label>
-            <Input
-              id={`wlprod-${lpt.id}`}
-              value={wlProd}
-              onChange={(e) => setWlProd(e.target.value)}
-              placeholder="vaga-coberta"
-              className="h-10 w-48"
-            />
-          </div>
+          {wlCatalog?.ready && wlCatalog.categories.length > 0 ? (
+            <>
+              <div className="flex flex-col gap-1.5">
+                <Label>Unidade (category)</Label>
+                <Select
+                  value={wlCat || undefined}
+                  onValueChange={(v) => {
+                    setWlCat(v);
+                    setWlProd(""); // troca de categoria zera o produto
+                  }}
+                >
+                  <SelectTrigger className="w-56">
+                    <SelectValue placeholder="Selecione…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {wlCatalog.categories.map((c) => (
+                      <SelectItem key={c.slug} value={c.slug}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Tipo de vaga (product)</Label>
+                <Select value={wlProd || undefined} onValueChange={setWlProd} disabled={!wlCat}>
+                  <SelectTrigger className="w-56">
+                    <SelectValue placeholder="Selecione…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {wlCatalog.products
+                      .filter((p) => p.category_slug === wlCat)
+                      .map((p) => (
+                        <SelectItem key={p.slug} value={p.slug}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={`wlcat-${lpt.id}`}>category_slug</Label>
+                <Input
+                  id={`wlcat-${lpt.id}`}
+                  value={wlCat}
+                  onChange={(e) => setWlCat(e.target.value)}
+                  placeholder="unidade-aeroporto"
+                  className="h-10 w-48"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={`wlprod-${lpt.id}`}>product_slug</Label>
+                <Input
+                  id={`wlprod-${lpt.id}`}
+                  value={wlProd}
+                  onChange={(e) => setWlProd(e.target.value)}
+                  placeholder="vaga-coberta"
+                  className="h-10 w-48"
+                />
+              </div>
+            </>
+          )}
           <Button
             size="sm"
             variant="secondary"
