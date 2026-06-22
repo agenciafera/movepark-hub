@@ -1,3 +1,6 @@
+import { Link } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
+
 const steps = [
   {
     title: "Escolha o destino",
@@ -20,32 +23,52 @@ const steps = [
 export function HowItWorks() {
   return (
     <section className="py-16 desktop:py-20">
-      {/* Cabeçalho */}
-      <div className="mx-auto mb-12 max-w-[1280px] px-6 text-center desktop:px-8">
-        <p className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
-          Simples e rápido
-        </p>
-        <h2 className="text-[36px] font-bold text-ink tablet:text-display-2xl">
-          Como reservar em 4 passos
-        </h2>
-        <p className="mx-auto mt-3 max-w-xl text-body-md text-muted">
-          Do destino ao voucher em menos de 2 minutos. Sem cadastro obrigatório para buscar.
-        </p>
-      </div>
-
-      {/* Layout lado a lado */}
       <div className="mx-auto max-w-[1280px] px-6 desktop:px-8">
-        <div className="grid grid-cols-1 gap-10 tablet:grid-cols-2 tablet:items-center">
-          {/* Imagem ilustrativa */}
-          <div className="relative min-h-[280px] overflow-hidden rounded-xl bg-surface-strong desktop:min-h-[400px]">
+        <div className="grid grid-cols-1 gap-12 tablet:grid-cols-2 tablet:items-start">
+
+          {/* Coluna esquerda: headline + link + grid 2×2 de passos */}
+          <div>
+            <p className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
+              Simples e rápido
+            </p>
+            <h2 className="mb-4 text-[36px] font-bold text-ink tablet:text-display-2xl">
+              Como reservar em 4 passos
+            </h2>
+            <p className="mb-6 max-w-md text-body-md text-muted">
+              Do destino ao voucher em menos de 2 minutos. Sem cadastro obrigatório para buscar.
+            </p>
+            <Link
+              to="/search"
+              className="group mb-12 inline-flex items-center gap-1.5 text-body-md font-semibold text-mp-violet"
+            >
+              Buscar vagas agora{" "}
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+
+            {/* Grid 2×2 — números grandes sem círculo, estilo referência */}
+            <div className="grid grid-cols-2 gap-x-10 gap-y-10">
+              {steps.map((s, i) => (
+                <div key={s.title}>
+                  <span className="block text-[64px] font-black leading-none text-mp-navy">
+                    {i + 1}
+                  </span>
+                  <h3 className="mt-3 text-title-md font-semibold text-ink">{s.title}</h3>
+                  <p className="mt-1.5 text-body-sm text-muted">{s.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Coluna direita: imagem ocupando toda a altura */}
+          <div className="relative min-h-[400px] overflow-hidden rounded-xl bg-surface-strong desktop:min-h-[560px]">
             <img
               src="/images/como-reservar.jpg"
-              alt="Mulher sorrindo ao celular após concluir reserva no aeroporto"
+              alt="Motorista sorrindo ao celular após concluir reserva no aeroporto"
               className="h-full w-full object-cover"
             />
 
             {/* Floating booking card decorativo */}
-            <div className="absolute bottom-8 left-8 rounded-xl border border-hairline bg-canvas p-4 shadow-tier tablet:bottom-10 tablet:left-10">
+            <div className="absolute bottom-8 left-8 rounded-xl border border-hairline bg-canvas p-4 shadow-tier">
               <div className="mb-2 text-caption font-semibold text-ink">Reserva confirmada</div>
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-success" />
@@ -54,21 +77,6 @@ export function HowItWorks() {
             </div>
           </div>
 
-          {/* Lista de passos */}
-          <div className="flex flex-col gap-6">
-            <p className="text-body-md font-semibold text-ink">Reserve sua vaga em 4 passos simples</p>
-            {steps.map((s, i) => (
-              <div key={s.title} className="flex gap-4">
-                <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mp-navy text-[15px] font-bold text-white">
-                  {i + 1}
-                </span>
-                <div>
-                  <div className="text-title-md text-ink">{s.title}</div>
-                  <p className="mt-1 text-body-sm text-muted">{s.text}</p>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </section>
