@@ -1,5 +1,10 @@
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { monthGrid, monthsInRange } from "./occupancy.logic";
+
+function brDate(iso: string): string {
+  return `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
+}
 
 export type CalendarDay = {
   count: number;
@@ -48,69 +53,94 @@ export function OccupancyCalendar({
   const months = monthsInRange(from, to);
 
   return (
-    <div className="grid gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
-      {months.map(({ year, month }) => (
-        <div key={`${year}-${month}`} className="rounded-md border border-hairline p-3">
-          <div className="mb-2 text-body-sm font-medium text-ink">
-            {MONTHS[month - 1]} <span className="text-muted">{year}</span>
-          </div>
-          <div className="grid grid-cols-7 gap-1">
-            {WEEKDAYS.map((w, i) => (
-              <div key={i} className="pb-1 text-center text-caption text-muted">
-                {w}
-              </div>
-            ))}
-            {monthGrid(year, month)
-              .flat()
-              .map((date, i) => {
-                if (!date) return <div key={i} />;
-                const d = data[date];
-                const day = Number(date.slice(8, 10));
-                if (!d) {
-                  // dia fora do intervalo consultado / sem dados
+    <TooltipProvider delayDuration={120}>
+      <div className="grid gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
+        {months.map(({ year, month }) => (
+          <div key={`${year}-${month}`} className="rounded-md border border-hairline p-3">
+            <div className="mb-2 text-body-sm font-medium text-ink">
+              {MONTHS[month - 1]} <span className="text-muted">{year}</span>
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {WEEKDAYS.map((w, i) => (
+                <div key={i} className="pb-1 text-center text-caption text-muted">
+                  {w}
+                </div>
+              ))}
+              {monthGrid(year, month)
+                .flat()
+                .map((date, i) => {
+                  if (!date) return <div key={i} />;
+                  const d = data[date];
+                  const day = Number(date.slice(8, 10));
+                  if (!d) {
+                    // dia fora do intervalo consultado / sem dados
+                    return (
+                      <div
+                        key={i}
+                        className="flex aspect-square items-center justify-center rounded-sm text-caption text-muted/40"
+                      >
+                        {day}
+                      </div>
+                    );
+                  }
+                  const over = d.count > d.capacity;
                   return (
-                    <div
-                      key={i}
-                      className="flex aspect-square items-center justify-center rounded-sm text-caption text-muted/40"
-                    >
-                      {day}
-                    </div>
+                    <Tooltip key={i}>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          disabled={disabled}
+                          onClick={() => onToggle(date, d.blocked)}
+                          style={d.blocked ? undefined : heatStyle(d.pct)}
+                          className={cn(
+                            "flex aspect-square flex-col items-center justify-center rounded-sm leading-none transition hover:ring-2 hover:ring-mp-primary/50 disabled:opacity-60",
+                            d.blocked
+                              ? "bg-badge-cancelled-bg text-badge-cancelled-fg line-through"
+                              : d.pct > 0.5
+                                ? "text-white"
+                                : "text-ink",
+                            over && "ring-2 ring-error",
+                          )}
+                        >
+                          <span className="text-caption font-medium tabular-nums">{day}</span>
+                          {!d.blocked && (
+                            <span className="text-[10px] tabular-nums opacity-80">{d.count}</span>
+                          )}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="flex flex-col gap-1">
+                          <span className="font-medium">{brDate(date)}</span>
+                          {d.blocked ? (
+                            <span className="text-badge-cancelled-fg">Data bloqueada</span>
+                          ) : (
+                            <div className="flex flex-col gap-0.5 tabular-nums">
+                              <span>
+                                Hub: <strong>{d.booked}</strong>
+                              </span>
+                              <span>
+                                White-label: <strong>{d.external}</strong>
+                              </span>
+                              <span className="border-t border-hairline pt-0.5">
+                                Total: <strong>{d.count}</strong>/{d.capacity} (
+                                {Math.round(d.pct * 100)}
+                                %){over && <span className="text-error"> · overbooking</span>}
+                              </span>
+                            </div>
+                          )}
+                          <span className="text-muted">
+                            Clique para {d.blocked ? "liberar" : "bloquear"}
+                          </span>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
                   );
-                }
-                const over = d.count > d.capacity;
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    disabled={disabled}
-                    onClick={() => onToggle(date, d.blocked)}
-                    style={d.blocked ? undefined : heatStyle(d.pct)}
-                    className={cn(
-                      "flex aspect-square flex-col items-center justify-center rounded-sm leading-none transition hover:ring-2 hover:ring-mp-primary/50 disabled:opacity-60",
-                      d.blocked
-                        ? "bg-badge-cancelled-bg text-badge-cancelled-fg line-through"
-                        : d.pct > 0.5
-                          ? "text-white"
-                          : "text-ink",
-                      over && "ring-2 ring-error",
-                    )}
-                    title={
-                      d.blocked
-                        ? `${date} — bloqueada (clique para liberar)`
-                        : `${date} — hub ${d.booked}${d.external ? ` + WL ${d.external}` : ""} = ${d.count}/${d.capacity} (${Math.round(d.pct * 100)}%) — clique para bloquear`
-                    }
-                  >
-                    <span className="text-caption font-medium tabular-nums">{day}</span>
-                    {!d.blocked && (
-                      <span className="text-[10px] tabular-nums opacity-80">{d.count}</span>
-                    )}
-                  </button>
-                );
-              })}
+                })}
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    </TooltipProvider>
   );
 }
 

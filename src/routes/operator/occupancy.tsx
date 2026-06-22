@@ -123,7 +123,7 @@ export default function OperatorOccupancy() {
       {wl?.ready && (
         <p className="-mt-2 text-caption text-muted">
           Os números somam as reservas do hub + as vagas vendidas no white-label (ao vivo). Passe o
-          mouse numa célula para ver a quebra.
+          mouse para ver mais detalhes.
         </p>
       )}
 
