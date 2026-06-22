@@ -27,10 +27,15 @@ O WL conta por `(category, product)`. Cada `location_parking_type` guarda
 (Movepark) → **Tipos de vaga → Mapeamento White-label** — nunca no painel do operador. Sem
 mapeamento, a lpt não sincroniza.
 
-**Dropdown via catálogo do WL:** quando o WL expõe `GET /categories` e `GET /products`
-(ver tarefa WL), o Manager mostra **dois selects em cascata** (unidade → tipo) populados ao vivo
-pela Edge `wl-sync` modo `catalog`. Enquanto esses endpoints não existem, cai no **fallback de
-texto livre** (digitar os slugs). O catálogo é buscado só no Manager (`useWlCatalog`).
+**Dropdown via catálogo do WL (API pública):** o catálogo vem da **API pública/storefront** do WL
+(`docs/Movepark v3.0.postman_collection.json`), **sem auth**, multi-tenant por domínio:
+- `GET https://<wl_domain>/api/v3/categories?lang=pt-br` → `{ data: [{ slug, name }] }`
+- `GET https://<wl_domain>/api/v3/categories/<slug>?lang=pt-br&is_spot=1` → `{ data: { products: [{ slug, name }] } }`
+
+A Edge `wl-sync` modo `catalog` (gateada por empresa, mas **sem precisar do token nem do toggle** —
+basta o domínio) lista as categorias e, pra cada uma, seus produtos, e o Manager mostra **dois
+selects em cascata** (unidade → tipo). `useWlCatalog` busca só no Manager. Fallback: se o domínio
+não responder, cai no texto livre.
 
 ## API do WL consumida (contrato do lado legado)
 

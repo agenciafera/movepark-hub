@@ -14,9 +14,9 @@
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
+  normalizeWlDomain,
   wlGetAvailability,
-  wlGetCategories,
-  wlGetProducts,
+  wlGetCatalog,
   wlReady,
   type WlConfig,
 } from "../_shared/wl/client.ts";
@@ -86,30 +86,31 @@ Deno.serve(async (req: Request) => {
   }
 
   const cfg = (cfgRows?.[0] ?? null) as WlConfig | null;
-  if (!wlReady(cfg)) {
-    return jsonResponse({ ready: false, days: [] });
-  }
 
-  // @ts-expect-error - Deno env
-  const token = Deno.env.get("WL_BACKEND_TOKEN");
-  if (!token) {
-    return jsonResponse({ ready: false, days: [], error: "WL_BACKEND_TOKEN ausente no servidor" }, 500);
-  }
-
+  // Catálogo usa a API PÚBLICA (storefront): basta o domínio — não precisa de token nem do toggle.
   if (mode === "catalog") {
+    if (!cfg || !normalizeWlDomain(cfg.wl_domain)) {
+      return jsonResponse({ ready: false, categories: [], products: [] });
+    }
     try {
-      const [categories, products] = await Promise.all([
-        wlGetCategories(cfg!, token),
-        wlGetProducts(cfg!, token),
-      ]);
+      const { categories, products } = await wlGetCatalog(cfg);
       return jsonResponse({ ready: true, categories, products });
     } catch (e) {
-      // Endpoints de listagem podem não existir ainda no WL → front cai no texto livre.
       return jsonResponse(
         { ready: false, categories: [], products: [], error: e instanceof Error ? e.message : String(e) },
         200,
       );
     }
+  }
+
+  // Availability/sync exigem a integração ligada + token (API /backend autenticada).
+  if (!wlReady(cfg)) {
+    return jsonResponse({ ready: false, days: [] });
+  }
+  // @ts-expect-error - Deno env
+  const token = Deno.env.get("WL_BACKEND_TOKEN");
+  if (!token) {
+    return jsonResponse({ ready: false, days: [], error: "WL_BACKEND_TOKEN ausente no servidor" }, 500);
   }
 
   try {

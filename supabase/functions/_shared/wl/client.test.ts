@@ -5,7 +5,7 @@ import {
   normalizeWlDomain,
   parseAvailabilityResponse,
   parseCategories,
-  parseProducts,
+  parseCategoryProducts,
   wlReady,
 } from "./client.ts";
 
@@ -60,22 +60,31 @@ Deno.test("parseAvailabilityResponse coage tipos/ausências", () => {
   ]);
 });
 
-Deno.test("parseCategories desembrulha e filtra sem slug", () => {
-  assertEquals(parseCategories({ data: [{ slug: "unidade-aeroporto", name: "Aeroporto" }] }), [
-    { slug: "unidade-aeroporto", name: "Aeroporto" },
+Deno.test("parseCategories desembrulha {data:[...]} e filtra sem slug", () => {
+  assertEquals(parseCategories({ data: [{ slug: "unidade-aeroporto", name: "Unidade aeroporto" }] }), [
+    { slug: "unidade-aeroporto", name: "Unidade aeroporto" },
   ]);
   // sem name → usa slug; sem slug → descartado
-  assertEquals(parseCategories([{ slug: "x" }, { name: "sem slug" }]), [{ slug: "x", name: "x" }]);
+  assertEquals(parseCategories({ data: [{ slug: "x" }, { name: "sem slug" }] }), [
+    { slug: "x", name: "x" },
+  ]);
   assertEquals(parseCategories(null), []);
 });
 
-Deno.test("parseProducts aceita category_slug ou category", () => {
-  assertEquals(
-    parseProducts({ products: [{ slug: "vaga-coberta", name: "Coberta", category: "unidade-aeroporto" }] }),
-    [{ slug: "vaga-coberta", name: "Coberta", category_slug: "unidade-aeroporto" }],
-  );
-  assertEquals(
-    parseProducts([{ slug: "vaga-descoberta", name: "Descoberta", category_slug: "u" }]),
-    [{ slug: "vaga-descoberta", name: "Descoberta", category_slug: "u" }],
-  );
+Deno.test("parseCategoryProducts pega data.products aninhado e injeta a categoria", () => {
+  const json = {
+    data: {
+      slug: "unidade-aeroporto",
+      products: [
+        { slug: "vaga-coberta", name: "Vaga coberta" },
+        { slug: "vaga-descoberta", name: "Vaga descoberta" },
+      ],
+    },
+  };
+  assertEquals(parseCategoryProducts(json, "unidade-aeroporto"), [
+    { slug: "vaga-coberta", name: "Vaga coberta", category_slug: "unidade-aeroporto" },
+    { slug: "vaga-descoberta", name: "Vaga descoberta", category_slug: "unidade-aeroporto" },
+  ]);
+  assertEquals(parseCategoryProducts({ data: {} }, "u"), []);
+  assertEquals(parseCategoryProducts(null, "u"), []);
 });

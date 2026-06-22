@@ -131,46 +131,77 @@ export async function wlPostSync(
   return json as { status?: string };
 }
 
-/** Desembrulha listas do WL (array, {data:[...]}, {items:[...]}, {categories|products:[...]}). */
-function unwrapList(json: unknown, key: string): Record<string, unknown>[] {
-  let arr: unknown = json;
-  if (json && typeof json === "object" && !Array.isArray(json)) {
-    const o = json as Record<string, unknown>;
-    arr = o.data ?? o.items ?? o[key] ?? [];
-  }
-  return Array.isArray(arr) ? (arr as Record<string, unknown>[]) : [];
+// Catálogo usa a API PÚBLICA do WL (storefront), não a /backend: é multi-tenant por domínio
+// e NÃO exige auth (Bearer). Endpoints (ver docs/Movepark v3.0.postman_collection.json):
+//   GET /api/v3/categories?lang=pt-br                       → { data: [{ slug, name }] }
+//   GET /api/v3/categories/<slug>?lang=pt-br&is_spot=1       → { data: { products: [{ slug, name }] } }
+export const WL_PUBLIC_PATH = "/api/v3";
+
+function publicHeaders(): HeadersInit {
+  return { Accept: "application/json", "Content-Type": "application/json" };
 }
 
 export function parseCategories(json: unknown): WlCategory[] {
-  return unwrapList(json, "categories")
-    .map((r) => ({ slug: String(r.slug ?? ""), name: String(r.name ?? r.slug ?? "") }))
+  let arr: unknown = json;
+  if (json && typeof json === "object" && !Array.isArray(json)) {
+    arr = (json as Record<string, unknown>).data ?? [];
+  }
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .map((row) => {
+      const r = (row ?? {}) as Record<string, unknown>;
+      return { slug: String(r.slug ?? ""), name: String(r.name ?? r.slug ?? "") };
+    })
     .filter((c) => c.slug);
 }
 
-export function parseProducts(json: unknown): WlProduct[] {
-  return unwrapList(json, "products")
-    .map((r) => ({
-      slug: String(r.slug ?? ""),
-      name: String(r.name ?? r.slug ?? ""),
-      category_slug: String(r.category_slug ?? r.category ?? ""),
-    }))
+/** Produtos vêm aninhados em `data.products` do "get category". */
+export function parseCategoryProducts(json: unknown, categorySlug: string): WlProduct[] {
+  let data: unknown = json;
+  if (json && typeof json === "object" && !Array.isArray(json)) {
+    data = (json as Record<string, unknown>).data ?? json;
+  }
+  const products =
+    data && typeof data === "object" ? (data as Record<string, unknown>).products : null;
+  if (!Array.isArray(products)) return [];
+  return products
+    .map((row) => {
+      const r = (row ?? {}) as Record<string, unknown>;
+      return {
+        slug: String(r.slug ?? ""),
+        name: String(r.name ?? r.slug ?? ""),
+        category_slug: categorySlug,
+      };
+    })
     .filter((p) => p.slug);
 }
 
-export async function wlGetCategories(c: WlConfig, token: string): Promise<WlCategory[]> {
+export async function wlGetCategories(c: WlConfig): Promise<WlCategory[]> {
   const host = normalizeWlDomain(c.wl_domain);
-  const res = await fetch(`https://${host}${WL_API_PATH}/categories`, {
-    headers: wlHeaders(c.wl_tenant_key!, token),
+  const res = await fetch(`https://${host}${WL_PUBLIC_PATH}/categories?lang=pt-br`, {
+    headers: publicHeaders(),
   });
   if (!res.ok) throw new Error(`WL categories ${res.status}`);
   return parseCategories(await res.json());
 }
 
-export async function wlGetProducts(c: WlConfig, token: string): Promise<WlProduct[]> {
+export async function wlGetCategoryProducts(c: WlConfig, categorySlug: string): Promise<WlProduct[]> {
   const host = normalizeWlDomain(c.wl_domain);
-  const res = await fetch(`https://${host}${WL_API_PATH}/products`, {
-    headers: wlHeaders(c.wl_tenant_key!, token),
-  });
-  if (!res.ok) throw new Error(`WL products ${res.status}`);
-  return parseProducts(await res.json());
+  const res = await fetch(
+    `https://${host}${WL_PUBLIC_PATH}/categories/${encodeURIComponent(categorySlug)}?lang=pt-br&is_spot=1`,
+    { headers: publicHeaders() },
+  );
+  if (!res.ok) throw new Error(`WL category ${categorySlug} ${res.status}`);
+  return parseCategoryProducts(await res.json(), categorySlug);
+}
+
+/** Catálogo completo: lista categorias e, pra cada uma, seus produtos (spots). */
+export async function wlGetCatalog(
+  c: WlConfig,
+): Promise<{ categories: WlCategory[]; products: WlProduct[] }> {
+  const categories = await wlGetCategories(c);
+  const nested = await Promise.all(
+    categories.map((cat) => wlGetCategoryProducts(c, cat.slug).catch(() => [] as WlProduct[])),
+  );
+  return { categories, products: nested.flat() };
 }
