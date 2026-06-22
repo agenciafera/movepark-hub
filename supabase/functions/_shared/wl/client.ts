@@ -75,24 +75,44 @@ export function buildAvailabilityUrl(domain: string, p: AvailabilityParams): str
   return u.toString();
 }
 
-/** A resposta do WL pode vir como [...], {data:[...]} ou {days:[...]}; normaliza tudo. */
+/**
+ * Normaliza a resposta de disponibilidade do WL. Shape real (produção):
+ *   { data: { units: [ { product_slug, days: [ { date, capacity, sold_wl, sold_external, available } ] } ] } }
+ * Também aceita formas simples ([...], {data:[...]}, {days:[...]}) por robustez.
+ */
 export function parseAvailabilityResponse(json: unknown): WlAvailabilityDay[] {
-  let arr: unknown = json;
-  if (json && typeof json === "object" && !Array.isArray(json)) {
-    const o = json as Record<string, unknown>;
-    arr = o.data ?? o.days ?? o.availability ?? [];
+  const out: WlAvailabilityDay[] = [];
+  const pushDays = (arr: unknown) => {
+    if (!Array.isArray(arr)) return;
+    for (const row of arr) {
+      const r = (row ?? {}) as Record<string, unknown>;
+      if (r.date == null) continue;
+      out.push({
+        date: String(r.date),
+        capacity: Number(r.capacity ?? 0),
+        sold_wl: Number(r.sold_wl ?? 0),
+        sold_external: Number(r.sold_external ?? 0),
+        available: Number(r.available ?? 0),
+      });
+    }
+  };
+
+  const root =
+    json && typeof json === "object" && !Array.isArray(json)
+      ? ((json as Record<string, unknown>).data ?? json)
+      : json;
+
+  if (Array.isArray(root)) {
+    pushDays(root);
+  } else if (root && typeof root === "object") {
+    const o = root as Record<string, unknown>;
+    if (Array.isArray(o.units)) {
+      for (const u of o.units) pushDays((u as Record<string, unknown>)?.days);
+    } else {
+      pushDays(o.days ?? o.availability);
+    }
   }
-  if (!Array.isArray(arr)) return [];
-  return arr.map((row) => {
-    const r = (row ?? {}) as Record<string, unknown>;
-    return {
-      date: String(r.date ?? ""),
-      capacity: Number(r.capacity ?? 0),
-      sold_wl: Number(r.sold_wl ?? 0),
-      sold_external: Number(r.sold_external ?? 0),
-      available: Number(r.available ?? 0),
-    };
-  });
+  return out;
 }
 
 function wlHeaders(tenant: string, token: string): HeadersInit {

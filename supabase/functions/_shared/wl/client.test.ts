@@ -54,6 +54,27 @@ Deno.test("parseAvailabilityResponse aceita array, {data} e {days}", () => {
   assertEquals(parseAvailabilityResponse({}), []);
 });
 
+Deno.test("parseAvailabilityResponse extrai data.units[].days[] (shape real do WL)", () => {
+  const json = {
+    data: {
+      category_slug: "virapark",
+      units: [
+        {
+          product_slug: "vaga-coberta",
+          days: [
+            { date: "2026-06-22", capacity: 1100, sold_wl: 834, sold_external: 0, available: 266 },
+            { date: "2026-06-23", capacity: 1100, sold_wl: 767, sold_external: 0, available: 333 },
+          ],
+        },
+      ],
+    },
+  };
+  assertEquals(parseAvailabilityResponse(json), [
+    { date: "2026-06-22", capacity: 1100, sold_wl: 834, sold_external: 0, available: 266 },
+    { date: "2026-06-23", capacity: 1100, sold_wl: 767, sold_external: 0, available: 333 },
+  ]);
+});
+
 Deno.test("parseAvailabilityResponse coage tipos/ausências", () => {
   assertEquals(parseAvailabilityResponse([{ date: "2026-06-22" }]), [
     { date: "2026-06-22", capacity: 0, sold_wl: 0, sold_external: 0, available: 0 },

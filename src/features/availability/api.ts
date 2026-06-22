@@ -111,11 +111,13 @@ export function useWlExternalOccupancy(
           });
           if (invErr) return;
           const res = data as
-            | { ready?: boolean; days?: { date: string; sold_external?: number }[] }
+            | { ready?: boolean; days?: { date: string; sold_wl?: number }[] }
             | null;
           if (res?.ready) anyReady = true;
           const m: Record<string, number> = {};
-          for (const d of res?.days ?? []) m[d.date] = Number(d.sold_external ?? 0);
+          // sold_wl = vendas próprias do white-label (o que o hub não enxerga).
+          // sold_external seria o que o hub empurrou — já contado no booked_count do hub.
+          for (const d of res?.days ?? []) m[d.date] = Number(d.sold_wl ?? 0);
           byLpt[l.id] = m;
         }),
       );
