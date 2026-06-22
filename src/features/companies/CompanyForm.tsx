@@ -9,6 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -45,6 +46,9 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
   const [legalName, setLegalName] = React.useState("");
   const [taxId, setTaxId] = React.useState("");
   const [status, setStatus] = React.useState<EntityStatus>("active");
+  const [wlBaseUrl, setWlBaseUrl] = React.useState("");
+  const [wlTenantKey, setWlTenantKey] = React.useState("");
+  const [wlSyncEnabled, setWlSyncEnabled] = React.useState(false);
 
   React.useEffect(() => {
     if (open) {
@@ -53,17 +57,29 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
       setLegalName(company?.legal_name ?? "");
       setTaxId(cnpjMask(company?.tax_id ?? ""));
       setStatus(company?.status ?? "active");
+      setWlBaseUrl(company?.wl_base_url ?? "");
+      setWlTenantKey(company?.wl_tenant_key ?? "");
+      setWlSyncEnabled(company?.wl_sync_enabled ?? false);
     }
   }, [open, company]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const wlUrl = wlBaseUrl.trim() || null;
+    const wlTenant = wlTenantKey.trim() || null;
+    if (wlSyncEnabled && (!wlUrl || !wlTenant)) {
+      toast.error("Para ligar a sincronização, preencha a URL base e o tenant (X-Tenant) do white-label.");
+      return;
+    }
     const payload = {
       name,
       slug: slug || slugify(name),
       legal_name: legalName || null,
       tax_id: taxId.replace(/\D/g, "") || null,
       status,
+      wl_base_url: wlUrl,
+      wl_tenant_key: wlTenant,
+      wl_sync_enabled: wlSyncEnabled,
     };
     try {
       if (isEdit && company) {
@@ -135,6 +151,39 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
               </SelectContent>
             </Select>
           </div>
+          {/* Integração com o white-label legado (E2.5.1 — sincronização de disponibilidade) */}
+          <div className="mt-2 flex flex-col gap-4 rounded-md border border-hairline p-4 tablet:col-span-2">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-body-sm font-medium text-ink">Integração White-label</p>
+                <p className="text-caption text-muted">
+                  Liga a sincronização de disponibilidade com o sistema legado desta empresa. O token é
+                  global (secret do servidor); aqui você diz <strong>onde</strong> e <strong>qual tenant</strong>.
+                </p>
+              </div>
+              <Switch checked={wlSyncEnabled} onCheckedChange={setWlSyncEnabled} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="wl-url">URL base da API do WL</Label>
+              <Input
+                id="wl-url"
+                type="url"
+                value={wlBaseUrl}
+                onChange={(e) => setWlBaseUrl(e.target.value)}
+                placeholder="https://tenant.movepark.com.br/api/v3/backend"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="wl-tenant">Tenant (header X-Tenant / whitelabel key)</Label>
+              <Input
+                id="wl-tenant"
+                value={wlTenantKey}
+                onChange={(e) => setWlTenantKey(e.target.value)}
+                placeholder="ex: ferapark"
+              />
+            </div>
+          </div>
+
           <div className="flex justify-end gap-2 pt-2 tablet:col-span-2">
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
               Cancelar
