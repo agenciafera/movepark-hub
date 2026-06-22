@@ -130,6 +130,7 @@ export default function ParkingTypesPage() {
               onToggleActive={(v) => toggleActive(lpt.id, v)}
               onUpdateCapacity={(c) => updateCapacity(lpt.id, c)}
               onUpdateWlMapping={(cat, prod) => updateWlMapping(lpt.id, cat, prod)}
+              showWlMapping={!isOperator}
               onEditPricing={() => setEditing(lpt)}
               onEditRules={() => setEditingRules(lpt)}
               onOpenSimulation={() => setSimulating(lpt)}
@@ -177,6 +178,7 @@ type CardProps = {
   onToggleActive: (v: boolean) => void;
   onUpdateCapacity: (capacity: number) => void;
   onUpdateWlMapping: (category: string | null, product: string | null) => void;
+  showWlMapping: boolean;
   onEditPricing: () => void;
   onEditRules: () => void;
   onOpenSimulation: () => void;
@@ -187,6 +189,7 @@ function ParkingTypeCard({
   onToggleActive,
   onUpdateCapacity,
   onUpdateWlMapping,
+  showWlMapping,
   onEditPricing,
   onEditRules,
   onOpenSimulation,
@@ -278,7 +281,8 @@ function ParkingTypeCard({
           </Button>
         </div>
 
-        {/* Mapeamento com o white-label (E2.5.1 — sincronização de disponibilidade) */}
+        {/* Mapeamento com o white-label (E2.5.1) — só Manager (Movepark), nunca o operador. */}
+        {showWlMapping && (
         <div className="flex flex-wrap items-end gap-3 rounded-md border border-hairline p-3">
           <div className="flex w-full flex-col">
             <span className="text-body-sm font-medium text-ink">Mapeamento White-label</span>
@@ -316,6 +320,7 @@ function ParkingTypeCard({
             Salvar
           </Button>
         </div>
+        )}
       </CardContent>
     </Card>
   );
