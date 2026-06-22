@@ -118,10 +118,10 @@ export function TrustBand() {
 
         {/* Cabeçalho */}
         <div className="mb-12">
-          <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-muted-steel">
+          <p className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
             Por que a Movepark
-          </span>
-          <h2 className="mt-3 max-w-2xl text-display-2xl text-ink">
+          </p>
+          <h2 className="text-[36px] font-bold text-ink tablet:text-display-2xl">
             O que você tem em toda reserva
           </h2>
         </div>
