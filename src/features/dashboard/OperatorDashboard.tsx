@@ -86,7 +86,7 @@ export default function OperatorDashboard() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Linha do tempo — hoje</CardTitle>
+          <CardTitle>Linha do tempo de hoje</CardTitle>
         </CardHeader>
         <CardContent>
           {timeline.isLoading ? (

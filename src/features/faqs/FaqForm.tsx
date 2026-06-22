@@ -171,9 +171,9 @@ export function FaqForm({
           <DialogTitle>{editing ? "Editar FAQ" : "Nova pergunta"}</DialogTitle>
           <DialogDescription>
             {scope === "global"
-              ? "Pergunta global — aparece em todos os estacionamentos e na página /faq."
+              ? "Pergunta global: aparece em todos os estacionamentos e na página /faq."
               : scope === "destination"
-                ? "Pergunta do aeroporto/destino — aparece na página do destino e nas unidades dele. As gerais da Movepark continuam aparecendo junto."
+                ? "Pergunta do aeroporto/destino: aparece na página do destino e nas unidades dele. As gerais da Movepark continuam aparecendo junto."
                 : "Pergunta específica desse estacionamento. As gerais da Movepark continuam aparecendo abaixo."}
           </DialogDescription>
         </DialogHeader>

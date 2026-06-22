@@ -55,7 +55,7 @@ export function DestinationFaqDialog({ open, destination, onOpenChange }: Props)
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>FAQ{label ? ` — ${label}` : ""}</DialogTitle>
+          <DialogTitle>FAQ{label ? ` · ${label}` : ""}</DialogTitle>
           <DialogDescription>
             Perguntas específicas deste destino. Aparecem na página do destino e nas unidades dele,
             junto das gerais da Movepark.

@@ -91,7 +91,7 @@ export default function ParkingTypesPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={`Tipos de vaga${location.data ? ` — ${location.data.name}` : ""}`}
+        title={`Tipos de vaga${location.data ? ` · ${location.data.name}` : ""}`}
         description="Configure preços, capacidade e regras de precificação dos tipos de vaga."
         actions={
           <div className="flex gap-2">

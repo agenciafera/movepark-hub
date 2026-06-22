@@ -47,7 +47,7 @@ export function RejectDialog({ companyId, companyName, open, onOpenChange, onDon
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Recusar cadastro{companyName ? ` — ${companyName}` : ""}</DialogTitle>
+          <DialogTitle>Recusar cadastro{companyName ? `: ${companyName}` : ""}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1.5">

@@ -75,7 +75,7 @@ export const FRACTIONAL_POLICIES: {
     label: "Adiciona +1 dia só se check-out for após hora X do próximo dia",
     helper: "Tolerance representa a hora (ex: 1 = 01h)",
   },
-  { value: "none", label: "Sem arredondamento — usa dias exatos" },
+  { value: "none", label: "Sem arredondamento (dias exatos)" },
 ];
 
 export const OLD_PRICE_STRATEGIES: { value: OldPriceStrategy; label: string }[] = [

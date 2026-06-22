@@ -57,7 +57,7 @@ export function PriceTableDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Preços por duração{title ? ` — ${title}` : ""}</DialogTitle>
+          <DialogTitle>Preços por duração{title ? ` · ${title}` : ""}</DialogTitle>
           <DialogDescription>
             O preço por diária cai nas estadias mais longas. A linha destacada é a sua busca.
           </DialogDescription>

@@ -40,7 +40,7 @@ export default function ManagerLocations() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={`Localizações${company.data ? ` — ${company.data.name}` : ""}`}
+        title={`Localizações${company.data ? ` · ${company.data.name}` : ""}`}
         description="Unidades operacionais da empresa."
         actions={
           <div className="flex gap-2">

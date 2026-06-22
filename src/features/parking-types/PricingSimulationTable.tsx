@@ -144,7 +144,7 @@ export function PricingSimulationDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Simulação de preços — {title}</DialogTitle>
+          <DialogTitle>Simulação de preços · {title}</DialogTitle>
         </DialogHeader>
 
         <Tabs defaultValue="buckets">

@@ -117,7 +117,7 @@ export function DestinationPointsDialog({ open, destination, onOpenChange }: Pro
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            Terminais{destination ? ` — ${destination.short_name ?? destination.name}` : ""}
+            Terminais{destination ? ` · ${destination.short_name ?? destination.name}` : ""}
           </DialogTitle>
         </DialogHeader>
 

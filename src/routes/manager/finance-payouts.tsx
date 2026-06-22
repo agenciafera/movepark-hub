@@ -55,7 +55,7 @@ export default function ManagerFinancePayouts() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Repasses"
-        description="Extrato reconciliado do split — quanto cada parceiro recebe (real, do pagamento)."
+        description="Extrato reconciliado do split: quanto cada parceiro recebe (real, do pagamento)."
       />
 
       <Card>

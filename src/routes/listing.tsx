@@ -64,7 +64,7 @@ export default function ListingPage() {
   const initialTo = toStr ? new Date(toStr) : null;
 
   const pageTitle = listing
-    ? `${listing.parking_type.name} — ${listing.location.name} | Movepark`
+    ? `${listing.parking_type.name} · ${listing.location.name} | Movepark`
     : "Estacionamento | Movepark";
   const pageDesc = listing
     ? `Reserve ${listing.parking_type.name} em ${listing.location.name}. ${listing.location.address ?? ""}`

@@ -116,7 +116,7 @@ export function Step4Confirmation({ booking }: Props) {
 function buildIcsHref(booking: BookingForCheckout): string {
   const dt = (s: string) =>
     new Date(s).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-  const summary = `Movepark — ${booking.location.name}`;
+  const summary = `Movepark · ${booking.location.name}`;
   const desc = `Reserva ${booking.code} · ${booking.location.company.name}`;
   const ics = [
     "BEGIN:VCALENDAR",

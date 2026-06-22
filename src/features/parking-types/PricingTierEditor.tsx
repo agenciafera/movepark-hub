@@ -76,7 +76,7 @@ export function PricingTierEditor({ strategy, tiers, onChange }: Props) {
 
       {tiers.length === 0 && (
         <div className="rounded-sm border border-dashed border-hairline bg-surface-soft p-4 text-center text-body-sm text-muted">
-          Nenhuma faixa configurada — adicione a primeira.
+          Nenhuma faixa configurada. Adicione a primeira.
         </div>
       )}
 

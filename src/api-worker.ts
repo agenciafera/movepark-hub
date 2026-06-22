@@ -145,7 +145,7 @@ function docsHtml(): string {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Movepark — API pública</title>
+    <title>Movepark | API pública</title>
   </head>
   <body>
     <script id="api-reference" data-url="/openapi.yaml"></script>
@@ -161,7 +161,7 @@ function mcpDocsHtml(): string {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Movepark — MCP</title>
+  <title>Movepark | MCP</title>
   <style>
     :root { color-scheme: light dark; }
     body { font: 16px/1.6 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; max-width: 820px;
@@ -203,7 +203,7 @@ function mcpDocsHtml(): string {
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/call",
        "params":{"name":"list_bookings","arguments":{"limit":10}}}'</pre>
 
-  <h2>Tools — consumidor (público)</h2>
+  <h2>Tools: consumidor (público)</h2>
   <table>
     <tr><th>Tool</th><th>Descrição</th></tr>
     <tr><td><code>search_parking</code></td><td>Busca estacionamentos por destino e período.</td></tr>
@@ -214,7 +214,7 @@ function mcpDocsHtml(): string {
     <tr><td><code>get_parking_types</code></td><td>Tipos de vaga de uma unidade.</td></tr>
   </table>
 
-  <h2>Tools — parceiro (chave + escopo)</h2>
+  <h2>Tools: parceiro (chave + escopo)</h2>
   <p>As tools visíveis dependem dos <span class="pill">escopos</span> da chave (gerencie em
      <code>/operator/api-keys</code>).</p>
   <table>

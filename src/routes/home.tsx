@@ -10,12 +10,12 @@ export default function HomePage() {
   return (
     <div>
       <Helmet>
-        <title>Movepark — Estacionamentos em aeroportos e destinos</title>
+        <title>Movepark | Estacionamentos em aeroportos e destinos</title>
         <meta
           name="description"
           content="Reserve sua vaga com antecedência. Estacionamentos cobertos, descobertos e valet nos principais aeroportos e destinos do Brasil."
         />
-        <meta property="og:title" content="Movepark — Estacionamentos em aeroportos e destinos" />
+        <meta property="og:title" content="Movepark | Estacionamentos em aeroportos e destinos" />
         <meta
           property="og:description"
           content="Reserve sua vaga com antecedência. Estacionamentos cobertos, descobertos e valet nos principais aeroportos e destinos do Brasil."

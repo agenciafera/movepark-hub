@@ -28,7 +28,7 @@ export function cancellationStatus(checkInAt: string | Date, now: Date): Cancell
 
 /** Cópia padrão da política (fonte única de verdade da marca). */
 export const CANCELLATION_POLICY_LINES = [
-  "Cancelamento grátis até 24 horas antes do horário de check-in — reembolso integral.",
+  "Cancelamento grátis até 24 horas antes do horário de check-in, com reembolso integral.",
   "Após esse prazo, você ainda pode cancelar, mas sem reembolso.",
 ];
 

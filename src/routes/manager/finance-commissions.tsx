@@ -59,7 +59,7 @@ export default function ManagerFinanceCommissions() {
       </Card>
 
       <p className="text-caption text-muted">
-        * Taxa atualmente fixa em 10% — campo dedicado na tabela{" "}
+        * Taxa atualmente fixa em 10%. Campo dedicado na tabela{" "}
         <code>company</code> ficará em uma próxima migração.
       </p>
     </div>

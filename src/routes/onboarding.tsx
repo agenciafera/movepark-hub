@@ -118,7 +118,7 @@ export default function OnboardingPage() {
   return (
     <>
       <Helmet>
-        <title>Concluir cadastro — Movepark</title>
+        <title>Concluir cadastro | Movepark</title>
       </Helmet>
       <Centered>
         <div className="mb-6">

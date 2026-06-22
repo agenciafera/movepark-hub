@@ -34,7 +34,7 @@ export function ApplicationDrawer({ application, open, onOpenChange, onReject }:
   async function approve() {
     try {
       await action.mutateAsync({ company_id: application!.company_id, action: "approve" });
-      toast.success("Parceiro aprovado — convite enviado");
+      toast.success("Parceiro aprovado. Convite enviado.");
       onOpenChange(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao aprovar");

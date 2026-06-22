@@ -128,7 +128,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 function buildIcsHref(booking: MyBookingDetail): string {
   const dt = (s: string) =>
     new Date(s).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-  const summary = `Movepark — ${booking.location.name}`;
+  const summary = `Movepark · ${booking.location.name}`;
   const desc = `Reserva ${booking.code} · ${booking.location.company.name}`;
   const ics = [
     "BEGIN:VCALENDAR",

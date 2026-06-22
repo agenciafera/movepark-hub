@@ -298,8 +298,8 @@ export default function DocsPage() {
         <p className="text-caption-sm font-bold uppercase tracking-[0.4px] text-muted-steel">Desenvolvedores</p>
         <h1 className="mt-1 text-display-xl text-ink">Documentação da API &amp; MCP</h1>
         <p className="mt-2 max-w-2xl text-body-md text-muted">
-          Integre o Movepark à sua operação: reservas, disponibilidade, preços, promoções e mais — via
-          API REST ou via MCP (para agentes de IA). Autenticação por chave de API com escopos.
+          Integre o Movepark à sua operação: reservas, disponibilidade, preços, promoções e mais,
+          via API REST ou via MCP (para agentes de IA). Autenticação por chave de API com escopos.
         </p>
         <div className="mt-4 flex flex-wrap gap-2 text-caption-sm">
           <span className="rounded-full bg-surface-soft px-3 py-1">REST: <code>{API_BASE}</code></span>
@@ -430,15 +430,15 @@ export default function DocsPage() {
           })}
 
           <section className="space-y-4">
-            <SectionTitle id="mcp" icon={Bot} title="MCP — para agentes de IA" />
+            <SectionTitle id="mcp" icon={Bot} title="MCP: para agentes de IA" />
             <p className="text-body-sm text-muted">
               Servidor <strong>MCP</strong> (Model Context Protocol, Streamable HTTP / JSON-RPC 2.0) com
               duas superfícies: <strong>consumidor</strong> (público, descoberta) e <strong>parceiro</strong>{" "}
               (autenticado por chave). As tools visíveis no parceiro dependem dos escopos da chave.
             </p>
             <div className="grid grid-cols-1 gap-3 desktop:grid-cols-2">
-              <CodeBlock label="Consumidor — tools/list" code={MCP_EXAMPLE_LIST} />
-              <CodeBlock label="Parceiro — tools/call" code={MCP_EXAMPLE_CALL} />
+              <CodeBlock label="Consumidor: tools/list" code={MCP_EXAMPLE_LIST} />
+              <CodeBlock label="Parceiro: tools/call" code={MCP_EXAMPLE_CALL} />
             </div>
             <div className="grid grid-cols-1 gap-4 desktop:grid-cols-2">
               <div className="rounded-md border border-hairline p-4">

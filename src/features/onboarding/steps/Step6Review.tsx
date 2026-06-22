@@ -37,7 +37,7 @@ export function Step6Review({ data, companyId, onBack, onSubmitted }: Props) {
         </div>
         <div className="text-body-sm text-muted">
           {data.location?.name ?? "Sem localização"}
-          {data.location?.address ? ` — ${data.location.address}` : ""}
+          {data.location?.address ? `, ${data.location.address}` : ""}
         </div>
       </section>
 

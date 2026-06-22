@@ -172,7 +172,7 @@ export function PopularParkingLots() {
         Estacionamentos populares
       </h2>
       <p className="mb-8 max-w-xl text-body-md text-muted">
-        Escolhidos por milhares de viajantes em todo o Brasil — com avaliações verificadas.
+        Escolhidos por milhares de viajantes em todo o Brasil, com avaliações verificadas.
       </p>
 
       <div

@@ -38,7 +38,7 @@ export default function SecurityPage() {
             </span>
             <div>
               <div className="text-body-md text-ink">
-                Sem senha — só código de uso único
+                Sem senha: só código de uso único
               </div>
               <div className="text-body-sm text-muted">
                 Toda vez que você entrar, mandamos um código pelo e-mail ou
@@ -80,7 +80,7 @@ export default function SecurityPage() {
               Sair de todos os dispositivos
             </div>
             <div className="text-body-sm text-muted">
-              Encerra todas as sessões — inclusive esta. Útil se você perdeu o
+              Encerra todas as sessões, inclusive esta. Útil se você perdeu o
               telefone ou usou um computador público.
             </div>
           </div>

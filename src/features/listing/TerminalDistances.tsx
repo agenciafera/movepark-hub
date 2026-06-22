@@ -30,7 +30,7 @@ export function TerminalDistancesView({ terminals }: { terminals: TerminalDistan
         ))}
       </ul>
       <p className="text-caption text-muted">
-        Distância em linha reta, calculada — não é o tempo de traslado, que pode variar.
+        Distância em linha reta. Não representa o tempo de traslado, que pode variar.
       </p>
     </div>
   );

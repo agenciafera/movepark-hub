@@ -42,7 +42,7 @@ export function Step5AddOns({ data, companyId, onNext, onBack }: Props) {
   return (
     <StepShell
       title="Serviços adicionais"
-      description="Opcional — serviços extras como lava-jato. Pode pular."
+      description="Opcional: serviços extras como lava-jato. Pode pular."
       onBack={onBack}
       onNext={async () => {
         if (await persist()) onNext();

@@ -58,7 +58,7 @@ export function voucherValidity(b: VoucherBookingLike, now: Date): VoucherValidi
         canCheckIn: false,
         tone: "warning",
         withinWindow: null,
-        message: "Reserva aguardando pagamento — ainda não confirmada.",
+        message: "Reserva aguardando pagamento. Ainda não confirmada.",
       };
     case "cancelled":
       return {
@@ -100,8 +100,8 @@ export function voucherValidity(b: VoucherBookingLike, now: Date): VoucherValidi
         tone: within ? "success" : "warning",
         withinWindow: within,
         message: within
-          ? "Reserva válida — registre a entrada."
-          : "Fora da janela prevista de entrada — confira antes de registrar.",
+          ? "Reserva válida. Registre a entrada."
+          : "Fora da janela prevista de entrada. Confira antes de registrar.",
       };
     }
   }

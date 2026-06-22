@@ -77,7 +77,7 @@ export function CancelBookingDialog({
           >
             {isFree
               ? `Cancelamento grátis. Reembolso integral de ${formatBRL(booking.total_amount)} em até 10 dias úteis. ${freeCancelDeadlineLabel(booking.check_in_at)}.`
-              : "Faltam menos de 24h pro check-in — você pode cancelar, mas sem reembolso."}
+              : "Faltam menos de 24h pro check-in. Você pode cancelar, mas sem reembolso."}
           </div>
         </div>
 

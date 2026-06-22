@@ -86,7 +86,7 @@ export default function CardsPage() {
         <Info className="h-4 w-4 shrink-0" />
         <p>
           Hoje os cartões são mockados pra simular o fluxo. Quando integrarmos
-          gateway real, eles serão tokenizados — o número fica só com o
+          gateway real, eles serão tokenizados. O número fica só com o
           gateway, nunca no nosso banco.
         </p>
       </div>

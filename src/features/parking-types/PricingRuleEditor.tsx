@@ -199,7 +199,7 @@ export function PricingRuleEditor({
       <SheetContent className="desktop:!w-[640px] desktop:!max-w-none">
         <SheetHeader>
           <SheetTitle>
-            Precificação — {lpt.company_parking_type.parking_type.name}
+            Precificação: {lpt.company_parking_type.parking_type.name}
           </SheetTitle>
           <SheetDescription>
             Estratégia atual:{" "}

@@ -71,7 +71,7 @@ export function ApiKeyCreateDialog({
     try {
       const res = await create.mutateAsync(buildApiKeyCreateArgs(companyId, f));
       setSecret(res);
-      toast.success("Chave criada — copie o segredo agora.");
+      toast.success("Chave criada. Copie o segredo agora.");
     } catch (e2) {
       toast.error(e2 instanceof Error ? e2.message : "Erro ao criar a chave");
     }
@@ -92,7 +92,7 @@ export function ApiKeyCreateDialog({
             <DialogHeader>
               <DialogTitle>Chave criada</DialogTitle>
               <DialogDescription>
-                Copie e guarde agora — por segurança, o segredo <strong>não será exibido novamente</strong>.
+                Copie e guarde agora. Por segurança, o segredo <strong>não será exibido novamente</strong>.
               </DialogDescription>
             </DialogHeader>
             <div className="flex items-center gap-2 rounded-sm border border-hairline bg-surface-soft p-3">
@@ -169,7 +169,7 @@ export function ApiKeyCreateDialog({
                           />
                           <span>
                             <code className="text-[12px]">{s.scope}</code>
-                            <span className="text-muted"> — {s.description}</span>
+                            <span className="text-muted">: {s.description}</span>
                           </span>
                         </label>
                       ))}

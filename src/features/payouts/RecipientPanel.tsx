@@ -33,7 +33,7 @@ export function RecipientPanel({
         action === "create" ? "Recebedor enviado ao gateway" : "Status do recebedor atualizado",
       );
       if (res.status === "action_required") {
-        toast.warning("O gateway pediu verificação — veja as pendências.");
+        toast.warning("O gateway pediu verificação. Veja as pendências.");
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao sincronizar recebedor");

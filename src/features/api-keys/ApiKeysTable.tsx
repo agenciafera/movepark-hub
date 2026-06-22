@@ -38,7 +38,7 @@ export function ApiKeysTable({ companyId }: { companyId: string }) {
     try {
       const res = await rotate.mutateAsync(k.id);
       await navigator.clipboard.writeText(res.key).catch(() => undefined);
-      toast.success("Nova chave gerada e copiada — guarde o segredo agora.");
+      toast.success("Nova chave gerada e copiada. Guarde o segredo agora.");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao rotacionar");
     }

@@ -68,7 +68,7 @@ export function AddonAvailability({ open, companyId, addon, onOpenChange }: Prop
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Disponibilidade — {addon?.name}</DialogTitle>
+          <DialogTitle>Disponibilidade: {addon?.name}</DialogTitle>
         </DialogHeader>
 
         {locations.isLoading ? (

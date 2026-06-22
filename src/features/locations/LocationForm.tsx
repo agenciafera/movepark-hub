@@ -274,7 +274,7 @@ export function LocationForm({
               id="notice"
               value={notice}
               onChange={(e) => setNotice(e.target.value)}
-              placeholder="Ex.: Use a Rua Padre Celestino Pavan — o GPS erra a entrada."
+              placeholder="Ex.: Use a Rua Padre Celestino Pavan. O GPS erra a entrada."
             />
             <p className="text-caption text-muted">
               Destacado em alerta no bloco "Como chegar". Use para o que o cliente erra na chegada.

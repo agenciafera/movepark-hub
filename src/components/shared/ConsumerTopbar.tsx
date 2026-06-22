@@ -110,7 +110,7 @@ export function ConsumerTopbar() {
 
   return (
     <header className="sticky top-0 z-40 flex h-20 items-center gap-4 border-b border-hairline bg-canvas px-4 desktop:px-8">
-      <Link to="/" className="hidden tablet:block shrink-0" aria-label="Movepark — ir para a home">
+      <Link to="/" className="hidden tablet:block shrink-0" aria-label="Ir para a home">
         <Wordmark height={22} />
       </Link>
       <Link to="/" className="tablet:hidden shrink-0" aria-label="Movepark">

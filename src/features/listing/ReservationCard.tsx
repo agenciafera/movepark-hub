@@ -317,7 +317,7 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
           {applied ? (
             <div className="flex items-center justify-between gap-2 rounded-sm border border-badge-confirmed-fg/30 bg-badge-confirmed-bg p-2.5">
               <span className="text-caption font-medium text-badge-confirmed-fg">
-                {applied.code} — {couponDiscountLabel(applied)}
+                {applied.code}: {couponDiscountLabel(applied)}
               </span>
               <button
                 type="button"

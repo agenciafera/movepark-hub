@@ -17,7 +17,7 @@ export default function SejaParceiroPage() {
   return (
     <>
       <Helmet>
-        <title>Seja parceiro — Movepark</title>
+        <title>Seja parceiro | Movepark</title>
         <meta
           name="description"
           content="Cadastre seu estacionamento na Movepark e comece a receber reservas online."

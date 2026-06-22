@@ -88,7 +88,7 @@ export function PaymentMethodForm({ open, onOpenChange }: Props) {
         <DialogHeader>
           <DialogTitle>Novo cartão</DialogTitle>
           <DialogDescription>
-            Hoje os cartões são mockados — quando integrarmos gateway real, o
+            Hoje os cartões são mockados. Quando integrarmos gateway real, o
             número será tokenizado e nunca armazenado em texto puro.
           </DialogDescription>
         </DialogHeader>

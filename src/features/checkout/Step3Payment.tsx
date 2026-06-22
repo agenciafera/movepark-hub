@@ -61,7 +61,7 @@ export function Step3Payment({ bookingCode, totalAmount, paymentStatus, onBack }
       const res = await pix.mutateAsync({ booking_code: bookingCode });
       setPixPayload(res.qr_code);
       if (res.qr_code) setPixSvg(await toSvgString(res.qr_code, 256));
-      toast.success("PIX gerado — pague no seu app de banco");
+      toast.success("PIX gerado. Pague no seu app de banco.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao gerar PIX");
     }
@@ -97,7 +97,7 @@ export function Step3Payment({ bookingCode, totalAmount, paymentStatus, onBack }
           exp_year: expiry.year,
         });
       }
-      toast.success("Pagamento aprovado — confirmando…");
+      toast.success("Pagamento aprovado. Confirmando…");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Pagamento recusado");
     }
@@ -264,7 +264,7 @@ export function Step3Payment({ bookingCode, totalAmount, paymentStatus, onBack }
                     <option key={o.installments} value={o.installments}>
                       {o.installments}x de {formatBRL(o.installmentCents / 100)}
                       {o.hasInterest
-                        ? ` (com juros — total ${formatBRL(o.totalCents / 100)})`
+                        ? ` (com juros, total ${formatBRL(o.totalCents / 100)})`
                         : " sem juros"}
                     </option>
                   ))}

@@ -69,7 +69,7 @@ export default function ManagerDashboard() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Receita — últimos 30 dias</CardTitle>
+          <CardTitle>Receita nos últimos 30 dias</CardTitle>
         </CardHeader>
         <CardContent>
           {revenue.isLoading ? (

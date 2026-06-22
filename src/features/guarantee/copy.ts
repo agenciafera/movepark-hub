@@ -4,7 +4,7 @@
 
 export const GUARANTEE_SHORT = "Vaga garantida";
 
-export const GUARANTEE_PROMISE = "Vaga garantida — ou realocamos e cobrimos a diferença";
+export const GUARANTEE_PROMISE = "Vaga garantida ou realocamos e cobrimos a diferença.";
 
 /** Regra operacional exibida na seção "Sobre a garantia" (parágrafos). */
 export const GUARANTEE_POLICY: string[] = [

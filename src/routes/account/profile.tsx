@@ -145,7 +145,7 @@ export default function ProfilePage() {
             </SelectContent>
           </Select>
           <span className="text-caption-sm text-muted">
-            Tradução completa entra em uma fase futura — por enquanto só PT-BR.
+            Tradução completa entra em uma fase futura. Por enquanto só PT-BR.
           </span>
         </div>
       </div>
