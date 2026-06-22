@@ -69,7 +69,7 @@ export function HowItWorks() {
             />
 
             {/* Floating booking card */}
-            <div className="absolute bottom-8 left-8 rounded-xl border border-hairline bg-canvas p-4 shadow-tier">
+            <div className="absolute bottom-8 left-8 rounded-lg border border-hairline bg-canvas px-4 py-3 shadow-tier">
               <div className="mb-1.5 text-caption font-bold text-ink">Reserva confirmada!</div>
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-success" />
