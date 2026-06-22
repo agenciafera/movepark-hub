@@ -1,5 +1,4 @@
-import { ShieldCheck, Tag, BadgeCheck, Headphones, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ShieldCheck, Tag, BadgeCheck, Headphones } from "lucide-react";
 
 const items = [
   {
@@ -60,29 +59,17 @@ export function TrustBand() {
                 ))}
               </div>
 
-              <a
-                href="/como-funciona"
-                className="mt-10 inline-flex items-center gap-1.5 text-body-sm font-medium text-white underline underline-offset-4 hover:text-white/80"
-              >
-                Saiba mais <ArrowRight className="h-4 w-4" />
-              </a>
             </div>
 
-            {/* Coluna direita — imagem + CTA (oculta em mobile) */}
-            <div className="hidden flex-col gap-6 px-8 pb-12 pt-10 desktop:flex desktop:px-8 desktop:pb-14">
-              <div className="min-h-0 flex-1 overflow-hidden rounded-xl">
+            {/* Coluna direita — imagem (oculta em mobile) */}
+            <div className="hidden items-center justify-center px-8 py-10 desktop:flex desktop:px-8 desktop:py-14">
+              <div className="aspect-square w-full overflow-hidden rounded-xl">
                 <img
                   src="/images/como-reservar.jpg"
                   alt="Como reservar no Movepark"
                   className="h-full w-full object-cover object-center"
                 />
               </div>
-              <Button
-                asChild
-                className="w-full shrink-0 bg-white !text-mp-navy hover:bg-mp-pale"
-              >
-                <a href="/search">Reservar agora</a>
-              </Button>
             </div>
 
           </div>
