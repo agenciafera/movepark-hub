@@ -7,8 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { useOperatorLocations } from "@/features/locations/api";
-import { useLocationOccupancy, useSetDateBlocked } from "@/features/availability/api";
-import { buildOccupancyMatrix, occupancyTone } from "@/features/availability/occupancy.logic";
+import {
+  useLocationOccupancy,
+  useSetDateBlocked,
+  useWlExternalOccupancy,
+} from "@/features/availability/api";
+import {
+  buildOccupancyMatrix,
+  occupancyTone,
+  withExternal,
+} from "@/features/availability/occupancy.logic";
 import { useAuth } from "@/auth/context";
 import { cn } from "@/lib/utils";
 
@@ -29,7 +37,8 @@ const toneClass: Record<"low" | "mid" | "high" | "full", string> = {
 };
 
 export default function OperatorOccupancy() {
-  const { impersonatedCompanyId } = useAuth();
+  const { impersonatedCompanyId, effectiveCompanyIds } = useAuth();
+  const companyId = effectiveCompanyIds[0];
   const { data: locations, isLoading: loadingLocs } = useOperatorLocations(impersonatedCompanyId);
 
   const [locationId, setLocationId] = React.useState<string>("");
@@ -54,6 +63,15 @@ export default function OperatorOccupancy() {
     to <= from ? undefined : to,
   );
   const matrix = React.useMemo(() => buildOccupancyMatrix(rows ?? []), [rows]);
+
+  // Pull ao vivo do WL (vagas vendidas por fora) — best-effort.
+  const { data: wl } = useWlExternalOccupancy(
+    companyId,
+    locationId || undefined,
+    from,
+    to <= from ? undefined : to,
+  );
+  const wlByLpt = wl?.byLpt ?? {};
 
   const setBlocked = useSetDateBlocked();
   async function toggleBlock(lptId: string, date: string, blocked: boolean) {
@@ -114,6 +132,13 @@ export default function OperatorOccupancy() {
         </CardContent>
       </Card>
 
+      {wl?.ready && (
+        <p className="-mt-2 text-caption text-muted">
+          Os números somam as reservas do hub + as vagas vendidas no white-label (ao vivo). Passe o
+          mouse numa célula para ver a quebra.
+        </p>
+      )}
+
       {loadingLocs || isLoading ? (
         <Skeleton className="h-64 w-full" />
       ) : error ? (
@@ -153,6 +178,8 @@ export default function OperatorOccupancy() {
                       if (!cell) {
                         return <td key={d} className="px-2 py-2" />;
                       }
+                      const ext = wlByLpt[row.lptId]?.[d] ?? 0;
+                      const eff = withExternal(cell.booked, ext, cell.capacity);
                       return (
                         <td key={d} className="px-1.5 py-1.5">
                           <button
@@ -163,15 +190,15 @@ export default function OperatorOccupancy() {
                               "w-full rounded-sm px-1 py-1 text-center tabular-nums transition hover:ring-1 hover:ring-mp-primary/40 disabled:opacity-60",
                               cell.blocked
                                 ? "bg-badge-cancelled-bg text-badge-cancelled-fg line-through"
-                                : toneClass[occupancyTone(cell.pct)],
+                                : toneClass[occupancyTone(eff.pct)],
                             )}
                             title={
                               cell.blocked
                                 ? "Bloqueada — clique para liberar"
-                                : `${cell.booked}/${cell.capacity} (${Math.round(cell.pct * 100)}%) — clique para bloquear`
+                                : `hub ${cell.booked}${ext ? ` + WL ${ext}` : ""} = ${eff.count}/${cell.capacity} (${Math.round(eff.pct * 100)}%) — clique para bloquear`
                             }
                           >
-                            {cell.blocked ? "Bloq." : `${cell.booked}/${cell.capacity}`}
+                            {cell.blocked ? "Bloq." : `${eff.count}/${cell.capacity}`}
                           </button>
                         </td>
                       );

@@ -62,6 +62,18 @@ export default function ParkingTypesPage() {
     }
   }
 
+  async function updateWlMapping(id: string, category: string | null, product: string | null) {
+    try {
+      await updateLpt.mutateAsync({
+        id,
+        patch: { wl_category_slug: category, wl_product_slug: product },
+      });
+      toast.success("Mapeamento WL salvo");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro");
+    }
+  }
+
   const backHref = isOperator
     ? "/operator/locations"
     : `/manager/companies/${params.companyId}/locations`;
@@ -117,6 +129,7 @@ export default function ParkingTypesPage() {
               lpt={lpt}
               onToggleActive={(v) => toggleActive(lpt.id, v)}
               onUpdateCapacity={(c) => updateCapacity(lpt.id, c)}
+              onUpdateWlMapping={(cat, prod) => updateWlMapping(lpt.id, cat, prod)}
               onEditPricing={() => setEditing(lpt)}
               onEditRules={() => setEditingRules(lpt)}
               onOpenSimulation={() => setSimulating(lpt)}
@@ -163,6 +176,7 @@ type CardProps = {
   lpt: LocationParkingTypeWithRelations;
   onToggleActive: (v: boolean) => void;
   onUpdateCapacity: (capacity: number) => void;
+  onUpdateWlMapping: (category: string | null, product: string | null) => void;
   onEditPricing: () => void;
   onEditRules: () => void;
   onOpenSimulation: () => void;
@@ -172,15 +186,23 @@ function ParkingTypeCard({
   lpt,
   onToggleActive,
   onUpdateCapacity,
+  onUpdateWlMapping,
   onEditPricing,
   onEditRules,
   onOpenSimulation,
 }: CardProps) {
   const [capacity, setCapacity] = React.useState(lpt.capacity);
+  const [wlCat, setWlCat] = React.useState(lpt.wl_category_slug ?? "");
+  const [wlProd, setWlProd] = React.useState(lpt.wl_product_slug ?? "");
 
   React.useEffect(() => {
     setCapacity(lpt.capacity);
-  }, [lpt.capacity]);
+    setWlCat(lpt.wl_category_slug ?? "");
+    setWlProd(lpt.wl_product_slug ?? "");
+  }, [lpt.capacity, lpt.wl_category_slug, lpt.wl_product_slug]);
+
+  const wlDirty =
+    wlCat !== (lpt.wl_category_slug ?? "") || wlProd !== (lpt.wl_product_slug ?? "");
 
   return (
     <Card>
@@ -253,6 +275,45 @@ function ParkingTypeCard({
           <Button size="sm" onClick={onEditPricing}>
             <SlidersHorizontal className="h-4 w-4" />
             Configurar precificação
+          </Button>
+        </div>
+
+        {/* Mapeamento com o white-label (E2.5.1 — sincronização de disponibilidade) */}
+        <div className="flex flex-wrap items-end gap-3 rounded-md border border-hairline p-3">
+          <div className="flex w-full flex-col">
+            <span className="text-body-sm font-medium text-ink">Mapeamento White-label</span>
+            <span className="text-caption text-muted">
+              Slugs deste tipo de vaga no sistema legado (category = unidade, product = tipo). Usado pra
+              casar disponibilidade.
+            </span>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={`wlcat-${lpt.id}`}>category_slug</Label>
+            <Input
+              id={`wlcat-${lpt.id}`}
+              value={wlCat}
+              onChange={(e) => setWlCat(e.target.value)}
+              placeholder="unidade-aeroporto"
+              className="h-10 w-48"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={`wlprod-${lpt.id}`}>product_slug</Label>
+            <Input
+              id={`wlprod-${lpt.id}`}
+              value={wlProd}
+              onChange={(e) => setWlProd(e.target.value)}
+              placeholder="vaga-coberta"
+              className="h-10 w-48"
+            />
+          </div>
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={!wlDirty}
+            onClick={() => onUpdateWlMapping(wlCat.trim() || null, wlProd.trim() || null)}
+          >
+            Salvar
           </Button>
         </div>
       </CardContent>

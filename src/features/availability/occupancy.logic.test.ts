@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildOccupancyMatrix, occupancyTone } from "./occupancy.logic";
+import { buildOccupancyMatrix, occupancyTone, withExternal } from "./occupancy.logic";
 import type { LocationOccupancyRow } from "@/types/domain";
 
 const rows: LocationOccupancyRow[] = [
@@ -45,6 +45,18 @@ describe("buildOccupancyMatrix", () => {
 
   it("matriz vazia para entrada vazia", () => {
     expect(buildOccupancyMatrix([])).toEqual({ dates: [], rows: [] });
+  });
+});
+
+describe("withExternal", () => {
+  it("soma hub + WL e limita pct a 1", () => {
+    expect(withExternal(3, 2, 10)).toEqual({ count: 5, pct: 0.5 });
+    expect(withExternal(0, 0, 10)).toEqual({ count: 0, pct: 0 });
+    // overbooking: count passa da capacidade mas pct trava em 1
+    expect(withExternal(8, 5, 10)).toEqual({ count: 13, pct: 1 });
+  });
+  it("capacity 0 → pct 0 (evita divisão por zero)", () => {
+    expect(withExternal(2, 1, 0)).toEqual({ count: 3, pct: 0 });
   });
 });
 

@@ -21,6 +21,7 @@
 
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { pushBookingToWl } from "../_shared/wl/push.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -121,6 +122,17 @@ Deno.serve(async (req: Request) => {
     // Erros lançados pelo plpgsql vêm aqui (mensagens em PT-BR já)
     return jsonResponse({ error: error.message }, 400);
   }
+
+  // Push hub→WL (E2.5.1): avisa o white-label que esta vaga foi vendida. Best-effort.
+  // @ts-expect-error - Deno env
+  const wlToken = Deno.env.get("WL_BACKEND_TOKEN");
+  await pushBookingToWl(admin, wlToken, {
+    bookingId: (data as { booking_id?: string })?.booking_id ?? "",
+    locationParkingTypeId: input.location_parking_type_id,
+    operation: "reserve",
+    startDate: input.check_in_at.slice(0, 10),
+    endDate: input.check_out_at.slice(0, 10),
+  });
 
   return jsonResponse(data, 201);
 });

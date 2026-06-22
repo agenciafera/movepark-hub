@@ -48,6 +48,20 @@ export function buildOccupancyMatrix(rows: LocationOccupancyRow[]): OccupancyMat
   return { dates, rows: matrixRows };
 }
 
+/**
+ * Ocupação efetiva somando o vendido no WL (E2.5.1).
+ * count = reservas do hub + vendidas no WL; pct limitado a 1 (overbooking aparece como cheio).
+ */
+export function withExternal(
+  booked: number,
+  external: number,
+  capacity: number,
+): { count: number; pct: number } {
+  const count = booked + external;
+  const pct = capacity > 0 ? Math.min(count / capacity, 1) : 0;
+  return { count, pct };
+}
+
 /** Faixa de ocupação para colorir a célula. */
 export function occupancyTone(pct: number): "low" | "mid" | "high" | "full" {
   if (pct >= 1) return "full";

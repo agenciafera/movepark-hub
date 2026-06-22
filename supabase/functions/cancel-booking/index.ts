@@ -15,6 +15,7 @@
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
+import { pushBookingToWl } from "../_shared/wl/push.ts";
 import { parseCancelInput, refundDecision, type Actor } from "./logic.ts";
 
 const corsHeaders = {
@@ -69,7 +70,9 @@ Deno.serve(async (req: Request) => {
   // Reserva + empresa (via location).
   const { data: booking, error: bErr } = await admin
     .from("booking")
-    .select("id, code, status, check_in_at, profile_id, location:location!inner(company_id)")
+    .select(
+      "id, code, status, check_in_at, check_out_at, location_parking_type_id, profile_id, location:location!inner(company_id)",
+    )
     .eq("code", input.bookingCode)
     .is("deleted_at", null)
     .maybeSingle();
@@ -174,6 +177,23 @@ Deno.serve(async (req: Request) => {
     p_reason: input.reason ?? `cancelamento (${actor})`,
   });
   if (rpcErr) return jsonResponse({ error: rpcErr.message }, 500);
+
+  // Push hub→WL (E2.5.1): devolve a vaga no white-label. Best-effort.
+  // @ts-expect-error - Deno env
+  const wlToken = Deno.env.get("WL_BACKEND_TOKEN");
+  // deno-lint-ignore no-explicit-any
+  const lptId = (booking as any).location_parking_type_id as string | undefined;
+  // deno-lint-ignore no-explicit-any
+  const checkOut = (booking as any).check_out_at as string | undefined;
+  if (lptId) {
+    await pushBookingToWl(admin, wlToken, {
+      bookingId: booking.id,
+      locationParkingTypeId: lptId,
+      operation: "release",
+      startDate: String(booking.check_in_at).slice(0, 10),
+      endDate: String(checkOut ?? booking.check_in_at).slice(0, 10),
+    });
+  }
 
   return jsonResponse({ status: "cancelled", refunded, refund_pending: refundPending });
 });

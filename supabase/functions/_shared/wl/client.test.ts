@@ -1,0 +1,59 @@
+// deno test — partes puras do cliente WL.
+import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import {
+  buildAvailabilityUrl,
+  normalizeWlDomain,
+  parseAvailabilityResponse,
+  wlReady,
+} from "./client.ts";
+
+Deno.test("normalizeWlDomain tira protocolo/path/caixa", () => {
+  assertEquals(
+    normalizeWlDomain("https://ferapark.movepark.com.br/api/v3/backend"),
+    "ferapark.movepark.com.br",
+  );
+  assertEquals(normalizeWlDomain("FeraPark.Movepark.com.br/"), "ferapark.movepark.com.br");
+  assertEquals(normalizeWlDomain(""), null);
+  assertEquals(normalizeWlDomain(null), null);
+});
+
+Deno.test("wlReady exige toggle + domínio + tenant", () => {
+  assertEquals(wlReady({ wl_domain: "x.com", wl_tenant_key: "t", wl_sync_enabled: true }), true);
+  assertEquals(wlReady({ wl_domain: "x.com", wl_tenant_key: "t", wl_sync_enabled: false }), false);
+  assertEquals(wlReady({ wl_domain: null, wl_tenant_key: "t", wl_sync_enabled: true }), false);
+  assertEquals(wlReady({ wl_domain: "x.com", wl_tenant_key: null, wl_sync_enabled: true }), false);
+});
+
+Deno.test("buildAvailabilityUrl monta query com path fixo", () => {
+  const url = buildAvailabilityUrl("ferapark.movepark.com.br", {
+    category_slug: "unidade-aeroporto",
+    product_slug: "vaga-coberta",
+    start_date: "2026-06-22",
+    end_date: "2026-07-05",
+  });
+  assertEquals(
+    url,
+    "https://ferapark.movepark.com.br/api/v3/backend/availability?category_slug=unidade-aeroporto&product_slug=vaga-coberta&start_date=2026-06-22&end_date=2026-07-05",
+  );
+});
+
+Deno.test("buildAvailabilityUrl omite product/end opcionais", () => {
+  const url = buildAvailabilityUrl("x.com", { category_slug: "c", start_date: "2026-06-22" });
+  assertEquals(url, "https://x.com/api/v3/backend/availability?category_slug=c&start_date=2026-06-22");
+});
+
+Deno.test("parseAvailabilityResponse aceita array, {data} e {days}", () => {
+  const row = { date: "2026-06-22", capacity: 1100, sold_wl: 3, sold_external: 1, available: 1096 };
+  const expected = [{ date: "2026-06-22", capacity: 1100, sold_wl: 3, sold_external: 1, available: 1096 }];
+  assertEquals(parseAvailabilityResponse([row]), expected);
+  assertEquals(parseAvailabilityResponse({ data: [row] }), expected);
+  assertEquals(parseAvailabilityResponse({ days: [row] }), expected);
+  assertEquals(parseAvailabilityResponse(null), []);
+  assertEquals(parseAvailabilityResponse({}), []);
+});
+
+Deno.test("parseAvailabilityResponse coage tipos/ausências", () => {
+  assertEquals(parseAvailabilityResponse([{ date: "2026-06-22" }]), [
+    { date: "2026-06-22", capacity: 0, sold_wl: 0, sold_external: 0, available: 0 },
+  ]);
+});

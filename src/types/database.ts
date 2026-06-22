@@ -1605,6 +1605,8 @@ export type Database = {
           near_capacity_message: string | null
           near_capacity_threshold: number | null
           updated_at: string
+          wl_category_slug: string | null
+          wl_product_slug: string | null
         }
         Insert: {
           capacity: number
@@ -1623,6 +1625,8 @@ export type Database = {
           near_capacity_message?: string | null
           near_capacity_threshold?: number | null
           updated_at?: string
+          wl_category_slug?: string | null
+          wl_product_slug?: string | null
         }
         Update: {
           capacity?: number
@@ -1641,6 +1645,8 @@ export type Database = {
           near_capacity_message?: string | null
           near_capacity_threshold?: number | null
           updated_at?: string
+          wl_category_slug?: string | null
+          wl_product_slug?: string | null
         }
         Relationships: [
           {
@@ -3229,6 +3235,14 @@ export type Database = {
           p_location_parking_type_id: string
         }
         Returns: Json
+      }
+      wl_company_config: {
+        Args: { p_company_id: string }
+        Returns: {
+          wl_domain: string
+          wl_sync_enabled: boolean
+          wl_tenant_key: string
+        }[]
       }
     }
     Enums: {

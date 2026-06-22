@@ -33,6 +33,65 @@ export function useLocationOccupancy(
   });
 }
 
+/** lptId → (date → vagas vendidas no WL) puxado ao vivo. */
+export type WlExternalMap = Record<string, Record<string, number>>;
+
+/**
+ * Pull ao vivo da disponibilidade do white-label (E2.5.1): para cada tipo de vaga da
+ * unidade que tenha mapeamento WL (category/product slug), chama a Edge `wl-sync` e
+ * devolve quantas vagas o WL já vendeu por data. Best-effort: se o WL falhar, não
+ * derruba a tela (a Ocupação segue mostrando só o contador do hub).
+ */
+export function useWlExternalOccupancy(
+  companyId: string | undefined,
+  locationId: string | undefined,
+  from: string | undefined,
+  to: string | undefined,
+) {
+  return useQuery({
+    queryKey: ["wl-occupancy", companyId, locationId, from, to],
+    enabled: !!companyId && !!locationId && !!from && !!to,
+    staleTime: 15_000,
+    retry: false,
+    queryFn: async (): Promise<{ ready: boolean; byLpt: WlExternalMap }> => {
+      const { data: lpts, error } = await supabase
+        .from("location_parking_type")
+        .select("id, wl_category_slug, wl_product_slug")
+        .eq("location_id", locationId!)
+        .eq("is_active", true);
+      if (error) throw error;
+
+      const mapped = (lpts ?? []).filter((l) => l.wl_category_slug && l.wl_product_slug);
+      if (mapped.length === 0) return { ready: false, byLpt: {} };
+
+      const byLpt: WlExternalMap = {};
+      let anyReady = false;
+      await Promise.all(
+        mapped.map(async (l) => {
+          const { data, error: invErr } = await supabase.functions.invoke("wl-sync", {
+            body: {
+              company_id: companyId,
+              category_slug: l.wl_category_slug,
+              product_slug: l.wl_product_slug,
+              start_date: from,
+              end_date: to,
+            },
+          });
+          if (invErr) return;
+          const res = data as
+            | { ready?: boolean; days?: { date: string; sold_external?: number }[] }
+            | null;
+          if (res?.ready) anyReady = true;
+          const m: Record<string, number> = {};
+          for (const d of res?.days ?? []) m[d.date] = Number(d.sold_external ?? 0);
+          byLpt[l.id] = m;
+        }),
+      );
+      return { ready: anyReady, byLpt };
+    },
+  });
+}
+
 /** Bloqueia/desbloqueia uma data de um tipo de vaga (E1.4.2) — via RPC operator_set_date_blocked. */
 export function useSetDateBlocked() {
   const qc = useQueryClient();
