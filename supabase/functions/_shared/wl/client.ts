@@ -79,8 +79,13 @@ export function buildAvailabilityUrl(domain: string, p: AvailabilityParams): str
  * Normaliza a resposta de disponibilidade do WL. Shape real (produção):
  *   { data: { units: [ { product_slug, days: [ { date, capacity, sold_wl, sold_external, available } ] } ] } }
  * Também aceita formas simples ([...], {data:[...]}, {days:[...]}) por robustez.
+ * Quando `productSlug` é informado e a resposta vem por `units`, considera só a unidade
+ * correspondente — evita misturar/sobrescrever o `sold_wl` de outro produto por data.
  */
-export function parseAvailabilityResponse(json: unknown): WlAvailabilityDay[] {
+export function parseAvailabilityResponse(
+  json: unknown,
+  productSlug?: string | null,
+): WlAvailabilityDay[] {
   const out: WlAvailabilityDay[] = [];
   const pushDays = (arr: unknown) => {
     if (!Array.isArray(arr)) return;
@@ -107,7 +112,12 @@ export function parseAvailabilityResponse(json: unknown): WlAvailabilityDay[] {
   } else if (root && typeof root === "object") {
     const o = root as Record<string, unknown>;
     if (Array.isArray(o.units)) {
-      for (const u of o.units) pushDays((u as Record<string, unknown>)?.days);
+      for (const u of o.units) {
+        const unit = (u ?? {}) as Record<string, unknown>;
+        // Só pula a unidade quando ela declara um product_slug diferente do pedido.
+        if (productSlug && unit.product_slug != null && unit.product_slug !== productSlug) continue;
+        pushDays(unit.days);
+      }
     } else {
       pushDays(o.days ?? o.availability);
     }
@@ -132,7 +142,7 @@ export async function wlGetAvailability(
     headers: wlHeaders(c.wl_tenant_key!, token),
   });
   if (!res.ok) throw new Error(`WL availability ${res.status}`);
-  return parseAvailabilityResponse(await res.json());
+  return parseAvailabilityResponse(await res.json(), p.product_slug);
 }
 
 export async function wlPostSync(

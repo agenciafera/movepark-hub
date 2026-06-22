@@ -75,6 +75,23 @@ Deno.test("parseAvailabilityResponse extrai data.units[].days[] (shape real do W
   ]);
 });
 
+Deno.test("parseAvailabilityResponse filtra a unidade pelo product_slug pedido", () => {
+  const json = {
+    data: {
+      units: [
+        { product_slug: "vaga-coberta", days: [{ date: "2026-06-22", sold_wl: 834 }] },
+        { product_slug: "vaga-descoberta", days: [{ date: "2026-06-22", sold_wl: 12 }] },
+      ],
+    },
+  };
+  // pedindo coberta, NÃO pode vir a descoberta (evita sobrescrever sold_wl da mesma data)
+  assertEquals(parseAvailabilityResponse(json, "vaga-coberta"), [
+    { date: "2026-06-22", capacity: 0, sold_wl: 834, sold_external: 0, available: 0 },
+  ]);
+  // sem product_slug → comportamento antigo (todas as unidades)
+  assertEquals(parseAvailabilityResponse(json).length, 2);
+});
+
 Deno.test("parseAvailabilityResponse coage tipos/ausências", () => {
   assertEquals(parseAvailabilityResponse([{ date: "2026-06-22" }]), [
     { date: "2026-06-22", capacity: 0, sold_wl: 0, sold_external: 0, available: 0 },

@@ -123,7 +123,7 @@ export function OccupancyCalendar({
                               </span>
                               <span className="border-t border-hairline pt-0.5">
                                 Total: <strong>{d.count}</strong>/{d.capacity} (
-                                {Math.round(d.pct * 100)}
+                                {d.capacity > 0 ? Math.round((d.count / d.capacity) * 100) : 0}
                                 %){over && <span className="text-error"> · overbooking</span>}
                               </span>
                             </div>
