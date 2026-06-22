@@ -1,7 +1,7 @@
 # Design Tokens — Movepark Hub
 
-> Direção visual própria da Movepark: whitespace e hierarquia tipográfica do Airbnb + paleta
-> violet/indigo/navy da brand Movepark. Benchmark completo em
+> Identidade visual Movepark: whitespace generoso, hierarquia tipográfica clara em Inter,
+> paleta violet/indigo/navy e uma única tier de sombra tingida em navy. Benchmark completo em
 > [`docs/design-system/visual-benchmark.md`](../design-system/visual-benchmark.md).
 
 ---
@@ -17,7 +17,7 @@
 | `{colors.mp-primary-disabled}` | `#C5C4F6` | CTA desabilitado |
 | `{colors.mp-navy}` | `#29263F` | Headings principais, sidebar, logotipo dark |
 
-### Surface (mantidos do Airbnb)
+### Surface
 
 | Token | Valor | Uso |
 |---|---|---|
@@ -66,8 +66,7 @@
 
 ## Typography
 
-> **Inter é a fonte definitiva** (não placeholder). Sem custo de licença, legível em interfaces
-> densas, diferente do Airbnb Cereal. Ajustar line-height display em -2% em relação ao Cereal.
+> **Inter é a fonte definitiva.** Sem custo de licença, legível em interfaces densas, pesos 100–900 disponíveis via Google Fonts (variable font `ital,opsz,wght`).
 
 | Token | Size | Weight | Line Height | Letter Spacing | Uso |
 |---|---|---|---|---|---|
@@ -89,7 +88,7 @@
 
 ## Spacing
 
-> Mantido do Airbnb — base 4px.
+> Base 4px.
 
 | Token | Valor |
 |---|---|
@@ -118,7 +117,7 @@
 
 ## Elevation
 
-> Mesmo sistema do Airbnb — uma única tier de sombra.
+> Uma única tier de sombra, tingida em navy (#29263F).
 
 ```css
 /* Card hover / dropdown / modais */

@@ -278,7 +278,7 @@ function PropertyCard({
       >
         {favorite && (
           <span className="absolute left-2.5 top-2.5 rounded-full bg-canvas px-2.5 py-1 text-[11px] font-bold text-ink shadow-tier">
-            Guest favorite
+            Destaque
           </span>
         )}
         <div className="absolute right-2.5 top-2.5">
@@ -487,7 +487,7 @@ export default function DesignSystemPage() {
               <span className="font-mono text-mp-primary">#5D5FEF</span> (CTA), indigo{" "}
               <span className="font-mono text-ink">#4041A3</span>, pale —
               sobre a linguagem estrutural de marketplaces de consumo (cards
-              foto-first, busca em pílula, elevação suave, tipografia Roboto em
+              foto-first, busca em pílula, elevação suave, tipografia Inter em
               pesos moderados).
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -562,7 +562,7 @@ export default function DesignSystemPage() {
             <SectionHeader
               eyebrow="Foundations"
               title="Cores"
-              description="A paleta Movepark começa em navy e culmina em vermelho — o único acento usado em CTAs. Tudo o mais é estrutural."
+              description="A paleta Movepark parte do navy: violet (#5D5FEF) é o CTA principal, vermelho (#DA455E) é acento de marca. Tudo o mais é estrutural."
             />
 
             <h3 className="mb-3 text-display-sm text-ink">Marca</h3>
@@ -631,7 +631,7 @@ export default function DesignSystemPage() {
             <SectionHeader
               eyebrow="Foundations"
               title="Tipografia"
-              description="Roboto em pesos moderados. O único momento alto da tipografia é o display de rating (64 / 900)."
+              description="Inter em pesos moderados. O único momento alto da tipografia é o display de rating (64 / 900)."
             />
 
             <h3 className="mb-3 text-display-sm text-ink">Display</h3>
@@ -746,7 +746,7 @@ export default function DesignSystemPage() {
                 </div>
                 <div className="flex flex-col items-start gap-2">
                   <span className="rounded-full bg-canvas px-3 py-1 text-[11px] font-bold text-ink shadow-tier">
-                    Guest favorite
+                    Destaque
                   </span>
                   <Token>badge · 11 / 700</Token>
                 </div>
@@ -877,7 +877,7 @@ export default function DesignSystemPage() {
             <Specimen>
               <div className="flex flex-wrap items-center gap-3">
                 <span className="rounded-full bg-canvas px-3 py-1 text-[11px] font-bold text-ink shadow-tier">
-                  Guest favorite
+                  Destaque
                 </span>
                 <span className="rounded-full bg-mp-primary px-2 py-[3px] text-[8px] font-black uppercase tracking-[0.4px] text-on-primary">
                   NEW
@@ -944,7 +944,7 @@ export default function DesignSystemPage() {
                 <PropertyCard
                   background="linear-gradient(135deg,#4041A3 0%,#5D5FEF 60%,#29263F 100%)"
                   title="Garagem · Centro"
-                  host="Hosted by Ana"
+                  host="Por Ana"
                   meta="0.8 km · 24h"
                   price="R$ 12"
                   rating="4.92"
@@ -953,7 +953,7 @@ export default function DesignSystemPage() {
                 <PropertyCard
                   background="linear-gradient(160deg,#818FAF 0%,#29263F 100%)"
                   title="Vaga aberta · Jardins"
-                  host="Hosted by Marco"
+                  host="Por Marco"
                   meta="1.4 km · Seg–Sex"
                   price="R$ 8"
                   rating="4.74"
@@ -962,7 +962,7 @@ export default function DesignSystemPage() {
                 <PropertyCard
                   background="linear-gradient(140deg,#E0E5F2 0%,#818FAF 100%)"
                   title="Edifício · Pinheiros"
-                  host="Hosted by Bia"
+                  host="Por Bia"
                   meta="0.3 km · 24h"
                   price="R$ 18"
                   rating="4.88"
@@ -1065,7 +1065,7 @@ export default function DesignSystemPage() {
                 body="Headlines e ink são navy #29263F, nunca preto puro."
               />
               <Rule
-                title="Roboto modesto"
+                title="Inter moderna"
                 body="500–700 para display, 400 para corpo. O único momento ‘alto’ é o rating em 64 / 900."
               />
               <Rule

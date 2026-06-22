@@ -49,7 +49,7 @@ button { font-family: inherit; }
 }
 .mp-new-tag {
   position: absolute; top: -4px; right: -14px;
-  background: var(--mp-red); color: #fff;
+  background: var(--colors-primary); color: #fff;
   font-size: 8px; font-weight: 900; letter-spacing: 0.4px;
   padding: 3px 6px; border-radius: 9999px;
   text-transform: uppercase;
@@ -116,7 +116,7 @@ button { font-family: inherit; }
 .mp-search-seg.has-val .mp-search-val { color: var(--colors-ink); }
 .mp-search-orb {
   width: 48px; height: 48px;
-  background: var(--mp-red); color: #fff;
+  background: var(--colors-primary); color: #fff;
   border: 0; border-radius: 9999px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   margin-left: 8px;
@@ -368,7 +368,7 @@ button { font-family: inherit; }
   font-size: 13px; color: var(--colors-ink);
 }
 .mp-res-cta {
-  background: var(--mp-red); color: #fff;
+  background: var(--colors-primary); color: #fff;
   font-size: 16px; font-weight: 500;
   padding: 14px; border: 0; border-radius: 8px; cursor: pointer;
 }
@@ -406,7 +406,7 @@ button { font-family: inherit; }
 .mp-modal .mp-input:focus { border: 2px solid var(--mp-navy); padding: 13px 13px; }
 .mp-modal .mp-btn {
   width: 100%; padding: 14px; border: 0; border-radius: 8px;
-  background: var(--mp-red); color: #fff;
+  background: var(--colors-primary); color: #fff;
   font-size: 16px; font-weight: 500; cursor: pointer;
 }
 .mp-modal .mp-btn:hover { background: var(--colors-primary-active); }

@@ -1,35 +1,35 @@
 # Movepark Website UI Kit
 
-A Movepark-skinned recreation of an Airbnb-shaped consumer marketplace — pill-shaped global search, photo-first property cards, category strip, sticky reservation rail, and the system's one loud type moment (the rating display) — all powered by the Movepark identity (navy + indigo + red, Roboto, the M monogram).
+Kit de UI do marketplace Movepark — busca em pílula, cards foto-first, category strip, rail de reserva sticky e o único momento tipográfico intenso (rating display) — tudo com identidade própria Movepark (navy + violet + indigo, Inter, monograma M).
 
-## What's modeled
+## O que está modelado
 
-This kit demonstrates a parking-spot marketplace inspired by Airbnb's information architecture. Spots replace homes; nightly rates become hourly rates; "Superhost" becomes "Operador verificado".
+Interface de marketplace de vagas de estacionamento. Vagas substituem imóveis; tarifas horárias no lugar de diárias; "Operador verificado" em vez de "Superhost".
 
-## Files
+## Arquivos
 
-| File | Purpose |
+| Arquivo | Propósito |
 |---|---|
-| `index.html` | Live clickable prototype — wires all components together |
-| `styles.css` | Imports project foundations and adds component-level styles |
-| `TopNav.jsx` | Global navigation with three product tabs |
-| `SearchBar.jsx` | Pill-shaped search with Onde / Quando / Duração segments + red orb |
-| `CategoryStrip.jsx` | Horizontal scrollable category filter (Cobertas, 24h, etc.) |
-| `PropertyCard.jsx` | Photo-first card with carousel dots, fav badge, heart save, meta |
-| `ListingDetail.jsx` | 2-column detail page: gallery, amenities, rating-display, sticky reservation rail |
-| `Footer.jsx` | Three-column light footer + legal band |
+| `index.html` | Protótipo clicável — conecta todos os componentes |
+| `styles.css` | Importa as foundations e estilos de componente |
+| `TopNav.jsx` | Navegação global com três abas de produto |
+| `SearchBar.jsx` | Busca em pílula com segmentos Onde / Quando / Duração + orb violet |
+| `CategoryStrip.jsx` | Filtro de categoria horizontal scrollável (Cobertas, 24h, etc.) |
+| `PropertyCard.jsx` | Card foto-first com dots, badge destaque, coração salvo e meta |
+| `ListingDetail.jsx` | Detalhe em 2 colunas: galeria, amenidades, rating-display, rail de reserva sticky |
+| `Footer.jsx` | Rodapé três colunas + faixa legal |
 
-## Flows
+## Fluxos
 
-The prototype starts on the home page. From there you can:
-- Tap a property card → opens the listing detail page
-- Tap the heart on any card → toggles save state (Rausch/red fill)
-- Tap the account button (top-right) → opens the login modal
-- Tap "Reservar" on the detail page → confirms with a toast and returns home
+O protótipo inicia na home. A partir daí:
+- Clicar num card → abre o detalhe da vaga
+- Clicar no coração → alterna estado salvo
+- Clicar no botão de conta (canto direito) → abre modal de login
+- Clicar em "Reservar" no detalhe → confirma com toast e volta para home
 
-## Caveats
+## Observações
 
-- **No real photography** — every image plate is a brand-aligned gradient placeholder. Plug in production photography once available.
-- **No real Movepark codebase** was provided; component shapes are inferred from the merged brand + Airbnb structural reference. Attach the real Figma or repo to upgrade fidelity.
-- **Icons** are hand-rolled SVGs in the Lucide stroke style (~1.7–2px strokes, rounded line caps). Swap in Movepark's production icon set when available.
-- **i18n**: copy is in Brazilian Portuguese to match the source brand. The system can fall back to English using the same casing rules.
+- **Sem fotografias reais** — cada placa de imagem é um placeholder de gradiente alinhado à marca. Substituir por fotografia de produção quando disponível.
+- **Sem codebase real** — formas dos componentes derivadas das specs de design. Conectar ao repositório real para aumentar fidelidade.
+- **Ícones** são SVGs manuais no estilo Lucide (~1.7–2px stroke, pontas arredondadas). Trocar pelo set de ícones de produção quando disponível.
+- **i18n**: copy em português brasileiro alinhada à marca.

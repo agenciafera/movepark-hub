@@ -102,7 +102,8 @@ const config: Config = {
       },
       fontFamily: {
         sans: [
-          "Roboto",
+          "Inter var",
+          "Inter",
           "-apple-system",
           "system-ui",
           "Segoe UI",

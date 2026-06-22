@@ -2,140 +2,14 @@
    Movepark Design System
    Foundations: Color + Type
    ============================================================
-   Movepark's visual identity (logo, palette, Roboto) wrapped
-   in the structural language of the Airbnb design system —
-   pill-shaped global search, photo-first cards, single-shadow
-   elevation, generous white canvas, modest display weights.
+   Identidade visual Movepark: paleta navy/violet/indigo,
+   tipografia Inter (100–900), busca em pílula, cards foto-first,
+   elevação suave em navy e canvas branco generoso.
    ============================================================ */
 
 /* ---------- Fonts ---------- */
 
-@font-face {
-  font-family: "Roboto";
-  src: url("fonts/Roboto-Thin.ttf") format("truetype");
-  font-weight: 100;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Roboto";
-  src: url("fonts/Roboto-ThinItalic.ttf") format("truetype");
-  font-weight: 100;
-  font-style: italic;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Roboto";
-  src: url("fonts/Roboto-ExtraLight.ttf") format("truetype");
-  font-weight: 200;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Roboto";
-  src: url("fonts/Roboto-ExtraLightItalic.ttf") format("truetype");
-  font-weight: 200;
-  font-style: italic;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Roboto";
-  src: url("fonts/Roboto-Light.ttf") format("truetype");
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Roboto";
-  src: url("fonts/Roboto-LightItalic.ttf") format("truetype");
-  font-weight: 300;
-  font-style: italic;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Roboto";
-  src: url("fonts/Roboto-Regular.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Roboto";
-  src: url("fonts/Roboto-Italic.ttf") format("truetype");
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Roboto";
-  src: url("fonts/Roboto-Medium.ttf") format("truetype");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Roboto";
-  src: url("fonts/Roboto-MediumItalic.ttf") format("truetype");
-  font-weight: 500;
-  font-style: italic;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Roboto";
-  src: url("fonts/Roboto-SemiBold.ttf") format("truetype");
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Roboto";
-  src: url("fonts/Roboto-SemiBoldItalic.ttf") format("truetype");
-  font-weight: 600;
-  font-style: italic;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Roboto";
-  src: url("fonts/Roboto-Bold.ttf") format("truetype");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Roboto";
-  src: url("fonts/Roboto-BoldItalic.ttf") format("truetype");
-  font-weight: 700;
-  font-style: italic;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Roboto";
-  src: url("fonts/Roboto-ExtraBold.ttf") format("truetype");
-  font-weight: 800;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Roboto";
-  src: url("fonts/Roboto-ExtraBoldItalic.ttf") format("truetype");
-  font-weight: 800;
-  font-style: italic;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Roboto";
-  src: url("fonts/Roboto-Black.ttf") format("truetype");
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Roboto";
-  src: url("fonts/Roboto-BlackItalic.ttf") format("truetype");
-  font-weight: 900;
-  font-style: italic;
-  font-display: swap;
-}
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
 
 :root {
   /* ============================================================
@@ -151,10 +25,10 @@
   --mp-red-deep:    #AE374B; /* shadow tone of the M monogram            */
   --mp-teal:        #A6DBDF; /* teal stripe in the M monogram            */
 
-  /* Brand — semantic aliases mapped to Airbnb-style tokens */
-  --colors-primary:           var(--mp-red);
-  --colors-primary-active:    #C32B45;            /* darker red for press     */
-  --colors-primary-disabled:  #F6D2D8;            /* pale red tint disabled   */
+  /* Brand — semantic aliases */
+  --colors-primary:           var(--mp-violet);
+  --colors-primary-active:    var(--mp-indigo);   /* indigo para pressed      */
+  --colors-primary-disabled:  #C5C4F6;            /* violet claro desabilitado */
   --colors-secondary:         var(--mp-indigo);   /* sub-brand purple-blue    */
   --colors-secondary-soft:    var(--mp-violet);
   --colors-on-primary:        #FFFFFF;
@@ -198,7 +72,7 @@
   /* ============================================================
      TYPE
      ============================================================ */
-  --font-sans: "Roboto", -apple-system, system-ui, "Segoe UI",
+  --font-sans: "Inter var", "Inter", -apple-system, system-ui, "Segoe UI",
                "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
@@ -321,7 +195,7 @@
   --nav-height:       80px;
 
   /* ============================================================
-     MOTION (Airbnb-quiet; modest fades, no bounces)
+     MOTION — modest fades, no bounces
      ============================================================ */
   --easing-standard:  cubic-bezier(0.2, 0, 0, 1);
   --easing-emphasize: cubic-bezier(0.3, 0, 0, 1);

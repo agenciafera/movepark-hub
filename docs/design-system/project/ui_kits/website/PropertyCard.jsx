@@ -1,6 +1,6 @@
-/* PropertyCard.jsx — photo-first card with image carousel dots,
-   "Guest favorite" floating badge, heart save state, and 4-line meta.
-   The Movepark version describes parking spots, not homes.
+/* PropertyCard.jsx — card foto-first com dots de carrossel,
+   badge "Destaque", estado salvo com coração e 4 linhas de meta.
+   Descreve vagas de estacionamento.
 */
 
 const { useState: useStatePC } = React;
@@ -33,7 +33,7 @@ function PropertyCard({ listing, onOpen, saved, onToggleSave }) {
         style={listing.gradient ? { background: listing.gradient } : null}
       >
         {photos[photoIdx] ? <img src={photos[photoIdx]} alt={listing.title} /> : null}
-        {listing.favorite ? <div className="mp-card-fav">Guest favorite</div> : null}
+        {listing.favorite ? <div className="mp-card-fav">Destaque</div> : null}
         <button
           className={`mp-card-heart ${saved ? "is-saved" : ""}`}
           onClick={e => { e.stopPropagation(); onToggleSave && onToggleSave(listing.id); }}

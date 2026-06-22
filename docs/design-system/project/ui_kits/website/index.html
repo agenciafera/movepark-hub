@@ -25,14 +25,14 @@
     const { useState, useEffect } = React;
 
     const LISTINGS = [
-      { id: 1, title: "Garagem · Centro",      host: "Hosted by Ana",   meta: "0.8 km · 24h",        price: 12, rating: 4.92, favorite: true,  gradient: "linear-gradient(140deg, #29263F 0%, #4041A3 100%)", spotType: "coberta", neighborhood: "Centro · São Paulo", reviews: 248 },
-      { id: 2, title: "Vaga aberta · Jardins", host: "Hosted by Marco", meta: "1.4 km · Seg–Sex",    price: 8,  rating: 4.74, favorite: false, gradient: "linear-gradient(160deg, #818FAF 0%, #29263F 100%)", spotType: "aberta", neighborhood: "Jardins · São Paulo", reviews: 134 },
-      { id: 3, title: "Edifício · Pinheiros",  host: "Hosted by Bia",   meta: "0.3 km · 24h",        price: 18, rating: 4.88, favorite: true,  gradient: "linear-gradient(140deg, #E0E5F2 0%, #818FAF 100%)", spotType: "em edifício", neighborhood: "Pinheiros · São Paulo", reviews: 312 },
-      { id: 4, title: "Subsolo · Itaim",       host: "Hosted by Pedro", meta: "0.9 km · 24h",        price: 22, rating: 4.95, favorite: true,  gradient: "linear-gradient(140deg, #4041A3 0%, #5D5FEF 100%)", spotType: "subsolo", neighborhood: "Itaim Bibi · São Paulo", reviews: 401 },
-      { id: 5, title: "Vaga rotativa · Sé",    host: "Hosted by Vania", meta: "2.1 km · Seg–Sáb",    price: 6,  rating: 4.61, favorite: false, gradient: "linear-gradient(135deg, #DA455E 0%, #AE374B 100%)", spotType: "rotativa", neighborhood: "Sé · São Paulo", reviews: 92 },
-      { id: 6, title: "Garagem · Moema",       host: "Hosted by Lara",  meta: "1.1 km · 24h",        price: 15, rating: 4.83, favorite: true,  gradient: "linear-gradient(135deg, #29263F 0%, #818FAF 100%)", spotType: "coberta", neighborhood: "Moema · São Paulo", reviews: 188 },
-      { id: 7, title: "Estacionamento · Vila Madalena", host: "Hosted by Hugo", meta: "0.4 km · 24h", price: 14, rating: 4.79, favorite: false, gradient: "linear-gradient(160deg, #5D5FEF 0%, #29263F 100%)", spotType: "público", neighborhood: "Vila Madalena · São Paulo", reviews: 73 },
-      { id: 8, title: "Vaga coberta · Brooklin", host: "Hosted by Júlia", meta: "1.6 km · 24h",     price: 10, rating: 4.86, favorite: true,  gradient: "linear-gradient(135deg, #A6DBDF 0%, #4041A3 100%)", spotType: "coberta", neighborhood: "Brooklin · São Paulo", reviews: 221 }
+      { id: 1, title: "Garagem · Centro",      host: "Por Ana",   meta: "0.8 km · 24h",        price: 12, rating: 4.92, favorite: true,  gradient: "linear-gradient(140deg, #29263F 0%, #4041A3 100%)", spotType: "coberta", neighborhood: "Centro · São Paulo", reviews: 248 },
+      { id: 2, title: "Vaga aberta · Jardins", host: "Por Marco", meta: "1.4 km · Seg–Sex",    price: 8,  rating: 4.74, favorite: false, gradient: "linear-gradient(160deg, #818FAF 0%, #29263F 100%)", spotType: "aberta", neighborhood: "Jardins · São Paulo", reviews: 134 },
+      { id: 3, title: "Edifício · Pinheiros",  host: "Por Bia",   meta: "0.3 km · 24h",        price: 18, rating: 4.88, favorite: true,  gradient: "linear-gradient(140deg, #E0E5F2 0%, #818FAF 100%)", spotType: "em edifício", neighborhood: "Pinheiros · São Paulo", reviews: 312 },
+      { id: 4, title: "Subsolo · Itaim",       host: "Por Pedro", meta: "0.9 km · 24h",        price: 22, rating: 4.95, favorite: true,  gradient: "linear-gradient(140deg, #4041A3 0%, #5D5FEF 100%)", spotType: "subsolo", neighborhood: "Itaim Bibi · São Paulo", reviews: 401 },
+      { id: 5, title: "Vaga rotativa · Sé",    host: "Por Vania", meta: "2.1 km · Seg–Sáb",    price: 6,  rating: 4.61, favorite: false, gradient: "linear-gradient(135deg, #DA455E 0%, #AE374B 100%)", spotType: "rotativa", neighborhood: "Sé · São Paulo", reviews: 92 },
+      { id: 6, title: "Garagem · Moema",       host: "Por Lara",  meta: "1.1 km · 24h",        price: 15, rating: 4.83, favorite: true,  gradient: "linear-gradient(135deg, #29263F 0%, #818FAF 100%)", spotType: "coberta", neighborhood: "Moema · São Paulo", reviews: 188 },
+      { id: 7, title: "Estacionamento · Vila Madalena", host: "Por Hugo", meta: "0.4 km · 24h", price: 14, rating: 4.79, favorite: false, gradient: "linear-gradient(160deg, #5D5FEF 0%, #29263F 100%)", spotType: "público", neighborhood: "Vila Madalena · São Paulo", reviews: 73 },
+      { id: 8, title: "Vaga coberta · Brooklin", host: "Por Júlia", meta: "1.6 km · 24h",     price: 10, rating: 4.86, favorite: true,  gradient: "linear-gradient(135deg, #A6DBDF 0%, #4041A3 100%)", spotType: "coberta", neighborhood: "Brooklin · São Paulo", reviews: 221 }
     ];
 
     const CATEGORIES = [

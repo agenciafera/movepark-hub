@@ -94,7 +94,7 @@ function ListingDetail({ listing, onBack, onReserve }) {
                   {listing.rating}
                   <Laurel side="right" />
                 </div>
-                <div className="mp-rating-tag">Guest favorite</div>
+                <div className="mp-rating-tag">Destaque Movepark</div>
                 <div className="mp-rating-sub">Entre os 5% mais bem avaliados</div>
               </div>
               <div className="mp-rating-stats">
