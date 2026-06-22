@@ -40,6 +40,9 @@ interface CreateBookingInput {
   add_on_service_ids?: string[] | null;
   coupon_code?: string | null;
   origin?: string | null;
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  utm_campaign?: string | null;
 }
 
 function jsonResponse(body: unknown, status = 200) {
@@ -123,11 +126,25 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: error.message }, 400);
   }
 
+  // Atribuição (E2.4.1): grava os UTMs na reserva recém-criada. Best-effort — não bloqueia.
+  const bookingId = (data as { booking_id?: string })?.booking_id;
+  if (bookingId && (input.utm_source || input.utm_medium || input.utm_campaign)) {
+    const { error: utmErr } = await admin
+      .from("booking")
+      .update({
+        utm_source: input.utm_source ?? null,
+        utm_medium: input.utm_medium ?? null,
+        utm_campaign: input.utm_campaign ?? null,
+      })
+      .eq("id", bookingId);
+    if (utmErr) console.error("utm update falhou:", utmErr.message);
+  }
+
   // Push hub→WL (E2.5.1): avisa o white-label que esta vaga foi vendida. Best-effort.
   // @ts-expect-error - Deno env
   const wlToken = Deno.env.get("WL_BACKEND_TOKEN");
   await pushBookingToWl(admin, wlToken, {
-    bookingId: (data as { booking_id?: string })?.booking_id ?? "",
+    bookingId: bookingId ?? "",
     locationParkingTypeId: input.location_parking_type_id,
     operation: "reserve",
     startDate: input.check_in_at.slice(0, 10),

@@ -112,3 +112,10 @@ export type CompanyMember = {
   role: CompanyRole;
   created_at: string;
 };
+
+/** Atribuição de reservas por origem/UTM (retorno de booking_attribution — E2.4.1). */
+export type BookingAttribution = {
+  totals: { hub: number; external: number; total: number };
+  by_origin: { origin: string; count: number; confirmed: number }[];
+  by_utm_source: { utm_source: string; count: number }[];
+};

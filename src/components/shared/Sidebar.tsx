@@ -17,6 +17,7 @@ import {
   CalendarRange,
   KeyRound,
   Receipt,
+  PieChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Monogram, Wordmark } from "./Brand";
@@ -35,6 +36,7 @@ const managerItems: Item[] = [
   { to: "/manager/bookings", label: "Reservas", icon: Calendar },
   { to: "/manager/finance/billing", label: "Financeiro", icon: Wallet },
   { to: "/manager/finance/payouts", label: "Repasses", icon: Receipt },
+  { to: "/manager/attribution", label: "Atribuição", icon: PieChart },
   { to: "/manager/reviews", label: "Avaliações", icon: Star },
   { to: "/manager/faq", label: "FAQ", icon: HelpCircle },
   { to: "/manager/users", label: "Usuários", icon: Users },

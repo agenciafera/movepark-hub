@@ -2805,6 +2805,10 @@ export type Database = {
           sold_out: boolean
         }[]
       }
+      booking_attribution: {
+        Args: { p_from: string; p_to: string }
+        Returns: Json
+      }
       cancel_booking_with_release: {
         Args: { p_booking_id: string; p_reason?: string }
         Returns: Database["public"]["Enums"]["booking_status"]

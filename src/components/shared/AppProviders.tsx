@@ -1,3 +1,4 @@
+import * as React from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -6,6 +7,7 @@ import { queryClient } from "@/lib/query-client";
 import { AuthProvider } from "@/auth/AuthProvider";
 import { hasSupabaseEnv } from "@/lib/supabase";
 import { ScrollToTop } from "@/components/shared/ScrollToTop";
+import { captureUtmFromSearch } from "@/lib/utm";
 
 function EnvMissing() {
   return (
@@ -36,6 +38,11 @@ function EnvMissing() {
 
 export function AppProviders() {
   const location = useLocation();
+
+  // Atribuição (E2.4.1): captura UTMs da URL (last-touch) pra anexar na reserva.
+  React.useEffect(() => {
+    captureUtmFromSearch(location.search);
+  }, [location.search]);
 
   if (!hasSupabaseEnv) {
     return location.pathname.startsWith("/design-system") ? <Outlet /> : <EnvMissing />;

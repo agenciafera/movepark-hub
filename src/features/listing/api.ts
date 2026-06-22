@@ -443,6 +443,9 @@ export function useCreateBooking() {
       add_on_service_ids?: string[];
       coupon_code?: string | null;
       origin?: string | null;
+      utm_source?: string | null;
+      utm_medium?: string | null;
+      utm_campaign?: string | null;
     }): Promise<{
       code: string;
       booking_id: string;

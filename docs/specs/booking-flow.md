@@ -208,8 +208,14 @@ No consumo direto, a busca (`/search`) e as páginas de destino (`/destinos/:slu
 ao link da listagem (`ResultCard`); o `ReservationCard` lê esse `src` e grava o `origin` ao criar a reserva
 (`originFromSrc`), default `hub_direct` quando a listagem é aberta direta.
 
-**Medição hub × white-label** (painel fica na **E2.4**): `created_via_api_key_id IS NULL AND origin LIKE 'hub%'`
-= hub; o resto = externo. **Sem CHECK rígido** em `origin` (não quebrar o default `api` da Public API).
+**Medição hub × white-label**: `created_via_api_key_id IS NULL AND origin LIKE 'hub%'` = hub; o resto =
+externo. **Sem CHECK rígido** em `origin` (não quebrar o default `api` da Public API).
+
+**UTM + dashboard (E2.4.1):** as UTMs são capturadas no front (last-touch da URL → `sessionStorage`,
+`src/lib/utm.ts`, no `AppProviders`) e enviadas no payload da reserva; a Edge `create-booking` grava
+`utm_source/medium/campaign` na reserva (UPDATE pós-criação, sem tocar no `create_booking_atomic`). O
+**dashboard** vive em **Manager → Atribuição** (`/manager/attribution`), via RPC `booking_attribution(from,to)`
+(SECURITY DEFINER, só hub_admin) que agrega o período por hub×externo, por `origin` e por `utm_source`.
 
 > **Cutover/go-live é tarefa separada:** apontar `movepark.co` + o tráfego do consumidor pro Hub (301/SEO)
 > é atividade de **lançamento**, fora da E2.1, dependente da publicação do Hub.
