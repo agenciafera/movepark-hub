@@ -205,5 +205,6 @@ white fill · rounded.md · hairline border · shadow tier · padding lg (24px)
 
 - [x] Paleta oficial Movepark definida — violet `#5D5FEF` / indigo `#4041A3` / navy `#29263F`
 - [x] Fonte oficial: Inter (definitiva)
-- [ ] Logo em SVG nas variações: full color, white, icon-only
+- [x] Logo em SVG nas variações: wordmark (`/brand/logo-movepark.svg`) e símbolo/monograma (`/brand/simbolo-movepark.svg`) — ambos via componentes `Wordmark` e `Monogram` em `src/components/shared/Brand.tsx`
+- [x] Iconografia: Lucide Icons, linha 2px, 24×24, cor padrão `ink` (navy) — documentado na página `/design-system`
 - [ ] Dark mode: fora do escopo por ora

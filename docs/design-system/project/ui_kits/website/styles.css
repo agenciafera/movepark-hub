@@ -37,7 +37,7 @@ button { font-family: inherit; }
 }
 .mp-tab svg { stroke: var(--colors-muted); transition: stroke var(--duration-fast) var(--easing-standard); }
 .mp-tab-label {
-  font-size: 14px; font-weight: 600; color: var(--colors-muted);
+  font-size: 16px; font-weight: 600; color: var(--colors-muted);
   transition: color var(--duration-fast) var(--easing-standard);
 }
 .mp-tab.is-active svg { stroke: var(--colors-ink); }

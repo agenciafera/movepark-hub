@@ -21,7 +21,7 @@
   --mp-indigo:      #4041A3; /* deep brand blue, used as secondary accent */
   --mp-violet:      #5D5FEF; /* bright blue-violet, gradient terminus    */
   --mp-pale:        #E4F2FF; /* pale blue tint surface                   */
-  --mp-red:         #DA455E; /* primary CTA red — the "Rausch" of Movepark*/
+  --mp-red:         #DA455E; /* brand accent — par do monograma M; não é CTA */
   --mp-red-deep:    #AE374B; /* shadow tone of the M monogram            */
   --mp-teal:        #A6DBDF; /* teal stripe in the M monogram            */
 
@@ -272,7 +272,7 @@ a {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
-a:hover { color: var(--colors-error); }
+a:hover { color: var(--colors-primary); }
 
 /* Utility classes */
 .mp-ink      { color: var(--colors-ink); }

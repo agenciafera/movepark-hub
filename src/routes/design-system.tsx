@@ -2,13 +2,22 @@ import * as React from "react";
 import {
   Bell,
   Calendar,
+  Car,
   ChevronLeft,
   ChevronRight,
+  CircleCheck,
+  Clock,
   Globe,
   Heart,
   Home,
+  Info,
+  MapPin,
+  QrCode,
   Search,
+  Shield,
   Star,
+  TriangleAlert,
+  X,
 } from "lucide-react";
 import { Wordmark, Monogram } from "@/components/shared/Brand";
 import { Button } from "@/components/ui/button";
@@ -71,6 +80,7 @@ const sections = [
   { id: "radii", label: "Raios" },
   { id: "elevation", label: "Elevação" },
   { id: "components", label: "Componentes" },
+  { id: "iconography", label: "Iconografia" },
   { id: "rules", label: "Regras de marca" },
 ];
 
@@ -476,7 +486,7 @@ export default function DesignSystemPage() {
           </div>
           <div className="flex flex-col gap-3">
             <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-muted-steel">
-              Movepark Design System · v0.1
+              Movepark Design System · v1.0
             </span>
             <h1 className="max-w-3xl text-display-2xl text-ink desktop:text-display-3xl">
               Estacione com confiança. <br />A linguagem visual do Movepark.
@@ -1070,6 +1080,113 @@ export default function DesignSystemPage() {
             </Specimen>
           </section>
 
+          {/* ICONOGRAPHY */}
+          <section id="iconography">
+            <SectionHeader
+              eyebrow="Foundations"
+              title="Iconografia"
+              description="Lucide Icons — linha 2px, ends arredondados, 24 × 24. Cor padrão: ink (navy). Nunca preencher com cor sólida exceto nos estados de destaque (heart salvo = violet)."
+            />
+
+            <h3 className="mb-3 text-display-sm text-ink">Navegação & ações</h3>
+            <Specimen>
+              <div className="grid grid-cols-3 gap-4 tablet:grid-cols-6 desktop:grid-cols-8">
+                {[
+                  { icon: <Home />, label: "Home" },
+                  { icon: <Search />, label: "Search" },
+                  { icon: <MapPin />, label: "MapPin" },
+                  { icon: <Calendar />, label: "Calendar" },
+                  { icon: <Clock />, label: "Clock" },
+                  { icon: <Globe />, label: "Globe" },
+                  { icon: <Bell />, label: "Bell" },
+                  { icon: <QrCode />, label: "QrCode" },
+                ].map(({ icon, label }) => (
+                  <IconChip key={label} icon={icon} label={label} />
+                ))}
+              </div>
+            </Specimen>
+
+            <h3 className="mb-3 mt-8 text-display-sm text-ink">Domínio de estacionamento</h3>
+            <Specimen>
+              <div className="grid grid-cols-3 gap-4 tablet:grid-cols-6 desktop:grid-cols-8">
+                {[
+                  { icon: <Car />, label: "Car" },
+                  { icon: <Shield />, label: "Shield" },
+                  { icon: <Star />, label: "Star" },
+                  { icon: <Heart />, label: "Heart" },
+                ].map(({ icon, label }) => (
+                  <IconChip key={label} icon={icon} label={label} />
+                ))}
+              </div>
+            </Specimen>
+
+            <h3 className="mb-3 mt-8 text-display-sm text-ink">Feedback & estado</h3>
+            <Specimen>
+              <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
+                <div className="flex items-center gap-3">
+                  <CircleCheck className="h-5 w-5 text-success" />
+                  <div>
+                    <span className="text-caption text-ink">CircleCheck</span>
+                    <span className="ml-2 font-mono text-[11px] text-muted">text-success</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <TriangleAlert className="h-5 w-5 text-warning" />
+                  <div>
+                    <span className="text-caption text-ink">TriangleAlert</span>
+                    <span className="ml-2 font-mono text-[11px] text-muted">text-warning</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <X className="h-5 w-5 text-error" />
+                  <div>
+                    <span className="text-caption text-ink">X</span>
+                    <span className="ml-2 font-mono text-[11px] text-muted">text-error</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Info className="h-5 w-5 text-info" />
+                  <div>
+                    <span className="text-caption text-ink">Info</span>
+                    <span className="ml-2 font-mono text-[11px] text-muted">text-info</span>
+                  </div>
+                </div>
+              </div>
+            </Specimen>
+
+            <h3 className="mb-3 mt-8 text-display-sm text-ink">Estados especiais</h3>
+            <Specimen>
+              <div className="flex flex-wrap items-center gap-8">
+                <div className="flex flex-col items-center gap-2">
+                  <Heart className="h-6 w-6" stroke="#fff" strokeWidth={2} fill="rgba(0,0,0,0.4)" />
+                  <Token>não salvo</Token>
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                  <Heart className="h-6 w-6" stroke="#fff" strokeWidth={2} fill="hsl(var(--mp-primary))" />
+                  <Token>salvo · mp-primary</Token>
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                  <Star className="h-5 w-5 fill-ink stroke-none" />
+                  <Token>estrela de rating</Token>
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                  <Search className="h-5 w-5 text-on-primary" style={{ background: "hsl(var(--mp-primary))", borderRadius: 9999, padding: 10, boxSizing: "content-box" }} />
+                  <Token>orb de busca · mp-primary</Token>
+                </div>
+              </div>
+            </Specimen>
+
+            <div className="mt-6 rounded-md border border-hairline bg-surface-soft p-4">
+              <p className="text-[11px] font-bold uppercase tracking-[0.3px] text-muted-steel">Regra de uso</p>
+              <ul className="mt-2 flex flex-col gap-1 text-body-sm text-body">
+                <li>Tamanho padrão: <code className="font-mono text-[12px]">h-5 w-5</code> (20 px); headings e CTAs: <code className="font-mono text-[12px]">h-6 w-6</code> (24 px).</li>
+                <li>Cor padrão: <code className="font-mono text-[12px]">text-ink</code> (navy). Nunca usar cor pura de marca (#5D5FEF) inline em ícones genéricos.</li>
+                <li>Ícones de estado usam as cores semânticas (<code className="font-mono text-[12px]">text-success</code>, <code className="font-mono text-[12px]">text-error</code>, etc.).</li>
+                <li>Coração salvo e orb de busca são os únicos ícones com <code className="font-mono text-[12px]">fill mp-primary</code>.</li>
+              </ul>
+            </div>
+          </section>
+
           {/* RULES */}
           <section id="rules" className="pb-16">
             <SectionHeader
@@ -1126,7 +1243,7 @@ export default function DesignSystemPage() {
           <div className="flex items-center gap-3">
             <Monogram size={24} />
             <span className="text-body-sm text-muted">
-              © 2026 Movepark · Design System v0.1
+              © 2026 Movepark · Design System v1.0
             </span>
           </div>
           <span className="font-mono text-[11px] text-muted-steel">
@@ -1165,6 +1282,17 @@ function Rule({ title, body }: { title: string; body: React.ReactNode }) {
         <span className="text-title-md text-ink">{title}</span>
       </div>
       <p className="text-body-sm text-body">{body}</p>
+    </div>
+  );
+}
+
+function IconChip({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-surface-soft text-ink">
+        {React.cloneElement(icon as React.ReactElement, { className: "h-5 w-5" })}
+      </div>
+      <span className="font-mono text-[10px] text-muted">{label}</span>
     </div>
   );
 }
