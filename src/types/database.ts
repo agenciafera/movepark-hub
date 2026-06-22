@@ -632,6 +632,9 @@ export type Database = {
           wl_domain: string | null
           wl_sync_enabled: boolean
           wl_tenant_key: string | null
+          wps_webhook_enabled: boolean
+          wps_webhook_secret: string | null
+          wps_webhook_url: string | null
         }
         Insert: {
           created_at?: string
@@ -649,6 +652,9 @@ export type Database = {
           wl_domain?: string | null
           wl_sync_enabled?: boolean
           wl_tenant_key?: string | null
+          wps_webhook_enabled?: boolean
+          wps_webhook_secret?: string | null
+          wps_webhook_url?: string | null
         }
         Update: {
           created_at?: string
@@ -666,6 +672,9 @@ export type Database = {
           wl_domain?: string | null
           wl_sync_enabled?: boolean
           wl_tenant_key?: string | null
+          wps_webhook_enabled?: boolean
+          wps_webhook_secret?: string | null
+          wps_webhook_url?: string | null
         }
         Relationships: []
       }
@@ -1347,6 +1356,7 @@ export type Database = {
           destination_id: string | null
           directions_text: string | null
           email: string | null
+          external_ref: string | null
           geog: unknown
           has_notice: boolean
           has_passenger_quantity: boolean
@@ -1378,6 +1388,7 @@ export type Database = {
           destination_id?: string | null
           directions_text?: string | null
           email?: string | null
+          external_ref?: string | null
           geog?: unknown
           has_notice?: boolean
           has_passenger_quantity?: boolean
@@ -1409,6 +1420,7 @@ export type Database = {
           destination_id?: string | null
           directions_text?: string | null
           email?: string | null
+          external_ref?: string | null
           geog?: unknown
           has_notice?: boolean
           has_passenger_quantity?: boolean
@@ -2435,6 +2447,7 @@ export type Database = {
           is_default: boolean
           license_plate: string
           model: string | null
+          plate_normalized: string | null
           profile_id: string
           updated_at: string
         }
@@ -2446,6 +2459,7 @@ export type Database = {
           is_default?: boolean
           license_plate: string
           model?: string | null
+          plate_normalized?: string | null
           profile_id: string
           updated_at?: string
         }
@@ -2457,6 +2471,7 @@ export type Database = {
           is_default?: boolean
           license_plate?: string
           model?: string | null
+          plate_normalized?: string | null
           profile_id?: string
           updated_at?: string
         }
@@ -2467,6 +2482,146 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      wps_delivery: {
+        Row: {
+          attempts: number
+          company_id: string
+          created_at: string
+          delivered_at: string | null
+          event_id: string
+          id: string
+          last_error: string | null
+          last_status: number | null
+          max_attempts: number
+          next_attempt_at: string
+          payload: Json
+          status: string
+          target_url: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          company_id: string
+          created_at?: string
+          delivered_at?: string | null
+          event_id: string
+          id?: string
+          last_error?: string | null
+          last_status?: number | null
+          max_attempts?: number
+          next_attempt_at?: string
+          payload: Json
+          status?: string
+          target_url: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          company_id?: string
+          created_at?: string
+          delivered_at?: string | null
+          event_id?: string
+          id?: string
+          last_error?: string | null
+          last_status?: number | null
+          max_attempts?: number
+          next_attempt_at?: string
+          payload?: Json
+          status?: string
+          target_url?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wps_delivery_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wps_event: {
+        Row: {
+          booking_id: string | null
+          company_id: string
+          external_event_id: string
+          id: string
+          location_id: string | null
+          message: string | null
+          plate: string | null
+          raw: Json | null
+          received_at: string
+          status: string | null
+          type: string
+        }
+        Insert: {
+          booking_id?: string | null
+          company_id: string
+          external_event_id: string
+          id?: string
+          location_id?: string | null
+          message?: string | null
+          plate?: string | null
+          raw?: Json | null
+          received_at?: string
+          status?: string | null
+          type: string
+        }
+        Update: {
+          booking_id?: string | null
+          company_id?: string
+          external_event_id?: string
+          id?: string
+          location_id?: string | null
+          message?: string | null
+          plate?: string | null
+          raw?: Json | null
+          received_at?: string
+          status?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wps_event_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wps_event_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wps_event_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wps_event_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_point_proximity"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "wps_event_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_proximity"
+            referencedColumns: ["location_id"]
           },
         ]
       }
@@ -2789,6 +2944,18 @@ export type Database = {
           p_valid_until: string
         }
         Returns: string
+      }
+      api_wps_event: {
+        Args: {
+          p_booking_code?: string
+          p_company_id: string
+          p_external_event_id: string
+          p_location_ref?: string
+          p_occurred_at?: string
+          p_plate?: string
+          p_type: string
+        }
+        Returns: Json
       }
       availability_batch: {
         Args: {

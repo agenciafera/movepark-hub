@@ -29,6 +29,8 @@ const ROUTES: RouteDef[] = [
   def("POST", "/v1/bookings/:id/check-in", ["id"], "bookings:checkin", "checkin_booking"),
   def("POST", "/v1/bookings/:id/check-out", ["id"], "bookings:checkin", "checkout_booking"),
   def("GET", "/v1/faq", [], "faq:read", "faq"),
+  // Pátio / WPS — evento de veículo entrou/saiu → check-in/check-out (E2.6.1)
+  def("POST", "/v1/wps/events", [], "wps:write", "wps_event"),
   // Promoções — cupons
   def("GET", "/v1/coupons", [], "coupons:read", "list_coupons"),
   def("POST", "/v1/coupons", [], "coupons:write", "upsert_coupon"),

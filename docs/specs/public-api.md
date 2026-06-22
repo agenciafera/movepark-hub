@@ -183,6 +183,7 @@ exige; o gateway nega (`403 insufficient_scope`) se faltar.
 | `bookings:write` | criar reserva via API |
 | `bookings:cancel` | cancelar reserva |
 | `bookings:checkin` | registrar check-in/check-out |
+| `wps:write` | eventos de pátio (entrada/saída de veículo) — ver `wps-integration.md` |
 | `coupons:read` / `coupons:write` | ler/gerir cupons |
 | `discounts:read` / `discounts:write` | ler/gerir descontos automáticos |
 | `addons:read` / `addons:write` | ler/gerir serviços adicionais (+ por unidade) |
@@ -244,6 +245,7 @@ vai na URL). Respostas em JSON com envelope estável (§10). Mapeamento para a l
 | `POST /bookings/{id}/cancel` | `bookings:cancel` | RPC de cancelamento | motivo no corpo |
 | `POST /bookings/{id}/check-in` | `bookings:checkin` | transição `confirmed→checked_in` | reusa RLS/voucher |
 | `POST /bookings/{id}/check-out` | `bookings:checkin` | transição de saída | |
+| `POST /wps/events` | `wps:write` | evento de pátio (entrada/saída ANPR) → check-in/out | idempotente; ver `wps-integration.md` |
 | `GET /coupons` · `POST /coupons` … | `coupons:*` | `operator_*_coupon`/`*_discount` | espelha §4.6 do operator |
 | `GET /faq` | `faq:read` | `get-faq` | |
 | `GET/POST /coupons` · `/coupons/{id}/active` · `/delete` | `coupons:*` | `api_*_coupon` | CRUD |

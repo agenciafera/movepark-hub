@@ -52,6 +52,27 @@ describe("CompanyForm — integração White-label", () => {
     expect(screen.getByLabelText(/Tenant/i)).toHaveValue("ferapark");
   });
 
+  it("mostra a seção de pátio (WPS) e o segredo como write-only quando já definido", () => {
+    renderWithProviders(
+      <CompanyForm
+        open
+        onOpenChange={() => {}}
+        company={makeCompany({
+          wps_webhook_url: "https://wps.parceiro.com/hook",
+          wps_webhook_secret: "ja-definido",
+          wps_webhook_enabled: true,
+        })}
+      />,
+    );
+    expect(screen.getByText("Integração de pátio (WPS)")).toBeInTheDocument();
+    expect(screen.getByLabelText(/URL do webhook do pátio/i)).toHaveValue(
+      "https://wps.parceiro.com/hook",
+    );
+    // segredo não é exibido; só o placeholder indica que existe
+    expect(screen.getByLabelText(/Segredo/i)).toHaveValue("");
+    expect(screen.getByPlaceholderText(/já definido/i)).toBeInTheDocument();
+  });
+
   it("bloqueia ligar a sync sem URL/tenant (não chama o update)", () => {
     renderWithProviders(
       <CompanyForm

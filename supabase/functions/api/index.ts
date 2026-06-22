@@ -14,6 +14,7 @@
 //   POST /v1/bookings                           (bookings:write)   [Idempotency-Key]
 //   POST /v1/bookings/{id}/cancel                (bookings:cancel)
 //   POST /v1/bookings/{id}/check-in|check-out    (bookings:checkin)
+//   POST /v1/wps/events                          (wps:write)   [pátio: entrada/saída de veículo]
 //   GET  /v1/faq                                 (faq:read)
 //
 // Erros: { error: { code, message, request_id } }. Sucesso: { data, meta:{request_id} }.
@@ -23,6 +24,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { extractApiKey, hasScope, keyPrefix, sha256Hex } from "./auth.ts";
 import { matchRoute, normalizePath, pathExists } from "./router.ts";
 import { corsHeaders, fail, ok, pgErrorToHttp } from "./respond.ts";
+import { parseWpsEvent } from "./wps.logic.ts";
 
 // request id curto sem dependências externas
 function newRequestId(): string {
@@ -265,6 +267,24 @@ async function dispatch(handler: string, d: Dispatch): Promise<Response> {
 
     case "checkout_booking":
       return ok(await call("api_checkout_booking", { p_company_id: company, p_booking_id: params.id }), requestId);
+
+    case "wps_event": {
+      const parsed = parseWpsEvent(body);
+      if (!parsed.ok) return fail("validation_error", parsed.error, 422, requestId);
+      const ev = parsed.value;
+      return ok(
+        await call("api_wps_event", {
+          p_company_id: company,
+          p_external_event_id: ev.event_id,
+          p_type: ev.type,
+          p_location_ref: ev.location_ref,
+          p_plate: ev.plate,
+          p_booking_code: ev.booking_code,
+          p_occurred_at: ev.occurred_at ?? new Date().toISOString(),
+        }),
+        requestId,
+      );
+    }
 
     case "faq": {
       const { data, error } = await admin.functions.invoke("get-faq", {

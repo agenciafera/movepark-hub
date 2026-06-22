@@ -50,6 +50,11 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
   const [wlDomain, setWlDomain] = React.useState("");
   const [wlTenantKey, setWlTenantKey] = React.useState("");
   const [wlSyncEnabled, setWlSyncEnabled] = React.useState(false);
+  const [wpsUrl, setWpsUrl] = React.useState("");
+  const [wpsSecret, setWpsSecret] = React.useState("");
+  const [wpsEnabled, setWpsEnabled] = React.useState(false);
+  // Segredo é write-only: não exibimos o valor; só sabemos se já existe um.
+  const hasWpsSecret = !!company?.wps_webhook_secret;
 
   React.useEffect(() => {
     if (open) {
@@ -61,6 +66,9 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
       setWlDomain(company?.wl_domain ?? "");
       setWlTenantKey(company?.wl_tenant_key ?? "");
       setWlSyncEnabled(company?.wl_sync_enabled ?? false);
+      setWpsUrl(company?.wps_webhook_url ?? "");
+      setWpsSecret("");
+      setWpsEnabled(company?.wps_webhook_enabled ?? false);
     }
   }, [open, company]);
 
@@ -72,6 +80,12 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
       toast.error("Para ligar a sincronização, preencha o domínio e o tenant (X-Tenant) do white-label.");
       return;
     }
+    const wpsUrlTrim = wpsUrl.trim() || null;
+    const wpsSecretTrim = wpsSecret.trim();
+    if (wpsEnabled && (!wpsUrlTrim || (!hasWpsSecret && !wpsSecretTrim))) {
+      toast.error("Para ligar o webhook do pátio (WPS), preencha a URL e o segredo.");
+      return;
+    }
     const payload = {
       name,
       slug: slug || slugify(name),
@@ -81,6 +95,10 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
       wl_domain: wlHost,
       wl_tenant_key: wlTenant,
       wl_sync_enabled: wlSyncEnabled,
+      wps_webhook_url: wpsUrlTrim,
+      wps_webhook_enabled: wpsEnabled,
+      // só grava o segredo quando o usuário digita um novo (write-only)
+      ...(wpsSecretTrim ? { wps_webhook_secret: wpsSecretTrim } : {}),
     };
     try {
       if (isEdit && company) {
@@ -185,6 +203,40 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
                 value={wlTenantKey}
                 onChange={(e) => setWlTenantKey(e.target.value)}
                 placeholder="ex: ferapark"
+              />
+            </div>
+          </div>
+
+          {/* Integração de pátio (WPS) — webhook outbound (E2.6.1) */}
+          <div className="mt-2 flex flex-col gap-4 rounded-md border border-hairline p-4 tablet:col-span-2">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-body-sm font-medium text-ink">Integração de pátio (WPS)</p>
+                <p className="text-caption text-muted">
+                  O Hub notifica o sistema de pátio quando uma reserva é confirmada/cancelada (assinado por
+                  HMAC). O check-in/out real vem pelo Public API (escopo <code>wps:write</code>).
+                </p>
+              </div>
+              <Switch checked={wpsEnabled} onCheckedChange={setWpsEnabled} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="wps-url">URL do webhook do pátio</Label>
+              <Input
+                id="wps-url"
+                type="url"
+                value={wpsUrl}
+                onChange={(e) => setWpsUrl(e.target.value)}
+                placeholder="https://wps.parceiro.com/webhooks/movepark"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="wps-secret">Segredo (HMAC)</Label>
+              <Input
+                id="wps-secret"
+                type="password"
+                value={wpsSecret}
+                onChange={(e) => setWpsSecret(e.target.value)}
+                placeholder={hasWpsSecret ? "•••••• (já definido — preencha para trocar)" : "defina um segredo"}
               />
             </div>
           </div>

@@ -70,6 +70,7 @@ export function LocationForm({
   const [reservationPolicy, setReservationPolicy] = React.useState("");
   const [destinationId, setDestinationId] = React.useState<string | null>(null);
   const [photos, setPhotos] = React.useState<string[]>([]);
+  const [externalRef, setExternalRef] = React.useState("");
 
   // Âncora de proximidade só é editável no full scope (hub_admin); operator não toca o vínculo.
   const destinations = useAdminDestinations();
@@ -103,6 +104,7 @@ export function LocationForm({
       setReservationPolicy(location?.reservation_policy ?? "");
       setDestinationId(location?.destination_id ?? null);
       setPhotos(Array.isArray(location?.photos) ? (location.photos as string[]) : []);
+      setExternalRef(location?.external_ref ?? "");
     }
   }, [open, location]);
 
@@ -128,6 +130,7 @@ export function LocationForm({
       has_notice: !!notice,
       destination_id: destinationId,
       company_id: companyId,
+      external_ref: externalRef.trim() || null,
       photos,
       ...arrivalFields,
     };
@@ -265,6 +268,20 @@ export function LocationForm({
               <p className="text-caption text-muted">
                 Usado para ranquear e exibir a distância do lote ao destino. Lotes novos com geo são
                 ligados ao mais próximo automaticamente.
+              </p>
+            </div>
+          )}
+          {!operatorMode && (
+            <div className="flex flex-col gap-1.5 tablet:col-span-2">
+              <Label htmlFor="external-ref">Código no sistema de pátio (WPS)</Label>
+              <Input
+                id="external-ref"
+                value={externalRef}
+                onChange={(e) => setExternalRef(e.target.value)}
+                placeholder="ex: lote-01"
+              />
+              <p className="text-caption text-muted">
+                Identifica este lote nos eventos do pátio (placa/ANPR). Deixe vazio se não integra com WPS.
               </p>
             </div>
           )}
