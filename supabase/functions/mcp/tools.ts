@@ -174,6 +174,23 @@ export const PARTNER_TOOLS: ToolDef[] = [
     scope: "bookings:checkin",
     inputSchema: obj({ booking_id: S }, ["booking_id"]),
   },
+  {
+    name: "wps_event",
+    description:
+      "Evento de pátio (WPS): entrada/saída de veículo por placa (ANPR) ou booking_code → check-in/check-out. Idempotente por event_id.",
+    scope: "wps:write",
+    inputSchema: obj(
+      {
+        event_id: S,
+        type: { type: "string", enum: ["vehicle.entered", "vehicle.exited"] },
+        plate: S,
+        booking_code: S,
+        location_ref: S,
+        occurred_at: DT,
+      },
+      ["event_id", "type"],
+    ),
+  },
   // Promoções — cupons
   { name: "list_coupons", description: "Lista os cupons da empresa.", scope: "coupons:read", inputSchema: obj({}) },
   {

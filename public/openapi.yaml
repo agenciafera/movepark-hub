@@ -166,6 +166,33 @@ paths:
       responses:
         "200": { $ref: "#/components/responses/Object" }
         "422": { $ref: "#/components/responses/ValidationError" }
+  /v1/wps/events:
+    post:
+      tags: [wps]
+      summary: Evento de pátio (WPS) — entrada/saída de veículo → check-in/check-out
+      description: >
+        Webhook do sistema de pátio (ANPR/placa). Resolve a reserva por placa normalizada
+        + lote (location_ref) + janela, ou por booking_code, e aplica a transição.
+        Idempotente por event_id. Ver docs/specs/wps-integration.md.
+      security: [{ apiKey: [wps:write] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [event_id, type]
+              properties:
+                version: { type: string, example: "1" }
+                event_id: { type: string }
+                type: { type: string, enum: [vehicle.entered, vehicle.exited] }
+                occurred_at: { type: string, format: date-time }
+                location_ref: { type: string }
+                plate: { type: string }
+                booking_code: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+        "422": { $ref: "#/components/responses/ValidationError" }
   /v1/faq:
     get:
       tags: [faq]

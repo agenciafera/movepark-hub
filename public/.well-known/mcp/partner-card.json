@@ -10,67 +10,723 @@
     "note": "Crie e gerencie chaves em /operator/api-keys. Escopos por tool conforme `scope`."
   },
   "tools": [
-    { "name": "list_locations", "scope": "locations:read", "description": "Lista as unidades da sua empresa.",
-      "inputSchema": { "type": "object", "properties": { "limit": { "type": "integer" }, "offset": { "type": "integer" } } } },
-    { "name": "get_location", "scope": "locations:read", "description": "Detalhe de uma unidade da sua empresa.",
-      "inputSchema": { "type": "object", "properties": { "location_id": { "type": "string" } }, "required": ["location_id"] } },
-    { "name": "list_parking_types", "scope": "parking-types:read", "description": "Tipos de vaga de uma unidade.",
-      "inputSchema": { "type": "object", "properties": { "location_id": { "type": "string" } }, "required": ["location_id"] } },
-    { "name": "get_availability", "scope": "availability:read", "description": "Disponibilidade de um tipo de vaga num período.",
-      "inputSchema": { "type": "object", "properties": { "location_parking_type_id": { "type": "string" }, "from": { "type": "string", "format": "date-time" }, "to": { "type": "string", "format": "date-time" } }, "required": ["location_parking_type_id", "from", "to"] } },
-    { "name": "simulate_price", "scope": "pricing:read", "description": "Simula o preço de uma reserva de um tipo de vaga da sua empresa.",
-      "inputSchema": { "type": "object", "properties": { "location_parking_type_id": { "type": "string" }, "days": { "type": "integer", "minimum": 1, "default": 1 } }, "required": ["location_parking_type_id"] } },
-    { "name": "list_bookings", "scope": "bookings:read", "description": "Lista reservas da sua empresa.",
-      "inputSchema": { "type": "object", "properties": { "status": { "type": "string" }, "from": { "type": "string", "format": "date-time" }, "to": { "type": "string", "format": "date-time" }, "limit": { "type": "integer" }, "offset": { "type": "integer" } } } },
-    { "name": "get_booking", "scope": "bookings:read", "description": "Detalhe de uma reserva da sua empresa.",
-      "inputSchema": { "type": "object", "properties": { "booking_id": { "type": "string" } }, "required": ["booking_id"] } },
-    { "name": "create_booking", "scope": "bookings:write", "description": "Cria uma reserva atribuída à sua empresa (idempotente por idempotency_key).",
-      "inputSchema": { "type": "object", "properties": { "location_parking_type_id": { "type": "string" }, "check_in_at": { "type": "string", "format": "date-time" }, "check_out_at": { "type": "string", "format": "date-time" }, "customer_name": { "type": "string" }, "customer_email": { "type": "string", "format": "email" }, "customer_phone": { "type": "string" }, "add_on_service_ids": { "type": "array", "items": { "type": "string" } }, "coupon_code": { "type": "string" }, "idempotency_key": { "type": "string" } }, "required": ["location_parking_type_id", "check_in_at", "check_out_at"] } },
-    { "name": "cancel_booking", "scope": "bookings:cancel", "description": "Cancela uma reserva da sua empresa.",
-      "inputSchema": { "type": "object", "properties": { "booking_id": { "type": "string" }, "reason": { "type": "string" } }, "required": ["booking_id"] } },
-    { "name": "check_in_booking", "scope": "bookings:checkin", "description": "Registra check-in (confirmed → checked_in).",
-      "inputSchema": { "type": "object", "properties": { "booking_id": { "type": "string" } }, "required": ["booking_id"] } },
-    { "name": "check_out_booking", "scope": "bookings:checkin", "description": "Registra check-out (checked_in → completed).",
-      "inputSchema": { "type": "object", "properties": { "booking_id": { "type": "string" } }, "required": ["booking_id"] } },
-
-    { "name": "list_coupons", "scope": "coupons:read", "description": "Lista os cupons da empresa.",
-      "inputSchema": { "type": "object", "properties": {} } },
-    { "name": "upsert_coupon", "scope": "coupons:write", "description": "Cria/atualiza um cupom (id ausente = novo).",
-      "inputSchema": { "type": "object", "properties": { "id": {"type":"string"}, "code": {"type":"string"}, "description": {"type":"string"}, "discount_type": {"type":"string","enum":["percent","fixed"]}, "discount_value": {"type":"number"}, "valid_from": {"type":"string","format":"date-time"}, "valid_until": {"type":"string","format":"date-time"}, "max_uses": {"type":"integer"}, "is_active": {"type":"boolean"}, "per_user_limit": {"type":"integer"}, "min_amount": {"type":"number"}, "min_days": {"type":"integer"}, "parking_type_ids": {"type":"array","items":{"type":"string"}} }, "required": ["code","discount_type","discount_value"] } },
-    { "name": "set_coupon_active", "scope": "coupons:write", "description": "Ativa/desativa um cupom.",
-      "inputSchema": { "type": "object", "properties": { "id": {"type":"string"}, "is_active": {"type":"boolean"} }, "required": ["id","is_active"] } },
-    { "name": "delete_coupon", "scope": "coupons:write", "description": "Exclui um cupom (bloqueado se já usado).",
-      "inputSchema": { "type": "object", "properties": { "id": {"type":"string"} }, "required": ["id"] } },
-
-    { "name": "list_discounts", "scope": "discounts:read", "description": "Lista os descontos automáticos.",
-      "inputSchema": { "type": "object", "properties": {} } },
-    { "name": "upsert_discount", "scope": "discounts:write", "description": "Cria/atualiza um desconto (id ausente = novo).",
-      "inputSchema": { "type": "object", "properties": { "id": {"type":"string"}, "location_id": {"type":"string"}, "name": {"type":"string"}, "description": {"type":"string"}, "discount_type": {"type":"string","enum":["percent","fixed"]}, "discount_value": {"type":"number"}, "valid_from": {"type":"string","format":"date-time"}, "valid_until": {"type":"string","format":"date-time"}, "min_days": {"type":"integer"}, "min_amount": {"type":"number"}, "advance_days": {"type":"integer"}, "allow_coupon_stack": {"type":"boolean"}, "priority": {"type":"integer"}, "is_active": {"type":"boolean"}, "parking_type_ids": {"type":"array","items":{"type":"string"}} }, "required": ["name","discount_type","discount_value"] } },
-    { "name": "set_discount_active", "scope": "discounts:write", "description": "Ativa/desativa um desconto.",
-      "inputSchema": { "type": "object", "properties": { "id": {"type":"string"}, "is_active": {"type":"boolean"} }, "required": ["id","is_active"] } },
-    { "name": "delete_discount", "scope": "discounts:write", "description": "Exclui um desconto (bloqueado se já usado).",
-      "inputSchema": { "type": "object", "properties": { "id": {"type":"string"} }, "required": ["id"] } },
-
-    { "name": "list_addons", "scope": "addons:read", "description": "Lista os serviços adicionais.",
-      "inputSchema": { "type": "object", "properties": {} } },
-    { "name": "upsert_addon", "scope": "addons:write", "description": "Cria/atualiza um serviço adicional (id ausente = novo).",
-      "inputSchema": { "type": "object", "properties": { "id": {"type":"string"}, "code": {"type":"string"}, "name": {"type":"string"}, "description": {"type":"string"}, "base_price": {"type":"number"}, "is_active": {"type":"boolean"} }, "required": ["name"] } },
-    { "name": "set_location_addon", "scope": "addons:write", "description": "Habilita/precifica um serviço numa unidade.",
-      "inputSchema": { "type": "object", "properties": { "id": {"type":"string"}, "location_id": {"type":"string"}, "is_active": {"type":"boolean"}, "price_override": {"type":"number"} }, "required": ["id","location_id"] } },
-    { "name": "delete_addon", "scope": "addons:write", "description": "Exclui um serviço adicional (bloqueado se já usado).",
-      "inputSchema": { "type": "object", "properties": { "id": {"type":"string"} }, "required": ["id"] } },
-
-    { "name": "list_reviews", "scope": "reviews:read", "description": "Lista avaliações das unidades da empresa.",
-      "inputSchema": { "type": "object", "properties": { "limit": {"type":"integer"} } } },
-    { "name": "respond_review", "scope": "reviews:write", "description": "Responde publicamente a uma avaliação.",
-      "inputSchema": { "type": "object", "properties": { "id": {"type":"string"}, "response": {"type":"string"} }, "required": ["id","response"] } },
-
-    { "name": "get_occupancy", "scope": "occupancy:read", "description": "Ocupação por data de uma unidade (booked/capacity).",
-      "inputSchema": { "type": "object", "properties": { "location_id": {"type":"string"}, "from": {"type":"string","format":"date"}, "to": {"type":"string","format":"date"} }, "required": ["location_id","from","to"] } },
-
-    { "name": "update_location", "scope": "locations:write", "description": "Edita dados de uma unidade (campos ausentes = mantém).",
-      "inputSchema": { "type": "object", "properties": { "location_id": {"type":"string"}, "name": {"type":"string"}, "address": {"type":"string"}, "phone": {"type":"string"}, "email": {"type":"string"}, "reservation_policy": {"type":"string"}, "has_notice": {"type":"boolean"}, "notice": {"type":"string"} }, "required": ["location_id"] } },
-    { "name": "update_parking_type", "scope": "parking-types:write", "description": "Edita um tipo de vaga: status, capacidade e regras.",
-      "inputSchema": { "type": "object", "properties": { "location_parking_type_id": {"type":"string"}, "is_active": {"type":"boolean"}, "capacity": {"type":"integer"}, "near_capacity_threshold": {"type":"integer"}, "near_capacity_message": {"type":"string"}, "has_minimum_stay": {"type":"boolean"}, "minimum_stay_value": {"type":"integer"}, "minimum_stay_unit": {"type":"string"}, "has_minimum_date": {"type":"boolean"}, "minimum_date": {"type":"string","format":"date"} }, "required": ["location_parking_type_id"] } }
+    {
+      "name": "list_locations",
+      "scope": "locations:read",
+      "description": "Lista as unidades da sua empresa.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    {
+      "name": "get_location",
+      "scope": "locations:read",
+      "description": "Detalhe de uma unidade da sua empresa.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "location_id"
+        ]
+      }
+    },
+    {
+      "name": "list_parking_types",
+      "scope": "parking-types:read",
+      "description": "Tipos de vaga de uma unidade.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "location_id"
+        ]
+      }
+    },
+    {
+      "name": "get_availability",
+      "scope": "availability:read",
+      "description": "Disponibilidade de um tipo de vaga num período.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location_parking_type_id": {
+            "type": "string"
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "location_parking_type_id",
+          "from",
+          "to"
+        ]
+      }
+    },
+    {
+      "name": "simulate_price",
+      "scope": "pricing:read",
+      "description": "Simula o preço de uma reserva de um tipo de vaga da sua empresa.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location_parking_type_id": {
+            "type": "string"
+          },
+          "days": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1
+          }
+        },
+        "required": [
+          "location_parking_type_id"
+        ]
+      }
+    },
+    {
+      "name": "list_bookings",
+      "scope": "bookings:read",
+      "description": "Lista reservas da sua empresa.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    {
+      "name": "get_booking",
+      "scope": "bookings:read",
+      "description": "Detalhe de uma reserva da sua empresa.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "booking_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "booking_id"
+        ]
+      }
+    },
+    {
+      "name": "create_booking",
+      "scope": "bookings:write",
+      "description": "Cria uma reserva atribuída à sua empresa (idempotente por idempotency_key).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location_parking_type_id": {
+            "type": "string"
+          },
+          "check_in_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "check_out_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "customer_name": {
+            "type": "string"
+          },
+          "customer_email": {
+            "type": "string",
+            "format": "email"
+          },
+          "customer_phone": {
+            "type": "string"
+          },
+          "add_on_service_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "coupon_code": {
+            "type": "string"
+          },
+          "idempotency_key": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "location_parking_type_id",
+          "check_in_at",
+          "check_out_at"
+        ]
+      }
+    },
+    {
+      "name": "cancel_booking",
+      "scope": "bookings:cancel",
+      "description": "Cancela uma reserva da sua empresa.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "booking_id": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "booking_id"
+        ]
+      }
+    },
+    {
+      "name": "check_in_booking",
+      "scope": "bookings:checkin",
+      "description": "Registra check-in (confirmed → checked_in).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "booking_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "booking_id"
+        ]
+      }
+    },
+    {
+      "name": "check_out_booking",
+      "scope": "bookings:checkin",
+      "description": "Registra check-out (checked_in → completed).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "booking_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "booking_id"
+        ]
+      }
+    },
+    {
+      "name": "wps_event",
+      "scope": "wps:write",
+      "description": "Evento de pátio (WPS): entrada/saída de veículo por placa (ANPR) ou booking_code → check-in/check-out. Idempotente por event_id.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "vehicle.entered",
+              "vehicle.exited"
+            ]
+          },
+          "plate": {
+            "type": "string"
+          },
+          "booking_code": {
+            "type": "string"
+          },
+          "location_ref": {
+            "type": "string"
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "event_id",
+          "type"
+        ]
+      }
+    },
+    {
+      "name": "list_coupons",
+      "scope": "coupons:read",
+      "description": "Lista os cupons da empresa.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "upsert_coupon",
+      "scope": "coupons:write",
+      "description": "Cria/atualiza um cupom (id ausente = novo).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "discount_type": {
+            "type": "string",
+            "enum": [
+              "percent",
+              "fixed"
+            ]
+          },
+          "discount_value": {
+            "type": "number"
+          },
+          "valid_from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "valid_until": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "max_uses": {
+            "type": "integer"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "per_user_limit": {
+            "type": "integer"
+          },
+          "min_amount": {
+            "type": "number"
+          },
+          "min_days": {
+            "type": "integer"
+          },
+          "parking_type_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "code",
+          "discount_type",
+          "discount_value"
+        ]
+      }
+    },
+    {
+      "name": "set_coupon_active",
+      "scope": "coupons:write",
+      "description": "Ativa/desativa um cupom.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "is_active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "is_active"
+        ]
+      }
+    },
+    {
+      "name": "delete_coupon",
+      "scope": "coupons:write",
+      "description": "Exclui um cupom (bloqueado se já usado).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "list_discounts",
+      "scope": "discounts:read",
+      "description": "Lista os descontos automáticos.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "upsert_discount",
+      "scope": "discounts:write",
+      "description": "Cria/atualiza um desconto (id ausente = novo).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "location_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "discount_type": {
+            "type": "string",
+            "enum": [
+              "percent",
+              "fixed"
+            ]
+          },
+          "discount_value": {
+            "type": "number"
+          },
+          "valid_from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "valid_until": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "min_days": {
+            "type": "integer"
+          },
+          "min_amount": {
+            "type": "number"
+          },
+          "advance_days": {
+            "type": "integer"
+          },
+          "allow_coupon_stack": {
+            "type": "boolean"
+          },
+          "priority": {
+            "type": "integer"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "parking_type_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "discount_type",
+          "discount_value"
+        ]
+      }
+    },
+    {
+      "name": "set_discount_active",
+      "scope": "discounts:write",
+      "description": "Ativa/desativa um desconto.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "is_active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "is_active"
+        ]
+      }
+    },
+    {
+      "name": "delete_discount",
+      "scope": "discounts:write",
+      "description": "Exclui um desconto (bloqueado se já usado).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "list_addons",
+      "scope": "addons:read",
+      "description": "Lista os serviços adicionais.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "upsert_addon",
+      "scope": "addons:write",
+      "description": "Cria/atualiza um serviço adicional (id ausente = novo).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "base_price": {
+            "type": "number"
+          },
+          "is_active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      }
+    },
+    {
+      "name": "set_location_addon",
+      "scope": "addons:write",
+      "description": "Habilita/precifica um serviço numa unidade.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "location_id": {
+            "type": "string"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "price_override": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "location_id"
+        ]
+      }
+    },
+    {
+      "name": "delete_addon",
+      "scope": "addons:write",
+      "description": "Exclui um serviço adicional (bloqueado se já usado).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "list_reviews",
+      "scope": "reviews:read",
+      "description": "Lista avaliações das unidades da empresa.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    {
+      "name": "respond_review",
+      "scope": "reviews:write",
+      "description": "Responde publicamente a uma avaliação.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "response": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "response"
+        ]
+      }
+    },
+    {
+      "name": "get_occupancy",
+      "scope": "occupancy:read",
+      "description": "Ocupação por data de uma unidade (booked/capacity).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location_id": {
+            "type": "string"
+          },
+          "from": {
+            "type": "string",
+            "format": "date"
+          },
+          "to": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "required": [
+          "location_id",
+          "from",
+          "to"
+        ]
+      }
+    },
+    {
+      "name": "update_location",
+      "scope": "locations:write",
+      "description": "Edita dados de uma unidade (campos ausentes = mantém).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "reservation_policy": {
+            "type": "string"
+          },
+          "has_notice": {
+            "type": "boolean"
+          },
+          "notice": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "location_id"
+        ]
+      }
+    },
+    {
+      "name": "update_parking_type",
+      "scope": "parking-types:write",
+      "description": "Edita um tipo de vaga: status, capacidade e regras.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location_parking_type_id": {
+            "type": "string"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "capacity": {
+            "type": "integer"
+          },
+          "near_capacity_threshold": {
+            "type": "integer"
+          },
+          "near_capacity_message": {
+            "type": "string"
+          },
+          "has_minimum_stay": {
+            "type": "boolean"
+          },
+          "minimum_stay_value": {
+            "type": "integer"
+          },
+          "minimum_stay_unit": {
+            "type": "string"
+          },
+          "has_minimum_date": {
+            "type": "boolean"
+          },
+          "minimum_date": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "required": [
+          "location_parking_type_id"
+        ]
+      }
+    }
   ]
 }

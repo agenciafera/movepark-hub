@@ -377,6 +377,16 @@ async function callPartner(admin: any, ctx: PartnerCtx, name: string, a: Record<
       return call("api_checkin_booking", { p_company_id: c, p_booking_id: a.booking_id });
     case "check_out_booking":
       return call("api_checkout_booking", { p_company_id: c, p_booking_id: a.booking_id });
+    case "wps_event":
+      return call("api_wps_event", {
+        p_company_id: c,
+        p_external_event_id: a.event_id,
+        p_type: a.type,
+        p_location_ref: a.location_ref ?? null,
+        p_plate: a.plate ?? null,
+        p_booking_code: a.booking_code ?? null,
+        p_occurred_at: a.occurred_at ?? new Date().toISOString(),
+      });
     // Promoções — cupons
     case "list_coupons":
       return call("api_list_coupons", { p_company_id: c });

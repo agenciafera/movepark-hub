@@ -87,6 +87,7 @@ Métodos suportados: `initialize`, `ping`, `tools/list`, `tools/call`, e `notifi
 | `create_booking` | `bookings:write` | `api_create_booking` |
 | `cancel_booking` | `bookings:cancel` | `api_cancel_booking` |
 | `check_in_booking` / `check_out_booking` | `bookings:checkin` | `api_checkin_booking` / `api_checkout_booking` |
+| `wps_event` | `wps:write` | `api_wps_event` (evento de pátio: entrada/saída → check-in/out) |
 | `list_coupons` / `upsert_coupon` / `set_coupon_active` / `delete_coupon` | `coupons:read` / `coupons:write` | `api_*_coupon` |
 | `list_discounts` / `upsert_discount` / `set_discount_active` / `delete_discount` | `discounts:read` / `discounts:write` | `api_*_discount` |
 | `list_addons` / `upsert_addon` / `set_location_addon` / `delete_addon` | `addons:read` / `addons:write` | `api_*_addon` |
