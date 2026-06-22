@@ -105,6 +105,29 @@ describe("ResultCard", () => {
     expect(screen.queryByText("Mais barato")).toBeNull();
   });
 
+  it("inclui src= e preserva os filtros no link quando source é passado (E2.1.1)", () => {
+    const { container } = renderWithProviders(
+      <ResultCard
+        item={item()}
+        isSaved={false}
+        onToggleSave={vi.fn()}
+        searchParams={new URLSearchParams({ from: "2026-06-22", to: "2026-06-25" })}
+        source="search"
+      />,
+    );
+    const href = container.querySelector("a")?.getAttribute("href") ?? "";
+    expect(href).toContain("src=search");
+    expect(href).toContain("from=2026-06-22");
+    expect(href).toContain("to=2026-06-25");
+  });
+
+  it("sem source: não injeta src no link", () => {
+    const { container } = renderWithProviders(
+      <ResultCard item={item()} isSaved={false} onToggleSave={vi.fn()} searchParams={new URLSearchParams()} />,
+    );
+    expect(container.querySelector("a")?.getAttribute("href") ?? "").not.toContain("src=");
+  });
+
   it("quase-lotação: mostra a mensagem e continua clicável", () => {
     const { container } = renderWithProviders(
       <ResultCard

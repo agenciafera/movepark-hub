@@ -13,6 +13,8 @@ type Props = {
   isSaved: boolean;
   onToggleSave: () => void;
   searchParams: URLSearchParams;
+  /** Fonte de entrada (E2.1.1) — vira `?src=` no link e a origem da reserva. */
+  source?: "search" | "destino";
   /** Badges comparativos calculados sobre o conjunto de resultados (PRD-13). */
   badges?: SearchBadge[];
 };
@@ -79,8 +81,17 @@ function CardLink({
   );
 }
 
-export function ResultCard({ item, isSaved, onToggleSave, searchParams, badges = [] }: Props) {
-  const url = `/p/${item.operator.slug}/${item.location.slug}/${item.parking_type.code}?${searchParams.toString()}`;
+export function ResultCard({
+  item,
+  isSaved,
+  onToggleSave,
+  searchParams,
+  source,
+  badges = [],
+}: Props) {
+  const params = new URLSearchParams(searchParams);
+  if (source) params.set("src", source);
+  const url = `/p/${item.operator.slug}/${item.location.slug}/${item.parking_type.code}?${params.toString()}`;
   const meta = topAmenities(item.amenities);
   const soldOut = item.availability?.sold_out ?? false;
   const nearCapacity = !soldOut && (item.availability?.near_capacity ?? false);

@@ -219,6 +219,7 @@ export default function DestinoPage() {
                   isSaved={false}
                   onToggleSave={() => {}}
                   searchParams={new URLSearchParams({ dest: destination.code, from: win.from, to: win.to })}
+                  source="destino"
                 />
               ))}
             </div>
@@ -245,6 +246,7 @@ export default function DestinoPage() {
                   isSaved={false}
                   onToggleSave={() => {}}
                   searchParams={new URLSearchParams({ dest: destination.code, from: win.from, to: win.to })}
+                  source="destino"
                 />
               ))}
             </div>

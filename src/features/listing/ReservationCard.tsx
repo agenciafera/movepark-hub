@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { DateRangeField } from "@/features/search/DateRangeField";
 import { useAuth } from "@/auth/context";
 import { formatBRL, formatDuration } from "@/lib/format";
+import { originFromSrc } from "@/lib/bookingOrigin";
 import {
   useSimulatePrice,
   useAvailability,
@@ -150,7 +151,7 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
         has_pcd: listing.location.has_pcd_config ? hasPcd : false,
         add_on_service_ids: selectedAddOnIds,
         coupon_code: applied?.code ?? null,
-        origin: "listing",
+        origin: originFromSrc(new URLSearchParams(location.search).get("src")),
       });
       navigate(`/checkout/${result.code}`);
     } catch (err) {

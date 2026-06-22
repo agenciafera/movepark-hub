@@ -232,6 +232,7 @@ export default function SearchResultsPage() {
                   isSaved={saved.isSaved(r.id)}
                   onToggleSave={() => saved.toggle(r.id)}
                   searchParams={params}
+                  source="search"
                   badges={computeResultBadges(r, data.results)}
                 />
               ))}
