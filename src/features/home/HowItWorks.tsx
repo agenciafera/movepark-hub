@@ -65,7 +65,7 @@ export function HowItWorks() {
             <img
               src="/images/como-reservar.jpg"
               alt="Motorista sorrindo ao celular após concluir reserva no aeroporto"
-              className="h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-cover"
             />
 
             {/* Floating booking card */}
