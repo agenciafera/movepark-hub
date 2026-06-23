@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { parseInstallmentPolicy, type InstallmentPolicy } from "@/lib/installments";
+import { shouldPollCheckout } from "@/features/checkout/checkout.logic";
 
 export type PriceBreakdown = {
   currency: string;
@@ -147,12 +148,8 @@ export function useCheckoutBooking(code: string | undefined) {
     enabled: !!code,
     // Polling: enquanto pending, recarrega a cada 2s (boost pra detectar confirmação)
     refetchInterval: (q) => {
-      // deno-lint-ignore no-explicit-any
-      const d = q.state.data as any;
-      if (d?.status === "pending" || d?.payment?.status === "pending") {
-        return 2000;
-      }
-      return false;
+      const d = q.state.data;
+      return shouldPollCheckout(d?.status, d?.payment?.status) ? 2000 : false;
     },
   });
 }

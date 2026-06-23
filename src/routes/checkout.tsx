@@ -14,8 +14,12 @@ import { Step2Vehicle } from "@/features/checkout/Step2Vehicle";
 import { Step3Payment } from "@/features/checkout/Step3Payment";
 import { Step4Confirmation } from "@/features/checkout/Step4Confirmation";
 import { SummaryCard } from "@/features/checkout/SummaryCard";
-
-type Step = 1 | 2 | 3 | 4;
+import {
+  isCheckoutExpired,
+  nextStepOnConfirm,
+  resolveCheckoutGate,
+  type CheckoutStep,
+} from "@/features/checkout/checkout.logic";
 
 export default function CheckoutPage() {
   const { code } = useParams<{ code: string }>();
@@ -23,16 +27,33 @@ export default function CheckoutPage() {
   const { session, isLoading: authLoading } = useAuth();
   const profileQ = useProfile(session?.userId);
   const { data: booking, isLoading, error } = useCheckoutBooking(code);
-  const [step, setStep] = React.useState<Step>(1);
+  const [step, setStep] = React.useState<CheckoutStep>(1);
 
   // Auto-avança pro Step 4 quando o pagamento for confirmado
   React.useEffect(() => {
-    if (booking?.status === "confirmed" && step !== 4) {
-      setStep(4);
-    }
+    if (!booking?.status) return;
+    const next = nextStepOnConfirm(booking.status, step);
+    if (next) setStep(next);
   }, [booking?.status, step]);
 
-  if (authLoading || isLoading) {
+  const gate = resolveCheckoutGate({
+    authLoading,
+    bookingLoading: isLoading,
+    hasSession: !!session,
+    userId: session?.userId ?? null,
+    code,
+    profile: profileQ.data,
+    hasError: !!error,
+    booking,
+  });
+
+  // Redireciona num efeito (nunca durante o render, pra não atualizar o Router enquanto renderiza)
+  const redirectTo = gate.kind === "redirect" ? gate.to : null;
+  React.useEffect(() => {
+    if (redirectTo) navigate(redirectTo, { replace: true });
+  }, [redirectTo, navigate]);
+
+  if (gate.kind === "loading") {
     return (
       <div className="mx-auto w-full max-w-[1080px] px-4 py-12 desktop:px-8">
         <Skeleton className="mb-6 h-10 w-1/2" />
@@ -41,23 +62,11 @@ export default function CheckoutPage() {
     );
   }
 
-  if (!session) {
-    const next = encodeURIComponent(`/checkout/${code}`);
-    navigate(`/entrar?next=${next}`, { replace: true });
+  if (gate.kind === "redirect") {
     return null;
   }
 
-  // Gate: customer precisa de full_name + tax_id pra finalizar reserva
-  if (
-    profileQ.data &&
-    (!profileQ.data.full_name || !profileQ.data.tax_id)
-  ) {
-    const next = encodeURIComponent(`/checkout/${code}`);
-    navigate(`/account/complete-profile?next=${next}`, { replace: true });
-    return null;
-  }
-
-  if (error) {
+  if (gate.kind === "error") {
     return (
       <div className="mx-auto w-full max-w-[1080px] px-4 py-12 desktop:px-8">
         <div className="rounded-md border border-error bg-badge-cancelled-bg p-4 text-body-sm text-error">
@@ -67,7 +76,7 @@ export default function CheckoutPage() {
     );
   }
 
-  if (!booking) {
+  if (gate.kind === "not-found") {
     return (
       <div className="mx-auto w-full max-w-[1080px] px-4 py-12 desktop:px-8">
         <EmptyState
@@ -84,7 +93,7 @@ export default function CheckoutPage() {
     );
   }
 
-  if (booking.profile_id !== session.userId) {
+  if (gate.kind === "not-owner") {
     return (
       <div className="mx-auto w-full max-w-[1080px] px-4 py-12 desktop:px-8">
         <EmptyState
@@ -95,10 +104,9 @@ export default function CheckoutPage() {
     );
   }
 
-  const expired =
-    booking.expires_at &&
-    new Date(booking.expires_at) < new Date() &&
-    booking.status === "pending";
+  // gate.kind === "ready" → booking garantido
+  if (!booking) return null;
+  const expired = isCheckoutExpired(booking.expires_at, booking.status);
 
   return (
     <div>
