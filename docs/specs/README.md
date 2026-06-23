@@ -24,6 +24,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | [distance-display.md](./distance-display.md) | Exibição de distância/proximidade ao aeroporto e terminal (PRD-09): badge "mais perto do Tx" no card + lista por terminal no detalhe — consome DAT-04/DAT-05 |
 | [public-api.md](./public-api.md) | **API pública** (E0.7): endpoints versionados `/v1` sobre as RPCs existentes, chaves de API com escopos, gestão no operator, proxy `api.movepark.co` (CF Worker), OpenAPI. Contém o **ADR-003** (doc-as-you-build). MCP = Fase 2 |
 | [mcp.md](./mcp.md) | **MCP** (E0.7 Fase 2): servidor MCP in-repo (Edge `mcp`, Streamable HTTP) com duas superfícies — **consumidor** (`mcp.movepark.co`, anon) e **parceiro** (`/partner`, chave `mp_`+escopo) sobre a API v1; substitui o MCP n8n |
+| [chatbot.md](./chatbot.md) | **Web chat do Hub** (E3.3): assistente ("bolinha") no consumidor, LLM **Gemini** (function-calling), transacional (reservar/cancelar) reusando Edges/RPCs; Edge `chat` (`verify_jwt=false`) + `ChatWidget`. MVP interno, só webchat |
 | [payment-split.md](./payment-split.md) | **Gateway com split** (E0.1 · ADR-004): camada de vínculo parceiro ↔ recebedor gateway-agnóstica (`company_payout_account`/`payout_recipient`/`payout_recipient_event` + `take_rate_bps`), abstração `_shared/payments`, Edge `sync-recipient`. Cobrança PIX/cartão e webhooks = E0.1.2–.4 |
 
 ## Status

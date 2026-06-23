@@ -2,6 +2,7 @@ import { Outlet } from "react-router-dom";
 import { ConsumerTopbar } from "./ConsumerTopbar";
 import { ConsumerBottomNav } from "./ConsumerBottomNav";
 import { ConsumerFooter } from "./ConsumerFooter";
+import { ChatWidget } from "@/features/assistant/ChatWidget";
 
 export function ConsumerAppShell() {
   return (
@@ -12,6 +13,7 @@ export function ConsumerAppShell() {
       </main>
       <ConsumerFooter />
       <ConsumerBottomNav />
+      <ChatWidget />
     </div>
   );
 }

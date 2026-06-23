@@ -1,0 +1,45 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { renderWithProviders } from "@/test/utils";
+import { ChatWidget } from "./ChatWidget";
+
+const h = vi.hoisted(() => ({
+  config: { enabled: true, model: "gemini-2.5-flash" } as { enabled: boolean; model: string },
+  mutateAsync: vi.fn(),
+}));
+
+vi.mock("./api", () => ({
+  useChatConfig: () => ({ data: h.config }),
+  useSendChat: () => ({ mutateAsync: h.mutateAsync, isPending: false }),
+}));
+
+describe("ChatWidget", () => {
+  beforeEach(() => {
+    h.config = { enabled: true, model: "gemini-2.5-flash" };
+    h.mutateAsync.mockReset();
+  });
+
+  it("não monta quando o assistente está desativado", () => {
+    h.config = { enabled: false, model: "" };
+    renderWithProviders(<ChatWidget />);
+    expect(screen.queryByLabelText("Abrir assistente")).toBeNull();
+  });
+
+  it("abre, envia uma mensagem e mostra a resposta do assistente", async () => {
+    h.mutateAsync.mockResolvedValue({ reply: "Achei 3 estacionamentos perto de GRU.", used_tools: ["search_parking"] });
+    const user = userEvent.setup();
+    renderWithProviders(<ChatWidget />);
+
+    await user.click(screen.getByLabelText("Abrir assistente"));
+    await user.type(screen.getByLabelText("Mensagem"), "estacionamento em GRU");
+    await user.click(screen.getByLabelText("Enviar"));
+
+    // a mensagem do usuário aparece
+    expect(screen.getByText("estacionamento em GRU")).toBeInTheDocument();
+    // a resposta do assistente aparece
+    await waitFor(() => expect(screen.getByText("Achei 3 estacionamentos perto de GRU.")).toBeInTheDocument());
+    // enviou o histórico ao edge
+    expect(h.mutateAsync).toHaveBeenCalledWith([{ role: "user", text: "estacionamento em GRU" }]);
+  });
+});
