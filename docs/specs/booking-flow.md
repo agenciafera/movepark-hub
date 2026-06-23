@@ -158,7 +158,10 @@ ser expiradas automaticamente.
 - Permitido enquanto `status IN (pending, confirmed)`
 - **Política de 24h (PRD-12, ✅):** cancelamento **grátis até 24h antes do check-in** → reembolso
   integral; **após** esse prazo, ainda pode cancelar **sem reembolso**. A janela estendida paga
-  (**Superflex**) é futura (depende do upsell **MON-11**).
+  (**Superflex**) é futura (depende do upsell **MON-11**) — rastreada na **E2.2.3** (status
+  `blocked`), aguardando a definição de preço/monetização em **E3.5** (precificação dinâmica) e
+  **E3.0** (Monetização Pro). Como é **receita 100% Movepark**, não será modelada como add-on do
+  parceiro (que iria ao recebedor do parceiro via split), e sim com split próprio pra Movepark.
 - **Estorno real (E0.3.2, ✅):** o cancelamento passa pela Edge **`cancel-booking`** (a verdade da
   elegibilidade é o servidor; o front só exibe). Ela autoriza **dono** (cliente) ou **staff**
   (hub_admin / operador da empresa), decide via `refundDecision({actor, ...})` e, quando há `payment`
