@@ -22,7 +22,7 @@ export function TerminalDistancesView({ terminals }: { terminals: TerminalDistan
             <span className="font-medium text-ink">{t.point_name}</span>
             <span>· {formatDistance(t.distance_km)}</span>
             {t.is_nearest && (
-              <span className="ml-0.5 rounded-sm bg-mp-primary/10 px-1.5 text-caption font-bold text-mp-primary">
+              <span className="ml-0.5 rounded-sm bg-mp-primary/10 px-2 py-0.5 text-caption font-bold text-mp-primary">
                 mais perto
               </span>
             )}

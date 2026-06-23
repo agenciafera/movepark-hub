@@ -93,7 +93,7 @@ function PopularParkingCard({ loc, index }: { loc: PopularLocation; index: numbe
             {badges.map(({ code, label, Icon }) => (
               <span
                 key={code}
-                className="inline-flex items-center gap-1 rounded-full bg-canvas/95 px-2 py-0.5 text-caption font-semibold text-ink shadow-tier backdrop-blur"
+                className="inline-flex items-center gap-1 rounded-full bg-canvas/95 px-2.5 py-1 text-caption font-semibold text-ink shadow-tier backdrop-blur"
               >
                 <Icon className="h-3 w-3 shrink-0" aria-hidden />
                 {label}
@@ -104,7 +104,7 @@ function PopularParkingCard({ loc, index }: { loc: PopularLocation; index: numbe
       </Link>
 
       {/* Corpo do card */}
-      <Link to={to} className="flex flex-col gap-1 p-4">
+      <Link to={to} className="flex flex-col gap-1.5 p-5">
         <h3 className="line-clamp-1 text-title-md text-ink">
           {loc.name}
           {loc.company && <span className="font-normal text-muted"> · {loc.company.name}</span>}
@@ -177,7 +177,7 @@ export function PopularParkingLots() {
 
       <div
         className={cn(
-          "grid gap-4",
+          "grid gap-5",
           data.length <= 2
             ? "grid-cols-1 tablet:grid-cols-2"
             : "grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3",

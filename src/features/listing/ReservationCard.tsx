@@ -178,7 +178,7 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
               {formatBRL(sim.data.old_price)}
             </span>
             {sim.data.discount && (
-              <span className="rounded-sm bg-badge-confirmed-bg px-1.5 py-0.5 text-caption font-bold text-badge-confirmed-fg">
+              <span className="rounded-sm bg-badge-confirmed-bg px-2 py-1 text-caption font-bold text-badge-confirmed-fg">
                 {sim.data.discount.label}
               </span>
             )}
@@ -218,7 +218,7 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
         title={listing.parking_type.name}
       />
 
-      <div className="my-4 h-px bg-hairline" />
+      <div className="my-5 h-px bg-hairline" />
 
       {/* Datas */}
       <div className="rounded-md border border-hairline">
@@ -287,7 +287,7 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
           {addOns.map((a) => (
             <label
               key={a.id}
-              className="flex cursor-pointer items-start justify-between gap-3 rounded-sm border border-hairline p-2.5"
+              className="flex cursor-pointer items-start justify-between gap-3 rounded-sm border border-hairline p-3"
             >
               <span className="flex items-start gap-2">
                 <input
@@ -315,7 +315,7 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
       {canReserve && (
         <div className="mt-4">
           {applied ? (
-            <div className="flex items-center justify-between gap-2 rounded-sm border border-badge-confirmed-fg/30 bg-badge-confirmed-bg p-2.5">
+            <div className="flex items-center justify-between gap-2 rounded-sm border border-badge-confirmed-fg/30 bg-badge-confirmed-bg p-3">
               <span className="text-caption font-medium text-badge-confirmed-fg">
                 {applied.code}: {couponDiscountLabel(applied)}
               </span>
@@ -379,7 +379,7 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
 
       {/* Botão Reservar */}
       <Button
-        className="mt-5 w-full"
+        className="mt-6 w-full"
         size="default"
         onClick={handleReserve}
         disabled={!canReserve || createBooking.isPending}

@@ -25,7 +25,7 @@ export function OperatorCard({ company, others }: Props) {
         <div className="flex-1 space-y-2">
           <div className="flex items-center gap-2">
             <h3 className="text-title-md text-ink">{company.name}</h3>
-            <span className="inline-flex items-center gap-1 rounded-full bg-mp-pale px-2 py-0.5 text-caption-sm text-mp-indigo">
+            <span className="inline-flex items-center gap-1 rounded-full bg-mp-pale px-3 py-1 text-caption-sm text-mp-indigo">
               <BadgeCheck className="h-3.5 w-3.5" />
               Operador verificado
             </span>
@@ -41,7 +41,7 @@ export function OperatorCard({ company, others }: Props) {
       </div>
 
       {others.length > 0 && (
-        <div className="mt-5 space-y-2 border-t border-hairline-soft pt-5">
+        <div className="mt-6 space-y-2 border-t border-hairline-soft pt-6">
           <div className="text-caption text-muted">Outras localizações</div>
           <ul className="space-y-1">
             {others.map((loc) => (

@@ -126,7 +126,7 @@ export default function ListingPage() {
   const isSaved = saved.isSaved(listing.id);
 
   return (
-    <div className="mx-auto w-full max-w-[1080px] px-4 py-6 desktop:px-8">
+    <div className="mx-auto w-full max-w-[1080px] px-4 py-8 desktop:px-8">
       <Helmet>
         <title>{pageTitle}</title>
         <meta name="description" content={pageDesc} />
@@ -199,7 +199,7 @@ export default function ListingPage() {
 
       {/* Body 2-col */}
       <div className="mt-8 grid grid-cols-1 gap-12 desktop:grid-cols-[1fr_360px]">
-        <div className="space-y-8">
+        <div className="space-y-10">
           {/* Sub-header */}
           <section className="space-y-3">
             <div className="flex flex-wrap items-center gap-2 text-body-md text-ink">
