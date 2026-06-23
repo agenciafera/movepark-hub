@@ -36,6 +36,7 @@ export default function SearchResultsPage() {
   const saved = useSavedListings();
 
   const dest = params.get("dest") ?? undefined;
+  const point = params.get("point") ?? undefined;
 
   const searchTitle = dest
     ? `Estacionamentos em ${dest} | Movepark`
@@ -63,6 +64,7 @@ export default function SearchResultsPage() {
   const filters: SearchFilters = React.useMemo(() => {
     return {
       dest,
+      point,
       from: dates.from,
       to: dates.to,
       vehicle,
@@ -76,6 +78,7 @@ export default function SearchResultsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     dest,
+    point,
     dates.from,
     dates.to,
     vehicle,

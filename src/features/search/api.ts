@@ -43,9 +43,19 @@ export type PopularLocation = {
   amenities: { amenity_code: string }[];
 };
 
+/** Ponto/terminal de um destino, leve (pro autocomplete). */
+export type DestinationPointLite = {
+  id: string;
+  destination_id: string;
+  name: string;
+  type: string;
+  sort_order: number;
+};
+
 export const searchKeys = {
   all: ["search"] as const,
   destinations: () => [...searchKeys.all, "destinations"] as const,
+  destinationPoints: () => [...searchKeys.all, "destination-points"] as const,
   popularDestinations: () => [...searchKeys.all, "popular-destinations"] as const,
   popularLocations: () => [...searchKeys.all, "popular-locations"] as const,
   parkingTypeCatalog: () => [...searchKeys.all, "parking-type-catalog"] as const,
@@ -72,6 +82,22 @@ export function useDestinations() {
         latitude: Number(d.latitude),
         longitude: Number(d.longitude),
       }));
+    },
+    staleTime: 5 * 60_000,
+  });
+}
+
+/** Terminais/pontos de todos os destinos (autocomplete por terminal — E2.1.2). Leitura pública. */
+export function useAllDestinationPoints() {
+  return useQuery({
+    queryKey: searchKeys.destinationPoints(),
+    queryFn: async (): Promise<DestinationPointLite[]> => {
+      const { data, error } = await supabase
+        .from("destination_point")
+        .select("id, destination_id, name, type, sort_order")
+        .order("sort_order");
+      if (error) throw error;
+      return (data ?? []) as DestinationPointLite[];
     },
     staleTime: 5 * 60_000,
   });

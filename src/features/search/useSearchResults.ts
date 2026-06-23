@@ -6,6 +6,8 @@ export type SearchVehicle = "car" | "motorcycle";
 
 export type SearchFilters = {
   dest?: string;
+  /** Terminal/ponto (destination_point id) — ancora a proximidade no terminal (E2.1.2). */
+  point?: string;
   from: string;
   to: string;
   vehicle?: SearchVehicle;

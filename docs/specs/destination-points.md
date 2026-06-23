@@ -145,4 +145,14 @@ para ordenar/rotular, não exige precisão de metro.
 | Banco / regra (pgTAP) | `supabase/tests/destination_point.test.sql` | `nearest_destination_point` (ponto certo + lat nula → null), view `location_point_proximity` (1 linha por ponto, `is_nearest` único e correto, distância pequena, lote some sob destino alheio), CHECK de `type`, UNIQUE `(destination_id,name)`, CASCADE no delete do destino, RLS (anon lê a view, anon **não** escreve). |
 | Componente (Vitest + RTL) | `src/features/destinations/DestinationPointsDialog.test.tsx` | dialog mostra título + formulário de adicionar terminal; pede para salvar o destino antes quando não há id. |
 
+## Autocomplete por terminal na busca (E2.1.2)
+
+O combobox de destino (`DestinationCombobox`) lista, sob cada aeroporto, seus **terminais** como
+sub-itens (de `useAllDestinationPoints`, ordenados por `sort_order`). Selecionar um terminal manda
+`?point=<destination_point.id>` na URL da busca (`buildSearchParams`); o Edge `search`, ao ver `point`
+**do destino resolvido**, lê as coords do `destination_point` e **ancora a proximidade no terminal**
+(sobrescreve `dest_lat/lng`) — a ordenação por distância continua no PostGIS via `locations_proximity`
+(ADR-001, nada de haversine em TS). O `nearest_terminal` por lote segue calculado normalmente.
+Aeroportos sem `destination_point` não mostram sub-itens. Sem mudança de schema.
+
 Mudou a regra de pontos/distância por terminal → atualize esta spec no mesmo PR.

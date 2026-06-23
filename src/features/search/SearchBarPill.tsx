@@ -20,6 +20,7 @@ type Props = {
   variant?: "hero" | "compact";
   className?: string;
   initialDest?: string | null;
+  initialPoint?: string | null;
   initialFrom?: Date | null;
   initialTo?: Date | null;
   initialVehicle?: Vehicle;
@@ -41,6 +42,7 @@ export function SearchBarPill({
   variant = "hero",
   className,
   initialDest = null,
+  initialPoint = null,
   initialFrom = null,
   initialTo = null,
   initialVehicle = "car",
@@ -50,6 +52,7 @@ export function SearchBarPill({
   const [searchParams] = useSearchParams();
   const defaults = React.useMemo(nextWeekendDefaults, []);
   const [dest, setDest] = React.useState<string | null>(initialDest);
+  const [point, setPoint] = React.useState<string | null>(initialPoint);
   const [from, setFrom] = React.useState<Date | null>(initialFrom ?? defaults.from);
   const [to, setTo] = React.useState<Date | null>(initialTo ?? defaults.to);
   const [vehicle, setVehicle] = React.useState<Vehicle>(initialVehicle);
@@ -58,6 +61,7 @@ export function SearchBarPill({
     const next = buildSearchParams({
       base: preserveParams ? searchParams : null,
       dest,
+      point,
       from,
       to,
       vehicle,
@@ -80,7 +84,14 @@ export function SearchBarPill({
       )}
     >
       <div className="flex-[1.4] border-r border-hairline">
-        <DestinationCombobox value={dest} onChange={setDest} />
+        <DestinationCombobox
+          value={dest}
+          pointValue={point}
+          onChange={(d, p) => {
+            setDest(d);
+            setPoint(p ?? null);
+          }}
+        />
       </div>
       <div className="flex-1 border-r border-hairline">
         <DateRangeField

@@ -44,6 +44,8 @@ const corsHeaders = {
 
 interface SearchParams {
   dest?: string;
+  /** Terminal/ponto (destination_point id) — ancora a proximidade no terminal (E2.1.2). */
+  point?: string;
   dest_lat?: number;
   dest_lng?: number;
   from: string;
@@ -121,6 +123,22 @@ Deno.serve(async (req: Request) => {
       }
       destInfo = { code: dest.code, name: dest.name };
       destId = dest.id as string;
+    }
+  }
+
+  // 1a. Âncora no terminal (E2.1.2): se um destination_point foi escolhido, a proximidade passa a
+  //     ser medida a partir do terminal (não do centro do aeroporto). Só lemos as coords — a
+  //     distância continua no PostGIS (ADR-001). O ponto precisa pertencer ao destino resolvido.
+  if (params.point && destId) {
+    const { data: pt } = await supabase
+      .from("destination_point")
+      .select("latitude, longitude")
+      .eq("id", params.point)
+      .eq("destination_id", destId)
+      .maybeSingle();
+    if (pt) {
+      destLat = Number(pt.latitude);
+      destLng = Number(pt.longitude);
     }
   }
 

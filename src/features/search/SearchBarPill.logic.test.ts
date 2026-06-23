@@ -51,4 +51,19 @@ describe("buildSearchParams", () => {
     expect(p.get("offset")).toBeNull();
     expect(p.get("operator")).toBe("plenty");
   });
+
+  it("inclui o point (terminal) quando setado e omite quando null (E2.1.2)", () => {
+    const com = buildSearchParams({ base: null, dest: "GRU", point: "pt-1", from, to, vehicle: "car" });
+    expect(com.get("point")).toBe("pt-1");
+    const sem = buildSearchParams({ base: null, dest: "GRU", point: null, from, to, vehicle: "car" });
+    expect(sem.get("point")).toBeNull();
+  });
+
+  it("trocar o escopo sem point remove um point antigo do base", () => {
+    const base = new URLSearchParams("dest=GRU&point=pt-1&operator=plenty");
+    const p = buildSearchParams({ base, dest: "CGH", point: null, from, to, vehicle: "car" });
+    expect(p.get("point")).toBeNull();
+    expect(p.get("dest")).toBe("CGH");
+    expect(p.get("operator")).toBe("plenty");
+  });
 });

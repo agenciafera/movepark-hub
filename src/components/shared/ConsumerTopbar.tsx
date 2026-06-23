@@ -96,6 +96,7 @@ export function ConsumerTopbar() {
   // Escopo da busca lido da URL pra semear a barra do header (na /search vem preenchido; em outras
   // páginas começa do padrão). vehicle pode ser car|motorcycle.
   const destParam = searchParams.get("dest");
+  const pointParam = searchParams.get("point");
   const fromParam = searchParams.get("from");
   const toParam = searchParams.get("to");
   const vehicleParam =
@@ -128,8 +129,9 @@ export function ConsumerTopbar() {
             <SearchBarPill
               variant="compact"
               className="hidden w-full max-w-3xl tablet:flex"
-              key={`${destParam ?? ""}|${fromParam ?? ""}|${toParam ?? ""}|${vehicleParam}`}
+              key={`${destParam ?? ""}|${pointParam ?? ""}|${fromParam ?? ""}|${toParam ?? ""}|${vehicleParam}`}
               initialDest={destParam}
+              initialPoint={pointParam}
               initialFrom={parseDate(fromParam)}
               initialTo={parseDate(toParam)}
               initialVehicle={vehicleParam}
