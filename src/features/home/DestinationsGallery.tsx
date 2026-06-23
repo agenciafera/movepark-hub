@@ -68,21 +68,19 @@ export function DestinationsGallery() {
         <p className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
           Destinos em destaque
         </p>
-        <h2 className="text-[36px] font-bold text-ink tablet:text-display-2xl">
+        <h2 className="text-[36px] font-bold leading-[1.1] text-ink tablet:text-display-2xl">
           Estacione nos principais
           <br className="hidden tablet:block" /> aeroportos do Brasil
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-body-md text-muted">
-          Cobertura nos principais aeroportos do Brasil, com operadoras verificadas.
+          Cobertura nos principais aeroportos do Brasil, com estacionamentos verificados.
         </p>
       </div>
 
-      {/* Faixa full-width — altura fixa para clipar cards acima/abaixo */}
-      <div className="group overflow-hidden" style={{ height: 620 }}>
-        {/* Margem extra no topo para dar espaço aos cards deslocados para cima */}
+      {/* Faixa full-width — overflow-hidden clipa cards acima/abaixo; reduced-motion mostra grid estático */}
+      <div className="group h-[620px] overflow-hidden motion-reduce:h-auto motion-reduce:overflow-visible">
         <div
-          className="flex items-center gap-6 px-6 animate-marquee group-hover:[animation-play-state:paused]"
-          style={{ marginTop: 90 }}
+          className="flex items-center gap-6 px-6 mt-[90px] animate-marquee group-hover:[animation-play-state:paused] motion-reduce:animate-none motion-reduce:mt-0 motion-reduce:flex-wrap motion-reduce:justify-center"
         >
           {loop.map((item, i) => (
             <PhotoCard key={`${item.label}-${i}`} label={item.label} city={item.city} dest={item.dest} h={item.h} dy={item.dy} img={item.img} />

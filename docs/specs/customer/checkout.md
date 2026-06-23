@@ -255,7 +255,7 @@ Comportamentos:
 Já mostrado no §2. Detalhes:
 
 ### Conteúdo
-- **Operadora · Localização** (linha 1)
+- **Estacionamento · Localização** (linha 1)
 - **Tipo de vaga** (linha 2)
 - **Check-in / Check-out** com data + hora local
 - **Duração** ("5 diárias" / "8 horas")

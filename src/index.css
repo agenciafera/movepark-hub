@@ -61,6 +61,13 @@
 
     /* Scrim — navy-tinted, not pure black */
     --scrim: 248 26% 20% / 0.55;
+    /* Deep scrim for photo overlays (rgb(8,12,40) ≈ hsl(233 67% 9%)) */
+    --scrim-deep-hsl: 233 67% 9%;
+
+    /* Hero gradient stops — brand hues at reduced lightness */
+    --hero-deep: 248 40% 8%;
+    --hero-violet-mid: 239 70% 20%;
+    --hero-end: 248 30% 14%;
 
     /* shadcn radius alias */
     --radius: 14px;

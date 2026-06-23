@@ -72,7 +72,7 @@ export default function VoucherValidatePage() {
     return (
       <Shell>
         <p className="text-body-md text-muted">
-          Esta página é para a equipe da operadora registrar sua entrada no portão.
+          Esta página é para a equipe do estacionamento registrar sua entrada no portão.
         </p>
         <Button variant="secondary" asChild>
           <Link to={code ? `/bookings/${code}` : "/bookings"}>Ver minha reserva</Link>
@@ -140,7 +140,7 @@ function OperatorValidate({ code }: { code: string }) {
 function Summary({ booking }: { booking: VoucherBooking }) {
   return (
     <div className="space-y-2 border-t border-hairline-soft pt-4 text-body-sm">
-      <Row label="Operadora" value={booking.location.company.name} />
+      <Row label="Estacionamento" value={booking.location.company.name} />
       <Row label="Unidade" value={booking.location.name} />
       <Row label="Tipo" value={booking.parking_type_name ?? "Vaga"} />
       <Row label="Check-in" value={formatDateTime(booking.check_in_at)} />

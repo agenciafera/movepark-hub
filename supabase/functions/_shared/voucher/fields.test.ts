@@ -31,7 +31,7 @@ Deno.test("formatBRL formata em reais", () => {
 Deno.test("voucherFields traz as linhas na ordem com veículo e endereço", () => {
   const labels = voucherFields(base).map((l) => l.label);
   assertEquals(labels, [
-    "Operadora",
+    "Estacionamento",
     "Unidade",
     "Endereço",
     "Tipo de vaga",

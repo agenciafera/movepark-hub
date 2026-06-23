@@ -8,7 +8,7 @@ const steps = [
   },
   {
     title: "Compare as opções",
-    text: "Veja vagas de várias operadoras: coberto, descoberto, valet e mais.",
+    text: "Veja vagas de vários estacionamentos: coberto, descoberto, valet e mais.",
   },
   {
     title: "Reserve e pague online",
@@ -31,7 +31,7 @@ export function HowItWorks() {
             <p className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
               Simples e rápido
             </p>
-            <h2 className="mb-4 text-[36px] font-bold text-ink tablet:text-display-2xl">
+            <h2 className="mb-4 text-[36px] leading-[1.1] font-bold text-ink tablet:text-display-2xl">
               Como reservar em 4 passos
             </h2>
             <p className="mb-10 max-w-md text-body-md text-muted">
@@ -66,6 +66,8 @@ export function HowItWorks() {
               src="/images/como-reservar.jpg"
               alt="Motorista sorrindo ao celular após concluir reserva no aeroporto"
               className="absolute inset-0 h-full w-full object-cover"
+              loading="lazy"
+              decoding="async"
             />
 
             {/* Floating booking card */}

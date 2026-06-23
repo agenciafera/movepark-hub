@@ -10,7 +10,7 @@
 Em **3 segundos**, o usuário deve entender:
 1. Que ele pode reservar vagas de estacionamento em aeroportos brasileiros e portugueses.
 2. Que ele começa indicando **para onde** e **quando** ele vai.
-3. Que a marca é confiável (operadoras parceiras, número de vagas, avaliações).
+3. Que a marca é confiável (estacionamentos parceiras, número de vagas, avaliações).
 
 Em **15 segundos**, ele deve conseguir iniciar uma busca útil.
 
@@ -49,7 +49,7 @@ Em **15 segundos**, ele deve conseguir iniciar uma busca útil.
 ├──────────────────────────────────────────────────────────────┤
 │                                                              │
 │   Por que reservar com a Movepark?                           │
-│   ▢ Cancelamento grátis  ▢ Operadoras verificadas            │  Trust
+│   ▢ Cancelamento grátis  ▢ Estacionamentos verificadas            │  Trust
 │   ▢ Preço travado        ▢ Atendimento 24h                   │  band
 │                                                              │
 ├──────────────────────────────────────────────────────────────┤
@@ -162,7 +162,7 @@ Faixa horizontal com 4 selos. Sem ilustrações pesadas, só ícone outline + la
 ```
 🛡  Cancelamento grátis até X horas antes
 🏷  Preço travado, sem surpresas no balcão
-✅  Operadoras verificadas pela Movepark
+✅  Estacionamentos verificadas pela Movepark
 📞  Atendimento 24h por dia, 7 dias por semana
 ```
 
@@ -175,7 +175,7 @@ Cor: ícone em `mp-indigo`, labels em `ink`, copy em `muted`. Background `bg-sur
 3 passos numerados (1 · 2 · 3) com mini-ilustração (ou ícone Lucide grande):
 
 1. **Buscar** — Digite o aeroporto e suas datas.
-2. **Comparar** — Veja opções de várias operadoras num só lugar.
+2. **Comparar** — Veja opções de várias estacionamentos num só lugar.
 3. **Reservar** — Pague online e receba seu voucher por e-mail.
 
 Layout 3-col desktop, vertical mobile.
@@ -243,5 +243,5 @@ CTA estrito pra operadores. Banda full-bleed com **gradiente da marca** (`--mp-g
 
 - [ ] Geolocation "Perto de mim" exige permissão de browser — precisamos de UX pra "Use sua localização" + fallback se negar.
 - [ ] Autocomplete de aeroportos: lista global hardcoded (~30 cidades/aeroportos) OU vier do banco? Hardcoded mais simples no MVP.
-- [ ] Foto de fundo do hero: usar foto da operadora mais popular daquela busca recente? Ou foto genérica do brand? **Decisão**: genérica no MVP.
+- [ ] Foto de fundo do hero: usar foto da estacionamento mais popular daquela busca recente? Ou foto genérica do brand? **Decisão**: genérica no MVP.
 - [ ] Quando a Movepark adicionar Europa em escala, a home precisa mudar idioma + currency. Hoje: PT-BR + BRL.

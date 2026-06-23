@@ -90,7 +90,7 @@ export function Step4Confirmation({ booking }: Props) {
       <div className="rounded-md border border-hairline-soft bg-surface-soft p-5 text-body-sm text-body">
         <ol className="space-y-2">
           <li>1. Apresente o QR na entrada do estacionamento.</li>
-          <li>2. Siga as orientações da equipe da operadora.</li>
+          <li>2. Siga as orientações da equipe do estacionamento.</li>
           <li>
             3. Check-in:{" "}
             <strong className="text-ink">

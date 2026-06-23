@@ -68,7 +68,7 @@ export type SearchResponse = {
   limit: number;
   offset: number;
   results: SearchResultItem[];
-  /** Facetas para a sidebar de filtros (operadora/destino presentes no resultado). */
+  /** Facetas para a sidebar de filtros (estacionamento/destino presentes no resultado). */
   facets?: {
     operators: { slug: string; name: string; count: number }[];
     destinations: { code: string; name: string; type: string; count: number }[];

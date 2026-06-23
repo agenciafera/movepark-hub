@@ -1,24 +1,11 @@
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 
-const trustItems = ["Confirmação imediata", "Sem taxa de serviço", "Cancelamento grátis"];
-
-function CheckIcon() {
-  return (
-    <svg className="h-3.5 w-3.5 shrink-0 text-mp-teal" fill="currentColor" viewBox="0 0 20 20">
-      <path
-        fillRule="evenodd"
-        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-        clipRule="evenodd"
-      />
-    </svg>
-  );
-}
 
 export function CtaBanner() {
-  const navigate = useNavigate();
   return (
-    <section className="relative overflow-hidden">
+    <section className="px-6 pt-4 pb-16 desktop:px-8 desktop:pb-20">
+      <div className="relative mx-auto max-w-[1280px] overflow-hidden rounded-3xl">
       {/* Foto de fundo */}
       <img
         src="/images/bg_cta-section-movepark-hub.png"
@@ -31,7 +18,7 @@ export function CtaBanner() {
         className="absolute inset-0"
         style={{
           background:
-            "linear-gradient(to bottom, rgba(8,12,40,0.72) 0%, rgba(8,12,40,0.60) 50%, rgba(8,12,40,0.78) 100%)",
+            "linear-gradient(to bottom, hsl(var(--scrim-deep-hsl) / 0.72) 0%, hsl(var(--scrim-deep-hsl) / 0.60) 50%, hsl(var(--scrim-deep-hsl) / 0.78) 100%)",
         }}
         aria-hidden="true"
       />
@@ -45,7 +32,7 @@ export function CtaBanner() {
         aria-hidden="true"
       />
 
-      <div className="relative z-10 mx-auto max-w-[1280px] px-6 py-20 text-center desktop:px-8 desktop:py-28">
+      <div className="relative z-10 px-6 py-20 text-center desktop:px-8 desktop:py-28">
         <p className="mb-3 text-caption-sm font-bold uppercase tracking-widest text-mp-pale/70">
           Reserve com antecedência
         </p>
@@ -56,23 +43,13 @@ export function CtaBanner() {
         <p className="mx-auto mb-10 max-w-lg text-[17px] leading-relaxed text-white/70">
           Preço garantido, cancelamento grátis e voucher na hora. Sem filas, sem surpresas.
         </p>
-        <button
-          type="button"
-          onClick={() => navigate("/search")}
+        <Link
+          to="/search"
           className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-button-md font-semibold text-mp-navy transition-all hover:bg-mp-pale hover:gap-3"
         >
           Buscar vagas agora <ArrowRight className="h-4 w-4" />
-        </button>
-
-        {/* Trust pills abaixo do CTA */}
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-          {trustItems.map((label) => (
-            <span key={label} className="inline-flex items-center gap-1.5 text-[13px] text-white/60">
-              <CheckIcon />
-              {label}
-            </span>
-          ))}
-        </div>
+        </Link>
+      </div>
       </div>
     </section>
   );

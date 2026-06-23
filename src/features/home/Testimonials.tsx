@@ -48,7 +48,7 @@ const reviews = [
     name: "Carlos Mendes",
     destination: "CGH · Congonhas",
     rating: 5,
-    text: "Comparei três operadoras e encontrei uma vaga coberta com valor bem abaixo do que pago normalmente. Recomendo muito.",
+    text: "Comparei três estacionamentos e encontrei uma vaga coberta com valor bem abaixo do que pago normalmente. Recomendo muito.",
   },
   {
     name: "Ana Paula Costa",
@@ -71,7 +71,7 @@ export function Testimonials() {
         <p className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
           Avaliações verificadas
         </p>
-        <h2 className="mb-4 text-[36px] font-bold text-ink tablet:text-display-2xl">
+        <h2 className="mb-4 text-[36px] leading-[1.1] font-bold text-ink tablet:text-display-2xl">
           O que nossos clientes dizem
         </h2>
 

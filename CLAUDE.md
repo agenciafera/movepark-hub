@@ -307,3 +307,19 @@ Deno + imports remotos. Cada função abre com um bloco de comentário documenta
 5. Mudou schema? → migration nova + `bun run gen:types` + spec atualizada.
 6. Mudou regra de negócio? → spec correspondente em `docs/specs/` atualizada no mesmo PR.
 7. Tipos vindos de `@/types/domain`, imports via `@/`, soft-delete respeitado.
+
+## Design Context
+
+Contexto estratégico e visual do projeto vive em dois arquivos na raiz:
+
+- **[PRODUCT.md](PRODUCT.md)** — Registro (`brand`), usuários, propósito, personalidade da marca e anti-referências. Leia antes de tomar decisões de UX ou copy.
+- **[DESIGN.md](DESIGN.md)** — Sistema visual completo: tokens de cor, tipografia, elevação, componentes e guardrails. DESIGN.md é normativo — segue-o em decisões visuais.
+
+**Princípios de design (resumo para agentes):**
+1. Clareza sem instrução — ação óbvia pela hierarquia, não por texto explicativo.
+2. Confiança antes do clique — sinais de confiança chegam antes do CTA.
+3. Personalidade no detalhe — marca vive no micro-copy, não em decoração.
+4. Mobile-first, aeroporto-first — um polegar, 4G, luz de sol.
+5. Uma marca, três superfícies — consumer/operator/admin no mesmo sistema de design.
+
+Para iterar visualmente no browser: `/impeccable live` (precisa de `bun run dev`). Para critique, audit ou polish de uma rota: `/impeccable <comando> <caminho>`.

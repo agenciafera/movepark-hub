@@ -110,7 +110,8 @@ export function ConsumerTopbar() {
     .toUpperCase();
 
   return (
-    <header className="sticky top-0 z-40 flex h-20 items-center gap-4 border-b border-hairline bg-canvas px-4 desktop:px-8">
+    <header className="sticky top-0 z-40 border-b border-hairline bg-canvas">
+      <div className="mx-auto flex h-20 w-full max-w-[1280px] items-center gap-4 px-4 desktop:px-8">
       <Link to="/" className="hidden tablet:block shrink-0" aria-label="Ir para a home">
         <Wordmark height={22} />
       </Link>
@@ -125,7 +126,7 @@ export function ConsumerTopbar() {
         {!isHome && (
           <>
             {/* Desktop/tablet: a SearchBarPill funcional, semeada com a busca atual e preservando
-                os filtros já aplicados (operadora, comodidades, ordenação…). */}
+                os filtros já aplicados (estacionamento, comodidades, ordenação…). */}
             <SearchBarPill
               variant="compact"
               className="hidden w-full max-w-3xl tablet:flex"
@@ -211,6 +212,7 @@ export function ConsumerTopbar() {
             </DropdownMenuContent>
           </DropdownMenu>
         )}
+      </div>
       </div>
     </header>
   );

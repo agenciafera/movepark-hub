@@ -25,7 +25,7 @@ function baseProps() {
 }
 
 describe("SearchFilters", () => {
-  it("lista operadoras da faceta com contagem (não empresas globais)", () => {
+  it("lista estacionamentos da faceta com contagem (não empresas globais)", () => {
     renderWithProviders(<SearchFiltersSidebar {...baseProps()} />);
     expect(screen.getByLabelText(/AeroValet/)).toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
@@ -36,14 +36,14 @@ describe("SearchFilters", () => {
     expect(screen.queryByText("Destino")).not.toBeInTheDocument();
   });
 
-  it("esconde operadora quando há só uma opção (escolher não faz sentido)", () => {
+  it("esconde estacionamento quando há só uma opção (escolher não faz sentido)", () => {
     const props = baseProps();
     props.operatorOptions = [operatorOptions[0]];
     renderWithProviders(<SearchFiltersSidebar {...props} />);
-    expect(screen.queryByText("Operadora")).not.toBeInTheDocument();
+    expect(screen.queryByText("Estacionamento")).not.toBeInTheDocument();
   });
 
-  it("toggla operadora chamando onOperatorChange", () => {
+  it("toggla estacionamento chamando onOperatorChange", () => {
     const props = baseProps();
     renderWithProviders(<SearchFiltersSidebar {...props} />);
     fireEvent.click(screen.getByLabelText(/Plenty/));

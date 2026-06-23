@@ -62,7 +62,7 @@ export const PUBLIC_TOOLS: ToolDef[] = [
   },
   {
     name: "list_companies",
-    description: "Lista as operadoras parceiras (empresas) ativas da plataforma.",
+    description: "Lista os estacionamentos parceiros (empresas) ativos da plataforma.",
     inputSchema: obj({ limit: INT }),
   },
   {

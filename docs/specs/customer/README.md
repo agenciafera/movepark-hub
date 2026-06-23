@@ -10,12 +10,12 @@
 O **Consumer App** é o site/aplicativo público onde qualquer pessoa pode:
 
 1. **Buscar** uma vaga de estacionamento próxima a um aeroporto/cidade, **a partir de datas e horários** (não a partir de um estacionamento específico).
-2. **Comparar** opções de múltiplas operadoras (Aerovalet, Plenty, Nationpark, …) num único feed unificado, com mapa + lista.
+2. **Comparar** opções de múltiplas estacionamentos (Aerovalet, Plenty, Nationpark, …) num único feed unificado, com mapa + lista.
 3. **Reservar e pagar** uma vaga, opcionalmente adicionando serviços extras (Capa Protetora, AutoStart, Seguro de cancelamento etc.).
 4. **Gerenciar** suas reservas, veículos, cartões salvos e dados pessoais.
 5. **Acessar o voucher** com QR code no dia da reserva.
 
-A grande mudança em relação ao legado é que o usuário **não escolhe mais um tenant/operadora primeiro** (`aerovalet.movepark.co`, `plenty.movepark.co` etc.). O Hub aceita uma busca por **destino + datas** e devolve resultados de **todas as operadoras** que servem aquele ponto.
+A grande mudança em relação ao legado é que o usuário **não escolhe mais um tenant/estacionamento primeiro** (`aerovalet.movepark.co`, `plenty.movepark.co` etc.). O Hub aceita uma busca por **destino + datas** e devolve resultados de **todas as estacionamentos** que servem aquele ponto.
 
 ---
 
@@ -35,7 +35,7 @@ A grande mudança em relação ao legado é que o usuário **não escolhe mais u
 
 ## 3. Princípios
 
-1. **Search-first.** A home é uma busca, não uma lista de operadoras.
+1. **Search-first.** A home é uma busca, não uma lista de estacionamentos.
 2. **Photography-led.** Toda vaga tem foto. Sem foto, sem destaque. (Placeholder genérico até as fotos chegarem.)
 3. **Confiança visível.** Rating + avaliações + selos ("Vaga favorita", "Operador verificado") no card. O número de rating é o único momento tipográfico "alto" do sistema (64 px / 900 — ver [design-tokens.md](../design-tokens.md)).
 4. **Uma cor de marca.** Vermelho `#DA455E` carrega CTA, save (coração), search orb. Não tem outras cores compitindo.
@@ -52,7 +52,7 @@ A grande mudança em relação ao legado é que o usuário **não escolhe mais u
 | [information-architecture.md](information-architecture.md) | Sitemap, rotas, navegação global, footer, mobile bottom-nav |
 | [home-and-search.md](home-and-search.md) | Home pública, hero, pill search bar, categorias, recentes |
 | [search-results.md](search-results.md) | Página de resultados — lista + mapa + filtros + ordenação |
-| [listing-detail.md](listing-detail.md) | Página de detalhe de uma vaga (operadora + localização + tipo) |
+| [listing-detail.md](listing-detail.md) | Página de detalhe de uma vaga (estacionamento + localização + tipo) |
 | [checkout.md](checkout.md) | Fluxo de checkout (identificação → veículo → pagamento → confirmação) |
 | [account-area.md](account-area.md) | Área logada — perfil, veículos, cartões, endereços |
 | [my-bookings.md](my-bookings.md) | Lista e detalhe das reservas do cliente, voucher QR |
@@ -69,7 +69,7 @@ Direto, brasileiro, formal-amigável. Verbos no infinitivo nos CTAs (**"Reservar
 ### Pronome
 - **"Você"** para o cliente.
 - **"Nós"** para a Movepark, parcimoniosamente — a marca fala pelo produto, não em primeira pessoa.
-- **3a pessoa** para operadoras: "Operada por Aerovalet", "Hospedada pelo Nationpark".
+- **3a pessoa** para estacionamentos: "Operada por Aerovalet", "Hospedada pelo Nationpark".
 
 ### Números, preços, unidades
 - `R$ 24 / dia`, `R$ 12 / hora` (espaço antes e depois da barra).

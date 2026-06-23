@@ -67,7 +67,7 @@ Auth obrigatória.
 - **Histórico**: "Seu histórico está vazio. Que tal reservar uma viagem?"
 
 ### Filtros (top-right da lista)
-- Operadora (dropdown checkboxes)
+- Estacionamento (dropdown checkboxes)
 - Ano
 - Status (extras dentro de cada tab)
 
@@ -90,7 +90,7 @@ Auth obrigatória.
 │                          │  ┌──────────────────────────┐    │
 │  ── Resumo da reserva ── │  │  Voucher                 │    │
 │                          │  │                          │    │
-│  Operadora               │  │  [QR code 240×240]       │    │  Sticky right
+│  Estacionamento               │  │  [QR code 240×240]       │    │  Sticky right
 │  Aerovalet               │  │                          │    │
 │                          │  │  Apresente este QR       │    │
 │  Localização             │  │  na chegada à vaga.      │    │
@@ -133,7 +133,7 @@ Auth obrigatória.
 │  ── divider ──           │                                  │
 │                          │                                  │
 │  Precisa de ajuda?       │                                  │
-│  [Falar com a operadora] │                                  │
+│  [Falar com a estacionamento] │                                  │
 │  [Falar com a Movepark]  │                                  │
 └──────────────────────────┴──────────────────────────────────┘
 ```
@@ -160,7 +160,7 @@ PDF no servidor, guarda no bucket privado `vouchers`, devolve signed URL). Quand
 `checked_in`, o voucher mostra "Entrada registrada às HH:MM". Ver [voucher-qrcode.md](../voucher-qrcode.md).
 
 PDF inclui:
-- Logo Movepark + operadora
+- Logo Movepark + estacionamento
 - Código booking grande
 - QR code grande (vetor)
 - Datas/horários
@@ -195,8 +195,8 @@ Ações principais:
 
 ### Em uso (`checked_in`)
 - Voucher continua visível pra check-out.
-- `[Pedir extensão]` (futuro) — operadora cobra dias extras.
-- `[Falar com a operadora]`.
+- `[Pedir extensão]` (futuro) — estacionamento cobra dias extras.
+- `[Falar com a estacionamento]`.
 
 ### Concluída (`completed`)
 - `[Ver recibo]`.
@@ -204,7 +204,7 @@ Ações principais:
 - `[Reservar de novo]` → pré-popula datas próximas no listing original.
 
 ### Cancelada (`cancelled`)
-- Banner cinza com motivo (cliente cancelou / operadora cancelou / pagamento falhou / expirou).
+- Banner cinza com motivo (cliente cancelou / estacionamento cancelou / pagamento falhou / expirou).
 - `[Detalhes do reembolso]` (se aplicável) — mostra valor reembolsado + prazo.
 - `[Reservar de novo]`.
 
@@ -294,7 +294,7 @@ Persistido via RPC `submit_review` na tabela `review` (rating 1-5 + sub-notas + 
 ## 9. Comunicação dentro da reserva
 
 Bloco "Precisa de ajuda?" no detalhe da reserva:
-- **Falar com a operadora** → modal com telefone + e-mail + nota "Atendimento das 6h às 22h".
+- **Falar com a estacionamento** → modal com telefone + e-mail + nota "Atendimento das 6h às 22h".
 - **Falar com a Movepark** → abre chat (Zendesk / Intercom no futuro) ou e-mail `suporte@movepark.co`.
 
 Mensagens automáticas:
@@ -340,7 +340,7 @@ Mensagens automáticas:
 - [ ] **Editar reserva**: requer recalcular `location_parking_availability.booked_count` na transição. Edge Function pra atomicidade.
 - [ ] **Refund**: depende do gateway. Stripe tem `refund` API direta; Pagar.me tem `transactions/:id/refund`. Tempo de processamento varia.
 - [x] **Avaliações**: implementado (PRD-08 — ver [reviews.md](../reviews.md)). CTA "Avaliar" no detalhe da reserva `completed` → RPC `submit_review`.
-- [ ] **Chat com operadora**: MVP é só link/telefone. Futuro: chat real-time via Supabase Realtime.
+- [ ] **Chat com estacionamento**: MVP é só link/telefone. Futuro: chat real-time via Supabase Realtime.
 - [ ] **Push notifications**: requer PWA + service worker + provider (Firebase, OneSignal). Fora do MVP.
-- [ ] **Receipt PDF**: similar ao voucher, mas com info fiscal completa (CNPJ operadora, valor, impostos quando aplicável).
+- [ ] **Receipt PDF**: similar ao voucher, mas com info fiscal completa (CNPJ estacionamento, valor, impostos quando aplicável).
 - [ ] **Reservar de novo**: deep link `/p/:o/:l/:pt?from=…&to=…` com datas sugeridas (próxima sexta a próxima domingo?).

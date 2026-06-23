@@ -209,7 +209,7 @@ function mcpDocsHtml(): string {
     <tr><td><code>search_parking</code></td><td>Busca estacionamentos por destino e período.</td></tr>
     <tr><td><code>simulate_price</code></td><td>Simula o preço de uma reserva.</td></tr>
     <tr><td><code>get_faq</code></td><td>Perguntas frequentes (global/unidade).</td></tr>
-    <tr><td><code>list_companies</code></td><td>Operadoras parceiras.</td></tr>
+    <tr><td><code>list_companies</code></td><td>Estacionamentos parceiros.</td></tr>
     <tr><td><code>list_locations</code></td><td>Unidades públicas.</td></tr>
     <tr><td><code>get_parking_types</code></td><td>Tipos de vaga de uma unidade.</td></tr>
   </table>

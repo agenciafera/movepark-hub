@@ -3,7 +3,7 @@
 export type Vehicle = "car" | "motorcycle";
 
 type BuildArgs = {
-  /** Params atuais a preservar (operadora, comodidades, ordenação, categoria, distância…).
+  /** Params atuais a preservar (estacionamento, comodidades, ordenação, categoria, distância…).
    *  null/undefined = busca nova "do zero" (home). */
   base?: URLSearchParams | null;
   dest: string | null;

@@ -24,7 +24,7 @@ type Props = {
   initialFrom?: Date | null;
   initialTo?: Date | null;
   initialVehicle?: Vehicle;
-  /** Preserva os filtros já na URL (operadora, comodidades, ordenação…) na re-busca. Usado na
+  /** Preserva os filtros já na URL (estacionamento, comodidades, ordenação…) na re-busca. Usado na
    *  página de resultados; na home fica false (busca nova). */
   preserveParams?: boolean;
 };

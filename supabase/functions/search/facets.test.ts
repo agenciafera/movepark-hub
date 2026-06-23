@@ -47,8 +47,8 @@ Deno.test("filterByDestinations filtra por code e descarta null", () => {
   );
 });
 
-Deno.test("facetas independem do próprio eixo: operadora reflete destino escolhido", () => {
-  // Filtro de destino = GRU → operadoras disponíveis devem ser só aerovalet + plenty
+Deno.test("facetas independem do próprio eixo: estacionamento reflete destino escolhido", () => {
+  // Filtro de destino = GRU → estacionamentos disponíveis devem ser só aerovalet + plenty
   const ops = aggregateOperators(filterByDestinations(items, ["GRU"]));
   assertEquals(ops.map((o) => o.slug), ["aerovalet", "plenty"]);
 });

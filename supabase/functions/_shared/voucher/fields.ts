@@ -42,7 +42,7 @@ export function formatBRL(value: number, currency = "BRL"): string {
 /** Linhas (label/valor) exibidas no corpo do voucher, na ordem. */
 export function voucherFields(b: VoucherBooking): VoucherLine[] {
   const lines: VoucherLine[] = [
-    { label: "Operadora", value: b.company_name },
+    { label: "Estacionamento", value: b.company_name },
     { label: "Unidade", value: b.location_name },
   ];
   if (b.location_address) lines.push({ label: "Endereço", value: b.location_address });

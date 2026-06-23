@@ -1,6 +1,6 @@
 # Página de resultados — `/search`
 
-> Onde o cliente compara vagas de várias operadoras pra uma mesma busca.
+> Onde o cliente compara vagas de várias estacionamentos pra uma mesma busca.
 
 ---
 
@@ -19,7 +19,7 @@
 | `pax` | int 1–9 | 1 | passageiros (só relevante se `location.has_passenger_quantity`) |
 | `pcd` | `true`\|`false` | `false` | (se aplicável) |
 | `category` | code do `parking_type` (csv) | — | filtro de tipo |
-| `operator` | slug (csv) | — | filtro de operadora |
+| `operator` | slug (csv) | — | filtro de estacionamento |
 | `max_distance_km` | int | — | filtro de distância |
 | `sort` | `price_asc`\|`price_desc`\|`distance_asc`\|`rating_desc` | `price_asc` | |
 | `view` | `list`\|`map` | `list` | |
@@ -44,7 +44,7 @@ URLs canônicas com `dest` + `from` + `to` são **indexáveis** se a Movepark op
 │                          │   │ 1  │ │ 2  │ │ 3  │               │
 │  • Preço                 │   └────┘ └────┘ └────┘               │
 │  • Distância             │   ┌────┐ ┌────┐ ┌────┐               │
-│  • Operadora             │   │ 4  │ │ 5  │ │ 6  │               │
+│  • Estacionamento             │   │ 4  │ │ 5  │ │ 6  │               │
 │  • Amenidades            │   └────┘ └────┘ └────┘               │
 │  • Política              │                                      │
 │  • Avaliação             │   [Carregar mais]                    │
@@ -84,7 +84,7 @@ Cores: inativo `bg-surface-soft text-ink`, ativo `bg-mp-navy text-white`.
 |---|---|---|
 | Preço | Range slider R$ 0–500 | `price_min`, `price_max` |
 | Distância do aeroporto | Range slider 0–10 km + lista de checkboxes (até 1km, 1–3km, 3km+) | `max_distance_km` |
-| Operadora | Lista de checkboxes com logo + nome (mostra contador por operadora) | `operator=slug,slug` |
+| Estacionamento | Lista de checkboxes com logo + nome (mostra contador por estacionamento) | `operator=slug,slug` |
 | Amenidades | Checkboxes (Shuttle, Coberto, 24h, Lavagem, Self-park, Valet) | `amenities=…` |
 | Tempo de shuttle | "≤ 5 min", "≤ 10 min", "≤ 15 min" | `max_shuttle_min` |
 | Política | "Cancelamento grátis", "Reembolsável" | `flexible_only=true` |
@@ -122,7 +122,7 @@ Footer da sidebar: botão `[Limpar tudo]` + contador "12 filtros ativos".
 - **Foto**: aspecto 4:3, `rounded-md`, com carrossel de dots overlay no bottom-center (até 5 fotos).
 - **Heart** top-right (32×32 círculo branco com hairline): salva pro favoritos. Quando saved, fill `mp-red`.
 - **"Vaga favorita"** badge pill top-left, fonte 11px / 600, branco com shadow tier.
-- **Title** em `title-md`: `{nome do tipo de vaga} · {operadora}`.
+- **Title** em `title-md`: `{nome do tipo de vaga} · {estacionamento}`.
 - **Meta line 1**: localização + distância.
 - **Meta line 2**: até 3 amenidades-chave separadas por `·`.
 - **Rating**: estrela preenchida `★` em `ink` (não amarela), rating com vírgula, "N avaliações" muted.
@@ -169,7 +169,7 @@ Placeholder com ícone genérico (`Car`) sobre `bg-surface-soft` + texto "Foto e
 Click no toggle `[Mapa ▭]` no header. Layout vira split 50/50:
 
 - **Esquerda (lista)**: scroll vertical, cards um pouco mais compactos (sem badge "Vaga favorita" pra economizar espaço).
-- **Direita (mapa)**: MapLibre com tiles abertos. Pin = operadora. Cor do pin = `mp-red`. Tamanho 32×40 (typical map pin shape). Hover/click no card destaca o pin correspondente (anel `mp-navy` ao redor).
+- **Direita (mapa)**: MapLibre com tiles abertos. Pin = estacionamento. Cor do pin = `mp-red`. Tamanho 32×40 (typical map pin shape). Hover/click no card destaca o pin correspondente (anel `mp-navy` ao redor).
 
 ### Comportamento do mapa
 - Zoom inicial ajustado pra mostrar todos os pins.
@@ -206,7 +206,7 @@ Discreto — o destaque visual deve ser **os pins**, não o terreno.
 | Parques / áreas verdes | tom muito claro de `surface-soft` |
 | Ruas principais | `hairline` 1px |
 | Rótulos | `body-sm muted` em Roboto (se MapTiler aceitar custom font; senão Inter) |
-| Pin de operadora | gota 32×40 `mp-red` `#DA455E` com ícone car branco |
+| Pin de estacionamento | gota 32×40 `mp-red` `#DA455E` com ícone car branco |
 | Pin do aeroporto / destino | ícone outline em `mp-navy`, não-clicável |
 | Cluster | círculo `mp-navy` 40px com contador branco |
 | Pin em hover | mesmo pin com anel 2px `mp-navy` ao redor |

@@ -41,7 +41,7 @@
 ├─ /privacidade                                    Política de privacidade
 │
 ├─ /manager/*                                      Painel admin Hub (existente, role hub_admin)
-└─ /operator/*                                     Painel operadora (existente, role company_operator)
+└─ /operator/*                                     Painel estacionamento (existente, role company_operator)
 ```
 
 ---
@@ -57,7 +57,7 @@
 | `/login`, `/signup` | público | noindex | client | |
 | `/account/*` | obrigatório | noindex | client | Redirect para `/login?next=…` se anônimo |
 | `/bookings`, `/bookings/:code` | obrigatório | noindex | client | Idem |
-| `/voucher/validate` | público | noindex | client | Usado por operadora pra check-in |
+| `/voucher/validate` | público | noindex | client | Usado por estacionamento pra check-in |
 | `/seja-parceiro` | público | indexável | SSG | LP B2B |
 | `/manager/*`, `/operator/*` | role-gated | noindex | client | Já implementadas |
 
@@ -104,9 +104,9 @@ Hairline `1px` inferior, sem shadow. Altura **80 px** (`--nav-height`).
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ Suporte           │ Operadoras            │ Movepark            │
+│ Suporte           │ Estacionamentos            │ Movepark            │
 │ Central de ajuda  │ Seja parceiro         │ Sobre nós           │
-│ Como funciona     │ Painel operadora      │ Carreiras           │
+│ Como funciona     │ Painel estacionamento      │ Carreiras           │
 │ Política de       │ API parceiros (futuro)│ Imprensa            │
 │ cancelamento      │                       │                     │
 │ Reembolso         │                       │                     │

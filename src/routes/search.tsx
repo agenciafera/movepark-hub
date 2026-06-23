@@ -101,7 +101,7 @@ export default function SearchResultsPage() {
   }
 
   // Destino é o ESCOPO da busca (combobox no topo), não um filtro de barra lateral. A sidebar só
-  // refina dentro do destino escolhido: operadora, distância, comodidades, categoria.
+  // refina dentro do destino escolhido: estacionamento, distância, comodidades, categoria.
   const activeCount =
     operator.length +
     amenities.length +

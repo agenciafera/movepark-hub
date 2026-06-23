@@ -97,7 +97,7 @@ const items: Item[] = [
   },
   {
     icon: BadgeCheck,
-    title: "Operadoras verificadas",
+    title: "Estacionamentos verificados",
     text: "Parceiros aprovados e avaliados pela Movepark.",
     Illustration: VerifiedIllustration,
   },
@@ -121,7 +121,7 @@ export function TrustBand() {
           <p className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
             Por que a Movepark
           </p>
-          <h2 className="text-[36px] font-bold text-ink tablet:text-display-2xl">
+          <h2 className="text-[36px] leading-[1.1] font-bold text-ink tablet:text-display-2xl">
             O que você tem em toda reserva
           </h2>
         </div>

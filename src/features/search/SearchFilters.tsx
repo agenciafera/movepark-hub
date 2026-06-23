@@ -20,7 +20,7 @@ type Props = {
   operator: string[];
   amenities: string[];
   maxDistanceKm: number | null;
-  /** Operadoras presentes no resultado atual (faceta da Edge), com contagem. */
+  /** Estacionamentos presentes no resultado atual (faceta da Edge), com contagem. */
   operatorOptions: OperatorOption[];
   /** Resultado/facetas ainda carregando — mostra skeleton no lugar das listas. */
   facetsLoading: boolean;
@@ -71,7 +71,7 @@ function FilterContent({
     return acc;
   }, {});
 
-  // Operadora só faz sentido escolher quando há 2+ no resultado.
+  // Estacionamento só faz sentido escolher quando há 2+ no resultado.
   const showOperators = facetsLoading || operatorOptions.length > 1;
 
   return (
@@ -115,7 +115,7 @@ function FilterContent({
         <>
           {hasDestCoords && <Separator />}
           <section className="space-y-3">
-            <Label className="text-title-md text-ink">Operadora</Label>
+            <Label className="text-title-md text-ink">Estacionamento</Label>
             {facetsLoading && operatorOptions.length === 0 ? (
               <div className="space-y-2">
                 {Array.from({ length: 4 }).map((_, i) => (

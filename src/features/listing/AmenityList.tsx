@@ -19,7 +19,7 @@ export function AmenityList({ amenities }: { amenities: ListingDetail["amenities
   if (!amenities.length) {
     return (
       <p className="text-body-sm text-muted">
-        Comodidades ainda não cadastradas pela operadora.
+        Comodidades ainda não cadastradas pelo estacionamento.
       </p>
     );
   }

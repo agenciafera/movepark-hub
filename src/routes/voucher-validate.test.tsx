@@ -42,10 +42,10 @@ describe("VoucherValidatePage", () => {
     expect(screen.getByText(/Entrar como operador/)).toBeInTheDocument();
   });
 
-  it("cliente → aviso de área da operadora", () => {
+  it("cliente → aviso de área do estacionamento", () => {
     const auth = mockAuth({ session: mockSession("customer"), effectiveRole: "customer" });
     renderWithProviders(<VoucherValidatePage />, { auth, route: ROUTE });
-    expect(screen.getByText(/equipe da operadora/)).toBeInTheDocument();
+    expect(screen.getByText(/equipe do estacionamento/)).toBeInTheDocument();
   });
 
   it("operador + confirmed → botão registra entrada", async () => {

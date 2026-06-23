@@ -104,24 +104,24 @@ combobox), e a **barra lateral refina dentro** do destino escolhido. O catálogo
   renderiza o **mesmo `SearchBarPill`** (variant `compact`) no centro, **persistente no scroll**
   (header `sticky`). Ele é semeado com o escopo da URL (`initialDest`/`initialFrom`/`initialTo`/
   `initialVehicle`; `key` força re-seed quando o escopo muda) e usa `preserveParams`, então re-buscar
-  **mantém os filtros já aplicados** (operadora, comodidades, ordenação, categoria, distância) e só
+  **mantém os filtros já aplicados** (estacionamento, comodidades, ordenação, categoria, distância) e só
   sobrescreve o escopo — lógica pura testada em `SearchBarPill.logic.ts` (`buildSearchParams`). Em
   mobile, o header mostra uma pill compacta que leva pra busca grande na home. Na home, a barra é o
   hero (`preserveParams` off, busca do zero); não há barra duplicada no corpo da `/search`. É a
   única forma de trocar destino — não há combobox de destino na sidebar.
-- **Sidebar (`SearchFilters.tsx`)** — só refinamentos dentro do destino: **operadora** (faceta),
+- **Sidebar (`SearchFilters.tsx`)** — só refinamentos dentro do destino: **estacionamento** (faceta),
   **distância do destino**, **comodidades**, **categoria** (pills). **Não** há filtro de destino na
   sidebar.
-- **Operadora** — vem da faceta `facets.operators` (operadoras que de fato têm lote no resultado
+- **Estacionamento** — vem da faceta `facets.operators` (estacionamentos que de fato têm lote no resultado
   atual, com contagem). Antes listava **todas** as empresas ativas globalmente, então escolher uma
-  operadora sem lote no destino zerava a busca; agora só aparece quem tem resultado. A seção só
-  renderiza com 2+ operadoras.
+  estacionamento sem lote no destino zerava a busca; agora só aparece quem tem resultado. A seção só
+  renderiza com 2+ estacionamentos.
 - **`ResultsHeader`** vira só resumo (H1 "N vagas em <destino>" + datas/duração + ordenação) — sem
   editar busca (quem edita é o `SearchBarPill`). O `Hero` da home também semeia o pill com os params
   da URL, então qualquer link pra `/?dest=…&from=…&to=…` chega preenchido.
 
 **Facetas (Edge `search`):** cada eixo é agregado considerando os demais filtros, mas **não a si
-mesmo** (`facets.ts` · `aggregate*`/`filterBy*`), pra lista não colapsar ao selecionar. Operadora e
+mesmo** (`facets.ts` · `aggregate*`/`filterBy*`), pra lista não colapsar ao selecionar. Estacionamento e
 destino deixam de ser filtrados antes da precificação e recortam o resultado só no fim (passo
 10b/10c de `supabase/functions/search/index.ts`). A faceta/param `destinations` (multi) continua
 disponível na Edge (capacidade de backend / Public API), mas o front de consumidor não usa —
@@ -206,8 +206,8 @@ adiciona `/destinos` e uma URL por destino publicado às `dynamicRoutes` do
 | Unitário (Vitest) | `src/lib/jsonld.test.ts` | `destinationSchema`: `@type: Place`, URL canônica `/destinos/<slug>`, address/geo, coalescing de `state`/`meta_description` nulos; `itemListSchema`: `@type: ItemList`, posições a partir de 1. |
 | Componente (Vitest) | `src/routes/destinos.test.tsx` | Índice `/destinos`: H1, separação populares/outros e links internos para cada `/destinos/<slug>`; estado vazio sem destinos. |
 | Unitário (Vitest) | `src/lib/destination-types.test.ts` | Registro central de tipos: ícone/label por tipo do enum e fallback (`MapPin`/code) para tipo desconhecido/nulo. |
-| Componente (Vitest) | `src/features/search/SearchFilters.test.tsx` | Sidebar de busca: operadora vem da faceta (não global) com contagem, some com ≤1 opção, toggle dispara callback; sem seção de destino (destino é escopo, fica no header). |
-| Edge (deno test) | `supabase/functions/search/facets.test.ts` | `aggregate*`/`filterBy*`: contagem, ordenação, descarte de destino nulo e independência de eixo (operadora reflete destino escolhido). |
+| Componente (Vitest) | `src/features/search/SearchFilters.test.tsx` | Sidebar de busca: estacionamento vem da faceta (não global) com contagem, some com ≤1 opção, toggle dispara callback; sem seção de destino (destino é escopo, fica no header). |
+| Edge (deno test) | `supabase/functions/search/facets.test.ts` | `aggregate*`/`filterBy*`: contagem, ordenação, descarte de destino nulo e independência de eixo (estacionamento reflete destino escolhido). |
 | Banco / RLS (pgTAP) | `supabase/tests/destination.test.sql` | Leitura pública (anon lê publicado); escrita bloqueada para anon (42501) e customer (UPDATE filtrado pelo USING); `hub_admin` insere/edita. |
 
 Ambos rodam no CI (`quality` → `test:unit`; `db` → `supabase test db` auto-descobre o

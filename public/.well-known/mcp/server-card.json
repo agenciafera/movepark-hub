@@ -50,7 +50,7 @@
     },
     {
       "name": "list_companies",
-      "description": "Lista as operadoras parceiras (empresas) da plataforma.",
+      "description": "Lista os estacionamentos parceiros (empresas) da plataforma.",
       "inputSchema": {
         "type": "object",
         "properties": { "limit": { "type": "integer" } }

@@ -74,12 +74,12 @@
 
 | Token | Size | Weight | Line Height | Letter Spacing | Uso |
 |---|---|---|---|---|---|
-| `display-3xl` | 56px | 700 | 1.08 | -0.8px | Hero H1 desktop, CtaBanner desktop |
-| `display-2xl` | 44px | 700 | 1.10 | -0.5px | Hero H1 mobile, section H2 desktop |
-| `display-xl` | 28px | 700 | 1.32 | -0.2px | KPI numbers, destaques numéricos |
-| `display-lg` | 22px | 500 | 1.20 | -0.3px | Títulos de página |
-| `display-md` | 21px | 700 | 1.40 | — | Títulos de seção |
-| `display-sm` | 20px | 600 | 1.22 | -0.15px | Sub-títulos |
+| `display-3xl` | 56px | 700 | 1.06 | -0.8px | Hero H1 desktop, CtaBanner desktop |
+| `display-2xl` | 44px | 700 | 1.05 | -0.5px | Hero H1 mobile, section H2 desktop |
+| `display-xl` | 28px | 700 | 1.28 | -0.2px | KPI numbers, destaques numéricos |
+| `display-lg` | 22px | 500 | 1.18 | -0.3px | Títulos de página |
+| `display-md` | 21px | 700 | 1.30 | — | Títulos de seção |
+| `display-sm` | 20px | 600 | 1.18 | -0.15px | Sub-títulos |
 
 ### Corpo
 

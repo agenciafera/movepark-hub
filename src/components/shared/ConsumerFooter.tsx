@@ -15,10 +15,10 @@ const groups: FooterGroup[] = [
     ],
   },
   {
-    title: "Operadoras",
+    title: "Estacionamentos",
     links: [
       { to: "/seja-parceiro", label: "Seja parceiro" },
-      { to: "/operator", label: "Painel da operadora" },
+      { to: "/operator", label: "Painel do estacionamento" },
     ],
   },
   {
@@ -43,7 +43,7 @@ const linkClass = "text-body-sm text-muted no-underline hover:text-ink";
 
 export function ConsumerFooter() {
   return (
-    <footer className="border-t border-hairline bg-canvas">
+    <footer className="border-t border-hairline bg-surface-soft">
       <div className="mx-auto grid w-full max-w-[1280px] grid-cols-1 gap-8 px-6 py-12 tablet:grid-cols-2 desktop:grid-cols-4 desktop:px-8">
         {groups.map((g) => (
           <div key={g.title} className="space-y-3">

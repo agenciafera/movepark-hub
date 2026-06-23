@@ -54,7 +54,7 @@ a marca é confiável.
 ## Resultados (`/search`)
 
 ### Objetivo
-O usuário compara vagas de várias operadoras para o mesmo destino e período, e decide qual ver
+O usuário compara vagas de várias estacionamentos para o mesmo destino e período, e decide qual ver
 em detalhe.
 
 ### Manter
@@ -64,7 +64,7 @@ em detalhe.
 | Header com contador + "editar busca" | Confirma o contexto da busca e permite ajustar sem sair da página. |
 | Category pills | Filtragem rápida por tipo de vaga, sem abrir a sidebar de filtros. |
 | Foto 4:3 no card | A principal âncora visual — o usuário precisa ver o que está comprando. |
-| Título: tipo · operadora | Identifica de forma imediata o que é e de quem é. |
+| Título: tipo · estacionamento | Identifica de forma imediata o que é e de quem é. |
 | Distância + até 3 amenidades chave | A distância é o segundo critério mais decisivo depois do preço. Amenidades chave (coberto, shuttle, valet) reduzem dúvidas. |
 | Rating + número de avaliações | Prova social objetiva. **Mostrar só se houver pelo menos 1 avaliação** — estrela sem dado faz o oposto do esperado. |
 | Preço total da estadia | Destaque visual à direita, com duração abaixo. Evita comparação de preço diário que confunde. |
@@ -91,7 +91,7 @@ em detalhe.
 ### Prioridade no card (de cima pra baixo)
 
 1. Foto com badge comparativo sobreposto
-2. Tipo de vaga · Operadora
+2. Tipo de vaga · Estacionamento
 3. Distância · amenidades chave
 4. Rating (condicional)
 5. Preço total + duração
@@ -111,13 +111,13 @@ existe para justificar o clique em "Reservar agora".
 |---|---|
 | Cabeçalho: h1 + meta (rating, distância, IATA) | Orientação imediata — onde estou, o que é, quão bem avaliado. |
 | Photo grid (5 fotos desktop, carrossel mobile) | A foto é o primeiro juízo de confiança. Grid de 5 mostra o lugar, não só uma câmera de segurança. |
-| Sobre essa vaga (texto curto da operadora) | 1–3 frases do parceiro personalizam o que seria genérico. Limite de 200 chars mantém conciso. Texto padrão por tipo de vaga como fallback. |
+| Sobre essa vaga (texto curto da estacionamento) | 1–3 frases do parceiro personalizam o que seria genérico. Limite de 200 chars mantém conciso. Texto padrão por tipo de vaga como fallback. |
 | O que essa vaga oferece (amenidades, 2 colunas) | Checklist claro de comodidades. Modal "ver todas" só quando há mais de 8. |
 | Avaliações (com critérios + lista) | Prova social detalhada — rating agregado + quebra por critério + cards de clientes reais. |
 | Como chegar (aviso crítico + passo a passo + traslado + mini-mapa) | A maior ansiedade do usuário antes de confirmar é "eu sei chegar lá?". Esta seção mata esse medo. Prioridade alta. |
 | Distâncias por terminal | Específico para aeroportos com múltiplos terminais (GRU T1/T2/T3). Elimina uma pergunta de suporte. |
 | Política de cancelamento | O usuário precisa saber antes de inserir o cartão. Regra única da plataforma (grátis até 24h). |
-| Conheça a operadora (card) | Humaniza a marca por trás da vaga. Logo + "N anos na Movepark" + badge verificado são suficientes. |
+| Conheça a estacionamento (card) | Humaniza a marca por trás da vaga. Logo + "N anos na Movepark" + badge verificado são suficientes. |
 | Reservation card sticky | O destino de tudo. Preço, datas, passageiros, "Reservar agora". |
 
 ### Remover / simplificar
@@ -125,14 +125,14 @@ existe para justificar o clique em "Reservar agora".
 | Elemento | Motivo |
 |---|---|
 | Sub-cabeçalho compacto logo abaixo das fotos | "Coberta · 100 vagas · Operada por Aerovalet · GRU" duplica o h1. Avaliar fusão com o texto "Sobre essa vaga" ou remoção. |
-| Outras localizações da operadora no card da operadora | Útil só se a operadora tiver mais de 1 localização no sistema. Esconder quando não houver para não mostrar seção vazia. |
+| Outras localizações da estacionamento no card da estacionamento | Útil só se a estacionamento tiver mais de 1 localização no sistema. Esconder quando não houver para não mostrar seção vazia. |
 | Critérios de avaliação sem dados | Se não há avaliações, a seção "Avaliações" some inteira — não mostrar rating zerado nem placeholder. |
 
 ### Adicionar
 
 | Seção | Contexto |
 |---|---|
-| FAQ contextual da vaga | A edge `get-faq` já resolve `global + destination + location`. Falta renderizar no listing como accordion colapsado no rodapé do conteúdo, antes da operadora. Perguntas frequentes sobre aquele lote específico (cancelamento, traslado, como funciona o check-in) reduzem suporte. |
+| FAQ contextual da vaga | A edge `get-faq` já resolve `global + destination + location`. Falta renderizar no listing como accordion colapsado no rodapé do conteúdo, antes da estacionamento. Perguntas frequentes sobre aquele lote específico (cancelamento, traslado, como funciona o check-in) reduzem suporte. |
 | Fotos reais (migration `location_photo`) | Ainda sem tabela de fotos por localização. Sem foto, o photo grid cai no placeholder — o que mina confiança na hora certa. Prioridade crítica antes do go-live das primeiras vagas. |
 
 ### Ordem recomendada da coluna esquerda
@@ -146,7 +146,7 @@ existe para justificar o clique em "Reservar agora".
 7. Sobre a garantia
 8. Política de cancelamento
 9. FAQ contextual
-10. Conheça a operadora
+10. Conheça a estacionamento
 
 ---
 
@@ -208,7 +208,7 @@ uma busca concreta.
 | Elemento | Contexto |
 |---|---|
 | FAQ específico do destino | A edge `get-faq` já suporta scope `destination`. Conteúdo de destino = perguntas sobre traslado ao terminal, cobertura vs descoberta, segurança, horários. É conteúdo único que o Google valoriza. Prioridade alta para SEO. |
-| Número de operadoras e vagas disponíveis | "5 operadoras, 240 vagas disponíveis em GRU" — dado real, se existir. Não mostrar se não houver. |
+| Número de estacionamentos e vagas disponíveis | "5 estacionamentos, 240 vagas disponíveis em GRU" — dado real, se existir. Não mostrar se não houver. |
 | Dicas de chegada ao aeroporto | 2–3 frases sobre acesso ao aeroporto (não à vaga). Conteúdo editorial curto que diferencia a página de um simples agregador. |
 
 ---
@@ -225,7 +225,7 @@ pode ser removida sem prejuízo.
 
 ### Footer
 
-**Manter:** as 3 colunas (Suporte, Operadoras, Movepark) + legal band. Estrutura certa.
+**Manter:** as 3 colunas (Suporte, Estacionamentos, Movepark) + legal band. Estrutura certa.
 
 **Preencher antes do go-live:**
 - `/sobre`, `/termos`, `/privacidade` precisam existir como páginas reais.
@@ -244,6 +244,6 @@ pode ser removida sem prejuízo.
 |---|---|---|
 | Fotos reais das vagas (`location_photo`) | Sem foto, listing e cards perdem o principal argumento visual | Crítica — resolver antes de captar primeiros parceiros |
 | FAQ global com conteúdo real | `/faq` vazia ou com placeholders prejudica confiança | Alta |
-| Textos "sobre a vaga" preenchidos pelas operadoras | Listing cai no fallback genérico sem o texto do parceiro | Alta — parte do onboarding do operador |
+| Textos "sobre a vaga" preenchidos pelas estacionamentos | Listing cai no fallback genérico sem o texto do parceiro | Alta — parte do onboarding do operador |
 | Foto real no hero da home | Ainda placeholder | Média |
 | Avaliações reais | Sem reviews, os blocos de rating somem em todo o Consumer App | Média — chegará com os primeiros clientes |

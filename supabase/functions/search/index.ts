@@ -225,7 +225,7 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // Operadora e destino NÃO são filtrados aqui — viram facetas (passo 10b) e só então
+  // Estacionamento e destino NÃO são filtrados aqui — viram facetas (passo 10b) e só então
   // recortam o resultado. Manter os candidatos largos até a precificação permite calcular
   // cada faceta considerando os DEMAIS filtros sem colapsar o próprio eixo.
 
@@ -293,7 +293,7 @@ Deno.serve(async (req: Request) => {
     }),
   );
 
-  // 10. Drop unpriceable results — conjunto base das facetas (sem filtro de operadora/destino)
+  // 10. Drop unpriceable results — conjunto base das facetas (sem filtro de estacionamento/destino)
   // deno-lint-ignore no-explicit-any
   const priceable: Array<any & FacetItem> = priced
     .filter((r) => r._price != null)
@@ -310,7 +310,7 @@ Deno.serve(async (req: Request) => {
     }));
 
   // 10b. Facetas — cada eixo considera os DEMAIS filtros, mas não a si mesmo (não colapsa
-  // ao selecionar). A faceta de operadora reflete a operadora que de fato tem lote aqui
+  // ao selecionar). A faceta de estacionamento reflete a estacionamento que de fato tem lote aqui
   // (corrige o filtro que antes listava todas as empresas globalmente).
   const operatorFacet = aggregateOperators(filterByDestinations(priceable, params.destinations));
   const destinationFacet = aggregateDestinations(filterByOperators(priceable, params.operator));

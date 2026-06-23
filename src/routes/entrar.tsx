@@ -15,7 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { OtpInput } from "@/components/ui/otp-input";
-import { Monogram, Wordmark } from "@/components/shared/Brand";
+import { Wordmark } from "@/components/shared/Brand";
 import { GoogleButton } from "@/auth/GoogleButton";
 import { useAuth } from "@/auth/context";
 
@@ -134,7 +134,6 @@ export default function EntrarPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-soft-gradient px-4 py-12">
       <div className="mb-8 flex flex-col items-center gap-3">
-        <Monogram size={44} />
         <div className="flex flex-col items-center gap-1">
           <Wordmark height={22} />
           <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-muted-steel">

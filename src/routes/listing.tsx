@@ -112,7 +112,7 @@ export default function ListingPage() {
       <div className="mx-auto w-full max-w-[1080px] px-4 py-12 desktop:px-8">
         <EmptyState
           title="Vaga não encontrada"
-          description="Pode ter sido removida pela operadora. Volte pra busca."
+          description="Pode ter sido removida pelo estacionamento. Volte pra busca."
           action={
             <Button asChild>
               <Link to="/">Voltar pra home</Link>
@@ -272,9 +272,9 @@ export default function ListingPage() {
 
           <Separator />
 
-          {/* Operadora */}
+          {/* Estacionamento */}
           <section className="space-y-4">
-            <h2 className="text-display-sm text-ink">Conheça a operadora</h2>
+            <h2 className="text-display-sm text-ink">Conheça o estacionamento</h2>
             <OperatorCard
               company={listing.company}
               others={listing.other_locations}

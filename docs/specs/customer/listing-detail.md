@@ -42,7 +42,7 @@ Os query params **vêm da busca** e populam o `reservation-card`. Se vazios, o c
 │  ── divider ──                       │  │ Check-in           │  │
 │                                      │  │ [10 jun · 22:00]   │  │  Reservation
 │  Sobre essa vaga                     │  │ Check-out          │  │  card (sticky)
-│  Texto curto da operadora            │  │ [15 jun · 08:00]   │  │  width 360 px
+│  Texto curto da estacionamento            │  │ [15 jun · 08:00]   │  │  width 360 px
 │                                      │  │ Passageiros [2 ▾]  │  │
 │  ── divider ──                       │  │                    │  │
 │                                      │  │ ▼ Detalhes do preço│  │
@@ -67,9 +67,9 @@ Os query params **vêm da busca** e populam o `reservation-card`. Se vazios, o c
 │                                      │                          │
 │  ── divider ──                       │                          │
 │                                      │                          │
-│  Conheça a operadora                 │                          │
+│  Conheça a estacionamento                 │                          │
 │  Aerovalet · 5 anos na Movepark      │                          │
-│  Outras localizações desta operadora │                          │
+│  Outras localizações desta estacionamento │                          │
 └──────────────────────────────────────┴──────────────────────────┘
 ```
 
@@ -111,12 +111,12 @@ Logo abaixo das fotos, antes do divider:
 Coberta · 100 vagas disponíveis · Operada por Aerovalet · GRU
 ```
 
-`title-md`, `ink`. Se a operadora tem badge "Operador verificado", aparece como pill ao final.
+`title-md`, `ink`. Se a estacionamento tem badge "Operador verificado", aparece como pill ao final.
 
 ### 5.2 Sobre essa vaga
-Parágrafo curto (1-3 frases) cadastrado pela operadora em `location.notice` ou similar. Limitado a ~200 chars; "Ler mais" expande inline.
+Parágrafo curto (1-3 frases) cadastrado pela estacionamento em `location.notice` ou similar. Limitado a ~200 chars; "Ler mais" expande inline.
 
-Default genérico se a operadora não preencheu: usa um texto baseado no tipo de vaga ("Vaga coberta, protegida do sol e chuva, ideal pra estadias longas.").
+Default genérico se a estacionamento não preencheu: usa um texto baseado no tipo de vaga ("Vaga coberta, protegida do sol e chuva, ideal pra estadias longas.").
 
 ### 5.3 O que essa vaga oferece
 Lista 2 colunas de amenidades com ícone outline 24 px à esquerda e label em `body-md ink`.
@@ -202,14 +202,14 @@ Distância **não** vem daqui — é proximidade calculada (DAT-04). Migration
 Texto-base do operador (`location.reservation_policy`) entra como **adendo**. A janela estendida paga
 (**Superflex**, cancelar até 1 min antes) é futura — depende do upsell **MON-11**.
 
-### 5.7 Conheça a operadora
+### 5.7 Conheça a estacionamento
 Card com:
-- Logo da operadora (64×64 round)
+- Logo da estacionamento (64×64 round)
 - Nome + "Membro da Movepark há N anos"
 - Selo "Operador verificado"
 - 1 linha de descrição
-- Botão "Contatar operadora" (ghost) → abre modal com telefone + e-mail
-- Lista horizontal de **outras localizações da operadora** (até 4) — card mini com foto, nome, "Ver vaga"
+- Botão "Contatar estacionamento" (ghost) → abre modal com telefone + e-mail
+- Lista horizontal de **outras localizações da estacionamento** (até 4) — card mini com foto, nome, "Ver vaga"
 
 ---
 
@@ -360,7 +360,7 @@ Sua reserva atual: 2 dias — não disponível.
 | `{component.rating-display-card}` | Bloco do rating (64px / 900) |
 | `{component.amenity-row}` | Lista de comodidades |
 | `{component.reviews-card}` | Grid 2-col de reviews |
-| `{component.host-card}` | "Conheça a operadora" |
+| `{component.host-card}` | "Conheça a estacionamento" |
 | `{component.reservation-card}` | Sticky right rail |
 | `{component.date-picker-day}` | Date inputs no reservation card |
 | `{component.button-primary}` | "Reservar agora" |
@@ -371,8 +371,8 @@ Sua reserva atual: 2 dias — não disponível.
 
 - [ ] **Galeria de fotos**: cada `location` precisa de tabela `location_photo (location_id, url, order)`. Falta migration.
 - [x] **Reviews**: implementado (PRD-08 — ver [reviews.md](../reviews.md)). `review` + agregado `location.review_avg/count`; o bloco e o selo do topo somem sem avaliações.
-- [ ] **Geolocalização da operadora**: já temos `location.lat/lng`. Mas pra mostrar "1,2 km do terminal" precisamos da coord do **terminal**, não da vaga. Catálogo de aeroportos com lat/lng necessário.
-- [ ] **Outras localizações da operadora**: query simples `location WHERE company_id = c.id AND id != current.id`. OK.
+- [ ] **Geolocalização da estacionamento**: já temos `location.lat/lng`. Mas pra mostrar "1,2 km do terminal" precisamos da coord do **terminal**, não da vaga. Catálogo de aeroportos com lat/lng necessário.
+- [ ] **Outras localizações da estacionamento**: query simples `location WHERE company_id = c.id AND id != current.id`. OK.
 - [ ] **"Operador verificado"**: precisa de flag `company.is_verified` (boolean). Default true por enquanto, futuro pra moderação.
 - [ ] **Política de cancelamento**: hoje `location.reservation_policy` é texto livre. Talvez modelar como estrutura (horas, % reembolso) pra renderizar consistente.
 - [ ] **Time-zone display**: reservas pra Portugal (Airpark, Redpark, Skypark) usam `Europe/Lisbon`. Mostrar `22:00 (hora local)` claro.

@@ -8,7 +8,7 @@
 
 - **Voucher PDF (server-side):** edge **`voucher-pdf`** (`supabase/functions/voucher-pdf/`) — recebe
   `{ code }` com JWT, lê o booking escopado pela RLS (dono **ou** operador da empresa), gera o PDF com
-  `pdf-lib` (wordmark, código, QR da página de validação, operadora/unidade/endereço, datas, veículo,
+  `pdf-lib` (wordmark, código, QR da página de validação, estacionamento/unidade/endereço, datas, veículo,
   valor — helper puro `fields.ts`), sobe no bucket **privado `vouchers`** em `${booking_id}.pdf`
   (service_role), grava `booking.voucher_url` e devolve uma **signed URL** (1h). Só para status
   `confirmed`/`checked_in`/`completed`. No cliente: hook `useVoucherPdf()` + botão "Baixar voucher PDF"
