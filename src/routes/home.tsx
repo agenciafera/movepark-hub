@@ -25,10 +25,10 @@ export default function HomePage() {
         <link rel="canonical" href="https://hub.movepark.co" />
       </Helmet>
       <Hero />
-<DestinationsGallery />
       <PopularParkingLots />
       <HowItWorks />
       <TrustBand />
+      <DestinationsGallery />
       <CtaBanner />
     </div>
   );
