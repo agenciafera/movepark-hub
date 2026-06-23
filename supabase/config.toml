@@ -366,6 +366,42 @@ authorization_url_path = "/oauth/consent"
 # Allow dynamic client registration
 allow_dynamic_registration = false
 
+# ── Edge Functions: política de verificação de JWT da plataforma ─────────────
+# Funções "públicas" fazem a PRÓPRIA auth (gateway REST por chave mp_, MCP anon/mp_,
+# webhooks por secret, crons internos) e NUNCA devem depender do gate de JWT da
+# plataforma. Sem fixar aqui, um `supabase functions deploy <fn>` sem `--no-verify-jwt`
+# re-liga verify_jwt e derruba a superfície externa (regressão real já ocorrida com
+# `api`/`mcp` → `UNAUTHORIZED_NO_AUTH_HEADER`). Ver docs/specs/mcp.md §2 e public-api.md.
+[functions.api]
+verify_jwt = false
+
+[functions.mcp]
+verify_jwt = false
+
+[functions.simulate-price]
+verify_jwt = false
+
+[functions.get-payment-config]
+verify_jwt = false
+
+[functions.pagarme-webhook]
+verify_jwt = false
+
+[functions.send-whatsapp-otp]
+verify_jwt = false
+
+[functions.wps-deliver]
+verify_jwt = false
+
+[functions.wl-deliver]
+verify_jwt = false
+
+[functions.wl-reconcile]
+verify_jwt = false
+
+[functions.review-request]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.

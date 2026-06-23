@@ -73,6 +73,21 @@ Regras **fixas** do projeto, não sugestões. Se algo conflitar com elas, **siga
   Implementado em `supabase/migrations/20260619000000_faq_destination_scope.sql`; ver
   [`docs/specs/destinations.md`](docs/specs/destinations.md).
 
+- **ADR-003 · Doc-as-you-build (API + MCP nascem documentadas).** Toda capacidade que é (ou pode
+  virar) **Public API** ou **tool de MCP** **nasce documentada na mesma entrega** — doc feita depois
+  vira dívida e quebra a descoberta por humanos e agentes (o Hub é agent-ready). Um PR que adiciona/
+  altera rota ou tool **sem** atualizar a doc é **incompleto** e falha na revisão (e no CI). Checklist
+  mínimo por endpoint/tool: (1) `public/openapi.yaml` (path + schema + `security`/escopo) **ou** o card
+  MCP (`public/.well-known/mcp/{server,partner}-card.json`); (2) escopo no catálogo `api_scope` (seed em
+  migration) com `assignable_to_api_key` correto, se for novo; (3) superfície §9 de `public-api.md` /
+  §4 de `mcp.md` atualizada; (4) `agent-skills/index.json` com `sha256` recalculado se um card mudou
+  (`bun run gen:cards`); (5) teste (`deno test` do branch do gateway/tool; pgTAP da RPC/escopo). O CI
+  roda **`bun run lint:openapi`** (`scripts/check-openapi-drift.mjs`): rota↔OpenAPI, tool↔card e
+  **todo escopo `assignable_to_api_key` do catálogo tem ≥1 rota/tool** (sem escopo órfão). As funções
+  `api`/`mcp` (e demais públicas) são **`verify_jwt=false`** — fixado em `supabase/config.toml`; deploy
+  sempre com `--no-verify-jwt`. Ver [`docs/specs/public-api.md`](docs/specs/public-api.md) (§2, §12) e
+  [`docs/specs/mcp.md`](docs/specs/mcp.md).
+
 - **ADR-004 · Gateway = Pagar.me (recebedores), atrás de uma camada de abstração.** O gateway de
   pagamento é o **Pagar.me**, com split por **Recebedores** geridos na conta da Movepark — o parceiro
   **não cria conta** no gateway nem é abordado por ele (**fica invisível**). **PIX + cartão,
