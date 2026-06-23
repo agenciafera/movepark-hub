@@ -38,7 +38,8 @@ import {
 } from "@/features/users/api";
 import { useCompanies } from "@/features/companies/api";
 import { formatDate } from "@/lib/format";
-import type { UserRole } from "@/types/domain";
+import type { CompanyRole, UserRole } from "@/types/domain";
+import { ASSIGNABLE_ROLES, COMPANY_ROLE_LABEL } from "@/features/team/team.logic";
 
 export default function ManagerUsers() {
   const users = useUsers();
@@ -49,6 +50,7 @@ export default function ManagerUsers() {
   const [search, setSearch] = React.useState("");
   const [linkingUser, setLinkingUser] = React.useState<UserListItem | null>(null);
   const [selectedCompany, setSelectedCompany] = React.useState<string>("");
+  const [selectedRole, setSelectedRole] = React.useState<CompanyRole>("owner");
 
   const filtered = (users.data ?? []).filter((u) => {
     if (!search) return true;
@@ -73,10 +75,12 @@ export default function ManagerUsers() {
       await linkCompany.mutateAsync({
         profileId: linkingUser.id,
         companyId: selectedCompany,
+        role: selectedRole,
       });
       toast.success("Empresa vinculada");
       setLinkingUser(null);
       setSelectedCompany("");
+      setSelectedRole("owner");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro");
     }
@@ -202,6 +206,19 @@ export default function ManagerUsers() {
                 {companies.data?.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Label>Papel na empresa</Label>
+            <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as CompanyRole)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ASSIGNABLE_ROLES.map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {COMPANY_ROLE_LABEL[r]}
                   </SelectItem>
                 ))}
               </SelectContent>

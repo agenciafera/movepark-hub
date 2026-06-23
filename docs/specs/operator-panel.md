@@ -347,28 +347,31 @@ Lista as avaliações publicadas das unidades da empresa (nota, autor, data, com
   - Cancelamento → notificar por e-mail / push
   - Check-in pendente (X min antes) → notificar
 
-### 4.10 Usuários da empresa ✅ (E1.6)
+### 4.10 Usuários da empresa ✅ (E1.6 + E1.7 + E1.8 · ADR-005)
 
-Tela `/operator/users` (item "Usuários" na sidebar). Lista os membros vinculados à
-empresa em escopo (`company_list_members`, RPC `SECURITY DEFINER` — qualquer membro vê
-o roster com nome, e-mail e papel).
+Tela `/operator/users` (item "Usuários" na sidebar, gateada por `team:read`). Lista os
+membros vinculados à empresa em escopo (`company_list_members`).
 
-**Sub-papéis (E1.6):** cada vínculo em `profile_company` tem um `company_role`:
-- **Dono (`owner`)** — acesso total: operação, financeiro e gestão de usuários.
-- **Operacional (`operator`)** — operação do dia a dia, sem gestão de usuários.
+**4 papéis fixos (`company_role`):** Dono (`owner`), Gerente (`manager`), Operação
+(`operator`), Financeiro (`finance`). Cada um é um pacote fixo de escopos (seed
+`company_role_scope`) — ver a matriz completa em [permissions.md](./permissions.md). Não há
+construtor de regras.
 
-Quem é dono (`useAuth().isCompanyOwner`) vê controles para **alterar o papel**
-(`company_set_member_role`) e **remover** (`company_remove_member`) — ambos owner-only no
-banco, com **guarda de "último dono"** (a empresa nunca fica sem dono; espelhada no client
-por `team.logic.ts → canModifyMember`). Operacional vê só os papéis (badge), sem controles.
-`hub_admin` (inclusive impersonando) conta como dono. Default da coluna é `owner`, então
-todos os vínculos pré-existentes seguem com acesso total.
+**Gestão (E1.7):** quem tem **`team:write`** (Dono) vê o botão **"Convidar usuário"** (Edge
+`invite-company-member`: e-mail + papel → magic link), o **seletor de papel** dos 4 presets
+(`company_set_member_role`) e o **remover** (`company_remove_member`). Tudo gateado por escopo
+no servidor e espelhado no client por `useAuth().hasScope("team:write")`. **Guarda de "último
+dono"** atualizada: rebaixar o único dono para **qualquer** papel não-Dono é bloqueado.
+`hub_admin` (inclusive impersonando) conta como dono.
 
-**Adiado (follow-ups):**
-- **Convidar usuário novo por e-mail** — exige Edge `SECURITY DEFINER` criando o auth user
-  (padrão `approve-partner`); hoje a tela gere apenas membros já existentes.
-- **Gating de financeiro/repasses por papel** — depende do painel de extrato/repasses
-  (E1.5), ainda não construído.
+**Gating por papel (E1.8):** a sidebar e as rotas do operador são filtradas por escopo
+(`<RequireScope>` + `filterNavByScopes`): Financeiro/Repasses (`finance:read`), Promoções
+(`coupons:write`), Serviços (`addons:write`), Ocupação (`occupancy:read`), Chaves de API
+(`api-keys:write`), Avaliações (`reviews:read`). As escritas correspondentes são bloqueadas no
+servidor (RPC/RLS) — a UI nunca é a única barreira.
+
+**Compat:** o backfill da E1.6 deixou `owner` por padrão, então vínculos pré-existentes seguem
+com acesso total; só membros explicitamente não-Dono ficam restritos.
 
 ---
 

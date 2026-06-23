@@ -102,6 +102,8 @@ export type Session = {
   companyIds: string[];
   /** Papel do usuário em cada empresa vinculada (E1.6). */
   companyRoles: Record<string, CompanyRole>;
+  /** Escopos efetivos do usuário em cada empresa (ADR-005). Dono → todos. */
+  companyScopes: Record<string, string[]>;
 };
 
 /** Membro de uma empresa (retorno de company_list_members). */

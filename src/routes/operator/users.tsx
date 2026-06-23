@@ -1,11 +1,21 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Users } from "lucide-react";
+import { Users, UserPlus } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -15,8 +25,107 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/auth/context";
 import type { CompanyMember, CompanyRole } from "@/types/domain";
-import { useCompanyMembers, useRemoveMember, useSetMemberRole } from "@/features/team/api";
-import { canModifyMember, COMPANY_ROLE_HINT, COMPANY_ROLE_LABEL } from "@/features/team/team.logic";
+import {
+  useCompanyMembers,
+  useInviteMember,
+  useRemoveMember,
+  useSetMemberRole,
+} from "@/features/team/api";
+import {
+  ASSIGNABLE_ROLES,
+  canModifyMember,
+  COMPANY_ROLE_HINT,
+  COMPANY_ROLE_LABEL,
+} from "@/features/team/team.logic";
+
+function RoleSelect({
+  value,
+  onChange,
+  disabled,
+  ariaLabel,
+}: {
+  value: CompanyRole;
+  onChange: (v: CompanyRole) => void;
+  disabled?: boolean;
+  ariaLabel: string;
+}) {
+  return (
+    <Select value={value} onValueChange={(v) => onChange(v as CompanyRole)} disabled={disabled}>
+      <SelectTrigger className="w-[150px]" aria-label={ariaLabel}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {ASSIGNABLE_ROLES.map((r) => (
+          <SelectItem key={r} value={r}>
+            {COMPANY_ROLE_LABEL[r]}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function InviteDialog({ companyId }: { companyId: string }) {
+  const invite = useInviteMember(companyId);
+  const [open, setOpen] = React.useState(false);
+  const [email, setEmail] = React.useState("");
+  const [role, setRole] = React.useState<CompanyRole>("operator");
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    try {
+      await invite.mutateAsync({ email: email.trim(), role });
+      toast.success("Convite enviado");
+      setOpen(false);
+      setEmail("");
+      setRole("operator");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao convidar");
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm">
+          <UserPlus className="h-4 w-4" />
+          Convidar usuário
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Convidar usuário</DialogTitle>
+          <DialogDescription>
+            Enviamos um link de acesso por e-mail. O papel define o que a pessoa vê no painel.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={submit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="invite-email">E-mail</Label>
+            <Input
+              id="invite-email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="pessoa@empresa.com"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="invite-role">Papel</Label>
+            <RoleSelect value={role} onChange={setRole} ariaLabel="Papel do convidado" />
+            <p className="text-caption text-muted">{COMPANY_ROLE_HINT[role]}</p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="submit" disabled={invite.isPending || !email.trim()}>
+              {invite.isPending ? "Enviando…" : "Enviar convite"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function MemberRow({
   m,
@@ -69,19 +178,12 @@ function MemberRow({
 
       <div className="flex items-center gap-2">
         {canManage ? (
-          <Select
+          <RoleSelect
             value={m.role}
-            onValueChange={(v) => changeRole(v as CompanyRole)}
+            onChange={changeRole}
             disabled={setRole.isPending || (!modifiable && m.role === "owner")}
-          >
-            <SelectTrigger className="w-[150px]" aria-label="Papel do usuário">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="owner">{COMPANY_ROLE_LABEL.owner}</SelectItem>
-              <SelectItem value="operator">{COMPANY_ROLE_LABEL.operator}</SelectItem>
-            </SelectContent>
-          </Select>
+            ariaLabel="Papel do usuário"
+          />
         ) : (
           <Badge tone={m.role === "owner" ? "confirmed" : "neutral"}>
             {COMPANY_ROLE_LABEL[m.role]}
@@ -115,8 +217,9 @@ function MemberRow({
 }
 
 export default function OperatorUsers() {
-  const { effectiveCompanyIds, isCompanyOwner, session } = useAuth();
+  const { effectiveCompanyIds, hasScope, session } = useAuth();
   const companyId = effectiveCompanyIds[0];
+  const canManage = hasScope("team:write");
   const { data, isLoading } = useCompanyMembers(companyId);
   const members = data ?? [];
 
@@ -125,10 +228,11 @@ export default function OperatorUsers() {
       <PageHeader
         title="Usuários da empresa"
         description={
-          isCompanyOwner
-            ? "Gerencie quem acessa o painel da sua empresa. Donos têm acesso total; operacionais cuidam do dia a dia."
-            : "Quem acessa o painel da sua empresa. Só o dono pode alterar papéis."
+          canManage
+            ? "Convide e gerencie quem acessa o painel. O papel define o que cada pessoa vê e pode fazer."
+            : "Quem acessa o painel da sua empresa. Só o dono pode convidar e alterar papéis."
         }
+        actions={canManage && companyId ? <InviteDialog companyId={companyId} /> : undefined}
       />
 
       {!companyId ? (
@@ -139,11 +243,14 @@ export default function OperatorUsers() {
         <EmptyState icon={<Users className="h-10 w-10" />} title="Nenhum usuário" />
       ) : (
         <div className="flex flex-col gap-3">
-          {isCompanyOwner && (
-            <p className="text-caption text-muted">
-              <strong>Dono:</strong> {COMPANY_ROLE_HINT.owner} <strong className="ml-2">Operacional:</strong>{" "}
-              {COMPANY_ROLE_HINT.operator}
-            </p>
+          {canManage && (
+            <div className="flex flex-col gap-1 text-caption text-muted">
+              {ASSIGNABLE_ROLES.map((r) => (
+                <p key={r}>
+                  <strong>{COMPANY_ROLE_LABEL[r]}:</strong> {COMPANY_ROLE_HINT[r]}
+                </p>
+              ))}
+            </div>
           )}
           {members.map((m) => (
             <MemberRow
@@ -151,7 +258,7 @@ export default function OperatorUsers() {
               m={m}
               members={members}
               companyId={companyId}
-              canManage={isCompanyOwner}
+              canManage={canManage}
               isSelf={m.profile_id === session?.userId}
             />
           ))}

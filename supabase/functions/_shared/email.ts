@@ -143,6 +143,22 @@ export function tplApprovalInvite(contactName: string, actionLink: string): { su
   };
 }
 
+export function tplTeamInvite(
+  companyName: string,
+  roleLabel: string,
+  actionLink: string,
+): { subject: string; html: string } {
+  return {
+    subject: `Você foi convidado para a equipe de ${companyName} na Movepark`,
+    html: shell("Convite para a equipe", `
+      <p>Olá!</p>
+      <p>Você foi convidado para acessar o painel de <strong>${escapeHtml(companyName)}</strong> na Movepark, com o papel de <strong>${escapeHtml(roleLabel)}</strong>.</p>
+      <p>Clique no botão abaixo para definir seu acesso e entrar.</p>
+      <p>${button(actionLink, "Aceitar convite")}</p>
+      <p style="color:${BRAND.muted};font-size:13px">Se o botão não funcionar, copie e cole este link no navegador:<br>${actionLink}</p>`),
+  };
+}
+
 export function tplRejection(contactName: string, reason?: string | null): { subject: string; html: string } {
   return {
     subject: "Sobre seu cadastro na Movepark",

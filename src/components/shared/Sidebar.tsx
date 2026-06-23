@@ -20,13 +20,11 @@ import {
   PieChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/auth/context";
+import { filterNavByScopes, type NavItem } from "./Sidebar.logic";
 import { Monogram, Wordmark } from "./Brand";
 
-type Item = {
-  to: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-};
+type Item = NavItem<React.ComponentType<{ className?: string }>>;
 
 const managerItems: Item[] = [
   { to: "/manager", label: "Dashboard", icon: LayoutDashboard },
@@ -43,19 +41,21 @@ const managerItems: Item[] = [
   { to: "/manager/settings", label: "Configurações", icon: Settings },
 ];
 
+// `scope` filtra o item pelo papel do operador (ADR-005). Sem scope = sempre visível
+// (a ação dentro da página é que é gateada). Manager (hub_admin) vê tudo.
 const operatorItems: Item[] = [
   { to: "/operator", label: "Dashboard", icon: LayoutDashboard },
   { to: "/operator/bookings", label: "Reservas", icon: Calendar },
   { to: "/operator/locations", label: "Localizações", icon: MapPin },
-  { to: "/operator/occupancy", label: "Ocupação", icon: CalendarRange },
-  { to: "/operator/addons", label: "Serviços", icon: Sparkles },
-  { to: "/operator/coupons", label: "Promoções", icon: Tag },
-  { to: "/operator/reviews", label: "Avaliações", icon: Star },
-  { to: "/operator/users", label: "Usuários", icon: Users },
+  { to: "/operator/occupancy", label: "Ocupação", icon: CalendarRange, scope: "occupancy:read" },
+  { to: "/operator/addons", label: "Serviços", icon: Sparkles, scope: "addons:write" },
+  { to: "/operator/coupons", label: "Promoções", icon: Tag, scope: "coupons:write" },
+  { to: "/operator/reviews", label: "Avaliações", icon: Star, scope: "reviews:read" },
+  { to: "/operator/users", label: "Usuários", icon: Users, scope: "team:read" },
   { to: "/operator/faq", label: "FAQ", icon: HelpCircle },
-  { to: "/operator/finance", label: "Repasses", icon: Receipt },
+  { to: "/operator/finance", label: "Repasses", icon: Receipt, scope: "finance:read" },
   { to: "/operator/reports", label: "Relatórios", icon: BarChart3 },
-  { to: "/operator/api-keys", label: "API", icon: KeyRound },
+  { to: "/operator/api-keys", label: "API", icon: KeyRound, scope: "api-keys:write" },
   { to: "/operator/settings", label: "Configurações", icon: Settings },
 ];
 
@@ -66,7 +66,9 @@ export function Sidebar({
   variant: "manager" | "operator";
   brandTitle?: string;
 }) {
-  const items = variant === "manager" ? managerItems : operatorItems;
+  const { hasScope } = useAuth();
+  const items =
+    variant === "manager" ? managerItems : filterNavByScopes(operatorItems, hasScope);
   return (
     <aside className="hidden tablet:flex h-full w-[64px] desktop:w-[240px] shrink-0 flex-col border-r border-hairline bg-surface-soft px-3 py-6">
       <div className="hidden desktop:flex flex-col gap-1 px-3 pb-8">

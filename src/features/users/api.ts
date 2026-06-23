@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { Database } from "@/types/database";
-import type { Profile, UserRole } from "@/types/domain";
+import type { CompanyRole, Profile, UserRole } from "@/types/domain";
 
 type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
 
@@ -68,10 +68,18 @@ export function useUpdateUserRole() {
 export function useLinkUserCompany() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ profileId, companyId }: { profileId: string; companyId: string }) => {
+    mutationFn: async ({
+      profileId,
+      companyId,
+      role = "owner",
+    }: {
+      profileId: string;
+      companyId: string;
+      role?: CompanyRole;
+    }) => {
       const { error } = await supabase
         .from("profile_company")
-        .upsert({ profile_id: profileId, company_id: companyId });
+        .upsert({ profile_id: profileId, company_id: companyId, role });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: usersKeys.all }),

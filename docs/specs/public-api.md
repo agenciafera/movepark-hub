@@ -191,6 +191,13 @@ exige; o gateway nega (`403 insufficient_scope`) se faltar.
 | `occupancy:read` | consultar ocupação por data |
 | `faq:read` | ler FAQ |
 | `webhooks:write` | registrar/gerir webhooks de integração (E2.6) |
+| `pricing:write` | editar regra de preço/tiers e bloquear datas |
+
+**Escopos só-internos (ADR-005).** O catálogo `api_scope` também guarda escopos usados **só** pela
+permissão in-app (papéis da empresa) — `finance:read`, `payouts:read`, `payouts:write`, `team:read`,
+`team:write`, `api-keys:write`. Eles têm **`assignable_to_api_key = false`** e são **rejeitados** por
+`api_assert_scopes` ao criar/editar uma chave (o gateway nunca os roteia). Ver
+[permissions.md](./permissions.md).
 
 **Catálogo é a fonte de verdade dos escopos** e cresce por **doc-as-you-build**: módulo novo na API
 ⇒ escopo novo aqui + no OpenAPI (`securitySchemes`/`scopes`) + na migration de seed do catálogo.

@@ -90,6 +90,23 @@ Regras **fixas** do projeto, não sugestões. Se algo conflitar com elas, **siga
   (recebedores) e `..._card_charges.sql` + Edges `create-card-charge`/`get-payment-config` (cartão); ver
   [`docs/specs/payment-split.md`](docs/specs/payment-split.md).
 
+- **ADR-005 · Permissões por escopo + papéis fixos (server-authoritative).** O controle de acesso
+  dentro de uma empresa fala **uma única língua: o escopo** (a tabela `api_scope`, a mesma da Public
+  API). "A mesma permissão = o mesmo escopo." São **4 papéis fixos** (`company_role`): **Dono**
+  (`owner`, acesso total), **Gerente** (`manager`), **Operação** (`operator`), **Financeiro**
+  (`finance`) — pacotes **seedados** em `company_role_scope`, **sem** construtor de regras na UI. O
+  enforcement é **server-authoritative**: cada `operator_*`/`payout_*`/`company_*` de escrita exige o
+  escopo via `member_has_scope(company_id, scope)` (hub_admin e dono → todos), e as escritas diretas
+  de `location`/`location_parking_type` carregam o escopo na policy de UPDATE. A UI **espelha** com
+  `useAuth().hasScope` (rota via `<RequireScope>`, sidebar e ações) — nunca é a única barreira.
+  Escopos só-internos (`team:*`, `api-keys:write`, `finance:read`, `payouts:*`) têm
+  `api_scope.assignable_to_api_key = false` e **não** podem ir pra uma chave de API; `payouts:write`
+  (saque/KYC) é **exclusivo do Dono**. Convite de usuário por e-mail exige `team:write` (Edge
+  `invite-company-member`). Ao adicionar uma escrita nova: **dê a ela um escopo** e gateie no servidor.
+  Implementado em `supabase/migrations/20260712000000_company_role_add_values.sql` +
+  `20260713000000_permission_scopes.sql` + `20260714000000_regate_operator_rpcs.sql`; ver
+  [`docs/specs/permissions.md`](docs/specs/permissions.md).
+
 ## Comandos
 
 Sempre via **bun**:

@@ -16,6 +16,7 @@ export function mockSession(role: UserRole, overrides?: Partial<Session>): Sessi
     fullName: "Teste",
     companyIds: role === "company_operator" ? ["company-1"] : [],
     companyRoles: role === "company_operator" ? { "company-1": "owner" } : {},
+    companyScopes: {},
     ...overrides,
   };
 }
@@ -30,6 +31,8 @@ export function mockAuth(overrides?: Partial<AuthContextValue>): AuthContextValu
     effectiveCompanyIds: [],
     companyRoleFor: () => null,
     isCompanyOwner: false,
+    // Default permissivo: o contexto fake autoriza tudo; testes de permissão sobrescrevem.
+    hasScope: () => true,
     signIn: vi.fn(),
     signInWithGoogle: vi.fn(),
     sendEmailOtp: vi.fn(),

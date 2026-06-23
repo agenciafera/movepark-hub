@@ -10,17 +10,27 @@ async function loadSession(): Promise<Session | null> {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return null;
 
-  const [{ data: profile }, { data: links }] = await Promise.all([
+  const [{ data: profile }, { data: links }, { data: roleScopes }] = await Promise.all([
     supabase
       .from("profiles")
       .select("id, full_name, role")
       .eq("id", auth.user.id)
       .maybeSingle(),
     supabase.from("profile_company").select("company_id, role").eq("profile_id", auth.user.id),
+    // Presets fixos papel→escopo (ADR-005). Tabela pequena, leitura pública p/ authenticated.
+    supabase.from("company_role_scope").select("role, scope"),
   ]);
 
+  // Mapa papel → escopos (dono já vem com todos no seed).
+  const scopesByRole: Record<string, string[]> = {};
+  for (const r of roleScopes ?? []) (scopesByRole[r.role] ??= []).push(r.scope);
+
   const companyRoles: Record<string, CompanyRole> = {};
-  for (const l of links ?? []) companyRoles[l.company_id] = l.role;
+  const companyScopes: Record<string, string[]> = {};
+  for (const l of links ?? []) {
+    companyRoles[l.company_id] = l.role;
+    companyScopes[l.company_id] = scopesByRole[l.role] ?? [];
+  }
 
   return {
     userId: auth.user.id,
@@ -29,6 +39,7 @@ async function loadSession(): Promise<Session | null> {
     fullName: profile?.full_name ?? null,
     companyIds: (links ?? []).map((l) => l.company_id),
     companyRoles,
+    companyScopes,
   };
 }
 
@@ -84,6 +95,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const isCompanyOwner = effectiveCompanyIds.some((id) => companyRoleFor(id) === "owner");
 
+  // Tem ESTE escopo na empresa em escopo ativo? (ADR-005). hub_admin (direto ou impersonando) →
+  // sempre true. Sem companyId explícito, usa a primeira empresa efetiva.
+  const hasScope = React.useCallback(
+    (scope: string, companyId?: string): boolean => {
+      if (!session) return false;
+      if (session.role === "hub_admin") return true;
+      const id = companyId ?? effectiveCompanyIds[0];
+      if (!id) return false;
+      return (session.companyScopes[id] ?? []).includes(scope);
+    },
+    [session, effectiveCompanyIds],
+  );
+
   function setImpersonatedCompanyId(id: string | null) {
     if (typeof window !== "undefined") {
       if (id) window.localStorage.setItem(IMPERSONATION_KEY, id);
@@ -103,6 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       effectiveCompanyIds,
       companyRoleFor,
       isCompanyOwner,
+      hasScope,
       async signIn(email, password) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -167,7 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [session, isLoading, effectiveImpersonation, effectiveRole, canImpersonate, companyRoleFor, isCompanyOwner],
+    [session, isLoading, effectiveImpersonation, effectiveRole, canImpersonate, companyRoleFor, isCompanyOwner, hasScope],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

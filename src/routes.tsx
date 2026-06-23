@@ -9,6 +9,7 @@ import { AppProviders } from "@/components/shared/AppProviders";
 import { ConsumerAppShell } from "@/components/shared/ConsumerAppShell";
 import { AccountAppShell } from "@/components/shared/AccountAppShell";
 import { RequireRole } from "@/auth/RequireRole";
+import { RequireScope } from "@/auth/RequireScope";
 
 import HomePage from "@/routes/home";
 import SearchResultsPage from "@/routes/search";
@@ -250,23 +251,46 @@ export const routes: RouteRecord[] = [
             path: "/operator",
             element: <OperatorLayout />,
             children: [
+              // Sem escopo: visíveis a todos os papéis (a ação na página é gateada por RLS/RPC).
               { index: true, element: <OperatorDashboard /> },
               { path: "bookings", element: <OperatorBookings /> },
               { path: "locations", element: <OperatorLocations /> },
-              { path: "occupancy", element: <OperatorOccupancy /> },
               {
                 path: "locations/:locationId/parking-types",
                 element: <ParkingTypesPage />,
               },
-              { path: "addons", element: <OperatorAddons /> },
-              { path: "coupons", element: <OperatorCoupons /> },
-              { path: "reviews", element: <OperatorReviews /> },
-              { path: "users", element: <OperatorUsers /> },
               { path: "faq", element: <OperatorFaq /> },
               { path: "reports", element: <OperatorReports /> },
-              { path: "finance", element: <OperatorFinance /> },
-              { path: "api-keys", element: <OperatorApiKeys /> },
               { path: "settings", element: <OperatorSettings /> },
+              // Gateadas por escopo (ADR-005) — espelham o filtro da sidebar e o gate do servidor.
+              {
+                element: <RequireScope scope="occupancy:read" />,
+                children: [{ path: "occupancy", element: <OperatorOccupancy /> }],
+              },
+              {
+                element: <RequireScope scope="addons:write" />,
+                children: [{ path: "addons", element: <OperatorAddons /> }],
+              },
+              {
+                element: <RequireScope scope="coupons:write" />,
+                children: [{ path: "coupons", element: <OperatorCoupons /> }],
+              },
+              {
+                element: <RequireScope scope="reviews:read" />,
+                children: [{ path: "reviews", element: <OperatorReviews /> }],
+              },
+              {
+                element: <RequireScope scope="team:read" />,
+                children: [{ path: "users", element: <OperatorUsers /> }],
+              },
+              {
+                element: <RequireScope scope="finance:read" />,
+                children: [{ path: "finance", element: <OperatorFinance /> }],
+              },
+              {
+                element: <RequireScope scope="api-keys:write" />,
+                children: [{ path: "api-keys", element: <OperatorApiKeys /> }],
+              },
             ],
           },
         ],

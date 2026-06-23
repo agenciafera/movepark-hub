@@ -3,13 +3,20 @@ import type { CompanyMember, CompanyRole } from "@/types/domain";
 
 export const COMPANY_ROLE_LABEL: Record<CompanyRole, string> = {
   owner: "Dono",
-  operator: "Operacional",
+  manager: "Gerente",
+  operator: "Operação",
+  finance: "Financeiro",
 };
 
 export const COMPANY_ROLE_HINT: Record<CompanyRole, string> = {
-  owner: "Acesso total: operação, financeiro e gestão de usuários.",
-  operator: "Operação do dia a dia, sem gestão de usuários.",
+  owner: "Acesso total: operação, financeiro, preços e gestão de usuários e chaves.",
+  manager: "Tudo operacional, financeiro e catálogo/preços. Não gere usuários nem chaves.",
+  operator: "Reservas, check-in e ocupação. Sem preços, financeiro ou usuários.",
+  finance: "Financeiro e repasses (leitura) e reservas. Sem operação ou catálogo.",
 };
+
+/** Papéis fixos atribuíveis na UI (ADR-005), na ordem de exibição. */
+export const ASSIGNABLE_ROLES: CompanyRole[] = ["owner", "manager", "operator", "finance"];
 
 /** Quantos donos a empresa tem. */
 export function ownerCount(members: CompanyMember[]): number {

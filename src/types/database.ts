@@ -300,16 +300,19 @@ export type Database = {
       }
       api_scope: {
         Row: {
+          assignable_to_api_key: boolean
           description: string
           module: string
           scope: string
         }
         Insert: {
+          assignable_to_api_key?: boolean
           description: string
           module: string
           scope: string
         }
         Update: {
+          assignable_to_api_key?: boolean
           description?: string
           module?: string
           scope?: string
@@ -877,6 +880,29 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_role_scope: {
+        Row: {
+          role: Database["public"]["Enums"]["company_role"]
+          scope: string
+        }
+        Insert: {
+          role: Database["public"]["Enums"]["company_role"]
+          scope: string
+        }
+        Update: {
+          role?: Database["public"]["Enums"]["company_role"]
+          scope?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_role_scope_scope_fkey"
+            columns: ["scope"]
+            isOneToOne: false
+            referencedRelation: "api_scope"
+            referencedColumns: ["scope"]
           },
         ]
       }
@@ -3157,6 +3183,10 @@ export type Database = {
       cron_expire_pending_bookings: { Args: never; Returns: number }
       cron_prune_api_request_log: { Args: never; Returns: number }
       current_company_ids: { Args: never; Returns: string[] }
+      current_member_scopes: {
+        Args: { p_company_id: string }
+        Returns: string[]
+      }
       current_owner_company_ids: { Args: never; Returns: string[] }
       current_user_role: {
         Args: never
@@ -3229,6 +3259,10 @@ export type Database = {
           nearest_terminal_distance_km: number
           nearest_terminal_name: string
         }[]
+      }
+      member_has_scope: {
+        Args: { p_company_id: string; p_scope: string }
+        Returns: boolean
       }
       min_stay_satisfied: {
         Args: {
@@ -3522,6 +3556,10 @@ export type Database = {
           wl_tenant_key: string
         }[]
       }
+      wl_reconcile_apply: {
+        Args: { p_lpt_id: string; p_rows: Json }
+        Returns: number
+      }
     }
     Enums: {
       booking_item_type: "parking" | "add_on"
@@ -3532,7 +3570,7 @@ export type Database = {
         | "completed"
         | "cancelled"
         | "no_show"
-      company_role: "owner" | "operator"
+      company_role: "owner" | "operator" | "manager" | "finance"
       discount_type: "percent" | "fixed"
       entity_status: "active" | "inactive" | "suspended"
       faq_scope: "global" | "location" | "destination"
@@ -3703,7 +3741,7 @@ export const Constants = {
         "cancelled",
         "no_show",
       ],
-      company_role: ["owner", "operator"],
+      company_role: ["owner", "operator", "manager", "finance"],
       discount_type: ["percent", "fixed"],
       entity_status: ["active", "inactive", "suspended"],
       faq_scope: ["global", "location", "destination"],
