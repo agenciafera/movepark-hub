@@ -23,6 +23,9 @@ ChatWidget (React, ConsumerAppShell)  ──POST /functions/v1/chat (apikey + Be
   traz `candidates[0].content.parts[].functionCall{name,args}`; cada resultado volta como content
   `role:"user"` com `parts:[{functionResponse:{name,response}}]`. Schemas das tools = subconjunto
   OpenAPI (sem `additionalProperties`).
+- **Contexto temporal:** a Edge injeta a data/hora atual (fuso `America/Sao_Paulo`) no system prompt
+  a cada turno, e há a tool `current_datetime` — o agente resolve datas relativas ("sexta que vem",
+  "amanhã") sozinho, sem pedir a data exata ao usuário.
 - **Stateless:** o cliente guarda o histórico e o envia a cada turno (`{ messages:[{role,text}] }`).
   O loop de tool-call roda inteiro no servidor numa request.
 - **Auth opcional:** a bolinha aparece para todos. Tools de leitura rodam anônimas; transacionais
@@ -38,6 +41,7 @@ ChatWidget (React, ConsumerAppShell)  ──POST /functions/v1/chat (apikey + Be
 | `get_faq` | leitura | Edge `get-faq` |
 | `list_companies`/`list_locations`/`get_parking_types` | leitura | selects de catálogo |
 | `list_destinations`/`get_destination` | leitura | `destination`(+`destination_point`) |
+| `current_datetime` | leitura | data/hora no fuso `America/Sao_Paulo` (resolver datas relativas) |
 | `list_my_bookings`/`get_booking` | transacional | query `booking` (RLS do dono, JWT) |
 | `create_booking` | transacional | Edge `create-booking` (JWT) |
 | `cancel_booking` | transacional | Edge `cancel-booking` (JWT) |

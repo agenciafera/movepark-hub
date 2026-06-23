@@ -20,7 +20,9 @@ import {
   geminiTools,
   MAX_TOOL_ROUNDS,
   needsLogin,
+  nowContext,
   parseChatRequest,
+  temporalSystemBlock,
   toGeminiHistory,
 } from "./agent.logic.ts";
 
@@ -98,6 +100,8 @@ async function callRead(sb: any, name: string, a: Record<string, unknown>): Prom
       return unwrap(
         await sb.from("destination").select("id, code, name, slug, type, city, state").eq("is_published", true).order("sort_order").limit(Number(a.limit ?? 50)),
       );
+    case "current_datetime":
+      return nowContext(new Date());
     case "get_destination": {
       const dest = unwrap(
         await sb.from("destination").select("id, code, name, slug, type, city, state, intro").eq("slug", a.slug as string).eq("is_published", true).maybeSingle(),
@@ -213,7 +217,8 @@ Deno.serve(async (req: Request) => {
   // Auth opcional: presença de Bearer = logado (as Edges transacionais revalidam o JWT).
   const authHeader = req.headers.get("Authorization");
   const isLoggedIn = !!authHeader && authHeader.startsWith("Bearer ");
-  const systemPrompt = (await readSetting(admin, "chatbot_system_prompt")) || DEFAULT_SYSTEM_PROMPT;
+  const systemPrompt =
+    ((await readSetting(admin, "chatbot_system_prompt")) || DEFAULT_SYSTEM_PROMPT) + temporalSystemBlock(new Date());
 
   const contents: GeminiContent[] = toGeminiHistory(parsed.value.messages);
   const usedTools: string[] = [];

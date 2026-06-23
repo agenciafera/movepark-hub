@@ -78,6 +78,12 @@ export const TOOLS: ToolDecl[] = [
   },
   { name: "list_destinations", description: "Lista destinos (aeroportos/cidades) atendidos, com slug.", parameters: obj({ limit: NUM("máximo") }) },
   { name: "get_destination", description: "Detalhe de um destino pelo slug, com terminais.", parameters: obj({ slug: STR("slug do destino") }, ["slug"]) },
+  {
+    name: "current_datetime",
+    description:
+      "Data e hora atuais no fuso de São Paulo (America/Sao_Paulo). Use para resolver datas relativas como hoje, amanhã, 'sexta que vem', 'próximo fim de semana'.",
+    parameters: obj({}),
+  },
   // ── Transacionais (exigem login) ──
   {
     name: "list_my_bookings",
@@ -193,4 +199,49 @@ export function functionResponseContent(
 /** true se a tool exige login e o usuário não está autenticado. */
 export function needsLogin(toolName: string, isLoggedIn: boolean): boolean {
   return TRANSACTIONAL.has(toolName) && !isLoggedIn;
+}
+
+// ── Data/hora (fuso de São Paulo) ────────────────────────────────────────────
+export const DEFAULT_TZ = "America/Sao_Paulo";
+
+export interface NowContext {
+  iso: string; // ISO-8601 com offset (-03:00, sem horário de verão desde 2019)
+  date: string; // dd/mm/aaaa
+  time: string; // HH:MM
+  weekday: string; // ex.: "terça-feira"
+  timezone: string;
+}
+
+/** Data/hora atual no fuso informado, de forma determinística (testável com um Date fixo). */
+export function nowContext(now: Date, timeZone = DEFAULT_TZ): NowContext {
+  const fmt = (opts: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("pt-BR", { timeZone, ...opts }).format(now);
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(now);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "00";
+  return {
+    iso: `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}-03:00`,
+    date: fmt({ day: "2-digit", month: "2-digit", year: "numeric" }),
+    time: fmt({ hour: "2-digit", minute: "2-digit", hour12: false }),
+    weekday: fmt({ weekday: "long" }),
+    timezone: timeZone,
+  };
+}
+
+/** Bloco de contexto temporal acrescentado ao system prompt a cada turno. */
+export function temporalSystemBlock(now: Date, timeZone = DEFAULT_TZ): string {
+  const n = nowContext(now, timeZone);
+  return (
+    `\n\n[Contexto temporal] Agora é ${n.weekday}, ${n.date}, ${n.time} (${n.timezone}; ISO ${n.iso}). ` +
+    "Resolva datas relativas você mesmo a partir disto (hoje, amanhã, \"sexta que vem\", \"próximo fim de semana\", \"daqui a 3 dias\") " +
+    "— só peça a data exata se for realmente impossível inferir. Em dúvida sobre o dia atual, use a ferramenta current_datetime. " +
+    "Passe datas para as ferramentas em ISO-8601."
+  );
 }
