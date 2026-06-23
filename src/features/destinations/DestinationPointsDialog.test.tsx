@@ -21,7 +21,7 @@ describe("DestinationPointsDialog — gestão de terminais", () => {
     renderWithProviders(
       <DestinationPointsDialog open destination={destination} onOpenChange={() => {}} />,
     );
-    expect(screen.getByText(/Terminais — Guarulhos \(GRU\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Terminais · Guarulhos \(GRU\)/i)).toBeInTheDocument();
     expect(screen.getByText(/Adicionar terminal/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Nome/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Latitude/i)).toBeInTheDocument();

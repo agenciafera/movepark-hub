@@ -1572,6 +1572,7 @@ export type Database = {
           blocked: boolean
           booked_count: number
           date: string
+          external_booked_count: number
           id: string
           location_parking_type_id: string
         }
@@ -1579,6 +1580,7 @@ export type Database = {
           blocked?: boolean
           booked_count?: number
           date: string
+          external_booked_count?: number
           id?: string
           location_parking_type_id: string
         }
@@ -1586,6 +1588,7 @@ export type Database = {
           blocked?: boolean
           booked_count?: number
           date?: string
+          external_booked_count?: number
           id?: string
           location_parking_type_id?: string
         }
@@ -2481,6 +2484,110 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wl_delivery: {
+        Row: {
+          attempts: number
+          company_id: string
+          created_at: string
+          delivered_at: string | null
+          event_id: string
+          id: string
+          last_error: string | null
+          last_status: number | null
+          max_attempts: number
+          next_attempt_at: string
+          operation: string
+          payload: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          company_id: string
+          created_at?: string
+          delivered_at?: string | null
+          event_id: string
+          id?: string
+          last_error?: string | null
+          last_status?: number | null
+          max_attempts?: number
+          next_attempt_at?: string
+          operation: string
+          payload: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          company_id?: string
+          created_at?: string
+          delivered_at?: string | null
+          event_id?: string
+          id?: string
+          last_error?: string | null
+          last_status?: number | null
+          max_attempts?: number
+          next_attempt_at?: string
+          operation?: string
+          payload?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wl_delivery_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wl_reconcile_log: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          date: string
+          id: string
+          location_parking_type_id: string | null
+          new_external: number | null
+          old_external: number | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          date: string
+          id?: string
+          location_parking_type_id?: string | null
+          new_external?: number | null
+          old_external?: number | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          location_parking_type_id?: string | null
+          new_external?: number | null
+          old_external?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wl_reconcile_log_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wl_reconcile_log_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "location_parking_type"
             referencedColumns: ["id"]
           },
         ]

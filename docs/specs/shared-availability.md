@@ -1,4 +1,4 @@
-# Disponibilidade compartilhada Hub ↔ White-label (E2.5.1)
+# Disponibilidade compartilhada Hub ↔ White-label (E2.5.1 + E2.5.2)
 
 Sincronização de disponibilidade entre o **Movepark Hub** (novo) e o **white-label legado**
 (`movepark-backoffice`), que rodam em paralelo e vendem a mesma vaga física. Modelo escolhido:
@@ -10,8 +10,13 @@ Sincronização de disponibilidade entre o **Movepark Hub** (novo) e o **white-l
   Há janela de divergência inerente — mitigada por push near-real-time + reconciliação (E2.5.2).
 - **Relação segura por chave de API**, não por nome: o Bearer (`WL_BACKEND_TOKEN`) é **global** e
   vive nos **secrets do Supabase**; por empresa variam só **domínio** e **tenant** (`X-Tenant`).
-- **Via de mão dupla:** o Hub **puxa** a disponibilidade do WL (exibição) e **empurra** o que vende
-  (anti-overbooking); o WL faz o inverso (push WL→Hub é o lado dele, fora deste repo).
+- **Via de mão dupla:** o Hub **puxa** a disponibilidade do WL (exibição + reconciliação) e
+  **empurra** o que vende (push confiável via outbox). O anti-overbooking é **real** no Hub: a
+  reconciliação grava o que o WL vendeu em `external_booked_count` e o `create_booking_atomic`
+  conta `booked_count + external_booked_count` contra a capacidade (E2.5.2).
+- **WL→Hub por pull (E2.5.2):** em vez de depender do WL chamar o Hub, um **job de reconciliação**
+  puxa o `sold_wl` do `GET /availability` e o materializa em `external_booked_count`. Sem mudança no
+  contrato do WL. **Hub→WL por outbox + retry** (mesmo padrão do WPS), não mais best-effort inline.
 
 ## Configuração (por empresa)
 
@@ -56,13 +61,36 @@ não responder, cai no texto livre.
 - **Pull (exibição):** `useWlExternalOccupancy` chama a `wl-sync` por lpt mapeado **ao abrir a
   Ocupação** e soma `sold_external` nas células (`withExternal` = hub + WL, pct travado em 1).
   Best-effort: WL fora do ar → tela segue mostrando só o hub.
-- **Push (anti-overbooking):** `_shared/wl/push.ts` → `create-booking` empurra **reserve**
-  (`external_id = booking_id`) na criação; `cancel-booking` empurra **release** no cancelamento.
-  Best-effort (loga em falha, não derruba a reserva); a divergência é pega na reconciliação.
+## Anti-overbooking + reconciliação (E2.5.2)
+
+- **Coluna espelho:** `location_parking_availability.external_booked_count integer not null default 0`
+  guarda o que o **WL** vendeu por fora (= `sold_wl`). Materializada pela reconciliação, nunca pelo front.
+- **Anti-overbooking real no Postgres:** `_create_booking_core` (compartilhado por `create_booking_atomic`
+  e `api_create_booking`) lê `external_booked_count` junto do `booked_count` no `SELECT … FOR UPDATE`
+  (lock pessimista) e bloqueia quando `booked_count + external_booked_count >= capacity` ("Sem
+  disponibilidade"). `check_availability`/`availability_batch` somam o external no `remaining`/`sold_out`,
+  então o consumidor para de ver/comprar vaga que o WL já esgotou.
+- **Push Hub→WL confiável (outbox + retry):** tabela **`wl_delivery`** (event_id único,
+  `operation` reserve|release, payload, `attempts`/`max_attempts`/`next_attempt_at`/backoff). Um
+  **trigger** enfileira `reserve` no `INSERT` de `booking_item` (parking) e `release` quando a
+  `booking` vira `cancelled` — só com `wl_sync_enabled` + lpt mapeada; idempotente por `event_id`
+  (`on conflict do nothing`). A Edge **`wl-deliver`** (cron 1 min, `nextBackoff` exponencial até 4h)
+  drena a outbox via `wlPostSync`. Substitui o antigo push inline best-effort (`_shared/wl/push.ts`,
+  removido) — `create-booking`/`cancel-booking` não empurram mais direto.
+- **Reconciliação WL→Hub (pull):** Edge **`wl-reconcile`** (cron 15 min) percorre cada lpt mapeada de
+  empresa com sync ligado, puxa `GET /availability` numa janela (hoje..+90d) e chama a RPC
+  **`wl_reconcile_apply(lpt_id, rows)`** (SECURITY DEFINER), que grava `external_booked_count = sold_wl`
+  (preserva `booked_count`) e loga divergência em **`wl_reconcile_log`**. É o que torna o
+  anti-overbooking real e fecha a janela de divergência.
+- **Cron + auth interna:** `20260711010000_wl_cron.sql` agenda ambas via `pg_cron` + `pg_net`
+  (`net.http_post`), com a chave interna (`x-wl-deliver-key`) vinda do **Vault** — sem segredo no repo.
+  As Edges validam o header e rodam com a service role (`--no-verify-jwt`).
+
+Migrations: **`20260711000000_wl_reconcile_sync.sql`** (coluna + core + outbox + trigger + log + RPC) e
+**`20260711010000_wl_cron.sql`** (agendamento).
 
 ## Fora de escopo (próximos)
 
-- **Push WL→Hub** (o WL avisar o Hub do que vendeu por fora) e a coluna espelho no
-  `location_parking_availability` — depende do lado legado (PR próprio do WL).
-- **Reconciliação periódica** + log de divergência (**E2.5.2**).
 - **Escopo read/write por chave-por-empresa** (hoje token global + `X-Tenant`) — dívida registrada.
+- **Ocupação por coluna:** a Ocupação ainda faz pull ao vivo (`wl-sync`) por render; com
+  `external_booked_count` no banco, pode passar a ler a coluna (fonte única, menos chamadas ao WL).

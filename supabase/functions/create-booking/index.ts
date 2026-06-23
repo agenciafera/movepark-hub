@@ -21,7 +21,6 @@
 
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { pushBookingToWl } from "../_shared/wl/push.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -140,16 +139,8 @@ Deno.serve(async (req: Request) => {
     if (utmErr) console.error("utm update falhou:", utmErr.message);
   }
 
-  // Push hub→WL (E2.5.1): avisa o white-label que esta vaga foi vendida. Best-effort.
-  // @ts-expect-error - Deno env
-  const wlToken = Deno.env.get("WL_BACKEND_TOKEN");
-  await pushBookingToWl(admin, wlToken, {
-    bookingId: bookingId ?? "",
-    locationParkingTypeId: input.location_parking_type_id,
-    operation: "reserve",
-    startDate: input.check_in_at.slice(0, 10),
-    endDate: input.check_out_at.slice(0, 10),
-  });
+  // O push Hub→WL (reserve) é enfileirado pelo trigger booking_item_wl_reserve → outbox wl_delivery
+  // → Edge wl-deliver (E2.5.2, confiável com retry). Nada inline aqui.
 
   return jsonResponse(data, 201);
 });

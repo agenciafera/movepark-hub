@@ -15,7 +15,6 @@
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
-import { pushBookingToWl } from "../_shared/wl/push.ts";
 import { parseCancelInput, refundDecision, type Actor } from "./logic.ts";
 
 const corsHeaders = {
@@ -178,22 +177,8 @@ Deno.serve(async (req: Request) => {
   });
   if (rpcErr) return jsonResponse({ error: rpcErr.message }, 500);
 
-  // Push hub→WL (E2.5.1): devolve a vaga no white-label. Best-effort.
-  // @ts-expect-error - Deno env
-  const wlToken = Deno.env.get("WL_BACKEND_TOKEN");
-  // deno-lint-ignore no-explicit-any
-  const lptId = (booking as any).location_parking_type_id as string | undefined;
-  // deno-lint-ignore no-explicit-any
-  const checkOut = (booking as any).check_out_at as string | undefined;
-  if (lptId) {
-    await pushBookingToWl(admin, wlToken, {
-      bookingId: booking.id,
-      locationParkingTypeId: lptId,
-      operation: "release",
-      startDate: String(booking.check_in_at).slice(0, 10),
-      endDate: String(checkOut ?? booking.check_in_at).slice(0, 10),
-    });
-  }
+  // O release Hub→WL é enfileirado pelo trigger booking_wl_release (status → cancelled) → outbox
+  // wl_delivery → Edge wl-deliver (E2.5.2). Nada inline aqui.
 
   return jsonResponse({ status: "cancelled", refunded, refund_pending: refundPending });
 });

@@ -49,7 +49,7 @@ describe("localBusinessSchema", () => {
   it("monta LocalBusiness/ParkingFacility com url canônica do hub", () => {
     const s = localBusinessSchema(makeListing());
     expect(s["@type"]).toEqual(["LocalBusiness", "ParkingFacility"]);
-    expect(s.name).toBe("Aeroporto Guarulhos — Vaga Coberta");
+    expect(s.name).toBe("Aeroporto Guarulhos · Vaga Coberta");
     expect(s.url).toBe("https://hub.movepark.co/p/aeropark/aeroporto-guarulhos/covered");
     expect(s.address).toMatchObject({ "@type": "PostalAddress", addressCountry: "BR" });
     expect(s.geo).toMatchObject({ "@type": "GeoCoordinates", latitude: -23.5 });
