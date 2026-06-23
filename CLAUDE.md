@@ -134,6 +134,18 @@ Commit e `git push origin main` na própria `main` (isto sobrepõe qualquer háb
 - Se por qualquer motivo aparecer uma branch fora da `main` (local ou remota), **mescle na `main` e apague** a branch — não deixe branches paralelas acumulando.
 - Mensagens de commit: `tipo(escopo): descrição` (pt-BR ou en), curtas e por mudança lógica.
 
+### Verificação de arquivos não rastreados — OBRIGATÓRIA
+
+**Antes de qualquer `commit` ou `push`, rode `git status` e resolva TODO arquivo `Untracked`.**
+
+Arquivos não rastreados (imagens, fontes, JSONs estáticos, PDFs, ícones, arquivos de seed, etc.) que são referenciados pelo código **devem ser commitados no mesmo PR/commit** que o código que os usa. Nunca versione código que depende de assets sem antes versionar os próprios assets.
+
+Regras práticas:
+- `public/images/`, `public/fonts/`, `public/icons/` e similares → adicione ao git se estiverem em uso.
+- `.DS_Store`, `*.local`, `dist/`, `node_modules/` → confirme que estão no `.gitignore` e **não** os adicione.
+- Se um arquivo untracked não deve ir ao repo (ex: segredo, binário grande), adicione ao `.gitignore` explicitamente e documente o motivo.
+- **Nunca** conclua uma tarefa deixando `Untracked files` que o código referencia.
+
 ## Testes
 
 **Todo código novo ou modificado precisa de teste automatizado.** Pirâmide:
@@ -276,6 +288,7 @@ Deno + imports remotos. Cada função abre com um bloco de comentário documenta
 1. `bun run typecheck` limpo.
 2. `bun run lint` limpo.
 3. **`bun run test` verde** — e há teste novo/atualizado cobrindo o que você mudou (regra de negócio → pgTAP/`test:int`; lógica pura/UI → Vitest; bug → teste de regressão).
-4. Mudou schema? → migration nova + `bun run gen:types` + spec atualizada.
-5. Mudou regra de negócio? → spec correspondente em `docs/specs/` atualizada no mesmo PR.
-6. Tipos vindos de `@/types/domain`, imports via `@/`, soft-delete respeitado.
+4. **`git status` limpo** — nenhum `Untracked file` que o código referencia (imagens, fontes, JSONs estáticos, seeds). Se existir, commite junto ou adicione ao `.gitignore` com justificativa.
+5. Mudou schema? → migration nova + `bun run gen:types` + spec atualizada.
+6. Mudou regra de negócio? → spec correspondente em `docs/specs/` atualizada no mesmo PR.
+7. Tipos vindos de `@/types/domain`, imports via `@/`, soft-delete respeitado.
