@@ -195,9 +195,11 @@ exige; o gateway nega (`403 insufficient_scope`) se faltar.
 
 **Escopos só-internos (ADR-005).** O catálogo `api_scope` também guarda escopos usados **só** pela
 permissão in-app (papéis da empresa) — `finance:read`, `payouts:read`, `payouts:write`, `team:read`,
-`team:write`, `api-keys:write`. Eles têm **`assignable_to_api_key = false`** e são **rejeitados** por
-`api_assert_scopes` ao criar/editar uma chave (o gateway nunca os roteia). Ver
-[permissions.md](./permissions.md).
+`team:write`, `api-keys:write` — e **`webhooks:write`**, que fica não-atribuível enquanto a config de
+webhook (E2.6) for hub_admin-only (o segredo mora no Manager). Todos têm
+**`assignable_to_api_key = false`** e são **rejeitados** por `api_assert_scopes` ao criar/editar uma
+chave (o gateway nunca os roteia); o **drift guard** (`lint:openapi`) garante que nenhum escopo
+**atribuível** fique sem rota/tool. Ver [permissions.md](./permissions.md).
 
 **Catálogo é a fonte de verdade dos escopos** e cresce por **doc-as-you-build**: módulo novo na API
 ⇒ escopo novo aqui + no OpenAPI (`securitySchemes`/`scopes`) + na migration de seed do catálogo.
@@ -262,6 +264,8 @@ vai na URL). Respostas em JSON com envelope estável (§10). Mapeamento para a l
 | `GET /occupancy` | `occupancy:read` | `api_location_occupancy` | `?location_id&from&to` |
 | `POST /locations/{id}` | `locations:write` | `api_update_location` | PATCH (campos ausentes = mantém) |
 | `POST /parking-types/{id}` | `parking-types:write` | `api_update_parking_type` | status/capacidade/regras |
+| `POST /parking-types/{id}/pricing` | `pricing:write` | `api_set_pricing` | base_price + regra + tiers (E1.4.1) |
+| `POST /parking-types/{id}/date-blocks` | `pricing:write` | `api_set_date_blocked` | bloqueia/desbloqueia uma data (E1.4.2) |
 
 > **Paridade:** os endpoints acima espelham as capacidades do operator panel. As RPCs `api_*` espelham
 > as `operator_*` keyed por `company_id` (o gateway já autorizou empresa+escopo) — mantenha as duas em

@@ -54,6 +54,9 @@ const ROUTES: RouteDef[] = [
   // Escritas de unidade / tipo de vaga
   def("POST", "/v1/locations/:id", ["id"], "locations:write", "update_location"),
   def("POST", "/v1/parking-types/:id", ["id"], "parking-types:write", "update_parking_type"),
+  // Precificação (E1.4.1) e bloqueio de datas (E1.4.2)
+  def("POST", "/v1/parking-types/:id/pricing", ["id"], "pricing:write", "set_pricing"),
+  def("POST", "/v1/parking-types/:id/date-blocks", ["id"], "pricing:write", "set_date_blocked"),
 ];
 
 function def(method: string, pattern: string, keys: string[], scope: string, handler: string): RouteDef {

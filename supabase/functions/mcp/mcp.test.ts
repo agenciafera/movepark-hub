@@ -69,6 +69,15 @@ Deno.test("listTools parceiro filtra pelos escopos da chave", () => {
   assertEquals(listTools("partner", []).length, 0);
 });
 
+Deno.test("pricing:write expõe as tools de precificação (E1.4.1/2)", () => {
+  const names = listTools("partner", ["pricing:write"]).map((x) => x.name);
+  assertEquals(names.includes("update_pricing_rule"), true);
+  assertEquals(names.includes("set_date_blocked"), true);
+  assertEquals(findTool("partner", "update_pricing_rule")?.scope, "pricing:write");
+  // sem o escopo, não aparecem
+  assertEquals(listTools("partner", ["pricing:read"]).map((x) => x.name).includes("update_pricing_rule"), false);
+});
+
 Deno.test("findTool resolve por endpoint", () => {
   assertEquals(findTool("public", "get_faq")?.name, "get_faq");
   assertEquals(findTool("partner", "create_booking")?.scope, "bookings:write");

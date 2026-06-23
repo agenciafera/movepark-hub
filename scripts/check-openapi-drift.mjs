@@ -5,6 +5,7 @@
 // Uso: node scripts/check-openapi-drift.mjs  (npm: bun run lint:openapi)
 
 import { readFileSync } from "node:fs";
+import { cardForUrl, sha256File } from "./gen-card-hashes.mjs";
 
 const router = readFileSync("supabase/functions/api/router.ts", "utf8");
 const openapi = readFileSync("public/openapi.yaml", "utf8");
@@ -60,3 +61,51 @@ if (mcpDrift) {
 
 const total = checks.reduce((n, c) => n + new Set(c.tools).size, 0);
 console.log(`✓ MCP em sincronia (tools.ts ↔ cards): ${total} tools.`);
+
+// ── Escopo órfão (catálogo api_scope ↔ implementação) ────────────────────────
+// Espelha `api_scope where assignable_to_api_key = true`. Doc-as-you-build (ADR-003): escopo
+// atribuível novo ⇒ entra aqui + ganha rota no gateway OU tool MCP. Os escopos só-internos
+// (team:*, finance:*, payouts:*, api-keys:write, webhooks:write) NÃO entram aqui nem podem
+// aparecer em router/tools.
+const ASSIGNABLE_SCOPES = new Set([
+  "addons:read", "addons:write", "availability:read", "bookings:cancel", "bookings:checkin",
+  "bookings:read", "bookings:write", "coupons:read", "coupons:write", "discounts:read",
+  "discounts:write", "faq:read", "locations:read", "locations:write", "occupancy:read",
+  "parking-types:read", "parking-types:write", "pricing:read", "pricing:write", "reviews:read",
+  "reviews:write", "wps:write",
+]);
+
+const routerScopes = [...router.matchAll(/def\(\s*"[A-Z]+",\s*"[^"]+",\s*\[[^\]]*\],\s*"([^"]+)"/g)].map((m) => m[1]);
+const toolScopes = [...toolsSrc.matchAll(/scope:\s*"([^"]+)"/g)].map((m) => m[1]);
+const usedScopes = new Set([...routerScopes, ...toolScopes]);
+
+const orphanScopes = [...ASSIGNABLE_SCOPES].filter((s) => !usedScopes.has(s));
+const unknownScopes = [...usedScopes].filter((s) => !ASSIGNABLE_SCOPES.has(s));
+
+if (orphanScopes.length || unknownScopes.length) {
+  if (orphanScopes.length) {
+    console.error("❌ Escopos atribuíveis sem nenhuma rota/tool (escopo órfão):");
+    for (const s of orphanScopes) console.error("   - " + s);
+  }
+  if (unknownScopes.length) {
+    console.error("❌ Escopos usados em router/tools fora do catálogo atribuível (typo ou escopo interno vazando):");
+    for (const s of unknownScopes) console.error("   - " + s);
+  }
+  console.error("\nADR-003: todo escopo assignable tem ≥1 endpoint/tool; escopo interno nunca é roteado.");
+  process.exit(1);
+}
+console.log(`✓ Escopos em sincronia (catálogo ↔ rota/tool): ${ASSIGNABLE_SCOPES.size} atribuíveis.`);
+
+// ── Frescor do sha256 dos cards (agent-skills/index.json) ────────────────────
+const skillsIndex = JSON.parse(readFileSync("public/.well-known/agent-skills/index.json", "utf8"));
+const staleHashes = (skillsIndex.skills ?? [])
+  .map((s) => ({ name: s.name, card: cardForUrl(s.url ?? ""), have: s.sha256 }))
+  .filter((s) => s.card)
+  .filter((s) => s.have !== sha256File(s.card));
+
+if (staleHashes.length) {
+  console.error("❌ sha256 desatualizado em agent-skills/index.json:");
+  for (const s of staleHashes) console.error(`   - ${s.name} (rode: bun run gen:cards)`);
+  process.exit(1);
+}
+console.log("✓ sha256 dos cards em sincronia (agent-skills/index.json).");

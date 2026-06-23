@@ -727,6 +727,59 @@
           "location_parking_type_id"
         ]
       }
+    },
+    {
+      "name": "update_pricing_rule",
+      "scope": "pricing:write",
+      "description": "Edita a regra de preço de um tipo de vaga: base_price, estratégia e faixas (tiers).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location_parking_type_id": {
+            "type": "string"
+          },
+          "base_price": {
+            "type": "number"
+          },
+          "rule": {
+            "type": "object"
+          },
+          "tiers": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "location_parking_type_id"
+        ]
+      }
+    },
+    {
+      "name": "set_date_blocked",
+      "scope": "pricing:write",
+      "description": "Bloqueia/desbloqueia uma data específica de um tipo de vaga (manutenção, lotado).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location_parking_type_id": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "blocked": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "location_parking_type_id",
+          "date",
+          "blocked"
+        ]
+      }
     }
   ]
 }

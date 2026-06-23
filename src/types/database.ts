@@ -2967,6 +2967,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      api_set_date_blocked: {
+        Args: {
+          p_blocked: boolean
+          p_company_id: string
+          p_date: string
+          p_location_parking_type_id: string
+        }
+        Returns: Json
+      }
       api_set_discount_active: {
         Args: {
           p_company_id: string
@@ -2984,6 +2993,16 @@ export type Database = {
           p_price_override: number
         }
         Returns: undefined
+      }
+      api_set_pricing: {
+        Args: {
+          p_base_price?: number
+          p_company_id: string
+          p_location_parking_type_id: string
+          p_rule?: Json
+          p_tiers?: Json
+        }
+        Returns: Json
       }
       api_simulate_price: {
         Args: {

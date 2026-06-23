@@ -327,6 +327,40 @@ paths:
       parameters: [{ $ref: "#/components/parameters/Id" }]
       requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
       responses: { "200": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/NotFound" } }
+  /v1/parking-types/{id}/pricing:
+    post:
+      tags: [pricing]
+      summary: Edita a regra de preço de um tipo de vaga (base_price, estratégia, tiers)
+      security: [{ apiKey: [pricing:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                base_price: { type: number }
+                rule: { type: object }
+                tiers: { type: array, items: { type: object } }
+      responses: { "200": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/NotFound" } }
+  /v1/parking-types/{id}/date-blocks:
+    post:
+      tags: [pricing]
+      summary: Bloqueia/desbloqueia uma data de um tipo de vaga
+      security: [{ apiKey: [pricing:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [date, blocked]
+              properties:
+                date: { type: string, format: date }
+                blocked: { type: boolean }
+      responses: { "200": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/NotFound" } }
 components:
   securitySchemes:
     apiKey:

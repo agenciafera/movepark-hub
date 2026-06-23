@@ -19,6 +19,7 @@
     "gen:types": "supabase gen types typescript --linked > src/types/database.ts",
     "deploy": "bun run build && wrangler deploy",
     "deploy:api": "wrangler deploy -c wrangler.api.jsonc",
+    "gen:cards": "node scripts/gen-card-hashes.mjs",
     "lint:openapi": "node scripts/check-openapi-drift.mjs"
   },
   "dependencies": {

@@ -457,6 +457,17 @@ async function callPartner(admin: any, ctx: PartnerCtx, name: string, a: Record<
         p_minimum_stay_value: a.minimum_stay_value ?? null, p_minimum_stay_unit: a.minimum_stay_unit ?? null,
         p_has_minimum_date: a.has_minimum_date ?? null, p_minimum_date: a.minimum_date ?? null,
       });
+    // Precificação (E1.4.1) e bloqueio de datas (E1.4.2)
+    case "update_pricing_rule":
+      return call("api_set_pricing", {
+        p_company_id: c, p_location_parking_type_id: a.location_parking_type_id,
+        p_base_price: a.base_price ?? null, p_rule: a.rule ?? {}, p_tiers: a.tiers ?? [],
+      });
+    case "set_date_blocked":
+      return call("api_set_date_blocked", {
+        p_company_id: c, p_location_parking_type_id: a.location_parking_type_id,
+        p_date: a.date, p_blocked: a.blocked,
+      });
     default:
       throw new Error(`Tool desconhecida: ${name}`);
   }

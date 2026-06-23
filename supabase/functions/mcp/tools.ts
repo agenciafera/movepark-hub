@@ -282,6 +282,30 @@ export const PARTNER_TOOLS: ToolDef[] = [
       ["location_parking_type_id"],
     ),
   },
+  // Precificação (E1.4.1) e bloqueio de datas (E1.4.2)
+  {
+    name: "update_pricing_rule",
+    description: "Edita a regra de preço de um tipo de vaga: base_price, estratégia e faixas (tiers).",
+    scope: "pricing:write",
+    inputSchema: obj(
+      {
+        location_parking_type_id: S,
+        base_price: { type: "number" },
+        rule: { type: "object", description: "Regra (strategy, fractional_day_policy, old_price_*, tiers incrementais/mensal/horário)" },
+        tiers: { type: "array", items: { type: "object" }, description: "Faixas por diárias: { from_day, to_day, unit_price, total_price }" },
+      },
+      ["location_parking_type_id"],
+    ),
+  },
+  {
+    name: "set_date_blocked",
+    description: "Bloqueia/desbloqueia uma data específica de um tipo de vaga (manutenção, lotado).",
+    scope: "pricing:write",
+    inputSchema: obj(
+      { location_parking_type_id: S, date: { type: "string", format: "date" }, blocked: { type: "boolean" } },
+      ["location_parking_type_id", "date", "blocked"],
+    ),
+  },
 ];
 
 function registry(endpoint: Endpoint): ToolDef[] {

@@ -25,6 +25,21 @@ Deno.test("matchRoute resolve handler, escopo e params", () => {
   assertEquals(matchRoute("POST", "/v1/bookings/xyz/check-in")?.scope, "bookings:checkin");
 });
 
+Deno.test("matchRoute resolve as escritas de precificação (E1.4.1/2)", () => {
+  assertEquals(matchRoute("POST", "/v1/parking-types/lpt1/pricing"), {
+    handler: "set_pricing",
+    scope: "pricing:write",
+    params: { id: "lpt1" },
+  });
+  assertEquals(matchRoute("POST", "/v1/parking-types/lpt1/date-blocks"), {
+    handler: "set_date_blocked",
+    scope: "pricing:write",
+    params: { id: "lpt1" },
+  });
+  // o /pricing não pode colidir com a edição base do tipo de vaga
+  assertEquals(matchRoute("POST", "/v1/parking-types/lpt1")?.handler, "update_parking_type");
+});
+
 Deno.test("matchRoute retorna null para rota inexistente ou método errado", () => {
   assertEquals(matchRoute("GET", "/v1/unknown"), null);
   assertEquals(matchRoute("DELETE", "/v1/locations"), null);

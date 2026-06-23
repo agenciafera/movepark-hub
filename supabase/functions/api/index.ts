@@ -448,6 +448,33 @@ async function dispatch(handler: string, d: Dispatch): Promise<Response> {
         requestId,
       );
 
+    // ── Precificação (E1.4.1) e bloqueio de datas (E1.4.2) ───────────────
+    case "set_pricing":
+      return ok(
+        await call("api_set_pricing", {
+          p_company_id: company,
+          p_location_parking_type_id: params.id,
+          p_base_price: (body.base_price as number) ?? null,
+          p_rule: body.rule ?? {},
+          p_tiers: body.tiers ?? [],
+        }),
+        requestId,
+      );
+    case "set_date_blocked": {
+      if (!body.date || typeof body.blocked !== "boolean") {
+        return fail("validation_error", "date (YYYY-MM-DD) e blocked (boolean) são obrigatórios.", 422, requestId);
+      }
+      return ok(
+        await call("api_set_date_blocked", {
+          p_company_id: company,
+          p_location_parking_type_id: params.id,
+          p_date: body.date,
+          p_blocked: body.blocked,
+        }),
+        requestId,
+      );
+    }
+
     default:
       return fail("not_found", "Handler desconhecido.", 404, requestId);
   }

@@ -95,6 +95,8 @@ Métodos suportados: `initialize`, `ping`, `tools/list`, `tools/call`, e `notifi
 | `get_occupancy` | `occupancy:read` | `api_location_occupancy` |
 | `update_location` | `locations:write` | `api_update_location` |
 | `update_parking_type` | `parking-types:write` | `api_update_parking_type` |
+| `update_pricing_rule` | `pricing:write` | `api_set_pricing` |
+| `set_date_blocked` | `pricing:write` | `api_set_date_blocked` |
 
 Consumidor ganhou ainda `list_destinations` / `get_destination` (destinos + terminais; anon).
 
