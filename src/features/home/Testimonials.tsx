@@ -1,3 +1,5 @@
+import { useGsapReveal } from "@/hooks/useGsapReveal";
+
 const AVATAR_COLORS = [
   "bg-mp-violet text-white",
   "bg-mp-teal/40 text-mp-navy",
@@ -65,18 +67,19 @@ const reviews = [
 ];
 
 export function Testimonials() {
+  const ref = useGsapReveal<HTMLElement>({ selector: "[data-reveal]", stagger: 0.09, y: 30, start: "top 88%" });
   return (
-    <section className="bg-surface-soft py-16 desktop:py-20">
+    <section ref={ref} className="bg-surface-soft py-16 desktop:py-20">
       <div className="mx-auto max-w-[1280px] px-6 desktop:px-8">
-        <p className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
+        <p data-reveal className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
           Avaliações verificadas
         </p>
-        <h2 className="mb-4 text-[36px] leading-[1.1] font-bold text-ink tablet:text-display-2xl">
+        <h2 data-reveal className="mb-4 text-[36px] leading-[1.1] font-bold text-ink tablet:text-display-2xl">
           O que nossos clientes dizem
         </h2>
 
         {/* Stats agregados */}
-        <div className="mb-10 flex items-center gap-3">
+        <div data-reveal className="mb-10 flex items-center gap-3">
           <div className="flex items-center gap-1.5">
             <Stars rating={5} />
             <span className="text-title-md font-bold text-ink">4.9</span>
@@ -89,6 +92,7 @@ export function Testimonials() {
           {reviews.map((r, i) => (
             <div
               key={r.name}
+              data-reveal
               className="flex flex-col gap-4 rounded-xl border border-hairline bg-canvas p-5 shadow-tier"
             >
               {/* Avatar com inicial colorida */}

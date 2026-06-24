@@ -1,5 +1,6 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import { gsap } from "@/lib/gsap";
 import { SearchBarPill } from "@/features/search/SearchBarPill";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
@@ -63,6 +64,23 @@ export function Hero() {
     spotlightRef.current.style.transform = `translate(${rect.width / 2 - 350}px, ${rect.height / 2 - 350}px)`;
     spotlightRef.current.style.opacity = "0";
   }
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({ delay: 0.1 });
+      tl.fromTo('[data-hero="badge"]', { opacity: 0, y: -14 },
+          { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" })
+        .fromTo('[data-hero="h1"]', { opacity: 0, y: 38 },
+          { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }, "-=0.3")
+        .fromTo('[data-hero="sub"]', { opacity: 0, y: 22 },
+          { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, "-=0.5")
+        .fromTo('[data-hero="search"]', { opacity: 0, y: 22, scale: 0.98 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.65, ease: "power2.out" }, "-=0.45")
+        .fromTo('[data-hero="trust"] > *', { opacity: 0 },
+          { opacity: 1, duration: 0.45, stagger: 0.1, ease: "power1.out" }, "-=0.35");
+    }, sectionRef);
+    return () => ctx.revert();
+  }, []);
 
   return (
     <section
@@ -154,6 +172,7 @@ export function Hero() {
       <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center justify-center px-6 pb-20 pt-32 text-center desktop:px-8 desktop:pb-24">
         {/* Badge de prova social */}
         <div
+          data-hero="badge"
           className="mb-8 inline-flex items-center gap-3 rounded-full border border-white/10 px-4 py-2"
           style={{ background: "rgba(255,255,255,0.06)" }}
         >
@@ -176,25 +195,28 @@ export function Hero() {
         </div>
 
         <h1
+          data-hero="h1"
           className="mx-auto mb-5 max-w-3xl text-[40px] font-bold text-white tablet:text-[54px]"
           style={{ lineHeight: 1.09, letterSpacing: "-0.7px", textWrap: "balance" } as React.CSSProperties}
         >
           Estacione em qualquer aeroporto do Brasil
         </h1>
 
-        <p className="mx-auto mb-10 max-w-xl text-[17px] leading-relaxed text-white/60">
+        <p data-hero="sub" className="mx-auto mb-10 max-w-xl text-[17px] leading-relaxed text-white/60">
           Compare vários estacionamentos num só lugar e reserve na hora.
         </p>
 
-        <SearchBarPill
-          initialDest={params.get("dest")}
-          initialFrom={parseDate(params.get("from"))}
-          initialTo={parseDate(params.get("to"))}
-          className="mx-auto w-full"
-        />
+        <div data-hero="search" className="mx-auto w-full">
+          <SearchBarPill
+            initialDest={params.get("dest")}
+            initialFrom={parseDate(params.get("from"))}
+            initialTo={parseDate(params.get("to"))}
+            className="mx-auto w-full"
+          />
+        </div>
 
         {/* Trust pills */}
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+        <div data-hero="trust" className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
           {trustPills.map((label) => (
             <span key={label} className="inline-flex items-center gap-1.5 text-[13px] text-white/70">
               <CheckIcon />

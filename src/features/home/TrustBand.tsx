@@ -1,5 +1,6 @@
 import { ShieldCheck, Tag, BadgeCheck, Headphones, CheckCircle, Lock, Star } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useGsapReveal } from "@/hooks/useGsapReveal";
 
 // ---- Ilustrações por diferencial ----
 
@@ -112,16 +113,17 @@ const items: Item[] = [
 // ---- Componente ----
 
 export function TrustBand() {
+  const ref = useGsapReveal<HTMLElement>({ selector: "[data-reveal]", stagger: 0.1, y: 28, start: "top 88%" });
   return (
-    <section className="px-6 py-16 desktop:px-8 desktop:py-24">
+    <section ref={ref} className="px-6 py-16 desktop:px-8 desktop:py-24">
       <div className="mx-auto max-w-[1280px]">
 
         {/* Cabeçalho */}
         <div className="mb-12">
-          <p className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
+          <p data-reveal className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
             Por que a Movepark
           </p>
-          <h2 className="text-[36px] leading-[1.1] font-bold text-ink tablet:text-display-2xl">
+          <h2 data-reveal className="text-[36px] leading-[1.1] font-bold text-ink tablet:text-display-2xl">
             O que você tem em toda reserva
           </h2>
         </div>
@@ -131,6 +133,7 @@ export function TrustBand() {
           {items.map((it) => (
             <div
               key={it.title}
+              data-reveal
               className="overflow-hidden rounded-xl bg-surface-soft p-6 transition-shadow hover:shadow-tier"
             >
               <it.icon className="h-5 w-5 text-mp-primary" />

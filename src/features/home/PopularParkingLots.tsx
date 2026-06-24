@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
+import { useRef, useEffect } from "react";
 import { BusFront, Umbrella, ConciergeBell, Car, ArrowRight } from "lucide-react";
 import { usePopularOffers, type PopularOffer } from "@/features/search/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { gsap } from "@/lib/gsap";
 import { formatBRL } from "@/lib/format";
 import { RatingBadge } from "@/features/reviews/RatingStars";
 
@@ -151,19 +153,39 @@ function LoadingSkeleton() {
 
 export function PopularParkingLots() {
   const { data, isLoading } = usePopularOffers(4);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!data || !sectionRef.current) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        "[data-reveal='header']",
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.55, ease: "power2.out", stagger: 0.08,
+          scrollTrigger: { trigger: sectionRef.current, start: "top 88%", once: true } },
+      );
+      gsap.fromTo(
+        "article",
+        { opacity: 0, y: 36 },
+        { opacity: 1, y: 0, duration: 0.65, ease: "power2.out", stagger: 0.1,
+          scrollTrigger: { trigger: sectionRef.current, start: "top 80%", once: true } },
+      );
+    }, sectionRef);
+    return () => ctx.revert();
+  }, [data]);
 
   if (isLoading) return <LoadingSkeleton />;
   if (!data || data.length === 0) return null;
 
   return (
-    <section className="mx-auto w-full max-w-[1280px] px-6 py-16 desktop:px-8">
-      <p className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
+    <section ref={sectionRef} className="mx-auto w-full max-w-[1280px] px-6 py-16 desktop:px-8">
+      <p data-reveal="header" className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
         Os mais reservados
       </p>
-      <h2 className="mb-2 text-[36px] leading-[1.1] font-bold text-ink tablet:text-display-2xl">
+      <h2 data-reveal="header" className="mb-2 text-[36px] leading-[1.1] font-bold text-ink tablet:text-display-2xl">
         Estacionamentos populares
       </h2>
-      <p className="mb-8 max-w-xl text-body-md text-muted">
+      <p data-reveal="header" className="mb-8 max-w-xl text-body-md text-muted">
         Escolhidos por viajantes em todo o Brasil, com avaliações verificadas.
       </p>
 

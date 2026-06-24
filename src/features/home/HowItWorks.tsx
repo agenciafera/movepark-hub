@@ -1,5 +1,7 @@
+import { useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { gsap } from "@/lib/gsap";
 
 const steps = [
   {
@@ -21,27 +23,46 @@ const steps = [
 ];
 
 export function HowItWorks() {
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo("[data-reveal='hw-header']", { opacity: 0, y: 22 },
+        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out", stagger: 0.09,
+          scrollTrigger: { trigger: el, start: "top 88%", once: true } });
+      gsap.fromTo("[data-reveal='hw-step']", { opacity: 0, y: 32 },
+        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out", stagger: 0.1,
+          scrollTrigger: { trigger: el, start: "top 82%", once: true } });
+      gsap.fromTo("[data-reveal='hw-image']", { opacity: 0, x: 40 },
+        { opacity: 1, x: 0, duration: 0.8, ease: "power2.out",
+          scrollTrigger: { trigger: el, start: "top 85%", once: true } });
+    }, el);
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <section className="bg-surface-soft py-16 desktop:py-20">
+    <section ref={sectionRef} className="bg-surface-soft py-16 desktop:py-20">
       <div className="mx-auto max-w-[1280px] px-6 desktop:px-8">
         <div className="grid grid-cols-1 gap-12 tablet:grid-cols-2 tablet:items-center">
 
           {/* Coluna esquerda: headline + descrição + grid 2×2 + link */}
           <div>
-            <p className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
+            <p data-reveal="hw-header" className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
               Simples e rápido
             </p>
-            <h2 className="mb-4 text-[36px] leading-[1.1] font-bold text-ink tablet:text-display-2xl">
+            <h2 data-reveal="hw-header" className="mb-4 text-[36px] leading-[1.1] font-bold text-ink tablet:text-display-2xl">
               Como reservar em 4 passos
             </h2>
-            <p className="mb-10 max-w-md text-body-md text-muted">
+            <p data-reveal="hw-header" className="mb-10 max-w-md text-body-md text-muted">
               Do destino ao voucher em menos de 2 minutos. Sem cadastro obrigatório para buscar.
             </p>
 
             {/* Grid 2×2 — ordenação por coluna: 1,3 no topo / 2,4 embaixo */}
             <div className="grid grid-flow-col grid-cols-2 grid-rows-2 gap-x-10 gap-y-8">
               {steps.map((s, i) => (
-                <div key={s.title}>
+                <div key={s.title} data-reveal="hw-step">
                   <span className="block text-[64px] font-black leading-none text-mp-navy">
                     {i + 1}
                   </span>
@@ -61,7 +82,7 @@ export function HowItWorks() {
           </div>
 
           {/* Coluna direita: imagem full-height */}
-          <div className="relative min-h-[400px] overflow-hidden rounded-xl bg-surface-strong desktop:min-h-[560px]">
+          <div data-reveal="hw-image" className="relative min-h-[400px] overflow-hidden rounded-xl bg-surface-strong desktop:min-h-[560px]">
             <img
               src="/images/como-reservar.jpg"
               alt="Motorista sorrindo ao celular após concluir reserva no aeroporto"

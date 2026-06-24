@@ -1,10 +1,11 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-
+import { useGsapReveal } from "@/hooks/useGsapReveal";
 
 export function CtaBanner() {
+  const ref = useGsapReveal<HTMLElement>({ y: 32, duration: 0.75, start: "top 88%" });
   return (
-    <section className="px-6 pt-4 pb-16 desktop:px-8 desktop:pb-20">
+    <section ref={ref} className="px-6 pt-4 pb-16 desktop:px-8 desktop:pb-20">
       <div className="relative mx-auto max-w-[1280px] overflow-hidden rounded-3xl">
       {/* Foto de fundo */}
       <img
