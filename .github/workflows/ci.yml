@@ -17,6 +17,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
+        with:
+          # Pino fixo: mantém CI ↔ Cloudflare ↔ local na MESMA versão de bun.
+          # O bun.lock é sensível à versão; "latest" pode derivar e quebrar o
+          # deploy do Cloudflare. Mantenha em lockstep com BUN_VERSION no CF
+          # (ver CLAUDE.md › "Deploy: pino de versão do bun").
+          bun-version: 1.3.13
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
       - run: bun run lint
@@ -55,5 +61,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.13
       - run: bun install --frozen-lockfile
       - run: bun run test:int
