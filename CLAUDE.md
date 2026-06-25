@@ -36,15 +36,20 @@ company (tenant)
 - **Backend:** Supabase (PostgreSQL + Auth + RLS) + Edge Functions (Deno).
 - **Deploy:** **Cloudflare Pages** (deploy ativo desde jun/2026, conectado ao GitHub; build estático em `dist`). A content-negotiation de Markdown para agentes roda na borda via `src/worker.ts` (Pages Functions / `_worker.js`); `wrangler.jsonc` + `bun run deploy` permanecem para deploy direto via Workers/`wrangler`.
 - **Gerenciador de pacotes:** **bun** (lockfile de texto `bun.lock` — versionado; o binário `bun.lockb` foi descontinuado por incompatibilidade entre versões de bun no CI/Cloudflare). Use sempre `bun` — não use `npm`/`yarn`/`pnpm`. Instalar deps: `bun install`; adicionar: `bun add <pkg>`.
-- **Pino de versão do bun (deploy) — OBRIGATÓRIO manter em lockstep.** O `bun.lock` é
-  **sensível à versão do bun**: um lockfile escrito por uma versão é rejeitado por outra no
-  `bun install --frozen-lockfile` (`error: lockfile had changes, but lockfile is frozen`). Isso
-  derrubou o deploy do Cloudflare em jun/2026 quando o CF **bumpou seu default de bun** sem o
-  lockfile ter mudado. Por isso a versão do bun é **pinada nos três lugares e tem que andar junto**:
-  (1) **Cloudflare Pages** → variável de build **`BUN_VERSION`** no painel (Settings › Build ›
-  *Variables and Secrets*, escopos **Production e Preview**) — o CF **não** lê arquivo do repo pra
-  isso, só a env var; (2) **CI** → `bun-version` fixo no `oven-sh/setup-bun@v2` em
-  `.github/workflows/ci.yml` (nunca deixe em "latest"); (3) **local** → use a mesma versão.
+- **Deploy/CI rodam `bun install --frozen-lockfile` no Linux — toda dep usada no código TEM que
+  estar no `package.json`.** Armadilha que derrubou CI e Cloudflare em jun/2026: um `import` de
+  `gsap` foi adicionado com o pacote **só no `bun.lock`** (entrada órfã), **sem** declarar `gsap`
+  em `package.json`. No **macOS** o bun tolera a divergência (instala e roda); no **Linux** (CI +
+  Cloudflare) o frozen-install é estrito e aborta com `error: lockfile had changes, but lockfile is
+  frozen`. Regra: ao usar `bun add <pkg>` confira que `package.json` **e** `bun.lock` foram
+  commitados juntos; nunca commite um lockfile com pacote que o `package.json` não declara. O
+  próprio CI (job `quality`, frozen-install no Ubuntu) é o guard contra isso.
+- **Pino de versão do bun (defesa secundária) — mantenha em lockstep.** O `bun.lock` também é
+  sensível à **versão** do bun. Para não depender do default (mutável) do Cloudflare, a versão é
+  pinada nos três lugares: (1) **Cloudflare** → variável de build **`BUN_VERSION`** no painel
+  (Settings › Build › *Variables and Secrets*, escopos **Production e Preview**) — o CF **não** lê
+  arquivo do repo, só a env var; (2) **CI** → `bun-version` fixo no `oven-sh/setup-bun@v2` em
+  `.github/workflows/ci.yml` (nunca "latest"); (3) **local** → mesma versão.
   **Versão atual pinada: `1.3.13`.** Ao subir a versão do bun, atualize os três no mesmo PR.
 
 ## Regras de arquitetura (ADRs)
