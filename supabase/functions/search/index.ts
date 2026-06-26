@@ -182,7 +182,7 @@ Deno.serve(async (req: Request) => {
       id, capacity, is_active,
       location:location!inner(
         id, slug, name, address, latitude, longitude, status, deleted_at,
-        review_avg, review_count,
+        review_avg, review_count, photos,
         company:company!inner(id, slug, name, status),
         destination:destination(code, name, type),
         amenities:location_amenity(amenity_code)
@@ -365,6 +365,11 @@ Deno.serve(async (req: Request) => {
       nearest_terminal: proximity.get(r.location.id)?.nearest_terminal ?? null,
       review_avg: r.location.review_avg != null ? Number(r.location.review_avg) : null,
       review_count: r.location.review_count ?? 0,
+      // Capa = 1ª foto da galeria (location.photos). null → o card usa o placeholder.
+      cover_image:
+        Array.isArray(r.location.photos) && r.location.photos.length > 0
+          ? (r.location.photos[0] as string)
+          : null,
     },
     parking_type: {
       code: r.company_parking_type.parking_type.code,

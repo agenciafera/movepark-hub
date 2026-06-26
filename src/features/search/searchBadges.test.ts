@@ -25,6 +25,7 @@ function item(overrides: {
       nearest_terminal: overrides.terminal ?? null,
       review_avg: null,
       review_count: 0,
+      cover_image: null,
     },
     parking_type: { code: overrides.typeCode ?? "self_park", name: "Vaga" },
     capacity: 10,

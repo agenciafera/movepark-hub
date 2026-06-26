@@ -110,11 +110,22 @@ export function ResultCard({
         soldOut={soldOut}
         className="relative block aspect-[4/3] overflow-hidden bg-surface-soft"
       >
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Car className="h-14 w-14 text-muted-soft" />
-        </div>
-        {/* Hide foto placeholder — usar gradiente subtle de fundo */}
-        <div className="absolute inset-0 bg-soft-gradient opacity-60" aria-hidden />
+        {item.location.cover_image ? (
+          <img
+            src={item.location.cover_image}
+            alt={item.location.name}
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+            decoding="async"
+          />
+        ) : (
+          <>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Car className="h-14 w-14 text-muted-soft" />
+            </div>
+            <div className="absolute inset-0 bg-soft-gradient opacity-60" aria-hidden />
+          </>
+        )}
         {soldOut ? (
           <span className="absolute left-3 top-3 rounded-sm bg-badge-cancelled-bg px-2 py-0.5 text-caption font-bold text-badge-cancelled-fg shadow-tier">
             Esgotado pro seu período

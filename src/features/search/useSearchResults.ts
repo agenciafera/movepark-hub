@@ -38,6 +38,8 @@ export type SearchResultItem = {
     nearest_terminal: { name: string; distance_km: number } | null;
     review_avg: number | null;
     review_count: number;
+    /** Capa (1ª foto da galeria). null → card mostra placeholder. */
+    cover_image: string | null;
   };
   parking_type: { code: string; name: string };
   capacity: number;

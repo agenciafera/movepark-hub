@@ -22,6 +22,7 @@ function item(
       nearest_terminal: null,
       review_avg: null,
       review_count: 0,
+      cover_image: null,
       ...locationOverrides,
     },
     parking_type: { code: "covered", name: "Vaga coberta" },
