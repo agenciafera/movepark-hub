@@ -303,7 +303,7 @@ export function usePopularOffers(maxLocations = 6) {
           company:company_id (id, name, slug),
           destination:destination_id (id, code, name, short_name, slug),
           amenities:location_amenity (amenity_code),
-          photos:location_photo (url, is_primary, sort_order)
+          photos
         `)
         .in("id", locationIds);
       if (locErr) throw locErr;
@@ -341,12 +341,10 @@ export function usePopularOffers(maxLocations = 6) {
         const { price, oldPrice } = calcOneDayPrice(ruleRaw ?? null);
         if (price == null) continue;
 
-        const photos: { url: string; is_primary: boolean; sort_order: number }[] =
-          loc.photos ?? [];
-        const primaryPhoto =
-          photos.find((p) => p.is_primary)?.url ??
-          photos.sort((a, b) => a.sort_order - b.sort_order)[0]?.url ??
-          null;
+        // Fonte canônica de fotos = coluna location.photos (text[]), a mesma que o operador
+        // edita e o detalhe (listing) usa. A 1ª é a capa.
+        const photos: string[] = Array.isArray(loc.photos) ? loc.photos : [];
+        const primaryPhoto = photos[0] ?? null;
 
         offers.push({
           id: r.id,
