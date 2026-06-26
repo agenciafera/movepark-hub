@@ -19,10 +19,6 @@ const ACCENT: Record<SearchBadgeKind, boolean> = {
   valet: false,
 };
 
-/**
- * Badges comparativos sobrepostos ao card (PRD-13). Overlay no canto inferior
- * esquerdo da foto — não colide com o pill de esgotado (topo) nem com o heart.
- */
 export function ResultBadges({
   badges,
   className,
@@ -32,17 +28,17 @@ export function ResultBadges({
 }) {
   if (badges.length === 0) return null;
   return (
-    <div className={cn("flex flex-wrap items-center gap-1.5", className)}>
+    <div className={cn("flex flex-wrap items-center gap-2", className)}>
       {badges.map((badge) => {
         const Icon = ICON[badge.kind];
         return (
           <span
             key={badge.kind}
             className={cn(
-              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-caption font-semibold shadow-tier",
+              "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-semibold",
               ACCENT[badge.kind]
                 ? "bg-mp-primary text-white"
-                : "bg-canvas/95 text-ink backdrop-blur",
+                : "bg-ink text-canvas",
             )}
           >
             <Icon className="h-3 w-3 shrink-0" aria-hidden />

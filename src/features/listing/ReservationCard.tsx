@@ -169,7 +169,7 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
   const showBreakdown = sim.data?.price != null && (applied != null || chosenAddOns.length > 0);
 
   return (
-    <div className="rounded-md border border-hairline bg-canvas p-6 shadow-tier">
+    <div className="rounded-2xl border border-hairline bg-canvas p-6 shadow-tier">
       {/* Preço */}
       <div className="space-y-1">
         {sim.data?.old_price != null && sim.data.old_price > (sim.data.price ?? 0) && (
@@ -281,7 +281,7 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
       {/* Serviços adicionais */}
       {addOns.length > 0 && (
         <div className="mt-4 space-y-2">
-          <div className="text-caption font-bold uppercase tracking-[0.4px] text-muted-steel">
+          <div className="text-caption font-semibold text-muted-steel">
             Serviços adicionais
           </div>
           {addOns.map((a) => (

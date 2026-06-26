@@ -200,7 +200,7 @@ export default function SearchResultsPage() {
           {isLoading && (
             <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
               {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-72 w-full rounded-md" />
+                <Skeleton key={i} className="h-72 w-full rounded-2xl" />
               ))}
             </div>
           )}

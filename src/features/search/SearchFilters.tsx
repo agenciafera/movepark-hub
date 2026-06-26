@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetHeader,
   SheetTitle,
@@ -214,12 +215,12 @@ export function SearchFiltersSheet(props: Props) {
           <FilterContent {...props} />
         </div>
         <div className="flex shrink-0 justify-end border-t border-hairline bg-canvas px-6 py-3">
-          <Button asChild>
-            <span>
+          <SheetClose asChild>
+            <Button>
               <X className="h-4 w-4" />
               Fechar
-            </span>
-          </Button>
+            </Button>
+          </SheetClose>
         </div>
       </SheetContent>
     </Sheet>

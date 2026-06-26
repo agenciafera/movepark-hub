@@ -1,12 +1,11 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { Heart, Car, MapPin } from "lucide-react";
+import { Heart, Car, MapPin, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatBRL, formatDistance } from "@/lib/format";
 import { RatingBadge } from "@/features/reviews/RatingStars";
-import { ResultBadges } from "./ResultBadges";
 import type { GroupedSearchResult } from "./useSearchResults";
-import type { SearchBadge } from "./searchBadges";
+import type { SearchBadge, SearchBadgeKind } from "./searchBadges";
 
 type Props = {
   item: GroupedSearchResult;
@@ -17,8 +16,8 @@ type Props = {
   badges?: SearchBadge[];
 };
 
-const amenityShortLabel: Record<string, string> = {
-  shuttle_free: "Shuttle 24h",
+const AMENITY_LABEL: Record<string, string> = {
+  shuttle_free: "Traslado grátis",
   cameras_24h: "Câmeras",
   on_site_24h: "24 horas",
   gated_access: "Portaria",
@@ -45,15 +44,22 @@ const AMENITY_PRIORITY = [
   "motorcycle",
 ];
 
-function topAmenities(codes: string[], n = 3): string[] {
+function topAmenities(codes: string[], n = 4): { code: string; label: string }[] {
   const set = new Set(codes);
-  const out: string[] = [];
-  for (const p of AMENITY_PRIORITY) {
-    if (set.has(p) && amenityShortLabel[p]) out.push(amenityShortLabel[p]);
+  const out: { code: string; label: string }[] = [];
+  for (const code of AMENITY_PRIORITY) {
+    if (set.has(code) && AMENITY_LABEL[code]) out.push({ code, label: AMENITY_LABEL[code] });
     if (out.length >= n) break;
   }
   return out;
 }
+
+// Somente diferenciais comparativos vão pra imagem
+const COMPARATIVE_KINDS = new Set<SearchBadgeKind>(["cheapest", "closest"]);
+const BADGE_ICON: Partial<Record<SearchBadgeKind, typeof Tag>> = {
+  cheapest: Tag,
+  closest: MapPin,
+};
 
 function CardLink({
   to,
@@ -93,23 +99,30 @@ export function GroupedResultCard({
 
   const url = `/p/${item.operator.slug}/${item.location.slug}/${item.cheapest_type.code}?${params.toString()}`;
 
-  const meta = topAmenities(item.amenities);
   const soldOut = item.parking_types.every((pt) => pt.availability?.sold_out);
   const cheapest = item.cheapest_type;
   const nearCapacity = !soldOut && (cheapest.availability?.near_capacity ?? false);
   const nearMsg = cheapest.availability?.near_capacity_message ?? "Restam poucas vagas";
 
-  const hasMultipleTypes = item.parking_types.length > 1;
-  const showFromLabel = hasMultipleTypes;
+  // Diferenciais comparativos: vão sobre a imagem (só aparecem quando há variação real)
+  const comparativeBadges = badges.filter((b) => COMPARATIVE_KINDS.has(b.kind));
+
+  // Tipos de vaga: exibidos discretamente como texto no corpo do card
+  const typeNames = item.parking_types.map((pt) => pt.name);
+
+  // Amenidades: pills secundários no corpo
+  const amenities = topAmenities(item.amenities);
+
+  const showFromLabel = item.parking_types.length > 1;
 
   return (
     <article
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-md border border-hairline bg-canvas transition-shadow hover:shadow-tier",
+        "group relative flex flex-col overflow-hidden rounded-2xl border border-hairline bg-canvas transition-shadow hover:shadow-tier",
         soldOut && "opacity-60",
       )}
     >
-      {/* Foto placeholder */}
+      {/* Imagem */}
       <CardLink
         to={url}
         soldOut={soldOut}
@@ -119,21 +132,39 @@ export function GroupedResultCard({
           <Car className="h-14 w-14 text-muted-soft" />
         </div>
         <div className="absolute inset-0 bg-soft-gradient opacity-60" aria-hidden />
-        {soldOut ? (
-          <span className="absolute left-3 top-3 rounded-sm bg-badge-cancelled-bg px-2 py-0.5 text-caption font-bold text-badge-cancelled-fg shadow-tier">
+
+        {/* Diferenciais comparativos — só quando o card se destaca no conjunto */}
+        {!soldOut && comparativeBadges.length > 0 && (
+          <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+            {comparativeBadges.map((badge) => {
+              const Icon = BADGE_ICON[badge.kind];
+              return (
+                <span
+                  key={badge.kind}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-mp-primary px-3 py-1 text-[12px] font-semibold text-white shadow-sm backdrop-blur-sm"
+                >
+                  {Icon && <Icon className="h-3 w-3 shrink-0" aria-hidden />}
+                  {badge.label}
+                </span>
+              );
+            })}
+          </div>
+        )}
+
+        {soldOut && (
+          <span className="absolute left-3 top-3 rounded-full bg-badge-cancelled-bg px-3 py-1 text-[12px] font-bold text-badge-cancelled-fg">
             Esgotado pro seu período
           </span>
-        ) : nearCapacity ? (
-          <span className="absolute left-3 top-3 rounded-sm bg-badge-pending-bg px-2 py-0.5 text-caption font-bold text-badge-pending-fg shadow-tier">
+        )}
+
+        {!soldOut && nearCapacity && (
+          <span className="absolute bottom-3 left-3 rounded-full bg-badge-pending-bg px-3 py-1 text-[12px] font-bold text-badge-pending-fg">
             {nearMsg}
           </span>
-        ) : null}
-        {!soldOut && badges.length > 0 && (
-          <ResultBadges badges={badges} className="absolute bottom-3 left-3 right-3" />
         )}
       </CardLink>
 
-      {/* Heart */}
+      {/* Botão favorito */}
       <button
         type="button"
         onClick={(e) => {
@@ -151,61 +182,59 @@ export function GroupedResultCard({
         />
       </button>
 
-      <CardLink to={url} soldOut={soldOut} className="flex flex-col gap-1 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1 space-y-1">
-            <h3 className="line-clamp-1 text-title-md text-ink">{item.location.name}</h3>
-            <RatingBadge
-              avg={item.location.review_avg}
-              count={item.location.review_count}
-              className="text-body-sm"
-            />
-            <p className="line-clamp-1 text-body-sm text-muted">
-              {item.operator.name}
-              {item.location.distance_km != null && (
-                <> · {formatDistance(item.location.distance_km)}</>
-              )}
-            </p>
+      {/* Corpo */}
+      <CardLink to={url} soldOut={soldOut} className="flex flex-col gap-3 p-5">
+        {/* Nome + localização + tipos de vaga (discretos) */}
+        <div className="space-y-0.5">
+          <h3 className="line-clamp-1 text-[18px] font-bold leading-snug text-ink">
+            {item.operator.name}
+          </h3>
+          <p className="line-clamp-1 flex items-center gap-1 text-body-sm text-muted">
             {item.location.nearest_terminal && (
-              <p className="line-clamp-1 inline-flex items-center gap-1 text-body-sm font-medium text-ink">
-                <MapPin className="h-3.5 w-3.5 text-mp-primary" />
-                mais perto do {item.location.nearest_terminal.name}
-                <span className="font-normal text-muted">
-                  · {formatDistance(item.location.nearest_terminal.distance_km)}
-                </span>
-              </p>
+              <MapPin className="h-3 w-3 shrink-0 text-mp-primary" aria-hidden />
             )}
-            {meta.length > 0 && (
-              <p className="line-clamp-1 text-body-sm text-muted">{meta.join(" · ")}</p>
-            )}
-            {hasMultipleTypes && (
-              <div className="flex flex-wrap gap-1 pt-0.5">
-                {item.parking_types.map((pt) => (
-                  <span
-                    key={pt.code}
-                    className="rounded-sm bg-surface-soft px-1.5 py-0.5 text-caption text-muted"
-                  >
-                    {pt.name}
-                  </span>
-                ))}
-              </div>
-            )}
+            <span>
+              {item.location.name}
+              {typeNames.length > 0 && <> · {typeNames.join(" · ")}</>}
+              {item.location.nearest_terminal && (
+                <> · {formatDistance(item.location.nearest_terminal.distance_km)}</>
+              )}
+            </span>
+          </p>
+          <RatingBadge
+            avg={item.location.review_avg}
+            count={item.location.review_count}
+            className="text-body-sm"
+          />
+        </div>
+
+        {/* Amenidades */}
+        {amenities.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {amenities.map((a) => (
+              <span
+                key={a.code}
+                className="rounded-full bg-surface-strong px-2.5 py-1 text-[12px] font-medium text-ink"
+              >
+                {a.label}
+              </span>
+            ))}
           </div>
-          <div className="shrink-0 text-right">
-            {cheapest.price.old_price != null && cheapest.price.old_price > item.min_price && (
-              <div className="text-caption-sm text-muted line-through tabular-nums">
-                {formatBRL(cheapest.price.old_price)}
-              </div>
-            )}
-            {showFromLabel && (
-              <div className="text-caption text-muted">a partir de</div>
-            )}
-            <div className="text-display-sm text-ink tabular-nums">
-              {formatBRL(item.min_price)}
+        )}
+
+        {/* Preço — sempre por último */}
+        <div className="mt-auto pt-1">
+          {cheapest.price.old_price != null && cheapest.price.old_price > item.min_price && (
+            <div className="text-[13px] text-muted line-through tabular-nums">
+              {formatBRL(cheapest.price.old_price)}
             </div>
-            <div className="text-caption text-muted">
-              {cheapest.price.days} {cheapest.price.days === 1 ? "diária" : "diárias"}
-            </div>
+          )}
+          {showFromLabel && <div className="text-[12px] text-muted">a partir de</div>}
+          <div className="text-[24px] font-bold leading-none text-ink tabular-nums">
+            {formatBRL(item.min_price)}
+          </div>
+          <div className="mt-1 text-body-sm text-muted">
+            {cheapest.price.days} {cheapest.price.days === 1 ? "diária" : "diárias"}
           </div>
         </div>
       </CardLink>

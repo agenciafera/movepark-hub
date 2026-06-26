@@ -1,6 +1,6 @@
 import { Link, useLoaderData, useParams, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { ArrowLeft, Building2, MapPin, Heart } from "lucide-react";
+import { ArrowLeft, MapPin, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
@@ -20,7 +20,6 @@ import { useListing, type ListingDetail } from "@/features/listing/api";
 import { useSavedListings } from "@/features/search/useSavedListings";
 import { useFaqCombined } from "@/features/faqs/api";
 import { FaqList } from "@/features/faqs/FaqList";
-import { formatBRL } from "@/lib/format";
 import { optimizedImageUrl } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import {
@@ -161,23 +160,19 @@ export default function ListingPage() {
 
       {/* Header */}
       <div className="mb-6 flex items-start justify-between gap-4">
-        <div className="space-y-2">
-          <h1 className="text-display-lg text-ink">
-            {listing.parking_type.name} · {listing.company.name} {listing.location.name}
-          </h1>
-          <div className="flex flex-wrap items-center gap-2 text-body-md text-muted">
+        <div className="space-y-1.5">
+          <h1 className="text-display-xl text-ink">{listing.company.name}</h1>
+          <p className="text-display-sm text-muted">{listing.parking_type.name}</p>
+          <div className="flex flex-wrap items-center gap-2 text-body-sm text-muted">
             <RatingBadge
               avg={listing.location.review_avg}
               count={listing.location.review_count}
               href="#avaliacoes"
             />
-            {(listing.location.review_count ?? 0) > 0 && <span>·</span>}
-            <Building2 className="h-4 w-4" />
-            <span>Operada por {listing.company.name}</span>
             {listing.location.address && (
               <>
-                <span>·</span>
-                <MapPin className="h-4 w-4" />
+                {(listing.location.review_count ?? 0) > 0 && <span>·</span>}
+                <MapPin className="h-4 w-4 shrink-0" />
                 <span className="line-clamp-1">{listing.location.address}</span>
               </>
             )}
@@ -197,20 +192,25 @@ export default function ListingPage() {
       {/* Photo grid */}
       <PhotoGrid title={listing.location.name} photoUrls={listing.location.photos} />
 
+      {/* Mobile/tablet: card de reserva logo após as fotos — visível sem scroll */}
+      <div className="mt-6 desktop:hidden">
+        <ReservationCard
+          listing={listing}
+          initialFrom={initialFrom}
+          initialTo={initialTo}
+        />
+      </div>
+
       {/* Body 2-col */}
       <div className="mt-8 grid grid-cols-1 gap-12 desktop:grid-cols-[1fr_360px]">
         <div className="space-y-10">
           {/* Sub-header */}
           <section className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2 text-body-md text-ink">
-              <strong>{listing.parking_type.name}</strong>
-              <span className="text-muted">·</span>
-              <span className="text-muted">{listing.capacity} vagas disponíveis</span>
-              <span className="text-muted">·</span>
-              <span className="text-muted">
-                Preço base {formatBRL(listing.company_parking_type.base_price)}
-              </span>
-            </div>
+            {(listing.capacity ?? 0) > 0 && (
+              <p className="text-body-sm text-muted">
+                {listing.capacity} vagas disponíveis
+              </p>
+            )}
             {listing.parking_type.description && (
               <p className="text-body-md text-body">{listing.parking_type.description}</p>
             )}
@@ -294,14 +294,6 @@ export default function ListingPage() {
         </aside>
       </div>
 
-      {/* Mobile/tablet: card no fim do conteúdo */}
-      <div className="mt-12 desktop:hidden">
-        <ReservationCard
-          listing={listing}
-          initialFrom={initialFrom}
-          initialTo={initialTo}
-        />
-      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useRef, useEffect } from "react";
-import { ArrowRight, Plane } from "lucide-react";
+import { ArrowRight, Plane, Tag } from "lucide-react";
 import { usePopularOffers, type PopularOffer } from "@/features/search/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -22,16 +22,16 @@ function getCardImage(offer: PopularOffer, index: number): string {
   return offer.location.cover_image ?? PARKING_IMAGES[index % PARKING_IMAGES.length];
 }
 
-// Mapeamento de amenidade → label + cor de pill
-const AMENITY_PILLS: Record<string, { label: string; className: string }> = {
-  shuttle_free: { label: "Traslado grátis", className: "bg-ink text-canvas" },
-  covered:      { label: "Coberto",         className: "bg-ink text-canvas" },
-  valet:        { label: "Valet",           className: "bg-ink text-canvas" },
-  ev_charger:   { label: "Carregador EV",   className: "bg-surface-strong text-ink" },
-  cameras_24h:  { label: "Câmeras 24h",     className: "bg-surface-strong text-ink" },
-  on_site_24h:  { label: "24 horas",        className: "bg-surface-strong text-ink" },
-  gated_access: { label: "Portaria",        className: "bg-surface-strong text-ink" },
-  self_park:    { label: "Self-park",       className: "bg-surface-strong text-ink" },
+// Mapeamento de amenidade → label
+const AMENITY_PILLS: Record<string, string> = {
+  shuttle_free: "Traslado grátis",
+  covered:      "Coberto",
+  valet:        "Valet",
+  ev_charger:   "Carregador EV",
+  cameras_24h:  "Câmeras 24h",
+  on_site_24h:  "24 horas",
+  gated_access: "Portaria",
+  self_park:    "Self-park",
 };
 
 const AMENITY_PRIORITY = [
@@ -45,9 +45,9 @@ const AMENITY_PRIORITY = [
   "self_park",
 ];
 
-function topAmenityPills(amenities: { amenity_code: string }[], n = 2) {
+function topAmenityPills(amenities: { amenity_code: string }[], n = 3) {
   const set = new Set(amenities.map((a) => a.amenity_code));
-  const out: { label: string; className: string }[] = [];
+  const out: string[] = [];
   for (const code of AMENITY_PRIORITY) {
     if (set.has(code) && AMENITY_PILLS[code]) out.push(AMENITY_PILLS[code]);
     if (out.length >= n) break;
@@ -65,7 +65,15 @@ function getDefaultDates() {
   return { from: fmt(tomorrow), to: fmt(dayAfter) };
 }
 
-function PopularOfferCard({ offer, index }: { offer: PopularOffer; index: number }) {
+function PopularOfferCard({
+  offer,
+  index,
+  badge,
+}: {
+  offer: PopularOffer;
+  index: number;
+  badge?: string;
+}) {
   const { from, to } = getDefaultDates();
   const { location, parking_type, price_1d, old_price_1d } = offer;
   const pills = topAmenityPills(location.amenities);
@@ -74,7 +82,7 @@ function PopularOfferCard({ offer, index }: { offer: PopularOffer; index: number
 
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-hairline bg-canvas transition-shadow hover:shadow-tier">
-      {/* Imagem — proporção 2:1 (mais larga que alta) */}
+      {/* Imagem */}
       <Link to={url} className="relative block aspect-[2/1] overflow-hidden bg-surface-soft">
         <img
           src={imgSrc}
@@ -85,50 +93,53 @@ function PopularOfferCard({ offer, index }: { offer: PopularOffer; index: number
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" aria-hidden />
 
-        {/* Tipo de vaga como badge — canto superior esquerdo */}
-        <div className="absolute left-3 top-3">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-mp-primary px-3 py-1 text-[12px] font-semibold text-white shadow-sm backdrop-blur-sm">
-            {parking_type.name}
-          </span>
-        </div>
+        {/* Diferencial comparativo — só quando o card se destaca no conjunto */}
+        {badge && (
+          <div className="absolute left-3 top-3">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-mp-primary px-3 py-1 text-[12px] font-semibold text-white shadow-sm backdrop-blur-sm">
+              <Tag className="h-3 w-3 shrink-0" aria-hidden />
+              {badge}
+            </span>
+          </div>
+        )}
       </Link>
 
-      {/* Conteúdo — padding e espaçamento maior */}
+      {/* Conteúdo */}
       <Link to={url} className="flex flex-1 flex-col gap-3 p-5">
-        {/* Nome + destino */}
-        <div className="min-w-0">
+        {/* Nome + destino + tipo de vaga (discreto) */}
+        <div className="min-w-0 space-y-0.5">
           <h3 className="line-clamp-1 text-[18px] font-bold leading-snug text-ink">
             {location.company.name}
           </h3>
-          {location.destination && (
-            <p className="mt-1 flex items-center gap-1.5 text-body-sm text-muted">
-              <Plane className="h-3 w-3 shrink-0" aria-hidden />
-              {location.destination.code
-                ? `(${location.destination.code}) ${location.destination.short_name ?? location.destination.name}`
-                : (location.destination.short_name ?? location.destination.name)}
-            </p>
-          )}
+          <p className="line-clamp-1 flex items-center gap-1.5 text-body-sm text-muted">
+            {location.destination && <Plane className="h-3 w-3 shrink-0" aria-hidden />}
+            <span>
+              {location.destination
+                ? location.destination.code
+                  ? `(${location.destination.code}) ${location.destination.short_name ?? location.destination.name}`
+                  : (location.destination.short_name ?? location.destination.name)
+                : location.name}
+              {" · "}{parking_type.name}
+            </span>
+          </p>
         </div>
 
         {/* Pills de amenidade */}
         {pills.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {pills.map((p) => (
+          <div className="flex flex-wrap gap-1.5">
+            {pills.map((label) => (
               <span
-                key={p.label}
-                className={cn(
-                  "rounded-full px-3 py-1 text-[12px] font-medium",
-                  p.className,
-                )}
+                key={label}
+                className="rounded-full bg-surface-strong px-2.5 py-1 text-[12px] font-medium text-ink"
               >
-                {p.label}
+                {label}
               </span>
             ))}
           </div>
         )}
 
-        {/* Preço */}
-        <div className="mt-auto">
+        {/* Preço — sempre por último */}
+        <div className="mt-auto pt-1">
           {old_price_1d != null && old_price_1d > price_1d! && (
             <div className="text-[13px] text-muted line-through tabular-nums">
               {formatBRL(old_price_1d)}
@@ -195,6 +206,12 @@ export function PopularParkingLots() {
   if (isLoading) return <LoadingSkeleton />;
   if (!data || data.length === 0) return null;
 
+  // Computa o menor preço do conjunto para destacar o "Mais barato"
+  const prices = data.map((o) => o.price_1d ?? Infinity);
+  const minPrice = Math.min(...prices);
+  const maxPrice = Math.max(...prices.filter((p) => p !== Infinity));
+  const hasPriceVariation = data.length >= 2 && maxPrice > minPrice;
+
   return (
     <section ref={sectionRef} className="mx-auto w-full max-w-[1280px] px-6 py-16 desktop:px-8">
       <p data-reveal="header" className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
@@ -212,9 +229,17 @@ export function PopularParkingLots() {
             : "grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3",
         )}
       >
-        {data.map((offer, i) => (
-          <PopularOfferCard key={offer.id} offer={offer} index={i} />
-        ))}
+        {data.map((offer, i) => {
+          const isCheapest = hasPriceVariation && offer.price_1d === minPrice;
+          return (
+            <PopularOfferCard
+              key={offer.id}
+              offer={offer}
+              index={i}
+              badge={isCheapest ? "Mais barato" : undefined}
+            />
+          );
+        })}
       </div>
 
       <div className="mt-10 flex justify-center">
