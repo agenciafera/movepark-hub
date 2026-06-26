@@ -11,7 +11,7 @@
   Cross-Origin-Opener-Policy: same-origin
   # CSP em report-only (S5): observa violações sem bloquear. Promover a Content-Security-Policy
   # (enforce) depois de validar que não há violação legítima. Allowlist: supabase, pagar.me, osm, google.
-  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.pagar.me https://*.movepark.co https://nominatim.openstreetmap.org; frame-src 'self' https://accounts.google.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.pagar.me https://*.movepark.co https://nominatim.openstreetmap.org; frame-src 'self' https://www.openstreetmap.org https://accounts.google.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
 
 /.well-known/api-catalog
   Content-Type: application/linkset+json
