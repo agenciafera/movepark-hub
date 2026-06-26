@@ -6,7 +6,6 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { CategoryPills } from "@/features/search/CategoryPills";
-import { ResultCard } from "@/features/search/ResultCard";
 import { ResultsHeader } from "@/features/search/ResultsHeader";
 import {
   SearchFiltersSheet,
@@ -18,9 +17,11 @@ import {
   type SearchSort,
   type SearchVehicle,
 } from "@/features/search/useSearchResults";
-import { computeResultBadges } from "@/features/search/searchBadges";
+import { computeGroupedResultBadges } from "@/features/search/searchBadges";
 import { resolveSearchDates } from "@/features/search/dates";
 import { useSavedListings } from "@/features/search/useSavedListings";
+import { GroupedResultCard } from "@/features/search/GroupedResultCard";
+import { groupResultsByLocation } from "@/features/search/useSearchResults";
 
 function parseCsv(value: string | null): string[] {
   if (!value) return [];
@@ -226,21 +227,24 @@ export default function SearchResultsPage() {
             />
           )}
 
-          {!isLoading && data && data.results.length > 0 && (
-            <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
-              {data.results.map((r) => (
-                <ResultCard
-                  key={r.id}
-                  item={r}
-                  isSaved={saved.isSaved(r.id)}
-                  onToggleSave={() => saved.toggle(r.id)}
-                  searchParams={params}
-                  source="search"
-                  badges={computeResultBadges(r, data.results)}
-                />
-              ))}
-            </div>
-          )}
+          {!isLoading && data && data.results.length > 0 && (() => {
+            const grouped = groupResultsByLocation(data.results);
+            return (
+              <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
+                {grouped.map((g) => (
+                  <GroupedResultCard
+                    key={g.location_id}
+                    item={g}
+                    isSaved={saved.isSaved(g.cheapest_type.lpt_id)}
+                    onToggleSave={() => saved.toggle(g.cheapest_type.lpt_id)}
+                    searchParams={params}
+                    source="search"
+                    badges={computeGroupedResultBadges(g, grouped)}
+                  />
+                ))}
+              </div>
+            );
+          })()}
         </section>
       </div>
     </div>

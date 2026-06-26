@@ -1,4 +1,4 @@
-import type { SearchResultItem } from "./useSearchResults";
+import type { GroupedSearchResult, SearchResultItem } from "./useSearchResults";
 
 /**
  * Badges comparativos do card de resultado (PRD-13).
@@ -72,6 +72,56 @@ export function computeResultBadges(
     found.set("covered", "Coberto");
   }
   if (item.parking_type.code === "valet" || amenities.has("valet")) {
+    found.set("valet", "Valet");
+  }
+
+  return PRIORITY.filter((kind) => found.has(kind))
+    .slice(0, MAX_BADGES)
+    .map((kind) => ({ kind, label: found.get(kind)! }));
+}
+
+function groupDistanceOf(group: GroupedSearchResult): number | null {
+  return group.location.distance_km ?? group.location.nearest_terminal?.distance_km ?? null;
+}
+
+export function computeGroupedResultBadges(
+  group: GroupedSearchResult,
+  all: GroupedSearchResult[],
+): SearchBadge[] {
+  const allSoldOut = group.parking_types.every((pt) => pt.availability?.sold_out);
+  if (allSoldOut) return [];
+
+  const found = new Map<SearchBadgeKind, string>();
+
+  const available = all.filter((g) => !g.parking_types.every((pt) => pt.availability?.sold_out));
+  const comparable = available.length >= 2;
+
+  if (comparable) {
+    const prices = available.map((g) => g.min_price);
+    const min = Math.min(...prices);
+    if (Math.max(...prices) > min && group.min_price === min) {
+      found.set("cheapest", "Mais barato");
+    }
+  }
+
+  if (comparable) {
+    const dists = available.map(groupDistanceOf).filter((d): d is number => d != null);
+    const mine = groupDistanceOf(group);
+    if (dists.length >= 2 && mine != null) {
+      const min = Math.min(...dists);
+      if (Math.max(...dists) > min && mine === min) {
+        const terminal = group.location.nearest_terminal?.name;
+        found.set("closest", terminal ? `Mais perto do ${terminal}` : "Mais perto");
+      }
+    }
+  }
+
+  const amenities = new Set(group.amenities);
+  if (amenities.has("shuttle_free")) found.set("shuttle", "Traslado grátis");
+  if (group.parking_types.some((pt) => pt.code === "covered") || amenities.has("covered")) {
+    found.set("covered", "Coberto");
+  }
+  if (group.parking_types.some((pt) => pt.code === "valet") || amenities.has("valet")) {
     found.set("valet", "Valet");
   }
 

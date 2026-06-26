@@ -97,6 +97,62 @@ async function callSearch(filters: SearchFilters): Promise<SearchResponse> {
   return res.json();
 }
 
+export type ParkingTypeOption = {
+  lpt_id: string;
+  code: string;
+  name: string;
+  price: SearchResultItem["price"];
+  availability: SearchResultItem["availability"];
+};
+
+export type GroupedSearchResult = {
+  location_id: string;
+  operator: SearchResultItem["operator"];
+  location: SearchResultItem["location"];
+  amenities: string[];
+  parking_types: ParkingTypeOption[];
+  /** Menor preço total entre os tipos — exibido como "a partir de R$X". */
+  min_price: number;
+  /** Tipo com menor preço: usado como destino do link do card. */
+  cheapest_type: ParkingTypeOption;
+};
+
+export function groupResultsByLocation(results: SearchResultItem[]): GroupedSearchResult[] {
+  const map = new Map<string, GroupedSearchResult>();
+
+  for (const item of results) {
+    const locationId = item.location.id;
+    const option: ParkingTypeOption = {
+      lpt_id: item.id,
+      code: item.parking_type.code,
+      name: item.parking_type.name,
+      price: item.price,
+      availability: item.availability,
+    };
+
+    if (!map.has(locationId)) {
+      map.set(locationId, {
+        location_id: locationId,
+        operator: item.operator,
+        location: item.location,
+        amenities: item.amenities,
+        parking_types: [option],
+        min_price: item.price.total,
+        cheapest_type: option,
+      });
+    } else {
+      const group = map.get(locationId)!;
+      group.parking_types.push(option);
+      if (item.price.total < group.min_price) {
+        group.min_price = item.price.total;
+        group.cheapest_type = option;
+      }
+    }
+  }
+
+  return Array.from(map.values());
+}
+
 export const searchResultsKey = (f: SearchFilters) =>
   ["search-results", f] as const;
 
