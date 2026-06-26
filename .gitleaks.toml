@@ -1,0 +1,16 @@
+# Config do gitleaks (secret scanning — E0.6). Estende as regras padrão e
+# allowlista ruído conhecido: a anon key do Supabase é PÚBLICA por design (vai no
+# bundle do front), então não é segredo. Qualquer OUTRO JWT/segredo é flagado.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Valores públicos conhecidos (não são segredos)"
+# A anon key vive em .env (template) e no ci.yml (build) — pública por design.
+paths = [
+  '''^\.env$''',
+]
+regexes = [
+  # JWT com claim "role":"anon" — chave pública do Supabase.
+  '''eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*cm9sZSI6ImFub24[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+''',
+]

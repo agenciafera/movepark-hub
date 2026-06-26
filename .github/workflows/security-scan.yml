@@ -1,0 +1,105 @@
+name: Security Scan
+
+# Rotina recorrente de segurança (E0.6). Roda:
+#  • semanalmente (segunda 06:00 UTC) — pega regressão cedo;
+#  • a cada PR que mexe em dependências — barra vuln nova entrando;
+#  • sob demanda (workflow_dispatch).
+# Camadas: auditoria de dependências (bun audit), secret scanning (gitleaks) e
+# Supabase security advisors (RLS/policies/grants, se o token estiver configurado).
+# Em regressão (high+ nas deps ou advisor de segurança), abre/atualiza uma issue.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  pull_request:
+    paths:
+      - "package.json"
+      - "bun.lock"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  # ── Auditoria de dependências ────────────────────────────────────────────
+  dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.13 # lockstep com o CI (ver CLAUDE.md)
+      - run: bun install --frozen-lockfile
+      - name: bun audit
+        id: audit
+        run: |
+          set +e
+          bun audit > audit.txt 2>&1
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat audit.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          # Conta high/critical; é o gatilho de regressão.
+          HIGHCRIT=$(grep -ciE "^\s*(high|critical):" audit.txt)
+          echo "highcrit=$HIGHCRIT" >> "$GITHUB_OUTPUT"
+          echo "Vulns high/critical: $HIGHCRIT"
+      - name: Abre issue em regressão (high/critical)
+        if: steps.audit.outputs.highcrit != '0' && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = "🔒 Security scan: dependências com vuln high/critical";
+            const body = `O scan recorrente encontrou **${{ steps.audit.outputs.highcrit }}** vuln(s) high/critical em dependências.\n\nVer o resumo do run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\nRemediar com \`bun update\` (ver docs/security/) e fechar quando resolvido.`;
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: "open", labels: "security-scan",
+            });
+            const existing = issues.find(i => i.title === title);
+            if (existing) {
+              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.number, body });
+            } else {
+              await github.rest.issues.create({ owner: context.repo.owner, repo: context.repo.repo, title, body, labels: ["security-scan"] });
+            }
+
+  # ── Secret scanning ──────────────────────────────────────────────────────
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # gitleaks varre o histórico
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_CONFIG: .gitleaks.toml
+
+  # ── Supabase security advisors ───────────────────────────────────────────
+  # Roda só se o secret SUPABASE_ACCESS_TOKEN estiver configurado (Management API).
+  # Token: Supabase Dashboard → Account → Access Tokens. Sem ele, o job é pulado.
+  supabase-advisors:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_REF: mgaigbezdalbyuqiofcf
+    steps:
+      - name: Supabase security advisors
+        if: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -e
+          resp=$(curl -fsSL \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects/$PROJECT_REF/advisors/security")
+          # Achados reais = lints de SECURITY que não sejam o ruído esperado
+          # (security_definer executável por authenticated nos operator_*).
+          real=$(echo "$resp" | jq '[.lints[]
+            | select(.categories[]? == "SECURITY")
+            | select(.name != "authenticated_security_definer_function_executable")] | length')
+          echo "Advisors de segurança relevantes: $real"
+          echo "$resp" | jq -r '.lints[]
+            | select(.categories[]? == "SECURITY")
+            | "\(.level)\t\(.name)"' | sort | uniq -c | sort -rn >> "$GITHUB_STEP_SUMMARY" || true
+      - name: Aviso se o token não está configurado
+        if: ${{ secrets.SUPABASE_ACCESS_TOKEN == '' }}
+        run: |
+          echo "⏭️ SUPABASE_ACCESS_TOKEN não configurado — advisors do Supabase pulados." >> "$GITHUB_STEP_SUMMARY"
+          echo "Configure em Settings → Secrets para habilitar. Enquanto isso, rode manualmente (MCP/Dashboard)." >> "$GITHUB_STEP_SUMMARY"

@@ -1,6 +1,14 @@
 /*
   Link: </.well-known/api-catalog>; rel="api-catalog"
   Link: </.well-known/mcp/server-card.json>; rel="service-desc"
+  # Headers de segurança (E0.6 · scan #1). CSP fica como ponto a validar (precisa
+  # allowlist de supabase/pagarme/osm) — ver docs/security/scan-2026-06-23.md.
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=()
+  Cross-Origin-Opener-Policy: same-origin
 
 /.well-known/api-catalog
   Content-Type: application/linkset+json
