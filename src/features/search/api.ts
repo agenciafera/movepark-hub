@@ -241,7 +241,8 @@ export type PopularOffer = {
     slug: string;
     review_avg: number | null;
     review_count: number;
-    popular_sort_order: number;
+    /** Posição no ranking de reservas (0 = mais reservado). Vem da RPC popular_locations. */
+    rank: number;
     cover_image: string | null;
     company: { id: string; name: string; slug: string };
     destination: {
@@ -257,40 +258,41 @@ export type PopularOffer = {
   old_price_1d: number | null;
 };
 
-export function usePopularOffers(maxLocations = 4) {
+/**
+ * Dedupe por estacionamento: 1 card por location (o de menor preço de 1 diária), ordenado pelo
+ * ranking de reservas (`rank` asc), cortado em `max`. Pura → testável sem rede.
+ */
+export function dedupePopularOffers(offers: PopularOffer[], max: number): PopularOffer[] {
+  const byLocation = new Map<string, PopularOffer>();
+  for (const o of offers) {
+    const cur = byLocation.get(o.location.id);
+    if (!cur || (o.price_1d ?? Infinity) < (cur.price_1d ?? Infinity)) {
+      byLocation.set(o.location.id, o);
+    }
+  }
+  return [...byLocation.values()]
+    .sort((a, b) => {
+      const d = a.location.rank - b.location.rank;
+      return d !== 0 ? d : (a.price_1d ?? 0) - (b.price_1d ?? 0);
+    })
+    .slice(0, max);
+}
+
+export function usePopularOffers(maxLocations = 6) {
   return useQuery({
     queryKey: [...searchKeys.popularLocations(), "offers", maxLocations],
     queryFn: async (): Promise<PopularOffer[]> => {
-      // Passo 1: IDs das locations populares (curadoria ou fallback por review_count)
-      let locRows: { id: string; popular_sort_order: number }[] = [];
-      const { data: curated, error: curErr } = await supabase
-        .from("location")
-        .select("id, popular_sort_order")
-        .eq("is_popular", true)
-        .eq("status", "active")
-        .is("deleted_at", null)
-        .order("popular_sort_order")
-        .limit(maxLocations);
-      if (curErr) throw curErr;
+      // Passo 1: ranking por nº de reservas (RPC popular_locations, zero-safe). Buffer 2x porque
+      // alguns lotes podem não ter oferta com preço calculável e cairão fora na dedupe.
+      const { data: rankRows, error: rankErr } = await supabase.rpc("popular_locations", {
+        p_limit: maxLocations * 2,
+      });
+      if (rankErr) throw rankErr;
+      const rankedIds = (rankRows ?? []).map((r) => r.id);
+      if (rankedIds.length === 0) return [];
 
-      if (curated && curated.length > 0) {
-        locRows = curated as typeof locRows;
-      } else {
-        const { data: fb, error: fbErr } = await supabase
-          .from("location")
-          .select("id, popular_sort_order, review_count")
-          .eq("status", "active")
-          .is("deleted_at", null)
-          .order("review_count", { ascending: false })
-          .limit(maxLocations);
-        if (fbErr) throw fbErr;
-        locRows = (fb ?? []) as typeof locRows;
-      }
-
-      if (locRows.length === 0) return [];
-
-      const locationIds = locRows.map((l) => l.id);
-      const sortMap = Object.fromEntries(locRows.map((l) => [l.id, l.popular_sort_order ?? 0]));
+      const locationIds = rankedIds;
+      const rankMap = Object.fromEntries(rankedIds.map((id, i) => [id, i] as const));
 
       // Passo 2: detalhes das locations (empresa, destino, amenidades)
       // Query separada para evitar nesting profundo que impede pricing_tier de retornar
@@ -355,7 +357,7 @@ export function usePopularOffers(maxLocations = 4) {
             slug: loc.slug,
             review_avg: loc.review_avg ?? null,
             review_count: loc.review_count ?? 0,
-            popular_sort_order: sortMap[r.location_id] ?? 0,
+            rank: rankMap[r.location_id] ?? Number.MAX_SAFE_INTEGER,
             cover_image: primaryPhoto,
             company: loc.company as { id: string; name: string; slug: string },
             destination: loc.destination as PopularOffer["location"]["destination"],
@@ -366,12 +368,8 @@ export function usePopularOffers(maxLocations = 4) {
         });
       }
 
-      offers.sort((a, b) => {
-        const d = a.location.popular_sort_order - b.location.popular_sort_order;
-        return d !== 0 ? d : (a.price_1d ?? 0) - (b.price_1d ?? 0);
-      });
-
-      return offers.slice(0, 6);
+      // 1 card por estacionamento (menor preço), ordenado pelo ranking de reservas, top N.
+      return dedupePopularOffers(offers, maxLocations);
     },
     staleTime: 5 * 60_000,
   });

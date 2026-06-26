@@ -3509,6 +3509,12 @@ export type Database = {
         }
         Returns: Json
       }
+      popular_locations: {
+        Args: { p_limit?: number }
+        Returns: {
+          id: string
+        }[]
+      }
       release_booking_capacity: {
         Args: { p_booking_id: string }
         Returns: undefined

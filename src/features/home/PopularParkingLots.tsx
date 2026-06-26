@@ -1,26 +1,11 @@
 import { Link } from "react-router-dom";
 import { useRef, useEffect } from "react";
-import { ArrowRight, Plane, Tag } from "lucide-react";
+import { ArrowRight, Plane, Tag, Car } from "lucide-react";
 import { usePopularOffers, type PopularOffer } from "@/features/search/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { gsap } from "@/lib/gsap";
 import { formatBRL } from "@/lib/format";
-
-// Rotação por índice — cada card recebe uma foto diferente
-const PARKING_IMAGES = [
-  "/Estacionamentos/nation park.avif",
-  "/Estacionamentos/movepark-virapark-002.jpg",
-  "/Estacionamentos/vaga-coberta-estacionamento-aeroporto-guarulhos-aeroparking.png",
-  "/Estacionamentos/nation park 2.avif",
-  "/Estacionamentos/movepark-virapark_001.jpg",
-  "/Estacionamentos/vaga-descoberta-estacionamento-aeroporto-guarulhos-aeroparking.png",
-  "/Estacionamentos/virapark-estacionamento-aeroporto-viracopos.png",
-];
-
-function getCardImage(offer: PopularOffer, index: number): string {
-  return offer.location.cover_image ?? PARKING_IMAGES[index % PARKING_IMAGES.length];
-}
 
 // Mapeamento de amenidade → label
 const AMENITY_PILLS: Record<string, string> = {
@@ -65,32 +50,33 @@ function getDefaultDates() {
   return { from: fmt(tomorrow), to: fmt(dayAfter) };
 }
 
-function PopularOfferCard({
-  offer,
-  index,
-  badge,
-}: {
-  offer: PopularOffer;
-  index: number;
-  badge?: string;
-}) {
+function PopularOfferCard({ offer, badge }: { offer: PopularOffer; badge?: string }) {
   const { from, to } = getDefaultDates();
   const { location, parking_type, price_1d, old_price_1d } = offer;
   const pills = topAmenityPills(location.amenities);
   const url = `/p/${location.company.slug}/${location.slug}/${parking_type.code}?from=${from}&to=${to}&src=home-popular`;
-  const imgSrc = getCardImage(offer, index);
+  const cover = location.cover_image;
 
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-hairline bg-canvas transition-shadow hover:shadow-tier">
-      {/* Imagem */}
+      {/* Imagem — 2:1. Sem foto → placeholder (mesmo padrão do ResultCard). */}
       <Link to={url} className="relative block aspect-[2/1] overflow-hidden bg-surface-soft">
-        <img
-          src={imgSrc}
-          alt={location.name}
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
-          decoding="async"
-        />
+        {cover ? (
+          <img
+            src={cover}
+            alt={location.name}
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+            decoding="async"
+          />
+        ) : (
+          <>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Car className="h-12 w-12 text-muted-soft" aria-hidden />
+            </div>
+            <div className="absolute inset-0 bg-soft-gradient opacity-60" aria-hidden />
+          </>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" aria-hidden />
 
         {/* Diferencial comparativo — só quando o card se destaca no conjunto */}
@@ -229,13 +215,12 @@ export function PopularParkingLots() {
             : "grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3",
         )}
       >
-        {data.map((offer, i) => {
+        {data.map((offer) => {
           const isCheapest = hasPriceVariation && offer.price_1d === minPrice;
           return (
             <PopularOfferCard
               key={offer.id}
               offer={offer}
-              index={i}
               badge={isCheapest ? "Mais barato" : undefined}
             />
           );
