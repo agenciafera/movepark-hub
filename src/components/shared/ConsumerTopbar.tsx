@@ -159,7 +159,7 @@ export function ConsumerTopbar() {
             <Button variant="ghost" size="sm" className="hidden tablet:inline-flex" asChild>
               <Link to="/seja-parceiro">Seja parceiro</Link>
             </Button>
-            <Button size="sm" variant="secondary" asChild>
+            <Button size="sm" variant="primary" asChild>
               <Link to="/entrar">Entrar</Link>
             </Button>
           </>

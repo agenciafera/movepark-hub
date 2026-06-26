@@ -41,29 +41,6 @@ const heroAvatars = [
 export function Hero() {
   const [params] = useSearchParams();
   const sectionRef = useRef<HTMLElement>(null);
-  const spotlightRef = useRef<HTMLDivElement>(null);
-
-  function handleMouseMove(e: React.MouseEvent<HTMLElement>) {
-    const rect = sectionRef.current?.getBoundingClientRect();
-    if (!rect || !spotlightRef.current) return;
-    const x = e.clientX - rect.left - 350;
-    const y = e.clientY - rect.top - 350;
-    spotlightRef.current.style.transform = `translate(${x}px, ${y}px)`;
-  }
-
-  function handleMouseEnter() {
-    if (!spotlightRef.current) return;
-    spotlightRef.current.style.transition = "transform 0.12s ease-out, opacity 0.3s ease";
-    spotlightRef.current.style.opacity = "1";
-  }
-
-  function handleMouseLeave() {
-    if (!spotlightRef.current || !sectionRef.current) return;
-    const rect = sectionRef.current.getBoundingClientRect();
-    spotlightRef.current.style.transition = "transform 1s ease-out, opacity 0.5s ease";
-    spotlightRef.current.style.transform = `translate(${rect.width / 2 - 350}px, ${rect.height / 2 - 350}px)`;
-    spotlightRef.current.style.opacity = "0";
-  }
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -85,86 +62,35 @@ export function Hero() {
   return (
     <section
       ref={sectionRef}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
       className="relative overflow-hidden"
-      style={{
-        // Céu blue-hour: cobalt navy profundo → índigo rico → violet-slate → escuro no fundo (área de texto)
-        background: [
-          // Vignette sutil — escurece as bordas como lente de câmera
-          "radial-gradient(ellipse 115% 100% at 50% 50%, transparent 38%, hsla(228, 60%, 4%, 0.55) 100%)",
-          // Glow horizonte âmbar-rosado — luz do sol abaixo do horizonte
-          "radial-gradient(ellipse 70% 18% at 50% 73%, hsla(14, 58%, 52%, 0.20) 0%, transparent 68%)",
-          // Bloom atmosférico violeta frio — trajetória ascendente do avião
-          "radial-gradient(ellipse 82% 54% at 42% 26%, hsla(239, 82%, 65%, 0.22) 0%, transparent 62%)",
-          // Toque teal da marca — canto superior esquerdo, haze atmosférico
-          "radial-gradient(ellipse 44% 32% at 9% 16%, hsla(184, 44%, 76%, 0.07) 0%, transparent 65%)",
-          // Base: gradiente vertical de céu — topo navy profundo → índigo → violet → navy escuro
-          "linear-gradient(to bottom, hsl(224 58% 7%) 0%, hsl(229 64% 12%) 22%, hsl(238 72% 17%) 45%, hsl(244 54% 20%) 63%, hsl(250 40% 17%) 76%, hsl(235 48% 11%) 88%, hsl(228 52% 7%) 100%)",
-        ].join(", "),
-        borderRadius: "0 0 3rem 3rem",
-        minHeight: "640px",
-      }}
+      style={{ minHeight: "640px" }}
     >
-      {/* Spotlight que segue o cursor — manipulação direta do DOM, sem re-render */}
+      {/* Foto de fundo — estacionamento aéreo ao pôr-do-sol */}
+      <img
+        src="/images/hero-image.png"
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 h-full w-full object-cover object-center"
+      />
+
+      {/* Overlay em camadas: gradiente direcional + vignette */}
       <div
-        ref={spotlightRef}
-        className="pointer-events-none absolute left-0 top-0"
+        className="absolute inset-0"
         style={{
-          width: "700px",
-          height: "700px",
-          borderRadius: "50%",
+          background: [
+            "radial-gradient(ellipse 110% 100% at 50% 50%, transparent 35%, rgba(8,10,28,0.50) 100%)",
+            "linear-gradient(to bottom, rgba(8,10,28,0.60) 0%, rgba(8,10,28,0.50) 30%, rgba(8,10,28,0.62) 65%, rgba(8,10,28,0.82) 100%)",
+          ].join(", "),
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Acento violeta suave — identidade de marca */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
           background:
-            "radial-gradient(circle, hsla(239, 82%, 72%, 0.18) 0%, hsla(239, 70%, 60%, 0.08) 40%, transparent 70%)",
-          opacity: 0,
-          willChange: "transform, opacity",
-        }}
-        aria-hidden="true"
-      />
-
-      {/* Film grain cinematográfico — feTurbulence fractalNoise */}
-      <svg
-        className="pointer-events-none absolute inset-0 h-full w-full"
-        style={{ opacity: 0.042 }}
-        aria-hidden="true"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <filter id="hero-grain" x="0%" y="0%" width="100%" height="100%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.68 0.72" numOctaves="4" stitchTiles="stitch" />
-          <feColorMatrix type="saturate" values="0" />
-        </filter>
-        <rect width="100%" height="100%" filter="url(#hero-grain)" />
-      </svg>
-
-      {/* Haze atmosférico difuso — volume de luz índigo no meio do céu */}
-      <div
-        className="pointer-events-none absolute"
-        style={{
-          top: "32%", left: "50%",
-          width: "720px", height: "280px",
-          transform: "translate(-50%, -50%)",
-          background: "hsl(239 70% 52%)",
-          opacity: 0.09,
-          filter: "blur(90px)",
-          borderRadius: "50%",
-          willChange: "filter",
-        }}
-        aria-hidden="true"
-      />
-
-      {/* Glow horizonte — calor difuso da luz abaixo do horizon line */}
-      <div
-        className="pointer-events-none absolute"
-        style={{
-          top: "74%", left: "50%",
-          width: "520px", height: "140px",
-          transform: "translate(-50%, -50%)",
-          background: "hsl(14 62% 48%)",
-          opacity: 0.055,
-          filter: "blur(72px)",
-          borderRadius: "50%",
-          willChange: "filter",
+            "radial-gradient(ellipse 60% 40% at 50% 20%, hsla(239, 70%, 60%, 0.14) 0%, transparent 65%)",
         }}
         aria-hidden="true"
       />
@@ -173,8 +99,8 @@ export function Hero() {
         {/* Badge de prova social */}
         <div
           data-hero="badge"
-          className="mb-8 inline-flex items-center gap-3 rounded-full border border-white/10 px-4 py-2"
-          style={{ background: "rgba(255,255,255,0.06)" }}
+          className="mb-8 inline-flex items-center gap-3 rounded-full border border-white/15 px-4 py-2"
+          style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(8px)" }}
         >
           <div className="flex -space-x-2">
             {heroAvatars.map((src) => (
@@ -190,7 +116,7 @@ export function Hero() {
                 <StarIcon key={i} />
               ))}
             </div>
-            <span className="text-[13px] font-medium text-white/75">5.000+ reservas</span>
+            <span className="text-[13px] font-medium text-white/80">5.000+ clientes</span>
           </div>
         </div>
 
@@ -202,8 +128,8 @@ export function Hero() {
           Estacione em qualquer aeroporto do Brasil
         </h1>
 
-        <p data-hero="sub" className="mx-auto mb-10 max-w-xl text-[17px] leading-relaxed text-white/60">
-          Compare vários estacionamentos num só lugar e reserve na hora.
+        <p data-hero="sub" className="mx-auto mb-10 max-w-xl text-[17px] leading-relaxed text-white/65">
+          Compare vários estacionamentos num só lugar e reserve agora.
         </p>
 
         <div data-hero="search" className="mx-auto w-full">

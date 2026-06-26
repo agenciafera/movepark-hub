@@ -29,8 +29,8 @@ export default function HomePage() {
       </Helmet>
       <Hero />
       <PopularParkingLots />
-      <HowItWorks />
       <TrustBand />
+      <HowItWorks />
       <DestinationsGallery />
       <CtaBanner />
     </div>

@@ -242,6 +242,7 @@ export type PopularOffer = {
     review_avg: number | null;
     review_count: number;
     popular_sort_order: number;
+    cover_image: string | null;
     company: { id: string; name: string; slug: string };
     destination: {
       id: string;
@@ -299,7 +300,8 @@ export function usePopularOffers(maxLocations = 4) {
           id, name, slug, review_avg, review_count,
           company:company_id (id, name, slug),
           destination:destination_id (id, code, name, short_name, slug),
-          amenities:location_amenity (amenity_code)
+          amenities:location_amenity (amenity_code),
+          photos:location_photo (url, is_primary, sort_order)
         `)
         .in("id", locationIds);
       if (locErr) throw locErr;
@@ -337,6 +339,13 @@ export function usePopularOffers(maxLocations = 4) {
         const { price, oldPrice } = calcOneDayPrice(ruleRaw ?? null);
         if (price == null) continue;
 
+        const photos: { url: string; is_primary: boolean; sort_order: number }[] =
+          loc.photos ?? [];
+        const primaryPhoto =
+          photos.find((p) => p.is_primary)?.url ??
+          photos.sort((a, b) => a.sort_order - b.sort_order)[0]?.url ??
+          null;
+
         offers.push({
           id: r.id,
           parking_type: r.company_parking_type.parking_type as { code: string; name: string },
@@ -347,6 +356,7 @@ export function usePopularOffers(maxLocations = 4) {
             review_avg: loc.review_avg ?? null,
             review_count: loc.review_count ?? 0,
             popular_sort_order: sortMap[r.location_id] ?? 0,
+            cover_image: primaryPhoto,
             company: loc.company as { id: string; name: string; slug: string },
             destination: loc.destination as PopularOffer["location"]["destination"],
             amenities: (loc.amenities ?? []) as { amenity_code: string }[],

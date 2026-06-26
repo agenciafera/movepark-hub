@@ -6,12 +6,11 @@ type FooterGroup = { title: string; links: FooterLink[] };
 
 const groups: FooterGroup[] = [
   {
-    title: "Suporte",
+    title: "Movepark",
     links: [
-      { to: "/faq", label: "Perguntas frequentes" },
-      { to: "/ajuda/como-funciona", label: "Como funciona" },
-      { to: "/ajuda/cancelamento", label: "Política de cancelamento" },
-      { to: "/contato", label: "Fale conosco" },
+      { to: "/sobre", label: "Sobre nós" },
+      { to: "/termos", label: "Termos de uso" },
+      { to: "/privacidade", label: "Política de privacidade" },
     ],
   },
   {
@@ -22,19 +21,12 @@ const groups: FooterGroup[] = [
     ],
   },
   {
-    title: "Desenvolvedores",
+    title: "Suporte",
     links: [
-      { to: "/docs", label: "Documentação da API" },
-      { to: "/docs#mcp", label: "API para agentes (MCP)" },
-      { to: "https://hub.movepark.co/openapi.yaml", label: "OpenAPI", external: true },
-    ],
-  },
-  {
-    title: "Movepark",
-    links: [
-      { to: "/sobre", label: "Sobre nós" },
-      { to: "/termos", label: "Termos de uso" },
-      { to: "/privacidade", label: "Política de privacidade" },
+      { to: "/faq", label: "Perguntas frequentes" },
+      { to: "/ajuda/como-funciona", label: "Como funciona" },
+      { to: "/ajuda/cancelamento", label: "Política de cancelamento" },
+      { to: "/contato", label: "Fale conosco" },
     ],
   },
 ];
@@ -44,7 +36,7 @@ const linkClass = "text-body-sm text-muted no-underline hover:text-ink";
 export function ConsumerFooter() {
   return (
     <footer className="border-t border-hairline bg-surface-soft">
-      <div className="mx-auto grid w-full max-w-[1280px] grid-cols-1 gap-8 px-6 py-12 tablet:grid-cols-2 desktop:grid-cols-4 desktop:px-8">
+      <div className="mx-auto grid w-full max-w-[1280px] grid-cols-1 gap-8 px-6 py-12 tablet:grid-cols-3 desktop:grid-cols-3 desktop:px-8">
         {groups.map((g) => (
           <div key={g.title} className="space-y-3">
             <h4 className="text-title-sm text-ink">{g.title}</h4>
