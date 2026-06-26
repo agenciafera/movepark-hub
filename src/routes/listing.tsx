@@ -1,3 +1,4 @@
+import * as React from "react";
 import { Link, useLoaderData, useParams, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { ArrowLeft, MapPin, Heart } from "lucide-react";
@@ -18,14 +19,16 @@ import { RatingBadge } from "@/features/reviews/RatingStars";
 import { useLocationReviews } from "@/features/reviews/api";
 import { useListing, type ListingDetail } from "@/features/listing/api";
 import { useSavedListings } from "@/features/search/useSavedListings";
-import { useFaqCombined } from "@/features/faqs/api";
+import { useFaqCombined, type FaqCombinedItem } from "@/features/faqs/api";
 import { FaqList } from "@/features/faqs/FaqList";
 import { optimizedImageUrl } from "@/lib/storage";
+import { formatBRL } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
   localBusinessSchema,
   productOfferSchema,
   breadcrumbSchema,
+  faqSchema,
   type SchemaReview,
 } from "@/lib/jsonld";
 
@@ -57,10 +60,30 @@ export default function ListingPage() {
     date: r.created_at,
   }));
 
+  const { data: faqItems, isLoading: faqLoading } = useFaqCombined({
+    locationId: listing?.location.id,
+    enabled: !!listing?.location.id,
+  });
+
   const fromStr = searchParams.get("from");
   const toStr = searchParams.get("to");
   const initialFrom = fromStr ? new Date(fromStr) : null;
   const initialTo = toStr ? new Date(toStr) : null;
+
+  // Ref para o card de reserva mobile — aciona sticky CTA ao sair da viewport
+  const mobileCardRef = React.useRef<HTMLDivElement>(null);
+  const [showStickyBar, setShowStickyBar] = React.useState(false);
+
+  React.useEffect(() => {
+    const el = mobileCardRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setShowStickyBar(!entry.isIntersecting),
+      { threshold: 0 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [listing]);
 
   const pageTitle = listing
     ? `${listing.parking_type.name} · ${listing.location.name} | Movepark`
@@ -77,6 +100,10 @@ export default function ListingPage() {
       ? optimizedImageUrl(listing.location.photos[0], { width: 1200, height: 630, resize: "cover" })
       : undefined;
 
+  const faqSchemaData =
+    faqItems && faqItems.length > 0
+      ? faqSchema(faqItems.map((f) => ({ question: f.question, answer: f.answer })))
+      : null;
 
   if (isLoading) {
     return (
@@ -123,6 +150,8 @@ export default function ListingPage() {
   }
 
   const isSaved = saved.isSaved(listing.id);
+  const hasDescription = (listing.capacity ?? 0) > 0 || !!listing.parking_type.description;
+  const hasAmenities = listing.amenities.length > 0;
 
   return (
     <div className="mx-auto w-full max-w-[1080px] px-4 py-8 desktop:px-8">
@@ -149,6 +178,9 @@ export default function ListingPage() {
             ]),
           )}
         </script>
+        {faqSchemaData && (
+          <script type="application/ld+json">{JSON.stringify(faqSchemaData)}</script>
+        )}
       </Helmet>
       {/* Voltar */}
       <Button variant="ghost" size="sm" asChild className="mb-4 -ml-3">
@@ -193,7 +225,7 @@ export default function ListingPage() {
       <PhotoGrid title={listing.location.name} photoUrls={listing.location.photos} />
 
       {/* Mobile/tablet: card de reserva logo após as fotos — visível sem scroll */}
-      <div className="mt-6 desktop:hidden">
+      <div ref={mobileCardRef} className="mt-6 desktop:hidden">
         <ReservationCard
           listing={listing}
           initialFrom={initialFrom}
@@ -204,27 +236,33 @@ export default function ListingPage() {
       {/* Body 2-col */}
       <div className="mt-8 grid grid-cols-1 gap-12 desktop:grid-cols-[1fr_360px]">
         <div className="space-y-10">
-          {/* Sub-header */}
-          <section className="space-y-3">
-            {(listing.capacity ?? 0) > 0 && (
-              <p className="text-body-sm text-muted">
-                {listing.capacity} vagas disponíveis
-              </p>
-            )}
-            {listing.parking_type.description && (
-              <p className="text-body-md text-body">{listing.parking_type.description}</p>
-            )}
-          </section>
+          {/* Sub-header: descrição e capacidade — só renderiza quando tem conteúdo */}
+          {hasDescription && (
+            <section className="space-y-3">
+              {(listing.capacity ?? 0) > 0 && (
+                <p className="text-body-sm text-muted">
+                  {listing.capacity} vagas disponíveis
+                </p>
+              )}
+              {listing.parking_type.description && (
+                <p className="text-body-md text-body">{listing.parking_type.description}</p>
+              )}
+            </section>
+          )}
 
-          <Separator />
+          {hasDescription && <Separator />}
 
-          {/* O que oferece */}
-          <section className="space-y-4">
-            <h2 className="text-display-sm text-ink">O que essa vaga oferece</h2>
-            <AmenityList amenities={listing.amenities} />
-          </section>
+          {/* O que oferece — oculto quando o estacionamento não cadastrou comodidades */}
+          {hasAmenities && (
+            <>
+              <section className="space-y-4">
+                <h2 className="text-display-sm text-ink">O que essa vaga oferece</h2>
+                <AmenityList amenities={listing.amenities} />
+              </section>
 
-          <Separator />
+              <Separator />
+            </>
+          )}
 
           {/* Como chegar (PRD-11): aviso de entrada + passo-a-passo + traslado + mapa */}
           <section className="space-y-4">
@@ -267,8 +305,8 @@ export default function ListingPage() {
 
           <Separator />
 
-          {/* FAQ — global + da unidade */}
-          <ListingFaqSection locationId={listing.location.id} />
+          {/* FAQ — global + destination + location (ADR-002) */}
+          <ListingFaqSection items={faqItems} isLoading={faqLoading} />
 
           <Separator />
 
@@ -294,17 +332,39 @@ export default function ListingPage() {
         </aside>
       </div>
 
+      {/* Sticky CTA mobile — aparece quando o card de reserva sai da viewport */}
+      {showStickyBar && (
+        <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-4 border-t border-hairline bg-canvas/95 px-4 py-3 backdrop-blur-sm desktop:hidden">
+          <div>
+            <p className="text-caption text-muted">A partir de</p>
+            <p className="text-display-sm font-bold text-ink tabular-nums">
+              {formatBRL(listing.company_parking_type.base_price)}
+            </p>
+          </div>
+          <Button
+            onClick={() =>
+              mobileCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }
+          >
+            Reservar
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
 
-function ListingFaqSection({ locationId }: { locationId: string }) {
-  const { data, isLoading } = useFaqCombined({ locationId });
-  if (!isLoading && (data ?? []).length === 0) return null;
+type ListingFaqSectionProps = {
+  items: FaqCombinedItem[] | undefined;
+  isLoading: boolean;
+};
+
+function ListingFaqSection({ items, isLoading }: ListingFaqSectionProps) {
+  if (!isLoading && (items ?? []).length === 0) return null;
   return (
     <section className="space-y-4">
       <h2 className="text-display-sm text-ink">Perguntas frequentes</h2>
-      <FaqList items={data} isLoading={isLoading} groupByScope />
+      <FaqList items={items} isLoading={isLoading} groupByScope />
     </section>
   );
 }

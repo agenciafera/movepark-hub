@@ -17,6 +17,8 @@ type Props = {
   datesAreEstimate?: boolean;
   sort: SearchSort;
   onSortChange: (s: SearchSort) => void;
+  /** true quando o destino tem coordenadas — habilita ordenação por distância. */
+  hasDestCoords?: boolean;
 };
 
 export function ResultsHeader({
@@ -27,6 +29,7 @@ export function ResultsHeader({
   datesAreEstimate,
   sort,
   onSortChange,
+  hasDestCoords,
 }: Props) {
   const destName = data?.destination?.name ?? data?.destination?.code ?? "destino";
   const count = data?.total ?? 0;
@@ -60,7 +63,9 @@ export function ResultsHeader({
             <SelectItem value="price_asc">Menor preço</SelectItem>
             <SelectItem value="price_desc">Maior preço</SelectItem>
             <SelectItem value="rating_desc">Melhor avaliação</SelectItem>
-            <SelectItem value="distance_asc">Mais próximo</SelectItem>
+            {hasDestCoords && (
+              <SelectItem value="distance_asc">Mais próximo</SelectItem>
+            )}
           </SelectContent>
         </Select>
       </div>

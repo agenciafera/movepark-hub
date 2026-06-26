@@ -128,6 +128,7 @@ export default function SearchResultsPage() {
         datesAreEstimate={dates.isEstimate}
         sort={sort}
         onSortChange={(s) => patch({ sort: s })}
+        hasDestCoords={hasDestCoords}
       />
 
       <div className="mt-6 flex items-center justify-between gap-3">
@@ -209,20 +210,26 @@ export default function SearchResultsPage() {
             <EmptyState
               icon={<Inbox className="h-10 w-10" />}
               title="Nenhuma vaga pra esse período"
-              description="Tente outras datas próximas ou limpe os filtros aplicados."
+              description={
+                activeCount > 0
+                  ? "Nenhuma vaga com esses filtros. Tente ampliar os critérios ou limpe os filtros."
+                  : "Tente outras datas próximas ou um destino diferente."
+              }
               action={
-                <Button
-                  onClick={() =>
-                    patch({
-                      operator: null,
-                      amenities: null,
-                      max_distance_km: null,
-                      category: null,
-                    })
-                  }
-                >
-                  Limpar filtros
-                </Button>
+                activeCount > 0 ? (
+                  <Button
+                    onClick={() =>
+                      patch({
+                        operator: null,
+                        amenities: null,
+                        max_distance_km: null,
+                        category: null,
+                      })
+                    }
+                  >
+                    Limpar filtros
+                  </Button>
+                ) : undefined
               }
             />
           )}
