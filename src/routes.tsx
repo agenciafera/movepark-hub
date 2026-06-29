@@ -29,6 +29,13 @@ import OnboardingPage from "@/routes/onboarding";
 import VoucherValidatePage from "@/routes/voucher-validate";
 import DestinoPage from "@/routes/destino";
 import DestinosPage from "@/routes/destinos";
+import SobrePage from "@/routes/sobre";
+import TermosPage from "@/routes/termos";
+import PrivacidadePage from "@/routes/privacidade";
+import ContatoPage from "@/routes/contato";
+import AjudaPage from "@/routes/ajuda";
+import CancelamentoPage from "@/routes/cancelamento";
+import ComoFuncionaPage from "@/routes/como-funciona";
 
 import AccountIndexPage from "@/routes/account/index";
 import AccountProfilePage from "@/routes/account/profile";
@@ -157,6 +164,13 @@ export const routes: RouteRecord[] = [
           },
           { path: "/checkout/:code", element: <CheckoutPage /> },
           { path: "/faq", element: <FaqPage /> },
+          { path: "/sobre", element: <SobrePage /> },
+          { path: "/termos", element: <TermosPage /> },
+          { path: "/privacidade", element: <PrivacidadePage /> },
+          { path: "/contato", element: <ContatoPage /> },
+          { path: "/ajuda", element: <AjudaPage /> },
+          { path: "/cancelamento", element: <CancelamentoPage /> },
+          { path: "/como-funciona", element: <ComoFuncionaPage /> },
           { path: "/docs", element: <DocsPage /> },
           { path: "/seja-parceiro", element: <SejaParceiroPage /> },
           { path: "/destinos", element: <DestinosPage />, loader: destinosLoader },
