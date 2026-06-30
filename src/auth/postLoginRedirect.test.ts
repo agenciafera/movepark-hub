@@ -23,4 +23,13 @@ describe("postLoginPath", () => {
   it("cai em / quando o role ainda não carregou e não há next", () => {
     expect(postLoginPath(null, null)).toBe("/");
   });
+
+  it("ignora next inseguro (open redirect) e usa o default do role", () => {
+    // protocol-relative e absolutos não são honrados
+    expect(postLoginPath("customer", "//evil.com")).toBe("/");
+    expect(postLoginPath("hub_admin", "//evil.com")).toBe("/manager");
+    expect(postLoginPath("customer", "https://evil.com")).toBe("/");
+    expect(postLoginPath("customer", "/\\evil.com")).toBe("/");
+    expect(postLoginPath("company_operator", "javascript:alert(1)")).toBe("/operator");
+  });
 });
