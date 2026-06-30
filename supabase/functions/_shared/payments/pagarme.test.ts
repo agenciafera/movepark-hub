@@ -236,12 +236,23 @@ Deno.test("buildCreateRecipientBody: PJ com KYC monta register_information compl
   assertEquals(reg.annual_revenue, 1000000);
   assertEquals(reg.founding_date, "2010-10-30"); // DD/MM/AAAA → ISO
   assertEquals(reg.main_address.zip_code, "01310930");
-  assertEquals(reg.main_address.complementary, undefined);
+  // Pagar.me exige complementary e reference_point; vazios viram "N/A" (fallback do adapter).
+  assertEquals(reg.main_address.complementary, "N/A");
+  assertEquals(reg.main_address.reference_point, "N/A");
+  assertEquals(reg.managing_partners[0].address.complementary, "N/A");
   assertEquals(reg.phone_numbers, [{ ddd: "11", number: "999998888", type: "mobile" }]);
   assertEquals(reg.managing_partners[0].name, "Tony Stark");
   assertEquals(reg.managing_partners[0].type, "individual");
   assertEquals(reg.managing_partners[0].self_declared_legal_representative, true);
   assertEquals(body.default_bank_account.holder_type, "company");
+
+  // Complement/reference_point reais são preservados (não viram "N/A").
+  const withCompl = buildCreateRecipientBody({
+    ...input,
+    kyc: { ...input.kyc!, address: { ...input.kyc!.address!, complement: "Sala 12", reference_point: "ao lado do metrô" } },
+  }) as Record<string, any>;
+  assertEquals(withCompl.register_information.main_address.complementary, "Sala 12");
+  assertEquals(withCompl.register_information.main_address.reference_point, "ao lado do metrô");
   assertEquals(body.default_bank_account.bank, "341");
 });
 

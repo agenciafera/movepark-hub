@@ -121,17 +121,22 @@ function brDateToIso(value: string | null | undefined): string | undefined {
   return m ? `${m[3]}-${m[2]}-${m[1]}` : value;
 }
 
+// O Pagar.me EXIGE complementary e reference_point no endereço do recebedor (mesmo quando o lote
+// não tem). Como é quirk do gateway, resolvemos aqui (adapter, ADR-004) com um fallback não-vazio.
+const orNa = (v: string | null | undefined): string =>
+  typeof v === "string" && v.trim() ? v.trim() : "N/A";
+
 function mapAddress(a: RecipientKycAddress | null | undefined) {
   if (!a) return undefined;
   return {
     street: undef(a.street),
-    complementary: undef(a.complement),
+    complementary: orNa(a.complement),
     street_number: undef(a.street_number),
     neighborhood: undef(a.neighborhood),
     city: undef(a.city),
     state: undef(a.state),
     zip_code: undef(a.zip_code),
-    reference_point: undef(a.reference_point),
+    reference_point: orNa(a.reference_point),
   };
 }
 
