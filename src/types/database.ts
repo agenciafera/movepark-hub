@@ -1685,6 +1685,48 @@ export type Database = {
           },
         ]
       }
+      location_fare: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          location_parking_type_id: string
+          price_cents_override: number | null
+          tier: Database["public"]["Enums"]["fare_tier"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          location_parking_type_id: string
+          price_cents_override?: number | null
+          tier: Database["public"]["Enums"]["fare_tier"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          location_parking_type_id?: string
+          price_cents_override?: number | null
+          tier?: Database["public"]["Enums"]["fare_tier"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_fare_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "location_parking_type"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_fare_tier_fkey"
+            columns: ["tier"]
+            isOneToOne: false
+            referencedRelation: "fare"
+            referencedColumns: ["tier"]
+          },
+        ]
+      }
       location_parking_availability: {
         Row: {
           blocked: boolean
@@ -3563,6 +3605,15 @@ export type Database = {
           p_location_parking_type_id: string
           p_rule: Json
           p_tiers?: Json
+        }
+        Returns: undefined
+      }
+      operator_set_unit_fare: {
+        Args: {
+          p_enabled: boolean
+          p_location_parking_type_id: string
+          p_price_cents?: number
+          p_tier: Database["public"]["Enums"]["fare_tier"]
         }
         Returns: undefined
       }
