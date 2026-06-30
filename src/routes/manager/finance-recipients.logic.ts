@@ -39,15 +39,24 @@ function asRecipientStatus(value: string | undefined): PayoutRecipientStatus {
     : "draft";
 }
 
-/** Mapeia a linha crua (company + payout_recipient[]) para a linha do overview. */
+/**
+ * Normaliza um embed do PostgREST para array. Relações 1:1 (ex.: company_payout_account, cujo PK é
+ * company_id) voltam como objeto único; 1:N voltam como array. Tratamos os dois.
+ */
+function toArray<T>(v: T[] | T | null | undefined): T[] {
+  if (v == null) return [];
+  return Array.isArray(v) ? v : [v];
+}
+
+/** Mapeia a linha crua (company + payout_recipient + company_payout_account) para o overview. */
 export function mapRecipientRow(raw: RawCompanyRecipient): RecipientOverviewRow {
-  const rec = (raw.payout_recipient ?? []).find((r) => r.provider === "pagarme" && !r.deleted_at) ?? null;
+  const rec = toArray(raw.payout_recipient).find((r) => r.provider === "pagarme" && !r.deleted_at) ?? null;
   const recipientStatus = asRecipientStatus(rec?.status);
   const onboardingStatus = raw.onboarding_status as OnboardingStatus;
   const requirements = Array.isArray(rec?.requirements)
     ? (rec!.requirements as PayoutRequirement[])
     : [];
-  const hasKyc = (raw.company_payout_account ?? []).some((a) => !a.deleted_at);
+  const hasKyc = toArray(raw.company_payout_account).some((a) => !a.deleted_at);
   return {
     companyId: raw.id,
     companyName: raw.name,

@@ -19,10 +19,24 @@ describe("mapRecipientRow", () => {
     expect(row.needsAttention).toBe(true);
   });
 
-  it("hasKyc reflete company_payout_account não-deletado", () => {
+  it("hasKyc reflete company_payout_account não-deletado (array ou objeto)", () => {
     expect(mapRecipientRow(raw({ id: "k1", name: "A", company_payout_account: [{ deleted_at: null }] })).hasKyc).toBe(true);
     expect(mapRecipientRow(raw({ id: "k2", name: "B", company_payout_account: [{ deleted_at: "2026-01-01" }] })).hasKyc).toBe(false);
     expect(mapRecipientRow(raw({ id: "k3", name: "C", company_payout_account: null })).hasKyc).toBe(false);
+    // PostgREST 1:1 → embed vem como OBJETO único (regressão do bug ".some is not a function")
+    expect(mapRecipientRow(raw({ id: "k4", name: "D", company_payout_account: { deleted_at: null } })).hasKyc).toBe(true);
+  });
+
+  it("payout_recipient como objeto único (1:1) também é tolerado", () => {
+    const row = mapRecipientRow(
+      raw({
+        id: "k5",
+        name: "E",
+        payout_recipient: { provider: "pagarme", status: "active", external_recipient_id: "rp", kyc_url: null, requirements: [], deleted_at: null },
+      }),
+    );
+    expect(row.recipientStatus).toBe("active");
+    expect(row.hasRecipient).toBe(true);
   });
 
   it("recebedor ativo → não precisa de atenção", () => {

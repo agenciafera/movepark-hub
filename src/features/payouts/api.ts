@@ -80,21 +80,23 @@ export function useRecipient(companyId: string | undefined) {
 }
 
 /** Linha crua do overview (company + recebedor embutido) — mapeada em finance-recipients.logic. */
+type RawRecipient = {
+  provider: string;
+  status: string;
+  external_recipient_id: string | null;
+  kyc_url: string | null;
+  requirements: unknown;
+  deleted_at: string | null;
+};
+type RawAccount = { deleted_at: string | null };
+
 export type RawCompanyRecipient = {
   id: string;
   name: string;
   onboarding_status: string;
-  payout_recipient:
-    | {
-        provider: string;
-        status: string;
-        external_recipient_id: string | null;
-        kyc_url: string | null;
-        requirements: unknown;
-        deleted_at: string | null;
-      }[]
-    | null;
-  company_payout_account: { deleted_at: string | null }[] | null;
+  // PostgREST devolve 1:N como array e 1:1 como objeto — aceitamos os dois (normalizado na lógica).
+  payout_recipient: RawRecipient[] | RawRecipient | null;
+  company_payout_account: RawAccount[] | RawAccount | null;
 };
 
 /** Overview de recebedores por empresa (Manager, hub_admin) — uma linha por empresa. */
