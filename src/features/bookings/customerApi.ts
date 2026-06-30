@@ -79,6 +79,10 @@ export type MyBookingDetail = MyBookingListItem & {
   passenger_count: number | null;
   has_pcd: boolean;
   checked_in_at: string | null;
+  fare_tier: import("@/lib/fares").FareTier;
+  fare_price_cents: number;
+  fare_cancel_until: string | null;
+  fare_benefits: import("@/lib/fares").FareBenefits | null;
   vehicle: { license_plate: string; model: string | null; color: string | null } | null;
   items: {
     id: string;
@@ -109,6 +113,7 @@ export function useBookingDetail(code: string | undefined) {
         .select(
           `id, code, status, check_in_at, check_out_at, expires_at, total_amount, created_at,
            passenger_count, has_pcd, checked_in_at,
+           fare_tier, fare_price_cents, fare_cancel_until, fare_benefits,
            location:location!inner(
              name, slug, address, phone, email, notice, reservation_policy,
              latitude, longitude,
@@ -150,6 +155,10 @@ export function useBookingDetail(code: string | undefined) {
         passenger_count: r.passenger_count,
         has_pcd: r.has_pcd,
         checked_in_at: r.checked_in_at ?? null,
+        fare_tier: (r.fare_tier ?? "basica") as import("@/lib/fares").FareTier,
+        fare_price_cents: Number(r.fare_price_cents ?? 0),
+        fare_cancel_until: r.fare_cancel_until ?? null,
+        fare_benefits: (r.fare_benefits ?? null) as import("@/lib/fares").FareBenefits | null,
         location: {
           name: r.location.name,
           slug: r.location.slug,

@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Voucher } from "@/features/bookings/Voucher";
 import { CancelBookingDialog } from "@/features/bookings/CancelBookingDialog";
+import { FareDisplay } from "@/features/fares/FareDisplay";
 import { useBookingDetail } from "@/features/bookings/customerApi";
 import { guaranteeChannel } from "@/features/guarantee/whatsapp";
 import { useMyReview } from "@/features/reviews/api";
@@ -143,6 +144,18 @@ export default function BookingDetailPage() {
               {booking.passenger_count != null && (
                 <Row label="Passageiros" value={String(booking.passenger_count)} />
               )}
+            </div>
+          </section>
+
+          <section className="rounded-md border border-hairline bg-canvas p-6">
+            <h3 className="text-title-md text-ink">Tarifa</h3>
+            <div className="mt-3">
+              <FareDisplay
+                fareTier={booking.fare_tier}
+                farePriceCents={booking.fare_price_cents}
+                fareCancelUntil={booking.fare_cancel_until}
+                benefits={booking.fare_benefits}
+              />
             </div>
           </section>
 

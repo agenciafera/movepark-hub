@@ -12,16 +12,23 @@ export type CancellationStatus = {
 };
 
 /**
- * Avalia o cancelamento de uma reserva contra a regra padrão de 24h.
- * `now` é injetado para testabilidade. (Superflex/MON-11 — janela estendida paga —
- * é fora de escopo; entraria como um parâmetro futuro.)
+ * Avalia o cancelamento de uma reserva. O prazo grátis vem da Tarifa (E2.8): `fareCancelUntil`
+ * snapshot da reserva (Superflex = 1 min antes); sem ele, cai no padrão de 24h (PRD-12).
+ * `now` é injetado para testabilidade.
  */
-export function cancellationStatus(checkInAt: string | Date, now: Date): CancellationStatus {
+export function cancellationStatus(
+  checkInAt: string | Date,
+  now: Date,
+  fareCancelUntil?: string | Date | null,
+): CancellationStatus {
   const checkIn = new Date(checkInAt).getTime();
   const hoursUntilCheckIn = (checkIn - now.getTime()) / (1000 * 60 * 60);
+  const deadline = fareCancelUntil
+    ? new Date(fareCancelUntil)
+    : new Date(checkIn - FREE_CANCEL_WINDOW_HOURS * 60 * 60 * 1000);
   return {
-    free: hoursUntilCheckIn >= FREE_CANCEL_WINDOW_HOURS,
-    deadline: new Date(checkIn - FREE_CANCEL_WINDOW_HOURS * 60 * 60 * 1000),
+    free: now.getTime() <= deadline.getTime(),
+    deadline,
     hoursUntilCheckIn,
   };
 }
@@ -32,8 +39,11 @@ export const CANCELLATION_POLICY_LINES = [
   "Após esse prazo, você ainda pode cancelar, mas sem reembolso.",
 ];
 
-/** Rótulo com o prazo concreto: "Cancele grátis até 14/06/2026 22:00". */
-export function freeCancelDeadlineLabel(checkInAt: string | Date): string {
-  const { deadline } = cancellationStatus(checkInAt, new Date(0));
+/** Rótulo com o prazo concreto: "Cancele grátis até 14/06/2026 22:00". Respeita a janela da Tarifa. */
+export function freeCancelDeadlineLabel(
+  checkInAt: string | Date,
+  fareCancelUntil?: string | Date | null,
+): string {
+  const { deadline } = cancellationStatus(checkInAt, new Date(0), fareCancelUntil);
   return `Cancele grátis até ${formatDateTime(deadline)}`;
 }

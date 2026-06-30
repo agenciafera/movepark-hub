@@ -26,6 +26,15 @@ describe("cancellationStatus", () => {
     const { deadline } = cancellationStatus(checkIn, NOW);
     expect(deadline.getTime()).toBe(new Date(checkIn).getTime() - 24 * 3600_000);
   });
+
+  it("Tarifa (E2.8): fareCancelUntil sobrepõe o padrão de 24h (Superflex grátis a 2h do check-in)", () => {
+    const checkIn = h(2); // 2h pro check-in → fora dos 24h padrão
+    const superflexUntil = h(2 - 1 / 60); // 1 min antes do check-in
+    expect(cancellationStatus(checkIn, NOW).free).toBe(false); // padrão
+    expect(cancellationStatus(checkIn, NOW, superflexUntil).free).toBe(true); // Superflex
+    const passed = h(2 + 1); // prazo já passou
+    expect(cancellationStatus(checkIn, NOW, passed).deadline.getTime()).toBe(new Date(passed).getTime());
+  });
 });
 
 describe("freeCancelDeadlineLabel", () => {

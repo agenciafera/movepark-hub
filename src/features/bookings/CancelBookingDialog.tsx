@@ -28,8 +28,8 @@ export function CancelBookingDialog({
   const cancelMutation = useCancelMyBooking();
   if (!booking) return null;
 
-  // Política padrão de 24h (PRD-12)
-  const isFree = cancellationStatus(booking.check_in_at, new Date()).free;
+  // Janela da Tarifa (E2.8): Superflex = 1 min antes; senão padrão 24h (PRD-12).
+  const isFree = cancellationStatus(booking.check_in_at, new Date(), booking.fare_cancel_until).free;
 
   async function handleCancel() {
     try {
@@ -76,8 +76,8 @@ export function CancelBookingDialog({
             }
           >
             {isFree
-              ? `Cancelamento grátis. Reembolso integral de ${formatBRL(booking.total_amount)} em até 10 dias úteis. ${freeCancelDeadlineLabel(booking.check_in_at)}.`
-              : "Faltam menos de 24h pro check-in. Você pode cancelar, mas sem reembolso."}
+              ? `Cancelamento grátis. Reembolso integral de ${formatBRL(booking.total_amount)} em até 10 dias úteis. ${freeCancelDeadlineLabel(booking.check_in_at, booking.fare_cancel_until)}.`
+              : "Fora da janela de cancelamento grátis da sua Tarifa. Você pode cancelar, mas sem reembolso."}
           </div>
         </div>
 
