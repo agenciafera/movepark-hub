@@ -1,0 +1,101 @@
+- generic [ref=e2]:
+  - region "Notifications alt+T"
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - link "Ir para a home" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img "Movepark" [ref=e7]
+        - generic [ref=e9]:
+          - button "Onde Aeroporto, cidade ou bairro" [ref=e11] [cursor=pointer]:
+            - generic [ref=e12]: Onde
+            - generic [ref=e13]: Aeroporto, cidade ou bairro
+          - button "Check-in 01 jul · 22:00" [ref=e15] [cursor=pointer]:
+            - generic [ref=e16]: Check-in
+            - generic [ref=e17]: 01 jul · 22:00
+          - button "Check-out 06 jul · 08:00" [ref=e19] [cursor=pointer]:
+            - generic [ref=e20]: Check-out
+            - generic [ref=e21]: 06 jul · 08:00
+          - generic [ref=e23]:
+            - combobox [ref=e24] [cursor=pointer]:
+              - generic [ref=e25]:
+                - generic [ref=e26]: Veículo
+                - generic [ref=e27]:
+                  - generic:
+                    - generic:
+                      - img
+                      - text: Carro
+              - img [ref=e28]
+            - combobox [ref=e30]
+          - button "Buscar" [ref=e32] [cursor=pointer]:
+            - img [ref=e33]
+        - generic [ref=e36]:
+          - link "Seja parceiro" [ref=e37] [cursor=pointer]:
+            - /url: /seja-parceiro
+          - link "Entrar" [ref=e38] [cursor=pointer]:
+            - /url: /entrar
+    - main [ref=e39]:
+      - generic [ref=e40]:
+        - generic [ref=e41]:
+          - generic [ref=e42]:
+            - heading "Buscando…" [level=1] [ref=e43]
+            - generic [ref=e44]:
+              - generic [ref=e45]: Estimativa
+              - generic [ref=e46]: 01/07/2026 10:00 → 02/07/2026 10:00
+              - generic [ref=e47]: ·
+              - generic [ref=e48]: 1 dia
+          - combobox [ref=e50] [cursor=pointer]:
+            - generic: Menor preço
+            - img [ref=e51]
+        - complementary [ref=e54]:
+          - generic [ref=e56]:
+            - generic [ref=e57]: Estacionamento
+            - generic [ref=e64]:
+              - heading "Comodidades" [level=3] [ref=e65]:
+                - button "Comodidades" [expanded] [ref=e66] [cursor=pointer]:
+                  - text: Comodidades
+                  - img [ref=e67]
+              - region "Comodidades" [ref=e69]
+    - contentinfo [ref=e80]:
+      - generic [ref=e81]:
+        - generic [ref=e82]:
+          - heading "Movepark" [level=4] [ref=e83]
+          - list [ref=e84]:
+            - listitem [ref=e85]:
+              - link "Sobre nós" [ref=e86] [cursor=pointer]:
+                - /url: /sobre
+            - listitem [ref=e87]:
+              - link "Termos de uso" [ref=e88] [cursor=pointer]:
+                - /url: /termos
+            - listitem [ref=e89]:
+              - link "Política de privacidade" [ref=e90] [cursor=pointer]:
+                - /url: /privacidade
+        - generic [ref=e91]:
+          - heading "Estacionamentos" [level=4] [ref=e92]
+          - list [ref=e93]:
+            - listitem [ref=e94]:
+              - link "Seja parceiro" [ref=e95] [cursor=pointer]:
+                - /url: /seja-parceiro
+            - listitem [ref=e96]:
+              - link "Painel do estacionamento" [ref=e97] [cursor=pointer]:
+                - /url: /operator
+        - generic [ref=e98]:
+          - heading "Suporte" [level=4] [ref=e99]
+          - list [ref=e100]:
+            - listitem [ref=e101]:
+              - link "Perguntas frequentes" [ref=e102] [cursor=pointer]:
+                - /url: /faq
+            - listitem [ref=e103]:
+              - link "Como funciona" [ref=e104] [cursor=pointer]:
+                - /url: /ajuda/como-funciona
+            - listitem [ref=e105]:
+              - link "Política de cancelamento" [ref=e106] [cursor=pointer]:
+                - /url: /ajuda/cancelamento
+            - listitem [ref=e107]:
+              - link "Fale conosco" [ref=e108] [cursor=pointer]:
+                - /url: /contato
+      - generic [ref=e110]:
+        - generic [ref=e111]:
+          - img "Movepark" [ref=e112]
+          - generic [ref=e113]: © 2026 Movepark
+        - generic [ref=e114]: 🌎 PT-BR (R$)

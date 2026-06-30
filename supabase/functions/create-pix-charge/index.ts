@@ -146,6 +146,14 @@ Deno.serve(async (req: Request) => {
   const email = authUser?.user?.email ?? null;
   if (!email) return jsonResponse({ error: "Cliente sem e-mail para a cobrança." }, 422);
 
+  // PIX no Pagar.me exige o CPF do cliente — sem ele o gateway recusa a cobrança ("failed").
+  if (!profile?.tax_id || profile.tax_id.replace(/\D/g, "").length !== 11) {
+    return jsonResponse(
+      { error: "Cliente sem CPF válido para a cobrança PIX. Informe o CPF no checkout." },
+      422,
+    );
+  }
+
   // PIX no Pagar.me exige telefone do cliente.
   const phone = parseBrPhone(profile?.phone);
   if (!phone) {

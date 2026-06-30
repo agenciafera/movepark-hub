@@ -1,0 +1,22 @@
+- generic [ref=f2e2]:
+  - region "Notifications alt+T"
+  - generic [ref=f2e3]:
+    - generic [ref=f2e5]:
+      - img "Movepark" [ref=f2e6]
+      - generic [ref=f2e7]: Hub
+    - generic [ref=f2e8]:
+      - generic [ref=f2e9]:
+        - generic [ref=f2e10]: Entre na Movepark
+        - generic [ref=f2e11]: Reserve em segundos. Sem senha.
+      - generic [ref=f2e13]:
+        - button "Continuar com Google" [ref=f2e14] [cursor=pointer]:
+          - img [ref=f2e15]
+          - text: Continuar com Google
+        - generic [ref=f2e22]: ou
+        - button "Entrar com e-mail" [ref=f2e24] [cursor=pointer]:
+          - img [ref=f2e25]
+          - text: Entrar com e-mail
+        - button "Entrar com WhatsApp" [ref=f2e28] [cursor=pointer]:
+          - img [ref=f2e29]
+          - text: Entrar com WhatsApp
+        - paragraph [ref=f2e31]: Ao continuar você aceita os Termos e a Política de privacidade.
