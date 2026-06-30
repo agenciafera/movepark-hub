@@ -56,6 +56,7 @@ import ManagerUsers from "@/routes/manager/users";
 import ManagerFinanceBilling from "@/routes/manager/finance-billing";
 import ManagerFinanceCommissions from "@/routes/manager/finance-commissions";
 import ManagerFinancePayouts from "@/routes/manager/finance-payouts";
+import ManagerFinanceRecipients from "@/routes/manager/finance-recipients";
 import ManagerSettings from "@/routes/manager/settings";
 import ManagerFaq from "@/routes/manager/faq";
 import ManagerFaqCategorias from "@/routes/manager/faq-categorias";
@@ -247,6 +248,7 @@ export const routes: RouteRecord[] = [
               { path: "finance/billing", element: <ManagerFinanceBilling /> },
               { path: "finance/commissions", element: <ManagerFinanceCommissions /> },
               { path: "finance/payouts", element: <ManagerFinancePayouts /> },
+              { path: "finance/recipients", element: <ManagerFinanceRecipients /> },
               { path: "attribution", element: <ManagerAttribution /> },
               { path: "reviews", element: <ManagerReviews /> },
               { path: "faq", element: <ManagerFaq /> },

@@ -18,6 +18,7 @@ import {
   KeyRound,
   Receipt,
   PieChart,
+  Landmark,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/context";
@@ -34,6 +35,7 @@ const managerItems: Item[] = [
   { to: "/manager/bookings", label: "Reservas", icon: Calendar },
   { to: "/manager/finance/billing", label: "Financeiro", icon: Wallet },
   { to: "/manager/finance/payouts", label: "Repasses", icon: Receipt },
+  { to: "/manager/finance/recipients", label: "Recebedores", icon: Landmark },
   { to: "/manager/attribution", label: "Atribuição", icon: PieChart },
   { to: "/manager/reviews", label: "Avaliações", icon: Star },
   { to: "/manager/faq", label: "FAQ", icon: HelpCircle },

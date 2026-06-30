@@ -75,6 +75,41 @@ export function useRecipient(companyId: string | undefined) {
   });
 }
 
+/** Linha crua do overview (company + recebedor embutido) — mapeada em finance-recipients.logic. */
+export type RawCompanyRecipient = {
+  id: string;
+  name: string;
+  onboarding_status: string;
+  payout_recipient:
+    | {
+        provider: string;
+        status: string;
+        external_recipient_id: string | null;
+        kyc_url: string | null;
+        requirements: unknown;
+        deleted_at: string | null;
+      }[]
+    | null;
+};
+
+/** Overview de recebedores por empresa (Manager, hub_admin) — uma linha por empresa. */
+export function useRecipientsOverview() {
+  return useQuery({
+    queryKey: [...payoutKeys.all, "overview"] as const,
+    queryFn: async (): Promise<RawCompanyRecipient[]> => {
+      const { data, error } = await supabase
+        .from("company")
+        .select(
+          "id, name, onboarding_status, payout_recipient(provider, status, external_recipient_id, kyc_url, requirements, deleted_at)",
+        )
+        .is("deleted_at", null)
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as unknown as RawCompanyRecipient[];
+    },
+  });
+}
+
 type SyncArgs = { company_id: string; action: "create" | "refresh"; provider?: string };
 
 async function callSyncRecipient(args: SyncArgs) {

@@ -106,11 +106,21 @@ link no `RecipientPanel`.
 
 ## Frontend (Manager) — `src/features/payouts/`
 
-- `api.ts` — `useRecipient(companyId)`, `useSyncRecipient()` (invalida `payoutKeys.all`).
+- `api.ts` — `useRecipient(companyId)`, `useSyncRecipient()` (invalida `payoutKeys.all`),
+  `useRecipientsOverview()` (todas as empresas + recebedor embutido, para a visão consolidada).
 - `status.ts` — `payoutStatusLabel`/`payoutStatusTone` (espelha `onboarding/status.ts`).
 - `RecipientPanel.tsx` — badge de status, link de verificação, lista de pendências e botão
   **Criar/Sincronizar recebedor**; embutido no `ApplicationDrawer` quando o parceiro está
   `approved`/`in_progress`/`active`.
+
+### Visão consolidada — Manager → **Recebedores** (`/manager/finance/recipients`)
+
+Painel de manutenção (hub_admin) que lista **todas as empresas com o status do recebedor** no
+gateway e permite **criar/sincronizar** por linha (mesma Edge `sync-recipient`) + **Editar KYC**
+(`PayoutKycDialog`). Resolve a dor operacional do checkout falhar com *"o estacionamento ainda não
+tem recebedor ativo no gateway"*: empresas publicadas sem recebedor `active` sobem como **"precisa de
+atenção"** (`needsAttention` = vende no catálogo mas `recipient_status != 'active'`). Lógica pura
+testável em `src/routes/manager/finance-recipients.logic.ts` (mapeamento, ordenação, resumo).
 
 ## Testes
 
