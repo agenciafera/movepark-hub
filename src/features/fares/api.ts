@@ -1,10 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { FARE_TIER_ORDER, type FareOption, type FareTier } from "@/lib/fares";
 
 export const faresKeys = {
   all: ["unit-fares"] as const,
   unit: (lptId: string) => [...faresKeys.all, lptId] as const,
+  catalog: () => [...faresKeys.all, "__catalog__"] as const,
 };
 
 function rowToOption(r: {
@@ -27,9 +28,9 @@ function rowToOption(r: {
   };
 }
 
-async function fetchUnitFares(lptId: string): Promise<FareOption[]> {
+async function fetchUnitFares(lptId: string | null): Promise<FareOption[]> {
   const { data, error } = await supabase.rpc("get_unit_fares", {
-    p_location_parking_type_id: lptId,
+    p_location_parking_type_id: lptId ?? undefined,
   });
   if (error) throw error;
   const opts = (data ?? []).map((r) => rowToOption(r as Parameters<typeof rowToOption>[0]));
@@ -46,5 +47,49 @@ export function useUnitFares(locationParkingTypeId: string | undefined) {
     queryFn: () => fetchUnitFares(locationParkingTypeId!),
     enabled: !!locationParkingTypeId,
     staleTime: 5 * 60 * 1000, // catálogo muda pouco
+  });
+}
+
+/** Catálogo global de Tarifas (sem unidade) — usado no upgrade pós-reserva. */
+export function useFareCatalog() {
+  return useQuery({
+    queryKey: faresKeys.catalog(),
+    queryFn: () => fetchUnitFares(null),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export type FareUpgradeResponse = {
+  payment_id: string;
+  status: string;
+  qr_code: string;
+  qr_code_url: string;
+  expires_at: string;
+  delta: number;
+};
+
+/** Cria a cobrança PIX do upgrade de Tarifa (E2.8-d) via Edge create-fare-upgrade. */
+export function useCreateFareUpgrade() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { booking_code: string; target_tier: FareTier }): Promise<FareUpgradeResponse> => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Sessão expirada. Entre novamente.");
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-fare-upgrade`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(args),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? `Falha (HTTP ${res.status})`);
+      return body as FareUpgradeResponse;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["booking-detail"] }),
   });
 }

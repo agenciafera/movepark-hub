@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { Voucher } from "@/features/bookings/Voucher";
 import { CancelBookingDialog } from "@/features/bookings/CancelBookingDialog";
 import { FareDisplay } from "@/features/fares/FareDisplay";
+import { FareUpgradeDialog } from "@/features/fares/FareUpgradeDialog";
 import { useBookingDetail } from "@/features/bookings/customerApi";
 import { guaranteeChannel } from "@/features/guarantee/whatsapp";
 import { useMyReview } from "@/features/reviews/api";
@@ -22,6 +23,7 @@ export default function BookingDetailPage() {
   const { data: booking, isLoading, error } = useBookingDetail(code);
   const [searchParams] = useSearchParams();
   const [cancelOpen, setCancelOpen] = React.useState(false);
+  const [upgradeOpen, setUpgradeOpen] = React.useState(false);
   const [reviewOpen, setReviewOpen] = React.useState(false);
   const myReview = useMyReview(booking?.status === "completed" ? booking?.id : undefined);
 
@@ -157,6 +159,18 @@ export default function BookingDetailPage() {
                 benefits={booking.fare_benefits}
               />
             </div>
+            {booking.fare_tier !== "superflex" &&
+              ["pending", "confirmed"].includes(booking.status) &&
+              new Date(booking.check_in_at) > new Date() && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-4"
+                  onClick={() => setUpgradeOpen(true)}
+                >
+                  Fazer upgrade de Tarifa
+                </Button>
+              )}
           </section>
 
           {booking.vehicle && (
@@ -321,6 +335,14 @@ export default function BookingDetailPage() {
         open={cancelOpen}
         onOpenChange={setCancelOpen}
         onCancelled={() => navigate("/bookings")}
+      />
+
+      <FareUpgradeDialog
+        bookingCode={booking.code}
+        currentTier={booking.fare_tier}
+        currentFarePriceCents={booking.fare_price_cents}
+        open={upgradeOpen}
+        onOpenChange={setUpgradeOpen}
       />
 
       <ReviewForm

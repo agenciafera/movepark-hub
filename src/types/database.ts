@@ -1898,8 +1898,10 @@ export type Database = {
           created_at: string
           currency: string
           expires_at: string | null
+          fare_target_tier: Database["public"]["Enums"]["fare_tier"] | null
           id: string
           installments: number | null
+          kind: string
           method: string | null
           paid_at: string | null
           pix_qr_code: string | null
@@ -1920,8 +1922,10 @@ export type Database = {
           created_at?: string
           currency?: string
           expires_at?: string | null
+          fare_target_tier?: Database["public"]["Enums"]["fare_tier"] | null
           id?: string
           installments?: number | null
+          kind?: string
           method?: string | null
           paid_at?: string | null
           pix_qr_code?: string | null
@@ -1942,8 +1946,10 @@ export type Database = {
           created_at?: string
           currency?: string
           expires_at?: string | null
+          fare_target_tier?: Database["public"]["Enums"]["fare_tier"] | null
           id?: string
           installments?: number | null
+          kind?: string
           method?: string | null
           paid_at?: string | null
           pix_qr_code?: string | null
@@ -3200,6 +3206,13 @@ export type Database = {
           p_occurred_at?: string
           p_plate?: string
           p_type: string
+        }
+        Returns: Json
+      }
+      apply_fare_upgrade: {
+        Args: {
+          p_booking_id: string
+          p_target_tier: Database["public"]["Enums"]["fare_tier"]
         }
         Returns: Json
       }
