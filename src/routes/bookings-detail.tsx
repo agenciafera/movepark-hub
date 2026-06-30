@@ -10,7 +10,9 @@ import { Voucher } from "@/features/bookings/Voucher";
 import { CancelBookingDialog } from "@/features/bookings/CancelBookingDialog";
 import { FareDisplay } from "@/features/fares/FareDisplay";
 import { FareUpgradeDialog } from "@/features/fares/FareUpgradeDialog";
+import { ChangeVehicleDialog } from "@/features/bookings/ChangeVehicleDialog";
 import { useBookingDetail } from "@/features/bookings/customerApi";
+import { useAuth } from "@/auth/context";
 import { guaranteeChannel } from "@/features/guarantee/whatsapp";
 import { useMyReview } from "@/features/reviews/api";
 import { ReviewForm } from "@/features/reviews/ReviewForm";
@@ -22,8 +24,10 @@ export default function BookingDetailPage() {
   const navigate = useNavigate();
   const { data: booking, isLoading, error } = useBookingDetail(code);
   const [searchParams] = useSearchParams();
+  const { session } = useAuth();
   const [cancelOpen, setCancelOpen] = React.useState(false);
   const [upgradeOpen, setUpgradeOpen] = React.useState(false);
+  const [vehicleOpen, setVehicleOpen] = React.useState(false);
   const [reviewOpen, setReviewOpen] = React.useState(false);
   const myReview = useMyReview(booking?.status === "completed" ? booking?.id : undefined);
 
@@ -185,6 +189,13 @@ export default function BookingDetailPage() {
                   <Row label="Cor" value={booking.vehicle.color} />
                 )}
               </div>
+              {booking.fare_benefits?.plate_change === true &&
+                ["pending", "confirmed"].includes(booking.status) &&
+                new Date(booking.check_in_at) > new Date() && (
+                  <Button variant="outline" size="sm" className="mt-4" onClick={() => setVehicleOpen(true)}>
+                    Trocar veículo
+                  </Button>
+                )}
             </section>
           )}
 
@@ -344,6 +355,16 @@ export default function BookingDetailPage() {
         open={upgradeOpen}
         onOpenChange={setUpgradeOpen}
       />
+
+      {session?.userId && (
+        <ChangeVehicleDialog
+          bookingCode={booking.code}
+          profileId={session.userId}
+          currentVehicleId={booking.vehicle?.id ?? null}
+          open={vehicleOpen}
+          onOpenChange={setVehicleOpen}
+        />
+      )}
 
       <ReviewForm
         open={reviewOpen}

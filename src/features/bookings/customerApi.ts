@@ -83,7 +83,7 @@ export type MyBookingDetail = MyBookingListItem & {
   fare_price_cents: number;
   fare_cancel_until: string | null;
   fare_benefits: import("@/lib/fares").FareBenefits | null;
-  vehicle: { license_plate: string; model: string | null; color: string | null } | null;
+  vehicle: { id: string; license_plate: string; model: string | null; color: string | null } | null;
   items: {
     id: string;
     item_type: "parking" | "add_on";
@@ -119,7 +119,7 @@ export function useBookingDetail(code: string | undefined) {
              latitude, longitude,
              company:company!inner(name, slug)
            ),
-           vehicle:vehicle(license_plate, model, color),
+           vehicle:vehicle(id, license_plate, model, color),
            items:booking_item(
              id, item_type, unit_price, subtotal,
              parking_type:parking_type(name, code),
@@ -240,6 +240,37 @@ export type CancelBookingResult = {
  * Cancela a reserva pela Edge `cancel-booking` (que orquestra o estorno via gateway, E0.3.2).
  * Recebe o `code` da reserva — a Edge resolve dono/staff, política de 24h e split.
  */
+/** Troca o veículo da reserva (E2.8-c/f) via Edge change-booking-vehicle. */
+export function useChangeBookingVehicle() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { bookingCode: string; vehicleId: string }) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Você precisa entrar.");
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/change-booking-vehicle`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ booking_code: args.bookingCode, vehicle_id: args.vehicleId }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? `Falha ao trocar veículo (HTTP ${res.status})`);
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-bookings"] });
+      qc.invalidateQueries({ queryKey: ["booking-detail"] });
+    },
+  });
+}
+
 export function useCancelMyBooking() {
   const qc = useQueryClient();
   return useMutation({
