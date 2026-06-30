@@ -142,11 +142,20 @@ disparo (best-effort, pós-resposta):
   a Tarifa quando pago — sem confirmar/voucher), UI `FareUpgradeDialog` + botão no detalhe. Sem
   downgrade; idempotente. Validado e2e (Flex→Superflex, delta R$12 → reserva vira Superflex).
 
+## E2.8-f · Config de Tarifa por unidade (Frente A) — implementado
+
+`location_fare` (override por unidade: `enabled` + `price_cents_override`, RLS leitura pública +
+escrita hub_admin) sobrepõe o catálogo global. `get_unit_fares(lpt)` faz o **overlay**
+(`coalesce(override, catálogo)` + filtra desabilitadas); `_create_booking_core` usa o **preço/on-off
+efetivo da unidade** (checkout e cobrança batem). Escrita via RPC **`operator_set_unit_fare`**
+(gate `pricing:write`/hub_admin). UI: `/operator/fares` (`FareConfigCard` por tipo de vaga) +
+`useLocationFareConfig`/`useSetUnitFare`. Migration `20260721000000`.
+
 ## Pendências (próximas subtarefas E2.8)
 
-- **E2.8-c (resto):** ações de **trocar placa/veículo** e **alterar data/horário** (RPCs de alteração).
-- **E2.8-f** (admin): config de preço/on-off por unidade (overrides via `get_unit_fares`) + honrar
-  troca de placa/cancelamento mesmo onde o white-label não permite.
+- **E2.8-f Frente B / E2.8-c (resto):** ações de **trocar placa/veículo** e **alterar data/horário**
+  (RPCs de alteração, gateadas pelos benefícios `plate_change`/`date_change`), incl. onde o
+  white-label não permite (registrar do nosso lado + refletir no voucher).
 - **Follow-ups da E2.8-e:** propagação da extensão ao white-label (`wl_delivery` não modela `extend`)
   e gatilho automático da auto-extensão por uma API de rastreio de voos; aprovação dos templates de
   WhatsApp no Meta para ativar as notificações.
