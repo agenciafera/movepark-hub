@@ -22,6 +22,10 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   selectedFare: FareTier;
   onSelect: (fare: FareTier) => void;
+  /** Rótulo de preço por tier vindo da unidade (E2.8-f). Sobrescreve o tagline padrão. */
+  priceLabelByTier?: Partial<Record<FareTier, string>>;
+  /** Tiers habilitados na unidade. Quando informado, esconde os desativados. */
+  availableTiers?: FareTier[];
 };
 
 const TIERS: { id: FareTier; label: string; tagline: string; popular?: boolean }[] = [
@@ -30,7 +34,19 @@ const TIERS: { id: FareTier; label: string; tagline: string; popular?: boolean }
   { id: "superflex", label: "Superflex", tagline: "+ R$ 24,90" },
 ];
 
-export function FareComparisonDialog({ open, onOpenChange, selectedFare, onSelect }: Props) {
+export function FareComparisonDialog({
+  open,
+  onOpenChange,
+  selectedFare,
+  onSelect,
+  priceLabelByTier,
+  availableTiers,
+}: Props) {
+  const visibleTiers = availableTiers
+    ? TIERS.filter((t) => availableTiers.includes(t.id))
+    : TIERS;
+  const taglineOf = (t: (typeof TIERS)[number]) => priceLabelByTier?.[t.id] ?? t.tagline;
+  const featureIndexOf = (id: FareTier) => TIERS.findIndex((t) => t.id === id);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl p-0">
@@ -43,7 +59,7 @@ export function FareComparisonDialog({ open, onOpenChange, selectedFare, onSelec
             <thead>
               <tr>
                 <th className="w-[45%] pb-5" />
-                {TIERS.map((tier) => (
+                {visibleTiers.map((tier) => (
                   <th key={tier.id} className="relative pb-5 text-center align-bottom">
                     {tier.popular && (
                       <div className="absolute -top-2 left-1/2 -translate-x-1/2">
@@ -65,7 +81,7 @@ export function FareComparisonDialog({ open, onOpenChange, selectedFare, onSelec
                           tier.id === "basic" ? "text-badge-confirmed-fg" : "text-mp-primary",
                         )}
                       >
-                        {tier.tagline}
+                        {taglineOf(tier)}
                       </p>
                     </div>
                   </th>
@@ -78,11 +94,11 @@ export function FareComparisonDialog({ open, onOpenChange, selectedFare, onSelec
                 return (
                   <tr key={fi} className="border-t border-hairline">
                     <td className="py-3 pr-4 text-body-sm text-body">{feature.label}</td>
-                    {TIERS.map((tier, ti) => {
-                      const included = feature.tiers[ti];
+                    {visibleTiers.map((tier) => {
+                      const included = feature.tiers[featureIndexOf(tier.id)];
                       return (
                         <td
-                          key={ti}
+                          key={tier.id}
                           className={cn(
                             "py-3 text-center",
                             tier.popular && [
@@ -105,7 +121,7 @@ export function FareComparisonDialog({ open, onOpenChange, selectedFare, onSelec
               {/* Spacer row for select buttons */}
               <tr>
                 <td className="pb-1 pt-4" />
-                {TIERS.map((tier) => (
+                {visibleTiers.map((tier) => (
                   <td
                     key={tier.id}
                     className={cn(
