@@ -16,6 +16,7 @@ function baseProps() {
     maxDistanceKm: null,
     operatorOptions,
     facetsLoading: false,
+    availableAmenities: [] as string[],
     onOperatorChange: vi.fn(),
     onAmenitiesChange: vi.fn(),
     onMaxDistanceChange: vi.fn(),

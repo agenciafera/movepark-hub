@@ -1,9 +1,16 @@
+import * as React from "react";
 import { Filter, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   Sheet,
   SheetClose,
@@ -25,6 +32,8 @@ type Props = {
   operatorOptions: OperatorOption[];
   /** Resultado/facetas ainda carregando — mostra skeleton no lugar das listas. */
   facetsLoading: boolean;
+  /** Códigos de amenidade presentes nos resultados atuais — limita o catálogo exibido. */
+  availableAmenities: string[];
   onOperatorChange: (next: string[]) => void;
   onAmenitiesChange: (next: string[]) => void;
   onMaxDistanceChange: (km: number | null) => void;
@@ -57,6 +66,7 @@ function FilterContent({
   maxDistanceKm,
   operatorOptions,
   facetsLoading,
+  availableAmenities,
   onOperatorChange,
   onAmenitiesChange,
   onMaxDistanceChange,
@@ -65,18 +75,27 @@ function FilterContent({
 }: Props) {
   const amenitiesQ = useAmenityCatalog();
 
-  const amenitiesByCategory = (amenitiesQ.data ?? []).reduce<
-    Record<string, typeof amenitiesQ.data extends infer T ? (T extends Array<infer U> ? U[] : never) : never>
-  >((acc, a) => {
-    (acc[a.category] ??= [] as never).push(a as never);
-    return acc;
-  }, {});
+  // Apenas amenidades presentes nos resultados da busca atual
+  const filteredCatalog = React.useMemo(() => {
+    if (!availableAmenities.length || !amenitiesQ.data) return [];
+    return amenitiesQ.data.filter((a) => availableAmenities.includes(a.code));
+  }, [availableAmenities, amenitiesQ.data]);
+
+  const amenitiesByCategory = filteredCatalog.reduce<Record<string, typeof filteredCatalog>>(
+    (acc, a) => {
+      (acc[a.category] ??= []).push(a);
+      return acc;
+    },
+    {},
+  );
 
   // Estacionamento só faz sentido escolher quando há 2+ no resultado.
   const showOperators = facetsLoading || operatorOptions.length > 1;
+  // Amenidades: exibe somente se houver dados reais nos resultados (ou enquanto carrega).
+  const showAmenities = facetsLoading || filteredCatalog.length > 0;
 
   return (
-    <div className="flex flex-col gap-6 px-1">
+    <div className="flex flex-col gap-7 px-1">
       {activeCount > 0 && (
         <div className="flex items-center justify-between gap-2 rounded-md bg-mp-pale px-3 py-2">
           <span className="text-caption text-mp-indigo">
@@ -100,9 +119,7 @@ function FilterContent({
                   type="button"
                   size="sm"
                   variant={active ? "primary" : "secondary"}
-                  onClick={() =>
-                    onMaxDistanceChange(active ? null : opt.value)
-                  }
+                  onClick={() => onMaxDistanceChange(active ? null : opt.value)}
                 >
                   {opt.label}
                 </Button>
@@ -118,13 +135,13 @@ function FilterContent({
           <section className="space-y-3">
             <Label className="text-title-md text-ink">Estacionamento</Label>
             {facetsLoading && operatorOptions.length === 0 ? (
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {Array.from({ length: 4 }).map((_, i) => (
                   <Skeleton key={i} className="h-6 w-40" />
                 ))}
               </div>
             ) : (
-              <ul className="space-y-2">
+              <ul className="space-y-2.5">
                 {operatorOptions.map((c) => (
                   <li key={c.slug} className="flex items-center gap-2.5">
                     <Checkbox
@@ -147,41 +164,52 @@ function FilterContent({
         </>
       )}
 
-      <Separator />
-
-      <section className="space-y-3">
-        <Label className="text-title-md text-ink">Comodidades</Label>
-        {amenitiesQ.isLoading ? (
-          <Skeleton className="h-48 w-full" />
-        ) : (
-          Object.entries(amenitiesByCategory).map(([cat, items]) => (
-            <div key={cat} className="space-y-2">
-              <div className="text-caption text-muted">
-                {categoryLabels[cat] ?? cat}
-              </div>
-              <ul className="space-y-2">
-                {items.map((a) => (
-                  <li key={a.code} className="flex items-center gap-2.5">
-                    <Checkbox
-                      id={`am-${a.code}`}
-                      checked={amenities.includes(a.code)}
-                      onCheckedChange={() =>
-                        onAmenitiesChange(toggleIn(amenities, a.code))
-                      }
-                    />
-                    <label
-                      htmlFor={`am-${a.code}`}
-                      className="cursor-pointer text-body-sm text-ink"
-                    >
-                      {a.name}
-                    </label>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))
-        )}
-      </section>
+      {showAmenities && (
+        <>
+          {(hasDestCoords || showOperators) && <Separator />}
+          <Accordion type="single" collapsible defaultValue="amenities">
+            <AccordionItem value="amenities" className="border-none">
+              <AccordionTrigger className="py-0 text-title-md text-ink hover:no-underline">
+                Comodidades
+              </AccordionTrigger>
+              <AccordionContent className="pr-0 pt-3">
+                {facetsLoading || amenitiesQ.isLoading ? (
+                  <Skeleton className="h-36 w-full" />
+                ) : (
+                  <div className="space-y-5">
+                    {Object.entries(amenitiesByCategory).map(([cat, items]) => (
+                      <div key={cat} className="space-y-2.5">
+                        <div className="text-caption text-muted">
+                          {categoryLabels[cat] ?? cat}
+                        </div>
+                        <ul className="space-y-2.5">
+                          {items.map((a) => (
+                            <li key={a.code} className="flex items-center gap-2.5">
+                              <Checkbox
+                                id={`am-${a.code}`}
+                                checked={amenities.includes(a.code)}
+                                onCheckedChange={() =>
+                                  onAmenitiesChange(toggleIn(amenities, a.code))
+                                }
+                              />
+                              <label
+                                htmlFor={`am-${a.code}`}
+                                className="cursor-pointer text-body-sm text-ink"
+                              >
+                                {a.name}
+                              </label>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </>
+      )}
     </div>
   );
 }

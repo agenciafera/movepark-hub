@@ -112,6 +112,16 @@ export default function SearchResultsPage() {
   const hasDestCoords = !!data?.destination;
   const operatorOptions = data?.facets?.operators ?? [];
 
+  // Códigos de amenidade presentes nos resultados atuais — limita o catálogo exibido na sidebar.
+  const availableAmenities = React.useMemo(() => {
+    if (!data?.results) return [];
+    const codes = new Set<string>();
+    for (const r of data.results) {
+      for (const code of r.amenities) codes.add(code);
+    }
+    return Array.from(codes);
+  }, [data?.results]);
+
   return (
     <div className="mx-auto w-full max-w-[1280px] px-4 py-6 desktop:px-8">
       <Helmet>
@@ -150,6 +160,7 @@ export default function SearchResultsPage() {
           maxDistanceKm={maxDistanceKm}
           operatorOptions={operatorOptions}
           facetsLoading={isLoading}
+          availableAmenities={availableAmenities}
           onOperatorChange={(next) => patch({ operator: toCsv(next) })}
           onAmenitiesChange={(next) => patch({ amenities: toCsv(next) })}
           onMaxDistanceChange={(km) =>
@@ -175,6 +186,7 @@ export default function SearchResultsPage() {
           maxDistanceKm={maxDistanceKm}
           operatorOptions={operatorOptions}
           facetsLoading={isLoading}
+          availableAmenities={availableAmenities}
           onOperatorChange={(next) => patch({ operator: toCsv(next) })}
           onAmenitiesChange={(next) => patch({ amenities: toCsv(next) })}
           onMaxDistanceChange={(km) =>
