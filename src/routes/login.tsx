@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, Mail, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -131,14 +131,16 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-soft-gradient px-4 py-12">
-      <div className="mb-8 flex flex-col items-center gap-3">
-        <div className="flex flex-col items-center gap-1">
-          <Wordmark height={22} />
-          <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-muted-steel">
-            Hub
-          </span>
-        </div>
-      </div>
+      <Link
+        to="/"
+        aria-label="Ir para a página inicial da Movepark"
+        className="mb-8 flex flex-col items-center gap-1 transition-opacity hover:opacity-80"
+      >
+        <Wordmark height={22} />
+        <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-muted-steel">
+          Hub
+        </span>
+      </Link>
       <Card className="w-full max-w-md">
         <CardHeader>
           {mode !== "choice" && (
@@ -307,6 +309,13 @@ export default function LoginPage() {
           )}
         </CardContent>
       </Card>
+      <Link
+        to="/"
+        className="mt-6 inline-flex items-center gap-1 text-body-sm text-muted no-underline hover:text-ink"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Voltar para o início
+      </Link>
     </div>
   );
 }
