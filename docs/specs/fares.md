@@ -127,9 +127,24 @@ disparo (best-effort, pós-resposta):
   `fare_extension.test.sql`: extensão Superflex (+1 diária, total inalterado, capacidade re-segurada,
   log) + rejeições (Flex, nova saída ≤ atual, reserva inexistente).
 
+## Front (E2.8-b/c/d) — implementado
+
+- **E2.8-b · Seletor no checkout:** `src/features/fares/` — `useUnitFares` (RPC `get_unit_fares`) +
+  `FareTierSelector` (good-better-best, Flex "Mais popular", default Básica). Integrado no
+  `ReservationCard` (Tarifa no payload de `create-booking`, total/breakdown, rótulo de cancelamento)
+  e no `SummaryCard` do checkout.
+- **E2.8-c · Detalhe da reserva:** `FareDisplay` (nível, benefícios cobertos, "cancelável até …"
+  via `fare_cancel_until`) no detalhe; `cancellationStatus`/`CancelBookingDialog` respeitam a janela
+  da Tarifa (Superflex = 1 min). _Pendente: ações de trocar placa/veículo e alterar data (RPCs novos)._
+- **E2.8-d · Upgrade pós-reserva:** cobra o **delta** (alvo − atual) como cobrança PIX de serviço
+  Movepark (split 100% master). Migration `20260720000000` (`payment.kind`/`fare_target_tier` + RPC
+  `apply_fare_upgrade`), Edge `create-fare-upgrade`, ramo `fare_upgrade` no `pagarme-webhook` (promove
+  a Tarifa quando pago — sem confirmar/voucher), UI `FareUpgradeDialog` + botão no detalhe. Sem
+  downgrade; idempotente. Validado e2e (Flex→Superflex, delta R$12 → reserva vira Superflex).
+
 ## Pendências (próximas subtarefas E2.8)
 
-- **E2.8-b/c/d** (front): seletor no checkout, Tarifa no detalhe da reserva + ações, upgrade pós-reserva.
+- **E2.8-c (resto):** ações de **trocar placa/veículo** e **alterar data/horário** (RPCs de alteração).
 - **E2.8-f** (admin): config de preço/on-off por unidade (overrides via `get_unit_fares`) + honrar
   troca de placa/cancelamento mesmo onde o white-label não permite.
 - **Follow-ups da E2.8-e:** propagação da extensão ao white-label (`wl_delivery` não modela `extend`)
