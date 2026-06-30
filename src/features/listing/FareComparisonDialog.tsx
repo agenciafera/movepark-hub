@@ -54,10 +54,10 @@ export function FareComparisonDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] w-full max-w-2xl overflow-y-auto p-6 tablet:p-8">
-        <p className="mb-6 text-display-sm text-ink">O que cada tarifa inclui</p>
+      <DialogContent className="max-h-[90vh] w-full max-w-5xl overflow-y-auto p-8 tablet:p-14">
+        <p className="mb-8 text-display-sm text-ink">O que cada tarifa inclui</p>
 
-        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 tablet:grid-cols-3">
           {visibleTiers.map((tier) => {
             const isSelected = selectedFare === tier.id;
             const ti = tierIndex(tier.id);
@@ -66,7 +66,7 @@ export function FareComparisonDialog({
               <div
                 key={tier.id}
                 className={cn(
-                  "flex flex-col rounded-md border-2 p-5 transition-colors",
+                  "flex flex-col rounded-md border-2 p-6 transition-colors",
                   tier.popular
                     ? "border-mp-primary bg-mp-pale/20"
                     : "border-hairline bg-canvas",
@@ -98,7 +98,7 @@ export function FareComparisonDialog({
                 <div className="mb-4 h-px bg-hairline" />
 
                 {/* Features */}
-                <ul className="flex-1 space-y-3">
+                <ul className="flex-1 space-y-4">
                   {FEATURES.map((f, fi) => {
                     const included = f.tiers[ti];
                     return (
