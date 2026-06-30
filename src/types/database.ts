@@ -3281,6 +3281,10 @@ export type Database = {
         Args: { p_booking_id: string; p_reason?: string }
         Returns: Database["public"]["Enums"]["booking_status"]
       }
+      change_booking_dates: {
+        Args: { p_booking_id: string; p_check_in: string; p_check_out: string }
+        Returns: Json
+      }
       check_availability: {
         Args: {
           p_check_in_at: string

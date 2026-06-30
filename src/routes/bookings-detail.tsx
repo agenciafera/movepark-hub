@@ -11,6 +11,7 @@ import { CancelBookingDialog } from "@/features/bookings/CancelBookingDialog";
 import { FareDisplay } from "@/features/fares/FareDisplay";
 import { FareUpgradeDialog } from "@/features/fares/FareUpgradeDialog";
 import { ChangeVehicleDialog } from "@/features/bookings/ChangeVehicleDialog";
+import { ChangeDatesDialog } from "@/features/bookings/ChangeDatesDialog";
 import { useBookingDetail } from "@/features/bookings/customerApi";
 import { useAuth } from "@/auth/context";
 import { guaranteeChannel } from "@/features/guarantee/whatsapp";
@@ -28,6 +29,7 @@ export default function BookingDetailPage() {
   const [cancelOpen, setCancelOpen] = React.useState(false);
   const [upgradeOpen, setUpgradeOpen] = React.useState(false);
   const [vehicleOpen, setVehicleOpen] = React.useState(false);
+  const [datesOpen, setDatesOpen] = React.useState(false);
   const [reviewOpen, setReviewOpen] = React.useState(false);
   const myReview = useMyReview(booking?.status === "completed" ? booking?.id : undefined);
 
@@ -151,6 +153,13 @@ export default function BookingDetailPage() {
                 <Row label="Passageiros" value={String(booking.passenger_count)} />
               )}
             </div>
+            {booking.fare_benefits?.date_change === true &&
+              booking.status === "pending" &&
+              new Date(booking.check_in_at) > new Date() && (
+                <Button variant="outline" size="sm" className="mt-4" onClick={() => setDatesOpen(true)}>
+                  Alterar datas
+                </Button>
+              )}
           </section>
 
           <section className="rounded-md border border-hairline bg-canvas p-6">
@@ -365,6 +374,14 @@ export default function BookingDetailPage() {
           onOpenChange={setVehicleOpen}
         />
       )}
+
+      <ChangeDatesDialog
+        bookingCode={booking.code}
+        currentCheckIn={booking.check_in_at}
+        currentCheckOut={booking.check_out_at}
+        open={datesOpen}
+        onOpenChange={setDatesOpen}
+      />
 
       <ReviewForm
         open={reviewOpen}

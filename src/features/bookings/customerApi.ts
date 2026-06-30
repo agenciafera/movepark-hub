@@ -271,6 +271,41 @@ export function useChangeBookingVehicle() {
   });
 }
 
+/** Altera as datas de uma reserva pendente (E2.8-f) via Edge change-booking-dates. */
+export function useChangeBookingDates() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { bookingCode: string; checkInAt: string; checkOutAt: string }) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Você precisa entrar.");
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/change-booking-dates`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          booking_code: args.bookingCode,
+          check_in_at: args.checkInAt,
+          check_out_at: args.checkOutAt,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? `Falha ao alterar datas (HTTP ${res.status})`);
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-bookings"] });
+      qc.invalidateQueries({ queryKey: ["booking-detail"] });
+    },
+  });
+}
+
 export function useCancelMyBooking() {
   const qc = useQueryClient();
   return useMutation({
