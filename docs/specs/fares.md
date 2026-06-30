@@ -1,10 +1,9 @@
 # Tarifas de flexibilidade da reserva (E2.8 · Básica / Flex / Superflex)
 
-> **Status:** E2.8-e (núcleo financeiro) **implementado** — migration `20260717000000_fare_tiers.sql`
-> aplicada, Edges de criação/cobrança/cancelamento deployadas. Front (seletor no checkout E2.8-b,
-> detalhe da reserva E2.8-c, upgrade pós-reserva E2.8-d) e admin de config por unidade (E2.8-f) são
-> as próximas subtarefas; auto-extensão por atraso de voo + notificações SMS/WhatsApp são o passo 2
-> da E2.8-e.
+> **Status:** E2.8-e **completa no backend** — núcleo financeiro (`20260717000000_fare_tiers.sql`) +
+> passo 2 (auto-extensão por atraso de voo + notificações SMS/WhatsApp, `20260718000000_fare_flight_extension.sql`)
+> aplicados; Edges deployadas. Front (seletor no checkout E2.8-b, detalhe da reserva E2.8-c, upgrade
+> pós-reserva E2.8-d) e admin de config por unidade (E2.8-f) são as próximas subtarefas.
 
 ## O que é (e o que não é)
 
@@ -84,6 +83,37 @@ em `cancel-booking/logic.ts` (`refundDecision` → `withinFreeWindow(checkIn, no
 O resto do fluxo de estorno (idempotência, `cancel_booking_with_release`, webhook `charge.refunded`)
 é o de [payment-split.md](./payment-split.md) / [booking-flow.md](./booking-flow.md) — inalterado.
 
+## Auto-extensão por atraso de voo (Superflex · `20260718000000`)
+
+Benefício `flight_delay_protection` (só Superflex): estende `check_out_at` cobrindo diária(s) extra(s)
+**sem cobrança**. A regra é server-authoritative na RPC **`extend_booking_flight_delay(booking_id,
+new_check_out_at, actor?, reason?)`** (SECURITY DEFINER, grant só `service_role`):
+
+1. exige a reserva com `fare_benefits.flight_delay_protection` (senão recusa) e status `confirmed`/`checked_in`;
+2. nova saída tem que ser **depois** da atual (auto-guarda contra reentrada);
+3. **re-segura a capacidade** só das datas adicionadas (mesma regra do hold de criação: `blocked` +
+   `booked + external < capacity`, sob `for update`) — resolve o lote via `booking_item` + `location`,
+   já que a `booking` não guarda o `location_parking_type_id`;
+4. estende `check_out_at` (sem tocar `total_amount`) e registra em **`booking_fare_extension`** (log).
+
+A Edge **`extend-booking`** (JWT; dono ou staff, mesma autz do `cancel-booking`) chama a RPC e dispara
+a notificação. **Follow-up:** a propagação da extensão ao white-label (o outbox `wl_delivery` modela
+`reserve`/`release`, não `extend`) e o gatilho automático por uma API de voos ficam para depois — hoje
+a extensão é acionada manualmente (cliente/staff).
+
+## Notificações SMS/WhatsApp (Flex+)
+
+Tarifas com `fare_benefits.notifications_sms` (Flex e Superflex) recebem aviso por WhatsApp. Sender
+reutilizável em **`_shared/whatsapp.ts`** (Meta Cloud API, mensagens de **template**), que **degrada
+como o e-mail**: sem config/template aprovado, loga e segue (nunca derruba o chamador). Pontos de
+disparo (best-effort, pós-resposta):
+
+- **Confirmação** — no `pagarme-webhook`, ao confirmar a reserva (template `WHATSAPP_BOOKING_CONFIRMED_TEMPLATE`).
+- **Extensão** — na Edge `extend-booking` (template `WHATSAPP_BOOKING_EXTENDED_TEMPLATE`).
+
+> ⚠️ Mensagens iniciadas pela Movepark (fora da janela de 24h) exigem **template aprovado no Meta**.
+> A infra está pronta e parametrizada por env; ativar = aprovar os templates e setar os secrets.
+
 ## Testes
 
 - **Vitest** (`src/lib/fares.test.ts`): conversão de preço, janela de cancelamento (24h × 1 min),
@@ -91,12 +121,17 @@ O resto do fluxo de estorno (idempotência, `cancel_booking_with_release`, webho
 - **Deno** (`_shared/payments/split.test.ts`): a Tarifa cai 100% na Movepark sem tocar o repasse do
   parceiro (com/sem take_rate, com juros de parcelamento). `cancel-booking/logic.test.ts`: estorno
   Superflex a 2h do check-in, Flex fora da janela, prioridade do snapshot sobre o fallback 24h.
+  `_shared/whatsapp.test.ts` (config/components/telefone) + `extend-booking/logic.test.ts` (parsing).
 - **pgTAP** (`supabase/tests/fare_tiers.test.sql`): schema/seed/RLS, `get_unit_fares`, e criação de
   reserva com Tarifa (total +12,90 / +24,90, snapshot de `fare_cancel_until`).
+  `fare_extension.test.sql`: extensão Superflex (+1 diária, total inalterado, capacidade re-segurada,
+  log) + rejeições (Flex, nova saída ≤ atual, reserva inexistente).
 
 ## Pendências (próximas subtarefas E2.8)
 
 - **E2.8-b/c/d** (front): seletor no checkout, Tarifa no detalhe da reserva + ações, upgrade pós-reserva.
 - **E2.8-f** (admin): config de preço/on-off por unidade (overrides via `get_unit_fares`) + honrar
   troca de placa/cancelamento mesmo onde o white-label não permite.
-- **E2.8-e passo 2:** auto-extensão por atraso de voo (Superflex) + disparo de SMS/WhatsApp (Flex+).
+- **Follow-ups da E2.8-e:** propagação da extensão ao white-label (`wl_delivery` não modela `extend`)
+  e gatilho automático da auto-extensão por uma API de rastreio de voos; aprovação dos templates de
+  WhatsApp no Meta para ativar as notificações.

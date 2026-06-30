@@ -70,7 +70,7 @@ Deno.serve(async (req: Request) => {
   const { data: booking, error: bErr } = await admin
     .from("booking")
     .select(
-      "id, code, status, check_in_at, check_out_at, fare_cancel_until, location_parking_type_id, profile_id, location:location!inner(company_id)",
+      "id, code, status, check_in_at, check_out_at, fare_cancel_until, profile_id, location:location!inner(company_id)",
     )
     .eq("code", input.bookingCode)
     .is("deleted_at", null)

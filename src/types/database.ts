@@ -569,6 +569,47 @@ export type Database = {
           },
         ]
       }
+      booking_fare_extension: {
+        Row: {
+          actor: string
+          added_days: number
+          booking_id: string
+          created_at: string
+          id: string
+          new_check_out_at: string
+          old_check_out_at: string
+          reason: string | null
+        }
+        Insert: {
+          actor?: string
+          added_days?: number
+          booking_id: string
+          created_at?: string
+          id?: string
+          new_check_out_at: string
+          old_check_out_at: string
+          reason?: string | null
+        }
+        Update: {
+          actor?: string
+          added_days?: number
+          booking_id?: string
+          created_at?: string
+          id?: string
+          new_check_out_at?: string
+          old_check_out_at?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_fare_extension_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_item: {
         Row: {
           add_on_service_id: string | null
@@ -3283,6 +3324,15 @@ export type Database = {
           discount_rule_id: string
           label: string
         }[]
+      }
+      extend_booking_flight_delay: {
+        Args: {
+          p_actor?: string
+          p_booking_id: string
+          p_new_check_out_at: string
+          p_reason?: string
+        }
+        Returns: Json
       }
       generate_unique_company_slug: {
         Args: { p_name: string }

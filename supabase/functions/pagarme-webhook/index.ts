@@ -14,12 +14,48 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { chargeStatusToPaymentStatus } from "../_shared/payments/index.ts";
 import { mapChargeStatus } from "../_shared/payments/pagarme.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
+import { sendWhatsAppTemplate } from "../_shared/whatsapp.ts";
 import {
   parseTransferEvent,
   parseWebhookEvent,
   transferStatusToWithdrawalStatus,
   verifyBasicAuth,
 } from "./logic.ts";
+
+/**
+ * Notifica a confirmação por WhatsApp — só Tarifas Flex+ (`fare_benefits.notifications_sms`).
+ * Best-effort: degrada sem config/template e nunca derruba o webhook.
+ */
+// deno-lint-ignore no-explicit-any
+async function notifyBookingConfirmed(admin: any, bookingId: string): Promise<void> {
+  const { data: b } = await admin
+    .from("booking")
+    .select("code, customer_name, customer_phone, profile_id, fare_benefits")
+    .eq("id", bookingId)
+    .maybeSingle();
+  if (!b || !b.fare_benefits?.notifications_sms) return;
+
+  let phone: string | null = b.customer_phone ?? null;
+  let name: string | null = b.customer_name ?? null;
+  if ((!phone || !name) && b.profile_id) {
+    const { data: p } = await admin
+      .from("profiles")
+      .select("full_name, phone")
+      .eq("id", b.profile_id)
+      .maybeSingle();
+    phone = phone ?? p?.phone ?? null;
+    name = name ?? p?.full_name ?? null;
+  }
+  if (!phone) return;
+
+  // @ts-expect-error - Deno env
+  const template = Deno.env.get("WHATSAPP_BOOKING_CONFIRMED_TEMPLATE") ?? "";
+  await sendWhatsAppTemplate({
+    to: phone,
+    template,
+    bodyParams: [name ?? "cliente", b.code],
+  });
+}
 
 /** Em produção (chave sk_live_) o webhook exige Basic auth; em staging (sk_test_) é opcional. */
 function isProduction(): boolean {
@@ -176,6 +212,13 @@ Deno.serve(async (req: Request) => {
     await runAfterResponse(
       generateAndStoreVoucher(admin, payment.booking_id, siteUrl).catch((e) =>
         console.error("[pagarme-webhook] falha ao gerar voucher:", payment!.booking_id, e),
+      ),
+    );
+
+    // Notificação de confirmação por WhatsApp (Tarifa Flex+) — best-effort, pós-resposta.
+    await runAfterResponse(
+      notifyBookingConfirmed(admin, payment.booking_id).catch((e) =>
+        console.error("[pagarme-webhook] falha ao notificar confirmação:", payment!.booking_id, e),
       ),
     );
   }
