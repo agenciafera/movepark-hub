@@ -121,6 +121,26 @@ gateway e permite **criar/sincronizar** por linha (mesma Edge `sync-recipient`) 
 tem recebedor ativo no gateway"*: empresas publicadas sem recebedor `active` sobem como **"precisa de
 atenção"** (`needsAttention` = vende no catálogo mas `recipient_status != 'active'`). Lógica pura
 testável em `src/routes/manager/finance-recipients.logic.ts` (mapeamento, ordenação, resumo).
+A ação **Criar recebedor** só aparece quando a empresa **já tem KYC** (`company_payout_account`);
+sem KYC, o botão vira **Preencher KYC**. Quando há `external_recipient_id`, vira **Sincronizar**.
+
+### Sincronização do status do recebedor (3 caminhos)
+
+O `payout_recipient.status` é um snapshot local; é mantido fresco por:
+
+1. **Webhook (push)** — `pagarme-webhook` trata `recipient.*` (`recipient.updated`/`created`): casa por
+   `external_recipient_id`, mapeia o status cru (`mapRecipientStatus`) e atualiza `status` +
+   `last_provider_status` (log em `payout_recipient_event` kind `webhook`). Self-healing — vira
+   "Apto a receber" sozinho quando o gateway aprova. Cadastrar o evento no painel do Pagar.me.
+2. **Cron (poll de segurança)** — Edge `refresh-recipients` (`verify_jwt=false`, header
+   `x-refresh-recipients-key` do Vault) reavalia via `getRecipient` os que estão `pending`/
+   `action_required` com `external_recipient_id`; pg_cron `refresh-recipients` a cada 15 min
+   (migration `20260719000000`).
+3. **Manual** — botão **Sincronizar** na linha (`sync-recipient` action `refresh`).
+
+> **Hardening (E2.8):** o `create` do `sync-recipient` **não** avança o status quando o gateway não
+> devolve `external_recipient_id` (falha) — antes isso deixava um recebedor "Em análise" fantasma sem
+> id, que não dava pra sincronizar nem recriar. Agora mantém `draft` e devolve erro com as pendências.
 
 ## Testes
 

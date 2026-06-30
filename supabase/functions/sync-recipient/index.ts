@@ -209,6 +209,30 @@ Deno.serve(async (req: Request) => {
 
   const result = await gateway.createRecipient(recipientInput);
 
+  // Falha no gateway (sem external id): NÃO avança o status — senão fica um recebedor "Em análise"
+  // fantasma sem id, que não dá pra sincronizar nem recriar de forma limpa. Mantém draft.
+  if (!result.externalId) {
+    runBg(
+      admin.from("payout_recipient_event").insert({
+        payout_recipient_id: recipient.id,
+        kind: "create",
+        http_status: result.httpStatus,
+        request:
+          input.provider === "pagarme"
+            ? redactRecipientBody(buildCreateRecipientBody(recipientInput))
+            : null,
+        response: result.raw,
+      }),
+    );
+    return jsonResponse(
+      {
+        error: "O gateway não criou o recebedor. Confira os dados de KYC/banco e tente novamente.",
+        requirements: result.requirements,
+      },
+      502,
+    );
+  }
+
   await admin
     .from("payout_recipient")
     .update({

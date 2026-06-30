@@ -1,11 +1,26 @@
 import { assertEquals } from "jsr:@std/assert";
 import {
+  parseRecipientEvent,
   parseTransferEvent,
   parseWebhookEvent,
   timingSafeEqual,
   transferStatusToWithdrawalStatus,
   verifyBasicAuth,
 } from "./logic.ts";
+
+Deno.test("parseRecipientEvent: extrai id e status do recipient.updated", () => {
+  const ev = parseRecipientEvent({
+    id: "hook_1",
+    type: "recipient.updated",
+    data: { id: "rp_abc", status: "active", kyc_details: { status: "approved" } },
+  });
+  assertEquals(ev, { type: "recipient.updated", recipientId: "rp_abc", rawStatus: "active" });
+});
+
+Deno.test("parseRecipientEvent: payload vazio → nulos", () => {
+  assertEquals(parseRecipientEvent({}), { type: "", recipientId: null, rawStatus: null });
+  assertEquals(parseRecipientEvent(null), { type: "", recipientId: null, rawStatus: null });
+});
 
 Deno.test("verifyBasicAuth: sem credencial configurada → aceita só fora de produção", () => {
   assertEquals(verifyBasicAuth(null, undefined), true); // required=false (default/staging)

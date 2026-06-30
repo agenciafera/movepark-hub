@@ -12,10 +12,11 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { chargeStatusToPaymentStatus } from "../_shared/payments/index.ts";
-import { mapChargeStatus } from "../_shared/payments/pagarme.ts";
+import { mapChargeStatus, mapRecipientStatus } from "../_shared/payments/pagarme.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 import { sendWhatsAppTemplate } from "../_shared/whatsapp.ts";
 import {
+  parseRecipientEvent,
   parseTransferEvent,
   parseWebhookEvent,
   transferStatusToWithdrawalStatus,
@@ -114,6 +115,41 @@ Deno.serve(async (req: Request) => {
   if (dupErr) {
     if (dupErr.code === "23505") return json({ ok: true, duplicate: true });
     return json({ error: dupErr.message }, 500);
+  }
+
+  // Evento de recebedor (status/KYC mudou no gateway): reflete em payout_recipient (E2.8
+  // manutenção). Mantém o status "self-healing" sem depender do botão Sincronizar.
+  if (ev.type.startsWith("recipient.")) {
+    const rc = parseRecipientEvent(body);
+    if (!rc.recipientId) return json({ ok: true, matched: false });
+    const { data: rec } = await admin
+      .from("payout_recipient")
+      .select("id")
+      .eq("provider", "pagarme")
+      .eq("external_recipient_id", rc.recipientId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (!rec) {
+      console.warn("[pagarme-webhook] recipient sem recebedor casado:", rc.recipientId);
+      return json({ ok: true, matched: false });
+    }
+    const status = mapRecipientStatus(rc.rawStatus);
+    await admin
+      .from("payout_recipient")
+      .update({ status, last_provider_status: rc.rawStatus })
+      .eq("id", rec.id);
+    await runAfterResponse(
+      (async () => {
+        await admin.from("payout_recipient_event").insert({
+          payout_recipient_id: rec.id,
+          kind: "webhook",
+          http_status: null,
+          request: null,
+          response: body as Record<string, unknown>,
+        });
+      })(),
+    );
+    return json({ ok: true, status });
   }
 
   // Evento de transferência (saque do recebedor → banco do parceiro): registra em

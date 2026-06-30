@@ -89,6 +89,27 @@ export function parseTransferEvent(body: unknown): ParsedTransfer {
   };
 }
 
+// ── Recebedor (status/KYC) — E2.8 manutenção ────────────────────────────────
+
+export interface ParsedRecipient {
+  type: string;
+  /** id do recebedor no gateway (data.id). */
+  recipientId: string | null;
+  /** status cru do recebedor (registration/affiliation/active/refused/...). */
+  rawStatus: string | null;
+}
+
+/** Extrai os campos de um evento `recipient.*` (created/updated) do Pagar.me. */
+export function parseRecipientEvent(body: unknown): ParsedRecipient {
+  const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
+  const data = (b.data ?? {}) as Record<string, unknown>;
+  return {
+    type: (b.type as string) ?? "",
+    recipientId: (data.id as string) ?? null,
+    rawStatus: (data.status as string) ?? null,
+  };
+}
+
 /** Status cru da transferência → status normalizado do saque. */
 export function transferStatusToWithdrawalStatus(raw: string | null | undefined): WithdrawalStatus {
   switch ((raw ?? "").toLowerCase()) {
