@@ -1,12 +1,18 @@
 import * as React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-import { Check, ShieldCheck, X } from "lucide-react";
+import { ChevronRight, Info, ShieldCheck, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { DateRangeField } from "@/features/search/DateRangeField";
 import { useAuth } from "@/auth/context";
 import { formatBRL, formatDuration } from "@/lib/format";
@@ -22,8 +28,8 @@ import {
   type ListingDetail,
 } from "./api";
 import { availabilityUi } from "./availability.logic";
-import { GuaranteeBadge } from "@/features/guarantee/GuaranteeBadge";
 import { PriceTableDialog } from "./PriceTableDialog";
+import { FareComparisonDialog } from "./FareComparisonDialog";
 import { couponDiscountLabel, couponErrorMessage, type CouponPreview } from "./coupon.logic";
 import { addOnsTotal, bookingTotal, selectedAddOns } from "./reservation.logic";
 import { cn } from "@/lib/utils";
@@ -34,7 +40,6 @@ type Props = {
   initialTo: Date | null;
 };
 
-// Tarifas de flexibilidade — apenas UI por ora; backend a ser integrado em fase posterior.
 type FareTier = "basic" | "flex" | "superflex";
 
 type FareOption = {
@@ -42,8 +47,10 @@ type FareOption = {
   label: string;
   surcharge: number;
   tagline: string;
-  benefits: string[];
-  badge?: string;
+  tooltip: string[];
+  badgeText: string;
+  cancellationLine: string;
+  guaranteeContext: string;
 };
 
 const FARE_OPTIONS: FareOption[] = [
@@ -52,22 +59,30 @@ const FARE_OPTIONS: FareOption[] = [
     label: "Básica",
     surcharge: 0,
     tagline: "Grátis",
-    benefits: ["Cancelamento gratuito até 24h"],
+    tooltip: ["Cancele grátis até 24h", "Confirmação por e-mail", "Vaga garantida"],
+    badgeText: "Cancelamento grátis até 24h",
+    cancellationLine: "Cancelamento grátis até 24h antes",
+    guaranteeContext: "cancele grátis até 24h",
   },
   {
     id: "flex",
     label: "Flex",
     surcharge: 12.9,
-    tagline: "+R$ 12,90",
-    benefits: ["Cancelamento gratuito até 24h", "Troca de placa", "Alteração de datas"],
-    badge: "Mais popular",
+    tagline: "+ R$ 12,90",
+    tooltip: ["Tudo da Básica", "Troca de placa e data", "SMS/WhatsApp na chegada"],
+    badgeText: "Cancelamento grátis até 24h",
+    cancellationLine: "Cancelamento grátis até 24h antes · troca de placa liberada",
+    guaranteeContext: "cancele grátis até 24h · troca de placa liberada",
   },
   {
     id: "superflex",
     label: "Superflex",
     surcharge: 24.9,
-    tagline: "+R$ 24,90",
-    benefits: ["Cancelamento até 1 min antes", "Proteção de voo", "Suporte prioritário"],
+    tagline: "+ R$ 24,90",
+    tooltip: ["Tudo da Flex", "Cancele até 1 min antes", "Proteção de voo", "Suporte prioritário"],
+    badgeText: "Cancele até 1 min antes",
+    cancellationLine: "Cancelamento até 1 min antes da entrada",
+    guaranteeContext: "cancela até 1 min antes · proteção de voo incluída",
   },
 ];
 
@@ -88,6 +103,7 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
   const [passengers, setPassengers] = React.useState<number>(1);
   const [hasPcd, setHasPcd] = React.useState<boolean>(false);
   const [priceTableOpen, setPriceTableOpen] = React.useState<boolean>(false);
+  const [fareComparisonOpen, setFareComparisonOpen] = React.useState<boolean>(false);
   const [selectedFare, setSelectedFare] = React.useState<FareTier>("flex");
 
   const validateCoupon = useValidateCoupon();
@@ -204,107 +220,117 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
   const discount = applied?.discount ?? 0;
   const parkingBase = bookingTotal(parkingPrice, discount, addOnsSum);
 
-  const fareOption = FARE_OPTIONS.find((f) => f.id === selectedFare) ?? FARE_OPTIONS[0];
+  const fareOption = FARE_OPTIONS.find((f) => f.id === selectedFare) ?? FARE_OPTIONS[1];
   const fareSurcharge = canReserve ? fareOption.surcharge : 0;
   const displayTotal = parkingBase + fareSurcharge;
 
-  const showBreakdown =
-    sim.data?.price != null && (applied != null || chosenAddOns.length > 0 || fareSurcharge > 0);
+  const hasFareOrAddOns = canReserve && (fareSurcharge > 0 || chosenAddOns.length > 0 || applied);
 
   return (
-    <div className="rounded-2xl border border-hairline bg-canvas p-6 shadow-tier">
-      {/* Preço */}
-      <div className="space-y-1">
-        {sim.data?.old_price != null && sim.data.old_price > (sim.data.price ?? 0) && (
-          <div className="flex items-center gap-2">
-            <span className="text-body-sm text-muted line-through tabular-nums">
-              {formatBRL(sim.data.old_price)}
-            </span>
-            {sim.data.discount && (
-              <span className="rounded-sm bg-badge-confirmed-bg px-2 py-1 text-caption font-bold text-badge-confirmed-fg">
-                {sim.data.discount.label}
+    <TooltipProvider>
+      <div className="rounded-2xl border border-hairline bg-canvas p-6 shadow-tier">
+        {/* Preço */}
+        <div className="space-y-1">
+          {sim.data?.old_price != null && sim.data.old_price > (sim.data.price ?? 0) && (
+            <div className="flex items-center gap-2">
+              <span className="text-body-sm text-muted line-through tabular-nums">
+                {formatBRL(sim.data.old_price)}
               </span>
-            )}
+              {sim.data.discount && (
+                <span className="rounded-sm bg-badge-confirmed-bg px-2 py-1 text-caption font-bold text-badge-confirmed-fg">
+                  {sim.data.discount.label}
+                </span>
+              )}
+            </div>
+          )}
+          {sim.isLoading || pricingStale ? (
+            <Skeleton className="h-9 w-32" />
+          ) : sim.data?.price != null ? (
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-display-md text-ink tabular-nums">
+                {formatBRL(sim.data.price)}
+              </span>
+              <span className="text-body-sm text-muted">/ diária</span>
+            </div>
+          ) : (
+            <div className="text-display-sm text-ink">
+              A partir de {formatBRL(listing.company_parking_type.base_price)}
+            </div>
+          )}
+          <div className="text-body-sm text-muted">
+            {days > 0
+              ? `${days} ${days === 1 ? "diária" : "diárias"} · ${formatDuration(from!, to!)}`
+              : "Escolha as datas"}
+          </div>
+          <button
+            type="button"
+            onClick={() => setPriceTableOpen(true)}
+            className="text-body-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
+          >
+            Ver preços por duração
+          </button>
+        </div>
+
+        <PriceTableDialog
+          open={priceTableOpen}
+          onOpenChange={setPriceTableOpen}
+          companySlug={listing.company.slug}
+          locationSlug={listing.location.slug}
+          parkingTypeCode={listing.parking_type.code}
+          selectedDays={days}
+          title={listing.parking_type.name}
+        />
+
+        <FareComparisonDialog
+          open={fareComparisonOpen}
+          onOpenChange={setFareComparisonOpen}
+          selectedFare={selectedFare}
+          onSelect={setSelectedFare}
+        />
+
+        <div className="my-5 h-px bg-hairline" />
+
+        {/* Datas */}
+        <div className="rounded-md border border-hairline">
+          <div className="grid grid-cols-2 divide-x divide-hairline">
+            <DateRangeField mode="check-in" date={from} onChange={setFrom} />
+            <DateRangeField
+              mode="check-out"
+              date={to}
+              onChange={setTo}
+              minDate={from ?? undefined}
+            />
+          </div>
+        </div>
+
+        {/* Passageiros */}
+        {listing.location.has_passenger_quantity && (
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <Label htmlFor="pax">Passageiros</Label>
+            <Input
+              id="pax"
+              type="number"
+              min={1}
+              max={9}
+              value={passengers}
+              onChange={(e) => setPassengers(Math.max(1, Number(e.target.value || 1)))}
+              className="h-10 w-20 text-center tabular-nums"
+            />
           </div>
         )}
-        {sim.isLoading || pricingStale ? (
-          <Skeleton className="h-9 w-32" />
-        ) : sim.data?.price != null ? (
-          <div className="text-display-md text-ink tabular-nums">
-            {formatBRL(displayTotal > 0 ? displayTotal : sim.data.price + fareSurcharge)}
-          </div>
-        ) : (
-          <div className="text-display-sm text-ink">
-            A partir de {formatBRL(listing.company_parking_type.base_price)}
+
+        {/* PCD */}
+        {listing.location.has_pcd_config && (
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <Label htmlFor="pcd">Vaga acessível PCD</Label>
+            <Switch checked={hasPcd} onCheckedChange={setHasPcd} />
           </div>
         )}
-        <div className="text-body-sm text-muted">
-          {days > 0 ? `${days} ${days === 1 ? "diária" : "diárias"}` : "Escolha as datas"}
-          {from && to ? ` · ${formatDuration(from, to)}` : ""}
-        </div>
-        <button
-          type="button"
-          onClick={() => setPriceTableOpen(true)}
-          className="text-body-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
-        >
-          Ver preços por duração
-        </button>
-      </div>
 
-      <PriceTableDialog
-        open={priceTableOpen}
-        onOpenChange={setPriceTableOpen}
-        companySlug={listing.company.slug}
-        locationSlug={listing.location.slug}
-        parkingTypeCode={listing.parking_type.code}
-        selectedDays={days}
-        title={listing.parking_type.name}
-      />
-
-      <div className="my-5 h-px bg-hairline" />
-
-      {/* Datas */}
-      <div className="rounded-md border border-hairline">
-        <div className="grid grid-cols-2 divide-x divide-hairline">
-          <DateRangeField mode="check-in" date={from} onChange={setFrom} />
-          <DateRangeField
-            mode="check-out"
-            date={to}
-            onChange={setTo}
-            minDate={from ?? undefined}
-          />
-        </div>
-      </div>
-
-      {/* Passageiros */}
-      {listing.location.has_passenger_quantity && (
-        <div className="mt-4 flex items-center justify-between gap-3">
-          <Label htmlFor="pax">Passageiros</Label>
-          <Input
-            id="pax"
-            type="number"
-            min={1}
-            max={9}
-            value={passengers}
-            onChange={(e) => setPassengers(Math.max(1, Number(e.target.value || 1)))}
-            className="h-10 w-20 text-center tabular-nums"
-          />
-        </div>
-      )}
-
-      {/* PCD */}
-      {listing.location.has_pcd_config && (
-        <div className="mt-4 flex items-center justify-between gap-3">
-          <Label htmlFor="pcd">Vaga acessível PCD</Label>
-          <Switch checked={hasPcd} onCheckedChange={setHasPcd} />
-        </div>
-      )}
-
-      {/* Seletor de tarifa */}
-      {(sim.data?.price != null || days > 0) && (
+        {/* Seletor de tarifa */}
         <div className="mt-5">
-          <div className="mb-3 text-body-sm font-semibold text-ink">Escolha sua tarifa</div>
-          <div className="space-y-2">
+          <div className="mb-2 text-body-sm font-semibold text-ink">Escolha sua tarifa</div>
+          <div className="divide-y divide-hairline overflow-hidden rounded-md border border-hairline">
             {FARE_OPTIONS.map((fare) => {
               const isSelected = selectedFare === fare.id;
               return (
@@ -313,217 +339,239 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
                   type="button"
                   onClick={() => setSelectedFare(fare.id)}
                   className={cn(
-                    "relative w-full rounded-md border px-4 py-3 text-left transition-all",
-                    isSelected
-                      ? "border-mp-primary bg-mp-pale/30 ring-1 ring-mp-primary"
-                      : "border-hairline bg-canvas hover:border-mp-indigo/50",
+                    "flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors",
+                    isSelected ? "bg-mp-pale/40" : "bg-canvas hover:bg-surface-soft",
                   )}
                 >
-                  {fare.badge && (
-                    <span className="absolute -top-2.5 right-3 rounded-full bg-mp-primary px-2.5 py-0.5 text-caption font-semibold text-on-primary">
-                      {fare.badge}
-                    </span>
-                  )}
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5">
+                  {/* Radio */}
+                  <span
+                    className={cn(
+                      "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                      isSelected
+                        ? "border-mp-primary bg-mp-primary"
+                        : "border-muted-soft bg-canvas",
+                    )}
+                  >
+                    {isSelected && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+                  </span>
+
+                  {/* Nome */}
+                  <span
+                    className={cn(
+                      "text-body-sm font-semibold",
+                      isSelected ? "text-mp-primary" : "text-ink",
+                    )}
+                  >
+                    {fare.label}
+                  </span>
+
+                  {/* Info tooltip */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
                       <span
-                        className={cn(
-                          "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2",
-                          isSelected
-                            ? "border-mp-primary bg-mp-primary"
-                            : "border-hairline bg-canvas",
-                        )}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center text-muted hover:text-ink"
                       >
-                        {isSelected && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+                        <Info className="h-3.5 w-3.5" />
                       </span>
-                      <span className="text-body-sm font-semibold text-ink">{fare.label}</span>
-                    </div>
-                    <span
-                      className={cn(
-                        "text-body-sm font-semibold tabular-nums",
-                        fare.surcharge === 0 ? "text-badge-confirmed-fg" : "text-ink",
-                      )}
-                    >
-                      {fare.tagline}
-                    </span>
-                  </div>
-                  <ul className="mt-1.5 space-y-0.5 pl-6.5">
-                    {fare.benefits.map((b) => (
-                      <li key={b} className="flex items-center gap-1.5 text-caption text-muted">
-                        <Check className="h-3 w-3 shrink-0 text-badge-confirmed-fg" />
-                        {b}
-                      </li>
-                    ))}
-                  </ul>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-48">
+                      <ul className="space-y-0.5">
+                        {fare.tooltip.map((line) => (
+                          <li key={line} className="text-caption">{line}</li>
+                        ))}
+                      </ul>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <span className="flex-1" />
+
+                  {/* Preço */}
+                  <span
+                    className={cn(
+                      "shrink-0 text-body-sm font-semibold tabular-nums",
+                      fare.surcharge === 0
+                        ? "text-badge-confirmed-fg"
+                        : isSelected
+                          ? "text-mp-primary"
+                          : "text-ink",
+                    )}
+                  >
+                    {fare.tagline}
+                  </span>
                 </button>
               );
             })}
           </div>
-        </div>
-      )}
 
-      {/* Erro do simulate_price */}
-      {sim.data?.error && (
-        <div className="mt-4 rounded-sm border border-error bg-badge-cancelled-bg p-2 text-caption text-error">
-          {sim.data.error}
+          <button
+            type="button"
+            onClick={() => setFareComparisonOpen(true)}
+            className="mt-2 flex items-center gap-1 text-caption text-mp-indigo hover:underline"
+          >
+            Ver o que cada tarifa inclui
+            <ChevronRight className="h-3 w-3" />
+          </button>
         </div>
-      )}
 
-      {/* Disponibilidade */}
-      {availUi.message && (
-        <div
-          className={
-            availUi.tone === "error"
-              ? "mt-4 rounded-sm border border-error bg-badge-cancelled-bg p-2 text-caption text-error"
-              : "mt-4 rounded-sm border border-hairline bg-badge-pending-bg p-2 text-caption text-badge-pending-fg"
-          }
-          role="status"
-        >
-          {availUi.message}
-        </div>
-      )}
+        {/* Erro do simulate_price */}
+        {sim.data?.error && (
+          <div className="mt-4 rounded-sm border border-error bg-badge-cancelled-bg p-2 text-caption text-error">
+            {sim.data.error}
+          </div>
+        )}
 
-      {/* Serviços adicionais */}
-      {addOns.length > 0 && (
-        <div className="mt-4 space-y-2">
-          <div className="text-caption font-semibold text-muted-steel">Serviços adicionais</div>
-          {addOns.map((a) => (
-            <label
-              key={a.id}
-              className="flex cursor-pointer items-start justify-between gap-3 rounded-sm border border-hairline p-3"
-            >
-              <span className="flex items-start gap-2">
-                <input
-                  type="checkbox"
-                  className="mt-0.5"
-                  checked={selectedAddOnIds.includes(a.id)}
-                  onChange={() => toggleAddOn(a.id)}
-                />
-                <span>
-                  <span className="block text-body-sm text-ink">{a.name}</span>
-                  {a.description && (
-                    <span className="block text-caption text-muted">{a.description}</span>
-                  )}
+        {/* Disponibilidade */}
+        {availUi.message && (
+          <div
+            className={
+              availUi.tone === "error"
+                ? "mt-4 rounded-sm border border-error bg-badge-cancelled-bg p-2 text-caption text-error"
+                : "mt-4 rounded-sm border border-hairline bg-badge-pending-bg p-2 text-caption text-badge-pending-fg"
+            }
+            role="status"
+          >
+            {availUi.message}
+          </div>
+        )}
+
+        {/* Serviços adicionais */}
+        {addOns.length > 0 && (
+          <div className="mt-4 space-y-2">
+            <div className="text-caption font-semibold text-muted-steel">Serviços adicionais</div>
+            {addOns.map((a) => (
+              <label
+                key={a.id}
+                className="flex cursor-pointer items-start justify-between gap-3 rounded-sm border border-hairline p-3"
+              >
+                <span className="flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5"
+                    checked={selectedAddOnIds.includes(a.id)}
+                    onChange={() => toggleAddOn(a.id)}
+                  />
+                  <span>
+                    <span className="block text-body-sm text-ink">{a.name}</span>
+                    {a.description && (
+                      <span className="block text-caption text-muted">{a.description}</span>
+                    )}
+                  </span>
                 </span>
-              </span>
-              <span className="shrink-0 text-body-sm text-ink tabular-nums">
-                {formatBRL(a.price)}
-              </span>
-            </label>
-          ))}
-        </div>
-      )}
-
-      {/* Cupom de desconto */}
-      {canReserve && (
-        <div className="mt-4">
-          {applied ? (
-            <div className="flex items-center justify-between gap-2 rounded-sm border border-badge-confirmed-fg/30 bg-badge-confirmed-bg p-3">
-              <span className="text-caption font-medium text-badge-confirmed-fg">
-                {applied.code}: {couponDiscountLabel(applied)}
-              </span>
-              <button
-                type="button"
-                onClick={clearCoupon}
-                className="inline-flex items-center gap-1 text-caption text-badge-confirmed-fg hover:underline"
-              >
-                <X className="h-3 w-3" /> Remover
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Input
-                value={couponInput}
-                onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                placeholder="Tem um cupom?"
-                className="h-10 flex-1 uppercase"
-                aria-label="Código do cupom"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={applyCoupon}
-                disabled={!couponInput.trim() || validateCoupon.isPending}
-              >
-                {validateCoupon.isPending ? "…" : "Aplicar"}
-              </Button>
-            </div>
-          )}
-          {couponMsg && <p className="mt-1.5 text-caption text-error">{couponMsg}</p>}
-        </div>
-      )}
-
-      {/* Breakdown: vaga + tarifa + add-ons + desconto */}
-      {showBreakdown && (
-        <div className="mt-4 space-y-1.5 border-t border-hairline pt-4">
-          <div className="flex justify-between text-body-sm text-muted">
-            <span>Estacionamento</span>
-            <span className="tabular-nums">{formatBRL(parkingPrice)}</span>
+                <span className="shrink-0 text-body-sm text-ink tabular-nums">
+                  {formatBRL(a.price)}
+                </span>
+              </label>
+            ))}
           </div>
-          {fareSurcharge > 0 && (
-            <div className="flex justify-between text-body-sm text-muted">
-              <span>Tarifa {fareOption.label}</span>
-              <span className="tabular-nums">+{formatBRL(fareSurcharge)}</span>
+        )}
+
+        {/* Cupom */}
+        {canReserve && (
+          <div className="mt-4">
+            {applied ? (
+              <div className="flex items-center justify-between gap-2 rounded-sm border border-badge-confirmed-fg/30 bg-badge-confirmed-bg p-3">
+                <span className="text-caption font-medium text-badge-confirmed-fg">
+                  {applied.code}: {couponDiscountLabel(applied)}
+                </span>
+                <button
+                  type="button"
+                  onClick={clearCoupon}
+                  className="inline-flex items-center gap-1 text-caption text-badge-confirmed-fg hover:underline"
+                >
+                  <X className="h-3 w-3" /> Remover
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Input
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value)}
+                  placeholder="Cupom de desconto"
+                  className="h-10 flex-1"
+                  aria-label="Código do cupom"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={applyCoupon}
+                  disabled={!couponInput.trim() || validateCoupon.isPending}
+                >
+                  {validateCoupon.isPending ? "…" : "Aplicar"}
+                </Button>
+              </div>
+            )}
+            {couponMsg && <p className="mt-1.5 text-caption text-error">{couponMsg}</p>}
+          </div>
+        )}
+
+        {/* Total */}
+        <div className="mt-5 border-t border-hairline pt-4">
+          {hasFareOrAddOns && (
+            <div className="mb-3 space-y-1.5">
+              {parkingPrice > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-body-sm text-muted">Estacionamento</span>
+                  <span className="text-body-sm text-muted tabular-nums">{formatBRL(parkingPrice)}</span>
+                </div>
+              )}
+              {fareSurcharge > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-body-sm text-muted">Tarifa {fareOption.label}</span>
+                  <span className="text-body-sm text-muted tabular-nums">{formatBRL(fareSurcharge)}</span>
+                </div>
+              )}
+              {chosenAddOns.map((a) => (
+                <div key={a.id} className="flex justify-between">
+                  <span className="text-body-sm text-muted">{a.name}</span>
+                  <span className="text-body-sm text-muted tabular-nums">{formatBRL(a.price)}</span>
+                </div>
+              ))}
+              {applied && (
+                <div className="flex justify-between">
+                  <span className="text-body-sm text-badge-confirmed-fg">Desconto</span>
+                  <span className="text-body-sm text-badge-confirmed-fg tabular-nums">−{formatBRL(discount)}</span>
+                </div>
+              )}
             </div>
           )}
-          {chosenAddOns.map((a) => (
-            <div key={a.id} className="flex justify-between text-body-sm text-muted">
-              <span>{a.name}</span>
-              <span className="tabular-nums">{formatBRL(a.price)}</span>
-            </div>
-          ))}
-          {applied && (
-            <div className="flex justify-between text-body-sm text-badge-confirmed-fg">
-              <span>Desconto ({applied.code})</span>
-              <span className="tabular-nums">−{formatBRL(discount)}</span>
-            </div>
-          )}
-          <div className="flex items-baseline justify-between pt-1">
+          <div className="flex items-baseline justify-between">
             <span className="text-title-sm text-ink">Total</span>
-            <span className="text-title-md text-ink tabular-nums">{formatBRL(displayTotal)}</span>
+            <span className="text-display-md text-ink tabular-nums">
+              {canReserve
+                ? formatBRL(displayTotal)
+                : formatBRL(listing.company_parking_type.base_price)}
+            </span>
           </div>
         </div>
-      )}
 
-      {/* Botão Reservar */}
-      <Button
-        className="mt-6 w-full"
-        size="default"
-        onClick={handleReserve}
-        disabled={!canReserve || createBooking.isPending}
-      >
-        {createBooking.isPending
-          ? "Reservando…"
-          : !from || !to
-            ? "Escolher datas"
-            : "Reservar agora"}
-      </Button>
+        {/* CTA */}
+        <Button
+          className="mt-4 w-full"
+          size="default"
+          onClick={handleReserve}
+          disabled={!canReserve || createBooking.isPending}
+        >
+          {createBooking.isPending
+            ? "Reservando…"
+            : !from || !to
+              ? "Escolher datas"
+              : "Reservar agora"}
+        </Button>
 
-      {/* Trust signals */}
-      <div className="mt-4 space-y-1.5">
-        {[
-          "Vaga garantida",
-          "Cancelamento conforme a tarifa",
-          "Sem pagamento ao estacionamento",
-        ].map((item) => (
-          <div key={item} className="flex items-center gap-2 text-caption text-muted">
-            <Check className="h-3.5 w-3.5 shrink-0 text-badge-confirmed-fg" />
-            <span>{item}</span>
+        {/* Trust badge */}
+        {!avail.data?.sold_out && (
+          <div className="mt-4 flex justify-center">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-badge-confirmed-bg px-3 py-1">
+              <ShieldCheck className="h-4 w-4 text-badge-confirmed-fg" />
+              <span className="text-body-sm font-semibold text-badge-confirmed-fg">
+                {fareOption.badgeText}
+              </span>
+            </div>
           </div>
-        ))}
+        )}
       </div>
-
-      {!avail.data?.sold_out && (
-        <div className="mt-4 flex justify-center">
-          <GuaranteeBadge />
-        </div>
-      )}
-
-      <p className="mt-3 flex items-center justify-center gap-1.5 text-caption text-muted">
-        <ShieldCheck className="h-3.5 w-3.5" />
-        Cancelamento grátis até 24h antes
-      </p>
-    </div>
+    </TooltipProvider>
   );
 }

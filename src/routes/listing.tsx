@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link, useLoaderData, useParams, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { ArrowLeft, BadgeCheck, Building2, Bus, CalendarX, Car, Heart, MapPin, ShieldCheck, Star } from "lucide-react";
+import { ArrowLeft, ArrowRight, BadgeCheck, Building2, Bus, CalendarX, Car, Heart, MapPin, ShieldCheck, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
@@ -18,6 +18,8 @@ import { useListing, type ListingDetail } from "@/features/listing/api";
 import { useSavedListings } from "@/features/search/useSavedListings";
 import { useFaqCombined, type FaqCombinedItem } from "@/features/faqs/api";
 import { FaqList } from "@/features/faqs/FaqList";
+import { groupFaqsByScope } from "@/features/faqs/FaqList.logic";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { optimizedImageUrl } from "@/lib/storage";
 import { formatBRL } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -222,12 +224,6 @@ export default function ListingPage() {
               </div>
             )}
 
-            {(listing.capacity ?? 0) > 0 && (
-              <div className="flex items-center gap-1.5 text-body-sm text-muted">
-                <Car className="h-3.5 w-3.5 shrink-0" />
-                <span>{listing.capacity} vagas</span>
-              </div>
-            )}
           </div>
         </div>
 
@@ -262,6 +258,12 @@ export default function ListingPage() {
           {hasDescription && (
             <>
               <section className="space-y-3">
+                {(listing.capacity ?? 0) > 0 && (
+                  <div className="flex items-center gap-1.5 text-body-md text-muted">
+                    <Car className="h-4 w-4 shrink-0" />
+                    <span>{listing.capacity} vagas</span>
+                  </div>
+                )}
                 {listing.parking_type.description && (
                   <p className="text-body-md text-body">{listing.parking_type.description}</p>
                 )}
@@ -355,11 +357,42 @@ type ListingFaqSectionProps = {
 };
 
 function ListingFaqSection({ items, isLoading }: ListingFaqSectionProps) {
+  const [allOpen, setAllOpen] = React.useState(false);
+
   if (!isLoading && (items ?? []).length === 0) return null;
+
+  const groups = items ? groupFaqsByScope(items) : null;
+  const inlineItems = groups ? [...groups.location, ...groups.destination] : undefined;
+  const hasGlobal = (groups?.global.length ?? 0) > 0;
+  const totalCount = (items ?? []).length;
+
   return (
     <section className="space-y-4" id="faq">
       <h2 className="text-display-sm text-ink">Perguntas frequentes</h2>
-      <FaqList items={items} isLoading={isLoading} groupByScope />
+
+      {/* Só perguntas específicas do estacionamento/destino inline */}
+      <FaqList
+        items={isLoading ? undefined : (inlineItems?.length ? inlineItems : items)}
+        isLoading={isLoading}
+      />
+
+      {/* Link para abrir todas as perguntas */}
+      {!isLoading && hasGlobal && (
+        <button
+          type="button"
+          onClick={() => setAllOpen(true)}
+          className="flex items-center gap-1 text-body-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
+        >
+          Ver todas as {totalCount} perguntas frequentes
+          <ArrowRight className="h-4 w-4" />
+        </button>
+      )}
+
+      <Dialog open={allOpen} onOpenChange={setAllOpen}>
+        <DialogContent className="max-h-[70vh] max-w-3xl overflow-y-auto px-12 py-10">
+          <FaqList items={items} groupByScope />
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
