@@ -40,3 +40,6 @@ build/
 
 # Imagens-fonte dos estacionamentos (cruas). As otimizadas vão em public/Estacionamentos/.
 /docs/Todos os estacionamentos/
+
+# Playwright MCP artifacts
+.playwright-mcp/
