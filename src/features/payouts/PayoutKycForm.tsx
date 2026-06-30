@@ -142,11 +142,11 @@ function AddressFields({ control, prefix }: { control: Control<KycValues>; prefi
       <TextField control={control} name={`${prefix}.zip_code` as Path<KycValues>} label="CEP" mask={cepMask} placeholder="00000-000" />
       <TextField control={control} name={`${prefix}.street` as Path<KycValues>} label="Rua" />
       <TextField control={control} name={`${prefix}.street_number` as Path<KycValues>} label="Número" />
-      <TextField control={control} name={`${prefix}.complement` as Path<KycValues>} label="Complemento (opcional)" />
+      <TextField control={control} name={`${prefix}.complement` as Path<KycValues>} label="Complemento" />
       <TextField control={control} name={`${prefix}.neighborhood` as Path<KycValues>} label="Bairro" />
       <TextField control={control} name={`${prefix}.city` as Path<KycValues>} label="Cidade" />
       <StateField control={control} name={`${prefix}.state` as Path<KycValues>} label="Estado (UF)" />
-      <TextField control={control} name={`${prefix}.reference_point` as Path<KycValues>} label="Ponto de referência (opcional)" />
+      <TextField control={control} name={`${prefix}.reference_point` as Path<KycValues>} label="Ponto de referência" />
     </>
   );
 }
@@ -246,7 +246,7 @@ export function PayoutKycForm({
         <TextField control={control} name="bank.account_number" label="Conta" />
         <TextField control={control} name="bank.account_check_digit" label="Dígito da conta" />
         <AccountTypeField control={control} />
-        <TextField control={control} name="bank.holder_name" label="Titular da conta" />
+        <TextField control={control} name="bank.holder_name" label="Titular da conta (máx. 30 caracteres)" />
       </Section>
 
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-hairline pt-5">

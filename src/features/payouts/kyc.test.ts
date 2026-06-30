@@ -6,11 +6,11 @@ function validForm(): PayoutKycForm {
     zip_code: "01310-930",
     street: "Av. Paulista",
     street_number: "1000",
-    complement: "",
+    complement: "Sala 12",
     neighborhood: "Bela Vista",
     city: "São Paulo",
     state: "SP",
-    reference_point: "",
+    reference_point: "Em frente ao MASP",
   };
   return {
     company: {
@@ -59,6 +59,22 @@ describe("payouts/kyc", () => {
     bad.representative.self_declared_legal_representative = false;
     const res = payoutKycSchema.safeParse(bad);
     expect(res.success).toBe(false);
+  });
+
+  it("exige complemento e ponto de referência no endereço (Pagar.me)", () => {
+    const noCompl = validForm();
+    noCompl.company.address.complement = "";
+    expect(payoutKycSchema.safeParse(noCompl).success).toBe(false);
+
+    const noRef = validForm();
+    noRef.representative.address.reference_point = "";
+    expect(payoutKycSchema.safeParse(noRef).success).toBe(false);
+  });
+
+  it("rejeita titular da conta com mais de 30 caracteres", () => {
+    const bad = validForm();
+    bad.bank.holder_name = "TRACES ESTACIONAMENTOS E PARTICIPACOES LTDA"; // 43 chars
+    expect(payoutKycSchema.safeParse(bad).success).toBe(false);
   });
 
   it("toPayoutAccountPayload mapeia banco plano + kyc_details (dinheiro em reais, telefone em ddd/number)", () => {

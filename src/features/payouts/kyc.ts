@@ -19,11 +19,12 @@ const addressSchema = z.object({
   zip_code: z.string().refine((v) => onlyDigits(v).length === 8, "CEP inválido"),
   street: requiredText("Informe a rua"),
   street_number: requiredText("Informe o número"),
-  complement: z.string().trim().optional().default(""),
+  // Pagar.me exige complemento e ponto de referência no recebedor — obrigatórios no form.
+  complement: requiredText("Informe o complemento"),
   neighborhood: requiredText("Informe o bairro"),
   city: requiredText("Informe a cidade"),
   state: z.string().trim().length(2, "UF"),
-  reference_point: z.string().trim().optional().default(""),
+  reference_point: requiredText("Informe um ponto de referência"),
 });
 export type KycAddress = z.infer<typeof addressSchema>;
 
@@ -73,7 +74,8 @@ const bankSchema = z.object({
   account_type: z.enum(["checking", "savings"], {
     errorMap: () => ({ message: "Selecione o tipo de conta" }),
   }),
-  holder_name: requiredText("Informe o titular"),
+  // Pagar.me limita o titular da conta a 30 caracteres.
+  holder_name: requiredText("Informe o titular").max(30, "O titular deve ter no máximo 30 caracteres"),
 });
 
 export const payoutKycSchema = z.object({
