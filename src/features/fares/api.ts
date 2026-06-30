@@ -59,6 +59,63 @@ export function useFareCatalog() {
   });
 }
 
+export type UnitFareConfig = {
+  tier: FareTier;
+  label: string;
+  default_price_cents: number;
+  enabled: boolean;
+  price_override_cents: number | null;
+};
+
+/** Config de Tarifa por unidade (catálogo + overrides) para o admin (E2.8-f). */
+export function useLocationFareConfig(lptId: string | undefined) {
+  return useQuery({
+    queryKey: [...faresKeys.all, "config", lptId ?? ""] as const,
+    enabled: !!lptId,
+    queryFn: async (): Promise<UnitFareConfig[]> => {
+      const [catalog, overrides] = await Promise.all([
+        supabase.from("fare").select("tier, label, price_cents, sort_order").eq("is_active", true).order("sort_order"),
+        supabase.from("location_fare").select("tier, enabled, price_cents_override").eq("location_parking_type_id", lptId!),
+      ]);
+      if (catalog.error) throw catalog.error;
+      if (overrides.error) throw overrides.error;
+      const ovByTier = new Map((overrides.data ?? []).map((o) => [o.tier as FareTier, o]));
+      return (catalog.data ?? []).map((f) => {
+        const ov = ovByTier.get(f.tier as FareTier);
+        return {
+          tier: f.tier as FareTier,
+          label: f.label as string,
+          default_price_cents: f.price_cents as number,
+          enabled: ov?.enabled ?? true,
+          price_override_cents: ov?.price_cents_override ?? null,
+        };
+      });
+    },
+  });
+}
+
+/** Salva a config de uma Tarifa numa unidade (RPC operator_set_unit_fare, gate pricing:write). */
+export function useSetUnitFare() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: {
+      location_parking_type_id: string;
+      tier: FareTier;
+      enabled: boolean;
+      price_cents: number | null;
+    }) => {
+      const { error } = await supabase.rpc("operator_set_unit_fare", {
+        p_location_parking_type_id: args.location_parking_type_id,
+        p_tier: args.tier,
+        p_enabled: args.enabled,
+        p_price_cents: args.price_cents ?? undefined,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: faresKeys.all }),
+  });
+}
+
 export type FareUpgradeResponse = {
   payment_id: string;
   status: string;

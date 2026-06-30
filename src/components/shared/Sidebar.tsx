@@ -51,6 +51,7 @@ const operatorItems: Item[] = [
   { to: "/operator/locations", label: "Localizações", icon: MapPin },
   { to: "/operator/occupancy", label: "Ocupação", icon: CalendarRange, scope: "occupancy:read" },
   { to: "/operator/addons", label: "Serviços", icon: Sparkles, scope: "addons:write" },
+  { to: "/operator/fares", label: "Tarifas", icon: Tag, scope: "pricing:write" },
   { to: "/operator/coupons", label: "Promoções", icon: Tag, scope: "coupons:write" },
   { to: "/operator/reviews", label: "Avaliações", icon: Star, scope: "reviews:read" },
   { to: "/operator/users", label: "Usuários", icon: Users, scope: "team:read" },

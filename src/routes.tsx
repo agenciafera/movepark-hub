@@ -75,6 +75,7 @@ import OperatorFinance from "@/routes/operator/finance";
 import OperatorSettings from "@/routes/operator/settings";
 import OperatorFaq from "@/routes/operator/faq";
 import OperatorAddons from "@/routes/operator/addons";
+import OperatorFares from "@/routes/operator/fares";
 import OperatorCoupons from "@/routes/operator/coupons";
 import OperatorReviews from "@/routes/operator/reviews";
 import OperatorUsers from "@/routes/operator/users";
@@ -286,6 +287,10 @@ export const routes: RouteRecord[] = [
               {
                 element: <RequireScope scope="addons:write" />,
                 children: [{ path: "addons", element: <OperatorAddons /> }],
+              },
+              {
+                element: <RequireScope scope="pricing:write" />,
+                children: [{ path: "fares", element: <OperatorFares /> }],
               },
               {
                 element: <RequireScope scope="coupons:write" />,
