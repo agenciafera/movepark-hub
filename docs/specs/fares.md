@@ -151,11 +151,21 @@ efetivo da unidade** (checkout e cobrança batem). Escrita via RPC **`operator_s
 (gate `pricing:write`/hub_admin). UI: `/operator/fares` (`FareConfigCard` por tipo de vaga) +
 `useLocationFareConfig`/`useSetUnitFare`. Migration `20260721000000`.
 
+## E2.8-f · Honrar alterações (Frente B) — troca de veículo implementada
+
+**Trocar placa/veículo** (benefício `plate_change`, Flex+): Edge **`change-booking-vehicle`** (dono ou
+staff; valida benefício/status/posse do veículo) troca `booking.vehicle_id` e **regenera o voucher** —
+resolve a dor do white-label que não troca placa (registramos do nosso lado). UI: `ChangeVehicleDialog`
++ botão "Trocar veículo" no detalhe da reserva (gate `plate_change` + antes da entrada);
+`useChangeBookingVehicle`. Staff faz override (sem exigir o benefício). Fecha o "trocar placa" da E2.8-c.
+
 ## Pendências (próximas subtarefas E2.8)
 
-- **E2.8-f Frente B / E2.8-c (resto):** ações de **trocar placa/veículo** e **alterar data/horário**
-  (RPCs de alteração, gateadas pelos benefícios `plate_change`/`date_change`), incl. onde o
-  white-label não permite (registrar do nosso lado + refletir no voucher).
+- **Alterar data/horário** (benefício `date_change`): re-hold de capacidade do novo período + re-preço
+  + tratamento do delta de pagamento (cobrar/estornar a diferença) numa reserva paga. É a peça mais
+  pesada (toca capacidade + pricing + pagamento) e merece um passo próprio — ainda não implementada.
+- **Ação de troca de veículo no painel do operador** (a capability/Edge já existe; falta o botão na
+  `BookingDrawer`).
 - **Follow-ups da E2.8-e:** propagação da extensão ao white-label (`wl_delivery` não modela `extend`)
   e gatilho automático da auto-extensão por uma API de rastreio de voos; aprovação dos templates de
   WhatsApp no Meta para ativar as notificações.
