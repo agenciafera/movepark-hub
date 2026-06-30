@@ -253,6 +253,15 @@ Deno.test("buildCreateRecipientBody: PJ com KYC monta register_information compl
   }) as Record<string, any>;
   assertEquals(withCompl.register_information.main_address.complementary, "Sala 12");
   assertEquals(withCompl.register_information.main_address.reference_point, "ao lado do metrô");
+
+  // holder_name é truncado em 30 chars (limite do Pagar.me).
+  const longHolder = buildCreateRecipientBody({
+    ...input,
+    holderName: "TRACES ESTACIONAMENTOS E PARTICIPACOES LTDA",
+  }) as Record<string, any>;
+  const hn = longHolder.default_bank_account.holder_name as string;
+  assertEquals(hn.length <= 30, true);
+  assertEquals(hn, "TRACES ESTACIONAMENTOS E PARTI");
   assertEquals(body.default_bank_account.bank, "341");
 });
 

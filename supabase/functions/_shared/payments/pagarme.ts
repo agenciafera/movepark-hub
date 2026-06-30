@@ -126,6 +126,13 @@ function brDateToIso(value: string | null | undefined): string | undefined {
 const orNa = (v: string | null | undefined): string =>
   typeof v === "string" && v.trim() ? v.trim() : "N/A";
 
+// O Pagar.me limita o holder_name da conta a 30 caracteres — trunca (razão social longa não cabe).
+function capHolderName(v: string | null | undefined): string | undefined {
+  if (v == null) return undefined;
+  const s = String(v).trim();
+  return s.length > 30 ? s.slice(0, 30).trim() : s;
+}
+
 function mapAddress(a: RecipientKycAddress | null | undefined) {
   if (!a) return undefined;
   return {
@@ -199,7 +206,7 @@ export function buildCreateRecipientBody(input: RecipientInput): Record<string, 
     code: input.externalCode,
     register_information: register,
     default_bank_account: {
-      holder_name: undef(input.holderName),
+      holder_name: capHolderName(input.holderName),
       holder_type: isCompany ? "company" : "individual",
       holder_document: undef(input.holderDocument) ?? undef(input.document),
       bank: undef(input.bank.code),
