@@ -159,13 +159,26 @@ resolve a dor do white-label que não troca placa (registramos do nosso lado). U
 + botão "Trocar veículo" no detalhe da reserva (gate `plate_change` + antes da entrada);
 `useChangeBookingVehicle`. Staff faz override (sem exigir o benefício). Fecha o "trocar placa" da E2.8-c.
 
-## Pendências (próximas subtarefas E2.8)
+**Alterar data/horário** (benefício `date_change`): RPC `change_booking_dates` (migration
+`20260722000000`) + Edge `change-booking-dates` + `ChangeDatesDialog`/botão no detalhe. Só para
+reservas **pendentes** (antes do pagamento): re-segura capacidade (atômico) + re-precifica a vaga +
+recalcula a janela da Tarifa + dropa o cupom. **Reserva paga** é recusada com orientação de
+cancelar+refazer (a Superflex cancela grátis até 1 min) — evita mexer em dinheiro de reserva paga.
 
-- **Alterar data/horário** (benefício `date_change`): re-hold de capacidade do novo período + re-preço
-  + tratamento do delta de pagamento (cobrar/estornar a diferença) numa reserva paga. É a peça mais
-  pesada (toca capacidade + pricing + pagamento) e merece um passo próprio — ainda não implementada.
-- **Ação de troca de veículo no painel do operador** (a capability/Edge já existe; falta o botão na
-  `BookingDrawer`).
+**Operador troca placa**: `change-booking-vehicle` aceita `license_plate` (staff digita) além de
+`vehicle_id`; botão "Trocar placa" na `BookingDrawer`.
+
+## Pendências / refinamentos conhecidos
+
+- **Preço por unidade no seletor do checkout:** o `ReservationCard` hoje usa `FARE_OPTIONS` com preços
+  **fixos** (12,90/24,90). O backend (`_create_booking_core`) já cobra o **preço efetivo da unidade**
+  (override E2.8-f), então para uma unidade com override há divergência **só de exibição** no card
+  (o checkout/SummaryCard mostra o valor real). Ideal: o card consumir `get_unit_fares(lpt)`
+  (hook `useUnitFares` já existe) em vez dos preços fixos.
+- **Dead code:** `src/features/fares/FareTierSelector.tsx` e o hook `useUnitFares` ficaram órfãos
+  após a UI do card migrar pro `FareComparisonDialog` — removíveis (ou reaproveitar p/ o item acima).
+- **Date change em reserva paga:** delta de pagamento (cobrar/estornar a diferença) é o passo futuro
+  se quiserem permitir alterar datas após o pagamento sem cancelar+refazer.
 - **Follow-ups da E2.8-e:** propagação da extensão ao white-label (`wl_delivery` não modela `extend`)
   e gatilho automático da auto-extensão por uma API de rastreio de voos; aprovação dos templates de
   WhatsApp no Meta para ativar as notificações.
