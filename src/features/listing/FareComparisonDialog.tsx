@@ -1,5 +1,5 @@
-import { CheckCircle2 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Check, X } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -9,7 +9,7 @@ const FEATURES: { label: string; tiers: [boolean, boolean, boolean] }[] = [
   { label: "Cancelamento grátis até 24h", tiers: [true, true, true] },
   { label: "E-mail de confirmação", tiers: [true, true, true] },
   { label: "Vaga garantida", tiers: [true, true, true] },
-  { label: "SMS/WhatsApp + lembrete de chegada", tiers: [false, true, true] },
+  { label: "SMS/WhatsApp + lembrete", tiers: [false, true, true] },
   { label: "Trocar placa / veículo", tiers: [false, true, true] },
   { label: "Alterar data e horário", tiers: [false, true, true] },
   { label: "Cancelar até 1 min antes", tiers: [false, false, true] },
@@ -17,22 +17,25 @@ const FEATURES: { label: string; tiers: [boolean, boolean, boolean] }[] = [
   { label: "Suporte prioritário", tiers: [false, false, true] },
 ];
 
+const TIERS: {
+  id: FareTier;
+  label: string;
+  tagline: string;
+  popular?: boolean;
+}[] = [
+  { id: "basic", label: "Básica", tagline: "Grátis" },
+  { id: "flex", label: "Flex", tagline: "+ R$ 12,90", popular: true },
+  { id: "superflex", label: "Superflex", tagline: "+ R$ 24,90" },
+];
+
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedFare: FareTier;
   onSelect: (fare: FareTier) => void;
-  /** Rótulo de preço por tier vindo da unidade (E2.8-f). Sobrescreve o tagline padrão. */
   priceLabelByTier?: Partial<Record<FareTier, string>>;
-  /** Tiers habilitados na unidade. Quando informado, esconde os desativados. */
   availableTiers?: FareTier[];
 };
-
-const TIERS: { id: FareTier; label: string; tagline: string; popular?: boolean }[] = [
-  { id: "basic", label: "Básica", tagline: "Grátis" },
-  { id: "flex", label: "Flex", tagline: "+ R$ 12,90", popular: true },
-  { id: "superflex", label: "Superflex", tagline: "+ R$ 24,90" },
-];
 
 export function FareComparisonDialog({
   open,
@@ -45,106 +48,93 @@ export function FareComparisonDialog({
   const visibleTiers = availableTiers
     ? TIERS.filter((t) => availableTiers.includes(t.id))
     : TIERS;
+
   const taglineOf = (t: (typeof TIERS)[number]) => priceLabelByTier?.[t.id] ?? t.tagline;
-  const featureIndexOf = (id: FareTier) => TIERS.findIndex((t) => t.id === id);
+  const tierIndex = (id: FareTier) => TIERS.findIndex((t) => t.id === id);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl p-0">
-        <DialogHeader className="px-6 pt-6">
-          <DialogTitle className="text-display-sm text-ink">O que cada tarifa inclui</DialogTitle>
-        </DialogHeader>
+      <DialogContent className="max-h-[90vh] w-full max-w-2xl overflow-y-auto p-6 tablet:p-8">
+        <p className="mb-6 text-display-sm text-ink">O que cada tarifa inclui</p>
 
-        <div className="overflow-x-auto px-6 pb-6 pt-4">
-          <table className="w-full border-separate border-spacing-0">
-            <thead>
-              <tr>
-                <th className="w-[45%] pb-5" />
-                {visibleTiers.map((tier) => (
-                  <th key={tier.id} className="relative pb-5 text-center align-bottom">
-                    {tier.popular && (
-                      <div className="absolute -top-2 left-1/2 -translate-x-1/2">
-                        <span className="whitespace-nowrap rounded-full bg-mp-primary px-3 py-1 text-caption font-semibold text-on-primary">
-                          Mais popular
-                        </span>
-                      </div>
-                    )}
-                    <div
+        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-3">
+          {visibleTiers.map((tier) => {
+            const isSelected = selectedFare === tier.id;
+            const ti = tierIndex(tier.id);
+
+            return (
+              <div
+                key={tier.id}
+                className={cn(
+                  "flex flex-col rounded-md border-2 p-5 transition-colors",
+                  tier.popular
+                    ? "border-mp-primary bg-mp-pale/20"
+                    : "border-hairline bg-canvas",
+                )}
+              >
+                {/* Header */}
+                <div className="mb-4">
+                  {tier.popular ? (
+                    <span className="mb-2 inline-block rounded-full bg-mp-primary px-2.5 py-0.5 text-caption font-semibold text-on-primary">
+                      Mais popular
+                    </span>
+                  ) : (
+                    <span className="mb-2 inline-block h-[22px]" />
+                  )}
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="text-title-md text-ink">{tier.label}</p>
+                    <p
                       className={cn(
-                        "rounded-t-md border-x border-t pt-5",
-                        tier.popular ? "border-mp-primary/40 bg-mp-pale/30" : "border-transparent",
+                        "text-title-sm font-semibold tabular-nums",
+                        tier.id === "basic" ? "text-badge-confirmed-fg" : "text-mp-primary",
                       )}
                     >
-                      <p className="text-body-sm font-semibold text-ink">{tier.label}</p>
-                      <p
+                      {taglineOf(tier)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Separador */}
+                <div className="mb-4 h-px bg-hairline" />
+
+                {/* Features */}
+                <ul className="flex-1 space-y-3">
+                  {FEATURES.map((f, fi) => {
+                    const included = f.tiers[ti];
+                    return (
+                      <li
+                        key={fi}
                         className={cn(
-                          "text-body-sm font-semibold",
-                          tier.id === "basic" ? "text-badge-confirmed-fg" : "text-mp-primary",
+                          "flex items-start gap-2.5 text-body-sm",
+                          included ? "text-ink" : "text-muted",
                         )}
                       >
-                        {taglineOf(tier)}
-                      </p>
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {FEATURES.map((feature, fi) => {
-                const isLast = fi === FEATURES.length - 1;
-                return (
-                  <tr key={fi} className="border-t border-hairline">
-                    <td className="py-3 pr-4 text-body-sm text-body">{feature.label}</td>
-                    {visibleTiers.map((tier) => {
-                      const included = feature.tiers[featureIndexOf(tier.id)];
-                      return (
-                        <td
-                          key={tier.id}
-                          className={cn(
-                            "py-3 text-center",
-                            tier.popular && [
-                              "border-x border-mp-primary/40 bg-mp-pale/20",
-                              isLast && "rounded-b-md border-b",
-                            ],
-                          )}
-                        >
-                          {included ? (
-                            <CheckCircle2 className="mx-auto h-5 w-5 text-badge-confirmed-fg" />
-                          ) : (
-                            <span className="text-muted">—</span>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })}
-              {/* Spacer row for select buttons */}
-              <tr>
-                <td className="pb-1 pt-4" />
-                {visibleTiers.map((tier) => (
-                  <td
-                    key={tier.id}
-                    className={cn(
-                      "pb-1 pt-4 text-center",
-                      tier.popular && "rounded-b-md border-x border-b border-mp-primary/40 bg-mp-pale/20",
-                    )}
-                  >
-                    <Button
-                      size="sm"
-                      variant={selectedFare === tier.id ? "primary" : "outline"}
-                      className="w-full"
-                      onClick={() => {
-                        onSelect(tier.id);
-                        onOpenChange(false);
-                      }}
-                    >
-                      Selecionar
-                    </Button>
-                  </td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
+                        {included ? (
+                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-badge-confirmed-fg" />
+                        ) : (
+                          <X className="mt-0.5 h-4 w-4 shrink-0 text-muted opacity-40" />
+                        )}
+                        {f.label}
+                      </li>
+                    );
+                  })}
+                </ul>
+
+                {/* CTA */}
+                <Button
+                  size="sm"
+                  variant={isSelected ? "primary" : "outline"}
+                  className="mt-6 w-full"
+                  onClick={() => {
+                    onSelect(tier.id);
+                    onOpenChange(false);
+                  }}
+                >
+                  {isSelected ? "Selecionada" : "Selecionar"}
+                </Button>
+              </div>
+            );
+          })}
         </div>
       </DialogContent>
     </Dialog>
