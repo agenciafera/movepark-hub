@@ -129,10 +129,11 @@ disparo (best-effort, pós-resposta):
 
 ## Front (E2.8-b/c/d) — implementado
 
-- **E2.8-b · Seletor no checkout:** `src/features/fares/` — `useUnitFares` (RPC `get_unit_fares`) +
-  `FareTierSelector` (good-better-best, Flex "Mais popular", default Básica). Integrado no
-  `ReservationCard` (Tarifa no payload de `create-booking`, total/breakdown, rótulo de cancelamento)
-  e no `SummaryCard` do checkout.
+- **E2.8-b · Seletor no checkout:** `ReservationCard` renderiza o seletor good-better-best (Flex
+  "Mais popular", default Flex) direto, com preços por unidade via `useUnitFares` (RPC
+  `get_unit_fares`) + `mergeUnitFares`, e o `FareComparisonDialog` ("Ver o que cada tarifa inclui").
+  Tarifa no payload de `create-booking`, total/breakdown e rótulo de cancelamento; refletido no
+  `SummaryCard` do checkout.
 - **E2.8-c · Detalhe da reserva:** `FareDisplay` (nível, benefícios cobertos, "cancelável até …"
   via `fare_cancel_until`) no detalhe; `cancellationStatus`/`CancelBookingDialog` respeitam a janela
   da Tarifa (Superflex = 1 min). _Pendente: ações de trocar placa/veículo e alterar data (RPCs novos)._
@@ -168,15 +169,15 @@ cancelar+refazer (a Superflex cancela grátis até 1 min) — evita mexer em din
 **Operador troca placa**: `change-booking-vehicle` aceita `license_plate` (staff digita) além de
 `vehicle_id`; botão "Trocar placa" na `BookingDrawer`.
 
+**Exibição = cobrança (preço por unidade):** o `ReservationCard` e o `FareComparisonDialog` consomem
+`get_unit_fares(lpt)` (hook `useUnitFares`) — `mergeUnitFares` (em `reservation.logic.ts`, pura/testada)
+aplica o **preço efetivo da unidade** sobre as tarifas-padrão, mapeia `basic↔basica` e **descarta tiers
+desativados**; sem dados da unidade cai nos defaults. Assim o card bate com o que `_create_booking_core`
+cobra (não há mais divergência só-de-exibição em unidade com override). A seleção cai pra Flex/primeira
+válida se a tarifa escolhida não existir na unidade. Dead code `FareTierSelector.tsx` removido.
+
 ## Pendências / refinamentos conhecidos
 
-- **Preço por unidade no seletor do checkout:** o `ReservationCard` hoje usa `FARE_OPTIONS` com preços
-  **fixos** (12,90/24,90). O backend (`_create_booking_core`) já cobra o **preço efetivo da unidade**
-  (override E2.8-f), então para uma unidade com override há divergência **só de exibição** no card
-  (o checkout/SummaryCard mostra o valor real). Ideal: o card consumir `get_unit_fares(lpt)`
-  (hook `useUnitFares` já existe) em vez dos preços fixos.
-- **Dead code:** `src/features/fares/FareTierSelector.tsx` e o hook `useUnitFares` ficaram órfãos
-  após a UI do card migrar pro `FareComparisonDialog` — removíveis (ou reaproveitar p/ o item acima).
 - **Date change em reserva paga:** delta de pagamento (cobrar/estornar a diferença) é o passo futuro
   se quiserem permitir alterar datas após o pagamento sem cancelar+refazer.
 - **Follow-ups da E2.8-e:** propagação da extensão ao white-label (`wl_delivery` não modela `extend`)
