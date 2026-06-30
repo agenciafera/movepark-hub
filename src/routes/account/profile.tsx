@@ -15,6 +15,8 @@ import {
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useAuth } from "@/auth/context";
 import { useProfile, useUpdateProfile } from "@/features/profile/api";
+import { documentMask, onlyDigits } from "@/lib/masks";
+import { isValidCnpj, isValidCpf } from "@/lib/documents";
 
 export default function ProfilePage() {
   const { session } = useAuth();
@@ -32,7 +34,7 @@ export default function ProfilePage() {
   React.useEffect(() => {
     if (!profileQ.data) return;
     setFullName(profileQ.data.full_name ?? "");
-    setTaxId(profileQ.data.tax_id ?? "");
+    setTaxId(documentMask(profileQ.data.tax_id ?? ""));
     const rawPhone = profileQ.data.phone ?? "";
     setPhone(rawPhone && !rawPhone.startsWith("+") ? `+${rawPhone}` : rawPhone);
     setBirthDate(profileQ.data.birth_date ?? "");
@@ -49,6 +51,11 @@ export default function ProfilePage() {
 
   async function handleSave() {
     if (!session) return;
+    const taxDigits = onlyDigits(taxId);
+    if (taxDigits && !isValidCpf(taxId) && !isValidCnpj(taxId)) {
+      toast.error("CPF ou CNPJ inválido");
+      return;
+    }
     try {
       const nextPrefs = {
         ...(profileQ.data?.preferences ?? {}),
@@ -57,7 +64,7 @@ export default function ProfilePage() {
       await update.mutateAsync({
         id: session.userId,
         full_name: fullName.trim() || null,
-        tax_id: taxId.trim() || null,
+        tax_id: taxDigits || null,
         phone: phone.trim() || null,
         birth_date: birthDate || null,
         preferences: nextPrefs,
@@ -109,17 +116,19 @@ export default function ProfilePage() {
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="cpf">CPF</Label>
+          <Label htmlFor="cpf">CPF ou CNPJ</Label>
           <Input
             id="cpf"
             value={taxId}
             disabled={!!profileQ.data?.tax_id}
-            placeholder="000.000.000-00"
-            onChange={(e) => markDirty(setTaxId)(e.target.value)}
+            placeholder="CPF ou CNPJ"
+            inputMode="numeric"
+            maxLength={18}
+            onChange={(e) => markDirty(setTaxId)(documentMask(e.target.value))}
           />
           {profileQ.data?.tax_id && (
             <span className="text-caption-sm text-muted">
-              Pra alterar o CPF, fale com o suporte.
+              Pra alterar o documento, fale com o suporte.
             </span>
           )}
         </div>

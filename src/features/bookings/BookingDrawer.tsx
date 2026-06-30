@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { formatBRL, formatDateTime } from "@/lib/format";
+import { documentMask } from "@/lib/masks";
 import type { BookingStatus, BookingWithRelations } from "@/types/domain";
 import { useCancelBookingStaff, useUpdateBookingStatus } from "./api";
 import { useChangeBookingVehicle } from "./customerApi";
@@ -102,7 +103,10 @@ export function BookingDrawer({ booking, open, onOpenChange }: Props) {
             <h4 className="text-title-md">Cliente</h4>
             <Field label="Nome" value={booking.profile?.full_name ?? "—"} />
             <Field label="Telefone" value={booking.profile?.phone ?? "—"} />
-            <Field label="CPF" value={booking.profile?.tax_id ?? "—"} />
+            <Field
+              label="CPF/CNPJ"
+              value={booking.profile?.tax_id ? documentMask(booking.profile.tax_id) : "—"}
+            />
           </section>
 
           <Separator />

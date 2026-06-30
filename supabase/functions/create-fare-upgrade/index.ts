@@ -11,6 +11,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { chargeStatusToPaymentStatus, getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
 import { parseBrPhone, parseUpgradeInput, reaisToCents } from "./logic.ts";
+import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -108,8 +109,8 @@ Deno.serve(async (req: Request) => {
   const { data: authUser } = await admin.auth.admin.getUserById(booking.profile_id);
   const email = authUser?.user?.email ?? null;
   if (!email) return jsonResponse({ error: "Cliente sem e-mail para a cobrança." }, 422);
-  if (!profile?.tax_id || profile.tax_id.replace(/\D/g, "").length !== 11) {
-    return jsonResponse({ error: "Cliente sem CPF válido para o PIX." }, 422);
+  if (!isValidChargeDocument(profile?.tax_id)) {
+    return jsonResponse({ error: "Cliente sem CPF/CNPJ válido para o PIX." }, 422);
   }
   const phone = parseBrPhone(profile?.phone);
   if (!phone) return jsonResponse({ error: "Cliente sem telefone (com DDD) para o PIX." }, 422);
@@ -142,7 +143,7 @@ Deno.serve(async (req: Request) => {
       name: profile?.full_name ?? "Cliente Movepark",
       email,
       document: profile?.tax_id ?? null,
-      type: "individual",
+      type: customerTypeFor(profile?.tax_id),
       phone,
     },
     items: [{ amount: deltaCents, description: `Upgrade Tarifa ${targetFare.label} · ${booking.code}`, quantity: 1 }],

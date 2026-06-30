@@ -18,6 +18,7 @@ import {
   GatewayConfigError,
 } from "../_shared/payments/index.ts";
 import { buildPixItems, parseBrPhone, reaisToCents } from "./logic.ts";
+import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -146,10 +147,10 @@ Deno.serve(async (req: Request) => {
   const email = authUser?.user?.email ?? null;
   if (!email) return jsonResponse({ error: "Cliente sem e-mail para a cobrança." }, 422);
 
-  // PIX no Pagar.me exige o CPF do cliente — sem ele o gateway recusa a cobrança ("failed").
-  if (!profile?.tax_id || profile.tax_id.replace(/\D/g, "").length !== 11) {
+  // PIX no Pagar.me exige o documento do cliente — sem ele o gateway recusa a cobrança ("failed").
+  if (!isValidChargeDocument(profile?.tax_id)) {
     return jsonResponse(
-      { error: "Cliente sem CPF válido para a cobrança PIX. Informe o CPF no checkout." },
+      { error: "Cliente sem CPF/CNPJ válido para a cobrança PIX. Informe o documento no checkout." },
       422,
     );
   }
@@ -179,7 +180,7 @@ Deno.serve(async (req: Request) => {
       name: profile?.full_name ?? "Cliente Movepark",
       email,
       document: profile?.tax_id ?? null,
-      type: "individual",
+      type: customerTypeFor(profile?.tax_id),
       phone,
     },
     items: buildPixItems(booking.code, totalCents),

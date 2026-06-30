@@ -19,6 +19,7 @@ import {
 } from "../_shared/payments/index.ts";
 import { computeInstallmentPlan, parseInstallmentPolicy } from "../_shared/payments/installments.ts";
 import { buildCardItems, extractCardId, parseCardInput, reaisToCents } from "./logic.ts";
+import { customerTypeFor } from "../_shared/payments/documents.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -196,7 +197,7 @@ Deno.serve(async (req: Request) => {
       name: profile?.full_name ?? "Cliente Movepark",
       email,
       document: profile?.tax_id ?? null,
-      type: "individual",
+      type: customerTypeFor(profile?.tax_id),
     },
     items: buildCardItems(booking.code, baseCents, interestCents),
     split,

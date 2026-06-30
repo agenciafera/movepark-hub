@@ -5,6 +5,7 @@ import {
   cnpjMask,
   cpfMask,
   dateMask,
+  documentMask,
   onlyDigits,
   phoneMask,
   splitPhone,
@@ -20,6 +21,13 @@ describe("masks", () => {
   it("cpfMask formata progressivamente", () => {
     expect(cpfMask("39053344705")).toBe("390.533.447-05");
     expect(cpfMask("3905")).toBe("390.5");
+  });
+
+  it("documentMask usa CPF até 11 dígitos e CNPJ acima disso", () => {
+    expect(documentMask("39053344705")).toBe("390.533.447-05");
+    expect(documentMask("3905")).toBe("390.5");
+    expect(documentMask("11222333000181")).toBe("11.222.333/0001-81");
+    expect(documentMask("112223330001")).toBe("11.222.333/0001"); // 12 dígitos → CNPJ
   });
 
   it("cepMask formata 00000-000", () => {
