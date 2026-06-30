@@ -68,7 +68,7 @@ Deno.serve(async (req: Request) => {
   // 1. Reserva (pertence ao usuário, pendente, não expirada)
   const { data: booking } = await admin
     .from("booking")
-    .select("id, code, status, total_amount, expires_at, profile_id, location_id")
+    .select("id, code, status, total_amount, fare_price_cents, expires_at, profile_id, location_id")
     .eq("code", input.bookingCode)
     .maybeSingle();
   if (!booking) return jsonResponse({ error: "Reserva não encontrada" }, 404);
@@ -127,7 +127,8 @@ Deno.serve(async (req: Request) => {
   const policy = parseInstallmentPolicy(settingMap.card_installment_policy);
   if (!policy.enabled) return jsonResponse({ error: "Pagamento com cartão indisponível." }, 422);
 
-  // 4. Parcela escolhida revalidada contra a política (server-authoritative).
+  // 4. Parcela escolhida revalidada contra a política (server-authoritative). O cliente parcela o
+  // TOTAL (vaga + tarifa); os juros incidem sobre esse total.
   const baseCents = reaisToCents(Number(booking.total_amount));
   const plan = computeInstallmentPlan(baseCents, policy);
   const chosen = plan.find((o) => o.installments === input.installments);
@@ -135,12 +136,15 @@ Deno.serve(async (req: Request) => {
   const chargedCents = chosen.totalCents;
   const interestCents = chosen.interestCents;
 
-  // 5. Split sobre o valor cobrado (parceiro sobre o base; excedente de juros → Movepark)
+  // 5. Split. Parceiro recebe sobre o preço da VAGA (base − tarifa); a Tarifa (E2.8, serviço
+  // Movepark) e o excedente de juros vão pra perna da Movepark.
+  const fareCents = booking.fare_price_cents ?? 0;
+  const partnerBaseCents = baseCents - fareCents;
   let split;
   try {
     split = buildSplit({
       chargedCents,
-      baseCents,
+      baseCents: partnerBaseCents,
       takeRateBps: company?.take_rate_bps ?? 0,
       moveparkRecipientId,
       partnerRecipientId: recipient.external_recipient_id,

@@ -68,7 +68,7 @@ Deno.serve(async (req: Request) => {
   // 1. Reserva (pertence ao usuário, pendente, não expirada)
   const { data: booking } = await admin
     .from("booking")
-    .select("id, code, status, total_amount, expires_at, profile_id, location_id")
+    .select("id, code, status, total_amount, fare_price_cents, expires_at, profile_id, location_id")
     .eq("code", input.booking_code)
     .maybeSingle();
   if (!booking) return jsonResponse({ error: "Reserva não encontrada" }, 404);
@@ -118,13 +118,16 @@ Deno.serve(async (req: Request) => {
     .maybeSingle();
   const moveparkRecipientId = (setting?.value ?? "").trim();
 
-  // 4. Split
+  // 4. Split. A Tarifa (E2.8) é receita de serviço Movepark, FORA do split da vaga: o base do
+  // parceiro exclui a tarifa, e o excedente (= tarifa) cai na perna da Movepark via buildSplit.
   const totalCents = reaisToCents(Number(booking.total_amount));
+  const fareCents = booking.fare_price_cents ?? 0;
+  const partnerBaseCents = totalCents - fareCents;
   let split;
   try {
     split = buildSplit({
-      chargedCents: totalCents,
-      baseCents: totalCents, // PIX não tem juros: cobrado == base
+      chargedCents: totalCents, // PIX não tem juros; o excedente sobre o base é só a tarifa
+      baseCents: partnerBaseCents,
       takeRateBps: company?.take_rate_bps ?? 0,
       moveparkRecipientId,
       partnerRecipientId: recipient.external_recipient_id,

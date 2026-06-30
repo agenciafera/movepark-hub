@@ -39,6 +39,7 @@ interface CreateBookingInput {
   add_on_service_ids?: string[] | null;
   coupon_code?: string | null;
   origin?: string | null;
+  fare_tier?: "basica" | "flex" | "superflex" | null;
   utm_source?: string | null;
   utm_medium?: string | null;
   utm_campaign?: string | null;
@@ -118,6 +119,7 @@ Deno.serve(async (req: Request) => {
     p_add_on_ids: input.add_on_service_ids ?? null,
     p_coupon_code: input.coupon_code ?? null,
     p_origin: input.origin ?? null,
+    p_fare_tier: input.fare_tier ?? "basica",
   });
 
   if (error) {

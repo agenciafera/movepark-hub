@@ -156,18 +156,19 @@ ser expiradas automaticamente.
 ### Cancelamento pelo usuário
 
 - Permitido enquanto `status IN (pending, confirmed)`
-- **Política de 24h (PRD-12, ✅):** cancelamento **grátis até 24h antes do check-in** → reembolso
-  integral; **após** esse prazo, ainda pode cancelar **sem reembolso**. A janela estendida paga
-  (**Superflex**) é futura (depende do upsell **MON-11**) — rastreada na **E2.2.3** (status
-  `blocked`), aguardando a definição de preço/monetização em **E3.5** (precificação dinâmica) e
-  **E3.0** (Monetização Pro). Como é **receita 100% Movepark**, não será modelada como add-on do
-  parceiro (que iria ao recebedor do parceiro via split), e sim com split próprio pra Movepark.
+- **Política por Tarifa (PRD-12 + E2.8, ✅):** a janela de cancelamento grátis é a da **Tarifa**
+  contratada (ver [fares.md](./fares.md)), snapshotada em `booking.fare_cancel_until` na criação:
+  **Básica/Flex = até 24h antes**; **Superflex = até 1 min antes** (estorno integral). Dentro da
+  janela → reembolso integral; após, ainda pode cancelar **sem reembolso**. Reservas anteriores à
+  E2.8 (sem snapshot) usam o **fallback de 24h**. A Tarifa é **receita 100% Movepark** (split próprio
+  pra Movepark, fora do repasse do parceiro) — ver [payment-split.md](./payment-split.md).
 - **Estorno real (E0.3.2, ✅):** o cancelamento passa pela Edge **`cancel-booking`** (a verdade da
   elegibilidade é o servidor; o front só exibe). Ela autoriza **dono** (cliente) ou **staff**
-  (hub_admin / operador da empresa), decide via `refundDecision({actor, ...})` e, quando há `payment`
-  pago e elegível, chama `gateway.refundCharge(chargeId)` (`DELETE /charges/{id}`) — a Pagar.me
-  **reverte o split proporcionalmente**. **Cliente** estorna só dentro da janela 24h; **staff** estorna
-  como **override** (a qualquer momento). Estorno **total** nesta etapa. Se o gateway falhar, a reserva
+  (hub_admin / operador da empresa), decide via `refundDecision({actor, fareCancelUntil, ...})` e,
+  quando há `payment` pago e elegível, chama `gateway.refundCharge(chargeId)` (`DELETE /charges/{id}`)
+  — a Pagar.me **reverte o split proporcionalmente**. **Cliente** estorna só dentro da janela da
+  **Tarifa** (`fare_cancel_until`; Superflex = 1 min antes); **staff** estorna como **override** (a
+  qualquer momento). Estorno **total** nesta etapa. Se o gateway falhar, a reserva
   **não** é cancelada (nunca cancelar sem estornar). Para PIX o estorno é **assíncrono**: o `payment`
   fica `paid` + `refunded_at` setado (`refund_pending`) e vira `refunded` quando o webhook
   `charge.refunded` confirma.

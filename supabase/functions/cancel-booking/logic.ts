@@ -2,7 +2,11 @@
 // de elegibilidade do estorno. A VERDADE da elegibilidade é o servidor (esta função) — o front
 // só exibe a política.
 
-/** Janela de cancelamento grátis do cliente (PRD-12): até 24h antes do check-in → reembolso. */
+/**
+ * Janela de cancelamento grátis PADRÃO do cliente (PRD-12): até 24h antes do check-in → reembolso.
+ * É o fallback para reservas sem Tarifa snapshot (anteriores à E2.8). Com Tarifa, a verdade é o
+ * `fare_cancel_until` gravado na reserva (Básica/Flex = 24h; Superflex = 1 min antes).
+ */
 export const FREE_CANCEL_WINDOW_HOURS = 24;
 
 export type Actor = "customer" | "staff";
@@ -20,13 +24,23 @@ export interface RefundDecisionArgs {
   /** refunded_at já preenchido (estorno já iniciado/feito). */
   alreadyRefunded: boolean;
   checkInAt: string;
+  /** Prazo de cancelamento grátis snapshot da Tarifa (booking.fare_cancel_until). null = sem snapshot. */
+  fareCancelUntil?: string | null;
   now: Date;
 }
 
-/** true se ainda falta ≥ 24h para o check-in (janela de reembolso grátis do cliente). */
-export function withinFreeWindow(checkInAt: string, now: Date): boolean {
-  const hours = (new Date(checkInAt).getTime() - now.getTime()) / 3_600_000;
-  return hours >= FREE_CANCEL_WINDOW_HOURS;
+/**
+ * Prazo efetivo de cancelamento grátis: o `fare_cancel_until` da Tarifa quando existe (Superflex
+ * estende até 1 min antes); senão o fallback padrão de 24h antes do check-in (PRD-12).
+ */
+export function freeCancelDeadline(checkInAt: string, fareCancelUntil?: string | null): Date {
+  if (fareCancelUntil) return new Date(fareCancelUntil);
+  return new Date(new Date(checkInAt).getTime() - FREE_CANCEL_WINDOW_HOURS * 3_600_000);
+}
+
+/** true se ainda está dentro da janela de reembolso grátis do cliente (agora ≤ prazo da Tarifa). */
+export function withinFreeWindow(checkInAt: string, now: Date, fareCancelUntil?: string | null): boolean {
+  return now.getTime() <= freeCancelDeadline(checkInAt, fareCancelUntil).getTime();
 }
 
 /**
@@ -47,7 +61,7 @@ export function refundDecision(a: RefundDecisionArgs): CancelDecision {
   if (a.alreadyRefunded) return { action: "cancel_no_refund", reason: "already_refunded" };
   if (a.paymentStatus !== "paid") return { action: "cancel_no_refund", reason: "not_paid" };
   if (a.actor === "staff") return { action: "cancel_with_refund" };
-  return withinFreeWindow(a.checkInAt, a.now)
+  return withinFreeWindow(a.checkInAt, a.now, a.fareCancelUntil)
     ? { action: "cancel_with_refund" }
     : { action: "cancel_no_refund", reason: "late_window" };
 }

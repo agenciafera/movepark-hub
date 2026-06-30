@@ -353,6 +353,10 @@ export type Database = {
           deleted_at: string | null
           expires_at: string | null
           external_id: string | null
+          fare_benefits: Json | null
+          fare_cancel_until: string | null
+          fare_price_cents: number
+          fare_tier: Database["public"]["Enums"]["fare_tier"]
           has_pcd: boolean
           id: string
           idempotency_key: string | null
@@ -387,6 +391,10 @@ export type Database = {
           deleted_at?: string | null
           expires_at?: string | null
           external_id?: string | null
+          fare_benefits?: Json | null
+          fare_cancel_until?: string | null
+          fare_price_cents?: number
+          fare_tier?: Database["public"]["Enums"]["fare_tier"]
           has_pcd?: boolean
           id?: string
           idempotency_key?: string | null
@@ -421,6 +429,10 @@ export type Database = {
           deleted_at?: string | null
           expires_at?: string | null
           external_id?: string | null
+          fare_benefits?: Json | null
+          fare_cancel_until?: string | null
+          fare_price_cents?: number
+          fare_tier?: Database["public"]["Enums"]["fare_tier"]
           has_pcd?: boolean
           id?: string
           idempotency_key?: string | null
@@ -1369,6 +1381,45 @@ export type Database = {
           label?: string
           slug?: string
           sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fare: {
+        Row: {
+          benefits: Json
+          cancel_window_minutes: number | null
+          created_at: string
+          is_active: boolean
+          is_popular: boolean
+          label: string
+          price_cents: number
+          sort_order: number
+          tier: Database["public"]["Enums"]["fare_tier"]
+          updated_at: string
+        }
+        Insert: {
+          benefits?: Json
+          cancel_window_minutes?: number | null
+          created_at?: string
+          is_active?: boolean
+          is_popular?: boolean
+          label: string
+          price_cents?: number
+          sort_order: number
+          tier: Database["public"]["Enums"]["fare_tier"]
+          updated_at?: string
+        }
+        Update: {
+          benefits?: Json
+          cancel_window_minutes?: number | null
+          created_at?: string
+          is_active?: boolean
+          is_popular?: boolean
+          label?: string
+          price_cents?: number
+          sort_order?: number
+          tier?: Database["public"]["Enums"]["fare_tier"]
           updated_at?: string
         }
         Relationships: []
@@ -2843,6 +2894,7 @@ export type Database = {
           p_customer_email: string
           p_customer_name: string
           p_customer_phone: string
+          p_fare_tier?: Database["public"]["Enums"]["fare_tier"]
           p_has_pcd: boolean
           p_location_parking_type_id: string
           p_origin: string
@@ -2884,6 +2936,7 @@ export type Database = {
           p_customer_email?: string
           p_customer_name?: string
           p_customer_phone?: string
+          p_fare_tier?: Database["public"]["Enums"]["fare_tier"]
           p_has_pcd?: boolean
           p_idempotency_key?: string
           p_location_parking_type_id: string
@@ -3189,6 +3242,7 @@ export type Database = {
           p_check_in_at: string
           p_check_out_at: string
           p_coupon_code?: string
+          p_fare_tier?: Database["public"]["Enums"]["fare_tier"]
           p_has_pcd?: boolean
           p_location_parking_type_id: string
           p_origin?: string
@@ -3266,6 +3320,18 @@ export type Database = {
           strategy: string
           surcharge_multiplier: number
           tiers: Json
+        }[]
+      }
+      get_unit_fares: {
+        Args: { p_location_parking_type_id?: string }
+        Returns: {
+          benefits: Json
+          cancel_window_minutes: number
+          is_popular: boolean
+          label: string
+          price_cents: number
+          sort_order: number
+          tier: Database["public"]["Enums"]["fare_tier"]
         }[]
       }
       is_company_owner: { Args: { p_company_id: string }; Returns: boolean }
@@ -3599,6 +3665,7 @@ export type Database = {
       discount_type: "percent" | "fixed"
       entity_status: "active" | "inactive" | "suspended"
       faq_scope: "global" | "location" | "destination"
+      fare_tier: "basica" | "flex" | "superflex"
       minimum_stay_unit: "minutes" | "hours" | "days" | "months"
       onboarding_status:
         | "pending_review"
@@ -3770,6 +3837,7 @@ export const Constants = {
       discount_type: ["percent", "fixed"],
       entity_status: ["active", "inactive", "suspended"],
       faq_scope: ["global", "location", "destination"],
+      fare_tier: ["basica", "flex", "superflex"],
       minimum_stay_unit: ["minutes", "hours", "days", "months"],
       onboarding_status: [
         "pending_review",

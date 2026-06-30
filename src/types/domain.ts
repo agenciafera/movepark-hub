@@ -9,8 +9,12 @@ export type CompanyRole = Enums<"company_role">;
 export type OnboardingStatus = Enums<"onboarding_status">;
 /** Ciclo da ficha do recebedor no gateway de pagamento (E0.1.1, ADR-004). */
 export type PayoutRecipientStatus = Enums<"payout_recipient_status">;
+/** Tarifa de flexibilidade da reserva (E2.8): Básica / Flex / Superflex. */
+export type FareTier = Enums<"fare_tier">;
 
 export type Booking = Tables<"booking">;
+/** Catálogo de Tarifas (preço/janela/benefícios por nível), E2.8. */
+export type Fare = Tables<"fare">;
 export type Company = Tables<"company">;
 export type Location = Tables<"location">;
 export type Profile = Tables<"profiles">;

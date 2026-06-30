@@ -256,6 +256,15 @@ configurável via `app_setting` e aplicado no `sync-recipient`. **Correção:** 
 `paid_at` em estorno (preserva a data do pagamento para a reconciliação por período). Migration
 `20260703000000`.
 
+## Tarifa de flexibilidade como receita Movepark (E2.8)
+
+A **Tarifa** (Básica/Flex/Superflex — ver [fares.md](./fares.md)) é **receita de serviço da Movepark**,
+**fora do split da vaga**: nunca toca o `take_rate` nem o repasse do parceiro. O roteamento reusa o
+mecanismo de **excedente** do `buildSplit`: `create-pix-charge` e `create-card-charge` descontam
+`booking.fare_price_cents` do **base do parceiro** (`baseCents = total − tarifa`) e cobram o total
+(`chargedCents = total [+ juros]`), de modo que a tarifa cai inteira na **perna da Movepark**
+(junto com a comissão e o excedente de juros). Invariante mantida: soma do split == cobrado.
+
 ## Fora de escopo (próximas subtarefas)
 
 3DS com challenge/redirect (assume cartão sem challenge nesta fase), **estorno parcial**

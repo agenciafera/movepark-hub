@@ -84,3 +84,43 @@ Deno.test("buildSplit: rejeita cobrado menor que o base", () => {
     buildSplit({ chargedCents: 9000, baseCents: 10000, takeRateBps: 1500, moveparkRecipientId: "rp_mp", partnerRecipientId: "rp_partner" })
   );
 });
+
+// Tarifa (E2.8): receita Movepark fora do split da vaga. base do parceiro = vaga; charged = vaga + tarifa.
+Deno.test("buildSplit: Tarifa (Flex R$12,90) cai 100% na Movepark, não toca o repasse do parceiro", () => {
+  const rules = buildSplit({
+    chargedCents: 11290, // R$100 vaga + R$12,90 tarifa
+    baseCents: 10000, // base do parceiro = só a vaga
+    takeRateBps: 1500,
+    moveparkRecipientId: "rp_mp",
+    partnerRecipientId: "rp_partner",
+  });
+  const partner = rules.find((r) => r.recipientId === "rp_partner")!;
+  const mp = rules.find((r) => r.recipientId === "rp_mp")!;
+  assertEquals(partner.amount, 8500); // 10000 − 1500 comissão (tarifa não entra)
+  assertEquals(mp.amount, 2790); // comissão 1500 + tarifa 1290
+  assertEquals(partner.amount + mp.amount, 11290);
+});
+
+Deno.test("buildSplit: Tarifa com take_rate 0 → Movepark recebe só a tarifa", () => {
+  const rules = buildSplit({
+    chargedCents: 12490, // vaga R$100 + Superflex R$24,90
+    baseCents: 10000,
+    takeRateBps: 0,
+    moveparkRecipientId: "rp_mp",
+    partnerRecipientId: "rp_partner",
+  });
+  assertEquals(rules.find((r) => r.recipientId === "rp_partner")!.amount, 10000);
+  assertEquals(rules.find((r) => r.recipientId === "rp_mp")!.amount, 2490);
+});
+
+Deno.test("buildSplit: Tarifa + juros de parcelamento somam na perna da Movepark", () => {
+  const rules = buildSplit({
+    chargedCents: 12290, // vaga 10000 + tarifa 1290 + juros 1000
+    baseCents: 10000,
+    takeRateBps: 1500,
+    moveparkRecipientId: "rp_mp",
+    partnerRecipientId: "rp_partner",
+  });
+  assertEquals(rules.find((r) => r.recipientId === "rp_partner")!.amount, 8500);
+  assertEquals(rules.find((r) => r.recipientId === "rp_mp")!.amount, 3790); // 1500 + 1290 + 1000
+});
