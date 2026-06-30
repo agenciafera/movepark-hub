@@ -14,9 +14,8 @@ export function RequireRole({ roles }: { roles: UserRole[] }) {
 
   if (!session || !effectiveRole) {
     const next = encodeURIComponent(location.pathname + location.search);
-    // Rotas customer mandam pra /entrar; backoffice continua em /login
-    const loginPath = roles.includes("customer") ? "/entrar" : "/login";
-    return <Navigate to={`${loginPath}?next=${next}`} replace />;
+    // Login universal e passwordless em /login (clientes e backoffice).
+    return <Navigate to={`/login?next=${next}`} replace />;
   }
 
   if (!roles.includes(effectiveRole)) {

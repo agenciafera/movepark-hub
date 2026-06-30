@@ -160,7 +160,7 @@ export function ConsumerTopbar() {
               <Link to="/seja-parceiro">Seja parceiro</Link>
             </Button>
             <Button size="sm" variant="primary" asChild>
-              <Link to="/entrar">Entrar</Link>
+              <Link to="/login">Entrar</Link>
             </Button>
           </>
         )}

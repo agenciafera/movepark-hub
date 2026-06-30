@@ -1,45 +1,132 @@
 import * as React from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
+import { ArrowLeft, Mail, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PhoneField } from "@/components/ui/phone-field";
+import { isValidPhoneNumber, formatPhoneNumberIntl } from "react-phone-number-input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { OtpInput } from "@/components/ui/otp-input";
 import { Wordmark } from "@/components/shared/Brand";
+import { GoogleButton } from "@/auth/GoogleButton";
 import { useAuth } from "@/auth/context";
+import { postLoginPath } from "@/auth/postLoginRedirect";
+
+type Mode = "choice" | "email" | "email-code" | "phone" | "phone-code";
+
+const RESEND_SECONDS = 30;
 
 export default function LoginPage() {
-  const { signIn, session, effectiveRole } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const next = searchParams.get("next");
+  const [params] = useSearchParams();
+  const next = params.get("next");
+  const {
+    session,
+    effectiveRole,
+    sendEmailOtp,
+    verifyEmailOtp,
+    sendWhatsappOtp,
+    verifyPhoneOtp,
+  } = useAuth();
+
+  const [mode, setMode] = React.useState<Mode>("choice");
   const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
+  const [phone, setPhone] = React.useState<string | undefined>(undefined);
+  const [code, setCode] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
+  const [resendIn, setResendIn] = React.useState(0);
 
   React.useEffect(() => {
     if (!session || !effectiveRole) return;
-    // Se veio com ?next= preserva o destino original (qualquer role)
-    if (next) {
-      navigate(next, { replace: true });
+    // Login universal: detecta o role e manda pro destino certo (next tem prioridade).
+    navigate(postLoginPath(effectiveRole, next), { replace: true });
+  }, [session, effectiveRole, navigate, next]);
+
+  React.useEffect(() => {
+    if (resendIn <= 0) return;
+    const t = window.setTimeout(() => setResendIn((s) => s - 1), 1000);
+    return () => window.clearTimeout(t);
+  }, [resendIn]);
+
+  function backToChoice() {
+    setMode("choice");
+    setCode("");
+  }
+
+  async function handleSendEmail() {
+    if (!email.includes("@")) {
+      toast.error("E-mail inválido");
       return;
     }
-    if (effectiveRole === "hub_admin") navigate("/manager", { replace: true });
-    else if (effectiveRole === "company_operator") navigate("/operator", { replace: true });
-    else navigate("/", { replace: true }); // customer
-  }, [session, effectiveRole, next, navigate]);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
     setSubmitting(true);
     try {
-      await signIn(email, password);
+      await sendEmailOtp(email.trim().toLowerCase());
+      setMode("email-code");
+      setResendIn(RESEND_SECONDS);
+      setCode("");
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro ao entrar";
-      toast.error(message);
+      toast.error(err instanceof Error ? err.message : "Erro ao enviar código");
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function handleVerifyEmail(token: string) {
+    setSubmitting(true);
+    try {
+      await verifyEmailOtp(email.trim().toLowerCase(), token);
+      toast.success("Tudo certo, entrando…");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Código inválido");
+      setCode("");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleSendPhone() {
+    if (!phone || !isValidPhoneNumber(phone)) {
+      toast.error("Número inválido");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await sendWhatsappOtp(phone);
+      setMode("phone-code");
+      setResendIn(RESEND_SECONDS);
+      setCode("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao enviar código");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleVerifyPhone(token: string) {
+    if (!phone) return;
+    setSubmitting(true);
+    try {
+      await verifyPhoneOtp(phone, token);
+      toast.success("Tudo certo, entrando…");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Código inválido");
+      setCode("");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleResend() {
+    if (mode === "email-code") await handleSendEmail();
+    if (mode === "phone-code") await handleSendPhone();
   }
 
   return (
@@ -54,60 +141,172 @@ export default function LoginPage() {
       </div>
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-display-md">Acesso ao painel</CardTitle>
+          {mode !== "choice" && (
+            <button
+              type="button"
+              onClick={backToChoice}
+              className="mb-2 inline-flex items-center gap-1 text-body-sm text-muted hover:text-ink"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Voltar
+            </button>
+          )}
+          <CardTitle className="text-display-md">
+            {mode === "choice" && "Entre na Movepark"}
+            {mode === "email" && "Entrar com e-mail"}
+            {mode === "email-code" && "Confirme o código"}
+            {mode === "phone" && "Entrar com WhatsApp"}
+            {mode === "phone-code" && "Confirme o código"}
+          </CardTitle>
           <CardDescription>
-            Login operacional (manager / operator). Clientes entram em{" "}
-            <Link to="/entrar" className="text-ink underline">
-              /entrar
-            </Link>
-            .
+            {mode === "choice" && "Reserve em segundos. Sem senha."}
+            {mode === "email" && "Mandamos um código de 6 dígitos pro e-mail."}
+            {mode === "email-code" && (
+              <>
+                Digite o código que enviamos pra{" "}
+                <span className="text-ink">{email}</span>.
+              </>
+            )}
+            {mode === "phone" && "Mandamos o código pelo WhatsApp."}
+            {mode === "phone-code" && (
+              <>
+                Código enviado pelo WhatsApp pra{" "}
+                <span className="text-ink">
+                  {phone ? formatPhoneNumberIntl(phone) : ""}
+                </span>
+                .
+              </>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="email">E-mail</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <span />
-              <Link
-                to="/forgot-password"
-                className="text-body-sm text-muted no-underline hover:text-ink"
+          {mode === "choice" && (
+            <div className="space-y-3">
+              <GoogleButton />
+              <div className="flex items-center gap-3 text-caption-sm text-muted">
+                <span className="h-px flex-1 bg-hairline" />
+                <span>ou</span>
+                <span className="h-px flex-1 bg-hairline" />
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full justify-center gap-2"
+                onClick={() => setMode("email")}
               >
-                Esqueci a senha
-              </Link>
+                <Mail className="h-4 w-4" />
+                Entrar com e-mail
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full justify-center gap-2"
+                onClick={() => setMode("phone")}
+              >
+                <MessageCircle className="h-4 w-4" />
+                Entrar com WhatsApp
+              </Button>
+              <p className="pt-2 text-center text-caption-sm text-muted">
+                Ao continuar você aceita os Termos e a Política de privacidade.
+              </p>
             </div>
-            <Button type="submit" disabled={submitting} className="mt-2">
-              {submitting ? "Entrando…" : "Entrar"}
-            </Button>
-          </form>
+          )}
+
+          {mode === "email" && (
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendEmail();
+              }}
+            >
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="email">E-mail</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  autoFocus
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="seu@email.com"
+                  required
+                />
+              </div>
+              <Button type="submit" disabled={submitting} className="w-full">
+                {submitting ? "Enviando…" : "Enviar código"}
+              </Button>
+            </form>
+          )}
+
+          {mode === "phone" && (
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendPhone();
+              }}
+            >
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="phone">WhatsApp</Label>
+                <PhoneField
+                  id="phone"
+                  value={phone}
+                  onChange={setPhone}
+                  autoFocus
+                  required
+                />
+                <span className="text-caption-sm text-muted">
+                  Escolhe o país e digita seu número. O código vem pelo WhatsApp.
+                </span>
+              </div>
+              <Button type="submit" disabled={submitting} className="w-full">
+                {submitting ? "Enviando…" : "Enviar código"}
+              </Button>
+            </form>
+          )}
+
+          {(mode === "email-code" || mode === "phone-code") && (
+            <div className="space-y-5">
+              <OtpInput
+                value={code}
+                onChange={setCode}
+                disabled={submitting}
+                onComplete={(v) =>
+                  mode === "email-code"
+                    ? handleVerifyEmail(v)
+                    : handleVerifyPhone(v)
+                }
+              />
+              <Button
+                type="button"
+                onClick={() =>
+                  mode === "email-code"
+                    ? handleVerifyEmail(code)
+                    : handleVerifyPhone(code)
+                }
+                disabled={submitting || code.length < 6}
+                className="w-full"
+              >
+                {submitting ? "Verificando…" : "Verificar"}
+              </Button>
+              <div className="text-center text-body-sm text-muted">
+                {resendIn > 0 ? (
+                  <>Não chegou? Reenviar em {resendIn}s</>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleResend}
+                    className="text-ink underline hover:no-underline"
+                  >
+                    Reenviar código
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
-      <a
-        href="/design-system"
-        className="mt-6 text-body-sm text-muted no-underline hover:text-ink"
-      >
-        Ver design system →
-      </a>
     </div>
   );
 }

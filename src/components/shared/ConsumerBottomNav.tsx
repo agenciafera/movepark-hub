@@ -24,7 +24,7 @@ export function ConsumerBottomNav() {
           <span>Reservas</span>
         </NavLink>
       ) : (
-        <NavLink to="/entrar" className={({ isActive }) => cn(baseItem, isActive && activeItem)}>
+        <NavLink to="/login" className={({ isActive }) => cn(baseItem, isActive && activeItem)}>
           <LogIn className="h-5 w-5" />
           <span>Entrar</span>
         </NavLink>

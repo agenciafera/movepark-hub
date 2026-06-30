@@ -1,4 +1,4 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import type { RouteRecord } from "vite-react-ssg";
 import type { LoaderFunctionArgs } from "react-router-dom";
 
@@ -19,10 +19,8 @@ import FaqPage from "@/routes/faq";
 import DocsPage from "@/routes/docs";
 import BookingsListPage from "@/routes/bookings-list";
 import BookingDetailPage from "@/routes/bookings-detail";
-import EntrarPage from "@/routes/entrar";
 import AuthCallbackPage from "@/routes/auth/callback";
 import LoginPage from "@/routes/login";
-import ForgotPasswordPage from "@/routes/forgot-password";
 import DesignSystemPage from "@/routes/design-system";
 import SejaParceiroPage from "@/routes/seja-parceiro";
 import OnboardingPage from "@/routes/onboarding";
@@ -82,6 +80,13 @@ import OperatorUsers from "@/routes/operator/users";
 import OperatorApiKeys from "@/routes/operator/api-keys";
 
 import ParkingTypesPage from "@/routes/parking-types";
+
+/** Redireciona rotas legadas de auth (/entrar, /signup) para o login universal,
+ *  preservando a query (`?next=`). `<Navigate>` puro não carrega a search. */
+function RedirectToLogin() {
+  const location = useLocation();
+  return <Navigate to={`/login${location.search}`} replace />;
+}
 
 async function listingLoader({ params }: LoaderFunctionArgs) {
   try {
@@ -192,17 +197,16 @@ export const routes: RouteRecord[] = [
         ],
       },
 
-      // Auth consumer (passwordless)
-      { path: "/entrar", element: <EntrarPage /> },
-      { path: "/signup", element: <Navigate to="/entrar" replace /> },
+      // Auth universal e passwordless (clientes + backoffice)
+      { path: "/login", element: <LoginPage /> },
       { path: "/auth/callback", element: <AuthCallbackPage /> },
+      // Rotas legadas → /login (preservam ?next=)
+      { path: "/entrar", element: <RedirectToLogin /> },
+      { path: "/signup", element: <RedirectToLogin /> },
 
       // Validação de voucher / check-in por QR (público, conteúdo por papel)
       { path: "/voucher/validate", element: <VoucherValidatePage /> },
 
-      // Auth backoffice
-      { path: "/login", element: <LoginPage /> },
-      { path: "/forgot-password", element: <ForgotPasswordPage /> },
       { path: "/design-system", element: <DesignSystemPage /> },
 
       // Área de conta (customer-only)

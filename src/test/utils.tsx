@@ -33,7 +33,6 @@ export function mockAuth(overrides?: Partial<AuthContextValue>): AuthContextValu
     isCompanyOwner: false,
     // Default permissivo: o contexto fake autoriza tudo; testes de permissão sobrescrevem.
     hasScope: () => true,
-    signIn: vi.fn(),
     signInWithGoogle: vi.fn(),
     sendEmailOtp: vi.fn(),
     verifyEmailOtp: vi.fn(),

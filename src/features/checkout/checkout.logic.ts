@@ -38,7 +38,7 @@ function checkoutNext(code: string | undefined): string {
  */
 export function resolveCheckoutGate(a: CheckoutGateArgs): CheckoutGate {
   if (a.authLoading || a.bookingLoading) return { kind: "loading" };
-  if (!a.hasSession) return { kind: "redirect", to: `/entrar?next=${checkoutNext(a.code)}` };
+  if (!a.hasSession) return { kind: "redirect", to: `/login?next=${checkoutNext(a.code)}` };
   if (a.profile && (!a.profile.full_name || !a.profile.tax_id)) {
     return { kind: "redirect", to: `/account/complete-profile?next=${checkoutNext(a.code)}` };
   }

@@ -12,7 +12,6 @@ function Harness({ roles }: { roles: UserRole[] }) {
         <Route path="/protegido" element={<div>PROTEGIDO</div>} />
       </Route>
       <Route path="/login" element={<div>LOGIN</div>} />
-      <Route path="/entrar" element={<div>ENTRAR</div>} />
       <Route path="/manager" element={<div>MANAGER</div>} />
       <Route path="/operator" element={<div>OPERATOR</div>} />
       <Route path="/" element={<div>HOME</div>} />
@@ -37,12 +36,12 @@ describe("RequireRole", () => {
     expect(screen.getByText("LOGIN")).toBeInTheDocument();
   });
 
-  it("sem sessão (rota customer) → redireciona para /entrar", () => {
+  it("sem sessão (rota customer) → redireciona para /login (login universal)", () => {
     renderWithProviders(<Harness roles={["customer"]} />, {
       auth: mockAuth({ session: null, effectiveRole: null }),
       route: "/protegido",
     });
-    expect(screen.getByText("ENTRAR")).toBeInTheDocument();
+    expect(screen.getByText("LOGIN")).toBeInTheDocument();
   });
 
   it("papel não permitido (hub_admin numa rota de operator) → fallback /manager", () => {

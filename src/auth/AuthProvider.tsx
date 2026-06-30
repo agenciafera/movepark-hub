@@ -128,10 +128,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       companyRoleFor,
       isCompanyOwner,
       hasScope,
-      async signIn(email, password) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-      },
       async signInWithGoogle(redirectTo) {
         const callback = `${window.location.origin}/auth/callback${
           redirectTo ? `?next=${encodeURIComponent(redirectTo)}` : ""
