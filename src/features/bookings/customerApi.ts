@@ -244,7 +244,7 @@ export type CancelBookingResult = {
 export function useChangeBookingVehicle() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (args: { bookingCode: string; vehicleId: string }) => {
+    mutationFn: async (args: { bookingCode: string; vehicleId?: string; licensePlate?: string }) => {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
       if (!token) throw new Error("Você precisa entrar.");
@@ -256,7 +256,11 @@ export function useChangeBookingVehicle() {
           apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ booking_code: args.bookingCode, vehicle_id: args.vehicleId }),
+        body: JSON.stringify({
+          booking_code: args.bookingCode,
+          vehicle_id: args.vehicleId,
+          license_plate: args.licensePlate,
+        }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));

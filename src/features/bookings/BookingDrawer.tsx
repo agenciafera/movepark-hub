@@ -1,3 +1,4 @@
+import * as React from "react";
 import { toast } from "sonner";
 import {
   Sheet,
@@ -7,10 +8,12 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { formatBRL, formatDateTime } from "@/lib/format";
 import type { BookingStatus, BookingWithRelations } from "@/types/domain";
 import { useCancelBookingStaff, useUpdateBookingStatus } from "./api";
+import { useChangeBookingVehicle } from "./customerApi";
 
 type Props = {
   booking: BookingWithRelations | null;
@@ -31,9 +34,23 @@ const allowed: Record<BookingStatus, BookingStatus[]> = {
 export function BookingDrawer({ booking, open, onOpenChange }: Props) {
   const mutation = useUpdateBookingStatus();
   const cancelMutation = useCancelBookingStaff();
+  const changeVehicle = useChangeBookingVehicle();
+  const [plate, setPlate] = React.useState("");
   const busy = mutation.isPending || cancelMutation.isPending;
 
   if (!booking) return null;
+
+  async function savePlate() {
+    const lp = plate.trim().toUpperCase();
+    if (!lp) return;
+    try {
+      await changeVehicle.mutateAsync({ bookingCode: booking!.code, licensePlate: lp });
+      toast.success("Placa atualizada.");
+      setPlate("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao trocar placa");
+    }
+  }
 
   function transition(status: BookingStatus, label: string) {
     const patch: Parameters<typeof mutation.mutate>[0] = {
@@ -95,6 +112,25 @@ export function BookingDrawer({ booking, open, onOpenChange }: Props) {
             <Field label="Placa" value={booking.vehicle?.license_plate ?? "—"} />
             <Field label="Modelo" value={booking.vehicle?.model ?? "—"} />
             <Field label="Cor" value={booking.vehicle?.color ?? "—"} />
+            {["pending", "confirmed", "checked_in"].includes(booking.status) && (
+              <div className="flex items-center gap-2 pt-1">
+                <Input
+                  value={plate}
+                  onChange={(e) => setPlate(e.target.value.toUpperCase())}
+                  placeholder="Nova placa"
+                  className="h-9 flex-1 uppercase"
+                  aria-label="Nova placa"
+                />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={savePlate}
+                  disabled={!plate.trim() || changeVehicle.isPending}
+                >
+                  Trocar placa
+                </Button>
+              </div>
+            )}
           </section>
 
           <Separator />
