@@ -1,19 +1,16 @@
 import * as React from "react";
 import { Link, useLoaderData, useParams, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { ArrowLeft, Bus, Car, Heart, MapPin, Star } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Building2, Bus, CalendarX, Car, Heart, MapPin, ShieldCheck, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PhotoGrid } from "@/features/listing/PhotoGrid";
 import { AmenityList } from "@/features/listing/AmenityList";
-import { OperatorCard } from "@/features/listing/OperatorCard";
 import { HowToArrive } from "@/features/listing/HowToArrive";
 import { TerminalDistances } from "@/features/listing/TerminalDistances";
 import { ReservationCard } from "@/features/listing/ReservationCard";
-import { GuaranteeSection } from "@/features/guarantee/GuaranteeSection";
-import { CancellationPolicy } from "@/features/bookings/CancellationPolicy";
 import { ReviewsBlock } from "@/features/reviews/ReviewsBlock";
 import { RatingBadge } from "@/features/reviews/RatingStars";
 import { useLocationReviews } from "@/features/reviews/api";
@@ -24,6 +21,8 @@ import { FaqList } from "@/features/faqs/FaqList";
 import { optimizedImageUrl } from "@/lib/storage";
 import { formatBRL } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { CANCELLATION_POLICY_LINES } from "@/features/bookings/cancellation.logic";
+import { GUARANTEE_PROMISE } from "@/features/guarantee/copy";
 import {
   localBusinessSchema,
   productOfferSchema,
@@ -307,34 +306,13 @@ export default function ListingPage() {
 
           <Separator />
 
-          {/* Política de cancelamento */}
-          <section className="space-y-3" id="cancelamento">
-            <h2 className="text-display-sm text-ink">Política de cancelamento</h2>
-            <div className="rounded-md border border-hairline bg-surface-soft p-5">
-              <CancellationPolicy operatorPolicy={listing.location.reservation_policy} />
-            </div>
-          </section>
-
-          <Separator />
-
-          {/* Garantia Movepark — card destacado */}
-          <GuaranteeSection />
-
-          <Separator />
-
           {/* FAQ */}
           <ListingFaqSection items={faqItems} isLoading={faqLoading} />
 
           <Separator />
 
-          {/* Conheça o estacionamento */}
-          <section className="space-y-4" id="estacionamento">
-            <h2 className="text-display-sm text-ink">Conheça o estacionamento</h2>
-            <OperatorCard
-              company={listing.company}
-              others={listing.other_locations}
-            />
-          </section>
+          {/* O que você deve saber — 3 colunas: cancelamento + garantia + estacionamento */}
+          <ListingKnowSection listing={listing} />
         </div>
 
         {/* Card lateral sticky */}
@@ -410,6 +388,73 @@ function ListingReviewsSection({ locationId, reviewCount }: ListingReviewsSectio
           As avaliações aparecem aqui após a conclusão das reservas. Reserve e compartilhe sua
           experiência.
         </p>
+      </div>
+    </section>
+  );
+}
+
+function ListingKnowSection({ listing }: { listing: ListingDetail }) {
+  const years = Math.max(
+    1,
+    Math.floor((Date.now() - new Date(listing.company.created_at).getTime()) / (1000 * 60 * 60 * 24 * 365)),
+  );
+
+  const columns = [
+    {
+      icon: <CalendarX className="h-7 w-7 text-ink" />,
+      title: "Política de cancelamento",
+      lines: CANCELLATION_POLICY_LINES,
+      extra: listing.location.reservation_policy ?? null,
+    },
+    {
+      icon: <ShieldCheck className="h-7 w-7 text-ink" />,
+      title: "Garantia Movepark",
+      lines: [
+        GUARANTEE_PROMISE,
+        "Se faltar vaga na chegada, realocamos e cobrimos a diferença — ou devolvemos 100% + crédito.",
+      ],
+      extra: null,
+    },
+    {
+      icon: <Building2 className="h-7 w-7 text-ink" />,
+      title: listing.company.name,
+      lines: [
+        `Parceiro Movepark há ${years} ${years === 1 ? "ano" : "anos"}.`,
+        listing.other_locations.length > 0
+          ? `${listing.other_locations.length} outra${listing.other_locations.length > 1 ? "s" : ""} unidade${listing.other_locations.length > 1 ? "s" : ""} disponível.`
+          : null,
+      ].filter((l): l is string => l != null),
+      extra: null,
+      badge: true,
+    },
+  ] as const;
+
+  return (
+    <section className="space-y-6">
+      <h2 className="text-display-sm text-ink">O que você deve saber</h2>
+      <div className="grid grid-cols-1 gap-8 tablet:grid-cols-3 tablet:divide-x tablet:divide-hairline">
+        {columns.map((col, i) => (
+          <div key={i} className={cn("space-y-3", i > 0 && "tablet:pl-8")}>
+            {col.icon}
+            <div className="flex items-center gap-2">
+              <p className="text-body-md font-semibold text-ink">{col.title}</p>
+              {"badge" in col && col.badge && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-mp-pale px-2 py-0.5 text-caption-sm text-mp-indigo">
+                  <BadgeCheck className="h-3 w-3" />
+                  Verificado
+                </span>
+              )}
+            </div>
+            <ul className="space-y-1">
+              {col.lines.map((line, j) => (
+                <li key={j} className="text-body-sm text-body">{line}</li>
+              ))}
+              {col.extra && (
+                <li className="text-body-sm text-muted">{col.extra}</li>
+              )}
+            </ul>
+          </div>
+        ))}
       </div>
     </section>
   );
