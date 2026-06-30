@@ -127,11 +127,45 @@ disparo (best-effort, pós-resposta):
   `fare_extension.test.sql`: extensão Superflex (+1 diária, total inalterado, capacidade re-segurada,
   log) + rejeições (Flex, nova saída ≤ atual, reserva inexistente).
 
+## Front (E2.8-b/c/d) — implementado
+
+- **E2.8-b · Seletor no checkout:** `src/features/fares/` — `useUnitFares` (RPC `get_unit_fares`) +
+  `FareTierSelector` (good-better-best, Flex "Mais popular", default Básica). Integrado no
+  `ReservationCard` (Tarifa no payload de `create-booking`, total/breakdown, rótulo de cancelamento)
+  e no `SummaryCard` do checkout.
+- **E2.8-c · Detalhe da reserva:** `FareDisplay` (nível, benefícios cobertos, "cancelável até …"
+  via `fare_cancel_until`) no detalhe; `cancellationStatus`/`CancelBookingDialog` respeitam a janela
+  da Tarifa (Superflex = 1 min). _Pendente: ações de trocar placa/veículo e alterar data (RPCs novos)._
+- **E2.8-d · Upgrade pós-reserva:** cobra o **delta** (alvo − atual) como cobrança PIX de serviço
+  Movepark (split 100% master). Migration `20260720000000` (`payment.kind`/`fare_target_tier` + RPC
+  `apply_fare_upgrade`), Edge `create-fare-upgrade`, ramo `fare_upgrade` no `pagarme-webhook` (promove
+  a Tarifa quando pago — sem confirmar/voucher), UI `FareUpgradeDialog` + botão no detalhe. Sem
+  downgrade; idempotente. Validado e2e (Flex→Superflex, delta R$12 → reserva vira Superflex).
+
+## E2.8-f · Config de Tarifa por unidade (Frente A) — implementado
+
+`location_fare` (override por unidade: `enabled` + `price_cents_override`, RLS leitura pública +
+escrita hub_admin) sobrepõe o catálogo global. `get_unit_fares(lpt)` faz o **overlay**
+(`coalesce(override, catálogo)` + filtra desabilitadas); `_create_booking_core` usa o **preço/on-off
+efetivo da unidade** (checkout e cobrança batem). Escrita via RPC **`operator_set_unit_fare`**
+(gate `pricing:write`/hub_admin). UI: `/operator/fares` (`FareConfigCard` por tipo de vaga) +
+`useLocationFareConfig`/`useSetUnitFare`. Migration `20260721000000`.
+
+## E2.8-f · Honrar alterações (Frente B) — troca de veículo implementada
+
+**Trocar placa/veículo** (benefício `plate_change`, Flex+): Edge **`change-booking-vehicle`** (dono ou
+staff; valida benefício/status/posse do veículo) troca `booking.vehicle_id` e **regenera o voucher** —
+resolve a dor do white-label que não troca placa (registramos do nosso lado). UI: `ChangeVehicleDialog`
++ botão "Trocar veículo" no detalhe da reserva (gate `plate_change` + antes da entrada);
+`useChangeBookingVehicle`. Staff faz override (sem exigir o benefício). Fecha o "trocar placa" da E2.8-c.
+
 ## Pendências (próximas subtarefas E2.8)
 
-- **E2.8-b/c/d** (front): seletor no checkout, Tarifa no detalhe da reserva + ações, upgrade pós-reserva.
-- **E2.8-f** (admin): config de preço/on-off por unidade (overrides via `get_unit_fares`) + honrar
-  troca de placa/cancelamento mesmo onde o white-label não permite.
+- **Alterar data/horário** (benefício `date_change`): re-hold de capacidade do novo período + re-preço
+  + tratamento do delta de pagamento (cobrar/estornar a diferença) numa reserva paga. É a peça mais
+  pesada (toca capacidade + pricing + pagamento) e merece um passo próprio — ainda não implementada.
+- **Ação de troca de veículo no painel do operador** (a capability/Edge já existe; falta o botão na
+  `BookingDrawer`).
 - **Follow-ups da E2.8-e:** propagação da extensão ao white-label (`wl_delivery` não modela `extend`)
   e gatilho automático da auto-extensão por uma API de rastreio de voos; aprovação dos templates de
   WhatsApp no Meta para ativar as notificações.

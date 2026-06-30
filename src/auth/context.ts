@@ -23,7 +23,6 @@ export type AuthContextValue = {
    * permissão no front (rotas via RequireScope, seções e ações).
    */
   hasScope: (scope: string, companyId?: string) => boolean;
-  signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: (redirectTo?: string) => Promise<void>;
   /** Dispara OTP por e-mail (cria conta se primeiro acesso). */
   sendEmailOtp: (email: string) => Promise<void>;

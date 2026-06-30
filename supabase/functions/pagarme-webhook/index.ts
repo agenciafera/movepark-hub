@@ -203,22 +203,30 @@ Deno.serve(async (req: Request) => {
   }
 
   // Localiza o payment pela order; fallback pelo booking.
-  let payment: { id: string; booking_id: string } | null = null;
+  let payment:
+    | { id: string; booking_id: string; kind: string | null; fare_target_tier: string | null }
+    | null = null;
   if (ev.orderId) {
     const { data } = await admin
       .from("payment")
-      .select("id, booking_id")
+      .select("id, booking_id, kind, fare_target_tier")
       .eq("provider", "pagarme")
       .eq("provider_payment_id", ev.orderId)
       .maybeSingle();
     payment = data ?? null;
   }
   if (!payment && (ev.bookingId || ev.bookingCode)) {
-    let q = admin.from("payment").select("id, booking_id, booking:booking!inner(code)").eq("provider", "pagarme");
+    let q = admin
+      .from("payment")
+      .select("id, booking_id, kind, fare_target_tier, booking:booking!inner(code)")
+      .eq("provider", "pagarme");
     if (ev.bookingId) q = q.eq("booking_id", ev.bookingId);
     const { data } = await q.order("created_at", { ascending: false }).limit(1).maybeSingle();
     // deno-lint-ignore no-explicit-any
-    payment = data ? { id: (data as any).id, booking_id: (data as any).booking_id } : null;
+    const d = data as any;
+    payment = d
+      ? { id: d.id, booking_id: d.booking_id, kind: d.kind, fare_target_tier: d.fare_target_tier }
+      : null;
   }
   if (!payment) {
     // Ack mesmo sem casar (evita reentrega infinita); fica logado.
@@ -234,6 +242,16 @@ Deno.serve(async (req: Request) => {
   const paymentPatch: Record<string, unknown> = { status: paymentStatus };
   if (status === "paid") paymentPatch.paid_at = new Date().toISOString();
   await admin.from("payment").update(paymentPatch).eq("id", payment.id);
+
+  // Upgrade de Tarifa pago (E2.8-d): promove a Tarifa da reserva, sem confirmar/voucher.
+  if (status === "paid" && payment.kind === "fare_upgrade" && payment.fare_target_tier) {
+    const { error: upErr } = await admin.rpc("apply_fare_upgrade", {
+      p_booking_id: payment.booking_id,
+      p_target_tier: payment.fare_target_tier,
+    });
+    if (upErr) console.error("[pagarme-webhook] apply_fare_upgrade falhou:", upErr.message);
+    return json({ ok: true, status: paymentStatus, fare_upgrade: true });
+  }
 
   // Pagamento aprovado → confirma a reserva (só se ainda pendente) e emite o voucher.
   if (status === "paid") {

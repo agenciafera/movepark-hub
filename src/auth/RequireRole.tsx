@@ -1,10 +1,19 @@
+import * as React from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { toast } from "sonner";
 import { useAuth } from "./context";
 import type { UserRole } from "@/types/domain";
 
 export function RequireRole({ roles }: { roles: UserRole[] }) {
   const { session, isLoading, effectiveRole } = useAuth();
   const location = useLocation();
+
+  // Logado, mas com papel que não acessa esta área (ex.: cliente tentando /manager).
+  const unauthorized = !!session && !!effectiveRole && !roles.includes(effectiveRole);
+
+  React.useEffect(() => {
+    if (unauthorized) toast.error("Você não tem acesso a essa área.");
+  }, [unauthorized]);
 
   if (isLoading) {
     return (
@@ -14,12 +23,12 @@ export function RequireRole({ roles }: { roles: UserRole[] }) {
 
   if (!session || !effectiveRole) {
     const next = encodeURIComponent(location.pathname + location.search);
-    // Rotas customer mandam pra /entrar; backoffice continua em /login
-    const loginPath = roles.includes("customer") ? "/entrar" : "/login";
-    return <Navigate to={`${loginPath}?next=${next}`} replace />;
+    // Login universal e passwordless em /login (clientes e backoffice).
+    return <Navigate to={`/login?next=${next}`} replace />;
   }
 
-  if (!roles.includes(effectiveRole)) {
+  if (unauthorized) {
+    // Bounce pro painel do próprio papel (ou home, no caso do cliente).
     const fallback =
       effectiveRole === "hub_admin"
         ? "/manager"

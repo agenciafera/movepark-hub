@@ -12,6 +12,7 @@ export type PriceBreakdown = {
   subtotal: number;
   auto_discount: { amount: number; rule_id: string | null; label: string | null } | null;
   coupon: { code: string; discount: number } | null;
+  fare?: { tier: string; label: string; amount: number } | null;
   total: number;
   line_items: unknown[];
 };

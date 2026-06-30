@@ -79,7 +79,11 @@ export type MyBookingDetail = MyBookingListItem & {
   passenger_count: number | null;
   has_pcd: boolean;
   checked_in_at: string | null;
-  vehicle: { license_plate: string; model: string | null; color: string | null } | null;
+  fare_tier: import("@/lib/fares").FareTier;
+  fare_price_cents: number;
+  fare_cancel_until: string | null;
+  fare_benefits: import("@/lib/fares").FareBenefits | null;
+  vehicle: { id: string; license_plate: string; model: string | null; color: string | null } | null;
   items: {
     id: string;
     item_type: "parking" | "add_on";
@@ -109,12 +113,13 @@ export function useBookingDetail(code: string | undefined) {
         .select(
           `id, code, status, check_in_at, check_out_at, expires_at, total_amount, created_at,
            passenger_count, has_pcd, checked_in_at,
+           fare_tier, fare_price_cents, fare_cancel_until, fare_benefits,
            location:location!inner(
              name, slug, address, phone, email, notice, reservation_policy,
              latitude, longitude,
              company:company!inner(name, slug)
            ),
-           vehicle:vehicle(license_plate, model, color),
+           vehicle:vehicle(id, license_plate, model, color),
            items:booking_item(
              id, item_type, unit_price, subtotal,
              parking_type:parking_type(name, code),
@@ -150,6 +155,10 @@ export function useBookingDetail(code: string | undefined) {
         passenger_count: r.passenger_count,
         has_pcd: r.has_pcd,
         checked_in_at: r.checked_in_at ?? null,
+        fare_tier: (r.fare_tier ?? "basica") as import("@/lib/fares").FareTier,
+        fare_price_cents: Number(r.fare_price_cents ?? 0),
+        fare_cancel_until: r.fare_cancel_until ?? null,
+        fare_benefits: (r.fare_benefits ?? null) as import("@/lib/fares").FareBenefits | null,
         location: {
           name: r.location.name,
           slug: r.location.slug,
@@ -231,6 +240,72 @@ export type CancelBookingResult = {
  * Cancela a reserva pela Edge `cancel-booking` (que orquestra o estorno via gateway, E0.3.2).
  * Recebe o `code` da reserva — a Edge resolve dono/staff, política de 24h e split.
  */
+/** Troca o veículo da reserva (E2.8-c/f) via Edge change-booking-vehicle. */
+export function useChangeBookingVehicle() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { bookingCode: string; vehicleId: string }) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Você precisa entrar.");
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/change-booking-vehicle`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ booking_code: args.bookingCode, vehicle_id: args.vehicleId }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? `Falha ao trocar veículo (HTTP ${res.status})`);
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-bookings"] });
+      qc.invalidateQueries({ queryKey: ["booking-detail"] });
+    },
+  });
+}
+
+/** Altera as datas de uma reserva pendente (E2.8-f) via Edge change-booking-dates. */
+export function useChangeBookingDates() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { bookingCode: string; checkInAt: string; checkOutAt: string }) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Você precisa entrar.");
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/change-booking-dates`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          booking_code: args.bookingCode,
+          check_in_at: args.checkInAt,
+          check_out_at: args.checkOutAt,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? `Falha ao alterar datas (HTTP ${res.status})`);
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-bookings"] });
+      qc.invalidateQueries({ queryKey: ["booking-detail"] });
+    },
+  });
+}
+
 export function useCancelMyBooking() {
   const qc = useQueryClient();
   return useMutation({

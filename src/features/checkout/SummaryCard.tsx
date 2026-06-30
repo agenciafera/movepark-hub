@@ -90,6 +90,12 @@ export function SummaryCard({ booking, onEdit }: Props) {
             <span className="tabular-nums">−{formatBRL(booking.coupon.discount_applied)}</span>
           </div>
         )}
+        {breakdown?.fare && breakdown.fare.amount > 0 && (
+          <div className="flex justify-between text-body-sm">
+            <span className="text-ink">Tarifa {breakdown.fare.label}</span>
+            <span className="text-ink tabular-nums">{formatBRL(breakdown.fare.amount)}</span>
+          </div>
+        )}
       </div>
 
       <div className="my-4 h-px bg-hairline" />

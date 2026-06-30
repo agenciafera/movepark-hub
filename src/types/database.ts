@@ -1685,6 +1685,48 @@ export type Database = {
           },
         ]
       }
+      location_fare: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          location_parking_type_id: string
+          price_cents_override: number | null
+          tier: Database["public"]["Enums"]["fare_tier"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          location_parking_type_id: string
+          price_cents_override?: number | null
+          tier: Database["public"]["Enums"]["fare_tier"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          location_parking_type_id?: string
+          price_cents_override?: number | null
+          tier?: Database["public"]["Enums"]["fare_tier"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_fare_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "location_parking_type"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_fare_tier_fkey"
+            columns: ["tier"]
+            isOneToOne: false
+            referencedRelation: "fare"
+            referencedColumns: ["tier"]
+          },
+        ]
+      }
       location_parking_availability: {
         Row: {
           blocked: boolean
@@ -1898,8 +1940,10 @@ export type Database = {
           created_at: string
           currency: string
           expires_at: string | null
+          fare_target_tier: Database["public"]["Enums"]["fare_tier"] | null
           id: string
           installments: number | null
+          kind: string
           method: string | null
           paid_at: string | null
           pix_qr_code: string | null
@@ -1920,8 +1964,10 @@ export type Database = {
           created_at?: string
           currency?: string
           expires_at?: string | null
+          fare_target_tier?: Database["public"]["Enums"]["fare_tier"] | null
           id?: string
           installments?: number | null
+          kind?: string
           method?: string | null
           paid_at?: string | null
           pix_qr_code?: string | null
@@ -1942,8 +1988,10 @@ export type Database = {
           created_at?: string
           currency?: string
           expires_at?: string | null
+          fare_target_tier?: Database["public"]["Enums"]["fare_tier"] | null
           id?: string
           installments?: number | null
+          kind?: string
           method?: string | null
           paid_at?: string | null
           pix_qr_code?: string | null
@@ -3203,6 +3251,13 @@ export type Database = {
         }
         Returns: Json
       }
+      apply_fare_upgrade: {
+        Args: {
+          p_booking_id: string
+          p_target_tier: Database["public"]["Enums"]["fare_tier"]
+        }
+        Returns: Json
+      }
       availability_batch: {
         Args: {
           p_check_in_at: string
@@ -3225,6 +3280,10 @@ export type Database = {
       cancel_booking_with_release: {
         Args: { p_booking_id: string; p_reason?: string }
         Returns: Database["public"]["Enums"]["booking_status"]
+      }
+      change_booking_dates: {
+        Args: { p_booking_id: string; p_check_in: string; p_check_out: string }
+        Returns: Json
       }
       check_availability: {
         Args: {
@@ -3550,6 +3609,15 @@ export type Database = {
           p_location_parking_type_id: string
           p_rule: Json
           p_tiers?: Json
+        }
+        Returns: undefined
+      }
+      operator_set_unit_fare: {
+        Args: {
+          p_enabled: boolean
+          p_location_parking_type_id: string
+          p_price_cents?: number
+          p_tier: Database["public"]["Enums"]["fare_tier"]
         }
         Returns: undefined
       }

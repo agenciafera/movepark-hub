@@ -442,6 +442,7 @@ export function useCreateBooking() {
       has_pcd?: boolean;
       add_on_service_ids?: string[];
       coupon_code?: string | null;
+      fare_tier?: "basica" | "flex" | "superflex" | null;
       origin?: string | null;
       utm_source?: string | null;
       utm_medium?: string | null;

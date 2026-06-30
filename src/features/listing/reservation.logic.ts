@@ -20,12 +20,13 @@ export function addOnsTotal(options: AddOnOption[], selectedIds: string[]): numb
 
 /**
  * Total da reserva: o desconto do cupom incide apenas no estacionamento
- * (nunca negativo); os serviços adicionais entram por cima.
+ * (nunca negativo); os serviços adicionais e a Tarifa (E2.8) entram por cima.
  */
 export function bookingTotal(
   parkingPrice: number,
   discount: number,
   addOnsSum: number,
+  farePrice = 0,
 ): number {
-  return Math.max(0, parkingPrice - discount) + addOnsSum;
+  return Math.max(0, parkingPrice - discount) + addOnsSum + farePrice;
 }

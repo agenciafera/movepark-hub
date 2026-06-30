@@ -28,7 +28,7 @@ describe("resolveCheckoutGate", () => {
     const gate = resolveCheckoutGate({ ...baseGate, hasSession: false });
     expect(gate).toEqual({
       kind: "redirect",
-      to: `/entrar?next=${encodeURIComponent("/checkout/MP-ABC123")}`,
+      to: `/login?next=${encodeURIComponent("/checkout/MP-ABC123")}`,
     });
   });
 

@@ -35,4 +35,9 @@ describe("bookingTotal", () => {
   it("sem desconto nem add-ons retorna o preço", () => {
     expect(bookingTotal(80, 0, 0)).toBe(80);
   });
+  it("soma a Tarifa (E2.8) por cima", () => {
+    expect(bookingTotal(100, 10, 50, 12.9)).toBe(152.9);
+    expect(bookingTotal(80, 0, 0, 24.9)).toBe(104.9);
+    expect(bookingTotal(80, 0, 0)).toBe(80); // sem tarifa = comportamento antigo
+  });
 });
