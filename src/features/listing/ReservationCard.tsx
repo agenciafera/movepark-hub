@@ -98,6 +98,7 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
   const { session, effectiveRole } = useAuth();
   const createBooking = useCreateBooking();
 
+  const [openTooltip, setOpenTooltip] = React.useState<FareTier | null>(null);
   const [from, setFrom] = React.useState<Date | null>(initialFrom);
   const [to, setTo] = React.useState<Date | null>(initialTo);
   const [passengers, setPassengers] = React.useState<number>(1);
@@ -365,11 +366,17 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
                     {fare.label}
                   </span>
 
-                  {/* Info tooltip */}
-                  <Tooltip>
+                  {/* Info tooltip — controlado para funcionar no toque mobile */}
+                  <Tooltip
+                    open={openTooltip === fare.id}
+                    onOpenChange={(v) => setOpenTooltip(v ? fare.id : null)}
+                  >
                     <TooltipTrigger asChild>
                       <span
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenTooltip(openTooltip === fare.id ? null : fare.id);
+                        }}
                         className="flex items-center text-muted hover:text-ink"
                       >
                         <Info className="h-3.5 w-3.5" />
