@@ -5,7 +5,7 @@ import { GUARANTEE_PROMISE, GUARANTEE_POLICY } from "./copy";
 export function GuaranteeSection() {
   return (
     <section>
-      <div className="rounded-xl border border-success/20 bg-badge-confirmed-bg p-5 desktop:p-6">
+      <div className="rounded-md border border-success/20 bg-badge-confirmed-bg p-5 desktop:p-6">
         <div className="flex gap-4">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-success/10">
             <ShieldCheck className="h-5 w-5 text-success" />

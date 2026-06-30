@@ -313,7 +313,7 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
                   type="button"
                   onClick={() => setSelectedFare(fare.id)}
                   className={cn(
-                    "relative w-full rounded-lg border px-4 py-3 text-left transition-all",
+                    "relative w-full rounded-md border px-4 py-3 text-left transition-all",
                     isSelected
                       ? "border-mp-primary bg-mp-pale/30 ring-1 ring-mp-primary"
                       : "border-hairline bg-canvas hover:border-mp-indigo/50",

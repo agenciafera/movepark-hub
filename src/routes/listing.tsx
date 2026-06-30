@@ -310,7 +310,7 @@ export default function ListingPage() {
           {/* Política de cancelamento */}
           <section className="space-y-3" id="cancelamento">
             <h2 className="text-display-sm text-ink">Política de cancelamento</h2>
-            <div className="rounded-xl border border-hairline bg-surface-soft p-5">
+            <div className="rounded-md border border-hairline bg-surface-soft p-5">
               <CancellationPolicy operatorPolicy={listing.location.reservation_policy} />
             </div>
           </section>
@@ -399,7 +399,7 @@ function ListingReviewsSection({ locationId, reviewCount }: ListingReviewsSectio
   return (
     <section id="avaliacoes" className="scroll-mt-24 space-y-4">
       <h2 className="text-display-sm text-ink">Avaliações</h2>
-      <div className="flex flex-col items-center gap-3 rounded-xl border border-hairline bg-surface-soft py-10 text-center">
+      <div className="flex flex-col items-center gap-3 rounded-md border border-hairline bg-surface-soft py-10 text-center">
         <div className="flex items-center gap-0.5">
           {[1, 2, 3, 4, 5].map((n) => (
             <Star key={n} className="h-6 w-6 text-hairline" />
