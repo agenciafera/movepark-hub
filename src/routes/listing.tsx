@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link, useLoaderData, useParams, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { ArrowLeft, Bus, Car, Heart, MapPin } from "lucide-react";
+import { ArrowLeft, Bus, Car, Heart, MapPin, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
@@ -298,16 +298,12 @@ export default function ListingPage() {
             <TerminalDistances locationId={listing.location.id} />
           </section>
 
-          {/* Avaliações */}
-          {listing.location.review_count > 0 && (
-            <>
-              <Separator />
-              <ReviewsBlock
-                locationId={listing.location.id}
-                totalCount={listing.location.review_count}
-              />
-            </>
-          )}
+          {/* Avaliações — sempre visível; ReviewsBlock mostra empty state quando count = 0 */}
+          <Separator />
+          <ListingReviewsSection
+            locationId={listing.location.id}
+            reviewCount={listing.location.review_count}
+          />
 
           <Separator />
 
@@ -386,6 +382,35 @@ function ListingFaqSection({ items, isLoading }: ListingFaqSectionProps) {
     <section className="space-y-4" id="faq">
       <h2 className="text-display-sm text-ink">Perguntas frequentes</h2>
       <FaqList items={items} isLoading={isLoading} groupByScope />
+    </section>
+  );
+}
+
+type ListingReviewsSectionProps = {
+  locationId: string;
+  reviewCount: number;
+};
+
+function ListingReviewsSection({ locationId, reviewCount }: ListingReviewsSectionProps) {
+  if (reviewCount > 0) {
+    return <ReviewsBlock locationId={locationId} totalCount={reviewCount} />;
+  }
+
+  return (
+    <section id="avaliacoes" className="scroll-mt-24 space-y-4">
+      <h2 className="text-display-sm text-ink">Avaliações</h2>
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-hairline bg-surface-soft py-10 text-center">
+        <div className="flex items-center gap-0.5">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <Star key={n} className="h-6 w-6 text-hairline" />
+          ))}
+        </div>
+        <p className="text-body-md font-medium text-ink">Seja o primeiro a avaliar</p>
+        <p className="max-w-xs text-body-sm text-muted">
+          As avaliações aparecem aqui após a conclusão das reservas. Reserve e compartilhe sua
+          experiência.
+        </p>
+      </div>
     </section>
   );
 }
