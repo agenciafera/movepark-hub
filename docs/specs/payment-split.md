@@ -28,7 +28,7 @@ Separa três conceitos:
 
 | Tabela / coluna | Concern | Agnóstico ao gateway? |
 |---|---|---|
-| `company.take_rate_bps` | Comissão da Movepark retida no split (basis points; default global `app_setting.default_take_rate_bps` = `1500` = 15%). Por **empresa**. | ✅ |
+| `company.take_rate_bps` | Comissão da Movepark retida no split (basis points; default global `app_setting.default_take_rate_bps` = `1500` = 15%). Por **empresa**. Editável em **Manager › Financeiro › Comissões** (`/manager/finance/commissions`), via RPC `set_company_take_rate` (gate `is_hub_admin`, valida 0..10000; migration `20260723000000`). O **Faturamento** (`finance-billing`) calcula a comissão com essa taxa real por empresa (não há mais taxa fixa). | ✅ |
 | `company_payout_account` (1:1 com company) | Dados de **banco/KYC** do parceiro (CNPJ/CPF, conta, titular). Preenchido na UI da Movepark (E1.3). **Nunca** exposto ao front. | ✅ |
 | `payout_recipient` (único por `(company_id, provider)`) | Registro do recebedor **no gateway**: `external_recipient_id`, `status`, `last_provider_status` (cru), `kyc_url`, `requirements` (pendências). | ❌ (por provider) |
 | `payout_recipient_event` (append-only) | **Log** de cada interação com o gateway (`create`/`refresh`/`webhook`): `http_status`, `request` (redigido), `response` cru. Fonte das pendências a comunicar ao parceiro. | — |

@@ -3707,6 +3707,35 @@ export type Database = {
         Args: { p_location_id: string }
         Returns: undefined
       }
+      set_company_take_rate: {
+        Args: { p_company_id: string; p_take_rate_bps: number }
+        Returns: {
+          created_at: string
+          deleted_at: string | null
+          id: string
+          legal_name: string | null
+          logo_url: string | null
+          name: string
+          onboarding_status: Database["public"]["Enums"]["onboarding_status"]
+          slug: string
+          status: Database["public"]["Enums"]["entity_status"]
+          take_rate_bps: number
+          tax_id: string | null
+          updated_at: string
+          wl_domain: string | null
+          wl_sync_enabled: boolean
+          wl_tenant_key: string | null
+          wps_webhook_enabled: boolean
+          wps_webhook_secret: string | null
+          wps_webhook_url: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "company"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       simulate_price: {
         Args: {
           p_company: string
