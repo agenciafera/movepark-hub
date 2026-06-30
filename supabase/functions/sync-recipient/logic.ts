@@ -91,3 +91,30 @@ export function redactRecipientBody(body: unknown): unknown {
   }
   return clone;
 }
+
+/**
+ * Extrai uma mensagem legível do erro cru do gateway (Pagar.me): `{ message, errors: {campo:[..]} }`
+ * ou `{ errors: [{message}] }`. Devolve null se não achar nada útil (cai no texto genérico).
+ */
+export function gatewayErrorMessage(raw: unknown): string | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  const parts: string[] = [];
+  if (typeof o.message === "string" && o.message.trim()) parts.push(o.message.trim());
+
+  const errs = o.errors;
+  if (Array.isArray(errs)) {
+    for (const e of errs) {
+      const m = (e as Record<string, unknown>)?.message;
+      if (typeof m === "string" && m.trim()) parts.push(m.trim());
+    }
+  } else if (errs && typeof errs === "object") {
+    for (const [field, msgs] of Object.entries(errs as Record<string, unknown>)) {
+      const list = Array.isArray(msgs) ? msgs.filter((m) => typeof m === "string") : [];
+      if (list.length) parts.push(`${field}: ${list.join(", ")}`);
+    }
+  }
+  if (parts.length === 0) return null;
+  // Limita o tamanho pra não estourar o toast.
+  return parts.join(" · ").slice(0, 500);
+}

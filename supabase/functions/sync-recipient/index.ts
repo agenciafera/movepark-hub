@@ -17,6 +17,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
 import {
   accountToRecipientInput,
+  gatewayErrorMessage,
   parseSyncInput,
   redactRecipientBody,
   type PayoutAccountRow,
@@ -212,21 +213,21 @@ Deno.serve(async (req: Request) => {
   // Falha no gateway (sem external id): NÃO avança o status — senão fica um recebedor "Em análise"
   // fantasma sem id, que não dá pra sincronizar nem recriar de forma limpa. Mantém draft.
   if (!result.externalId) {
-    runBg(
-      admin.from("payout_recipient_event").insert({
-        payout_recipient_id: recipient.id,
-        kind: "create",
-        http_status: result.httpStatus,
-        request:
-          input.provider === "pagarme"
-            ? redactRecipientBody(buildCreateRecipientBody(recipientInput))
-            : null,
-        response: result.raw,
-      }),
-    );
+    // AWAIT (não runBg): é justamente quando precisamos do log — captura o motivo do gateway.
+    await admin.from("payout_recipient_event").insert({
+      payout_recipient_id: recipient.id,
+      kind: "create",
+      http_status: result.httpStatus,
+      request:
+        input.provider === "pagarme"
+          ? redactRecipientBody(buildCreateRecipientBody(recipientInput))
+          : null,
+      response: result.raw,
+    });
     return jsonResponse(
       {
-        error: "O gateway não criou o recebedor. Confira os dados de KYC/banco e tente novamente.",
+        error: gatewayErrorMessage(result.raw)
+          ?? "O gateway não criou o recebedor. Confira os dados de KYC/banco e tente novamente.",
         requirements: result.requirements,
       },
       502,

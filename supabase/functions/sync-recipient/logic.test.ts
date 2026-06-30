@@ -1,11 +1,38 @@
 import { assertEquals } from "jsr:@std/assert";
 import {
   accountToRecipientInput,
+  gatewayErrorMessage,
   maskTail,
   parseSyncInput,
   redactRecipientBody,
   type PayoutAccountRow,
 } from "./logic.ts";
+
+Deno.test("gatewayErrorMessage: extrai message + errors por campo", () => {
+  assertEquals(
+    gatewayErrorMessage({
+      message: "The request is invalid.",
+      errors: {
+        "default_bank_account.account_number": ["required"],
+        "register_information.annual_revenue": ["required"],
+      },
+    }),
+    "The request is invalid. · default_bank_account.account_number: required · register_information.annual_revenue: required",
+  );
+});
+
+Deno.test("gatewayErrorMessage: errors como array de objetos", () => {
+  assertEquals(
+    gatewayErrorMessage({ errors: [{ message: "CPF do representante inválido" }] }),
+    "CPF do representante inválido",
+  );
+});
+
+Deno.test("gatewayErrorMessage: sem nada útil → null", () => {
+  assertEquals(gatewayErrorMessage(null), null);
+  assertEquals(gatewayErrorMessage({}), null);
+  assertEquals(gatewayErrorMessage("erro"), null);
+});
 
 Deno.test("parseSyncInput valida company_id e action", () => {
   assertEquals(parseSyncInput(null).error !== undefined, true);
