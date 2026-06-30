@@ -84,3 +84,20 @@ export function isWithinFareCancelWindow(
 export function fareUpgradeDeltaCents(currentPriceCents: number, targetPriceCents: number): number {
   return Math.max(0, targetPriceCents - currentPriceCents);
 }
+
+/** Rótulo humano da janela de cancelamento grátis a partir dos minutos (24h / 1 min / …). */
+export function cancelWindowLabel(cancelWindowMinutes: number | null | undefined): string | null {
+  if (cancelWindowMinutes === null || cancelWindowMinutes === undefined) return null;
+  if (cancelWindowMinutes <= 0) return "até a entrada";
+  if (cancelWindowMinutes < 60) {
+    return `até ${cancelWindowMinutes} min antes`;
+  }
+  if (cancelWindowMinutes % 1440 === 0) {
+    const d = cancelWindowMinutes / 1440;
+    return d === 1 ? "até 24h antes" : `até ${d} dias antes`;
+  }
+  if (cancelWindowMinutes % 60 === 0) {
+    return `até ${cancelWindowMinutes / 60}h antes`;
+  }
+  return `até ${cancelWindowMinutes} min antes`;
+}

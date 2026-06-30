@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  cancelWindowLabel,
   fareCancelDeadline,
   fareReais,
   fareUpgradeDeltaCents,
@@ -7,6 +8,20 @@ import {
   FARE_TIER_ORDER,
   isWithinFareCancelWindow,
 } from "./fares";
+
+describe("cancelWindowLabel", () => {
+  it("formata janelas comuns", () => {
+    expect(cancelWindowLabel(1440)).toBe("até 24h antes");
+    expect(cancelWindowLabel(1)).toBe("até 1 min antes");
+    expect(cancelWindowLabel(60)).toBe("até 1h antes");
+    expect(cancelWindowLabel(2880)).toBe("até 2 dias antes");
+    expect(cancelWindowLabel(0)).toBe("até a entrada");
+  });
+  it("sem janela → null", () => {
+    expect(cancelWindowLabel(null)).toBeNull();
+    expect(cancelWindowLabel(undefined)).toBeNull();
+  });
+});
 
 describe("fareReais", () => {
   it("converte centavos em reais", () => {

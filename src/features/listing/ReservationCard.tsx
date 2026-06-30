@@ -22,6 +22,9 @@ import {
   type ListingDetail,
 } from "./api";
 import { availabilityUi } from "./availability.logic";
+import { useUnitFares } from "@/features/fares/api";
+import { FareTierSelector } from "@/features/fares/FareTierSelector";
+import { cancelWindowLabel, fareReais, type FareTier } from "@/lib/fares";
 import { GuaranteeBadge } from "@/features/guarantee/GuaranteeBadge";
 import { PriceTableDialog } from "./PriceTableDialog";
 import { couponDiscountLabel, couponErrorMessage, type CouponPreview } from "./coupon.logic";
@@ -59,6 +62,13 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
   const addOnsQuery = useLocationAddOns(listing.location.id);
   const addOns = addOnsQuery.data ?? [];
   const [selectedAddOnIds, setSelectedAddOnIds] = React.useState<string[]>([]);
+
+  // Tarifa de flexibilidade (E2.8) — default Básica (sem custo, sem dark pattern).
+  const faresQuery = useUnitFares(listing.id);
+  const fareOptions = faresQuery.data ?? [];
+  const [fareTier, setFareTier] = React.useState<FareTier>("basica");
+  const selectedFare = fareOptions.find((f) => f.tier === fareTier) ?? null;
+  const farePrice = selectedFare ? fareReais(selectedFare.price_cents) : 0;
 
   function toggleAddOn(id: string) {
     setSelectedAddOnIds((prev) =>
@@ -152,6 +162,7 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
         has_pcd: listing.location.has_pcd_config ? hasPcd : false,
         add_on_service_ids: selectedAddOnIds,
         coupon_code: applied?.code ?? null,
+        fare_tier: fareTier,
         origin: originFromSrc(new URLSearchParams(location.search).get("src")),
         ...getStoredUtm(),
       });
@@ -165,8 +176,9 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
   const chosenAddOns = selectedAddOns(addOns, selectedAddOnIds);
   const addOnsSum = addOnsTotal(addOns, selectedAddOnIds);
   const discount = applied?.discount ?? 0;
-  const total = bookingTotal(parkingPrice, discount, addOnsSum);
-  const showBreakdown = sim.data?.price != null && (applied != null || chosenAddOns.length > 0);
+  const total = bookingTotal(parkingPrice, discount, addOnsSum, farePrice);
+  const showBreakdown =
+    sim.data?.price != null && (applied != null || chosenAddOns.length > 0 || farePrice > 0);
 
   return (
     <div className="rounded-2xl border border-hairline bg-canvas p-6 shadow-tier">
@@ -311,6 +323,18 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
         </div>
       )}
 
+      {/* Tarifa de flexibilidade (E2.8) */}
+      {(faresQuery.isLoading || fareOptions.length > 0) && (
+        <div className="mt-5">
+          <FareTierSelector
+            options={fareOptions}
+            selected={fareTier}
+            onSelect={setFareTier}
+            isLoading={faresQuery.isLoading}
+          />
+        </div>
+      )}
+
       {/* Cupom de desconto */}
       {canReserve && (
         <div className="mt-4">
@@ -370,6 +394,12 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
               <span className="tabular-nums">−{formatBRL(discount)}</span>
             </div>
           )}
+          {farePrice > 0 && selectedFare && (
+            <div className="flex justify-between text-body-sm text-muted">
+              <span>Tarifa {selectedFare.label}</span>
+              <span className="tabular-nums">{formatBRL(farePrice)}</span>
+            </div>
+          )}
           <div className="flex items-baseline justify-between pt-1">
             <span className="text-title-sm text-ink">Total</span>
             <span className="text-title-md text-ink tabular-nums">{formatBRL(total)}</span>
@@ -399,7 +429,7 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
 
       <p className="mt-3 flex items-center justify-center gap-1.5 text-caption text-muted">
         <ShieldCheck className="h-3.5 w-3.5" />
-        Cancelamento grátis até 24h antes
+        Cancelamento grátis {cancelWindowLabel(selectedFare?.cancel_window_minutes ?? 1440) ?? "até 24h antes"}
       </p>
     </div>
   );
