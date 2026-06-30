@@ -205,6 +205,8 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
         has_pcd: listing.location.has_pcd_config ? hasPcd : false,
         add_on_service_ids: selectedAddOnIds,
         coupon_code: applied?.code ?? null,
+        // Tarifa escolhida (E2.8): o id "basic" da UI mapeia pro enum "basica" do banco.
+        fare_tier: selectedFare === "basic" ? "basica" : selectedFare,
         origin: originFromSrc(new URLSearchParams(location.search).get("src")),
         ...getStoredUtm(),
       });
