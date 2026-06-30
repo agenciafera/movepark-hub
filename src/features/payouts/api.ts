@@ -52,7 +52,11 @@ export function useSavePayoutAccountAdmin() {
         .upsert({ company_id: args.company_id, ...args.payload, deleted_at: null });
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: payoutAccountKeys.all }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: payoutAccountKeys.all });
+      // O overview de recebedores depende do KYC (gate do "Criar recebedor") → refaz.
+      qc.invalidateQueries({ queryKey: payoutKeys.all });
+    },
   });
 }
 
@@ -90,6 +94,7 @@ export type RawCompanyRecipient = {
         deleted_at: string | null;
       }[]
     | null;
+  company_payout_account: { deleted_at: string | null }[] | null;
 };
 
 /** Overview de recebedores por empresa (Manager, hub_admin) — uma linha por empresa. */
@@ -100,7 +105,7 @@ export function useRecipientsOverview() {
       const { data, error } = await supabase
         .from("company")
         .select(
-          "id, name, onboarding_status, payout_recipient(provider, status, external_recipient_id, kyc_url, requirements, deleted_at)",
+          "id, name, onboarding_status, payout_recipient(provider, status, external_recipient_id, kyc_url, requirements, deleted_at), company_payout_account(deleted_at)",
         )
         .is("deleted_at", null)
         .order("name");

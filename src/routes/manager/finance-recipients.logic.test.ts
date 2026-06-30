@@ -7,7 +7,7 @@ import {
 } from "./finance-recipients.logic";
 
 function raw(over: Partial<RawCompanyRecipient> & { id: string; name: string }): RawCompanyRecipient {
-  return { onboarding_status: "active", payout_recipient: null, ...over };
+  return { onboarding_status: "active", payout_recipient: null, company_payout_account: null, ...over };
 }
 
 describe("mapRecipientRow", () => {
@@ -15,7 +15,14 @@ describe("mapRecipientRow", () => {
     const row = mapRecipientRow(raw({ id: "c1", name: "Aeropark", onboarding_status: "active" }));
     expect(row.recipientStatus).toBe("draft");
     expect(row.hasRecipient).toBe(false);
+    expect(row.hasKyc).toBe(false);
     expect(row.needsAttention).toBe(true);
+  });
+
+  it("hasKyc reflete company_payout_account não-deletado", () => {
+    expect(mapRecipientRow(raw({ id: "k1", name: "A", company_payout_account: [{ deleted_at: null }] })).hasKyc).toBe(true);
+    expect(mapRecipientRow(raw({ id: "k2", name: "B", company_payout_account: [{ deleted_at: "2026-01-01" }] })).hasKyc).toBe(false);
+    expect(mapRecipientRow(raw({ id: "k3", name: "C", company_payout_account: null })).hasKyc).toBe(false);
   });
 
   it("recebedor ativo → não precisa de atenção", () => {

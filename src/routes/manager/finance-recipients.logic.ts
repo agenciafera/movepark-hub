@@ -12,6 +12,8 @@ export interface RecipientOverviewRow {
   recipientStatus: PayoutRecipientStatus;
   /** Tem recebedor de fato criado no gateway (id externo presente). */
   hasRecipient: boolean;
+  /** Tem dados de banco/KYC (`company_payout_account`) — pré-requisito para criar o recebedor. */
+  hasKyc: boolean;
   externalRecipientId: string | null;
   kycUrl: string | null;
   requirements: PayoutRequirement[];
@@ -45,12 +47,14 @@ export function mapRecipientRow(raw: RawCompanyRecipient): RecipientOverviewRow 
   const requirements = Array.isArray(rec?.requirements)
     ? (rec!.requirements as PayoutRequirement[])
     : [];
+  const hasKyc = (raw.company_payout_account ?? []).some((a) => !a.deleted_at);
   return {
     companyId: raw.id,
     companyName: raw.name,
     onboardingStatus,
     recipientStatus,
     hasRecipient: !!rec?.external_recipient_id,
+    hasKyc,
     externalRecipientId: rec?.external_recipient_id ?? null,
     kycUrl: rec?.kyc_url ?? null,
     requirements,

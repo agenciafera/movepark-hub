@@ -122,6 +122,11 @@ export default function ManagerFinanceRecipients() {
                   <TableRow key={row.companyId} className={row.needsAttention ? "bg-surface-soft" : ""}>
                     <TableCell className="text-ink">
                       <div className="font-medium">{row.companyName}</div>
+                      {!row.hasKyc && (
+                        <div className="mt-0.5 text-caption text-warning">
+                          KYC pendente — preencha os dados antes de criar
+                        </div>
+                      )}
                       {row.requirements.length > 0 && (
                         <div className="mt-0.5 text-caption text-warning">
                           {row.requirements.length} pendência(s) do gateway
@@ -148,26 +153,38 @@ export default function ManagerFinanceRecipients() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap justify-end gap-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setKyc({ id: row.companyId, name: row.companyName })}
-                        >
-                          Editar KYC
-                        </Button>
-                        {!row.hasRecipient ? (
-                          <Button size="sm" onClick={() => run(row, "create")} disabled={busy}>
-                            {busy ? "Criando…" : "Criar recebedor"}
-                          </Button>
-                        ) : (
+                        {!row.hasKyc ? (
+                          // Sem KYC não dá pra criar recebedor (a Edge exige company_payout_account).
                           <Button
                             size="sm"
-                            variant="secondary"
-                            onClick={() => run(row, "refresh")}
-                            disabled={busy}
+                            onClick={() => setKyc({ id: row.companyId, name: row.companyName })}
                           >
-                            {busy ? "Sincronizando…" : "Sincronizar"}
+                            Preencher KYC
                           </Button>
+                        ) : (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setKyc({ id: row.companyId, name: row.companyName })}
+                            >
+                              Editar KYC
+                            </Button>
+                            {!row.hasRecipient ? (
+                              <Button size="sm" onClick={() => run(row, "create")} disabled={busy}>
+                                {busy ? "Criando…" : "Criar recebedor"}
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => run(row, "refresh")}
+                                disabled={busy}
+                              >
+                                {busy ? "Sincronizando…" : "Sincronizar"}
+                              </Button>
+                            )}
+                          </>
                         )}
                       </div>
                     </TableCell>
