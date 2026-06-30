@@ -25,6 +25,11 @@ export function cpfMask(value: string): string {
     .replace(/\.(\d{3})(\d)/, ".$1-$2");
 }
 
+/** Máscara dinâmica de documento: CPF (≤11 dígitos) ou CNPJ (>11). */
+export function documentMask(value: string): string {
+  return onlyDigits(value).length > 11 ? cnpjMask(value) : cpfMask(value);
+}
+
 /** 00000-000 (CEP, 8 dígitos). */
 export function cepMask(value: string): string {
   const v = onlyDigits(value).slice(0, 8);

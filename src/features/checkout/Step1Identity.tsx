@@ -1,6 +1,8 @@
 import { ArrowRight, Mail, Phone, User as UserIcon } from "lucide-react";
+import { formatPhoneNumberIntl } from "react-phone-number-input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/context";
+import { useProfile } from "@/features/profile/api";
 
 type Props = {
   onNext: () => void;
@@ -8,7 +10,13 @@ type Props = {
 
 export function Step1Identity({ onNext }: Props) {
   const { session } = useAuth();
+  const profileQ = useProfile(session?.userId);
   if (!session) return null;
+
+  const rawPhone = profileQ.data?.phone ?? null;
+  const phoneDisplay = rawPhone
+    ? formatPhoneNumberIntl(rawPhone.startsWith("+") ? rawPhone : `+${rawPhone}`) || rawPhone
+    : null;
 
   return (
     <div className="space-y-6">
@@ -28,7 +36,7 @@ export function Step1Identity({ onNext }: Props) {
             <div>
               <div className="text-caption text-muted">Nome</div>
               <div className="text-body-md text-ink">
-                {session.fullName ?? "—"}
+                {profileQ.data?.full_name ?? session.fullName ?? "—"}
               </div>
             </div>
           </div>
@@ -47,7 +55,9 @@ export function Step1Identity({ onNext }: Props) {
             </span>
             <div>
               <div className="text-caption text-muted">Telefone</div>
-              <div className="text-body-md text-ink">Cadastre em "Conta"</div>
+              <div className="text-body-md text-ink">
+                {phoneDisplay ?? 'Cadastre em "Conta"'}
+              </div>
             </div>
           </div>
         </div>

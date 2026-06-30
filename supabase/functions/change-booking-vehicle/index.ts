@@ -96,21 +96,49 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "Esta reserva não permite troca de veículo." }, 400);
   }
 
-  // Veículo precisa pertencer ao titular da reserva (segurança).
-  const { data: vehicle } = await admin
-    .from("vehicle")
-    .select("id, profile_id")
-    .eq("id", input.vehicleId)
-    .is("deleted_at", null)
-    .maybeSingle();
-  if (!vehicle) return jsonResponse({ error: "Veículo não encontrado." }, 404);
-  if (booking.profile_id && vehicle.profile_id !== booking.profile_id) {
-    return jsonResponse({ error: "O veículo não pertence ao titular da reserva." }, 403);
+  // Resolve o veículo alvo: por id (veículo já cadastrado do cliente) ou por placa (staff digita).
+  let targetVehicleId: string;
+  if (input.vehicleId) {
+    const { data: v } = await admin
+      .from("vehicle")
+      .select("id, profile_id")
+      .eq("id", input.vehicleId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (!v) return jsonResponse({ error: "Veículo não encontrado." }, 404);
+    if (booking.profile_id && v.profile_id !== booking.profile_id) {
+      return jsonResponse({ error: "O veículo não pertence ao titular da reserva." }, 403);
+    }
+    targetVehicleId = v.id;
+  } else {
+    // Caminho por placa: cria/acha o veículo do titular. Precisa de uma reserva com titular.
+    if (!booking.profile_id) {
+      return jsonResponse({ error: "Reserva sem titular; não dá pra cadastrar a placa." }, 422);
+    }
+    const plate = input.licensePlate!;
+    const { data: existing } = await admin
+      .from("vehicle")
+      .select("id")
+      .eq("profile_id", booking.profile_id)
+      .eq("license_plate", plate)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (existing) {
+      targetVehicleId = existing.id;
+    } else {
+      const { data: created, error: cErr } = await admin
+        .from("vehicle")
+        .insert({ profile_id: booking.profile_id, license_plate: plate })
+        .select("id")
+        .single();
+      if (cErr || !created) return jsonResponse({ error: cErr?.message ?? "Falha ao cadastrar veículo." }, 500);
+      targetVehicleId = created.id;
+    }
   }
 
   const { error: upErr } = await admin
     .from("booking")
-    .update({ vehicle_id: input.vehicleId })
+    .update({ vehicle_id: targetVehicleId })
     .eq("id", booking.id);
   if (upErr) return jsonResponse({ error: upErr.message }, 500);
 
@@ -126,5 +154,5 @@ Deno.serve(async (req: Request) => {
     else await task;
   }
 
-  return jsonResponse({ ok: true, vehicle_id: input.vehicleId });
+  return jsonResponse({ ok: true, vehicle_id: targetVehicleId });
 });

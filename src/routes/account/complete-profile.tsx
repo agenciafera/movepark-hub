@@ -1,6 +1,7 @@
 import * as React from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,10 +13,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Monogram, Wordmark } from "@/components/shared/Brand";
+import { Wordmark } from "@/components/shared/Brand";
 import { useAuth } from "@/auth/context";
 import { PhoneField } from "@/components/ui/phone-field";
 import { useProfile, useUpdateProfile } from "@/features/profile/api";
+import { documentMask, onlyDigits } from "@/lib/masks";
+import { isValidCnpj, isValidCpf } from "@/lib/documents";
 
 export default function CompleteProfilePage() {
   const navigate = useNavigate();
@@ -33,7 +36,7 @@ export default function CompleteProfilePage() {
   React.useEffect(() => {
     if (!profileQ.data) return;
     setFullName(profileQ.data.full_name ?? "");
-    setTaxId(profileQ.data.tax_id ?? "");
+    setTaxId(documentMask(profileQ.data.tax_id ?? ""));
     const rawPhone = profileQ.data.phone ?? "";
     setPhone(rawPhone && !rawPhone.startsWith("+") ? `+${rawPhone}` : rawPhone);
     // Se já está completo, manda pra next
@@ -49,8 +52,8 @@ export default function CompleteProfilePage() {
       toast.error("Conta seu nome");
       return;
     }
-    if (taxId.replace(/\D/g, "").length < 11) {
-      toast.error("CPF inválido");
+    if (!isValidCpf(taxId) && !isValidCnpj(taxId)) {
+      toast.error("CPF ou CNPJ inválido");
       return;
     }
     setSubmitting(true);
@@ -58,7 +61,7 @@ export default function CompleteProfilePage() {
       await update.mutateAsync({
         id: session.userId,
         full_name: fullName.trim(),
-        tax_id: taxId.replace(/\D/g, ""),
+        tax_id: onlyDigits(taxId),
         phone: phone.trim() || null,
       });
       toast.success("Pronto!");
@@ -72,15 +75,21 @@ export default function CompleteProfilePage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-soft-gradient px-4 py-12">
-      <div className="mb-8 flex flex-col items-center gap-3">
-        <Monogram size={44} />
+      <Link
+        to="/"
+        aria-label="Ir para a página inicial da Movepark"
+        className="mb-8 flex flex-col items-center gap-1 transition-opacity hover:opacity-80"
+      >
         <Wordmark height={22} />
-      </div>
+        <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-muted-steel">
+          Hub
+        </span>
+      </Link>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-display-md">Falta pouco</CardTitle>
           <CardDescription>
-            Conta seu nome e CPF pra emitir notas das suas reservas.
+            Conta seu nome e CPF ou CNPJ pra emitir notas das suas reservas.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -103,13 +112,14 @@ export default function CompleteProfilePage() {
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="cpf">CPF</Label>
+                <Label htmlFor="cpf">CPF ou CNPJ</Label>
                 <Input
                   id="cpf"
                   value={taxId}
-                  onChange={(e) => setTaxId(e.target.value)}
-                  placeholder="000.000.000-00"
+                  onChange={(e) => setTaxId(documentMask(e.target.value))}
+                  placeholder="CPF ou CNPJ"
                   inputMode="numeric"
+                  maxLength={18}
                   required
                 />
               </div>
@@ -128,6 +138,13 @@ export default function CompleteProfilePage() {
           )}
         </CardContent>
       </Card>
+      <Link
+        to="/"
+        className="mt-6 inline-flex items-center gap-1 text-body-sm text-muted no-underline hover:text-ink"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Voltar para o início
+      </Link>
     </div>
   );
 }

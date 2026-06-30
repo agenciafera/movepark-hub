@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { addOnsTotal, bookingTotal, selectedAddOns, type AddOnOption } from "./reservation.logic";
+import {
+  addOnsTotal,
+  bookingTotal,
+  mergeUnitFares,
+  selectedAddOns,
+  type AddOnOption,
+} from "./reservation.logic";
 
 const OPTS: AddOnOption[] = [
   { id: "a", name: "Lava-jato", description: null, price: 30 },
@@ -39,5 +45,45 @@ describe("bookingTotal", () => {
     expect(bookingTotal(100, 10, 50, 12.9)).toBe(152.9);
     expect(bookingTotal(80, 0, 0, 24.9)).toBe(104.9);
     expect(bookingTotal(80, 0, 0)).toBe(80); // sem tarifa = comportamento antigo
+  });
+});
+
+describe("mergeUnitFares", () => {
+  const FARES = [
+    { id: "basic", surcharge: 0, tagline: "Grátis" },
+    { id: "flex", surcharge: 12.9, tagline: "+ R$ 12,90" },
+    { id: "superflex", surcharge: 24.9, tagline: "+ R$ 24,90" },
+  ];
+  const fmt = { reais: (c: number) => c / 100, brl: (r: number) => `R$ ${r.toFixed(2)}` };
+
+  it("sem dados da unidade devolve os defaults intactos", () => {
+    expect(mergeUnitFares(FARES, [], fmt)).toEqual(FARES);
+  });
+
+  it("sobrescreve com o preço efetivo da unidade (override por unidade)", () => {
+    const out = mergeUnitFares(
+      FARES,
+      [
+        { tier: "basica", price_cents: 0 },
+        { tier: "flex", price_cents: 1500 },
+        { tier: "superflex", price_cents: 2490 },
+      ],
+      fmt,
+    );
+    expect(out.map((f) => f.surcharge)).toEqual([0, 15, 24.9]);
+    expect(out.find((f) => f.id === "flex")?.tagline).toBe("+ R$ 15.00");
+    expect(out.find((f) => f.id === "basic")?.tagline).toBe("Grátis");
+  });
+
+  it("descarta tiers desativados na unidade e mapeia basic↔basica", () => {
+    const out = mergeUnitFares(
+      FARES,
+      [
+        { tier: "basica", price_cents: 0 },
+        { tier: "flex", price_cents: 1290 },
+      ],
+      fmt,
+    );
+    expect(out.map((f) => f.id)).toEqual(["basic", "flex"]);
   });
 });

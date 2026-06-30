@@ -28,10 +28,12 @@ import {
   type ListingDetail,
 } from "./api";
 import { availabilityUi } from "./availability.logic";
+import { useUnitFares } from "@/features/fares/api";
+import { fareReais } from "@/lib/fares";
 import { PriceTableDialog } from "./PriceTableDialog";
 import { FareComparisonDialog } from "./FareComparisonDialog";
 import { couponDiscountLabel, couponErrorMessage, type CouponPreview } from "./coupon.logic";
-import { addOnsTotal, bookingTotal, selectedAddOns } from "./reservation.logic";
+import { addOnsTotal, bookingTotal, mergeUnitFares, selectedAddOns } from "./reservation.logic";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -116,6 +118,17 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
   const addOns = addOnsQuery.data ?? [];
   const [selectedAddOnIds, setSelectedAddOnIds] = React.useState<string[]>([]);
 
+  // Tarifas com preço/on-off REAIS da unidade (E2.8-f); cai nos defaults se o catálogo não carregar.
+  const unitFaresQuery = useUnitFares(listing.id);
+  const pricedFares: FareOption[] = React.useMemo(
+    () =>
+      mergeUnitFares(FARE_OPTIONS, unitFaresQuery.data ?? [], {
+        reais: fareReais,
+        brl: formatBRL,
+      }),
+    [unitFaresQuery.data],
+  );
+
   function toggleAddOn(id: string) {
     setSelectedAddOnIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
@@ -152,6 +165,13 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
     setApplied(null);
     setCouponMsg(null);
   }, [from, to]);
+
+  // Se a Tarifa selecionada não existe nesta unidade, cai pra "popular" (flex) ou a primeira válida.
+  React.useEffect(() => {
+    if (pricedFares.length > 0 && !pricedFares.some((f) => f.id === selectedFare)) {
+      setSelectedFare(pricedFares.some((f) => f.id === "flex") ? "flex" : pricedFares[0].id);
+    }
+  }, [pricedFares, selectedFare]);
 
   async function applyCoupon() {
     const code = couponInput.trim();
@@ -206,6 +226,8 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
         has_pcd: listing.location.has_pcd_config ? hasPcd : false,
         add_on_service_ids: selectedAddOnIds,
         coupon_code: applied?.code ?? null,
+        // Tarifa escolhida (E2.8): o id "basic" da UI mapeia pro enum "basica" do banco.
+        fare_tier: selectedFare === "basic" ? "basica" : selectedFare,
         origin: originFromSrc(new URLSearchParams(location.search).get("src")),
         ...getStoredUtm(),
       });
@@ -221,7 +243,8 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
   const discount = applied?.discount ?? 0;
   const parkingBase = bookingTotal(parkingPrice, discount, addOnsSum);
 
-  const fareOption = FARE_OPTIONS.find((f) => f.id === selectedFare) ?? FARE_OPTIONS[1];
+  const fareOption =
+    pricedFares.find((f) => f.id === selectedFare) ?? pricedFares[0] ?? FARE_OPTIONS[1];
   const fareSurcharge = canReserve ? fareOption.surcharge : 0;
   const displayTotal = parkingBase + fareSurcharge;
 
@@ -287,6 +310,8 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
           onOpenChange={setFareComparisonOpen}
           selectedFare={selectedFare}
           onSelect={setSelectedFare}
+          priceLabelByTier={Object.fromEntries(pricedFares.map((f) => [f.id, f.tagline]))}
+          availableTiers={pricedFares.map((f) => f.id)}
         />
 
         <div className="my-5 h-px bg-hairline" />
@@ -332,7 +357,7 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
         <div className="mt-5">
           <div className="mb-2 text-body-sm font-semibold text-ink">Escolha sua tarifa</div>
           <div className="divide-y divide-hairline overflow-hidden rounded-md border border-hairline">
-            {FARE_OPTIONS.map((fare) => {
+            {pricedFares.map((fare) => {
               const isSelected = selectedFare === fare.id;
               return (
                 <button
