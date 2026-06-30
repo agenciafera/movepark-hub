@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link, useLoaderData, useParams, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { ArrowLeft, MapPin, Heart } from "lucide-react";
+import { ArrowLeft, Bus, Car, Heart, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
@@ -70,7 +70,6 @@ export default function ListingPage() {
   const initialFrom = fromStr ? new Date(fromStr) : null;
   const initialTo = toStr ? new Date(toStr) : null;
 
-  // Ref para o card de reserva mobile — aciona sticky CTA ao sair da viewport
   const mobileCardRef = React.useRef<HTMLDivElement>(null);
   const [showStickyBar, setShowStickyBar] = React.useState(false);
 
@@ -94,7 +93,6 @@ export default function ListingPage() {
   const pageUrl = listing
     ? `https://hub.movepark.co/p/${listing.company.slug}/${listing.location.slug}/${listing.parking_type.code}`
     : "";
-  // og:image/twitter — usa a 1ª foto da unidade, recortada pro formato de card (1200x630).
   const ogImage =
     listing && listing.location.photos[0]
       ? optimizedImageUrl(listing.location.photos[0], { width: 1200, height: 630, resize: "cover" })
@@ -107,12 +105,12 @@ export default function ListingPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto w-full max-w-[1080px] px-4 py-6 desktop:px-8">
+      <div className="mx-auto w-full max-w-[1280px] px-4 py-6 desktop:px-8">
         <Skeleton className="mb-6 h-6 w-32" />
         <Skeleton className="mb-3 h-8 w-2/3" />
         <Skeleton className="mb-6 h-4 w-1/2" />
         <Skeleton className="mb-8 h-[420px] w-full rounded-md" />
-        <div className="grid grid-cols-1 gap-8 desktop:grid-cols-[1fr_360px]">
+        <div className="grid grid-cols-1 gap-8 desktop:grid-cols-[1fr_400px]">
           <div className="space-y-4">
             <Skeleton className="h-32 w-full" />
             <Skeleton className="h-48 w-full" />
@@ -125,7 +123,7 @@ export default function ListingPage() {
 
   if (error) {
     return (
-      <div className="mx-auto w-full max-w-[1080px] px-4 py-12 desktop:px-8">
+      <div className="mx-auto w-full max-w-[1280px] px-4 py-12 desktop:px-8">
         <div className="rounded-md border border-error bg-badge-cancelled-bg p-4 text-body-sm text-error">
           {(error as Error).message}
         </div>
@@ -135,7 +133,7 @@ export default function ListingPage() {
 
   if (!listing) {
     return (
-      <div className="mx-auto w-full max-w-[1080px] px-4 py-12 desktop:px-8">
+      <div className="mx-auto w-full max-w-[1280px] px-4 py-12 desktop:px-8">
         <EmptyState
           title="Vaga não encontrada"
           description="Pode ter sido removida pelo estacionamento. Volte pra busca."
@@ -152,9 +150,13 @@ export default function ListingPage() {
   const isSaved = saved.isSaved(listing.id);
   const hasDescription = (listing.capacity ?? 0) > 0 || !!listing.parking_type.description;
   const hasAmenities = listing.amenities.length > 0;
+  const hasShuttle =
+    listing.location.shuttle_to_terminal_minutes != null ||
+    listing.location.shuttle_frequency_minutes != null;
+  const shuttleMin = listing.location.shuttle_to_terminal_minutes;
 
   return (
-    <div className="mx-auto w-full max-w-[1080px] px-4 py-8 desktop:px-8">
+    <div className="mx-auto w-full max-w-[1280px] px-4 py-8 desktop:px-8">
       <Helmet>
         <title>{pageTitle}</title>
         <meta name="description" content={pageDesc} />
@@ -182,6 +184,7 @@ export default function ListingPage() {
           <script type="application/ld+json">{JSON.stringify(faqSchemaData)}</script>
         )}
       </Helmet>
+
       {/* Voltar */}
       <Button variant="ghost" size="sm" asChild className="mb-4 -ml-3">
         <Link to={`/search?${searchParams.toString()}`}>
@@ -192,24 +195,43 @@ export default function ListingPage() {
 
       {/* Header */}
       <div className="mb-6 flex items-start justify-between gap-4">
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <h1 className="text-display-xl text-ink">{listing.company.name}</h1>
           <p className="text-display-sm text-muted">{listing.parking_type.name}</p>
-          <div className="flex flex-wrap items-center gap-2 text-body-sm text-muted">
+
+          {/* Social proof row */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <RatingBadge
               avg={listing.location.review_avg}
               count={listing.location.review_count}
               href="#avaliacoes"
             />
+
             {listing.location.address && (
-              <>
-                {(listing.location.review_count ?? 0) > 0 && <span>·</span>}
-                <MapPin className="h-4 w-4 shrink-0" />
+              <div className="flex items-center gap-1.5 text-body-sm text-muted">
+                <MapPin className="h-3.5 w-3.5 shrink-0" />
                 <span className="line-clamp-1">{listing.location.address}</span>
-              </>
+              </div>
+            )}
+
+            {hasShuttle && (
+              <div className="flex items-center gap-1.5 text-body-sm text-muted">
+                <Bus className="h-3.5 w-3.5 shrink-0" />
+                <span>
+                  Transfer{shuttleMin ? ` em ${shuttleMin} min` : " gratuito"}
+                </span>
+              </div>
+            )}
+
+            {(listing.capacity ?? 0) > 0 && (
+              <div className="flex items-center gap-1.5 text-body-sm text-muted">
+                <Car className="h-3.5 w-3.5 shrink-0" />
+                <span>{listing.capacity} vagas</span>
+              </div>
             )}
           </div>
         </div>
+
         <button
           type="button"
           onClick={() => saved.toggle(listing.id)}
@@ -221,10 +243,10 @@ export default function ListingPage() {
         </button>
       </div>
 
-      {/* Photo grid */}
+      {/* Galeria de fotos */}
       <PhotoGrid title={listing.location.name} photoUrls={listing.location.photos} />
 
-      {/* Mobile/tablet: card de reserva logo após as fotos — visível sem scroll */}
+      {/* Mobile: card de reserva logo após as fotos */}
       <div ref={mobileCardRef} className="mt-6 desktop:hidden">
         <ReservationCard
           listing={listing}
@@ -233,39 +255,35 @@ export default function ListingPage() {
         />
       </div>
 
-      {/* Body 2-col */}
-      <div className="mt-8 grid grid-cols-1 gap-12 desktop:grid-cols-[1fr_360px]">
+      {/* Corpo em 2 colunas */}
+      <div className="mt-10 grid grid-cols-1 gap-12 desktop:grid-cols-[1fr_400px]">
         <div className="space-y-10">
-          {/* Sub-header: descrição e capacidade — só renderiza quando tem conteúdo */}
+
+          {/* Descrição e tipo de vaga */}
           {hasDescription && (
-            <section className="space-y-3">
-              {(listing.capacity ?? 0) > 0 && (
-                <p className="text-body-sm text-muted">
-                  {listing.capacity} vagas disponíveis
-                </p>
-              )}
-              {listing.parking_type.description && (
-                <p className="text-body-md text-body">{listing.parking_type.description}</p>
-              )}
-            </section>
-          )}
-
-          {hasDescription && <Separator />}
-
-          {/* O que oferece — oculto quando o estacionamento não cadastrou comodidades */}
-          {hasAmenities && (
             <>
-              <section className="space-y-4">
-                <h2 className="text-display-sm text-ink">O que essa vaga oferece</h2>
-                <AmenityList amenities={listing.amenities} />
+              <section className="space-y-3">
+                {listing.parking_type.description && (
+                  <p className="text-body-md text-body">{listing.parking_type.description}</p>
+                )}
               </section>
-
               <Separator />
             </>
           )}
 
-          {/* Como chegar (PRD-11): aviso de entrada + passo-a-passo + traslado + mapa */}
-          <section className="space-y-4">
+          {/* O que essa vaga oferece — cards visuais */}
+          {hasAmenities && (
+            <>
+              <section className="space-y-5">
+                <h2 className="text-display-sm text-ink">O que essa vaga oferece</h2>
+                <AmenityList amenities={listing.amenities} />
+              </section>
+              <Separator />
+            </>
+          )}
+
+          {/* Como chegar */}
+          <section className="space-y-4" id="como-chegar">
             <h2 className="text-display-sm text-ink">Como chegar</h2>
             <HowToArrive
               address={listing.location.address}
@@ -280,6 +298,7 @@ export default function ListingPage() {
             <TerminalDistances locationId={listing.location.id} />
           </section>
 
+          {/* Avaliações */}
           {listing.location.review_count > 0 && (
             <>
               <Separator />
@@ -292,26 +311,28 @@ export default function ListingPage() {
 
           <Separator />
 
-          {/* Política */}
-          <section className="space-y-3">
+          {/* Política de cancelamento */}
+          <section className="space-y-3" id="cancelamento">
             <h2 className="text-display-sm text-ink">Política de cancelamento</h2>
-            <CancellationPolicy operatorPolicy={listing.location.reservation_policy} />
+            <div className="rounded-xl border border-hairline bg-surface-soft p-5">
+              <CancellationPolicy operatorPolicy={listing.location.reservation_policy} />
+            </div>
           </section>
 
           <Separator />
 
-          {/* Garantia de vaga */}
+          {/* Garantia Movepark — card destacado */}
           <GuaranteeSection />
 
           <Separator />
 
-          {/* FAQ — global + destination + location (ADR-002) */}
+          {/* FAQ */}
           <ListingFaqSection items={faqItems} isLoading={faqLoading} />
 
           <Separator />
 
-          {/* Estacionamento */}
-          <section className="space-y-4">
+          {/* Conheça o estacionamento */}
+          <section className="space-y-4" id="estacionamento">
             <h2 className="text-display-sm text-ink">Conheça o estacionamento</h2>
             <OperatorCard
               company={listing.company}
@@ -320,7 +341,7 @@ export default function ListingPage() {
           </section>
         </div>
 
-        {/* Reservation card sticky */}
+        {/* Card lateral sticky */}
         <aside className="hidden desktop:block">
           <div className="sticky top-24">
             <ReservationCard
@@ -332,7 +353,7 @@ export default function ListingPage() {
         </aside>
       </div>
 
-      {/* Sticky CTA mobile — aparece quando o card de reserva sai da viewport */}
+      {/* Sticky CTA mobile */}
       {showStickyBar && (
         <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-4 border-t border-hairline bg-canvas/95 px-4 py-3 backdrop-blur-sm desktop:hidden">
           <div>
@@ -362,7 +383,7 @@ type ListingFaqSectionProps = {
 function ListingFaqSection({ items, isLoading }: ListingFaqSectionProps) {
   if (!isLoading && (items ?? []).length === 0) return null;
   return (
-    <section className="space-y-4">
+    <section className="space-y-4" id="faq">
       <h2 className="text-display-sm text-ink">Perguntas frequentes</h2>
       <FaqList items={items} isLoading={isLoading} groupByScope />
     </section>

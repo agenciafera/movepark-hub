@@ -14,7 +14,7 @@ describe("GuaranteeBadge", () => {
 describe("GuaranteeSection", () => {
   it("mostra a promessa e a regra operacional", () => {
     render(<GuaranteeSection />);
-    expect(screen.getByText("Sobre a garantia")).toBeInTheDocument();
+    expect(screen.getByText("Garantia de vaga Movepark")).toBeInTheDocument();
     expect(screen.getByText(GUARANTEE_PROMISE)).toBeInTheDocument();
     expect(screen.getByText(/realocamos você em um parceiro próximo/)).toBeInTheDocument();
   });

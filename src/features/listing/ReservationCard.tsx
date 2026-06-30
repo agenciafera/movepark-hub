@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-import { ShieldCheck, X } from "lucide-react";
+import { Check, ShieldCheck, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
@@ -26,12 +26,50 @@ import { GuaranteeBadge } from "@/features/guarantee/GuaranteeBadge";
 import { PriceTableDialog } from "./PriceTableDialog";
 import { couponDiscountLabel, couponErrorMessage, type CouponPreview } from "./coupon.logic";
 import { addOnsTotal, bookingTotal, selectedAddOns } from "./reservation.logic";
+import { cn } from "@/lib/utils";
 
 type Props = {
   listing: ListingDetail;
   initialFrom: Date | null;
   initialTo: Date | null;
 };
+
+// Tarifas de flexibilidade — apenas UI por ora; backend a ser integrado em fase posterior.
+type FareTier = "basic" | "flex" | "superflex";
+
+type FareOption = {
+  id: FareTier;
+  label: string;
+  surcharge: number;
+  tagline: string;
+  benefits: string[];
+  badge?: string;
+};
+
+const FARE_OPTIONS: FareOption[] = [
+  {
+    id: "basic",
+    label: "Básica",
+    surcharge: 0,
+    tagline: "Grátis",
+    benefits: ["Cancelamento gratuito até 24h"],
+  },
+  {
+    id: "flex",
+    label: "Flex",
+    surcharge: 12.9,
+    tagline: "+R$ 12,90",
+    benefits: ["Cancelamento gratuito até 24h", "Troca de placa", "Alteração de datas"],
+    badge: "Mais popular",
+  },
+  {
+    id: "superflex",
+    label: "Superflex",
+    surcharge: 24.9,
+    tagline: "+R$ 24,90",
+    benefits: ["Cancelamento até 1 min antes", "Proteção de voo", "Suporte prioritário"],
+  },
+];
 
 function daysBetween(a: Date | null, b: Date | null): number {
   if (!a || !b || b <= a) return 0;
@@ -50,6 +88,7 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
   const [passengers, setPassengers] = React.useState<number>(1);
   const [hasPcd, setHasPcd] = React.useState<boolean>(false);
   const [priceTableOpen, setPriceTableOpen] = React.useState<boolean>(false);
+  const [selectedFare, setSelectedFare] = React.useState<FareTier>("flex");
 
   const validateCoupon = useValidateCoupon();
   const [couponInput, setCouponInput] = React.useState<string>("");
@@ -87,13 +126,11 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
   });
   const availUi = availabilityUi(avail.data);
 
-  // Recalcula stale flag — pricing está sendo recarregado pra novos valores
   const pricingStale = sim.isFetching && (from !== debouncedFrom || to !== debouncedTo);
 
   const canReserve =
     !!from && !!to && days > 0 && sim.data?.price != null && !sim.isFetching && availUi.canReserve;
 
-  // Cupom depende de datas/preço: ao mudar o período, invalida o cupom aplicado.
   React.useEffect(() => {
     setApplied(null);
     setCouponMsg(null);
@@ -165,8 +202,14 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
   const chosenAddOns = selectedAddOns(addOns, selectedAddOnIds);
   const addOnsSum = addOnsTotal(addOns, selectedAddOnIds);
   const discount = applied?.discount ?? 0;
-  const total = bookingTotal(parkingPrice, discount, addOnsSum);
-  const showBreakdown = sim.data?.price != null && (applied != null || chosenAddOns.length > 0);
+  const parkingBase = bookingTotal(parkingPrice, discount, addOnsSum);
+
+  const fareOption = FARE_OPTIONS.find((f) => f.id === selectedFare) ?? FARE_OPTIONS[0];
+  const fareSurcharge = canReserve ? fareOption.surcharge : 0;
+  const displayTotal = parkingBase + fareSurcharge;
+
+  const showBreakdown =
+    sim.data?.price != null && (applied != null || chosenAddOns.length > 0 || fareSurcharge > 0);
 
   return (
     <div className="rounded-2xl border border-hairline bg-canvas p-6 shadow-tier">
@@ -188,7 +231,7 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
           <Skeleton className="h-9 w-32" />
         ) : sim.data?.price != null ? (
           <div className="text-display-md text-ink tabular-nums">
-            {formatBRL(sim.data.price)}
+            {formatBRL(displayTotal > 0 ? displayTotal : sim.data.price + fareSurcharge)}
           </div>
         ) : (
           <div className="text-display-sm text-ink">
@@ -257,6 +300,68 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
         </div>
       )}
 
+      {/* Seletor de tarifa */}
+      {(sim.data?.price != null || days > 0) && (
+        <div className="mt-5">
+          <div className="mb-3 text-body-sm font-semibold text-ink">Escolha sua tarifa</div>
+          <div className="space-y-2">
+            {FARE_OPTIONS.map((fare) => {
+              const isSelected = selectedFare === fare.id;
+              return (
+                <button
+                  key={fare.id}
+                  type="button"
+                  onClick={() => setSelectedFare(fare.id)}
+                  className={cn(
+                    "relative w-full rounded-lg border px-4 py-3 text-left transition-all",
+                    isSelected
+                      ? "border-mp-primary bg-mp-pale/30 ring-1 ring-mp-primary"
+                      : "border-hairline bg-canvas hover:border-mp-indigo/50",
+                  )}
+                >
+                  {fare.badge && (
+                    <span className="absolute -top-2.5 right-3 rounded-full bg-mp-primary px-2.5 py-0.5 text-caption font-semibold text-on-primary">
+                      {fare.badge}
+                    </span>
+                  )}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <span
+                        className={cn(
+                          "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2",
+                          isSelected
+                            ? "border-mp-primary bg-mp-primary"
+                            : "border-hairline bg-canvas",
+                        )}
+                      >
+                        {isSelected && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+                      </span>
+                      <span className="text-body-sm font-semibold text-ink">{fare.label}</span>
+                    </div>
+                    <span
+                      className={cn(
+                        "text-body-sm font-semibold tabular-nums",
+                        fare.surcharge === 0 ? "text-badge-confirmed-fg" : "text-ink",
+                      )}
+                    >
+                      {fare.tagline}
+                    </span>
+                  </div>
+                  <ul className="mt-1.5 space-y-0.5 pl-6.5">
+                    {fare.benefits.map((b) => (
+                      <li key={b} className="flex items-center gap-1.5 text-caption text-muted">
+                        <Check className="h-3 w-3 shrink-0 text-badge-confirmed-fg" />
+                        {b}
+                      </li>
+                    ))}
+                  </ul>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Erro do simulate_price */}
       {sim.data?.error && (
         <div className="mt-4 rounded-sm border border-error bg-badge-cancelled-bg p-2 text-caption text-error">
@@ -264,7 +369,7 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
         </div>
       )}
 
-      {/* Disponibilidade / regras de reserva (esgotado, estadia mínima, antecedência, quase-lotação) */}
+      {/* Disponibilidade */}
       {availUi.message && (
         <div
           className={
@@ -281,9 +386,7 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
       {/* Serviços adicionais */}
       {addOns.length > 0 && (
         <div className="mt-4 space-y-2">
-          <div className="text-caption font-semibold text-muted-steel">
-            Serviços adicionais
-          </div>
+          <div className="text-caption font-semibold text-muted-steel">Serviços adicionais</div>
           {addOns.map((a) => (
             <label
               key={a.id}
@@ -351,13 +454,19 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
         </div>
       )}
 
-      {/* Breakdown: estacionamento + add-ons + desconto */}
+      {/* Breakdown: vaga + tarifa + add-ons + desconto */}
       {showBreakdown && (
         <div className="mt-4 space-y-1.5 border-t border-hairline pt-4">
           <div className="flex justify-between text-body-sm text-muted">
             <span>Estacionamento</span>
             <span className="tabular-nums">{formatBRL(parkingPrice)}</span>
           </div>
+          {fareSurcharge > 0 && (
+            <div className="flex justify-between text-body-sm text-muted">
+              <span>Tarifa {fareOption.label}</span>
+              <span className="tabular-nums">+{formatBRL(fareSurcharge)}</span>
+            </div>
+          )}
           {chosenAddOns.map((a) => (
             <div key={a.id} className="flex justify-between text-body-sm text-muted">
               <span>{a.name}</span>
@@ -372,7 +481,7 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
           )}
           <div className="flex items-baseline justify-between pt-1">
             <span className="text-title-sm text-ink">Total</span>
-            <span className="text-title-md text-ink tabular-nums">{formatBRL(total)}</span>
+            <span className="text-title-md text-ink tabular-nums">{formatBRL(displayTotal)}</span>
           </div>
         </div>
       )}
@@ -391,8 +500,22 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
             : "Reservar agora"}
       </Button>
 
+      {/* Trust signals */}
+      <div className="mt-4 space-y-1.5">
+        {[
+          "Vaga garantida",
+          "Cancelamento conforme a tarifa",
+          "Sem pagamento ao estacionamento",
+        ].map((item) => (
+          <div key={item} className="flex items-center gap-2 text-caption text-muted">
+            <Check className="h-3.5 w-3.5 shrink-0 text-badge-confirmed-fg" />
+            <span>{item}</span>
+          </div>
+        ))}
+      </div>
+
       {!avail.data?.sold_out && (
-        <div className="mt-3 flex justify-center">
+        <div className="mt-4 flex justify-center">
           <GuaranteeBadge />
         </div>
       )}

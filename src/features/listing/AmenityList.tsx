@@ -23,7 +23,6 @@ export function AmenityList({ amenities }: { amenities: ListingDetail["amenities
       </p>
     );
   }
-  // Mantém ordem do servidor (já sort_order), agrupa preservando categorias na ordem em que aparecem
   const grouped = new Map<string, ListingDetail["amenities"]>();
   for (const a of amenities) {
     const arr = grouped.get(a.category) ?? [];
@@ -32,19 +31,22 @@ export function AmenityList({ amenities }: { amenities: ListingDetail["amenities
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {Array.from(grouped.entries()).map(([cat, items]) => (
         <div key={cat}>
-          <div className="mb-3 text-caption text-muted">
+          <div className="mb-3 text-caption font-semibold uppercase tracking-wide text-muted-steel">
             {categoryLabel[cat] ?? cat}
           </div>
-          <ul className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
+          <ul className="grid grid-cols-2 gap-2.5">
             {items.map((a) => {
               const Icon = getIcon(a.icon);
               return (
-                <li key={a.code} className="flex items-center gap-3">
-                  <Icon className="h-5 w-5 shrink-0 text-mp-indigo" />
-                  <span className="text-body-md text-ink">{a.name}</span>
+                <li
+                  key={a.code}
+                  className="flex items-center gap-2.5 rounded-lg border border-hairline bg-surface-soft px-3.5 py-3 text-body-sm text-ink transition-colors hover:border-mp-indigo/40 hover:bg-mp-pale/20"
+                >
+                  <Icon className="h-4 w-4 shrink-0 text-mp-indigo" />
+                  <span>{a.name}</span>
                 </li>
               );
             })}
