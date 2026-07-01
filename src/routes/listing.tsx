@@ -11,6 +11,7 @@ import { AmenityList } from "@/features/listing/AmenityList";
 import { HowToArrive } from "@/features/listing/HowToArrive";
 import { TerminalDistances } from "@/features/listing/TerminalDistances";
 import { ReservationCard } from "@/features/listing/ReservationCard";
+import { RecommendedCarousel } from "@/features/listing/RecommendedCarousel";
 import { ReviewsBlock } from "@/features/reviews/ReviewsBlock";
 import { RatingBadge } from "@/features/reviews/RatingStars";
 import { useLocationReviews } from "@/features/reviews/api";
@@ -68,6 +69,7 @@ export default function ListingPage() {
 
   const fromStr = searchParams.get("from");
   const toStr = searchParams.get("to");
+  const dest = searchParams.get("dest");
   const initialFrom = fromStr ? new Date(fromStr) : null;
   const initialTo = toStr ? new Date(toStr) : null;
 
@@ -328,6 +330,22 @@ export default function ListingPage() {
           </div>
         </aside>
       </div>
+
+      {/* Carrossel de recomendados */}
+      {dest && fromStr && toStr && (
+        <>
+          <Separator className="mt-10" />
+          <div className="mt-10">
+            <RecommendedCarousel
+              currentLocationId={listing.location.id}
+              dest={dest}
+              from={fromStr}
+              to={toStr}
+              searchParams={searchParams}
+            />
+          </div>
+        </>
+      )}
 
       {/* Sticky CTA mobile */}
       {showStickyBar && (
