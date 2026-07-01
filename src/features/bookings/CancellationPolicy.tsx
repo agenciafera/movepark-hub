@@ -16,16 +16,16 @@ export function CancellationPolicy({ checkInAt, fareCancelUntil, operatorPolicy,
   return (
     <div className={cn("space-y-2", className)}>
       {checkInAt && (
-        <p className="text-body-md font-medium text-ink">
+        <p className="text-body-sm font-medium text-ink">
           {freeCancelDeadlineLabel(checkInAt, fareCancelUntil)}
         </p>
       )}
-      <ul className="space-y-1 text-body-md text-body">
+      <ul className="space-y-1 text-body-sm text-body">
         {CANCELLATION_POLICY_LINES.map((line, i) => (
           <li key={i}>{line}</li>
         ))}
       </ul>
-      {operatorPolicy && <p className="text-body-sm text-muted">{operatorPolicy}</p>}
+      {operatorPolicy && <p className="text-caption text-muted">{operatorPolicy}</p>}
     </div>
   );
 }
