@@ -169,23 +169,6 @@ export function useUpdateBookingVehicle() {
   });
 }
 
-export function useCancelBooking() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (args: { bookingId: string }) => {
-      // Libera capacidade
-      await supabase.rpc("release_booking_capacity", { p_booking_id: args.bookingId });
-      // Marca como cancelada
-      const { error } = await supabase
-        .from("booking")
-        .update({ status: "cancelled", deleted_at: new Date().toISOString() })
-        .eq("id", args.bookingId);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["checkout-booking"] }),
-  });
-}
-
 type MockPaymentResponse = {
   payment_id: string;
   status: "pending";
