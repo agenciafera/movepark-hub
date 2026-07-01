@@ -17,7 +17,9 @@ Relacionado: [booking-flow.md](./booking-flow.md) · [customer/listing-detail.md
 ## 1. Modelo de dados
 - `review` (baseline): `booking_id` UNIQUE (1 review/reserva), `profile_id`, `location_id`,
   `rating` 1-5, sub-notas `rating_cleanliness/service/value/access` (1-5, opcionais), `comment`,
-  `is_published` (default true), **`owner_response`/`owner_response_at`** (resposta do dono).
+  `is_published` (default true), **`owner_response`/`owner_response_at`** (resposta do dono),
+  **`stay_check_in`/`stay_check_out`** (snapshot do período da estadia — PRD-08.8; denormalizado do
+  `booking` porque o RLS de `booking` bloqueia o join público a partir do read anônimo de reviews).
 - `location.review_avg` (numeric 2,1) + `location.review_count` — **agregado cacheado** (só publicados),
   recomputado pelo trigger `review_bump_rating` a cada insert/update/delete de review.
 - `booking.review_request_sent_at` — idempotência da coleta.
@@ -26,6 +28,8 @@ Relacionado: [booking-flow.md](./booking-flow.md) · [customer/listing-detail.md
 - **5 estrelas**, estrela em **ink** (não amarela), número com vírgula (`formatRating`).
 - Card de busca e topo do detalhe: selo `★ 4,8 · 248 avaliações` (`RatingBadge`). **Some sem avaliações**.
 - Bloco na unidade (`ReviewsBlock`): grid 2-col (autor, data, nota, comentário, resposta do dono) + modal "ver todas".
+  O card mostra o **contexto de estadia** ("Estacionou de DD/MM a DD/MM" / "Estacionou em DD/MM" no mesmo dia)
+  quando há `stay_check_in/out` — PRD-08.8, `reviews.logic.ts → stayContextLabel` (some sem datas).
 - Busca: `sort=rating_desc` e filtro `min_rating` (edge `search` lê `location.review_avg/count`).
 
 ## 3. Coleta pós-estadia

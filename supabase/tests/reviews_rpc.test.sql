@@ -4,7 +4,7 @@
 -- Rodar com: supabase test db. Transação + rollback.
 
 begin;
-select plan(9);
+select plan(10);
 
 -- ── Fixture: empresa ativa + operator + cliente + location + bookings ───────
 do $$
@@ -38,6 +38,12 @@ do $$ begin
 end $$;
 select ok(current_setting('test.rid') is not null, 'submit_review cria avaliação');
 select is((select rating from public.review where id=current_setting('test.rid')::uuid), 5, 'nota gravada');
+
+-- PRD-08.8: submit_review snapshota o período da estadia a partir do booking.
+select is(
+  (select stay_check_in from public.review where id=current_setting('test.rid')::uuid),
+  (select check_in_at from public.booking where id=current_setting('test.bk')::uuid),
+  'submit_review snapshota stay_check_in do booking (PRD-08.8)');
 
 -- agregado cacheado
 select is((select review_count from public.location where id=current_setting('test.lid')::uuid), 1, 'review_count=1');

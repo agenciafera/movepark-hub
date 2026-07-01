@@ -157,9 +157,12 @@ para GEO). Ordenação é lógica pura testável (`reviews.logic.ts → sortRevi
 O **selo de rating no topo do detalhe** é um link-âncora (`#avaliacoes`) que rola até este bloco
 (`RatingBadge href`). A seção tem `id="avaliacoes"` + `scroll-mt`.
 
-> **Contexto de estadia no card ("estacionou de X a Y") — adiado.** Exige denormalizar as datas da
-> reserva na tabela `review` (no `submit_review`) + backfill, porque o RLS de `booking` bloqueia o
-> join público a partir do read de reviews. É um follow-up com migration, fora do nice-to-have atual.
+> **Contexto de estadia no card ("estacionou de X a Y") — ✅ PRD-08.8.** As datas da reserva são
+> denormalizadas em `review.stay_check_in/stay_check_out` (preenchidas no `submit_review` + backfill),
+> porque o RLS de `booking` bloqueia o join público a partir do read anônimo de reviews. O card
+> renderiza "Estacionou de DD/MM a DD/MM" (ou "Estacionou em DD/MM" no mesmo dia) via
+> `reviews.logic.ts → stayContextLabel`; some quando faltam datas. Migration
+> `20260723000000_review_stay_context.sql`.
 
 ### 5.5 Como chegar ✅ (PRD-11)
 

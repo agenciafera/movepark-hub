@@ -4,6 +4,7 @@ import {
   EMPTY_REVIEW_FORM,
   ratingLabel,
   sortReviews,
+  stayContextLabel,
   topRated,
   validateReviewForm,
   type ReviewFormValues,
@@ -73,6 +74,24 @@ describe("sortReviews", () => {
     const original = [...reviews];
     sortReviews(reviews, "best");
     expect(reviews).toEqual(original);
+  });
+});
+
+describe("stayContextLabel", () => {
+  // Datas em horário local do meio-dia → DD/MM estável independente do timezone do runner.
+  const jun14 = new Date(2026, 5, 14, 12, 0);
+  const jun16 = new Date(2026, 5, 16, 12, 0);
+
+  it("período de vários dias: 'Estacionou de DD/MM a DD/MM'", () => {
+    expect(stayContextLabel(jun14, jun16)).toBe("Estacionou de 14/06 a 16/06");
+  });
+  it("mesmo dia: 'Estacionou em DD/MM'", () => {
+    expect(stayContextLabel(jun14, jun14)).toBe("Estacionou em 14/06");
+  });
+  it("null quando falta alguma data", () => {
+    expect(stayContextLabel(null, jun16)).toBeNull();
+    expect(stayContextLabel(jun14, null)).toBeNull();
+    expect(stayContextLabel(null, null)).toBeNull();
   });
 });
 

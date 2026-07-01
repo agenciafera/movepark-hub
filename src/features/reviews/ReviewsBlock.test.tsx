@@ -39,6 +39,24 @@ describe("ReviewsBlock", () => {
     expect(screen.getByText(/Comentário r7/)).toBeInTheDocument();
   });
 
+  it("mostra o contexto de estadia quando há datas (PRD-08.8)", () => {
+    mockReviews([
+      review({
+        id: "comdatas",
+        stay_check_in: "2026-06-14T12:00:00",
+        stay_check_out: "2026-06-16T12:00:00",
+      }),
+    ]);
+    renderWithProviders(<ReviewsBlock locationId="loc-1" totalCount={1} />);
+    expect(screen.getByText("Estacionou de 14/06 a 16/06")).toBeInTheDocument();
+  });
+
+  it("esconde o contexto de estadia quando faltam datas", () => {
+    mockReviews([review({ id: "semdatas", stay_check_in: null, stay_check_out: null })]);
+    renderWithProviders(<ReviewsBlock locationId="loc-1" totalCount={1} />);
+    expect(screen.queryByText(/Estacionou/)).not.toBeInTheDocument();
+  });
+
   it("ordena por 'Melhor avaliadas'", () => {
     mockReviews([
       review({ id: "baixa", rating: 2, comment: "nota baixa", created_at: "2026-06-10T00:00:00Z" }),

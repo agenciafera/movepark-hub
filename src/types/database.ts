@@ -2533,6 +2533,8 @@ export type Database = {
           rating_cleanliness: number | null
           rating_service: number | null
           rating_value: number | null
+          stay_check_in: string | null
+          stay_check_out: string | null
           updated_at: string
         }
         Insert: {
@@ -2550,6 +2552,8 @@ export type Database = {
           rating_cleanliness?: number | null
           rating_service?: number | null
           rating_value?: number | null
+          stay_check_in?: string | null
+          stay_check_out?: string | null
           updated_at?: string
         }
         Update: {
@@ -2567,6 +2571,8 @@ export type Database = {
           rating_cleanliness?: number | null
           rating_service?: number | null
           rating_value?: number | null
+          stay_check_in?: string | null
+          stay_check_out?: string | null
           updated_at?: string
         }
         Relationships: [

@@ -5,11 +5,12 @@ import { formatDate } from "@/lib/format";
 import type { ReviewWithAuthor } from "@/types/domain";
 import { useLocationReviews } from "./api";
 import { RatingStars } from "./RatingStars";
-import { type ReviewSort, sortReviews } from "./reviews.logic";
+import { type ReviewSort, sortReviews, stayContextLabel } from "./reviews.logic";
 
 const PAGE_SIZE = 6;
 
 function ReviewCard({ r }: { r: ReviewWithAuthor }) {
+  const stay = stayContextLabel(r.stay_check_in, r.stay_check_out);
   return (
     <div className="rounded-md border border-hairline bg-canvas p-4">
       <div className="flex items-center justify-between gap-2">
@@ -17,6 +18,7 @@ function ReviewCard({ r }: { r: ReviewWithAuthor }) {
         <RatingStars value={r.rating} size="sm" />
       </div>
       <p className="text-caption text-muted">{formatDate(r.created_at)}</p>
+      {stay && <p className="text-caption text-muted-steel">{stay}</p>}
       {r.comment && <p className="mt-2 text-body-sm text-ink">{r.comment}</p>}
       {r.owner_response && (
         <div className="mt-3 rounded-sm bg-surface-soft p-3">

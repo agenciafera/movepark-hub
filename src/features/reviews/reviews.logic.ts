@@ -1,5 +1,23 @@
 // Lógica pura das avaliações. Sem React/Supabase → testável (Vitest).
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { formatRating } from "@/lib/format";
+
+/**
+ * Contexto de estadia do card de avaliação (PRD-08.8): "Estacionou de DD/MM a DD/MM"
+ * (ou "Estacionou em DD/MM" quando entrada e saída caem no mesmo dia). As datas vêm
+ * denormalizadas em `review.stay_check_in/stay_check_out`. `null` quando faltar alguma
+ * (reviews anteriores ao backfill) → a UI esconde a linha.
+ */
+export function stayContextLabel(
+  checkIn: string | Date | null | undefined,
+  checkOut: string | Date | null | undefined,
+): string | null {
+  if (!checkIn || !checkOut) return null;
+  const from = format(new Date(checkIn), "dd/MM", { locale: ptBR });
+  const to = format(new Date(checkOut), "dd/MM", { locale: ptBR });
+  return from === to ? `Estacionou em ${from}` : `Estacionou de ${from} a ${to}`;
+}
 
 export type ReviewFormValues = {
   rating: number; // 1-5; 0 = não escolhido
