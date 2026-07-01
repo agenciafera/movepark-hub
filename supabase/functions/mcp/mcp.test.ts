@@ -95,6 +95,27 @@ Deno.test("todas as PARTNER_TOOLS têm escopo declarado", () => {
   assertEquals(PARTNER_TOOLS.every((t) => typeof t.scope === "string"), true);
 });
 
+// Regressão: `false`/`0` são valores VÁLIDOS de um campo required — não podem ser
+// tratados como "faltando", senão desativar (is_active=false) / desbloquear (blocked=false)
+// seria rejeitado antes de chegar na RPC.
+Deno.test("missingRequired trata false/0 como presentes (desativar/desbloquear)", () => {
+  const coupon = findTool("partner", "set_coupon_active")!; // required: id, is_active
+  assertEquals(missingRequired(coupon, { id: "c1", is_active: false }), null);
+  const block = findTool("partner", "set_date_blocked")!; // required: lpt, date, blocked
+  assertEquals(
+    missingRequired(block, { location_parking_type_id: "l1", date: "2026-06-01", blocked: false }),
+    null,
+  );
+});
+
+// Invariante de segurança: todo escopo de tool de parceiro segue o padrão do catálogo
+// (recurso:ação) — pega typo tipo "booking:read" (singular) que furaria o gating.
+Deno.test("todo escopo de PARTNER_TOOLS casa o padrão recurso:ação", () => {
+  const re = /^[a-z-]+:(read|write|cancel|checkin)$/;
+  const bad = PARTNER_TOOLS.filter((t) => !re.test(t.scope!));
+  assertEquals(bad.map((t) => `${t.name}=${t.scope}`), []);
+});
+
 // ── auth ─────────────────────────────────────────────────────────────────────
 Deno.test("auth helpers", async () => {
   assertEquals(extractApiKey(new Headers({ Authorization: "Bearer mp_live_abc" })), "mp_live_abc");

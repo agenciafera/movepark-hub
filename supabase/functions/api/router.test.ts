@@ -50,6 +50,20 @@ Deno.test("pathExists distingue 404 de 405", () => {
   assertEquals(pathExists("/v1/nope"), false);
 });
 
+Deno.test("matchRoute aceita barra final e decodifica params (%20)", () => {
+  assertEquals(matchRoute("GET", "/v1/locations/")?.handler, "list_locations");
+  assertEquals(matchRoute("GET", "/v1/locations/a%20b")?.params.id, "a b");
+});
+
+Deno.test("POST numa rota só-GET → matchRoute null, mas pathExists true (vira 405, não 404)", () => {
+  assertEquals(matchRoute("POST", "/v1/locations"), null);
+  assertEquals(pathExists("/v1/locations"), true);
+});
+
+Deno.test("normalizePath sem /v1 devolve o próprio path", () => {
+  assertEquals(normalizePath("/health"), "/health");
+});
+
 Deno.test("extractApiKey aceita Bearer e X-API-Key", () => {
   assertEquals(extractApiKey(new Headers({ Authorization: "Bearer mp_live_abc" })), "mp_live_abc");
   assertEquals(extractApiKey(new Headers({ "X-API-Key": "mp_test_xyz" })), "mp_test_xyz");
