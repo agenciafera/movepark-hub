@@ -2,12 +2,13 @@ import type { ListingDetail } from "@/features/listing/api";
 
 const SITE_URL = "https://hub.movepark.co";
 
-export function localBusinessSchema(listing: ListingDetail) {
+export function localBusinessSchema(listing: ListingDetail, opts?: { description?: string }) {
   return {
     "@context": "https://schema.org",
     "@type": ["LocalBusiness", "ParkingFacility"],
     name: `${listing.location.name} · ${listing.parking_type.name}`,
-    description: listing.parking_type.description ?? undefined,
+    // TLDR-first: prefere o resumo extraível quando fornecido; senão a descrição do tipo de vaga.
+    description: opts?.description ?? listing.parking_type.description ?? undefined,
     image: listing.location.photos?.length ? listing.location.photos : undefined,
     url: `${SITE_URL}/p/${listing.company.slug}/${listing.location.slug}/${listing.parking_type.code}`,
     telephone: listing.location.phone ?? undefined,
@@ -40,7 +41,11 @@ export type SchemaReview = {
 // Modelado como Product/Offer (não LocalBusiness) — a regra "self-serving" do Google
 // só habilita o rich snippet de estrela em avaliações de produto. AggregateRating/Review
 // só entram quando há avaliações publicadas (count > 0).
-export function productOfferSchema(listing: ListingDetail, reviews: SchemaReview[] = []) {
+export function productOfferSchema(
+  listing: ListingDetail,
+  reviews: SchemaReview[] = [],
+  opts?: { description?: string },
+) {
   const count = listing.location.review_count ?? 0;
   const avg = listing.location.review_avg;
   const hasRating = count > 0 && avg != null;
@@ -49,7 +54,8 @@ export function productOfferSchema(listing: ListingDetail, reviews: SchemaReview
     "@context": "https://schema.org",
     "@type": "Product",
     name: `${listing.parking_type.name} · ${listing.location.name}`,
-    description: listing.parking_type.description ?? undefined,
+    // TLDR-first: prefere o resumo extraível quando fornecido; senão a descrição do tipo de vaga.
+    description: opts?.description ?? listing.parking_type.description ?? undefined,
     // `image` é exigido pelo Google pro rich result de Product — usa as fotos da unidade.
     image: listing.location.photos?.length ? listing.location.photos : undefined,
     offers: {

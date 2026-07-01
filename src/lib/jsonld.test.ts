@@ -66,6 +66,13 @@ describe("localBusinessSchema", () => {
     expect(localBusinessSchema(makeListing({ photos: fotos })).image).toEqual(fotos);
     expect(localBusinessSchema(makeListing()).image).toBeUndefined();
   });
+
+  it("usa o resumo TLDR como description quando fornecido (senão a descrição do tipo)", () => {
+    expect(localBusinessSchema(makeListing()).description).toBe("Coberta e segura");
+    expect(localBusinessSchema(makeListing(), { description: "Resumo TLDR." }).description).toBe(
+      "Resumo TLDR.",
+    );
+  });
 });
 
 describe("productOfferSchema", () => {
@@ -90,6 +97,13 @@ describe("productOfferSchema", () => {
     const fotos = ["https://cdn/p1.jpg"];
     expect(productOfferSchema(makeListing({ photos: fotos })).image).toEqual(fotos);
     expect(productOfferSchema(makeListing()).image).toBeUndefined();
+  });
+
+  it("usa o resumo TLDR como description quando fornecido", () => {
+    expect(productOfferSchema(makeListing(), [], { description: "Resumo TLDR." }).description).toBe(
+      "Resumo TLDR.",
+    );
+    expect(productOfferSchema(makeListing()).description).toBe("Coberta e segura");
   });
 
   it("com avaliações inclui AggregateRating (regra self-serving do Google)", () => {

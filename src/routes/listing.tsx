@@ -12,10 +12,12 @@ import { HowToArrive } from "@/features/listing/HowToArrive";
 import { TerminalDistances } from "@/features/listing/TerminalDistances";
 import { ReservationCard } from "@/features/listing/ReservationCard";
 import { RecommendedCarousel } from "@/features/listing/RecommendedCarousel";
+import { TldrCard } from "@/features/listing/TldrCard";
+import { buildListingTldr, nearestTerminal } from "@/features/listing/tldr.logic";
 import { ReviewsBlock } from "@/features/reviews/ReviewsBlock";
 import { RatingBadge } from "@/features/reviews/RatingStars";
 import { useLocationReviews } from "@/features/reviews/api";
-import { useListing, type ListingDetail } from "@/features/listing/api";
+import { useListing, useLocationTerminals, type ListingDetail } from "@/features/listing/api";
 import { useSavedListings } from "@/features/search/useSavedListings";
 import { useFaqCombined, type FaqCombinedItem } from "@/features/faqs/api";
 import { FaqList } from "@/features/faqs/FaqList";
@@ -67,6 +69,13 @@ export default function ListingPage() {
     enabled: !!listing?.location.id,
   });
 
+  // TLDR-first (E3.2): resumo extraível gerado dos dados da unidade. Reusa a mesma query
+  // de terminais do bloco "Distância aos terminais" (cache compartilhado, sem fetch extra).
+  const { data: terminals } = useLocationTerminals(listing?.location.id);
+  const tldr = listing
+    ? buildListingTldr(listing, { nearest: nearestTerminal(terminals ?? []) })
+    : null;
+
   const fromStr = searchParams.get("from");
   const toStr = searchParams.get("to");
   const dest = searchParams.get("dest");
@@ -90,9 +99,11 @@ export default function ListingPage() {
   const pageTitle = listing
     ? `${listing.parking_type.name} · ${listing.location.name} | Movepark`
     : "Estacionamento | Movepark";
-  const pageDesc = listing
-    ? `Reserve ${listing.parking_type.name} em ${listing.location.name}. ${listing.location.address ?? ""}`
-    : "";
+  const pageDesc =
+    tldr?.summary ??
+    (listing
+      ? `Reserve ${listing.parking_type.name} em ${listing.location.name}. ${listing.location.address ?? ""}`
+      : "");
   const pageUrl = listing
     ? `https://hub.movepark.co/p/${listing.company.slug}/${listing.location.slug}/${listing.parking_type.code}`
     : "";
@@ -173,8 +184,12 @@ export default function ListingPage() {
         {ogImage && <meta property="og:image:height" content="630" />}
         {ogImage && <meta name="twitter:image" content={ogImage} />}
         <link rel="canonical" href={pageUrl} />
-        <script type="application/ld+json">{JSON.stringify(localBusinessSchema(listing))}</script>
-        <script type="application/ld+json">{JSON.stringify(productOfferSchema(listing, schemaReviews))}</script>
+        <script type="application/ld+json">
+          {JSON.stringify(localBusinessSchema(listing, { description: tldr?.summary }))}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify(productOfferSchema(listing, schemaReviews, { description: tldr?.summary }))}
+        </script>
         <script type="application/ld+json">
           {JSON.stringify(
             breadcrumbSchema([
@@ -239,6 +254,13 @@ export default function ListingPage() {
           <span className="hidden tablet:inline">{isSaved ? "Salvo" : "Salvar"}</span>
         </button>
       </div>
+
+      {/* TLDR-first: resumo extraível no topo (E3.2 · agent-readiness-seo) */}
+      {tldr && (
+        <div className="mb-6">
+          <TldrCard tldr={tldr} />
+        </div>
+      )}
 
       {/* Galeria de fotos */}
       <PhotoGrid title={listing.location.name} photoUrls={listing.location.photos} />

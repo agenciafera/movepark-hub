@@ -91,11 +91,31 @@ A ferramenta (lançada 17/abr/2026) pontua 4 dimensões. Priorizar os **maduros/
 - **MCP Server Card** (`/.well-known/mcp/server-card.json`): **on-thesis** — descreve o MCP da Movepark para agentes. Barato (JSON estático + o MCP que já existe).
 - Experimentais (deixar para depois): Web Bot Auth, WebMCP, Agent Skills discovery, e todo o bloco de **comércio agêntico** (x402/ACP/UCP) — ACP (OpenAI+Stripe) é o mais avançado, mas é roadmap, não fundação.
 
+## TLDR-first na página de unidade (E3.2)
+
+> **✅ Implementado (jul/2026).** Cada página de unidade (`/p/...`) lidera com um bloco **"Em
+> resumo"** — a "TLDR" que os LLMs extraem primeiro. É **gerado dos dados que já existem** (sem
+> campo curado / migration): preço "a partir de", terminal mais perto + distância (view
+> `location_point_proximity`, DAT-05), traslado, avaliação agregada e prazo de cancelamento grátis.
+
+- **Lógica pura e testável:** `src/features/listing/tldr.logic.ts` (`buildListingTldr`,
+  `nearestTerminal`, `shuttleLabel`) → `{ summary, facts[] }`. Cada fato só entra quando o dado
+  existe (terminal/traslado/avaliação são opcionais; preço e cancelamento sempre presentes).
+- **Extração dupla:** o mesmo `summary` aparece **(1)** como texto real no bloco visível
+  (`TldrCard.tsx`, HTML que o crawler lê) e **(2)** no **JSON-LD** — vira o `description` de
+  `Product` e `LocalBusiness` (parâmetro opcional em `jsonld.ts`, com fallback pra descrição do
+  tipo de vaga) e a `<meta name="description">` da rota.
+- **Sem fetch extra:** reusa a query `useLocationTerminals` do bloco "Distância aos terminais"
+  (cache compartilhado). Testes: `tldr.logic.test.ts` + casos de `description` em `jsonld.test.ts`.
+- **v2 (curadoria):** coluna `tldr` editável no Manager, sobrescrevendo o gerado — fora deste escopo.
+
 ## Sequenciamento (ordem de prioridade)
 
 1. **HTML rastreável** (vite-react-ssg + build-time fetch Supabase) — bloqueador nº 1.
 2. **Head por rota + JSON-LD** (@unhead/react; Product/Offer, LocalBusiness, Breadcrumb, FAQ).
-3. **Conteúdo no padrão GEO** (ver plano `gestao/plano-organico-geo.md`): estatísticas com fonte, quotes, FAQ, **datas de atualização visíveis** (conteúdo fresco recebe ~3,2× mais citações de IA).
+3. **TLDR-first + conteúdo no padrão GEO** (ver plano `gestao/plano-organico-geo.md`): resumo
+   extraível no topo da unidade (✅), estatísticas com fonte, quotes, FAQ, **datas de atualização
+   visíveis** (conteúdo fresco recebe ~3,2× mais citações de IA).
 4. **robots.txt + sitemap.xml** (permitir bots de retrieval; sitemap dinâmico).
 5. **llms.txt + recursos agênticos** (Markdown negotiation, MCP server card, Content Signals) — baixo custo, on-thesis, payoff incerto.
 
