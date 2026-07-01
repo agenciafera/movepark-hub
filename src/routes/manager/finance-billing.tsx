@@ -24,8 +24,6 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { useCompanyFinance } from "@/features/finance/api";
 import { formatBRL } from "@/lib/format";
 
-const COMMISSION_RATE = 0.1;
-
 function recentMonths(n: number) {
   const out: { value: string; label: string; date: Date }[] = [];
   const now = new Date();
@@ -46,7 +44,11 @@ export default function ManagerFinanceBilling() {
   const selectedMonth = months.find((m) => m.value === monthKey)?.date ?? new Date();
   const { data, isLoading } = useCompanyFinance(selectedMonth);
   const totalGross = (data ?? []).reduce((acc, r) => acc + r.grossRevenue, 0);
-  const totalCommission = totalGross * COMMISSION_RATE;
+  // Comissão real por empresa (take_rate_bps), não mais taxa fixa.
+  const totalCommission = (data ?? []).reduce(
+    (acc, r) => acc + (r.grossRevenue * r.takeRateBps) / 10000,
+    0,
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -97,14 +99,14 @@ export default function ManagerFinanceBilling() {
                 <TableHead>Empresa</TableHead>
                 <TableHead className="text-right">Reservas</TableHead>
                 <TableHead className="text-right">Receita bruta</TableHead>
-                <TableHead className="text-right">Comissão (10%)</TableHead>
+                <TableHead className="text-right">Comissão</TableHead>
                 <TableHead className="text-right">Repasse</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {data?.map((row) => {
-                const commission = row.grossRevenue * COMMISSION_RATE;
+                const commission = (row.grossRevenue * row.takeRateBps) / 10000;
                 return (
                   <TableRow key={row.companyId}>
                     <TableCell className="text-ink">{row.companyName}</TableCell>
@@ -114,6 +116,9 @@ export default function ManagerFinanceBilling() {
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {formatBRL(commission)}
+                      <span className="ml-1 text-caption text-muted">
+                        ({row.takeRateBps / 100}%)
+                      </span>
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {formatBRL(row.grossRevenue - commission)}

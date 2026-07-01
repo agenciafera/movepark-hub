@@ -7,6 +7,8 @@ export type CompanyFinance = {
   companyName: string;
   reservations: number;
   grossRevenue: number;
+  /** Comissão da Movepark da empresa, em basis points (1500 = 15%). */
+  takeRateBps: number;
 };
 
 export function useCompanyFinance(month: Date) {
@@ -17,7 +19,7 @@ export function useCompanyFinance(month: Date) {
       const to = endOfMonth(month).toISOString();
       const { data, error } = await supabase
         .from("booking")
-        .select("total_amount, location:location(company:company(id, name))")
+        .select("total_amount, location:location(company:company(id, name, take_rate_bps))")
         .gte("check_in_at", from)
         .lte("check_in_at", to)
         .in("status", ["confirmed", "checked_in", "completed"]);
@@ -26,7 +28,9 @@ export function useCompanyFinance(month: Date) {
       const map = new Map<string, CompanyFinance>();
       for (const row of (data ?? []) as unknown as Array<{
         total_amount: number;
-        location: { company: { id: string; name: string } | null } | null;
+        location: {
+          company: { id: string; name: string; take_rate_bps: number } | null;
+        } | null;
       }>) {
         const company = row.location?.company;
         if (!company) continue;
@@ -35,6 +39,7 @@ export function useCompanyFinance(month: Date) {
           companyName: company.name,
           reservations: 0,
           grossRevenue: 0,
+          takeRateBps: company.take_rate_bps ?? 0,
         };
         existing.reservations += 1;
         existing.grossRevenue += Number(row.total_amount ?? 0);
