@@ -1,7 +1,6 @@
 import { Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatBRL, formatDateTime, formatDuration } from "@/lib/format";
-import { GuaranteeBadge } from "@/features/guarantee/GuaranteeBadge";
 import { CancellationPolicy } from "@/features/bookings/CancellationPolicy";
 import type { BookingForCheckout } from "./api";
 
@@ -107,13 +106,9 @@ export function SummaryCard({ booking, onEdit }: Props) {
         </span>
       </div>
 
-      <div className="mt-4 flex justify-center">
-        <GuaranteeBadge />
-      </div>
+      <div className="my-4 h-px bg-hairline" />
 
-      <div className="mt-4 border-t border-hairline-soft pt-4">
-        <CancellationPolicy checkInAt={booking.check_in_at} />
-      </div>
+      <CancellationPolicy checkInAt={booking.check_in_at} />
 
       {onEdit && (
         <Button
