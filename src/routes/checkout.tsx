@@ -34,7 +34,7 @@ function MobileBookingSummary({ booking }: { booking: BookingForCheckout }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-4 p-4 text-left"
+        className="flex w-full items-center justify-between gap-4 p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink"
         aria-expanded={open}
       >
         <div className="min-w-0">
@@ -153,6 +153,7 @@ export default function CheckoutPage() {
       <Countdown expiresAt={booking.status === "pending" ? booking.expires_at : null} />
 
       <div className="mx-auto w-full max-w-[1080px] px-4 py-8 desktop:px-8">
+        <h1 className="sr-only">Finalizar reserva</h1>
         <div className="mb-6 flex justify-center">
           <Stepper current={step} />
         </div>
@@ -218,14 +219,10 @@ export default function CheckoutPage() {
       {/* Barra CTA fixa no rodapé — mobile/tablet, steps 1 e 2 */}
       {showMobileCta && (
         <div className="fixed bottom-0 inset-x-0 z-20 border-t border-hairline bg-canvas px-4 py-3 desktop:hidden">
-          <button
-            form="checkout-step-form"
-            type="submit"
-            className="flex w-full items-center justify-center gap-2 rounded-sm bg-mp-primary py-3.5 text-button-md text-white transition-colors hover:bg-mp-primary-active active:opacity-90"
-          >
+          <Button form="checkout-step-form" type="submit" className="w-full">
             Continuar
             <ArrowRight className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       )}
     </div>

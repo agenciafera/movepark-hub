@@ -42,7 +42,7 @@ function CheckoutTopbar() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  className="flex items-center gap-2 rounded-full border border-hairline px-2 py-1 hover:shadow-tier"
+                  className="flex items-center gap-2 rounded-full border border-hairline px-2 py-1 hover:shadow-tier focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2"
                   aria-label="Menu da conta"
                 >
                   <Avatar className="h-7 w-7">

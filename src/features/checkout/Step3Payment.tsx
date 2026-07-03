@@ -125,7 +125,7 @@ export function Step3Payment({ bookingCode, totalAmount, paymentStatus, onBack }
       <button
         type="button"
         onClick={onBack}
-        className="-ml-1 inline-flex items-center gap-1.5 text-body-sm text-muted transition-colors hover:text-ink"
+        className="-ml-1 inline-flex items-center gap-1.5 rounded-sm px-1 py-0.5 text-body-sm text-muted transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         Voltar

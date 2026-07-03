@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ArrowLeft, ArrowRight, Car, Plus, Accessibility } from "lucide-react";
+import { ArrowLeft, ArrowRight, Car, Plus, Accessibility, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -109,7 +109,7 @@ export function Step2Vehicle({
       <button
         type="button"
         onClick={onBack}
-        className="-ml-1 inline-flex items-center gap-1.5 text-body-sm text-muted transition-colors hover:text-ink"
+        className="-ml-1 inline-flex items-center gap-1.5 rounded-sm px-1 py-0.5 text-body-sm text-muted transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         Voltar
@@ -132,8 +132,9 @@ export function Step2Vehicle({
               <button
                 type="button"
                 onClick={() => setSelected(v.id)}
+                aria-pressed={selected === v.id}
                 className={cn(
-                  "flex w-full items-center gap-4 rounded-md border bg-canvas p-4 text-left transition-colors",
+                  "flex w-full items-center gap-4 rounded-md border bg-canvas p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2",
                   selected === v.id
                     ? "border-mp-primary ring-1 ring-mp-primary"
                     : "border-hairline hover:bg-surface-soft",
@@ -142,12 +143,17 @@ export function Step2Vehicle({
                 <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-mp-pale text-mp-indigo">
                   <Car className="h-5 w-5" />
                 </span>
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <div className="text-title-md text-ink">{v.license_plate}</div>
                   <div className="text-body-sm text-muted">
                     {[v.model, v.color].filter(Boolean).join(" · ") || "Sem detalhes"}
                   </div>
                 </div>
+                {selected === v.id && (
+                  <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-mp-primary text-white">
+                    <Check className="h-4 w-4" />
+                  </span>
+                )}
               </button>
             </li>
           ))}
@@ -205,29 +211,34 @@ export function Step2Vehicle({
       <div className="space-y-4 rounded-md border border-hairline bg-canvas p-5">
         <h3 className="text-title-md text-ink">Dados da viagem</h3>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="passengers">Número de passageiros que vão usar o serviço de transfer</Label>
-          <Input
-            id="passengers"
-            type="number"
-            min={1}
-            max={7}
-            value={passengers}
-            onChange={(e) => setPassengers(e.target.value)}
-            placeholder="1"
-            className="w-20"
-          />
+          <Label htmlFor="passengers">Passageiros no transfer</Label>
+          <div className="flex items-center gap-3">
+            <Input
+              id="passengers"
+              type="number"
+              min={1}
+              max={7}
+              value={passengers}
+              onChange={(e) => setPassengers(e.target.value)}
+              placeholder="1"
+              className="w-20"
+            />
+            <span className="text-body-sm text-muted">
+              Quantas pessoas vão usar o serviço de transfer.
+            </span>
+          </div>
         </div>
-        <label className="flex cursor-pointer items-start gap-3">
+        <label className="flex cursor-pointer items-center gap-3">
           <input
             type="checkbox"
             checked={pcd}
             onChange={(e) => setPcd(e.target.checked)}
-            className="mt-1 h-4 w-4 shrink-0 rounded border-hairline accent-mp-indigo"
+            className="h-4 w-4 shrink-0 rounded border-hairline accent-mp-indigo"
           />
-          <span className="flex items-center gap-3 text-body-md text-ink">
-            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-mp-pale text-mp-indigo">
-              <Accessibility className="h-5 w-5" />
-            </span>
+          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-mp-pale text-mp-indigo">
+            <Accessibility className="h-5 w-5" />
+          </span>
+          <span className="text-body-md text-ink">
             Uma ou mais pessoas precisam de assistência especial no embarque ou desembarque
           </span>
         </label>
