@@ -1,4 +1,4 @@
-import * as Icons from "lucide-react";
+import * as Icons from "@/lib/icons";
 import type { ListingDetail } from "./api";
 
 function getIcon(name: string | null): React.ComponentType<{ className?: string }> {

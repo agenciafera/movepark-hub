@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Download, Calendar as CalendarIcon, CheckCircle2 } from "lucide-react";
+import { Download, Calendar as CalendarIcon, CheckCircle2 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toDataUrl } from "@/lib/qr";

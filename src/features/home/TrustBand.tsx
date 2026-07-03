@@ -1,5 +1,5 @@
-import { ShieldCheck, Tag, BadgeCheck, Headphones, CheckCircle, Lock, Star } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { ShieldCheck, Tag, BadgeCheck, Headphones, CheckCircle, Lock, Star } from "@/lib/icons";
+import type { LucideIcon } from "@/lib/icons";
 import { useGsapReveal } from "@/hooks/useGsapReveal";
 
 // ---- Ilustrações animadas por diferencial ----

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useRef, useEffect } from "react";
-import { ArrowRight, Plane, Tag, Car } from "lucide-react";
+import { ArrowRight, Plane, Tag, Car } from "@/lib/icons";
 import { usePopularOffers, type PopularOffer } from "@/features/search/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";

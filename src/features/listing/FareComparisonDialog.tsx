@@ -1,4 +1,4 @@
-import { Check, X } from "lucide-react";
+import { Check, X } from "@/lib/icons";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";

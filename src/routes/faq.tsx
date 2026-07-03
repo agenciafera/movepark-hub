@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { Search } from "lucide-react";
+import { Search } from "@/lib/icons";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useFaqCategories, useFaqs } from "@/features/faqs/api";

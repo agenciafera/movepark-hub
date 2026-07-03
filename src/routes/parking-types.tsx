@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useParams, useLocation, Link } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, SlidersHorizontal, Table2, CalendarClock } from "lucide-react";
+import { ArrowLeft, Plus, SlidersHorizontal, Table2, CalendarClock } from "@/lib/icons";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";

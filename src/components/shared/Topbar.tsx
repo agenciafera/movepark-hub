@@ -1,4 +1,4 @@
-import { LogOut, Bell, Search } from "lucide-react";
+import { LogOut, Bell, Search } from "@/lib/icons";
 import { useAuth } from "@/auth/context";
 import {
   Avatar,

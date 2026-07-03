@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Check } from "lucide-react";
+import { Check } from "@/lib/icons";
 import {
   Command,
   CommandEmpty,
@@ -8,7 +8,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { MapPin } from "lucide-react";
+import { MapPin } from "@/lib/icons";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useAllDestinationPoints, useDestinations, type Destination } from "./api";
 import { destinationTypeIcon } from "@/lib/destination-types";

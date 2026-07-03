@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { Inbox } from "lucide-react";
+import { Inbox } from "@/lib/icons";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";

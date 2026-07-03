@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Handshake } from "lucide-react";
+import { Handshake } from "@/lib/icons";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";

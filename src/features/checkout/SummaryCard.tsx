@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink } from "@/lib/icons";
 import { formatBRL, formatDateTime, formatDuration } from "@/lib/format";
 import { freeCancelDeadlineLabel, CANCELLATION_POLICY_LINES } from "@/features/bookings/cancellation.logic";
 import type { BookingForCheckout } from "./api";

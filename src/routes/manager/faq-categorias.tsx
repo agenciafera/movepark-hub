@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { ArrowLeft, MoreVertical, Plus } from "lucide-react";
+import { ArrowLeft, MoreVertical, Plus } from "@/lib/icons";
 import { Link } from "react-router-dom";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";

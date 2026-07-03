@@ -1,4 +1,4 @@
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "@/lib/icons";
 import { GUARANTEE_PROMISE, GUARANTEE_POLICY } from "./copy";
 
 /** Bloco "Sobre a garantia" para a página da unidade — card destacado com promessa + política. */

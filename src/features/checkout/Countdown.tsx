@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Hourglass, AlertTriangle } from "lucide-react";
+import { Hourglass, AlertTriangle } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 
 type Props = {

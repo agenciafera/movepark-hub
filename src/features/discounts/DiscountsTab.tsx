@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Plus, Tag, Pencil, Trash2 } from "lucide-react";
+import { Plus, Tag, Pencil, Trash2 } from "@/lib/icons";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";

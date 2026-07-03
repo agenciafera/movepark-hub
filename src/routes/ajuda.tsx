@@ -8,7 +8,7 @@ import {
   ShieldCheck,
   HelpCircle,
   MessageCircle,
-} from "lucide-react";
+} from "@/lib/icons";
 
 const CATEGORIES = [
   {

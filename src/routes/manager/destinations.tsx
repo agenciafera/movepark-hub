@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Plus, MapPin, ExternalLink } from "lucide-react";
+import { Plus, MapPin, ExternalLink } from "@/lib/icons";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";

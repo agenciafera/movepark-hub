@@ -2,7 +2,7 @@
 // Fonte única — use aqui ao renderizar qualquer destino (combobox, filtros, cards, SEO).
 // Os tipos espelham o CHECK de `destination.type` (ver docs/specs/destinations.md).
 
-import { Plane, Bus, Building2, MapPin, Compass, type LucideIcon } from "lucide-react";
+import { Plane, Bus, Building2, MapPin, Compass, type LucideIcon } from "@/lib/icons";
 
 export type DestinationType =
   | "airport"

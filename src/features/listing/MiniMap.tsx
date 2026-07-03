@@ -1,4 +1,4 @@
-import { ExternalLink, MapPin } from "lucide-react";
+import { ExternalLink, MapPin } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 
 type Props = {

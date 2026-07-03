@@ -1,4 +1,4 @@
-import { AlertTriangle, Bus } from "lucide-react";
+import { AlertTriangle, Bus } from "@/lib/icons";
 import { MiniMap } from "./MiniMap";
 import { formatShuttle } from "./howToArrive.logic";
 

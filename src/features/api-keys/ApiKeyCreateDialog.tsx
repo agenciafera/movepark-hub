@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check } from "@/lib/icons";
 import {
   Dialog,
   DialogContent,

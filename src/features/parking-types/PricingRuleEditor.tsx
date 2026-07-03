@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Save } from "lucide-react";
+import { Save } from "@/lib/icons";
 import {
   Sheet,
   SheetContent,

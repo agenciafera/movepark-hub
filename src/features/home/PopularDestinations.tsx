@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Plane, Bus, Building2, MapPin, ArrowRight, Image } from "lucide-react";
+import { Plane, Bus, Building2, MapPin, ArrowRight, Image } from "@/lib/icons";
 import { usePopularDestinations, type Destination } from "@/features/search/api";
 import { Skeleton } from "@/components/ui/skeleton";
 

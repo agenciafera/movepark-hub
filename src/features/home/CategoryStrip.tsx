@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Car, CloudRain, KeyRound, Star, Bike, Container } from "lucide-react";
+import { Car, CloudRain, KeyRound, Star, Bike, Container } from "@/lib/icons";
 import { useParkingTypeCatalog } from "@/features/search/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";

@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { ShieldCheck, MapPin, Star, Users } from "lucide-react";
+import { ShieldCheck, MapPin, Star, Users } from "@/lib/icons";
 
 const VALUES = [
   {

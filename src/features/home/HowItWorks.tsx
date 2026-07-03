@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { MapPin, LayoutList, CreditCard, Ticket, Heart, Share2, CheckCircle, ArrowRight, Star, ShieldCheck } from "lucide-react";
+import { MapPin, LayoutList, CreditCard, Ticket, Heart, Share2, CheckCircle, ArrowRight, Star, ShieldCheck } from "@/lib/icons";
 import { gsap } from "@/lib/gsap";
 
 const steps = [

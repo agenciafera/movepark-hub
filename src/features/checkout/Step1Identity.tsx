@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight } from "@/lib/icons";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";

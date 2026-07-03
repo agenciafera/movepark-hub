@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/lib/icons";
 import { Wordmark } from "@/components/shared/Brand";
 import { useAuth } from "@/auth/context";
 import { postLoginPath } from "@/auth/postLoginRedirect";

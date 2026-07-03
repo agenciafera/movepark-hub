@@ -18,7 +18,7 @@ import {
   Star,
   TriangleAlert,
   X,
-} from "lucide-react";
+} from "@/lib/icons";
 import { Wordmark, Monogram } from "@/components/shared/Brand";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

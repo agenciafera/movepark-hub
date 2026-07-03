@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
-import { Search, CalendarCheck, Car, QrCode, ShieldCheck, Clock, MapPin } from "lucide-react";
+import { Search, CalendarCheck, Car, QrCode, ShieldCheck, Clock, MapPin } from "@/lib/icons";
 
 const STEPS = [
   {

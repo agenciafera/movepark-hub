@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Search } from "@/lib/icons";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";

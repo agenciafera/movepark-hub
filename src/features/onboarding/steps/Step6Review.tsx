@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { MapPin, Car, Tag, Sparkles } from "lucide-react";
+import { MapPin, Car, Tag, Sparkles } from "@/lib/icons";
 import { StepShell } from "../StepShell";
 import { useSubmitOnboarding, type OnboardingData } from "../wizardApi";
 

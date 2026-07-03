@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { ShieldCheck, LogOut, KeyRound } from "lucide-react";
+import { ShieldCheck, LogOut, KeyRound } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useSignOutEverywhere } from "@/features/profile/api";

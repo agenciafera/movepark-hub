@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Helmet } from "react-helmet-async";
-import { TrendingUp, ShieldCheck, Wallet } from "lucide-react";
+import { TrendingUp, ShieldCheck, Wallet } from "@/lib/icons";
 import { LeadForm } from "@/features/onboarding/LeadForm";
 import { ThankYou } from "@/features/onboarding/ThankYou";
 import type { LeadResult } from "@/features/onboarding/leadApi";

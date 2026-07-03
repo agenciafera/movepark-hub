@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ArrowLeft, ArrowRight, Car, Plus, Accessibility, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Car, Plus, Accessibility, Check } from "@/lib/icons";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

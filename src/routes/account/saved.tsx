@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Heart, Car } from "lucide-react";
+import { Heart, Car } from "@/lib/icons";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";

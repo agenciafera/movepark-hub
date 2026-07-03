@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Plus } from "lucide-react";
+import { Plus } from "@/lib/icons";
 import {
   Dialog,
   DialogContent,

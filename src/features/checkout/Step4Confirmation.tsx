@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { Check, Download, Calendar as CalendarIcon } from "lucide-react";
+import { Check, Download, Calendar as CalendarIcon } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toDataUrl } from "@/lib/qr";

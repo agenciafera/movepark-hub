@@ -1,6 +1,6 @@
 import { Link, useLoaderData } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { MapPin } from "lucide-react";
+import { MapPin } from "@/lib/icons";
 import { useDestinations, type Destination } from "@/features/search/api";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
