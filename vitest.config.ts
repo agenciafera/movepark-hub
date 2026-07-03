@@ -12,12 +12,6 @@ export default defineConfig({
   resolve: {
     alias: { "@": srcAlias },
   },
-  optimizeDeps: {
-    include: ["@lineiconshq/free-icons"],
-  },
-  ssr: {
-    noExternal: ["@lineiconshq/free-icons"],
-  },
   test: {
     // Pool de forks (processos) em vez de threads: o pool de threads padrão crashava no
     // teardown nesta combinação de macOS + runtime (erro "Channel closed"/uv__stream_destroy),

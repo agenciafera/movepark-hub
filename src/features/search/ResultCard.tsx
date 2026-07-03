@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { Heart, Car, MapPin } from "@/lib/icons";
+import { Heart, Car, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatBRL, formatDistance } from "@/lib/format";
 import { RatingBadge } from "@/features/reviews/RatingStars";

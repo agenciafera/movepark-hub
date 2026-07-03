@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { addDays, addHours, set } from "date-fns";
-import { Search, Car, Bike } from "@/lib/icons";
+import { Search, Car, Bike } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,

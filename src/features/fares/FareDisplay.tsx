@@ -1,4 +1,4 @@
-import { Check, CalendarClock } from "@/lib/icons";
+import { Check, CalendarClock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatBRL, formatDateTime } from "@/lib/format";
 import {

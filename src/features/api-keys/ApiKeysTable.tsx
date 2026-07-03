@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Plus, KeyRound, RefreshCw, Trash2 } from "@/lib/icons";
+import { Plus, KeyRound, RefreshCw, Trash2 } from "lucide-react";
 import {
   Table,
   TableBody,

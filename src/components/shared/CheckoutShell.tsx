@@ -1,5 +1,5 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { LogOut, User2, Calendar, Heart, LayoutDashboard } from "@/lib/icons";
+import { LogOut, User2, Calendar, Heart, LayoutDashboard } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,

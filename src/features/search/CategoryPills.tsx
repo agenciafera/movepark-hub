@@ -1,4 +1,4 @@
-import { Car, CloudRain, KeyRound, Star, Bike, Container } from "@/lib/icons";
+import { Car, CloudRain, KeyRound, Star, Bike, Container } from "lucide-react";
 import { useParkingTypeCatalog } from "./api";
 import { cn } from "@/lib/utils";
 

@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { Search, Heart, User2, LogOut, LayoutDashboard, Calendar, ChevronDown, MapPin } from "@/lib/icons";
+import { Search, Heart, User2, LogOut, LayoutDashboard, Calendar, ChevronDown, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchBarPill } from "@/features/search/SearchBarPill";
 import {

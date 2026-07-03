@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { Car, ChevronLeft, ChevronRight, Star } from "@/lib/icons";
+import { Car, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { useSearchResults } from "@/features/search/useSearchResults";
 import { formatBRL } from "@/lib/format";
 import { Skeleton } from "@/components/ui/skeleton";

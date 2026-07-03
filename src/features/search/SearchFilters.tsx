@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Filter, X } from "@/lib/icons";
+import { Filter, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";

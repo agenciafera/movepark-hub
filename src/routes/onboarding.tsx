@@ -2,7 +2,7 @@ import * as React from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { toast } from "sonner";
-import { Clock, XCircle } from "@/lib/icons";
+import { Clock, XCircle } from "lucide-react";
 import { Wordmark } from "@/components/shared/Brand";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/context";

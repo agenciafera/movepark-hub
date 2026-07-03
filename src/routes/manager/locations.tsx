@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Plus } from "@/lib/icons";
+import { ArrowLeft, Plus } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import {
   Table,

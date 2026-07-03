@@ -24,7 +24,7 @@ import {
   HelpCircle,
   Bot,
   type LucideIcon,
-} from "@/lib/icons";
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {

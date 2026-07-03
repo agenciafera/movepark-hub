@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Download } from "@/lib/icons";
+import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";

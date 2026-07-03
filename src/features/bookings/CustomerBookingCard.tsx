@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Car, MapPin } from "@/lib/icons";
+import { Car, MapPin } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { formatBRL, formatDateTime, formatDuration } from "@/lib/format";
 import type { MyBookingListItem } from "./customerApi";

@@ -10,7 +10,7 @@ import {
   BarChart,
   Bar,
 } from "recharts";
-import { Download } from "@/lib/icons";
+import { Download } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

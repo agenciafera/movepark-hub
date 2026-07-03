@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft } from "@/lib/icons";
+import { ArrowLeft } from "lucide-react";
 import { ConsumerTopbar } from "./ConsumerTopbar";
 import { ConsumerFooter } from "./ConsumerFooter";
 import { ConsumerBottomNav } from "./ConsumerBottomNav";

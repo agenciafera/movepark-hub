@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-import { ChevronRight, Info, ShieldCheck, X } from "@/lib/icons";
+import { ChevronRight, Info, ShieldCheck, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";

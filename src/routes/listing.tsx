@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link, useLoaderData, useParams, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { ArrowLeft, ArrowRight, BadgeCheck, Building2, Bus, CalendarX, Car, Heart, MapPin, ShieldCheck, Star } from "@/lib/icons";
+import { ArrowLeft, ArrowRight, BadgeCheck, Building2, Bus, CalendarX, Car, Heart, MapPin, ShieldCheck, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";

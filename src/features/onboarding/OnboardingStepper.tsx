@@ -1,4 +1,4 @@
-import { Check } from "@/lib/icons";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Props = {

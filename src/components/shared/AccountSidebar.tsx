@@ -9,7 +9,7 @@ import {
   Lock,
   LogOut,
   ChevronRight,
-} from "@/lib/icons";
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/context";
 

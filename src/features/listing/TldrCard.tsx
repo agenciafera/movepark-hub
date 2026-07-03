@@ -1,5 +1,5 @@
-import { Bus, CalendarX, MapPin, Star, Tag } from "@/lib/icons";
-import type { LucideIcon } from "@/lib/icons";
+import { Bus, CalendarX, MapPin, Star, Tag } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { ListingTldr, TldrFact } from "./tldr.logic";
 
 const ICONS: Record<TldrFact["key"], LucideIcon> = {

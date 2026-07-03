@@ -1,4 +1,4 @@
-import { ShieldCheck } from "@/lib/icons";
+import { ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GUARANTEE_SHORT } from "./copy";
 

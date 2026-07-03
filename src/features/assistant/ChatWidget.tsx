@@ -1,5 +1,5 @@
 import * as React from "react";
-import { MessageCircle, Send, X } from "@/lib/icons";
+import { MessageCircle, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useChatConfig, useSendChat } from "./api";
 import { appendMessage, canSend, toRequestMessages, type ChatMessage } from "./chat.logic";

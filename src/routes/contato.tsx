@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Helmet } from "react-helmet-async";
-import { Mail, MessageCircle, Clock } from "@/lib/icons";
+import { Mail, MessageCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { BadgeCheck, Building2, MapPin } from "@/lib/icons";
+import { BadgeCheck, Building2, MapPin } from "lucide-react";
 import type { ListingDetail } from "./api";
 
 function yearsOnPlatform(createdAt: string): number {

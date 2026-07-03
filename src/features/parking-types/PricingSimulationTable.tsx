@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Calculator } from "@/lib/icons";
+import { AlertTriangle, Calculator } from "lucide-react";
 import { format, differenceInMinutes, addDays } from "date-fns";
 import { supabase } from "@/lib/supabase";
 import {

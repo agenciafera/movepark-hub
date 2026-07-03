@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Car, ChevronLeft, ChevronRight, Grid2x2, ImageIcon } from "@/lib/icons";
+import { Car, ChevronLeft, ChevronRight, Grid2x2, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { imageSrcSet, optimizedImageUrl } from "@/lib/storage";
 import {

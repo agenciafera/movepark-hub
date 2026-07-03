@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { CreditCard, Info, MoreVertical, Plus, Star } from "@/lib/icons";
+import { CreditCard, Info, MoreVertical, Plus, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";

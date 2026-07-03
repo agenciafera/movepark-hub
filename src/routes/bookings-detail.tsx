@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Inbox, ExternalLink, Phone, Mail, ShieldCheck } from "@/lib/icons";
+import { ArrowLeft, Inbox, ExternalLink, Phone, Mail, ShieldCheck } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";

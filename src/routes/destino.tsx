@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link, useLoaderData, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { MapPin } from "@/lib/icons";
+import { MapPin } from "lucide-react";
 import type { Destination } from "@/types/domain";
 import { useDestinationBySlug, usePublishedDestinations } from "@/features/destinations/api";
 import { useSearchResults } from "@/features/search/useSearchResults";

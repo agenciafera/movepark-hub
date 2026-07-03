@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { ArrowRight, ChevronDown, Inbox } from "@/lib/icons";
+import { ArrowRight, ChevronDown, Inbox } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/EmptyState";

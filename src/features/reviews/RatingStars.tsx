@@ -1,4 +1,4 @@
-import { Star } from "@/lib/icons";
+import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ratingLabel } from "./reviews.logic";
 

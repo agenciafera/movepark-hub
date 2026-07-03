@@ -1,4 +1,4 @@
-import { Plus, Trash2 } from "@/lib/icons";
+import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CurrencyInput } from "@/components/ui/currency-input";

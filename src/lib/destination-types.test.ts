@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Plane, Bus, MapPin } from "@/lib/icons";
+import { Plane, Bus, MapPin } from "lucide-react";
 import {
   destinationTypeIcon,
   destinationTypeLabel,

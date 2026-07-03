@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Plane, ArrowRight } from "@/lib/icons";
+import { Plane, ArrowRight } from "lucide-react";
 import { useRef, useEffect } from "react";
 import { gsap } from "@/lib/gsap";
 

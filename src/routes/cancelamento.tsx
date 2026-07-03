@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
-import { CheckCircle, XCircle, Clock } from "@/lib/icons";
+import { CheckCircle, XCircle, Clock } from "lucide-react";
 
 const RULES = [
   {

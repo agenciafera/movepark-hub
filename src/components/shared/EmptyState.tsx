@@ -1,4 +1,4 @@
-import { Inbox } from "@/lib/icons";
+import { Inbox } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Props = {

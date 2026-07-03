@@ -20,7 +20,7 @@ import {
   PieChart,
   Landmark,
   Percent,
-} from "@/lib/icons";
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/context";
 import { filterNavByScopes, type NavItem } from "./Sidebar.logic";

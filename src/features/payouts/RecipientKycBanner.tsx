@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ShieldAlert } from "@/lib/icons";
+import { ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toDataUrl } from "@/lib/qr";
 import { useRecipient } from "./api";

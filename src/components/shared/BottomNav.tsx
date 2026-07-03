@@ -6,7 +6,7 @@ import {
   Users,
   MapPin,
   BarChart3,
-} from "@/lib/icons";
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const managerItems = [

@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { Search, Calendar, User2, HelpCircle, LogIn, Store } from "@/lib/icons";
+import { Search, Calendar, User2, HelpCircle, LogIn, Store } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/context";
 

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { CheckCircle2, Clock } from "@/lib/icons";
+import { CheckCircle2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Props = {

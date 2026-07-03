@@ -1,4 +1,4 @@
-import { Tag, MapPin, BusFront, Umbrella, ConciergeBell, type LucideIcon } from "@/lib/icons";
+import { Tag, MapPin, BusFront, Umbrella, ConciergeBell, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SearchBadge, SearchBadgeKind } from "./searchBadges";
 

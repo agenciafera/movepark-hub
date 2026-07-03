@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { LogOut, ShieldAlert } from "@/lib/icons";
+import { LogOut, ShieldAlert } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/auth/context";
