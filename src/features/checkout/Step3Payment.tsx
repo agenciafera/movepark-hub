@@ -5,6 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCreateCardCharge, useCreatePixCharge, usePaymentConfig } from "./api";
 import { toSvgString } from "@/lib/qr";
@@ -115,7 +122,16 @@ export function Step3Payment({ bookingCode, totalAmount, paymentStatus, onBack }
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
+      <button
+        type="button"
+        onClick={onBack}
+        className="-ml-1 inline-flex items-center gap-1.5 text-body-sm text-muted transition-colors hover:text-ink"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Voltar
+      </button>
+
+      <div className="space-y-2">
         <h2 className="text-display-sm text-ink">Pagamento</h2>
         <p className="text-body-md text-muted">
           PIX com confirmação automática ou cartão de crédito (parcelado).
@@ -186,19 +202,19 @@ export function Step3Payment({ bookingCode, totalAmount, paymentStatus, onBack }
               {(savedCards.data ?? []).length > 0 && (
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="card-choice">Cartão</Label>
-                  <select
-                    id="card-choice"
-                    className="h-10 rounded-md border border-hairline bg-canvas px-3 text-body-sm"
-                    value={cardChoice}
-                    onChange={(e) => setCardChoice(e.target.value)}
-                  >
-                    {(savedCards.data ?? []).map((pm) => (
-                      <option key={pm.id} value={pm.id}>
-                        {pm.brand} •••• {pm.last4}
-                      </option>
-                    ))}
-                    <option value="new">Usar outro cartão</option>
-                  </select>
+                  <Select value={cardChoice} onValueChange={setCardChoice}>
+                    <SelectTrigger id="card-choice">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(savedCards.data ?? []).map((pm) => (
+                        <SelectItem key={pm.id} value={pm.id}>
+                          {pm.brand} •••• {pm.last4}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="new">Usar outro cartão</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
 
@@ -217,7 +233,13 @@ export function Step3Payment({ bookingCode, totalAmount, paymentStatus, onBack }
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="card-name">Nome no cartão</Label>
-                    <Input id="card-name" value={cardName} onChange={(e) => setCardName(e.target.value)} required />
+                    <Input
+                      id="card-name"
+                      placeholder="NOME SOBRENOME"
+                      value={cardName}
+                      onChange={(e) => setCardName(e.target.value)}
+                      required
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1.5">
@@ -244,8 +266,13 @@ export function Step3Payment({ bookingCode, totalAmount, paymentStatus, onBack }
                       />
                     </div>
                   </div>
-                  <label className="flex items-center gap-2 text-body-sm text-body">
-                    <input type="checkbox" checked={saveCard} onChange={(e) => setSaveCard(e.target.checked)} />
+                  <label className="flex cursor-pointer items-center gap-2 text-body-sm text-body">
+                    <input
+                      type="checkbox"
+                      checked={saveCard}
+                      onChange={(e) => setSaveCard(e.target.checked)}
+                      className="h-4 w-4 rounded border-hairline accent-mp-indigo"
+                    />
                     Salvar este cartão para as próximas reservas
                   </label>
                 </>
@@ -254,21 +281,24 @@ export function Step3Payment({ bookingCode, totalAmount, paymentStatus, onBack }
               {/* Parcelas */}
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="installments">Parcelas</Label>
-                <select
-                  id="installments"
-                  className="h-10 rounded-md border border-hairline bg-canvas px-3 text-body-sm"
-                  value={installments}
-                  onChange={(e) => setInstallments(Number(e.target.value))}
+                <Select
+                  value={String(installments)}
+                  onValueChange={(v) => setInstallments(Number(v))}
                 >
-                  {options.map((o) => (
-                    <option key={o.installments} value={o.installments}>
-                      {o.installments}x de {formatBRL(o.installmentCents / 100)}
-                      {o.hasInterest
-                        ? ` (com juros, total ${formatBRL(o.totalCents / 100)})`
-                        : " sem juros"}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger id="installments">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {options.map((o) => (
+                      <SelectItem key={o.installments} value={String(o.installments)}>
+                        {o.installments}x de {formatBRL(o.installmentCents / 100)}
+                        {o.hasInterest
+                          ? ` (com juros, total ${formatBRL(o.totalCents / 100)})`
+                          : " sem juros"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <Button type="submit" className="w-full" disabled={busy}>
@@ -279,12 +309,6 @@ export function Step3Payment({ bookingCode, totalAmount, paymentStatus, onBack }
         </TabsContent>
       </Tabs>
 
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={onBack}>
-          <ArrowLeft className="h-4 w-4" />
-          Voltar
-        </Button>
-      </div>
     </div>
   );
 }

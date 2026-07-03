@@ -52,7 +52,7 @@ export function Countdown({ expiresAt, onExpire }: Props) {
   return (
     <div
       className={cn(
-        "sticky top-20 z-30 flex items-center justify-center gap-2 border-b border-hairline px-4 py-3 text-body-sm tabular-nums desktop:px-8",
+        "sticky top-16 z-30 flex items-center justify-center gap-2 border-b border-hairline px-4 py-3 text-body-sm tabular-nums desktop:px-8",
         tone,
       )}
       role="timer"

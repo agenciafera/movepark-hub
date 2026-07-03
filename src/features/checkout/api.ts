@@ -31,6 +31,8 @@ export type BookingForCheckout = {
   has_pcd: boolean;
   vehicle_id: string | null;
   profile_id: string;
+  customer_name: string | null;
+  customer_phone: string | null;
   location: {
     id: string;
     slug: string;
@@ -78,6 +80,7 @@ export function useCheckoutBooking(code: string | undefined) {
         .select(
           `id, code, status, total_amount, currency, price_breakdown, check_in_at, check_out_at,
            expires_at, passenger_count, has_pcd, vehicle_id, profile_id,
+           customer_name, customer_phone,
            location:location!inner(id, slug, name, address,
              company:company!inner(slug, name)),
            items:booking_item(id, item_type, quantity, unit_price, subtotal,
@@ -115,6 +118,8 @@ export function useCheckoutBooking(code: string | undefined) {
         has_pcd: row.has_pcd,
         vehicle_id: row.vehicle_id,
         profile_id: row.profile_id,
+        customer_name: row.customer_name,
+        customer_phone: row.customer_phone,
         location: row.location,
         items: (row.items ?? []).map(
           // deno-lint-ignore no-explicit-any
@@ -168,6 +173,62 @@ export function useUpdateBookingVehicle() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["checkout-booking"] }),
   });
 }
+
+export function useUpdateBookingTrip() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: {
+      bookingId: string;
+      passenger_count: number | null;
+      has_pcd: boolean;
+    }) => {
+      const { bookingId, ...rest } = args;
+      const { error } = await supabase
+        .from("booking")
+        .update(rest)
+        .eq("id", bookingId);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["checkout-booking"] }),
+  });
+}
+
+export function useUpdateBookingCustomer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: {
+      bookingId: string;
+      customer_name: string | null;
+      customer_phone: string | null;
+    }) => {
+      const { bookingId, ...rest } = args;
+      const { error } = await supabase
+        .from("booking")
+        .update(rest)
+        .eq("id", bookingId);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["checkout-booking"] }),
+  });
+}
+
+export function useCancelBooking() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { bookingId: string }) => {
+      // Libera capacidade
+      await supabase.rpc("release_booking_capacity", { p_booking_id: args.bookingId });
+      // Marca como cancelada
+      const { error } = await supabase
+        .from("booking")
+        .update({ status: "cancelled", deleted_at: new Date().toISOString() })
+        .eq("id", args.bookingId);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["checkout-booking"] }),
+  });
+}
+
 
 type MockPaymentResponse = {
   payment_id: string;

@@ -19,6 +19,8 @@ function booking(breakdown: PriceBreakdown | null, parkingSubtotal = 151.4): Boo
     has_pcd: false,
     vehicle_id: null,
     profile_id: "u1",
+    customer_name: null,
+    customer_phone: null,
     location: { id: "l1", slug: "gru", name: "Guarulhos", address: null, company: { slug: "aero", name: "Aerovalet" } },
     items: [
       {

@@ -37,7 +37,7 @@ export function Step4Confirmation({ booking }: Props) {
         <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-success text-white">
           <Check className="h-7 w-7" />
         </span>
-        <h2 className="text-display-md text-ink">Reserva confirmada!</h2>
+        <h2 className="text-display-xl text-ink">Reserva confirmada!</h2>
         <p className="text-body-md text-muted">
           Mostre o QR Code ou informe o código na entrada do estacionamento.
         </p>
@@ -45,7 +45,7 @@ export function Step4Confirmation({ booking }: Props) {
 
       <div className="rounded-md border border-hairline bg-canvas p-6 text-center">
         <div className="text-caption text-muted">Código</div>
-        <div className="text-display-md font-bold tracking-wide tabular-nums">
+        <div className="text-display-xl tabular-nums">
           {booking.code}
         </div>
 

@@ -8,6 +8,7 @@ import { fetchListing } from "@/features/listing/api";
 import { AppProviders } from "@/components/shared/AppProviders";
 import { ConsumerAppShell } from "@/components/shared/ConsumerAppShell";
 import { AccountAppShell } from "@/components/shared/AccountAppShell";
+import { CheckoutShell } from "@/components/shared/CheckoutShell";
 import { RequireRole } from "@/auth/RequireRole";
 import { RequireScope } from "@/auth/RequireScope";
 
@@ -169,7 +170,6 @@ export const routes: RouteRecord[] = [
             loader: listingLoader,
             getStaticPaths: fetchAllListingPaths,
           },
-          { path: "/checkout/:code", element: <CheckoutPage /> },
           { path: "/faq", element: <FaqPage /> },
           { path: "/sobre", element: <SobrePage /> },
           { path: "/termos", element: <TermosPage /> },
@@ -195,6 +195,12 @@ export const routes: RouteRecord[] = [
             ],
           },
         ],
+      },
+
+      // Checkout com shell minimalista (sem footer, sem nav, sem search)
+      {
+        element: <CheckoutShell />,
+        children: [{ path: "/checkout/:code", element: <CheckoutPage /> }],
       },
 
       // Auth universal e passwordless (clientes + backoffice)

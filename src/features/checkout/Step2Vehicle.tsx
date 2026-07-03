@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ArrowLeft, ArrowRight, Car, Plus } from "lucide-react";
+import { ArrowLeft, ArrowRight, Car, Plus, Accessibility } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,12 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/auth/context";
 import { useCreateVehicle, useMyVehicles } from "@/features/vehicles/api";
-import { useUpdateBookingVehicle } from "./api";
+import { useUpdateBookingVehicle, useUpdateBookingTrip } from "./api";
 import { cn } from "@/lib/utils";
 
 type Props = {
   bookingId: string;
   selectedVehicleId: string | null;
+  passengerCount: number | null;
+  hasPcd: boolean;
   onBack: () => void;
   onNext: () => void;
 };
@@ -23,11 +25,19 @@ function plateMask(value: string): string {
   return `${v.slice(0, 3)}-${v.slice(3)}`;
 }
 
-export function Step2Vehicle({ bookingId, selectedVehicleId, onBack, onNext }: Props) {
+export function Step2Vehicle({
+  bookingId,
+  selectedVehicleId,
+  passengerCount,
+  hasPcd,
+  onBack,
+  onNext,
+}: Props) {
   const { session } = useAuth();
   const vehiclesQ = useMyVehicles(session?.userId);
   const createVehicle = useCreateVehicle();
   const updateBookingVehicle = useUpdateBookingVehicle();
+  const updateBookingTrip = useUpdateBookingTrip();
 
   const [adding, setAdding] = React.useState(false);
   const [plate, setPlate] = React.useState("");
@@ -35,17 +45,23 @@ export function Step2Vehicle({ bookingId, selectedVehicleId, onBack, onNext }: P
   const [color, setColor] = React.useState("");
 
   const [selected, setSelected] = React.useState<string | null>(selectedVehicleId);
+  const [passengers, setPassengers] = React.useState<string>(
+    passengerCount != null ? String(passengerCount) : "",
+  );
+  const [pcd, setPcd] = React.useState(hasPcd);
 
   React.useEffect(() => {
-    // Quando carregar lista, pré-seleciona o primeiro se nada selecionado
     if (!selected && vehiclesQ.data?.length) {
       setSelected(vehiclesQ.data[0].id);
     }
   }, [vehiclesQ.data, selected]);
 
-  async function handleAdd(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleAdd() {
     if (!session) return;
+    if (!plate.trim()) {
+      toast.error("Informe a placa do veículo");
+      return;
+    }
     try {
       const v = await createVehicle.mutateAsync({
         profile_id: session.userId,
@@ -70,23 +86,38 @@ export function Step2Vehicle({ bookingId, selectedVehicleId, onBack, onNext }: P
       return;
     }
     try {
-      await updateBookingVehicle.mutateAsync({
-        bookingId,
-        vehicleId: selected,
-      });
+      const passNum = passengers.trim() ? Number(passengers) : null;
+      await Promise.all([
+        updateBookingVehicle.mutateAsync({ bookingId, vehicleId: selected }),
+        updateBookingTrip.mutateAsync({ bookingId, passenger_count: passNum, has_pcd: pcd }),
+      ]);
       onNext();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao vincular veículo");
+      toast.error(err instanceof Error ? err.message : "Erro ao salvar veículo");
     }
   }
 
+  const busy = updateBookingVehicle.isPending || updateBookingTrip.isPending;
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await handleNext();
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
+    <form id="checkout-step-form" onSubmit={handleSubmit} className="space-y-6">
+      <button
+        type="button"
+        onClick={onBack}
+        className="-ml-1 inline-flex items-center gap-1.5 text-body-sm text-muted transition-colors hover:text-ink"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Voltar
+      </button>
+
+      <div className="space-y-2">
         <h2 className="text-display-sm text-ink">Veículo</h2>
-        <p className="text-body-md text-muted">
-          Selecione o veículo que vai usar essa vaga.
-        </p>
+        <p className="text-body-md text-muted">Selecione o veículo que vai usar essa vaga.</p>
       </div>
 
       {vehiclesQ.isLoading ? (
@@ -104,18 +135,17 @@ export function Step2Vehicle({ bookingId, selectedVehicleId, onBack, onNext }: P
                 className={cn(
                   "flex w-full items-center gap-4 rounded-md border bg-canvas p-4 text-left transition-colors",
                   selected === v.id
-                    ? "border-mp-navy ring-1 ring-mp-navy"
+                    ? "border-mp-primary ring-1 ring-mp-primary"
                     : "border-hairline hover:bg-surface-soft",
                 )}
               >
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-mp-pale text-mp-indigo">
+                <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-mp-pale text-mp-indigo">
                   <Car className="h-5 w-5" />
                 </span>
                 <div className="flex-1">
                   <div className="text-title-md text-ink">{v.license_plate}</div>
                   <div className="text-body-sm text-muted">
-                    {[v.model, v.color].filter(Boolean).join(" · ") ||
-                      "Sem detalhes"}
+                    {[v.model, v.color].filter(Boolean).join(" · ") || "Sem detalhes"}
                   </div>
                 </div>
               </button>
@@ -125,10 +155,7 @@ export function Step2Vehicle({ bookingId, selectedVehicleId, onBack, onNext }: P
       )}
 
       {adding ? (
-        <form
-          onSubmit={handleAdd}
-          className="space-y-4 rounded-md border border-hairline bg-canvas p-5"
-        >
+        <div className="space-y-4 rounded-md border border-hairline bg-canvas p-5">
           <h3 className="text-title-md text-ink">Adicionar veículo</h3>
           <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
             <div className="flex flex-col gap-1.5">
@@ -138,7 +165,6 @@ export function Step2Vehicle({ bookingId, selectedVehicleId, onBack, onNext }: P
                 value={plate}
                 onChange={(e) => setPlate(plateMask(e.target.value))}
                 placeholder="ABC-1D23"
-                required
               />
             </div>
             <div className="flex flex-col gap-1.5">
@@ -161,38 +187,59 @@ export function Step2Vehicle({ bookingId, selectedVehicleId, onBack, onNext }: P
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setAdding(false)}
-            >
+            <Button type="button" variant="secondary" onClick={() => setAdding(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={createVehicle.isPending || !plate}>
+            <Button type="button" onClick={handleAdd} disabled={createVehicle.isPending || !plate}>
               {createVehicle.isPending ? "Salvando…" : "Salvar veículo"}
             </Button>
           </div>
-        </form>
+        </div>
       ) : (
         <Button variant="secondary" onClick={() => setAdding(true)}>
           <Plus className="h-4 w-4" />
-          Adicionar outro veículo
+          Adicionar veículo
         </Button>
       )}
 
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={onBack}>
-          <ArrowLeft className="h-4 w-4" />
-          Voltar
-        </Button>
-        <Button
-          onClick={handleNext}
-          disabled={!selected || updateBookingVehicle.isPending}
-        >
-          {updateBookingVehicle.isPending ? "Salvando…" : "Continuar"}
+      <div className="space-y-4 rounded-md border border-hairline bg-canvas p-5">
+        <h3 className="text-title-md text-ink">Dados da viagem</h3>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="passengers">Número de passageiros que vão usar o serviço de transfer</Label>
+          <Input
+            id="passengers"
+            type="number"
+            min={1}
+            max={7}
+            value={passengers}
+            onChange={(e) => setPassengers(e.target.value)}
+            placeholder="1"
+            className="w-20"
+          />
+        </div>
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            checked={pcd}
+            onChange={(e) => setPcd(e.target.checked)}
+            className="mt-1 h-4 w-4 shrink-0 rounded border-hairline accent-mp-indigo"
+          />
+          <span className="flex items-center gap-3 text-body-md text-ink">
+            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-mp-pale text-mp-indigo">
+              <Accessibility className="h-5 w-5" />
+            </span>
+            Uma ou mais pessoas precisam de assistência especial no embarque ou desembarque
+          </span>
+        </label>
+      </div>
+
+      {/* Botão desktop — no mobile a barra fixa do checkout.tsx submete o form */}
+      <div className="hidden justify-end desktop:flex">
+        <Button type="submit" disabled={!selected || busy}>
+          {busy ? "Salvando…" : "Continuar"}
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
-    </div>
+    </form>
   );
 }

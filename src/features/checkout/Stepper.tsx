@@ -30,7 +30,7 @@ export function Stepper({ current }: Props) {
                 completed
                   ? "bg-success text-white"
                   : active
-                    ? "bg-mp-navy text-white"
+                    ? "bg-mp-primary text-white"
                     : "border border-hairline bg-canvas text-muted",
               )}
             >
