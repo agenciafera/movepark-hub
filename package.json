@@ -67,7 +67,7 @@
     "vite-plugin-sitemap": "^0.8.2",
     "vite-react-ssg": "^0.9.1-beta.1",
     "ws": "^8.21.0",
-    "zod": "^3.25.76"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@secretlint/secretlint-rule-preset-recommend": "^13.0.2",
