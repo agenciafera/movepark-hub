@@ -77,11 +77,11 @@ export function availabilityUi(a: AvailabilityCheck | null | undefined): Availab
     };
   }
   if (a.near_capacity) {
-    return {
-      canReserve: true,
-      message: a.near_capacity_message ?? "Restam poucas vagas para esse período.",
-      tone: "warning",
-    };
+    const msg =
+      a.remaining > 0
+        ? `Faltam ${a.remaining} vaga${a.remaining === 1 ? "" : "s"} para esse período.`
+        : (a.near_capacity_message ?? "Restam poucas vagas para esse período.");
+    return { canReserve: true, message: msg, tone: "warning" };
   }
   return { canReserve: true, message: null, tone: null };
 }

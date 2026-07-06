@@ -1,6 +1,7 @@
 import { ExternalLink } from "lucide-react";
 import { formatBRL, formatDateTime, formatDuration } from "@/lib/format";
 import { freeCancelDeadlineLabel, CANCELLATION_POLICY_LINES } from "@/features/bookings/cancellation.logic";
+import { useAvailability } from "@/features/listing/api";
 import type { BookingForCheckout } from "./api";
 
 type Props = {
@@ -12,6 +13,21 @@ type Props = {
 export function SummaryCard({ booking, bare }: Props) {
   const parkingItem = booking.items.find((i) => i.item_type === "parking");
   const addOns = booking.items.filter((i) => i.item_type === "add_on");
+
+  const avail = useAvailability({
+    companySlug: booking.location.company.slug,
+    locationSlug: booking.location.slug,
+    parkingTypeCode: parkingItem?.parking_type?.code ?? "",
+    from: new Date(booking.check_in_at),
+    to: new Date(booking.check_out_at),
+  });
+  const nearCapacity = !avail.data?.sold_out && (avail.data?.near_capacity ?? false);
+  const scarcityMsg =
+    nearCapacity && avail.data
+      ? avail.data.remaining > 0
+        ? `Faltam ${avail.data.remaining} vaga${avail.data.remaining === 1 ? "" : "s"} para esse período`
+        : (avail.data.near_capacity_message ?? "Restam poucas vagas")
+      : null;
 
   const breakdown = booking.price_breakdown;
   const oldPrice =
@@ -49,6 +65,13 @@ export function SummaryCard({ booking, bare }: Props) {
 
           <div className="my-4 h-px bg-hairline" />
         </>
+      )}
+
+      {/* Sinal de escassez */}
+      {scarcityMsg && (
+        <div className="mb-4 rounded-sm border border-badge-pending-fg/20 bg-badge-pending-bg px-3 py-2 text-caption font-medium text-badge-pending-fg">
+          {scarcityMsg}
+        </div>
       )}
 
       {/* Datas */}

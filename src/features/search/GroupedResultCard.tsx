@@ -102,7 +102,11 @@ export function GroupedResultCard({
   const soldOut = item.parking_types.every((pt) => pt.availability?.sold_out);
   const cheapest = item.cheapest_type;
   const nearCapacity = !soldOut && (cheapest.availability?.near_capacity ?? false);
-  const nearMsg = cheapest.availability?.near_capacity_message ?? "Restam poucas vagas";
+  const cheapestRemaining = cheapest.availability?.remaining;
+  const nearMsg =
+    nearCapacity && cheapestRemaining != null && cheapestRemaining > 0
+      ? `Faltam ${cheapestRemaining} vaga${cheapestRemaining === 1 ? "" : "s"}`
+      : (cheapest.availability?.near_capacity_message ?? "Restam poucas vagas");
 
   // Diferenciais comparativos: vão sobre a imagem (só aparecem quando há variação real)
   const comparativeBadges = badges.filter((b) => COMPARATIVE_KINDS.has(b.kind));

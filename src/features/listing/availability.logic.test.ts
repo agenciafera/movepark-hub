@@ -61,17 +61,29 @@ describe("availabilityUi", () => {
     expect(r.message).toMatch(/30 min/);
   });
 
-  it("quase-lotação → libera mas avisa (warning)", () => {
+  it("quase-lotação com vagas restantes → mostra contagem real (plural)", () => {
     const r = availabilityUi(
-      base({ near_capacity: true, near_capacity_message: "Últimas vagas!" }),
+      base({ near_capacity: true, remaining: 3, near_capacity_message: "Últimas vagas!" }),
     );
     expect(r.canReserve).toBe(true);
     expect(r.tone).toBe("warning");
+    expect(r.message).toBe("Faltam 3 vagas para esse período.");
+  });
+
+  it("quase-lotação com 1 vaga restante → singular", () => {
+    const r = availabilityUi(base({ near_capacity: true, remaining: 1 }));
+    expect(r.message).toBe("Faltam 1 vaga para esse período.");
+  });
+
+  it("quase-lotação com remaining=0 usa near_capacity_message", () => {
+    const r = availabilityUi(
+      base({ near_capacity: true, remaining: 0, near_capacity_message: "Últimas vagas!" }),
+    );
     expect(r.message).toBe("Últimas vagas!");
   });
 
-  it("quase-lotação sem mensagem custom usa fallback", () => {
-    const r = availabilityUi(base({ near_capacity: true }));
+  it("quase-lotação sem remaining e sem mensagem usa fallback", () => {
+    const r = availabilityUi(base({ near_capacity: true, remaining: 0 }));
     expect(r.message).toMatch(/poucas vagas/);
   });
 

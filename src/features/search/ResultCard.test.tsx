@@ -129,16 +129,28 @@ describe("ResultCard", () => {
     expect(container.querySelector("a")?.getAttribute("href") ?? "").not.toContain("src=");
   });
 
-  it("quase-lotação: mostra a mensagem e continua clicável", () => {
+  it("quase-lotação: mostra contagem real de vagas e continua clicável", () => {
     const { container } = renderWithProviders(
       <ResultCard
-        item={item({ near_capacity: true, near_capacity_message: "Últimas 2 vagas" })}
+        item={item({ near_capacity: true, remaining: 2 })}
         isSaved={false}
         onToggleSave={vi.fn()}
         searchParams={new URLSearchParams()}
       />,
     );
-    expect(screen.getByText("Últimas 2 vagas")).toBeInTheDocument();
+    expect(screen.getByText("Faltam 2 vagas")).toBeInTheDocument();
     expect(container.querySelector("a")).not.toBeNull();
+  });
+
+  it("quase-lotação com remaining=0 mostra mensagem customizada", () => {
+    renderWithProviders(
+      <ResultCard
+        item={item({ near_capacity: true, remaining: 0, near_capacity_message: "Últimas vagas" })}
+        isSaved={false}
+        onToggleSave={vi.fn()}
+        searchParams={new URLSearchParams()}
+      />,
+    );
+    expect(screen.getByText("Últimas vagas")).toBeInTheDocument();
   });
 });

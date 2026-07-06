@@ -95,7 +95,11 @@ export function ResultCard({
   const meta = topAmenities(item.amenities);
   const soldOut = item.availability?.sold_out ?? false;
   const nearCapacity = !soldOut && (item.availability?.near_capacity ?? false);
-  const nearMsg = item.availability?.near_capacity_message ?? "Restam poucas vagas";
+  const remaining = item.availability?.remaining;
+  const nearMsg =
+    nearCapacity && remaining != null && remaining > 0
+      ? `Faltam ${remaining} vaga${remaining === 1 ? "" : "s"}`
+      : (item.availability?.near_capacity_message ?? "Restam poucas vagas");
 
   return (
     <article
