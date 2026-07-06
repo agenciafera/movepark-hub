@@ -58,6 +58,9 @@ export default defineConfig(async ({ mode }) => {
       sitemap({
         hostname: SITE_URL,
         dynamicRoutes,
+        // NÃO gerar robots.txt aqui — o plugin sobrescreveria o public/robots.txt curado
+        // (allowlist/blocklist de bots + Content Signals). Só o sitemap.xml é gerado. (E0.8-a/b)
+        generateRobotsTxt: false,
         exclude: [
           "/login",
           "/entrar",
