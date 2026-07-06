@@ -16,8 +16,8 @@ select results_eq(
 
 -- Não dá pra ligar a sync sem URL + tenant (CHECK company_wl_sync_requires_config)
 select throws_ok(
-  $$ insert into public.company (name, slug, contact_name, contact_email, contact_phone, wl_sync_enabled)
-     values ('WL Test', 'wl-test-cfg', 'x', 'x@x.co', '11999999999', true) $$,
+  $$ insert into public.company (name, slug, wl_sync_enabled)
+     values ('WL Test', 'wl-test-cfg', true) $$,
   '23514',
   null,
   'ligar wl_sync_enabled sem wl_base_url/wl_tenant_key viola o CHECK'

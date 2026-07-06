@@ -34,8 +34,8 @@ select function_privs_are(
 
 -- CHECK: não dá pra ligar o webhook sem url+secret
 select throws_ok(
-  $$ insert into public.company (name, slug, contact_name, contact_email, contact_phone, wps_webhook_enabled)
-     values ('WPS x', 'wps-check', 'x', 'x@x.co', '11999999999', true) $$,
+  $$ insert into public.company (name, slug, wps_webhook_enabled)
+     values ('WPS x', 'wps-check', true) $$,
   '23514', null, 'ligar wps_webhook_enabled sem url/secret viola o CHECK'
 );
 

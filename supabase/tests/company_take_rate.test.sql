@@ -15,20 +15,27 @@ select ok(
   'anon NÃO executa set_company_take_rate'
 );
 
--- ── fixture: uma empresa do seed ─────────────────────────────────────────────
+-- ── fixture: uma empresa do seed + um hub_admin real ─────────────────────────
+-- is_hub_admin() consulta profiles.role do auth.uid() (NÃO lê claim do JWT); por isso
+-- criamos um usuário com profiles.role='hub_admin' e usamos o uid dele no claim `sub`.
 do $$
-declare v_company uuid;
+declare v_company uuid; v_admin uuid := gen_random_uuid();
 begin
   select id into v_company from public.company where deleted_at is null limit 1;
   perform set_config('test.company', v_company::text, false);
+
+  insert into auth.users(id, instance_id, aud, role, email, created_at, updated_at)
+    values (v_admin,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','take-rate-admin@ex.com',now(),now());
+  insert into public.profiles(id, role) values (v_admin, 'hub_admin')
+    on conflict (id) do update set role = 'hub_admin';
+  perform set_config('test.admin', v_admin::text, false);
 end $$;
 
 -- ── como hub_admin: altera a comissão ────────────────────────────────────────
--- is_hub_admin() lê o JWT; simulamos um hub_admin via GUC do PostgREST.
 set local role authenticated;
 select set_config(
   'request.jwt.claims',
-  json_build_object('sub', gen_random_uuid(), 'role', 'authenticated', 'user_role', 'hub_admin')::text,
+  json_build_object('sub', current_setting('test.admin'), 'role', 'authenticated')::text,
   true
 );
 
