@@ -4,8 +4,9 @@ name: Security Scan
 #  • semanalmente (segunda 06:00 UTC) — pega regressão cedo;
 #  • a cada PR que mexe em dependências — barra vuln nova entrando;
 #  • sob demanda (workflow_dispatch).
-# Camadas: auditoria de dependências (bun audit), secret scanning (gitleaks) e
-# Supabase security advisors (RLS/policies/grants, se o token estiver configurado).
+# Camadas: auditoria de dependências (bun audit), secret scanning (gitleaks),
+# Supabase security advisors (RLS/policies/grants, se o token estiver configurado)
+# e SAST (semgrep OSS, report-only — robusto/bloqueante fica na E4.2).
 # Em regressão (high+ nas deps ou advisor de segurança), abre/atualiza uma issue.
 
 on:
@@ -36,9 +37,11 @@ jobs:
         run: |
           set +e
           bun audit > audit.txt 2>&1
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          cat audit.txt >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo '```'
+            cat audit.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
           # Conta high/critical; é o gatilho de regressão.
           HIGHCRIT=$(grep -ciE "^\s*(high|critical):" audit.txt)
           echo "highcrit=$HIGHCRIT" >> "$GITHUB_OUTPUT"
@@ -79,11 +82,12 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PROJECT_REF: mgaigbezdalbyuqiofcf
+      # secrets não pode ser referenciado em `if:` de step — expomos como env de job
+      # (isso é permitido) e o `if` testa env.SUPABASE_ACCESS_TOKEN.
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
     steps:
       - name: Supabase security advisors
-        if: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' }}
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' }}
         run: |
           set -e
           resp=$(curl -fsSL \
@@ -99,7 +103,35 @@ jobs:
             | select(.categories[]? == "SECURITY")
             | "\(.level)\t\(.name)"' | sort | uniq -c | sort -rn >> "$GITHUB_STEP_SUMMARY" || true
       - name: Aviso se o token não está configurado
-        if: ${{ secrets.SUPABASE_ACCESS_TOKEN == '' }}
+        if: ${{ env.SUPABASE_ACCESS_TOKEN == '' }}
         run: |
           echo "⏭️ SUPABASE_ACCESS_TOKEN não configurado — advisors do Supabase pulados." >> "$GITHUB_STEP_SUMMARY"
           echo "Configure em Settings → Secrets para habilitar. Enquanto isso, rode manualmente (MCP/Dashboard)." >> "$GITHUB_STEP_SUMMARY"
+
+  # ── SAST — semgrep OSS (E0.6, camada leve) ───────────────────────────────
+  # Análise estática do NOSSO código com rulesets da comunidade — OSS puro, SEM
+  # token/conta. Modo REPORTA: `continue-on-error` não bloqueia entrega (fase 0).
+  # Robustecer é a E4.2 (pré-lançamento): custom rules Movepark + gate bloqueante
+  # + rodar em cada push/PR (hoje roda no schedule semanal + PR de deps + dispatch).
+  sast:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    container:
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v5
+      - name: semgrep scan (report-only)
+        run: |
+          set +e
+          semgrep scan \
+            --config p/typescript \
+            --config p/react \
+            --config p/secrets \
+            --config p/owasp-top-ten \
+            --metrics off --text 2>&1 | tee semgrep.txt
+          {
+            echo '### Semgrep (SAST OSS — report-only)'
+            echo '```'
+            tail -n 80 semgrep.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
