@@ -93,15 +93,47 @@ jobs:
           resp=$(curl -fsSL \
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
             "https://api.supabase.com/v1/projects/$PROJECT_REF/advisors/security")
-          # Achados reais = lints de SECURITY que não sejam o ruído esperado
-          # (security_definer executável por authenticated nos operator_*).
-          real=$(echo "$resp" | jq '[.lints[]
+          # ── Allowlist dos reads públicos + helpers de RLS que SÃO anon-executáveis
+          # de propósito (funil de busca/preço + funções usadas dentro de policies RLS).
+          # Qualquer OUTRA função exposta a `anon` como SECURITY DEFINER = regressão real
+          # (mutação nova vazando pra anon) e entra na contagem. Triado na E0.6 (jul/2026);
+          # os grants indevidos foram revogados em 20260726000000_revoke_anon_leftover_rpcs.
+          allow='["availability_batch","check_availability","coupon_evaluate","current_company_ids","current_owner_company_ids","current_user_role","discount_evaluate","get_pricing_data","get_unit_fares","is_hub_admin","member_has_scope","popular_locations","simulate_price","validate_coupon"]'
+          # Achados reais = lints de SECURITY, excluindo:
+          #  • authenticated_security_definer (ruído: exige usuário logado);
+          #  • anon_security_definer cuja função está na allowlist acima;
+          #  • nível INFO (informativo, ex.: rls_enabled_no_policy do webhook — desejado).
+          real=$(echo "$resp" | jq --argjson allow "$allow" '[.lints[]
             | select(.categories[]? == "SECURITY")
-            | select(.name != "authenticated_security_definer_function_executable")] | length')
-          echo "Advisors de segurança relevantes: $real"
-          echo "$resp" | jq -r '.lints[]
-            | select(.categories[]? == "SECURITY")
-            | "\(.level)\t\(.name)"' | sort | uniq -c | sort -rn >> "$GITHUB_STEP_SUMMARY" || true
+            | select(.level != "INFO")
+            | select(.name != "authenticated_security_definer_function_executable")
+            | select((.name == "anon_security_definer_function_executable"
+                      and (.metadata.name | IN($allow[]))) | not)] | length')
+          echo "Advisors de segurança relevantes (fora da allowlist): $real"
+          {
+            echo "### Supabase security advisors"
+            echo "Relevantes (fora da allowlist): **$real**"
+            echo ""
+            echo "Distribuição por lint:"
+            echo '```'
+            echo "$resp" | jq -r '.lints[]
+              | select(.categories[]? == "SECURITY")
+              | "\(.level)\t\(.name)"' | sort | uniq -c | sort -rn
+            echo '```'
+            if [ "$real" != "0" ]; then
+              echo ""
+              echo "Achados relevantes (revisar — regressão ou item a corrigir):"
+              echo '```'
+              echo "$resp" | jq -r --argjson allow "$allow" '.lints[]
+                | select(.categories[]? == "SECURITY")
+                | select(.level != "INFO")
+                | select(.name != "authenticated_security_definer_function_executable")
+                | select((.name == "anon_security_definer_function_executable"
+                          and (.metadata.name | IN($allow[]))) | not)
+                | "\(.level)\t\(.name)\t\(.metadata.name // "-")"'
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY" || true
       - name: Aviso se o token não está configurado
         if: ${{ env.SUPABASE_ACCESS_TOKEN == '' }}
         run: |

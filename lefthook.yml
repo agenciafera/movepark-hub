@@ -1,0 +1,15 @@
+# lefthook.yml — Camada 1 "chão duro" da higiene de segurança (E0.6).
+# Roda em TODO `git commit`, de qualquer origem (Claude Code, extensão de IDE,
+# Desktop, commit manual) — é o único guard cross-setup, não depende de IA cooperar.
+# Faz só o rápido: secretlint nos arquivos staged (segundos). O pesado (bun audit,
+# gitleaks no histórico, advisors) mora no CI (.github/workflows/security-scan.yml).
+# Instala sozinho via `prepare` do package.json a cada `bun install`.
+pre-commit:
+  parallel: true
+  commands:
+    secretscan:
+      glob: "*.{ts,tsx,js,jsx,mjs,cjs,json,jsonc,env,yml,yaml,toml,sql,md,sh}"
+      run: bunx secretlint --secretlintignore .gitignore {staged_files}
+      skip:
+        - merge
+        - rebase
