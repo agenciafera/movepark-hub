@@ -6,7 +6,28 @@ import {
   timingSafeEqual,
   transferStatusToWithdrawalStatus,
   verifyBasicAuth,
+  webhookIntentFromType,
 } from "./logic.ts";
+
+Deno.test("webhookIntentFromType: decide a ação pelo TIPO do evento (não pelo data.status)", () => {
+  // Estorno total — o caso PIX que hoje falha: o evento é charge.refunded mas data.status vem "paid".
+  assertEquals(webhookIntentFromType("charge.refunded"), "refund");
+  assertEquals(webhookIntentFromType("order.refunded"), "refund");
+  // Estorno parcial (defensivo — feito no painel da Pagar.me)
+  assertEquals(webhookIntentFromType("charge.partially_refunded"), "partial_refund");
+  assertEquals(webhookIntentFromType("order.partially_refunded"), "partial_refund");
+  // Cancelamento (hoje não tratado → booking ficava confirmado)
+  assertEquals(webhookIntentFromType("charge.canceled"), "cancel");
+  assertEquals(webhookIntentFromType("charge.cancelled"), "cancel");
+  assertEquals(webhookIntentFromType("order.canceled"), "cancel");
+  // Pagamento
+  assertEquals(webhookIntentFromType("charge.paid"), "paid");
+  assertEquals(webhookIntentFromType("order.paid"), "paid");
+  // Desconhecido → null (cai no mapeamento genérico por status)
+  assertEquals(webhookIntentFromType("charge.updated"), null);
+  assertEquals(webhookIntentFromType("order.created"), null);
+  assertEquals(webhookIntentFromType(""), null);
+});
 
 Deno.test("parseRecipientEvent: extrai id e status do recipient.updated", () => {
   const ev = parseRecipientEvent({

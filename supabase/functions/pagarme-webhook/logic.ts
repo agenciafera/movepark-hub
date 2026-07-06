@@ -43,6 +43,32 @@ export interface ParsedEvent {
   rawStatus: string | null;
 }
 
+/** Intenção de um evento de cobrança/ordem, derivada do TIPO (não do data.status). */
+export type WebhookIntent = "paid" | "refund" | "partial_refund" | "cancel";
+
+/**
+ * Decide a ação a partir do TIPO do evento — e NÃO do `data.status`. Crítico para estorno de PIX:
+ * a Pagar.me envia `charge.refunded` com `data.status: "paid"` (o refund fica em `last_transaction`),
+ * então confiar no status faria o estorno cair no branch "paid" e nunca refletir. Retorna `null`
+ * para tipos não reconhecidos (o handler cai no mapeamento genérico por status).
+ */
+export function webhookIntentFromType(type: string | null | undefined): WebhookIntent | null {
+  const action = (type ?? "").toLowerCase().split(".")[1] ?? "";
+  switch (action) {
+    case "paid":
+      return "paid";
+    case "refunded":
+      return "refund";
+    case "partially_refunded":
+      return "partial_refund";
+    case "canceled":
+    case "cancelled":
+      return "cancel";
+    default:
+      return null;
+  }
+}
+
 /** Extrai os campos relevantes do payload de webhook (order.* ou charge.*). */
 export function parseWebhookEvent(body: unknown): ParsedEvent {
   const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;

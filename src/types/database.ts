@@ -2072,18 +2072,21 @@ export type Database = {
       payment_webhook_event: {
         Row: {
           id: string
+          processed_at: string | null
           provider: string
           received_at: string
           type: string | null
         }
         Insert: {
           id: string
+          processed_at?: string | null
           provider?: string
           received_at?: string
           type?: string | null
         }
         Update: {
           id?: string
+          processed_at?: string | null
           provider?: string
           received_at?: string
           type?: string | null

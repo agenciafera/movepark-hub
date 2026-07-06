@@ -21,6 +21,7 @@ import {
   parseWebhookEvent,
   transferStatusToWithdrawalStatus,
   verifyBasicAuth,
+  webhookIntentFromType,
 } from "./logic.ts";
 
 /**
@@ -78,6 +79,16 @@ function json(body: unknown, status = 200) {
   });
 }
 
+// Marca o evento como processado com sucesso. Idempotência resiliente: numa reentrega, só o que
+// COMPLETOU é pulado; um evento cujo processamento não chegou ao fim (crash/timeout) é reprocessado.
+// deno-lint-ignore no-explicit-any
+async function markProcessed(admin: any, eventId: string): Promise<void> {
+  await admin
+    .from("payment_webhook_event")
+    .update({ processed_at: new Date().toISOString() })
+    .eq("id", eventId);
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
@@ -108,13 +119,24 @@ Deno.serve(async (req: Request) => {
     { auth: { persistSession: false } },
   );
 
-  // Idempotência: registra o evento; se já existe (23505), ignora.
+  // Idempotência resiliente: registra o evento. Se já existe (23505) E já foi processado com
+  // sucesso (`processed_at`), ignora; se a tentativa anterior NÃO completou (crash/timeout →
+  // processed_at nulo), reprocessa — todas as ações abaixo são idempotentes.
   const { error: dupErr } = await admin
     .from("payment_webhook_event")
     .insert({ id: ev.eventId, provider: "pagarme", type: ev.type });
   if (dupErr) {
-    if (dupErr.code === "23505") return json({ ok: true, duplicate: true });
-    return json({ error: dupErr.message }, 500);
+    if (dupErr.code === "23505") {
+      const { data: prev } = await admin
+        .from("payment_webhook_event")
+        .select("processed_at")
+        .eq("id", ev.eventId)
+        .maybeSingle();
+      if (prev?.processed_at) return json({ ok: true, duplicate: true });
+      // tentativa anterior não completou → segue e reprocessa
+    } else {
+      return json({ error: dupErr.message }, 500);
+    }
   }
 
   // Evento de recebedor (status/KYC mudou no gateway): reflete em payout_recipient (E2.8
@@ -234,7 +256,40 @@ Deno.serve(async (req: Request) => {
     return json({ ok: true, matched: false });
   }
 
-  const status = mapChargeStatus(ev.rawStatus ?? ev.type.split(".")[1]);
+  // Decide a ação pelo TIPO do evento (não pelo data.status — PIX manda `charge.refunded` com
+  // data.status "paid", o refund fica em last_transaction). Sem intent reconhecida, cai no
+  // mapeamento genérico por status.
+  const intent = webhookIntentFromType(ev.type);
+
+  // Estorno PARCIAL (defensivo — feito no painel da Pagar.me): registra o valor no payment, NÃO
+  // cancela nem muda o status pago (a aplicação só emite estorno total).
+  if (intent === "partial_refund") {
+    const rawData = ((body as Record<string, unknown>).data ?? {}) as Record<string, unknown>;
+    const cents = Number(rawData.amount);
+    const { data: pay } = await admin
+      .from("payment")
+      .select("refunded_at")
+      .eq("id", payment.id)
+      .maybeSingle();
+    await admin
+      .from("payment")
+      .update({
+        refunded_at: pay?.refunded_at ?? new Date().toISOString(),
+        refunded_amount: Number.isFinite(cents) && cents > 0 ? cents / 100 : null,
+      })
+      .eq("id", payment.id);
+    await markProcessed(admin, ev.eventId);
+    return json({ ok: true, partial_refund: true });
+  }
+
+  const status =
+    intent === "refund"
+      ? "refunded"
+      : intent === "cancel"
+        ? "canceled"
+        : intent === "paid"
+          ? "paid"
+          : mapChargeStatus(ev.rawStatus ?? ev.type.split(".")[1]);
   const paymentStatus = chargeStatusToPaymentStatus(status);
 
   // Preserva paid_at: um pagamento pago e depois estornado mantém a data do pagamento
@@ -250,6 +305,7 @@ Deno.serve(async (req: Request) => {
       p_target_tier: payment.fare_target_tier,
     });
     if (upErr) console.error("[pagarme-webhook] apply_fare_upgrade falhou:", upErr.message);
+    await markProcessed(admin, ev.eventId);
     return json({ ok: true, status: paymentStatus, fare_upgrade: true });
   }
 
@@ -277,9 +333,9 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // Estorno confirmado pelo gateway (E0.3.2): reflete no payment e garante booking cancelado +
-  // capacidade liberada. Idempotente: a RPC é noop se o booking já está cancelado (ex.: a Edge
-  // cancel-booking iniciou o estorno) e o coalesce preserva o que ela já marcou.
+  // Estorno TOTAL confirmado pelo gateway (E0.3.2): reflete SÓ no payment. Estorno e cancelamento
+  // são ações SEPARADAS — o cancelamento vem do evento `*.canceled` ou da Edge cancel-booking.
+  // Assim um estorno avulso (inclusive de reserva concluída) não força cancelar o booking.
   if (status === "refunded") {
     const { data: pay } = await admin
       .from("payment")
@@ -293,15 +349,20 @@ Deno.serve(async (req: Request) => {
         refunded_amount: pay?.refunded_amount ?? pay?.amount ?? null,
       })
       .eq("id", payment.id);
-
-    const { error: rpcErr } = await admin.rpc("cancel_booking_with_release", {
-      p_booking_id: payment.booking_id,
-      p_reason: "estorno confirmado pelo gateway",
-    });
-    if (rpcErr) {
-      console.error("[pagarme-webhook] cancel_booking_with_release falhou:", rpcErr.message);
-    }
   }
 
+  // Cancelamento confirmado pelo gateway (expiração do PIX, cancelamento no painel): cancela o
+  // booking + libera capacidade. RPC idempotente (noop se já cancelado). Erro é logado e a
+  // reconciliação (cron) cobre o straggler — não devolvemos 500 (a RPC recusa reserva terminal
+  // por design, o que causaria retry infinito).
+  if (status === "canceled") {
+    const { error: rpcErr } = await admin.rpc("cancel_booking_with_release", {
+      p_booking_id: payment.booking_id,
+      p_reason: "cancelamento confirmado pelo gateway",
+    });
+    if (rpcErr) console.error("[pagarme-webhook] cancel_booking_with_release falhou:", rpcErr.message);
+  }
+
+  await markProcessed(admin, ev.eventId);
   return json({ ok: true, status: paymentStatus });
 });
