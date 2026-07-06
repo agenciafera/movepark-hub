@@ -176,6 +176,26 @@ Regras práticas:
 - Se um arquivo untracked não deve ir ao repo (ex: segredo, binário grande), adicione ao `.gitignore` explicitamente e documente o motivo.
 - **Nunca** conclua uma tarefa deixando `Untracked files` que o código referencia.
 
+### Segurança — guardas antes do commit (E0.6)
+
+Modelo em 3 camadas — **local leve, CI pesado** (não travar entrega):
+
+1. **Chão duro (roda em TODO commit, qualquer ferramenta, até sem IA):** hook `pre-commit` via
+   **lefthook** roda `secretlint` nos arquivos staged. É rápido (segundos) e só barra **segredo
+   vazando**. Instala sozinho no `bun install` (script `prepare`). Se aparecer um achado, é segredo
+   de verdade → remova/rotacione; a **anon key** do Supabase é pública por design (não é segredo).
+2. **Convenção da IA (você, Claude — vale terminal, extensão de IDE e Desktop):** ao mexer em
+   **migration, RLS, policy, função `SECURITY DEFINER`, Edge Function ou dependências**, antes de
+   concluir a tarefa: (a) rode `/security-review` (revisão de segurança do diff da branch) e
+   (b) rode os **advisors do Supabase** (`get_advisors` type `security`, projeto `mgaigbezdalbyuqiofcf`)
+   e trate qualquer **regressão** (RLS que caiu, mutação nova exposta a `anon`). Não é opcional
+   quando o diff toca esses pontos.
+3. **Backstop (CI):** `.github/workflows/security-scan.yml` roda semanal + em PR de deps
+   (`bun audit`, `gitleaks` no histórico, advisors do Supabase). É a rede de segurança — o pesado
+   mora aqui, não no commit local.
+
+Detalhe operacional e triagem dos achados: `../gestao/E0.6-guardas-nativas.md`.
+
 ## Testes
 
 **Todo código novo ou modificado precisa de teste automatizado.** Pirâmide:
