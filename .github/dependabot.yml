@@ -24,6 +24,13 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    # Ignora bumps MAJOR (breaking) — upgrades tipo zod 3→4, react 18→19, TS 5→6 são
+    # deliberados e testados à mão, não backlog automático. Os *security updates* NÃO
+    # são afetados: quando houver CVE, o PR abre mesmo que o bump seja major.
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
 
   # As próprias GitHub Actions dos workflows (mantém as Actions atualizadas).
   - package-ecosystem: "github-actions"
