@@ -9,7 +9,11 @@
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
-    "not_found_handling": "single-page-application"
+    "not_found_handling": "single-page-application",
+    // Roda o worker ANTES de servir o asset — necessário para a content-negotiation de
+    // Markdown-for-Agents (E0.8-c) valer nas páginas reais (que têm HTML pré-renderizado).
+    // Sem isto, o asset é servido primeiro e o worker.ts nunca roda em / e nas rotas SSG.
+    "run_worker_first": true
   },
   "compatibility_flags": [
     "nodejs_compat"
