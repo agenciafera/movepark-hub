@@ -12,7 +12,6 @@ import { HowToArrive } from "@/features/listing/HowToArrive";
 import { TerminalDistances } from "@/features/listing/TerminalDistances";
 import { ReservationCard } from "@/features/listing/ReservationCard";
 import { RecommendedCarousel } from "@/features/listing/RecommendedCarousel";
-import { TldrCard } from "@/features/listing/TldrCard";
 import { buildListingTldr, nearestTerminal } from "@/features/listing/tldr.logic";
 import { ReviewsBlock } from "@/features/reviews/ReviewsBlock";
 import { RatingBadge } from "@/features/reviews/RatingStars";
@@ -69,8 +68,9 @@ export default function ListingPage() {
     enabled: !!listing?.location.id,
   });
 
-  // TLDR-first (E3.2): resumo extraível gerado dos dados da unidade. Reusa a mesma query
-  // de terminais do bloco "Distância aos terminais" (cache compartilhado, sem fetch extra).
+  // TLDR-first (E3.2): resumo extraível gerado dos dados da unidade. Alimenta apenas a meta
+  // description e o JSON-LD (description) — extração por IA, sem bloco visível na página.
+  // Reusa a query de terminais do bloco "Distância aos terminais" (cache, sem fetch extra).
   const { data: terminals } = useLocationTerminals(listing?.location.id);
   const tldr = listing
     ? buildListingTldr(listing, { nearest: nearestTerminal(terminals ?? []) })
@@ -254,13 +254,6 @@ export default function ListingPage() {
           <span className="hidden tablet:inline">{isSaved ? "Salvo" : "Salvar"}</span>
         </button>
       </div>
-
-      {/* TLDR-first: resumo extraível no topo (E3.2 · agent-readiness-seo) */}
-      {tldr && (
-        <div className="mb-6">
-          <TldrCard tldr={tldr} />
-        </div>
-      )}
 
       {/* Galeria de fotos */}
       <PhotoGrid title={listing.location.name} photoUrls={listing.location.photos} />
