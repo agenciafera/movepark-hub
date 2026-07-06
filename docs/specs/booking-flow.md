@@ -183,8 +183,9 @@ ser expiradas automaticamente.
   valor. **Estorno reflete só no `payment`** (não força cancelar — o cancelamento vem de `*.canceled`
   ou da Edge `cancel-booking`). Idempotência **resiliente** por `payment_webhook_event.processed_at`:
   reentrega de evento que não completou é **reprocessada** (antes o 23505 engolia a falha).
-  **Eventos a assinar no painel Pagar.me:** `charge.paid`, `order.paid`, `charge.refunded`,
-  `charge.partially_refunded`, `charge.canceled`/`order.canceled`.
+  **Eventos a assinar no painel Pagar.me** (nomes reais da conta): `charge.paid`, `charge.refunded`
+  (estorno total) e `charge.partial_canceled` (estorno parcial). Esta conta emite `charge.*` (não há
+  `order.*` nem `charge.canceled`); o full refund/void é o próprio `charge.refunded`.
 - **Capacidade:** cancelar + liberar a vaga é uma RPC única e **idempotente por status**,
   `cancel_booking_with_release` (noop se já `cancelled`), chamada **tanto** pela Edge **quanto** pelo
   webhook — a vaga nunca é liberada em dobro (`release_booking_capacity` não é idempotente sozinha).

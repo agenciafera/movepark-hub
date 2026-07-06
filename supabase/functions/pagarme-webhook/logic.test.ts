@@ -13,9 +13,9 @@ Deno.test("webhookIntentFromType: decide a ação pelo TIPO do evento (não pelo
   // Estorno total — o caso PIX que hoje falha: o evento é charge.refunded mas data.status vem "paid".
   assertEquals(webhookIntentFromType("charge.refunded"), "refund");
   assertEquals(webhookIntentFromType("order.refunded"), "refund");
-  // Estorno parcial (defensivo — feito no painel da Pagar.me)
+  // Estorno parcial — nome REAL da Pagar.me é `partial_canceled` (partially_refunded é defensivo)
+  assertEquals(webhookIntentFromType("charge.partial_canceled"), "partial_refund");
   assertEquals(webhookIntentFromType("charge.partially_refunded"), "partial_refund");
-  assertEquals(webhookIntentFromType("order.partially_refunded"), "partial_refund");
   // Cancelamento (hoje não tratado → booking ficava confirmado)
   assertEquals(webhookIntentFromType("charge.canceled"), "cancel");
   assertEquals(webhookIntentFromType("charge.cancelled"), "cancel");

@@ -24,16 +24,17 @@ const CUTOFF_MINUTES = 15;
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  const expected = Deno.env.get("RECONCILE_REFUNDS_KEY");
-  if (!expected || req.headers.get("x-reconcile-refunds-key") !== expected) {
-    return json({ error: "unauthorized" }, 401);
-  }
-
   const admin = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     { auth: { persistSession: false } },
   );
+
+  // A chave interna vem do Vault (mesma que o cron envia) — sem env var, sem sincronizar segredo.
+  const { data: expected } = await admin.rpc("reconcile_refunds_expected_key");
+  if (!expected || req.headers.get("x-reconcile-refunds-key") !== expected) {
+    return json({ error: "unauthorized" }, 401);
+  }
 
   let gateway;
   try {
