@@ -1,38 +1,19 @@
 # Dependabot — guard nativo do GitHub (grátis inclusive em repo privado), parte da E0.6.
-# Compara as deps do projeto com o GitHub Advisory Database e abre PR de bump quando há
-# correção. Os ALERTS (aba Security) dependem do toggle em Settings → Code security e
-# funcionam pelo manifesto (package.json) independente do version-update.
-# Ressalva (bun): o version-update do Dependabot ainda tem suporte limitado a `bun.lock`;
-# o `bun audit` no CI (security-scan.yml) cobre esse buraco. Ver docs/ e CLAUDE.md.
+#
+# O VALOR real aqui são os ALERTAS de segurança (aba Security) + os *security updates*,
+# ligados nos toggles do repo (Settings → Code security) e INDEPENDENTES deste arquivo —
+# funcionam pelo manifesto (package.json) mesmo sem bloco `updates` abaixo.
+#
+# ⚠️ npm version-update REMOVIDO de propósito: o Dependabot tem suporte incompleto a
+# `bun.lock` — ele atualiza o package.json mas gera um lockfile que o `bun install
+# --frozen-lockfile` (CI/Cloudflare, bun 1.3.13) rejeita com "lockfile had changes, but
+# lockfile is frozen". Ou seja, TODO PR de bump npm nasce com a CI vermelha e não mergeia.
+# O `bun audit` no security-scan.yml já cobre o gap de version-update; os alerts/security
+# updates continuam pelo toggle. Ver CLAUDE.md (frozen-lockfile) e docs/security/.
+# Quando o suporte a bun no Dependabot amadurecer, reintroduzir o bloco `npm` aqui.
 version: 2
 updates:
-  # Dependências JS/TS — lê o package.json.
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
-    commit-message:
-      prefix: "chore(deps)"
-    labels:
-      - "dependencies"
-      - "security-scan"
-    # Só agrupa os patch/minor pra não abrir uma enxurrada de PRs.
-    groups:
-      minor-and-patch:
-        update-types:
-          - "minor"
-          - "patch"
-    # Ignora bumps MAJOR (breaking) — upgrades tipo zod 3→4, react 18→19, TS 5→6 são
-    # deliberados e testados à mão, não backlog automático. Os *security updates* NÃO
-    # são afetados: quando houver CVE, o PR abre mesmo que o bump seja major.
-    ignore:
-      - dependency-name: "*"
-        update-types:
-          - "version-update:semver-major"
-
-  # As próprias GitHub Actions dos workflows (mantém as Actions atualizadas).
+  # As próprias GitHub Actions dos workflows (sem bun → o version-update funciona bem).
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -43,3 +24,13 @@ updates:
     labels:
       - "dependencies"
       - "github-actions"
+    # Agrupa num PR só e ignora major (bumps major de action são deliberados/testados).
+    groups:
+      actions:
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
