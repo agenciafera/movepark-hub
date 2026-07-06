@@ -162,7 +162,7 @@ O **selo de rating no topo do detalhe** é um link-âncora (`#avaliacoes`) que r
 > porque o RLS de `booking` bloqueia o join público a partir do read anônimo de reviews. O card
 > renderiza "Estacionou de DD/MM a DD/MM" (ou "Estacionou em DD/MM" no mesmo dia) via
 > `reviews.logic.ts → stayContextLabel`; some quando faltam datas. Migration
-> `20260723000000_review_stay_context.sql`.
+> `20260723000001_review_stay_context.sql`.
 
 ### 5.5 Como chegar ✅ (PRD-11)
 
