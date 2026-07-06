@@ -9,6 +9,15 @@ description = "Valores públicos conhecidos (não são segredos)"
 # A anon key vive em .env (template) e no ci.yml (build) — pública por design.
 paths = [
   '''^\.env$''',
+  # Fixtures de teste com chaves MOCK (não são segredos reais):
+  #  - key_prefix "mp_live_…" (só o prefixo público de uma API key)
+  #  - const KEY base64 de "secret-key-1234567890" (valor de teste do roundtrip)
+  '''src/features/api-keys/ApiKeysTable\.test\.tsx$''',
+  '''supabase/functions/send-whatsapp-otp/webhook\.test\.ts$''',
+  # Coleção Postman LEGADO da API v3.0 (Stripe sk_test_ / JWTs expirados). Removida da
+  # árvore, mas o gitleaks varre o histórico — o allowlist por caminho cobre os commits
+  # antigos onde o arquivo existia.
+  '''docs/Movepark v3\.0\.postman_collection\.json$''',
 ]
 regexes = [
   # JWT com claim "role":"anon" — chave pública do Supabase.
