@@ -4,7 +4,7 @@
 -- Fixture cria sua própria company/location (não depende do seed) pra isolar as contagens.
 
 begin;
-select plan(8);
+select plan(10);
 
 select has_function(
   'public', 'locations_high_demand_today', ARRAY['uuid[]'],
@@ -19,7 +19,7 @@ select ok(
 
 -- ── fixture: customer + company/location próprios (timezone default America/Sao_Paulo) ──
 do $$
-declare u uuid := gen_random_uuid(); v_company uuid; v_loc uuid; v_loc2 uuid;
+declare u uuid := gen_random_uuid(); v_company uuid; v_loc uuid; v_loc2 uuid; v_loc3 uuid;
 begin
   insert into auth.users(id, instance_id, aud, role, email, created_at, updated_at)
     values (u,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','demand@ex.com',now(),now());
@@ -28,10 +28,12 @@ begin
   insert into public.company (name, slug) values ('Demand Test Co', 'demand-test-co-' || u) returning id into v_company;
   insert into public.location (company_id, name, slug) values (v_company, 'Demand Loc 1', 'demand-loc-1-' || u) returning id into v_loc;
   insert into public.location (company_id, name, slug) values (v_company, 'Demand Loc 2', 'demand-loc-2-' || u) returning id into v_loc2;
+  insert into public.location (company_id, name, slug) values (v_company, 'Demand Loc 3', 'demand-loc-3-' || u) returning id into v_loc3;
 
   perform set_config('test.u', u::text, false);
   perform set_config('test.loc', v_loc::text, false);
   perform set_config('test.loc2', v_loc2::text, false);
+  perform set_config('test.loc3', v_loc3::text, false);
 end $$;
 
 -- 2 reservas "vendidas" hoje — abaixo do limiar (3)
@@ -88,6 +90,30 @@ select ok(
     where location_id = current_setting('test.loc2')::uuid
   ),
   'reservas confirmed de 2 dias atrás não contam pra "hoje" (dia civil na timezone da location)');
+
+-- location inativa/excluída não deve vazar o sinal mesmo com reservas reais suficientes hoje
+-- (SECURITY DEFINER contorna RLS — catalog_read_location só esconde de anon/authenticated no
+-- SELECT direto; a função precisa reaplicar o filtro manualmente, como popular_locations já faz).
+insert into public.booking (code, profile_id, location_id, check_in_at, check_out_at, status, total_amount, created_at)
+select 'MP-DEM3I' || i, current_setting('test.u')::uuid, current_setting('test.loc3')::uuid,
+       now() + interval '1 day', now() + interval '2 days', 'confirmed', 100, now()
+from generate_series(1, 3) i;
+
+select ok(
+  exists(
+    select 1 from public.locations_high_demand_today(array[current_setting('test.loc3')::uuid])
+    where location_id = current_setting('test.loc3')::uuid
+  ),
+  'sanity: 3 reservas hoje numa location ativa aciona o sinal');
+
+update public.location set status = 'inactive' where id = current_setting('test.loc3')::uuid;
+
+select ok(
+  not exists(
+    select 1 from public.locations_high_demand_today(array[current_setting('test.loc3')::uuid])
+    where location_id = current_setting('test.loc3')::uuid
+  ),
+  'location inativa não vaza o sinal mesmo com reservas reais suficientes hoje');
 
 select * from finish();
 rollback;
