@@ -26,6 +26,7 @@ function item(overrides: {
       review_avg: null,
       review_count: 0,
       cover_image: null,
+      high_demand_today: false,
     },
     parking_type: { code: overrides.typeCode ?? "self_park", name: "Vaga" },
     capacity: 10,

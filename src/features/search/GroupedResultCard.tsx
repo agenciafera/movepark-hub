@@ -107,6 +107,8 @@ export function GroupedResultCard({
     nearCapacity && cheapestRemaining != null && cheapestRemaining > 0
       ? `Faltam ${cheapestRemaining} vaga${cheapestRemaining === 1 ? "" : "s"}`
       : (cheapest.availability?.near_capacity_message ?? "Restam poucas vagas");
+  // Sinal de demanda honesto (E3.6) — só quando não há já um badge de escassez pra não poluir o card.
+  const highDemand = !soldOut && !nearCapacity && item.location.high_demand_today;
 
   // Diferenciais comparativos: vão sobre a imagem (só aparecem quando há variação real)
   const comparativeBadges = badges.filter((b) => COMPARATIVE_KINDS.has(b.kind));
@@ -176,6 +178,12 @@ export function GroupedResultCard({
         {!soldOut && nearCapacity && (
           <span className="absolute bottom-3 left-3 rounded-full bg-badge-pending-bg px-3 py-1 text-[12px] font-bold text-badge-pending-fg">
             {nearMsg}
+          </span>
+        )}
+
+        {highDemand && (
+          <span className="absolute bottom-3 left-3 rounded-full bg-badge-active-bg px-3 py-1 text-[12px] font-bold text-badge-active-fg">
+            Muito procurado hoje
           </span>
         )}
       </CardLink>

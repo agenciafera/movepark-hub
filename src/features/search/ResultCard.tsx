@@ -100,6 +100,8 @@ export function ResultCard({
     nearCapacity && remaining != null && remaining > 0
       ? `Faltam ${remaining} vaga${remaining === 1 ? "" : "s"}`
       : (item.availability?.near_capacity_message ?? "Restam poucas vagas");
+  // Sinal de demanda honesto (E3.6) — só quando não há já um badge de escassez pra não poluir o card.
+  const highDemand = !soldOut && !nearCapacity && item.location.high_demand_today;
 
   return (
     <article
@@ -137,6 +139,10 @@ export function ResultCard({
         ) : nearCapacity ? (
           <span className="absolute left-3 top-3 rounded-sm bg-badge-pending-bg px-2 py-0.5 text-caption font-bold text-badge-pending-fg shadow-tier">
             {nearMsg}
+          </span>
+        ) : highDemand ? (
+          <span className="absolute left-3 top-3 rounded-sm bg-badge-active-bg px-2 py-0.5 text-caption font-bold text-badge-active-fg shadow-tier">
+            Muito procurado hoje
           </span>
         ) : null}
         {!soldOut && badges.length > 0 && (

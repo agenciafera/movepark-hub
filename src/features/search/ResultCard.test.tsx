@@ -23,6 +23,7 @@ function item(
       review_avg: null,
       review_count: 0,
       cover_image: null,
+      high_demand_today: false,
       ...locationOverrides,
     },
     parking_type: { code: "covered", name: "Vaga coberta" },
@@ -152,5 +153,37 @@ describe("ResultCard", () => {
       />,
     );
     expect(screen.getByText("Últimas vagas")).toBeInTheDocument();
+  });
+
+  it("alta demanda (E3.6): mostra badge qualitativo, nunca um número", () => {
+    renderWithProviders(
+      <ResultCard
+        item={item({}, { high_demand_today: true })}
+        isSaved={false}
+        onToggleSave={vi.fn()}
+        searchParams={new URLSearchParams()}
+      />,
+    );
+    expect(screen.getByText("Muito procurado hoje")).toBeInTheDocument();
+  });
+
+  it("sem alta demanda: não mostra o badge", () => {
+    renderWithProviders(
+      <ResultCard item={item()} isSaved={false} onToggleSave={vi.fn()} searchParams={new URLSearchParams()} />,
+    );
+    expect(screen.queryByText(/Muito procurado/)).toBeNull();
+  });
+
+  it("escassez tem prioridade sobre alta demanda (nunca os dois badges juntos)", () => {
+    renderWithProviders(
+      <ResultCard
+        item={item({ near_capacity: true, remaining: 2 }, { high_demand_today: true })}
+        isSaved={false}
+        onToggleSave={vi.fn()}
+        searchParams={new URLSearchParams()}
+      />,
+    );
+    expect(screen.getByText("Faltam 2 vagas")).toBeInTheDocument();
+    expect(screen.queryByText(/Muito procurado/)).toBeNull();
   });
 });

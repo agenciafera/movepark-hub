@@ -40,6 +40,8 @@ export type SearchResultItem = {
     review_count: number;
     /** Capa (1ª foto da galeria). null → card mostra placeholder. */
     cover_image: string | null;
+    /** Sinal de demanda honesto (E3.6) — nunca um número, só presença acima do limiar. */
+    high_demand_today: boolean;
   };
   parking_type: { code: string; name: string };
   capacity: number;

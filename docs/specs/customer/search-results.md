@@ -274,6 +274,28 @@ card em `opacity-60` e sem clique quando `sold_out`; pill de quase-lotação cas
 Esgotados vão para o fim da lista (qualquer `sort`). Ver [capacity-rules.md](../capacity-rules.md).
 (Sugestões "datas próximas" seguem como evolução.)
 
+### Sinal de demanda — "Muito procurado hoje" (E3.6, recorte)
+✅ **Implementado.** Badge qualitativo (sem número) exibido quando a location cruzou o
+limiar de reservas pagas no dia (`app_setting.high_demand_min_bookings_today`, default 3;
+RPC `locations_high_demand_today`, `supabase/functions/search/highDemand.ts`). Dado 100%
+real — só conta reserva `confirmed`/`checked_in`/`completed`/`no_show`, nunca `pending`/
+`cancelled` — e "hoje" é o dia civil na timezone da própria location.
+
+**Por que nunca um número:** a E3.6 original pedia "N reservaram hoje" com a contagem
+literal, mas isso vazaria volume de vendas por parceiro — o mesmo problema que
+`popular_locations` (home) já resolveu devolvendo só IDs, nunca contagem. Este RPC segue o
+mesmo padrão de não-vazamento.
+
+**Prioridade de badge**: no máximo um badge de urgência por card — `sold_out` > `near_capacity`
+(escassez) > `high_demand_today` (demanda). Nunca escassez e demanda juntos no mesmo card.
+
+**Escopo desta entrega** (recorte da E3.6, ver ClickUp): só o pedaço que usa dado real já
+existente e não depende de infra nova. Os outros dois entregáveis da E3.6 — "N pessoas vendo
+agora" (exige tracking de sessão/presença, inexistente hoje) e ajuste dinâmico por A/B
+testing (infra inexistente) — **seguem no backlog**, pós-lançamento, como o épico original
+já previa. Listing detail (`ReservationCard`) ainda não mostra o badge — é extensão natural,
+não feita nesta entrega.
+
 ---
 
 ## 11. Performance e UX

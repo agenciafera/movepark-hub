@@ -27,6 +27,7 @@ import {
   soldOutTiebreak,
   type AvailabilityRow,
 } from "./availability.ts";
+import { buildHighDemandSet, isHighDemandToday, type HighDemandRow } from "./highDemand.ts";
 import {
   aggregateDestinations,
   aggregateOperators,
@@ -345,6 +346,18 @@ Deno.serve(async (req: Request) => {
   const total = withPrice.length;
   const page = withPrice.slice(offset, offset + limit);
 
+  // 12b. Sinal de demanda honesto (E3.6, recorte "N reservaram hoje") — só pras locations
+  // da página atual. Nunca expõe a contagem (mesmo princípio de `popular_locations`): o RPC
+  // devolve apenas os location_id que cruzaram o limiar, aqui virando um Set de presença.
+  const pageLocationIds = Array.from(new Set(page.map((r) => r.location.id as string)));
+  let highDemandSet = buildHighDemandSet(null);
+  if (pageLocationIds.length > 0) {
+    const { data: demandRows } = await supabase.rpc("locations_high_demand_today", {
+      p_location_ids: pageLocationIds,
+    });
+    highDemandSet = buildHighDemandSet((demandRows ?? null) as HighDemandRow[] | null);
+  }
+
   // 13. Map to response shape
   const results = page.map((r) => ({
     id: r.id,
@@ -370,6 +383,8 @@ Deno.serve(async (req: Request) => {
         Array.isArray(r.location.photos) && r.location.photos.length > 0
           ? (r.location.photos[0] as string)
           : null,
+      // Sinal de demanda honesto — nunca um número, só presença (E3.6).
+      high_demand_today: isHighDemandToday(highDemandSet, r.location.id as string),
     },
     parking_type: {
       code: r.company_parking_type.parking_type.code,
