@@ -9,10 +9,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PhoneField } from "@/components/ui/phone-field";
 import { useAuth } from "@/auth/context";
 import { useProfile, useUpdateProfile } from "@/features/profile/api";
+import { useAcceptTerms } from "@/features/legal/api";
 import { useUpdateBookingCustomer } from "./api";
 
 type Props = {
   bookingId: string;
+  bookingCode: string;
   customerName: string | null;
   customerPhone: string | null;
   onNext: () => void;
@@ -23,11 +25,12 @@ function splitName(full: string): [string, string] {
   return [parts[0] ?? "", parts.slice(1).join(" ")];
 }
 
-export function Step1Identity({ bookingId, customerName, customerPhone, onNext }: Props) {
+export function Step1Identity({ bookingId, bookingCode, customerName, customerPhone, onNext }: Props) {
   const { session } = useAuth();
   const profileQ = useProfile(session?.userId);
   const updateProfile = useUpdateProfile();
   const updateCustomer = useUpdateBookingCustomer();
+  const acceptTerms = useAcceptTerms();
 
   const [firstName, setFirstName] = React.useState("");
   const [lastName, setLastName] = React.useState("");
@@ -85,13 +88,15 @@ export function Step1Identity({ bookingId, customerName, customerPhone, onNext }
       }
 
       await Promise.all(tasks);
+      // Registra o aceite explícito dos Termos (server-authoritative, RFN005/LGPD) antes de avançar.
+      await acceptTerms.mutateAsync({ booking_code: bookingCode });
       onNext();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao salvar dados");
     }
   }
 
-  const busy = updateProfile.isPending || updateCustomer.isPending;
+  const busy = updateProfile.isPending || updateCustomer.isPending || acceptTerms.isPending;
 
   return (
     <form id="checkout-step-form" onSubmit={handleNext} className="space-y-6">

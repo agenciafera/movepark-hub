@@ -20,6 +20,7 @@ import {
   PieChart,
   Landmark,
   Percent,
+  ScrollText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/context";
@@ -42,6 +43,7 @@ const managerItems: Item[] = [
   { to: "/manager/reviews", label: "Avaliações", icon: Star },
   { to: "/manager/faq", label: "FAQ", icon: HelpCircle },
   { to: "/manager/users", label: "Usuários", icon: Users },
+  { to: "/manager/legal", label: "Documentos legais", icon: ScrollText },
   { to: "/manager/settings", label: "Configurações", icon: Settings },
 ];
 

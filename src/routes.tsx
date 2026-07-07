@@ -57,6 +57,7 @@ import ManagerFinanceCommissions from "@/routes/manager/finance-commissions";
 import ManagerFinancePayouts from "@/routes/manager/finance-payouts";
 import ManagerFinanceRecipients from "@/routes/manager/finance-recipients";
 import ManagerSettings from "@/routes/manager/settings";
+import ManagerLegal from "@/routes/manager/legal";
 import ManagerFaq from "@/routes/manager/faq";
 import ManagerFaqCategorias from "@/routes/manager/faq-categorias";
 import ManagerPartners from "@/routes/manager/partners";
@@ -265,6 +266,7 @@ export const routes: RouteRecord[] = [
               { path: "faq", element: <ManagerFaq /> },
               { path: "faq/categorias", element: <ManagerFaqCategorias /> },
               { path: "settings", element: <ManagerSettings /> },
+              { path: "legal", element: <ManagerLegal /> },
             ],
           },
         ],

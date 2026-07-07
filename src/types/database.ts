@@ -1465,6 +1465,73 @@ export type Database = {
         }
         Relationships: []
       }
+      legal_document: {
+        Row: {
+          created_at: string
+          current_version_id: string | null
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_version_id?: string | null
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_version_id?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_document_current_version_fk"
+            columns: ["current_version_id"]
+            isOneToOne: false
+            referencedRelation: "legal_document_version"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_document_version: {
+        Row: {
+          content: string
+          document_slug: string
+          id: string
+          published_at: string
+          published_by: string | null
+          version: number
+        }
+        Insert: {
+          content: string
+          document_slug: string
+          id?: string
+          published_at?: string
+          published_by?: string | null
+          version: number
+        }
+        Update: {
+          content?: string
+          document_slug?: string
+          id?: string
+          published_at?: string
+          published_by?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_document_version_document_slug_fkey"
+            columns: ["document_slug"]
+            isOneToOne: false
+            referencedRelation: "legal_document"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
       location: {
         Row: {
           address: string | null
@@ -2616,6 +2683,45 @@ export type Database = {
           },
         ]
       }
+      terms_acceptance: {
+        Row: {
+          accepted_at: string
+          booking_id: string
+          document_version_id: string
+          id: string
+          ip: string | null
+        }
+        Insert: {
+          accepted_at?: string
+          booking_id: string
+          document_version_id: string
+          id?: string
+          ip?: string | null
+        }
+        Update: {
+          accepted_at?: string
+          booking_id?: string
+          document_version_id?: string
+          id?: string
+          ip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "terms_acceptance_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "booking"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "terms_acceptance_document_version_id_fkey"
+            columns: ["document_version_id"]
+            isOneToOne: false
+            referencedRelation: "legal_document_version"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicle: {
         Row: {
           color: string | null
@@ -3420,6 +3526,16 @@ export type Database = {
       }
       get_booking_hold_grace_minutes: { Args: never; Returns: number }
       get_booking_hold_minutes: { Args: never; Returns: number }
+      get_current_legal_document: {
+        Args: { p_slug: string }
+        Returns: {
+          content: string
+          published_at: string
+          slug: string
+          title: string
+          version: number
+        }[]
+      }
       get_pricing_data: {
         Args: {
           p_company: string
@@ -3724,8 +3840,16 @@ export type Database = {
           id: string
         }[]
       }
+      publish_legal_document: {
+        Args: { p_content: string; p_slug: string }
+        Returns: Json
+      }
       reconcile_confirmations_expected_key: { Args: never; Returns: string }
       reconcile_refunds_expected_key: { Args: never; Returns: string }
+      record_terms_acceptance: {
+        Args: { p_booking_id: string; p_ip?: string }
+        Returns: Json
+      }
       release_booking_capacity: {
         Args: { p_booking_id: string }
         Returns: undefined

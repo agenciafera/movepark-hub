@@ -175,6 +175,7 @@ export default function CheckoutPage() {
               ) : step === 1 ? (
                 <Step1Identity
                   bookingId={booking.id}
+                  bookingCode={booking.code}
                   customerName={booking.customer_name}
                   customerPhone={booking.customer_phone}
                   onNext={() => setStep(2)}

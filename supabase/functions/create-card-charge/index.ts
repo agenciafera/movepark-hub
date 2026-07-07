@@ -83,6 +83,15 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "Reserva expirada" }, 400);
   }
 
+  // 1a. Gate de conformidade (RFN005/LGPD): sem aceite explícito dos Termos, não cobra.
+  const { count: termsCount } = await admin
+    .from("terms_acceptance")
+    .select("id", { count: "exact", head: true })
+    .eq("booking_id", booking.id);
+  if (!termsCount) {
+    return jsonResponse({ error: "É necessário aceitar os Termos de Uso antes de pagar." }, 422);
+  }
+
   // 1b. Idempotência: não cobrar de novo se já há pagamento aprovado/autorizado.
   const { data: paid } = await admin
     .from("payment")

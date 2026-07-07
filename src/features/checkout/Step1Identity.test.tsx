@@ -11,6 +11,9 @@ vi.mock("@/features/profile/api", () => ({
   useUpdateProfile: vi.fn(),
 }));
 vi.mock("./api", () => ({ useUpdateBookingCustomer: vi.fn() }));
+vi.mock("@/features/legal/api", () => ({
+  useAcceptTerms: () => ({ mutateAsync: vi.fn().mockResolvedValue({ ok: true }), isPending: false }),
+}));
 vi.mock("@/components/ui/phone-field", () => ({
   PhoneField: ({
     id,
@@ -34,6 +37,7 @@ vi.mock("@/components/ui/phone-field", () => ({
 
 const defaultProps = {
   bookingId: "bk-1",
+  bookingCode: "MP-TEST1",
   customerName: null,
   customerPhone: null,
   onNext: vi.fn(),
