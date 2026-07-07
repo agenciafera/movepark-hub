@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import type { LookedUpVehicle } from "./usePlateLookupFlow.logic";
 
 export type Vehicle = {
   id: string;
@@ -10,6 +11,37 @@ export type Vehicle = {
   is_default: boolean;
   created_at: string;
 };
+
+export type LookupPlateResult = { found: boolean; vehicle?: LookedUpVehicle };
+
+/**
+ * Consulta a placa no serviço externo via Edge `lookup-vehicle-plate` (o Bearer da API mora no
+ * servidor). Exige sessão (JWT). Retorna `{ found, vehicle? }` já normalizado pro nosso domínio.
+ */
+export function useLookupPlate() {
+  return useMutation({
+    mutationFn: async (plate: string): Promise<LookupPlateResult> => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Você precisa entrar.");
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/lookup-vehicle-plate`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ plate }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? `Falha ao consultar a placa (HTTP ${res.status})`);
+      }
+      return res.json();
+    },
+  });
+}
 
 const KEY = ["my-vehicles"] as const;
 
