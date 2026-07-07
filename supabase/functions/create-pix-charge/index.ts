@@ -33,8 +33,6 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
-const PIX_EXPIRES_IN_SECONDS = 3600; // 1h
-
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
@@ -164,7 +162,8 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // 6. Cobrança no gateway
+  // 6. Cobrança no gateway. A validade do QR = a janela de hold (config única, E0.3.1-a): o QR e o
+  // hold da reserva derivam do MESMO valor — nunca dois relógios soltos.
   let gateway;
   try {
     gateway = getGateway("pagarme");
@@ -172,6 +171,9 @@ Deno.serve(async (req: Request) => {
     if (e instanceof GatewayConfigError) return jsonResponse({ error: e.message }, 503);
     throw e;
   }
+
+  const { data: holdMin } = await admin.rpc("get_booking_hold_minutes");
+  const holdMinutes = Number(holdMin ?? 30);
 
   const result = await gateway.createPixCharge({
     externalCode: booking.code,
@@ -185,7 +187,7 @@ Deno.serve(async (req: Request) => {
     },
     items: buildPixItems(booking.code, totalCents),
     split,
-    expiresInSeconds: PIX_EXPIRES_IN_SECONDS,
+    expiresInSeconds: holdMinutes * 60,
     metadata: { booking_id: booking.id, booking_code: booking.code },
   });
 
@@ -211,6 +213,15 @@ Deno.serve(async (req: Request) => {
     split,
   });
   if (payErr) return jsonResponse({ error: payErr.message }, 500);
+
+  // 8. Renova o hold: o "relógio de pagar" começa quando o cliente gera o PIX (E0.3.1-a). O hold
+  // passa a cobrir a validade do QR (mesmo valor). Countdown e o polling do checkout herdam sozinhos.
+  const newExpiry = new Date(Date.now() + holdMinutes * 60_000).toISOString();
+  await admin
+    .from("booking")
+    .update({ expires_at: newExpiry })
+    .eq("id", booking.id)
+    .eq("status", "pending");
 
   return jsonResponse(
     {

@@ -2,12 +2,25 @@
 
 > **Modelo de capacidade (implementado):** a vaga é **reservada na criação do `pending`**
 > (`create_booking_atomic` segura `location_parking_availability.booked_count` por data, com
-> `expires_at = now() + 30 min`) — **não** na confirmação do pagamento. A confirmação **não**
-> re-incrementa. O hold é liberado (`release_booking_capacity`) no **cancelamento** e na
+> `expires_at = now() + booking_hold_minutes`) — **não** na confirmação do pagamento. A confirmação
+> **não** re-incrementa. O hold é liberado (`release_booking_capacity`) no **cancelamento** e na
 > **expiração** de `pending` não pago, que vira **`cancelled`** (não `no_show`) via
 > `cron_expire_pending_bookings` (pg_cron `expire-pending-bookings`, a cada 5 min).
 > `minimum_stay`/`minimum_date`/antecedência são validados na criação. Ver
 > [capacity-rules.md](./capacity-rules.md).
+>
+> **Janela de expiração configurável + blindagem de pagamento (E0.3.1-a, ADR-005).** A janela do
+> hold é **uma config única** em `app_setting.booking_hold_minutes` (default 30, editável no Manager
+> → Configurações → Pagamentos) lida pelo helper `get_booking_hold_minutes()`; **o hold da reserva e
+> a validade do QR PIX derivam do mesmo valor** (fim do desencontro 30 min × QR de 1 h). Gerar
+> PIX/cartão **renova** `booking.expires_at = now() + hold` (o "relógio de pagar" começa quando o
+> cliente decide pagar). O cron **reconcilia contra `payment` antes de cancelar**: nunca expira uma
+> reserva com pagamento comprometido (`paid`/`authorized`/cartão em voo) — só PIX apenas gerado e não
+> pago (`method=pix, status=pending`); há uma folga `booking_hold_grace_minutes` (default 2) antes de
+> cancelar. Cartão aprovado **confirma inline** (não espera o webhook, que vira reconciliação
+> idempotente). Rede de segurança do caso 4c (pago sem vaga): `confirm_or_refund_booking` reconfirma
+> se há vaga (`acquire_booking_capacity`), senão **estorna automático** (nunca captura sem entregar);
+> a Edge `reconcile-confirmations` (pg_cron, a cada 15 min) cobre o webhook perdido.
 
 ## State Machine
 
@@ -110,11 +123,16 @@ POST /webhooks/payment/{provider}
 
 - Verifica assinatura do webhook
 - Atualiza `payment.status` → `paid`
-- Atualiza `booking.status` → `confirmed`
-- **Não** mexe em `location_parking_availability.booked_count` — a vaga já foi segurada na criação
-  do `pending` (ver nota de capacidade no topo); confirmar só consolida o hold
-- Gera voucher / QR code (ver [voucher-qrcode.md](./voucher-qrcode.md))
-- Envia e-mail de confirmação
+- Confirma a reserva via **`confirm_or_refund_booking`** (E0.3.1-a): `pending → confirmed`
+  (idempotente — `noop` se já `confirmed`, ex.: cartão confirmado inline). Se a reserva já expirou
+  no gap pagar↔webhook (**caso 4c**), reconfirma se ainda há vaga (`acquire_booking_capacity`); se
+  não há, marca `needs_refund` e a Edge **estorna automático** (`gateway.refundCharge`) — nunca
+  captura sem entregar
+- **Não** mexe em `location_parking_availability.booked_count` na confirmação normal — a vaga já foi
+  segurada na criação do `pending` (ver nota de capacidade no topo); confirmar só consolida o hold
+- Gera voucher / QR code (**gerador único**, idempotente por reserva; ver
+  [voucher-qrcode.md](./voucher-qrcode.md)) + envia confirmação. O webhook perdido é coberto pela
+  Edge `reconcile-confirmations` (pg_cron, a cada 15 min)
 
 ### 5. Check-in (QR escaneado) — ✅ implementado
 
@@ -140,14 +158,20 @@ POST /webhooks/payment/{provider}
 Reservas com `expires_at` preenchido (pagamentos assíncronos como PIX) precisam
 ser expiradas automaticamente.
 
-**Regra (implementada):**
-- Se `status = pending` E `expires_at < now()` → `cron_expire_pending_bookings()` chama
-  `release_booking_capacity` (devolve o hold de cada data) e marca **`cancelled`** + `deleted_at`
-- Executado por pg_cron `expire-pending-bookings` (a cada 5 min)
-- O hold **foi** criado na reserva, então expirar **precisa** liberá-lo (senão a vaga vaza)
+**Regra (implementada — E0.3.1-a, ADR-005):**
+- Cancela apenas `status = pending` cujo `expires_at < now() - booking_hold_grace_minutes` (folga
+  para atraso de webhook, default 2 min) **E** que **não** tenha pagamento comprometido — o cron
+  reconcilia contra `payment`: pula quem tem `paid`/`authorized` ou `method=card` não-terminal.
+  **PIX apenas gerado e não pago** (`method=pix, status=pending`) continua expirando normalmente.
+- Cancela via **`cancel_booking_with_release`** (único ponto idempotente de cancelar+liberar), que
+  chama `release_booking_capacity` e marca **`cancelled`** + `deleted_at`.
+- Executado por pg_cron `expire-pending-bookings` (a cada 5 min).
+- O hold **foi** criado na reserva, então expirar **precisa** liberá-lo (senão a vaga vaza).
 
-**Campo `expires_at` na `booking`:** já existe (`timestamptz`); `create_booking_atomic` grava
-`now() + 30 min` na criação.
+**Campo `expires_at` na `booking`:** `timestamptz`; `create_booking_atomic` grava
+`now() + booking_hold_minutes` (config única em `app_setting`, default 30) na criação, e
+`create-pix-charge`/`create-card-charge` **renovam** `expires_at` ao gerar o pagamento — o QR PIX usa
+o **mesmo** valor, então o hold sempre cobre a validade do QR.
 
 ---
 

@@ -207,6 +207,13 @@ service_role).
 4. Front: aba **PIX** do `Step3Payment` gera a cobrança real e renderiza o QR (via `lib/qr`); cartão
    segue no `mock-payment` até a E0.1.3.
 
+> **Validade do QR = janela de hold (E0.3.1-a, ADR-005).** A validade do QR (`expires_in`) deixou de
+> ser fixa em 1 h e passa a ser **a config única** `app_setting.booking_hold_minutes` (default 30,
+> via `get_booking_hold_minutes()`), a **mesma** que governa `booking.expires_at`. Gerar o
+> PIX/cartão **renova** `booking.expires_at = now() + hold`, então o hold sempre cobre a validade do
+> QR — fim do desencontro que deixava dinheiro capturado sem vaga. Ver
+> [booking-flow.md](./booking-flow.md).
+
 > **Recebedor master da Movepark:** configurável em `app_setting.pagarme_movepark_recipient_id`
 > (Manager). Use o de staging agora; trocar para produção é só editar o valor.
 
@@ -219,12 +226,20 @@ Em staging `sk_test_` continua opcional). **Idempotência** por id do evento (`p
 casa o `payment` por `provider_payment_id` (order id, ou `metadata.booking_id`) e decide a ação pelo
 **TIPO do evento** via `webhookIntentFromType()` — **não** pelo `data.status` (num estorno de PIX a
 Pagar.me manda `charge.refunded` com `data.status:"paid"`; confiar no status fazia o estorno nunca
-refletir). `charge.paid`/`order.paid` → `payment.paid` + `booking.confirmed` (só se pendente);
+refletir). `charge.paid`/`order.paid` → `payment.paid` + confirma via **`confirm_or_refund_booking`** (E0.3.1-a:
+reconfirma se há vaga, senão estorna automático no **caso 4c** — pago sobre reserva já expirada;
+idempotente, `noop` se já `confirmed`);
 `charge.refunded` → `payment.refunded` (**sem** cancelar o booking — estorno ≠ cancelamento);
 `charge.partial_canceled` → registra `refunded_amount`. Idempotência **resiliente** por `processed_at`
-(evento que falhou reprocessa na reentrega). **Rede de segurança:** Edge **`reconcile-refunds`** (cron
-15 min) recupera estornos pendentes cujo webhook nunca chegou. O polling do checkout
+(evento que falhou reprocessa na reentrega). **Redes de segurança:** Edge **`reconcile-refunds`** (cron
+15 min) recupera estornos pendentes cujo webhook nunca chegou, e **`reconcile-confirmations`** (cron
+15 min) recupera confirmações perdidas (pago sem vaga → reconfirma ou estorna). O polling do checkout
 (`useCheckoutBooking`) detecta a confirmação no banco.
+
+> **`authorized` populado (E0.3.1-a).** O `mapChargeStatus` passa a emitir **`authorized`** para
+> cartão em análise/antifraude (`authorized`/`analyzing`/`in_analysis`/`pending_review`) — habilita a
+> blindagem do cron (ADR-005): `payment.status = authorized` = dinheiro comprometido, o cron não
+> expira. **PIX ocioso** (`waiting_payment`) permanece em `pending` e continua expirando.
 
 **Emissão do voucher no `pago` (E0.1.4):** ao confirmar, o webhook **pré-gera o voucher** com service
 role e persiste `booking.voucher_url`, sem segurar o 2xx (`EdgeRuntime.waitUntil`). A geração do PDF

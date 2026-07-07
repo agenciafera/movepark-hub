@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       add_on_service: {
@@ -2977,6 +3002,10 @@ export type Database = {
         }
         Returns: Json
       }
+      acquire_booking_capacity: {
+        Args: { p_booking_id: string }
+        Returns: boolean
+      }
       addon_assert_company_access: {
         Args: { p_company_id: string }
         Returns: undefined
@@ -3301,6 +3330,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      confirm_or_refund_booking: {
+        Args: { p_booking_id: string; p_payment_id: string }
+        Returns: Json
+      }
       coupon_assert_company_access: {
         Args: { p_company_id: string }
         Returns: undefined
@@ -3385,6 +3418,8 @@ export type Database = {
         Args: { p_company_id: string; p_name: string }
         Returns: string
       }
+      get_booking_hold_grace_minutes: { Args: never; Returns: number }
+      get_booking_hold_minutes: { Args: never; Returns: number }
       get_pricing_data: {
         Args: {
           p_company: string
@@ -3689,6 +3724,7 @@ export type Database = {
           id: string
         }[]
       }
+      reconcile_confirmations_expected_key: { Args: never; Returns: string }
       reconcile_refunds_expected_key: { Args: never; Returns: string }
       release_booking_capacity: {
         Args: { p_booking_id: string }
@@ -3957,6 +3993,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       booking_item_type: ["parking", "add_on"],

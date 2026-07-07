@@ -243,6 +243,26 @@ Deno.serve(async (req: Request) => {
   });
   if (payErr) return jsonResponse({ error: payErr.message }, 500);
 
+  // 9b. Renova o hold enquanto pending (E0.3.1-a). Cartão aprovado inline vira confirmed (a RPC zera
+  // o expires_at); cartão em análise (authorized/pending) mantém o hold vivo até o webhook.
+  const { data: holdMin } = await admin.rpc("get_booking_hold_minutes");
+  const holdMinutes = Number(holdMin ?? 30);
+  await admin
+    .from("booking")
+    .update({ expires_at: new Date(Date.now() + holdMinutes * 60_000).toISOString() })
+    .eq("id", booking.id)
+    .eq("status", "pending");
+
+  // 9c. Aprovado na hora → confirma inline (não espera o webhook), melhorando o feedback no checkout.
+  // O webhook `charge.paid`/`order.paid` chega depois, vê 'confirmed' → noop, e segue como gerador
+  // único do voucher. Cartão em análise NÃO confirma aqui — o webhook confirma quando virar 'paid'.
+  if (result.status === "paid") {
+    await admin.rpc("confirm_or_refund_booking", {
+      p_booking_id: booking.id,
+      p_payment_id: paymentId,
+    });
+  }
+
   // 10. Salvar o cartão (opt-in) — só token+brand+last4 (nunca PAN).
   let savedCard = false;
   if (input.saveCard && input.cardToken) {

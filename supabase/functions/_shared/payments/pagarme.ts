@@ -263,6 +263,13 @@ export function mapChargeStatus(raw: string | null | undefined): ChargeStatus {
     case "with_error":
     case "not_authorized":
       return "failed";
+    // Cartão em análise/antifraude = dinheiro comprometido (habilita a blindagem do cron, ADR-005).
+    // NÃO inclui `waiting_payment` (PIX ocioso) — esse fica em `pending` e continua expirando.
+    case "authorized":
+    case "analyzing":
+    case "in_analysis":
+    case "pending_review":
+      return "authorized";
     case "pending":
     case "processing":
     case "waiting_payment":

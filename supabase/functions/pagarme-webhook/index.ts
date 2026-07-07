@@ -11,7 +11,7 @@
 // { id, type: "order.paid" | "charge.paid" | "charge.refunded" | ..., data: { ...order/charge } }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { chargeStatusToPaymentStatus } from "../_shared/payments/index.ts";
+import { chargeStatusToPaymentStatus, getGateway } from "../_shared/payments/index.ts";
 import { mapChargeStatus, mapRecipientStatus } from "../_shared/payments/pagarme.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 import { sendWhatsAppTemplate } from "../_shared/whatsapp.ts";
@@ -309,28 +309,52 @@ Deno.serve(async (req: Request) => {
     return json({ ok: true, status: paymentStatus, fare_upgrade: true });
   }
 
-  // Pagamento aprovado → confirma a reserva (só se ainda pendente) e emite o voucher.
+  // Pagamento aprovado → confirma a reserva OU estorna se a vaga sumiu (caso 4c, ADR-005). A RPC
+  // confirm_or_refund_booking concentra a decisão (reconfirma se há vaga; senão sinaliza estorno) e
+  // é idempotente: se já confirmada (ex.: confirmação inline do cartão) retorna 'noop'.
   if (status === "paid") {
-    await admin
-      .from("booking")
-      .update({ status: "confirmed" })
-      .eq("id", payment.booking_id)
-      .eq("status", "pending");
+    const { data: cr } = await admin.rpc("confirm_or_refund_booking", {
+      p_booking_id: payment.booking_id,
+      p_payment_id: payment.id,
+    });
+    const outcome = (cr as { outcome?: string; charge_id?: string } | null)?.outcome;
 
-    // Pré-gera o voucher (server-side, service role) sem segurar o 2xx do webhook.
-    const siteUrl = Deno.env.get("PUBLIC_SITE_URL") ?? "https://hub.movepark.co";
-    await runAfterResponse(
-      generateAndStoreVoucher(admin, payment.booking_id, siteUrl).catch((e) =>
-        console.error("[pagarme-webhook] falha ao gerar voucher:", payment!.booking_id, e),
-      ),
-    );
+    if (outcome === "needs_refund") {
+      // Pago sem vaga (confirmação tardia após expirar): estorna automático — nunca captura sem
+      // entregar. O evento `charge.refunded` posterior fecha o ciclo no payment.
+      const chargeId = (cr as { charge_id?: string }).charge_id;
+      await runAfterResponse(
+        (async () => {
+          try {
+            if (chargeId) {
+              await getGateway("pagarme").refundCharge({ chargeId });
+              await admin
+                .from("payment")
+                .update({ refunded_at: new Date().toISOString() })
+                .eq("id", payment!.id);
+            }
+          } catch (e) {
+            console.error("[pagarme-webhook] falha ao estornar pago-sem-vaga:", payment!.booking_id, e);
+          }
+        })(),
+      );
+    } else {
+      // confirmed / reconfirmed / noop (já confirmada) → gera voucher + notifica. generateAndStoreVoucher
+      // é o gerador ÚNICO do voucher (idempotente por reserva), mesmo quando o cartão confirmou inline.
+      const siteUrl = Deno.env.get("PUBLIC_SITE_URL") ?? "https://hub.movepark.co";
+      await runAfterResponse(
+        generateAndStoreVoucher(admin, payment.booking_id, siteUrl).catch((e) =>
+          console.error("[pagarme-webhook] falha ao gerar voucher:", payment!.booking_id, e),
+        ),
+      );
 
-    // Notificação de confirmação por WhatsApp (Tarifa Flex+) — best-effort, pós-resposta.
-    await runAfterResponse(
-      notifyBookingConfirmed(admin, payment.booking_id).catch((e) =>
-        console.error("[pagarme-webhook] falha ao notificar confirmação:", payment!.booking_id, e),
-      ),
-    );
+      // Notificação de confirmação por WhatsApp (Tarifa Flex+) — best-effort, pós-resposta.
+      await runAfterResponse(
+        notifyBookingConfirmed(admin, payment.booking_id).catch((e) =>
+          console.error("[pagarme-webhook] falha ao notificar confirmação:", payment!.booking_id, e),
+        ),
+      );
+    }
   }
 
   // Estorno TOTAL confirmado pelo gateway (E0.3.2): reflete SÓ no payment. Estorno e cancelamento

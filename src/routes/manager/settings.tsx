@@ -14,6 +14,12 @@ import {
   parseInstallmentPolicy,
   type InstallmentAbsorb,
 } from "@/lib/installments";
+import {
+  clampGraceMinutes,
+  clampHoldMinutes,
+  parseGraceMinutes,
+  parseHoldMinutes,
+} from "@/lib/bookingHold";
 
 function PartnerEmailSettings() {
   const { data, isLoading } = useAppSettings();
@@ -255,6 +261,87 @@ function InstallmentPolicySettings() {
   );
 }
 
+export function BookingHoldSettings() {
+  const { data, isLoading } = useAppSettings();
+  const update = useUpdateAppSettings();
+  const [hold, setHold] = React.useState(String(parseHoldMinutes(undefined)));
+  const [grace, setGrace] = React.useState(String(parseGraceMinutes(undefined)));
+  const [ready, setReady] = React.useState(false);
+
+  React.useEffect(() => {
+    if (data && !ready) {
+      setHold(String(parseHoldMinutes(data.booking_hold_minutes)));
+      setGrace(String(parseGraceMinutes(data.booking_hold_grace_minutes)));
+      setReady(true);
+    }
+  }, [data, ready]);
+
+  async function save() {
+    // clampa antes de salvar (mesma faixa do servidor)
+    const holdMinutes = clampHoldMinutes(hold);
+    const graceMinutes = clampGraceMinutes(grace);
+    setHold(String(holdMinutes));
+    setGrace(String(graceMinutes));
+    try {
+      await update.mutateAsync({
+        booking_hold_minutes: String(holdMinutes),
+        booking_hold_grace_minutes: String(graceMinutes),
+      });
+      toast.success("Janela de expiração salva");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao salvar");
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Janela de expiração da reserva</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="hold-minutes">Hold da reserva (min)</Label>
+            <Input
+              id="hold-minutes"
+              type="number"
+              min={5}
+              max={1440}
+              value={hold}
+              onChange={(e) => setHold(e.target.value)}
+              disabled={isLoading}
+            />
+            <span className="text-caption text-muted">
+              Tempo que a vaga fica reservada aguardando pagamento. O QR PIX vale exatamente essa
+              janela, e ela é renovada quando o cliente inicia o pagamento.
+            </span>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="grace-minutes">Folga do cancelamento (min)</Label>
+            <Input
+              id="grace-minutes"
+              type="number"
+              min={0}
+              max={60}
+              value={grace}
+              onChange={(e) => setGrace(e.target.value)}
+              disabled={isLoading}
+            />
+            <span className="text-caption text-muted">
+              Margem extra antes do cron cancelar uma reserva não paga, cobrindo atraso de webhook.
+            </span>
+          </div>
+        </div>
+        <div>
+          <Button onClick={save} disabled={update.isPending || isLoading}>
+            {update.isPending ? "Salvando…" : "Salvar"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function ManagerSettings() {
   const [twoFactor, setTwoFactor] = React.useState(false);
   return (
@@ -293,6 +380,7 @@ export default function ManagerSettings() {
 
         <TabsContent value="payments" className="flex flex-col gap-6">
           <PaymentsSettings />
+          <BookingHoldSettings />
           <InstallmentPolicySettings />
         </TabsContent>
 

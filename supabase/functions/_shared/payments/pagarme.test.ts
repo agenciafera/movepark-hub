@@ -329,3 +329,40 @@ Deno.test("buildRecipientResult: kyc/pendências em status pending → action_re
   const active = buildRecipientResult(200, { id: "rp_2", status: "active" });
   assertEquals(active.status, "active");
 });
+
+// E0.3.1-a: cartão em análise/antifraude → 'authorized' (habilita a blindagem do cron). PIX ocioso
+// (waiting_payment/processing/created) DEVE ficar em 'pending' — senão o cron nunca expiraria PIX
+// abandonado (ADR-005).
+Deno.test("mapChargeStatus: cartão-em-análise vira authorized", () => {
+  assertEquals(mapChargeStatus("authorized"), "authorized");
+  assertEquals(mapChargeStatus("analyzing"), "authorized");
+  assertEquals(mapChargeStatus("in_analysis"), "authorized");
+  assertEquals(mapChargeStatus("pending_review"), "authorized");
+  assertEquals(mapChargeStatus("AUTHORIZED"), "authorized");
+});
+
+Deno.test("mapChargeStatus: PIX ocioso permanece pending (não vira authorized)", () => {
+  assertEquals(mapChargeStatus("waiting_payment"), "pending");
+  assertEquals(mapChargeStatus("processing"), "pending");
+  assertEquals(mapChargeStatus("created"), "pending");
+  assertEquals(mapChargeStatus("pending"), "pending");
+  assertEquals(mapChargeStatus(""), "pending");
+  assertEquals(mapChargeStatus(null), "pending");
+});
+
+Deno.test("mapChargeStatus: terminais inalterados", () => {
+  assertEquals(mapChargeStatus("paid"), "paid");
+  assertEquals(mapChargeStatus("canceled"), "canceled");
+  assertEquals(mapChargeStatus("cancelled"), "canceled");
+  assertEquals(mapChargeStatus("refunded"), "refunded");
+  assertEquals(mapChargeStatus("pending_refund"), "refunded");
+  assertEquals(mapChargeStatus("failed"), "failed");
+  assertEquals(mapChargeStatus("not_authorized"), "failed");
+});
+
+Deno.test("chargeStatusToPaymentStatus: authorized passa direto; canceled vira cancelled", async () => {
+  const { chargeStatusToPaymentStatus } = await import("./index.ts");
+  assertEquals(chargeStatusToPaymentStatus("authorized"), "authorized");
+  assertEquals(chargeStatusToPaymentStatus("paid"), "paid");
+  assertEquals(chargeStatusToPaymentStatus("canceled"), "cancelled");
+});

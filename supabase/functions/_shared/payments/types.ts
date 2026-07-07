@@ -107,7 +107,7 @@ export interface RecipientResult {
 // ── Cobrança (E0.1.2: PIX com split) ────────────────────────────────────────
 
 /** Status normalizado da cobrança (espelha o enum SQL `payment_status`). */
-export type ChargeStatus = "pending" | "paid" | "failed" | "refunded" | "canceled";
+export type ChargeStatus = "pending" | "authorized" | "paid" | "failed" | "refunded" | "canceled";
 
 /** Uma perna do split: quanto vai pra qual recebedor e quem arca taxa/risco. */
 export interface SplitRule {
