@@ -6,6 +6,7 @@ import type { Destination } from "@/types/domain";
 import { useDestinationBySlug, usePublishedDestinations } from "@/features/destinations/api";
 import { useSearchResults } from "@/features/search/useSearchResults";
 import { useFaqCombined } from "@/features/faqs/api";
+import { FaqList } from "@/features/faqs/FaqList";
 import { ResultCard } from "@/features/search/ResultCard";
 import { topRated } from "@/features/reviews/reviews.logic";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -166,7 +167,7 @@ export default function DestinoPage() {
 
         {/* Hero */}
         <header className="flex flex-col gap-3">
-          <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-muted-steel">
+          <span className="text-badge uppercase text-muted-steel">
             {destination.city}
             {destination.state ? ` · ${destination.state}` : ""}
           </span>
@@ -272,18 +273,16 @@ export default function DestinoPage() {
           />
         </section>
 
-        {/* FAQ */}
-        {faqItems.length > 0 && (
+        {/* FAQ — camadas destino + global (ADR-002), mesmo componente de listing.tsx/faq.tsx */}
+        {(faqs.isLoading || faqItems.length > 0) && (
           <section className="mt-10">
             <h2 className="mb-4 text-display-md text-ink">Perguntas frequentes</h2>
-            <div className="flex flex-col divide-y divide-hairline rounded-md border border-hairline">
-              {faqItems.map((f, i) => (
-                <details key={i} className="group p-4">
-                  <summary className="cursor-pointer list-none text-title-sm text-ink">{f.question}</summary>
-                  <p className="mt-2 text-body-sm text-muted">{f.answer}</p>
-                </details>
-              ))}
-            </div>
+            <FaqList
+              items={faqs.isLoading ? undefined : faqs.data}
+              isLoading={faqs.isLoading}
+              groupByScope
+              destinationLabel={`Sobre ${destination.short_name ?? destination.name}`}
+            />
           </section>
         )}
 
