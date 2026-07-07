@@ -14,6 +14,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { chargeStatusToPaymentStatus, getGateway } from "../_shared/payments/index.ts";
 import { mapChargeStatus, mapRecipientStatus } from "../_shared/payments/pagarme.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
+import { refundShouldCancelBooking } from "../_shared/refund.ts";
 import { sendWhatsAppTemplate } from "../_shared/whatsapp.ts";
 import {
   parseRecipientEvent,
@@ -357,9 +358,9 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  // Estorno TOTAL confirmado pelo gateway (E0.3.2): reflete SÓ no payment. Estorno e cancelamento
-  // são ações SEPARADAS — o cancelamento vem do evento `*.canceled` ou da Edge cancel-booking.
-  // Assim um estorno avulso (inclusive de reserva concluída) não força cancelar o booking.
+  // Estorno TOTAL confirmado pelo gateway (E0.3.2): reflete no payment e — se a reserva ainda não
+  // começou (confirmada/pendente) — CANCELA + libera a vaga. Reserva em andamento/concluída
+  // (checked_in/completed/no_show) só recebe o estorno no payment (não cancela o histórico).
   if (status === "refunded") {
     const { data: pay } = await admin
       .from("payment")
@@ -373,6 +374,23 @@ Deno.serve(async (req: Request) => {
         refunded_amount: pay?.refunded_amount ?? pay?.amount ?? null,
       })
       .eq("id", payment.id);
+
+    // Cancela a reserva se ainda confirmada/pendente (regra única em refundShouldCancelBooking).
+    // A RPC é idempotente e libera a vaga uma vez; erro é logado, nunca 500 (evita retry infinito).
+    const { data: bk } = await admin
+      .from("booking")
+      .select("status")
+      .eq("id", payment.booking_id)
+      .maybeSingle();
+    if (bk && refundShouldCancelBooking(bk.status)) {
+      const { error: cancelErr } = await admin.rpc("cancel_booking_with_release", {
+        p_booking_id: payment.booking_id,
+        p_reason: "estorno total confirmado pelo gateway",
+      });
+      if (cancelErr) {
+        console.error("[pagarme-webhook] cancelamento pós-estorno falhou:", cancelErr.message);
+      }
+    }
   }
 
   // Cancelamento confirmado pelo gateway (expiração do PIX, cancelamento no painel): cancela o

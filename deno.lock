@@ -140,6 +140,7 @@
         "npm:cmdk@^1.1.1",
         "npm:date-fns-tz@^3.2.0",
         "npm:date-fns@^3.6.0",
+        "npm:dompurify@^3.4.11",
         "npm:embla-carousel-autoplay@^8.6.0",
         "npm:embla-carousel-react@^8.6.0",
         "npm:eslint-plugin-react-hooks@^5.2.0",

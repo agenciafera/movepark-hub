@@ -197,15 +197,21 @@ o **mesmo** valor, então o hold sempre cobre a validade do QR.
   fica `paid` + `refunded_at` setado (`refund_pending`) e vira `refunded` quando o webhook
   `charge.refunded` confirma.
 - **Estorno avulso pelo painel (staff, ✅):** Edge **`refund-booking`** — reembolsa o `payment`
-  (total) **SEM** cancelar a reserva; ação separada do cancelamento, válida em **qualquer** reserva
-  paga (inclusive `completed`). Auth: staff (hub_admin / operador da empresa; escopo `bookings:cancel`).
+  (total). Quando o gateway confirma o estorno (`charge.refunded`), a reserva é **cancelada se ainda
+  não começou** (`confirmed`/`pending` → libera a vaga); reserva **em andamento/concluída**
+  (`checked_in`/`completed`/`no_show`) recebe **só** o reembolso (não cancela o histórico). Válida em
+  **qualquer** reserva paga. Auth: staff (hub_admin / operador da empresa; escopo `bookings:cancel`).
   Botão **"Estorno"** no Manager (`BookingModal`) e Operator (`BookingDrawer`), gateado por
   `paymentState()` (pago e não estornado) + `hasScope`. Idempotente (já estornado → noop).
 - **Webhook decide pelo TIPO do evento (não pelo `data.status`):** `webhookIntentFromType()` mapeia
   `charge.refunded`/`order.refunded` → refund (mesmo com `data.status:"paid"`, o caso PIX que
   falhava), `*.canceled` → cancela booking + libera capacidade, `partially_refunded` → registra o
-  valor. **Estorno reflete só no `payment`** (não força cancelar — o cancelamento vem de `*.canceled`
-  ou da Edge `cancel-booking`). Idempotência **resiliente** por `payment_webhook_event.processed_at`:
+  valor. **Estorno total** (`charge.refunded`) reflete no `payment` **e cancela a reserva se ainda
+  `confirmed`/`pending`** (regra única `refundShouldCancelBooking` em `_shared/refund.ts` → libera a
+  vaga via `cancel_booking_with_release`); reserva em andamento/concluída recebe só o reembolso. Como
+  esta conta emite o full refund/void como o **próprio `charge.refunded`** (não há `charge.canceled`),
+  o cancelamento **tem** de partir dele — e o `reconcile-refunds` (poll) aplica a **mesma** regra.
+  Idempotência **resiliente** por `payment_webhook_event.processed_at`:
   reentrega de evento que não completou é **reprocessada** (antes o 23505 engolia a falha).
   **Eventos a assinar no painel Pagar.me** (nomes reais da conta): `charge.paid`, `charge.refunded`
   (estorno total) e `charge.partial_canceled` (estorno parcial). Esta conta emite `charge.*` (não há

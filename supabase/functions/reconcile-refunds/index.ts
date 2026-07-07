@@ -10,6 +10,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { chargeStatusToPaymentStatus, getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
+import { refundShouldCancelBooking } from "../_shared/refund.ts";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -48,7 +49,7 @@ Deno.serve(async (req: Request) => {
   const cutoff = new Date(Date.now() - CUTOFF_MINUTES * 60_000).toISOString();
   const { data: payments, error } = await admin
     .from("payment")
-    .select("id, provider_payment_id")
+    .select("id, provider_payment_id, booking_id")
     .eq("provider", "pagarme")
     .eq("status", "paid")
     .not("refunded_at", "is", null)
@@ -67,6 +68,24 @@ Deno.serve(async (req: Request) => {
           .update({ status: chargeStatusToPaymentStatus("refunded") })
           .eq("id", p.id);
         updated += 1;
+
+        // Mesma regra do webhook: estorno total cancela a reserva se ainda confirmada/pendente
+        // (libera a vaga). Sem isto, um estorno cujo webhook não chegou reconciliava o payment mas
+        // deixava a reserva confirmada — o mesmo bug pela porta dos fundos.
+        const { data: bk } = await admin
+          .from("booking")
+          .select("status")
+          .eq("id", p.booking_id)
+          .maybeSingle();
+        if (bk && refundShouldCancelBooking(bk.status)) {
+          const { error: cancelErr } = await admin.rpc("cancel_booking_with_release", {
+            p_booking_id: p.booking_id,
+            p_reason: "estorno total reconciliado (webhook não chegou)",
+          });
+          if (cancelErr) {
+            console.error("[reconcile-refunds] cancelamento pós-estorno falhou:", cancelErr.message);
+          }
+        }
       }
     } catch (e) {
       console.error("[reconcile-refunds] falha em", p.provider_payment_id, e);
