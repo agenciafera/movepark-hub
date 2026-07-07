@@ -10,6 +10,13 @@
       "env": {
         "SUPABASE_ACCESS_TOKEN": "<YOUR_SUPABASE_PAT>"
       }
+    },
+    "gemini-image": {
+      "command": "npx",
+      "args": ["@houtini/gemini-mcp"],
+      "env": {
+        "GEMINI_API_KEY": "<YOUR_GEMINI_API_KEY>"
+      }
     }
   }
 }
