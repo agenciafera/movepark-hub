@@ -11,9 +11,6 @@ Thumbs.db
 .env.local
 .env.*.local
 
-# MCP — contém access token, não versionar
-.mcp.json
-
 # Claude Code — config pessoal (permissões locais), por dev; não versionar
 .claude/settings.local.json
 
