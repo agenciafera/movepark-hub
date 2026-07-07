@@ -10,6 +10,7 @@
 // → { found: true, vehicle: { license_plate, model, color, raw_color, brand, year, fuel } }
 // → { found: false }   (placa não está na base)
 
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { buildLookupUrl, isValidPlate, normalizeLookupResponse, normalizePlate } from "./logic.ts";
 
 const corsHeaders = {
@@ -28,9 +29,20 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
 
-  // Auth: exige JWT válido (a plataforma já valida com verify_jwt, mas conferimos o header).
+  // Auth: exige um USUÁRIO logado de verdade. A plataforma (verify_jwt) só garante um JWT
+  // válido — a anon key (pública no bundle) passaria. Então validamos com getUser() e
+  // rejeitamos anon, pra não expor a API externa paga a qualquer um com a anon key.
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) return jsonResponse({ error: "Autenticação necessária" }, 401);
+
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+  const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const userClient = createClient(SUPABASE_URL, ANON, {
+    auth: { persistSession: false },
+    global: { headers: { Authorization: authHeader } },
+  });
+  const { data: userData, error: userErr } = await userClient.auth.getUser();
+  if (userErr || !userData.user) return jsonResponse({ error: "Sessão inválida" }, 401);
 
   const BASE_URL = Deno.env.get("PLATE_LOOKUP_BASE_URL");
   const TOKEN = Deno.env.get("PLATE_LOOKUP_TOKEN");
