@@ -216,9 +216,15 @@ Edge **`pagarme-webhook`** (`verify_jwt=false`, deploy com `--no-verify-jwt`): v
 (secret `PAGARME_WEBHOOK_BASIC_AUTH` = `user:pass`, configurado no painel do Pagar.me) com **comparação
 em tempo constante** e **fail-closed em produção** (chave `sk_live_` exige o secret; sem ele → 401.
 Em staging `sk_test_` continua opcional). **Idempotência** por id do evento (`payment_webhook_event`),
-casa o `payment` por `provider_payment_id` (order id, ou `metadata.booking_id`) e reflete o status:
-`order.paid`/`charge.paid` → `payment.paid` + `booking.confirmed` (só se pendente); refunded/failed/canceled
-refletem no `payment`. O polling do checkout (`useCheckoutBooking`) detecta a confirmação no banco.
+casa o `payment` por `provider_payment_id` (order id, ou `metadata.booking_id`) e decide a ação pelo
+**TIPO do evento** via `webhookIntentFromType()` — **não** pelo `data.status` (num estorno de PIX a
+Pagar.me manda `charge.refunded` com `data.status:"paid"`; confiar no status fazia o estorno nunca
+refletir). `charge.paid`/`order.paid` → `payment.paid` + `booking.confirmed` (só se pendente);
+`charge.refunded` → `payment.refunded` (**sem** cancelar o booking — estorno ≠ cancelamento);
+`charge.partial_canceled` → registra `refunded_amount`. Idempotência **resiliente** por `processed_at`
+(evento que falhou reprocessa na reentrega). **Rede de segurança:** Edge **`reconcile-refunds`** (cron
+15 min) recupera estornos pendentes cujo webhook nunca chegou. O polling do checkout
+(`useCheckoutBooking`) detecta a confirmação no banco.
 
 **Emissão do voucher no `pago` (E0.1.4):** ao confirmar, o webhook **pré-gera o voucher** com service
 role e persiste `booking.voucher_url`, sem segurar o 2xx (`EdgeRuntime.waitUntil`). A geração do PDF

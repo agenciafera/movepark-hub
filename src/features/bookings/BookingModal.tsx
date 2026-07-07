@@ -1,9 +1,13 @@
+import * as React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { formatBRL, formatDateTime } from "@/lib/format";
 import type { BookingWithRelations } from "@/types/domain";
+import { useAuth } from "@/auth/context";
+import { paymentState } from "./payment.logic";
+import { RefundBookingDialog } from "./RefundBookingDialog";
 
 type Props = {
   booking: BookingWithRelations | null;
@@ -13,14 +17,27 @@ type Props = {
 };
 
 export function BookingModal({ booking, open, onOpenChange, onCancel }: Props) {
+  const { hasScope } = useAuth();
+  const [refundOpen, setRefundOpen] = React.useState(false);
   if (!booking) return null;
+
+  const pay = paymentState(booking.payments);
+  const canRefund = pay.canRefund && hasScope("bookings:cancel", booking.location?.company?.id);
+  const canCancel = !!onCancel && booking.status !== "cancelled" && booking.status !== "completed";
+
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Reserva {booking.code}</DialogTitle>
           <div className="flex items-center gap-2 pt-1">
             <StatusBadge status={booking.status} />
+            {pay.badge && (
+              <span className="rounded-sm bg-surface-soft px-2 py-0.5 text-caption text-muted-steel">
+                {pay.badge}
+              </span>
+            )}
             <span className="text-body-sm text-muted">
               {booking.location?.company?.name} · {booking.location?.name}
             </span>
@@ -54,15 +71,29 @@ export function BookingModal({ booking, open, onOpenChange, onCancel }: Props) {
           </ol>
         </div>
 
-        {onCancel && booking.status !== "cancelled" && booking.status !== "completed" && (
+        {(canCancel || canRefund) && (
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="danger" size="sm" onClick={() => onCancel(booking)}>
-              Cancelar reserva
-            </Button>
+            {canCancel && (
+              <Button variant="danger" size="sm" onClick={() => onCancel!(booking)}>
+                Cancelar reserva
+              </Button>
+            )}
+            {canRefund && (
+              <Button variant="secondary" size="sm" onClick={() => setRefundOpen(true)}>
+                Estorno
+              </Button>
+            )}
           </div>
         )}
       </DialogContent>
     </Dialog>
+    <RefundBookingDialog
+      bookingCode={booking.code}
+      totalAmount={booking.total_amount}
+      open={refundOpen}
+      onOpenChange={setRefundOpen}
+    />
+    </>
   );
 }
 

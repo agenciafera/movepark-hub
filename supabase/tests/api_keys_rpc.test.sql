@@ -55,7 +55,7 @@ begin
   perform set_config('test.keyid', r->>'id', false);
 end $$;
 
-select like(current_setting('test.key'), 'mp_live_%'::text, 'segredo tem prefixo mp_live_'::text);
+select ok(current_setting('test.key') like 'mp_live_%', 'segredo tem prefixo mp_live_');
 select is(left(current_setting('test.key'),16), current_setting('test.prefix'), 'key_prefix = 16 primeiros chars');
 select is((select count(*)::int from public.api_key where company_id = current_setting('test.c1')::uuid), 1, 'chave persistida na empresa');
 select ok((select key_hash <> current_setting('test.key') from public.api_key where id = current_setting('test.keyid')::uuid),
@@ -90,8 +90,12 @@ select is(
   public.api_key_verify(current_setting('test.prefix'), 'hash_errado')->>'ok',
   'false', 'verify rejeita hash errado');
 
--- revoga e verifica
+-- revoga (como operador dono da empresa 1) e verifica que o verify passa a rejeitar
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.u1'))::text, false);
+set local role authenticated;
 do $$ begin perform public.operator_revoke_api_key(current_setting('test.keyid')::uuid); end $$;
+reset role;
+select set_config('request.jwt.claims', NULL, false);
 select is(
   public.api_key_verify(current_setting('test.prefix'), encode(extensions.digest(current_setting('test.key')::bytea,'sha256'),'hex'))->>'reason',
   'revoked', 'verify rejeita chave revogada');

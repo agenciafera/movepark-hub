@@ -2,7 +2,7 @@
 -- Cobre: gate Superflex, extensão de check_out + re-hold de capacidade + log; rejeições. Rollback.
 
 begin;
-select plan(11);
+select plan(10);
 
 select has_table('public', 'booking_fare_extension', 'tabela de log de extensão existe');
 select has_function('public', 'extend_booking_flight_delay', 'RPC de extensão existe');

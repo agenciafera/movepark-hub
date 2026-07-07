@@ -172,6 +172,20 @@ ser expiradas automaticamente.
   **não** é cancelada (nunca cancelar sem estornar). Para PIX o estorno é **assíncrono**: o `payment`
   fica `paid` + `refunded_at` setado (`refund_pending`) e vira `refunded` quando o webhook
   `charge.refunded` confirma.
+- **Estorno avulso pelo painel (staff, ✅):** Edge **`refund-booking`** — reembolsa o `payment`
+  (total) **SEM** cancelar a reserva; ação separada do cancelamento, válida em **qualquer** reserva
+  paga (inclusive `completed`). Auth: staff (hub_admin / operador da empresa; escopo `bookings:cancel`).
+  Botão **"Estorno"** no Manager (`BookingModal`) e Operator (`BookingDrawer`), gateado por
+  `paymentState()` (pago e não estornado) + `hasScope`. Idempotente (já estornado → noop).
+- **Webhook decide pelo TIPO do evento (não pelo `data.status`):** `webhookIntentFromType()` mapeia
+  `charge.refunded`/`order.refunded` → refund (mesmo com `data.status:"paid"`, o caso PIX que
+  falhava), `*.canceled` → cancela booking + libera capacidade, `partially_refunded` → registra o
+  valor. **Estorno reflete só no `payment`** (não força cancelar — o cancelamento vem de `*.canceled`
+  ou da Edge `cancel-booking`). Idempotência **resiliente** por `payment_webhook_event.processed_at`:
+  reentrega de evento que não completou é **reprocessada** (antes o 23505 engolia a falha).
+  **Eventos a assinar no painel Pagar.me** (nomes reais da conta): `charge.paid`, `charge.refunded`
+  (estorno total) e `charge.partial_canceled` (estorno parcial). Esta conta emite `charge.*` (não há
+  `order.*` nem `charge.canceled`); o full refund/void é o próprio `charge.refunded`.
 - **Capacidade:** cancelar + liberar a vaga é uma RPC única e **idempotente por status**,
   `cancel_booking_with_release` (noop se já `cancelled`), chamada **tanto** pela Edge **quanto** pelo
   webhook — a vaga nunca é liberada em dobro (`release_booking_capacity` não é idempotente sozinha).

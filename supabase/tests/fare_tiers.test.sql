@@ -38,10 +38,13 @@ begin
 end $$;
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.uc'))::text, true);
-select throws_ok(
-  $$ update public.fare set price_cents = 999 where tier = 'flex' $$,
-  '42501', null, 'customer NÃO escreve no catálogo de Tarifas (RLS)');
+-- RLS bloqueia a escrita silenciosamente: o UPDATE filtrado pela policy USING afeta 0 linhas
+-- (não lança 42501). Verificamos que nenhuma Tarifa foi alterada.
+update public.fare set price_cents = 999 where tier = 'flex';
 reset role;
+select is(
+  (select count(*)::int from public.fare where price_cents = 999),
+  0, 'customer NÃO escreve no catálogo de Tarifas (RLS bloqueia a escrita)');
 
 -- ── criação de reserva com Tarifa (snapshot) ─────────────────────────────────
 do $$

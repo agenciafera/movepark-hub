@@ -22,7 +22,7 @@ export const bookingsKeys = {
 };
 
 const baseSelect =
-  "*, profile:profiles(id, full_name, phone, tax_id), location:location(id, name, slug, timezone, company:company(id, name, slug)), vehicle:vehicle(id, license_plate, model, color)";
+  "*, profile:profiles(id, full_name, phone, tax_id), location:location(id, name, slug, timezone, company:company(id, name, slug)), vehicle:vehicle(id, license_plate, model, color), payments:payment(id, status, refunded_at, created_at)";
 
 async function fetchBookings(filters: BookingFilters): Promise<BookingWithRelations[]> {
   let query = supabase
@@ -127,6 +127,49 @@ export function useCancelBookingStaff() {
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error ?? `Falha ao cancelar (HTTP ${res.status})`);
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: bookingsKeys.all });
+    },
+  });
+}
+
+export type RefundBookingResult = {
+  refunded: boolean;
+  refund_pending: boolean;
+  already?: boolean;
+};
+
+/**
+ * ESTORNO AVULSO (staff) via Edge `refund-booking`: reembolsa o pagamento SEM cancelar a reserva —
+ * ação separada do cancelamento, válida em qualquer reserva paga (inclusive concluída). Só staff.
+ */
+export function useRefundBookingStaff() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: {
+      bookingCode: string;
+      reason?: string;
+    }): Promise<RefundBookingResult> => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Sessão expirada. Entre novamente.");
+
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/refund-booking`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ booking_code: args.bookingCode, reason: args.reason ?? null }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? `Falha ao estornar (HTTP ${res.status})`);
       }
       return res.json();
     },

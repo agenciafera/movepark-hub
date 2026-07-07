@@ -69,3 +69,10 @@ export function brDateToIso(value: string): string | null {
   const yyyy = v.slice(4, 8);
   return `${yyyy}-${mm}-${dd}`;
 }
+
+/** Placa BR: ABC-1D23 (Mercosul) ou ABC-1234 (antiga). 7 chars A-Z0-9, hífen só apresentação. */
+export function plateMask(value: string): string {
+  const v = (value ?? "").replace(/[^a-z0-9]/gi, "").toUpperCase().slice(0, 7);
+  if (v.length <= 3) return v;
+  return `${v.slice(0, 3)}-${v.slice(3)}`;
+}

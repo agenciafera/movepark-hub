@@ -1,12 +1,13 @@
 begin;
 select plan(9);
 
--- Fixture: um usuário + empresa, papel variável. O insert em auth.users dispara o trigger que
--- cria o profile; por isso atualizamos (não inserimos) profiles. Tudo dentro do begin/rollback.
+-- Fixture: um usuário + empresa, papel variável. Não há trigger criando o profile a partir de
+-- auth.users neste schema, então inserimos o profile explicitamente. Tudo dentro do begin/rollback.
 insert into auth.users (id, email)
   values ('00000000-0000-0000-0000-0000000000bb', 'rpcscope@example.com');
-update public.profiles set role = 'company_operator'
-  where id = '00000000-0000-0000-0000-0000000000bb';
+insert into public.profiles (id, role)
+  values ('00000000-0000-0000-0000-0000000000bb', 'company_operator')
+  on conflict (id) do update set role = 'company_operator';
 insert into public.company (id, name, slug)
   values ('00000000-0000-0000-0000-0000000000cc', 'RpcScope', 'rpc-scope-test');
 insert into public.profile_company (profile_id, company_id, role)

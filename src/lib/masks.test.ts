@@ -8,6 +8,7 @@ import {
   documentMask,
   onlyDigits,
   phoneMask,
+  plateMask,
   splitPhone,
 } from "./masks";
 
@@ -56,5 +57,13 @@ describe("masks", () => {
 
   it("onlyDigits remove não-dígitos", () => {
     expect(onlyDigits("11.222/0001-81")).toBe("11222000181");
+  });
+
+  it("plateMask formata placa Mercosul/antiga e trunca em 7", () => {
+    expect(plateMask("abc1d23")).toBe("ABC-1D23");
+    expect(plateMask("abc1234")).toBe("ABC-1234");
+    expect(plateMask("ab")).toBe("AB");
+    expect(plateMask("abc1d23extra")).toBe("ABC-1D23"); // trunca em 7
+    expect(plateMask("abc-1d23")).toBe("ABC-1D23"); // ignora hífen já digitado
   });
 });
