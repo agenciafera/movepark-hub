@@ -1,5 +1,6 @@
 // Estado de pagamento/estorno derivado dos payments de uma reserva — lógica pura (testável).
-// Usado para gatear o botão de estorno e mostrar o badge no Manager/Operator.
+// Usado para mostrar o badge de estorno (Estornado / em processamento) no Manager/Operator.
+// (O estorno não é mais uma ação à parte: reembolsar = cancelar antes do check-in — E0.3.2.)
 
 type PaymentLike = {
   status: string | null;

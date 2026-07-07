@@ -5,9 +5,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { formatBRL, formatDateTime } from "@/lib/format";
 import type { BookingWithRelations } from "@/types/domain";
-import { useAuth } from "@/auth/context";
 import { paymentState } from "./payment.logic";
-import { RefundBookingDialog } from "./RefundBookingDialog";
 
 type Props = {
   booking: BookingWithRelations | null;
@@ -17,16 +15,13 @@ type Props = {
 };
 
 export function BookingModal({ booking, open, onOpenChange, onCancel }: Props) {
-  const { hasScope } = useAuth();
-  const [refundOpen, setRefundOpen] = React.useState(false);
   if (!booking) return null;
 
   const pay = paymentState(booking.payments);
-  const canRefund = pay.canRefund && hasScope("bookings:cancel", booking.location?.company?.id);
-  const canCancel = !!onCancel && booking.status !== "cancelled" && booking.status !== "completed";
+  // Cancelar antes do check-in reembolsa (cancel-booking, E0.3.2). Estorno não é ação à parte.
+  const canCancel = !!onCancel && (booking.status === "pending" || booking.status === "confirmed");
 
   return (
-    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
@@ -71,29 +66,15 @@ export function BookingModal({ booking, open, onOpenChange, onCancel }: Props) {
           </ol>
         </div>
 
-        {(canCancel || canRefund) && (
+        {canCancel && (
           <div className="flex justify-end gap-2 pt-2">
-            {canCancel && (
-              <Button variant="danger" size="sm" onClick={() => onCancel!(booking)}>
-                Cancelar reserva
-              </Button>
-            )}
-            {canRefund && (
-              <Button variant="secondary" size="sm" onClick={() => setRefundOpen(true)}>
-                Estorno
-              </Button>
-            )}
+            <Button variant="danger" size="sm" onClick={() => onCancel!(booking)}>
+              Cancelar reserva
+            </Button>
           </div>
         )}
       </DialogContent>
     </Dialog>
-    <RefundBookingDialog
-      bookingCode={booking.code}
-      totalAmount={booking.total_amount}
-      open={refundOpen}
-      onOpenChange={setRefundOpen}
-    />
-    </>
   );
 }
 

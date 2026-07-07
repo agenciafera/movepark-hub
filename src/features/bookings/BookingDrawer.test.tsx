@@ -9,7 +9,6 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock("./api", () => ({
   useUpdateBookingStatus: () => ({ mutate: updateMutate, isPending: false }),
   useCancelBookingStaff: () => ({ mutate: vi.fn(), isPending: false }),
-  useRefundBookingStaff: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 import { BookingDrawer } from "./BookingDrawer";

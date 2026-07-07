@@ -191,18 +191,18 @@ o **mesmo** valor, então o hold sempre cobre a validade do QR.
   (hub_admin / operador da empresa), decide via `refundDecision({actor, fareCancelUntil, ...})` e,
   quando há `payment` pago e elegível, chama `gateway.refundCharge(chargeId)` (`DELETE /charges/{id}`)
   — a Pagar.me **reverte o split proporcionalmente**. **Cliente** estorna só dentro da janela da
-  **Tarifa** (`fare_cancel_until`; Superflex = 1 min antes); **staff** estorna como **override** (a
-  qualquer momento). Estorno **total** nesta etapa. Se o gateway falhar, a reserva
+  **Tarifa** (`fare_cancel_until`; Superflex = 1 min antes); **staff** estorna como **override**, mas
+  sempre **antes do check-in** (a RPC recusa reserva já iniciada). Estorno **total** nesta etapa. Se o gateway falhar, a reserva
   **não** é cancelada (nunca cancelar sem estornar). Para PIX o estorno é **assíncrono**: o `payment`
   fica `paid` + `refunded_at` setado (`refund_pending`) e vira `refunded` quando o webhook
   `charge.refunded` confirma.
-- **Estorno avulso pelo painel (staff, ✅):** Edge **`refund-booking`** — reembolsa o `payment`
-  (total). Quando o gateway confirma o estorno (`charge.refunded`), a reserva é **cancelada se ainda
-  não começou** (`confirmed`/`pending` → libera a vaga); reserva **em andamento/concluída**
-  (`checked_in`/`completed`/`no_show`) recebe **só** o reembolso (não cancela o histórico). Válida em
-  **qualquer** reserva paga. Auth: staff (hub_admin / operador da empresa; escopo `bookings:cancel`).
-  Botão **"Estorno"** no Manager (`BookingModal`) e Operator (`BookingDrawer`), gateado por
-  `paymentState()` (pago e não estornado) + `hasScope`. Idempotente (já estornado → noop).
+- **Reembolso = cancelamento, e só antes do check-in (E0.3.2):** **não** há ação de "estorno avulso"
+  separada — quem devolve o dinheiro é o **cancelamento** (`cancel-booking`), disponível **apenas
+  enquanto a reserva não começou** (`pending`/`confirmed`). Depois do check-in
+  (`checked_in`/`completed`/`no_show`) não há reembolso pelo painel (a estadia aconteceu). O botão
+  **"Estorno"** foi **removido** do Manager (`BookingModal`) e do Operator (`BookingDrawer`), assim
+  como a Edge `refund-booking`; `paymentState()` agora só alimenta o **badge** de estado
+  (Estornado / em processamento).
 - **Webhook decide pelo TIPO do evento (não pelo `data.status`):** `webhookIntentFromType()` mapeia
   `charge.refunded`/`order.refunded` → refund (mesmo com `data.status:"paid"`, o caso PIX que
   falhava), `*.canceled` → cancela booking + libera capacidade, `partially_refunded` → registra o

@@ -13,11 +13,9 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { formatBRL, formatDateTime } from "@/lib/format";
 import { documentMask } from "@/lib/masks";
 import type { BookingStatus, BookingWithRelations } from "@/types/domain";
-import { useAuth } from "@/auth/context";
 import { useCancelBookingStaff, useUpdateBookingStatus } from "./api";
 import { useChangeBookingVehicle } from "./customerApi";
 import { paymentState } from "./payment.logic";
-import { RefundBookingDialog } from "./RefundBookingDialog";
 
 type Props = {
   booking: BookingWithRelations | null;
@@ -36,19 +34,16 @@ const allowed: Record<BookingStatus, BookingStatus[]> = {
 };
 
 export function BookingDrawer({ booking, open, onOpenChange }: Props) {
-  const { hasScope } = useAuth();
   const mutation = useUpdateBookingStatus();
   const cancelMutation = useCancelBookingStaff();
   const changeVehicle = useChangeBookingVehicle();
   const [plate, setPlate] = React.useState("");
-  const [refundOpen, setRefundOpen] = React.useState(false);
   const busy = mutation.isPending || cancelMutation.isPending;
 
   if (!booking) return null;
 
-  // Estorno avulso: só staff com bookings:cancel e pagamento pago não estornado (qualquer status).
+  // Badge de estado do estorno (Estornado / em processamento), quando houver.
   const pay = paymentState(booking.payments);
-  const canRefund = pay.canRefund && hasScope("bookings:cancel", booking.location?.company?.id);
 
   async function savePlate() {
     const lp = plate.trim().toUpperCase();
@@ -97,7 +92,6 @@ export function BookingDrawer({ booking, open, onOpenChange }: Props) {
   const next = allowed[booking.status];
 
   return (
-    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent>
         <SheetHeader>
@@ -162,7 +156,7 @@ export function BookingDrawer({ booking, open, onOpenChange }: Props) {
             {booking.notes && <Field label="Notas" value={booking.notes} />}
           </section>
 
-          {(next.length > 0 || canRefund) && (
+          {next.length > 0 && (
             <>
               <Separator />
               <section className="flex flex-wrap gap-2">
@@ -213,29 +207,12 @@ export function BookingDrawer({ booking, open, onOpenChange }: Props) {
                     {cancelMutation.isPending ? "Cancelando…" : "Cancelar"}
                   </Button>
                 )}
-                {canRefund && (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={busy}
-                    onClick={() => setRefundOpen(true)}
-                  >
-                    Estorno
-                  </Button>
-                )}
               </section>
             </>
           )}
         </div>
       </SheetContent>
     </Sheet>
-    <RefundBookingDialog
-      bookingCode={booking.code}
-      totalAmount={booking.total_amount}
-      open={refundOpen}
-      onOpenChange={setRefundOpen}
-    />
-    </>
   );
 }
 
