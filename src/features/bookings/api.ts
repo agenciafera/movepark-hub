@@ -22,7 +22,7 @@ export const bookingsKeys = {
 };
 
 const baseSelect =
-  "*, profile:profiles(id, full_name, phone, tax_id), location:location(id, name, slug, timezone, company:company(id, name, slug)), vehicle:vehicle(id, license_plate, model, color), payments:payment(id, status, refunded_at, created_at)";
+  "*, profile:profiles(id, full_name, tax_id), location:location(id, name, slug, timezone, company:company(id, name, slug)), vehicle:vehicle(id, license_plate, model, color), payments:payment(id, status, refunded_at, created_at)";
 
 async function fetchBookings(filters: BookingFilters): Promise<BookingWithRelations[]> {
   let query = supabase

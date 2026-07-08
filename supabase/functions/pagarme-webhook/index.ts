@@ -41,13 +41,20 @@ async function notifyBookingConfirmed(admin: any, bookingId: string): Promise<vo
   let phone: string | null = b.customer_phone ?? null;
   let name: string | null = b.customer_name ?? null;
   if ((!phone || !name) && b.profile_id) {
-    const { data: p } = await admin
-      .from("profiles")
-      .select("full_name, phone")
-      .eq("id", b.profile_id)
-      .maybeSingle();
-    phone = phone ?? p?.phone ?? null;
-    name = name ?? p?.full_name ?? null;
+    // ADR-006: nome vem do profiles; telefone (credencial) vem do auth.users — nunca do profiles.
+    if (!name) {
+      const { data: p } = await admin
+        .from("profiles")
+        .select("full_name")
+        .eq("id", b.profile_id)
+        .maybeSingle();
+      name = p?.full_name ?? null;
+    }
+    if (!phone) {
+      const { data: u } = await admin.auth.admin.getUserById(b.profile_id);
+      const raw = u?.user?.phone ?? null;
+      phone = raw ? (raw.startsWith("+") ? raw : `+${raw}`) : null;
+    }
   }
   if (!phone) return;
 

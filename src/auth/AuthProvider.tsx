@@ -35,6 +35,7 @@ async function loadSession(): Promise<Session | null> {
   return {
     userId: auth.user.id,
     email: auth.user.email ?? null,
+    phone: auth.user.phone ?? null,
     role: profile?.role ?? "customer",
     fullName: profile?.full_name ?? null,
     companyIds: (links ?? []).map((l) => l.company_id),

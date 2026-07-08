@@ -89,7 +89,7 @@ export type PartnerApplication = CompanyOnboarding & {
 };
 
 export type BookingWithRelations = Booking & {
-  profile: Pick<Profile, "id" | "full_name" | "phone" | "tax_id"> | null;
+  profile: Pick<Profile, "id" | "full_name" | "tax_id"> | null;
   location:
     | (Pick<Location, "id" | "name" | "slug" | "timezone"> & {
         company: Pick<Company, "id" | "name" | "slug">;
@@ -103,6 +103,8 @@ export type BookingWithRelations = Booking & {
 export type Session = {
   userId: string;
   email: string | null;
+  /** Telefone verificado da credencial (auth.users.phone), E.164. ADR-006: contato próprio via JWT. */
+  phone: string | null;
   role: UserRole;
   fullName: string | null;
   companyIds: string[];

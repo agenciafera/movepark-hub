@@ -39,6 +39,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_merge_log: {
+        Row: {
+          counts: Json
+          created_at: string
+          id: string
+          loser_id: string
+          survivor_id: string
+        }
+        Insert: {
+          counts?: Json
+          created_at?: string
+          id?: string
+          loser_id: string
+          survivor_id: string
+        }
+        Update: {
+          counts?: Json
+          created_at?: string
+          id?: string
+          loser_id?: string
+          survivor_id?: string
+        }
+        Relationships: []
+      }
       add_on_service: {
         Row: {
           base_price: number
@@ -3538,6 +3562,7 @@ export type Database = {
           version: number
         }[]
       }
+      get_my_identities: { Args: never; Returns: Json }
       get_pricing_data: {
         Args: {
           p_company: string
@@ -3600,6 +3625,10 @@ export type Database = {
       member_has_scope: {
         Args: { p_company_id: string; p_scope: string }
         Returns: boolean
+      }
+      merge_accounts: {
+        Args: { p_loser: string; p_survivor: string }
+        Returns: Json
       }
       min_stay_satisfied: {
         Args: {

@@ -12,6 +12,7 @@ export function mockSession(role: UserRole, overrides?: Partial<Session>): Sessi
   return {
     userId: "user-test",
     email: "test@example.com",
+    phone: null,
     role,
     fullName: "Teste",
     companyIds: role === "company_operator" ? ["company-1"] : [],

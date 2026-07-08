@@ -112,13 +112,16 @@ Deno.serve(async (req: Request) => {
     let phone: string | null = booking.customer_phone ?? null;
     let name: string | null = booking.customer_name ?? null;
     if (!phone && booking.profile_id) {
+      // ADR-006: nome do profiles; telefone (credencial) do auth.users — nunca do profiles.
       const { data: p } = await admin
         .from("profiles")
-        .select("full_name, phone")
+        .select("full_name")
         .eq("id", booking.profile_id)
         .maybeSingle();
-      phone = p?.phone ?? null;
       name = name ?? p?.full_name ?? null;
+      const { data: u } = await admin.auth.admin.getUserById(booking.profile_id);
+      const raw = u?.user?.phone ?? null;
+      phone = raw ? (raw.startsWith("+") ? raw : `+${raw}`) : null;
     }
     if (phone) {
       const template = Deno.env.get("WHATSAPP_BOOKING_EXTENDED_TEMPLATE") ?? "";

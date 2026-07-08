@@ -111,7 +111,7 @@ export function BookingDrawer({ booking, open, onOpenChange }: Props) {
           <section className="space-y-2">
             <h4 className="text-title-md">Cliente</h4>
             <Field label="Nome" value={booking.profile?.full_name ?? "—"} />
-            <Field label="Telefone" value={booking.profile?.phone ?? "—"} />
+            <Field label="Telefone" value={booking.customer_phone ?? "—"} />
             <Field
               label="CPF/CNPJ"
               value={booking.profile?.tax_id ? documentMask(booking.profile.tax_id) : "—"}

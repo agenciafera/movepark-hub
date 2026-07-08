@@ -76,7 +76,7 @@ export function BookingModal({ booking, open, onOpenChange }: Props) {
 
         <div className="grid grid-cols-2 gap-4 text-body-sm">
           <Field label="Cliente" value={booking.profile?.full_name ?? "—"} />
-          <Field label="Telefone" value={booking.profile?.phone ?? "—"} />
+          <Field label="Telefone" value={booking.customer_phone ?? "—"} />
           <Field label="Check-in" value={formatDateTime(booking.check_in_at)} />
           <Field label="Check-out" value={formatDateTime(booking.check_out_at)} />
           <Field label="Veículo" value={booking.vehicle?.license_plate ?? "—"} />
