@@ -32,6 +32,20 @@ describe("LeadForm — validação inline", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("associa o erro ao campo via aria-invalid + aria-describedby ao enviar vazio", () => {
+    const { container } = renderWithProviders(<LeadForm onSuccess={vi.fn()} />);
+
+    submitForm(container);
+
+    const phone = document.querySelector("#contact_phone");
+    expect(phone).toHaveAttribute("aria-invalid", "true");
+    expect(phone).toHaveAttribute("aria-describedby", "contact_phone-error");
+
+    const checkbox = screen.getByRole("checkbox");
+    expect(checkbox).toHaveAttribute("aria-invalid", "true");
+    expect(checkbox).toHaveAttribute("aria-describedby", "accept_terms-error");
+  });
+
   it("coleta o Cargo (contact_role) como campo opcional", () => {
     renderWithProviders(<LeadForm onSuccess={vi.fn()} />);
 

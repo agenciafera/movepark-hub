@@ -13,6 +13,9 @@ type Props = {
   required?: boolean;
   className?: string;
   defaultCountry?: "BR" | "PT" | "US" | "AR" | "UY" | "PY" | "CL";
+  /** Encaminhados ao input nativo para associar erro/estado a leitores de tela. */
+  "aria-invalid"?: boolean;
+  "aria-describedby"?: string;
 };
 
 export function PhoneField({
@@ -25,6 +28,8 @@ export function PhoneField({
   required,
   className,
   defaultCountry = "BR",
+  "aria-invalid": ariaInvalid,
+  "aria-describedby": ariaDescribedby,
 }: Props) {
   return (
     <PhoneInputBase
@@ -39,6 +44,8 @@ export function PhoneField({
       required={required}
       className={cn("mp-phone-field", className)}
       countryCallingCodeEditable={false}
+      aria-invalid={ariaInvalid}
+      aria-describedby={ariaDescribedby}
     />
   );
 }

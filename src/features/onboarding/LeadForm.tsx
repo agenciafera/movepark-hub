@@ -87,8 +87,8 @@ export function LeadForm({ onSuccess }: Props) {
   return (
     <form className="flex flex-col gap-8" onSubmit={handleSubmit}>
       <fieldset className="flex flex-col gap-4">
-        <legend className="mb-1 text-label font-medium text-muted">Sobre o estacionamento</legend>
-        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-1">
+        <legend className="text-label font-medium text-muted">Sobre o estacionamento</legend>
+        <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-1">
           <div className="flex flex-col gap-1.5 tablet:col-span-2">
             <Label htmlFor="company_name">Nome do estacionamento *</Label>
             <Input
@@ -125,8 +125,8 @@ export function LeadForm({ onSuccess }: Props) {
       </fieldset>
 
       <fieldset className="flex flex-col gap-4">
-        <legend className="mb-1 text-label font-medium text-muted">Seu contato</legend>
-        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-1">
+        <legend className="text-label font-medium text-muted">Seu contato</legend>
+        <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-1">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="contact_name">Seu nome *</Label>
             <Input
@@ -168,6 +168,8 @@ export function LeadForm({ onSuccess }: Props) {
                 if (errors.phone) setErrors((p) => ({ ...p, phone: undefined }));
               }}
               required
+              aria-invalid={!!errors.phone}
+              aria-describedby={errors.phone ? "contact_phone-error" : undefined}
             />
             <FieldError id="contact_phone-error">{errors.phone}</FieldError>
           </div>
@@ -215,6 +217,8 @@ export function LeadForm({ onSuccess }: Props) {
               setAcceptTerms(v === true);
               if (errors.terms) setErrors((p) => ({ ...p, terms: undefined }));
             }}
+            aria-invalid={!!errors.terms}
+            aria-describedby={errors.terms ? "accept_terms-error" : undefined}
           />
           <span className="text-body-sm text-muted">
             Concordo em ser contatado pela Movepark e com o tratamento dos meus dados conforme os{" "}
