@@ -27,6 +27,7 @@ export type BookingForCheckout = {
   check_in_at: string;
   check_out_at: string;
   expires_at: string | null;
+  created_at: string;
   passenger_count: number | null;
   has_pcd: boolean;
   vehicle_id: string | null;
@@ -79,7 +80,7 @@ export function useCheckoutBooking(code: string | undefined) {
         .from("booking")
         .select(
           `id, code, status, total_amount, currency, price_breakdown, check_in_at, check_out_at,
-           expires_at, passenger_count, has_pcd, vehicle_id, profile_id,
+           expires_at, created_at, passenger_count, has_pcd, vehicle_id, profile_id,
            customer_name, customer_phone,
            location:location!inner(id, slug, name, address,
              company:company!inner(slug, name)),
@@ -114,6 +115,7 @@ export function useCheckoutBooking(code: string | undefined) {
         check_in_at: row.check_in_at,
         check_out_at: row.check_out_at,
         expires_at: row.expires_at,
+        created_at: row.created_at,
         passenger_count: row.passenger_count,
         has_pcd: row.has_pcd,
         vehicle_id: row.vehicle_id,
@@ -224,6 +226,30 @@ export function useCancelBooking() {
         .update({ status: "cancelled", deleted_at: new Date().toISOString() })
         .eq("id", args.bookingId);
       if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["checkout-booking"] }),
+  });
+}
+
+export type RenewHoldResult = {
+  ok: boolean;
+  reason?: "not_pending" | "cap_reached";
+  expires_at: string | null;
+  cap_at?: string | null;
+  cap_reached?: boolean;
+};
+
+/**
+ * Renova o hold da reserva pendente (modal keep-alive "Ainda está aí?"). Server-authoritative via
+ * RPC `renew_booking_hold`: estende `expires_at` respeitando o teto (`booking_hold_max_minutes`).
+ */
+export function useRenewBookingHold() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (bookingId: string): Promise<RenewHoldResult> => {
+      const { data, error } = await supabase.rpc("renew_booking_hold", { p_booking_id: bookingId });
+      if (error) throw error;
+      return data as RenewHoldResult;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["checkout-booking"] }),
   });

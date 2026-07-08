@@ -14,7 +14,11 @@
 > → Configurações → Pagamentos) lida pelo helper `get_booking_hold_minutes()`; **o hold da reserva e
 > a validade do QR PIX derivam do mesmo valor** (fim do desencontro 30 min × QR de 1 h). Gerar
 > PIX/cartão **renova** `booking.expires_at = now() + hold` (o "relógio de pagar" começa quando o
-> cliente decide pagar). O cron **reconcilia contra `payment` antes de cancelar**: nunca expira uma
+> cliente decide pagar). **Keep-alive "Ainda está aí?" (E0.3.1-b):** ~5 min antes de expirar, o
+> checkout mostra o `KeepAliveModal` que deixa o cliente **renovar o hold sem pagar** via RPC
+> `renew_booking_hold` (dono/hub_admin) — com **teto** `booking_hold_max_minutes` (default 90, a
+> partir de `created_at`) pra não segurar a vaga indefinidamente. O cron **reconcilia contra
+> `payment` antes de cancelar**: nunca expira uma
 > reserva com pagamento comprometido (`paid`/`authorized`/cartão em voo) — só PIX apenas gerado e não
 > pago (`method=pix, status=pending`); há uma folga `booking_hold_grace_minutes` (default 2) antes de
 > cancelar. Cartão aprovado **confirma inline** (não espera o webhook, que vira reconciliação

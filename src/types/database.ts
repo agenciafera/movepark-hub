@@ -3525,6 +3525,7 @@ export type Database = {
         Returns: string
       }
       get_booking_hold_grace_minutes: { Args: never; Returns: number }
+      get_booking_hold_max_minutes: { Args: never; Returns: number }
       get_booking_hold_minutes: { Args: never; Returns: number }
       get_current_legal_document: {
         Args: { p_slug: string }
@@ -3854,6 +3855,7 @@ export type Database = {
         Args: { p_booking_id: string }
         Returns: undefined
       }
+      renew_booking_hold: { Args: { p_booking_id: string }; Returns: Json }
       review_recompute_location: {
         Args: { p_location_id: string }
         Returns: undefined

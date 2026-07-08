@@ -1,0 +1,39 @@
+// Lógica pura do modal keep-alive "Ainda está aí?" (E0.3.1-b). Decide QUANDO o modal aparece e
+// se o teto de renovação já foi atingido — sem React, testável.
+
+/** Minutos antes do fim em que o modal começa a avisar (proposta da tarefa: 5). */
+export const KEEP_ALIVE_THRESHOLD_SEC = 5 * 60;
+
+/** Teto total do hold, em minutos, a partir da criação (espelha `booking_hold_max_minutes`). */
+export const BOOKING_HOLD_MAX_MINUTES = 90;
+
+export type KeepAliveState = "hidden" | "warning" | "cap" | "expired";
+
+/**
+ * Estado do modal a partir da reserva e do "agora":
+ * - `hidden`  — não pendente, sem expiração, ou ainda falta mais que o limiar;
+ * - `warning` — dentro do limiar (≤5 min) e ainda dá pra renovar → mostra o CTA;
+ * - `cap`     — dentro do limiar mas o teto (created_at + máx) já passou → não dá pra renovar;
+ * - `expired` — já passou de `expires_at`.
+ */
+export function keepAliveState(args: {
+  status: string;
+  expiresAt: string | null;
+  createdAt: string | null;
+  nowMs: number;
+}): KeepAliveState {
+  const { status, expiresAt, createdAt, nowMs } = args;
+  if (status !== "pending" || !expiresAt) return "hidden";
+
+  const expMs = new Date(expiresAt).getTime();
+  if (nowMs >= expMs) return "expired";
+
+  const secsLeft = Math.floor((expMs - nowMs) / 1000);
+  if (secsLeft > KEEP_ALIVE_THRESHOLD_SEC) return "hidden";
+
+  if (createdAt) {
+    const capMs = new Date(createdAt).getTime() + BOOKING_HOLD_MAX_MINUTES * 60_000;
+    if (nowMs >= capMs) return "cap";
+  }
+  return "warning";
+}

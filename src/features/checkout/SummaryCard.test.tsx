@@ -15,6 +15,7 @@ function booking(breakdown: PriceBreakdown | null, parkingSubtotal = 151.4): Boo
     check_in_at: "2026-12-10T12:00:00Z",
     check_out_at: "2026-12-12T12:00:00Z",
     expires_at: null,
+    created_at: "2026-12-10T11:30:00Z",
     passenger_count: null,
     has_pcd: false,
     vehicle_id: null,

@@ -8,6 +8,7 @@ import { useAuth } from "@/auth/context";
 import { useProfile } from "@/features/profile/api";
 import { useCheckoutBooking } from "@/features/checkout/api";
 import { Countdown } from "@/features/checkout/Countdown";
+import { KeepAliveModal } from "@/features/checkout/KeepAliveModal";
 import { Stepper } from "@/features/checkout/Stepper";
 import { Step1Identity } from "@/features/checkout/Step1Identity";
 import { Step2Vehicle } from "@/features/checkout/Step2Vehicle";
@@ -151,6 +152,16 @@ export default function CheckoutPage() {
   return (
     <div>
       <Countdown expiresAt={booking.status === "pending" ? booking.expires_at : null} />
+      {booking.status === "pending" && (
+        <KeepAliveModal
+          booking={{
+            id: booking.id,
+            status: booking.status,
+            expires_at: booking.expires_at,
+            created_at: booking.created_at,
+          }}
+        />
+      )}
 
       <div className="mx-auto w-full max-w-[1080px] px-4 py-8 desktop:px-8">
         <h1 className="sr-only">Finalizar reserva</h1>
