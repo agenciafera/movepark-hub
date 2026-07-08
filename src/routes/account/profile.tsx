@@ -1,9 +1,9 @@
 import * as React from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PhoneField } from "@/components/ui/phone-field";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
@@ -25,7 +25,6 @@ export default function ProfilePage() {
 
   const [fullName, setFullName] = React.useState("");
   const [taxId, setTaxId] = React.useState("");
-  const [phone, setPhone] = React.useState("");
   const [birthDate, setBirthDate] = React.useState<string>("");
   const [language, setLanguage] = React.useState<string>("pt-BR");
   const [dirty, setDirty] = React.useState(false);
@@ -35,8 +34,6 @@ export default function ProfilePage() {
     if (!profileQ.data) return;
     setFullName(profileQ.data.full_name ?? "");
     setTaxId(documentMask(profileQ.data.tax_id ?? ""));
-    const rawPhone = profileQ.data.phone ?? "";
-    setPhone(rawPhone && !rawPhone.startsWith("+") ? `+${rawPhone}` : rawPhone);
     setBirthDate(profileQ.data.birth_date ?? "");
     setLanguage(profileQ.data.preferences.language ?? "pt-BR");
     setDirty(false);
@@ -65,7 +62,6 @@ export default function ProfilePage() {
         id: session.userId,
         full_name: fullName.trim() || null,
         tax_id: taxDigits || null,
-        phone: phone.trim() || null,
         birth_date: birthDate || null,
         preferences: nextPrefs,
       });
@@ -109,11 +105,19 @@ export default function ProfilePage() {
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="phone">Telefone</Label>
-          <PhoneField
+          <Input
             id="phone"
-            value={phone || undefined}
-            onChange={(v) => markDirty(setPhone)(v ?? "")}
+            value={session?.phone ?? "Não adicionado"}
+            disabled
+            className="cursor-not-allowed bg-surface-soft"
           />
+          <span className="text-caption-sm text-muted">
+            Telefone e e-mail ficam em{" "}
+            <Link to="/account/security" className="text-info underline">
+              Segurança › Meus logins
+            </Link>
+            .
+          </span>
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="cpf">CPF ou CNPJ</Label>

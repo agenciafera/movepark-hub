@@ -103,7 +103,7 @@ Deno.serve(async (req: Request) => {
   // 4. Cliente (CPF + telefone exigidos no PIX).
   const { data: profile } = await admin
     .from("profiles")
-    .select("full_name, tax_id, phone")
+    .select("full_name, tax_id")
     .eq("id", booking.profile_id)
     .maybeSingle();
   const { data: authUser } = await admin.auth.admin.getUserById(booking.profile_id);
@@ -112,7 +112,8 @@ Deno.serve(async (req: Request) => {
   if (!isValidChargeDocument(profile?.tax_id)) {
     return jsonResponse({ error: "Cliente sem CPF/CNPJ válido para o PIX." }, 422);
   }
-  const phone = parseBrPhone(profile?.phone);
+  // ADR-006: telefone (credencial) vem do auth.users, não do profiles.
+  const phone = parseBrPhone(authUser?.user?.phone);
   if (!phone) return jsonResponse({ error: "Cliente sem telefone (com DDD) para o PIX." }, 422);
 
   // 5. Split 100% Movepark (serviço; absorve as taxas).

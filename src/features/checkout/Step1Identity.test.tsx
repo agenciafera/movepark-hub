@@ -72,7 +72,7 @@ describe("Step1Identity", () => {
     expect(screen.getByLabelText("Nome")).toBeInTheDocument();
     expect(screen.getByLabelText("Sobrenome")).toBeInTheDocument();
     expect(screen.getByLabelText("E-mail")).toBeInTheDocument();
-    expect(screen.getByLabelText("Telefone")).toBeInTheDocument();
+    expect(screen.getByLabelText("Telefone de contato")).toBeInTheDocument();
   });
 
   it("separa nome e sobrenome a partir do full_name do perfil", () => {
@@ -119,8 +119,8 @@ describe("Step1Identity", () => {
   });
 
   // Regressão do bug: login por telefone deixava o e-mail travado e vazio.
-  it("login por telefone: e-mail editável e salvo em customer_email; telefone travado", async () => {
-    setProfile({ full_name: "Pedro Araujo", phone: "+5511987727182" });
+  it("login por telefone: e-mail editável e salvo em customer_email; telefone de contato editável", async () => {
+    setProfile({ full_name: "Pedro Araujo" });
     const updateCustomer = vi.fn().mockResolvedValue(undefined);
     vi.mocked(useUpdateBookingCustomer).mockReturnValue({
       mutateAsync: updateCustomer,
@@ -128,13 +128,13 @@ describe("Step1Identity", () => {
     } as never);
 
     renderWithProviders(<Step1Identity {...defaultProps} />, {
-      auth: mockAuth({ session: mockSession("customer", { email: null }) }),
+      auth: mockAuth({ session: mockSession("customer", { email: null, phone: "+5511987727182" }) }),
     });
 
     const emailInput = screen.getByLabelText("E-mail") as HTMLInputElement;
     expect(emailInput).toBeEnabled();
-    // Telefone é a identidade do login → read-only.
-    expect(screen.getByLabelText("Telefone")).toBeDisabled();
+    // ADR-006: telefone de contato do pedido é editável (não é mais a identidade travada).
+    expect(screen.getByLabelText("Telefone de contato")).toBeEnabled();
 
     await userEvent.type(emailInput, "diego@ex.com");
     await userEvent.click(screen.getByRole("checkbox", { name: /Aceito os/i }));
@@ -153,6 +153,6 @@ describe("Step1Identity", () => {
     const emailInput = screen.getByLabelText("E-mail") as HTMLInputElement;
     expect(emailInput).toBeDisabled();
     expect(emailInput.value).toBe("pedro@ex.com");
-    expect(screen.getByLabelText("Telefone")).toBeEnabled();
+    expect(screen.getByLabelText("Telefone de contato")).toBeEnabled();
   });
 });

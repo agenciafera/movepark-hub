@@ -147,7 +147,7 @@ Deno.serve(async (req: Request) => {
   // 5. Cliente (perfil + e-mail do auth)
   const { data: profile } = await admin
     .from("profiles")
-    .select("full_name, tax_id, phone")
+    .select("full_name, tax_id")
     .eq("id", booking.profile_id)
     .maybeSingle();
   const { data: authUser } = await admin.auth.admin.getUserById(booking.profile_id);
@@ -162,8 +162,8 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // PIX no Pagar.me exige telefone do cliente.
-  const phone = parseBrPhone(profile?.phone);
+  // PIX no Pagar.me exige telefone do cliente. ADR-006: vem do auth.users (credencial), não do profiles.
+  const phone = parseBrPhone(authUser?.user?.phone);
   if (!phone) {
     return jsonResponse(
       { error: "Cliente sem telefone (com DDD) para a cobrança PIX. Atualize o cadastro." },

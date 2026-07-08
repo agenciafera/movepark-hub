@@ -62,10 +62,10 @@ export function Step1Identity({
       const [fn, ln] = splitName(profileQ.data.full_name ?? "");
       setFirstName(fn);
       setLastName(ln);
-      setPhone(profileQ.data.phone ?? undefined);
+      setPhone(session?.phone ?? undefined);
       initialized.current = true;
     }
-  }, [profileQ.data]);
+  }, [profileQ.data, session?.phone]);
 
   if (!session) return null;
   if (profileQ.isLoading) return <Skeleton className="h-64 w-full" />;
@@ -78,19 +78,14 @@ export function Step1Identity({
 
       const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ");
       const prevName = profileQ.data?.full_name ?? "";
-      const prevPhone = profileQ.data?.phone ?? undefined;
-      if (fullName !== prevName || phone !== prevPhone) {
-        tasks.push(
-          updateProfile.mutateAsync({
-            id: session.userId,
-            ...(fullName !== prevName ? { full_name: fullName } : {}),
-            ...(phone !== prevPhone ? { phone: phone ?? null } : {}),
-          }),
-        );
+      // ADR-006: o telefone da conta é credencial (auth.users) — não é escrito no profiles aqui.
+      if (fullName !== prevName) {
+        tasks.push(updateProfile.mutateAsync({ id: session.userId, full_name: fullName }));
       }
 
       const newCustomerName = forOther ? otherName.trim() || null : null;
-      const newCustomerPhone = forOther ? (otherPhone ?? null) : null;
+      // Snapshot de contato do pedido: outra pessoa → telefone dela; senão o telefone informado.
+      const newCustomerPhone = forOther ? (otherPhone ?? null) : (phone ?? null);
       // E-mail de contato da reserva: quem entrou por telefone informa aqui (a conta não tem
       // e-mail); quem entrou por e-mail já é atendido pelo e-mail da conta.
       const newCustomerEmail = loggedInWithEmail ? customerEmail : email.trim() || null;
@@ -169,15 +164,9 @@ export function Step1Identity({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="id-phone">Telefone</Label>
-          {/* Login por telefone → o número é a identidade verificada, fica travado. */}
-          <PhoneField
-            id="id-phone"
-            value={phone}
-            onChange={setPhone}
-            required
-            disabled={!loggedInWithEmail}
-          />
+          <Label htmlFor="id-phone">Telefone de contato</Label>
+          {/* Contato do pedido (snapshot). O telefone da CONTA fica em Segurança › Meus logins. */}
+          <PhoneField id="id-phone" value={phone} onChange={setPhone} required />
         </div>
 
         <label className="flex cursor-pointer items-center gap-3 border-t border-hairline pt-4">

@@ -1489,6 +1489,42 @@ export type Database = {
         }
         Relationships: []
       }
+      identifier_otp: {
+        Row: {
+          attempts: number
+          channel: string
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          identifier: string
+          requested_by: string | null
+        }
+        Insert: {
+          attempts?: number
+          channel: string
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          identifier: string
+          requested_by?: string | null
+        }
+        Update: {
+          attempts?: number
+          channel?: string
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          identifier?: string
+          requested_by?: string | null
+        }
+        Relationships: []
+      }
       legal_document: {
         Row: {
           created_at: string
@@ -3132,6 +3168,7 @@ export type Database = {
         }
         Returns: Json
       }
+      account_has_history: { Args: { p_uid: string }; Returns: boolean }
       acquire_booking_capacity: {
         Args: { p_booking_id: string }
         Returns: boolean
@@ -3541,6 +3578,10 @@ export type Database = {
         }
         Returns: Json
       }
+      find_user_by_identifier: {
+        Args: { p_channel: string; p_identifier: string }
+        Returns: string
+      }
       generate_unique_company_slug: {
         Args: { p_name: string }
         Returns: string
@@ -3630,6 +3671,7 @@ export type Database = {
         Args: { p_loser: string; p_survivor: string }
         Returns: Json
       }
+      merge_preview: { Args: { p_loser: string }; Returns: Json }
       min_stay_satisfied: {
         Args: {
           p_days: number

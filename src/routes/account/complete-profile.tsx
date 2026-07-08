@@ -15,7 +15,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Wordmark } from "@/components/shared/Brand";
 import { useAuth } from "@/auth/context";
-import { PhoneField } from "@/components/ui/phone-field";
 import { useProfile, useUpdateProfile } from "@/features/profile/api";
 import { documentMask, onlyDigits } from "@/lib/masks";
 import { isValidCnpj, isValidCpf } from "@/lib/documents";
@@ -30,15 +29,12 @@ export default function CompleteProfilePage() {
 
   const [fullName, setFullName] = React.useState("");
   const [taxId, setTaxId] = React.useState("");
-  const [phone, setPhone] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
 
   React.useEffect(() => {
     if (!profileQ.data) return;
     setFullName(profileQ.data.full_name ?? "");
     setTaxId(documentMask(profileQ.data.tax_id ?? ""));
-    const rawPhone = profileQ.data.phone ?? "";
-    setPhone(rawPhone && !rawPhone.startsWith("+") ? `+${rawPhone}` : rawPhone);
     // Se já está completo, manda pra next
     if (profileQ.data.full_name && profileQ.data.tax_id) {
       navigate(next, { replace: true });
@@ -62,7 +58,6 @@ export default function CompleteProfilePage() {
         id: session.userId,
         full_name: fullName.trim(),
         tax_id: onlyDigits(taxId),
-        phone: phone.trim() || null,
       });
       toast.success("Pronto!");
       navigate(next, { replace: true });
@@ -121,14 +116,6 @@ export default function CompleteProfilePage() {
                   inputMode="numeric"
                   maxLength={18}
                   required
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="phone">Telefone (opcional)</Label>
-                <PhoneField
-                  id="phone"
-                  value={phone || undefined}
-                  onChange={(v) => setPhone(v ?? "")}
                 />
               </div>
               <Button type="submit" disabled={submitting} className="w-full">

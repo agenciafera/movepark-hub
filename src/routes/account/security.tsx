@@ -1,9 +1,10 @@
 import { toast } from "sonner";
-import { ShieldCheck, LogOut, KeyRound } from "lucide-react";
+import { ShieldCheck, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useSignOutEverywhere } from "@/features/profile/api";
 import { DeleteAccountDialog } from "@/features/account/DeleteAccountDialog";
+import { MyLoginsSection } from "@/features/identity/MyLoginsSection";
 
 export default function SecurityPage() {
   const signOutAll = useSignOutEverywhere();
@@ -30,25 +31,7 @@ export default function SecurityPage() {
         description="Senha, autenticação em dois fatores e sessões ativas."
       />
 
-      <section className="space-y-3">
-        <h2 className="text-title-md text-ink">Como você entra</h2>
-        <div className="flex flex-wrap items-center justify-between gap-4 rounded-md border border-hairline bg-canvas p-4">
-          <div className="flex items-start gap-3">
-            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-mp-pale text-mp-indigo">
-              <KeyRound className="h-5 w-5" />
-            </span>
-            <div>
-              <div className="text-body-md text-ink">
-                Sem senha: só código de uso único
-              </div>
-              <div className="text-body-sm text-muted">
-                Toda vez que você entrar, mandamos um código pelo e-mail ou
-                WhatsApp. Não tem o que decorar nem o que recuperar.
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <MyLoginsSection />
 
       <section className="space-y-3">
         <h2 className="text-title-md text-ink">

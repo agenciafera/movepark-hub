@@ -15,7 +15,7 @@ import { formatBRL, formatTime } from "@/lib/format";
 import type { BookingWithRelations } from "@/types/domain";
 
 const baseSelect =
-  "*, profile:profiles(id, full_name, phone, tax_id), location:location(id, name, slug, timezone, company:company(id, name, slug)), vehicle:vehicle(id, license_plate, model, color)";
+  "*, profile:profiles(id, full_name, tax_id), location:location(id, name, slug, timezone, company:company(id, name, slug)), vehicle:vehicle(id, license_plate, model, color)";
 
 function useTodayTimeline(locationIds: string[] | undefined) {
   return useQuery({
