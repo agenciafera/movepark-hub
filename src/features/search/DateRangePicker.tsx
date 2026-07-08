@@ -48,7 +48,9 @@ export function DateRangePicker({ from, to, onChange, triggerClassName }: Props)
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverAnchor asChild>
-        <div className="flex w-full flex-col tablet:flex-row">
+        {/* h-full (tablet+) pra o bloco preencher a altura do pill e os campos ficarem
+            verticalmente centralizados, alinhados com "Onde" e "Veículo". */}
+        <div className="flex w-full flex-col tablet:h-full tablet:flex-row">
           {/* Divisória no wrapper (linha reta, full-height) — não no botão, senão o
               rounded-full curva a borda e cria um "entalhe" entre os dois campos. */}
           <div className="min-w-0 flex-1 border-b border-hairline tablet:border-b-0 tablet:border-r">
