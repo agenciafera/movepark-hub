@@ -20,17 +20,20 @@ vi.mock("@/components/ui/phone-field", () => ({
     value,
     onChange,
     required,
+    disabled,
   }: {
     id?: string;
     value?: string;
     onChange: (v: string | undefined) => void;
     required?: boolean;
+    disabled?: boolean;
   }) => (
     <input
       id={id}
       value={value ?? ""}
       onChange={(e) => onChange(e.target.value || undefined)}
       required={required}
+      disabled={disabled}
     />
   ),
 }));
@@ -40,6 +43,7 @@ const defaultProps = {
   bookingCode: "MP-TEST1",
   customerName: null,
   customerPhone: null,
+  customerEmail: null,
   onNext: vi.fn(),
 };
 
@@ -112,5 +116,43 @@ describe("Step1Identity", () => {
     }) as HTMLInputElement;
     expect(checkbox.checked).toBe(true);
     expect(screen.getByDisplayValue("Maria Silva")).toBeInTheDocument();
+  });
+
+  // Regressão do bug: login por telefone deixava o e-mail travado e vazio.
+  it("login por telefone: e-mail editável e salvo em customer_email; telefone travado", async () => {
+    setProfile({ full_name: "Pedro Araujo", phone: "+5511987727182" });
+    const updateCustomer = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(useUpdateBookingCustomer).mockReturnValue({
+      mutateAsync: updateCustomer,
+      isPending: false,
+    } as never);
+
+    renderWithProviders(<Step1Identity {...defaultProps} />, {
+      auth: mockAuth({ session: mockSession("customer", { email: null }) }),
+    });
+
+    const emailInput = screen.getByLabelText("E-mail") as HTMLInputElement;
+    expect(emailInput).toBeEnabled();
+    // Telefone é a identidade do login → read-only.
+    expect(screen.getByLabelText("Telefone")).toBeDisabled();
+
+    await userEvent.type(emailInput, "diego@ex.com");
+    await userEvent.click(screen.getByRole("checkbox", { name: /Aceito os/i }));
+    await userEvent.click(screen.getByRole("button", { name: /Continuar/i }));
+
+    expect(updateCustomer).toHaveBeenCalledWith(
+      expect.objectContaining({ bookingId: "bk-1", customer_email: "diego@ex.com" }),
+    );
+  });
+
+  it("login por e-mail: campo de e-mail fica read-only (identidade da conta) e telefone editável", () => {
+    setProfile({ full_name: "Pedro Araujo", phone: "+5511987727182" });
+    renderWithProviders(<Step1Identity {...defaultProps} />, {
+      auth: mockAuth({ session: mockSession("customer", { email: "pedro@ex.com" }) }),
+    });
+    const emailInput = screen.getByLabelText("E-mail") as HTMLInputElement;
+    expect(emailInput).toBeDisabled();
+    expect(emailInput.value).toBe("pedro@ex.com");
+    expect(screen.getByLabelText("Telefone")).toBeEnabled();
   });
 });

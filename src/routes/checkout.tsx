@@ -189,6 +189,7 @@ export default function CheckoutPage() {
                   bookingCode={booking.code}
                   customerName={booking.customer_name}
                   customerPhone={booking.customer_phone}
+                  customerEmail={booking.customer_email}
                   onNext={() => setStep(2)}
                 />
               ) : step === 2 ? (

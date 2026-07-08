@@ -17,6 +17,7 @@ type Props = {
   bookingCode: string;
   customerName: string | null;
   customerPhone: string | null;
+  customerEmail: string | null;
   onNext: () => void;
 };
 
@@ -25,16 +26,29 @@ function splitName(full: string): [string, string] {
   return [parts[0] ?? "", parts.slice(1).join(" ")];
 }
 
-export function Step1Identity({ bookingId, bookingCode, customerName, customerPhone, onNext }: Props) {
+export function Step1Identity({
+  bookingId,
+  bookingCode,
+  customerName,
+  customerPhone,
+  customerEmail,
+  onNext,
+}: Props) {
   const { session } = useAuth();
   const profileQ = useProfile(session?.userId);
   const updateProfile = useUpdateProfile();
   const updateCustomer = useUpdateBookingCustomer();
   const acceptTerms = useAcceptTerms();
 
+  // Identidade verificada = o canal usado no login. Quem entrou por e-mail (OTP/Google) tem
+  // `session.email` e não edita o e-mail; quem entrou por telefone não tem e-mail na conta e
+  // precisa informá-lo aqui (e o telefone, que é a identidade, fica travado).
+  const loggedInWithEmail = !!session?.email;
+
   const [firstName, setFirstName] = React.useState("");
   const [lastName, setLastName] = React.useState("");
   const [phone, setPhone] = React.useState<string | undefined>(undefined);
+  const [email, setEmail] = React.useState(customerEmail ?? "");
   const [termsAccepted, setTermsAccepted] = React.useState(false);
   const [forOther, setForOther] = React.useState(!!customerName);
   const [otherName, setOtherName] = React.useState(customerName ?? "");
@@ -77,12 +91,20 @@ export function Step1Identity({ bookingId, bookingCode, customerName, customerPh
 
       const newCustomerName = forOther ? otherName.trim() || null : null;
       const newCustomerPhone = forOther ? (otherPhone ?? null) : null;
-      if (newCustomerName !== customerName || newCustomerPhone !== customerPhone) {
+      // E-mail de contato da reserva: quem entrou por telefone informa aqui (a conta não tem
+      // e-mail); quem entrou por e-mail já é atendido pelo e-mail da conta.
+      const newCustomerEmail = loggedInWithEmail ? customerEmail : email.trim() || null;
+      if (
+        newCustomerName !== customerName ||
+        newCustomerPhone !== customerPhone ||
+        newCustomerEmail !== customerEmail
+      ) {
         tasks.push(
           updateCustomer.mutateAsync({
             bookingId,
             customer_name: newCustomerName,
             customer_phone: newCustomerPhone,
+            customer_email: newCustomerEmail,
           }),
         );
       }
@@ -131,12 +153,31 @@ export function Step1Identity({ bookingId, bookingCode, customerName, customerPh
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="id-email">E-mail</Label>
-          <Input id="id-email" value={session.email ?? ""} disabled />
+          {loggedInWithEmail ? (
+            <Input id="id-email" type="email" value={session.email ?? ""} disabled />
+          ) : (
+            <Input
+              id="id-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="seu@email.com"
+              autoComplete="email"
+              required
+            />
+          )}
         </div>
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="id-phone">Telefone</Label>
-          <PhoneField id="id-phone" value={phone} onChange={setPhone} required />
+          {/* Login por telefone → o número é a identidade verificada, fica travado. */}
+          <PhoneField
+            id="id-phone"
+            value={phone}
+            onChange={setPhone}
+            required
+            disabled={!loggedInWithEmail}
+          />
         </div>
 
         <label className="flex cursor-pointer items-center gap-3 border-t border-hairline pt-4">

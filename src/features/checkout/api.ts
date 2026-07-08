@@ -34,6 +34,7 @@ export type BookingForCheckout = {
   profile_id: string;
   customer_name: string | null;
   customer_phone: string | null;
+  customer_email: string | null;
   location: {
     id: string;
     slug: string;
@@ -81,7 +82,7 @@ export function useCheckoutBooking(code: string | undefined) {
         .select(
           `id, code, status, total_amount, currency, price_breakdown, check_in_at, check_out_at,
            expires_at, created_at, passenger_count, has_pcd, vehicle_id, profile_id,
-           customer_name, customer_phone,
+           customer_name, customer_phone, customer_email,
            location:location!inner(id, slug, name, address,
              company:company!inner(slug, name)),
            items:booking_item(id, item_type, quantity, unit_price, subtotal,
@@ -122,6 +123,7 @@ export function useCheckoutBooking(code: string | undefined) {
         profile_id: row.profile_id,
         customer_name: row.customer_name,
         customer_phone: row.customer_phone,
+        customer_email: row.customer_email,
         location: row.location,
         items: (row.items ?? []).map(
           // deno-lint-ignore no-explicit-any
@@ -202,6 +204,7 @@ export function useUpdateBookingCustomer() {
       bookingId: string;
       customer_name: string | null;
       customer_phone: string | null;
+      customer_email?: string | null;
     }) => {
       const { bookingId, ...rest } = args;
       const { error } = await supabase
