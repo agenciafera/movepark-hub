@@ -49,26 +49,28 @@ export function DateRangePicker({ from, to, onChange, triggerClassName }: Props)
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverAnchor asChild>
         <div className="flex w-full flex-col tablet:flex-row">
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            className={cn(cellBase, "min-w-0 flex-1", triggerClassName)}
-          >
-            <span className="text-caption font-medium text-ink">Check-in</span>
-            <span className="line-clamp-1 text-body-sm text-muted">{value(from)}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            className={cn(
-              cellBase,
-              "min-w-0 flex-1 border-t border-hairline tablet:border-l tablet:border-t-0",
-              triggerClassName,
-            )}
-          >
-            <span className="text-caption font-medium text-ink">Check-out</span>
-            <span className="line-clamp-1 text-body-sm text-muted">{value(to)}</span>
-          </button>
+          {/* Divisória no wrapper (linha reta, full-height) — não no botão, senão o
+              rounded-full curva a borda e cria um "entalhe" entre os dois campos. */}
+          <div className="min-w-0 flex-1 border-b border-hairline tablet:border-b-0 tablet:border-r">
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className={cn(cellBase, triggerClassName)}
+            >
+              <span className="text-caption font-medium text-ink">Check-in</span>
+              <span className="line-clamp-1 text-body-sm text-muted">{value(from)}</span>
+            </button>
+          </div>
+          <div className="min-w-0 flex-1">
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className={cn(cellBase, triggerClassName)}
+            >
+              <span className="text-caption font-medium text-ink">Check-out</span>
+              <span className="line-clamp-1 text-body-sm text-muted">{value(to)}</span>
+            </button>
+          </div>
         </div>
       </PopoverAnchor>
 
