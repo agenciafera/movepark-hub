@@ -8,7 +8,7 @@ type Props = {
 
 export function ThankYou({ alreadySubmitted }: Props) {
   return (
-    <div className="flex flex-col items-center gap-5 rounded-md border border-hairline bg-canvas px-6 py-12 text-center">
+    <div className="flex flex-col items-center gap-5 py-6 text-center">
       <div className="text-success">
         {alreadySubmitted ? (
           <Clock className="h-12 w-12" />

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,18 @@ import { useSubmitLead, type LeadResult } from "./leadApi";
 type Props = {
   onSuccess: (result: LeadResult) => void;
 };
+
+type FieldErrors = { phone?: string; terms?: string };
+
+/** Mensagem de erro inline, persistente e associada ao campo (não usa toast). */
+function FieldError({ id, children }: { id: string; children?: string }) {
+  if (!children) return null;
+  return (
+    <p id={id} role="alert" className="text-body-sm text-error">
+      {children}
+    </p>
+  );
+}
 
 export function LeadForm({ onSuccess }: Props) {
   const submit = useSubmitLead();
@@ -30,17 +42,21 @@ export function LeadForm({ onSuccess }: Props) {
   const [message, setMessage] = React.useState("");
   const [acceptTerms, setAcceptTerms] = React.useState(false);
   const [hpField, setHpField] = React.useState(""); // honeypot
+  const [errors, setErrors] = React.useState<FieldErrors>({});
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!contactPhone) {
-      toast.error("Informe um telefone para contato.");
+    // Validação dos campos que o HTML nativo não cobre — erros inline e persistentes,
+    // no mesmo lugar (abaixo do campo) que a validação nativa dos demais.
+    const next: FieldErrors = {};
+    if (!contactPhone) next.phone = "Informe um telefone para contato.";
+    if (!acceptTerms) next.terms = "É necessário aceitar os termos para continuar.";
+    if (next.phone || next.terms) {
+      setErrors(next);
       return;
     }
-    if (!acceptTerms) {
-      toast.error("É necessário aceitar os termos.");
-      return;
-    }
+    setErrors({});
+    if (!contactPhone) return; // já validado acima; garante o narrowing do tipo pro TS
     try {
       const result = await submit.mutateAsync({
         company_name: companyName,
@@ -61,89 +77,110 @@ export function LeadForm({ onSuccess }: Props) {
       });
       onSuccess(result);
     } catch (err) {
+      // Falha de rede/servidor (não validação) — toast é apropriado aqui.
       toast.error(err instanceof Error ? err.message : "Erro ao enviar cadastro");
     }
   }
 
   return (
-    <form className="grid grid-cols-1 gap-4 tablet:grid-cols-2" onSubmit={handleSubmit}>
-      <div className="flex flex-col gap-1.5 tablet:col-span-2">
-        <Label htmlFor="company_name">Nome do estacionamento *</Label>
-        <Input
-          id="company_name"
-          required
-          value={companyName}
-          onChange={(e) => setCompanyName(e.target.value)}
-          placeholder="Ex: Estacionamento Centro"
-        />
-      </div>
+    <form className="flex flex-col gap-8" onSubmit={handleSubmit}>
+      <fieldset className="flex flex-col gap-4">
+        <legend className="mb-1 text-label font-medium text-muted">Sobre o estacionamento</legend>
+        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
+          <div className="flex flex-col gap-1.5 tablet:col-span-2">
+            <Label htmlFor="company_name">Nome do estacionamento *</Label>
+            <Input
+              id="company_name"
+              required
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              placeholder="Ex: Estacionamento Centro"
+            />
+          </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="contact_name">Seu nome *</Label>
-        <Input
-          id="contact_name"
-          required
-          value={contactName}
-          onChange={(e) => setContactName(e.target.value)}
-        />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="contact_email">E-mail *</Label>
-        <Input
-          id="contact_email"
-          type="email"
-          required
-          value={contactEmail}
-          onChange={(e) => setContactEmail(e.target.value)}
-          placeholder="voce@empresa.com"
-        />
-      </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="city">Cidade *</Label>
+            <Input id="city" required value={city} onChange={(e) => setCity(e.target.value)} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="lead-uf">Estado *</Label>
+            <StateSelect id="lead-uf" value={uf} onValueChange={setUf} required />
+          </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="contact_phone">Telefone / WhatsApp *</Label>
-        <PhoneField id="contact_phone" value={contactPhone} onChange={setContactPhone} required />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="tax_id">CNPJ</Label>
-        <Input
-          id="tax_id"
-          value={taxId}
-          onChange={(e) => setTaxId(cnpjMask(e.target.value))}
-          placeholder="Opcional neste momento"
-        />
-      </div>
+          <div className="flex flex-col gap-1.5 tablet:col-span-2">
+            <Label htmlFor="estimated_spots">Quantidade estimada de vagas</Label>
+            <Input
+              id="estimated_spots"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              value={estimatedSpots}
+              onChange={(e) => setEstimatedSpots(e.target.value)}
+              placeholder="Opcional"
+            />
+          </div>
+        </div>
+      </fieldset>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="city">Cidade *</Label>
-        <Input id="city" required value={city} onChange={(e) => setCity(e.target.value)} />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="lead-uf">Estado *</Label>
-        <StateSelect id="lead-uf" value={uf} onValueChange={setUf} required />
-      </div>
+      <fieldset className="flex flex-col gap-4">
+        <legend className="mb-1 text-label font-medium text-muted">Seu contato</legend>
+        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="contact_name">Seu nome *</Label>
+            <Input
+              id="contact_name"
+              required
+              value={contactName}
+              onChange={(e) => setContactName(e.target.value)}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="contact_email">E-mail *</Label>
+            <Input
+              id="contact_email"
+              type="email"
+              required
+              value={contactEmail}
+              onChange={(e) => setContactEmail(e.target.value)}
+              placeholder="voce@empresa.com"
+            />
+          </div>
 
-      <div className="flex flex-col gap-1.5 tablet:col-span-2">
-        <Label htmlFor="estimated_spots">Quantidade estimada de vagas</Label>
-        <Input
-          id="estimated_spots"
-          type="number"
-          min={0}
-          value={estimatedSpots}
-          onChange={(e) => setEstimatedSpots(e.target.value)}
-          placeholder="Opcional"
-        />
-      </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="contact_phone">Telefone / WhatsApp *</Label>
+            <PhoneField
+              id="contact_phone"
+              value={contactPhone}
+              onChange={(v) => {
+                setContactPhone(v);
+                if (errors.phone) setErrors((p) => ({ ...p, phone: undefined }));
+              }}
+              required
+            />
+            <FieldError id="contact_phone-error">{errors.phone}</FieldError>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="tax_id">CNPJ</Label>
+            <Input
+              id="tax_id"
+              value={taxId}
+              onChange={(e) => setTaxId(cnpjMask(e.target.value))}
+              placeholder="Opcional neste momento"
+            />
+          </div>
 
-      <div className="flex flex-col gap-1.5 tablet:col-span-2">
-        <Label htmlFor="message">Mensagem</Label>
-        <Textarea
-          id="message"
-          rows={3}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Conte um pouco sobre seu estacionamento (opcional)"
-        />
-      </div>
+          <div className="flex flex-col gap-1.5 tablet:col-span-2">
+            <Label htmlFor="message">Mensagem</Label>
+            <Textarea
+              id="message"
+              rows={3}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Conte um pouco sobre seu estacionamento (opcional)"
+            />
+          </div>
+        </div>
+      </fieldset>
 
       {/* honeypot anti-spam — invisível para humanos */}
       <div className="hidden" aria-hidden>
@@ -158,19 +195,33 @@ export function LeadForm({ onSuccess }: Props) {
         </label>
       </div>
 
-      <label className="flex items-start gap-2 tablet:col-span-2">
-        <Checkbox checked={acceptTerms} onCheckedChange={(v) => setAcceptTerms(v === true)} />
-        <span className="text-body-sm text-muted">
-          Concordo em ser contatado pela Movepark e com o tratamento dos meus dados conforme a
-          política de privacidade.
-        </span>
-      </label>
-
-      <div className="tablet:col-span-2">
-        <Button type="submit" className="w-full tablet:w-auto" disabled={submit.isPending}>
-          {submit.isPending ? "Enviando…" : "Quero cadastrar meu estacionamento"}
-        </Button>
+      <div className="flex flex-col gap-2">
+        <label className="flex items-start gap-2">
+          <Checkbox
+            checked={acceptTerms}
+            onCheckedChange={(v) => {
+              setAcceptTerms(v === true);
+              if (errors.terms) setErrors((p) => ({ ...p, terms: undefined }));
+            }}
+          />
+          <span className="text-body-sm text-muted">
+            Concordo em ser contatado pela Movepark e com o tratamento dos meus dados conforme os{" "}
+            <Link to="/termos" target="_blank" className="text-mp-primary underline">
+              termos de uso
+            </Link>{" "}
+            e a{" "}
+            <Link to="/privacidade" target="_blank" className="text-mp-primary underline">
+              política de privacidade
+            </Link>
+            .
+          </span>
+        </label>
+        <FieldError id="accept_terms-error">{errors.terms}</FieldError>
       </div>
+
+      <Button type="submit" className="w-full tablet:w-auto" disabled={submit.isPending}>
+        {submit.isPending ? "Enviando…" : "Quero cadastrar meu estacionamento"}
+      </Button>
     </form>
   );
 }

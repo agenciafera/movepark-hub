@@ -92,6 +92,9 @@ export function ConsumerTopbar() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const isHome = location.pathname === "/";
+  // Rotas onde a busca de vaga não faz sentido: a landing B2B de parceiro fala com um
+  // dono de estacionamento, não com um viajante — o widget de busca só divide o foco.
+  const hideSearch = location.pathname === "/seja-parceiro";
 
   // Escopo da busca lido da URL pra semear a barra do header (na /search vem preenchido; em outras
   // páginas começa do padrão). vehicle pode ser car|motorcycle.
@@ -123,7 +126,7 @@ export function ConsumerTopbar() {
 
       <div className="flex flex-1 justify-center">
         {/* Busca real e persistente no header (sticky). Na home o hero já traz a barra grande. */}
-        {!isHome && (
+        {!isHome && !hideSearch && (
           <>
             {/* Desktop/tablet: a SearchBarPill funcional, semeada com a busca atual e preservando
                 os filtros já aplicados (estacionamento, comodidades, ordenação…). */}
