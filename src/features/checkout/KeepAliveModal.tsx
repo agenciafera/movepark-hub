@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Hourglass, ShieldCheck } from "lucide-react";
+import { Hourglass, ShieldCheck, Timer } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_BOOKING_HOLD_MAX_MINUTES } from "@/lib/bookingHold";
@@ -84,8 +84,8 @@ export function KeepAliveModal({ booking }: Props) {
               <DialogTitle>Tempo de reserva esgotado</DialogTitle>
             </DialogHeader>
             <p className="text-body-md text-ink">
-              Você já renovou o máximo ({maxMinutes} min). Finalize o pagamento agora —
-              se a vaga expirar, é só refazer a busca.
+              Você já usou o tempo extra disponível. Finalize o pagamento agora para
+              garantir sua vaga. Se ela expirar, você vai precisar refazer a busca.
             </p>
             <div className="flex justify-end pt-2">
               <Button onClick={dismiss}>Entendi</Button>
@@ -99,17 +99,22 @@ export function KeepAliveModal({ booking }: Props) {
               </span>
               <DialogTitle>Ainda está aí?</DialogTitle>
             </DialogHeader>
-            <p className="text-body-md text-ink">
-              Sua vaga está reservada por mais{" "}
-              <strong className="tabular-nums">{mmss}</strong>. Quer manter a reserva?
-            </p>
+            <p className="text-body-md text-ink">Sua vaga está reservada por mais:</p>
+            <div className="flex items-center justify-center gap-2 rounded-md bg-surface-soft py-3">
+              <Timer className="h-5 w-5 text-mp-indigo" aria-hidden="true" />
+              <span className="text-display-sm tabular-nums text-ink">{mmss}</span>
+            </div>
             <p className="text-caption text-muted">
-              Você pode renovar por até {maxMinutes} min no total. Depois disso, a vaga
-              é liberada.
+              Se o tempo acabar antes de você finalizar a reserva, a vaga é liberada para
+              outra pessoa.
             </p>
-            <div className="flex justify-end pt-2">
-              <Button onClick={handleRenew} disabled={renew.isPending}>
-                {renew.isPending ? "Mantendo…" : "Ainda estou aqui — manter minha vaga"}
+            <div className="pt-2">
+              <Button
+                onClick={handleRenew}
+                disabled={renew.isPending}
+                className="w-full"
+              >
+                {renew.isPending ? "Mantendo…" : "Ainda estou aqui"}
               </Button>
             </div>
           </>
