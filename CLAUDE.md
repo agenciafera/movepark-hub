@@ -137,6 +137,20 @@ Regras **fixas** do projeto, não sugestões. Se algo conflitar com elas, **siga
   `20260713000000_permission_scopes.sql` + `20260714000000_regate_operator_rpcs.sql`; ver
   [`docs/specs/permissions.md`](docs/specs/permissions.md).
 
+- **ADR-006 · Modelo de identidade (auth.users é a fonte única da credencial).** E-mail e telefone
+  **verificados** moram no **`auth.users`** (únicos, com `confirmed_at`) — são a credencial de login.
+  **`profiles` NÃO guarda `email` nem `phone`** (a coluna `profiles.phone` foi dropada); dados de
+  identidade **não** são escritos por formulário nem copiados pra tabela editável. O **contato
+  operacional** (o do pedido) mora no **snapshot da `booking`** (`customer_name/email/phone`).
+  **Leituras:** contato do **próprio** usuário → via **JWT** (`auth.jwt()`/`session.email`/`session.phone`);
+  contato de **terceiros** → snapshot da `booking` (operacional) **ou** RPC security-definer/view sobre
+  `auth.users` (contato vivo) — **nunca** cópia editável no `profiles`. Promover um identificador a
+  credencial exige **verificação** (OTP/magic-link); merge de contas só sobre identificador
+  **recém-verificado** (nunca por igualdade crua — evita sequestro). Se um dia precisar de contato ≠
+  credencial (telefone de recado), modele explícito como `profiles.contact_phone`, separado, sem se
+  passar por identidade. Épico **E0.10** (identidade unificada: anexar-verificado + merge determinístico
+  Google↔WhatsApp); ver [`docs/specs/customer/identity-unification.md`](docs/specs/customer/identity-unification.md).
+
 ## Comandos
 
 Sempre via **bun**:
