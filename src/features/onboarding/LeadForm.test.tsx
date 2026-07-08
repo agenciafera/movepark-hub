@@ -32,6 +32,15 @@ describe("LeadForm — validação inline", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("coleta o Cargo (contact_role) como campo opcional", () => {
+    renderWithProviders(<LeadForm onSuccess={vi.fn()} />);
+
+    const cargo = screen.getByLabelText("Cargo");
+    expect(cargo).toBeInTheDocument();
+    // Opcional: sem `required` e sem asterisco no label.
+    expect(cargo).not.toBeRequired();
+  });
+
   it("linka termos de uso e política de privacidade para as rotas reais", () => {
     renderWithProviders(<LeadForm onSuccess={vi.fn()} />);
 

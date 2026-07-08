@@ -33,6 +33,7 @@ export function LeadForm({ onSuccess }: Props) {
 
   const [companyName, setCompanyName] = React.useState("");
   const [contactName, setContactName] = React.useState("");
+  const [contactRole, setContactRole] = React.useState("");
   const [contactEmail, setContactEmail] = React.useState("");
   const [contactPhone, setContactPhone] = React.useState<string | undefined>(undefined);
   const [taxId, setTaxId] = React.useState("");
@@ -61,6 +62,7 @@ export function LeadForm({ onSuccess }: Props) {
       const result = await submit.mutateAsync({
         company_name: companyName,
         contact_name: contactName,
+        contact_role: contactRole || null,
         contact_email: contactEmail,
         contact_phone: contactPhone,
         tax_id: taxId.replace(/\D/g, "") || null,
@@ -86,7 +88,7 @@ export function LeadForm({ onSuccess }: Props) {
     <form className="flex flex-col gap-8" onSubmit={handleSubmit}>
       <fieldset className="flex flex-col gap-4">
         <legend className="mb-1 text-label font-medium text-muted">Sobre o estacionamento</legend>
-        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-1">
           <div className="flex flex-col gap-1.5 tablet:col-span-2">
             <Label htmlFor="company_name">Nome do estacionamento *</Label>
             <Input
@@ -124,7 +126,7 @@ export function LeadForm({ onSuccess }: Props) {
 
       <fieldset className="flex flex-col gap-4">
         <legend className="mb-1 text-label font-medium text-muted">Seu contato</legend>
-        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-1">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="contact_name">Seu nome *</Label>
             <Input
@@ -134,6 +136,16 @@ export function LeadForm({ onSuccess }: Props) {
               onChange={(e) => setContactName(e.target.value)}
             />
           </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="contact_role">Cargo</Label>
+            <Input
+              id="contact_role"
+              value={contactRole}
+              onChange={(e) => setContactRole(e.target.value)}
+              placeholder="Ex: Proprietário, Gerente"
+            />
+          </div>
+
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="contact_email">E-mail *</Label>
             <Input
