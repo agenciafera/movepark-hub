@@ -88,8 +88,8 @@ export function LeadForm({ onSuccess }: Props) {
     <form className="flex flex-col gap-8" onSubmit={handleSubmit}>
       <fieldset className="flex flex-col gap-4">
         <legend className="text-label font-medium text-muted">Sobre o estacionamento</legend>
-        <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-1">
-          <div className="flex flex-col gap-1.5 tablet:col-span-2">
+        <div className="grid grid-cols-1 gap-5">
+          <div className="flex flex-col gap-1.5">
             <Label htmlFor="company_name">Nome do estacionamento *</Label>
             <Input
               id="company_name"
@@ -100,16 +100,19 @@ export function LeadForm({ onSuccess }: Props) {
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="city">Cidade *</Label>
-            <Input id="city" required value={city} onChange={(e) => setCity(e.target.value)} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="lead-uf">Estado *</Label>
-            <StateSelect id="lead-uf" value={uf} onValueChange={setUf} required />
+          {/* Cidade + Estado é o único par: o UF é estreito e cabe em qualquer largura. */}
+          <div className="grid grid-cols-[1fr_6rem] gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="city">Cidade *</Label>
+              <Input id="city" required value={city} onChange={(e) => setCity(e.target.value)} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="lead-uf">Estado *</Label>
+              <StateSelect id="lead-uf" value={uf} onValueChange={setUf} required />
+            </div>
           </div>
 
-          <div className="flex flex-col gap-1.5 tablet:col-span-2">
+          <div className="flex flex-col gap-1.5">
             <Label htmlFor="estimated_spots">Quantidade estimada de vagas</Label>
             <Input
               id="estimated_spots"
@@ -126,7 +129,7 @@ export function LeadForm({ onSuccess }: Props) {
 
       <fieldset className="flex flex-col gap-4">
         <legend className="text-label font-medium text-muted">Seu contato</legend>
-        <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-1">
+        <div className="grid grid-cols-1 gap-5">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="contact_name">Seu nome *</Label>
             <Input
@@ -183,7 +186,7 @@ export function LeadForm({ onSuccess }: Props) {
             />
           </div>
 
-          <div className="flex flex-col gap-1.5 tablet:col-span-2">
+          <div className="flex flex-col gap-1.5">
             <Label htmlFor="message">Mensagem</Label>
             <Textarea
               id="message"

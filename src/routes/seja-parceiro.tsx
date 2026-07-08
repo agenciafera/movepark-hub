@@ -64,7 +64,7 @@ export default function SejaParceiroPage() {
           </div>
 
           {/* Formulário / sucesso — coluna direita cheia no desktop */}
-          <div className="rounded-md border border-hairline bg-canvas p-6 shadow-tier tablet:p-8 desktop:col-start-2 desktop:row-start-1 desktop:row-span-2">
+          <div className="w-full justify-self-center rounded-md border border-hairline bg-canvas p-6 shadow-tier tablet:max-w-lg tablet:p-8 desktop:col-start-2 desktop:row-start-1 desktop:row-span-2 desktop:max-w-none">
             {result?.ok ? (
               <ThankYou alreadySubmitted={result.already_submitted} />
             ) : (
