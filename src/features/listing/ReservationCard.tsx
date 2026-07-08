@@ -13,7 +13,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { DateRangeField } from "@/features/search/DateRangeField";
+import { DateRangePicker } from "@/features/search/DateRangePicker";
 import { useAuth } from "@/auth/context";
 import { formatBRL, formatDuration } from "@/lib/format";
 import { originFromSrc } from "@/lib/bookingOrigin";
@@ -345,17 +345,17 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
 
         <div className="my-5 h-px bg-hairline" />
 
-        {/* Datas */}
-        <div className="rounded-md border border-hairline">
-          <div className="grid grid-cols-2 divide-x divide-hairline">
-            <DateRangeField mode="check-in" date={from} onChange={setFrom} />
-            <DateRangeField
-              mode="check-out"
-              date={to}
-              onChange={setTo}
-              minDate={from ?? undefined}
-            />
-          </div>
+        {/* Datas — mesmo seletor de intervalo (range) da busca */}
+        <div className="overflow-hidden rounded-md border border-hairline">
+          <DateRangePicker
+            from={from}
+            to={to}
+            triggerClassName="py-3.5"
+            onChange={(f, t) => {
+              setFrom(f);
+              setTo(t);
+            }}
+          />
         </div>
 
         {/* Passageiros */}

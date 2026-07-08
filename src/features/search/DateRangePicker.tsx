@@ -76,7 +76,8 @@ export function DateRangePicker({ from, to, onChange, triggerClassName }: Props)
         </div>
       </PopoverAnchor>
 
-      <PopoverContent align="start" className="w-auto p-0">
+      {/* Sempre abre pra baixo (não flipa pra cima): side=bottom + avoidCollisions=false. */}
+      <PopoverContent align="start" side="bottom" avoidCollisions={false} className="w-auto p-0">
         <Calendar
           mode="range"
           selected={range}
