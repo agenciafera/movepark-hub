@@ -19,6 +19,13 @@ import { formatBRL, formatDuration } from "@/lib/format";
 import { originFromSrc } from "@/lib/bookingOrigin";
 import { getStoredUtm } from "@/lib/utm";
 import {
+  parseCouponParam,
+  getStoredCoupon,
+  storeCoupon,
+  clearStoredCoupon,
+  normalizeCouponCode,
+} from "@/lib/coupon";
+import {
   useSimulatePrice,
   useAvailability,
   useDebounced,
@@ -110,7 +117,12 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
   const [selectedFare, setSelectedFare] = React.useState<FareTier>("flex");
 
   const validateCoupon = useValidateCoupon();
-  const [couponInput, setCouponInput] = React.useState<string>("");
+  // Cupom de campanha: da query string (?cupom=/?coupon=) ou guardado na sessão (sobrevive ao
+  // round-trip de login). O `couponCode` é o código pretendido; o effect re-valida (o desconto
+  // depende dos dias) e produz o `applied`. Sem gate de login (validação anônima server-side).
+  const initialCoupon = parseCouponParam(location.search) ?? getStoredCoupon() ?? "";
+  const [couponInput, setCouponInput] = React.useState<string>(initialCoupon);
+  const [couponCode, setCouponCode] = React.useState<string | null>(initialCoupon || null);
   const [applied, setApplied] = React.useState<CouponPreview | null>(null);
   const [couponMsg, setCouponMsg] = React.useState<string | null>(null);
 
@@ -161,10 +173,44 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
   const canReserve =
     !!from && !!to && days > 0 && sim.data?.price != null && !sim.isFetching && availUi.canReserve;
 
+  // Re-valida o cupom pretendido sempre que ele ou as datas mudarem (o desconto depende dos dias).
+  // Cobre: aplicar manual, auto-aplicar da URL/sessão, e recalcular ao trocar as datas.
   React.useEffect(() => {
-    setApplied(null);
-    setCouponMsg(null);
-  }, [from, to]);
+    if (!couponCode || !from || !to || days <= 0) {
+      setApplied(null);
+      setCouponMsg(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const preview = await validateCoupon.mutateAsync({
+          code: couponCode,
+          location_parking_type_id: listing.id,
+          check_in_at: from.toISOString(),
+          check_out_at: to.toISOString(),
+        });
+        if (cancelled) return;
+        if (preview.valid) {
+          setApplied(preview);
+          setCouponMsg(null);
+          storeCoupon(couponCode); // sobrevive ao round-trip de login
+        } else {
+          setApplied(null);
+          setCouponMsg(couponErrorMessage(preview.error_code));
+        }
+      } catch (err) {
+        if (cancelled) return;
+        setApplied(null);
+        setCouponMsg(err instanceof Error ? err.message : "Não foi possível validar o cupom");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // validateCoupon é uma mutation estável; re-validar só quando código/datas/unidade mudam.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [couponCode, from, to, listing.id]);
 
   // Se a Tarifa selecionada não existe nesta unidade, cai pra "popular" (flex) ou a primeira válida.
   React.useEffect(() => {
@@ -173,37 +219,20 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
     }
   }, [pricedFares, selectedFare]);
 
-  async function applyCoupon() {
-    const code = couponInput.trim();
-    if (!code || !from || !to) return;
-    if (!session) {
-      toast.error("Entre para aplicar um cupom.");
-      return;
-    }
+  // Aplicar = definir o código pretendido; o effect valida (server-side, sem exigir login).
+  function applyCoupon() {
+    const code = normalizeCouponCode(couponInput);
+    if (!code) return;
     setCouponMsg(null);
-    try {
-      const preview = await validateCoupon.mutateAsync({
-        code,
-        location_parking_type_id: listing.id,
-        check_in_at: from.toISOString(),
-        check_out_at: to.toISOString(),
-      });
-      if (preview.valid) {
-        setApplied(preview);
-      } else {
-        setApplied(null);
-        setCouponMsg(couponErrorMessage(preview.error_code));
-      }
-    } catch (err) {
-      setApplied(null);
-      setCouponMsg(err instanceof Error ? err.message : "Não foi possível validar o cupom");
-    }
+    setCouponCode(code);
   }
 
   function clearCoupon() {
     setApplied(null);
     setCouponInput("");
+    setCouponCode(null);
     setCouponMsg(null);
+    clearStoredCoupon();
   }
 
   async function handleReserve() {

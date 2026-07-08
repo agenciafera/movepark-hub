@@ -271,9 +271,16 @@ porque o aplicador de migration faz split ingênuo por `;`.
 
 - `create-booking`: **sem mudança** de contrato — já repassa `coupon_code`. Garantir que
   o erro de cupom da RPC volte com status/mensagem adequada (já trata `P0001`).
-- **Validação no checkout**: o front chama `validate_coupon` **direto via `supabase.rpc`**
-  (não precisa de Edge Function nova). Se for preciso rodar sem sessão (guest, v2), criar
-  endpoint `validate-coupon` com anon key.
+- **Validação no detalhe/checkout**: o front chama a validação **direto via `supabase.rpc`** (sem
+  Edge). **Logado** → `validate_coupon` (com `auth.uid()`, preview do `per_user_limit`). **Deslogado**
+  → `validate_coupon_public` (migration `20260731000000`), que passa `profile_id = NULL` ao
+  `coupon_evaluate` (pula o `per_user_limit`) e é concedida a `anon` (mesmo perfil read-only do
+  `simulate_price`). O `useValidateCoupon` escolhe a RPC pela sessão. O **enforcement real** do
+  limite por-usuário continua no `create_booking_atomic` (que tem o `profile_id`).
+- **Cupom por campanha (query string)**: `?cupom=`/`?coupon=` é lido e persistido na sessão
+  (`src/lib/coupon.ts`, capturado no `AppProviders` como o UTM) e **pré-aplicado** no `ReservationCard`
+  sem exigir login; sobrevive ao round-trip de `/login` (sessionStorage `mp_coupon`). Re-validado por
+  unidade ao mudar as datas. pgTAP: `coupon_public.test.sql`.
 - `mock-payment`: **sem mudança** — o incremento vem do trigger em `payment` (§5). Apenas
   garantir que ele escreve `payment.status='paid'` (já escreve).
 

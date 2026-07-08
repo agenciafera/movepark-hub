@@ -383,8 +383,9 @@ export function useAvailability(args: {
 }
 
 /**
- * Pré-valida um cupom (RPC validate_coupon) sem criar reserva.
- * Requer sessão (a RPC usa auth.uid()); retorna preview do desconto ou error_code.
+ * Pré-valida um cupom sem criar reserva. Deslogado usa `validate_coupon_public` (anônimo, sem
+ * preview de per_user_limit); logado usa `validate_coupon` (com o auth.uid()). O enforcement real
+ * do limite acontece no create_booking_atomic. Retorna preview do desconto ou error_code.
  */
 export function useValidateCoupon() {
   return useMutation({
@@ -394,7 +395,9 @@ export function useValidateCoupon() {
       check_in_at: string;
       check_out_at: string;
     }): Promise<CouponPreview> => {
-      const { data, error } = await supabase.rpc("validate_coupon", {
+      const { data: sess } = await supabase.auth.getSession();
+      const rpc = sess.session ? "validate_coupon" : "validate_coupon_public";
+      const { data, error } = await supabase.rpc(rpc, {
         p_code: args.code,
         p_location_parking_type_id: args.location_parking_type_id,
         p_check_in_at: args.check_in_at,

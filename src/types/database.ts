@@ -4008,6 +4008,15 @@ export type Database = {
         }
         Returns: Json
       }
+      validate_coupon_public: {
+        Args: {
+          p_check_in_at: string
+          p_check_out_at: string
+          p_code: string
+          p_location_parking_type_id: string
+        }
+        Returns: Json
+      }
       wl_company_config: {
         Args: { p_company_id: string }
         Returns: {

@@ -8,6 +8,7 @@ import { AuthProvider } from "@/auth/AuthProvider";
 import { hasSupabaseEnv } from "@/lib/supabase";
 import { ScrollToTop } from "@/components/shared/ScrollToTop";
 import { captureUtmFromSearch } from "@/lib/utm";
+import { captureCouponFromSearch } from "@/lib/coupon";
 
 function EnvMissing() {
   return (
@@ -40,8 +41,10 @@ export function AppProviders() {
   const location = useLocation();
 
   // Atribuição (E2.4.1): captura UTMs da URL (last-touch) pra anexar na reserva.
+  // Campanha de cupom: captura ?cupom=/?coupon= (persiste na sessão até o checkout).
   React.useEffect(() => {
     captureUtmFromSearch(location.search);
+    captureCouponFromSearch(location.search);
   }, [location.search]);
 
   if (!hasSupabaseEnv) {
