@@ -21,6 +21,11 @@ Duas camadas, independentes:
 > O enum reusa `operator` como "Operação" (sem migração de dados); `manager`/`finance` foram
 > adicionados (migration `20260712000000`). Presets **fixos**: não há construtor de regras na UI.
 
+> **Fora deste modelo — ações self-service do consumidor.** Operações do próprio usuário sobre a
+> própria conta (ex.: **exclusão da conta**, E0.9) **não** são company-scoped e **não** têm escopo
+> no catálogo. A autorização é `auth.uid() = alvo` (a RPC só toca a linha do próprio usuário). Ver
+> [account-deletion.md](./customer/account-deletion.md).
+
 ## Vocabulário de escopos
 
 O catálogo é a tabela **`api_scope`** (mesma da Public API). A coluna **`assignable_to_api_key`**

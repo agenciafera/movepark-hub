@@ -3116,6 +3116,7 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: undefined
       }
+      anonymize_own_account: { Args: never; Returns: undefined }
       api_assert_lpt_company: {
         Args: { p_company_id: string; p_lpt_id: string }
         Returns: undefined

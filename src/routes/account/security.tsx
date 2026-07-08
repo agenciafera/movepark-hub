@@ -3,6 +3,7 @@ import { ShieldCheck, LogOut, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useSignOutEverywhere } from "@/features/profile/api";
+import { DeleteAccountDialog } from "@/features/account/DeleteAccountDialog";
 
 export default function SecurityPage() {
   const signOutAll = useSignOutEverywhere();
@@ -93,6 +94,20 @@ export default function SecurityPage() {
             <LogOut className="h-4 w-4" />
             {signOutAll.isPending ? "Saindo…" : "Sair de todos"}
           </Button>
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-title-md text-error">Zona de perigo</h2>
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-md border border-error/40 bg-canvas p-4">
+          <div>
+            <div className="text-body-md text-ink">Excluir minha conta</div>
+            <div className="text-body-sm text-muted">
+              Apaga seus dados pessoais e te deixa anônimo. O histórico de reservas é mantido de
+              forma anônima por exigência fiscal. Ação permanente.
+            </div>
+          </div>
+          <DeleteAccountDialog />
         </div>
       </section>
     </div>

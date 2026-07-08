@@ -63,7 +63,8 @@
 
 ### Ações
 - Botão `[Salvar alterações]` (primary) — desabilitado se não houver dirty.
-- Botão `[Excluir minha conta]` (ghost / danger no rodapé) — abre modal de confirmação dupla (digite o e-mail + senha).
+- Botão `[Excluir minha conta]` (danger) — abre o modal de confirmação por digitação do **e-mail**
+  (auth é passwordless, não há senha). Fluxo em [account-deletion.md](./account-deletion.md).
 
 ### Verificação de e-mail
 Alterar e-mail dispara:
@@ -253,9 +254,11 @@ Para confirmar, digite seu e-mail:
 [Cancelar]                            [Excluir conta]
 ```
 
-Soft-delete em `profiles.deleted_at = now()`. Reservas históricas mantêm `profile_id` mas com `profile.full_name = '(Conta excluída)'` no display.
-
-LGPD art. 18 cumprido em **30 dias** com hard-delete agendado.
+**Anonimização imediata in-place** (não é hard-delete agendado): `profiles.deleted_at = now()` +
+scrub da PII (`full_name = '(Conta excluída)'`, demais campos nulos). As reservas mantêm o
+`profile_id` (venda preservada por exigência fiscal), apenas com a PII removida; o login é banido.
+Só para contas de consumidor. Regra canônica em **[account-deletion.md](./account-deletion.md)**
+(E0.9 · LGPD art. 18).
 
 ---
 
