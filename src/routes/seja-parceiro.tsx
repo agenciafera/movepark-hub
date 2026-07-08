@@ -52,14 +52,15 @@ export default function SejaParceiroPage() {
           benefícios (empilhados), à direita o formulário ocupando a coluna inteira.
         */}
         <div className="grid grid-cols-1 gap-8 desktop:grid-cols-2 desktop:grid-rows-[auto_1fr] desktop:gap-x-16 desktop:gap-y-8">
-          {/* Promessa */}
-          <div className="space-y-4 desktop:col-start-1 desktop:row-start-1">
-            <h1 className="text-balance text-display-2xl text-ink tablet:text-display-3xl">
-              Encha seu estacionamento com reservas online
-            </h1>
+          {/* Promessa — copy aprovada (com sobrancelha, exceção deliberada ao guia do DESIGN). */}
+          <div className="space-y-3 desktop:col-start-1 desktop:row-start-1">
+            <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-muted-steel">
+              Para estacionamentos
+            </span>
+            <h1 className="text-display-xl text-ink">Cadastre seu estacionamento na Movepark</h1>
             <p className="max-w-prose text-body-md text-muted">
-              A Movepark conecta seu estacionamento a milhares de viajantes procurando vaga perto do
-              aeroporto. Você cadastra, a gente coloca no ar — e o pagamento chega garantido.
+              Aumente a ocupação das suas vagas com reservas online. Preencha o cadastro e nossa
+              equipe entra em contato para colocar você no ar.
             </p>
           </div>
 
