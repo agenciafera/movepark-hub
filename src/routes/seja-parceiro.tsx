@@ -45,35 +45,26 @@ export default function SejaParceiroPage() {
       </Helmet>
 
       <section className="mx-auto w-full max-w-5xl px-4 py-10 tablet:py-16">
-        <div className="grid grid-cols-1 gap-10 desktop:grid-cols-2 desktop:gap-16">
-          {/* Coluna de proposta de valor */}
-          <div className="flex flex-col gap-6">
-            <div className="space-y-4">
-              <h1 className="text-balance text-display-3xl text-ink">
-                Encha seu estacionamento com reservas online
-              </h1>
-              <p className="max-w-prose text-body-md text-muted">
-                A Movepark conecta seu estacionamento a milhares de viajantes procurando vaga perto
-                do aeroporto. Você cadastra, a gente coloca no ar — e o pagamento chega garantido.
-              </p>
-            </div>
-            <ul className="flex flex-col gap-4">
-              {BENEFITS.map((b) => (
-                <li key={b.title} className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-mp-pale text-mp-indigo">
-                    <b.icon className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <div className="text-title-sm text-ink">{b.title}</div>
-                    <div className="text-body-sm text-muted">{b.desc}</div>
-                  </div>
-                </li>
-              ))}
-            </ul>
+        {/*
+          Ordem no DOM = ordem no mobile: promessa → formulário → benefícios. No celular o parceiro
+          alcança a ação logo após a promessa, sem rolar por toda a proposta de valor. No desktop
+          (≥1128px) o posicionamento explícito remonta as duas colunas: à esquerda promessa +
+          benefícios (empilhados), à direita o formulário ocupando a coluna inteira.
+        */}
+        <div className="grid grid-cols-1 gap-8 desktop:grid-cols-2 desktop:grid-rows-[auto_1fr] desktop:gap-x-16 desktop:gap-y-8">
+          {/* Promessa */}
+          <div className="space-y-4 desktop:col-start-1 desktop:row-start-1">
+            <h1 className="text-balance text-display-2xl text-ink tablet:text-display-3xl">
+              Encha seu estacionamento com reservas online
+            </h1>
+            <p className="max-w-prose text-body-md text-muted">
+              A Movepark conecta seu estacionamento a milhares de viajantes procurando vaga perto do
+              aeroporto. Você cadastra, a gente coloca no ar — e o pagamento chega garantido.
+            </p>
           </div>
 
-          {/* Coluna do formulário / sucesso */}
-          <div className="rounded-md border border-hairline bg-canvas p-6 shadow-tier tablet:p-8">
+          {/* Formulário / sucesso — coluna direita cheia no desktop */}
+          <div className="rounded-md border border-hairline bg-canvas p-6 shadow-tier tablet:p-8 desktop:col-start-2 desktop:row-start-1 desktop:row-span-2">
             {result?.ok ? (
               <ThankYou alreadySubmitted={result.already_submitted} />
             ) : (
@@ -89,6 +80,21 @@ export default function SejaParceiroPage() {
               </>
             )}
           </div>
+
+          {/* Benefícios — abaixo do formulário no mobile, sob a promessa no desktop */}
+          <ul className="flex flex-col gap-4 desktop:col-start-1 desktop:row-start-2">
+            {BENEFITS.map((b) => (
+              <li key={b.title} className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-mp-pale text-mp-indigo">
+                  <b.icon className="h-5 w-5" />
+                </span>
+                <div>
+                  <div className="text-title-sm text-ink">{b.title}</div>
+                  <div className="text-body-sm text-muted">{b.desc}</div>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
 
         {/* Como funciona — a prova de confiança que faltava antes do CTA: o passo a passo
