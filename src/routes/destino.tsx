@@ -7,7 +7,9 @@ import { useDestinationBySlug, usePublishedDestinations } from "@/features/desti
 import { useSearchResults } from "@/features/search/useSearchResults";
 import { useFaqCombined } from "@/features/faqs/api";
 import { FaqList } from "@/features/faqs/FaqList";
-import { ResultCard } from "@/features/search/ResultCard";
+import { GroupedResultCard } from "@/features/search/GroupedResultCard";
+import { groupResultsByLocation } from "@/features/search/useSearchResults";
+import { computeGroupedResultBadges } from "@/features/search/searchBadges";
 import { topRated } from "@/features/reviews/reviews.logic";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -17,6 +19,24 @@ import { formatBRL } from "@/lib/format";
 import { lowestPerDay, pickRelatedDestinations } from "./destino.logic";
 
 const SITE_URL = "https://hub.movepark.co";
+
+/** Skeleton espelhando o GroupedResultCard (mesma forma/altura) — evita salto de layout. */
+function ParkingCardSkeleton() {
+  return (
+    <div className="flex flex-col overflow-hidden rounded-2xl border border-hairline bg-canvas">
+      <Skeleton className="aspect-[4/3] w-full rounded-none" />
+      <div className="flex flex-col gap-3 p-5">
+        <Skeleton className="h-5 w-3/4" />
+        <Skeleton className="h-4 w-1/2" />
+        <div className="flex gap-1.5">
+          <Skeleton className="h-6 w-20 rounded-full" />
+          <Skeleton className="h-6 w-16 rounded-full" />
+        </div>
+        <Skeleton className="mt-1 h-7 w-24" />
+      </div>
+    </div>
+  );
+}
 
 // Janela padrão (D+7 por 2 dias) só para listar preços "a partir de".
 function defaultWindow() {
@@ -97,6 +117,15 @@ export default function DestinoPage() {
   const fromPrice = lowestPerDay(results);
   const related = pickRelatedDestinations(allDestinations.data ?? [], destination.id, 6);
   const topResults = topRated(topSearch.data?.results ?? []);
+  // Agrupa por localização e usa o MESMO card da busca (GroupedResultCard) — um único
+  // modelo de card entre home, busca e destino.
+  const grouped = groupResultsByLocation(results);
+  const topGrouped = groupResultsByLocation(topResults);
+  const searchWindowParams = new URLSearchParams({
+    dest: destination.code,
+    from: win.from,
+    to: win.to,
+  });
   const faqItems = (faqs.data ?? []).map((f) => ({ question: f.question, answer: f.answer }));
   const lat = Number(destination.latitude);
   const lng = Number(destination.longitude);
@@ -175,13 +204,13 @@ export default function DestinoPage() {
             Estacionamento em {destination.short_name ?? destination.name}
           </h1>
           {destination.intro ? (
-            <div className="max-w-3xl space-y-3 text-body-md text-muted">
+            <div className="max-w-4xl space-y-3 text-body-md text-muted">
               {destination.intro.split(/\n{2,}/).map((p, i) => (
                 <p key={i}>{p}</p>
               ))}
             </div>
           ) : (
-            <p className="max-w-3xl text-body-md text-muted">{description}</p>
+            <p className="max-w-4xl text-body-md text-muted">{description}</p>
           )}
           {fromPrice != null && (
             <p className="text-body-md text-ink">
@@ -207,19 +236,19 @@ export default function DestinoPage() {
         )}
 
         {/* Mais bem avaliados (curadoria) */}
-        {topResults.length > 0 && (
+        {topGrouped.length > 0 && (
           <section className="mt-10">
             <h2 className="mb-4 text-display-md text-ink">
               Mais bem avaliados em {destination.short_name ?? destination.name}
             </h2>
-            <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
-              {topResults.map((item) => (
-                <ResultCard
-                  key={`top-${item.id}`}
-                  item={item}
+            <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-3">
+              {topGrouped.map((g) => (
+                <GroupedResultCard
+                  key={`top-${g.location_id}`}
+                  item={g}
                   isSaved={false}
                   onToggleSave={() => {}}
-                  searchParams={new URLSearchParams({ dest: destination.code, from: win.from, to: win.to })}
+                  searchParams={searchWindowParams}
                   source="destino"
                 />
               ))}
@@ -231,23 +260,24 @@ export default function DestinoPage() {
         <section className="mt-10">
           <h2 className="mb-4 text-display-md text-ink">Estacionamentos em {destination.short_name ?? destination.name}</h2>
           {search.isLoading ? (
-            <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-44 w-full" />
+            <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <ParkingCardSkeleton key={i} />
               ))}
             </div>
-          ) : results.length === 0 ? (
+          ) : grouped.length === 0 ? (
             <EmptyState title="Nenhum estacionamento disponível para esse destino ainda." />
           ) : (
-            <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
-              {results.map((item) => (
-                <ResultCard
-                  key={item.id}
-                  item={item}
+            <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-3">
+              {grouped.map((g) => (
+                <GroupedResultCard
+                  key={g.location_id}
+                  item={g}
                   isSaved={false}
                   onToggleSave={() => {}}
-                  searchParams={new URLSearchParams({ dest: destination.code, from: win.from, to: win.to })}
+                  searchParams={searchWindowParams}
                   source="destino"
+                  badges={computeGroupedResultBadges(g, grouped)}
                 />
               ))}
             </div>
