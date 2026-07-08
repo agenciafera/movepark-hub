@@ -26,6 +26,23 @@ export function Step4Pricing({ data, companyId, onNext, onBack }: Props) {
     return init;
   });
 
+  // Os itens chegam de forma assíncrona (o fetch do onboarding é refeito ao voltar da etapa 3),
+  // então o state inicial pode nascer vazio. Semeia qualquer item que ainda não tenha estado,
+  // sem sobrescrever edições já feitas.
+  React.useEffect(() => {
+    setState((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const item of data.items) {
+        if (!next[item.location_parking_type_id]) {
+          next[item.location_parking_type_id] = initState(item);
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [data.items]);
+
   function patch(id: string, p: Partial<PriceState>) {
     setState((prev) => ({ ...prev, [id]: { ...prev[id], ...p } }));
   }
@@ -52,7 +69,8 @@ export function Step4Pricing({ data, companyId, onNext, onBack }: Props) {
     if (!data.items.length) return toast.error("Cadastre os tipos de vaga primeiro.");
     try {
       for (const item of data.items) {
-        const built = buildPricingTiers(state[item.location_parking_type_id]);
+        const ps = state[item.location_parking_type_id] ?? initState(item);
+        const built = buildPricingTiers(ps);
         if (!built.ok) {
           throw new Error(
             built.reason === "daily"
