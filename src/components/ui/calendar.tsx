@@ -44,9 +44,15 @@ function Calendar({
         day_today: "ring-1 ring-mp-navy",
         day_outside: "text-muted-soft",
         day_disabled: "text-muted-soft opacity-50",
-        day_range_middle: "rounded-none bg-surface-soft text-ink",
-        day_range_start: "rounded-l-full bg-ink !text-white",
-        day_range_end: "rounded-r-full bg-ink !text-white",
+        // Range (mode="range"): pontas em violeta (cor de seleção da marca), miolo em violeta
+        // suave com texto ink. `!` vence o `day_selected` (bg-ink/text-white), que também incide
+        // nos dias do intervalo — sem isso o texto ficava branco em fundo claro (dias "sumiam").
+        day_range_start:
+          "rounded-l-full !rounded-r-none !bg-mp-primary !text-white hover:!bg-mp-primary-active",
+        day_range_end:
+          "rounded-r-full !rounded-l-none !bg-mp-primary !text-white hover:!bg-mp-primary-active",
+        day_range_middle:
+          "!rounded-none !bg-mp-pale !text-ink hover:!bg-mp-pale",
         day_hidden: "invisible",
         ...classNames,
       }}

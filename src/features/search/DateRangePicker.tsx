@@ -82,7 +82,7 @@ export function DateRangePicker({ from, to, onChange, triggerClassName }: Props)
         />
         <div className="flex items-end gap-3 border-t border-hairline p-4">
           <div className="flex-1">
-            <Label className="mb-2 block">Horário check-in</Label>
+            <Label className="mb-2 block">Check-in</Label>
             <Select
               value={fmtTime(from, "08:00")}
               onValueChange={(t) => from && onChange(setTime(from, t), to)}
@@ -101,7 +101,7 @@ export function DateRangePicker({ from, to, onChange, triggerClassName }: Props)
             </Select>
           </div>
           <div className="flex-1">
-            <Label className="mb-2 block">Horário check-out</Label>
+            <Label className="mb-2 block">Check-out</Label>
             <Select
               value={fmtTime(to, "18:00")}
               onValueChange={(t) => to && onChange(from, setTime(to, t))}
