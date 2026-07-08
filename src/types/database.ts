@@ -2613,7 +2613,6 @@ export type Database = {
           deleted_at: string | null
           full_name: string | null
           id: string
-          phone: string | null
           preferences: Json
           role: Database["public"]["Enums"]["user_role"]
           tax_id: string | null
@@ -2626,7 +2625,6 @@ export type Database = {
           deleted_at?: string | null
           full_name?: string | null
           id: string
-          phone?: string | null
           preferences?: Json
           role?: Database["public"]["Enums"]["user_role"]
           tax_id?: string | null
@@ -2639,7 +2637,6 @@ export type Database = {
           deleted_at?: string | null
           full_name?: string | null
           id?: string
-          phone?: string | null
           preferences?: Json
           role?: Database["public"]["Enums"]["user_role"]
           tax_id?: string | null
