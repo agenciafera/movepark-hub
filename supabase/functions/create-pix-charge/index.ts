@@ -67,7 +67,7 @@ Deno.serve(async (req: Request) => {
   // 1. Reserva (pertence ao usuário, pendente, não expirada)
   const { data: booking } = await admin
     .from("booking")
-    .select("id, code, status, total_amount, fare_price_cents, expires_at, profile_id, location_id")
+    .select("id, code, status, total_amount, fare_price_cents, expires_at, profile_id, location_id, customer_email")
     .eq("code", input.booking_code)
     .maybeSingle();
   if (!booking) return jsonResponse({ error: "Reserva não encontrada" }, 404);
@@ -151,7 +151,8 @@ Deno.serve(async (req: Request) => {
     .eq("id", booking.profile_id)
     .maybeSingle();
   const { data: authUser } = await admin.auth.admin.getUserById(booking.profile_id);
-  const email = authUser?.user?.email ?? null;
+  // Login por telefone não tem e-mail na conta → cai no e-mail de contato informado no checkout.
+  const email = authUser?.user?.email ?? booking.customer_email ?? null;
   if (!email) return jsonResponse({ error: "Cliente sem e-mail para a cobrança." }, 422);
 
   // PIX no Pagar.me exige o documento do cliente — sem ele o gateway recusa a cobrança ("failed").

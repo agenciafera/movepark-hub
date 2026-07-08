@@ -60,7 +60,7 @@ Deno.serve(async (req: Request) => {
   // 1. Reserva (dona, ainda upgradável: antes da entrada, não terminal).
   const { data: booking } = await admin
     .from("booking")
-    .select("id, code, status, check_in_at, fare_tier, fare_price_cents, profile_id")
+    .select("id, code, status, check_in_at, fare_tier, fare_price_cents, profile_id, customer_email")
     .eq("code", input.bookingCode)
     .is("deleted_at", null)
     .maybeSingle();
@@ -107,7 +107,8 @@ Deno.serve(async (req: Request) => {
     .eq("id", booking.profile_id)
     .maybeSingle();
   const { data: authUser } = await admin.auth.admin.getUserById(booking.profile_id);
-  const email = authUser?.user?.email ?? null;
+  // Login por telefone não tem e-mail na conta → cai no e-mail de contato informado no checkout.
+  const email = authUser?.user?.email ?? booking.customer_email ?? null;
   if (!email) return jsonResponse({ error: "Cliente sem e-mail para a cobrança." }, 422);
   if (!isValidChargeDocument(profile?.tax_id)) {
     return jsonResponse({ error: "Cliente sem CPF/CNPJ válido para o PIX." }, 422);
