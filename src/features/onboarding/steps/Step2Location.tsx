@@ -17,8 +17,9 @@ export function Step2Location({ data, companyId, onNext, onBack }: Props) {
   const [address, setAddress] = React.useState(loc?.address ?? "");
   const [lat, setLat] = React.useState(loc?.latitude != null ? String(loc.latitude) : "");
   const [lng, setLng] = React.useState(loc?.longitude != null ? String(loc.longitude) : "");
-  const [phone, setPhone] = React.useState(loc?.phone ?? "");
-  const [email, setEmail] = React.useState(loc?.email ?? "");
+  // Unidade nova herda o contato do lead (form Seja parceiro) como default editável.
+  const [phone, setPhone] = React.useState(loc?.phone ?? data.lead?.contactPhone ?? "");
+  const [email, setEmail] = React.useState(loc?.email ?? data.lead?.contactEmail ?? "");
   const [policy, setPolicy] = React.useState(loc?.reservation_policy ?? "");
   const [photos, setPhotos] = React.useState<string[]>(loc?.photos ?? []);
   const [uploading, setUploading] = React.useState(false);

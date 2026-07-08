@@ -53,6 +53,8 @@ export type OnboardingData = {
     onboarding_status: string;
   };
   currentStep: number;
+  /** Contato informado no lead (form Seja parceiro) — usado para pré-preencher a unidade. */
+  lead: { contactEmail: string | null; contactPhone: string | null } | null;
   location: {
     id: string;
     name: string;
@@ -79,7 +81,7 @@ export function useOnboardingData(companyId: string | undefined) {
 
       const [{ data: company }, { data: onboarding }, { data: catalog }] = await Promise.all([
         supabase.from("company").select("id, name, legal_name, tax_id, logo_url, onboarding_status").eq("id", cid).single(),
-        supabase.from("company_onboarding").select("current_step").eq("company_id", cid).maybeSingle(),
+        supabase.from("company_onboarding").select("current_step, contact_email, contact_phone").eq("company_id", cid).maybeSingle(),
         supabase.from("parking_type").select("id, code, name").order("name"),
       ]);
 
@@ -149,6 +151,9 @@ export function useOnboardingData(companyId: string | undefined) {
         // deno-lint-ignore no-explicit-any
         company: company as any,
         currentStep: onboarding?.current_step ?? 0,
+        lead: onboarding
+          ? { contactEmail: onboarding.contact_email ?? null, contactPhone: onboarding.contact_phone ?? null }
+          : null,
         location: loc
           ? { ...loc, photos: Array.isArray(loc.photos) ? (loc.photos as string[]) : [] }
           : null,
