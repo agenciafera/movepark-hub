@@ -2,9 +2,9 @@
   "mcpServers": {
     "gemini-image": {
       "command": "npx",
-      "args": ["@houtini/gemini-mcp"],
+      "args": ["-y", "@houtini/gemini-mcp"],
       "env": {
-        "GEMINI_API_KEY": "AQ.Ab8RN6JWyuYQItK37NHWdiXppmYC6yaaT7rp68oUfGCijIgqWQ"
+        "GEMINI_API_KEY": "${GEMINI_API_KEY}"
       }
     }
   }
