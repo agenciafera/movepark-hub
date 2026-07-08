@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DestinationCombobox } from "./DestinationCombobox";
-import { DateRangeField } from "./DateRangeField";
+import { DateRangePicker } from "./DateRangePicker";
 import { buildSearchParams, type Vehicle } from "./SearchBarPill.logic";
 import { cn } from "@/lib/utils";
 
@@ -98,25 +98,15 @@ export function SearchBarPill({
           }}
         />
       </div>
-      <div className="min-w-0 flex-1 border-b border-hairline tablet:border-b-0 tablet:border-r">
-        <DateRangeField
-          mode="check-in"
-          date={from}
+      <div className="min-w-0 flex-[2] border-b border-hairline tablet:border-b-0 tablet:border-r">
+        <DateRangePicker
+          from={from}
+          to={to}
           triggerClassName={fieldTrigger}
-          onChange={(d) => {
-            setFrom(d);
-            // Garante check-out > check-in
-            if (to && to <= d) setTo(addDays(d, 1));
+          onChange={(f, t) => {
+            setFrom(f);
+            setTo(t);
           }}
-        />
-      </div>
-      <div className="min-w-0 flex-1 border-b border-hairline tablet:border-b-0 tablet:border-r">
-        <DateRangeField
-          mode="check-out"
-          date={to}
-          onChange={setTo}
-          minDate={from ?? undefined}
-          triggerClassName={fieldTrigger}
         />
       </div>
       <div className="min-w-0 border-b border-hairline tablet:w-[140px] tablet:border-b-0 tablet:border-r">
