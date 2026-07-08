@@ -3,8 +3,9 @@ import { toast } from "sonner";
 import { Hourglass, ShieldCheck } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useRenewBookingHold } from "./api";
-import { BOOKING_HOLD_MAX_MINUTES, keepAliveState } from "./keepAlive.logic";
+import { DEFAULT_BOOKING_HOLD_MAX_MINUTES } from "@/lib/bookingHold";
+import { useBookingHoldMax, useRenewBookingHold } from "./api";
+import { keepAliveState } from "./keepAlive.logic";
 
 type Props = {
   booking: {
@@ -22,6 +23,8 @@ type Props = {
  */
 export function KeepAliveModal({ booking }: Props) {
   const renew = useRenewBookingHold();
+  const { data: maxData } = useBookingHoldMax();
+  const maxMinutes = maxData ?? DEFAULT_BOOKING_HOLD_MAX_MINUTES;
   const [nowMs, setNowMs] = React.useState(() => Date.now());
   // Suprime o modal (por dismiss ou após renovar) até `expires_at` mudar.
   const [ackExpires, setAckExpires] = React.useState<string | null>(null);
@@ -37,6 +40,7 @@ export function KeepAliveModal({ booking }: Props) {
     expiresAt: booking.expires_at,
     createdAt: booking.created_at,
     nowMs,
+    maxMinutes,
   });
   const atCap = serverCap || state === "cap";
   const open = (state === "warning" || state === "cap") && booking.expires_at !== ackExpires;
@@ -80,7 +84,7 @@ export function KeepAliveModal({ booking }: Props) {
               <DialogTitle>Tempo de reserva esgotado</DialogTitle>
             </DialogHeader>
             <p className="text-body-md text-ink">
-              Você já renovou o máximo ({BOOKING_HOLD_MAX_MINUTES} min). Finalize o pagamento agora —
+              Você já renovou o máximo ({maxMinutes} min). Finalize o pagamento agora —
               se a vaga expirar, é só refazer a busca.
             </p>
             <div className="flex justify-end pt-2">
@@ -100,7 +104,7 @@ export function KeepAliveModal({ booking }: Props) {
               <strong className="tabular-nums">{mmss}</strong>. Quer manter a reserva?
             </p>
             <p className="text-caption text-muted">
-              Você pode renovar por até {BOOKING_HOLD_MAX_MINUTES} min no total. Depois disso, a vaga
+              Você pode renovar por até {maxMinutes} min no total. Depois disso, a vaga
               é liberada.
             </p>
             <div className="flex justify-end pt-2">

@@ -28,6 +28,14 @@ describe("keepAliveState", () => {
     expect(keepAliveState({ status: "pending", expiresAt, createdAt, nowMs: T0 })).toBe("cap");
   });
 
+  it("respeita um teto customizado (maxMinutes)", () => {
+    const expiresAt = new Date(T0 + min(3)).toISOString();
+    const createdAt = new Date(T0 - min(50)).toISOString(); // criada há 50 min
+    // teto 45 → já passou → cap; teto 90 → ainda dentro → warning
+    expect(keepAliveState({ status: "pending", expiresAt, createdAt, nowMs: T0, maxMinutes: 45 })).toBe("cap");
+    expect(keepAliveState({ status: "pending", expiresAt, createdAt, nowMs: T0, maxMinutes: 90 })).toBe("warning");
+  });
+
   it("expired quando já passou de expires_at", () => {
     const expiresAt = new Date(T0 - min(1)).toISOString();
     expect(keepAliveState({ status: "pending", expiresAt, createdAt: new Date(T0 - min(30)).toISOString(), nowMs: T0 })).toBe("expired");

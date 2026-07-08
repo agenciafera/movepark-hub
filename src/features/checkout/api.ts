@@ -255,6 +255,19 @@ export function useRenewBookingHold() {
   });
 }
 
+/** Teto de renovação do hold (min), config em `booking_hold_max_minutes` — lido via RPC pública. */
+export function useBookingHoldMax() {
+  return useQuery({
+    queryKey: ["booking-hold-max"],
+    queryFn: async (): Promise<number> => {
+      const { data, error } = await supabase.rpc("get_booking_hold_max_minutes");
+      if (error) throw error;
+      return Number(data) || 90;
+    },
+    staleTime: 5 * 60_000,
+  });
+}
+
 
 type MockPaymentResponse = {
   payment_id: string;

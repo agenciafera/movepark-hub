@@ -17,8 +17,10 @@ import {
 import {
   clampGraceMinutes,
   clampHoldMinutes,
+  clampMaxMinutes,
   parseGraceMinutes,
   parseHoldMinutes,
+  parseMaxMinutes,
 } from "@/lib/bookingHold";
 
 function PartnerEmailSettings() {
@@ -266,12 +268,14 @@ export function BookingHoldSettings() {
   const update = useUpdateAppSettings();
   const [hold, setHold] = React.useState(String(parseHoldMinutes(undefined)));
   const [grace, setGrace] = React.useState(String(parseGraceMinutes(undefined)));
+  const [maxHold, setMaxHold] = React.useState(String(parseMaxMinutes(undefined)));
   const [ready, setReady] = React.useState(false);
 
   React.useEffect(() => {
     if (data && !ready) {
       setHold(String(parseHoldMinutes(data.booking_hold_minutes)));
       setGrace(String(parseGraceMinutes(data.booking_hold_grace_minutes)));
+      setMaxHold(String(parseMaxMinutes(data.booking_hold_max_minutes)));
       setReady(true);
     }
   }, [data, ready]);
@@ -280,12 +284,15 @@ export function BookingHoldSettings() {
     // clampa antes de salvar (mesma faixa do servidor)
     const holdMinutes = clampHoldMinutes(hold);
     const graceMinutes = clampGraceMinutes(grace);
+    const maxMinutes = clampMaxMinutes(maxHold);
     setHold(String(holdMinutes));
     setGrace(String(graceMinutes));
+    setMaxHold(String(maxMinutes));
     try {
       await update.mutateAsync({
         booking_hold_minutes: String(holdMinutes),
         booking_hold_grace_minutes: String(graceMinutes),
+        booking_hold_max_minutes: String(maxMinutes),
       });
       toast.success("Janela de expiração salva");
     } catch (err) {
@@ -329,6 +336,22 @@ export function BookingHoldSettings() {
             />
             <span className="text-caption text-muted">
               Margem extra antes do cron cancelar uma reserva não paga, cobrindo atraso de webhook.
+            </span>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="max-minutes">Renovação máxima (min)</Label>
+            <Input
+              id="max-minutes"
+              type="number"
+              min={10}
+              max={1440}
+              value={maxHold}
+              onChange={(e) => setMaxHold(e.target.value)}
+              disabled={isLoading}
+            />
+            <span className="text-caption text-muted">
+              Teto total do hold desde a criação. Depois disso, o modal "Ainda está aí?" para de
+              renovar e a vaga é liberada. Precisa ser maior que o hold.
             </span>
           </div>
         </div>

@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { fetchListing } from "@/features/listing/api";
 
 import { AppProviders } from "@/components/shared/AppProviders";
+import { RootErrorBoundary } from "@/components/shared/RootErrorBoundary";
 import { ConsumerAppShell } from "@/components/shared/ConsumerAppShell";
 import { AccountAppShell } from "@/components/shared/AccountAppShell";
 import { CheckoutShell } from "@/components/shared/CheckoutShell";
@@ -158,6 +159,9 @@ async function destinosLoader() {
 export const routes: RouteRecord[] = [
   {
     element: <AppProviders />,
+    // Trata "build velho" (deploy novo invalidou assets com hash) recarregando 1x,
+    // em vez de estourar "Unexpected Application Error!" no loader SSG. Ver stale-build.ts.
+    errorElement: <RootErrorBoundary />,
     children: [
       // Rotas públicas com ConsumerAppShell
       {
