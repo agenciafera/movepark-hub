@@ -54,7 +54,7 @@ export default function SejaParceiroPage() {
         <div className="grid grid-cols-1 gap-8 desktop:grid-cols-2 desktop:grid-rows-[auto_1fr] desktop:gap-x-16 desktop:gap-y-8">
           {/* Promessa — copy aprovada (com sobrancelha, exceção deliberada ao guia do DESIGN). */}
           <div className="space-y-3 desktop:col-start-1 desktop:row-start-1">
-            <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-muted-steel">
+            <span className="text-badge uppercase tracking-[0.4px] text-muted-steel">
               Para estacionamentos
             </span>
             <h1 className="text-display-xl text-ink">Cadastre seu estacionamento na Movepark</h1>
