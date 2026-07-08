@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { differenceInCalendarDays, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const brl = new Intl.NumberFormat("pt-BR", {
@@ -24,6 +24,35 @@ export function formatDateTime(value: string | Date | null | undefined): string 
 export function formatTime(value: string | Date | null | undefined): string {
   if (!value) return "—";
   return format(new Date(value), "HH:mm", { locale: ptBR });
+}
+
+/**
+ * Data + hora compacta, sem ano: `8 jul · 22:00`. Para listas onde o ano é ruído
+ * (o viajante quer dia e horário, não a data por extenso). Remove o ponto que o
+ * locale ptBR adiciona no mês abreviado (`jul.` → `jul`).
+ */
+export function formatDayTime(value: string | Date | null | undefined): string {
+  if (!value) return "—";
+  return format(new Date(value), "d MMM · HH:mm", { locale: ptBR }).replace(/\./g, "");
+}
+
+/**
+ * Pista de proximidade humana a partir de uma data: `hoje`, `amanhã`, `ontem`,
+ * `em 3 dias`, `há 5 dias`. Fora de uma janela de ~30 dias retorna `null` (evita
+ * "em 340 dias"). `now` é injetável para testes.
+ */
+export function formatRelativeDay(
+  value: string | Date | null | undefined,
+  now: Date = new Date(),
+): string | null {
+  if (!value) return null;
+  const diff = differenceInCalendarDays(new Date(value), now);
+  if (diff === 0) return "hoje";
+  if (diff === 1) return "amanhã";
+  if (diff === -1) return "ontem";
+  if (diff > 1 && diff <= 30) return `em ${diff} dias`;
+  if (diff < -1 && diff >= -30) return `há ${-diff} dias`;
+  return null;
 }
 
 export function daysBetween(start: string | Date, end: string | Date): number {

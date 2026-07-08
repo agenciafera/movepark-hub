@@ -1,5 +1,6 @@
 import { Link, useSearchParams } from "react-router-dom";
-import { Search } from "lucide-react";
+import { CalendarClock, CalendarX2, Car, History } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -16,22 +17,29 @@ const tabs: { id: MyBookingStatus; label: string }[] = [
   { id: "cancelled", label: "Canceladas" },
 ];
 
-const emptyCopy: Record<MyBookingStatus, { title: string; description: string }> = {
+const emptyCopy: Record<
+  MyBookingStatus,
+  { title: string; description: string; icon: LucideIcon }
+> = {
   upcoming: {
     title: "Você ainda não tem reservas futuras.",
     description: "Comece buscando uma vaga.",
+    icon: CalendarClock,
   },
   active: {
     title: "Nada em uso agora.",
     description: "Reservas em andamento aparecem aqui.",
+    icon: Car,
   },
   history: {
     title: "Seu histórico está vazio.",
     description: "Reservas concluídas aparecem aqui.",
+    icon: History,
   },
   cancelled: {
     title: "Sem reservas canceladas.",
     description: "Quando uma reserva for cancelada, vai aparecer aqui.",
+    icon: CalendarX2,
   },
 };
 
@@ -79,10 +87,23 @@ function BookingsList({
   const { data, isLoading, error } = useMyBookings(profileId, bucket);
 
   if (isLoading) {
+    // Skeleton espelha o layout do CustomerBookingCard (mesma altura/estrutura)
+    // pra não haver salto de layout quando os dados chegam.
     return (
       <div className="space-y-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-24 w-full rounded-md" />
+          <div
+            key={i}
+            className="flex flex-col gap-4 rounded-md border border-hairline bg-canvas p-5 tablet:flex-row tablet:items-center"
+          >
+            <Skeleton className="h-20 w-20 shrink-0 rounded-md" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-3 w-1/2" />
+              <Skeleton className="h-3 w-3/4" />
+            </div>
+            <Skeleton className="h-7 w-24 shrink-0" />
+          </div>
         ))}
       </div>
     );
@@ -98,9 +119,10 @@ function BookingsList({
 
   if (!data || data.length === 0) {
     const copy = emptyCopy[bucket];
+    const Icon = copy.icon;
     return (
       <EmptyState
-        icon={<Search className="h-10 w-10" />}
+        icon={<Icon className="h-10 w-10" aria-hidden="true" />}
         title={copy.title}
         description={copy.description}
         action={

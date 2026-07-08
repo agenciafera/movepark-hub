@@ -4,9 +4,11 @@ import {
   formatBRL,
   formatDate,
   formatDateTime,
+  formatDayTime,
   formatDistance,
   formatDuration,
   formatRating,
+  formatRelativeDay,
   formatTime,
 } from "./format";
 
@@ -41,6 +43,35 @@ describe("formatDate / formatDateTime / formatTime", () => {
   it("formata hora", () => {
     expect(formatTime(d)).toBe("14:30");
     expect(formatTime(null)).toBe("—");
+  });
+});
+
+describe("formatDayTime", () => {
+  it("retorna — para vazio", () => {
+    expect(formatDayTime(null)).toBe("—");
+    expect(formatDayTime("")).toBe("—");
+  });
+  it("data+hora compacta sem ano e sem ponto no mês", () => {
+    expect(formatDayTime(new Date(2026, 6, 8, 22, 0))).toBe("8 jul · 22:00");
+    expect(formatDayTime(new Date(2026, 0, 3, 9, 5))).toBe("3 jan · 09:05");
+  });
+});
+
+describe("formatRelativeDay", () => {
+  const now = new Date(2026, 6, 8, 12, 0); // 08/07/2026
+  it("retorna null para vazio ou fora da janela de ~30 dias", () => {
+    expect(formatRelativeDay(null, now)).toBeNull();
+    expect(formatRelativeDay(new Date(2026, 8, 1), now)).toBeNull(); // ~55 dias à frente
+    expect(formatRelativeDay(new Date(2026, 4, 1), now)).toBeNull(); // ~68 dias atrás
+  });
+  it("hoje / amanhã / ontem", () => {
+    expect(formatRelativeDay(new Date(2026, 6, 8, 23, 0), now)).toBe("hoje");
+    expect(formatRelativeDay(new Date(2026, 6, 9, 6, 0), now)).toBe("amanhã");
+    expect(formatRelativeDay(new Date(2026, 6, 7, 6, 0), now)).toBe("ontem");
+  });
+  it("em N dias / há N dias", () => {
+    expect(formatRelativeDay(new Date(2026, 6, 11, 8, 0), now)).toBe("em 3 dias");
+    expect(formatRelativeDay(new Date(2026, 6, 3, 8, 0), now)).toBe("há 5 dias");
   });
 });
 
