@@ -1,25 +1,60 @@
 import * as React from "react";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { formatBRL, formatDateTime } from "@/lib/format";
 import type { BookingWithRelations } from "@/types/domain";
+import { useAuth } from "@/auth/context";
+import { useCancelBookingStaff } from "./api";
 import { paymentState } from "./payment.logic";
 
 type Props = {
   booking: BookingWithRelations | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCancel?: (booking: BookingWithRelations) => void;
 };
 
-export function BookingModal({ booking, open, onOpenChange, onCancel }: Props) {
+export function BookingModal({ booking, open, onOpenChange }: Props) {
+  const { hasScope } = useAuth();
+  const cancelMutation = useCancelBookingStaff();
+  const [confirming, setConfirming] = React.useState(false);
+
+  // Reseta a confirmação ao fechar/trocar de reserva.
+  React.useEffect(() => {
+    if (!open) setConfirming(false);
+  }, [open]);
+
   if (!booking) return null;
 
   const pay = paymentState(booking.payments);
-  // Cancelar antes do check-in reembolsa (cancel-booking, E0.3.2). Estorno não é ação à parte.
-  const canCancel = !!onCancel && (booking.status === "pending" || booking.status === "confirmed");
+  // Cancelar (que reembolsa) só antes do check-in — e com escopo. Depois do check-in não há estorno.
+  const canCancel =
+    (booking.status === "pending" || booking.status === "confirmed") &&
+    hasScope("bookings:cancel", booking.location?.company?.id);
+
+  const refundHint = pay.canRefund
+    ? `estorna ${formatBRL(booking.total_amount)} ao cliente`
+    : pay.badge === "Estornado"
+      ? "o valor já foi estornado"
+      : null;
+
+  function handleCancel() {
+    cancelMutation.mutate(booking!.code, {
+      onSuccess: (r) => {
+        toast.success(
+          r.refunded
+            ? r.refund_pending
+              ? "Reserva cancelada. Estorno do PIX em processamento."
+              : "Reserva cancelada e valor estornado."
+            : "Reserva cancelada.",
+        );
+        onOpenChange(false);
+      },
+      onError: (err) => toast.error(err instanceof Error ? err.message : "Falha ao cancelar"),
+    });
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -67,10 +102,37 @@ export function BookingModal({ booking, open, onOpenChange, onCancel }: Props) {
         </div>
 
         {canCancel && (
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="danger" size="sm" onClick={() => onCancel!(booking)}>
-              Cancelar reserva
-            </Button>
+          <div className="flex flex-col items-end gap-2 pt-2">
+            {!confirming ? (
+              <Button variant="danger" size="sm" onClick={() => setConfirming(true)}>
+                Cancelar reserva
+              </Button>
+            ) : (
+              <div className="w-full space-y-2 rounded-md border border-hairline bg-surface-soft p-3">
+                <p className="text-body-sm text-ink">
+                  Cancela a reserva{refundHint ? ` e ${refundHint}` : ""}. Só é possível antes do
+                  check-in. Confirmar?
+                </p>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setConfirming(false)}
+                    disabled={cancelMutation.isPending}
+                  >
+                    Voltar
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={handleCancel}
+                    disabled={cancelMutation.isPending}
+                  >
+                    {cancelMutation.isPending ? "Cancelando…" : "Confirmar cancelamento"}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </DialogContent>
