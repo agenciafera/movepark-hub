@@ -69,6 +69,10 @@ export function SearchBarPill({
     navigate(`/search?${next.toString()}`);
   }
 
+  // Padding vertical que dá altura aos campos quando empilhados no mobile; no pill (tablet+)
+  // a altura vem da própria barra (h-[72px]/h-14) e o py volta a zero.
+  const fieldTrigger = "py-3.5 tablet:py-0";
+
   return (
     <form
       onSubmit={(e) => {
@@ -76,27 +80,29 @@ export function SearchBarPill({
         submit();
       }}
       className={cn(
-        "flex w-full max-w-4xl items-stretch rounded-full bg-canvas",
-        variant === "hero"
-          ? "h-[72px] border border-hairline shadow-tier"
-          : "h-14 border border-hairline shadow-tier",
+        // Mobile: card empilhado (coluna). Tablet+: pill horizontal.
+        "flex w-full max-w-4xl flex-col rounded-3xl border border-hairline bg-canvas shadow-tier",
+        "tablet:flex-row tablet:items-stretch tablet:rounded-full",
+        variant === "hero" ? "tablet:h-[72px]" : "tablet:h-14",
         className,
       )}
     >
-      <div className="flex-[1.4] border-r border-hairline">
+      <div className="min-w-0 flex-[1.4] border-b border-hairline tablet:border-b-0 tablet:border-r">
         <DestinationCombobox
           value={dest}
           pointValue={point}
+          triggerClassName={fieldTrigger}
           onChange={(d, p) => {
             setDest(d);
             setPoint(p ?? null);
           }}
         />
       </div>
-      <div className="flex-1 border-r border-hairline">
+      <div className="min-w-0 flex-1 border-b border-hairline tablet:border-b-0 tablet:border-r">
         <DateRangeField
           mode="check-in"
           date={from}
+          triggerClassName={fieldTrigger}
           onChange={(d) => {
             setFrom(d);
             // Garante check-out > check-in
@@ -104,25 +110,26 @@ export function SearchBarPill({
           }}
         />
       </div>
-      <div className="flex-1 border-r border-hairline">
+      <div className="min-w-0 flex-1 border-b border-hairline tablet:border-b-0 tablet:border-r">
         <DateRangeField
           mode="check-out"
           date={to}
           onChange={setTo}
           minDate={from ?? undefined}
+          triggerClassName={fieldTrigger}
         />
       </div>
-      <div className="hidden tablet:block w-[140px] border-r border-hairline">
+      <div className="min-w-0 border-b border-hairline tablet:w-[140px] tablet:border-b-0 tablet:border-r">
         <VehicleField value={vehicle} onChange={setVehicle} />
       </div>
-      <div className="flex items-center px-2">
+      <div className="flex items-center p-2 tablet:px-2 tablet:py-0">
         <Button
           type="submit"
-          size="icon"
-          className="h-12 w-12 rounded-full"
+          className="h-12 w-full gap-2 rounded-full tablet:w-12 tablet:gap-0 tablet:px-0"
           aria-label="Buscar"
         >
-          <Search className="h-5 w-5" />
+          <Search className="h-5 w-5 shrink-0" />
+          <span className="tablet:hidden">Buscar</span>
         </Button>
       </div>
     </form>
@@ -137,7 +144,7 @@ function VehicleField({
   onChange: (v: Vehicle) => void;
 }) {
   return (
-    <div className="flex h-full w-full items-center px-4">
+    <div className="flex h-full w-full items-center px-6 py-3.5 tablet:px-4 tablet:py-0">
       <Select value={value} onValueChange={(v) => onChange(v as Vehicle)}>
         <SelectTrigger className="h-auto !border-none !bg-transparent !p-0 !shadow-none focus:!border-none">
           <div className="flex flex-col items-start gap-0.5 text-left">

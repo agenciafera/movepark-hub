@@ -24,8 +24,8 @@ const groups: FooterGroup[] = [
     title: "Suporte",
     links: [
       { to: "/faq", label: "Perguntas frequentes" },
-      { to: "/ajuda/como-funciona", label: "Como funciona" },
-      { to: "/ajuda/cancelamento", label: "Política de cancelamento" },
+      { to: "/como-funciona", label: "Como funciona" },
+      { to: "/cancelamento", label: "Política de cancelamento" },
       { to: "/contato", label: "Fale conosco" },
     ],
   },
@@ -35,7 +35,7 @@ const linkClass = "text-body-sm text-muted no-underline hover:text-ink";
 
 export function ConsumerFooter() {
   return (
-    <footer className="border-t border-hairline bg-surface-soft">
+    <footer className="border-t border-hairline bg-surface-soft pb-16 tablet:pb-0">
       <div className="mx-auto grid w-full max-w-[1280px] grid-cols-1 gap-8 px-6 py-12 tablet:grid-cols-3 desktop:grid-cols-3 desktop:px-8">
         {groups.map((g) => (
           <div key={g.title} className="space-y-3">
