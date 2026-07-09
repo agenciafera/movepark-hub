@@ -11,6 +11,7 @@ import { AmenityList } from "@/features/listing/AmenityList";
 import { HowToArrive } from "@/features/listing/HowToArrive";
 import { TerminalDistances } from "@/features/listing/TerminalDistances";
 import { ReservationCard } from "@/features/listing/ReservationCard";
+import { ListingTrustBar } from "@/features/listing/ListingTrustBar";
 import { RecommendedCarousel } from "@/features/listing/RecommendedCarousel";
 import { buildListingTldr, nearestTerminal } from "@/features/listing/tldr.logic";
 import { ReviewsBlock } from "@/features/reviews/ReviewsBlock";
@@ -170,7 +171,9 @@ export default function ListingPage() {
   const shuttleMin = listing.location.shuttle_to_terminal_minutes;
 
   return (
-    <div className="mx-auto w-full max-w-[1280px] px-4 py-8 desktop:px-8">
+    <>
+      <ListingTrustBar />
+      <div className="mx-auto w-full max-w-[1280px] px-4 py-8 desktop:px-8">
       <Helmet>
         <title>{pageTitle}</title>
         <meta name="description" content={pageDesc} />
@@ -380,7 +383,8 @@ export default function ListingPage() {
           </Button>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }
 
