@@ -1,6 +1,5 @@
 import * as React from "react";
 import { ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +9,7 @@ import { PhoneField } from "@/components/ui/phone-field";
 import { useAuth } from "@/auth/context";
 import { useProfile, useUpdateProfile } from "@/features/profile/api";
 import { useAcceptTerms } from "@/features/legal/api";
+import { LegalDocumentModal } from "@/features/legal/LegalDocumentModal";
 import { useUpdateBookingCustomer } from "./api";
 
 type Props = {
@@ -50,6 +50,7 @@ export function Step1Identity({
   const [phone, setPhone] = React.useState<string | undefined>(undefined);
   const [email, setEmail] = React.useState(customerEmail ?? "");
   const [termsAccepted, setTermsAccepted] = React.useState(false);
+  const [termsOpen, setTermsOpen] = React.useState(false);
   const [forOther, setForOther] = React.useState(!!customerName);
   const [otherName, setOtherName] = React.useState(customerName ?? "");
   const [otherPhone, setOtherPhone] = React.useState<string | undefined>(
@@ -200,8 +201,11 @@ export function Step1Identity({
         </div>
       )}
 
-      <label className="flex cursor-pointer items-start gap-3">
+      {/* Trigger dos Termos fica FORA do label — clicar nele abre o modal
+          sem marcar/desmarcar o checkbox de aceite. */}
+      <div className="flex items-start gap-3">
         <input
+          id="accept-terms"
           type="checkbox"
           checked={termsAccepted}
           onChange={(e) => setTermsAccepted(e.target.checked)}
@@ -209,12 +213,25 @@ export function Step1Identity({
           required
         />
         <span className="text-body-md text-ink">
-          Aceito os{" "}
-          <Link to="/termos" target="_blank" className="font-semibold underline hover:text-mp-primary">
+          <label htmlFor="accept-terms" className="cursor-pointer">
+            Aceito os
+          </label>{" "}
+          <button
+            type="button"
+            onClick={() => setTermsOpen(true)}
+            className="font-semibold underline hover:text-mp-primary"
+          >
             Termos e Condições
-          </Link>
+          </button>
         </span>
-      </label>
+      </div>
+
+      <LegalDocumentModal
+        slug="terms"
+        title="Termos e Condições"
+        open={termsOpen}
+        onOpenChange={setTermsOpen}
+      />
 
       {/* Botão desktop — no mobile a barra fixa do checkout.tsx submete o form */}
       <div className="hidden justify-end desktop:flex">

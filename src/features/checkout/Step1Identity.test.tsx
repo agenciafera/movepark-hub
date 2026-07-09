@@ -13,6 +13,7 @@ vi.mock("@/features/profile/api", () => ({
 vi.mock("./api", () => ({ useUpdateBookingCustomer: vi.fn() }));
 vi.mock("@/features/legal/api", () => ({
   useAcceptTerms: () => ({ mutateAsync: vi.fn().mockResolvedValue({ ok: true }), isPending: false }),
+  useLegalDocument: () => ({ data: null, isLoading: false }),
 }));
 vi.mock("@/components/ui/phone-field", () => ({
   PhoneField: ({
@@ -154,5 +155,24 @@ describe("Step1Identity", () => {
     expect(emailInput).toBeDisabled();
     expect(emailInput.value).toBe("pedro@ex.com");
     expect(screen.getByLabelText("Telefone de contato")).toBeEnabled();
+  });
+
+  it("abre os Termos num modal sem marcar o checkbox de aceite", async () => {
+    setProfile({ full_name: "Pedro Araujo", phone: "+5511987727182" });
+    renderWithProviders(<Step1Identity {...defaultProps} />, {
+      auth: mockAuth({ session: mockSession("customer", { email: "pedro@ex.com" }) }),
+    });
+
+    // Referência capturada antes: ao abrir o modal, o Radix marca o resto da
+    // página como aria-hidden, então guardamos o nó pra checar o estado depois.
+    const checkbox = screen.getByRole("checkbox", { name: /Aceito os/i });
+    expect(checkbox).not.toBeChecked();
+
+    await userEvent.click(screen.getByText("Termos e Condições"));
+
+    // Abre o modal (não navega pra outra página) …
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    // … e o clique no link NÃO marca o checkbox de aceite.
+    expect(checkbox).not.toBeChecked();
   });
 });

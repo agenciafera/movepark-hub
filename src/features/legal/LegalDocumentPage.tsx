@@ -3,14 +3,7 @@ import { Helmet } from "react-helmet-async";
 import DOMPurify from "dompurify";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLegalDocument } from "./api";
-
-// Allowlist casando com o schema restrito do Tiptap. Defesa em profundidade: mesmo que alguém grave
-// markup fora do editor (ex.: chamando a RPC direto), nada além destas tags/atributos renderiza —
-// e o DOMPurify já bloqueia javascript:/data: em href. Sanitiza no cliente (a página hidrata lá).
-const SANITIZE_CONFIG = {
-  ALLOWED_TAGS: ["h2", "h3", "p", "ul", "ol", "li", "strong", "em", "b", "i", "s", "a", "br"],
-  ALLOWED_ATTR: ["href", "rel", "target"],
-};
+import { LEGAL_SANITIZE_CONFIG, LEGAL_PROSE_CLASS } from "./legalRender";
 
 type Props = {
   slug: string;
@@ -40,7 +33,7 @@ export function LegalDocumentPage({ slug, title, description, canonicalPath }: P
   const heading = data?.title ?? title;
   const url = `https://hub.movepark.co${canonicalPath}`;
   const safeHtml = useMemo(
-    () => (data?.content ? DOMPurify.sanitize(data.content, SANITIZE_CONFIG) : ""),
+    () => (data?.content ? DOMPurify.sanitize(data.content, LEGAL_SANITIZE_CONFIG) : ""),
     [data?.content],
   );
 
@@ -72,7 +65,7 @@ export function LegalDocumentPage({ slug, title, description, canonicalPath }: P
           </div>
         ) : data ? (
           <div
-            className="space-y-4 text-body-sm text-muted [&_a]:text-mp-indigo [&_a]:underline [&_a]:underline-offset-2 [&_h2]:mt-8 [&_h2]:text-title-sm [&_h2]:text-ink [&_li]:mt-1 [&_p]:mt-2 [&_strong]:text-ink [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5"
+            className={LEGAL_PROSE_CLASS}
             // Sanitizado (DOMPurify + allowlist) — não confia no schema client-side do editor.
             dangerouslySetInnerHTML={{ __html: safeHtml }}
           />
