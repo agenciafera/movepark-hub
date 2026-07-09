@@ -5,6 +5,8 @@ import {
   tierProgress,
   cashbackPctLabel,
   firstNameOf,
+  referralMessage,
+  whatsappShareUrl,
 } from "./growth.logic";
 
 describe("brlFromCents", () => {
@@ -52,5 +54,18 @@ describe("firstNameOf", () => {
   it("usa fallback quando vazio", () => {
     expect(firstNameOf(null)).toBe("cliente");
     expect(firstNameOf("   ")).toBe("cliente");
+  });
+});
+
+describe("compartilhamento de indicação", () => {
+  const link = "https://hub.movepark.co/r/JOAO2X9";
+  it("monta a mensagem com o link", () => {
+    expect(referralMessage(link)).toContain(link);
+    expect(referralMessage(link)).toContain("R$ 25 de desconto");
+  });
+  it("gera a URL do WhatsApp com a mensagem codificada", () => {
+    const url = whatsappShareUrl(link);
+    expect(url.startsWith("https://wa.me/?text=")).toBe(true);
+    expect(url).toContain(encodeURIComponent(link));
   });
 });

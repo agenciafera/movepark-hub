@@ -1,9 +1,11 @@
 import * as React from "react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Gift, Share2, Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/context";
 import { useReferrals } from "./api";
+import { whatsappShareUrl } from "./growth.logic";
 
 /**
  * Card compacto e fixo do Indique e Ganhe — pensado pra viver na sidebar da
@@ -27,10 +29,7 @@ export function ReferralShareCard({ className }: { className?: string }) {
 
   function compartilhar() {
     if (!data) return;
-    const msg =
-      `Ganhei um presente pra você no Movepark: R$ 25 de desconto na sua 1ª reserva. ` +
-      `É só usar meu link: ${data.link}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank", "noopener");
+    window.open(whatsappShareUrl(data.link), "_blank", "noopener");
   }
 
   return (
@@ -74,6 +73,12 @@ export function ReferralShareCard({ className }: { className?: string }) {
             <span className="font-mono">{data.code}</span>
             <span>· {copiado ? "copiado" : "copiar link"}</span>
           </button>
+          <Link
+            to="/account/indicar"
+            className="mt-2 block text-center text-caption-sm text-mp-indigo hover:underline"
+          >
+            Como funciona
+          </Link>
         </>
       )}
     </div>

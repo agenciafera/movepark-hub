@@ -28,3 +28,16 @@ export function cashbackPctLabel(bps: number): string {
 export function firstNameOf(fullName: string | null | undefined, fallback = "cliente"): string {
   return fullName?.trim().split(/\s+/)[0] || fallback;
 }
+
+/** Mensagem de indicação pronta pra compartilhar. */
+export function referralMessage(link: string): string {
+  return (
+    `Ganhei um presente pra você no Movepark: R$ 25 de desconto na sua 1ª reserva. ` +
+    `É só usar meu link: ${link}`
+  );
+}
+
+/** URL de compartilhamento no WhatsApp com a mensagem de indicação. */
+export function whatsappShareUrl(link: string): string {
+  return `https://wa.me/?text=${encodeURIComponent(referralMessage(link))}`;
+}

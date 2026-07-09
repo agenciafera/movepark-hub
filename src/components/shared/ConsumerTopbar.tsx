@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { Search, Heart, User2, LogOut, LayoutDashboard, Calendar, ChevronDown, MapPin } from "lucide-react";
+import { Search, Heart, User2, LogOut, LayoutDashboard, Calendar, ChevronDown, MapPin, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchBarPill } from "@/features/search/SearchBarPill";
 import {
@@ -197,6 +197,9 @@ export function ConsumerTopbar() {
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/account/saved")}>
                     <Heart className="h-4 w-4" /> Favoritos
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/account/indicar")}>
+                    <Gift className="h-4 w-4" /> Indique e ganhe
                   </DropdownMenuItem>
                 </>
               )}

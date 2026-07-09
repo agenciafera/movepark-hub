@@ -40,6 +40,7 @@ import ComoFuncionaPage from "@/routes/como-funciona";
 
 import AccountIndexPage from "@/routes/account/index";
 import AccountClubePage from "@/routes/account/clube";
+import AccountIndicarPage from "@/routes/account/indicar";
 import AccountProfilePage from "@/routes/account/profile";
 import AccountVehiclesPage from "@/routes/account/vehicles";
 import AccountAddressesPage from "@/routes/account/addresses";
@@ -234,6 +235,7 @@ export const routes: RouteRecord[] = [
             children: [
               { index: true, element: <AccountIndexPage /> },
               { path: "clube", element: <AccountClubePage /> },
+              { path: "indicar", element: <AccountIndicarPage /> },
               { path: "profile", element: <AccountProfilePage /> },
               { path: "vehicles", element: <AccountVehiclesPage /> },
               { path: "addresses", element: <AccountAddressesPage /> },
