@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/context";
+import { ReferralShareCard } from "@/features/growth/ReferralShareCard";
 
 const items = [
   { to: "/account/clube", icon: Sparkles, label: "Movepark Clube" },
@@ -54,6 +55,8 @@ export function AccountSidebar() {
         </NavLink>
       ))}
 
+      <ReferralShareCard className="mt-4" />
+
       <div className="mt-3 border-t border-hairline pt-3">
         <button
           type="button"
@@ -91,6 +94,9 @@ export function AccountMobileMenu() {
           <ChevronRight className="h-4 w-4 text-muted" />
         </NavLink>
       ))}
+
+      <ReferralShareCard className="mt-4" />
+
       <button
         type="button"
         onClick={handleSignOut}
