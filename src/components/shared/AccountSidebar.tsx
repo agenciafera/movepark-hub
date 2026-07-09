@@ -9,11 +9,13 @@ import {
   Lock,
   LogOut,
   ChevronRight,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/context";
 
 const items = [
+  { to: "/account/clube", icon: Sparkles, label: "Movepark Clube" },
   { to: "/account/profile", icon: User2, label: "Perfil" },
   { to: "/account/vehicles", icon: Car, label: "Veículos" },
   { to: "/account/addresses", icon: MapPin, label: "Endereços" },

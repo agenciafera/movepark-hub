@@ -24,6 +24,7 @@ import BookingDetailPage from "@/routes/bookings-detail";
 import AuthCallbackPage from "@/routes/auth/callback";
 import LoginPage from "@/routes/login";
 import DesignSystemPage from "@/routes/design-system";
+import MotorPreviewPage from "@/routes/motor-preview";
 import SejaParceiroPage from "@/routes/seja-parceiro";
 import OnboardingPage from "@/routes/onboarding";
 import VoucherValidatePage from "@/routes/voucher-validate";
@@ -38,6 +39,7 @@ import CancelamentoPage from "@/routes/cancelamento";
 import ComoFuncionaPage from "@/routes/como-funciona";
 
 import AccountIndexPage from "@/routes/account/index";
+import AccountClubePage from "@/routes/account/clube";
 import AccountProfilePage from "@/routes/account/profile";
 import AccountVehiclesPage from "@/routes/account/vehicles";
 import AccountAddressesPage from "@/routes/account/addresses";
@@ -185,6 +187,7 @@ export const routes: RouteRecord[] = [
           { path: "/como-funciona", element: <ComoFuncionaPage /> },
           { path: "/docs", element: <DocsPage /> },
           { path: "/seja-parceiro", element: <SejaParceiroPage /> },
+          { path: "/motor-preview", element: <MotorPreviewPage /> },
           { path: "/destinos", element: <DestinosPage />, loader: destinosLoader },
           {
             path: "/destinos/:slug",
@@ -230,6 +233,7 @@ export const routes: RouteRecord[] = [
             element: <AccountAppShell />,
             children: [
               { index: true, element: <AccountIndexPage /> },
+              { path: "clube", element: <AccountClubePage /> },
               { path: "profile", element: <AccountProfilePage /> },
               { path: "vehicles", element: <AccountVehiclesPage /> },
               { path: "addresses", element: <AccountAddressesPage /> },

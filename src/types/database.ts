@@ -3115,6 +3115,10 @@ export type Database = {
       }
     }
     Functions: {
+      get_my_membership: { Args: never; Returns: Json }
+      get_my_wallet: { Args: never; Returns: Json }
+      get_my_referrals: { Args: never; Returns: Json }
+      redeem_referral_code: { Args: { p_code: string }; Returns: Json }
       _apply_pricing:
         | {
             Args: {
