@@ -17,6 +17,7 @@ import {
 import { useAuth } from "@/auth/context";
 import { useDestinations } from "@/features/search/api";
 import { Monogram, Wordmark } from "./Brand";
+import { ThemeToggle } from "./ThemeToggle";
 import type { Destination } from "@/features/search/api";
 
 function parseDate(value: string | null): Date | null {
@@ -157,6 +158,7 @@ export function ConsumerTopbar() {
       </div>
 
       <div className="flex items-center gap-2">
+        <ThemeToggle />
         {!session && (
           <>
             <Button variant="ghost" size="sm" className="hidden tablet:inline-flex" asChild>

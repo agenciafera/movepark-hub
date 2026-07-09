@@ -72,6 +72,61 @@
     /* shadcn radius alias */
     --radius: 14px;
   }
+
+  /* ============================================================
+     Tema grafite escuro — ativado por .dark no <html>.
+     Só sobrescreve superfícies, texto e semânticos; o violeta da
+     marca continua carregando o CTA (um pouco mais claro pra brilhar).
+     ============================================================ */
+  .dark {
+    /* Surface — grafite */
+    --canvas: 240 6% 11%;              /* #1a1a1e página */
+    --surface-soft: 240 5% 15%;        /* #242428 hover/painel */
+    --surface-strong: 240 5% 20%;      /* #303036 */
+    --surface-pale: 239 30% 22%;       /* tinta violeta escura (pale/badge) */
+
+    /* Hairlines & borders */
+    --hairline: 240 5% 24%;            /* #393940 */
+    --hairline-soft: 240 5% 19%;
+    --border-strong: 220 12% 52%;
+
+    /* Text — claros sobre grafite */
+    --ink: 0 0% 96%;
+    --body: 0 0% 82%;
+    --muted: 0 0% 63%;
+    --muted-soft: 0 0% 48%;
+    --muted-steel: 220 14% 64%;
+    --on-primary: 0 0% 100%;
+
+    /* Marca — violeta um tom acima pra contraste no escuro */
+    --mp-violet: 239 84% 71%;
+    --mp-primary: var(--mp-violet);
+    --mp-primary-active: 239 72% 63%;
+    --mp-pale: 239 30% 22%;
+
+    /* Semânticos — mais claros pra legibilidade */
+    --success: 150 48% 58%;
+    --warning: 34 88% 62%;
+    --error: 13 82% 64%;
+    --info: 239 70% 72%;
+
+    /* Status badges — tints escuros */
+    --badge-confirmed-bg: 150 28% 18%;
+    --badge-confirmed-fg: 150 48% 70%;
+    --badge-active-bg: 239 32% 24%;
+    --badge-active-fg: 239 72% 82%;
+    --badge-pending-bg: 38 38% 20%;
+    --badge-pending-fg: 38 88% 68%;
+    --badge-completed-bg: 240 5% 18%;
+    --badge-completed-fg: 0 0% 66%;
+    --badge-cancelled-bg: 6 38% 20%;
+    --badge-cancelled-fg: 6 74% 72%;
+
+    /* Scrim mais denso no escuro */
+    --scrim: 0 0% 0% / 0.6;
+
+    color-scheme: dark;
+  }
 }
 
 @layer base {
