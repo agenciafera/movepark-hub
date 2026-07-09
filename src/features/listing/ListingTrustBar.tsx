@@ -31,7 +31,7 @@ export function ListingTrustBar() {
       <div
         className={cn(
           "mx-auto flex max-w-[1280px] items-center gap-5 overflow-x-auto px-4 py-2.5 scrollbar-none transition-all duration-300 ease-standard desktop:justify-center desktop:gap-12 desktop:px-8",
-          scrolled ? "opacity-60 blur-[1.5px]" : "opacity-100 blur-0",
+          scrolled ? "opacity-70 blur-[0.5px]" : "opacity-100 blur-0",
         )}
       >
         {DIFERENCIAIS.map((d) => (
