@@ -10,6 +10,7 @@ import {
   BadgeCheck,
   Play,
   Quote,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,6 +48,13 @@ const STEPS = [
     title: "Dinheiro na conta",
     desc: "A Movepark garante o pagamento e faz o repasse organizado. Sem inadimplência, sem cobrança manual.",
   },
+];
+
+const PAINS = [
+  "Ocupação baixa em dia de semana, com o custo fixo correndo igual.",
+  "Cliente que some na hora de pagar e discussão de preço no balcão.",
+  "Dinheiro em anúncio sem saber se volta em reserva.",
+  "Vaga parada hoje é receita que não volta amanhã.",
 ];
 
 const BENEFITS = [
@@ -208,6 +216,27 @@ export default function SejaParceiroPage() {
         </div>
       </section>
 
+      {/* Dor: a rotina de quem tem estacionamento */}
+      <section className="mx-auto max-w-[1100px] px-4 pt-16 desktop:px-8 desktop:pt-20">
+        <span className="text-badge uppercase tracking-wide text-mp-indigo">
+          A rotina de quem tem estacionamento
+        </span>
+        <h2 className="mt-3 max-w-2xl text-display-2xl text-ink">
+          Vaga vazia não volta. O dia que passou, passou.
+        </h2>
+        <ul className="mt-8 grid grid-cols-1 gap-4 tablet:grid-cols-2">
+          {PAINS.map((p) => (
+            <li
+              key={p}
+              className="flex items-start gap-3 rounded-md border border-hairline bg-canvas p-5"
+            >
+              <X className="mt-0.5 h-5 w-5 shrink-0 text-muted-steel" />
+              <span className="text-body-md text-ink">{p}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
       {/* Custo zero: destaque */}
       <section className="mx-auto max-w-[1100px] px-4 py-16 desktop:px-8 desktop:py-20">
         <div className="rounded-lg border border-hairline bg-surface-pale p-8 text-center shadow-tier desktop:p-12">
@@ -215,9 +244,10 @@ export default function SejaParceiroPage() {
           <h2 className="mx-auto mt-3 max-w-2xl text-display-2xl text-ink">
             Você cuida das vagas. A gente cuida do resto.
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-body-md text-muted">
-            Sem mensalidade, sem taxa de adesão, sem gasto com marketing. A Movepark traz o cliente,
-            recebe com antecedência e repassa organizado. Nossos interesses são os mesmos.
+          <p className="mx-auto mt-4 max-w-2xl text-body-md text-muted">
+            Sem mensalidade, sem taxa de adesão, sem gasto com mídia. Encher vaga por conta própria
+            custa anúncio todo mês; aqui você começa sem pôr nada no bolso. A Movepark traz o
+            cliente, recebe adiantado e repassa organizado.
           </p>
           <div className="mt-7 flex justify-center">
             <SejaParceiroCta onClick={openModal}>Começar agora</SejaParceiroCta>
@@ -343,6 +373,9 @@ export default function SejaParceiroPage() {
           <div className="mt-7 flex justify-center">
             <SejaParceiroCta onClick={openModal}>Quero ser parceiro</SejaParceiroCta>
           </div>
+          <p className="mx-auto mt-6 max-w-md text-caption-sm text-white/60">
+            Sem mensalidade. Sem exclusividade. Você põe as vagas, a gente traz o cliente.
+          </p>
         </div>
       </section>
     </>
