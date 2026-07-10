@@ -4,7 +4,7 @@
 -- (confirmed / reconfirmed / needs_refund). Roda em transação com rollback.
 
 begin;
-select plan(19);
+select plan(18);
 
 -- ── fixture: customer + um tipo de vaga do seed com capacidade = 1 ──────────
 do $$

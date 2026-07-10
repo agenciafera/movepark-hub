@@ -5,7 +5,7 @@
 -- Roda com: supabase test db (stack local — ver README.md). Transação + rollback.
 
 begin;
-select plan(12);
+select plan(11);
 
 -- ── Fixture: 2 consumidores (u1 com dados; u2 controle) + 1 operador (u3) ────
 do $$
@@ -23,10 +23,12 @@ begin
     (u3,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','del-u3@ex.com',now(),now());
 
   -- Perfis com PII completa.
-  insert into public.profiles(id, role, full_name, phone, tax_id, birth_date, avatar_url) values
-    (u1,'customer','Maria Silva','+5511999990001','12345678900','1990-01-01','https://x/a.png'),
-    (u2,'customer','João Souza','+5511999990002','98765432100','1985-05-05','https://x/b.png'),
-    (u3,'company_operator','Op Teste',null,null,null,null)
+  -- profiles.phone foi dropada (ADR-006: contato verificado mora em auth.users /
+  -- snapshot da booking); a PII de telefone é anonimizada em booking.customer_phone.
+  insert into public.profiles(id, role, full_name, tax_id, birth_date, avatar_url) values
+    (u1,'customer','Maria Silva','12345678900','1990-01-01','https://x/a.png'),
+    (u2,'customer','João Souza','98765432100','1985-05-05','https://x/b.png'),
+    (u3,'company_operator','Op Teste',null,null,null)
   on conflict (id) do nothing;
 
   -- u3 é membro de empresa (aciona a guarda "só consumidor").
@@ -65,8 +67,6 @@ select lives_ok($$ select public.anonymize_own_account() $$, 'anonymize_own_acco
 -- ── Perfil: PII zerada + placeholder + deleted_at ───────────────────────────
 select is((select full_name  from public.profiles where id = current_setting('test.u1')::uuid),
           '(Conta excluída)', 'full_name vira placeholder');
-select is((select phone      from public.profiles where id = current_setting('test.u1')::uuid),
-          null::text, 'phone zerado');
 select is((select tax_id     from public.profiles where id = current_setting('test.u1')::uuid),
           null::text, 'tax_id (CPF) zerado');
 select is((select birth_date from public.profiles where id = current_setting('test.u1')::uuid),
