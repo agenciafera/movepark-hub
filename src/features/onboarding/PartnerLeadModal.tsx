@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ArrowRight, ArrowLeft, Lock } from "lucide-react";
 import {
   Dialog,
@@ -12,7 +12,6 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PhoneField } from "@/components/ui/phone-field";
-import { StateSelect } from "@/components/shared/StateSelect";
 import { ThankYou } from "./ThankYou";
 import { useCapturePartnerLead } from "./partnerLeadApi";
 import { useSubmitLead, type LeadResult } from "./leadApi";
@@ -21,8 +20,8 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * Modal multi-etapas do "Seja parceiro". Passo 1 (WhatsApp + e-mail) já salva via
- * capture-partner-lead — se a pessoa desistir, o contato fica pra follow-up.
- * Passos 2–3 completam e a submissão final vai pro submit-partner-lead.
+ * capture-partner-lead: se a pessoa desistir, o contato fica pra follow-up.
+ * O passo 2 (estacionamento + vagas + aceite) completa e submete pro submit-partner-lead.
  */
 export function PartnerLeadModal({
   open,
@@ -41,8 +40,6 @@ export function PartnerLeadModal({
   const [email, setEmail] = React.useState("");
   const [phone, setPhone] = React.useState<string | undefined>(undefined);
   const [companyName, setCompanyName] = React.useState("");
-  const [city, setCity] = React.useState("");
-  const [uf, setUf] = React.useState("");
   const [spots, setSpots] = React.useState("");
   const [contactName, setContactName] = React.useState("");
   const [accept, setAccept] = React.useState(false);
@@ -87,37 +84,19 @@ export function PartnerLeadModal({
     }
   }
 
-  async function nextFromStep2() {
-    setError(null);
-    if (!companyName.trim()) return setError("Informe o nome do estacionamento.");
-    // Best-effort: salva o progresso, mas não trava o avanço se falhar.
-    capture.mutate({
-      contact_email: email,
-      contact_phone: phone,
-      contact_name: contactName,
-      company_name: companyName,
-      estimated_spots: spotsInt,
-      step: 2,
-      ...utm,
-    });
-    setStep(3);
-  }
-
   async function finish() {
     setError(null);
-    if (!city.trim()) return setError("Informe a cidade.");
-    if (!uf) return setError("Selecione o estado.");
-    if (!accept) return setError("É preciso aceitar os termos para continuar.");
+    if (!companyName.trim()) return setError("Informe o nome do estacionamento.");
+    if (!spotsInt || spotsInt < 1) return setError("Informe o número de vagas.");
+    if (!accept) return setError("É preciso autorizar o contato para continuar.");
     try {
       const r = await submit.mutateAsync({
         company_name: companyName,
         contact_name: contactName,
         contact_email: email,
         contact_phone: phone ?? "",
-        city,
-        state: uf,
         estimated_spots: spotsInt,
-        accept_terms: true,
+        accept_terms: accept,
         ...utm,
         hp_field: hp,
       });
@@ -148,7 +127,7 @@ export function PartnerLeadModal({
 
             {/* Progresso */}
             <div className="flex items-center gap-2">
-              {[1, 2, 3].map((n) => (
+              {[1, 2].map((n) => (
                 <div
                   key={n}
                   className={
@@ -158,7 +137,7 @@ export function PartnerLeadModal({
                 />
               ))}
             </div>
-            <p className="-mt-2 text-caption-sm text-muted">Passo {step} de 3</p>
+            <p className="-mt-2 text-caption-sm text-muted">Passo {step} de 2</p>
 
             {/* Honeypot */}
             <input
@@ -221,33 +200,23 @@ export function PartnerLeadModal({
                     min={1}
                     value={spots}
                     onChange={(e) => setSpots(e.target.value)}
-                    placeholder="Opcional"
+                    placeholder="Ex: 50"
                   />
-                </div>
-              </div>
-            )}
-
-            {step === 3 && (
-              <div className="space-y-4">
-                <p className="text-body-sm text-muted">
-                  Quase lá, {contactName.trim().split(/\s+/)[0] || "parceiro"}. Onde fica e é só
-                  confirmar.
-                </p>
-                <div className="grid grid-cols-[1fr_auto] gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="pl-city">Cidade</Label>
-                    <Input id="pl-city" value={city} onChange={(e) => setCity(e.target.value)} />
-                  </div>
-                  <div className="flex w-24 flex-col gap-1.5">
-                    <Label htmlFor="pl-uf">Estado</Label>
-                    <StateSelect id="pl-uf" value={uf} onValueChange={setUf} />
-                  </div>
                 </div>
                 <label className="flex cursor-pointer items-start gap-3">
                   <Checkbox checked={accept} onCheckedChange={(v) => setAccept(v === true)} />
                   <span className="text-body-sm text-muted">
-                    Autorizo a Movepark a entrar em contato sobre a parceria. Sem mensalidade, sem
-                    taxa de adesão.
+                    Autorizo a Movepark a entrar em contato sobre a parceria e concordo com a{" "}
+                    <Link
+                      to="/privacidade"
+                      target="_blank"
+                      rel="noopener"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-mp-primary underline underline-offset-2"
+                    >
+                      Política de Privacidade
+                    </Link>
+                    . Sem mensalidade, sem taxa de adesão.
                   </span>
                 </label>
               </div>
@@ -278,11 +247,6 @@ export function PartnerLeadModal({
                 </Button>
               )}
               {step === 2 && (
-                <Button type="button" onClick={nextFromStep2} disabled={busy}>
-                  Continuar <ArrowRight className="h-4 w-4" />
-                </Button>
-              )}
-              {step === 3 && (
                 <Button type="button" onClick={finish} disabled={busy}>
                   {busy ? "Enviando…" : "Quero ser parceiro"} <ArrowRight className="h-4 w-4" />
                 </Button>

@@ -26,10 +26,10 @@ describe("SejaParceiroPage — landing de parceiro", () => {
   it("não tem formulário inline; os CTAs abrem o modal de cadastro", async () => {
     renderPage();
     // Formulário não fica visível na página (só via modal).
-    expect(screen.queryByText("Passo 1 de 3")).not.toBeInTheDocument();
+    expect(screen.queryByText("Passo 1 de 2")).not.toBeInTheDocument();
 
     await userEvent.click(screen.getAllByRole("button", { name: /Quero ser parceiro/i })[0]);
 
-    expect(await screen.findByText("Passo 1 de 3")).toBeInTheDocument();
+    expect(await screen.findByText("Passo 1 de 2")).toBeInTheDocument();
   });
 });
