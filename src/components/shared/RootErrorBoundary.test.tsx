@@ -13,8 +13,8 @@ function renderWithLoaderError(error: unknown) {
       element: <div>página</div>,
       errorElement: <RootErrorBoundary />,
     },
-  ]);
-  return render(<RouterProvider router={router} />);
+  ], { future: { v7_relativeSplatPath: true } });
+  return render(<RouterProvider router={router} future={{ v7_startTransition: true }} />);
 }
 
 describe("RootErrorBoundary", () => {

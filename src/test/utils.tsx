@@ -54,7 +54,12 @@ export function renderWithProviders(
   return render(
     <QueryClientProvider client={qc}>
       <AuthContext.Provider value={opts?.auth ?? mockAuth()}>
-        <MemoryRouter initialEntries={[opts?.route ?? "/"]}>{ui}</MemoryRouter>
+        <MemoryRouter
+          initialEntries={[opts?.route ?? "/"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          {ui}
+        </MemoryRouter>
       </AuthContext.Provider>
     </QueryClientProvider>,
   );

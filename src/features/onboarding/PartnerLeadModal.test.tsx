@@ -32,7 +32,7 @@ vi.mock("@/components/ui/phone-field", () => ({
 
 function renderModal() {
   return render(
-    <MemoryRouter>
+    <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <PartnerLeadModal open onOpenChange={() => {}} />
     </MemoryRouter>,
   );
