@@ -9,7 +9,7 @@ import { formatBRL } from "@/lib/format";
 
 // Mapeamento de amenidade → label
 const AMENITY_PILLS: Record<string, string> = {
-  shuttle_free: "Traslado grátis",
+  shuttle_free: "Transfer grátis",
   covered:      "Coberto",
   valet:        "Valet",
   ev_charger:   "Carregador EV",

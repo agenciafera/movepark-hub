@@ -37,6 +37,6 @@ describe("HowToArrive — bloco 'Como chegar' (PRD-11)", () => {
 
   it("omite a linha de traslado quando não há dados", () => {
     render(<HowToArrive {...base} />);
-    expect(screen.queryByText(/Traslado:/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Transfer:/)).not.toBeInTheDocument();
   });
 });

@@ -55,7 +55,7 @@ export function HowToArrive({
         <div className="flex items-center gap-2 text-body-md text-ink">
           <Bus className="h-4 w-4 shrink-0 text-muted" />
           <span>
-            <strong>Traslado:</strong> {shuttle}
+            <strong>Transfer:</strong> {shuttle}
           </span>
         </div>
       )}

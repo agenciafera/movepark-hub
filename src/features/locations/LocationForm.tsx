@@ -310,7 +310,7 @@ export function LocationForm({
             </p>
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="shuttle-freq">Traslado · frequência (min)</Label>
+            <Label htmlFor="shuttle-freq">Transfer · frequência (min)</Label>
             <Input
               id="shuttle-freq"
               type="number"
@@ -321,7 +321,7 @@ export function LocationForm({
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="shuttle-terminal">Traslado · tempo até o terminal (min)</Label>
+            <Label htmlFor="shuttle-terminal">Transfer · tempo até o terminal (min)</Label>
             <Input
               id="shuttle-terminal"
               type="number"

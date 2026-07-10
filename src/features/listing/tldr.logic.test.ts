@@ -65,13 +65,13 @@ describe("shuttleLabel", () => {
 
   it("usa os minutos ao terminal quando presentes", () => {
     expect(shuttleLabel(makeListing({ shuttle_to_terminal_minutes: 8 }))).toBe(
-      "Traslado ao terminal em 8 min",
+      "Transfer ao terminal em 8 min",
     );
   });
 
   it("cai em gratuito quando só há frequência", () => {
     expect(shuttleLabel(makeListing({ shuttle_frequency_minutes: 15 }))).toBe(
-      "Traslado gratuito ao terminal",
+      "Transfer gratuito ao terminal",
     );
   });
 });
@@ -105,7 +105,7 @@ describe("buildListingTldr", () => {
     );
     const byKey = Object.fromEntries(facts.map((f) => [f.key, f.value]));
     expect(byKey.terminal).toBe("Terminal 3 · 1,5 km");
-    expect(byKey.shuttle).toBe("Traslado ao terminal em 6 min");
+    expect(byKey.shuttle).toBe("Transfer ao terminal em 6 min");
     expect(byKey.rating).toBe("4,8 de 5 · 248 avaliações");
     // Summary é uma frase única e factual, extraível por IA.
     expect(summary).toContain("Vaga Coberta no Aeropark, em Aeroporto Guarulhos.");

@@ -17,7 +17,7 @@ type Props = {
 };
 
 const AMENITY_LABEL: Record<string, string> = {
-  shuttle_free: "Traslado grátis",
+  shuttle_free: "Transfer grátis",
   cameras_24h: "Câmeras",
   on_site_24h: "24 horas",
   gated_access: "Portaria",

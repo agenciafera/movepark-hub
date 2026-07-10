@@ -20,7 +20,7 @@ type Props = {
 };
 
 const amenityShortLabel: Record<string, string> = {
-  shuttle_free: "Shuttle 24h",
+  shuttle_free: "Transfer 24h",
   cameras_24h: "Câmeras",
   on_site_24h: "24 horas",
   gated_access: "Portaria",

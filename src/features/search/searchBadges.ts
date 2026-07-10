@@ -67,7 +67,7 @@ export function computeResultBadges(
 
   // Atributos — flags do parking_type / amenidades.
   const amenities = new Set(item.amenities);
-  if (amenities.has("shuttle_free")) found.set("shuttle", "Traslado grátis");
+  if (amenities.has("shuttle_free")) found.set("shuttle", "Transfer grátis");
   if (item.parking_type.code === "covered" || amenities.has("covered")) {
     found.set("covered", "Coberto");
   }
@@ -117,7 +117,7 @@ export function computeGroupedResultBadges(
   }
 
   const amenities = new Set(group.amenities);
-  if (amenities.has("shuttle_free")) found.set("shuttle", "Traslado grátis");
+  if (amenities.has("shuttle_free")) found.set("shuttle", "Transfer grátis");
   if (group.parking_types.some((pt) => pt.code === "covered") || amenities.has("covered")) {
     found.set("covered", "Coberto");
   }

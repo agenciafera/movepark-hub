@@ -41,8 +41,8 @@ export function shuttleLabel(listing: ListingDetail): string | null {
   const min = listing.location.shuttle_to_terminal_minutes;
   const freq = listing.location.shuttle_frequency_minutes;
   if (min == null && freq == null) return null;
-  if (min != null) return `Traslado ao terminal em ${min} min`;
-  return "Traslado gratuito ao terminal";
+  if (min != null) return `Transfer ao terminal em ${min} min`;
+  return "Transfer gratuito ao terminal";
 }
 
 export function buildListingTldr(
@@ -64,7 +64,7 @@ export function buildListingTldr(
   }
 
   const shuttle = shuttleLabel(listing);
-  if (shuttle) facts.push({ key: "shuttle", label: "Traslado", value: shuttle });
+  if (shuttle) facts.push({ key: "shuttle", label: "Transfer", value: shuttle });
 
   const count = listing.location.review_count ?? 0;
   const avg = listing.location.review_avg;
