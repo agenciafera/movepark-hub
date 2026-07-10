@@ -18,7 +18,7 @@ import { SummaryCard } from "@/features/checkout/SummaryCard";
 import { formatBRL } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
-  isCheckoutExpired,
+  isCheckoutBlocked,
   nextStepOnConfirm,
   resolveCheckoutGate,
   type CheckoutStep,
@@ -144,7 +144,7 @@ export default function CheckoutPage() {
   }
 
   if (!booking) return null;
-  const expired = isCheckoutExpired(booking.expires_at, booking.status);
+  const expired = isCheckoutBlocked(booking.expires_at, booking.status);
 
   // Barra CTA fixa mobile visível apenas nos steps com form unificado (1 e 2)
   const showMobileCta = !expired && (step === 1 || step === 2);

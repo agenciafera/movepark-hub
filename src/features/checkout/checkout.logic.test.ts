@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  isCheckoutExpired,
+  isCheckoutBlocked,
   nextStepOnConfirm,
   resolveCheckoutGate,
   shouldPollCheckout,
@@ -73,23 +73,31 @@ describe("resolveCheckoutGate", () => {
   });
 });
 
-describe("isCheckoutExpired", () => {
+describe("isCheckoutBlocked", () => {
   const now = new Date("2026-06-23T12:00:00Z");
 
-  it("expira só reserva pendente passada do prazo", () => {
-    expect(isCheckoutExpired("2026-06-23T11:59:00Z", "pending", now)).toBe(true);
+  it("bloqueia reserva pendente passada do prazo", () => {
+    expect(isCheckoutBlocked("2026-06-23T11:59:00Z", "pending", now)).toBe(true);
   });
 
-  it("não expira se o prazo é futuro", () => {
-    expect(isCheckoutExpired("2026-06-23T12:01:00Z", "pending", now)).toBe(false);
+  it("bloqueia reserva cancelada (inclui a expirada que o cron cancelou), mesmo com prazo futuro ou nulo", () => {
+    // Regressão do furo: cancelada mostrava um checkout mudo, sem contador nem aviso.
+    expect(isCheckoutBlocked("2026-06-23T12:30:00Z", "cancelled", now)).toBe(true);
+    expect(isCheckoutBlocked(null, "cancelled", now)).toBe(true);
   });
 
-  it("não expira se a reserva não é pending", () => {
-    expect(isCheckoutExpired("2026-06-23T11:00:00Z", "confirmed", now)).toBe(false);
+  it("não bloqueia se o prazo é futuro (pendente)", () => {
+    expect(isCheckoutBlocked("2026-06-23T12:01:00Z", "pending", now)).toBe(false);
   });
 
-  it("sem expires_at nunca expira", () => {
-    expect(isCheckoutExpired(null, "pending", now)).toBe(false);
+  it("não bloqueia estados de sucesso/pós-reserva", () => {
+    expect(isCheckoutBlocked("2026-06-23T11:00:00Z", "confirmed", now)).toBe(false);
+    expect(isCheckoutBlocked("2026-06-23T11:00:00Z", "checked_in", now)).toBe(false);
+    expect(isCheckoutBlocked("2026-06-23T11:00:00Z", "completed", now)).toBe(false);
+  });
+
+  it("sem expires_at, pendente nunca bloqueia", () => {
+    expect(isCheckoutBlocked(null, "pending", now)).toBe(false);
   });
 });
 

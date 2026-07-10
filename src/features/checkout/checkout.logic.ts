@@ -91,13 +91,20 @@ export function resolveCheckoutGate(a: CheckoutGateArgs): CheckoutGate {
   return { kind: "ready" };
 }
 
-/** true se a reserva pendente já passou do `expires_at` (só pendente expira). */
-export function isCheckoutExpired(
+/**
+ * true quando o checkout NÃO pode prosseguir e deve mostrar o estado "reserva expirou / refaça":
+ * reserva `cancelled` (inclui a expiração, que o cron transforma em cancelada) OU pendente que já
+ * passou do `expires_at`. Estados de sucesso/pós-reserva (confirmed/checked_in/completed/no_show)
+ * não bloqueiam. Antes só a pendente-vencida era tratada, então uma reserva já cancelada caía num
+ * checkout mudo (sem contador e sem aviso); este superset fecha esse furo.
+ */
+export function isCheckoutBlocked(
   expiresAt: string | null,
   status: string,
   now: Date = new Date(),
 ): boolean {
-  return !!expiresAt && new Date(expiresAt) < now && status === "pending";
+  if (status === "cancelled") return true;
+  return status === "pending" && !!expiresAt && new Date(expiresAt) < now;
 }
 
 /** Passo pra onde auto-avançar quando o pagamento confirma (Step 4); null = não mexe. */
