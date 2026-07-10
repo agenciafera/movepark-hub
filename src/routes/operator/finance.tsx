@@ -4,6 +4,7 @@ import { ptBR } from "date-fns/locale";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -28,6 +29,7 @@ import {
   usePayoutWithdrawals,
   useRecipient,
 } from "@/features/payouts/api";
+import { PayoutSettingsDialog } from "@/features/payouts/PayoutSettingsDialog";
 import { payoutStatusLabel, payoutStatusTone } from "@/features/payouts/status";
 import { formatBRL, formatDate } from "@/lib/format";
 
@@ -58,8 +60,10 @@ const withdrawalStatus: Record<string, { label: string; tone: "pending" | "confi
 };
 
 export default function OperatorFinance() {
-  const { effectiveCompanyIds } = useAuth();
+  const { effectiveCompanyIds, hasScope } = useAuth();
   const companyId = effectiveCompanyIds[0];
+  const [payoutOpen, setPayoutOpen] = React.useState(false);
+  const canConfigurePayout = hasScope("payouts:write", companyId);
 
   const months = React.useMemo(() => recentMonths(12), []);
   const [monthKey, setMonthKey] = React.useState(months[0].value);
@@ -121,12 +125,26 @@ export default function OperatorFinance() {
                 )}
               </div>
             </div>
-            <div className="text-right">
-              <div className="text-caption text-muted">Saques diluem a taxa</div>
-              <div className="text-body-sm text-body">transferência agregada (não por reserva)</div>
+            <div className="flex flex-col items-end gap-2 text-right">
+              <div>
+                <div className="text-caption text-muted">Saques diluem a taxa</div>
+                <div className="text-body-sm text-body">transferência agregada (não por reserva)</div>
+              </div>
+              {canConfigurePayout && recipient.data && (
+                <Button size="sm" variant="secondary" onClick={() => setPayoutOpen(true)}>
+                  Configurar recebimento
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
+
+        <PayoutSettingsDialog
+          companyId={companyId}
+          recipient={recipient.data}
+          open={payoutOpen}
+          onOpenChange={setPayoutOpen}
+        />
       </div>
 
       {/* Extrato do mês */}

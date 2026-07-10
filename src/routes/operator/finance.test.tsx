@@ -4,6 +4,7 @@ import { renderWithProviders, mockAuth } from "@/test/utils";
 
 vi.mock("@/features/payouts/api", () => ({
   useRecipient: () => ({ data: { status: "active" } }),
+  useUpdateRecipientPayout: () => ({ mutateAsync: vi.fn(), isPending: false }),
   usePayoutBalance: () => ({ data: { balance_cents: 25500, withdrawn_cents: 10000 }, isLoading: false }),
   usePayoutStatement: () => ({
     data: {

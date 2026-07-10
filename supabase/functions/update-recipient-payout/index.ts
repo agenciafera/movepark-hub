@@ -50,15 +50,12 @@ Deno.serve(async (req: Request) => {
 
   const admin = createClient(SUPABASE_URL, SERVICE, { auth: { persistSession: false } });
 
-  // Só hub_admin configura repasse.
   const { data: caller } = await admin
     .from("profiles")
     .select("role")
     .eq("id", userData.user.id)
     .maybeSingle();
-  if (!caller || caller.role !== "hub_admin") {
-    return jsonResponse({ error: "Acesso restrito a administradores." }, 403);
-  }
+  const isHubAdmin = caller?.role === "hub_admin";
 
   let parsedBody: unknown;
   try {
@@ -68,6 +65,20 @@ Deno.serve(async (req: Request) => {
   }
   const { input, error: inputErr } = parseUpdatePayoutInput(parsedBody);
   if (!input) return jsonResponse({ error: inputErr }, 400);
+
+  // Permissão: hub_admin (Movepark) OU o DONO da empresa (escopo payouts:write, ADR-005). O
+  // member_has_scope roda no contexto do usuário (auth.uid()), por isso via userClient.
+  if (!isHubAdmin) {
+    const { data: allowed } = await userClient.rpc("member_has_scope", {
+      p_company_id: input.companyId,
+      p_scope: "payouts:write",
+    });
+    if (!allowed) return jsonResponse({ error: "Sem permissão para configurar o repasse." }, 403);
+  }
+  // Antecipação é decisão financeira da Movepark (e exige liberação Pagar.me): só hub_admin.
+  if (input.anticipation && !isHubAdmin) {
+    return jsonResponse({ error: "Antecipação só pode ser configurada pela Movepark." }, 403);
+  }
 
   // Recebedor da empresa (vivo).
   const { data: recipient } = await admin
