@@ -51,8 +51,9 @@ export function PayoutSettingsDialog({ companyId, open, onOpenChange }: Props) {
 
   React.useEffect(() => {
     if (!open) return;
-    setInterval((recipient?.transfer_interval as TransferInterval) ?? "Monthly");
-    setDay(recipient?.transfer_day ?? 1);
+    const iv = (recipient?.transfer_interval as TransferInterval) ?? "Monthly";
+    setInterval(iv);
+    setDay(coerceDay(iv, recipient?.transfer_day ?? 1));
     setEnabled(recipient?.transfer_enabled ?? true);
   }, [open, recipient]);
 

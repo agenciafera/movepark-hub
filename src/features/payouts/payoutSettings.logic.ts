@@ -13,18 +13,29 @@ export const INTERVAL_LABELS: Record<TransferInterval, string> = {
 /** Rótulos dos dias da semana (transfer_day 1–5 = seg–sex na Pagar.me). */
 export const WEEKDAY_LABELS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
 
+/**
+ * Dias "seguros" pra recebimento mensal — estilo vencimento de cartão. Todos ≤28, pra existirem em
+ * TODO mês (nada de 29/30/31, que quebram em fevereiro e em meses de 30 dias).
+ */
+export const MONTHLY_DAYS = [1, 5, 10, 15, 20, 25, 28];
+
 /** Opções de dia para o intervalo; null = campo não se aplica (Daily). */
 export function dayOptions(interval: TransferInterval): number[] | null {
   if (interval === "Daily") return null;
   if (interval === "Weekly") return [1, 2, 3, 4, 5];
-  return Array.from({ length: 31 }, (_, i) => i + 1); // Monthly 1–31
+  return MONTHLY_DAYS;
 }
 
-/** Ajusta o dia ao trocar o intervalo (Daily→0, Weekly→1–5, Monthly→1–31). */
+/** Snapa o dia pra uma opção válida do intervalo (Daily→0, Weekly→1–5, Monthly→dia seguro). */
 export function coerceDay(interval: TransferInterval, day: number): number {
   if (interval === "Daily") return 0;
   if (interval === "Weekly") return Math.min(5, Math.max(1, day || 1));
-  return Math.min(31, Math.max(1, day || 1));
+  // Monthly: se não for um dia seguro, cai no mais próximo (ex.: 31 → 28, 0 → 1).
+  if (MONTHLY_DAYS.includes(day)) return day;
+  return MONTHLY_DAYS.reduce(
+    (best, d) => (Math.abs(d - day) < Math.abs(best - day) ? d : best),
+    MONTHLY_DAYS[0],
+  );
 }
 
 /** Descrição amigável do dia por intervalo (pra exibição). */
