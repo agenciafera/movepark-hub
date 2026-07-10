@@ -18,8 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { PayoutRecipient } from "@/types/domain";
-import { useUpdateRecipientPayout } from "./api";
+import { useRecipient, useUpdateRecipientPayout } from "./api";
 import {
   coerceDay,
   dayOptions,
@@ -31,7 +30,6 @@ import {
 
 type Props = {
   companyId: string;
-  recipient: PayoutRecipient | null | undefined;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
@@ -40,19 +38,21 @@ type Props = {
  * Configuração de repasse por empresa (E0.3.3, hub_admin): cadência de transferência editável;
  * antecipação automática exibida porém desabilitada (requer liberação prévia na Pagar.me).
  */
-export function PayoutSettingsDialog({ companyId, recipient, open, onOpenChange }: Props) {
+export function PayoutSettingsDialog({ companyId, open, onOpenChange }: Props) {
   const update = useUpdateRecipientPayout();
+  const { data: recipient } = useRecipient(open ? companyId : undefined);
 
-  // NULL nas colunas = herda o default global; refletimos isso na dica "herdado".
+  // NULL nas colunas = herda o default global (hoje Mensal/dia 1); refletimos isso na dica "herdado"
+  // e no fallback do formulário (pra não exibir "Diário" quando a empresa na verdade recebe mensal).
   const inheritsTransfer = recipient?.transfer_interval == null;
-  const [interval, setInterval] = React.useState<TransferInterval>("Daily");
-  const [day, setDay] = React.useState(0);
+  const [interval, setInterval] = React.useState<TransferInterval>("Monthly");
+  const [day, setDay] = React.useState(1);
   const [enabled, setEnabled] = React.useState(true);
 
   React.useEffect(() => {
     if (!open) return;
-    setInterval((recipient?.transfer_interval as TransferInterval) ?? "Daily");
-    setDay(recipient?.transfer_day ?? 0);
+    setInterval((recipient?.transfer_interval as TransferInterval) ?? "Monthly");
+    setDay(recipient?.transfer_day ?? 1);
     setEnabled(recipient?.transfer_enabled ?? true);
   }, [open, recipient]);
 

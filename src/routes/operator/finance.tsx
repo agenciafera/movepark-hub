@@ -139,12 +139,7 @@ export default function OperatorFinance() {
           </CardContent>
         </Card>
 
-        <PayoutSettingsDialog
-          companyId={companyId}
-          recipient={recipient.data}
-          open={payoutOpen}
-          onOpenChange={setPayoutOpen}
-        />
+        <PayoutSettingsDialog companyId={companyId} open={payoutOpen} onOpenChange={setPayoutOpen} />
       </div>
 
       {/* Extrato do mês */}

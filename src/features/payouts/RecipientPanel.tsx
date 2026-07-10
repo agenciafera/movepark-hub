@@ -104,12 +104,7 @@ export function RecipientPanel({
         open={kycOpen}
         onOpenChange={setKycOpen}
       />
-      <PayoutSettingsDialog
-        companyId={companyId}
-        recipient={recipient}
-        open={payoutOpen}
-        onOpenChange={setPayoutOpen}
-      />
+      <PayoutSettingsDialog companyId={companyId} open={payoutOpen} onOpenChange={setPayoutOpen} />
     </div>
   );
 }

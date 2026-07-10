@@ -17,6 +17,7 @@ import {
 import { useRecipientsOverview, useSyncRecipient } from "@/features/payouts/api";
 import { payoutStatusLabel, payoutStatusTone } from "@/features/payouts/status";
 import { PayoutKycDialog } from "@/features/payouts/PayoutKycDialog";
+import { PayoutSettingsDialog } from "@/features/payouts/PayoutSettingsDialog";
 import {
   buildRecipientOverview,
   summarizeRecipients,
@@ -29,6 +30,7 @@ export default function ManagerFinanceRecipients() {
   const [onlyPending, setOnlyPending] = React.useState(false);
   const [syncingId, setSyncingId] = React.useState<string | null>(null);
   const [kyc, setKyc] = React.useState<{ id: string; name: string } | null>(null);
+  const [payoutId, setPayoutId] = React.useState<string | null>(null);
 
   const rows = React.useMemo(() => buildRecipientOverview(data ?? []), [data]);
   const summary = React.useMemo(() => summarizeRecipients(rows), [rows]);
@@ -184,6 +186,15 @@ export default function ManagerFinanceRecipients() {
                                 {busy ? "Sincronizando…" : "Sincronizar"}
                               </Button>
                             )}
+                            {row.hasRecipient && (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => setPayoutId(row.companyId)}
+                              >
+                                Configurar repasse
+                              </Button>
+                            )}
                           </>
                         )}
                       </div>
@@ -202,6 +213,13 @@ export default function ManagerFinanceRecipients() {
           companyName={kyc.name}
           open={!!kyc}
           onOpenChange={(o) => !o && setKyc(null)}
+        />
+      )}
+      {payoutId && (
+        <PayoutSettingsDialog
+          companyId={payoutId}
+          open={!!payoutId}
+          onOpenChange={(o) => !o && setPayoutId(null)}
         />
       )}
     </div>
