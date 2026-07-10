@@ -11,6 +11,7 @@ import { useProfile, useUpdateProfile } from "@/features/profile/api";
 import { useAcceptTerms } from "@/features/legal/api";
 import { LegalDocumentModal } from "@/features/legal/LegalDocumentModal";
 import { useUpdateBookingCustomer } from "./api";
+import { validateStep1Identity } from "./checkout.logic";
 
 type Props = {
   bookingId: string;
@@ -74,6 +75,25 @@ export function Step1Identity({
   async function handleNext(e: React.FormEvent) {
     e.preventDefault();
     if (!session) return;
+
+    // Contato obrigatório: telefone válido sempre; e-mail quando a conta não tem (login por
+    // telefone); telefone do passageiro quando é pra outra pessoa. Continua sendo só contato do
+    // pedido (snapshot da booking) — não vira credencial aqui (ADR-006 / E0.10).
+    const validationError = validateStep1Identity({
+      firstName,
+      lastName,
+      phone,
+      email,
+      loggedInWithEmail,
+      forOther,
+      otherName,
+      otherPhone,
+    });
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+
     try {
       const tasks: Promise<unknown>[] = [];
 

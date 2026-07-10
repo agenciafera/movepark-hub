@@ -3,7 +3,50 @@
 // passo de confirmação e o polling de confirmação automática. A página (`routes/checkout.tsx`)
 // e o hook (`api.useCheckoutBooking`) só consomem estas funções.
 
+import { isValidPhoneNumber } from "react-phone-number-input";
+
 export type CheckoutStep = 1 | 2 | 3 | 4;
+
+// Validação básica de e-mail: um "@" com algo antes e um domínio com ponto depois. Não tenta ser
+// RFC-completo (isso mora na verificação real, futura); só barra digitação claramente inválida.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export interface Step1IdentityInput {
+  firstName: string;
+  lastName: string;
+  /** Telefone de contato do titular, em E.164 (ou undefined enquanto vazio). */
+  phone: string | undefined;
+  /** E-mail de contato digitado (só usado quando o login NÃO foi por e-mail). */
+  email: string;
+  /** true quando a conta tem e-mail (login por e-mail/Google): o campo fica travado. */
+  loggedInWithEmail: boolean;
+  /** Reserva para outra pessoa: exige nome e telefone do passageiro. */
+  forOther: boolean;
+  otherName: string;
+  otherPhone: string | undefined;
+}
+
+/**
+ * Valida o passo 1 do checkout (Identificação). Retorna a 1ª mensagem de erro, ou null se ok.
+ * Contato é OBRIGATÓRIO (o pedido precisa de um telefone válido pra avisos operacionais): telefone
+ * do titular sempre; e-mail quando a conta não tem e-mail (login por telefone); e telefone do
+ * passageiro quando a reserva é pra outra pessoa. Contato ≠ credencial: nada disso vira login aqui
+ * (ADR-006 / E0.10); só popula o snapshot da booking.
+ */
+export function validateStep1Identity(i: Step1IdentityInput): string | null {
+  if (!i.firstName.trim() || !i.lastName.trim()) return "Conta seu nome e sobrenome.";
+  if (!i.phone || !isValidPhoneNumber(i.phone)) return "Informe um telefone de contato válido.";
+  if (!i.loggedInWithEmail && !EMAIL_RE.test(i.email.trim())) {
+    return "Informe um e-mail de contato válido.";
+  }
+  if (i.forOther) {
+    if (!i.otherName.trim()) return "Conta o nome de quem vai usar a vaga.";
+    if (!i.otherPhone || !isValidPhoneNumber(i.otherPhone)) {
+      return "Informe um telefone válido de quem vai usar a vaga.";
+    }
+  }
+  return null;
+}
 
 /** Decisão de "tela" antes de montar o layout do checkout. */
 export type CheckoutGate =

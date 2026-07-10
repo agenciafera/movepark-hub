@@ -4,7 +4,9 @@ import {
   nextStepOnConfirm,
   resolveCheckoutGate,
   shouldPollCheckout,
+  validateStep1Identity,
   type CheckoutGateArgs,
+  type Step1IdentityInput,
 } from "./checkout.logic";
 
 const baseGate: CheckoutGateArgs = {
@@ -118,5 +120,49 @@ describe("shouldPollCheckout", () => {
   it("para de pollar quando reserva e pagamento saíram de pending", () => {
     expect(shouldPollCheckout("confirmed", "paid")).toBe(false);
     expect(shouldPollCheckout(undefined, undefined)).toBe(false);
+  });
+});
+
+describe("validateStep1Identity", () => {
+  const base: Step1IdentityInput = {
+    firstName: "Pedro",
+    lastName: "Araujo",
+    phone: "+5511987654321", // BR válido
+    email: "",
+    loggedInWithEmail: true, // logou por e-mail: campo travado, não valida
+    forOther: false,
+    otherName: "",
+    otherPhone: undefined,
+  };
+
+  it("ok com telefone válido (login por e-mail)", () => {
+    expect(validateStep1Identity(base)).toBeNull();
+  });
+
+  it("exige nome e sobrenome", () => {
+    expect(validateStep1Identity({ ...base, firstName: "  " })).toMatch(/nome/i);
+    expect(validateStep1Identity({ ...base, lastName: "" })).toMatch(/nome/i);
+  });
+
+  it("telefone é OBRIGATÓRIO: vazio ou só o DDI '+55' não passa", () => {
+    expect(validateStep1Identity({ ...base, phone: undefined })).toMatch(/telefone/i);
+    expect(validateStep1Identity({ ...base, phone: "+55" })).toMatch(/telefone/i);
+    expect(validateStep1Identity({ ...base, phone: "+5511" })).toMatch(/telefone/i);
+  });
+
+  it("login por telefone: e-mail de contato vira obrigatório e é validado", () => {
+    const viaPhone: Step1IdentityInput = { ...base, loggedInWithEmail: false, email: "" };
+    expect(validateStep1Identity(viaPhone)).toMatch(/e-mail/i);
+    expect(validateStep1Identity({ ...viaPhone, email: "invalido" })).toMatch(/e-mail/i);
+    expect(validateStep1Identity({ ...viaPhone, email: "pedro@fera.ag" })).toBeNull();
+  });
+
+  it("reserva pra outra pessoa exige nome e telefone do passageiro", () => {
+    const other: Step1IdentityInput = { ...base, forOther: true, otherName: "", otherPhone: undefined };
+    expect(validateStep1Identity(other)).toMatch(/nome/i);
+    expect(validateStep1Identity({ ...other, otherName: "Maria" })).toMatch(/telefone/i);
+    expect(
+      validateStep1Identity({ ...other, otherName: "Maria", otherPhone: "+5511987654321" }),
+    ).toBeNull();
   });
 });
