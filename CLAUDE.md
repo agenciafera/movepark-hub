@@ -267,7 +267,7 @@ docs/
 
 **Tipos de domínio:** nunca importe nada de `@/types/database` diretamente nos componentes — ele é gerado. Derive tipos curados em `@/types/domain.ts` (`Tables<"booking">`, `Enums<"booking_status">`, tipos `…WithRelations`) e importe de lá. `database.ts` está no ignore do ESLint e do gen.
 
-**Idioma:** UI, comentários e mensagens são em **português** (pt-BR). Nomes de símbolos/identificadores em inglês. Siga o que já existe no arquivo vizinho.
+**Idioma:** UI, comentários e mensagens são em **português** (pt-BR). Nomes de símbolos/identificadores em inglês. Siga o que já existe no arquivo vizinho. Sem travessão "—" (ver "Escrita de conteúdo e copy" abaixo).
 
 ### Padrão de feature (`src/features/<dominio>/`)
 
@@ -322,6 +322,13 @@ onSuccess: () => qc.invalidateQueries({ queryKey: bookingsKeys.all })
 ### Edge Functions (`supabase/functions/`)
 
 Deno + imports remotos. Cada função abre com um bloco de comentário documentando rota, payload e comportamento — **mantenha esse cabeçalho**. Funções-chave: `create-booking` (wrapper sobre a SQL `create_booking_atomic`), `search` (preço+distância+amenidades), `get-faq` (auto+location+global), `mock-payment` (pagamento mockado do MVP), `send-whatsapp-otp`.
+
+## Escrita de conteúdo e copy (regra de marca)
+
+Vale para **tudo que o projeto publica ou mostra**: copy de UI, landing pages, e-mails, microcopy, mensagens de estado, docs e mensagens de commit.
+
+- **Proibido o travessão "—" (em dash) e o traço "–" (en dash) em qualquer texto do projeto.** O travessão é marca típica de texto gerado por IA e não combina com a voz da Movepark. **Nunca** use. No lugar dele, reescreva a frase: ponto, vírgula, dois-pontos ou parênteses resolvem quase sempre. Se precisar mesmo de um separador visual curto, use hífen com espaços (" - "). A regra cobre copy, comentários de código, docs e commits. O hífen simples "-" em palavras compostas, ranges e slugs continua normal (não é travessão). Ao concluir qualquer tarefa que escreva texto, faça uma passada final procurando "—" e "–" e elimine.
+- **Toda copy nova ou reescrita passa pela skill `copy-lp-queiroz`.** É a fonte de uniformidade da voz do projeto: mesmo padrão de headline, benefício acima de feature, quebra de objeção e prova. Ao criar ou ajustar texto de página, use a skill, mesmo para blocos curtos (aplique o método e o tom dela). O tom default da marca (Nubank-like: direto, humano, anti-guru, sem superlativo vazio) manda; a skill operacionaliza esse tom. Ver `PRODUCT.md` (Brand Personality) e `DESIGN.md`.
 
 ## Specs — leia antes de implementar regra de negócio
 

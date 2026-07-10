@@ -23,19 +23,19 @@ import { PartnerLeadModal } from "@/features/onboarding/PartnerLeadModal";
 const HERO_IMAGE =
   "/Estacionamentos/vaga-coberta-estacionamento-aeroporto-guarulhos-aeroparking.png";
 
-// Números do movepark.co/o-sistema (dados do negócio — confirmar/atualizar).
+// Sinais de confiança: fatos da política do parceiro, sem número sem lastro.
 const METRICS = [
-  { value: "R$ 1,28 mi", label: "gerado em reservas para parceiros" },
-  { value: "125 mil+", label: "reservas já realizadas" },
-  { value: "R$ 0", label: "de custo fixo mensal" },
-  { value: "2 países", label: "Brasil e Portugal" },
+  { value: "R$ 0", label: "de custo pra começar" },
+  { value: "100%", label: "das reservas pagas com antecedência" },
+  { value: "PIX & cartão", label: "o cliente paga antes de chegar" },
+  { value: "Sem trava", label: "você segue vendendo do seu jeito" },
 ];
 
 const STEPS = [
   {
     n: 1,
     title: "Cadastro rápido",
-    desc: "Deixe seu contato. Nossa equipe valida e configura seu estacionamento no sistema — sem burocracia.",
+    desc: "Deixe seu contato. Nossa equipe valida e configura seu estacionamento no sistema, sem burocracia.",
   },
   {
     n: 2,
@@ -58,7 +58,7 @@ const BENEFITS = [
   {
     icon: Wallet,
     title: "Pagamento garantido",
-    desc: "O cliente paga antes de chegar. Acabou a inadimplência e a cobrança no balcão.",
+    desc: "O cliente paga antes de chegar. Acabou a inadimplência e a discussão no balcão.",
   },
   {
     icon: CreditCard,
@@ -67,8 +67,8 @@ const BENEFITS = [
   },
   {
     icon: Tag,
-    title: "Preço inteligente",
-    desc: "Promoções sazonais, descontos por diária longa e cupons — você define, a gente ajuda na estratégia.",
+    title: "Preço no seu controle",
+    desc: "Você define a tabela. A gente ajuda com estratégia: sazonalidade, promoções e desconto por diária longa.",
   },
   {
     icon: BadgeCheck,
@@ -78,11 +78,11 @@ const BENEFITS = [
   {
     icon: ShieldCheck,
     title: "Seguro e sem risco",
-    desc: "Dados protegidos (LGPD) e nenhum custo pra começar. Você só paga quando recebe uma reserva.",
+    desc: "Dados protegidos (LGPD) e zero custo pra entrar. Você testa sem colocar nada em risco.",
   },
 ];
 
-// Depoimentos ILUSTRATIVOS — trocar pelos reais dos donos de estacionamento.
+// Depoimentos ILUSTRATIVOS: trocar pelos reais dos donos de estacionamento.
 const TESTIMONIALS = [
   {
     quote:
@@ -109,11 +109,11 @@ const BRANDS = ["Virapark", "Garage Inn", "Nation Park", "Aerovalet", "Abbapark"
 const FAQ = [
   {
     q: "Quanto custa para ser parceiro?",
-    a: "Nada de custo fixo — sem mensalidade e sem taxa de adesão. A Movepark recebe uma comissão apenas quando você recebe uma reserva. Se você não ganha, a gente não ganha.",
+    a: "Começar não custa nada: sem mensalidade e sem taxa de adesão. Os detalhes comerciais a gente alinha direto com você, já com as reservas na mesa.",
   },
   {
     q: "Como eu recebo o dinheiro das reservas?",
-    a: "O cliente paga com antecedência (PIX ou cartão). A Movepark garante o valor e faz o repasse organizado pra sua conta — sem inadimplência e sem cobrança manual.",
+    a: "O cliente paga com antecedência (PIX ou cartão). A Movepark garante o valor e faz o repasse organizado pra sua conta, sem inadimplência e sem cobrança manual.",
   },
   {
     q: "Preciso ter exclusividade com a Movepark?",
@@ -125,11 +125,11 @@ const FAQ = [
   },
   {
     q: "Eu continuo no controle dos preços?",
-    a: "Sim. Você define a sua tabela. A Movepark ajuda com estratégia de preço — sazonalidade, promoções e descontos por diária longa.",
+    a: "Sim. Você define a sua tabela. A Movepark ajuda com estratégia de preço: sazonalidade, promoções e desconto por diária longa.",
   },
   {
     q: "A Movepark investe em divulgação?",
-    a: "Sim, e essa é a maior vantagem: levamos clientes por tráfego pago e orgânico no Google. Você aparece pra quem está buscando vaga, sem gastar com mídia.",
+    a: "Sim, e essa é a maior vantagem: tráfego pago e orgânico no Google trazem quem está buscando vaga até você, sem você gastar um real com mídia.",
   },
 ];
 
@@ -162,13 +162,13 @@ export default function SejaParceiroPage() {
         <title>Seja parceiro | Movepark</title>
         <meta
           name="description"
-          content="Coloque seu estacionamento na Movepark e receba reservas online com pagamento garantido. Sem mensalidade e sem custo de adesão — você só paga quando recebe uma reserva."
+          content="Coloque seu estacionamento na Movepark e receba reservas online com pagamento garantido. Sem mensalidade e sem custo de adesão para começar."
         />
       </Helmet>
 
       <PartnerLeadModal open={open} onOpenChange={setOpen} />
 
-      {/* Hero — imagem em faixa, não muito alta */}
+      {/* Hero: imagem em faixa, não muito alta */}
       <section className="relative isolate overflow-hidden bg-mp-navy">
         <img
           src={HERO_IMAGE}
@@ -181,11 +181,11 @@ export default function SejaParceiroPage() {
             Para donos de estacionamento
           </span>
           <h1 className="mt-3 max-w-2xl text-display-2xl leading-tight text-white tablet:text-display-3xl">
-            Encha suas vagas com reservas online — sem pagar nada de custo fixo.
+            Encha suas vagas com reservas online. Sem custo pra começar.
           </h1>
           <p className="mt-4 max-w-xl text-body-md text-white/80">
-            A Movepark leva clientes até o seu estacionamento e garante o pagamento. Você só paga
-            quando recebe uma reserva. Simples assim.
+            A Movepark leva clientes até o seu estacionamento e garante o pagamento adiantado. Sem
+            mensalidade, sem risco pra começar.
           </p>
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <SejaParceiroCta onClick={openModal}>Quero ser parceiro</SejaParceiroCta>
@@ -208,16 +208,16 @@ export default function SejaParceiroPage() {
         </div>
       </section>
 
-      {/* Custo zero — destaque */}
+      {/* Custo zero: destaque */}
       <section className="mx-auto max-w-[1100px] px-4 py-16 desktop:px-8 desktop:py-20">
         <div className="rounded-lg border border-hairline bg-surface-pale p-8 text-center shadow-tier desktop:p-12">
           <p className="text-badge uppercase tracking-wide text-mp-indigo">Risco zero</p>
           <h2 className="mx-auto mt-3 max-w-2xl text-display-2xl text-ink">
-            Você não paga nada de custo fixo.
+            Você cuida das vagas. A gente cuida do resto.
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-body-md text-muted">
-            Sem mensalidade, sem taxa de adesão, sem gasto com marketing. A Movepark só ganha quando
-            você recebe uma reserva — nossos interesses são exatamente os mesmos.
+            Sem mensalidade, sem taxa de adesão, sem gasto com marketing. A Movepark traz o cliente,
+            recebe com antecedência e repassa organizado. Nossos interesses são os mesmos.
           </p>
           <div className="mt-7 flex justify-center">
             <SejaParceiroCta onClick={openModal}>Começar agora</SejaParceiroCta>
@@ -275,7 +275,7 @@ export default function SejaParceiroPage() {
             <iframe
               className="h-full w-full"
               src="https://www.youtube.com/embed/ZkbAd7B6CIo"
-              title="Movepark — vídeo institucional"
+              title="Movepark: vídeo institucional"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               referrerPolicy="strict-origin-when-cross-origin"
               allowFullScreen

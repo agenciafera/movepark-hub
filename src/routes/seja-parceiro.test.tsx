@@ -17,9 +17,9 @@ describe("SejaParceiroPage — landing de parceiro", () => {
   it("mostra promessa, métricas e FAQ", () => {
     renderPage();
     expect(
-      screen.getByRole("heading", { name: /sem pagar nada de custo fixo/i }),
+      screen.getByRole("heading", { name: /sem custo pra começar/i }),
     ).toBeInTheDocument();
-    expect(screen.getByText("125 mil+")).toBeInTheDocument();
+    expect(screen.getByText("das reservas pagas com antecedência")).toBeInTheDocument();
     expect(screen.getByText(/Quanto custa para ser parceiro/i)).toBeInTheDocument();
   });
 
