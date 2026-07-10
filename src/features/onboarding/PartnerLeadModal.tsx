@@ -69,12 +69,14 @@ export function PartnerLeadModal({
 
   async function nextFromStep1() {
     setError(null);
+    if (!contactName.trim()) return setError("Informe seu nome.");
     if (!EMAIL_RE.test(email.trim())) return setError("Informe um e-mail válido.");
     if (!phone || phone.length < 8) return setError("Informe seu WhatsApp.");
     try {
       await capture.mutateAsync({
         contact_email: email,
         contact_phone: phone,
+        contact_name: contactName,
         step: 1,
         ...utm,
         hp_field: hp,
@@ -106,7 +108,6 @@ export function PartnerLeadModal({
 
   async function finish() {
     setError(null);
-    if (!contactName.trim()) return setError("Informe seu nome.");
     if (!accept) return setError("É preciso aceitar os termos para continuar.");
     try {
       const r = await submit.mutateAsync({
@@ -177,6 +178,15 @@ export function PartnerLeadModal({
                   Deixe seu contato — a gente te chama no WhatsApp pra colocar você no ar.
                 </p>
                 <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="pl-name">Seu nome</Label>
+                  <Input
+                    id="pl-name"
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    placeholder="Nome e sobrenome"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
                   <Label htmlFor="pl-email">E-mail</Label>
                   <Input
                     id="pl-email"
@@ -230,15 +240,9 @@ export function PartnerLeadModal({
 
             {step === 3 && (
               <div className="space-y-4">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="pl-name">Seu nome</Label>
-                  <Input
-                    id="pl-name"
-                    value={contactName}
-                    onChange={(e) => setContactName(e.target.value)}
-                    placeholder="Nome e sobrenome"
-                  />
-                </div>
+                <p className="text-body-sm text-muted">
+                  Quase lá, {contactName.trim().split(/\s+/)[0] || "parceiro"}. É só confirmar.
+                </p>
                 <label className="flex cursor-pointer items-start gap-3">
                   <Checkbox checked={accept} onCheckedChange={(v) => setAccept(v === true)} />
                   <span className="text-body-sm text-muted">

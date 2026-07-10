@@ -340,9 +340,7 @@ export default function SejaParceiroPage() {
             Cadastre seu estacionamento em 2 minutos. Sem custo pra começar.
           </p>
           <div className="mt-7 flex justify-center">
-            <SejaParceiroCta onClick={openModal} variant="secondary">
-              Quero ser parceiro
-            </SejaParceiroCta>
+            <SejaParceiroCta onClick={openModal}>Quero ser parceiro</SejaParceiroCta>
           </div>
         </div>
       </section>

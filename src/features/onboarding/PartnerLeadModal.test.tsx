@@ -60,6 +60,7 @@ describe("PartnerLeadModal", () => {
     renderModal();
     expect(screen.getByText("Passo 1 de 3")).toBeInTheDocument();
 
+    await userEvent.type(screen.getByLabelText("Seu nome"), "Ana Souza");
     await userEvent.type(screen.getByLabelText("E-mail"), "invalido");
     await userEvent.type(screen.getByLabelText("WhatsApp"), "11991234567");
     await userEvent.click(screen.getByRole("button", { name: /Continuar/i }));
@@ -72,6 +73,7 @@ describe("PartnerLeadModal", () => {
   it("com e-mail + WhatsApp válidos, salva (captura abandono) e avança pro passo 2", async () => {
     renderModal();
 
+    await userEvent.type(screen.getByLabelText("Seu nome"), "Ana Souza");
     await userEvent.type(screen.getByLabelText("E-mail"), "dono@estacionamento.com");
     await userEvent.type(screen.getByLabelText("WhatsApp"), "11991234567");
     await userEvent.click(screen.getByRole("button", { name: /Continuar/i }));
