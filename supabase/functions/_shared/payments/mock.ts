@@ -91,4 +91,12 @@ export class MockGateway implements PaymentGateway {
       httpStatus: 200,
     });
   }
+
+  updateTransferSettings(externalId: string): Promise<RecipientResult> {
+    return this.getRecipient(externalId);
+  }
+
+  updateAnticipationSettings(externalId: string): Promise<RecipientResult> {
+    return this.getRecipient(externalId);
+  }
 }

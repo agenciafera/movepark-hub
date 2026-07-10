@@ -6,6 +6,7 @@ import type { PayoutRecipientStatus } from "@/types/domain";
 import { useRecipient, useSyncRecipient, type PayoutRequirement } from "./api";
 import { payoutStatusLabel, payoutStatusTone } from "./status";
 import { PayoutKycDialog } from "./PayoutKycDialog";
+import { PayoutSettingsDialog } from "./PayoutSettingsDialog";
 
 /**
  * Painel do recebedor (gateway de pagamento) para o Manager. Mostra status da ficha, link de
@@ -21,6 +22,7 @@ export function RecipientPanel({
   const { data: recipient, isLoading } = useRecipient(companyId);
   const sync = useSyncRecipient();
   const [kycOpen, setKycOpen] = React.useState(false);
+  const [payoutOpen, setPayoutOpen] = React.useState(false);
 
   const status: PayoutRecipientStatus = recipient?.status ?? "draft";
   const hasExternal = !!recipient?.external_recipient_id;
@@ -89,6 +91,11 @@ export function RecipientPanel({
             Sincronizar status
           </Button>
         )}
+        {recipient && (
+          <Button size="sm" variant="secondary" onClick={() => setPayoutOpen(true)}>
+            Configurar repasse
+          </Button>
+        )}
       </div>
 
       <PayoutKycDialog
@@ -96,6 +103,12 @@ export function RecipientPanel({
         companyName={companyName}
         open={kycOpen}
         onOpenChange={setKycOpen}
+      />
+      <PayoutSettingsDialog
+        companyId={companyId}
+        recipient={recipient}
+        open={payoutOpen}
+        onOpenChange={setPayoutOpen}
       />
     </div>
   );

@@ -85,7 +85,25 @@ export interface RecipientInput {
   /** register_information completo (endereço, telefone, representante…) quando coletado (E1.3). */
   kyc?: RecipientKyc | null;
   /** Cadência de saque (diluir a taxa: transferir agregado, não por transação — E0.3.3). */
-  transferSettings?: { enabled: boolean; interval: string; day: number } | null;
+  transferSettings?: TransferSettings | null;
+  /** Antecipação automática (E0.3.3). Requer liberação na conta Pagar.me. */
+  anticipationSettings?: AnticipationSettings | null;
+}
+
+/** Cadência de transferência de um recebedor (transfer-settings da Pagar.me). */
+export interface TransferSettings {
+  enabled: boolean;
+  interval: string; // Daily | Weekly | Monthly
+  day: number;
+}
+
+/** Antecipação automática de um recebedor (automatic-anticipation-settings da Pagar.me). */
+export interface AnticipationSettings {
+  enabled: boolean;
+  type: string; // full | 1025
+  volumePercentage: number; // 0..100
+  delay: number | null;
+  days: number[] | null;
 }
 
 /** Resultado normalizado de qualquer operação de recebedor. */
@@ -212,6 +230,13 @@ export interface PaymentGateway {
   getCharge(orderId: string): Promise<ChargeResult>;
   /** Estorna uma cobrança (total ou parcial). O split é revertido proporcionalmente pelo gateway. */
   refundCharge(input: RefundInput): Promise<RefundResult>;
+  /** Atualiza a cadência de transferência de um recebedor (PATCH transfer-settings). */
+  updateTransferSettings(externalId: string, settings: TransferSettings): Promise<RecipientResult>;
+  /** Atualiza a antecipação automática de um recebedor (PATCH automatic-anticipation-settings). */
+  updateAnticipationSettings(
+    externalId: string,
+    settings: AnticipationSettings,
+  ): Promise<RecipientResult>;
 }
 
 /** Erro de configuração do gateway (ex.: secret ausente) — separado de erro de negócio. */

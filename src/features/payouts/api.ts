@@ -7,6 +7,7 @@ import type { toPayoutAccountPayload } from "./kyc";
 export type PayoutAccountPayload = ReturnType<typeof toPayoutAccountPayload>;
 
 const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-recipient`;
+const UPDATE_PAYOUT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/update-recipient-payout`;
 const ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 /** Pendência de KYC/verificação normalizada (coluna `requirements` jsonb). */
@@ -148,6 +149,44 @@ export function useSyncRecipient() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: callSyncRecipient,
+    onSuccess: () => qc.invalidateQueries({ queryKey: payoutKeys.all }),
+  });
+}
+
+/** Config de repasse por empresa (E0.3.3): cadência de transferência e/ou antecipação. */
+export type UpdatePayoutArgs = {
+  company_id: string;
+  transfer?: { enabled: boolean; interval: string; day: number } | null;
+  anticipation?: {
+    enabled: boolean;
+    type: string;
+    volume_percentage: number;
+    delay: number | null;
+    days: number[] | null;
+  } | null;
+};
+
+export function useUpdateRecipientPayout() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: UpdatePayoutArgs): Promise<{ ok: boolean; warning: string | null }> => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("Sessão expirada. Entre novamente.");
+      const res = await fetch(UPDATE_PAYOUT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: ANON,
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(args),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? `Falha (HTTP ${res.status})`);
+      return body as { ok: boolean; warning: string | null };
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: payoutKeys.all }),
   });
 }

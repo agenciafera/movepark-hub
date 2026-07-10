@@ -7,12 +7,14 @@
 // completos (endereço, sócios, nascimento, etc.) são coletados em E1.3.
 
 import type {
+  AnticipationSettings,
   CardChargeInput,
   ChargeResult,
   ChargeStatus,
   PaymentGateway,
   PixChargeInput,
   RecipientInput,
+  TransferSettings,
   RecipientKycAddress,
   RecipientKycPhone,
   RecipientRequirement,
@@ -202,6 +204,7 @@ export function buildCreateRecipientBody(input: RecipientInput): Record<string, 
       };
 
   const t = input.transferSettings;
+  const a = input.anticipationSettings;
   return {
     code: input.externalCode,
     register_information: register,
@@ -216,9 +219,19 @@ export function buildCreateRecipientBody(input: RecipientInput): Record<string, 
       account_check_digit: undef(input.bank.accountCheckDigit),
       type: undef(input.bank.type),
     },
-    // Cadência de saque agregada (E0.3.3) — só quando configurado no Manager.
+    // Cadência de saque agregada (E0.3.3) — só quando configurado (empresa ?? global).
     transfer_settings: t
       ? { transfer_enabled: t.enabled, transfer_interval: t.interval, transfer_day: t.day }
+      : undefined,
+    // Antecipação automática (E0.3.3) — só quando habilitada (requer liberação Pagar.me).
+    automatic_anticipation_settings: a?.enabled
+      ? {
+          enabled: true,
+          type: a.type,
+          volume_percentage: a.volumePercentage,
+          ...(a.delay != null ? { delay: a.delay } : {}),
+          ...(a.days && a.days.length ? { days: a.days } : {}),
+        }
       : undefined,
   };
 }
@@ -477,6 +490,35 @@ export class PagarmeGateway implements PaymentGateway {
   async getRecipient(externalId: string): Promise<RecipientResult> {
     const result = await this.request("GET", `/recipients/${externalId}`);
     return this.withKycLink(result);
+  }
+
+  async updateTransferSettings(
+    externalId: string,
+    settings: TransferSettings,
+  ): Promise<RecipientResult> {
+    return this.request("PATCH", `/recipients/${externalId}/transfer-settings`, {
+      transfer_enabled: settings.enabled,
+      transfer_interval: settings.interval,
+      transfer_day: settings.day,
+    });
+  }
+
+  async updateAnticipationSettings(
+    externalId: string,
+    settings: AnticipationSettings,
+  ): Promise<RecipientResult> {
+    const body: Record<string, unknown> = {
+      enabled: settings.enabled,
+      type: settings.type,
+      volume_percentage: settings.volumePercentage,
+    };
+    if (settings.delay != null) body.delay = settings.delay;
+    if (settings.days && settings.days.length) body.days = settings.days;
+    return this.request(
+      "PATCH",
+      `/recipients/${externalId}/automatic-anticipation-settings`,
+      body,
+    );
   }
 
   private async rawFetch(

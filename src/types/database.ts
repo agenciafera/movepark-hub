@@ -2033,6 +2033,148 @@ export type Database = {
           },
         ]
       }
+      membership: {
+        Row: {
+          completed_bookings: number
+          created_at: string
+          last_booking_at: string | null
+          profile_id: string
+          tier_code: string
+          tier_since: string
+          updated_at: string
+          window_bookings: number
+        }
+        Insert: {
+          completed_bookings?: number
+          created_at?: string
+          last_booking_at?: string | null
+          profile_id: string
+          tier_code?: string
+          tier_since?: string
+          updated_at?: string
+          window_bookings?: number
+        }
+        Update: {
+          completed_bookings?: number
+          created_at?: string
+          last_booking_at?: string | null
+          profile_id?: string
+          tier_code?: string
+          tier_since?: string
+          updated_at?: string
+          window_bookings?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_tier_code_fkey"
+            columns: ["tier_code"]
+            isOneToOne: false
+            referencedRelation: "membership_tier"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      membership_tier: {
+        Row: {
+          cashback_bps: number
+          code: string
+          created_at: string
+          is_invite_only: boolean
+          min_bookings: number
+          name: string
+          perks: Json
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          cashback_bps?: number
+          code: string
+          created_at?: string
+          is_invite_only?: boolean
+          min_bookings: number
+          name: string
+          perks?: Json
+          sort_order: number
+          updated_at?: string
+        }
+        Update: {
+          cashback_bps?: number
+          code?: string
+          created_at?: string
+          is_invite_only?: boolean
+          min_bookings?: number
+          name?: string
+          perks?: Json
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      movecoins_ledger: {
+        Row: {
+          amount_cents: number
+          booking_id: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          kind: string
+          note: string | null
+          profile_id: string
+          referral_id: string | null
+        }
+        Insert: {
+          amount_cents: number
+          booking_id?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          kind: string
+          note?: string | null
+          profile_id: string
+          referral_id?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          booking_id?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          kind?: string
+          note?: string | null
+          profile_id?: string
+          referral_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movecoins_ledger_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movecoins_ledger_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movecoins_ledger_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "referral"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       parking_type: {
         Row: {
           code: string
@@ -2057,6 +2199,63 @@ export type Database = {
           id?: string
           name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      partner_lead: {
+        Row: {
+          city: string | null
+          company_name: string | null
+          contact_email: string
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          estimated_spots: number | null
+          id: string
+          referrer: string | null
+          state: string | null
+          status: string
+          step: number
+          updated_at: string
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          city?: string | null
+          company_name?: string | null
+          contact_email: string
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          estimated_spots?: number | null
+          id?: string
+          referrer?: string | null
+          state?: string | null
+          status?: string
+          step?: number
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          city?: string | null
+          company_name?: string | null
+          contact_email?: string
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          estimated_spots?: number | null
+          id?: string
+          referrer?: string | null
+          state?: string | null
+          status?: string
+          step?: number
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Relationships: []
       }
@@ -2222,6 +2421,11 @@ export type Database = {
       }
       payout_recipient: {
         Row: {
+          anticipation_days: number[] | null
+          anticipation_delay: number | null
+          anticipation_enabled: boolean | null
+          anticipation_type: string | null
+          anticipation_volume_percentage: number | null
           company_id: string
           created_at: string
           deleted_at: string | null
@@ -2232,9 +2436,17 @@ export type Database = {
           provider: string
           requirements: Json
           status: Database["public"]["Enums"]["payout_recipient_status"]
+          transfer_day: number | null
+          transfer_enabled: boolean | null
+          transfer_interval: string | null
           updated_at: string
         }
         Insert: {
+          anticipation_days?: number[] | null
+          anticipation_delay?: number | null
+          anticipation_enabled?: boolean | null
+          anticipation_type?: string | null
+          anticipation_volume_percentage?: number | null
           company_id: string
           created_at?: string
           deleted_at?: string | null
@@ -2245,9 +2457,17 @@ export type Database = {
           provider?: string
           requirements?: Json
           status?: Database["public"]["Enums"]["payout_recipient_status"]
+          transfer_day?: number | null
+          transfer_enabled?: boolean | null
+          transfer_interval?: string | null
           updated_at?: string
         }
         Update: {
+          anticipation_days?: number[] | null
+          anticipation_delay?: number | null
+          anticipation_enabled?: boolean | null
+          anticipation_type?: string | null
+          anticipation_volume_percentage?: number | null
           company_id?: string
           created_at?: string
           deleted_at?: string | null
@@ -2258,6 +2478,9 @@ export type Database = {
           provider?: string
           requirements?: Json
           status?: Database["public"]["Enums"]["payout_recipient_status"]
+          transfer_day?: number | null
+          transfer_enabled?: boolean | null
+          transfer_interval?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2643,6 +2866,126 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      referral: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          qualified_at: string | null
+          qualifying_booking_id: string | null
+          referred_coupon_id: string | null
+          referred_email: string | null
+          referred_profile_id: string | null
+          referrer_profile_id: string
+          reward_amount: number
+          reward_coupon_id: string | null
+          rewarded_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          qualified_at?: string | null
+          qualifying_booking_id?: string | null
+          referred_coupon_id?: string | null
+          referred_email?: string | null
+          referred_profile_id?: string | null
+          referrer_profile_id: string
+          reward_amount?: number
+          reward_coupon_id?: string | null
+          rewarded_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          qualified_at?: string | null
+          qualifying_booking_id?: string | null
+          referred_coupon_id?: string | null
+          referred_email?: string | null
+          referred_profile_id?: string | null
+          referrer_profile_id?: string
+          reward_amount?: number
+          reward_coupon_id?: string | null
+          rewarded_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_code_fkey"
+            columns: ["code"]
+            isOneToOne: false
+            referencedRelation: "referral_code"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "referral_qualifying_booking_id_fkey"
+            columns: ["qualifying_booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_referred_coupon_id_fkey"
+            columns: ["referred_coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupon"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_referred_profile_id_fkey"
+            columns: ["referred_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_referrer_profile_id_fkey"
+            columns: ["referrer_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_reward_coupon_id_fkey"
+            columns: ["reward_coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupon"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_code: {
+        Row: {
+          code: string
+          created_at: string
+          profile_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          profile_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_code_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       review: {
         Row: {
@@ -3605,6 +3948,13 @@ export type Database = {
         }[]
       }
       get_my_identities: { Args: never; Returns: Json }
+      get_my_membership: { Args: never; Returns: Json }
+      get_my_referrals: { Args: never; Returns: Json }
+      get_my_wallet: { Args: never; Returns: Json }
+      get_or_create_referral_code: {
+        Args: { p_profile_id?: string }
+        Returns: string
+      }
       get_pricing_data: {
         Args: {
           p_company: string
@@ -3918,12 +4268,17 @@ export type Database = {
         Args: { p_content: string; p_slug: string }
         Returns: Json
       }
+      recompute_membership: {
+        Args: { p_profile_id: string }
+        Returns: undefined
+      }
       reconcile_confirmations_expected_key: { Args: never; Returns: string }
       reconcile_refunds_expected_key: { Args: never; Returns: string }
       record_terms_acceptance: {
         Args: { p_booking_id: string; p_ip?: string }
         Returns: Json
       }
+      redeem_referral_code: { Args: { p_code: string }; Returns: Json }
       release_booking_capacity: {
         Args: { p_booking_id: string }
         Returns: undefined

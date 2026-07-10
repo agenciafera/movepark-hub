@@ -302,10 +302,21 @@ parceiro + NFs é a E1.5.2.
 **Saques reais:** tabela **`payout_withdrawal`** (RLS: operator lê o seu, escrita só service_role)
 alimentada pelos eventos **`transfer.*`** do Pagar.me no `pagarme-webhook` (upsert idempotente por
 `(provider, external_transfer_id)`; casa empresa por `external_recipient_id`). **Diluir a taxa** (R$3,67,
-`app_setting.payout_withdrawal_fee_cents`): `transfer_settings` (cadência agregada) no recebedor,
-configurável via `app_setting` e aplicado no `sync-recipient`. **Correção:** o webhook deixou de zerar
-`paid_at` em estorno (preserva a data do pagamento para a reconciliação por período). Migration
-`20260703000000`.
+`app_setting.payout_withdrawal_fee_cents`): `transfer_settings` (cadência agregada) no recebedor.
+**Correção:** o webhook deixou de zerar `paid_at` em estorno (preserva a data do pagamento para a
+reconciliação por período). Migration `20260703000000`.
+
+**Config de repasse POR EMPRESA (E0.3.3, migration `20260729000000`).** A cadência de transferência
+(`Daily/Weekly/Monthly` + dia + on/off) e a **antecipação automática** deixam de ser só globais:
+viram **colunas em `payout_recipient`** (`transfer_*`, `anticipation_*`; **NULL = herda** o default
+global do `app_setting` — `payout_transfer_*` / novos `payout_anticipation_*`). O valor **efetivo**
+(`coluna ?? global ?? hard`) é resolvido em `_shared/payments/payoutConfig.ts` e aplicado no
+recebedor: no **create** pelo `sync-recipient`, e no **update** pela Edge nova **`update-recipient-payout`**
+(hub_admin) → `gateway.updateTransferSettings` / `updateAnticipationSettings`
+(PATCH `/recipients/{id}/transfer-settings` e `/automatic-anticipation-settings`, ADR-004; mock no-op).
+UI: botão **Configurar repasse** no `RecipientPanel` (Manager → Recebedores). **Antecipação** aparece
+mas **desabilitada** — a Pagar.me exige **liberação prévia** da conta. `take_rate_bps` segue por empresa
+na `company`.
 
 ## Tarifa de flexibilidade como receita Movepark (E2.8)
 

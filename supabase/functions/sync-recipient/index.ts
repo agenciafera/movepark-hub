@@ -15,6 +15,7 @@
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
+import { resolveAnticipation, resolveTransfer } from "../_shared/payments/payoutConfig.ts";
 import {
   accountToRecipientInput,
   gatewayErrorMessage,
@@ -113,7 +114,7 @@ Deno.serve(async (req: Request) => {
   // Garante a linha de payout_recipient (nasce em draft).
   let { data: recipient } = await admin
     .from("payout_recipient")
-    .select("id, external_recipient_id, status, provider")
+    .select("id, external_recipient_id, status, provider, transfer_enabled, transfer_interval, transfer_day, anticipation_enabled, anticipation_type, anticipation_volume_percentage, anticipation_delay, anticipation_days")
     .eq("company_id", input.company_id)
     .eq("provider", input.provider)
     .is("deleted_at", null)
@@ -123,7 +124,7 @@ Deno.serve(async (req: Request) => {
     const { data: created, error: createErr } = await admin
       .from("payout_recipient")
       .insert({ company_id: input.company_id, provider: input.provider, status: "draft" })
-      .select("id, external_recipient_id, status, provider")
+      .select("id, external_recipient_id, status, provider, transfer_enabled, transfer_interval, transfer_day, anticipation_enabled, anticipation_type, anticipation_volume_percentage, anticipation_delay, anticipation_days")
       .single();
     if (createErr) return jsonResponse({ error: createErr.message }, 500);
     recipient = created;
@@ -192,21 +193,24 @@ Deno.serve(async (req: Request) => {
     contactEmail,
   );
 
-  // Cadência de saque agregada (E0.3.3) — diluir a taxa: transferir agregado, não por transação.
-  const { data: transferCfg } = await admin
+  // Config de repasse EFETIVA (coluna da empresa ?? default global) — E0.3.3.
+  const { data: payoutCfg } = await admin
     .from("app_setting")
     .select("key, value")
-    .in("key", ["payout_transfer_enabled", "payout_transfer_interval", "payout_transfer_day"]);
-  const cfg = Object.fromEntries((transferCfg ?? []).map((s) => [s.key, s.value]));
-  if (cfg.payout_transfer_interval) {
-    const interval = cfg.payout_transfer_interval.toLowerCase();
-    recipientInput.transferSettings = {
-      enabled: cfg.payout_transfer_enabled !== "false",
-      // Pagar.me espera Capitalizado (Daily/Weekly/Monthly).
-      interval: interval.charAt(0).toUpperCase() + interval.slice(1),
-      day: Number(cfg.payout_transfer_day ?? 0) || 0,
-    };
-  }
+    .in("key", [
+      "payout_transfer_enabled",
+      "payout_transfer_interval",
+      "payout_transfer_day",
+      "payout_anticipation_enabled",
+      "payout_anticipation_type",
+      "payout_anticipation_volume_percentage",
+      "payout_anticipation_delay",
+      "payout_anticipation_days",
+    ]);
+  const globalCfg = Object.fromEntries((payoutCfg ?? []).map((s) => [s.key, s.value]));
+  recipientInput.transferSettings = resolveTransfer(recipient, globalCfg);
+  const anticipation = resolveAnticipation(recipient, globalCfg);
+  if (anticipation.enabled) recipientInput.anticipationSettings = anticipation;
 
   const result = await gateway.createRecipient(recipientInput);
 
