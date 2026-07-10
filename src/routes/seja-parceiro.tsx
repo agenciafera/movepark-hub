@@ -71,7 +71,7 @@ const BENEFITS = [
   {
     icon: CreditCard,
     title: "PIX e cartão, checkout redondo",
-    desc: "Reserva em poucos toques, com a melhor experiência de compra do setor.",
+    desc: "Reserva em poucos toques, com pagamento aprovado na hora.",
   },
   {
     icon: Tag,

@@ -289,12 +289,19 @@ mesmo padrão de não-vazamento.
 **Prioridade de badge**: no máximo um badge de urgência por card — `sold_out` > `near_capacity`
 (escassez) > `high_demand_today` (demanda). Nunca escassez e demanda juntos no mesmo card.
 
-**Escopo desta entrega** (recorte da E3.6, ver ClickUp): só o pedaço que usa dado real já
-existente e não depende de infra nova. Os outros dois entregáveis da E3.6 — "N pessoas vendo
-agora" (exige tracking de sessão/presença, inexistente hoje) e ajuste dinâmico por A/B
-testing (infra inexistente) — **seguem no backlog**, pós-lançamento, como o épico original
-já previa. Listing detail (`ReservationCard`) ainda não mostra o badge — é extensão natural,
-não feita nesta entrega.
+**Escopo desta entrega** (recorte da E3.6): só o pedaço que usa dado real já
+existente e não depende de infra nova. A **E3.6 foi fechada como `completed`** no ClickUp em
+2026-07-10 com este recorte; os outros dois entregáveis não entraram e foram diferidos para
+o escopo que já cobre suas dependências:
+
+- "N pessoas vendo agora" (exige tracking de sessão/presença ao vivo, inexistente hoje):
+  segue pós-lançamento, junto da governança de escassez honesta (**E2.7**).
+- Ajuste dinâmico da oferta por threshold de escassez: coberto pela **E3.5** (precificação
+  dinâmica / Tábua de Marés).
+
+Ambos dependem de volume real de tráfego e de infra de A/B testing, então nascem nesses
+épicos quando forem retomados, sem reabrir a E3.6. Listing detail (`ReservationCard`) ainda
+não mostra o badge; é extensão natural, não feita nesta entrega.
 
 ---
 
