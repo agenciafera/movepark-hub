@@ -27,6 +27,10 @@ export default defineConfig({
         test: {
           name: "unit",
           environment: "happy-dom",
+          // Não carrega src de <iframe> (ex.: embed do YouTube) — testes não batem na rede.
+          environmentOptions: {
+            happyDOM: { settings: { disableIframePageLoading: true } },
+          },
           globals: true,
           setupFiles: ["src/test/setup.ts"],
           include: ["src/**/*.test.{ts,tsx}"],

@@ -1,23 +1,35 @@
 import { describe, expect, it } from "vitest";
 import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { HelmetProvider } from "react-helmet-async";
 import { renderWithProviders } from "@/test/utils";
 import SejaParceiroPage from "@/routes/seja-parceiro";
 
-describe("SejaParceiroPage — ordem mobile-first", () => {
-  it("coloca o formulário antes dos benefícios no DOM (ação alcançável no mobile)", () => {
-    renderWithProviders(
-      <HelmetProvider>
-        <SejaParceiroPage />
-      </HelmetProvider>,
-    );
+function renderPage() {
+  renderWithProviders(
+    <HelmetProvider>
+      <SejaParceiroPage />
+    </HelmetProvider>,
+  );
+}
 
-    const form = screen.getByRole("heading", { name: "Comece agora" });
-    const firstBenefit = screen.getByText("Mais reservas");
+describe("SejaParceiroPage — landing de parceiro", () => {
+  it("mostra promessa, métricas e FAQ", () => {
+    renderPage();
+    expect(
+      screen.getByRole("heading", { name: /sem pagar nada de custo fixo/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("125 mil+")).toBeInTheDocument();
+    expect(screen.getByText(/Quanto custa para ser parceiro/i)).toBeInTheDocument();
+  });
 
-    // No mobile a ordem do DOM é a ordem visual: "Comece agora" (form) vem antes de "Mais reservas".
-    expect(form.compareDocumentPosition(firstBenefit)).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING,
-    );
+  it("não tem formulário inline; os CTAs abrem o modal de cadastro", async () => {
+    renderPage();
+    // Formulário não fica visível na página (só via modal).
+    expect(screen.queryByText("Passo 1 de 3")).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getAllByRole("button", { name: /Quero ser parceiro/i })[0]);
+
+    expect(await screen.findByText("Passo 1 de 3")).toBeInTheDocument();
   });
 });
