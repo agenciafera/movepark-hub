@@ -81,4 +81,26 @@ describe("PartnerLeadModal", () => {
     expect(captureMutateAsync).toHaveBeenCalledTimes(1);
     expect(await screen.findByText("Passo 2 de 3")).toBeInTheDocument();
   });
+
+  it("distribui os campos: passo 2 = estacionamento+vagas, passo 3 = cidade+estado+aceite", async () => {
+    renderModal();
+    await userEvent.type(screen.getByLabelText("Seu nome"), "Ana Souza");
+    await userEvent.type(screen.getByLabelText("E-mail"), "ana@estac.com");
+    await userEvent.type(screen.getByLabelText("WhatsApp"), "11991234567");
+    await userEvent.click(screen.getByRole("button", { name: /Continuar/i }));
+
+    // Passo 2 — só estacionamento + vagas (sem cidade/estado).
+    expect(await screen.findByText("Passo 2 de 3")).toBeInTheDocument();
+    expect(screen.getByLabelText("Nome do estacionamento")).toBeInTheDocument();
+    expect(screen.getByLabelText("Vagas (aprox.)")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Cidade")).not.toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText("Nome do estacionamento"), "Estac Centro");
+    await userEvent.click(screen.getByRole("button", { name: /Continuar/i }));
+
+    // Passo 3 — cidade + estado + autorização.
+    expect(await screen.findByText("Passo 3 de 3")).toBeInTheDocument();
+    expect(screen.getByLabelText("Cidade")).toBeInTheDocument();
+    expect(screen.getByLabelText("Estado")).toBeInTheDocument();
+    expect(screen.getByText(/autorizo a movepark/i)).toBeInTheDocument();
+  });
 });

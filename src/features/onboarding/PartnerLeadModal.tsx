@@ -90,15 +90,12 @@ export function PartnerLeadModal({
   async function nextFromStep2() {
     setError(null);
     if (!companyName.trim()) return setError("Informe o nome do estacionamento.");
-    if (!city.trim()) return setError("Informe a cidade.");
-    if (!uf) return setError("Selecione o estado.");
     // Best-effort: salva o progresso, mas não trava o avanço se falhar.
     capture.mutate({
       contact_email: email,
       contact_phone: phone,
+      contact_name: contactName,
       company_name: companyName,
-      city,
-      state: uf,
       estimated_spots: spotsInt,
       step: 2,
       ...utm,
@@ -108,6 +105,8 @@ export function PartnerLeadModal({
 
   async function finish() {
     setError(null);
+    if (!city.trim()) return setError("Informe a cidade.");
+    if (!uf) return setError("Selecione o estado.");
     if (!accept) return setError("É preciso aceitar os termos para continuar.");
     try {
       const r = await submit.mutateAsync({
@@ -214,16 +213,6 @@ export function PartnerLeadModal({
                     placeholder="Ex: Estacionamento Centro"
                   />
                 </div>
-                <div className="grid grid-cols-[1fr_auto] gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="pl-city">Cidade</Label>
-                    <Input id="pl-city" value={city} onChange={(e) => setCity(e.target.value)} />
-                  </div>
-                  <div className="flex w-24 flex-col gap-1.5">
-                    <Label htmlFor="pl-uf">Estado</Label>
-                    <StateSelect id="pl-uf" value={uf} onValueChange={setUf} />
-                  </div>
-                </div>
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="pl-spots">Vagas (aprox.)</Label>
                   <Input
@@ -241,8 +230,19 @@ export function PartnerLeadModal({
             {step === 3 && (
               <div className="space-y-4">
                 <p className="text-body-sm text-muted">
-                  Quase lá, {contactName.trim().split(/\s+/)[0] || "parceiro"}. É só confirmar.
+                  Quase lá, {contactName.trim().split(/\s+/)[0] || "parceiro"}. Onde fica e é só
+                  confirmar.
                 </p>
+                <div className="grid grid-cols-[1fr_auto] gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="pl-city">Cidade</Label>
+                    <Input id="pl-city" value={city} onChange={(e) => setCity(e.target.value)} />
+                  </div>
+                  <div className="flex w-24 flex-col gap-1.5">
+                    <Label htmlFor="pl-uf">Estado</Label>
+                    <StateSelect id="pl-uf" value={uf} onValueChange={setUf} />
+                  </div>
+                </div>
                 <label className="flex cursor-pointer items-start gap-3">
                   <Checkbox checked={accept} onCheckedChange={(v) => setAccept(v === true)} />
                   <span className="text-body-sm text-muted">
