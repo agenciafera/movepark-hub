@@ -1,5 +1,6 @@
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert";
-import { siteUrl, tplApprovalInvite, tplLeadAlert, tplLeadReceived, tplRejection, tplReviewRequest } from "./email.ts";
+import { decodeBase64 } from "jsr:@std/encoding/base64";
+import { htmlToBase64, siteUrl, tplApprovalInvite, tplLeadAlert, tplLeadReceived, tplRejection, tplReviewRequest } from "./email.ts";
 
 Deno.test("siteUrl remove barra(s) final(is)", () => {
   Deno.env.set("PUBLIC_SITE_URL", "https://hub.movepark.co//");
@@ -36,6 +37,26 @@ Deno.test("tplApprovalInvite: inclui o link de ação", () => {
   const m = tplApprovalInvite("Kallef", link);
   assertStringIncludes(m.html, link);
   assertStringIncludes(m.subject, "aprovado");
+});
+
+Deno.test("htmlToBase64: link longo chega íntegro e nenhuma linha começa com '.' (regressão do ponto comido pelo SMTP dot-stuffing)", () => {
+  // Link real que quebrou em produção: o QP soft-wrap deixou uma linha começando com
+  // ".supabase.co" e o dot-stuffing comeu o ponto → "...qiofcfsupabase.co" (NXDOMAIN).
+  const link =
+    "https://mgaigbezdalbyuqiofcf.supabase.co/auth/v1/verify?token=9872e9be6a60a81f2c000477706ff7ab52dc530f975d1452b1957760&type=magiclink&redirect_to=https://hub.movepark.co/onboarding";
+  const html = tplApprovalInvite("Léo", link).html;
+  const encoded = htmlToBase64(html);
+
+  // Base64 não tem "." no alfabeto → nenhuma linha começa com ponto (é o que corrige o bug).
+  for (const line of encoded.split("\r\n")) {
+    assert(!line.startsWith("."), `linha base64 não pode começar com ponto: ${line.slice(0, 12)}`);
+    assert(line.length <= 76, "linha base64 respeita o limite de 76 chars (RFC 2045)");
+  }
+
+  // Round-trip: o HTML decodificado preserva o domínio COM o ponto.
+  const decoded = new TextDecoder().decode(decodeBase64(encoded.replaceAll("\r\n", "")));
+  assertStringIncludes(decoded, "mgaigbezdalbyuqiofcf.supabase.co");
+  assertStringIncludes(decoded, link);
 });
 
 Deno.test("tplRejection: inclui o motivo quando informado", () => {

@@ -9,6 +9,20 @@
 // Remetente/caixa interna vêm do banco (app_setting, editável no Manager).
 
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import { encodeBase64 } from "jsr:@std/encoding/base64";
+
+/**
+ * Codifica o HTML como base64 quebrado em linhas de 76 chars (RFC 2045). Usamos base64 de
+ * propósito, no lugar do quoted-printable padrão do denomailer: em QP, uma URL longa (magic link)
+ * é quebrada a cada 76 chars com "=\r\n"; quando a quebra cai logo depois de um ponto, a linha
+ * seguinte começa com "." e o dot-stuffing do SMTP remove esse ponto inicial, corrompendo o
+ * domínio do link (ex.: "...qiofcf.supabase.co" vira "...qiofcfsupabase.co" e dá NXDOMAIN). O
+ * alfabeto base64 não tem ".", então nenhuma linha começa com ponto e o link chega íntegro.
+ */
+export function htmlToBase64(html: string): string {
+  const b64 = encodeBase64(new TextEncoder().encode(html));
+  return (b64.match(/.{1,76}/g) ?? []).join("\r\n");
+}
 
 // @ts-expect-error - Deno env
 const env = (k: string) => Deno.env.get(k);
@@ -75,13 +89,25 @@ export async function sendEmail({ from, to, subject, html, replyTo }: SendArgs):
   });
 
   try {
+    // HTML enviado como base64 (não quoted-printable) — ver htmlToBase64: evita que o
+    // dot-stuffing do SMTP coma o ponto do domínio em links longos (magic link → NXDOMAIN).
     await client.send({
       from,
       to: Array.isArray(to) ? to : [to],
       replyTo,
       subject,
-      content: "Este e-mail requer um cliente compatível com HTML.",
-      html,
+      mimeContent: [
+        {
+          mimeType: 'text/plain; charset="utf-8"',
+          content: "Este e-mail requer um cliente compatível com HTML.",
+          transferEncoding: "quoted-printable",
+        },
+        {
+          mimeType: 'text/html; charset="utf-8"',
+          content: htmlToBase64(html),
+          transferEncoding: "base64",
+        },
+      ],
     });
     return { ok: true };
   } catch (e) {
