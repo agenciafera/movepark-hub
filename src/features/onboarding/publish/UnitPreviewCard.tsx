@@ -4,7 +4,7 @@ import { formatBRL } from "@/lib/format";
 /**
  * Preview vivo da unidade tomando forma no wizard "Publicar" (E1.9). É a recompensa contínua do
  * split-screen: à medida que o dono preenche, ele vê como a unidade vai aparecer. Puramente
- * presentacional — recebe o estado local do wizard.
+ * presentacional; recebe o estado local do wizard.
  */
 export type PreviewItem = { name: string; base_price: number | null; capacity: number };
 
@@ -63,7 +63,7 @@ export function UnitPreviewCard({
                   <Check className="h-3.5 w-3.5 text-success" /> {i.name}
                 </span>
                 <span className="text-muted">
-                  {i.base_price ? formatBRL(i.base_price) : "—"}
+                  {i.base_price ? formatBRL(i.base_price) : "a definir"}
                   {i.capacity > 0 && <span className="text-caption-sm"> · {i.capacity} vagas</span>}
                 </span>
               </div>
@@ -79,7 +79,7 @@ export function UnitPreviewCard({
               <span className="text-body-sm font-normal text-muted"> /diária</span>
             </p>
             <p className="text-caption-sm text-muted-steel">
-              preço de balcão — a Movepark calcula o online
+preço de balcão. A Movepark calcula o online
             </p>
           </div>
         )}

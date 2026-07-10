@@ -65,8 +65,8 @@ export default function UnitPreviewPage() {
                 <div>
                   <h1 className="text-title-lg text-ink">Sua unidade está no ar! 🚗</h1>
                   <p className="mt-1 text-body-sm text-muted">
-                    Já aparece na busca da Movepark. Compartilhe o link e comece a receber reservas —
-                    depois é só deixar a unidade redonda no painel (fotos, comodidades, horários).
+                    Já aparece na busca da Movepark. Compartilhe o link e comece a receber reservas.
+                    Depois é só deixar a unidade redonda no painel (fotos, comodidades, horários).
                   </p>
                 </div>
               </div>
@@ -74,7 +74,7 @@ export default function UnitPreviewPage() {
 
             {!justPublished && (
               <div className="flex items-center gap-2 rounded-md bg-mp-pale px-4 py-2.5 text-body-sm text-mp-indigo">
-                <Eye className="h-4 w-4" /> Pré-visualização — é assim que o cliente vê sua unidade.
+                <Eye className="h-4 w-4" /> Pré-visualização: é assim que o cliente vê sua unidade.
               </div>
             )}
 
@@ -93,7 +93,7 @@ export default function UnitPreviewPage() {
                   {absoluteUrl ? (
                     <>
                       <p className="mt-1 text-body-sm text-muted">
-                        Envie no WhatsApp, redes ou no seu site — a reserva acontece por aqui.
+                        Envie no WhatsApp, redes ou no seu site. A reserva acontece por aqui.
                       </p>
                       <div className="mt-3 flex items-center gap-2">
                         <code className="flex-1 truncate rounded-md border border-hairline bg-surface-soft px-3 py-2 text-caption text-ink">

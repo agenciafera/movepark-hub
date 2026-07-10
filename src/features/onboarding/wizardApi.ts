@@ -193,7 +193,7 @@ export const useSetPricing = (cid?: string) => useRpc("onboarding_set_pricing", 
 export const useSetAddons = (cid?: string) => useRpc("onboarding_set_addons", cid);
 export const useUpsertPayoutAccount = (cid?: string) => useRpc("onboarding_upsert_payout_account", cid);
 export const useSubmitOnboarding = (cid?: string) => useRpc("onboarding_submit", cid);
-/** E1.9 — publica a unidade com o mínimo (auto-semeia pricing do balcão). Ver onboarding_publish. */
+/** E1.9: publica a unidade com o mínimo (auto-semeia pricing do balcão). Ver onboarding_publish. */
 export const usePublishOnboarding = (cid?: string) => useRpc("onboarding_publish", cid);
 
 // ── Upload de assets públicos (logo/fotos) — bucket `assets-public` (OPS-05) ──

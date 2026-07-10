@@ -1,5 +1,5 @@
 /**
- * Lógica pura do wizard "Publicar" (E1.9) — extraída para teste unitário (convenção do projeto:
+ * Lógica pura do wizard "Publicar" (E1.9), extraída para teste unitário (convenção do projeto:
  * lógica dentro de componente vai para *.logic/*Logic.ts testável).
  */
 import type { ParkingType } from "@/types/domain";

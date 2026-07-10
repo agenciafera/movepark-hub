@@ -7,7 +7,7 @@ import {
 
 /**
  * No ambiente de teste `VITE_GOOGLE_MAPS_API_KEY` não está definido (import.meta.env stubado em
- * src/test/setup.ts), então o componente deve degradar para um input comum e NÃO carregar script —
+ * src/test/setup.ts), então o componente deve degradar para um input comum e NÃO carregar script,
  * a "key plugável depois" não pode quebrar o wizard.
  */
 describe("GooglePlacesAutocomplete (sem key)", () => {

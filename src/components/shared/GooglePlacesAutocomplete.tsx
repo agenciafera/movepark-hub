@@ -2,11 +2,11 @@ import * as React from "react";
 import { Input } from "@/components/ui/input";
 
 /**
- * Autocomplete de endereço (Google Places) que deriva geo — usado no onboarding do parceiro
+ * Autocomplete de endereço (Google Places) que deriva geo, usado no onboarding do parceiro
  * (E1.9, spec partner-onboarding-redesign.md §7). A key mora em `VITE_GOOGLE_MAPS_API_KEY` e é
  * **plugável depois**: sem key, o componente degrada para um input de endereço comum (a UI do wizard
  * oferece lat/lng manuais como fallback). A key do Maps é pública por design (restringir por HTTP
- * referrer no Google Cloud) — nada de secret trafega aqui.
+ * referrer no Google Cloud). Nada de secret trafega aqui.
  */
 
 export type PlaceSelection = {

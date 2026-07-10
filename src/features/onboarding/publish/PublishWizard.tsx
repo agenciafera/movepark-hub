@@ -183,7 +183,7 @@ export function PublishWizard({ data, companyId }: Props) {
                 <div className="space-y-1">
                   <h1 className="text-display-md text-ink">Onde fica seu estacionamento?</h1>
                   <p className="text-body-sm text-muted">
-                    Buscamos o endereço e localizamos no mapa pra você — sem digitar coordenada.
+                    Buscamos o endereço e localizamos no mapa pra você, sem digitar coordenadas na mão.
                   </p>
                 </div>
                 <div className="flex flex-col gap-1.5">
@@ -269,7 +269,7 @@ export function PublishWizard({ data, companyId }: Props) {
                     <option value="">Nenhum / não se aplica</option>
                     {(destinations ?? []).map((d) => (
                       <option key={d.id} value={d.id}>
-                        {d.name} — {d.city}/{d.state}
+                        {d.name} · {d.city}/{d.state}
                       </option>
                     ))}
                   </select>
@@ -287,7 +287,7 @@ export function PublishWizard({ data, companyId }: Props) {
                 <div className="space-y-1">
                   <h1 className="text-display-md text-ink">Suas vagas e o preço de balcão</h1>
                   <p className="text-body-sm text-muted">
-                    Informe o preço que você cobra no balcão hoje. É a base — a Movepark monta um preço
+                    Informe o preço que você cobra no balcão hoje. É a base. A Movepark monta um preço
                     online mais atrativo a partir dele, e <strong className="text-ink">você aprova antes de valer</strong>. Você segue no controle.
                   </p>
                 </div>
@@ -337,7 +337,7 @@ export function PublishWizard({ data, companyId }: Props) {
                 <div className="space-y-1">
                   <h1 className="text-display-md text-ink">Você oferece transfer?</h1>
                   <p className="text-body-sm text-muted">
-                    Traslado até o terminal/destino. Você detalha frequência e horários depois, no painel.
+                    Transfer até o terminal ou destino. Você detalha frequência e horários depois, no painel.
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
