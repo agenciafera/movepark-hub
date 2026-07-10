@@ -3,6 +3,11 @@
 > Cadastro de novos estacionamentos parceiros na plataforma, em **duas etapas**:
 > captura de lead (público) → aprovação manual (Manager) → onboarding de configuração (parceiro).
 > Design base: Airbnb design system (recolorido com brand Movepark).
+>
+> ⚠️ **Stage 2 (wizard) em redesenho — E1.9.** O fluxo de setup descrito aqui está sendo
+> substituído por um wizard rápido split-screen. Ao implementar o Stage 2, siga
+> [partner-onboarding-redesign.md](./partner-onboarding-redesign.md) (fonte de verdade do novo
+> onboarding; Q-010/D-003/ADR-008). Esta spec segue válida para Stage 1 (lead) e a máquina de estados.
 
 ---
 
