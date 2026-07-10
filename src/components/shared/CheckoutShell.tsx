@@ -11,11 +11,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/context";
+import { postLogoutPath } from "@/auth/postLoginRedirect";
 import { Wordmark } from "./Brand";
 
 function CheckoutTopbar() {
   const { session, effectiveRole, signOut } = useAuth();
   const navigate = useNavigate();
+
+  async function handleSignOut() {
+    // Captura o papel antes de limpar a sessão (depois vira null).
+    const target = postLogoutPath(effectiveRole);
+    await signOut();
+    navigate(target, { replace: true });
+  }
 
   const initials = (session?.fullName ?? session?.email ?? "?")
     .split(" ")
@@ -79,7 +87,7 @@ function CheckoutTopbar() {
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => void signOut()}>
+                <DropdownMenuItem onClick={() => void handleSignOut()}>
                   <LogOut className="h-4 w-4" /> Sair
                 </DropdownMenuItem>
               </DropdownMenuContent>

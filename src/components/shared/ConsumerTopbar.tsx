@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/auth/context";
+import { postLogoutPath } from "@/auth/postLoginRedirect";
 import { useDestinations } from "@/features/search/api";
 import { Monogram, Wordmark } from "./Brand";
 import { ThemeToggle } from "./ThemeToggle";
@@ -96,6 +97,13 @@ export function ConsumerTopbar() {
   // Rotas onde a busca de vaga não faz sentido: a landing B2B de parceiro fala com um
   // dono de estacionamento, não com um viajante — o widget de busca só divide o foco.
   const hideSearch = location.pathname === "/seja-parceiro";
+
+  async function handleSignOut() {
+    // Consumidor volta pra home; captura o papel antes de limpar a sessão.
+    const target = postLogoutPath(effectiveRole);
+    await signOut();
+    navigate(target, { replace: true });
+  }
 
   // Escopo da busca lido da URL pra semear a barra do header (na /search vem preenchido; em outras
   // páginas começa do padrão). vehicle pode ser car|motorcycle.
@@ -214,7 +222,7 @@ export function ConsumerTopbar() {
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => void signOut()}>
+              <DropdownMenuItem onClick={() => void handleSignOut()}>
                 <LogOut className="h-4 w-4" /> Sair
               </DropdownMenuItem>
             </DropdownMenuContent>

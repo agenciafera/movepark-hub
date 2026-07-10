@@ -1,5 +1,7 @@
+import { useNavigate } from "react-router-dom";
 import { LogOut, Bell, Search } from "lucide-react";
 import { useAuth } from "@/auth/context";
+import { postLogoutPath } from "@/auth/postLoginRedirect";
 import {
   Avatar,
   AvatarFallback,
@@ -16,7 +18,16 @@ import { Button } from "@/components/ui/button";
 import { Monogram } from "./Brand";
 
 export function Topbar({ rightSlot }: { rightSlot?: React.ReactNode }) {
-  const { session, signOut } = useAuth();
+  const { session, effectiveRole, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  async function handleSignOut() {
+    // Backoffice sai pro login; captura o papel antes de limpar a sessão.
+    const target = postLogoutPath(effectiveRole);
+    await signOut();
+    navigate(target, { replace: true });
+  }
+
   const initials = (session?.fullName ?? session?.email ?? "?")
     .split(" ")
     .map((p) => p[0])
@@ -49,7 +60,7 @@ export function Topbar({ rightSlot }: { rightSlot?: React.ReactNode }) {
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>{session?.fullName ?? session?.email}</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => void signOut()}>
+          <DropdownMenuItem onClick={() => void handleSignOut()}>
             <LogOut className="h-4 w-4" /> Sair
           </DropdownMenuItem>
         </DropdownMenuContent>

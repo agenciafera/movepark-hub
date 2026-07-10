@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { postLoginPath } from "./postLoginRedirect";
+import { postLoginPath, postLogoutPath } from "./postLoginRedirect";
 
 describe("postLoginPath", () => {
   it("honra o next pretendido para qualquer role", () => {
@@ -31,5 +31,20 @@ describe("postLoginPath", () => {
     expect(postLoginPath("customer", "https://evil.com")).toBe("/");
     expect(postLoginPath("customer", "/\\evil.com")).toBe("/");
     expect(postLoginPath("company_operator", "javascript:alert(1)")).toBe("/operator");
+  });
+});
+
+describe("postLogoutPath", () => {
+  it("consumidor (customer) volta pra home", () => {
+    expect(postLogoutPath("customer")).toBe("/");
+  });
+
+  it("anônimo/sem papel volta pra home", () => {
+    expect(postLogoutPath(null)).toBe("/");
+  });
+
+  it("backoffice (hub_admin e company_operator) vai pro login", () => {
+    expect(postLogoutPath("hub_admin")).toBe("/login");
+    expect(postLogoutPath("company_operator")).toBe("/login");
   });
 });
