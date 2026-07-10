@@ -20,7 +20,8 @@ import {
 } from "@/components/ui/accordion";
 import { PartnerLeadModal } from "@/features/onboarding/PartnerLeadModal";
 
-const HERO_IMAGE = "/Estacionamentos/movepark-virapark_001.jpg";
+const HERO_IMAGE =
+  "/Estacionamentos/vaga-coberta-estacionamento-aeroporto-guarulhos-aeroparking.png";
 
 // Números do movepark.co/o-sistema (dados do negócio — confirmar/atualizar).
 const METRICS = [
