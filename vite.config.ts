@@ -77,7 +77,10 @@ export default defineConfig(async ({ mode }) => {
       },
     },
     server: {
-      port: 5173,
+      // Honra a porta atribuída pelo harness de preview (env PORT) — com strictPort
+      // para bater exatamente nela em vez de incrementar. Sem PORT, usa 5173 (dev local).
+      port: process.env.PORT ? Number(process.env.PORT) : 5173,
+      strictPort: !!process.env.PORT,
       host: true,
     },
   };
