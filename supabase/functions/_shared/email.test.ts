@@ -19,13 +19,14 @@ Deno.test("tplLeadReceived: assunto + primeiro nome no corpo", () => {
   assertStringIncludes(m.html, "Olá, Kallef.");
 });
 
-Deno.test("shell: sem newline e sem travessão (regressão do artefato =20)", () => {
+Deno.test("shell: logo real, sem newline e sem travessão (regressão do artefato =20)", () => {
   const html = tplLeadReceived("Kallef").html;
   // O denomailer codifica em quoted-printable; a indentação/newline entre tags
   // virava um "=20" solto no corpo. shell() remove esse whitespace estrutural.
   assert(!html.includes("\n"), "html final não pode ter quebra de linha");
-  // Mas o espaço inline do logo ("Movepark Hub") é preservado.
-  assertStringIncludes(html, "park</span> <span");
+  // O logo é a imagem real da marca (PNG hospedado), não texto.
+  assertStringIncludes(html, "/brand/logo-movepark-email.png");
+  assertStringIncludes(html, 'alt="Movepark"');
   // Regra de marca: nada de travessão em texto do projeto.
   assert(!html.includes("—") && !html.includes("–"), "sem travessão");
 });

@@ -98,28 +98,71 @@ export async function sendEmail({ from, to, subject, html, replyTo }: SendArgs):
 
 // ───────────────────────────────────────── templates ─────────────────────────────────────────
 
-function shell(title: string, bodyHtml: string): string {
-  const html = `<!doctype html><html lang="pt-BR"><body style="margin:0;background:${BRAND.surface};font-family:Roboto,Arial,sans-serif;color:${BRAND.navy}">
-  <div style="max-width:560px;margin:0 auto;padding:32px 24px">
-    <div style="background:${BRAND.navy};border-radius:14px 14px 0 0;padding:22px 28px">
-      <div style="font-size:20px;font-weight:800;letter-spacing:-0.01em;color:#fff">Move<span style="color:${BRAND.red}">park</span> <span style="font-weight:600;color:${BRAND.violetSoft}">Hub</span></div>
-    </div>
-    <div style="background:#fff;border:1px solid ${BRAND.hairline};border-top:none;border-radius:0 0 14px 14px;padding:28px">
-      <h1 style="font-size:20px;line-height:1.3;margin:0 0 16px;color:${BRAND.navy}">${title}</h1>
-      ${bodyHtml}
-    </div>
-    <p style="color:${BRAND.muted};font-size:12px;margin-top:20px;text-align:center">Movepark Hub, a plataforma que conecta estacionamentos a clientes.</p>
-  </div></body></html>`;
-  // Remove newline + indentação estrutural do template. O denomailer codifica o
-  // e-mail em quoted-printable; a indentação entre as tags virava um "=20" (espaço
-  // codificado) que aparecia solto no corpo do e-mail. Removemos só o whitespace
-  // que contém quebra de linha (estrutural); espaços inline entre tags, como o do
-  // logo "Movepark Hub", são preservados.
+const FONT = "'Roboto',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif";
+
+/**
+ * Casco do e-mail. Layout table-based (robusto em Gmail/Apple/Outlook), CSS inline,
+ * mobile-first. O logo é a marca REAL como PNG hospedado (SVG não renderiza no Gmail),
+ * servido pelo site em `${siteUrl()}/brand/...`. `preheader` controla o texto de preview
+ * na caixa de entrada (cai no título se não vier).
+ */
+function shell(title: string, bodyHtml: string, preheader?: string): string {
+  const logo = `${siteUrl()}/brand/logo-movepark-email.png`;
+  const symbol = `${siteUrl()}/brand/simbolo-movepark-email.png`;
+  const pre = (preheader ?? title).replace(/\s+/g, " ").trim();
+  const html = `<!doctype html>
+<html lang="pt-BR" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="light only">
+<title>${title}</title>
+</head>
+<body style="margin:0;padding:0;width:100%;background:#EEF0F4;-webkit-text-size-adjust:100%;">
+<span style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;overflow:hidden;mso-hide:all;">${pre}</span>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#EEF0F4;">
+<tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">
+<tr><td style="padding:2px 6px 20px;">
+<img src="${logo}" width="150" height="23" alt="Movepark" style="display:block;border:0;outline:none;text-decoration:none;height:auto;width:150px;max-width:150px;">
+</td></tr>
+<tr><td style="background:#ffffff;border:1px solid #E6E7EC;border-radius:16px;overflow:hidden;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+<td width="34%" height="4" style="height:4px;background:${BRAND.red};font-size:0;line-height:4px;">&nbsp;</td>
+<td width="33%" height="4" style="height:4px;background:#A6DBDF;font-size:0;line-height:4px;">&nbsp;</td>
+<td width="33%" height="4" style="height:4px;background:${BRAND.violet};font-size:0;line-height:4px;">&nbsp;</td>
+</tr></table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+<td style="padding:34px 34px 32px;font-family:${FONT};font-size:16px;line-height:1.65;color:#45434F;">
+<h1 style="margin:0 0 18px;font-family:${FONT};font-size:22px;line-height:1.3;font-weight:700;color:${BRAND.navy};">${title}</h1>
+${bodyHtml}
+</td>
+</tr></table>
+</td></tr>
+<tr><td style="padding:26px 24px 8px;text-align:center;">
+<img src="${symbol}" width="22" height="22" alt="" style="display:inline-block;border:0;width:22px;height:22px;">
+<p style="margin:12px 0 0;font-family:${FONT};font-size:12px;line-height:1.7;color:#8A8A96;">
+Movepark Hub, a plataforma que conecta estacionamentos a clientes.<br>
+<a href="${siteUrl()}" style="color:#8A8A96;text-decoration:underline;">hub.movepark.co</a>
+</p>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+  // Remove newline + indentação estrutural do template. O denomailer codifica o e-mail
+  // em quoted-printable; a indentação entre as tags virava um "=20" (espaço codificado)
+  // que aparecia solto no corpo. Removemos só o whitespace que contém quebra de linha;
+  // espaços inline entre tags (ex: dentro do rodapé) são preservados.
   return html.replace(/\n\s*/g, "").trim();
 }
 
 function button(href: string, label: string): string {
-  return `<a href="${href}" style="display:inline-block;background:${BRAND.violet};color:#fff;text-decoration:none;font-weight:700;padding:13px 24px;border-radius:8px;margin:8px 0">${label}</a>`;
+  // Inline-block <a>: centraliza via text-align do <p> e é válido dentro de <p>. Render
+  // ótimo em Gmail/Apple; no Outlook aparece como retângulo violeta com o texto (aceitável).
+  return `<a href="${href}" style="display:inline-block;background:${BRAND.violet};color:#ffffff;text-decoration:none;font-family:${FONT};font-size:15px;font-weight:700;line-height:1;padding:14px 26px;border-radius:8px;">${label}</a>`;
 }
 
 export function tplLeadReceived(contactName: string): { subject: string; html: string } {
