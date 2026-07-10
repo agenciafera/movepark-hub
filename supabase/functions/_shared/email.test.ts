@@ -12,10 +12,22 @@ Deno.test("siteUrl cai no localhost sem env", () => {
   assertEquals(siteUrl(), "http://localhost:5173");
 });
 
-Deno.test("tplLeadReceived: assunto + nome no corpo", () => {
-  const m = tplLeadReceived("Kallef");
-  assertStringIncludes(m.subject, "Recebemos seu cadastro");
-  assertStringIncludes(m.html, "Kallef");
+Deno.test("tplLeadReceived: assunto + primeiro nome no corpo", () => {
+  const m = tplLeadReceived("Kallef Souza");
+  assertStringIncludes(m.subject, "Recebemos o cadastro");
+  // Saudação usa só o primeiro nome.
+  assertStringIncludes(m.html, "Olá, Kallef.");
+});
+
+Deno.test("shell: sem newline e sem travessão (regressão do artefato =20)", () => {
+  const html = tplLeadReceived("Kallef").html;
+  // O denomailer codifica em quoted-printable; a indentação/newline entre tags
+  // virava um "=20" solto no corpo. shell() remove esse whitespace estrutural.
+  assert(!html.includes("\n"), "html final não pode ter quebra de linha");
+  // Mas o espaço inline do logo ("Movepark Hub") é preservado.
+  assertStringIncludes(html, "park</span> <span");
+  // Regra de marca: nada de travessão em texto do projeto.
+  assert(!html.includes("—") && !html.includes("–"), "sem travessão");
 });
 
 Deno.test("tplApprovalInvite: inclui o link de ação", () => {
