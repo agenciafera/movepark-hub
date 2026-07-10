@@ -67,6 +67,27 @@ no_show ──────→ (terminal — sem transições)
 
 ## Sequência de checkout
 
+### 0. Persistência de intenção e retomada pós-login
+
+A criação da reserva exige JWT (guest checkout é v2). Quando um visitante anônimo escolhe datas,
+tarifa, passageiros, PCD, add-ons e cupom no card da unidade e clica em "Reservar agora", essas
+escolhas vivem só em estado local do `ReservationCard`. Antes de mandar pro login, o card **salva a
+intenção** num objeto em `sessionStorage` (`mp_booking_intent`, via `src/lib/bookingIntent.ts`), que
+sobrevive ao round-trip de login (OTP e OAuth do Google, mesma aba). O redirect usa
+`/login?next=<listing>` (o `next` já existente resolve a volta pra rota certa).
+
+Na volta autenticado, o card **hidrata** o estado a partir da intenção (amarrada ao `listingId`, só
+retoma no mesmo lote), limpa a intenção consumida e **auto-avança pro checkout**. O gate
+`isAutoSubmitReady` evita a corrida entre restaurar sessão e restaurar intenção: só submete quando a
+sessão já carregou (`!authLoading`), é cliente, o lote está reservável (disponibilidade e preço
+**revalidados** via `canReserve`) e o cupom já resolveu (pra não criar a reserva sem o desconto). Se
+o lote esgotou ou o preço mudou no intervalo, não auto-submete: o usuário vê o card restaurado com o
+aviso de disponibilidade e decide. O cupom continua também persistido em separado (`mp_coupon`).
+
+Isso resolve o bug de perder as datas/cupom/tarifa ao logar no meio da reserva (o "barramento de
+retomar destino" já existia via `next`; faltava a parte **stateful** do card). Cobertura:
+`bookingIntent.test.ts` (round-trip do storage + gate de auto-submit).
+
 ### 1. Simulação de preço
 
 ```

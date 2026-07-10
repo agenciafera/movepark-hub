@@ -26,6 +26,12 @@ import {
   normalizeCouponCode,
 } from "@/lib/coupon";
 import {
+  storeBookingIntent,
+  getBookingIntent,
+  clearBookingIntent,
+  isAutoSubmitReady,
+} from "@/lib/bookingIntent";
+import {
   useSimulatePrice,
   useAvailability,
   useDebounced,
@@ -104,8 +110,14 @@ function daysBetween(a: Date | null, b: Date | null): number {
 export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { session, effectiveRole } = useAuth();
+  const { session, effectiveRole, isLoading: authLoading } = useAuth();
   const createBooking = useCreateBooking();
+
+  // Retomada pós-login: uma intenção pendente (datas/tarifa/cupom/etc.) hidrata o card e
+  // auto-avança pro checkout assim que a sessão e a disponibilidade ficam prontas.
+  const [resumePending, setResumePending] = React.useState(false);
+  const hydratedRef = React.useRef(false);
+  const autoSubmittedRef = React.useRef(false);
 
   const [openTooltip, setOpenTooltip] = React.useState<FareTier | null>(null);
   const [from, setFrom] = React.useState<Date | null>(initialFrom);
@@ -238,6 +250,19 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
   async function handleReserve() {
     if (!from || !to) return;
     if (!session) {
+      // Guarda a intenção completa pra retomar de onde parou depois do login (as datas/tarifa/
+      // passageiros/add-ons vivem só em estado local e se perderiam no round-trip).
+      storeBookingIntent({
+        listingId: listing.id,
+        returnTo: location.pathname,
+        from: from.toISOString(),
+        to: to.toISOString(),
+        passengers,
+        hasPcd,
+        fare: selectedFare,
+        addOnIds: selectedAddOnIds,
+        coupon: applied?.code ?? couponCode ?? null,
+      });
       const next = encodeURIComponent(location.pathname + location.search);
       navigate(`/login?next=${next}`);
       return;
@@ -278,6 +303,56 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
   const displayTotal = parkingBase + fareSurcharge;
 
   const hasFareOrAddOns = canReserve && (fareSurcharge > 0 || chosenAddOns.length > 0 || applied);
+
+  // Hidrata o card a partir de uma intenção pendente (volta do login), uma vez, no lote certo.
+  React.useEffect(() => {
+    if (hydratedRef.current) return;
+    const intent = getBookingIntent();
+    if (!intent || intent.listingId !== listing.id) return;
+    hydratedRef.current = true;
+    clearBookingIntent(); // consumida — evita re-hidratar num reload manual
+    const f = new Date(intent.from);
+    const t = new Date(intent.to);
+    if (!Number.isNaN(f.getTime())) setFrom(f);
+    if (!Number.isNaN(t.getTime())) setTo(t);
+    setPassengers(intent.passengers);
+    setHasPcd(intent.hasPcd);
+    if (intent.fare === "basic" || intent.fare === "flex" || intent.fare === "superflex") {
+      setSelectedFare(intent.fare);
+    }
+    setSelectedAddOnIds(intent.addOnIds);
+    if (intent.coupon) {
+      setCouponInput(intent.coupon);
+      setCouponCode(intent.coupon);
+    }
+    setResumePending(true);
+  }, [listing.id]);
+
+  // Cupom resolveu? (aplicado, com erro, ou inexistente) — pra não auto-submeter sem o desconto.
+  const couponReady = !couponCode || applied != null || couponMsg != null;
+
+  // Auto-avança pro checkout quando a intenção retomada está pronta (sessão + disponibilidade
+  // revalidada + cupom resolvido). Uma vez só, guardado pelo ref.
+  React.useEffect(() => {
+    if (autoSubmittedRef.current) return;
+    if (
+      !isAutoSubmitReady({
+        pending: resumePending,
+        hasSession: !!session,
+        role: effectiveRole,
+        authLoading,
+        canReserve,
+        couponReady,
+      })
+    ) {
+      return;
+    }
+    autoSubmittedRef.current = true;
+    setResumePending(false);
+    void handleReserve();
+    // handleReserve é recriada a cada render; as deps de gating cobrem a reexecução.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resumePending, session, effectiveRole, authLoading, canReserve, couponReady]);
 
   return (
     <TooltipProvider>
