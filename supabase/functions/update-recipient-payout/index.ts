@@ -26,6 +26,26 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
+// Trilha de auditoria da aplicação no gateway. O erro é capturado e logado (não derruba o save),
+// mas NUNCA passa em silêncio — foi um insert silencioso que escondeu o kind fora do CHECK.
+// deno-lint-ignore no-explicit-any
+async function logEvent(
+  admin: any,
+  recipientId: string,
+  httpStatus: number | undefined,
+  request: unknown,
+  response: unknown,
+) {
+  const { error } = await admin.from("payout_recipient_event").insert({
+    payout_recipient_id: recipientId,
+    kind: "update",
+    http_status: httpStatus,
+    request,
+    response,
+  });
+  if (error) console.error("[update-recipient-payout] falha ao logar evento:", error.message);
+}
+
 // @ts-expect-error - Deno global
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -115,13 +135,7 @@ Deno.serve(async (req: Request) => {
       if ((r.httpStatus ?? 0) >= 400) {
         warning = gatewayErrorMessage(r.raw) ?? "O gateway recusou a cadência de transferência.";
       }
-      await admin.from("payout_recipient_event").insert({
-        payout_recipient_id: recipient.id,
-        kind: "update",
-        http_status: r.httpStatus,
-        request: { transfer: input.transfer },
-        response: r.raw,
-      });
+      await logEvent(admin, recipient.id, r.httpStatus, { transfer: input.transfer }, r.raw);
     }
     if (input.anticipation) {
       const r = await gateway.updateAnticipationSettings(rid, input.anticipation);
@@ -129,13 +143,7 @@ Deno.serve(async (req: Request) => {
         warning = gatewayErrorMessage(r.raw)
           ?? "O gateway recusou a antecipação (pode exigir liberação na Pagar.me).";
       }
-      await admin.from("payout_recipient_event").insert({
-        payout_recipient_id: recipient.id,
-        kind: "update",
-        http_status: r.httpStatus,
-        request: { anticipation: input.anticipation },
-        response: r.raw,
-      });
+      await logEvent(admin, recipient.id, r.httpStatus, { anticipation: input.anticipation }, r.raw);
     }
   }
 
