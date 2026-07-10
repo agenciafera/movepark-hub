@@ -204,20 +204,8 @@ export default function SejaParceiroPage() {
         </div>
       </section>
 
-      {/* Métricas */}
-      <section className="border-b border-hairline bg-canvas">
-        <div className="mx-auto grid max-w-[1100px] grid-cols-2 gap-6 px-4 py-8 desktop:grid-cols-4 desktop:px-8">
-          {METRICS.map((m) => (
-            <div key={m.label} className="text-center">
-              <p className="text-display-xl text-ink">{m.value}</p>
-              <p className="mt-1 text-body-sm text-muted">{m.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* Dor: a rotina de quem tem estacionamento */}
-      <section className="mx-auto max-w-[1100px] px-4 pt-16 desktop:px-8 desktop:pt-20">
+      <section className="mx-auto max-w-[1100px] px-4 py-16 desktop:px-8 desktop:py-20">
         <span className="text-badge uppercase tracking-wide text-mp-indigo">
           A rotina de quem tem estacionamento
         </span>
@@ -235,6 +223,18 @@ export default function SejaParceiroPage() {
             </li>
           ))}
         </ul>
+      </section>
+
+      {/* Sinais de confiança */}
+      <section className="border-y border-hairline bg-canvas">
+        <div className="mx-auto grid max-w-[1100px] grid-cols-2 gap-6 px-4 py-8 desktop:grid-cols-4 desktop:px-8">
+          {METRICS.map((m) => (
+            <div key={m.label} className="text-center">
+              <p className="text-display-xl text-ink">{m.value}</p>
+              <p className="mt-1 text-body-sm text-muted">{m.label}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* Custo zero: destaque */}
