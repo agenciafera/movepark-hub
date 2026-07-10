@@ -66,6 +66,8 @@ export type OnboardingData = {
     email: string | null;
     reservation_policy: string | null;
     photos: string[];
+    destination_id: string | null;
+    has_shuttle: boolean;
   } | null;
   items: WizardParkingItem[];
   addons: WizardAddon[];
@@ -87,7 +89,7 @@ export function useOnboardingData(companyId: string | undefined) {
 
       const { data: loc } = await supabase
         .from("location")
-        .select("id, name, address, latitude, longitude, timezone, phone, email, reservation_policy, photos")
+        .select("id, name, address, latitude, longitude, timezone, phone, email, reservation_policy, photos, destination_id, has_shuttle")
         .eq("company_id", cid)
         .order("created_at", { ascending: true })
         .limit(1)
@@ -191,6 +193,8 @@ export const useSetPricing = (cid?: string) => useRpc("onboarding_set_pricing", 
 export const useSetAddons = (cid?: string) => useRpc("onboarding_set_addons", cid);
 export const useUpsertPayoutAccount = (cid?: string) => useRpc("onboarding_upsert_payout_account", cid);
 export const useSubmitOnboarding = (cid?: string) => useRpc("onboarding_submit", cid);
+/** E1.9 — publica a unidade com o mínimo (auto-semeia pricing do balcão). Ver onboarding_publish. */
+export const usePublishOnboarding = (cid?: string) => useRpc("onboarding_publish", cid);
 
 // ── Upload de assets públicos (logo/fotos) — bucket `assets-public` (OPS-05) ──
 // Path por empresa (<company_id>/…) → a RLS de `assets-public` autoriza o operador

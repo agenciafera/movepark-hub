@@ -1,23 +1,12 @@
 import * as React from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { toast } from "sonner";
 import { Clock, XCircle } from "lucide-react";
 import { Wordmark } from "@/components/shared/Brand";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/context";
-import { OnboardingStepper } from "@/features/onboarding/OnboardingStepper";
 import { useOnboardingData } from "@/features/onboarding/wizardApi";
-import { Step1Company } from "@/features/onboarding/steps/Step1Company";
-import { Step2Location } from "@/features/onboarding/steps/Step2Location";
-import { Step3ParkingTypes } from "@/features/onboarding/steps/Step3ParkingTypes";
-import { Step4Pricing } from "@/features/onboarding/steps/Step4Pricing";
-import { Step5AddOns } from "@/features/onboarding/steps/Step5AddOns";
-import { StepPayout } from "@/features/onboarding/steps/StepPayout";
-import { Step6Review } from "@/features/onboarding/steps/Step6Review";
-
-const STEP_LABELS = ["Empresa", "Localização", "Tipos de vaga", "Precificação", "Serviços", "Recebimento", "Revisão"];
-const LAST_STEP = STEP_LABELS.length;
+import { PublishWizard } from "@/features/onboarding/publish/PublishWizard";
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
@@ -34,20 +23,8 @@ function Centered({ children }: { children: React.ReactNode }) {
 
 export default function OnboardingPage() {
   const { effectiveCompanyIds, signOut } = useAuth();
-  const navigate = useNavigate();
   const companyId = effectiveCompanyIds[0];
   const { data, isLoading } = useOnboardingData(companyId);
-
-  const [current, setCurrent] = React.useState<number>(1);
-  const [initialized, setInitialized] = React.useState(false);
-
-  React.useEffect(() => {
-    if (data && !initialized) {
-      const resume = Math.min(LAST_STEP, Math.max(1, (data.currentStep ?? 0) + 1));
-      setCurrent(resume);
-      setInitialized(true);
-    }
-  }, [data, initialized]);
 
   if (!companyId) {
     return (
@@ -103,36 +80,13 @@ export default function OnboardingPage() {
     );
   }
 
-  // approved | in_progress → wizard
-  function goNext() {
-    setCurrent((c) => Math.min(LAST_STEP, c + 1));
-  }
-  function goBack() {
-    setCurrent((c) => Math.max(1, c - 1));
-  }
-  function onSubmitted() {
-    toast.success("Tudo pronto. Seu estacionamento está no ar.");
-    navigate("/operator", { replace: true });
-  }
-
+  // approved | in_progress → fluxo curto "Publicar" (E1.9)
   return (
     <>
       <Helmet>
-        <title>Concluir cadastro | Movepark</title>
+        <title>Publicar seu estacionamento | Movepark</title>
       </Helmet>
-      <Centered>
-        <div className="mb-6">
-          <OnboardingStepper steps={STEP_LABELS} current={current} />
-        </div>
-
-        {current === 1 && <Step1Company data={data} companyId={companyId} onNext={goNext} />}
-        {current === 2 && <Step2Location data={data} companyId={companyId} onNext={goNext} onBack={goBack} />}
-        {current === 3 && <Step3ParkingTypes data={data} companyId={companyId} onNext={goNext} onBack={goBack} />}
-        {current === 4 && <Step4Pricing data={data} companyId={companyId} onNext={goNext} onBack={goBack} />}
-        {current === 5 && <Step5AddOns data={data} companyId={companyId} onNext={goNext} onBack={goBack} />}
-        {current === 6 && <StepPayout data={data} companyId={companyId} onNext={goNext} onBack={goBack} />}
-        {current === 7 && <Step6Review data={data} companyId={companyId} onBack={goBack} onSubmitted={onSubmitted} />}
-      </Centered>
+      <PublishWizard data={data} companyId={companyId} />
     </>
   );
 }

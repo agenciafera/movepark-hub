@@ -21,7 +21,7 @@ function makeData(items: WizardParkingItem[]): OnboardingData {
     company: { id: "c1", name: "COW", legal_name: null, tax_id: null, logo_url: null, onboarding_status: "approved" },
     currentStep: 4,
     lead: null,
-    location: { id: "loc1", name: "U", address: null, latitude: null, longitude: null, timezone: "America/Sao_Paulo", phone: null, email: null, reservation_policy: null, photos: [] },
+    location: { id: "loc1", name: "U", address: null, latitude: null, longitude: null, timezone: "America/Sao_Paulo", phone: null, email: null, reservation_policy: null, photos: [], destination_id: null, has_shuttle: false },
     items,
     addons: [],
     catalog: [],

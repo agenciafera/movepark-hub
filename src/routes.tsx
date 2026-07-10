@@ -25,6 +25,7 @@ import AuthCallbackPage from "@/routes/auth/callback";
 import LoginPage from "@/routes/login";
 import DesignSystemPage from "@/routes/design-system";
 import MotorPreviewPage from "@/routes/motor-preview";
+import UnitPreviewPage from "@/routes/operator/unit-preview";
 import SejaParceiroPage from "@/routes/seja-parceiro";
 import OnboardingPage from "@/routes/onboarding";
 import VoucherValidatePage from "@/routes/voucher-validate";
@@ -342,7 +343,12 @@ export const routes: RouteRecord[] = [
       // Onboarding do parceiro (Stage 2) — full-page, fora do shell do operador
       {
         element: <RequireRole roles={["company_operator"]} />,
-        children: [{ path: "/onboarding", element: <OnboardingPage /> }],
+        children: [
+          { path: "/onboarding", element: <OnboardingPage /> },
+          // Preview travado da unidade (E1.9) — dono vê a unidade via RLS da própria empresa,
+          // independente de is_active/status (sem exigir foto/KYC). Ver preview-listing.md §6.4.
+          { path: "/operator/preview/:locationId", element: <UnitPreviewPage /> },
+        ],
       },
 
       { path: "*", element: <Navigate to="/" replace /> },

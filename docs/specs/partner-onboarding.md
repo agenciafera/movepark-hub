@@ -165,6 +165,10 @@ Na aprovação:
 
 ## 5. Stage 2 — Setup Onboarding (Wizard)
 
+> ⚠️ **Superseded (E1.9).** O wizard de 7 passos descrito abaixo foi **substituído** pelo fluxo
+> curto "Publicar" em [`partner-onboarding-redesign.md`](./partner-onboarding-redesign.md). O Stage 1
+> (lead) e a aprovação (§3–§4) permanecem. Mantido aqui como histórico do modelo original.
+
 ### 5.1 Rota & Acesso
 
 - **Rota:** `/onboarding` (autenticado; redireciona para cá enquanto `onboarding_status ∈ {approved, in_progress, submitted}`)

@@ -1606,6 +1606,7 @@ export type Database = {
           has_notice: boolean
           has_passenger_quantity: boolean
           has_pcd_config: boolean
+          has_shuttle: boolean
           id: string
           is_popular: boolean
           latitude: number | null
@@ -1638,6 +1639,7 @@ export type Database = {
           has_notice?: boolean
           has_passenger_quantity?: boolean
           has_pcd_config?: boolean
+          has_shuttle?: boolean
           id?: string
           is_popular?: boolean
           latitude?: number | null
@@ -1670,6 +1672,7 @@ export type Database = {
           has_notice?: boolean
           has_passenger_quantity?: boolean
           has_pcd_config?: boolean
+          has_shuttle?: boolean
           id?: string
           is_popular?: boolean
           latitude?: number | null
@@ -4061,6 +4064,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      onboarding_publish: { Args: { p_company_id: string }; Returns: undefined }
       onboarding_submit: { Args: { p_company_id: string }; Returns: undefined }
       onboarding_update_company: {
         Args: {
@@ -4076,7 +4080,9 @@ export type Database = {
         Args: {
           p_address?: string
           p_company_id: string
+          p_destination_id?: string
           p_email?: string
+          p_has_shuttle?: boolean
           p_latitude?: number
           p_location_id: string
           p_longitude?: number
