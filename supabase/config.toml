@@ -238,6 +238,21 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
+# Login por código (OTP) do consumidor: o app faz signInWithOtp({ email }) e valida com
+# verifyOtp({ type: "email" }) — precisa receber um CÓDIGO de 6 dígitos, não um magic link. O
+# template abaixo usa {{ .Token }} (código), NÃO {{ .ConfirmationURL }} (link). Este arquivo é a
+# fonte da verdade do template; a aplicação no projeto vivo é feita no painel do Supabase Auth
+# (Authentication > Email Templates > Magic Link) ou por config push (bug 86ajeq03v).
+[auth.email.template.magic_link]
+subject = "Seu código de acesso Movepark"
+content_path = "./supabase/templates/magic_link.html"
+
+# Confirm signup: disparado quando o OTP cria um usuário novo (shouldCreateUser). Mesmo motivo:
+# precisa do código {{ .Token }}, senão o primeiro login de um e-mail novo recebe link e quebra.
+[auth.email.template.confirmation]
+subject = "Confirme seu e-mail na Movepark"
+content_path = "./supabase/templates/confirmation.html"
+
 # Uncomment to customize email template
 # [auth.email.template.invite]
 # subject = "You have been invited"

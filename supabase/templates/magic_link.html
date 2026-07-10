@@ -1,0 +1,50 @@
+<!--
+  Template do e-mail de login por código (Supabase Auth, "Magic Link").
+  IMPORTANTE: usa {{ .Token }} (código de 6 dígitos), NÃO {{ .ConfirmationURL }}.
+  O app (/entrar) faz signInWithOtp({ email }) e valida com verifyOtp({ type: "email" }),
+  ou seja, espera um CÓDIGO, não um link. Enviar link quebra o login (bug 86ajeq03v).
+-->
+<div style="margin:0;padding:0;background:#f4f4f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f7;padding:32px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:440px;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #ececf1;">
+          <tr>
+            <td style="padding:32px 32px 8px;">
+              <div style="font-size:20px;font-weight:700;color:#5D5FEF;letter-spacing:-0.3px;">Movepark</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 32px 0;">
+              <h1 style="margin:0 0 6px;font-size:22px;line-height:1.3;color:#1a1a2e;font-weight:700;">Seu código de acesso</h1>
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.5;color:#5b5b6b;">
+                Use o código abaixo para entrar. Ele vale por 1 hora e serve uma vez só.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 32px;">
+              <div style="background:#f4f4fb;border:1px solid #e3e3f5;border-radius:12px;padding:20px;text-align:center;">
+                <div style="font-size:34px;font-weight:700;letter-spacing:8px;color:#5D5FEF;font-family:'SF Mono',Menlo,Consolas,monospace;">{{ .Token }}</div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 32px 32px;">
+              <p style="margin:0;font-size:13px;line-height:1.5;color:#8a8a99;">
+                Se você não pediu este código, pode ignorar este e-mail. Ninguém consegue entrar sem ele.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 32px;background:#fafafc;border-top:1px solid #ececf1;">
+              <p style="margin:0;font-size:12px;line-height:1.5;color:#a0a0ad;">
+                Movepark - reserva de estacionamento em segundos, sem senha.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</div>
