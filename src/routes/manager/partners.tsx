@@ -19,9 +19,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePartnerApplications } from "@/features/onboarding/managerApi";
 import { ApplicationDrawer } from "@/features/onboarding/ApplicationDrawer";
 import { RejectDialog } from "@/features/onboarding/RejectDialog";
+import { PartnersKanban } from "@/features/onboarding/PartnersKanban";
 import { onboardingStatusLabel, onboardingStatusTone } from "@/features/onboarding/status";
 import type { OnboardingStatus, PartnerApplication } from "@/types/domain";
 
@@ -46,7 +48,8 @@ export default function ManagerPartners() {
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const [rejectOpen, setRejectOpen] = React.useState(false);
 
-  const rows = (data ?? []).filter(
+  const apps = data ?? [];
+  const rows = apps.filter(
     (a) => status === "all" || a.company?.onboarding_status === status,
   );
 
@@ -68,72 +71,95 @@ export default function ManagerPartners() {
         description="Solicitações de cadastro de estacionamentos."
       />
 
-      <Select value={status} onValueChange={setStatus}>
-        <SelectTrigger className="max-w-xs">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {STATUS_FILTERS.map((f) => (
-            <SelectItem key={f.value} value={f.value}>
-              {f.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <Tabs defaultValue="list" className="flex flex-col gap-4">
+        <TabsList>
+          <TabsTrigger value="list">Lista</TabsTrigger>
+          <TabsTrigger value="kanban">Kanban</TabsTrigger>
+        </TabsList>
 
-      {isLoading ? (
-        <Skeleton className="h-64 w-full" />
-      ) : rows.length === 0 ? (
-        <EmptyState
-          icon={<Handshake className="h-10 w-10" />}
-          title="Nenhuma solicitação"
-          description="Quando um estacionamento se cadastrar, ele aparece aqui."
-        />
-      ) : (
-        <div className="overflow-x-auto rounded-md border border-hairline">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Empresa</TableHead>
-                <TableHead>Responsável</TableHead>
-                <TableHead>Contato</TableHead>
-                <TableHead>Cidade/UF</TableHead>
-                <TableHead>Vagas</TableHead>
-                <TableHead>Canal</TableHead>
-                <TableHead>Recebido</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((a) => (
-                <TableRow
-                  key={a.company_id}
-                  className="cursor-pointer"
-                  onClick={() => openDrawer(a)}
-                >
-                  <TableCell className="font-medium text-ink">{a.company?.name}</TableCell>
-                  <TableCell>{a.contact_name}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span>{a.contact_email}</span>
-                      <span className="text-caption text-muted">{a.contact_phone}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{[a.city, a.state].filter(Boolean).join(" / ") || "—"}</TableCell>
-                  <TableCell>{a.estimated_spots ?? "—"}</TableCell>
-                  <TableCell>{a.utm_source ?? "—"}</TableCell>
-                  <TableCell>{fmtDate(a.submitted_at)}</TableCell>
-                  <TableCell>
-                    <Badge tone={onboardingStatusTone[(a.company?.onboarding_status ?? "pending_review") as OnboardingStatus]}>
-                      {onboardingStatusLabel[(a.company?.onboarding_status ?? "pending_review") as OnboardingStatus]}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
+        <TabsContent value="list" className="mt-0 flex flex-col gap-4">
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger className="max-w-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUS_FILTERS.map((f) => (
+                <SelectItem key={f.value} value={f.value}>
+                  {f.label}
+                </SelectItem>
               ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+            </SelectContent>
+          </Select>
+
+          {isLoading ? (
+            <Skeleton className="h-64 w-full" />
+          ) : rows.length === 0 ? (
+            <EmptyState
+              icon={<Handshake className="h-10 w-10" />}
+              title="Nenhuma solicitação"
+              description="Quando um estacionamento se cadastrar, ele aparece aqui."
+            />
+          ) : (
+            <div className="overflow-x-auto rounded-md border border-hairline">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Empresa</TableHead>
+                    <TableHead>Responsável</TableHead>
+                    <TableHead>Contato</TableHead>
+                    <TableHead>Cidade/UF</TableHead>
+                    <TableHead>Vagas</TableHead>
+                    <TableHead>Canal</TableHead>
+                    <TableHead>Recebido</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((a) => (
+                    <TableRow
+                      key={a.company_id}
+                      className="cursor-pointer"
+                      onClick={() => openDrawer(a)}
+                    >
+                      <TableCell className="font-medium text-ink">{a.company?.name}</TableCell>
+                      <TableCell>{a.contact_name}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span>{a.contact_email}</span>
+                          <span className="text-caption text-muted">{a.contact_phone}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{[a.city, a.state].filter(Boolean).join(" / ") || "—"}</TableCell>
+                      <TableCell>{a.estimated_spots ?? "—"}</TableCell>
+                      <TableCell>{a.utm_source ?? "—"}</TableCell>
+                      <TableCell>{fmtDate(a.submitted_at)}</TableCell>
+                      <TableCell>
+                        <Badge tone={onboardingStatusTone[(a.company?.onboarding_status ?? "pending_review") as OnboardingStatus]}>
+                          {onboardingStatusLabel[(a.company?.onboarding_status ?? "pending_review") as OnboardingStatus]}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="kanban" className="mt-0">
+          {isLoading ? (
+            <Skeleton className="h-64 w-full" />
+          ) : apps.length === 0 ? (
+            <EmptyState
+              icon={<Handshake className="h-10 w-10" />}
+              title="Nenhuma solicitação"
+              description="Quando um estacionamento se cadastrar, ele aparece aqui."
+            />
+          ) : (
+            <PartnersKanban applications={apps} onSelect={openDrawer} />
+          )}
+        </TabsContent>
+      </Tabs>
 
       <ApplicationDrawer
         application={selected}
