@@ -58,6 +58,13 @@ describe("canMoveToColumn", () => {
     expect(canMoveToColumn("rejected", "approved")).toBe(true);
   });
 
+  it("permite arrastar Pendente para Em cadastro como atalho do approve", () => {
+    expect(canMoveToColumn("pending_review", "in_progress")).toBe(true);
+    // só a partir de Pendente; outros status não viram in_progress manualmente
+    expect(canMoveToColumn("approved", "in_progress")).toBe(false);
+    expect(canMoveToColumn("rejected", "in_progress")).toBe(false);
+  });
+
   it("não aprova a partir de in_progress/active/approved", () => {
     expect(canMoveToColumn("in_progress", "approved")).toBe(false);
     expect(canMoveToColumn("active", "approved")).toBe(false);

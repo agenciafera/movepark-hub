@@ -95,14 +95,16 @@ export default function ManagerPartners() {
   }
 
   // Arrastar um card para outra coluna dispara a MESMA ação da lista/drawer:
-  //  - Aprovado: "approve" (cria convite e envia o e-mail de continuar cadastro).
-  //  - Perdido:  abre o diálogo de motivo e faz "reject" (envia e-mail de recusa).
+  //  - Em cadastro ou Aprovado: "approve" (cria convite e envia o e-mail de
+  //    continuar cadastro). O status vira `approved`, então o card assenta na
+  //    coluna Aprovado, como acontece ao clicar em "Aprovar e enviar convite".
+  //  - Perdido: abre o diálogo de motivo e faz "reject" (envia e-mail de recusa).
   async function handleMove(app: PartnerApplication, target: OnboardingStatus) {
     if (target === "rejected") {
       openReject(app);
       return;
     }
-    if (target === "approved") {
+    if (target === "in_progress" || target === "approved") {
       setMovingId(app.company_id);
       try {
         await action.mutateAsync({ company_id: app.company_id, action: "approve" });

@@ -60,8 +60,8 @@ export function ApplicationDrawer({ application, open, onOpenChange, onReject }:
           </SheetTitle>
         </SheetHeader>
 
-        <div className="mt-6 flex flex-col gap-5">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="mt-6 flex flex-col gap-6">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-5">
             <Field label="Responsável" value={application.contact_name} />
             <Field label="Cargo" value={application.contact_role} />
             <Field label="E-mail" value={application.contact_email} />
@@ -70,6 +70,8 @@ export function ApplicationDrawer({ application, open, onOpenChange, onReject }:
             <Field label="Estado" value={application.state} />
             <Field label="Vagas (est.)" value={application.estimated_spots} />
             <Field label="Slug" value={application.company?.slug} />
+            <Field label="Canal (UTM)" value={application.utm_source} />
+            <Field label="Campanha" value={application.utm_campaign} />
           </div>
 
           {application.message && (
@@ -78,11 +80,6 @@ export function ApplicationDrawer({ application, open, onOpenChange, onReject }:
               <p className="text-body-sm text-ink">{application.message}</p>
             </div>
           )}
-
-          <div className="grid grid-cols-2 gap-4 border-t border-hairline pt-4">
-            <Field label="Canal (UTM)" value={application.utm_source} />
-            <Field label="Campanha" value={application.utm_campaign} />
-          </div>
 
           {application.rejection_reason && (
             <div className="rounded-sm bg-surface-soft p-3">
@@ -98,7 +95,7 @@ export function ApplicationDrawer({ application, open, onOpenChange, onReject }:
             />
           )}
 
-          <div className="flex flex-wrap gap-2 border-t border-hairline pt-4">
+          <div className="flex flex-wrap gap-2 border-t border-hairline pt-5">
             {canApprove && (
               <Button size="sm" onClick={approve} disabled={action.isPending}>
                 Aprovar e enviar convite
