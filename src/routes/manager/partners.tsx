@@ -1,17 +1,11 @@
 import * as React from "react";
+import { toast } from "sonner";
 import { Handshake, List, SquareKanban } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -20,23 +14,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { usePartnerApplications } from "@/features/onboarding/managerApi";
+import { usePartnerApplications, usePartnerAction } from "@/features/onboarding/managerApi";
 import { ApplicationDrawer } from "@/features/onboarding/ApplicationDrawer";
 import { RejectDialog } from "@/features/onboarding/RejectDialog";
 import { PartnersKanban } from "@/features/onboarding/PartnersKanban";
+import { PartnersFilters } from "@/features/onboarding/PartnersFilters";
+import {
+  applyPartnersFilters,
+  emptyPartnersFilters,
+  type PartnersFilters as Filters,
+} from "@/features/onboarding/partnersFilters.logic";
 import { onboardingStatusLabel, onboardingStatusTone } from "@/features/onboarding/status";
 import type { OnboardingStatus, PartnerApplication } from "@/types/domain";
 
 type PartnersView = "kanban" | "list";
-
-const STATUS_FILTERS: { value: string; label: string }[] = [
-  { value: "all", label: "Todos os status" },
-  { value: "pending_review", label: "Pendentes" },
-  { value: "approved", label: "Aprovados" },
-  { value: "in_progress", label: "Em cadastro" },
-  { value: "active", label: "Ativos" },
-  { value: "rejected", label: "Recusados" },
-];
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
@@ -77,16 +68,20 @@ function ViewToggle({
 
 export default function ManagerPartners() {
   const { data, isLoading } = usePartnerApplications();
+  const action = usePartnerAction();
   const [view, setView] = React.useState<PartnersView>("kanban");
-  const [status, setStatus] = React.useState("all");
+  const [filters, setFilters] = React.useState<Filters>(emptyPartnersFilters);
   const [selected, setSelected] = React.useState<PartnerApplication | null>(null);
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const [rejectOpen, setRejectOpen] = React.useState(false);
+  const [movingId, setMovingId] = React.useState<string | null>(null);
 
   const apps = data ?? [];
-  const rows = apps.filter(
-    (a) => status === "all" || a.company?.onboarding_status === status,
-  );
+  const visible = applyPartnersFilters(apps, filters);
+
+  function patchFilters(patch: Partial<Filters>) {
+    setFilters((f) => ({ ...f, ...patch }));
+  }
 
   function openDrawer(app: PartnerApplication) {
     setSelected(app);
@@ -99,6 +94,27 @@ export default function ManagerPartners() {
     setRejectOpen(true);
   }
 
+  // Arrastar um card para outra coluna dispara a MESMA ação da lista/drawer:
+  //  - Aprovado: "approve" (cria convite e envia o e-mail de continuar cadastro).
+  //  - Perdido:  abre o diálogo de motivo e faz "reject" (envia e-mail de recusa).
+  async function handleMove(app: PartnerApplication, target: OnboardingStatus) {
+    if (target === "rejected") {
+      openReject(app);
+      return;
+    }
+    if (target === "approved") {
+      setMovingId(app.company_id);
+      try {
+        await action.mutateAsync({ company_id: app.company_id, action: "approve" });
+        toast.success("Parceiro aprovado. Enviamos o e-mail para continuar o cadastro.");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Erro ao aprovar");
+      } finally {
+        setMovingId(null);
+      }
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -106,21 +122,15 @@ export default function ManagerPartners() {
         description="Solicitações de cadastro de estacionamentos."
       />
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-col gap-3">
         <ViewToggle view={view} onChange={setView} />
-        {view === "list" && (
-          <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="max-w-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_FILTERS.map((f) => (
-                <SelectItem key={f.value} value={f.value}>
-                  {f.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {!isLoading && apps.length > 0 && (
+          <PartnersFilters
+            apps={apps}
+            filters={filters}
+            onChange={patchFilters}
+            resultCount={visible.length}
+          />
         )}
       </div>
 
@@ -132,13 +142,18 @@ export default function ManagerPartners() {
           title="Nenhuma solicitação"
           description="Quando um estacionamento se cadastrar, ele aparece aqui."
         />
-      ) : view === "kanban" ? (
-        <PartnersKanban applications={apps} onSelect={openDrawer} />
-      ) : rows.length === 0 ? (
+      ) : visible.length === 0 ? (
         <EmptyState
           icon={<Handshake className="h-10 w-10" />}
-          title="Nenhuma solicitação nesse status"
-          description="Ajuste o filtro para ver outras solicitações."
+          title="Nada com esses filtros"
+          description="Ajuste ou limpe os filtros para ver outras solicitações."
+        />
+      ) : view === "kanban" ? (
+        <PartnersKanban
+          applications={visible}
+          onSelect={openDrawer}
+          onMove={handleMove}
+          movingId={movingId}
         />
       ) : (
         <div className="overflow-x-auto rounded-md border border-hairline">
@@ -156,7 +171,7 @@ export default function ManagerPartners() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((a) => (
+              {visible.map((a) => (
                 <TableRow
                   key={a.company_id}
                   className="cursor-pointer"
