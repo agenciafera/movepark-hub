@@ -129,42 +129,46 @@ export function PartnersFilters({ apps, filters, onChange, resultCount }: Props)
               Filtros{advCount > 0 ? ` (${advCount})` : ""}
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="end" className="flex w-80 flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
+          <PopoverContent align="end" className="w-80 space-y-4">
+            <div className="space-y-1.5">
               <Label>Data de criação</Label>
               <div className="flex items-center gap-2">
                 <Input
                   type="date"
                   aria-label="De"
+                  className="h-10 min-w-0 flex-1 px-3 text-body-sm"
                   value={filters.dateFrom ?? ""}
                   onChange={(e) => onChange({ dateFrom: e.target.value || null })}
                 />
-                <span className="text-caption text-muted">até</span>
+                <span className="shrink-0 text-caption text-muted">até</span>
                 <Input
                   type="date"
                   aria-label="Até"
+                  className="h-10 min-w-0 flex-1 px-3 text-body-sm"
                   value={filters.dateTo ?? ""}
                   onChange={(e) => onChange({ dateTo: e.target.value || null })}
                 />
               </div>
             </div>
 
-            <div className="flex flex-col gap-1.5">
+            <div className="space-y-1.5">
               <Label htmlFor="filtro-cidade">Cidade ou UF</Label>
               <Input
                 id="filtro-cidade"
+                className="h-10 px-3 text-body-sm"
                 placeholder="Ex: São Paulo"
                 value={filters.city}
                 onChange={(e) => onChange({ city: e.target.value })}
               />
             </div>
 
-            <div className="flex flex-col gap-1.5">
+            <div className="space-y-1.5">
               <Label htmlFor="filtro-vagas">Vagas mínimas</Label>
               <Input
                 id="filtro-vagas"
                 type="number"
                 min={0}
+                className="h-10 px-3 text-body-sm"
                 placeholder="Ex: 50"
                 value={filters.minSpots ?? ""}
                 onChange={(e) =>
@@ -177,7 +181,7 @@ export function PartnersFilters({ apps, filters, onChange, resultCount }: Props)
               <Button
                 variant="ghost"
                 size="sm"
-                className="self-start px-0"
+                className="h-auto self-start px-0"
                 onClick={() => onChange({ city: "", minSpots: null, dateFrom: null, dateTo: null })}
               >
                 Limpar filtros avançados
