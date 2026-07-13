@@ -32,7 +32,7 @@ export function Voucher({ booking }: Props) {
 
   return (
     <div className="rounded-md border border-hairline bg-canvas p-6 print:border-0 print:p-0">
-      <div className="mb-4 flex items-center justify-between gap-3 print:hidden">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 print:hidden">
         <h3 className="text-title-md text-ink">Voucher</h3>
         <div className="flex gap-2">
           <Button
