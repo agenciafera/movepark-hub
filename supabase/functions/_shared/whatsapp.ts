@@ -38,6 +38,28 @@ export function buildBodyComponents(params: string[]): Array<Record<string, unkn
   return [{ type: "body", parameters: params.map((text) => ({ type: "text", text })) }];
 }
 
+/**
+ * Monta os `components` incluindo o botão de copiar código quando o template pede.
+ * Template de categoria "autenticação" (o `otp_movepark`) traz um botão Url de copy-code, e a Meta
+ * recusa o envio sem o parâmetro dele (erro 131008). Templates de utilidade (reserva confirmada,
+ * extensão) não têm botão: passe `urlButtonParams` vazio.
+ */
+export function buildComponents(
+  bodyParams: string[],
+  urlButtonParams: string[] = [],
+): Array<Record<string, unknown>> {
+  const components = buildBodyComponents(bodyParams);
+  if (urlButtonParams.length > 0) {
+    components.push({
+      type: "button",
+      sub_type: "url",
+      index: "0",
+      parameters: urlButtonParams.map((text) => ({ type: "text", text })),
+    });
+  }
+  return components;
+}
+
 /** Telefone BR → E.164 só com dígitos (Meta espera 55DDDNUMERO). null se inválido. */
 export function toWhatsAppNumber(phone: string | null | undefined): string | null {
   let digits = (phone ?? "").replace(/\D/g, "");
@@ -50,6 +72,8 @@ export interface SendTemplateArgs {
   to: string;
   template: string;
   bodyParams?: string[];
+  /** Parâmetros do botão Url (copy-code) — obrigatório nos templates de autenticação. */
+  urlButtonParams?: string[];
   config?: WhatsAppConfig | null;
 }
 
@@ -58,6 +82,7 @@ export async function sendWhatsAppTemplate({
   to,
   template,
   bodyParams = [],
+  urlButtonParams = [],
   config,
 }: SendTemplateArgs): Promise<{ ok: boolean; error?: string }> {
   // @ts-expect-error - Deno env
@@ -92,7 +117,7 @@ export async function sendWhatsAppTemplate({
           template: {
             name: template,
             language: { code: cfg.language },
-            components: buildBodyComponents(bodyParams),
+            components: buildComponents(bodyParams, urlButtonParams),
           },
         }),
       },
@@ -100,7 +125,7 @@ export async function sendWhatsAppTemplate({
     if (!res.ok) {
       const body = await res.text();
       console.error("[whatsapp] envio falhou:", res.status, body);
-      return { ok: false, error: `meta ${res.status}` };
+      return { ok: false, error: `meta ${res.status}: ${body}` };
     }
     return { ok: true };
   } catch (e) {

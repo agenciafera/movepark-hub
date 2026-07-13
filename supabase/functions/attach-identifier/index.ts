@@ -103,7 +103,17 @@ Deno.serve(async (req: Request) => {
       if (!to) return jsonResponse({ error: "Telefone inválido" }, 400);
       // @ts-expect-error - Deno env
       const template = Deno.env.get("WHATSAPP_OFFICIAL_TEMPLATE_NAME") ?? "otp_movepark";
-      const r = await sendWhatsAppTemplate({ to, template, bodyParams: [code] });
+      // O template de OTP tem botão de copiar código, e a Meta recusa o envio sem o parâmetro dele
+      // (131008). Mesmo flag do send-whatsapp-otp, para os dois fluxos falarem com o mesmo template.
+      // @ts-expect-error - Deno env
+      const otpButtonFlag = Deno.env.get("WHATSAPP_INCLUDE_OTP_BUTTON") ?? "false";
+      const includeOtpButton = otpButtonFlag.toLowerCase() === "true";
+      const r = await sendWhatsAppTemplate({
+        to,
+        template,
+        bodyParams: [code],
+        urlButtonParams: includeOtpButton ? [code] : [],
+      });
       if (!r.ok) return jsonResponse({ error: "Não foi possível enviar o código por WhatsApp." }, 502);
     } else {
       const { from } = await getEmailConfig(admin);
