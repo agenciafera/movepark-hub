@@ -22,11 +22,6 @@ type Props = {
   onNext: () => void;
 };
 
-function splitName(full: string): [string, string] {
-  const parts = full.trim().split(/\s+/);
-  return [parts[0] ?? "", parts.slice(1).join(" ")];
-}
-
 export function Step1Identity({
   bookingId,
   bookingCode,
@@ -61,9 +56,8 @@ export function Step1Identity({
   const initialized = React.useRef(false);
   React.useEffect(() => {
     if (!initialized.current && profileQ.data) {
-      const [fn, ln] = splitName(profileQ.data.full_name ?? "");
-      setFirstName(fn);
-      setLastName(ln);
+      setFirstName(profileQ.data.first_name ?? "");
+      setLastName(profileQ.data.last_name ?? "");
       setPhone(session?.phone ?? undefined);
       initialized.current = true;
     }
@@ -97,11 +91,17 @@ export function Step1Identity({
     try {
       const tasks: Promise<unknown>[] = [];
 
-      const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ");
-      const prevName = profileQ.data?.full_name ?? "";
+      const nextFirst = firstName.trim();
+      const nextLast = lastName.trim();
       // ADR-006: o telefone da conta é credencial (auth.users) — não é escrito no profiles aqui.
-      if (fullName !== prevName) {
-        tasks.push(updateProfile.mutateAsync({ id: session.userId, full_name: fullName }));
+      if (nextFirst !== (profileQ.data?.first_name ?? "") || nextLast !== (profileQ.data?.last_name ?? "")) {
+        tasks.push(
+          updateProfile.mutateAsync({
+            id: session.userId,
+            first_name: nextFirst,
+            last_name: nextLast,
+          }),
+        );
       }
 
       const newCustomerName = forOther ? otherName.trim() || null : null;

@@ -25,10 +25,10 @@ begin
   -- Perfis com PII completa.
   -- profiles.phone foi dropada (ADR-006: contato verificado mora em auth.users /
   -- snapshot da booking); a PII de telefone é anonimizada em booking.customer_phone.
-  insert into public.profiles(id, role, full_name, tax_id, birth_date, avatar_url) values
-    (u1,'customer','Maria Silva','12345678900','1990-01-01','https://x/a.png'),
-    (u2,'customer','João Souza','98765432100','1985-05-05','https://x/b.png'),
-    (u3,'company_operator','Op Teste',null,null,null)
+  insert into public.profiles(id, role, first_name, last_name, tax_id, birth_date, avatar_url) values
+    (u1,'customer','Maria','Silva','12345678900','1990-01-01','https://x/a.png'),
+    (u2,'customer','João','Souza','98765432100','1985-05-05','https://x/b.png'),
+    (u3,'company_operator','Op','Teste',null,null,null)
   on conflict (id) do nothing;
 
   -- u3 é membro de empresa (aciona a guarda "só consumidor").

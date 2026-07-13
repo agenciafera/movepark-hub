@@ -36,7 +36,7 @@ Logo, não há hard-delete do perfil. Faz-se **scrub da PII in-place**, mantendo
 
 | Tabela / recurso | Ação | Detalhe |
 |---|---|---|
-| `profiles` (uid) | **scrub + `deleted_at`** | `full_name = '(Conta excluída)'`; `phone/tax_id/birth_date/avatar_url = null`; `preferences = '{}'` |
+| `profiles` (uid) | **scrub + `deleted_at`** | `first_name = '(Conta excluída)', last_name = null` (`full_name` gerada acompanha); `tax_id/birth_date/avatar_url = null`; `preferences = '{}'` |
 | `booking` (profile_id = uid) | **scrub, mantém a linha** | `customer_name/customer_email/customer_phone/notes/voucher_url = null`. **Mantém** `profile_id`, preço, datas, status, utm |
 | `vehicle`, `address`, `payment_method`, `profile_saved` (profile_id = uid) | **hard-delete** | dados puramente pessoais. `booking.vehicle_id` é `ON DELETE SET NULL` → a referência histórica se desliga sozinha |
 | `review` (profile_id = uid) | **mantém** | rating/comentário têm valor pro local; o autor fica anônimo via `profiles.full_name` |

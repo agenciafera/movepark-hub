@@ -21,7 +21,7 @@ export default function AccountIndex() {
     <div className="space-y-6">
       <div className="space-y-1 desktop:hidden">
         <p className="text-body-md text-muted">
-          Olá, <span className="text-ink">{session?.fullName ?? session?.email}</span>.
+          Olá, <span className="text-ink">{session?.firstName ?? session?.email}</span>.
         </p>
       </div>
       <AccountMobileMenu />

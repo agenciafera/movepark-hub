@@ -27,16 +27,18 @@ export default function CompleteProfilePage() {
   const profileQ = useProfile(session?.userId);
   const update = useUpdateProfile();
 
-  const [fullName, setFullName] = React.useState("");
+  const [firstName, setFirstName] = React.useState("");
+  const [lastName, setLastName] = React.useState("");
   const [taxId, setTaxId] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
 
   React.useEffect(() => {
     if (!profileQ.data) return;
-    setFullName(profileQ.data.full_name ?? "");
+    setFirstName(profileQ.data.first_name ?? "");
+    setLastName(profileQ.data.last_name ?? "");
     setTaxId(documentMask(profileQ.data.tax_id ?? ""));
     // Se já está completo, manda pra next
-    if (profileQ.data.full_name && profileQ.data.tax_id) {
+    if (profileQ.data.first_name && profileQ.data.tax_id) {
       navigate(next, { replace: true });
     }
   }, [profileQ.data, navigate, next]);
@@ -44,8 +46,8 @@ export default function CompleteProfilePage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!session) return;
-    if (!fullName.trim()) {
-      toast.error("Conta seu nome");
+    if (!firstName.trim() || !lastName.trim()) {
+      toast.error("Conta seu nome e sobrenome");
       return;
     }
     if (!isValidCpf(taxId) && !isValidCnpj(taxId)) {
@@ -56,7 +58,8 @@ export default function CompleteProfilePage() {
     try {
       await update.mutateAsync({
         id: session.userId,
-        full_name: fullName.trim(),
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
         tax_id: onlyDigits(taxId),
       });
       toast.success("Pronto!");
@@ -96,15 +99,26 @@ export default function CompleteProfilePage() {
             </div>
           ) : (
             <form className="space-y-4" onSubmit={handleSubmit}>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="name">Nome completo</Label>
-                <Input
-                  id="name"
-                  autoFocus
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="first-name">Nome</Label>
+                  <Input
+                    id="first-name"
+                    autoFocus
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="last-name">Sobrenome</Label>
+                  <Input
+                    id="last-name"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="cpf">CPF ou CNPJ</Label>

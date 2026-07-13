@@ -46,10 +46,10 @@ async function notifyBookingConfirmed(admin: any, bookingId: string): Promise<vo
     if (!name) {
       const { data: p } = await admin
         .from("profiles")
-        .select("full_name")
+        .select("first_name")
         .eq("id", b.profile_id)
         .maybeSingle();
-      name = p?.full_name ?? null;
+      name = p?.first_name ?? null;
     }
     if (!phone) {
       const { data: u } = await admin.auth.admin.getUserById(b.profile_id);

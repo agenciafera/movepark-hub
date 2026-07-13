@@ -13,7 +13,7 @@ async function loadSession(): Promise<Session | null> {
   const [{ data: profile }, { data: links }, { data: roleScopes }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("id, full_name, role")
+      .select("id, full_name, first_name, last_name, role")
       .eq("id", auth.user.id)
       .maybeSingle(),
     supabase.from("profile_company").select("company_id, role").eq("profile_id", auth.user.id),
@@ -38,6 +38,8 @@ async function loadSession(): Promise<Session | null> {
     phone: auth.user.phone ?? null,
     role: profile?.role ?? "customer",
     fullName: profile?.full_name ?? null,
+    firstName: profile?.first_name ?? null,
+    lastName: profile?.last_name ?? null,
     companyIds: (links ?? []).map((l) => l.company_id),
     companyRoles,
     companyScopes,

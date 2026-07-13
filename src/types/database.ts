@@ -2840,8 +2840,10 @@ export type Database = {
           birth_date: string | null
           created_at: string
           deleted_at: string | null
+          first_name: string | null
           full_name: string | null
           id: string
+          last_name: string | null
           preferences: Json
           role: Database["public"]["Enums"]["user_role"]
           tax_id: string | null
@@ -2852,8 +2854,10 @@ export type Database = {
           birth_date?: string | null
           created_at?: string
           deleted_at?: string | null
+          first_name?: string | null
           full_name?: string | null
           id: string
+          last_name?: string | null
           preferences?: Json
           role?: Database["public"]["Enums"]["user_role"]
           tax_id?: string | null
@@ -2864,8 +2868,10 @@ export type Database = {
           birth_date?: string | null
           created_at?: string
           deleted_at?: string | null
+          first_name?: string | null
           full_name?: string | null
           id?: string
+          last_name?: string | null
           preferences?: Json
           role?: Database["public"]["Enums"]["user_role"]
           tax_id?: string | null
@@ -4332,6 +4338,13 @@ export type Database = {
         Returns: Json
       }
       slugify: { Args: { p_text: string }; Returns: string }
+      split_person_name: {
+        Args: { p_full: string }
+        Returns: {
+          first_name: string
+          last_name: string
+        }[]
+      }
       submit_partner_lead: {
         Args: {
           p_city?: string

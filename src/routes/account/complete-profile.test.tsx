@@ -22,7 +22,7 @@ function render() {
 beforeEach(() => {
   vi.mocked(useUpdateProfile).mockReturnValue({ mutateAsync: updateSpy, isPending: false } as never);
   vi.mocked(useProfile).mockReturnValue({
-    data: { full_name: "", tax_id: "", phone: "" },
+    data: { first_name: "", last_name: "", tax_id: "" },
     isLoading: false,
   } as never);
   updateSpy.mockClear();
@@ -37,9 +37,8 @@ describe("CompleteProfilePage", () => {
 
   it("aceita CNPJ (14 dígitos) e grava só os dígitos", async () => {
     render();
-    fireEvent.change(screen.getByLabelText("Nome completo"), {
-      target: { value: "Empresa LTDA" },
-    });
+    fireEvent.change(screen.getByLabelText("Nome"), { target: { value: "Empresa" } });
+    fireEvent.change(screen.getByLabelText("Sobrenome"), { target: { value: "LTDA" } });
     fireEvent.change(screen.getByLabelText("CPF ou CNPJ"), {
       target: { value: "11222333000181" },
     });
@@ -47,13 +46,15 @@ describe("CompleteProfilePage", () => {
     await waitFor(() => expect(updateSpy).toHaveBeenCalledTimes(1));
     expect(updateSpy.mock.calls[0][0]).toMatchObject({
       tax_id: "11222333000181",
-      full_name: "Empresa LTDA",
+      first_name: "Empresa",
+      last_name: "LTDA",
     });
   });
 
   it("rejeita documento inválido sem chamar a mutation", () => {
     render();
-    fireEvent.change(screen.getByLabelText("Nome completo"), { target: { value: "Fulano" } });
+    fireEvent.change(screen.getByLabelText("Nome"), { target: { value: "Fulano" } });
+    fireEvent.change(screen.getByLabelText("Sobrenome"), { target: { value: "Silva" } });
     fireEvent.change(screen.getByLabelText("CPF ou CNPJ"), { target: { value: "123" } });
     fireEvent.click(screen.getByRole("button", { name: /continuar/i }));
     expect(updateSpy).not.toHaveBeenCalled();

@@ -115,10 +115,10 @@ Deno.serve(async (req: Request) => {
       // ADR-006: nome do profiles; telefone (credencial) do auth.users — nunca do profiles.
       const { data: p } = await admin
         .from("profiles")
-        .select("full_name")
+        .select("first_name")
         .eq("id", booking.profile_id)
         .maybeSingle();
-      name = name ?? p?.full_name ?? null;
+      name = name ?? p?.first_name ?? null;
       const { data: u } = await admin.auth.admin.getUserById(booking.profile_id);
       const raw = u?.user?.phone ?? null;
       phone = raw ? (raw.startsWith("+") ? raw : `+${raw}`) : null;

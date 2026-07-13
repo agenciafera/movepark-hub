@@ -82,7 +82,7 @@ destination  (aeroporto/etc — âncora de busca + página de conteúdo SEO)
 ```
 profiles  (dados de domínio; PK = FK para auth.users)
 ├── id → auth.users
-├── full_name, tax_id, phone, birth_date
+├── first_name, last_name, full_name (gerado = first + last), tax_id, birth_date
 └── created_at, updated_at, deleted_at
 
 vehicle

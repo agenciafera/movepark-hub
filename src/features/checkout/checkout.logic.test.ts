@@ -15,7 +15,7 @@ const baseGate: CheckoutGateArgs = {
   hasSession: true,
   userId: "u1",
   code: "MP-ABC123",
-  profile: { full_name: "Fulano", tax_id: "12345678900" },
+  profile: { first_name: "Fulano", tax_id: "12345678900" },
   hasError: false,
   booking: { profile_id: "u1" },
 };
@@ -34,10 +34,10 @@ describe("resolveCheckoutGate", () => {
     });
   });
 
-  it("redireciona pra completar perfil quando falta full_name ou tax_id", () => {
+  it("redireciona pra completar perfil quando falta first_name ou tax_id", () => {
     const semNome = resolveCheckoutGate({
       ...baseGate,
-      profile: { full_name: null, tax_id: "123" },
+      profile: { first_name: null, tax_id: "123" },
     });
     expect(semNome).toEqual({
       kind: "redirect",
@@ -45,7 +45,7 @@ describe("resolveCheckoutGate", () => {
     });
     const semCpf = resolveCheckoutGate({
       ...baseGate,
-      profile: { full_name: "Fulano", tax_id: null },
+      profile: { first_name: "Fulano", tax_id: null },
     });
     expect(semCpf.kind).toBe("redirect");
   });

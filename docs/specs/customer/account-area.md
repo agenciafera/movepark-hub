@@ -255,7 +255,7 @@ Para confirmar, digite seu e-mail:
 ```
 
 **Anonimização imediata in-place** (não é hard-delete agendado): `profiles.deleted_at = now()` +
-scrub da PII (`full_name = '(Conta excluída)'`, demais campos nulos). As reservas mantêm o
+scrub da PII (`first_name = '(Conta excluída)', last_name = null`, demais campos nulos; `full_name` é gerada). As reservas mantêm o
 `profile_id` (venda preservada por exigência fiscal), apenas com a PII removida; o login é banido.
 Só para contas de consumidor. Regra canônica em **[account-deletion.md](./account-deletion.md)**
 (E0.9 · LGPD art. 18).

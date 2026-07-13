@@ -23,7 +23,8 @@ export default function ProfilePage() {
   const profileQ = useProfile(session?.userId);
   const update = useUpdateProfile();
 
-  const [fullName, setFullName] = React.useState("");
+  const [firstName, setFirstName] = React.useState("");
+  const [lastName, setLastName] = React.useState("");
   const [taxId, setTaxId] = React.useState("");
   const [birthDate, setBirthDate] = React.useState<string>("");
   const [language, setLanguage] = React.useState<string>("pt-BR");
@@ -32,7 +33,8 @@ export default function ProfilePage() {
   // Sync ao carregar
   React.useEffect(() => {
     if (!profileQ.data) return;
-    setFullName(profileQ.data.full_name ?? "");
+    setFirstName(profileQ.data.first_name ?? "");
+    setLastName(profileQ.data.last_name ?? "");
     setTaxId(documentMask(profileQ.data.tax_id ?? ""));
     setBirthDate(profileQ.data.birth_date ?? "");
     setLanguage(profileQ.data.preferences.language ?? "pt-BR");
@@ -60,7 +62,8 @@ export default function ProfilePage() {
       };
       await update.mutateAsync({
         id: session.userId,
-        full_name: fullName.trim() || null,
+        first_name: firstName.trim() || null,
+        last_name: lastName.trim() || null,
         tax_id: taxDigits || null,
         birth_date: birthDate || null,
         preferences: nextPrefs,
@@ -86,12 +89,20 @@ export default function ProfilePage() {
       <PageHeader title="Perfil" description="Suas informações pessoais." />
 
       <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
-        <div className="flex flex-col gap-1.5 tablet:col-span-2">
-          <Label htmlFor="name">Nome completo</Label>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="first-name">Nome</Label>
           <Input
-            id="name"
-            value={fullName}
-            onChange={(e) => markDirty(setFullName)(e.target.value)}
+            id="first-name"
+            value={firstName}
+            onChange={(e) => markDirty(setFirstName)(e.target.value)}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="last-name">Sobrenome</Label>
+          <Input
+            id="last-name"
+            value={lastName}
+            onChange={(e) => markDirty(setLastName)(e.target.value)}
           />
         </div>
         <div className="flex flex-col gap-1.5">

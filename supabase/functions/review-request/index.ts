@@ -52,7 +52,7 @@ Deno.serve(async (req: Request) => {
     .select(
       `id, code, profile_id,
        location:location!inner(name),
-       profile:profiles!inner(full_name),
+       profile:profiles!inner(first_name),
        review:review(id)`,
     )
     .eq("status", "completed")
@@ -74,7 +74,7 @@ Deno.serve(async (req: Request) => {
     if (!email || !cfg.from) continue;
 
     const tpl = tplReviewRequest(
-      row.profile?.full_name ?? "cliente",
+      row.profile?.first_name ?? "cliente",
       row.location?.name ?? "seu estacionamento",
       `${siteUrl()}/bookings/${row.code}`,
     );

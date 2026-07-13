@@ -13,7 +13,7 @@
 - **Guest checkout** continua first-class. Conta só vira obrigatória ao confirmar reserva.
 - **Google OAuth** como atalho. Quem prefere senha social não precisa pegar OTP.
 - **Tela única `/entrar`.** Não tem mais "signup" vs "login" — a primeira verificação cria a conta automaticamente.
-- **Pós-login**, se o profile ainda não tem `full_name + tax_id`, redireciona pra `/account/complete-profile` antes de liberar checkout.
+- **Pós-login**, se o profile ainda não tem `first_name + tax_id`, redireciona pra `/account/complete-profile` antes de liberar checkout.
 
 ---
 
@@ -197,27 +197,24 @@ Meta aprova em geral em ~30 minutos pra templates Authentication.
 
 ## 5. `/account/complete-profile`
 
-Gate que aparece pós-primeiro-login se `profiles.full_name = null OR profiles.tax_id = null`.
+Gate que aparece pós-primeiro-login se `profiles.first_name = null OR profiles.tax_id = null`.
 
 ```
 Falta pouco
 
 Conta nome e CPF pra emitir notas das suas reservas.
 
-Nome completo
-[                                  ]
+Nome                     Sobrenome
+[                  ]     [                  ]
 
 CPF
-[                                  ]
-
-Telefone (opcional, se entrou por e-mail/Google)
 [                                  ]
 
 [        Continuar         ]
 ```
 
-- `RequireRole(['customer'])` + verificação de `profile.full_name && profile.tax_id`; se incompleto, redireciona pra cá com `?next=` preservando destino original.
-- Pula esta tela só se ambos os campos estiverem preenchidos (caso Google já populou `full_name`).
+- `RequireRole(['customer'])` + verificação de `profile.first_name && profile.tax_id`; se incompleto, redireciona pra cá com `?next=` preservando destino original.
+- Pula esta tela só se ambos os campos estiverem preenchidos (caso o Google já tenha populado `first_name`).
 
 ---
 

@@ -22,7 +22,8 @@
   unicidade → colisão vira erro capturado → dispara o fluxo de merge. O provider `phone` (WhatsApp via
   Send SMS Hook) é agnóstico de backend — `auth.users.phone` **é** o identificador de login do WhatsApp.
 - **`profiles` sem `email`/`phone`:** dropar `profiles.phone`, não introduzir `email`. `profiles` segue
-  com `full_name`, `tax_id`, `birth_date`, `avatar_url`, `preferences`, `role`.
+  com `first_name`, `last_name` (`full_name` é coluna gerada = first + last), `tax_id`, `birth_date`,
+  `avatar_url`, `preferences`, `role`.
 - **Leituras:** próprio contato → JWT (`session.email`/`session.phone`); contato de terceiros →
   snapshot da `booking` (operacional) ou RPC security-definer sobre `auth.users` (vivo). Nunca cópia
   editável no `profiles`.
@@ -74,7 +75,7 @@ Ainda em aberto (fora desta entrega): impedir que o identificador liberado vire 
   `booking`, `api_key.created_by`. **Dedupe** onde há PK/único composto (`profile_saved`,
   `profile_company`, placa de veículo). `faq.created_by/updated_by` seguem `SET NULL`.
 - **Precedência de campos** (`profiles`): verificado > não-verificado, não-nulo vence
-  (`full_name`/`tax_id`/`birth_date`/`avatar_url`).
+  (`first_name`/`last_name`/`tax_id`/`birth_date`/`avatar_url`; `full_name` é gerada).
 - **Auth:** seta em A a credencial que faltava (`admin.updateUserById`) e deleta B
   (`admin.auth.admin.deleteUser`) — o profile de B (já sem dados) cai por CASCADE.
 - **Auditoria:** `account_merge_log` (sobrevivente, perdedor, contagens, timestamp).

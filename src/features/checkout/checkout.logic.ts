@@ -64,7 +64,7 @@ export interface CheckoutGateArgs {
   userId: string | null;
   code: string | undefined;
   /** profile do usuário (undefined = ainda carregando; objeto = carregado). */
-  profile: { full_name: string | null; tax_id: string | null } | null | undefined;
+  profile: { first_name: string | null; tax_id: string | null } | null | undefined;
   hasError: boolean;
   /** booking carregado (null/undefined = não encontrado). */
   booking: { profile_id: string | null } | null | undefined;
@@ -77,12 +77,12 @@ function checkoutNext(code: string | undefined): string {
 /**
  * Resolve a tela do checkout na MESMA ordem da página:
  * loading → redireciona p/ login se anônimo → redireciona p/ completar perfil se
- * faltar full_name/tax_id → erro → não encontrada → não pertence ao usuário → pronta.
+ * faltar first_name/tax_id → erro → não encontrada → não pertence ao usuário → pronta.
  */
 export function resolveCheckoutGate(a: CheckoutGateArgs): CheckoutGate {
   if (a.authLoading || a.bookingLoading) return { kind: "loading" };
   if (!a.hasSession) return { kind: "redirect", to: `/login?next=${checkoutNext(a.code)}` };
-  if (a.profile && (!a.profile.full_name || !a.profile.tax_id)) {
+  if (a.profile && (!a.profile.first_name || !a.profile.tax_id)) {
     return { kind: "redirect", to: `/account/complete-profile?next=${checkoutNext(a.code)}` };
   }
   if (a.hasError) return { kind: "error" };

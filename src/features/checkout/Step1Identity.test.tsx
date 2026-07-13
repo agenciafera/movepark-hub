@@ -66,7 +66,7 @@ beforeEach(() => {
 
 describe("Step1Identity", () => {
   it("mostra campos de nome, sobrenome, e-mail e telefone editáveis", () => {
-    setProfile({ full_name: "Pedro Araujo", phone: "+5511987727182" });
+    setProfile({ first_name: "Pedro", last_name: "Araujo" });
     renderWithProviders(<Step1Identity {...defaultProps} />, {
       auth: mockAuth({ session: mockSession("customer") }),
     });
@@ -76,8 +76,8 @@ describe("Step1Identity", () => {
     expect(screen.getByLabelText("Telefone de contato")).toBeInTheDocument();
   });
 
-  it("separa nome e sobrenome a partir do full_name do perfil", () => {
-    setProfile({ full_name: "Pedro Araujo", phone: null });
+  it("prefila nome e sobrenome a partir do perfil", () => {
+    setProfile({ first_name: "Pedro", last_name: "Araujo" });
     renderWithProviders(<Step1Identity {...defaultProps} />, {
       auth: mockAuth({ session: mockSession("customer") }),
     });
@@ -86,7 +86,7 @@ describe("Step1Identity", () => {
   });
 
   it("mostra checkbox 'A reserva é para outra pessoa'", () => {
-    setProfile({ full_name: "Pedro", phone: null });
+    setProfile({ first_name: "Pedro", last_name: null });
     renderWithProviders(<Step1Identity {...defaultProps} />, {
       auth: mockAuth({ session: mockSession("customer") }),
     });
@@ -96,7 +96,7 @@ describe("Step1Identity", () => {
   });
 
   it("expande campos do passageiro ao marcar o checkbox", async () => {
-    setProfile({ full_name: "Pedro", phone: null });
+    setProfile({ first_name: "Pedro", last_name: null });
     renderWithProviders(<Step1Identity {...defaultProps} />, {
       auth: mockAuth({ session: mockSession("customer") }),
     });
@@ -107,7 +107,7 @@ describe("Step1Identity", () => {
   });
 
   it("inicializa o checkbox marcado quando customerName já existe", () => {
-    setProfile({ full_name: "Pedro Silva", phone: null });
+    setProfile({ first_name: "Pedro", last_name: "Silva" });
     renderWithProviders(
       <Step1Identity {...defaultProps} customerName="Maria Silva" customerPhone={null} />,
       { auth: mockAuth({ session: mockSession("customer") }) },
@@ -121,7 +121,7 @@ describe("Step1Identity", () => {
 
   // Regressão do bug: login por telefone deixava o e-mail travado e vazio.
   it("login por telefone: e-mail editável e salvo em customer_email; telefone de contato editável", async () => {
-    setProfile({ full_name: "Pedro Araujo" });
+    setProfile({ first_name: "Pedro", last_name: "Araujo" });
     const updateCustomer = vi.fn().mockResolvedValue(undefined);
     vi.mocked(useUpdateBookingCustomer).mockReturnValue({
       mutateAsync: updateCustomer,
@@ -147,7 +147,7 @@ describe("Step1Identity", () => {
   });
 
   it("login por e-mail: campo de e-mail fica read-only (identidade da conta) e telefone editável", () => {
-    setProfile({ full_name: "Pedro Araujo", phone: "+5511987727182" });
+    setProfile({ first_name: "Pedro", last_name: "Araujo" });
     renderWithProviders(<Step1Identity {...defaultProps} />, {
       auth: mockAuth({ session: mockSession("customer", { email: "pedro@ex.com" }) }),
     });
@@ -158,7 +158,7 @@ describe("Step1Identity", () => {
   });
 
   it("abre os Termos num modal sem marcar o checkbox de aceite", async () => {
-    setProfile({ full_name: "Pedro Araujo", phone: "+5511987727182" });
+    setProfile({ first_name: "Pedro", last_name: "Araujo" });
     renderWithProviders(<Step1Identity {...defaultProps} />, {
       auth: mockAuth({ session: mockSession("customer", { email: "pedro@ex.com" }) }),
     });
