@@ -170,6 +170,7 @@ export default function BookingDetailPage() {
                 farePriceCents={booking.fare_price_cents}
                 fareCancelUntil={booking.fare_cancel_until}
                 benefits={booking.fare_benefits}
+                checkInAt={booking.check_in_at}
               />
             </div>
             {booking.fare_tier !== "superflex" &&
@@ -256,9 +257,9 @@ export default function BookingDetailPage() {
               {booking.location_detail.email && (
                 <a
                   href={`mailto:${booking.location_detail.email}`}
-                  className="block text-ink no-underline hover:underline"
+                  className="inline-flex items-center gap-2 text-ink no-underline hover:underline"
                 >
-                  <Mail className="mr-2 inline-block h-4 w-4 text-mp-indigo" />
+                  <Mail className="h-4 w-4 text-mp-indigo" />
                   {booking.location_detail.email}
                 </a>
               )}
