@@ -32,13 +32,18 @@ const env = (k: string) => Deno.env.get(k);
 // do logo); navy é o ink/header. Não trocar violeta por vermelho nos botões.
 const BRAND = {
   violet: "#5D5FEF", // primary / CTA
-  violetActive: "#4041A3",
+  violetActive: "#4041A3", // hero (fundo do topo)
   violetSoft: "#C5C4F6",
   red: "#DA455E", // accent da marca (logo)
-  navy: "#29263F", // ink / header
+  redDark: "#AE374B",
+  cyan: "#A6DBDF", // terceira cor da régua de marca
+  navy: "#29263F", // ink / header / rodapé legal
+  body: "#424242", // texto de corpo
   muted: "#6A6A6A",
+  footMuted: "#818FAF", // texto sobre o rodapé navy
   surface: "#F7F7F8",
   hairline: "#E0E0E0",
+  pageBg: "#EDEDEF", // fundo da página (fora do card)
 };
 
 export function siteUrl(): string {
@@ -124,18 +129,54 @@ export async function sendEmail({ from, to, subject, html, replyTo }: SendArgs):
 
 // ───────────────────────────────────────── templates ─────────────────────────────────────────
 
-const FONT = "'Roboto',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif";
+const FONT = "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+
+// Links institucionais do rodapé (rotas reais do site).
+function helpUrl(): string {
+  return `${siteUrl()}/contato`;
+}
+function privacyUrl(): string {
+  return `${siteUrl()}/privacidade`;
+}
+function termsUrl(): string {
+  return `${siteUrl()}/termos`;
+}
+
+// Redes sociais do rodapé. URLs reais da marca (atualizar aqui se mudarem).
+const SOCIAL: { name: string; url: string; alt: string }[] = [
+  { name: "instagram", url: "https://www.instagram.com/moveparkestacionamento", alt: "Instagram" },
+  { name: "linkedin", url: "https://www.linkedin.com/company/movepark", alt: "LinkedIn" },
+  { name: "whatsapp", url: "https://wa.me/5511994752952", alt: "WhatsApp" },
+];
+
+// Identificação legal no rodapé (endereço/razão social confirmados pelo time).
+const LEGAL_NAME = "Movepark Tecnologia Ltda.";
+const LEGAL_ADDRESS = "Rua Tito, 479, 1º andar &middot; São Paulo, SP &middot; 05051-000 &middot; Brasil";
 
 /**
- * Casco do e-mail. Layout table-based (robusto em Gmail/Apple/Outlook), CSS inline,
- * mobile-first. O logo é a marca REAL como PNG hospedado (SVG não renderiza no Gmail),
- * servido pelo site em `${siteUrl()}/brand/...`. `preheader` controla o texto de preview
- * na caixa de entrada (cai no título se não vier).
+ * Casco do e-mail. Layout table-based (robusto em Gmail/Apple/Outlook), CSS inline.
+ * Estrutura (identidade Movepark): hero colorido com símbolo branco + título → corpo →
+ * régua de marca (4 cores) → banda de ajuda com wordmark e redes sociais → rodapé legal navy.
+ * Todos os logos/ícones são PNG hospedados (SVG não renderiza no Gmail), servidos pelo site
+ * em `${siteUrl()}/brand/...`. `preheader` controla o texto de preview na caixa de entrada;
+ * `heroBg` permite variar a cor do topo (default = índigo da marca).
  */
-function shell(title: string, bodyHtml: string, preheader?: string): string {
-  const logo = `${siteUrl()}/brand/logo-movepark-email.png`;
-  const symbol = `${siteUrl()}/brand/simbolo-movepark-email.png`;
-  const pre = (preheader ?? title).replace(/\s+/g, " ").trim();
+function shell(
+  title: string,
+  bodyHtml: string,
+  opts?: { preheader?: string; heroBg?: string },
+): string {
+  const symbolWhite = `${siteUrl()}/brand/simbolo-movepark-white-email.png`;
+  const wordmark = `${siteUrl()}/brand/logo-movepark-email.png`;
+  const heroBg = opts?.heroBg ?? BRAND.violetActive;
+  const pre = (opts?.preheader ?? title).replace(/\s+/g, " ").trim();
+
+  // Redes sociais como PNG hospedado (SVG some no Gmail). Uma célula por ícone.
+  const social = SOCIAL.map(
+    (s, i) =>
+      `<td style="padding-right:${i < SOCIAL.length - 1 ? "20px" : "0"};"><a href="${s.url}" target="_blank" style="text-decoration:none;"><img src="${siteUrl()}/brand/social-${s.name}-email.png" width="22" height="22" alt="${s.alt}" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td>`,
+  ).join("");
+
   const html = `<!doctype html>
 <html lang="pt-BR" xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -144,35 +185,61 @@ function shell(title: string, bodyHtml: string, preheader?: string): string {
 <meta name="x-apple-disable-message-reformatting">
 <meta name="color-scheme" content="light only">
 <title>${title}</title>
+<!--[if mso]><style>*{font-family:Arial,sans-serif!important;}</style><![endif]-->
+<style>
+  a{color:${BRAND.violetActive};}
+  .mp-help-link{color:${BRAND.violetActive}!important;text-decoration:underline;}
+  .mp-foot-link{color:#ffffff!important;text-decoration:none;}
+  @media only screen and (max-width:480px){
+    .mp-pad{padding-left:24px!important;padding-right:24px!important;}
+    .mp-hero{padding-left:24px!important;padding-right:24px!important;}
+  }
+</style>
 </head>
-<body style="margin:0;padding:0;width:100%;background:#EEF0F4;-webkit-text-size-adjust:100%;">
+<body style="margin:0;padding:0;width:100%;background:${BRAND.pageBg};-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
 <span style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;overflow:hidden;mso-hide:all;">${pre}</span>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#EEF0F4;">
-<tr><td align="center" style="padding:32px 16px;">
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">
-<tr><td style="padding:2px 6px 20px;">
-<img src="${logo}" width="150" height="23" alt="Movepark" style="display:block;border:0;outline:none;text-decoration:none;height:auto;width:150px;max-width:150px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${BRAND.pageBg};">
+<tr><td align="center" style="padding:40px 16px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#ffffff;">
+
+<tr><td class="mp-hero" style="padding:40px 40px 56px;background:${heroBg};font-family:${FONT};">
+<img src="${symbolWhite}" width="50" height="32" alt="Movepark" style="display:block;border:0;outline:none;height:32px;width:auto;margin:0 0 40px;">
+<h1 style="margin:0;font-family:${FONT};font-size:30px;line-height:1.2;font-weight:600;letter-spacing:-0.6px;color:#ffffff;">${title}</h1>
 </td></tr>
-<tr><td style="background:#ffffff;border:1px solid #E6E7EC;border-radius:16px;overflow:hidden;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-<td width="34%" height="4" style="height:4px;background:${BRAND.red};font-size:0;line-height:4px;">&nbsp;</td>
-<td width="33%" height="4" style="height:4px;background:#A6DBDF;font-size:0;line-height:4px;">&nbsp;</td>
-<td width="33%" height="4" style="height:4px;background:${BRAND.violet};font-size:0;line-height:4px;">&nbsp;</td>
-</tr></table>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-<td style="padding:34px 34px 32px;font-family:${FONT};font-size:16px;line-height:1.65;color:#45434F;">
-<h1 style="margin:0 0 18px;font-family:${FONT};font-size:22px;line-height:1.3;font-weight:700;color:${BRAND.navy};">${title}</h1>
+
+<tr><td class="mp-pad" style="padding:44px 40px;font-family:${FONT};font-size:16px;line-height:1.65;color:${BRAND.body};">
 ${bodyHtml}
-</td>
+</td></tr>
+
+<tr><td style="font-size:0;line-height:0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+<td width="40%" height="6" style="height:6px;background:${BRAND.navy};font-size:0;line-height:6px;">&nbsp;</td>
+<td width="27%" height="6" style="height:6px;background:${BRAND.violet};font-size:0;line-height:6px;">&nbsp;</td>
+<td width="18%" height="6" style="height:6px;background:${BRAND.red};font-size:0;line-height:6px;">&nbsp;</td>
+<td width="15%" height="6" style="height:6px;background:${BRAND.cyan};font-size:0;line-height:6px;">&nbsp;</td>
 </tr></table>
 </td></tr>
-<tr><td style="padding:26px 24px 8px;text-align:center;">
-<img src="${symbol}" width="22" height="22" alt="" style="display:inline-block;border:0;width:22px;height:22px;">
-<p style="margin:12px 0 0;font-family:${FONT};font-size:12px;line-height:1.7;color:#8A8A96;">
-Movepark Hub, a plataforma que conecta estacionamentos a clientes.<br>
-<a href="${siteUrl()}" style="color:#8A8A96;text-decoration:underline;">hub.movepark.co</a>
-</p>
+
+<tr><td class="mp-pad" style="padding:40px;background:${BRAND.surface};font-family:${FONT};">
+<img src="${wordmark}" width="135" height="20" alt="Movepark" style="display:block;border:0;outline:none;height:20px;width:auto;margin:0 0 24px;">
+<h3 style="margin:0 0 14px;font-family:${FONT};font-size:18px;line-height:1.25;font-weight:600;color:${BRAND.navy};">Ficou com alguma dúvida?</h3>
+<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:${BRAND.body};">Acesse a <a href="${helpUrl()}" class="mp-help-link">Central de Ajuda</a>, disponível no app ou no nosso site.</p>
+<p style="margin:0 0 26px;font-size:14px;line-height:1.6;color:${BRAND.muted};">Esta é uma mensagem automática. Não responda este e-mail: não conseguimos dar sequência ao atendimento por aqui.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>${social}</tr></table>
 </td></tr>
+
+<tr><td class="mp-pad" style="padding:36px 40px 44px;background:${BRAND.navy};font-family:${FONT};">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+<td style="padding-right:28px;"><a href="${helpUrl()}" class="mp-foot-link" style="font-size:13px;font-weight:500;color:#ffffff;text-decoration:none;">Central de Ajuda</a></td>
+<td style="padding-right:28px;"><a href="${privacyUrl()}" class="mp-foot-link" style="font-size:13px;font-weight:500;color:#ffffff;text-decoration:none;">Privacidade</a></td>
+<td><a href="${termsUrl()}" class="mp-foot-link" style="font-size:13px;font-weight:500;color:#ffffff;text-decoration:none;">Termos de Uso</a></td>
+</tr></table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:1px solid rgba(255,255,255,0.14);padding-top:22px;">
+<p style="margin:0 0 6px;font-size:12px;line-height:1.6;color:${BRAND.footMuted};">&copy; 2026 ${LEGAL_NAME}</p>
+<p style="margin:0;font-size:12px;line-height:1.6;color:${BRAND.footMuted};">${LEGAL_ADDRESS}</p>
+</td></tr></table>
+</td></tr>
+
 </table>
 </td></tr>
 </table>
@@ -188,7 +255,7 @@ Movepark Hub, a plataforma que conecta estacionamentos a clientes.<br>
 function button(href: string, label: string): string {
   // Inline-block <a>: centraliza via text-align do <p> e é válido dentro de <p>. Render
   // ótimo em Gmail/Apple; no Outlook aparece como retângulo violeta com o texto (aceitável).
-  return `<a href="${href}" style="display:inline-block;background:${BRAND.violet};color:#ffffff;text-decoration:none;font-family:${FONT};font-size:15px;font-weight:700;line-height:1;padding:14px 26px;border-radius:8px;">${label}</a>`;
+  return `<a href="${href}" style="display:inline-block;background:${BRAND.violet};color:#ffffff;text-decoration:none;font-family:${FONT};font-size:16px;font-weight:600;line-height:1;padding:15px 30px;border-radius:8px;">${label}</a>`;
 }
 
 export function tplLeadReceived(contactName: string): { subject: string; html: string } {

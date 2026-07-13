@@ -87,3 +87,26 @@ Deno.test("escapeHtml: nome com < > é escapado (anti-injeção)", () => {
   assert(!m.html.includes("<script>"));
   assertStringIncludes(m.html, "&lt;script&gt;");
 });
+
+Deno.test("shell: casco da marca (hero, régua, banda de ajuda, redes, rodapé legal)", () => {
+  const html = tplLeadReceived("Kallef").html;
+  // Hero: símbolo branco da marca sobre fundo colorido.
+  assertStringIncludes(html, "/brand/simbolo-movepark-white-email.png");
+  // Régua de marca (as 4 cores da identidade).
+  for (const hex of ["#29263F", "#5D5FEF", "#DA455E", "#A6DBDF"]) {
+    assertStringIncludes(html, hex);
+  }
+  // Banda de ajuda.
+  assertStringIncludes(html, "Ficou com alguma dúvida?");
+  // Redes sociais como PNG hospedado (email-safe).
+  assertStringIncludes(html, "/brand/social-instagram-email.png");
+  assertStringIncludes(html, "/brand/social-linkedin-email.png");
+  assertStringIncludes(html, "/brand/social-whatsapp-email.png");
+  // Rodapé legal.
+  assertStringIncludes(html, "Movepark Tecnologia Ltda.");
+  assertStringIncludes(html, "Rua Tito, 479");
+  // Links institucionais apontam para as rotas reais do site.
+  assertStringIncludes(html, "/termos");
+  assertStringIncludes(html, "/privacidade");
+  assertStringIncludes(html, "/contato");
+});
