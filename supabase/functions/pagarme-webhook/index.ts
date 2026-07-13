@@ -14,6 +14,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { chargeStatusToPaymentStatus, getGateway } from "../_shared/payments/index.ts";
 import { mapChargeStatus, mapRecipientStatus } from "../_shared/payments/pagarme.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
+import { sendBookingConfirmationEmail } from "../_shared/booking-confirmation.ts";
 import { refundShouldCancelBooking } from "../_shared/refund.ts";
 import { sendWhatsAppTemplate } from "../_shared/whatsapp.ts";
 import {
@@ -360,6 +361,13 @@ Deno.serve(async (req: Request) => {
       await runAfterResponse(
         notifyBookingConfirmed(admin, payment.booking_id).catch((e) =>
           console.error("[pagarme-webhook] falha ao notificar confirmação:", payment!.booking_id, e),
+        ),
+      );
+
+      // E-mail de confirmação para o cliente — guarda de exatamente-uma-vez no helper, best-effort.
+      await runAfterResponse(
+        sendBookingConfirmationEmail(admin, payment.booking_id).catch((e) =>
+          console.error("[pagarme-webhook] falha ao enviar e-mail de confirmação:", payment!.booking_id, e),
         ),
       );
     }

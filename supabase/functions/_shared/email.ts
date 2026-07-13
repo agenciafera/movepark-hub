@@ -10,6 +10,7 @@
 
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 import { encodeBase64 } from "jsr:@std/encoding/base64";
+import { formatBRDateTime, formatBRL, type VoucherBooking } from "./voucher/fields.ts";
 
 /**
  * Codifica o HTML como base64 quebrado em linhas de 76 chars (RFC 2045). Usamos base64 de
@@ -359,6 +360,83 @@ export function tplReviewRequest(
       <div style="text-align:center;margin:4px 0 12px">${stars}</div>
       <p style="text-align:center">${button(reviewLink, "Avaliar meu estacionamento")}</p>
       <p style="color:${BRAND.muted};font-size:13px">Se as estrelas não funcionarem, copie e cole este link no navegador:<br>${reviewLink}</p>`),
+  };
+}
+
+/** WhatsApp de suporte (o mesmo do rodapé), para a mensagem de confirmação. */
+const SUPPORT_WHATSAPP = { href: "https://wa.me/5511994752952", label: "(11) 99475-2952" };
+
+/** Linha de tabela com borda (resumo da reserva). `strong` destaca o Total. */
+function bordRow(label: string, value: string, strong = false): string {
+  const size = strong ? "15px" : "14px";
+  const valColor = strong ? BRAND.navy : BRAND.body;
+  const valWeight = strong ? "700" : "400";
+  return `<tr>
+    <td style="border:1px solid ${BRAND.hairline};padding:12px 16px;font-family:${FONT};font-size:${size};font-weight:600;color:${BRAND.navy};width:42%;">${escapeHtml(label)}</td>
+    <td style="border:1px solid ${BRAND.hairline};padding:12px 16px;font-family:${FONT};font-size:${size};font-weight:${valWeight};color:${valColor};">${value}</td>
+  </tr>`;
+}
+
+/** Item de checklist (check violeta + texto). Table-based para render no Gmail/Outlook. */
+function checkItem(html: string): string {
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 14px;"><tr>
+    <td width="24" valign="top" style="font-family:${FONT};font-size:16px;font-weight:700;line-height:1.5;color:${BRAND.violet};">&#10003;</td>
+    <td style="font-family:${FONT};font-size:15px;line-height:1.55;color:${BRAND.body};">${html}</td>
+  </tr></table>`;
+}
+
+/** Dia e mês por extenso em pt-BR (ex.: "25 de fevereiro"), fuso de São Paulo. */
+function formatBRDayMonth(iso: string): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    day: "2-digit",
+    month: "long",
+  }).format(new Date(iso));
+}
+
+/**
+ * Confirmação de reserva (cliente). Enviado quando o pagamento confirma a reserva.
+ * Reaproveita a montagem de dados do voucher (`VoucherBooking`) e linka o cliente
+ * para a própria reserva, onde o voucher fica disponível para download.
+ */
+export function tplBookingConfirmation(
+  b: VoucherBooking,
+  customerName: string | null,
+  bookingUrl: string,
+): { subject: string; html: string } {
+  const fn = String(customerName ?? "").trim().split(/\s+/)[0];
+  const greeting = fn ? `Tudo certo, ${escapeHtml(fn)}!` : "Tudo certo!";
+
+  const rows: [string, string][] = [
+    ["Reserva", escapeHtml(`#${b.code}`)],
+    ["Estacionamento", escapeHtml(b.company_name)],
+    ["Unidade", escapeHtml(b.location_name)],
+    ["Tipo de vaga", escapeHtml(b.parking_type_name ?? "Vaga")],
+    ["Check-in", escapeHtml(formatBRDateTime(b.check_in_at))],
+    ["Check-out", escapeHtml(formatBRDateTime(b.check_out_at))],
+  ];
+  if (b.vehicle) {
+    const v = b.vehicle.model
+      ? `${b.vehicle.license_plate} · ${b.vehicle.model}`
+      : b.vehicle.license_plate;
+    rows.push(["Veículo", escapeHtml(v)]);
+  }
+  const summary = rows.map(([l, v]) => bordRow(l, v)).join("") +
+    bordRow("Total", formatBRL(b.total_amount, b.currency ?? "BRL"), true);
+
+  return {
+    subject: `Sua reserva ${b.code} está confirmada`,
+    html: shell(
+      "Sua reserva está confirmada",
+      `
+      <p style="margin:0 0 24px;">${greeting} Sua reserva foi confirmada. Aqui está o resumo.</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 32px;">${summary}</table>
+      ${checkItem(`O <strong style="color:${BRAND.navy};">${escapeHtml(b.location_name)}</strong> espera você em <strong style="color:${BRAND.navy};">${escapeHtml(formatBRDayMonth(b.check_in_at))}</strong>.`)}
+      ${checkItem(`Precisa de ajuda? Fale com a gente no WhatsApp <a href="${SUPPORT_WHATSAPP.href}" class="mp-help-link">${SUPPORT_WHATSAPP.label}</a>.`)}
+      ${checkItem(`O voucher fica na sua reserva, pronto para baixar quando quiser.`)}
+      <p style="margin:28px 0 0;">${button(bookingUrl, "Ver minha reserva")}</p>`,
+      { preheader: `Reserva ${b.code} confirmada no ${b.location_name}` },
+    ),
   };
 }
 

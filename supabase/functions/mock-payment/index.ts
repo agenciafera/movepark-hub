@@ -23,6 +23,7 @@
 // }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendBookingConfirmationEmail } from "../_shared/booking-confirmation.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -159,6 +160,10 @@ Deno.serve(async (req: Request) => {
           .from("booking")
           .update({ status: "confirmed" })
           .eq("id", booking.id);
+        // E-mail de confirmação (mesmo helper do fluxo real; guarda de exatamente-uma-vez).
+        await sendBookingConfirmationEmail(admin, booking.id).catch((e) =>
+          console.error("[mock-payment] falha ao enviar e-mail de confirmação:", booking.id, e),
+        );
       } finally {
         resolve();
       }
