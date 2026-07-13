@@ -343,8 +343,14 @@ export default function BookingDetailPage() {
           )}
         </main>
 
-        {/* Coluna direita / voucher */}
-        <aside className="space-y-6">
+        {/* Coluna direita / voucher. No mobile, quando há voucher, ele sobe pro topo (é o que a
+            pessoa abre no aeroporto). No desktop fica na lateral e gruda (sticky) enquanto a
+            coluna esquerda rola, evitando o vazio à direita. */}
+        <aside
+          className={`space-y-6 desktop:sticky desktop:top-8 desktop:self-start${
+            canSeeVoucher ? " order-first desktop:order-none" : ""
+          }`}
+        >
           {canSeeVoucher ? (
             <Voucher booking={booking} />
           ) : booking.status === "pending" ? (

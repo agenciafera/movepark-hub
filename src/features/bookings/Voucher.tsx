@@ -94,7 +94,9 @@ export function Voucher({ booking }: Props) {
         )}
       </div>
 
-      <div className="mt-6 space-y-2 border-t border-hairline-soft pt-5 text-body-sm">
+      {/* Detalhes só na impressão: na tela a coluna principal já mostra tudo (evita duplicar);
+          no PDF/impressão o `main` é print:hidden, então o voucher precisa ser autocontido. */}
+      <div className="mt-6 hidden space-y-2 border-t border-hairline-soft pt-5 text-body-sm print:block">
         <Row label="Estacionamento" value={booking.location.company.name} />
         <Row label="Localização" value={booking.location.name} />
         {booking.location.address && (
