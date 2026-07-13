@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Inbox, ExternalLink, Phone, Mail, ShieldCheck } from "lucide-react";
-import { StatusBadge } from "@/components/shared/StatusBadge";
+import { BOOKING_STATUS_LABELS, StatusBadge } from "@/components/shared/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -122,8 +122,13 @@ export default function BookingDetailPage() {
               {booking.location.company.name}
             </h2>
             <p className="mt-1 text-body-sm text-muted">
-              {booking.location.name}
-              {booking.location.address ? ` · ${booking.location.address}` : ""}
+              {/* Marca (company) e unidade (location) às vezes têm o mesmo nome (rede de 1 unidade):
+                  nesse caso o título já mostra o nome, então aqui fica só o endereço. */}
+              {booking.location.company.name === booking.location.name
+                ? booking.location.address
+                : `${booking.location.name}${
+                    booking.location.address ? ` · ${booking.location.address}` : ""
+                  }`}
             </p>
             {booking.location_detail.latitude != null && (
               <Button
@@ -242,60 +247,40 @@ export default function BookingDetailPage() {
               </div>
               {booking.payment && (
                 <p className="mt-2 text-caption text-muted">
-                  Pago via {booking.payment.provider}
+                  {/* ADR-004: o gateway fica invisível pro cliente — não mostrar o slug do provedor. */}
                   {booking.payment.paid_at
-                    ? ` em ${formatDateTime(booking.payment.paid_at)}`
-                    : " (aguardando confirmação)"}
+                    ? `Pagamento confirmado em ${formatDateTime(booking.payment.paid_at)}`
+                    : "Pagamento aguardando confirmação"}
                 </p>
               )}
             </div>
           </section>
 
-          <section className="rounded-md border border-hairline bg-canvas p-6">
-            <h3 className="text-title-md text-ink">Precisa de ajuda?</h3>
-            <div className="mt-3 space-y-2 text-body-sm">
-              {booking.location_detail.phone && (
-                <a
-                  href={`tel:${booking.location_detail.phone}`}
-                  className="inline-flex items-center gap-2 text-ink no-underline hover:underline"
-                >
-                  <Phone className="h-4 w-4 text-mp-indigo" />
-                  {booking.location_detail.phone}
-                </a>
-              )}
-              {booking.location_detail.email && (
-                <a
-                  href={`mailto:${booking.location_detail.email}`}
-                  className="inline-flex items-center gap-2 text-ink no-underline hover:underline"
-                >
-                  <Mail className="h-4 w-4 text-mp-indigo" />
-                  {booking.location_detail.email}
-                </a>
-              )}
-            </div>
-
-            {(booking.status === "confirmed" || booking.status === "checked_in") &&
-              (() => {
-                const ch = guaranteeChannel({
-                  unitPhone: booking.location_detail.phone,
-                  code: booking.code,
-                  unitName: booking.location.name,
-                });
-                return (
-                  <div className="mt-4 border-t border-hairline-soft pt-4">
-                    <p className="text-body-sm text-muted">
-                      Chegou e não tinha vaga? Você tem a garantia Movepark.
-                    </p>
-                    <Button variant="secondary" size="sm" className="mt-2" asChild>
-                      <a href={ch.href} target="_blank" rel="noreferrer">
-                        <ShieldCheck className="h-4 w-4" />
-                        {ch.label}
-                      </a>
-                    </Button>
-                  </div>
-                );
-              })()}
-          </section>
+          {(booking.location_detail.phone || booking.location_detail.email) && (
+            <section className="rounded-md border border-hairline bg-canvas p-6">
+              <h3 className="text-title-md text-ink">Precisa de ajuda?</h3>
+              <div className="mt-3 space-y-2 text-body-sm">
+                {booking.location_detail.phone && (
+                  <a
+                    href={`tel:${booking.location_detail.phone}`}
+                    className="inline-flex items-center gap-2 text-ink no-underline hover:underline"
+                  >
+                    <Phone className="h-4 w-4 text-mp-indigo" />
+                    {booking.location_detail.phone}
+                  </a>
+                )}
+                {booking.location_detail.email && (
+                  <a
+                    href={`mailto:${booking.location_detail.email}`}
+                    className="inline-flex items-center gap-2 text-ink no-underline hover:underline"
+                  >
+                    <Mail className="h-4 w-4 text-mp-indigo" />
+                    {booking.location_detail.email}
+                  </a>
+                )}
+              </div>
+            </section>
+          )}
 
           {booking.status === "completed" && (
             <section className="rounded-md border border-hairline bg-canvas p-6">
@@ -360,9 +345,33 @@ export default function BookingDetailPage() {
             </div>
           ) : (
             <div className="rounded-md border border-hairline bg-surface-soft p-4 text-body-sm text-muted">
-              Voucher não disponível pra reservas {booking.status}.
+              Esta reserva ({BOOKING_STATUS_LABELS[booking.status].toLowerCase()}) não tem voucher
+              disponível.
             </div>
           )}
+
+          {/* Garantia perto do voucher: é a reassurance do momento de chegada (não escondida na Ajuda). */}
+          {canSeeVoucher &&
+            (() => {
+              const ch = guaranteeChannel({
+                unitPhone: booking.location_detail.phone,
+                code: booking.code,
+                unitName: booking.location.name,
+              });
+              return (
+                <div className="rounded-md border border-hairline bg-canvas p-4">
+                  <p className="text-body-sm text-ink">
+                    Chegou e não tinha vaga? Você tem a garantia Movepark.
+                  </p>
+                  <Button variant="secondary" size="sm" className="mt-3 w-full" asChild>
+                    <a href={ch.href} target="_blank" rel="noreferrer">
+                      <ShieldCheck className="h-4 w-4" />
+                      {ch.label}
+                    </a>
+                  </Button>
+                </div>
+              );
+            })()}
         </aside>
       </div>
 

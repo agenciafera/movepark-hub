@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import type { BookingStatus } from "@/types/domain";
 
-const labels: Record<BookingStatus, string> = {
+export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
   pending: "Pendente",
   confirmed: "Confirmada",
   checked_in: "Em uso",
@@ -20,5 +20,5 @@ const tones = {
 } as const;
 
 export function StatusBadge({ status }: { status: BookingStatus }) {
-  return <Badge tone={tones[status]}>{labels[status]}</Badge>;
+  return <Badge tone={tones[status]}>{BOOKING_STATUS_LABELS[status]}</Badge>;
 }
