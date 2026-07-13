@@ -199,8 +199,11 @@ export function Step3Payment({
           placeholder="CPF ou CNPJ"
           inputMode="numeric"
           maxLength={18}
+          aria-describedby="pay-tax-id-help"
         />
-        <span className="text-caption-sm text-muted">Vai na nota e é exigido pelo pagamento.</span>
+        <span id="pay-tax-id-help" className="text-caption-sm text-muted">
+          Vai na nota e é exigido pelo pagamento.
+        </span>
       </div>
 
       <Tabs defaultValue="pix">

@@ -209,8 +209,16 @@ export function Step1Identity({
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="id-phone">Telefone</Label>
-          <PhoneField id="id-phone" value={phone} onChange={setPhone} required />
-          <span className="text-caption-sm text-muted">Pra avisar sobre a sua reserva.</span>
+          <PhoneField
+            id="id-phone"
+            value={phone}
+            onChange={setPhone}
+            required
+            aria-describedby="id-phone-help"
+          />
+          <span id="id-phone-help" className="text-caption-sm text-muted">
+            Pra avisar sobre a sua reserva.
+          </span>
         </div>
 
         <label className="flex cursor-pointer items-center gap-3 border-t border-hairline pt-4">
