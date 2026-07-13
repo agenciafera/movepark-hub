@@ -19,7 +19,7 @@ import {
 } from "../_shared/payments/index.ts";
 import { computeInstallmentPlan, parseInstallmentPolicy } from "../_shared/payments/installments.ts";
 import { buildCardItems, extractCardId, parseCardInput, reaisToCents } from "./logic.ts";
-import { customerTypeFor } from "../_shared/payments/documents.ts";
+import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -69,7 +69,10 @@ Deno.serve(async (req: Request) => {
   // 1. Reserva (pertence ao usuário, pendente, não expirada)
   const { data: booking } = await admin
     .from("booking")
-    .select("id, code, status, total_amount, fare_price_cents, expires_at, profile_id, location_id, customer_email")
+    .select(
+      "id, code, status, total_amount, fare_price_cents, expires_at, profile_id, location_id, " +
+        "customer_name, customer_first_name, customer_last_name, customer_email, customer_tax_id",
+    )
     .eq("code", input.bookingCode)
     .maybeSingle();
   if (!booking) return jsonResponse({ error: "Reserva não encontrada" }, 404);
@@ -163,16 +166,21 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: e instanceof Error ? e.message : "Falha ao montar o split" }, 422);
   }
 
-  // 6. Cliente
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("full_name, tax_id")
-    .eq("id", booking.profile_id)
-    .maybeSingle();
+  // 6. Pagador: do snapshot do booking (o titular preencheu no checkout). Não lê profiles; o e-mail
+  //    cai no auth só como reforço (login por e-mail tem o e-mail travado na conta).
+  const payerName =
+    [booking.customer_first_name, booking.customer_last_name].filter(Boolean).join(" ").trim() ||
+    booking.customer_name ||
+    "Cliente Movepark";
   const { data: authUser } = await admin.auth.admin.getUserById(booking.profile_id);
-  // Login por telefone não tem e-mail na conta → cai no e-mail de contato informado no checkout.
-  const email = authUser?.user?.email ?? booking.customer_email ?? null;
+  const email = booking.customer_email ?? authUser?.user?.email ?? null;
   if (!email) return jsonResponse({ error: "Cliente sem e-mail para a cobrança." }, 422);
+  if (!isValidChargeDocument(booking.customer_tax_id)) {
+    return jsonResponse(
+      { error: "Cliente sem CPF/CNPJ válido para a cobrança. Informe o documento no checkout." },
+      422,
+    );
+  }
 
   // 7. Resolve o cartão: salvo (card_id) ou novo (token).
   let cardRef: { cardToken?: string; cardId?: string };
@@ -204,10 +212,10 @@ Deno.serve(async (req: Request) => {
     externalCode: booking.code,
     amountCents: chargedCents,
     customer: {
-      name: profile?.full_name ?? "Cliente Movepark",
+      name: payerName,
       email,
-      document: profile?.tax_id ?? null,
-      type: customerTypeFor(profile?.tax_id),
+      document: booking.customer_tax_id ?? null,
+      type: customerTypeFor(booking.customer_tax_id),
     },
     items: buildCardItems(booking.code, baseCents, interestCents),
     split,

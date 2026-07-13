@@ -37,6 +37,10 @@ export type BookingForCheckout = {
   customer_last_name: string | null;
   customer_phone: string | null;
   customer_email: string | null;
+  customer_tax_id: string | null;
+  passenger_first_name: string | null;
+  passenger_last_name: string | null;
+  passenger_phone: string | null;
   location: {
     id: string;
     slug: string;
@@ -85,6 +89,7 @@ export function useCheckoutBooking(code: string | undefined) {
           `id, code, status, total_amount, currency, price_breakdown, check_in_at, check_out_at,
            expires_at, created_at, passenger_count, has_pcd, vehicle_id, profile_id,
            customer_name, customer_first_name, customer_last_name, customer_phone, customer_email,
+           customer_tax_id, passenger_first_name, passenger_last_name, passenger_phone,
            location:location!inner(id, slug, name, address,
              company:company!inner(slug, name)),
            items:booking_item(id, item_type, quantity, unit_price, subtotal,
@@ -128,6 +133,10 @@ export function useCheckoutBooking(code: string | undefined) {
         customer_last_name: row.customer_last_name,
         customer_phone: row.customer_phone,
         customer_email: row.customer_email,
+        customer_tax_id: row.customer_tax_id,
+        passenger_first_name: row.passenger_first_name,
+        passenger_last_name: row.passenger_last_name,
+        passenger_phone: row.passenger_phone,
         location: row.location,
         items: (row.items ?? []).map(
           // deno-lint-ignore no-explicit-any
@@ -206,10 +215,14 @@ export function useUpdateBookingCustomer() {
   return useMutation({
     mutationFn: async (args: {
       bookingId: string;
-      customer_first_name: string | null;
-      customer_last_name: string | null;
-      customer_phone: string | null;
+      customer_first_name?: string | null;
+      customer_last_name?: string | null;
+      customer_phone?: string | null;
       customer_email?: string | null;
+      customer_tax_id?: string | null;
+      passenger_first_name?: string | null;
+      passenger_last_name?: string | null;
+      passenger_phone?: string | null;
     }) => {
       const { bookingId, ...rest } = args;
       const { error } = await supabase
@@ -219,6 +232,33 @@ export function useUpdateBookingCustomer() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["checkout-booking"] }),
+  });
+}
+
+/**
+ * Anexa o telefone informado no checkout ao auth.users da conta (sem OTP, com guarda de colisão).
+ * Best-effort: só conveniência de pré-preenchimento; o pagamento lê o telefone do snapshot do booking.
+ * Edge attach-phone-silent. Ver a exceção documentada na ADR-006.
+ */
+export function useAttachPhone() {
+  return useMutation({
+    mutationFn: async (args: { phone: string }): Promise<{ status: string }> => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Você precisa estar logado");
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/attach-phone-silent`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(args),
+      });
+      if (!res.ok) throw new Error(`Falha ao anexar telefone (HTTP ${res.status})`);
+      return res.json();
+    },
   });
 }
 

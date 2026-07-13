@@ -150,6 +150,13 @@ Regras **fixas** do projeto, não sugestões. Se algo conflitar com elas, **siga
   credencial (telefone de recado), modele explícito como `profiles.contact_phone`, separado, sem se
   passar por identidade. Épico **E0.10** (identidade unificada: anexar-verificado + merge determinístico
   Google↔WhatsApp); ver [`docs/specs/customer/identity-unification.md`](docs/specs/customer/identity-unification.md).
+  - **Exceção consciente (decisão de produto) — anexo silencioso de telefone no checkout.** No passo 1 do
+    checkout, se a conta ainda não tem telefone no `auth.users`, o telefone digitado é gravado **sem OTP**
+    (Edge `attach-phone-silent`, `admin.updateUserById({ phone, phone_confirm: true })`). A guarda que
+    substitui a verificação é a **checagem de colisão**: se o número já pertence a outra conta
+    (`find_user_by_identifier`), **não escreve nada** (não sequestra conta alheia). O **pagamento não depende
+    disso** — o pagador (nome, CPF, telefone, e-mail) vem do **snapshot do booking** (`customer_*`), não do
+    `auth.users`. Fora do checkout, promover identificador a credencial continua exigindo verificação.
 
 ## Comandos
 

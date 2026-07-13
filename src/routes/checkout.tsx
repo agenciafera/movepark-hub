@@ -5,7 +5,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { useAuth } from "@/auth/context";
-import { useProfile } from "@/features/profile/api";
 import { useCheckoutBooking } from "@/features/checkout/api";
 import { Countdown } from "@/features/checkout/Countdown";
 import { KeepAliveModal } from "@/features/checkout/KeepAliveModal";
@@ -67,7 +66,6 @@ export default function CheckoutPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { session, isLoading: authLoading } = useAuth();
-  const profileQ = useProfile(session?.userId);
   const { data: booking, isLoading, error } = useCheckoutBooking(code);
   const [step, setStep] = React.useState<CheckoutStep>(1);
 
@@ -84,7 +82,6 @@ export default function CheckoutPage() {
     hasSession: !!session,
     userId: session?.userId ?? null,
     code,
-    profile: profileQ.data,
     hasError: !!error,
     booking,
   });
@@ -187,10 +184,10 @@ export default function CheckoutPage() {
                 <Step1Identity
                   bookingId={booking.id}
                   bookingCode={booking.code}
-                  customerFirstName={booking.customer_first_name}
-                  customerLastName={booking.customer_last_name}
-                  customerPhone={booking.customer_phone}
                   customerEmail={booking.customer_email}
+                  passengerFirstName={booking.passenger_first_name}
+                  passengerLastName={booking.passenger_last_name}
+                  passengerPhone={booking.passenger_phone}
                   onNext={() => setStep(2)}
                 />
               ) : step === 2 ? (
@@ -204,8 +201,10 @@ export default function CheckoutPage() {
                 />
               ) : step === 3 ? (
                 <Step3Payment
+                  bookingId={booking.id}
                   bookingCode={booking.code}
                   totalAmount={booking.total_amount}
+                  customerTaxId={booking.customer_tax_id}
                   paymentStatus={booking.payment?.status ?? null}
                   onBack={() => setStep(2)}
                 />

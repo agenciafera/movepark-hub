@@ -377,6 +377,7 @@ export type Database = {
           customer_last_name: string | null
           customer_name: string | null
           customer_phone: string | null
+          customer_tax_id: string | null
           deleted_at: string | null
           expires_at: string | null
           external_id: string | null
@@ -391,6 +392,9 @@ export type Database = {
           notes: string | null
           origin: string | null
           passenger_count: number | null
+          passenger_first_name: string | null
+          passenger_last_name: string | null
+          passenger_phone: string | null
           price_breakdown: Json | null
           profile_id: string | null
           review_request_sent_at: string | null
@@ -418,6 +422,7 @@ export type Database = {
           customer_last_name?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          customer_tax_id?: string | null
           deleted_at?: string | null
           expires_at?: string | null
           external_id?: string | null
@@ -432,6 +437,9 @@ export type Database = {
           notes?: string | null
           origin?: string | null
           passenger_count?: number | null
+          passenger_first_name?: string | null
+          passenger_last_name?: string | null
+          passenger_phone?: string | null
           price_breakdown?: Json | null
           profile_id?: string | null
           review_request_sent_at?: string | null
@@ -459,6 +467,7 @@ export type Database = {
           customer_last_name?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          customer_tax_id?: string | null
           deleted_at?: string | null
           expires_at?: string | null
           external_id?: string | null
@@ -473,6 +482,9 @@ export type Database = {
           notes?: string | null
           origin?: string | null
           passenger_count?: number | null
+          passenger_first_name?: string | null
+          passenger_last_name?: string | null
+          passenger_phone?: string | null
           price_breakdown?: Json | null
           profile_id?: string | null
           review_request_sent_at?: string | null

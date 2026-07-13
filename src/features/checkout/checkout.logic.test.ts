@@ -15,7 +15,6 @@ const baseGate: CheckoutGateArgs = {
   hasSession: true,
   userId: "u1",
   code: "MP-ABC123",
-  profile: { first_name: "Fulano", tax_id: "12345678900" },
   hasError: false,
   booking: { profile_id: "u1" },
 };
@@ -34,24 +33,9 @@ describe("resolveCheckoutGate", () => {
     });
   });
 
-  it("redireciona pra completar perfil quando falta first_name ou tax_id", () => {
-    const semNome = resolveCheckoutGate({
-      ...baseGate,
-      profile: { first_name: null, tax_id: "123" },
-    });
-    expect(semNome).toEqual({
-      kind: "redirect",
-      to: `/account/complete-profile?next=${encodeURIComponent("/checkout/MP-ABC123")}`,
-    });
-    const semCpf = resolveCheckoutGate({
-      ...baseGate,
-      profile: { first_name: "Fulano", tax_id: null },
-    });
-    expect(semCpf.kind).toBe("redirect");
-  });
-
-  it("não redireciona enquanto o perfil ainda não carregou (undefined)", () => {
-    expect(resolveCheckoutGate({ ...baseGate, profile: undefined }).kind).toBe("ready");
+  it("não gateia por perfil: checkout é autocontido (nome no passo 1, CPF no pagamento)", () => {
+    // Sem redirect pra complete-profile mesmo sem nome/CPF no perfil.
+    expect(resolveCheckoutGate(baseGate).kind).toBe("ready");
   });
 
   it("erro tem precedência sobre booking ausente", () => {

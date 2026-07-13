@@ -134,6 +134,15 @@ POST /api/bookings
 > capacidade, pricing, desconto e cupom são idênticos. Idempotência por `(api_key, Idempotency-Key)`.
 > Ver [public-api.md](./public-api.md).
 
+> **Titular x passageiro + pagamento pelo snapshot (checkout do consumidor).** O TITULAR (conta logada) é
+> sempre o pagador: o passo 1 grava `booking.customer_first_name/last_name/phone/email` (titular) e, no passo
+> de pagamento, `customer_tax_id` (CPF/CNPJ). "Reserva para outra pessoa" adiciona um passageiro
+> (`passenger_first_name/last_name/phone`) só pro voucher/aviso. As Edges de pagamento (`create-pix-charge`,
+> `create-card-charge`, `create-fare-upgrade`) montam o pagador **a partir do snapshot do booking**, nunca de
+> `profiles`/`auth.users` — assim quem loga por e-mail (sem `auth.users.phone`) paga normalmente. O telefone
+> do titular também é anexado ao `auth.users` (Edge `attach-phone-silent`, sem OTP, com guarda de colisão;
+> exceção da ADR-006). O checkout é autocontido: sem redirect pra `/account/complete-profile`.
+
 ### 3. Pagamento
 
 ```

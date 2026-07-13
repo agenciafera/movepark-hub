@@ -13,17 +13,28 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCreateCardCharge, useCreatePixCharge, usePaymentConfig } from "./api";
+import {
+  useCreateCardCharge,
+  useCreatePixCharge,
+  usePaymentConfig,
+  useUpdateBookingCustomer,
+} from "./api";
 import { toSvgString } from "@/lib/qr";
 import { formatBRL } from "@/lib/format";
 import { computeInstallmentPlan } from "@/lib/installments";
 import { tokenizeCard } from "@/lib/pagarme-tokenize";
+import { documentMask, onlyDigits } from "@/lib/masks";
+import { isValidCnpj, isValidCpf } from "@/lib/documents";
 import { useAuth } from "@/auth/context";
+import { useProfile, useUpdateProfile } from "@/features/profile/api";
 import { useMyPaymentMethods } from "@/features/payment-methods/api";
 
 type Props = {
+  bookingId: string;
   bookingCode: string;
   totalAmount: number;
+  /** CPF/CNPJ já no snapshot do booking (pra pré-preencher). */
+  customerTaxId: string | null;
   paymentStatus: "pending" | "authorized" | "paid" | "refunded" | "failed" | "cancelled" | null;
   onBack: () => void;
 };
@@ -37,15 +48,54 @@ function parseExpiry(s: string): { month: number; year: number } | null {
   return { month, year: 2000 + parseInt(m[2], 10) };
 }
 
-export function Step3Payment({ bookingCode, totalAmount, paymentStatus, onBack }: Props) {
+export function Step3Payment({
+  bookingId,
+  bookingCode,
+  totalAmount,
+  customerTaxId,
+  paymentStatus,
+  onBack,
+}: Props) {
   const pix = useCreatePixCharge();
   const card = useCreateCardCharge();
   const config = usePaymentConfig();
   const { session } = useAuth();
+  const profileQ = useProfile(session?.userId);
+  const updateProfile = useUpdateProfile();
+  const updateCustomer = useUpdateBookingCustomer();
   const savedCards = useMyPaymentMethods(session?.userId);
 
   const [pixPayload, setPixPayload] = React.useState<string | null>(null);
   const [pixSvg, setPixSvg] = React.useState<string | null>(null);
+
+  // CPF/CNPJ do pagador: exigido pelo PIX/cartão. Pré-preenche do snapshot do booking ou do perfil;
+  // editável (pode faturar em outro documento). O valor confirmado vai pro booking (fonte do pagamento).
+  const [taxId, setTaxId] = React.useState("");
+  const taxInit = React.useRef(false);
+  React.useEffect(() => {
+    if (taxInit.current) return;
+    const seed = customerTaxId ?? profileQ.data?.tax_id ?? "";
+    if (customerTaxId !== null || profileQ.data) {
+      setTaxId(documentMask(seed));
+      taxInit.current = true;
+    }
+  }, [customerTaxId, profileQ.data]);
+
+  /** Valida e persiste o documento no booking (e no perfil, se estava vazio). false = inválido. */
+  async function persistTaxId(): Promise<boolean> {
+    const digits = onlyDigits(taxId);
+    if (!isValidCpf(taxId) && !isValidCnpj(taxId)) {
+      toast.error("Informe um CPF ou CNPJ válido para a cobrança.");
+      return false;
+    }
+    if (digits !== onlyDigits(customerTaxId ?? "")) {
+      await updateCustomer.mutateAsync({ bookingId, customer_tax_id: digits });
+    }
+    if (session && !profileQ.data?.tax_id) {
+      await updateProfile.mutateAsync({ id: session.userId, tax_id: digits });
+    }
+    return true;
+  }
 
   // cartão: escolher salvo ou "new"
   const [cardChoice, setCardChoice] = React.useState<string>("new");
@@ -65,6 +115,7 @@ export function Step3Payment({ bookingCode, totalAmount, paymentStatus, onBack }
 
   async function initPix() {
     try {
+      if (!(await persistTaxId())) return;
       const res = await pix.mutateAsync({ booking_code: bookingCode });
       setPixPayload(res.qr_code);
       if (res.qr_code) setPixSvg(await toSvgString(res.qr_code, 256));
@@ -77,6 +128,7 @@ export function Step3Payment({ bookingCode, totalAmount, paymentStatus, onBack }
   async function payCard(e: React.FormEvent) {
     e.preventDefault();
     try {
+      if (!(await persistTaxId())) return;
       if (cardChoice !== "new") {
         await card.mutateAsync({ booking_code: bookingCode, installments, payment_method_id: cardChoice });
       } else {
@@ -136,6 +188,19 @@ export function Step3Payment({ bookingCode, totalAmount, paymentStatus, onBack }
         <p className="text-body-md text-muted">
           PIX com confirmação automática ou cartão de crédito (parcelado).
         </p>
+      </div>
+
+      <div className="flex flex-col gap-1.5 rounded-md border border-hairline bg-canvas p-5">
+        <Label htmlFor="pay-tax-id">CPF ou CNPJ</Label>
+        <Input
+          id="pay-tax-id"
+          value={taxId}
+          onChange={(e) => setTaxId(documentMask(e.target.value))}
+          placeholder="CPF ou CNPJ"
+          inputMode="numeric"
+          maxLength={18}
+        />
+        <span className="text-caption-sm text-muted">Vai na nota e é exigido pelo pagamento.</span>
       </div>
 
       <Tabs defaultValue="pix">

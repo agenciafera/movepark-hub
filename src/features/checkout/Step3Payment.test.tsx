@@ -25,6 +25,10 @@ const policy: InstallmentPolicy = {
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock("@/features/payment-methods/api", () => ({ useMyPaymentMethods: () => ({ data: [] }) }));
+vi.mock("@/features/profile/api", () => ({
+  useProfile: () => ({ data: { tax_id: "04810388417" }, isLoading: false }),
+  useUpdateProfile: () => ({ mutateAsync: vi.fn().mockResolvedValue(undefined), isPending: false }),
+}));
 vi.mock("@/lib/pagarme-tokenize", () => ({
   tokenizeCard: vi.fn().mockResolvedValue({ token: "token_1", brand: "visa", last4: "1111" }),
 }));
@@ -47,6 +51,10 @@ vi.mock("./api", async (importOriginal) => {
       isLoading: false,
     }),
     useCreateCardCharge: () => ({ mutateAsync: cardMutate, isPending: false }),
+    useUpdateBookingCustomer: () => ({
+      mutateAsync: vi.fn().mockResolvedValue(undefined),
+      isPending: false,
+    }),
   };
 });
 
@@ -56,7 +64,14 @@ import { tokenizeCard } from "@/lib/pagarme-tokenize";
 describe("Step3Payment", () => {
   it("gera o PIX e mostra o QR + aguardo de confirmação", async () => {
     renderWithProviders(
-      <Step3Payment bookingCode="MP-ABC123" totalAmount={100} paymentStatus={null} onBack={() => {}} />,
+      <Step3Payment
+        bookingId="bk-1"
+        bookingCode="MP-ABC123"
+        totalAmount={100}
+        customerTaxId="04810388417"
+        paymentStatus={null}
+        onBack={() => {}}
+      />,
     );
     fireEvent.click(screen.getByRole("button", { name: /Gerar PIX/i }));
     await waitFor(() =>
@@ -68,7 +83,14 @@ describe("Step3Payment", () => {
   it("cartão novo: tokeniza e cobra com parcelas", async () => {
     const user = userEvent.setup();
     renderWithProviders(
-      <Step3Payment bookingCode="MP-ABC123" totalAmount={100} paymentStatus={null} onBack={() => {}} />,
+      <Step3Payment
+        bookingId="bk-1"
+        bookingCode="MP-ABC123"
+        totalAmount={100}
+        customerTaxId="04810388417"
+        paymentStatus={null}
+        onBack={() => {}}
+      />,
     );
     await user.click(screen.getByRole("tab", { name: /Cartão/i }));
     await screen.findByLabelText("Número do cartão");

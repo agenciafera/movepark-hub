@@ -10,50 +10,55 @@ import { useAuth } from "@/auth/context";
 import { useProfile, useUpdateProfile } from "@/features/profile/api";
 import { useAcceptTerms } from "@/features/legal/api";
 import { LegalDocumentModal } from "@/features/legal/LegalDocumentModal";
-import { useUpdateBookingCustomer } from "./api";
+import { useAttachPhone, useUpdateBookingCustomer } from "./api";
 import { validateStep1Identity } from "./checkout.logic";
 
 type Props = {
   bookingId: string;
   bookingCode: string;
-  customerFirstName: string | null;
-  customerLastName: string | null;
-  customerPhone: string | null;
+  /** Titular (pagador) já no snapshot do booking, pra pré-preencher. */
   customerEmail: string | null;
+  /** Passageiro (quem usa a vaga), quando a reserva é pra outra pessoa. */
+  passengerFirstName: string | null;
+  passengerLastName: string | null;
+  passengerPhone: string | null;
   onNext: () => void;
 };
 
 export function Step1Identity({
   bookingId,
   bookingCode,
-  customerFirstName,
-  customerLastName,
-  customerPhone,
   customerEmail,
+  passengerFirstName,
+  passengerLastName,
+  passengerPhone,
   onNext,
 }: Props) {
   const { session } = useAuth();
   const profileQ = useProfile(session?.userId);
   const updateProfile = useUpdateProfile();
   const updateCustomer = useUpdateBookingCustomer();
+  const attachPhone = useAttachPhone();
   const acceptTerms = useAcceptTerms();
 
-  // Identidade verificada = o canal usado no login. Quem entrou por e-mail (OTP/Google) tem
-  // `session.email` e não edita o e-mail; quem entrou por telefone não tem e-mail na conta e
-  // precisa informá-lo aqui (e o telefone, que é a identidade, fica travado).
+  // O titular é sempre a conta em sessão (o pagador). Quem entrou por e-mail (OTP/Google) tem o
+  // e-mail travado; quem entrou por telefone não tem e-mail na conta e informa aqui.
   const loggedInWithEmail = !!session?.email;
 
+  // Bloco "Seus dados" (titular = pagador).
   const [firstName, setFirstName] = React.useState("");
   const [lastName, setLastName] = React.useState("");
   const [phone, setPhone] = React.useState<string | undefined>(undefined);
   const [email, setEmail] = React.useState(customerEmail ?? "");
   const [termsAccepted, setTermsAccepted] = React.useState(false);
   const [termsOpen, setTermsOpen] = React.useState(false);
-  const [forOther, setForOther] = React.useState(!!(customerFirstName || customerLastName));
-  const [otherFirstName, setOtherFirstName] = React.useState(customerFirstName ?? "");
-  const [otherLastName, setOtherLastName] = React.useState(customerLastName ?? "");
+
+  // Bloco passageiro (reserva pra outra pessoa) → só nome e telefone; ele não paga.
+  const [forOther, setForOther] = React.useState(!!(passengerFirstName || passengerLastName));
+  const [otherFirstName, setOtherFirstName] = React.useState(passengerFirstName ?? "");
+  const [otherLastName, setOtherLastName] = React.useState(passengerLastName ?? "");
   const [otherPhone, setOtherPhone] = React.useState<string | undefined>(
-    customerPhone ?? undefined,
+    passengerPhone ?? undefined,
   );
 
   const initialized = React.useRef(false);
@@ -61,7 +66,10 @@ export function Step1Identity({
     if (!initialized.current && profileQ.data) {
       setFirstName(profileQ.data.first_name ?? "");
       setLastName(profileQ.data.last_name ?? "");
-      setPhone(session?.phone ?? undefined);
+      // Telefone da conta (auth.users), se houver; senão a dica não-verificada guardada no perfil.
+      const hint = (profileQ.data.preferences as { unverified_phone_hint?: string } | null)
+        ?.unverified_phone_hint;
+      setPhone(session?.phone ?? hint ?? undefined);
       initialized.current = true;
     }
   }, [profileQ.data, session?.phone]);
@@ -73,9 +81,6 @@ export function Step1Identity({
     e.preventDefault();
     if (!session) return;
 
-    // Contato obrigatório: telefone válido sempre; e-mail quando a conta não tem (login por
-    // telefone); telefone do passageiro quando é pra outra pessoa. Continua sendo só contato do
-    // pedido (snapshot da booking) — não vira credencial aqui (ADR-006 / E0.10).
     const validationError = validateStep1Identity({
       firstName,
       lastName,
@@ -95,44 +100,54 @@ export function Step1Identity({
     try {
       const tasks: Promise<unknown>[] = [];
 
-      const nextFirst = firstName.trim();
-      const nextLast = lastName.trim();
-      // ADR-006: o telefone da conta é credencial (auth.users) — não é escrito no profiles aqui.
-      if (nextFirst !== (profileQ.data?.first_name ?? "") || nextLast !== (profileQ.data?.last_name ?? "")) {
+      const titularFirst = firstName.trim();
+      const titularLast = lastName.trim();
+      // Mantém o profiles atualizado (fonte de pré-preenchimento das próximas reservas).
+      if (
+        titularFirst !== (profileQ.data?.first_name ?? "") ||
+        titularLast !== (profileQ.data?.last_name ?? "")
+      ) {
         tasks.push(
           updateProfile.mutateAsync({
             id: session.userId,
-            first_name: nextFirst,
-            last_name: nextLast,
+            first_name: titularFirst,
+            last_name: titularLast,
           }),
         );
       }
 
-      const newCustomerFirst = forOther ? otherFirstName.trim() || null : null;
-      const newCustomerLast = forOther ? otherLastName.trim() || null : null;
-      // Snapshot de contato do pedido: outra pessoa → telefone dela; senão o telefone informado.
-      const newCustomerPhone = forOther ? (otherPhone ?? null) : (phone ?? null);
-      // E-mail de contato da reserva: quem entrou por telefone informa aqui (a conta não tem
-      // e-mail); quem entrou por e-mail já é atendido pelo e-mail da conta.
-      const newCustomerEmail = loggedInWithEmail ? customerEmail : email.trim() || null;
-      if (
-        newCustomerFirst !== customerFirstName ||
-        newCustomerLast !== customerLastName ||
-        newCustomerPhone !== customerPhone ||
-        newCustomerEmail !== customerEmail
-      ) {
-        tasks.push(
-          updateCustomer.mutateAsync({
-            bookingId,
-            customer_first_name: newCustomerFirst,
-            customer_last_name: newCustomerLast,
-            customer_phone: newCustomerPhone,
-            customer_email: newCustomerEmail,
-          }),
-        );
-      }
+      // Snapshot do PAGADOR (titular) no booking: é o que o pagamento e a nota vão usar.
+      const titularEmail = loggedInWithEmail ? (session.email ?? null) : email.trim() || null;
+      const titularPhone = phone ?? null;
+      // Passageiro (opcional): só nome e telefone, pro voucher/aviso.
+      const passFirst = forOther ? otherFirstName.trim() || null : null;
+      const passLast = forOther ? otherLastName.trim() || null : null;
+      const passPhone = forOther ? (otherPhone ?? null) : null;
+      tasks.push(
+        updateCustomer.mutateAsync({
+          bookingId,
+          customer_first_name: titularFirst,
+          customer_last_name: titularLast,
+          customer_phone: titularPhone,
+          customer_email: titularEmail,
+          passenger_first_name: passFirst,
+          passenger_last_name: passLast,
+          passenger_phone: passPhone,
+        }),
+      );
 
       await Promise.all(tasks);
+
+      // Lembrar o telefone: se a conta ainda não tem telefone, anexa (best-effort, sem OTP). Colisão
+      // com outra conta → não anexa (a edge decide); o pedido segue com o telefone no snapshot.
+      if (!session.phone && titularPhone) {
+        try {
+          await attachPhone.mutateAsync({ phone: titularPhone });
+        } catch {
+          // não bloqueia o checkout
+        }
+      }
+
       // Registra o aceite explícito dos Termos (server-authoritative, RFN005/LGPD) antes de avançar.
       await acceptTerms.mutateAsync({ booking_code: bookingCode });
       onNext();
@@ -151,6 +166,7 @@ export function Step1Identity({
       </div>
 
       <div className="space-y-4 rounded-md border border-hairline bg-canvas p-5">
+        <p className="text-body-sm font-semibold text-ink">Seus dados</p>
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="id-first-name">Nome</Label>
@@ -192,9 +208,9 @@ export function Step1Identity({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="id-phone">Telefone de contato</Label>
-          {/* Contato do pedido (snapshot). O telefone da CONTA fica em Segurança › Meus logins. */}
+          <Label htmlFor="id-phone">Telefone</Label>
           <PhoneField id="id-phone" value={phone} onChange={setPhone} required />
+          <span className="text-caption-sm text-muted">Pra avisar sobre a sua reserva.</span>
         </div>
 
         <label className="flex cursor-pointer items-center gap-3 border-t border-hairline pt-4">
@@ -210,7 +226,9 @@ export function Step1Identity({
 
       {forOther && (
         <div className="space-y-4 rounded-md border border-hairline bg-canvas p-5">
-          <p className="text-body-sm text-muted">Dados de quem vai usar a vaga.</p>
+          <p className="text-body-sm text-muted">
+            Quem vai usar a vaga. O pagamento e a nota continuam no seu nome.
+          </p>
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="other-first-name">Nome do passageiro</Label>

@@ -60,7 +60,10 @@ Deno.serve(async (req: Request) => {
   // 1. Reserva (dona, ainda upgradável: antes da entrada, não terminal).
   const { data: booking } = await admin
     .from("booking")
-    .select("id, code, status, check_in_at, fare_tier, fare_price_cents, profile_id, customer_email")
+    .select(
+      "id, code, status, check_in_at, fare_tier, fare_price_cents, profile_id, " +
+        "customer_name, customer_first_name, customer_last_name, customer_email, customer_phone, customer_tax_id",
+    )
     .eq("code", input.bookingCode)
     .is("deleted_at", null)
     .maybeSingle();
@@ -100,21 +103,19 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "Recebedor master da Movepark não configurado." }, 503);
   }
 
-  // 4. Cliente (CPF + telefone exigidos no PIX).
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("full_name, tax_id")
-    .eq("id", booking.profile_id)
-    .maybeSingle();
+  // 4. Pagador: do snapshot do booking (CPF + telefone exigidos no PIX). Não lê profiles/auth.phone;
+  //    o e-mail cai no auth só como reforço (login por e-mail tem o e-mail travado na conta).
+  const payerName =
+    [booking.customer_first_name, booking.customer_last_name].filter(Boolean).join(" ").trim() ||
+    booking.customer_name ||
+    "Cliente Movepark";
   const { data: authUser } = await admin.auth.admin.getUserById(booking.profile_id);
-  // Login por telefone não tem e-mail na conta → cai no e-mail de contato informado no checkout.
-  const email = authUser?.user?.email ?? booking.customer_email ?? null;
+  const email = booking.customer_email ?? authUser?.user?.email ?? null;
   if (!email) return jsonResponse({ error: "Cliente sem e-mail para a cobrança." }, 422);
-  if (!isValidChargeDocument(profile?.tax_id)) {
+  if (!isValidChargeDocument(booking.customer_tax_id)) {
     return jsonResponse({ error: "Cliente sem CPF/CNPJ válido para o PIX." }, 422);
   }
-  // ADR-006: telefone (credencial) vem do auth.users, não do profiles.
-  const phone = parseBrPhone(authUser?.user?.phone);
+  const phone = parseBrPhone(booking.customer_phone);
   if (!phone) return jsonResponse({ error: "Cliente sem telefone (com DDD) para o PIX." }, 422);
 
   // 5. Split 100% Movepark (serviço; absorve as taxas).
@@ -142,10 +143,10 @@ Deno.serve(async (req: Request) => {
     externalCode,
     amountCents: deltaCents,
     customer: {
-      name: profile?.full_name ?? "Cliente Movepark",
+      name: payerName,
       email,
-      document: profile?.tax_id ?? null,
-      type: customerTypeFor(profile?.tax_id),
+      document: booking.customer_tax_id ?? null,
+      type: customerTypeFor(booking.customer_tax_id),
       phone,
     },
     items: [{ amount: deltaCents, description: `Upgrade Tarifa ${targetFare.label} · ${booking.code}`, quantity: 1 }],

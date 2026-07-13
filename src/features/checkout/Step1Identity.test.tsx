@@ -4,13 +4,13 @@ import userEvent from "@testing-library/user-event";
 import { Step1Identity } from "./Step1Identity";
 import { mockAuth, mockSession, renderWithProviders } from "@/test/utils";
 import { useProfile, useUpdateProfile } from "@/features/profile/api";
-import { useUpdateBookingCustomer } from "./api";
+import { useAttachPhone, useUpdateBookingCustomer } from "./api";
 
 vi.mock("@/features/profile/api", () => ({
   useProfile: vi.fn(),
   useUpdateProfile: vi.fn(),
 }));
-vi.mock("./api", () => ({ useUpdateBookingCustomer: vi.fn() }));
+vi.mock("./api", () => ({ useUpdateBookingCustomer: vi.fn(), useAttachPhone: vi.fn() }));
 vi.mock("@/features/legal/api", () => ({
   useAcceptTerms: () => ({ mutateAsync: vi.fn().mockResolvedValue({ ok: true }), isPending: false }),
   useLegalDocument: () => ({ data: null, isLoading: false }),
@@ -42,10 +42,10 @@ vi.mock("@/components/ui/phone-field", () => ({
 const defaultProps = {
   bookingId: "bk-1",
   bookingCode: "MP-TEST1",
-  customerFirstName: null,
-  customerLastName: null,
-  customerPhone: null,
   customerEmail: null,
+  passengerFirstName: null,
+  passengerLastName: null,
+  passengerPhone: null,
   onNext: vi.fn(),
 };
 
@@ -63,6 +63,10 @@ beforeEach(() => {
     mutateAsync: vi.fn().mockResolvedValue(undefined),
     isPending: false,
   } as never);
+  vi.mocked(useAttachPhone).mockReturnValue({
+    mutateAsync: vi.fn().mockResolvedValue({ status: "attached" }),
+    isPending: false,
+  } as never);
 });
 
 describe("Step1Identity", () => {
@@ -74,7 +78,7 @@ describe("Step1Identity", () => {
     expect(screen.getByLabelText("Nome")).toBeInTheDocument();
     expect(screen.getByLabelText("Sobrenome")).toBeInTheDocument();
     expect(screen.getByLabelText("E-mail")).toBeInTheDocument();
-    expect(screen.getByLabelText("Telefone de contato")).toBeInTheDocument();
+    expect(screen.getByLabelText("Telefone")).toBeInTheDocument();
   });
 
   it("prefila nome e sobrenome a partir do perfil", () => {
@@ -112,9 +116,9 @@ describe("Step1Identity", () => {
     renderWithProviders(
       <Step1Identity
         {...defaultProps}
-        customerFirstName="Maria"
-        customerLastName="Silva"
-        customerPhone={null}
+        passengerFirstName="Maria"
+        passengerLastName="Silva"
+        passengerPhone={null}
       />,
       { auth: mockAuth({ session: mockSession("customer") }) },
     );
@@ -142,7 +146,7 @@ describe("Step1Identity", () => {
     const emailInput = screen.getByLabelText("E-mail") as HTMLInputElement;
     expect(emailInput).toBeEnabled();
     // ADR-006: telefone de contato do pedido é editável (não é mais a identidade travada).
-    expect(screen.getByLabelText("Telefone de contato")).toBeEnabled();
+    expect(screen.getByLabelText("Telefone")).toBeEnabled();
 
     await userEvent.type(emailInput, "diego@ex.com");
     await userEvent.click(screen.getByRole("checkbox", { name: /Aceito os/i }));
@@ -161,7 +165,7 @@ describe("Step1Identity", () => {
     const emailInput = screen.getByLabelText("E-mail") as HTMLInputElement;
     expect(emailInput).toBeDisabled();
     expect(emailInput.value).toBe("pedro@ex.com");
-    expect(screen.getByLabelText("Telefone de contato")).toBeEnabled();
+    expect(screen.getByLabelText("Telefone")).toBeEnabled();
   });
 
   it("abre os Termos num modal sem marcar o checkbox de aceite", async () => {
