@@ -19,6 +19,7 @@ import { useMyReview } from "@/features/reviews/api";
 import { ReviewForm } from "@/features/reviews/ReviewForm";
 import { RatingStars } from "@/features/reviews/RatingStars";
 import { formatBRL, formatDateTime, formatDuration } from "@/lib/format";
+import { FARE_TIER_LABEL, fareReais } from "@/lib/fares";
 
 export default function BookingDetailPage() {
   const { code } = useParams<{ code: string }>();
@@ -224,6 +225,14 @@ export default function BookingDetailPage() {
                   </span>
                 </div>
               ))}
+              {booking.fare_price_cents > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-ink">Tarifa {FARE_TIER_LABEL[booking.fare_tier]}</span>
+                  <span className="text-ink tabular-nums">
+                    {formatBRL(fareReais(booking.fare_price_cents))}
+                  </span>
+                </div>
+              )}
               <Separator className="my-3" />
               <div className="flex justify-between text-title-md text-ink">
                 <span>Total</span>
