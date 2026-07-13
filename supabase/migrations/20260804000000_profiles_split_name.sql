@@ -15,6 +15,7 @@ create or replace function public.split_person_name(p_full text)
 returns table (first_name text, last_name text)
 language sql
 immutable
+set search_path = ''
 as $$
   select
     nullif((regexp_split_to_array(btrim(coalesce(p_full, '')), '\s+'))[1], '')                       as first_name,
