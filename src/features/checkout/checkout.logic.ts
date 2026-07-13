@@ -20,9 +20,10 @@ export interface Step1IdentityInput {
   email: string;
   /** true quando a conta tem e-mail (login por e-mail/Google): o campo fica travado. */
   loggedInWithEmail: boolean;
-  /** Reserva para outra pessoa: exige nome e telefone do passageiro. */
+  /** Reserva para outra pessoa: exige nome, sobrenome e telefone do passageiro. */
   forOther: boolean;
-  otherName: string;
+  otherFirstName: string;
+  otherLastName: string;
   otherPhone: string | undefined;
 }
 
@@ -40,7 +41,9 @@ export function validateStep1Identity(i: Step1IdentityInput): string | null {
     return "Informe um e-mail de contato válido.";
   }
   if (i.forOther) {
-    if (!i.otherName.trim()) return "Conta o nome de quem vai usar a vaga.";
+    if (!i.otherFirstName.trim() || !i.otherLastName.trim()) {
+      return "Conta o nome e o sobrenome de quem vai usar a vaga.";
+    }
     if (!i.otherPhone || !isValidPhoneNumber(i.otherPhone)) {
       return "Informe um telefone válido de quem vai usar a vaga.";
     }

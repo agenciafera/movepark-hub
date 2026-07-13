@@ -33,6 +33,8 @@ export type BookingForCheckout = {
   vehicle_id: string | null;
   profile_id: string;
   customer_name: string | null;
+  customer_first_name: string | null;
+  customer_last_name: string | null;
   customer_phone: string | null;
   customer_email: string | null;
   location: {
@@ -82,7 +84,7 @@ export function useCheckoutBooking(code: string | undefined) {
         .select(
           `id, code, status, total_amount, currency, price_breakdown, check_in_at, check_out_at,
            expires_at, created_at, passenger_count, has_pcd, vehicle_id, profile_id,
-           customer_name, customer_phone, customer_email,
+           customer_name, customer_first_name, customer_last_name, customer_phone, customer_email,
            location:location!inner(id, slug, name, address,
              company:company!inner(slug, name)),
            items:booking_item(id, item_type, quantity, unit_price, subtotal,
@@ -122,6 +124,8 @@ export function useCheckoutBooking(code: string | undefined) {
         vehicle_id: row.vehicle_id,
         profile_id: row.profile_id,
         customer_name: row.customer_name,
+        customer_first_name: row.customer_first_name,
+        customer_last_name: row.customer_last_name,
         customer_phone: row.customer_phone,
         customer_email: row.customer_email,
         location: row.location,
@@ -202,7 +206,8 @@ export function useUpdateBookingCustomer() {
   return useMutation({
     mutationFn: async (args: {
       bookingId: string;
-      customer_name: string | null;
+      customer_first_name: string | null;
+      customer_last_name: string | null;
       customer_phone: string | null;
       customer_email?: string | null;
     }) => {

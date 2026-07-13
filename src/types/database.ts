@@ -373,6 +373,8 @@ export type Database = {
           created_via_api_key_id: string | null
           currency: string
           customer_email: string | null
+          customer_first_name: string | null
+          customer_last_name: string | null
           customer_name: string | null
           customer_phone: string | null
           deleted_at: string | null
@@ -412,6 +414,8 @@ export type Database = {
           created_via_api_key_id?: string | null
           currency?: string
           customer_email?: string | null
+          customer_first_name?: string | null
+          customer_last_name?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           deleted_at?: string | null
@@ -451,6 +455,8 @@ export type Database = {
           created_via_api_key_id?: string | null
           currency?: string
           customer_email?: string | null
+          customer_first_name?: string | null
+          customer_last_name?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           deleted_at?: string | null

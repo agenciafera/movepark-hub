@@ -16,7 +16,8 @@ import { validateStep1Identity } from "./checkout.logic";
 type Props = {
   bookingId: string;
   bookingCode: string;
-  customerName: string | null;
+  customerFirstName: string | null;
+  customerLastName: string | null;
   customerPhone: string | null;
   customerEmail: string | null;
   onNext: () => void;
@@ -25,7 +26,8 @@ type Props = {
 export function Step1Identity({
   bookingId,
   bookingCode,
-  customerName,
+  customerFirstName,
+  customerLastName,
   customerPhone,
   customerEmail,
   onNext,
@@ -47,8 +49,9 @@ export function Step1Identity({
   const [email, setEmail] = React.useState(customerEmail ?? "");
   const [termsAccepted, setTermsAccepted] = React.useState(false);
   const [termsOpen, setTermsOpen] = React.useState(false);
-  const [forOther, setForOther] = React.useState(!!customerName);
-  const [otherName, setOtherName] = React.useState(customerName ?? "");
+  const [forOther, setForOther] = React.useState(!!(customerFirstName || customerLastName));
+  const [otherFirstName, setOtherFirstName] = React.useState(customerFirstName ?? "");
+  const [otherLastName, setOtherLastName] = React.useState(customerLastName ?? "");
   const [otherPhone, setOtherPhone] = React.useState<string | undefined>(
     customerPhone ?? undefined,
   );
@@ -80,7 +83,8 @@ export function Step1Identity({
       email,
       loggedInWithEmail,
       forOther,
-      otherName,
+      otherFirstName,
+      otherLastName,
       otherPhone,
     });
     if (validationError) {
@@ -104,21 +108,24 @@ export function Step1Identity({
         );
       }
 
-      const newCustomerName = forOther ? otherName.trim() || null : null;
+      const newCustomerFirst = forOther ? otherFirstName.trim() || null : null;
+      const newCustomerLast = forOther ? otherLastName.trim() || null : null;
       // Snapshot de contato do pedido: outra pessoa → telefone dela; senão o telefone informado.
       const newCustomerPhone = forOther ? (otherPhone ?? null) : (phone ?? null);
       // E-mail de contato da reserva: quem entrou por telefone informa aqui (a conta não tem
       // e-mail); quem entrou por e-mail já é atendido pelo e-mail da conta.
       const newCustomerEmail = loggedInWithEmail ? customerEmail : email.trim() || null;
       if (
-        newCustomerName !== customerName ||
+        newCustomerFirst !== customerFirstName ||
+        newCustomerLast !== customerLastName ||
         newCustomerPhone !== customerPhone ||
         newCustomerEmail !== customerEmail
       ) {
         tasks.push(
           updateCustomer.mutateAsync({
             bookingId,
-            customer_name: newCustomerName,
+            customer_first_name: newCustomerFirst,
+            customer_last_name: newCustomerLast,
             customer_phone: newCustomerPhone,
             customer_email: newCustomerEmail,
           }),
@@ -204,15 +211,27 @@ export function Step1Identity({
       {forOther && (
         <div className="space-y-4 rounded-md border border-hairline bg-canvas p-5">
           <p className="text-body-sm text-muted">Dados de quem vai usar a vaga.</p>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="other-name">Nome do passageiro</Label>
-            <Input
-              id="other-name"
-              value={otherName}
-              onChange={(e) => setOtherName(e.target.value)}
-              placeholder="Nome completo"
-              required
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="other-first-name">Nome do passageiro</Label>
+              <Input
+                id="other-first-name"
+                value={otherFirstName}
+                onChange={(e) => setOtherFirstName(e.target.value)}
+                placeholder="Nome"
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="other-last-name">Sobrenome do passageiro</Label>
+              <Input
+                id="other-last-name"
+                value={otherLastName}
+                onChange={(e) => setOtherLastName(e.target.value)}
+                placeholder="Sobrenome"
+                required
+              />
+            </div>
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="other-phone">Telefone do passageiro</Label>

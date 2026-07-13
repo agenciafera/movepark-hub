@@ -139,7 +139,8 @@ describe("validateStep1Identity", () => {
     email: "",
     loggedInWithEmail: true, // logou por e-mail: campo travado, não valida
     forOther: false,
-    otherName: "",
+    otherFirstName: "",
+    otherLastName: "",
     otherPhone: undefined,
   };
 
@@ -165,12 +166,27 @@ describe("validateStep1Identity", () => {
     expect(validateStep1Identity({ ...viaPhone, email: "pedro@fera.ag" })).toBeNull();
   });
 
-  it("reserva pra outra pessoa exige nome e telefone do passageiro", () => {
-    const other: Step1IdentityInput = { ...base, forOther: true, otherName: "", otherPhone: undefined };
+  it("reserva pra outra pessoa exige nome, sobrenome e telefone do passageiro", () => {
+    const other: Step1IdentityInput = {
+      ...base,
+      forOther: true,
+      otherFirstName: "",
+      otherLastName: "",
+      otherPhone: undefined,
+    };
     expect(validateStep1Identity(other)).toMatch(/nome/i);
-    expect(validateStep1Identity({ ...other, otherName: "Maria" })).toMatch(/telefone/i);
+    // só o nome ainda falha (sobrenome obrigatório)
+    expect(validateStep1Identity({ ...other, otherFirstName: "Maria" })).toMatch(/nome/i);
     expect(
-      validateStep1Identity({ ...other, otherName: "Maria", otherPhone: "+5511987654321" }),
+      validateStep1Identity({ ...other, otherFirstName: "Maria", otherLastName: "Silva" }),
+    ).toMatch(/telefone/i);
+    expect(
+      validateStep1Identity({
+        ...other,
+        otherFirstName: "Maria",
+        otherLastName: "Silva",
+        otherPhone: "+5511987654321",
+      }),
     ).toBeNull();
   });
 });

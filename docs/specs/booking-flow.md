@@ -124,7 +124,11 @@ POST /api/bookings
 > **Reserva criada por parceiro (Public API, E0.7):** além do consumidor (com JWT), uma reserva
 > pode ser criada **em nome da empresa** via chave de API (`POST /v1/bookings`). Nesse caso
 > `booking.profile_id` é **null** e `created_via_api_key_id` aponta para a chave usada; o contato do
-> cliente vai nas colunas denormalizadas `customer_name/email/phone`. O `CHECK booking_actor_check`
+> cliente vai nas colunas denormalizadas `customer_name/email/phone`. O nome é quebrado em
+> `customer_first_name`/`customer_last_name` (pra bater com o checkout, que coleta Nome + Sobrenome):
+> um trigger `booking_reconcile_customer_name` reconcilia os dois lados, então quem manda
+> `customer_name` (Public API/MCP/RPCs) tem o nome fatiado e quem manda first/last (checkout) tem o
+> `customer_name` recomposto. O contrato da Public API segue com `customer_name` (string única). O `CHECK booking_actor_check`
 > garante `profile_id IS NOT NULL OR created_via_api_key_id IS NOT NULL`. O núcleo é o mesmo
 > (`_create_booking_core`, reusado por `create_booking_atomic` e `api_create_booking`), então hold de
 > capacidade, pricing, desconto e cupom são idênticos. Idempotência por `(api_key, Idempotency-Key)`.

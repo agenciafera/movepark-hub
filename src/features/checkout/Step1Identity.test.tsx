@@ -42,7 +42,8 @@ vi.mock("@/components/ui/phone-field", () => ({
 const defaultProps = {
   bookingId: "bk-1",
   bookingCode: "MP-TEST1",
-  customerName: null,
+  customerFirstName: null,
+  customerLastName: null,
   customerPhone: null,
   customerEmail: null,
   onNext: vi.fn(),
@@ -106,17 +107,23 @@ describe("Step1Identity", () => {
     expect(screen.getByLabelText("Telefone do passageiro")).toBeInTheDocument();
   });
 
-  it("inicializa o checkbox marcado quando customerName já existe", () => {
+  it("inicializa o checkbox marcado quando o passageiro já existe", () => {
     setProfile({ first_name: "Pedro", last_name: "Silva" });
     renderWithProviders(
-      <Step1Identity {...defaultProps} customerName="Maria Silva" customerPhone={null} />,
+      <Step1Identity
+        {...defaultProps}
+        customerFirstName="Maria"
+        customerLastName="Silva"
+        customerPhone={null}
+      />,
       { auth: mockAuth({ session: mockSession("customer") }) },
     );
     const checkbox = screen.getByRole("checkbox", {
       name: /A reserva é para outra pessoa/i,
     }) as HTMLInputElement;
     expect(checkbox.checked).toBe(true);
-    expect(screen.getByDisplayValue("Maria Silva")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Maria")).toBeInTheDocument();
+    expect(screen.getAllByDisplayValue("Silva").length).toBeGreaterThan(0);
   });
 
   // Regressão do bug: login por telefone deixava o e-mail travado e vazio.
