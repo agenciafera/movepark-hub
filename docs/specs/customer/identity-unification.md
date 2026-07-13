@@ -51,6 +51,21 @@
 | X pertence a conta B **sem histórico** | funde B→A silenciosamente |
 | X pertence a conta B **com histórico** (**Q-006 — decidido**) | **confirmação explícita "conectar contas"**: como o usuário provou controle de A (sessão) e de X (OTP de B), mostra um resumo do que será unificado (reservas/veículos/salvos) e confirma → funde B→A |
 
+### A credencial órfã de B some do login (avisar antes de confirmar)
+
+O `auth.users` guarda **um** e-mail e **um** telefone por conta. Quando B tem credencial no outro
+canal (ex.: anexando o telefone de B, e B também tem e-mail verificado), essa credencial **não tem
+para onde ir**: B é apagada e o e-mail dela deixa de ser login. Quem tentar entrar por ele depois
+cai numa conta nova e vazia, porque o identificador foi liberado.
+
+Por isso o `merge_preview` devolve, além das contagens, o **e-mail e o telefone de B**, e a tela
+"conectar contas" avisa qual login deixa de existir e por quais o usuário passa a entrar. A promessa
+antiga ("nada é perdido") era falsa e saiu da UI.
+
+Ainda em aberto (fora desta entrega): impedir que o identificador liberado vire conta nova em branco
+(alias do identificador consumido + hook **Before User Created**), e revisar a regra de sobrevivente
+(hoje é sempre a conta em sessão, mesmo quando a outra é a que tem o histórico).
+
 ## Função de merge (server-side, service_role — idempotente e transacional)
 
 - **Sobrevivente:** a conta em sessão (A). No caso canônico (A=Google, B=WhatsApp) A mantém o OAuth e

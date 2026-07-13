@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import type { MergePreview } from "./AttachIdentifierDialog.logic";
 
 // E0.10 · Identidade unificada. Anexar identificador verificado (telefone/e-mail) + merge, e a
 // tela "Meus logins". A regra vive na Edge `attach-identifier` (ADR-006); aqui só os hooks.
@@ -16,7 +17,7 @@ export type Channel = "phone" | "email";
 
 export type ConfirmResult =
   | { status: "attached" | "merged" }
-  | { status: "needs_merge_confirm"; preview: { bookings: number; vehicles: number; saved: number; reviews: number } };
+  | { status: "needs_merge_confirm"; preview: MergePreview };
 
 async function callAttach(payload: Record<string, unknown>) {
   const { data: sessionData } = await supabase.auth.getSession();

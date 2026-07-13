@@ -11,9 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PhoneField } from "@/components/ui/phone-field";
-import { useRequestAttachOtp, useConfirmAttach, type Channel } from "./api";
-
-type Preview = { bookings: number; vehicles: number; saved: number; reviews: number };
+import { useRequestAttachOtp, useConfirmAttach, useIdentities, type Channel } from "./api";
+import { computeMergeLogins, type MergePreview } from "./AttachIdentifierDialog.logic";
 
 /**
  * Anexa/altera um identificador verificado (E0.10). Fluxo: informar → código (OTP) → confirmar.
@@ -30,12 +29,17 @@ export function AttachIdentifierDialog({
 }) {
   const request = useRequestAttachOtp();
   const confirm = useConfirmAttach();
+  const { data: mine } = useIdentities();
   const [step, setStep] = React.useState<"input" | "code" | "merge">("input");
   const [identifier, setIdentifier] = React.useState<string | undefined>(undefined);
   const [code, setCode] = React.useState("");
-  const [preview, setPreview] = React.useState<Preview | null>(null);
+  const [preview, setPreview] = React.useState<MergePreview | null>(null);
 
   const label = channel === "phone" ? "telefone" : "e-mail";
+  const { losing, remaining } =
+    preview && identifier
+      ? computeMergeLogins({ channel, identifier, preview, mine })
+      : { losing: [], remaining: [] };
 
   function reset() {
     setStep("input");
@@ -89,8 +93,7 @@ export function AttachIdentifierDialog({
           <DialogDescription>
             {step === "input" && `Vamos enviar um código para confirmar que o ${label} é seu.`}
             {step === "code" && `Digite o código que enviamos para o seu ${label}.`}
-            {step === "merge" &&
-              `Este ${label} já pertence a outra conta sua. Conectar vai unir as duas — nada é perdido.`}
+            {step === "merge" && `Este ${label} já é de outra conta sua. Dá para juntar as duas aqui.`}
           </DialogDescription>
         </DialogHeader>
 
@@ -149,8 +152,17 @@ export function AttachIdentifierDialog({
               <li>{preview.saved} favorito(s)</li>
               <li>{preview.reviews} avaliação(ões)</li>
             </ul>
+            {losing.length > 0 && (
+              <p
+                role="alert"
+                className="rounded-sm bg-badge-pending-bg p-3 text-body-sm text-warning"
+              >
+                O login por <strong>{losing.join(" e ")}</strong> deixa de existir. Depois de
+                conectar, você entra por <strong>{remaining.join(" ou ")}</strong>.
+              </p>
+            )}
             <p className="text-body-sm text-body">
-              Tudo isso vai passar para esta conta. Esta ação não pode ser desfeita.
+              Tudo isso passa para esta conta. Não dá para desfazer.
             </p>
             <div className="flex justify-end gap-2">
               <Button variant="secondary" size="sm" onClick={() => onOpenChange(false)}>
