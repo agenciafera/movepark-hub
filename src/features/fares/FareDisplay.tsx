@@ -33,6 +33,10 @@ export function FareDisplay({ fareTier, farePriceCents, fareCancelUntil, benefit
       ? Math.round((new Date(checkInAt).getTime() - new Date(fareCancelUntil).getTime()) / 60_000)
       : null;
   const windowLabel = cancelWindowLabel(windowMinutes);
+  // Janela já vencida: mostra que encerrou (coerente com o bloqueio de cancelamento), não um prazo passado.
+  const cancelWindowPassed = fareCancelUntil
+    ? new Date(fareCancelUntil).getTime() < Date.now()
+    : false;
 
   // Amarra a janela ao benefício de cancelamento; os demais seguem o rótulo padrão.
   const included = FARE_BENEFIT_LABELS.filter((b) => benefits?.[b.key] === true).map((b) =>
@@ -63,8 +67,14 @@ export function FareDisplay({ fareTier, farePriceCents, fareCancelUntil, benefit
         <div className="flex items-start gap-2 rounded-md bg-surface-soft p-3">
           <CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-mp-indigo" />
           <p className="text-body-sm text-ink">
-            Cancele com reembolso integral até{" "}
-            <span className="font-semibold">{formatDateTime(fareCancelUntil)}</span>.
+            {cancelWindowPassed ? (
+              "A janela de cancelamento grátis já encerrou."
+            ) : (
+              <>
+                Cancele com reembolso integral até{" "}
+                <span className="font-semibold">{formatDateTime(fareCancelUntil)}</span>.
+              </>
+            )}
           </p>
         </div>
       )}
