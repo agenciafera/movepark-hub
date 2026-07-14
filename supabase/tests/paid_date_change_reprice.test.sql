@@ -39,13 +39,15 @@ select ok(
     '2026-12-10T12:00:00Z', '2026-12-14T12:00:00Z') ->> 'delta_cents')::int > 0,
   '4 diárias: delta > 0');
 
--- Data bloqueada pelo estacionamento -> indisponível (não cota como ok).
-update public.location_parking_availability set blocked = true
-  where location_parking_type_id = current_setting('test.lpt')::uuid and date = '2026-12-10';
+-- Data NOVA bloqueada pelo estacionamento -> indisponível. (Bloquear uma data que a reserva já
+-- ocupa não a torna indisponível: a vaga já é dela; o bloqueio vale só pra datas novas.)
+insert into public.location_parking_availability (location_parking_type_id, date, booked_count, blocked)
+  values (current_setting('test.lpt')::uuid, '2026-12-13', 0, true)
+  on conflict (location_parking_type_id, date) do update set blocked = true;
 select is(
   (public.reprice_booking_dates(current_setting('test.bid')::uuid,
-    '2026-12-10T12:00:00Z', '2026-12-12T12:00:00Z') ->> 'available')::boolean,
-  false, 'data bloqueada: indisponível');
+    '2026-12-10T12:00:00Z', '2026-12-14T12:00:00Z') ->> 'available')::boolean,
+  false, 'data nova bloqueada: indisponível');
 
 select * from finish();
 rollback;
