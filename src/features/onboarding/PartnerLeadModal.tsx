@@ -153,7 +153,7 @@ export function PartnerLeadModal({
             {step === 1 && (
               <div className="space-y-4">
                 <p className="text-body-sm text-muted">
-                  Deixe seu contato — a gente te chama no WhatsApp pra colocar você no ar.
+                  Deixe seu contato. A gente te chama no WhatsApp pra colocar você no ar.
                 </p>
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="pl-name">Seu nome</Label>
