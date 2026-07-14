@@ -14,6 +14,7 @@ import {
   canCustomerChangePaidDates,
   canCustomerChangeVehicle,
 } from "@/features/bookings/booking-modifications.logic";
+import { UpgradeActionHint } from "@/features/bookings/UpgradeActionHint";
 import { FareDisplay } from "@/features/fares/FareDisplay";
 import { FareUpgradeDialog } from "@/features/fares/FareUpgradeDialog";
 import { ChangeVehicleDialog } from "@/features/bookings/ChangeVehicleDialog";
@@ -124,6 +125,12 @@ export default function BookingDetailPage() {
     booking.check_in_at,
     now,
   );
+  // Upgrade de Tarifa possível: antes da entrada, não-Superflex, reserva ativa. Também gate dos
+  // convites de upgrade por ação (E2.8-j) quando a Básica não inclui a troca.
+  const canUpgrade =
+    booking.fare_tier !== "superflex" &&
+    ["pending", "confirmed"].includes(booking.status) &&
+    new Date(booking.check_in_at) > now;
   const canContinuePayment = booking.status === "pending";
 
   return (
@@ -193,10 +200,15 @@ export default function BookingDetailPage() {
                 <Row label="Passageiros" value={String(booking.passenger_count)} />
               )}
             </div>
-            {(canChangeDates || canChangePaidDates) && (
+            {canChangeDates || canChangePaidDates ? (
               <Button variant="outline" size="sm" className="mt-4" onClick={() => setDatesOpen(true)}>
                 Alterar datas
               </Button>
+            ) : (
+              booking.fare_benefits?.date_change !== true &&
+              canUpgrade && (
+                <UpgradeActionHint action="Alterar datas" onUpgrade={() => setUpgradeOpen(true)} />
+              )
             )}
           </section>
 
@@ -211,18 +223,16 @@ export default function BookingDetailPage() {
                 checkInAt={booking.check_in_at}
               />
             </div>
-            {booking.fare_tier !== "superflex" &&
-              ["pending", "confirmed"].includes(booking.status) &&
-              new Date(booking.check_in_at) > new Date() && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-4"
-                  onClick={() => setUpgradeOpen(true)}
-                >
-                  Fazer upgrade de Tarifa
-                </Button>
-              )}
+            {canUpgrade && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-4"
+                onClick={() => setUpgradeOpen(true)}
+              >
+                Fazer upgrade de Tarifa
+              </Button>
+            )}
           </section>
 
           {booking.vehicle && (
@@ -237,10 +247,15 @@ export default function BookingDetailPage() {
                   <Row label="Cor" value={booking.vehicle.color} />
                 )}
               </div>
-              {canChangeVehicle && (
+              {canChangeVehicle ? (
                 <Button variant="outline" size="sm" className="mt-4" onClick={() => setVehicleOpen(true)}>
                   Trocar veículo
                 </Button>
+              ) : (
+                booking.fare_benefits?.plate_change !== true &&
+                canUpgrade && (
+                  <UpgradeActionHint action="Trocar veículo" onUpgrade={() => setUpgradeOpen(true)} />
+                )
               )}
             </section>
           )}
