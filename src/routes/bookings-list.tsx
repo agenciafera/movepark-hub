@@ -59,7 +59,7 @@ export default function BookingsListPage() {
       <PageHeader title="Minhas reservas" description="Acesse seus vouchers e histórico." />
 
       <Tabs value={activeTab} onValueChange={(v) => setTab(v as MyBookingStatus)} className="mt-6">
-        <TabsList className="overflow-x-auto">
+        <TabsList className="overflow-x-auto overflow-y-hidden">
           {tabs.map((t) => (
             <TabsTrigger key={t.id} value={t.id}>
               {t.label}
