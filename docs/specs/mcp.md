@@ -103,6 +103,11 @@ Consumidor ganhou ainda `list_destinations` / `get_destination` (destinos + term
 > Escopos = catálogo `api_scope` (ver [public-api.md](./public-api.md) §7). Tool parceiro nova ⇒ escopo
 > existente (ou novo no catálogo) + entrada em `tools.ts` + `partner-card.json`.
 
+> **Fora do catálogo por decisão (14/07/2026):** algumas capacidades de reserva existem como Edge mas
+> **não** são tools de parceiro por ora (reagendar, trocar veículo, voucher, auto-extensão). O ciclo
+> exposto hoje é `create`/`cancel`/`check-in`/`check-out`. O racional e o caminho de exposição estão
+> em [public-api.md](./public-api.md) §9.1. Ao promover qualquer uma a tool, seguir o checklist de §6.
+
 ---
 
 ## 5. Descoberta (`.well-known`)

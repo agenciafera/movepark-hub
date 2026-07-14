@@ -274,6 +274,26 @@ vai na URL). Respostas em JSON com envelope estável (§10). Mapeamento para a l
 > Esta tabela **cresce por doc-as-you-build** (§12): endpoint novo ⇒ linha aqui + path no OpenAPI +
 > escopo no catálogo.
 
+### 9.1 · Capacidades internas fora da superfície (decisão registrada em 14/07/2026)
+
+Auditoria de 14/07/2026 da superfície API/MCP: existem Edge Functions com lógica que **poderia**
+virar endpoint público, mas que ficam **intencionalmente internas** por ora. Registrado aqui para
+manter o ADR-003 honesto: a ausência é **decisão**, não drift. Reavaliar quando um parceiro pedir.
+Ao expor qualquer uma, seguir o checklist de §12 (RPC `api_*` com assert de empresa, rota, OpenAPI,
+tool/card, teste, drift).
+
+| Capacidade (Edge) | Escopo se exposta | Por que fica interna hoje |
+|---|---|---|
+| Reagendar reserva (`change-booking-dates`) | `bookings:write` | Mutação de reserva forte candidata (a RPC já é server-authoritative e re-precifica). Segurada por ora. Ao expor: `api_change_booking_dates` + `POST /bookings/{id}/change-dates` + tool `change_booking_dates`. |
+| Trocar veículo/placa (`change-booking-vehicle`) | `bookings:write` | Idem, útil para integração de pátio/ANPR. Mesmo caminho de exposição. |
+| Baixar voucher (`voucher-pdf`) | `bookings:read` | Leitura escopada, baixo risco. Entraria como `GET /bookings/{id}/voucher` (signed URL). |
+| Auto-extensão por atraso de voo (`extend-booking`) | `bookings:write` | Muito acoplada ao benefício Superflex e à notificação. Só junto do pacote de mutações acima. |
+| Consulta de placa (`lookup-vehicle-plate`) | (novo) | Utilitário externo pago. Só faria sentido com rate-limit por chave, senão fica interna. |
+
+> As demais Edges novas (pagamento, payouts, sync WL/WPS, crons de reconciliação, conta/LGPD, funil
+> de leads, chat) são corretamente internas: exigem JWT de consumidor ou hub_admin, são crons
+> protegidos por chave, ou usam escopo `assignable_to_api_key = false`. Não entram na superfície.
+
 ---
 
 ## 10. Convenções transversais
