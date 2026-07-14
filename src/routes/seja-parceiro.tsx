@@ -198,7 +198,7 @@ export default function SejaParceiroPage() {
           <span className="text-badge uppercase tracking-[0.4px] text-white/70">
             Para donos de estacionamento
           </span>
-          <h1 className="mt-3 max-w-2xl text-display-2xl leading-tight text-white tablet:text-display-3xl">
+          <h1 className="mt-3 max-w-2xl text-balance text-display-2xl leading-tight text-white tablet:text-display-3xl">
             Encha suas vagas com reservas online. Sem custo pra começar.
           </h1>
           <p className="mt-4 max-w-xl text-body-md text-white/80">
@@ -219,7 +219,7 @@ export default function SejaParceiroPage() {
         <span className="text-badge uppercase tracking-wide text-mp-indigo">
           A rotina de quem tem estacionamento
         </span>
-        <h2 className="mt-3 max-w-2xl text-display-2xl text-ink">
+        <h2 className="mt-3 max-w-2xl text-balance text-display-2xl text-ink">
           Vaga vazia não volta. O dia que passou, passou.
         </h2>
         <ul className="mt-8 grid grid-cols-1 gap-4 tablet:grid-cols-2">
@@ -251,10 +251,10 @@ export default function SejaParceiroPage() {
       <section className="mx-auto max-w-[1100px] px-4 py-16 desktop:px-8 desktop:py-20">
         <div className="rounded-lg border border-hairline bg-surface-pale p-8 text-center shadow-tier desktop:p-12">
           <p className="text-badge uppercase tracking-wide text-mp-indigo">Risco zero</p>
-          <h2 className="mx-auto mt-3 max-w-2xl text-display-2xl text-ink">
+          <h2 className="mx-auto mt-3 max-w-2xl text-balance text-display-2xl text-ink">
             Você cuida das vagas. A gente cuida do resto.
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-body-md text-muted">
+          <p className="mx-auto mt-4 max-w-2xl text-pretty text-body-md text-muted">
             Sem mensalidade, sem taxa de adesão, sem gasto com mídia. Encher vaga por conta própria
             custa anúncio todo mês; aqui você começa sem pôr nada no bolso. A Movepark traz o
             cliente, recebe adiantado e repassa organizado.
@@ -307,7 +307,7 @@ export default function SejaParceiroPage() {
         <span className="inline-flex items-center gap-2 text-badge uppercase tracking-wide text-mp-indigo">
           <Play className="h-4 w-4" /> Conheça a Movepark
         </span>
-        <h2 className="mx-auto mt-3 max-w-2xl text-display-xl text-ink">
+        <h2 className="mx-auto mt-3 max-w-2xl text-balance text-display-xl text-ink">
           Veja como a Movepark trabalha pelo seu estacionamento
         </h2>
         <div className="mt-8 overflow-hidden rounded-lg border border-hairline shadow-tier">
@@ -365,16 +365,16 @@ export default function SejaParceiroPage() {
       {/* CTA final */}
       <section className="bg-mp-navy">
         <div className="mx-auto max-w-[1100px] px-4 py-16 text-center text-white desktop:px-8 desktop:py-20">
-          <h2 className="mx-auto max-w-2xl text-display-2xl text-white">
+          <h2 className="mx-auto max-w-2xl text-balance text-display-2xl text-white">
             Pronto pra encher suas vagas?
           </h2>
-          <p className="mx-auto mt-3 max-w-lg text-body-md text-white/80">
+          <p className="mx-auto mt-3 max-w-lg text-balance text-body-md text-white/80">
             Cadastre seu estacionamento em 2 minutos. Sem custo pra começar.
           </p>
           <div className="mt-7 flex justify-center">
             <SejaParceiroCta onClick={openModal}>Quero ser parceiro</SejaParceiroCta>
           </div>
-          <p className="mx-auto mt-6 max-w-md text-caption-sm text-white/60">
+          <p className="mx-auto mt-6 max-w-md text-balance text-caption-sm text-white/60">
             Sem mensalidade. Sem exclusividade. Você põe as vagas, a gente traz o cliente.
           </p>
         </div>
