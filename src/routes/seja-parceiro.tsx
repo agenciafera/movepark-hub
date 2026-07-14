@@ -181,6 +181,8 @@ export default function SejaParceiroPage() {
         <img
           src={HERO_IMAGE}
           alt="Estacionamento parceiro Movepark"
+          fetchPriority="high"
+          decoding="async"
           className="absolute inset-0 h-full w-full object-cover opacity-40"
         />
         <div className="absolute inset-0 bg-mp-navy/60" aria-hidden />

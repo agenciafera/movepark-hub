@@ -107,6 +107,7 @@ function BookingCardMockup() {
             aria-hidden="true"
             className="h-full w-full object-cover"
             loading="lazy"
+            decoding="async"
           />
         </div>
 

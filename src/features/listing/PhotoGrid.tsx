@@ -143,6 +143,7 @@ function Slot({ url, index, title, width, large = false, onOpen, className }: Sl
         sizes={large ? "(min-width: 768px) 50vw, 88vw" : "(min-width: 768px) 25vw, 88vw"}
         alt={`Foto ${index + 1} de ${title}`}
         loading={large && index === 0 ? "eager" : "lazy"}
+        decoding="async"
         className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
       />
     </button>
@@ -189,6 +190,7 @@ function Lightbox({ title, photos, open, active, onOpenChange, onActiveChange }:
             <img
               src={optimizedImageUrl(current, { width: 1600, quality: 80 })}
               alt={`Foto ${active + 1} de ${title}`}
+              decoding="async"
               className="max-h-[78vh] w-auto max-w-full rounded-md object-contain"
             />
 
@@ -223,6 +225,8 @@ function Lightbox({ title, photos, open, active, onOpenChange, onActiveChange }:
                   <img
                     src={optimizedImageUrl(url, { width: 160, quality: 60, resize: "cover" })}
                     alt=""
+                    loading="lazy"
+                    decoding="async"
                     className="h-full w-full object-cover"
                   />
                 </button>
