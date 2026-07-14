@@ -13,6 +13,9 @@ export type PayoutRecipientStatus = Enums<"payout_recipient_status">;
 export type FareTier = Enums<"fare_tier">;
 
 export type Booking = Tables<"booking">;
+/** Histórico de alterações da reserva (cancelar, trocar data/veículo, upgrade, estorno), E2.8. */
+export type BookingModification = Tables<"booking_modification">;
+export type BookingModificationType = Enums<"booking_modification_type">;
 /** Catálogo de Tarifas (preço/janela/benefícios por nível), E2.8. */
 export type Fare = Tables<"fare">;
 export type Company = Tables<"company">;

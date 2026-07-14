@@ -716,6 +716,50 @@ export type Database = {
           },
         ]
       }
+      booking_modification: {
+        Row: {
+          actor_id: string | null
+          actor_role: string
+          amount_delta_cents: number | null
+          booking_id: string
+          changes: Json | null
+          created_at: string
+          id: string
+          reason: string | null
+          type: Database["public"]["Enums"]["booking_modification_type"]
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_role?: string
+          amount_delta_cents?: number | null
+          booking_id: string
+          changes?: Json | null
+          created_at?: string
+          id?: string
+          reason?: string | null
+          type: Database["public"]["Enums"]["booking_modification_type"]
+        }
+        Update: {
+          actor_id?: string | null
+          actor_role?: string
+          amount_delta_cents?: number | null
+          booking_id?: string
+          changes?: Json | null
+          created_at?: string
+          id?: string
+          reason?: string | null
+          type?: Database["public"]["Enums"]["booking_modification_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_modification_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company: {
         Row: {
           created_at: string
@@ -4040,6 +4084,18 @@ export type Database = {
           nearest_terminal_name: string
         }[]
       }
+      log_booking_modification: {
+        Args: {
+          p_actor_id?: string
+          p_actor_role?: string
+          p_amount_delta_cents?: number
+          p_booking_id: string
+          p_changes?: Json
+          p_reason?: string
+          p_type: Database["public"]["Enums"]["booking_modification_type"]
+        }
+        Returns: string
+      }
       member_has_scope: {
         Args: { p_company_id: string; p_scope: string }
         Returns: boolean
@@ -4074,6 +4130,7 @@ export type Database = {
         Args: { p_company_id: string; p_step: number }
         Returns: undefined
       }
+      onboarding_publish: { Args: { p_company_id: string }; Returns: undefined }
       onboarding_set_addons: {
         Args: { p_company_id: string; p_items: Json; p_location_id: string }
         Returns: undefined
@@ -4091,7 +4148,6 @@ export type Database = {
         }
         Returns: undefined
       }
-      onboarding_publish: { Args: { p_company_id: string }; Returns: undefined }
       onboarding_submit: { Args: { p_company_id: string }; Returns: undefined }
       onboarding_update_company: {
         Args: {
@@ -4427,6 +4483,12 @@ export type Database = {
     }
     Enums: {
       booking_item_type: "parking" | "add_on"
+      booking_modification_type:
+        | "cancel"
+        | "date_change"
+        | "vehicle_change"
+        | "fare_upgrade"
+        | "refund"
       booking_status:
         | "pending"
         | "confirmed"
@@ -4598,6 +4660,13 @@ export const Constants = {
   public: {
     Enums: {
       booking_item_type: ["parking", "add_on"],
+      booking_modification_type: [
+        "cancel",
+        "date_change",
+        "vehicle_change",
+        "fare_upgrade",
+        "refund",
+      ],
       booking_status: [
         "pending",
         "confirmed",

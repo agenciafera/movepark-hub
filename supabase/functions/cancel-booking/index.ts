@@ -191,6 +191,21 @@ Deno.serve(async (req: Request) => {
   });
   if (rpcErr) return jsonResponse({ error: rpcErr.message }, 500);
 
+  // Histórico de alteração (best-effort: não bloqueia a resposta se o log falhar).
+  await admin
+    .rpc("log_booking_modification", {
+      p_booking_id: booking.id,
+      p_type: "cancel",
+      p_actor_id: userId,
+      p_actor_role: actor,
+      p_changes: { status: { from: booking.status, to: "cancelled" } },
+      p_amount_delta_cents: refunded && payment ? -Math.round(Number(payment.amount) * 100) : null,
+      p_reason: input.reason ?? null,
+    })
+    .then(({ error }) => {
+      if (error) console.error("[cancel-booking] log_booking_modification:", error.message);
+    });
+
   // O release Hub→WL é enfileirado pelo trigger booking_wl_release (status → cancelled) → outbox
   // wl_delivery → Edge wl-deliver (E2.5.2). Nada inline aqui.
 

@@ -153,7 +153,19 @@ O front usa os mesmos snapshots para não oferecer ações que o servidor vai re
   - Vitest `src/features/bookings/booking-modifications.logic.test.ts`: matriz dos 3 tiers × 3 ações.
   - Vitest `cancellation.logic.test.ts` e `CancelBookingDialog.test.tsx`: estados do cancelamento.
 
-## 7. Divergência conhecida a alinhar
+## 7. Histórico de alterações (auditoria)
+
+Toda alteração relevante da reserva é registrada em **`booking_modification`** (migration
+`20260808000000`): `type` (`cancel`/`date_change`/`vehicle_change`/`fare_upgrade`/`refund`),
+`actor_id` + `actor_role` (`customer`/`staff`/`system`), `changes` (de→para em jsonb),
+`amount_delta_cents` (+ cobrado / − estornado) e `reason`. Escrita centralizada por
+`log_booking_modification` (SECURITY DEFINER, **só `service_role`**; anon/authenticated revogados,
+senão inseririam histórico falso). RLS de leitura: dono da reserva, hub_admin e operador da empresa.
+As Edges `cancel-booking`, `change-booking-dates` e `change-booking-vehicle` gravam o log ao concluir.
+A extensão por atraso de voo mantém a tabela própria `booking_fare_extension`. pgTAP:
+`supabase/tests/booking_modification.test.sql`. (`fare_upgrade`/`refund` do webhook entram na Fase B.)
+
+## 8. Divergência conhecida a alinhar
 
 A página estática `src/routes/cancelamento.tsx` (marketing) ainda anuncia uma política de **3 faixas**
 (48h = 100%, 24-48h = 50%, <24h = 0%) que **nunca foi implementada**. A política real é **binária por

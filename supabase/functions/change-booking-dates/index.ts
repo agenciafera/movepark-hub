@@ -55,7 +55,9 @@ Deno.serve(async (req: Request) => {
 
   const { data: booking, error: bErr } = await admin
     .from("booking")
-    .select("id, status, profile_id, fare_benefits, location:location!inner(company_id)")
+    .select(
+      "id, status, profile_id, fare_benefits, check_in_at, check_out_at, location:location!inner(company_id)",
+    )
     .eq("code", input.bookingCode)
     .is("deleted_at", null)
     .maybeSingle();
@@ -98,6 +100,24 @@ Deno.serve(async (req: Request) => {
     p_check_out: input.checkOutAt,
   });
   if (error) return jsonResponse({ error: error.message }, 400);
+
+  // Histórico (best-effort). `data.total_amount` vem da RPC re-precificada.
+  await admin
+    .rpc("log_booking_modification", {
+      p_booking_id: booking.id,
+      p_type: "date_change",
+      p_actor_id: userId,
+      p_actor_role: isStaff ? "staff" : "customer",
+      p_changes: {
+        from: { check_in_at: booking.check_in_at, check_out_at: booking.check_out_at },
+        to: { check_in_at: input.checkInAt, check_out_at: input.checkOutAt },
+      },
+      p_amount_delta_cents: null,
+      p_reason: null,
+    })
+    .then(({ error: logErr }) => {
+      if (logErr) console.error("[change-booking-dates] log_booking_modification:", logErr.message);
+    });
 
   return jsonResponse(data, 200);
 });

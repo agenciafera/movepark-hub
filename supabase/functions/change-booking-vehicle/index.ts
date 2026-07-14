@@ -56,7 +56,9 @@ Deno.serve(async (req: Request) => {
 
   const { data: booking, error: bErr } = await admin
     .from("booking")
-    .select("id, code, status, profile_id, fare_benefits, location:location!inner(company_id)")
+    .select(
+      "id, code, status, profile_id, vehicle_id, fare_benefits, location:location!inner(company_id)",
+    )
     .eq("code", input.bookingCode)
     .is("deleted_at", null)
     .maybeSingle();
@@ -136,11 +138,27 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  const previousVehicleId = booking.vehicle_id as string | null;
   const { error: upErr } = await admin
     .from("booking")
     .update({ vehicle_id: targetVehicleId })
     .eq("id", booking.id);
   if (upErr) return jsonResponse({ error: upErr.message }, 500);
+
+  // Histórico (best-effort).
+  await admin
+    .rpc("log_booking_modification", {
+      p_booking_id: booking.id,
+      p_type: "vehicle_change",
+      p_actor_id: userId,
+      p_actor_role: isStaff ? "staff" : "customer",
+      p_changes: { from: { vehicle_id: previousVehicleId }, to: { vehicle_id: targetVehicleId } },
+      p_amount_delta_cents: null,
+      p_reason: null,
+    })
+    .then(({ error: logErr }) => {
+      if (logErr) console.error("[change-booking-vehicle] log_booking_modification:", logErr.message);
+    });
 
   // Regenera o voucher (a placa está no PDF) — best-effort, não bloqueia a resposta.
   if (booking.status === "confirmed") {
