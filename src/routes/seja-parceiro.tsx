@@ -197,7 +197,7 @@ export default function SejaParceiroPage() {
             A Movepark leva clientes até o seu estacionamento e garante o pagamento adiantado. Sem
             mensalidade, sem risco pra começar.
           </p>
-          <div className="mt-7 flex flex-wrap items-center gap-3">
+          <div className="mt-7 flex flex-col items-start gap-2.5">
             <SejaParceiroCta onClick={openModal}>Quero ser parceiro</SejaParceiroCta>
             <span className="text-caption-sm text-white/70">
               Leva 2 minutos · sem compromisso
