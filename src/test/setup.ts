@@ -1,6 +1,14 @@
 import "@testing-library/jest-dom/vitest";
-import { afterAll, afterEach, beforeAll, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, vi } from "vitest";
 import { server } from "./msw/server";
+
+// Estado ambiente limpo antes de CADA teste. sessionStorage é global do happy-dom e, dependendo da
+// ordem/distribuição de arquivos entre forks, um valor de um teste (ex.: o flag de stale-build)
+// podia sobrar e contaminar o primeiro teste de outro arquivo (que só limpa no afterEach). Limpar
+// no beforeEach torna cada teste hermético e mata essa classe de flakiness (que quebrou o CI).
+beforeEach(() => {
+  sessionStorage.clear();
+});
 
 // Stub das envs do Vite usadas por src/lib/supabase.ts. O client já degrada via
 // hasSupabaseEnv, mas estabilizamos pra um valor conhecido (interceptado pelo MSW).
