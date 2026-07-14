@@ -29,6 +29,20 @@ export function canCustomerChangeDates(
 }
 
 /**
+ * Trocar datas de uma reserva PAGA (E2.8-h, Fase B): benefício `date_change`, reserva CONFIRMED e
+ * antes do check-in. Diferente de `canCustomerChangeDates` (pending): aqui há re-preço com cobrança
+ * ou estorno da diferença, pela Edge change-booking-dates-paid.
+ */
+export function canCustomerChangePaidDates(
+  benefits: FareBenefits | null | undefined,
+  status: string,
+  checkInAt: string | Date,
+  now: Date,
+): boolean {
+  return benefits?.date_change === true && status === "confirmed" && beforeCheckIn(checkInAt, now);
+}
+
+/**
  * Trocar veículo/placa: benefício `plate_change` (Flex+; Básica não tem), reserva pending/confirmed
  * e antes do check-in.
  */

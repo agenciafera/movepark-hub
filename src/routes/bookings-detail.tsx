@@ -11,12 +11,14 @@ import { CancelBookingDialog } from "@/features/bookings/CancelBookingDialog";
 import { customerSelfCancel } from "@/features/bookings/cancellation.logic";
 import {
   canCustomerChangeDates,
+  canCustomerChangePaidDates,
   canCustomerChangeVehicle,
 } from "@/features/bookings/booking-modifications.logic";
 import { FareDisplay } from "@/features/fares/FareDisplay";
 import { FareUpgradeDialog } from "@/features/fares/FareUpgradeDialog";
 import { ChangeVehicleDialog } from "@/features/bookings/ChangeVehicleDialog";
 import { ChangeDatesDialog } from "@/features/bookings/ChangeDatesDialog";
+import { ChangeDatesPaidDialog } from "@/features/bookings/ChangeDatesPaidDialog";
 import { useBookingDetail } from "@/features/bookings/customerApi";
 import { useAuth } from "@/auth/context";
 import { guaranteeChannel } from "@/features/guarantee/whatsapp";
@@ -109,6 +111,13 @@ export default function BookingDetailPage() {
     booking.check_in_at,
     now,
   );
+  // Reserva paga: alterar datas passa pelo fluxo com cobrança/estorno da diferença (E2.8-h).
+  const canChangePaidDates = canCustomerChangePaidDates(
+    booking.fare_benefits,
+    booking.status,
+    booking.check_in_at,
+    now,
+  );
   const canChangeVehicle = canCustomerChangeVehicle(
     booking.fare_benefits,
     booking.status,
@@ -184,7 +193,7 @@ export default function BookingDetailPage() {
                 <Row label="Passageiros" value={String(booking.passenger_count)} />
               )}
             </div>
-            {canChangeDates && (
+            {(canChangeDates || canChangePaidDates) && (
               <Button variant="outline" size="sm" className="mt-4" onClick={() => setDatesOpen(true)}>
                 Alterar datas
               </Button>
@@ -429,13 +438,23 @@ export default function BookingDetailPage() {
         />
       )}
 
-      <ChangeDatesDialog
-        bookingCode={booking.code}
-        currentCheckIn={booking.check_in_at}
-        currentCheckOut={booking.check_out_at}
-        open={datesOpen}
-        onOpenChange={setDatesOpen}
-      />
+      {canChangePaidDates ? (
+        <ChangeDatesPaidDialog
+          bookingCode={booking.code}
+          currentCheckIn={booking.check_in_at}
+          currentCheckOut={booking.check_out_at}
+          open={datesOpen}
+          onOpenChange={setDatesOpen}
+        />
+      ) : (
+        <ChangeDatesDialog
+          bookingCode={booking.code}
+          currentCheckIn={booking.check_in_at}
+          currentCheckOut={booking.check_out_at}
+          open={datesOpen}
+          onOpenChange={setDatesOpen}
+        />
+      )}
 
       <ReviewForm
         open={reviewOpen}

@@ -310,6 +310,66 @@ export function useChangeBookingDates() {
   });
 }
 
+export type ChangePaidDatesResult =
+  | {
+      mode: "applied";
+      delta: number;
+      total_amount: number | null;
+      refunded: boolean;
+      refund_pending: boolean;
+    }
+  | {
+      mode: "charge";
+      payment_id: string;
+      status: string;
+      qr_code: string | null;
+      qr_code_url: string | null;
+      expires_at: string | null;
+      delta: number;
+    };
+
+/**
+ * Altera as datas de uma reserva PAGA (E2.8-h) via Edge change-booking-dates-paid. Se ficar mais
+ * caro, devolve uma cobrança PIX do delta (mode="charge"); senão aplica na hora (mode="applied").
+ */
+export function useChangePaidBookingDates() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: {
+      bookingCode: string;
+      checkInAt: string;
+      checkOutAt: string;
+    }): Promise<ChangePaidDatesResult> => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Você precisa entrar.");
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/change-booking-dates-paid`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          booking_code: args.bookingCode,
+          check_in_at: args.checkInAt,
+          check_out_at: args.checkOutAt,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? `Falha ao alterar datas (HTTP ${res.status})`);
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-bookings"] });
+      qc.invalidateQueries({ queryKey: ["booking-detail"] });
+    },
+  });
+}
+
 export function useCancelMyBooking() {
   const qc = useQueryClient();
   return useMutation({

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { FARE_ACTION_BENEFIT, type FareBenefits, type FareTier } from "@/lib/fares";
 import {
   canCustomerChangeDates,
+  canCustomerChangePaidDates,
   canCustomerChangeVehicle,
   customerSelfCancel,
 } from "./booking-modifications.logic";
@@ -53,6 +54,23 @@ describe("canCustomerChangeDates — por tier (gate date_change, só pending, an
   it("depois do check-in não permite", () => {
     const past = "2026-07-09T00:00:00.000Z";
     expect(canCustomerChangeDates(TIERS.flex.benefits, "pending", past, NOW)).toBe(false);
+  });
+});
+
+describe("canCustomerChangePaidDates — reserva paga (E2.8-h)", () => {
+  it("confirmada + benefício + antes do check-in → permite (Flex/Superflex); Básica não", () => {
+    expect(canCustomerChangePaidDates(TIERS.basica.benefits, "confirmed", CHECK_IN, NOW)).toBe(false);
+    expect(canCustomerChangePaidDates(TIERS.flex.benefits, "confirmed", CHECK_IN, NOW)).toBe(true);
+    expect(canCustomerChangePaidDates(TIERS.superflex.benefits, "confirmed", CHECK_IN, NOW)).toBe(true);
+  });
+
+  it("pending usa o outro fluxo (aqui é só confirmed)", () => {
+    expect(canCustomerChangePaidDates(TIERS.flex.benefits, "pending", CHECK_IN, NOW)).toBe(false);
+  });
+
+  it("depois do check-in não permite", () => {
+    const past = "2026-07-09T00:00:00.000Z";
+    expect(canCustomerChangePaidDates(TIERS.flex.benefits, "confirmed", past, NOW)).toBe(false);
   });
 });
 
