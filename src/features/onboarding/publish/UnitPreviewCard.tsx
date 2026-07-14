@@ -1,4 +1,4 @@
-import { MapPin, BusFront, Car, Check } from "lucide-react";
+import { MapPin, BusFront, Check } from "lucide-react";
 import { formatBRL } from "@/lib/format";
 
 /**
@@ -30,9 +30,16 @@ export function UnitPreviewCard({
 
   return (
     <div className="overflow-hidden rounded-lg border border-hairline bg-canvas shadow-tier">
-      {/* Faixa "imagem" placeholder na cor da marca */}
-      <div className="relative flex h-28 items-center justify-center bg-mp-navy">
-        <Car className="h-9 w-9 text-white/40" />
+      {/* Faixa de imagem: foto ilustrativa até o parceiro subir as fotos da unidade */}
+      <div className="relative h-28 bg-mp-navy">
+        <img
+          src="/images/estacionamento-preview-thumb.webp"
+          alt=""
+          aria-hidden
+          className="h-full w-full object-cover"
+          loading="lazy"
+          decoding="async"
+        />
         {destinationName && (
           <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-caption-sm font-medium text-mp-navy">
             Perto de {destinationName}
