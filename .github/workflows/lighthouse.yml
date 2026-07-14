@@ -5,7 +5,13 @@ name: Lighthouse
 # pricing-integration: o número fica visível no PR sem travar o merge por flutuação
 # de rede (o /search puxa dados do Supabase vivo no runtime, como em produção).
 on:
+  # Trabalho é direto na main (sem feature branches), então medimos no push da main.
+  push:
+    branches: [main]
   pull_request:
+  # Rede social do /search puxa dado vivo; um agendado diário dá a linha de base.
+  schedule:
+    - cron: "0 9 * * *"
   workflow_dispatch:
 
 env:
