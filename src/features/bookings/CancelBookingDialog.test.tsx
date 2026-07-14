@@ -33,11 +33,24 @@ describe("CancelBookingDialog", () => {
     expect(screen.getByText(/Cancele grátis até/)).toBeInTheDocument();
   });
 
-  it("fora da janela (<24h) → sem reembolso", () => {
+  it("confirmado fora da janela (<24h) → bloqueado, confirmar desabilitado", () => {
     renderWithProviders(
       <CancelBookingDialog booking={booking(inHours(2))} open onOpenChange={vi.fn()} />,
     );
-    expect(screen.getByText(/sem reembolso/)).toBeInTheDocument();
+    expect(screen.getByText(/fale com o suporte/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Cancelar reserva/ })).toBeDisabled();
+  });
+
+  it("pending → cancela (libera a vaga), sem menção a reembolso", () => {
+    renderWithProviders(
+      <CancelBookingDialog
+        booking={{ ...booking(inHours(2)), status: "pending" } as never}
+        open
+        onOpenChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/ainda não foi paga/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Cancelar reserva/ })).not.toBeDisabled();
   });
 
   it("cancela usando o CODE da reserva e mostra o estorno em processamento", async () => {

@@ -33,10 +33,37 @@ export function cancellationStatus(
   };
 }
 
+/**
+ * Se o CLIENTE pode se auto-cancelar. Espelho do `refundDecision` da Edge (a verdade é o servidor):
+ * - `pending` → pode a qualquer hora (hold não pago, só libera a vaga);
+ * - `confirmed` dentro da janela da Tarifa → pode, com estorno integral (`free`);
+ * - `confirmed` fora da janela → BLOQUEADO (decisão PO jul/2026; só staff cancela);
+ * - demais estados (checked_in/completed/cancelled/no_show) → terminal, não cancela.
+ * `now` é injetado para testabilidade.
+ */
+export type SelfCancelGate =
+  | { allowed: true; free: boolean }
+  | { allowed: false; reason: "window_closed" | "terminal" };
+
+export function customerSelfCancel(
+  status: string,
+  checkInAt: string | Date,
+  now: Date,
+  fareCancelUntil?: string | Date | null,
+): SelfCancelGate {
+  if (status === "pending") return { allowed: true, free: false };
+  if (status === "confirmed") {
+    return cancellationStatus(checkInAt, now, fareCancelUntil).free
+      ? { allowed: true, free: true }
+      : { allowed: false, reason: "window_closed" };
+  }
+  return { allowed: false, reason: "terminal" };
+}
+
 /** Cópia padrão da política (fonte única de verdade da marca). */
 export const CANCELLATION_POLICY_LINES = [
   "Cancelamento grátis até 24 horas antes do horário de check-in, com reembolso integral.",
-  "Após esse prazo, você ainda pode cancelar, mas sem reembolso.",
+  "Após esse prazo, o cancelamento fica com o suporte.",
 ];
 
 /** Rótulo com o prazo concreto: "Cancele grátis até 14/06/2026 22:00". Respeita a janela da Tarifa. */

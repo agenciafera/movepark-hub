@@ -12,6 +12,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | [capacity-rules.md](./capacity-rules.md) | Regras de capacidade e controle de disponibilidade por data |
 | [database-schema.md](./database-schema.md) | Visão geral do schema atual, decisões de modelagem, migrations existentes |
 | [booking-flow.md](./booking-flow.md) | Ciclo de vida da reserva: state machine, sequência de checkout, expiração, cancelamento |
+| [booking-modifications.md](./booking-modifications.md) | **Alterações de reserva gateadas pela Tarifa** (E2.8): cancelar (bloqueio fora da janela) + trocar data/veículo por benefício; verdade no servidor, override de staff/parceiro |
 | [coupon-rules.md](./coupon-rules.md) | Motor de Cupons & Descontos — **pilar cupom** (código): validação, ciclo de uso, RPCs, RLS, UI, testes |
 | [discount-rules.md](./discount-rules.md) | Motor de Cupons & Descontos — **pilar desconto automático** (regra sem código no `simulate_price`, alimenta `old_price`): modelo, avaliação, empilhamento com cupom, UI, testes |
 | [reviews.md](./reviews.md) | Avaliações por estacionamento (PRD-08): modelo, agregado, coleta pós-estadia, exibição, resposta do dono, JSON-LD |

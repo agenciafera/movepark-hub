@@ -223,9 +223,12 @@ o **mesmo** valor, então o hold sempre cobre a validade do QR.
 - **Política por Tarifa (PRD-12 + E2.8, ✅):** a janela de cancelamento grátis é a da **Tarifa**
   contratada (ver [fares.md](./fares.md)), snapshotada em `booking.fare_cancel_until` na criação:
   **Básica/Flex = até 24h antes**; **Superflex = até 1 min antes** (estorno integral). Dentro da
-  janela → reembolso integral; após, ainda pode cancelar **sem reembolso**. Reservas anteriores à
-  E2.8 (sem snapshot) usam o **fallback de 24h**. A Tarifa é **receita 100% Movepark** (split próprio
-  pra Movepark, fora do repasse do parceiro) — ver [payment-split.md](./payment-split.md).
+  janela → reembolso integral. **Fora da janela o cliente é bloqueado** (decisão PO jul/2026): não
+  cancela mais por conta própria; só **staff/parceiro** cancelam como override. O `pending` (hold não
+  pago) segue cancelável a qualquer hora (só libera a vaga). Reservas anteriores à E2.8 (sem snapshot)
+  usam o **fallback de 24h**. A Tarifa é **receita 100% Movepark** (split próprio pra Movepark, fora
+  do repasse do parceiro), ver [payment-split.md](./payment-split.md). Regra completa das alterações
+  (cancelar + trocar data/veículo) em [booking-modifications.md](./booking-modifications.md).
 - **Estorno real (E0.3.2, ✅):** o cancelamento passa pela Edge **`cancel-booking`** (a verdade da
   elegibilidade é o servidor; o front só exibe). Ela autoriza **dono** (cliente) ou **staff**
   (hub_admin / operador da empresa), decide via `refundDecision({actor, fareCancelUntil, ...})` e,

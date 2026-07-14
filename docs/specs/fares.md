@@ -76,9 +76,14 @@ A janela de cancelamento grátis deixou de ser o fixo de 24h e passou a ser o **
 snapshot da reserva — Superflex cancela com estorno **até 1 min antes** do check-in. A decisão mora
 em `cancel-booking/logic.ts` (`refundDecision` → `withinFreeWindow(checkIn, now, fareCancelUntil)`):
 
-- **cliente** estorna só dentro da janela da Tarifa; fora dela, cancela **sem** estorno;
-- **staff** (hub_admin/operador) estorna como override a qualquer momento (inalterado);
+- **cliente** estorna só dentro da janela da Tarifa; **fora dela é bloqueado** (decisão PO jul/2026,
+  ação `blocked` no `refundDecision`), não cancela mais por conta própria (`pending` não pago segue
+  cancelável);
+- **staff** (hub_admin/operador) estorna como override a qualquer momento antes do check-in;
 - reservas anteriores à E2.8 (sem snapshot) caem no **fallback de 24h** (PRD-12).
+
+Modelo completo das alterações do cliente amarradas à Tarifa (cancelar + trocar data/veículo, com o
+espelho no front e o override de staff) em [booking-modifications.md](./booking-modifications.md).
 
 O resto do fluxo de estorno (idempotência, `cancel_booking_with_release`, webhook `charge.refunded`)
 é o de [payment-split.md](./payment-split.md) / [booking-flow.md](./booking-flow.md) — inalterado.

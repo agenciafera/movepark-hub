@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   FREE_CANCEL_WINDOW_HOURS,
   cancellationStatus,
+  customerSelfCancel,
   freeCancelDeadlineLabel,
 } from "./cancellation.logic";
 
@@ -34,6 +35,38 @@ describe("cancellationStatus", () => {
     expect(cancellationStatus(checkIn, NOW, superflexUntil).free).toBe(true); // Superflex
     const passed = h(2 + 1); // prazo já passou
     expect(cancellationStatus(checkIn, NOW, passed).deadline.getTime()).toBe(new Date(passed).getTime());
+  });
+});
+
+describe("customerSelfCancel", () => {
+  it("pending → sempre pode (hold não pago), sem estorno", () => {
+    const gate = customerSelfCancel("pending", h(2), NOW);
+    expect(gate).toEqual({ allowed: true, free: false });
+  });
+
+  it("confirmed dentro da janela → pode, com estorno", () => {
+    const gate = customerSelfCancel("confirmed", h(48), NOW);
+    expect(gate).toEqual({ allowed: true, free: true });
+  });
+
+  it("confirmed fora da janela → BLOQUEADO (window_closed)", () => {
+    const gate = customerSelfCancel("confirmed", h(2), NOW);
+    expect(gate).toEqual({ allowed: false, reason: "window_closed" });
+  });
+
+  it("confirmed fora do padrão mas Superflex (1 min) → pode, com estorno", () => {
+    const checkIn = h(2);
+    const superflexUntil = h(2 - 1 / 60);
+    expect(customerSelfCancel("confirmed", checkIn, NOW, superflexUntil)).toEqual({
+      allowed: true,
+      free: true,
+    });
+  });
+
+  it("estados terminais → não cancela", () => {
+    for (const s of ["checked_in", "completed", "cancelled", "no_show"]) {
+      expect(customerSelfCancel(s, h(48), NOW)).toEqual({ allowed: false, reason: "terminal" });
+    }
   });
 });
 

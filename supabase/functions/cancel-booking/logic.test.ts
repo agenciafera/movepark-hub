@@ -45,9 +45,9 @@ Deno.test("refundDecision: cliente confirmado pago dentro de 24h → estorna", (
   assertEquals(d, { action: "cancel_with_refund" });
 });
 
-Deno.test("refundDecision: cliente confirmado pago fora de 24h → cancela sem estorno", () => {
+Deno.test("refundDecision: cliente confirmado pago fora de 24h → BLOQUEADO (não cancela)", () => {
   const d = refundDecision({ actor: "customer", bookingStatus: "confirmed", paymentStatus: "paid", alreadyRefunded: false, checkInAt: inDays(0.5), now: NOW });
-  assertEquals(d, { action: "cancel_no_refund", reason: "late_window" });
+  assertEquals(d, { action: "blocked", reason: "late_window" });
 });
 
 Deno.test("refundDecision: staff confirmado pago FORA de 24h → estorna (override)", () => {
@@ -87,24 +87,42 @@ Deno.test("refundDecision: Superflex estorna a 2h do check-in (janela 1 min)", (
   assertEquals(d, { action: "cancel_with_refund" });
 });
 
-Deno.test("refundDecision: Superflex já passou de 1 min antes → sem estorno", () => {
+Deno.test("refundDecision: Superflex já passou de 1 min antes → BLOQUEADO", () => {
   const checkIn = inMinutes(0.5 / 60); // ~em segundos; já dentro de 1 min
   const fareCancelUntil = inMinutes(-1); // prazo já passou
   const d = refundDecision({
     actor: "customer", bookingStatus: "confirmed", paymentStatus: "paid",
     alreadyRefunded: false, checkInAt: checkIn, fareCancelUntil, now: NOW,
   });
-  assertEquals(d, { action: "cancel_no_refund", reason: "late_window" });
+  assertEquals(d, { action: "blocked", reason: "late_window" });
 });
 
-Deno.test("refundDecision: Flex (snapshot 24h) a 2h do check-in → sem estorno", () => {
+Deno.test("refundDecision: Flex (snapshot 24h) a 2h do check-in → BLOQUEADO", () => {
   const checkIn = inMinutes(120);
   const fareCancelUntil = new Date(new Date(checkIn).getTime() - 24 * 3_600_000).toISOString();
   const d = refundDecision({
     actor: "customer", bookingStatus: "confirmed", paymentStatus: "paid",
     alreadyRefunded: false, checkInAt: checkIn, fareCancelUntil, now: NOW,
   });
-  assertEquals(d, { action: "cancel_no_refund", reason: "late_window" });
+  assertEquals(d, { action: "blocked", reason: "late_window" });
+});
+
+Deno.test("refundDecision: staff FORA da janela da Tarifa → estorna (override)", () => {
+  const checkIn = inMinutes(120);
+  const fareCancelUntil = new Date(new Date(checkIn).getTime() - 24 * 3_600_000).toISOString();
+  const d = refundDecision({
+    actor: "staff", bookingStatus: "confirmed", paymentStatus: "paid",
+    alreadyRefunded: false, checkInAt: checkIn, fareCancelUntil, now: NOW,
+  });
+  assertEquals(d, { action: "cancel_with_refund" });
+});
+
+Deno.test("refundDecision: pending fora da janela → ainda cancela (hold não pago)", () => {
+  const d = refundDecision({
+    actor: "customer", bookingStatus: "pending", paymentStatus: null,
+    alreadyRefunded: false, checkInAt: inDays(0.5), now: NOW,
+  });
+  assertEquals(d, { action: "cancel_no_refund", reason: "pending" });
 });
 
 Deno.test("withinFreeWindow: snapshot da Tarifa tem prioridade sobre o fallback 24h", () => {

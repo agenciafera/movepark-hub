@@ -29,7 +29,13 @@ export function CancelBookingDialog({
   if (!booking) return null;
 
   // Janela da Tarifa (E2.8): Superflex = 1 min antes; senão padrão 24h (PRD-12).
-  const isFree = cancellationStatus(booking.check_in_at, new Date(), booking.fare_cancel_until).free;
+  const isPending = booking.status === "pending";
+  const isFree =
+    !isPending &&
+    cancellationStatus(booking.check_in_at, new Date(), booking.fare_cancel_until).free;
+  // Confirmado fora da janela → bloqueado (só staff cancela). O botão de abrir já não aparece no
+  // detalhe; aqui é defesa extra caso o dialog seja aberto mesmo assim.
+  const isBlocked = booking.status === "confirmed" && !isFree;
 
   async function handleCancel() {
     try {
@@ -70,14 +76,18 @@ export function CancelBookingDialog({
           </div>
           <div
             className={
-              isFree
-                ? "rounded-sm bg-badge-confirmed-bg p-3 text-success"
-                : "rounded-sm bg-badge-pending-bg p-3 text-warning"
+              isBlocked
+                ? "rounded-sm bg-badge-cancelled-bg p-3 text-error"
+                : isFree
+                  ? "rounded-sm bg-badge-confirmed-bg p-3 text-success"
+                  : "rounded-sm bg-badge-pending-bg p-3 text-warning"
             }
           >
-            {isFree
-              ? `Cancelamento grátis. Reembolso integral de ${formatBRL(booking.total_amount)} em até 10 dias úteis. ${freeCancelDeadlineLabel(booking.check_in_at, booking.fare_cancel_until)}.`
-              : "Fora da janela de cancelamento grátis da sua Tarifa. Você pode cancelar, mas sem reembolso."}
+            {isBlocked
+              ? "A janela de cancelamento da sua tarifa já encerrou. Para cancelar, fale com o suporte."
+              : isFree
+                ? `Cancelamento grátis. Reembolso integral de ${formatBRL(booking.total_amount)} em até 10 dias úteis. ${freeCancelDeadlineLabel(booking.check_in_at, booking.fare_cancel_until)}.`
+                : "Esta reserva ainda não foi paga. Cancelar libera a vaga na hora."}
           </div>
         </div>
 
@@ -88,7 +98,7 @@ export function CancelBookingDialog({
           <Button
             variant="danger"
             onClick={handleCancel}
-            disabled={cancelMutation.isPending}
+            disabled={cancelMutation.isPending || isBlocked}
           >
             {cancelMutation.isPending ? "Cancelando…" : "Cancelar reserva"}
           </Button>

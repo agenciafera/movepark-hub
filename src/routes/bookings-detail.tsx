@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Voucher } from "@/features/bookings/Voucher";
 import { CancelBookingDialog } from "@/features/bookings/CancelBookingDialog";
+import { customerSelfCancel } from "@/features/bookings/cancellation.logic";
 import { FareDisplay } from "@/features/fares/FareDisplay";
 import { FareUpgradeDialog } from "@/features/fares/FareUpgradeDialog";
 import { ChangeVehicleDialog } from "@/features/bookings/ChangeVehicleDialog";
@@ -88,8 +89,15 @@ export default function BookingDetailPage() {
   }
 
   const canSeeVoucher = booking.status === "confirmed" || booking.status === "checked_in";
-  const canCancel =
-    booking.status === "pending" || booking.status === "confirmed";
+  // Auto-cancelamento do cliente é gateado pela janela da Tarifa (E2.8). Fora da janela, confirmado
+  // e pago, o cliente é bloqueado (só staff cancela). Ver docs/specs/booking-modifications.md.
+  const selfCancel = customerSelfCancel(
+    booking.status,
+    booking.check_in_at,
+    new Date(),
+    booking.fare_cancel_until,
+  );
+  const cancelBlocked = !selfCancel.allowed && selfCancel.reason === "window_closed";
   const canContinuePayment = booking.status === "pending";
 
   return (
@@ -310,19 +318,27 @@ export default function BookingDetailPage() {
             </section>
           )}
 
-          {(canContinuePayment || canCancel) && (
-            <section className="flex flex-wrap gap-3">
-              {canContinuePayment && (
-                <Button asChild>
-                  <Link to={`/checkout/${booking.code}`}>
-                    Continuar pagamento
-                  </Link>
-                </Button>
-              )}
-              {canCancel && (
-                <Button variant="danger" onClick={() => setCancelOpen(true)}>
-                  Cancelar reserva
-                </Button>
+          {(canContinuePayment || selfCancel.allowed || cancelBlocked) && (
+            <section className="flex flex-col gap-3">
+              <div className="flex flex-wrap gap-3">
+                {canContinuePayment && (
+                  <Button asChild>
+                    <Link to={`/checkout/${booking.code}`}>
+                      Continuar pagamento
+                    </Link>
+                  </Button>
+                )}
+                {selfCancel.allowed && (
+                  <Button variant="danger" onClick={() => setCancelOpen(true)}>
+                    Cancelar reserva
+                  </Button>
+                )}
+              </div>
+              {cancelBlocked && (
+                <p className="text-body-sm text-muted">
+                  A janela de cancelamento da sua tarifa {FARE_TIER_LABEL[booking.fare_tier]} já
+                  encerrou. Para cancelar, fale com o suporte.
+                </p>
               )}
             </section>
           )}

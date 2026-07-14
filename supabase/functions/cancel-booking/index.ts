@@ -128,6 +128,19 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ status: booking.status, refunded: false, refund_pending: false });
   }
 
+  // Cliente fora da janela grátis da Tarifa: bloqueado (decisão PO jul/2026). Staff nunca cai aqui
+  // (refundDecision já resolve como override). Nada é escrito.
+  if (decision.action === "blocked") {
+    return jsonResponse(
+      {
+        error:
+          "A janela de cancelamento da sua tarifa já encerrou. Fale com o suporte para avaliar seu caso.",
+        code: "cancel_window_closed",
+      },
+      403,
+    );
+  }
+
   let refunded = false;
   let refundPending = false;
 

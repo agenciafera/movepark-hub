@@ -13,7 +13,9 @@ export type Actor = "customer" | "staff";
 
 export type CancelDecision =
   | { action: "cancel_with_refund" }
-  | { action: "cancel_no_refund"; reason: "pending" | "not_paid" | "late_window" | "already_refunded" }
+  | { action: "cancel_no_refund"; reason: "pending" | "not_paid" | "already_refunded" }
+  // Cliente fora da janela grátis da Tarifa: NÃO cancela (decisão PO jul/2026). Só staff faz override.
+  | { action: "blocked"; reason: "late_window" }
   | { action: "noop"; reason: "already_cancelled" | "not_cancelable" };
 
 export interface RefundDecisionArgs {
@@ -46,8 +48,9 @@ export function withinFreeWindow(checkInAt: string, now: Date, fareCancelUntil?:
 /**
  * Decide o que fazer ao cancelar:
  * - terminal/cancelado → noop (idempotente);
- * - pending → cancela sem estorno (nada pago);
- * - confirmed + pago: staff estorna sempre; cliente estorna só dentro da janela 24h;
+ * - pending → cancela sem estorno (nada pago), a qualquer hora (só libera a vaga);
+ * - confirmed + pago: staff estorna sempre (override); cliente estorna só dentro da janela da Tarifa,
+ *   e FORA da janela é BLOQUEADO (decisão PO jul/2026 — não cancela mais sem estorno);
  * - confirmed sem pagamento pago / já estornado → cancela sem estorno.
  */
 export function refundDecision(a: RefundDecisionArgs): CancelDecision {
@@ -63,7 +66,7 @@ export function refundDecision(a: RefundDecisionArgs): CancelDecision {
   if (a.actor === "staff") return { action: "cancel_with_refund" };
   return withinFreeWindow(a.checkInAt, a.now, a.fareCancelUntil)
     ? { action: "cancel_with_refund" }
-    : { action: "cancel_no_refund", reason: "late_window" };
+    : { action: "blocked", reason: "late_window" };
 }
 
 export interface CancelInput {
