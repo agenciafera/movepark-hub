@@ -10,7 +10,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
-import { parseChangeVehicleInput } from "./logic.ts";
+import { parseChangeVehicleInput, plateChangeAllowed } from "./logic.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -86,7 +86,7 @@ Deno.serve(async (req: Request) => {
   // Regra da Tarifa: troca de placa é benefício Flex+ (cliente). Staff faz override.
   // deno-lint-ignore no-explicit-any
   const benefits = (booking.fare_benefits ?? {}) as Record<string, any>;
-  if (!isStaff && benefits.plate_change !== true) {
+  if (!plateChangeAllowed(benefits, isStaff)) {
     return jsonResponse(
       { error: "Sua Tarifa não permite trocar o veículo. Faça upgrade para Flex ou Superflex." },
       403,

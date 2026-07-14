@@ -1,4 +1,16 @@
-// Lógica pura de change-booking-dates (testável sem rede): parsing/validação do payload.
+// Lógica pura de change-booking-dates (testável sem rede): parsing/validação do payload + o gate
+// de benefício da Tarifa. A VERDADE é o servidor; ver docs/specs/booking-modifications.md.
+
+/**
+ * Trocar datas exige o benefício `date_change` da Tarifa (Flex+; Básica não tem). Staff (hub_admin/
+ * operador) faz override. `benefits` é o snapshot `booking.fare_benefits`.
+ */
+export function dateChangeAllowed(
+  benefits: Record<string, unknown> | null | undefined,
+  isStaff: boolean,
+): boolean {
+  return isStaff || benefits?.date_change === true;
+}
 
 export interface ChangeDatesInput {
   bookingCode: string;

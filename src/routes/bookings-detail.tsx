@@ -9,6 +9,10 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { Voucher } from "@/features/bookings/Voucher";
 import { CancelBookingDialog } from "@/features/bookings/CancelBookingDialog";
 import { customerSelfCancel } from "@/features/bookings/cancellation.logic";
+import {
+  canCustomerChangeDates,
+  canCustomerChangeVehicle,
+} from "@/features/bookings/booking-modifications.logic";
 import { FareDisplay } from "@/features/fares/FareDisplay";
 import { FareUpgradeDialog } from "@/features/fares/FareUpgradeDialog";
 import { ChangeVehicleDialog } from "@/features/bookings/ChangeVehicleDialog";
@@ -98,6 +102,19 @@ export default function BookingDetailPage() {
     booking.fare_cancel_until,
   );
   const cancelBlocked = !selfCancel.allowed && selfCancel.reason === "window_closed";
+  const now = new Date();
+  const canChangeDates = canCustomerChangeDates(
+    booking.fare_benefits,
+    booking.status,
+    booking.check_in_at,
+    now,
+  );
+  const canChangeVehicle = canCustomerChangeVehicle(
+    booking.fare_benefits,
+    booking.status,
+    booking.check_in_at,
+    now,
+  );
   const canContinuePayment = booking.status === "pending";
 
   return (
@@ -167,13 +184,11 @@ export default function BookingDetailPage() {
                 <Row label="Passageiros" value={String(booking.passenger_count)} />
               )}
             </div>
-            {booking.fare_benefits?.date_change === true &&
-              booking.status === "pending" &&
-              new Date(booking.check_in_at) > new Date() && (
-                <Button variant="outline" size="sm" className="mt-4" onClick={() => setDatesOpen(true)}>
-                  Alterar datas
-                </Button>
-              )}
+            {canChangeDates && (
+              <Button variant="outline" size="sm" className="mt-4" onClick={() => setDatesOpen(true)}>
+                Alterar datas
+              </Button>
+            )}
           </section>
 
           <section className="rounded-md border border-hairline bg-canvas p-6">
@@ -213,13 +228,11 @@ export default function BookingDetailPage() {
                   <Row label="Cor" value={booking.vehicle.color} />
                 )}
               </div>
-              {booking.fare_benefits?.plate_change === true &&
-                ["pending", "confirmed"].includes(booking.status) &&
-                new Date(booking.check_in_at) > new Date() && (
-                  <Button variant="outline" size="sm" className="mt-4" onClick={() => setVehicleOpen(true)}>
-                    Trocar veículo
-                  </Button>
-                )}
+              {canChangeVehicle && (
+                <Button variant="outline" size="sm" className="mt-4" onClick={() => setVehicleOpen(true)}>
+                  Trocar veículo
+                </Button>
+              )}
             </section>
           )}
 

@@ -1,5 +1,27 @@
 import { assertEquals } from "jsr:@std/assert";
-import { parseChangeVehicleInput } from "./logic.ts";
+import { parseChangeVehicleInput, plateChangeAllowed } from "./logic.ts";
+
+// Gate por tier (espelha o seed `fare`): Básica não tem plate_change; Flex/Superflex têm; staff override.
+const BENEFITS = {
+  basica: { date_change: false, plate_change: false },
+  flex: { date_change: true, plate_change: true },
+  superflex: { date_change: true, plate_change: true },
+};
+
+Deno.test("plateChangeAllowed: Básica bloqueia; Flex/Superflex liberam (cliente)", () => {
+  assertEquals(plateChangeAllowed(BENEFITS.basica, false), false);
+  assertEquals(plateChangeAllowed(BENEFITS.flex, false), true);
+  assertEquals(plateChangeAllowed(BENEFITS.superflex, false), true);
+});
+
+Deno.test("plateChangeAllowed: staff faz override mesmo na Básica", () => {
+  assertEquals(plateChangeAllowed(BENEFITS.basica, true), true);
+});
+
+Deno.test("plateChangeAllowed: benefits ausente/nulo → bloqueia cliente", () => {
+  assertEquals(plateChangeAllowed(null, false), false);
+  assertEquals(plateChangeAllowed({}, false), false);
+});
 
 Deno.test("parseChangeVehicleInput: exige booking_code e (vehicle_id ou license_plate)", () => {
   assertEquals(parseChangeVehicleInput({}).error, "booking_code é obrigatório.");

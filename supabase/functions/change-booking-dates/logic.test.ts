@@ -1,5 +1,27 @@
 import { assertEquals } from "jsr:@std/assert";
-import { parseChangeDatesInput } from "./logic.ts";
+import { dateChangeAllowed, parseChangeDatesInput } from "./logic.ts";
+
+// Gate por tier (espelha o seed `fare`): Básica não tem date_change; Flex/Superflex têm; staff override.
+const BENEFITS = {
+  basica: { date_change: false, plate_change: false },
+  flex: { date_change: true, plate_change: true },
+  superflex: { date_change: true, plate_change: true },
+};
+
+Deno.test("dateChangeAllowed: Básica bloqueia; Flex/Superflex liberam (cliente)", () => {
+  assertEquals(dateChangeAllowed(BENEFITS.basica, false), false);
+  assertEquals(dateChangeAllowed(BENEFITS.flex, false), true);
+  assertEquals(dateChangeAllowed(BENEFITS.superflex, false), true);
+});
+
+Deno.test("dateChangeAllowed: staff faz override mesmo na Básica", () => {
+  assertEquals(dateChangeAllowed(BENEFITS.basica, true), true);
+});
+
+Deno.test("dateChangeAllowed: benefits ausente/nulo → bloqueia cliente", () => {
+  assertEquals(dateChangeAllowed(null, false), false);
+  assertEquals(dateChangeAllowed({}, false), false);
+});
 
 Deno.test("parseChangeDatesInput: exige código e datas válidas", () => {
   assertEquals(parseChangeDatesInput({}).error, "booking_code é obrigatório.");

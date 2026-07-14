@@ -1,6 +1,18 @@
-// Lógica pura de change-booking-vehicle (testável sem rede): parsing do payload.
+// Lógica pura de change-booking-vehicle (testável sem rede): parsing do payload + gate de benefício.
 // Aceita vehicle_id (cliente escolhe um veículo já cadastrado) OU license_plate (staff digita a
 // placa direto no painel — criamos/achamos o veículo do titular).
+// A VERDADE é o servidor; ver docs/specs/booking-modifications.md.
+
+/**
+ * Trocar veículo/placa exige o benefício `plate_change` da Tarifa (Flex+; Básica não tem). Staff
+ * (hub_admin/operador) faz override. `benefits` é o snapshot `booking.fare_benefits`.
+ */
+export function plateChangeAllowed(
+  benefits: Record<string, unknown> | null | undefined,
+  isStaff: boolean,
+): boolean {
+  return isStaff || benefits?.plate_change === true;
+}
 
 export interface ChangeVehicleInput {
   bookingCode: string;

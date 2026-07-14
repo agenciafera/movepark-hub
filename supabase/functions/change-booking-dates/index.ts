@@ -9,7 +9,7 @@
 // → { booking_id, days, total_amount }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { parseChangeDatesInput } from "./logic.ts";
+import { dateChangeAllowed, parseChangeDatesInput } from "./logic.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -84,7 +84,7 @@ Deno.serve(async (req: Request) => {
 
   // deno-lint-ignore no-explicit-any
   const benefits = (booking.fare_benefits ?? {}) as Record<string, any>;
-  if (!isStaff && benefits.date_change !== true) {
+  if (!dateChangeAllowed(benefits, isStaff)) {
     return jsonResponse(
       { error: "Sua Tarifa não permite alterar datas. Faça upgrade para Flex ou Superflex." },
       403,

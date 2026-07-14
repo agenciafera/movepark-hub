@@ -29,6 +29,16 @@ export type FareBenefitKey =
 
 export type FareBenefits = Partial<Record<FareBenefitKey, boolean>>;
 
+/**
+ * Benefício booleano que cada AÇÃO de alteração exige (fonte única front + servidor).
+ * Cancelar não entra aqui: é gateado por JANELA de tempo (`cancel_window_minutes` →
+ * `booking.fare_cancel_until`), não por flag. Ver docs/specs/booking-modifications.md.
+ */
+export const FARE_ACTION_BENEFIT = {
+  change_dates: "date_change",
+  change_vehicle: "plate_change",
+} as const satisfies Record<string, FareBenefitKey>;
+
 /** Rótulo curto de cada benefício, em ordem de exibição na tabela comparativa. */
 export const FARE_BENEFIT_LABELS: { key: FareBenefitKey; label: string }[] = [
   { key: "guaranteed_spot", label: "Vaga garantida" },

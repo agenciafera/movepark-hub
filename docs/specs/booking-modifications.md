@@ -29,6 +29,33 @@ Cancelamento é **janela** (Básica/Flex = até 24h antes; Superflex = até 1 mi
 Não existe janela de tempo separada para trocas: o modelo de Tarifa não define uma, então o gate é
 "tem o benefício **e** falta acontecer o check-in".
 
+### 1.1 Matriz Tarifa × ação (fonte da verdade)
+
+Esta é a matriz canônica. É **travada por testes** nos três pontos (se um seed/migration ou um gate
+divergir, o teste correspondente falha):
+
+| Ação | Gate | **Básica** | **Flex** | **Superflex** |
+|---|---|---|---|---|
+| **Cancelar (com estorno)** | janela `cancel_window_minutes` → `fare_cancel_until` | até **24h** antes | até **24h** antes | até **1 min** antes |
+| **Trocar datas** | benefício `date_change` (+ reserva `pending`) | ❌ | ✅ | ✅ |
+| **Trocar veículo/placa** | benefício `plate_change` (+ `pending`/`confirmed`) | ❌ | ✅ | ✅ |
+| Proteção contra atraso de voo | benefício `flight_delay_protection` | ❌ | ❌ | ✅ |
+| Suporte prioritário | benefício `priority_support` | ❌ | ❌ | ✅ |
+
+Regras comuns a toda ação do cliente: sempre **antes do check-in**; **staff/parceiro fazem override**
+de todos os gates; reserva `pending` (hold não pago) é cancelável a qualquer hora.
+
+**Onde a matriz é travada:**
+- **Seed do catálogo** (`fare.cancel_window_minutes` + `fare.benefits`): pgTAP
+  [`supabase/tests/fare_action_matrix.test.sql`](../../supabase/tests/fare_action_matrix.test.sql).
+- **Gates do front** (`customerSelfCancel`, `canCustomerChangeDates`, `canCustomerChangeVehicle`):
+  Vitest [`src/features/bookings/booking-modifications.logic.test.ts`](../../src/features/bookings/booking-modifications.logic.test.ts).
+- **Gates do servidor** (`refundDecision`, `dateChangeAllowed`, `plateChangeAllowed`): `deno test` em
+  `supabase/functions/{cancel-booking,change-booking-dates,change-booking-vehicle}/logic.test.ts`.
+
+Ao mexer em Tarifa (novo tier, nova flag, mudança de janela): atualize esta matriz **e** os três
+testes no mesmo PR. O mapa ação → benefício booleano mora em `FARE_ACTION_BENEFIT` (`src/lib/fares.ts`).
+
 ## 2. Cancelamento (a regra que mudou)
 
 **Decisão de produto (PO, jul/2026):** fora da janela grátis da Tarifa, o cliente **não cancela**.
@@ -97,8 +124,10 @@ O front usa os mesmos snapshots para não oferecer ações que o servidor vai re
 - **`CancelBookingDialog.tsx`**: renderiza o estado certo (grátis com reembolso / hold não pago /
   bloqueado). No estado bloqueado o botão de confirmar fica **desabilitado** (defesa extra; o botão
   de abrir o dialog já não aparece).
-- Lógica pura testável em `cancellation.logic.ts` (`customerSelfCancel`, `cancellationStatus`) e
-  `src/lib/fares.ts` (`isWithinFareCancelWindow`, `cancelWindowLabel`).
+- Lógica pura testável: `customerSelfCancel` (`cancellation.logic.ts`) e `canCustomerChangeDates` /
+  `canCustomerChangeVehicle` (`booking-modifications.logic.ts`), mais `isWithinFareCancelWindow` /
+  `cancelWindowLabel` (`src/lib/fares.ts`). Os botões "Alterar datas" e "Trocar veículo" do detalhe
+  usam esses gates (não condições inline).
 
 ## 5. Override de staff e Public API
 
@@ -116,11 +145,13 @@ O front usa os mesmos snapshots para não oferecer ações que o servidor vai re
   com a arquitetura atual (a RPC `cancel_booking_with_release` é `service_role`, só valida status e
   idempotência; não há caminho de cancelamento do cliente que não passe pela Edge). Não há migration
   nova nesta entrega.
-- **Testes:**
-  - `supabase/functions/cancel-booking/logic.test.ts` (`deno test`): `blocked` para cliente fora da
-    janela (Flex 24h e Superflex 1 min), override de staff fora da janela, `pending` sempre cancelável.
-  - `src/features/bookings/cancellation.logic.test.ts` (Vitest): `customerSelfCancel` em cada estado.
-  - `src/features/bookings/CancelBookingDialog.test.tsx` (Vitest): estados grátis / bloqueado.
+- **Testes (travam a matriz da §1.1):**
+  - pgTAP `supabase/tests/fare_action_matrix.test.sql`: seed do catálogo (janela + flags) por tier.
+  - `deno test` em `cancel-booking/logic.test.ts` (`refundDecision`: `blocked` fora da janela Flex/
+    Superflex, override de staff, `pending` cancelável), `change-booking-dates/logic.test.ts`
+    (`dateChangeAllowed`) e `change-booking-vehicle/logic.test.ts` (`plateChangeAllowed`) por tier.
+  - Vitest `src/features/bookings/booking-modifications.logic.test.ts`: matriz dos 3 tiers × 3 ações.
+  - Vitest `cancellation.logic.test.ts` e `CancelBookingDialog.test.tsx`: estados do cancelamento.
 
 ## 7. Divergência conhecida a alinhar
 
