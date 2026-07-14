@@ -165,7 +165,31 @@ As Edges `cancel-booking`, `change-booking-dates` e `change-booking-vehicle` gra
 A extensão por atraso de voo mantém a tabela própria `booking_fare_extension`. pgTAP:
 `supabase/tests/booking_modification.test.sql`. (`fare_upgrade`/`refund` do webhook entram na Fase B.)
 
-## 8. Divergência conhecida a alinhar
+## 8. Fase B (E2.8-h): alterar datas de reserva PAGA (mecânica confirmada)
+
+Decisões de produto (jul/2026) que guiam a implementação:
+
+- **Preço:** re-cota a vaga a **preço atual** (`simulate_price`), igual à troca de datas de reserva
+  pendente. Uma estadia do mesmo tamanho pode mudar de valor se o preço mudou desde a compra. O delta
+  é sempre `novo_total − booking.total_amount` (o total acumulado que a pessoa já pagou, incluindo
+  upgrades). Cotação read-only já entregue: `reprice_booking_dates` (B1, migration `20260809000000`).
+- **Delta > 0 (mais caro):** cobra o delta por **PIX** (`payment.kind='date_change'`, split 100%
+  Movepark, padrão do `fare_upgrade`). As datas-alvo ficam em `payment.date_change_check_in_at/out_at`.
+  **Segura a vaga nova já na cobrança** (hold): adquire a capacidade das novas datas no momento da
+  cobrança e mantém as datas antigas até o pagamento. As novas datas só são aplicadas quando o
+  **webhook** confirma o PIX (aí libera a capacidade antiga). Se o PIX **expira** sem pagar, libera o
+  hold das novas datas e a reserva segue nas antigas (cleanup por expiração).
+- **Delta < 0 (mais barato):** aplica as novas datas na hora e **estorna a diferença** (estorno
+  parcial via gateway, reverte o split proporcional). É o "estorno parcial" descopado da E0.3.2.
+- **Delta = 0:** aplica na hora.
+- **Histórico:** registra em `booking_modification` (`date_change`, e `refund` quando estorna).
+- **Front:** libera "Alterar datas" na reserva **confirmada**; mostra a diferença e o fluxo (pagar
+  por PIX / confirmar estorno / confirmar).
+
+Estágios: **B1** schema + cotação (✅); **B2** RPCs de hold/apply + Edge + ramo do webhook + expiração;
+**B3** front; **B4** testes + deploy.
+
+## 9. Divergência conhecida a alinhar
 
 A página estática `src/routes/cancelamento.tsx` (marketing) ainda anuncia uma política de **3 faixas**
 (48h = 100%, 24-48h = 50%, <24h = 0%) que **nunca foi implementada**. A política real é **binária por
