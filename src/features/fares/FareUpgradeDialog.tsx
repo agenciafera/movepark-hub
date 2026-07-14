@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { formatBRL } from "@/lib/format";
 import { toDataUrl } from "@/lib/qr";
-import { fareReais, FARE_TIER_LABEL, type FareTier } from "@/lib/fares";
+import { fareReais, FARE_TIER_LABEL, FARE_TIER_ORDER, type FareTier } from "@/lib/fares";
 import { useCreateFareUpgrade, useFareCatalog, type FareUpgradeResponse } from "./api";
 
 type Props = {
@@ -39,7 +39,10 @@ export function FareUpgradeDialog({
   const [qrUrl, setQrUrl] = React.useState<string | null>(null);
 
   // Só níveis acima da Tarifa atual (delta > 0).
-  const targets = (catalog.data ?? []).filter((f) => f.price_cents > currentFarePriceCents);
+  // Alvos = tiers ACIMA do atual pela ordem (mesmo sinal do gate do botão de upgrade). Antes filtrava
+  // por preço, o que divergia do tier se os dois não batessem; a ordem é a fonte única de "mais alto".
+  const currentIdx = FARE_TIER_ORDER.indexOf(currentTier);
+  const targets = (catalog.data ?? []).filter((f) => FARE_TIER_ORDER.indexOf(f.tier) > currentIdx);
 
   React.useEffect(() => {
     if (open && !target && targets.length > 0) setTarget(targets[targets.length - 1].tier);
