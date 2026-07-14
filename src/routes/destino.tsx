@@ -204,13 +204,13 @@ export default function DestinoPage() {
             Estacionamento em {destination.short_name ?? destination.name}
           </h1>
           {destination.intro ? (
-            <div className="max-w-4xl space-y-3 text-body-md text-muted">
+            <div className="space-y-3 text-body-md text-muted">
               {destination.intro.split(/\n{2,}/).map((p, i) => (
                 <p key={i}>{p}</p>
               ))}
             </div>
           ) : (
-            <p className="max-w-4xl text-body-md text-muted">{description}</p>
+            <p className="text-body-md text-muted">{description}</p>
           )}
           {fromPrice != null && (
             <p className="text-body-md text-ink">
