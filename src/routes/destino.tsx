@@ -200,17 +200,17 @@ export default function DestinoPage() {
             {destination.city}
             {destination.state ? ` · ${destination.state}` : ""}
           </span>
-          <h1 className="text-display-xl text-ink">
+          <h1 className="text-balance text-display-xl text-ink">
             Estacionamento em {destination.short_name ?? destination.name}
           </h1>
           {destination.intro ? (
-            <div className="space-y-3 text-body-md text-muted">
+            <div className="space-y-3 text-pretty text-body-md text-muted">
               {destination.intro.split(/\n{2,}/).map((p, i) => (
                 <p key={i}>{p}</p>
               ))}
             </div>
           ) : (
-            <p className="text-body-md text-muted">{description}</p>
+            <p className="text-pretty text-body-md text-muted">{description}</p>
           )}
           {fromPrice != null && (
             <p className="text-body-md text-ink">
@@ -238,7 +238,7 @@ export default function DestinoPage() {
         {/* Mais bem avaliados (curadoria) */}
         {topGrouped.length > 0 && (
           <section className="mt-10">
-            <h2 className="mb-4 text-display-md text-ink">
+            <h2 className="mb-4 text-balance text-display-md text-ink">
               Mais bem avaliados em {destination.short_name ?? destination.name}
             </h2>
             <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-3">
@@ -258,7 +258,7 @@ export default function DestinoPage() {
 
         {/* Estacionamentos */}
         <section className="mt-10">
-          <h2 className="mb-4 text-display-md text-ink">Estacionamentos em {destination.short_name ?? destination.name}</h2>
+          <h2 className="mb-4 text-balance text-display-md text-ink">Estacionamentos em {destination.short_name ?? destination.name}</h2>
           {search.isLoading ? (
             <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-3">
               {Array.from({ length: 6 }).map((_, i) => (
@@ -319,7 +319,7 @@ export default function DestinoPage() {
         {/* Outros destinos — internal linking entre páginas de destino */}
         {related.length > 0 && (
           <section className="mt-12 border-t border-hairline pt-8">
-            <h2 className="mb-4 text-display-md text-ink">Estacionamento em outros destinos</h2>
+            <h2 className="mb-4 text-balance text-display-md text-ink">Estacionamento em outros destinos</h2>
             <ul className="flex flex-wrap gap-2">
               {related.map((d) => (
                 <li key={d.id}>

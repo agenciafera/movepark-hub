@@ -130,7 +130,7 @@ export function Hero() {
           Estacione em qualquer aeroporto do Brasil
         </h1>
 
-        <p data-hero="sub" className="mx-auto mb-10 max-w-xl text-[17px] leading-relaxed text-white/65">
+        <p data-hero="sub" className="mx-auto mb-10 max-w-xl text-pretty text-[17px] leading-relaxed text-white/65">
           Compare vários estacionamentos num só lugar e reserve agora.
         </p>
 
