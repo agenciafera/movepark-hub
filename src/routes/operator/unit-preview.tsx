@@ -78,7 +78,7 @@ export default function UnitPreviewPage() {
               </div>
             )}
 
-            <div className="grid gap-6 tablet:grid-cols-[320px_1fr]">
+            <div className="grid items-start gap-6 tablet:grid-cols-2">
               <UnitPreviewCard
                 name={unit.name}
                 address={unit.address}
