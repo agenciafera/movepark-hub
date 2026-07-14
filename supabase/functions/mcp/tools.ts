@@ -327,6 +327,17 @@ export function findTool(endpoint: Endpoint, name: string): ToolDef | null {
   return registry(endpoint).find((t) => t.name === name) ?? null;
 }
 
+// Gate de segurança do `tools/call`: uma tool só é chamável se existe E (é pública, ou não exige
+// escopo, ou a chave tem o escopo). Espelha o filtro de `listTools` — garante que uma tool
+// escondida na listagem também NÃO seja executável (senão dava pra chamar tool fora de escopo
+// sabendo o nome). Fora de escopo é tratado como inexistente (não revela a existência da tool).
+export function isToolCallable(endpoint: Endpoint, name: string, scopes: string[] = []): boolean {
+  const tool = findTool(endpoint, name);
+  if (!tool) return false;
+  if (endpoint === "public") return true;
+  return !tool.scope || scopes.includes(tool.scope);
+}
+
 // Valida os campos `required` do inputSchema (checagem leve, sem libs externas).
 export function missingRequired(tool: ToolDef, args: Record<string, unknown>): string | null {
   const required = (tool.inputSchema.required as string[] | undefined) ?? [];

@@ -2,7 +2,7 @@
 -- helpers usados em policies RLS. Ver 20260724000000 + 20260725000000 e ADR-005.
 
 begin;
-select plan(30);
+select plan(31);
 
 -- ── Helpers usados DENTRO de policies RLS: anon PRECISA manter EXECUTE ────────
 -- (senão SELECT anônimo no catálogo público quebra com "permission denied for function")
@@ -77,6 +77,20 @@ select ok(has_function_privilege('authenticated', 'public.operator_create_api_ke
 -- o caller real de create_booking_atomic é o client service_role da Edge — deve manter EXECUTE
 select ok(has_function_privilege('service_role', 'public.create_booking_atomic(uuid, uuid, timestamptz, timestamptz, integer, boolean, uuid, uuid[], text, text, fare_tier)', 'execute'),
   'service_role mantém EXECUTE em create_booking_atomic (caller real da Edge)');
+
+-- ── Invariante gateway-only: NENHUMA função api_* é chamável por anon/authenticated ──────────
+-- Elas são SECURITY DEFINER que confiam no company_id do gateway (sem auth.uid()); só service_role
+-- as chama. Assertion agregada (assinatura-agnóstica) pega qualquer regressão futura, inclusive
+-- funções api_* novas ou recriadas que reganhem o grant default. Regressão real: api_create_booking
+-- reabriu para `authenticated` ao ser recriada em 20260717 (fechada em 20260807000000).
+select is(
+  (select count(*)::int
+     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname like 'api\_%'
+      and (has_function_privilege('anon', p.oid, 'execute')
+        or has_function_privilege('authenticated', p.oid, 'execute'))),
+  0,
+  'nenhuma função api_* é executável por anon ou authenticated (gateway-only, service_role)');
 
 select * from finish();
 rollback;

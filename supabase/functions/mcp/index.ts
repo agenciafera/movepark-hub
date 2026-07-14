@@ -20,7 +20,7 @@ import {
   rpcResult,
   toolTextContent,
 } from "./protocol.ts";
-import { findTool, listTools, missingRequired, type Endpoint } from "./tools.ts";
+import { findTool, isToolCallable, listTools, missingRequired, type Endpoint } from "./tools.ts";
 import { extractApiKey, keyPrefix, sha256Hex } from "./auth.ts";
 
 const CORS = {
@@ -123,13 +123,12 @@ Deno.serve(async (req: Request) => {
         const p = (reqMsg.params ?? {}) as { name?: string; arguments?: Record<string, unknown> };
         const toolName = p.name ?? "";
         const args = p.arguments ?? {};
-        const tool = findTool(endpoint, toolName);
-        // out-of-scope no parceiro = tratado como inexistente (não revela)
-        if (!tool || (endpoint === "partner" && tool.scope && !partner!.scopes.includes(tool.scope))) {
+        // Gate de escopo (isToolCallable): out-of-scope no parceiro = inexistente (não revela).
+        if (!isToolCallable(endpoint, toolName, partner?.scopes ?? [])) {
           resp = json(rpcError(id, JSONRPC.INVALID_PARAMS, `Tool indisponível: ${toolName}`));
           break;
         }
-        const miss = missingRequired(tool, args);
+        const miss = missingRequired(findTool(endpoint, toolName)!, args);
         if (miss) {
           resp = json(rpcError(id, JSONRPC.INVALID_PARAMS, `Parâmetro obrigatório ausente: ${miss}`));
           break;

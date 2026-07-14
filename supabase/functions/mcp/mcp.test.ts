@@ -9,7 +9,7 @@ import {
   rpcResult,
   toolTextContent,
 } from "./protocol.ts";
-import { findTool, listTools, missingRequired, PARTNER_TOOLS, PUBLIC_TOOLS } from "./tools.ts";
+import { findTool, isToolCallable, listTools, missingRequired, PARTNER_TOOLS, PUBLIC_TOOLS } from "./tools.ts";
 import { extractApiKey, hasScope, keyPrefix, sha256Hex } from "./auth.ts";
 
 // ── protocolo ────────────────────────────────────────────────────────────────
@@ -82,6 +82,38 @@ Deno.test("findTool resolve por endpoint", () => {
   assertEquals(findTool("public", "get_faq")?.name, "get_faq");
   assertEquals(findTool("partner", "create_booking")?.scope, "bookings:write");
   assertEquals(findTool("partner", "get_faq"), null);
+});
+
+// Invariante de segurança do tools/call: escopo é RECHECADO na chamada, não só escondido no
+// tools/list. Uma tool fora de escopo é inchamável mesmo que o cliente saiba o nome exato.
+Deno.test("isToolCallable recheca escopo no tools/call (não só esconde na listagem)", () => {
+  // público: qualquer tool existente é chamável; inexistente não
+  assertEquals(isToolCallable("public", "search_parking"), true);
+  assertEquals(isToolCallable("public", "create_booking"), false); // não é tool pública
+  assertEquals(isToolCallable("public", "inexistente"), false);
+  // parceiro: precisa do escopo da tool
+  assertEquals(isToolCallable("partner", "create_booking", ["bookings:write"]), true);
+  assertEquals(isToolCallable("partner", "create_booking", ["bookings:read"]), false);
+  assertEquals(isToolCallable("partner", "create_booking", []), false);
+  // sabendo o nome mas sem escopo → inchamável (escalada de privilégio bloqueada)
+  assertEquals(isToolCallable("partner", "update_pricing_rule", ["pricing:read"]), false);
+  assertEquals(isToolCallable("partner", "update_pricing_rule", ["pricing:write"]), true);
+  // tool inexistente no parceiro
+  assertEquals(isToolCallable("partner", "get_faq", ["faq:read"]), false);
+});
+
+// Consistência: o que NÃO aparece no tools/list para um conjunto de escopos também NÃO pode ser
+// chamado com esses escopos (a listagem e o gate de chamada não podem divergir).
+Deno.test("isToolCallable é consistente com listTools para os mesmos escopos", () => {
+  const scopes = ["bookings:read", "coupons:read"];
+  const listed = new Set(listTools("partner", scopes).map((t) => t.name));
+  for (const t of PARTNER_TOOLS) {
+    assertEquals(
+      isToolCallable("partner", t.name, scopes),
+      listed.has(t.name),
+      `${t.name}: chamável deve casar com listado`,
+    );
+  }
 });
 
 Deno.test("missingRequired aponta o primeiro campo faltante", () => {

@@ -90,3 +90,27 @@ Deno.test("pgErrorToHttp mapeia SQLSTATE → HTTP", () => {
   assertEquals(pgErrorToHttp({ code: "P0001", message: "Check-out precisa ser após o check-in" }).status, 422);
   assertEquals(pgErrorToHttp({ code: "XX000", message: "boom" }).status, 500);
 });
+
+Deno.test("pgErrorToHttp: unicidade → 409, input malformado → 422", () => {
+  assertEquals(pgErrorToHttp({ code: "23505", message: "x" }).status, 409);
+  assertEquals(pgErrorToHttp({ code: "23505", message: "x" }).code, "conflict");
+  // uuid inválido, data inválida, not-null, FK, check → 422
+  for (const code of ["22P02", "22007", "23502", "23503", "23514"]) {
+    assertEquals(pgErrorToHttp({ code, message: "x" }).status, 422, `${code} → 422`);
+  }
+});
+
+// Segurança: mensagem crua do Postgres NUNCA vaza para o cliente (nome de constraint/coluna).
+// Só a nossa mensagem de negócio (P0001, levantada por RAISE nas RPCs) é propagada.
+Deno.test("pgErrorToHttp não vaza a mensagem crua do Postgres", () => {
+  const leak = 'duplicate key value violates unique constraint "coupon_company_id_code_key"';
+  assertEquals(pgErrorToHttp({ code: "23505", message: leak }).message.includes("constraint"), false);
+  const uuidLeak = 'invalid input syntax for type uuid: "abc"';
+  assertEquals(pgErrorToHttp({ code: "22P02", message: uuidLeak }).message.includes("uuid"), false);
+  assertEquals(pgErrorToHttp({ code: "XX000", message: "internal detail" }).message, "Erro interno.");
+  // a nossa mensagem de negócio (P0001) CONTINUA sendo mostrada
+  assertEquals(
+    pgErrorToHttp({ code: "P0001", message: "Check-out precisa ser após o check-in" }).message,
+    "Check-out precisa ser após o check-in",
+  );
+});
