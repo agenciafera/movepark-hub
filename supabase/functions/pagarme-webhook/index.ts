@@ -242,10 +242,11 @@ Deno.serve(async (req: Request) => {
         fare_target_tier: string | null;
         date_change_check_in_at: string | null;
         date_change_check_out_at: string | null;
+        status: string | null;
       }
     | null = null;
   const paymentCols =
-    "id, booking_id, kind, fare_target_tier, date_change_check_in_at, date_change_check_out_at";
+    "id, booking_id, kind, fare_target_tier, date_change_check_in_at, date_change_check_out_at, status";
   if (ev.orderId) {
     const { data } = await admin
       .from("payment")
@@ -272,6 +273,7 @@ Deno.serve(async (req: Request) => {
           fare_target_tier: d.fare_target_tier,
           date_change_check_in_at: d.date_change_check_in_at,
           date_change_check_out_at: d.date_change_check_out_at,
+          status: d.status,
         }
       : null;
   }
@@ -305,6 +307,14 @@ Deno.serve(async (req: Request) => {
       .eq("id", payment.id);
     await markProcessed(admin, ev.eventId);
     return json({ ok: true, partial_refund: true });
+  }
+
+  // Evento benigno (sem intent definida, ex.: `charge.updated` depois do pagamento) sobre um
+  // payment já terminal: NÃO rebaixa o status. Sem isto, um evento pós-pagamento derruba 'paid'
+  // de volta pra 'pending' (deixava o date_change preso e o expire liberaria vaga ativa).
+  if (intent === null && ["paid", "refunded", "cancelled"].includes(payment.status ?? "")) {
+    await markProcessed(admin, ev.eventId);
+    return json({ ok: true, noop: true, reason: "benign_event_on_terminal_payment" });
   }
 
   const status =
