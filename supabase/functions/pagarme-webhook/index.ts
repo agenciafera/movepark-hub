@@ -235,12 +235,21 @@ Deno.serve(async (req: Request) => {
 
   // Localiza o payment pela order; fallback pelo booking.
   let payment:
-    | { id: string; booking_id: string; kind: string | null; fare_target_tier: string | null }
+    | {
+        id: string;
+        booking_id: string;
+        kind: string | null;
+        fare_target_tier: string | null;
+        date_change_check_in_at: string | null;
+        date_change_check_out_at: string | null;
+      }
     | null = null;
+  const paymentCols =
+    "id, booking_id, kind, fare_target_tier, date_change_check_in_at, date_change_check_out_at";
   if (ev.orderId) {
     const { data } = await admin
       .from("payment")
-      .select("id, booking_id, kind, fare_target_tier")
+      .select(paymentCols)
       .eq("provider", "pagarme")
       .eq("provider_payment_id", ev.orderId)
       .maybeSingle();
@@ -249,14 +258,21 @@ Deno.serve(async (req: Request) => {
   if (!payment && (ev.bookingId || ev.bookingCode)) {
     let q = admin
       .from("payment")
-      .select("id, booking_id, kind, fare_target_tier, booking:booking!inner(code)")
+      .select(`${paymentCols}, booking:booking!inner(code)`)
       .eq("provider", "pagarme");
     if (ev.bookingId) q = q.eq("booking_id", ev.bookingId);
     const { data } = await q.order("created_at", { ascending: false }).limit(1).maybeSingle();
     // deno-lint-ignore no-explicit-any
     const d = data as any;
     payment = d
-      ? { id: d.id, booking_id: d.booking_id, kind: d.kind, fare_target_tier: d.fare_target_tier }
+      ? {
+          id: d.id,
+          booking_id: d.booking_id,
+          kind: d.kind,
+          fare_target_tier: d.fare_target_tier,
+          date_change_check_in_at: d.date_change_check_in_at,
+          date_change_check_out_at: d.date_change_check_out_at,
+        }
       : null;
   }
   if (!payment) {
@@ -316,6 +332,25 @@ Deno.serve(async (req: Request) => {
     if (upErr) console.error("[pagarme-webhook] apply_fare_upgrade falhou:", upErr.message);
     await markProcessed(admin, ev.eventId);
     return json({ ok: true, status: paymentStatus, fare_upgrade: true });
+  }
+
+  // Delta de troca de datas pago (E2.8-h): aplica as novas datas (a vaga já foi segurada no hold).
+  if (
+    status === "paid" &&
+    payment.kind === "date_change" &&
+    payment.date_change_check_in_at &&
+    payment.date_change_check_out_at
+  ) {
+    const { error: dcErr } = await admin.rpc("apply_paid_date_change", {
+      p_booking_id: payment.booking_id,
+      p_check_in: payment.date_change_check_in_at,
+      p_check_out: payment.date_change_check_out_at,
+      p_actor_id: null,
+      p_acquire: false,
+    });
+    if (dcErr) console.error("[pagarme-webhook] apply_paid_date_change falhou:", dcErr.message);
+    await markProcessed(admin, ev.eventId);
+    return json({ ok: true, status: paymentStatus, date_change: true });
   }
 
   // Pagamento aprovado → confirma a reserva OU estorna se a vaga sumiu (caso 4c, ADR-005). A RPC
