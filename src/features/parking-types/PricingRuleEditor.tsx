@@ -1,5 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { Save } from "lucide-react";
 import {
   Sheet,
@@ -41,6 +42,8 @@ import {
   useLocationParkingTypesByCompany,
   type LocationParkingTypeWithRelations,
 } from "./api";
+import { fetchPricingCurve, findCurveInversions, pricingCurveKeys } from "./pricing-curve";
+import { formatBRL } from "@/lib/format";
 
 type Props = {
   open: boolean;
@@ -75,6 +78,7 @@ export function PricingRuleEditor({
   parkingTypeCode,
 }: Props) {
   const setPricing = useOperatorSetPricing();
+  const qc = useQueryClient();
 
   const [strategy, setStrategy] = React.useState<PricingStrategy>("uniform_by_duration");
   const [fractionalPolicy, setFractionalPolicy] = React.useState<FractionalDayPolicy>("any_extra");
@@ -187,8 +191,33 @@ export function PricingRuleEditor({
 
       toast.success("Precificação salva");
       onOpenChange(false);
+      void warnIfCurveInverted();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao salvar");
+    }
+  }
+
+  /**
+   * Recalcula a curva no motor (RPC) e avisa se a tabela recém-salva ficou invertida:
+   * alguma estadia mais longa custando menos que uma mais curta. Não bloqueia o save
+   * (pode ser intencional) e não falha se a simulação der erro.
+   */
+  async function warnIfCurveInverted() {
+    const key = pricingCurveKeys.buckets(companySlug, locationSlug, parkingTypeCode);
+    try {
+      qc.removeQueries({ queryKey: key });
+      const rows = await qc.fetchQuery({
+        queryKey: key,
+        queryFn: () => fetchPricingCurve(companySlug, locationSlug, parkingTypeCode),
+      });
+      const [first] = findCurveInversions(rows);
+      if (!first) return;
+      toast.warning(
+        `${first.days} dias custa ${formatBRL(first.price)} e ${first.nextDays} dias custa ${formatBRL(first.nextPrice)}. Quem fica menos tempo paga mais. Confira as faixas.`,
+        { duration: 12_000 },
+      );
+    } catch {
+      // O aviso é um extra. Se a simulação falhar, o preço já foi salvo do mesmo jeito.
     }
   }
 

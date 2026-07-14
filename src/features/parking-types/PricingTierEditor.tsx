@@ -143,9 +143,10 @@ export function PricingTierEditor({ strategy, tiers, onChange }: Props) {
 
       {strategy === "fixed_bracket" && (
         <p className="text-caption text-muted">
-          Em <strong>Valor Fixo por Faixa</strong>, preencha <em>Preço total fixo</em> para
-          faixas fechadas. Use <em>Preço/dia</em> em uma faixa final aberta (sem "Até") para
-          calcular dias excedentes (ex.: 30+ dias × R$ 26,40).
+          Cada faixa aceita <em>um</em> dos dois: <em>Preço total fixo</em>, que vale para
+          qualquer estadia dentro da faixa, ou <em>Preço/dia</em>, que é multiplicado pelos dias
+          da reserva. O total fixo tem prioridade se os dois estiverem preenchidos. Na faixa
+          final aberta (sem "Até"), use <em>Preço/dia</em>.
         </p>
       )}
     </div>

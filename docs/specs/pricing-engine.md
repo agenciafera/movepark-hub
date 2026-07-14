@@ -44,7 +44,10 @@ total 16+ dias  → R$ 20,90/dia × total_dias
 
 ### Padrão 3 — Valor Fixo por Faixa (`fixed_bracket`)
 
-Cada faixa de dias tem um **valor total fixo**, sem multiplicação por dia.
+Cada faixa de dias tem um **valor total fixo** (`pricing_tier.total_price`), sem multiplicação por
+dia. Se a faixa não tiver total e sim `unit_price`, o motor cobra `unit_price × dias` (ver o
+pseudocódigo em "Cálculo"), o que vale para qualquer faixa, aberta ou fechada. É isso que permite
+misturar total fixo e diária na mesma tabela.
 
 ```
 1 dia   → R$ 149,00
@@ -55,6 +58,12 @@ Cada faixa de dias tem um **valor total fixo**, sem multiplicação por dia.
 ```
 
 **Exemplos no legado:** Aeropark Valet. NationPark mistura fixo (1-2 dias) com diária (3+).
+O Virapark usa total fixo só em 1 dia e diária nas demais faixas.
+
+**Curva invertida.** Nada no motor impede uma tabela em que ficar mais dias custa menos no total
+(ex.: 6 dias por R$ 179,40 e 7 dias por R$ 125,30). Pode ser intencional, então não é bloqueio: o
+painel do parceiro avisa ao salvar e marca o card, e o simulador sinaliza a linha
+(`findCurveInversions`, em `src/features/parking-types/pricing-curve.ts`).
 
 ---
 

@@ -12,11 +12,7 @@ type CompanyParkingTypeInsert =
 type CompanyParkingTypeUpdate =
   Database["public"]["Tables"]["company_parking_type"]["Update"];
 type PricingTierRow = Database["public"]["Tables"]["pricing_tier"]["Row"];
-type PricingTierInsert = Database["public"]["Tables"]["pricing_tier"]["Insert"];
-type PricingTierUpdate = Database["public"]["Tables"]["pricing_tier"]["Update"];
 type PricingRuleRow = Database["public"]["Tables"]["pricing_rule"]["Row"];
-type PricingRuleInsert = Database["public"]["Tables"]["pricing_rule"]["Insert"];
-type PricingRuleUpdate = Database["public"]["Tables"]["pricing_rule"]["Update"];
 
 export type CompanyParkingTypeWithCatalog = CompanyParkingTypeRow & {
   parking_type: Pick<ParkingType, "id" | "code" | "name">;
@@ -156,23 +152,6 @@ export function useUpdateCompanyParkingType() {
 
 /* ------------------- Pricing rule + tier ---------------- */
 
-export function useUpsertPricingRule() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (payload: PricingRuleInsert): Promise<PricingRuleRow> => {
-      // Há unique constraint em location_parking_type_id → upsert nessa coluna
-      const { data, error } = await supabase
-        .from("pricing_rule")
-        .upsert(payload, { onConflict: "location_parking_type_id" })
-        .select()
-        .single();
-      if (error) throw error;
-      return data as PricingRuleRow;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: parkingTypesKeys.all }),
-  });
-}
-
 /**
  * Salva a precificação (regra + faixas + base) numa única RPC SECURITY DEFINER, que valida a posse
  * da empresa (E1.4.1). As tabelas pricing_rule/pricing_tier têm RLS só de leitura — escrita direta
@@ -194,50 +173,6 @@ export function useOperatorSetPricing() {
         p_rule: args.rule as Json,
         p_tiers: args.tiers as unknown as Json,
       });
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: parkingTypesKeys.all }),
-  });
-}
-
-export function useUpdatePricingRule() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, patch }: { id: string; patch: PricingRuleUpdate }) => {
-      const { error } = await supabase.from("pricing_rule").update(patch).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: parkingTypesKeys.all }),
-  });
-}
-
-export function useCreatePricingTier() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (payload: PricingTierInsert) => {
-      const { error } = await supabase.from("pricing_tier").insert(payload);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: parkingTypesKeys.all }),
-  });
-}
-
-export function useUpdatePricingTier() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, patch }: { id: string; patch: PricingTierUpdate }) => {
-      const { error } = await supabase.from("pricing_tier").update(patch).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: parkingTypesKeys.all }),
-  });
-}
-
-export function useDeletePricingTier() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("pricing_tier").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: parkingTypesKeys.all }),

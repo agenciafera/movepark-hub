@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { AlertTriangle, Calculator } from "lucide-react";
 import { format, differenceInMinutes, addDays } from "date-fns";
 import { supabase } from "@/lib/supabase";
@@ -23,23 +23,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatBRL } from "@/lib/format";
-
-/** Conjunto canônico de dias usado na simulação em produção. */
-const DAY_BUCKETS = [1, 2, 3, 4, 5, 6, 7, 10, 14, 15, 17, 18, 20, 30, 35];
-
-type Row = {
-  days: number;
-  price: number | null;
-  oldPrice: number | null;
-  error: string | null;
-};
+import { findCurveInversions, usePricingCurve, type CurveRow } from "./pricing-curve";
 
 async function callSimulate(
   company: string,
   location: string,
   parkingType: string,
   days: number,
-): Promise<Omit<Row, "days">> {
+): Promise<Omit<CurveRow, "days">> {
   const { data, error } = await supabase.rpc("simulate_price", {
     p_company: company,
     p_location: location,
@@ -53,20 +44,6 @@ async function callSimulate(
     oldPrice: r?.old_price ?? null,
     error: r?.error ?? null,
   };
-}
-
-async function runBucketSimulation(
-  company: string,
-  location: string,
-  parkingType: string,
-): Promise<Row[]> {
-  const results = await Promise.all(
-    DAY_BUCKETS.map(async (days) => ({
-      days,
-      ...(await callSimulate(company, location, parkingType, days)),
-    })),
-  );
-  return results;
 }
 
 type Props = {
@@ -91,26 +68,12 @@ export function PricingSimulationDialog({
   parkingTypeCode,
   title,
 }: Props) {
-  const bucketSim = useQuery({
-    queryKey: ["pricing-simulation", "buckets", companySlug, locationSlug, parkingTypeCode],
-    queryFn: () => runBucketSimulation(companySlug, locationSlug, parkingTypeCode),
-    enabled: open,
-  });
+  const bucketSim = usePricingCurve(companySlug, locationSlug, parkingTypeCode, open);
 
   const data = bucketSim.data;
   const isLoading = bucketSim.isLoading;
 
-  // Detecta flips de faixa — preço de N dias > N+k dias
-  const flips = new Set<number>();
-  if (data) {
-    for (let i = 0; i < data.length - 1; i++) {
-      const cur = data[i].price;
-      const next = data[i + 1].price;
-      if (cur !== null && next !== null && cur > next) {
-        flips.add(data[i].days);
-      }
-    }
-  }
+  const flips = new Set(findCurveInversions(data ?? []).map((i) => i.days));
 
   // ---------- Aba "Por datas" ----------
   const now = React.useMemo(() => new Date(), []);

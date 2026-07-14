@@ -1,7 +1,15 @@
 import * as React from "react";
 import { useParams, useLocation, Link } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, SlidersHorizontal, Table2, CalendarClock } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  CalendarClock,
+  Plus,
+  SlidersHorizontal,
+  Table2,
+} from "lucide-react";
+import { useAuth } from "@/auth/context";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,7 +38,24 @@ import { CapacityRulesForm } from "@/features/parking-types/CapacityRulesForm";
 import { PricingRuleEditor } from "@/features/parking-types/PricingRuleEditor";
 import { PricingSimulationDialog } from "@/features/parking-types/PricingSimulationTable";
 import { PricingSummary, StrategyChip } from "@/features/parking-types/PricingSummary";
-import { formatBRL } from "@/lib/format";
+import {
+  findCurveInversions,
+  usePricingCurve,
+} from "@/features/parking-types/pricing-curve";
+import { formatBRL, formatDate } from "@/lib/format";
+
+const NO_SCOPE_HINT = "Seu perfil não pode alterar esta configuração. Fale com o dono da conta.";
+
+const MIN_STAY_UNIT_LABEL: Record<string, string> = {
+  minutes: "minutos",
+  hours: "horas",
+  days: "diárias",
+  months: "meses",
+};
+
+function minStayUnitLabel(lpt: LocationParkingTypeWithRelations): string {
+  return MIN_STAY_UNIT_LABEL[lpt.minimum_stay_unit ?? "days"] ?? "diárias";
+}
 
 export default function ParkingTypesPage() {
   const params = useParams<{ id?: string; locationId?: string; companyId?: string }>();
@@ -53,6 +78,12 @@ export default function ParkingTypesPage() {
   const company = useCompany(companyId);
   // Catálogo do WL só faz sentido no Manager (mapeamento é da Movepark, não do operador).
   const wlCatalog = useWlCatalog(isOperator ? undefined : companyId);
+
+  // ADR-005: a UI espelha o gate do servidor. Sem o escopo, a ação vem desabilitada em vez
+  // de deixar o parceiro clicar e tomar 403. hub_admin tem todos os escopos.
+  const { hasScope } = useAuth();
+  const canEditParkingType = hasScope("parking-types:write", companyId);
+  const canEditPricing = hasScope("pricing:write", companyId);
 
   async function toggleActive(id: string, isActive: boolean) {
     try {
@@ -100,7 +131,12 @@ export default function ParkingTypesPage() {
                 <ArrowLeft className="h-4 w-4" /> Voltar
               </Link>
             </Button>
-            <Button size="sm" onClick={() => setCreateOpen(true)} disabled={!companyId}>
+            <Button
+              size="sm"
+              onClick={() => setCreateOpen(true)}
+              disabled={!companyId || !canEditParkingType}
+              title={canEditParkingType ? undefined : NO_SCOPE_HINT}
+            >
               <Plus className="h-4 w-4" /> Novo tipo
             </Button>
           </div>
@@ -145,6 +181,10 @@ export default function ParkingTypesPage() {
               onEditPricing={() => setEditing(lpt)}
               onEditRules={() => setEditingRules(lpt)}
               onOpenSimulation={() => setSimulating(lpt)}
+              canEditParkingType={canEditParkingType}
+              canEditPricing={canEditPricing}
+              companySlug={company.data?.slug}
+              locationSlug={location.data?.slug}
             />
           ))}
         </div>
@@ -194,6 +234,10 @@ type CardProps = {
   onEditPricing: () => void;
   onEditRules: () => void;
   onOpenSimulation: () => void;
+  canEditParkingType: boolean;
+  canEditPricing: boolean;
+  companySlug?: string;
+  locationSlug?: string;
 };
 
 function ParkingTypeCard({
@@ -206,8 +250,22 @@ function ParkingTypeCard({
   onEditPricing,
   onEditRules,
   onOpenSimulation,
+  canEditParkingType,
+  canEditPricing,
+  companySlug,
+  locationSlug,
 }: CardProps) {
   const [capacity, setCapacity] = React.useState(lpt.capacity);
+
+  // Curva atual pelo motor (RPC). Serve pra flagrar no card, sem abrir o simulador,
+  // a tabela em que ficar mais dias sai mais barato.
+  const curve = usePricingCurve(
+    companySlug,
+    locationSlug,
+    lpt.company_parking_type.parking_type.code,
+    !!lpt.pricing_rule,
+  );
+  const inversion = findCurveInversions(curve.data ?? [])[0];
   const [wlCat, setWlCat] = React.useState(lpt.wl_category_slug ?? "");
   const [wlProd, setWlProd] = React.useState(lpt.wl_product_slug ?? "");
 
@@ -236,16 +294,46 @@ function ParkingTypeCard({
               <span className="text-caption text-muted">
                 Preço base · {formatBRL(Number(lpt.company_parking_type.base_price))}
               </span>
+              {lpt.has_minimum_stay && lpt.minimum_stay_value != null && (
+                <span className="rounded-full bg-surface-soft px-2 py-0.5 text-caption text-muted">
+                  Mínimo de {lpt.minimum_stay_value} {minStayUnitLabel(lpt)}
+                </span>
+              )}
+              {lpt.has_minimum_date && lpt.minimum_date && (
+                <span className="rounded-full bg-surface-soft px-2 py-0.5 text-caption text-muted">
+                  A partir de {formatDate(lpt.minimum_date)}
+                </span>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Label className="text-caption">{lpt.is_active ? "Ativo" : "Inativo"}</Label>
-            <Switch checked={lpt.is_active} onCheckedChange={onToggleActive} />
+            <Switch
+              checked={lpt.is_active}
+              onCheckedChange={onToggleActive}
+              disabled={!canEditParkingType}
+              title={canEditParkingType ? undefined : NO_SCOPE_HINT}
+            />
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <PricingSummary lpt={lpt} />
+
+        {inversion && (
+          <button
+            type="button"
+            onClick={onOpenSimulation}
+            className="flex w-full items-start gap-2 rounded-sm bg-badge-pending-bg p-3 text-left text-body-sm text-warning"
+          >
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>
+              {inversion.days} dias custa {formatBRL(inversion.price)} e {inversion.nextDays} dias
+              custa {formatBRL(inversion.nextPrice)}. Quem fica menos tempo paga mais. Toque para
+              ver a tabela inteira.
+            </span>
+          </button>
+        )}
 
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1.5">
@@ -257,12 +345,15 @@ function ParkingTypeCard({
                 min={0}
                 value={capacity}
                 onChange={(e) => setCapacity(Number(e.target.value))}
+                disabled={!canEditParkingType}
+                title={canEditParkingType ? undefined : NO_SCOPE_HINT}
                 className="h-10 w-32 text-center tabular-nums"
               />
               <Button
                 size="sm"
                 variant="secondary"
-                disabled={capacity === lpt.capacity}
+                disabled={capacity === lpt.capacity || !canEditParkingType}
+                title={canEditParkingType ? undefined : NO_SCOPE_HINT}
                 onClick={() => onUpdateCapacity(capacity)}
               >
                 Salvar
@@ -270,7 +361,13 @@ function ParkingTypeCard({
             </div>
           </div>
           <div className="flex-1" />
-          <Button size="sm" variant="secondary" onClick={onEditRules}>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={onEditRules}
+            disabled={!canEditParkingType}
+            title={canEditParkingType ? undefined : NO_SCOPE_HINT}
+          >
             <CalendarClock className="h-4 w-4" />
             Regras de reserva
           </Button>
@@ -288,7 +385,12 @@ function ParkingTypeCard({
             <Table2 className="h-4 w-4" />
             Simular preços
           </Button>
-          <Button size="sm" onClick={onEditPricing}>
+          <Button
+            size="sm"
+            onClick={onEditPricing}
+            disabled={!canEditPricing}
+            title={canEditPricing ? undefined : NO_SCOPE_HINT}
+          >
             <SlidersHorizontal className="h-4 w-4" />
             Configurar precificação
           </Button>

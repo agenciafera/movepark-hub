@@ -32,7 +32,8 @@ export const STRATEGIES: { value: PricingStrategy; label: string; description: s
   {
     value: "fixed_bracket",
     label: "Valor Fixo por Faixa",
-    description: "Cada faixa de dias tem um valor total fixo (não multiplica por dia).",
+    description:
+      "Cada faixa cobra um valor total fixo. Se a faixa tiver preço/dia em vez de total, ele é multiplicado pelos dias.",
   },
   {
     value: "incremental_formula",
