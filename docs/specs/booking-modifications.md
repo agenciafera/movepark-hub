@@ -186,8 +186,12 @@ Decisões de produto (jul/2026) que guiam a implementação:
 - **Front:** libera "Alterar datas" na reserva **confirmada**; mostra a diferença e o fluxo (pagar
   por PIX / confirmar estorno / confirmar).
 
-Estágios: **B1** schema + cotação (✅); **B2** RPCs de hold/apply + Edge + ramo do webhook + expiração;
-**B3** front; **B4** testes + deploy.
+Implementação (E2.8-h, todos no ar): **B1** schema + cotação `reprice_booking_dates` (✅);
+**B2.1** RPCs `hold_paid_date_change`/`apply_paid_date_change`/`expire_paid_date_change_hold` (✅);
+**B2.2** Edge `change-booking-dates-paid` + ramo `date_change` do webhook + cron
+`cron_expire_date_change_holds` (✅); **B3** front `ChangeDatesPaidDialog` + gate
+`canCustomerChangePaidDates` (✅). Testado por pgTAP + deno + Vitest. Falta só a verificação visual
+ao vivo com sessão logada (B4).
 
 ## 9. Divergência conhecida a alinhar
 
