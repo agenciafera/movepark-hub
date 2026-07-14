@@ -36,7 +36,19 @@ import {
   PricingTierEditor,
   type TierDraft,
 } from "./PricingTierEditor";
-import { PriceSimulator } from "./PriceSimulator";
+import { PricingPreview } from "./PricingPreview";
+import {
+  strategyChangeDropsTiers,
+  whyCannotSave,
+  type DraftRule,
+} from "./pricing-draft.logic";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   useOperatorSetPricing,
   useLocationParkingTypesByCompany,
@@ -112,6 +124,9 @@ export function PricingRuleEditor({
   // tiers
   const [tiers, setTiers] = React.useState<TierDraft[]>([]);
 
+  // Estratégia escolhida que descartaria as faixas, aguardando confirmação.
+  const [pendingStrategy, setPendingStrategy] = React.useState<PricingStrategy | null>(null);
+
   // outras LPTs da empresa pra escolher como source de surcharge
   const surchargeSources = useLocationParkingTypesByCompany(companyId, lpt?.id);
 
@@ -151,42 +166,57 @@ export function PricingRuleEditor({
 
   const showTiers = USES_TIERS[strategy];
 
+  // O rascunho: o que a tela tem AGORA. Alimenta a prévia e é o que o save manda.
+  const draftRule: DraftRule & Record<string, unknown> = {
+    strategy,
+    fractional_day_policy: fractionalPolicy,
+    fractional_day_tolerance: fractionalTolerance,
+    old_price_strategy: oldPriceStrategy,
+    old_price_multiplier: oldPriceStrategy === "multiplier" ? oldPriceMultiplier : null,
+    advance_booking_minutes: advanceMinutes,
+    incremental_one_day_price: strategy === "incremental_formula" ? oneDay : null,
+    incremental_two_days_price: strategy === "incremental_formula" ? twoDays : null,
+    incremental_base: strategy === "incremental_formula" ? incBase : null,
+    incremental_multiplier: strategy === "incremental_formula" ? incMultiplier : null,
+    monthly_fixed_price: strategy === "monthly_remainder" ? monthlyFixed : null,
+    monthly_daily_rate: strategy === "monthly_remainder" ? monthlyDaily : null,
+    hourly_initial_rate: strategy === "hourly_capped" ? hourlyInitial : null,
+    hourly_one_hour_rate: strategy === "hourly_capped" ? hourlyOneHour : null,
+    hourly_fraction_rate: strategy === "hourly_capped" ? hourlyFraction : null,
+    hourly_daily_rate: strategy === "hourly_capped" ? hourlyDaily : null,
+    hourly_hours_per_day: strategy === "hourly_capped" ? hourlyHoursPerDay : null,
+    surcharge_source_id: strategy === "surcharge" ? surchargeSourceId : null,
+    surcharge_multiplier: strategy === "surcharge" ? surchargeMultiplier : null,
+  };
+
+  const draftTiers = showTiers
+    ? tiers.map((t) => ({
+        from_day: t.from_day,
+        to_day: t.to_day,
+        unit_price: t.unit_price,
+        total_price: t.total_price,
+      }))
+    : [];
+
+  const blockedReason = whyCannotSave(strategy, draftTiers, draftRule);
+
+  /** Trocar de estratégia pode descartar as faixas: confirma antes em vez de apagar calado. */
+  function requestStrategyChange(next: PricingStrategy) {
+    if (strategyChangeDropsTiers(next, tiers)) {
+      setPendingStrategy(next);
+      return;
+    }
+    setStrategy(next);
+  }
+
   async function handleSave() {
     if (!lpt) return;
     try {
       await setPricing.mutateAsync({
         locationParkingTypeId: lpt.id,
         basePrice,
-        rule: {
-          strategy,
-          fractional_day_policy: fractionalPolicy,
-          fractional_day_tolerance: fractionalTolerance,
-          old_price_strategy: oldPriceStrategy,
-          old_price_multiplier: oldPriceStrategy === "multiplier" ? oldPriceMultiplier : null,
-          advance_booking_minutes: advanceMinutes,
-          incremental_one_day_price: strategy === "incremental_formula" ? oneDay : null,
-          incremental_two_days_price: strategy === "incremental_formula" ? twoDays : null,
-          incremental_base: strategy === "incremental_formula" ? incBase : null,
-          incremental_multiplier: strategy === "incremental_formula" ? incMultiplier : null,
-          monthly_fixed_price: strategy === "monthly_remainder" ? monthlyFixed : null,
-          monthly_daily_rate: strategy === "monthly_remainder" ? monthlyDaily : null,
-          hourly_initial_rate: strategy === "hourly_capped" ? hourlyInitial : null,
-          hourly_one_hour_rate: strategy === "hourly_capped" ? hourlyOneHour : null,
-          hourly_fraction_rate: strategy === "hourly_capped" ? hourlyFraction : null,
-          hourly_daily_rate: strategy === "hourly_capped" ? hourlyDaily : null,
-          hourly_hours_per_day: strategy === "hourly_capped" ? hourlyHoursPerDay : null,
-          surcharge_source_id: strategy === "surcharge" ? surchargeSourceId : null,
-          surcharge_multiplier: strategy === "surcharge" ? surchargeMultiplier : null,
-        },
-        // só envia faixas quando a estratégia as usa (senão limpa)
-        tiers: showTiers
-          ? tiers.map((t) => ({
-              from_day: t.from_day,
-              to_day: t.to_day,
-              unit_price: t.unit_price,
-              total_price: t.total_price,
-            }))
-          : [],
+        rule: draftRule,
+        tiers: draftTiers,
       });
 
       toast.success("Precificação salva");
@@ -258,15 +288,19 @@ export function PricingRuleEditor({
               <Label>Modelo de cálculo</Label>
               <Select
                 value={strategy}
-                onValueChange={(v) => setStrategy(v as PricingStrategy)}
+                onValueChange={(v) => requestStrategyChange(v as PricingStrategy)}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  {/* Sem children, o Radix espelha o item inteiro (rótulo + descrição) aqui. */}
+                  <SelectValue>{STRATEGY_LABEL[strategy]}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {STRATEGIES.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>
-                      {s.label}
+                    <SelectItem key={s.value} value={s.value} textValue={s.label}>
+                      <span className="flex flex-col gap-0.5 text-left">
+                        <span>{s.label}</span>
+                        <span className="text-caption text-muted">{s.description}</span>
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -515,23 +549,63 @@ export function PricingRuleEditor({
 
           <Separator />
 
-          <PriceSimulator
-            companySlug={companySlug}
-            locationSlug={locationSlug}
-            parkingTypeCode={parkingTypeCode}
-          />
+          <PricingPreview rule={draftRule} tiers={draftTiers} blockedReason={blockedReason} />
         </div>
 
-        <div className="flex shrink-0 justify-end gap-2 border-t border-hairline bg-canvas px-6 py-3">
-          <Button variant="secondary" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSave} disabled={submitting}>
-            <Save className="h-4 w-4" />
-            {submitting ? "Salvando…" : "Salvar precificação"}
-          </Button>
+        <div className="flex shrink-0 flex-col gap-2 border-t border-hairline bg-canvas px-6 py-3">
+          {blockedReason && (
+            <p className="text-caption text-muted">{blockedReason}</p>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={submitting || !!blockedReason}
+              title={blockedReason ?? undefined}
+            >
+              <Save className="h-4 w-4" />
+              {submitting ? "Salvando…" : "Salvar precificação"}
+            </Button>
+          </div>
         </div>
       </SheetContent>
+
+      <Dialog
+        open={pendingStrategy !== null}
+        onOpenChange={(open) => !open && setPendingStrategy(null)}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Trocar a estratégia apaga suas faixas de preço</DialogTitle>
+            <DialogDescription>
+              {pendingStrategy && (
+                <>
+                  <strong className="text-ink">{STRATEGY_LABEL[pendingStrategy]}</strong> não usa
+                  faixas de preço. Ao trocar, as {tiers.length}{" "}
+                  {tiers.length === 1 ? "faixa configurada" : "faixas configuradas"} saem da tela, e
+                  salvar depois disso apaga a tabela de preço desta vaga. Reservas já confirmadas
+                  não mudam.
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="secondary" onClick={() => setPendingStrategy(null)}>
+              Manter as faixas
+            </Button>
+            <Button
+              onClick={() => {
+                if (pendingStrategy) setStrategy(pendingStrategy);
+                setPendingStrategy(null);
+              }}
+            >
+              Trocar mesmo assim
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Sheet>
   );
 }

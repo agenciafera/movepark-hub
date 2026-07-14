@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import type { Json } from "@/types/database";
 
 /**
  * Curva de preço de um tipo de vaga: o preço total para cada duração de estadia.
@@ -88,6 +89,39 @@ export function findCurveInversions(rows: CurveRow[]): CurveInversion[] {
     }
   }
   return inversions;
+}
+
+/** Dias mostrados na prévia dentro do editor. Menos linhas que a simulação completa. */
+export const PREVIEW_DAYS = [1, 2, 3, 5, 7, 10, 15, 30];
+
+/**
+ * Curva de um rascunho (regra + faixas ainda não salvas), pela RPC `simulate_pricing_draft`.
+ * O cálculo é do mesmo motor da reserva real; aqui só mandamos o que está na tela.
+ */
+export async function fetchDraftCurve(
+  rule: Record<string, unknown>,
+  tiers: unknown[],
+  days: number[] = PREVIEW_DAYS,
+): Promise<CurveRow[]> {
+  const { data, error } = await supabase.rpc("simulate_pricing_draft", {
+    p_rule: rule as Json,
+    p_tiers: tiers as Json,
+    p_days: days,
+  });
+  if (error) throw error;
+
+  if (!Array.isArray(data)) {
+    const msg =
+      data && typeof data === "object" && "error" in data ? String(data.error) : "Preço indisponível";
+    return days.map((d) => ({ days: d, price: null, oldPrice: null, error: msg }));
+  }
+
+  return (data as { days: number; price: number | null }[]).map((r) => ({
+    days: r.days,
+    price: r.price === null ? null : Number(r.price),
+    oldPrice: null,
+    error: null,
+  }));
 }
 
 export function usePricingCurve(

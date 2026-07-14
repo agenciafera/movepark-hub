@@ -62,8 +62,14 @@ O Virapark usa total fixo só em 1 dia e diária nas demais faixas.
 
 **Curva invertida.** Nada no motor impede uma tabela em que ficar mais dias custa menos no total
 (ex.: 6 dias por R$ 179,40 e 7 dias por R$ 125,30). Pode ser intencional, então não é bloqueio: o
-painel do parceiro avisa ao salvar e marca o card, e o simulador sinaliza a linha
+painel do parceiro avisa enquanto o parceiro digita, marca o card e sinaliza a linha no simulador
 (`findCurveInversions`, em `src/features/parking-types/pricing-curve.ts`).
+
+**Simular um rascunho.** `simulate_price` lê a regra **já salva**. Para mostrar o preço de uma tabela
+que ainda está na tela (antes de salvar), use `simulate_pricing_draft(p_rule jsonb, p_tiers jsonb,
+p_days int[])`, que chama o mesmo `_apply_pricing` e não persiste nada
+(`supabase/migrations/20260815000000_simulate_pricing_draft.sql`). É o que alimenta a prévia do
+editor de precificação. **Nunca** recalcule preço em TypeScript: o motor é o Postgres.
 
 ---
 

@@ -4458,6 +4458,10 @@ export type Database = {
         }
         Returns: Json
       }
+      simulate_pricing_draft: {
+        Args: { p_days?: number[]; p_rule: Json; p_tiers?: Json }
+        Returns: Json
+      }
       slugify: { Args: { p_text: string }; Returns: string }
       split_person_name: {
         Args: { p_full: string }
