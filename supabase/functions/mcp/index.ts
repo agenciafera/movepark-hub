@@ -376,6 +376,13 @@ async function callPartner(admin: any, ctx: PartnerCtx, name: string, a: Record<
       return call("api_checkin_booking", { p_company_id: c, p_booking_id: a.booking_id });
     case "check_out_booking":
       return call("api_checkout_booking", { p_company_id: c, p_booking_id: a.booking_id });
+    case "change_booking_dates":
+      return call("api_change_booking_dates", {
+        p_company_id: c,
+        p_booking_id: a.booking_id,
+        p_check_in: a.check_in_at,
+        p_check_out: a.check_out_at,
+      });
     case "wps_event":
       return call("api_wps_event", {
         p_company_id: c,

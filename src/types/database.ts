@@ -3607,6 +3607,15 @@ export type Database = {
         Args: { p_booking_id: string; p_company_id: string; p_reason?: string }
         Returns: Json
       }
+      api_change_booking_dates: {
+        Args: {
+          p_booking_id: string
+          p_check_in: string
+          p_check_out: string
+          p_company_id: string
+        }
+        Returns: Json
+      }
       api_checkin_booking: {
         Args: { p_booking_id: string; p_company_id: string }
         Returns: Json
@@ -3859,6 +3868,16 @@ export type Database = {
         }
         Returns: Json
       }
+      apply_paid_date_change: {
+        Args: {
+          p_acquire?: boolean
+          p_actor_id?: string
+          p_booking_id: string
+          p_check_in: string
+          p_check_out: string
+        }
+        Returns: Json
+      }
       availability_batch: {
         Args: {
           p_check_in_at: string
@@ -3958,6 +3977,7 @@ export type Database = {
         Returns: Json
       }
       cron_complete_bookings: { Args: never; Returns: number }
+      cron_expire_date_change_holds: { Args: never; Returns: number }
       cron_expire_pending_bookings: { Args: never; Returns: number }
       cron_prune_api_request_log: { Args: never; Returns: number }
       current_company_ids: { Args: never; Returns: string[] }
@@ -3988,6 +4008,10 @@ export type Database = {
           discount_rule_id: string
           label: string
         }[]
+      }
+      expire_paid_date_change_hold: {
+        Args: { p_payment_id: string }
+        Returns: Json
       }
       extend_booking_flight_delay: {
         Args: {
@@ -4072,6 +4096,10 @@ export type Database = {
           sort_order: number
           tier: Database["public"]["Enums"]["fare_tier"]
         }[]
+      }
+      hold_paid_date_change: {
+        Args: { p_booking_id: string; p_check_in: string; p_check_out: string }
+        Returns: Json
       }
       is_company_owner: { Args: { p_company_id: string }; Returns: boolean }
       is_hub_admin: { Args: never; Returns: boolean }

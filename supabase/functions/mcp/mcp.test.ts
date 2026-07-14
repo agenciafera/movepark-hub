@@ -116,6 +116,16 @@ Deno.test("isToolCallable é consistente com listTools para os mesmos escopos", 
   }
 });
 
+Deno.test("change_booking_dates é tool de parceiro sob bookings:write", () => {
+  assertEquals(findTool("partner", "change_booking_dates")?.scope, "bookings:write");
+  const names = listTools("partner", ["bookings:write"]).map((x) => x.name);
+  assertEquals(names.includes("change_booking_dates"), true);
+  // sem bookings:write não aparece nem é chamável
+  assertEquals(listTools("partner", ["bookings:read"]).map((x) => x.name).includes("change_booking_dates"), false);
+  assertEquals(isToolCallable("partner", "change_booking_dates", ["bookings:read"]), false);
+  assertEquals(missingRequired(findTool("partner", "change_booking_dates")!, { booking_id: "b1" }), "check_in_at");
+});
+
 Deno.test("missingRequired aponta o primeiro campo faltante", () => {
   const t = findTool("partner", "get_booking")!;
   assertEquals(missingRequired(t, {}), "booking_id");

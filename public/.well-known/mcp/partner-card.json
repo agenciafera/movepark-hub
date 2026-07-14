@@ -248,6 +248,32 @@
       }
     },
     {
+      "name": "change_booking_dates",
+      "scope": "bookings:write",
+      "description": "Reagenda uma reserva pendente: revalida capacidade e re-precifica.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "booking_id": {
+            "type": "string"
+          },
+          "check_in_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "check_out_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "booking_id",
+          "check_in_at",
+          "check_out_at"
+        ]
+      }
+    },
+    {
       "name": "wps_event",
       "scope": "wps:write",
       "description": "Evento de pátio (WPS): entrada/saída de veículo por placa (ANPR) ou booking_code → check-in/check-out. Idempotente por event_id.",

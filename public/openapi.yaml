@@ -166,6 +166,26 @@ paths:
       responses:
         "200": { $ref: "#/components/responses/Object" }
         "422": { $ref: "#/components/responses/ValidationError" }
+  /v1/bookings/{id}/change-dates:
+    post:
+      tags: [bookings]
+      summary: Reagenda uma reserva pendente (revalida capacidade e re-precifica)
+      security: [{ apiKey: [bookings:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [check_in_at, check_out_at]
+              properties:
+                check_in_at: { type: string, format: date-time }
+                check_out_at: { type: string, format: date-time }
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationError" }
   /v1/wps/events:
     post:
       tags: [wps]

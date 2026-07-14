@@ -254,6 +254,7 @@ vai na URL). Respostas em JSON com envelope estável (§10). Mapeamento para a l
 | `POST /bookings/{id}/cancel` | `bookings:cancel` | RPC de cancelamento | motivo no corpo |
 | `POST /bookings/{id}/check-in` | `bookings:checkin` | transição `confirmed→checked_in` | reusa RLS/voucher |
 | `POST /bookings/{id}/check-out` | `bookings:checkin` | transição de saída | |
+| `POST /bookings/{id}/change-dates` | `bookings:write` | `api_change_booking_dates` → `change_booking_dates` | reagenda reserva pendente: revalida capacidade + re-precifica (parceiro = staff, sem gate de Tarifa) |
 | `POST /wps/events` | `wps:write` | evento de pátio (entrada/saída ANPR) → check-in/out | idempotente; ver `wps-integration.md` |
 | `GET /coupons` · `POST /coupons` … | `coupons:*` | `operator_*_coupon`/`*_discount` | espelha §4.6 do operator |
 | `GET /faq` | `faq:read` | `get-faq` | |
@@ -284,8 +285,7 @@ tool/card, teste, drift).
 
 | Capacidade (Edge) | Escopo se exposta | Por que fica interna hoje |
 |---|---|---|
-| Reagendar reserva (`change-booking-dates`) | `bookings:write` | Mutação de reserva forte candidata (a RPC já é server-authoritative e re-precifica). Segurada por ora. Ao expor: `api_change_booking_dates` + `POST /bookings/{id}/change-dates` + tool `change_booking_dates`. |
-| Trocar veículo/placa (`change-booking-vehicle`) | `bookings:write` | Idem, útil para integração de pátio/ANPR. Mesmo caminho de exposição. |
+| Trocar veículo/placa (`change-booking-vehicle`) | `bookings:write` | Útil para integração de pátio/ANPR. Envolve regenerar o voucher (PDF, lado Edge), por isso pende do wiring de voucher no gateway/MCP. |
 | Baixar voucher (`voucher-pdf`) | `bookings:read` | Leitura escopada, baixo risco. Entraria como `GET /bookings/{id}/voucher` (signed URL). |
 | Auto-extensão por atraso de voo (`extend-booking`) | `bookings:write` | Muito acoplada ao benefício Superflex e à notificação. Só junto do pacote de mutações acima. |
 | Consulta de placa (`lookup-vehicle-plate`) | (novo) | Utilitário externo pago. Só faria sentido com rate-limit por chave, senão fica interna. |

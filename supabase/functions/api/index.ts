@@ -268,6 +268,21 @@ async function dispatch(handler: string, d: Dispatch): Promise<Response> {
     case "checkout_booking":
       return ok(await call("api_checkout_booking", { p_company_id: company, p_booking_id: params.id }), requestId);
 
+    case "change_dates": {
+      if (!body.check_in_at || !body.check_out_at) {
+        return fail("validation_error", "check_in_at e check_out_at são obrigatórios.", 422, requestId);
+      }
+      return ok(
+        await call("api_change_booking_dates", {
+          p_company_id: company,
+          p_booking_id: params.id,
+          p_check_in: body.check_in_at,
+          p_check_out: body.check_out_at,
+        }),
+        requestId,
+      );
+    }
+
     case "wps_event": {
       const parsed = parseWpsEvent(body);
       if (!parsed.ok) return fail("validation_error", parsed.error, 422, requestId);

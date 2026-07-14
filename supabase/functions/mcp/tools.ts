@@ -175,6 +175,16 @@ export const PARTNER_TOOLS: ToolDef[] = [
     inputSchema: obj({ booking_id: S }, ["booking_id"]),
   },
   {
+    name: "change_booking_dates",
+    description: "Reagenda uma reserva pendente: revalida capacidade e re-precifica.",
+    scope: "bookings:write",
+    inputSchema: obj({ booking_id: S, check_in_at: DT, check_out_at: DT }, [
+      "booking_id",
+      "check_in_at",
+      "check_out_at",
+    ]),
+  },
+  {
     name: "wps_event",
     description:
       "Evento de pátio (WPS): entrada/saída de veículo por placa (ANPR) ou booking_code → check-in/check-out. Idempotente por event_id.",
