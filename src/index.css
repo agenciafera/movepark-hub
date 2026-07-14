@@ -274,3 +274,11 @@
     );
   }
 }
+
+/* Google Places autocomplete (PlaceAutocompleteElement). O web component tem shadow DOM fechado,
+   então só dá pra ajustar o host: forçamos o tema claro (senão herda "light dark" e renderiza
+   escuro no card claro do wizard) e a largura total. */
+.mp-places-autocomplete {
+  color-scheme: light;
+  width: 100%;
+}

@@ -133,8 +133,13 @@ dura de CNPJ/KYC do wizard (§1) ficam para a Fase 2.
 - **Wizard split-screen** (`features/onboarding/publish/PublishWizard.tsx`) com **preview vivo**
   (`UnitPreviewCard`): endereço → destino (auto) → tipos (capacidade+balcão) → traslado → publicar.
   Reusa `useNearestDestination`, `onboarding_upsert_location`, `onboarding_set_parking_types`.
-- **Google Places autocomplete** (`components/shared/GooglePlacesAutocomplete.tsx`) → geo; key em
-  `VITE_GOOGLE_MAPS_API_KEY`, **degrada** para lat/lng manuais sem key.
+- **Google Places autocomplete** (`components/shared/GooglePlacesAutocomplete.tsx`) → geo. Usa a
+  **Places API (New)** via `PlaceAutocompleteElement` (a `places.Autocomplete` legada foi
+  descontinuada para projetos novos em mar/2025 e não retorna resultados neles). `lat/lng` só são
+  preenchidos pelo geocoding da seleção (`gmp-select` → `fetchFields`), então a pill "Localização
+  confirmada no mapa" só aparece após uma seleção real. Key em `VITE_GOOGLE_MAPS_API_KEY` (pública,
+  restrita por HTTP referrer no Google Cloud; em prod, env var no Cloudflare Pages), **degrada** para
+  lat/lng manuais sem key.
 - **Preview travado** `/operator/preview/:locationId` (`routes/operator/unit-preview.tsx` + `previewApi`)
   via RLS do dono + **URL pública copiável** como recompensa.
 - **Testes:** pgTAP de `onboarding_publish` (`onboarding_rpc.test.sql`) + Vitest (`publishLogic`,

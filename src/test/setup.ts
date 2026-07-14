@@ -6,6 +6,9 @@ import { server } from "./msw/server";
 // hasSupabaseEnv, mas estabilizamos pra um valor conhecido (interceptado pelo MSW).
 vi.stubEnv("VITE_SUPABASE_URL", "http://localhost:54321");
 vi.stubEnv("VITE_SUPABASE_ANON_KEY", "test-anon-key");
+// Google Places desligado por padrão nos testes (determinístico, igual ao CI onde a var não existe).
+// Sem isso, um `.env.local` com VITE_GOOGLE_MAPS_API_KEY vazaria e ligaria o caminho do web component.
+vi.stubEnv("VITE_GOOGLE_MAPS_API_KEY", "");
 
 // MSW: intercepta chamadas a Edge Functions / REST do Supabase nos testes de
 // componente/integração. Handlers vazios por ora — adicionados conforme a leva.
