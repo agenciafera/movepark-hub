@@ -3,6 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { usePartnerAction } from "./managerApi";
+import { partnerApproveMessage, partnerResendMessage } from "./partnerActionMessages";
 import { onboardingStatusLabel, onboardingStatusTone } from "./status";
 import { RecipientPanel } from "@/features/payouts/RecipientPanel";
 import type { PartnerApplication } from "@/types/domain";
@@ -33,8 +34,10 @@ export function ApplicationDrawer({ application, open, onOpenChange, onReject }:
 
   async function approve() {
     try {
-      await action.mutateAsync({ company_id: application!.company_id, action: "approve" });
-      toast.success("Parceiro aprovado. Convite enviado.");
+      const res = await action.mutateAsync({ company_id: application!.company_id, action: "approve" });
+      const msg = partnerApproveMessage(res);
+      if (msg.ok) toast.success(msg.text);
+      else toast.warning(msg.text);
       onOpenChange(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao aprovar");
@@ -43,8 +46,10 @@ export function ApplicationDrawer({ application, open, onOpenChange, onReject }:
 
   async function resend() {
     try {
-      await action.mutateAsync({ company_id: application!.company_id, action: "resend_invite" });
-      toast.success("Convite reenviado");
+      const res = await action.mutateAsync({ company_id: application!.company_id, action: "resend_invite" });
+      const msg = partnerResendMessage(res);
+      if (msg.ok) toast.success(msg.text);
+      else toast.error(msg.text);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao reenviar");
     }
@@ -60,7 +65,7 @@ export function ApplicationDrawer({ application, open, onOpenChange, onReject }:
           </SheetTitle>
         </SheetHeader>
 
-        <div className="mt-6 flex flex-col gap-6">
+        <div className="flex flex-col gap-6 px-6 pb-8 pt-2">
           <div className="grid grid-cols-2 gap-x-4 gap-y-5">
             <Field label="Responsável" value={application.contact_name} />
             <Field label="Cargo" value={application.contact_role} />

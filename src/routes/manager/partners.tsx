@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { usePartnerApplications, usePartnerAction } from "@/features/onboarding/managerApi";
+import { partnerApproveMessage } from "@/features/onboarding/partnerActionMessages";
 import { ApplicationDrawer } from "@/features/onboarding/ApplicationDrawer";
 import { RejectDialog } from "@/features/onboarding/RejectDialog";
 import { PartnersKanban } from "@/features/onboarding/PartnersKanban";
@@ -107,8 +108,10 @@ export default function ManagerPartners() {
     if (target === "in_progress" || target === "approved") {
       setMovingId(app.company_id);
       try {
-        await action.mutateAsync({ company_id: app.company_id, action: "approve" });
-        toast.success("Parceiro aprovado. Enviamos o e-mail para continuar o cadastro.");
+        const res = await action.mutateAsync({ company_id: app.company_id, action: "approve" });
+        const msg = partnerApproveMessage(res);
+        if (msg.ok) toast.success(msg.text);
+        else toast.warning(msg.text);
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Erro ao aprovar");
       } finally {

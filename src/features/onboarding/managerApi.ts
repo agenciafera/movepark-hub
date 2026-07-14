@@ -44,7 +44,7 @@ async function callApprovePartner(args: {
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(body.error ?? `Falha (HTTP ${res.status})`);
-  return body as { ok: boolean; status: string };
+  return body as { ok: boolean; status: string; emailSent?: boolean; emailError?: string | null };
 }
 
 export function usePartnerAction() {

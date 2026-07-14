@@ -27,13 +27,19 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
-/** Roda em background — não bloqueia nem derruba a resposta. */
-function runBg(p: Promise<unknown>) {
+/**
+ * Grava o resultado do último envio em app_setting.partner_email_last_result (diagnóstico),
+ * no mesmo formato que submit-partner-lead usa. Nunca derruba a ação principal.
+ */
+// deno-lint-ignore no-explicit-any
+async function recordEmailResult(admin: any, note: string) {
   try {
-    // @ts-expect-error - EdgeRuntime global
-    EdgeRuntime.waitUntil(p);
-  } catch {
-    /* já roda em background */
+    await admin.from("app_setting").upsert(
+      { key: "partner_email_last_result", value: `${new Date().toISOString()} ${note}` },
+      { onConflict: "key" },
+    );
+  } catch (e) {
+    console.error("[approve] falha ao gravar last_result (ignorado):", e);
   }
 }
 
@@ -119,11 +125,18 @@ Deno.serve(async (req: Request) => {
     if (error) return jsonResponse({ error: error.message }, 400);
     await admin.from("company").update({ onboarding_status: "rejected" }).eq("id", companyId);
 
-    if (from) {
+    let emailSent = false;
+    let emailError: string | null = null;
+    if (!from) {
+      emailError = "Remetente (partner_email_from) não configurado";
+    } else {
       const mail = tplRejection(contactName, input.rejection_reason);
-      runBg(sendEmail({ from, to: contactEmail, subject: mail.subject, html: mail.html }));
+      const r = await sendEmail({ from, to: contactEmail, subject: mail.subject, html: mail.html });
+      emailSent = r.ok;
+      emailError = r.error ?? null;
     }
-    return jsonResponse({ ok: true, status: "rejected" });
+    await recordEmailResult(admin, `recusa→${contactEmail}: ${emailSent ? "ok" : `falhou (${emailError})`}`);
+    return jsonResponse({ ok: true, status: "rejected", emailSent, emailError });
   }
 
   // approve | resend_invite → precisa de um link de acesso
@@ -168,10 +181,24 @@ Deno.serve(async (req: Request) => {
       .eq("company_id", companyId);
   }
 
-  if (actionLink && from) {
+  let emailSent = false;
+  let emailError: string | null = null;
+  if (!actionLink) {
+    emailError = "Não foi possível gerar o link de acesso";
+  } else if (!from) {
+    emailError = "Remetente (partner_email_from) não configurado";
+  } else {
     const mail = tplApprovalInvite(contactName, actionLink);
-    runBg(sendEmail({ from, to: contactEmail, subject: mail.subject, html: mail.html }));
+    const r = await sendEmail({ from, to: contactEmail, subject: mail.subject, html: mail.html });
+    emailSent = r.ok;
+    emailError = r.error ?? null;
   }
+  await recordEmailResult(admin, `${action}→${contactEmail}: ${emailSent ? "ok" : `falhou (${emailError})`}`);
 
-  return jsonResponse({ ok: true, status: action === "approve" ? "approved" : "invited" });
+  return jsonResponse({
+    ok: true,
+    status: action === "approve" ? "approved" : "invited",
+    emailSent,
+    emailError,
+  });
 });
