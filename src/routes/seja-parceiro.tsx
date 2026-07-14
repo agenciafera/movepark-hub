@@ -13,12 +13,8 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/components/ui/accordion";
+import { FaqList } from "@/features/faqs/FaqList";
+import type { FaqCombinedItem } from "@/features/faqs/api";
 import { PartnerLeadModal } from "@/features/onboarding/PartnerLeadModal";
 
 const HERO_IMAGE =
@@ -140,6 +136,18 @@ const FAQ = [
     a: "Sim, e essa é a maior vantagem: tráfego pago e orgânico no Google trazem quem está buscando vaga até você, sem você gastar um real com mídia.",
   },
 ];
+
+// Adapta a FAQ estática do parceiro ao shape do FaqList (componente único de FAQ do projeto).
+const FAQ_ITEMS: FaqCombinedItem[] = FAQ.map((f, i) => ({
+  id: `parceiro-${i}`,
+  scope: "global",
+  location_id: null,
+  destination_id: null,
+  question: f.q,
+  answer: f.a,
+  sort_order: i,
+  category: null,
+}));
 
 function SejaParceiroCta({
   onClick,
@@ -350,17 +358,8 @@ export default function SejaParceiroPage() {
 
       {/* FAQ */}
       <section className="mx-auto max-w-[820px] px-4 pb-16 desktop:px-8 desktop:pb-20">
-        <h2 className="text-display-2xl text-ink">Perguntas frequentes</h2>
-        <div className="mt-6 rounded-lg border border-hairline bg-canvas px-6 shadow-tier">
-          <Accordion type="single" collapsible>
-            {FAQ.map((item, i) => (
-              <AccordionItem key={i} value={`faq-${i}`}>
-                <AccordionTrigger>{item.q}</AccordionTrigger>
-                <AccordionContent>{item.a}</AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </div>
+        <h2 className="mb-4 text-display-2xl text-ink">Perguntas frequentes</h2>
+        <FaqList items={FAQ_ITEMS} />
       </section>
 
       {/* CTA final */}
