@@ -24,16 +24,16 @@ const DEST_COUNTS: Record<string, number> = {
 };
 
 const items: { label: string; city: string; state: string; dest: string; img: string }[] = [
-  { label: "Aeroporto de Guarulhos",             city: "Guarulhos",      state: "SP", dest: "GRU", img: "/airports/GRU.png"   },
-  { label: "Aeroporto de Congonhas",             city: "São Paulo",      state: "SP", dest: "CGH", img: "/airports/CGH.png"   },
-  { label: "Aeroporto Internacional de Confins", city: "Belo Horizonte", state: "MG", dest: "CNF", img: "/airports/CNF.png"   },
-  { label: "Aeroporto do Galeão",                city: "Rio de Janeiro", state: "RJ", dest: "GIG", img: "/airports/GIG.png"   },
-  { label: "Aeroporto Santos Dumont",            city: "Rio de Janeiro", state: "RJ", dest: "SDU", img: "/airports/SDU.png"   },
-  { label: "Aeroporto Afonso Pena",              city: "Curitiba",       state: "PR", dest: "CWB", img: "/airports/CWB.png"   },
-  { label: "Aeroporto de Viracopos",             city: "Campinas",       state: "SP", dest: "VCP", img: "/airports/VCP.png"   },
-  { label: "Aeroporto Salgado Filho",            city: "Porto Alegre",   state: "RS", dest: "POA", img: "/airports/POA.png"   },
-  { label: "Aeroporto de Brasília",              city: "Brasília",       state: "DF", dest: "BSB", img: "/airports/BSB.png"   },
-  { label: "Terminal Tietê",                     city: "São Paulo",      state: "SP", dest: "TIE", img: "/airports/tiete.png" },
+  { label: "Aeroporto de Guarulhos",             city: "Guarulhos",      state: "SP", dest: "GRU", img: "/airports/GRU.webp"   },
+  { label: "Aeroporto de Congonhas",             city: "São Paulo",      state: "SP", dest: "CGH", img: "/airports/CGH.webp"   },
+  { label: "Aeroporto Internacional de Confins", city: "Belo Horizonte", state: "MG", dest: "CNF", img: "/airports/CNF.webp"   },
+  { label: "Aeroporto do Galeão",                city: "Rio de Janeiro", state: "RJ", dest: "GIG", img: "/airports/GIG.webp"   },
+  { label: "Aeroporto Santos Dumont",            city: "Rio de Janeiro", state: "RJ", dest: "SDU", img: "/airports/SDU.webp"   },
+  { label: "Aeroporto Afonso Pena",              city: "Curitiba",       state: "PR", dest: "CWB", img: "/airports/CWB.webp"   },
+  { label: "Aeroporto de Viracopos",             city: "Campinas",       state: "SP", dest: "VCP", img: "/airports/VCP.webp"   },
+  { label: "Aeroporto Salgado Filho",            city: "Porto Alegre",   state: "RS", dest: "POA", img: "/airports/POA.webp"   },
+  { label: "Aeroporto de Brasília",              city: "Brasília",       state: "DF", dest: "BSB", img: "/airports/BSB.webp"   },
+  { label: "Terminal Tietê",                     city: "São Paulo",      state: "SP", dest: "TIE", img: "/airports/tiete.webp" },
 ];
 
 // Duplica os items para loop contínuo

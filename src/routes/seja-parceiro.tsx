@@ -22,7 +22,7 @@ import {
 import { PartnerLeadModal } from "@/features/onboarding/PartnerLeadModal";
 
 const HERO_IMAGE =
-  "/Estacionamentos/vaga-coberta-estacionamento-aeroporto-guarulhos-aeroparking.png";
+  "/Estacionamentos/vaga-coberta-estacionamento-aeroporto-guarulhos-aeroparking.webp";
 
 // Sinais de confiança: fatos da política do parceiro, sem número sem lastro.
 const METRICS = [

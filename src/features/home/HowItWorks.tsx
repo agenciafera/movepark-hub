@@ -102,7 +102,7 @@ function BookingCardMockup() {
         {/* Foto do estacionamento */}
         <div className="relative aspect-[16/8] overflow-hidden bg-surface-strong">
           <img
-            src="/Estacionamentos/vaga-coberta-estacionamento-aeroporto-guarulhos-aeroparking.png"
+            src="/Estacionamentos/vaga-coberta-estacionamento-aeroporto-guarulhos-aeroparking.webp"
             alt=""
             aria-hidden="true"
             className="h-full w-full object-cover"

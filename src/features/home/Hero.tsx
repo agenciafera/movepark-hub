@@ -67,7 +67,7 @@ export function Hero() {
     >
       {/* Foto de fundo — estacionamento aéreo ao pôr-do-sol */}
       <img
-        src="/images/hero-image.png"
+        src="/images/hero-image.webp"
         alt=""
         aria-hidden="true"
         className="absolute inset-0 h-full w-full object-cover object-center"

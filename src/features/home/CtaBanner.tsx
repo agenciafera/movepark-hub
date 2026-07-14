@@ -10,7 +10,7 @@ export function CtaBanner() {
 
         {/* Foto — posicionada à direita para mostrar a mulher */}
         <img
-          src="/images/como-reservar.jpg"
+          src="/images/como-reservar.webp"
           alt=""
           aria-hidden="true"
           className="absolute inset-0 h-full w-full object-cover object-[65%_center]"
