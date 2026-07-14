@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizeEmail, normalizePhoneE164 } from "./identifiers";
+import { normalizeEmail, normalizePhoneE164, storedPhoneToE164 } from "./identifiers";
 
 describe("normalizeEmail", () => {
   it("trim + lowercase", () => {
@@ -27,5 +27,23 @@ describe("normalizePhoneE164", () => {
     expect(normalizePhoneE164("")).toBeNull();
     expect(normalizePhoneE164(null)).toBeNull();
     expect(normalizePhoneE164("abc")).toBeNull();
+  });
+});
+
+describe("storedPhoneToE164 (recuperação: Supabase guarda sem '+')", () => {
+  it("número do Supabase sem '+' → prefixa o '+' (bandeira volta a ser reconhecida)", () => {
+    // caso real do bug: auth.users.phone = "5511987727182"
+    expect(storedPhoneToE164("5511987727182")).toBe("+5511987727182");
+  });
+  it("já com '+' → mantém intacto", () => {
+    expect(storedPhoneToE164("+5511987727182")).toBe("+5511987727182");
+  });
+  it("limpa formatação e prefixa", () => {
+    expect(storedPhoneToE164(" 55 11 98772-7182 ")).toBe("+5511987727182");
+  });
+  it("vazio / nulo → null", () => {
+    expect(storedPhoneToE164("")).toBeNull();
+    expect(storedPhoneToE164(null)).toBeNull();
+    expect(storedPhoneToE164(undefined)).toBeNull();
   });
 });

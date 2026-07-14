@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { storedPhoneToE164 } from "@/lib/identifiers";
 import type { CompanyRole, Session, UserRole } from "@/types/domain";
 import { AuthContext, type AuthContextValue } from "./context";
 
@@ -35,7 +36,8 @@ async function loadSession(): Promise<Session | null> {
   return {
     userId: auth.user.id,
     email: auth.user.email ?? null,
-    phone: auth.user.phone ?? null,
+    // auth.users.phone vem do Supabase SEM o "+"; recupera pro E.164 canônico (regra única).
+    phone: storedPhoneToE164(auth.user.phone),
     role: profile?.role ?? "customer",
     fullName: profile?.full_name ?? null,
     firstName: profile?.first_name ?? null,

@@ -32,3 +32,19 @@ export function normalizePhoneE164(
     return null;
   }
 }
+
+/**
+ * Recupera um telefone ARMAZENADO para o **E.164 canônico** (com "+"). Par simétrico de
+ * `normalizePhoneE164` (que é a regra de **gravação**). Motivo: o Supabase guarda
+ * `auth.users.phone` **sem** o "+" (ex.: `"5511987727182"`), e o mesmo pode vir de outros snapshots.
+ * A UI (`react-phone-number-input`) e o E.164 canônico exigem o "+", senão o país (bandeira) não é
+ * reconhecido. REGRA ÚNICA de recuperação: todo lugar que lê telefone do banco/sessão passa por aqui
+ * antes de exibir ou comparar. Não revalida (o número já foi validado na gravação); só garante o "+".
+ */
+export function storedPhoneToE164(raw: string | null | undefined): string | null {
+  const v = (raw ?? "").trim();
+  if (!v) return null;
+  if (v.startsWith("+")) return v;
+  const digits = v.replace(/\D/g, "");
+  return digits ? `+${digits}` : null;
+}
