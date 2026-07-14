@@ -25,9 +25,9 @@ function isoDate(d: Date): string {
 }
 
 export default function OperatorOccupancy() {
-  const { impersonatedCompanyId, effectiveCompanyIds } = useAuth();
+  const { effectiveCompanyIds } = useAuth();
   const companyId = effectiveCompanyIds[0];
-  const { data: locations, isLoading: loadingLocs } = useOperatorLocations(impersonatedCompanyId);
+  const { data: locations, isLoading: loadingLocs } = useOperatorLocations(effectiveCompanyIds);
 
   const [locationId, setLocationId] = React.useState<string>("");
   const today = React.useMemo(() => new Date(), []);

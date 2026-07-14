@@ -174,8 +174,8 @@ function LocationPricing({ location }: { location: Location }) {
 }
 
 export default function OperatorPricing() {
-  const { impersonatedCompanyId } = useAuth();
-  const { data: locations, isLoading } = useOperatorLocations(impersonatedCompanyId);
+  const { effectiveCompanyIds } = useAuth();
+  const { data: locations, isLoading } = useOperatorLocations(effectiveCompanyIds);
 
   return (
     <div className="flex flex-col gap-6">

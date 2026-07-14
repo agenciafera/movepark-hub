@@ -18,8 +18,8 @@ const statusTone: Record<EntityStatus, "confirmed" | "pending" | "cancelled"> = 
 };
 
 export default function OperatorLocations() {
-  const { impersonatedCompanyId } = useAuth();
-  const { data, isLoading } = useOperatorLocations(impersonatedCompanyId);
+  const { effectiveCompanyIds } = useAuth();
+  const { data, isLoading } = useOperatorLocations(effectiveCompanyIds);
   const [editing, setEditing] = React.useState<(Location & { company_id: string }) | null>(null);
 
   return (
