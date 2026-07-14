@@ -22,6 +22,7 @@ import {
 } from "./protocol.ts";
 import { findTool, isToolCallable, listTools, missingRequired, type Endpoint } from "./tools.ts";
 import { extractApiKey, keyPrefix, sha256Hex } from "./auth.ts";
+import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -383,6 +384,21 @@ async function callPartner(admin: any, ctx: PartnerCtx, name: string, a: Record<
         p_check_in: a.check_in_at,
         p_check_out: a.check_out_at,
       });
+    case "change_booking_vehicle": {
+      const res = await call("api_change_booking_vehicle", {
+        p_company_id: c,
+        p_booking_id: a.booking_id,
+        p_vehicle_id: a.vehicle_id ?? null,
+        p_license_plate: a.license_plate ?? null,
+      });
+      // O voucher mostra a placa: regenera em background se a reserva já está confirmada.
+      if ((res as { status?: string })?.status === "confirmed") {
+        background(
+          generateAndStoreVoucher(admin, (res as { booking_id: string }).booking_id, env("PUBLIC_SITE_URL") ?? "https://hub.movepark.co"),
+        );
+      }
+      return res;
+    }
     case "wps_event":
       return call("api_wps_event", {
         p_company_id: c,

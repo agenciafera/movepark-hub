@@ -126,6 +126,15 @@ Deno.test("change_booking_dates é tool de parceiro sob bookings:write", () => {
   assertEquals(missingRequired(findTool("partner", "change_booking_dates")!, { booking_id: "b1" }), "check_in_at");
 });
 
+Deno.test("change_booking_vehicle é tool de parceiro sob bookings:write", () => {
+  assertEquals(findTool("partner", "change_booking_vehicle")?.scope, "bookings:write");
+  assertEquals(isToolCallable("partner", "change_booking_vehicle", ["bookings:write"]), true);
+  assertEquals(isToolCallable("partner", "change_booking_vehicle", ["bookings:read"]), false);
+  // só booking_id é obrigatório (vehicle_id OU license_plate validado em runtime no servidor)
+  assertEquals(missingRequired(findTool("partner", "change_booking_vehicle")!, { booking_id: "b1" }), null);
+  assertEquals(missingRequired(findTool("partner", "change_booking_vehicle")!, {}), "booking_id");
+});
+
 Deno.test("missingRequired aponta o primeiro campo faltante", () => {
   const t = findTool("partner", "get_booking")!;
   assertEquals(missingRequired(t, {}), "booking_id");

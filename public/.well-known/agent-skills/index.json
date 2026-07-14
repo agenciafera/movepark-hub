@@ -13,7 +13,7 @@
       "type": "mcp",
       "description": "MCP do Movepark (parceiro, autenticado por chave mp_): reservas, disponibilidade e preço da própria empresa. Endpoint: https://mcp.movepark.co/partner",
       "url": "https://hub.movepark.co/.well-known/mcp/partner-card.json",
-      "sha256": "0e5467dbac1648d26005e9d943c7c177b2c2d6d6e0ba64daf907636f2fa1fe1a"
+      "sha256": "b5bbdc722768371717dd09426fa470443639c3b0d4af4a36e2c0ec51cadc04f5"
     }
   ]
 }

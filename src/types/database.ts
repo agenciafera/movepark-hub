@@ -3616,6 +3616,15 @@ export type Database = {
         }
         Returns: Json
       }
+      api_change_booking_vehicle: {
+        Args: {
+          p_booking_id: string
+          p_company_id: string
+          p_license_plate?: string
+          p_vehicle_id?: string
+        }
+        Returns: Json
+      }
       api_checkin_booking: {
         Args: { p_booking_id: string; p_company_id: string }
         Returns: Json

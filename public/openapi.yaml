@@ -186,6 +186,25 @@ paths:
         "200": { $ref: "#/components/responses/Object" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/ValidationError" }
+  /v1/bookings/{id}/change-vehicle:
+    post:
+      tags: [bookings]
+      summary: Troca o veículo/placa de uma reserva (por vehicle_id ou license_plate)
+      security: [{ apiKey: [bookings:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                vehicle_id: { type: string, description: "Veículo já cadastrado do titular" }
+                license_plate: { type: string, description: "Placa (cria/acha o veículo do titular)" }
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationError" }
   /v1/wps/events:
     post:
       tags: [wps]

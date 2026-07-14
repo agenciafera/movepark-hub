@@ -185,6 +185,13 @@ export const PARTNER_TOOLS: ToolDef[] = [
     ]),
   },
   {
+    name: "change_booking_vehicle",
+    description:
+      "Troca o veículo/placa de uma reserva (pendente ou confirmada). Informe vehicle_id (do titular) ou license_plate.",
+    scope: "bookings:write",
+    inputSchema: obj({ booking_id: S, vehicle_id: S, license_plate: S }, ["booking_id"]),
+  },
+  {
     name: "wps_event",
     description:
       "Evento de pátio (WPS): entrada/saída de veículo por placa (ANPR) ou booking_code → check-in/check-out. Idempotente por event_id.",

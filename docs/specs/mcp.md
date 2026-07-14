@@ -88,6 +88,7 @@ Métodos suportados: `initialize`, `ping`, `tools/list`, `tools/call`, e `notifi
 | `cancel_booking` | `bookings:cancel` | `api_cancel_booking` |
 | `check_in_booking` / `check_out_booking` | `bookings:checkin` | `api_checkin_booking` / `api_checkout_booking` |
 | `change_booking_dates` | `bookings:write` | `api_change_booking_dates` → `change_booking_dates` (reagenda pendente) |
+| `change_booking_vehicle` | `bookings:write` | `api_change_booking_vehicle` (troca veículo/placa; voucher regen em background se `confirmed`) |
 | `wps_event` | `wps:write` | `api_wps_event` (evento de pátio: entrada/saída → check-in/out) |
 | `list_coupons` / `upsert_coupon` / `set_coupon_active` / `delete_coupon` | `coupons:read` / `coupons:write` | `api_*_coupon` |
 | `list_discounts` / `upsert_discount` / `set_discount_active` / `delete_discount` | `discounts:read` / `discounts:write` | `api_*_discount` |
@@ -105,10 +106,10 @@ Consumidor ganhou ainda `list_destinations` / `get_destination` (destinos + term
 > existente (ou novo no catálogo) + entrada em `tools.ts` + `partner-card.json`.
 
 > **Fora do catálogo por decisão (14/07/2026):** algumas capacidades de reserva existem como Edge mas
-> **não** são tools de parceiro por ora (trocar veículo, voucher, auto-extensão). O ciclo exposto hoje
-> é `create`/`cancel`/`check-in`/`check-out`/`change_booking_dates`. O racional e o caminho de exposição
-> das que faltam estão em [public-api.md](./public-api.md) §9.1. Ao promover qualquer uma a tool, seguir
-> o checklist de §6.
+> **não** são tools de parceiro por ora (voucher, auto-extensão). O ciclo exposto hoje é
+> `create`/`cancel`/`check-in`/`check-out`/`change_booking_dates`/`change_booking_vehicle`. O racional e
+> o caminho de exposição das que faltam estão em [public-api.md](./public-api.md) §9.1. Ao promover
+> qualquer uma a tool, seguir o checklist de §6.
 
 ---
 

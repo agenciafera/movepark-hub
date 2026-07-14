@@ -274,6 +274,28 @@
       }
     },
     {
+      "name": "change_booking_vehicle",
+      "scope": "bookings:write",
+      "description": "Troca o veículo/placa de uma reserva (pendente ou confirmada). Informe vehicle_id (do titular) ou license_plate.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "booking_id": {
+            "type": "string"
+          },
+          "vehicle_id": {
+            "type": "string"
+          },
+          "license_plate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "booking_id"
+        ]
+      }
+    },
+    {
       "name": "wps_event",
       "scope": "wps:write",
       "description": "Evento de pátio (WPS): entrada/saída de veículo por placa (ANPR) ou booking_code → check-in/check-out. Idempotente por event_id.",

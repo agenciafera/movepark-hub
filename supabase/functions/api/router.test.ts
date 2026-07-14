@@ -28,6 +28,11 @@ Deno.test("matchRoute resolve handler, escopo e params", () => {
     scope: "bookings:write",
     params: { id: "xyz" },
   });
+  assertEquals(matchRoute("POST", "/v1/bookings/xyz/change-vehicle"), {
+    handler: "change_vehicle",
+    scope: "bookings:write",
+    params: { id: "xyz" },
+  });
 });
 
 Deno.test("matchRoute resolve as escritas de precificação (E1.4.1/2)", () => {

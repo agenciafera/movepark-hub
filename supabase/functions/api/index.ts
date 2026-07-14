@@ -25,6 +25,7 @@ import { extractApiKey, hasScope, keyPrefix, sha256Hex } from "./auth.ts";
 import { matchRoute, normalizePath, pathExists } from "./router.ts";
 import { corsHeaders, fail, ok, pgErrorToHttp } from "./respond.ts";
 import { parseWpsEvent } from "./wps.logic.ts";
+import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 
 // request id curto sem dependências externas
 function newRequestId(): string {
@@ -281,6 +282,25 @@ async function dispatch(handler: string, d: Dispatch): Promise<Response> {
         }),
         requestId,
       );
+    }
+
+    case "change_vehicle": {
+      if (!body.vehicle_id && !body.license_plate) {
+        return fail("validation_error", "Informe vehicle_id ou license_plate.", 422, requestId);
+      }
+      const res = await call("api_change_booking_vehicle", {
+        p_company_id: company,
+        p_booking_id: params.id,
+        p_vehicle_id: (body.vehicle_id as string) ?? null,
+        p_license_plate: (body.license_plate as string) ?? null,
+      });
+      // O voucher mostra a placa: regenera em background se a reserva já está confirmada.
+      if ((res as { status?: string })?.status === "confirmed") {
+        // @ts-expect-error - Deno env
+        const siteUrl = Deno.env.get("PUBLIC_SITE_URL") ?? "https://hub.movepark.co";
+        background(generateAndStoreVoucher(admin, (res as { booking_id: string }).booking_id, siteUrl));
+      }
+      return ok(res, requestId);
     }
 
     case "wps_event": {
