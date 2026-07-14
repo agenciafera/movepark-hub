@@ -309,7 +309,7 @@ onSuccess: () => qc.invalidateQueries({ queryKey: bookingsKeys.all })
 - Sessão carregada uma vez em `AuthProvider` (query key `["auth-session"]`) e exposta via `useAuth()`.
 - Proteja rotas com `<RequireRole roles={[...]} />` na árvore de `routes.tsx`, nunca com checagem ad-hoc dentro da página.
 - **Impersonation:** `hub_admin` pode "entrar" como `company_operator` de uma `company`. Use **`effectiveRole`** e **`effectiveCompanyIds`** do `useAuth()` para qualquer lógica/escopo de dados — não use `session.role` cru.
-- Auth do consumidor é **passwordless** (`/entrar`: e-mail OTP, WhatsApp OTP, Google). Backoffice usa `/login` (senha). O WhatsApp OTP passa pela Edge Function `send-whatsapp-otp` (Send SMS Hook).
+- Auth é **passwordless para todos os papéis** (consumidor, manager e operator): a tela única `/login` (`src/routes/login.tsx`) oferece e-mail OTP, WhatsApp OTP e Google. `/entrar` e `/signup` são rotas legadas que redirecionam pra `/login`. **Não há login por senha** (sem `signInWithPassword`); o password grant do Supabase Auth deve ficar **desligado**. O WhatsApp OTP passa pela Edge Function `send-whatsapp-otp` (Send SMS Hook).
 
 ### Rotas
 
