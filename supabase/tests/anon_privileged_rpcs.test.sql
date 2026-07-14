@@ -2,7 +2,7 @@
 -- helpers usados em policies RLS. Ver 20260724000000 + 20260725000000 e ADR-005.
 
 begin;
-select plan(31);
+select plan(32);
 
 -- ── Helpers usados DENTRO de policies RLS: anon PRECISA manter EXECUTE ────────
 -- (senão SELECT anônimo no catálogo público quebra com "permission denied for function")
@@ -91,6 +91,19 @@ select is(
         or has_function_privilege('authenticated', p.oid, 'execute'))),
   0,
   'nenhuma função api_* é executável por anon ou authenticated (gateway-only, service_role)');
+
+-- ── Invariante: funções-trigger nunca são chamáveis diretamente (só disparam por gatilho) ─────
+-- (20260807000001/2) Elas ganhavam EXECUTE default de anon/authenticated/PUBLIC como qualquer
+-- função nova, mas trigger não é RPC. Revogar não afeta o disparo. Pega regressão (trigger nova).
+select is(
+  (select count(*)::int
+     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+     join pg_type t on t.oid = p.prorettype
+    where n.nspname = 'public' and t.typname = 'trigger'
+      and (has_function_privilege('anon', p.oid, 'execute')
+        or has_function_privilege('authenticated', p.oid, 'execute'))),
+  0,
+  'nenhuma função-trigger é executável por anon ou authenticated');
 
 select * from finish();
 rollback;
