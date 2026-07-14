@@ -336,12 +336,12 @@ export default function SejaParceiroPage() {
 
       {/* Marcas */}
       <section className="mx-auto max-w-[1100px] px-4 py-14 text-center desktop:px-8">
-        <p className="text-caption uppercase tracking-widest text-muted-steel">
+        <p className="text-caption uppercase tracking-widest text-muted">
           Estacionamentos que já são Movepark
         </p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
           {BRANDS.map((b) => (
-            <span key={b} className="text-title-md font-medium text-muted-steel">
+            <span key={b} className="text-title-md font-medium text-muted">
               {b}
             </span>
           ))}
