@@ -1,14 +1,14 @@
 import * as React from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatBRL } from "@/lib/format";
 import { fareReais, type FareTier } from "@/lib/fares";
 import { useLocationFareConfig, useSetUnitFare, type UnitFareConfig } from "./api";
 
-type RowState = { enabled: boolean; priceInput: string };
+type RowState = { enabled: boolean; priceReais: number | null };
 
 /** Config das Tarifas de UMA unidade (E2.8-f): liga/desliga + preço por nível. */
 export function FareConfigCard({ lptId, title }: { lptId: string; title: string }) {
@@ -22,7 +22,7 @@ export function FareConfigCard({ lptId, title }: { lptId: string; title: string 
     const next = {} as Record<FareTier, RowState>;
     for (const f of data) {
       const cents = f.price_override_cents ?? f.default_price_cents;
-      next[f.tier] = { enabled: f.enabled, priceInput: cents > 0 ? String(fareReais(cents)) : "" };
+      next[f.tier] = { enabled: f.enabled, priceReais: cents > 0 ? fareReais(cents) : null };
     }
     setRows(next);
   }, [data]);
@@ -38,8 +38,8 @@ export function FareConfigCard({ lptId, title }: { lptId: string; title: string 
     const isBasica = f.tier === "basica";
     const priceCents = isBasica
       ? null
-      : st.priceInput.trim()
-        ? Math.round(Number(st.priceInput.replace(",", ".")) * 100)
+      : st.priceReais != null
+        ? Math.round(st.priceReais * 100)
         : null; // vazio = usar o padrão do catálogo
     if (priceCents != null && (!Number.isFinite(priceCents) || priceCents < 0)) {
       toast.error("Preço inválido.");
@@ -76,13 +76,10 @@ export function FareConfigCard({ lptId, title }: { lptId: string; title: string 
                 <span className="text-body-sm text-muted">Grátis</span>
               ) : (
                 <div className="flex items-center gap-1.5">
-                  <span className="text-caption text-muted">R$</span>
-                  <Input
-                    value={st.priceInput}
-                    onChange={(e) => patch(f.tier, { priceInput: e.target.value })}
-                    placeholder={String(fareReais(f.default_price_cents))}
-                    inputMode="decimal"
-                    className="h-9 w-24 tabular-nums"
+                  <CurrencyInput
+                    value={st.priceReais}
+                    onChange={(v) => patch(f.tier, { priceReais: v })}
+                    className="h-9 w-32"
                     aria-label={`Preço da Tarifa ${f.label}`}
                   />
                   <span className="text-caption text-muted">

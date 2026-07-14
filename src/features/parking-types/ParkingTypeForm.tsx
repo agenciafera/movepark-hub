@@ -44,14 +44,14 @@ export function ParkingTypeForm({
   const enableForCompany = useEnableCompanyParkingType();
   const createForLocation = useCreateLocationParkingType();
 
-  // Aba 1 — Habilitar tipo já cadastrado na empresa
+  // Aba 1: habilitar tipo já cadastrado na empresa
   const available = (companyTypes.data ?? []).filter(
     (cpt) => !existingLocationParkingTypeIds.includes(cpt.id),
   );
   const [selectedCpt, setSelectedCpt] = React.useState<string>("");
   const [capacity, setCapacity] = React.useState<number>(10);
 
-  // Aba 2 — Adicionar tipo novo do catálogo à empresa
+  // Aba 2: adicionar tipo novo do catálogo à empresa
   const enabledCodes = (companyTypes.data ?? []).map((c) => c.parking_type.code);
   const catalogAvailable = (catalog.data ?? []).filter((p) => !enabledCodes.includes(p.code));
   const [selectedCatalog, setSelectedCatalog] = React.useState<string>("");

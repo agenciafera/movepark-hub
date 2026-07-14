@@ -1,9 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildDayAriaLabel,
   buildOccupancyMatrix,
+  contrastRatio,
+  formatDayLong,
+  INK_HEX,
   monthGrid,
   monthsInRange,
-  occupancyTone,
+  OCCUPANCY_SCALE,
+  occupancyStep,
+  occupancyStyle,
+  pickTextColor,
+  WHITE_HEX,
   withExternal,
 } from "./occupancy.logic";
 import type { LocationOccupancyRow } from "@/types/domain";
@@ -93,13 +101,77 @@ describe("monthGrid", () => {
   });
 });
 
-describe("occupancyTone", () => {
-  it("classifica faixas de ocupação", () => {
-    expect(occupancyTone(0)).toBe("low");
-    expect(occupancyTone(0.49)).toBe("low");
-    expect(occupancyTone(0.5)).toBe("mid");
-    expect(occupancyTone(0.8)).toBe("high");
-    expect(occupancyTone(1)).toBe("full");
-    expect(occupancyTone(1.2)).toBe("full");
+describe("contrastRatio / relativeLuminance", () => {
+  it("bate com os valores canônicos do WCAG", () => {
+    expect(contrastRatio("#FFFFFF", "#000000")).toBeCloseTo(21, 2);
+    expect(contrastRatio("#FFFFFF", "#FFFFFF")).toBeCloseTo(1, 5);
+    // é simétrico
+    expect(contrastRatio(INK_HEX, WHITE_HEX)).toBeCloseTo(contrastRatio(WHITE_HEX, INK_HEX), 5);
+  });
+});
+
+describe("escala de ocupação (regressão de contraste)", () => {
+  it("todo degrau passa 4,5:1 com a cor de texto escolhida", () => {
+    for (const step of OCCUPANCY_SCALE) {
+      const fg = pickTextColor(step.bg);
+      expect(contrastRatio(step.bg, fg)).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it("a rampa antiga (violeta com opacidade) reprovava: nenhuma cor de texto passava", () => {
+    // regressão do bug: rgba(93,95,239, 0.92) sobre branco = rgb(105,107,240)
+    const violetaMaisEscuro = "#696BF0";
+    expect(contrastRatio(violetaMaisEscuro, WHITE_HEX)).toBeLessThan(4.5);
+    expect(contrastRatio(violetaMaisEscuro, INK_HEX)).toBeLessThan(4.5);
+  });
+
+  it("escolhe o texto pela luminância do fundo, não pelo percentual", () => {
+    expect(pickTextColor("#F1F4FA")).toBe(INK_HEX);
+    expect(pickTextColor("#29263F")).toBe(WHITE_HEX);
+    // o degrau de 60% a 80% já é escuro: texto branco, mesmo com pct abaixo de 0.8
+    expect(occupancyStyle(0.65).color).toBe(WHITE_HEX);
+    expect(occupancyStyle(0.55).color).toBe(INK_HEX);
+  });
+
+  it("mapeia a ocupação em 5 degraus, com clamp nas pontas", () => {
+    expect(occupancyStep(0)).toBe(0);
+    expect(occupancyStep(0.19)).toBe(0);
+    expect(occupancyStep(0.2)).toBe(1);
+    expect(occupancyStep(0.4)).toBe(2);
+    expect(occupancyStep(0.6)).toBe(3);
+    expect(occupancyStep(0.8)).toBe(4);
+    expect(occupancyStep(1)).toBe(4);
+    expect(occupancyStep(1.5)).toBe(4);
+    expect(occupancyStep(-1)).toBe(0);
+  });
+
+  it("occupancyStyle devolve o par fundo + texto do degrau", () => {
+    expect(occupancyStyle(0.05)).toEqual({ backgroundColor: "#F1F4FA", color: INK_HEX });
+    expect(occupancyStyle(1)).toEqual({ backgroundColor: "#29263F", color: WHITE_HEX });
+  });
+});
+
+describe("formatDayLong / buildDayAriaLabel", () => {
+  it("formata o dia por extenso", () => {
+    expect(formatDayLong("2026-07-15")).toBe("15 de julho");
+    expect(formatDayLong("2026-01-01")).toBe("1 de janeiro");
+  });
+
+  it("descreve ocupação, overbooking e bloqueio (nome acessível do botão)", () => {
+    expect(buildDayAriaLabel({ date: "2026-07-15", count: 640, capacity: 1100, blocked: false })).toBe(
+      "15 de julho, 640 de 1100 vagas ocupadas (58%). Bloquear vendas nesta data",
+    );
+    expect(
+      buildDayAriaLabel({ date: "2026-07-15", count: 1101, capacity: 1100, blocked: false }),
+    ).toBe("15 de julho, 1101 de 1100 vagas ocupadas, overbooking. Bloquear vendas nesta data");
+    expect(buildDayAriaLabel({ date: "2026-07-15", count: 0, capacity: 10, blocked: true })).toBe(
+      "15 de julho, vendas bloqueadas nesta data. Liberar vendas nesta data",
+    );
+  });
+
+  it("capacidade 0 não vira divisão por zero", () => {
+    expect(buildDayAriaLabel({ date: "2026-07-15", count: 0, capacity: 0, blocked: false })).toBe(
+      "15 de julho, 0 de 0 vagas ocupadas (0%). Bloquear vendas nesta data",
+    );
   });
 });

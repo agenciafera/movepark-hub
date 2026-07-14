@@ -11,7 +11,7 @@ export function StrategyChip({ strategy }: { strategy: PricingStrategy | string 
   );
 }
 
-/** Resumo compacto da regra de preço — uma linha por estratégia */
+/** Resumo compacto da regra de preço: uma linha por estratégia */
 export function PricingSummary({ lpt }: { lpt: LocationParkingTypeWithRelations }) {
   const rule = lpt.pricing_rule;
   if (!rule) {
@@ -34,7 +34,7 @@ export function PricingSummary({ lpt }: { lpt: LocationParkingTypeWithRelations 
           <span key={t.id} className="tabular-nums">
             <strong className="text-ink">
               {t.from_day}
-              {t.to_day && t.to_day !== t.from_day ? `–${t.to_day}` : ""}
+              {t.to_day && t.to_day !== t.from_day ? `a ${t.to_day}` : ""}
               {!t.to_day ? "+" : ""}d
             </strong>
             : {formatBRL(Number(t.unit_price ?? 0))}/dia
@@ -51,7 +51,7 @@ export function PricingSummary({ lpt }: { lpt: LocationParkingTypeWithRelations 
           <span key={t.id} className="tabular-nums">
             <strong className="text-ink">
               {t.from_day}
-              {t.to_day && t.to_day !== t.from_day ? `–${t.to_day}` : ""}
+              {t.to_day && t.to_day !== t.from_day ? `a ${t.to_day}` : ""}
               {!t.to_day ? "+" : ""}d
             </strong>
             :{" "}
@@ -95,7 +95,7 @@ export function PricingSummary({ lpt }: { lpt: LocationParkingTypeWithRelations 
     return (
       <div className="space-y-0.5 text-body-sm text-body tabular-nums">
         <div>
-          0–30min: {formatBRL(Number(rule.hourly_initial_rate ?? 0))} · 31–60min:{" "}
+          0 a 30min: {formatBRL(Number(rule.hourly_initial_rate ?? 0))} · 31 a 60min:{" "}
           {formatBRL(Number(rule.hourly_one_hour_rate ?? 0))}
         </div>
         <div>

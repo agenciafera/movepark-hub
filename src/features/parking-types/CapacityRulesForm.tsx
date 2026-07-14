@@ -76,8 +76,10 @@ export function CapacityRulesForm({ open, lpt, onOpenChange }: Props) {
               onChange={(e) => set("near_capacity_threshold", e.target.value)}
               className="h-10 w-32 tabular-nums"
             />
+            <Label htmlFor="near-message">Mensagem de quase-lotação (opcional)</Label>
             <Textarea
-              placeholder="Mensagem de quase-lotação (opcional)"
+              id="near-message"
+              placeholder="Ex.: Últimas vagas para esta data."
               value={values.near_capacity_message}
               onChange={(e) => set("near_capacity_message", e.target.value)}
               rows={2}

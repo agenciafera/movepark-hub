@@ -1,6 +1,23 @@
+import * as React from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { monthGrid, monthsInRange } from "./occupancy.logic";
+import {
+  buildDayAriaLabel,
+  formatDayLong,
+  monthGrid,
+  monthsInRange,
+  OCCUPANCY_SCALE,
+  occupancyStyle,
+  pickTextColor,
+} from "./occupancy.logic";
 
 function brDate(iso: string): string {
   return `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
@@ -31,12 +48,6 @@ const MONTHS = [
 ];
 const WEEKDAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
 
-/** Cor de calor: violeta da marca, opacidade cresce com a ocupação. */
-function heatStyle(pct: number): React.CSSProperties {
-  const alpha = 0.08 + Math.min(Math.max(pct, 0), 1) * 0.84;
-  return { backgroundColor: `rgba(93, 95, 239, ${alpha.toFixed(2)})` };
-}
-
 export function OccupancyCalendar({
   from,
   to,
@@ -51,16 +62,27 @@ export function OccupancyCalendar({
   disabled?: boolean;
 }) {
   const months = monthsInRange(from, to);
+  // Bloquear uma data para de vender naquele dia: pede confirmação. Liberar é direto.
+  const [confirmDate, setConfirmDate] = React.useState<string | null>(null);
+  const confirmDay = confirmDate ? data[confirmDate] : undefined;
+
+  function handleClick(date: string, d: CalendarDay) {
+    if (d.blocked) {
+      onToggle(date, true);
+      return;
+    }
+    setConfirmDate(date);
+  }
 
   return (
     <TooltipProvider delayDuration={120}>
-      <div className="grid gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
+      <div className="grid gap-4 tablet:grid-cols-2">
         {months.map(({ year, month }) => (
-          <div key={`${year}-${month}`} className="rounded-md border border-hairline p-3">
-            <div className="mb-2 text-body-sm font-medium text-ink">
+          <div key={`${year}-${month}`} className="rounded-md border border-hairline p-2">
+            <div className="mb-2 px-1 text-body-sm font-medium text-ink">
               {MONTHS[month - 1]} <span className="text-muted">{year}</span>
             </div>
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-0.5">
               {WEEKDAYS.map((w, i) => (
                 <div key={i} className="pb-1 text-center text-caption text-muted">
                   {w}
@@ -77,7 +99,7 @@ export function OccupancyCalendar({
                     return (
                       <div
                         key={i}
-                        className="flex aspect-square items-center justify-center rounded-sm text-caption text-muted/40"
+                        className="flex aspect-square min-h-11 min-w-11 items-center justify-center rounded-sm text-caption text-muted/40"
                       >
                         {day}
                       </div>
@@ -90,24 +112,33 @@ export function OccupancyCalendar({
                         <button
                           type="button"
                           disabled={disabled}
-                          onClick={() => onToggle(date, d.blocked)}
-                          style={d.blocked ? undefined : heatStyle(d.pct)}
+                          aria-pressed={d.blocked}
+                          aria-label={buildDayAriaLabel({
+                            date,
+                            count: d.count,
+                            capacity: d.capacity,
+                            blocked: d.blocked,
+                          })}
+                          onClick={() => handleClick(date, d)}
+                          style={d.blocked ? undefined : occupancyStyle(d.pct)}
                           className={cn(
-                            "flex aspect-square flex-col items-center justify-center rounded-sm leading-none transition hover:ring-2 hover:ring-mp-primary/50 disabled:opacity-60",
-                            d.blocked
-                              ? "bg-badge-cancelled-bg text-badge-cancelled-fg line-through"
-                              : d.pct > 0.5
-                                ? "text-white"
-                                : "text-ink",
+                            "flex aspect-square min-h-11 min-w-11 flex-col items-center justify-center gap-0.5 rounded-sm leading-none transition hover:ring-2 hover:ring-ink/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-1 disabled:opacity-60",
+                            d.blocked &&
+                              "bg-badge-cancelled-bg text-badge-cancelled-fg line-through",
                             over && "ring-2 ring-error",
                           )}
                         >
-                          <span className="text-caption font-medium tabular-nums">{day}</span>
+                          <span aria-hidden className="text-caption font-medium tabular-nums">
+                            {day}
+                          </span>
                           {!d.blocked && (
-                            <span className="text-[10px] tabular-nums opacity-80">{d.count}</span>
+                            <span aria-hidden className="text-[11px] font-medium tabular-nums">
+                              {d.count}
+                            </span>
                           )}
                         </button>
                       </TooltipTrigger>
+                      {/* Radix abre o tooltip no hover E no foco por teclado. */}
                       <TooltipContent>
                         <div className="flex flex-col gap-1">
                           <span className="font-medium">{brDate(date)}</span>
@@ -129,7 +160,7 @@ export function OccupancyCalendar({
                             </div>
                           )}
                           <span className="text-muted">
-                            Clique para {d.blocked ? "liberar" : "bloquear"}
+                            Clique para {d.blocked ? "liberar" : "bloquear"} as vendas
                           </span>
                         </div>
                       </TooltipContent>
@@ -140,21 +171,83 @@ export function OccupancyCalendar({
           </div>
         ))}
       </div>
+
+      <Dialog open={confirmDate !== null} onOpenChange={(open) => !open && setConfirmDate(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Bloquear vendas em {confirmDate ? formatDayLong(confirmDate) : ""}?
+            </DialogTitle>
+            <DialogDescription>
+              A unidade para de receber reservas nessa data até você liberar de novo. As reservas
+              já confirmadas continuam valendo.
+              {confirmDay && confirmDay.count > 0 ? (
+                <>
+                  {" "}
+                  Hoje essa data tem {confirmDay.count} de {confirmDay.capacity} vagas ocupadas.
+                </>
+              ) : null}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setConfirmDate(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => {
+                if (confirmDate) onToggle(confirmDate, false);
+                setConfirmDate(null);
+              }}
+            >
+              Bloquear vendas
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </TooltipProvider>
   );
 }
 
-/** Legenda do mapa de calor (menos → mais ocupação). */
+/** Legenda do calendário: escala de ocupação, overbooking e data bloqueada. */
 export function OccupancyLegend() {
   return (
-    <div className="flex items-center gap-2 text-caption text-muted">
-      <span>Menos</span>
-      <div className="flex gap-0.5">
-        {[0.1, 0.3, 0.5, 0.7, 0.92].map((p) => (
-          <div key={p} className="h-3 w-5 rounded-sm" style={heatStyle(p)} />
-        ))}
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-caption text-muted">
+      <div className="flex items-center gap-2">
+        <span>Vazio</span>
+        <div className="flex gap-0.5">
+          {OCCUPANCY_SCALE.map((step) => (
+            <div
+              key={step.bg}
+              title={step.label}
+              className="h-3 w-5 rounded-sm"
+              style={{ backgroundColor: step.bg }}
+            />
+          ))}
+        </div>
+        <span>Lotado</span>
       </div>
-      <span>Mais ocupação</span>
+      <div className="flex items-center gap-1.5">
+        <span
+          aria-hidden
+          className="h-4 w-4 rounded-sm ring-2 ring-error"
+          style={{
+            backgroundColor: OCCUPANCY_SCALE[4].bg,
+            color: pickTextColor(OCCUPANCY_SCALE[4].bg),
+          }}
+        />
+        <span>Overbooking</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <span
+          aria-hidden
+          className="flex h-4 w-4 items-center justify-center rounded-sm bg-badge-cancelled-bg text-[9px] leading-none text-badge-cancelled-fg line-through"
+        >
+          7
+        </span>
+        <span>Data bloqueada</span>
+      </div>
     </div>
   );
 }

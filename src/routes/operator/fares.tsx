@@ -37,8 +37,8 @@ export default function OperatorFares() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Tarifas"
-        description="Configure preço e disponibilidade das Tarifas (Flex/Superflex) por tipo de vaga. A Básica é sempre grátis."
+        title="Planos de cancelamento"
+        description="Preço e disponibilidade dos planos Flex e Superflex por tipo de vaga. A Básica é sempre grátis. O preço da diária fica em Preços."
       />
 
       {isLoading ? (

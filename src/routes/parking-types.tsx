@@ -1,14 +1,7 @@
 import * as React from "react";
 import { useParams, useLocation, Link } from "react-router-dom";
 import { toast } from "sonner";
-import {
-  AlertTriangle,
-  ArrowLeft,
-  CalendarClock,
-  Plus,
-  SlidersHorizontal,
-  Table2,
-} from "lucide-react";
+import { ArrowLeft, CalendarClock, Plus, SlidersHorizontal, Table2 } from "lucide-react";
 import { useAuth } from "@/auth/context";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,6 +35,7 @@ import {
   findCurveInversions,
   usePricingCurve,
 } from "@/features/parking-types/pricing-curve";
+import { CurveInversionAlert } from "@/features/parking-types/CurveInversionAlert";
 import { formatBRL, formatDate } from "@/lib/format";
 
 const NO_SCOPE_HINT = "Seu perfil não pode alterar esta configuração. Fale com o dono da conta.";
@@ -307,8 +301,11 @@ function ParkingTypeCard({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Label className="text-caption">{lpt.is_active ? "Ativo" : "Inativo"}</Label>
+            <Label htmlFor={`active-${lpt.id}`} className="text-caption">
+              {lpt.is_active ? "Ativo" : "Inativo"}
+            </Label>
             <Switch
+              id={`active-${lpt.id}`}
               checked={lpt.is_active}
               onCheckedChange={onToggleActive}
               disabled={!canEditParkingType}
@@ -321,18 +318,7 @@ function ParkingTypeCard({
         <PricingSummary lpt={lpt} />
 
         {inversion && (
-          <button
-            type="button"
-            onClick={onOpenSimulation}
-            className="flex w-full items-start gap-2 rounded-sm bg-badge-pending-bg p-3 text-left text-body-sm text-warning"
-          >
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>
-              {inversion.days} dias custa {formatBRL(inversion.price)} e {inversion.nextDays} dias
-              custa {formatBRL(inversion.nextPrice)}. Quem fica menos tempo paga mais. Toque para
-              ver a tabela inteira.
-            </span>
-          </button>
+          <CurveInversionAlert inversion={inversion} onOpenSimulation={onOpenSimulation} />
         )}
 
         <div className="flex flex-wrap items-end gap-3">
@@ -396,7 +382,7 @@ function ParkingTypeCard({
           </Button>
         </div>
 
-        {/* Mapeamento com o white-label (E2.5.1) — só Manager (Movepark), nunca o operador. */}
+        {/* Mapeamento com o white-label (E2.5.1): só Manager (Movepark), nunca o operador. */}
         {showWlMapping && (
         <div className="flex flex-wrap items-end gap-3 rounded-md border border-hairline p-3">
           <div className="flex w-full flex-col">

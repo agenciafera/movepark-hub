@@ -165,6 +165,7 @@ export function PricingRuleEditor({
   if (!lpt) return null;
 
   const showTiers = USES_TIERS[strategy];
+  const savedStrategy = (lpt.pricing_rule?.strategy as PricingStrategy | undefined) ?? null;
 
   // O rascunho: o que a tela tem AGORA. Alimenta a prévia e é o que o save manda.
   const draftRule: DraftRule & Record<string, unknown> = {
@@ -261,25 +262,19 @@ export function PricingRuleEditor({
             Precificação: {lpt.company_parking_type.parking_type.name}
           </SheetTitle>
           <SheetDescription>
-            Estratégia atual:{" "}
-            <strong className="text-ink">{STRATEGY_LABEL[strategy]}</strong>
+            {/* O que está SALVO. Antes isto lia o rascunho e jurava que a estratégia "atual"
+                já era a que o parceiro tinha acabado de escolher na tela. */}
+            Em uso hoje:{" "}
+            <strong className="text-ink">
+              {savedStrategy ? STRATEGY_LABEL[savedStrategy] : "nenhuma estratégia configurada"}
+            </strong>
+            {savedStrategy && savedStrategy !== strategy && (
+              <span className="text-warning"> · alterações não salvas</span>
+            )}
           </SheetDescription>
         </SheetHeader>
 
         <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 pb-8">
-          {/* Base price */}
-          <section className="space-y-3">
-            <h4 className="text-title-md">Preço base da empresa</h4>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="bp">Valor referência (informativo)</Label>
-              <CurrencyInput value={basePrice} onChange={setBasePrice} />
-              <p className="text-caption text-muted">
-                Não impacta o cálculo dinâmico, mas é usado em relatórios e como fallback.
-              </p>
-            </div>
-          </section>
-
-          <Separator />
 
           {/* Strategy */}
           <section className="space-y-3">
@@ -381,11 +376,11 @@ export function PricingRuleEditor({
                 <h4 className="text-title-md">Tarifas horárias</h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1.5">
-                    <Label>0–30 min</Label>
+                    <Label>0 a 30 min</Label>
                     <CurrencyInput value={hourlyInitial} onChange={setHourlyInitial} />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <Label>31–60 min</Label>
+                    <Label>31 a 60 min</Label>
                     <CurrencyInput value={hourlyOneHour} onChange={setHourlyOneHour} />
                   </div>
                   <div className="flex flex-col gap-1.5">
@@ -544,6 +539,20 @@ export function PricingRuleEditor({
                   setAdvanceMinutes(e.target.value === "" ? null : Number(e.target.value))
                 }
               />
+            </div>
+          </section>
+
+          <Separator />
+
+          {/* Informativo: não entra no cálculo, então fica longe do topo (e do foco inicial). */}
+          <section className="space-y-3">
+            <h4 className="text-title-md">Preço base da empresa</h4>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="bp">Valor referência</Label>
+              <CurrencyInput value={basePrice} onChange={setBasePrice} />
+              <p className="text-caption text-muted">
+                Não entra no cálculo do preço. Serve de referência em relatórios e como fallback.
+              </p>
             </div>
           </section>
 

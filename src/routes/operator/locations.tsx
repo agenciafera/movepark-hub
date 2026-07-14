@@ -26,7 +26,7 @@ export default function OperatorLocations() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Localizações"
-        description="Edite informações de exibição das suas unidades."
+        description="Endereço, fotos e dados de cada unidade. Capacidade e preço ficam em Tipos de vaga."
       />
 
       {isLoading ? (

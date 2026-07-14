@@ -60,7 +60,9 @@ export function PricingTierEditor({ strategy, tiers, onChange }: Props) {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-12 items-center gap-2 px-1">
+      {/* No mobile cada faixa vira um bloco com rótulo próprio: em 12 colunas os campos
+          espremiam e o valor aparecia cortado ("R$ 40,"). */}
+      <div className="hidden grid-cols-12 items-center gap-2 px-1 tablet:grid">
         <Label className="col-span-2">De (dia)</Label>
         <Label className="col-span-2">Até (dia)</Label>
         {strategy === "fixed_bracket" ? (
@@ -81,35 +83,49 @@ export function PricingTierEditor({ strategy, tiers, onChange }: Props) {
       )}
 
       {tiers.map((tier) => (
-        <div key={tier.id} className="grid grid-cols-12 items-center gap-2">
-          <Input
-            className="col-span-2 h-12 text-center tabular-nums"
-            type="number"
-            min={1}
-            value={tier.from_day}
-            onChange={(e) => updateTier(tier.id, { from_day: Number(e.target.value) })}
-          />
-          <Input
-            className="col-span-2 h-12 text-center tabular-nums"
-            type="number"
-            min={tier.from_day}
-            value={tier.to_day ?? ""}
-            placeholder="∞"
-            onChange={(e) =>
-              updateTier(tier.id, {
-                to_day: e.target.value === "" ? null : Number(e.target.value),
-              })
-            }
-          />
+        <div
+          key={tier.id}
+          className="flex flex-col gap-3 rounded-sm border border-hairline p-3 tablet:grid tablet:grid-cols-12 tablet:items-center tablet:gap-2 tablet:rounded-none tablet:border-0 tablet:p-0"
+        >
+          <div className="grid grid-cols-2 gap-2 tablet:col-span-4 tablet:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label className="tablet:hidden">De (dia)</Label>
+              <Input
+                className="h-12 text-center tabular-nums"
+                type="number"
+                min={1}
+                value={tier.from_day}
+                onChange={(e) => updateTier(tier.id, { from_day: Number(e.target.value) })}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label className="tablet:hidden">Até (dia)</Label>
+              <Input
+                className="h-12 text-center tabular-nums"
+                type="number"
+                min={tier.from_day}
+                value={tier.to_day ?? ""}
+                placeholder="∞"
+                onChange={(e) =>
+                  updateTier(tier.id, {
+                    to_day: e.target.value === "" ? null : Number(e.target.value),
+                  })
+                }
+              />
+            </div>
+          </div>
+
           {strategy === "fixed_bracket" ? (
             <>
-              <div className="col-span-3">
+              <div className="flex flex-col gap-1.5 tablet:col-span-3">
+                <Label className="tablet:hidden">Preço total fixo</Label>
                 <CurrencyInput
                   value={tier.total_price}
                   onChange={(v) => updateTier(tier.id, { total_price: v })}
                 />
               </div>
-              <div className="col-span-4">
+              <div className="flex flex-col gap-1.5 tablet:col-span-4">
+                <Label className="tablet:hidden">Preço por dia</Label>
                 <CurrencyInput
                   value={tier.unit_price}
                   onChange={(v) => updateTier(tier.id, { unit_price: v })}
@@ -117,22 +133,24 @@ export function PricingTierEditor({ strategy, tiers, onChange }: Props) {
               </div>
             </>
           ) : (
-            <div className="col-span-7">
+            <div className="flex flex-col gap-1.5 tablet:col-span-7">
+              <Label className="tablet:hidden">Preço por dia</Label>
               <CurrencyInput
                 value={tier.unit_price}
                 onChange={(v) => updateTier(tier.id, { unit_price: v })}
               />
             </div>
           )}
+
           <Button
             type="button"
             variant="ghost"
-            size="icon"
-            className="col-span-1 text-error"
+            className="h-11 w-full gap-2 text-error tablet:col-span-1 tablet:h-11 tablet:w-11 tablet:p-0"
             onClick={() => removeTier(tier.id)}
             title="Remover faixa"
           >
             <Trash2 className="h-4 w-4" />
+            <span className="tablet:hidden">Remover faixa</span>
           </Button>
         </div>
       ))}

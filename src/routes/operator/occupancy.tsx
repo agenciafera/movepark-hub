@@ -62,10 +62,25 @@ export default function OperatorOccupancy() {
   const wlByLpt = wl?.byLpt ?? {};
 
   const setBlocked = useSetDateBlocked();
+
+  async function applyBlock(lptId: string, date: string, blocked: boolean) {
+    await setBlocked.mutateAsync({ locationParkingTypeId: lptId, date, blocked });
+  }
+
   async function toggleBlock(lptId: string, date: string, blocked: boolean) {
+    const next = !blocked;
     try {
-      await setBlocked.mutateAsync({ locationParkingTypeId: lptId, date, blocked: !blocked });
-      toast.success(blocked ? "Data liberada" : "Data bloqueada");
+      await applyBlock(lptId, date, next);
+      toast.success(next ? "Data bloqueada" : "Data liberada", {
+        action: {
+          label: "Desfazer",
+          onClick: () => {
+            applyBlock(lptId, date, blocked).catch((err: unknown) => {
+              toast.error(err instanceof Error ? err.message : "Falha ao desfazer");
+            });
+          },
+        },
+      });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao atualizar a data");
     }
@@ -122,8 +137,8 @@ export default function OperatorOccupancy() {
 
       {wl?.ready && (
         <p className="-mt-2 text-caption text-muted">
-          Os números somam as reservas do hub + as vagas vendidas no white-label (ao vivo). Passe o
-          mouse para ver mais detalhes.
+          Os números somam as reservas do hub e as vagas vendidas no white-label (ao vivo). O número
+          embaixo do dia é o total de vagas ocupadas.
         </p>
       )}
 
@@ -161,7 +176,12 @@ export default function OperatorOccupancy() {
               <Card key={row.lptId}>
                 <CardContent className="flex flex-col gap-4 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h3 className="text-body font-medium text-ink">{row.name}</h3>
+                    <div className="flex flex-col gap-0.5">
+                      <h3 className="text-body font-medium text-ink">{row.name}</h3>
+                      <p className="text-caption text-muted">
+                        Clique numa data para bloquear ou liberar as vendas.
+                      </p>
+                    </div>
                     <OccupancyLegend />
                   </div>
                   <OccupancyCalendar

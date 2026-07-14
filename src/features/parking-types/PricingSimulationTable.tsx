@@ -117,8 +117,9 @@ export function PricingSimulationDialog({
           </TabsList>
 
           <TabsContent value="buckets">
-            <p className="mb-3 text-caption text-muted">
-              ⚠️ marca inversão de faixa (mais dias = mais barato).
+            <p className="mb-3 flex items-center gap-1.5 text-caption text-muted">
+              <AlertTriangle className="h-3.5 w-3.5 text-warning" aria-hidden="true" />
+              marca a inversão de faixa: ficar mais dias sai mais barato.
             </p>
             {isLoading ? (
               <div className="space-y-2">
@@ -127,9 +128,11 @@ export function PricingSimulationDialog({
                 ))}
               </div>
             ) : (
-              <div className="overflow-hidden rounded-md border border-hairline">
+              // O diálogo inteiro rolava e o cabeçalho sumia: quem chegava no fim da tabela não
+              // sabia mais o que era cada coluna. O scroll agora é da tabela, com thead fixo.
+              <div className="max-h-[55vh] overflow-y-auto rounded-md border border-hairline">
                 <Table>
-                  <TableHeader>
+                  <TableHeader className="sticky top-0 z-10 bg-canvas">
                     <TableRow>
                       <TableHead className="text-right">Dias</TableHead>
                       <TableHead className="text-right">Preço total</TableHead>
@@ -161,16 +164,16 @@ export function PricingSimulationDialog({
                                 {formatBRL(Number(r.price))}
                               </span>
                             ) : (
-                              <span className="text-muted">—</span>
+                              <span className="text-muted">n/d</span>
                             )}
                           </TableCell>
                           <TableCell className="text-right tabular-nums text-muted">
-                            {perDay !== null ? formatBRL(perDay) : "—"}
+                            {perDay !== null ? formatBRL(perDay) : "n/d"}
                           </TableCell>
                           <TableCell className="text-right tabular-nums text-muted">
                             {r.oldPrice !== null && r.oldPrice !== r.price
                               ? formatBRL(Number(r.oldPrice))
-                              : "—"}
+                              : "n/d"}
                           </TableCell>
                         </TableRow>
                       );
@@ -210,13 +213,13 @@ export function PricingSimulationDialog({
                   <div className="text-body-md text-ink tabular-nums">
                     {totalMinutes > 0
                       ? `${hours}h ${minutesRest.toString().padStart(2, "0")}m`
-                      : "—"}
+                      : "n/d"}
                   </div>
                 </div>
                 <div className="space-y-0.5">
                   <div className="text-caption text-muted">Dias cobrados</div>
                   <div className="text-display-sm text-ink tabular-nums">
-                    {computedDays || "—"}
+                    {computedDays || "n/d"}
                   </div>
                 </div>
                 <div className="flex-1" />

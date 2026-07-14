@@ -154,7 +154,7 @@ export function useUpdateCompanyParkingType() {
 
 /**
  * Salva a precificação (regra + faixas + base) numa única RPC SECURITY DEFINER, que valida a posse
- * da empresa (E1.4.1). As tabelas pricing_rule/pricing_tier têm RLS só de leitura — escrita direta
+ * da empresa (E1.4.1). As tabelas pricing_rule/pricing_tier têm RLS só de leitura, e a escrita direta
  * pelo operador dava 403; a RPC é o caminho server-authoritative.
  */
 export function useOperatorSetPricing() {

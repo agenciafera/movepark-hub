@@ -116,7 +116,7 @@ export function useWlExternalOccupancy(
           if (res?.ready) anyReady = true;
           const m: Record<string, number> = {};
           // sold_wl = vendas próprias do white-label (o que o hub não enxerga).
-          // sold_external seria o que o hub empurrou — já contado no booked_count do hub.
+          // sold_external seria o que o hub empurrou, e isso já está no booked_count do hub.
           for (const d of res?.days ?? []) m[d.date] = Number(d.sold_wl ?? 0);
           byLpt[l.id] = m;
         }),
@@ -126,7 +126,7 @@ export function useWlExternalOccupancy(
   });
 }
 
-/** Bloqueia/desbloqueia uma data de um tipo de vaga (E1.4.2) — via RPC operator_set_date_blocked. */
+/** Bloqueia/desbloqueia uma data de um tipo de vaga (E1.4.2) via RPC operator_set_date_blocked. */
 export function useSetDateBlocked() {
   const qc = useQueryClient();
   return useMutation({
