@@ -182,7 +182,7 @@ Deno.serve(async (req: Request) => {
       `
       id, capacity, is_active,
       location:location!inner(
-        id, slug, name, address, latitude, longitude, status, deleted_at,
+        id, slug, name, address, latitude, longitude, status, deleted_at, is_listed,
         review_avg, review_count, photos,
         company:company!inner(id, slug, name, status),
         destination:destination(code, name, type),
@@ -215,6 +215,8 @@ Deno.serve(async (req: Request) => {
   let filtered: any[] = (rows ?? []).filter((r: any) => {
     if (!r.location || r.location.deleted_at) return false;
     if (r.location.status !== "active") return false;
+    // Só listadas publicamente (gate de recebedor ativo). A RLS anon já exige is_listed; explícito aqui.
+    if (!r.location.is_listed) return false;
     if (!r.location.company || r.location.company.status !== "active") return false;
     return true;
   });

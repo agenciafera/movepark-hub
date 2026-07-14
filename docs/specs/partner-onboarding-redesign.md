@@ -74,6 +74,8 @@ Descoberta central: o `location` **já modela** quase tudo. O wizard só não ex
 
 Ao publicar, redirecionar o dono (logado) para a **página de detalhe da unidade em modo preview**, mesmo sem foto/KYC e **não publicada** (flag de preview que faz bypass do gate de status para o dono da `company`). No dashboard da unidade: card "perfil X% completo" + **URL de preview copiável**, revisitável a qualquer momento. **Mobile:** não depender de preview ao vivo dentro do wizard — o mecanismo é preview-no-fim + link no painel (ver D-003.4).
 
+**Implementado (correção do vazamento, 2026-07):** a "flag de preview / não publicada" é `location.is_listed`, separada de `status`/`is_active`. A leitura pública (RLS `catalog_read_location` + filtros explícitos no SSG `fetchAllListingPaths`, `fetchListing` e na edge `search`) passa a exigir `is_listed`; o dono lê o preview pela RLS de dono (`location_select`), que ignora a flag. `is_listed` liga **automaticamente** quando a empresa passa a poder receber (`payout_recipient.status='active'`, ADR-004): no próprio `onboarding_publish` (se já ativo) ou via trigger `list_locations_on_recipient_active`. Publicar deixa a unidade ativa/configurada mas **não listada** até o recebimento ligar; a página pós-publicação (`unit-preview.tsx`) reflete isso (não promete "já está na busca" enquanto `is_listed=false`). Unidades já ativas na virada foram preservadas (grandfather). Migration `20260816000000_public_listing_gate.sql`.
+
 ---
 
 ## 6. Gate — VALIDAR ANTES DE CODAR (D-003)
@@ -83,7 +85,7 @@ Não iniciar a implementação sem resolver:
 1. **Onde mora o "preço de balcão" no schema?** Resolver a dupla fonte `company_parking_type.base_price` × tiers de `pricing_rule`. Definir o campo do balcão (âncora) e como o online é derivado. → toca `onboarding_set_pricing`/`onboarding_set_parking_types`.
 2. **Escrita de comodidades:** confirmar tabela `amenity` + `location_amenity` e a RPC de escrita para o checklist (leitura já confirmada em `AmenityList`).
 3. **Campo de horário/24h no `location`?** Não aparece no `LocationForm` — pode ser **campo/migration novo**.
-4. **Flag de preview** para o dono logado ver o detalhe não publicado (bypass de status na rota de listing / `/destino`) — confirmar como o listing detail resolve status e onde inserir o bypass.
+4. **Flag de preview** para o dono logado ver o detalhe não publicado (bypass de status na rota de listing / `/destino`). **Resolvido:** `location.is_listed` gateia a leitura pública; a RLS de dono (`location_select`) segue permitindo o preview. Liga com recebedor ativo. Ver §5 e migration `20260816000000_public_listing_gate.sql`.
 
 Cada item resolvido vira decisão registrada (atualizar D-003) antes/junto da atividade correspondente.
 

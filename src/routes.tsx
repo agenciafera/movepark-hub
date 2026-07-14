@@ -122,7 +122,10 @@ async function fetchAllListingPaths(): Promise<string[]> {
       )
     `,
     )
-    .eq("is_active", true);
+    .eq("is_active", true)
+    // Só pré-renderiza páginas de unidades publicamente listadas (gate de recebedor ativo).
+    // A RLS pública já exige location.is_listed; este filtro deixa explícito no build (SSG).
+    .eq("location.is_listed", true);
 
   // deno-lint-ignore no-explicit-any
   return (data ?? []).map(

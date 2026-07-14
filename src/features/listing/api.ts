@@ -77,6 +77,10 @@ export async function fetchListing(
     .from("location_parking_type")
     .select(baseSelect)
     .eq("is_active", true)
+    // Só serve a página pública /p/... de unidades listadas (gate de recebedor ativo). A RLS
+    // pública já exige location.is_listed; este filtro deixa explícito. O preview do dono usa
+    // outra leitura (previewApi, RLS de dono), que ignora is_listed.
+    .eq("location.is_listed", true)
     .limit(50);
   if (error) throw error;
 

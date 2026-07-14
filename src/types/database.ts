@@ -1673,6 +1673,7 @@ export type Database = {
           has_pcd_config: boolean
           has_shuttle: boolean
           id: string
+          is_listed: boolean
           is_popular: boolean
           latitude: number | null
           longitude: number | null
@@ -1706,6 +1707,7 @@ export type Database = {
           has_pcd_config?: boolean
           has_shuttle?: boolean
           id?: string
+          is_listed?: boolean
           is_popular?: boolean
           latitude?: number | null
           longitude?: number | null
@@ -1739,6 +1741,7 @@ export type Database = {
           has_pcd_config?: boolean
           has_shuttle?: boolean
           id?: string
+          is_listed?: boolean
           is_popular?: boolean
           latitude?: number | null
           longitude?: number | null

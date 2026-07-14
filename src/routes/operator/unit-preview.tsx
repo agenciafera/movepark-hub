@@ -60,14 +60,37 @@ export default function UnitPreviewPage() {
         ) : (
           <>
             {justPublished && (
-              <div className="flex items-start gap-3 rounded-lg border border-success/30 bg-success/5 p-5">
-                <PartyPopper className="mt-0.5 h-6 w-6 shrink-0 text-success" />
+              <div
+                className={
+                  "flex items-start gap-3 rounded-lg border p-5 " +
+                  (unit.isListed ? "border-success/30 bg-success/5" : "border-mp-primary/30 bg-mp-pale")
+                }
+              >
+                <PartyPopper
+                  className={
+                    "mt-0.5 h-6 w-6 shrink-0 " + (unit.isListed ? "text-success" : "text-mp-indigo")
+                  }
+                />
                 <div>
-                  <h1 className="text-title-lg text-ink">Sua unidade está no ar! 🚗</h1>
-                  <p className="mt-1 text-body-sm text-muted">
-                    Já aparece na busca da Movepark. Compartilhe o link e comece a receber reservas.
-                    Depois é só deixar a unidade redonda no painel (fotos, comodidades, horários).
-                  </p>
+                  {unit.isListed ? (
+                    <>
+                      <h1 className="text-title-lg text-ink">Sua unidade está no ar! 🚗</h1>
+                      <p className="mt-1 text-body-sm text-muted">
+                        Já aparece na busca da Movepark. Compartilhe o link e comece a receber
+                        reservas. Depois é só deixar a unidade redonda no painel (fotos, comodidades,
+                        horários).
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <h1 className="text-title-lg text-ink">Sua unidade está pronta 🎉</h1>
+                      <p className="mt-1 text-body-sm text-muted">
+                        Você já vê aqui embaixo como ela vai aparecer. Ela entra na busca da Movepark
+                        assim que o recebimento ficar ativo (os dados pra você receber os pagamentos).
+                        A gente finaliza esse passo com você.
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -90,7 +113,12 @@ export default function UnitPreviewPage() {
               <div className="flex flex-col gap-4">
                 <div className="rounded-lg border border-hairline bg-canvas p-5">
                   <h2 className="text-title-md text-ink">Link público da sua unidade</h2>
-                  {absoluteUrl ? (
+                  {!unit.isListed ? (
+                    <p className="mt-1 text-body-sm text-muted">
+                      A página pública fica disponível quando a unidade entrar na busca, assim que o
+                      recebimento estiver ativo. Até lá, você acompanha tudo pelo painel.
+                    </p>
+                  ) : absoluteUrl ? (
                     <>
                       <p className="mt-1 text-body-sm text-muted">
                         Envie no WhatsApp, redes ou no seu site. A reserva acontece por aqui.

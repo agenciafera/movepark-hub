@@ -5,8 +5,9 @@ import type { PreviewItem } from "./UnitPreviewCard";
 /**
  * Leitura da unidade para o **preview travado** (E1.9). Não precisa de RPC nem bypass de RLS: as
  * policies de SELECT scopeadas por empresa (location_select, lpt_select, …) já deixam o dono ler a
- * própria unidade independente de is_active/status. O público não enxerga (RLS pública exige
- * is_active/active). Ver spec partner-onboarding-redesign.md §6.4.
+ * própria unidade independente de is_active/status/is_listed. O público só enxerga quando
+ * location.is_listed (RLS catalog_read_location), que liga quando a empresa tem recebedor ativo.
+ * Ver spec partner-onboarding-redesign.md §6.4.
  */
 export type PreviewUnit = {
   name: string;
@@ -14,6 +15,8 @@ export type PreviewUnit = {
   destinationName: string | null;
   hasShuttle: boolean;
   isActive: boolean;
+  /** Já aparece na busca / URL pública? (liga quando o recebedor da empresa fica ativo.) */
+  isListed: boolean;
   items: PreviewItem[];
   /** URL pública copiável (existe quando a unidade tem ao menos um tipo de vaga). */
   publicUrl: string | null;
@@ -27,7 +30,7 @@ export function usePreviewUnit(locationId: string | undefined) {
       const { data: loc, error } = await supabase
         .from("location")
         .select(
-          "id, name, slug, address, has_shuttle, status, company:company!inner(slug), destination:destination(name)",
+          "id, name, slug, address, has_shuttle, status, is_listed, company:company!inner(slug), destination:destination(name)",
         )
         .eq("id", locationId!)
         .maybeSingle();
@@ -66,6 +69,7 @@ export function usePreviewUnit(locationId: string | undefined) {
         destinationName: l.destination?.name ?? null,
         hasShuttle: Boolean(l.has_shuttle),
         isActive: l.status === "active",
+        isListed: Boolean(l.is_listed),
         items,
         publicUrl,
       };
