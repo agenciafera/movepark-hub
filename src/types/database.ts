@@ -2333,6 +2333,8 @@ export type Database = {
           booking_id: string
           created_at: string
           currency: string
+          date_change_check_in_at: string | null
+          date_change_check_out_at: string | null
           expires_at: string | null
           fare_target_tier: Database["public"]["Enums"]["fare_tier"] | null
           id: string
@@ -2357,6 +2359,8 @@ export type Database = {
           booking_id: string
           created_at?: string
           currency?: string
+          date_change_check_in_at?: string | null
+          date_change_check_out_at?: string | null
           expires_at?: string | null
           fare_target_tier?: Database["public"]["Enums"]["fare_tier"] | null
           id?: string
@@ -2381,6 +2385,8 @@ export type Database = {
           booking_id?: string
           created_at?: string
           currency?: string
+          date_change_check_in_at?: string | null
+          date_change_check_out_at?: string | null
           expires_at?: string | null
           fare_target_tier?: Database["public"]["Enums"]["fare_tier"] | null
           id?: string
@@ -4369,6 +4375,10 @@ export type Database = {
         Returns: undefined
       }
       renew_booking_hold: { Args: { p_booking_id: string }; Returns: Json }
+      reprice_booking_dates: {
+        Args: { p_booking_id: string; p_check_in: string; p_check_out: string }
+        Returns: Json
+      }
       review_recompute_location: {
         Args: { p_location_id: string }
         Returns: undefined
