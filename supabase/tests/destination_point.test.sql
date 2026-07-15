@@ -33,8 +33,10 @@ begin
   values (d2, 'B1', 'terminal', -40.0010, -20.0010, 1);
 
   -- lote ligado a d1, geo praticamente em cima de P1.
-  insert into public.location(id, company_id, name, slug, latitude, longitude, destination_id, status)
-  values (gen_random_uuid(), cmp, 'Lote DAT05', 'lote-dat05', -50.0011, -30.0011, d1, 'active');
+  -- is_listed = true: desde o gate de listagem pública (20260816000000), a RLS catalog_read_location
+  -- exige is_listed para o anon enxergar a unidade (e a view de proximidade que a junta).
+  insert into public.location(id, company_id, name, slug, latitude, longitude, destination_id, status, is_listed)
+  values (gen_random_uuid(), cmp, 'Lote DAT05', 'lote-dat05', -50.0011, -30.0011, d1, 'active', true);
 
   perform set_config('test.d1', d1::text, false);
   perform set_config('test.d2', d2::text, false);
