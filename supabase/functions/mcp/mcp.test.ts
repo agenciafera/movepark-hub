@@ -7,6 +7,7 @@ import {
   MCP_PROTOCOL_VERSION,
   rpcError,
   rpcResult,
+  safeToolError,
   toolTextContent,
 } from "./protocol.ts";
 import { findTool, isToolCallable, listTools, missingRequired, PARTNER_TOOLS, PUBLIC_TOOLS } from "./tools.ts";
@@ -29,6 +30,20 @@ Deno.test("initialize ecoa a versão do cliente e expõe capability tools", () =
   assertEquals(r.capabilities.tools.listChanged, false);
   assertEquals(r.serverInfo.name, "movepark");
   assertEquals(initializeResult("x").protocolVersion, MCP_PROTOCOL_VERSION);
+});
+
+// Segurança: o MCP não pode vazar a mensagem crua do Postgres (nome de constraint/coluna/schema)
+// ao parceiro. Só a nossa mensagem de negócio (P0001 ou throw sem SQLSTATE) é propagada.
+Deno.test("safeToolError não vaza mensagem crua do Postgres", () => {
+  // nosso throw (sem code) → mostra a mensagem
+  assertEquals(safeToolError(new Error("Destino não encontrado.")), "Destino não encontrado.");
+  // P0001 (RAISE de negócio) → mostra a mensagem
+  assertEquals(safeToolError({ code: "P0001", message: "Reserva não encontrada nesta empresa." }), "Reserva não encontrada nesta empresa.");
+  // unique/uuid inválido/constraint → genérico, sem vazar
+  const leak = 'duplicate key value violates unique constraint "coupon_company_id_code_key"';
+  assertEquals(safeToolError({ code: "23505", message: leak }).includes("constraint"), false);
+  assertEquals(safeToolError({ code: "22P02", message: 'invalid input syntax for type uuid: "x"' }).includes("uuid"), false);
+  assertEquals(safeToolError({ code: "XX000", message: "internal detail" }), "Erro ao executar a operação.");
 });
 
 Deno.test("toolTextContent embrulha JSON como text content", () => {

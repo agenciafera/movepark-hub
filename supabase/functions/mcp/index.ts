@@ -18,6 +18,7 @@ import {
   type JsonRpcRequest,
   rpcError,
   rpcResult,
+  safeToolError,
   toolTextContent,
 } from "./protocol.ts";
 import { findTool, isToolCallable, listTools, missingRequired, type Endpoint } from "./tools.ts";
@@ -145,11 +146,13 @@ Deno.serve(async (req: Request) => {
         resp = json(rpcError(id, JSONRPC.METHOD_NOT_FOUND, `Método não suportado: ${reqMsg.method}`));
     }
   } catch (e) {
-    // erro de execução de tool → result.isError (convenção MCP), não erro de protocolo
+    // erro de execução de tool → result.isError (convenção MCP), não erro de protocolo.
+    // safeToolError evita vazar a mensagem crua do Postgres (nome de constraint/coluna/schema).
+    const msg = safeToolError(e);
     resp =
       reqMsg.method === "tools/call"
-        ? json(rpcResult(id, toolTextContent({ error: (e as Error).message }, true)))
-        : json(rpcError(id, JSONRPC.INTERNAL_ERROR, (e as Error).message));
+        ? json(rpcResult(id, toolTextContent({ error: msg }, true)))
+        : json(rpcError(id, JSONRPC.INTERNAL_ERROR, msg));
   }
 
   // Auditoria (Fase 1.1) — só parceiro autenticado; não bloqueia a resposta.

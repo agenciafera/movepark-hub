@@ -64,3 +64,19 @@ export function toolTextContent(data: unknown, isError = false) {
 export function isNotification(req: JsonRpcRequest): boolean {
   return req.id === undefined || req.method.startsWith("notifications/");
 }
+
+// Mensagem segura de erro para o cliente (espelha o pgErrorToHttp do gateway REST). Erro SEM
+// SQLSTATE = throw explícito de um handler (mensagem é nossa e segura). Com SQLSTATE: só P0001
+// (RAISE de negócio das RPCs) é propagado; qualquer outro erro interno do Postgres (unique/check/
+// FK/uuid inválido/not-null) vira genérico, pra não vazar nome de constraint, coluna ou schema.
+export function safeToolError(e: unknown): string {
+  const err = e as { code?: string; message?: string };
+  const code = err?.code;
+  if (!code) return err?.message ?? "Erro ao executar a operação.";
+  if (code === "P0001") return err.message ?? "Requisição inválida.";
+  if (code === "23505") return "Registro já existe (conflito de unicidade).";
+  if (["22P02", "22007", "22008", "22003", "23502", "23503", "23514"].includes(code)) {
+    return "Parâmetro inválido para esta operação.";
+  }
+  return "Erro ao executar a operação.";
+}
