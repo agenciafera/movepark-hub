@@ -1,4 +1,5 @@
--- pgTAP: Motor de Crescimento, carteira MoveCoins (base de CRÉDITO).
+-- pgTAP: Motor de Crescimento, carteira Movepark (base de CRÉDITO).
+-- Nome técnico dos objetos ainda usa o prefixo movecoins_ (rename de schema é decisão à parte).
 --
 -- Blinda a carteira ANTES de mexer em cancelamento/reembolso/alteração de data, que
 -- vão passar a debitar e estornar MoveCoins. Cobre o que já existe hoje:
