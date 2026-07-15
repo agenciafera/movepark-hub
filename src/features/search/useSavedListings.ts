@@ -1,40 +1,60 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/auth/context";
 
 const LS_KEY = "mp:saved";
 
-function readLocal(): Set<string> {
-  if (typeof window === "undefined") return new Set();
+/** Ids de LPT que o visitante anônimo tentou favoritar (intenção pendente até logar). */
+function readLocal(): string[] {
+  if (typeof window === "undefined") return [];
   try {
-    return new Set(JSON.parse(localStorage.getItem(LS_KEY) ?? "[]") as string[]);
+    const raw = JSON.parse(localStorage.getItem(LS_KEY) ?? "[]");
+    return Array.isArray(raw) ? (raw as string[]) : [];
   } catch {
-    return new Set();
+    return [];
   }
 }
-function writeLocal(s: Set<string>) {
-  localStorage.setItem(LS_KEY, JSON.stringify(Array.from(s)));
-  window.dispatchEvent(new Event("mp:saved-changed"));
+function writeLocal(ids: string[]) {
+  localStorage.setItem(LS_KEY, JSON.stringify(ids));
+}
+function clearLocal() {
+  localStorage.removeItem(LS_KEY);
 }
 
-/** Set de LPT ids salvos. Logado: tabela profile_saved. Anônimo: localStorage. */
+/**
+ * Migra pra `profile_saved` os favoritos que o visitante marcou antes de logar
+ * (ficam guardados no localStorage). Idempotente: usa upsert com a PK
+ * (profile_id, location_parking_type_id) e ignora duplicados. Só limpa o
+ * localStorage quando o upsert dá certo (em erro, tenta de novo no próximo login).
+ */
+export async function migratePendingSaves(profileId: string): Promise<number> {
+  const pending = readLocal();
+  if (pending.length === 0) return 0;
+  const rows = pending.map((id) => ({
+    profile_id: profileId,
+    location_parking_type_id: id,
+  }));
+  const { error } = await supabase.from("profile_saved").upsert(rows, {
+    onConflict: "profile_id,location_parking_type_id",
+    ignoreDuplicates: true,
+  });
+  if (error) throw error;
+  clearLocal();
+  return rows.length;
+}
+
+/**
+ * Favoritos do usuário. Favoritar **exige login**: o anônimo não tem estado
+ * salvo (coração sempre vazio) e, ao clicar, é levado ao `/login` (a intenção
+ * fica guardada e é migrada pra conta no login). Logado grava em `profile_saved`.
+ */
 export function useSavedListings() {
   const { session } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const qc = useQueryClient();
-  const [localTick, setLocalTick] = React.useState(0);
-
-  // Reage a mudanças no localStorage (mesma aba)
-  React.useEffect(() => {
-    if (session) return;
-    const handler = () => setLocalTick((t) => t + 1);
-    window.addEventListener("mp:saved-changed", handler);
-    window.addEventListener("storage", handler);
-    return () => {
-      window.removeEventListener("mp:saved-changed", handler);
-      window.removeEventListener("storage", handler);
-    };
-  }, [session]);
 
   const remoteIds = useQuery({
     queryKey: ["saved-listings", session?.userId ?? "anon"],
@@ -47,34 +67,30 @@ export function useSavedListings() {
       if (error) throw error;
       return new Set((data ?? []).map((r) => r.location_parking_type_id));
     },
+    enabled: !!session,
     staleTime: 60_000,
   });
 
-  const ids = session ? (remoteIds.data ?? new Set<string>()) : readLocal();
-  // forçar re-render quando localTick mudar (não usar tick diretamente — só na key)
-  void localTick;
+  // Anônimo não tem favoritos salvos (favoritar exige login).
+  const ids = session ? (remoteIds.data ?? new Set<string>()) : new Set<string>();
 
   const toggle = useMutation({
     mutationFn: async (id: string) => {
+      if (!session) return { id, nowSaved: false };
       const isSaved = ids.has(id);
-      if (session) {
-        if (isSaved) {
-          await supabase
-            .from("profile_saved")
-            .delete()
-            .eq("profile_id", session.userId)
-            .eq("location_parking_type_id", id);
-        } else {
-          await supabase.from("profile_saved").insert({
-            profile_id: session.userId,
-            location_parking_type_id: id,
-          });
-        }
+      if (isSaved) {
+        const { error } = await supabase
+          .from("profile_saved")
+          .delete()
+          .eq("profile_id", session.userId)
+          .eq("location_parking_type_id", id);
+        if (error) throw error;
       } else {
-        const next = new Set(readLocal());
-        if (isSaved) next.delete(id);
-        else next.add(id);
-        writeLocal(next);
+        const { error } = await supabase.from("profile_saved").insert({
+          profile_id: session.userId,
+          location_parking_type_id: id,
+        });
+        if (error) throw error;
       }
       return { id, nowSaved: !isSaved };
     },
@@ -83,10 +99,52 @@ export function useSavedListings() {
     },
   });
 
+  function requestToggle(id: string) {
+    if (!session) {
+      // Favoritar exige login: guarda a intenção e leva pro login, voltando pra
+      // esta página depois (o favorito é migrado pra conta no login).
+      const pending = new Set(readLocal());
+      pending.add(id);
+      writeLocal(Array.from(pending));
+      const target = `${location.pathname}${location.search}`;
+      navigate(`/login?next=${encodeURIComponent(target)}`);
+      return;
+    }
+    toggle.mutate(id);
+  }
+
   return {
     ids,
     isSaved: (id: string) => ids.has(id),
-    toggle: (id: string) => toggle.mutate(id),
+    toggle: requestToggle,
     isToggling: toggle.isPending,
   };
+}
+
+/**
+ * Efeito de root: quando a sessão aparece (login), migra os favoritos pendentes
+ * do localStorage pra `profile_saved`. Roda uma vez por usuário; em erro, libera
+ * pra tentar de novo. Monte em UM lugar só (`SavedListingsSync`).
+ */
+export function useSyncSavedListingsOnLogin() {
+  const { session } = useAuth();
+  const qc = useQueryClient();
+  const doneFor = React.useRef<string | null>(null);
+
+  React.useEffect(() => {
+    if (!session) {
+      doneFor.current = null;
+      return;
+    }
+    if (doneFor.current === session.userId) return;
+    doneFor.current = session.userId;
+    migratePendingSaves(session.userId)
+      .then((migrated) => {
+        if (migrated > 0) qc.invalidateQueries({ queryKey: ["saved-listings"] });
+      })
+      .catch(() => {
+        // Falhou: libera pra tentar de novo (não perde a intenção do usuário).
+        doneFor.current = null;
+      });
+  }, [session, qc]);
 }

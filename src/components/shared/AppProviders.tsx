@@ -7,6 +7,7 @@ import { queryClient } from "@/lib/query-client";
 import { AuthProvider } from "@/auth/AuthProvider";
 import { hasSupabaseEnv } from "@/lib/supabase";
 import { ScrollToTop } from "@/components/shared/ScrollToTop";
+import { SavedListingsSync } from "@/features/search/SavedListingsSync";
 import { captureUtmFromSearch } from "@/lib/utm";
 import { captureCouponFromSearch } from "@/lib/coupon";
 
@@ -58,6 +59,7 @@ export function AppProviders() {
       <Helmet defaultTitle="Movepark Hub" />
       <AuthProvider>
         <ScrollToTop />
+        <SavedListingsSync />
         <Toaster position="bottom-right" richColors />
         <Outlet />
       </AuthProvider>
