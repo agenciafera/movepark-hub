@@ -1,5 +1,4 @@
 -- pgTAP: Motor de Crescimento, carteira Movepark (base de CRÉDITO).
--- Nome técnico dos objetos ainda usa o prefixo movecoins_ (rename de schema é decisão à parte).
 --
 -- Blinda a carteira ANTES de mexer em cancelamento/reembolso/alteração de data, que
 -- vão passar a debitar e estornar MoveCoins. Cobre o que já existe hoje:
@@ -16,17 +15,17 @@ begin;
 select plan(21);
 
 -- ── Estrutura + hardening ────────────────────────────────────────────────────
-select has_table('public', 'movecoins_ledger', 'movecoins_ledger existe');
+select has_table('public', 'wallet_ledger', 'wallet_ledger existe');
 select ok(
-  (select relrowsecurity from pg_class where oid = 'public.movecoins_ledger'::regclass),
-  'movecoins_ledger com RLS habilitada'
+  (select relrowsecurity from pg_class where oid = 'public.wallet_ledger'::regclass),
+  'wallet_ledger com RLS habilitada'
 );
 select is(
-  (select count(*)::int from pg_policy where polrelid = 'public.movecoins_ledger'::regclass),
+  (select count(*)::int from pg_policy where polrelid = 'public.wallet_ledger'::regclass),
   0, 'ledger trancada (0 policies, acesso só via RPC/trigger SECURITY DEFINER)'
 );
 select has_index(
-  'public', 'movecoins_ledger', 'movecoins_cashback_once',
+  'public', 'wallet_ledger', 'wallet_cashback_once',
   'índice de idempotência (no máximo um cashback por reserva)'
 );
 select ok(
@@ -105,17 +104,17 @@ end $$;
 
 -- ── Cashback ─────────────────────────────────────────────────────────────────
 select is(
-  (select amount_cents from public.movecoins_ledger
+  (select amount_cents from public.wallet_ledger
      where booking_id = current_setting('mc.b1')::uuid and kind = 'cashback'),
   200, 'cashback = 2% de R$100 (Ignição, 200 bps)'
 );
 select isnt(
-  (select expires_at from public.movecoins_ledger
+  (select expires_at from public.wallet_ledger
      where booking_id = current_setting('mc.b1')::uuid and kind = 'cashback'),
   null, 'crédito de cashback tem validade (expires_at)'
 );
 select is(
-  (select count(*)::int from public.movecoins_ledger where booking_id = current_setting('mc.b0')::uuid),
+  (select count(*)::int from public.wallet_ledger where booking_id = current_setting('mc.b0')::uuid),
   0, 'reserva de valor 0 não credita cashback'
 );
 
@@ -125,15 +124,15 @@ select lives_ok(
   'update numa reserva já concluída roda sem erro'
 );
 select is(
-  (select count(*)::int from public.movecoins_ledger
+  (select count(*)::int from public.wallet_ledger
      where booking_id = current_setting('mc.b1')::uuid and kind = 'cashback'),
   1, 'idempotência: continua exatamente 1 cashback'
 );
 -- O índice parcial barra um 2º cashback manual pra mesma reserva.
 select throws_ok(
-  $$ insert into public.movecoins_ledger(profile_id, amount_cents, kind, booking_id)
+  $$ insert into public.wallet_ledger(profile_id, amount_cents, kind, booking_id)
      values (current_setting('mc.u1')::uuid, 50, 'cashback', current_setting('mc.b1')::uuid) $$,
-  '23505', null, 'índice movecoins_cashback_once barra 2º cashback pra mesma reserva'
+  '23505', null, 'índice wallet_cashback_once barra 2º cashback pra mesma reserva'
 );
 
 -- ── Indicação ────────────────────────────────────────────────────────────────
@@ -142,12 +141,12 @@ select is(
   'rewarded', 'indicação fecha como rewarded na 1ª reserva concluída'
 );
 select is(
-  (select coalesce(sum(amount_cents), 0)::int from public.movecoins_ledger
+  (select coalesce(sum(amount_cents), 0)::int from public.wallet_ledger
      where profile_id = current_setting('mc.u_ref')::uuid and kind = 'referral'),
   2500, 'quem indica recebe R$25'
 );
 select is(
-  (select coalesce(sum(amount_cents), 0)::int from public.movecoins_ledger
+  (select coalesce(sum(amount_cents), 0)::int from public.wallet_ledger
      where profile_id = current_setting('mc.u_new')::uuid and kind = 'referral'),
   2500, 'indicado recebe R$25 de boas-vindas'
 );
@@ -170,7 +169,7 @@ select is(
   2700, 'saldo soma créditos válidos (200 cashback + 2500 indicação)'
 );
 select lives_ok(
-  $$ insert into public.movecoins_ledger(profile_id, amount_cents, kind, note, expires_at)
+  $$ insert into public.wallet_ledger(profile_id, amount_cents, kind, note, expires_at)
      values (current_setting('mc.u_new')::uuid, 9999, 'adjust', 'expirado', now() - interval '1 day') $$,
   'insere um crédito já expirado'
 );

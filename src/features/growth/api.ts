@@ -2,11 +2,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
 /**
- * Motor de Crescimento — acesso a dados (Clube, MoveCoins, Indicação).
+ * Motor de Crescimento: acesso a dados (Clube, carteira, Indicação).
  *
  * O backend já mora no Postgres:
  * - `get_my_membership()` → nível atual + progresso (tabelas membership/membership_tier)
- * - `get_my_wallet()`     → saldo MoveCoins + expiração + extrato (movecoins_ledger)
+ * - `get_my_wallet()`     → saldo da carteira + expiração + extrato (wallet_ledger)
  * - `get_my_referrals()`  → código, link e contagem de indicações
  * - `redeem_referral_code(code)` → atribui uma indicação a um novo cliente
  * Todas são RPCs SECURITY DEFINER; as tabelas ficam trancadas por RLS.

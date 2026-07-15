@@ -37,7 +37,7 @@ import {
 } from "./growth.logic";
 
 /**
- * Motor de Crescimento — Clube (níveis), MoveCoins (dinheiro de volta) e
+ * Motor de Crescimento: Clube (níveis), carteira (dinheiro de volta) e
  * Indique e Ganhe, ligados aos dados reais do cliente logado. Ver `./api.ts`.
  */
 
@@ -189,7 +189,7 @@ export function MotorCrescimento() {
 
       {/* Engrenagem 2 + recompra */}
       <section className="grid gap-4 tablet:grid-cols-2">
-        {/* MoveCoins */}
+        {/* Carteira Movepark */}
         <div className="flex flex-col justify-between rounded-md border border-hairline bg-canvas p-6 shadow-tier">
           <div>
             <div className="mb-4 flex items-center gap-2 text-muted-steel">

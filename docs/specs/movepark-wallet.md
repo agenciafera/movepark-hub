@@ -9,10 +9,9 @@
 > conversão. Cashback e indicação creditam dinheiro de verdade; o débito (fase seguinte) abate a
 > cobrança na mesma proporção.
 >
-> **Nomenclatura:** o produto se chama **carteira Movepark** (Movepark Wallet). Os identificadores
-> técnicos atuais ainda carregam o prefixo `movecoins_` (`movecoins_ledger`, `movecoins_expiry_days`,
-> índice `movecoins_cashback_once`); um rename de schema é opcional e fica como decisão à parte (a
-> tabela está vazia em produção hoje).
+> **Nomenclatura:** o produto se chama **carteira Movepark** (Movepark Wallet); o nome "MoveCoins"
+> foi descontinuado. Os objetos técnicos usam o prefixo `wallet_` (`wallet_ledger`, `wallet_expiry_days`,
+> índice `wallet_cashback_once`), renomeados na migration `20260819000000_wallet_rename_movecoins`.
 
 ## Por que esta spec existe
 
@@ -26,12 +25,12 @@ validado, testado e com o contrato de reversão escrito.
 
 | Tabela / coluna | Papel |
 |---|---|
-| `movecoins_ledger` | Ledger append-only. Saldo = soma dos lançamentos não expirados, em centavos de real. `amount_cents > 0` crédito, `< 0` débito. `kind in ('cashback','referral','debit','expire','adjust')`. Trancada por RLS (0 policies): acesso só por RPC/trigger `SECURITY DEFINER`. |
+| `wallet_ledger` | Ledger append-only. Saldo = soma dos lançamentos não expirados, em centavos de real. `amount_cents > 0` crédito, `< 0` débito. `kind in ('cashback','referral','debit','expire','adjust')`. Trancada por RLS (0 policies): acesso só por RPC/trigger `SECURITY DEFINER`. |
 | `membership` / `membership_tier` | Nível do cliente (Ignição 2% → Turbo 3% → Nitro 5% → Pódio invite-only). `cashback_bps` mora no catálogo, calibrável no Manager. |
 | `referral` / `referral_code` | Indicação (quem indicou quem) e código por perfil. |
-| `app_setting.movecoins_expiry_days` | Validade do crédito em dias (default 90). |
+| `app_setting.wallet_expiry_days` | Validade do crédito em dias (default 90). |
 
-**Idempotência:** índice parcial `movecoins_cashback_once (booking_id) where kind = 'cashback'`
+**Idempotência:** índice parcial `wallet_cashback_once (booking_id) where kind = 'cashback'`
 garante no máximo um cashback por reserva.
 
 ## Créditos (o que existe hoje)
@@ -83,7 +82,7 @@ implementado.
 
 ## Testes
 
-`supabase/tests/movecoins_wallet.test.sql` (pgTAP): estrutura + RLS + hardening (anon barrado),
+`supabase/tests/wallet.test.sql` (pgTAP): estrutura + RLS + hardening (anon barrado),
 cashback na conclusão (valor por bps + idempotência + guarda de valor 0), indicação (crédito dos dois
 lados + `rewarded` + guardas do redeem), saldo e exclusão de crédito expirado em `get_my_wallet`.
 Valores conferidos contra o banco vivo. Front (lógica pura) em `src/features/growth/growth.logic.test.ts`.

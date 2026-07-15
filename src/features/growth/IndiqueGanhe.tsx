@@ -36,7 +36,7 @@ const PASSOS = [
     n: 3,
     titulo: "Vocês dois ganham",
     texto:
-      "Quando a reserva dele é concluída, você recebe R$ 25 de volta na sua carteira MoveCoins.",
+      "Quando a reserva dele é concluída, você recebe R$ 25 de volta na sua carteira Movepark.",
   },
 ];
 
@@ -63,7 +63,7 @@ const FAQ = [
   },
   {
     q: "O crédito expira?",
-    a: "O crédito MoveCoins vale por 90 dias a partir do momento em que entra na sua carteira.",
+    a: "O crédito vale por 90 dias a partir do momento em que entra na sua carteira.",
   },
 ];
 

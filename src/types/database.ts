@@ -2194,7 +2194,7 @@ export type Database = {
         }
         Relationships: []
       }
-      movecoins_ledger: {
+      wallet_ledger: {
         Row: {
           amount_cents: number
           booking_id: string | null
@@ -2230,21 +2230,21 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "movecoins_ledger_booking_id_fkey"
+            foreignKeyName: "wallet_ledger_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "booking"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "movecoins_ledger_profile_id_fkey"
+            foreignKeyName: "wallet_ledger_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "movecoins_ledger_referral_id_fkey"
+            foreignKeyName: "wallet_ledger_referral_id_fkey"
             columns: ["referral_id"]
             isOneToOne: false
             referencedRelation: "referral"
