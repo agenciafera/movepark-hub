@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { http, HttpResponse } from "msw";
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/utils";
 import { server } from "@/test/msw/server";
 import { ConsumerTopbar } from "./ConsumerTopbar";
@@ -35,5 +36,24 @@ describe("ConsumerTopbar — busca por rota", () => {
     renderWithProviders(<ConsumerTopbar />, { route: "/" });
 
     expect(screen.queryByText("Onde · Quando · Veículo")).not.toBeInTheDocument();
+  });
+
+  it("abre o modal de busca ao tocar no atalho mobile (não volta pra home)", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ConsumerTopbar />, { route: "/search" });
+
+    // Nenhum modal aberto de início.
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    // Toca no atalho mobile de busca (o span vive dentro de um <button>).
+    const trigger = screen.getByText("Onde · Quando · Veículo").closest("button");
+    expect(trigger).not.toBeNull();
+    await user.click(trigger!);
+
+    // Abre o modal por cima da página, com os campos reaproveitados (Onde · Quando · Veículo).
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Buscar vaga")).toBeInTheDocument();
+    expect(within(dialog).getByText("Onde")).toBeInTheDocument();
+    expect(within(dialog).getByText("Veículo")).toBeInTheDocument();
   });
 });

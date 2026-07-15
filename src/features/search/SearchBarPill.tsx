@@ -27,6 +27,8 @@ type Props = {
   /** Preserva os filtros já na URL (estacionamento, comodidades, ordenação…) na re-busca. Usado na
    *  página de resultados; na home fica false (busca nova). */
   preserveParams?: boolean;
+  /** Dispara depois de navegar pra `/search`. Usado pra fechar o modal de busca no mobile. */
+  onSubmit?: () => void;
 };
 
 function nextWeekendDefaults(): { from: Date; to: Date } {
@@ -47,6 +49,7 @@ export function SearchBarPill({
   initialTo = null,
   initialVehicle = "car",
   preserveParams = false,
+  onSubmit,
 }: Props) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -67,6 +70,7 @@ export function SearchBarPill({
       vehicle,
     });
     navigate(`/search?${next.toString()}`);
+    onSubmit?.();
   }
 
   // Padding vertical que dá altura aos campos quando empilhados no mobile; no pill (tablet+)

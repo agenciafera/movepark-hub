@@ -1,6 +1,13 @@
+import * as React from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Search, Heart, User2, LogOut, LayoutDashboard, Calendar, ChevronDown, MapPin, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { SearchBarPill } from "@/features/search/SearchBarPill";
 import {
   Avatar,
@@ -93,6 +100,7 @@ export function ConsumerTopbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
+  const [searchOpen, setSearchOpen] = React.useState(false);
   const isHome = location.pathname === "/";
   // Rotas onde a busca de vaga não faz sentido: a landing B2B de parceiro fala com um
   // dono de estacionamento, não com um viajante — o widget de busca só divide o foco.
@@ -150,10 +158,11 @@ export function ConsumerTopbar() {
               initialVehicle={vehicleParam}
               preserveParams
             />
-            {/* Mobile: pill compacta que leva pra busca grande na home. */}
+            {/* Mobile: pill compacta que abre o modal de busca por cima da página (estilo Airbnb),
+                sem voltar pra home. */}
             <button
               type="button"
-              onClick={() => navigate("/")}
+              onClick={() => setSearchOpen(true)}
               className="flex h-12 w-full items-center gap-3 rounded-full border border-hairline bg-canvas px-4 text-body-sm text-muted shadow-tier transition-shadow hover:shadow-tier tablet:hidden"
             >
               <Search className="h-4 w-4 shrink-0" />
@@ -161,6 +170,29 @@ export function ConsumerTopbar() {
                 {destParam ? destParam : "Onde · Quando · Veículo"}
               </span>
             </button>
+            {/* modal={false}: sem o body-lock/focus-trap do Radix Dialog modal, que quebra os
+                Popover/cmdk aninhados (DestinationCombobox, DateRangePicker) portados pra fora do
+                content (tocar num destino ou dia não seleciona). Como modal={false} deixa o fundo
+                clicável, o content é full-screen e opaco: cobre a página toda e não sobra brecha
+                pro clique vazar pro fundo. */}
+            <Dialog open={searchOpen} onOpenChange={setSearchOpen} modal={false}>
+              <DialogContent className="inset-0 left-0 top-0 h-full max-h-none w-full max-w-none translate-x-0 translate-y-0 content-start gap-4 rounded-none border-0 tablet:hidden">
+                <DialogHeader>
+                  <DialogTitle>Buscar vaga</DialogTitle>
+                </DialogHeader>
+                <SearchBarPill
+                  variant="compact"
+                  className="border-0 shadow-none"
+                  initialDest={destParam}
+                  initialPoint={pointParam}
+                  initialFrom={parseDate(fromParam)}
+                  initialTo={parseDate(toParam)}
+                  initialVehicle={vehicleParam}
+                  preserveParams
+                  onSubmit={() => setSearchOpen(false)}
+                />
+              </DialogContent>
+            </Dialog>
           </>
         )}
       </div>
