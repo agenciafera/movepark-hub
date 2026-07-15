@@ -21,18 +21,23 @@ function useSavedListingsDetail(ids: string[]) {
     queryKey: ["saved-listings-detail", ids.slice().sort().join(",")],
     queryFn: async (): Promise<SavedListingDetail[]> => {
       if (ids.length === 0) return [];
+      // O tipo de vaga (código/nome) vem por company_parking_type → parking_type;
+      // location_parking_type não tem "parking_type_code" (isso dava erro PGRST200
+      // e deixava a lista de favoritos sempre vazia).
       const { data, error } = await supabase
         .from("location_parking_type")
         .select(
           `
           id,
-          location:location_id (
+          location:location!inner (
             slug,
             name,
             address,
-            company:company_id ( slug, name )
+            company:company!inner ( slug, name )
           ),
-          parking_type:parking_type_code ( code, name )
+          company_parking_type:company_parking_type!inner (
+            parking_type:parking_type!inner ( code, name )
+          )
         `,
         )
         .in("id", ids);
@@ -46,8 +51,11 @@ function useSavedListingsDetail(ids: string[]) {
             address: string | null;
             company: { slug: string; name: string } | null;
           } | null;
-          parking_type: { code: string; name: string } | null;
+          company_parking_type: {
+            parking_type: { code: string; name: string } | null;
+          } | null;
         };
+        const parkingType = rec.company_parking_type?.parking_type;
         return {
           id: rec.id,
           operator: {
@@ -60,8 +68,8 @@ function useSavedListingsDetail(ids: string[]) {
             address: rec.location?.address ?? null,
           },
           parking_type: {
-            code: rec.parking_type?.code ?? "",
-            name: rec.parking_type?.name ?? "",
+            code: parkingType?.code ?? "",
+            name: parkingType?.name ?? "",
           },
         };
       });

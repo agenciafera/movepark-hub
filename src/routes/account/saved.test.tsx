@@ -25,7 +25,9 @@ describe("SavedPage — /account/saved", () => {
               address: "Rua X, 100",
               company: { slug: "ferapark", name: "Ferapark" },
             },
-            parking_type: { code: "uncovered", name: "Vaga Descoberta" },
+            company_parking_type: {
+              parking_type: { code: "uncovered", name: "Vaga Descoberta" },
+            },
           },
         ]),
       ),
