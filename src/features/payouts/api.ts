@@ -61,6 +61,66 @@ export function useSavePayoutAccountAdmin() {
   });
 }
 
+/**
+ * Salva a conta de repasse do PRÓPRIO operador (dono). Mesma escrita direta do admin, mas
+ * autorizada pela RLS de dono (company_payout_account_owner_write/update). E1.3.
+ */
+export function useSavePayoutAccountSelf() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { company_id: string; payload: PayoutAccountPayload }) => {
+      const { error } = await supabase
+        .from("company_payout_account")
+        .upsert({ company_id: args.company_id, ...args.payload, deleted_at: null });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: payoutAccountKeys.all });
+      qc.invalidateQueries({ queryKey: payoutKeys.all });
+    },
+  });
+}
+
+export const contractKeys = {
+  all: ["company-contract"] as const,
+  detail: (companyId: string) => [...contractKeys.all, companyId] as const,
+};
+
+/** Lê o status do contrato (assinado quando `contract_accepted_at` existe). */
+export function useContractStatus(companyId: string | undefined) {
+  return useQuery({
+    queryKey: contractKeys.detail(companyId ?? ""),
+    enabled: !!companyId,
+    queryFn: async (): Promise<{ acceptedAt: string | null; version: string | null }> => {
+      const { data, error } = await supabase
+        .from("company")
+        .select("contract_accepted_at, contract_version")
+        .eq("id", companyId!)
+        .maybeSingle();
+      if (error) throw error;
+      return {
+        acceptedAt: data?.contract_accepted_at ?? null,
+        version: data?.contract_version ?? null,
+      };
+    },
+  });
+}
+
+/** Assinatura (simulada) do contrato com a Movepark. Só o dono (RPC gateia). E1.3. */
+export function useAcceptContract() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { company_id: string; version?: string }) => {
+      const { error } = await supabase.rpc("operator_accept_contract", {
+        p_company_id: args.company_id,
+        p_version: args.version ?? "v1",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: contractKeys.all }),
+  });
+}
+
 async function fetchRecipient(companyId: string): Promise<PayoutRecipient | null> {
   const { data, error } = await supabase
     .from("payout_recipient")

@@ -762,6 +762,8 @@ export type Database = {
       }
       company: {
         Row: {
+          contract_accepted_at: string | null
+          contract_version: string | null
           created_at: string
           deleted_at: string | null
           id: string
@@ -786,6 +788,8 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           legal_name?: string | null
+          contract_accepted_at?: string | null
+          contract_version?: string | null
           logo_url?: string | null
           name: string
           onboarding_status?: Database["public"]["Enums"]["onboarding_status"]
@@ -806,6 +810,8 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           legal_name?: string | null
+          contract_accepted_at?: string | null
+          contract_version?: string | null
           logo_url?: string | null
           name?: string
           onboarding_status?: Database["public"]["Enums"]["onboarding_status"]
@@ -4254,6 +4260,10 @@ export type Database = {
         Returns: undefined
       }
       operator_list_api_keys: { Args: { p_company_id: string }; Returns: Json }
+      operator_accept_contract: {
+        Args: { p_company_id: string; p_version?: string }
+        Returns: undefined
+      }
       operator_location_occupancy: {
         Args: { p_from: string; p_location_id: string; p_to: string }
         Returns: {

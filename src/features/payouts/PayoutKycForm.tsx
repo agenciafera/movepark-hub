@@ -171,6 +171,68 @@ function RepDeclaration({ control }: { control: Control<KycValues> }) {
   );
 }
 
+// Seções do KYC, exportadas para o PayoutKycWizard (operador, em etapas) reusar o mesmo layout.
+export function KycCompanySection({ control }: { control: Control<KycValues> }) {
+  return (
+    <Section title="Dados da empresa">
+      <TextField control={control} name="company.legal_name" label="Razão social" />
+      <TextField control={control} name="company.trade_name" label="Nome fantasia (opcional)" />
+      <TextField control={control} name="company.document" label="CNPJ" mask={cnpjMask} placeholder="00.000.000/0000-00" />
+      <CorporationTypeField control={control} />
+      <TextField control={control} name="company.email" label="E-mail da empresa" type="email" />
+      <TextField control={control} name="company.phone" label="Telefone" mask={phoneMask} placeholder="(11) 99999-9999" />
+      <MoneyField control={control} name="company.annual_revenue" label="Faturamento anual" />
+      <TextField control={control} name="company.founding_date" label="Data de fundação" mask={dateMask} placeholder="DD/MM/AAAA" />
+    </Section>
+  );
+}
+
+export function KycCompanyAddressSection({ control }: { control: Control<KycValues> }) {
+  return (
+    <Section title="Endereço da empresa">
+      <AddressFields control={control} prefix="company.address" />
+    </Section>
+  );
+}
+
+export function KycRepresentativeSection({ control }: { control: Control<KycValues> }) {
+  return (
+    <Section title="Representante legal">
+      <TextField control={control} name="representative.name" label="Nome completo" />
+      <TextField control={control} name="representative.document" label="CPF" mask={cpfMask} placeholder="000.000.000-00" />
+      <TextField control={control} name="representative.email" label="E-mail" type="email" />
+      <TextField control={control} name="representative.phone" label="Telefone" mask={phoneMask} placeholder="(11) 99999-9999" />
+      <TextField control={control} name="representative.birthdate" label="Data de nascimento" mask={dateMask} placeholder="DD/MM/AAAA" />
+      <MoneyField control={control} name="representative.monthly_income" label="Renda mensal" />
+      <TextField control={control} name="representative.professional_occupation" label="Ocupação profissional" />
+      <TextField control={control} name="representative.mother_name" label="Nome da mãe (opcional)" />
+      <RepDeclaration control={control} />
+    </Section>
+  );
+}
+
+export function KycRepAddressSection({ control }: { control: Control<KycValues> }) {
+  return (
+    <Section title="Endereço do representante">
+      <AddressFields control={control} prefix="representative.address" />
+    </Section>
+  );
+}
+
+export function KycBankSection({ control }: { control: Control<KycValues> }) {
+  return (
+    <Section title="Conta bancária para repasse">
+      <TextField control={control} name="bank.bank_code" label="Código do banco" mask={bankCodeMask} placeholder="341" />
+      <TextField control={control} name="bank.branch_number" label="Agência" />
+      <TextField control={control} name="bank.branch_check_digit" label="Dígito da agência (opcional)" />
+      <TextField control={control} name="bank.account_number" label="Conta" />
+      <TextField control={control} name="bank.account_check_digit" label="Dígito da conta" />
+      <AccountTypeField control={control} />
+      <TextField control={control} name="bank.holder_name" label="Titular da conta (máx. 30 caracteres)" />
+    </Section>
+  );
+}
+
 export type PayoutKycFormProps = {
   defaultValues: KycValues;
   onSubmit: (values: KycValues) => Promise<void> | void;
@@ -208,46 +270,11 @@ export function PayoutKycForm({
 
   return (
     <form onSubmit={handleSubmit((v) => onSubmit(v))} className="flex flex-col gap-7">
-      <Section title="Dados da empresa">
-        <TextField control={control} name="company.legal_name" label="Razão social" />
-        <TextField control={control} name="company.trade_name" label="Nome fantasia (opcional)" />
-        <TextField control={control} name="company.document" label="CNPJ" mask={cnpjMask} placeholder="00.000.000/0000-00" />
-        <CorporationTypeField control={control} />
-        <TextField control={control} name="company.email" label="E-mail da empresa" type="email" />
-        <TextField control={control} name="company.phone" label="Telefone" mask={phoneMask} placeholder="(11) 99999-9999" />
-        <MoneyField control={control} name="company.annual_revenue" label="Faturamento anual" />
-        <TextField control={control} name="company.founding_date" label="Data de fundação" mask={dateMask} placeholder="DD/MM/AAAA" />
-      </Section>
-
-      <Section title="Endereço da empresa">
-        <AddressFields control={control} prefix="company.address" />
-      </Section>
-
-      <Section title="Representante legal">
-        <TextField control={control} name="representative.name" label="Nome completo" />
-        <TextField control={control} name="representative.document" label="CPF" mask={cpfMask} placeholder="000.000.000-00" />
-        <TextField control={control} name="representative.email" label="E-mail" type="email" />
-        <TextField control={control} name="representative.phone" label="Telefone" mask={phoneMask} placeholder="(11) 99999-9999" />
-        <TextField control={control} name="representative.birthdate" label="Data de nascimento" mask={dateMask} placeholder="DD/MM/AAAA" />
-        <MoneyField control={control} name="representative.monthly_income" label="Renda mensal" />
-        <TextField control={control} name="representative.professional_occupation" label="Ocupação profissional" />
-        <TextField control={control} name="representative.mother_name" label="Nome da mãe (opcional)" />
-        <RepDeclaration control={control} />
-      </Section>
-
-      <Section title="Endereço do representante">
-        <AddressFields control={control} prefix="representative.address" />
-      </Section>
-
-      <Section title="Conta bancária para repasse">
-        <TextField control={control} name="bank.bank_code" label="Código do banco" mask={bankCodeMask} placeholder="341" />
-        <TextField control={control} name="bank.branch_number" label="Agência" />
-        <TextField control={control} name="bank.branch_check_digit" label="Dígito da agência (opcional)" />
-        <TextField control={control} name="bank.account_number" label="Conta" />
-        <TextField control={control} name="bank.account_check_digit" label="Dígito da conta" />
-        <AccountTypeField control={control} />
-        <TextField control={control} name="bank.holder_name" label="Titular da conta (máx. 30 caracteres)" />
-      </Section>
+      <KycCompanySection control={control} />
+      <KycCompanyAddressSection control={control} />
+      <KycRepresentativeSection control={control} />
+      <KycRepAddressSection control={control} />
+      <KycBankSection control={control} />
 
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-hairline pt-5">
         <div className="flex gap-2">

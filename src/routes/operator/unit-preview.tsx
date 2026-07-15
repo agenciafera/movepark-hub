@@ -2,7 +2,18 @@ import * as React from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { toast } from "sonner";
-import { ArrowLeft, Check, Copy, Eye, ExternalLink, PartyPopper } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Building2,
+  Check,
+  Copy,
+  Eye,
+  ExternalLink,
+  Landmark,
+  PartyPopper,
+  ShieldCheck,
+} from "lucide-react";
 import { Wordmark } from "@/components/shared/Brand";
 import { Button } from "@/components/ui/button";
 import { UnitPreviewCard } from "@/features/onboarding/publish/UnitPreviewCard";
@@ -83,11 +94,10 @@ export default function UnitPreviewPage() {
                     </>
                   ) : (
                     <>
-                      <h1 className="text-title-lg text-ink">Sua unidade está pronta 🎉</h1>
+                      <h1 className="text-title-lg text-ink">Boa! Sua unidade tomou forma 🎉</h1>
                       <p className="mt-1 text-body-sm text-muted">
-                        Você já vê aqui embaixo como ela vai aparecer. Ela entra na busca da Movepark
-                        assim que o recebimento ficar ativo (os dados pra você receber os pagamentos).
-                        A gente finaliza esse passo com você.
+                        Veja aqui embaixo como ela vai aparecer pro cliente. Falta a etapa 2 pra ela
+                        entrar na busca e você começar a vender: seus dados de recebimento.
                       </p>
                     </>
                   )}
@@ -111,52 +121,97 @@ export default function UnitPreviewPage() {
               />
 
               <div className="flex flex-col gap-4">
-                <div className="rounded-lg border border-hairline bg-canvas p-5">
-                  <h2 className="text-title-md text-ink">Link público da sua unidade</h2>
-                  {!unit.isListed ? (
-                    <p className="mt-1 text-body-sm text-muted">
-                      A página pública fica disponível quando a unidade entrar na busca, assim que o
-                      recebimento estiver ativo. Até lá, você acompanha tudo pelo painel.
-                    </p>
-                  ) : absoluteUrl ? (
-                    <>
+                {!unit.isListed ? (
+                  <>
+                    {/* Etapa 2 (primário): dados de recebimento — é o que libera a venda e a busca */}
+                    <div className="rounded-lg border border-mp-primary/40 bg-mp-pale p-5">
+                      <span className="text-caption-sm font-semibold uppercase tracking-wide text-mp-indigo">
+                        Etapa 2 de 2
+                      </span>
+                      <h2 className="mt-1 text-title-md text-ink">Falta pouco pra você vender</h2>
                       <p className="mt-1 text-body-sm text-muted">
-                        Envie no WhatsApp, redes ou no seu site. A reserva acontece por aqui.
+                        Pra receber os pagamentos e entrar na busca da Movepark, complete seus dados de
+                        recebimento:
                       </p>
-                      <div className="mt-3 flex items-center gap-2">
-                        <code className="flex-1 truncate rounded-md border border-hairline bg-surface-soft px-3 py-2 text-caption text-ink">
-                          {absoluteUrl}
-                        </code>
-                        <Button size="sm" variant="secondary" onClick={copyUrl}>
-                          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                          {copied ? "Copiado" : "Copiar"}
-                        </Button>
-                      </div>
-                      {unit.isActive && (
-                        <Button asChild size="sm" variant="ghost" className="mt-2 w-fit">
-                          <a href={unit.publicUrl!} target="_blank" rel="noreferrer">
-                            Abrir página pública <ExternalLink className="h-4 w-4" />
-                          </a>
-                        </Button>
-                      )}
-                    </>
-                  ) : (
-                    <p className="mt-1 text-body-sm text-muted">
-                      Cadastre ao menos um tipo de vaga para gerar o link público.
-                    </p>
-                  )}
-                </div>
+                      <ul className="mt-3 flex flex-col gap-2.5">
+                        <li className="flex items-center gap-2.5 text-body-sm text-ink">
+                          <Landmark className="h-4 w-4 shrink-0 text-mp-indigo" /> Conta bancária
+                        </li>
+                        <li className="flex items-center gap-2.5 text-body-sm text-ink">
+                          <Building2 className="h-4 w-4 shrink-0 text-mp-indigo" /> CNPJ e dados da empresa
+                        </li>
+                        <li className="flex items-center gap-2.5 text-body-sm text-ink">
+                          <ShieldCheck className="h-4 w-4 shrink-0 text-mp-indigo" /> Verificação de
+                          identidade (KYC)
+                        </li>
+                      </ul>
+                      <Button asChild size="sm" className="mt-4 w-fit">
+                        <Link to="/operator/recebimento">
+                          Continuar cadastro <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      <p className="mt-2 text-caption-sm text-muted-steel">
+                        Assim que aprovarmos seus dados, a unidade entra na busca sozinha.
+                      </p>
+                    </div>
 
-                <div className="rounded-lg border border-hairline bg-surface-pale p-5">
-                  <h2 className="text-title-md text-ink">Deixe redondo depois</h2>
-                  <p className="mt-1 text-body-sm text-muted">
-                    Fotos, comodidades, horário/24h, como chegar e serviços extras deixam sua página
-                    mais vendedora. Você faz isso quando quiser, no painel.
-                  </p>
-                  <Button asChild size="sm" variant="secondary" className="mt-3 w-fit">
-                    <Link to="/operator/locations">Ir para minhas unidades</Link>
-                  </Button>
-                </div>
+                    {/* Secundário (opcional, sem pressa): deixar a página redonda */}
+                    <div className="rounded-lg border border-hairline bg-canvas p-5">
+                      <h2 className="text-title-md text-ink">Deixe a página redonda (quando quiser)</h2>
+                      <p className="mt-1 text-body-sm text-muted">
+                        Fotos, comodidades, horário/24h e como chegar deixam sua página mais vendedora.
+                        Sem pressa: dá pra fazer depois, no painel.
+                      </p>
+                      <Button asChild size="sm" variant="ghost" className="mt-3 w-fit">
+                        <Link to="/operator/locations">Ir para minhas unidades</Link>
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="rounded-lg border border-hairline bg-canvas p-5">
+                      <h2 className="text-title-md text-ink">Link público da sua unidade</h2>
+                      {absoluteUrl ? (
+                        <>
+                          <p className="mt-1 text-body-sm text-muted">
+                            Envie no WhatsApp, redes ou no seu site. A reserva acontece por aqui.
+                          </p>
+                          <div className="mt-3 flex items-center gap-2">
+                            <code className="flex-1 truncate rounded-md border border-hairline bg-surface-soft px-3 py-2 text-caption text-ink">
+                              {absoluteUrl}
+                            </code>
+                            <Button size="sm" variant="secondary" onClick={copyUrl}>
+                              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                              {copied ? "Copiado" : "Copiar"}
+                            </Button>
+                          </div>
+                          {unit.isActive && (
+                            <Button asChild size="sm" variant="ghost" className="mt-2 w-fit">
+                              <a href={unit.publicUrl!} target="_blank" rel="noreferrer">
+                                Abrir página pública <ExternalLink className="h-4 w-4" />
+                              </a>
+                            </Button>
+                          )}
+                        </>
+                      ) : (
+                        <p className="mt-1 text-body-sm text-muted">
+                          Cadastre ao menos um tipo de vaga para gerar o link público.
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="rounded-lg border border-hairline bg-surface-pale p-5">
+                      <h2 className="text-title-md text-ink">Deixe redondo depois</h2>
+                      <p className="mt-1 text-body-sm text-muted">
+                        Fotos, comodidades, horário/24h, como chegar e serviços extras deixam sua
+                        página mais vendedora. Você faz isso quando quiser, no painel.
+                      </p>
+                      <Button asChild size="sm" variant="secondary" className="mt-3 w-fit">
+                        <Link to="/operator/locations">Ir para minhas unidades</Link>
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </>

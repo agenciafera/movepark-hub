@@ -1,0 +1,125 @@
+import * as React from "react";
+import { useForm, type Control, type Path } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, ArrowLeft } from "lucide-react";
+import { payoutKycSchema, type PayoutKycForm as KycValues } from "./kyc";
+import {
+  KycCompanySection,
+  KycCompanyAddressSection,
+  KycRepresentativeSection,
+  KycRepAddressSection,
+  KycBankSection,
+} from "./PayoutKycForm";
+
+type KycStep = {
+  title: string;
+  /** Prefixos de campo validados antes de avançar (o zod cobre os aninhados: company.address, etc.). */
+  fields: Path<KycValues>[];
+  render: (control: Control<KycValues>) => React.ReactNode;
+};
+
+const STEPS: KycStep[] = [
+  {
+    title: "Sua empresa",
+    fields: ["company"],
+    render: (c) => (
+      <div className="flex flex-col gap-7">
+        <KycCompanySection control={c} />
+        <KycCompanyAddressSection control={c} />
+      </div>
+    ),
+  },
+  {
+    title: "Representante legal",
+    fields: ["representative"],
+    render: (c) => (
+      <div className="flex flex-col gap-7">
+        <KycRepresentativeSection control={c} />
+        <KycRepAddressSection control={c} />
+      </div>
+    ),
+  },
+  {
+    title: "Conta bancária",
+    fields: ["bank"],
+    render: (c) => <KycBankSection control={c} />,
+  },
+];
+
+export type PayoutKycWizardProps = {
+  defaultValues: KycValues;
+  onSubmit: (values: KycValues) => Promise<void> | void;
+  submitting?: boolean;
+  onSkip?: () => void;
+};
+
+/**
+ * KYC do recebedor em ETAPAS (operador), no padrão do PublishWizard da fase 1: barra de progresso,
+ * "Passo X de N", Continuar/Voltar com validação por etapa. Um único form (react-hook-form); só
+ * submete na última etapa. Reusa as seções do PayoutKycForm.
+ */
+export function PayoutKycWizard({ defaultValues, onSubmit, submitting, onSkip }: PayoutKycWizardProps) {
+  const {
+    control,
+    handleSubmit,
+    trigger,
+    formState: { isSubmitting },
+  } = useForm<KycValues>({
+    resolver: zodResolver(payoutKycSchema),
+    defaultValues,
+    mode: "onBlur",
+  });
+
+  const [step, setStep] = React.useState(0);
+  const busy = submitting || isSubmitting;
+  const isLast = step === STEPS.length - 1;
+
+  async function next() {
+    const ok = await trigger(STEPS[step].fields);
+    if (ok) setStep((s) => Math.min(s + 1, STEPS.length - 1));
+  }
+
+  return (
+    <form onSubmit={handleSubmit((v) => onSubmit(v))} className="flex flex-col gap-6">
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          {STEPS.map((s, i) => (
+            <div
+              key={s.title}
+              className={"h-1.5 flex-1 rounded-full " + (i <= step ? "bg-mp-primary" : "bg-surface-pale")}
+            />
+          ))}
+        </div>
+        <p className="text-caption-sm text-muted">
+          Passo {step + 1} de {STEPS.length} · {STEPS[step].title}
+        </p>
+      </div>
+
+      {STEPS[step].render(control)}
+
+      <div className="flex items-center justify-between gap-2 border-t border-hairline pt-5">
+        {step > 0 ? (
+          <Button type="button" variant="ghost" onClick={() => setStep((s) => s - 1)} disabled={busy}>
+            <ArrowLeft className="h-4 w-4" /> Voltar
+          </Button>
+        ) : onSkip ? (
+          <Button type="button" variant="ghost" onClick={onSkip} disabled={busy}>
+            Fazer depois
+          </Button>
+        ) : (
+          <span />
+        )}
+        {isLast ? (
+          <Button type="submit" disabled={busy}>
+            {busy ? "Salvando…" : "Salvar e continuar"} <ArrowRight className="h-4 w-4" />
+          </Button>
+        ) : (
+          <Button type="button" onClick={next} disabled={busy}>
+            Continuar <ArrowRight className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+    </form>
+  );
+}
