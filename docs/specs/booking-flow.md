@@ -6,7 +6,9 @@
 > **não** re-incrementa. O hold é liberado (`release_booking_capacity`) no **cancelamento** e na
 > **expiração** de `pending` não pago, que vira **`cancelled`** (não `no_show`) via
 > `cron_expire_pending_bookings` (pg_cron `expire-pending-bookings`, a cada 5 min).
-> `minimum_stay`/`minimum_date`/antecedência são validados na criação. Ver
+> `minimum_stay`/`minimum_date`/antecedência são validados na criação. A **entrada não pode ser
+> retroativa** (piso incondicional `assert_check_in_not_past`, bug E2.2.1): vale na criação e na
+> troca de datas (pendente e paga), com espelho `past_ok` em `check_availability` para o front. Ver
 > [capacity-rules.md](./capacity-rules.md).
 >
 > **Janela de expiração configurável + blindagem de pagamento (E0.3.1-a, ADR-005).** A janela do

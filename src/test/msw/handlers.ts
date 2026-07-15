@@ -30,6 +30,7 @@ export const handlers: RequestHandler[] = [
       minimum_date: null,
       advance_ok: true,
       advance_minutes: null,
+      past_ok: true,
       days: 2,
       reasons: [],
       error: null,

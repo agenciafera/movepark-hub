@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { TIME_SLOTS, fmtTime, mergeRange, setTime } from "./DateRangePicker.logic";
+import { TIME_SLOTS, fmtTime, isTimeSlotPast, mergeRange, setTime } from "./DateRangePicker.logic";
 
 type Props = {
   from: Date | null;
@@ -98,7 +98,7 @@ export function DateRangePicker({ from, to, onChange, triggerClassName }: Props)
               </SelectTrigger>
               <SelectContent className="max-h-72">
                 {TIME_SLOTS.map((t) => (
-                  <SelectItem key={t} value={t}>
+                  <SelectItem key={t} value={t} disabled={!!from && isTimeSlotPast(from, t)}>
                     {t}
                   </SelectItem>
                 ))}
@@ -117,7 +117,7 @@ export function DateRangePicker({ from, to, onChange, triggerClassName }: Props)
               </SelectTrigger>
               <SelectContent className="max-h-72">
                 {TIME_SLOTS.map((t) => (
-                  <SelectItem key={t} value={t}>
+                  <SelectItem key={t} value={t} disabled={!!to && isTimeSlotPast(to, t)}>
                     {t}
                   </SelectItem>
                 ))}

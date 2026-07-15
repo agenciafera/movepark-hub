@@ -19,6 +19,13 @@ O hold por data **já existia** no baseline; esta entrega o tornou confiável de
 - **Regras de reserva aplicadas (novo):** `create_booking_atomic` agora bloqueia (`P0001`) antes
   do hold quando viola `minimum_stay` (`min_stay_satisfied`), `minimum_date` ou a antecedência
   mínima (`pricing_rule.advance_booking_minutes`).
+- **Piso de data (bug E2.2.1):** a entrada não pode ser retroativa. `create_booking_atomic`,
+  `change_booking_dates` e `hold_paid_date_change` chamam `assert_check_in_not_past(check_in)`
+  (helper `check_in_in_past`, `check_in < now() - 2 min` de folga para skew de relógio) e recusam
+  com `P0001` "A data e o horário de entrada não podem estar no passado.". A regra é incondicional
+  (vale mesmo sem `advance_booking_minutes` configurado). `check_availability` espelha o piso em
+  `past_ok` (+ reason `past`) para o front bloquear o botão de reservar antes do submit.
+  Migration `20260811000000_block_retroactive_check_in.sql`.
 - **Disponibilidade exposta no produto (novo):**
   - `check_availability(company, location, parking_type, check_in, check_out)` → jsonb com
     `remaining` (= `capacity − max(booked_count nas datas)`), `sold_out`, `near_capacity`,

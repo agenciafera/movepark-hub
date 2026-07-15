@@ -3607,6 +3607,10 @@ export type Database = {
         Returns: undefined
       }
       anonymize_own_account: { Args: never; Returns: undefined }
+      assert_check_in_not_past: {
+        Args: { p_check_in: string }
+        Returns: undefined
+      }
       api_assert_lpt_company: {
         Args: { p_company_id: string; p_lpt_id: string }
         Returns: undefined
@@ -3932,6 +3936,10 @@ export type Database = {
           p_parking_type: string
         }
         Returns: Json
+      }
+      check_in_in_past: {
+        Args: { p_check_in: string }
+        Returns: boolean
       }
       company_list_members: {
         Args: { p_company_id: string }

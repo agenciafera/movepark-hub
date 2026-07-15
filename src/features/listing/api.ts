@@ -378,6 +378,7 @@ export function useAvailability(args: {
         minimum_date: r?.minimum_date ?? null,
         advance_ok: r?.advance_ok ?? true,
         advance_minutes: r?.advance_minutes != null ? Number(r.advance_minutes) : null,
+        past_ok: r?.past_ok ?? true,
         days: Number(r?.days ?? 0),
         reasons: Array.isArray(r?.reasons) ? r.reasons : [],
         error: r?.error ?? null,

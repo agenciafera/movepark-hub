@@ -16,6 +16,7 @@ function base(overrides: Partial<AvailabilityCheck> = {}): AvailabilityCheck {
     minimum_date: null,
     advance_ok: true,
     advance_minutes: null,
+    past_ok: true,
     days: 2,
     reasons: [],
     ...overrides,
@@ -59,6 +60,15 @@ describe("availabilityUi", () => {
     const r = availabilityUi(base({ ok: false, advance_ok: false, advance_minutes: 30 }));
     expect(r.canReserve).toBe(false);
     expect(r.message).toMatch(/30 min/);
+  });
+
+  it("data de entrada no passado → bloqueia (tem prioridade sobre esgotado)", () => {
+    const r = availabilityUi(
+      base({ ok: false, past_ok: false, sold_out: true, reasons: ["past", "sold_out"] }),
+    );
+    expect(r.canReserve).toBe(false);
+    expect(r.tone).toBe("error");
+    expect(r.message).toBe("A data e o horário de entrada precisam ser futuros.");
   });
 
   it("quase-lotação com vagas restantes → mostra contagem real (plural)", () => {

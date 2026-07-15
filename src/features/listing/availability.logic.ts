@@ -17,6 +17,7 @@ export type AvailabilityCheck = {
   minimum_date: string | null;
   advance_ok: boolean;
   advance_minutes: number | null;
+  past_ok: boolean;
   days: number;
   reasons: string[];
   error?: string | null;
@@ -52,6 +53,13 @@ function minStayLabel(value: number, unit: MinStayUnit): string {
 export function availabilityUi(a: AvailabilityCheck | null | undefined): AvailabilityUi {
   if (!a || a.error) return { canReserve: true, message: null, tone: null };
 
+  if (!a.past_ok) {
+    return {
+      canReserve: false,
+      message: "A data e o horário de entrada precisam ser futuros.",
+      tone: "error",
+    };
+  }
   if (a.sold_out) {
     return { canReserve: false, message: "Esgotado pro seu período.", tone: "error" };
   }

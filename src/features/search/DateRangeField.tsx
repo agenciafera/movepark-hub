@@ -1,5 +1,5 @@
 import * as React from "react";
-import { format, set } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -12,27 +12,13 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-
-/** Gera lista de horários em passos de 30min "00:00", "00:30", ..., "23:30". */
-const TIME_SLOTS = (() => {
-  const out: string[] = [];
-  for (let h = 0; h < 24; h++) {
-    for (const m of [0, 30]) {
-      out.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
-    }
-  }
-  return out;
-})();
-
-function setTime(d: Date, hhmm: string): Date {
-  const [h, m] = hhmm.split(":").map(Number);
-  return set(d, { hours: h, minutes: m, seconds: 0, milliseconds: 0 });
-}
-
-function fmtTime(d: Date | null): string {
-  if (!d) return "08:00";
-  return format(d, "HH:mm");
-}
+import {
+  TIME_SLOTS,
+  fmtTime,
+  isTimeSlotPast,
+  nextFutureTime,
+  setTime,
+} from "./DateRangePicker.logic";
 
 type Mode = "check-in" | "check-out";
 
@@ -51,8 +37,9 @@ export function DateRangeField({ mode, date, onChange, minDate, triggerClassName
 
   function handleDay(day: Date | undefined) {
     if (!day) return;
-    const time = date ? fmtTime(date) : mode === "check-in" ? "08:00" : "18:00";
-    onChange(setTime(day, time));
+    const desired = date ? fmtTime(date) : mode === "check-in" ? "08:00" : "18:00";
+    // Se o dia é hoje e o horário já passou, avança pro próximo slot futuro (entrada não retroativa).
+    onChange(setTime(day, nextFutureTime(day, desired)));
   }
 
   function handleTime(hhmm: string) {
@@ -95,7 +82,7 @@ export function DateRangeField({ mode, date, onChange, minDate, triggerClassName
               </SelectTrigger>
               <SelectContent className="max-h-72">
                 {TIME_SLOTS.map((t) => (
-                  <SelectItem key={t} value={t}>
+                  <SelectItem key={t} value={t} disabled={!!date && isTimeSlotPast(date, t)}>
                     {t}
                   </SelectItem>
                 ))}
