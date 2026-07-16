@@ -75,16 +75,6 @@ Deno.serve(async (req: Request) => {
 
   const admin = createClient(SUPABASE_URL, SERVICE, { auth: { persistSession: false } });
 
-  // Só hub_admin pode operar recebedores.
-  const { data: caller } = await admin
-    .from("profiles")
-    .select("role")
-    .eq("id", userData.user.id)
-    .maybeSingle();
-  if (!caller || caller.role !== "hub_admin") {
-    return jsonResponse({ error: "Acesso restrito a administradores." }, 403);
-  }
-
   let parsedBody: unknown;
   try {
     parsedBody = await req.json();
@@ -93,6 +83,38 @@ Deno.serve(async (req: Request) => {
   }
   const { input, error: inputErr } = parseSyncInput(parsedBody);
   if (!input) return jsonResponse({ error: inputErr }, 400);
+
+  // Autorização: hub_admin OU o DONO da própria empresa. Payouts/KYC são owner-exclusive
+  // (ADR-005); o dono só opera o recebedor da PRÓPRIA empresa e só depois de assinar o contrato.
+  const { data: caller } = await admin
+    .from("profiles")
+    .select("role")
+    .eq("id", userData.user.id)
+    .maybeSingle();
+  let allowed = caller?.role === "hub_admin";
+  if (!allowed) {
+    const { data: ownership } = await admin
+      .from("profile_company")
+      .select("role")
+      .eq("profile_id", userData.user.id)
+      .eq("company_id", input.company_id)
+      .eq("role", "owner")
+      .maybeSingle();
+    if (ownership) {
+      const { data: comp } = await admin
+        .from("company")
+        .select("contract_accepted_at")
+        .eq("id", input.company_id)
+        .maybeSingle();
+      if (!(comp as { contract_accepted_at: string | null } | null)?.contract_accepted_at) {
+        return jsonResponse({ error: "Assine o contrato antes de criar o recebedor." }, 403);
+      }
+      allowed = true;
+    }
+  }
+  if (!allowed) {
+    return jsonResponse({ error: "Acesso restrito." }, 403);
+  }
 
   // Empresa precisa existir.
   const { data: company } = await admin

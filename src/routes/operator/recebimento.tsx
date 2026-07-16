@@ -2,7 +2,7 @@ import * as React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { toast } from "sonner";
-import { ArrowLeft, Check, Download, Landmark, FileText, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Check, Download, Landmark, FileText, ShieldCheck, ShieldQuestion, ExternalLink } from "lucide-react";
 import { useAuth } from "@/auth/context";
 import { Wordmark } from "@/components/shared/Brand";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import {
   useSavePayoutAccountSelf,
   useContractStatus,
   useAcceptContract,
+  useSyncRecipient,
 } from "@/features/payouts/api";
 import { CONTRACT_VERSION, CONTRACT_SUMMARY, downloadContract } from "@/features/payouts/contract";
 import { RevenueMotivator, RevenueMotivatorBanner } from "@/features/payouts/RevenueMotivator";
@@ -37,7 +38,10 @@ export default function OperatorRecebimento() {
   const contract = useContractStatus(companyId);
   const saveAccount = useSavePayoutAccountSelf();
   const acceptContract = useAcceptContract();
+  const syncRecipient = useSyncRecipient();
   const [accept, setAccept] = React.useState(false);
+  // resultado da criação do recebedor na Pagar.me (status + link de KYC, se houver).
+  const [recipient, setRecipient] = React.useState<{ status: string; kycUrl: string | null } | null>(null);
 
   const hasAccount = !!account.data;
   const hasContract = !!contract.data?.acceptedAt;
@@ -62,6 +66,14 @@ export default function OperatorRecebimento() {
     if (!companyId || !accept) return;
     try {
       await acceptContract.mutateAsync({ company_id: companyId, version: CONTRACT_VERSION });
+      // Assinado → cria o recebedor na Pagar.me. Se o gateway pedir verificação, ele devolve o
+      // link de KYC, que vira o próximo passo. Falha aqui não trava a conclusão (a Movepark recria).
+      try {
+        const r = await syncRecipient.mutateAsync({ company_id: companyId, action: "create" });
+        setRecipient({ status: r.status, kycUrl: r.kyc_url });
+      } catch {
+        setRecipient(null);
+      }
       toast.success("Contrato assinado.");
       setOverride("done");
     } catch (err) {
@@ -167,8 +179,13 @@ export default function OperatorRecebimento() {
               <span>Li e concordo com o contrato de parceria da Movepark.</span>
             </label>
             <div className="flex items-center gap-2">
-              <Button onClick={signContract} disabled={!accept || acceptContract.isPending}>
-                {acceptContract.isPending ? "Assinando…" : "Assinar contrato"}
+              <Button
+                onClick={signContract}
+                disabled={!accept || acceptContract.isPending || syncRecipient.isPending}
+              >
+                {acceptContract.isPending || syncRecipient.isPending
+                  ? "Assinando…"
+                  : "Assinar contrato"}
               </Button>
               <Button variant="ghost" onClick={() => setOverride("dados")}>
                 Voltar aos dados
@@ -184,12 +201,49 @@ export default function OperatorRecebimento() {
               </div>
               <h1 className="text-title-lg text-ink">Recebimento enviado! 🎉</h1>
               <p className="text-body-sm text-muted">
-                Recebemos seus dados e o contrato assinado. A Movepark faz a verificação e, assim que
-                liberar, sua unidade entra na busca e começa a receber reservas. A gente te avisa.
+                Recebemos seus dados e o contrato assinado, e já criamos seu recebedor.
               </p>
             </div>
 
-            <Button asChild className="w-fit">
+            {recipient?.kycUrl ? (
+              <div className="flex flex-col gap-3 rounded-lg border border-mp-primary/30 bg-mp-pale p-5 tablet:p-6">
+                <div className="flex items-center gap-2 text-mp-indigo">
+                  <ShieldCheck className="h-4 w-4" />
+                  <span className="text-caption-sm font-semibold">Próximo passo</span>
+                </div>
+                <h2 className="text-title-md text-ink">Confirme sua identidade (verificação)</h2>
+                <p className="text-body-sm text-muted">
+                  Pra liberar os repasses das suas reservas, a processadora de pagamento precisa
+                  confirmar quem você é. É rápido, num link seguro, e você faz uma vez só.
+                </p>
+                <Button asChild className="w-fit">
+                  <a href={recipient.kycUrl} target="_blank" rel="noreferrer">
+                    Fazer a verificação <ExternalLink className="h-4 w-4" />
+                  </a>
+                </Button>
+                <details className="group text-body-sm">
+                  <summary className="flex cursor-pointer items-center gap-1.5 font-medium text-mp-indigo">
+                    <ShieldQuestion className="h-4 w-4" /> Entenda o que é isso
+                  </summary>
+                  <p className="mt-2 text-caption-sm text-muted">
+                    Essa verificação (chamada de KYC) é uma exigência das regras de pagamento no
+                    Brasil. A empresa que processa os pagamentos confirma sua identidade para evitar
+                    fraude e liberar o dinheiro das suas reservas na conta que você cadastrou. Você
+                    envia um documento e uma selfie por um link seguro, uma única vez. Sem isso, os
+                    repasses ficam retidos.
+                  </p>
+                </details>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-hairline bg-canvas p-5">
+                <p className="text-body-sm text-muted">
+                  A Movepark faz a verificação e, assim que liberar, sua unidade entra na busca e
+                  começa a receber reservas. A gente te avisa.
+                </p>
+              </div>
+            )}
+
+            <Button asChild variant="ghost" className="w-fit">
               <Link to="/operator">Ir para o painel</Link>
             </Button>
           </div>
