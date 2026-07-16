@@ -25,9 +25,10 @@ export type JourneyStatus = {
   isListed: boolean;
 };
 
-const ORDER: JourneyStage[] = ["preview", "recebimento", "fotos", "vender"];
+const ORDER: JourneyStage[] = ["preview", "recebimento", "vender"];
 
-/** Lógica pura da jornada (testável sem React/Query). */
+/** Lógica pura da jornada (testável sem React/Query). Fotos são um passo dentro do Preview,
+ * então não têm fase própria; `hasPhotos` fica no retorno só pra nudge de foto na fase Vender. */
 export function deriveJourney(input: {
   loading: boolean;
   hasPublished: boolean;
@@ -42,7 +43,6 @@ export function deriveJourney(input: {
   const completed: JourneyStage[] = [];
   if (input.hasPublished) completed.push("preview");
   if (canReceive) completed.push("recebimento");
-  if (input.hasPhotos) completed.push("fotos");
   if (input.isListed) completed.push("vender");
 
   const current = ORDER.find((s) => !completed.includes(s)) ?? "vender";

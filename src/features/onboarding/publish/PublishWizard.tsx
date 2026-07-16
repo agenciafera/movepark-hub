@@ -21,6 +21,8 @@ import {
   GooglePlacesAutocomplete,
   isGooglePlacesEnabled,
 } from "@/components/shared/GooglePlacesAutocomplete";
+import { ImageGalleryField } from "@/components/shared/ImageUpload";
+import { uploadCompanyAsset } from "@/lib/storage";
 import { useNearestDestination } from "@/features/locations/api";
 import { usePublishedDestinations } from "@/features/destinations/api";
 import {
@@ -36,7 +38,7 @@ type Props = { data: OnboardingData; companyId: string };
 
 type Row = { selected: boolean; base_price: number | null; capacity: string };
 
-const PUBLISH_STEP_TITLES = ["Endereço", "Vagas e preço", "Transfer"];
+const PUBLISH_STEP_TITLES = ["Endereço", "Vagas e preço", "Transfer", "Fotos"];
 
 export function PublishWizard({ data, companyId }: Props) {
   const navigate = useNavigate();
@@ -56,6 +58,9 @@ export function PublishWizard({ data, companyId }: Props) {
   const [lng, setLng] = React.useState<number | null>(loc?.longitude ?? null);
   const [destinationId, setDestinationId] = React.useState<string | null>(loc?.destination_id ?? null);
   const [hasShuttle, setHasShuttle] = React.useState<boolean | null>(loc?.has_shuttle ?? null);
+  const [photos, setPhotos] = React.useState<string[]>(
+    Array.isArray(loc?.photos) ? (loc?.photos as string[]) : [],
+  );
 
   const [rows, setRows] = React.useState<Record<string, Row>>(() => {
     const init: Record<string, Row> = {};
@@ -96,7 +101,7 @@ export function PublishWizard({ data, companyId }: Props) {
       p_address: address || null,
       p_latitude: lat,
       p_longitude: lng,
-      p_photos: loc?.photos ?? [],
+      p_photos: photos,
       p_destination_id: destinationId,
       p_has_shuttle: hasShuttle ?? false,
     });
@@ -139,10 +144,17 @@ export function PublishWizard({ data, companyId }: Props) {
     }
   }
 
-  async function doPublish() {
+  function goFromTransfer() {
     if (hasShuttle == null) return toast.error("Responda sobre o transfer para continuar.");
+    setStep(4);
+  }
+
+  async function doPublish() {
+    if (photos.length === 0) {
+      return toast.error("Adicione pelo menos 1 foto da sua unidade para publicar.");
+    }
     try {
-      await persistLocation(); // grava has_shuttle
+      await persistLocation(); // grava has_shuttle + fotos
       await publish.mutateAsync({ p_company_id: companyId });
       const id = locationId;
       toast.success("Sua unidade está no ar! 🚗");
@@ -349,10 +361,31 @@ export function PublishWizard({ data, companyId }: Props) {
                 </div>
                 <div className="rounded-md bg-surface-pale p-4">
                   <p className="flex items-center gap-2 text-body-sm text-ink">
-                    <Sparkles className="h-4 w-4 text-mp-violet" /> Pronto pra publicar. Você deixa a
-                    unidade redonda (fotos, comodidades, horários) depois, no painel.
+                    <Sparkles className="h-4 w-4 text-mp-violet" /> Falta só as fotos. Comodidades e
+                    horários você ajusta depois, no painel.
                   </p>
                 </div>
+              </div>
+            )}
+
+            {step === 4 && (
+              <div className="flex flex-col gap-5">
+                <div className="space-y-1">
+                  <h1 className="text-display-md text-ink">As fotos do seu estacionamento</h1>
+                  <p className="text-body-sm text-muted">
+                    O cliente escolhe onde deixar o carro pelo que vê. Foto boa recebe muito mais
+                    reserva. Suba pelo menos 1: sem foto, sua unidade não entra na busca.
+                  </p>
+                </div>
+                <ImageGalleryField
+                  label="Fotos da unidade"
+                  values={photos}
+                  onChange={setPhotos}
+                  onUpload={(file) => uploadCompanyAsset(companyId, "photo", file)}
+                />
+                <p className="text-caption-sm text-muted">
+                  Capriche na fachada, nas vagas e onde o cliente circula.
+                </p>
               </div>
             )}
 
@@ -376,6 +409,11 @@ export function PublishWizard({ data, companyId }: Props) {
                 </Button>
               )}
               {step === 3 && (
+                <Button onClick={goFromTransfer} disabled={busy}>
+                  Continuar <ArrowRight className="h-4 w-4" />
+                </Button>
+              )}
+              {step === 4 && (
                 <Button onClick={doPublish} disabled={busy}>
                   {busy ? "Publicando…" : "Publicar minha unidade"} <ArrowRight className="h-4 w-4" />
                 </Button>

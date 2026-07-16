@@ -18,7 +18,6 @@ import {
 import { CONTRACT_VERSION, CONTRACT_SUMMARY, downloadContract } from "@/features/payouts/contract";
 import { RevenueMotivator, RevenueMotivatorBanner } from "@/features/payouts/RevenueMotivator";
 import { OnboardingJourney } from "@/components/shared/OnboardingJourney";
-import { PhotosCallout } from "@/components/shared/PhotosCallout";
 import { ConfettiBurst } from "@/components/shared/ConfettiBurst";
 
 type Step = "dados" | "contrato" | "done";
@@ -90,7 +89,7 @@ export default function OperatorRecebimento() {
 
         {!loading && (
           <OnboardingJourney
-            current={step === "done" ? "fotos" : "recebimento"}
+            current={step === "done" ? "vender" : "recebimento"}
             completed={step === "done" ? ["preview", "recebimento"] : ["preview"]}
           />
         )}
@@ -184,14 +183,12 @@ export default function OperatorRecebimento() {
               </div>
               <h1 className="text-title-lg text-ink">Recebimento enviado! 🎉</h1>
               <p className="text-body-sm text-muted">
-                Recebemos seus dados e o contrato assinado. A Movepark faz a verificação e te avisa
-                assim que liberar. Enquanto isso, dá pra deixar sua página pronta pra vender.
+                Recebemos seus dados e o contrato assinado. A Movepark faz a verificação e, assim que
+                liberar, sua unidade entra na busca e começa a receber reservas. A gente te avisa.
               </p>
             </div>
 
-            <PhotosCallout />
-
-            <Button asChild variant="ghost" className="w-fit">
+            <Button asChild className="w-fit">
               <Link to="/operator">Ir para o painel</Link>
             </Button>
           </div>

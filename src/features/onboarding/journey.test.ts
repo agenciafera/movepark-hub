@@ -10,7 +10,7 @@ const base = {
 };
 
 describe("deriveJourney", () => {
-  it("recém-publicado sem recebimento nem foto: fase atual = recebimento", () => {
+  it("publicado sem recebimento: fase atual = recebimento", () => {
     const j = deriveJourney(base);
     expect(j.current).toBe("recebimento");
     expect(j.completed).toEqual(["preview"]);
@@ -24,10 +24,13 @@ describe("deriveJourney", () => {
     expect(j.canReceive).toBe(false);
   });
 
-  it("recebedor ativo mas sem foto: fase atual = fotos", () => {
+  it("recebedor ativo mas ainda não no ar (falta foto): fase atual = vender", () => {
     const j = deriveJourney({ ...base, recipientStatus: "active" });
-    expect(j.current).toBe("fotos");
+    expect(j.current).toBe("vender");
     expect(j.completed).toEqual(["preview", "recebimento"]);
+    expect(j.complete).toBe(false);
+    // o banner usa hasPhotos pra decidir o nudge de foto na fase vender
+    expect(j.hasPhotos).toBe(false);
   });
 
   it("no ar (is_listed): jornada completa em Publicar/Vender", () => {
@@ -39,13 +42,6 @@ describe("deriveJourney", () => {
     });
     expect(j.complete).toBe(true);
     expect(j.current).toBe("vender");
-    expect(j.completed).toEqual(["preview", "recebimento", "fotos", "vender"]);
-  });
-
-  it("foto feita antes do recebimento: fotos concluída, recebimento ainda atual", () => {
-    const j = deriveJourney({ ...base, hasPhotos: true });
-    expect(j.current).toBe("recebimento");
-    expect(j.completed).toContain("fotos");
-    expect(j.complete).toBe(false);
+    expect(j.completed).toEqual(["preview", "recebimento", "vender"]);
   });
 });

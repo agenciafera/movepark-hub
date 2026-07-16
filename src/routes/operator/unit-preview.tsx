@@ -75,9 +75,7 @@ export default function UnitPreviewPage() {
           <>
             <OnboardingJourney
               current={unit.isListed ? "vender" : "recebimento"}
-              completed={
-                unit.isListed ? ["preview", "recebimento", "fotos"] : ["preview"]
-              }
+              completed={unit.isListed ? ["preview", "recebimento"] : ["preview"]}
             />
 
             {justPublished && (

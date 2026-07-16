@@ -1,32 +1,30 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { Check, Eye, Landmark, Camera, Rocket, ArrowRight } from "lucide-react";
+import { Check, Eye, Landmark, Rocket, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /**
  * Trilha macro do onboarding do parceiro. Deixa claro, em qualquer tela do fluxo, em que fase o
- * dono está e qual é o próximo passo. Quatro fases fixas, da aprovação do lead até a venda:
- *   1. Preview (montar a unidade e ver como ela fica)
+ * dono está e qual é o próximo passo. Três fases fixas, da aprovação do lead até a venda:
+ *   1. Preview (montar a unidade, incluindo as fotos, e ver como ela fica)
  *   2. Recebimento (dados bancários + CNPJ + contrato)
- *   3. Fotos (o diferencial que atrai cliente, obrigatório pra vender)
- *   4. Publicar/Vender (unidade no ar, recebendo reservas)
+ *   3. Publicar/Vender (unidade no ar, recebendo reservas)
+ * As fotos são um passo DENTRO do Preview (o wizard de publicação), não uma fase à parte.
  */
-export type JourneyStage = "preview" | "recebimento" | "fotos" | "vender";
+export type JourneyStage = "preview" | "recebimento" | "vender";
 
 type StageDef = { key: JourneyStage; label: string; icon: React.ComponentType<{ className?: string }> };
 
 const STAGES: StageDef[] = [
   { key: "preview", label: "Preview", icon: Eye },
   { key: "recebimento", label: "Recebimento", icon: Landmark },
-  { key: "fotos", label: "Fotos", icon: Camera },
   { key: "vender", label: "Publicar/Vender", icon: Rocket },
 ];
 
 const NEXT_HINT: Record<JourneyStage, string> = {
-  preview: "Monte sua unidade e veja como ela fica.",
+  preview: "Monte sua unidade, suba as fotos e veja como ela fica.",
   recebimento: "Cadastre seus dados de recebimento para começar a vender.",
-  fotos: "Suba pelo menos 1 foto. Sem foto, sua unidade não entra na busca.",
   vender: "Tudo pronto! Sua unidade está no ar, recebendo reservas.",
 };
 
