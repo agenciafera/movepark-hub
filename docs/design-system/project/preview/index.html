@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design System Movepark</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+  body { background: var(--colors-surface-soft); }
+
+  .shell { max-width: 1120px; margin: 0 auto; padding: 48px 24px 96px; }
+
+  header { margin-bottom: 40px; }
+  .eyebrow { font-size: 13px; font-weight: 600; color: var(--colors-primary); margin-bottom: 8px; }
+  h1 {
+    margin: 0 0 12px;
+    font-size: var(--type-display-xl-size);
+    font-weight: var(--type-display-xl-weight);
+    line-height: var(--type-display-xl-lh);
+    letter-spacing: var(--type-display-xl-track);
+    color: var(--colors-ink);
+  }
+  .lede { margin: 0; max-width: 62ch; font-size: 15px; line-height: 1.6; color: var(--colors-body); }
+
+  .kit-link {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    background: var(--colors-primary);
+    color: var(--colors-on-primary);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .kit-link:hover { background: var(--colors-primary-active); }
+
+  nav.groups { display: flex; flex-wrap: wrap; gap: 8px; margin: 32px 0 0; }
+  nav.groups a {
+    padding: 8px 16px;
+    border-radius: 32px;
+    background: var(--colors-canvas);
+    box-shadow: inset 0 0 0 1px var(--colors-hairline);
+    color: var(--colors-ink);
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+  }
+  nav.groups a:hover { box-shadow: inset 0 0 0 1px var(--colors-border-strong); }
+
+  section { margin-top: 56px; scroll-margin-top: 24px; }
+  h2 {
+    margin: 0 0 20px;
+    font-size: var(--type-display-sm-size);
+    font-weight: var(--type-display-sm-weight);
+    line-height: var(--type-display-sm-lh);
+    letter-spacing: var(--type-display-sm-track);
+    color: var(--colors-ink);
+  }
+
+  figure { margin: 0 0 20px; }
+  figcaption { margin-bottom: 8px; }
+  .specimen {
+    display: block;
+    width: 100%;
+    border: 0;
+    border-radius: 14px;
+    background: var(--colors-canvas);
+    box-shadow: 0 2px 8px rgba(41, 38, 63, 0.08);
+    overflow: hidden;
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header>
+    <div class="eyebrow">Movepark</div>
+    <h1>Design system</h1>
+    <p class="lede">
+      Specimens de marca, cor, tipografia, espaçamento e componentes.
+      Os tokens vivem em <code>colors_and_type.css</code>.
+    </p>
+    <a class="kit-link" href="../ui_kits/website/index.html">Abrir o protótipo do site</a>
+  </header>
+
+  <nav class="groups">
+    <a href="#brand">Marca</a>
+    <a href="#colors">Cores</a>
+    <a href="#type">Tipografia</a>
+    <a href="#spacing">Espaçamento</a>
+    <a href="#components">Componentes</a>
+  </nav>
+
+  <section id="brand">
+    <h2>Marca</h2>
+    <figure>
+      <figcaption class="label-token">Wordmark</figcaption>
+      <iframe class="specimen" src="brand-wordmark.html" title="Wordmark"></iframe>
+    </figure>
+    <figure>
+      <figcaption class="label-token">Monograma</figcaption>
+      <iframe class="specimen" src="brand-monogram.html" title="Monograma"></iframe>
+    </figure>
+  </section>
+
+  <section id="colors">
+    <h2>Cores</h2>
+    <figure>
+      <figcaption class="label-token">Primárias</figcaption>
+      <iframe class="specimen" src="colors-primary.html" title="Cores primárias"></iframe>
+    </figure>
+    <figure>
+      <figcaption class="label-token">Neutros</figcaption>
+      <iframe class="specimen" src="colors-neutrals.html" title="Neutros"></iframe>
+    </figure>
+    <figure>
+      <figcaption class="label-token">Texto</figcaption>
+      <iframe class="specimen" src="colors-text.html" title="Cores de texto"></iframe>
+    </figure>
+    <figure>
+      <figcaption class="label-token">Semânticas</figcaption>
+      <iframe class="specimen" src="colors-semantic.html" title="Cores semânticas"></iframe>
+    </figure>
+    <figure>
+      <figcaption class="label-token">Gradiente</figcaption>
+      <iframe class="specimen" src="colors-gradient.html" title="Gradiente"></iframe>
+    </figure>
+  </section>
+
+  <section id="type">
+    <h2>Tipografia</h2>
+    <figure>
+      <figcaption class="label-token">Display</figcaption>
+      <iframe class="specimen" src="type-display.html" title="Display"></iframe>
+    </figure>
+    <figure>
+      <figcaption class="label-token">Corpo</figcaption>
+      <iframe class="specimen" src="type-body.html" title="Corpo"></iframe>
+    </figure>
+    <figure>
+      <figcaption class="label-token">Utilitário</figcaption>
+      <iframe class="specimen" src="type-utility.html" title="Utilitário"></iframe>
+    </figure>
+    <figure>
+      <figcaption class="label-token">Pesos</figcaption>
+      <iframe class="specimen" src="type-weights.html" title="Pesos"></iframe>
+    </figure>
+    <figure>
+      <figcaption class="label-token">Rating display</figcaption>
+      <iframe class="specimen" src="type-rating.html" title="Rating display"></iframe>
+    </figure>
+  </section>
+
+  <section id="spacing">
+    <h2>Espaçamento</h2>
+    <figure>
+      <figcaption class="label-token">Escala</figcaption>
+      <iframe class="specimen" src="spacing-scale.html" title="Escala de espaçamento"></iframe>
+    </figure>
+    <figure>
+      <figcaption class="label-token">Raios</figcaption>
+      <iframe class="specimen" src="spacing-radii.html" title="Raios"></iframe>
+    </figure>
+    <figure>
+      <figcaption class="label-token">Elevação</figcaption>
+      <iframe class="specimen" src="spacing-elevation.html" title="Elevação"></iframe>
+    </figure>
+  </section>
+
+  <section id="components">
+    <h2>Componentes</h2>
+    <figure>
+      <figcaption class="label-token">Top nav</figcaption>
+      <iframe class="specimen" src="components-top-nav.html" title="Top nav"></iframe>
+    </figure>
+    <figure>
+      <figcaption class="label-token">Busca em pílula</figcaption>
+      <iframe class="specimen" src="components-search-pill.html" title="Busca em pílula"></iframe>
+    </figure>
+    <figure>
+      <figcaption class="label-token">Botões</figcaption>
+      <iframe class="specimen" src="components-buttons.html" title="Botões"></iframe>
+    </figure>
+    <figure>
+      <figcaption class="label-token">Inputs</figcaption>
+      <iframe class="specimen" src="components-inputs.html" title="Inputs"></iframe>
+    </figure>
+    <figure>
+      <figcaption class="label-token">Badges</figcaption>
+      <iframe class="specimen" src="components-badges.html" title="Badges"></iframe>
+    </figure>
+    <figure>
+      <figcaption class="label-token">Card de vaga</figcaption>
+      <iframe class="specimen" src="components-property-card.html" title="Card de vaga"></iframe>
+    </figure>
+    <figure>
+      <figcaption class="label-token">Card de reserva</figcaption>
+      <iframe class="specimen" src="components-reservation-card.html" title="Card de reserva"></iframe>
+    </figure>
+    <figure>
+      <figcaption class="label-token">Date picker</figcaption>
+      <iframe class="specimen" src="components-date-picker.html" title="Date picker"></iframe>
+    </figure>
+  </section>
+
+</div>
+
+<script>
+  // Os specimens são same-origin: mede o conteúdo e ajusta a altura do iframe.
+  // Zera a altura antes de medir; senão scrollHeight nunca encolhe abaixo do
+  // tamanho atual do iframe e specimens curtos ficam com sobra embaixo.
+  function fit(frame) {
+    try {
+      const doc = frame.contentDocument;
+      if (!doc || !doc.body) return;
+      frame.style.height = "0px";
+      frame.style.height = doc.documentElement.scrollHeight + "px";
+    } catch {
+      frame.style.height = "220px";
+    }
+  }
+
+  // Medir antes das fontes carregarem dá altura curta demais, então espera o
+  // doc.fonts.ready de cada specimen.
+  // Nada de ResizeObserver no documento de dentro: fit() mexe na altura do
+  // iframe, o observer dispararia de novo e o laço trava o renderer.
+  function track(frame) {
+    const doc = frame.contentDocument;
+    if (!doc) return;
+    (doc.fonts ? doc.fonts.ready : Promise.resolve()).then(() => fit(frame));
+  }
+
+  for (const frame of document.querySelectorAll("iframe.specimen")) {
+    frame.style.height = "160px";
+    frame.addEventListener("load", () => track(frame));
+    if (frame.contentDocument?.readyState === "complete") track(frame);
+  }
+
+  window.addEventListener("resize", () => {
+    for (const frame of document.querySelectorAll("iframe.specimen")) fit(frame);
+  });
+</script>
+</body>
+</html>

@@ -19,6 +19,20 @@
       "runtimeExecutable": "supabase",
       "runtimeArgs": ["start"],
       "port": 54323
+    },
+    {
+      "name": "design-system",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": [
+        "x",
+        "vite",
+        "--config",
+        "vite.design-system.config.ts",
+        "--port",
+        "5190"
+      ],
+      "port": 5190,
+      "autoPort": true
     }
   ]
 }
