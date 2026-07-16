@@ -24,7 +24,7 @@ export function ListingStickyBar({ summary, basePrice, onReserve }: Props) {
       <div className="min-w-0">
         {canReserve && summary ? (
           <>
-            <p className="text-caption text-muted-soft">Total</p>
+            <p className="text-caption text-ink">Total</p>
             <p className="text-display-sm font-bold text-ink tabular-nums">
               {formatBRL(summary.total)}
             </p>
@@ -36,7 +36,7 @@ export function ListingStickyBar({ summary, basePrice, onReserve }: Props) {
           </>
         ) : basePrice > 0 ? (
           <>
-            <p className="text-caption text-muted-soft">A partir de</p>
+            <p className="text-caption text-ink">A partir de</p>
             <p className="text-display-sm font-bold text-ink tabular-nums">
               {formatBRL(basePrice)}
             </p>
