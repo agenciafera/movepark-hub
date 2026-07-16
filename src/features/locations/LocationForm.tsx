@@ -111,6 +111,13 @@ export function LocationForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // Foto obrigatória para vender: o parceiro não salva a unidade sem pelo menos 1 foto. O gate
+    // no banco (is_listed) já impede a listagem sem foto; aqui a barreira é no próprio form, na voz
+    // do operador. O manager (staff) segue livre para salvar rascunho sem foto.
+    if (operatorMode && photos.length === 0) {
+      toast.error("Adicione pelo menos 1 foto da unidade. Sem foto, ela não entra na busca.");
+      return;
+    }
     // Conteúdo "Como chegar" (PRD-11) — passo-a-passo + traslado honesto (frequência/tempo).
     const arrivalFields = {
       directions_text: directionsText.trim() || null,

@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/utils";
 import { LocationForm } from "./LocationForm";
 import type { Location } from "@/types/domain";
@@ -48,5 +49,25 @@ describe("LocationForm — gating do vínculo de destino", () => {
       />,
     );
     expect(screen.queryByText(DEST_LABEL)).not.toBeInTheDocument();
+  });
+});
+
+describe("LocationForm — foto obrigatória (operador)", () => {
+  it("bloqueia salvar sem foto no operator scope (form não fecha)", async () => {
+    const onOpenChange = vi.fn();
+    renderWithProviders(
+      <LocationForm
+        open
+        companyId="company-1"
+        location={location}
+        onOpenChange={onOpenChange}
+        editableScope="operator"
+      />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: /^salvar$/i }));
+    // guarda impede o submit: onOpenChange(false) nunca é chamado
+    await waitFor(() => {
+      expect(onOpenChange).not.toHaveBeenCalledWith(false);
+    });
   });
 });
