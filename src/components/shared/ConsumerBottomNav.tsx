@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { Search, Calendar, User2, HelpCircle, LogIn, Store } from "lucide-react";
+import { MapPin, Calendar, User2, HelpCircle, LogIn, Store } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/context";
 
@@ -11,10 +11,10 @@ export function ConsumerBottomNav() {
   const { session } = useAuth();
   return (
     <nav className="tablet:hidden fixed bottom-0 left-0 right-0 z-40 grid grid-cols-4 border-t border-hairline bg-canvas">
-      {/* Col 1: Buscar — sempre */}
-      <NavLink to="/" end className={({ isActive }) => cn(baseItem, isActive && activeItem)}>
-        <Search className="h-5 w-5" />
-        <span>Buscar</span>
+      {/* Col 1: Destinos — sempre (a busca já vive no navbar/hero) */}
+      <NavLink to="/destinos" className={({ isActive }) => cn(baseItem, isActive && activeItem)}>
+        <MapPin className="h-5 w-5" />
+        <span>Destinos</span>
       </NavLink>
 
       {/* Col 2: Reservas (logado) | Entrar (anônimo) */}
