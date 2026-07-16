@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowRight, ArrowLeft, MapPin, BusFront, Sparkles } from "lucide-react";
 import { Wordmark } from "@/components/shared/Brand";
+import { OnboardingJourney } from "@/components/shared/OnboardingJourney";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -161,6 +162,9 @@ export function PublishWizard({ data, companyId }: Props) {
         {/* Coluna do formulário */}
         <div className="flex flex-col gap-6">
           <Wordmark height={24} />
+
+          {/* trilha macro: publicar é a fase 1 de 3 */}
+          <OnboardingJourney current="publicar" />
 
           {/* progresso */}
           <div className="flex flex-col gap-2">

@@ -1,5 +1,7 @@
 import * as React from "react";
-import { Check, Rocket, Landmark, Camera } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Check, Rocket, Landmark, Camera, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /**
@@ -29,11 +31,17 @@ export function OnboardingJourney({
   current,
   completed = [],
   className,
+  hint,
+  cta,
 }: {
   current: JourneyStage;
   /** fases já concluídas (as anteriores à atual entram automaticamente). */
   completed?: JourneyStage[];
   className?: string;
+  /** sobrescreve o texto padrão de "Próximo passo" (ex.: recebimento em análise). */
+  hint?: string;
+  /** botão opcional que leva à ação da fase atual (usado no banner persistente do painel). */
+  cta?: { to: string; label: string };
 }) {
   const currentIndex = STAGES.findIndex((s) => s.key === current);
 
@@ -87,9 +95,18 @@ export function OnboardingJourney({
           );
         })}
       </ol>
-      <p className="mt-3 text-body-sm text-muted">
-        <span className="font-semibold text-ink">Próximo passo:</span> {NEXT_HINT[current]}
-      </p>
+      <div className="mt-3 flex flex-col gap-3 tablet:flex-row tablet:items-center tablet:justify-between">
+        <p className="text-body-sm text-muted">
+          <span className="font-semibold text-ink">Próximo passo:</span> {hint ?? NEXT_HINT[current]}
+        </p>
+        {cta && (
+          <Button asChild size="sm" className="w-fit shrink-0">
+            <Link to={cta.to}>
+              {cta.label} <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
