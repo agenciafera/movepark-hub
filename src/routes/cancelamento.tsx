@@ -1,6 +1,7 @@
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { CheckCircle, LifeBuoy } from "lucide-react";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 const RULES = [
   {
@@ -60,14 +61,13 @@ export default function CancelamentoPage() {
         <link rel="canonical" href="https://hub.movepark.co/cancelamento" />
       </Helmet>
 
-      <div className="mx-auto w-full max-w-[840px] px-4 py-12 desktop:px-8">
-        <header className="mb-10 space-y-3">
-          <h1 className="text-display-lg text-ink">Política de Cancelamento</h1>
-          <p className="text-body-md text-muted">
-            Dentro do prazo da sua Tarifa, o cancelamento é grátis e o reembolso é integral. Veja os
-            prazos abaixo.
-          </p>
-        </header>
+      <div className="mx-auto w-full max-w-[1080px] px-4 py-12 desktop:px-8">
+        <PageHeader
+          variant="content"
+          className="mb-10 max-w-2xl"
+          title="Política de cancelamento"
+          description="Dentro do prazo da sua Tarifa, o cancelamento é grátis e o reembolso é integral. Veja os prazos abaixo."
+        />
 
         {/* Regras */}
         <section className="mb-14 space-y-4">
@@ -90,7 +90,7 @@ export default function CancelamentoPage() {
 
         {/* Resumo por Tarifa */}
         <section className="mb-14 overflow-x-auto">
-          <h2 className="mb-4 text-title-sm text-ink">Prazo por Tarifa</h2>
+          <h2 className="mb-4 text-display-sm text-ink">Prazo por Tarifa</h2>
           <table className="w-full border-collapse text-body-sm">
             <thead>
               <tr className="border-b border-hairline bg-surface-soft text-left">
@@ -116,7 +116,7 @@ export default function CancelamentoPage() {
 
         {/* Como cancelar */}
         <section className="mb-14">
-          <h2 className="mb-6 text-title-sm text-ink">Como cancelar sua reserva</h2>
+          <h2 className="mb-6 text-display-sm text-ink">Como cancelar sua reserva</h2>
           <div className="space-y-4">
             {[
               { n: "1", t: "Acesse Minhas Reservas", d: "No menu da sua conta, abra a lista de reservas." },
@@ -143,7 +143,7 @@ export default function CancelamentoPage() {
 
         {/* FAQ */}
         <section className="mb-14">
-          <h2 className="mb-6 text-title-sm text-ink">Dúvidas frequentes</h2>
+          <h2 className="mb-6 text-display-sm text-ink">Dúvidas frequentes</h2>
           <div className="space-y-6">
             {FAQ_CANCEL.map((item) => (
               <div key={item.q}>

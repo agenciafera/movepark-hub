@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 type FormState = "idle" | "success";
 
@@ -63,18 +64,17 @@ export default function ContatoPage() {
       </Helmet>
 
       <div className="mx-auto w-full max-w-[1080px] px-4 py-12 desktop:px-8">
-        <header className="mb-10 max-w-xl space-y-2">
-          <h1 className="text-display-lg text-ink">Fale conosco</h1>
-          <p className="text-body-md text-muted">
-            Tem uma dúvida, sugestão ou precisa de ajuda com uma reserva? Nossa equipe está pronta
-            para atender.
-          </p>
-        </header>
+        <PageHeader
+          variant="content"
+          className="mb-10 max-w-xl"
+          title="Fale conosco"
+          description="Tem uma dúvida, sugestão ou precisa de ajuda com uma reserva? Nossa equipe está pronta para atender."
+        />
 
         <div className="grid grid-cols-1 gap-10 desktop:grid-cols-2 desktop:gap-16">
           {/* Canais de contato */}
           <div className="space-y-6">
-            <h2 className="text-title-sm text-ink">Canais de atendimento</h2>
+            <h2 className="text-display-sm text-ink">Canais de atendimento</h2>
             <div className="space-y-4">
               {CHANNELS.map((c) => (
                 <div
@@ -120,7 +120,7 @@ export default function ContatoPage() {
                 <span className="flex h-14 w-14 items-center justify-center rounded-full bg-mp-pale text-mp-indigo">
                   <Mail className="h-7 w-7" />
                 </span>
-                <h2 className="text-title-md text-ink">Mensagem enviada!</h2>
+                <h2 className="text-display-sm text-ink">Mensagem enviada!</h2>
                 <p className="text-body-sm text-muted">
                   Recebemos sua mensagem e responderemos em até 1 dia útil.
                 </p>
@@ -134,7 +134,7 @@ export default function ContatoPage() {
               </div>
             ) : (
               <>
-                <h2 className="mb-1 text-title-md text-ink">Envie uma mensagem</h2>
+                <h2 className="mb-1 text-display-sm text-ink">Envie uma mensagem</h2>
                 <p className="mb-6 text-body-sm text-muted">
                   Respondemos em até 1 dia útil.
                 </p>

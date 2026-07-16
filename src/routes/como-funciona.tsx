@@ -73,7 +73,7 @@ export default function ComoFuncionaPage() {
           <h1 className="text-display-xl text-ink">
             Reserve sua vaga em menos de 2 minutos.
           </h1>
-          <p className="text-body-lg text-muted">
+          <p className="text-body-md text-body">
             Da busca ao check-in, tudo pelo celular. Sem ligação, sem fila, sem estresse.
           </p>
         </header>

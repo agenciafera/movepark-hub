@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Helmet } from "react-helmet-async";
 import DOMPurify from "dompurify";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { useLegalDocument } from "./api";
 import { LEGAL_SANITIZE_CONFIG, LEGAL_PROSE_CLASS } from "./legalRender";
 
@@ -48,14 +49,13 @@ export function LegalDocumentPage({ slug, title, description, canonicalPath }: P
       </Helmet>
 
       <div className="mx-auto w-full max-w-[720px] px-4 py-12 desktop:px-8">
-        <header className="mb-10 space-y-2">
-          <h1 className="text-display-lg text-ink">{heading}</h1>
+        <PageHeader variant="content" className="mb-10" title={heading}>
           {data?.published_at && (
             <p className="text-body-sm text-muted">
               Última atualização: {formatDate(data.published_at)}
             </p>
           )}
-        </header>
+        </PageHeader>
 
         {isLoading ? (
           <div className="space-y-4">

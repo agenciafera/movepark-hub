@@ -9,6 +9,8 @@ import {
   HelpCircle,
   MessageCircle,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 const CATEGORIES = [
   {
@@ -72,17 +74,16 @@ export default function AjudaPage() {
       </Helmet>
 
       <div className="mx-auto w-full max-w-[1080px] px-4 py-12 desktop:px-8">
-        {/* Hero */}
-        <header className="mb-12 space-y-3 text-center">
-          <h1 className="text-display-lg text-ink">Como podemos ajudar?</h1>
-          <p className="mx-auto max-w-xl text-body-md text-muted">
-            Encontre respostas rápidas sobre reservas, pagamentos, check-in e mais.
-          </p>
-        </header>
+        <PageHeader
+          variant="content"
+          className="mb-12 max-w-xl"
+          title="Como podemos ajudar?"
+          description="Encontre respostas rápidas sobre reservas, pagamentos, check-in e mais."
+        />
 
         {/* Categorias */}
         <section className="mb-14">
-          <h2 className="mb-6 text-title-sm text-ink">Navegar por categoria</h2>
+          <h2 className="mb-6 text-display-sm text-ink">Navegar por categoria</h2>
           <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
             {CATEGORIES.map((c) => (
               <Link
@@ -104,7 +105,7 @@ export default function AjudaPage() {
 
         {/* Perguntas populares */}
         <section className="mb-14">
-          <h2 className="mb-6 text-title-sm text-ink">Perguntas mais frequentes</h2>
+          <h2 className="mb-6 text-display-sm text-ink">Perguntas mais frequentes</h2>
           <div className="divide-y divide-hairline rounded-md border border-hairline bg-canvas">
             {POPULAR.map((item) => (
               <Link
@@ -130,16 +131,13 @@ export default function AjudaPage() {
         {/* Não encontrou */}
         <section className="rounded-md bg-surface-soft px-8 py-10 text-center">
           <MessageCircle className="mx-auto mb-4 h-10 w-10 text-mp-indigo" />
-          <h2 className="mb-2 text-title-sm text-ink">Não encontrou o que precisava?</h2>
+          <h2 className="mb-2 text-display-sm text-ink">Não encontrou o que precisava?</h2>
           <p className="mb-6 text-body-sm text-muted">
             Nossa equipe responde em até 1 dia útil.
           </p>
-          <Link
-            to="/contato"
-            className="inline-flex h-11 items-center rounded-sm bg-mp-primary px-6 text-label font-semibold text-white transition-colors hover:bg-mp-primary/90"
-          >
-            Falar com o suporte
-          </Link>
+          <Button asChild>
+            <Link to="/contato">Falar com o suporte</Link>
+          </Button>
         </section>
       </div>
     </>

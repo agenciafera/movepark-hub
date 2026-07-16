@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { Voucher } from "@/features/bookings/Voucher";
 import { CancelBookingDialog } from "@/features/bookings/CancelBookingDialog";
 import { customerSelfCancel } from "@/features/bookings/cancellation.logic";
@@ -142,17 +143,15 @@ export default function BookingDetailPage() {
         </Link>
       </Button>
 
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3 print:hidden">
-        <div className="space-y-1">
-          <h1 className="text-display-lg text-ink">
-            Reserva {booking.code}
-          </h1>
-          <p className="text-body-sm text-muted">
-            Criada em {formatDateTime(booking.created_at)}
-          </p>
-        </div>
-        <StatusBadge status={booking.status} />
-      </div>
+      <PageHeader
+        className="mb-6 print:hidden"
+        title={`Reserva ${booking.code}`}
+        actions={<StatusBadge status={booking.status} />}
+      >
+        <p className="text-body-sm text-muted">
+          Criada em {formatDateTime(booking.created_at)}
+        </p>
+      </PageHeader>
 
       <div className="grid grid-cols-1 gap-8 desktop:grid-cols-[1fr_360px]">
         {/* Coluna esquerda */}

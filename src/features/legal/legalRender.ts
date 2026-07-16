@@ -12,6 +12,12 @@ export const LEGAL_SANITIZE_CONFIG = {
   ALLOWED_ATTR: ["href", "rel", "target"],
 };
 
-/** Estilo do corpo do documento (child-selectors do HTML sanitizado). */
+/**
+ * Estilo do corpo do documento (child-selectors do HTML sanitizado).
+ * Corpo em `body` (16px/#424242) e h2 em `display-sm`: é o contrato de página de
+ * conteúdo (skill `harmonizar-paginas`). Antes o documento inteiro era 14px muted,
+ * o que deixava Termos e Privacidade sem hierarquia e no contraste mais baixo do
+ * site, justamente nas páginas de leitura mais longa.
+ */
 export const LEGAL_PROSE_CLASS =
-  "space-y-4 text-body-sm text-muted [&_a]:text-mp-indigo [&_a]:underline [&_a]:underline-offset-2 [&_h2]:mt-8 [&_h2]:text-title-sm [&_h2]:text-ink [&_li]:mt-1 [&_p]:mt-2 [&_strong]:text-ink [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5";
+  "space-y-4 text-body-md text-body [&_a]:text-mp-indigo [&_a]:underline [&_a]:underline-offset-2 [&_h2]:mt-8 [&_h2]:text-display-sm [&_h2]:text-ink [&_h3]:mt-6 [&_h3]:text-title-md [&_h3]:text-ink [&_li]:mt-1 [&_p]:mt-2 [&_strong]:text-ink [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5";

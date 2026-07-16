@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { cn } from "@/lib/utils";
 import { useFaqCategories, useFaqs } from "@/features/faqs/api";
 import { FaqList } from "@/features/faqs/FaqList";
@@ -77,7 +78,7 @@ export default function FaqPage() {
     : null;
 
   return (
-    <div className="mx-auto w-full max-w-[1080px] px-4 py-10 desktop:px-8">
+    <div className="mx-auto w-full max-w-[1080px] px-4 py-12 desktop:px-8">
       <Helmet>
         <title>Perguntas Frequentes | Movepark</title>
         <meta
@@ -95,12 +96,13 @@ export default function FaqPage() {
           <script type="application/ld+json">{faqJsonLd}</script>
         )}
       </Helmet>
-      <header className="mb-8 space-y-3">
-        <h1 className="text-display-lg text-ink">Perguntas frequentes</h1>
-        <p className="text-body-lg text-muted">
-          Reservas, pagamentos, check-in… tudo o que você precisa saber em um lugar só.
-        </p>
-        <div className="relative max-w-xl">
+      <PageHeader
+        variant="content"
+        className="mb-8"
+        title="Perguntas frequentes"
+        description="Reservas, pagamentos, check-in… tudo o que você precisa saber em um lugar só."
+      >
+        <div className="relative mt-2 max-w-xl">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
           <Input
             placeholder="Buscar pergunta…"
@@ -109,7 +111,7 @@ export default function FaqPage() {
             className="pl-9"
           />
         </div>
-      </header>
+      </PageHeader>
 
       <div className="grid grid-cols-1 gap-8 tablet:grid-cols-[200px_1fr]">
         <aside className="space-y-1">

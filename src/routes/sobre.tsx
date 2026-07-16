@@ -51,7 +51,7 @@ export default function SobrePage() {
           <h1 className="text-display-xl text-ink">
             Vaga garantida. Viagem tranquila.
           </h1>
-          <p className="text-body-lg text-muted">
+          <p className="text-body-md text-body">
             A Movepark nasceu de uma frustração simples: encontrar estacionamento perto do aeroporto
             não deveria ser um jogo de sorte. Criamos um marketplace que conecta viajantes a
             estacionamentos parceiros certificados — com reserva antecipada, preço fixo e
