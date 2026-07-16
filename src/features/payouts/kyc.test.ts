@@ -21,7 +21,7 @@ function validForm(): PayoutKycForm {
       annual_revenue: 1000000, // reais = R$ 1.000.000
       founding_date: "10/10/2010",
       corporation_type: "LTDA",
-      phone: "(11) 99999-8888",
+      phone: "+5511999998888",
       address: addr,
     },
     representative: {
@@ -33,7 +33,7 @@ function validForm(): PayoutKycForm {
       professional_occupation: "Sócio",
       mother_name: "Maria",
       self_declared_legal_representative: true,
-      phone: "(11) 98888-7777",
+      phone: "+5511988887777",
       address: addr,
     },
     bank: {

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { Check, Eye, Landmark, Rocket, ArrowRight } from "lucide-react";
+import { Check, Eye, Landmark, Rocket, ArrowRight, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +34,7 @@ export function OnboardingJourney({
   className,
   hint,
   cta,
+  estimate,
 }: {
   current: JourneyStage;
   /** fases já concluídas (as anteriores à atual entram automaticamente). */
@@ -43,6 +44,8 @@ export function OnboardingJourney({
   hint?: string;
   /** botão opcional que leva à ação da fase atual (usado no banner persistente do painel). */
   cta?: { to: string; label: string };
+  /** estimativa de tempo da fase atual (ex.: "2 minutos"). */
+  estimate?: string;
 }) {
   const currentIndex = STAGES.findIndex((s) => s.key === current);
 
@@ -97,9 +100,16 @@ export function OnboardingJourney({
         })}
       </ol>
       <div className="mt-3 flex flex-col gap-3 tablet:flex-row tablet:items-center tablet:justify-between">
-        <p className="text-body-sm text-muted">
-          <span className="font-semibold text-ink">Próximo passo:</span> {hint ?? NEXT_HINT[current]}
-        </p>
+        <div className="flex flex-col gap-1">
+          <p className="text-body-sm text-muted">
+            <span className="font-semibold text-ink">Próximo passo:</span> {hint ?? NEXT_HINT[current]}
+          </p>
+          {estimate && (
+            <span className="flex items-center gap-1 text-caption-sm text-muted-steel">
+              <Clock className="h-3.5 w-3.5" /> Leva ~{estimate}
+            </span>
+          )}
+        </div>
         {cta && (
           <Button asChild size="sm" className="w-fit shrink-0">
             <Link to={cta.to}>

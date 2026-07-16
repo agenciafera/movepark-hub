@@ -14,9 +14,10 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CurrencyInput } from "@/components/ui/currency-input";
+import { PhoneField } from "@/components/ui/phone-field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StateSelect } from "@/components/shared/StateSelect";
-import { cepMask, cnpjMask, cpfMask, dateMask, onlyDigits, phoneMask } from "@/lib/masks";
+import { cepMask, cnpjMask, cpfMask, dateMask, onlyDigits } from "@/lib/masks";
 import { CORPORATION_TYPES, payoutKycSchema, type PayoutKycForm as KycValues } from "./kyc";
 
 type Mask = (v: string) => string;
@@ -63,6 +64,27 @@ function TextField({
         value={(field.value as string) ?? ""}
         onBlur={field.onBlur}
         onChange={(e) => field.onChange(mask ? mask(e.target.value) : e.target.value)}
+      />
+    </Field>
+  );
+}
+
+function PhoneFormField({
+  control,
+  name,
+  label,
+}: {
+  control: Control<KycValues>;
+  name: Path<KycValues>;
+  label: string;
+}) {
+  const { field, fieldState } = useController({ control, name });
+  return (
+    <Field label={label} error={fieldState.error?.message}>
+      <PhoneField
+        value={(field.value as string) || undefined}
+        onChange={(v) => field.onChange(v ?? "")}
+        aria-invalid={!!fieldState.error}
       />
     </Field>
   );
@@ -227,7 +249,7 @@ export function KycCompanySection({ control }: { control: Control<KycValues> }) 
       <TextField control={control} name="company.document" label="CNPJ" mask={cnpjMask} placeholder="00.000.000/0000-00" />
       <CorporationTypeField control={control} />
       <TextField control={control} name="company.email" label="E-mail da empresa" type="email" />
-      <TextField control={control} name="company.phone" label="Telefone" mask={phoneMask} placeholder="(11) 99999-9999" />
+      <PhoneFormField control={control} name="company.phone" label="Telefone" />
       <MoneyField control={control} name="company.annual_revenue" label="Faturamento anual" />
       <TextField control={control} name="company.founding_date" label="Data de fundação" mask={dateMask} placeholder="DD/MM/AAAA" />
     </Section>
@@ -248,7 +270,7 @@ export function KycRepresentativeSection({ control }: { control: Control<KycValu
       <TextField control={control} name="representative.name" label="Nome completo" />
       <TextField control={control} name="representative.document" label="CPF" mask={cpfMask} placeholder="000.000.000-00" />
       <TextField control={control} name="representative.email" label="E-mail" type="email" />
-      <TextField control={control} name="representative.phone" label="Telefone" mask={phoneMask} placeholder="(11) 99999-9999" />
+      <PhoneFormField control={control} name="representative.phone" label="Telefone" />
       <TextField control={control} name="representative.birthdate" label="Data de nascimento" mask={dateMask} placeholder="DD/MM/AAAA" />
       <MoneyField control={control} name="representative.monthly_income" label="Renda mensal" />
       <TextField control={control} name="representative.professional_occupation" label="Ocupação profissional" />

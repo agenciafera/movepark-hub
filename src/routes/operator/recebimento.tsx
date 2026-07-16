@@ -91,6 +91,7 @@ export default function OperatorRecebimento() {
           <OnboardingJourney
             current={step === "done" ? "vender" : "recebimento"}
             completed={step === "done" ? ["preview", "recebimento"] : ["preview"]}
+            estimate={step === "done" ? undefined : "5 minutos"}
           />
         )}
 

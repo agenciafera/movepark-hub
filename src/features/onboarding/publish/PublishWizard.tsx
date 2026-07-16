@@ -175,7 +175,7 @@ export function PublishWizard({ data, companyId }: Props) {
           <Wordmark height={24} />
 
           {/* trilha macro: preview é a 1ª fase (estágio único, persiste no topo) */}
-          <OnboardingJourney current="preview" />
+          <OnboardingJourney current="preview" estimate="2 minutos" />
 
           {/* seções da fase Publicar (por nome; sem recriar "Passo 1") */}
           <SubStepBar steps={PUBLISH_STEP_TITLES} current={step - 1} />
@@ -415,7 +415,7 @@ export function PublishWizard({ data, companyId }: Props) {
               )}
               {step === 4 && (
                 <Button onClick={doPublish} disabled={busy}>
-                  {busy ? "Publicando…" : "Publicar minha unidade"} <ArrowRight className="h-4 w-4" />
+                  {busy ? "Concluindo…" : "Concluir preview"} <ArrowRight className="h-4 w-4" />
                 </Button>
               )}
             </div>

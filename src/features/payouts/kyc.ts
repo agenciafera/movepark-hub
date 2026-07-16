@@ -8,8 +8,9 @@
 //  - Telefone do form é uma string mascarada; vira { ddd, number } no payload.
 
 import { z } from "zod";
-import { isValidCnpj, isValidCpf, isValidPastDateBR, isValidPhoneBR } from "@/lib/documents";
-import { cepMask, cnpjMask, cpfMask, dateMask, onlyDigits, phoneMask, splitPhone } from "@/lib/masks";
+import { isValidPhoneNumber, parsePhoneNumber } from "react-phone-number-input";
+import { isValidCnpj, isValidCpf, isValidPastDateBR } from "@/lib/documents";
+import { cepMask, cnpjMask, cpfMask, dateMask, onlyDigits } from "@/lib/masks";
 
 export const CORPORATION_TYPES = ["MEI", "EI", "EIRELI", "SLU", "LTDA", "SA", "OUTROS"] as const;
 
@@ -34,7 +35,18 @@ const moneyReais = (msg: string) =>
     .number({ invalid_type_error: msg, required_error: msg })
     .positive(msg);
 
-const phoneField = z.string().refine(isValidPhoneBR, "Telefone inválido (com DDD)");
+// Telefone em E.164 (+55DDNNNNNNNNN), vindo do PhoneField (seletor de país). Valida com libphonenumber.
+const phoneField = z.string().refine((v) => !!v && isValidPhoneNumber(v), "Telefone inválido");
+
+/** E.164 (+55...) → { ddd, number } que o Pagar.me espera. */
+export function e164ToPhoneParts(e164: string): { ddd: string; number: string } {
+  try {
+    const national = parsePhoneNumber(e164)?.nationalNumber ?? "";
+    return { ddd: national.slice(0, 2), number: national.slice(2) };
+  } catch {
+    return { ddd: "", number: "" };
+  }
+}
 
 const companySchema = z.object({
   legal_name: requiredText("Informe a razão social"),
@@ -159,9 +171,12 @@ function addressFromJson(a: unknown): KycAddress {
   };
 }
 
+/** { ddd, number } salvos → E.164 (+55...) para o PhoneField. */
 function phoneFromJson(p: unknown): string {
   const o = (p ?? {}) as JsonObj;
-  return phoneMask(`${str(o.ddd)}${str(o.number)}`);
+  const ddd = str(o.ddd);
+  const number = str(o.number);
+  return ddd || number ? `+55${ddd}${number}` : "";
 }
 
 /** Linha de company_payout_account (colunas planas + kyc_details) → form (com máscaras). */
@@ -262,7 +277,7 @@ export function toPayoutAccountPayload(form: PayoutKycForm) {
       annual_revenue: Math.round(c.annual_revenue),
       founding_date: c.founding_date, // DD/MM/AAAA → o adapter converte p/ ISO se preciso
       corporation_type: c.corporation_type,
-      phone: splitPhone(c.phone),
+      phone: e164ToPhoneParts(c.phone),
       address: addressToJson(c.address),
       representative: {
         name: r.name.trim(),
@@ -273,7 +288,7 @@ export function toPayoutAccountPayload(form: PayoutKycForm) {
         professional_occupation: r.professional_occupation.trim(),
         mother_name: r.mother_name?.trim() || null,
         self_declared_legal_representative: r.self_declared_legal_representative,
-        phone: splitPhone(r.phone),
+        phone: e164ToPhoneParts(r.phone),
         address: addressToJson(r.address),
       },
     },
