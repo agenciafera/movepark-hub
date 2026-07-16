@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { ArrowRight, ArrowLeft, MapPin, BusFront, Sparkles } from "lucide-react";
 import { Wordmark } from "@/components/shared/Brand";
 import { OnboardingJourney } from "@/components/shared/OnboardingJourney";
+import { SubStepBar } from "@/components/shared/SubStepBar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,7 +29,7 @@ type Props = { data: OnboardingData; companyId: string };
 
 type Row = { selected: boolean; base_price: number | null; capacity: string };
 
-const TOTAL_STEPS = 4;
+const PUBLISH_STEP_TITLES = ["Endereço", "Destino", "Vagas e preço", "Transfer"];
 
 export function PublishWizard({ data, companyId }: Props) {
   const navigate = useNavigate();
@@ -163,23 +164,11 @@ export function PublishWizard({ data, companyId }: Props) {
         <div className="flex flex-col gap-6">
           <Wordmark height={24} />
 
-          {/* trilha macro: publicar é a fase 1 de 3 */}
+          {/* trilha macro: publicar é a fase 1 de 3 (estágio único, persiste no topo) */}
           <OnboardingJourney current="publicar" />
 
-          {/* progresso */}
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((n) => (
-                <div
-                  key={n}
-                  className={"h-1.5 flex-1 rounded-full " + (n <= step ? "bg-mp-primary" : "bg-surface-pale")}
-                />
-              ))}
-            </div>
-            <p className="text-caption-sm text-muted">
-              Passo {step} de {TOTAL_STEPS} · leva ~2 minutos
-            </p>
-          </div>
+          {/* seções da fase Publicar (por nome; sem recriar "Passo 1") */}
+          <SubStepBar steps={PUBLISH_STEP_TITLES} current={step - 1} />
 
           <div className="rounded-lg border border-hairline bg-canvas p-6 shadow-tier tablet:p-8">
             {step === 1 && (

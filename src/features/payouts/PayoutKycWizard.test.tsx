@@ -5,9 +5,9 @@ import { PayoutKycWizard } from "./PayoutKycWizard";
 import { emptyPayoutKyc } from "./kyc";
 
 describe("PayoutKycWizard", () => {
-  it("começa no passo 1 (Sua empresa), sem botão Voltar", () => {
+  it("começa na primeira seção (Sua empresa), sem botão Voltar", () => {
     renderWithProviders(<PayoutKycWizard defaultValues={emptyPayoutKyc()} onSubmit={vi.fn()} />);
-    expect(screen.getByText(/Passo 1 de 3/i)).toBeInTheDocument();
+    // a seção atual é nomeada na SubStepBar (sem "Passo 1 de N" competindo com a trilha macro)
     expect(screen.getByText(/Sua empresa/i)).toBeInTheDocument();
     expect(screen.getByText("Dados da empresa")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Voltar/i })).toBeNull();
@@ -18,8 +18,8 @@ describe("PayoutKycWizard", () => {
     renderWithProviders(<PayoutKycWizard defaultValues={emptyPayoutKyc()} onSubmit={onSubmit} />);
     fireEvent.click(screen.getByRole("button", { name: /Continuar/i }));
     await waitFor(() => expect(screen.getByText("CNPJ inválido")).toBeInTheDocument());
-    // segue no passo 1 (validação por etapa barra o avanço) e não chamou submit
-    expect(screen.getByText(/Passo 1 de 3/i)).toBeInTheDocument();
+    // segue na primeira seção (validação por etapa barra o avanço) e não chamou submit
+    expect(screen.getByText("Dados da empresa")).toBeInTheDocument();
     expect(onSubmit).not.toHaveBeenCalled();
   });
 });
