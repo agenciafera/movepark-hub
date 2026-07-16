@@ -2,7 +2,7 @@ import * as React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { toast } from "sonner";
-import { ArrowLeft, Check, Landmark, FileText, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Check, Download, Landmark, FileText, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/auth/context";
 import { Wordmark } from "@/components/shared/Brand";
 import { Button } from "@/components/ui/button";
@@ -15,8 +15,8 @@ import {
   useContractStatus,
   useAcceptContract,
 } from "@/features/payouts/api";
-
-const CONTRACT_VERSION = "v1";
+import { CONTRACT_VERSION, CONTRACT_SUMMARY, downloadContract } from "@/features/payouts/contract";
+import { RevenueMotivator } from "@/features/payouts/RevenueMotivator";
 
 type Step = "dados" | "contrato" | "done";
 
@@ -74,7 +74,8 @@ export default function OperatorRecebimento() {
       <Helmet>
         <title>Dados de recebimento | Movepark</title>
       </Helmet>
-      <div className="mx-auto flex max-w-[720px] flex-col gap-6 px-4 py-8 tablet:py-12 desktop:px-8">
+      <div className="mx-auto grid max-w-[1080px] gap-8 px-4 py-8 tablet:py-12 desktop:grid-cols-[1fr_360px] desktop:px-8">
+        <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <Wordmark height={24} />
           <Button asChild variant="ghost" size="sm">
@@ -124,16 +125,27 @@ export default function OperatorRecebimento() {
             <div className="max-h-72 overflow-y-auto rounded-md border border-hairline bg-surface-soft p-4 text-body-sm text-ink">
               <p className="font-medium text-ink">Resumo do contrato de parceria (versão {CONTRACT_VERSION})</p>
               <ul className="mt-2 flex list-disc flex-col gap-1.5 pl-5 text-muted">
-                <li>A Movepark divulga seu estacionamento, recebe as reservas e o pagamento dos clientes.</li>
-                <li>Você recebe o valor das reservas, menos a comissão da Movepark, no repasse combinado.</li>
-                <li>Você define preço de balcão, capacidade e disponibilidade. O controle da vaga é seu.</li>
-                <li>Dá pra pausar ou encerrar a parceria quando quiser, respeitando as reservas já confirmadas.</li>
-                <li>Seus dados são tratados conforme a Política de Privacidade da Movepark.</li>
+                {CONTRACT_SUMMARY.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
               </ul>
               <p className="mt-3 text-caption-sm text-muted-steel">
-                Este é um resumo. O contrato completo fica disponível no painel após a assinatura.
+                Este é um resumo. Baixe o contrato completo para ler e guardar.
               </p>
             </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-fit"
+              onClick={() =>
+                downloadContract({
+                  companyName: account.data?.legal_name,
+                  acceptedAt: contract.data?.acceptedAt,
+                })
+              }
+            >
+              <Download className="h-4 w-4" /> Baixar contrato
+            </Button>
             <label className="flex items-start gap-2.5 text-body-sm text-ink">
               <Checkbox checked={accept} onCheckedChange={(v) => setAccept(v === true)} className="mt-0.5" />
               <span>Li e concordo com o contrato de parceria da Movepark.</span>
@@ -162,6 +174,15 @@ export default function OperatorRecebimento() {
               <Link to="/operator">Ir para o painel</Link>
             </Button>
           </div>
+        )}
+        </div>
+
+        {!loading && step !== "done" && (
+          <aside className="hidden desktop:block">
+            <div className="sticky top-8">
+              <RevenueMotivator />
+            </div>
+          </aside>
         )}
       </div>
     </div>

@@ -1,6 +1,14 @@
 import * as React from "react";
-import { useForm, useController, type Control, type Path } from "react-hook-form";
+import {
+  useForm,
+  useController,
+  FormProvider,
+  useFormContext,
+  type Control,
+  type Path,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { fetchCep } from "@/lib/cep";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -136,10 +144,49 @@ const bankCodeMask: Mask = (v) => onlyDigits(v).slice(0, 5);
 
 type AddrPrefix = "company.address" | "representative.address";
 
+/**
+ * Campo de CEP que autopreenche rua/bairro/cidade/UF (ViaCEP) assim que o CEP fica completo.
+ * Usa o setValue do form (FormProvider) para setar os campos irmãos do mesmo endereço.
+ */
+function CepField({ control, prefix }: { control: Control<KycValues>; prefix: AddrPrefix }) {
+  const name = `${prefix}.zip_code` as Path<KycValues>;
+  const { field, fieldState } = useController({ control, name });
+  const { setValue } = useFormContext<KycValues>();
+  const [loading, setLoading] = React.useState(false);
+
+  async function autofill(value: string) {
+    setLoading(true);
+    const addr = await fetchCep(value);
+    if (addr) {
+      const opts = { shouldValidate: true, shouldDirty: true } as const;
+      setValue(`${prefix}.street` as Path<KycValues>, addr.street, opts);
+      setValue(`${prefix}.neighborhood` as Path<KycValues>, addr.neighborhood, opts);
+      setValue(`${prefix}.city` as Path<KycValues>, addr.city, opts);
+      setValue(`${prefix}.state` as Path<KycValues>, addr.state, opts);
+    }
+    setLoading(false);
+  }
+
+  return (
+    <Field label={loading ? "CEP (buscando endereço…)" : "CEP"} error={fieldState.error?.message}>
+      <Input
+        placeholder="00000-000"
+        value={(field.value as string) ?? ""}
+        onBlur={field.onBlur}
+        onChange={(e) => {
+          const masked = cepMask(e.target.value);
+          field.onChange(masked);
+          if (onlyDigits(masked).length === 8) void autofill(masked);
+        }}
+      />
+    </Field>
+  );
+}
+
 function AddressFields({ control, prefix }: { control: Control<KycValues>; prefix: AddrPrefix }) {
   return (
     <>
-      <TextField control={control} name={`${prefix}.zip_code` as Path<KycValues>} label="CEP" mask={cepMask} placeholder="00000-000" />
+      <CepField control={control} prefix={prefix} />
       <TextField control={control} name={`${prefix}.street` as Path<KycValues>} label="Rua" />
       <TextField control={control} name={`${prefix}.street_number` as Path<KycValues>} label="Número" />
       <TextField control={control} name={`${prefix}.complement` as Path<KycValues>} label="Complemento" />
@@ -211,11 +258,49 @@ export function KycRepresentativeSection({ control }: { control: Control<KycValu
   );
 }
 
+const ADDRESS_KEYS = [
+  "zip_code",
+  "street",
+  "street_number",
+  "complement",
+  "neighborhood",
+  "city",
+  "state",
+  "reference_point",
+] as const;
+
+/**
+ * Endereço do representante com atalho "mesmo endereço da empresa" (evita redigitar os 8 campos —
+ * caso comum: o dono é o representante e usa o endereço da empresa). Quando ligado, espelha o
+ * endereço da empresa e esconde os campos.
+ */
 export function KycRepAddressSection({ control }: { control: Control<KycValues> }) {
+  const { watch, setValue } = useFormContext<KycValues>();
+  const [same, setSame] = React.useState(false);
+  const companyAddress = watch("company.address");
+
+  React.useEffect(() => {
+    if (!same) return;
+    for (const k of ADDRESS_KEYS) {
+      setValue(`representative.address.${k}` as Path<KycValues>, companyAddress?.[k] ?? "", {
+        shouldValidate: true,
+      });
+    }
+  }, [same, companyAddress, setValue]);
+
   return (
-    <Section title="Endereço do representante">
-      <AddressFields control={control} prefix="representative.address" />
-    </Section>
+    <div className="flex flex-col gap-3">
+      <h3 className="text-body-md font-medium text-ink">Endereço do representante</h3>
+      <label className="flex items-center gap-2 text-body-sm text-ink">
+        <Checkbox checked={same} onCheckedChange={(c) => setSame(c === true)} />
+        Mesmo endereço da empresa
+      </label>
+      {!same && (
+        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
+          <AddressFields control={control} prefix="representative.address" />
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -256,25 +341,27 @@ export function PayoutKycForm({
   onSkip,
   skipLabel = "Pular por enquanto",
 }: PayoutKycFormProps) {
-  const {
-    control,
-    handleSubmit,
-    formState: { isSubmitting },
-  } = useForm<KycValues>({
+  const methods = useForm<KycValues>({
     resolver: zodResolver(payoutKycSchema),
     defaultValues,
     mode: "onBlur",
   });
+  const {
+    control,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = methods;
 
   const busy = submitting || isSubmitting;
 
   return (
-    <form onSubmit={handleSubmit((v) => onSubmit(v))} className="flex flex-col gap-7">
-      <KycCompanySection control={control} />
-      <KycCompanyAddressSection control={control} />
-      <KycRepresentativeSection control={control} />
-      <KycRepAddressSection control={control} />
-      <KycBankSection control={control} />
+    <FormProvider {...methods}>
+      <form onSubmit={handleSubmit((v) => onSubmit(v))} className="flex flex-col gap-7">
+        <KycCompanySection control={control} />
+        <KycCompanyAddressSection control={control} />
+        <KycRepresentativeSection control={control} />
+        <KycRepAddressSection control={control} />
+        <KycBankSection control={control} />
 
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-hairline pt-5">
         <div className="flex gap-2">
@@ -293,6 +380,7 @@ export function PayoutKycForm({
           {busy ? "Salvando…" : submitLabel}
         </Button>
       </div>
-    </form>
+      </form>
+    </FormProvider>
   );
 }

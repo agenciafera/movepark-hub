@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useForm, type Control, type Path } from "react-hook-form";
+import { useForm, FormProvider, type Control, type Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ArrowLeft } from "lucide-react";
@@ -60,16 +60,17 @@ export type PayoutKycWizardProps = {
  * submete na última etapa. Reusa as seções do PayoutKycForm.
  */
 export function PayoutKycWizard({ defaultValues, onSubmit, submitting, onSkip }: PayoutKycWizardProps) {
+  const methods = useForm<KycValues>({
+    resolver: zodResolver(payoutKycSchema),
+    defaultValues,
+    mode: "onBlur",
+  });
   const {
     control,
     handleSubmit,
     trigger,
     formState: { isSubmitting },
-  } = useForm<KycValues>({
-    resolver: zodResolver(payoutKycSchema),
-    defaultValues,
-    mode: "onBlur",
-  });
+  } = methods;
 
   const [step, setStep] = React.useState(0);
   const busy = submitting || isSubmitting;
@@ -81,7 +82,8 @@ export function PayoutKycWizard({ defaultValues, onSubmit, submitting, onSkip }:
   }
 
   return (
-    <form onSubmit={handleSubmit((v) => onSubmit(v))} className="flex flex-col gap-6">
+    <FormProvider {...methods}>
+      <form onSubmit={handleSubmit((v) => onSubmit(v))} className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           {STEPS.map((s, i) => (
@@ -120,6 +122,7 @@ export function PayoutKycWizard({ defaultValues, onSubmit, submitting, onSkip }:
           </Button>
         )}
       </div>
-    </form>
+      </form>
+    </FormProvider>
   );
 }
