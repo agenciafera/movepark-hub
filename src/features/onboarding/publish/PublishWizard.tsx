@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CurrencyInput } from "@/components/ui/currency-input";
+import { formatBRL } from "@/lib/format";
 import {
   Select,
   SelectContent,
@@ -39,6 +40,10 @@ type Props = { data: OnboardingData; companyId: string };
 type Row = { selected: boolean; base_price: number | null; capacity: string };
 
 const PUBLISH_STEP_TITLES = ["Endereço", "Vagas e preço", "Transfer", "Fotos"];
+// Sugestão de preço online da Movepark: 10% abaixo do balcão informado.
+const MOVEPARK_DISCOUNT = 0.1;
+const suggestedOnline = (base: number | null): number | null =>
+  base == null || base <= 0 ? base : Math.round(base * (1 - MOVEPARK_DISCOUNT) * 100) / 100;
 
 export function PublishWizard({ data, companyId }: Props) {
   const navigate = useNavigate();
@@ -84,9 +89,18 @@ export function PublishWizard({ data, companyId }: Props) {
     [destinations, destinationId],
   );
 
+  // Aceitar a sugestão (online 10% menor) ou seguir com o preço informado.
+  const [acceptSuggestion, setAcceptSuggestion] = React.useState(true);
+  const effectivePrice = (base: number | null): number | null =>
+    acceptSuggestion ? suggestedOnline(base) : base;
+
   const previewItems: PreviewItem[] = data.catalog
     .filter((pt) => rows[pt.id]?.selected)
-    .map((pt) => ({ name: pt.name, base_price: rows[pt.id].base_price, capacity: Number(rows[pt.id].capacity || 0) }));
+    .map((pt) => ({
+      name: pt.name,
+      base_price: effectivePrice(rows[pt.id].base_price),
+      capacity: Number(rows[pt.id].capacity || 0),
+    }));
 
   function patchRow(id: string, p: Partial<Row>) {
     setRows((prev) => ({ ...prev, [id]: { ...prev[id], ...p } }));
@@ -133,7 +147,11 @@ export function PublishWizard({ data, companyId }: Props) {
   async function goFromParkingTypes() {
     const id = locationId;
     if (!id) return toast.error("Salve o endereço primeiro.");
-    const items = buildParkingItems(data.catalog, rows);
+    // Aplica a escolha do parceiro (sugestão 10% menor ou preço dele) no preço salvo.
+    const pricedRows = Object.fromEntries(
+      Object.entries(rows).map(([k, r]) => [k, { ...r, base_price: effectivePrice(r.base_price) }]),
+    );
+    const items = buildParkingItems(data.catalog, pricedRows);
     const err = validateParkingItems(items);
     if (err) return toast.error(err);
     try {
@@ -323,9 +341,50 @@ export function PublishWizard({ data, companyId }: Props) {
                             </div>
                           </div>
                         )}
+                        {row.selected && (row.base_price ?? 0) > 0 && (
+                          <p className="pl-8 text-caption-sm text-mp-indigo">
+                            Online sugerido: <strong>{formatBRL(suggestedOnline(row.base_price) ?? 0)}</strong>{" "}
+                            <span className="text-muted-steel">(10% menor que o balcão)</span>
+                          </p>
+                        )}
                       </div>
                     );
                   })}
+                </div>
+
+                {/* Sugestão da Movepark: aceitar o online 10% menor ou seguir com o preço informado */}
+                <div className="flex flex-col gap-3 rounded-md border border-hairline bg-surface-pale p-4">
+                  <div>
+                    <p className="text-body-sm font-medium text-ink">
+                      A Movepark sugere um preço online 10% abaixo do balcão
+                    </p>
+                    <p className="text-caption-sm text-muted">
+                      Online mais baixo atrai mais reserva. Você decide o que vale.
+                    </p>
+                  </div>
+                  <div className="grid gap-2 tablet:grid-cols-2">
+                    {[
+                      { v: true, label: "Aceitar a sugestão (10% menor)" },
+                      { v: false, label: "Seguir com o meu preço" },
+                    ].map((opt) => (
+                      <button
+                        key={String(opt.v)}
+                        type="button"
+                        onClick={() => setAcceptSuggestion(opt.v)}
+                        className={
+                          "rounded-md border p-3 text-left text-body-sm transition " +
+                          (acceptSuggestion === opt.v
+                            ? "border-mp-primary bg-mp-pale text-mp-indigo"
+                            : "border-hairline bg-canvas text-ink hover:border-mp-primary/50")
+                        }
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-caption-sm text-muted-steel">
+                    O card ao lado já mostra o preço que o cliente vai ver.
+                  </p>
                 </div>
               </div>
             )}

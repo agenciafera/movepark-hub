@@ -17,6 +17,7 @@ import { CurrencyInput } from "@/components/ui/currency-input";
 import { PhoneField } from "@/components/ui/phone-field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StateSelect } from "@/components/shared/StateSelect";
+import { BankSelect } from "@/components/shared/BankSelect";
 import { cepMask, cnpjMask, cpfMask, dateMask, onlyDigits } from "@/lib/masks";
 import { CORPORATION_TYPES, payoutKycSchema, type PayoutKycForm as KycValues } from "./kyc";
 
@@ -136,6 +137,19 @@ function CorporationTypeField({ control }: { control: Control<KycValues> }) {
   );
 }
 
+function BankCodeField({ control }: { control: Control<KycValues> }) {
+  const { field, fieldState } = useController({ control, name: "bank.bank_code" });
+  return (
+    <Field label="Banco" error={fieldState.error?.message}>
+      <BankSelect
+        value={(field.value as string) ?? ""}
+        onChange={(code) => field.onChange(code)}
+        invalid={!!fieldState.error}
+      />
+    </Field>
+  );
+}
+
 function AccountTypeField({ control }: { control: Control<KycValues> }) {
   const { field, fieldState } = useController({ control, name: "bank.account_type" });
   return (
@@ -161,8 +175,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     </div>
   );
 }
-
-const bankCodeMask: Mask = (v) => onlyDigits(v).slice(0, 5);
 
 type AddrPrefix = "company.address" | "representative.address";
 
@@ -329,7 +341,7 @@ export function KycRepAddressSection({ control }: { control: Control<KycValues> 
 export function KycBankSection({ control }: { control: Control<KycValues> }) {
   return (
     <Section title="Conta bancária para repasse">
-      <TextField control={control} name="bank.bank_code" label="Código do banco" mask={bankCodeMask} placeholder="341" />
+      <BankCodeField control={control} />
       <TextField control={control} name="bank.branch_number" label="Agência" />
       <TextField control={control} name="bank.branch_check_digit" label="Dígito da agência (opcional)" />
       <TextField control={control} name="bank.account_number" label="Conta" />
