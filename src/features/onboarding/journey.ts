@@ -21,9 +21,11 @@ export type JourneyStatus = {
   /** recebimento enviado, aguardando a Movepark aprovar (pending / action_required). */
   recebimentoPending: boolean;
   hasPhotos: boolean;
+  /** unidade efetivamente no ar / vendendo (is_listed). */
+  isListed: boolean;
 };
 
-const ORDER: JourneyStage[] = ["publicar", "recebimento", "fotos"];
+const ORDER: JourneyStage[] = ["preview", "recebimento", "fotos", "vender"];
 
 /** Lógica pura da jornada (testável sem React/Query). */
 export function deriveJourney(input: {
@@ -31,18 +33,20 @@ export function deriveJourney(input: {
   hasPublished: boolean;
   recipientStatus: string | null;
   hasPhotos: boolean;
+  isListed: boolean;
 }): JourneyStatus {
   const canReceive = input.recipientStatus === "active";
   const recebimentoPending =
     input.recipientStatus === "pending" || input.recipientStatus === "action_required";
 
   const completed: JourneyStage[] = [];
-  if (input.hasPublished) completed.push("publicar");
+  if (input.hasPublished) completed.push("preview");
   if (canReceive) completed.push("recebimento");
   if (input.hasPhotos) completed.push("fotos");
+  if (input.isListed) completed.push("vender");
 
-  const current = ORDER.find((s) => !completed.includes(s)) ?? "fotos";
-  const complete = completed.length === ORDER.length;
+  const current = ORDER.find((s) => !completed.includes(s)) ?? "vender";
+  const complete = input.isListed;
 
   return {
     loading: input.loading,
@@ -53,6 +57,7 @@ export function deriveJourney(input: {
     canReceive,
     recebimentoPending,
     hasPhotos: input.hasPhotos,
+    isListed: input.isListed,
   };
 }
 
@@ -66,6 +71,7 @@ export function useOnboardingJourney(companyId: string | undefined): JourneyStat
       loading: locations.isLoading || recipient.isLoading,
       hasPublished: locs.some((l) => l.status === "active"),
       hasPhotos: locs.some((l) => Array.isArray(l.photos) && l.photos.length >= 1),
+      isListed: locs.some((l) => l.is_listed === true),
       recipientStatus: recipient.data?.status ?? null,
     });
   }, [locations.isLoading, locations.data, recipient.isLoading, recipient.data]);

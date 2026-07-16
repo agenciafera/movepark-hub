@@ -11,6 +11,13 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   GooglePlacesAutocomplete,
   isGooglePlacesEnabled,
 } from "@/components/shared/GooglePlacesAutocomplete";
@@ -29,7 +36,7 @@ type Props = { data: OnboardingData; companyId: string };
 
 type Row = { selected: boolean; base_price: number | null; capacity: string };
 
-const PUBLISH_STEP_TITLES = ["Endereço", "Destino", "Vagas e preço", "Transfer"];
+const PUBLISH_STEP_TITLES = ["Endereço", "Vagas e preço", "Transfer"];
 
 export function PublishWizard({ data, companyId }: Props) {
   const navigate = useNavigate();
@@ -118,15 +125,6 @@ export function PublishWizard({ data, companyId }: Props) {
     }
   }
 
-  async function goFromDestination() {
-    try {
-      await persistLocation();
-      setStep(3);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao salvar.");
-    }
-  }
-
   async function goFromParkingTypes() {
     const id = locationId;
     if (!id) return toast.error("Salve o endereço primeiro.");
@@ -135,7 +133,7 @@ export function PublishWizard({ data, companyId }: Props) {
     if (err) return toast.error(err);
     try {
       await setParkingTypes.mutateAsync({ p_company_id: companyId, p_location_id: id, p_items: items });
-      setStep(4);
+      setStep(3);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao salvar.");
     }
@@ -164,8 +162,8 @@ export function PublishWizard({ data, companyId }: Props) {
         <div className="flex flex-col gap-6">
           <Wordmark height={24} />
 
-          {/* trilha macro: publicar é a fase 1 de 3 (estágio único, persiste no topo) */}
-          <OnboardingJourney current="publicar" />
+          {/* trilha macro: preview é a 1ª fase (estágio único, persiste no topo) */}
+          <OnboardingJourney current="preview" />
 
           {/* seções da fase Publicar (por nome; sem recriar "Passo 1") */}
           <SubStepBar steps={PUBLISH_STEP_TITLES} current={step - 1} />
@@ -237,45 +235,40 @@ export function PublishWizard({ data, companyId }: Props) {
                     </div>
                   </div>
                 )}
-              </div>
-            )}
-
-            {step === 2 && (
-              <div className="flex flex-col gap-5">
-                <div className="space-y-1">
-                  <h1 className="text-display-md text-ink">Qual destino você atende?</h1>
-                  <p className="text-body-sm text-muted">
-                    Detectamos o ponto mais próximo. Confirme ou escolha outro.
-                  </p>
-                </div>
-                {nearest.isFetching && !destName ? (
-                  <p className="text-body-sm text-muted">Detectando o destino mais próximo…</p>
-                ) : null}
+                {/* Ponto de referência (opcional). Nem todo estacionamento atende aeroporto:
+                    vendemos para qualquer estacionamento, então isto NÃO é obrigatório. */}
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="destination">Destino</Label>
-                  <select
-                    id="destination"
-                    value={destinationId ?? ""}
-                    onChange={(e) => setDestinationId(e.target.value || null)}
-                    className="h-10 rounded-md border border-hairline bg-canvas px-3 text-body-sm text-ink"
+                  <Label htmlFor="destination">Ponto de referência (opcional)</Label>
+                  <Select
+                    value={destinationId ?? "none"}
+                    onValueChange={(v) => setDestinationId(v === "none" ? null : v)}
                   >
-                    <option value="">Nenhum / não se aplica</option>
-                    {(destinations ?? []).map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name} · {d.city}/{d.state}
-                      </option>
-                    ))}
-                  </select>
-                  {destName && nearest.data === destinationId && (
+                    <SelectTrigger id="destination">
+                      <SelectValue placeholder="Não atende um ponto específico" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Não atende um ponto específico</SelectItem>
+                      {(destinations ?? []).map((d) => (
+                        <SelectItem key={d.id} value={d.id}>
+                          {d.name} · {d.city}/{d.state}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-caption-sm text-muted">
+                    Atende um aeroporto, rodoviária ou outro ponto conhecido? Selecione para aparecer
+                    nas buscas dele. Se não, é só seguir.
+                  </p>
+                  {destName && destinationId && nearest.data === destinationId && (
                     <p className="text-caption-sm text-mp-indigo">
-                      Sugerido automaticamente pela localização.
+                      Sugerido pela localização. Você pode trocar.
                     </p>
                   )}
                 </div>
               </div>
             )}
 
-            {step === 3 && (
+            {step === 2 && (
               <div className="flex flex-col gap-5">
                 <div className="space-y-1">
                   <h1 className="text-display-md text-ink">Suas vagas e o preço de balcão</h1>
@@ -325,7 +318,7 @@ export function PublishWizard({ data, companyId }: Props) {
               </div>
             )}
 
-            {step === 4 && (
+            {step === 3 && (
               <div className="flex flex-col gap-5">
                 <div className="space-y-1">
                   <h1 className="text-display-md text-ink">Você oferece transfer?</h1>
@@ -378,16 +371,11 @@ export function PublishWizard({ data, companyId }: Props) {
                 </Button>
               )}
               {step === 2 && (
-                <Button onClick={goFromDestination} disabled={busy}>
-                  Continuar <ArrowRight className="h-4 w-4" />
-                </Button>
-              )}
-              {step === 3 && (
                 <Button onClick={goFromParkingTypes} disabled={busy}>
                   Continuar <ArrowRight className="h-4 w-4" />
                 </Button>
               )}
-              {step === 4 && (
+              {step === 3 && (
                 <Button onClick={doPublish} disabled={busy}>
                   {busy ? "Publicando…" : "Publicar minha unidade"} <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -399,8 +387,8 @@ export function PublishWizard({ data, companyId }: Props) {
         {/* Coluna do preview vivo */}
         <aside className="hidden desktop:block">
           <div className="sticky top-12 flex flex-col gap-3">
-            <p className="text-caption-sm uppercase tracking-wide text-muted-steel">
-              Como o cliente vai ver
+            <p className="text-caption-sm font-medium text-muted-steel">
+              Veja como ficará seu estacionamento
             </p>
             <UnitPreviewCard
               name={name}

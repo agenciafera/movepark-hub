@@ -20,19 +20,30 @@ type KycStep = {
   render: (control: Control<KycValues>) => React.ReactNode;
 };
 
+// Quebrado em etapas curtas: o formulário completo era grande demais pra preencher de uma vez.
+// Cada etapa valida só os seus campos antes de avançar.
 const STEPS: KycStep[] = [
   {
-    title: "Sua empresa",
-    fields: ["company"],
-    render: (c) => (
-      <div className="flex flex-col gap-7">
-        <KycCompanySection control={c} />
-        <KycCompanyAddressSection control={c} />
-      </div>
-    ),
+    title: "Empresa",
+    fields: [
+      "company.legal_name",
+      "company.trade_name",
+      "company.document",
+      "company.corporation_type",
+      "company.email",
+      "company.phone",
+      "company.annual_revenue",
+      "company.founding_date",
+    ],
+    render: (c) => <KycCompanySection control={c} />,
   },
   {
-    title: "Representante legal",
+    title: "Endereço da empresa",
+    fields: ["company.address"],
+    render: (c) => <KycCompanyAddressSection control={c} />,
+  },
+  {
+    title: "Representante",
     fields: ["representative"],
     render: (c) => (
       <div className="flex flex-col gap-7">

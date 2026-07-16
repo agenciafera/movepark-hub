@@ -18,8 +18,8 @@ export function OperatorJourneyBanner() {
   let hint: string | undefined;
   let cta: { to: string; label: string } | undefined;
 
-  if (journey.current === "publicar") {
-    cta = { to: "/onboarding", label: "Continuar publicação" };
+  if (journey.current === "preview") {
+    cta = { to: "/onboarding", label: "Continuar" };
   } else if (journey.current === "recebimento") {
     if (journey.recebimentoPending) {
       hint = "Recebimento em análise. A gente te avisa assim que liberar.";
@@ -27,9 +27,10 @@ export function OperatorJourneyBanner() {
     } else {
       cta = { to: "/operator/recebimento", label: "Cadastrar recebimento" };
     }
-  } else {
+  } else if (journey.current === "fotos") {
     cta = { to: "/operator/locations", label: "Adicionar fotos" };
   }
+  // current === "vender" só aparece transitoriamente; sem CTA (a unidade lista sozinha).
 
   return (
     <div className="mb-6">

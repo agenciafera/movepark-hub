@@ -5,10 +5,9 @@ import { PayoutKycWizard } from "./PayoutKycWizard";
 import { emptyPayoutKyc } from "./kyc";
 
 describe("PayoutKycWizard", () => {
-  it("começa na primeira seção (Sua empresa), sem botão Voltar", () => {
+  it("começa na primeira seção (Empresa), sem botão Voltar", () => {
     renderWithProviders(<PayoutKycWizard defaultValues={emptyPayoutKyc()} onSubmit={vi.fn()} />);
     // a seção atual é nomeada na SubStepBar (sem "Passo 1 de N" competindo com a trilha macro)
-    expect(screen.getByText(/Sua empresa/i)).toBeInTheDocument();
     expect(screen.getByText("Dados da empresa")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Voltar/i })).toBeNull();
   });

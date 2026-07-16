@@ -276,9 +276,21 @@
 }
 
 /* Google Places autocomplete (PlaceAutocompleteElement). O web component tem shadow DOM fechado,
-   então só dá pra ajustar o host: forçamos o tema claro (senão herda "light dark" e renderiza
-   escuro no card claro do wizard) e a largura total. */
+   então só dá pra ajustar o host: casamos o color-scheme com o TEMA do app (senão renderiza um
+   campo claro dentro do painel escuro, destoando dos outros campos) e damos a mesma casca do
+   Input do app (altura, borda, raio, fundo) pra padronizar. */
 .mp-places-autocomplete {
   color-scheme: light;
+  display: block;
   width: 100%;
+  min-height: 3.5rem;
+  border: 1px solid hsl(var(--hairline));
+  border-radius: 0.125rem;
+  background: hsl(var(--canvas));
+}
+.mp-places-autocomplete:focus-within {
+  border: 2px solid hsl(var(--ink));
+}
+.dark .mp-places-autocomplete {
+  color-scheme: dark;
 }

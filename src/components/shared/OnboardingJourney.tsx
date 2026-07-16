@@ -1,30 +1,33 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { Check, Rocket, Landmark, Camera, ArrowRight } from "lucide-react";
+import { Check, Eye, Landmark, Camera, Rocket, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /**
  * Trilha macro do onboarding do parceiro. Deixa claro, em qualquer tela do fluxo, em que fase o
- * dono está e qual é o próximo passo. Três fases fixas:
- *   1. Publicar (a unidade tomou forma na busca)
+ * dono está e qual é o próximo passo. Quatro fases fixas, da aprovação do lead até a venda:
+ *   1. Preview (montar a unidade e ver como ela fica)
  *   2. Recebimento (dados bancários + CNPJ + contrato)
- *   3. Fotos (o diferencial que atrai cliente)
+ *   3. Fotos (o diferencial que atrai cliente, obrigatório pra vender)
+ *   4. Publicar/Vender (unidade no ar, recebendo reservas)
  */
-export type JourneyStage = "publicar" | "recebimento" | "fotos";
+export type JourneyStage = "preview" | "recebimento" | "fotos" | "vender";
 
 type StageDef = { key: JourneyStage; label: string; icon: React.ComponentType<{ className?: string }> };
 
 const STAGES: StageDef[] = [
-  { key: "publicar", label: "Publicar", icon: Rocket },
+  { key: "preview", label: "Preview", icon: Eye },
   { key: "recebimento", label: "Recebimento", icon: Landmark },
   { key: "fotos", label: "Fotos", icon: Camera },
+  { key: "vender", label: "Publicar/Vender", icon: Rocket },
 ];
 
 const NEXT_HINT: Record<JourneyStage, string> = {
-  publicar: "Agora é hora de cadastrar seu recebimento.",
+  preview: "Monte sua unidade e veja como ela fica.",
   recebimento: "Cadastre seus dados de recebimento para começar a vender.",
   fotos: "Suba pelo menos 1 foto. Sem foto, sua unidade não entra na busca.",
+  vender: "Tudo pronto! Sua unidade está no ar, recebendo reservas.",
 };
 
 export function OnboardingJourney({
@@ -61,10 +64,10 @@ export function OnboardingJourney({
           const isLast = index === STAGES.length - 1;
           return (
             <li key={stage.key} className="flex flex-1 items-center last:flex-none">
-              <div className="flex flex-col items-center gap-1.5">
+              <div className="flex min-w-0 flex-col items-center gap-1.5">
                 <span
                   className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-full border-2 transition-colors",
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
                     status === "done" && "border-success bg-success text-white",
                     status === "current" && "border-mp-primary bg-mp-primary text-white shadow-tier",
                     status === "upcoming" && "border-hairline bg-surface-soft text-muted-steel",
@@ -74,7 +77,7 @@ export function OnboardingJourney({
                 </span>
                 <span
                   className={cn(
-                    "text-caption-sm font-medium",
+                    "max-w-[4.5rem] text-center text-[11px] font-medium leading-tight break-words tablet:max-w-none tablet:text-caption-sm",
                     status === "upcoming" ? "text-muted-steel" : "text-ink",
                   )}
                 >

@@ -91,7 +91,7 @@ export default function OperatorRecebimento() {
         {!loading && (
           <OnboardingJourney
             current={step === "done" ? "fotos" : "recebimento"}
-            completed={step === "done" ? ["publicar", "recebimento"] : ["publicar"]}
+            completed={step === "done" ? ["preview", "recebimento"] : ["preview"]}
           />
         )}
 
