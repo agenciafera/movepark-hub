@@ -46,10 +46,15 @@ peso vem do token, e sobrescrever é como a divergência começou.
 
 | Elemento | Classe | Computa |
 |---|---|---|
-| h1 | `text-display-2xl tablet:text-display-3xl` | 44/700/-0.5 → 56/700/-0.8 |
-| h2 de seção | `text-display-2xl` | 44/700/-0.5 |
+| h1 | `text-display-3xl` | 34px no mobile → 56px no desktop |
+| h2 de seção | `text-display-2xl` | 26px no mobile → 44px no desktop |
 | h3 de card | `text-title-md` | 16/600 |
 | lead do h1 | `text-body-md` | 16/400 |
+
+`display-3xl` e `display-2xl` são fluidos (`clamp`) e escalam sozinhos até travar em
+1128px. Escreva o token puro: **nada de `tablet:`**. E nunca combine px arbitrário com
+o token (`text-[36px] tablet:text-display-2xl`), que encolhe de 36 para 34.8px ao
+cruzar o breakpoint.
 
 ### Página de conteúdo
 
@@ -173,6 +178,9 @@ Rode antes de concluir. Todos devem voltar vazios (ou só com exceções conscie
 ```bash
 # 1. Tamanho arbitrário no consumer (o contrato tem ~9 tiers; havia 17 valores à mão)
 grep -rnE 'text-\[[0-9]+px\]' src/routes src/features/home src/features/legal
+
+# 1b. Degrau manual em cima do tier fluido: os dois erros que ele causa
+grep -rnE 'tablet:text-display-(2xl|3xl)' src/routes src/features
 
 # 2. Peso sobrescrevendo token de heading
 grep -rnE 'text-(display|title)-[a-z0-9]+[^"]*font-(bold|semibold|medium)' src/routes src/features

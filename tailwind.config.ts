@@ -128,8 +128,19 @@ const config: Config = {
       },
       fontSize: {
         "rating-display": ["64px", { lineHeight: "1.05", fontWeight: "900", letterSpacing: "-1.5px" }],
-        "display-3xl": ["56px", { lineHeight: "1.06", fontWeight: "700", letterSpacing: "-0.8px" }],
-        "display-2xl": ["44px", { lineHeight: "1.05", fontWeight: "700", letterSpacing: "-0.5px" }],
+        // Fluidos: 34→56 e 26→44, batendo o máximo no breakpoint desktop (1128px).
+        // A razão entre os dois se mantém nas duas pontas (1.31 no mobile, 1.27 no
+        // desktop); com mínimos de 32/28 a escala achatava para 1.14 justo na tela
+        // menor. O tracking é em `em` porque acompanha o tamanho: em px ele apertaria
+        // demais no mobile. Os valores do DESIGN.md são o topo da faixa.
+        "display-3xl": [
+          "clamp(34px, 2.92vw + 23px, 56px)",
+          { lineHeight: "1.06", fontWeight: "700", letterSpacing: "-0.014em" },
+        ],
+        "display-2xl": [
+          "clamp(26px, 2.39vw + 17px, 44px)",
+          { lineHeight: "1.08", fontWeight: "700", letterSpacing: "-0.011em" },
+        ],
         "display-xl": ["28px", { lineHeight: "1.28", fontWeight: "700", letterSpacing: "-0.2px" }],
         "display-lg": ["22px", { lineHeight: "1.18", fontWeight: "500", letterSpacing: "-0.3px" }],
         "display-md": ["21px", { lineHeight: "1.30", fontWeight: "700" }],

@@ -124,8 +124,8 @@ export function Hero() {
 
         <h1
           data-hero="h1"
-          className="mx-auto mb-5 max-w-3xl text-[40px] font-bold text-white tablet:text-[54px]"
-          style={{ lineHeight: 1.09, letterSpacing: "-0.7px", textWrap: "balance" } as React.CSSProperties}
+          className="mx-auto mb-5 max-w-3xl text-display-3xl text-white"
+          style={{ textWrap: "balance" } as React.CSSProperties}
         >
           Estacione em qualquer aeroporto do Brasil
         </h1>

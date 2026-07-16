@@ -42,7 +42,7 @@ export function CtaBanner() {
           </p>
 
           <h2
-            className="mb-5 max-w-lg text-[38px] font-bold leading-[1.08] text-white tablet:text-[52px]"
+            className="mb-5 max-w-lg text-display-2xl text-white"
             style={{ textWrap: "balance" } as React.CSSProperties}
           >
             Garanta sua vaga antes da sua próxima viagem

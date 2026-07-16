@@ -120,7 +120,7 @@ export function DestinationsGallery() {
         </p>
         <h2
           data-reveal="dg-header"
-          className="mb-3 text-[36px] font-bold leading-[1.1] text-ink tablet:text-display-2xl"
+          className="mb-3 text-display-2xl text-ink"
           style={{ textWrap: "balance" } as React.CSSProperties}
         >
           Estacione nos principais

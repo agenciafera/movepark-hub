@@ -198,7 +198,7 @@ export default function SejaParceiroPage() {
           <span className="text-badge uppercase tracking-[0.4px] text-white/70">
             Para donos de estacionamento
           </span>
-          <h1 className="mt-3 max-w-2xl text-balance text-display-2xl leading-tight text-white tablet:text-display-3xl">
+          <h1 className="mt-3 max-w-2xl text-balance text-display-3xl leading-tight text-white">
             Encha suas vagas com reservas online. Sem custo pra começar.
           </h1>
           <p className="mt-4 max-w-xl text-body-md text-white/80">

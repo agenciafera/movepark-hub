@@ -62,6 +62,25 @@ describe("contrato de tipografia do consumer", () => {
     expect(offenders).toEqual([]);
   });
 
+  it("os tiers de hero e de seção são fluidos: sem clamp, o mobile herda o px do desktop", () => {
+    // display-2xl fixo em 44px punia justamente quem usava o token certo:
+    // /seja-parceiro entregava h1 e 7 h2 todos em 44px numa tela de 375px.
+    const config = readFileSync(join(process.cwd(), "tailwind.config.ts"), "utf8");
+
+    expect(config).toMatch(/"display-3xl":\s*\[\s*\n?\s*"clamp\(/);
+    expect(config).toMatch(/"display-2xl":\s*\[\s*\n?\s*"clamp\(/);
+  });
+
+  it("nenhum heading combina px arbitrário com o token fluido no tablet", () => {
+    // `text-[36px] tablet:text-display-2xl` encolhe de 36px para 34.8px ao cruzar
+    // o breakpoint, porque o token fluido só alcança 36px por volta de 800px.
+    const offenders = sources
+      .filter(({ body }) => /text-\[\d+px\][^"]*tablet:text-display-/.test(body))
+      .map(({ file }) => file);
+
+    expect(offenders).toEqual([]);
+  });
+
   it("nenhuma classe de tipografia fantasma: o que o código usa existe no config", () => {
     // `text-body-lg` era usada em faq/sobre/como-funciona e nunca existiu no
     // tailwind.config.ts, então computava 16px/400 herdado sem ninguém notar.

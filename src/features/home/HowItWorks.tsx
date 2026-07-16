@@ -185,7 +185,7 @@ export function HowItWorks() {
             <p data-reveal="hw-header" className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
               Simples e rápido
             </p>
-            <h2 data-reveal="hw-header" className="mb-3 text-[36px] leading-[1.1] font-bold text-ink tablet:text-display-2xl" style={{ textWrap: "balance" } as React.CSSProperties}>
+            <h2 data-reveal="hw-header" className="mb-3 text-display-2xl text-ink" style={{ textWrap: "balance" } as React.CSSProperties}>
               Reserve sua vaga de estacionamento em quatro passos fáceis
             </h2>
             <p data-reveal="hw-header" className="mb-10 max-w-md text-body-md text-muted">

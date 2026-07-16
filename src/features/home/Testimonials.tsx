@@ -74,7 +74,7 @@ export function Testimonials() {
         <p data-reveal className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
           Avaliações verificadas
         </p>
-        <h2 data-reveal className="mb-4 text-balance text-[36px] leading-[1.1] font-bold text-ink tablet:text-display-2xl">
+        <h2 data-reveal className="mb-4 text-balance text-display-2xl text-ink">
           O que nossos clientes dizem
         </h2>
 

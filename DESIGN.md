@@ -24,16 +24,20 @@ colors:
 typography:
   display:
     fontFamily: "Inter var, Inter, -apple-system, system-ui, sans-serif"
-    fontSize: "56px"
+    fontSize: "clamp(34px, 2.92vw + 23px, 56px)"
+    fontSizeMobile: "34px"
+    fontSizeDesktop: "56px"
     fontWeight: 700
-    lineHeight: 1.08
-    letterSpacing: "-0.8px"
+    lineHeight: 1.06
+    letterSpacing: "-0.014em"
   headline:
     fontFamily: "Inter var, Inter, -apple-system, system-ui, sans-serif"
-    fontSize: "44px"
+    fontSize: "clamp(26px, 2.39vw + 17px, 44px)"
+    fontSizeMobile: "26px"
+    fontSizeDesktop: "44px"
     fontWeight: 700
-    lineHeight: 1.10
-    letterSpacing: "-0.5px"
+    lineHeight: 1.08
+    letterSpacing: "-0.011em"
   title:
     fontFamily: "Inter var, Inter, -apple-system, system-ui, sans-serif"
     fontSize: "28px"
@@ -173,8 +177,8 @@ Inter var é a única família do sistema — humanista, altamente legível, ext
 **Character:** Uma voz única. Inter em peso 700 com tracking negativo (-0.5px a -0.8px) em display é preciso e confiante — lê-se como informação de sinalização aeroportuária, não como marketing. Inter em 400 no corpo tem calor suficiente para conversação. O contraste de peso faz o trabalho que outras famílias fazem com dois tipos distintos.
 
 ### Hierarchy
-- **Display** (700, 56px, lh 1.06, ls -0.8px): Hero headlines exclusivamente. Uma ocorrência por página. Reservado para o claim principal da home ou da página de destino.
-- **Headline** (700, 44px, lh 1.05, ls -0.5px): Títulos de seção de página, headings de destino. Até 2-3 por página.
+- **Display** (700, 34px no mobile → 56px no desktop, lh 1.06, ls -0.014em): Hero headlines exclusivamente. Uma ocorrência por página. Reservado para o claim principal da home ou da página de destino.
+- **Headline** (700, 26px no mobile → 44px no desktop, lh 1.08, ls -0.011em): Títulos de seção de página, headings de destino. Até 2-3 por página.
 - **Title** (700, 28px, lh 1.28, ls -0.2px): Cabeçalhos de cards de produto, nomes de estacionamentos em listagem, títulos de modal.
 - **Display SM** (600, 20px, lh 1.18, ls -0.15px): Subheadings de seção, rótulos de categoria com peso.
 - **Body MD** (400, 16px, lh 1.50): Texto corrido. Máximo 65ch por linha. O núcleo da comunicação.
@@ -184,6 +188,8 @@ Inter var é a única família do sistema — humanista, altamente legível, ext
 - **Badge** (700, 11px, lh 1.18, ls 0.1px): Status badges. Peso máximo para compensar tamanho mínimo.
 
 ### Named Rules
+**A Regra da Escala Fluida.** `display` e `headline` são fluidos via `clamp()`: escalam sozinhos de 375px a 1128px, onde travam no máximo. Escreva `text-display-3xl` e `text-display-2xl` puros, **sem** `tablet:` nem `desktop:`. Nunca combine um px arbitrário com o token (`text-[36px] tablet:text-display-2xl` encolhe ao cruzar o breakpoint, porque o token só alcança 36px por volta de 800px). A razão entre os dois tiers se mantém em toda a faixa (1.31 no mobile, 1.27 no desktop). Os tiers menores (`title` para baixo) são px fixo: já nascem legíveis no mobile e não precisam de degrau. O tracking é em `em` porque acompanha o tamanho; em px ele apertaria demais na ponta pequena.
+
 **A Regra do Tracking Negativo.** Títulos em `display` e `headline` sempre carregam tracking negativo. O tracking padrão em grande escala parece desleixado — o tracking negativo transmite precision e intenção. Nunca use tracking positivo (`letter-spacing > 0`) em headings.
 
 **A Regra do Uppercase Proibido.** Texto todo em uppercase está proibido em títulos e corpo. O único uso legítimo é `uppercase-tag` (8px, 900, ls 0.4px) — e apenas para classificadores muito específicos (ex: tipo de vaga, categoria de destino), nunca como decoração ou kicker de seção.
