@@ -46,13 +46,21 @@ import { fareReais } from "@/lib/fares";
 import { PriceTableDialog } from "./PriceTableDialog";
 import { FareComparisonDialog } from "./FareComparisonDialog";
 import { couponDiscountLabel, couponErrorMessage, type CouponPreview } from "./coupon.logic";
-import { addOnsTotal, bookingTotal, mergeUnitFares, selectedAddOns } from "./reservation.logic";
+import {
+  addOnsTotal,
+  bookingTotal,
+  mergeUnitFares,
+  selectedAddOns,
+  type ReservationSummary,
+} from "./reservation.logic";
 import { cn } from "@/lib/utils";
 
 type Props = {
   listing: ListingDetail;
   initialFrom: Date | null;
   initialTo: Date | null;
+  /** Publica o resumo vivo (total/datas/cancelamento) pro CTA fixo do mobile. */
+  onSummaryChange?: (summary: ReservationSummary) => void;
 };
 
 type FareTier = "basic" | "flex" | "superflex";
@@ -107,7 +115,7 @@ function daysBetween(a: Date | null, b: Date | null): number {
   return Math.max(1, Math.ceil(ms / (1000 * 60 * 60 * 24)));
 }
 
-export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
+export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChange }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
   const { session, effectiveRole, isLoading: authLoading } = useAuth();
@@ -303,6 +311,29 @@ export function ReservationCard({ listing, initialFrom, initialTo }: Props) {
   const displayTotal = parkingBase + fareSurcharge;
 
   const hasFareOrAddOns = canReserve && (fareSurcharge > 0 || chosenAddOns.length > 0 || applied);
+
+  // Publica o resumo vivo pro CTA fixo do mobile (total real da reserva, estilo Airbnb).
+  // Ref pro callback pra não depender da identidade dele (o pai pode passar inline).
+  const onSummaryChangeRef = React.useRef(onSummaryChange);
+  onSummaryChangeRef.current = onSummaryChange;
+  React.useEffect(() => {
+    onSummaryChangeRef.current?.({
+      canReserve,
+      total: canReserve ? displayTotal : listing.company_parking_type.base_price,
+      days,
+      from,
+      to,
+      cancellationLine: fareOption.badgeText,
+    });
+  }, [
+    canReserve,
+    displayTotal,
+    days,
+    from,
+    to,
+    fareOption.badgeText,
+    listing.company_parking_type.base_price,
+  ]);
 
   // Hidrata o card a partir de uma intenção pendente (volta do login), uma vez, no lote certo.
   React.useEffect(() => {

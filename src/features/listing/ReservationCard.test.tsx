@@ -26,6 +26,7 @@ const listing = {
   company: { slug: "aeropark", name: "Aeropark" },
   location: { id: "loc-1", slug: "unidade-1", name: "Unidade 1", has_passenger_quantity: false, has_pcd_config: false },
   parking_type: { code: "coberto", name: "Coberto" },
+  company_parking_type: { base_price: 150 },
 } as never;
 
 const from = new Date("2027-05-10T12:00:00Z");

@@ -11,6 +11,8 @@ import { AmenityList } from "@/features/listing/AmenityList";
 import { HowToArrive } from "@/features/listing/HowToArrive";
 import { TerminalDistances } from "@/features/listing/TerminalDistances";
 import { ReservationCard } from "@/features/listing/ReservationCard";
+import { ListingStickyBar } from "@/features/listing/ListingStickyBar";
+import type { ReservationSummary } from "@/features/listing/reservation.logic";
 import { ListingTrustBar } from "@/features/listing/ListingTrustBar";
 import { RecommendedCarousel } from "@/features/listing/RecommendedCarousel";
 import { buildListingTldr, nearestTerminal } from "@/features/listing/tldr.logic";
@@ -24,7 +26,6 @@ import { FaqList } from "@/features/faqs/FaqList";
 import { groupFaqsByScope } from "@/features/faqs/FaqList.logic";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { optimizedImageUrl } from "@/lib/storage";
-import { formatBRL } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CANCELLATION_POLICY_LINES } from "@/features/bookings/cancellation.logic";
 import { GUARANTEE_PROMISE } from "@/features/guarantee/copy";
@@ -85,6 +86,8 @@ export default function ListingPage() {
 
   const mobileCardRef = React.useRef<HTMLDivElement>(null);
   const [showStickyBar, setShowStickyBar] = React.useState(false);
+  // Resumo vivo do card de reserva do mobile pra alimentar o CTA fixo com o total real.
+  const [summary, setSummary] = React.useState<ReservationSummary | null>(null);
 
   React.useEffect(() => {
     const el = mobileCardRef.current;
@@ -267,6 +270,7 @@ export default function ListingPage() {
           listing={listing}
           initialFrom={initialFrom}
           initialTo={initialTo}
+          onSummaryChange={setSummary}
         />
       </div>
 
@@ -365,23 +369,15 @@ export default function ListingPage() {
         </>
       )}
 
-      {/* Sticky CTA mobile */}
+      {/* Sticky CTA mobile — espelha o total real da reserva (referência Airbnb) */}
       {showStickyBar && (
-        <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-4 border-t border-hairline bg-canvas/95 px-4 py-3 backdrop-blur-sm desktop:hidden">
-          <div>
-            <p className="text-caption text-muted">A partir de</p>
-            <p className="text-display-sm font-bold text-ink tabular-nums">
-              {formatBRL(listing.company_parking_type.base_price)}
-            </p>
-          </div>
-          <Button
-            onClick={() =>
-              mobileCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-            }
-          >
-            Reservar
-          </Button>
-        </div>
+        <ListingStickyBar
+          summary={summary}
+          basePrice={listing.company_parking_type.base_price}
+          onReserve={() =>
+            mobileCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+          }
+        />
       )}
       </div>
     </>

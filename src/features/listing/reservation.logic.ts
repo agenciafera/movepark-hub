@@ -1,5 +1,21 @@
 // Lógica pura da reserva (add-ons + total). Sem React/Supabase → testável (Vitest).
 
+/**
+ * Resumo da reserva que o ReservationCard publica pra fora (pro CTA fixo do mobile
+ * espelhar o total real, estilo Airbnb, em vez de "A partir de").
+ */
+export type ReservationSummary = {
+  /** Datas válidas + preço + disponibilidade prontos (o total faz sentido). */
+  canReserve: boolean;
+  /** Total da reserva quando `canReserve`; caso contrário, o preço de balcão (base). */
+  total: number;
+  days: number;
+  from: Date | null;
+  to: Date | null;
+  /** Selo curto de cancelamento da tarifa escolhida (ex.: "Cancelamento grátis até 24h"). */
+  cancellationLine: string;
+};
+
 export type AddOnOption = {
   id: string;
   name: string;
