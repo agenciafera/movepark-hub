@@ -2,7 +2,7 @@ import * as React from "react";
 import { useForm, FormProvider, type Control, type Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ArrowLeft } from "lucide-react";
+import { ArrowRight, ArrowLeft, Check } from "lucide-react";
 import { payoutKycSchema, type PayoutKycForm as KycValues } from "./kyc";
 import {
   KycCompanySection,
@@ -85,20 +85,37 @@ export function PayoutKycWizard({ defaultValues, onSubmit, submitting, onSkip }:
     <FormProvider {...methods}>
       <form onSubmit={handleSubmit((v) => onSubmit(v))} className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-2">
-          {STEPS.map((s, i) => (
-            <div
-              key={s.title}
-              className={"h-1.5 flex-1 rounded-full " + (i <= step ? "bg-mp-primary" : "bg-surface-pale")}
-            />
-          ))}
+        <div className="flex items-stretch gap-2">
+          {STEPS.map((s, i) => {
+            const done = i < step;
+            const active = i === step;
+            return (
+              <div key={s.title} className="flex flex-1 flex-col gap-1.5">
+                <div
+                  className={"h-1.5 rounded-full transition-colors " + (i <= step ? "bg-mp-primary" : "bg-surface-pale")}
+                />
+                <span
+                  className={
+                    "flex items-center gap-1 text-caption-sm " +
+                    (active ? "font-semibold text-ink" : done ? "text-muted" : "text-muted-steel")
+                  }
+                >
+                  {done && <Check className="h-3 w-3 text-success" />}
+                  {s.title}
+                </span>
+              </div>
+            );
+          })}
         </div>
-        <p className="text-caption-sm text-muted">
-          Passo {step + 1} de {STEPS.length} · {STEPS[step].title}
+        <p className="text-caption-sm text-muted-steel">
+          Passo {step + 1} de {STEPS.length}
         </p>
       </div>
 
-      {STEPS[step].render(control)}
+      {/* re-anima a cada avanço de etapa pra dar a sensação de progresso */}
+      <div key={step} className="duration-300 animate-in fade-in slide-in-from-right-2">
+        {STEPS[step].render(control)}
+      </div>
 
       <div className="flex items-center justify-between gap-2 border-t border-hairline pt-5">
         {step > 0 ? (

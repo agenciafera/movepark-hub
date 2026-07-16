@@ -17,6 +17,9 @@ import {
 } from "@/features/payouts/api";
 import { CONTRACT_VERSION, CONTRACT_SUMMARY, downloadContract } from "@/features/payouts/contract";
 import { RevenueMotivator, RevenueMotivatorBanner } from "@/features/payouts/RevenueMotivator";
+import { OnboardingJourney } from "@/components/shared/OnboardingJourney";
+import { PhotosCallout } from "@/components/shared/PhotosCallout";
+import { ConfettiBurst } from "@/components/shared/ConfettiBurst";
 
 type Step = "dados" | "contrato" | "done";
 
@@ -84,6 +87,13 @@ export default function OperatorRecebimento() {
             </Link>
           </Button>
         </div>
+
+        {!loading && (
+          <OnboardingJourney
+            current={step === "done" ? "fotos" : "recebimento"}
+            completed={step === "done" ? ["publicar", "recebimento"] : ["publicar"]}
+          />
+        )}
 
         {step !== "done" && (
           <div className="desktop:hidden">
@@ -166,17 +176,22 @@ export default function OperatorRecebimento() {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-start gap-3 rounded-lg border border-success/30 bg-success/5 p-6">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-success/15">
-              <Check className="h-6 w-6 text-success" />
+          <div className="flex flex-col gap-5">
+            <div className="relative flex flex-col items-start gap-3 overflow-hidden rounded-lg border border-success/30 bg-success/5 p-6 duration-500 animate-in fade-in zoom-in-95">
+              <ConfettiBurst />
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-success/15">
+                <Check className="h-6 w-6 text-success" />
+              </div>
+              <h1 className="text-title-lg text-ink">Recebimento enviado! 🎉</h1>
+              <p className="text-body-sm text-muted">
+                Recebemos seus dados e o contrato assinado. A Movepark faz a verificação e te avisa
+                assim que liberar. Enquanto isso, dá pra deixar sua página pronta pra vender.
+              </p>
             </div>
-            <h1 className="text-title-lg text-ink">Tudo enviado! 🎉</h1>
-            <p className="text-body-sm text-muted">
-              Recebemos seus dados de recebimento e o contrato assinado. A Movepark faz a verificação
-              e, assim que liberar, sua unidade entra na busca e começa a receber reservas. A gente te
-              avisa.
-            </p>
-            <Button asChild className="mt-1">
+
+            <PhotosCallout />
+
+            <Button asChild variant="ghost" className="w-fit">
               <Link to="/operator">Ir para o painel</Link>
             </Button>
           </div>

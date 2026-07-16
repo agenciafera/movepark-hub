@@ -18,6 +18,9 @@ import { Wordmark } from "@/components/shared/Brand";
 import { Button } from "@/components/ui/button";
 import { UnitPreviewCard } from "@/features/onboarding/publish/UnitPreviewCard";
 import { usePreviewUnit } from "@/features/onboarding/publish/previewApi";
+import { OnboardingJourney } from "@/components/shared/OnboardingJourney";
+import { PhotosCallout } from "@/components/shared/PhotosCallout";
+import { ConfettiBurst } from "@/components/shared/ConfettiBurst";
 
 const PUBLIC_SITE_URL =
   (import.meta.env.VITE_PUBLIC_SITE_URL as string | undefined)?.replace(/\/$/, "") ??
@@ -70,13 +73,19 @@ export default function UnitPreviewPage() {
           </div>
         ) : (
           <>
+            <OnboardingJourney
+              current={unit.isListed ? "fotos" : "recebimento"}
+              completed={unit.isListed ? ["publicar", "recebimento"] : ["publicar"]}
+            />
+
             {justPublished && (
               <div
                 className={
-                  "flex items-start gap-3 rounded-lg border p-5 " +
+                  "relative flex items-start gap-3 overflow-hidden rounded-lg border p-5 duration-500 animate-in fade-in zoom-in-95 " +
                   (unit.isListed ? "border-success/30 bg-success/5" : "border-mp-primary/30 bg-mp-pale")
                 }
               >
+                <ConfettiBurst />
                 <PartyPopper
                   className={
                     "mt-0.5 h-6 w-6 shrink-0 " + (unit.isListed ? "text-success" : "text-mp-indigo")
@@ -155,17 +164,8 @@ export default function UnitPreviewPage() {
                       </p>
                     </div>
 
-                    {/* Secundário (opcional, sem pressa): deixar a página redonda */}
-                    <div className="rounded-lg border border-hairline bg-canvas p-5">
-                      <h2 className="text-title-md text-ink">Deixe a página redonda (quando quiser)</h2>
-                      <p className="mt-1 text-body-sm text-muted">
-                        Fotos, comodidades, horário/24h e como chegar deixam sua página mais vendedora.
-                        Sem pressa: dá pra fazer depois, no painel.
-                      </p>
-                      <Button asChild size="sm" variant="ghost" className="mt-3 w-fit">
-                        <Link to="/operator/locations">Ir para minhas unidades</Link>
-                      </Button>
-                    </div>
+                    {/* Fotos: diferencial de destaque, não um "quando quiser" */}
+                    <PhotosCallout />
                   </>
                 ) : (
                   <>
@@ -200,16 +200,7 @@ export default function UnitPreviewPage() {
                       )}
                     </div>
 
-                    <div className="rounded-lg border border-hairline bg-surface-pale p-5">
-                      <h2 className="text-title-md text-ink">Deixe redondo depois</h2>
-                      <p className="mt-1 text-body-sm text-muted">
-                        Fotos, comodidades, horário/24h, como chegar e serviços extras deixam sua
-                        página mais vendedora. Você faz isso quando quiser, no painel.
-                      </p>
-                      <Button asChild size="sm" variant="secondary" className="mt-3 w-fit">
-                        <Link to="/operator/locations">Ir para minhas unidades</Link>
-                      </Button>
-                    </div>
+                    <PhotosCallout />
                   </>
                 )}
               </div>
