@@ -8,7 +8,32 @@ const ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
 export const partnerApplicationsKeys = {
   all: ["partner-applications"] as const,
   list: () => [...partnerApplicationsKeys.all, "list"] as const,
+  pendingCount: () => [...partnerApplicationsKeys.all, "pending-count"] as const,
 };
+
+/**
+ * Conta leads novos aguardando análise (onboarding_status = pending_review). Leve (head count),
+ * usado no badge do menu "Parceiros". Só habilita para hub_admin (a RLS de company_onboarding
+ * já restringe; `enabled` evita o request no operator).
+ */
+export function usePendingPartnerCount(enabled = true) {
+  return useQuery({
+    queryKey: partnerApplicationsKeys.pendingCount(),
+    enabled,
+    staleTime: 60_000,
+    queryFn: async (): Promise<number> => {
+      const { count, error } = await supabase
+        .from("company_onboarding")
+        .select("company_id, company:company!inner(onboarding_status)", {
+          count: "exact",
+          head: true,
+        })
+        .eq("company.onboarding_status", "pending_review");
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+}
 
 export function usePartnerApplications() {
   return useQuery({
