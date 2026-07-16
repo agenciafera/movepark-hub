@@ -18,6 +18,8 @@ export type PreviewUnit = {
   /** Já aparece na busca / URL pública? (liga quando o recebedor da empresa fica ativo.) */
   isListed: boolean;
   items: PreviewItem[];
+  /** fotos da unidade (a 1ª vira capa do card). */
+  photos: string[];
   /** URL pública copiável (existe quando a unidade tem ao menos um tipo de vaga). */
   publicUrl: string | null;
 };
@@ -30,7 +32,7 @@ export function usePreviewUnit(locationId: string | undefined) {
       const { data: loc, error } = await supabase
         .from("location")
         .select(
-          "id, name, slug, address, has_shuttle, status, is_listed, company:company!inner(slug), destination:destination(name)",
+          "id, name, slug, address, has_shuttle, status, is_listed, photos, company:company!inner(slug), destination:destination(name)",
         )
         .eq("id", locationId!)
         .maybeSingle();
@@ -71,6 +73,7 @@ export function usePreviewUnit(locationId: string | undefined) {
         isActive: l.status === "active",
         isListed: Boolean(l.is_listed),
         items,
+        photos: Array.isArray(l.photos) ? (l.photos as string[]) : [],
         publicUrl,
       };
     },

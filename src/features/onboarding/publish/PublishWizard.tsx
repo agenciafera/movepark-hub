@@ -434,6 +434,7 @@ export function PublishWizard({ data, companyId }: Props) {
               destinationName={destName}
               hasShuttle={hasShuttle}
               items={previewItems}
+              coverPhoto={photos[0] ?? null}
             />
           </div>
         </aside>

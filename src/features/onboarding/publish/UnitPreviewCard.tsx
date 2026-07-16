@@ -14,12 +14,15 @@ export function UnitPreviewCard({
   destinationName,
   hasShuttle,
   items,
+  coverPhoto,
 }: {
   name: string;
   address: string;
   destinationName: string | null;
   hasShuttle: boolean | null;
   items: PreviewItem[];
+  /** 1ª foto da unidade, se o parceiro já subiu. Sem foto, cai na ilustrativa. */
+  coverPhoto?: string | null;
 }) {
   const filled = items.filter((i) => i.capacity > 0 || (i.base_price ?? 0) > 0);
   const minPrice = filled.reduce<number | null>((min, i) => {
@@ -30,12 +33,12 @@ export function UnitPreviewCard({
 
   return (
     <div className="overflow-hidden rounded-lg border border-hairline bg-canvas shadow-tier">
-      {/* Faixa de imagem: foto ilustrativa até o parceiro subir as fotos da unidade */}
+      {/* Faixa de imagem: usa a 1ª foto da unidade se o parceiro já subiu; senão, a ilustrativa. */}
       <div className="relative h-28 bg-mp-navy">
         <img
-          src="/images/estacionamento-preview-thumb.webp"
-          alt=""
-          aria-hidden
+          src={coverPhoto || "/images/estacionamento-preview-thumb.webp"}
+          alt={coverPhoto ? `Foto de ${name || "sua unidade"}` : ""}
+          aria-hidden={coverPhoto ? undefined : true}
           className="h-full w-full object-cover"
           loading="lazy"
           decoding="async"

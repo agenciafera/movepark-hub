@@ -127,6 +127,7 @@ export default function UnitPreviewPage() {
                 destinationName={unit.destinationName}
                 hasShuttle={unit.hasShuttle}
                 items={unit.items}
+                coverPhoto={unit.photos[0] ?? null}
               />
 
               <div className="flex flex-col gap-4">
@@ -165,7 +166,7 @@ export default function UnitPreviewPage() {
                     </div>
 
                     {/* Fotos: diferencial de destaque, não um "quando quiser" */}
-                    <PhotosCallout />
+                    <PhotosCallout hasPhotos={unit.photos.length > 0} />
                   </>
                 ) : (
                   <>
@@ -200,7 +201,7 @@ export default function UnitPreviewPage() {
                       )}
                     </div>
 
-                    <PhotosCallout />
+                    <PhotosCallout hasPhotos={unit.photos.length > 0} />
                   </>
                 )}
               </div>

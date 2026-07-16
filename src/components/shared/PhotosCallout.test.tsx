@@ -15,4 +15,16 @@ describe("PhotosCallout", () => {
     const cta = screen.getByRole("link", { name: /adicionar fotos/i });
     expect(cta).toHaveAttribute("href", "/operator/locations");
   });
+
+  it("quando já tem foto, estimula subir mais em vez de cobrar o mínimo", () => {
+    render(
+      <MemoryRouter>
+        <PhotosCallout hasPhotos />
+      </MemoryRouter>,
+    );
+    expect(screen.queryByText(/obrigatório para vender/i)).toBeNull();
+    expect(screen.queryByText(/precisa de pelo menos 1 foto/i)).toBeNull();
+    expect(screen.getByText(/mais fotos, mais reservas/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /adicionar mais fotos/i })).toBeInTheDocument();
+  });
 });
