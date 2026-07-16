@@ -16,7 +16,7 @@ import {
   useAcceptContract,
 } from "@/features/payouts/api";
 import { CONTRACT_VERSION, CONTRACT_SUMMARY, downloadContract } from "@/features/payouts/contract";
-import { RevenueMotivator } from "@/features/payouts/RevenueMotivator";
+import { RevenueMotivator, RevenueMotivatorBanner } from "@/features/payouts/RevenueMotivator";
 
 type Step = "dados" | "contrato" | "done";
 
@@ -84,6 +84,12 @@ export default function OperatorRecebimento() {
             </Link>
           </Button>
         </div>
+
+        {step !== "done" && (
+          <div className="desktop:hidden">
+            <RevenueMotivatorBanner />
+          </div>
+        )}
 
         {loading ? (
           <div className="py-16 text-center text-muted">Carregando…</div>

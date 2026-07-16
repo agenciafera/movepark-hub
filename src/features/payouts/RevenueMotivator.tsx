@@ -38,13 +38,18 @@ const INDICATORS: Indicator[] = [
 
 const ROTATE_MS = 3800;
 
-export function RevenueMotivator() {
+/** Índice que gira de tempos em tempos (compartilhado pelo painel e pelo banner). */
+function useRotatingIndex(length: number, ms: number): number {
   const [i, setI] = React.useState(0);
   React.useEffect(() => {
-    const id = window.setInterval(() => setI((n) => (n + 1) % INDICATORS.length), ROTATE_MS);
+    const id = window.setInterval(() => setI((n) => (n + 1) % length), ms);
     return () => window.clearInterval(id);
-  }, []);
+  }, [length, ms]);
+  return i;
+}
 
+export function RevenueMotivator() {
+  const i = useRotatingIndex(INDICATORS.length, ROTATE_MS);
   const cur = INDICATORS[i];
   const Icon = cur.icon;
 
@@ -80,6 +85,24 @@ export function RevenueMotivator() {
       <p className="text-caption-sm text-white/70">
         Termine o recebimento e sua unidade entra na busca da Movepark.
       </p>
+    </div>
+  );
+}
+
+/** Versão compacta (banner rotativo) para o topo do form no mobile, onde o painel lateral não cabe. */
+export function RevenueMotivatorBanner() {
+  const i = useRotatingIndex(INDICATORS.length, ROTATE_MS);
+  const cur = INDICATORS[i];
+  const Icon = cur.icon;
+  return (
+    <div className="flex items-center gap-3 rounded-lg bg-mp-navy px-4 py-3 text-white">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15">
+        <Icon className="h-4 w-4 text-white" />
+      </span>
+      <div key={i} className="min-w-0 flex-1 duration-500 animate-in fade-in slide-in-from-bottom-1">
+        <span className="block text-body-sm font-semibold leading-tight text-white">{cur.title}</span>
+        <span className="block truncate text-caption-sm text-white/80">{cur.text}</span>
+      </div>
     </div>
   );
 }
