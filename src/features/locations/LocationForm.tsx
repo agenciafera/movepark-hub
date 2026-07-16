@@ -1,5 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
+import { AlertCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -341,11 +342,21 @@ export function LocationForm({
           </div>
           <div className="tablet:col-span-2">
             <ImageGalleryField
-              label="Fotos da unidade"
+              label="Fotos da unidade (obrigatório)"
               values={photos}
               onChange={setPhotos}
               onUpload={(file) => uploadCompanyAsset(companyId, "photo", file)}
             />
+            {photos.length === 0 ? (
+              <p className="mt-2 flex items-start gap-1.5 text-caption-sm text-error">
+                <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                Suba pelo menos 1 foto. Sem foto, a unidade não entra na busca e não vende.
+              </p>
+            ) : (
+              <p className="mt-2 text-caption-sm text-muted-steel">
+                Foto boa atrai mais cliente. Capriche na fachada e nas vagas.
+              </p>
+            )}
           </div>
           <div className="flex justify-end gap-2 pt-2 tablet:col-span-2">
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>

@@ -12,9 +12,11 @@ declare v_co uuid := gen_random_uuid(); v_loc uuid := gen_random_uuid();
 begin
   insert into public.company(id, name, slug, status, onboarding_status)
     values (v_co, 'Gate Test Co', 'gate-test-co-' || substr(v_co::text, 1, 8), 'active', 'active');
-  insert into public.location(id, company_id, name, slug, status, timezone)
+  -- com foto: o gate de foto (20260818000000) exige >=1 foto para listar; damos uma aqui para
+  -- exercitar o comportamento monotônico do recebedor sem esbarrar no piso de foto.
+  insert into public.location(id, company_id, name, slug, status, timezone, photos)
     values (v_loc, v_co, 'Gate Test Loc', 'gate-test-loc-' || substr(v_loc::text, 1, 8),
-            'active', 'America/Sao_Paulo');
+            'active', 'America/Sao_Paulo', '["https://img.example/p1.jpg"]'::jsonb);
   perform set_config('t.co', v_co::text, false);
   perform set_config('t.loc', v_loc::text, false);
 end $$;

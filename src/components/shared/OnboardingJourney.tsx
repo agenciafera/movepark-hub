@@ -22,7 +22,7 @@ const STAGES: StageDef[] = [
 const NEXT_HINT: Record<JourneyStage, string> = {
   publicar: "Agora é hora de cadastrar seu recebimento.",
   recebimento: "Cadastre seus dados de recebimento para começar a vender.",
-  fotos: "Só falta subir as fotos do estacionamento.",
+  fotos: "Suba pelo menos 1 foto. Sem foto, sua unidade não entra na busca.",
 };
 
 export function OnboardingJourney({

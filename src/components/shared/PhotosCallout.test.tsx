@@ -10,7 +10,8 @@ describe("PhotosCallout", () => {
         <PhotosCallout to="/operator/locations" />
       </MemoryRouter>,
     );
-    expect(screen.getByText(/atrai cliente/i)).toBeInTheDocument();
+    expect(screen.getByText(/obrigatório para vender/i)).toBeInTheDocument();
+    expect(screen.getByText(/pelo menos 1 foto/i)).toBeInTheDocument();
     const cta = screen.getByRole("link", { name: /adicionar fotos/i });
     expect(cta).toHaveAttribute("href", "/operator/locations");
   });

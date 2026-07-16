@@ -14,6 +14,6 @@ describe("OnboardingJourney", () => {
 
   it("aponta fotos como próximo passo quando o recebimento já foi feito", () => {
     render(<OnboardingJourney current="fotos" completed={["publicar", "recebimento"]} />);
-    expect(screen.getByText(/subir as fotos/i)).toBeInTheDocument();
+    expect(screen.getByText(/pelo menos 1 foto/i)).toBeInTheDocument();
   });
 });

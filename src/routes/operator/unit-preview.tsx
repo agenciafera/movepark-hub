@@ -160,7 +160,7 @@ export default function UnitPreviewPage() {
                         </Link>
                       </Button>
                       <p className="mt-2 text-caption-sm text-muted-steel">
-                        Assim que aprovarmos seus dados, a unidade entra na busca sozinha.
+                        Com seus dados aprovados e pelo menos 1 foto, a unidade entra na busca sozinha.
                       </p>
                     </div>
 

@@ -1,12 +1,12 @@
 import { Link } from "react-router-dom";
-import { Camera, Sparkles } from "lucide-react";
+import { Camera, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /**
- * Chamada forte para o upload de fotos. Foto é o maior diferencial pra atrair cliente, então é
- * tratada como fase de destaque no onboarding (não um "quando der"). Reaproveitada na pós-publicação
- * e no fim do recebimento.
+ * Chamada forte para o upload de fotos. Foto é obrigatória para vender: sem pelo menos 1 foto, a
+ * unidade não entra na busca. Tratada como fase de destaque no onboarding, reaproveitada na
+ * pós-publicação e no fim do recebimento.
  */
 const SHOT_LIST = ["Fachada e entrada", "As vagas cobertas", "Onde o cliente circula", "A recepção ou guarita"];
 
@@ -27,13 +27,13 @@ export function PhotosCallout({
       )}
     >
       <div className="flex items-center gap-2 text-mp-indigo">
-        <Sparkles className="h-4 w-4" />
-        <span className="text-caption-sm font-semibold">O passo que mais atrai cliente</span>
+        <AlertCircle className="h-4 w-4" />
+        <span className="text-caption-sm font-semibold">Obrigatório para vender</span>
       </div>
-      <h3 className="mt-2 text-title-md text-ink">Boas fotos enchem seu estacionamento</h3>
+      <h3 className="mt-2 text-title-md text-ink">Sua unidade precisa de pelo menos 1 foto</h3>
       <p className="mt-1.5 text-body-sm text-muted">
-        O cliente escolhe onde deixar o carro pelo que vê. Estacionamento com foto boa recebe muito
-        mais reserva que um sem foto nenhuma. Capriche aqui: vale mais que qualquer desconto.
+        Sem foto, sua unidade não entra na busca da Movepark e não recebe reserva. O cliente escolhe
+        onde deixar o carro pelo que vê, então capriche: foto boa vale mais que qualquer desconto.
       </p>
       <ul className="mt-4 grid gap-2 tablet:grid-cols-2">
         {SHOT_LIST.map((shot) => (
