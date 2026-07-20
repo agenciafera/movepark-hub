@@ -24,6 +24,7 @@ import {
 import { findTool, isToolCallable, listTools, missingRequired, type Endpoint } from "./tools.ts";
 import { extractApiKey, keyPrefix, sha256Hex } from "./auth.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
+import { callRead } from "../_shared/assistant-tools.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -232,89 +233,9 @@ function anonClient() {
   });
 }
 
-async function callPublic(name: string, a: Record<string, unknown>): Promise<unknown> {
-  const sb = anonClient();
-  const unwrap = <T>(r: { data: T; error: { message: string } | null }): T => {
-    if (r.error) throw new Error(r.error.message);
-    return r.data;
-  };
-  switch (name) {
-    case "search_parking":
-      return unwrap(
-        await sb.functions.invoke("search", {
-          body: {
-            dest: a.dest,
-            from: a.from,
-            to: a.to,
-            vehicle: a.vehicle,
-            category: a.category,
-            max_distance_km: a.max_distance_km,
-            limit: a.limit ?? 20,
-          },
-        }),
-      );
-    case "simulate_price":
-      return unwrap(
-        await sb.rpc("simulate_price", {
-          p_company: a.company,
-          p_location: a.location ?? null,
-          p_parking_type: a.parking_type ?? null,
-          p_days: Number(a.days ?? 1),
-        }),
-      );
-    case "get_faq":
-      return unwrap(
-        await sb.functions.invoke("get-faq", {
-          body: { location_id: a.location_id ?? null, query: a.query ?? null, limit: a.limit ?? 20 },
-        }),
-      );
-    case "list_companies":
-      return unwrap(
-        await sb.from("company").select("id, name, slug").order("name").limit(Number(a.limit ?? 50)),
-      );
-    case "list_locations":
-      return unwrap(
-        await sb
-          .from("location")
-          .select("id, name, slug, address, latitude, longitude")
-          .is("deleted_at", null)
-          .order("name")
-          .limit(Number(a.limit ?? 50)),
-      );
-    case "get_parking_types":
-      return unwrap(
-        await sb
-          .from("location_parking_type")
-          .select("id, capacity, is_active, company_parking_type:company_parking_type_id(parking_type:parking_type_id(code, name))")
-          .eq("location_id", a.location_id as string),
-      );
-    case "list_destinations":
-      return unwrap(
-        await sb
-          .from("destination")
-          .select("id, code, name, short_name, slug, type, city, state, country, latitude, longitude")
-          .eq("is_published", true)
-          .order("sort_order")
-          .limit(Number(a.limit ?? 50)),
-      );
-    case "get_destination": {
-      const dest = unwrap(
-        await sb
-          .from("destination")
-          .select("id, code, name, short_name, slug, type, city, state, country, latitude, longitude, intro")
-          .eq("slug", a.slug as string)
-          .eq("is_published", true)
-          .maybeSingle(),
-      ) as { id?: string } | null;
-      if (!dest?.id) throw new Error("Destino não encontrado.");
-      const points = unwrap(
-        await sb.from("destination_point").select("id, name, type, latitude, longitude").eq("destination_id", dest.id),
-      );
-      return { ...dest, points };
-    }
-    default:
-      throw new Error(`Tool desconhecida: ${name}`);
-  }
+// Handler único, compartilhado com a Edge `chat` (ver _shared/assistant-tools.ts).
+function callPublic(name: string, a: Record<string, unknown>): Promise<unknown> {
+  return callRead(anonClient(), name, a);
 }
 
 // ── Handlers parceiro (service_role + RPCs api_*, tenant-scoped) ──────────────

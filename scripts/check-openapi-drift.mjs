@@ -62,7 +62,42 @@ console.log(`✓ OpenAPI em sincronia com o gateway (${routeOps.size} operaçõe
 
 // ── MCP: tools.ts (PUBLIC_TOOLS/PARTNER_TOOLS) ↔ server-card.json/partner-card.json ──
 const toolsSrc = readFileSync("supabase/functions/mcp/tools.ts", "utf8");
-const toolNames = (s) => [...s.matchAll(/name:\s*"([a-z_]+)"/g)].map((m) => m[1]);
+const sharedSrc = readFileSync("supabase/functions/_shared/assistant-tools.ts", "utf8");
+const agentSrc = readFileSync("supabase/functions/chat/agent.logic.ts", "utf8");
+
+const literalNames = (s) => [...s.matchAll(/name:\s*"([a-z_]+)"/g)].map((m) => m[1]);
+
+// Tools de leitura do registro canônico compartilhado (MCP público + chat).
+const SHARED_READ = literalNames(sharedSrc);
+if (SHARED_READ.length === 0) {
+  console.error("❌ Nenhuma tool encontrada em _shared/assistant-tools.ts (READ_TOOLS).");
+  process.exit(1);
+}
+
+// Um registro pode ser derivado (`READ_TOOLS.map(...)`) em vez de literal. Sem isto
+// as tools derivadas somem do check em silêncio, que foi o que aconteceu ao fatorar.
+// Casa a DERIVAÇÃO, não a menção: `import { READ_TOOLS }` não pode contar como uso.
+const DERIVES_READ = /\.\.\.READ_TOOLS\b|READ_TOOLS\.map\(/;
+const toolNames = (s) => [
+  ...literalNames(s),
+  ...(DERIVES_READ.test(s) ? SHARED_READ : []),
+];
+
+/** Corpo de um `export const NOME: ... = [ ... ];` (para não varrer o arquivo inteiro). */
+function arrayBody(src, name) {
+  const decl = new RegExp(`export const ${name}\\b[^=]*=`);
+  const m = decl.exec(src);
+  if (!m) return "";
+  // A partir do "=", senão o "[]" da anotação de tipo (ToolDecl[]) casa primeiro.
+  const open = src.indexOf("[", m.index + m[0].length);
+  if (open < 0) return "";
+  let depth = 0;
+  for (let i = open; i < src.length; i++) {
+    if (src[i] === "[") depth++;
+    else if (src[i] === "]" && --depth === 0) return src.slice(open, i + 1);
+  }
+  return src.slice(open);
+}
 const cardNames = (path) =>
   new Set((JSON.parse(readFileSync(path, "utf8")).tools ?? []).map((t) => t.name));
 
@@ -95,11 +130,20 @@ const checks = marks.map((mk, i) => {
 
 let mcpDrift = false;
 for (const { label, tools, card } of checks) {
-  const absent = [...new Set(tools)].filter((t) => !card.has(t));
+  const exposed = new Set(tools);
+  const absent = [...exposed].filter((t) => !card.has(t));
+  // Direção inversa: card anunciando tool que a superfície não expõe. Sem isto um
+  // registro esvaziado passa em silêncio, porque não sobra nada para comparar.
+  const extra = [...card].filter((t) => !exposed.has(t));
   if (absent.length) {
     mcpDrift = true;
     console.error(`❌ Tools do MCP (${label}) sem entrada no card:`);
     for (const t of absent) console.error("   - " + t);
+  }
+  if (extra.length) {
+    mcpDrift = true;
+    console.error(`❌ Card do MCP (${label}) anuncia tool que a superfície não expõe:`);
+    for (const t of extra) console.error("   - " + t);
   }
 }
 if (mcpDrift) {
@@ -109,6 +153,19 @@ if (mcpDrift) {
 
 const total = checks.reduce((n, c) => n + new Set(c.tools).size, 0);
 console.log(`✓ MCP em sincronia (tools.ts ↔ cards): ${total} tools.`);
+
+// ── Assistente web (chat) ↔ registro compartilhado ───────────────────────────
+// O chat é a terceira superfície que expõe as tools de leitura. Antes ele tinha
+// catálogo próprio e divergiu (current_datetime, category, colunas de destino).
+const chatTools = toolNames(arrayBody(agentSrc, "TOOLS"));
+const chatMissing = SHARED_READ.filter((t) => !chatTools.includes(t));
+if (chatMissing.length) {
+  console.error("❌ Tools de leitura ausentes no catálogo do chat (chat/agent.logic.ts):");
+  for (const t of chatMissing) console.error("   - " + t);
+  console.error("\nO chat deve espalhar READ_TOOLS, não redeclarar tool de leitura.");
+  process.exit(1);
+}
+console.log(`✓ Chat em sincronia com o registro compartilhado (${SHARED_READ.length} de leitura).`);
 
 // ── Escopo órfão (catálogo api_scope ↔ implementação) ────────────────────────
 // Espelha `api_scope where assignable_to_api_key = true`. Doc-as-you-build (ADR-003): escopo

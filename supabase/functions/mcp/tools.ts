@@ -2,6 +2,8 @@
 // Os handlers impuros (RPC/edge) ficam no index.ts, indexados por `name`.
 // Lógica pura — testável com deno test. Ver docs/specs/mcp.md.
 
+import { READ_TOOLS, toMcpToolDef } from "../_shared/assistant-tools.ts";
+
 export type Endpoint = "public" | "partner";
 
 export interface ToolDef {
@@ -24,68 +26,10 @@ const INT = { type: "integer" };
 const DT = { type: "string", format: "date-time" };
 
 // ── Consumidor (público/anon) — descoberta ───────────────────────────────────
-export const PUBLIC_TOOLS: ToolDef[] = [
-  {
-    name: "search_parking",
-    description:
-      "Busca estacionamentos por destino (código de aeroporto ou cidade) e período, com preço, distância e disponibilidade.",
-    inputSchema: obj(
-      {
-        dest: { ...S, description: "Código do aeroporto (ex.: GRU) ou cidade" },
-        from: { ...DT, description: "Check-in (ISO-8601)" },
-        to: { ...DT, description: "Check-out (ISO-8601)" },
-        vehicle: { type: "string", enum: ["car", "motorcycle"] },
-        category: { type: "array", items: S, description: "covered/uncovered/valet…" },
-        max_distance_km: { type: "number" },
-        limit: INT,
-      },
-      ["dest", "from", "to"],
-    ),
-  },
-  {
-    name: "simulate_price",
-    description: "Simula o preço de uma reserva por empresa/unidade/tipo de vaga e nº de diárias.",
-    inputSchema: obj(
-      {
-        company: { ...S, description: "slug da empresa" },
-        location: { ...S, description: "slug da unidade" },
-        parking_type: { ...S, description: "code do tipo de vaga (ex.: covered)" },
-        days: { ...INT, minimum: 1, default: 1 },
-      },
-      ["company"],
-    ),
-  },
-  {
-    name: "get_faq",
-    description: "Perguntas frequentes (global ou de uma unidade específica).",
-    inputSchema: obj({ location_id: S, query: S, limit: INT }),
-  },
-  {
-    name: "list_companies",
-    description: "Lista os estacionamentos parceiros (empresas) ativos da plataforma.",
-    inputSchema: obj({ limit: INT }),
-  },
-  {
-    name: "list_locations",
-    description: "Lista unidades (estacionamentos) públicas ativas.",
-    inputSchema: obj({ limit: INT }),
-  },
-  {
-    name: "get_parking_types",
-    description: "Tipos de vaga de uma unidade (coberto, descoberto, valet…).",
-    inputSchema: obj({ location_id: S }, ["location_id"]),
-  },
-  {
-    name: "list_destinations",
-    description: "Lista destinos (aeroportos/cidades) atendidos, com slug e localização.",
-    inputSchema: obj({ limit: INT }),
-  },
-  {
-    name: "get_destination",
-    description: "Detalhe de um destino pelo slug, com seus pontos/terminais.",
-    inputSchema: obj({ slug: S }, ["slug"]),
-  },
-];
+// Registro canônico em _shared/assistant-tools.ts, compartilhado com a Edge `chat`.
+// Não declare tool de leitura aqui: ela divergiria do assistente web (era o que
+// acontecia antes, com current_datetime, category e colunas de destino).
+export const PUBLIC_TOOLS: ToolDef[] = READ_TOOLS.map(toMcpToolDef);
 
 // ── Parceiro (autenticado por chave + escopo) — sobre a API v1 ────────────────
 export const PARTNER_TOOLS: ToolDef[] = [

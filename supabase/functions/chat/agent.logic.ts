@@ -3,6 +3,14 @@
 // Gemini, roteiam nomes de tool e controlam o loop. A chamada à Gemini e o dispatch impuro
 // (RPCs/Edges) ficam no index.ts. Ver docs/specs/chatbot.md.
 
+import { READ_TOOLS, toGeminiDecl } from "../_shared/assistant-tools.ts";
+
+// Data/hora vive no registro compartilhado (o handler de current_datetime está lá).
+// Reexportado aqui porque temporalSystemBlock e os testes deste módulo já o usavam.
+export { DEFAULT_TZ, nowContext } from "../_shared/assistant-tools.ts";
+export type { NowContext } from "../_shared/assistant-tools.ts";
+import { nowContext as nowCtx, DEFAULT_TZ as TZ } from "../_shared/assistant-tools.ts";
+
 // ── Tipos do wire Gemini (v1beta generateContent) ───────────────────────────
 export interface GeminiFunctionCall {
   name: string;
@@ -35,55 +43,9 @@ function obj(properties: Record<string, unknown>, required: string[] = []) {
 }
 
 export const TOOLS: ToolDecl[] = [
-  {
-    name: "search_parking",
-    description:
-      "Busca estacionamentos por destino (código de aeroporto como GRU/CGH ou cidade) e período. Use antes de simular preço ou reservar.",
-    parameters: obj(
-      {
-        dest: STR("Código do aeroporto (ex.: GRU) ou nome da cidade"),
-        from: STR("Check-in em ISO-8601 (ex.: 2026-07-10T10:00:00Z)"),
-        to: STR("Check-out em ISO-8601"),
-        vehicle: STR("car ou motorcycle"),
-        max_distance_km: NUM("Raio máximo em km"),
-        limit: NUM("Máximo de resultados (default 20)"),
-      },
-      ["dest", "from", "to"],
-    ),
-  },
-  {
-    name: "simulate_price",
-    description: "Simula o preço de uma reserva por empresa (slug), unidade, tipo de vaga e nº de diárias.",
-    parameters: obj(
-      {
-        company: STR("slug da empresa (ex.: virapark)"),
-        location: STR("slug da unidade (opcional)"),
-        parking_type: STR("code do tipo de vaga, ex.: covered (opcional)"),
-        days: NUM("Número de diárias (default 1)"),
-      },
-      ["company"],
-    ),
-  },
-  {
-    name: "get_faq",
-    description: "Perguntas frequentes (global ou de uma unidade específica).",
-    parameters: obj({ location_id: STR("id da unidade (opcional)"), query: STR("texto da busca (opcional)"), limit: NUM("máximo") }),
-  },
-  { name: "list_companies", description: "Lista as operadoras parceiras (empresas) ativas.", parameters: obj({ limit: NUM("máximo") }) },
-  { name: "list_locations", description: "Lista unidades (estacionamentos) ativas.", parameters: obj({ limit: NUM("máximo") }) },
-  {
-    name: "get_parking_types",
-    description: "Tipos de vaga de uma unidade (coberto, descoberto, valet). Devolve os ids usados para reservar.",
-    parameters: obj({ location_id: STR("id da unidade") }, ["location_id"]),
-  },
-  { name: "list_destinations", description: "Lista destinos (aeroportos/cidades) atendidos, com slug.", parameters: obj({ limit: NUM("máximo") }) },
-  { name: "get_destination", description: "Detalhe de um destino pelo slug, com terminais.", parameters: obj({ slug: STR("slug do destino") }, ["slug"]) },
-  {
-    name: "current_datetime",
-    description:
-      "Data e hora atuais no fuso de São Paulo (America/Sao_Paulo). Use para resolver datas relativas como hoje, amanhã, 'sexta que vem', 'próximo fim de semana'.",
-    parameters: obj({}),
-  },
+  // Leitura: registro canônico em _shared/assistant-tools.ts, o mesmo que o MCP
+  // consumidor consome. Não declare tool de leitura aqui — ela divergiria do MCP.
+  ...READ_TOOLS.map(toGeminiDecl),
   // ── Transacionais (exigem login) ──
   {
     name: "list_my_bookings",
@@ -201,43 +163,9 @@ export function needsLogin(toolName: string, isLoggedIn: boolean): boolean {
   return TRANSACTIONAL.has(toolName) && !isLoggedIn;
 }
 
-// ── Data/hora (fuso de São Paulo) ────────────────────────────────────────────
-export const DEFAULT_TZ = "America/Sao_Paulo";
-
-export interface NowContext {
-  iso: string; // ISO-8601 com offset (-03:00, sem horário de verão desde 2019)
-  date: string; // dd/mm/aaaa
-  time: string; // HH:MM
-  weekday: string; // ex.: "terça-feira"
-  timezone: string;
-}
-
-/** Data/hora atual no fuso informado, de forma determinística (testável com um Date fixo). */
-export function nowContext(now: Date, timeZone = DEFAULT_TZ): NowContext {
-  const fmt = (opts: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("pt-BR", { timeZone, ...opts }).format(now);
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  }).formatToParts(now);
-  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "00";
-  return {
-    iso: `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}-03:00`,
-    date: fmt({ day: "2-digit", month: "2-digit", year: "numeric" }),
-    time: fmt({ hour: "2-digit", minute: "2-digit", hour12: false }),
-    weekday: fmt({ weekday: "long" }),
-    timezone: timeZone,
-  };
-}
-
 /** Bloco de contexto temporal acrescentado ao system prompt a cada turno. */
-export function temporalSystemBlock(now: Date, timeZone = DEFAULT_TZ): string {
-  const n = nowContext(now, timeZone);
+export function temporalSystemBlock(now: Date, timeZone = TZ): string {
+  const n = nowCtx(now, timeZone);
   return (
     `\n\n[Contexto temporal] Agora é ${n.weekday}, ${n.date}, ${n.time} (${n.timezone}; ISO ${n.iso}). ` +
     "Resolva datas relativas você mesmo a partir disto (hoje, amanhã, \"sexta que vem\", \"próximo fim de semana\", \"daqui a 3 dias\") " +

@@ -20,11 +20,11 @@ import {
   geminiTools,
   MAX_TOOL_ROUNDS,
   needsLogin,
-  nowContext,
   parseChatRequest,
   temporalSystemBlock,
   toGeminiHistory,
 } from "./agent.logic.ts";
+import { callRead } from "../_shared/assistant-tools.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -56,64 +56,8 @@ async function readSetting(admin: any, key: string): Promise<string | null> {
   return (data?.value as string | undefined) ?? null;
 }
 
-// ── Tools de leitura (anon) — espelham o MCP consumidor (mcp/index.ts callPublic) ──
-// deno-lint-ignore no-explicit-any
-async function callRead(sb: any, name: string, a: Record<string, unknown>): Promise<unknown> {
-  const unwrap = <T>(r: { data: T; error: { message: string } | null }): T => {
-    if (r.error) throw new Error(r.error.message);
-    return r.data;
-  };
-  switch (name) {
-    case "search_parking":
-      return unwrap(
-        await sb.functions.invoke("search", {
-          body: { dest: a.dest, from: a.from, to: a.to, vehicle: a.vehicle, max_distance_km: a.max_distance_km, limit: a.limit ?? 20 },
-        }),
-      );
-    case "simulate_price":
-      return unwrap(
-        await sb.rpc("simulate_price", {
-          p_company: a.company,
-          p_location: a.location ?? null,
-          p_parking_type: a.parking_type ?? null,
-          p_days: Number(a.days ?? 1),
-        }),
-      );
-    case "get_faq":
-      return unwrap(
-        await sb.functions.invoke("get-faq", { body: { location_id: a.location_id ?? null, query: a.query ?? null, limit: a.limit ?? 20 } }),
-      );
-    case "list_companies":
-      return unwrap(await sb.from("company").select("id, name, slug").order("name").limit(Number(a.limit ?? 50)));
-    case "list_locations":
-      return unwrap(
-        await sb.from("location").select("id, name, slug, address").is("deleted_at", null).order("name").limit(Number(a.limit ?? 50)),
-      );
-    case "get_parking_types":
-      return unwrap(
-        await sb
-          .from("location_parking_type")
-          .select("id, capacity, is_active, company_parking_type:company_parking_type_id(parking_type:parking_type_id(code, name))")
-          .eq("location_id", a.location_id as string),
-      );
-    case "list_destinations":
-      return unwrap(
-        await sb.from("destination").select("id, code, name, slug, type, city, state").eq("is_published", true).order("sort_order").limit(Number(a.limit ?? 50)),
-      );
-    case "current_datetime":
-      return nowContext(new Date());
-    case "get_destination": {
-      const dest = unwrap(
-        await sb.from("destination").select("id, code, name, slug, type, city, state, intro").eq("slug", a.slug as string).eq("is_published", true).maybeSingle(),
-      ) as { id?: string } | null;
-      if (!dest?.id) throw new Error("Destino não encontrado.");
-      const points = unwrap(await sb.from("destination_point").select("id, name, type").eq("destination_id", dest.id));
-      return { ...dest, points };
-    }
-    default:
-      throw new Error(`Tool de leitura desconhecida: ${name}`);
-  }
-}
+// Tools de leitura: handler único em _shared/assistant-tools.ts, o mesmo do MCP
+// consumidor. Importado como `callRead` no topo deste arquivo.
 
 // ── Tools transacionais (JWT do usuário) ──
 async function callTransactional(
