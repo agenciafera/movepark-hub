@@ -10,6 +10,7 @@ export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 function Calendar({
   className,
   classNames,
+  components,
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
@@ -56,9 +57,12 @@ function Calendar({
         day_hidden: "invisible",
         ...classNames,
       }}
+      // Mescla em vez de substituir: quem passa `components` (ex: DayContent, pra dar
+      // rótulo acessível aos dias) não deve perder os ícones de navegação junto.
       components={{
         IconLeft: () => <ChevronLeft className="h-4 w-4" />,
         IconRight: () => <ChevronRight className="h-4 w-4" />,
+        ...components,
       }}
       {...props}
     />

@@ -14,7 +14,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { TIME_SLOTS, fmtTime, isTimeSlotPast, mergeRange, setTime } from "./DateRangePicker.logic";
+import {
+  TIME_SLOTS,
+  dayAriaLabel,
+  disabledDays,
+  fmtTime,
+  isTimeSlotPast,
+  mergeRange,
+  nextRange,
+  pickerPhase,
+  setTime,
+} from "./DateRangePicker.logic";
 
 type Props = {
   from: Date | null;
@@ -34,9 +44,17 @@ const startOfToday = () => new Date(new Date().toDateString());
 export function DateRangePicker({ from, to, onChange, triggerClassName }: Props) {
   const [open, setOpen] = React.useState(false);
   const range: DateRange | undefined = from ? { from, to: to ?? undefined } : undefined;
+  const phase = pickerPhase(from, to);
 
-  function handleSelect(next: DateRange | undefined) {
-    const merged = mergeRange({ from, to }, next);
+  /**
+   * A seleção é nossa, não do react-day-picker: `onDayClick` em vez de `onSelect`.
+   * O padrão da lib reinterpretava o clique em silêncio (clicar na própria entrada
+   * apagava as duas pontas; clicar antes dela trocava entrada e saída de lugar).
+   * Agora a regra é uma só, e o que seria inválido nem fica clicável.
+   */
+  function handleDayClick(day: Date, mods: { disabled?: boolean }) {
+    if (mods.disabled) return;
+    const merged = mergeRange({ from, to }, nextRange({ from, to }, day));
     onChange(merged.from, merged.to);
   }
 
@@ -70,7 +88,16 @@ export function DateRangePicker({ from, to, onChange, triggerClassName }: Props)
               className={cn(cellBase, triggerClassName)}
             >
               <span className="text-caption font-medium text-ink">Check-out</span>
-              <span className="line-clamp-1 text-body-sm text-muted">{value(to)}</span>
+              {/* Com a entrada escolhida e a saída em aberto, o campo diz o próximo
+                  passo em vez de repetir o placeholder neutro dos dois lados. */}
+              <span
+                className={cn(
+                  "line-clamp-1 text-body-sm",
+                  phase === "checkout" && !to ? "font-medium text-ink" : "text-muted",
+                )}
+              >
+                {phase === "checkout" && !to ? "Escolha a saída" : value(to)}
+              </span>
             </button>
           </div>
         </div>
@@ -81,9 +108,34 @@ export function DateRangePicker({ from, to, onChange, triggerClassName }: Props)
         <Calendar
           mode="range"
           selected={range}
-          onSelect={handleSelect}
-          disabled={{ before: startOfToday() }}
-          defaultMonth={from ?? new Date()}
+          onDayClick={handleDayClick}
+          disabled={disabledDays(from, to)}
+          defaultMonth={from ?? startOfToday()}
+          // Entrada sozinha é círculo fechado. A classe de início de intervalo corta o
+          // lado direito pra emendar no miolo, e sem saída isso vira meia pílula solta.
+          classNames={
+            to
+              ? undefined
+              : {
+                  // Sem saída, o react-day-picker marca o mesmo dia como início E fim,
+                  // então as duas classes precisam virar círculo.
+                  day_range_start:
+                    "!rounded-full !bg-mp-primary !text-white hover:!bg-mp-primary-active",
+                  day_range_end:
+                    "!rounded-full !bg-mp-primary !text-white hover:!bg-mp-primary-active",
+                }
+          }
+          components={{
+            // `labels.labelDay` existe nos defaults do react-day-picker 8.10 mas não é
+            // usado no render, então o rótulo vai por aqui: número visível pro olho,
+            // frase completa pro leitor de tela.
+            DayContent: ({ date, activeModifiers }) => (
+              <>
+                <span aria-hidden>{date.getDate()}</span>
+                <span className="sr-only">{dayAriaLabel(date, activeModifiers, phase)}</span>
+              </>
+            ),
+          }}
         />
         <div className="flex items-end gap-3 border-t border-hairline p-4">
           <div className="flex-1">
@@ -125,7 +177,18 @@ export function DateRangePicker({ from, to, onChange, triggerClassName }: Props)
             </Select>
           </div>
         </div>
-        <div className="flex justify-end border-t border-hairline p-3">
+        {/* "Limpar datas" é a saída explícita do estado. Antes o jeito de zerar era
+            clicar de novo na entrada, que apagava tudo por acidente e sem avisar. */}
+        <div className="flex items-center justify-between border-t border-hairline p-3">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => onChange(null, null)}
+            disabled={!from && !to}
+          >
+            Limpar datas
+          </Button>
           <Button type="button" size="sm" onClick={() => setOpen(false)} disabled={!from || !to}>
             Aplicar
           </Button>

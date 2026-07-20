@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { format } from "date-fns";
-import { mergeRange, fmtTime, isTimeSlotPast, nextFutureTime } from "./DateRangePicker.logic";
+import {
+  dayAriaLabel,
+  disabledDays,
+  fmtTime,
+  isTimeSlotPast,
+  mergeRange,
+  nextFutureTime,
+  nextRange,
+} from "./DateRangePicker.logic";
 
 const hhmm = (d: Date | null) => (d ? format(d, "dd/MM HH:mm") : null);
 
@@ -79,5 +87,106 @@ describe("fmtTime", () => {
   });
   it("formata HH:mm da data", () => {
     expect(fmtTime(new Date(2026, 6, 8, 22, 5))).toBe("22:05");
+  });
+});
+
+describe("nextRange — a regra de clique do calendário", () => {
+  const dia = (d: number) => new Date(2026, 6, d);
+
+  it("sem entrada: o clique vira a entrada", () => {
+    const r = nextRange({ from: null, to: null }, dia(10));
+    expect(hhmm(r.from)).toBe("10/07 00:00");
+    expect(r.to).toBeNull();
+  });
+
+  it("com entrada e sem saída: o clique fecha o intervalo", () => {
+    const r = nextRange({ from: dia(10), to: null }, dia(14));
+    expect(hhmm(r.from)).toBe("10/07 00:00");
+    expect(hhmm(r.to)).toBe("14/07 00:00");
+  });
+
+  it("mesmo dia fecha o intervalo (entrar e sair no mesmo dia é reserva válida)", () => {
+    const r = nextRange({ from: dia(10), to: null }, dia(10));
+    expect(hhmm(r.to)).toBe("10/07 00:00");
+  });
+
+  it("intervalo completo: o clique recomeça em vez de apagar as duas pontas", () => {
+    // Regressão: clicar na própria data de entrada zerava a seleção sem aviso.
+    const r = nextRange({ from: dia(10), to: dia(14) }, dia(10));
+    expect(hhmm(r.from)).toBe("10/07 00:00");
+    expect(r.to).toBeNull();
+  });
+
+  it("dia anterior à entrada recomeça, nunca inverte as pontas", () => {
+    // Regressão: o padrão da lib trocava entrada e saída de lugar em silêncio.
+    const r = nextRange({ from: dia(10), to: null }, dia(7));
+    expect(hhmm(r.from)).toBe("07/07 00:00");
+    expect(r.to).toBeNull();
+  });
+});
+
+describe("disabledDays — o clique inválido não existe", () => {
+  const hoje = new Date(2026, 6, 20, 15, 0);
+
+  it("sem entrada: só o passado fica barrado", () => {
+    const d = disabledDays(null, null, hoje);
+    expect(hhmm(d.before)).toBe("20/07 00:00");
+  });
+
+  it("escolhendo a saída: tudo antes da entrada sai de cena", () => {
+    const d = disabledDays(new Date(2026, 6, 25, 8, 0), null, hoje);
+    expect(hhmm(d.before)).toBe("25/07 00:00");
+  });
+
+  it("intervalo completo: volta a barrar só o passado (o próximo clique recomeça)", () => {
+    const d = disabledDays(new Date(2026, 6, 25), new Date(2026, 6, 28), hoje);
+    expect(hhmm(d.before)).toBe("20/07 00:00");
+  });
+});
+
+describe("ensureAfter — saída nunca antes da entrada", () => {
+  it("entrada 22:00 no mesmo dia: a saída não herda as 18:00", () => {
+    const from = new Date(2026, 6, 25, 22, 0);
+    const r = mergeRange({ from, to: null }, { from, to: new Date(2026, 6, 25) });
+    expect(r.to!.getTime()).toBeGreaterThan(r.from!.getTime());
+    expect(hhmm(r.to)).toBe("25/07 22:30");
+  });
+
+  it("dia seguinte segue usando o horário default", () => {
+    const from = new Date(2026, 6, 25, 22, 0);
+    const r = mergeRange({ from, to: null }, { from, to: new Date(2026, 6, 26) });
+    expect(hhmm(r.to)).toBe("26/07 18:00");
+  });
+});
+
+describe("dayAriaLabel — o calendário deixa de ser uma grade de números", () => {
+  const dia = new Date(2026, 6, 25);
+
+  it("diz a data por extenso e o papel de cada ponta", () => {
+    expect(dayAriaLabel(dia, { range_start: true, selected: true }, "checkout")).toBe(
+      "25 de julho de 2026. Entrada selecionada.",
+    );
+    expect(dayAriaLabel(dia, { range_end: true, selected: true }, "checkin")).toBe(
+      "25 de julho de 2026. Saída selecionada.",
+    );
+  });
+
+  it("diz o que o clique faz, conforme a fase", () => {
+    expect(dayAriaLabel(dia, {}, "checkout")).toBe("25 de julho de 2026. Escolher como saída.");
+    expect(dayAriaLabel(dia, {}, "checkin")).toBe("25 de julho de 2026. Escolher como entrada.");
+  });
+
+  it("dia barrado é anunciado como indisponível", () => {
+    expect(dayAriaLabel(dia, { disabled: true }, "checkout")).toBe(
+      "25 de julho de 2026. Indisponível.",
+    );
+  });
+});
+
+describe("dayAriaLabel — miolo do intervalo", () => {
+  it("dia entre as pontas é anunciado como parte do período", () => {
+    expect(
+      dayAriaLabel(new Date(2026, 6, 26), { range_middle: true, selected: true }, "checkin"),
+    ).toBe("26 de julho de 2026. Dentro do período.");
   });
 });
