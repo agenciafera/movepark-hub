@@ -37,6 +37,26 @@ type Props = {
 const startOfToday = () => new Date(new Date().toDateString());
 
 /**
+ * As pontas do intervalo são círculos fechados, como no calendário do Airbnb, e a
+ * faixa passa **atrás** delas: um `::before` de meia largura no lado que aponta pro
+ * miolo, atrás do fundo do botão (`-z-10`). Sem isso a ponta vira meia pílula, que é
+ * o que o nosso fazia.
+ *
+ * Cada utilitária aparece escrita por extenso: o JIT do Tailwind varre o fonte em
+ * busca do nome completo. Juntar strings prontas como aqui é seguro; o que quebraria
+ * é montar o nome por pedaço (`before:bg-${tom}`), que ele não consegue ler.
+ */
+const BAND = "relative before:absolute before:inset-y-0 before:-z-10 before:w-1/2 before:content-['']";
+/** Faixa do intervalo confirmado (azul da marca). */
+const BAND_RIGHT_PALE = `${BAND} before:right-0 before:bg-mp-pale`;
+const BAND_LEFT_PALE = `${BAND} before:left-0 before:bg-mp-pale`;
+/** Faixa da prévia sob o cursor (cinza neutro). */
+const BAND_RIGHT_SOFT = `${BAND} before:right-0 before:bg-surface-soft`;
+const BAND_LEFT_SOFT = `${BAND} before:left-0 before:bg-surface-soft`;
+/** Círculo cheio das pontas escolhidas. */
+const CAP_CIRCLE = "!rounded-full !bg-mp-primary !text-white hover:!bg-mp-primary-active";
+
+/**
  * Seletor de datas em intervalo (range) da busca. Mantém os dois campos (Check-in / Check-out)
  * mas com UM calendário `mode="range"`: após escolher o check-in, o próximo clique já é o
  * check-out (comportamento nativo do react-day-picker), com o intervalo destacado. Os horários
@@ -134,29 +154,24 @@ export function DateRangePicker({ from, to, onChange, triggerClassName }: Props)
           }}
           // Cinza neutro na prévia, azul da marca só no intervalo confirmado: o olho
           // separa "seria isto" de "é isto" sem precisar de legenda. A ponta sob o
-          // cursor leva contorno em vez de preenchimento, porque ainda não é escolha.
+          // cursor fica só contornada, porque ainda não é escolha.
           modifiersClassNames={{
             preview_middle: "!rounded-none !bg-surface-soft !text-ink",
-            preview_end:
-              "!rounded-r-full !bg-surface-soft !text-ink ring-1 ring-inset ring-mp-primary",
+            preview_end: cn(
+              BAND_LEFT_SOFT,
+              "!rounded-full !bg-canvas !text-ink ring-1 ring-inset ring-mp-primary",
+            ),
           }}
-          // Entrada sozinha é círculo fechado. A classe de início de intervalo corta o
-          // lado direito pra emendar no miolo, e sem saída isso vira meia pílula solta.
-          // Com prévia aberta ela volta a ser tampa esquerda, pra emendar na prévia.
-          classNames={
-            to
-              ? undefined
-              : {
-                  // Sem saída, o react-day-picker marca o mesmo dia como início E fim,
-                  // então as duas classes precisam do mesmo tratamento.
-                  day_range_start: previewing
-                    ? "!rounded-l-full !rounded-r-none !bg-mp-primary !text-white"
-                    : "!rounded-full !bg-mp-primary !text-white hover:!bg-mp-primary-active",
-                  day_range_end: previewing
-                    ? "!rounded-l-full !rounded-r-none !bg-mp-primary !text-white"
-                    : "!rounded-full !bg-mp-primary !text-white hover:!bg-mp-primary-active",
-                }
-          }
+          // As pontas são sempre círculo; o que muda é a faixa que passa atrás delas.
+          // Sem saída o react-day-picker marca o mesmo dia como início E fim, por isso
+          // as duas classes andam juntas.
+          classNames={{
+            day_range_start: cn(CAP_CIRCLE, to ? BAND_RIGHT_PALE : previewing && BAND_RIGHT_SOFT),
+            day_range_end: cn(
+              CAP_CIRCLE,
+              to ? BAND_LEFT_PALE : previewing && BAND_RIGHT_SOFT,
+            ),
+          }}
           components={{
             // `labels.labelDay` existe nos defaults do react-day-picker 8.10 mas não é
             // usado no render, então o rótulo vai por aqui: número visível pro olho,
