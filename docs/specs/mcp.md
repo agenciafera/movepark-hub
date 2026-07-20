@@ -64,6 +64,10 @@ Métodos suportados: `initialize`, `ping`, `tools/list`, `tools/call`, e `notifi
 
 ### Consumidor (público, sem auth)
 
+Fonte única: **`supabase/functions/_shared/assistant-tools.ts`** (`READ_TOOLS`), o mesmo registro que a
+Edge `chat` consome. O MCP converte com `toMcpToolDef` e roteia por `callRead`; o card
+`server-card.json` reflete o registro (o drift guard barra divergência).
+
 | Tool | Substrato |
 |---|---|
 | `search_parking(dest, from, to, …)` | Edge `search` |
@@ -72,6 +76,8 @@ Métodos suportados: `initialize`, `ping`, `tools/list`, `tools/call`, e `notifi
 | `list_companies(limit?)` | `company` (RLS `catalog_read_company`) |
 | `list_locations(limit?)` | `location` |
 | `get_parking_types(location_id)` | `location_parking_type` (+ join) |
+| `list_destinations(limit?)` / `get_destination(slug)` | `destination` (+ `destination_point`) |
+| `current_datetime()` | data/hora no fuso `America/Sao_Paulo` (resolver datas relativas) |
 
 ### Parceiro (chave `mp_` + escopo)
 
@@ -100,7 +106,11 @@ Métodos suportados: `initialize`, `ping`, `tools/list`, `tools/call`, e `notifi
 | `update_pricing_rule` | `pricing:write` | `api_set_pricing` |
 | `set_date_blocked` | `pricing:write` | `api_set_date_blocked` |
 
-Consumidor ganhou ainda `list_destinations` / `get_destination` (destinos + terminais; anon).
+### Consumidor autenticado (planejado)
+
+Uma terceira superfície, `/customer`, dá ao usuário final (logado por OTP) as tools transacionais de
+reserva, para um agente fechar a compra e entregar um link de checkout. Desenho, autenticação e
+handoff em [agent-booking.md](./customer/agent-booking.md). Ainda não implementada.
 
 > Escopos = catálogo `api_scope` (ver [public-api.md](./public-api.md) §7). Tool parceiro nova ⇒ escopo
 > existente (ou novo no catálogo) + entrada em `tools.ts` + `partner-card.json`.

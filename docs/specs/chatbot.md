@@ -46,8 +46,11 @@ ChatWidget (React, ConsumerAppShell)  ──POST /functions/v1/chat (apikey + Be
 | `create_booking` | transacional | Edge `create-booking` (JWT) |
 | `cancel_booking` | transacional | Edge `cancel-booking` (JWT) |
 
-As tools de leitura **espelham** os handlers do MCP consumidor (`supabase/functions/mcp/index.ts`
-`callPublic`). Débito conhecido: a duplicação pode ser fatorada para um `_shared/assistant-tools.ts`.
+As tools de leitura vêm do **registro canônico** `supabase/functions/_shared/assistant-tools.ts`
+(mesma fonte do MCP consumidor): o `chat` espalha `READ_TOOLS.map(toGeminiDecl)` e roteia por
+`callRead`, e o MCP faz `READ_TOOLS.map(toMcpToolDef)` + `callRead`. O drift guard
+(`scripts/check-openapi-drift.mjs`) barra divergência entre as duas superfícies e o registro. As
+transacionais seguem no `chat` (JWT do usuário).
 
 ## 3. Configuração (`app_setting`, key/value text)
 
@@ -74,5 +77,7 @@ Deploy: `supabase functions deploy chat --no-verify-jwt` (fixado em `config.toml
 
 ## 6. Fora de escopo (v2)
 
-Persistência de conversa + observabilidade, streaming (SSE), handoff humano, canais WhatsApp/UZAPI/
-Meta e a aposentadoria do MCP n8n legado.
+Persistência de conversa + observabilidade, streaming (SSE), handoff humano e a aposentadoria do MCP
+n8n legado. O canal de **WhatsApp** (reserva por agente, com login por OTP e pagamento via link de
+checkout) é tratado à parte em [agent-booking.md](./customer/agent-booking.md), reusando o mesmo
+registro de tools desta Edge.
