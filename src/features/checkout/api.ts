@@ -1,7 +1,9 @@
+import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { parseInstallmentPolicy, type InstallmentPolicy } from "@/lib/installments";
 import { shouldPollCheckout } from "@/features/checkout/checkout.logic";
+import { parseHandoffToken } from "@/features/checkout/handoff";
 
 export type PriceBreakdown = {
   currency: string;
@@ -276,6 +278,78 @@ export function useCancelBooking() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["checkout-booking"] }),
+  });
+}
+
+/**
+ * Resgate do link de handoff (reserva por agente): se a URL tem `#ht=<segredo>`, troca o segredo por
+ * uma sessão (Edge redeem-checkout-handoff), faz setSession e limpa o fragment da URL. Enquanto resolve,
+ * devolve `redeeming: true` para a página segurar o redirect de login. Uso único: rodamos uma vez.
+ */
+export function useHandoffRedemption(): { redeeming: boolean } {
+  const qc = useQueryClient();
+  const [redeeming, setRedeeming] = React.useState(() =>
+    typeof window !== "undefined" ? !!parseHandoffToken(window.location.hash) : false,
+  );
+  const ran = React.useRef(false);
+
+  React.useEffect(() => {
+    if (ran.current || typeof window === "undefined") return;
+    const token = parseHandoffToken(window.location.hash);
+    if (!token) return;
+    ran.current = true;
+
+    (async () => {
+      try {
+        const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/redeem-checkout-handoff`;
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({ token }),
+        });
+        const data = (await res.json().catch(() => ({}))) as {
+          access_token?: string;
+          refresh_token?: string;
+        };
+        if (res.ok && data.access_token && data.refresh_token) {
+          await supabase.auth.setSession({
+            access_token: data.access_token,
+            refresh_token: data.refresh_token,
+          });
+          // A sessão nova muda o que a RLS enxerga: revalida tudo (auth + booking sob o dono).
+          await qc.invalidateQueries();
+        }
+      } catch {
+        // Falhou: cai no gate normal (login). Não trava o checkout.
+      } finally {
+        // Limpa o segredo da URL de qualquer jeito (não deixa no histórico).
+        const clean = window.location.pathname + window.location.search;
+        window.history.replaceState(null, "", clean);
+        setRedeeming(false);
+      }
+    })();
+  }, [qc]);
+
+  return { redeeming };
+}
+
+/** true quando a reserva já tem aceite de Termos registrado (RLS do dono). Usado no deep-link. */
+export function useTermsAccepted(bookingId: string | undefined) {
+  return useQuery({
+    queryKey: ["terms-accepted", bookingId],
+    enabled: !!bookingId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("terms_acceptance")
+        .select("id")
+        .eq("booking_id", bookingId as string)
+        .maybeSingle();
+      if (error) throw error;
+      return !!data;
+    },
   });
 }
 

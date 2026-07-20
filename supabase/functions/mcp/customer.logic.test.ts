@@ -77,6 +77,7 @@ Deno.test("CUSTOMER_TXN_TOOLS: nomes esperados, sem scope, schema fechado", () =
     "add_vehicle",
     "cancel_booking",
     "create_booking",
+    "create_checkout_link",
     "get_booking",
     "get_booking_status",
     "list_my_bookings",

@@ -106,6 +106,25 @@ export function isCheckoutBlocked(
   return status === "pending" && !!expiresAt && new Date(expiresAt) < now;
 }
 
+export interface InitialStepArgs {
+  /** O link pediu para cair no pagamento (handoff de reserva por agente, ?pay=1). */
+  requestedPay: boolean;
+  /** Dados do pagador exigidos no pagamento já preenchidos (CPF/CNPJ + telefone + e-mail). */
+  hasPayerData: boolean;
+  /** Aceite dos Termos já registrado para a reserva. */
+  termsAccepted: boolean;
+}
+
+/**
+ * Passo inicial do checkout. Regra: só pula pro pagamento (passo 3) quando o link pediu E a reserva
+ * está pronta de fato (dados do pagador + Termos aceitos). Deriva do estado, nunca confia só no
+ * parâmetro do link: se falta algo, cai no passo 1 (onde o usuário completa e aceita os Termos).
+ */
+export function resolveInitialStep(a: InitialStepArgs): CheckoutStep {
+  if (a.requestedPay && a.hasPayerData && a.termsAccepted) return 3;
+  return 1;
+}
+
 /** Passo pra onde auto-avançar quando o pagamento confirma (Step 4); null = não mexe. */
 export function nextStepOnConfirm(status: string, current: CheckoutStep): CheckoutStep | null {
   return status === "confirmed" && current !== 4 ? 4 : null;

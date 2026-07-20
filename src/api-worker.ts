@@ -274,6 +274,7 @@ function mcpDocsHtml(): string {
     <tr><td><code>list_my_bookings</code> / <code>get_booking</code></td><td>Lista e detalha as reservas do usuário.</td></tr>
     <tr><td><code>get_booking_status</code></td><td>Acompanha o estado da reserva e do pagamento.</td></tr>
     <tr><td><code>cancel_booking</code></td><td>Cancela uma reserva.</td></tr>
+    <tr><td><code>create_checkout_link</code></td><td>Gera o link de pagamento que cai logado no checkout.</td></tr>
   </table>
   <p>O pagamento fica fora do MCP: o agente monta a reserva e entrega um link de checkout que já cai
      logado no passo de pagamento. Ver a spec de reserva por agente.</p>

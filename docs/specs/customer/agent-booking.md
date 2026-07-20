@@ -233,6 +233,18 @@ jurídico antes de implementar. Se não passar, o link cai no passo 1 só para o
 5. **Pré-requisito fechado:** o `attach-phone-silent` promovia telefone a credencial sem OTP, o que
    viraria porta de sequestro com login por WhatsApp. Corrigido: virou dica não-credencial (migration
    `20260820000000`, RPC `set_phone_hint`). Ver ADR-006 no `CLAUDE.md`.
+6. **Session fixation do link de handoff (decisão antes do go-live do bot).** O link loga o browser na
+   conta que o **gerou** (propriedade de magic link). Como o MCP `/customer` é público, um atacante pode
+   autenticar a própria conta, reservar, gerar o link e enviá-lo a uma vítima; ao abrir, o browser da
+   vítima vira a sessão do atacante. O agravante é o link cair no pagamento (a vítima pagaria a reserva
+   do atacante; com cartão + `save_card`, o cartão vai pra conta dele). As partes criptográficas estão
+   corretas (segredo de alta entropia, resgate atômico, sem IDOR). Mitigação atual: o "cai no pagamento"
+   (`resolveInitialStep → 3`) só ativa com Termos aceitos, e `accept_terms` ainda não é tool, então hoje
+   o link cai no **passo 1** e o agravante está dormente. **Antes de ativar o cair-no-pagamento (junto
+   do `accept_terms`), decidir a mitigação:** entregar o link só pelo canal verificado do próprio usuário
+   (como um magic link é entregue ao e-mail do dono), e/ou o checkout avisar quando a sessão do handoff
+   substitui uma sessão diferente já ativa, e/ou não emitir refresh_token de longa duração (sessão que
+   não sobrevive ao checkout). O reviewer classificou como MEDIUM, parcialmente inerente ao padrão.
 
 ---
 
@@ -247,8 +259,12 @@ jurídico antes de implementar. Se não passar, o link cai no passo 1 só para o
   `assert_verified_identity` (chamador confiável) adiada para junto do bot (§4).
 - **F2 - Tools transacionais** - ✅ no ar (§5). `create_booking`, `set_booking_customer`, `add_vehicle`,
   `set_booking_vehicle`, `list_my_bookings`, `get_booking`, `get_booking_status`, `cancel_booking`, sob
-  JWT + RLS. `accept_terms` e `lookup_plate` movidas para F3.
-- **F3 - Handoff de checkout** - planejado (§6). Inclui `accept_terms` (com aval jurídico) e `lookup_plate`.
+  JWT + RLS.
+- **F3 - Handoff de checkout** - ✅ no ar (§6). Tabela `checkout_handoff` + RPC de resgate atômica +
+  cron de purga; Edges `create-checkout-handoff` (JWT) e `redeem-checkout-handoff` (anon); tool
+  `create_checkout_link`; front resgata o `#ht=`, faz `setSession` e deriva o passo (`resolveInitialStep`).
+  O deep-link só cai no pagamento quando o aceite existe (fallback: cai no passo 1). Falta ainda o
+  `accept_terms` (com aval jurídico) e o `lookup_plate` (API paga) para o fluxo pular o passo 1.
 - **F4 - Superfície, doc e descoberta** - planejado. Terceiro branch de endpoint na Edge `mcp`,
   `customer-card.json`, atualização de `api-catalog`/`llms.txt`/`auth.md`.
 

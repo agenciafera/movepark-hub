@@ -5,7 +5,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { useAuth } from "@/auth/context";
-import { useCheckoutBooking } from "@/features/checkout/api";
+import {
+  useCheckoutBooking,
+  useHandoffRedemption,
+  useTermsAccepted,
+} from "@/features/checkout/api";
+import { wantsPayStep } from "@/features/checkout/handoff";
 import { Countdown } from "@/features/checkout/Countdown";
 import { KeepAliveModal } from "@/features/checkout/KeepAliveModal";
 import { Stepper } from "@/features/checkout/Stepper";
@@ -20,6 +25,7 @@ import {
   isCheckoutBlocked,
   nextStepOnConfirm,
   resolveCheckoutGate,
+  resolveInitialStep,
   type CheckoutStep,
 } from "@/features/checkout/checkout.logic";
 import type { BookingForCheckout } from "@/features/checkout/api";
@@ -66,8 +72,26 @@ export default function CheckoutPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { session, isLoading: authLoading } = useAuth();
+  // Handoff (reserva por agente): se a URL tem #ht=, troca por sessão antes do gate de login.
+  const { redeeming } = useHandoffRedemption();
   const { data: booking, isLoading, error } = useCheckoutBooking(code);
+  const { data: termsAccepted } = useTermsAccepted(booking?.id);
   const [step, setStep] = React.useState<CheckoutStep>(1);
+
+  // Passo inicial: só cai no pagamento quando o link pediu (?pay=1) E a reserva está pronta
+  // (dados do pagador + Termos aceitos). Deriva do estado; roda uma vez quando os dados chegam.
+  const initialStepSet = React.useRef(false);
+  React.useEffect(() => {
+    if (initialStepSet.current || !booking || termsAccepted === undefined) return;
+    initialStepSet.current = true;
+    const hasPayerData = !!(booking.customer_tax_id && booking.customer_phone && booking.customer_email);
+    const initial = resolveInitialStep({
+      requestedPay: wantsPayStep(window.location.search),
+      hasPayerData,
+      termsAccepted: !!termsAccepted,
+    });
+    if (initial !== 1) setStep(initial);
+  }, [booking, termsAccepted]);
 
   // Auto-avança pro Step 4 quando o pagamento for confirmado
   React.useEffect(() => {
@@ -77,7 +101,7 @@ export default function CheckoutPage() {
   }, [booking?.status, step]);
 
   const gate = resolveCheckoutGate({
-    authLoading,
+    authLoading: authLoading || redeeming,
     bookingLoading: isLoading,
     hasSession: !!session,
     userId: session?.userId ?? null,

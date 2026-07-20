@@ -423,6 +423,10 @@ verify_jwt = false
 [functions.chat]
 verify_jwt = false
 
+# Resgate do link de handoff: anon, autorizado pela posse do segredo (uso único + TTL).
+[functions.redeem-checkout-handoff]
+verify_jwt = false
+
 [functions.reconcile-refunds]
 verify_jwt = false
 

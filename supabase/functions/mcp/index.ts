@@ -357,6 +357,12 @@ async function callCustomerTxn(
     case "cancel_booking":
       return invokeEdge("cancel-booking", { booking_code: a.booking_code, reason: a.reason ?? null });
 
+    case "create_checkout_link":
+      return invokeEdge("create-checkout-handoff", {
+        booking_code: a.booking_code,
+        refresh_token: a.refresh_token,
+      });
+
     case "set_booking_customer": {
       // Só os campos informados (undefined não sobrescreve). tax_id/phone são exigidos no pagamento.
       const patch: Record<string, unknown> = {};

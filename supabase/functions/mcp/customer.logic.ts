@@ -179,6 +179,18 @@ export const CUSTOMER_TXN_TOOLS: ToolDef[] = [
       ["booking_code"],
     ),
   },
+  {
+    name: "create_checkout_link",
+    description:
+      "Gera um link de uso único que abre o checkout já logado, direto no pagamento. Entregue este link ao usuário para ele pagar (PIX ou cartão) e receber o voucher. Passe o refresh_token que veio de verify_login_otp.",
+    inputSchema: obj(
+      {
+        booking_code: { type: "string", description: "Código da reserva (MP-...)" },
+        refresh_token: { type: "string", description: "O refresh_token da sessão (de verify_login_otp)" },
+      },
+      ["booking_code", "refresh_token"],
+    ),
+  },
 ];
 
 // Nomes das tools que exigem sessão (JWT). O handler recusa cedo, com mensagem amigável, se faltar.

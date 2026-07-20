@@ -3,6 +3,7 @@ import {
   isCheckoutBlocked,
   nextStepOnConfirm,
   resolveCheckoutGate,
+  resolveInitialStep,
   shouldPollCheckout,
   validateStep1Identity,
   type CheckoutGateArgs,
@@ -172,5 +173,31 @@ describe("validateStep1Identity", () => {
         otherPhone: "+5511987654321",
       }),
     ).toBeNull();
+  });
+});
+
+describe("resolveInitialStep (deep-link do handoff)", () => {
+  it("cai no pagamento só quando pedido E pronto (dados + termos)", () => {
+    expect(
+      resolveInitialStep({ requestedPay: true, hasPayerData: true, termsAccepted: true }),
+    ).toBe(3);
+  });
+
+  it("sem pedir pagamento, começa no passo 1 (comportamento normal intacto)", () => {
+    expect(
+      resolveInitialStep({ requestedPay: false, hasPayerData: true, termsAccepted: true }),
+    ).toBe(1);
+  });
+
+  it("pediu pagamento mas falta dado do pagador → passo 1", () => {
+    expect(
+      resolveInitialStep({ requestedPay: true, hasPayerData: false, termsAccepted: true }),
+    ).toBe(1);
+  });
+
+  it("pediu pagamento mas Termos não aceitos → passo 1 (não confia só no link)", () => {
+    expect(
+      resolveInitialStep({ requestedPay: true, hasPayerData: true, termsAccepted: false }),
+    ).toBe(1);
   });
 });
