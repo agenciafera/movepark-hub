@@ -3,7 +3,7 @@
 // Lógica pura — testável com deno test. Ver docs/specs/mcp.md.
 
 import { READ_TOOLS, toMcpToolDef } from "../_shared/assistant-tools.ts";
-import { CUSTOMER_AUTH_TOOLS } from "./customer.logic.ts";
+import { CUSTOMER_AUTH_TOOLS, CUSTOMER_TXN_TOOLS } from "./customer.logic.ts";
 
 export type Endpoint = "public" | "partner" | "customer";
 
@@ -270,9 +270,13 @@ export const PARTNER_TOOLS: ToolDef[] = [
   },
 ];
 
-// Consumidor autenticado (usuário final logado por OTP). Descoberta (READ_TOOLS) + login.
-// Sem `scope` (o modelo de escopo é exclusivo do parceiro). As transacionais entram em F2.
-export const CUSTOMER_TOOLS: ToolDef[] = [...READ_TOOLS.map(toMcpToolDef), ...CUSTOMER_AUTH_TOOLS];
+// Consumidor autenticado (usuário final logado por OTP): descoberta (READ_TOOLS) + login +
+// transacionais (reservar em nome do usuário). Sem `scope` (o gate é o JWT + RLS do dono).
+export const CUSTOMER_TOOLS: ToolDef[] = [
+  ...READ_TOOLS.map(toMcpToolDef),
+  ...CUSTOMER_AUTH_TOOLS,
+  ...CUSTOMER_TXN_TOOLS,
+];
 
 const REGISTRY: Record<Endpoint, ToolDef[]> = {
   public: PUBLIC_TOOLS,

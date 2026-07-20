@@ -261,15 +261,22 @@ function mcpDocsHtml(): string {
   </table>
 
   <h2>Tools: consumidor autenticado (login por OTP)</h2>
-  <p>Para um agente reservar em nome do usuário final. Toda a descoberta acima, mais o login:</p>
+  <p>Para um agente reservar em nome do usuário final. Toda a descoberta acima, mais o login e a
+     reserva. As tools de reserva recebem <code>Authorization: Bearer &lt;access_token&gt;</code>.</p>
   <table>
     <tr><th>Tool</th><th>Descrição</th></tr>
     <tr><td><code>request_login_otp</code></td><td>Dispara o código por WhatsApp ou e-mail (passo 1).</td></tr>
     <tr><td><code>verify_login_otp</code></td><td>Troca o código pela sessão (access/refresh token) (passo 2).</td></tr>
     <tr><td><code>whoami</code></td><td>Diz quem está autenticado no token atual.</td></tr>
+    <tr><td><code>create_booking</code></td><td>Cria a reserva e segura a vaga.</td></tr>
+    <tr><td><code>set_booking_customer</code></td><td>Preenche CPF, telefone e e-mail do pagador.</td></tr>
+    <tr><td><code>add_vehicle</code> / <code>set_booking_vehicle</code></td><td>Cadastra a placa e vincula à reserva.</td></tr>
+    <tr><td><code>list_my_bookings</code> / <code>get_booking</code></td><td>Lista e detalha as reservas do usuário.</td></tr>
+    <tr><td><code>get_booking_status</code></td><td>Acompanha o estado da reserva e do pagamento.</td></tr>
+    <tr><td><code>cancel_booking</code></td><td>Cancela uma reserva.</td></tr>
   </table>
-  <p>As reservas e o pagamento entram numa fase seguinte. O agente leva até o pagamento e entrega um
-     link de checkout que já cai logado. Ver a spec de reserva por agente.</p>
+  <p>O pagamento fica fora do MCP: o agente monta a reserva e entrega um link de checkout que já cai
+     logado no passo de pagamento. Ver a spec de reserva por agente.</p>
 
   <h2>Mais</h2>
   <p>API REST (OpenAPI): <a href="https://api.movepark.co/docs">api.movepark.co/docs</a> ·

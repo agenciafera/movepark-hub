@@ -74,18 +74,24 @@ if (SHARED_READ.length === 0) {
   console.error("❌ Nenhuma tool encontrada em _shared/assistant-tools.ts (READ_TOOLS).");
   process.exit(1);
 }
-// Tools de login do consumidor autenticado (customer.logic.ts).
-const CUSTOMER_AUTH = literalNames(customerSrc);
+// Tools do consumidor autenticado (customer.logic.ts): login (AUTH) + reserva (TXN).
+// Fatiar por bloco para separar os dois conjuntos de literais no mesmo arquivo.
+const authBody = arrayBody(customerSrc, "CUSTOMER_AUTH_TOOLS");
+const txnBody = arrayBody(customerSrc, "CUSTOMER_TXN_TOOLS");
+const CUSTOMER_AUTH = literalNames(authBody);
+const CUSTOMER_TXN = literalNames(txnBody);
 
 // Um registro pode ser DERIVADO (spread de outro array) em vez de literal. Sem resolver isso as
 // tools derivadas somem do check em silêncio, que foi o que aconteceu ao fatorar. Casa a derivação,
 // não a menção: um `import { READ_TOOLS }` não pode contar como uso.
 const DERIVES_READ = /\.\.\.READ_TOOLS\b|READ_TOOLS\.map\(/;
 const DERIVES_AUTH = /\.\.\.CUSTOMER_AUTH_TOOLS\b/;
+const DERIVES_TXN = /\.\.\.CUSTOMER_TXN_TOOLS\b/;
 const toolNames = (s) => [
   ...literalNames(s),
   ...(DERIVES_READ.test(s) ? SHARED_READ : []),
   ...(DERIVES_AUTH.test(s) ? CUSTOMER_AUTH : []),
+  ...(DERIVES_TXN.test(s) ? CUSTOMER_TXN : []),
 ];
 
 /** Corpo de um `export const NOME: ... = [ ... ];` (para não varrer o arquivo inteiro). */

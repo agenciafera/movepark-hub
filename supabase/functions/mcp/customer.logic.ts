@@ -87,3 +87,99 @@ export const CUSTOMER_AUTH_TOOLS: ToolDef[] = [
     inputSchema: obj({}),
   },
 ];
+
+// Tools transacionais da superfície /customer (exigem Authorization: Bearer <access_token>).
+// Reservar em nome do usuário logado; sem `scope` (o gate é o JWT + RLS do dono). O pagamento fica
+// fora do MCP: o agente monta a reserva e o handoff (F3) leva ao checkout. accept_terms e lookup_plate
+// entram em F3 (aceite tem ressalva jurídica; consulta de placa é API externa paga).
+export const CUSTOMER_TXN_TOOLS: ToolDef[] = [
+  {
+    name: "create_booking",
+    description:
+      "Cria uma reserva pendente para o usuário logado e segura a vaga. Use os ids vindos de get_parking_types. Confirme os dados com o usuário antes de reservar.",
+    inputSchema: obj(
+      {
+        location_parking_type_id: { type: "string", description: "id do tipo de vaga (location_parking_type)" },
+        check_in_at: { type: "string", format: "date-time", description: "Check-in ISO-8601" },
+        check_out_at: { type: "string", format: "date-time", description: "Check-out ISO-8601" },
+        fare_tier: { type: "string", enum: ["basica", "flex", "superflex"], description: "Tarifa (default basica)" },
+        add_on_service_ids: { type: "array", items: { type: "string" }, description: "Serviços adicionais (opcional)" },
+        coupon_code: { type: "string", description: "Cupom (opcional)" },
+        passenger_count: { type: "integer", description: "Nº de passageiros (opcional)" },
+        has_pcd: { type: "boolean", description: "Vaga PCD (opcional)" },
+      },
+      ["location_parking_type_id", "check_in_at", "check_out_at"],
+    ),
+  },
+  {
+    name: "set_booking_customer",
+    description:
+      "Preenche os dados do pagador na reserva (CPF/CNPJ e telefone são exigidos no pagamento). Campos ausentes ficam como estão.",
+    inputSchema: obj(
+      {
+        booking_code: { type: "string", description: "Código da reserva (MP-...)" },
+        tax_id: { type: "string", description: "CPF ou CNPJ do pagador" },
+        phone: { type: "string", description: "Telefone com DDD (E.164)" },
+        email: { type: "string", description: "E-mail do pagador" },
+        first_name: { type: "string", description: "Nome" },
+        last_name: { type: "string", description: "Sobrenome" },
+      },
+      ["booking_code"],
+    ),
+  },
+  {
+    name: "add_vehicle",
+    description:
+      "Cadastra um veículo do usuário pela placa. Devolve o vehicle_id para vincular à reserva.",
+    inputSchema: obj(
+      {
+        license_plate: { type: "string", description: "Placa" },
+        model: { type: "string", description: "Modelo (opcional)" },
+        color: { type: "string", description: "Cor (opcional)" },
+        set_default: { type: "boolean", description: "Tornar o veículo padrão (opcional)" },
+      },
+      ["license_plate"],
+    ),
+  },
+  {
+    name: "set_booking_vehicle",
+    description: "Vincula um veículo já cadastrado (vehicle_id) à reserva.",
+    inputSchema: obj(
+      {
+        booking_code: { type: "string", description: "Código da reserva (MP-...)" },
+        vehicle_id: { type: "string", description: "id do veículo (de add_vehicle ou list)" },
+      },
+      ["booking_code", "vehicle_id"],
+    ),
+  },
+  {
+    name: "list_my_bookings",
+    description: "Lista as reservas do usuário logado.",
+    inputSchema: obj({ limit: { type: "integer", description: "máximo (default 10)" } }),
+  },
+  {
+    name: "get_booking",
+    description: "Detalhe de uma reserva do usuário pelo código.",
+    inputSchema: obj({ booking_code: { type: "string", description: "Código (MP-...)" } }, ["booking_code"]),
+  },
+  {
+    name: "get_booking_status",
+    description:
+      "Estado da reserva e do pagamento (para acompanhar a confirmação sem consultar tabelas). Devolve status, pagamento e expiração.",
+    inputSchema: obj({ booking_code: { type: "string", description: "Código (MP-...)" } }, ["booking_code"]),
+  },
+  {
+    name: "cancel_booking",
+    description: "Cancela uma reserva do usuário. Confirme com o usuário antes de cancelar.",
+    inputSchema: obj(
+      {
+        booking_code: { type: "string", description: "Código (MP-...)" },
+        reason: { type: "string", description: "Motivo (opcional)" },
+      },
+      ["booking_code"],
+    ),
+  },
+];
+
+// Nomes das tools que exigem sessão (JWT). O handler recusa cedo, com mensagem amigável, se faltar.
+export const CUSTOMER_TXN_NAMES: ReadonlySet<string> = new Set(CUSTOMER_TXN_TOOLS.map((t) => t.name));

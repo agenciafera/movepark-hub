@@ -115,7 +115,10 @@ Terceira superfície, para um agente reservar em nome do usuário final. `server
 |---|---|---|
 | descoberta (as 9 do consumidor) | `READ_TOOLS` / `callRead` | ✅ no ar |
 | `request_login_otp` / `verify_login_otp` / `whoami` | GoTrue (`customer.logic.ts`) | ✅ no ar |
-| transacionais (reservar, dados, placa, aceite) | Edges de consumidor via JWT | F2 |
+| `create_booking` / `cancel_booking` | Edges `create-booking` / `cancel-booking` (JWT) | ✅ no ar |
+| `set_booking_customer` / `add_vehicle` / `set_booking_vehicle` | escrita direta (RLS do dono) | ✅ no ar |
+| `list_my_bookings` / `get_booking` / `get_booking_status` | leitura direta (RLS do dono) | ✅ no ar |
+| `accept_terms` / `lookup_plate` | Edges de consumidor (JWT) | F3 |
 
 Login por OTP (WhatsApp/e-mail) e handoff de checkout em
 [agent-booking.md](./customer/agent-booking.md). `assert_verified_identity` (chamador confiável, sem

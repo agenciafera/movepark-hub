@@ -1,12 +1,12 @@
 {
   "name": "Movepark Customer",
-  "description": "MCP do Movepark (consumidor autenticado): descoberta + login por OTP (WhatsApp/e-mail) para reservar em nome do usuário final. Tools transacionais em breve. Endpoint: https://mcp.movepark.co/customer",
+  "description": "MCP do Movepark (consumidor autenticado): descoberta, login por OTP (WhatsApp/e-mail) e reserva em nome do usuário final. O pagamento é feito num link de checkout. Endpoint: https://mcp.movepark.co/customer",
   "url": "https://mcp.movepark.co/customer",
   "transport": "streamable-http",
   "contact": "contato@movepark.co",
   "authentication": {
     "type": "user-otp",
-    "note": "Login passwordless: request_login_otp dispara o código, verify_login_otp devolve a sessão. As demais tools recebem Authorization: Bearer <access_token>."
+    "note": "Login passwordless: request_login_otp dispara o código, verify_login_otp devolve a sessão. As tools de reserva recebem Authorization: Bearer <access_token>."
   },
   "tools": [
     {
@@ -198,7 +198,8 @@
         "required": [
           "identifier",
           "channel"
-        ]
+        ],
+        "additionalProperties": false
       }
     },
     {
@@ -228,7 +229,8 @@
           "identifier",
           "channel",
           "code"
-        ]
+        ],
+        "additionalProperties": false
       }
     },
     {
@@ -236,7 +238,224 @@
       "description": "Diz se há usuário autenticado no token atual e devolve id/e-mail/telefone. Não exige argumentos.",
       "inputSchema": {
         "type": "object",
-        "properties": {}
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "create_booking",
+      "description": "Cria uma reserva pendente para o usuário logado e segura a vaga. Use os ids vindos de get_parking_types. Confirme os dados com o usuário antes de reservar.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location_parking_type_id": {
+            "type": "string",
+            "description": "id do tipo de vaga (location_parking_type)"
+          },
+          "check_in_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Check-in ISO-8601"
+          },
+          "check_out_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Check-out ISO-8601"
+          },
+          "fare_tier": {
+            "type": "string",
+            "enum": [
+              "basica",
+              "flex",
+              "superflex"
+            ],
+            "description": "Tarifa (default basica)"
+          },
+          "add_on_service_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Serviços adicionais (opcional)"
+          },
+          "coupon_code": {
+            "type": "string",
+            "description": "Cupom (opcional)"
+          },
+          "passenger_count": {
+            "type": "integer",
+            "description": "Nº de passageiros (opcional)"
+          },
+          "has_pcd": {
+            "type": "boolean",
+            "description": "Vaga PCD (opcional)"
+          }
+        },
+        "required": [
+          "location_parking_type_id",
+          "check_in_at",
+          "check_out_at"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "set_booking_customer",
+      "description": "Preenche os dados do pagador na reserva (CPF/CNPJ e telefone são exigidos no pagamento). Campos ausentes ficam como estão.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "booking_code": {
+            "type": "string",
+            "description": "Código da reserva (MP-...)"
+          },
+          "tax_id": {
+            "type": "string",
+            "description": "CPF ou CNPJ do pagador"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Telefone com DDD (E.164)"
+          },
+          "email": {
+            "type": "string",
+            "description": "E-mail do pagador"
+          },
+          "first_name": {
+            "type": "string",
+            "description": "Nome"
+          },
+          "last_name": {
+            "type": "string",
+            "description": "Sobrenome"
+          }
+        },
+        "required": [
+          "booking_code"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "add_vehicle",
+      "description": "Cadastra um veículo do usuário pela placa. Devolve o vehicle_id para vincular à reserva.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "license_plate": {
+            "type": "string",
+            "description": "Placa"
+          },
+          "model": {
+            "type": "string",
+            "description": "Modelo (opcional)"
+          },
+          "color": {
+            "type": "string",
+            "description": "Cor (opcional)"
+          },
+          "set_default": {
+            "type": "boolean",
+            "description": "Tornar o veículo padrão (opcional)"
+          }
+        },
+        "required": [
+          "license_plate"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "set_booking_vehicle",
+      "description": "Vincula um veículo já cadastrado (vehicle_id) à reserva.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "booking_code": {
+            "type": "string",
+            "description": "Código da reserva (MP-...)"
+          },
+          "vehicle_id": {
+            "type": "string",
+            "description": "id do veículo (de add_vehicle ou list)"
+          }
+        },
+        "required": [
+          "booking_code",
+          "vehicle_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_my_bookings",
+      "description": "Lista as reservas do usuário logado.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "description": "máximo (default 10)"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_booking",
+      "description": "Detalhe de uma reserva do usuário pelo código.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "booking_code": {
+            "type": "string",
+            "description": "Código (MP-...)"
+          }
+        },
+        "required": [
+          "booking_code"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_booking_status",
+      "description": "Estado da reserva e do pagamento (para acompanhar a confirmação sem consultar tabelas). Devolve status, pagamento e expiração.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "booking_code": {
+            "type": "string",
+            "description": "Código (MP-...)"
+          }
+        },
+        "required": [
+          "booking_code"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "cancel_booking",
+      "description": "Cancela uma reserva do usuário. Confirme com o usuário antes de cancelar.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "booking_code": {
+            "type": "string",
+            "description": "Código (MP-...)"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Motivo (opcional)"
+          }
+        },
+        "required": [
+          "booking_code"
+        ],
+        "additionalProperties": false
       }
     }
   ]

@@ -107,20 +107,26 @@ deve existir sem consumidor.
 
 ## 5. Tools transacionais de consumidor
 
-`CUSTOMER_TOOLS = [...READ_TOOLS, ...CUSTOMER_ONLY_TOOLS]`, reusando o registro compartilhado de
-leitura. As transacionais repassam o JWT do usuário às Edges, que revalidam o dono por RLS.
+`CUSTOMER_TOOLS = [...READ_TOOLS, ...CUSTOMER_AUTH_TOOLS, ...CUSTOMER_TXN_TOOLS]`. As transacionais
+exigem `Authorization: Bearer <access_token>` (o handler recusa cedo, com mensagem amigável, se faltar).
+`create`/`cancel` repassam o JWT às Edges; o resto é escrita/leitura direta sob a RLS do dono, o mesmo
+caminho do checkout web. Definições em `mcp/customer.logic.ts`; handler `callCustomerTxn` em `index.ts`.
 
-| Tool | Substrato | Nota |
+| Tool | Substrato | Status |
 |---|---|---|
-| `create_booking` | Edge `create-booking` | Já existe. Segura a vaga (`status=pending`) |
-| `set_booking_customer` | update em `booking` | `customer_tax_id`, `customer_phone`, `customer_email`, nomes |
-| `accept_terms` | Edge `accept-terms` | Ver ressalva jurídica (§8) |
-| `lookup_plate` | Edge `lookup-vehicle-plate` | API externa **paga**: rate limit próprio |
-| `add_vehicle` | insert em `vehicle` | |
-| `set_booking_vehicle` | update em `booking` | |
-| `list_my_bookings` / `get_booking` | query `booking` sob RLS | |
-| `cancel_booking` | Edge `cancel-booking` | |
-| `get_booking_status` | query `booking` + `payment` | Evita o agente dar poll em tabela crua |
+| `create_booking` | Edge `create-booking` (JWT) | ✅ no ar. Segura a vaga (`status=pending`) |
+| `set_booking_customer` | update em `booking` (RLS) | ✅ no ar. `customer_tax_id`, `customer_phone`, `customer_email`, nomes |
+| `add_vehicle` | insert em `vehicle` (RLS) | ✅ no ar. Cadastra pela placa, devolve `vehicle_id` |
+| `set_booking_vehicle` | update em `booking` (RLS) | ✅ no ar |
+| `list_my_bookings` / `get_booking` | query `booking` (RLS) | ✅ no ar |
+| `get_booking_status` | `booking` + `payment` (RLS) | ✅ no ar. Evita o agente dar poll em tabela crua |
+| `cancel_booking` | Edge `cancel-booking` (JWT) | ✅ no ar |
+| `accept_terms` | Edge `accept-terms` (JWT) | F3 (ressalva jurídica, §8) |
+| `lookup_plate` | Edge `lookup-vehicle-plate` (JWT) | F3 (API externa paga, rate limit próprio) |
+
+`accept_terms` e `lookup_plate` foram movidas para F3 de propósito: o aceite pareia com o handoff e
+depende do aval jurídico (§8); a consulta de placa bate em API paga e precisa de rate limit próprio. O
+`add_vehicle` aceita a placa direto, então a reserva fecha sem `lookup_plate`.
 
 Ficam **fora** por decisão: `delete-account` (irreversível), `attach-phone-silent` (identidade), e
 tudo de pagamento.
@@ -239,8 +245,10 @@ jurídico antes de implementar. Se não passar, o link cai no passo 1 só para o
 - **F1 - Autenticação de consumidor no MCP** - ✅ no ar (caminho OTP). Superfície `/customer` com
   descoberta + `request_login_otp`/`verify_login_otp`/`whoami`, rate limit por IP na borda.
   `assert_verified_identity` (chamador confiável) adiada para junto do bot (§4).
-- **F2 - Tools transacionais** - planejado (§5).
-- **F3 - Handoff de checkout** - planejado (§6).
+- **F2 - Tools transacionais** - ✅ no ar (§5). `create_booking`, `set_booking_customer`, `add_vehicle`,
+  `set_booking_vehicle`, `list_my_bookings`, `get_booking`, `get_booking_status`, `cancel_booking`, sob
+  JWT + RLS. `accept_terms` e `lookup_plate` movidas para F3.
+- **F3 - Handoff de checkout** - planejado (§6). Inclui `accept_terms` (com aval jurídico) e `lookup_plate`.
 - **F4 - Superfície, doc e descoberta** - planejado. Terceiro branch de endpoint na Edge `mcp`,
   `customer-card.json`, atualização de `api-catalog`/`llms.txt`/`auth.md`.
 

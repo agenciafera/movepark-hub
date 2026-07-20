@@ -1,6 +1,8 @@
 import { assertEquals, assertThrows } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
   CUSTOMER_AUTH_TOOLS,
+  CUSTOMER_TXN_NAMES,
+  CUSTOMER_TXN_TOOLS,
   isOtpChannel,
   otpRequestParams,
   otpVerifyParams,
@@ -68,4 +70,35 @@ Deno.test("CUSTOMER_AUTH_TOOLS: nomes esperados e schema fechado", () => {
     assertEquals(t.inputSchema.additionalProperties, false, t.name);
     assertEquals((t as { scope?: string }).scope, undefined, `${t.name} não tem scope`);
   }
+});
+
+Deno.test("CUSTOMER_TXN_TOOLS: nomes esperados, sem scope, schema fechado", () => {
+  assertEquals(CUSTOMER_TXN_TOOLS.map((t) => t.name).sort(), [
+    "add_vehicle",
+    "cancel_booking",
+    "create_booking",
+    "get_booking",
+    "get_booking_status",
+    "list_my_bookings",
+    "set_booking_customer",
+    "set_booking_vehicle",
+  ]);
+  for (const t of CUSTOMER_TXN_TOOLS) {
+    assertEquals(t.inputSchema.additionalProperties, false, t.name);
+    assertEquals((t as { scope?: string }).scope, undefined, `${t.name} não tem scope`);
+  }
+});
+
+Deno.test("CUSTOMER_TXN_NAMES cobre exatamente as transacionais", () => {
+  assertEquals(CUSTOMER_TXN_NAMES.size, CUSTOMER_TXN_TOOLS.length);
+  for (const t of CUSTOMER_TXN_TOOLS) assertEquals(CUSTOMER_TXN_NAMES.has(t.name), true, t.name);
+  // login e leitura não são transacionais (não exigem JWT)
+  for (const n of ["request_login_otp", "whoami", "search_parking"]) {
+    assertEquals(CUSTOMER_TXN_NAMES.has(n), false, n);
+  }
+});
+
+Deno.test("create_booking exige location/check-in/check-out; os opcionais não bloqueiam", () => {
+  const t = CUSTOMER_TXN_TOOLS.find((x) => x.name === "create_booking")!;
+  assertEquals(t.inputSchema.required, ["location_parking_type_id", "check_in_at", "check_out_at"]);
 });

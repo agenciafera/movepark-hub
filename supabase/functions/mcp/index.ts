@@ -27,7 +27,7 @@ import { findTool, isToolCallable, listTools, missingRequired, type Endpoint } f
 import { extractApiKey, keyPrefix, sha256Hex } from "./auth.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 import { callRead, READ_TOOL_NAMES } from "../_shared/assistant-tools.ts";
-import { otpRequestParams, otpVerifyParams } from "./customer.logic.ts";
+import { CUSTOMER_TXN_NAMES, otpRequestParams, otpVerifyParams } from "./customer.logic.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -269,6 +269,7 @@ async function callCustomer(
 ): Promise<unknown> {
   if (READ_TOOL_NAMES.has(name)) return callRead(anonClient(), name, a);
 
+  // Login (pré-sessão): não exige JWT.
   switch (name) {
     case "request_login_otp": {
       const sb = anonClient();
@@ -302,6 +303,155 @@ async function callCustomer(
         phone: data.user.phone ?? null,
       };
     }
+  }
+
+  // Transacionais: exigem sessão. Recusa cedo com mensagem amigável se faltar o JWT.
+  if (CUSTOMER_TXN_NAMES.has(name)) {
+    if (!authHeader?.startsWith("Bearer ")) {
+      throw new Error("Faça login primeiro (request_login_otp e verify_login_otp).");
+    }
+    return callCustomerTxn(authHeader, name, a);
+  }
+
+  throw new Error(`Tool desconhecida: ${name}`);
+}
+
+// Transacionais do consumidor: reservar em nome do usuário logado. Escrita/leitura direta sob a
+// RLS do dono (o mesmo caminho do checkout web); create/cancel repassam o JWT às Edges.
+async function callCustomerTxn(
+  authHeader: string,
+  name: string,
+  a: Record<string, unknown>,
+): Promise<unknown> {
+  const sb = userClient(authHeader);
+  const unwrap = <T>(r: { data: T; error: { message: string } | null }): T => {
+    if (r.error) throw new Error(r.error.message);
+    return r.data;
+  };
+  // Repassa o JWT do usuário a uma Edge de consumidor (mesmo padrão do chat).
+  const invokeEdge = async (fn: string, body: Record<string, unknown>) => {
+    const res = await fetch(`${env("SUPABASE_URL")}/functions/v1/${fn}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: env("SUPABASE_ANON_KEY"), Authorization: authHeader },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error((data as { error?: string }).error ?? `Falha (${res.status})`);
+    return data;
+  };
+
+  switch (name) {
+    case "create_booking":
+      return invokeEdge("create-booking", {
+        location_parking_type_id: a.location_parking_type_id,
+        check_in_at: a.check_in_at,
+        check_out_at: a.check_out_at,
+        fare_tier: a.fare_tier ?? null,
+        add_on_service_ids: a.add_on_service_ids ?? null,
+        coupon_code: a.coupon_code ?? null,
+        passenger_count: a.passenger_count ?? null,
+        has_pcd: a.has_pcd ?? false,
+        origin: "mcp",
+      });
+
+    case "cancel_booking":
+      return invokeEdge("cancel-booking", { booking_code: a.booking_code, reason: a.reason ?? null });
+
+    case "set_booking_customer": {
+      // Só os campos informados (undefined não sobrescreve). tax_id/phone são exigidos no pagamento.
+      const patch: Record<string, unknown> = {};
+      if (a.tax_id !== undefined) patch.customer_tax_id = a.tax_id;
+      if (a.phone !== undefined) patch.customer_phone = a.phone;
+      if (a.email !== undefined) patch.customer_email = a.email;
+      if (a.first_name !== undefined) patch.customer_first_name = a.first_name;
+      if (a.last_name !== undefined) patch.customer_last_name = a.last_name;
+      if (Object.keys(patch).length === 0) return { updated: false };
+      const rows = unwrap(
+        await sb.from("booking").update(patch).eq("code", a.booking_code as string).select("code").maybeSingle(),
+      ) as { code?: string } | null;
+      if (!rows?.code) throw new Error("Reserva não encontrada.");
+      return { updated: true, booking_code: rows.code };
+    }
+
+    case "add_vehicle": {
+      const { data: u } = await sb.auth.getUser();
+      if (!u?.user) throw new Error("Sessão inválida.");
+      // is_default único por perfil: zera os outros antes, se for marcar como padrão.
+      if (a.set_default) {
+        await sb.from("vehicle").update({ is_default: false }).eq("profile_id", u.user.id);
+      }
+      const veh = unwrap(
+        await sb
+          .from("vehicle")
+          .insert({
+            profile_id: u.user.id,
+            license_plate: a.license_plate,
+            model: a.model ?? null,
+            color: a.color ?? null,
+            is_default: a.set_default ?? false,
+          })
+          .select("id, license_plate, model, color, is_default")
+          .single(),
+      );
+      return veh;
+    }
+
+    case "set_booking_vehicle": {
+      const rows = unwrap(
+        await sb
+          .from("booking")
+          .update({ vehicle_id: a.vehicle_id })
+          .eq("code", a.booking_code as string)
+          .select("code, vehicle_id")
+          .maybeSingle(),
+      ) as { code?: string } | null;
+      if (!rows?.code) throw new Error("Reserva não encontrada.");
+      return { updated: true, booking_code: rows.code };
+    }
+
+    case "list_my_bookings":
+      return unwrap(
+        await sb
+          .from("booking")
+          .select("code, status, check_in_at, check_out_at, total_amount, currency")
+          .is("deleted_at", null)
+          .order("check_in_at", { ascending: false })
+          .limit(Number(a.limit ?? 10)),
+      );
+
+    case "get_booking":
+      return unwrap(
+        await sb
+          .from("booking")
+          .select(
+            "code, status, check_in_at, check_out_at, total_amount, currency, expires_at, customer_tax_id, customer_phone, customer_email, vehicle_id, location:location_id(name, slug)",
+          )
+          .eq("code", a.booking_code as string)
+          .maybeSingle(),
+      );
+
+    case "get_booking_status": {
+      const b = unwrap(
+        await sb
+          .from("booking")
+          .select("code, status, expires_at, payment:payment(status, method, created_at)")
+          .eq("code", a.booking_code as string)
+          .maybeSingle(),
+      ) as
+        | { code?: string; status?: string; expires_at?: string; payment?: Array<{ status?: string; method?: string }> }
+        | null;
+      if (!b?.code) throw new Error("Reserva não encontrada.");
+      // Pega o pagamento mais recente (a reserva pode ter tentativas).
+      const pay = Array.isArray(b.payment) ? b.payment[b.payment.length - 1] ?? null : b.payment ?? null;
+      return {
+        booking_code: b.code,
+        status: b.status,
+        expires_at: b.expires_at,
+        payment_status: (pay as { status?: string } | null)?.status ?? null,
+        payment_method: (pay as { method?: string } | null)?.method ?? null,
+      };
+    }
+
     default:
       throw new Error(`Tool desconhecida: ${name}`);
   }
