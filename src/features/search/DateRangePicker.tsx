@@ -37,24 +37,30 @@ type Props = {
 const startOfToday = () => new Date(new Date().toDateString());
 
 /**
- * As pontas do intervalo são círculos fechados, como no calendário do Airbnb, e a
- * faixa passa **atrás** delas: um `::before` de meia largura no lado que aponta pro
- * miolo, atrás do fundo do botão (`-z-10`). Sem isso a ponta vira meia pílula, que é
- * o que o nosso fazia.
+ * A faixa do período cobre também as células da entrada e da saída, arredondada no
+ * lado de fora, pra leitura ser de um bloco contínuo com as pontas dentro dele. O
+ * círculo da ponta é desenhado **por dentro** da célula (no `DayContent`), acima da
+ * faixa.
+ *
+ * A faixa é um `::before` em `z-0` e o círculo sobe pra `z-10`. Uma tentativa
+ * anterior usou `-z-10` no `::before`, e aí a faixa era pintada atrás do fundo
+ * branco do popover: sumia justamente nas pontas.
  *
  * Cada utilitária aparece escrita por extenso: o JIT do Tailwind varre o fonte em
  * busca do nome completo. Juntar strings prontas como aqui é seguro; o que quebraria
  * é montar o nome por pedaço (`before:bg-${tom}`), que ele não consegue ler.
  */
-const BAND = "relative before:absolute before:inset-y-0 before:-z-10 before:w-1/2 before:content-['']";
+const BAND = "relative !bg-transparent before:absolute before:inset-0 before:z-0 before:content-['']";
 /** Faixa do intervalo confirmado (azul da marca). */
-const BAND_RIGHT_PALE = `${BAND} before:right-0 before:bg-mp-pale`;
-const BAND_LEFT_PALE = `${BAND} before:left-0 before:bg-mp-pale`;
+const BAND_START_PALE = `${BAND} before:rounded-l-full before:bg-mp-pale`;
+const BAND_END_PALE = `${BAND} before:rounded-r-full before:bg-mp-pale`;
 /** Faixa da prévia sob o cursor (cinza neutro). */
-const BAND_RIGHT_SOFT = `${BAND} before:right-0 before:bg-surface-soft`;
-const BAND_LEFT_SOFT = `${BAND} before:left-0 before:bg-surface-soft`;
-/** Círculo cheio das pontas escolhidas. */
-const CAP_CIRCLE = "!rounded-full !bg-mp-primary !text-white hover:!bg-mp-primary-active";
+const BAND_START_SOFT = `${BAND} before:rounded-l-full before:bg-surface-soft`;
+const BAND_END_SOFT = `${BAND} before:rounded-r-full before:bg-surface-soft`;
+/** Célula da ponta sem faixa (entrada sozinha): só o círculo, sem fundo no botão. */
+const CAP_ONLY = "relative !bg-transparent";
+/** O círculo em si, desenhado dentro da célula e acima da faixa. */
+const CIRCLE = "relative z-10 flex h-10 w-10 items-center justify-center rounded-full";
 
 /**
  * Seletor de datas em intervalo (range) da busca. Mantém os dois campos (Check-in / Check-out)
@@ -157,31 +163,50 @@ export function DateRangePicker({ from, to, onChange, triggerClassName }: Props)
           // cursor fica só contornada, porque ainda não é escolha.
           modifiersClassNames={{
             preview_middle: "!rounded-none !bg-surface-soft !text-ink",
-            preview_end: cn(
-              BAND_LEFT_SOFT,
-              "!rounded-full !bg-canvas !text-ink ring-1 ring-inset ring-mp-primary",
-            ),
+            preview_end: cn(BAND_END_SOFT, "!text-ink"),
           }}
-          // As pontas são sempre círculo; o que muda é a faixa que passa atrás delas.
-          // Sem saída o react-day-picker marca o mesmo dia como início E fim, por isso
-          // as duas classes andam juntas.
+          // A faixa engloba as pontas; o círculo vem por dentro, no DayContent. Sem
+          // saída o react-day-picker marca o mesmo dia como início E fim, por isso as
+          // duas classes andam juntas.
           classNames={{
-            day_range_start: cn(CAP_CIRCLE, to ? BAND_RIGHT_PALE : previewing && BAND_RIGHT_SOFT),
-            day_range_end: cn(
-              CAP_CIRCLE,
-              to ? BAND_LEFT_PALE : previewing && BAND_RIGHT_SOFT,
-            ),
+            day_range_start: to
+              ? BAND_START_PALE
+              : previewing
+                ? BAND_START_SOFT
+                : CAP_ONLY,
+            day_range_end: to ? BAND_END_PALE : previewing ? BAND_START_SOFT : CAP_ONLY,
           }}
           components={{
             // `labels.labelDay` existe nos defaults do react-day-picker 8.10 mas não é
             // usado no render, então o rótulo vai por aqui: número visível pro olho,
-            // frase completa pro leitor de tela.
-            DayContent: ({ date, activeModifiers }) => (
-              <>
-                <span aria-hidden>{date.getDate()}</span>
-                <span className="sr-only">{dayAriaLabel(date, activeModifiers, phase)}</span>
-              </>
-            ),
+            // frase completa pro leitor de tela. O círculo da ponta também mora aqui,
+            // pra ficar acima da faixa em vez de disputar com ela.
+            DayContent: ({ date, activeModifiers }) => {
+              const mods = activeModifiers as {
+                range_start?: boolean;
+                range_end?: boolean;
+                preview_end?: boolean;
+              };
+              const escolhida = mods.range_start || mods.range_end;
+              return (
+                <>
+                  <span
+                    aria-hidden
+                    className={cn(
+                      CIRCLE,
+                      escolhida && "bg-mp-primary font-medium text-white",
+                      // Sob o cursor a ponta é só contorno: ainda não é escolha.
+                      !escolhida &&
+                        mods.preview_end &&
+                        "bg-canvas text-ink ring-1 ring-inset ring-mp-primary",
+                    )}
+                  >
+                    {date.getDate()}
+                  </span>
+                  <span className="sr-only">{dayAriaLabel(date, activeModifiers, phase)}</span>
+                </>
+              );
+            },
           }}
         />
         <div className="flex items-end gap-3 border-t border-hairline p-4">
