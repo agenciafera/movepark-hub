@@ -4,46 +4,94 @@
 //
 // Uso: node scripts/check-openapi-drift.mjs  (npm: bun run lint:openapi)
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { load as yamlLoad } from "js-yaml";
 import { cardForUrl, sha256File } from "./gen-card-hashes.mjs";
 
 const router = readFileSync("supabase/functions/api/router.ts", "utf8");
 const openapi = readFileSync("public/openapi.yaml", "utf8");
 
-// rotas declaradas: def("GET", "/v1/locations/:id", ...)
-const routePaths = [...router.matchAll(/def\(\s*"[A-Z]+",\s*"([^"]+)"/g)]
-  .map((m) => m[1])
-  .map((p) => p.replace(/:([A-Za-z_]+)/g, "{$1}")); // :id → {id}
+// O contrato precisa PARSEAR, não só casar por string: chave duplicada e escalar com ": "
+// sem aspas passavam batido no regex e quebravam o /docs (que renderiza a partir daqui).
+let openapiDoc;
+try {
+  openapiDoc = yamlLoad(openapi);
+} catch (err) {
+  console.error("❌ public/openapi.yaml não é YAML válido:");
+  console.error("   " + (err.reason ?? err.message));
+  if (err.mark) console.error(`   linha ${err.mark.line + 1}, coluna ${err.mark.column + 1}`);
+  console.error("\nADR-003: o contrato publicado em api.movepark.co precisa parsear.");
+  process.exit(1);
+}
 
-// paths do OpenAPI: chaves "  /v1/...:" no topo do bloco paths
-const openapiPaths = new Set(
-  [...openapi.matchAll(/^\s{2}(\/v1\/[^\s:]+):/gm)].map((m) => m[1]),
+const HTTP_VERBS = ["get", "post", "put", "patch", "delete"];
+
+// rotas declaradas: def("GET", "/v1/locations/:id", ...) → "GET /v1/locations/{id}"
+const routeOps = new Set(
+  [...router.matchAll(/def\(\s*"([A-Z]+)",\s*"([^"]+)"/g)].map(
+    (m) => `${m[1].toLowerCase()} ${m[2].replace(/:([A-Za-z_]+)/g, "{$1}")}`,
+  ),
 );
 
-const missing = [...new Set(routePaths)].filter((p) => !openapiPaths.has(p));
+// operações do OpenAPI, já estruturadas
+const openapiOps = new Set(
+  Object.entries(openapiDoc?.paths ?? {}).flatMap(([p, item]) =>
+    Object.keys(item ?? {})
+      .filter((k) => HTTP_VERBS.includes(k))
+      .map((verb) => `${verb} ${p}`),
+  ),
+);
 
-if (missing.length > 0) {
-  console.error("❌ Rotas do gateway sem path no OpenAPI (public/openapi.yaml):");
-  for (const p of missing) console.error("   - " + p);
+const undocumented = [...routeOps].filter((op) => !openapiOps.has(op));
+const unserved = [...openapiOps].filter((op) => !routeOps.has(op));
+
+if (undocumented.length || unserved.length) {
+  if (undocumented.length) {
+    console.error("❌ Rotas do gateway sem operação no OpenAPI (public/openapi.yaml):");
+    for (const op of undocumented) console.error("   - " + op);
+  }
+  if (unserved.length) {
+    console.error("❌ Operações no OpenAPI que o gateway não serve (doc fantasma):");
+    for (const op of unserved) console.error("   - " + op);
+  }
   console.error("\nADR-003: documente o endpoint no OpenAPI na mesma entrega.");
   process.exit(1);
 }
 
-console.log(`✓ OpenAPI em sincronia com o gateway (${new Set(routePaths).size} rotas).`);
+console.log(`✓ OpenAPI em sincronia com o gateway (${routeOps.size} operações).`);
 
 // ── MCP: tools.ts (PUBLIC_TOOLS/PARTNER_TOOLS) ↔ server-card.json/partner-card.json ──
 const toolsSrc = readFileSync("supabase/functions/mcp/tools.ts", "utf8");
-const splitIdx = toolsSrc.indexOf("PARTNER_TOOLS");
-const publicSrc = toolsSrc.slice(0, splitIdx);
-const partnerSrc = toolsSrc.slice(splitIdx);
 const toolNames = (s) => [...s.matchAll(/name:\s*"([a-z_]+)"/g)].map((m) => m[1]);
 const cardNames = (path) =>
   new Set((JSON.parse(readFileSync(path, "utf8")).tools ?? []).map((t) => t.name));
 
-const checks = [
-  { label: "consumidor", tools: toolNames(publicSrc), card: cardNames("public/.well-known/mcp/server-card.json") },
-  { label: "parceiro", tools: toolNames(partnerSrc), card: cardNames("public/.well-known/mcp/partner-card.json") },
-];
+// Cada registro `export const X_TOOLS` tem um card. Fatiar por bloco (e não por
+// indexOf de um literal) para que um registro novo não seja atribuído em silêncio
+// ao grupo vizinho. Registro sem card mapeado é erro: card novo tem que ser declarado.
+const CARD_BY_REGISTRY = {
+  PUBLIC_TOOLS: { label: "consumidor", card: "public/.well-known/mcp/server-card.json" },
+  PARTNER_TOOLS: { label: "parceiro", card: "public/.well-known/mcp/partner-card.json" },
+};
+
+const marks = [...toolsSrc.matchAll(/export const ([A-Z][A-Z0-9_]*_TOOLS)\s*:/g)].map((m) => ({
+  name: m[1],
+  start: m.index,
+}));
+
+const unmapped = marks.filter((mk) => !CARD_BY_REGISTRY[mk.name]);
+if (unmapped.length) {
+  console.error("❌ Registro de tools sem card mapeado em check-openapi-drift.mjs:");
+  for (const mk of unmapped) console.error("   - " + mk.name);
+  console.error("\nADR-003: declare o card do registro novo (e em gen-card-hashes.mjs).");
+  process.exit(1);
+}
+
+const checks = marks.map((mk, i) => {
+  const { label, card } = CARD_BY_REGISTRY[mk.name];
+  const src = toolsSrc.slice(mk.start, i + 1 < marks.length ? marks[i + 1].start : undefined);
+  return { label, tools: toolNames(src), card: cardNames(card) };
+});
 
 let mcpDrift = false;
 for (const { label, tools, card } of checks) {
@@ -98,10 +146,18 @@ console.log(`✓ Escopos em sincronia (catálogo ↔ rota/tool): ${ASSIGNABLE_SC
 
 // ── Frescor do sha256 dos cards (agent-skills/index.json) ────────────────────
 const skillsIndex = JSON.parse(readFileSync("public/.well-known/agent-skills/index.json", "utf8"));
-const staleHashes = (skillsIndex.skills ?? [])
+const referenced = (skillsIndex.skills ?? [])
   .map((s) => ({ name: s.name, card: cardForUrl(s.url ?? ""), have: s.sha256 }))
-  .filter((s) => s.card)
-  .filter((s) => s.have !== sha256File(s.card));
+  .filter((s) => s.card);
+
+const missingCards = referenced.filter((s) => !existsSync(s.card));
+if (missingCards.length) {
+  console.error("❌ agent-skills/index.json referencia card que não existe:");
+  for (const s of missingCards) console.error(`   - ${s.name} → ${s.card}`);
+  process.exit(1);
+}
+
+const staleHashes = referenced.filter((s) => s.have !== sha256File(s.card));
 
 if (staleHashes.length) {
   console.error("❌ sha256 desatualizado em agent-skills/index.json:");

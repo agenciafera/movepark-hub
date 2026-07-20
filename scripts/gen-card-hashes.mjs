@@ -8,10 +8,11 @@ import { createHash } from "node:crypto";
 
 const INDEX = "public/.well-known/agent-skills/index.json";
 
+// Qualquer "*-card.json" sob .well-known/mcp/ conta. Antes só server/partner eram
+// reconhecidos e um card novo era descartado em silêncio, ficando sem verificação de sha256.
 export function cardForUrl(url) {
-  if (url.endsWith("server-card.json")) return "public/.well-known/mcp/server-card.json";
-  if (url.endsWith("partner-card.json")) return "public/.well-known/mcp/partner-card.json";
-  return null;
+  const m = /\/([a-z0-9-]+-card\.json)(?:[?#].*)?$/.exec(url);
+  return m ? `public/.well-known/mcp/${m[1]}` : null;
 }
 
 export function sha256File(path) {

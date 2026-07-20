@@ -42,6 +42,13 @@ paths:
       responses:
         "200": { $ref: "#/components/responses/Object" }
         "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [locations]
+      summary: Edita dados de uma unidade (campos ausentes = mantém)
+      security: [{ apiKey: [locations:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
+      responses: { "200": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/NotFound" } }
   /v1/locations/{id}/parking-types:
     get:
       tags: [parking-types]
@@ -350,14 +357,6 @@ paths:
         - { name: from, in: query, required: true, schema: { type: string, format: date } }
         - { name: to, in: query, required: true, schema: { type: string, format: date } }
       responses: { "200": { $ref: "#/components/responses/List" }, "422": { $ref: "#/components/responses/ValidationError" } }
-  /v1/locations/{id}:
-    post:
-      tags: [locations]
-      summary: Edita dados de uma unidade (campos ausentes = mantém)
-      security: [{ apiKey: [locations:write] }]
-      parameters: [{ $ref: "#/components/parameters/Id" }]
-      requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
-      responses: { "200": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/NotFound" } }
   /v1/parking-types/{id}:
     post:
       tags: [parking-types]
@@ -443,7 +442,7 @@ components:
       description: Recurso não encontrado nesta empresa
       content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
     Conflict:
-      description: Conflito (ex.: sem disponibilidade)
+      description: "Conflito (ex.: sem disponibilidade)"
       content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
     ValidationError:
       description: Erro de validação
