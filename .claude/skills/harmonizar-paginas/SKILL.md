@@ -30,11 +30,18 @@ classe, porque tudo abaixo depende da faixa.
 
 | Faixa | Quais | O que é |
 |---|---|---|
-| **Hero de marketing** | `/`, `/seja-parceiro` | Abre com imagem full-bleed, headline grande, sem padding no topo |
-| **Página de conteúdo** | as outras 12 | Abre com `PageHeader`, coluna de leitura, padding no topo |
+| **Hero de marketing** | `/`, `/seja-parceiro`, `/sobre` | Abre com imagem full-bleed, headline grande, sem padding no topo |
+| **Página de conteúdo** | as outras 11 | Abre com `PageHeader`, coluna de leitura, padding no topo |
 
 `/seja-parceiro` é o gabarito de hero. `bookings-list.tsx` é o gabarito de
 conteúdo (é a única que já usa o `PageHeader`).
+
+**`/sobre` mudou de faixa em 20/07/2026** (atividade `86ajepypm`, redesign com
+apoio visual). Ela é página de marca, não de utilidade: conta a história, mostra
+os destinos e os parceiros. Com `PageHeader` e coluna de leitura ela entregava
+texto puro, que era exatamente o problema relatado. As outras 11 continuam de
+conteúdo; mover mais alguma exige a mesma justificativa de marca e uma edição
+aqui, no mesmo PR.
 
 ## Contrato de tipografia
 
@@ -145,11 +152,14 @@ a referência; as outras empilhavam `mb-8`/`mb-16`/`mb-20` ad-hoc.
 <a className="rounded-full bg-mp-primary px-6 py-3">Buscar vagas</a>
 ```
 
-São **6 CTAs escritos à mão** hoje (`sobre.tsx:116`, `ajuda.tsx:139`,
+Eram **6 CTAs escritos à mão** (`sobre.tsx:116`, `ajuda.tsx:139`,
 `como-funciona.tsx:149`, `CtaBanner.tsx:57`, `HowItWorks.tsx:219`,
 `DestinationsGallery.tsx:135`), produzindo 4 alturas: 42, 44 (`ajuda` usa `h-11`),
 47 e 52px. Nenhuma é 48. Os 42px reprovam o alvo de toque de 44px, no contexto
 declarado do produto: um polegar, 4G, luz de sol.
+
+O de `sobre.tsx` saiu no redesign de 20/07/2026 (agora é `<Button asChild>`).
+**Faltam 5.**
 
 ## Procedimento
 
