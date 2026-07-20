@@ -51,7 +51,9 @@ function BookingCardMockup() {
       <div
         className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
         style={{
-          width: "400px", height: "400px", borderRadius: "50%",
+          // `min()` porque a coluna tem 327px no mobile: em 400px fixo o glow vazava
+          // 36px de cada lado e, sem ancestral que corte, esticava a página inteira.
+          width: "min(400px, 100%)", height: "400px", borderRadius: "50%",
           background: "radial-gradient(circle, hsla(239, 70%, 65%, 0.18) 0%, transparent 70%)",
           filter: "blur(40px)",
         }}
@@ -176,7 +178,11 @@ export function HowItWorks() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="bg-surface-soft py-16 desktop:py-24">
+    // `overflow-x-clip` porque o reveal do card entra de `x: 32`: até o ScrollTrigger
+    // disparar (a seção fica abaixo da dobra) esses 32px esticavam a página e davam
+    // scroll horizontal no mobile desde o load. `clip` em vez de `hidden` para não
+    // virar container de scroll e não quebrar `sticky` de descendentes.
+    <section ref={sectionRef} className="overflow-x-clip bg-surface-soft py-16 desktop:py-24">
       <div className="mx-auto max-w-[1280px] px-6 desktop:px-8">
         <div className="grid grid-cols-1 gap-12 tablet:grid-cols-2 tablet:items-center">
 

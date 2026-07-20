@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { getStoredTheme, setStoredTheme, type Theme } from "@/lib/theme";
 import { useAuth } from "@/auth/context";
 import {
   useProfile,
@@ -31,6 +32,23 @@ export default function PreferencesPage() {
   const [emailReminder, setEmailReminder] = React.useState(true);
   const [emailOffers, setEmailOffers] = React.useState(false);
   const [dirty, setDirty] = React.useState(false);
+
+  /**
+   * O tema mora no localStorage, não no perfil, então vale na hora e fica fora do
+   * "Salvar" desta página (que grava idioma, moeda e notificações no servidor).
+   * SSR-safe igual ao ThemeToggle: começa em "light", que é o HTML pré-renderizado,
+   * e sincroniza depois de montar.
+   */
+  const [theme, setTheme] = React.useState<Theme>("light");
+  React.useEffect(() => {
+    setTheme(getStoredTheme());
+  }, []);
+
+  function handleThemeChange(dark: boolean) {
+    const next: Theme = dark ? "dark" : "light";
+    setTheme(next);
+    setStoredTheme(next);
+  }
 
   React.useEffect(() => {
     if (!profileQ.data) return;
@@ -118,6 +136,25 @@ export default function PreferencesPage() {
                 <SelectItem value="EUR">Euro (€)</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-title-md text-ink">Aparência</h2>
+        <div className="rounded-md border border-hairline bg-canvas p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="text-body-md text-ink">Tema escuro</div>
+              <div className="text-body-sm text-muted">
+                Fundo grafite, mais confortável à noite. Vale já, sem precisar salvar.
+              </div>
+            </div>
+            <Switch
+              checked={theme === "dark"}
+              onCheckedChange={handleThemeChange}
+              aria-label="Tema escuro"
+            />
           </div>
         </div>
       </section>

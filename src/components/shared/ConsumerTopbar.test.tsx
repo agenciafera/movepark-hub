@@ -20,7 +20,7 @@ describe("ConsumerTopbar — busca por rota", () => {
     renderWithProviders(<ConsumerTopbar />, { route: "/seja-parceiro" });
 
     // Nem a pill desktop (role combobox/textbox da SearchBarPill) nem o atalho mobile de busca.
-    expect(screen.queryByText("Onde · Quando · Veículo")).not.toBeInTheDocument();
+    expect(screen.queryByText("Buscar vaga")).not.toBeInTheDocument();
     // O shell de consumidor permanece: "Entrar" continua acessível.
     expect(screen.getByRole("link", { name: "Entrar" })).toBeInTheDocument();
   });
@@ -29,13 +29,13 @@ describe("ConsumerTopbar — busca por rota", () => {
     renderWithProviders(<ConsumerTopbar />, { route: "/search" });
 
     // O atalho mobile de busca aparece quando a busca está habilitada.
-    expect(screen.getByText("Onde · Quando · Veículo")).toBeInTheDocument();
+    expect(screen.getByText("Buscar vaga")).toBeInTheDocument();
   });
 
   it("não renderiza a busca na home (o hero já traz a barra grande)", () => {
     renderWithProviders(<ConsumerTopbar />, { route: "/" });
 
-    expect(screen.queryByText("Onde · Quando · Veículo")).not.toBeInTheDocument();
+    expect(screen.queryByText("Buscar vaga")).not.toBeInTheDocument();
   });
 
   it("abre o modal de busca ao tocar no atalho mobile (não volta pra home)", async () => {
@@ -46,11 +46,11 @@ describe("ConsumerTopbar — busca por rota", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
     // Toca no atalho mobile de busca (o span vive dentro de um <button>).
-    const trigger = screen.getByText("Onde · Quando · Veículo").closest("button");
+    const trigger = screen.getByText("Buscar vaga").closest("button");
     expect(trigger).not.toBeNull();
     await user.click(trigger!);
 
-    // Abre o modal por cima da página, com os campos reaproveitados (Onde · Quando · Veículo).
+    // Abre o modal por cima da página, com os campos reaproveitados (Onde, Quando, Veículo).
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).getByText("Buscar vaga")).toBeInTheDocument();
     expect(within(dialog).getByText("Onde")).toBeInTheDocument();

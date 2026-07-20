@@ -166,9 +166,9 @@ export function ConsumerTopbar() {
               className="flex h-12 w-full items-center gap-3 rounded-full border border-hairline bg-canvas px-4 text-body-sm text-muted shadow-tier transition-shadow hover:shadow-tier tablet:hidden"
             >
               <Search className="h-4 w-4 shrink-0" />
-              <span className="truncate">
-                {destParam ? destParam : "Onde · Quando · Veículo"}
-              </span>
+              {/* O rótulo curto é o mesmo do título do modal que este botão abre.
+                  "Onde · Quando · Veículo" media 222px e não sobrava espaço no header. */}
+              <span className="truncate">{destParam ? destParam : "Buscar vaga"}</span>
             </button>
             {/* modal={false}: sem o body-lock/focus-trap do Radix Dialog modal, que quebra os
                 Popover/cmdk aninhados (DestinationCombobox, DateRangePicker) portados pra fora do
@@ -198,7 +198,10 @@ export function ConsumerTopbar() {
       </div>
 
       <div className="flex items-center gap-2">
-        <ThemeToggle />
+        {/* No mobile o toggle sai do header: ele custava 36px + gap e era o que
+            estourava a largura da barra em 375px. O controle de tema mora em
+            /account/preferences, que é onde ele continua acessível no celular. */}
+        <ThemeToggle className="hidden tablet:inline-flex" />
         {!session && (
           <>
             <Button variant="ghost" size="sm" className="hidden tablet:inline-flex" asChild>
