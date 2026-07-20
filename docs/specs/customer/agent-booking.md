@@ -89,9 +89,13 @@ O supabase-js só embrulha os endpoints REST do GoTrue (`/auth/v1/otp`, `/auth/v
 `channel` ∈ `whatsapp` (verifica com `type: "sms"`) ou `email`. `verify_login_otp` devolve os tokens
 para o agente agir em nome do usuário; o usuário consentiu ao passar o código.
 
-Rate limit no `handleMcp` do worker (`src/api-worker.ts`): a superfície `/customer` freia por IP no KV
-`API_RATELIMIT` (o `request_login_otp` dispara mensagem com custo). O GoTrue ainda limita OTP por
-identificador. ✅ no ar.
+Proteção contra abuso de OTP (mensagem tem custo), em duas camadas:
+- **Dura, por identificador:** o GoTrue recusa um novo OTP pro mesmo destino por ~60s (verificado em
+  produção: "you can only request this after 59 seconds"). É o que trava spam pro mesmo número.
+- **Best-effort, por IP:** o `handleMcp` do worker freia `/customer` no KV `API_RATELIMIT`. Como o KV
+  é eventualmente consistente (get-then-put, igual ao `handleApi`), um burst rápido pode passar; serve
+  para spray entre muitos identificadores, não como limite rígido. Limite rígido (Durable Object) fica
+  para E4.1. ✅ no ar.
 
 **`assert_verified_identity` foi adiada de propósito.** É a capacidade mais poderosa do desenho (cria
 sessão sem OTP) e só tem uso junto do bot de WhatsApp, que ainda não existe. Exige escopo novo
