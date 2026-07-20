@@ -5,6 +5,20 @@
 @layer base {
   :root {
     /* ============================================================
+       Barra inferior do mobile
+       ============================================================ */
+
+    /* Folga do indicador de home (iPhone). Vale 0 em aparelho sem recorte e no
+       desktop, então a conta abaixo continua correta em qualquer tela. Depende do
+       `viewport-fit=cover` no index.html. */
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+    /* Espaço que o conteúdo precisa reservar pra não ficar embaixo da barra: a
+       altura dela mais o recorte. Quem empurra o conteúdo usa esta variável, e não
+       um `pb-16` cravado, senão a conta desencontra quando a barra muda de altura. */
+    --bottom-nav-space: calc(4rem + var(--safe-bottom));
+
+    /* ============================================================
        Movepark palette
        ============================================================ */
 

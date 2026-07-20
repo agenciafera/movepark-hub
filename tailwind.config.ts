@@ -152,6 +152,10 @@ const config: Config = {
         caption: ["14px", { lineHeight: "1.29", fontWeight: "500" }],
         "caption-sm": ["13px", { lineHeight: "1.23", fontWeight: "400" }],
         badge: ["11px", { lineHeight: "1.18", fontWeight: "700", letterSpacing: "0.1px" }],
+        // Rótulo da barra inferior no mobile. 11px é o tamanho que iOS e Android usam
+        // na tab bar; o `caption-sm` (13px) que estava ali deixava o menu pesado.
+        // Peso 500 porque `badge` (700) é forte demais pra um rótulo de navegação.
+        "tab-label": ["11px", { lineHeight: "1.27", fontWeight: "500" }],
         "micro-label": ["12px", { lineHeight: "1.33", fontWeight: "700" }],
         "uppercase-tag": ["8px", { lineHeight: "1.25", fontWeight: "900", letterSpacing: "0.4px" }],
         "button-md": ["16px", { lineHeight: "1.25", fontWeight: "500" }],

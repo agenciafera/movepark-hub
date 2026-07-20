@@ -39,7 +39,7 @@ export function AccountAppShell() {
 
         <div className="flex gap-10">
           <AccountSidebar />
-          <main className="min-w-0 flex-1 pb-16 tablet:pb-0">
+          <main className="min-w-0 flex-1 pb-[var(--bottom-nav-space)] tablet:pb-0">
             <Outlet />
           </main>
         </div>

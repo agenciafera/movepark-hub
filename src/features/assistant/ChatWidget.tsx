@@ -52,7 +52,7 @@ export function ChatWidget() {
         type="button"
         aria-label="Abrir assistente"
         onClick={() => setOpen(true)}
-        className="fixed bottom-20 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-mp-primary text-white shadow-lg transition hover:bg-mp-primary-active tablet:bottom-6 tablet:right-6"
+        className="fixed bottom-[calc(5rem+var(--safe-bottom))] right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-mp-primary text-white shadow-lg transition hover:bg-mp-primary-active tablet:bottom-6 tablet:right-6"
       >
         <MessageCircle className="h-6 w-6" />
       </button>
@@ -60,7 +60,7 @@ export function ChatWidget() {
   }
 
   return (
-    <div className="fixed bottom-20 right-4 z-50 flex h-[480px] w-[calc(100vw-2rem)] max-w-[380px] flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl tablet:bottom-6 tablet:right-6">
+    <div className="fixed bottom-[calc(5rem+var(--safe-bottom))] right-4 z-50 flex h-[480px] w-[calc(100vw-2rem)] max-w-[380px] flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl tablet:bottom-6 tablet:right-6">
       <header className="flex items-center justify-between bg-mp-primary px-4 py-3 text-white">
         <span className="text-button-sm font-semibold">Assistente Movepark</span>
         <button type="button" aria-label="Fechar assistente" onClick={() => setOpen(false)}>

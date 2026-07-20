@@ -3,7 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/brand/simbolo-movepark.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- viewport-fit=cover é o que faz `env(safe-area-inset-*)` valer no iOS. Sem ele
+         o inset volta 0 e a barra inferior fica colada no indicador de home. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <!-- Tema (claro/grafite): aplica a classe antes do paint pra não piscar. -->
     <script>
       (function () {

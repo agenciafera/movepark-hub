@@ -16,7 +16,7 @@ export function ConsumerAppShell() {
   return (
     <div className="flex min-h-screen flex-col bg-canvas">
       <ConsumerTopbar />
-      <main className={cn("flex-1", !isListing && "pb-16 tablet:pb-0")}>
+      <main className={cn("flex-1", !isListing && "pb-[var(--bottom-nav-space)] tablet:pb-0")}>
         <Outlet />
       </main>
       <ConsumerFooter />

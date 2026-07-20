@@ -37,7 +37,7 @@ export function BottomNav({ variant }: { variant: "manager" | "operator" }) {
 
   return (
     <>
-      <nav className="tablet:hidden fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 border-t border-hairline bg-canvas">
+      <nav className="tablet:hidden fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 border-t border-hairline bg-canvas pb-[var(--safe-bottom)]">
         {primary.map((item) => (
           <NavLink
             key={item.to}
@@ -45,13 +45,13 @@ export function BottomNav({ variant }: { variant: "manager" | "operator" }) {
             end={isRoot(item.to)}
             className={({ isActive }) =>
               cn(
-                "flex min-h-[44px] flex-col items-center justify-center gap-1 px-1 py-2 text-caption-sm text-muted",
+                "flex min-h-[44px] flex-col items-center justify-center gap-1 px-1 py-2 text-muted",
                 isActive && "text-ink",
               )
             }
           >
             <item.icon className="h-4 w-4" />
-            <span>{item.shortLabel ?? item.label}</span>
+            <span className="text-tab-label">{item.shortLabel ?? item.label}</span>
           </NavLink>
         ))}
 
@@ -60,10 +60,10 @@ export function BottomNav({ variant }: { variant: "manager" | "operator" }) {
             type="button"
             onClick={() => setMoreOpen(true)}
             aria-label="Mais opções"
-            className="flex min-h-[44px] flex-col items-center justify-center gap-1 px-1 py-2 text-caption-sm text-muted"
+            className="flex min-h-[44px] flex-col items-center justify-center gap-1 px-1 py-2 text-muted"
           >
             <MoreHorizontal className="h-4 w-4" />
-            <span>Mais</span>
+            <span className="text-tab-label">Mais</span>
           </button>
         )}
       </nav>
