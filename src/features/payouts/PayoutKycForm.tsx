@@ -284,9 +284,21 @@ function CnpjField({ control }: { control: Control<KycValues> }) {
     const data = await fetchCnpj(value);
     if (data) {
       const opts = { shouldValidate: true, shouldDirty: true } as const;
-      if (data.legalName) setValue("company.legal_name", data.legalName, opts);
-      if (data.tradeName) setValue("company.trade_name", data.tradeName, opts);
-      if (data.foundingDate) setValue("company.founding_date", data.foundingDate, opts);
+      const set = (name: Path<KycValues>, v: string) => {
+        if (v) setValue(name, v, opts);
+      };
+      set("company.legal_name", data.legalName);
+      set("company.trade_name", data.tradeName);
+      set("company.founding_date", data.foundingDate);
+      set("company.email", data.email);
+      const a = data.address;
+      set("company.address.zip_code", a.zip_code);
+      set("company.address.street", a.street);
+      set("company.address.street_number", a.street_number);
+      set("company.address.complement", a.complement);
+      set("company.address.neighborhood", a.neighborhood);
+      set("company.address.city", a.city);
+      set("company.address.state", a.state);
     }
     setLoading(false);
   }

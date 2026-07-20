@@ -11,7 +11,7 @@ describe("fetchCnpj", () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
-  it("mapeia os campos e converte a data ISO para DD/MM/AAAA", async () => {
+  it("mapeia identidade, e-mail e endereço, convertendo data e mascarando CEP", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => ({
@@ -20,6 +20,14 @@ describe("fetchCnpj", () => {
           razao_social: "ACME ESTACIONAMENTOS LTDA",
           nome_fantasia: "Acme Park",
           data_inicio_atividade: "2010-05-20",
+          email: "CONTATO@ACME.COM",
+          cep: "01310100",
+          logradouro: "Avenida Paulista",
+          numero: "1000",
+          complemento: "Andar 5",
+          bairro: "Bela Vista",
+          municipio: "São Paulo",
+          uf: "sp",
         }),
       })),
     );
@@ -28,6 +36,16 @@ describe("fetchCnpj", () => {
       legalName: "ACME ESTACIONAMENTOS LTDA",
       tradeName: "Acme Park",
       foundingDate: "20/05/2010",
+      email: "contato@acme.com",
+      address: {
+        zip_code: "01310-100",
+        street: "Avenida Paulista",
+        street_number: "1000",
+        complement: "Andar 5",
+        neighborhood: "Bela Vista",
+        city: "São Paulo",
+        state: "SP",
+      },
     });
   });
 
@@ -37,7 +55,13 @@ describe("fetchCnpj", () => {
       vi.fn(async () => ({ ok: true, json: async () => ({ razao_social: "X LTDA" }) })),
     );
     const r = await fetchCnpj("11222333000181");
-    expect(r).toEqual({ legalName: "X LTDA", tradeName: "", foundingDate: "" });
+    expect(r).toEqual({
+      legalName: "X LTDA",
+      tradeName: "",
+      foundingDate: "",
+      email: "",
+      address: { zip_code: "", street: "", street_number: "", complement: "", neighborhood: "", city: "", state: "" },
+    });
   });
 
   it("retorna null em falha de rede", async () => {
