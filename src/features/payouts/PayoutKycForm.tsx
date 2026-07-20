@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { StateSelect } from "@/components/shared/StateSelect";
 import { BankSelect } from "@/components/shared/BankSelect";
 import { cepMask, cnpjMask, cpfMask, dateMask, onlyDigits } from "@/lib/masks";
+import { cn } from "@/lib/utils";
 import { CORPORATION_TYPES, payoutKycSchema, type PayoutKycForm as KycValues } from "./kyc";
 
 type Mask = (v: string) => string;
@@ -27,13 +28,15 @@ function Field({
   label,
   error,
   children,
+  className,
 }: {
   label: string;
   error?: string;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className={cn("flex flex-col gap-1.5", className)}>
       <Label>{label}</Label>
       {children}
       {error && <span className="text-caption text-error">{error}</span>}
@@ -182,7 +185,15 @@ type AddrPrefix = "company.address" | "representative.address";
  * Campo de CEP que autopreenche rua/bairro/cidade/UF (ViaCEP) assim que o CEP fica completo.
  * Usa o setValue do form (FormProvider) para setar os campos irmãos do mesmo endereço.
  */
-function CepField({ control, prefix }: { control: Control<KycValues>; prefix: AddrPrefix }) {
+function CepField({
+  control,
+  prefix,
+  className,
+}: {
+  control: Control<KycValues>;
+  prefix: AddrPrefix;
+  className?: string;
+}) {
   const name = `${prefix}.zip_code` as Path<KycValues>;
   const { field, fieldState } = useController({ control, name });
   const { setValue } = useFormContext<KycValues>();
@@ -202,7 +213,11 @@ function CepField({ control, prefix }: { control: Control<KycValues>; prefix: Ad
   }
 
   return (
-    <Field label={loading ? "CEP (buscando endereço…)" : "CEP"} error={fieldState.error?.message}>
+    <Field
+      label={loading ? "CEP (buscando endereço…)" : "CEP"}
+      error={fieldState.error?.message}
+      className={className}
+    >
       <Input
         placeholder="00000-000"
         value={(field.value as string) ?? ""}
@@ -220,7 +235,8 @@ function CepField({ control, prefix }: { control: Control<KycValues>; prefix: Ad
 function AddressFields({ control, prefix }: { control: Control<KycValues>; prefix: AddrPrefix }) {
   return (
     <>
-      <CepField control={control} prefix={prefix} />
+      {/* CEP ocupa a linha toda (é o gatilho do autopreenchimento); Rua e Número na mesma linha. */}
+      <CepField control={control} prefix={prefix} className="tablet:col-span-2" />
       <TextField control={control} name={`${prefix}.street` as Path<KycValues>} label="Rua" />
       <TextField control={control} name={`${prefix}.street_number` as Path<KycValues>} label="Número" />
       <TextField control={control} name={`${prefix}.complement` as Path<KycValues>} label="Complemento" />
@@ -343,7 +359,6 @@ export function KycBankSection({ control }: { control: Control<KycValues> }) {
     <Section title="Conta bancária para repasse">
       <BankCodeField control={control} />
       <TextField control={control} name="bank.branch_number" label="Agência" />
-      <TextField control={control} name="bank.branch_check_digit" label="Dígito da agência (opcional)" />
       <TextField control={control} name="bank.account_number" label="Conta" />
       <TextField control={control} name="bank.account_check_digit" label="Dígito da conta" />
       <AccountTypeField control={control} />
