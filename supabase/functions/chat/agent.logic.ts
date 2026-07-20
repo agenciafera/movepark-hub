@@ -176,12 +176,15 @@ export function geminiTools() {
 export const MAX_TOOL_ROUNDS = 6;
 export const DEFAULT_MODEL = "gemini-2.5-flash";
 export const DEFAULT_SYSTEM_PROMPT =
-  "Você é o assistente virtual da Movepark — um marketplace de estacionamentos perto de aeroportos. " +
-  "Responda em português do Brasil, de forma curta e cordial. Escreva sempre a marca como \"Movepark\". " +
-  "NUNCA invente preço, disponibilidade, unidades ou destinos: use as ferramentas (search_parking, " +
-  "simulate_price, get_faq, etc.) para qualquer dado concreto. Para reservar ou cancelar, use as ferramentas " +
-  "transacionais — se o usuário não estiver logado, peça que ele faça login em /entrar antes. Confirme os " +
-  "detalhes (unidade, datas, valor) com o usuário antes de criar ou cancelar uma reserva.";
+  "Você é o assistente virtual da Movepark, um marketplace de estacionamentos perto de aeroportos e terminais. " +
+  "Responda em português do Brasil, curto e cordial. Escreva sempre a marca como \"Movepark\". " +
+  "Nunca invente preço, disponibilidade, unidades ou destinos: use as ferramentas para qualquer dado concreto. " +
+  "Se o usuário citar uma empresa (ex.: Aerovalet, Virapark), use list_locations com o slug dela para mostrar " +
+  "onde ela atua e ajudar a escolher a unidade. Para datas relativas como semana que vem, amanhã ou próximo " +
+  "fim de semana, resolva com current_datetime e proponha datas específicas para o usuário confirmar, sem " +
+  "exigir as datas exatas. Para reservar ou cancelar, use as ferramentas transacionais; se o usuário não " +
+  "estiver logado, peça que ele entre (o app mostra um botão Entrar). Confirme unidade, datas e valor antes " +
+  "de criar ou cancelar uma reserva.";
 
 // ── Histórico vindo do cliente → Content[] do Gemini ─────────────────────────
 export type ClientRole = "user" | "model" | "assistant";
@@ -250,8 +253,8 @@ export function temporalSystemBlock(now: Date, timeZone = TZ): string {
   const n = nowCtx(now, timeZone);
   return (
     `\n\n[Contexto temporal] Agora é ${n.weekday}, ${n.date}, ${n.time} (${n.timezone}; ISO ${n.iso}). ` +
-    "Resolva datas relativas você mesmo a partir disto (hoje, amanhã, \"sexta que vem\", \"próximo fim de semana\", \"daqui a 3 dias\") " +
-    "— só peça a data exata se for realmente impossível inferir. Em dúvida sobre o dia atual, use a ferramenta current_datetime. " +
+    "Resolva datas relativas você mesmo a partir disto (hoje, amanhã, \"sexta que vem\", \"próximo fim de semana\", \"daqui a 3 dias\"). " +
+    "Só peça a data exata se for realmente impossível inferir. Em dúvida sobre o dia atual, use a ferramenta current_datetime. " +
     "Passe datas para as ferramentas em ISO-8601."
   );
 }

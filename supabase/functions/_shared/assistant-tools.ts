@@ -79,8 +79,12 @@ export const READ_TOOLS: ReadToolDef[] = [
   },
   {
     name: "list_locations",
-    description: "Lista unidades (estacionamentos) públicas ativas.",
-    parameters: obj({ limit: INT("máximo de resultados") }),
+    description:
+      "Lista unidades (estacionamentos) ativas, com a empresa e o destino de cada uma. Passe `company` (slug, ex.: aerovalet) para ver só as unidades daquela empresa e onde ela atua.",
+    parameters: obj({
+      company: S("slug da empresa para filtrar (opcional, ex.: aerovalet)"),
+      limit: INT("máximo de resultados"),
+    }),
   },
   {
     name: "get_parking_types",
@@ -234,15 +238,23 @@ export async function callRead(
         await sb.from("company").select("id, name, slug").order("name").limit(Number(a.limit ?? 50)),
       );
 
-    case "list_locations":
-      return unwrap(
-        await sb
-          .from("location")
-          .select("id, name, slug, address, latitude, longitude")
-          .is("deleted_at", null)
-          .order("name")
-          .limit(Number(a.limit ?? 50)),
-      );
+    case "list_locations": {
+      // `!inner` filtra no banco (locations sempre têm empresa); destino fica left join (pode faltar).
+      let q = sb
+        .from("location")
+        .select(
+          "id, name, slug, address, latitude, longitude, company:company_id!inner(name, slug), destination:destination_id(short_name, code, city)",
+        )
+        .is("deleted_at", null)
+        .order("name")
+        .limit(Number(a.limit ?? 50));
+      // Filtro opcional por empresa (slug), pra responder "onde a Aerovalet atua?". Slug é minúsculo;
+      // normaliza a entrada pra casar "Aerovalet" com "aerovalet".
+      if (typeof a.company === "string" && a.company.trim()) {
+        q = q.eq("company.slug", a.company.trim().toLowerCase());
+      }
+      return unwrap(await q);
+    }
 
     case "get_parking_types":
       return unwrap(
