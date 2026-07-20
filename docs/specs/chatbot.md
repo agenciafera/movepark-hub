@@ -42,15 +42,21 @@ ChatWidget (React, ConsumerAppShell)  ──POST /functions/v1/chat (apikey + Be
 | `list_companies`/`list_locations`/`get_parking_types` | leitura | selects de catálogo |
 | `list_destinations`/`get_destination` | leitura | `destination`(+`destination_point`) |
 | `current_datetime` | leitura | data/hora no fuso `America/Sao_Paulo` (resolver datas relativas) |
-| `list_my_bookings`/`get_booking` | transacional | query `booking` (RLS do dono, JWT) |
-| `create_booking` | transacional | Edge `create-booking` (JWT) |
-| `cancel_booking` | transacional | Edge `cancel-booking` (JWT) |
+| `list_my_bookings`/`get_booking`/`get_booking_status` | transacional | MCP `/customer` (RLS do dono) |
+| `create_booking`/`cancel_booking` | transacional | MCP `/customer` → Edges `create-booking`/`cancel-booking` |
+| `set_booking_customer`/`add_vehicle`/`set_booking_vehicle` | transacional | MCP `/customer` (RLS do dono) |
 
 As tools de leitura vêm do **registro canônico** `supabase/functions/_shared/assistant-tools.ts`
 (mesma fonte do MCP consumidor): o `chat` espalha `READ_TOOLS.map(toGeminiDecl)` e roteia por
-`callRead`, e o MCP faz `READ_TOOLS.map(toMcpToolDef)` + `callRead`. O drift guard
-(`scripts/check-openapi-drift.mjs`) barra divergência entre as duas superfícies e o registro. As
-transacionais seguem no `chat` (JWT do usuário).
+`callRead`, e o MCP faz `READ_TOOLS.map(toMcpToolDef)` + `callRead`.
+
+**As transacionais executam pelo MCP `/customer`** (`callTxn` em `index.ts`): o bot é um cliente MCP,
+repassando o JWT do usuário. Assim o uso real do site valida o MCP de ponta a ponta com sessão de
+verdade. Fallback: se o MCP cair no **transporte** (rede/HTTP), as tools que já tinham via direta
+(`LEGACY_TXN`: create/cancel/list/get) concluem pela Edge antiga; erro de negócio não faz fallback
+(`parseMcpToolResult`). O bot **não** tem `create_checkout_link` (o usuário já está logado no site, o
+bot manda ele pro `/checkout/<code>`). O drift guard barra divergência: todo nome transacional do chat
+tem que existir em `CUSTOMER_TXN_TOOLS`.
 
 ## 3. Configuração (`app_setting`, key/value text)
 

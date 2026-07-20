@@ -177,7 +177,19 @@ if (chatMissing.length) {
   console.error("\nO chat deve espalhar READ_TOOLS, não redeclarar tool de leitura.");
   process.exit(1);
 }
-console.log(`✓ Chat em sincronia com o registro compartilhado (${SHARED_READ.length} de leitura).`);
+// As transacionais do chat executam PELO MCP /customer, então todo nome transacional que o chat
+// declara tem que existir em CUSTOMER_TXN_TOOLS (senão o bot chama uma tool que o MCP não serve).
+const chatTxn = chatTools.filter((t) => !SHARED_READ.includes(t));
+const chatTxnOrphan = chatTxn.filter((t) => !CUSTOMER_TXN.includes(t));
+if (chatTxnOrphan.length) {
+  console.error("❌ Tools transacionais do chat que o MCP /customer não tem (chat/agent.logic.ts):");
+  for (const t of chatTxnOrphan) console.error("   - " + t);
+  console.error("\nO chat executa transacionais pelo MCP; declare a tool em customer.logic.ts.");
+  process.exit(1);
+}
+console.log(
+  `✓ Chat em sincronia com o registro compartilhado (${SHARED_READ.length} leitura + ${chatTxn.length} transacional via MCP).`,
+);
 
 // ── Escopo órfão (catálogo api_scope ↔ implementação) ────────────────────────
 // Espelha `api_scope where assignable_to_api_key = true`. Doc-as-you-build (ADR-003): escopo

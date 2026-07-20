@@ -1,12 +1,15 @@
-import { assertEquals } from "jsr:@std/assert";
+import { assertEquals, assertThrows } from "jsr:@std/assert";
 import {
   extractFunctionCalls,
   extractText,
   functionResponseContent,
   geminiTools,
+  LEGACY_TXN,
+  McpTransportError,
   needsLogin,
   nowContext,
   parseChatRequest,
+  parseMcpToolResult,
   temporalSystemBlock,
   toGeminiHistory,
   TOOLS,
@@ -104,4 +107,51 @@ Deno.test("temporalSystemBlock injeta a data atual + instrução de datas relati
   const b = temporalSystemBlock(new Date("2026-06-24T17:30:00Z"));
   assertEquals(b.includes("24/06/2026"), true);
   assertEquals(b.includes("current_datetime"), true);
+});
+
+Deno.test("TRANSACTIONAL agora inclui o fluxo completo de reserva", () => {
+  for (const n of [
+    "create_booking", "cancel_booking", "list_my_bookings", "get_booking",
+    "set_booking_customer", "add_vehicle", "set_booking_vehicle", "get_booking_status",
+  ]) {
+    assertEquals(TRANSACTIONAL.has(n), true, n);
+  }
+  // create_checkout_link NÃO é do bot do site (usuário já está logado; vai direto pro checkout).
+  assertEquals(TRANSACTIONAL.has("create_checkout_link"), false);
+  // leitura não é transacional
+  assertEquals(TRANSACTIONAL.has("search_parking"), false);
+});
+
+Deno.test("LEGACY_TXN é subconjunto das transacionais (só estas fazem fallback)", () => {
+  for (const n of LEGACY_TXN) assertEquals(TRANSACTIONAL.has(n), true, n);
+  // as novas não têm via antiga, então não caem no fallback
+  assertEquals(LEGACY_TXN.has("set_booking_customer"), false);
+});
+
+Deno.test("parseMcpToolResult: sucesso devolve o payload parseado", () => {
+  const out = parseMcpToolResult(true, {
+    result: { content: [{ text: JSON.stringify({ code: "MP-1", status: "pending" }) }] },
+  });
+  assertEquals(out, { code: "MP-1", status: "pending" });
+});
+
+Deno.test("parseMcpToolResult: HTTP não-ok = transporte → McpTransportError (dispara fallback)", () => {
+  assertThrows(() => parseMcpToolResult(false, {}), McpTransportError);
+});
+
+Deno.test("parseMcpToolResult: erro de negócio (isError) propaga sem ser transporte", () => {
+  const err = assertThrows(() =>
+    parseMcpToolResult(true, {
+      result: { isError: true, content: [{ text: JSON.stringify({ error: "Reserva não encontrada." }) }] },
+    })
+  );
+  assertEquals(err instanceof McpTransportError, false);
+  assertEquals((err as Error).message, "Reserva não encontrada.");
+});
+
+Deno.test("parseMcpToolResult: erro JSON-RPC (param faltando) propaga sem fallback", () => {
+  const err = assertThrows(() =>
+    parseMcpToolResult(true, { error: { message: "Parâmetro obrigatório ausente: booking_code" } })
+  );
+  assertEquals(err instanceof McpTransportError, false);
 });

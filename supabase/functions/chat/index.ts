@@ -18,9 +18,13 @@ import {
   functionResponseContent,
   type GeminiContent,
   geminiTools,
+  LEGACY_TXN,
   MAX_TOOL_ROUNDS,
+  McpTransportError,
   needsLogin,
   parseChatRequest,
+  parseMcpToolResult,
+  TRANSACTIONAL,
   temporalSystemBlock,
   toGeminiHistory,
 } from "./agent.logic.ts";
@@ -59,7 +63,27 @@ async function readSetting(admin: any, key: string): Promise<string | null> {
 // Tools de leitura: handler único em _shared/assistant-tools.ts, o mesmo do MCP
 // consumidor. Importado como `callRead` no topo deste arquivo.
 
-// ── Tools transacionais (JWT do usuário) ──
+// Executa uma tool transacional PELO MCP /customer (a superfície de consumidor), repassando o JWT do
+// usuário. É assim que o bot do site valida o MCP de ponta a ponta com sessão real. Fallback: se o MCP
+// cair no transporte, as tools que já tinham via direta (LEGACY_TXN) concluem pela via antiga.
+async function callTxn(authHeader: string, name: string, a: Record<string, unknown>): Promise<unknown> {
+  try {
+    const res = await fetch(`${env("SUPABASE_URL")}/functions/v1/mcp/customer`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: env("SUPABASE_ANON_KEY"), Authorization: authHeader },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name, arguments: a } }),
+    });
+    const data = await res.json().catch(() => ({}));
+    return parseMcpToolResult(res.ok, data);
+  } catch (e) {
+    if (e instanceof McpTransportError && LEGACY_TXN.has(name)) {
+      return callTransactional(authHeader, name, a); // rollout sem quebrar a conversa
+    }
+    throw e;
+  }
+}
+
+// ── Via direta (legado, fallback) — Edges de consumidor + queries sob RLS ──
 async function callTransactional(
   authHeader: string,
   name: string,
@@ -185,10 +209,9 @@ Deno.serve(async (req: Request) => {
             results.push({ name: call.name, response: { error: "login_required", message: "Peça ao usuário para entrar em /entrar antes de reservar ou cancelar." } });
             continue;
           }
-          const out =
-            call.name === "create_booking" || call.name === "cancel_booking" || call.name === "list_my_bookings" || call.name === "get_booking"
-              ? await callTransactional(authHeader as string, call.name, call.args ?? {})
-              : await callRead(sbRead, call.name, call.args ?? {});
+          const out = TRANSACTIONAL.has(call.name)
+            ? await callTxn(authHeader as string, call.name, call.args ?? {})
+            : await callRead(sbRead, call.name, call.args ?? {});
           results.push({ name: call.name, response: { result: out } });
         } catch (e) {
           results.push({ name: call.name, response: { error: (e as Error).message } });

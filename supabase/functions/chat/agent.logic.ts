@@ -81,9 +81,91 @@ export const TOOLS: ToolDecl[] = [
     parameters: obj({ booking_code: STR("código da reserva"), reason: STR("motivo (opcional)") }, ["booking_code"]),
     transactional: true,
   },
+  // Completam o fluxo de reserva. Executam pelo MCP /customer (mcp/customer.logic.ts CUSTOMER_TXN_TOOLS);
+  // o drift guard garante que todo nome transacional daqui existe lá.
+  {
+    name: "set_booking_customer",
+    description:
+      "Preenche os dados do pagador na reserva (CPF/CNPJ e telefone são exigidos no pagamento). Campos ausentes ficam como estão.",
+    parameters: obj(
+      {
+        booking_code: STR("código da reserva (MP-...)"),
+        tax_id: STR("CPF ou CNPJ do pagador"),
+        phone: STR("telefone com DDD (E.164)"),
+        email: STR("e-mail do pagador"),
+        first_name: STR("nome"),
+        last_name: STR("sobrenome"),
+      },
+      ["booking_code"],
+    ),
+    transactional: true,
+  },
+  {
+    name: "add_vehicle",
+    description: "Cadastra um veículo do usuário pela placa. Devolve o vehicle_id para vincular à reserva.",
+    parameters: obj(
+      { license_plate: STR("placa"), model: STR("modelo (opcional)"), color: STR("cor (opcional)") },
+      ["license_plate"],
+    ),
+    transactional: true,
+  },
+  {
+    name: "set_booking_vehicle",
+    description: "Vincula um veículo já cadastrado (vehicle_id) à reserva.",
+    parameters: obj(
+      { booking_code: STR("código da reserva (MP-...)"), vehicle_id: STR("id do veículo") },
+      ["booking_code", "vehicle_id"],
+    ),
+    transactional: true,
+  },
+  {
+    name: "get_booking_status",
+    description: "Estado da reserva e do pagamento, para acompanhar a confirmação.",
+    parameters: obj({ booking_code: STR("código da reserva (MP-...)") }, ["booking_code"]),
+    transactional: true,
+  },
 ];
 
 export const TRANSACTIONAL = new Set(TOOLS.filter((t) => t.transactional).map((t) => t.name));
+
+// As transacionais que já tinham caminho direto (Edge) antes de rotear pelo MCP. Só estas fazem
+// fallback: se o MCP cair no transporte, o bot ainda conclui pela via antiga (rollout sem quebrar).
+export const LEGACY_TXN = new Set(["create_booking", "cancel_booking", "list_my_bookings", "get_booking"]);
+
+/** Falha de TRANSPORTE ao falar com o MCP (rede/HTTP), que dispara o fallback. Erro de negócio não. */
+export class McpTransportError extends Error {}
+
+/**
+ * Interpreta a resposta JSON-RPC de um `tools/call` do MCP. Puro: separa falha de transporte (dispara
+ * fallback) de erro de negócio (propaga como erro normal, sem fallback) e devolve o payload no sucesso.
+ */
+export function parseMcpToolResult(
+  httpOk: boolean,
+  data: unknown,
+): unknown {
+  if (!httpOk) throw new McpTransportError("MCP indisponível");
+  const d = (data ?? {}) as {
+    error?: { message?: string };
+    result?: { isError?: boolean; content?: Array<{ text?: string }> };
+  };
+  // Erro de protocolo JSON-RPC (param faltando, tool indisponível): erro de negócio, sem fallback.
+  if (d.error) throw new Error(d.error.message ?? "Erro na ferramenta.");
+  const text = d.result?.content?.[0]?.text;
+  const payload = typeof text === "string" ? safeJsonParse(text) : d.result;
+  if (d.result?.isError) {
+    const msg = (payload as { error?: string } | null)?.error ?? (typeof text === "string" ? text : "Erro na ferramenta.");
+    throw new Error(msg);
+  }
+  return payload;
+}
+
+function safeJsonParse(s: string): unknown {
+  try {
+    return JSON.parse(s);
+  } catch {
+    return s;
+  }
+}
 
 /** Bloco `tools` do request Gemini (functionDeclarations). */
 export function geminiTools() {
