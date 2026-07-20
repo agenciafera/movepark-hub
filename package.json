@@ -9,7 +9,7 @@
     "build": "tsc -b && node --import ./scripts/ws-polyfill.mjs node_modules/.bin/vite-react-ssg build",
     "preview": "bun run build && wrangler dev",
     "lint": "eslint .",
-    "typecheck": "tsc -b --noEmit",
+    "typecheck": "tsc -b --noEmit && tsc -p e2e/tsconfig.json --noEmit",
     "test": "./scripts/vitest-run.sh --project unit",
     "test:unit": "./scripts/vitest-run.sh --project unit",
     "test:watch": "vitest --project unit",
@@ -21,7 +21,10 @@
     "deploy": "bun run build && wrangler deploy",
     "deploy:api": "wrangler deploy -c wrangler.api.jsonc",
     "gen:cards": "node scripts/gen-card-hashes.mjs",
-    "lint:openapi": "node scripts/check-openapi-drift.mjs"
+    "lint:openapi": "node scripts/check-openapi-drift.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:smoke": "playwright test --project=e2e-public --project=smoke"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -75,6 +78,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@secretlint/secretlint-rule-preset-recommend": "^13.0.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

@@ -44,3 +44,9 @@ build/
 # Playwright MCP artifacts
 .playwright-mcp/
 _originals/
+
+# Playwright E2E
+.auth/
+.env.e2e
+playwright-report/
+test-results/
