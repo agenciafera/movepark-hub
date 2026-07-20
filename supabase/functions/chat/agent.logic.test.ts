@@ -10,6 +10,7 @@ import {
   nowContext,
   parseChatRequest,
   parseMcpToolResult,
+  sessionBlock,
   temporalSystemBlock,
   toGeminiHistory,
   TOOLS,
@@ -154,4 +155,13 @@ Deno.test("parseMcpToolResult: erro JSON-RPC (param faltando) propaga sem fallba
     parseMcpToolResult(true, { error: { message: "Parâmetro obrigatório ausente: booking_code" } })
   );
   assertEquals(err instanceof McpTransportError, false);
+});
+
+Deno.test("sessionBlock diz ao modelo o estado de login", () => {
+  const logado = sessionBlock(true);
+  assertEquals(logado.includes("ESTÁ logado"), true);
+  assertEquals(logado.toLowerCase().includes("sem pedir login"), true);
+  const deslogado = sessionBlock(false);
+  assertEquals(deslogado.includes("NÃO está logado"), true);
+  assertEquals(deslogado.toLowerCase().includes("botão entrar"), true);
 });

@@ -60,6 +60,27 @@ describe("ChatWidget", () => {
     expect(btn).toHaveAttribute("href", expect.stringContaining("/login?next="));
   });
 
+  it("renderiza markdown do assistente (negrito e lista) sem asterisco cru", async () => {
+    h.mutateAsync.mockResolvedValue({
+      reply: "Para confirmar:\n* **Estacionamento:** Virapark\n* **Valor:** R$ 36,00",
+      used_tools: [],
+    });
+    const user = userEvent.setup();
+    renderWithProviders(<ChatWidget />);
+
+    await user.click(screen.getByLabelText("Abrir assistente"));
+    await user.type(screen.getByLabelText("Mensagem"), "confirma");
+    await user.click(screen.getByLabelText("Enviar"));
+
+    // negrito virou <strong>, não texto com **
+    const strong = await screen.findByText("Estacionamento:");
+    expect(strong.tagName).toBe("STRONG");
+    // vira itens de lista
+    expect(screen.getAllByRole("listitem").length).toBe(2);
+    // nenhum asterisco cru na tela
+    expect(screen.queryByText(/\*\*/)).toBeNull();
+  });
+
   it("não mostra o botão Entrar quando não é preciso login", async () => {
     h.mutateAsync.mockResolvedValue({ reply: "Achei 2 opções.", used_tools: ["search_parking"] });
     const user = userEvent.setup();

@@ -4,7 +4,14 @@ import { MessageCircle, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/context";
 import { useChatConfig, useSendChat } from "./api";
-import { appendMessage, canSend, toRequestMessages, type ChatMessage } from "./chat.logic";
+import {
+  appendMessage,
+  canSend,
+  parseChatMarkdown,
+  toRequestMessages,
+  type ChatMessage,
+  type InlineToken,
+} from "./chat.logic";
 
 const GREETING =
   "Oi! Sou o assistente da Movepark. Posso buscar estacionamento, simular preço, tirar dúvidas e, se você estiver logado, reservar ou cancelar. Como posso ajudar?";
@@ -105,17 +112,43 @@ export function ChatWidget() {
   );
 }
 
+function Inline({ spans }: { spans: InlineToken[] }) {
+  return (
+    <>
+      {spans.map((s, i) => (s.bold ? <strong key={i}>{s.text}</strong> : <span key={i}>{s.text}</span>))}
+    </>
+  );
+}
+
 function Bubble({ role, text }: { role: "user" | "model"; text: string }) {
   const mine = role === "user";
+  // A resposta do assistente vem em markdown; renderiza negrito e listas. Do usuário é texto puro.
+  const blocks = mine ? null : parseChatMarkdown(text);
   return (
     <div className={mine ? "flex justify-end" : "flex justify-start"}>
       <div
         className={
-          "max-w-[80%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-body-sm " +
-          (mine ? "bg-mp-primary text-white" : "bg-neutral-100 text-neutral-900")
+          "max-w-[80%] rounded-2xl px-3 py-2 text-body-sm " +
+          (mine ? "whitespace-pre-wrap bg-mp-primary text-white" : "space-y-2 bg-neutral-100 text-neutral-900")
         }
       >
-        {text}
+        {mine
+          ? text
+          : blocks!.map((b, i) =>
+              b.type === "ul" ? (
+                <ul key={i} className="list-disc space-y-1 pl-4">
+                  {b.items.map((item, j) => (
+                    <li key={j}>
+                      <Inline spans={item} />
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p key={i}>
+                  <Inline spans={b.spans} />
+                </p>
+              ),
+            )}
       </div>
     </div>
   );

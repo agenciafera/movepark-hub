@@ -24,6 +24,7 @@ import {
   needsLogin,
   parseChatRequest,
   parseMcpToolResult,
+  sessionBlock,
   TRANSACTIONAL,
   temporalSystemBlock,
   toGeminiHistory,
@@ -186,7 +187,9 @@ Deno.serve(async (req: Request) => {
   const authHeader = req.headers.get("Authorization");
   const isLoggedIn = !!authHeader && authHeader.startsWith("Bearer ");
   const systemPrompt =
-    ((await readSetting(admin, "chatbot_system_prompt")) || DEFAULT_SYSTEM_PROMPT) + temporalSystemBlock(new Date());
+    ((await readSetting(admin, "chatbot_system_prompt")) || DEFAULT_SYSTEM_PROMPT) +
+    temporalSystemBlock(new Date()) +
+    sessionBlock(isLoggedIn);
 
   const contents: GeminiContent[] = toGeminiHistory(parsed.value.messages);
   const usedTools: string[] = [];

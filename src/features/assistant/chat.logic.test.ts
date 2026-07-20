@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { appendMessage, canSend, toRequestMessages, type ChatMessage } from "./chat.logic";
+import {
+  appendMessage,
+  canSend,
+  parseChatMarkdown,
+  parseInline,
+  toRequestMessages,
+  type ChatMessage,
+} from "./chat.logic";
 
 describe("chat.logic", () => {
   it("toRequestMessages descarta vazias e mantém role+text", () => {
@@ -28,5 +35,40 @@ describe("chat.logic", () => {
     expect(canSend("oi", false)).toBe(true);
     expect(canSend("  ", false)).toBe(false);
     expect(canSend("oi", true)).toBe(false);
+  });
+});
+
+describe("parseInline (negrito)", () => {
+  it("separa **negrito** do texto normal", () => {
+    expect(parseInline("Valor: **R$ 36,00** total")).toEqual([
+      { bold: false, text: "Valor: " },
+      { bold: true, text: "R$ 36,00" },
+      { bold: false, text: " total" },
+    ]);
+  });
+  it("texto sem negrito vira um span só", () => {
+    expect(parseInline("só texto")).toEqual([{ bold: false, text: "só texto" }]);
+  });
+});
+
+describe("parseChatMarkdown (blocos)", () => {
+  it("lista com * vira ul; sem asterisco cru", () => {
+    const md = "Para confirmar:\n* **Estacionamento:** Virapark\n* **Valor:** R$ 36,00";
+    const blocks = parseChatMarkdown(md);
+    expect(blocks[0]).toEqual({ type: "p", spans: [{ bold: false, text: "Para confirmar:" }] });
+    expect(blocks[1].type).toBe("ul");
+    if (blocks[1].type === "ul") {
+      expect(blocks[1].items.length).toBe(2);
+      // o primeiro item tem um trecho em negrito ("Estacionamento:")
+      expect(blocks[1].items[0].some((s) => s.bold)).toBe(true);
+    }
+  });
+  it("linha em branco separa parágrafos", () => {
+    const blocks = parseChatMarkdown("Oi.\n\nTudo certo?");
+    expect(blocks.map((b) => b.type)).toEqual(["p", "p"]);
+  });
+  it("aceita - como marcador de lista", () => {
+    const blocks = parseChatMarkdown("- um\n- dois");
+    expect(blocks[0].type).toBe("ul");
   });
 });

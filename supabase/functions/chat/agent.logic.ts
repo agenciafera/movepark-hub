@@ -248,6 +248,18 @@ export function needsLogin(toolName: string, isLoggedIn: boolean): boolean {
   return TRANSACTIONAL.has(toolName) && !isLoggedIn;
 }
 
+/**
+ * Bloco de sessão: diz ao modelo se o usuário está logado. Sem isto o modelo não tem esse sinal
+ * (o gate de login é server-side) e chuta, recusando reservar mesmo quando o usuário está logado.
+ */
+export function sessionBlock(isLoggedIn: boolean): string {
+  return isLoggedIn
+    ? "\n\n[Sessão] O usuário ESTÁ logado. Pode reservar e cancelar: chame as ferramentas transacionais " +
+        "direto, sem pedir login."
+    : "\n\n[Sessão] O usuário NÃO está logado. Não tente reservar nem cancelar; peça que ele entre (o app " +
+        "mostra um botão Entrar) e siga ajudando na busca e nas dúvidas.";
+}
+
 /** Bloco de contexto temporal acrescentado ao system prompt a cada turno. */
 export function temporalSystemBlock(now: Date, timeZone = TZ): string {
   const n = nowCtx(now, timeZone);
