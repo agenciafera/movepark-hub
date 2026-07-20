@@ -2,7 +2,7 @@ import * as React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { toast } from "sonner";
-import { ArrowLeft, Check, Download, Landmark, FileText, ShieldCheck, ShieldQuestion, ExternalLink } from "lucide-react";
+import { ArrowLeft, Check, Download, Landmark, FileText, ShieldCheck, ShieldQuestion, ExternalLink, PartyPopper, Clock } from "lucide-react";
 import { useAuth } from "@/auth/context";
 import { Wordmark } from "@/components/shared/Brand";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,29 @@ type Step = "dados" | "contrato" | "done";
  * contrato (simulada por ora). Quando a Movepark aprova o recebedor, a unidade entra na busca
  * (gate is_listed). Standalone, no estilo do preview travado.
  */
+/** Comemoração no aside quando o cadastro fica completo: ícone vibrando + confete. */
+function SetupDoneAside() {
+  return (
+    <div className="relative flex flex-col items-center gap-4 overflow-hidden rounded-lg bg-mp-navy p-6 text-center text-white">
+      <ConfettiBurst />
+      <style>{`@keyframes mp-celebrate{0%,100%{transform:rotate(0deg) scale(1)}15%{transform:rotate(-12deg) scale(1.1)}30%{transform:rotate(10deg) scale(1.1)}45%{transform:rotate(-8deg) scale(1.05)}60%{transform:rotate(8deg) scale(1.05)}75%{transform:rotate(-4deg) scale(1.02)}}`}</style>
+      <span
+        className="flex h-16 w-16 items-center justify-center rounded-full bg-white/15"
+        style={{ animation: "mp-celebrate 1.6s ease-in-out infinite" }}
+      >
+        <PartyPopper className="h-8 w-8 text-white" />
+      </span>
+      <div className="flex flex-col gap-1.5">
+        <p className="text-title-md text-white">Cadastro completo! 🎉</p>
+        <p className="text-body-sm text-white/80">
+          Você fez tudo do seu lado. Agora é com a Movepark: seu recebedor já foi criado e está em
+          análise.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function OperatorRecebimento() {
   const navigate = useNavigate();
   const { effectiveCompanyIds } = useAuth();
@@ -235,11 +258,18 @@ export default function OperatorRecebimento() {
                 </details>
               </div>
             ) : (
-              <div className="rounded-lg border border-hairline bg-canvas p-5">
-                <p className="text-body-sm text-muted">
-                  A Movepark faz a verificação e, assim que liberar, sua unidade entra na busca e
-                  começa a receber reservas. A gente te avisa.
-                </p>
+              <div className="flex items-start gap-3 rounded-lg border border-hairline bg-canvas p-5">
+                <Clock className="mt-0.5 h-5 w-5 shrink-0 text-mp-indigo" />
+                <div>
+                  <p className="text-body-sm font-medium text-ink">
+                    A aprovação leva, em média, 15 a 20 dias corridos.
+                  </p>
+                  <p className="mt-1 text-body-sm text-muted">
+                    É a análise da processadora de pagamento com a Movepark. Fica tranquilo: assim
+                    que aprovar, sua unidade entra na busca e começa a receber reservas. A gente te
+                    avisa por e-mail e WhatsApp.
+                  </p>
+                </div>
               </div>
             )}
 
@@ -250,10 +280,10 @@ export default function OperatorRecebimento() {
         )}
         </div>
 
-        {!loading && step !== "done" && (
+        {!loading && (
           <aside className="hidden desktop:block">
             <div className="sticky top-8">
-              <RevenueMotivator />
+              {step === "done" ? <SetupDoneAside /> : <RevenueMotivator />}
             </div>
           </aside>
         )}
