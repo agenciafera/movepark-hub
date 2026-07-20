@@ -16,12 +16,15 @@ export function PhotosCallout({
   className,
   ctaLabel,
   hasPhotos = false,
+  ctaVariant = "primary",
 }: {
   to?: string;
   className?: string;
   ctaLabel?: string;
   /** já tem ao menos 1 foto? muda o texto pra estimular a subir mais em vez de cobrar o mínimo. */
   hasPhotos?: boolean;
+  /** peso do botão. "secondary" quando existe um CTA mais importante ao lado (ex: continuar cadastro). */
+  ctaVariant?: "primary" | "secondary";
 }) {
   const EyebrowIcon = hasPhotos ? Sparkles : AlertCircle;
   const eyebrow = hasPhotos ? "Quanto mais fotos, mais reservas" : "Obrigatório para vender";
@@ -56,7 +59,7 @@ export function PhotosCallout({
           </li>
         ))}
       </ul>
-      <Button asChild className="mt-5">
+      <Button asChild variant={ctaVariant} className="mt-5">
         <Link to={to}>
           <Camera className="h-4 w-4" /> {cta}
         </Link>

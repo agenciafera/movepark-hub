@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,20 @@ export default function OperatorLocations() {
   const { effectiveCompanyIds } = useAuth();
   const { data, isLoading } = useOperatorLocations(effectiveCompanyIds);
   const [editing, setEditing] = React.useState<(Location & { company_id: string }) | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Deep-link: /operator/locations?edit=<id> abre direto o editor da unidade (usado pelo
+  // "Adicionar mais fotos" da tela de preview). Consome o parâmetro após abrir.
+  const editId = searchParams.get("edit");
+  React.useEffect(() => {
+    if (!editId || !data) return;
+    const loc = data.find((l) => l.id === editId);
+    if (loc) setEditing(loc as Location & { company_id: string });
+    const next = new URLSearchParams(searchParams);
+    next.delete("edit");
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editId, data]);
 
   return (
     <div className="flex flex-col gap-6">

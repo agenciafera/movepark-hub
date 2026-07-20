@@ -155,7 +155,7 @@ export default function UnitPreviewPage() {
                           identidade (KYC)
                         </li>
                       </ul>
-                      <Button asChild size="sm" className="mt-4 w-fit">
+                      <Button asChild className="mt-4 w-full">
                         <Link to="/operator/recebimento">
                           Continuar cadastro <ArrowRight className="h-4 w-4" />
                         </Link>
@@ -165,8 +165,12 @@ export default function UnitPreviewPage() {
                       </p>
                     </div>
 
-                    {/* Fotos: diferencial de destaque, não um "quando quiser" */}
-                    <PhotosCallout hasPhotos={unit.photos.length > 0} />
+                    {/* Fotos: diferencial de destaque, mas com peso menor que o "continuar cadastro" */}
+                    <PhotosCallout
+                      hasPhotos={unit.photos.length > 0}
+                      ctaVariant="secondary"
+                      to={locationId ? `/operator/locations?edit=${locationId}` : "/operator/locations"}
+                    />
                   </>
                 ) : (
                   <>
@@ -201,7 +205,10 @@ export default function UnitPreviewPage() {
                       )}
                     </div>
 
-                    <PhotosCallout hasPhotos={unit.photos.length > 0} />
+                    <PhotosCallout
+                      hasPhotos={unit.photos.length > 0}
+                      to={locationId ? `/operator/locations?edit=${locationId}` : "/operator/locations"}
+                    />
                   </>
                 )}
               </div>
