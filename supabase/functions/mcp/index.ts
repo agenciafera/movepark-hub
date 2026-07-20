@@ -1,11 +1,13 @@
 // Edge Function: /mcp  — Servidor MCP (Model Context Protocol) do Movepark (E0.7 Fase 2).
-// Streamable HTTP / JSON-RPC 2.0, stateless. Duas superfícies pelo path:
-//   /mcp  ou /mcp/public   → CONSUMIDOR (anon): descoberta — buscar estacionamento,
-//                            simular preço, FAQ, listar empresas/unidades, tipos de vaga.
+// Streamable HTTP / JSON-RPC 2.0, stateless. Três superfícies pelo path:
+//   /mcp  ou /mcp/public   → CONSUMIDOR anon: descoberta (buscar, simular preço, FAQ, catálogo).
 //   /mcp/partner           → PARCEIRO (Authorization: Bearer mp_…): tools tenant-scoped
 //                            sobre a API v1 (escopos da chave), reusa RPCs api_* + api_key_verify.
+//   /mcp/customer          → CONSUMIDOR autenticado: descoberta + login por OTP (request/verify)
+//                            em nome do usuário final. Auth opcional (as tools de login são pré-login;
+//                            whoami lê o JWT). Transacionais entram em F2. Ver agent-booking.md.
 // Servido externamente em https://mcp.movepark.co (proxy Cloudflare Worker — src/api-worker.ts).
-// Ver docs/specs/mcp.md. server-card: /.well-known/mcp/server-card.json (+ partner-card.json).
+// Ver docs/specs/mcp.md. server-card: /.well-known/mcp/server-card.json (+ partner/customer).
 
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -24,7 +26,8 @@ import {
 import { findTool, isToolCallable, listTools, missingRequired, type Endpoint } from "./tools.ts";
 import { extractApiKey, keyPrefix, sha256Hex } from "./auth.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
-import { callRead } from "../_shared/assistant-tools.ts";
+import { callRead, READ_TOOL_NAMES } from "../_shared/assistant-tools.ts";
+import { otpRequestParams, otpVerifyParams } from "./customer.logic.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -57,7 +60,11 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
 
   const url = new URL(req.url);
-  const endpoint: Endpoint = url.pathname.includes("/partner") ? "partner" : "public";
+  const endpoint: Endpoint = url.pathname.includes("/partner")
+    ? "partner"
+    : url.pathname.includes("/customer")
+      ? "customer"
+      : "public";
 
   // Probe simples por GET (clientes/healthcheck)
   if (req.method === "GET") {
@@ -112,7 +119,12 @@ Deno.serve(async (req: Request) => {
     switch (reqMsg.method) {
       case "initialize": {
         const cp = (reqMsg.params as { protocolVersion?: string } | undefined)?.protocolVersion;
-        const name = endpoint === "partner" ? "movepark-partner" : "movepark";
+        const name =
+          endpoint === "partner"
+            ? "movepark-partner"
+            : endpoint === "customer"
+              ? "movepark-customer"
+              : "movepark";
         resp = json(rpcResult(id, initializeResult(name, cp)));
         break;
       }
@@ -137,9 +149,11 @@ Deno.serve(async (req: Request) => {
           break;
         }
         const data =
-          endpoint === "public"
-            ? await callPublic(toolName, args)
-            : await callPartner(admin!, partner!, toolName, args);
+          endpoint === "partner"
+            ? await callPartner(admin!, partner!, toolName, args)
+            : endpoint === "customer"
+              ? await callCustomer(req.headers.get("Authorization"), toolName, args)
+              : await callPublic(toolName, args);
         resp = json(rpcResult(id, toolTextContent(data)));
         break;
       }
@@ -233,9 +247,64 @@ function anonClient() {
   });
 }
 
+// Cliente com o JWT do usuário no header: a RLS filtra sozinha (leituras/whoami do dono).
+function userClient(authHeader: string) {
+  return createClient(env("SUPABASE_URL"), env("SUPABASE_ANON_KEY"), {
+    auth: { persistSession: false },
+    global: { headers: { Authorization: authHeader } },
+  });
+}
+
 // Handler único, compartilhado com a Edge `chat` (ver _shared/assistant-tools.ts).
 function callPublic(name: string, a: Record<string, unknown>): Promise<unknown> {
   return callRead(anonClient(), name, a);
+}
+
+// ── Handlers consumidor autenticado (/customer) ──────────────────────────────
+// Descoberta reusa callRead; login passwordless em nome do usuário via GoTrue (OTP).
+async function callCustomer(
+  authHeader: string | null,
+  name: string,
+  a: Record<string, unknown>,
+): Promise<unknown> {
+  if (READ_TOOL_NAMES.has(name)) return callRead(anonClient(), name, a);
+
+  switch (name) {
+    case "request_login_otp": {
+      const sb = anonClient();
+      // otpRequestParams valida o canal e monta o payload (phone+channel / email).
+      const { error } = await sb.auth.signInWithOtp(otpRequestParams(a.channel, a.identifier));
+      if (error) throw new Error(error.message);
+      return { status: "sent", channel: a.channel };
+    }
+    case "verify_login_otp": {
+      const sb = anonClient();
+      const { data, error } = await sb.auth.verifyOtp(otpVerifyParams(a.channel, a.identifier, a.code));
+      if (error) throw new Error(error.message);
+      const s = data.session;
+      if (!s) throw new Error("Código verificado, mas nenhuma sessão foi criada.");
+      return {
+        access_token: s.access_token,
+        refresh_token: s.refresh_token,
+        expires_at: s.expires_at,
+        token_type: s.token_type,
+        user: { id: data.user?.id ?? null },
+      };
+    }
+    case "whoami": {
+      if (!authHeader?.startsWith("Bearer ")) return { authenticated: false };
+      const { data, error } = await userClient(authHeader).auth.getUser();
+      if (error || !data.user) return { authenticated: false };
+      return {
+        authenticated: true,
+        user_id: data.user.id,
+        email: data.user.email ?? null,
+        phone: data.user.phone ?? null,
+      };
+    }
+    default:
+      throw new Error(`Tool desconhecida: ${name}`);
+  }
 }
 
 // ── Handlers parceiro (service_role + RPCs api_*, tenant-scoped) ──────────────

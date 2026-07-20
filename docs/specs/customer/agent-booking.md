@@ -76,18 +76,28 @@ na criação. O identificador do pedido na conversa é o `booking_code`.
 ## 4. Autenticação de consumidor
 
 O supabase-js só embrulha os endpoints REST do GoTrue (`/auth/v1/otp`, `/auth/v1/verify`); nada neles
-é específico de browser, então rodam server-side.
+é específico de browser, então rodam server-side. Definições e mapeamento canal→GoTrue em
+`supabase/functions/mcp/customer.logic.ts`; handler em `mcp/index.ts` (`callCustomer`).
 
-| Tool | Faz |
-|---|---|
-| `request_login_otp({ identifier, channel })` | Dispara OTP por WhatsApp ou e-mail |
-| `verify_login_otp({ identifier, channel, code })` | Troca o código por `access_token` + `refresh_token` |
-| `whoami()` | Retorna o usuário do JWT corrente, ou não autenticado |
-| `assert_verified_identity({ channel, identifier })` | Só com chave `mp_` + escopo `identity:assert`: afirma identidade verificada pelo canal, sem OTP |
+| Tool | Faz | Status |
+|---|---|---|
+| `request_login_otp({ identifier, channel })` | Dispara OTP por WhatsApp ou e-mail (`signInWithOtp`) | ✅ no ar |
+| `verify_login_otp({ identifier, channel, code })` | Troca o código por `access_token` + `refresh_token` (`verifyOtp`) | ✅ no ar |
+| `whoami()` | Retorna o usuário do JWT corrente, ou não autenticado | ✅ no ar |
+| `assert_verified_identity({ channel, identifier })` | Chamador confiável (chave `mp_` + escopo `identity:assert`) afirma identidade verificada pelo canal, sem OTP | adiada |
 
-Rate limit por identificador e por IP é obrigatório aqui. O `handleMcp` do worker
-(`src/api-worker.ts`) não tem rate limit hoje, ao contrário do `handleApi`; reusar o KV
-`API_RATELIMIT`.
+`channel` ∈ `whatsapp` (verifica com `type: "sms"`) ou `email`. `verify_login_otp` devolve os tokens
+para o agente agir em nome do usuário; o usuário consentiu ao passar o código.
+
+Rate limit no `handleMcp` do worker (`src/api-worker.ts`): a superfície `/customer` freia por IP no KV
+`API_RATELIMIT` (o `request_login_otp` dispara mensagem com custo). O GoTrue ainda limita OTP por
+identificador. ✅ no ar.
+
+**`assert_verified_identity` foi adiada de propósito.** É a capacidade mais poderosa do desenho (cria
+sessão sem OTP) e só tem uso junto do bot de WhatsApp, que ainda não existe. Exige escopo novo
+`identity:assert` no catálogo `api_scope` e verificação de chave `mp_` na superfície `/customer`. Será
+construída junto da integração do bot, não antes: uma tool que mina sessão de qualquer telefone não
+deve existir sem consumidor.
 
 ---
 
@@ -222,7 +232,9 @@ jurídico antes de implementar. Se não passar, o link cai no passo 1 só para o
   (registro canônico de leitura, consumido por MCP e chat), drift guard cobrindo as três superfícies
   em ambas as direções, `openapi.yaml` parseando. `current_datetime` entrou no MCP consumidor.
 - **Pré-requisito de segurança** - ✅ no ar. Telefone do checkout deixou de virar credencial.
-- **F1 - Autenticação de consumidor no MCP** - planejado (§4).
+- **F1 - Autenticação de consumidor no MCP** - ✅ no ar (caminho OTP). Superfície `/customer` com
+  descoberta + `request_login_otp`/`verify_login_otp`/`whoami`, rate limit por IP na borda.
+  `assert_verified_identity` (chamador confiável) adiada para junto do bot (§4).
 - **F2 - Tools transacionais** - planejado (§5).
 - **F3 - Handoff de checkout** - planejado (§6).
 - **F4 - Superfície, doc e descoberta** - planejado. Terceiro branch de endpoint na Edge `mcp`,

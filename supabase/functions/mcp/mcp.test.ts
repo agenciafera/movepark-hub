@@ -10,7 +10,7 @@ import {
   safeToolError,
   toolTextContent,
 } from "./protocol.ts";
-import { findTool, isToolCallable, listTools, missingRequired, PARTNER_TOOLS, PUBLIC_TOOLS } from "./tools.ts";
+import { CUSTOMER_TOOLS, findTool, isToolCallable, listTools, missingRequired, PARTNER_TOOLS, PUBLIC_TOOLS } from "./tools.ts";
 import { extractApiKey, hasScope, keyPrefix, sha256Hex } from "./auth.ts";
 
 // ── protocolo ────────────────────────────────────────────────────────────────
@@ -180,6 +180,41 @@ Deno.test("todo escopo de PARTNER_TOOLS casa o padrão recurso:ação", () => {
   const re = /^[a-z-]+:(read|write|cancel|checkin)$/;
   const bad = PARTNER_TOOLS.filter((t) => !re.test(t.scope!));
   assertEquals(bad.map((t) => `${t.name}=${t.scope}`), []);
+});
+
+// ── superfície consumidor autenticado (/customer) ────────────────────────────
+Deno.test("listTools customer = descoberta + login, sem filtro de escopo", () => {
+  const names = listTools("customer").map((t) => t.name);
+  // as 9 de leitura (mesmas do público)
+  for (const t of listTools("public").map((x) => x.name)) {
+    assertEquals(names.includes(t), true, `customer deve ter ${t}`);
+  }
+  // + as de login
+  for (const t of ["request_login_otp", "verify_login_otp", "whoami"]) {
+    assertEquals(names.includes(t), true, `customer deve ter ${t}`);
+  }
+  // escopo vazio não esconde nada no customer (diferente do parceiro)
+  assertEquals(listTools("customer", []).length, CUSTOMER_TOOLS.length);
+});
+
+Deno.test("isToolCallable no customer não depende de escopo", () => {
+  assertEquals(isToolCallable("customer", "request_login_otp"), true);
+  assertEquals(isToolCallable("customer", "search_parking"), true);
+  assertEquals(isToolCallable("customer", "whoami"), true);
+  assertEquals(isToolCallable("customer", "inexistente"), false);
+  // tool de parceiro não vaza para o customer
+  assertEquals(isToolCallable("customer", "update_pricing_rule"), false);
+});
+
+Deno.test("isToolCallable é consistente com listTools no customer", () => {
+  const listed = new Set(listTools("customer").map((t) => t.name));
+  for (const t of CUSTOMER_TOOLS) {
+    assertEquals(isToolCallable("customer", t.name), listed.has(t.name), t.name);
+  }
+});
+
+Deno.test("nenhuma CUSTOMER_TOOLS tem scope (modelo de escopo é só do parceiro)", () => {
+  assertEquals(CUSTOMER_TOOLS.every((t) => t.scope === undefined), true);
 });
 
 // ── auth ─────────────────────────────────────────────────────────────────────

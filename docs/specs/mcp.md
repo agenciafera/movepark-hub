@@ -106,11 +106,20 @@ Edge `chat` consome. O MCP converte com `toMcpToolDef` e roteia por `callRead`; 
 | `update_pricing_rule` | `pricing:write` | `api_set_pricing` |
 | `set_date_blocked` | `pricing:write` | `api_set_date_blocked` |
 
-### Consumidor autenticado (planejado)
+### Consumidor autenticado (`/customer`)
 
-Uma terceira superfície, `/customer`, dá ao usuário final (logado por OTP) as tools transacionais de
-reserva, para um agente fechar a compra e entregar um link de checkout. Desenho, autenticação e
-handoff em [agent-booking.md](./customer/agent-booking.md). Ainda não implementada.
+Terceira superfície, para um agente reservar em nome do usuário final. `serverInfo.name`
+`movepark-customer`; card `customer-card.json`. Sem modelo de escopo (as tools não têm `scope`).
+
+| Tool | Substrato | Status |
+|---|---|---|
+| descoberta (as 9 do consumidor) | `READ_TOOLS` / `callRead` | ✅ no ar |
+| `request_login_otp` / `verify_login_otp` / `whoami` | GoTrue (`customer.logic.ts`) | ✅ no ar |
+| transacionais (reservar, dados, placa, aceite) | Edges de consumidor via JWT | F2 |
+
+Login por OTP (WhatsApp/e-mail) e handoff de checkout em
+[agent-booking.md](./customer/agent-booking.md). `assert_verified_identity` (chamador confiável, sem
+OTP) fica para a integração do bot.
 
 > Escopos = catálogo `api_scope` (ver [public-api.md](./public-api.md) §7). Tool parceiro nova ⇒ escopo
 > existente (ou novo no catálogo) + entrada em `tools.ts` + `partner-card.json`.

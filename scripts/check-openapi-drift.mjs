@@ -64,6 +64,7 @@ console.log(`✓ OpenAPI em sincronia com o gateway (${routeOps.size} operaçõe
 const toolsSrc = readFileSync("supabase/functions/mcp/tools.ts", "utf8");
 const sharedSrc = readFileSync("supabase/functions/_shared/assistant-tools.ts", "utf8");
 const agentSrc = readFileSync("supabase/functions/chat/agent.logic.ts", "utf8");
+const customerSrc = readFileSync("supabase/functions/mcp/customer.logic.ts", "utf8");
 
 const literalNames = (s) => [...s.matchAll(/name:\s*"([a-z_]+)"/g)].map((m) => m[1]);
 
@@ -73,14 +74,18 @@ if (SHARED_READ.length === 0) {
   console.error("❌ Nenhuma tool encontrada em _shared/assistant-tools.ts (READ_TOOLS).");
   process.exit(1);
 }
+// Tools de login do consumidor autenticado (customer.logic.ts).
+const CUSTOMER_AUTH = literalNames(customerSrc);
 
-// Um registro pode ser derivado (`READ_TOOLS.map(...)`) em vez de literal. Sem isto
-// as tools derivadas somem do check em silêncio, que foi o que aconteceu ao fatorar.
-// Casa a DERIVAÇÃO, não a menção: `import { READ_TOOLS }` não pode contar como uso.
+// Um registro pode ser DERIVADO (spread de outro array) em vez de literal. Sem resolver isso as
+// tools derivadas somem do check em silêncio, que foi o que aconteceu ao fatorar. Casa a derivação,
+// não a menção: um `import { READ_TOOLS }` não pode contar como uso.
 const DERIVES_READ = /\.\.\.READ_TOOLS\b|READ_TOOLS\.map\(/;
+const DERIVES_AUTH = /\.\.\.CUSTOMER_AUTH_TOOLS\b/;
 const toolNames = (s) => [
   ...literalNames(s),
   ...(DERIVES_READ.test(s) ? SHARED_READ : []),
+  ...(DERIVES_AUTH.test(s) ? CUSTOMER_AUTH : []),
 ];
 
 /** Corpo de um `export const NOME: ... = [ ... ];` (para não varrer o arquivo inteiro). */
@@ -107,6 +112,7 @@ const cardNames = (path) =>
 const CARD_BY_REGISTRY = {
   PUBLIC_TOOLS: { label: "consumidor", card: "public/.well-known/mcp/server-card.json" },
   PARTNER_TOOLS: { label: "parceiro", card: "public/.well-known/mcp/partner-card.json" },
+  CUSTOMER_TOOLS: { label: "consumidor autenticado", card: "public/.well-known/mcp/customer-card.json" },
 };
 
 const marks = [...toolsSrc.matchAll(/export const ([A-Z][A-Z0-9_]*_TOOLS)\s*:/g)].map((m) => ({

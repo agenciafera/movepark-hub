@@ -48,7 +48,23 @@ async function handleMcp(request: Request, env: Env, url: URL): Promise<Response
       headers: { "Content-Type": "text/html; charset=utf-8", ...CORS },
     });
   }
-  // "/" → /mcp (consumidor); "/partner" → /mcp/partner
+  // A superfície /customer dispara OTP (WhatsApp/e-mail, com custo) e devolve sessão. Sem chave
+  // para limitar por, então freia por IP na borda. O GoTrue ainda limita OTP por identificador.
+  if (env.API_RATELIMIT && url.pathname.includes("/customer") && request.method === "POST") {
+    const ip = clientIp(request);
+    if (ip) {
+      const limited = await rateLimited(env.API_RATELIMIT, `mcpc:${ip}`);
+      if (limited) {
+        return json(
+          { jsonrpc: "2.0", id: null, error: { code: -32000, message: "Limite de requisições excedido." } },
+          429,
+          { "Retry-After": "60" },
+        );
+      }
+    }
+  }
+
+  // "/" → /mcp (consumidor); "/partner" → /mcp/partner; "/customer" → /mcp/customer
   const sub = url.pathname === "/" ? "" : url.pathname;
   const target = env.SUPABASE_FUNCTIONS_URL.replace(/\/$/, "") + "/mcp" + sub + url.search;
 
@@ -118,6 +134,15 @@ function withCors(upstream: Response): Response {
   return new Response(upstream.body, { status: upstream.status, headers: respHeaders });
 }
 
+function clientIp(request: Request): string | null {
+  return (
+    request.headers.get("cf-connecting-ip") ??
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    request.headers.get("x-real-ip") ??
+    null
+  );
+}
+
 function bearer(request: Request): string | null {
   const auth = request.headers.get("Authorization");
   if (auth?.startsWith("Bearer ")) return auth.slice(7).trim() || null;
@@ -179,16 +204,20 @@ function mcpDocsHtml(): string {
 <body>
   <h1>Movepark · MCP</h1>
   <p class="sub">Servidor <strong>Model Context Protocol</strong> (Streamable HTTP / JSON-RPC 2.0).
-     Duas superfícies: <strong>consumidor</strong> (público) e <strong>parceiro</strong> (autenticado).</p>
+     Três superfícies: <strong>consumidor</strong> (público), <strong>parceiro</strong> (chave) e
+     <strong>consumidor autenticado</strong> (login por OTP).</p>
 
   <h2>Endpoints</h2>
   <table>
     <tr><th>Superfície</th><th>URL</th><th>Auth</th><th>Card</th></tr>
-    <tr><td>Consumidor</td><td><code>https://mcp.movepark.co</code></td><td>—</td>
+    <tr><td>Consumidor</td><td><code>https://mcp.movepark.co</code></td><td>sem auth</td>
         <td><a href="https://hub.movepark.co/.well-known/mcp/server-card.json">server-card.json</a></td></tr>
     <tr><td>Parceiro</td><td><code>https://mcp.movepark.co/partner</code></td>
         <td><code>Authorization: Bearer mp_…</code></td>
         <td><a href="https://hub.movepark.co/.well-known/mcp/partner-card.json">partner-card.json</a></td></tr>
+    <tr><td>Consumidor autenticado</td><td><code>https://mcp.movepark.co/customer</code></td>
+        <td>login por OTP (WhatsApp/e-mail)</td>
+        <td><a href="https://hub.movepark.co/.well-known/mcp/customer-card.json">customer-card.json</a></td></tr>
   </table>
 
   <h2>Conectar</h2>
@@ -212,6 +241,8 @@ function mcpDocsHtml(): string {
     <tr><td><code>list_companies</code></td><td>Estacionamentos parceiros.</td></tr>
     <tr><td><code>list_locations</code></td><td>Unidades públicas.</td></tr>
     <tr><td><code>get_parking_types</code></td><td>Tipos de vaga de uma unidade.</td></tr>
+    <tr><td><code>list_destinations</code> / <code>get_destination</code></td><td>Destinos (aeroportos) e terminais.</td></tr>
+    <tr><td><code>current_datetime</code></td><td>Data/hora atual (fuso de São Paulo).</td></tr>
   </table>
 
   <h2>Tools: parceiro (chave + escopo)</h2>
@@ -228,6 +259,17 @@ function mcpDocsHtml(): string {
     <tr><td><code>cancel_booking</code></td><td>bookings:cancel</td></tr>
     <tr><td><code>check_in_booking</code> / <code>check_out_booking</code></td><td>bookings:checkin</td></tr>
   </table>
+
+  <h2>Tools: consumidor autenticado (login por OTP)</h2>
+  <p>Para um agente reservar em nome do usuário final. Toda a descoberta acima, mais o login:</p>
+  <table>
+    <tr><th>Tool</th><th>Descrição</th></tr>
+    <tr><td><code>request_login_otp</code></td><td>Dispara o código por WhatsApp ou e-mail (passo 1).</td></tr>
+    <tr><td><code>verify_login_otp</code></td><td>Troca o código pela sessão (access/refresh token) (passo 2).</td></tr>
+    <tr><td><code>whoami</code></td><td>Diz quem está autenticado no token atual.</td></tr>
+  </table>
+  <p>As reservas e o pagamento entram numa fase seguinte. O agente leva até o pagamento e entrega um
+     link de checkout que já cai logado. Ver a spec de reserva por agente.</p>
 
   <h2>Mais</h2>
   <p>API REST (OpenAPI): <a href="https://api.movepark.co/docs">api.movepark.co/docs</a> ·

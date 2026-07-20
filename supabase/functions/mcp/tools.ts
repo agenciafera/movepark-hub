@@ -3,8 +3,9 @@
 // Lógica pura — testável com deno test. Ver docs/specs/mcp.md.
 
 import { READ_TOOLS, toMcpToolDef } from "../_shared/assistant-tools.ts";
+import { CUSTOMER_AUTH_TOOLS } from "./customer.logic.ts";
 
-export type Endpoint = "public" | "partner";
+export type Endpoint = "public" | "partner" | "customer";
 
 export interface ToolDef {
   name: string;
@@ -269,8 +270,18 @@ export const PARTNER_TOOLS: ToolDef[] = [
   },
 ];
 
+// Consumidor autenticado (usuário final logado por OTP). Descoberta (READ_TOOLS) + login.
+// Sem `scope` (o modelo de escopo é exclusivo do parceiro). As transacionais entram em F2.
+export const CUSTOMER_TOOLS: ToolDef[] = [...READ_TOOLS.map(toMcpToolDef), ...CUSTOMER_AUTH_TOOLS];
+
+const REGISTRY: Record<Endpoint, ToolDef[]> = {
+  public: PUBLIC_TOOLS,
+  partner: PARTNER_TOOLS,
+  customer: CUSTOMER_TOOLS,
+};
+
 function registry(endpoint: Endpoint): ToolDef[] {
-  return endpoint === "public" ? PUBLIC_TOOLS : PARTNER_TOOLS;
+  return REGISTRY[endpoint];
 }
 
 // `tools/list`: público devolve tudo; parceiro filtra pelos escopos da chave.
@@ -279,8 +290,9 @@ export function listTools(
   endpoint: Endpoint,
   scopes: string[] = [],
 ): Array<Pick<ToolDef, "name" | "description" | "inputSchema">> {
+  // Só o parceiro filtra por escopo; público e consumidor mostram tudo (tools sem `scope`).
   return registry(endpoint)
-    .filter((t) => endpoint === "public" || !t.scope || scopes.includes(t.scope))
+    .filter((t) => endpoint !== "partner" || !t.scope || scopes.includes(t.scope))
     .map(({ name, description, inputSchema }) => ({ name, description, inputSchema }));
 }
 
@@ -295,7 +307,7 @@ export function findTool(endpoint: Endpoint, name: string): ToolDef | null {
 export function isToolCallable(endpoint: Endpoint, name: string, scopes: string[] = []): boolean {
   const tool = findTool(endpoint, name);
   if (!tool) return false;
-  if (endpoint === "public") return true;
+  if (endpoint !== "partner") return true;
   return !tool.scope || scopes.includes(tool.scope);
 }
 

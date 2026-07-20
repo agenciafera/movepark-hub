@@ -1,0 +1,243 @@
+{
+  "name": "Movepark Customer",
+  "description": "MCP do Movepark (consumidor autenticado): descoberta + login por OTP (WhatsApp/e-mail) para reservar em nome do usuário final. Tools transacionais em breve. Endpoint: https://mcp.movepark.co/customer",
+  "url": "https://mcp.movepark.co/customer",
+  "transport": "streamable-http",
+  "contact": "contato@movepark.co",
+  "authentication": {
+    "type": "user-otp",
+    "note": "Login passwordless: request_login_otp dispara o código, verify_login_otp devolve a sessão. As demais tools recebem Authorization: Bearer <access_token>."
+  },
+  "tools": [
+    {
+      "name": "search_parking",
+      "description": "Busca estacionamentos por destino e período, com preço, distância e disponibilidade.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "dest": {
+            "type": "string",
+            "description": "Código do aeroporto (ex.: GRU) ou cidade"
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "vehicle": {
+            "type": "string",
+            "enum": [
+              "car",
+              "motorcycle"
+            ]
+          },
+          "category": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "max_distance_km": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "dest",
+          "from",
+          "to"
+        ]
+      }
+    },
+    {
+      "name": "simulate_price",
+      "description": "Simula o preço de uma reserva por empresa/unidade/tipo de vaga e nº de diárias.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "company": {
+            "type": "string",
+            "description": "slug da empresa"
+          },
+          "location": {
+            "type": "string",
+            "description": "slug da unidade"
+          },
+          "parking_type": {
+            "type": "string",
+            "description": "code do tipo de vaga"
+          },
+          "days": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1
+          }
+        },
+        "required": [
+          "company"
+        ]
+      }
+    },
+    {
+      "name": "get_faq",
+      "description": "Perguntas frequentes globais ou de uma unidade específica.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location_id": {
+            "type": "string"
+          },
+          "query": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    {
+      "name": "list_companies",
+      "description": "Lista os estacionamentos parceiros (empresas) da plataforma.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    {
+      "name": "list_locations",
+      "description": "Lista unidades (estacionamentos) públicas.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    {
+      "name": "get_parking_types",
+      "description": "Tipos de vaga de uma unidade (coberto, descoberto, valet).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "location_id"
+        ]
+      }
+    },
+    {
+      "name": "list_destinations",
+      "description": "Destinos (aeroportos/cidades) atendidos, com slug e localização.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    {
+      "name": "get_destination",
+      "description": "Detalhe de um destino pelo slug, com seus pontos/terminais.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug"
+        ]
+      }
+    },
+    {
+      "name": "current_datetime",
+      "description": "Data e hora atuais no fuso de São Paulo. Use para resolver datas relativas como 'amanhã' ou 'sexta que vem' sem perguntar ao usuário.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "request_login_otp",
+      "description": "Dispara um código de acesso (OTP) por WhatsApp ou e-mail para o usuário entrar. Passo 1 do login.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "description": "Telefone em E.164 (WhatsApp) ou e-mail"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "whatsapp",
+              "email"
+            ],
+            "description": "whatsapp ou email"
+          }
+        },
+        "required": [
+          "identifier",
+          "channel"
+        ]
+      }
+    },
+    {
+      "name": "verify_login_otp",
+      "description": "Troca o código recebido por uma sessão. Devolve access_token e refresh_token para o agente agir em nome do usuário. Passo 2 do login.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "description": "O mesmo identificador do passo 1"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "whatsapp",
+              "email"
+            ],
+            "description": "whatsapp ou email"
+          },
+          "code": {
+            "type": "string",
+            "description": "Código de 6 dígitos recebido"
+          }
+        },
+        "required": [
+          "identifier",
+          "channel",
+          "code"
+        ]
+      }
+    },
+    {
+      "name": "whoami",
+      "description": "Diz se há usuário autenticado no token atual e devolve id/e-mail/telefone. Não exige argumentos.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    }
+  ]
+}
