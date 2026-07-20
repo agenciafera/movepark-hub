@@ -183,18 +183,28 @@ Deno.test("todo escopo de PARTNER_TOOLS casa o padrão recurso:ação", () => {
 });
 
 // ── superfície consumidor autenticado (/customer) ────────────────────────────
-Deno.test("listTools customer = descoberta + login, sem filtro de escopo", () => {
+Deno.test("listTools customer = descoberta + login + reserva, sem chave de agente", () => {
   const names = listTools("customer").map((t) => t.name);
   // as 9 de leitura (mesmas do público)
   for (const t of listTools("public").map((x) => x.name)) {
     assertEquals(names.includes(t), true, `customer deve ter ${t}`);
   }
-  // + as de login
-  for (const t of ["request_login_otp", "verify_login_otp", "whoami"]) {
+  // + login e reserva
+  for (const t of ["request_login_otp", "verify_login_otp", "whoami", "create_booking"]) {
     assertEquals(names.includes(t), true, `customer deve ter ${t}`);
   }
-  // escopo vazio não esconde nada no customer (diferente do parceiro)
-  assertEquals(listTools("customer", []).length, CUSTOMER_TOOLS.length);
+  // sem chave de agente confiável, gerar link não aparece (session fixation, §9 item 6)
+  assertEquals(names.includes("create_checkout_link"), false);
+  assertEquals(listTools("customer", []).length, CUSTOMER_TOOLS.length - 1);
+});
+
+Deno.test("create_checkout_link só aparece/roda com a chave de agente confiável", () => {
+  const semChave = listTools("customer", []).map((t) => t.name);
+  const comChave = listTools("customer", ["checkout:link"]).map((t) => t.name);
+  assertEquals(semChave.includes("create_checkout_link"), false);
+  assertEquals(comChave.includes("create_checkout_link"), true);
+  assertEquals(isToolCallable("customer", "create_checkout_link", []), false);
+  assertEquals(isToolCallable("customer", "create_checkout_link", ["checkout:link"]), true);
 });
 
 Deno.test("isToolCallable no customer não depende de escopo", () => {
@@ -213,8 +223,11 @@ Deno.test("isToolCallable é consistente com listTools no customer", () => {
   }
 });
 
-Deno.test("nenhuma CUSTOMER_TOOLS tem scope (modelo de escopo é só do parceiro)", () => {
-  assertEquals(CUSTOMER_TOOLS.every((t) => t.scope === undefined), true);
+Deno.test("no customer só a de gerar link tem scope; o resto é gateado por JWT + RLS", () => {
+  assertEquals(
+    CUSTOMER_TOOLS.filter((t) => t.scope).map((t) => t.name),
+    ["create_checkout_link"],
+  );
 });
 
 // ── auth ─────────────────────────────────────────────────────────────────────

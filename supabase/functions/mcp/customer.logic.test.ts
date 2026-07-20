@@ -72,7 +72,7 @@ Deno.test("CUSTOMER_AUTH_TOOLS: nomes esperados e schema fechado", () => {
   }
 });
 
-Deno.test("CUSTOMER_TXN_TOOLS: nomes esperados, sem scope, schema fechado", () => {
+Deno.test("CUSTOMER_TXN_TOOLS: nomes esperados e schema fechado", () => {
   assertEquals(CUSTOMER_TXN_TOOLS.map((t) => t.name).sort(), [
     "add_vehicle",
     "cancel_booking",
@@ -86,8 +86,18 @@ Deno.test("CUSTOMER_TXN_TOOLS: nomes esperados, sem scope, schema fechado", () =
   ]);
   for (const t of CUSTOMER_TXN_TOOLS) {
     assertEquals(t.inputSchema.additionalProperties, false, t.name);
-    assertEquals((t as { scope?: string }).scope, undefined, `${t.name} não tem scope`);
   }
+});
+
+// Mitigação da session fixation: gerar link exige chamador confiável (chave mp_ com o escopo).
+// As demais transacionais seguem sem escopo (o gate delas é o JWT + RLS do dono).
+Deno.test("só create_checkout_link exige escopo entre as transacionais", () => {
+  const comEscopo = CUSTOMER_TXN_TOOLS.filter((t) => t.scope).map((t) => t.name);
+  assertEquals(comEscopo, ["create_checkout_link"]);
+  assertEquals(
+    CUSTOMER_TXN_TOOLS.find((t) => t.name === "create_checkout_link")!.scope,
+    "checkout:link",
+  );
 });
 
 Deno.test("CUSTOMER_TXN_NAMES cobre exatamente as transacionais", () => {

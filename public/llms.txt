@@ -27,4 +27,5 @@ O Movepark é um hub centralizado que conecta viajantes a estacionamentos creden
 
 - [MCP Server (consumidor)](https://mcp.movepark.co): servidor MCP público (Streamable HTTP) para buscar estacionamentos, simular preços, FAQ e listar empresas/unidades — [server-card](https://hub.movepark.co/.well-known/mcp/server-card.json)
 - [MCP Server (parceiro)](https://mcp.movepark.co/partner): servidor MCP autenticado por chave (`mp_`) com tools tenant-scoped — [partner-card](https://hub.movepark.co/.well-known/mcp/partner-card.json)
+- [MCP Server (consumidor autenticado)](https://mcp.movepark.co/customer): reserva em nome do usuário final, com login por código (OTP) no WhatsApp ou e-mail. O pagamento acontece no checkout web, nunca pelo MCP. Ver o [customer-card](https://hub.movepark.co/.well-known/mcp/customer-card.json)
 - [API Catalog](https://hub.movepark.co/.well-known/api-catalog): catálogo de endpoints públicos

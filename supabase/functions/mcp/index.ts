@@ -109,6 +109,27 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // Consumidor: a identidade do usuário vem do JWT (Authorization). A chave `mp_` opcional no
+  // header X-API-Key atesta QUEM é o agente e libera as tools com escopo (hoje só
+  // create_checkout_link, que gera um link que autentica quem o abre). Sem chave → escopos vazios,
+  // e a tool nem aparece no tools/list. Ver agent-booking.md §9 item 6.
+  let callerScopes: string[] = [];
+  if (endpoint === "customer") {
+    const key = req.headers.get("x-api-key");
+    if (key) {
+      const admin2 = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), {
+        auth: { persistSession: false },
+      });
+      const { data: v } = await admin2.rpc("api_key_verify", {
+        p_key_prefix: keyPrefix(key),
+        p_key_hash: await sha256Hex(key),
+      });
+      if (v && (v as { ok?: boolean }).ok === true) {
+        callerScopes = (v as { scopes?: string[] }).scopes ?? [];
+      }
+    }
+  }
+
   // Notificações (sem id) não recebem resposta.
   if (isNotification(reqMsg) && reqMsg.method.startsWith("notifications/")) {
     return new Response(null, { status: 202, headers: CORS });
@@ -132,14 +153,14 @@ Deno.serve(async (req: Request) => {
         resp = json(rpcResult(id, {}));
         break;
       case "tools/list":
-        resp = json(rpcResult(id, { tools: listTools(endpoint, partner?.scopes ?? []) }));
+        resp = json(rpcResult(id, { tools: listTools(endpoint, partner?.scopes ?? callerScopes) }));
         break;
       case "tools/call": {
         const p = (reqMsg.params ?? {}) as { name?: string; arguments?: Record<string, unknown> };
         const toolName = p.name ?? "";
         const args = p.arguments ?? {};
         // Gate de escopo (isToolCallable): out-of-scope no parceiro = inexistente (não revela).
-        if (!isToolCallable(endpoint, toolName, partner?.scopes ?? [])) {
+        if (!isToolCallable(endpoint, toolName, partner?.scopes ?? callerScopes)) {
           resp = json(rpcError(id, JSONRPC.INVALID_PARAMS, `Tool indisponível: ${toolName}`));
           break;
         }

@@ -189,11 +189,14 @@ const ASSIGNABLE_SCOPES = new Set([
   "bookings:read", "bookings:write", "coupons:read", "coupons:write", "discounts:read",
   "discounts:write", "faq:read", "locations:read", "locations:write", "occupancy:read",
   "parking-types:read", "parking-types:write", "pricing:read", "pricing:write", "reviews:read",
-  "reviews:write", "wps:write",
+  "reviews:write", "wps:write", "checkout:link",
 ]);
 
 const routerScopes = [...router.matchAll(/def\(\s*"[A-Z]+",\s*"[^"]+",\s*\[[^\]]*\],\s*"([^"]+)"/g)].map((m) => m[1]);
-const toolScopes = [...toolsSrc.matchAll(/scope:\s*"([^"]+)"/g)].map((m) => m[1]);
+// Escopos declarados em tools.ts E em customer.logic.ts (onde vive `checkout:link`).
+const toolScopes = [toolsSrc, customerSrc].flatMap((src) =>
+  [...src.matchAll(/scope:\s*"([^"]+)"/g)].map((m) => m[1]),
+);
 const usedScopes = new Set([...routerScopes, ...toolScopes]);
 
 const orphanScopes = [...ASSIGNABLE_SCOPES].filter((s) => !usedScopes.has(s));

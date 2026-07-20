@@ -180,9 +180,13 @@ export const CUSTOMER_TXN_TOOLS: ToolDef[] = [
     ),
   },
   {
+    // Chamador confiável: exige chave mp_ com `checkout:link` (header X-API-Key), além do JWT do
+    // usuário. O link autentica quem o abre, então gerar link é privilégio do nosso bot, não de
+    // qualquer agente. Ver agent-booking.md §9 item 6 (session fixation).
     name: "create_checkout_link",
+    scope: "checkout:link",
     description:
-      "Gera um link de uso único que abre o checkout já logado, direto no pagamento. Entregue este link ao usuário para ele pagar (PIX ou cartão) e receber o voucher. Passe o refresh_token que veio de verify_login_otp.",
+      "Gera um link de uso único que abre o checkout já logado. Entregue este link ao usuário para ele pagar (PIX ou cartão) e receber o voucher. Exige chave de agente confiável. Passe o refresh_token que veio de verify_login_otp.",
     inputSchema: obj(
       {
         booking_code: { type: "string", description: "Código da reserva (MP-...)" },

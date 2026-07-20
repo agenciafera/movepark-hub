@@ -17,6 +17,11 @@
           "href": "https://hub.movepark.co/.well-known/mcp/partner-card.json",
           "type": "application/json",
           "title": "Movepark MCP Server Card (parceiro, autenticado) — https://mcp.movepark.co/partner"
+        },
+        {
+          "href": "https://hub.movepark.co/.well-known/mcp/customer-card.json",
+          "type": "application/json",
+          "title": "Movepark MCP Server Card (consumidor autenticado, login por OTP): https://mcp.movepark.co/customer"
         }
       ],
       "service-doc": [

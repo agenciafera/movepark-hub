@@ -294,9 +294,10 @@ export function listTools(
   endpoint: Endpoint,
   scopes: string[] = [],
 ): Array<Pick<ToolDef, "name" | "description" | "inputSchema">> {
-  // Só o parceiro filtra por escopo; público e consumidor mostram tudo (tools sem `scope`).
+  // Regra única em qualquer superfície: tool sem `scope` é sempre visível; com `scope`, só quando a
+  // chave concede. Público não tem tool com escopo; no consumidor só `create_checkout_link` tem.
   return registry(endpoint)
-    .filter((t) => endpoint !== "partner" || !t.scope || scopes.includes(t.scope))
+    .filter((t) => !t.scope || scopes.includes(t.scope))
     .map(({ name, description, inputSchema }) => ({ name, description, inputSchema }));
 }
 
@@ -311,7 +312,6 @@ export function findTool(endpoint: Endpoint, name: string): ToolDef | null {
 export function isToolCallable(endpoint: Endpoint, name: string, scopes: string[] = []): boolean {
   const tool = findTool(endpoint, name);
   if (!tool) return false;
-  if (endpoint !== "partner") return true;
   return !tool.scope || scopes.includes(tool.scope);
 }
 

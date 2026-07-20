@@ -124,9 +124,12 @@ caminho do checkout web. Definições em `mcp/customer.logic.ts`; handler `callC
 | `accept_terms` | Edge `accept-terms` (JWT) | F3 (ressalva jurídica, §8) |
 | `lookup_plate` | Edge `lookup-vehicle-plate` (JWT) | F3 (API externa paga, rate limit próprio) |
 
-`accept_terms` e `lookup_plate` foram movidas para F3 de propósito: o aceite pareia com o handoff e
-depende do aval jurídico (§8); a consulta de placa bate em API paga e precisa de rate limit próprio. O
-`add_vehicle` aceita a placa direto, então a reserva fecha sem `lookup_plate`.
+**Decisão sobre `accept_terms`: não implementar.** O aceite dos Termos acontece no site, no passo 1 do
+checkout. O link do handoff cai logado no passo 1 e o usuário aceita ali. Custa um toque e elimina o
+risco jurídico de registrar aceite de LGPD a partir de uma conversa (§8). Consequência: o deep-link para
+o passo de pagamento (`resolveInitialStep → 3`) fica inerte, já que exige o aceite; a função e os testes
+seguem no código caso a decisão mude. `lookup_plate` continua pendente (API externa paga, quer rate
+limit próprio); `add_vehicle` aceita a placa direto, então a reserva fecha sem ela.
 
 Ficam **fora** por decisão: `delete-account` (irreversível), `attach-phone-silent` (identidade), e
 tudo de pagamento.
@@ -233,18 +236,16 @@ jurídico antes de implementar. Se não passar, o link cai no passo 1 só para o
 5. **Pré-requisito fechado:** o `attach-phone-silent` promovia telefone a credencial sem OTP, o que
    viraria porta de sequestro com login por WhatsApp. Corrigido: virou dica não-credencial (migration
    `20260820000000`, RPC `set_phone_hint`). Ver ADR-006 no `CLAUDE.md`.
-6. **Session fixation do link de handoff (decisão antes do go-live do bot).** O link loga o browser na
-   conta que o **gerou** (propriedade de magic link). Como o MCP `/customer` é público, um atacante pode
-   autenticar a própria conta, reservar, gerar o link e enviá-lo a uma vítima; ao abrir, o browser da
-   vítima vira a sessão do atacante. O agravante é o link cair no pagamento (a vítima pagaria a reserva
-   do atacante; com cartão + `save_card`, o cartão vai pra conta dele). As partes criptográficas estão
-   corretas (segredo de alta entropia, resgate atômico, sem IDOR). Mitigação atual: o "cai no pagamento"
-   (`resolveInitialStep → 3`) só ativa com Termos aceitos, e `accept_terms` ainda não é tool, então hoje
-   o link cai no **passo 1** e o agravante está dormente. **Antes de ativar o cair-no-pagamento (junto
-   do `accept_terms`), decidir a mitigação:** entregar o link só pelo canal verificado do próprio usuário
-   (como um magic link é entregue ao e-mail do dono), e/ou o checkout avisar quando a sessão do handoff
-   substitui uma sessão diferente já ativa, e/ou não emitir refresh_token de longa duração (sessão que
-   não sobrevive ao checkout). O reviewer classificou como MEDIUM, parcialmente inerente ao padrão.
+6. **Session fixation do link de handoff (✅ mitigada).** O link loga o browser na conta que o **gerou**
+   (propriedade de magic link). Com o MCP `/customer` público, um atacante podia autenticar a própria
+   conta, reservar, gerar o link e enviá-lo a uma vítima; ao abrir, o browser da vítima virava a sessão
+   do atacante (e, se pagasse, o cartão salvo ia pra conta dele). As partes criptográficas já estavam
+   corretas (segredo de alta entropia, resgate atômico, sem IDOR); o furo era **quem pode gerar o link**.
+   **Mitigação:** `create_checkout_link` exige **chamador confiável**, com chave `mp_` no header
+   `X-API-Key` e o escopo `checkout:link` (migration `20260822000000`). A identidade do usuário segue
+   vindo do JWT; a chave só atesta qual agente está falando. Sem a chave, a tool nem aparece no
+   `tools/list`. Na prática o escopo é concedido só à chave interna da Movepark: agentes de terceiros
+   buscam e reservam, mas não geram link de pagamento.
 
 ---
 
