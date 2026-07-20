@@ -2,6 +2,7 @@ import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { ArrowRight, ArrowUpRight, ShieldCheck, MapPin, Star, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PartnerLogos } from "@/features/partners/PartnerLogos";
 
 const HERO_IMAGE = "/Estacionamentos/virapark-estacionamento-aeroporto-viracopos.webp";
 
@@ -16,16 +17,6 @@ const NUMBERS = [
   { value: "11", label: "destinos com vaga" },
   { value: "2 min", label: "pra reservar" },
   { value: "100%", label: "do preço fechado na reserva" },
-];
-
-/** Parceiros reais, os mesmos que aparecem em /seja-parceiro. */
-const PARTNERS = [
-  "Virapark",
-  "Garage Inn",
-  "Nation Park",
-  "Aerovalet",
-  "Abbapark",
-  "Plenty Park",
 ];
 
 /** Destinos com estacionamento parceiro no ar, do mais servido pro menos. */
@@ -145,16 +136,13 @@ export default function SobrePage() {
           </div>
         </div>
 
-        {/* Faixa de parceiros: prova concreta, no lugar do carrossel de logo genérico. */}
-        <div className="relative border-t border-white/10">
-          <div className="mx-auto flex max-w-[1080px] flex-wrap items-center gap-x-8 gap-y-3 px-4 py-5 desktop:px-8">
-            <span className="text-caption-sm text-white/50">Estacionamentos parceiros</span>
-            {PARTNERS.map((p) => (
-              <span key={p} className="text-body-sm font-semibold text-white/80">
-                {p}
-              </span>
-            ))}
-          </div>
+      </section>
+
+      {/* Faixa de parceiros: prova concreta, no lugar do carrossel de logo genérico.
+          Fora do hero porque os logos são escuros e sumiriam sobre o navy. */}
+      <section className="border-b border-hairline bg-canvas">
+        <div className="mx-auto max-w-[1080px] px-4 py-10 desktop:px-8 desktop:py-12">
+          <PartnerLogos title="Estacionamentos parceiros" />
         </div>
       </section>
 

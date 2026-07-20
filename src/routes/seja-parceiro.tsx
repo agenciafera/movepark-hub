@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { FaqList } from "@/features/faqs/FaqList";
 import type { FaqCombinedItem } from "@/features/faqs/api";
 import { PartnerLeadModal } from "@/features/onboarding/PartnerLeadModal";
+import { PartnerLogos } from "@/features/partners/PartnerLogos";
 
 const HERO_IMAGE =
   "/Estacionamentos/vaga-coberta-estacionamento-aeroporto-guarulhos-aeroparking.webp";
@@ -107,8 +108,6 @@ const TESTIMONIALS = [
     role: "Sócio · Nation Park",
   },
 ];
-
-const BRANDS = ["Virapark", "Garage Inn", "Nation Park", "Aerovalet", "Abbapark", "Plenty Park"];
 
 const FAQ = [
   {
@@ -343,17 +342,8 @@ export default function SejaParceiroPage() {
       </section>
 
       {/* Marcas */}
-      <section className="mx-auto max-w-[1100px] px-4 py-14 text-center desktop:px-8">
-        <p className="text-caption uppercase tracking-widest text-muted">
-          Estacionamentos que já são Movepark
-        </p>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
-          {BRANDS.map((b) => (
-            <span key={b} className="text-title-md font-medium text-muted">
-              {b}
-            </span>
-          ))}
-        </div>
+      <section className="mx-auto max-w-[1100px] px-4 py-14 desktop:px-8">
+        <PartnerLogos />
       </section>
 
       {/* FAQ */}
