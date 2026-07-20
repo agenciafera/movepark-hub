@@ -9,6 +9,7 @@ import {
 } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { fetchCep } from "@/lib/cep";
+import { fetchCnpj } from "@/lib/cnpj";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -268,13 +269,51 @@ function RepDeclaration({ control }: { control: Control<KycValues> }) {
   );
 }
 
+/**
+ * Campo de CNPJ que autopreenche razão social, nome fantasia e data de fundação (BrasilAPI/Receita)
+ * assim que o CNPJ fica completo. Não sobrescreve campo com valor vazio (empresa sem nome fantasia
+ * não apaga o que o dono digitou). Mesmo padrão do CepField.
+ */
+function CnpjField({ control }: { control: Control<KycValues> }) {
+  const { field, fieldState } = useController({ control, name: "company.document" });
+  const { setValue } = useFormContext<KycValues>();
+  const [loading, setLoading] = React.useState(false);
+
+  async function autofill(value: string) {
+    setLoading(true);
+    const data = await fetchCnpj(value);
+    if (data) {
+      const opts = { shouldValidate: true, shouldDirty: true } as const;
+      if (data.legalName) setValue("company.legal_name", data.legalName, opts);
+      if (data.tradeName) setValue("company.trade_name", data.tradeName, opts);
+      if (data.foundingDate) setValue("company.founding_date", data.foundingDate, opts);
+    }
+    setLoading(false);
+  }
+
+  return (
+    <Field label={loading ? "CNPJ (buscando dados…)" : "CNPJ"} error={fieldState.error?.message}>
+      <Input
+        placeholder="00.000.000/0000-00"
+        value={(field.value as string) ?? ""}
+        onBlur={field.onBlur}
+        onChange={(e) => {
+          const masked = cnpjMask(e.target.value);
+          field.onChange(masked);
+          if (onlyDigits(masked).length === 14) void autofill(masked);
+        }}
+      />
+    </Field>
+  );
+}
+
 // Seções do KYC, exportadas para o PayoutKycWizard (operador, em etapas) reusar o mesmo layout.
 export function KycCompanySection({ control }: { control: Control<KycValues> }) {
   return (
     <Section title="Dados da empresa">
+      <CnpjField control={control} />
       <TextField control={control} name="company.legal_name" label="Razão social" />
       <TextField control={control} name="company.trade_name" label="Nome fantasia (opcional)" />
-      <TextField control={control} name="company.document" label="CNPJ" mask={cnpjMask} placeholder="00.000.000/0000-00" />
       <CorporationTypeField control={control} />
       <TextField control={control} name="company.email" label="E-mail da empresa" type="email" />
       <PhoneFormField control={control} name="company.phone" label="Telefone" />
