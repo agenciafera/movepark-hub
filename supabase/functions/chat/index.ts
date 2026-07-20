@@ -190,13 +190,15 @@ Deno.serve(async (req: Request) => {
 
   const contents: GeminiContent[] = toGeminiHistory(parsed.value.messages);
   const usedTools: string[] = [];
+  // O usuário tentou uma ação que exige login mas não está logado: o front mostra um botão "Entrar".
+  let loginRequired = false;
 
   try {
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
       const content = await callGemini(apiKey, model, systemPrompt, contents);
       const calls = extractFunctionCalls(content);
       if (calls.length === 0) {
-        return json({ reply: extractText(content) || "Desculpe, não consegui responder agora.", used_tools: usedTools });
+        return json({ reply: extractText(content) || "Desculpe, não consegui responder agora.", used_tools: usedTools, login_required: loginRequired });
       }
       // anexa o turno do modelo (com os functionCall) e executa cada tool
       contents.push(content as GeminiContent);
@@ -206,7 +208,8 @@ Deno.serve(async (req: Request) => {
         usedTools.push(call.name);
         try {
           if (needsLogin(call.name, isLoggedIn)) {
-            results.push({ name: call.name, response: { error: "login_required", message: "Peça ao usuário para entrar em /entrar antes de reservar ou cancelar." } });
+            loginRequired = true;
+            results.push({ name: call.name, response: { error: "login_required", message: "Peça ao usuário para entrar antes de reservar ou cancelar (o app mostra um botão Entrar)." } });
             continue;
           }
           const out = TRANSACTIONAL.has(call.name)
@@ -220,7 +223,7 @@ Deno.serve(async (req: Request) => {
       contents.push(functionResponseContent(results));
     }
     // estourou o teto de rodadas
-    return json({ reply: "Não consegui concluir agora — pode reformular?", used_tools: usedTools }, 200);
+    return json({ reply: "Não consegui concluir agora, pode reformular?", used_tools: usedTools, login_required: loginRequired }, 200);
   } catch (e) {
     return json({ error: (e as Error).message }, 502);
   }

@@ -1,19 +1,24 @@
 import * as React from "react";
+import { Link, useLocation } from "react-router-dom";
 import { MessageCircle, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/auth/context";
 import { useChatConfig, useSendChat } from "./api";
 import { appendMessage, canSend, toRequestMessages, type ChatMessage } from "./chat.logic";
 
 const GREETING =
-  "Oi! Sou o assistente da Movepark. Posso buscar estacionamento, simular preço, tirar dúvidas e — se você estiver logado — reservar ou cancelar. Como posso ajudar?";
+  "Oi! Sou o assistente da Movepark. Posso buscar estacionamento, simular preço, tirar dúvidas e, se você estiver logado, reservar ou cancelar. Como posso ajudar?";
 
 /** Bolinha de chat (assistente web do Hub, E3.3). Some quando `chatbot_enabled=false`. */
 export function ChatWidget() {
   const cfg = useChatConfig();
   const send = useSendChat();
+  const { session } = useAuth();
+  const location = useLocation();
   const [open, setOpen] = React.useState(false);
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
   const [input, setInput] = React.useState("");
+  const [needsLogin, setNeedsLogin] = React.useState(false);
   const listRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -21,6 +26,10 @@ export function ChatWidget() {
   }, [messages, open]);
 
   if (!cfg.data?.enabled) return null;
+
+  // Só mostra o botão se o assistente pediu login E o usuário de fato não está logado.
+  const showLogin = needsLogin && !session;
+  const loginHref = `/login?next=${encodeURIComponent(location.pathname + location.search)}`;
 
   async function handleSend() {
     const text = input.trim();
@@ -31,6 +40,7 @@ export function ChatWidget() {
     try {
       const res = await send.mutateAsync(toRequestMessages(next));
       setMessages((m) => appendMessage(m, "model", res.reply));
+      setNeedsLogin(!!res.login_required);
     } catch (e) {
       setMessages((m) => appendMessage(m, "model", `Desculpe, deu um erro: ${(e as Error).message}`));
     }
@@ -64,6 +74,13 @@ export function ChatWidget() {
           <Bubble key={m.id} role={m.role} text={m.text} />
         ))}
         {send.isPending && <Bubble role="model" text="…" />}
+        {showLogin && (
+          <div className="flex justify-start">
+            <Button asChild size="sm" onClick={() => setNeedsLogin(false)}>
+              <Link to={loginHref}>Entrar para reservar</Link>
+            </Button>
+          </div>
+        )}
       </div>
 
       <form

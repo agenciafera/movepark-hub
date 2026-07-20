@@ -42,4 +42,34 @@ describe("ChatWidget", () => {
     // enviou o histórico ao edge
     expect(h.mutateAsync).toHaveBeenCalledWith([{ role: "user", text: "estacionamento em GRU" }]);
   });
+
+  it("mostra o botão Entrar quando o assistente pede login (usuário deslogado)", async () => {
+    h.mutateAsync.mockResolvedValue({
+      reply: "Para reservar, você precisa entrar.",
+      used_tools: ["create_booking"],
+      login_required: true,
+    });
+    const user = userEvent.setup();
+    renderWithProviders(<ChatWidget />);
+
+    await user.click(screen.getByLabelText("Abrir assistente"));
+    await user.type(screen.getByLabelText("Mensagem"), "quero reservar");
+    await user.click(screen.getByLabelText("Enviar"));
+
+    const btn = await screen.findByRole("link", { name: /entrar para reservar/i });
+    expect(btn).toHaveAttribute("href", expect.stringContaining("/login?next="));
+  });
+
+  it("não mostra o botão Entrar quando não é preciso login", async () => {
+    h.mutateAsync.mockResolvedValue({ reply: "Achei 2 opções.", used_tools: ["search_parking"] });
+    const user = userEvent.setup();
+    renderWithProviders(<ChatWidget />);
+
+    await user.click(screen.getByLabelText("Abrir assistente"));
+    await user.type(screen.getByLabelText("Mensagem"), "buscar GRU");
+    await user.click(screen.getByLabelText("Enviar"));
+
+    await waitFor(() => expect(screen.getByText("Achei 2 opções.")).toBeInTheDocument());
+    expect(screen.queryByRole("link", { name: /entrar para reservar/i })).toBeNull();
+  });
 });

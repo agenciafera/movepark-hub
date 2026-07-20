@@ -20,7 +20,7 @@ export function useChatConfig() {
   });
 }
 
-export type SendChatResult = { reply: string; used_tools: string[] };
+export type SendChatResult = { reply: string; used_tools: string[]; login_required?: boolean };
 
 /** Envia o histórico ao assistente. Repassa o JWT do usuário quando logado. */
 export function useSendChat() {
