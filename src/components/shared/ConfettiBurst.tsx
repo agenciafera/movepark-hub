@@ -23,19 +23,21 @@ function makePieces(n: number): Piece[] {
   return pieces;
 }
 
-export function ConfettiBurst({ count = 28 }: { count?: number }) {
+/** `loop` mantém o confete caindo pra sempre (festa contínua); sem ele, cai uma vez e some. */
+export function ConfettiBurst({ count = 28, loop = false }: { count?: number; loop?: boolean }) {
   // gera as peças uma vez (posição/atraso aleatórios).
   const pieces = React.useMemo(() => makePieces(count), [count]);
   const [gone, setGone] = React.useState(false);
   React.useEffect(() => {
+    if (loop) return; // festa contínua não some
     const t = window.setTimeout(() => setGone(true), 2400);
     return () => window.clearTimeout(t);
-  }, []);
+  }, [loop]);
   if (gone) return null;
 
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-      <style>{`@keyframes mp-confetti{0%{transform:translateY(-10%) rotate(0);opacity:1}100%{transform:translateY(340px) rotate(320deg);opacity:0}}`}</style>
+      <style>{`@keyframes mp-confetti{0%{transform:translateY(-10%) rotate(0);opacity:0}8%{opacity:1}100%{transform:translateY(340px) rotate(320deg);opacity:0}}`}</style>
       {pieces.map((p, i) => (
         <span
           key={i}
@@ -48,7 +50,7 @@ export function ConfettiBurst({ count = 28 }: { count?: number }) {
             background: p.color,
             borderRadius: 2,
             transform: `rotate(${p.rotate}deg)`,
-            animation: `mp-confetti ${p.duration}ms ${p.delay}ms ease-in forwards`,
+            animation: `mp-confetti ${p.duration}ms ${p.delay}ms ease-in ${loop ? "infinite" : "forwards"}`,
           }}
         />
       ))}

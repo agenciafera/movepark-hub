@@ -2,7 +2,7 @@ import * as React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { toast } from "sonner";
-import { ArrowLeft, Check, Download, Landmark, FileText, ShieldCheck, ShieldQuestion, ExternalLink, PartyPopper, Clock } from "lucide-react";
+import { ArrowLeft, Check, Download, Landmark, FileText, ShieldCheck, ShieldQuestion, ExternalLink, Clock } from "lucide-react";
 import { useAuth } from "@/auth/context";
 import { Wordmark } from "@/components/shared/Brand";
 import { Button } from "@/components/ui/button";
@@ -29,23 +29,22 @@ type Step = "dados" | "contrato" | "done";
  * contrato (simulada por ora). Quando a Movepark aprova o recebedor, a unidade entra na busca
  * (gate is_listed). Standalone, no estilo do preview travado.
  */
-/** Comemoração no aside quando o cadastro fica completo: ícone vibrando + confete. */
+/** Comemoração no aside ao completar o cadastro: emoji pulando + confete em loop. */
 function SetupDoneAside() {
   return (
-    <div className="relative flex flex-col items-center gap-4 overflow-hidden rounded-lg bg-mp-navy p-6 text-center text-white">
-      <ConfettiBurst />
-      <style>{`@keyframes mp-celebrate{0%,100%{transform:rotate(0deg) scale(1)}15%{transform:rotate(-12deg) scale(1.1)}30%{transform:rotate(10deg) scale(1.1)}45%{transform:rotate(-8deg) scale(1.05)}60%{transform:rotate(8deg) scale(1.05)}75%{transform:rotate(-4deg) scale(1.02)}}`}</style>
+    <div className="relative flex flex-col items-center gap-4 overflow-hidden rounded-lg bg-brand-gradient p-6 text-center text-white">
+      <ConfettiBurst loop count={22} />
+      <style>{`@keyframes mp-party{0%,100%{transform:translateY(0) rotate(0) scale(1)}18%{transform:translateY(-12px) rotate(-14deg) scale(1.18)}40%{transform:translateY(0) rotate(12deg) scale(1.08)}62%{transform:translateY(-6px) rotate(-7deg) scale(1.05)}82%{transform:translateY(0) rotate(6deg) scale(1.02)}}`}</style>
       <span
-        className="flex h-16 w-16 items-center justify-center rounded-full bg-white/15"
-        style={{ animation: "mp-celebrate 1.6s ease-in-out infinite" }}
+        className="relative select-none text-6xl leading-none"
+        style={{ animation: "mp-party 1.4s ease-in-out infinite" }}
       >
-        <PartyPopper className="h-8 w-8 text-white" />
+        🎉
       </span>
-      <div className="flex flex-col gap-1.5">
-        <p className="text-title-md text-white">Cadastro completo! 🎉</p>
-        <p className="text-body-sm text-white/80">
-          Você fez tudo do seu lado. Agora é com a Movepark: seu recebedor já foi criado e está em
-          análise.
+      <div className="relative flex flex-col gap-1.5">
+        <p className="text-title-lg text-white">Mandou muito bem! 🥳</p>
+        <p className="text-body-sm text-white/90">
+          Fez tudo do seu lado. Agora relaxa e deixa o resto com a gente.
         </p>
       </div>
     </div>
@@ -222,9 +221,10 @@ export default function OperatorRecebimento() {
               <div className="flex h-11 w-11 items-center justify-center rounded-full bg-success/15">
                 <Check className="h-6 w-6 text-success" />
               </div>
-              <h1 className="text-title-lg text-ink">Recebimento enviado! 🎉</h1>
+              <h1 className="text-title-lg text-ink">Fechou! Cadastro completo 🎉</h1>
               <p className="text-body-sm text-muted">
-                Recebemos seus dados e o contrato assinado, e já criamos seu recebedor.
+                Seus dados chegaram, o contrato tá assinado e seu recebedor já foi criado. Você fez
+                tudo certinho.
               </p>
             </div>
 
@@ -262,12 +262,11 @@ export default function OperatorRecebimento() {
                 <Clock className="mt-0.5 h-5 w-5 shrink-0 text-mp-indigo" />
                 <div>
                   <p className="text-body-sm font-medium text-ink">
-                    A aprovação leva, em média, 15 a 20 dias corridos.
+                    Agora é a nossa vez: a aprovação leva uns 15 a 20 dias corridos.
                   </p>
                   <p className="mt-1 text-body-sm text-muted">
-                    É a análise da processadora de pagamento com a Movepark. Fica tranquilo: assim
-                    que aprovar, sua unidade entra na busca e começa a receber reservas. A gente te
-                    avisa por e-mail e WhatsApp.
+                    Pode relaxar que a gente cuida daqui. Assim que aprovar, sua unidade entra na
+                    busca e começa a receber reserva. A gente te chama no e-mail e no WhatsApp.
                   </p>
                 </div>
               </div>
