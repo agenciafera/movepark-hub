@@ -23,6 +23,7 @@ import {
   mergeRange,
   nextRange,
   pickerPhase,
+  previewRange,
   setTime,
 } from "./DateRangePicker.logic";
 
@@ -43,8 +44,11 @@ const startOfToday = () => new Date(new Date().toDateString());
  */
 export function DateRangePicker({ from, to, onChange, triggerClassName }: Props) {
   const [open, setOpen] = React.useState(false);
+  const [hovered, setHovered] = React.useState<Date | null>(null);
   const range: DateRange | undefined = from ? { from, to: to ?? undefined } : undefined;
   const phase = pickerPhase(from, to);
+  const preview = previewRange(from, to, hovered);
+  const previewing = preview.end !== null;
 
   /**
    * A seleção é nossa, não do react-day-picker: `onDayClick` em vez de `onSelect`.
@@ -54,6 +58,7 @@ export function DateRangePicker({ from, to, onChange, triggerClassName }: Props)
    */
   function handleDayClick(day: Date, mods: { disabled?: boolean }) {
     if (mods.disabled) return;
+    setHovered(null);
     const merged = mergeRange({ from, to }, nextRange({ from, to }, day));
     onChange(merged.from, merged.to);
   }
@@ -64,7 +69,15 @@ export function DateRangePicker({ from, to, onChange, triggerClassName }: Props)
     d ? format(d, "dd MMM · HH:mm", { locale: ptBR }) : "Adicionar data";
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        // O mouse sai do calendário sem passar por onDayMouseLeave quando o popover
+        // fecha; sem isto a prévia reaparece congelada na próxima abertura.
+        if (!next) setHovered(null);
+        setOpen(next);
+      }}
+    >
       <PopoverAnchor asChild>
         {/* h-full (tablet+) pra o bloco preencher a altura do pill e os campos ficarem
             verticalmente centralizados, alinhados com "Onde" e "Veículo". */}
@@ -111,18 +124,37 @@ export function DateRangePicker({ from, to, onChange, triggerClassName }: Props)
           onDayClick={handleDayClick}
           disabled={disabledDays(from, to)}
           defaultMonth={from ?? startOfToday()}
+          onDayMouseEnter={(day, mods) => setHovered(mods.disabled ? null : day)}
+          onDayMouseLeave={() => setHovered(null)}
+          // Prévia do intervalo sob o cursor. Fica mais clara que o intervalo confirmado
+          // (miolo tracejado, ponta só contornada) pra não passar por escolha já feita.
+          modifiers={{
+            ...(preview.middle ? { preview_middle: preview.middle } : {}),
+            ...(preview.end ? { preview_end: preview.end } : {}),
+          }}
+          // Cinza neutro na prévia, azul da marca só no intervalo confirmado: o olho
+          // separa "seria isto" de "é isto" sem precisar de legenda. A ponta sob o
+          // cursor leva contorno em vez de preenchimento, porque ainda não é escolha.
+          modifiersClassNames={{
+            preview_middle: "!rounded-none !bg-surface-soft !text-ink",
+            preview_end:
+              "!rounded-r-full !bg-surface-soft !text-ink ring-1 ring-inset ring-mp-primary",
+          }}
           // Entrada sozinha é círculo fechado. A classe de início de intervalo corta o
           // lado direito pra emendar no miolo, e sem saída isso vira meia pílula solta.
+          // Com prévia aberta ela volta a ser tampa esquerda, pra emendar na prévia.
           classNames={
             to
               ? undefined
               : {
                   // Sem saída, o react-day-picker marca o mesmo dia como início E fim,
-                  // então as duas classes precisam virar círculo.
-                  day_range_start:
-                    "!rounded-full !bg-mp-primary !text-white hover:!bg-mp-primary-active",
-                  day_range_end:
-                    "!rounded-full !bg-mp-primary !text-white hover:!bg-mp-primary-active",
+                  // então as duas classes precisam do mesmo tratamento.
+                  day_range_start: previewing
+                    ? "!rounded-l-full !rounded-r-none !bg-mp-primary !text-white"
+                    : "!rounded-full !bg-mp-primary !text-white hover:!bg-mp-primary-active",
+                  day_range_end: previewing
+                    ? "!rounded-l-full !rounded-r-none !bg-mp-primary !text-white"
+                    : "!rounded-full !bg-mp-primary !text-white hover:!bg-mp-primary-active",
                 }
           }
           components={{

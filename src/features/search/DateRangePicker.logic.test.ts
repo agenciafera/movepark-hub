@@ -8,6 +8,7 @@ import {
   mergeRange,
   nextFutureTime,
   nextRange,
+  previewRange,
 } from "./DateRangePicker.logic";
 
 const hhmm = (d: Date | null) => (d ? format(d, "dd/MM HH:mm") : null);
@@ -188,5 +189,36 @@ describe("dayAriaLabel — miolo do intervalo", () => {
     expect(
       dayAriaLabel(new Date(2026, 6, 26), { range_middle: true, selected: true }, "checkin"),
     ).toBe("26 de julho de 2026. Dentro do período.");
+  });
+});
+
+describe("previewRange — prévia do intervalo no hover", () => {
+  const dia = (d: number) => new Date(2026, 6, d);
+
+  it("escolhendo a saída, pinta da entrada até o dia sob o cursor", () => {
+    const p = previewRange(dia(10), null, dia(14));
+    expect(hhmm(p.middle!.after)).toBe("10/07 00:00");
+    expect(hhmm(p.middle!.before)).toBe("14/07 00:00");
+    expect(hhmm(p.end)).toBe("14/07 00:00");
+  });
+
+  it("sem entrada não há prévia (não existe de onde pintar)", () => {
+    expect(previewRange(null, null, dia(14))).toEqual({ middle: null, end: null });
+  });
+
+  it("intervalo completo não tem prévia: o próximo clique recomeça", () => {
+    expect(previewRange(dia(10), dia(20), dia(14))).toEqual({ middle: null, end: null });
+  });
+
+  it("cursor sobre a própria entrada não pinta nada", () => {
+    expect(previewRange(dia(10), null, dia(10))).toEqual({ middle: null, end: null });
+  });
+
+  it("cursor antes da entrada não pinta pra trás", () => {
+    expect(previewRange(dia(10), null, dia(7))).toEqual({ middle: null, end: null });
+  });
+
+  it("sem cursor não há prévia", () => {
+    expect(previewRange(dia(10), null, null)).toEqual({ middle: null, end: null });
   });
 });

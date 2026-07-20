@@ -75,6 +75,27 @@ export function nextRange(prev: Range, day: Date): Range {
 }
 
 /**
+ * Prévia do intervalo enquanto o mouse passeia pelo calendário: mostra onde a reserva
+ * terminaria se o clique acontecesse ali. Só existe escolhendo a saída, e só pra frente
+ * (o dia anterior à entrada já está barrado).
+ *
+ * `middle` são os dias entre as pontas (matcher exclusivo do react-day-picker) e `end`
+ * é o dia sob o cursor. Devolve tudo nulo quando não há prévia, pro componente não
+ * precisar repetir a checagem.
+ */
+export function previewRange(
+  from: Date | null,
+  to: Date | null,
+  hovered: Date | null,
+): { middle: { after: Date; before: Date } | null; end: Date | null } {
+  const vazio = { middle: null, end: null };
+  if (pickerPhase(from, to) !== "checkout" || !from || !hovered) return vazio;
+  // Mesmo dia não tem prévia: a entrada já ocupa a célula.
+  if (startOfDay(hovered).getTime() <= startOfDay(from).getTime()) return vazio;
+  return { middle: { after: from, before: hovered }, end: hovered };
+}
+
+/**
  * Rótulo acessível de um dia. Sem isto o calendário é uma grade de números soltos
  * no leitor de tela: ele lê "25" sem dizer o mês, se está selecionado, nem o que o
  * clique faz. O papel vem dos modificadores que o react-day-picker já calcula.
