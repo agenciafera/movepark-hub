@@ -1,15 +1,16 @@
 // Edge Function: /attach-phone-silent
-// Anexa o telefone informado no checkout ao auth.users da conta em sessão, SEM OTP, com guarda de
-// colisão. Objetivo: lembrar o telefone (pré-preencher da próxima) e habilitar login por WhatsApp.
+// Guarda o telefone informado no checkout como DICA de pré-preenchimento da conta
+// em sessão. NÃO é credencial de login: escreve profiles.preferences.unverified_phone_hint,
+// nunca auth.users.phone.
 //
-// ⚠️ DESVIO CONSCIENTE DA ADR-006 (decisão de produto): a ADR-006 exige verificação (OTP) pra
-// promover um identificador a credencial. Aqui gravamos direto. A guarda que resta é a checagem de
-// colisão: se o número já é de OUTRA conta, NÃO escrevemos nada (evita sequestro de conta alheia).
-// O pagamento NÃO depende disto (lê o telefone do snapshot do booking); isto é só conveniência.
+// ADR-006: promover um identificador a credencial exige prova de posse (OTP). O caminho
+// verificado é a tela "Meus logins" (Edge attach-identifier). Aqui é só conveniência — o
+// checkout pré-preenche o telefone na próxima reserva. O pagamento não depende disto (lê o
+// telefone do snapshot do booking).
 //
 // POST /functions/v1/attach-phone-silent   Authorization: Bearer <JWT>
 //   { phone: "+55..." }
-// → { status: "attached" | "collision" | "already_set" | "invalid" }
+// → { status: "hinted" | "invalid" }
 
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -39,16 +40,15 @@ Deno.serve(async (req: Request) => {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   // @ts-expect-error - Deno env
   const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
-  // @ts-expect-error - Deno env
-  const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+  // Cliente do usuário: a RPC set_phone_hint é keyed por auth.uid(), então escreve só no
+  // próprio perfil. Sem service_role — não há mais mutação de credencial aqui.
   const userClient = createClient(SUPABASE_URL, ANON, {
     auth: { persistSession: false },
     global: { headers: { Authorization: authHeader } },
   });
   const { data: userData, error: userErr } = await userClient.auth.getUser();
   if (userErr || !userData.user) return jsonResponse({ error: "Sessão inválida" }, 401);
-  const uid = userData.user.id;
 
   let body: { phone?: string };
   try {
@@ -60,27 +60,10 @@ Deno.serve(async (req: Request) => {
   const phone = normalizePhone(body.phone);
   if (!phone) return jsonResponse({ status: "invalid" });
 
-  const admin = createClient(SUPABASE_URL, SERVICE, { auth: { persistSession: false } });
-
-  // Já tem telefone na conta? Não sobrescreve (o checkout só chama quando está vazio, mas garantimos).
-  if (userData.user.phone) {
-    const sameDigits =
-      userData.user.phone.replace(/\D/g, "") === phone.replace(/\D/g, "");
-    return jsonResponse({ status: sameDigits ? "attached" : "already_set" });
-  }
-
-  // Guarda de colisão: se o número já é de outra conta, não escreve nada (evita sequestro).
-  const { data: ownerB } = await admin.rpc("find_user_by_identifier", {
-    p_channel: "phone",
-    p_identifier: phone,
-  });
-  if (ownerB && ownerB !== uid) return jsonResponse({ status: "collision" });
-
-  const { error } = await admin.auth.admin.updateUserById(uid, { phone, phone_confirm: true });
+  const { error } = await userClient.rpc("set_phone_hint", { p_phone: phone });
   if (error) {
-    // Corrida rara: o número virou de outra conta entre a checagem e a escrita → trata como colisão.
-    console.error("[attach-phone-silent] updateUserById falhou:", error.message);
-    return jsonResponse({ status: "collision" });
+    console.error("[attach-phone-silent] set_phone_hint falhou:", error.message);
+    return jsonResponse({ error: "Falha ao guardar a dica de telefone" }, 500);
   }
-  return jsonResponse({ status: "attached" });
+  return jsonResponse({ status: "hinted" });
 });

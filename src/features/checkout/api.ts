@@ -236,9 +236,9 @@ export function useUpdateBookingCustomer() {
 }
 
 /**
- * Anexa o telefone informado no checkout ao auth.users da conta (sem OTP, com guarda de colisão).
- * Best-effort: só conveniência de pré-preenchimento; o pagamento lê o telefone do snapshot do booking.
- * Edge attach-phone-silent. Ver a exceção documentada na ADR-006.
+ * Guarda o telefone do checkout como dica de pré-preenchimento (profiles.preferences), não como
+ * credencial de login. Best-effort; o pagamento lê o telefone do snapshot do booking. Promover a
+ * credencial exige verificação (tela "Meus logins"). Edge attach-phone-silent, ADR-006.
  */
 export function useAttachPhone() {
   return useMutation({

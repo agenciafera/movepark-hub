@@ -138,8 +138,8 @@ export function Step1Identity({
 
       await Promise.all(tasks);
 
-      // Lembrar o telefone: se a conta ainda não tem telefone, anexa (best-effort, sem OTP). Colisão
-      // com outra conta → não anexa (a edge decide); o pedido segue com o telefone no snapshot.
+      // Lembrar o telefone como dica de pré-preenchimento (não credencial): se a conta ainda não tem
+      // telefone verificado, guarda (best-effort). O pedido segue com o telefone no snapshot do booking.
       if (!session.phone && titularPhone) {
         try {
           await attachPhone.mutateAsync({ phone: titularPhone });

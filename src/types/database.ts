@@ -784,12 +784,12 @@ export type Database = {
           wps_webhook_url: string | null
         }
         Insert: {
+          contract_accepted_at?: string | null
+          contract_version?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
           legal_name?: string | null
-          contract_accepted_at?: string | null
-          contract_version?: string | null
           logo_url?: string | null
           name: string
           onboarding_status?: Database["public"]["Enums"]["onboarding_status"]
@@ -806,12 +806,12 @@ export type Database = {
           wps_webhook_url?: string | null
         }
         Update: {
+          contract_accepted_at?: string | null
+          contract_version?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
           legal_name?: string | null
-          contract_accepted_at?: string | null
-          contract_version?: string | null
           logo_url?: string | null
           name?: string
           onboarding_status?: Database["public"]["Enums"]["onboarding_status"]
@@ -2194,64 +2194,6 @@ export type Database = {
         }
         Relationships: []
       }
-      wallet_ledger: {
-        Row: {
-          amount_cents: number
-          booking_id: string | null
-          created_at: string
-          expires_at: string | null
-          id: string
-          kind: string
-          note: string | null
-          profile_id: string
-          referral_id: string | null
-        }
-        Insert: {
-          amount_cents: number
-          booking_id?: string | null
-          created_at?: string
-          expires_at?: string | null
-          id?: string
-          kind: string
-          note?: string | null
-          profile_id: string
-          referral_id?: string | null
-        }
-        Update: {
-          amount_cents?: number
-          booking_id?: string | null
-          created_at?: string
-          expires_at?: string | null
-          id?: string
-          kind?: string
-          note?: string | null
-          profile_id?: string
-          referral_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "wallet_ledger_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "booking"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "wallet_ledger_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "wallet_ledger_referral_id_fkey"
-            columns: ["referral_id"]
-            isOneToOne: false
-            referencedRelation: "referral"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       parking_type: {
         Row: {
           code: string
@@ -3258,6 +3200,64 @@ export type Database = {
           },
         ]
       }
+      wallet_ledger: {
+        Row: {
+          amount_cents: number
+          booking_id: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          kind: string
+          note: string | null
+          profile_id: string
+          referral_id: string | null
+        }
+        Insert: {
+          amount_cents: number
+          booking_id?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          kind: string
+          note?: string | null
+          profile_id: string
+          referral_id?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          booking_id?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          kind?: string
+          note?: string | null
+          profile_id?: string
+          referral_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_ledger_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_ledger_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_ledger_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "referral"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wl_delivery: {
         Row: {
           attempts: number
@@ -3607,10 +3607,6 @@ export type Database = {
         Returns: undefined
       }
       anonymize_own_account: { Args: never; Returns: undefined }
-      assert_check_in_not_past: {
-        Args: { p_check_in: string }
-        Returns: undefined
-      }
       api_assert_lpt_company: {
         Args: { p_company_id: string; p_lpt_id: string }
         Returns: undefined
@@ -3900,6 +3896,10 @@ export type Database = {
         }
         Returns: Json
       }
+      assert_check_in_not_past: {
+        Args: { p_check_in: string }
+        Returns: undefined
+      }
       availability_batch: {
         Args: {
           p_check_in_at: string
@@ -3937,10 +3937,8 @@ export type Database = {
         }
         Returns: Json
       }
-      check_in_in_past: {
-        Args: { p_check_in: string }
-        Returns: boolean
-      }
+      check_in_in_past: { Args: { p_check_in: string }; Returns: boolean }
+      company_can_receive: { Args: { p_company_id: string }; Returns: boolean }
       company_list_members: {
         Args: { p_company_id: string }
         Returns: {
@@ -4129,6 +4127,7 @@ export type Database = {
       }
       is_company_owner: { Args: { p_company_id: string }; Returns: boolean }
       is_hub_admin: { Args: never; Returns: boolean }
+      location_has_photo: { Args: { p_photos: Json }; Returns: boolean }
       locations_high_demand_today: {
         Args: { p_location_ids: string[] }
         Returns: {
@@ -4241,6 +4240,10 @@ export type Database = {
         Args: { p_account: Json; p_company_id: string }
         Returns: undefined
       }
+      operator_accept_contract: {
+        Args: { p_company_id: string; p_version?: string }
+        Returns: undefined
+      }
       operator_api_usage: {
         Args: { p_company_id: string; p_limit?: number; p_since?: string }
         Returns: Json
@@ -4268,10 +4271,6 @@ export type Database = {
         Returns: undefined
       }
       operator_list_api_keys: { Args: { p_company_id: string }; Returns: Json }
-      operator_accept_contract: {
-        Args: { p_company_id: string; p_version?: string }
-        Returns: undefined
-      }
       operator_location_occupancy: {
         Args: { p_from: string; p_location_id: string; p_to: string }
         Returns: {
@@ -4444,6 +4443,8 @@ export type Database = {
       set_company_take_rate: {
         Args: { p_company_id: string; p_take_rate_bps: number }
         Returns: {
+          contract_accepted_at: string | null
+          contract_version: string | null
           created_at: string
           deleted_at: string | null
           id: string
@@ -4470,6 +4471,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      set_phone_hint: { Args: { p_phone: string }; Returns: undefined }
       simulate_price: {
         Args: {
           p_company: string

@@ -150,13 +150,15 @@ Regras **fixas** do projeto, não sugestões. Se algo conflitar com elas, **siga
   credencial (telefone de recado), modele explícito como `profiles.contact_phone`, separado, sem se
   passar por identidade. Épico **E0.10** (identidade unificada: anexar-verificado + merge determinístico
   Google↔WhatsApp); ver [`docs/specs/customer/identity-unification.md`](docs/specs/customer/identity-unification.md).
-  - **Exceção consciente (decisão de produto) — anexo silencioso de telefone no checkout.** No passo 1 do
-    checkout, se a conta ainda não tem telefone no `auth.users`, o telefone digitado é gravado **sem OTP**
-    (Edge `attach-phone-silent`, `admin.updateUserById({ phone, phone_confirm: true })`). A guarda que
-    substitui a verificação é a **checagem de colisão**: se o número já pertence a outra conta
-    (`find_user_by_identifier`), **não escreve nada** (não sequestra conta alheia). O **pagamento não depende
-    disso** — o pagador (nome, CPF, telefone, e-mail) vem do **snapshot do booking** (`customer_*`), não do
-    `auth.users`. Fora do checkout, promover identificador a credencial continua exigindo verificação.
+  - **Telefone do checkout é dica, não credencial (sem exceção ao ADR-006).** No passo 1 do checkout, se a
+    conta ainda não tem telefone verificado, o telefone digitado é guardado como **dica de
+    pré-preenchimento** em `profiles.preferences.unverified_phone_hint` (RPC `set_phone_hint`, keyed em
+    `auth.uid()`; Edge `attach-phone-silent`). **Nunca** vira credencial: não escreve `auth.users.phone`. O
+    **pagamento não depende disso** (o pagador vem do **snapshot do booking**, `customer_*`). Promover o
+    telefone a credencial de login continua exigindo **verificação** (tela "Meus logins", Edge
+    `attach-identifier` com OTP próprio). Histórico: houve um anexo silencioso que promovia o número a
+    credencial sem OTP; foi fechado (migration `20260820000000`) porque abria sequestro de conta quando o
+    login por OTP de WhatsApp é o caminho principal (ex.: agente de reserva).
 
 ## Comandos
 
