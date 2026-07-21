@@ -7,7 +7,9 @@
 -- Roda em transação com rollback.
 
 begin;
-select plan(9);
+-- 11 = 8 originais + 3 do caso de tarifa. O plano estava em 9 com 8 asserções (Bad plan
+-- pré-existente, mesma classe do retroactive_check_in relatado em 86ajmx4yc).
+select plan(11);
 
 -- ── fixture: customer + um tipo de vaga do seed, capacidade folgada ─────────
 do $$
@@ -90,5 +92,31 @@ end $$;
 
 select isnt(current_setting('test.bk4'), current_setting('test.bk1'),
   're-reserva após a 1ª sair de pending cria reserva nova');
+
+-- ── 5) MESMAS datas com TARIFA diferente → reserva nova (86ajmycpc) ─────────
+-- A chave cobre o que o cliente comprou. Sem isto, quem criava uma pending na Básica e voltava
+-- para escolher Superflex recebia replay da Básica: pagava achando que tinha a janela de 1 minuto
+-- e ficava com a de 24h, descobrindo só na hora de cancelar.
+do $$
+declare r_basica jsonb; r_super jsonb;
+begin
+  r_basica := public.create_booking_atomic(
+    current_setting('test.u')::uuid, current_setting('test.lpt')::uuid,
+    '2027-08-01T12:00:00Z', '2027-08-03T12:00:00Z');
+  r_super := public.create_booking_atomic(
+    current_setting('test.u')::uuid, current_setting('test.lpt')::uuid,
+    '2027-08-01T12:00:00Z', '2027-08-03T12:00:00Z', p_fare_tier => 'superflex');
+  perform set_config('test.tier_basica', r_basica ->> 'booking_id', false);
+  perform set_config('test.tier_super', r_super ->> 'booking_id', false);
+  perform set_config('test.tier_replay', coalesce(r_super ->> 'idempotent_replay', 'false'), false);
+end $$;
+
+select isnt(current_setting('test.tier_super'), current_setting('test.tier_basica'),
+  'trocar a tarifa nas mesmas datas cria reserva NOVA (não deduplica)');
+select is(current_setting('test.tier_replay'), 'false',
+  'a reserva com tarifa diferente não é marcada como replay');
+select is(
+  (select fare_tier::text from public.booking where id = current_setting('test.tier_super')::uuid),
+  'superflex', 'a tarifa escolhida é a que fica persistida');
 
 rollback;

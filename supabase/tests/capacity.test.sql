@@ -5,16 +5,21 @@
 begin;
 select plan(11);
 
--- ── fixture: customer + um tipo de vaga do seed com capacidade = 1 ──────────
+-- ── fixture: DOIS customers + um tipo de vaga do seed com capacidade = 1 ────
+-- O 2º cliente existe porque create_booking_atomic deduplica por (cliente + compra): repetir a
+-- mesma chamada com o MESMO cliente devolve replay da pending e nunca chega no guard que se quer
+-- testar. Um segundo cliente disputando a mesma vaga é o modelo real da capacidade. Ver 86ajmycpc.
 do $$
-declare u uuid := gen_random_uuid(); v_lpt uuid;
+declare u uuid := gen_random_uuid(); u2 uuid := gen_random_uuid(); v_lpt uuid;
 begin
   insert into auth.users(id, instance_id, aud, role, email, created_at, updated_at)
-    values (u,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','cap@ex.com',now(),now());
-  insert into public.profiles(id, role) values (u,'customer') on conflict (id) do nothing;
+    values (u,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','cap@ex.com',now(),now()),
+           (u2,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','cap2@ex.com',now(),now());
+  insert into public.profiles(id, role) values (u,'customer'), (u2,'customer') on conflict (id) do nothing;
   select id into v_lpt from public.location_parking_type where capacity > 0 and is_active limit 1;
   update public.location_parking_type set capacity = 1 where id = v_lpt;  -- força capacidade 1
   perform set_config('test.u', u::text, false);
+  perform set_config('test.u2', u2::text, false);
   perform set_config('test.lpt', v_lpt::text, false);
 end $$;
 
@@ -43,7 +48,7 @@ select is(
 select throws_ok(
   format($q$ select public.create_booking_atomic(%L::uuid, %L::uuid,
     '2026-09-10T12:00:00Z'::timestamptz, '2026-09-12T12:00:00Z'::timestamptz) $q$,
-    current_setting('test.u'), current_setting('test.lpt')),
+    current_setting('test.u2'), current_setting('test.lpt')),
   'P0001', NULL,
   'segunda reserva nas mesmas datas é bloqueada por capacidade');
 
@@ -66,7 +71,7 @@ update public.location_parking_type
 select throws_ok(
   format($q$ select public.create_booking_atomic(%L::uuid, %L::uuid,
     '2026-09-10T12:00:00Z'::timestamptz, '2026-09-12T12:00:00Z'::timestamptz) $q$,
-    current_setting('test.u'), current_setting('test.lpt')),
+    current_setting('test.u2'), current_setting('test.lpt')),
   'P0001', NULL,
   'estadia abaixo do mínimo é bloqueada');
 
@@ -80,7 +85,7 @@ update public.location_parking_type
 select throws_ok(
   format($q$ select public.create_booking_atomic(%L::uuid, %L::uuid,
     '2026-09-10T12:00:00Z'::timestamptz, '2026-09-12T12:00:00Z'::timestamptz) $q$,
-    current_setting('test.u'), current_setting('test.lpt')),
+    current_setting('test.u2'), current_setting('test.lpt')),
   'P0001', NULL,
   'entrada antes da data mínima é bloqueada');
 

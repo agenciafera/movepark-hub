@@ -12,17 +12,21 @@ select has_column('public', 'payment', 'refunded_at', 'payment.refunded_at exist
 select has_column('public', 'payment', 'refund_reason', 'payment.refund_reason existe');
 
 -- ── fixture: customer + lpt com capacidade 5 + DUAS reservas nas mesmas datas ─
+-- Duas reservas nas mesmas datas exigem DOIS clientes: create_booking_atomic deduplica por
+-- (cliente + compra), então o mesmo cliente repetindo a chamada receberia replay da 1ª em vez de
+-- uma reserva nova, e o booked_count ficaria em 1. Ver 86ajmycpc.
 do $$
-declare u uuid := gen_random_uuid(); v_lpt uuid; a jsonb; b jsonb; v_pay uuid;
+declare u uuid := gen_random_uuid(); u2 uuid := gen_random_uuid(); v_lpt uuid; a jsonb; b jsonb; v_pay uuid;
 begin
   insert into auth.users(id, instance_id, aud, role, email, created_at, updated_at)
-    values (u,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','refund@ex.com',now(),now());
-  insert into public.profiles(id, role) values (u,'customer') on conflict (id) do nothing;
+    values (u,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','refund@ex.com',now(),now()),
+           (u2,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','refund2@ex.com',now(),now());
+  insert into public.profiles(id, role) values (u,'customer'), (u2,'customer') on conflict (id) do nothing;
   select id into v_lpt from public.location_parking_type where capacity > 0 and is_active limit 1;
   update public.location_parking_type set capacity = 5 where id = v_lpt;
 
-  a := public.create_booking_atomic(u, v_lpt, '2026-11-10T12:00:00Z', '2026-11-12T12:00:00Z');
-  b := public.create_booking_atomic(u, v_lpt, '2026-11-10T12:00:00Z', '2026-11-12T12:00:00Z');
+  a := public.create_booking_atomic(u,  v_lpt, '2026-11-10T12:00:00Z', '2026-11-12T12:00:00Z');
+  b := public.create_booking_atomic(u2, v_lpt, '2026-11-10T12:00:00Z', '2026-11-12T12:00:00Z');
 
   -- payment pago para a reserva A (testa RLS de escrita)
   insert into public.payment (booking_id, provider, amount, status)
