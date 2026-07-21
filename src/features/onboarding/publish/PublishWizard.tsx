@@ -169,13 +169,13 @@ export function PublishWizard({ data, companyId }: Props) {
 
   async function doPublish() {
     if (photos.length === 0) {
-      return toast.error("Adicione pelo menos 1 foto da sua unidade para publicar.");
+      return toast.error("Adicione pelo menos 1 foto do seu estacionamento.");
     }
     try {
       await persistLocation(); // grava has_shuttle + fotos
       await publish.mutateAsync({ p_company_id: companyId });
       const id = locationId;
-      toast.success("Sua unidade está no ar! 🚗");
+      toast.success("Pronto! Veja como seu estacionamento aparece pro cliente.");
       if (id) navigate(`/operator/preview/${id}?published=1`, { replace: true });
       else navigate("/operator", { replace: true });
     } catch (e) {
@@ -476,7 +476,7 @@ export function PublishWizard({ data, companyId }: Props) {
               )}
               {step === 4 && (
                 <Button onClick={doPublish} disabled={busy}>
-                  {busy ? "Concluindo…" : "Concluir preview"} <ArrowRight className="h-4 w-4" />
+                  {busy ? "Concluindo…" : "Ver como fica"} <ArrowRight className="h-4 w-4" />
                 </Button>
               )}
             </div>

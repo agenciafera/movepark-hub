@@ -87,7 +87,7 @@ test("T-07: os 4 passos publicam a unidade e levam ao preview", async ({ page })
   });
   await uploadDone;
 
-  await page.getByRole("button", { name: "Concluir preview" }).click();
+  await page.getByRole("button", { name: "Ver como fica" }).click();
 
   // Publicou: a rota vira o preview travado da unidade.
   await page.waitForURL(/\/operator\/preview\/[0-9a-f-]+\?published=1/, { timeout: 30_000 });

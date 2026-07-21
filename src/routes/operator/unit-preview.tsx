@@ -133,7 +133,7 @@ export default function UnitPreviewPage() {
               <div className="flex flex-col gap-4">
                 {!unit.isListed ? (
                   <>
-                    {/* Etapa 2 (primário): dados de recebimento — é o que libera a venda e a busca */}
+                    {/* Etapa 2 (primário): dados de recebimento, o que libera a venda e a busca */}
                     <div className="rounded-lg border border-mp-primary/40 bg-mp-pale p-5">
                       <span className="text-caption-sm font-semibold uppercase tracking-wide text-mp-indigo">
                         Etapa 2 de 2
@@ -157,7 +157,7 @@ export default function UnitPreviewPage() {
                       </ul>
                       <Button asChild className="mt-4 w-full">
                         <Link to="/operator/recebimento">
-                          Continuar cadastro <ArrowRight className="h-4 w-4" />
+                          Cadastrar recebimento <ArrowRight className="h-4 w-4" />
                         </Link>
                       </Button>
                       <p className="mt-2 text-caption-sm text-muted-steel">
