@@ -6,6 +6,7 @@ import { assertEquals, assertRejects } from "https://deno.land/std@0.224.0/asser
 import {
   callRead,
   nowContext,
+  PARKING_TYPE_CODES,
   READ_TOOLS,
   toGeminiDecl,
   toMcpToolDef,
@@ -45,6 +46,26 @@ Deno.test("os adaptadores não vazam um no outro: o registro segue sem additiona
   for (const t of READ_TOOLS) {
     assertEquals("additionalProperties" in t.parameters, false, t.name);
   }
+});
+
+// Regressão do achado (§18): simulate_price é keyed no CODE do tipo de vaga, não no nome. Sem enum,
+// o modelo mandava "coberta" e a tool devolvia "Tipo de vaga não encontrado". O enum + a dica de
+// mapeamento no schema forçam o code, e precisam sobreviver à conversão pro Gemini.
+Deno.test("simulate_price e search_parking: parking_type/category restritos aos codes (enum)", () => {
+  const sim = READ_TOOLS.find((t) => t.name === "simulate_price")!;
+  const simProps = (sim.parameters as { properties: Record<string, { enum?: string[] }> }).properties;
+  assertEquals(simProps.parking_type.enum, PARKING_TYPE_CODES);
+
+  const search = READ_TOOLS.find((t) => t.name === "search_parking")!;
+  const searchProps =
+    (search.parameters as { properties: Record<string, { items?: { enum?: string[] } }> }).properties;
+  assertEquals(searchProps.category.items?.enum, PARKING_TYPE_CODES);
+
+  // o enum tem que passar intacto pro Gemini (é lá que o modelo lê os valores válidos)
+  const decl = toGeminiDecl(sim);
+  const declProps = (decl.parameters as { properties: Record<string, { enum?: string[] }> }).properties;
+  assertEquals(declProps.parking_type.enum, PARKING_TYPE_CODES);
+  assertEquals(PARKING_TYPE_CODES.includes("motorcycle"), true);
 });
 
 // ── callRead ─────────────────────────────────────────────────────────────────

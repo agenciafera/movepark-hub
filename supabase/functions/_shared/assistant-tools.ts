@@ -27,6 +27,17 @@ function obj(
   return { type: "object", properties, required };
 }
 
+// Codes válidos de tipo de vaga (tabela parking_type). Viram enum no schema das tools para o modelo
+// mandar o code, não o nome em português: "coberta" quebrava simulate_price (keyed em code exato).
+export const PARKING_TYPE_CODES = [
+  "covered",
+  "uncovered",
+  "valet",
+  "garage",
+  "premium",
+  "motorcycle",
+];
+
 const S = (description?: string) => (description ? { type: "string", description } : { type: "string" });
 const INT = (description?: string) =>
   description ? { type: "integer", description } : { type: "integer" };
@@ -43,7 +54,12 @@ export const READ_TOOLS: ReadToolDef[] = [
         from: DT("Check-in (ISO-8601)"),
         to: DT("Check-out (ISO-8601)"),
         vehicle: { type: "string", enum: ["car", "motorcycle"] },
-        category: { type: "array", items: S(), description: "covered/uncovered/valet" },
+        category: {
+          type: "array",
+          items: { type: "string", enum: PARKING_TYPE_CODES },
+          description:
+            "codes do tipo de vaga (coberta=covered, descoberta=uncovered, valet=valet, garagem/box=garage, premium=premium, moto=motorcycle)",
+        },
         max_distance_km: { type: "number" },
         limit: INT("máximo de resultados"),
       },
@@ -57,7 +73,12 @@ export const READ_TOOLS: ReadToolDef[] = [
       {
         company: S("slug da empresa"),
         location: S("slug da unidade"),
-        parking_type: S("code do tipo de vaga (ex.: covered)"),
+        parking_type: {
+          type: "string",
+          enum: PARKING_TYPE_CODES,
+          description:
+            "code do tipo de vaga (coberta=covered, descoberta=uncovered, valet=valet, garagem/box=garage, premium=premium, moto=motorcycle)",
+        },
         days: { type: "integer", minimum: 1, default: 1, description: "número de diárias" },
       },
       ["company"],
