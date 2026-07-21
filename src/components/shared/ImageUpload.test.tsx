@@ -74,4 +74,17 @@ describe("ImageGalleryField", () => {
     fireEvent.click(screen.getAllByRole("button", { name: /Remover foto/i })[0]);
     expect(onChange).toHaveBeenCalledWith(["u2"]);
   });
+
+  it("marca a 1ª foto como capa e só as outras têm 'Definir como capa'", () => {
+    render(<ImageGalleryField values={["u1", "u2", "u3"]} onChange={vi.fn()} onUpload={vi.fn()} />);
+    // A capa (posição 0) é um selo, não botão; as outras duas viram alvo de troca.
+    expect(screen.getAllByRole("button", { name: "Definir como capa" })).toHaveLength(2);
+  });
+
+  it("definir como capa move a foto escolhida para o início da lista", () => {
+    const onChange = vi.fn();
+    render(<ImageGalleryField values={["u1", "u2", "u3"]} onChange={onChange} onUpload={vi.fn()} />);
+    fireEvent.click(screen.getAllByRole("button", { name: "Definir como capa" })[1]); // u3
+    expect(onChange).toHaveBeenCalledWith(["u3", "u1", "u2"]);
+  });
 });

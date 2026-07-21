@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowRight, ArrowLeft, MapPin, BusFront, Sparkles } from "lucide-react";
+import { ArrowRight, ArrowLeft, MapPin, BusFront, Sparkles, Camera } from "lucide-react";
 import { Wordmark } from "@/components/shared/Brand";
 import { OnboardingJourney } from "@/components/shared/OnboardingJourney";
 import { SubStepBar } from "@/components/shared/SubStepBar";
@@ -40,6 +40,16 @@ type Props = { data: OnboardingData; companyId: string };
 type Row = { selected: boolean; base_price: number | null; capacity: string };
 
 const PUBLISH_STEP_TITLES = ["Endereço", "Vagas e preço", "Transfer", "Fotos"];
+
+// Guia do que fotografar. Não é slot salvo por foto (a categoria só orienta o
+// dono); as fotos seguem numa lista única. O objetivo é dirigir a captura pro
+// que vende: mostrar o estacionamento por dentro convence pela imagem.
+const PHOTO_GUIDE: { label: string; why: string }[] = [
+  { label: "Fachada e entrada", why: "é o cartão de visita e mostra que é fácil chegar." },
+  { label: "Vagas cobertas", why: "carro protegido de sol e chuva vale mais pro cliente." },
+  { label: "Vagas descobertas", why: "mostre o espaço e a organização do pátio." },
+  { label: "Recepção ou onde o cliente circula", why: "passa segurança e cuidado." },
+];
 // Sugestão de preço online da Movepark: 10% abaixo do balcão informado.
 const MOVEPARK_DISCOUNT = 0.1;
 const suggestedOnline = (base: number | null): number | null =>
@@ -438,15 +448,30 @@ export function PublishWizard({ data, companyId }: Props) {
                     reserva. Suba pelo menos 1: sem foto, seu estacionamento não entra na busca.
                   </p>
                 </div>
+
+                <div className="rounded-md border border-mp-primary/30 bg-mp-pale p-4">
+                  <p className="text-caption-sm font-semibold text-mp-indigo">
+                    Capriche nestas: são as fotos que mais atraem cliente
+                  </p>
+                  <ul className="mt-2.5 grid gap-2.5 tablet:grid-cols-2">
+                    {PHOTO_GUIDE.map((g) => (
+                      <li key={g.label} className="flex items-start gap-2 text-body-sm text-ink">
+                        <Camera className="mt-0.5 h-4 w-4 shrink-0 text-mp-indigo" />
+                        <span>
+                          <span className="font-medium">{g.label}:</span>{" "}
+                          <span className="text-muted">{g.why}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
                 <ImageGalleryField
                   label="Fotos do estacionamento"
                   values={photos}
                   onChange={setPhotos}
                   onUpload={(file) => uploadCompanyAsset(companyId, "photo", file)}
                 />
-                <p className="text-caption-sm text-muted">
-                  Capriche na fachada, nas vagas e onde o cliente circula.
-                </p>
               </div>
             )}
 

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { ImagePlus, Upload, X } from "lucide-react";
+import { ImagePlus, Star, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -164,19 +164,37 @@ export function ImageGalleryField({
     <div className="flex flex-col gap-1.5">
       {label && <Label>{label}</Label>}
       <div className="flex flex-wrap gap-2">
-        {values.map((url) => (
-          <div key={url} className="relative h-20 w-28 overflow-hidden rounded-sm border border-hairline">
-            <img src={url} alt="" className="h-full w-full object-cover" />
-            <button
-              type="button"
-              onClick={() => onChange(values.filter((u) => u !== url))}
-              className="absolute right-1 top-1 rounded-full bg-canvas/90 p-0.5 text-ink shadow-tier"
-              aria-label="Remover foto"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        ))}
+        {values.map((url, i) => {
+          const isCover = i === 0;
+          return (
+            <div key={url} className="relative h-20 w-28 overflow-hidden rounded-sm border border-hairline">
+              <img src={url} alt="" className="h-full w-full object-cover" />
+              {isCover ? (
+                <span className="absolute left-1 top-1 flex items-center gap-1 rounded-sm bg-mp-primary px-1.5 py-0.5 text-[10px] font-semibold text-canvas shadow-tier">
+                  <Star className="h-3 w-3 fill-canvas" /> Capa
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onChange([url, ...values.filter((u) => u !== url)])}
+                  className="absolute bottom-1 left-1 flex items-center gap-1 rounded-sm bg-canvas/90 px-1.5 py-0.5 text-[10px] font-medium text-ink shadow-tier hover:text-mp-indigo"
+                  aria-label="Definir como capa"
+                  title="Definir como capa"
+                >
+                  <Star className="h-3 w-3" /> Capa
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => onChange(values.filter((u) => u !== url))}
+                className="absolute right-1 top-1 rounded-full bg-canvas/90 p-0.5 text-ink shadow-tier"
+                aria-label="Remover foto"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          );
+        })}
 
         {!atLimit && (
           <>
@@ -202,6 +220,12 @@ export function ImageGalleryField({
           </>
         )}
       </div>
+      {values.length > 0 && (
+        <p className="text-caption-sm text-muted">
+          A foto marcada como Capa é a que aparece em destaque na busca. Toque na estrela de outra
+          foto pra trocar.
+        </p>
+      )}
     </div>
   );
 }

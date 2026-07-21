@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
  *  - com foto (hasPhotos=true): parabeniza e estimula a subir MAIS fotos (mais foto, mais reserva).
  * Reaproveitada na pós-publicação. Foto é obrigatória pra vender (gate is_listed).
  */
-const SHOT_LIST = ["Fachada e entrada", "As vagas cobertas", "Onde o cliente circula", "A recepção ou guarita"];
+const SHOT_LIST = ["Fachada e entrada", "Vagas cobertas", "Vagas descobertas", "Recepção ou circulação"];
 
 export function PhotosCallout({
   to = "/operator/locations",
