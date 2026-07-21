@@ -49,6 +49,7 @@ export const env = {
 
   managerEmail: process.env.E2E_MANAGER_EMAIL ?? "developer@fera.ag",
   operatorEmail: process.env.E2E_OPERATOR_EMAIL ?? "peu+mercy@fera.ag",
+  customerEmail: process.env.E2E_CUSTOMER_EMAIL ?? "peu+teste1@fera.ag",
 } as const;
 
 /** Ref do projeto Supabase, extraído da URL. Usado em mensagens de erro. */

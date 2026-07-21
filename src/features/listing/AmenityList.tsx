@@ -29,7 +29,7 @@ export function AmenityList({ amenities }: { amenities: ListingDetail["amenities
   }
 
   return (
-    <ul className="grid grid-cols-2 gap-x-6 gap-y-4">
+    <ul data-testid="listing-amenities" className="grid grid-cols-2 gap-x-6 gap-y-4">
       {amenities.map((a) => {
         const Icon = getIcon(a.icon);
         return (

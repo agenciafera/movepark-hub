@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 import { env } from "./e2e/support/env";
-import { MANAGER_STATE, OPERATOR_STATE } from "./e2e/support/session";
+import { CUSTOMER_STATE, MANAGER_STATE, OPERATOR_STATE } from "./e2e/support/session";
 
 /**
  * Camada E2E de navegador. Separada do Vitest de propósito: o Vitest só olha
@@ -9,6 +9,22 @@ import { MANAGER_STATE, OPERATOR_STATE } from "./e2e/support/session";
  * Os projects rodam em cadeia: `setup` gera os storageStates, e os projects
  * autenticados dependem dele. Quem roda em `e2e/public` não tem sessão.
  */
+
+/**
+ * O project transacional do consumidor (C-06 a C-11) só existe quando alguém o
+ * pede por nome na linha de comando. Sem esta trava ele entraria em qualquer
+ * `playwright test` sem argumento e geraria cobrança real no Pagar.me.
+ *
+ * A checagem é no argv de propósito: uma variável de ambiente ficaria exportada
+ * no shell e voltaria a valer na próxima execução sem ninguém perceber.
+ */
+const TX_PROJECT = "e2e-consumer-tx";
+const txRequested = process.argv.some(
+  (arg, i) =>
+    arg === `--project=${TX_PROJECT}` ||
+    (arg === "--project" && process.argv[i + 1] === TX_PROJECT),
+);
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
@@ -49,6 +65,44 @@ export default defineConfig({
       dependencies: ["setup"],
       use: { ...devices["Desktop Chrome"], storageState: OPERATOR_STATE },
     },
+    /**
+     * Roteiro C (consumidor), parte de LEITURA: C-01 a C-05. Home, busca e
+     * detalhe da unidade. Nenhum destes cria reserva ou cobrança.
+     */
+    {
+      name: "e2e-consumer",
+      testMatch: /consumer\/C0[1-5].*\.spec\.ts$/,
+      dependencies: ["setup"],
+      use: { ...devices["Desktop Chrome"], storageState: CUSTOMER_STATE },
+    },
+    /**
+     * Roteiro C, parte TRANSACIONAL: C-06 a C-11.
+     *
+     * Fica num project separado porque cria efeito colateral irreversível: cada
+     * execução gera `booking` de verdade numa unidade de parceiro real e, do
+     * C-09 em diante, uma COBRANÇA REAL no Pagar.me. Na conta atual o PIX
+     * liquida sozinho em 1 a 3 segundos, então a cobrança é paga, não fica
+     * pendurada.
+     *
+     * Por isso ele nem é registrado na execução padrão (ver `txRequested` acima):
+     * `playwright test` sem argumento não enxerga estes specs. O único jeito de
+     * rodá-los é pedir o project pelo nome:
+     *
+     *     bunx playwright test --project=e2e-consumer-tx
+     *
+     * A limpeza é por CANCELAMENTO pelo produto, nunca por delete: ver
+     * `docs/testes/roteiro-consumidor-reserva.md` e `e2e/README.md`.
+     */
+    ...(txRequested
+      ? [
+          {
+            name: TX_PROJECT,
+            testMatch: /consumer\/C(0[6-9]|1[01]).*\.spec\.ts$/,
+            dependencies: ["setup"],
+            use: { ...devices["Desktop Chrome"], storageState: CUSTOMER_STATE },
+          },
+        ]
+      : []),
     {
       name: "smoke",
       testMatch: /smoke\/.*\.spec\.ts$/,

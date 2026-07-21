@@ -123,6 +123,7 @@ export function GroupedResultCard({
 
   return (
     <article
+      data-testid="result-card"
       className={cn(
         "group relative flex flex-col overflow-hidden rounded-2xl border border-hairline bg-canvas transition-shadow hover:shadow-tier",
         soldOut && "opacity-60",
@@ -213,7 +214,10 @@ export function GroupedResultCard({
           <h3 className="line-clamp-1 text-[18px] font-bold leading-snug text-ink">
             {item.operator.name}
           </h3>
-          <p className="line-clamp-1 flex items-center gap-1 text-body-sm text-muted">
+          <p
+            data-testid="result-card-subline"
+            className="line-clamp-1 flex items-center gap-1 text-body-sm text-muted"
+          >
             {item.location.nearest_terminal && (
               <MapPin className="h-3 w-3 shrink-0 text-mp-primary" aria-hidden />
             )}
@@ -234,7 +238,7 @@ export function GroupedResultCard({
 
         {/* Amenidades */}
         {amenities.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
+          <div data-testid="result-card-amenities" className="flex flex-wrap gap-1.5">
             {amenities.map((a) => (
               <span
                 key={a.code}

@@ -58,7 +58,10 @@ function PopularOfferCard({ offer, badge }: { offer: PopularOffer; badge?: strin
   const cover = location.cover_image;
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-2xl border border-hairline bg-canvas transition-shadow hover:shadow-tier">
+    <article
+      data-testid="popular-card"
+      className="group flex flex-col overflow-hidden rounded-2xl border border-hairline bg-canvas transition-shadow hover:shadow-tier"
+    >
       {/* Imagem — 2:1. Sem foto → placeholder (mesmo padrão do ResultCard). */}
       <Link to={url} className="relative block aspect-[2/1] overflow-hidden bg-surface-soft">
         {cover ? (
@@ -199,7 +202,11 @@ export function PopularParkingLots() {
   const hasPriceVariation = data.length >= 2 && maxPrice > minPrice;
 
   return (
-    <section ref={sectionRef} className="mx-auto w-full max-w-[1280px] px-6 py-16 desktop:px-8">
+    <section
+      ref={sectionRef}
+      data-testid="popular-parking-lots"
+      className="mx-auto w-full max-w-[1280px] px-6 py-16 desktop:px-8"
+    >
       <p data-reveal="header" className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
         Os mais reservados
       </p>

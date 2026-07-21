@@ -23,6 +23,7 @@ import { env, projectRef } from "./env";
 
 export const MANAGER_STATE = ".auth/manager.json";
 export const OPERATOR_STATE = ".auth/operator.json";
+export const CUSTOMER_STATE = ".auth/customer.json";
 
 async function generateMagicLink(email: string): Promise<string> {
   const { data, error } = await admin.auth.admin.generateLink({

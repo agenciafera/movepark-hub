@@ -289,7 +289,9 @@ export default function ListingPage() {
                   </div>
                 )}
                 {listing.parking_type.description && (
-                  <p className="text-body-md text-body">{listing.parking_type.description}</p>
+                  <p data-testid="listing-type-description" className="text-body-md text-body">
+                    {listing.parking_type.description}
+                  </p>
                 )}
               </section>
               <Separator />
