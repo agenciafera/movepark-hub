@@ -213,25 +213,42 @@ export default function SejaParceiroPage() {
         </div>
       </section>
 
-      {/* Dor: a rotina de quem tem estacionamento */}
+      {/* Dor: a rotina de quem tem estacionamento.
+          O título fica preso à esquerda enquanto os cards passam empilhando à direita,
+          um cobrindo o outro. O empilhamento é `position: sticky` puro, sem JS e sem
+          animação: quem manda é a rolagem, então não há quadro travado nem conteúdo
+          escondido esperando gatilho. Cada card para 14px abaixo do anterior, e é essa
+          sobra que deixa a pilha visível embaixo do card do topo. */}
       <section className="mx-auto max-w-[1100px] px-4 py-16 desktop:px-8 desktop:py-20">
-        <span className="text-badge uppercase tracking-wide text-mp-indigo">
-          A rotina de quem tem estacionamento
-        </span>
-        <h2 className="mt-3 max-w-2xl text-balance text-display-2xl text-ink">
-          Vaga vazia não volta. O dia que passou, passou.
-        </h2>
-        <ul className="mt-8 grid grid-cols-1 gap-4 tablet:grid-cols-2">
-          {PAINS.map((p) => (
-            <li
-              key={p}
-              className="flex items-start gap-3 rounded-md border border-hairline bg-canvas p-5"
-            >
-              <X className="mt-0.5 h-5 w-5 shrink-0 text-muted-steel" />
-              <span className="text-body-md text-ink">{p}</span>
-            </li>
-          ))}
-        </ul>
+        <div className="grid grid-cols-1 gap-8 tablet:grid-cols-2 tablet:gap-12">
+          <div className="tablet:sticky tablet:top-28 tablet:self-start">
+            <span className="text-badge uppercase tracking-wide text-mp-indigo">
+              A rotina de quem tem estacionamento
+            </span>
+            <h2 className="mt-3 text-balance text-display-2xl text-ink">
+              Vaga vazia não volta. O dia que passou, passou.
+            </h2>
+          </div>
+
+          <ul className="space-y-4">
+            {PAINS.map((p, i) => (
+              <li
+                key={p}
+                className="sticky"
+                // 96px libera a topbar (h-20) com folga; o degrau por índice é o que
+                // deixa a borda do card anterior aparecendo embaixo do atual.
+                style={{ top: `${96 + i * 14}px` }}
+              >
+                {/* `min-h` porque cada card é um bloco solto (a pilha não é grid, então
+                    não há linha pra igualar altura): o valor é o do card mais alto. */}
+                <div className="flex min-h-[168px] flex-col gap-3 rounded-md border border-hairline bg-canvas p-5 shadow-tier">
+                  <X className="h-8 w-8 shrink-0 text-mp-red" aria-hidden />
+                  <span className="text-body-md text-ink">{p}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
       </section>
 
       {/* Sinais de confiança */}
