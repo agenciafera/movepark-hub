@@ -73,6 +73,15 @@ describe("CompanyForm — integração White-label", () => {
     expect(screen.getByPlaceholderText(/já definido/i)).toBeInTheDocument();
   });
 
+  it("associa o rótulo 'Status' ao select (getByLabelText acha o campo)", () => {
+    renderWithProviders(
+      <CompanyForm open onOpenChange={() => {}} company={makeCompany({ status: "active" })} />,
+    );
+    // Antes do fix o <Label>Status</Label> não tinha htmlFor e o SelectTrigger não tinha id,
+    // então getByLabelText não encontrava o controle. Agora encontra pelo vínculo label->id.
+    expect(screen.getByLabelText("Status")).toBeInTheDocument();
+  });
+
   it("bloqueia ligar a sync sem URL/tenant (não chama o update)", () => {
     renderWithProviders(
       <CompanyForm

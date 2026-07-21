@@ -182,9 +182,9 @@ export function DestinationPointsDialog({ open, destination, onOpenChange }: Pro
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Tipo</Label>
+                <Label htmlFor="point-type">Tipo</Label>
                 <Select value={f.type} onValueChange={(v) => set("type", v)}>
-                  <SelectTrigger>
+                  <SelectTrigger id="point-type">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

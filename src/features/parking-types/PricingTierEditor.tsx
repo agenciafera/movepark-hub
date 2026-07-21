@@ -91,6 +91,7 @@ export function PricingTierEditor({ strategy, tiers, onChange }: Props) {
             <div className="flex flex-col gap-1.5">
               <Label className="tablet:hidden">De (dia)</Label>
               <Input
+                aria-label="De (dia)"
                 className="h-12 text-center tabular-nums"
                 type="number"
                 min={1}
@@ -101,6 +102,7 @@ export function PricingTierEditor({ strategy, tiers, onChange }: Props) {
             <div className="flex flex-col gap-1.5">
               <Label className="tablet:hidden">Até (dia)</Label>
               <Input
+                aria-label="Até (dia)"
                 className="h-12 text-center tabular-nums"
                 type="number"
                 min={tier.from_day}
@@ -120,6 +122,7 @@ export function PricingTierEditor({ strategy, tiers, onChange }: Props) {
               <div className="flex flex-col gap-1.5 tablet:col-span-3">
                 <Label className="tablet:hidden">Preço total fixo</Label>
                 <CurrencyInput
+                  aria-label="Preço total fixo"
                   value={tier.total_price}
                   onChange={(v) => updateTier(tier.id, { total_price: v })}
                 />
@@ -127,6 +130,7 @@ export function PricingTierEditor({ strategy, tiers, onChange }: Props) {
               <div className="flex flex-col gap-1.5 tablet:col-span-4">
                 <Label className="tablet:hidden">Preço por dia</Label>
                 <CurrencyInput
+                  aria-label="Preço por dia (faixa aberta)"
                   value={tier.unit_price}
                   onChange={(v) => updateTier(tier.id, { unit_price: v })}
                 />
@@ -136,6 +140,7 @@ export function PricingTierEditor({ strategy, tiers, onChange }: Props) {
             <div className="flex flex-col gap-1.5 tablet:col-span-7">
               <Label className="tablet:hidden">Preço por dia</Label>
               <CurrencyInput
+                aria-label="Preço por dia"
                 value={tier.unit_price}
                 onChange={(v) => updateTier(tier.id, { unit_price: v })}
               />

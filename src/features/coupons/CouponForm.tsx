@@ -116,12 +116,12 @@ export function CouponForm({ open, companyId, coupon, onOpenChange }: Props) {
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label>Tipo de desconto</Label>
+            <Label htmlFor="coupon-type">Tipo de desconto</Label>
             <Select
               value={f.discount_type}
               onValueChange={(v) => set("discount_type", v as DiscountType)}
             >
-              <SelectTrigger>
+              <SelectTrigger id="coupon-type">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -149,6 +149,7 @@ export function CouponForm({ open, companyId, coupon, onOpenChange }: Props) {
               </div>
             ) : (
               <CurrencyInput
+                id="c-value"
                 value={f.discount_value}
                 onChange={(v) => set("discount_value", v)}
               />
@@ -204,6 +205,7 @@ export function CouponForm({ open, companyId, coupon, onOpenChange }: Props) {
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="c-minamount">Valor mínimo da reserva</Label>
             <CurrencyInput
+              id="c-minamount"
               value={f.min_amount}
               onChange={(v) => set("min_amount", v)}
             />

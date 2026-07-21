@@ -157,9 +157,9 @@ export default function ProfilePage() {
           />
         </div>
         <div className="flex flex-col gap-1.5 tablet:col-span-2">
-          <Label>Idioma preferido</Label>
+          <Label htmlFor="profile-lang">Idioma preferido</Label>
           <Select value={language} onValueChange={markDirty(setLanguage)}>
-            <SelectTrigger>
+            <SelectTrigger id="profile-lang">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

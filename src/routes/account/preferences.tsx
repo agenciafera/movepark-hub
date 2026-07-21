@@ -113,9 +113,9 @@ export default function PreferencesPage() {
         <h2 className="text-title-md text-ink">Idioma e moeda</h2>
         <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
           <div className="flex flex-col gap-1.5">
-            <Label>Idioma</Label>
+            <Label htmlFor="pref-lang">Idioma</Label>
             <Select value={language} onValueChange={dirtyOn(setLanguage)}>
-              <SelectTrigger>
+              <SelectTrigger id="pref-lang">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -126,9 +126,9 @@ export default function PreferencesPage() {
             </Select>
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label>Moeda</Label>
+            <Label htmlFor="pref-currency">Moeda</Label>
             <Select value={currency} onValueChange={dirtyOn(setCurrency)}>
-              <SelectTrigger>
+              <SelectTrigger id="pref-currency">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

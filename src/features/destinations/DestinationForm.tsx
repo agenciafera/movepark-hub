@@ -144,9 +144,9 @@ export function DestinationForm({ open, destination, onOpenChange }: Props) {
             <Input id="d-code" required value={f.code} onChange={(e) => set("code", e.target.value)} placeholder="GRU" />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label>Tipo</Label>
+            <Label htmlFor="dest-type">Tipo</Label>
             <Select value={f.type} onValueChange={(v) => set("type", v)}>
-              <SelectTrigger>
+              <SelectTrigger id="dest-type">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

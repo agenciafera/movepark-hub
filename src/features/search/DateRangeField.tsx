@@ -75,9 +75,9 @@ export function DateRangeField({ mode, date, onChange, minDate, triggerClassName
             defaultMonth={date ?? minDate ?? new Date()}
           />
           <div className="border-l border-hairline p-4 tablet:w-44">
-            <Label className="mb-2 block">Horário</Label>
+            <Label htmlFor="time-select" className="mb-2 block">Horário</Label>
             <Select value={fmtTime(date)} onValueChange={handleTime}>
-              <SelectTrigger>
+              <SelectTrigger id="time-select">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="max-h-72">

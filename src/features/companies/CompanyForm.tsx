@@ -158,9 +158,9 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label>Status</Label>
+            <Label htmlFor="company-status">Status</Label>
             <Select value={status} onValueChange={(v) => setStatus(v as EntityStatus)}>
-              <SelectTrigger>
+              <SelectTrigger id="company-status">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

@@ -322,16 +322,18 @@ export function PublishWizard({ data, companyId }: Props) {
                         {row.selected && (
                           <div className="flex flex-wrap gap-3 pl-8">
                             <div className="flex flex-col gap-1">
-                              <Label className="text-caption">Preço de balcão/diária</Label>
+                              <Label htmlFor={`pt-base-${pt.id}`} className="text-caption">Preço de balcão/diária</Label>
                               <CurrencyInput
+                                id={`pt-base-${pt.id}`}
                                 value={row.base_price}
                                 onChange={(v) => patchRow(pt.id, { base_price: v })}
                                 className="w-36"
                               />
                             </div>
                             <div className="flex flex-col gap-1">
-                              <Label className="text-caption">Capacidade</Label>
+                              <Label htmlFor={`pt-cap-${pt.id}`} className="text-caption">Capacidade</Label>
                               <Input
+                                id={`pt-cap-${pt.id}`}
                                 type="number"
                                 min={0}
                                 value={row.capacity}

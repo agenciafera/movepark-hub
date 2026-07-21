@@ -136,9 +136,9 @@ export function ParkingTypeForm({
             ) : (
               <form className="flex flex-col gap-4" onSubmit={handleAddExisting}>
                 <div className="flex flex-col gap-1.5">
-                  <Label>Tipo de vaga</Label>
+                  <Label htmlFor="pt-kind">Tipo de vaga</Label>
                   <Select value={selectedCpt} onValueChange={setSelectedCpt}>
-                    <SelectTrigger>
+                    <SelectTrigger id="pt-kind">
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
@@ -182,9 +182,9 @@ export function ParkingTypeForm({
             ) : (
               <form className="flex flex-col gap-4" onSubmit={handleAddFromCatalog}>
                 <div className="flex flex-col gap-1.5">
-                  <Label>Tipo do catálogo</Label>
+                  <Label htmlFor="pt-catalog">Tipo do catálogo</Label>
                   <Select value={selectedCatalog} onValueChange={setSelectedCatalog}>
-                    <SelectTrigger>
+                    <SelectTrigger id="pt-catalog">
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>

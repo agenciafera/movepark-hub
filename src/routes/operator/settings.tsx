@@ -29,16 +29,17 @@ export default function OperatorSettings() {
             </CardHeader>
             <CardContent className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
               <div className="flex flex-col gap-1.5">
-                <Label>Nome do operador logado</Label>
-                <Input value={session?.fullName ?? ""} readOnly />
+                <Label htmlFor="op-name">Nome do operador logado</Label>
+                <Input id="op-name" value={session?.fullName ?? ""} readOnly />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>E-mail</Label>
-                <Input value={session?.email ?? ""} readOnly />
+                <Label htmlFor="op-email">E-mail</Label>
+                <Input id="op-email" value={session?.email ?? ""} readOnly />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Empresas vinculadas</Label>
+                <Label htmlFor="op-companies">Empresas vinculadas</Label>
                 <Input
+                  id="op-companies"
                   value={session?.companyIds.length ? session.companyIds.length + " empresa(s)" : "—"}
                   readOnly
                 />

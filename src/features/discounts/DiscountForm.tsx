@@ -124,12 +124,12 @@ export function DiscountForm({ open, companyId, discount, onOpenChange }: Props)
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label>Unidade</Label>
+            <Label htmlFor="d-location">Unidade</Label>
             <Select
               value={f.location_id ?? ALL_LOCATIONS}
               onValueChange={(v) => set("location_id", v === ALL_LOCATIONS ? null : v)}
             >
-              <SelectTrigger>
+              <SelectTrigger id="d-location">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -143,12 +143,12 @@ export function DiscountForm({ open, companyId, discount, onOpenChange }: Props)
             </Select>
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label>Tipo de desconto</Label>
+            <Label htmlFor="d-type">Tipo de desconto</Label>
             <Select
               value={f.discount_type}
               onValueChange={(v) => set("discount_type", v as DiscountType)}
             >
-              <SelectTrigger>
+              <SelectTrigger id="d-type">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -175,7 +175,7 @@ export function DiscountForm({ open, companyId, discount, onOpenChange }: Props)
                 <span className="text-body-sm text-muted">%</span>
               </div>
             ) : (
-              <CurrencyInput value={f.discount_value} onChange={(v) => set("discount_value", v)} />
+              <CurrencyInput id="d-value" value={f.discount_value} onChange={(v) => set("discount_value", v)} />
             )}
           </div>
           <div className="flex flex-col gap-1.5">
@@ -214,7 +214,7 @@ export function DiscountForm({ open, companyId, discount, onOpenChange }: Props)
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="d-minamount">Valor mínimo da reserva</Label>
-            <CurrencyInput value={f.min_amount} onChange={(v) => set("min_amount", v)} />
+            <CurrencyInput id="d-minamount" value={f.min_amount} onChange={(v) => set("min_amount", v)} />
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="d-mindays">Diárias mínimas</Label>

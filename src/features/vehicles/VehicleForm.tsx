@@ -170,9 +170,9 @@ export function VehicleForm({ open, onOpenChange, vehicle }: Props) {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>Cor</Label>
+              <Label htmlFor="vehicle-color">Cor</Label>
               <Select value={color} onValueChange={setColor}>
-                <SelectTrigger>
+                <SelectTrigger id="vehicle-color">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>

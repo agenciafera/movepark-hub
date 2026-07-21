@@ -395,7 +395,7 @@ function ParkingTypeCard({
           {wlCatalog?.ready && wlCatalog.categories.length > 0 ? (
             <>
               <div className="flex flex-col gap-1.5">
-                <Label>Unidade (category)</Label>
+                <Label htmlFor={`wlcat-select-${lpt.id}`}>Unidade (category)</Label>
                 <Select
                   value={wlCat || undefined}
                   onValueChange={(v) => {
@@ -403,7 +403,7 @@ function ParkingTypeCard({
                     setWlProd(""); // troca de categoria zera o produto
                   }}
                 >
-                  <SelectTrigger className="w-56">
+                  <SelectTrigger id={`wlcat-select-${lpt.id}`} className="w-56">
                     <SelectValue placeholder="Selecione…" />
                   </SelectTrigger>
                   <SelectContent>
@@ -416,9 +416,9 @@ function ParkingTypeCard({
                 </Select>
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Tipo de vaga (product)</Label>
+                <Label htmlFor={`wlprod-select-${lpt.id}`}>Tipo de vaga (product)</Label>
                 <Select value={wlProd || undefined} onValueChange={setWlProd} disabled={!wlCat}>
-                  <SelectTrigger className="w-56">
+                  <SelectTrigger id={`wlprod-select-${lpt.id}`} className="w-56">
                     <SelectValue placeholder="Selecione…" />
                   </SelectTrigger>
                   <SelectContent>

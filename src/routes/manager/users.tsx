@@ -197,9 +197,9 @@ export default function ManagerUsers() {
             <DialogTitle>Vincular {linkingUser?.full_name ?? "usuário"} a uma empresa</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-3">
-            <Label>Empresa</Label>
+            <Label htmlFor="user-company">Empresa</Label>
             <Select value={selectedCompany} onValueChange={setSelectedCompany}>
-              <SelectTrigger>
+              <SelectTrigger id="user-company">
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
               <SelectContent>
@@ -210,9 +210,9 @@ export default function ManagerUsers() {
                 ))}
               </SelectContent>
             </Select>
-            <Label>Papel na empresa</Label>
+            <Label htmlFor="user-role">Papel na empresa</Label>
             <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as CompanyRole)}>
-              <SelectTrigger>
+              <SelectTrigger id="user-role">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

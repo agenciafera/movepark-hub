@@ -280,12 +280,12 @@ export function PricingRuleEditor({
           <section className="space-y-3">
             <h4 className="text-title-md">Estratégia</h4>
             <div className="flex flex-col gap-1.5">
-              <Label>Modelo de cálculo</Label>
+              <Label htmlFor="prule-strategy">Modelo de cálculo</Label>
               <Select
                 value={strategy}
                 onValueChange={(v) => requestStrategyChange(v as PricingStrategy)}
               >
-                <SelectTrigger>
+                <SelectTrigger id="prule-strategy">
                   {/* Sem children, o Radix espelha o item inteiro (rótulo + descrição) aqui. */}
                   <SelectValue>{STRATEGY_LABEL[strategy]}</SelectValue>
                 </SelectTrigger>
@@ -324,20 +324,20 @@ export function PricingRuleEditor({
                 <h4 className="text-title-md">Fórmula incremental</h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1.5">
-                    <Label>Preço 1 dia</Label>
-                    <CurrencyInput value={oneDay} onChange={setOneDay} />
+                    <Label htmlFor="prule-oneday">Preço 1 dia</Label>
+                    <CurrencyInput id="prule-oneday" value={oneDay} onChange={setOneDay} />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <Label>Preço 2 dias</Label>
-                    <CurrencyInput value={twoDays} onChange={setTwoDays} />
+                    <Label htmlFor="prule-twodays">Preço 2 dias</Label>
+                    <CurrencyInput id="prule-twodays" value={twoDays} onChange={setTwoDays} />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <Label>Base (3+ dias)</Label>
-                    <CurrencyInput value={incBase} onChange={setIncBase} />
+                    <Label htmlFor="prule-incbase">Base (3+ dias)</Label>
+                    <CurrencyInput id="prule-incbase" value={incBase} onChange={setIncBase} />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <Label>Multiplicador por dia</Label>
-                    <CurrencyInput value={incMultiplier} onChange={setIncMultiplier} />
+                    <Label htmlFor="prule-incmult">Multiplicador por dia</Label>
+                    <CurrencyInput id="prule-incmult" value={incMultiplier} onChange={setIncMultiplier} />
                   </div>
                 </div>
                 <p className="text-caption text-muted">
@@ -354,12 +354,12 @@ export function PricingRuleEditor({
                 <h4 className="text-title-md">Mensal + diária</h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1.5">
-                    <Label>Pacote mensal (30 dias)</Label>
-                    <CurrencyInput value={monthlyFixed} onChange={setMonthlyFixed} />
+                    <Label htmlFor="prule-monthly">Pacote mensal (30 dias)</Label>
+                    <CurrencyInput id="prule-monthly" value={monthlyFixed} onChange={setMonthlyFixed} />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <Label>Diária dos dias avulsos</Label>
-                    <CurrencyInput value={monthlyDaily} onChange={setMonthlyDaily} />
+                    <Label htmlFor="prule-monthlydaily">Diária dos dias avulsos</Label>
+                    <CurrencyInput id="prule-monthlydaily" value={monthlyDaily} onChange={setMonthlyDaily} />
                   </div>
                 </div>
                 <p className="text-caption text-muted">
@@ -376,27 +376,29 @@ export function PricingRuleEditor({
                 <h4 className="text-title-md">Tarifas horárias</h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1.5">
-                    <Label>0 a 30 min</Label>
-                    <CurrencyInput value={hourlyInitial} onChange={setHourlyInitial} />
+                    <Label htmlFor="prule-h-initial">0 a 30 min</Label>
+                    <CurrencyInput id="prule-h-initial" value={hourlyInitial} onChange={setHourlyInitial} />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <Label>31 a 60 min</Label>
-                    <CurrencyInput value={hourlyOneHour} onChange={setHourlyOneHour} />
+                    <Label htmlFor="prule-h-onehour">31 a 60 min</Label>
+                    <CurrencyInput id="prule-h-onehour" value={hourlyOneHour} onChange={setHourlyOneHour} />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <Label>Cada hora extra</Label>
+                    <Label htmlFor="prule-h-extra">Cada hora extra</Label>
                     <CurrencyInput
+                      id="prule-h-extra"
                       value={hourlyFraction}
                       onChange={setHourlyFraction}
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <Label>Teto diário</Label>
-                    <CurrencyInput value={hourlyDaily} onChange={setHourlyDaily} />
+                    <Label htmlFor="prule-h-daily">Teto diário</Label>
+                    <CurrencyInput id="prule-h-daily" value={hourlyDaily} onChange={setHourlyDaily} />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <Label>Horas que formam 1 diária</Label>
+                    <Label htmlFor="prule-h-hoursperday">Horas que formam 1 diária</Label>
                     <Input
+                      id="prule-h-hoursperday"
                       type="number"
                       min={1}
                       value={hourlyHoursPerDay ?? ""}
@@ -418,12 +420,12 @@ export function PricingRuleEditor({
               <section className="space-y-3">
                 <h4 className="text-title-md">Sobretaxa sobre outro tipo</h4>
                 <div className="flex flex-col gap-1.5">
-                  <Label>Tipo base (mesma empresa)</Label>
+                  <Label htmlFor="prule-surcharge-source">Tipo base (mesma empresa)</Label>
                   <Select
                     value={surchargeSourceId ?? ""}
                     onValueChange={(v) => setSurchargeSourceId(v || null)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="prule-surcharge-source">
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
@@ -436,8 +438,9 @@ export function PricingRuleEditor({
                   </Select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label>Multiplicador</Label>
+                  <Label htmlFor="prule-surcharge-mult">Multiplicador</Label>
                   <PercentInput
+                    id="prule-surcharge-mult"
                     value={surchargeMultiplier}
                     onChange={setSurchargeMultiplier}
                   />
@@ -456,12 +459,12 @@ export function PricingRuleEditor({
           <section className="space-y-3">
             <h4 className="text-title-md">Tratamento de fração de dia</h4>
             <div className="flex flex-col gap-1.5">
-              <Label>Política</Label>
+              <Label htmlFor="prule-fractional-policy">Política</Label>
               <Select
                 value={fractionalPolicy}
                 onValueChange={(v) => setFractionalPolicy(v as FractionalDayPolicy)}
               >
-                <SelectTrigger>
+                <SelectTrigger id="prule-fractional-policy">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -475,8 +478,9 @@ export function PricingRuleEditor({
             </div>
             {(fractionalPolicy === "hour_tolerance" || fractionalPolicy === "time_of_day") && (
               <div className="flex flex-col gap-1.5">
-                <Label>Tolerância (horas)</Label>
+                <Label htmlFor="prule-fractional-tol">Tolerância (horas)</Label>
                 <Input
+                  id="prule-fractional-tol"
                   type="number"
                   step="0.5"
                   min={0}
@@ -496,12 +500,12 @@ export function PricingRuleEditor({
           <section className="space-y-3">
             <h4 className="text-title-md">Preço de balcão (riscado)</h4>
             <div className="flex flex-col gap-1.5">
-              <Label>Estratégia</Label>
+              <Label htmlFor="prule-oldprice-strategy">Estratégia</Label>
               <Select
                 value={oldPriceStrategy}
                 onValueChange={(v) => setOldPriceStrategy(v as OldPriceStrategy)}
               >
-                <SelectTrigger>
+                <SelectTrigger id="prule-oldprice-strategy">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -515,8 +519,8 @@ export function PricingRuleEditor({
             </div>
             {oldPriceStrategy === "multiplier" && (
               <div className="flex flex-col gap-1.5">
-                <Label>Multiplicador do preço de balcão</Label>
-                <PercentInput value={oldPriceMultiplier} onChange={setOldPriceMultiplier} />
+                <Label htmlFor="prule-oldprice-mult">Multiplicador do preço de balcão</Label>
+                <PercentInput id="prule-oldprice-mult" value={oldPriceMultiplier} onChange={setOldPriceMultiplier} />
                 <p className="text-caption text-muted">
                   120% aumenta 20% sobre o preço calculado.
                 </p>
@@ -529,8 +533,9 @@ export function PricingRuleEditor({
           <section className="space-y-3">
             <h4 className="text-title-md">Reserva antecipada</h4>
             <div className="flex flex-col gap-1.5">
-              <Label>Antecedência mínima (minutos)</Label>
+              <Label htmlFor="prule-advance">Antecedência mínima (minutos)</Label>
               <Input
+                id="prule-advance"
                 type="number"
                 min={0}
                 value={advanceMinutes ?? ""}
@@ -549,7 +554,7 @@ export function PricingRuleEditor({
             <h4 className="text-title-md">Preço base da empresa</h4>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="bp">Valor referência</Label>
-              <CurrencyInput value={basePrice} onChange={setBasePrice} />
+              <CurrencyInput id="bp" value={basePrice} onChange={setBasePrice} />
               <p className="text-caption text-muted">
                 Não entra no cálculo do preço. Serve de referência em relatórios e como fallback.
               </p>

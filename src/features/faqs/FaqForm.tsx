@@ -181,9 +181,9 @@ export function FaqForm({
         <form className="space-y-4" onSubmit={handleSubmit}>
           {scope === "location" && (
             <div className="flex flex-col gap-1.5">
-              <Label>Estacionamento</Label>
+              <Label htmlFor="faq-location">Estacionamento</Label>
               <Select value={locationId} onValueChange={setLocationId}>
-                <SelectTrigger>
+                <SelectTrigger id="faq-location">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
@@ -199,9 +199,9 @@ export function FaqForm({
 
           {scope === "destination" && !defaultDestinationId && (
             <div className="flex flex-col gap-1.5">
-              <Label>Destino</Label>
+              <Label htmlFor="faq-destination">Destino</Label>
               <Select value={destinationId} onValueChange={setDestinationId}>
-                <SelectTrigger>
+                <SelectTrigger id="faq-destination">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
@@ -240,9 +240,9 @@ export function FaqForm({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <Label>Categoria</Label>
+              <Label htmlFor="faq-category">Categoria</Label>
               <Select value={categoryId} onValueChange={setCategoryId}>
-                <SelectTrigger>
+                <SelectTrigger id="faq-category">
                   <SelectValue placeholder="Sem categoria" />
                 </SelectTrigger>
                 <SelectContent>

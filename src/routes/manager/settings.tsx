@@ -414,12 +414,15 @@ export default function ManagerSettings() {
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
-                <Label>Confirmação de reserva</Label>
-                <Textarea defaultValue="Olá {{nome}}, sua reserva {{codigo}} foi confirmada." />
+                <Label htmlFor="tpl-confirm">Confirmação de reserva</Label>
+                <Textarea
+                  id="tpl-confirm"
+                  defaultValue="Olá {{nome}}, sua reserva {{codigo}} foi confirmada."
+                />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Cancelamento</Label>
-                <Textarea defaultValue="Sua reserva {{codigo}} foi cancelada." />
+                <Label htmlFor="tpl-cancel">Cancelamento</Label>
+                <Textarea id="tpl-cancel" defaultValue="Sua reserva {{codigo}} foi cancelada." />
               </div>
             </CardContent>
           </Card>

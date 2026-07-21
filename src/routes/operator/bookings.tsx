@@ -71,9 +71,9 @@ export default function OperatorBookings() {
             <Input id="to" type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} className="w-40" />
           </div>
           <div className="flex w-full tablet:w-60 flex-col gap-1.5">
-            <Label>Status</Label>
+            <Label htmlFor="booking-status">Status</Label>
             <Select value={status} onValueChange={(v) => setStatus(v as BookingStatus | "all")}>
-              <SelectTrigger>
+              <SelectTrigger id="booking-status">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
