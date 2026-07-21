@@ -3,7 +3,7 @@
 -- guarda na troca de datas de reserva pendente (change_booking_dates). Roda em transação com rollback.
 
 begin;
-select plan(9);
+select plan(10);
 
 -- ── fixture: customer + um tipo de vaga do seed, capacidade folgada, sem min_stay/min_date ──
 do $$

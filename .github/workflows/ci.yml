@@ -34,6 +34,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      # Dois carimbos de migration iguais fazem o `supabase db reset` abortar por PK duplicada e
+      # deixam de aplicar tudo dali pra frente, mascarando falhas. Já aconteceu duas vezes.
+      - name: Sem timestamp de migration duplicado
+        run: |
+          dups=$(ls supabase/migrations/ | sed 's/_.*//' | sort | uniq -d)
+          if [ -n "$dups" ]; then
+            echo "Migrations com timestamp duplicado:"; echo "$dups"; exit 1
+          fi
       - uses: supabase/setup-cli@v2
         with:
           version: latest
