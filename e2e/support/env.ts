@@ -32,8 +32,13 @@ function required(name: string, hint: string): string {
 }
 
 export const env = {
-  /** URL onde o app responde. Default: dev server local. */
-  baseUrl: process.env.E2E_BASE_URL ?? "http://localhost:5173",
+  /**
+   * URL onde o app responde. Default: dev server próprio da suíte, numa porta
+   * separada da 5173 de propósito. Assim a suíte nunca reaproveita um
+   * `bun run dev` aberto na mão, que sobe com a chave do Google e mudaria o
+   * caminho do passo 1 do wizard de publicação (ver T-07).
+   */
+  baseUrl: process.env.E2E_BASE_URL ?? "http://localhost:5273",
 
   supabaseUrl: required("VITE_SUPABASE_URL", "Deveria vir do .env versionado."),
   supabaseAnonKey: required("VITE_SUPABASE_ANON_KEY", "Deveria vir do .env versionado."),

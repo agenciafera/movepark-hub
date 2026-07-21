@@ -8,8 +8,12 @@ Este diretório é **só o harness**. Os casos do roteiro E1.3 (T-01 a T-16) sã
 
 | O quê | Onde |
 |---|---|
-| Navegador | dev server local (`bun run dev`, porta 5173), subido pelo próprio Playwright |
+| Navegador | dev server próprio da suíte, na porta **5273**, subido pelo Playwright |
 | Banco | **produção** (`mgaigbezdalbyuqiofcf`), com a fixture Mercy |
+
+A porta é 5273 de propósito, separada da 5173 do seu `bun run dev`. Isso evita que a suíte reaproveite um servidor que você deixou aberto, porque o dela sobe com uma diferença importante: **sem `VITE_GOOGLE_MAPS_API_KEY`**.
+
+Sem a chave, o passo 1 do wizard de publicação mostra campos manuais de latitude e longitude em vez do autocomplete do Google. É o que deixa o T-07 determinístico e sem chamada externa paga. O preço: **o autocomplete do Google não tem cobertura E2E**.
 
 Não existe banco de staging do Hub. O projeto `movepark_staging` no Supabase é o dump do backoffice legado (October CMS), sem nenhuma tabela do Hub. Enquanto isso não mudar, a suíte escreve em produção dentro do escopo da fixture.
 
@@ -32,7 +36,7 @@ O `.env.e2e` fica fora do git. `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` j�
 3. Libere o redirect do magic link no Supabase. Em **Authentication > URL Configuration > Redirect URLs**, inclua:
 
 ```
-http://localhost:5173/**
+http://localhost:5273/**
 ```
 
 Sem isso o bypass de auth falha, e a mensagem de erro do `session.ts` aponta pra cá.
@@ -69,16 +73,24 @@ Já existem em produção, não precisam ser criados:
 | `hub_admin` | `developer@fera.ag` | `/manager/*` |
 | `company_operator` (Mercy) | `peu+mercy@fera.ag` | `/operator/*` |
 
-O vínculo do operador com a empresa Mercy vive em `profile_company`. Se a limpeza da fixture apagar a company, esse vínculo cai junto e o storageState do operator para de dar acesso a `/operator/recebimento`. Quem recria a company (os specs do roteiro) precisa recriar o vínculo.
+O vínculo do operador com a empresa Mercy vive em `profile_company`. A limpeza apaga a company, e o vínculo cai por cascata. Por isso existe `seedFixtureCompany(status)`: ela recria company e vínculo, e é pré-condição de todo spec de `/operator`. No fluxo real esse vínculo nasce do convite por e-mail, que não dá para automatizar.
 
 ## Guardas de escrita
 
-Como o alvo é produção, a limpeza tem duas travas em `support/db.ts`:
+Como o alvo é produção, a limpeza tem travas em `support/db.ts`:
 
 - `assertFixtureScoped()` recusa constantes de fixture largas demais (padrão vazio, `%`, string curta).
 - `cleanupFixture()` conta as empresas que casaram com o padrão antes de apagar e aborta se passar de `MAX_FIXTURE_COMPANIES` (hoje 3).
 
 A suíte nunca apaga usuário do `auth.users`. Ao escrever specs novos, use os helpers de `support/db.ts` em vez de montar delete na mão.
+
+### Ordem da limpeza
+
+`location.company_id` é **RESTRICT**, não CASCADE. Sem apagar a unidade antes, o delete da company falha e trava a limpeza da suíte inteira. A ordem em `cleanupFixture()` já cobre isso.
+
+`booking.location_id` também é RESTRICT, e essa trava fica de pé de propósito: se a limpeza estourar ali, é sinal de que a unidade de teste ganhou reserva de verdade, e o certo é investigar, não forçar o delete.
+
+As fotos que o wizard sobe vão para o Storage (`assets-public/<company_id>/`), que não cai por FK nenhuma. `removeCompanyAssets()` limpa isso.
 
 ## Estrutura
 
@@ -90,16 +102,38 @@ e2e/
     env.ts               # carrega .env + .env.e2e, valida e falha cedo
     fixtures.ts          # constantes da fixture Mercy
     supabaseAdmin.ts     # clients service_role e anon
-    db.ts                # leituras + limpeza FK-safe com guardas
+    db.ts                # leituras, seed e limpeza FK-safe com guardas
     session.ts           # bypass de auth via magic link
+    leadFlow.ts          # passos do modal "Seja parceiro"
+    dragHtml5.ts         # arrasto nativo do kanban
   auth/
     manager.setup.ts     # gera .auth/manager.json
     operator.setup.ts    # gera .auth/operator.json
   public/
     harness.spec.ts      # dev server + service_role, sem depender de auth
+    T01-lead-parcial.spec.ts
+    T02-lead-submissao.spec.ts
+    T03-email-novo-lead.spec.ts
+  manager/
+    T04-kanban-mover.spec.ts
+    T05-kanban-tela-cheia.spec.ts
+  operator/
+    T07-publish-wizard.spec.ts
   smoke/
     auth-bypass.spec.ts  # prova que os storageStates caem logados
 ```
+
+## Efeitos colaterais de rodar contra produção
+
+- **T-03** dispara e-mail de verdade: um para o lead e um para `hub@movepark.co`.
+- **T-04** aprova o parceiro, o que envia o e-mail de convite para o lead.
+- **T-07** sobe uma imagem para o Storage de produção (removida no teardown).
+
+## Arrasto no kanban
+
+O kanban usa DnD nativo do HTML5, não dnd-kit. O `locator.dragTo()` do Playwright não dispara o `dragstart` nesse caso: use `dragHtml5()`, que conduz o mouse em passos.
+
+Evite a tentação de disparar `DragEvent` sintético. Funcionaria, mas ignoraria o atributo `draggable` e o teste passaria mesmo com o arrasto quebrado para quem usa o produto.
 
 O smoke está partido em dois de propósito. O de `public/` não depende do project `setup`, então continua rodando mesmo com o bypass quebrado. Se só o de `smoke/` falhar, o problema é auth; se os dois falharem, é ambiente.
 

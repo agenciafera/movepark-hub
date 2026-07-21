@@ -311,7 +311,7 @@ export function PublishWizard({ data, companyId }: Props) {
                   {data.catalog.map((pt) => {
                     const row = rows[pt.id];
                     return (
-                      <div key={pt.id} className="flex flex-col gap-3 p-4">
+                      <div key={pt.id} data-testid={`pt-row-${pt.id}`} className="flex flex-col gap-3 p-4">
                         <label className="flex items-center gap-3">
                           <Checkbox
                             checked={row.selected}

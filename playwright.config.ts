@@ -57,9 +57,19 @@ export default defineConfig({
     },
   ],
 
-  // Sobe o dev server local. Se já houver um rodando na porta, reaproveita.
+  /**
+   * Dev server próprio da suíte, na 5273 e sem a chave do Google.
+   *
+   * Sem a chave, `isGooglePlacesEnabled` é false e o passo 1 do wizard de
+   * publicação mostra campos manuais de latitude e longitude, o que deixa o
+   * T-07 determinístico e sem chamada externa paga. O preço dessa escolha:
+   * o autocomplete do Google não tem cobertura E2E.
+   *
+   * A porta separada evita reaproveitar um `bun run dev` aberto na mão, que
+   * viria com a chave e mudaria silenciosamente o caminho testado.
+   */
   webServer: {
-    command: "bun run dev",
+    command: "VITE_GOOGLE_MAPS_API_KEY= PORT=5273 bun run dev",
     url: env.baseUrl,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,

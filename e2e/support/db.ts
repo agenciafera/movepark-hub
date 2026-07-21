@@ -115,19 +115,27 @@ export async function findUserIdByEmail(email: string): Promise<string> {
  *
  * Idempotente. Devolve o id da company.
  */
-export async function seedFixtureCompany(): Promise<string> {
+export async function seedFixtureCompany(
+  onboardingStatus: "pending_review" | "in_progress" | "approved" = "pending_review",
+): Promise<string> {
   assertFixtureScoped();
 
   const existing = await getCompany();
   let companyId = existing?.id;
 
-  if (!companyId) {
+  if (companyId) {
+    const { error } = await admin
+      .from("company")
+      .update({ onboarding_status: onboardingStatus })
+      .eq("id", companyId);
+    if (error) throw error;
+  } else {
     const { data, error } = await admin
       .from("company")
       .insert({
         name: FIXTURE_COMPANY_NAME,
         slug: FIXTURE_SLUG,
-        onboarding_status: "pending_review",
+        onboarding_status: onboardingStatus,
       })
       .select("id")
       .single();
@@ -142,6 +150,21 @@ export async function seedFixtureCompany(): Promise<string> {
   if (linkError) throw linkError;
 
   return companyId;
+}
+
+/** Bucket público onde o wizard grava as fotos da unidade. */
+const PUBLIC_BUCKET = "assets-public";
+
+/** Apaga os assets que o wizard subiu para a pasta da empresa. Idempotente. */
+export async function removeCompanyAssets(companyId: string) {
+  const bucket = admin.storage.from(PUBLIC_BUCKET);
+  const { data, error } = await bucket.list(companyId);
+  if (error) throw error;
+  if (!data || data.length === 0) return;
+
+  const paths = data.map((f) => `${companyId}/${f.name}`);
+  const { error: removeError } = await bucket.remove(paths);
+  if (removeError) throw removeError;
 }
 
 /**
@@ -168,6 +191,19 @@ export async function cleanupFixture() {
   if (ids.length > 0) {
     const { error } = await admin.from("company_payout_account").delete().in("company_id", ids);
     if (error) throw error;
+
+    // `location.company_id` é RESTRICT, não CASCADE: sem apagar a unidade
+    // antes, o delete da company falha e a limpeza trava para toda a suíte.
+    // Os filhos de `location` caem por cascata, exceto `booking`, que é
+    // RESTRICT de propósito. Se um dia isso estourar aqui, é sinal de que a
+    // unidade de teste ganhou reserva de verdade, e aí é para investigar, não
+    // para forçar o delete.
+    const { error: locError } = await admin.from("location").delete().in("company_id", ids);
+    if (locError) throw locError;
+
+    // As fotos do wizard vão para o Storage, que não cai por FK nenhuma. Sem
+    // isso, cada rodada do T-07 deixaria uma imagem órfã no bucket.
+    for (const id of ids) await removeCompanyAssets(id);
   }
 
   const steps = [
