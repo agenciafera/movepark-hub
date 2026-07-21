@@ -1,20 +1,12 @@
 /**
  * T-04 do roteiro E1.3: o card aparece no kanban e muda de coluna.
  *
- * DIVERGÊNCIA DO ROTEIRO, confirmada no código. O roteiro descreve
- * "Pendente -> Em cadastro -> Aprovado", com o status passando por
- * `in_progress`. Não é o que acontece:
- *
- *   - soltar em "Em cadastro" OU em "Aprovado" dispara a mesma ação `approve`
- *     (`src/routes/manager/partners.tsx`), que leva o status direto para
- *     `approved`. O card assenta em "Aprovado", não em "Em cadastro";
- *   - por isso o segundo arrasto do roteiro não existe. E, mesmo que se
- *     tentasse, `canMoveToColumn` proíbe `in_progress -> approved`
- *     (`PartnersKanban.logic.ts`).
- *
- * Este spec testa o comportamento real. Se a intenção do produto for mesmo ter
- * uma parada em `in_progress`, o teste é que está certo e o código é que
- * precisa mudar.
+ * A esteira tem uma só ação manual de avanço: o manager arrasta Pendente para
+ * "Aprovado", o que dispara `approve` (`src/routes/manager/partners.tsx`), envia
+ * o convite e leva o status para `approved`. As colunas "Em cadastro"
+ * (`in_progress`) e "Ativo" (`active`) NÃO são alvo de arrasto: quem chega nelas
+ * é o próprio parceiro, ao salvar/publicar o wizard (auto-transição no backend).
+ * Por isso `canMoveToColumn` recusa esses destinos (`PartnersKanban.logic.ts`).
  *
  * O drag é HTML5 nativo, não dnd-kit. `dragTo` funciona no Chromium, mas este
  * é o caso mais frágil da suíte.
@@ -36,7 +28,7 @@ test.afterEach(async () => {
   await cleanupFixture();
 });
 
-test("T-04: card aparece em Pendente e aprovar leva a company para approved", async ({ page }) => {
+test("T-04: card aparece em Pendente e arrastar para Aprovado leva a company para approved", async ({ page }) => {
   // Cria a solicitação pelo caminho real, o funil público. A rota é pública,
   // então roda mesmo neste contexto autenticado como manager.
   const modal = await submitFullLead(page);
@@ -50,20 +42,20 @@ test("T-04: card aparece em Pendente e aprovar leva a company para approved", as
 
   const card = page.getByTestId(`kanban-card-${company!.id}`);
   const pendente = page.getByTestId("kanban-col-pending_review");
-  const emCadastro = page.getByTestId("kanban-col-in_progress");
+  const aprovado = page.getByTestId("kanban-col-approved");
 
   // Pré-condição: o card nasce na coluna Pendente.
   await expect(card).toBeVisible({ timeout: 20_000 });
   await expect(pendente.getByTestId(`kanban-card-${company!.id}`)).toBeVisible();
 
-  await dragHtml5(page, card, emCadastro);
+  // A ação manual do manager: arrastar para "Aprovado" (dispara approve + convite).
+  await dragHtml5(page, card, aprovado);
 
-  // O efeito real é `approved`, não `in_progress`. Ver o cabeçalho do arquivo.
   await expect
     .poll(async () => (await getCompany())?.onboarding_status, {
       timeout: 30_000,
       intervals: [500, 1000, 2000],
-      message: "o arrasto deveria ter disparado a Edge approve-partner",
+      message: "o arrasto para Aprovado deveria ter disparado a Edge approve-partner",
     })
     .toBe("approved");
 

@@ -15,12 +15,12 @@ function app(id: string, status: OnboardingStatus | null): PartnerApplication {
 }
 
 describe("groupApplicationsByStatus", () => {
-  it("mantém as 5 colunas na ordem do funil", () => {
+  it("mantém as 5 colunas na ordem real do funil", () => {
     const cols = groupApplicationsByStatus([]);
     expect(cols.map((c) => c.status)).toEqual([
       "pending_review",
-      "in_progress",
       "approved",
+      "in_progress",
       "active",
       "rejected",
     ]);
@@ -58,9 +58,8 @@ describe("canMoveToColumn", () => {
     expect(canMoveToColumn("rejected", "approved")).toBe(true);
   });
 
-  it("permite arrastar Pendente para Em cadastro como atalho do approve", () => {
-    expect(canMoveToColumn("pending_review", "in_progress")).toBe(true);
-    // só a partir de Pendente; outros status não viram in_progress manualmente
+  it("não deixa arrastar para Em cadastro (é o parceiro que chega lá, não o manager)", () => {
+    expect(canMoveToColumn("pending_review", "in_progress")).toBe(false);
     expect(canMoveToColumn("approved", "in_progress")).toBe(false);
     expect(canMoveToColumn("rejected", "in_progress")).toBe(false);
   });

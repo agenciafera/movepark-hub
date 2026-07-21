@@ -1,13 +1,19 @@
 import type { OnboardingStatus, PartnerApplication } from "@/types/domain";
 
-// Colunas do kanban de parceiros, na ordem do funil (esquerda para direita).
-// "Perdido" reaproveita o status `rejected` (não existe status novo no enum
-// `onboarding_status`; ver ADR e migrations). O rótulo de coluna é próprio do
-// kanban e não altera o label global do status (que segue "Recusado" na lista).
+// Colunas do kanban de parceiros, na ordem real do funil (esquerda para direita):
+// Pendente → Aprovado → Em cadastro → Ativo, com Perdido à parte. A ordem segue o
+// ciclo do onboarding: o manager aprova (envia o convite) e, a partir daí, quem
+// avança é o próprio parceiro: começa a preencher o wizard (`in_progress`, "Em
+// cadastro") e depois publica (`active`, "Ativo"). Por isso "Em cadastro" e "Ativo"
+// não são alvo de arrasto (ver canMoveToColumn): são estados que o parceiro
+// conquista, não que o manager atribui. "Perdido" reaproveita o status `rejected`
+// (não existe status novo no enum `onboarding_status`; ver ADR e migrations). O
+// rótulo de coluna é próprio do kanban e não altera o label global do status (que
+// segue "Recusado" na lista).
 export const partnersKanbanColumns: { status: OnboardingStatus; label: string }[] = [
   { status: "pending_review", label: "Pendente" },
-  { status: "in_progress", label: "Em cadastro" },
   { status: "approved", label: "Aprovado" },
+  { status: "in_progress", label: "Em cadastro" },
   { status: "active", label: "Ativo" },
   { status: "rejected", label: "Perdido" },
 ];
@@ -31,20 +37,19 @@ export function groupApplicationsByStatus(
   }));
 }
 
-// Regras de transição por arrastar, espelhando o que a lista/drawer permitem.
-// A única ação de backend de avanço é "approve" (edge `approve-partner`), que
-// envia o convite de continuar cadastro e leva o status para `approved`. Um lead
-// Pendente pode ser arrastado tanto para "Em cadastro" quanto para "Aprovado"
-// como atalho desse "Aprovar e enviar convite" (nos dois casos o card acaba em
-// Aprovado, que é o status real após a aprovação). "reject" leva a Perdido.
-//   - approve: destinos in_progress|approved, a partir de pending_review; e ainda
-//     approved a partir de rejected (re-aprovar), como o `canApprove` do drawer.
-//   - reject (Perdido): a partir de qualquer status menos active (mesmo critério
-//     de visibilidade do botão Recusar no drawer).
-// Active não tem ação manual; pending_review como destino também não.
+// Regras de transição por arrastar. O manager tem só DUAS ações reais na esteira:
+// aprovar e recusar. Tudo mais é o próprio parceiro que faz.
+//   - approve (Aprovado): edge `approve-partner`, envia o convite e leva o status
+//     para `approved`. A partir de `pending_review` (aprovar) ou de `rejected`
+//     (re-aprovar), como o `canApprove` do drawer.
+//   - reject (Perdido): a partir de qualquer status menos `active` (mesmo critério
+//     do botão Recusar no drawer).
+// "Em cadastro" (`in_progress`) e "Ativo" (`active`) NÃO são alvo de arrasto: o
+// parceiro entra em `in_progress` ao salvar o wizard e em `active` ao publicar
+// (auto-transição no backend, `onboarding_assert_editable` / `onboarding_publish`).
+// O manager não atribui esses estados; a coluna só mostra quem já chegou lá.
 export function canMoveToColumn(from: OnboardingStatus, to: OnboardingStatus): boolean {
   if (from === to) return false;
-  if (to === "in_progress") return from === "pending_review";
   if (to === "approved") return from === "pending_review" || from === "rejected";
   if (to === "rejected") return from !== "active";
   return false;

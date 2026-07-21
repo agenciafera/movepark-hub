@@ -98,17 +98,18 @@ export default function ManagerPartners() {
     setRejectOpen(true);
   }
 
-  // Arrastar um card para outra coluna dispara a MESMA ação da lista/drawer:
-  //  - Em cadastro ou Aprovado: "approve" (cria convite e envia o e-mail de
-  //    continuar cadastro). O status vira `approved`, então o card assenta na
-  //    coluna Aprovado, como acontece ao clicar em "Aprovar e enviar convite".
+  // Arrastar um card dispara a MESMA ação da lista/drawer. O manager só tem duas:
+  //  - Aprovado: "approve" (cria convite e envia o e-mail de continuar cadastro).
+  //    O status vira `approved`, como ao clicar em "Aprovar e enviar convite".
   //  - Perdido: abre o diálogo de motivo e faz "reject" (envia e-mail de recusa).
+  // "Em cadastro" e "Ativo" não entram aqui: canMoveToColumn não os aceita como
+  // destino (o parceiro é quem chega neles ao preencher/publicar o wizard).
   async function handleMove(app: PartnerApplication, target: OnboardingStatus) {
     if (target === "rejected") {
       openReject(app);
       return;
     }
-    if (target === "in_progress" || target === "approved") {
+    if (target === "approved") {
       setMovingId(app.company_id);
       try {
         const res = await action.mutateAsync({ company_id: app.company_id, action: "approve" });
