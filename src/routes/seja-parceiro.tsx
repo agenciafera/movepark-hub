@@ -265,7 +265,7 @@ export default function SejaParceiroPage() {
 
       {/* Custo zero: destaque */}
       <section className="mx-auto max-w-[1100px] px-4 py-16 desktop:px-8 desktop:py-20">
-        <div className="rounded-lg border border-hairline bg-surface-pale p-8 text-center desktop:p-12">
+        <div className="rounded-lg bg-surface-pale p-8 text-center desktop:p-12">
           <p className="text-badge uppercase tracking-wide text-mp-indigo">Risco zero</p>
           <h2 className="mx-auto mt-3 max-w-2xl text-balance text-display-2xl text-ink">
             Você cuida das vagas. A gente cuida do resto.
