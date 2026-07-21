@@ -251,15 +251,46 @@ export default function SejaParceiroPage() {
         </div>
       </section>
 
-      {/* Sinais de confiança */}
-      <section className="border-y border-hairline bg-canvas">
-        <div className="mx-auto grid max-w-[1100px] grid-cols-2 gap-6 px-4 py-8 desktop:grid-cols-4 desktop:px-8">
-          {METRICS.map((m) => (
-            <div key={m.label} className="text-center">
-              <p className="text-display-xl text-ink">{m.value}</p>
-              <p className="mt-1 text-body-sm text-muted">{m.label}</p>
-            </div>
-          ))}
+      {/* Sinais de confiança, em bento.
+          Eram quatro textos centralizados iguais numa fileira, que é o formato mais
+          chapado que existe: nada puxa o olho primeiro. Agora os tiles têm tamanhos
+          diferentes, o "100%" ancora em navy (é o número que mais quebra objeção) e
+          entra uma foto de lote parceiro pra dar matéria no meio dos números. */}
+      <section className="mx-auto max-w-[1100px] px-4 py-10 desktop:px-8 desktop:py-14">
+        <div className="grid grid-cols-2 gap-4 desktop:grid-cols-4">
+          {/* Ocupa a linha inteira no mobile: com a foto escondida, uma coluna só
+              deixaria metade da primeira linha vazia. */}
+          <div className="col-span-2 flex flex-col justify-between rounded-lg bg-mp-pale p-6 desktop:col-span-1">
+            <p className="text-display-xl text-ink">{METRICS[0].value}</p>
+            <p className="mt-3 text-body-sm text-body">{METRICS[0].label}</p>
+          </div>
+
+          {/* A foto some no mobile: em duas colunas ela viraria um selo pequeno demais
+              pra somar, e só empurraria os números pra fora da primeira tela. */}
+          <div className="hidden overflow-hidden rounded-lg desktop:block">
+            <img
+              src="/Estacionamentos/virapark/virapark_001.webp"
+              alt="Pátio de um estacionamento parceiro da Movepark"
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover"
+            />
+          </div>
+
+          <div className="col-span-2 flex flex-col justify-between rounded-lg bg-mp-navy p-6 text-white">
+            <p className="text-display-xl">{METRICS[1].value}</p>
+            <p className="mt-3 text-body-sm text-white/80">{METRICS[1].label}</p>
+          </div>
+
+          <div className="col-span-2 flex flex-col justify-between rounded-lg bg-surface-soft p-6">
+            <p className="text-display-xl text-ink">{METRICS[2].value}</p>
+            <p className="mt-3 text-body-sm text-body">{METRICS[2].label}</p>
+          </div>
+
+          <div className="col-span-2 flex flex-col justify-between rounded-lg bg-surface-soft p-6">
+            <p className="text-display-xl text-ink">{METRICS[3].value}</p>
+            <p className="mt-3 text-body-sm text-body">{METRICS[3].label}</p>
+          </div>
         </div>
       </section>
 
