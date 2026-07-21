@@ -28,6 +28,7 @@ export type BookingForCheckout = {
   price_breakdown: PriceBreakdown | null;
   check_in_at: string;
   check_out_at: string;
+  fare_cancel_until: string | null;
   expires_at: string | null;
   created_at: string;
   passenger_count: number | null;
@@ -89,7 +90,7 @@ export function useCheckoutBooking(code: string | undefined) {
         .from("booking")
         .select(
           `id, code, status, total_amount, currency, price_breakdown, check_in_at, check_out_at,
-           expires_at, created_at, passenger_count, has_pcd, vehicle_id, profile_id,
+           fare_cancel_until, expires_at, created_at, passenger_count, has_pcd, vehicle_id, profile_id,
            customer_name, customer_first_name, customer_last_name, customer_phone, customer_email,
            customer_tax_id, passenger_first_name, passenger_last_name, passenger_phone,
            location:location!inner(id, slug, name, address,
@@ -124,6 +125,7 @@ export function useCheckoutBooking(code: string | undefined) {
         price_breakdown: (row.price_breakdown as PriceBreakdown | null) ?? null,
         check_in_at: row.check_in_at,
         check_out_at: row.check_out_at,
+        fare_cancel_until: row.fare_cancel_until,
         expires_at: row.expires_at,
         created_at: row.created_at,
         passenger_count: row.passenger_count,

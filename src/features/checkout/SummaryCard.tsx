@@ -1,6 +1,6 @@
 import { ExternalLink } from "lucide-react";
 import { formatBRL, formatDateTime, formatDuration } from "@/lib/format";
-import { freeCancelDeadlineLabel, CANCELLATION_POLICY_LINES } from "@/features/bookings/cancellation.logic";
+import { freeCancelDeadlineLabel, cancellationPolicyLines } from "@/features/bookings/cancellation.logic";
 import { useAvailability } from "@/features/listing/api";
 import type { BookingForCheckout } from "./api";
 
@@ -148,10 +148,10 @@ export function SummaryCard({ booking, bare }: Props) {
       {/* Política de cancelamento */}
       <div className="space-y-2">
         <div className="rounded-full bg-badge-confirmed-bg px-4 py-2 text-center text-caption text-badge-confirmed-fg">
-          {freeCancelDeadlineLabel(booking.check_in_at)}
+          {freeCancelDeadlineLabel(booking.check_in_at, booking.fare_cancel_until)}
         </div>
         <div className="rounded-md bg-surface-soft px-4 py-3 text-center text-body-sm text-body">
-          {CANCELLATION_POLICY_LINES.join(" ")}
+          {cancellationPolicyLines(booking.check_in_at, booking.fare_cancel_until).join(" ")}
         </div>
       </div>
     </>

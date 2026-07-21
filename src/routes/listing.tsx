@@ -27,7 +27,7 @@ import { groupFaqsByScope } from "@/features/faqs/FaqList.logic";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { optimizedImageUrl } from "@/lib/storage";
 import { cn } from "@/lib/utils";
-import { CANCELLATION_POLICY_LINES } from "@/features/bookings/cancellation.logic";
+import { CANCELLATION_POLICY_LINES_GENERIC } from "@/features/bookings/cancellation.logic";
 import { GUARANTEE_PROMISE } from "@/features/guarantee/copy";
 import {
   localBusinessSchema,
@@ -471,7 +471,7 @@ function ListingKnowSection({ listing }: { listing: ListingDetail }) {
     {
       icon: <CalendarX className="h-7 w-7 text-ink" />,
       title: "Política de cancelamento",
-      lines: CANCELLATION_POLICY_LINES,
+      lines: CANCELLATION_POLICY_LINES_GENERIC,
       extra: listing.location.reservation_policy ?? null,
     },
     {

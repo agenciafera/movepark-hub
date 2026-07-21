@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { CANCELLATION_POLICY_LINES, freeCancelDeadlineLabel } from "./cancellation.logic";
+import { cancellationPolicyLines, freeCancelDeadlineLabel } from "./cancellation.logic";
 
 type Props = {
   /** Quando informado, mostra o prazo concreto ("Cancele grátis até …"). */
@@ -21,7 +21,7 @@ export function CancellationPolicy({ checkInAt, fareCancelUntil, operatorPolicy,
         </p>
       )}
       <ul className="space-y-1 text-caption text-muted">
-        {CANCELLATION_POLICY_LINES.map((line, i) => (
+        {cancellationPolicyLines(checkInAt, fareCancelUntil).map((line, i) => (
           <li key={i}>{line}</li>
         ))}
       </ul>
