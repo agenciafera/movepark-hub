@@ -22,11 +22,13 @@ export function BankSelect({
   onChange,
   invalid,
   id,
+  "aria-describedby": ariaDescribedby,
 }: {
   value: string;
   onChange: (code: string) => void;
   invalid?: boolean;
   id?: string;
+  "aria-describedby"?: string;
 }) {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
@@ -42,6 +44,7 @@ export function BankSelect({
           role="combobox"
           aria-expanded={open}
           aria-invalid={invalid}
+          aria-describedby={ariaDescribedby}
           className={cn(
             "flex h-14 w-full items-center justify-between gap-2 rounded-sm border border-hairline bg-canvas px-4 text-left text-body-md text-ink",
             "focus:border-2 focus:border-ink focus:outline-none",

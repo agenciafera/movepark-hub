@@ -11,6 +11,7 @@ type Props = {
   value: string;
   onValueChange: (uf: string) => void;
   id?: string;
+  "aria-describedby"?: string;
   /** Texto exibido quando nada está selecionado. */
   placeholder?: string;
   required?: boolean;
@@ -28,13 +29,14 @@ export function StateSelect({
   value,
   onValueChange,
   id,
+  "aria-describedby": ariaDescribedby,
   placeholder = "UF",
   required,
   disabled,
 }: Props) {
   return (
     <Select value={value} onValueChange={onValueChange} required={required} disabled={disabled}>
-      <SelectTrigger id={id} aria-label="Estado">
+      <SelectTrigger id={id} aria-describedby={ariaDescribedby} aria-label="Estado">
         {value ? value : <span className="text-muted">{placeholder}</span>}
       </SelectTrigger>
       <SelectContent>

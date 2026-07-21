@@ -25,6 +25,15 @@ import { CORPORATION_TYPES, payoutKycSchema, type PayoutKycForm as KycValues } f
 
 type Mask = (v: string) => string;
 
+/** Props que o Field entrega ao controle filho para associá-lo ao rótulo e à mensagem de erro. */
+type FieldControlProps = { id: string; "aria-describedby"?: string };
+
+/**
+ * Envelope de campo do KYC. Gera um id (React.useId) e o vincula ao <Label htmlFor> e ao controle
+ * filho, para leitor de tela anunciar cada campo pelo nome. Quando há erro, associa a mensagem via
+ * aria-describedby. O children é uma render prop: recebe { id, aria-describedby } e os aplica no
+ * controle (Input, Select, PhoneField, etc.).
+ */
 function Field({
   label,
   error,
@@ -33,14 +42,20 @@ function Field({
 }: {
   label: string;
   error?: string;
-  children: React.ReactNode;
+  children: (control: FieldControlProps) => React.ReactNode;
   className?: string;
 }) {
+  const id = React.useId();
+  const errorId = `${id}-error`;
   return (
     <div data-field={label} className={cn("flex flex-col gap-1.5", className)}>
-      <Label>{label}</Label>
-      {children}
-      {error && <span className="text-caption text-error">{error}</span>}
+      <Label htmlFor={id}>{label}</Label>
+      {children({ id, "aria-describedby": error ? errorId : undefined })}
+      {error && (
+        <span id={errorId} className="text-caption text-error">
+          {error}
+        </span>
+      )}
     </div>
   );
 }
@@ -63,13 +78,16 @@ function TextField({
   const { field, fieldState } = useController({ control, name });
   return (
     <Field label={label} error={fieldState.error?.message}>
-      <Input
-        type={type}
-        placeholder={placeholder}
-        value={(field.value as string) ?? ""}
-        onBlur={field.onBlur}
-        onChange={(e) => field.onChange(mask ? mask(e.target.value) : e.target.value)}
-      />
+      {(a) => (
+        <Input
+          {...a}
+          type={type}
+          placeholder={placeholder}
+          value={(field.value as string) ?? ""}
+          onBlur={field.onBlur}
+          onChange={(e) => field.onChange(mask ? mask(e.target.value) : e.target.value)}
+        />
+      )}
     </Field>
   );
 }
@@ -86,11 +104,15 @@ function PhoneFormField({
   const { field, fieldState } = useController({ control, name });
   return (
     <Field label={label} error={fieldState.error?.message}>
-      <PhoneField
-        value={(field.value as string) || undefined}
-        onChange={(v) => field.onChange(v ?? "")}
-        aria-invalid={!!fieldState.error}
-      />
+      {(a) => (
+        <PhoneField
+          id={a.id}
+          aria-describedby={a["aria-describedby"]}
+          value={(field.value as string) || undefined}
+          onChange={(v) => field.onChange(v ?? "")}
+          aria-invalid={!!fieldState.error}
+        />
+      )}
     </Field>
   );
 }
@@ -107,7 +129,9 @@ function MoneyField({
   const { field, fieldState } = useController({ control, name });
   return (
     <Field label={label} error={fieldState.error?.message}>
-      <CurrencyInput value={field.value as number | null} onChange={(v) => field.onChange(v)} />
+      {(a) => (
+        <CurrencyInput {...a} value={field.value as number | null} onChange={(v) => field.onChange(v)} />
+      )}
     </Field>
   );
 }
@@ -116,7 +140,14 @@ function StateField({ control, name, label }: { control: Control<KycValues>; nam
   const { field, fieldState } = useController({ control, name });
   return (
     <Field label={label} error={fieldState.error?.message}>
-      <StateSelect value={(field.value as string) ?? ""} onValueChange={field.onChange} />
+      {(a) => (
+        <StateSelect
+          id={a.id}
+          aria-describedby={a["aria-describedby"]}
+          value={(field.value as string) ?? ""}
+          onValueChange={field.onChange}
+        />
+      )}
     </Field>
   );
 }
@@ -125,18 +156,20 @@ function CorporationTypeField({ control }: { control: Control<KycValues> }) {
   const { field, fieldState } = useController({ control, name: "company.corporation_type" });
   return (
     <Field label="Tipo de empresa" error={fieldState.error?.message}>
-      <Select value={field.value} onValueChange={field.onChange}>
-        <SelectTrigger>
-          <SelectValue placeholder="Selecione" />
-        </SelectTrigger>
-        <SelectContent>
-          {CORPORATION_TYPES.map((t) => (
-            <SelectItem key={t} value={t}>
-              {t}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {(a) => (
+        <Select value={field.value} onValueChange={field.onChange}>
+          <SelectTrigger {...a}>
+            <SelectValue placeholder="Selecione" />
+          </SelectTrigger>
+          <SelectContent>
+            {CORPORATION_TYPES.map((t) => (
+              <SelectItem key={t} value={t}>
+                {t}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
     </Field>
   );
 }
@@ -145,11 +178,15 @@ function BankCodeField({ control }: { control: Control<KycValues> }) {
   const { field, fieldState } = useController({ control, name: "bank.bank_code" });
   return (
     <Field label="Banco" error={fieldState.error?.message}>
-      <BankSelect
-        value={(field.value as string) ?? ""}
-        onChange={(code) => field.onChange(code)}
-        invalid={!!fieldState.error}
-      />
+      {(a) => (
+        <BankSelect
+          id={a.id}
+          aria-describedby={a["aria-describedby"]}
+          value={(field.value as string) ?? ""}
+          onChange={(code) => field.onChange(code)}
+          invalid={!!fieldState.error}
+        />
+      )}
     </Field>
   );
 }
@@ -158,15 +195,17 @@ function AccountTypeField({ control }: { control: Control<KycValues> }) {
   const { field, fieldState } = useController({ control, name: "bank.account_type" });
   return (
     <Field label="Tipo de conta" error={fieldState.error?.message}>
-      <Select value={field.value} onValueChange={field.onChange}>
-        <SelectTrigger>
-          <SelectValue placeholder="Selecione" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="checking">Conta corrente</SelectItem>
-          <SelectItem value="savings">Conta poupança</SelectItem>
-        </SelectContent>
-      </Select>
+      {(a) => (
+        <Select value={field.value} onValueChange={field.onChange}>
+          <SelectTrigger {...a}>
+            <SelectValue placeholder="Selecione" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="checking">Conta corrente</SelectItem>
+            <SelectItem value="savings">Conta poupança</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
     </Field>
   );
 }
@@ -219,16 +258,19 @@ function CepField({
       error={fieldState.error?.message}
       className={className}
     >
-      <Input
-        placeholder="00000-000"
-        value={(field.value as string) ?? ""}
-        onBlur={field.onBlur}
-        onChange={(e) => {
-          const masked = cepMask(e.target.value);
-          field.onChange(masked);
-          if (onlyDigits(masked).length === 8) void autofill(masked);
-        }}
-      />
+      {(a) => (
+        <Input
+          {...a}
+          placeholder="00000-000"
+          value={(field.value as string) ?? ""}
+          onBlur={field.onBlur}
+          onChange={(e) => {
+            const masked = cepMask(e.target.value);
+            field.onChange(masked);
+            if (onlyDigits(masked).length === 8) void autofill(masked);
+          }}
+        />
+      )}
     </Field>
   );
 }
@@ -305,16 +347,19 @@ function CnpjField({ control }: { control: Control<KycValues> }) {
 
   return (
     <Field label={loading ? "CNPJ (buscando dados…)" : "CNPJ"} error={fieldState.error?.message}>
-      <Input
-        placeholder="00.000.000/0000-00"
-        value={(field.value as string) ?? ""}
-        onBlur={field.onBlur}
-        onChange={(e) => {
-          const masked = cnpjMask(e.target.value);
-          field.onChange(masked);
-          if (onlyDigits(masked).length === 14) void autofill(masked);
-        }}
-      />
+      {(a) => (
+        <Input
+          {...a}
+          placeholder="00.000.000/0000-00"
+          value={(field.value as string) ?? ""}
+          onBlur={field.onBlur}
+          onChange={(e) => {
+            const masked = cnpjMask(e.target.value);
+            field.onChange(masked);
+            if (onlyDigits(masked).length === 14) void autofill(masked);
+          }}
+        />
+      )}
     </Field>
   );
 }
