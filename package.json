@@ -22,9 +22,9 @@
     "deploy:api": "wrangler deploy -c wrangler.api.jsonc",
     "gen:cards": "node scripts/gen-card-hashes.mjs",
     "lint:openapi": "node scripts/check-openapi-drift.mjs",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:smoke": "playwright test --project=e2e-public --project=smoke"
+    "test:e2e": "NODE_OPTIONS=\"--import ./scripts/ws-polyfill.mjs\" playwright test",
+    "test:e2e:ui": "NODE_OPTIONS=\"--import ./scripts/ws-polyfill.mjs\" playwright test --ui",
+    "test:e2e:smoke": "NODE_OPTIONS=\"--import ./scripts/ws-polyfill.mjs\" playwright test --project=e2e-public --project=smoke"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
