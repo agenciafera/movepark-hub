@@ -184,7 +184,10 @@ export const DEFAULT_SYSTEM_PROMPT =
   "fim de semana, resolva com current_datetime e proponha datas específicas para o usuário confirmar, sem " +
   "exigir as datas exatas. Para reservar ou cancelar, use as ferramentas transacionais; se o usuário não " +
   "estiver logado, peça que ele entre (o app mostra um botão Entrar). Confirme unidade, datas e valor antes " +
-  "de criar ou cancelar uma reserva.";
+  "de criar ou cancelar uma reserva. " +
+  "Você NÃO remarca nem troca as datas de uma reserva existente, e não gera cobrança nem link de pagamento. " +
+  "Se pedirem isso, diga que não faz por aqui: para mudar datas, o caminho é cancelar e reservar de novo; " +
+  "para pagar, é no checkout do site. Nunca prometa uma dessas coisas para depois do login.";
 
 // ── Histórico vindo do cliente → Content[] do Gemini ─────────────────────────
 export type ClientRole = "user" | "model" | "assistant";
@@ -256,8 +259,46 @@ export function sessionBlock(isLoggedIn: boolean): string {
   return isLoggedIn
     ? "\n\n[Sessão] O usuário ESTÁ logado. Pode reservar e cancelar: chame as ferramentas transacionais " +
         "direto, sem pedir login."
-    : "\n\n[Sessão] O usuário NÃO está logado. Não tente reservar nem cancelar; peça que ele entre (o app " +
-        "mostra um botão Entrar) e siga ajudando na busca e nas dúvidas.";
+    : "\n\n[Sessão] O usuário NÃO está logado. Se ele pedir para reservar ou cancelar, CHAME a ferramenta " +
+        "transacional assim mesmo: o sistema barra e devolve a orientação de login, e é isso que faz o app " +
+        "mostrar o botão Entrar. Nunca diga que reservou ou cancelou.";
+}
+
+/** Nomes curtos de dia da semana, na ordem de Date.getDay() (0 = domingo). */
+const WEEKDAYS_PT = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+
+/**
+ * Calendário dos próximos dias, já com o dia da semana resolvido. Existe porque o modelo erra
+ * aritmética de data: ele afirmava "sexta, 01/08" sendo 01/08 um sábado, e reservaria a semana
+ * errada. Com a tabela pronta ele consulta em vez de calcular.
+ */
+export function calendarBlock(now: Date, days = 14, timeZone = TZ): string {
+  const fmt = (d: Date) =>
+    new Intl.DateTimeFormat("pt-BR", {
+      timeZone,
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(d);
+  // Dia da semana no fuso alvo (evita virar o dia por causa do UTC).
+  const weekdayOf = (d: Date) =>
+    WEEKDAYS_PT[
+      ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(
+        new Intl.DateTimeFormat("en-US", { timeZone, weekday: "short" }).format(d),
+      )
+    ];
+
+  const linhas: string[] = [];
+  for (let i = 0; i <= days; i++) {
+    const d = new Date(now.getTime() + i * 86_400_000);
+    const marca = i === 0 ? " (hoje)" : i === 1 ? " (amanhã)" : "";
+    linhas.push(`${weekdayOf(d)} ${fmt(d)}${marca}`);
+  }
+  return (
+    "\n\n[Calendário] Use ESTA tabela para converter dia da semana em data. Não calcule de cabeça: " +
+    linhas.join("; ") +
+    ". Ao propor datas, confira aqui que o dia da semana bate com a data."
+  );
 }
 
 /** Bloco de contexto temporal acrescentado ao system prompt a cada turno. */

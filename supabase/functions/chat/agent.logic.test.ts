@@ -10,6 +10,7 @@ import {
   nowContext,
   parseChatRequest,
   parseMcpToolResult,
+  calendarBlock,
   sessionBlock,
   temporalSystemBlock,
   toGeminiHistory,
@@ -164,4 +165,31 @@ Deno.test("sessionBlock diz ao modelo o estado de login", () => {
   const deslogado = sessionBlock(false);
   assertEquals(deslogado.includes("NÃO está logado"), true);
   assertEquals(deslogado.toLowerCase().includes("botão entrar"), true);
+});
+
+// Regressão do achado A3 (roteiro de testes): o modelo afirmava "sexta, 01/08" sendo 01/08 um sábado.
+// O calendário entrega o dia da semana pronto, então ele consulta em vez de calcular.
+Deno.test("calendarBlock casa dia da semana com a data (21/07/2026 é terça)", () => {
+  const b = calendarBlock(new Date("2026-07-21T14:00:00Z"), 14);
+  assertEquals(b.includes("terça 21/07/2026 (hoje)"), true);
+  assertEquals(b.includes("quarta 22/07/2026 (amanhã)"), true);
+  // as datas que o bot errou:
+  assertEquals(b.includes("sexta 24/07/2026"), true);
+  assertEquals(b.includes("sábado 01/08/2026"), true); // ele dizia "sexta 01/08"
+  assertEquals(b.includes("terça 04/08/2026"), true);
+  // e não pode afirmar o que é falso
+  assertEquals(b.includes("sexta 01/08/2026"), false);
+  assertEquals(b.includes("terça 05/08/2026"), false);
+});
+
+Deno.test("calendarBlock manda consultar em vez de calcular", () => {
+  const b = calendarBlock(new Date("2026-07-21T14:00:00Z"), 3);
+  assertEquals(b.toLowerCase().includes("não calcule de cabeça"), true);
+  assertEquals(b.split(";").length, 4); // hoje + 3 dias
+});
+
+Deno.test("sessionBlock deslogado manda CHAMAR a tool (é o que acende o botão Entrar)", () => {
+  const b = sessionBlock(false);
+  assertEquals(b.includes("CHAME a ferramenta"), true);
+  assertEquals(b.toLowerCase().includes("botão entrar"), true);
 });

@@ -11,6 +11,7 @@
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
+  calendarBlock,
   DEFAULT_MODEL,
   DEFAULT_SYSTEM_PROMPT,
   extractFunctionCalls,
@@ -186,9 +187,11 @@ Deno.serve(async (req: Request) => {
   // Auth opcional: presença de Bearer = logado (as Edges transacionais revalidam o JWT).
   const authHeader = req.headers.get("Authorization");
   const isLoggedIn = !!authHeader && authHeader.startsWith("Bearer ");
+  const agora = new Date();
   const systemPrompt =
     ((await readSetting(admin, "chatbot_system_prompt")) || DEFAULT_SYSTEM_PROMPT) +
-    temporalSystemBlock(new Date()) +
+    temporalSystemBlock(agora) +
+    calendarBlock(agora) +
     sessionBlock(isLoggedIn);
 
   const contents: GeminiContent[] = toGeminiHistory(parsed.value.messages);
