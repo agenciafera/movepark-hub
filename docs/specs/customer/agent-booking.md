@@ -273,6 +273,9 @@ jurídico antes de implementar. Se não passar, o link cai no passo 1 só para o
 
 ## 11. Testes
 
+Roteiros manuais de conversa (usuário real, ciclo completo, limites e tentativas de quebrar):
+[agent-test-scenarios.md](./agent-test-scenarios.md).
+
 - deno: invariante `isToolCallable` consistente com `listTools` nas três superfícies; login e tools
   transacionais.
 - pgTAP `checkout_handoff.test.sql`: uso único sob concorrência, expiração, guarda de tenant, grants.

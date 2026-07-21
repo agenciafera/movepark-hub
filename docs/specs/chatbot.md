@@ -78,6 +78,9 @@ Deploy: `supabase functions deploy chat --no-verify-jwt` (fixado em `config.toml
 
 ## 5. Testes
 
+Roteiros de conversa para caçar bug à mão (do descobrir ao cancelar, mais os limites conhecidos):
+[customer/agent-test-scenarios.md](./customer/agent-test-scenarios.md).
+
 - `deno test` `supabase/functions/chat/agent.logic.test.ts` (tools, parsing, roteamento, gate de
   login, function-calling). Vitest `chat.logic.test.ts` + `ChatWidget.test.tsx` (MSW/mocks).
 
