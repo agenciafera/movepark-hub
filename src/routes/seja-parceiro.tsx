@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { FaqList } from "@/features/faqs/FaqList";
 import type { FaqCombinedItem } from "@/features/faqs/api";
 import { PartnerLeadModal } from "@/features/onboarding/PartnerLeadModal";
@@ -54,14 +55,22 @@ const PAINS = [
   "Vaga parada hoje é receita que não volta amanhã.",
 ];
 
+/**
+ * `featured` marca os dois argumentos que mais pesam pra quem tem estacionamento:
+ * não gastar com mídia e não levar calote. Eles ganham tile grande no bento; os
+ * outros quatro ficam compactos. Seis cards idênticos comunicariam que todo
+ * benefício vale o mesmo, que é justamente o contrário do que a gente quer dizer.
+ */
 const BENEFITS = [
   {
     icon: Megaphone,
+    featured: true,
     title: "Marketing por nossa conta",
     desc: "Levamos clientes até você com tráfego pago e orgânico no Google. Você não gasta um real com mídia.",
   },
   {
     icon: Wallet,
+    featured: true,
     title: "Pagamento garantido",
     desc: "O cliente paga antes de chegar. Acabou a inadimplência e a discussão no balcão.",
   },
@@ -318,14 +327,25 @@ export default function SejaParceiroPage() {
         <p className="mt-2 max-w-2xl text-body-md text-muted">
           Do cadastro ao repasse, a Movepark cuida da parte chata. Você cuida das vagas.
         </p>
-        <ol className="mt-8 grid grid-cols-1 gap-8 tablet:grid-cols-3">
-          {STEPS.map((s) => (
-            <li key={s.n} className="flex flex-col gap-2">
-              <span className="text-display-md tabular-nums text-mp-indigo">
-                {String(s.n).padStart(2, "0")}
+        {/* Trilho numerado. Antes eram três colunas de texto com um número solto em
+            cima, que não dizia que uma coisa leva à outra. O filete ligando os passos
+            é o que transforma três blocos num processo. */}
+        <ol className="mt-10 grid grid-cols-1 gap-8 tablet:grid-cols-3">
+          {STEPS.map((s, i) => (
+            <li key={s.n} className="relative">
+              {i < STEPS.length - 1 && (
+                // `-right-8` atravessa o gap da grade: parando em `right-0` o filete
+                // morreria na borda da coluna e o trilho ficaria picotado.
+                <span
+                  className="absolute -right-8 left-12 top-5 hidden h-px bg-hairline tablet:block"
+                  aria-hidden
+                />
+              )}
+              <span className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-mp-navy text-body-sm font-bold tabular-nums text-white">
+                {s.n}
               </span>
-              <div className="text-title-md text-ink">{s.title}</div>
-              <p className="text-body-sm text-muted">{s.desc}</p>
+              <h3 className="mt-5 text-title-md text-ink">{s.title}</h3>
+              <p className="mt-1.5 text-body-sm text-body">{s.desc}</p>
             </li>
           ))}
         </ol>
@@ -335,14 +355,42 @@ export default function SejaParceiroPage() {
       <section className="border-y border-hairline bg-surface-soft">
         <div className="mx-auto max-w-[1100px] px-4 py-16 desktop:px-8 desktop:py-20">
           <h2 className="text-display-2xl text-ink">Por que colocar seu estacionamento aqui</h2>
-          <div className="mt-8 grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-3">
+          {/* Bento: os dois destaques ocupam metade da largura cada um na primeira
+              linha, os outros quatro dividem a segunda. Sem isso são seis cards
+              iguais, e grade uniforme diz que todo benefício pesa o mesmo. */}
+          <div className="mt-8 grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-4">
             {BENEFITS.map((b) => (
-              <div key={b.title} className="rounded-md border border-hairline bg-canvas p-6">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-mp-pale text-mp-indigo">
-                  <b.icon className="h-5 w-5" />
+              <div
+                key={b.title}
+                className={cn(
+                  "rounded-lg bg-canvas p-6",
+                  b.featured && "desktop:col-span-2 desktop:p-8",
+                )}
+              >
+                <span
+                  className={cn(
+                    "inline-flex items-center justify-center rounded-md bg-mp-pale text-mp-indigo",
+                    b.featured ? "h-12 w-12" : "h-10 w-10",
+                  )}
+                >
+                  <b.icon className={b.featured ? "h-6 w-6" : "h-5 w-5"} />
                 </span>
-                <h3 className="mt-4 text-title-md text-ink">{b.title}</h3>
-                <p className="mt-1.5 text-body-sm text-muted">{b.desc}</p>
+                <h3
+                  className={cn(
+                    "mt-4 text-ink",
+                    b.featured ? "text-display-sm" : "text-title-md",
+                  )}
+                >
+                  {b.title}
+                </h3>
+                <p
+                  className={cn(
+                    "mt-1.5 text-body",
+                    b.featured ? "text-body-md" : "text-body-sm",
+                  )}
+                >
+                  {b.desc}
+                </p>
               </div>
             ))}
           </div>
