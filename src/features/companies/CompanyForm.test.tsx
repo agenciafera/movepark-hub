@@ -28,7 +28,7 @@ function makeCompany(over: Partial<Company>): Company {
   } as unknown as Company;
 }
 
-describe("CompanyForm — integração White-label", () => {
+describe("CompanyForm: integração White-label", () => {
   beforeEach(() => {
     updateMutate.mockClear();
     createMutate.mockClear();
@@ -80,6 +80,14 @@ describe("CompanyForm — integração White-label", () => {
     // Antes do fix o <Label>Status</Label> não tinha htmlFor e o SelectTrigger não tinha id,
     // então getByLabelText não encontrava o controle. Agora encontra pelo vínculo label->id.
     expect(screen.getByLabelText("Status")).toBeInTheDocument();
+  });
+
+  it("dá nome acessível aos switches de integração (aria-labelledby)", () => {
+    renderWithProviders(<CompanyForm open onOpenChange={() => {}} company={makeCompany({})} />);
+    // Antes o Switch não tinha nome: o título ficava num <p> solto. Agora o aria-labelledby
+    // aponta pro título, então getByRole("switch", { name }) encontra cada um.
+    expect(screen.getByRole("switch", { name: /Integração White-label/i })).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: /Integração de pátio/i })).toBeInTheDocument();
   });
 
   it("bloqueia ligar a sync sem URL/tenant (não chama o update)", () => {

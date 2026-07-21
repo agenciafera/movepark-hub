@@ -170,17 +170,24 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
               </SelectContent>
             </Select>
           </div>
-          {/* Integração com o white-label legado (E2.5.1 — sincronização de disponibilidade) */}
+          {/* Integração com o white-label legado (E2.5.1, sincronização de disponibilidade) */}
           <div className="mt-2 flex flex-col gap-4 rounded-md border border-hairline p-4 tablet:col-span-2">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-body-sm font-medium text-ink">Integração White-label</p>
-                <p className="text-caption text-muted">
+                <p id="wl-int-title" className="text-body-sm font-medium text-ink">
+                  Integração White-label
+                </p>
+                <p id="wl-int-desc" className="text-caption text-muted">
                   Liga a sincronização de disponibilidade com o sistema legado desta empresa. O token é
                   global (secret do servidor); aqui você diz <strong>onde</strong> e <strong>qual tenant</strong>.
                 </p>
               </div>
-              <Switch checked={wlSyncEnabled} onCheckedChange={setWlSyncEnabled} />
+              <Switch
+                checked={wlSyncEnabled}
+                onCheckedChange={setWlSyncEnabled}
+                aria-labelledby="wl-int-title"
+                aria-describedby="wl-int-desc"
+              />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="wl-domain">Domínio do backend WL</Label>
@@ -207,17 +214,24 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
             </div>
           </div>
 
-          {/* Integração de pátio (WPS) — webhook outbound (E2.6.1) */}
+          {/* Integração de pátio (WPS): webhook outbound (E2.6.1) */}
           <div className="mt-2 flex flex-col gap-4 rounded-md border border-hairline p-4 tablet:col-span-2">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-body-sm font-medium text-ink">Integração de pátio (WPS)</p>
-                <p className="text-caption text-muted">
+                <p id="wps-int-title" className="text-body-sm font-medium text-ink">
+                  Integração de pátio (WPS)
+                </p>
+                <p id="wps-int-desc" className="text-caption text-muted">
                   O Hub notifica o sistema de pátio quando uma reserva é confirmada/cancelada (assinado por
                   HMAC). O check-in/out real vem pelo Public API (escopo <code>wps:write</code>).
                 </p>
               </div>
-              <Switch checked={wpsEnabled} onCheckedChange={setWpsEnabled} />
+              <Switch
+                checked={wpsEnabled}
+                onCheckedChange={setWpsEnabled}
+                aria-labelledby="wps-int-title"
+                aria-describedby="wps-int-desc"
+              />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="wps-url">URL do webhook do pátio</Label>
@@ -236,7 +250,7 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
                 type="password"
                 value={wpsSecret}
                 onChange={(e) => setWpsSecret(e.target.value)}
-                placeholder={hasWpsSecret ? "•••••• (já definido — preencha para trocar)" : "defina um segredo"}
+                placeholder={hasWpsSecret ? "•••••• (já definido, preencha para trocar)" : "defina um segredo"}
               />
             </div>
           </div>

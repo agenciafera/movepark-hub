@@ -89,18 +89,26 @@ export function ReviewForm({
         </DialogHeader>
         <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
           <div className="flex flex-col items-center gap-2 py-2">
-            <Label>Sua nota geral</Label>
-            <RatingStars value={f.rating} onChange={(v) => set("rating", v)} size="lg" />
+            <Label id="rating-overall">Sua nota geral</Label>
+            <RatingStars
+              value={f.rating}
+              onChange={(v) => set("rating", v)}
+              size="lg"
+              aria-labelledby="rating-overall"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             {CRITERIA.map((c) => (
               <div key={c.key} className="flex items-center justify-between gap-2">
-                <span className="text-body-sm text-muted">{c.label}</span>
+                <span id={`rating-${c.key}`} className="text-body-sm text-muted">
+                  {c.label}
+                </span>
                 <RatingStars
                   value={(f[c.key] as number | null) ?? 0}
                   onChange={(v) => set(c.key, v as ReviewFormValues[typeof c.key])}
                   size="sm"
+                  aria-labelledby={`rating-${c.key}`}
                 />
               </div>
             ))}

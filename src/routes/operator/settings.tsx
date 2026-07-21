@@ -40,7 +40,7 @@ export default function OperatorSettings() {
                 <Label htmlFor="op-companies">Empresas vinculadas</Label>
                 <Input
                   id="op-companies"
-                  value={session?.companyIds.length ? session.companyIds.length + " empresa(s)" : "—"}
+                  value={session?.companyIds.length ? session.companyIds.length + " empresa(s)" : "Nenhuma"}
                   readOnly
                 />
               </div>
@@ -91,13 +91,24 @@ function Row({
   checked: boolean;
   onChange: (v: boolean) => void;
 }) {
+  const titleId = React.useId();
+  const descId = React.useId();
   return (
     <div className="flex items-center justify-between gap-4">
       <div>
-        <div className="text-title-md">{title}</div>
-        <div className="text-body-sm text-muted">{description}</div>
+        <div id={titleId} className="text-title-md">
+          {title}
+        </div>
+        <div id={descId} className="text-body-sm text-muted">
+          {description}
+        </div>
       </div>
-      <Switch checked={checked} onCheckedChange={onChange} />
+      <Switch
+        checked={checked}
+        onCheckedChange={onChange}
+        aria-labelledby={titleId}
+        aria-describedby={descId}
+      />
     </div>
   );
 }

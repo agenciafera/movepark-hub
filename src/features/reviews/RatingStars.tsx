@@ -4,18 +4,35 @@ import { ratingLabel } from "./reviews.logic";
 
 const SIZE = { sm: "h-3.5 w-3.5", md: "h-5 w-5", lg: "h-7 w-7" };
 
-/** 5 estrelas. Com `onChange` vira seletor; sem, é só exibição. Estrela em ink. */
+/**
+ * 5 estrelas. Com `onChange` vira seletor; sem, é só exibição. Estrela em ink.
+ *
+ * Quando é seletor, o grupo vira um `radiogroup` e cada estrela um `radio` com
+ * `aria-checked`, para o leitor de tela anunciar "grupo, N de 5". Dê um nome ao
+ * grupo via `aria-label` ou `aria-labelledby` (senão o leitor não sabe do que é
+ * a nota).
+ */
 export function RatingStars({
   value,
   onChange,
   size = "md",
+  "aria-label": ariaLabel,
+  "aria-labelledby": ariaLabelledby,
 }: {
   value: number;
   onChange?: (v: number) => void;
   size?: keyof typeof SIZE;
+  "aria-label"?: string;
+  "aria-labelledby"?: string;
 }) {
+  const interactive = !!onChange;
   return (
-    <div className="flex items-center gap-0.5">
+    <div
+      className="flex items-center gap-0.5"
+      role={interactive ? "radiogroup" : undefined}
+      aria-label={interactive ? ariaLabel : undefined}
+      aria-labelledby={interactive ? ariaLabelledby : undefined}
+    >
       {[1, 2, 3, 4, 5].map((n) => {
         const filled = n <= value;
         const star = (
@@ -25,6 +42,8 @@ export function RatingStars({
           <button
             key={n}
             type="button"
+            role="radio"
+            aria-checked={n === value}
             onClick={() => onChange(n)}
             className="cursor-pointer"
             aria-label={`${n} ${n === 1 ? "estrela" : "estrelas"}`}
