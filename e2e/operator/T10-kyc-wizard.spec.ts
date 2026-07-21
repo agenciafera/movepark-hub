@@ -49,7 +49,7 @@ test("T-10: não avança com os campos do passo vazios", async ({ page }) => {
   await expect(page.getByText("Carregando…")).toBeHidden({ timeout: 20_000 });
 
   // Pré-condição: o primeiro passo está ativo e o CNPJ, vazio.
-  const cnpj = field(page, "CNPJ").getByRole("textbox");
+  const cnpj = field(page, "CNPJ");
   await expect(cnpj).toBeVisible();
   await expect(cnpj).toHaveValue("");
 

@@ -1,18 +1,15 @@
 /**
  * Helpers do wizard de KYC em /operator/recebimento.
  *
- * Os campos do formulário não têm `id`, e o `Field` renderiza o `<Label>` sem
- * `htmlFor` (`src/features/payouts/PayoutKycForm.tsx`), então `getByLabel` não
- * funciona. Localizamos pelo `data-field`, que é o rótulo visível.
- *
- * A falta dessa associação também é um problema de acessibilidade real: leitor
- * de tela não anuncia o rótulo do campo. Está registrado em atividade própria.
+ * Cada campo do formulário tem `id` e o `Field` liga o `<Label htmlFor>` ao
+ * controle (`src/features/payouts/PayoutKycForm.tsx`), então localizamos pelo
+ * rótulo com `getByLabel` (exatamente o vínculo que a tecnologia assistiva usa).
  */
 import { expect, type Locator, type Page } from "@playwright/test";
 
-/** Container de um campo, localizado pelo rótulo visível. */
+/** O controle de um campo, pelo rótulo associado (htmlFor/id). */
 export function field(page: Page, label: string): Locator {
-  return page.locator(`[data-field="${label}"]`);
+  return page.getByLabel(label, { exact: true });
 }
 
 /**
@@ -49,35 +46,33 @@ export async function stubCnpjLookup(page: Page) {
 /**
  * Preenche um telefone.
  *
- * O `PhoneField` tem dois campos: o seletor de país e o número. Um
- * `getByRole("textbox")` genérico pega o de busca de país e abre a lista de
- * países por cima do formulário, o que já custou uma falha silenciosa aqui.
- * O placeholder é o que distingue o campo do número.
+ * O `PhoneField` tem dois campos (seletor de país e número). O `htmlFor` do
+ * rótulo aponta pro input do número, então `getByLabel` já cai nele direto,
+ * sem esbarrar no seletor de país.
  */
 export async function fillPhone(page: Page, fieldLabel: string, digits: string) {
-  await field(page, fieldLabel).getByPlaceholder("Digite seu número").fill(digits);
+  await field(page, fieldLabel).fill(digits);
 }
 
 /** Escolhe uma opção num Select do Radix, pelo rótulo do campo. */
 export async function selectOption(page: Page, fieldLabel: string, optionName: RegExp | string) {
-  await field(page, fieldLabel).getByRole("combobox").click();
+  await field(page, fieldLabel).click();
   await page.getByRole("option", { name: optionName }).first().click();
 }
 
 /** Preenche o passo "Empresa" e avança. O CNPJ traz o resto pelo stub. */
 export async function fillCompanyStep(page: Page) {
-  await field(page, "CNPJ").getByRole("textbox").fill("11222333000181");
+  await field(page, "CNPJ").fill("11222333000181");
 
   // O autopreenchimento é assíncrono: espera a razão social chegar.
-  await expect(field(page, "Razão social").getByRole("textbox")).toHaveValue(
-    /Mercy Estacionamentos/,
-    { timeout: 15_000 },
-  );
+  await expect(field(page, "Razão social")).toHaveValue(/Mercy Estacionamentos/, {
+    timeout: 15_000,
+  });
 
   await selectOption(page, "Tipo de empresa", /.+/);
   await fillPhone(page, "Telefone", "11987727182");
-  await field(page, "Faturamento anual").getByRole("textbox").fill("12000000"); // R$ 120.000,00
-  await field(page, "Data de fundação").getByRole("textbox").fill("10/03/2015");
+  await field(page, "Faturamento anual").fill("12000000"); // R$ 120.000,00
+  await field(page, "Data de fundação").fill("10/03/2015");
 
   await page.getByRole("button", { name: "Continuar" }).click();
 }
@@ -89,26 +84,27 @@ export async function fillAddress(
 ) {
   const { complement = "Sala 12", referencePoint = "Ao lado do posto" } = opts;
 
-  await field(page, "CEP").getByRole("textbox").fill("01310100");
-  await field(page, "Rua").getByRole("textbox").fill("Avenida Paulista");
-  await field(page, "Número").getByRole("textbox").fill("1000");
-  await field(page, "Complemento").getByRole("textbox").fill(complement);
-  await field(page, "Bairro").getByRole("textbox").fill("Bela Vista");
-  await field(page, "Cidade").getByRole("textbox").fill("Sao Paulo");
-  // "Estado (UF)" é um Select de UFs (StateSelect), não campo de texto.
-  await selectOption(page, "Estado (UF)", "SP");
-  await field(page, "Ponto de referência").getByRole("textbox").fill(referencePoint);
+  await field(page, "CEP").fill("01310100");
+  await field(page, "Rua").fill("Avenida Paulista");
+  await field(page, "Número").fill("1000");
+  await field(page, "Complemento").fill(complement);
+  await field(page, "Bairro").fill("Bela Vista");
+  await field(page, "Cidade").fill("Sao Paulo");
+  // O UF é um Select (StateSelect). O nome acessível do gatilho é "Estado"
+  // (aria-label do trigger), então é por ele que o getByLabel encontra.
+  await selectOption(page, "Estado", "SP");
+  await field(page, "Ponto de referência").fill(referencePoint);
 }
 
 /** Preenche o passo "Representante", que inclui os dados pessoais e o endereço. */
 export async function fillRepresentativeStep(page: Page) {
-  await field(page, "Nome completo").getByRole("textbox").fill("Maria Teste da Silva");
-  await field(page, "CPF").getByRole("textbox").fill("39053344705");
-  await field(page, "E-mail").getByRole("textbox").fill("peu+mercy@fera.ag");
+  await field(page, "Nome completo").fill("Maria Teste da Silva");
+  await field(page, "CPF").fill("39053344705");
+  await field(page, "E-mail").fill("peu+mercy@fera.ag");
   await fillPhone(page, "Telefone", "11987727182");
-  await field(page, "Data de nascimento").getByRole("textbox").fill("15/06/1985");
-  await field(page, "Renda mensal").getByRole("textbox").fill("1500000"); // R$ 15.000,00
-  await field(page, "Ocupação profissional").getByRole("textbox").fill("Empresaria");
+  await field(page, "Data de nascimento").fill("15/06/1985");
+  await field(page, "Renda mensal").fill("1500000"); // R$ 15.000,00
+  await field(page, "Ocupação profissional").fill("Empresaria");
 
   // Checkbox obrigatório. Sem ele o passo não avança e o erro aparece como
   // "Confirme que é o representante legal".
@@ -132,17 +128,15 @@ export async function fillRepresentativeStep(page: Page) {
  * roteiro dá o T-13 como não implementado, mas ele existe.
  */
 export async function fillBankStepAndSubmit(page: Page) {
-  await field(page, "Banco").getByRole("combobox").click();
+  await field(page, "Banco").click();
   await page.getByPlaceholder("Busque por código ou nome").fill("341");
   await page.getByRole("option").first().click();
 
-  await field(page, "Agência").getByRole("textbox").fill("1234");
-  await field(page, "Conta").getByRole("textbox").fill("567890");
-  await field(page, "Dígito da conta").getByRole("textbox").fill("1");
+  await field(page, "Agência").fill("1234");
+  await field(page, "Conta").fill("567890");
+  await field(page, "Dígito da conta").fill("1");
   await selectOption(page, "Tipo de conta", /.+/);
-  await field(page, "Titular da conta (máx. 30 caracteres)")
-    .getByRole("textbox")
-    .fill("Mercy Estacionamentos");
+  await field(page, "Titular da conta (máx. 30 caracteres)").fill("Mercy Estacionamentos");
 
   await page.getByRole("button", { name: "Salvar e continuar" }).click();
 }

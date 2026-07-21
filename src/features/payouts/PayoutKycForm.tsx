@@ -48,7 +48,7 @@ function Field({
   const id = React.useId();
   const errorId = `${id}-error`;
   return (
-    <div data-field={label} className={cn("flex flex-col gap-1.5", className)}>
+    <div className={cn("flex flex-col gap-1.5", className)}>
       <Label htmlFor={id}>{label}</Label>
       {children({ id, "aria-describedby": error ? errorId : undefined })}
       {error && (
