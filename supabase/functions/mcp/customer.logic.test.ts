@@ -1,5 +1,6 @@
 import { assertEquals, assertThrows } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
+  buildCreateBookingBody,
   CUSTOMER_AUTH_TOOLS,
   CUSTOMER_TXN_NAMES,
   CUSTOMER_TXN_TOOLS,
@@ -87,6 +88,48 @@ Deno.test("CUSTOMER_TXN_TOOLS: nomes esperados e schema fechado", () => {
   for (const t of CUSTOMER_TXN_TOOLS) {
     assertEquals(t.inputSchema.additionalProperties, false, t.name);
   }
+});
+
+// Repasse do create_booking do consumidor: mapeia os args da tool pro corpo da Edge create-booking.
+Deno.test("buildCreateBookingBody: repassa os campos e força origin mcp", () => {
+  const body = buildCreateBookingBody({
+    location_parking_type_id: "lpt-1",
+    check_in_at: "2027-08-01T10:00:00Z",
+    check_out_at: "2027-08-03T10:00:00Z",
+    fare_tier: "flex",
+    add_on_service_ids: ["a1"],
+    coupon_code: "PROMO",
+    passenger_count: 2,
+    has_pcd: true,
+  });
+  assertEquals(body, {
+    location_parking_type_id: "lpt-1",
+    check_in_at: "2027-08-01T10:00:00Z",
+    check_out_at: "2027-08-03T10:00:00Z",
+    fare_tier: "flex",
+    add_on_service_ids: ["a1"],
+    coupon_code: "PROMO",
+    passenger_count: 2,
+    has_pcd: true,
+    origin: "mcp",
+  });
+});
+
+// Opcionais ausentes viram null/false; nunca inventamos idempotency_key no cliente (a dedup é
+// derivada no servidor, em create_booking_atomic). Regressão do achado H1 / §16-1.
+Deno.test("buildCreateBookingBody: defaults dos opcionais e sem idempotency_key", () => {
+  const body = buildCreateBookingBody({
+    location_parking_type_id: "lpt-1",
+    check_in_at: "2027-08-01T10:00:00Z",
+    check_out_at: "2027-08-03T10:00:00Z",
+  });
+  assertEquals(body.fare_tier, null);
+  assertEquals(body.add_on_service_ids, null);
+  assertEquals(body.coupon_code, null);
+  assertEquals(body.passenger_count, null);
+  assertEquals(body.has_pcd, false);
+  assertEquals(body.origin, "mcp");
+  assertEquals("idempotency_key" in body, false);
 });
 
 // Mitigação da session fixation: gerar link exige chamador confiável (chave mp_ com o escopo).

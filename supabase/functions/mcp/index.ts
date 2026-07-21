@@ -27,7 +27,7 @@ import { findTool, isToolCallable, listTools, missingRequired, type Endpoint } f
 import { extractApiKey, keyPrefix, sha256Hex } from "./auth.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 import { callRead, READ_TOOL_NAMES } from "../_shared/assistant-tools.ts";
-import { CUSTOMER_TXN_NAMES, otpRequestParams, otpVerifyParams } from "./customer.logic.ts";
+import { buildCreateBookingBody, CUSTOMER_TXN_NAMES, otpRequestParams, otpVerifyParams } from "./customer.logic.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -363,17 +363,8 @@ async function callCustomerTxn(
 
   switch (name) {
     case "create_booking":
-      return invokeEdge("create-booking", {
-        location_parking_type_id: a.location_parking_type_id,
-        check_in_at: a.check_in_at,
-        check_out_at: a.check_out_at,
-        fare_tier: a.fare_tier ?? null,
-        add_on_service_ids: a.add_on_service_ids ?? null,
-        coupon_code: a.coupon_code ?? null,
-        passenger_count: a.passenger_count ?? null,
-        has_pcd: a.has_pcd ?? false,
-        origin: "mcp",
-      });
+      // Dedup do consumidor é derivada no servidor (create_booking_atomic): não mandamos chave.
+      return invokeEdge("create-booking", buildCreateBookingBody(a));
 
     case "cancel_booking":
       return invokeEdge("cancel-booking", { booking_code: a.booking_code, reason: a.reason ?? null });

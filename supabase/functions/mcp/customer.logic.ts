@@ -88,6 +88,24 @@ export const CUSTOMER_AUTH_TOOLS: ToolDef[] = [
   },
 ];
 
+// Monta o corpo do POST /create-booking a partir dos argumentos da tool. Puro (testável).
+// Não manda idempotency_key: a dedup do consumidor é DERIVADA no servidor em create_booking_atomic
+// (profile + vaga + datas), porque um modelo não inventa chave estável entre duas mensagens.
+// origin: "mcp" marca a procedência da reserva feita pelo agente.
+export function buildCreateBookingBody(a: Record<string, unknown>): Record<string, unknown> {
+  return {
+    location_parking_type_id: a.location_parking_type_id,
+    check_in_at: a.check_in_at,
+    check_out_at: a.check_out_at,
+    fare_tier: a.fare_tier ?? null,
+    add_on_service_ids: a.add_on_service_ids ?? null,
+    coupon_code: a.coupon_code ?? null,
+    passenger_count: a.passenger_count ?? null,
+    has_pcd: a.has_pcd ?? false,
+    origin: "mcp",
+  };
+}
+
 // Tools transacionais da superfície /customer (exigem Authorization: Bearer <access_token>).
 // Reservar em nome do usuário logado; sem `scope` (o gate é o JWT + RLS do dono). O pagamento fica
 // fora do MCP: o agente monta a reserva e o handoff (F3) leva ao checkout. accept_terms e lookup_plate

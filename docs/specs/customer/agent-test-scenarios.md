@@ -573,12 +573,15 @@ where profile_id = (select id from auth.users where email = 'peu+teste1@fera.ag'
   and deleted_at is null and status = 'pending'
 order by created_at desc;
 ```
-- **Passa:** uma reserva só, ou ele pergunta se você quer mesmo duas.
-- **Bug:** duas `pending` iguais. **Sabemos que isso é possível:** o `create_booking` do consumidor
-  não manda `idempotency_key` ([mcp/index.ts:365](../../../supabase/functions/mcp/index.ts:365)),
-  enquanto o do parceiro manda ([mcp/index.ts:541](../../../supabase/functions/mcp/index.ts:541)).
-- **Efeito colateral real:** cada `pending` segura vaga de verdade até o cron expirar. **Cancele as
-  duas.**
+- **Passa:** uma reserva só. O segundo envio devolve a mesma reserva (`idempotent_replay`), sem
+  criar uma segunda `pending`. A `select` acima traz **uma** linha.
+- **Correção aplicada:** a idempotência do consumidor é derivada no servidor em
+  `create_booking_atomic` de `(profile, tipo de vaga, entrada, saída)`, com dedup contra a `pending`
+  viva e `pg_advisory_xact_lock` contra corrida (migration `20260825000000_consumer_booking_idempotency.sql`).
+  Não depende de o modelo mandar `idempotency_key`. Vale também pro duplo-submit do checkout web.
+- **Bug (regressão):** duas `pending` iguais. Se aparecer, a dedup do servidor caiu.
+- **Efeito colateral real:** cada `pending` segura vaga de verdade até o cron expirar. **Cancele o
+  que sobrar.**
 
 ### H2 · "Cancela minha reserva" com mais de uma
 Logado, com **duas** reservas ativas em unidades diferentes.
@@ -760,7 +763,7 @@ Vieram da leitura do código, não de execução. Precisam de roteiro rodado par
 
 | # | Achado | Onde | Roteiro |
 |---|---|---|---|
-| 1 | `create_booking` do consumidor não manda `idempotency_key`; o do parceiro manda | [mcp/index.ts:365](../../../supabase/functions/mcp/index.ts:365) contra [:541](../../../supabase/functions/mcp/index.ts:541) | H1 |
+| 1 | ~~`create_booking` do consumidor não manda `idempotency_key`~~ **Resolvido:** dedup derivada no servidor (`create_booking_atomic`), migration `20260825000000_consumer_booking_idempotency.sql` | [customer.logic.ts `buildCreateBookingBody`](../../../supabase/functions/mcp/customer.logic.ts) | H1 |
 | 2 | `set_booking_customer` grava CPF sem validar; quem recusa é o pagamento, com 422 | [mcp/index.ts:390](../../../supabase/functions/mcp/index.ts:390) | G4 |
 | 3 | O prompt não fala de tarifa, mas `fare_tier` muda o prazo de cancelamento | [customer.logic.ts:105](../../../supabase/functions/mcp/customer.logic.ts:105) | G7 |
 | 4 | `passenger_first_name`, `passenger_last_name` e `passenger_phone` existem na `booking` e **nenhuma ferramenta escreve** nelas | schema da `booking` | B6 |

@@ -30,6 +30,16 @@
 > se há vaga (`acquire_booking_capacity`), senão **estorna automático** (nunca captura sem entregar);
 > a Edge `reconcile-confirmations` (pg_cron, a cada 15 min) cobre o webhook perdido.
 
+> **Idempotência da criação (dedup de duplo-envio).** Um `create_booking` do consumidor (chatbot/
+> agente MCP e checkout web) pode chegar duplicado (dois "reserva" seguidos, duplo-submit). Sem
+> guarda, cada envio cria uma `pending` que segura vaga real até o cron expirar. `create_booking_atomic`
+> deriva a chave no servidor de `(profile, tipo de vaga, entrada, saída)` (não confia numa chave do
+> chamador, que um modelo não inventa estável), guarda em `booking.idempotency_key` e, dentro de um
+> `pg_advisory_xact_lock`, devolve a `pending` viva (`idempotent_replay: true`) em vez de criar outra.
+> A janela é a vida do hold: depois que a 1ª expira/confirma, a mesma reserva pode ser feita de novo.
+> A criação por parceiro (`api_create_booking`) segue idempotente por **chave explícita** (keyed em
+> `api_key`, header `Idempotency-Key`). Migration `20260825000000_consumer_booking_idempotency.sql`.
+
 ## State Machine
 
 ### Estados
