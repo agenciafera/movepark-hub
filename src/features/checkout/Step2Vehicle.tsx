@@ -1,7 +1,8 @@
 import * as React from "react";
-import { ArrowLeft, ArrowRight, Car, Plus, Accessibility, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Car, Plus, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { AccessibilityIcon } from "@/components/shared/AccessibilityIcon";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -283,7 +284,7 @@ export function Step2Vehicle({
             className="h-4 w-4 shrink-0 rounded border-hairline accent-mp-indigo"
           />
           <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-mp-pale text-mp-indigo">
-            <Accessibility className="h-5 w-5" />
+            <AccessibilityIcon className="h-5 w-5" />
           </span>
           <span className="text-body-md text-ink">
             Uma ou mais pessoas precisam de assistência especial no embarque ou desembarque

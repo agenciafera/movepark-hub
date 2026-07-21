@@ -1,8 +1,19 @@
 import * as Icons from "lucide-react";
+import { AccessibilityIcon } from "@/components/shared/AccessibilityIcon";
 import type { ListingDetail } from "./api";
+
+/**
+ * Ícones que o projeto desenha por conta própria, sobrepondo o lucide. A chave é o
+ * mesmo nome que o banco guarda em `amenity.icon`, então o override vive aqui e a
+ * linha do banco continua valendo (o `pcd` segue com "Accessibility").
+ */
+const OVERRIDES: Record<string, React.ComponentType<{ className?: string }>> = {
+  Accessibility: AccessibilityIcon,
+};
 
 function getIcon(name: string | null): React.ComponentType<{ className?: string }> {
   if (!name) return Icons.Sparkles;
+  if (OVERRIDES[name]) return OVERRIDES[name];
   // deno-lint-ignore no-explicit-any
   const Component = (Icons as any)[name];
   return Component ?? Icons.Sparkles;
