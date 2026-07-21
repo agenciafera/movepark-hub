@@ -143,8 +143,19 @@ export function decidePaymentStatus(input: StatusDecisionInput): StatusDecision 
         : input.intent === "paid"
           ? "paid"
           : mapChargeStatus(input.rawStatus ?? input.eventType.split(".")[1]);
+  const paymentStatus = chargeStatusToPaymentStatus(chargeStatus);
 
-  return { action: "update", chargeStatus, paymentStatus: chargeStatusToPaymentStatus(chargeStatus) };
+  // Guarda de rebaixamento (86ajmwb4u, C-12): um pagamento já liquidado ('paid') só tem UMA saída
+  // legítima, o estorno ('refunded'). Qualquer evento que mande 'paid' de volta pra pendente/falho
+  // ou pra cancelado é fora de ordem e é ignorado. `paid_at` reforça o sinal: só o webhook o grava,
+  // na liquidação. Espelha a regra atômica de apply_payment_webhook_status (a trava de linha lá é
+  // que fecha a corrida de concorrência; aqui é a defesa do caso sequencial).
+  const liquidated = input.currentStatus === "paid" || input.paidAt != null;
+  if (liquidated && paymentStatus !== "paid" && paymentStatus !== "refunded") {
+    return { action: "noop", reason: "downgrade_blocked" };
+  }
+
+  return { action: "update", chargeStatus, paymentStatus };
 }
 
 // ── Transferências (saques) — E0.3.3 ────────────────────────────────────────

@@ -10,9 +10,11 @@
 -- handlers do mesmo payment, e uma regra de precedência impede qualquer transição que REBAIXE um
 -- pagamento já terminal.
 --
--- Ciclo de vida (rank): pending(1) < authorized/failed(2) < paid(3) < cancelled/refunded(4).
--- Uma transição só é aplicada se avança ou mantém o rank. Isso preserva paid->refunded e
--- paid->cancelled (estorno/cancelamento legítimos) e bloqueia paid->pending (a corrida).
+-- Regra: um pagamento já terminal não é rebaixado. A ÚNICA saída legítima de 'paid' é 'refunded'
+-- (o estorno). 'cancelled' e 'refunded' são terminais definitivos. Um 'paid' que nasce de 'pending'
+-- ou 'authorized' é avanço normal e passa. Isso preserva paid->refunded e bloqueia paid->pending
+-- (a corrida) e paid->cancelled (um pagamento liquidado não vira cancelado; se precisar reverter,
+-- é estorno). Espelha a guarda sequencial de decidePaymentStatus (logic.ts).
 
 create or replace function public.apply_payment_webhook_status(
   p_payment_id uuid,
@@ -26,8 +28,6 @@ set search_path = public
 as $$
 declare
   v_current public.payment_status;
-  v_rank_cur int;
-  v_rank_new int;
 begin
   -- Trava a linha: handlers concorrentes do mesmo payment esperam aqui, um de cada vez.
   select status into v_current from public.payment where id = p_payment_id for update;
@@ -36,16 +36,12 @@ begin
     return;
   end if;
 
-  v_rank_cur := case v_current
-    when 'pending' then 1 when 'authorized' then 2 when 'failed' then 2
-    when 'paid' then 3 when 'cancelled' then 4 when 'refunded' then 4 end;
-  v_rank_new := case p_new_status
-    when 'pending' then 1 when 'authorized' then 2 when 'failed' then 2
-    when 'paid' then 3 when 'cancelled' then 4 when 'refunded' then 4 end;
-
-  -- Nunca rebaixa: transição que anda pra trás no ciclo de vida é ignorada (não é erro; é a
-  -- corrida chegando fora de ordem).
-  if v_rank_new < v_rank_cur then
+  -- Bloqueia rebaixamento de status terminal (não é erro; é a corrida chegando fora de ordem).
+  if v_current in ('paid', 'refunded', 'cancelled')
+     and not (
+       v_current = p_new_status                                  -- idempotente
+       or (v_current = 'paid' and p_new_status = 'refunded')     -- única saída de 'paid'
+     ) then
     return query select false, v_current;
     return;
   end if;
@@ -64,6 +60,9 @@ comment on function public.apply_payment_webhook_status(uuid, public.payment_sta
   'Aplica transição de status do payment de forma atômica (FOR UPDATE) e monotônica: nunca rebaixa '
   'um pagamento terminal. Fecha a corrida entre eventos do webhook do Pagar.me (86ajmwb4u).';
 
--- Só o service_role (a Edge do webhook) chama. Não exposto a anon/authenticated.
-revoke all on function public.apply_payment_webhook_status(uuid, public.payment_status, boolean) from public;
+-- Só o service_role (a Edge do webhook) chama. O Supabase concede EXECUTE a anon/authenticated por
+-- default privilege em toda função nova do schema public; um `revoke from public` não tira essas
+-- concessões explícitas, então precisa revogar de anon e authenticated nominalmente. Sem isto, uma
+-- função SECURITY DEFINER que escreve status de pagamento ficaria chamável por anon.
+revoke all on function public.apply_payment_webhook_status(uuid, public.payment_status, boolean) from public, anon, authenticated;
 grant execute on function public.apply_payment_webhook_status(uuid, public.payment_status, boolean) to service_role;

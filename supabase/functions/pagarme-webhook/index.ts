@@ -328,11 +328,26 @@ Deno.serve(async (req: Request) => {
   const status = decision.chargeStatus;
   const paymentStatus = decision.paymentStatus;
 
-  // Preserva paid_at: um pagamento pago e depois estornado mantém a data do pagamento
-  // (necessário para a reconciliação por período — E0.3.3).
-  const paymentPatch: Record<string, unknown> = { status: paymentStatus };
-  if (status === "paid") paymentPatch.paid_at = new Date().toISOString();
-  await admin.from("payment").update(paymentPatch).eq("id", payment.id);
+  // Escrita ATÔMICA e monotônica via RPC (trava de linha + regra de precedência): nunca rebaixa um
+  // pagamento já terminal. A guarda em memória (decidePaymentStatus) reduz a janela mas não fecha a
+  // corrida entre charge.pending e charge.paid, que é de concorrência. paid_at é preservado dentro
+  // da RPC (coalesce). Ver 86ajmwb4u.
+  const { data: applyRows, error: applyErr } = await admin.rpc("apply_payment_webhook_status", {
+    p_payment_id: payment.id,
+    p_new_status: paymentStatus,
+    p_set_paid_at: status === "paid",
+  });
+  if (applyErr) {
+    console.error("[pagarme-webhook] apply_payment_webhook_status falhou:", applyErr.message);
+    return json({ ok: false, error: "status_write_failed" }, 500);
+  }
+  const applyRow = Array.isArray(applyRows) ? applyRows[0] : applyRows;
+  if (!applyRow?.applied) {
+    // Transição rebaixaria um pagamento terminal (evento fora de ordem): não escreve nem dispara os
+    // efeitos abaixo. Ack pra não reentregar.
+    await markProcessed(admin, ev.eventId);
+    return json({ ok: true, noop: true, reason: "status_not_downgraded", effective: applyRow?.effective_status ?? null });
+  }
 
   // Upgrade de Tarifa pago (E2.8-d): promove a Tarifa da reserva, sem confirmar/voucher.
   if (status === "paid" && payment.kind === "fare_upgrade" && payment.fare_target_tier) {

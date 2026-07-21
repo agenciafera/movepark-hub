@@ -760,6 +760,60 @@ export type Database = {
           },
         ]
       }
+      checkout_handoff: {
+        Row: {
+          access_token: string | null
+          booking_id: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          profile_id: string
+          refresh_token: string | null
+          token_hash: string
+          token_prefix: string
+        }
+        Insert: {
+          access_token?: string | null
+          booking_id: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          profile_id: string
+          refresh_token?: string | null
+          token_hash: string
+          token_prefix: string
+        }
+        Update: {
+          access_token?: string | null
+          booking_id?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          profile_id?: string
+          refresh_token?: string | null
+          token_hash?: string
+          token_prefix?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkout_handoff_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkout_handoff_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company: {
         Row: {
           contract_accepted_at: string | null
@@ -3896,6 +3950,17 @@ export type Database = {
         }
         Returns: Json
       }
+      apply_payment_webhook_status: {
+        Args: {
+          p_new_status: Database["public"]["Enums"]["payment_status"]
+          p_payment_id: string
+          p_set_paid_at?: boolean
+        }
+        Returns: {
+          applied: boolean
+          effective_status: Database["public"]["Enums"]["payment_status"]
+        }[]
+      }
       assert_check_in_not_past: {
         Args: { p_check_in: string }
         Returns: undefined
@@ -3938,6 +4003,10 @@ export type Database = {
         Returns: Json
       }
       check_in_in_past: { Args: { p_check_in: string }; Returns: boolean }
+      checkout_handoff_redeem: {
+        Args: { p_hash: string; p_prefix: string }
+        Returns: Json
+      }
       company_can_receive: { Args: { p_company_id: string }; Returns: boolean }
       company_list_members: {
         Args: { p_company_id: string }
@@ -4004,6 +4073,7 @@ export type Database = {
       cron_expire_date_change_holds: { Args: never; Returns: number }
       cron_expire_pending_bookings: { Args: never; Returns: number }
       cron_prune_api_request_log: { Args: never; Returns: number }
+      cron_prune_checkout_handoff: { Args: never; Returns: number }
       current_company_ids: { Args: never; Returns: string[] }
       current_member_scopes: {
         Args: { p_company_id: string }

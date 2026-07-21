@@ -141,7 +141,6 @@ Deno.test("decidePaymentStatus: estorno de um pagamento pago continua passando",
  * `paid_at` só é escrito pelo webhook na liquidação).
  */
 Deno.test({
-  ignore: true,
   name: "C-12: pagamento pago não é rebaixado por evento posterior com intent definida",
   fn: () => {
     // Cancelamento da ordem chegando depois da liquidação: o payment continua pago.
