@@ -483,8 +483,14 @@ de 24/07 a 28/07, quantas diárias e quanto fica?
 ```
 - **Passa:** o número de diárias que ele diz bate com o que o motor de preço cobra. Confira contra
   `docs/simulacao-precos.md` e o `price_breakdown` da reserva.
-- **Bug:** dizer "5 diárias" e cobrar 4, ou o contrário. Observado na rodada de 21/07 sem confirmação:
-  ele afirmou "5 diárias" para 24/07 a 28/07. **Este caso está em aberto.**
+- **Regra do motor:** `days = ceil(minutos_totais / 1440)` ([search/index.ts:176](../../../supabase/functions/search/index.ts:176)),
+  então 24/07 a 28/07 no mesmo horário são 96h = **4 diárias** (arredonda pra cima só com hora extra).
+- **Bug:** dizer "5 diárias" e cobrar 4, ou o contrário.
+- **PASSA · reverificado em 21/07.** O bot respondeu "são 4 diárias", Plenty Park R$120 e Aerovalet
+  R$127,60. Bate exatamente com o motor (`simulate_price('plenty',...,4)` = R$120;
+  `simulate_price('aerovalet',...,4)` = R$127,60). A afirmação "5 diárias / R$150" da primeira rodada
+  não se reproduz: era efeito colateral da alucinação de data do A3 (datas erradas, contagem errada
+  junto), fechada pelo `calendarBlock`.
 
 ### G4 · CPF inválido
 Logado, com reserva criada.
