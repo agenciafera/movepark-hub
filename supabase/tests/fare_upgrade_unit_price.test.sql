@@ -1,24 +1,22 @@
 -- pgTAP: C-18 do roteiro do consumidor (docs/testes/roteiro-consumidor-reserva.md).
--- "Upgrade de Tarifa respeita o preço da unidade" · DEFEITO CONHECIDO, ainda sem correção.
+-- "Upgrade de Tarifa respeita o preço da unidade" · CORRIGIDO em 20260828000000 + 20260829000000.
 -- Tarefa: https://app.clickup.com/t/86ajmwhdk
 --
--- O que o teste prova, em duas camadas:
---   (a) asserções FORA de todo = comportamento de HOJE (registro do estado atual, ficam verdes);
---   (b) asserções DENTRO de todo_start/todo_end = comportamento DEVIDO (viram o aceite da correção;
---       quando o fix entrar, elas passam a passar e o bloco de todo sai daqui junto com as (a)).
+-- O contrato que este arquivo trava: quem MOSTRA e quem COBRA leem a mesma fonte. O preço da tarifa
+-- sai de get_unit_fares(unidade), que aplica location_fare.price_cents_override, tanto na criação da
+-- reserva quanto no upgrade.
 --
--- Mapa do defeito:
---   1. `get_unit_fares` APLICA o override da unidade (20260721000000_location_fare.sql:36). É o preço
---      que o cliente vê no checkout.
---   2. `_create_booking_core` NÃO aplica. A versão de 20260721000000 aplicava (coalesce, linha 124),
---      mas a redefinição de 20260811000000_block_retroactive_check_in.sql:74 reintroduziu
---      `v_fare.price_cents` cru e derrubou o overlay. Conferido também no banco vivo.
---   3. `apply_fare_upgrade` também lê o catálogo global (20260720000000_fare_upgrade.sql:28).
--- Ou seja: a unidade configura um preço de Tarifa, o cliente vê esse preço, e nem a reserva nem o
--- upgrade cobram por ele.
+-- Histórico do defeito, que é o motivo de o teste existir:
+--   1. get_unit_fares sempre aplicou o override (20260721000000_location_fare.sql).
+--   2. _create_booking_core aplicava (coalesce, 20260721000000:124) até 20260811000000 redefinir a
+--      função a partir da versão de 20260717000000 e derrubar o overlay em silêncio. O comentário de
+--      lá dizia "corpo idêntico", mas a versão copiada era anterior ao overlay.
+--   3. apply_fare_upgrade nunca aplicou: lia o catálogo global.
+-- Por isso 20260828000000 troca só as duas linhas do corpo vigente em vez de recriar a função
+-- inteira. Se uma migration futura recriar _create_booking_core do zero, este arquivo fica vermelho.
 
 begin;
-select plan(16);
+select plan(9);
 
 -- ── fixture: customer + um tipo de vaga com capacidade ───────────────────────
 do $$
@@ -61,37 +59,31 @@ select is(
   2490, 'catálogo global segue em R$ 24,90');
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 2. Criação da reserva: o snapshot ignora o override (regressão de 20260811000000)
---    A reserva nasce direto na Superflex, com override MAIS BARATO que o global.
+-- 2. Criação da reserva usa o preço da unidade, não o global
+--    Override MAIS BARATO que o global: sem o fix, o cliente pagaria a mais.
 -- ─────────────────────────────────────────────────────────────────────────────
 do $$
 declare r jsonb;
 begin
   r := public.create_booking_atomic(
     current_setting('test.u')::uuid, current_setting('test.lpt')::uuid,
-    '2026-12-10T12:00:00Z', '2026-12-12T12:00:00Z', p_fare_tier => 'superflex');
+    now() + interval '30 days', now() + interval '32 days', p_fare_tier => 'superflex');
   perform set_config('test.bk_nasce', (r ->> 'booking_id'), false);
 end $$;
 
-select is(pg_temp.cents(current_setting('test.bk_nasce')::uuid), 2490,
-  'HOJE: a reserva nasce com o preço GLOBAL, não com o da unidade');
-
-select todo_start('C-18: criação e upgrade precisam usar o preço da unidade. https://app.clickup.com/t/86ajmwhdk');
 select is(pg_temp.cents(current_setting('test.bk_nasce')::uuid), 1500,
-  'DEVIDO: o snapshot da reserva usa o preço da unidade (1500)');
-select todo_end();
+  'o snapshot da reserva usa o preço da unidade (1500), não o global');
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 3. C-18 · override MAIS BARATO que o global → o delta cobrado fica ACIMA do devido
---    Reserva Básica (0) numa unidade cuja Superflex custa R$ 15,00.
---    Devido: 1500 − 0 = R$ 15,00. Cobrado: 2490 − 0 = R$ 24,90.
+-- 3. Upgrade com override MAIS BARATO que o global
+--    Reserva Básica (0) numa unidade cuja Superflex custa R$ 15,00 → delta R$ 15,00.
 -- ─────────────────────────────────────────────────────────────────────────────
 do $$
 declare r jsonb; v_bk uuid; v_total0 numeric;
 begin
   r := public.create_booking_atomic(
     current_setting('test.u')::uuid, current_setting('test.lpt')::uuid,
-    '2026-12-14T12:00:00Z', '2026-12-16T12:00:00Z');            -- basica
+    now() + interval '34 days', now() + interval '36 days');            -- basica
   v_bk := (r ->> 'booking_id')::uuid;
   update public.booking set status = 'confirmed' where id = v_bk;
   v_total0 := pg_temp.total(v_bk);
@@ -100,22 +92,14 @@ begin
   perform set_config('test.delta_barato', (pg_temp.total(v_bk) - v_total0)::text, false);
 end $$;
 
-select is(current_setting('test.delta_barato')::numeric, 24.90,
-  'HOJE: override mais barato → cobra R$ 24,90 (o global), acima do devido');
-select is(pg_temp.cents(current_setting('test.bk_barato')::uuid), 2490,
-  'HOJE: o snapshot pós-upgrade grava o preço global');
-
-select todo_start('C-18: o delta do upgrade precisa sair do preço da unidade. https://app.clickup.com/t/86ajmwhdk');
 select is(current_setting('test.delta_barato')::numeric, 15.00,
-  'DEVIDO: delta = preço da unidade (R$ 15,00)');
+  'delta do upgrade = preço da unidade (R$ 15,00)');
 select is(pg_temp.cents(current_setting('test.bk_barato')::uuid), 1500,
-  'DEVIDO: snapshot pós-upgrade = 1500');
-select todo_end();
+  'snapshot pós-upgrade = 1500');
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 4. C-18 · override MAIS CARO que o global → o delta cobrado fica ABAIXO do devido
---    Mesma unidade, Superflex reconfigurada para R$ 40,00. O sinal do erro inverte:
---    aqui a Movepark deixa dinheiro na mesa em vez de cobrar a mais.
+-- 4. Upgrade com override MAIS CARO que o global
+--    O erro antigo mudava de sinal: aqui a casa é que deixava dinheiro na mesa.
 -- ─────────────────────────────────────────────────────────────────────────────
 update public.location_fare set price_cents_override = 4000
  where location_parking_type_id = current_setting('test.lpt')::uuid and tier = 'superflex';
@@ -125,7 +109,7 @@ declare r jsonb; v_bk uuid; v_total0 numeric;
 begin
   r := public.create_booking_atomic(
     current_setting('test.u')::uuid, current_setting('test.lpt')::uuid,
-    '2026-12-18T12:00:00Z', '2026-12-20T12:00:00Z');            -- basica
+    now() + interval '38 days', now() + interval '40 days');            -- basica
   v_bk := (r ->> 'booking_id')::uuid;
   update public.booking set status = 'confirmed' where id = v_bk;
   v_total0 := pg_temp.total(v_bk);
@@ -134,22 +118,16 @@ begin
   perform set_config('test.delta_caro', (pg_temp.total(v_bk) - v_total0)::text, false);
 end $$;
 
-select is(current_setting('test.delta_caro')::numeric, 24.90,
-  'HOJE: override mais caro → cobra R$ 24,90 (o global), abaixo do devido');
-
-select todo_start('C-18: o efeito muda de sinal conforme o override. https://app.clickup.com/t/86ajmwhdk');
 select is(current_setting('test.delta_caro')::numeric, 40.00,
-  'DEVIDO: delta = preço da unidade (R$ 40,00)');
-select todo_end();
+  'delta do upgrade = preço da unidade (R$ 40,00), acima do global');
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 5. C-18 · caso extremo: fare_price_cents da reserva ACIMA do preço global do tier alvo
---    O guard de "sem downgrade" (20260720000000_fare_upgrade.sql:34-36) compara o preço GLOBAL do
---    alvo com o snapshot da reserva. Se o snapshot for maior, a RPC vira noop: a Edge cobra o PIX do
---    delta e o cliente não recebe o upgrade.
---    Nota de honestidade do teste: hoje a criação ignora o override (bloco 2), então esse snapshot
---    alto não nasce sozinho. Ele é gravado aqui na mão porque é exatamente o estado que uma correção
---    PARCIAL produz (arrumar a criação e esquecer o upgrade). É o cenário a provar primeiro.
+-- 5. O caso que uma correção PARCIAL quebraria
+--    Flex da unidade a R$ 30,00, acima do global da Superflex (R$ 24,90). Se a criação usasse o
+--    preço da unidade e o upgrade continuasse no global, o guard de "sem downgrade" compararia
+--    2490 <= 3000 e viraria noop: a Edge cobra o PIX do delta e o cliente não recebe o upgrade.
+--    Com as duas pontas na mesma fonte, Superflex (4000) > Flex (3000) e o upgrade vale.
+--    O snapshot de 3000 agora NASCE da unidade, sem precisar ser gravado na mão.
 -- ─────────────────────────────────────────────────────────────────────────────
 insert into public.location_fare(location_parking_type_id, tier, enabled, price_cents_override)
 values (current_setting('test.lpt')::uuid, 'flex', true, 3000);
@@ -159,32 +137,21 @@ declare r jsonb; v_bk uuid; res jsonb;
 begin
   r := public.create_booking_atomic(
     current_setting('test.u')::uuid, current_setting('test.lpt')::uuid,
-    '2026-12-22T12:00:00Z', '2026-12-24T12:00:00Z', p_fare_tier => 'flex');
+    now() + interval '42 days', now() + interval '44 days', p_fare_tier => 'flex');
   v_bk := (r ->> 'booking_id')::uuid;
-  -- snapshot da unidade (R$ 30,00), acima do global da Superflex (R$ 24,90)
-  update public.booking set status = 'confirmed', fare_price_cents = 3000 where id = v_bk;
-  perform set_config('test.total_extremo', pg_temp.total(v_bk)::text, false);
+  update public.booking set status = 'confirmed' where id = v_bk;
+  perform set_config('test.cents_extremo', pg_temp.cents(v_bk)::text, false);
   res := public.apply_fare_upgrade(v_bk, 'superflex');
   perform set_config('test.bk_extremo', v_bk::text, false);
   perform set_config('test.res_extremo', res::text, false);
 end $$;
 
-select is(current_setting('test.res_extremo')::jsonb ->> 'upgraded', 'false',
-  'HOJE: snapshot acima do global do alvo → RPC devolve upgraded = false (noop)');
-select is(pg_temp.tier(current_setting('test.bk_extremo')::uuid), 'flex',
-  'HOJE: a reserva continua na Flex, o upgrade não acontece');
-select is(pg_temp.total(current_setting('test.bk_extremo')::uuid),
-  current_setting('test.total_extremo')::numeric,
-  'HOJE: total intocado (a cobrança do delta acontece fora da RPC, na Edge)');
-
-select todo_start('C-18: com o preço da unidade, Superflex (R$ 40,00) > Flex (R$ 30,00) e o upgrade deve valer. https://app.clickup.com/t/86ajmwhdk');
+select is(current_setting('test.cents_extremo')::int, 3000,
+  'a Flex nasce com o preço da unidade (3000), acima do global da Superflex');
 select is(current_setting('test.res_extremo')::jsonb ->> 'upgraded', 'true',
-  'DEVIDO: o upgrade é aplicado, o cliente recebe o que pagou');
-select is(pg_temp.tier(current_setting('test.bk_extremo')::uuid), 'superflex',
-  'DEVIDO: a reserva vira Superflex');
+  'o upgrade é aplicado: o cliente recebe o que pagou');
 select is(pg_temp.cents(current_setting('test.bk_extremo')::uuid), 4000,
-  'DEVIDO: snapshot = preço da Superflex na unidade (4000)');
-select todo_end();
+  'snapshot pós-upgrade = preço da Superflex na unidade (4000)');
 
 select * from finish();
 rollback;
