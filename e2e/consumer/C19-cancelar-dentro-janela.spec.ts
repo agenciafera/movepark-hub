@@ -31,6 +31,7 @@
  *     soft delete e aparece na aba "Canceladas" de `/bookings`.
  */
 import { test, expect } from "@playwright/test";
+import { guardTx } from "../support/consumer";
 import {
   bookAndPay,
   getBookingFareByCode,
@@ -40,6 +41,9 @@ import {
 
 /** Check-in daqui a 48h: bem dentro da janela de 24h da Básica, sem depender da hora do dia. */
 const CHECK_IN_IN_MINUTES = 48 * 60;
+
+
+guardTx(test);
 
 test.describe.serial("C-19", () => {
   test("C-19: cancelar dentro da janela cancela a reserva e dispara o estorno", async ({ page }) => {

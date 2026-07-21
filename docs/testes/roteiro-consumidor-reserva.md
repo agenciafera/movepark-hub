@@ -26,7 +26,7 @@ reconfere no código antes de mexer em qualquer linha de status.
 | C-09 | Checkout passo 3: gerar o QR do PIX | PRONTO |
 | C-10 | PIX pago confirma a reserva e avança pro passo 4 | PRONTO |
 | C-11 | "Minhas reservas" mostra a reserva com o tipo de vaga | PRONTO |
-| C-12 | Pagamento pago não volta pra pendente | CORRIGIDO em 14/07 (`88da760`) |
+| C-12 | Pagamento pago não volta pra pendente | **FALHA GRAVE** (corrida, 25% dos pagamentos) |
 | C-13 | Hold expirado libera a vaga e trava o checkout | PRONTO |
 | C-14 | Baixar o voucher em PDF | PRONTO |
 | C-15 | Voucher não existe antes da confirmação | PRONTO |
@@ -294,51 +294,71 @@ duplicado não se confirmou (`groupResultsByLocation`, `useSearchResults.ts:120`
   - São 4 abas (Próximas, Em uso, Histórico, Canceladas) com estado em `?tab=`. Reserva com check-in
     no passado não está na aba padrão. Antes de reportar "a reserva sumiu", confira as outras abas.
 
-## C-12 · Pagamento pago não volta pra pendente  [**CORRIGIDO EM 14/07** · reverificado 21/07/2026 · commit `88da760`]
+## C-12 · Pagamento pago não volta pra pendente  [**FALHA GRAVE E VIVA** · reproduzido em 21/07/2026 · corrida no `pagarme-webhook`]
 
-> **Este caso foi reescrito em 21/07/2026.** A primeira versão descrevia um mecanismo que **não é
-> alcançável** e classificava como falha viva algo que já tinha sido corrigido uma semana antes. O
-> erro veio de olhar os dados sem datar contra o histórico do git. Fica registrado porque é
-> exatamente a falha que este formato de roteiro existe para evitar.
+> **Terceira versão deste caso.** A primeira acertou que havia defeito, mas errou o mecanismo. A
+> segunda concluiu que estava **corrigido**, com base em datar as linhas contra o commit da guarda.
+> Essa conclusão era **falsa**: a rodada transacional de 21/07 produziu **2 ocorrências novas em 8
+> pagamentos**. O que faltava não era um dado, era executar. Análise de dado parado não substitui
+> rodar o fluxo.
 
-- **Antes:** um `payment` que já recebeu evento de pagamento, com `paid_at` preenchido.
-- **Passos:** o webhook recebe um evento posterior e benigno sobre a mesma cobrança.
-- **Depois esperado:** o status permanece `paid`. Um pagamento liquidado não regride.
-- **Depois observado:** a guarda existe e funciona (`pagarme-webhook/index.ts:314-318`, commit
-  `88da760`, 14/07/2026 18:37 UTC). O corte por data é decisivo:
+- **Antes:** reserva com PIX gerado, prestes a liquidar.
+- **Passos:** deixar o PIX liquidar normalmente. Não é preciso forçar nada.
+- **Depois esperado:** `payment.status = 'paid'`, e assim permanece.
+- **Depois observado:** em 2 dos 8 pagamentos da rodada, o status terminou **`pending`** com
+  `paid_at` preenchido e `updated_at` **posterior** ao `paid_at`, prova de uma segunda escrita.
 
-  ```sql
-  select case when p.created_at < '2026-07-14 18:37:00+00'
-              then 'antes da guarda' else 'DEPOIS da guarda' end as periodo,
-         p.status, count(*)
-  from payment p
-  where p.paid_at is not null and p.status <> 'paid'
-  group by 1, 2;
-  -- antes da guarda: pending 5, refunded 5, cancelled 1
-  -- DEPOIS da guarda: nenhuma linha
-  ```
+### A causa: corrida, não guarda furada
 
-  **Zero ocorrências depois da guarda.** As linhas em `pending` são todas anteriores a ela, a mais
-  recente de 13/07 21:33 (horário de Brasília), poucas horas antes do fix.
-- **Efeitos colaterais:** nenhum, é leitura.
+O Pagar.me manda **três eventos quase simultâneos** para a mesma cobrança, e eles são processados em
+paralelo. Registro real de `payment_webhook_event`:
+
+```
+MP-DF8B57
+charge.pending  recebido 17:13:51.847   processado 17:13:53.458   <- terminou por ULTIMO
+charge.paid     recebido 17:13:51.958   processado 17:13:52.657
+charge.created  recebido 17:13:52.001   processado 17:13:53.324
+```
+
+A guarda de `index.ts:314-318` **lê o status e depois escreve, sem trava**. O handler do
+`charge.pending` leu `pending` (antes do `charge.paid` gravar), passou pela guarda porque naquele
+instante o pagamento ainda não era terminal, e no fim sobrescreveu o `paid`. É perda de atualização
+clássica, não falha de lógica da guarda.
+
+Por isso a análise por data enganou: a guarda **reduz** a janela, não a fecha. E o defeito só
+aparece quando alguém de fato paga, o que quase não aconteceu entre 14/07 e 21/07.
+
+### O dano, observado nesta rodada
+
+O **MP-DF8B57** é o caso completo, e é sério:
+
+1. cliente pagou R$ 33,90, `paid_at` gravado;
+2. a corrida rebaixou o `payment` para `pending`;
+3. o cliente cancelou dentro da janela da Superflex;
+4. a `cancel-booking` leu `status = 'pending'`, concluiu que não havia pagamento e decidiu
+   **`cancel_no_refund`**;
+5. resultado: reserva cancelada, **R$ 33,90 cobrados e não devolvidos**, sem `refunded_at`.
+
+Foi assim que o teste C-21a falhou: ele esperava `refunded: true`. **A falha do teste é o produto,
+não o spec.**
+
+- **Frequência medida:** 2 em 8 pagamentos, **25%**. Não é canto raro.
+- **Efeitos colaterais:** nenhum ao investigar.
 - **Armadilhas:**
   - **`refunded` com `paid_at` preenchido não é defeito, é projeto.** O código preserva a data do
-    pagamento de propósito, para a reconciliação por período (`index.ts:329-331`). As 5 linhas
-    `refunded` da consulta acima são saudáveis. Contá-las como anomalia foi parte do erro original.
-  - **O mecanismo que descrevi antes não existe.** Com `intent` não nulo, o status só pode virar
-    `refunded`, `canceled` ou `paid`, nunca `pending`. Logo, um evento com intent definido **não**
-    consegue rebaixar para pendente. As linhas antigas vieram do comportamento anterior à guarda,
-    quando um evento benigno derrubava `paid` de volta.
-  - **Sobra uma brecha estreita e nunca observada:** a guarda cobre só `intent === null`. Um
-    `charge.canceled` chegando depois da liquidação levaria `paid` para `cancelled`, porque tem
-    intent definido. Nenhuma ocorrência em produção. É hipótese de código, não defeito medido, e o
-    teste correspondente está escrito e desativado.
-  - Ao mexer aqui, cuidado com o fix óbvio demais: **bloquear qualquer saída de `paid` quebra o
+    pagamento de propósito, para a reconciliação por período (`index.ts:329-331`).
+  - **Não confunda com o C-22.** Lá, `status = 'paid'` com `refunded_at` preenchido é o estado
+    correto logo após cancelar. Aqui é `paid_at` preenchido com status `pending`, que nunca é
+    correto.
+  - Ao corrigir, cuidado com o fix óbvio demais: **bloquear qualquer saída de `paid` quebra o
     estorno**, que precisa levar `paid` para `refunded`. Há teste ativo guardando esse caminho.
-  - Segundo caminho suspeito, não coberto pela investigação original: quando o match por
-    `provider_payment_id` falha, o fallback pega o **payment mais recente do booking**
-    (`index.ts:259-267`), que pode ser outra cobrança (upgrade, troca de datas).
-  - A cobertura natural disto é **`deno test` do webhook**, não Playwright. Não force para o E2E.
+  - Guarda em memória não resolve. O conserto tem que ser **atômico no banco**: `UPDATE ... WHERE`
+    condicional no status atual, ou `SELECT ... FOR UPDATE`, ou serialização por `provider_charge_id`.
+  - Segundo caminho suspeito, ainda não investigado: quando o match por `provider_payment_id` falha,
+    o fallback pega o **payment mais recente do booking** (`index.ts:259-267`), que pode ser outra
+    cobrança (upgrade, troca de datas).
+  - A cobertura de regressão é **`deno test` do webhook** para a lógica, mas a corrida só aparece de
+    ponta a ponta. O C-21a serve de detector.
 
 ## C-13 · Hold expirado libera a vaga e trava o checkout  [PRONTO · sem cobertura E2E · `src/routes/checkout.tsx:168` e commit `7c37329`]
 

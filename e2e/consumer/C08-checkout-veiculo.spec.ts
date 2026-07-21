@@ -10,12 +10,16 @@
  * que já existem na conta, então não engorda a lista.
  */
 import { test, expect } from "@playwright/test";
+import { guardTx } from "../support/consumer";
 import {
   fillIdentityStep,
   fillVehicleStep,
   getBookingByCode,
   reserveCheapest,
 } from "../support/consumer";
+
+
+guardTx(test);
 
 test.describe.serial("C-08", () => {
   test("C-08: passo 2 vincula o veículo escolhido à reserva", async ({ page }) => {

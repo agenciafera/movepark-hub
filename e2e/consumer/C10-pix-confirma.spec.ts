@@ -18,11 +18,15 @@
  * automatizável e volta a ser manual.
  */
 import { test, expect } from "@playwright/test";
+import { guardTx } from "../support/consumer";
 import {
   getBookingByCode,
   getPaymentByBookingId,
   reserveUntilPayment,
 } from "../support/consumer";
+
+
+guardTx(test);
 
 test.describe.serial("C-10", () => {
   test("C-10: PIX liquidado confirma a reserva", async ({ page }) => {

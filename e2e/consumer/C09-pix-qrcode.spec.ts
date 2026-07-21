@@ -21,11 +21,15 @@
  *     produção passa por ele.
  */
 import { test, expect } from "@playwright/test";
+import { guardTx } from "../support/consumer";
 import {
   getBookingByCode,
   getPaymentByBookingId,
   reserveUntilPayment,
 } from "../support/consumer";
+
+
+guardTx(test);
 
 test.describe.serial("C-09", () => {
   test("C-09: gerar PIX mostra o QR e cria o pagamento no banco", async ({ page }) => {

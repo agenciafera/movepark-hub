@@ -11,12 +11,23 @@ import { CUSTOMER_STATE, MANAGER_STATE, OPERATOR_STATE } from "./e2e/support/ses
  */
 
 /**
- * O project transacional do consumidor (C-06 a C-11) só existe quando alguém o
- * pede por nome na linha de comando. Sem esta trava ele entraria em qualquer
- * `playwright test` sem argumento e geraria cobrança real no Pagar.me.
+ * O project transacional do consumidor (C-06 em diante) cria reserva e cobrança
+ * REAL no Pagar.me. Ele nunca pode rodar num `playwright test` sem argumento.
  *
- * A checagem é no argv de propósito: uma variável de ambiente ficaria exportada
- * no shell e voltaria a valer na próxima execução sem ninguém perceber.
+ * A trava tem duas partes, e as duas são necessárias:
+ *
+ *   1. aqui, derivamos do argv se alguém pediu o project por nome, e gravamos
+ *      isso em `MP_E2E_TX`. Derivar do argv mantém a decisão presa a UMA
+ *      invocação: nada fica exportado no shell para valer na execução seguinte.
+ *
+ *   2. os specs consultam `MP_E2E_TX` via `guardTx()` (e2e/support/consumer.ts)
+ *      e se pulam sozinhos quando ela não está ligada.
+ *
+ * Por que não bastava não registrar o project quando o argv não pede: o worker
+ * do Playwright reavalia este arquivo num processo próprio, SEM o argv original.
+ * O project sumia lá dentro e a execução morria com "Project not found in the
+ * worker process". O worker herda `process.env`, então a variável atravessa e o
+ * argv não. Descoberto na primeira execução real, em 21/07/2026.
  */
 const TX_PROJECT = "e2e-consumer-tx";
 const txRequested = process.argv.some(
@@ -24,6 +35,7 @@ const txRequested = process.argv.some(
     arg === `--project=${TX_PROJECT}` ||
     (arg === "--project" && process.argv[i + 1] === TX_PROJECT),
 );
+if (txRequested) process.env.MP_E2E_TX = "1";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -95,9 +107,12 @@ export default defineConfig({
      * liquida sozinho em 1 a 3 segundos, então a cobrança é paga, não fica
      * pendurada.
      *
-     * Por isso ele nem é registrado na execução padrão (ver `txRequested` acima):
-     * `playwright test` sem argumento não enxerga estes specs. O único jeito de
-     * rodá-los é pedir o project pelo nome:
+     * O project fica SEMPRE registrado, para o worker conseguir resolvê-lo pelo
+     * nome (ver a nota sobre `MP_E2E_TX` no topo do arquivo). Quem impede a
+     * execução acidental é o `guardTx()` dentro de cada spec: num `playwright
+     * test` sem argumento eles aparecem e se pulam, sem tocar em nada.
+     *
+     * O único jeito de rodá-los de verdade é pedir o project pelo nome:
      *
      *     bunx playwright test --project=e2e-consumer-tx
      *
@@ -106,16 +121,12 @@ export default defineConfig({
      * o C-20, que de propósito deixa uma reserva fora da janela: essa só o staff
      * fecha.
      */
-    ...(txRequested
-      ? [
-          {
-            name: TX_PROJECT,
-            testMatch: /consumer\/C(0[6-9]|1[014569]|2[01]).*\.spec\.ts$/,
-            dependencies: ["setup"],
-            use: { ...devices["Desktop Chrome"], storageState: CUSTOMER_STATE },
-          },
-        ]
-      : []),
+    {
+      name: TX_PROJECT,
+      testMatch: /consumer\/C(0[6-9]|1[014569]|2[01]).*\.spec\.ts$/,
+      dependencies: ["setup"],
+      use: { ...devices["Desktop Chrome"], storageState: CUSTOMER_STATE },
+    },
     {
       name: "smoke",
       testMatch: /smoke\/.*\.spec\.ts$/,

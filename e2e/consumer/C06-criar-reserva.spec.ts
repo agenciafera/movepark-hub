@@ -18,6 +18,7 @@
  *     "hoje" a cada execução.
  */
 import { test, expect } from "@playwright/test";
+import { guardTx } from "../support/consumer";
 import {
   CHEAPEST_TYPE_CODE,
   MOTION_PARK,
@@ -25,6 +26,9 @@ import {
   listActiveParkingTypes,
   reserveCheapest,
 } from "../support/consumer";
+
+
+guardTx(test);
 
 test("C-06: reservar leva ao checkout e grava a reserva como pending", async ({ page }) => {
   const types = await listActiveParkingTypes(MOTION_PARK);

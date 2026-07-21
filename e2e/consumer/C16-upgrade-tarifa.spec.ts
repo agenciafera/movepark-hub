@@ -32,12 +32,16 @@
  * upgrade é cobrança separada e não volta pelo mesmo caminho.
  */
 import { test, expect } from "@playwright/test";
+import { guardTx } from "../support/consumer";
 import { bookAndPay, getBookingFareByCode } from "../support/consumer";
 
 /** Preço da Superflex no catálogo (`20260717000000_fare_tiers.sql:46-70`). */
 const SUPERFLEX_PRICE_CENTS = 2490;
 /** Janela da Superflex: 1 minuto antes do check-in. */
 const SUPERFLEX_WINDOW_MINUTES = 1;
+
+
+guardTx(test);
 
 test.describe.serial("C-16", () => {
   test("C-16: upgrade para Superflex cobra o delta e recalcula a janela", async ({ page }) => {

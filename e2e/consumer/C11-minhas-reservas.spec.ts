@@ -18,8 +18,12 @@
  *     Reserva com check-in no passado não está na aba padrão.
  */
 import { test, expect } from "@playwright/test";
+import { guardTx } from "../support/consumer";
 import { env } from "../support/env";
 import { latestConfirmedBooking } from "../support/consumer";
+
+
+guardTx(test);
 
 test.describe.serial("C-11", () => {
   test("C-11: a reserva confirmada aparece com código e tipo de vaga", async ({ page }) => {

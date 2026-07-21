@@ -31,6 +31,7 @@
  *     o gate do cliente.
  */
 import { test, expect } from "@playwright/test";
+import { guardTx } from "../support/consumer";
 import {
   bookAndPay,
   callEdgeAsCustomer,
@@ -44,6 +45,9 @@ import {
  * unidade nem no bloqueio de data retroativa.
  */
 const CHECK_IN_IN_MINUTES = 6 * 60;
+
+
+guardTx(test);
 
 test.describe.serial("C-20", () => {
   test("C-20: fora da janela, a tela esconde o botão e a Edge devolve 403", async ({ page }) => {

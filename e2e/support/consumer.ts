@@ -450,3 +450,25 @@ export async function callEdgeAsCustomer<T = Record<string, unknown>>(
     { supabaseUrl: env.supabaseUrl, anonKey: env.supabaseAnonKey, fnName, body },
   ) as Promise<{ status: number; body: T }>;
 }
+
+/**
+ * Trava de execução dos specs transacionais (C-06 em diante).
+ *
+ * Chame no topo de todo spec que cria reserva ou cobrança. Sem a variável
+ * `MP_E2E_TX`, o spec se pula em vez de rodar.
+ *
+ * A variável é ligada pelo `playwright.config.ts` quando, e só quando, alguém
+ * pede `--project=e2e-consumer-tx` na linha de comando. Ela existe porque o
+ * worker do Playwright reavalia o config sem o argv original: o argv não
+ * atravessa o processo, `process.env` atravessa.
+ *
+ * Não exporte `MP_E2E_TX` no shell. Se fizer isso, a trava deixa de valer para
+ * todas as execuções seguintes daquele terminal, que é exatamente o acidente
+ * que ela existe para impedir.
+ */
+export function guardTx(test: { skip(condition: boolean, reason: string): void }) {
+  test.skip(
+    !process.env.MP_E2E_TX,
+    "Spec transacional: cria reserva e cobrança real. Rode com --project=e2e-consumer-tx.",
+  );
+}

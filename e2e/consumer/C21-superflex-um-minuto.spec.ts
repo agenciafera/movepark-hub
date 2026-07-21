@@ -33,6 +33,7 @@
  * que não tem nada a ver com cancelamento.
  */
 import { test, expect } from "@playwright/test";
+import { guardTx } from "../support/consumer";
 import {
   bookAndPay,
   callEdgeAsCustomer,
@@ -105,6 +106,9 @@ async function cancelBySuperflexWindow(
   expect(payment!.refunded_at, "estorno tem que estar registrado").not.toBeNull();
   // `status` fica em `paid` até o webhook do estorno chegar. Ver C-19 e C-22.
 }
+
+
+guardTx(test);
 
 test.describe.serial("C-21", () => {
   test("C-21a: reserva que NASCE Superflex cancela a 1 minuto do check-in", async ({ page }) => {

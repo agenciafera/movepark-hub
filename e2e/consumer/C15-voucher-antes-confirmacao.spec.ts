@@ -33,12 +33,16 @@
  * hoje não existe. Enquanto não existir, ele vive aqui.
  */
 import { test, expect } from "@playwright/test";
+import { guardTx } from "../support/consumer";
 import {
   callEdgeAsCustomer,
   getBookingByCode,
   reserveCheapest,
   VOUCHER_ALLOWED_STATUSES,
 } from "../support/consumer";
+
+
+guardTx(test);
 
 test.describe.serial("C-15", () => {
   test("C-15: reserva pendente não tem voucher, e a Edge devolve 422", async ({ page }) => {

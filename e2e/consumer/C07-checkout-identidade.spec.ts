@@ -15,6 +15,7 @@
  *     estoura depois, o que faz parecer erro de pagamento.
  */
 import { test, expect } from "@playwright/test";
+import { guardTx } from "../support/consumer";
 import { env } from "../support/env";
 import {
   CUSTOMER_FIRST_NAME,
@@ -23,6 +24,9 @@ import {
   getBookingByCode,
   reserveCheapest,
 } from "../support/consumer";
+
+
+guardTx(test);
 
 test.describe.serial("C-07", () => {
   test("C-07: passo 1 grava o contato no snapshot da reserva", async ({ page }) => {

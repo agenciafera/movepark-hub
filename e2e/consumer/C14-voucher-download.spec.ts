@@ -21,12 +21,16 @@
  *
  * Limpeza: cancelar pela conta do cliente. Nunca `delete` em `booking`.
  */
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+import { guardTx } from "../support/consumer";
 import {
   bookAndPay,
   getBookingFareByCode,
   voucherFileExists,
 } from "../support/consumer";
+
+
+guardTx(test);
 
 test.describe.serial("C-14", () => {
   test("C-14: o voucher já existe no webhook e o botão assina a URL", async ({ page }) => {
@@ -55,7 +59,7 @@ test.describe.serial("C-14", () => {
       page.waitForEvent("popup"),
       page.getByTestId("voucher-download-pdf-step4").click(),
     ]);
-    expectSignedVoucherUrl(step4Popup.url(), booking!.id);
+    await expectSignedVoucherUrl(step4Popup, booking!.id);
     await step4Popup.close();
 
     // Mesmo hook, outra tela: o card do voucher no detalhe da reserva.
@@ -66,7 +70,7 @@ test.describe.serial("C-14", () => {
       page.waitForEvent("popup"),
       page.getByTestId("voucher-download-pdf").click(),
     ]);
-    expectSignedVoucherUrl(detailPopup.url(), booking!.id);
+    await expectSignedVoucherUrl(detailPopup, booking!.id);
 
     // A URL assinada tem que servir o PDF de verdade, não só existir.
     const res = await page.request.get(detailPopup.url());
@@ -79,8 +83,15 @@ test.describe.serial("C-14", () => {
 /**
  * A URL do voucher tem que ser ASSINADA. Se um dia ela vier como `/object/public/`,
  * o bucket deixou de ser privado, e isso é vazamento, não conveniência.
+ *
+ * Espera o popup navegar antes de ler a URL. O botão faz `window.open` e SÓ DEPOIS
+ * troca a URL, quando a Edge devolve a assinatura. Lendo `popup.url()` na hora, vem
+ * `":"` (a aba ainda em branco) e o teste falha por corrida própria, acusando o
+ * produto de um defeito que é do spec. Aconteceu na primeira execução, em 21/07/2026.
  */
-function expectSignedVoucherUrl(url: string, bookingId: string) {
-  expect(url).toContain(`/storage/v1/object/sign/vouchers/${bookingId}.pdf`);
-  expect(url).toContain("token=");
+async function expectSignedVoucherUrl(popup: Page, bookingId: string) {
+  const expected = `/storage/v1/object/sign/vouchers/${bookingId}.pdf`;
+  await popup.waitForURL((url) => url.pathname.includes(expected), { timeout: 30_000 });
+  expect(popup.url()).toContain(expected);
+  expect(popup.url()).toContain("token=");
 }
