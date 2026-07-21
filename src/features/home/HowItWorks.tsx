@@ -1,30 +1,8 @@
 import { useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { MapPin, LayoutList, CreditCard, Ticket, Heart, Share2, CheckCircle, ArrowRight, Star, ShieldCheck } from "lucide-react";
+import { MapPin, Heart, Share2, CheckCircle, ArrowRight, Star, ShieldCheck } from "lucide-react";
 import { gsap } from "@/lib/gsap";
-
-const steps = [
-  {
-    Icon: MapPin,
-    title: "Escolha o destino",
-    text: "Digite o aeroporto ou terminal e selecione as datas da sua viagem.",
-  },
-  {
-    Icon: LayoutList,
-    title: "Compare as opções",
-    text: "Veja vagas de vários estacionamentos: coberto, descoberto, valet e mais.",
-  },
-  {
-    Icon: CreditCard,
-    title: "Reserve e pague online",
-    text: "Pagamento seguro via PIX ou cartão. Confirmação instantânea.",
-  },
-  {
-    Icon: Ticket,
-    title: "Apresente o voucher",
-    text: "Chegue ao estacionamento e mostre o QR Code que enviamos por e-mail.",
-  },
-];
+import { HOW_IT_WORKS } from "@/features/how-it-works/copy";
 
 function BookingCardMockup() {
   return (
@@ -189,18 +167,18 @@ export function HowItWorks() {
           {/* Coluna esquerda: headline + passos verticais */}
           <div>
             <p data-reveal="hw-header" className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
-              Simples e rápido
+              {HOW_IT_WORKS.eyebrow}
             </p>
             <h2 data-reveal="hw-header" className="mb-3 text-display-2xl text-ink" style={{ textWrap: "balance" } as React.CSSProperties}>
-              Reserve sua vaga de estacionamento em quatro passos fáceis
+              {HOW_IT_WORKS.headline}
             </h2>
             <p data-reveal="hw-header" className="mb-10 max-w-md text-body-md text-muted">
-              Do destino ao voucher em menos de 2 minutos.
+              {HOW_IT_WORKS.lead}
             </p>
 
             {/* Lista vertical de passos */}
             <ol className="flex flex-col gap-6">
-              {steps.map((s) => (
+              {HOW_IT_WORKS.steps.map((s) => (
                 <li
                   key={s.title}
                   data-reveal="hw-step"

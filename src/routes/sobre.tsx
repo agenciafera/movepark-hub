@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, ArrowUpRight, ShieldCheck, MapPin, Star, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PartnerLogos } from "@/features/partners/PartnerLogos";
+import { HOW_IT_WORKS } from "@/features/how-it-works/copy";
 
 const HERO_IMAGE = "/Estacionamentos/virapark-estacionamento-aeroporto-viracopos.webp";
 
@@ -34,24 +35,6 @@ const DESTINATIONS = [
   { slug: "aeroporto-de-congonhas", image: "CGH", name: "Congonhas", city: "CGH" },
   { slug: "aeroporto-de-viracopos", image: "VCP", name: "Viracopos", city: "VCP" },
   { slug: "aeroporto-de-faro", image: "FAO", name: "Faro", city: "FAO" },
-];
-
-const STEPS = [
-  {
-    n: 1,
-    title: "Busque pelo destino",
-    desc: "Diga pra onde vai e quando. A gente mostra os estacionamentos parceiros com o preço já fechado.",
-  },
-  {
-    n: 2,
-    title: "Reserve e pague online",
-    desc: "PIX ou cartão. O voucher com QR Code chega na hora, no seu e-mail e na sua conta.",
-  },
-  {
-    n: 3,
-    title: "Chegue e deixe o carro",
-    desc: "Mostre o QR Code na portaria. O traslado te leva ao terminal e você paga o que estava na tela.",
-  },
 ];
 
 const VALUES = [
@@ -233,20 +216,23 @@ export default function SobrePage() {
         <div className="grid grid-cols-1 gap-10 tablet:grid-cols-2 tablet:items-center desktop:gap-16">
           <div className="order-2 tablet:order-1">
             <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-mp-indigo">
-              Como funciona
+              {HOW_IT_WORKS.eyebrow}
             </span>
             <h2 id="como-funciona" className="mt-3 text-balance text-display-2xl text-ink">
-              Três passos e o carro está guardado.
+              {HOW_IT_WORKS.headline}
             </h2>
+            <p className="mt-4 text-body-md text-body">{HOW_IT_WORKS.lead}</p>
+            {/* A numeração é do layout desta página; a home mostra os mesmos passos
+                com ícone. O texto vem dos dois lados de `@/features/how-it-works`. */}
             <ol aria-labelledby="como-funciona" className="mt-8 space-y-6">
-              {STEPS.map((s) => (
-                <li key={s.n} className="flex gap-4">
+              {HOW_IT_WORKS.steps.map((s, i) => (
+                <li key={s.title} className="flex gap-4">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-mp-pale text-body-sm font-bold text-mp-indigo">
-                    {s.n}
+                    {i + 1}
                   </span>
                   <div>
                     <h3 className="text-title-md text-ink">{s.title}</h3>
-                    <p className="mt-1 text-body-sm text-body">{s.desc}</p>
+                    <p className="mt-1 text-body-sm text-body">{s.text}</p>
                   </div>
                 </li>
               ))}
