@@ -10,7 +10,13 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { chargeStatusToPaymentStatus, getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
-import { parseBrPhone, parseUpgradeInput, reaisToCents } from "./logic.ts";
+import {
+  checkBookingUpgradable,
+  checkUpgradeDelta,
+  parseBrPhone,
+  parseUpgradeInput,
+  reaisToCents,
+} from "./logic.ts";
 import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
 
 const corsHeaders = {
@@ -67,19 +73,13 @@ Deno.serve(async (req: Request) => {
     .eq("code", input.bookingCode)
     .is("deleted_at", null)
     .maybeSingle();
-  if (!booking) return jsonResponse({ error: "Reserva não encontrada" }, 404);
-  if (booking.profile_id !== userData.user.id) {
-    return jsonResponse({ error: "Reserva não pertence a você" }, 403);
-  }
-  if (!["pending", "confirmed"].includes(booking.status)) {
-    return jsonResponse({ error: "Esta reserva não permite upgrade." }, 400);
-  }
-  if (new Date(booking.check_in_at) <= new Date()) {
-    return jsonResponse({ error: "Upgrade só antes da entrada." }, 400);
-  }
-  if (booking.fare_tier === input.targetTier) {
-    return jsonResponse({ error: "A reserva já está nessa Tarifa." }, 400);
-  }
+  const bookingDenial = checkBookingUpgradable({
+    booking,
+    userId: userData.user.id,
+    targetTier: input.targetTier,
+    now: new Date(),
+  });
+  if (bookingDenial) return jsonResponse({ error: bookingDenial.error }, bookingDenial.status);
 
   // 2. Tarifa-alvo + delta (sem downgrade).
   const { data: targetFare } = await admin
@@ -88,9 +88,12 @@ Deno.serve(async (req: Request) => {
     .eq("tier", input.targetTier)
     .eq("is_active", true)
     .maybeSingle();
-  if (!targetFare) return jsonResponse({ error: "Tarifa-alvo indisponível." }, 404);
-  const deltaCents = targetFare.price_cents - (booking.fare_price_cents ?? 0);
-  if (deltaCents <= 0) return jsonResponse({ error: "Sem upgrade (Tarifa-alvo não é superior)." }, 400);
+  const deltaDenial = checkUpgradeDelta({
+    targetPriceCents: targetFare?.price_cents ?? null,
+    currentFarePriceCents: booking.fare_price_cents,
+  });
+  if (deltaDenial) return jsonResponse({ error: deltaDenial.error }, deltaDenial.status);
+  const deltaCents = targetFare!.price_cents - (booking.fare_price_cents ?? 0);
 
   // 3. Recebedor master da Movepark (a receita do upgrade é 100% Movepark).
   const { data: setting } = await admin

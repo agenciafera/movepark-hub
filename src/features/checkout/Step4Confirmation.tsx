@@ -67,6 +67,7 @@ export function Step4Confirmation({ booking }: Props) {
             size="sm"
             onClick={downloadPdf}
             disabled={pdf.isPending}
+            data-testid="voucher-download-pdf-step4"
           >
             <Download className="h-4 w-4" />
             {pdf.isPending ? "Gerando…" : "Baixar voucher PDF"}

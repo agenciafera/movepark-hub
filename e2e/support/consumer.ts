@@ -11,6 +11,7 @@
  */
 import { expect, type Page } from "@playwright/test";
 import { admin } from "./supabaseAdmin";
+import { env } from "./env";
 
 export type ConsumerFixture = {
   /** Slug da company (primeiro segmento de /p/:operator/:location/:type). */
@@ -118,6 +119,36 @@ export function oneNightRange(now = new Date()): { from: string; to: string } {
   };
 }
 
+/**
+ * Intervalo de 1 diária começando daqui a `minutesFromNow`.
+ *
+ * Serve aos casos da parte 2, onde a JANELA é o objeto do teste: o C-20 precisa
+ * de check-in a menos de 24h e o C-21 de check-in daqui a poucos minutos.
+ *
+ * Diferente do `oneNightRange`, aqui a data vai em ISO com `Z`. O motivo é
+ * precisão: uma string ingênua ("2026-07-22T08:00:00") é lida como hora LOCAL,
+ * e o fuso do runner Node não é necessariamente o do navegador. Com `Z` os dois
+ * concordam no instante exato, que é o que o `fare_cancel_until` vai congelar.
+ *
+ * ARMADILHA DO SNAPSHOT: `fare_cancel_until` é congelado na criação da reserva.
+ * Por isso a janela é montada aqui, no `check_in_at` de origem, e não mexendo no
+ * banco depois. Ver "Armadilha central" no roteiro.
+ */
+export function rangeStartingIn(minutesFromNow: number, now = new Date()) {
+  const from = new Date(now.getTime() + minutesFromNow * 60_000);
+  const to = new Date(from.getTime() + 24 * 60 * 60_000);
+  return { from: from.toISOString(), to: to.toISOString() };
+}
+
+/**
+ * Rótulos de Tarifa aceitos pelo seletor do `ReservationCard`.
+ *
+ * "Flex" fica de fora de propósito: o botão é localizado por substring do nome
+ * acessível, e "Flex" casaria também com "Superflex". Nenhum caso do roteiro
+ * precisa da Flex, então o tipo bloqueia o erro em vez de documentá-lo.
+ */
+export type FareLabel = "Básica" | "Superflex";
+
 // ---------------------------------------------------------------------------
 // Leituras de banco (service_role, ignora RLS). Nenhuma escrita, nenhum delete.
 // ---------------------------------------------------------------------------
@@ -146,6 +177,58 @@ export async function getPaymentByBookingId(bookingId: string) {
     .maybeSingle();
   if (error) throw error;
   return data;
+}
+
+/**
+ * Estado de Tarifa e voucher da reserva. É o que a parte 2 do roteiro assere:
+ * `fare_tier`, `fare_price_cents`, `fare_cancel_until` e `voucher_url`.
+ */
+export async function getBookingFareByCode(code: string) {
+  const { data, error } = await admin
+    .from("booking")
+    .select(
+      `id, code, status, check_in_at, check_out_at, total_amount,
+       fare_tier, fare_price_cents, fare_cancel_until, voucher_url`,
+    )
+    .eq("code", code)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Estados que a Edge `voucher-pdf` aceita (`_shared/voucher/fields.ts:63`).
+ * Qualquer outro é 422, que é o que o C-15 prova.
+ */
+export const VOUCHER_ALLOWED_STATUSES = ["confirmed", "checked_in", "completed"] as const;
+
+
+/**
+ * `pricing_rule.advance_booking_minutes` da unidade: antecedência mínima exigida
+ * na criação da reserva (`_create_booking_core`).
+ *
+ * O C-21 reserva com check-in daqui a poucos minutos. Se a unidade exigir mais
+ * antecedência que isso, a reserva nem é criada, e o teste falharia por um
+ * motivo que não tem nada a ver com a janela de cancelamento. Por isso o spec lê
+ * este valor antes e se pula sozinho, dizendo o porquê.
+ */
+export async function getAdvanceBookingMinutes(locationParkingTypeId: string): Promise<number> {
+  const { data, error } = await admin
+    .from("pricing_rule")
+    .select("advance_booking_minutes")
+    .eq("location_parking_type_id", locationParkingTypeId)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.advance_booking_minutes ?? 0;
+}
+
+/** O PDF do voucher existe no bucket privado `vouchers`? O caminho é `<id>.pdf`. */
+export async function voucherFileExists(bookingId: string): Promise<boolean> {
+  const { data, error } = await admin.storage
+    .from("vouchers")
+    .list("", { search: `${bookingId}.pdf` });
+  if (error) throw error;
+  return (data ?? []).some((f) => f.name === `${bookingId}.pdf`);
 }
 
 /** Tipos de vaga ativos de uma unidade, do mais barato pro mais caro. */
@@ -220,11 +303,28 @@ export async function latestConfirmedBooking(customerEmail: string) {
  * react-day-picker nem do fuso do runner.
  */
 export async function reserveCheapest(page: Page): Promise<string> {
-  const range = oneNightRange();
+  return reserveWithFare(page, { fare: "Básica", range: oneNightRange() });
+}
+
+/**
+ * Mesma criação de reserva, com Tarifa e janela escolhidas.
+ *
+ * A parte 2 do roteiro precisa das duas coisas: o C-21 nasce em Superflex e o
+ * C-20 nasce com check-in a menos de 24h. As datas continuam indo pela query
+ * string, que o `ReservationCard` lê como estado inicial, então o teste não
+ * depende do popover do calendário nem do fuso do runner.
+ */
+export async function reserveWithFare(
+  page: Page,
+  opts: { fare: FareLabel; range?: { from: string; to: string } },
+): Promise<string> {
+  const range = opts.range ?? oneNightRange();
   await page.goto(listingUrl(MOTION_PARK, CHEAPEST_TYPE_CODE, range));
 
-  // Tarifa Básica: a default é a Flex, que soma sobretaxa ao total.
-  await page.getByRole("button", { name: "Básica" }).click();
+  // A default da UI é a Flex, que soma sobretaxa ao total. A escolha é sempre
+  // explícita aqui. O nome acessível do botão traz rótulo + tagline, então a
+  // busca é por substring (ver o comentário de `FareLabel`).
+  await page.getByRole("button", { name: opts.fare }).click();
 
   const reserve = page.getByRole("button", { name: "Reservar agora" });
   await expect(reserve).toBeEnabled({ timeout: 30_000 });
@@ -280,4 +380,73 @@ export async function reserveUntilPayment(page: Page): Promise<string> {
   await fillVehicleStep(page);
   await expect(page.getByRole("heading", { name: "Pagamento" })).toBeVisible({ timeout: 30_000 });
   return code;
+}
+
+/**
+ * Leva a reserva do zero até CONFIRMADA, com Tarifa e janela escolhidas.
+ *
+ * GERA COBRANÇA REAL NO PAGAR.ME. Na conta atual o PIX liquida sozinho em 1 a 3
+ * segundos, e quem confirma a reserva é o webhook, não a `create-pix-charge`.
+ * Se travar aqui, o suspeito é a entrega do webhook: comece pelo `get_logs`.
+ *
+ * Ao voltar, a página está no passo 4 do checkout.
+ */
+export async function bookAndPay(
+  page: Page,
+  opts: { fare: FareLabel; range?: { from: string; to: string } },
+): Promise<string> {
+  const code = await reserveWithFare(page, opts);
+  await fillIdentityStep(page);
+  await fillVehicleStep(page);
+  await expect(page.getByRole("heading", { name: "Pagamento" })).toBeVisible({ timeout: 30_000 });
+
+  await page.getByRole("button", { name: "Gerar PIX" }).click();
+  await expect(page.getByRole("button", { name: "Copiar código PIX" })).toBeVisible({
+    timeout: 45_000,
+  });
+
+  // A tela avança sozinha pro passo 4 pelo polling de 2s do checkout.
+  await expect(page.getByRole("heading", { name: "Reserva confirmada!" })).toBeVisible({
+    timeout: 90_000,
+  });
+  return code;
+}
+
+/**
+ * Chama uma Edge Function com o JWT do cliente logado, por fora da UI.
+ *
+ * Existe por causa do C-20: a ausência do botão na tela pode ser CSS, então ela
+ * não prova gate nenhum. A prova é a Edge devolvendo 403. O token sai do
+ * localStorage que o próprio app gravou, o mesmo caminho do bypass de auth.
+ *
+ * A página precisa estar na origem do app para enxergar o localStorage.
+ */
+export async function callEdgeAsCustomer<T = Record<string, unknown>>(
+  page: Page,
+  fnName: string,
+  body: unknown,
+): Promise<{ status: number; body: T }> {
+  return page.evaluate(
+    async ({ supabaseUrl, anonKey, fnName, body }) => {
+      const key = Object.keys(window.localStorage).find(
+        (k) => k.startsWith("sb-") && k.endsWith("-auth-token"),
+      );
+      if (!key) throw new Error("[e2e] Sem sessão no localStorage: o storageState não carregou.");
+      const token = (JSON.parse(window.localStorage.getItem(key)!) as { access_token?: string })
+        .access_token;
+      if (!token) throw new Error("[e2e] Sessão sem access_token no localStorage.");
+
+      const res = await fetch(`${supabaseUrl}/functions/v1/${fnName}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: anonKey,
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+      return { status: res.status, body: await res.json().catch(() => ({})) };
+    },
+    { supabaseUrl: env.supabaseUrl, anonKey: env.supabaseAnonKey, fnName, body },
+  ) as Promise<{ status: number; body: T }>;
 }

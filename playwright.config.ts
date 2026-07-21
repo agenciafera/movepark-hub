@@ -68,6 +68,10 @@ export default defineConfig({
     /**
      * Roteiro C (consumidor), parte de LEITURA: C-01 a C-05. Home, busca e
      * detalhe da unidade. Nenhum destes cria reserva ou cobrança.
+     *
+     * O C-15 foi avaliado para entrar aqui e não coube: o único estado que
+     * produz o 422 do voucher é `pending`, e reserva pendente expira sozinha.
+     * Ele ficou no project transacional, com o custo do C-06 (sem cobrança).
      */
     {
       name: "e2e-consumer",
@@ -76,7 +80,14 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], storageState: CUSTOMER_STATE },
     },
     /**
-     * Roteiro C, parte TRANSACIONAL: C-06 a C-11.
+     * Roteiro C, parte TRANSACIONAL: C-06 a C-11 (reserva, checkout e PIX) e a
+     * parte 2, pós-pagamento: C-14 (voucher), C-15 (422 antes da confirmação),
+     * C-16 (upgrade de Tarifa), C-19 e C-20 (cancelamento dentro e fora da
+     * janela) e C-21 (Superflex).
+     *
+     * Nem todos cobram: o C-15 para no passo 1 do checkout e só cria `booking`,
+     * como o C-06. Do C-09 em diante, e em toda a parte 2 fora do C-15, há
+     * cobrança real.
      *
      * Fica num project separado porque cria efeito colateral irreversível: cada
      * execução gera `booking` de verdade numa unidade de parceiro real e, do
@@ -91,13 +102,15 @@ export default defineConfig({
      *     bunx playwright test --project=e2e-consumer-tx
      *
      * A limpeza é por CANCELAMENTO pelo produto, nunca por delete: ver
-     * `docs/testes/roteiro-consumidor-reserva.md` e `e2e/README.md`.
+     * `docs/testes/roteiro-consumidor-reserva.md` e `e2e/README.md`. A exceção é
+     * o C-20, que de propósito deixa uma reserva fora da janela: essa só o staff
+     * fecha.
      */
     ...(txRequested
       ? [
           {
             name: TX_PROJECT,
-            testMatch: /consumer\/C(0[6-9]|1[01]).*\.spec\.ts$/,
+            testMatch: /consumer\/C(0[6-9]|1[014569]|2[01]).*\.spec\.ts$/,
             dependencies: ["setup"],
             use: { ...devices["Desktop Chrome"], storageState: CUSTOMER_STATE },
           },

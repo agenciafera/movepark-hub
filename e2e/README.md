@@ -87,7 +87,7 @@ A jornada de quem reserva vive em `e2e/consumer/` e está partida em **dois proj
 | Project | Casos | O que faz | Como roda |
 |---|---|---|---|
 | `e2e-consumer` | C-01 a C-05 | Home, busca e detalhe. Só leitura. | `bunx playwright test --project=e2e-consumer` |
-| `e2e-consumer-tx` | C-06 a C-11 | Reserva, checkout e PIX. **Escreve e cobra.** | `bunx playwright test --project=e2e-consumer-tx` |
+| `e2e-consumer-tx` | C-06 a C-11, C-14 a C-16, C-19 a C-21 | Reserva, checkout, PIX e pós-pagamento. **Escreve e cobra.** | `bunx playwright test --project=e2e-consumer-tx` |
 
 O roteiro completo, com armadilhas caso a caso, está em `docs/testes/roteiro-consumidor-reserva.md`.
 
@@ -127,6 +127,59 @@ Três specs de leitura guardam defeito conhecido em vez de esconder:
 
 O C-04 tem também um caso de **controle** que passa hoje: o Maxi Park tem os mesmos tipos de vaga do Abbapark mas não tem a amenidade `covered` na location, e lá a contradição some. É o que prova que a causa é a amenidade vazando pro tipo, não o tipo em si.
 
+### Parte 2: voucher, upgrade e cancelamento (C-14 a C-23)
+
+Os casos de pós-pagamento entraram no `e2e-consumer-tx` porque quase todos precisam de uma reserva **paga** para existir.
+
+| Caso | O que prova | Custo de rodar |
+|---|---|---|
+| C-14 | O voucher já existe antes do clique; o botão só assina a URL | 1 reserva paga |
+| C-15 | Reserva pendente recebe 422 da `voucher-pdf` | 1 reserva, **sem cobrança** |
+| C-16 | Upgrade Básica → Superflex cobra o delta e recalcula a janela | 1 reserva paga + PIX do delta |
+| C-19 | Cancelar dentro da janela cancela e estorna | 1 reserva paga + estorno real |
+| C-20 | Fora da janela: sem botão na tela **e** 403 na Edge | 1 reserva paga que **fica de pé** |
+| C-21 | Superflex cancela a 1 min, nascendo assim **e** chegando por upgrade | 2 reservas pagas + estornos |
+
+Três decisões que valem explicar, porque não são óbvias:
+
+**O C-20 é o único que não se limpa sozinho.** A reserva dele nasce fora da janela de propósito, então o cliente não consegue cancelá-la, que é justamente o que o caso prova. Ela fica ativa até o check-in passar. Para fechar antes, é pela mão do staff (`developer@fera.ag`), que cancela com estorno em qualquer horário. Nunca por `delete`.
+
+**O C-19 não asserta `payment.status = 'refunded'`, e isso é de propósito.** Logo após o cancelamento, o estado correto é `status = 'paid'` com `refunded_at` preenchido: é o `refundPending`, e o PIX fecha o estorno depois. Assertar `refunded` ali faria o teste falhar por um motivo que não é defeito. É o erro mais provável de quem for mexer nesses specs.
+
+**O C-15 quase coube no project de leitura, e não coube.** A ideia era reaproveitar uma reserva já existente do cliente. Só que o cancelamento grava `deleted_at`, e a `voucher-pdf` filtra `deleted_at is null` antes de olhar o status: reserva cancelada devolve **404**, não 422. O único estado que produz o 422 é `pending`, e reserva pendente expira sozinha. Por isso o caso cria a sua, parando no passo 1 do checkout, sem gerar cobrança.
+
+### C-22: o estorno assíncrono não cabe num E2E
+
+O fechamento do estorno leva até **30 minutos** no pior caso legítimo: a `reconcile-refunds` só olha estornos com mais de 15 minutos e o cron roda a cada 15. Meia hora de espera dentro da suíte seria pior que não testar.
+
+A divisão: o estado **imediato** é assertado pelo C-19; o estado **final** é conferido depois, por consulta.
+
+```bash
+bun run e2e/support/checkRefunds.ts
+```
+
+O script é só leitura. Ele lista os estornos das últimas 24h do cliente de teste, diz quais já fecharam, quais ainda estão no prazo e quais passaram dos 30 minutos. Só os últimos justificam abrir bug.
+
+### C-23 fica no Vitest, não aqui
+
+A copy da política de cancelamento é texto fixo em 24 horas (`cancellation.logic.ts:64-67`) e não reflete a Superflex, que cancela até 1 minuto antes. É defeito de **copy**, não de gate: o sistema recusa e aceita cancelamento na hora certa, e é o que o C-19, o C-20 e o C-21 provam.
+
+O teste do comportamento correto está escrito em `src/features/bookings/CancellationPolicy.test.tsx`, em `it.skip`, para o CI seguir verde e o caso virar aceite quando o fix entrar ([86ajmwhg5](https://app.clickup.com/t/86ajmwhg5)).
+
+### Como as janelas de cancelamento são montadas
+
+`fare_cancel_until` é **snapshot congelado na criação da reserva**, não cálculo feito na hora de cancelar. Mexer em `booking.check_in_at` depois não move a janela, e o teste passaria ou falharia pelo motivo errado.
+
+Por isso os specs montam a janela pelo `check_in_at` de origem, com `rangeStartingIn(minutos)` de `support/consumer.ts`: 48h para o C-19 (dentro da janela), 6h para o C-20 (fora) e 90 min para o C-21. Se algum dia for mesmo preciso mexer no banco, mova `check_in_at` **e** `fare_cancel_until` juntos, na mesma transação.
+
+O C-21 lê `pricing_rule.advance_booking_minutes` antes de reservar e se pula sozinho quando a unidade exige mais antecedência do que os 90 minutos que ele usa. Sem isso, ele falharia por antecedência mínima, que não tem nada a ver com cancelamento.
+
+### Chamar Edge por fora da UI
+
+`callEdgeAsCustomer(page, fn, body)` faz a chamada com o JWT que o app gravou no localStorage, o mesmo caminho do bypass de auth.
+
+Existe por causa do C-20: ausência de botão na tela pode ser CSS, e isso não prova gate nenhum. A prova é o servidor devolvendo 403. As duas partes são obrigatórias.
+
 ### Fixtures do consumidor
 
 Ficam em `support/consumer.ts`, com o motivo de cada uma. Ao contrário de `db.ts`, esse módulo **só lê** o banco: são unidades de parceiro real, não fixture descartável.
@@ -161,6 +214,7 @@ e2e/
     env.ts               # carrega .env + .env.e2e, valida e falha cedo
     fixtures.ts          # constantes da fixture Mercy
     consumer.ts          # fixtures e passos do roteiro C (só leitura de banco)
+    checkRefunds.ts      # C-22: confere o fechamento do estorno, por consulta
     supabaseAdmin.ts     # clients service_role e anon
     db.ts                # leituras, seed e limpeza FK-safe com guardas
     session.ts           # bypass de auth via magic link
@@ -192,6 +246,12 @@ e2e/
     C09-pix-qrcode.spec.ts             # tx: COBRANÇA REAL
     C10-pix-confirma.spec.ts           # tx: COBRANÇA REAL + e-mail
     C11-minhas-reservas.spec.ts        # tx: lê o que o C-10 deixou
+    C14-voucher-download.spec.ts       # tx: COBRANÇA REAL + Storage
+    C15-voucher-antes-confirmacao.spec.ts # tx: cria booking, sem cobrança
+    C16-upgrade-tarifa.spec.ts         # tx: DUAS COBRANÇAS REAIS
+    C19-cancelar-dentro-janela.spec.ts # tx: COBRANÇA + ESTORNO REAL
+    C20-cancelar-fora-janela.spec.ts   # tx: COBRANÇA REAL, não se limpa sozinho
+    C21-superflex-um-minuto.spec.ts    # tx: 2 COBRANÇAS + ESTORNOS REAIS
   smoke/
     auth-bypass.spec.ts  # prova que os storageStates caem logados
 ```
@@ -203,6 +263,10 @@ e2e/
 - **T-07** sobe uma imagem para o Storage de produção (removida no teardown).
 - **C-06 a C-08** criam reserva de verdade e consomem capacidade até o hold expirar.
 - **C-09 e C-10** criam cobrança real no Pagar.me, que a conta atual liquida sozinha em 1 a 3 segundos. O C-10 ainda dispara o e-mail de confirmação.
+- **C-14** grava o PDF do voucher no bucket privado `vouchers` do Storage de produção. É idempotente, reexecutar não duplica.
+- **C-16 e C-21b** criam uma segunda cobrança, a do delta do upgrade. O split dela é 100% Movepark, então esse valor não aparece no extrato da unidade.
+- **C-19 e C-21** disparam estorno real. O fechamento é assíncrono: confira depois com `checkRefunds.ts`.
+- **C-20** deixa para trás uma reserva paga que o cliente não consegue cancelar. Fechar antes do check-in exige o staff.
 
 ## Arrasto no kanban
 

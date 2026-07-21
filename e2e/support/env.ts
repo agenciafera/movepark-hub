@@ -12,10 +12,27 @@ import path from "node:path";
 
 const ROOT = path.resolve(import.meta.dirname, "../..");
 
+/**
+ * `process.loadEnvFile` é do Node (20.12+) e é o caminho normal aqui, já que o
+ * Playwright roda sob Node. O fallback existe para quando este módulo é
+ * carregado pelo bun, que não implementa essa API: é o caso dos scripts de
+ * verificação avulsos, como o `checkRefunds.ts` do C-22.
+ */
 function loadEnvFile(file: string) {
   const full = path.join(ROOT, file);
   if (!fs.existsSync(full)) return;
-  process.loadEnvFile(full);
+
+  if (typeof process.loadEnvFile === "function") {
+    process.loadEnvFile(full);
+    return;
+  }
+
+  for (const line of fs.readFileSync(full, "utf8").split("\n")) {
+    const match = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/.exec(line);
+    if (!match) continue;
+    const value = match[2].trim().replace(/^(['"])(.*)\1$/, "$2");
+    process.env[match[1]] = value;
+  }
 }
 
 loadEnvFile(".env");

@@ -26,7 +26,7 @@ reconfere no código antes de mexer em qualquer linha de status.
 | C-09 | Checkout passo 3: gerar o QR do PIX | PRONTO |
 | C-10 | PIX pago confirma a reserva e avança pro passo 4 | PRONTO |
 | C-11 | "Minhas reservas" mostra a reserva com o tipo de vaga | PRONTO |
-| C-12 | Pagamento pago não volta pra pendente | **FALHA** (regressão) |
+| C-12 | Pagamento pago não volta pra pendente | CORRIGIDO em 14/07 (`88da760`) |
 | C-13 | Hold expirado libera a vaga e trava o checkout | PRONTO |
 | C-14 | Baixar o voucher em PDF | PRONTO |
 | C-15 | Voucher não existe antes da confirmação | PRONTO |
@@ -294,39 +294,51 @@ duplicado não se confirmou (`groupResultsByLocation`, `useSearchResults.ts:120`
   - São 4 abas (Próximas, Em uso, Histórico, Canceladas) com estado em `?tab=`. Reserva com check-in
     no passado não está na aba padrão. Antes de reportar "a reserva sumiu", confira as outras abas.
 
-## C-12 · Pagamento pago não volta pra pendente  [**FALHA** · verificado 21/07/2026 · `pagarme-webhook/index.ts:314-318`]
+## C-12 · Pagamento pago não volta pra pendente  [**CORRIGIDO EM 14/07** · reverificado 21/07/2026 · commit `88da760`]
 
-Regressão encontrada durante a montagem deste roteiro, não durante a jornada. Entra aqui porque é
-a única camada que a exercita.
+> **Este caso foi reescrito em 21/07/2026.** A primeira versão descrevia um mecanismo que **não é
+> alcançável** e classificava como falha viva algo que já tinha sido corrigido uma semana antes. O
+> erro veio de olhar os dados sem datar contra o histórico do git. Fica registrado porque é
+> exatamente a falha que este formato de roteiro existe para evitar.
 
 - **Antes:** um `payment` que já recebeu evento de pagamento, com `paid_at` preenchido.
-- **Passos:** o webhook recebe um evento posterior sobre a mesma cobrança, com `intent` não nulo,
-  cujo status mapeia para pendente.
+- **Passos:** o webhook recebe um evento posterior e benigno sobre a mesma cobrança.
 - **Depois esperado:** o status permanece `paid`. Um pagamento liquidado não regride.
-- **Depois observado:** existem em produção 5 pagamentos com `paid_at` preenchido e
-  `status <> 'paid'`, dos quais 4 estão em `pending` com a reserva **cancelada** e **sem estorno**:
+- **Depois observado:** a guarda existe e funciona (`pagarme-webhook/index.ts:314-318`, commit
+  `88da760`, 14/07/2026 18:37 UTC). O corte por data é decisivo:
 
   ```sql
-  select b.code, b.status as booking_status, p.status as payment_status,
-         p.amount, p.created_at, p.paid_at, p.refunded_at
-  from payment p join booking b on b.id = p.booking_id
-  where p.method = 'pix' and p.paid_at is not null and p.status = 'pending';
-  -- MP-449353, MP-DB1549, MP-ABB52D, MP-699CF0 (R$ 52,90 cada) e MP-81E138 (R$ 192,30)
+  select case when p.created_at < '2026-07-14 18:37:00+00'
+              then 'antes da guarda' else 'DEPOIS da guarda' end as periodo,
+         p.status, count(*)
+  from payment p
+  where p.paid_at is not null and p.status <> 'paid'
+  group by 1, 2;
+  -- antes da guarda: pending 5, refunded 5, cancelled 1
+  -- DEPOIS da guarda: nenhuma linha
   ```
 
-  A guarda contra rebaixamento em `:314-318` só protege eventos **benignos**, com `intent === null`.
-  Um evento posterior com intent definido atravessa a guarda e rebaixa o status. Com o pagamento
-  de volta em `pending`, o job de expiração cancela a reserva de um cliente que já pagou.
-- **Efeitos colaterais:** nenhum ao ler. Reproduzir exige reenviar evento no gateway.
+  **Zero ocorrências depois da guarda.** As linhas em `pending` são todas anteriores a ela, a mais
+  recente de 13/07 21:33 (horário de Brasília), poucas horas antes do fix.
+- **Efeitos colaterais:** nenhum, é leitura.
 - **Armadilhas:**
-  - **Estas 5 ocorrências são de teste**, não de cliente real: todas têm a assinatura de liquidação
-    automática (`paid_at` 1 a 2 segundos depois) e `customer_email` nulo ou `peu+teste1@fera.ag`.
-    Isso muda a urgência, não a gravidade: o mesmo caminho de código roda para cliente real.
-  - `paid_at` é escrito **só** pelo webhook (`:331-333`); a `create-pix-charge` não escreve
-    (`create-pix-charge/index.ts:213-227`). Então `paid_at` preenchido com status diferente de `paid`
-    é prova de rebaixamento, não de gravação torta na criação.
-  - A cobertura natural disto é **pgTAP ou `deno test` do webhook**, não Playwright. Não force para
-    dentro do E2E.
+  - **`refunded` com `paid_at` preenchido não é defeito, é projeto.** O código preserva a data do
+    pagamento de propósito, para a reconciliação por período (`index.ts:329-331`). As 5 linhas
+    `refunded` da consulta acima são saudáveis. Contá-las como anomalia foi parte do erro original.
+  - **O mecanismo que descrevi antes não existe.** Com `intent` não nulo, o status só pode virar
+    `refunded`, `canceled` ou `paid`, nunca `pending`. Logo, um evento com intent definido **não**
+    consegue rebaixar para pendente. As linhas antigas vieram do comportamento anterior à guarda,
+    quando um evento benigno derrubava `paid` de volta.
+  - **Sobra uma brecha estreita e nunca observada:** a guarda cobre só `intent === null`. Um
+    `charge.canceled` chegando depois da liquidação levaria `paid` para `cancelled`, porque tem
+    intent definido. Nenhuma ocorrência em produção. É hipótese de código, não defeito medido, e o
+    teste correspondente está escrito e desativado.
+  - Ao mexer aqui, cuidado com o fix óbvio demais: **bloquear qualquer saída de `paid` quebra o
+    estorno**, que precisa levar `paid` para `refunded`. Há teste ativo guardando esse caminho.
+  - Segundo caminho suspeito, não coberto pela investigação original: quando o match por
+    `provider_payment_id` falha, o fallback pega o **payment mais recente do booking**
+    (`index.ts:259-267`), que pode ser outra cobrança (upgrade, troca de datas).
+  - A cobertura natural disto é **`deno test` do webhook**, não Playwright. Não force para o E2E.
 
 ## C-13 · Hold expirado libera a vaga e trava o checkout  [PRONTO · sem cobertura E2E · `src/routes/checkout.tsx:168` e commit `7c37329`]
 
@@ -415,11 +427,20 @@ diferente da que nasceu com ela.
 - **Passos:** tentar baixar o voucher pela Edge, com o JWT do dono da reserva.
 - **Depois:** HTTP 422, "Voucher disponível só após a confirmação do pagamento".
   `VOUCHER_BOOKING_STATUSES` aceita só `confirmed`, `checked_in` e `completed`.
-- **Efeitos colaterais:** nenhum.
-- **Armadilhas:** existe uma divergência conhecida entre servidor e tela. O servidor aceita
-  `completed`, mas a UI só mostra o card com `confirmed` ou `checked_in`
-  (`bookings-detail.tsx:99`). Reserva já concluída **tem** voucher válido e **não** mostra o botão.
-  Isso é inconsistência real, não erro de execução do roteiro. Registre, não force.
+- **Efeitos colaterais:** criar a reserva pendente consome capacidade até expirar. Não gera cobrança.
+- **Armadilhas:**
+  - **`pending` é o único status que produz 422.** A Edge filtra `.is("deleted_at", null)` na
+    consulta, **antes** do gate de status. O cancelamento grava `deleted_at` junto com o status
+    (`cancel_booking_with_release`), então reserva cancelada some da consulta e devolve **404**.
+    Medido em produção com a MP-449353. Não use o 422 para detectar reserva cancelada; o que chega
+    é 404. Vale o mesmo para `expired` e `no_show`, se também forem soft-deletados.
+  - Provar este caso **exige criar uma reserva**, porque reserva pendente expira sozinha e o cliente
+    de teste não costuma ter nenhuma parada. O spec cria a sua e para no passo 1 do checkout: tem o
+    custo do C-06, sem cobrança.
+  - Divergência conhecida entre servidor e tela: o servidor aceita `completed`, mas a UI só mostra o
+    card com `confirmed` ou `checked_in` (`bookings-detail.tsx:99`). Reserva já concluída **tem**
+    voucher válido e **não** mostra o botão. É inconsistência real, não erro de execução. Registre,
+    não force.
 
 ## C-16 · Upgrade de tarifa: Básica para Superflex  [PRONTO · sem cobertura E2E · `supabase/migrations/20260720000000_fare_upgrade.sql:14-55`]
 

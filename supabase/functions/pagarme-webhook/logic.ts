@@ -1,4 +1,9 @@
-// Lógica pura do webhook do Pagar.me (testável sem rede): auth básica e parsing do evento.
+// Lógica pura do webhook do Pagar.me (testável sem rede): auth básica, parsing do evento e
+// decisão de status do payment.
+
+import { chargeStatusToPaymentStatus } from "../_shared/payments/index.ts";
+import { mapChargeStatus } from "../_shared/payments/pagarme.ts";
+import type { ChargeStatus } from "../_shared/payments/types.ts";
 
 /** Comparação de strings em tempo (quase) constante — evita vazar o segredo por timing. */
 export function timingSafeEqual(a: string, b: string): boolean {
@@ -87,6 +92,59 @@ export function parseWebhookEvent(body: unknown): ParsedEvent {
     bookingCode: (data.code as string) ?? (metadata.booking_code as string) ?? null,
     rawStatus: (data.status as string) ?? null,
   };
+}
+
+// ── Decisão de status do payment ────────────────────────────────────────────
+
+/** Status de payment considerados terminais pela guarda de rebaixamento. */
+export const TERMINAL_PAYMENT_STATUSES = ["paid", "refunded", "cancelled"] as const;
+
+export interface StatusDecisionInput {
+  /** Intenção derivada do TIPO do evento (`webhookIntentFromType`). */
+  intent: WebhookIntent | null;
+  /** `payment.status` atual no banco. */
+  currentStatus: string | null;
+  /** `payment.paid_at` atual. Preenchido = a cobrança já foi liquidada alguma vez. */
+  paidAt: string | null;
+  /** `data.status` cru do evento. */
+  rawStatus: string | null;
+  /** `type` cru do evento (usado como fallback do status). */
+  eventType: string;
+}
+
+export type StatusDecision =
+  | { action: "noop"; reason: string }
+  | { action: "update"; chargeStatus: ChargeStatus; paymentStatus: string };
+
+/**
+ * Decide o que fazer com o `payment` diante de um evento de cobrança/ordem.
+ *
+ * Extraída do `index.ts` sem mudança de comportamento: hoje a guarda contra rebaixamento só cobre
+ * evento SEM intent (`charge.updated` e afins) sobre payment terminal. Um evento COM intent que
+ * mapeie para um status não pago atravessa a guarda e rebaixa um pagamento já liquidado. Ver o
+ * teste ignorado em `logic.test.ts` (C-12) e a tarefa https://app.clickup.com/t/86ajmwb4u.
+ */
+export function decidePaymentStatus(input: StatusDecisionInput): StatusDecision {
+  // Evento benigno (sem intent definida, ex.: `charge.updated` depois do pagamento) sobre um
+  // payment já terminal: NÃO rebaixa o status. Sem isto, um evento pós-pagamento derruba 'paid'
+  // de volta pra 'pending' (deixava o date_change preso e o expire liberaria vaga ativa).
+  if (
+    input.intent === null &&
+    (TERMINAL_PAYMENT_STATUSES as readonly string[]).includes(input.currentStatus ?? "")
+  ) {
+    return { action: "noop", reason: "benign_event_on_terminal_payment" };
+  }
+
+  const chargeStatus: ChargeStatus =
+    input.intent === "refund"
+      ? "refunded"
+      : input.intent === "cancel"
+        ? "canceled"
+        : input.intent === "paid"
+          ? "paid"
+          : mapChargeStatus(input.rawStatus ?? input.eventType.split(".")[1]);
+
+  return { action: "update", chargeStatus, paymentStatus: chargeStatusToPaymentStatus(chargeStatus) };
 }
 
 // ── Transferências (saques) — E0.3.3 ────────────────────────────────────────

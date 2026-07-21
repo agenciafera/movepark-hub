@@ -99,6 +99,7 @@ export function CancelBookingDialog({
             variant="danger"
             onClick={handleCancel}
             disabled={cancelMutation.isPending || isBlocked}
+            data-testid="cancel-booking-confirm"
           >
             {cancelMutation.isPending ? "Cancelando…" : "Cancelar reserva"}
           </Button>

@@ -10,12 +10,9 @@
 
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import {
-  mapBookingRowToVoucher,
-  VOUCHER_BOOKING_SELECT,
-  VOUCHER_BOOKING_STATUSES,
-} from "../_shared/voucher/fields.ts";
+import { mapBookingRowToVoucher, VOUCHER_BOOKING_SELECT } from "../_shared/voucher/fields.ts";
 import { buildVoucherPdf, voucherValidateUrl } from "../_shared/voucher/pdf.ts";
+import { checkVoucherAuth, checkVoucherBooking, checkVoucherCode } from "./logic.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -36,9 +33,8 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
 
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return jsonResponse({ error: "Autenticação necessária" }, 401);
-  }
+  const authDenial = checkVoucherAuth(authHeader);
+  if (authDenial) return jsonResponse({ error: authDenial.error }, authDenial.status);
 
   // @ts-expect-error - Deno env
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -63,7 +59,8 @@ Deno.serve(async (req: Request) => {
   } catch {
     return jsonResponse({ error: "Invalid JSON" }, 400);
   }
-  if (!code) return jsonResponse({ error: "code é obrigatório" }, 400);
+  const codeDenial = checkVoucherCode(code);
+  if (codeDenial) return jsonResponse({ error: codeDenial.error }, codeDenial.status);
 
   // Leitura escopada pela RLS (dono ou operador da empresa)
   const { data: b, error: bErr } = await userClient
@@ -74,10 +71,8 @@ Deno.serve(async (req: Request) => {
     .maybeSingle();
 
   if (bErr) return jsonResponse({ error: bErr.message }, 500);
-  if (!b) return jsonResponse({ error: "Reserva não encontrada" }, 404);
-  if (!VOUCHER_BOOKING_STATUSES.includes(b.status)) {
-    return jsonResponse({ error: "Voucher disponível só após a confirmação do pagamento." }, 422);
-  }
+  const bookingDenial = checkVoucherBooking(b);
+  if (bookingDenial) return jsonResponse({ error: bookingDenial.error }, bookingDenial.status);
 
   const voucher = mapBookingRowToVoucher(b);
   const pdfBytes = await buildVoucherPdf(voucher, voucherValidateUrl(SITE_URL, b.code));

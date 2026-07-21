@@ -228,6 +228,7 @@ export default function BookingDetailPage() {
                 size="sm"
                 className="mt-4"
                 onClick={() => setUpgradeOpen(true)}
+                data-testid="fare-upgrade-trigger"
               >
                 Fazer upgrade de Tarifa
               </Button>
@@ -365,13 +366,17 @@ export default function BookingDetailPage() {
                   </Button>
                 )}
                 {selfCancel.allowed && (
-                  <Button variant="danger" onClick={() => setCancelOpen(true)}>
+                  <Button
+                    variant="danger"
+                    onClick={() => setCancelOpen(true)}
+                    data-testid="cancel-booking-trigger"
+                  >
                     Cancelar reserva
                   </Button>
                 )}
               </div>
               {cancelBlocked && (
-                <p className="text-body-sm text-muted">
+                <p className="text-body-sm text-muted" data-testid="cancel-window-closed">
                   A janela de cancelamento da sua tarifa {FARE_TIER_LABEL[booking.fare_tier]} já
                   encerrou. Para cancelar, fale com o suporte.
                 </p>

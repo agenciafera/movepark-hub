@@ -1,5 +1,6 @@
 import { assertEquals } from "jsr:@std/assert";
 import {
+  decidePaymentStatus,
   parseRecipientEvent,
   parseTransferEvent,
   parseWebhookEvent,
@@ -65,6 +66,110 @@ Deno.test("timingSafeEqual: igual/diferente, inclusive comprimentos distintos", 
   assertEquals(timingSafeEqual("abc", "abd"), false);
   assertEquals(timingSafeEqual("abc", "abcd"), false);
   assertEquals(timingSafeEqual("", ""), true);
+});
+
+// ── C-12 · Pagamento pago não volta pra pendente ────────────────────────────
+// Roteiro: docs/testes/roteiro-consumidor-reserva.md (C-12).
+
+const PAID_AT = "2026-07-20T10:00:00.000Z";
+
+Deno.test("decidePaymentStatus: evento sem intent sobre payment terminal → noop (não rebaixa)", () => {
+  for (const current of ["paid", "refunded", "cancelled"]) {
+    assertEquals(
+      decidePaymentStatus({
+        intent: null,
+        currentStatus: current,
+        paidAt: current === "cancelled" ? null : PAID_AT,
+        rawStatus: "waiting_payment",
+        eventType: "charge.updated",
+      }),
+      { action: "noop", reason: "benign_event_on_terminal_payment" },
+    );
+  }
+});
+
+Deno.test("decidePaymentStatus: payment ainda pendente segue o status do evento", () => {
+  assertEquals(
+    decidePaymentStatus({
+      intent: null,
+      currentStatus: "pending",
+      paidAt: null,
+      rawStatus: "waiting_payment",
+      eventType: "charge.updated",
+    }),
+    { action: "update", chargeStatus: "pending", paymentStatus: "pending" },
+  );
+  assertEquals(
+    decidePaymentStatus({
+      intent: "paid",
+      currentStatus: "pending",
+      paidAt: null,
+      rawStatus: "paid",
+      eventType: "charge.paid",
+    }),
+    { action: "update", chargeStatus: "paid", paymentStatus: "paid" },
+  );
+});
+
+Deno.test("decidePaymentStatus: estorno de um pagamento pago continua passando", () => {
+  // O estorno é a ÚNICA saída legítima de um pagamento liquidado. A guarda do C-12 não pode
+  // bloquear este caminho, senão o estorno de PIX para de refletir no payment.
+  assertEquals(
+    decidePaymentStatus({
+      intent: "refund",
+      currentStatus: "paid",
+      paidAt: PAID_AT,
+      rawStatus: "paid", // a Pagar.me manda `charge.refunded` com data.status "paid"
+      eventType: "charge.refunded",
+    }),
+    { action: "update", chargeStatus: "refunded", paymentStatus: "refunded" },
+  );
+});
+
+/**
+ * ACEITE da tarefa https://app.clickup.com/t/86ajmwb4u (C-12).
+ *
+ * Este teste FALHA hoje, e é exatamente esse o ponto: o comportamento correto ainda não existe.
+ * A guarda atual (`decidePaymentStatus`, ramo `intent === null`) só protege eventos benignos. Um
+ * evento COM intent definida atravessa a guarda e rebaixa um pagamento já liquidado. Com o payment
+ * de volta em pendente/cancelado, o job de expiração cancela a reserva de quem já pagou. Em
+ * produção havia 5 pagamentos com `paid_at` preenchido e `status <> 'paid'` (MP-449353, MP-DB1549,
+ * MP-ABB52D, MP-699CF0, MP-81E138), 4 deles com a reserva cancelada e sem estorno.
+ *
+ * Desmarque o `ignore` no mesmo commit do fix. O fix precisa recusar qualquer transição que saia de
+ * 'paid' para algo que não seja estorno, olhando `currentStatus` (e `paidAt` como reforço, já que
+ * `paid_at` só é escrito pelo webhook na liquidação).
+ */
+Deno.test({
+  ignore: true,
+  name: "C-12: pagamento pago não é rebaixado por evento posterior com intent definida",
+  fn: () => {
+    // Cancelamento da ordem chegando depois da liquidação: o payment continua pago.
+    assertEquals(
+      decidePaymentStatus({
+        intent: "cancel",
+        currentStatus: "paid",
+        paidAt: PAID_AT,
+        rawStatus: "canceled",
+        eventType: "charge.canceled",
+      }),
+      { action: "noop", reason: "downgrade_blocked" },
+    );
+    // Mesma proteção quando o status cru do evento mapeia para pendente/falho.
+    for (const raw of ["waiting_payment", "pending", "processing", "with_error", "failed"]) {
+      assertEquals(
+        decidePaymentStatus({
+          intent: "cancel",
+          currentStatus: "paid",
+          paidAt: PAID_AT,
+          rawStatus: raw,
+          eventType: "charge.canceled",
+        }),
+        { action: "noop", reason: "downgrade_blocked" },
+        `evento com data.status "${raw}" não pode rebaixar um pagamento liquidado`,
+      );
+    }
+  },
 });
 
 Deno.test("parseWebhookEvent: order.paid → orderId = data.id", () => {

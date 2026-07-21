@@ -11,13 +11,14 @@
 // { id, type: "order.paid" | "charge.paid" | "charge.refunded" | ..., data: { ...order/charge } }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { chargeStatusToPaymentStatus, getGateway } from "../_shared/payments/index.ts";
-import { mapChargeStatus, mapRecipientStatus } from "../_shared/payments/pagarme.ts";
+import { getGateway } from "../_shared/payments/index.ts";
+import { mapRecipientStatus } from "../_shared/payments/pagarme.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 import { sendBookingConfirmationEmail } from "../_shared/booking-confirmation.ts";
 import { refundShouldCancelBooking } from "../_shared/refund.ts";
 import { sendWhatsAppTemplate } from "../_shared/whatsapp.ts";
 import {
+  decidePaymentStatus,
   parseRecipientEvent,
   parseTransferEvent,
   parseWebhookEvent,
@@ -243,10 +244,11 @@ Deno.serve(async (req: Request) => {
         date_change_check_in_at: string | null;
         date_change_check_out_at: string | null;
         status: string | null;
+        paid_at: string | null;
       }
     | null = null;
   const paymentCols =
-    "id, booking_id, kind, fare_target_tier, date_change_check_in_at, date_change_check_out_at, status";
+    "id, booking_id, kind, fare_target_tier, date_change_check_in_at, date_change_check_out_at, status, paid_at";
   if (ev.orderId) {
     const { data } = await admin
       .from("payment")
@@ -274,6 +276,7 @@ Deno.serve(async (req: Request) => {
           date_change_check_in_at: d.date_change_check_in_at,
           date_change_check_out_at: d.date_change_check_out_at,
           status: d.status,
+          paid_at: d.paid_at,
         }
       : null;
   }
@@ -309,23 +312,21 @@ Deno.serve(async (req: Request) => {
     return json({ ok: true, partial_refund: true });
   }
 
-  // Evento benigno (sem intent definida, ex.: `charge.updated` depois do pagamento) sobre um
-  // payment já terminal: NÃO rebaixa o status. Sem isto, um evento pós-pagamento derruba 'paid'
-  // de volta pra 'pending' (deixava o date_change preso e o expire liberaria vaga ativa).
-  if (intent === null && ["paid", "refunded", "cancelled"].includes(payment.status ?? "")) {
+  // A decisão de status (inclusive a guarda contra rebaixamento) vive em `decidePaymentStatus`,
+  // pura e testável em `logic.ts`.
+  const decision = decidePaymentStatus({
+    intent,
+    currentStatus: payment.status,
+    paidAt: payment.paid_at,
+    rawStatus: ev.rawStatus,
+    eventType: ev.type,
+  });
+  if (decision.action === "noop") {
     await markProcessed(admin, ev.eventId);
-    return json({ ok: true, noop: true, reason: "benign_event_on_terminal_payment" });
+    return json({ ok: true, noop: true, reason: decision.reason });
   }
-
-  const status =
-    intent === "refund"
-      ? "refunded"
-      : intent === "cancel"
-        ? "canceled"
-        : intent === "paid"
-          ? "paid"
-          : mapChargeStatus(ev.rawStatus ?? ev.type.split(".")[1]);
-  const paymentStatus = chargeStatusToPaymentStatus(status);
+  const status = decision.chargeStatus;
+  const paymentStatus = decision.paymentStatus;
 
   // Preserva paid_at: um pagamento pago e depois estornado mantém a data do pagamento
   // (necessário para a reconciliação por período — E0.3.3).

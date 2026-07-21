@@ -84,7 +84,14 @@ export function FareUpgradeDialog({
               Pague <strong className="text-ink">{formatBRL(charge.delta)}</strong> via PIX para
               concluir o upgrade. A Tarifa é atualizada assim que o pagamento for confirmado.
             </p>
-            {qrUrl && <img src={qrUrl} alt="QR code do PIX" className="mx-auto h-[220px] w-[220px]" />}
+            {qrUrl && (
+              <img
+                src={qrUrl}
+                alt="QR code do PIX"
+                className="mx-auto h-[220px] w-[220px]"
+                data-testid="fare-upgrade-qr"
+              />
+            )}
             <p className="break-all rounded-sm bg-surface-soft p-2 text-caption text-muted">
               {charge.qr_code}
             </p>
@@ -106,6 +113,7 @@ export function FareUpgradeDialog({
                   <button
                     key={f.tier}
                     type="button"
+                    data-testid={`fare-upgrade-option-${f.tier}`}
                     onClick={() => setTarget(f.tier)}
                     className={cn(
                       "flex w-full items-center justify-between rounded-md border p-3 text-left transition-colors",
@@ -126,7 +134,12 @@ export function FareUpgradeDialog({
             <p className="text-caption text-muted">
               Você está na Tarifa {FARE_TIER_LABEL[currentTier]}. Sem reembolso se mudar de ideia.
             </p>
-            <Button className="w-full" onClick={handleUpgrade} disabled={!target || upgrade.isPending}>
+            <Button
+              className="w-full"
+              onClick={handleUpgrade}
+              disabled={!target || upgrade.isPending}
+              data-testid="fare-upgrade-submit"
+            >
               {upgrade.isPending ? "Gerando PIX…" : "Pagar diferença com PIX"}
             </Button>
           </div>
