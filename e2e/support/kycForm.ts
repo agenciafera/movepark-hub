@@ -46,6 +46,18 @@ export async function stubCnpjLookup(page: Page) {
   );
 }
 
+/**
+ * Preenche um telefone.
+ *
+ * O `PhoneField` tem dois campos: o seletor de país e o número. Um
+ * `getByRole("textbox")` genérico pega o de busca de país e abre a lista de
+ * países por cima do formulário, o que já custou uma falha silenciosa aqui.
+ * O placeholder é o que distingue o campo do número.
+ */
+export async function fillPhone(page: Page, fieldLabel: string, digits: string) {
+  await field(page, fieldLabel).getByPlaceholder("Digite seu número").fill(digits);
+}
+
 /** Escolhe uma opção num Select do Radix, pelo rótulo do campo. */
 export async function selectOption(page: Page, fieldLabel: string, optionName: RegExp | string) {
   await field(page, fieldLabel).getByRole("combobox").click();
@@ -63,8 +75,8 @@ export async function fillCompanyStep(page: Page) {
   );
 
   await selectOption(page, "Tipo de empresa", /.+/);
-  await field(page, "Telefone").getByRole("textbox").fill("11987727182");
-  await field(page, "Faturamento anual").getByRole("textbox").fill("120000");
+  await fillPhone(page, "Telefone", "11987727182");
+  await field(page, "Faturamento anual").getByRole("textbox").fill("12000000"); // R$ 120.000,00
   await field(page, "Data de fundação").getByRole("textbox").fill("10/03/2015");
 
   await page.getByRole("button", { name: "Continuar" }).click();
@@ -86,4 +98,51 @@ export async function fillAddress(
   // "Estado (UF)" é um Select de UFs (StateSelect), não campo de texto.
   await selectOption(page, "Estado (UF)", "SP");
   await field(page, "Ponto de referência").getByRole("textbox").fill(referencePoint);
+}
+
+/** Preenche o passo "Representante", que inclui os dados pessoais e o endereço. */
+export async function fillRepresentativeStep(page: Page) {
+  await field(page, "Nome completo").getByRole("textbox").fill("Maria Teste da Silva");
+  await field(page, "CPF").getByRole("textbox").fill("39053344705");
+  await field(page, "E-mail").getByRole("textbox").fill("peu+mercy@fera.ag");
+  await fillPhone(page, "Telefone", "11987727182");
+  await field(page, "Data de nascimento").getByRole("textbox").fill("15/06/1985");
+  await field(page, "Renda mensal").getByRole("textbox").fill("1500000"); // R$ 15.000,00
+  await field(page, "Ocupação profissional").getByRole("textbox").fill("Empresaria");
+
+  // Checkbox obrigatório. Sem ele o passo não avança e o erro aparece como
+  // "Confirme que é o representante legal".
+  await page
+    .locator("label")
+    .filter({ hasText: "Declaro que sou o representante legal" })
+    .getByRole("checkbox")
+    .check();
+
+  // O endereço do representante usa os mesmos rótulos do da empresa, mas está
+  // sozinho neste passo, então não há ambiguidade.
+  await fillAddress(page);
+
+  await page.getByRole("button", { name: "Continuar" }).click();
+}
+
+/**
+ * Preenche o passo "Conta bancária" e submete o formulário.
+ *
+ * O campo Banco é um combobox com busca (`BankSelect`), não texto livre. O
+ * roteiro dá o T-13 como não implementado, mas ele existe.
+ */
+export async function fillBankStepAndSubmit(page: Page) {
+  await field(page, "Banco").getByRole("combobox").click();
+  await page.getByPlaceholder("Busque por código ou nome").fill("341");
+  await page.getByRole("option").first().click();
+
+  await field(page, "Agência").getByRole("textbox").fill("1234");
+  await field(page, "Conta").getByRole("textbox").fill("567890");
+  await field(page, "Dígito da conta").getByRole("textbox").fill("1");
+  await selectOption(page, "Tipo de conta", /.+/);
+  await field(page, "Titular da conta (máx. 30 caracteres)")
+    .getByRole("textbox")
+    .fill("Mercy Estacionamentos");
+
+  await page.getByRole("button", { name: "Salvar e continuar" }).click();
 }
