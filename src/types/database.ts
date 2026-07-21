@@ -899,6 +899,8 @@ export type Database = {
           created_at: string
           current_step: number
           estimated_spots: number | null
+          go2park_interest: boolean
+          go2park_interest_at: string | null
           internal_note: string | null
           message: string | null
           referrer: string | null
@@ -925,6 +927,8 @@ export type Database = {
           created_at?: string
           current_step?: number
           estimated_spots?: number | null
+          go2park_interest?: boolean
+          go2park_interest_at?: string | null
           internal_note?: string | null
           message?: string | null
           referrer?: string | null
@@ -951,6 +955,8 @@ export type Database = {
           created_at?: string
           current_step?: number
           estimated_spots?: number | null
+          go2park_interest?: boolean
+          go2park_interest_at?: string | null
           internal_note?: string | null
           message?: string | null
           referrer?: string | null

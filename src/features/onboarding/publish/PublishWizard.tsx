@@ -23,6 +23,7 @@ import {
   isGooglePlacesEnabled,
 } from "@/components/shared/GooglePlacesAutocomplete";
 import { ImageGalleryField } from "@/components/shared/ImageUpload";
+import { Go2ParkInterestCard } from "./Go2ParkInterestCard";
 import { uploadCompanyAsset } from "@/lib/storage";
 import { useNearestDestination } from "@/features/locations/api";
 import { usePublishedDestinations } from "@/features/destinations/api";
@@ -430,6 +431,8 @@ export function PublishWizard({ data, companyId }: Props) {
                     </button>
                   ))}
                 </div>
+                {/* Tem van de transfer? oferece a Go2Park (rastreio de vans em tempo real). */}
+                {hasShuttle === true && <Go2ParkInterestCard companyId={companyId} />}
                 <div className="rounded-md bg-surface-pale p-4">
                   <p className="flex items-center gap-2 text-body-sm text-ink">
                     <Sparkles className="h-4 w-4 text-mp-violet" /> Falta só as fotos. Comodidades e

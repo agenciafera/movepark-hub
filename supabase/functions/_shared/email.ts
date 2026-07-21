@@ -289,6 +289,30 @@ export function tplLeadAlert(lead: {
   };
 }
 
+/**
+ * Lead de interesse na Go2Park (produto irmão de rastreio de vans de transfer).
+ * Vai para a caixa da Go2Park (app_setting go2park_leads_inbox). O replyTo do envio
+ * aponta para o contato do estacionamento, então a Go2Park responde direto.
+ */
+export function tplGo2ParkInterest(lead: {
+  companyName: string; contactName: string; contactEmail: string; contactPhone: string;
+  city?: string | null; state?: string | null; estimatedSpots?: number | null;
+}): { subject: string; html: string } {
+  return {
+    subject: `Interesse na Go2Park: ${lead.companyName}`,
+    html: shell("Um estacionamento quer conhecer a Go2Park", `
+      <p style="margin:0 0 16px">Este estacionamento demonstrou interesse na Go2Park pelo onboarding da Movepark. Vale entrar em contato para apresentar o rastreio de vans em tempo real.</p>
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        ${row("Estacionamento", lead.companyName)}
+        ${row("Responsável", lead.contactName)}
+        ${row("E-mail", lead.contactEmail)}
+        ${row("Telefone", lead.contactPhone)}
+        ${row("Cidade/UF", [lead.city, lead.state].filter(Boolean).join(" / ") || "não informado")}
+        ${row("Vagas (est.)", lead.estimatedSpots != null ? String(lead.estimatedSpots) : "não informado")}
+      </table>`),
+  };
+}
+
 export function tplApprovalInvite(contactName: string, actionLink: string): { subject: string; html: string } {
   return {
     subject: "Seu cadastro foi aprovado. Continue de onde parou.",

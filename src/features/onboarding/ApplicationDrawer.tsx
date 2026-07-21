@@ -59,9 +59,10 @@ export function ApplicationDrawer({ application, open, onOpenChange, onReject }:
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full max-w-md overflow-y-auto">
         <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
+          <SheetTitle className="flex flex-wrap items-center gap-2">
             {application.company?.name ?? "Cadastro"}
             <Badge tone={onboardingStatusTone[status]}>{onboardingStatusLabel[status]}</Badge>
+            {application.go2park_interest && <Badge tone="pending">Interesse Go2Park</Badge>}
           </SheetTitle>
         </SheetHeader>
 
