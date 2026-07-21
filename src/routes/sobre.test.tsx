@@ -30,16 +30,16 @@ describe("SobrePage — /sobre", () => {
     );
   });
 
-  it("mostra apoio visual: foto de hero, fotos dos destinos e a foto do passo a passo", () => {
+  it("mostra apoio visual: logos, fotos dos destinos e a foto do passo a passo", () => {
     const { container } = renderPage();
 
     // O aceite da atividade é a página não ser só texto.
     const images = container.querySelectorAll("img");
     expect(images.length).toBeGreaterThanOrEqual(9);
 
-    // Hero e passo a passo têm alt descritivo (as fotos dos destinos são decorativas,
-    // porque o nome do destino já vem no texto do link ao lado).
-    expect(screen.getByAltText(/estacionamento parceiro da Movepark/i)).toBeInTheDocument();
+    // O hero virou mesh gradient e não tem mais foto; o alt descritivo que sobrou é
+    // o do passo a passo (as fotos dos destinos são decorativas, porque o nome já
+    // vem no texto do link ao lado).
     expect(screen.getByAltText(/reservando a vaga pelo celular/i)).toBeInTheDocument();
   });
 

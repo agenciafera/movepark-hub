@@ -2,10 +2,9 @@ import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { ArrowRight, ArrowUpRight, ShieldCheck, MapPin, Star, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { HeroMesh } from "@/components/shared/HeroMesh";
 import { PartnerLogos } from "@/features/partners/PartnerLogos";
 import { HOW_IT_WORKS } from "@/features/how-it-works/copy";
-
-const HERO_IMAGE = "/Estacionamentos/virapark-estacionamento-aeroporto-viracopos.webp";
 
 /**
  * Números conferidos no banco em 20/07/2026 (projeto mgaigbezdalbyuqiofcf):
@@ -78,16 +77,10 @@ export default function SobrePage() {
         <link rel="canonical" href="https://hub.movepark.co/sobre" />
       </Helmet>
 
-      {/* Hero: foto de um lote parceiro de verdade, com a tinta navy da marca por cima. */}
-      <section className="relative isolate overflow-hidden bg-mp-navy">
-        <img
-          src={HERO_IMAGE}
-          alt="Vagas cobertas em um estacionamento parceiro da Movepark no aeroporto de Viracopos"
-          decoding="async"
-          className="absolute inset-0 h-full w-full object-cover opacity-40"
-        />
-        <div className="absolute inset-0 bg-mp-navy/60" aria-hidden />
-
+      {/* Hero em mesh gradient. Segue sangrando de ponta a ponta, como manda a faixa
+          de hero do contrato do consumer: o arredondado ficaria brigando com a borda
+          da tela e cortaria a banda no meio. */}
+      <HeroMesh palette="navy">
         <div className="relative mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-24">
           <div className="max-w-2xl motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-3 motion-safe:duration-500">
             <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-white/70">
@@ -118,8 +111,7 @@ export default function SobrePage() {
             </div>
           </div>
         </div>
-
-      </section>
+      </HeroMesh>
 
       {/* Faixa de parceiros: prova concreta, no lugar do carrossel de logo genérico.
           Fora do hero porque os logos são escuros e sumiriam sobre o navy. */}
@@ -277,7 +269,10 @@ export default function SobrePage() {
         </div>
       </section>
 
-      {/* CTA final */}
+      {/* CTA final. Já testamos o mesh (paleta aurora) aqui: o card tem só 335px de
+          altura, então as manchas ficam enormes pra caixa e a violeta cai bem no miolo,
+          onde mora o texto centralizado. Dava 1,99:1 no lead, e só passava com um véu
+          branco que apagava quase todo o efeito. Fundo chapado resolve melhor. */}
       <section className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-24">
         <div className="rounded-2xl bg-mp-pale px-6 py-12 text-center desktop:px-16">
           <h2 className="mx-auto max-w-xl text-balance text-display-2xl text-ink">
