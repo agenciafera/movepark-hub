@@ -838,12 +838,18 @@ Por que a autocorreção não salva sempre: os resultados de tool **não sobrevi
 seguinte. Ele precisa reaprender a cada turno, gastando rodada do teto de 6.
 
 **Correções candidatas**, da mais barata para a mais estrutural:
-1. Declarar `enum` em `parking_type` no schema da tool (`covered`, `uncovered`, `valet`, `garage`,
-   `premium`, `motorcycle`). O modelo passa a ser restringido a valores válidos.
-2. Aceitar nome/código além do slug em `get_destination` e `simulate_price` (resolver por
-   `slug ilike` / `short_name` / `code`), em vez de igualdade crua.
-3. Fazer o erro da tool ser instrutivo: devolver "use um destes: ..." em vez de "não encontrado",
-   para o modelo se corrigir na rodada seguinte.
+1. **FEITO (commit 57d61d6).** `enum` em `parking_type` (`simulate_price`) e em `category.items`
+   (`search_parking`) com os 6 codes, e a descrição mapeando `coberta=covered` etc. Reverificado via
+   chat: "quanto fica 3 diárias na aerovalet de congonhas numa vaga coberta?" agora responde
+   **R$ 95,70**, batendo com `simulate_price(...,covered,3)`. Antes: "não consegui simular o preço".
+   Regressão em `assistant-tools.test.ts`. Edges `chat` e `mcp` redeployadas.
+2. **EM ABERTO.** Aceitar nome/código além do slug em `get_destination` e `location` de
+   `simulate_price` (resolver por `slug ilike` / `short_name` / `code`), em vez de igualdade crua. Na
+   reverificação o modelo contornou chamando `list_locations` para achar o slug antes do
+   `simulate_price`, então o enum sozinho já destravou o caso comum, mas o slug longo do destino
+   continua frágil em contexto poluído.
+3. **EM ABERTO.** Fazer o erro da tool ser instrutivo: devolver "use um destes: ..." em vez de "não
+   encontrado", para o modelo se corrigir na rodada seguinte.
 
 ### Achado 2 · `get_parking_types` nunca é chamada, e a resposta de cabeça está incompleta
 
