@@ -50,6 +50,7 @@ export function PartnersKanban({ applications, onSelect, onMove, movingId }: Pro
         return (
           <div
             key={col.status}
+            data-testid={`kanban-col-${col.status}`}
             onDragOver={(e) => {
               if (!isValidTarget) return;
               e.preventDefault();
@@ -88,6 +89,7 @@ export function PartnersKanban({ applications, onSelect, onMove, movingId }: Pro
                   return (
                     <div
                       key={a.company_id}
+                      data-testid={`kanban-card-${a.company_id}`}
                       draggable={draggable && !isMoving}
                       onDragStart={() => setDragging(a)}
                       onDragEnd={() => {

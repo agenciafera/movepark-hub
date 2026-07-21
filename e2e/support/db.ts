@@ -12,8 +12,11 @@
  * Usuários do `auth.users` não são apagados por esta suíte.
  */
 import { admin } from "./supabaseAdmin";
+import { env } from "./env";
 import {
+  FIXTURE_COMPANY_NAME,
   FIXTURE_EMAIL,
+  FIXTURE_SLUG,
   FIXTURE_SLUG_PATTERN,
   MAX_FIXTURE_COMPANIES,
 } from "./fixtures";
@@ -81,6 +84,64 @@ export async function getAppSetting(key: string) {
     .maybeSingle();
   if (error) throw error;
   return data?.value ?? null;
+}
+
+/**
+ * Resolve o id do usuário pelo e-mail. A admin API não tem busca por e-mail,
+ * então pagina o listUsers. Os usuários de teste já existem no banco, esta
+ * função só descobre o id deles.
+ */
+export async function findUserIdByEmail(email: string): Promise<string> {
+  const perPage = 200;
+  for (let page = 1; page <= 20; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+    if (error) throw error;
+    const hit = data.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+    if (hit) return hit.id;
+    if (data.users.length < perPage) break;
+  }
+  throw new Error(`[e2e] Usuário ${email} não encontrado no projeto ${env.supabaseUrl}.`);
+}
+
+/**
+ * Garante que existe a company da fixture e que o operador de teste está
+ * ligado a ela como dono.
+ *
+ * Por que isso existe: a limpeza da fixture apaga a company, e o vínculo em
+ * `profile_company` cai por cascata. Sem recriar o vínculo, o operador entra
+ * no app mas fica sem empresa, e as telas de `/operator` não têm o que
+ * mostrar. No fluxo real esse vínculo nasce do convite por e-mail, que não dá
+ * para automatizar, então aqui ele é semeado direto.
+ *
+ * Idempotente. Devolve o id da company.
+ */
+export async function seedFixtureCompany(): Promise<string> {
+  assertFixtureScoped();
+
+  const existing = await getCompany();
+  let companyId = existing?.id;
+
+  if (!companyId) {
+    const { data, error } = await admin
+      .from("company")
+      .insert({
+        name: FIXTURE_COMPANY_NAME,
+        slug: FIXTURE_SLUG,
+        onboarding_status: "pending_review",
+      })
+      .select("id")
+      .single();
+    if (error) throw error;
+    companyId = data.id;
+  }
+
+  const profileId = await findUserIdByEmail(env.operatorEmail);
+  const { error: linkError } = await admin
+    .from("profile_company")
+    .upsert({ profile_id: profileId, company_id: companyId, role: "owner" });
+  if (linkError) throw linkError;
+
+  return companyId;
 }
 
 /**

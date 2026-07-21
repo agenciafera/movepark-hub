@@ -14,6 +14,9 @@ export const FIXTURE_PHONE = "+55 11 98772 7182";
 /** Nome da empresa fictícia. */
 export const FIXTURE_COMPANY_NAME = "Mercy";
 
+/** Slug da company semeada pelos testes do operator. */
+export const FIXTURE_SLUG = "mercy-e2e";
+
 /**
  * Padrão de slug usado nos deletes. Deliberadamente específico: qualquer
  * alargamento aqui (ex.: trocar por '%') é barrado por `assertFixtureScoped`.
