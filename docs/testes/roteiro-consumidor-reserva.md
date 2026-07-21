@@ -16,10 +16,10 @@ reconfere no código antes de mexer em qualquer linha de status.
 | Caso | O que prova | Status |
 |---|---|---|
 | C-01 | Vitrine da home agrupa por estacionamento | PRONTO |
-| C-02 | Card da busca separa benefício de tipo de vaga | **FALHA** |
-| C-03 | Contador da busca conta estacionamento, não vaga | **FALHA** |
+| C-02 | Cada card é um tipo de vaga, sem benefício contraditório | **FALHA** |
+| C-03 | Contador da busca bate com o número de cards | **FALHA** |
 | C-04 | Detalhe informa corretamente coberto ou descoberto | **FALHA** |
-| C-05 | Detalhe permite escolher o tipo de vaga | **NÃO EXISTE** |
+| C-05 | Detalhe induz upgrade e nunca oferece downgrade | **NÃO EXISTE** |
 | C-06 | Escolher datas cria a reserva e segura a vaga | PRONTO |
 | C-07 | Checkout passo 1: identidade e contato | PRONTO |
 | C-08 | Checkout passo 2: veículo | PRONTO |
@@ -114,46 +114,67 @@ que ficar pendente expira sozinha pelo job de expiração, sem intervenção.
 - **Depois:** nenhum estacionamento aparece em dois cards. Cada card leva a
   `/p/:operator/:location/:type`.
 - **Efeitos colaterais:** nenhum, é leitura.
-- **Armadilhas:** o dedupe da home guarda **só a oferta mais barata** por location
-  (`api.ts:266-272`) e descarta as outras. O card fica preso a um tipo de vaga
-  (`PopularParkingLots.tsx:55`), então uma unidade que só tem vaga premium some da vitrine se a
-  descoberta dela ficar inativa. Passar neste caso não prova que os outros tipos existem, só que
-  não há card repetido.
+- **Armadilhas:**
+  - o dedupe da home guarda **só a oferta mais barata** por location (`api.ts:266-272`) e descarta
+    as outras. O card fica preso a um tipo de vaga (`PopularParkingLots.tsx:55`), então uma unidade
+    que só tem vaga premium some da vitrine se a descoberta dela ficar inativa. Passar neste caso
+    não prova que os outros tipos existem, só que não há card repetido.
+  - **Pergunta em aberto desde 21/07/2026.** A reunião decidiu card por tipo de vaga **na busca** e
+    não falou da home. Enquanto isso não for decidido, a home continua agrupando e este caso segue
+    valendo como está. Se a decisão da busca for estendida à home, este caso **se inverte** e passa
+    a exigir o contrário. Não presuma a extensão: o objetivo da home (vitrine curta de destaques) é
+    diferente do da busca (lista exaustiva), e duplicar ali pode encher a vitrine com a mesma
+    unidade.
 
-## C-02 · Card da busca separa benefício de tipo de vaga  [**FALHA** · verificado 21/07/2026 · `GroupedResultCard.tsx:222` e `:236-247`]
+> **C-02 a C-05 foram reescritos em 21/07/2026, depois da reunião das 15:03.** A versão anterior
+> tratava o card duplicado como defeito e pedia um seletor de tipo de vaga no detalhe. **A decisão
+> foi o contrário:** um card por tipo de vaga é o formato desejado, e no detalhe não existe
+> seletor, existe indução a upgrade. Ver a atividade
+> [E2.1.3](https://app.clickup.com/t/86ajmwawc) e as
+> [anotações da reunião](https://docs.google.com/document/d/1baCLeJ8tS56krvKhnD3SiCo8P3N04ZcmLo51qdZaHP0/edit).
+>
+> O que **não** mudou: a amenidade da unidade não pode contradizer o tipo de vaga (C-04). Com um
+> card por tipo isso fica mais visível, não menos.
 
-Este é o caso que originou o roteiro. O agrupamento **funciona**: a suspeita inicial de card
-duplicado não se confirmou (`groupResultsByLocation`, `useSearchResults.ts:120`). O defeito é outro.
+## C-02 · Cada card é um tipo de vaga, e nenhum benefício contradiz o tipo  [**FALHA** · reescrito 21/07/2026 · `useSearchResults.ts:120` e `GroupedResultCard.tsx:236-247`]
 
-- **Antes:** `/search?destination=<destino do Abbapark>`, com a fixture Abbapark visível.
-- **Passos:** localizar o card do Abbapark e ler a linha cinza abaixo do nome e os pills.
-- **Depois esperado:** os tipos de vaga aparecem como **elemento próprio e clicável** (badge ou
-  seletor), separados visualmente dos benefícios, e nenhum conceito aparece duas vezes.
-- **Depois observado (21/07/2026):**
-  - os tipos vêm como texto solto concatenado na linha de endereço:
-    `Aeroporto Afonso Pena · Vaga Descoberta · Vaga Coberta · Vaga Premium`;
-  - a linha é `line-clamp-1` e disputa espaço com nome da unidade e distância, então trunca;
-  - o pill de benefício **`Coberto`** aparece no mesmo card, ao lado de tipos que incluem
-    `Vaga Descoberta`.
+- **Antes:** `/search` num destino onde o Abbapark apareça (3 tipos ativos, com a amenidade `covered`).
+- **Passos:** contar os cards do Abbapark e ler os benefícios de cada um.
+- **Depois esperado:**
+  - o Abbapark aparece em **3 cards**, um por tipo (`covered`, `uncovered`, `premium`), cada um com
+    o próprio preço e a própria foto;
+  - nenhum card exibe benefício que contradiga o próprio tipo. O card `Vaga Descoberta` **não** pode
+    exibir o benefício `Coberto`.
+- **Depois observado (21/07/2026):** o Abbapark aparece em **1 card só**. O agrupamento no cliente
+  (`groupResultsByLocation`, `useSearchResults.ts:120`) junta os três tipos, lista os nomes como
+  texto solto na linha de endereço e ainda exibe o pill `Coberto` ao lado deles.
 - **Efeitos colaterais:** nenhum, é leitura.
-- **Armadilhas:** `covered` existe como código de **amenidade** (`location_amenity`) e como código
-  de **tipo de vaga** (`parking_type`). São tabelas diferentes renderizadas lado a lado, e é isso
-  que dá a impressão de duplicação. Quem for corrigir precisa tratar os dois, não só um. O caso de
-  controle é o Maxi Park: mesmos tipos, sem a amenidade, e lá o pill não aparece.
+- **Armadilhas:**
+  - **A implementação é remover, não construir.** A Edge `search` já devolve uma linha por
+    `location_parking_type` (`search/index.ts:180`). Quem agrupa é o cliente. Quem for medir esforço
+    olhando só a tela vai superestimar.
+  - `covered` existe como código de **amenidade** (`location_amenity`, da unidade) e como código de
+    **tipo de vaga** (`parking_type`). São tabelas diferentes renderizadas lado a lado. Corrigir só o
+    layout do card e não a amenidade deixa a contradição mais evidente, porque ela passa a morar
+    dentro de um card cujo título é o tipo.
+  - Caso de controle: `maxi-park/maxi-park` tem os mesmos tipos e **não** tem a amenidade `covered`.
+    Se o defeito aparecer nos dois, a causa não é a amenidade e a investigação recomeça.
 
-## C-03 · Contador da busca conta estacionamento, não vaga  [**FALHA** · verificado 21/07/2026 · `supabase/functions/search/index.ts:346-349`]
+## C-03 · Contador da busca bate com o número de cards  [**FALHA** · reescrito 21/07/2026 · `supabase/functions/search/index.ts:346-349`]
 
 - **Antes:** `/search` com resultados.
 - **Passos:** comparar o número do topo com a quantidade de cards na tela.
-- **Depois esperado:** o contador reflete o que o cliente vê, ou deixa explícito que conta vagas.
-- **Depois observado:** o topo diz `36 vagas em destino` e a lista mostra 18 cards. A Edge pagina
-  por `location_parking_type`, não por location, então `total`, `limit` e `offset` contam vagas.
+- **Depois esperado:** o número do topo é igual ao número de cards.
+- **Depois observado:** o topo diz `36 vagas em destino` e a lista mostra 18 cards.
 - **Efeitos colaterais:** nenhum, é leitura.
-- **Armadilhas:** o efeito grave não é o número, é a **paginação**. Como o agrupamento acontece no
-  cliente (`useSearchResults.ts:120`) e a página vem paginada por vaga, dois tipos da mesma unidade
-  podem cair em páginas diferentes. Aí a mesma unidade **aparece em duas páginas**, cada uma
-  mostrando parte dos tipos. Para reproduzir, use um destino com mais tipos que o `limit` e vá até
-  a última página. Este é o único cenário em que a suspeita original de card duplicado se realiza.
+- **Armadilhas:**
+  - **Este caso passa sozinho quando o C-02 entrar.** A Edge já pagina por
+    `location_parking_type`, então card por tipo faz contador e lista baterem sem nenhum trabalho
+    extra. Se continuar falhando depois do C-02, o problema é outro e merece investigação própria.
+  - O efeito grave nunca foi o número, era a **paginação**: com agrupamento no cliente sobre uma
+    página paginada por vaga, dois tipos da mesma unidade podiam cair em páginas diferentes e a
+    unidade aparecia em duas páginas, cada uma com parte dos tipos. Isso também desaparece com o
+    C-02.
 
 ## C-04 · Detalhe informa corretamente coberto ou descoberto  [**FALHA** · verificado 21/07/2026 · `src/routes/listing.tsx:291-292` vs bloco de amenidades]
 
@@ -170,24 +191,38 @@ duplicado não se confirmou (`groupResultsByLocation`, `useSearchResults.ts:120`
   esta página quebrada. Repita em `/maxi-park/maxi-park/uncovered` para confirmar que sem a
   amenidade a contradição some.
 
-## C-05 · Detalhe permite escolher o tipo de vaga  [**NÃO EXISTE** · verificado 21/07/2026 · `git log --since="60 days ago" -- src/routes/listing.tsx src/features/listing/` sem commit relacionado]
+## C-05 · Detalhe induz upgrade e nunca oferece downgrade  [**NÃO EXISTE** · reescrito 21/07/2026 · decisão da reunião de 21/07]
 
-- **Antes:** `/p/abbapark/aeroporto-afonso-pena/uncovered`, unidade com três tipos ativos.
-- **Passos:** procurar, na página, um controle que troque de descoberta para coberta.
-- **Depois esperado:** um seletor de tipo de vaga que atualize preço, capacidade e descrição sem
-  perder as datas já escolhidas.
-- **Depois observado:** não existe. O tipo é o próprio recurso da rota
-  (`/p/:operator/:location/:parkingTypeCode`, `src/routes.tsx:182`) e a página inteira é de um único
-  `location_parking_type`. Os seletores do card de reserva são datas, tarifa, add-ons, passageiros e
-  cupom. Nenhum troca o tipo.
-- **Efeitos colaterais:** nenhum.
-- **Armadilhas:** o card da busca **sempre** linka para o tipo mais barato
-  (`cheapest_type.code`, `GroupedResultCard.tsx:100`). Somado à ausência do seletor, isso significa
-  que **não há caminho pela UI para comprar vaga coberta** numa unidade onde a descoberta é mais
-  barata. Só editando a URL na mão. É o achado de maior impacto comercial deste roteiro: o tipo mais
-  caro fica inalcançável exatamente nas unidades onde ele existe.
-  Não confunda com falha de dado: `item.parking_types` já chega completo no card, a lista está lá e
-  não é usada.
+Este caso **trocou de natureza**. Antes ele cobrava um seletor de tipo de vaga no detalhe. A reunião
+descartou o seletor: a escolha do tipo passa a acontecer na busca, no card, e o detalhe só empurra
+para cima.
+
+- **Antes:** duas abas, uma em cada ponta da mesma unidade com mais de um tipo:
+  - `/p/abbapark/aeroporto-afonso-pena/uncovered` (o mais barato)
+  - `/p/abbapark/aeroporto-afonso-pena/covered` (o mais caro)
+- **Passos:** procurar, em cada página, oferta de troca de tipo de vaga.
+- **Depois esperado:**
+  - na página do **mais barato**, existe indução a upgrade, com a diferença de preço explícita
+    (o exemplo discutido foi "por mais R$ 10, cubra seu carro");
+  - na página da **coberta**, **não** existe nenhuma oferta de descoberta. Quem já está no tipo
+    melhor não é puxado para baixo.
+- **Depois observado (21/07/2026):** nenhuma das duas coisas existe. O tipo é o próprio recurso da
+  rota (`/p/:operator/:location/:parkingTypeCode`, `routes.tsx:182`), e os seletores do card de
+  reserva são datas, tarifa, add-ons, passageiros e cupom.
+- **Efeitos colaterais:** nenhum ao verificar. Se o upgrade for exercido, cria ou altera reserva.
+- **Armadilhas:**
+  - **Assimetria é o comportamento correto, não bug.** Um testador que encontrar oferta só de um
+    lado vai querer reportar como inconsistência. Está no roteiro justamente para não reportar.
+    Pedro registrou na reunião que a assimetria é um dark pattern consciente.
+  - **O upgrade de VAGA não é o upgrade de TARIFA.** O `apply_fare_upgrade` troca Básica / Flex /
+    Superflex e não encosta no tipo de vaga. Trocar descoberta por coberta muda o
+    `location_parking_type_id`, o que mexe em capacidade nos dois tipos, em preço vindo de outro
+    `pricing_rule` e em disponibilidade na data. Ao testar, confira os dois lados da capacidade, não
+    só o preço.
+  - Depende da correção da amenidade (C-04). Induzir upgrade para "coberta" numa página que já
+    exibe o benefício "Coberto" é confuso ao ponto de invalidar o teste.
+  - O upgrade **pós-venda** em "minha conta" foi levantado na reunião e **não** foi decidido. Não
+    o teste como se existisse.
 
 ## C-06 · Escolher datas cria a reserva e segura a vaga  [PRONTO · sem cobertura E2E · `src/features/listing/ReservationCard.tsx:283-296`]
 

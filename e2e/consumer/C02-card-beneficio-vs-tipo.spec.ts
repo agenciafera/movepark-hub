@@ -26,35 +26,39 @@ import { ABBAPARK, listActiveParkingTypes, searchUrl } from "../support/consumer
 
 test.fail();
 
-test("C-02: card do Abbapark não mistura tipo de vaga com benefício", async ({ page }) => {
+test("C-02: cada tipo de vaga do Abbapark é um card, sem benefício contraditório", async ({
+  page,
+}) => {
   const types = await listActiveParkingTypes(ABBAPARK);
   const typeNames = types.map((t) => t.name);
-  expect(typeNames, "a fixture precisa ter mais de um tipo ativo").not.toHaveLength(0);
+  expect(typeNames.length, "a fixture precisa ter mais de um tipo ativo").toBeGreaterThan(1);
   expect(typeNames).toContain("Vaga Descoberta");
 
   await page.goto(searchUrl(ABBAPARK));
 
-  const card = page
+  const abbaparkCards = page
     .getByTestId("result-card")
-    .filter({ has: page.getByRole("heading", { name: ABBAPARK.operatorName, exact: true }) })
-    .first();
-  await expect(card).toBeVisible({ timeout: 30_000 });
+    .filter({ has: page.getByRole("heading", { name: ABBAPARK.operatorName, exact: true }) });
+  await expect(abbaparkCards.first()).toBeVisible({ timeout: 30_000 });
 
-  // 1. Os tipos de vaga não podem estar concatenados na linha de endereço.
-  //    Quando existirem como elemento próprio, essa linha volta a ser só
-  //    unidade e distância.
-  const subline = (await card.getByTestId("result-card-subline").innerText()).trim();
-  for (const name of typeNames) {
-    expect(subline, `a linha de endereço não deveria conter o tipo "${name}": ${subline}`)
-      .not.toContain(name);
-  }
+  // 1. Um card por tipo de vaga (decisão da reunião de 21/07). Hoje o
+  //    agrupamento no cliente devolve 1 card só.
+  await expect(
+    abbaparkCards,
+    `esperava ${typeNames.length} cards do Abbapark, um por tipo (${typeNames.join(", ")})`,
+  ).toHaveCount(typeNames.length);
 
-  // 2. "Coberto" é benefício da unidade. Num card cujos tipos incluem "Vaga
-  //    Descoberta", exibi-lo como benefício contradiz o que está sendo vendido.
-  const amenities = card.getByTestId("result-card-amenities");
+  // 2. Nenhum card pode exibir benefício que contradiga o próprio tipo. O caso
+  //    concreto: "Coberto" é amenidade da UNIDADE e não pode aparecer no card
+  //    cujo tipo é "Vaga Descoberta".
+  const descoberta = abbaparkCards.filter({ hasText: "Vaga Descoberta" }).first();
+  await expect(descoberta, "não achei o card da vaga descoberta").toBeVisible();
+
+  const amenities = descoberta.getByTestId("result-card-amenities");
   if (await amenities.count()) {
     const pills = (await amenities.innerText()).trim();
-    expect(pills, `benefício "Coberto" ao lado de "Vaga Descoberta": ${pills}`)
-      .not.toContain("Coberto");
+    expect(pills, `benefício "Coberto" no card da vaga descoberta: ${pills}`).not.toContain(
+      "Coberto",
+    );
   }
 });

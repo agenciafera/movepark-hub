@@ -21,7 +21,7 @@ import { ABBAPARK, searchUrl } from "../support/consumer";
 
 test.fail();
 
-test("C-03: o contador do topo conta estacionamento, não vaga", async ({ page }) => {
+test("C-03: o contador do topo bate com o número de cards", async ({ page }) => {
   await page.goto(searchUrl(ABBAPARK));
 
   const cards = page.getByTestId("result-card");
