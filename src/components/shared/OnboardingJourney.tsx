@@ -23,9 +23,9 @@ const STAGES: StageDef[] = [
 ];
 
 const NEXT_HINT: Record<JourneyStage, string> = {
-  preview: "Monte sua unidade, suba as fotos e veja como ela fica.",
+  preview: "Monte seu estacionamento, suba as fotos e veja como ele fica.",
   recebimento: "Cadastre seus dados de recebimento para começar a vender.",
-  vender: "Tudo pronto! Sua unidade está no ar, recebendo reservas.",
+  vender: "Tudo pronto! Seu estacionamento está no ar, recebendo reservas.",
 };
 
 export function OnboardingJourney({

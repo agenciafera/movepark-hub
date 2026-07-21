@@ -30,10 +30,10 @@ export function PhotosCallout({
   const eyebrow = hasPhotos ? "Quanto mais fotos, mais reservas" : "Obrigatório para vender";
   const title = hasPhotos
     ? "Que tal mais algumas fotos?"
-    : "Sua unidade precisa de pelo menos 1 foto";
+    : "Seu estacionamento precisa de pelo menos 1 foto";
   const body = hasPhotos
     ? "Você já subiu uma foto, ótimo. Estacionamento com mais fotos passa confiança e recebe mais reserva. Mostre a fachada, as vagas e onde o cliente circula."
-    : "Sem foto, sua unidade não entra na busca da Movepark e não recebe reserva. O cliente escolhe onde deixar o carro pelo que vê, então capriche: foto boa vale mais que qualquer desconto.";
+    : "Sem foto, seu estacionamento não entra na busca da Movepark e não recebe reserva. O cliente escolhe onde deixar o carro pelo que vê, então capriche: foto boa vale mais que qualquer desconto.";
   const cta = ctaLabel ?? (hasPhotos ? "Adicionar mais fotos" : "Adicionar fotos agora");
 
   return (

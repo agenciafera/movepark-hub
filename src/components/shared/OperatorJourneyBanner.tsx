@@ -29,7 +29,7 @@ export function OperatorJourneyBanner() {
     }
   } else if (journey.current === "vender" && !journey.hasPhotos) {
     // recebimento aprovado mas falta foto pra unidade entrar na busca (o gate exige >=1 foto).
-    hint = "Falta subir pelo menos 1 foto. Sem foto, sua unidade não entra na busca.";
+    hint = "Falta subir pelo menos 1 foto. Sem foto, seu estacionamento não entra na busca.";
     cta = { to: "/operator/locations", label: "Adicionar fotos" };
   }
   // current === "vender" com foto só aparece transitoriamente; sem CTA (a unidade lista sozinha).

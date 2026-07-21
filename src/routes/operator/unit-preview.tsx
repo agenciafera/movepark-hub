@@ -50,7 +50,7 @@ export default function UnitPreviewPage() {
   return (
     <div className="min-h-screen bg-surface-soft">
       <Helmet>
-        <title>Pré-visualização da unidade | Movepark</title>
+        <title>Pré-visualização do estacionamento | Movepark</title>
       </Helmet>
       <div className="mx-auto flex max-w-[860px] flex-col gap-6 px-4 py-8 tablet:py-12 desktop:px-8">
         <div className="flex items-center justify-between">
@@ -66,7 +66,7 @@ export default function UnitPreviewPage() {
           <div className="py-16 text-center text-muted">Carregando pré-visualização…</div>
         ) : !unit ? (
           <div className="rounded-lg border border-hairline bg-canvas p-8 text-center">
-            <p className="text-body-md text-ink">Unidade não encontrada.</p>
+            <p className="text-body-md text-ink">Estacionamento não encontrado.</p>
             <p className="mt-1 text-body-sm text-muted">
               Ela pode não existir ou não pertencer à sua empresa.
             </p>
@@ -94,16 +94,16 @@ export default function UnitPreviewPage() {
                 <div>
                   {unit.isListed ? (
                     <>
-                      <h1 className="text-title-lg text-ink">Sua unidade está no ar! 🚗</h1>
+                      <h1 className="text-title-lg text-ink">Seu estacionamento está no ar! 🚗</h1>
                       <p className="mt-1 text-body-sm text-muted">
                         Já aparece na busca da Movepark. Compartilhe o link e comece a receber
-                        reservas. Depois é só deixar a unidade redonda no painel (fotos, comodidades,
-                        horários).
+                        reservas. Depois é só deixar o estacionamento redondo no painel (fotos,
+                        comodidades, horários).
                       </p>
                     </>
                   ) : (
                     <>
-                      <h1 className="text-title-lg text-ink">Boa! Sua unidade tomou forma 🎉</h1>
+                      <h1 className="text-title-lg text-ink">Boa! Seu estacionamento tomou forma 🎉</h1>
                       <p className="mt-1 text-body-sm text-muted">
                         Veja aqui embaixo como ela vai aparecer pro cliente. Falta a etapa 2 pra ela
                         entrar na busca e você começar a vender: seus dados de recebimento.
@@ -116,7 +116,7 @@ export default function UnitPreviewPage() {
 
             {!justPublished && (
               <div className="flex items-center gap-2 rounded-md bg-mp-pale px-4 py-2.5 text-body-sm text-mp-indigo">
-                <Eye className="h-4 w-4" /> Pré-visualização: é assim que o cliente vê sua unidade.
+                <Eye className="h-4 w-4" /> Pré-visualização: é assim que o cliente vê seu estacionamento.
               </div>
             )}
 
@@ -161,7 +161,7 @@ export default function UnitPreviewPage() {
                         </Link>
                       </Button>
                       <p className="mt-2 text-caption-sm text-muted-steel">
-                        Com seus dados aprovados e pelo menos 1 foto, a unidade entra na busca sozinha.
+                        Com seus dados aprovados e pelo menos 1 foto, o estacionamento entra na busca sozinho.
                       </p>
                     </div>
 
@@ -175,7 +175,7 @@ export default function UnitPreviewPage() {
                 ) : (
                   <>
                     <div className="rounded-lg border border-hairline bg-canvas p-5">
-                      <h2 className="text-title-md text-ink">Link público da sua unidade</h2>
+                      <h2 className="text-title-md text-ink">Link público do seu estacionamento</h2>
                       {absoluteUrl ? (
                         <>
                           <p className="mt-1 text-body-sm text-muted">

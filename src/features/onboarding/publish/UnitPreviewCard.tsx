@@ -37,7 +37,7 @@ export function UnitPreviewCard({
       <div className="relative h-28 bg-mp-navy">
         <img
           src={coverPhoto || "/images/estacionamento-preview-thumb.webp"}
-          alt={coverPhoto ? `Foto de ${name || "sua unidade"}` : ""}
+          alt={coverPhoto ? `Foto de ${name || "seu estacionamento"}` : ""}
           aria-hidden={coverPhoto ? undefined : true}
           className="h-full w-full object-cover"
           loading="lazy"
@@ -52,7 +52,7 @@ export function UnitPreviewCard({
 
       <div className="flex flex-col gap-3 p-4">
         <div>
-          <h3 className="text-title-md text-ink">{name || "Sua unidade"}</h3>
+          <h3 className="text-title-md text-ink">{name || "Seu estacionamento"}</h3>
           <p className="mt-0.5 flex items-start gap-1 text-body-sm text-muted">
             <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>{address || "Endereço aparece aqui"}</span>

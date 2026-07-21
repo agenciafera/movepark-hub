@@ -44,7 +44,7 @@ export function validateAddress(input: {
   lat: number | null;
   lng: number | null;
 }): string | null {
-  if (!input.name.trim()) return "Dê um nome para a unidade.";
+  if (!input.name.trim()) return "Dê um nome para o estacionamento.";
   if (!input.address.trim()) return "Informe o endereço.";
   if (input.lat == null || input.lng == null) return "Confirme a localização no mapa.";
   return null;

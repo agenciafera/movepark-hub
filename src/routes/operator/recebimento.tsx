@@ -24,7 +24,7 @@ import { ConfettiBurst } from "@/components/shared/ConfettiBurst";
 type Step = "dados" | "contrato" | "done";
 
 /**
- * Recebimento self-service do operador (E1.3) — a "etapa 2" que a tela pós-publicação (unit-preview)
+ * Recebimento self-service do operador (E1.3): a "etapa 2" que a tela pós-publicação (unit-preview)
  * empurra. Coleta dados bancários + empresa (CNPJ) via PayoutKycForm e fecha com a assinatura do
  * contrato (simulada por ora). Quando a Movepark aprova o recebedor, a unidade entra na busca
  * (gate is_listed). Standalone, no estilo do preview travado.
@@ -143,7 +143,7 @@ export default function OperatorRecebimento() {
               <h1 className="text-display-sm text-ink">Seus dados de recebimento</h1>
               <p className="text-body-sm text-muted">
                 É com esses dados que a Movepark repassa o dinheiro das suas reservas. Assim que a
-                gente aprovar, sua unidade entra na busca e começa a vender.
+                gente aprovar, seu estacionamento entra na busca e começa a vender.
               </p>
             </div>
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-caption-sm text-muted-steel">
@@ -265,8 +265,8 @@ export default function OperatorRecebimento() {
                     Agora é a nossa vez: a aprovação leva uns 15 a 20 dias corridos.
                   </p>
                   <p className="mt-1 text-body-sm text-muted">
-                    Pode relaxar que a gente cuida daqui. Assim que aprovar, sua unidade entra na
-                    busca e começa a receber reserva. A gente te chama no e-mail e no WhatsApp.
+                    Pode relaxar que a gente cuida daqui. Assim que aprovar, seu estacionamento entra
+                    na busca e começa a receber reserva. A gente te chama no e-mail e no WhatsApp.
                   </p>
                 </div>
               </div>

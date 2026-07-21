@@ -208,12 +208,12 @@ export function PublishWizard({ data, companyId }: Props) {
                   </p>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="unit-name">Nome da unidade</Label>
+                  <Label htmlFor="unit-name">Nome do estacionamento</Label>
                   <Input
                     id="unit-name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Ex: Unidade Aeroporto"
+                    placeholder="Ex: Estacionamento Aeroporto"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
@@ -435,11 +435,11 @@ export function PublishWizard({ data, companyId }: Props) {
                   <h1 className="text-display-md text-ink">As fotos do seu estacionamento</h1>
                   <p className="text-body-sm text-muted">
                     O cliente escolhe onde deixar o carro pelo que vê. Foto boa recebe muito mais
-                    reserva. Suba pelo menos 1: sem foto, sua unidade não entra na busca.
+                    reserva. Suba pelo menos 1: sem foto, seu estacionamento não entra na busca.
                   </p>
                 </div>
                 <ImageGalleryField
-                  label="Fotos da unidade"
+                  label="Fotos do estacionamento"
                   values={photos}
                   onChange={setPhotos}
                   onUpload={(file) => uploadCompanyAsset(companyId, "photo", file)}
