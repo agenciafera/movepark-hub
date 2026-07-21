@@ -326,18 +326,21 @@ export type Database = {
         Row: {
           assignable_to_api_key: boolean
           description: string
+          is_platform_scope: boolean
           module: string
           scope: string
         }
         Insert: {
           assignable_to_api_key?: boolean
           description: string
+          is_platform_scope?: boolean
           module: string
           scope: string
         }
         Update: {
           assignable_to_api_key?: boolean
           description?: string
+          is_platform_scope?: boolean
           module?: string
           scope?: string
         }

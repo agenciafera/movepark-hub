@@ -1,5 +1,5 @@
 begin;
-select plan(11);
+select plan(12);
 
 -- Estrutura (ADR-005) --------------------------------------------------------
 select has_table('public', 'company_role_scope', 'tabela company_role_scope existe');
@@ -21,11 +21,24 @@ select is(
   0, 'todo company_role_scope.scope existe em api_scope'
 );
 
--- owner = catálogo inteiro ---------------------------------------------------
+-- owner = catálogo de EMPRESA ------------------------------------------------
+-- A invariante do ADR-005 ("o Dono tem tudo") vale sobre os escopos de empresa, não sobre o
+-- catálogo inteiro. Escopo de plataforma (is_platform_scope) é da Movepark, não de parceiro: o
+-- checkout:link é do bot que gera link de checkout, e nenhum Dono de estacionamento o exerce.
+-- assignable_to_api_key não serve de discriminador aqui, porque o checkout:link É atribuído a uma
+-- chave de API (a do bot) e tem a flag true com razão. Ver 86ajmx4yc.
 select is(
   (select count(*)::int from public.company_role_scope where role = 'owner'),
-  (select count(*)::int from public.api_scope),
-  'owner recebe todos os escopos do catálogo'
+  (select count(*)::int from public.api_scope where not is_platform_scope),
+  'owner recebe todos os escopos de EMPRESA do catálogo'
+);
+
+-- Escopo de plataforma não vaza para papel de empresa (guard por trigger) -----
+select is(
+  (select count(*)::int from public.company_role_scope crs
+   join public.api_scope s on s.scope = crs.scope
+   where s.is_platform_scope),
+  0, 'nenhum escopo de plataforma foi concedido a papel de empresa'
 );
 
 -- Presets restritivos: papéis não-Dono NÃO têm os escopos sensíveis ----------

@@ -133,8 +133,16 @@ Regras **fixas** do projeto, não sugestões. Se algo conflitar com elas, **siga
   `api_scope.assignable_to_api_key = false` e **não** podem ir pra uma chave de API; `payouts:write`
   (saque/KYC) é **exclusivo do Dono**. Convite de usuário por e-mail exige `team:write` (Edge
   `invite-company-member`). Ao adicionar uma escrita nova: **dê a ela um escopo** e gateie no servidor.
+  **Escopo de plataforma é uma terceira categoria** (`api_scope.is_platform_scope = true`): pertence à
+  Movepark, não a empresa nem a parceiro. É o caso do `checkout:link`, da tool que gera link de
+  checkout e só é concedido à chave do bot interno. Ele **não** entra em `company_role_scope` (um
+  trigger recusa) e **não** conta na invariante "o Dono tem todos", que vale sobre o catálogo de
+  empresa (`is_platform_scope = false`). A flag é **ortogonal** a `assignable_to_api_key`: o
+  `checkout:link` é atribuível a uma chave (a do bot) e mesmo assim é de plataforma, então
+  `assignable_to_api_key` não serve para distinguir as categorias.
   Implementado em `supabase/migrations/20260712000000_company_role_add_values.sql` +
-  `20260713000000_permission_scopes.sql` + `20260714000000_regate_operator_rpcs.sql`; ver
+  `20260713000000_permission_scopes.sql` + `20260714000000_regate_operator_rpcs.sql` +
+  `20260830000000_api_scope_platform_flag.sql`; ver
   [`docs/specs/permissions.md`](docs/specs/permissions.md).
 
 - **ADR-006 · Modelo de identidade (auth.users é a fonte única da credencial).** E-mail e telefone
