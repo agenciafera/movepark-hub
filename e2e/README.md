@@ -66,12 +66,15 @@ Os projects `e2e-manager` e `e2e-operator` declaram o `storageState` corresponde
 
 ### Usuários de teste
 
-Já existem em produção, não precisam ser criados:
+Já existem em produção, não precisam ser criados. São os mesmos do `CLAUDE.md`, usados também nos roteiros manuais:
 
 | Papel | E-mail | Usado em |
 |---|---|---|
-| `hub_admin` | `developer@fera.ag` | `/manager/*` |
-| `company_operator` (Mercy) | `peu+mercy@fera.ag` | `/operator/*` |
+| `hub_admin` (super admin) | `developer@fera.ag` | `/manager/*` |
+| `company_operator` (Mercy) | `peu+mercy@fera.ag` | `/operator/*` e o onboarding do parceiro |
+| `customer` | `peu+teste1@fera.ag` | reservas: busca, checkout, `/account` (sem cobertura E2E ainda) |
+
+O usuário do parceiro é um só ao longo de toda a jornada: entra como lead público e, aprovado, vira o operador da unidade que cadastrou. Por isso os specs de `/operator` precisam de uma company vinculada a ele.
 
 O vínculo do operador com a empresa Mercy vive em `profile_company`. A limpeza apaga a company, e o vínculo cai por cascata. Por isso existe `seedFixtureCompany(status)`: ela recria company e vínculo, e é pré-condição de todo spec de `/operator`. No fluxo real esse vínculo nasce do convite por e-mail, que não dá para automatizar.
 

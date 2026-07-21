@@ -241,6 +241,24 @@ Detalhe operacional e triagem dos achados: `../gestao/E0.6-guardas-nativas.md`.
 
 Mocks: `import.meta.env` é stubado em `src/test/setup.ts`; o client Supabase já degrada via `hasSupabaseEnv`. Para pgTAP local: `supabase start` + `bun run test:db` (o stack é construído do baseline `supabase/migrations/2026010100*_baseline_from_live.sql` + `supabase/seed.sql`). O repo foi rebaselineado do banco vivo — ver `supabase/tests/README.md`.
 
+### Usuários de teste (fixos, já existem no banco)
+
+Use sempre estes. Não crie usuário novo para testar, e não apague nenhum deles.
+
+| Papel | E-mail | Para quê |
+|---|---|---|
+| Parceiro em onboarding | `peu+mercy@fera.ag` | Onboarding do parceiro, do lead até o contrato. Empresa fictícia **Mercy** |
+| Cliente | `peu+teste1@fera.ag` | Reservas: busca, checkout, conta do cliente |
+| Super admin | `developer@fera.ag` | Painel de gestão geral (`/manager`), papel `hub_admin` |
+
+**Ciclo de vida do parceiro:** `peu+mercy@fera.ag` começa como lead público. Quando é aprovado e conclui o cadastro, ele **vira o operador da unidade que cadastrou**. Ou seja, o mesmo usuário atravessa onboarding e depois responde como `company_operator` daquela unidade. Um roteiro que testa `/operator` depende de o onboarding ter chegado até esse ponto, ou de o vínculo em `profile_company` ser semeado.
+
+A suíte E2E automatiza isso em `e2e/support/db.ts` (`seedFixtureCompany`) e documenta a armadilha: a limpeza da fixture apaga a company, e o vínculo cai por cascata. Ver `e2e/README.md`.
+
+### Escrever ou revisar roteiro de teste
+
+Use a skill **`roteiro-de-testes`**. Ela existe porque um roteiro escrito à mão envelhece: na revisão de jul/2026, **8 dos 17 casos do roteiro E1.3 descreviam um baseline que já não existia**, e o time perdeu tempo procurando o que já estava pronto. A skill fixa o método que evita isso, principalmente a regra de **verificar o histórico do git da área antes de declarar qualquer caso como pendente**.
+
 ## Estrutura
 
 ```
