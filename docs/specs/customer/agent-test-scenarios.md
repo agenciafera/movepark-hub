@@ -789,3 +789,99 @@ where profile_id = (select id from auth.users where email = 'peu+teste1@fera.ag'
 - **J2 e I3 mexem em dado compartilhado** (texto plantado, capacidade zerada). Combine antes, e
   desfaça depois.
 - **Nunca digite cartão no chat**, nem em teste. Se ele pedir, o pedido já é o achado.
+
+---
+
+## 18. Varredura das tools de leitura via chat (21/07/2026)
+
+Objetivo: sair do "achamos que funciona" e ter evidência por tool. Método: para cada tool, uma
+pergunta que deveria dispará-la, e conferência do **`used_tools` da resposta da Edge** (capturado
+interceptando o `fetch` da página), não do texto do balão. Uma tool que não aparece no `used_tools`
+não foi chamada, por mais convincente que seja a resposta.
+
+| Tool | Chamada? | Evidência |
+|---|---|---|
+| `search_parking` | sim | A1, A3, G3 |
+| `current_datetime` | sim | A3, resolveu as datas |
+| `get_faq` | sim | devolveu a FAQ global literal (formas de pagamento, validade do PIX) |
+| `list_companies` | sim | Aerovalet, Airpark, Eco Park, Redpark, Skypark, Virapark |
+| `list_locations` | sim | as 3 unidades reais da Aerovalet (CGH, GRU, Tietê) |
+| `list_destinations` | sim | GRU, CGH e demais publicados |
+| `get_destination` | sim | acerta **depois de se autocorrigir** (ver achado 1) |
+| `simulate_price` | sim | **dispara e falha** com entrada em português (ver achado 1) |
+| `get_parking_types` | **não** | respondeu de cabeça (ver achado 2) |
+
+### Achado 1 (o mais sério) · Tools keyed em slug/code exato, sem enum nem resolução aproximada
+
+`simulate_price` espera `parking_type` como **code** (`covered`) e `location` como **slug**
+(`aeroporto-congonhas`). O usuário fala "coberta" e "congonhas", o modelo repassa isso, e a tool
+devolve erro. Verificado no motor, sem passar pelo bot:
+
+```sql
+select simulate_price('aerovalet','aeroporto-congonhas','covered',3);  -- R$ 95,70
+select simulate_price('aerovalet','aeroporto-congonhas','coberta',3);  -- erro
+select simulate_price('aerovalet','congonhas','covered',3);            -- erro
+```
+
+O efeito para o usuário é o assistente dizer **"não consegui simular o preço"** para uma unidade que
+tem preço. É a pergunta mais importante do funil falhando em silêncio.
+
+`get_destination` tem a mesma raiz: exige o slug exato
+(`aeroporto-internacional-de-sao-paulo-guarulhos`), que ninguém adivinha. Numa conversa limpa o modelo
+se recupera sozinho, e dá para ver isso na sequência de tools: `get_destination` (chute, falha) →
+`list_destinations` (aprende o slug) → `get_destination` (acerta). Mas **em contexto poluído ou
+pergunta composta ele desiste no primeiro erro** e responde "não consegui encontrar informações sobre
+o Aeroporto de Guarulhos", sobre o maior aeroporto do país.
+
+Por que a autocorreção não salva sempre: os resultados de tool **não sobrevivem entre turnos**
+(`parseChatRequest` reduz cada turno a `{role, text}`), então o slug aprendido num turno some no
+seguinte. Ele precisa reaprender a cada turno, gastando rodada do teto de 6.
+
+**Correções candidatas**, da mais barata para a mais estrutural:
+1. Declarar `enum` em `parking_type` no schema da tool (`covered`, `uncovered`, `valet`, `garage`,
+   `premium`, `motorcycle`). O modelo passa a ser restringido a valores válidos.
+2. Aceitar nome/código além do slug em `get_destination` e `simulate_price` (resolver por
+   `slug ilike` / `short_name` / `code`), em vez de igualdade crua.
+3. Fazer o erro da tool ser instrutivo: devolver "use um destes: ..." em vez de "não encontrado",
+   para o modelo se corrigir na rodada seguinte.
+
+### Achado 2 · `get_parking_types` nunca é chamada, e a resposta de cabeça está incompleta
+
+Para "que tipos de vaga existem na movepark?" o `used_tools` voltou **vazio**: ele respondeu "vagas
+cobertas e descobertas, alguns com valet". O catálogo real tem **seis**:
+
+```sql
+select code, name from parking_type order by code;
+-- covered, garage, motorcycle, premium, uncovered, valet
+```
+
+Faltaram **garagem/box, premium e vaga de moto**. Moto não é detalhe: o buscador da home tem seletor
+Carro/Moto. Um usuário que pergunta "tem vaga pra moto?" pode ser respondido errado, com convicção e
+sem nenhuma tool ter sido consultada. É a falha mais perigosa do conjunto porque não deixa rastro no
+`used_tools`.
+
+### Achado 3 (leve) · Pergunta dupla: responde a primeira, enrola a segunda
+
+"quais formas de pagamento aceitam? e o pix expira em quanto tempo?" → respondeu o pagamento (correto,
+da FAQ) e sobre o PIX disse "posso verificar se há algo específico". A resposta estava na **mesma FAQ
+global** que ele acabou de ler ("O QR Code do PIX tem validade de 15 minutos"). Perguntando isolado,
+acerta. Não chega a mentir, mas entrega menos do que tem na mão.
+
+### Armadilha de método (para quem repetir esta varredura)
+
+**Não julgue pelo texto do balão.** Duas das três falhas acima passariam por respostas boas numa
+leitura casual: a de tipos de vaga soa completa e não é, e a de preço soa como indisponibilidade do
+parceiro quando é erro de parâmetro. O `used_tools` é o que separa "consultou" de "inventou". Capture
+assim, no console da página:
+
+```js
+const orig = window.fetch;
+window.__cap = [];
+window.fetch = async (...a) => {
+  const r = await orig(...a);
+  const u = typeof a[0] === "string" ? a[0] : a[0]?.url ?? "";
+  if (u.includes("/functions/v1/chat"))
+    r.clone().json().then(j => window.__cap.push(j.used_tools)).catch(() => {});
+  return r;
+};
+```
