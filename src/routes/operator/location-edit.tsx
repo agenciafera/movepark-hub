@@ -27,10 +27,16 @@ export default function OperatorLocationEdit() {
     onSaved: () => navigate("/operator/locations"),
   });
 
+  // Semeia o formulário quando a UNIDADE muda, não quando o objeto muda de
+  // identidade. `location` é referência nova sempre que a query responde com
+  // dado diferente: dependendo dela, uma atualização vinda de fora no meio da
+  // edição chamava `reset()` e sobrescrevia o que a pessoa tinha acabado de
+  // digitar. Quem está editando manda no formulário até salvar ou sair.
   const { reset } = form;
   React.useEffect(() => {
     if (location) reset();
-  }, [location, reset]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location?.id]);
 
   if (isLoading) {
     return (
