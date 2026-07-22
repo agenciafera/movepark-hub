@@ -31,14 +31,19 @@ function LocationFares({ location }: { location: Location }) {
 }
 
 export default function OperatorFares() {
-  const { effectiveCompanyIds } = useAuth();
+  const { effectiveCompanyIds, session } = useAuth();
   const { data: locations, isLoading } = useOperatorLocations(effectiveCompanyIds);
+  const podeEditar = session?.role === "hub_admin";
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Planos de cancelamento"
-        description="Preço e disponibilidade dos planos Flex e Superflex por tipo de vaga. A Básica é sempre grátis. O preço da diária fica em Preços."
+        description={
+          podeEditar
+            ? "Preço e disponibilidade dos planos Flex e Superflex por tipo de vaga. A Básica é sempre grátis. O preço da diária fica em Preços."
+            : "Os planos Flex e Superflex que valem nas suas vagas. A Básica é sempre grátis. Quem define preço e disponibilidade é a equipe Movepark, então esta tela é só de consulta. O preço da diária fica em Preços."
+        }
       />
 
       {isLoading ? (

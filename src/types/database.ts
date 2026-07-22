@@ -3672,6 +3672,7 @@ export type Database = {
       admin_search: {
         Args: { p_limit?: number; p_query: string }
         Returns: {
+          company_id: string
           id: string
           kind: string
           subtitle: string
@@ -4498,6 +4499,15 @@ export type Database = {
         Args: { p_limit?: number }
         Returns: {
           id: string
+        }[]
+      }
+      popular_parking_types: {
+        Args: { p_limit?: number }
+        Returns: {
+          id: string
+          location_slug: string
+          operator_slug: string
+          parking_type_code: string
         }[]
       }
       publish_legal_document: {

@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatBRL } from "@/lib/format";
 import { fareReais, type FareTier } from "@/lib/fares";
+import { useAuth } from "@/auth/context";
 import { useLocationFareConfig, useSetUnitFare, type UnitFareConfig } from "./api";
 
 type RowState = { enabled: boolean; priceReais: number | null };
@@ -14,6 +15,11 @@ type RowState = { enabled: boolean; priceReais: number | null };
 export function FareConfigCard({ lptId, title }: { lptId: string; title: string }) {
   const { data, isLoading } = useLocationFareConfig(lptId);
   const setFare = useSetUnitFare();
+  const { session } = useAuth();
+  // Papel REAL, não o `effectiveRole`: o hub_admin chega nesta tela por
+  // impersonation, quando o papel efetivo já virou company_operator. A RPC
+  // usa `is_hub_admin()`, que também olha o papel real, então os dois batem.
+  const podeEditar = session?.role === "hub_admin";
   const [rows, setRows] = React.useState<Record<FareTier, RowState>>();
 
   // Inicializa o estado editável quando os dados chegam.
@@ -69,7 +75,11 @@ export function FareConfigCard({ lptId, title }: { lptId: string; title: string 
             <div key={f.tier} className="flex flex-wrap items-center gap-3 border-t border-hairline-soft pt-3">
               <span className="w-24 text-body-sm font-medium text-ink">{f.label}</span>
               <label className="flex items-center gap-2 text-caption text-muted">
-                <Switch checked={st.enabled} onCheckedChange={(v) => patch(f.tier, { enabled: v })} />
+                <Switch
+                  checked={st.enabled}
+                  disabled={!podeEditar}
+                  onCheckedChange={(v) => patch(f.tier, { enabled: v })}
+                />
                 {st.enabled ? "Ativa" : "Desativada"}
               </label>
               {isBasica ? (
@@ -79,23 +89,26 @@ export function FareConfigCard({ lptId, title }: { lptId: string; title: string 
                   <CurrencyInput
                     value={st.priceReais}
                     onChange={(v) => patch(f.tier, { priceReais: v })}
+                    disabled={!podeEditar}
                     className="h-9 w-32"
-                    aria-label={`Preço da Tarifa ${f.label}`}
+                    aria-label={`Preço do plano ${f.label}`}
                   />
                   <span className="text-caption text-muted">
                     (padrão {formatBRL(fareReais(f.default_price_cents))})
                   </span>
                 </div>
               )}
-              <Button
-                size="sm"
-                variant="secondary"
-                className="ml-auto"
-                onClick={() => save(f)}
-                disabled={setFare.isPending}
-              >
-                Salvar
-              </Button>
+              {podeEditar && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="ml-auto"
+                  onClick={() => save(f)}
+                  disabled={setFare.isPending}
+                >
+                  Salvar
+                </Button>
+              )}
             </div>
           );
         })}

@@ -2,7 +2,7 @@
 -- gate de escopo do operator_set_unit_fare. Transação + rollback.
 
 begin;
-select plan(7);
+select plan(8);
 
 select has_table('public', 'location_fare', 'tabela location_fare existe');
 select has_function('public', 'operator_set_unit_fare', 'RPC operator_set_unit_fare existe');
@@ -45,6 +45,29 @@ select set_config('request.jwt.claims', json_build_object('sub', current_setting
 select throws_ok(
   format($$ select public.operator_set_unit_fare(%L::uuid, 'flex', true, 1500) $$, current_setting('test.lpt')),
   '42501', null, 'customer sem pricing:write é barrado');
+reset role;
+
+-- Plano de cancelamento é produto da Movepark: nem o DONO da empresa edita.
+-- Antes deste gate, `owner` (que carrega pricing:write) passava.
+do $$
+declare uo uuid := gen_random_uuid(); v_company uuid;
+begin
+  select l.company_id into v_company
+  from public.location_parking_type lpt
+  join public.location l on l.id = lpt.location_id
+  where lpt.id = current_setting('test.lpt')::uuid;
+
+  insert into auth.users(id, instance_id, aud, role, email, created_at, updated_at)
+    values (uo,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','fare-owner@ex.com',now(),now());
+  insert into public.profiles(id, role) values (uo,'company_operator') on conflict (id) do nothing;
+  insert into public.profile_company(profile_id, company_id, role) values (uo, v_company, 'owner');
+  perform set_config('test.uo', uo::text, false);
+end $$;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.uo'))::text, true);
+select throws_ok(
+  format($$ select public.operator_set_unit_fare(%L::uuid, 'superflex', true, 2500) $$, current_setting('test.lpt')),
+  '42501', null, 'dono da empresa, mesmo com pricing:write, não edita plano de cancelamento');
 reset role;
 
 select * from finish();
