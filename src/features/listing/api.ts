@@ -288,6 +288,61 @@ function simulatePriceQueryOptions(
   };
 }
 
+/** Tipos de vaga ativos de uma unidade (código + nome), para o upsell de upgrade (E2.1.4). */
+export async function fetchLocationTypes(
+  companySlug: string,
+  locationSlug: string,
+): Promise<{ code: string; name: string }[]> {
+  const { data, error } = await supabase
+    .from("location_parking_type")
+    .select(
+      `location:location!inner(slug, is_listed, company:company!inner(slug)),
+       company_parking_type:company_parking_type!inner(parking_type:parking_type!inner(code, name))`,
+    )
+    .eq("is_active", true)
+    .eq("location.slug", locationSlug)
+    .eq("location.is_listed", true)
+    .eq("location.company.slug", companySlug)
+    .limit(50);
+  if (error) throw error;
+  // deno-lint-ignore no-explicit-any
+  return ((data ?? []) as any[]).map((r) => ({
+    code: r.company_parking_type.parking_type.code as string,
+    name: r.company_parking_type.parking_type.name as string,
+  }));
+}
+
+/**
+ * Tipos de vaga da unidade com o preço simulado de cada, para a duração atual. Usado pelo upsell de
+ * upgrade da página da unidade (E2.1.4): o catálogo carrega uma vez e cada preço é uma query própria
+ * que compartilha o cache do reservation card (mesma key do simulate_price).
+ */
+export function useLocationTypePrices(args: {
+  companySlug: string | undefined;
+  locationSlug: string | undefined;
+  days: number;
+}): { types: import("./upgrade.logic").TypePrice[]; isLoading: boolean } {
+  const catalog = useQuery({
+    queryKey: ["location-types", args.companySlug, args.locationSlug] as const,
+    queryFn: () => fetchLocationTypes(args.companySlug!, args.locationSlug!),
+    enabled: !!args.companySlug && !!args.locationSlug,
+    staleTime: 60_000,
+  });
+  const codes = catalog.data ?? [];
+  const priceQueries = useQueries({
+    queries: codes.map((t) =>
+      simulatePriceQueryOptions(args.companySlug, args.locationSlug, t.code, args.days),
+    ),
+  });
+  const types = codes.map((t, i) => ({
+    code: t.code,
+    name: t.name,
+    price: priceQueries[i]?.data?.price ?? null,
+  }));
+  const isLoading = catalog.isLoading || priceQueries.some((q) => q.isLoading);
+  return { types, isLoading };
+}
+
 /**
  * Simula preço chamando simulate_price RPC.
  * Recalcula automaticamente quando `args` mudam (com debounce no consumer).

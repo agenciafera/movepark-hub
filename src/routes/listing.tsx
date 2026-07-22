@@ -19,7 +19,7 @@ import { buildListingTldr, nearestTerminal } from "@/features/listing/tldr.logic
 import { ReviewsBlock } from "@/features/reviews/ReviewsBlock";
 import { RatingBadge } from "@/features/reviews/RatingStars";
 import { useLocationReviews } from "@/features/reviews/api";
-import { useListing, useLocationTerminals, type ListingDetail } from "@/features/listing/api";
+import { useListing, useLocationTerminals, useLocationTypePrices, type ListingDetail } from "@/features/listing/api";
 import { useSavedListings } from "@/features/search/useSavedListings";
 import { useFaqCombined, type FaqCombinedItem } from "@/features/faqs/api";
 import { FaqList } from "@/features/faqs/FaqList";
@@ -29,6 +29,8 @@ import { optimizedImageUrl } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { CANCELLATION_POLICY_LINES_GENERIC } from "@/features/bookings/cancellation.logic";
 import { isTypeDescriptorAmenity } from "@/features/search/amenities.logic";
+import { UpgradeVagaNudge } from "@/features/listing/UpgradeVagaNudge";
+import { pickUpgradeTarget } from "@/features/listing/upgrade.logic";
 import { GUARANTEE_PROMISE } from "@/features/guarantee/copy";
 import {
   localBusinessSchema,
@@ -89,6 +91,18 @@ export default function ListingPage() {
   const [showStickyBar, setShowStickyBar] = React.useState(false);
   // Resumo vivo do card de reserva do mobile pra alimentar o CTA fixo com o total real.
   const [summary, setSummary] = React.useState<ReservationSummary | null>(null);
+
+  // Upsell de upgrade de vaga (E2.1.4): preços de todos os tipos da unidade pra mesma duração.
+  const upsellDays =
+    summary?.days ??
+    (initialFrom && initialTo
+      ? Math.max(1, Math.ceil((initialTo.getTime() - initialFrom.getTime()) / 86_400_000))
+      : 1);
+  const { types: typePrices } = useLocationTypePrices({
+    companySlug: params.operatorSlug,
+    locationSlug: params.locationSlug,
+    days: upsellDays,
+  });
 
   React.useEffect(() => {
     const el = mobileCardRef.current;
@@ -167,6 +181,14 @@ export default function ListingPage() {
   }
 
   const isSaved = saved.isSaved(listing.id);
+  // Só sobe: pickUpgradeTarget devolve o próximo tipo mais caro, ou null se já é o topo (E2.1.4).
+  const upgradeTarget = pickUpgradeTarget(listing.parking_type.code, typePrices);
+  const upgradeNudge = upgradeTarget ? (
+    <UpgradeVagaNudge
+      target={upgradeTarget}
+      to={`/p/${params.operatorSlug}/${params.locationSlug}/${upgradeTarget.code}?${searchParams.toString()}`}
+    />
+  ) : null;
   const hasDescription = (listing.capacity ?? 0) > 0 || !!listing.parking_type.description;
   // A página é por tipo de vaga: descritores de tipo (Coberto, Valet…) saem da lista de amenidades,
   // senão contradizem o próprio tipo do card (86ajmwawc).
@@ -270,6 +292,7 @@ export default function ListingPage() {
 
       {/* Mobile: card de reserva logo após as fotos */}
       <div ref={mobileCardRef} className="mt-6 desktop:hidden">
+        {upgradeNudge && <div className="mb-3">{upgradeNudge}</div>}
         <ReservationCard
           listing={listing}
           initialFrom={initialFrom}
@@ -349,7 +372,8 @@ export default function ListingPage() {
 
         {/* Card lateral sticky */}
         <aside className="hidden desktop:block">
-          <div className="sticky top-24">
+          <div className="sticky top-24 space-y-3">
+            {upgradeNudge}
             <ReservationCard
               listing={listing}
               initialFrom={initialFrom}
