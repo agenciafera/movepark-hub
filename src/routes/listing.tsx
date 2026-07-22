@@ -93,8 +93,12 @@ export default function ListingPage() {
   const [summary, setSummary] = React.useState<ReservationSummary | null>(null);
 
   // Upsell de upgrade de vaga (E2.1.4): preços de todos os tipos da unidade pra mesma duração.
+  // Sem datas escolhidas o card reporta days = 0, e 0 passaria pelo `??` e desligaria as queries de
+  // preço (que exigem days > 0). Então só vale a duração do card quando ela é positiva; senão cai
+  // nas datas da URL e, na falta delas, em 1 diária (o nudge ainda mostra um delta real).
+  const summaryDays = summary?.days && summary.days > 0 ? summary.days : null;
   const upsellDays =
-    summary?.days ??
+    summaryDays ??
     (initialFrom && initialTo
       ? Math.max(1, Math.ceil((initialTo.getTime() - initialFrom.getTime()) / 86_400_000))
       : 1);

@@ -17,13 +17,15 @@ export function UpgradeVagaNudge({ target, to }: Props) {
   return (
     <Link
       to={to}
-      data-testid="upgrade-vaga-nudge"
+      data-testid="listing-upgrade-offer"
       className="flex items-center gap-3 rounded-md border border-mp-primary/30 bg-mp-pale px-4 py-3 transition-colors hover:bg-mp-primary/10"
     >
       <Sparkles className="h-5 w-5 shrink-0 text-mp-primary" aria-hidden />
       <div className="min-w-0 flex-1">
         <p className="text-body-md font-semibold text-ink">
-          Por mais {formatBRL(target.delta)}, garanta a {target.name}
+          Por mais{" "}
+          <span data-testid="listing-upgrade-price-delta">{formatBRL(target.delta)}</span>, garanta a{" "}
+          {target.name}
         </p>
         <p className="text-caption text-mp-primary">Ver {target.name}</p>
       </div>

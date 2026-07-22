@@ -8,8 +8,8 @@
  *
  * Decisão registrada na tarefa https://app.clickup.com/t/86ajmwawc
  *
- * ESTE SPEC ESTÁ EM `test.fixme()`: nada disso existe hoje. Ele entra escrito para
- * ser o teste de aceite. Quem entregar tira o `fixme`.
+ * Implementado na E2.1.4 (indução pré-pagamento): o nudge `UpgradeVagaNudge` na
+ * página da unidade. Só sobe, nunca oferece downgrade.
  *
  * O comportamento esperado é ASSIMÉTRICO de propósito:
  *   - na página do tipo mais BARATO, existe indução a upgrade com a diferença de
@@ -31,8 +31,6 @@
  */
 import { test, expect } from "@playwright/test";
 import { ABBAPARK, listActiveParkingTypes, listingUrl } from "../support/consumer";
-
-test.fixme(true, "Indução a upgrade no detalhe ainda não existe (tarefa ClickUp 86ajmwawc).");
 
 test.describe("C-05", () => {
   test("C-05a: na vaga mais barata, o detalhe induz o upgrade com a diferença explícita", async ({
