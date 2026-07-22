@@ -22,7 +22,7 @@ import type { FaqCombinedItem } from "@/features/faqs/api";
 import { PartnerLeadModal } from "@/features/onboarding/PartnerLeadModal";
 import { PartnerLogos } from "@/features/partners/PartnerLogos";
 
-const HERO_IMAGE = "/images/seja-parceiro-acordo.webp";
+const HERO_IMAGE = "/images/seja-parceiro-acordo-sunset.webp";
 const STEPS_IMAGE = "/Estacionamentos/virapark/virapark_001.webp";
 
 // Sinais de confiança: fatos da política do parceiro, sem número sem lastro.
@@ -216,16 +216,32 @@ export default function SejaParceiroPage() {
       <section className="relative isolate overflow-hidden bg-mp-navy">
         <img
           src={HERO_IMAGE}
-          alt="Estacionamento parceiro Movepark"
+          alt="Dono de estacionamento e cliente se cumprimentando no pátio, ao fim da tarde"
           fetchPriority="high"
           decoding="async"
           className="absolute inset-0 h-full w-full object-cover"
         />
-        {/* Overlay chapado. A foto foi feita pra isso: a metade esquerda é parede
-            em sombra de cima a baixo, sem céu, então 30% já dá o piso do texto sem
-            precisar apagar a cena. Com a foto anterior (contraluz, céu estourado na
-            esquerda) nem 65% chapado passava, e era preciso degradê. */}
-        <div className="absolute inset-0 bg-mp-navy/30" aria-hidden />
+        {/* Overlay em degradê, e não chapado. Esta foto é contraluz de fim de tarde
+            e o sol estoura dentro da área do h1, o que a média esconde: no trecho
+            atrás do texto a foto dá luminância média 0.18, mas com picos de 1.0.
+            Com os 30% chapados que a foto anterior usava (parede em sombra, sem
+            céu), o branco fica em 6.5:1 na média e despenca pra 1.85:1 em cima do
+            sol. O degradê carrega a esquerda a 95% e alivia até 25% à direita: na
+            borda direita do h1 o alpha ainda é 0.72, o que põe o pior ponto em
+            5.85:1, e os dois rostos seguem visíveis.
+
+            O mobile precisa de mais piso e por isso fecha em 65% em vez de 25%: lá
+            o h1 vai quase até a borda direita, em cima da parte iluminada do rosto,
+            enquanto no desktop ele para em 53% da largura.
+
+            Sem posição de parada (`from-0%`, `via-55%`): combinadas com a cor por
+            variável, essas classes não compilam nada aqui e o `background-image`
+            sai `none`, ou seja, overlay invisível e foto crua. O idioma que
+            funciona no projeto é este, de `sobre.tsx`: só from/via/to. */}
+        <div
+          className="absolute inset-0 bg-gradient-to-r from-mp-navy/95 via-mp-navy/85 to-mp-navy/65 desktop:via-mp-navy/75 desktop:to-mp-navy/25"
+          aria-hidden
+        />
         <div className="relative mx-auto max-w-[1080px] px-4 py-20 text-white desktop:px-8 desktop:py-28">
           <span className="text-badge uppercase tracking-[0.4px] text-white/70">
             Para donos de estacionamento
