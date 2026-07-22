@@ -320,10 +320,14 @@ export const routes: RouteRecord[] = [
               },
               {
                 element: <RequireScope scope="pricing:write" />,
-                children: [
-                  { path: "pricing", element: <OperatorPricing /> },
-                  { path: "fares", element: <OperatorFares /> },
-                ],
+                children: [{ path: "pricing", element: <OperatorPricing /> }],
+              },
+              {
+                // Plano de cancelamento é produto da Movepark: `fares:write` é
+                // escopo de plataforma, então nenhum membro de empresa alcança
+                // a rota, nem digitando a URL.
+                element: <RequireScope scope="fares:write" />,
+                children: [{ path: "fares", element: <OperatorFares /> }],
               },
               {
                 element: <RequireScope scope="coupons:write" />,

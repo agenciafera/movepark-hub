@@ -522,10 +522,17 @@ estava nem o que faltava. A página divide em blocos nomeados, cada um responden
 - O deep-link legado `?edit=<id>` (usado pelo "Adicionar mais fotos" do preview) redireciona para a
   página com `replace`, sem deixar a listagem no histórico entre o preview e o editor.
 
-### Plano de cancelamento é só do hub_admin
+### Plano de cancelamento não existe para o parceiro
 
-`/operator/fares` é **consulta** para o parceiro. Preço e disponibilidade dos planos Flex e Superflex
-são produto da Movepark, então quem edita é a equipe interna.
+`/operator/fares` **não aparece no menu da empresa e não é alcançável por membro de empresa**. Preço
+e disponibilidade dos planos Flex e Superflex são produto da Movepark, então a tela é da equipe
+interna.
+
+O gate é o escopo de plataforma **`fares:write`** (ver [permissions.md](./permissions.md)): um
+trigger recusa concedê-lo a papel de empresa, e o `hasScope` do front devolve `true` só para
+`hub_admin`, inclusive impersonando, que é como ele chega na tela. Com um escopo só, o item some da
+sidebar, some da command palette (que filtra pela mesma função) e a rota redireciona quem digita a
+URL. Antes o item usava `pricing:write`, que é preço de diária e não tem relação com plano.
 
 O RLS de `location_fare` e `fare` já exigia `is_hub_admin()` para escrever; o furo era a RPC
 **`operator_set_unit_fare`**, que sendo `SECURITY DEFINER` passa por cima do RLS e aceitava qualquer

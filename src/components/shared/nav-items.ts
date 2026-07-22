@@ -102,7 +102,13 @@ export const operatorSections: Section[] = [
         label: "Planos de cancelamento",
         shortLabel: "Planos",
         icon: ShieldCheck,
-        scope: "pricing:write",
+        // `fares:write` é escopo de PLATAFORMA (ADR-005): pertence à Movepark, e
+        // um trigger recusa concedê-lo a papel de empresa. Efeito: o item some
+        // do menu do parceiro, e o hub_admin continua vendo (o `hasScope` dele é
+        // sempre true, inclusive impersonando, que é como ele chega aqui).
+        // Antes era `pricing:write`, que é preço de diária e não tem relação
+        // com plano de cancelamento.
+        scope: "fares:write",
       },
       { to: "/operator/coupons", label: "Promoções", icon: Tag, scope: "coupons:write" },
     ],

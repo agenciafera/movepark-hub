@@ -34,6 +34,22 @@ chaves, financeiro). Escopos in-app adicionados (migration `20260713000000`): `p
 (atribuível), `finance:read`, `payouts:read`, `payouts:write`, `team:read`, `team:write`,
 `api-keys:write` (só-internos).
 
+### Escopo de plataforma (`is_platform_scope = true`)
+
+Terceira categoria, ortogonal a `assignable_to_api_key`: pertence à **Movepark**, não à empresa nem
+ao parceiro. Não entra em `company_role_scope` (o trigger `company_role_scope_no_platform` recusa) e
+não conta na invariante "o Dono tem todos", que vale sobre o catálogo de empresa.
+
+| Escopo | Atribuível a chave | Para quê |
+|---|---|---|
+| `checkout:link` | ✔ | Tool que gera link de checkout, concedida só à chave do bot interno |
+| `fares:write` | – | Editar plano de cancelamento (Básica/Flex/Superflex) por tipo de vaga |
+
+É o gate certo quando a resposta para "quem manda nisso?" é a Movepark. No front sai de graça: o
+`hasScope` devolve `true` para `hub_admin` (inclusive impersonando) e `false` para todo membro de
+empresa, então o mesmo escopo esconde o item do menu, tira a rota do alcance e barra a ação, sem um
+`if` de papel espalhado pela UI. Migration `20260904000000_fares_write_platform_scope.sql`.
+
 ## Matriz papel → escopo (seed `company_role_scope`)
 
 `owner` = catálogo inteiro. Não-Dono:

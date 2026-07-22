@@ -7,6 +7,7 @@ import {
   type NavItem,
   type NavSection,
 } from "./Sidebar.logic";
+import { operatorSections } from "./nav-items";
 
 const items: NavItem<null>[] = [
   { to: "/operator", label: "Dashboard", icon: null },
@@ -114,5 +115,47 @@ describe("buildBottomNav", () => {
       "/operator/coupons",
     ]);
     expect(flattenSections(more)).toHaveLength(0);
+  });
+});
+
+/**
+ * Plano de cancelamento é produto da Movepark, então o item não pode aparecer no
+ * menu da empresa. O gate é `fares:write`, um escopo de PLATAFORMA (ADR-005):
+ * um trigger no banco recusa concedê-lo a papel de empresa, e o `hasScope` do
+ * front devolve true só para hub_admin (inclusive impersonando).
+ */
+describe("Planos de cancelamento fora do menu da empresa", () => {
+  const escoposDeEmpresa = [
+    "pricing:write",
+    "coupons:write",
+    "occupancy:read",
+    "addons:write",
+    "reviews:read",
+    "team:read",
+    "finance:read",
+    "locations:write",
+    "bookings:checkin",
+  ];
+
+  const rotulos = (has: (s: string) => boolean) =>
+    flattenSections(filterSectionsByScopes(operatorSections, has)).map((i) => i.label);
+
+  it("dono com todos os escopos de empresa não vê o item", () => {
+    const visiveis = rotulos((s) => escoposDeEmpresa.includes(s));
+
+    expect(visiveis).not.toContain("Planos de cancelamento");
+    // controle: os itens de empresa continuam aparecendo
+    expect(visiveis).toContain("Preços");
+    expect(visiveis).toContain("Promoções");
+  });
+
+  it("hub_admin vê, porque o hasScope dele é sempre true", () => {
+    expect(rotulos(() => true)).toContain("Planos de cancelamento");
+  });
+
+  it("o item exige fares:write, e não pricing:write", () => {
+    const fares = flattenSections(operatorSections).find((i) => i.to === "/operator/fares");
+
+    expect(fares?.scope).toBe("fares:write");
   });
 });
