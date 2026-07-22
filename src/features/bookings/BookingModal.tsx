@@ -1,4 +1,5 @@
 import * as React from "react";
+import { bookingCustomerName } from "./bookings.logic";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
@@ -75,7 +76,7 @@ export function BookingModal({ booking, open, onOpenChange }: Props) {
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-4 text-body-sm">
-          <Field label="Cliente" value={booking.profile?.full_name ?? "—"} />
+          <Field label="Cliente" value={bookingCustomerName(booking) ?? "-"} />
           <Field label="Telefone" value={booking.customer_phone ?? "—"} />
           <Field label="Check-in" value={formatDateTime(booking.check_in_at)} />
           <Field label="Check-out" value={formatDateTime(booking.check_out_at)} />

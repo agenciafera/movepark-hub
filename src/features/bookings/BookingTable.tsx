@@ -1,8 +1,16 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { formatBRL, formatDateTime, daysBetween } from "@/lib/format";
+import { bookingCustomerName } from "./bookings.logic";
 import type { BookingWithRelations } from "@/types/domain";
 
 type Props = {
@@ -24,7 +32,12 @@ export function BookingTable({ bookings, isLoading, onRowClick, showCompany = tr
   }
 
   if (!bookings || bookings.length === 0) {
-    return <EmptyState title="Nenhuma reserva encontrada" description="Ajuste os filtros para ver resultados." />;
+    return (
+      <EmptyState
+        title="Nenhuma reserva encontrada"
+        description="Ajuste os filtros para ver resultados."
+      />
+    );
   }
 
   return (
@@ -51,10 +64,8 @@ export function BookingTable({ bookings, isLoading, onRowClick, showCompany = tr
               onClick={() => onRowClick?.(b)}
             >
               <TableCell className="font-mono text-caption">{b.code}</TableCell>
-              <TableCell className="text-ink">{b.profile?.full_name ?? "—"}</TableCell>
-              {showCompany && (
-                <TableCell>{b.location?.company?.name ?? "—"}</TableCell>
-              )}
+              <TableCell className="text-ink">{bookingCustomerName(b) ?? "-"}</TableCell>
+              {showCompany && <TableCell>{b.location?.company?.name ?? "—"}</TableCell>}
               <TableCell>{b.location?.name ?? "—"}</TableCell>
               <TableCell>{formatDateTime(b.check_in_at)}</TableCell>
               <TableCell>{formatDateTime(b.check_out_at)}</TableCell>

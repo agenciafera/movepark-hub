@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bucketBooking, type BucketableBooking } from "./bookings.logic";
+import { bucketBooking, bookingCustomerName, type BucketableBooking } from "./bookings.logic";
 
 const NOW = new Date("2026-06-13T12:00:00Z");
 
@@ -51,5 +51,28 @@ describe("bucketBooking", () => {
 
   it("confirmed futuro → upcoming", () => {
     expect(bucketBooking(booking({ status: "confirmed" }), NOW)).toBe("upcoming");
+  });
+});
+
+describe("bookingCustomerName", () => {
+  it("prefere o snapshot customer_name ao profile.full_name", () => {
+    expect(
+      bookingCustomerName({ customer_name: "Test Pentest", profile: { full_name: null } }),
+    ).toBe("Test Pentest");
+  });
+
+  it("compõe do first/last quando não há customer_name", () => {
+    expect(
+      bookingCustomerName({ customer_name: null, customer_first_name: "Ana", customer_last_name: "Lima" }),
+    ).toBe("Ana Lima");
+  });
+
+  it("cai para full_name só quando o snapshot está vazio (reserva legada)", () => {
+    expect(bookingCustomerName({ customer_name: null, profile: { full_name: "Pedro" } })).toBe("Pedro");
+  });
+
+  it("devolve null quando não há nenhum nome", () => {
+    expect(bookingCustomerName({ customer_name: null, profile: { full_name: null } })).toBeNull();
+    expect(bookingCustomerName({ customer_name: "   " })).toBeNull();
   });
 });

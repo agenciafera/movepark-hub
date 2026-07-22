@@ -1,11 +1,7 @@
 import * as React from "react";
+import { bookingCustomerName } from "./bookings.logic";
 import { toast } from "sonner";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,8 +65,7 @@ export function BookingDrawer({ booking, open, onOpenChange }: Props) {
 
     mutation.mutate(patch, {
       onSuccess: () => toast.success(`${label} com sucesso`),
-      onError: (err) =>
-        toast.error(err instanceof Error ? err.message : "Falha ao atualizar"),
+      onError: (err) => toast.error(err instanceof Error ? err.message : "Falha ao atualizar"),
     });
   }
 
@@ -110,7 +105,7 @@ export function BookingDrawer({ booking, open, onOpenChange }: Props) {
         <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 pb-6">
           <section className="space-y-2">
             <h4 className="text-title-md">Cliente</h4>
-            <Field label="Nome" value={booking.profile?.full_name ?? "—"} />
+            <Field label="Nome" value={bookingCustomerName(booking) ?? "-"} />
             <Field label="Telefone" value={booking.customer_phone ?? "—"} />
             <Field
               label="CPF/CNPJ"
@@ -198,12 +193,7 @@ export function BookingDrawer({ booking, open, onOpenChange }: Props) {
                   </Button>
                 )}
                 {next.includes("cancelled") && (
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    disabled={busy}
-                    onClick={cancel}
-                  >
+                  <Button size="sm" variant="danger" disabled={busy} onClick={cancel}>
                     {cancelMutation.isPending ? "Cancelando…" : "Cancelar"}
                   </Button>
                 )}

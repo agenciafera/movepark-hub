@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { bookingCustomerName } from "@/features/bookings/bookings.logic";
 import { startOfDay, endOfDay } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -109,7 +110,7 @@ export default function OperatorDashboard() {
                       {formatTime(b.check_in_at)}
                     </span>
                     <div className="flex flex-col">
-                      <span className="text-ink">{b.profile?.full_name ?? "—"}</span>
+                      <span className="text-ink">{bookingCustomerName(b) ?? "-"}</span>
                       <span className="text-caption text-muted">
                         {b.location?.name} · {b.vehicle?.license_plate ?? "Sem placa"}
                       </span>
