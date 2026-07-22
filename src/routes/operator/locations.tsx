@@ -4,26 +4,11 @@ import { AlertTriangle, ImageOff } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { EntityStatusBadge } from "@/components/shared/StatusBadge";
 import { useOperatorLocations, summarizeLocation } from "@/features/locations/api";
 import { useAuth } from "@/auth/context";
-import type { EntityStatus } from "@/types/domain";
-
-const statusTone: Record<EntityStatus, "active" | "pending" | "cancelled"> = {
-  active: "active",
-  inactive: "pending",
-  suspended: "cancelled",
-};
-
-// O enum vive em inglês no banco; o parceiro lê em português. Mesmo dicionário
-// que o LocationForm já usa, para a listagem e o editor não divergirem.
-const statusLabel: Record<EntityStatus, string> = {
-  active: "Ativa",
-  inactive: "Inativa",
-  suspended: "Suspensa",
-};
 
 const plural = (n: number, singular: string, plural: string) =>
   `${n} ${n === 1 ? singular : plural}`;
@@ -110,12 +95,7 @@ export default function OperatorLocations() {
                           {loc.address ?? "Endereço não informado"}
                         </p>
                       </div>
-                      <Badge
-                        tone={statusTone[loc.status]}
-                        aria-label={`Status da unidade: ${statusLabel[loc.status]}`}
-                      >
-                        {statusLabel[loc.status]}
-                      </Badge>
+                      <EntityStatusBadge status={loc.status} />
                     </div>
 
                     <div className="flex flex-col gap-1">

@@ -7,24 +7,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { EntityStatusBadge } from "@/components/shared/StatusBadge";
 import { useCompanies } from "@/features/companies/api";
 import { CompanyForm } from "@/features/companies/CompanyForm";
 import { useAuth } from "@/auth/context";
-import type { Company, EntityStatus } from "@/types/domain";
-
-const statusTone: Record<EntityStatus, "confirmed" | "pending" | "cancelled"> = {
-  active: "confirmed",
-  inactive: "pending",
-  suspended: "cancelled",
-};
-
-const statusLabel: Record<EntityStatus, string> = {
-  active: "Ativa",
-  inactive: "Inativa",
-  suspended: "Suspensa",
-};
+import type { Company } from "@/types/domain";
 
 export default function ManagerCompanies() {
   const { data, isLoading } = useCompanies();
@@ -96,7 +84,7 @@ export default function ManagerCompanies() {
                     <span className="text-title-md text-ink">{c.name}</span>
                     <span className="text-caption text-muted">/{c.slug}</span>
                   </div>
-                  <Badge tone={statusTone[c.status]}>{statusLabel[c.status]}</Badge>
+                  <EntityStatusBadge status={c.status} context="empresa" />
                 </div>
                 <div className="space-y-0.5 text-body-sm text-muted">
                   {c.legal_name && <div>{c.legal_name}</div>}

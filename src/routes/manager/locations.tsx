@@ -11,19 +11,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { EntityStatusBadge } from "@/components/shared/StatusBadge";
 import { useCompany } from "@/features/companies/api";
 import { useLocationsByCompany } from "@/features/locations/api";
 import { LocationForm } from "@/features/locations/LocationForm";
-import type { EntityStatus, Location } from "@/types/domain";
-
-const statusTone: Record<EntityStatus, "confirmed" | "pending" | "cancelled"> = {
-  active: "confirmed",
-  inactive: "pending",
-  suspended: "cancelled",
-};
+import type { Location } from "@/types/domain";
 
 export default function ManagerLocations() {
   const { id: companyId } = useParams<{ id: string }>();
@@ -90,7 +84,7 @@ export default function ManagerLocations() {
                   </TableCell>
                   <TableCell>{loc.timezone}</TableCell>
                   <TableCell>
-                    <Badge tone={statusTone[loc.status]}>{loc.status}</Badge>
+                    <EntityStatusBadge status={loc.status} />
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
