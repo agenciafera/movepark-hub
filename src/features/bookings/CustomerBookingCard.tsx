@@ -44,7 +44,7 @@ export function CustomerBookingCard({ item }: Props) {
           <span className="text-muted"> → {formatDayTime(item.check_out_at)}</span>
           {relative && <span className="text-muted"> · {relative}</span>}
         </p>
-        <p className="text-caption-sm text-muted-soft">
+        <p className="text-caption-sm text-muted">
           {formatDuration(item.check_in_at, item.check_out_at)} · Código{" "}
           <span className="font-mono">{item.code}</span>
         </p>

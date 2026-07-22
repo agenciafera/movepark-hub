@@ -29,7 +29,7 @@ export function ListingStickyBar({ summary, basePrice, onReserve }: Props) {
               {formatBRL(summary.total)}
             </p>
             {summary.cancellationLine && (
-              <p className="line-clamp-1 text-[12px] leading-tight text-muted-soft">
+              <p className="line-clamp-1 text-[12px] leading-tight text-muted">
                 {summary.cancellationLine}
               </p>
             )}

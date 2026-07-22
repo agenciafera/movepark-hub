@@ -135,7 +135,7 @@ export default function ManagerUsers() {
                   <TableCell>
                     <div className="flex flex-col">
                       <span className="text-ink">{u.full_name ?? "—"}</span>
-                      <span className="text-caption-sm text-muted-soft">{u.id.slice(0, 8)}</span>
+                      <span className="text-caption-sm text-muted">{u.id.slice(0, 8)}</span>
                     </div>
                   </TableCell>
                   <TableCell className="w-48">

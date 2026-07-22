@@ -52,7 +52,7 @@
     --body: 0 0% 26%;                  /* #424242 */
     --muted: 0 0% 42%;                 /* #6A6A6A */
     --muted-soft: 0 0% 57%;            /* #929292 */
-    --muted-steel: 220 21% 59%;        /* #818FAF */
+    --muted-steel: 220 21% 46%;        /* #5D6D8E. Era 59% (#818FAF), 3.26:1 sobre canvas: reprovava AA no eyebrow de 11px e nos rótulos da sidebar. Agora 5.19:1. */
     --on-primary: 0 0% 100%;
 
     /* Semantic */
