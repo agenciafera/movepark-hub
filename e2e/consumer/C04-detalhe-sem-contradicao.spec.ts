@@ -4,17 +4,17 @@
  *
  * São dois casos, e o par é o que separa causa de sintoma:
  *
- *   - Abbapark (`test.fail()`): tem a amenidade `covered` na location. A página
- *     da vaga DESCOBERTA diz "Vaga em área aberta, sem cobertura" e três linhas
- *     abaixo lista "Coberto" entre os benefícios. Contradição no exato ponto em
+ *   - Abbapark: tem a amenidade `covered` na location. Antes da E2.1.3, a página
+ *     da vaga DESCOBERTA dizia "Vaga em área aberta, sem cobertura" e três linhas
+ *     abaixo listava "Coberto" entre os benefícios. Contradição no exato ponto em
  *     que o cliente decide.
- *   - Maxi Park (passa): mesmos tipos coberta e descoberta, sem a amenidade. A
- *     contradição some. É a prova de que a causa é a amenidade da location
- *     vazando pro tipo de vaga, não o tipo em si.
+ *   - Maxi Park (controle): mesmos tipos coberta e descoberta, sem a amenidade. A
+ *     contradição nunca existiu. É a prova de que a causa é a amenidade da
+ *     location vazando pro tipo de vaga, não o tipo em si.
  *
- * A causa raiz é a mesma do C-02, então corrigir só o card da busca deixa esta
- * página quebrada. O título da seção diz "O que essa VAGA oferece", mas o
- * conteúdo vem de `location_amenity`, que é da UNIDADE.
+ * Corrigido na E2.1.3 (86ajmwawc), nas duas fontes: o card da busca e esta
+ * página. O título diz "O que essa VAGA oferece", mas o conteúdo vem de
+ * `location_amenity` (da UNIDADE), então os descritores de tipo são filtrados.
  *
  * Só LÊ. Não cria reserva nem cobrança.
  */
@@ -41,10 +41,8 @@ async function openUncovered(page: Page, fixture: ConsumerFixture) {
 }
 
 test("C-04: Abbapark descoberta não pode listar Coberto como benefício", async ({ page }) => {
-  // Aceite da tarefa ClickUp 86ajmwawc: quando a correção entrar, este teste
-  // passa e o `test.fail()` acusa que a marca pode sair.
-  test.fail();
-
+  // Corrigido na E2.1.3 (86ajmwawc): a página da unidade filtra os descritores de
+  // tipo (covered/valet/…) da lista de amenidades.
   await openUncovered(page, ABBAPARK);
 
   const benefits = await benefitsText(page);
