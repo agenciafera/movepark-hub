@@ -19,7 +19,7 @@ type Props = {
 export function CategoryPills({ selected, onToggle }: Props) {
   const { data } = useParkingTypeCatalog();
   return (
-    <div className="flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="flex flex-wrap gap-2">
       {data?.map((pt) => {
         const Icon = iconByCode[pt.code] ?? Car;
         const active = selected.includes(pt.code);

@@ -20,21 +20,19 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useAmenityCatalog } from "./useFilterCatalogs";
-
-export type OperatorOption = { slug: string; name: string; count: number };
+import { CategoryPills } from "./CategoryPills";
 
 type Props = {
   hasDestCoords: boolean;
-  operator: string[];
+  /** Tipos de vaga selecionados (códigos). Mora na sidebar desde E2.1.3, saiu do topo. */
+  category: string[];
   amenities: string[];
   maxDistanceKm: number | null;
-  /** Estacionamentos presentes no resultado atual (faceta da Edge), com contagem. */
-  operatorOptions: OperatorOption[];
   /** Resultado/facetas ainda carregando — mostra skeleton no lugar das listas. */
   facetsLoading: boolean;
   /** Códigos de amenidade presentes nos resultados atuais — limita o catálogo exibido. */
   availableAmenities: string[];
-  onOperatorChange: (next: string[]) => void;
+  onCategoryChange: (next: string[]) => void;
   onAmenitiesChange: (next: string[]) => void;
   onMaxDistanceChange: (km: number | null) => void;
   onClearAll: () => void;
@@ -61,13 +59,12 @@ function toggleIn(list: string[], value: string): string[] {
 
 function FilterContent({
   hasDestCoords,
-  operator,
+  category,
   amenities,
   maxDistanceKm,
-  operatorOptions,
   facetsLoading,
   availableAmenities,
-  onOperatorChange,
+  onCategoryChange,
   onAmenitiesChange,
   onMaxDistanceChange,
   onClearAll,
@@ -89,8 +86,6 @@ function FilterContent({
     {},
   );
 
-  // Estacionamento só faz sentido escolher quando há 2+ no resultado.
-  const showOperators = facetsLoading || operatorOptions.length > 1;
   // Amenidades: exibe somente se houver dados reais nos resultados (ou enquanto carrega).
   const showAmenities = facetsLoading || filteredCatalog.length > 0;
 
@@ -129,44 +124,19 @@ function FilterContent({
         </section>
       )}
 
-      {showOperators && (
-        <>
-          {hasDestCoords && <Separator />}
-          <section className="space-y-3">
-            <Label className="text-title-md text-ink">Estacionamento</Label>
-            {facetsLoading && operatorOptions.length === 0 ? (
-              <div className="space-y-2.5">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-6 w-40" />
-                ))}
-              </div>
-            ) : (
-              <ul className="space-y-2.5">
-                {operatorOptions.map((c) => (
-                  <li key={c.slug} className="flex items-center gap-2.5">
-                    <Checkbox
-                      id={`op-${c.slug}`}
-                      checked={operator.includes(c.slug)}
-                      onCheckedChange={() => onOperatorChange(toggleIn(operator, c.slug))}
-                    />
-                    <label
-                      htmlFor={`op-${c.slug}`}
-                      className="flex flex-1 cursor-pointer items-center gap-2 text-body-sm text-ink"
-                    >
-                      <span className="flex-1">{c.name}</span>
-                      <span className="text-caption-sm text-muted">{c.count}</span>
-                    </label>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        </>
-      )}
+      {/* Tipo de vaga: mora aqui desde E2.1.3 (saiu dos pills do topo). O filtro de marca
+          (estacionamento) saiu de vez: o cliente busca por preço e conveniência, não por parceiro. */}
+      <>
+        {hasDestCoords && <Separator />}
+        <section className="space-y-3">
+          <Label className="text-title-md text-ink">Tipo de vaga</Label>
+          <CategoryPills selected={category} onToggle={(code) => onCategoryChange(toggleIn(category, code))} />
+        </section>
+      </>
 
       {showAmenities && (
         <>
-          {(hasDestCoords || showOperators) && <Separator />}
+          <Separator />
           <Accordion type="single" collapsible defaultValue="amenities">
             <AccordionItem value="amenities" className="border-none">
               <AccordionTrigger className="py-0 text-title-md text-ink hover:no-underline">

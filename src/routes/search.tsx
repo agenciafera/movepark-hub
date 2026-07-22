@@ -5,7 +5,6 @@ import { Inbox } from "lucide-react";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { CategoryPills } from "@/features/search/CategoryPills";
 import { ResultsHeader } from "@/features/search/ResultsHeader";
 import {
   SearchFiltersSheet,
@@ -21,6 +20,7 @@ import { computeResultBadges } from "@/features/search/searchBadges";
 import { resolveSearchDates } from "@/features/search/dates";
 import { useSavedListings } from "@/features/search/useSavedListings";
 import { ResultCard } from "@/features/search/ResultCard";
+import { isTypeDescriptorAmenity } from "@/features/search/amenities.logic";
 
 function parseCsv(value: string | null): string[] {
   if (!value) return [];
@@ -49,7 +49,6 @@ export default function SearchResultsPage() {
   const vehicle = (params.get("vehicle") as SearchVehicle | null) ?? "car";
   const sort = (params.get("sort") as SearchSort | null) ?? "price_asc";
   const category = parseCsv(params.get("category"));
-  const operator = parseCsv(params.get("operator"));
   const amenities = parseCsv(params.get("amenities"));
   const maxDistanceRaw = params.get("max_distance_km");
   const maxDistanceKm = maxDistanceRaw ? Number(maxDistanceRaw) : null;
@@ -70,7 +69,6 @@ export default function SearchResultsPage() {
       vehicle,
       sort,
       category: category.length ? category : undefined,
-      operator: operator.length ? operator : undefined,
       amenities: amenities.length ? amenities : undefined,
       max_distance_km: maxDistanceKm ?? undefined,
       limit: 50,
@@ -84,7 +82,6 @@ export default function SearchResultsPage() {
     vehicle,
     sort,
     category.join(","),
-    operator.join(","),
     amenities.join(","),
     maxDistanceKm,
   ]);
@@ -101,22 +98,21 @@ export default function SearchResultsPage() {
   }
 
   // Destino é o ESCOPO da busca (combobox no topo), não um filtro de barra lateral. A sidebar só
-  // refina dentro do destino escolhido: estacionamento, distância, comodidades, categoria.
-  const activeCount =
-    operator.length +
-    amenities.length +
-    (maxDistanceKm ? 1 : 0) +
-    category.length;
+  // refina dentro do destino escolhido: tipo de vaga, distância e comodidades. Filtro por
+  // estacionamento (marca) saiu na E2.1.3.
+  const activeCount = amenities.length + (maxDistanceKm ? 1 : 0) + category.length;
 
   const hasDestCoords = !!data?.destination;
-  const operatorOptions = data?.facets?.operators ?? [];
 
-  // Códigos de amenidade presentes nos resultados atuais — limita o catálogo exibido na sidebar.
+  // Códigos de amenidade presentes nos resultados atuais — limita o catálogo exibido na sidebar. Os
+  // descritores de tipo (Coberto, Valet…) ficam de fora: viraram o filtro "Tipo de vaga" (E2.1.3).
   const availableAmenities = React.useMemo(() => {
     if (!data?.results) return [];
     const codes = new Set<string>();
     for (const r of data.results) {
-      for (const code of r.amenities) codes.add(code);
+      for (const code of r.amenities) {
+        if (!isTypeDescriptorAmenity(code)) codes.add(code);
+      }
     }
     return Array.from(codes);
   }, [data?.results]);
@@ -140,34 +136,23 @@ export default function SearchResultsPage() {
         hasDestCoords={hasDestCoords}
       />
 
-      <div className="mt-6 flex items-center justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <CategoryPills
-            selected={category}
-            onToggle={(code) => {
-              const next = category.includes(code)
-                ? category.filter((c) => c !== code)
-                : [...category, code];
-              patch({ category: toCsv(next) });
-            }}
-          />
-        </div>
+      {/* Botão de filtros do mobile (a sidebar cobre o desktop). Os tipos de vaga, que ficavam em
+          pills no topo, foram para dentro dos filtros na E2.1.3. */}
+      <div className="mt-6 flex justify-end desktop:hidden">
         <SearchFiltersSheet
           hasDestCoords={hasDestCoords}
-          operator={operator}
+          category={category}
           amenities={amenities}
           maxDistanceKm={maxDistanceKm}
-          operatorOptions={operatorOptions}
           facetsLoading={isLoading}
           availableAmenities={availableAmenities}
-          onOperatorChange={(next) => patch({ operator: toCsv(next) })}
+          onCategoryChange={(next) => patch({ category: toCsv(next) })}
           onAmenitiesChange={(next) => patch({ amenities: toCsv(next) })}
           onMaxDistanceChange={(km) =>
             patch({ max_distance_km: km == null ? null : String(km) })
           }
           onClearAll={() =>
             patch({
-              operator: null,
               amenities: null,
               max_distance_km: null,
               category: null,
@@ -180,20 +165,18 @@ export default function SearchResultsPage() {
       <div className="mt-6 flex gap-8">
         <SearchFiltersSidebar
           hasDestCoords={hasDestCoords}
-          operator={operator}
+          category={category}
           amenities={amenities}
           maxDistanceKm={maxDistanceKm}
-          operatorOptions={operatorOptions}
           facetsLoading={isLoading}
           availableAmenities={availableAmenities}
-          onOperatorChange={(next) => patch({ operator: toCsv(next) })}
+          onCategoryChange={(next) => patch({ category: toCsv(next) })}
           onAmenitiesChange={(next) => patch({ amenities: toCsv(next) })}
           onMaxDistanceChange={(km) =>
             patch({ max_distance_km: km == null ? null : String(km) })
           }
           onClearAll={() =>
             patch({
-              operator: null,
               amenities: null,
               max_distance_km: null,
               category: null,
