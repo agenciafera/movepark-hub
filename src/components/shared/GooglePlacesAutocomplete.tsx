@@ -111,6 +111,18 @@ function loadPlaces(): Promise<GMapsNamespace | null> {
 /** Exposto para a UI decidir se mostra o fallback manual de lat/lng. */
 export const isGooglePlacesEnabled = Boolean(apiKey);
 
+/**
+ * Reaproveita o mesmo bootstrap do Maps (memoizado) para OUTRAS libs além de
+ * places, como "maps"/"marker" do preview. Resolve o namespace com
+ * `importLibrary` pronto, ou `null` se não houver key/window ou falhar.
+ */
+export async function loadGoogleMapsNamespace(): Promise<GMapsNamespace | null> {
+  const ok = await loadBootstrap();
+  if (!ok) return null;
+  const maps = (window as unknown as { google?: GMaps }).google?.maps;
+  return maps?.importLibrary ? maps : null;
+}
+
 type Props = {
   id?: string;
   value: string;

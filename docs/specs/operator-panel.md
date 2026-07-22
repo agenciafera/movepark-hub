@@ -503,6 +503,20 @@ Tabela de Reservas
   (`_create_booking_core`) **rejeita** datas bloqueadas (antes do cálculo de preço). A RPC
   `operator_location_occupancy` devolve `blocked` para a grade exibir o estado.
 
+### Endereço com Google Places + mapa
+
+O campo de endereço da edição da unidade (operator e o dialog do manager) usa o **Google Places
+Autocomplete** (o mesmo `GooglePlacesAutocomplete` do onboarding, E1.9). Escolher um resultado captura
+endereço **e** lat/lng juntos, que alimentam a proximidade: `location.geog` é **coluna gerada** de
+lat/lng (ADR-001), então gravar as coordenadas mantém o geo em dia sem trigger. Editar o texto do
+endereço à mão zera lat/lng até uma nova seleção, pra não deixar coordenada de um endereço apontando
+para outro. Um `LocationMapPreview` (read-only, reaproveita o bootstrap do Maps já carregado) mostra
+o pin.
+
+Sem `VITE_GOOGLE_MAPS_API_KEY` o componente degrada para input comum e aparecem campos manuais de
+latitude/longitude; o mapa não renderiza. O operador grava a geo pela mesma RLS de edição da unidade
+(`locations:write`); o destino (âncora de proximidade) continua exclusivo do manager.
+
 ### Comodidades da unidade (ClickUp 86ajnetje)
 
 O parceiro marca as comodidades da unidade no bloco **Comodidades** da edição

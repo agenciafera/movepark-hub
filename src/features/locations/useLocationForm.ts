@@ -25,11 +25,7 @@ export function slugify(s: string) {
 }
 
 /** Campos que a validação e a âncora de erro conhecem. */
-export type LocationFieldError =
-  | "name"
-  | "shuttleFrequency"
-  | "shuttleToTerminal"
-  | "photos";
+export type LocationFieldError = "name" | "shuttleFrequency" | "shuttleToTerminal" | "photos";
 
 type Options = {
   companyId: string;
@@ -54,6 +50,8 @@ type Snapshot = {
   shuttleToTerminal: string;
   reservationPolicy: string;
   destinationId: string | null;
+  latitude: number | null;
+  longitude: number | null;
   photos: string[];
   externalRef: string;
   amenities: string[];
@@ -89,6 +87,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
   const [shuttleToTerminal, setShuttleToTerminal] = React.useState("");
   const [reservationPolicy, setReservationPolicy] = React.useState("");
   const [destinationId, setDestinationId] = React.useState<string | null>(null);
+  const [latitude, setLatitude] = React.useState<number | null>(null);
+  const [longitude, setLongitude] = React.useState<number | null>(null);
   const [photos, setPhotos] = React.useState<string[]>([]);
   const [externalRef, setExternalRef] = React.useState("");
   const [amenities, setAmenities_] = React.useState<string[]>([]);
@@ -118,6 +118,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
           : "",
       reservationPolicy: location?.reservation_policy ?? "",
       destinationId: location?.destination_id ?? null,
+      latitude: location?.latitude ?? null,
+      longitude: location?.longitude ?? null,
       photos: Array.isArray(location?.photos) ? (location.photos as string[]) : [],
       externalRef: location?.external_ref ?? "",
       amenities: amenitiesData ?? [],
@@ -139,6 +141,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     setShuttleToTerminal(baseline.shuttleToTerminal);
     setReservationPolicy(baseline.reservationPolicy);
     setDestinationId(baseline.destinationId);
+    setLatitude(baseline.latitude);
+    setLongitude(baseline.longitude);
     setPhotos(baseline.photos);
     setExternalRef(baseline.externalRef);
     setErrors({});
@@ -166,6 +170,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     shuttleToTerminal,
     reservationPolicy,
     destinationId,
+    latitude,
+    longitude,
     photos,
     externalRef,
     amenities,
@@ -210,7 +216,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       const el = document.getElementById(errorAnchor[first]);
       el?.scrollIntoView({ block: "center", behavior: "smooth" });
       // O bloco de fotos não é focável; o campo de texto é.
-      if (el instanceof HTMLElement && typeof el.focus === "function") el.focus({ preventScroll: true });
+      if (el instanceof HTMLElement && typeof el.focus === "function")
+        el.focus({ preventScroll: true });
       return;
     }
 
@@ -234,10 +241,15 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       destination_id: destinationId,
       company_id: companyId,
       external_ref: externalRef.trim() || null,
+      latitude,
+      longitude,
       photos,
       ...arrivalFields,
     };
 
+    // O operador também salva a geo: o `geog` (ADR-001) é coluna gerada de
+    // lat/lng, então gravar as coordenadas do Places mantém a proximidade em dia.
+    // O destino (âncora) continua fora, que é do manager.
     const operatorPatch = {
       name,
       address: address || null,
@@ -246,6 +258,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       notice: notice || null,
       reservation_policy: reservationPolicy || null,
       has_notice: !!notice,
+      latitude,
+      longitude,
       photos,
       ...arrivalFields,
     };
@@ -310,6 +324,10 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       setReservationPolicy,
       destinationId,
       setDestinationId,
+      latitude,
+      setLatitude,
+      longitude,
+      setLongitude,
       photos,
       setPhotos,
       externalRef,

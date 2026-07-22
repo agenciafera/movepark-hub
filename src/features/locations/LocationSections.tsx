@@ -1,6 +1,11 @@
 import * as React from "react";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import {
+  GooglePlacesAutocomplete,
+  isGooglePlacesEnabled,
+} from "@/components/shared/GooglePlacesAutocomplete";
+import { LocationMapPreview } from "@/components/shared/LocationMapPreview";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -134,9 +139,67 @@ export function LocationSections({
             {...errorProps("name", errors.name)}
           />
         </Field>
-        <Field label="Endereço" htmlFor="address" wide>
-          <Input id="address" value={f.address} onChange={(e) => f.setAddress(e.target.value)} />
-        </Field>
+        <div className="flex flex-col gap-1.5 tablet:col-span-2">
+          <Label htmlFor="address">Endereço</Label>
+          {/* Google Places (E1.9): ao escolher um resultado, captura endereço +
+              lat/lng juntos, que alimentam a proximidade (ADR-001, coluna geog
+              gerada). Sem key, degrada para input comum e mostra os campos
+              manuais de lat/lng. */}
+          <GooglePlacesAutocomplete
+            id="address"
+            value={f.address}
+            onChange={(a) => {
+              f.setAddress(a);
+              // Editar o texto à mão invalida a geo até nova seleção, pra não
+              // deixar coordenada de um endereço apontando para outro.
+              if (isGooglePlacesEnabled) {
+                f.setLatitude(null);
+                f.setLongitude(null);
+              }
+            }}
+            onSelect={(p) => {
+              f.setAddress(p.address);
+              f.setLatitude(p.latitude);
+              f.setLongitude(p.longitude);
+            }}
+          />
+          {f.latitude != null && f.longitude != null ? (
+            <p className="flex items-center gap-1 text-caption-sm text-success">
+              <MapPin className="h-3.5 w-3.5" /> Localização confirmada no mapa.
+            </p>
+          ) : (
+            isGooglePlacesEnabled && (
+              <p className="text-caption text-muted">
+                Escolha o endereço na lista para fixar o ponto no mapa.
+              </p>
+            )
+          )}
+          {!isGooglePlacesEnabled && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="lat">Latitude</Label>
+                <Input
+                  id="lat"
+                  inputMode="decimal"
+                  value={f.latitude ?? ""}
+                  onChange={(e) => f.setLatitude(e.target.value ? Number(e.target.value) : null)}
+                  placeholder="-23.5505"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="lng">Longitude</Label>
+                <Input
+                  id="lng"
+                  inputMode="decimal"
+                  value={f.longitude ?? ""}
+                  onChange={(e) => f.setLongitude(e.target.value ? Number(e.target.value) : null)}
+                  placeholder="-46.6333"
+                />
+              </div>
+            </div>
+          )}
+          <LocationMapPreview latitude={f.latitude} longitude={f.longitude} />
+        </div>
       </Section>
 
       <Section
