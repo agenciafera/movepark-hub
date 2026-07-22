@@ -49,7 +49,75 @@ if (!server) {
   console.error('ERRO: servidor "gemini-image" ausente em ' + cfgPath);
   process.exit(1);
 }
-const childEnv = { ...process.env, ...(server.env || {}) };
+/**
+ * Lê um arquivo no formato dotenv num mapa. Não é parser completo de shell: cobre
+ * `CHAVE=valor`, aspas simples/duplas em volta do valor, comentário e linha vazia,
+ * que é tudo o que um `.env` de projeto costuma ter.
+ */
+function readDotenv(file) {
+  const out = {};
+  if (!fs.existsSync(file)) return out;
+  for (const raw of fs.readFileSync(file, "utf8").split("\n")) {
+    const line = raw.trim();
+    if (!line || line.startsWith("#")) continue;
+    const eq = line.indexOf("=");
+    if (eq < 1) continue;
+    const key = line.slice(0, eq).trim();
+    let value = line.slice(eq + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    out[key] = value;
+  }
+  return out;
+}
+
+/**
+ * Resolve os `${VAR}` que o `.mcp.json` usa no `env` do servidor.
+ *
+ * O `.mcp.json` guarda `GEMINI_API_KEY: "${GEMINI_API_KEY}"` pra não versionar
+ * segredo, mas ninguém expande isso: o antigo `{ ...process.env, ...server.env }`
+ * jogava o literal `${GEMINI_API_KEY}` por cima do valor real e era esse texto que
+ * chegava no Google, que respondia 400 e derrubava o servidor no boot.
+ *
+ * A ordem de busca é ambiente primeiro, depois `.env.local`, depois `.env`: quem
+ * exporta na shell manda, e o arquivo é a rede de segurança.
+ */
+const projectRoot = path.dirname(cfgPath);
+const dotenv = {
+  ...readDotenv(path.join(projectRoot, ".env")),
+  ...readDotenv(path.join(projectRoot, ".env.local")),
+};
+
+function resolveEnvValue(value) {
+  if (typeof value !== "string") return value;
+  const match = /^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$/.exec(value.trim());
+  if (!match) return value;
+  const name = match[1];
+  return process.env[name] ?? dotenv[name] ?? null;
+}
+
+const resolvedServerEnv = {};
+const unresolved = [];
+for (const [key, value] of Object.entries(server.env || {})) {
+  const resolved = resolveEnvValue(value);
+  if (resolved === null) unresolved.push(`${key} (${value})`);
+  else resolvedServerEnv[key] = resolved;
+}
+
+if (unresolved.length) {
+  console.error(
+    "ERRO: variável do servidor sem valor: " +
+      unresolved.join(", ") +
+      "\nDefina no ambiente ou em .env.local (na raiz do projeto).",
+  );
+  process.exit(1);
+}
+
+const childEnv = { ...process.env, ...resolvedServerEnv };
 
 // ---- parse de argumentos ----
 const argv = process.argv.slice(2);

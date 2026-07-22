@@ -19,8 +19,7 @@ import type { FaqCombinedItem } from "@/features/faqs/api";
 import { PartnerLeadModal } from "@/features/onboarding/PartnerLeadModal";
 import { PartnerLogos } from "@/features/partners/PartnerLogos";
 
-const HERO_IMAGE =
-  "/Estacionamentos/vaga-coberta-estacionamento-aeroporto-guarulhos-aeroparking.webp";
+const HERO_IMAGE = "/images/seja-parceiro-acordo.webp";
 
 // Sinais de confiança: fatos da política do parceiro, sem número sem lastro.
 const METRICS = [
@@ -199,14 +198,20 @@ export default function SejaParceiroPage() {
           alt="Estacionamento parceiro Movepark"
           fetchPriority="high"
           decoding="async"
-          className="absolute inset-0 h-full w-full object-cover opacity-40"
+          className="absolute inset-0 h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-mp-navy/60" aria-hidden />
+        {/* Overlay chapado. A foto foi feita pra isso: a metade esquerda é parede
+            em sombra de cima a baixo, sem céu, então 30% já dá o piso do texto sem
+            precisar apagar a cena. Com a foto anterior (contraluz, céu estourado na
+            esquerda) nem 65% chapado passava, e era preciso degradê. */}
+        <div className="absolute inset-0 bg-mp-navy/30" aria-hidden />
         <div className="relative mx-auto max-w-[1100px] px-4 py-14 text-white desktop:px-8 desktop:py-20">
           <span className="text-badge uppercase tracking-[0.4px] text-white/70">
             Para donos de estacionamento
           </span>
-          <h1 className="mt-3 max-w-2xl text-balance text-display-3xl leading-tight text-white">
+          {/* `max-w-xl` e nao `2xl`: a 672px a ponta direita do h1 caia sobre o homem
+              iluminado e o contraste ia a 2,2:1. A 576px ele fica na parede escura. */}
+          <h1 className="mt-3 max-w-xl text-balance text-display-3xl leading-tight text-white">
             Encha suas vagas com reservas online. Sem custo pra começar.
           </h1>
           <p className="mt-4 max-w-xl text-body-md text-white/80">
@@ -222,41 +227,90 @@ export default function SejaParceiroPage() {
         </div>
       </section>
 
-      {/* Dor: a rotina de quem tem estacionamento.
-          O título fica preso à esquerda enquanto os cards passam empilhando à direita,
-          um cobrindo o outro. O empilhamento é `position: sticky` puro, sem JS e sem
-          animação: quem manda é a rolagem, então não há quadro travado nem conteúdo
-          escondido esperando gatilho. Cada card para 14px abaixo do anterior, e é essa
-          sobra que deixa a pilha visível embaixo do card do topo. */}
+      {/* Dor e resposta, lado a lado. Antes eram duas seções soltas em pontos
+          diferentes da página; juntas, uma lê a outra: à esquerda o problema como
+          papelada torta, à direita a fatura que zera o custo.
+
+          A cor está invertida em relação ao mockup de propósito: não existe lilás nos
+          tokens (`surface-pale` é alias do `mp-pale`), e pôr o azul da marca no lado da
+          resposta, deixando o problema em cinza neutro, diz a coisa certa. */}
       <section className="mx-auto max-w-[1100px] px-4 py-16 desktop:px-8 desktop:py-20">
-        <div className="grid grid-cols-1 gap-8 tablet:grid-cols-2 tablet:gap-12">
-          <div className="tablet:sticky tablet:top-28 tablet:self-start">
+        <div className="grid grid-cols-1 items-stretch gap-6 tablet:grid-cols-2">
+          {/* Card da dor */}
+          <div className="flex flex-col rounded-2xl bg-surface-soft p-8 desktop:p-10">
             <span className="text-badge uppercase tracking-wide text-mp-indigo">
               A rotina de quem tem estacionamento
             </span>
-            <h2 className="mt-3 text-balance text-display-2xl text-ink">
-              Vaga vazia não volta. O dia que passou, passou.
-            </h2>
+            <h2 className="mt-3 text-balance text-display-2xl text-ink">Vaga vazia não volta.</h2>
+            <p className="mt-4 text-body-md text-body">O que trava a sua receita todo mês.</p>
+
+            {/* A pilha de comprovantes. Cada um é levemente girado e puxado pra cima do
+                anterior; o recorte tracejado e o X vermelho fazem a leitura de "papelada
+                de problema" sem precisar escrever a palavra em cada um. */}
+            <ul className="relative mt-10 flex-1">
+              {PAINS.map((p, i) => (
+                <li
+                  key={p}
+                  className="rounded-xl border border-hairline bg-canvas px-5 pb-9 pt-5 shadow-tier"
+                  style={{
+                    transform: `rotate(${[-2.5, 1.5, -1, 2][i] ?? 0}deg)`,
+                    marginTop: i === 0 ? 0 : -20,
+                    position: "relative",
+                    zIndex: i + 1,
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-mp-red text-white">
+                      <X className="h-4 w-4" aria-hidden />
+                    </span>
+                    <span className="h-px flex-1 border-t border-dashed border-hairline" />
+                  </div>
+                  <p className="mt-3 text-body-sm text-ink">{p}</p>
+                </li>
+              ))}
+            </ul>
           </div>
 
-          <ul className="space-y-4">
-            {PAINS.map((p, i) => (
-              <li
-                key={p}
-                className="sticky"
-                // 96px libera a topbar (h-20) com folga; o degrau por índice é o que
-                // deixa a borda do card anterior aparecendo embaixo do atual.
-                style={{ top: `${96 + i * 14}px` }}
-              >
-                {/* `min-h` porque cada card é um bloco solto (a pilha não é grid, então
-                    não há linha pra igualar altura): o valor é o do card mais alto. */}
-                <div className="flex min-h-[168px] flex-col gap-3 rounded-md border border-hairline bg-canvas p-5 shadow-tier">
-                  <X className="h-8 w-8 shrink-0 text-mp-red" aria-hidden />
-                  <span className="text-body-md text-ink">{p}</span>
+          {/* Card da resposta */}
+          <div className="flex flex-col rounded-2xl bg-mp-pale p-8 desktop:p-10">
+            <span className="text-badge uppercase tracking-wide text-mp-indigo">Risco zero</span>
+            <h2 className="mt-3 text-balance text-display-2xl text-ink">
+              Você cuida das vagas, a gente cuida do resto.
+            </h2>
+            <p className="mt-4 text-body-md text-body">
+              A Movepark traz o cliente, recebe adiantado e repassa organizado.
+            </p>
+
+            {/* A fatura zerada. É a prova literal do "sem botar nada do bolso": as três
+                linhas que o parceiro teme, todas em zero, e o total fechando em zero. */}
+            <div className="mt-10 flex-1">
+              <div className="rounded-xl bg-canvas p-6">
+                <p className="text-badge uppercase tracking-wide text-muted">Custo pra começar</p>
+                <dl className="mt-5 space-y-3">
+                  {[
+                    "Mensalidade",
+                    "Taxa de adesão",
+                    "Anúncio e mídia",
+                  ].map((linha) => (
+                    <div key={linha} className="flex items-baseline justify-between gap-4">
+                      <dt className="text-body-sm text-body">{linha}</dt>
+                      <dd className="text-body-sm tabular-nums text-body">R$ 0,00</dd>
+                    </div>
+                  ))}
+                </dl>
+                <div className="mt-5 border-t border-hairline pt-5">
+                  <div className="flex items-baseline justify-between gap-4">
+                    <span className="text-title-md text-ink">Você paga</span>
+                    <span className="text-display-sm tabular-nums text-ink">R$ 0,00</span>
+                  </div>
                 </div>
-              </li>
-            ))}
-          </ul>
+              </div>
+
+              <div className="mt-6">
+                <SejaParceiroCta onClick={openModal}>Começar agora</SejaParceiroCta>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -299,24 +353,6 @@ export default function SejaParceiroPage() {
           <div className="col-span-2 flex flex-col justify-between rounded-lg bg-surface-soft p-6">
             <p className="text-display-xl text-ink">{METRICS[3].value}</p>
             <p className="mt-3 text-body-sm text-body">{METRICS[3].label}</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Custo zero: destaque */}
-      <section className="mx-auto max-w-[1100px] px-4 py-16 desktop:px-8 desktop:py-20">
-        <div className="rounded-lg bg-surface-pale p-8 text-center desktop:p-12">
-          <p className="text-badge uppercase tracking-wide text-mp-indigo">Risco zero</p>
-          <h2 className="mx-auto mt-3 max-w-2xl text-balance text-display-2xl text-ink">
-            Você cuida das vagas. A gente cuida do resto.
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-pretty text-body-md text-muted">
-            Sem mensalidade, sem taxa de adesão, sem gasto com mídia. Encher vaga por conta própria
-            custa anúncio todo mês; aqui você começa sem pôr nada no bolso. A Movepark traz o
-            cliente, recebe adiantado e repassa organizado.
-          </p>
-          <div className="mt-7 flex justify-center">
-            <SejaParceiroCta onClick={openModal}>Começar agora</SejaParceiroCta>
           </div>
         </div>
       </section>

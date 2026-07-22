@@ -13,43 +13,52 @@ function renderPage() {
   );
 }
 
-describe("SejaParceiroPage — bloco de dor (pilha de cards)", () => {
-  function cards() {
-    const titulo = screen.getByRole("heading", { name: /Vaga vazia não volta/i });
-    const lista = titulo.closest("section")!.querySelector("ul")!;
-    return [...lista.querySelectorAll<HTMLLIElement>(":scope > li")];
+describe("SejaParceiroPage — par de cards dor/resposta", () => {
+  function cardDor() {
+    return screen.getByRole("heading", { name: /Vaga vazia não volta/i }).closest("div")!;
   }
 
-  it("cada card gruda um degrau abaixo do anterior", () => {
-    // É o degrau que deixa a borda do card de baixo aparecendo na pilha. Sem ele os
-    // cards se cobrem por inteiro e o efeito some.
+  it("empilha os comprovantes sobrepostos e tortos", () => {
+    // É a sobreposição que faz a leitura de "papelada acumulada". Sem a margem
+    // negativa vira uma lista comum, e sem o giro vira uma pilha de cartões.
     renderPage();
 
-    const tops = cards().map((li) => li.style.top);
-    expect(tops).toEqual(["96px", "110px", "124px", "138px"]);
-    for (const li of cards()) expect(li.className).toContain("sticky");
+    const tickets = [...cardDor().querySelectorAll<HTMLLIElement>("ul > li")];
+    expect(tickets).toHaveLength(4);
+    expect(tickets[0].style.marginTop).toBe("0px");
+    for (const t of tickets.slice(1)) expect(t.style.marginTop).toBe("-20px");
+    for (const t of tickets) expect(t.style.transform).toMatch(/rotate\(-?[\d.]+deg\)/);
   });
 
-  it("todos os cards têm a mesma altura mínima", () => {
-    // A pilha não é grid, então não existe linha pra igualar altura: o `min-h` é o
-    // que mantém os quatro do tamanho do maior.
+  it("cada comprovante empilha acima do anterior", () => {
+    // Sem z-index crescente o de baixo apareceria por cima e a pilha inverteria.
     renderPage();
 
-    const alturas = new Set(
-      cards().map((li) => li.querySelector("div")!.className.match(/min-h-\[\d+px\]/)?.[0]),
+    const z = [...cardDor().querySelectorAll<HTMLLIElement>("ul > li")].map((t) =>
+      Number(t.style.zIndex),
     );
-    expect(alturas.size).toBe(1);
-    expect([...alturas][0]).toBeDefined();
+    expect(z).toEqual([...z].sort((a, b) => a - b));
+    expect(new Set(z).size).toBe(z.length);
   });
 
-  it("o X é grande e na cor de erro da marca, decorativo", () => {
+  it("o X é vermelho e decorativo", () => {
     renderPage();
 
-    const icone = cards()[0].querySelector("svg")!;
-    expect(icone.getAttribute("class")).toContain("text-mp-red");
-    expect(icone.getAttribute("class")).toContain("h-8");
-    // O texto ao lado já diz a dor; o ícone não deve ser lido de novo.
+    const icone = cardDor().querySelector("svg")!;
     expect(icone.getAttribute("aria-hidden")).toBe("true");
+    expect(icone.closest("span")!.className).toContain("bg-mp-red");
+  });
+
+  it("a fatura zera todas as linhas e o total", () => {
+    // É a prova literal do "sem botar nada do bolso": se alguma linha deixar de ser
+    // zero, a promessa da seção deixa de ser verdade.
+    renderPage();
+
+    for (const linha of ["Mensalidade", "Taxa de adesão", "Anúncio e mídia"]) {
+      expect(screen.getByText(linha)).toBeInTheDocument();
+    }
+    expect(screen.getByText("Você paga")).toBeInTheDocument();
+    expect(screen.getAllByText("R$ 0,00")).toHaveLength(4);
   });
 });
 
