@@ -48,7 +48,7 @@ não conta na invariante "o Dono tem todos", que vale sobre o catálogo de empre
 É o gate certo quando a resposta para "quem manda nisso?" é a Movepark. No front sai de graça: o
 `hasScope` devolve `true` para `hub_admin` (inclusive impersonando) e `false` para todo membro de
 empresa, então o mesmo escopo esconde o item do menu, tira a rota do alcance e barra a ação, sem um
-`if` de papel espalhado pela UI. Migration `20260904000000_fares_write_platform_scope.sql`.
+`if` de papel espalhado pela UI. Migration `20260905000000_fares_write_platform_scope.sql`.
 
 ## Matriz papel → escopo (seed `company_role_scope`)
 
