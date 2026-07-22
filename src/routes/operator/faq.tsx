@@ -76,7 +76,7 @@ export default function OperatorFaq() {
   const noLocations = !locations.isLoading && (locations.data ?? []).length === 0;
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title="FAQ"
         description="Perguntas e respostas específicas dos seus estacionamentos."

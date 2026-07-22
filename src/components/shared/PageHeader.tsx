@@ -30,10 +30,16 @@ export function PageHeader({
     <header
       className={cn(
         "flex flex-col gap-3 tablet:flex-row tablet:items-end tablet:justify-between",
+        // O cabeçalho é uma zona, não mais um bloco na fila. As páginas do painel
+        // empilham tudo com `gap-6` (24px), então o header ficava a 24px do corpo,
+        // exatamente a mesma distância que os blocos do corpo guardam entre si:
+        // nada separava nada. Este respiro extra faz 24 + 16 = 40px depois do
+        // header contra 24px entre blocos, e é o que cria o agrupamento.
+        !isContent && "pb-4",
         className,
       )}
     >
-      <div className={cn("flex flex-col", isContent ? "gap-2" : "gap-1")}>
+      <div className="flex flex-col gap-2">
         {eyebrow && (
           <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-mp-indigo">
             {eyebrow}

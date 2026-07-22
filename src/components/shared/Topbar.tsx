@@ -36,11 +36,16 @@ export function Topbar({ rightSlot }: { rightSlot?: React.ReactNode }) {
     .toUpperCase();
 
   return (
-    <header className="flex h-20 items-center gap-4 border-b border-hairline bg-canvas px-4 desktop:px-6">
+    // h-16 e não h-20: 80px era o dobro da pílula de busca que a barra carrega.
+    // Num painel de dados aberto em notebook, 16px de volta em toda tela conta.
+    <header className="flex h-16 items-center gap-4 border-b border-hairline bg-canvas px-4 desktop:px-6">
       <div className="tablet:hidden">
         <Monogram size={28} />
       </div>
-      <div className="hidden tablet:flex flex-1 max-w-md items-center gap-2 rounded-full border border-hairline bg-canvas px-4 py-2.5 text-body-sm text-muted shadow-tier transition-shadow">
+      {/* Sem `shadow-tier`: era sombra em repouso num controle plano, e o
+          `transition-shadow` que a acompanhava não tinha estado de hover pra
+          transicionar. A borda já resolve o contorno. */}
+      <div className="hidden tablet:flex flex-1 max-w-md items-center gap-2 rounded-full border border-hairline bg-canvas px-4 py-2.5 text-body-sm text-muted">
         <Search className="h-4 w-4" />
         <span>Buscar reservas, empresas, usuários…</span>
       </div>

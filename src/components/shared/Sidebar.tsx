@@ -63,8 +63,13 @@ export function Sidebar({
                   className={({ isActive }) =>
                     cn(
                       "relative flex items-center gap-3 rounded-sm px-3 py-2 text-body-sm text-muted transition-colors hover:bg-canvas hover:text-ink",
-                      isActive &&
-                        "bg-canvas font-medium text-ink shadow-tier before:absolute before:inset-y-2 before:left-0 before:w-[2px] before:rounded-full before:bg-mp-navy",
+                      // Ativo = pastilha branca sobre o cinza da barra, texto ink e
+                      // peso médio. Três sinais já bastam. Saíram daqui a tarja de
+                      // 2px na borda esquerda (a forma que o design system proíbe
+                      // como acento colorido em item de lista) e a `shadow-tier`,
+                      // que é sombra de hover/elevação estrutural e estava em
+                      // repouso num elemento plano.
+                      isActive && "bg-canvas font-medium text-ink",
                     )
                   }
                   // No tablet o rótulo fica escondido: o title vira o tooltip do ícone.

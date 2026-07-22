@@ -18,7 +18,7 @@ reconfere no código antes de mexer em qualquer linha de status.
 
 | Caso | O que prova | Status |
 |---|---|---|
-| C-01 | Vitrine da home agrupa por estacionamento | PRONTO |
+| C-01 | Vitrine da home: mais vendidos, 1 card por empresa | **PARCIAL** (teto ok, ordem não) |
 | C-02 | Cada card é um tipo de vaga, sem benefício contraditório | **CORRIGIDO** em 22/07 |
 | C-03 | Contador da busca bate com o número de cards | **CORRIGIDO** em 22/07 |
 | C-04 | Detalhe informa corretamente coberto ou descoberto | **CORRIGIDO** em 22/07 |
@@ -149,24 +149,40 @@ não consegue cancelar, só o staff.
 
 ---
 
-## C-01 · Vitrine da home agrupa por estacionamento  [PRONTO · coberto por `e2e/consumer/C01-vitrine-agrupada.spec.ts` · `src/features/search/api.ts:265` (`dedupePopularOffers`)]
+## C-01 · Vitrine da home: mais vendidos, um card por empresa  [**PARCIAL** · decidido 22/07/2026 · coberto por `e2e/consumer/C01-vitrine-mais-vendidos.spec.ts`]
+
+> **Este caso trocou de natureza em 22/07.** Antes exigia o oposto: que nenhuma unidade aparecesse
+> em dois cards, porque a home agrupava por location. A decisão nova alinha a home à busca (o card é
+> um TIPO DE VAGA) e ordena pelo que mais vende, com teto de um card por empresa.
+> Registrada em [86ajneu1c](https://app.clickup.com/t/86ajneu1c).
 
 - **Antes:** home carregada em `/`, sem sessão.
-- **Passos:** rolar até a seção de estacionamentos populares.
-- **Depois:** nenhum estacionamento aparece em dois cards. Cada card leva a
-  `/p/:operator/:location/:type`.
+- **Passos:** rolar até a seção de estacionamentos populares e ler os links dos cards.
+- **Depois esperado:**
+  - cada card é um **tipo de vaga** (`/p/:operador/:unidade/:tipo`), como na busca;
+  - a ordem segue o **volume de reservas daquele tipo**, do maior para o menor;
+  - **nenhuma empresa aparece duas vezes**, mesmo tendo várias unidades ou vários tipos.
+- **Depois observado (22/07):**
+  - o teto de 1 por empresa **já vale**, mas por coincidência: a home ranqueia por unidade e, no
+    corte de 6, não há empresa repetida. A 2ª unidade do Aerovalet é a 7ª colocada e fica de fora;
+  - a **ordem por venda do tipo não existe**. A home ranqueia por reservas da **unidade**
+    (`popular_locations`) e destaca o tipo **mais barato** (`dedupePopularOffers` guarda o de menor
+    `price_1d`), não o mais vendido.
 - **Efeitos colaterais:** nenhum, é leitura.
 - **Armadilhas:**
-  - o dedupe da home guarda **só a oferta mais barata** por location (`api.ts:266-272`) e descarta
-    as outras. O card fica preso a um tipo de vaga (`PopularParkingLots.tsx:55`), então uma unidade
-    que só tem vaga premium some da vitrine se a descoberta dela ficar inativa. Passar neste caso
-    não prova que os outros tipos existem, só que não há card repetido.
-  - **Pergunta em aberto desde 21/07/2026.** A reunião decidiu card por tipo de vaga **na busca** e
-    não falou da home. Enquanto isso não for decidido, a home continua agrupando e este caso segue
-    valendo como está. Se a decisão da busca for estendida à home, este caso **se inverte** e passa
-    a exigir o contrário. Não presuma a extensão: o objetivo da home (vitrine curta de destaques) é
-    diferente do da busca (lista exaustiva), e duplicar ali pode encher a vitrine com a mesma
-    unidade.
+  - **O teto é por EMPRESA, não por unidade.** Aerovalet tem 3 unidades (Congonhas, Guarulhos,
+    Tietê) e só pode ocupar um slot. Quem testar com o teto de unidade em mente vai achar que passa
+    quando não passa.
+  - **Cuidado com o teste que passa por sorte.** O caso está partido em dois de propósito: o C-01a
+    (teto) fica **ativo**, porque a propriedade já vale hoje e serve de guarda contra regressão; o
+    C-01b (ordem por venda) fica em `test.fail()`, porque não existe. Juntar os dois faria o
+    `test.fail()` acusar "passou mas era pra falhar" pelo motivo errado.
+  - **O ranking mal tem dado para ordenar.** Dos 56 tipos de vaga ativos, **53 têm zero venda**. Só
+    Motion Park descoberta (25), Virapark coberta (11) e Abbapark coberta (1) têm histórico. Metade
+    da vitrine vai sair do critério de desempate, não de venda. Ao validar a ordem, confira os três
+    primeiros contra o banco e trate o resto como curadoria.
+  - Ordenar por tipo revela o que a agregação escondia: o Virapark vende **coberta**, o Motion Park
+    vende **descoberta**. Isso é informação de negócio, e é o principal ganho da mudança.
 
 > **C-02 a C-05 foram reescritos em 21/07/2026, depois da reunião das 15:03.** A versão anterior
 > tratava o card duplicado como defeito e pedia um seletor de tipo de vaga no detalhe. **A decisão

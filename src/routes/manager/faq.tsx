@@ -41,7 +41,7 @@ export default function ManagerFaq() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title="FAQ"
         description="Fonte da verdade da FAQ em camadas. As gerais (global) são geridas aqui; destino e unidade aparecem para referência. Nova pergunta cria uma global."

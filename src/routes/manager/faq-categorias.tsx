@@ -46,7 +46,7 @@ export default function ManagerFaqCategorias() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title="Categorias de FAQ"
         description="Agrupam as perguntas no /faq e nos formulários do backoffice."
