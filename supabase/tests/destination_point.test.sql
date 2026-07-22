@@ -34,9 +34,10 @@ begin
 
   -- lote ligado a d1, geo praticamente em cima de P1.
   -- is_listed = true: desde o gate de listagem pública (20260816000000), a RLS catalog_read_location
-  -- exige is_listed para o anon enxergar a unidade (e a view de proximidade que a junta).
-  insert into public.location(id, company_id, name, slug, latitude, longitude, destination_id, status, is_listed)
-  values (gen_random_uuid(), cmp, 'Lote DAT05', 'lote-dat05', -50.0011, -30.0011, d1, 'active', true);
+  -- exige is_listed para o anon enxergar a unidade (e a view de proximidade que a junta). O gate de
+  -- foto (20260818000000) força is_listed = false sem foto, então a fixture precisa de ao menos uma.
+  insert into public.location(id, company_id, name, slug, latitude, longitude, destination_id, status, is_listed, photos)
+  values (gen_random_uuid(), cmp, 'Lote DAT05', 'lote-dat05', -50.0011, -30.0011, d1, 'active', true, '["https://ex/foto.jpg"]'::jsonb);
 
   perform set_config('test.d1', d1::text, false);
   perform set_config('test.d2', d2::text, false);

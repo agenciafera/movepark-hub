@@ -23,9 +23,10 @@ begin
 
   -- lote A: geo coladinha em d1, sem destination_id → trigger deve ligar a d1.
   -- is_listed = true: a RLS catalog_read_location (gate de listagem, 20260816000000) exige a flag
-  -- para o anon enxergar a unidade e a view de proximidade (o teste 11 lê este lote como anon).
-  insert into public.location(id, company_id, name, slug, latitude, longitude, status, is_listed)
-  values (gen_random_uuid(), cmp, 'Lote A (auto)', 'lote-a-auto', -50.0100, -30.0100, 'active', true);
+  -- para o anon enxergar a unidade e a view de proximidade (o teste 11 lê este lote como anon). O
+  -- gate de foto (20260818000000) força is_listed = false sem foto, então a fixture leva uma.
+  insert into public.location(id, company_id, name, slug, latitude, longitude, status, is_listed, photos)
+  values (gen_random_uuid(), cmp, 'Lote A (auto)', 'lote-a-auto', -50.0100, -30.0100, 'active', true, '["https://ex/foto.jpg"]'::jsonb);
 
   -- lote B: geo coladinha em d1, mas com override explícito p/ d2 → mantém d2
   insert into public.location(id, company_id, name, slug, latitude, longitude, destination_id, status)
