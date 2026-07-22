@@ -28,6 +28,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { optimizedImageUrl } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { CANCELLATION_POLICY_LINES_GENERIC } from "@/features/bookings/cancellation.logic";
+import { isTypeDescriptorAmenity } from "@/features/search/amenities.logic";
 import { GUARANTEE_PROMISE } from "@/features/guarantee/copy";
 import {
   localBusinessSchema,
@@ -167,7 +168,10 @@ export default function ListingPage() {
 
   const isSaved = saved.isSaved(listing.id);
   const hasDescription = (listing.capacity ?? 0) > 0 || !!listing.parking_type.description;
-  const hasAmenities = listing.amenities.length > 0;
+  // A página é por tipo de vaga: descritores de tipo (Coberto, Valet…) saem da lista de amenidades,
+  // senão contradizem o próprio tipo do card (86ajmwawc).
+  const amenities = listing.amenities.filter((a) => !isTypeDescriptorAmenity(a.code));
+  const hasAmenities = amenities.length > 0;
   const hasShuttle =
     listing.location.shuttle_to_terminal_minutes != null ||
     listing.location.shuttle_frequency_minutes != null;
@@ -303,7 +307,7 @@ export default function ListingPage() {
             <>
               <section className="space-y-5">
                 <h2 className="text-display-sm text-ink">O que essa vaga oferece</h2>
-                <AmenityList amenities={listing.amenities} />
+                <AmenityList amenities={amenities} />
               </section>
               <Separator />
             </>
