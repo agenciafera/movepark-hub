@@ -1,0 +1,306 @@
+import * as React from "react";
+import { AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ImageGalleryField } from "@/components/shared/ImageUpload";
+import { uploadCompanyAsset } from "@/lib/storage";
+import { useAdminDestinations } from "@/features/destinations/api";
+import { useNearestDestination } from "./api";
+import { slugify, type LocationFormApi } from "./useLocationForm";
+import type { EntityStatus, Location } from "@/types/domain";
+
+// Sentinela do <Select> para "sem âncora" (o Radix Select não aceita value="").
+const NO_DESTINATION = "__none__";
+
+/**
+ * Um bloco do formulário: título, uma linha explicando o porquê, e os campos.
+ *
+ * O formulário tem 15 campos. Empilhados num grid só, como estavam, o parceiro
+ * não sabe onde está nem o que falta. Cada bloco responde a uma pergunta
+ * diferente, e é por isso que o título vem com a explicação junto.
+ */
+function Section({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-md border border-hairline bg-canvas p-6">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-display-sm text-ink">{title}</h2>
+        <p className="text-body-sm text-muted">{description}</p>
+      </div>
+      <div className="mt-5 grid grid-cols-1 gap-4 tablet:grid-cols-2">{children}</div>
+    </section>
+  );
+}
+
+/** Um campo. `wide` ocupa a linha inteira do grid de 2 colunas. */
+function Field({
+  label,
+  htmlFor,
+  hint,
+  wide,
+  children,
+}: {
+  label: React.ReactNode;
+  htmlFor?: string;
+  hint?: string;
+  wide?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={`flex flex-col gap-1.5 ${wide ? "tablet:col-span-2" : ""}`}>
+      <Label htmlFor={htmlFor}>{label}</Label>
+      {children}
+      {hint && <p className="text-caption text-muted">{hint}</p>}
+    </div>
+  );
+}
+
+export function LocationSections({
+  form,
+  companyId,
+  location,
+}: {
+  form: LocationFormApi;
+  companyId: string;
+  location: Location | null;
+}) {
+  const { fields: f, operatorMode, isEdit } = form;
+
+  // Âncora de proximidade só é editável no full scope (hub_admin); operator não toca o vínculo.
+  const destinations = useAdminDestinations();
+  const hasGeo = location?.latitude != null && location?.longitude != null;
+  const nearest = useNearestDestination(
+    !operatorMode ? (location?.latitude ?? null) : null,
+    !operatorMode ? (location?.longitude ?? null) : null,
+  );
+
+  return (
+    <>
+      <Section
+        title="Identificação"
+        description="Como a unidade aparece para o cliente na busca e no voucher."
+      >
+        <Field label="Nome" htmlFor="name" wide>
+          <Input
+            id="name"
+            required
+            value={f.name}
+            onChange={(e) => {
+              f.setName(e.target.value);
+              if (!isEdit && !operatorMode) f.setSlug(slugify(e.target.value));
+            }}
+          />
+        </Field>
+        <Field label="Endereço" htmlFor="address" wide>
+          <Input id="address" value={f.address} onChange={(e) => f.setAddress(e.target.value)} />
+        </Field>
+      </Section>
+
+      <Section
+        title="Contato"
+        description="Por onde a Movepark e o cliente falam com esta unidade."
+      >
+        <Field label="Telefone" htmlFor="phone">
+          <Input id="phone" value={f.phone} onChange={(e) => f.setPhone(e.target.value)} />
+        </Field>
+        <Field label="E-mail" htmlFor="email">
+          <Input
+            id="email"
+            type="email"
+            value={f.email}
+            onChange={(e) => f.setEmail(e.target.value)}
+          />
+        </Field>
+      </Section>
+
+      <Section
+        title="Chegada"
+        description="O que o cliente precisa saber para achar a entrada e pegar o transfer."
+      >
+        <Field
+          label="Aviso crítico de entrada"
+          htmlFor="notice"
+          wide
+          hint='Destacado em alerta no bloco "Como chegar". Use para o que o cliente erra na chegada.'
+        >
+          <Textarea
+            id="notice"
+            value={f.notice}
+            onChange={(e) => f.setNotice(e.target.value)}
+            placeholder="Ex.: Use a Rua Padre Celestino Pavan. O GPS erra a entrada."
+          />
+        </Field>
+        <Field
+          label="Como chegar (passo a passo)"
+          htmlFor="directions"
+          wide
+          hint="O endereço diz onde fica. Aqui você diz como entrar."
+        >
+          <Textarea
+            id="directions"
+            value={f.directionsText}
+            onChange={(e) => f.setDirectionsText(e.target.value)}
+            placeholder="Ex.: Entre pela rua lateral (não pela entrada principal). Recepção coberta à direita."
+          />
+        </Field>
+        <Field label="Transfer · frequência (min)" htmlFor="shuttle-freq">
+          <Input
+            id="shuttle-freq"
+            type="number"
+            min={1}
+            value={f.shuttleFrequency}
+            onChange={(e) => f.setShuttleFrequency(e.target.value)}
+            placeholder="15"
+          />
+        </Field>
+        <Field label="Transfer · tempo até o terminal (min)" htmlFor="shuttle-terminal">
+          <Input
+            id="shuttle-terminal"
+            type="number"
+            min={1}
+            value={f.shuttleToTerminal}
+            onChange={(e) => f.setShuttleToTerminal(e.target.value)}
+            placeholder="6"
+          />
+        </Field>
+      </Section>
+
+      <Section
+        title="Fotos"
+        description="Sem foto a unidade não entra na busca, então este bloco decide se ela vende."
+      >
+        <div className="tablet:col-span-2">
+          <ImageGalleryField
+            label="Fotos da unidade"
+            values={f.photos}
+            onChange={f.setPhotos}
+            onUpload={(file) => uploadCompanyAsset(companyId, "photo", file)}
+          />
+          {f.photos.length === 0 ? (
+            <p className="mt-2 flex items-start gap-1.5 text-caption-sm text-error">
+              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              Suba pelo menos 1 foto. Sem foto, a unidade não entra na busca e não vende.
+            </p>
+          ) : (
+            <p className="mt-2 text-caption-sm text-muted">
+              Foto boa atrai mais cliente. Capriche na fachada e nas vagas.
+            </p>
+          )}
+        </div>
+      </Section>
+
+      <Section
+        title="Política de reserva"
+        description="As regras desta unidade que o cliente lê antes de reservar."
+      >
+        {/* Rótulo escondido: o título da seção já nomeia o campo na tela, e
+            repetir a palavra logo abaixo é ruído. O leitor de tela continua
+            recebendo o label. */}
+        <Field label={<span className="sr-only">Política de reserva</span>} htmlFor="policy" wide>
+          <Textarea
+            id="policy"
+            value={f.reservationPolicy}
+            onChange={(e) => f.setReservationPolicy(e.target.value)}
+            placeholder="Ex.: Cancelamento grátis até 24h antes do check-in."
+          />
+        </Field>
+      </Section>
+
+      {!operatorMode && (
+        <Section
+          title="Catálogo Movepark"
+          description="Campos que a equipe Movepark controla. O parceiro não vê este bloco."
+        >
+          <Field label="Slug" htmlFor="slug">
+            <Input
+              id="slug"
+              required
+              value={f.slug}
+              onChange={(e) => f.setSlug(slugify(e.target.value))}
+            />
+          </Field>
+          <Field label="Status" htmlFor="status">
+            <Select value={f.status} onValueChange={(v) => f.setStatus(v as EntityStatus)}>
+              <SelectTrigger id="status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Ativa</SelectItem>
+                <SelectItem value="inactive">Inativa</SelectItem>
+                <SelectItem value="suspended">Suspensa</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Fuso horário" htmlFor="tz">
+            <Input id="tz" value={f.timezone} onChange={(e) => f.setTimezone(e.target.value)} />
+          </Field>
+          <Field
+            label="Código no sistema de pátio (WPS)"
+            htmlFor="external-ref"
+            hint="Identifica este lote nos eventos do pátio (placa/ANPR). Deixe vazio se não integra com WPS."
+          >
+            <Input
+              id="external-ref"
+              value={f.externalRef}
+              onChange={(e) => f.setExternalRef(e.target.value)}
+              placeholder="ex: lote-01"
+            />
+          </Field>
+          <Field
+            label={
+              <span className="flex items-center justify-between gap-2">
+                Destino (âncora de proximidade)
+                {hasGeo && nearest.data && nearest.data !== f.destinationId && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => f.setDestinationId(nearest.data ?? null)}
+                  >
+                    Detectar mais próximo
+                  </Button>
+                )}
+              </span>
+            }
+            htmlFor="destination"
+            wide
+            hint="Usado para ranquear e exibir a distância do lote ao destino. Lotes novos com geo são ligados ao mais próximo automaticamente."
+          >
+            <Select
+              value={f.destinationId ?? NO_DESTINATION}
+              onValueChange={(v) => f.setDestinationId(v === NO_DESTINATION ? null : v)}
+            >
+              <SelectTrigger id="destination">
+                <SelectValue placeholder="Selecione um destino" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_DESTINATION}>Nenhum</SelectItem>
+                {(destinations.data ?? []).map((d) => (
+                  <SelectItem key={d.id} value={d.id}>
+                    {d.short_name ?? d.name} ({d.code})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+        </Section>
+      )}
+    </>
+  );
+}

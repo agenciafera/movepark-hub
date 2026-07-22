@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AlertTriangle, ImageOff } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,12 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
-import {
-  useOperatorLocations,
-  summarizeLocation,
-  type OperatorLocation,
-} from "@/features/locations/api";
-import { LocationForm } from "@/features/locations/LocationForm";
+import { useOperatorLocations, summarizeLocation } from "@/features/locations/api";
 import { useAuth } from "@/auth/context";
 import type { EntityStatus } from "@/types/domain";
 
@@ -37,23 +32,18 @@ export default function OperatorLocations() {
   const { effectiveCompanyIds } = useAuth();
   const { data, isLoading, isError, refetch, isFetching } =
     useOperatorLocations(effectiveCompanyIds);
-  const [editing, setEditing] = React.useState<(OperatorLocation & { company_id: string }) | null>(
-    null,
-  );
-  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  // Deep-link: /operator/locations?edit=<id> abre direto o editor da unidade (usado pelo
-  // "Adicionar mais fotos" da tela de preview). Consome o parâmetro após abrir.
+  // Deep-link legado: /operator/locations?edit=<id> era usado pelo "Adicionar mais
+  // fotos" da tela de preview, quando o editor era um dialog aqui dentro. Agora o
+  // editor é página própria, então o parâmetro só redireciona (com replace, pra não
+  // deixar a listagem no histórico entre o preview e o editor).
   const editId = searchParams.get("edit");
   React.useEffect(() => {
-    if (!editId || !data) return;
-    const loc = data.find((l) => l.id === editId);
-    if (loc) setEditing(loc as OperatorLocation & { company_id: string });
-    const next = new URLSearchParams(searchParams);
-    next.delete("edit");
-    setSearchParams(next, { replace: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editId, data]);
+    if (!editId) return;
+    navigate(`/operator/locations/${editId}/editar`, { replace: true });
+  }, [editId, navigate]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -147,12 +137,8 @@ export default function OperatorLocations() {
                           Tipos de vaga
                         </Link>
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setEditing(loc as OperatorLocation & { company_id: string })}
-                      >
-                        Editar
+                      <Button size="sm" variant="ghost" asChild>
+                        <Link to={`/operator/locations/${loc.id}/editar`}>Editar</Link>
                       </Button>
                     </div>
                   </CardContent>
@@ -163,15 +149,6 @@ export default function OperatorLocations() {
         </ul>
       )}
 
-      {editing && (
-        <LocationForm
-          open={!!editing}
-          companyId={editing.company_id}
-          location={editing}
-          onOpenChange={(open) => !open && setEditing(null)}
-          editableScope="operator"
-        />
-      )}
     </div>
   );
 }

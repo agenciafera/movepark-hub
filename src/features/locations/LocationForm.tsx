@@ -1,41 +1,9 @@
 import * as React from "react";
-import { toast } from "sonner";
-import { AlertCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ImageGalleryField } from "@/components/shared/ImageUpload";
-import { uploadCompanyAsset } from "@/lib/storage";
-import { useCreateLocation, useNearestDestination, useUpdateLocation } from "./api";
-import { useAdminDestinations } from "@/features/destinations/api";
-import type { EntityStatus, Location } from "@/types/domain";
-
-// Sentinela do <Select> para "sem âncora" (o Radix Select não aceita value="").
-const NO_DESTINATION = "__none__";
-
-/** Minutos do traslado: inteiro positivo ou null (vazio/0/negativo → null, casa com o CHECK do banco). */
-function parsePositiveInt(value: string): number | null {
-  const n = Number.parseInt(value, 10);
-  return Number.isFinite(n) && n > 0 ? n : null;
-}
-
-function slugify(s: string) {
-  return s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
+import { useLocationForm } from "./useLocationForm";
+import { LocationSections } from "./LocationSections";
+import type { Location } from "@/types/domain";
 
 type Props = {
   open: boolean;
@@ -45,6 +13,15 @@ type Props = {
   editableScope?: "full" | "operator";
 };
 
+/**
+ * Editor de localização em dialog.
+ *
+ * O painel do parceiro edita numa PÁGINA (`/operator/locations/:id/editar`):
+ * são seis blocos de campos, e modal não é lugar pra isso. O dialog continua
+ * aqui porque o manager também CRIA unidade a partir da empresa, e nesse fluxo
+ * a sobreposição faz sentido. Os campos são os mesmos nos dois, via
+ * `LocationSections`.
+ */
 export function LocationForm({
   open,
   companyId,
@@ -52,325 +29,32 @@ export function LocationForm({
   onOpenChange,
   editableScope = "full",
 }: Props) {
-  const create = useCreateLocation();
-  const update = useUpdateLocation();
-  const isEdit = !!location;
-  const operatorMode = editableScope === "operator";
+  const form = useLocationForm({
+    companyId,
+    location,
+    operatorMode: editableScope === "operator",
+    onSaved: () => onOpenChange(false),
+  });
 
-  const [name, setName] = React.useState("");
-  const [slug, setSlug] = React.useState("");
-  const [address, setAddress] = React.useState("");
-  const [timezone, setTimezone] = React.useState("America/Sao_Paulo");
-  const [status, setStatus] = React.useState<EntityStatus>("active");
-  const [phone, setPhone] = React.useState("");
-  const [email, setEmail] = React.useState("");
-  const [notice, setNotice] = React.useState("");
-  const [directionsText, setDirectionsText] = React.useState("");
-  const [shuttleFrequency, setShuttleFrequency] = React.useState("");
-  const [shuttleToTerminal, setShuttleToTerminal] = React.useState("");
-  const [reservationPolicy, setReservationPolicy] = React.useState("");
-  const [destinationId, setDestinationId] = React.useState<string | null>(null);
-  const [photos, setPhotos] = React.useState<string[]>([]);
-  const [externalRef, setExternalRef] = React.useState("");
-
-  // Âncora de proximidade só é editável no full scope (hub_admin); operator não toca o vínculo.
-  const destinations = useAdminDestinations();
-  const hasGeo = location?.latitude != null && location?.longitude != null;
-  const nearest = useNearestDestination(
-    !operatorMode ? (location?.latitude ?? null) : null,
-    !operatorMode ? (location?.longitude ?? null) : null,
-  );
-
+  const { reset } = form;
   React.useEffect(() => {
-    if (open) {
-      setName(location?.name ?? "");
-      setSlug(location?.slug ?? "");
-      setAddress(location?.address ?? "");
-      setTimezone(location?.timezone ?? "America/Sao_Paulo");
-      setStatus(location?.status ?? "active");
-      setPhone(location?.phone ?? "");
-      setEmail(location?.email ?? "");
-      setNotice(location?.notice ?? "");
-      setDirectionsText(location?.directions_text ?? "");
-      setShuttleFrequency(
-        location?.shuttle_frequency_minutes != null
-          ? String(location.shuttle_frequency_minutes)
-          : "",
-      );
-      setShuttleToTerminal(
-        location?.shuttle_to_terminal_minutes != null
-          ? String(location.shuttle_to_terminal_minutes)
-          : "",
-      );
-      setReservationPolicy(location?.reservation_policy ?? "");
-      setDestinationId(location?.destination_id ?? null);
-      setPhotos(Array.isArray(location?.photos) ? (location.photos as string[]) : []);
-      setExternalRef(location?.external_ref ?? "");
-    }
-  }, [open, location]);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    // Foto obrigatória para vender: o parceiro não salva a unidade sem pelo menos 1 foto. O gate
-    // no banco (is_listed) já impede a listagem sem foto; aqui a barreira é no próprio form, na voz
-    // do operador. O manager (staff) segue livre para salvar rascunho sem foto.
-    if (operatorMode && photos.length === 0) {
-      toast.error("Adicione pelo menos 1 foto da unidade. Sem foto, ela não entra na busca.");
-      return;
-    }
-    // Conteúdo "Como chegar" (PRD-11) — passo-a-passo + traslado honesto (frequência/tempo).
-    const arrivalFields = {
-      directions_text: directionsText.trim() || null,
-      shuttle_frequency_minutes: parsePositiveInt(shuttleFrequency),
-      shuttle_to_terminal_minutes: parsePositiveInt(shuttleToTerminal),
-    };
-
-    const fullPayload = {
-      name,
-      slug: slug || slugify(name),
-      address: address || null,
-      timezone,
-      status,
-      phone: phone || null,
-      email: email || null,
-      notice: notice || null,
-      reservation_policy: reservationPolicy || null,
-      has_notice: !!notice,
-      destination_id: destinationId,
-      company_id: companyId,
-      external_ref: externalRef.trim() || null,
-      photos,
-      ...arrivalFields,
-    };
-
-    const operatorPatch = {
-      name,
-      address: address || null,
-      phone: phone || null,
-      email: email || null,
-      notice: notice || null,
-      reservation_policy: reservationPolicy || null,
-      has_notice: !!notice,
-      photos,
-      ...arrivalFields,
-    };
-
-    try {
-      if (isEdit && location) {
-        await update.mutateAsync({
-          id: location.id,
-          patch: operatorMode ? operatorPatch : fullPayload,
-        });
-        toast.success("Localização atualizada");
-      } else {
-        await create.mutateAsync(fullPayload);
-        toast.success("Localização criada");
-      }
-      onOpenChange(false);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao salvar");
-    }
-  }
-
-  const submitting = create.isPending || update.isPending;
+    if (open) reset();
+  }, [open, reset]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Editar localização" : "Nova localização"}</DialogTitle>
+          <DialogTitle>{form.isEdit ? "Editar localização" : "Nova localização"}</DialogTitle>
         </DialogHeader>
-        <form className="grid grid-cols-1 gap-4 tablet:grid-cols-2" onSubmit={handleSubmit}>
-          <div className="flex flex-col gap-1.5 tablet:col-span-2">
-            <Label htmlFor="name">Nome</Label>
-            <Input
-              id="name"
-              required
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                if (!isEdit && !operatorMode) setSlug(slugify(e.target.value));
-              }}
-            />
-          </div>
-          {!operatorMode && (
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="slug">Slug</Label>
-              <Input
-                id="slug"
-                required
-                value={slug}
-                onChange={(e) => setSlug(slugify(e.target.value))}
-              />
-            </div>
-          )}
-          {!operatorMode && (
-            <div className="flex flex-col gap-1.5">
-              <Label>Status</Label>
-              <Select value={status} onValueChange={(v) => setStatus(v as EntityStatus)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Ativa</SelectItem>
-                  <SelectItem value="inactive">Inativa</SelectItem>
-                  <SelectItem value="suspended">Suspensa</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          <div className="flex flex-col gap-1.5 tablet:col-span-2">
-            <Label htmlFor="address">Endereço</Label>
-            <Input id="address" value={address} onChange={(e) => setAddress(e.target.value)} />
-          </div>
-          {!operatorMode && (
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="tz">Fuso horário</Label>
-              <Input id="tz" value={timezone} onChange={(e) => setTimezone(e.target.value)} />
-            </div>
-          )}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="phone">Telefone</Label>
-            <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="email">E-mail</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          {!operatorMode && (
-            <div className="flex flex-col gap-1.5 tablet:col-span-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="destination">Destino (âncora de proximidade)</Label>
-                {hasGeo && nearest.data && nearest.data !== destinationId && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setDestinationId(nearest.data ?? null)}
-                  >
-                    Detectar mais próximo
-                  </Button>
-                )}
-              </div>
-              <Select
-                value={destinationId ?? NO_DESTINATION}
-                onValueChange={(v) => setDestinationId(v === NO_DESTINATION ? null : v)}
-              >
-                <SelectTrigger id="destination">
-                  <SelectValue placeholder="Selecione um destino" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NO_DESTINATION}>Nenhum</SelectItem>
-                  {(destinations.data ?? []).map((d) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {d.short_name ?? d.name} ({d.code})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-caption text-muted">
-                Usado para ranquear e exibir a distância do lote ao destino. Lotes novos com geo são
-                ligados ao mais próximo automaticamente.
-              </p>
-            </div>
-          )}
-          {!operatorMode && (
-            <div className="flex flex-col gap-1.5 tablet:col-span-2">
-              <Label htmlFor="external-ref">Código no sistema de pátio (WPS)</Label>
-              <Input
-                id="external-ref"
-                value={externalRef}
-                onChange={(e) => setExternalRef(e.target.value)}
-                placeholder="ex: lote-01"
-              />
-              <p className="text-caption text-muted">
-                Identifica este lote nos eventos do pátio (placa/ANPR). Deixe vazio se não integra com WPS.
-              </p>
-            </div>
-          )}
-          <div className="flex flex-col gap-1.5 tablet:col-span-2">
-            <Label htmlFor="notice">Aviso crítico de entrada</Label>
-            <Textarea
-              id="notice"
-              value={notice}
-              onChange={(e) => setNotice(e.target.value)}
-              placeholder="Ex.: Use a Rua Padre Celestino Pavan. O GPS erra a entrada."
-            />
-            <p className="text-caption text-muted">
-              Destacado em alerta no bloco "Como chegar". Use para o que o cliente erra na chegada.
-            </p>
-          </div>
-          <div className="flex flex-col gap-1.5 tablet:col-span-2">
-            <Label htmlFor="directions">Como chegar (passo a passo)</Label>
-            <Textarea
-              id="directions"
-              value={directionsText}
-              onChange={(e) => setDirectionsText(e.target.value)}
-              placeholder="Ex.: Entre pela rua lateral (não pela entrada principal). Recepção coberta à direita."
-            />
-            <p className="text-caption text-muted">
-              O passo-a-passo de chegada. O endereço diz onde fica; aqui você diz como entrar.
-            </p>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="shuttle-freq">Transfer · frequência (min)</Label>
-            <Input
-              id="shuttle-freq"
-              type="number"
-              min={1}
-              value={shuttleFrequency}
-              onChange={(e) => setShuttleFrequency(e.target.value)}
-              placeholder="15"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="shuttle-terminal">Transfer · tempo até o terminal (min)</Label>
-            <Input
-              id="shuttle-terminal"
-              type="number"
-              min={1}
-              value={shuttleToTerminal}
-              onChange={(e) => setShuttleToTerminal(e.target.value)}
-              placeholder="6"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5 tablet:col-span-2">
-            <Label htmlFor="policy">Política de reserva</Label>
-            <Textarea
-              id="policy"
-              value={reservationPolicy}
-              onChange={(e) => setReservationPolicy(e.target.value)}
-            />
-          </div>
-          <div className="tablet:col-span-2">
-            <ImageGalleryField
-              label="Fotos da unidade (obrigatório)"
-              values={photos}
-              onChange={setPhotos}
-              onUpload={(file) => uploadCompanyAsset(companyId, "photo", file)}
-            />
-            {photos.length === 0 ? (
-              <p className="mt-2 flex items-start gap-1.5 text-caption-sm text-error">
-                <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                Suba pelo menos 1 foto. Sem foto, a unidade não entra na busca e não vende.
-              </p>
-            ) : (
-              <p className="mt-2 text-caption-sm text-muted-steel">
-                Foto boa atrai mais cliente. Capriche na fachada e nas vagas.
-              </p>
-            )}
-          </div>
-          <div className="flex justify-end gap-2 pt-2 tablet:col-span-2">
+        <form className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto" onSubmit={form.submit}>
+          <LocationSections form={form} companyId={companyId} location={location} />
+          <div className="sticky bottom-0 flex justify-end gap-2 border-t border-hairline bg-canvas pt-3">
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={submitting}>
-              {submitting ? "Salvando…" : "Salvar"}
+            <Button type="submit" disabled={form.submitting}>
+              {form.submitting ? "Salvando..." : "Salvar"}
             </Button>
           </div>
         </form>

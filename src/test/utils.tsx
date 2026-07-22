@@ -2,7 +2,7 @@ import * as React from "react";
 import { vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { AuthContext } from "@/auth/context";
 import type { AuthContextValue } from "@/auth/context";
 import type { Session, UserRole } from "@/types/domain";
@@ -50,7 +50,16 @@ export function mockAuth(overrides?: Partial<AuthContextValue>): AuthContextValu
 
 export function renderWithProviders(
   ui: React.ReactNode,
-  opts?: { auth?: AuthContextValue; route?: string },
+  opts?: {
+    auth?: AuthContextValue;
+    route?: string;
+    /**
+     * Padrão da rota, para componente que lê `useParams()`. Sem ele o
+     * MemoryRouter monta a árvore sem `<Routes>`, e `useParams()` devolve `{}`:
+     * a página renderiza como se o id não existisse.
+     */
+    path?: string;
+  },
 ) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
@@ -60,7 +69,13 @@ export function renderWithProviders(
           initialEntries={[opts?.route ?? "/"]}
           future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
         >
-          {ui}
+          {opts?.path ? (
+            <Routes>
+              <Route path={opts.path} element={ui} />
+            </Routes>
+          ) : (
+            ui
+          )}
         </MemoryRouter>
       </AuthContext.Provider>
     </QueryClientProvider>,

@@ -503,6 +503,39 @@ Tabela de Reservas
   (`_create_booking_core`) **rejeita** datas bloqueadas (antes do cálculo de preço). A RPC
   `operator_location_occupancy` devolve `blocked` para a grade exibir o estado.
 
+### Editar unidade é página, não modal
+
+O parceiro edita a unidade em **`/operator/locations/:locationId/editar`**. Era um dialog com os 15
+campos empilhados num grid de 2 colunas, sem seções: dentro de um modal o parceiro não sabia onde
+estava nem o que faltava. A página divide em blocos nomeados, cada um respondendo a uma pergunta:
+**Identificação**, **Contato**, **Chegada**, **Fotos** e **Política de reserva**. O bloco
+**Catálogo Movepark** (slug, status, fuso, âncora de destino, código WPS) só aparece no escopo
+`full`, ou seja, nunca para o parceiro.
+
+- A barra de ações é `sticky` no rodapé: com seis blocos o formulário passa da dobra em qualquer
+  tela, e salvar não deve exigir rolar até o fim.
+- Estado e submit ficam em `useLocationForm`; a apresentação em `LocationSections`. O dialog
+  (`LocationForm`) continua existindo porque o **manager também cria** unidade a partir da empresa,
+  e nesse fluxo a sobreposição faz sentido. Os dois consomem as mesmas seções, então não divergem.
+- A posse é verificada pela própria listagem: `useOperatorLocations` já vem escopada por empresa, e
+  a página resolve a unidade com um `find` nessa lista. Id de outra empresa cai em "não encontrada".
+- O deep-link legado `?edit=<id>` (usado pelo "Adicionar mais fotos" do preview) redireciona para a
+  página com `replace`, sem deixar a listagem no histórico entre o preview e o editor.
+
+### Plano de cancelamento é só do hub_admin
+
+`/operator/fares` é **consulta** para o parceiro. Preço e disponibilidade dos planos Flex e Superflex
+são produto da Movepark, então quem edita é a equipe interna.
+
+O RLS de `location_fare` e `fare` já exigia `is_hub_admin()` para escrever; o furo era a RPC
+**`operator_set_unit_fare`**, que sendo `SECURITY DEFINER` passa por cima do RLS e aceitava qualquer
+membro com `pricing:write` (na prática, dono e gerente da empresa). A RPC agora exige `is_hub_admin()`,
+alinhada com o RLS das tabelas que ela escreve. A UI gateia por **`session.role`**, o papel real, e
+não pelo `effectiveRole`: o hub_admin chega nessa tela por impersonation, quando o papel efetivo já
+virou `company_operator`, e `is_hub_admin()` também olha o papel real, então os dois batem.
+
+Migration `20260903000000_fare_edit_is_hub_admin_only.sql`, pgTAP em `location_fare.test.sql`.
+
 ### Busca do painel (command palette)
 
 O campo de busca da topbar abre uma **command palette** (`⌘K` no mac, `Ctrl+K` no resto), compartilhada
