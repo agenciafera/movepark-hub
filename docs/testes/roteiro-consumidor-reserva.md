@@ -38,6 +38,7 @@ reconfere no código antes de mexer em qualquer linha de status.
 | C-21 | Superflex cancela até 1 minuto antes | PRONTO |
 | C-22 | Estorno de PIX fecha de forma assíncrona | PRONTO |
 | C-23 | Copy da política de cancelamento bate com a tarifa | **FALHA** |
+| C-24 | Cupom PROMO10 por querystring e aplicado à mão | PRONTO |
 
 ## Fixtures deste roteiro
 
@@ -662,6 +663,54 @@ quanto e por quê, senão alguém abre bug de algo que ainda está no prazo.
 - **Armadilhas:** é **copy estática, não afeta o gate**. O comportamento do sistema está certo; o
   texto é que está errado. Não registre como falha de cancelamento, senão a correção vai para o
   arquivo errado. A regra de copy do projeto manda passar pela skill `revisar-texto`.
+
+## C-24 · Cupom PROMO10 por querystring e aplicado à mão  [PRONTO · verificado 22/07/2026 · `ReservationCard.tsx:140-147` e `validate_coupon_public`]
+
+O cupom entra por dois caminhos e os dois precisam funcionar. É também o caso que prova o **escopo**,
+que é onde quase todo mundo erra ao testar cupom.
+
+- **Antes:** cupom `PROMO10` ativo. Estado conferido no banco:
+  ```sql
+  select c.code, c.discount_type, c.discount_value, c.is_active,
+         comp.slug as empresa_dona, c.max_uses, c.per_user_limit, c.times_used
+  from coupon c left join company comp on comp.id = c.company_id
+  where upper(c.code) = 'PROMO10';
+  -- percent | 10.00 | true | abbapark | max_uses null | per_user_limit null
+  ```
+- **Passos:**
+  1. abrir o detalhe do Abbapark com o cupom na URL: `/p/abbapark/aeroporto-afonso-pena/uncovered?cupom=PROMO10`, escolher datas;
+  2. repetir sem a querystring, digitando `PROMO10` no campo de cupom;
+  3. tentar o mesmo cupom numa unidade de **outra empresa** (Motion Park).
+- **Depois:**
+  - nos passos 1 e 2, desconto de **10%** aplicado e total reduzido. Medido: subtotal R$ 16,90 vira
+    **R$ 15,21** (desconto R$ 1,69);
+  - no passo 3, o cupom é **recusado** com `error_code: "invalid"`.
+- **Efeitos colaterais:** nenhum ao validar. A validação é anônima e não escreve nada.
+- **Armadilhas:**
+  - **O escopo é por EMPRESA, não por tipo de vaga.** Mora em `coupon.company_id`
+    (`= abbapark`). Quem procurar o vínculo em `coupon_parking_type` vai achar a tabela **vazia** e
+    concluir, errado, que o cupom é global. `coupon_parking_type` é um segundo filtro, mais estreito,
+    e vazio significa "todos os tipos daquela empresa" (a checagem só roda `if exists`, ver
+    `20260611000000_coupon_engine.sql:110`).
+  - **Recusa em outra empresa devolve `invalid`, não `not_eligible_type`.** Parece "cupom não
+    existe", e é escopo. Não registre como cupom quebrado.
+  - **Dois nomes de parâmetro:** `?cupom=` e `?coupon=` (`parseCouponParam`). Testar só um deixa
+    metade sem cobertura.
+  - **Cupom aceito faz o campo de digitação sumir.** O JSX é um ternário: validou, o chip "aplicado"
+    **substitui** o input. Quem for conferir "o código ficou no campo" não vai achar campo nenhum.
+    O sinal de sucesso é o chip com o código e o desconto, não o valor do input. No caminho de
+    recusa o input continua lá, com o código digitado.
+  - **A página monta o card de reserva duas vezes**, o do desktop e o CTA fixo do mobile
+    (`listing.tsx:269` e `:349`). Só um fica visível, mas os dois existem no DOM. Quem automatizar
+    precisa filtrar pelo visível, senão o seletor casa com dois elementos e quebra.
+  - **O cupom sobrevive ao login.** É guardado na sessão (`getStoredCoupon`), de propósito, para não
+    se perder no round-trip de autenticação. Ao testar em sequência, um cupom de um teste anterior
+    pode reaparecer sozinho e parecer bug. Limpe a sessão entre execuções.
+  - **`times_used` NÃO incrementa ao reservar.** O contador só sobe quando o pagamento vira `paid`,
+    pelo trigger `payment_bump_coupon`. Quem conferir o contador logo após criar a reserva vai achar
+    que o cupom não foi registrado. Hoje `times_used = 0` e não há `max_uses`, então nada limita.
+  - O desconto depende dos **dias**, então o valor é revalidado quando as datas mudam. Conferir o
+    percentual, não um valor absoluto decorado.
 
 ---
 

@@ -637,7 +637,10 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
         {canReserve && (
           <div className="mt-4">
             {applied ? (
-              <div className="flex items-center justify-between gap-2 rounded-sm border border-badge-confirmed-fg/30 bg-badge-confirmed-bg p-3">
+              <div
+                data-testid="coupon-applied"
+                className="flex items-center justify-between gap-2 rounded-sm border border-badge-confirmed-fg/30 bg-badge-confirmed-bg p-3"
+              >
                 <span className="text-caption font-medium text-badge-confirmed-fg">
                   {applied.code}: {couponDiscountLabel(applied)}
                 </span>
@@ -652,6 +655,7 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
             ) : (
               <div className="flex items-center gap-2">
                 <Input
+                  data-testid="coupon-input"
                   value={couponInput}
                   onChange={(e) => setCouponInput(e.target.value)}
                   placeholder="Cupom de desconto"
@@ -659,6 +663,7 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
                   aria-label="Código do cupom"
                 />
                 <Button
+                  data-testid="coupon-apply"
                   type="button"
                   variant="outline"
                   size="sm"
@@ -669,7 +674,11 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
                 </Button>
               </div>
             )}
-            {couponMsg && <p className="mt-1.5 text-caption text-error">{couponMsg}</p>}
+            {couponMsg && (
+              <p data-testid="coupon-error" className="mt-1.5 text-caption text-error">
+                {couponMsg}
+              </p>
+            )}
           </div>
         )}
 

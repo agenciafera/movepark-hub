@@ -87,7 +87,7 @@ export default defineConfig({
      */
     {
       name: "e2e-consumer",
-      testMatch: /consumer\/C0[1-5].*\.spec\.ts$/,
+      testMatch: /consumer\/C(0[1-5]|24).*\.spec\.ts$/,
       dependencies: ["setup"],
       use: { ...devices["Desktop Chrome"], storageState: CUSTOMER_STATE },
     },
