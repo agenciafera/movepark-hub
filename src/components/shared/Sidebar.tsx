@@ -5,6 +5,7 @@ import { usePendingPartnerCount } from "@/features/onboarding/managerApi";
 import { filterSectionsByScopes } from "./Sidebar.logic";
 import { managerSections, operatorSections } from "./nav-items";
 import { Monogram, Wordmark } from "./Brand";
+import { useCompany } from "@/features/companies/api";
 
 export function Sidebar({
   variant,
@@ -13,22 +14,32 @@ export function Sidebar({
   variant: "manager" | "operator";
   brandTitle?: string;
 }) {
-  const { hasScope } = useAuth();
+  const { hasScope, effectiveCompanyIds } = useAuth();
   const sections = filterSectionsByScopes(
     variant === "manager" ? managerSections : operatorSections,
     hasScope,
   );
+
+  // Sob a marca vai o nome da empresa em escopo, que é a informação que o
+  // parceiro precisa ("estou mexendo em qual conta?"). O `brandTitle` genérico
+  // fica de fallback: o hub_admin não pertence a uma empresa, então no manager
+  // continua "Backoffice" até ele impersonar, quando o nome passa a valer.
+  const company = useCompany(effectiveCompanyIds[0]);
+  const subtitle = company.data?.name ?? brandTitle;
   // Leads novos aguardando análise → badge no item "Parceiros" (só no manager).
   const pendingPartners = usePendingPartnerCount(variant === "manager");
   const newLeads = variant === "manager" ? (pendingPartners.data ?? 0) : 0;
 
   return (
     <aside className="hidden tablet:flex h-full w-[64px] desktop:w-[240px] shrink-0 flex-col overflow-y-auto border-r border-hairline bg-surface-soft px-3 py-6">
-      <div className="hidden desktop:flex flex-col gap-1 px-3 pb-8">
+      <div className="hidden desktop:flex flex-col items-center gap-1.5 px-3 pb-8 text-center">
         <Wordmark height={22} />
-        {brandTitle && (
-          <span className="pl-px text-[11px] font-bold uppercase tracking-[0.4px] text-muted-steel">
-            {brandTitle}
+        {subtitle && (
+          <span
+            className="line-clamp-2 text-caption font-medium text-muted-steel"
+            title={subtitle}
+          >
+            {subtitle}
           </span>
         )}
       </div>
