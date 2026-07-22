@@ -237,7 +237,7 @@ export default function SejaParceiroPage() {
       <section className="mx-auto max-w-[1100px] px-4 py-16 desktop:px-8 desktop:py-20">
         <div className="grid grid-cols-1 items-stretch gap-6 tablet:grid-cols-2">
           {/* Card da dor */}
-          <div className="flex flex-col rounded-2xl bg-surface-soft p-8 desktop:p-10">
+          <div className="flex flex-col rounded-xl bg-surface-soft p-8 desktop:p-10">
             <span className="text-badge uppercase tracking-wide text-mp-indigo">
               A rotina de quem tem estacionamento
             </span>
@@ -251,7 +251,7 @@ export default function SejaParceiroPage() {
               {PAINS.map((p, i) => (
                 <li
                   key={p}
-                  className="rounded-xl border border-hairline bg-canvas px-5 pb-9 pt-5 shadow-tier"
+                  className="rounded-md border border-hairline bg-canvas px-5 pb-9 pt-5 shadow-tier"
                   style={{
                     transform: `rotate(${[-2.5, 1.5, -1, 2][i] ?? 0}deg)`,
                     marginTop: i === 0 ? 0 : -20,
@@ -272,7 +272,7 @@ export default function SejaParceiroPage() {
           </div>
 
           {/* Card da resposta */}
-          <div className="flex flex-col rounded-2xl bg-mp-pale p-8 desktop:p-10">
+          <div className="flex flex-col rounded-xl bg-mp-pale p-8 desktop:p-10">
             <span className="text-badge uppercase tracking-wide text-mp-indigo">Risco zero</span>
             <h2 className="mt-3 text-balance text-display-2xl text-ink">
               Você cuida das vagas, a gente cuida do resto.
@@ -284,7 +284,7 @@ export default function SejaParceiroPage() {
             {/* A fatura zerada. É a prova literal do "sem botar nada do bolso": as três
                 linhas que o parceiro teme, todas em zero, e o total fechando em zero. */}
             <div className="mt-10 flex-1">
-              <div className="rounded-xl bg-canvas p-6">
+              <div className="rounded-md bg-canvas p-6">
                 <p className="text-badge uppercase tracking-wide text-muted">Custo pra começar</p>
                 <dl className="mt-5 space-y-3">
                   {[
