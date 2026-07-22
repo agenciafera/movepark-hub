@@ -21,6 +21,13 @@ vi.mock("@/features/amenities/AmenityPicker", () => ({
   AmenityPicker: () => null,
 }));
 
+// O hook do form lê/grava amenidades. Sem mock, isso vira query real (supabase
+// degradado) que resolve async e re-renderiza no meio da interação do teste.
+vi.mock("@/features/amenities/api", () => ({
+  useLocationAmenities: () => ({ data: [] as string[] }),
+  useSetLocationAmenities: () => ({ mutateAsync: vi.fn().mockResolvedValue(undefined), isPending: false }),
+}));
+
 function location(over: Partial<OperatorLocation> = {}): OperatorLocation {
   return {
     id: "loc-1",
@@ -108,7 +115,7 @@ describe("OperatorLocationEdit", () => {
  * atualização vinda de fora no meio da edição chamava `reset()` e apagava o que
  * a pessoa tinha digitado. A dependência agora é `location?.id`.
  */
-describe("OperatorLocationEdit — o que a pessoa digitou é dela", () => {
+describe("OperatorLocationEdit: o que a pessoa digitou é dela", () => {
   it("dado que muda por fora não sobrescreve o formulário em edição", async () => {
     let atual = [location()];
     vi.mocked(useOperatorLocations).mockImplementation(
@@ -133,5 +140,32 @@ describe("OperatorLocationEdit — o que a pessoa digitou é dela", () => {
     await userEvent.type(tel, "9"); // provoca re-render
 
     expect(tel).toHaveValue("419888877779");
+  });
+});
+
+/**
+ * Endurecimento: a validação vive no submit, fala em pt-BR e ancora no campo,
+ * em vez do balão nativo do navegador ou de coerção silenciosa.
+ */
+describe("OperatorLocationEdit: validação no submit", () => {
+  it("nome vazio barra o salvamento e mostra erro no campo", async () => {
+    setup({ data: [location()] });
+
+    const nome = screen.getByLabelText("Nome");
+    await userEvent.clear(nome);
+    await userEvent.click(screen.getByRole("button", { name: "Salvar alterações" }));
+
+    expect(screen.getByText("Dê um nome para a unidade.")).toBeInTheDocument();
+    expect(nome).toHaveAttribute("aria-invalid", "true");
+    // continua na página (o submit não seguiu)
+    expect(screen.getByRole("heading", { name: "Identificação" })).toBeInTheDocument();
+  });
+
+  it("sem foto, barra o salvamento com o aviso de que não vende", async () => {
+    setup({ data: [location({ photos: [] })] });
+
+    await userEvent.click(screen.getByRole("button", { name: "Salvar alterações" }));
+
+    expect(screen.getByText(/Sem foto, a unidade não entra na busca/)).toBeInTheDocument();
   });
 });

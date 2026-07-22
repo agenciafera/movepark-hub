@@ -2,7 +2,7 @@ import * as React from "react";
 import { vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, RouterProvider, createMemoryRouter } from "react-router-dom";
 import { AuthContext } from "@/auth/context";
 import type { AuthContextValue } from "@/auth/context";
 import type { Session, UserRole } from "@/types/domain";
@@ -54,30 +54,34 @@ export function renderWithProviders(
     auth?: AuthContextValue;
     route?: string;
     /**
-     * Padrão da rota, para componente que lê `useParams()`. Sem ele o
-     * MemoryRouter monta a árvore sem `<Routes>`, e `useParams()` devolve `{}`:
-     * a página renderiza como se o id não existisse.
+     * Padrão da rota, para componente que lê `useParams()`. Com ele, a árvore
+     * usa um DATA ROUTER (`createMemoryRouter`), não o `<MemoryRouter>` simples:
+     * `useParams()` resolve o id E hooks de data router como `useBlocker`
+     * funcionam, igual à produção (vite-react-ssg usa `createBrowserRouter`).
+     * Sem `path`, mantém o MemoryRouter simples dos testes que não precisam disso.
      */
     path?: string;
   },
 ) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const future = { v7_startTransition: true, v7_relativeSplatPath: true } as const;
+
+  const tree = opts?.path ? (
+    <RouterProvider
+      router={createMemoryRouter([{ path: opts.path, element: ui }], {
+        initialEntries: [opts?.route ?? "/"],
+        future,
+      })}
+    />
+  ) : (
+    <MemoryRouter initialEntries={[opts?.route ?? "/"]} future={future}>
+      {ui}
+    </MemoryRouter>
+  );
+
   return render(
     <QueryClientProvider client={qc}>
-      <AuthContext.Provider value={opts?.auth ?? mockAuth()}>
-        <MemoryRouter
-          initialEntries={[opts?.route ?? "/"]}
-          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-        >
-          {opts?.path ? (
-            <Routes>
-              <Route path={opts.path} element={ui} />
-            </Routes>
-          ) : (
-            ui
-          )}
-        </MemoryRouter>
-      </AuthContext.Provider>
+      <AuthContext.Provider value={opts?.auth ?? mockAuth()}>{tree}</AuthContext.Provider>
     </QueryClientProvider>,
   );
 }

@@ -38,10 +38,17 @@ function Section({
   description: string;
   children: React.ReactNode;
 }) {
+  // `aria-labelledby` no h2 faz cada bloco virar região navegável por landmark.
+  const headingId = `sec-${slugify(title)}`;
   return (
-    <section className="rounded-md border border-hairline bg-canvas p-6">
+    <section
+      aria-labelledby={headingId}
+      className="rounded-md border border-hairline bg-canvas p-6"
+    >
       <div className="flex flex-col gap-1">
-        <h2 className="text-display-sm text-ink">{title}</h2>
+        <h2 id={headingId} className="text-display-sm text-ink">
+          {title}
+        </h2>
         <p className="text-body-sm text-muted">{description}</p>
       </div>
       <div className="mt-5 grid grid-cols-1 gap-4 tablet:grid-cols-2">{children}</div>
@@ -49,17 +56,28 @@ function Section({
   );
 }
 
-/** Um campo. `wide` ocupa a linha inteira do grid de 2 colunas. */
+/** Props de acessibilidade do controle quando o campo tem erro, para o caller espalhar. */
+function errorProps(fieldId: string, error?: string) {
+  return error ? { "aria-invalid": true, "aria-describedby": `${fieldId}-error` } : {};
+}
+
+/**
+ * Um campo. `wide` ocupa a linha inteira do grid. `error` troca a dica por uma
+ * mensagem em vermelho com id `${htmlFor}-error`, ligada ao controle via
+ * `aria-describedby` (ver `errorProps`).
+ */
 function Field({
   label,
   htmlFor,
   hint,
+  error,
   wide,
   children,
 }: {
   label: React.ReactNode;
   htmlFor?: string;
   hint?: string;
+  error?: string;
   wide?: boolean;
   children: React.ReactNode;
 }) {
@@ -67,7 +85,13 @@ function Field({
     <div className={`flex flex-col gap-1.5 ${wide ? "tablet:col-span-2" : ""}`}>
       <Label htmlFor={htmlFor}>{label}</Label>
       {children}
-      {hint && <p className="text-caption text-muted">{hint}</p>}
+      {error ? (
+        <p id={htmlFor ? `${htmlFor}-error` : undefined} className="text-caption text-error">
+          {error}
+        </p>
+      ) : (
+        hint && <p className="text-caption text-muted">{hint}</p>
+      )}
     </div>
   );
 }
@@ -81,7 +105,7 @@ export function LocationSections({
   companyId: string;
   location: Location | null;
 }) {
-  const { fields: f, operatorMode, isEdit } = form;
+  const { fields: f, operatorMode, isEdit, errors } = form;
 
   // Âncora de proximidade só é editável no full scope (hub_admin); operator não toca o vínculo.
   const destinations = useAdminDestinations();
@@ -97,15 +121,17 @@ export function LocationSections({
         title="Identificação"
         description="Como a unidade aparece para o cliente na busca e no voucher."
       >
-        <Field label="Nome" htmlFor="name" wide>
+        {/* Sem `required` nativo: a validação vive no submit (useLocationForm) e
+            fala na mesma língua dos outros erros, em vez do balão do navegador. */}
+        <Field label="Nome" htmlFor="name" error={errors.name} wide>
           <Input
             id="name"
-            required
             value={f.name}
             onChange={(e) => {
               f.setName(e.target.value);
               if (!isEdit && !operatorMode) f.setSlug(slugify(e.target.value));
             }}
+            {...errorProps("name", errors.name)}
           />
         </Field>
         <Field label="Endereço" htmlFor="address" wide>
@@ -160,24 +186,36 @@ export function LocationSections({
             placeholder="Ex.: Entre pela rua lateral (não pela entrada principal). Recepção coberta à direita."
           />
         </Field>
-        <Field label="Transfer · frequência (min)" htmlFor="shuttle-freq">
+        <Field
+          label="Transfer · frequência (min)"
+          htmlFor="shuttle-freq"
+          error={errors.shuttleFrequency}
+        >
           <Input
             id="shuttle-freq"
             type="number"
+            inputMode="numeric"
             min={1}
             value={f.shuttleFrequency}
             onChange={(e) => f.setShuttleFrequency(e.target.value)}
             placeholder="15"
+            {...errorProps("shuttle-freq", errors.shuttleFrequency)}
           />
         </Field>
-        <Field label="Transfer · tempo até o terminal (min)" htmlFor="shuttle-terminal">
+        <Field
+          label="Transfer · tempo até o terminal (min)"
+          htmlFor="shuttle-terminal"
+          error={errors.shuttleToTerminal}
+        >
           <Input
             id="shuttle-terminal"
             type="number"
+            inputMode="numeric"
             min={1}
             value={f.shuttleToTerminal}
             onChange={(e) => f.setShuttleToTerminal(e.target.value)}
             placeholder="6"
+            {...errorProps("shuttle-terminal", errors.shuttleToTerminal)}
           />
         </Field>
       </Section>
@@ -186,7 +224,8 @@ export function LocationSections({
         title="Fotos"
         description="Sem foto a unidade não entra na busca, então este bloco decide se ela vende."
       >
-        <div className="tablet:col-span-2">
+        {/* id de âncora: o submit rola até aqui quando falta foto. */}
+        <div id="photos-field" className="scroll-mt-24 tablet:col-span-2">
           <ImageGalleryField
             label="Fotos da unidade"
             values={f.photos}
@@ -272,26 +311,22 @@ export function LocationSections({
               placeholder="ex: lote-01"
             />
           </Field>
-          <Field
-            label={
-              <span className="flex items-center justify-between gap-2">
-                Destino (âncora de proximidade)
-                {hasGeo && nearest.data && nearest.data !== f.destinationId && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => f.setDestinationId(nearest.data ?? null)}
-                  >
-                    Detectar mais próximo
-                  </Button>
-                )}
-              </span>
-            }
-            htmlFor="destination"
-            wide
-            hint="Usado para ranquear e exibir a distância do lote ao destino. Lotes novos com geo são ligados ao mais próximo automaticamente."
-          >
+          {/* O botão "Detectar" fica FORA do label: botão dentro de <label> é
+              HTML inválido e o clique pode ser reencaminhado ao Select. */}
+          <div className="flex flex-col gap-1.5 tablet:col-span-2">
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="destination">Destino (âncora de proximidade)</Label>
+              {hasGeo && nearest.data && nearest.data !== f.destinationId && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => f.setDestinationId(nearest.data ?? null)}
+                >
+                  Detectar mais próximo
+                </Button>
+              )}
+            </div>
             <Select
               value={f.destinationId ?? NO_DESTINATION}
               onValueChange={(v) => f.setDestinationId(v === NO_DESTINATION ? null : v)}
@@ -308,7 +343,11 @@ export function LocationSections({
                 ))}
               </SelectContent>
             </Select>
-          </Field>
+            <p className="text-caption text-muted">
+              Usado para ranquear e exibir a distância do lote ao destino. Lotes novos com geo são
+              ligados ao mais próximo automaticamente.
+            </p>
+          </div>
         </Section>
       )}
     </>
