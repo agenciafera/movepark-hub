@@ -43,6 +43,9 @@ export interface ParsedEvent {
   eventId: string | null;
   type: string;
   orderId: string | null;
+  /** Id da cobrança (ch_...) quando o evento é `charge.*`. Desempata quando há mais de uma
+   *  cobrança no mesmo booking, sem depender de recência (86ajnet8w). */
+  chargeId: string | null;
   bookingId: string | null;
   bookingCode: string | null;
   rawStatus: string | null;
@@ -82,16 +85,64 @@ export function parseWebhookEvent(body: unknown): ParsedEvent {
   const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
   const data = (b.data ?? {}) as Record<string, unknown>;
   const metadata = (data.metadata ?? {}) as Record<string, unknown>;
-  // charge.* → data.order_id; order.* → data.id
+  const type = (b.type as string) ?? "";
+  // charge.* → data.order_id é a ordem; data.id é a cobrança (ch_...).
+  // order.*  → data.id é a ordem; a cobrança fica em data.charges[].
   const orderId = (data.order_id as string) ?? (data.id as string) ?? null;
+  const chargeId = type.toLowerCase().startsWith("charge.")
+    ? ((data.id as string) ?? null)
+    : (((data.charges as Array<Record<string, unknown>>)?.[0]?.id as string) ?? null);
   return {
     eventId: (b.id as string) ?? null,
-    type: (b.type as string) ?? "",
+    type,
     orderId,
+    chargeId,
     bookingId: (metadata.booking_id as string) ?? null,
     bookingCode: (data.code as string) ?? (metadata.booking_code as string) ?? null,
     rawStatus: (data.status as string) ?? null,
   };
+}
+
+// ── Resolução do payment casado com o evento ────────────────────────────────
+
+/** Payment casado com o evento (o que o handler precisa pra decidir a ação). */
+export interface MatchedPayment {
+  id: string;
+  booking_id: string;
+  kind: string | null;
+  fare_target_tier: string | null;
+  date_change_check_in_at: string | null;
+  date_change_check_out_at: string | null;
+  status: string | null;
+  paid_at: string | null;
+}
+
+/** Buscas precisas por identificador único da cobrança. Sem busca por booking/recência. */
+export interface PaymentLookup {
+  byOrderId(orderId: string): Promise<MatchedPayment | null>;
+  byChargeId(chargeId: string): Promise<MatchedPayment | null>;
+}
+
+/**
+ * Acha o payment que o evento cita, SÓ por identificador único: primeiro a ordem
+ * (`provider_payment_id`), depois a cobrança (`provider_charge_id`). Nunca por "o mais recente do
+ * booking": uma reserva pode ter várias cobranças (reserva, upgrade de tarifa, troca de datas), e
+ * chutar a mais recente aplicaria o evento na cobrança errada, de forma silenciosa (86ajnet8w).
+ * Sem match, devolve null: melhor o evento ficar não processado do que aplicado no lugar errado.
+ */
+export async function resolvePayment(
+  ev: Pick<ParsedEvent, "orderId" | "chargeId">,
+  lookup: PaymentLookup,
+): Promise<MatchedPayment | null> {
+  if (ev.orderId) {
+    const byOrder = await lookup.byOrderId(ev.orderId);
+    if (byOrder) return byOrder;
+  }
+  if (ev.chargeId) {
+    const byCharge = await lookup.byChargeId(ev.chargeId);
+    if (byCharge) return byCharge;
+  }
+  return null;
 }
 
 // ── Decisão de status do payment ────────────────────────────────────────────

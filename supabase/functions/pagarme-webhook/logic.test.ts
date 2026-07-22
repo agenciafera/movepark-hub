@@ -1,9 +1,11 @@
 import { assertEquals } from "jsr:@std/assert";
 import {
   decidePaymentStatus,
+  type MatchedPayment,
   parseRecipientEvent,
   parseTransferEvent,
   parseWebhookEvent,
+  resolvePayment,
   timingSafeEqual,
   transferStatusToWithdrawalStatus,
   verifyBasicAuth,
@@ -226,4 +228,105 @@ Deno.test("transferStatusToWithdrawalStatus: mapeia os status crus", () => {
   assertEquals(transferStatusToWithdrawalStatus("processing"), "processing");
   assertEquals(transferStatusToWithdrawalStatus("created"), "created");
   assertEquals(transferStatusToWithdrawalStatus(null), "created");
+});
+
+// ── Resolução do payment (86ajnet8w) ────────────────────────────────────────
+
+Deno.test("parseWebhookEvent: charge.* traz orderId (order_id) e chargeId (data.id)", () => {
+  const ev = parseWebhookEvent({
+    id: "ev_1",
+    type: "charge.paid",
+    data: { id: "ch_ABC", order_id: "or_XYZ", status: "paid" },
+  });
+  assertEquals(ev.orderId, "or_XYZ");
+  assertEquals(ev.chargeId, "ch_ABC");
+});
+
+Deno.test("parseWebhookEvent: order.* traz orderId (data.id) e chargeId da 1ª charge", () => {
+  const ev = parseWebhookEvent({
+    id: "ev_2",
+    type: "order.paid",
+    data: { id: "or_XYZ", charges: [{ id: "ch_ABC" }], status: "paid" },
+  });
+  assertEquals(ev.orderId, "or_XYZ");
+  assertEquals(ev.chargeId, "ch_ABC");
+});
+
+function fakePayment(id: string, kind: string): MatchedPayment {
+  return {
+    id,
+    booking_id: "bk_1",
+    kind,
+    fare_target_tier: null,
+    date_change_check_in_at: null,
+    date_change_check_out_at: null,
+    status: "pending",
+    paid_at: null,
+  };
+}
+
+Deno.test("resolvePayment: casa pela ordem (provider_payment_id)", async () => {
+  const p = fakePayment("pay_booking", "booking");
+  const calls: string[] = [];
+  const got = await resolvePayment(
+    { orderId: "or_1", chargeId: "ch_1" },
+    {
+      byOrderId: (o) => {
+        calls.push(`order:${o}`);
+        return Promise.resolve(o === "or_1" ? p : null);
+      },
+      byChargeId: (c) => {
+        calls.push(`charge:${c}`);
+        return Promise.resolve(null);
+      },
+    },
+  );
+  assertEquals(got, p);
+  // achou pela ordem → nem consulta o charge
+  assertEquals(calls, ["order:or_1"]);
+});
+
+Deno.test("resolvePayment: ordem não casa → desempata pelo charge (nunca por recência)", async () => {
+  // Cenário do C-16: reserva com duas cobranças. O evento é da cobrança do UPGRADE, cuja ordem não
+  // bateu no match primário; o charge id é único e aponta pro payment certo, não pro mais recente.
+  const upgrade = fakePayment("pay_upgrade", "fare_upgrade");
+  const got = await resolvePayment(
+    { orderId: "or_desconhecida", chargeId: "ch_upgrade" },
+    {
+      byOrderId: () => Promise.resolve(null),
+      byChargeId: (c) => Promise.resolve(c === "ch_upgrade" ? upgrade : null),
+    },
+  );
+  assertEquals(got, upgrade);
+});
+
+Deno.test("resolvePayment: sem match por ordem nem charge → null (não aplica no errado)", async () => {
+  const got = await resolvePayment(
+    { orderId: "or_nao_existe", chargeId: "ch_nao_existe" },
+    {
+      byOrderId: () => Promise.resolve(null),
+      byChargeId: () => Promise.resolve(null),
+    },
+  );
+  // O ponto da tarefa: melhor não achar do que aplicar na cobrança mais recente do booking.
+  assertEquals(got, null);
+});
+
+Deno.test("resolvePayment: sem identificadores → null sem consultar nada", async () => {
+  let consultou = false;
+  const got = await resolvePayment(
+    { orderId: null, chargeId: null },
+    {
+      byOrderId: () => {
+        consultou = true;
+        return Promise.resolve(fakePayment("x", "booking"));
+      },
+      byChargeId: () => {
+        consultou = true;
+        return Promise.resolve(fakePayment("x", "booking"));
+      },
+    },
+  );
+  assertEquals(got, null);
+  assertEquals(consultou, false);
 });

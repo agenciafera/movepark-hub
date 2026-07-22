@@ -19,9 +19,11 @@ import { refundShouldCancelBooking } from "../_shared/refund.ts";
 import { sendWhatsAppTemplate } from "../_shared/whatsapp.ts";
 import {
   decidePaymentStatus,
+  type MatchedPayment,
   parseRecipientEvent,
   parseTransferEvent,
   parseWebhookEvent,
+  resolvePayment,
   transferStatusToWithdrawalStatus,
   verifyBasicAuth,
   webhookIntentFromType,
@@ -234,55 +236,27 @@ Deno.serve(async (req: Request) => {
     return json({ ok: true, withdrawal: wStatus });
   }
 
-  // Localiza o payment pela order; fallback pelo booking.
-  let payment:
-    | {
-        id: string;
-        booking_id: string;
-        kind: string | null;
-        fare_target_tier: string | null;
-        date_change_check_in_at: string | null;
-        date_change_check_out_at: string | null;
-        status: string | null;
-        paid_at: string | null;
-      }
-    | null = null;
+  // Localiza o payment SÓ por identificador único da cobrança (ordem, depois charge). Nunca pelo
+  // "mais recente do booking": uma reserva pode ter várias cobranças e o chute aplicaria no errado.
+  // Ver resolvePayment e 86ajnet8w.
   const paymentCols =
     "id, booking_id, kind, fare_target_tier, date_change_check_in_at, date_change_check_out_at, status, paid_at";
-  if (ev.orderId) {
+  const findBy = async (col: string, val: string) => {
     const { data } = await admin
       .from("payment")
       .select(paymentCols)
       .eq("provider", "pagarme")
-      .eq("provider_payment_id", ev.orderId)
+      .eq(col, val)
       .maybeSingle();
-    payment = data ?? null;
-  }
-  if (!payment && (ev.bookingId || ev.bookingCode)) {
-    let q = admin
-      .from("payment")
-      .select(`${paymentCols}, booking:booking!inner(code)`)
-      .eq("provider", "pagarme");
-    if (ev.bookingId) q = q.eq("booking_id", ev.bookingId);
-    const { data } = await q.order("created_at", { ascending: false }).limit(1).maybeSingle();
-    // deno-lint-ignore no-explicit-any
-    const d = data as any;
-    payment = d
-      ? {
-          id: d.id,
-          booking_id: d.booking_id,
-          kind: d.kind,
-          fare_target_tier: d.fare_target_tier,
-          date_change_check_in_at: d.date_change_check_in_at,
-          date_change_check_out_at: d.date_change_check_out_at,
-          status: d.status,
-          paid_at: d.paid_at,
-        }
-      : null;
-  }
+    return (data as MatchedPayment | null) ?? null;
+  };
+  const payment = await resolvePayment(ev, {
+    byOrderId: (orderId) => findBy("provider_payment_id", orderId),
+    byChargeId: (chargeId) => findBy("provider_charge_id", chargeId),
+  });
   if (!payment) {
     // Ack mesmo sem casar (evita reentrega infinita); fica logado.
-    console.warn("[pagarme-webhook] payment não encontrado:", ev.orderId, ev.bookingId);
+    console.warn("[pagarme-webhook] payment não encontrado:", ev.orderId, ev.chargeId);
     return json({ ok: true, matched: false });
   }
 
