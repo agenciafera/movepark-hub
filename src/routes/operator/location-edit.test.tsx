@@ -89,7 +89,8 @@ describe("OperatorLocationEdit", () => {
     setup({ data: [location()] });
 
     expect(screen.getByLabelText("Nome")).toHaveValue("Aeroporto Afonso Pena");
-    expect(screen.getByLabelText("Endereço")).toHaveValue("Av. Rocha Pombo, s/n");
+    // O endereço agora é display read-only (AddressField), não um input.
+    expect(screen.getByText("Av. Rocha Pombo, s/n")).toBeInTheDocument();
   });
 
   it("id que não é da empresa não abre o editor", () => {

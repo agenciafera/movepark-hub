@@ -1729,6 +1729,7 @@ export type Database = {
       location: {
         Row: {
           address: string | null
+          address_complement: string | null
           company_id: string
           created_at: string
           deleted_at: string | null
@@ -1763,6 +1764,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          address_complement?: string | null
           company_id: string
           created_at?: string
           deleted_at?: string | null
@@ -1797,6 +1799,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          address_complement?: string | null
           company_id?: string
           created_at?: string
           deleted_at?: string | null

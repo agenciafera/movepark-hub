@@ -503,7 +503,28 @@ Tabela de Reservas
   (`_create_booking_core`) **rejeita** datas bloqueadas (antes do cálculo de preço). A RPC
   `operator_location_occupancy` devolve `blocked` para a grade exibir o estado.
 
-### Endereço com Google Places + mapa
+### Endereço: display read-only + modal de captura
+
+O endereço da unidade tem dois estados. **Display** (padrão): o endereço formatado como texto, o
+complemento (se houver) e o mini-mapa com o pin, mais um botão "Editar endereço". Sem endereço, um
+estado vazio com "Adicionar endereço". **Modal** (`AddressField` → `AddressEditDialog`): isola a
+captura sensível. Dentro dele, a busca do Google Places, o texto do endereço editável (lotes "s/n",
+"km 12" que o Places formata errado), o campo de **complemento/ponto de referência** (o Places não
+sabe "entrada pela lateral") e o mapa confirmando o pin.
+
+Por que o modal: o `PlaceAutocompleteElement` do Google renderiza como um campo de busca **vazio**,
+então o autocomplete inline fazia o endereço atual sumir da tela e uma tecla no lugar errado zerava
+lat/lng. Com o padrão display+modal, o endereço fica sempre visível como texto e editar é um ato
+explícito.
+
+O modal **não grava no banco**: trabalha num rascunho próprio (cancelar descarta, "Usar este
+endereço" devolve), e ao salvar entrega o valor ao formulário-pai via `onChange`. O "Salvar
+alterações" da página persiste tudo junto, então continua um caminho de save só e a guarda de saída
+(useBlocker) enxerga a mudança pelo `isDirty` (verificado). O complemento mora na coluna nova
+`location.address_complement` (migration `20260907000000`); o endereço e lat/lng seguem em `address`
++ `latitude`/`longitude` (geo é coluna gerada, ADR-001).
+
+### Endereço com Google Places + mapa (base)
 
 O campo de endereço da edição da unidade (operator e o dialog do manager) usa o **Google Places
 Autocomplete** (o mesmo `GooglePlacesAutocomplete` do onboarding, E1.9). Escolher um resultado captura

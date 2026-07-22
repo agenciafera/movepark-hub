@@ -40,6 +40,7 @@ type Snapshot = {
   name: string;
   slug: string;
   address: string;
+  addressComplement: string;
   timezone: string;
   status: EntityStatus;
   phone: string;
@@ -77,6 +78,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
   const [name, setName] = React.useState("");
   const [slug, setSlug] = React.useState("");
   const [address, setAddress] = React.useState("");
+  const [addressComplement, setAddressComplement] = React.useState("");
   const [timezone, setTimezone] = React.useState("America/Sao_Paulo");
   const [status, setStatus] = React.useState<EntityStatus>("active");
   const [phone, setPhone] = React.useState("");
@@ -102,6 +104,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       name: location?.name ?? "",
       slug: location?.slug ?? "",
       address: location?.address ?? "",
+      addressComplement: location?.address_complement ?? "",
       timezone: location?.timezone ?? "America/Sao_Paulo",
       status: (location?.status ?? "active") as EntityStatus,
       phone: location?.phone ?? "",
@@ -131,6 +134,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     setName(baseline.name);
     setSlug(baseline.slug);
     setAddress(baseline.address);
+    setAddressComplement(baseline.addressComplement);
     setTimezone(baseline.timezone);
     setStatus(baseline.status);
     setPhone(baseline.phone);
@@ -160,6 +164,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     name,
     slug,
     address,
+    addressComplement,
     timezone,
     status,
     phone,
@@ -231,6 +236,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       name,
       slug: slug || slugify(name),
       address: address || null,
+      address_complement: addressComplement.trim() || null,
       timezone,
       status,
       phone: phone || null,
@@ -253,6 +259,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     const operatorPatch = {
       name,
       address: address || null,
+      address_complement: addressComplement.trim() || null,
       phone: phone || null,
       email: email || null,
       notice: notice || null,
@@ -304,6 +311,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       setSlug,
       address,
       setAddress,
+      addressComplement,
+      setAddressComplement,
       timezone,
       setTimezone,
       status,
