@@ -89,6 +89,39 @@ Roda contra produção. Quem executar precisa saber disto antes, não depois.
 - **C-10 dispara e-mail de confirmação** para `peu+teste1@fera.ag`.
 - **C-13 espera o hold expirar**, o que consome o tempo de `hold_minutes` do `app_setting`.
 
+## Armadilha da idempotência: cada caso precisa da SUA data
+
+Desde 22/07 a `create_booking_atomic` é idempotente. A chave de dedup cobre perfil, tipo de vaga,
+**datas**, tarifa, add-ons, cupom, passageiros e veículo.
+
+Consequência para quem testa: **dois casos que reservam a mesma vaga nas mesmas datas não criam duas
+reservas.** O segundo recebe um `idempotent_replay` da reserva do primeiro, enquanto ela estiver
+`pending` e não expirada.
+
+Isso derrubou o C-10 em 22/07, e o sintoma não parecia ter nada a ver: o teste esperava o passo
+"Identificação" e não achava. Motivo real: o C-09 deixava uma pendente com PIX gerado, o C-10 pedia
+a mesma reserva, recebia o replay e o checkout **retomava no passo de pagamento**. O produto estava
+certo; a suíte é que nasceu antes da idempotência.
+
+Por isso cada caso transacional usa um offset de data próprio. Ao escrever um caso novo que cria
+reserva, **escolha um offset ainda não usado** e acrescente aqui:
+
+| Caso | Offset (`oneNightRange`) |
+|---|---|
+| C-06 | +2 dias |
+| C-07 | +3 dias |
+| C-08 | +4 dias |
+| C-09 | +5 dias |
+| C-10 | +6 dias |
+| C-15 | +7 dias |
+| C-14 | +8 dias |
+| C-16 | +9 dias |
+| C-19, C-20, C-21 | janela própria, via `rangeStartingIn` (a janela é o objeto do teste) |
+
+Testando na mão vale o mesmo: repetir o mesmo caso duas vezes seguidas, com as mesmas datas, devolve
+a **mesma** reserva. Se você esperava uma nova e recebeu a antiga, isso é a idempotência funcionando,
+não bug. Mude a data ou espere a primeira expirar.
+
 ## Limpeza
 
 `booking.location_id` é **RESTRICT** de propósito. As reservas criadas aqui não podem ser apagadas

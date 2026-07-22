@@ -33,7 +33,7 @@ guardTx(test);
 
 test.describe.serial("C-09", () => {
   test("C-09: gerar PIX mostra o QR e cria o pagamento no banco", async ({ page }) => {
-    const code = await reserveUntilPayment(page);
+    const code = await reserveUntilPayment(page, 5);
 
     // O CPF/CNPJ do pagador vem pré-preenchido do perfil. Vazio aqui significa
     // que o cliente de teste perdeu o `tax_id`, e o PIX vai falhar com erro que

@@ -37,7 +37,7 @@ test("C-06: reservar leva ao checkout e grava a reserva como pending", async ({ 
     .toBeTruthy();
   expect(target!.capacity ?? 0, "sem capacidade a reserva não é criada").toBeGreaterThan(0);
 
-  const code = await reserveCheapest(page);
+  const code = await reserveCheapest(page, 2);
   expect(code).toMatch(/^MP-/);
 
   const booking = await getBookingByCode(code);

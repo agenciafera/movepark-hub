@@ -30,7 +30,7 @@ guardTx(test);
 
 test.describe.serial("C-07", () => {
   test("C-07: passo 1 grava o contato no snapshot da reserva", async ({ page }) => {
-    const code = await reserveCheapest(page);
+    const code = await reserveCheapest(page, 3);
 
     await fillIdentityStep(page);
 

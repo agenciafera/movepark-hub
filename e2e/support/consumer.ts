@@ -102,7 +102,27 @@ export function searchUrl(fixture: ConsumerFixture): string {
  * Data de entrada retroativa é bloqueada (commit `4eeae96`), então o roteiro
  * nunca crava data fixa: ele deriva de "hoje" a cada execução.
  */
-export function oneNightRange(now = new Date()): { from: string; to: string } {
+/**
+ * Intervalo de 1 diária, começando daqui a `startInDays` (padrão: amanhã).
+ *
+ * POR QUE O OFFSET EXISTE: desde 22/07 a `create_booking_atomic` é idempotente, e
+ * a chave de dedup inclui perfil, vaga, DATAS, tarifa, add-ons, cupom, passageiros
+ * e veículo. Dois specs que reservam a mesma vaga nas mesmas datas geram a MESMA
+ * chave, e o segundo recebe um `idempotent_replay` da reserva do primeiro em vez
+ * de uma nova.
+ *
+ * Isso quebrou o C-10 em 22/07: o C-09 deixava uma pending com PIX gerado, o C-10
+ * pedia a mesma reserva, recebia o replay e caía no passo de pagamento em vez do
+ * passo 1. O produto estava certo; a suíte é que nasceu antes da idempotência.
+ *
+ * Por isso cada spec transacional usa o SEU offset. Ao escrever um spec novo que
+ * cria reserva, escolha um offset ainda não usado (ver a tabela em
+ * `docs/testes/roteiro-consumidor-reserva.md`).
+ */
+export function oneNightRange(
+  startInDays = 1,
+  now = new Date(),
+): { from: string; to: string } {
   const day = (offset: number) => {
     const d = new Date(now);
     d.setDate(d.getDate() + offset);
@@ -111,8 +131,8 @@ export function oneNightRange(now = new Date()): { from: string; to: string } {
     const dd = String(d.getDate()).padStart(2, "0");
     return { yyyy, mm, dd };
   };
-  const a = day(1);
-  const b = day(2);
+  const a = day(startInDays);
+  const b = day(startInDays + 1);
   return {
     from: `${a.yyyy}-${a.mm}-${a.dd}T08:00:00`,
     to: `${b.yyyy}-${b.mm}-${b.dd}T08:00:00`,
@@ -302,8 +322,8 @@ export async function latestConfirmedBooking(customerEmail: string) {
  * `?from=`/`?to=` como estado inicial, então o teste não depende do popover do
  * react-day-picker nem do fuso do runner.
  */
-export async function reserveCheapest(page: Page): Promise<string> {
-  return reserveWithFare(page, { fare: "Básica", range: oneNightRange() });
+export async function reserveCheapest(page: Page, startInDays = 1): Promise<string> {
+  return reserveWithFare(page, { fare: "Básica", range: oneNightRange(startInDays) });
 }
 
 /**
@@ -373,9 +393,14 @@ export async function fillVehicleStep(page: Page) {
   await page.getByRole("button", { name: "Continuar" }).first().click();
 }
 
-/** Leva do zero até o passo 3 (pagamento) sem gerar cobrança. */
-export async function reserveUntilPayment(page: Page): Promise<string> {
-  const code = await reserveCheapest(page);
+/**
+ * Leva do zero até o passo 3 (pagamento) sem gerar cobrança.
+ *
+ * `startInDays` existe para cada spec ter a SUA data e não colidir com a chave de
+ * dedup dos outros. Ver a nota em `oneNightRange`.
+ */
+export async function reserveUntilPayment(page: Page, startInDays = 1): Promise<string> {
+  const code = await reserveCheapest(page, startInDays);
   await fillIdentityStep(page);
   await fillVehicleStep(page);
   await expect(page.getByRole("heading", { name: "Pagamento" })).toBeVisible({ timeout: 30_000 });

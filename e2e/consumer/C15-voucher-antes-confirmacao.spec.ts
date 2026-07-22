@@ -47,7 +47,7 @@ guardTx(test);
 test.describe.serial("C-15", () => {
   test("C-15: reserva pendente não tem voucher, e a Edge devolve 422", async ({ page }) => {
     // Para no passo 1: sem identidade, sem veículo, sem PIX. Nenhuma cobrança.
-    const code = await reserveCheapest(page);
+    const code = await reserveCheapest(page, 7);
 
     const booking = await getBookingByCode(code);
     expect(booking!.status).toBe("pending");

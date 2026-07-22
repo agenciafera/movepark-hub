@@ -30,7 +30,7 @@ guardTx(test);
 
 test.describe.serial("C-10", () => {
   test("C-10: PIX liquidado confirma a reserva", async ({ page }) => {
-    const code = await reserveUntilPayment(page);
+    const code = await reserveUntilPayment(page, 6);
 
     await page.getByRole("button", { name: "Gerar PIX" }).click();
     await expect(page.getByRole("button", { name: "Copiar código PIX" })).toBeVisible({

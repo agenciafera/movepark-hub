@@ -23,7 +23,7 @@ guardTx(test);
 
 test.describe.serial("C-08", () => {
   test("C-08: passo 2 vincula o veículo escolhido à reserva", async ({ page }) => {
-    const code = await reserveCheapest(page);
+    const code = await reserveCheapest(page, 4);
     await fillIdentityStep(page);
 
     await expect(page.getByRole("heading", { name: "Veículo" })).toBeVisible({ timeout: 30_000 });

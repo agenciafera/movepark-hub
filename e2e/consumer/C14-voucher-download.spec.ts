@@ -25,6 +25,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { guardTx } from "../support/consumer";
 import {
   bookAndPay,
+  oneNightRange,
   getBookingFareByCode,
   voucherFileExists,
 } from "../support/consumer";
@@ -34,7 +35,7 @@ guardTx(test);
 
 test.describe.serial("C-14", () => {
   test("C-14: o voucher já existe no webhook e o botão assina a URL", async ({ page }) => {
-    const code = await bookAndPay(page, { fare: "Básica" });
+    const code = await bookAndPay(page, { fare: "Básica", range: oneNightRange(8) });
 
     // O webhook grava o `voucher_url` na confirmação, ANTES de qualquer clique.
     // A espera é pela entrega do webhook, não pelo botão.

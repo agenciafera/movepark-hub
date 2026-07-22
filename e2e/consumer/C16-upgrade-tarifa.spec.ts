@@ -33,7 +33,7 @@
  */
 import { test, expect } from "@playwright/test";
 import { guardTx } from "../support/consumer";
-import { bookAndPay, getBookingFareByCode } from "../support/consumer";
+import { bookAndPay, getBookingFareByCode, oneNightRange } from "../support/consumer";
 
 /** Preço da Superflex no catálogo (`20260717000000_fare_tiers.sql:46-70`). */
 const SUPERFLEX_PRICE_CENTS = 2490;
@@ -45,7 +45,7 @@ guardTx(test);
 
 test.describe.serial("C-16", () => {
   test("C-16: upgrade para Superflex cobra o delta e recalcula a janela", async ({ page }) => {
-    const code = await bookAndPay(page, { fare: "Básica" });
+    const code = await bookAndPay(page, { fare: "Básica", range: oneNightRange(9) });
 
     const before = await getBookingFareByCode(code);
     expect(before).not.toBeNull();
