@@ -14,6 +14,7 @@ import {
 import { ImageGalleryField } from "@/components/shared/ImageUpload";
 import { uploadCompanyAsset } from "@/lib/storage";
 import { useAdminDestinations } from "@/features/destinations/api";
+import { AmenityPicker } from "@/features/amenities/AmenityPicker";
 import { useNearestDestination } from "./api";
 import { slugify, type LocationFormApi } from "./useLocationForm";
 import type { EntityStatus, Location } from "@/types/domain";
@@ -202,6 +203,15 @@ export function LocationSections({
               Foto boa atrai mais cliente. Capriche na fachada e nas vagas.
             </p>
           )}
+        </div>
+      </Section>
+
+      <Section
+        title="Comodidades"
+        description="O que a unidade oferece. Aparece como benefício no card da busca e no detalhe."
+      >
+        <div className="tablet:col-span-2">
+          <AmenityPicker selected={f.amenities} onChange={f.setAmenities} />
         </div>
       </Section>
 

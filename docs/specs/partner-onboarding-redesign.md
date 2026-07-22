@@ -123,9 +123,11 @@ dura de CNPJ/KYC do wizard (§1) ficam para a Fase 2.
 1. **Preço de balcão →** `company_parking_type.base_price` é a **âncora**; o online é derivado em
    `pricing_rule`/`pricing_tier` (com `old_price_*` para o "riscado"). Resolve a dupla fonte. O
    passo em que o dono definia preço de site (`Step4Pricing`) **sai** do caminho de publicar.
-2. **Comodidades →** `amenity` + `location_amenity` confirmadas; **não** existe RPC de onboarding p/
-   gravá-las (só `onboarding_set_addons`, que é `add_on_service`). → **RPC nova** (Fase 2):
-   `operator_set_location_amenities`.
+2. **Comodidades →** ✅ **feito.** RPC `operator_set_location_amenities` (substitui o conjunto,
+   valida contra o catálogo, exige `locations:write` no servidor), bloco "Comodidades" na edição da
+   unidade (`/operator/locations/:id/editar`), e a policy `location_amenity_write` passou a exigir
+   escopo (antes deixava qualquer membro escrever). Migration `20260906000000`, pgTAP
+   `location_amenity.test.sql`. Ver `operator-panel.md`.
 3. **Horário/24h →** **não existe** em `location` (só `operating_hours` em `pricing_rule`, contexto de
    preço). → **campos novos** `is_24h` + `operating_hours jsonb` (Fase 2).
 4. **Preview →** **sem RPC/RLS nova**: as policies de SELECT scopeadas por empresa (`location_select`,

@@ -503,6 +503,26 @@ Tabela de Reservas
   (`_create_booking_core`) **rejeita** datas bloqueadas (antes do cálculo de preço). A RPC
   `operator_location_occupancy` devolve `blocked` para a grade exibir o estado.
 
+### Comodidades da unidade (ClickUp 86ajnetje)
+
+O parceiro marca as comodidades da unidade no bloco **Comodidades** da edição
+(`/operator/locations/:id/editar`), como checklist sobre o catálogo `amenity` (18 códigos em 4
+categorias: `security`, `service`, `access`, `extras`). Não é texto livre: o catálogo é fechado (só
+`hub_admin` escreve nele) e é o que a busca usa para filtrar, então texto livre viraria benefício que
+ninguém acha. A mudança aparece na busca de graça: a Edge `search` já lê `location_amenity`.
+
+- **Escrita:** RPC **`operator_set_location_amenities(p_location_id, p_codes[])`**, que **substitui o
+  conjunto inteiro** (a tela manda a lista final, não um diff, então desmarcar apaga de verdade),
+  valida cada código contra o catálogo, e exige **`locations:write`** na empresa dona (ADR-005),
+  o mesmo escopo de editar a unidade, porque amenidade é atributo dela.
+- **Furo fechado junto:** a policy `location_amenity_write` deixava **qualquer** membro da empresa
+  escrever, sem checagem de escopo. Um papel `operator` podia gravar direto pelo PostgREST,
+  contornando a RPC. A policy passou a exigir `member_has_scope(company_id, 'locations:write')`,
+  alinhada com a RPC. É o mesmo padrão de furo do plano de cancelamento.
+
+Migration `20260906000000_operator_set_location_amenities.sql`, pgTAP `location_amenity.test.sql`
+(10 casos, incluindo operador de outra empresa barrado na RPC **e** no insert direto).
+
 ### Editar unidade é página, não modal
 
 O parceiro edita a unidade em **`/operator/locations/:locationId/editar`**. Era um dialog com os 15

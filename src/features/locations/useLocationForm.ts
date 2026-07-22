@@ -1,6 +1,7 @@
 import * as React from "react";
 import { toast } from "sonner";
 import { useCreateLocation, useUpdateLocation } from "./api";
+import { useLocationAmenities, useSetLocationAmenities } from "@/features/amenities/api";
 import type { EntityStatus, Location } from "@/types/domain";
 
 /** Minutos do traslado: inteiro positivo ou null (vazio/0/negativo → null, casa com o CHECK do banco). */
@@ -36,7 +37,13 @@ type Options = {
 export function useLocationForm({ companyId, location, operatorMode, onSaved }: Options) {
   const create = useCreateLocation();
   const update = useUpdateLocation();
+  const setAmenities = useSetLocationAmenities();
   const isEdit = !!location;
+
+  // Amenidades moram em `location_amenity`, não na `location`, então elas têm
+  // query e escrita próprias. O formulário trata as duas coisas como um salvamento
+  // só, porque para quem preenche é a mesma unidade.
+  const amenitiesQuery = useLocationAmenities(location?.id);
 
   const [name, setName] = React.useState("");
   const [slug, setSlug] = React.useState("");
@@ -53,6 +60,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
   const [destinationId, setDestinationId] = React.useState<string | null>(null);
   const [photos, setPhotos] = React.useState<string[]>([]);
   const [externalRef, setExternalRef] = React.useState("");
+  const [amenities, setAmenities_] = React.useState<string[]>([]);
 
   const reset = React.useCallback(() => {
     setName(location?.name ?? "");
@@ -77,6 +85,14 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     setPhotos(Array.isArray(location?.photos) ? (location.photos as string[]) : []);
     setExternalRef(location?.external_ref ?? "");
   }, [location]);
+
+  // O catálogo chega depois do resto: semeia quando a query responde, e só
+  // por id, pra não sobrescrever marcação feita durante o carregamento.
+  const amenitiesData = amenitiesQuery.data;
+  React.useEffect(() => {
+    if (amenitiesData) setAmenities_(amenitiesData);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location?.id, !!amenitiesData]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -127,16 +143,22 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     };
 
     try {
+      let savedId: string;
       if (isEdit && location) {
         await update.mutateAsync({
           id: location.id,
           patch: operatorMode ? operatorPatch : fullPayload,
         });
-        toast.success("Localização atualizada");
+        savedId = location.id;
       } else {
-        await create.mutateAsync(fullPayload);
-        toast.success("Localização criada");
+        const criada = await create.mutateAsync(fullPayload);
+        savedId = criada.id;
       }
+
+      // Depois da unidade existir, e não antes: numa criação o id só nasce aqui.
+      await setAmenities.mutateAsync({ locationId: savedId, codes: amenities });
+
+      toast.success(isEdit ? "Localização atualizada" : "Localização criada");
       onSaved();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao salvar");
@@ -146,7 +168,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
   return {
     isEdit,
     operatorMode,
-    submitting: create.isPending || update.isPending,
+    submitting: create.isPending || update.isPending || setAmenities.isPending,
     reset,
     submit,
     fields: {
@@ -180,6 +202,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       setPhotos,
       externalRef,
       setExternalRef,
+      amenities,
+      setAmenities: setAmenities_,
     },
   };
 }

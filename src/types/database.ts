@@ -4405,6 +4405,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      operator_set_location_amenities: {
+        Args: { p_codes: string[]; p_location_id: string }
+        Returns: undefined
+      }
       operator_set_pricing: {
         Args: {
           p_base_price: number

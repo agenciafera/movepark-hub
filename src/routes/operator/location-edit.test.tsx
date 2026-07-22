@@ -16,6 +16,11 @@ vi.mock("@/components/shared/ImageUpload", () => ({
   ImageGalleryField: () => null,
 }));
 
+// O bloco de comodidades tem teste próprio; aqui só interessa que o bloco existe.
+vi.mock("@/features/amenities/AmenityPicker", () => ({
+  AmenityPicker: () => null,
+}));
+
 function location(over: Partial<OperatorLocation> = {}): OperatorLocation {
   return {
     id: "loc-1",
@@ -59,6 +64,7 @@ describe("OperatorLocationEdit", () => {
       "Contato",
       "Chegada",
       "Fotos",
+      "Comodidades",
       "Política de reserva",
     ]);
   });
