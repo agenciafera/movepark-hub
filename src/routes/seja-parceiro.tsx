@@ -440,7 +440,7 @@ export default function SejaParceiroPage() {
         <h2 className="mx-auto mt-3 max-w-2xl text-balance text-display-xl text-ink">
           Veja como a Movepark trabalha pelo seu estacionamento
         </h2>
-        <div className="mt-8 overflow-hidden rounded-lg border border-hairline">
+        <div className="mt-8 overflow-hidden rounded-lg">
           <div className="aspect-video">
             <iframe
               className="h-full w-full"
