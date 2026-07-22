@@ -17,11 +17,10 @@ import {
   type SearchSort,
   type SearchVehicle,
 } from "@/features/search/useSearchResults";
-import { computeGroupedResultBadges } from "@/features/search/searchBadges";
+import { computeResultBadges } from "@/features/search/searchBadges";
 import { resolveSearchDates } from "@/features/search/dates";
 import { useSavedListings } from "@/features/search/useSavedListings";
-import { GroupedResultCard } from "@/features/search/GroupedResultCard";
-import { groupResultsByLocation } from "@/features/search/useSearchResults";
+import { ResultCard } from "@/features/search/ResultCard";
 
 function parseCsv(value: string | null): string[] {
   if (!value) return [];
@@ -246,24 +245,23 @@ export default function SearchResultsPage() {
             />
           )}
 
-          {!isLoading && data && data.results.length > 0 && (() => {
-            const grouped = groupResultsByLocation(data.results);
-            return (
-              <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
-                {grouped.map((g) => (
-                  <GroupedResultCard
-                    key={g.location_id}
-                    item={g}
-                    isSaved={saved.isSaved(g.cheapest_type.lpt_id)}
-                    onToggleSave={() => saved.toggle(g.cheapest_type.lpt_id)}
-                    searchParams={params}
-                    source="search"
-                    badges={computeGroupedResultBadges(g, grouped)}
-                  />
-                ))}
-              </div>
-            );
-          })()}
+          {/* Um card por tipo de vaga: a Edge já pagina por location_parking_type, então o número
+              de cards bate com o contador de vagas (E2.1.3). */}
+          {!isLoading && data && data.results.length > 0 && (
+            <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
+              {data.results.map((r) => (
+                <ResultCard
+                  key={r.id}
+                  item={r}
+                  isSaved={saved.isSaved(r.id)}
+                  onToggleSave={() => saved.toggle(r.id)}
+                  searchParams={params}
+                  source="search"
+                  badges={computeResultBadges(r, data.results)}
+                />
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </div>

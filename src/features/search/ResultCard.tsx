@@ -1,13 +1,18 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { Heart, Car, MapPin } from "lucide-react";
+import { Heart, Car, MapPin, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatBRL, formatDistance } from "@/lib/format";
 import { RatingBadge } from "@/features/reviews/RatingStars";
-import { ResultBadges } from "./ResultBadges";
+import { isTypeDescriptorAmenity } from "./amenities.logic";
 import type { SearchResultItem } from "./useSearchResults";
-import type { SearchBadge } from "./searchBadges";
+import type { SearchBadge, SearchBadgeKind } from "./searchBadges";
 
+/**
+ * Card de resultado da busca. Representa UM `location_parking_type`, não uma unidade: uma unidade
+ * com coberta e descoberta aparece em dois cards (decisão da reunião de 21/07, E2.1.3). O card é a
+ * variação do produto, e é assim que Parkos e Parclick fazem.
+ */
 type Props = {
   item: SearchResultItem;
   isSaved: boolean;
@@ -19,42 +24,47 @@ type Props = {
   badges?: SearchBadge[];
 };
 
-const amenityShortLabel: Record<string, string> = {
-  shuttle_free: "Transfer 24h",
+const AMENITY_LABEL: Record<string, string> = {
+  shuttle_free: "Transfer grátis",
   cameras_24h: "Câmeras",
   on_site_24h: "24 horas",
   gated_access: "Portaria",
-  valet: "Valet",
-  self_park: "Self-park",
-  covered: "Coberto",
-  motorcycle: "Vagas moto",
   pcd: "Acessível",
   ev_charger: "Carregador EV",
   cover_protection: "Capa proteção",
 };
 
-function topAmenities(codes: string[], n = 3): string[] {
-  const priority = [
-    "shuttle_free",
-    "valet",
-    "self_park",
-    "covered",
-    "cover_protection",
-    "ev_charger",
-    "cameras_24h",
-    "on_site_24h",
-    "gated_access",
-    "pcd",
-    "motorcycle",
-  ];
-  const set = new Set(codes);
-  const out: string[] = [];
-  for (const p of priority) {
-    if (set.has(p) && amenityShortLabel[p]) out.push(amenityShortLabel[p]);
+const AMENITY_PRIORITY = [
+  "shuttle_free",
+  "cover_protection",
+  "ev_charger",
+  "cameras_24h",
+  "on_site_24h",
+  "gated_access",
+  "pcd",
+];
+
+/**
+ * Amenidades exibidas no card. Os descritores de tipo (Coberto, Valet, Self-park, Moto) ficam de
+ * fora: o card já É um tipo, então a badge ou repete o título ou o contradiz ("Coberto" num card
+ * "Vaga Descoberta"). Ver `amenities.logic`.
+ */
+function topAmenities(codes: string[], n = 4): { code: string; label: string }[] {
+  const set = new Set(codes.filter((c) => !isTypeDescriptorAmenity(c)));
+  const out: { code: string; label: string }[] = [];
+  for (const code of AMENITY_PRIORITY) {
+    if (set.has(code) && AMENITY_LABEL[code]) out.push({ code, label: AMENITY_LABEL[code] });
     if (out.length >= n) break;
   }
   return out;
 }
+
+// Somente diferenciais comparativos vão pra imagem
+const COMPARATIVE_KINDS = new Set<SearchBadgeKind>(["cheapest", "closest"]);
+const BADGE_ICON: Partial<Record<SearchBadgeKind, typeof Tag>> = {
+  cheapest: Tag,
+  closest: MapPin,
+};
 
 function CardLink({
   to,
@@ -91,8 +101,9 @@ export function ResultCard({
 }: Props) {
   const params = new URLSearchParams(searchParams);
   if (source) params.set("src", source);
+
   const url = `/p/${item.operator.slug}/${item.location.slug}/${item.parking_type.code}?${params.toString()}`;
-  const meta = topAmenities(item.amenities);
+
   const soldOut = item.availability?.sold_out ?? false;
   const nearCapacity = !soldOut && (item.availability?.near_capacity ?? false);
   const remaining = item.availability?.remaining;
@@ -103,14 +114,20 @@ export function ResultCard({
   // Sinal de demanda honesto (E3.6) — só quando não há já um badge de escassez pra não poluir o card.
   const highDemand = !soldOut && !nearCapacity && item.location.high_demand_today;
 
+  // Diferenciais comparativos: vão sobre a imagem (só aparecem quando há variação real)
+  const comparativeBadges = badges.filter((b) => COMPARATIVE_KINDS.has(b.kind));
+
+  const amenities = topAmenities(item.amenities);
+
   return (
     <article
+      data-testid="result-card"
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-md border border-hairline bg-canvas transition-shadow hover:shadow-tier",
+        "group relative flex flex-col overflow-hidden rounded-2xl border border-hairline bg-canvas transition-shadow hover:shadow-tier",
         soldOut && "opacity-60",
       )}
     >
-      {/* Foto placeholder */}
+      {/* Imagem */}
       <CardLink
         to={url}
         soldOut={soldOut}
@@ -119,7 +136,7 @@ export function ResultCard({
         {item.location.cover_image ? (
           <img
             src={item.location.cover_image}
-            alt={item.location.name}
+            alt={`${item.parking_type.name} em ${item.location.name}`}
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
             decoding="async"
@@ -132,25 +149,45 @@ export function ResultCard({
             <div className="absolute inset-0 bg-soft-gradient opacity-60" aria-hidden />
           </>
         )}
-        {soldOut ? (
-          <span className="absolute left-3 top-3 rounded-sm bg-badge-cancelled-bg px-2 py-0.5 text-caption font-bold text-badge-cancelled-fg shadow-tier">
+
+        {/* Diferenciais comparativos — só quando o card se destaca no conjunto */}
+        {!soldOut && comparativeBadges.length > 0 && (
+          <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+            {comparativeBadges.map((badge) => {
+              const Icon = BADGE_ICON[badge.kind];
+              return (
+                <span
+                  key={badge.kind}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-mp-primary px-3 py-1 text-[12px] font-semibold text-white shadow-sm backdrop-blur-sm"
+                >
+                  {Icon && <Icon className="h-3 w-3 shrink-0" aria-hidden />}
+                  {badge.label}
+                </span>
+              );
+            })}
+          </div>
+        )}
+
+        {soldOut && (
+          <span className="absolute left-3 top-3 rounded-full bg-badge-cancelled-bg px-3 py-1 text-[12px] font-bold text-badge-cancelled-fg">
             Esgotado pro seu período
           </span>
-        ) : nearCapacity ? (
-          <span className="absolute left-3 top-3 rounded-sm bg-badge-pending-bg px-2 py-0.5 text-caption font-bold text-badge-pending-fg shadow-tier">
+        )}
+
+        {!soldOut && nearCapacity && (
+          <span className="absolute bottom-3 left-3 rounded-full bg-badge-pending-bg px-3 py-1 text-[12px] font-bold text-badge-pending-fg">
             {nearMsg}
           </span>
-        ) : highDemand ? (
-          <span className="absolute left-3 top-3 rounded-sm bg-badge-active-bg px-2 py-0.5 text-caption font-bold text-badge-active-fg shadow-tier">
+        )}
+
+        {highDemand && (
+          <span className="absolute bottom-3 left-3 rounded-full bg-badge-active-bg px-3 py-1 text-[12px] font-bold text-badge-active-fg">
             Muito procurado hoje
           </span>
-        ) : null}
-        {!soldOut && badges.length > 0 && (
-          <ResultBadges badges={badges} className="absolute bottom-3 left-3 right-3" />
         )}
       </CardLink>
 
-      {/* Heart */}
+      {/* Botão favorito */}
       <button
         type="button"
         onClick={(e) => {
@@ -163,57 +200,68 @@ export function ResultCard({
         <Heart
           className={cn(
             "h-4 w-4 transition-colors",
-            isSaved
-              ? "fill-mp-primary stroke-mp-primary"
-              : "text-ink",
+            isSaved ? "fill-mp-primary stroke-mp-primary" : "text-ink",
           )}
         />
       </button>
 
-      <CardLink to={url} soldOut={soldOut} className="flex flex-col gap-1 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1 space-y-1">
-            <h3 className="line-clamp-1 text-title-md text-ink">
-              {item.parking_type.name} · {item.operator.name}
-            </h3>
-            <RatingBadge
-              avg={item.location.review_avg}
-              count={item.location.review_count}
-              className="text-body-sm"
-            />
-            <p className="line-clamp-1 text-body-sm text-muted">
-              {item.location.name}
-              {item.location.distance_km != null && (
-                <> · {formatDistance(item.location.distance_km)}</>
-              )}
-            </p>
+      {/* Corpo */}
+      <CardLink to={url} soldOut={soldOut} className="flex flex-col gap-3 p-5">
+        <div className="space-y-0.5">
+          <h3 className="line-clamp-1 text-[18px] font-bold leading-snug text-ink">
+            {item.operator.name}
+          </h3>
+          {/* O tipo é a identidade do card: dois cards da mesma unidade só se distinguem por aqui. */}
+          <p data-testid="result-card-type" className="line-clamp-1 text-body-sm font-semibold text-ink">
+            {item.parking_type.name}
+          </p>
+          <p
+            data-testid="result-card-subline"
+            className="line-clamp-1 flex items-center gap-1 text-body-sm text-muted"
+          >
             {item.location.nearest_terminal && (
-              <p className="line-clamp-1 inline-flex items-center gap-1 text-body-sm font-medium text-ink">
-                <MapPin className="h-3.5 w-3.5 text-mp-primary" />
-                mais perto do {item.location.nearest_terminal.name}
-                <span className="font-normal text-muted">
-                  · {formatDistance(item.location.nearest_terminal.distance_km)}
-                </span>
-              </p>
+              <MapPin className="h-3 w-3 shrink-0 text-mp-primary" aria-hidden />
             )}
-            {meta.length > 0 && (
-              <p className="line-clamp-1 text-body-sm text-muted">
-                {meta.join(" · ")}
-              </p>
-            )}
+            <span>
+              {item.location.name}
+              {item.location.nearest_terminal && (
+                <> · {formatDistance(item.location.nearest_terminal.distance_km)}</>
+              )}
+            </span>
+          </p>
+          <RatingBadge
+            avg={item.location.review_avg}
+            count={item.location.review_count}
+            className="text-body-sm"
+          />
+        </div>
+
+        {/* Amenidades */}
+        {amenities.length > 0 && (
+          <div data-testid="result-card-amenities" className="flex flex-wrap gap-1.5">
+            {amenities.map((a) => (
+              <span
+                key={a.code}
+                className="rounded-full bg-surface-strong px-2.5 py-1 text-[12px] font-medium text-ink"
+              >
+                {a.label}
+              </span>
+            ))}
           </div>
-          <div className="shrink-0 text-right">
-            {item.price.old_price != null && item.price.old_price > item.price.total && (
-              <div className="text-caption-sm text-muted line-through tabular-nums">
-                {formatBRL(item.price.old_price)}
-              </div>
-            )}
-            <div className="text-display-sm text-ink tabular-nums">
-              {formatBRL(item.price.total)}
+        )}
+
+        {/* Preço — sempre por último */}
+        <div className="mt-auto pt-1">
+          {item.price.old_price != null && item.price.old_price > item.price.total && (
+            <div className="text-[13px] text-muted line-through tabular-nums">
+              {formatBRL(item.price.old_price)}
             </div>
-            <div className="text-caption text-muted">
-              {item.price.days} {item.price.days === 1 ? "diária" : "diárias"}
-            </div>
+          )}
+          <div className="text-[24px] font-bold leading-none text-ink tabular-nums">
+            {formatBRL(item.price.total)}
+          </div>
+          <div className="mt-1 text-body-sm text-muted">
+            {item.price.days} {item.price.days === 1 ? "diária" : "diárias"}
           </div>
         </div>
       </CardLink>

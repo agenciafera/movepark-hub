@@ -18,7 +18,7 @@ vi.mock("@/features/destinations/api", () => ({
   useDestinationBySlug: vi.fn(),
   usePublishedDestinations: vi.fn(),
 }));
-// Mocka só o hook; mantém `groupResultsByLocation` (função pura) real via importOriginal.
+// Mocka só o hook useSearchResults; o resto do módulo continua real via importOriginal.
 vi.mock("@/features/search/useSearchResults", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/search/useSearchResults")>();
   return { ...actual, useSearchResults: vi.fn() };

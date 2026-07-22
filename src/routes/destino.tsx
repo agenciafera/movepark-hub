@@ -7,9 +7,8 @@ import { useDestinationBySlug, usePublishedDestinations } from "@/features/desti
 import { useSearchResults } from "@/features/search/useSearchResults";
 import { useFaqCombined } from "@/features/faqs/api";
 import { FaqList } from "@/features/faqs/FaqList";
-import { GroupedResultCard } from "@/features/search/GroupedResultCard";
-import { groupResultsByLocation } from "@/features/search/useSearchResults";
-import { computeGroupedResultBadges } from "@/features/search/searchBadges";
+import { ResultCard } from "@/features/search/ResultCard";
+import { computeResultBadges } from "@/features/search/searchBadges";
 import { topRated } from "@/features/reviews/reviews.logic";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -20,7 +19,7 @@ import { lowestPerDay, pickRelatedDestinations } from "./destino.logic";
 
 const SITE_URL = "https://hub.movepark.co";
 
-/** Skeleton espelhando o GroupedResultCard (mesma forma/altura) — evita salto de layout. */
+/** Skeleton espelhando o ResultCard (mesma forma/altura) — evita salto de layout. */
 function ParkingCardSkeleton() {
   return (
     <div className="flex flex-col overflow-hidden rounded-2xl border border-hairline bg-canvas">
@@ -117,10 +116,8 @@ export default function DestinoPage() {
   const fromPrice = lowestPerDay(results);
   const related = pickRelatedDestinations(allDestinations.data ?? [], destination.id, 6);
   const topResults = topRated(topSearch.data?.results ?? []);
-  // Agrupa por localização e usa o MESMO card da busca (GroupedResultCard) — um único
-  // modelo de card entre home, busca e destino.
-  const grouped = groupResultsByLocation(results);
-  const topGrouped = groupResultsByLocation(topResults);
+  // Um card por tipo de vaga, o MESMO card da busca (ResultCard): um único modelo de card entre
+  // home, busca e destino (E2.1.3).
   const searchWindowParams = new URLSearchParams({
     dest: destination.code,
     from: win.from,
@@ -236,16 +233,16 @@ export default function DestinoPage() {
         )}
 
         {/* Mais bem avaliados (curadoria) */}
-        {topGrouped.length > 0 && (
+        {topResults.length > 0 && (
           <section className="mt-10">
             <h2 className="mb-4 text-balance text-display-md text-ink">
               Mais bem avaliados em {destination.short_name ?? destination.name}
             </h2>
             <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-3">
-              {topGrouped.map((g) => (
-                <GroupedResultCard
-                  key={`top-${g.location_id}`}
-                  item={g}
+              {topResults.map((r) => (
+                <ResultCard
+                  key={`top-${r.id}`}
+                  item={r}
                   isSaved={false}
                   onToggleSave={() => {}}
                   searchParams={searchWindowParams}
@@ -265,19 +262,19 @@ export default function DestinoPage() {
                 <ParkingCardSkeleton key={i} />
               ))}
             </div>
-          ) : grouped.length === 0 ? (
+          ) : results.length === 0 ? (
             <EmptyState title="Nenhum estacionamento disponível para esse destino ainda." />
           ) : (
             <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-3">
-              {grouped.map((g) => (
-                <GroupedResultCard
-                  key={g.location_id}
-                  item={g}
+              {results.map((r) => (
+                <ResultCard
+                  key={r.id}
+                  item={r}
                   isSaved={false}
                   onToggleSave={() => {}}
                   searchParams={searchWindowParams}
                   source="destino"
-                  badges={computeGroupedResultBadges(g, grouped)}
+                  badges={computeResultBadges(r, results)}
                 />
               ))}
             </div>

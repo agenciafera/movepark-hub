@@ -62,7 +62,7 @@ describe("ResultCard", () => {
     expect(container.querySelector("a")).toBeNull();
   });
 
-  it("mostra o terminal mais próximo quando presente (PRD-09)", () => {
+  it("mostra a distância ao terminal mais próximo na subline (PRD-09)", () => {
     renderWithProviders(
       <ResultCard
         item={item({}, { nearest_terminal: { name: "Terminal 2", distance_km: 0.48 } })}
@@ -71,14 +71,38 @@ describe("ResultCard", () => {
         searchParams={new URLSearchParams()}
       />,
     );
-    expect(screen.getByText(/mais perto do Terminal 2/i)).toBeInTheDocument();
+    expect(screen.getByTestId("result-card-subline").textContent).toContain("480 m");
   });
 
-  it("sem terminal: não renderiza o badge de proximidade", () => {
+  it("sem terminal: a subline mostra só a unidade, sem distância", () => {
     renderWithProviders(
       <ResultCard item={item()} isSaved={false} onToggleSave={vi.fn()} searchParams={new URLSearchParams()} />,
     );
-    expect(screen.queryByText(/mais perto do/i)).toBeNull();
+    expect(screen.getByTestId("result-card-subline").textContent).not.toContain("·");
+  });
+
+  it("card por tipo: exibe o tipo de vaga como identidade do card (E2.1.3)", () => {
+    renderWithProviders(
+      <ResultCard item={item()} isSaved={false} onToggleSave={vi.fn()} searchParams={new URLSearchParams()} />,
+    );
+    expect(screen.getByTestId("result-card-type").textContent).toBe("Vaga coberta");
+  });
+
+  it("C-04: amenidade descritora de tipo não vira pill no card (Coberto num card coberto é ruído)", () => {
+    // item().amenities = ["covered"], que é descritor de tipo → não pode aparecer como amenidade.
+    renderWithProviders(
+      <ResultCard item={item()} isSaved={false} onToggleSave={vi.fn()} searchParams={new URLSearchParams()} />,
+    );
+    expect(screen.queryByTestId("result-card-amenities")).toBeNull();
+  });
+
+  it("link do card aponta para o tipo de vaga do próprio card", () => {
+    const { container } = renderWithProviders(
+      <ResultCard item={item()} isSaved={false} onToggleSave={vi.fn()} searchParams={new URLSearchParams()} />,
+    );
+    expect(container.querySelector("a")?.getAttribute("href") ?? "").toContain(
+      "/p/aerovalet/aeroporto-guarulhos/covered",
+    );
   });
 
   it("renderiza os badges comparativos quando passados (PRD-13)", () => {
