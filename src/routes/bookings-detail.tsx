@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Voucher } from "@/features/bookings/Voucher";
+import { canDownloadVoucher } from "@/features/bookings/voucher.logic";
 import { CancelBookingDialog } from "@/features/bookings/CancelBookingDialog";
 import { customerSelfCancel } from "@/features/bookings/cancellation.logic";
 import {
@@ -96,7 +97,9 @@ export default function BookingDetailPage() {
     );
   }
 
-  const canSeeVoucher = booking.status === "confirmed" || booking.status === "checked_in";
+  // A lista vive em voucher.logic e espelha a da Edge: incluir `completed` é o que faz a reserva
+  // concluída poder baixar o comprovante (86ajmy4d2).
+  const canSeeVoucher = canDownloadVoucher(booking.status);
   // Auto-cancelamento do cliente é gateado pela janela da Tarifa (E2.8). Fora da janela, confirmado
   // e pago, o cliente é bloqueado (só staff cancela). Ver docs/specs/booking-modifications.md.
   const selfCancel = customerSelfCancel(

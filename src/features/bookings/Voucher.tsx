@@ -7,6 +7,7 @@ import { toDataUrl } from "@/lib/qr";
 import { formatDateTime, formatTime } from "@/lib/format";
 import { Wordmark } from "@/components/shared/Brand";
 import { useVoucherPdf, type MyBookingDetail } from "./customerApi";
+import { isVoucherReceipt } from "./voucher.logic";
 
 type Props = {
   booking: MyBookingDetail;
@@ -15,6 +16,8 @@ type Props = {
 export function Voucher({ booking }: Props) {
   const [qrUrl, setQrUrl] = React.useState<string | null>(null);
   const pdf = useVoucherPdf();
+  // Estadia concluída: o documento deixa de servir para entrar e passa a servir para prestar contas.
+  const receipt = isVoucherReceipt(booking.status);
 
   React.useEffect(() => {
     const validateUrl = `${window.location.origin}/voucher/validate?code=${booking.code}`;
@@ -33,7 +36,7 @@ export function Voucher({ booking }: Props) {
   return (
     <div className="rounded-md border border-hairline bg-canvas p-6 print:border-0 print:p-0">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 print:hidden">
-        <h3 className="text-title-md text-ink">Voucher</h3>
+        <h3 className="text-title-md text-ink">{receipt ? "Comprovante" : "Voucher"}</h3>
         <div className="flex gap-2">
           <Button
             variant="secondary"
@@ -43,24 +46,29 @@ export function Voucher({ booking }: Props) {
             data-testid="voucher-download-pdf"
           >
             <Download className="h-4 w-4" />
-            {pdf.isPending ? "Gerando…" : "Baixar PDF"}
+            {pdf.isPending ? "Gerando…" : receipt ? "Baixar comprovante" : "Baixar PDF"}
           </Button>
-          <Button variant="secondary" size="sm" asChild>
-            <a
-              href={buildIcsHref(booking)}
-              download={`movepark-${booking.code}.ics`}
-            >
-              <CalendarIcon className="h-4 w-4" />
-              Calendário
-            </a>
-          </Button>
+          {/* Estadia concluída não entra no calendário: o evento já passou. */}
+          {!receipt && (
+            <Button variant="secondary" size="sm" asChild>
+              <a
+                href={buildIcsHref(booking)}
+                download={`movepark-${booking.code}.ics`}
+              >
+                <CalendarIcon className="h-4 w-4" />
+                Calendário
+              </a>
+            </Button>
+          )}
         </div>
       </div>
 
       {/* Cabeçalho impresso */}
       <div className="hidden print:flex print:items-center print:justify-between print:border-b print:border-hairline print:pb-4">
         <Wordmark height={18} />
-        <span className="text-caption text-muted">Voucher de reserva</span>
+        <span className="text-caption text-muted">
+          {receipt ? "Comprovante de estadia" : "Voucher de reserva"}
+        </span>
       </div>
 
       <div className="flex flex-col items-center gap-3 text-center">
@@ -69,21 +77,29 @@ export function Voucher({ booking }: Props) {
           {booking.code}
         </div>
 
-        <div className="my-2">
-          {qrUrl ? (
-            <img
-              src={qrUrl}
-              width={240}
-              height={240}
-              alt={`QR ${booking.code}`}
-              className="mx-auto"
-            />
-          ) : (
-            <Skeleton className="h-60 w-60" />
-          )}
-        </div>
+        {/* O QR é o crachá de entrada. Depois do check-out ele não abre mais nada, então some. */}
+        {!receipt && (
+          <div className="my-2">
+            {qrUrl ? (
+              <img
+                src={qrUrl}
+                width={240}
+                height={240}
+                alt={`QR ${booking.code}`}
+                className="mx-auto"
+              />
+            ) : (
+              <Skeleton className="h-60 w-60" />
+            )}
+          </div>
+        )}
 
-        {booking.status === "checked_in" && booking.checked_in_at ? (
+        {receipt ? (
+          <p className="inline-flex items-center gap-1.5 rounded-sm bg-badge-confirmed-bg px-2 py-1 text-body-sm text-badge-confirmed-fg">
+            <CheckCircle2 className="h-4 w-4" />
+            Estadia concluída em {formatDateTime(booking.check_out_at)}
+          </p>
+        ) : booking.status === "checked_in" && booking.checked_in_at ? (
           <p className="inline-flex items-center gap-1.5 rounded-sm bg-badge-confirmed-bg px-2 py-1 text-body-sm text-badge-confirmed-fg">
             <CheckCircle2 className="h-4 w-4" />
             Entrada registrada às {formatTime(booking.checked_in_at)}
