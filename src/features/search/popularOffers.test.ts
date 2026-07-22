@@ -1,10 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { dedupePopularOffers, type PopularOffer } from "./api";
 
-function offer(id: string, locationId: string, rank: number, price: number | null): PopularOffer {
+/** `rank` vem da RPC popular_parking_types já ordenada por venda (0 = mais vendido). */
+function offer(
+  id: string,
+  companyId: string,
+  rank: number,
+  opts: { locationId?: string; typeCode?: string } = {},
+): PopularOffer {
+  const locationId = opts.locationId ?? `L-${id}`;
   return {
     id,
-    parking_type: { code: "covered", name: "Coberta" },
+    parking_type: { code: opts.typeCode ?? "covered", name: "Coberta" },
     location: {
       id: locationId,
       name: `Loc ${locationId}`,
@@ -13,44 +20,57 @@ function offer(id: string, locationId: string, rank: number, price: number | nul
       review_count: 0,
       rank,
       cover_image: null,
-      company: { id: `c-${locationId}`, name: "Co", slug: `co-${locationId}` },
+      company: { id: companyId, name: `Co ${companyId}`, slug: companyId },
       destination: null,
       amenities: [],
     },
-    price_1d: price,
+    price_1d: 100,
     old_price_1d: null,
   };
 }
 
 describe("dedupePopularOffers", () => {
-  it("1 card por estacionamento — mantém a oferta de menor preço", () => {
+  it("teto de 1 por EMPRESA — guarda o tipo mais vendido (menor rank) da empresa", () => {
+    // Empresa A tem dois tipos: rank 0 (mais vendido) e rank 3.
     const out = dedupePopularOffers(
-      [offer("a1", "L1", 0, 90), offer("a2", "L1", 0, 50), offer("b1", "L2", 1, 70)],
+      [
+        offer("a-cara", "A", 3, { typeCode: "premium" }),
+        offer("a-vendida", "A", 0, { typeCode: "uncovered" }),
+        offer("b", "B", 1),
+      ],
       6,
     );
     expect(out).toHaveLength(2);
-    expect(out.find((o) => o.location.id === "L1")!.id).toBe("a2"); // 50 < 90
+    expect(out.find((o) => o.location.company.id === "A")!.id).toBe("a-vendida");
   });
 
-  it("ordena pelo ranking de reservas (rank asc), preço como desempate", () => {
+  it("teto por empresa vale entre UNIDADES diferentes da mesma empresa (caso Aerovalet, C-01a)", () => {
+    // Duas unidades da mesma empresa entram no top; só a de melhor rank fica.
     const out = dedupePopularOffers(
-      [offer("x", "L3", 2, 10), offer("y", "L1", 0, 80), offer("z", "L2", 1, 40)],
+      [
+        offer("u1", "aerovalet", 5, { locationId: "unidade-1" }),
+        offer("u2", "aerovalet", 6, { locationId: "unidade-2" }),
+      ],
       6,
     );
-    expect(out.map((o) => o.location.id)).toEqual(["L1", "L2", "L3"]);
+    expect(out).toHaveLength(1);
+    expect(out[0].id).toBe("u1"); // rank 5 < 6
+  });
+
+  it("ordena pelo rank de venda (asc)", () => {
+    const out = dedupePopularOffers(
+      [offer("x", "C", 2), offer("y", "A", 0), offer("z", "B", 1)],
+      6,
+    );
+    expect(out.map((o) => o.location.company.id)).toEqual(["A", "B", "C"]);
   });
 
   it("corta em `max`", () => {
-    const offers = Array.from({ length: 10 }, (_, i) => offer(`o${i}`, `L${i}`, i, 100 - i));
+    const offers = Array.from({ length: 10 }, (_, i) => offer(`o${i}`, `C${i}`, i));
     expect(dedupePopularOffers(offers, 6)).toHaveLength(6);
   });
 
-  it("zero-safe: rank igual (0 reservas) cai no desempate por preço; sem ofertas → vazio", () => {
-    const out = dedupePopularOffers(
-      [offer("a", "L1", 0, 99), offer("b", "L2", 0, 30)],
-      6,
-    );
-    expect(out.map((o) => o.location.id)).toEqual(["L2", "L1"]); // mesmo rank → menor preço primeiro
+  it("sem ofertas → vazio", () => {
     expect(dedupePopularOffers([], 6)).toEqual([]);
   });
 });

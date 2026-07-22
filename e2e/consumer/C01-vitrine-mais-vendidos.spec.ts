@@ -16,10 +16,10 @@
  *           fica fora do corte de 6). Ativo, ele pega a regressão no dia em que
  *           duas unidades da mesma empresa entrarem no top.
  *
- *   C-01b — ordem por venda DO TIPO. Está em `test.fail()`: hoje a home ranqueia
- *           por unidade (`popular_locations` conta reservas por location) e
- *           destaca o tipo MAIS BARATO, não o mais vendido. Quando a
- *           implementação entrar, o teste passa e a marca sai.
+ *   C-01b — ordem por venda DO TIPO. A home ranqueia por (unidade, tipo de vaga)
+ *           via a RPC `popular_parking_types` e destaca o tipo mais vendido de
+ *           cada empresa (dedupePopularOffers com teto de 1 por empresa).
+ *           Implementado em 86ajnfwgx.
  *
  * Por que o teto é por EMPRESA e não por unidade: a home é vitrine curta de
  * destaques (6 cards), não lista exaustiva. Sem teto, uma empresa com 3 tipos
@@ -79,30 +79,13 @@ test.describe("C-01", () => {
   test("C-01b: cada card traz o tipo de vaga MAIS VENDIDO daquela empresa", async ({ page }) => {
     // Hoje falha porque a home destaca o tipo MAIS BARATO da unidade
     // (`dedupePopularOffers` guarda o de menor `price_1d`), não o mais vendido.
-    // Dentro do teste, e não no describe: no escopo do describe a marca pegaria
-    // o C-01a junto, que precisa ficar ativo.
-    test.fail();
-
     const hrefs = await vitrineHrefs(page);
     expect(hrefs.length, "a vitrine precisa ter cards para comparar").toBeGreaterThan(0);
 
     // Ranking esperado, direto do banco: reservas por (unidade, tipo de vaga).
-    //
-    // O cast existe porque a RPC ainda NÃO existe, então ela não está no
-    // `database.ts` gerado e o TS recusa o nome. Sai junto com o `test.fail()`
-    // quando a implementação entrar e o `bun run gen:types` rodar.
-    const rpc = admin.rpc as unknown as (
-      fn: string,
-      args: Record<string, unknown>,
-    ) => Promise<{ data: unknown; error: { message: string } | null }>;
-    const { data, error } = await rpc("popular_parking_types", { p_limit: 24 });
+    const { data, error } = await admin.rpc("popular_parking_types", { p_limit: 24 });
     if (error) {
-      // A RPC ainda não existe: é parte da implementação pendente. Falhar aqui é
-      // o comportamento certo, e a mensagem diz o que falta.
-      throw new Error(
-        `RPC popular_parking_types ainda não existe (${error.message}). ` +
-          "Ela é a fonte do ranking por tipo de vaga que esta vitrine precisa.",
-      );
+      throw new Error(`RPC popular_parking_types falhou (${error.message}).`);
     }
 
     const melhorPorEmpresa = new Map<string, string>();

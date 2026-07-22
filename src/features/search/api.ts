@@ -259,22 +259,21 @@ export type PopularOffer = {
 };
 
 /**
- * Dedupe por estacionamento: 1 card por location (o de menor preço de 1 diária), ordenado pelo
- * ranking de reservas (`rank` asc), cortado em `max`. Pura → testável sem rede.
+ * Teto de 1 card por EMPRESA, guardando o tipo de vaga MAIS VENDIDO daquela empresa (o de menor
+ * `rank`, que vem da RPC popular_parking_types já ordenada por venda). Ordena pelo rank e corta em
+ * `max`. Mais restritivo que a busca de propósito: a home é vitrine curta de destaques, não lista
+ * exaustiva, então uma empresa não pode ocupar vários slots (86ajnfwgx). Pura → testável sem rede.
  */
 export function dedupePopularOffers(offers: PopularOffer[], max: number): PopularOffer[] {
-  const byLocation = new Map<string, PopularOffer>();
+  const byCompany = new Map<string, PopularOffer>();
   for (const o of offers) {
-    const cur = byLocation.get(o.location.id);
-    if (!cur || (o.price_1d ?? Infinity) < (cur.price_1d ?? Infinity)) {
-      byLocation.set(o.location.id, o);
+    const cur = byCompany.get(o.location.company.id);
+    if (!cur || o.location.rank < cur.location.rank) {
+      byCompany.set(o.location.company.id, o);
     }
   }
-  return [...byLocation.values()]
-    .sort((a, b) => {
-      const d = a.location.rank - b.location.rank;
-      return d !== 0 ? d : (a.price_1d ?? 0) - (b.price_1d ?? 0);
-    })
+  return [...byCompany.values()]
+    .sort((a, b) => a.location.rank - b.location.rank)
     .slice(0, max);
 }
 
@@ -282,17 +281,21 @@ export function usePopularOffers(maxLocations = 6) {
   return useQuery({
     queryKey: [...searchKeys.popularLocations(), "offers", maxLocations],
     queryFn: async (): Promise<PopularOffer[]> => {
-      // Passo 1: ranking por nº de reservas (RPC popular_locations, zero-safe). Buffer 2x porque
-      // alguns lotes podem não ter oferta com preço calculável e cairão fora na dedupe.
-      const { data: rankRows, error: rankErr } = await supabase.rpc("popular_locations", {
-        p_limit: maxLocations * 2,
+      // Passo 1: ranking por venda do TIPO DE VAGA (RPC popular_parking_types, zero-safe). Cada linha
+      // é um location_parking_type (o `id`). Buffer 4x porque o teto é 1 por empresa: várias linhas
+      // do topo podem ser da mesma empresa (ex.: Aerovalet com 2 unidades), então precisa de mais
+      // candidatos pra fechar `maxLocations` empresas distintas. Alguns lotes também caem na dedupe
+      // por não ter preço calculável.
+      const { data: rankRows, error: rankErr } = await supabase.rpc("popular_parking_types", {
+        p_limit: maxLocations * 4,
       });
       if (rankErr) throw rankErr;
-      const rankedIds = (rankRows ?? []).map((r) => r.id);
-      if (rankedIds.length === 0) return [];
+      const rankedRows = rankRows ?? [];
+      if (rankedRows.length === 0) return [];
 
-      const locationIds = rankedIds;
-      const rankMap = Object.fromEntries(rankedIds.map((id, i) => [id, i] as const));
+      // rank por lpt (a ordem de venda); as locations a buscar são as das linhas ranqueadas.
+      const rankMap = Object.fromEntries(rankedRows.map((r, i) => [r.id, i] as const));
+      const locationIds = [...new Set(rankedRows.map((r) => r.location_id))];
 
       // Passo 2: detalhes das locations (empresa, destino, amenidades)
       // Query separada para evitar nesting profundo que impede pricing_tier de retornar
@@ -355,7 +358,7 @@ export function usePopularOffers(maxLocations = 6) {
             slug: loc.slug,
             review_avg: loc.review_avg ?? null,
             review_count: loc.review_count ?? 0,
-            rank: rankMap[r.location_id] ?? Number.MAX_SAFE_INTEGER,
+            rank: rankMap[r.id] ?? Number.MAX_SAFE_INTEGER,
             cover_image: primaryPhoto,
             company: loc.company as { id: string; name: string; slug: string },
             destination: loc.destination as PopularOffer["location"]["destination"],

@@ -4505,6 +4505,7 @@ export type Database = {
         Args: { p_limit?: number }
         Returns: {
           id: string
+          location_id: string
           location_slug: string
           operator_slug: string
           parking_type_code: string
