@@ -195,6 +195,11 @@ grep -rnE 'tablet:text-display-(2xl|3xl)' src/routes src/features
 # 2. Peso sobrescrevendo token de heading
 grep -rnE 'text-(display|title)-[a-z0-9]+[^"]*font-(bold|semibold|medium)' src/routes src/features
 
+# 2b. Entrelinha sobrescrevendo token de heading. O nome engana: `leading-tight` do
+#     Tailwind é 1.25, MAIS SOLTO que o 1.06 do display-3xl. Em /seja-parceiro isso
+#     deixava o h1 com 70px de entrelinha contra 59px do mesmo h1 na home e na /sobre.
+grep -rnE 'text-(display|title)-[a-z0-9]+[^"]*leading-|leading-[a-z]+[^"]*text-(display|title)-' src/routes src/features src/components
+
 # 3. Violeta em texto (só acionável pode)
 grep -rn 'text-mp-primary' src/routes src/features/home
 

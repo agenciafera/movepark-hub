@@ -205,13 +205,13 @@ export default function SejaParceiroPage() {
             precisar apagar a cena. Com a foto anterior (contraluz, céu estourado na
             esquerda) nem 65% chapado passava, e era preciso degradê. */}
         <div className="absolute inset-0 bg-mp-navy/30" aria-hidden />
-        <div className="relative mx-auto max-w-[1100px] px-4 py-14 text-white desktop:px-8 desktop:py-20">
+        <div className="relative mx-auto max-w-[1100px] px-4 py-20 text-white desktop:px-8 desktop:py-28">
           <span className="text-badge uppercase tracking-[0.4px] text-white/70">
             Para donos de estacionamento
           </span>
           {/* `max-w-xl` e nao `2xl`: a 672px a ponta direita do h1 caia sobre o homem
               iluminado e o contraste ia a 2,2:1. A 576px ele fica na parede escura. */}
-          <h1 className="mt-3 max-w-xl text-balance text-display-3xl leading-tight text-white">
+          <h1 className="mt-3 max-w-xl text-balance text-display-3xl text-white">
             Encha suas vagas com reservas online. Sem custo pra começar.
           </h1>
           <p className="mt-4 max-w-xl text-body-md text-white/80">
