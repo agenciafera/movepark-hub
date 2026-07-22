@@ -40,7 +40,7 @@ as $$
     and l.status = 'active'
     and l.deleted_at is null
     and l.is_listed
-  group by lpt.id, c.slug, l.slug, pt.code, l.review_count, l.popular_sort_order, l.created_at
+  group by lpt.id, l.id, c.slug, l.slug, pt.code, l.review_count, l.popular_sort_order, l.created_at
   order by
     count(distinct b.id) desc,
     l.review_count desc nulls last,
