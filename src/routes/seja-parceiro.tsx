@@ -8,7 +8,6 @@ import {
   ShieldCheck,
   Tag,
   BadgeCheck,
-  Play,
   Quote,
   X,
 } from "lucide-react";
@@ -435,13 +434,13 @@ export default function SejaParceiroPage() {
 
       {/* Vídeo institucional */}
       <section className="mx-auto max-w-[900px] px-4 py-16 text-center desktop:px-8 desktop:py-20">
-        <span className="inline-flex items-center gap-2 text-badge uppercase tracking-wide text-mp-indigo">
-          <Play className="h-4 w-4" /> Conheça a Movepark
+        <span className="text-badge uppercase tracking-wide text-mp-indigo">
+          Conheça a Movepark
         </span>
         <h2 className="mx-auto mt-3 max-w-2xl text-balance text-display-xl text-ink">
           Veja como a Movepark trabalha pelo seu estacionamento
         </h2>
-        <div className="mt-8 overflow-hidden rounded-lg border border-hairline shadow-tier">
+        <div className="mt-8 overflow-hidden rounded-lg border border-hairline">
           <div className="aspect-video">
             <iframe
               className="h-full w-full"
