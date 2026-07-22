@@ -106,10 +106,10 @@ export function BookingDrawer({ booking, open, onOpenChange }: Props) {
           <section className="space-y-2">
             <h4 className="text-title-md">Cliente</h4>
             <Field label="Nome" value={bookingCustomerName(booking) ?? "-"} />
-            <Field label="Telefone" value={booking.customer_phone ?? "—"} />
+            <Field label="Telefone" value={booking.customer_phone ?? "-"} />
             <Field
               label="CPF/CNPJ"
-              value={booking.profile?.tax_id ? documentMask(booking.profile.tax_id) : "—"}
+              value={booking.profile?.tax_id ? documentMask(booking.profile.tax_id) : "-"}
             />
           </section>
 
@@ -117,9 +117,9 @@ export function BookingDrawer({ booking, open, onOpenChange }: Props) {
 
           <section className="space-y-2">
             <h4 className="text-title-md">Veículo</h4>
-            <Field label="Placa" value={booking.vehicle?.license_plate ?? "—"} />
-            <Field label="Modelo" value={booking.vehicle?.model ?? "—"} />
-            <Field label="Cor" value={booking.vehicle?.color ?? "—"} />
+            <Field label="Placa" value={booking.vehicle?.license_plate ?? "-"} />
+            <Field label="Modelo" value={booking.vehicle?.model ?? "-"} />
+            <Field label="Cor" value={booking.vehicle?.color ?? "-"} />
             {["pending", "confirmed", "checked_in"].includes(booking.status) && (
               <div className="flex items-center gap-2 pt-1">
                 <Input

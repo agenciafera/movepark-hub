@@ -23,7 +23,7 @@ function validityLabel(c: CouponWithRestrictions): string {
   const from = c.valid_from ? new Date(c.valid_from).toLocaleDateString("pt-BR") : null;
   const until = c.valid_until ? new Date(c.valid_until).toLocaleDateString("pt-BR") : null;
   if (!from && !until) return "Sempre";
-  return `${from ?? "—"} → ${until ?? "—"}`;
+  return `${from ?? "-"} → ${until ?? "-"}`;
 }
 
 export function CouponsTab({ companyId }: { companyId: string }) {

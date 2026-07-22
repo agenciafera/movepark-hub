@@ -65,8 +65,8 @@ export function BookingTable({ bookings, isLoading, onRowClick, showCompany = tr
             >
               <TableCell className="font-mono text-caption">{b.code}</TableCell>
               <TableCell className="text-ink">{bookingCustomerName(b) ?? "-"}</TableCell>
-              {showCompany && <TableCell>{b.location?.company?.name ?? "—"}</TableCell>}
-              <TableCell>{b.location?.name ?? "—"}</TableCell>
+              {showCompany && <TableCell>{b.location?.company?.name ?? "-"}</TableCell>}
+              <TableCell>{b.location?.name ?? "-"}</TableCell>
               <TableCell>{formatDateTime(b.check_in_at)}</TableCell>
               <TableCell>{formatDateTime(b.check_out_at)}</TableCell>
               <TableCell className="text-right tabular-nums">

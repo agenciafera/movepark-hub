@@ -112,7 +112,7 @@ export default function ManagerFinancePayouts() {
                   <TableCell className="text-right tabular-nums">{c.paid_count}</TableCell>
                   <TableCell className="text-right tabular-nums">{brl(c.gross_partner_cents)}</TableCell>
                   <TableCell className="text-right tabular-nums text-warning">
-                    {c.refunded_partner_cents > 0 ? `−${brl(c.refunded_partner_cents)}` : "—"}
+                    {c.refunded_partner_cents > 0 ? `−${brl(c.refunded_partner_cents)}` : "-"}
                   </TableCell>
                   <TableCell className="text-right tabular-nums text-ink">
                     {brl(c.net_partner_cents)}

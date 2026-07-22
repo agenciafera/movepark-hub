@@ -76,11 +76,11 @@ export default function ManagerLocations() {
                 <TableRow key={loc.id}>
                   <TableCell className="text-ink">{loc.name}</TableCell>
                   <TableCell className="text-caption text-muted">/{loc.slug}</TableCell>
-                  <TableCell>{loc.address ?? "—"}</TableCell>
+                  <TableCell>{loc.address ?? "-"}</TableCell>
                   <TableCell>
                     {loc.destination
                       ? `${loc.destination.short_name ?? loc.destination.name} (${loc.destination.code})`
-                      : "—"}
+                      : "-"}
                   </TableCell>
                   <TableCell>{loc.timezone}</TableCell>
                   <TableCell>

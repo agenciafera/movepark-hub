@@ -96,7 +96,7 @@ export function FaqAdminTable({
               )}
               {showLocation && faq.location_id && (
                 <Badge tone="neutral" className="shrink-0">
-                  {locationNames[faq.location_id] ?? "—"}
+                  {locationNames[faq.location_id] ?? "-"}
                 </Badge>
               )}
             </div>

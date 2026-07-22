@@ -19,7 +19,7 @@ function Field({ label, value }: { label: string; value?: string | number | null
   return (
     <div className="flex flex-col gap-0.5">
       <span className="text-caption text-muted-steel">{label}</span>
-      <span className="text-body-sm text-ink">{value === null || value === undefined || value === "" ? "—" : value}</span>
+      <span className="text-body-sm text-ink">{value === null || value === undefined || value === "" ? "-" : value}</span>
     </div>
   );
 }

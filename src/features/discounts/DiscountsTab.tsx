@@ -111,7 +111,7 @@ export function DiscountsTab({ companyId }: { companyId: string }) {
                     {formatDiscountValue(d.discount_type, Number(d.discount_value))}
                   </TableCell>
                   <TableCell className="text-body-sm">
-                    {d.location_id ? (locationNames[d.location_id] ?? "—") : "Todas"}
+                    {d.location_id ? (locationNames[d.location_id] ?? "-") : "Todas"}
                   </TableCell>
                   <TableCell className="text-body-sm">
                     {discountWindowLabel(d.valid_from, d.valid_until)}

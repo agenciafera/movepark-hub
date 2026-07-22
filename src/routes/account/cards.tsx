@@ -33,7 +33,7 @@ const brandLabels: Record<string, string> = {
 };
 
 function formatExpiry(month: number | null, year: number | null) {
-  if (!month || !year) return "—";
+  if (!month || !year) return "-";
   const mm = String(month).padStart(2, "0");
   const yy = String(year % 100).padStart(2, "0");
   return `${mm}/${yy}`;

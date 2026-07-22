@@ -109,7 +109,7 @@ export function discountWindowLabel(validFrom: string | null, validUntil: string
   const from = validFrom ? formatDate(validFrom) : null;
   const until = validUntil ? formatDate(validUntil) : null;
   if (!from && !until) return "Sempre";
-  return `${from ?? "—"} → ${until ?? "—"}`;
+  return `${from ?? "-"} → ${until ?? "-"}`;
 }
 
 /** ISO (ou null) → "YYYY-MM-DD" para `<input type="date">`. */

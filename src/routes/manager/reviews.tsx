@@ -83,11 +83,11 @@ export default function ManagerReviews() {
                     {r.author_name ?? "Cliente"}
                   </TableCell>
                   <TableCell className="text-body-sm">
-                    <div className="text-ink">{r.location_name ?? "—"}</div>
+                    <div className="text-ink">{r.location_name ?? "-"}</div>
                     <div className="text-caption text-muted">{r.company_name ?? ""}</div>
                   </TableCell>
                   <TableCell className="max-w-[320px] text-body-sm text-muted">
-                    <span className="line-clamp-2">{r.comment ?? "—"}</span>
+                    <span className="line-clamp-2">{r.comment ?? "-"}</span>
                   </TableCell>
                   <TableCell className="text-caption text-muted">
                     {formatDate(r.created_at)}

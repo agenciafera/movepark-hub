@@ -102,7 +102,7 @@ export function PriceTableDialog({
                           <span className="text-ink">{formatBRL(row.total)}</span>
                         </span>
                       ) : (
-                        <span className="text-muted">—</span>
+                        <span className="text-muted">-</span>
                       )}
                     </TableCell>
                     <TableCell className="text-right tabular-nums text-muted">
@@ -111,7 +111,7 @@ export function PriceTableDialog({
                       ) : row.perDay != null ? (
                         formatBRL(row.perDay)
                       ) : (
-                        "—"
+                        "-"
                       )}
                     </TableCell>
                   </TableRow>

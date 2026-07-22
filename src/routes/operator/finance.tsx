@@ -170,7 +170,7 @@ export default function OperatorFinance() {
             <>
               <div className="grid grid-cols-2 gap-4 tablet:grid-cols-4">
                 <Kpi label="Bruto" value={brl(company.gross_partner_cents)} />
-                <Kpi label="Estornos" value={company.refunded_partner_cents > 0 ? `−${brl(company.refunded_partner_cents)}` : "—"} />
+                <Kpi label="Estornos" value={company.refunded_partner_cents > 0 ? `−${brl(company.refunded_partner_cents)}` : "-"} />
                 <Kpi label="Líquido a receber" value={brl(company.net_partner_cents)} strong />
                 <Kpi label="Comissão Movepark" value={brl(company.movepark_commission_cents)} muted />
               </div>

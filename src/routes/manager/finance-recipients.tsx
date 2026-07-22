@@ -151,7 +151,7 @@ export default function ManagerFinanceRecipients() {
                       </Badge>
                     </TableCell>
                     <TableCell className="font-mono text-caption text-muted">
-                      {row.externalRecipientId ?? "—"}
+                      {row.externalRecipientId ?? "-"}
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap justify-end gap-2">

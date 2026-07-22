@@ -126,7 +126,7 @@ export function MotorCrescimento() {
   }
 
   const m = membership.data;
-  const cashbackPct = m ? cashbackPctLabel(m.cashback_bps) : "—";
+  const cashbackPct = m ? cashbackPctLabel(m.cashback_bps) : "-";
   const next = m?.next_tier ?? null;
   const progress = m ? tierProgress(m.window_bookings, next?.min_bookings ?? null) : 0;
 

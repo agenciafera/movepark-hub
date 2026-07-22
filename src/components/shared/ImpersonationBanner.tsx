@@ -37,7 +37,7 @@ export function ImpersonationBanner() {
           </div>
           <div className="text-body-sm text-body">
             Você está vendo o painel como operador de{" "}
-            <strong className="text-ink">{company?.name ?? "—"}</strong>.
+            <strong className="text-ink">{company?.name ?? "-"}</strong>.
           </div>
         </div>
       </div>

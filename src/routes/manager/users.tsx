@@ -134,7 +134,7 @@ export default function ManagerUsers() {
                 <TableRow key={u.id}>
                   <TableCell>
                     <div className="flex flex-col">
-                      <span className="text-ink">{u.full_name ?? "—"}</span>
+                      <span className="text-ink">{u.full_name ?? "-"}</span>
                       <span className="text-caption-sm text-muted">{u.id.slice(0, 8)}</span>
                     </div>
                   </TableCell>
@@ -155,7 +155,7 @@ export default function ManagerUsers() {
                   </TableCell>
                   <TableCell>
                     {u.companies.length === 0 ? (
-                      <span className="text-caption text-muted-soft">—</span>
+                      <span className="text-caption text-muted-soft">-</span>
                     ) : (
                       <div className="flex flex-wrap gap-1">
                         {u.companies.map((c) => (

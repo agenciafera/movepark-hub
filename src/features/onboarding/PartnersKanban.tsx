@@ -15,7 +15,7 @@ type Props = {
 };
 
 function fmtDate(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   return new Date(iso).toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "2-digit",
@@ -114,8 +114,8 @@ export function PartnersKanban({ applications, onSelect, onMove, movingId }: Pro
                       <span className="text-body-sm font-medium text-ink">{a.company?.name}</span>
                       <span className="text-caption text-muted">{a.contact_name}</span>
                       <div className="mt-1 flex items-center justify-between text-caption text-muted">
-                        <span>{[a.city, a.state].filter(Boolean).join(" / ") || "—"}</span>
-                        <span>{a.estimated_spots != null ? `${a.estimated_spots} vagas` : "—"}</span>
+                        <span>{[a.city, a.state].filter(Boolean).join(" / ") || "-"}</span>
+                        <span>{a.estimated_spots != null ? `${a.estimated_spots} vagas` : "-"}</span>
                       </div>
                       <span className="text-caption text-muted">{fmtDate(a.submitted_at)}</span>
                     </div>

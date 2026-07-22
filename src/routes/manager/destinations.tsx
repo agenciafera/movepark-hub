@@ -99,7 +99,7 @@ export default function ManagerDestinations() {
                   <TableCell>{d.code}</TableCell>
                   <TableCell>{[d.city, d.state].filter(Boolean).join(" / ")}</TableCell>
                   <TableCell>{d.type}</TableCell>
-                  <TableCell>{d.is_popular ? "★" : "—"}</TableCell>
+                  <TableCell>{d.is_popular ? "★" : "-"}</TableCell>
                   <TableCell>
                     <Badge tone={d.is_published ? "confirmed" : "pending"}>
                       {d.is_published ? "Publicado" : "Rascunho"}
