@@ -3669,6 +3669,15 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: undefined
       }
+      admin_search: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          id: string
+          kind: string
+          subtitle: string
+          title: string
+        }[]
+      }
       anonymize_own_account: { Args: never; Returns: undefined }
       api_assert_lpt_company: {
         Args: { p_company_id: string; p_lpt_id: string }

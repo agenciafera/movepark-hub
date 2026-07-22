@@ -503,6 +503,32 @@ Tabela de Reservas
   (`_create_booking_core`) **rejeita** datas bloqueadas (antes do cálculo de preço). A RPC
   `operator_location_occupancy` devolve `blocked` para a grade exibir o estado.
 
+### Busca do painel (command palette)
+
+O campo de busca da topbar abre uma **command palette** (`⌘K` no mac, `Ctrl+K` no resto), compartilhada
+entre `/operator` e `/manager` pelo `AppShell`. Ela faz duas coisas: acha objetos e pula para telas.
+
+- **Objetos** vêm da RPC **`admin_search(p_query, p_limit)`** (`UNION` entre `booking`, `location` e
+  `coupon`). Reserva casa por código, nome e e-mail do cliente; unidade por nome e endereço; cupom por
+  código. Termo com menos de 2 caracteres devolve vazio, para uma tecla solta não varrer as tabelas.
+- **Escopo por empresa é explícito na query, não herdado do RLS.** As policies são permissivas e se
+  somam com `OR`: `location` tem a `catalog_read_location` e `coupon` tem a `catalog_read_coupon`, ambas
+  liberando leitura para `anon`/`authenticated` (o site do consumidor precisa listar estacionamentos).
+  Uma busca que confiasse só no RLS devolveria unidade e cupom **de outras empresas** para o operador.
+  Por isso cada ramo carrega `is_hub_admin() OR company_id = any(current_company_ids())`. A função é
+  `SECURITY INVOKER` de propósito: o RLS segue valendo por baixo e o filtro é a segunda camada.
+- **Navegação** reaproveita as seções da sidebar e passa pelo mesmo `filterSectionsByScopes`, então a
+  palette nunca é atalho para uma tela que o papel do usuário não abre (ADR-005).
+- **Destino de cada resultado** (`palette.logic.ts`): reserva abre a listagem com `?q=<código>` já
+  semeado (o painel não tem rota de detalhe de reserva); unidade vai para `/operator/locations` ou, no
+  manager, para `/manager/companies/:id/locations` (a rota é aninhada na empresa, por isso a RPC
+  devolve `company_id`); cupom só existe no operator. Quando o painel não tem rota para o tipo, o
+  resultado **não é exibido** em vez de virar link morto.
+- Índices de trigrama (`pg_trgm`, GIN) em `booking.code`, `booking.customer_name`,
+  `booking.customer_email`, `location.name`, `location.address` e `coupon.code`.
+
+Migration `20260902000000_admin_search.sql`.
+
 ## 9. Open Points
 
 - [ ] Confirmação manual de reservas: fluxo obrigatório ou opcional por empresa?

@@ -17,9 +17,23 @@ import {
 import { Button } from "@/components/ui/button";
 import { Monogram } from "./Brand";
 
-export function Topbar({ rightSlot }: { rightSlot?: React.ReactNode }) {
+export function Topbar({
+  rightSlot,
+  onOpenSearch,
+}: {
+  rightSlot?: React.ReactNode;
+  onOpenSearch: () => void;
+}) {
   const { session, effectiveRole, signOut } = useAuth();
   const navigate = useNavigate();
+
+  // O rótulo do atalho segue o teclado de quem está olhando. `navigator.platform`
+  // é depreciado mas continua sendo o teste que funciona nos navegadores atuais;
+  // no SSR não existe `navigator`, então cai no Ctrl.
+  const atalho =
+    typeof navigator !== "undefined" && /mac|iphone|ipad/i.test(navigator.platform)
+      ? "⌘K"
+      : "Ctrl K";
 
   async function handleSignOut() {
     // Backoffice sai pro login; captura o papel antes de limpar a sessão.
@@ -42,13 +56,20 @@ export function Topbar({ rightSlot }: { rightSlot?: React.ReactNode }) {
       <div className="tablet:hidden">
         <Monogram size={28} />
       </div>
-      {/* Sem `shadow-tier`: era sombra em repouso num controle plano, e o
-          `transition-shadow` que a acompanhava não tinha estado de hover pra
-          transicionar. A borda já resolve o contorno. */}
-      <div className="hidden tablet:flex flex-1 max-w-md items-center gap-2 rounded-full border border-hairline bg-canvas px-4 py-2.5 text-body-sm text-muted">
-        <Search className="h-4 w-4" />
-        <span>Buscar reservas, empresas, usuários…</span>
-      </div>
+      {/* Era um `div` com um `span`: parecia campo de busca e não fazia nada,
+          nem focava nem clicava. Agora é um botão de verdade que abre a
+          command palette. Sem `shadow-tier` porque é controle plano. */}
+      <button
+        type="button"
+        onClick={onOpenSearch}
+        className="hidden tablet:flex flex-1 max-w-md items-center gap-2 rounded-full border border-hairline bg-canvas px-4 py-2.5 text-body-sm text-muted transition-colors hover:bg-surface-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2"
+      >
+        <Search className="h-4 w-4 shrink-0" />
+        <span>Buscar reserva, unidade, cupom...</span>
+        <kbd className="ml-auto hidden rounded-xs border border-hairline px-1.5 py-0.5 text-caption-sm font-sans desktop:inline">
+          {atalho}
+        </kbd>
+      </button>
       <div className="flex-1" />
       {rightSlot}
       <Button variant="outline" size="icon" aria-label="Notificações">

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,7 +26,9 @@ const statusOptions: { value: BookingStatus | "all"; label: string }[] = [
 ];
 
 export default function ManagerBookings() {
-  const [search, setSearch] = React.useState("");
+  // A command palette manda o código da reserva em `?q=` (ver operator/bookings).
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = React.useState(() => searchParams.get("q") ?? "");
   const [status, setStatus] = React.useState<BookingStatus | "all">("all");
   const [selected, setSelected] = React.useState<BookingWithRelations | null>(null);
 

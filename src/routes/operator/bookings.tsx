@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -26,7 +27,11 @@ const statusOptions: { value: BookingStatus | "all"; label: string }[] = [
 ];
 
 export default function OperatorBookings() {
-  const [search, setSearch] = React.useState("");
+  // A command palette manda o código da reserva em `?q=`. Semear o estado a
+  // partir dele é o que faz o resultado da busca abrir já filtrado, já que o
+  // painel não tem rota de detalhe de reserva.
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = React.useState(() => searchParams.get("q") ?? "");
   const [status, setStatus] = React.useState<BookingStatus | "all">("all");
   const [from, setFrom] = React.useState("");
   const [to, setTo] = React.useState("");
