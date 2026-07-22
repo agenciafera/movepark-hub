@@ -146,7 +146,7 @@ export default function ComoFuncionaPage() {
           </p>
           <Link
             to="/"
-            className="inline-flex h-12 items-center rounded-sm bg-mp-primary px-6 text-label font-semibold text-white transition-colors hover:bg-mp-primary/90"
+            className="inline-flex h-12 items-center rounded-sm bg-mp-primary px-6 text-button-sm font-semibold text-white transition-colors hover:bg-mp-primary/90"
           >
             Buscar estacionamento
           </Link>

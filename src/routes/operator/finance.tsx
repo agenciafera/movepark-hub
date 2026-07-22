@@ -279,7 +279,7 @@ function Kpi({ label, value, strong, muted }: { label: string; value: string; st
       <div
         className={
           strong
-            ? "text-title-lg text-ink"
+            ? "text-display-sm text-ink"
             : muted
               ? "text-title-md text-mp-primary"
               : "text-title-md text-ink"

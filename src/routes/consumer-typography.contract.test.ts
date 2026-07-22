@@ -40,12 +40,22 @@ function collectTsx(dir: string, recursive: boolean): string[] {
   });
 }
 
-const sources = CONSUMER_DIRS.flatMap(({ dir, recursive }) => collectTsx(dir, recursive)).map(
-  (path) => ({
-    file: path.slice(path.indexOf("/src/") + 1),
-    body: readFileSync(path, "utf8"),
-  }),
-);
+const read = (path: string) => ({
+  file: path.slice(path.indexOf("/src/") + 1),
+  body: readFileSync(path, "utf8"),
+});
+
+const sources = CONSUMER_DIRS.flatMap(({ dir, recursive }) => collectTsx(dir, recursive)).map(read);
+
+/**
+ * A checagem de classe fantasma vale para o app inteiro, não só para o consumer.
+ *
+ * O escopo antigo (`src/routes` sem recursão) deixava `routes/operator/`,
+ * `routes/manager/` e `features/` de fora, e foi assim que `text-title-lg`
+ * sobreviveu em 6 lugares mesmo estando nomeada na lista de fantasmas deste
+ * arquivo: a guarda existia, apontava a classe certa e não a enxergava.
+ */
+const allSources = collectTsx(SRC, true).map(read);
 
 describe("contrato de tipografia do consumer", () => {
   it("varre um conjunto de arquivos não-vazio", () => {
@@ -81,15 +91,33 @@ describe("contrato de tipografia do consumer", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("nenhuma classe de tipografia fantasma: o que o código usa existe no config", () => {
+  it("nenhuma classe de tipografia fantasma em todo o src: o que o código usa existe no config", () => {
     // `text-body-lg` era usada em faq/sobre/como-funciona e nunca existiu no
     // tailwind.config.ts, então computava 16px/400 herdado sem ninguém notar.
-    const ghosts = ["text-body-lg", "text-display-4xl", "text-title-lg", "text-caption-lg"];
+    // A lista fixa que morava aqui envelhecia: agora os degraus válidos são lidos
+    // do próprio config, então uma classe nova só passa se o token existir.
+    const config = readFileSync(join(process.cwd(), "tailwind.config.ts"), "utf8");
+    const block = config.match(/fontSize:\s*\{([\s\S]*?)\n {6}\},/)?.[1];
+    expect(block, "não achei o bloco fontSize no tailwind.config.ts").toBeTruthy();
 
-    const offenders = sources.flatMap(({ file, body }) =>
-      ghosts.filter((ghost) => new RegExp(`\\b${ghost}\\b`).test(body)).map((g) => `${file}: ${g}`),
+    const valid = new Set(
+      [...block!.replace(/\/\/.*$/gm, "").matchAll(/^\s{8}"?([a-z0-9-]+)"?:\s*\[/gm)].map(
+        (m) => m[1],
+      ),
+    );
+    expect(valid.size).toBeGreaterThan(10);
+
+    // Prefixos que só existem como degrau de tipografia. `badge` fica de fora de
+    // propósito: `text-badge-confirmed-fg` e companhia são COR, não tamanho.
+    const typographic = /\btext-((?:display|title|body|caption|button)-[a-z0-9]+)\b/g;
+
+    const offenders = allSources.flatMap(({ file, body }) =>
+      [...body.matchAll(typographic)]
+        .map((m) => m[1])
+        .filter((token) => !valid.has(token))
+        .map((token) => `${file}: text-${token}`),
     );
 
-    expect(offenders).toEqual([]);
+    expect([...new Set(offenders)]).toEqual([]);
   });
 });

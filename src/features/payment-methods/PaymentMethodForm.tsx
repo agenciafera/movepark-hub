@@ -106,7 +106,7 @@ export function PaymentMethodForm({ open, onOpenChange }: Props) {
                 required
               />
               {brand && brand !== "unknown" && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-body-xs uppercase text-muted">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-caption-sm uppercase text-muted">
                   {brand}
                 </span>
               )}

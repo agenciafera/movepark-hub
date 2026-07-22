@@ -87,7 +87,7 @@ export function LeadForm({ onSuccess }: Props) {
   return (
     <form className="flex flex-col gap-8" onSubmit={handleSubmit}>
       <fieldset className="flex flex-col gap-4">
-        <legend className="text-label font-medium text-muted">Sobre o estacionamento</legend>
+        <legend className="text-caption font-medium text-muted">Sobre o estacionamento</legend>
         <div className="grid grid-cols-1 gap-5">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="company_name">Nome do estacionamento *</Label>
@@ -128,7 +128,7 @@ export function LeadForm({ onSuccess }: Props) {
       </fieldset>
 
       <fieldset className="flex flex-col gap-4">
-        <legend className="text-label font-medium text-muted">Seu contato</legend>
+        <legend className="text-caption font-medium text-muted">Seu contato</legend>
         <div className="grid grid-cols-1 gap-5">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="contact_name">Seu nome *</Label>

@@ -84,7 +84,7 @@ export function UnitPreviewCard({
         {minPrice != null && (
           <div className="border-t border-hairline pt-3">
             <span className="text-caption-sm text-muted">a partir de</span>
-            <p className="text-title-lg text-ink">
+            <p className="text-display-sm text-ink">
               {formatBRL(minPrice)}
               <span className="text-body-sm font-normal text-muted"> /diária</span>
             </p>

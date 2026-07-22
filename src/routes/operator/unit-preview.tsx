@@ -94,7 +94,7 @@ export default function UnitPreviewPage() {
                 <div>
                   {unit.isListed ? (
                     <>
-                      <h1 className="text-title-lg text-ink">Seu estacionamento está no ar! 🚗</h1>
+                      <h1 className="text-display-sm text-ink">Seu estacionamento está no ar! 🚗</h1>
                       <p className="mt-1 text-body-sm text-muted">
                         Já aparece na busca da Movepark. Compartilhe o link e comece a receber
                         reservas. Depois é só deixar o estacionamento redondo no painel (fotos,
@@ -103,7 +103,7 @@ export default function UnitPreviewPage() {
                     </>
                   ) : (
                     <>
-                      <h1 className="text-title-lg text-ink">Boa! Seu estacionamento tomou forma 🎉</h1>
+                      <h1 className="text-display-sm text-ink">Boa! Seu estacionamento tomou forma 🎉</h1>
                       <p className="mt-1 text-body-sm text-muted">
                         Veja aqui embaixo como ela vai aparecer pro cliente. Falta a etapa 2 pra ela
                         entrar na busca e você começar a vender: seus dados de recebimento.

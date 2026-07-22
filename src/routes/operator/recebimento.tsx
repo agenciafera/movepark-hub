@@ -42,7 +42,7 @@ function SetupDoneAside() {
         🎉
       </span>
       <div className="relative flex flex-col gap-1.5">
-        <p className="text-title-lg text-white">Mandou muito bem! 🥳</p>
+        <p className="text-display-sm text-white">Mandou muito bem! 🥳</p>
         <p className="text-body-sm text-white/90">
           Fez tudo do seu lado. Agora relaxa e deixa o resto com a gente.
         </p>
@@ -221,7 +221,7 @@ export default function OperatorRecebimento() {
               <div className="flex h-11 w-11 items-center justify-center rounded-full bg-success/15">
                 <Check className="h-6 w-6 text-success" />
               </div>
-              <h1 className="text-title-lg text-ink">Fechou! Cadastro completo 🎉</h1>
+              <h1 className="text-display-sm text-ink">Fechou! Cadastro completo 🎉</h1>
               <p className="text-body-sm text-muted">
                 Seus dados chegaram, o contrato tá assinado e seu recebedor já foi criado. Você fez
                 tudo certinho.

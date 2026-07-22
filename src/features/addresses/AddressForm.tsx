@@ -154,7 +154,7 @@ export function AddressForm({ open, onOpenChange, address }: Props) {
                 disabled={lookingUp}
               />
               {lookingUp && (
-                <span className="text-body-xs text-muted">Buscando…</span>
+                <span className="text-caption-sm text-muted">Buscando…</span>
               )}
             </div>
             <div className="flex flex-col gap-1.5">

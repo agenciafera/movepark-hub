@@ -57,7 +57,10 @@
 
     /* Semantic */
     --success: 150 60% 30%;            /* #1F7A4D */
-    --warning: 34 100% 36%;            /* #B96A00 */
+    /* #8F5100. Era #B96A00, que reprovava o AA nos dois fundos onde o token
+       aparece: 4.18:1 sobre canvas e 3.72:1 sobre o badge-pending-bg. Agora
+       dá 6.28:1 e 5.59:1. */
+    --warning: 34 100% 28%;
     --error: 13 80% 42%;               /* #C13515 */
     --info: var(--mp-indigo);
 

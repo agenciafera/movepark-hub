@@ -10,6 +10,12 @@ type LocationUpdate = Database["public"]["Tables"]["location"]["Update"];
 const destinationEmbed =
   "destination:destination(id, code, name, short_name, type, latitude, longitude)";
 
+/** Unidade como o painel do operador a consome: com a empresa e o resumo de vagas. */
+export type OperatorLocation = Location & {
+  company: { id: string; name: string } | null;
+  parking_types: { capacity: number; is_active: boolean }[] | null;
+};
+
 export const locationsKeys = {
   all: ["locations"] as const,
   byCompany: (companyId: string) => [...locationsKeys.all, "company", companyId] as const,
@@ -70,20 +76,37 @@ export function useOperatorLocations(companyIds: string[] | undefined) {
   const ids = companyIds ?? [];
   return useQuery({
     queryKey: [...locationsKeys.forOperator(), ...ids] as const,
-    queryFn: async (): Promise<(Location & { company: { id: string; name: string } | null })[]> => {
+    queryFn: async (): Promise<OperatorLocation[]> => {
       const { data, error } = await supabase
         .from("location")
-        .select("*, company:company(id, name)")
+        .select(
+          "*, company:company(id, name), parking_types:location_parking_type(capacity, is_active)",
+        )
         .is("deleted_at", null)
         .in("company_id", ids)
         .order("name");
       if (error) throw error;
-      return (data ?? []) as unknown as (Location & {
-        company: { id: string; name: string } | null;
-      })[];
+      return (data ?? []) as unknown as OperatorLocation[];
     },
     enabled: ids.length > 0,
   });
+}
+
+/**
+ * Resumo do que a unidade tem, para o card da listagem.
+ *
+ * Só conta tipo de vaga ATIVO: um tipo desativado não vende, então somar a
+ * capacidade dele inflaria o número que o parceiro usa pra conferir a operação.
+ * `photos` é a coluna Json da própria `location` (mesma fonte que o onboarding
+ * usa em `journey.ts` pra decidir o nudge de foto).
+ */
+export function summarizeLocation(loc: OperatorLocation) {
+  const active = (loc.parking_types ?? []).filter((t) => t.is_active);
+  return {
+    spots: active.reduce((sum, t) => sum + (t.capacity ?? 0), 0),
+    types: active.length,
+    photos: Array.isArray(loc.photos) ? loc.photos.length : 0,
+  };
 }
 
 export function useLocation(id: string | undefined) {

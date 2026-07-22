@@ -129,7 +129,7 @@ export default function CancelamentoPage() {
               { n: "4", t: "Confirme o cancelamento", d: "O processo é imediato. Você recebe confirmação por e-mail." },
             ].map((s) => (
               <div key={s.n} className="flex items-start gap-4">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-mp-pale text-label font-bold text-mp-indigo">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-mp-pale text-caption font-bold text-mp-indigo">
                   {s.n}
                 </span>
                 <div>
