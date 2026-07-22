@@ -54,44 +54,55 @@ test.describe.serial("C-14", () => {
       "o arquivo deveria existir no bucket privado `vouchers`",
     ).toBe(true);
 
-    // Passo 4 do checkout: o botão abre o PDF em outra aba (`window.open`).
-    const [step4Popup] = await Promise.all([
-      page.waitForEvent("popup"),
-      page.getByTestId("voucher-download-pdf-step4").click(),
-    ]);
-    await expectSignedVoucherUrl(step4Popup, booking!.id);
-    await step4Popup.close();
+    // Passo 4 do checkout: o botão pede a URL à Edge e abre em outra aba.
+    const step4Url = await clickAndCaptureVoucherUrl(page, "voucher-download-pdf-step4");
+    expectSignedVoucherUrl(step4Url, booking!.id);
 
     // Mesmo hook, outra tela: o card do voucher no detalhe da reserva.
     await page.goto(`/bookings/${code}`);
     await expect(page.getByRole("heading", { name: "Voucher" })).toBeVisible({ timeout: 30_000 });
 
-    const [detailPopup] = await Promise.all([
-      page.waitForEvent("popup"),
-      page.getByTestId("voucher-download-pdf").click(),
-    ]);
-    await expectSignedVoucherUrl(detailPopup, booking!.id);
+    const detailUrl = await clickAndCaptureVoucherUrl(page, "voucher-download-pdf");
+    expectSignedVoucherUrl(detailUrl, booking!.id);
 
     // A URL assinada tem que servir o PDF de verdade, não só existir.
-    const res = await page.request.get(detailPopup.url());
+    const res = await page.request.get(detailUrl);
     expect(res.status()).toBe(200);
     expect(res.headers()["content-type"]).toContain("application/pdf");
-    await detailPopup.close();
   });
 });
 
 /**
+ * Clica no botão de baixar e devolve a URL que a Edge `voucher-pdf` assinou.
+ *
+ * Por que ler da resposta da Edge e não da aba aberta: o botão faz
+ * `window.open(url)` DEPOIS de resolver a URL, mas essa URL serve um PDF, e o
+ * Chromium trata isso como DOWNLOAD, não como navegação. A aba abre e fica em
+ * `":"` para sempre, então `popup.url()` e `popup.waitForURL()` não servem aqui.
+ * Custou duas execuções para descobrir (21 e 22/07), as duas acusando o produto
+ * de um problema que era do spec.
+ *
+ * A resposta da Edge é a fonte certa: é exatamente o que o app usa para abrir.
+ */
+async function clickAndCaptureVoucherUrl(page: Page, testId: string): Promise<string> {
+  const [response] = await Promise.all([
+    page.waitForResponse(
+      (r) => r.url().includes("/functions/v1/voucher-pdf") && r.request().method() === "POST",
+      { timeout: 30_000 },
+    ),
+    page.getByTestId(testId).click(),
+  ]);
+  expect(response.status(), "a Edge voucher-pdf deveria responder 200").toBe(200);
+  const body = (await response.json()) as { url?: string };
+  expect(body.url, "a Edge deveria devolver a URL assinada").toBeTruthy();
+  return body.url!;
+}
+
+/**
  * A URL do voucher tem que ser ASSINADA. Se um dia ela vier como `/object/public/`,
  * o bucket deixou de ser privado, e isso é vazamento, não conveniência.
- *
- * Espera o popup navegar antes de ler a URL. O botão faz `window.open` e SÓ DEPOIS
- * troca a URL, quando a Edge devolve a assinatura. Lendo `popup.url()` na hora, vem
- * `":"` (a aba ainda em branco) e o teste falha por corrida própria, acusando o
- * produto de um defeito que é do spec. Aconteceu na primeira execução, em 21/07/2026.
  */
-async function expectSignedVoucherUrl(popup: Page, bookingId: string) {
-  const expected = `/storage/v1/object/sign/vouchers/${bookingId}.pdf`;
-  await popup.waitForURL((url) => url.pathname.includes(expected), { timeout: 30_000 });
-  expect(popup.url()).toContain(expected);
-  expect(popup.url()).toContain("token=");
+function expectSignedVoucherUrl(url: string, bookingId: string) {
+  expect(url).toContain(`/storage/v1/object/sign/vouchers/${bookingId}.pdf`);
+  expect(url, "a URL do voucher tem que ser assinada, com token").toContain("token=");
 }

@@ -476,6 +476,12 @@ diferente da que nasceu com ela.
   - O QR do PDF e o QR da tela são gerados por caminhos diferentes: o da tela vem do cliente
     (`Voucher.tsx:20-22`), o do PDF vem da Edge. Divergência entre os dois é defeito de verdade,
     e é o único jeito de pegá-la é comparando os dois.
+  - **A aba que abre fica vazia, e isso é normal.** O botão faz `window.open` com a URL assinada,
+    que serve um PDF. O navegador trata como **download**, não como navegação, então a aba nunca
+    "vai" para a URL. Quem for automatizar não deve olhar a URL da aba (`popup.url()` fica em `":"`
+    para sempre, e `waitForURL` estoura por timeout esperando um `load` que não vem). A fonte certa
+    é a **resposta da Edge `voucher-pdf`**, que é exatamente o que o app usa para abrir. Custou duas
+    execuções para descobrir, as duas acusando o produto de um problema que era do teste.
 
 ## C-15 · Voucher não existe antes da confirmação  [PRONTO · sem cobertura E2E · `_shared/voucher/fields.ts:63`]
 
