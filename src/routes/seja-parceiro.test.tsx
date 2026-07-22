@@ -62,6 +62,54 @@ describe("SejaParceiroPage — par de cards dor/resposta", () => {
   });
 });
 
+describe("SejaParceiroPage — como funciona", () => {
+  it("mostra os três passos legíveis, sem desbotar os seguintes", () => {
+    // O mockup apagava os passos 2 e 3 a ponto de reprovar contraste. Se alguém
+    // reintroduzir o efeito via opacity/text-white, este teste cai.
+    renderPage();
+
+    const passos = [...document.querySelectorAll("ol > li")];
+    expect(passos).toHaveLength(3);
+    for (const p of passos) {
+      expect(p.className).not.toMatch(/opacity-[0-7]?[05]\b/);
+    }
+    expect(screen.getByRole("heading", { name: /Cadastro rápido/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Suas vagas no ar/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Dinheiro na conta/i })).toBeInTheDocument();
+  });
+
+  it("o card de aprovação flutua sobre a foto do lote", () => {
+    renderPage();
+    expect(screen.getByText("Cadastro aprovado")).toBeInTheDocument();
+  });
+});
+
+describe("SejaParceiroPage — depoimentos", () => {
+  it("cada depoimento traz o logo do lote", () => {
+    // Escopado ao <figure>: a faixa de parceiros no rodapé da página repete os
+    // mesmos nomes, e uma busca global casaria com ela em vez do depoimento.
+    renderPage();
+
+    const cards = [...document.querySelectorAll("figure")];
+    expect(cards).toHaveLength(3);
+    expect(cards.map((c) => c.querySelector("img")?.getAttribute("alt"))).toEqual([
+      "Virapark",
+      "Garage Inn",
+      "Nation Park",
+    ]);
+  });
+
+  it("não afirma número de performance sem lastro", () => {
+    // Guarda contra o mockup, que trazia "24% de conversão" e "R$ 550k+ de
+    // faturamento". Não temos essa medição; número inventado aqui vira cobrança
+    // do parceiro na primeira reunião.
+    renderPage();
+
+    expect(document.body.textContent).not.toMatch(/\d+%\s*de\s*convers/i);
+    expect(document.body.textContent).not.toMatch(/R\$\s*\d+\s*k/i);
+  });
+});
+
 describe("SejaParceiroPage — landing de parceiro", () => {
   it("mostra promessa, métricas e FAQ", () => {
     renderPage();

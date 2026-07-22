@@ -10,6 +10,10 @@ import {
   BadgeCheck,
   Quote,
   X,
+  FileText,
+  Radio,
+  Banknote,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -19,6 +23,7 @@ import { PartnerLeadModal } from "@/features/onboarding/PartnerLeadModal";
 import { PartnerLogos } from "@/features/partners/PartnerLogos";
 
 const HERO_IMAGE = "/images/seja-parceiro-acordo.webp";
+const STEPS_IMAGE = "/Estacionamentos/virapark/virapark_001.webp";
 
 // Sinais de confiança: fatos da política do parceiro, sem número sem lastro.
 const METRICS = [
@@ -31,16 +36,19 @@ const METRICS = [
 const STEPS = [
   {
     n: 1,
+    icon: FileText,
     title: "Cadastro rápido",
     desc: "Deixe seu contato. Nossa equipe valida e configura seu estacionamento no sistema, sem burocracia.",
   },
   {
     n: 2,
+    icon: Radio,
     title: "Suas vagas no ar",
     desc: "Você aparece na busca. O cliente reserva e paga com antecedência, por PIX ou cartão, antes de chegar.",
   },
   {
     n: 3,
+    icon: Banknote,
     title: "Dinheiro na conta",
     desc: "A Movepark garante o pagamento e faz o repasse organizado. Sem inadimplência, sem cobrança manual.",
   },
@@ -94,25 +102,39 @@ const BENEFITS = [
   },
 ];
 
-// Depoimentos ILUSTRATIVOS: trocar pelos reais dos donos de estacionamento.
+/**
+ * Depoimentos ILUSTRATIVOS: trocar pelos reais dos donos de estacionamento.
+ *
+ * O mockup trazia dois números grandes no lugar do logo ("24% de conversão",
+ * "R$ 550k+ de faturamento"). Ficaram de fora: não temos essa medição, e número
+ * inventado em página de captação é o tipo de coisa que o parceiro cobra na
+ * primeira reunião. O logo do lote prova a mesma coisa sem afirmar o que não
+ * dá pra sustentar.
+ */
 const TESTIMONIALS = [
   {
     quote:
       "A ocupação nos dias de semana subiu de verdade. O cliente já chega pago, sem discussão no balcão.",
     name: "João P.",
     role: "Proprietário · Virapark",
+    logo: "logo-virapark.svg",
+    logoSize: "h-6",
   },
   {
     quote:
       "Entrei sem pagar nada e comecei a receber reserva na primeira semana. O repasse é organizado e certo.",
     name: "Marina R.",
     role: "Gerente · Garage Inn",
+    logo: "logo-garageinn.svg",
+    logoSize: "h-5",
   },
   {
     quote:
       "O que mais pesou foi não gastar com marketing. Eles trazem o cliente e eu cuido só das vagas.",
     name: "Carlos A.",
     role: "Sócio · Nation Park",
+    logo: "logo-nationpark.svg",
+    logoSize: "h-5",
   },
 ];
 
@@ -204,7 +226,7 @@ export default function SejaParceiroPage() {
             precisar apagar a cena. Com a foto anterior (contraluz, céu estourado na
             esquerda) nem 65% chapado passava, e era preciso degradê. */}
         <div className="absolute inset-0 bg-mp-navy/30" aria-hidden />
-        <div className="relative mx-auto max-w-[1100px] px-4 py-20 text-white desktop:px-8 desktop:py-28">
+        <div className="relative mx-auto max-w-[1080px] px-4 py-20 text-white desktop:px-8 desktop:py-28">
           <span className="text-badge uppercase tracking-[0.4px] text-white/70">
             Para donos de estacionamento
           </span>
@@ -233,7 +255,7 @@ export default function SejaParceiroPage() {
           A cor está invertida em relação ao mockup de propósito: não existe lilás nos
           tokens (`surface-pale` é alias do `mp-pale`), e pôr o azul da marca no lado da
           resposta, deixando o problema em cinza neutro, diz a coisa certa. */}
-      <section className="mx-auto max-w-[1100px] px-4 py-16 desktop:px-8 desktop:py-20">
+      <section className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-20">
         <div className="grid grid-cols-1 items-stretch gap-6 tablet:grid-cols-2">
           {/* Card da dor */}
           <div className="flex flex-col rounded-xl bg-surface-soft p-8 desktop:p-10">
@@ -313,119 +335,120 @@ export default function SejaParceiroPage() {
         </div>
       </section>
 
-      {/* Sinais de confiança, em bento.
-          Eram quatro textos centralizados iguais numa fileira, que é o formato mais
-          chapado que existe: nada puxa o olho primeiro. Agora os tiles têm tamanhos
-          diferentes, o "100%" ancora em navy (é o número que mais quebra objeção) e
-          entra uma foto de lote parceiro pra dar matéria no meio dos números. */}
-      <section className="mx-auto max-w-[1100px] px-4 py-10 desktop:px-8 desktop:py-14">
-        <div className="grid grid-cols-2 gap-4 desktop:grid-cols-4">
-          {/* Ocupa a linha inteira no mobile: com a foto escondida, uma coluna só
-              deixaria metade da primeira linha vazia. */}
-          <div className="col-span-2 flex flex-col justify-between rounded-lg bg-mp-pale p-6 desktop:col-span-1">
-            <p className="text-display-xl text-ink">{METRICS[0].value}</p>
-            <p className="mt-3 text-body-sm text-body">{METRICS[0].label}</p>
-          </div>
-
-          {/* A foto some no mobile: em duas colunas ela viraria um selo pequeno demais
-              pra somar, e só empurraria os números pra fora da primeira tela. */}
-          <div className="hidden overflow-hidden rounded-lg desktop:block">
-            <img
-              src="/Estacionamentos/virapark/virapark_001.webp"
-              alt="Pátio de um estacionamento parceiro da Movepark"
-              loading="lazy"
-              decoding="async"
-              className="h-full w-full object-cover"
-            />
-          </div>
-
-          <div className="col-span-2 flex flex-col justify-between rounded-lg bg-mp-navy p-6 text-white">
-            <p className="text-display-xl">{METRICS[1].value}</p>
-            <p className="mt-3 text-body-sm text-white/80">{METRICS[1].label}</p>
-          </div>
-
-          <div className="col-span-2 flex flex-col justify-between rounded-lg bg-surface-soft p-6">
-            <p className="text-display-xl text-ink">{METRICS[2].value}</p>
-            <p className="mt-3 text-body-sm text-body">{METRICS[2].label}</p>
-          </div>
-
-          <div className="col-span-2 flex flex-col justify-between rounded-lg bg-surface-soft p-6">
-            <p className="text-display-xl text-ink">{METRICS[3].value}</p>
-            <p className="mt-3 text-body-sm text-body">{METRICS[3].label}</p>
-          </div>
-        </div>
+      {/* Sinais de confiança, em faixa quieta.
+          Era um bento com tile navy e foto. Depois dos dois cards grandes e coloridos
+          acima, um segundo bloco de peso competia com eles; aqui a faixa de filetes
+          funciona como respiro entre a promessa e o mecanismo. Os divisores só
+          aparecem no desktop: empilhado, cada linha já se separa sozinha. */}
+      <section className="mx-auto max-w-[1080px] px-4 py-4 desktop:px-8">
+        <dl className="grid grid-cols-2 border-y border-hairline desktop:grid-cols-4">
+          {METRICS.map((m, i) => (
+            <div
+              key={m.value}
+              className={cn(
+                "px-2 py-8 desktop:px-6",
+                // Filete só entre colunas, nunca na primeira de cada linha.
+                i % 2 === 1 && "border-l border-hairline desktop:border-l",
+                i >= 2 && "border-t border-hairline desktop:border-t-0",
+                i === 2 && "desktop:border-l",
+              )}
+            >
+              <dt className="text-display-xl text-ink">{m.value}</dt>
+              <dd className="mt-2 text-body-sm text-body">{m.label}</dd>
+            </div>
+          ))}
+        </dl>
       </section>
 
-      {/* Como funciona */}
-      <section className="mx-auto max-w-[1100px] px-4 pb-16 desktop:px-8 desktop:pb-20">
-        <h2 className="text-display-2xl text-ink">Como funciona</h2>
-        <p className="mt-2 max-w-2xl text-body-md text-muted">
-          Do cadastro ao repasse, a Movepark cuida da parte chata. Você cuida das vagas.
-        </p>
-        {/* Trilho numerado. Antes eram três colunas de texto com um número solto em
-            cima, que não dizia que uma coisa leva à outra. O filete ligando os passos
-            é o que transforma três blocos num processo. */}
-        <ol className="mt-10 grid grid-cols-1 gap-8 tablet:grid-cols-3">
-          {STEPS.map((s, i) => (
-            <li key={s.n} className="relative">
-              {i < STEPS.length - 1 && (
-                // `-right-8` atravessa o gap da grade: parando em `right-0` o filete
-                // morreria na borda da coluna e o trilho ficaria picotado.
-                <span
-                  className="absolute -right-8 left-12 top-5 hidden h-px bg-hairline tablet:block"
-                  aria-hidden
-                />
-              )}
-              <span className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-mp-navy text-body-sm font-bold tabular-nums text-white">
-                {s.n}
-              </span>
-              <h3 className="mt-5 text-title-md text-ink">{s.title}</h3>
-              <p className="mt-1.5 text-body-sm text-body">{s.desc}</p>
-            </li>
-          ))}
-        </ol>
+      {/* Como funciona: foto à esquerda, passos empilhados à direita.
+          Eram três colunas de texto. A foto do lote com o card de aprovação flutuando
+          faz o passo 1 sair da promessa e virar resultado visível, que é a ideia boa
+          do mockup. Os três passos ficam legíveis: o mockup desbotava o 2 e o 3 a
+          ponto de reprovar contraste, e o trilho vertical já diz que um leva ao outro. */}
+      <section className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-20">
+        {/* Sem eyebrow: o mockup repetia aqui o "Para donos de estacionamento" que o
+            hero já usa, e eyebrow repetido para de rotular e vira ruído. */}
+        <div className="max-w-2xl">
+          <h2 className="text-display-2xl text-ink">Como funciona</h2>
+          <p className="mt-3 text-body-md text-body">
+            Do cadastro ao repasse, a Movepark cuida da parte chata. Você cuida das vagas.
+          </p>
+        </div>
+
+        <div className="mt-12 grid grid-cols-1 items-center gap-10 tablet:grid-cols-2 desktop:gap-14">
+          {/* `pb-10` no mobile abre o espaço que o card ocupa ao transbordar a foto;
+              sem isso ele encosta no primeiro passo. */}
+          <div className="relative pb-10 tablet:pb-0">
+            <div className="overflow-hidden rounded-xl">
+              <img
+                src={STEPS_IMAGE}
+                alt="Pátio de um estacionamento parceiro da Movepark"
+                loading="lazy"
+                decoding="async"
+                className="aspect-[4/3] h-full w-full object-cover"
+              />
+            </div>
+            {/* Card de aprovação. Transborda a foto de propósito: encostado nela
+                viraria legenda, solto por cima ele lê como notificação do sistema. */}
+            <div className="absolute -bottom-0 left-4 right-4 rounded-md border border-hairline bg-canvas p-4 shadow-tier desktop:left-8 desktop:right-10">
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-mp-pale text-mp-indigo">
+                  <CheckCircle2 className="h-4 w-4" aria-hidden />
+                </span>
+                <div>
+                  <p className="text-title-md text-ink">Cadastro aprovado</p>
+                  <p className="mt-1 text-body-sm text-body">
+                    Suas vagas já estão na busca e podem receber reserva.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <ol className="relative">
+            {STEPS.map((s, i) => (
+              <li key={s.n} className="relative flex gap-5 pb-8 last:pb-0">
+                {/* Trilho: desce do ícone até o próximo, e some no último item. */}
+                {i < STEPS.length - 1 && (
+                  <span
+                    className="absolute bottom-2 left-6 top-14 w-px bg-hairline"
+                    aria-hidden
+                  />
+                )}
+                <span className="relative inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-mp-pale text-mp-indigo">
+                  <s.icon className="h-5 w-5" aria-hidden />
+                </span>
+                <div className="pt-1">
+                  <h3 className="text-title-md text-ink">
+                    <span className="tabular-nums text-muted">{s.n}.</span> {s.title}
+                  </h3>
+                  <p className="mt-1.5 text-body-sm text-body">{s.desc}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
       </section>
 
       {/* Benefícios */}
       <section className="border-y border-hairline bg-surface-soft">
-        <div className="mx-auto max-w-[1100px] px-4 py-16 desktop:px-8 desktop:py-20">
+        <div className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-20">
           <h2 className="text-display-2xl text-ink">Por que colocar seu estacionamento aqui</h2>
-          {/* Bento: os dois destaques ocupam metade da largura cada um na primeira
-              linha, os outros quatro dividem a segunda. Sem isso são seis cards
-              iguais, e grade uniforme diz que todo benefício pesa o mesmo. */}
-          <div className="mt-8 grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-4">
+          {/* Grade uniforme 3x2, como nos dois mockups. Era um bento com dois
+              destaques grandes; agora que "Como funciona" e a faixa de números já
+              carregam hierarquia, seis cards do mesmo peso funcionam como lista de
+              conferência: o leitor varre, não é conduzido. */}
+          <div className="mt-8 grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-3">
             {BENEFITS.map((b) => (
               <div
                 key={b.title}
-                className={cn(
-                  "rounded-lg bg-canvas p-6",
-                  b.featured && "desktop:col-span-2 desktop:p-8",
-                )}
+                className="rounded-lg border border-hairline bg-canvas p-6"
               >
-                <span
-                  className={cn(
-                    "inline-flex items-center justify-center rounded-md bg-mp-pale text-mp-indigo",
-                    b.featured ? "h-12 w-12" : "h-10 w-10",
-                  )}
-                >
-                  <b.icon className={b.featured ? "h-6 w-6" : "h-5 w-5"} />
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-mp-pale text-mp-indigo">
+                  <b.icon className="h-5 w-5" aria-hidden />
                 </span>
-                <h3
-                  className={cn(
-                    "mt-4 text-ink",
-                    b.featured ? "text-display-sm" : "text-title-md",
-                  )}
-                >
-                  {b.title}
-                </h3>
-                <p
-                  className={cn(
-                    "mt-1.5 text-body",
-                    b.featured ? "text-body-md" : "text-body-sm",
-                  )}
-                >
-                  {b.desc}
-                </p>
+                <h3 className="mt-4 text-title-md text-ink">{b.title}</h3>
+                <p className="mt-1.5 text-body-sm text-body">{b.desc}</p>
               </div>
             ))}
           </div>
@@ -456,14 +479,29 @@ export default function SejaParceiroPage() {
 
       {/* Depoimentos */}
       <section className="border-y border-hairline bg-surface-soft">
-        <div className="mx-auto max-w-[1100px] px-4 py-16 desktop:px-8 desktop:py-20">
+        <div className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-20">
           <h2 className="text-display-2xl text-ink">Quem já é parceiro conta</h2>
-          <div className="mt-8 grid grid-cols-1 gap-5 tablet:grid-cols-3">
+          {/* O logo do lote vai no topo do card e as aspas na ponta oposta, como no
+              mockup. `items-stretch` + `flex-1` na citação alinham a assinatura na
+              mesma linha nos três cards, mesmo com depoimentos de tamanhos diferentes. */}
+          <div className="mt-8 grid grid-cols-1 items-stretch gap-5 tablet:grid-cols-3">
             {TESTIMONIALS.map((t) => (
-              <figure key={t.name} className="rounded-md border border-hairline bg-canvas p-6">
-                <Quote className="h-6 w-6 text-mp-violet" />
-                <blockquote className="mt-3 text-body-md text-ink">“{t.quote}”</blockquote>
-                <figcaption className="mt-4 text-body-sm text-muted">
+              <figure
+                key={t.name}
+                className="flex flex-col rounded-lg border border-hairline bg-canvas p-6"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <img
+                    src={`/images/parceiros/${t.logo}`}
+                    alt={t.role.split(" · ")[1]}
+                    loading="lazy"
+                    decoding="async"
+                    className={cn("w-auto object-contain", t.logoSize)}
+                  />
+                  <Quote className="h-5 w-5 shrink-0 text-mp-violet" aria-hidden />
+                </div>
+                <blockquote className="mt-6 flex-1 text-body-md text-ink">“{t.quote}”</blockquote>
+                <figcaption className="mt-6 border-t border-hairline pt-4 text-body-sm text-muted">
                   <span className="text-ink">{t.name}</span> · {t.role}
                 </figcaption>
               </figure>
@@ -473,19 +511,26 @@ export default function SejaParceiroPage() {
       </section>
 
       {/* Marcas */}
-      <section className="mx-auto max-w-[1100px] px-4 py-14 desktop:px-8">
+      <section className="mx-auto max-w-[1080px] px-4 py-14 desktop:px-8">
         <PartnerLogos />
       </section>
 
-      {/* FAQ */}
-      <section className="mx-auto max-w-[820px] px-4 pb-16 desktop:px-8 desktop:pb-20">
-        <h2 className="mb-4 text-display-2xl text-ink">Perguntas frequentes</h2>
-        <FaqList items={FAQ_ITEMS} />
+      {/* FAQ em duas colunas, como no mockup: o título fica preso à esquerda e a
+          sanfona corre à direita. Numa coluna só, o h2 sumia do campo de visão logo
+          na segunda pergunta aberta. `sticky` mantém o contexto durante a leitura. */}
+      <section className="mx-auto max-w-[1080px] px-4 pb-16 desktop:px-8 desktop:pb-20">
+        <div className="grid grid-cols-1 gap-8 tablet:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] desktop:gap-14">
+          <div className="tablet:sticky tablet:top-24 tablet:self-start">
+            <span className="text-badge uppercase tracking-wide text-mp-indigo">Dúvidas</span>
+            <h2 className="mt-3 text-display-2xl text-ink">Perguntas frequentes</h2>
+          </div>
+          <FaqList items={FAQ_ITEMS} />
+        </div>
       </section>
 
       {/* CTA final */}
       <section className="bg-mp-navy">
-        <div className="mx-auto max-w-[1100px] px-4 py-16 text-center text-white desktop:px-8 desktop:py-20">
+        <div className="mx-auto max-w-[1080px] px-4 py-16 text-center text-white desktop:px-8 desktop:py-20">
           <h2 className="mx-auto max-w-2xl text-balance text-display-2xl text-white">
             Pronto pra encher suas vagas?
           </h2>
