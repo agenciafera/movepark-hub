@@ -99,7 +99,7 @@ export default function ManagerCompanies() {
                     Editar
                   </Button>
                   <Button size="sm" variant="ghost" asChild>
-                    <Link to={`/manager/companies/${c.id}/locations`}>Localizações</Link>
+                    <Link to={`/manager/companies/${c.id}/locations`}>Unidades</Link>
                   </Button>
                 </div>
               </CardContent>

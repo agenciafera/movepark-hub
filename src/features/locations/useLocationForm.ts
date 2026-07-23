@@ -287,7 +287,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       // Depois da unidade existir, e não antes: numa criação o id só nasce aqui.
       await setAmenities.mutateAsync({ locationId: savedId, codes: amenities });
 
-      toast.success(isEdit ? "Localização atualizada" : "Localização criada");
+      toast.success(isEdit ? "Unidade atualizada" : "Unidade criada");
       onSaved();
     } catch (err) {
       // O erro cru do PostgREST/Postgres é técnico e em inglês; não vai pra tela.

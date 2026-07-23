@@ -90,7 +90,7 @@ export default function OperatorLocationEdit() {
         description="Pode ter sido a conexão. Tente de novo."
         action={
           <Button size="sm" variant="secondary" asChild>
-            <Link to="/operator/locations">Ir para Localizações</Link>
+            <Link to="/operator/locations">Ir para Unidades</Link>
           </Button>
         }
       />
@@ -104,7 +104,7 @@ export default function OperatorLocationEdit() {
         description="Ela pode ter sido removida, ou o endereço está errado."
         action={
           <Button size="sm" variant="secondary" asChild>
-            <Link to="/operator/locations">Ir para Localizações</Link>
+            <Link to="/operator/locations">Ir para Unidades</Link>
           </Button>
         }
       />
@@ -115,7 +115,7 @@ export default function OperatorLocationEdit() {
     <>
       <form className="flex flex-col gap-6" onSubmit={form.submit}>
         <PageHeader
-          back={{ to: "/operator/locations", label: "Voltar para Localizações" }}
+          back={{ to: "/operator/locations", label: "Voltar para Unidades" }}
           title={location.name}
           description="Endereço, contato, chegada e fotos desta unidade. Capacidade e preço ficam em Tipos de vaga."
         />

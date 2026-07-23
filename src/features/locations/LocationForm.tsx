@@ -45,7 +45,7 @@ export function LocationForm({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>{form.isEdit ? "Editar localização" : "Nova localização"}</DialogTitle>
+          <DialogTitle>{form.isEdit ? "Editar unidade" : "Nova unidade"}</DialogTitle>
         </DialogHeader>
         <form className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto" onSubmit={form.submit}>
           <LocationSections form={form} companyId={companyId} location={location} />

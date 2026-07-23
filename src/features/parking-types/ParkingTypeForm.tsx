@@ -102,7 +102,7 @@ export function ParkingTypeForm({
         company_parking_type_id: cpt.id,
         capacity: newCapacity,
       });
-      toast.success("Tipo habilitado e adicionado à localização");
+      toast.success("Tipo habilitado e adicionado à unidade");
       onOpenChange(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao salvar");
@@ -130,7 +130,7 @@ export function ParkingTypeForm({
               <p className="text-body-sm text-muted">Carregando…</p>
             ) : available.length === 0 ? (
               <p className="text-body-sm text-muted">
-                Todos os tipos da empresa já foram adicionados a esta localização. Use a aba
+                Todos os tipos da empresa já foram adicionados a esta unidade. Use a aba
                 "Novo do catálogo" para habilitar um novo.
               </p>
             ) : (
@@ -151,7 +151,7 @@ export function ParkingTypeForm({
                   </Select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="cap">Capacidade nesta localização</Label>
+                  <Label htmlFor="cap">Capacidade nesta unidade</Label>
                   <Input
                     id="cap"
                     type="number"
@@ -219,7 +219,7 @@ export function ParkingTypeForm({
                     />
                   </div>
                   <div className="flex flex-col gap-1.5 tablet:col-span-2">
-                    <Label htmlFor="nc">Capacidade nesta localização</Label>
+                    <Label htmlFor="nc">Capacidade nesta unidade</Label>
                     <Input
                       id="nc"
                       type="number"

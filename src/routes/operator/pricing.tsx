@@ -188,7 +188,7 @@ export default function OperatorPricing() {
         <Skeleton className="h-64 w-full" />
       ) : (locations ?? []).length === 0 ? (
         <EmptyState
-          title="Sem localizações vinculadas"
+          title="Sem unidades vinculadas"
           description="Solicite à equipe Movepark para cadastrar suas unidades."
         />
       ) : (

@@ -48,7 +48,7 @@ export function BookingTable({ bookings, isLoading, onRowClick, showCompany = tr
             <TableHead>#ID</TableHead>
             <TableHead>Cliente</TableHead>
             {showCompany && <TableHead>Empresa</TableHead>}
-            <TableHead>Localização</TableHead>
+            <TableHead>Unidade</TableHead>
             <TableHead>Check-in</TableHead>
             <TableHead>Check-out</TableHead>
             <TableHead className="text-right">Dias</TableHead>

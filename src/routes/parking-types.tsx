@@ -111,7 +111,7 @@ export default function ParkingTypesPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        back={{ to: backHref, label: "Voltar para Localizações" }}
+        back={{ to: backHref, label: "Voltar para Unidades" }}
         title={`Tipos de vaga${location.data ? ` · ${location.data.name}` : ""}`}
         description="Configure preços, capacidade e regras de precificação dos tipos de vaga."
         actions={

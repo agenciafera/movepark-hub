@@ -33,7 +33,7 @@ export default function OperatorLocations() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Localizações"
+        title="Unidades"
         description="Endereço, fotos e dados de cada unidade. Capacidade e preço ficam em Tipos de vaga."
       />
 
@@ -77,7 +77,7 @@ export default function OperatorLocations() {
         />
       ) : (data ?? []).length === 0 ? (
         <EmptyState
-          title="Sem localizações vinculadas"
+          title="Sem unidades vinculadas"
           description="Solicite à equipe Movepark para cadastrar suas unidades."
         />
       ) : (

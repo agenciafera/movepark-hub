@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
  * Voltar padrão da área administrativa. É um LINK de texto, não um botão: voltar
  * é navegação, não ação primária, e um botão competiria com o "Nova X" da página.
  * Fica acima do título (posição de breadcrumb) e o rótulo nomeia o destino
- * ("Voltar para Localizações"), pra o operador saber para onde vai antes de clicar.
+ * ("Voltar para Unidades"), pra o operador saber para onde vai antes de clicar.
  *
  * Use via a prop `back` do PageHeader nas telas com cabeçalho; use direto só nas
  * telas que não têm PageHeader (ex.: as de conclusão do onboarding).

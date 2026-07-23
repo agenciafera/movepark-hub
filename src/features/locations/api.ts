@@ -64,7 +64,7 @@ export function useNearestDestination(lat: number | null, lng: number | null) {
 }
 
 /**
- * Localizações que o operador pode ver, SEMPRE escopadas às empresas dele.
+ * Unidades que o operador pode ver, SEMPRE escopadas às empresas dele.
  *
  * Passe `effectiveCompanyIds` do useAuth (as empresas reais do usuário, ou a empresa em
  * impersonation do hub_admin). O RLS de `location` tem uma policy de catálogo pública

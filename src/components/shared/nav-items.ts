@@ -84,7 +84,7 @@ export const operatorSections: Section[] = [
         icon: CalendarRange,
         scope: "occupancy:read",
       },
-      { to: "/operator/locations", label: "Localizações", shortLabel: "Locais", icon: MapPin },
+      { to: "/operator/locations", label: "Unidades", shortLabel: "Unidades", icon: MapPin },
       { to: "/operator/addons", label: "Serviços", icon: Sparkles, scope: "addons:write" },
       { to: "/operator/reviews", label: "Avaliações", icon: Star, scope: "reviews:read" },
     ],

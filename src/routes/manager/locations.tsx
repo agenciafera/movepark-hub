@@ -34,12 +34,12 @@ export default function ManagerLocations() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={`Localizações${company.data ? ` · ${company.data.name}` : ""}`}
+        title={`Unidades${company.data ? ` · ${company.data.name}` : ""}`}
         description="Unidades operacionais da empresa."
         back={{ to: "/manager/companies", label: "Voltar para Empresas" }}
         actions={
           <Button size="sm" onClick={openCreate} disabled={!companyId}>
-            <Plus className="h-4 w-4" /> Nova localização
+            <Plus className="h-4 w-4" /> Nova unidade
           </Button>
         }
       />
@@ -48,8 +48,8 @@ export default function ManagerLocations() {
         <Skeleton className="h-64 w-full" />
       ) : (data ?? []).length === 0 ? (
         <EmptyState
-          title="Sem localizações"
-          description="Cadastre a primeira localização para essa empresa."
+          title="Sem unidades"
+          description="Cadastre a primeira unidade para essa empresa."
         />
       ) : (
         <div className="overflow-hidden rounded-md border border-hairline">

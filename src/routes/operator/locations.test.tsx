@@ -102,7 +102,7 @@ describe("OperatorLocations", () => {
     setup({ isError: true, refetch });
 
     expect(screen.getByText("Não conseguimos carregar suas unidades")).toBeInTheDocument();
-    expect(screen.queryByText("Sem localizações vinculadas")).not.toBeInTheDocument();
+    expect(screen.queryByText("Sem unidades vinculadas")).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Tentar de novo" }));
     expect(refetch).toHaveBeenCalledOnce();
@@ -111,7 +111,7 @@ describe("OperatorLocations", () => {
   it("lista vazia de verdade continua caindo no empty state", () => {
     setup({ data: [] });
 
-    expect(screen.getByText("Sem localizações vinculadas")).toBeInTheDocument();
+    expect(screen.getByText("Sem unidades vinculadas")).toBeInTheDocument();
     expect(screen.queryByText("Não conseguimos carregar suas unidades")).not.toBeInTheDocument();
   });
 

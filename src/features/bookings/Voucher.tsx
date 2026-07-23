@@ -116,7 +116,7 @@ export function Voucher({ booking }: Props) {
       <div className="mt-6 hidden space-y-2 border-t border-hairline-soft pt-5 text-body-sm print:block">
         <Row label="Estacionamento" value={booking.location.company.name} />
         {booking.location.company.name !== booking.location.name && (
-          <Row label="Localização" value={booking.location.name} />
+          <Row label="Unidade" value={booking.location.name} />
         )}
         {booking.location.address && (
           <Row label="Endereço" value={booking.location.address} />
