@@ -937,9 +937,9 @@ resposta depois de um Enter fica travado sem erro.
 
 ## 20. Matriz de cobertura das 17 tools
 
-| # | Tool | Login? | Caso | Status (21/07) |
+| # | Tool | Login? | Caso | Status |
 |---|---|---|---|---|
-| 1 | `search_parking` | não | A1, A3, G3 | PRONTO · via chat |
+| 1 | `search_parking` | não | A1, A3, G3, K-01 | PRONTO · via chat |
 | 2 | `simulate_price` | não | §18, G3 | PRONTO · via chat (após fix do enum, commit 57d61d6) |
 | 3 | `get_faq` | não | §18 | PRONTO · via chat |
 | 4 | `list_companies` | não | §18 | PRONTO · via chat |
@@ -947,19 +947,35 @@ resposta depois de um Enter fica travado sem erro.
 | 6 | `list_destinations` | não | §18 | PRONTO · via chat |
 | 7 | `get_destination` | não | §18 | PRONTO · via chat (com autocorreção; achado 1.2 aberto) |
 | 8 | `current_datetime` | não | A3 | PRONTO · via chat |
-| 9 | `get_parking_types` | não | K-13 | PENDENTE · precisa perguntar por unidade |
-| 10 | `list_my_bookings` | **sim** | K-11, C4 | PRONTO · via chat (rodada anterior) |
-| 11 | `create_booking` | **sim** | K-02, B1 | PRONTO · via chat (criou MP-7CE1F8) |
-| 12 | `cancel_booking` | **sim** | K-12, C5 | PRONTO · via chat (cancelou MP-7CE1F8) |
-| 13 | `get_booking` | **sim** | K-10 | PENDENTE · verificado só por leitura de código |
-| 14 | `set_booking_customer` | **sim** | K-04 | PENDENTE |
-| 15 | `add_vehicle` | **sim** | K-05, K-14 | PENDENTE |
-| 16 | `set_booking_vehicle` | **sim** | K-06, K-15 | PENDENTE |
-| 17 | `get_booking_status` | **sim** | K-09 | PENDENTE |
+| 9 | `get_parking_types` | não | K-13 | PRONTO · via chat · disparou na preparação do K-02 (23/07) |
+| 10 | `list_my_bookings` | **sim** | K-11 | PRONTO · via chat · 23/07, só a reserva do usuário |
+| 11 | `create_booking` | **sim** | K-02 | PRONTO · via chat · 23/07, criou MP-C16868 (total bate com cotado) |
+| 12 | `cancel_booking` | **sim** | K-12 | PRONTO · via chat · 23/07, MP-C16868 → cancelled |
+| 13 | `get_booking` | **sim** | K-03, K-16 | PRONTO · via chat · 23/07, dados batem; inexistente = "não encontrei" |
+| 14 | `set_booking_customer` | **sim** | K-04 | PRONTO · via chat · 23/07, CPF/email/telefone gravados |
+| 15 | `add_vehicle` | **sim** | K-05 | PRONTO · via chat · 23/07, veículo criado |
+| 16 | `set_booking_vehicle` | **sim** | K-06 | PRONTO · via chat · 23/07, vinculado à reserva |
+| 17 | `get_booking_status` | **sim** | K-09 | PRONTO · via chat · 23/07, pendente/sem pagamento (bate com C3) |
 
-O que falta rodar via chat: 1 de leitura (`get_parking_types`) e 5 transacionais (`get_booking`,
-`set_booking_customer`, `add_vehicle`, `set_booking_vehicle`, `get_booking_status`). O §21 abaixo é o
-roteiro que fecha essas seis, logado.
+**Todas as 17 tools do chat foram exercitadas via chat com prova de `used_tools` + asserção de
+banco**, na rodada logada de 23/07 (grupo K). O usuário foi `02a1e144-...` (login por WhatsApp, conta
+de teste). Ao fim, o estado voltou ao baseline (0 pendentes, veículo de teste soft-deletado).
+
+### Achado da rodada · intermitência do Gemini (não é bug do nosso código)
+
+Em 2 dos ~14 turnos o Gemini voltou **vazio**: sem texto e sem function call, e a Edge caiu no
+fallback "Desculpe, não consegui responder agora." (`used_tools: []`). Os POSTs de `/chat` foram
+**200** e nenhuma tool rodou (confirmado no `get_logs`: nada criado no banco). Repetir a mesma
+pergunta resolveu nas duas vezes. É flutuação do modelo, não erro nosso, mas com impacto de UX:
+
+- **em pergunta idempotente** (K-03, detalhar) o retry é inócuo;
+- **em confirmação de ação** (K-02, "sim, confirma") o retry vazio poderia assustar, mas a
+  idempotência derivada (migration `20260825000000`) garante que reenviar "confirma" **não** cria
+  duas reservas. Isto foi observado na prática: o `create_booking` só efetivou uma vez (MP-C16868,
+  `total_pendentes = 1`).
+
+Mitigação possível (aberta): a Edge poderia **re-tentar uma vez** internamente quando o candidato do
+Gemini volta sem parts, em vez de já devolver o fallback ao usuário.
 
 ## 21. Grupo K · Caminho logado que toca cada transacional
 
