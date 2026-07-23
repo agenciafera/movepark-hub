@@ -38,6 +38,16 @@ describe("contrato de layout do shell administrativo", () => {
     expect([...new Set(offenders)]).toEqual([]);
   });
 
+  it("o scroll root é position relative (senão os absolutos dão 2º scroll na janela)", () => {
+    // main[data-scroll-root] é o container de rolagem. Sem `relative`, descendentes
+    // position:absolute (o input escondido do Radix Checkbox/Switch, spans sr-only)
+    // ancoram no viewport em vez do main; a posição estática deles no fim de um form
+    // longo estica o scroll do documento além da viewport, a janela ganha um segundo
+    // scroll e o layout sobe deixando um vão branco. `relative` contém os absolutos.
+    const body = read("AppShell.tsx");
+    expect(body).toMatch(/data-scroll-root[\s\S]*?className="relative[^"]*overflow-auto/);
+  });
+
   it("nenhuma tarja lateral colorida como acento", () => {
     // Ban absoluto do design system. O item ativo do sidebar usava
     // `before:w-[2px] before:bg-mp-navy` na borda esquerda, e ainda por cima
