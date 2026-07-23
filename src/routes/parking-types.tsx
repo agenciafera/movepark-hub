@@ -1,7 +1,7 @@
 import * as React from "react";
-import { useParams, useLocation, Link } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, CalendarClock, Plus, SlidersHorizontal, Table2 } from "lucide-react";
+import { CalendarClock, Plus, SlidersHorizontal, Table2 } from "lucide-react";
 import { useAuth } from "@/auth/context";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,10 +31,7 @@ import { CapacityRulesForm } from "@/features/parking-types/CapacityRulesForm";
 import { PricingRuleEditor } from "@/features/parking-types/PricingRuleEditor";
 import { PricingSimulationDialog } from "@/features/parking-types/PricingSimulationTable";
 import { PricingSummary, StrategyChip } from "@/features/parking-types/PricingSummary";
-import {
-  findCurveInversions,
-  usePricingCurve,
-} from "@/features/parking-types/pricing-curve";
+import { findCurveInversions, usePricingCurve } from "@/features/parking-types/pricing-curve";
 import { CurveInversionAlert } from "@/features/parking-types/CurveInversionAlert";
 import { formatBRL, formatDate } from "@/lib/format";
 
@@ -64,9 +61,7 @@ export default function ParkingTypesPage() {
   const [editingRules, setEditingRules] = React.useState<LocationParkingTypeWithRelations | null>(
     null,
   );
-  const [simulating, setSimulating] = React.useState<LocationParkingTypeWithRelations | null>(
-    null,
-  );
+  const [simulating, setSimulating] = React.useState<LocationParkingTypeWithRelations | null>(null);
 
   const companyId = params.companyId ?? location.data?.company_id;
   const company = useCompany(companyId);
@@ -116,15 +111,11 @@ export default function ParkingTypesPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
+        back={{ to: backHref, label: "Voltar para Localizações" }}
         title={`Tipos de vaga${location.data ? ` · ${location.data.name}` : ""}`}
         description="Configure preços, capacidade e regras de precificação dos tipos de vaga."
         actions={
           <div className="flex gap-2">
-            <Button size="sm" variant="secondary" asChild>
-              <Link to={backHref}>
-                <ArrowLeft className="h-4 w-4" /> Voltar
-              </Link>
-            </Button>
             <Button
               size="sm"
               onClick={() => setCreateOpen(true)}
@@ -143,9 +134,7 @@ export default function ParkingTypesPage() {
           onOpenChange={setCreateOpen}
           locationId={locationId}
           companyId={companyId}
-          existingLocationParkingTypeIds={(data ?? []).map(
-            (lpt) => lpt.company_parking_type.id,
-          )}
+          existingLocationParkingTypeIds={(data ?? []).map((lpt) => lpt.company_parking_type.id)}
         />
       )}
 
@@ -153,8 +142,7 @@ export default function ParkingTypesPage() {
         <Skeleton className="h-64 w-full" />
       ) : error ? (
         <div className="rounded-md border border-error bg-badge-cancelled-bg p-4 text-body-sm text-error">
-          Erro ao carregar tipos de vaga:{" "}
-          {error instanceof Error ? error.message : "desconhecido"}
+          Erro ao carregar tipos de vaga: {error instanceof Error ? error.message : "desconhecido"}
         </div>
       ) : (data ?? []).length === 0 ? (
         <EmptyState
@@ -269,8 +257,7 @@ function ParkingTypeCard({
     setWlProd(lpt.wl_product_slug ?? "");
   }, [lpt.capacity, lpt.wl_category_slug, lpt.wl_product_slug]);
 
-  const wlDirty =
-    wlCat !== (lpt.wl_category_slug ?? "") || wlProd !== (lpt.wl_product_slug ?? "");
+  const wlDirty = wlCat !== (lpt.wl_category_slug ?? "") || wlProd !== (lpt.wl_product_slug ?? "");
 
   return (
     <Card>
@@ -363,9 +350,7 @@ function ParkingTypeCard({
             onClick={onOpenSimulation}
             disabled={!lpt.pricing_rule}
             title={
-              lpt.pricing_rule
-                ? undefined
-                : "Configure uma estratégia primeiro pra simular preços"
+              lpt.pricing_rule ? undefined : "Configure uma estratégia primeiro pra simular preços"
             }
           >
             <Table2 className="h-4 w-4" />
@@ -384,88 +369,88 @@ function ParkingTypeCard({
 
         {/* Mapeamento com o white-label (E2.5.1): só Manager (Movepark), nunca o operador. */}
         {showWlMapping && (
-        <div className="flex flex-wrap items-end gap-3 rounded-md border border-hairline p-3">
-          <div className="flex w-full flex-col">
-            <span className="text-body-sm font-medium text-ink">Mapeamento White-label</span>
-            <span className="text-caption text-muted">
-              Slugs deste tipo de vaga no sistema legado (category = unidade, product = tipo). Usado pra
-              casar disponibilidade.
-            </span>
-          </div>
-          {wlCatalog?.ready && wlCatalog.categories.length > 0 ? (
-            <>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor={`wlcat-select-${lpt.id}`}>Unidade (category)</Label>
-                <Select
-                  value={wlCat || undefined}
-                  onValueChange={(v) => {
-                    setWlCat(v);
-                    setWlProd(""); // troca de categoria zera o produto
-                  }}
-                >
-                  <SelectTrigger id={`wlcat-select-${lpt.id}`} className="w-56">
-                    <SelectValue placeholder="Selecione…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {wlCatalog.categories.map((c) => (
-                      <SelectItem key={c.slug} value={c.slug}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor={`wlprod-select-${lpt.id}`}>Tipo de vaga (product)</Label>
-                <Select value={wlProd || undefined} onValueChange={setWlProd} disabled={!wlCat}>
-                  <SelectTrigger id={`wlprod-select-${lpt.id}`} className="w-56">
-                    <SelectValue placeholder="Selecione…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {wlCatalog.products
-                      .filter((p) => p.category_slug === wlCat)
-                      .map((p) => (
-                        <SelectItem key={p.slug} value={p.slug}>
-                          {p.name}
+          <div className="flex flex-wrap items-end gap-3 rounded-md border border-hairline p-3">
+            <div className="flex w-full flex-col">
+              <span className="text-body-sm font-medium text-ink">Mapeamento White-label</span>
+              <span className="text-caption text-muted">
+                Slugs deste tipo de vaga no sistema legado (category = unidade, product = tipo).
+                Usado pra casar disponibilidade.
+              </span>
+            </div>
+            {wlCatalog?.ready && wlCatalog.categories.length > 0 ? (
+              <>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor={`wlcat-select-${lpt.id}`}>Unidade (category)</Label>
+                  <Select
+                    value={wlCat || undefined}
+                    onValueChange={(v) => {
+                      setWlCat(v);
+                      setWlProd(""); // troca de categoria zera o produto
+                    }}
+                  >
+                    <SelectTrigger id={`wlcat-select-${lpt.id}`} className="w-56">
+                      <SelectValue placeholder="Selecione…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {wlCatalog.categories.map((c) => (
+                        <SelectItem key={c.slug} value={c.slug}>
+                          {c.name}
                         </SelectItem>
                       ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor={`wlcat-${lpt.id}`}>category_slug</Label>
-                <Input
-                  id={`wlcat-${lpt.id}`}
-                  value={wlCat}
-                  onChange={(e) => setWlCat(e.target.value)}
-                  placeholder="unidade-aeroporto"
-                  className="h-10 w-48"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor={`wlprod-${lpt.id}`}>product_slug</Label>
-                <Input
-                  id={`wlprod-${lpt.id}`}
-                  value={wlProd}
-                  onChange={(e) => setWlProd(e.target.value)}
-                  placeholder="vaga-coberta"
-                  className="h-10 w-48"
-                />
-              </div>
-            </>
-          )}
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled={!wlDirty}
-            onClick={() => onUpdateWlMapping(wlCat.trim() || null, wlProd.trim() || null)}
-          >
-            Salvar
-          </Button>
-        </div>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor={`wlprod-select-${lpt.id}`}>Tipo de vaga (product)</Label>
+                  <Select value={wlProd || undefined} onValueChange={setWlProd} disabled={!wlCat}>
+                    <SelectTrigger id={`wlprod-select-${lpt.id}`} className="w-56">
+                      <SelectValue placeholder="Selecione…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {wlCatalog.products
+                        .filter((p) => p.category_slug === wlCat)
+                        .map((p) => (
+                          <SelectItem key={p.slug} value={p.slug}>
+                            {p.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor={`wlcat-${lpt.id}`}>category_slug</Label>
+                  <Input
+                    id={`wlcat-${lpt.id}`}
+                    value={wlCat}
+                    onChange={(e) => setWlCat(e.target.value)}
+                    placeholder="unidade-aeroporto"
+                    className="h-10 w-48"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor={`wlprod-${lpt.id}`}>product_slug</Label>
+                  <Input
+                    id={`wlprod-${lpt.id}`}
+                    value={wlProd}
+                    onChange={(e) => setWlProd(e.target.value)}
+                    placeholder="vaga-coberta"
+                    className="h-10 w-48"
+                  />
+                </div>
+              </>
+            )}
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={!wlDirty}
+              onClick={() => onUpdateWlMapping(wlCat.trim() || null, wlProd.trim() || null)}
+            >
+              Salvar
+            </Button>
+          </div>
         )}
       </CardContent>
     </Card>

@@ -1,6 +1,5 @@
 import * as React from "react";
 import { Link, useBlocker, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -91,7 +90,7 @@ export default function OperatorLocationEdit() {
         description="Pode ter sido a conexão. Tente de novo."
         action={
           <Button size="sm" variant="secondary" asChild>
-            <Link to="/operator/locations">Voltar para Localizações</Link>
+            <Link to="/operator/locations">Ir para Localizações</Link>
           </Button>
         }
       />
@@ -105,7 +104,7 @@ export default function OperatorLocationEdit() {
         description="Ela pode ter sido removida, ou o endereço está errado."
         action={
           <Button size="sm" variant="secondary" asChild>
-            <Link to="/operator/locations">Voltar para Localizações</Link>
+            <Link to="/operator/locations">Ir para Localizações</Link>
           </Button>
         }
       />
@@ -115,19 +114,11 @@ export default function OperatorLocationEdit() {
   return (
     <>
       <form className="flex flex-col gap-6" onSubmit={form.submit}>
-        <div className="flex flex-col gap-2">
-          <Link
-            to="/operator/locations"
-            className="inline-flex w-fit items-center gap-1.5 text-body-sm text-muted transition-colors hover:text-ink"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Localizações
-          </Link>
-          <PageHeader
-            title={location.name}
-            description="Endereço, contato, chegada e fotos desta unidade. Capacidade e preço ficam em Tipos de vaga."
-          />
-        </div>
+        <PageHeader
+          back={{ to: "/operator/locations", label: "Voltar para Localizações" }}
+          title={location.name}
+          description="Endereço, contato, chegada e fotos desta unidade. Capacidade e preço ficam em Tipos de vaga."
+        />
 
         <LocationSections form={form} companyId={location.company_id} location={location} />
 
@@ -143,7 +134,10 @@ export default function OperatorLocationEdit() {
         </div>
       </form>
 
-      <Dialog open={blocker.state === "blocked"} onOpenChange={(open) => !open && blocker.reset?.()}>
+      <Dialog
+        open={blocker.state === "blocked"}
+        onOpenChange={(open) => !open && blocker.reset?.()}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Sair sem salvar?</DialogTitle>

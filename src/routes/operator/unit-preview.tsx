@@ -65,7 +65,7 @@ export default function UnitPreviewPage() {
         {isLoading ? (
           <div className="py-16 text-center text-muted">Carregando pré-visualização…</div>
         ) : !unit ? (
-          <div className="rounded-lg border border-hairline bg-canvas p-8 text-center">
+          <div className="rounded-md border border-hairline bg-canvas p-8 text-center">
             <p className="text-body-md text-ink">Estacionamento não encontrado.</p>
             <p className="mt-1 text-body-sm text-muted">
               Ela pode não existir ou não pertencer à sua empresa.
@@ -81,8 +81,10 @@ export default function UnitPreviewPage() {
             {justPublished && (
               <div
                 className={
-                  "relative flex items-start gap-3 overflow-hidden rounded-lg border p-5 duration-500 animate-in fade-in zoom-in-95 " +
-                  (unit.isListed ? "border-success/30 bg-success/5" : "border-mp-primary/30 bg-mp-pale")
+                  "relative flex items-start gap-3 overflow-hidden rounded-md border p-5 duration-500 animate-in fade-in zoom-in-95 " +
+                  (unit.isListed
+                    ? "border-success/30 bg-success/5"
+                    : "border-mp-primary/30 bg-mp-pale")
                 }
               >
                 <ConfettiBurst />
@@ -94,7 +96,9 @@ export default function UnitPreviewPage() {
                 <div>
                   {unit.isListed ? (
                     <>
-                      <h1 className="text-display-sm text-ink">Seu estacionamento está no ar! 🚗</h1>
+                      <h1 className="text-display-sm text-ink">
+                        Seu estacionamento está no ar! 🚗
+                      </h1>
                       <p className="mt-1 text-body-sm text-muted">
                         Já aparece na busca da Movepark. Compartilhe o link e comece a receber
                         reservas. Depois é só deixar o estacionamento redondo no painel (fotos,
@@ -103,7 +107,9 @@ export default function UnitPreviewPage() {
                     </>
                   ) : (
                     <>
-                      <h1 className="text-display-sm text-ink">Boa! Seu estacionamento tomou forma 🎉</h1>
+                      <h1 className="text-display-sm text-ink">
+                        Boa! Seu estacionamento tomou forma 🎉
+                      </h1>
                       <p className="mt-1 text-body-sm text-muted">
                         Veja aqui embaixo como ela vai aparecer pro cliente. Falta a etapa 2 pra ela
                         entrar na busca e você começar a vender: seus dados de recebimento.
@@ -116,7 +122,8 @@ export default function UnitPreviewPage() {
 
             {!justPublished && (
               <div className="flex items-center gap-2 rounded-md bg-mp-pale px-4 py-2.5 text-body-sm text-mp-indigo">
-                <Eye className="h-4 w-4" /> Pré-visualização: é assim que o cliente vê seu estacionamento.
+                <Eye className="h-4 w-4" /> Pré-visualização: é assim que o cliente vê seu
+                estacionamento.
               </div>
             )}
 
@@ -134,21 +141,22 @@ export default function UnitPreviewPage() {
                 {!unit.isListed ? (
                   <>
                     {/* Etapa 2 (primário): dados de recebimento, o que libera a venda e a busca */}
-                    <div className="rounded-lg border border-mp-primary/40 bg-mp-pale p-5">
+                    <div className="rounded-md border border-mp-primary/40 bg-mp-pale p-5">
                       <span className="text-caption-sm font-semibold uppercase tracking-wide text-mp-indigo">
                         Etapa 2 de 2
                       </span>
                       <h2 className="mt-1 text-title-md text-ink">Falta pouco pra você vender</h2>
                       <p className="mt-1 text-body-sm text-muted">
-                        Pra receber os pagamentos e entrar na busca da Movepark, complete seus dados de
-                        recebimento:
+                        Pra receber os pagamentos e entrar na busca da Movepark, complete seus dados
+                        de recebimento:
                       </p>
                       <ul className="mt-3 flex flex-col gap-2.5">
                         <li className="flex items-center gap-2.5 text-body-sm text-ink">
                           <Landmark className="h-4 w-4 shrink-0 text-mp-indigo" /> Conta bancária
                         </li>
                         <li className="flex items-center gap-2.5 text-body-sm text-ink">
-                          <Building2 className="h-4 w-4 shrink-0 text-mp-indigo" /> CNPJ e dados da empresa
+                          <Building2 className="h-4 w-4 shrink-0 text-mp-indigo" /> CNPJ e dados da
+                          empresa
                         </li>
                         <li className="flex items-center gap-2.5 text-body-sm text-ink">
                           <ShieldCheck className="h-4 w-4 shrink-0 text-mp-indigo" /> Verificação de
@@ -161,7 +169,8 @@ export default function UnitPreviewPage() {
                         </Link>
                       </Button>
                       <p className="mt-2 text-caption-sm text-muted-steel">
-                        Com seus dados aprovados e pelo menos 1 foto, o estacionamento entra na busca sozinho.
+                        Com seus dados aprovados e pelo menos 1 foto, o estacionamento entra na
+                        busca sozinho.
                       </p>
                     </div>
 
@@ -169,12 +178,16 @@ export default function UnitPreviewPage() {
                     <PhotosCallout
                       hasPhotos={unit.photos.length > 0}
                       ctaVariant="secondary"
-                      to={locationId ? `/operator/locations?edit=${locationId}` : "/operator/locations"}
+                      to={
+                        locationId
+                          ? `/operator/locations?edit=${locationId}`
+                          : "/operator/locations"
+                      }
                     />
                   </>
                 ) : (
                   <>
-                    <div className="rounded-lg border border-hairline bg-canvas p-5">
+                    <div className="rounded-md border border-hairline bg-canvas p-5">
                       <h2 className="text-title-md text-ink">Link público do seu estacionamento</h2>
                       {absoluteUrl ? (
                         <>
@@ -186,7 +199,11 @@ export default function UnitPreviewPage() {
                               {absoluteUrl}
                             </code>
                             <Button size="sm" variant="secondary" onClick={copyUrl}>
-                              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                              {copied ? (
+                                <Check className="h-4 w-4" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
                               {copied ? "Copiado" : "Copiar"}
                             </Button>
                           </div>
@@ -207,7 +224,11 @@ export default function UnitPreviewPage() {
 
                     <PhotosCallout
                       hasPhotos={unit.photos.length > 0}
-                      to={locationId ? `/operator/locations?edit=${locationId}` : "/operator/locations"}
+                      to={
+                        locationId
+                          ? `/operator/locations?edit=${locationId}`
+                          : "/operator/locations"
+                      }
                     />
                   </>
                 )}

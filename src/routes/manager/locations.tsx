@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import {
   Table,
@@ -36,17 +36,11 @@ export default function ManagerLocations() {
       <PageHeader
         title={`Localizações${company.data ? ` · ${company.data.name}` : ""}`}
         description="Unidades operacionais da empresa."
+        back={{ to: "/manager/companies", label: "Voltar para Empresas" }}
         actions={
-          <div className="flex gap-2">
-            <Button variant="secondary" size="sm" asChild>
-              <Link to="/manager/companies">
-                <ArrowLeft className="h-4 w-4" /> Voltar
-              </Link>
-            </Button>
-            <Button size="sm" onClick={openCreate} disabled={!companyId}>
-              <Plus className="h-4 w-4" /> Nova localização
-            </Button>
-          </div>
+          <Button size="sm" onClick={openCreate} disabled={!companyId}>
+            <Plus className="h-4 w-4" /> Nova localização
+          </Button>
         }
       />
 

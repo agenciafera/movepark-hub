@@ -1,7 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { ArrowLeft, MoreVertical, Plus } from "lucide-react";
-import { Link } from "react-router-dom";
+import { MoreVertical, Plus } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
@@ -13,10 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { FaqCategoryForm } from "@/features/faqs/FaqCategoryForm";
-import {
-  useDeleteFaqCategory,
-  useFaqCategories,
-} from "@/features/faqs/api";
+import { useDeleteFaqCategory, useFaqCategories } from "@/features/faqs/api";
 import type { FaqCategoryRow } from "@/features/faqs/types";
 
 export default function ManagerFaqCategorias() {
@@ -50,14 +46,9 @@ export default function ManagerFaqCategorias() {
       <PageHeader
         title="Categorias de FAQ"
         description="Agrupam as perguntas no /faq e nos formulários do backoffice."
+        back={{ to: "/manager/faq", label: "Voltar para FAQ" }}
         actions={
           <div className="flex gap-2">
-            <Button variant="secondary" size="sm" asChild>
-              <Link to="/manager/faq">
-                <ArrowLeft className="h-4 w-4" />
-                Voltar
-              </Link>
-            </Button>
             <Button onClick={openCreate} size="sm">
               <Plus className="h-4 w-4" />
               Nova categoria
@@ -92,10 +83,7 @@ export default function ManagerFaqCategorias() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => openEdit(c)}>Editar</DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="!text-error"
-                    onClick={() => handleDelete(c)}
-                  >
+                  <DropdownMenuItem className="!text-error" onClick={() => handleDelete(c)}>
                     Remover
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -105,11 +93,7 @@ export default function ManagerFaqCategorias() {
         </ul>
       )}
 
-      <FaqCategoryForm
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        category={editing}
-      />
+      <FaqCategoryForm open={formOpen} onOpenChange={setFormOpen} category={editing} />
     </div>
   );
 }

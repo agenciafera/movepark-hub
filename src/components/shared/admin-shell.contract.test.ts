@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 /**
@@ -48,6 +48,57 @@ describe("contrato de layout do shell administrativo", () => {
     });
 
     expect(offenders).toEqual([]);
+  });
+
+  // As rotas dos dois painéis (manager + operator), a superfície que a
+  // padronização cobre. Sub-rotas compartilhadas (parking-types) entram também.
+  const ROUTE_DIRS = [
+    join(process.cwd(), "src", "routes", "manager"),
+    join(process.cwd(), "src", "routes", "operator"),
+  ];
+  const routeFiles = ROUTE_DIRS.flatMap((dir) =>
+    readdirSync(dir)
+      .filter((f) => f.endsWith(".tsx") && !f.includes(".test."))
+      .map((f) => ({
+        file: `${dir.split("/src/")[1]}/${f}`,
+        body: readFileSync(join(dir, f), "utf8"),
+      })),
+  );
+
+  it("varre um conjunto de rotas admin não-vazio", () => {
+    expect(routeFiles.length).toBeGreaterThan(20);
+  });
+
+  it("card admin usa rounded-md, não rounded-lg (o raio de container do DESIGN.md)", () => {
+    // rounded-lg (20px) é hero band; card com borda hairline é rounded-md (14px).
+    const offenders = routeFiles
+      .filter(({ body }) => /rounded-lg border border-(hairline|mp-primary)/.test(body))
+      .map(({ file }) => file);
+    expect(offenders).toEqual([]);
+  });
+
+  it("nenhuma sombra em repouso nas rotas admin (shadow-tier só com hover/focus)", () => {
+    const offenders = routeFiles
+      .filter(({ body }) =>
+        [...semComentarios(body).matchAll(/(\S*)shadow-tier/g)].some(
+          (m) => !/(hover|group-hover|focus|focus-visible):$/.test(m[1]),
+        ),
+      )
+      .map(({ file }) => file);
+    expect(offenders).toEqual([]);
+  });
+
+  it("voltar-ao-pai é o BackLink padrão, não um botão solto", () => {
+    // O rótulo "Voltar para X" só existe como prop `back` do PageHeader (mesma
+    // linha tem `label:`) ou dentro do BackLink. Nunca como texto de <Button>,
+    // que era a divergência (Button secondary vs link, rótulos variados).
+    const offenders = routeFiles.flatMap(({ file, body }) =>
+      body
+        .split("\n")
+        .filter((l) => /Voltar para/.test(l) && !/label:/.test(l) && !/BackLink/.test(l))
+        .map(() => file),
+    );
+    expect([...new Set(offenders)]).toEqual([]);
   });
 
   it("o cabeçalho de página é uma zona, não mais um bloco na fila", () => {
