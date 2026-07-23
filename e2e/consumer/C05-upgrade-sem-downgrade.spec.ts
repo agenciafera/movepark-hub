@@ -29,8 +29,17 @@
  *   - `listing-upgrade-offer`        (o bloco de indução)
  *   - `listing-upgrade-price-delta`  (a diferença, que precisa ser explícita)
  */
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { ABBAPARK, listActiveParkingTypes, listingUrl } from "../support/consumer";
+
+/**
+ * O detalhe monta o `ReservationCard` duas vezes: o card do desktop e o CTA fixo
+ * do mobile (`listing.tsx:269` e `:349`). O nudge de upgrade vem nos dois, então
+ * `getByTestId` sozinho estoura o strict mode. Filtra pelo visível.
+ */
+function visible(page: Page, id: string) {
+  return page.locator(`[data-testid="${id}"]:visible`);
+}
 
 test.describe("C-05", () => {
   test("C-05a: na vaga mais barata, o detalhe induz o upgrade com a diferença explícita", async ({
@@ -43,11 +52,11 @@ test.describe("C-05", () => {
 
     await page.goto(listingUrl(ABBAPARK, cheapest.code));
 
-    await expect(page.getByTestId("listing-upgrade-offer")).toBeVisible({ timeout: 30_000 });
+    await expect(visible(page, "listing-upgrade-offer")).toBeVisible({ timeout: 30_000 });
 
     // A diferença precisa estar na tela. "Faça upgrade" sem preço não deixa o
     // cliente decidir, e foi justamente o exemplo discutido na reunião.
-    await expect(page.getByTestId("listing-upgrade-price-delta")).toContainText(/R\$/);
+    await expect(visible(page, "listing-upgrade-price-delta")).toContainText(/R\$/);
   });
 
   test("C-05b: na vaga mais cara, NÃO existe oferta de downgrade", async ({ page }) => {
