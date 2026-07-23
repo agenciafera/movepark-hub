@@ -111,3 +111,7 @@ chat de uma vez (`READ_TOOLS.map`). Docs do ADR-003 no mesmo PR: cards `server`/
 `tools/call` com a pergunta em linguagem natural "posso cancelar minha reserva sem pagar taxa?"
 (palavras diferentes da FAQ armazenada) embeda a query e traz a FAQ de cancelamento no topo. Testes:
 `mcp.test.ts` (a tool é de leitura em public+customer, nunca partner, chamável sem escopo).
+
+**Verificado no chat do site:** a pergunta "se meu voo atrasar e eu chegar depois do horário, perco a
+vaga ou tem tolerância?" faz o modelo escolher `search_knowledge` sozinho (`used_tools` confirma) e
+responder ancorado na FAQ vetorizada ("30 minutos antes e 60 depois, sem cobrança").
