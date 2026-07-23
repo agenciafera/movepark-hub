@@ -6,7 +6,7 @@
       "type": "mcp",
       "description": "MCP do Movepark (consumidor): buscar estacionamentos, tipos de vaga, simular preços, FAQ e listar empresas/unidades. Endpoint: https://mcp.movepark.co",
       "url": "https://hub.movepark.co/.well-known/mcp/server-card.json",
-      "sha256": "61d2e0640d4507e7278eef50b6e3299691cc0168c76fc9550f977b074951dde8"
+      "sha256": "25e8b8d7c003ff94912153e112b0f7f121bcfed6efbd157e4459ea2db07fcf9b"
     },
     {
       "name": "movepark-partner-mcp",
@@ -20,7 +20,7 @@
       "type": "mcp",
       "description": "MCP do Movepark (consumidor autenticado): descoberta + login por OTP (WhatsApp/e-mail) para reservar em nome do usuário final. Endpoint: https://mcp.movepark.co/customer",
       "url": "https://hub.movepark.co/.well-known/mcp/customer-card.json",
-      "sha256": "2042a01ca6e5ca8276dd9799cc95cae2d341dc61a422aa04551d16b6ef499aec"
+      "sha256": "81ebd31ad791c2ade2748657f2573851596cb8d273a72e6ac93d69bc11955edf"
     }
   ]
 }

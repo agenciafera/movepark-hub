@@ -94,6 +94,20 @@ export const READ_TOOLS: ReadToolDef[] = [
     }),
   },
   {
+    name: "search_knowledge",
+    description:
+      "Busca semântica na base de conhecimento (direções de acesso, políticas, avisos e FAQ em prosa). Use para perguntas abertas, em linguagem natural, que o get_faq estruturado não cobre bem. Passe location_id/destination_id para focar numa unidade ou destino.",
+    parameters: obj(
+      {
+        query: S("pergunta em linguagem natural"),
+        location_id: S("id da unidade (opcional)"),
+        destination_id: S("id do destino (opcional)"),
+        k: INT("máximo de trechos (default 6)"),
+      },
+      ["query"],
+    ),
+  },
+  {
     name: "list_companies",
     description: "Lista os estacionamentos parceiros (empresas) ativos da plataforma.",
     parameters: obj({ limit: INT("máximo de resultados") }),
@@ -250,6 +264,20 @@ export async function callRead(
             location_id: a.location_id ?? null,
             query: a.query ?? null,
             limit: a.limit ?? 20,
+          },
+        }),
+      );
+
+    case "search_knowledge":
+      // A embedding da query precisa da GEMINI_API_KEY (env de Edge), que o client anon do chat/MCP
+      // não tem: a busca semântica roda na Edge dedicada, igual get_faq -> get-faq.
+      return unwrap(
+        await sb.functions.invoke("knowledge-search", {
+          body: {
+            query: a.query ?? "",
+            location_id: a.location_id ?? null,
+            destination_id: a.destination_id ?? null,
+            k: a.k ?? 6,
           },
         }),
       );

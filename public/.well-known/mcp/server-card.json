@@ -49,6 +49,20 @@
       }
     },
     {
+      "name": "search_knowledge",
+      "description": "Busca semântica na base de conhecimento (direções, políticas, avisos e FAQ em prosa) para perguntas abertas.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": { "type": "string" },
+          "location_id": { "type": "string" },
+          "destination_id": { "type": "string" },
+          "k": { "type": "integer" }
+        },
+        "required": ["query"]
+      }
+    },
+    {
       "name": "list_companies",
       "description": "Lista os estacionamentos parceiros (empresas) da plataforma.",
       "inputSchema": {

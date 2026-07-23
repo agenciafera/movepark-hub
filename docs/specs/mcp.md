@@ -73,6 +73,7 @@ Edge `chat` consome. O MCP converte com `toMcpToolDef` e roteia por `callRead`; 
 | `search_parking(dest, from, to, …)` | Edge `search` |
 | `simulate_price(company, location?, parking_type?, days?)` | RPC `simulate_price` |
 | `get_faq(location_id?, query?, limit?)` | Edge `get-faq` |
+| `search_knowledge(query, location_id?, destination_id?, k?)` | Edge `knowledge-search` (RAG pgvector, ver `knowledge-base.md`) |
 | `list_companies(limit?)` | `company` (RLS `catalog_read_company`) |
 | `list_locations(limit?)` | `location` |
 | `get_parking_types(location_id)` | `location_parking_type` (+ join) |

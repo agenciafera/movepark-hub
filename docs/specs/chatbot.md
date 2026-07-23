@@ -11,8 +11,8 @@
 ChatWidget (React, ConsumerAppShell)  ──POST /functions/v1/chat (apikey + Bearer JWT opcional)──▶
   Edge `chat` (Deno, verify_jwt=false)
      └─ loop de agente (Gemini generateContent, function-calling, teto de 6 rodadas)
-          ├─ leitura (anon): search_parking, simulate_price, get_faq, list_companies,
-          │    list_locations, get_parking_types, list_destinations, get_destination
+          ├─ leitura (anon): search_parking, simulate_price, get_faq, search_knowledge,
+          │    list_companies, list_locations, get_parking_types, list_destinations, get_destination
           └─ transacionais (repassa o JWT): create_booking, cancel_booking,
                list_my_bookings, get_booking
      ◀── { reply, used_tools }
@@ -39,6 +39,7 @@ ChatWidget (React, ConsumerAppShell)  ──POST /functions/v1/chat (apikey + Be
 | `search_parking` | leitura | Edge `search` |
 | `simulate_price` | leitura | RPC `simulate_price` |
 | `get_faq` | leitura | Edge `get-faq` |
+| `search_knowledge` | leitura | Edge `knowledge-search` (RAG pgvector, ver `knowledge-base.md`) |
 | `list_companies`/`list_locations`/`get_parking_types` | leitura | selects de catálogo |
 | `list_destinations`/`get_destination` | leitura | `destination`(+`destination_point`) |
 | `current_datetime` | leitura | data/hora no fuso `America/Sao_Paulo` (resolver datas relativas) |

@@ -95,9 +95,19 @@ operacionalmente, fora do repo), nunca vira env desta Edge nem trafega para fora
 retorna ela mesma no topo (similaridade 1.0) e agrupa as FAQs do ciclo de reserva logo abaixo. O
 gatilho de frescor confere: editar uma faq enfileira `upsert`, despublicar enfileira `delete`.
 
-## F3: superfície de leitura (pendente)
+## F3: superfície de leitura (implementada)
 
-Edge `knowledge-search` (embeda a query + chama a RPC) e a tool `search_knowledge` no registro
-compartilhado `_shared/assistant-tools.ts` (1 `ReadToolDef` + 1 `case`), que aparece no MCP (público e
-customer) e no chat de uma vez. Docs do ADR-003: cards `server`/`customer`, `gen:cards`, `mcp.md`,
-`chatbot.md`.
+Edge `knowledge-search` (`verify_jwt=false`, molde `get-faq`): embeda a query com
+`gemini-embedding-001` (`taskType: RETRIEVAL_QUERY`, 768d) e chama a RPC `match_knowledge`. A
+`GEMINI_API_KEY` mora só nesta Edge; o client anon do chat/MCP não a tem, por isso a tool invoca a
+Edge dedicada, igual `get_faq → get-faq`.
+
+Tool `search_knowledge(query, location_id?, destination_id?, k?)` no registro compartilhado
+`_shared/assistant-tools.ts` (1 `ReadToolDef` + 1 `case`): aparece no MCP público, no MCP customer e no
+chat de uma vez (`READ_TOOLS.map`). Docs do ADR-003 no mesmo PR: cards `server`/`customer` +
+`gen:cards` (sha256), `mcp.md` §4, `chatbot.md`. O drift guard cobre a sincronia (65 tools).
+
+**Verificado ponta a ponta pelo MCP público:** `tools/list` lista `search_knowledge`; um
+`tools/call` com a pergunta em linguagem natural "posso cancelar minha reserva sem pagar taxa?"
+(palavras diferentes da FAQ armazenada) embeda a query e traz a FAQ de cancelamento no topo. Testes:
+`mcp.test.ts` (a tool é de leitura em public+customer, nunca partner, chamável sem escopo).

@@ -99,6 +99,16 @@ Deno.test("findTool resolve por endpoint", () => {
   assertEquals(findTool("partner", "get_faq"), null);
 });
 
+// search_knowledge (E3.3, RAG): tool de leitura, aparece no public e no customer (deriva de
+// READ_TOOLS), nunca no partner, e é chamável sem escopo.
+Deno.test("search_knowledge é tool de leitura em public e customer", () => {
+  assertEquals(findTool("public", "search_knowledge")?.name, "search_knowledge");
+  assertEquals(findTool("customer", "search_knowledge")?.name, "search_knowledge");
+  assertEquals(findTool("partner", "search_knowledge"), null);
+  assertEquals(isToolCallable("public", "search_knowledge"), true);
+  assertEquals(findTool("public", "search_knowledge")?.scope, undefined);
+});
+
 // Invariante de segurança do tools/call: escopo é RECHECADO na chamada, não só escondido no
 // tools/list. Uma tool fora de escopo é inchamável mesmo que o cliente saiba o nome exato.
 Deno.test("isToolCallable recheca escopo no tools/call (não só esconde na listagem)", () => {
