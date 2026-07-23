@@ -16,7 +16,7 @@ create extension if not exists vector with schema extensions;
 
 -- 2) Tabela de chunks. FK polimórfica leve (source_type, source_id) para não poluir faq/location com
 --    uma coluna de 768 floats. content_hash dá idempotência de reembedding (pular chunk igual).
---    ATENÇÃO: a dimensão 768 (Gemini text-embedding-004) fica CRAVADA na coluna e no índice HNSW.
+--    ATENÇÃO: a dimensão 768 (Gemini gemini-embedding-001 com outputDimensionality=768) fica CRAVADA na coluna e no índice HNSW.
 --    Trocar de modelo (outra dimensão) exige recriar coluna + índice + rebackfill.
 create table if not exists public.knowledge_chunk (
   id              uuid primary key default gen_random_uuid(),

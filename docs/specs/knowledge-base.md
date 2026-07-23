@@ -38,7 +38,8 @@ Busca:
 ```
 
 **Decisões:** pgvector nativo (dado + RLS + escopo num lugar só); embedding pelo Gemini
-`text-embedding-004` (reusa a `GEMINI_API_KEY` do chat, sem novo fornecedor); índice HNSW cosseno
+`gemini-embedding-001` com `outputDimensionality: 768` (reusa a `GEMINI_API_KEY` do chat, sem novo
+fornecedor; a chave só tem esse modelo, e ele é `embedContent` síncrono, sem batch); índice HNSW cosseno
 (build-once, insert incremental, bom recall em base pequena/média); frescor por outbox de fonte
 (prosa longa muda o número de chunks, então a unidade de trabalho é a fonte, não o chunk); v1 é vetor
 puro, híbrido (vetor + léxico com RRF) fica para a fase 2.
@@ -78,10 +79,21 @@ e a faq órfã não vazam).
 
 ## F2: pipeline de frescor (pendente)
 
-Fila `knowledge_source_queue` (outbox molde `wps_delivery`), `enqueue_knowledge_resync` + triggers em
-`faq`, `location` e `location_amenity`, Edge `knowledge-embed` (chunking puro, `batchEmbedContents`,
-backoff reusado de `wps-deliver`), cron padrão B com a chave interna no Vault, e o backfill inicial
-que enfileira as fontes publicadas para o worker drenar.
+Fila `knowledge_source_queue` (outbox molde `wps_delivery`) com claim atômico (`for update skip
+locked`), `enqueue_knowledge_resync` + triggers em `faq`, `location` e `location_amenity`, Edge
+`knowledge-embed` (chunking puro, `embedContent` um a um, backoff reusado de `wps-deliver`), cron
+padrão B com a chave interna no Vault, e o backfill inicial que enfileira as fontes publicadas para o
+worker drenar.
+
+**Auth do worker:** o header `x-knowledge-embed-key` é validado contra o Vault por uma RPC
+(`knowledge_embed_key_valid`) que devolve só um booleano. O segredo mora só no Vault (criado
+operacionalmente, fora do repo), nunca vira env desta Edge nem trafega para fora do Postgres.
+
+**Estado (implementado e verificado no banco vivo):** as 40 fontes de prosa existentes (38 faq + 1
+`directions_text` + 1 `reservation_policy`) foram vetorizadas pelo caminho real do cron
+(pg_net → Edge → embedContent → grava). A busca semântica confere: a query "Como cancelo uma reserva?"
+retorna ela mesma no topo (similaridade 1.0) e agrupa as FAQs do ciclo de reserva logo abaixo. O
+gatilho de frescor confere: editar uma faq enfileira `upsert`, despublicar enfileira `delete`.
 
 ## F3: superfície de leitura (pendente)
 
