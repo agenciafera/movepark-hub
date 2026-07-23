@@ -255,17 +255,18 @@ function HighlightSweep({ children }: { children: string }) {
   return (
     <span ref={ref} className="relative inline-block whitespace-nowrap align-baseline">
       <span className="px-2 text-white">{children}</span>
+      {/* O `rounded` mora AQUI, no container que recorta a animação: com ele na
+          banda de dentro, o `overflow-hidden` cortava os cantos num retângulo reto.
+          Aqui a máscara é que arredonda, então a ponta da caneta entra redonda. */}
       <span
         aria-hidden
         className={cn(
-          "absolute inset-y-0 left-0 overflow-hidden",
+          "absolute inset-y-0 left-0 overflow-hidden rounded-[4px]",
           !reduced && "transition-[width] duration-700 ease-out",
         )}
         style={{ width: reduced || revealed ? "100%" : "0%" }}
       >
-        <span className="block whitespace-nowrap rounded-[4px] bg-mp-pale px-2 text-ink">
-          {children}
-        </span>
+        <span className="block whitespace-nowrap bg-mp-pale px-2 text-ink">{children}</span>
       </span>
     </span>
   );
