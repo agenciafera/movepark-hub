@@ -22,6 +22,7 @@ import type { FaqCombinedItem } from "@/features/faqs/api";
 import { PartnerLeadModal } from "@/features/onboarding/PartnerLeadModal";
 import { PartnerLogos } from "@/features/partners/PartnerLogos";
 import { useGsapReveal } from "@/hooks/useGsapReveal";
+import { gsap } from "@/lib/gsap";
 
 const HERO_IMAGE = "/images/seja-parceiro-acordo-sunset.webp";
 // Mesma foto do hero, como na referência do mockup. Reaproveitar não pesa: o
@@ -429,12 +430,40 @@ export default function SejaParceiroPage() {
   // Reveals no scroll (GSAP). Cada seção sobe e aparece em sequência quando entra
   // na dobra; o hook ignora tudo sob prefers-reduced-motion. `[data-reveal]` marca
   // os elementos animados de cada bloco.
-  const painResponseRef = useGsapReveal<HTMLDivElement>({
-    selector: "[data-reveal-card]",
-    y: 28,
-    stagger: 0.14,
-    start: "top 82%",
-  });
+  const reduced = usePrefersReducedMotion();
+
+  // Dor/resposta tem animação própria (não o fade genérico): à esquerda os
+  // comprovantes caem um a um; à direita a fatura preenche linha por linha.
+  const painSectionRef = React.useRef<HTMLElement>(null);
+  React.useEffect(() => {
+    if (reduced) return;
+    const el = painSectionRef.current;
+    if (!el) return;
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({
+        scrollTrigger: { trigger: el, start: "top 78%", once: true },
+      });
+      // Os comprovantes caem de cima, um a um. `back.out` dá o repique de queda.
+      // A queda mora no `<li>` (y/opacity); a inclinação fica num filho, pra o gsap
+      // não sobrescrever o `rotate` ao assumir o transform do li.
+      tl.from("[data-pain-ticket]", {
+        y: -48,
+        opacity: 0,
+        duration: 0.55,
+        ease: "back.out(1.4)",
+        stagger: 0.12,
+      });
+      // A fatura preenche linha por linha, começando quando os comprovantes já
+      // estão quase assentados (`-=0.2`).
+      tl.from(
+        "[data-invoice-row]",
+        { y: 12, opacity: 0, duration: 0.4, ease: "power2.out", stagger: 0.16 },
+        "-=0.2",
+      );
+    }, el);
+    return () => ctx.revert();
+  }, [reduced]);
+
   const metricsRef = useGsapReveal<HTMLElement>({
     selector: "[data-reveal]",
     y: 16,
@@ -543,7 +572,7 @@ export default function SejaParceiroPage() {
           tokens (`surface-pale` é alias do `mp-pale`), e pôr o azul da marca no lado da
           resposta, deixando o problema em cinza neutro, diz a coisa certa. */}
       <section
-        ref={painResponseRef}
+        ref={painSectionRef}
         className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-20"
       >
         <div className="grid grid-cols-1 items-stretch gap-6 tablet:grid-cols-2">
@@ -569,21 +598,27 @@ export default function SejaParceiroPage() {
               {PAINS.map((p, i) => (
                 <li
                   key={p}
-                  className="rounded-md border border-hairline bg-canvas px-5 pb-9 pt-5 shadow-tier"
+                  data-pain-ticket
                   style={{
-                    transform: `rotate(${[-2.5, 1.5, -1, 2][i] ?? 0}deg)`,
                     marginTop: i === 0 ? 0 : -20,
                     position: "relative",
                     zIndex: i + 1,
                   }}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-mp-red text-white">
-                      <X className="h-4 w-4" aria-hidden />
-                    </span>
-                    <span className="h-px flex-1 border-t border-dashed border-hairline" />
+                  {/* O rotate mora aqui, num filho, e não no <li>: assim o gsap anima
+                      a queda no <li> (transform y) sem apagar a inclinação. */}
+                  <div
+                    className="rounded-md border border-hairline bg-canvas px-5 pb-9 pt-5 shadow-tier"
+                    style={{ transform: `rotate(${[-2.5, 1.5, -1, 2][i] ?? 0}deg)` }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-mp-red text-white">
+                        <X className="h-4 w-4" aria-hidden />
+                      </span>
+                      <span className="h-px flex-1 border-t border-dashed border-hairline" />
+                    </div>
+                    <p className="mt-3 text-body-sm text-ink">{p}</p>
                   </div>
-                  <p className="mt-3 text-body-sm text-ink">{p}</p>
                 </li>
               ))}
             </ul>
@@ -612,13 +647,17 @@ export default function SejaParceiroPage() {
                     "Taxa de adesão",
                     "Anúncio e mídia",
                   ].map((linha) => (
-                    <div key={linha} className="flex items-baseline justify-between gap-4">
+                    <div
+                      key={linha}
+                      data-invoice-row
+                      className="flex items-baseline justify-between gap-4"
+                    >
                       <dt className="text-body-sm text-body">{linha}</dt>
                       <dd className="text-body-sm tabular-nums text-body">R$ 0,00</dd>
                     </div>
                   ))}
                 </dl>
-                <div className="mt-5 border-t border-hairline pt-5">
+                <div data-invoice-row className="mt-5 border-t border-hairline pt-5">
                   <div className="flex items-baseline justify-between gap-4">
                     <span className="text-title-md text-ink">Você paga</span>
                     <span className="text-display-sm tabular-nums text-ink">R$ 0,00</span>

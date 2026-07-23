@@ -31,7 +31,12 @@ describe("SejaParceiroPage — par de cards dor/resposta", () => {
     expect(tickets).toHaveLength(4);
     expect(tickets[0].style.marginTop).toBe("0px");
     for (const t of tickets.slice(1)) expect(t.style.marginTop).toBe("-20px");
-    for (const t of tickets) expect(t.style.transform).toMatch(/rotate\(-?[\d.]+deg\)/);
+    // O giro fica no filho do <li> (o <li> é só posição/queda; o rotate ali seria
+    // apagado pelo gsap ao assumir o transform na animação de cair).
+    for (const t of tickets) {
+      const card = t.firstElementChild as HTMLElement;
+      expect(card.style.transform).toMatch(/rotate\(-?[\d.]+deg\)/);
+    }
   });
 
   it("cada comprovante empilha acima do anterior", () => {
