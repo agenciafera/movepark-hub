@@ -250,20 +250,24 @@ function ComoFunciona() {
     return () => obs.disconnect();
   }, [reduced]);
 
+  // Grid com colocação explícita: no desktop o cabeçalho vai pra coluna da direita
+  // (col 2, linha 1), alinhado com os passos (col 2, linha 2); a foto ocupa a coluna
+  // esquerda nas duas linhas e fica fixa. No mobile é uma coluna só e a ordem-fonte
+  // manda: cabeçalho, foto, passos.
   return (
     <section className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-20">
-      <div className="max-w-2xl">
-        <h2 className="text-display-2xl text-ink">Como funciona</h2>
-        <p className="mt-3 text-body-md text-body">
-          Do cadastro ao repasse, a Movepark cuida da parte chata. Você cuida das vagas.
-        </p>
-      </div>
+      <div className="grid grid-cols-1 items-start gap-x-10 gap-y-8 tablet:grid-cols-2 desktop:gap-x-14">
+        <div className="tablet:col-start-2 tablet:row-start-1">
+          <h2 className="text-display-2xl text-ink">Como funciona</h2>
+          <p className="mt-3 text-body-md text-body">
+            Do cadastro ao repasse, a Movepark cuida da parte chata. Você cuida das vagas.
+          </p>
+        </div>
 
-      <div className="mt-12 grid grid-cols-1 items-start gap-10 tablet:grid-cols-2 desktop:gap-14">
         {/* Foto: fixa no desktop enquanto os passos correm ao lado. Recorte em
             retrato (aspect-[4/5]), com o foco à direita pra pegar o aperto de mão.
             `pb-12` no mobile abre o espaço que o card verde ocupa ao transbordar. */}
-        <div className="relative pb-12 tablet:sticky tablet:top-24 tablet:pb-0">
+        <div className="relative pb-12 tablet:col-start-1 tablet:row-start-1 tablet:row-span-2 tablet:sticky tablet:top-24 tablet:pb-0">
           <div className="overflow-hidden rounded-2xl">
             <img
               src={STEPS_IMAGE}
@@ -298,7 +302,7 @@ function ComoFunciona() {
 
         {/* Passos. Cada um tem a própria barra vertical à esquerda (não um trilho
             contínuo): indigo no ativo, cinza nos demais. */}
-        <ol className="flex flex-col gap-2">
+        <ol className="flex flex-col gap-2 tablet:col-start-2 tablet:row-start-2">
           {STEPS.map((s, i) => {
             const on = i === active;
             const dim = !reduced && !on;
@@ -683,12 +687,12 @@ export default function SejaParceiroPage() {
         </div>
       </section>
 
-      {/* FAQ em duas colunas, como no mockup: o título fica preso à esquerda e a
-          sanfona corre à direita. Numa coluna só, o h2 sumia do campo de visão logo
-          na segunda pergunta aberta. `sticky` mantém o contexto durante a leitura. */}
-      <section className="mx-auto max-w-[1080px] px-4 pb-16 desktop:px-8 desktop:pb-20">
+      {/* FAQ em duas colunas: o título fica à esquerda e a sanfona à direita.
+          `pt` próprio pra descolar da seção de cima (estava grudado). O título não
+          é mais `sticky`: acompanha o scroll normal. */}
+      <section className="mx-auto max-w-[1080px] px-4 pb-16 pt-16 desktop:px-8 desktop:pb-20 desktop:pt-24">
         <div className="grid grid-cols-1 gap-8 tablet:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] desktop:gap-14">
-          <div className="tablet:sticky tablet:top-24 tablet:self-start">
+          <div className="tablet:self-start">
             <span className="text-badge uppercase tracking-wide text-mp-indigo">Dúvidas</span>
             <h2 className="mt-3 text-display-2xl text-ink">Perguntas frequentes</h2>
           </div>
