@@ -415,23 +415,25 @@ export default function SejaParceiroPage() {
               (95/85/65 no mobile, 95/75/25 no desktop), então dá pra soltar o h1 a
               672px sem o contraste cair na área iluminada. Com isso "Sem custo" para
               de quebrar entre linhas e cabe junto de "pra começar".
-              `whitespace-nowrap` no grifo garante que o riscado nunca parta no meio. */}
+              `whitespace-nowrap` no grifo garante que o riscado nunca parta no meio.
+              Riscado em violeta (`decoration-mp-violet`), como no mockup. É exceção
+              consciente à regra "violeta só em acionável": aqui é um traço de marca
+              sobre a headline, não texto clicável, e o pedido foi bater a referência. */}
           <h1 className="mt-3 max-w-2xl text-balance text-display-3xl text-white">
             Encha suas vagas com reservas online.{" "}
-            <span className="whitespace-nowrap line-through decoration-white/70 decoration-2">
+            <span className="whitespace-nowrap line-through decoration-mp-violet decoration-[3px]">
               Sem custo
             </span>{" "}
-            pra começar.
+            pra começar
           </h1>
+          {/* Subtexto e microcopy da referência, sem duplicar: a linha "Leva 2
+              minutos · sem compromisso" saiu porque o parágrafo já carrega os dois. */}
           <p className="mt-4 max-w-xl text-body-md text-white/80">
-            A Movepark leva clientes até o seu estacionamento e garante o pagamento adiantado. Sem
-            mensalidade, sem risco pra começar.
+            Faça seu cadastro no botão abaixo, sem compromisso. O processo é simples e rápido, leva
+            menos de 2 minutos.
           </p>
-          <div className="mt-7 flex flex-col items-start gap-2.5">
+          <div className="mt-7">
             <SejaParceiroCta onClick={openModal}>Quero ser parceiro</SejaParceiroCta>
-            <span className="text-caption-sm text-white/70">
-              Leva 2 minutos · sem compromisso
-            </span>
           </div>
         </div>
       </section>
