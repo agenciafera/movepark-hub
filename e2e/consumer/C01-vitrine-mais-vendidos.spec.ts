@@ -77,8 +77,9 @@ test.describe("C-01", () => {
   });
 
   test("C-01b: cada card traz o tipo de vaga MAIS VENDIDO daquela empresa", async ({ page }) => {
-    // Hoje falha porque a home destaca o tipo MAIS BARATO da unidade
-    // (`dedupePopularOffers` guarda o de menor `price_1d`), não o mais vendido.
+    // A home ranqueia por (unidade, tipo de vaga) via `popular_parking_types` e
+    // destaca o tipo mais vendido de cada empresa. Este teste compara o que a
+    // vitrine mostra contra o ranking do banco.
     const hrefs = await vitrineHrefs(page);
     expect(hrefs.length, "a vitrine precisa ter cards para comparar").toBeGreaterThan(0);
 
