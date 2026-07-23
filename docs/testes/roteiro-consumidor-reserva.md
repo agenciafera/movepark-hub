@@ -18,11 +18,11 @@ reconfere no código antes de mexer em qualquer linha de status.
 
 | Caso | O que prova | Status |
 |---|---|---|
-| C-01 | Vitrine da home: mais vendidos, 1 card por empresa | **PARCIAL** (teto ok, ordem não) |
+| C-01 | Vitrine da home: mais vendidos, 1 card por empresa | **PRONTO** em 22/07 |
 | C-02 | Cada card é um tipo de vaga, sem benefício contraditório | **CORRIGIDO** em 22/07 |
 | C-03 | Contador da busca bate com o número de cards | **CORRIGIDO** em 22/07 |
 | C-04 | Detalhe informa corretamente coberto ou descoberto | **CORRIGIDO** em 22/07 |
-| C-05 | Detalhe induz upgrade e nunca oferece downgrade | **NÃO EXISTE** |
+| C-05 | Detalhe induz upgrade e nunca oferece downgrade | **PRONTO** em 22/07 |
 | C-06 | Escolher datas cria a reserva e segura a vaga | PRONTO |
 | C-07 | Checkout passo 1: identidade e contato | PRONTO |
 | C-08 | Checkout passo 2: veículo | PRONTO |
@@ -149,12 +149,13 @@ não consegue cancelar, só o staff.
 
 ---
 
-## C-01 · Vitrine da home: mais vendidos, um card por empresa  [**PARCIAL** · decidido 22/07/2026 · coberto por `e2e/consumer/C01-vitrine-mais-vendidos.spec.ts`]
+## C-01 · Vitrine da home: mais vendidos, um card por empresa  [**PRONTO** · verificado 22/07/2026 · commit `257d4b1` · coberto por `e2e/consumer/C01-vitrine-mais-vendidos.spec.ts`]
 
 > **Este caso trocou de natureza em 22/07.** Antes exigia o oposto: que nenhuma unidade aparecesse
 > em dois cards, porque a home agrupava por location. A decisão nova alinha a home à busca (o card é
 > um TIPO DE VAGA) e ordena pelo que mais vende, com teto de um card por empresa.
-> Registrada em [86ajneu1c](https://app.clickup.com/t/86ajneu1c).
+> Registrada em [86ajneu1c](https://app.clickup.com/t/86ajneu1c), implementada em
+> [86ajnfwgx](https://app.clickup.com/t/86ajnfwgx).
 
 - **Antes:** home carregada em `/`, sem sessão.
 - **Passos:** rolar até a seção de estacionamentos populares e ler os links dos cards.
@@ -162,25 +163,24 @@ não consegue cancelar, só o staff.
   - cada card é um **tipo de vaga** (`/p/:operador/:unidade/:tipo`), como na busca;
   - a ordem segue o **volume de reservas daquele tipo**, do maior para o menor;
   - **nenhuma empresa aparece duas vezes**, mesmo tendo várias unidades ou vários tipos.
-- **Depois observado (22/07):**
-  - o teto de 1 por empresa **já vale**, mas por coincidência: a home ranqueia por unidade e, no
-    corte de 6, não há empresa repetida. A 2ª unidade do Aerovalet é a 7ª colocada e fica de fora;
-  - a **ordem por venda do tipo não existe**. A home ranqueia por reservas da **unidade**
-    (`popular_locations`) e destaca o tipo **mais barato** (`dedupePopularOffers` guarda o de menor
-    `price_1d`), não o mais vendido.
+- **Depois observado (22/07, após o fix):** os dois testes passam. A RPC `popular_parking_types`
+  ranqueia por tipo de vaga (o Kallef seguiu o nome e o shape que o spec já esperava), e o teto de
+  1 por empresa vale por desenho, não mais por coincidência.
 - **Efeitos colaterais:** nenhum, é leitura.
 - **Armadilhas:**
   - **O teto é por EMPRESA, não por unidade.** Aerovalet tem 3 unidades (Congonhas, Guarulhos,
     Tietê) e só pode ocupar um slot. Quem testar com o teto de unidade em mente vai achar que passa
     quando não passa.
-  - **Cuidado com o teste que passa por sorte.** O caso está partido em dois de propósito: o C-01a
-    (teto) fica **ativo**, porque a propriedade já vale hoje e serve de guarda contra regressão; o
-    C-01b (ordem por venda) fica em `test.fail()`, porque não existe. Juntar os dois faria o
-    `test.fail()` acusar "passou mas era pra falhar" pelo motivo errado.
+  - **Por que o caso está partido em dois.** O C-01a prova o teto (empresa não repete) e o C-01b
+    prova a ordem (cada card traz o tipo mais vendido da empresa, contra a RPC `popular_parking_types`).
+    Nasceram assim porque o teto já valia antes da implementação, por coincidência de dados, então
+    um teste único teria passado pela metade certa e escondido a outra. Hoje os dois passam por
+    desenho.
   - **O ranking mal tem dado para ordenar.** Dos 56 tipos de vaga ativos, **53 têm zero venda**. Só
     Motion Park descoberta (25), Virapark coberta (11) e Abbapark coberta (1) têm histórico. Metade
-    da vitrine vai sair do critério de desempate, não de venda. Ao validar a ordem, confira os três
-    primeiros contra o banco e trate o resto como curadoria.
+    da vitrine sai do critério de desempate, não de venda. Ao validar a ordem, confira os três
+    primeiros contra o banco e trate o resto como curadoria. Vale tratar `popular_sort_order` como
+    curadoria explícita enquanto o volume de vendas não cresce.
   - Ordenar por tipo revela o que a agregação escondia: o Virapark vende **coberta**, o Motion Park
     vende **descoberta**. Isso é informação de negócio, e é o principal ganho da mudança.
 
@@ -249,7 +249,7 @@ não consegue cancelar, só o staff.
   esta página quebrada. Repita em `/maxi-park/maxi-park/uncovered` para confirmar que sem a
   amenidade a contradição some.
 
-## C-05 · Detalhe induz upgrade e nunca oferece downgrade  [**NÃO EXISTE** · reescrito 21/07/2026 · decisão da reunião de 21/07]
+## C-05 · Detalhe induz upgrade e nunca oferece downgrade  [**PRONTO** · verificado 22/07/2026 · commits `25321bf` e `e174423` · coberto por `e2e/consumer/C05-upgrade-sem-downgrade.spec.ts`]
 
 Este caso **trocou de natureza**. Antes ele cobrava um seletor de tipo de vaga no detalhe. A reunião
 descartou o seletor: a escolha do tipo passa a acontecer na busca, no card, e o detalhe só empurra
@@ -264,14 +264,21 @@ para cima.
     (o exemplo discutido foi "por mais R$ 10, cubra seu carro");
   - na página da **coberta**, **não** existe nenhuma oferta de descoberta. Quem já está no tipo
     melhor não é puxado para baixo.
-- **Depois observado (21/07/2026):** nenhuma das duas coisas existe. O tipo é o próprio recurso da
-  rota (`/p/:operator/:location/:parkingTypeCode`, `routes.tsx:182`), e os seletores do card de
-  reserva são datas, tarifa, add-ons, passageiros e cupom.
-- **Efeitos colaterais:** nenhum ao verificar. Se o upgrade for exercido, cria ou altera reserva.
+- **Depois observado (22/07, após o fix):** as duas coisas funcionam. O `UpgradeVagaNudge` mostra
+  "Por mais R$ 19,00, garanta a..." na vaga mais barata do Abbapark, e some na vaga premium. Os dois
+  testes passam.
+- **Efeitos colaterais:** nenhum ao verificar. Se o upgrade for exercido, é só um link para o outro
+  tipo, o cliente ainda não reservou nada.
 - **Armadilhas:**
   - **Assimetria é o comportamento correto, não bug.** Um testador que encontrar oferta só de um
     lado vai querer reportar como inconsistência. Está no roteiro justamente para não reportar.
     Pedro registrou na reunião que a assimetria é um dark pattern consciente.
+  - **O nudge aparece duas vezes no DOM**, uma no card do desktop e uma no CTA fixo do mobile
+    (`listing.tsx:269` e `:349`). Só um fica visível. Automatizar sem filtrar pelo visível casa com
+    os dois e quebra por strict mode. Custou uma execução.
+  - **O nudge aparece mesmo SEM datas escolhidas.** Foi um ajuste do fix (`e174423`): a página abre
+    sem datas, e o preço do delta usa a diária base. Não espere ter que escolher data para ver a
+    indução.
   - **O upgrade de VAGA não é o upgrade de TARIFA.** O `apply_fare_upgrade` troca Básica / Flex /
     Superflex e não encosta no tipo de vaga. Trocar descoberta por coberta muda o
     `location_parking_type_id`, o que mexe em capacidade nos dois tipos, em preço vindo de outro
@@ -809,7 +816,6 @@ que é onde quase todo mundo erra ao testar cupom.
 
 | Caso | Motivo |
 |---|---|
-| C-05 | O recurso não existe (a decisão da reunião ainda não foi implementada). `e2e/consumer/C05-upgrade-sem-downgrade.spec.ts` está escrito em `test.fixme` e vira o aceite da E2.1.3. |
 | C-12 | A lógica tem `deno test` do webhook. A **corrida** em si só aparece de ponta a ponta, e quem a detecta é o C-21a. Não force para dentro de um teste unitário. |
 | C-13 | Depende de esperar o hold inteiro. Fica manual até existir um jeito de encurtar `hold_minutes` só para a suíte. |
 | C-15 | Chamada direta à Edge com JWT, sem navegador. Cobertura correta é `deno test` da `voucher-pdf`, que hoje não existe. |
