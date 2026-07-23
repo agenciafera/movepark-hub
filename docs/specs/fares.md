@@ -3,7 +3,8 @@
 > **Status:** E2.8-e **completa no backend** — núcleo financeiro (`20260717000000_fare_tiers.sql`) +
 > passo 2 (auto-extensão por atraso de voo + notificações SMS/WhatsApp, `20260718000000_fare_flight_extension.sql`)
 > aplicados; Edges deployadas. Front (seletor no checkout E2.8-b, detalhe da reserva E2.8-c, upgrade
-> pós-reserva E2.8-d) e admin de config por unidade (E2.8-f) são as próximas subtarefas.
+> pós-reserva E2.8-d) implementado. A config por unidade (E2.8-f) foi **removida** em 23/07: a tarifa é
+> fonte única global, editada pelo Super Admin em `/manager/tarifas` (ver seção E2.8-f abaixo).
 
 ## O que é (e o que não é)
 
@@ -46,12 +47,13 @@ vaga+tarifa e os juros incidem sobre esse total).
 | Objeto | Papel |
 |---|---|
 | enum `fare_tier` | `basica` / `flex` / `superflex` |
-| tabela `fare` | catálogo global: `price_cents`, `sort_order`, `is_popular`, `cancel_window_minutes` (1440 / 1440 / 1), `benefits` (jsonb de flags), `is_active`. RLS: **leitura pública**, escrita só `hub_admin`. Seedada com os preços aprovados |
+| tabela `fare` | catálogo global **e fonte única**: `price_cents`, `sort_order`, `is_popular`, `cancel_window_minutes` (1440 / 1440 / 1), `benefits` (jsonb de flags), `is_active`. RLS: **leitura pública**; escrita só via RPC `admin_set_fare` (grant de escrita revogado de anon/authenticated). Seedada com os preços aprovados |
 | `booking.fare_tier` | Tarifa contratada (default `basica`) |
 | `booking.fare_price_cents` | snapshot do preço da Tarifa (receita Movepark) |
 | `booking.fare_cancel_until` | snapshot do **prazo de cancelamento grátis** (verdade do estorno) |
 | `booking.fare_benefits` | snapshot dos benefícios contratados (o que a Tarifa cobre) |
-| RPC `get_unit_fares(lpt_id?)` | Tarifas ativas para o checkout. O parâmetro é reservado para os **overrides por unidade** (preço/on-off) da E2.8-f; hoje devolve o catálogo global |
+| RPC `get_unit_fares(lpt_id?)` | Tarifas ativas para o checkout, sempre o **catálogo global**. O parâmetro é ignorado (mantido na assinatura porque criação, upgrade e front chamam por nome). Já foi o ponto de overlay por unidade; hoje não há preço por unidade |
+| RPC `admin_set_fare(...)` | Escreve uma tarifa global (preço, janela, ativo, popular, rótulo, ordem, benefícios). `security definer`, gate `is_hub_admin()`. Básica é forçada a `price_cents = 0`. Editor em `/manager/tarifas` |
 
 `benefits` (flags): `free_cancellation`, `email_confirmation`, `guaranteed_spot`, `plate_change`,
 `date_change`, `notifications_sms`, `flight_delay_protection`, `priority_support`.
@@ -135,8 +137,8 @@ disparo (best-effort, pós-resposta):
 ## Front (E2.8-b/c/d) — implementado
 
 - **E2.8-b · Seletor no checkout:** `ReservationCard` renderiza o seletor good-better-best (Flex
-  "Mais popular", default Flex) direto, com preços por unidade via `useUnitFares` (RPC
-  `get_unit_fares`) + `mergeUnitFares`, e o `FareComparisonDialog` ("Ver o que cada tarifa inclui").
+  "Mais popular", default Flex) direto, com o catálogo global via `useUnitFares` (RPC
+  `get_unit_fares`), e o `FareComparisonDialog` ("Ver o que cada tarifa inclui").
   Tarifa no payload de `create-booking`, total/breakdown e rótulo de cancelamento; refletido no
   `SummaryCard` do checkout.
 - **E2.8-c · Detalhe da reserva:** `FareDisplay` (nível, benefícios cobertos, "cancelável até …"
@@ -148,14 +150,16 @@ disparo (best-effort, pós-resposta):
   a Tarifa quando pago — sem confirmar/voucher), UI `FareUpgradeDialog` + botão no detalhe. Sem
   downgrade; idempotente. Validado e2e (Flex→Superflex, delta R$12 → reserva vira Superflex).
 
-## E2.8-f · Config de Tarifa por unidade (Frente A) — implementado
+## E2.8-f · Config de Tarifa por unidade — REMOVIDA (fonte única global, 23/07)
 
-`location_fare` (override por unidade: `enabled` + `price_cents_override`, RLS leitura pública +
-escrita hub_admin) sobrepõe o catálogo global. `get_unit_fares(lpt)` faz o **overlay**
-(`coalesce(override, catálogo)` + filtra desabilitadas); `_create_booking_core` usa o **preço/on-off
-efetivo da unidade** (checkout e cobrança batem). Escrita via RPC **`operator_set_unit_fare`**
-(gate `pricing:write`/hub_admin). UI: `/operator/fares` (`FareConfigCard` por tipo de vaga) +
-`useLocationFareConfig`/`useSetUnitFare`. Migration `20260721000000`.
+**Decisão de 23/07 (ClickUp `86ajnxf04` + `86ajnxeym`):** a tarifa é da **plataforma**, fonte única
+global, gerida só pelo Super Admin. O mecanismo por unidade saiu. A tabela `location_fare`, a RPC
+`operator_set_unit_fare`, a tela `/operator/fares` (`FareConfigCard`) e os hooks
+`useLocationFareConfig`/`useSetUnitFare` foram removidos. `get_unit_fares` lê só `public.fare` (o
+parâmetro de unidade virou ignorado); `_create_booking_core` e `apply_fare_upgrade` não mudaram
+(preservados os gates do upgrade). O editor agora vive em **`/manager/tarifas`** (só `hub_admin`),
+que escreve `public.fare` pela RPC **`admin_set_fare`**. Migrations `20260908000000` (editor) e
+`20260909000000` (remoção do por unidade).
 
 ## E2.8-f · Honrar alterações (Frente B) — troca de veículo implementada
 
@@ -174,12 +178,10 @@ cancelar+refazer (a Superflex cancela grátis até 1 min) — evita mexer em din
 **Operador troca placa**: `change-booking-vehicle` aceita `license_plate` (staff digita) além de
 `vehicle_id`; botão "Trocar placa" na `BookingDrawer`.
 
-**Exibição = cobrança (preço por unidade):** o `ReservationCard` e o `FareComparisonDialog` consomem
-`get_unit_fares(lpt)` (hook `useUnitFares`) — `mergeUnitFares` (em `reservation.logic.ts`, pura/testada)
-aplica o **preço efetivo da unidade** sobre as tarifas-padrão, mapeia `basic↔basica` e **descarta tiers
-desativados**; sem dados da unidade cai nos defaults. Assim o card bate com o que `_create_booking_core`
-cobra (não há mais divergência só-de-exibição em unidade com override). A seleção cai pra Flex/primeira
-válida se a tarifa escolhida não existir na unidade. Dead code `FareTierSelector.tsx` removido.
+**Exibição = cobrança:** o `ReservationCard` e o `FareComparisonDialog` consomem `get_unit_fares`
+(hook `useUnitFares`), que devolve o catálogo global. Como a mesma fonte alimenta a exibição e o
+`_create_booking_core`, o card bate com o que se cobra. A seleção cai pra Flex/primeira válida se a
+tarifa escolhida não estiver ativa. Dead code `FareTierSelector.tsx` removido.
 
 ## Pendências / refinamentos conhecidos
 

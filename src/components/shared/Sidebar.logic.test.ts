@@ -7,7 +7,7 @@ import {
   type NavItem,
   type NavSection,
 } from "./Sidebar.logic";
-import { operatorSections } from "./nav-items";
+import { managerSections, operatorSections } from "./nav-items";
 
 const items: NavItem<null>[] = [
   { to: "/operator", label: "Dashboard", icon: null },
@@ -28,12 +28,8 @@ const sections: NavSection<null>[] = [
     title: "Preços",
     items: [
       { to: "/operator/pricing", label: "Preços", icon: null, scope: "pricing:write" },
-      {
-        to: "/operator/fares",
-        label: "Planos de cancelamento",
-        icon: null,
-        scope: "pricing:write",
-      },
+      // Segundo item com o mesmo escopo, dado sintético só para exercitar o filtro.
+      { to: "/operator/item-b", label: "Item B", icon: null, scope: "pricing:write" },
       { to: "/operator/coupons", label: "Promoções", icon: null, scope: "coupons:write" },
     ],
   },
@@ -65,7 +61,7 @@ describe("filterSectionsByScopes", () => {
   it("filtra item por escopo e descarta seção que ficou vazia", () => {
     const out = filterSectionsByScopes(sections, (s) => s === "pricing:write");
     expect(out.map((s) => s.title)).toEqual(["Operação", "Preços"]); // Financeiro sumiu
-    expect(out[1].items.map((i) => i.label)).toEqual(["Preços", "Planos de cancelamento"]);
+    expect(out[1].items.map((i) => i.label)).toEqual(["Preços", "Item B"]);
   });
 
   it("com todos os escopos, mantém as seções na ordem", () => {
@@ -119,43 +115,23 @@ describe("buildBottomNav", () => {
 });
 
 /**
- * Plano de cancelamento é produto da Movepark, então o item não pode aparecer no
- * menu da empresa. O gate é `fares:write`, um escopo de PLATAFORMA (ADR-005):
- * um trigger no banco recusa concedê-lo a papel de empresa, e o `hasScope` do
- * front devolve true só para hub_admin (inclusive impersonando).
+ * Tarifa (Básica/Flex/Superflex) é produto da plataforma, editada só pelo Super
+ * Admin no /manager. Decisão de 23/07 (ClickUp 86ajnxeym + 86ajnxf04): o menu do
+ * operador deixa de ter qualquer item de tarifa, e o do manager passa a ter
+ * "Tarifas". Antes, o operador tinha "Planos de cancelamento" gateado por
+ * fares:write; agora a superfície do operador não existe.
  */
-describe("Planos de cancelamento fora do menu da empresa", () => {
-  const escoposDeEmpresa = [
-    "pricing:write",
-    "coupons:write",
-    "occupancy:read",
-    "addons:write",
-    "reviews:read",
-    "team:read",
-    "finance:read",
-    "locations:write",
-    "bookings:checkin",
-  ];
-
-  const rotulos = (has: (s: string) => boolean) =>
-    flattenSections(filterSectionsByScopes(operatorSections, has)).map((i) => i.label);
-
-  it("dono com todos os escopos de empresa não vê o item", () => {
-    const visiveis = rotulos((s) => escoposDeEmpresa.includes(s));
-
-    expect(visiveis).not.toContain("Planos de cancelamento");
-    // controle: os itens de empresa continuam aparecendo
-    expect(visiveis).toContain("Preços");
-    expect(visiveis).toContain("Promoções");
+describe("tarifa é do manager, não do operador", () => {
+  it("o menu do operador não tem item de tarifa", () => {
+    const rotas = flattenSections(operatorSections).map((i) => i.to);
+    expect(rotas).not.toContain("/operator/fares");
+    const rotulos = flattenSections(operatorSections).map((i) => i.label);
+    expect(rotulos).not.toContain("Planos de cancelamento");
+    expect(rotulos).not.toContain("Tarifas");
   });
 
-  it("hub_admin vê, porque o hasScope dele é sempre true", () => {
-    expect(rotulos(() => true)).toContain("Planos de cancelamento");
-  });
-
-  it("o item exige fares:write, e não pricing:write", () => {
-    const fares = flattenSections(operatorSections).find((i) => i.to === "/operator/fares");
-
-    expect(fares?.scope).toBe("fares:write");
+  it("o menu do manager tem Tarifas apontando para /manager/tarifas", () => {
+    const tarifas = flattenSections(managerSections).find((i) => i.to === "/manager/tarifas");
+    expect(tarifas?.label).toBe("Tarifas");
   });
 });

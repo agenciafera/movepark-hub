@@ -12,13 +12,13 @@ describe("BottomNav (operador)", () => {
       route: "/operator",
     });
 
-    // Fora da barra, nada de Planos de cancelamento nem Configurações antes de abrir o Mais.
+    // Fora da barra, nada de Configurações antes de abrir o Mais.
     expect(screen.queryByRole("link", { name: "Configurações" })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Mais opções" }));
 
     const menu = screen.getByRole("dialog");
-    expect(within(menu).getByRole("link", { name: "Planos de cancelamento" })).toBeInTheDocument();
+    expect(within(menu).getByRole("link", { name: "Promoções" })).toBeInTheDocument();
     expect(within(menu).getByRole("link", { name: "Configurações" })).toBeInTheDocument();
     expect(within(menu).getByRole("link", { name: "Repasses" })).toBeInTheDocument();
   });

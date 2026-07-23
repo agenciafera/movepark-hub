@@ -3682,6 +3682,19 @@ export type Database = {
           title: string
         }[]
       }
+      admin_set_fare: {
+        Args: {
+          p_benefits: Json
+          p_cancel_window_minutes?: number
+          p_is_active: boolean
+          p_is_popular: boolean
+          p_label: string
+          p_price_cents: number
+          p_sort_order: number
+          p_tier: Database["public"]["Enums"]["fare_tier"]
+        }
+        Returns: undefined
+      }
       anonymize_own_account: { Args: never; Returns: undefined }
       api_assert_lpt_company: {
         Args: { p_company_id: string; p_lpt_id: string }
@@ -4418,15 +4431,6 @@ export type Database = {
           p_location_parking_type_id: string
           p_rule: Json
           p_tiers?: Json
-        }
-        Returns: undefined
-      }
-      operator_set_unit_fare: {
-        Args: {
-          p_enabled: boolean
-          p_location_parking_type_id: string
-          p_price_cents?: number
-          p_tier: Database["public"]["Enums"]["fare_tier"]
         }
         Returns: undefined
       }

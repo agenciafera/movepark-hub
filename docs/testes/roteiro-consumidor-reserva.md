@@ -35,7 +35,7 @@ reconfere no código antes de mexer em qualquer linha de status.
 | C-15 | Voucher não existe antes da confirmação | PRONTO |
 | C-16 | Upgrade de tarifa: Básica para Superflex | PRONTO |
 | C-17 | Upgrade: downgrade e prazo bloqueados | PRONTO |
-| C-18 | Tarifa tem fonte única global, sem preço por unidade | **PENDENTE** (decisão 23/07) |
+| C-18 | Tarifa tem fonte única global, sem preço por unidade | **PRONTO** |
 | C-19 | Cancelar dentro da janela devolve 100% | PRONTO |
 | C-20 | Cancelar fora da janela é bloqueado | PRONTO |
 | C-21 | Superflex cancela até 1 minuto antes | PRONTO |
@@ -630,36 +630,35 @@ diferente da que nasceu com ela.
     PIX gerado antes do check-in e pago depois **aplica o upgrade mesmo assim**. Para reproduzir:
     gerar o QR com o check-in perto, deixar passar, e pagar. É a brecha mais interessante deste caso.
 
-## C-18 · Tarifa tem fonte única global, sem preço por unidade  [**PENDENTE** · decisão de 23/07/2026 · aguarda `86ajnxf04` + `86ajnxeym`]
+## C-18 · Tarifa tem fonte única global, sem preço por unidade  [**PRONTO** · `86ajnxf04` + `86ajnxeym`]
 
-> **Este caso trocou de natureza em 23/07.** Antes cobrava "a cobrança respeitar o preço por
-> unidade". Foi implementado nesse sentido (`dda3817`), mas a decisão de negócio inverteu: as tarifas
-> (Básica, Flex, Superflex) são da **plataforma**, fonte única global, geridas só pelo Super Admin.
-> Preço por unidade não deve existir. O caso agora prova a ausência dele.
+> **Este caso trocou de natureza em 23/07 e foi implementado.** Antes cobrava "a cobrança respeitar o
+> preço por unidade". A decisão de negócio inverteu: as tarifas (Básica, Flex, Superflex) são da
+> **plataforma**, fonte única global, geridas só pelo Super Admin. Preço por unidade não existe mais.
+> O caso agora prova a ausência dele.
 
-- **Antes:** a plataforma, num futuro próximo, tenta configurar um preço de tarifa diferente por
-  estacionamento.
-- **Passos:** verificar que não há como fazer isso.
+- **Antes:** a plataforma tentaria configurar um preço de tarifa diferente por estacionamento.
+- **Passos:** verificar que não há como fazer isso, e que o Super Admin edita as tarifas num só lugar.
 - **Depois esperado:**
   - a tabela `location_fare` não existe mais;
   - `get_unit_fares` devolve sempre o preço **global** (`fare.price_cents`), independente da unidade;
   - o operador não tem tela de edição de tarifa (nem via impersonação);
-  - o Super Admin edita as tarifas num editor **global** no `/manager`, e a mudança vale para todos.
-- **Depois observado (23/07):** a fonte ainda é por unidade. `location_fare` existe, `get_unit_fares`
-  faz `coalesce(lf.price_cents_override, f.price_cents)`, e o `hub_admin` edita preço por unidade
-  entrando como operador. Não há editor global no manager.
+  - o Super Admin edita as tarifas num editor **global** em `/manager/tarifas`, e a mudança vale para
+    todos os estacionamentos.
+- **Depois observado:** a fonte é única e global. `get_unit_fares` lê só `public.fare`;
+  `operator_set_unit_fare` e `location_fare` foram removidos; o menu do operador não tem item de
+  tarifa; `/manager/tarifas` edita preço, janela, ativo e benefícios de cada tier via a RPC
+  `admin_set_fare` (gate `is_hub_admin`).
 - **Efeitos colaterais:** nenhum ao verificar.
 - **Armadilhas:**
-  - **A divergência de cobrança já foi resolvida** (`dda3817`): hoje tela e cobrança leem a mesma
-    fonte. O que sobra não é o bug de valor, é o **recurso** de preço por unidade, que contraria a
-    regra "tarifa é da plataforma".
-  - **Não confundir com os gates do upgrade.** O mesmo commit trouxe a revalidação de prazo/status do
-    `apply_fare_upgrade` (tarefa `86ajmy41d`), que é correta e fica. Só o preço por unidade sai.
-  - **Cobertura:** `supabase/tests/fare_upgrade_unit_price.test.sql` hoje documenta o comportamento
-    antigo. Quando a remoção entrar, ele inverte: prova que não há como um preço por unidade divergir
-    do global, porque a coluna deixou de existir.
-  - Ordem de entrega: o editor global (`86ajnxeym`) vem junto ou antes da remoção. Remover primeiro
-    deixaria o Super Admin sem lugar para editar tarifa.
+  - **A divergência de cobrança já tinha sido resolvida** (`dda3817`): tela e cobrança leem a mesma
+    fonte. O que saiu não foi o bug de valor, foi o **recurso** de preço por unidade.
+  - **Os gates do upgrade ficam.** A revalidação de prazo/status do `apply_fare_upgrade` (tarefa
+    `86ajmy41d`) é correta e foi preservada: só o corpo de `get_unit_fares` mudou, `apply_fare_upgrade`
+    e `_create_booking_core` não foram tocados.
+  - **Cobertura:** `supabase/tests/fare_upgrade_unit_price.test.sql` foi invertido (prova a fonte única
+    global) e `supabase/tests/admin_set_fare.test.sql` cobre o editor (hub_admin grava, operador e dono
+    são barrados, Básica fica grátis). `location_fare.test.sql` saiu.
 
 ## C-19 · Cancelar dentro da janela devolve 100%  [PRONTO · coberto por `e2e/consumer/C19-cancelar-dentro-janela.spec.ts` + `supabase/tests/fare_cancel_window.test.sql` · `supabase/functions/cancel-booking/index.ts:147-185`]
 
@@ -826,6 +825,6 @@ que é onde quase todo mundo erra ao testar cupom.
 | C-13 | Depende de esperar o hold inteiro. Fica manual até existir um jeito de encurtar `hold_minutes` só para a suíte. |
 | C-15 | Chamada direta à Edge com JWT, sem navegador. Cobertura correta é `deno test` da `voucher-pdf`, que hoje não existe. |
 | C-17 | A brecha do QR de 1 hora depende de esperar o check-in passar. O resto (downgrade, prazo) é automatizável. |
-| C-18 | Aguarda a decisão de 23/07 ser implementada (editor global `86ajnxeym` + remoção do por unidade `86ajnxf04`). Vira pgTAP quando `location_fare` for dropada. |
+| C-18 | `supabase/tests/fare_upgrade_unit_price.test.sql` (invertido: fonte única global) + `admin_set_fare.test.sql` (editor, gate `is_hub_admin`). |
 | C-21 | Janela de 1 minuto é curta demais para clique confiável em navegador. Automatize pela Edge e pelo banco. |
 | C-22 | O fechamento assíncrono pode levar até 30 minutos. Fora do orçamento de tempo de um E2E; vira verificação de banco, feita depois. |

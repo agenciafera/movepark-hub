@@ -1,9 +1,9 @@
 // Itens de navegação do Hub. Fonte única para a Sidebar (desktop/tablet) e a BottomNav (mobile),
 // pra que nada que o usuário pode acessar fique fora de um dos dois.
 //
-// Nomes importam: "Preços" é o preço da diária (o que o parceiro cobra). "Planos de cancelamento"
-// são os planos Básica/Flex/Superflex da Movepark (a rota /operator/fares segue a mesma, só o
-// rótulo mudou). Cada item tem um ícone próprio: em tablet a sidebar é só-ícone.
+// Nomes importam: "Preços" é o preço da diária (o que o parceiro cobra). "Tarifas" são as tarifas
+// de flexibilidade Básica/Flex/Superflex da Movepark, editadas só pelo Super Admin no /manager
+// (a unidade não toca nelas). Cada item tem um ícone próprio: em tablet a sidebar é só-ícone.
 
 import {
   BarChart3,
@@ -54,6 +54,7 @@ export const managerSections: Section[] = [
       { to: "/manager/finance/payouts", label: "Repasses", icon: Receipt },
       { to: "/manager/finance/commissions", label: "Comissões", icon: Percent },
       { to: "/manager/finance/recipients", label: "Recebedores", icon: Landmark },
+      { to: "/manager/tarifas", label: "Tarifas", icon: ShieldCheck },
       { to: "/manager/attribution", label: "Atribuição", icon: PieChart },
     ],
   },
@@ -96,19 +97,6 @@ export const operatorSections: Section[] = [
         label: "Preços",
         icon: CircleDollarSign,
         scope: "pricing:write",
-      },
-      {
-        to: "/operator/fares",
-        label: "Planos de cancelamento",
-        shortLabel: "Planos",
-        icon: ShieldCheck,
-        // `fares:write` é escopo de PLATAFORMA (ADR-005): pertence à Movepark, e
-        // um trigger recusa concedê-lo a papel de empresa. Efeito: o item some
-        // do menu do parceiro, e o hub_admin continua vendo (o `hasScope` dele é
-        // sempre true, inclusive impersonando, que é como ele chega aqui).
-        // Antes era `pricing:write`, que é preço de diária e não tem relação
-        // com plano de cancelamento.
-        scope: "fares:write",
       },
       { to: "/operator/coupons", label: "Promoções", icon: Tag, scope: "coupons:write" },
     ],

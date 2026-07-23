@@ -36,6 +36,7 @@ Reservas
 Financeiro
   └─ Faturamento
   └─ Comissões
+  └─ Tarifas
 Usuários
 Configurações
 ────────────────
@@ -273,6 +274,19 @@ Moderação **pós-publicação**: a review já entra publicada; o Manager remov
 - **Notificações:** configurar templates de e-mail por evento (booking created, cancelled, etc.)
 - **Integrações:** tokens de API, webhooks
 - **Segurança:** logs de acesso, 2FA obrigatório
+
+---
+
+### 4.11 Tarifas
+
+**Rota:** `/manager/tarifas` (só `hub_admin`)
+
+Editor da tabela global `public.fare` (Básica/Flex/Superflex), a fonte única de tarifa da
+plataforma. Um card por tier, com preço, janela de cancelamento grátis, ativo, selo "popular",
+rótulo e benefícios. A Básica é sempre grátis (preço não editável). A escrita passa pela RPC
+`admin_set_fare` (gate `is_hub_admin()`); a mudança vale para todos os estacionamentos e reflete na
+busca e no checkout (que leem `get_unit_fares`). O parceiro não edita tarifa (ver
+[operator-panel.md](./operator-panel.md)). Decisão de 23/07 (ClickUp `86ajnxeym` + `86ajnxf04`).
 
 ---
 

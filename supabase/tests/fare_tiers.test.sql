@@ -23,7 +23,10 @@ select is((select cancel_window_minutes from public.fare where tier='basica'), 1
 -- ── get_unit_fares retorna as 3 ativas ────────────────────────────────────────
 select is((select count(*)::int from public.get_unit_fares(null)), 3, 'get_unit_fares lista as 3 Tarifas ativas');
 
--- ── RLS: catálogo é público pra leitura; escrita só hub_admin ─────────────────
+-- ── acesso: catálogo é público pra leitura; escrita direta é negada ───────────
+-- A escrita passou a fluir só pela RPC admin_set_fare (definer, gate is_hub_admin,
+-- 20260908000000). O grant de UPDATE foi revogado de anon/authenticated, então uma
+-- escrita direta nem chega na RLS: bate no privilégio e lança 42501.
 set local role anon;
 select isnt_empty('select 1 from public.fare', 'anon lê o catálogo de Tarifas');
 reset role;
@@ -38,13 +41,11 @@ begin
 end $$;
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.uc'))::text, true);
--- RLS bloqueia a escrita silenciosamente: o UPDATE filtrado pela policy USING afeta 0 linhas
--- (não lança 42501). Verificamos que nenhuma Tarifa foi alterada.
-update public.fare set price_cents = 999 where tier = 'flex';
+select throws_ok(
+  $$ update public.fare set price_cents = 999 where tier = 'flex' $$,
+  '42501', null,
+  'escrita direta no catálogo é negada (só a RPC admin_set_fare escreve)');
 reset role;
-select is(
-  (select count(*)::int from public.fare where price_cents = 999),
-  0, 'customer NÃO escreve no catálogo de Tarifas (RLS bloqueia a escrita)');
 
 -- ── criação de reserva com Tarifa (snapshot) ─────────────────────────────────
 do $$

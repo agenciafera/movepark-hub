@@ -577,26 +577,24 @@ estava nem o que faltava. A página divide em blocos nomeados, cada um responden
 - O deep-link legado `?edit=<id>` (usado pelo "Adicionar mais fotos" do preview) redireciona para a
   página com `replace`, sem deixar a listagem no histórico entre o preview e o editor.
 
-### Plano de cancelamento não existe para o parceiro
+### Tarifa não existe para o parceiro (é do Super Admin, no /manager)
 
-`/operator/fares` **não aparece no menu da empresa e não é alcançável por membro de empresa**. Preço
-e disponibilidade dos planos Flex e Superflex são produto da Movepark, então a tela é da equipe
-interna.
+O operador **não tem nenhuma tela de tarifa**. Preço, janela de cancelamento e benefícios das tarifas
+(Básica/Flex/Superflex) são produto da Movepark, fonte única global. A edição vive em
+**`/manager/tarifas`** (só `hub_admin`), não no painel do operador.
 
-O gate é o escopo de plataforma **`fares:write`** (ver [permissions.md](./permissions.md)): um
-trigger recusa concedê-lo a papel de empresa, e o `hasScope` do front devolve `true` só para
-`hub_admin`, inclusive impersonando, que é como ele chega na tela. Com um escopo só, o item some da
-sidebar, some da command palette (que filtra pela mesma função) e a rota redireciona quem digita a
-URL. Antes o item usava `pricing:write`, que é preço de diária e não tem relação com plano.
+Decisão de 23/07 (ClickUp `86ajnxf04` + `86ajnxeym`): o mecanismo por unidade saiu. A tela
+`/operator/fares` (`FareConfigCard`), a RPC `operator_set_unit_fare` e a tabela `location_fare` foram
+removidas; o item "Planos de cancelamento" saiu do menu do operador. Antes, o hub_admin editava
+entrando como operador via impersonation, o que o Pedro reconheceu como errado: ninguém no nível da
+unidade pode tocar nessas taxas.
 
-O RLS de `location_fare` e `fare` já exigia `is_hub_admin()` para escrever; o furo era a RPC
-**`operator_set_unit_fare`**, que sendo `SECURITY DEFINER` passa por cima do RLS e aceitava qualquer
-membro com `pricing:write` (na prática, dono e gerente da empresa). A RPC agora exige `is_hub_admin()`,
-alinhada com o RLS das tabelas que ela escreve. A UI gateia por **`session.role`**, o papel real, e
-não pelo `effectiveRole`: o hub_admin chega nessa tela por impersonation, quando o papel efetivo já
-virou `company_operator`, e `is_hub_admin()` também olha o papel real, então os dois batem.
+Agora a escrita é uma RPC **`admin_set_fare`** (`SECURITY DEFINER`, gate `is_hub_admin()`), e o grant
+de escrita direta em `public.fare` foi revogado de anon/authenticated: a tabela só é escrita pela
+RPC. `get_unit_fares` lê só o catálogo global.
 
-Migration `20260903000000_fare_edit_is_hub_admin_only.sql`, pgTAP em `location_fare.test.sql`.
+Migrations `20260908000000_admin_set_fare.sql` (editor) e `20260909000000_drop_location_fare.sql`
+(remoção do por unidade), pgTAP em `admin_set_fare.test.sql` e `fare_upgrade_unit_price.test.sql`.
 
 ### Busca do painel (command palette)
 

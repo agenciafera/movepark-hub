@@ -82,7 +82,7 @@ import OperatorFinance from "@/routes/operator/finance";
 import OperatorSettings from "@/routes/operator/settings";
 import OperatorFaq from "@/routes/operator/faq";
 import OperatorAddons from "@/routes/operator/addons";
-import OperatorFares from "@/routes/operator/fares";
+import ManagerTarifas from "@/routes/manager/tarifas";
 import OperatorPricing from "@/routes/operator/pricing";
 import OperatorCoupons from "@/routes/operator/coupons";
 import OperatorReviews from "@/routes/operator/reviews";
@@ -282,6 +282,7 @@ export const routes: RouteRecord[] = [
               { path: "reviews", element: <ManagerReviews /> },
               { path: "faq", element: <ManagerFaq /> },
               { path: "faq/categorias", element: <ManagerFaqCategorias /> },
+              { path: "tarifas", element: <ManagerTarifas /> },
               { path: "settings", element: <ManagerSettings /> },
               { path: "legal", element: <ManagerLegal /> },
             ],
@@ -321,13 +322,6 @@ export const routes: RouteRecord[] = [
               {
                 element: <RequireScope scope="pricing:write" />,
                 children: [{ path: "pricing", element: <OperatorPricing /> }],
-              },
-              {
-                // Plano de cancelamento é produto da Movepark: `fares:write` é
-                // escopo de plataforma, então nenhum membro de empresa alcança
-                // a rota, nem digitando a URL.
-                element: <RequireScope scope="fares:write" />,
-                children: [{ path: "fares", element: <OperatorFares /> }],
               },
               {
                 element: <RequireScope scope="coupons:write" />,

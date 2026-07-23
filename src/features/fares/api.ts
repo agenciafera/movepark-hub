@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { FARE_TIER_ORDER, type FareOption, type FareTier } from "@/lib/fares";
+import {
+  FARE_TIER_ORDER,
+  type FareBenefits,
+  type FareOption,
+  type FareTier,
+} from "@/lib/fares";
 
 export const faresKeys = {
   all: ["unit-fares"] as const,
@@ -59,56 +64,63 @@ export function useFareCatalog() {
   });
 }
 
-export type UnitFareConfig = {
+/**
+ * Linha editável do catálogo global de tarifas (a tabela `public.fare`), para o
+ * editor do Super Admin no /manager. Inclui as inativas, por isso lê a tabela
+ * direto em vez de `get_unit_fares` (que só devolve as ativas).
+ */
+export type FareAdminRow = {
   tier: FareTier;
   label: string;
-  default_price_cents: number;
-  enabled: boolean;
-  price_override_cents: number | null;
+  price_cents: number;
+  cancel_window_minutes: number | null;
+  is_active: boolean;
+  is_popular: boolean;
+  sort_order: number;
+  benefits: FareBenefits;
 };
 
-/** Config de Tarifa por unidade (catálogo + overrides) para o admin (E2.8-f). */
-export function useLocationFareConfig(lptId: string | undefined) {
+/** Catálogo global de tarifas para edição no /manager (só hub_admin lê a inativa útil). */
+export function useFareAdminList() {
   return useQuery({
-    queryKey: [...faresKeys.all, "config", lptId ?? ""] as const,
-    enabled: !!lptId,
-    queryFn: async (): Promise<UnitFareConfig[]> => {
-      const [catalog, overrides] = await Promise.all([
-        supabase.from("fare").select("tier, label, price_cents, sort_order").eq("is_active", true).order("sort_order"),
-        supabase.from("location_fare").select("tier, enabled, price_cents_override").eq("location_parking_type_id", lptId!),
-      ]);
-      if (catalog.error) throw catalog.error;
-      if (overrides.error) throw overrides.error;
-      const ovByTier = new Map((overrides.data ?? []).map((o) => [o.tier as FareTier, o]));
-      return (catalog.data ?? []).map((f) => {
-        const ov = ovByTier.get(f.tier as FareTier);
-        return {
-          tier: f.tier as FareTier,
-          label: f.label as string,
-          default_price_cents: f.price_cents as number,
-          enabled: ov?.enabled ?? true,
-          price_override_cents: ov?.price_cents_override ?? null,
-        };
-      });
+    queryKey: [...faresKeys.all, "admin"] as const,
+    queryFn: async (): Promise<FareAdminRow[]> => {
+      const { data, error } = await supabase
+        .from("fare")
+        .select(
+          "tier, label, price_cents, cancel_window_minutes, is_active, is_popular, sort_order, benefits",
+        )
+        .order("sort_order");
+      if (error) throw error;
+      return (data ?? []).map((r) => ({
+        tier: r.tier as FareTier,
+        label: r.label as string,
+        price_cents: r.price_cents as number,
+        cancel_window_minutes: r.cancel_window_minutes as number | null,
+        is_active: r.is_active as boolean,
+        is_popular: r.is_popular as boolean,
+        sort_order: r.sort_order as number,
+        benefits: (r.benefits ?? {}) as FareBenefits,
+      }));
     },
   });
 }
 
-/** Salva a config de uma Tarifa numa unidade (RPC operator_set_unit_fare, gate pricing:write). */
-export function useSetUnitFare() {
+/** Salva uma tarifa global (RPC admin_set_fare, gate is_hub_admin no servidor). */
+export function useAdminSetFare() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (args: {
-      location_parking_type_id: string;
-      tier: FareTier;
-      enabled: boolean;
-      price_cents: number | null;
-    }) => {
-      const { error } = await supabase.rpc("operator_set_unit_fare", {
-        p_location_parking_type_id: args.location_parking_type_id,
-        p_tier: args.tier,
-        p_enabled: args.enabled,
-        p_price_cents: args.price_cents ?? undefined,
+    mutationFn: async (row: FareAdminRow) => {
+      const { error } = await supabase.rpc("admin_set_fare", {
+        p_tier: row.tier,
+        p_price_cents: row.price_cents,
+        p_is_active: row.is_active,
+        p_is_popular: row.is_popular,
+        p_label: row.label,
+        p_sort_order: row.sort_order,
+        p_benefits: row.benefits,
+        // null (sem cancelamento grátis) vira omissão: o DEFAULT NULL da RPC cobre.
+        p_cancel_window_minutes: row.cancel_window_minutes ?? undefined,
       });
       if (error) throw error;
     },
