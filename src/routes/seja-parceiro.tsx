@@ -273,11 +273,18 @@ function ComoFunciona() {
               className="aspect-[4/5] h-full w-full object-cover object-[70%_center]"
             />
           </div>
-          {/* Card verde de sucesso, transbordando a foto no canto inferior. */}
-          <div className="absolute -bottom-2 left-6 right-2 rounded-xl border border-success/40 bg-canvas p-4 shadow-tier ring-4 ring-success/10 desktop:left-10 desktop:right-6">
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-success text-white">
-                <Check className="h-4 w-4" aria-hidden strokeWidth={3} />
+          {/* Card verde de sucesso, transbordando a foto no canto inferior. Verde
+              claro da escala green do Tailwind (o token `success`, #1F7A4D, é escuro
+              demais pro que o mockup pede): quadradinho green-100, círculo green-500,
+              borda green-200 e glow verde. Cantos em `rounded-md` (14px), menos
+              arredondado que o `rounded-xl` de antes. O ícone é quadrado claro com
+              um círculo verde dentro, como na referência. */}
+          <div className="absolute -bottom-2 left-6 right-2 rounded-md border border-green-200 bg-canvas p-4 shadow-[0_10px_40px_-6px_rgba(34,197,94,0.4)] desktop:left-10 desktop:right-6">
+            <div className="flex items-center gap-3.5">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-green-100">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-green-500 text-white">
+                  <Check className="h-3.5 w-3.5" aria-hidden strokeWidth={3} />
+                </span>
               </span>
               <div>
                 <p className="text-title-md text-ink">Cadastro aprovado!</p>
