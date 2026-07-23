@@ -825,6 +825,5 @@ que é onde quase todo mundo erra ao testar cupom.
 | C-13 | Depende de esperar o hold inteiro. Fica manual até existir um jeito de encurtar `hold_minutes` só para a suíte. |
 | C-15 | Chamada direta à Edge com JWT, sem navegador. Cobertura correta é `deno test` da `voucher-pdf`, que hoje não existe. |
 | C-17 | A brecha do QR de 1 hora depende de esperar o check-in passar. O resto (downgrade, prazo) é automatizável. |
-| C-18 | `supabase/tests/fare_upgrade_unit_price.test.sql` (invertido: fonte única global) + `admin_set_fare.test.sql` (editor, gate `is_hub_admin`). |
 | C-21 | Janela de 1 minuto é curta demais para clique confiável em navegador. Automatize pela Edge e pelo banco. |
 | C-22 | O fechamento assíncrono pode levar até 30 minutos. Fora do orçamento de tempo de um E2E; vira verificação de banco, feita depois. |
