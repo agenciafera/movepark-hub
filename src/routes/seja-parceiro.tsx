@@ -214,6 +214,64 @@ function usePrefersReducedMotion() {
 }
 
 /**
+ * Grifo animado tipo caneta marca-texto: quando a seção entra na tela, a banda
+ * pale varre da esquerda pra direita "pintando" a frase.
+ *
+ * Duas camadas resolvem a legibilidade durante a varredura: embaixo, o mesmo
+ * texto em branco (legível sobre o navy antes da caneta chegar); em cima, uma
+ * sobreposição recortada com a banda pale e o texto em ink, cuja largura cresce
+ * de 0 a 100%. Onde a caneta já passou lê-se ink sobre pale; onde ainda não, o
+ * branco de baixo aparece. `whitespace-nowrap` mantém as duas camadas alinhadas
+ * numa linha só. Com `prefers-reduced-motion` (ou sem IntersectionObserver) já
+ * nasce pintado, sem animar.
+ */
+function HighlightSweep({ children }: { children: string }) {
+  const reduced = usePrefersReducedMotion();
+  const [revealed, setRevealed] = React.useState(false);
+  const ref = React.useRef<HTMLSpanElement>(null);
+
+  React.useEffect(() => {
+    if (reduced || typeof IntersectionObserver === "undefined") {
+      setRevealed(true);
+      return;
+    }
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            setRevealed(true);
+            obs.disconnect();
+          }
+        }
+      },
+      { threshold: 0.6 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [reduced]);
+
+  return (
+    <span ref={ref} className="relative inline-block whitespace-nowrap align-baseline">
+      <span className="px-2 text-white">{children}</span>
+      <span
+        aria-hidden
+        className={cn(
+          "absolute inset-y-0 left-0 overflow-hidden",
+          !reduced && "transition-[width] duration-700 ease-out",
+        )}
+        style={{ width: reduced || revealed ? "100%" : "0%" }}
+      >
+        <span className="block whitespace-nowrap rounded-[4px] bg-mp-pale px-2 text-ink">
+          {children}
+        </span>
+      </span>
+    </span>
+  );
+}
+
+/**
  * "Como funciona": foto à esquerda (fixa no desktop) e os passos à direita, que o
  * scroll vai ativando um a um, como no mockup. O scroll-spy usa um
  * IntersectionObserver com faixa de 0px no centro da tela (`-50% 0px -50%`): o
@@ -283,7 +341,7 @@ function ComoFunciona() {
               borda green-200 e glow verde. Cantos em `rounded-md` (14px), menos
               arredondado que o `rounded-xl` de antes. O ícone é quadrado claro com
               um círculo verde dentro, como na referência. */}
-          <div className="absolute -bottom-2 left-6 right-2 rounded-md border border-green-200 bg-canvas p-4 shadow-[0_10px_40px_-6px_rgba(34,197,94,0.4)] desktop:left-10 desktop:right-6">
+          <div className="absolute -bottom-2 left-6 right-2 rounded-md border border-green-200 bg-canvas p-4 shadow-[0_8px_28px_-12px_rgba(34,197,94,0.15)] desktop:left-10 desktop:right-6">
             <div className="flex items-center gap-3.5">
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-green-100">
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-green-500 text-white">
@@ -709,28 +767,23 @@ export default function SejaParceiroPage() {
       {/* CTA final. Eyebrow em `text-white/70` (não indigo): na banda navy o indigo
           fica escuro demais sobre o fundo escuro. É o mesmo tratamento do eyebrow do
           hero.
-          Grifo em "encher suas vagas": banda `mp-pale` (clara) com texto `ink`. Não
-          uso violeta (reservado a acionável) nem a banda ficaria legível com texto
-          branco; a pale sobre navy dá ~13:1 e lê como marca-texto. `box-decoration-
-          clone` mantém o preenchimento nas duas linhas se quebrar. */}
+          Grifo em "encher suas vagas": banda `mp-pale` com texto `ink`, pintada por
+          `HighlightSweep` quando a seção entra na tela (caneta marca-texto). Pale +
+          ink dá ~13:1; não uso violeta (reservado a acionável). */}
       <section className="bg-mp-navy">
         <div className="mx-auto max-w-[1080px] px-4 py-16 text-center text-white desktop:px-8 desktop:py-20">
           <span className="text-badge uppercase tracking-[0.4px] text-white/70">Risco zero</span>
           <h2 className="mx-auto mt-3 max-w-2xl text-balance text-display-2xl text-white">
-            Você está pronto pra{" "}
-            <span className="box-decoration-clone rounded-[4px] bg-mp-pale px-2 text-ink">
-              encher suas vagas?
-            </span>
+            Você está pronto pra <HighlightSweep>encher suas vagas?</HighlightSweep>
           </h2>
-          <p className="mx-auto mt-4 max-w-lg text-balance text-body-md text-white/80">
+          {/* Sem `max-w` no desktop pra caber numa linha só; no mobile o `max-w-lg`
+              segura a quebra. */}
+          <p className="mx-auto mt-4 max-w-lg text-balance text-body-md text-white/80 desktop:max-w-none">
             Cadastre seu estacionamento em 2 minutos. Sem custo pra começar.
           </p>
           <div className="mt-7 flex justify-center">
             <SejaParceiroCta onClick={openModal}>Quero ser parceiro</SejaParceiroCta>
           </div>
-          <p className="mx-auto mt-6 max-w-md text-balance text-caption-sm text-white/60">
-            Sem mensalidade. Sem exclusividade. Você põe as vagas, a gente traz o cliente.
-          </p>
         </div>
       </section>
     </>

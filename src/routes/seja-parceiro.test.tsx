@@ -126,13 +126,15 @@ describe("SejaParceiroPage — depoimentos", () => {
 describe("SejaParceiroPage — CTA final", () => {
   it("grifa 'encher suas vagas' com banda clara e texto legível", () => {
     // O grifo usa banda pale + texto ink (não violeta, que é reservado a
-    // acionável). Se alguém trocar por bg-mp-primary, a regra de cor cai.
+    // acionável). O HighlightSweep renderiza o texto duas vezes (base branca +
+    // overlay pintado), então buscamos a camada pintada entre os matches.
     renderPage();
 
-    const grifo = screen.getByText("encher suas vagas?");
-    expect(grifo.className).toContain("bg-mp-pale");
-    expect(grifo.className).toContain("text-ink");
-    expect(grifo.className).not.toContain("bg-mp-primary");
+    const matches = screen.getAllByText("encher suas vagas?");
+    const grifo = matches.find((el) => el.className.includes("bg-mp-pale"));
+    expect(grifo).toBeTruthy();
+    expect(grifo!.className).toContain("text-ink");
+    for (const el of matches) expect(el.className).not.toContain("bg-mp-primary");
   });
 });
 
