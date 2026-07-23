@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { Star } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,7 +32,7 @@ function ReviewRow({ r, companyId }: { r: OperatorReview; companyId: string }) {
   }
 
   return (
-    <div className="rounded-md border border-hairline bg-canvas p-4">
+    <Card className="p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <RatingStars value={r.rating} size="sm" />
@@ -82,7 +83,7 @@ function ReviewRow({ r, companyId }: { r: OperatorReview; companyId: string }) {
           Responder
         </Button>
       )}
-    </div>
+    </Card>
   );
 }
 

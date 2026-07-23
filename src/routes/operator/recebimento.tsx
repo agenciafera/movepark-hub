@@ -16,6 +16,7 @@ import {
 import { useAuth } from "@/auth/context";
 import { Wordmark } from "@/components/shared/Brand";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PayoutKycWizard } from "@/features/payouts/PayoutKycWizard";
 import {
@@ -158,7 +159,7 @@ export default function OperatorRecebimento() {
           {loading ? (
             <div className="py-16 text-center text-muted">Carregando…</div>
           ) : step === "dados" ? (
-            <div className="flex flex-col gap-5 rounded-md border border-hairline bg-canvas p-6 tablet:p-8">
+            <Card className="flex flex-col gap-5 p-6 tablet:p-8">
               <div className="space-y-1">
                 <h1 className="text-display-sm text-ink">Seus dados de recebimento</h1>
                 <p className="text-body-sm text-muted">
@@ -183,9 +184,9 @@ export default function OperatorRecebimento() {
                 submitting={saveAccount.isPending}
                 onSkip={() => navigate("/operator")}
               />
-            </div>
+            </Card>
           ) : step === "contrato" ? (
-            <div className="flex flex-col gap-5 rounded-md border border-hairline bg-canvas p-6 tablet:p-8">
+            <Card className="flex flex-col gap-5 p-6 tablet:p-8">
               <div className="space-y-1">
                 <h1 className="text-display-sm text-ink">Contrato de parceria</h1>
                 <p className="text-body-sm text-muted">
@@ -239,7 +240,7 @@ export default function OperatorRecebimento() {
                   Voltar aos dados
                 </Button>
               </div>
-            </div>
+            </Card>
           ) : (
             <div className="flex flex-col gap-5">
               <div className="relative flex flex-col items-start gap-3 overflow-hidden rounded-lg border border-success/30 bg-success/5 p-6 duration-500 animate-in fade-in zoom-in-95">
@@ -284,7 +285,7 @@ export default function OperatorRecebimento() {
                   </details>
                 </div>
               ) : (
-                <div className="flex items-start gap-3 rounded-md border border-hairline bg-canvas p-5">
+                <Card className="flex items-start gap-3 p-5">
                   <Clock className="mt-0.5 h-5 w-5 shrink-0 text-mp-indigo" />
                   <div>
                     <p className="text-body-sm font-medium text-ink">
@@ -296,7 +297,7 @@ export default function OperatorRecebimento() {
                       WhatsApp.
                     </p>
                   </div>
-                </div>
+                </Card>
               )}
 
               <Button asChild variant="ghost" className="w-fit">

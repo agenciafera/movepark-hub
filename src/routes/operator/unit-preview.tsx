@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Wordmark } from "@/components/shared/Brand";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { UnitPreviewCard } from "@/features/onboarding/publish/UnitPreviewCard";
 import { usePreviewUnit } from "@/features/onboarding/publish/previewApi";
 import { OnboardingJourney } from "@/components/shared/OnboardingJourney";
@@ -65,12 +66,12 @@ export default function UnitPreviewPage() {
         {isLoading ? (
           <div className="py-16 text-center text-muted">Carregando pré-visualização…</div>
         ) : !unit ? (
-          <div className="rounded-md border border-hairline bg-canvas p-8 text-center">
+          <Card className="p-8 text-center">
             <p className="text-body-md text-ink">Estacionamento não encontrado.</p>
             <p className="mt-1 text-body-sm text-muted">
               Ela pode não existir ou não pertencer à sua empresa.
             </p>
-          </div>
+          </Card>
         ) : (
           <>
             <OnboardingJourney
@@ -187,7 +188,7 @@ export default function UnitPreviewPage() {
                   </>
                 ) : (
                   <>
-                    <div className="rounded-md border border-hairline bg-canvas p-5">
+                    <Card className="p-5">
                       <h2 className="text-title-md text-ink">Link público do seu estacionamento</h2>
                       {absoluteUrl ? (
                         <>
@@ -220,7 +221,7 @@ export default function UnitPreviewPage() {
                           Cadastre ao menos um tipo de vaga para gerar o link público.
                         </p>
                       )}
-                    </div>
+                    </Card>
 
                     <PhotosCallout
                       hasPhotos={unit.photos.length > 0}

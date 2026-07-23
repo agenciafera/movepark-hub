@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { Users, UserPlus } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -167,7 +168,7 @@ function MemberRow({
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-hairline bg-canvas p-4">
+    <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
       <div className="min-w-0">
         <p className="truncate text-body-sm font-medium text-ink">
           {m.full_name ?? m.email ?? "Usuário"}
@@ -212,7 +213,7 @@ function MemberRow({
             </Button>
           ))}
       </div>
-    </div>
+    </Card>
   );
 }
 
