@@ -67,24 +67,30 @@ describe("SejaParceiroPage — par de cards dor/resposta", () => {
 });
 
 describe("SejaParceiroPage — como funciona", () => {
-  it("mostra os três passos legíveis, sem desbotar os seguintes", () => {
-    // O mockup apagava os passos 2 e 3 a ponto de reprovar contraste. Se alguém
-    // reintroduzir o efeito via opacity/text-white, este teste cai.
+  it("mostra os três passos com título e barra de destaque", () => {
     renderPage();
 
-    const passos = [...document.querySelectorAll("ol > li")];
+    const passos = [...document.querySelectorAll("li[data-step]")];
     expect(passos).toHaveLength(3);
-    for (const p of passos) {
-      expect(p.className).not.toMatch(/opacity-[0-7]?[05]\b/);
-    }
     expect(screen.getByRole("heading", { name: /Cadastro rápido/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Suas vagas no ar/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Dinheiro na conta/i })).toBeInTheDocument();
   });
 
-  it("o card de aprovação flutua sobre a foto do lote", () => {
+  it("o primeiro passo entra em foco por padrão, sem desbotar", () => {
+    // O foco (ativo) muda com o scroll; sem scroll, o passo 1 é o ativo e não
+    // pode estar desbotado. É o conteúdo do primeiro passo que precisa estar
+    // sempre legível ao abrir a página.
     renderPage();
-    expect(screen.getByText("Cadastro aprovado")).toBeInTheDocument();
+
+    const primeiro = document.querySelector('li[data-step="0"]')!;
+    const conteudo = primeiro.querySelector("div")!;
+    expect(conteudo.className).not.toContain("opacity-40");
+  });
+
+  it("o card verde de aprovação flutua sobre a foto", () => {
+    renderPage();
+    expect(screen.getByText("Cadastro aprovado!")).toBeInTheDocument();
   });
 });
 

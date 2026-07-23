@@ -13,7 +13,7 @@ import {
   FileText,
   Radio,
   Banknote,
-  CheckCircle2,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -24,7 +24,9 @@ import { PartnerLogos } from "@/features/partners/PartnerLogos";
 import { useGsapReveal } from "@/hooks/useGsapReveal";
 
 const HERO_IMAGE = "/images/seja-parceiro-acordo-sunset.webp";
-const STEPS_IMAGE = "/Estacionamentos/virapark/virapark_001.webp";
+// Mesma foto do hero, como na referência do mockup. Reaproveitar não pesa: o
+// hero já carregou a imagem, e aqui ela entra recortada em retrato.
+const STEPS_IMAGE = "/images/seja-parceiro-acordo-sunset.webp";
 
 // Sinais de confiança. O destaque é um rótulo curto em todos os quatro: misturar
 // "R$ 0" (moeda), "100%" (porcentagem) e "PIX & cartão" (texto) fazia a fileira
@@ -213,15 +215,17 @@ function usePrefersReducedMotion() {
 
 /**
  * "Como funciona": foto à esquerda (fixa no desktop) e os passos à direita, que o
- * scroll vai ativando um a um. O scroll-spy usa um IntersectionObserver com faixa
- * de 0px no centro da tela (`-50% 0px -50%`): o passo cujo miolo cruza o meio da
- * viewport vira o ativo, e o trilho colorido cresce até ele.
+ * scroll vai ativando um a um, como no mockup. O scroll-spy usa um
+ * IntersectionObserver com faixa de 0px no centro da tela (`-50% 0px -50%`): o
+ * passo cujo miolo cruza o meio da viewport vira o ativo (um de cada vez).
  *
- * A ativação NÃO derruba o contraste: título e descrição ficam sempre em ink/body
- * (o mockup desbotava os passos seguintes a ponto de reprovar o AA). O que muda
- * entre ativo e inativo é só o ícone (preenche em indigo) e o trilho. Com
- * `prefers-reduced-motion`, o observer nem monta: o passo 1 fica ativo e pronto,
- * sem nada mexer no scroll.
+ * O ativo ganha barra vertical em indigo à esquerda e texto cheio; os inativos
+ * ficam desbotados (barra cinza, texto a 40%), igual à referência. Isso derruba o
+ * contraste dos passos que não estão em foco, então tem duas salvaguardas: (1) é
+ * um estado transitório, cada passo fica legível quando entra no centro; (2) com
+ * `prefers-reduced-motion` o observer nem monta, nada desbota e o passo 1 fica
+ * marcado, tudo legível. Sem esse par, quem não rola a página ficaria com os
+ * passos 2 e 3 ilegíveis pra sempre.
  */
 function ComoFunciona() {
   const reduced = usePrefersReducedMotion();
@@ -256,71 +260,70 @@ function ComoFunciona() {
       </div>
 
       <div className="mt-12 grid grid-cols-1 items-start gap-10 tablet:grid-cols-2 desktop:gap-14">
-        {/* Foto: fixa no desktop enquanto os passos correm ao lado. `pb-10` no
-            mobile abre o espaço que o card de aprovação ocupa ao transbordar. */}
-        <div className="relative pb-10 tablet:sticky tablet:top-24 tablet:pb-0">
-          <div className="overflow-hidden rounded-xl">
+        {/* Foto: fixa no desktop enquanto os passos correm ao lado. Recorte em
+            retrato (aspect-[4/5]), com o foco à direita pra pegar o aperto de mão.
+            `pb-12` no mobile abre o espaço que o card verde ocupa ao transbordar. */}
+        <div className="relative pb-12 tablet:sticky tablet:top-24 tablet:pb-0">
+          <div className="overflow-hidden rounded-2xl">
             <img
               src={STEPS_IMAGE}
-              alt="Pátio de um estacionamento parceiro da Movepark"
+              alt="Dono de estacionamento e cliente se cumprimentando no pátio"
               loading="lazy"
               decoding="async"
-              className="aspect-[4/3] h-full w-full object-cover"
+              className="aspect-[4/5] h-full w-full object-cover object-[70%_center]"
             />
           </div>
-          <div className="absolute -bottom-0 left-4 right-4 rounded-md border border-hairline bg-canvas p-4 shadow-tier desktop:left-8 desktop:right-10">
+          {/* Card verde de sucesso, transbordando a foto no canto inferior. */}
+          <div className="absolute -bottom-2 left-6 right-2 rounded-xl border border-success/40 bg-canvas p-4 shadow-tier ring-4 ring-success/10 desktop:left-10 desktop:right-6">
             <div className="flex items-start gap-3">
-              <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-mp-pale text-mp-indigo">
-                <CheckCircle2 className="h-4 w-4" aria-hidden />
+              <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-success text-white">
+                <Check className="h-4 w-4" aria-hidden strokeWidth={3} />
               </span>
               <div>
-                <p className="text-title-md text-ink">Cadastro aprovado</p>
+                <p className="text-title-md text-ink">Cadastro aprovado!</p>
                 <p className="mt-1 text-body-sm text-body">
-                  Suas vagas já estão na busca e podem receber reserva.
+                  Parabéns! Você já pode começar a receber reservas pela Movepark.
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Passos. O trilho vive em dois traços sobrepostos em `left-6` (centro do
-            ícone de 48px): o cinza de fundo e o indigo que cresce até o passo ativo. */}
-        <ol className="relative">
-          <span
-            className="absolute left-6 top-6 bottom-6 w-px bg-hairline tablet:block"
-            aria-hidden
-          />
-          <span
-            className="absolute left-6 top-6 w-px bg-mp-indigo transition-[height] duration-500 ease-out"
-            style={{
-              height: reduced
-                ? "0%"
-                : `calc((100% - 3rem) * ${active / (STEPS.length - 1)})`,
-            }}
-            aria-hidden
-          />
+        {/* Passos. Cada um tem a própria barra vertical à esquerda (não um trilho
+            contínuo): indigo no ativo, cinza nos demais. */}
+        <ol className="flex flex-col gap-2">
           {STEPS.map((s, i) => {
-            const on = reduced ? i === 0 : i <= active;
+            const on = i === active;
+            const dim = !reduced && !on;
             return (
               <li
                 key={s.n}
                 data-step={i}
                 ref={(el) => (stepRefs.current[i] = el)}
-                className="relative flex gap-5 pb-10 last:pb-0"
+                className="flex items-stretch gap-6 py-4"
               >
                 <span
                   className={cn(
-                    "relative z-10 inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-colors duration-300",
-                    on ? "bg-mp-indigo text-white" : "bg-mp-pale text-mp-indigo",
+                    "w-[3px] shrink-0 rounded-full transition-colors duration-300",
+                    on ? "bg-mp-indigo" : "bg-hairline",
+                  )}
+                  aria-hidden
+                />
+                <div
+                  className={cn(
+                    "flex gap-5 transition-opacity duration-300",
+                    dim && "opacity-40",
                   )}
                 >
-                  <s.icon className="h-5 w-5" aria-hidden />
-                </span>
-                <div className="pt-1.5">
-                  <h3 className="text-title-md text-ink">
-                    <span className="tabular-nums text-muted">{s.n}.</span> {s.title}
-                  </h3>
-                  <p className="mt-1.5 text-body-sm text-body">{s.desc}</p>
+                  <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-mp-pale text-mp-indigo">
+                    <s.icon className="h-6 w-6" aria-hidden />
+                  </span>
+                  <div className="pt-1.5">
+                    <h3 className="text-title-md text-ink">
+                      <span className="tabular-nums text-muted">{s.n}.</span> {s.title}
+                    </h3>
+                    <p className="mt-1.5 text-body-sm text-body">{s.desc}</p>
+                  </div>
                 </div>
               </li>
             );
