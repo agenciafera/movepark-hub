@@ -1163,3 +1163,32 @@ where profile_id = '055deb74-65a3-43e2-8c6d-2310e607be3c'
 **Efeitos colaterais desta parte:** K-02 segura vaga real (a `pending` conta na capacidade até
 expirar ou cancelar); uma reserva que fosse paga dispararia e-mail de confirmação (não pague);
 `add_vehicle` grava veículo real no perfil de teste. Nada aqui manda e-mail para terceiro.
+
+---
+
+# Parte IV · As 4 tools que não passam pelo chat (MCP direto)
+
+`request_login_otp`, `verify_login_otp`, `whoami` e `create_checkout_link` não são expostas ao chat do
+site (o site usa a sessão do navegador). Validadas na superfície MCP `/customer`, em 23/07, **de dentro
+da própria página**, reusando o token de sessão do usuário logado (a chamada roda no `fetch` da página
+e devolve só a resposta; o token nunca sai do navegador).
+
+| Tool | Como validei | Resultado |
+|---|---|---|
+| `whoami` | `tools/call` com o JWT da sessão | `authenticated: true`, `user_id` e telefone do próprio usuário |
+| `create_checkout_link` | `tools/list` e `tools/call` com JWT de usuário | **ausente** da lista (20 tools) e **negado** na chamada ("Tool indisponível"): escopo de plataforma, só chave confiável |
+| `verify_login_otp` | `tools/call` com código `000000` | rejeitado ("Token has expired or is invalid", `isError`), sem disparar mensagem |
+| `request_login_otp` | não disparado | envia OTP real (mensagem no WhatsApp/e-mail); validação do envio fica para uma rodada controlada, para não spammar. O par `verify` já prova a fiação |
+
+**Conclusão:** as 21 tools de consumidor estão exercitadas (17 via chat na Parte III + estas 4 na
+superfície MCP), menos o **envio** real de `request_login_otp`, deixado de fora de propósito.
+
+**Reuso de sessão (a mecânica de auth silenciosa do site):** provado nas duas camadas. Pela Edge
+`/chat` (grupo K) e agora **página → MCP `/customer` direto**, ambos com o mesmo JWT da sessão do
+navegador, sem OTP. A fronteira de segurança é o **tipo de credencial**, não a origem: JWT de sessão =
+usuário do site; chave `mp_` confiável com `identity:assert` = agente externo (WhatsApp). O
+`create_checkout_link` é o único que o usuário do site **não** recebe (é de plataforma).
+
+**Ainda não construído (canal WhatsApp):** `assert_verified_identity` e o escopo `identity:assert` não
+existem no código. É o que falta para o agente de WhatsApp autenticar um número já verificado pela Meta
+sem OTP. Ver o plano em `agent-booking.md`.
