@@ -426,13 +426,32 @@ function SejaParceiroCta({
 export default function SejaParceiroPage() {
   const [open, setOpen] = React.useState(false);
   const openModal = () => setOpen(true);
-  // Reveal dos dois cards de dor/resposta: sobem e aparecem em sequência quando a
-  // seção entra na dobra. O hook já ignora tudo sob prefers-reduced-motion.
+  // Reveals no scroll (GSAP). Cada seção sobe e aparece em sequência quando entra
+  // na dobra; o hook ignora tudo sob prefers-reduced-motion. `[data-reveal]` marca
+  // os elementos animados de cada bloco.
   const painResponseRef = useGsapReveal<HTMLDivElement>({
     selector: "[data-reveal-card]",
     y: 28,
     stagger: 0.14,
     start: "top 82%",
+  });
+  const metricsRef = useGsapReveal<HTMLElement>({
+    selector: "[data-reveal]",
+    y: 16,
+    stagger: 0.08,
+    start: "top 90%",
+  });
+  const benefitsRef = useGsapReveal<HTMLDivElement>({
+    selector: "[data-reveal]",
+    y: 24,
+    stagger: 0.06,
+    start: "top 85%",
+  });
+  const testimonialsRef = useGsapReveal<HTMLDivElement>({
+    selector: "[data-reveal]",
+    y: 24,
+    stagger: 0.06,
+    start: "top 85%",
   });
 
   return (
@@ -620,11 +639,12 @@ export default function SejaParceiroPage() {
           acima, um segundo bloco de peso competia com eles; aqui a faixa de filetes
           funciona como respiro entre a promessa e o mecanismo. Os divisores só
           aparecem no desktop: empilhado, cada linha já se separa sozinha. */}
-      <section className="mx-auto max-w-[1080px] px-4 py-4 desktop:px-8">
+      <section ref={metricsRef} className="mx-auto max-w-[1080px] px-4 py-4 desktop:px-8">
         <dl className="grid grid-cols-2 border-y border-hairline desktop:grid-cols-4">
           {METRICS.map((m, i) => (
             <div
               key={m.value}
+              data-reveal
               className={cn(
                 "px-2 py-8 desktop:px-6",
                 // Filete só entre colunas, nunca na primeira de cada linha.
@@ -644,8 +664,11 @@ export default function SejaParceiroPage() {
 
       {/* Benefícios */}
       <section className="border-y border-hairline bg-surface-soft">
-        <div className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-20">
-          <h2 className="mx-auto max-w-2xl text-center text-display-2xl text-ink">
+        <div
+          ref={benefitsRef}
+          className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-20"
+        >
+          <h2 data-reveal className="mx-auto max-w-2xl text-center text-display-2xl text-ink">
             Por que colocar seu estacionamento aqui
           </h2>
           {/* Grade uniforme 3x2, como nos dois mockups. Era um bento com dois
@@ -656,6 +679,7 @@ export default function SejaParceiroPage() {
             {BENEFITS.map((b) => (
               <div
                 key={b.title}
+                data-reveal
                 className="rounded-lg border border-hairline bg-canvas p-6"
               >
                 <span className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-mp-pale text-mp-indigo">
@@ -696,13 +720,19 @@ export default function SejaParceiroPage() {
           performance (que a gente não tem). `items-stretch` + `flex-1` na citação
           alinham a assinatura na base de cada card. */}
       <section className="border-y border-hairline bg-surface-soft">
-        <div className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-20">
-          <h2 className="text-center text-display-2xl text-ink">Quem já é parceiro conta</h2>
+        <div
+          ref={testimonialsRef}
+          className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-20"
+        >
+          <h2 data-reveal className="text-center text-display-2xl text-ink">
+            Quem já é parceiro conta
+          </h2>
 
           <div className="mt-10 grid grid-cols-1 items-stretch gap-5 tablet:grid-cols-2">
             {TESTIMONIALS.filter((t) => t.featured).map((t) => (
               <figure
                 key={t.name}
+                data-reveal
                 className="flex flex-col rounded-xl border border-hairline bg-canvas p-7 desktop:p-8"
               >
                 <div className="flex items-start justify-between gap-4">
@@ -727,6 +757,7 @@ export default function SejaParceiroPage() {
             {TESTIMONIALS.filter((t) => !t.featured).map((t) => (
               <figure
                 key={t.name}
+                data-reveal
                 className="flex flex-col rounded-lg border border-hairline bg-canvas p-6"
               >
                 <img
