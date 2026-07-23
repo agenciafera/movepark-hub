@@ -27,9 +27,22 @@ type Props = {
   /** Texto acima da faixa. Passe `null` pra esconder. */
   title?: string | null;
   className?: string;
+  /**
+   * Faixa rolando em loop (marquee) com fade nas laterais e logos em cinza.
+   * Sem isso, o layout é o mural estático (usado em `/sobre`).
+   */
+  marquee?: boolean;
 };
 
-export function PartnerLogos({ title = "Estacionamentos que já são Movepark", className }: Props) {
+export function PartnerLogos({
+  title = "Estacionamentos que já são Movepark",
+  className,
+  marquee = false,
+}: Props) {
+  if (marquee) {
+    return <PartnerMarquee title={title} className={className} />;
+  }
+
   return (
     <div className={cn("text-center", className)}>
       {title && <p className="text-caption uppercase tracking-widest text-muted">{title}</p>}
@@ -52,6 +65,71 @@ export function PartnerLogos({ title = "Estacionamentos que já são Movepark", 
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+/**
+ * Marquee: os logos deslizam da direita pra esquerda em loop contínuo. O truque do
+ * loop sem emenda é duplicar a lista em dois blocos idênticos e mover o trilho até
+ * `-50%`: quando o primeiro bloco sai de cena, o segundo ocupa o mesmo lugar e a
+ * animação reinicia sem salto. O `pr` no fim de cada bloco mantém o espaçamento
+ * constante na costura.
+ *
+ * Fade nas laterais via `mask-image` (o Tailwind não traz utilitário de máscara).
+ * Cinza via `grayscale` + opacidade: os SVGs são coloridos, então dessaturamos em
+ * vez de recolorir. Com `prefers-reduced-motion` o trilho para (fica estático).
+ */
+function PartnerMarquee({ title, className }: { title?: string | null; className?: string }) {
+  const fade =
+    "linear-gradient(to right, transparent, #000 8%, #000 92%, transparent)";
+  // Dobra a lista pra costurar o loop; o segundo bloco é decorativo (aria-hidden).
+  const blocks = [0, 1];
+
+  return (
+    <div className={cn("text-center", className)}>
+      <style>{`
+        @keyframes mp-partner-marquee {
+          from { transform: translateX(0); }
+          to   { transform: translateX(-50%); }
+        }
+        .mp-marquee-track { animation: mp-partner-marquee 34s linear infinite; }
+        @media (prefers-reduced-motion: reduce) {
+          .mp-marquee-track { animation: none; }
+        }
+      `}</style>
+
+      {title && <p className="text-caption uppercase tracking-widest text-muted">{title}</p>}
+
+      <div
+        className={cn("relative overflow-hidden", title && "mt-8")}
+        style={{ maskImage: fade, WebkitMaskImage: fade }}
+      >
+        <div className="mp-marquee-track flex w-max">
+          {blocks.map((b) => (
+            <ul
+              key={b}
+              aria-hidden={b === 1}
+              className="flex shrink-0 items-center gap-x-12 pr-12 desktop:gap-x-16 desktop:pr-16"
+            >
+              {PARTNERS.map((p) => (
+                <li key={p.name}>
+                  <img
+                    src={`/images/parceiros/${p.file}`}
+                    alt={p.name}
+                    loading="lazy"
+                    decoding="async"
+                    className={cn(
+                      "w-auto object-contain opacity-60 grayscale transition",
+                      p.size,
+                    )}
+                  />
+                </li>
+              ))}
+            </ul>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

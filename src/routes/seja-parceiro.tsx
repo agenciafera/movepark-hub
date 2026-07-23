@@ -414,7 +414,7 @@ export default function SejaParceiroPage() {
           className="absolute inset-0 bg-gradient-to-r from-mp-navy/95 via-mp-navy/85 to-mp-navy/65 desktop:via-mp-navy/75 desktop:to-mp-navy/25"
           aria-hidden
         />
-        <div className="relative mx-auto max-w-[1080px] px-4 py-20 text-white desktop:px-8 desktop:py-28">
+        <div className="relative mx-auto max-w-[1080px] px-4 py-28 text-white desktop:px-8 desktop:py-40">
           <span className="text-badge uppercase tracking-[0.4px] text-white/70">
             Para donos de estacionamento
           </span>
@@ -442,6 +442,14 @@ export default function SejaParceiroPage() {
           <div className="mt-7">
             <SejaParceiroCta onClick={openModal}>Quero ser parceiro</SejaParceiroCta>
           </div>
+        </div>
+      </section>
+
+      {/* Prova social logo abaixo do hero: faixa de logos rolando (marquee) com
+          fade nas laterais. Sinal de confiança chega antes do primeiro argumento. */}
+      <section className="border-b border-hairline py-10 desktop:py-12">
+        <div className="mx-auto max-w-[1080px] px-4 desktop:px-8">
+          <PartnerLogos marquee />
         </div>
       </section>
 
@@ -673,11 +681,6 @@ export default function SejaParceiroPage() {
             ))}
           </div>
         </div>
-      </section>
-
-      {/* Marcas */}
-      <section className="mx-auto max-w-[1080px] px-4 py-14 desktop:px-8">
-        <PartnerLogos />
       </section>
 
       {/* FAQ em duas colunas, como no mockup: o título fica preso à esquerda e a
