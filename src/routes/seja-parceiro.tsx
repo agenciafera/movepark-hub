@@ -21,14 +21,17 @@ import { FaqList } from "@/features/faqs/FaqList";
 import type { FaqCombinedItem } from "@/features/faqs/api";
 import { PartnerLeadModal } from "@/features/onboarding/PartnerLeadModal";
 import { PartnerLogos } from "@/features/partners/PartnerLogos";
+import { useGsapReveal } from "@/hooks/useGsapReveal";
 
 const HERO_IMAGE = "/images/seja-parceiro-acordo-sunset.webp";
 const STEPS_IMAGE = "/Estacionamentos/virapark/virapark_001.webp";
 
-// Sinais de confiança: fatos da política do parceiro, sem número sem lastro.
+// Sinais de confiança. O destaque é um rótulo curto em todos os quatro: misturar
+// "R$ 0" (moeda), "100%" (porcentagem) e "PIX & cartão" (texto) fazia a fileira
+// parecer desalinhada. Mesma classe gramatical, mesmo peso visual.
 const METRICS = [
-  { value: "R$ 0", label: "de custo pra começar" },
-  { value: "100%", label: "das reservas pagas com antecedência" },
+  { value: "Zero", label: "de custo pra começar, sem mensalidade" },
+  { value: "Seguro", label: "reserva paga com antecedência" },
   { value: "PIX & cartão", label: "o cliente paga antes de chegar" },
   { value: "Sem trava", label: "você segue vendendo do seu jeito" },
 ];
@@ -110,30 +113,49 @@ const BENEFITS = [
  * inventado em página de captação é o tipo de coisa que o parceiro cobra na
  * primeira reunião. O logo do lote prova a mesma coisa sem afirmar o que não
  * dá pra sustentar.
+ *
+ * `featured` monta o layout do mockup: dois cards grandes em cima, três compactos
+ * embaixo. Os dois em destaque levam a citação mais longa; os três de baixo,
+ * uma frase curta.
  */
 const TESTIMONIALS = [
   {
+    featured: true,
     quote:
-      "A ocupação nos dias de semana subiu de verdade. O cliente já chega pago, sem discussão no balcão.",
+      "A ocupação nos dias de semana subiu de verdade. O cliente já chega pago e não tem mais discussão de preço no balcão. Pra mim virou receita que antes ficava parada.",
     name: "João P.",
     role: "Proprietário · Virapark",
     logo: "logo-virapark.svg",
-    logoSize: "h-6",
+    logoSize: "h-7",
   },
   {
+    featured: true,
     quote:
-      "Entrei sem pagar nada e comecei a receber reserva na primeira semana. O repasse é organizado e certo.",
+      "Entrei sem pagar nada e comecei a receber reserva já na primeira semana. O repasse cai certo e organizado, sem eu precisar ir atrás de ninguém.",
     name: "Marina R.",
     role: "Gerente · Garage Inn",
     logo: "logo-garageinn.svg",
-    logoSize: "h-5",
+    logoSize: "h-6",
   },
   {
-    quote:
-      "O que mais pesou foi não gastar com marketing. Eles trazem o cliente e eu cuido só das vagas.",
+    quote: "Eles trazem o cliente e eu cuido só das vagas. Não gasto mais com anúncio.",
     name: "Carlos A.",
     role: "Sócio · Nation Park",
     logo: "logo-nationpark.svg",
+    logoSize: "h-5",
+  },
+  {
+    quote: "O cliente chega com tudo pago. Acabou o calote e a cobrança na saída.",
+    name: "Renata M.",
+    role: "Gerente · Aerovalet",
+    logo: "logo-aerovalet.svg",
+    logoSize: "h-6",
+  },
+  {
+    quote: "Botei as vagas no ar num dia e no outro já tinha reserva marcada.",
+    name: "Paulo S.",
+    role: "Proprietário · Aeropark",
+    logo: "aeropark-logo.svg",
     logoSize: "h-5",
   },
 ];
@@ -177,6 +199,138 @@ const FAQ_ITEMS: FaqCombinedItem[] = FAQ.map((f, i) => ({
   category: null,
 }));
 
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = React.useState(false);
+  React.useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const on = () => setReduced(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return reduced;
+}
+
+/**
+ * "Como funciona": foto à esquerda (fixa no desktop) e os passos à direita, que o
+ * scroll vai ativando um a um. O scroll-spy usa um IntersectionObserver com faixa
+ * de 0px no centro da tela (`-50% 0px -50%`): o passo cujo miolo cruza o meio da
+ * viewport vira o ativo, e o trilho colorido cresce até ele.
+ *
+ * A ativação NÃO derruba o contraste: título e descrição ficam sempre em ink/body
+ * (o mockup desbotava os passos seguintes a ponto de reprovar o AA). O que muda
+ * entre ativo e inativo é só o ícone (preenche em indigo) e o trilho. Com
+ * `prefers-reduced-motion`, o observer nem monta: o passo 1 fica ativo e pronto,
+ * sem nada mexer no scroll.
+ */
+function ComoFunciona() {
+  const reduced = usePrefersReducedMotion();
+  const [active, setActive] = React.useState(0);
+  const stepRefs = React.useRef<Array<HTMLLIElement | null>>([]);
+
+  React.useEffect(() => {
+    // `IntersectionObserver` não existe no happy-dom dos testes nem no render de
+    // build (SSG). Sem ele, o passo 1 fica ativo e pronto, sem quebrar.
+    if (reduced || typeof IntersectionObserver === "undefined") return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            setActive(Number((e.target as HTMLElement).dataset.step));
+          }
+        }
+      },
+      { rootMargin: "-50% 0px -50% 0px", threshold: 0 },
+    );
+    for (const el of stepRefs.current) if (el) obs.observe(el);
+    return () => obs.disconnect();
+  }, [reduced]);
+
+  return (
+    <section className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-20">
+      <div className="max-w-2xl">
+        <h2 className="text-display-2xl text-ink">Como funciona</h2>
+        <p className="mt-3 text-body-md text-body">
+          Do cadastro ao repasse, a Movepark cuida da parte chata. Você cuida das vagas.
+        </p>
+      </div>
+
+      <div className="mt-12 grid grid-cols-1 items-start gap-10 tablet:grid-cols-2 desktop:gap-14">
+        {/* Foto: fixa no desktop enquanto os passos correm ao lado. `pb-10` no
+            mobile abre o espaço que o card de aprovação ocupa ao transbordar. */}
+        <div className="relative pb-10 tablet:sticky tablet:top-24 tablet:pb-0">
+          <div className="overflow-hidden rounded-xl">
+            <img
+              src={STEPS_IMAGE}
+              alt="Pátio de um estacionamento parceiro da Movepark"
+              loading="lazy"
+              decoding="async"
+              className="aspect-[4/3] h-full w-full object-cover"
+            />
+          </div>
+          <div className="absolute -bottom-0 left-4 right-4 rounded-md border border-hairline bg-canvas p-4 shadow-tier desktop:left-8 desktop:right-10">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-mp-pale text-mp-indigo">
+                <CheckCircle2 className="h-4 w-4" aria-hidden />
+              </span>
+              <div>
+                <p className="text-title-md text-ink">Cadastro aprovado</p>
+                <p className="mt-1 text-body-sm text-body">
+                  Suas vagas já estão na busca e podem receber reserva.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Passos. O trilho vive em dois traços sobrepostos em `left-6` (centro do
+            ícone de 48px): o cinza de fundo e o indigo que cresce até o passo ativo. */}
+        <ol className="relative">
+          <span
+            className="absolute left-6 top-6 bottom-6 w-px bg-hairline tablet:block"
+            aria-hidden
+          />
+          <span
+            className="absolute left-6 top-6 w-px bg-mp-indigo transition-[height] duration-500 ease-out"
+            style={{
+              height: reduced
+                ? "0%"
+                : `calc((100% - 3rem) * ${active / (STEPS.length - 1)})`,
+            }}
+            aria-hidden
+          />
+          {STEPS.map((s, i) => {
+            const on = reduced ? i === 0 : i <= active;
+            return (
+              <li
+                key={s.n}
+                data-step={i}
+                ref={(el) => (stepRefs.current[i] = el)}
+                className="relative flex gap-5 pb-10 last:pb-0"
+              >
+                <span
+                  className={cn(
+                    "relative z-10 inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-colors duration-300",
+                    on ? "bg-mp-indigo text-white" : "bg-mp-pale text-mp-indigo",
+                  )}
+                >
+                  <s.icon className="h-5 w-5" aria-hidden />
+                </span>
+                <div className="pt-1.5">
+                  <h3 className="text-title-md text-ink">
+                    <span className="tabular-nums text-muted">{s.n}.</span> {s.title}
+                  </h3>
+                  <p className="mt-1.5 text-body-sm text-body">{s.desc}</p>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+    </section>
+  );
+}
+
 function SejaParceiroCta({
   onClick,
   children,
@@ -199,6 +353,14 @@ function SejaParceiroCta({
 export default function SejaParceiroPage() {
   const [open, setOpen] = React.useState(false);
   const openModal = () => setOpen(true);
+  // Reveal dos dois cards de dor/resposta: sobem e aparecem em sequência quando a
+  // seção entra na dobra. O hook já ignora tudo sob prefers-reduced-motion.
+  const painResponseRef = useGsapReveal<HTMLDivElement>({
+    selector: "[data-reveal-card]",
+    y: 28,
+    stagger: 0.14,
+    start: "top 82%",
+  });
 
   return (
     <>
@@ -246,10 +408,17 @@ export default function SejaParceiroPage() {
           <span className="text-badge uppercase tracking-[0.4px] text-white/70">
             Para donos de estacionamento
           </span>
-          {/* `max-w-xl` e nao `2xl`: a 672px a ponta direita do h1 caia sobre o homem
-              iluminado e o contraste ia a 2,2:1. A 576px ele fica na parede escura. */}
-          <h1 className="mt-3 max-w-xl text-balance text-display-3xl text-white">
-            Encha suas vagas com reservas online. Sem custo pra começar.
+          {/* `max-w-2xl` (era `xl`): o degradê agora carrega mais a esquerda
+              (95/85/65 no mobile, 95/75/25 no desktop), então dá pra soltar o h1 a
+              672px sem o contraste cair na área iluminada. Com isso "Sem custo" para
+              de quebrar entre linhas e cabe junto de "pra começar".
+              `whitespace-nowrap` no grifo garante que o riscado nunca parta no meio. */}
+          <h1 className="mt-3 max-w-2xl text-balance text-display-3xl text-white">
+            Encha suas vagas com reservas online.{" "}
+            <span className="whitespace-nowrap line-through decoration-white/70 decoration-2">
+              Sem custo
+            </span>{" "}
+            pra começar.
           </h1>
           <p className="mt-4 max-w-xl text-body-md text-white/80">
             A Movepark leva clientes até o seu estacionamento e garante o pagamento adiantado. Sem
@@ -271,15 +440,25 @@ export default function SejaParceiroPage() {
           A cor está invertida em relação ao mockup de propósito: não existe lilás nos
           tokens (`surface-pale` é alias do `mp-pale`), e pôr o azul da marca no lado da
           resposta, deixando o problema em cinza neutro, diz a coisa certa. */}
-      <section className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-20">
+      <section
+        ref={painResponseRef}
+        className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-20"
+      >
         <div className="grid grid-cols-1 items-stretch gap-6 tablet:grid-cols-2">
           {/* Card da dor */}
-          <div className="flex flex-col rounded-xl bg-surface-soft p-8 desktop:p-10">
-            <span className="text-badge uppercase tracking-wide text-mp-indigo">
-              A rotina de quem tem estacionamento
-            </span>
-            <h2 className="mt-3 text-balance text-display-2xl text-ink">Vaga vazia não volta.</h2>
-            <p className="mt-4 text-body-md text-body">O que trava a sua receita todo mês.</p>
+          <div
+            data-reveal-card
+            className="flex flex-col rounded-xl bg-surface-soft p-8 desktop:p-10"
+          >
+            {/* Cabeçalho centralizado; a pilha de comprovantes abaixo segue à
+                esquerda, senão o giro e a sobreposição perdiam o prumo. */}
+            <div className="text-center">
+              <span className="text-badge uppercase tracking-wide text-mp-indigo">
+                A rotina de quem tem estacionamento
+              </span>
+              <h2 className="mt-3 text-balance text-display-2xl text-ink">Vaga vazia não volta.</h2>
+              <p className="mt-4 text-body-md text-body">O que trava a sua receita todo mês.</p>
+            </div>
 
             {/* A pilha de comprovantes. Cada um é levemente girado e puxado pra cima do
                 anterior; o recorte tracejado e o X vermelho fazem a leitura de "papelada
@@ -309,14 +488,16 @@ export default function SejaParceiroPage() {
           </div>
 
           {/* Card da resposta */}
-          <div className="flex flex-col rounded-xl bg-mp-pale p-8 desktop:p-10">
-            <span className="text-badge uppercase tracking-wide text-mp-indigo">Risco zero</span>
-            <h2 className="mt-3 text-balance text-display-2xl text-ink">
-              Você cuida das vagas, a gente cuida do resto.
-            </h2>
-            <p className="mt-4 text-body-md text-body">
-              A Movepark traz o cliente, recebe adiantado e repassa organizado.
-            </p>
+          <div data-reveal-card className="flex flex-col rounded-xl bg-mp-pale p-8 desktop:p-10">
+            <div className="text-center">
+              <span className="text-badge uppercase tracking-wide text-mp-indigo">Risco zero</span>
+              <h2 className="mt-3 text-balance text-display-2xl text-ink">
+                Você cuida das vagas, a gente cuida do resto.
+              </h2>
+              <p className="mt-4 text-body-md text-body">
+                A Movepark traz o cliente, recebe adiantado e repassa organizado.
+              </p>
+            </div>
 
             {/* A fatura zerada. É a prova literal do "sem botar nada do bolso": as três
                 linhas que o parceiro teme, todas em zero, e o total fechando em zero. */}
@@ -376,80 +557,14 @@ export default function SejaParceiroPage() {
         </dl>
       </section>
 
-      {/* Como funciona: foto à esquerda, passos empilhados à direita.
-          Eram três colunas de texto. A foto do lote com o card de aprovação flutuando
-          faz o passo 1 sair da promessa e virar resultado visível, que é a ideia boa
-          do mockup. Os três passos ficam legíveis: o mockup desbotava o 2 e o 3 a
-          ponto de reprovar contraste, e o trilho vertical já diz que um leva ao outro. */}
-      <section className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-20">
-        {/* Sem eyebrow: o mockup repetia aqui o "Para donos de estacionamento" que o
-            hero já usa, e eyebrow repetido para de rotular e vira ruído. */}
-        <div className="max-w-2xl">
-          <h2 className="text-display-2xl text-ink">Como funciona</h2>
-          <p className="mt-3 text-body-md text-body">
-            Do cadastro ao repasse, a Movepark cuida da parte chata. Você cuida das vagas.
-          </p>
-        </div>
-
-        <div className="mt-12 grid grid-cols-1 items-center gap-10 tablet:grid-cols-2 desktop:gap-14">
-          {/* `pb-10` no mobile abre o espaço que o card ocupa ao transbordar a foto;
-              sem isso ele encosta no primeiro passo. */}
-          <div className="relative pb-10 tablet:pb-0">
-            <div className="overflow-hidden rounded-xl">
-              <img
-                src={STEPS_IMAGE}
-                alt="Pátio de um estacionamento parceiro da Movepark"
-                loading="lazy"
-                decoding="async"
-                className="aspect-[4/3] h-full w-full object-cover"
-              />
-            </div>
-            {/* Card de aprovação. Transborda a foto de propósito: encostado nela
-                viraria legenda, solto por cima ele lê como notificação do sistema. */}
-            <div className="absolute -bottom-0 left-4 right-4 rounded-md border border-hairline bg-canvas p-4 shadow-tier desktop:left-8 desktop:right-10">
-              <div className="flex items-start gap-3">
-                <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-mp-pale text-mp-indigo">
-                  <CheckCircle2 className="h-4 w-4" aria-hidden />
-                </span>
-                <div>
-                  <p className="text-title-md text-ink">Cadastro aprovado</p>
-                  <p className="mt-1 text-body-sm text-body">
-                    Suas vagas já estão na busca e podem receber reserva.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <ol className="relative">
-            {STEPS.map((s, i) => (
-              <li key={s.n} className="relative flex gap-5 pb-8 last:pb-0">
-                {/* Trilho: desce do ícone até o próximo, e some no último item. */}
-                {i < STEPS.length - 1 && (
-                  <span
-                    className="absolute bottom-2 left-6 top-14 w-px bg-hairline"
-                    aria-hidden
-                  />
-                )}
-                <span className="relative inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-mp-pale text-mp-indigo">
-                  <s.icon className="h-5 w-5" aria-hidden />
-                </span>
-                <div className="pt-1">
-                  <h3 className="text-title-md text-ink">
-                    <span className="tabular-nums text-muted">{s.n}.</span> {s.title}
-                  </h3>
-                  <p className="mt-1.5 text-body-sm text-body">{s.desc}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
+      <ComoFunciona />
 
       {/* Benefícios */}
       <section className="border-y border-hairline bg-surface-soft">
         <div className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-20">
-          <h2 className="text-display-2xl text-ink">Por que colocar seu estacionamento aqui</h2>
+          <h2 className="mx-auto max-w-2xl text-center text-display-2xl text-ink">
+            Por que colocar seu estacionamento aqui
+          </h2>
           {/* Grade uniforme 3x2, como nos dois mockups. Era um bento com dois
               destaques grandes; agora que "Como funciona" e a faixa de números já
               carregam hierarquia, seis cards do mesmo peso funcionam como lista de
@@ -493,18 +608,19 @@ export default function SejaParceiroPage() {
         </div>
       </section>
 
-      {/* Depoimentos */}
+      {/* Depoimentos: dois cards grandes em cima, três compactos embaixo, como no
+          mockup. A diferença de tamanho cria hierarquia sem precisar de número de
+          performance (que a gente não tem). `items-stretch` + `flex-1` na citação
+          alinham a assinatura na base de cada card. */}
       <section className="border-y border-hairline bg-surface-soft">
         <div className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-20">
-          <h2 className="text-display-2xl text-ink">Quem já é parceiro conta</h2>
-          {/* O logo do lote vai no topo do card e as aspas na ponta oposta, como no
-              mockup. `items-stretch` + `flex-1` na citação alinham a assinatura na
-              mesma linha nos três cards, mesmo com depoimentos de tamanhos diferentes. */}
-          <div className="mt-8 grid grid-cols-1 items-stretch gap-5 tablet:grid-cols-3">
-            {TESTIMONIALS.map((t) => (
+          <h2 className="text-center text-display-2xl text-ink">Quem já é parceiro conta</h2>
+
+          <div className="mt-10 grid grid-cols-1 items-stretch gap-5 tablet:grid-cols-2">
+            {TESTIMONIALS.filter((t) => t.featured).map((t) => (
               <figure
                 key={t.name}
-                className="flex flex-col rounded-lg border border-hairline bg-canvas p-6"
+                className="flex flex-col rounded-xl border border-hairline bg-canvas p-7 desktop:p-8"
               >
                 <div className="flex items-start justify-between gap-4">
                   <img
@@ -514,10 +630,31 @@ export default function SejaParceiroPage() {
                     decoding="async"
                     className={cn("w-auto object-contain", t.logoSize)}
                   />
-                  <Quote className="h-5 w-5 shrink-0 text-mp-violet" aria-hidden />
+                  <Quote className="h-6 w-6 shrink-0 text-mp-violet" aria-hidden />
                 </div>
                 <blockquote className="mt-6 flex-1 text-body-md text-ink">“{t.quote}”</blockquote>
                 <figcaption className="mt-6 border-t border-hairline pt-4 text-body-sm text-muted">
+                  <span className="text-ink">{t.name}</span> · {t.role}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+
+          <div className="mt-5 grid grid-cols-1 items-stretch gap-5 tablet:grid-cols-3">
+            {TESTIMONIALS.filter((t) => !t.featured).map((t) => (
+              <figure
+                key={t.name}
+                className="flex flex-col rounded-lg border border-hairline bg-canvas p-6"
+              >
+                <img
+                  src={`/images/parceiros/${t.logo}`}
+                  alt={t.role.split(" · ")[1]}
+                  loading="lazy"
+                  decoding="async"
+                  className={cn("w-auto object-contain", t.logoSize)}
+                />
+                <blockquote className="mt-5 flex-1 text-body-md text-ink">“{t.quote}”</blockquote>
+                <figcaption className="mt-5 border-t border-hairline pt-4 text-body-sm text-muted">
                   <span className="text-ink">{t.name}</span> · {t.role}
                 </figcaption>
               </figure>
@@ -540,17 +677,33 @@ export default function SejaParceiroPage() {
             <span className="text-badge uppercase tracking-wide text-mp-indigo">Dúvidas</span>
             <h2 className="mt-3 text-display-2xl text-ink">Perguntas frequentes</h2>
           </div>
-          <FaqList items={FAQ_ITEMS} />
+          {/* `[&_button]:py-6` folga a respiração entre as perguntas sem tocar no
+              componente compartilhado: o gatilho do acordeão vem com `py-4`, e só
+              existe um botão por pergunta nesta área, então o seletor não pega mais
+              nada. */}
+          <div className="[&_button]:py-6">
+            <FaqList items={FAQ_ITEMS} />
+          </div>
         </div>
       </section>
 
-      {/* CTA final */}
+      {/* CTA final. Eyebrow em `text-white/70` (não indigo): na banda navy o indigo
+          fica escuro demais sobre o fundo escuro. É o mesmo tratamento do eyebrow do
+          hero.
+          Grifo em "encher suas vagas": banda `mp-pale` (clara) com texto `ink`. Não
+          uso violeta (reservado a acionável) nem a banda ficaria legível com texto
+          branco; a pale sobre navy dá ~13:1 e lê como marca-texto. `box-decoration-
+          clone` mantém o preenchimento nas duas linhas se quebrar. */}
       <section className="bg-mp-navy">
         <div className="mx-auto max-w-[1080px] px-4 py-16 text-center text-white desktop:px-8 desktop:py-20">
-          <h2 className="mx-auto max-w-2xl text-balance text-display-2xl text-white">
-            Pronto pra encher suas vagas?
+          <span className="text-badge uppercase tracking-[0.4px] text-white/70">Risco zero</span>
+          <h2 className="mx-auto mt-3 max-w-2xl text-balance text-display-2xl text-white">
+            Você está pronto pra{" "}
+            <span className="box-decoration-clone rounded-[4px] bg-mp-pale px-2 text-ink">
+              encher suas vagas?
+            </span>
           </h2>
-          <p className="mx-auto mt-3 max-w-lg text-balance text-body-md text-white/80">
+          <p className="mx-auto mt-4 max-w-lg text-balance text-body-md text-white/80">
             Cadastre seu estacionamento em 2 minutos. Sem custo pra começar.
           </p>
           <div className="mt-7 flex justify-center">

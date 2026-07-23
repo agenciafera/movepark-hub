@@ -15,7 +15,11 @@ function renderPage() {
 
 describe("SejaParceiroPage — par de cards dor/resposta", () => {
   function cardDor() {
-    return screen.getByRole("heading", { name: /Vaga vazia não volta/i }).closest("div")!;
+    // Sobe até o card inteiro (marcado com data-reveal-card), não o wrapper
+    // `text-center` do cabeçalho, que não contém a pilha de comprovantes.
+    return screen
+      .getByRole("heading", { name: /Vaga vazia não volta/i })
+      .closest("[data-reveal-card]")!;
   }
 
   it("empilha os comprovantes sobrepostos e tortos", () => {
@@ -85,17 +89,20 @@ describe("SejaParceiroPage — como funciona", () => {
 });
 
 describe("SejaParceiroPage — depoimentos", () => {
-  it("cada depoimento traz o logo do lote", () => {
+  it("traz dois depoimentos em destaque e três compactos, cada um com o logo do lote", () => {
     // Escopado ao <figure>: a faixa de parceiros no rodapé da página repete os
     // mesmos nomes, e uma busca global casaria com ela em vez do depoimento.
+    // A ordem no DOM é os dois featured primeiro, depois os três compactos.
     renderPage();
 
     const cards = [...document.querySelectorAll("figure")];
-    expect(cards).toHaveLength(3);
+    expect(cards).toHaveLength(5);
     expect(cards.map((c) => c.querySelector("img")?.getAttribute("alt"))).toEqual([
       "Virapark",
       "Garage Inn",
       "Nation Park",
+      "Aerovalet",
+      "Aeropark",
     ]);
   });
 
@@ -110,13 +117,26 @@ describe("SejaParceiroPage — depoimentos", () => {
   });
 });
 
+describe("SejaParceiroPage — CTA final", () => {
+  it("grifa 'encher suas vagas' com banda clara e texto legível", () => {
+    // O grifo usa banda pale + texto ink (não violeta, que é reservado a
+    // acionável). Se alguém trocar por bg-mp-primary, a regra de cor cai.
+    renderPage();
+
+    const grifo = screen.getByText("encher suas vagas?");
+    expect(grifo.className).toContain("bg-mp-pale");
+    expect(grifo.className).toContain("text-ink");
+    expect(grifo.className).not.toContain("bg-mp-primary");
+  });
+});
+
 describe("SejaParceiroPage — landing de parceiro", () => {
   it("mostra promessa, métricas e FAQ", () => {
     renderPage();
     expect(
       screen.getByRole("heading", { name: /sem custo pra começar/i }),
     ).toBeInTheDocument();
-    expect(screen.getByText("das reservas pagas com antecedência")).toBeInTheDocument();
+    expect(screen.getByText("o cliente paga antes de chegar")).toBeInTheDocument();
     expect(screen.getByText(/Quanto custa para ser parceiro/i)).toBeInTheDocument();
   });
 

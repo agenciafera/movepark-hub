@@ -21,6 +21,18 @@ export function useGsapReveal<T extends HTMLElement = HTMLDivElement>(
     const container = ref.current;
     if (!container) return;
 
+    // Respeita quem desativou movimento no sistema. Como a animação parte de
+    // `opacity: 0`, o caminho certo é NÃO montar o gsap: sem fromTo, os alvos
+    // ficam no estado natural (visíveis). Se em vez disso a gente só zerasse a
+    // duração, o ScrollTrigger ainda seguraria os elementos invisíveis até a
+    // dobra. Este era o gap que o critique de 16/07 apontou em `lib/gsap.ts`.
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
+
     const targets = opts.selector
       ? Array.from(container.querySelectorAll<HTMLElement>(opts.selector))
       : [container];
