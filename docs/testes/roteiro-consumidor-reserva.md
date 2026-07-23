@@ -35,7 +35,7 @@ reconfere no código antes de mexer em qualquer linha de status.
 | C-15 | Voucher não existe antes da confirmação | PRONTO |
 | C-16 | Upgrade de tarifa: Básica para Superflex | PRONTO |
 | C-17 | Upgrade: downgrade e prazo bloqueados | PRONTO |
-| C-18 | Upgrade respeita o preço da unidade | **FALHA** |
+| C-18 | Tarifa tem fonte única global, sem preço por unidade | **PENDENTE** (decisão 23/07) |
 | C-19 | Cancelar dentro da janela devolve 100% | PRONTO |
 | C-20 | Cancelar fora da janela é bloqueado | PRONTO |
 | C-21 | Superflex cancela até 1 minuto antes | PRONTO |
@@ -630,30 +630,36 @@ diferente da que nasceu com ela.
     PIX gerado antes do check-in e pago depois **aplica o upgrade mesmo assim**. Para reproduzir:
     gerar o QR com o check-in perto, deixar passar, e pagar. É a brecha mais interessante deste caso.
 
-## C-18 · Upgrade respeita o preço da unidade  [**FALHA** · verificado 21/07/2026 · `create-fare-upgrade/index.ts:85-90` vs `20260721000000_location_fare.sql:10`]
+## C-18 · Tarifa tem fonte única global, sem preço por unidade  [**PENDENTE** · decisão de 23/07/2026 · aguarda `86ajnxf04` + `86ajnxeym`]
 
-- **Antes:** uma unidade com `location_fare.price_cents_override` diferente do catálogo global.
-- **Passos:** reservar nessa unidade e pedir upgrade.
-- **Depois esperado:** o delta cobrado sai do preço **da unidade**, o mesmo que originou a reserva.
-- **Depois observado:** o caminho de upgrade lê o catálogo **global** e ignora o override, em três
-  pontos: a Edge (`index.ts:85-90`), a RPC (`fare_upgrade.sql:28`) e o front, que passa `lptId = null`
-  (`src/features/fares/api.ts:53-60`).
-- **Efeitos colaterais:** cobrança com valor errado.
+> **Este caso trocou de natureza em 23/07.** Antes cobrava "a cobrança respeitar o preço por
+> unidade". Foi implementado nesse sentido (`dda3817`), mas a decisão de negócio inverteu: as tarifas
+> (Básica, Flex, Superflex) são da **plataforma**, fonte única global, geridas só pelo Super Admin.
+> Preço por unidade não deve existir. O caso agora prova a ausência dele.
+
+- **Antes:** a plataforma, num futuro próximo, tenta configurar um preço de tarifa diferente por
+  estacionamento.
+- **Passos:** verificar que não há como fazer isso.
+- **Depois esperado:**
+  - a tabela `location_fare` não existe mais;
+  - `get_unit_fares` devolve sempre o preço **global** (`fare.price_cents`), independente da unidade;
+  - o operador não tem tela de edição de tarifa (nem via impersonação);
+  - o Super Admin edita as tarifas num editor **global** no `/manager`, e a mudança vale para todos.
+- **Depois observado (23/07):** a fonte ainda é por unidade. `location_fare` existe, `get_unit_fares`
+  faz `coalesce(lf.price_cents_override, f.price_cents)`, e o `hub_admin` edita preço por unidade
+  entrando como operador. Não há editor global no manager.
+- **Efeitos colaterais:** nenhum ao verificar.
 - **Armadilhas:**
-  - O efeito **muda de sinal** conforme o override: numa unidade com override mais barato que o
-    global o cliente **paga a mais**; com override mais caro, paga a menos. Testar em uma unidade só
-    esconde metade do problema.
-  - Caso extremo: se o `fare_price_cents` já gravado for maior que o preço global, a RPC vira noop e
-    **o cliente paga sem receber o upgrade**. Este é o cenário a provar primeiro.
-  - Pré-requisito: hoje pode não haver unidade com override em produção. Confira antes:
-    ```sql
-    select lf.*, l.slug from location_fare lf
-    join location_parking_type lpt on lpt.id = lf.location_parking_type_id
-    join location l on l.id = lpt.location_id
-    where lf.price_cents_override is not null;
-    ```
-    Sem nenhuma linha, o caso fica **não executável** até existir uma. Diga isso em vez de dar por
-    passado.
+  - **A divergência de cobrança já foi resolvida** (`dda3817`): hoje tela e cobrança leem a mesma
+    fonte. O que sobra não é o bug de valor, é o **recurso** de preço por unidade, que contraria a
+    regra "tarifa é da plataforma".
+  - **Não confundir com os gates do upgrade.** O mesmo commit trouxe a revalidação de prazo/status do
+    `apply_fare_upgrade` (tarefa `86ajmy41d`), que é correta e fica. Só o preço por unidade sai.
+  - **Cobertura:** `supabase/tests/fare_upgrade_unit_price.test.sql` hoje documenta o comportamento
+    antigo. Quando a remoção entrar, ele inverte: prova que não há como um preço por unidade divergir
+    do global, porque a coluna deixou de existir.
+  - Ordem de entrega: o editor global (`86ajnxeym`) vem junto ou antes da remoção. Remover primeiro
+    deixaria o Super Admin sem lugar para editar tarifa.
 
 ## C-19 · Cancelar dentro da janela devolve 100%  [PRONTO · coberto por `e2e/consumer/C19-cancelar-dentro-janela.spec.ts` + `supabase/tests/fare_cancel_window.test.sql` · `supabase/functions/cancel-booking/index.ts:147-185`]
 
@@ -820,6 +826,6 @@ que é onde quase todo mundo erra ao testar cupom.
 | C-13 | Depende de esperar o hold inteiro. Fica manual até existir um jeito de encurtar `hold_minutes` só para a suíte. |
 | C-15 | Chamada direta à Edge com JWT, sem navegador. Cobertura correta é `deno test` da `voucher-pdf`, que hoje não existe. |
 | C-17 | A brecha do QR de 1 hora depende de esperar o check-in passar. O resto (downgrade, prazo) é automatizável. |
-| C-18 | Depende de existir unidade com `price_cents_override`. Enquanto não existir, o caso não é executável. |
+| C-18 | Aguarda a decisão de 23/07 ser implementada (editor global `86ajnxeym` + remoção do por unidade `86ajnxf04`). Vira pgTAP quando `location_fare` for dropada. |
 | C-21 | Janela de 1 minuto é curta demais para clique confiável em navegador. Automatize pela Edge e pelo banco. |
 | C-22 | O fechamento assíncrono pode levar até 30 minutos. Fora do orçamento de tempo de um E2E; vira verificação de banco, feita depois. |
