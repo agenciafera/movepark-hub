@@ -1659,6 +1659,86 @@ export type Database = {
         }
         Relationships: []
       }
+      knowledge_chunk: {
+        Row: {
+          chunk_index: number
+          content: string
+          content_hash: string
+          created_at: string
+          destination_id: string | null
+          embedding: string | null
+          embedding_stale: boolean
+          id: string
+          location_id: string | null
+          scope: Database["public"]["Enums"]["faq_scope"]
+          source_id: string
+          source_type: string
+          token_estimate: number | null
+          updated_at: string
+        }
+        Insert: {
+          chunk_index?: number
+          content: string
+          content_hash: string
+          created_at?: string
+          destination_id?: string | null
+          embedding?: string | null
+          embedding_stale?: boolean
+          id?: string
+          location_id?: string | null
+          scope: Database["public"]["Enums"]["faq_scope"]
+          source_id: string
+          source_type: string
+          token_estimate?: number | null
+          updated_at?: string
+        }
+        Update: {
+          chunk_index?: number
+          content?: string
+          content_hash?: string
+          created_at?: string
+          destination_id?: string | null
+          embedding?: string | null
+          embedding_stale?: boolean
+          id?: string
+          location_id?: string | null
+          scope?: Database["public"]["Enums"]["faq_scope"]
+          source_id?: string
+          source_type?: string
+          token_estimate?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_chunk_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destination"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_chunk_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_chunk_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_point_proximity"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "knowledge_chunk_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_proximity"
+            referencedColumns: ["location_id"]
+          },
+        ]
+      }
       legal_document: {
         Row: {
           created_at: string
@@ -1952,48 +2032,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location_proximity"
             referencedColumns: ["location_id"]
-          },
-        ]
-      }
-      location_fare: {
-        Row: {
-          created_at: string
-          enabled: boolean
-          location_parking_type_id: string
-          price_cents_override: number | null
-          tier: Database["public"]["Enums"]["fare_tier"]
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          enabled?: boolean
-          location_parking_type_id: string
-          price_cents_override?: number | null
-          tier: Database["public"]["Enums"]["fare_tier"]
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          enabled?: boolean
-          location_parking_type_id?: string
-          price_cents_override?: number | null
-          tier?: Database["public"]["Enums"]["fare_tier"]
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "location_fare_location_parking_type_id_fkey"
-            columns: ["location_parking_type_id"]
-            isOneToOne: false
-            referencedRelation: "location_parking_type"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "location_fare_tier_fkey"
-            columns: ["tier"]
-            isOneToOne: false
-            referencedRelation: "fare"
-            referencedColumns: ["tier"]
           },
         ]
       }
@@ -4259,6 +4297,24 @@ export type Database = {
           p_type: Database["public"]["Enums"]["booking_modification_type"]
         }
         Returns: string
+      }
+      match_knowledge: {
+        Args: {
+          p_destination_id?: string
+          p_k?: number
+          p_location_id?: string
+          p_query_embedding: string
+        }
+        Returns: {
+          chunk_index: number
+          content: string
+          destination_id: string
+          location_id: string
+          scope: Database["public"]["Enums"]["faq_scope"]
+          similarity: number
+          source_id: string
+          source_type: string
+        }[]
       }
       member_has_scope: {
         Args: { p_company_id: string; p_scope: string }
