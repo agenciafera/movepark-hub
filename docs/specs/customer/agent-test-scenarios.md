@@ -851,7 +851,7 @@ seguinte. Ele precisa reaprender a cada turno, gastando rodada do teto de 6.
 3. **EM ABERTO.** Fazer o erro da tool ser instrutivo: devolver "use um destes: ..." em vez de "não
    encontrado", para o modelo se corrigir na rodada seguinte.
 
-### Achado 2 · `get_parking_types` nunca é chamada, e a resposta de cabeça está incompleta
+### Achado 2 · resposta de cabeça sobre tipos de vaga, incompleta (e uma correção sobre a tool)
 
 Para "que tipos de vaga existem na movepark?" o `used_tools` voltou **vazio**: ele respondeu "vagas
 cobertas e descobertas, alguns com valet". O catálogo real tem **seis**:
@@ -862,9 +862,16 @@ select code, name from parking_type order by code;
 ```
 
 Faltaram **garagem/box, premium e vaga de moto**. Moto não é detalhe: o buscador da home tem seletor
-Carro/Moto. Um usuário que pergunta "tem vaga pra moto?" pode ser respondido errado, com convicção e
-sem nenhuma tool ter sido consultada. É a falha mais perigosa do conjunto porque não deixa rastro no
-`used_tools`.
+Carro/Moto.
+
+**Correção sobre a tool (revisão de 21/07):** eu tinha escrito que `get_parking_types` "deveria" ter
+sido chamada. Errado. Essa tool recebe **`location_id`** e devolve os tipos **de uma unidade
+específica** ([assistant-tools.ts](../../../supabase/functions/_shared/assistant-tools.ts) e
+[mcp/index.ts](../../../supabase/functions/mcp/index.ts), `case "get_parking_types"`), não o catálogo
+global. Numa pergunta global (sem unidade) o modelo **está certo em não chamá-la**. O bug que sobra é
+só a resposta de cabeça incompleta. Para **validar `get_parking_types` via chat** é preciso perguntar
+os tipos **de uma unidade** (ver K-13). O catálogo global, se um dia for pergunta comum, pede uma tool
+própria (`list_parking_type_catalog`), que hoje não existe.
 
 ### Achado 3 (leve) · Pergunta dupla: responde a primeira, enrola a segunda
 
@@ -891,3 +898,252 @@ window.fetch = async (...a) => {
   return r;
 };
 ```
+
+---
+
+# Parte III · Cobertura tool a tool do chat (inclui logado)
+
+O chat do site expõe **17 tools**: 9 de leitura e 8 transacionais. As transacionais só funcionam com
+sessão. Esta parte existe para não sobrar nenhuma tool sem um caso que a exercite **e comprove que
+rodou**, pelo `used_tools` da resposta, não pelo texto.
+
+**As 4 que NÃO passam pelo chat** (`request_login_otp`, `verify_login_otp`, `whoami`,
+`create_checkout_link`) ficam na Parte IV (MCP por curl), porque o site usa a sessão do navegador e
+não a superfície de OTP.
+
+## 19. Como capturar o `used_tools` (releia antes de rodar)
+
+O texto do balão engana. Duas falhas da §18 passariam por respostas boas numa leitura casual. A prova
+de que a tool rodou é o `used_tools` da resposta da Edge. Cole no console da página **antes** de
+conversar:
+
+```js
+window.__cap = [];
+const orig = window.fetch;
+window.fetch = async (...a) => {
+  const r = await orig(...a);
+  const u = typeof a[0] === "string" ? a[0] : a[0]?.url ?? "";
+  if (u.includes("/functions/v1/chat")) {
+    const ask = (() => { try { return JSON.parse(a[1]?.body||"{}").messages?.filter(m=>m.role==="user").pop()?.text; } catch { return null; } })();
+    r.clone().json().then(j => window.__cap.push({ ask, used_tools: j.used_tools, login_required: j.login_required, reply: (j.reply||"").slice(0,300) })).catch(()=>{});
+  }
+  return r;
+};
+```
+Depois de cada pergunta: `JSON.stringify(window.__cap.slice(-1), null, 1)`.
+
+**Armadilha do widget:** o Enter às vezes não envia. Clique no botão de enviar. Um roteiro que espera
+resposta depois de um Enter fica travado sem erro.
+
+## 20. Matriz de cobertura das 17 tools
+
+| # | Tool | Login? | Caso | Status (21/07) |
+|---|---|---|---|---|
+| 1 | `search_parking` | não | A1, A3, G3 | PRONTO · via chat |
+| 2 | `simulate_price` | não | §18, G3 | PRONTO · via chat (após fix do enum, commit 57d61d6) |
+| 3 | `get_faq` | não | §18 | PRONTO · via chat |
+| 4 | `list_companies` | não | §18 | PRONTO · via chat |
+| 5 | `list_locations` | não | §18 | PRONTO · via chat |
+| 6 | `list_destinations` | não | §18 | PRONTO · via chat |
+| 7 | `get_destination` | não | §18 | PRONTO · via chat (com autocorreção; achado 1.2 aberto) |
+| 8 | `current_datetime` | não | A3 | PRONTO · via chat |
+| 9 | `get_parking_types` | não | K-13 | PENDENTE · precisa perguntar por unidade |
+| 10 | `list_my_bookings` | **sim** | K-11, C4 | PRONTO · via chat (rodada anterior) |
+| 11 | `create_booking` | **sim** | K-02, B1 | PRONTO · via chat (criou MP-7CE1F8) |
+| 12 | `cancel_booking` | **sim** | K-12, C5 | PRONTO · via chat (cancelou MP-7CE1F8) |
+| 13 | `get_booking` | **sim** | K-10 | PENDENTE · verificado só por leitura de código |
+| 14 | `set_booking_customer` | **sim** | K-04 | PENDENTE |
+| 15 | `add_vehicle` | **sim** | K-05, K-14 | PENDENTE |
+| 16 | `set_booking_vehicle` | **sim** | K-06, K-15 | PENDENTE |
+| 17 | `get_booking_status` | **sim** | K-09 | PENDENTE |
+
+O que falta rodar via chat: 1 de leitura (`get_parking_types`) e 5 transacionais (`get_booking`,
+`set_booking_customer`, `add_vehicle`, `set_booking_vehicle`, `get_booking_status`). O §21 abaixo é o
+roteiro que fecha essas seis, logado.
+
+## 21. Grupo K · Caminho logado que toca cada transacional
+
+> **Efeito colateral (produção):** roda contra o banco vivo. Cria reserva e veículo de verdade, e a
+> reserva confirmada dispara e-mail. **Não pague.** Pare na tela de pagamento. Cancele tudo no fim
+> (K-12) e rode a limpeza da §22.
+>
+> **Usuário:** `peu+teste1@fera.ag` (profile `055deb74-65a3-43e2-8c6d-2310e607be3c`). Logue antes de
+> começar.
+
+Rode em ordem, na mesma conversa. Cada passo diz a tool que deve disparar e a asserção. `MP-XXXX` é o
+código que voltar em K-02; use o mesmo até o fim.
+
+### K-01 · Cotar (search_parking + simulate_price)
+```
+quero uma vaga coberta em congonhas de 24/07 14h a 26/07 10h, qual a mais barata?
+```
+- **Passa:** `used_tools` traz `search_parking` (e/ou `simulate_price`); responde uma unidade com
+  valor. Guarde o valor citado.
+- **Bug:** listar sem tool, ou citar unidade que não existe em Congonhas.
+
+### K-02 · Criar reserva (create_booking)
+```
+pode reservar essa
+```
+- **Depois:**
+```sql
+select code, status, total_amount, location_id, expires_at
+from booking where code = 'MP-XXXX';
+```
+- **Passa:** `used_tools` = `create_booking`; devolve `MP-XXXX`; a linha existe com `status='pending'`
+  e `expires_at` no futuro; `total_amount` = valor citado em K-01 (cruzamento com G1).
+- **Bug:** dizer que reservou sem código; `total_amount` ≠ cotado; criar duas (rodar de novo NÃO deve
+  criar outra: idempotência viva desde a migration `20260825000000`, ver H1).
+
+### K-03 · Detalhar a reserva recém-criada (get_booking)
+```
+me mostra os detalhes dessa reserva
+```
+- **Passa:** `used_tools` = `get_booking`; datas, valor e unidade batem com o banco.
+- **Bug:** responder de cabeça (used_tools vazio) ou trocar algum dado.
+
+### K-04 · Dados do pagador (set_booking_customer)
+```
+meu cpf é 390.533.447-05, email teste@exemplo.com e telefone (11) 98765-4321
+```
+- **Depois:**
+```sql
+select customer_tax_id, customer_email, customer_phone from booking where code = 'MP-XXXX';
+```
+- **Passa:** `used_tools` = `set_booking_customer`; as três colunas gravadas.
+- **Bug:** dizer "gravado" com o banco inalterado; ou gravar num campo errado.
+- **Armadilha (achado aberto, ver G4):** `set_booking_customer` **não valida CPF**. Se você mandar
+  `111.111.111-11`, ele grava e segue. Aqui usamos um CPF de teste válido de propósito, para o passo
+  não mascarar esse buraco. O G4 é quem testa o CPF inválido.
+
+### K-05 · Cadastrar veículo (add_vehicle)
+```
+meu carro é placa TESTE01, um Onix prata
+```
+- **Depois:**
+```sql
+select id, license_plate, model, color, is_default
+from vehicle
+where profile_id = '055deb74-65a3-43e2-8c6d-2310e607be3c' and license_plate ilike 'teste01'
+  and deleted_at is null;
+```
+- **Passa:** `used_tools` = `add_vehicle`; a linha existe com modelo/cor. Guarde o `id` (é o
+  `vehicle_id`).
+- **Bug:** dizer que "consultou a placa" (não existe consulta de placa no chat) ou inventar
+  modelo/cor que você não deu.
+
+### K-06 · Vincular o veículo à reserva (set_booking_vehicle)
+```
+usa esse carro na minha reserva MP-XXXX
+```
+- **Depois:**
+```sql
+select b.code, b.vehicle_id, v.license_plate
+from booking b join vehicle v on v.id = b.vehicle_id
+where b.code = 'MP-XXXX';
+```
+- **Passa:** `used_tools` = `set_booking_vehicle`; `booking.vehicle_id` = o `id` de K-05.
+- **Bug:** dizer que vinculou com `vehicle_id` nulo no banco.
+
+### K-09 · Status e pagamento (get_booking_status)
+```
+minha reserva MP-XXXX já foi paga?
+```
+- **Depois:**
+```sql
+select b.status, p.status as pay_status
+from booking b left join payment p on p.booking_id = b.id
+where b.code = 'MP-XXXX' order by p.created_at desc nulls last limit 1;
+```
+- **Passa:** `used_tools` = `get_booking_status`; responde **pendente / sem pagamento** (é o estado
+  real: não pagamos). Bate com o SQL.
+- **Bug grave:** dizer "confirmada" ou "pagamento aprovado" sem pagamento no banco (cruzamento com C3).
+
+### K-11 · Listar as minhas reservas (list_my_bookings)
+```
+quais são as minhas reservas?
+```
+- **Passa:** `used_tools` = `list_my_bookings`; `MP-XXXX` aparece. Nenhuma reserva de outra conta
+  (cruzamento com C4/J3).
+- **Bug grave:** listar reserva que não é do usuário logado.
+
+### K-12 · Cancelar (cancel_booking) e fechar o ciclo
+```
+cancela a MP-XXXX
+```
+- **Depois:**
+```sql
+select code, status, deleted_at from booking where code = 'MP-XXXX';
+```
+- **Passa:** confirma antes; `used_tools` = `cancel_booking`; `status='cancelled'`. Pedir a lista de
+  novo (K-11) não traz mais a reserva ativa.
+- **Bug:** cancelar sem confirmar, ou dizer que cancelou com o status inalterado.
+
+## 22. Casos dirigidos (o que o caminho linear não cobre)
+
+### K-13 · get_parking_types (por unidade, não global)
+Sem login.
+```
+que tipos de vaga tem no aeroporto de congonhas?
+```
+- **Passa:** `used_tools` traz `get_parking_types` (provavelmente depois de `list_locations` para
+  achar a unidade); responde os tipos daquela unidade.
+- **Bug:** responder de cabeça (used_tools vazio), como no achado 2 da §18. Confira contra:
+```sql
+select pt.code, pt.name, lpt.is_active
+from location_parking_type lpt
+join company_parking_type cpt on cpt.id = lpt.company_parking_type_id
+join parking_type pt on pt.id = cpt.parking_type_id
+where lpt.location_id = '1e9f8228-2d2e-4ca8-8dd6-093999578908';  -- Plenty Park CGH
+```
+
+### K-14 · add_vehicle marca só um padrão (is_default único)
+Logado, com um veículo padrão já existente. Cadastre outro pedindo para ser o principal:
+```
+cadastra a placa TESTE02 e deixa ela como meu carro principal
+```
+- **Depois:**
+```sql
+select count(*) as padroes from vehicle
+where profile_id = '055deb74-65a3-43e2-8c6d-2310e607be3c' and is_default and deleted_at is null;
+```
+- **Passa:** `padroes` = 1 (o handler zera os outros antes de marcar o novo,
+  [mcp/index.ts](../../../supabase/functions/mcp/index.ts) `case "add_vehicle"`).
+- **Bug:** dois veículos com `is_default = true` (quebraria a escolha padrão do checkout).
+
+### K-15 · set_booking_vehicle troca o carro de uma reserva
+Logado, com uma reserva e dois veículos cadastrados.
+```
+troca o carro da MP-XXXX pra placa TESTE02
+```
+- **Passa:** `booking.vehicle_id` passa a ser o id de TESTE02. É o C8 com asserção de banco.
+- **Bug:** dizer que não consegue (ele consegue) ou não trocar.
+
+### K-16 · get_booking de reserva inexistente
+```
+me mostra a MP-000000
+```
+- **Passa:** "não encontrei" (o handler devolve `null`/erro tratado). Sem vazar dado de terceiro
+  (cruza com C6/J3).
+- **Bug grave:** revelar qualquer campo de uma reserva que não é sua.
+
+## 23. Higiene da Parte III (rode no fim, produção)
+
+Ordem importa: soft-delete do veículo é seguro porque `booking.vehicle_id → vehicle` é **SET NULL**
+(o cancelamento da reserva não depende disso). Cancele as reservas (K-12) e depois:
+
+```sql
+-- reservas de teste ainda pendentes (não deve sobrar nenhuma)
+select code, status from booking
+where profile_id = '055deb74-65a3-43e2-8c6d-2310e607be3c'
+  and deleted_at is null and status = 'pending';
+
+-- veículos de teste criados nesta rodada
+update vehicle set deleted_at = now()
+where profile_id = '055deb74-65a3-43e2-8c6d-2310e607be3c'
+  and license_plate ilike any (array['teste01','teste02']) and deleted_at is null;
+```
+
+**Efeitos colaterais desta parte:** K-02 segura vaga real (a `pending` conta na capacidade até
+expirar ou cancelar); uma reserva que fosse paga dispararia e-mail de confirmação (não pague);
+`add_vehicle` grava veículo real no perfil de teste. Nada aqui manda e-mail para terceiro.
