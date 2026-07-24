@@ -1,6 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
 import { env } from "./e2e/support/env";
-import { CUSTOMER_STATE, MANAGER_STATE, OPERATOR_STATE } from "./e2e/support/session";
+import {
+  ABBAPARK_OWNER_STATE,
+  CUSTOMER_STATE,
+  MANAGER_STATE,
+  OPERATOR_STATE,
+} from "./e2e/support/session";
 
 /**
  * Camada E2E de navegador. Separada do Vitest de propósito: o Vitest só olha
@@ -30,10 +35,17 @@ import { CUSTOMER_STATE, MANAGER_STATE, OPERATOR_STATE } from "./e2e/support/ses
  * argv não. Descoberto na primeira execução real, em 21/07/2026.
  */
 const TX_PROJECT = "e2e-consumer-tx";
-const txRequested = process.argv.some(
-  (arg, i) =>
-    arg === `--project=${TX_PROJECT}` ||
-    (arg === "--project" && process.argv[i + 1] === TX_PROJECT),
+/**
+ * Projects que ESCREVEM em produção e não podem rodar num `playwright test` cru:
+ * o consumidor transacional (cria reserva/cobrança) e a jornada do dono (altera
+ * preço real e cria reserva). Os dois armam a mesma trava `MP_E2E_TX`, e cada
+ * spec se pula sozinho via `guardTx()` quando ela não está ligada.
+ */
+const OWNER_PROJECT = "e2e-owner-tx";
+const txRequested = [TX_PROJECT, OWNER_PROJECT].some((name) =>
+  process.argv.some(
+    (arg, i) => arg === `--project=${name}` || (arg === "--project" && process.argv[i + 1] === name),
+  ),
 );
 if (txRequested) process.env.MP_E2E_TX = "1";
 
@@ -76,6 +88,27 @@ export default defineConfig({
       testMatch: /operator\/.*\.spec\.ts$/,
       dependencies: ["setup"],
       use: { ...devices["Desktop Chrome"], storageState: OPERATOR_STATE },
+    },
+    /**
+     * Roteiro O: jornada do DONO de estacionamento (peu+operador@fera.ag, owner do
+     * Abbapark). Confere reservas, tenta ver as canceladas, muda o preço da diária,
+     * confirma que o novo valor propaga pra busca e pro checkout, reserva no valor
+     * novo e lê o reflexo no painel.
+     *
+     * Transacional: o passo de preço ESCREVE no Abbapark de produção (revertido no
+     * fim do spec) e a reserva cria um `booking` real (pendente, expira sozinho).
+     * Por isso fica atrás da mesma trava do consumidor tx: só roda por nome.
+     *
+     *     bunx playwright test --project=e2e-owner-tx
+     *
+     * storageState default é o do dono; o passo da reserva abre um contexto à parte
+     * com a sessão do cliente.
+     */
+    {
+      name: OWNER_PROJECT,
+      testMatch: /owner\/.*\.spec\.ts$/,
+      dependencies: ["setup"],
+      use: { ...devices["Desktop Chrome"], storageState: ABBAPARK_OWNER_STATE },
     },
     /**
      * Roteiro C (consumidor), parte de LEITURA: C-01 a C-05. Home, busca e

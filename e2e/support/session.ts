@@ -24,6 +24,8 @@ import { env, projectRef } from "./env";
 export const MANAGER_STATE = ".auth/manager.json";
 export const OPERATOR_STATE = ".auth/operator.json";
 export const CUSTOMER_STATE = ".auth/customer.json";
+/** Sessão do dono do Abbapark (roteiro O). Separada do operador Mercy. */
+export const ABBAPARK_OWNER_STATE = ".auth/abbapark-owner.json";
 
 async function generateMagicLink(email: string): Promise<string> {
   const { data, error } = await admin.auth.admin.generateLink({

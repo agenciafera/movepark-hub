@@ -322,8 +322,16 @@ export async function latestConfirmedBooking(customerEmail: string) {
  * `?from=`/`?to=` como estado inicial, então o teste não depende do popover do
  * react-day-picker nem do fuso do runner.
  */
-export async function reserveCheapest(page: Page, startInDays = 1): Promise<string> {
-  return reserveWithFare(page, { fare: "Básica", range: oneNightRange(startInDays) });
+export async function reserveCheapest(
+  page: Page,
+  startInDays = 1,
+  target: { fixture?: ConsumerFixture; typeCode?: string } = {},
+): Promise<string> {
+  return reserveWithFare(page, {
+    fare: "Básica",
+    range: oneNightRange(startInDays),
+    ...target,
+  });
 }
 
 /**
@@ -336,10 +344,19 @@ export async function reserveCheapest(page: Page, startInDays = 1): Promise<stri
  */
 export async function reserveWithFare(
   page: Page,
-  opts: { fare: FareLabel; range?: { from: string; to: string } },
+  opts: {
+    fare: FareLabel;
+    range?: { from: string; to: string };
+    /** Unidade alvo. Default: Motion Park, a mais barata (specs C cobram real). */
+    fixture?: ConsumerFixture;
+    /** Tipo de vaga. Default: o mais barato do Motion Park. */
+    typeCode?: string;
+  },
 ): Promise<string> {
   const range = opts.range ?? oneNightRange();
-  await page.goto(listingUrl(MOTION_PARK, CHEAPEST_TYPE_CODE, range));
+  const fixture = opts.fixture ?? MOTION_PARK;
+  const typeCode = opts.typeCode ?? CHEAPEST_TYPE_CODE;
+  await page.goto(listingUrl(fixture, typeCode, range));
 
   // A default da UI é a Flex, que soma sobretaxa ao total. A escolha é sempre
   // explícita aqui. O nome acessível do botão traz rótulo + tagline, então a
@@ -399,8 +416,12 @@ export async function fillVehicleStep(page: Page) {
  * `startInDays` existe para cada spec ter a SUA data e não colidir com a chave de
  * dedup dos outros. Ver a nota em `oneNightRange`.
  */
-export async function reserveUntilPayment(page: Page, startInDays = 1): Promise<string> {
-  const code = await reserveCheapest(page, startInDays);
+export async function reserveUntilPayment(
+  page: Page,
+  startInDays = 1,
+  target: { fixture?: ConsumerFixture; typeCode?: string } = {},
+): Promise<string> {
+  const code = await reserveCheapest(page, startInDays, target);
   await fillIdentityStep(page);
   await fillVehicleStep(page);
   await expect(page.getByRole("heading", { name: "Pagamento" })).toBeVisible({ timeout: 30_000 });

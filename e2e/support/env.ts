@@ -67,6 +67,15 @@ export const env = {
   managerEmail: process.env.E2E_MANAGER_EMAIL ?? "developer@fera.ag",
   operatorEmail: process.env.E2E_OPERATOR_EMAIL ?? "peu+mercy@fera.ag",
   customerEmail: process.env.E2E_CUSTOMER_EMAIL ?? "peu+teste1@fera.ag",
+
+  /**
+   * Dono de estacionamento de verdade: owner da company Abbapark (unidade
+   * Aeroporto Afonso Pena), já vinculado em `profile_company`. Diferente do
+   * operador Mercy (fixture descartável), este responde por uma company real de
+   * parceiro, então a jornada dele (roteiro O) só LÊ, e o único write (preço) é
+   * revertido no fim. Ver `e2e/support/owner.ts`.
+   */
+  abbaparkOwnerEmail: process.env.E2E_ABBAPARK_OWNER_EMAIL ?? "peu+operador@fera.ag",
 } as const;
 
 /** Ref do projeto Supabase, extraído da URL. Usado em mensagens de erro. */
