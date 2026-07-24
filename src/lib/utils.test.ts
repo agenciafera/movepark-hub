@@ -37,6 +37,14 @@ describe("cn com os degraus de tipografia do projeto", () => {
     expect(cn("text-display-sm", "text-ink")).toBe("text-display-sm text-ink");
   });
 
+  // Cobertura literal do critério de aceite: TODO token de tamanho, seguido de
+  // uma cor, tem que sobreviver ao merge. Se alguém adicionar um token novo, o
+  // lockstep obriga a registrá-lo em FONT_SIZE_TOKENS, e este caso passa a
+  // exercê-lo automaticamente.
+  it.each([...FONT_SIZE_TOKENS])("preserva o tamanho text-%s ao lado de uma cor", (token) => {
+    expect(cn(`text-${token}`, "text-muted")).toBe(`text-${token} text-muted`);
+  });
+
   it("ainda resolve conflito real entre dois tamanhos do projeto", () => {
     expect(cn("text-caption", "text-badge")).toBe("text-badge");
     expect(cn("text-title-md", "text-display-sm")).toBe("text-display-sm");
