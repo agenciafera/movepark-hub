@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
 import { useRef, useEffect } from "react";
-import { ArrowRight, Plane, Tag, Car } from "lucide-react";
+import { ArrowRight, Plane, Tag } from "lucide-react";
 import { usePopularOffers, type PopularOffer } from "@/features/search/api";
+import { useSavedListings } from "@/features/search/useSavedListings";
+import { ParkingCard, ParkingCardBadge, type ParkingCardAmenity } from "@/features/search/ParkingCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { gsap } from "@/lib/gsap";
-import { formatBRL } from "@/lib/format";
 
 // Mapeamento de amenidade → label
 const AMENITY_PILLS: Record<string, string> = {
@@ -30,14 +31,22 @@ const AMENITY_PRIORITY = [
   "self_park",
 ];
 
-function topAmenityPills(amenities: { amenity_code: string }[], n = 3) {
+function topAmenityPills(amenities: { amenity_code: string }[], n = 3): ParkingCardAmenity[] {
   const set = new Set(amenities.map((a) => a.amenity_code));
-  const out: string[] = [];
+  const out: ParkingCardAmenity[] = [];
   for (const code of AMENITY_PRIORITY) {
-    if (set.has(code) && AMENITY_PILLS[code]) out.push(AMENITY_PILLS[code]);
+    if (set.has(code) && AMENITY_PILLS[code]) out.push({ code, label: AMENITY_PILLS[code] });
     if (out.length >= n) break;
   }
   return out;
+}
+
+/** Rótulo do destino no card da home: "(GRU) Guarulhos", ou o nome da unidade sem destino. */
+function destinationMeta(location: PopularOffer["location"]): string {
+  const d = location.destination;
+  if (!d) return location.name;
+  const label = d.short_name ?? d.name;
+  return d.code ? `(${d.code}) ${label}` : label;
 }
 
 function getDefaultDates() {
@@ -50,97 +59,37 @@ function getDefaultDates() {
   return { from: fmt(tomorrow), to: fmt(dayAfter) };
 }
 
-function PopularOfferCard({ offer, badge }: { offer: PopularOffer; badge?: string }) {
+function PopularOfferCard({
+  offer,
+  badge,
+  isSaved,
+  onToggleSave,
+}: {
+  offer: PopularOffer;
+  badge?: string;
+  isSaved: boolean;
+  onToggleSave: () => void;
+}) {
   const { from, to } = getDefaultDates();
   const { location, parking_type, price_1d, old_price_1d } = offer;
-  const pills = topAmenityPills(location.amenities);
   const url = `/p/${location.company.slug}/${location.slug}/${parking_type.code}?from=${from}&to=${to}&src=home-popular`;
-  const cover = location.cover_image;
 
   return (
-    <article
-      data-testid="popular-card"
-      className="group flex flex-col overflow-hidden rounded-2xl border border-hairline bg-canvas transition-shadow hover:shadow-tier"
-    >
-      {/* Imagem — 2:1. Sem foto → placeholder (mesmo padrão do ResultCard). */}
-      <Link to={url} className="relative block aspect-[2/1] overflow-hidden bg-surface-soft">
-        {cover ? (
-          <img
-            src={cover}
-            alt={location.name}
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            loading="lazy"
-            decoding="async"
-          />
-        ) : (
-          <>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Car className="h-12 w-12 text-muted-soft" aria-hidden />
-            </div>
-            <div className="absolute inset-0 bg-soft-gradient opacity-60" aria-hidden />
-          </>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" aria-hidden />
-
-        {/* Diferencial comparativo — só quando o card se destaca no conjunto */}
-        {badge && (
-          <div className="absolute left-3 top-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-mp-primary px-3 py-1 text-[12px] font-semibold text-white shadow-sm backdrop-blur-sm">
-              <Tag className="h-3 w-3 shrink-0" aria-hidden />
-              {badge}
-            </span>
-          </div>
-        )}
-      </Link>
-
-      {/* Conteúdo */}
-      <Link to={url} className="flex flex-1 flex-col gap-3 p-5">
-        {/* Nome + destino + tipo de vaga (discreto) */}
-        <div className="min-w-0 space-y-0.5">
-          <h3 className="line-clamp-1 text-[18px] font-bold leading-snug text-ink">
-            {location.company.name}
-          </h3>
-          <p className="line-clamp-1 flex items-center gap-1.5 text-body-sm text-muted">
-            {location.destination && <Plane className="h-3 w-3 shrink-0" aria-hidden />}
-            <span>
-              {location.destination
-                ? location.destination.code
-                  ? `(${location.destination.code}) ${location.destination.short_name ?? location.destination.name}`
-                  : (location.destination.short_name ?? location.destination.name)
-                : location.name}
-              {" · "}{parking_type.name}
-            </span>
-          </p>
-        </div>
-
-        {/* Pills de amenidade */}
-        {pills.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {pills.map((label) => (
-              <span
-                key={label}
-                className="rounded-full bg-surface-strong px-2.5 py-1 text-[12px] font-medium text-ink"
-              >
-                {label}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Preço — sempre por último */}
-        <div className="mt-auto pt-1">
-          {old_price_1d != null && old_price_1d > price_1d! && (
-            <div className="text-[13px] text-muted line-through tabular-nums">
-              {formatBRL(old_price_1d)}
-            </div>
-          )}
-          <div className="text-[24px] font-bold leading-none text-ink tabular-nums">
-            {formatBRL(price_1d)}
-          </div>
-          <span className="mt-1 block text-body-sm text-muted">1 diária</span>
-        </div>
-      </Link>
-    </article>
+    <ParkingCard
+      testId="popular-card"
+      href={url}
+      coverImage={location.cover_image}
+      coverAlt={location.name}
+      title={location.company.name}
+      parkingTypeName={parking_type.name}
+      metaIcon={location.destination ? Plane : undefined}
+      meta={destinationMeta(location)}
+      rating={{ avg: location.review_avg, count: location.review_count }}
+      amenities={topAmenityPills(location.amenities)}
+      price={{ total: price_1d, oldPrice: old_price_1d, unit: "1 diária" }}
+      overlay={badge ? <ParkingCardBadge icon={Tag}>{badge}</ParkingCardBadge> : undefined}
+      favorite={{ isSaved, onToggle: onToggleSave }}
+    />
   );
 }
 
@@ -167,6 +116,7 @@ function LoadingSkeleton() {
 
 export function PopularParkingLots() {
   const { data, isLoading } = usePopularOffers(6);
+  const saved = useSavedListings();
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -229,6 +179,8 @@ export function PopularParkingLots() {
               key={offer.id}
               offer={offer}
               badge={isCheapest ? "Mais barato" : undefined}
+              isSaved={saved.isSaved(offer.id)}
+              onToggleSave={() => saved.toggle(offer.id)}
             />
           );
         })}
