@@ -97,7 +97,7 @@ Isso cobre a vitrine inteira e quase todo o detalhe. As RPCs de escrita são gat
 escopo (`locations:write`, `parking-types:write`, `pricing:write`), em
 `supabase/migrations/20260714000000_regate_operator_rpcs.sql`.
 
-**O que o dono NÃO administra hoje (candidatos a abrir):**
+**O que o dono NÃO administra hoje (e quase tudo é de propósito):**
 
 | Informação que o cliente vê | Onde aparece | Quem controla hoje | Onde comprova |
 |---|---|---|---|
@@ -108,19 +108,40 @@ escopo (`locations:write`, `parking-types:write`, `pricing:write`), em
 | Distâncias a terminais | Card e detalhe | Derivado de PostGIS sobre `destination_point` (hub_admin) | `src/routes/listing.tsx:356` |
 | Garantia Movepark | Detalhe | Copy de plataforma (código) | `src/features/guarantee/copy.ts` |
 
-**Sugestão de prioridade (você decide se precisa):**
+### Decisões sobre as lacunas (24/07/2026)
 
-1. **Descrição do tipo de vaga.** É o único texto livre do corpo da página que o dono não
-   controla, e é onde ele explicaria o diferencial da vaga dele. Hoje vem do catálogo
-   global. Forte candidato a virar um override por unidade.
-2. **Política de cancelamento por estacionamento.** Se a regra varia por lote, o dono
-   precisaria editar as linhas principais, não só acrescentar uma. Hoje é genérica e fixa.
-3. **Nome comercial da empresa.** Provavelmente controle intencional da Movepark. Vale só
-   confirmar com o time se o dono deveria poder ajustar.
+Revisadas com o produto. Quase todas as lacunas são intencionais:
+
+- **Política de cancelamento e de reserva ficam com a Movepark.** A plataforma monetiza a
+  política de cancelamento, então ela é da Movepark, não do estacionamento. O dono não
+  administra isso, de propósito. **A verificar:** hoje o dono ainda consegue editar um campo
+  `reservation_policy` da unidade (`src/features/locations/LocationSections.tsx:327`), o que
+  contradiz a regra. Confirmar se esse campo deve sair da mão do dono.
+- **Descrição do tipo de vaga fica global, com curadoria da Movepark.** O dono faz a gestão
+  do tipo (marca coberta ou descoberta), mas não escreve a descrição. Na prática ele tende a
+  não preencher, ou preenche mal ("essa é uma vaga coberta"), então é melhor a Movepark curar
+  esse texto. Decisão: manter só a seleção do tipo no operator, sem campo de descrição.
+- **FAQ global fica como visualização.** Interessa o dono ver que a Movepark já responde
+  muita pergunta. Segue read-only por enquanto (`src/routes/operator/faq.tsx:55`).
+- **Garantia e nome comercial são da plataforma.** Copy de garantia e nome comercial da
+  empresa seguem com a Movepark.
+
+### A construir (requisito que saiu desta varredura)
+
+- **Área do dono para ver o acordo aceito.** A garantia da Movepark faz parte de um acordo
+  que o dono aceita no onboarding. Ele precisa de uma tela para consultar esse acordo aceito,
+  com o compromisso dele explícito: quantas vagas ele garante disponibilizar e vender pela
+  plataforma.
+- **Capacidade é compromisso de venda, não só disponibilidade declarada.** O número de vagas
+  que o dono coloca na plataforma é uma garantia de que ele reserva e vende aquilo para a
+  Movepark, separado do que ele monetiza no balcão. Exemplo: um estacionamento de 1000 vagas
+  que já vende no balcão não coloca as 1000 aqui; ele separa, digamos, 100 (50 cobertas, 50
+  descobertas) dedicadas à plataforma. Hoje a capacidade em
+  `/operator/locations/:id/parking-types` é tratada como disponibilidade declarada. O produto
+  e o discurso precisam amarrar que ela é uma alocação dedicada e um compromisso de venda. É
+  decisão de negócio (candidata a épico), para o time avaliar.
 
 **A verificar (a análise não fechou 100%):**
 - Editar `base_price` depois de criado: no card do tipo em `/operator/locations/:id/parking-types`
   o preço base aparece read-only; o dono muda o efetivo pelas regras em `/operator/pricing`,
   mas não achei editor do `base_price` pós-criação. Confirmar se é lacuna ou decisão.
-- Alguma RPC de edição de `company` exposta ao dono: não encontrada em
-  `20260714000000_regate_operator_rpcs.sql`. Confirmar que o nome da empresa é mesmo só do manager.
