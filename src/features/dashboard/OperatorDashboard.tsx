@@ -96,9 +96,14 @@ export default function OperatorDashboard() {
   const { ids: scopedLocationIds } = useScopedLocationIds();
   const companyId = effectiveCompanyIds[0];
   const [period, setPeriod] = React.useState<ReportPeriod>(30);
-  // O dashboard espelha o escopo (ADR-005): quem não tem reviews:read (ex.: o papel
-  // Financeiro) não vê o card de Avaliações aqui, do mesmo jeito que a página some da sidebar.
+  // O dashboard espelha o escopo (ADR-005), do mesmo jeito que a sidebar: quem não tem o escopo
+  // não vê o card. reviews:read → Avaliações; finance:read → receita/ticket/RevPAR/gráfico;
+  // payouts:read → saldo. O papel Operação, por exemplo, não vê dinheiro; o Financeiro não vê
+  // avaliações.
   const canReviews = hasScope("reviews:read", companyId);
+  const canFinance = hasScope("finance:read", companyId);
+  const canPayouts = hasScope("payouts:read", companyId);
+  const canMoney = canFinance || canPayouts;
 
   const stats = useOperatorStats(scopedLocationIds);
   const summary = useOperatorPeriodSummary(period, scopedLocationIds);
@@ -159,36 +164,14 @@ export default function OperatorDashboard() {
 
       <RecipientKycBanner companyId={companyId} />
 
-      {/* Dinheiro e demanda do período */}
+      {/* Operacional do período (bookings/occupancy:read, todos os papéis) */}
       <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-4">
-        <KpiCard
-          label={`Receita (${periodLabel})`}
-          value={formatBRL(cur?.revenue ?? 0)}
-          trend={cur && prev ? formatDelta(pctDelta(cur.revenue, prev.revenue)) : undefined}
-          isLoading={summary.isLoading}
-        />
         <KpiCard
           label={`Reservas (${periodLabel})`}
           value={cur?.count ?? 0}
           trend={cur && prev ? formatDelta(pctDelta(cur.count, prev.count)) : undefined}
           isLoading={summary.isLoading}
         />
-        <KpiCard
-          label="Ticket médio"
-          value={formatBRL(cur?.ticket ?? 0)}
-          hint="por reserva paga"
-          isLoading={summary.isLoading}
-        />
-        <KpiCard
-          label="Saldo a repassar"
-          value={formatBRL((balance.data?.balance_cents ?? 0) / 100)}
-          hint="líquido menos saques"
-          isLoading={balance.isLoading}
-        />
-      </div>
-
-      {/* Demanda e futuro */}
-      <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-4">
         <KpiCard
           label={`Reservas futuras (${periodLabel})`}
           value={upcoming.data ?? 0}
@@ -207,17 +190,49 @@ export default function OperatorDashboard() {
           hint="das vagas dedicadas"
           isLoading={occ7.isLoading}
         />
-        <KpiCard
-          label={`RevPAR (${periodLabel})`}
-          value={occPeriod.data?.capacityDays ? formatBRL(revparValue) : "-"}
-          hint="receita por vaga-dia"
-          isLoading={occPeriod.isLoading}
-        />
       </div>
 
-      {/* Receita diária + saúde */}
-      <div className="grid grid-cols-1 gap-4 desktop:grid-cols-3">
-        <Card className="desktop:col-span-2">
+      {/* Dinheiro (finance:read / payouts:read). O papel Operação não vê. */}
+      {canMoney && (
+        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-4">
+          {canFinance && (
+            <KpiCard
+              label={`Receita (${periodLabel})`}
+              value={formatBRL(cur?.revenue ?? 0)}
+              trend={cur && prev ? formatDelta(pctDelta(cur.revenue, prev.revenue)) : undefined}
+              isLoading={summary.isLoading}
+            />
+          )}
+          {canFinance && (
+            <KpiCard
+              label="Ticket médio"
+              value={formatBRL(cur?.ticket ?? 0)}
+              hint="por reserva paga"
+              isLoading={summary.isLoading}
+            />
+          )}
+          {canFinance && (
+            <KpiCard
+              label={`RevPAR (${periodLabel})`}
+              value={occPeriod.data?.capacityDays ? formatBRL(revparValue) : "-"}
+              hint="receita por vaga-dia"
+              isLoading={occPeriod.isLoading}
+            />
+          )}
+          {canPayouts && (
+            <KpiCard
+              label="Saldo a repassar"
+              value={formatBRL((balance.data?.balance_cents ?? 0) / 100)}
+              hint="líquido menos saques"
+              isLoading={balance.isLoading}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Receita diária (finance:read) */}
+      {canFinance && (
+        <Card>
           <CardHeader>
             <CardTitle>Receita diária</CardTitle>
           </CardHeader>
@@ -260,62 +275,63 @@ export default function OperatorDashboard() {
             )}
           </CardContent>
         </Card>
+      )}
 
-        <div className="flex flex-col gap-4">
+      {/* Saúde da operação */}
+      <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
+        <Card>
+          <CardContent className="flex flex-col gap-2 p-6">
+            <span className="text-caption text-muted">Cancelamento ({periodLabel})</span>
+            {funnel.isLoading ? (
+              <Skeleton className="h-9 w-24" />
+            ) : (
+              <span className="text-display-md text-ink">
+                {cancel.rate.toFixed(0).replace(".", ",")}%
+              </span>
+            )}
+            <span className={cn("text-caption", toneClass[benchmark.tone])}>{benchmark.label}</span>
+            <span className="text-caption text-muted">
+              {cancel.cancelled} canceladas e {cancel.noShow} no-show de {cancel.total} reservas
+            </span>
+          </CardContent>
+        </Card>
+
+        {canReviews && (
           <Card>
             <CardContent className="flex flex-col gap-2 p-6">
-              <span className="text-caption text-muted">Cancelamento ({periodLabel})</span>
-              {funnel.isLoading ? (
+              <span className="text-caption text-muted">Avaliações</span>
+              {reviews.isLoading ? (
                 <Skeleton className="h-9 w-24" />
+              ) : rating.count === 0 ? (
+                <span className="text-body-md text-muted">Ainda sem avaliação</span>
               ) : (
                 <span className="text-display-md text-ink">
-                  {cancel.rate.toFixed(0).replace(".", ",")}%
+                  {formatRating(rating.avg)}
+                  <span className="text-body-sm text-muted"> de 5 · {rating.count}</span>
                 </span>
               )}
-              <span className={cn("text-caption", toneClass[benchmark.tone])}>{benchmark.label}</span>
               <span className="text-caption text-muted">
-                {cancel.cancelled} canceladas e {cancel.noShow} no-show de {cancel.total} reservas
+                {pending === 0 ? "Nenhuma aguardando resposta" : `${pending} aguardando resposta`}
               </span>
             </CardContent>
           </Card>
+        )}
 
-          {canReviews && (
-            <Card>
-              <CardContent className="flex flex-col gap-2 p-6">
-                <span className="text-caption text-muted">Avaliações</span>
-                {reviews.isLoading ? (
-                  <Skeleton className="h-9 w-24" />
-                ) : rating.count === 0 ? (
-                  <span className="text-body-md text-muted">Ainda sem avaliação</span>
-                ) : (
-                  <span className="text-display-md text-ink">
-                    {formatRating(rating.avg)}
-                    <span className="text-body-sm text-muted"> de 5 · {rating.count}</span>
-                  </span>
-                )}
-                <span className="text-caption text-muted">
-                  {pending === 0 ? "Nenhuma aguardando resposta" : `${pending} aguardando resposta`}
-                </span>
-              </CardContent>
-            </Card>
-          )}
-
-          <Card>
-            <CardContent className="flex flex-col gap-2 p-6">
-              <span className="text-caption text-muted">Origem ({periodLabel})</span>
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center justify-between text-body-sm">
-                  <span className="text-muted">Pelo site</span>
-                  <span className="tabular-nums text-ink">{channel.site}</span>
-                </div>
-                <div className="flex items-center justify-between text-body-sm">
-                  <span className="text-muted">Pela API</span>
-                  <span className="tabular-nums text-ink">{channel.api}</span>
-                </div>
+        <Card>
+          <CardContent className="flex flex-col gap-2 p-6">
+            <span className="text-caption text-muted">Origem ({periodLabel})</span>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between text-body-sm">
+                <span className="text-muted">Pelo site</span>
+                <span className="tabular-nums text-ink">{channel.site}</span>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+              <div className="flex items-center justify-between text-body-sm">
+                <span className="text-muted">Pela API</span>
+                <span className="tabular-nums text-ink">{channel.api}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Operação de hoje */}

@@ -13,7 +13,7 @@ function mockCompanyName(name: string) {
   );
 }
 
-describe("Sidebar — subtítulo sob a marca", () => {
+describe("Sidebar: subtítulo sob a marca", () => {
   // Regressão: o hub_admin "vê" todas as empresas, então effectiveCompanyIds[0] é só a
   // primeira da lista. A sidebar do manager mostrava esse nome (ex.: "Virapark") como se o
   // admin fosse dela. Sem impersonar, tem que ficar o brandTitle.
