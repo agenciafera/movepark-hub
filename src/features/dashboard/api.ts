@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { startOfDay, startOfMonth, subDays, subMonths } from "date-fns";
 import { supabase } from "@/lib/supabase";
-import { summarizePeriod } from "./dashboardMetrics.logic";
+import { summarizePeriod, averageLeadTimeDays, channelMix } from "./dashboardMetrics.logic";
 
 function isoStartOfMonth(d = new Date()) {
   return startOfMonth(d).toISOString();
@@ -124,18 +124,67 @@ export function useOperatorPeriodSummary(periodDays: PeriodDays, locationIds?: s
       const now = new Date();
       const periodStart = subDays(now, periodDays).toISOString();
       const windowStart = subDays(now, periodDays * 2).toISOString();
+      // fare_tier NÃO entra aqui: o mix de tarifa (Básica/Flex/Superflex) revela quanto a
+      // Movepark ganha por reserva e é visão de Super Admin, não do dono. O canal (site/API)
+      // é operacional e pode aparecer para o dono.
       let q = supabase
         .from("booking")
-        .select("check_in_at, total_amount")
+        .select("check_in_at, total_amount, created_at, created_via_api_key_id")
         .gte("check_in_at", windowStart)
         .in("status", ["confirmed", "checked_in", "completed"]);
       if (locationIds?.length) q = q.in("location_id", locationIds);
       const { data, error } = await q;
       if (error) throw error;
-      return summarizePeriod(
-        (data ?? []) as { check_in_at: string; total_amount: number | string | null }[],
-        periodStart,
-      );
+      const rows = (data ?? []) as {
+        check_in_at: string;
+        total_amount: number | string | null;
+        created_at: string;
+        created_via_api_key_id: string | null;
+      }[];
+      const split = summarizePeriod(rows, periodStart);
+      // Lead time e canal são do período atual (as reservas com check-in dentro dele).
+      const currentRows = rows.filter((r) => r.check_in_at >= periodStart);
+      return {
+        ...split,
+        leadTimeDays: averageLeadTimeDays(currentRows),
+        channelMix: channelMix(currentRows),
+      };
+    },
+  });
+}
+
+/** Reservas confirmadas com check-in nos próximos `periodDays`: o olhar pra frente. */
+export function useUpcomingBookingsCount(periodDays: PeriodDays, locationIds?: string[]) {
+  return useQuery({
+    queryKey: ["dashboard", "operator-upcoming", periodDays, locationIds],
+    queryFn: async (): Promise<number> => {
+      const now = new Date();
+      const until = new Date(now.getTime() + periodDays * 24 * 60 * 60 * 1000).toISOString();
+      let q = supabase
+        .from("booking")
+        .select("id", { count: "exact", head: true })
+        .gte("check_in_at", now.toISOString())
+        .lte("check_in_at", until)
+        .in("status", ["confirmed", "checked_in"]);
+      if (locationIds?.length) q = q.in("location_id", locationIds);
+      const { count, error } = await q;
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+}
+
+/** Unidades da empresa em alta demanda hoje (RPC `locations_high_demand_today`). */
+export function useHighDemandToday(locationIds?: string[]) {
+  return useQuery({
+    queryKey: ["dashboard", "high-demand-today", locationIds],
+    enabled: !!locationIds?.length,
+    queryFn: async (): Promise<number> => {
+      const { data, error } = await supabase.rpc("locations_high_demand_today", {
+        p_location_ids: locationIds!,
+      });
+      if (error) throw error;
+      return (data ?? []).length;
     },
   });
 }

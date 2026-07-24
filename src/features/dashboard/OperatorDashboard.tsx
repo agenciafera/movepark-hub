@@ -25,7 +25,12 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { cn } from "@/lib/utils";
-import { useOperatorStats, useOperatorPeriodSummary } from "./api";
+import {
+  useOperatorStats,
+  useOperatorPeriodSummary,
+  useUpcomingBookingsCount,
+  useHighDemandToday,
+} from "./api";
 import {
   pctDelta,
   formatDelta,
@@ -95,6 +100,8 @@ export default function OperatorDashboard() {
   const balance = usePayoutBalance(companyId);
   const reviews = useOperatorReviews(companyId);
   const timeline = useTodayTimeline(scopedLocationIds);
+  const upcoming = useUpcomingBookingsCount(period, scopedLocationIds);
+  const highDemand = useHighDemandToday(scopedLocationIds);
 
   const cur = summary.data?.current;
   const prev = summary.data?.previous;
@@ -102,6 +109,9 @@ export default function OperatorDashboard() {
   const benchmark = cancellationBenchmark(cancel.rate);
   const rating = averageRating(reviews.data ?? []);
   const pending = pendingReviews(reviews.data ?? []);
+  const leadTime = summary.data?.leadTimeDays ?? 0;
+  const channel = summary.data?.channelMix ?? { site: 0, api: 0 };
+  const isHighDemand = (highDemand.data ?? 0) > 0;
 
   const periodLabel = `${period} dias`;
 
@@ -156,6 +166,37 @@ export default function OperatorDashboard() {
           hint="líquido menos saques"
           isLoading={balance.isLoading}
         />
+      </div>
+
+      {/* Demanda e futuro */}
+      <div className="grid grid-cols-1 gap-4 tablet:grid-cols-3">
+        <KpiCard
+          label={`Reservas futuras (${periodLabel})`}
+          value={upcoming.data ?? 0}
+          hint="com check-in daqui pra frente"
+          isLoading={upcoming.isLoading}
+        />
+        <KpiCard
+          label="Antecedência média"
+          value={cur?.count ? `${leadTime.toFixed(1).replace(".", ",")} dias` : "-"}
+          hint="da reserva ao check-in"
+          isLoading={summary.isLoading}
+        />
+        <Card>
+          <CardContent className="flex flex-col gap-2 p-6">
+            <span className="text-caption text-muted">Origem ({periodLabel})</span>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between text-body-sm">
+                <span className="text-muted">Pelo site</span>
+                <span className="tabular-nums text-ink">{channel.site}</span>
+              </div>
+              <div className="flex items-center justify-between text-body-sm">
+                <span className="text-muted">Pela API</span>
+                <span className="tabular-nums text-ink">{channel.api}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Receita diária + saúde */}
@@ -246,7 +287,14 @@ export default function OperatorDashboard() {
       {/* Operação de hoje */}
       <Card>
         <CardHeader>
-          <CardTitle>Hoje</CardTitle>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle>Hoje</CardTitle>
+            {isHighDemand && (
+              <span className="rounded-full bg-surface-soft px-2.5 py-0.5 text-caption text-success">
+                Em alta demanda hoje
+              </span>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
           <div className="grid grid-cols-3 gap-4">

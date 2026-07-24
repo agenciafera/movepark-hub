@@ -171,12 +171,19 @@ Movepark (sem catraca, sem cobrança no balcão, com comissão), a proposta de d
 Cada item traz a viabilidade: **[pronto]** sai de hook/RPC que já existe, **[corte novo]** é
 agregação client-side nova sobre dados que já temos, **[backend novo]** precisa de RPC/endpoint.
 
-**Status: v1 implementado** (`src/features/dashboard/OperatorDashboard.tsx`, lógica testada em
-`dashboardMetrics.logic.ts`). Entregue: seletor de período, KPIs de receita/reservas com Δ vs
-período anterior, ticket médio, saldo a repassar, gráfico de receita diária, cancelamento com
-referência de mercado (destrava com o F1) e nota/avaliações, mais a operação de hoje. Ficaram de
-fora do v1 (pace, lead time, mix de tarifa/canal, ocupação vs capacidade no dashboard, RevPAR),
-por serem corte novo ou backend novo.
+**Status: implementado** (`src/features/dashboard/OperatorDashboard.tsx`, lógica testada em
+`dashboardMetrics.logic.ts`). Entregue: seletor de período; KPIs de receita e reservas com Δ vs
+período anterior, ticket médio e saldo a repassar; reservas futuras (pace simples), antecedência
+média (lead time) e origem (site vs API); gráfico de receita diária; cancelamento com referência
+de mercado (destrava com o F1); nota e avaliações; selo de alta demanda hoje; e a operação de hoje.
+
+**Fora de propósito do dono:** o mix de tarifa (Básica/Flex/Superflex) revela a margem da Movepark
+por reserva, então é visão de Super Admin. A função `fareMix` (`dashboardMetrics.logic.ts`) fica
+pronta e testada para a visão do manager, mas não entra no dashboard do dono.
+
+**Ainda por fazer (backend novo, sem depender de decisão):** ocupação vs capacidade no dashboard
+com agregador multi-unidade, RevPAR/RevPAS, comparativo por unidade e atribuição por origem
+escopada ao dono.
 
 **Bloco 1 · Dinheiro (topo)**
 - Receita líquida do período (depois da comissão) e variação vs período anterior. [líquida:

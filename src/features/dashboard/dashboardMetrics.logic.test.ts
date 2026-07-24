@@ -7,6 +7,9 @@ import {
   cancellationBenchmark,
   averageRating,
   pendingReviews,
+  averageLeadTimeDays,
+  fareMix,
+  channelMix,
 } from "./dashboardMetrics.logic";
 
 describe("summarizePeriod", () => {
@@ -88,5 +91,47 @@ describe("reviews", () => {
 
   it("pendentes são as sem resposta", () => {
     expect(pendingReviews(reviews)).toBe(2);
+  });
+});
+
+describe("averageLeadTimeDays", () => {
+  it("média de dias entre criação e check-in", () => {
+    const rows = [
+      { created_at: "2026-07-01T00:00:00Z", check_in_at: "2026-07-03T00:00:00Z" }, // 2 dias
+      { created_at: "2026-07-01T00:00:00Z", check_in_at: "2026-07-05T00:00:00Z" }, // 4 dias
+    ];
+    expect(averageLeadTimeDays(rows)).toBe(3);
+  });
+
+  it("diferença negativa vira 0 e lista vazia é 0", () => {
+    expect(
+      averageLeadTimeDays([
+        { created_at: "2026-07-05T00:00:00Z", check_in_at: "2026-07-01T00:00:00Z" },
+      ]),
+    ).toBe(0);
+    expect(averageLeadTimeDays([])).toBe(0);
+  });
+});
+
+describe("fareMix / channelMix", () => {
+  it("conta por tarifa e ignora sem tarifa", () => {
+    expect(
+      fareMix([
+        { fare_tier: "basica" },
+        { fare_tier: "flex" },
+        { fare_tier: "flex" },
+        { fare_tier: null },
+      ]),
+    ).toEqual({ basica: 1, flex: 2 });
+  });
+
+  it("separa site (fluxo próprio) de API (chave de API)", () => {
+    expect(
+      channelMix([
+        { created_via_api_key_id: null },
+        { created_via_api_key_id: "key-1" },
+        { created_via_api_key_id: null },
+      ]),
+    ).toEqual({ site: 2, api: 1 });
   });
 });

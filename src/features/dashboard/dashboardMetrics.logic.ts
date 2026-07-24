@@ -96,3 +96,51 @@ export function averageRating(reviews: { rating: number | null }[]): { avg: numb
 export function pendingReviews(reviews: { owner_response: string | null }[]): number {
   return reviews.filter((r) => !r.owner_response).length;
 }
+
+const DAY_MS = 1000 * 60 * 60 * 24;
+
+/**
+ * Antecedência média (lead time): dias entre a criação da reserva e o check-in.
+ * Diferença negativa (dado torto) é tratada como 0. Zero se não houver reserva.
+ */
+export function averageLeadTimeDays(
+  rows: { created_at: string; check_in_at: string }[],
+): number {
+  if (rows.length === 0) return 0;
+  const total = rows.reduce((acc, r) => {
+    const diff = (new Date(r.check_in_at).getTime() - new Date(r.created_at).getTime()) / DAY_MS;
+    return acc + Math.max(0, diff);
+  }, 0);
+  return total / rows.length;
+}
+
+/**
+ * Contagem por tarifa (basica/flex/superflex). Ignora reserva sem tarifa.
+ *
+ * NÃO usar no dashboard do dono: o mix de tarifa revela quanto a Movepark ganha por
+ * reserva, então é visão de Super Admin. Fica aqui, testada, para a visão do manager.
+ */
+export function fareMix(rows: { fare_tier: string | null }[]): Record<string, number> {
+  const mix: Record<string, number> = {};
+  for (const r of rows) {
+    if (!r.fare_tier) continue;
+    mix[r.fare_tier] = (mix[r.fare_tier] ?? 0) + 1;
+  }
+  return mix;
+}
+
+/**
+ * Canal de origem: site (fluxo próprio) vs API (reserva criada por chave de API,
+ * ex.: o bot). `created_via_api_key_id` preenchido marca a API.
+ */
+export function channelMix(
+  rows: { created_via_api_key_id: string | null }[],
+): { site: number; api: number } {
+  let site = 0;
+  let api = 0;
+  for (const r of rows) {
+    if (r.created_via_api_key_id) api += 1;
+    else site += 1;
+  }
+  return { site, api };
+}
