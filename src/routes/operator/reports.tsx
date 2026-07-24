@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { useRevenueByDay, useStatusFunnel, type ReportPeriod } from "@/features/reports/api";
 import { useScopedLocationIds } from "@/auth/useScopedLocationIds";
+import { useAuth } from "@/auth/context";
 import { formatBRL } from "@/lib/format";
 
 const statusLabel: Record<string, string> = {
@@ -59,6 +60,10 @@ function exportCsv(filename: string, rows: Record<string, unknown>[]) {
 export default function OperatorReports() {
   const [period, setPeriod] = React.useState<ReportPeriod>(30);
   const { ids: scopedLocationIds } = useScopedLocationIds();
+  const { effectiveCompanyIds, hasScope } = useAuth();
+  // Receita é financeiro (ADR-005): a aba Receita e o export de receita exigem finance:read.
+  // A aba Reservas (funil) fica para todos (bookings:read). O papel Operação não vê receita aqui.
+  const canFinance = hasScope("finance:read", effectiveCompanyIds[0]);
   const revenue = useRevenueByDay(period, scopedLocationIds);
   const funnel = useStatusFunnel(period, scopedLocationIds);
 
@@ -85,14 +90,15 @@ export default function OperatorReports() {
         }
       />
 
-      <Tabs defaultValue="revenue">
+      <Tabs defaultValue={canFinance ? "revenue" : "bookings"}>
         <TabsList>
-          <TabsTrigger value="revenue">Receita</TabsTrigger>
+          {canFinance && <TabsTrigger value="revenue">Receita</TabsTrigger>}
           <TabsTrigger value="bookings">Reservas</TabsTrigger>
           <TabsTrigger value="export">Exportar</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="revenue">
+        {canFinance && (
+          <TabsContent value="revenue">
           <div className="grid grid-cols-1 gap-4 tablet:grid-cols-3">
             <Card>
               <CardContent className="p-6">
@@ -156,7 +162,8 @@ export default function OperatorReports() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+          </TabsContent>
+        )}
 
         <TabsContent value="bookings">
           <Card>
@@ -192,15 +199,15 @@ export default function OperatorReports() {
                 Baixe os dados consolidados do período selecionado em CSV.
               </p>
               <div className="flex flex-wrap gap-3">
-                <Button
-                  variant="secondary"
-                  onClick={() =>
-                    exportCsv(`receita-${period}d.csv`, revenue.data ?? [])
-                  }
-                  disabled={revenue.isLoading}
-                >
-                  <Download className="h-4 w-4" /> Receita diária
-                </Button>
+                {canFinance && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => exportCsv(`receita-${period}d.csv`, revenue.data ?? [])}
+                    disabled={revenue.isLoading}
+                  >
+                    <Download className="h-4 w-4" /> Receita diária
+                  </Button>
+                )}
                 <Button
                   variant="secondary"
                   onClick={() => exportCsv(`status-${period}d.csv`, funnel.data ?? [])}

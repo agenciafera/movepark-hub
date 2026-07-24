@@ -200,8 +200,9 @@ cobre os três perfis. Liga na Q-015: como o papel Financeiro já esconde toda a
 (Serviços, Preços, Promoções, API), blindar um parceiro sensível virou **configuração de papel**,
 não desenvolvimento caso a caso. **Continua sendo decisão:** o Financeiro tem `pricing:read` e
 `parking-types:read`, ou seja, vê preço e catálogo; se o risco é cópia, é a opção (b) do Q-015
-(tirar esses escopos do pacote). Falta ainda gatear os **Relatórios** (`/operator/reports`) do
-mesmo jeito.
+(tirar esses escopos do pacote). Os **Relatórios** (`/operator/reports`) também passaram a
+espelhar o escopo: a aba Receita e o export de receita exigem `finance:read` (o papel Operação
+cai na aba Reservas/funil, que é `bookings:read`). Teste de componente cobre os dois casos.
 
 **Bloco 1 · Dinheiro (topo)**
 - Receita líquida do período (depois da comissão) e variação vs período anterior. [líquida:
