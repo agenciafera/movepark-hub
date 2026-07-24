@@ -1,6 +1,12 @@
 import * as React from "react";
 import { toast } from "sonner";
 import { useCreateLocation, useUpdateLocation } from "./api";
+import {
+  emptyBusinessHours,
+  hasAnyHours,
+  parseBusinessHours,
+  type BusinessHours,
+} from "./businessHours";
 import { useLocationAmenities, useSetLocationAmenities } from "@/features/amenities/api";
 import type { EntityStatus, Location } from "@/types/domain";
 
@@ -52,6 +58,8 @@ type Snapshot = {
   addressComplement: string;
   googlePlaceId: string;
   googleMapsUrl: string;
+  is24h: boolean;
+  businessHours: BusinessHours;
   timezone: string;
   status: EntityStatus;
   phone: string;
@@ -92,6 +100,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
   const [addressComplement, setAddressComplement] = React.useState("");
   const [googlePlaceId, setGooglePlaceId] = React.useState("");
   const [googleMapsUrl, setGoogleMapsUrl] = React.useState("");
+  const [is24h, setIs24h] = React.useState(true);
+  const [businessHours, setBusinessHours] = React.useState<BusinessHours>(emptyBusinessHours);
   const [timezone, setTimezone] = React.useState("America/Sao_Paulo");
   const [status, setStatus] = React.useState<EntityStatus>("active");
   const [phone, setPhone] = React.useState("");
@@ -120,6 +130,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       addressComplement: location?.address_complement ?? "",
       googlePlaceId: location?.google_place_id ?? "",
       googleMapsUrl: location?.google_maps_url ?? "",
+      is24h: location?.is_24h ?? true,
+      businessHours: parseBusinessHours(location?.business_hours ?? null),
       timezone: location?.timezone ?? "America/Sao_Paulo",
       status: (location?.status ?? "active") as EntityStatus,
       phone: location?.phone ?? "",
@@ -152,6 +164,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     setAddressComplement(baseline.addressComplement);
     setGooglePlaceId(baseline.googlePlaceId);
     setGoogleMapsUrl(baseline.googleMapsUrl);
+    setIs24h(baseline.is24h);
+    setBusinessHours(baseline.businessHours);
     setTimezone(baseline.timezone);
     setStatus(baseline.status);
     setPhone(baseline.phone);
@@ -184,6 +198,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     addressComplement,
     googlePlaceId,
     googleMapsUrl,
+    is24h,
+    businessHours,
     timezone,
     status,
     phone,
@@ -258,6 +274,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       address_complement: addressComplement.trim() || null,
       google_place_id: googlePlaceId.trim() || null,
       google_maps_url: googleMapsUrl.trim() || null,
+      is_24h: is24h,
+      business_hours: is24h || !hasAnyHours(businessHours) ? null : businessHours,
       timezone,
       status,
       phone: phone || null,
@@ -283,6 +301,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       address_complement: addressComplement.trim() || null,
       google_place_id: googlePlaceId.trim() || null,
       google_maps_url: googleMapsUrl.trim() || null,
+      is_24h: is24h,
+      business_hours: is24h || !hasAnyHours(businessHours) ? null : businessHours,
       phone: phone || null,
       email: email || null,
       notice: notice || null,
@@ -340,6 +360,10 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       setGooglePlaceId,
       googleMapsUrl,
       setGoogleMapsUrl,
+      is24h,
+      setIs24h,
+      businessHours,
+      setBusinessHours,
       timezone,
       setTimezone,
       status,

@@ -69,6 +69,7 @@ describe("OperatorLocationEdit", () => {
     expect(blocos).toEqual([
       "Identificação",
       "Contato",
+      "Horário de funcionamento",
       "Chegada",
       "Fotos",
       "Comodidades",

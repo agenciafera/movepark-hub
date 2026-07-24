@@ -22,6 +22,7 @@
 
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { describeBusinessHours } from "./hours.ts";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -92,6 +93,8 @@ type LocationRow = {
   latitude: number | null;
   longitude: number | null;
   google_maps_url: string | null;
+  is_24h: boolean | null;
+  business_hours: unknown;
 };
 
 type LptRow = {
@@ -117,7 +120,7 @@ async function buildAutoFaq(supa, locationId: string): Promise<FaqItem[]> {
     supa
       .from("location")
       .select(
-        "id, name, address, phone, email, timezone, notice, has_notice, reservation_policy, latitude, longitude, google_maps_url",
+        "id, name, address, phone, email, timezone, notice, has_notice, reservation_policy, latitude, longitude, google_maps_url, is_24h, business_hours",
       )
       .eq("id", locationId)
       .maybeSingle(),
@@ -161,6 +164,31 @@ async function buildAutoFaq(supa, locationId: string): Promise<FaqItem[]> {
       question: `Onde fica o estacionamento ${L.name}?`,
       answer: lines.join("\n"),
       sort_order: 1,
+      category: AUTO_CATEGORY,
+    });
+  }
+
+  // 1b) Horário de funcionamento e retirada fora do horário
+  {
+    const { hours, afterHours } = describeBusinessHours(L.is_24h ?? true, L.business_hours);
+    items.push({
+      id: `auto:${L.id}:hours`,
+      scope: "auto",
+      location_id: L.id,
+      destination_id: null,
+      question: "Qual o horário de funcionamento?",
+      answer: hours,
+      sort_order: 1.5,
+      category: AUTO_CATEGORY,
+    });
+    items.push({
+      id: `auto:${L.id}:after-hours`,
+      scope: "auto",
+      location_id: L.id,
+      destination_id: null,
+      question: "Posso retirar o carro fora do horário?",
+      answer: afterHours,
+      sort_order: 1.6,
       category: AUTO_CATEGORY,
     });
   }

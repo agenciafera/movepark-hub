@@ -95,7 +95,7 @@ Campos que não existem hoje e aparecem em quase toda base:
 | Info | Hoje | Ação | Tarefa |
 |---|---|---|---|
 | Link do Google Maps / Meu Negócio | **Feito.** `location.google_place_id` + `google_maps_url`, apartados do endereço. O autocomplete do Places captura o `place_id` e pré-preenche o link de forma aditiva; a camada `auto` do `get-faq` devolve o link na resposta de endereço | [86ajp6vhh](https://app.clickup.com/t/86ajp6vhh) ✅ |
-| Horário de funcionamento | Só existe `timezone` | Criar campo de horário (24h vs comercial; Nova Iguaçu não é 24h) | [86ajp6vnf](https://app.clickup.com/t/86ajp6vnf) |
+| Horário de funcionamento | **Feito.** `location.is_24h` (default true) + `business_hours` jsonb por dia da semana. UI com interruptor de 24h e editor por dia (admin + operador); a camada `auto` do `get-faq` responde horário e retirada fora do horário | [86ajp6vnf](https://app.clickup.com/t/86ajp6vnf) ✅ |
 | Tolerância de saída | Não existe no cálculo | Criar `tolerance_minutes` na engine de cálculo | [86ajp6vrq](https://app.clickup.com/t/86ajp6vrq) |
 
 Parciais que valem endurecer (sem tarefa dedicada por ora): `location.phone` é usado como WhatsApp da unidade (ver [spot-guarantee.md](./spot-guarantee.md)); confirmar e padronizar. A `reservation_policy` é texto livre, mas a regra de cancelamento é `global`, então não vira campo por unidade.

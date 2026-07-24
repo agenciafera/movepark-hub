@@ -2,6 +2,7 @@ import * as React from "react";
 import { AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { AddressField } from "./AddressField";
+import { BusinessHoursField } from "./BusinessHoursField";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -189,6 +190,18 @@ export function LocationSections({
             onChange={(e) => f.setEmail(e.target.value)}
           />
         </Field>
+      </Section>
+
+      <Section
+        title="Horário de funcionamento"
+        description="Quando a unidade abre. O atendimento usa isso para responder sobre horário e retirada do carro."
+      >
+        <BusinessHoursField
+          is24h={f.is24h}
+          onIs24hChange={f.setIs24h}
+          hours={f.businessHours}
+          onHoursChange={f.setBusinessHours}
+        />
       </Section>
 
       <Section

@@ -1852,6 +1852,7 @@ export type Database = {
         Row: {
           address: string | null
           address_complement: string | null
+          business_hours: Json | null
           company_id: string
           created_at: string
           deleted_at: string | null
@@ -1867,6 +1868,7 @@ export type Database = {
           has_pcd_config: boolean
           has_shuttle: boolean
           id: string
+          is_24h: boolean
           is_listed: boolean
           is_popular: boolean
           latitude: number | null
@@ -1889,6 +1891,7 @@ export type Database = {
         Insert: {
           address?: string | null
           address_complement?: string | null
+          business_hours?: Json | null
           company_id: string
           created_at?: string
           deleted_at?: string | null
@@ -1904,6 +1907,7 @@ export type Database = {
           has_pcd_config?: boolean
           has_shuttle?: boolean
           id?: string
+          is_24h?: boolean
           is_listed?: boolean
           is_popular?: boolean
           latitude?: number | null
@@ -1926,6 +1930,7 @@ export type Database = {
         Update: {
           address?: string | null
           address_complement?: string | null
+          business_hours?: Json | null
           company_id?: string
           created_at?: string
           deleted_at?: string | null
@@ -1941,6 +1946,7 @@ export type Database = {
           has_pcd_config?: boolean
           has_shuttle?: boolean
           id?: string
+          is_24h?: boolean
           is_listed?: boolean
           is_popular?: boolean
           latitude?: number | null
