@@ -25,10 +25,14 @@ const baseSelect =
   "*, profile:profiles(id, full_name, tax_id), location:location(id, name, slug, timezone, company:company(id, name, slug)), vehicle:vehicle(id, license_plate, model, color), payments:payment(id, status, refunded_at, created_at)";
 
 async function fetchBookings(filters: BookingFilters): Promise<BookingWithRelations[]> {
+  // Reserva cancelada carrega `deleted_at` (que também é o "cancelada em" na UI). A lista
+  // do painel (operador e manager) PRECISA mostrar as canceladas, então NÃO filtramos
+  // `deleted_at` aqui: a RLS de `booking` já restringe às reservas da empresa e o filtro de
+  // status resolve o resto. Filtrar deleted_at deixava o filtro "Cancelada" natimorto.
+  // Ver docs/testes/furos-visao-dono.md (F1).
   let query = supabase
     .from("booking")
     .select(baseSelect)
-    .is("deleted_at", null)
     .order("check_in_at", { ascending: false })
     .limit(100);
 

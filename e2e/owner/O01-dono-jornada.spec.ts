@@ -62,27 +62,20 @@ test.describe("Roteiro O: jornada do dono (Abbapark)", () => {
     await expect(page.getByRole("columnheader", { name: "Status" })).toBeVisible();
   });
 
-  test("O-02: o dono consegue ver as reservas canceladas", async ({ page }) => {
-    // FURO CONHECIDO: cancelar uma reserva faz soft-delete (status='cancelled' E
-    // deleted_at=now(), em 3 migrations), e a lista do painel filtra
-    // `deleted_at is null`. Então o filtro "Cancelada" fica sempre vazio, mesmo
-    // havendo canceladas no banco (o Abbapark tem 18). Ver furos-visao-dono.md.
-    // Quando o furo for fechado, este teste passa e o test.fail vira vermelho:
-    // aí é só remover a marcação.
-    test.fail(true, "Cancelamento faz soft-delete; o filtro Cancelada nunca lista nada");
-
+  test("O-02: o dono vê as reservas canceladas", async ({ page }) => {
+    // Regressão do F1: cancelar faz soft-delete (`deleted_at`), mas a lista do painel
+    // PRECISA mostrar as canceladas. A RLS de `booking` já restringe por empresa, então
+    // a lista deixou de filtrar `deleted_at` (ver src/features/bookings/api.ts). O Abbapark
+    // tem canceladas, então com o filtro em "Cancelada" pelo menos uma linha aparece.
     await page.goto("/operator/bookings");
     await page.locator("#booking-status").click();
     await page.getByRole("option", { name: "Cancelada" }).click();
     // Confirma que o filtro foi aplicado (evita falso-positivo de timing).
     await expect(page.locator("#booking-status")).toContainText("Cancelada");
 
-    // Intenção: com o filtro em Cancelada, pelo menos uma reserva cancelada
-    // aparece. Hoje nenhuma aparece (a lista assenta em "Nenhuma reserva
-    // encontrada"), então esta espera estoura e o test.fail a captura.
     await expect(
       page.getByRole("row").filter({ hasText: "Cancelada" }).first(),
-    ).toBeVisible({ timeout: 6_000 });
+    ).toBeVisible({ timeout: 10_000 });
   });
 
   test("O-03: mudar o preço propaga para a busca, o checkout e o painel", async ({

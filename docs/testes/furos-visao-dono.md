@@ -12,7 +12,7 @@ onde tem furo. Cada furo aponta o arquivo que comprova.
 
 | # | Furo | Gravidade | Onde |
 |---|---|---|---|
-| F1 | O dono não vê as próprias reservas canceladas | Alta | `src/features/bookings/api.ts:31` + cancelamento seta `deleted_at` |
+| F1 | O dono não vê as próprias reservas canceladas (**CORRIGIDO**) | Alta | `src/features/bookings/api.ts` (lista deixou de filtrar `deleted_at`) |
 | F2 | Reservas de teste de segurança poluem a lista real do dono | Média | dados em produção (3 bookings "Test Pentest", valor R$ 0,00) |
 | F3 | "Preço base · R$ 0,00" aparece em todo card de preço | Baixa | `src/routes/operator/pricing.tsx:59` |
 
@@ -48,9 +48,16 @@ filtrando `deleted_at is null`; tirar o soft-delete exige que elas passem a excl
 canceladas pelo status. É decisão de modelagem, não troca de uma linha só. Alternativa
 paliativa: a lista do dono mostrar canceladas mesmo com `deleted_at` setado.
 
-**Cobertura.** `O-02` em `e2e/owner/O01-dono-jornada.spec.ts` documenta o furo com
-`test.fail`: hoje passa como falha esperada; quando o furo for fechado, o teste fica
-vermelho pedindo para remover a marcação.
+**Correção aplicada.** A RLS de `booking` (`booking_select`) já restringe as reservas às da
+empresa e **não** filtra `deleted_at`, então quem escondia as canceladas era só o filtro
+client-side. A lista do painel (`fetchBookings` em `src/features/bookings/api.ts`, usada pelo
+operador e pelo manager) deixou de filtrar `deleted_at`. O `deleted_at` continua sendo o
+"cancelada em" mostrado no detalhe, e a capacidade segue liberada por `release_booking_capacity`
+(independe do `deleted_at`), então nada de capacidade muda. Não precisou de migration nem backfill.
+
+**Cobertura.** `O-02` em `e2e/owner/O01-dono-jornada.spec.ts` (agora passa de verdade) e o teste
+de regressão de CI `src/features/bookings/useBookings.test.tsx`, que falha se a lista voltar a
+mandar `deleted_at` na query.
 
 ## F2 · Dados de teste de segurança na lista real do dono (Média)
 
