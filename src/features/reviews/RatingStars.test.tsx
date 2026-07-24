@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { RatingStars } from "./RatingStars";
+import { RatingStars, RatingSummary } from "./RatingStars";
 
 describe("RatingStars", () => {
   it("como seletor, é um radiogroup nomeado com 5 radios e a nota marcada", () => {
@@ -19,5 +19,28 @@ describe("RatingStars", () => {
     render(<RatingStars value={4} />);
     expect(screen.queryByRole("radiogroup")).not.toBeInTheDocument();
     expect(screen.queryByRole("radio")).not.toBeInTheDocument();
+  });
+});
+
+describe("RatingSummary", () => {
+  it("mostra a nota média grande e a contagem, rotulado pro leitor de tela", () => {
+    render(<RatingSummary avg={4.8} count={248} />);
+    // O bloco inteiro é um `img` com a nota por extenso; o número e as estrelas
+    // ficam aria-hidden pra não repetir a nota.
+    expect(
+      screen.getByRole("img", { name: "Nota 4,8 de 5, 248 avaliações" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("4,8")).toBeInTheDocument();
+    expect(screen.getByText("248 avaliações")).toBeInTheDocument();
+  });
+
+  it("some quando não há avaliações (empty state fica com o card/seção)", () => {
+    const { container } = render(<RatingSummary avg={null} count={0} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("usa singular com uma avaliação", () => {
+    render(<RatingSummary avg={5} count={1} />);
+    expect(screen.getByText("1 avaliação")).toBeInTheDocument();
   });
 });

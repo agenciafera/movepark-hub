@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/format";
 import type { ReviewWithAuthor } from "@/types/domain";
 import { useLocationReviews } from "./api";
-import { RatingStars } from "./RatingStars";
+import { RatingStars, RatingSummary } from "./RatingStars";
 import { type ReviewSort, sortReviews, stayContextLabel } from "./reviews.logic";
 
 const PAGE_SIZE = 6;
@@ -41,9 +41,12 @@ const SORT_OPTIONS: { value: ReviewSort; label: string }[] = [
 export function ReviewsBlock({
   locationId,
   totalCount,
+  avg,
 }: {
   locationId: string;
   totalCount: number;
+  /** Nota média da unidade (`location.review_avg`), para o resumo em rating-display. */
+  avg?: number | null;
 }) {
   const { data } = useLocationReviews(locationId);
   const [sort, setSort] = React.useState<ReviewSort>("recent");
@@ -57,9 +60,12 @@ export function ReviewsBlock({
   const shown = sorted.slice(0, visible);
 
   return (
-    <section id="avaliacoes" className="scroll-mt-24 space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-display-sm text-ink">Avaliações ({totalCount})</h2>
+    <section id="avaliacoes" className="scroll-mt-24 space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-4">
+          <h2 className="text-display-sm text-ink">Avaliações</h2>
+          <RatingSummary avg={avg} count={totalCount} />
+        </div>
         {reviews.length > 1 && (
           <div className="flex gap-1" role="group" aria-label="Ordenar avaliações">
             {SORT_OPTIONS.map((opt) => (

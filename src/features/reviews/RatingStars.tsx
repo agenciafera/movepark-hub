@@ -1,5 +1,6 @@
 import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatRating } from "@/lib/format";
 import { ratingLabel } from "./reviews.logic";
 
 const SIZE = { sm: "h-3.5 w-3.5", md: "h-5 w-5", lg: "h-7 w-7" };
@@ -89,5 +90,42 @@ export function RatingBadge({
       <Star className="h-3.5 w-3.5 fill-ink text-ink" />
       {label}
     </span>
+  );
+}
+
+/**
+ * Resumo do rating no topo da seção de avaliações da interna: a nota média grande,
+ * as 5 estrelas e a contagem. É o único lugar que usa o token `rating-display`
+ * (64/900), o momento tipográfico alto da marca reservado ao rating da listing
+ * (ver skill `harmonizar-paginas`). Some sem avaliações.
+ *
+ * A11y: o bloco inteiro é um `img` rotulado ("Nota 4,8 de 5, 248 avaliações"); o
+ * número e as estrelas ficam `aria-hidden` pra não repetir a nota no leitor de tela.
+ */
+export function RatingSummary({
+  avg,
+  count,
+  className,
+}: {
+  avg: number | null | undefined;
+  count: number | null | undefined;
+  className?: string;
+}) {
+  if (avg == null || !count) return null;
+  const countLabel = `${count} ${count === 1 ? "avaliação" : "avaliações"}`;
+  return (
+    <div
+      className={cn("flex items-center gap-4", className)}
+      role="img"
+      aria-label={`Nota ${formatRating(avg)} de 5, ${countLabel}`}
+    >
+      <span className="text-rating-display leading-none text-ink tabular-nums" aria-hidden>
+        {formatRating(avg)}
+      </span>
+      <div className="space-y-1" aria-hidden>
+        <RatingStars value={Math.round(avg)} size="md" />
+        <p className="text-body-sm text-muted">{countLabel}</p>
+      </div>
+    </div>
   );
 }

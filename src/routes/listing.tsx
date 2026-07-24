@@ -361,6 +361,7 @@ export default function ListingPage() {
           <ListingReviewsSection
             locationId={listing.location.id}
             reviewCount={listing.location.review_count}
+            reviewAvg={listing.location.review_avg}
           />
 
           <Separator />
@@ -467,11 +468,12 @@ function ListingFaqSection({ items, isLoading }: ListingFaqSectionProps) {
 type ListingReviewsSectionProps = {
   locationId: string;
   reviewCount: number;
+  reviewAvg: number | null;
 };
 
-function ListingReviewsSection({ locationId, reviewCount }: ListingReviewsSectionProps) {
+function ListingReviewsSection({ locationId, reviewCount, reviewAvg }: ListingReviewsSectionProps) {
   if (reviewCount > 0) {
-    return <ReviewsBlock locationId={locationId} totalCount={reviewCount} />;
+    return <ReviewsBlock locationId={locationId} totalCount={reviewCount} avg={reviewAvg} />;
   }
 
   return (

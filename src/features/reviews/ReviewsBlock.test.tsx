@@ -29,6 +29,14 @@ describe("ReviewsBlock", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
+  it("lidera com o resumo em rating-display quando há nota média", () => {
+    mockReviews([review({ id: "r1" })]);
+    renderWithProviders(<ReviewsBlock locationId="loc-1" totalCount={127} avg={4.8} />);
+    expect(
+      screen.getByRole("img", { name: "Nota 4,8 de 5, 127 avaliações" }),
+    ).toBeInTheDocument();
+  });
+
   it("pagina de 6 em 6 com 'Ver mais'", () => {
     mockReviews(Array.from({ length: 8 }, (_, i) => review({ id: `r${i}` })));
     renderWithProviders(<ReviewsBlock locationId="loc-1" totalCount={8} />);
