@@ -82,6 +82,7 @@ function PopularOfferCard({
       coverAlt={location.name}
       title={location.company.name}
       parkingTypeName={parking_type.name}
+      parkingTypeCode={parking_type.code}
       metaIcon={location.destination ? Plane : undefined}
       meta={destinationMeta(location)}
       rating={{ avg: location.review_avg, count: location.review_count }}

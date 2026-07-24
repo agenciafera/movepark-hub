@@ -4,6 +4,7 @@ import { Car, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatBRL } from "@/lib/format";
 import { RatingBadge } from "@/features/reviews/RatingStars";
+import { parkingTypeChipClass } from "./parkingTypeStyle";
 
 /**
  * Card de estacionamento COMPARTILHADO entre as três superfícies do consumer: a home
@@ -25,8 +26,10 @@ export type ParkingCardProps = {
   coverAlt: string;
   /** Nome do estacionamento (empresa/operador) — o título do card. */
   title: string;
-  /** Tipo de vaga: a identidade do card ("Vaga Coberta"). Vem em linha própria. */
+  /** Tipo de vaga: a identidade do card ("Vaga Coberta"). Vem em chip colorido. */
   parkingTypeName: string;
+  /** Código do `parking_type` (covered/uncovered/valet…) — define a cor do chip. */
+  parkingTypeCode?: string;
   /** Linha de metadados em `text-muted`. Muda por superfície: destino na home, unidade
    *  + distância na busca. `metaIcon` é o ícone que a antecede (Plane, MapPin…). */
   meta?: React.ReactNode;
@@ -95,6 +98,7 @@ export function ParkingCard({
   coverAlt,
   title,
   parkingTypeName,
+  parkingTypeCode,
   meta,
   metaIcon: MetaIcon,
   rating,
@@ -170,10 +174,20 @@ export function ParkingCard({
       <CardLink to={href} soldOut={soldOut} className="flex flex-1 flex-col gap-3 p-5">
         <div className="min-w-0 space-y-0.5">
           <h3 className="line-clamp-1 text-[18px] font-bold leading-snug text-ink">{title}</h3>
-          {/* O tipo é a identidade do card: dois cards da mesma unidade só se distinguem por aqui. */}
-          <p data-testid={typeTestId} className="line-clamp-1 text-body-sm font-semibold text-ink">
-            {parkingTypeName}
-          </p>
+          {/* O tipo é a identidade do card: dois cards da mesma unidade só se distinguem por
+              aqui. O chip ganha cor por tipo (parkingTypeStyle) pra o cliente diferenciar de
+              relance na lista. */}
+          <div className="pt-0.5">
+            <span
+              data-testid={typeTestId}
+              className={cn(
+                "inline-flex max-w-full items-center truncate rounded-full px-2.5 py-0.5 text-[12px] font-semibold",
+                parkingTypeChipClass(parkingTypeCode),
+              )}
+            >
+              {parkingTypeName}
+            </span>
+          </div>
           {meta && (
             <p
               data-testid={metaTestId}

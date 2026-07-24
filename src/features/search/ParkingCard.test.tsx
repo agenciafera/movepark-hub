@@ -24,6 +24,16 @@ describe("ParkingCard (card único das três superfícies)", () => {
     expect(screen.getByText("4 diárias")).toBeInTheDocument();
   });
 
+  it("colore o chip do tipo conforme o código do parking_type", () => {
+    renderWithProviders(<ParkingCard {...props({ parkingTypeCode: "covered" })} />);
+    expect(screen.getByText("Vaga Coberta").className).toContain("text-blue-700");
+  });
+
+  it("tipo sem código conhecido usa o chip neutro (não quebra o layout)", () => {
+    renderWithProviders(<ParkingCard {...props()} />);
+    expect(screen.getByText("Vaga Coberta").className).toContain("bg-surface-strong");
+  });
+
   it("disponível: o card é clicável (tem link para o listing)", () => {
     const { container } = renderWithProviders(<ParkingCard {...props()} />);
     expect(container.querySelector('a[href="/p/virapark/virapark/covered"]')).not.toBeNull();

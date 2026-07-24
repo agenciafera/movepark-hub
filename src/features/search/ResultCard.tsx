@@ -123,6 +123,7 @@ export function ResultCard({ item, isSaved, onToggleSave, searchParams, source, 
       coverAlt={`${item.parking_type.name} em ${item.location.name}`}
       title={item.operator.name}
       parkingTypeName={item.parking_type.name}
+      parkingTypeCode={item.parking_type.code}
       typeTestId="result-card-type"
       metaTestId="result-card-subline"
       metaIcon={terminal ? MapPin : undefined}
