@@ -20,8 +20,17 @@ export function Voucher({ booking }: Props) {
   const receipt = isVoucherReceipt(booking.status);
 
   React.useEffect(() => {
+    let active = true;
     const validateUrl = `${window.location.origin}/voucher/validate?code=${booking.code}`;
-    toDataUrl(validateUrl, 240).then(setQrUrl);
+    // Guarda contra setState depois de desmontar: a geração do QR é assíncrona, e
+    // sem isso ela resolvia após o teardown do teste ("window is not defined") e
+    // faria um setState num componente que já saiu.
+    toDataUrl(validateUrl, 240).then((url) => {
+      if (active) setQrUrl(url);
+    });
+    return () => {
+      active = false;
+    };
   }, [booking.code]);
 
   async function downloadPdf() {
