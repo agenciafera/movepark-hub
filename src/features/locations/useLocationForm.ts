@@ -22,6 +22,15 @@ export function isValidMinutes(value: string): boolean {
 }
 
 /**
+ * Minutos onde ZERO é resposta legítima (tolerância de saída: 0 = sem tolerância).
+ * Diferente de `parsePositiveInt`, que trata 0 como ausência. Vazio e lixo viram 0.
+ */
+export function parseNonNegativeInt(value: string): number {
+  const n = Number.parseInt(value, 10);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+/**
  * Link de Maps a partir de um Place ID. Deep link documentado do Google para
  * abrir um lugar pelo identificador. Usado para pré-preencher o campo de negócio
  * quando o autocomplete traz o place_id; o parceiro pode trocar por um link próprio.
@@ -60,6 +69,7 @@ type Snapshot = {
   googleMapsUrl: string;
   is24h: boolean;
   businessHours: BusinessHours;
+  toleranceMinutes: string;
   timezone: string;
   status: EntityStatus;
   phone: string;
@@ -102,6 +112,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
   const [googleMapsUrl, setGoogleMapsUrl] = React.useState("");
   const [is24h, setIs24h] = React.useState(true);
   const [businessHours, setBusinessHours] = React.useState<BusinessHours>(emptyBusinessHours);
+  const [toleranceMinutes, setToleranceMinutes] = React.useState("");
   const [timezone, setTimezone] = React.useState("America/Sao_Paulo");
   const [status, setStatus] = React.useState<EntityStatus>("active");
   const [phone, setPhone] = React.useState("");
@@ -132,6 +143,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       googleMapsUrl: location?.google_maps_url ?? "",
       is24h: location?.is_24h ?? true,
       businessHours: parseBusinessHours(location?.business_hours ?? null),
+      // 0 (sem tolerância) aparece como campo vazio, que lê melhor que um "0".
+      toleranceMinutes: location?.tolerance_minutes ? String(location.tolerance_minutes) : "",
       timezone: location?.timezone ?? "America/Sao_Paulo",
       status: (location?.status ?? "active") as EntityStatus,
       phone: location?.phone ?? "",
@@ -166,6 +179,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     setGoogleMapsUrl(baseline.googleMapsUrl);
     setIs24h(baseline.is24h);
     setBusinessHours(baseline.businessHours);
+    setToleranceMinutes(baseline.toleranceMinutes);
     setTimezone(baseline.timezone);
     setStatus(baseline.status);
     setPhone(baseline.phone);
@@ -200,6 +214,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     googleMapsUrl,
     is24h,
     businessHours,
+    toleranceMinutes,
     timezone,
     status,
     phone,
@@ -276,6 +291,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       google_maps_url: googleMapsUrl.trim() || null,
       is_24h: is24h,
       business_hours: is24h || !hasAnyHours(businessHours) ? null : businessHours,
+      tolerance_minutes: parseNonNegativeInt(toleranceMinutes),
       timezone,
       status,
       phone: phone || null,
@@ -303,6 +319,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       google_maps_url: googleMapsUrl.trim() || null,
       is_24h: is24h,
       business_hours: is24h || !hasAnyHours(businessHours) ? null : businessHours,
+      tolerance_minutes: parseNonNegativeInt(toleranceMinutes),
       phone: phone || null,
       email: email || null,
       notice: notice || null,
@@ -364,6 +381,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       setIs24h,
       businessHours,
       setBusinessHours,
+      toleranceMinutes,
+      setToleranceMinutes,
       timezone,
       setTimezone,
       status,

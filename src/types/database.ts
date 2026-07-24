@@ -1886,6 +1886,7 @@ export type Database = {
           slug: string
           status: Database["public"]["Enums"]["entity_status"]
           timezone: string
+          tolerance_minutes: number
           updated_at: string
         }
         Insert: {
@@ -1925,6 +1926,7 @@ export type Database = {
           slug: string
           status?: Database["public"]["Enums"]["entity_status"]
           timezone?: string
+          tolerance_minutes?: number
           updated_at?: string
         }
         Update: {
@@ -1964,6 +1966,7 @@ export type Database = {
           slug?: string
           status?: Database["public"]["Enums"]["entity_status"]
           timezone?: string
+          tolerance_minutes?: number
           updated_at?: string
         }
         Relationships: [

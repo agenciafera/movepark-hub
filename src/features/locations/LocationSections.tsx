@@ -202,6 +202,21 @@ export function LocationSections({
           hours={f.businessHours}
           onHoursChange={f.setBusinessHours}
         />
+        <Field
+          label="Tolerância na saída (min)"
+          htmlFor="tolerance-minutes"
+          hint="Quanto tempo o cliente pode passar do horário contratado sem contar diária nova. Deixe vazio para não dar tolerância."
+        >
+          <Input
+            id="tolerance-minutes"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            value={f.toleranceMinutes}
+            onChange={(e) => f.setToleranceMinutes(e.target.value)}
+            placeholder="60"
+          />
+        </Field>
       </Section>
 
       <Section

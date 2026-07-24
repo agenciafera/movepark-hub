@@ -95,6 +95,7 @@ type LocationRow = {
   google_maps_url: string | null;
   is_24h: boolean | null;
   business_hours: unknown;
+  tolerance_minutes: number | null;
 };
 
 type LptRow = {
@@ -120,7 +121,7 @@ async function buildAutoFaq(supa, locationId: string): Promise<FaqItem[]> {
     supa
       .from("location")
       .select(
-        "id, name, address, phone, email, timezone, notice, has_notice, reservation_policy, latitude, longitude, google_maps_url, is_24h, business_hours",
+        "id, name, address, phone, email, timezone, notice, has_notice, reservation_policy, latitude, longitude, google_maps_url, is_24h, business_hours, tolerance_minutes",
       )
       .eq("id", locationId)
       .maybeSingle(),
@@ -170,7 +171,11 @@ async function buildAutoFaq(supa, locationId: string): Promise<FaqItem[]> {
 
   // 1b) Horário de funcionamento e retirada fora do horário
   {
-    const { hours, afterHours } = describeBusinessHours(L.is_24h ?? true, L.business_hours);
+    const { hours, afterHours } = describeBusinessHours(
+      L.is_24h ?? true,
+      L.business_hours,
+      L.tolerance_minutes ?? 0,
+    );
     items.push({
       id: `auto:${L.id}:hours`,
       scope: "auto",

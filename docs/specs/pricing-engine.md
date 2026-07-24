@@ -11,6 +11,37 @@ preços, taxas, faixas e regras configurados em banco de dados, sem código novo
 
 ---
 
+## Antes do preço: como o número de diárias é contado
+
+Todos os padrões abaixo recebem um **número de dias já contado**. A `simulate_price` inclusive
+tem essa assinatura (`p_days integer`), então quem converte datas em diárias é a criação da
+reserva, não o motor de preço.
+
+A regra vive em `_create_booking_core` (criação) e em `reprice_booking_dates` (troca de datas):
+
+```sql
+v_total_minutes := extract(epoch from (check_out - check_in)) / 60;
+v_days := greatest(1, ceil((v_total_minutes - tolerance_minutes) / (60 * 24))::int);
+```
+
+Duas coisas importam aqui:
+
+1. **Arredonda para cima, com mínimo de 1.** Qualquer excedente sobre o dia cheio vira diária
+   nova: 3 dias e 10 minutos são 4 diárias.
+2. **`location.tolerance_minutes` é o excedente que não vira diária** (86ajp6vrq). As bases de
+   atendimento citam "1 hora de tolerância" na saída. O campo é por unidade e nasce com
+   **default 0**, que reproduz exatamente o comportamento anterior, então ligar a feature não
+   mexeu em nenhum preço existente. Com tolerância de 60, uma estadia de 3 dias e 30 minutos
+   cobra 3 diárias; com 3 dias e 90 minutos volta a cobrar 4.
+
+A tolerância entra só onde se decide **diária cobrada**. Ficam de fora, de propósito, a
+`check_availability` (capacidade por data, não preço) e a `validate_coupon*` (elegibilidade por
+dias mínimos): aplicar tolerância nelas mudaria semântica sem relação com saída do carro.
+
+Coberto por `supabase/tests/location_tolerance.test.sql`.
+
+---
+
 ## Padrões de cálculo identificados
 
 ### Padrão 1 — Diária Progressiva (`tiered_progressive`)

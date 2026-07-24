@@ -1,5 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { parsePositiveInt, isValidMinutes, googleMapsUrlFromPlaceId } from "./useLocationForm";
+import {
+  parsePositiveInt,
+  isValidMinutes,
+  googleMapsUrlFromPlaceId,
+  parseNonNegativeInt,
+} from "./useLocationForm";
+
+describe("parseNonNegativeInt", () => {
+  it("vazio e lixo viram 0 (sem tolerância), não null", () => {
+    expect(parseNonNegativeInt("")).toBe(0);
+    expect(parseNonNegativeInt("abc")).toBe(0);
+    expect(parseNonNegativeInt("-30")).toBe(0);
+    expect(parseNonNegativeInt("0")).toBe(0);
+  });
+  it("inteiro positivo passa", () => {
+    expect(parseNonNegativeInt("60")).toBe(60);
+  });
+});
 
 describe("googleMapsUrlFromPlaceId", () => {
   it("monta o deep link de Maps a partir do place_id", () => {
