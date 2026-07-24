@@ -145,3 +145,72 @@ Revisadas com o produto. Quase todas as lacunas são intencionais:
 - Editar `base_price` depois de criado: no card do tipo em `/operator/locations/:id/parking-types`
   o preço base aparece read-only; o dono muda o efetivo pelas regras em `/operator/pricing`,
   mas não achei editor do `base_price` pós-criação. Confirmar se é lacuna ou decisão.
+
+## Dashboard do dono (proposta com base em pesquisa)
+
+Hoje o dashboard é pobre: quatro números do dia (Reservas Hoje, Check-ins, Check-outs, Receita
+do Mês) e uma "Linha do tempo de hoje" (`src/features/dashboard/OperatorDashboard.tsx`). Não usa
+nenhum RPC, não tem tendência e não olha pra frente. Quando a operação está zerada, o dono abre
+o painel e vê tudo em R$ 0,00, sem leitura de negócio.
+
+A pesquisa (dores de donos de estacionamento e o que os sistemas lá fora entregam) aponta o
+caminho. As duas dores centrais: **demanda variável e difícil de prever**, e **falta de
+visibilidade** ("sei que está cheio, mas não sei quando, por quê, nem quem"). Os bons sistemas
+abrem com dinheiro primeiro, depois demanda, depois utilização. Adaptando ao modelo pré-pago do
+Movepark (sem catraca, sem cobrança no balcão, com comissão), a proposta de dashboard fica assim.
+
+Cada item traz a viabilidade: **[pronto]** sai de hook/RPC que já existe, **[corte novo]** é
+agregação client-side nova sobre dados que já temos, **[backend novo]** precisa de RPC/endpoint.
+
+**Bloco 1 · Dinheiro (topo)**
+- Receita líquida do período (depois da comissão) e variação vs período anterior. [líquida:
+  RPC `payout_statement` **pronto**; o Δ por unidade não existe hoje, é **corte novo** leve]
+- Saldo a repassar e próximo repasse. [RPC `payout_balance` **pronto**]
+- Diária média (ADR) e ticket médio. [ticket: **corte novo** simples; ADR por diária: **corte
+  novo** sobre `price_breakdown`/dias]
+
+**Bloco 2 · Demanda e futuro (a dor nº 1: prever)**
+- Reservas do período e o ritmo (pace) vs período anterior: o olhar pra frente que orienta preço.
+  [contagem: **pronto** via `useStatusFunnel`; pace: **corte novo**, viável sobre `check_in_at` futuro]
+- Ocupação vs capacidade dedicada, por tipo de vaga, hoje e próximos dias. [RPC
+  `operator_location_occupancy` **pronto** (uma unidade por chamada); visão multi-unidade pede
+  **backend novo** (agregador)]
+- Sinal "unidade em alta demanda hoje". [RPC `locations_high_demand_today` **pronto**, falta só o hook]
+
+**Bloco 3 · Saúde da operação**
+- Funil (criadas → confirmadas → concluídas) com taxa de cancelamento e no-show, contra a
+  referência de mercado (os bons seguram cancelamento em 15% a 20%). [funil: `useStatusFunnel`
+  **pronto**; **atenção:** a taxa de cancelamento depende do **F1**, porque as canceladas somem
+  pelo soft-delete. O número só fecha depois de resolver o F1]
+- Antecedência média das reservas (lead time), de `created_at` até o check-in. [**corte novo**]
+- Mix de tarifa (Básica/Flex/Superflex) e canal (site vs API/bot). [**corte novo** sobre
+  `fare_tier`/`origin`/`created_via_api_key_id`]
+- Nota média e avaliações a responder. [colunas `review_avg`/`review_count` + `useOperatorReviews`, **pronto**]
+
+**Bloco 4 · Operação do dia (o que a "linha do tempo" tenta ser)**
+- Próximos check-ins e check-outs, hoje e nos próximos 7 dias, com placa e cliente. [extensão do
+  `useTodayTimeline` atual, **corte novo** leve]
+
+**O que pede backend novo** (o resto já sai de hook/RPC existente): comparativo período-anterior
+por unidade, ocupação agregada de várias unidades numa chamada, RevPAR/RevPAS (receita por vaga
+disponível), take-rate exposto como número e atribuição por origem escopada ao dono (o RPC de
+atribuição hoje é só hub_admin).
+
+**Ligações com o resto do doc:** a taxa de cancelamento (Bloco 3) só funciona depois do **F1**;
+e a ocupação vs capacidade dedicada (Bloco 2) é a leitura visual do requisito "capacidade é
+compromisso de venda".
+
+## Referências
+
+Pesquisa de julho/2026 sobre dores e KPIs de gestão de estacionamento:
+
+- Gestão de lote e dores operacionais: [JustPark](https://www.justpark.com/business/blog/ultimate-guide-to-parking-lot-management/),
+  [Trakaid](https://www.trakaid.com/5-parking-lot-management-problems-solutions/).
+- Os 7 KPIs de dashboard, com financeiro primeiro: [AirGarage](https://www.airgarage.com/blog/parking-management-metrics).
+- Aeroporto e yield (RevPAS, precificação dinâmica, no-show):
+  [Parking Revenue Insider](https://parkingrevenueinsider.com/revenue-strategy/parking-yield-management-guide/),
+  [Rezcomm](https://rezcomm.com/resources/blog/business/dynamic-pricing-revenue-stream-parking).
+- Reserva pré-paga, o modelo mais próximo (ADR, RevPAR, cancelamento, no-show, lead time, booking
+  pace): [Lighthouse](https://www.mylighthouse.com/resources/blog/hotel-performance-metrics-guide),
+  [BEONx (lead time)](https://beonx.com/knowledge/articles/lead-time-what-it-is-how-to-calculate-it-and-why-it-matters-for-your-hotel/),
+  [Hostaway (booking pace)](https://www.hostaway.com/glossary/booking-pace/).
