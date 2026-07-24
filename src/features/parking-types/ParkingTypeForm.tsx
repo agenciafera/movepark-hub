@@ -159,6 +159,10 @@ export function ParkingTypeForm({
                     value={capacity}
                     onChange={(e) => setCapacity(Number(e.target.value))}
                   />
+                  <p className="text-caption text-muted">
+                    Coloque só as vagas que você dedica à Movepark, separadas das que vende no
+                    balcão. É o número que você se compromete a manter disponível.
+                  </p>
                 </div>
                 <div className="flex justify-end gap-2 pt-2">
                   <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
@@ -227,6 +231,10 @@ export function ParkingTypeForm({
                       value={newCapacity}
                       onChange={(e) => setNewCapacity(Number(e.target.value))}
                     />
+                    <p className="text-caption text-muted">
+                      Coloque só as vagas que você dedica à Movepark, separadas das que vende no
+                      balcão. É o número que você se compromete a manter disponível.
+                    </p>
                   </div>
                 </div>
                 <div className="flex justify-end gap-2 pt-2">

@@ -135,18 +135,20 @@ Revisadas com o produto. Quase todas as lacunas são intencionais:
 
 ### A construir (requisito que saiu desta varredura)
 
-- **Área do dono para ver o acordo aceito.** A garantia da Movepark faz parte de um acordo
-  que o dono aceita no onboarding. Ele precisa de uma tela para consultar esse acordo aceito,
-  com o compromisso dele explícito: quantas vagas ele garante disponibilizar e vender pela
-  plataforma.
-- **Capacidade é compromisso de venda, não só disponibilidade declarada.** O número de vagas
-  que o dono coloca na plataforma é uma garantia de que ele reserva e vende aquilo para a
-  Movepark, separado do que ele monetiza no balcão. Exemplo: um estacionamento de 1000 vagas
-  que já vende no balcão não coloca as 1000 aqui; ele separa, digamos, 100 (50 cobertas, 50
-  descobertas) dedicadas à plataforma. Hoje a capacidade em
-  `/operator/locations/:id/parking-types` é tratada como disponibilidade declarada. O produto
-  e o discurso precisam amarrar que ela é uma alocação dedicada e um compromisso de venda. É
-  decisão de negócio (candidata a épico), para o time avaliar.
+- **Capacidade é compromisso de venda, não só disponibilidade (microcopy feita).** O número de
+  vagas que o dono coloca na plataforma é uma garantia de que ele reserva e vende aquilo para a
+  Movepark, separado do que monetiza no balcão. Exemplo: um estacionamento de 1000 vagas que já
+  vende no balcão não coloca as 1000 aqui; separa, digamos, 100 (50 cobertas, 50 descobertas)
+  dedicadas à plataforma. **Feito:** o campo de capacidade em
+  `src/features/parking-types/ParkingTypeForm.tsx` ganhou a microcopy que deixa explícito que é a
+  vaga dedicada e um compromisso de manter disponível. **Falta decisão de produto/legal:** se e
+  como isso vira compromisso amarrado (SLA de vaga, penalidade), o que se liga à tarefa "Contrato
+  do parceiro: SLA de vaga, penalidade e retenção".
+- **Área do dono para ver o acordo aceito (bloqueada por conteúdo).** Hoje o sistema só guarda
+  `company.contract_accepted_at` e `company.contract_version` (assinatura simulada), sem o texto
+  do acordo. Uma tela que só mostra "aceito em X, versão Y" fica oca. Antes de construir, o time
+  precisa definir o conteúdo do acordo (o documento e o compromisso de vagas) e onde ele mora.
+  Sem essa decisão, implementar exigiria inventar conteúdo contratual.
 
 **A verificar (a análise não fechou 100%):**
 - Editar `base_price` depois de criado: no card do tipo em `/operator/locations/:id/parking-types`
