@@ -190,6 +190,15 @@ dos próximos 7 dias e o RevPAR do período (receita por vaga-dia). **Ainda por 
 novo):** comparativo por unidade e atribuição por origem escopada ao dono (o RPC de atribuição
 hoje é só hub_admin).
 
+**Escopo no dashboard (ADR-005), achado da verificação da Q-015.** O dashboard e os Relatórios
+não espelhavam o escopo (sem `RequireScope`, e os cards não checavam `hasScope`). Corrigido em
+parte: o card de Avaliações agora some para quem não tem `reviews:read` (ex.: papel Financeiro),
+igual à sidebar. **Falta:** gatear os cards de dinheiro (Receita, Ticket, RevPAR, gráfico de
+receita, Saldo) por `finance:read`/`payouts:read`, porque o papel Operação os vê hoje sem ter o
+escopo (pede um pequeno ajuste de layout). Liga na Q-015 (blindar a visão do parceiro sensível):
+o papel Financeiro já esconde toda a EDIÇÃO (Serviços, Preços, Promoções, API) pela sidebar, então
+blindar escrita é configuração; o que falta blindar é a leitura de dinheiro pelo papel Operação.
+
 **Bloco 1 · Dinheiro (topo)**
 - Receita líquida do período (depois da comissão) e variação vs período anterior. [líquida:
   RPC `payout_statement` **pronto**; o Δ por unidade não existe hoje, é **corte novo** leve]

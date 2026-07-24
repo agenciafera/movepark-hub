@@ -92,10 +92,13 @@ function formatRating(avg: number): string {
 }
 
 export default function OperatorDashboard() {
-  const { session, effectiveCompanyIds } = useAuth();
+  const { session, effectiveCompanyIds, hasScope } = useAuth();
   const { ids: scopedLocationIds } = useScopedLocationIds();
   const companyId = effectiveCompanyIds[0];
   const [period, setPeriod] = React.useState<ReportPeriod>(30);
+  // O dashboard espelha o escopo (ADR-005): quem não tem reviews:read (ex.: o papel
+  // Financeiro) não vê o card de Avaliações aqui, do mesmo jeito que a página some da sidebar.
+  const canReviews = hasScope("reviews:read", companyId);
 
   const stats = useOperatorStats(scopedLocationIds);
   const summary = useOperatorPeriodSummary(period, scopedLocationIds);
@@ -276,24 +279,26 @@ export default function OperatorDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="flex flex-col gap-2 p-6">
-              <span className="text-caption text-muted">Avaliações</span>
-              {reviews.isLoading ? (
-                <Skeleton className="h-9 w-24" />
-              ) : rating.count === 0 ? (
-                <span className="text-body-md text-muted">Ainda sem avaliação</span>
-              ) : (
-                <span className="text-display-md text-ink">
-                  {formatRating(rating.avg)}
-                  <span className="text-body-sm text-muted"> de 5 · {rating.count}</span>
+          {canReviews && (
+            <Card>
+              <CardContent className="flex flex-col gap-2 p-6">
+                <span className="text-caption text-muted">Avaliações</span>
+                {reviews.isLoading ? (
+                  <Skeleton className="h-9 w-24" />
+                ) : rating.count === 0 ? (
+                  <span className="text-body-md text-muted">Ainda sem avaliação</span>
+                ) : (
+                  <span className="text-display-md text-ink">
+                    {formatRating(rating.avg)}
+                    <span className="text-body-sm text-muted"> de 5 · {rating.count}</span>
+                  </span>
+                )}
+                <span className="text-caption text-muted">
+                  {pending === 0 ? "Nenhuma aguardando resposta" : `${pending} aguardando resposta`}
                 </span>
-              )}
-              <span className="text-caption text-muted">
-                {pending === 0 ? "Nenhuma aguardando resposta" : `${pending} aguardando resposta`}
-              </span>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardContent className="flex flex-col gap-2 p-6">
