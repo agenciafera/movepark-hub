@@ -169,6 +169,13 @@ Movepark (sem catraca, sem cobrança no balcão, com comissão), a proposta de d
 Cada item traz a viabilidade: **[pronto]** sai de hook/RPC que já existe, **[corte novo]** é
 agregação client-side nova sobre dados que já temos, **[backend novo]** precisa de RPC/endpoint.
 
+**Status: v1 implementado** (`src/features/dashboard/OperatorDashboard.tsx`, lógica testada em
+`dashboardMetrics.logic.ts`). Entregue: seletor de período, KPIs de receita/reservas com Δ vs
+período anterior, ticket médio, saldo a repassar, gráfico de receita diária, cancelamento com
+referência de mercado (destrava com o F1) e nota/avaliações, mais a operação de hoje. Ficaram de
+fora do v1 (pace, lead time, mix de tarifa/canal, ocupação vs capacidade no dashboard, RevPAR),
+por serem corte novo ou backend novo.
+
 **Bloco 1 · Dinheiro (topo)**
 - Receita líquida do período (depois da comissão) e variação vs período anterior. [líquida:
   RPC `payout_statement` **pronto**; o Δ por unidade não existe hoje, é **corte novo** leve]

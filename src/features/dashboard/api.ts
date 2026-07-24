@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { startOfDay, startOfMonth, subDays, subMonths } from "date-fns";
 import { supabase } from "@/lib/supabase";
+import { summarizePeriod } from "./dashboardMetrics.logic";
 
 function isoStartOfMonth(d = new Date()) {
   return startOfMonth(d).toISOString();
@@ -108,6 +109,36 @@ export type OperatorStats = {
   checkOutsToday: number;
   revenueThisMonth: number;
 };
+
+export type PeriodDays = 7 | 30 | 90;
+
+/**
+ * Receita, reservas e ticket médio do período, com o período ANTERIOR do mesmo
+ * tamanho para comparar. Uma query só: busca 2× o período e o `summarizePeriod`
+ * separa. Conta só reservas que valem receita (confirmed/checked_in/completed).
+ */
+export function useOperatorPeriodSummary(periodDays: PeriodDays, locationIds?: string[]) {
+  return useQuery({
+    queryKey: ["dashboard", "operator-period", periodDays, locationIds],
+    queryFn: async () => {
+      const now = new Date();
+      const periodStart = subDays(now, periodDays).toISOString();
+      const windowStart = subDays(now, periodDays * 2).toISOString();
+      let q = supabase
+        .from("booking")
+        .select("check_in_at, total_amount")
+        .gte("check_in_at", windowStart)
+        .in("status", ["confirmed", "checked_in", "completed"]);
+      if (locationIds?.length) q = q.in("location_id", locationIds);
+      const { data, error } = await q;
+      if (error) throw error;
+      return summarizePeriod(
+        (data ?? []) as { check_in_at: string; total_amount: number | string | null }[],
+        periodStart,
+      );
+    },
+  });
+}
 
 export function useOperatorStats(locationIds?: string[]) {
   return useQuery({
