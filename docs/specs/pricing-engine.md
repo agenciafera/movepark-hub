@@ -28,11 +28,18 @@ Duas coisas importam aqui:
 
 1. **Arredonda para cima, com mínimo de 1.** Qualquer excedente sobre o dia cheio vira diária
    nova: 3 dias e 10 minutos são 4 diárias.
-2. **`location.tolerance_minutes` é o excedente que não vira diária** (86ajp6vrq). As bases de
-   atendimento citam "1 hora de tolerância" na saída. O campo é por unidade e nasce com
-   **default 0**, que reproduz exatamente o comportamento anterior, então ligar a feature não
-   mexeu em nenhum preço existente. Com tolerância de 60, uma estadia de 3 dias e 30 minutos
+2. **`location.tolerance_minutes` é o excedente que não vira diária** (86ajp6vrq). O campo é por
+   unidade e o **padrão da plataforma é 60 minutos**. Com ele, uma estadia de 3 dias e 30 minutos
    cobra 3 diárias; com 3 dias e 90 minutos volta a cobrar 4.
+
+   O padrão 60 não é arbitrário: a FAQ global já prometia ao cliente "tolerância de 30 minutos
+   antes e 60 minutos depois sem cobrança", enquanto a engine cobrava diária a partir do primeiro
+   minuto de excedente. A coluna nasceu com default 0 justamente para não mexer em preço na
+   entrega da feature, e num segundo passo (migration `20260912000000`) subiu para 60 em todas as
+   unidades, alinhando o que se promete ao que se cobra. Um lote pode divergir do padrão pela UI.
+
+   A tolerância de **entrada** ("30 minutos antes" da mesma FAQ) não é modelada: este campo é só
+   de saída.
 
 A tolerância entra só onde se decide **diária cobrada**. Ficam de fora, de propósito, a
 `check_availability` (capacidade por data, não preço) e a `validate_coupon*` (elegibilidade por

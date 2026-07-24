@@ -52,6 +52,54 @@ describe("LocationForm — gating do vínculo de destino", () => {
   });
 });
 
+/**
+ * O formulário sempre manda um valor explícito de `tolerance_minutes` no insert, então
+ * ele precisa semear o padrão da plataforma. Sem isso, unidade criada pela tela gravaria
+ * 0 e atropelaria o default 60 do banco, quebrando a promessa da FAQ global (86ajp6vrq).
+ */
+describe("LocationForm — tolerância de saída", () => {
+  const TOLERANCIA = /Tolerância na saída/i;
+
+  it("unidade NOVA nasce com o padrão da plataforma no campo (60)", () => {
+    renderWithProviders(
+      <LocationForm
+        open
+        companyId="company-1"
+        location={null}
+        onOpenChange={() => {}}
+        editableScope="full"
+      />,
+    );
+    expect(screen.getByLabelText(TOLERANCIA)).toHaveValue(60);
+  });
+
+  it("unidade existente que zerou a tolerância mostra o campo vazio", () => {
+    renderWithProviders(
+      <LocationForm
+        open
+        companyId="company-1"
+        location={{ ...location, tolerance_minutes: 0 } as Location}
+        onOpenChange={() => {}}
+        editableScope="full"
+      />,
+    );
+    expect(screen.getByLabelText(TOLERANCIA)).toHaveValue(null);
+  });
+
+  it("unidade existente mostra a tolerância que ela tem salva", () => {
+    renderWithProviders(
+      <LocationForm
+        open
+        companyId="company-1"
+        location={{ ...location, tolerance_minutes: 30 } as Location}
+        onOpenChange={() => {}}
+        editableScope="full"
+      />,
+    );
+    expect(screen.getByLabelText(TOLERANCIA)).toHaveValue(30);
+  });
+});
+
 describe("LocationForm — foto obrigatória (operador)", () => {
   it("bloqueia salvar sem foto no operator scope (form não fecha)", async () => {
     const onOpenChange = vi.fn();

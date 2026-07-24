@@ -11,11 +11,12 @@ select plan(5);
 
 select has_column('public', 'location', 'tolerance_minutes', 'location.tolerance_minutes existe');
 
--- O default 0 é o que preserva o preço de todas as unidades existentes.
+-- Padrão da plataforma: 60 minutos, honrando a FAQ global que promete
+-- "60 minutos depois sem cobrança". Unidade nova já nasce com a promessa valendo.
 select is(
   (select column_default from information_schema.columns
     where table_schema = 'public' and table_name = 'location' and column_name = 'tolerance_minutes'),
-  '0', 'tolerance_minutes nasce com default 0 (sem tolerância, comportamento antigo)');
+  '60', 'tolerance_minutes nasce com default 60 (padrão da plataforma)');
 
 -- ── fixture: customer + um tipo de vaga do seed, sem estadia mínima ──────────
 do $$

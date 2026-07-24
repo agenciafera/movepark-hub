@@ -31,6 +31,14 @@ export function parseNonNegativeInt(value: string): number {
 }
 
 /**
+ * Tolerância de saída que uma unidade NOVA já nasce oferecendo, espelhando o default
+ * da coluna no banco (86ajp6vrq). Precisa estar aqui porque o formulário sempre manda
+ * um valor explícito no insert: sem semear, unidade criada pela tela gravaria 0 e
+ * atropelaria o default do banco, quebrando a promessa da FAQ global.
+ */
+export const DEFAULT_TOLERANCE_MINUTES = 60;
+
+/**
  * Link de Maps a partir de um Place ID. Deep link documentado do Google para
  * abrir um lugar pelo identificador. Usado para pré-preencher o campo de negócio
  * quando o autocomplete traz o place_id; o parceiro pode trocar por um link próprio.
@@ -143,8 +151,13 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       googleMapsUrl: location?.google_maps_url ?? "",
       is24h: location?.is_24h ?? true,
       businessHours: parseBusinessHours(location?.business_hours ?? null),
-      // 0 (sem tolerância) aparece como campo vazio, que lê melhor que um "0".
-      toleranceMinutes: location?.tolerance_minutes ? String(location.tolerance_minutes) : "",
+      // Unidade nova nasce com o padrão da plataforma, visível pra ser ajustado. Em
+      // unidade existente, 0 (sem tolerância) aparece como vazio, que lê melhor que "0".
+      toleranceMinutes: location
+        ? location.tolerance_minutes
+          ? String(location.tolerance_minutes)
+          : ""
+        : String(DEFAULT_TOLERANCE_MINUTES),
       timezone: location?.timezone ?? "America/Sao_Paulo",
       status: (location?.status ?? "active") as EntityStatus,
       phone: location?.phone ?? "",
