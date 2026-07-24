@@ -77,7 +77,7 @@ sobe Supabase local, a RPC foi validada no banco vivo com embeddings determinís
 Unidade A retorna só global + a própria unidade + o destino herdado; a unidade vizinha, o chunk stale
 e a faq órfã não vazam).
 
-## F2: pipeline de frescor (pendente)
+## F2: pipeline de frescor (implementada)
 
 Fila `knowledge_source_queue` (outbox molde `wps_delivery`) com claim atômico (`for update skip
 locked`), `enqueue_knowledge_resync` + triggers em `faq`, `location` e `location_amenity`, Edge
