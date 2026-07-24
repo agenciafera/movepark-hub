@@ -35,11 +35,12 @@ describe("SobrePage — /sobre", () => {
 
     // O aceite da atividade é a página não ser só texto.
     const images = container.querySelectorAll("img");
-    expect(images.length).toBeGreaterThanOrEqual(9);
+    expect(images.length).toBeGreaterThanOrEqual(10);
 
-    // O hero virou mesh gradient e não tem mais foto; o alt descritivo que sobrou é
-    // o do passo a passo (as fotos dos destinos são decorativas, porque o nome já
-    // vem no texto do link ao lado).
+    // O hero é foto de marca (blue hour), sob overlay navy, com a headline branca à
+    // esquerda; e a foto do passo a passo segue presente. As fotos dos destinos são
+    // decorativas, porque o nome já vem no texto do link ao lado.
+    expect(screen.getByAltText(/caminhando até o carro/i)).toBeInTheDocument();
     expect(screen.getByAltText(/reservando a vaga pelo celular/i)).toBeInTheDocument();
   });
 

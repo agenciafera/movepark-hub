@@ -2,9 +2,14 @@ import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { ArrowRight, ArrowUpRight, ShieldCheck, MapPin, Star, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { HeroMesh } from "@/components/shared/HeroMesh";
 import { PartnerLogos } from "@/features/partners/PartnerLogos";
 import { HOW_IT_WORKS } from "@/features/how-it-works/copy";
+import { useGsapReveal } from "@/hooks/useGsapReveal";
+
+// Hero de marca em foto (blue hour). Metade esquerda cai na sombra pra segurar a
+// headline branca sob o overlay navy, mesmo comportamento do hero da /seja-parceiro.
+// Gerada pelo gemini-image; prompt versionado em docs/design-system/image-prompts.md.
+const HERO_IMAGE = "/images/sobre-hero.webp";
 
 /**
  * Números conferidos no banco em 20/07/2026 (projeto mgaigbezdalbyuqiofcf):
@@ -60,6 +65,28 @@ const VALUES = [
 ];
 
 export default function SobrePage() {
+  // Reveals no scroll (GSAP), no mesmo idioma da /seja-parceiro: cada bloco sobe e
+  // aparece quando entra na dobra. O hook ignora tudo sob prefers-reduced-motion e
+  // não monta fora do browser (SSG/testes), então os elementos ficam visíveis lá.
+  const missionRef = useGsapReveal<HTMLElement>({
+    selector: "[data-reveal]",
+    y: 16,
+    stagger: 0.08,
+    start: "top 85%",
+  });
+  const destinationsRef = useGsapReveal<HTMLDivElement>({
+    selector: "[data-reveal]",
+    y: 24,
+    stagger: 0.05,
+    start: "top 82%",
+  });
+  const valuesRef = useGsapReveal<HTMLDivElement>({
+    selector: "[data-reveal]",
+    y: 20,
+    stagger: 0.06,
+    start: "top 85%",
+  });
+
   return (
     <>
       <Helmet>
@@ -77,11 +104,23 @@ export default function SobrePage() {
         <link rel="canonical" href="https://hub.movepark.co/sobre" />
       </Helmet>
 
-      {/* Hero em mesh gradient. Segue sangrando de ponta a ponta, como manda a faixa
-          de hero do contrato do consumer: o arredondado ficaria brigando com a borda
-          da tela e cortaria a banda no meio. */}
-      <HeroMesh palette="navy">
-        <div className="relative mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-24">
+      {/* Hero de marca em foto, sangrando de ponta a ponta. Overlay navy em degradê
+          (esquerda 95% → direita 25% no desktop), não chapado: a foto é blue hour e o
+          terminal iluminado à direita fica visível, enquanto a esquerda escura segura a
+          headline branca em contraste AA. É o mesmo idioma do hero da /seja-parceiro. */}
+      <section className="relative isolate overflow-hidden bg-mp-navy">
+        <img
+          src={HERO_IMAGE}
+          alt="Viajante com a mala caminhando até o carro no estacionamento do aeroporto ao anoitecer"
+          fetchPriority="high"
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover object-[70%_center]"
+        />
+        <div
+          className="absolute inset-0 bg-gradient-to-r from-mp-navy/95 via-mp-navy/85 to-mp-navy/70 desktop:via-mp-navy/75 desktop:to-mp-navy/25"
+          aria-hidden
+        />
+        <div className="relative mx-auto max-w-[1080px] px-4 py-24 desktop:px-8 desktop:py-36">
           <div className="max-w-2xl motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-3 motion-safe:duration-500">
             <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-white/70">
               Quem somos
@@ -111,7 +150,7 @@ export default function SobrePage() {
             </div>
           </div>
         </div>
-      </HeroMesh>
+      </section>
 
       {/* Faixa de parceiros: prova concreta, no lugar do carrossel de logo genérico.
           Fora do hero porque os logos são escuros e sumiriam sobre o navy. */}
@@ -122,15 +161,21 @@ export default function SobrePage() {
       </section>
 
       {/* Missão + números */}
-      <section className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-24">
-        <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-mp-indigo">
+      <section
+        ref={missionRef}
+        className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-24"
+      >
+        <span
+          data-reveal
+          className="text-[11px] font-bold uppercase tracking-[0.4px] text-mp-indigo"
+        >
           Nossa missão
         </span>
-        <h2 className="mt-3 max-w-3xl text-balance text-display-2xl text-ink">
+        <h2 data-reveal className="mt-3 max-w-3xl text-balance text-display-2xl text-ink">
           Chegar no aeroporto <span className="text-mp-indigo">sem estresse</span> deveria ser o
           normal.
         </h2>
-        <p className="mt-5 max-w-2xl text-body-md text-body">
+        <p data-reveal className="mt-5 max-w-2xl text-body-md text-body">
           A gente cuida da parte chata: achar o estacionamento, comparar preço e garantir que tem
           vaga te esperando. Você chega, deixa o carro e embarca. O estacionamento parceiro só entra
           na plataforma depois de passar pela avaliação da Movepark.
@@ -140,7 +185,7 @@ export default function SobrePage() {
           {NUMBERS.map((n) => (
             // `flex-col-reverse` põe o número em cima na tela sem inverter a ordem
             // semântica: no DOM (e no leitor de tela) o rótulo vem antes do valor.
-            <div key={n.label} className="flex flex-col-reverse">
+            <div key={n.label} data-reveal className="flex flex-col-reverse">
               <dt className="mt-1 text-body-sm text-muted">{n.label}</dt>
               <dd className="text-display-2xl text-ink tabular-nums">{n.value}</dd>
             </div>
@@ -162,11 +207,15 @@ export default function SobrePage() {
             avaliados pela Movepark antes de entrar no ar.
           </p>
 
-          <div className="mt-12 grid grid-cols-2 gap-4 tablet:grid-cols-3 desktop:grid-cols-4">
+          <div
+            ref={destinationsRef}
+            className="mt-12 grid grid-cols-2 gap-4 tablet:grid-cols-3 desktop:grid-cols-4"
+          >
             {DESTINATIONS.map((d) => (
               <Link
                 key={d.slug}
                 to={`/destinos/${d.slug}`}
+                data-reveal
                 className="group relative block overflow-hidden rounded-2xl border border-white/10"
               >
                 <div className="aspect-[4/3] overflow-hidden bg-white/5">
@@ -253,9 +302,12 @@ export default function SobrePage() {
             Quatro compromissos que não mudam.
           </h2>
 
-          <div className="mt-12 grid grid-cols-1 gap-x-10 gap-y-8 tablet:grid-cols-2">
+          <div
+            ref={valuesRef}
+            className="mt-12 grid grid-cols-1 gap-x-10 gap-y-8 tablet:grid-cols-2"
+          >
             {VALUES.map((v) => (
-              <div key={v.title} className="flex items-start gap-4">
+              <div key={v.title} data-reveal className="flex items-start gap-4">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-mp-pale text-mp-indigo">
                   <v.icon className="h-5 w-5" />
                 </span>
