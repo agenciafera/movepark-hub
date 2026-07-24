@@ -7,7 +7,8 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { BookingTable } from "@/features/bookings/BookingTable";
 import { BookingModal } from "@/features/bookings/BookingModal";
 import { useRecentBookings } from "@/features/bookings/api";
-import { useManagerStats, useRevenueLastDays } from "./api";
+import { useManagerStats, useRevenueLastDays, useFareRevenueMix } from "./api";
+import { FARE_TIER_ORDER, FARE_TIER_LABEL } from "@/lib/fares";
 import { formatBRL } from "@/lib/format";
 import type { BookingWithRelations } from "@/types/domain";
 
@@ -22,7 +23,10 @@ export default function ManagerDashboard() {
   const stats = useManagerStats();
   const revenue = useRevenueLastDays(30);
   const recent = useRecentBookings(20);
+  const fareRev = useFareRevenueMix(30);
   const [selected, setSelected] = React.useState<BookingWithRelations | null>(null);
+
+  const fareTotal = Object.values(fareRev.data ?? {}).reduce((acc, e) => acc + e.revenue, 0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -114,6 +118,36 @@ export default function ManagerDashboard() {
                   />
                 </AreaChart>
               </ResponsiveContainer>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Receita de tarifas (30 dias)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {fareRev.isLoading ? (
+            <Skeleton className="h-40 w-full" />
+          ) : (
+            <div className="flex max-w-md flex-col gap-2">
+              {FARE_TIER_ORDER.map((tier) => {
+                const entry = fareRev.data?.[tier];
+                return (
+                  <div key={tier} className="flex items-center justify-between text-body-sm">
+                    <span className="text-muted">
+                      {FARE_TIER_LABEL[tier]}{" "}
+                      <span className="text-caption">({entry?.count ?? 0})</span>
+                    </span>
+                    <span className="tabular-nums text-ink">{formatBRL(entry?.revenue ?? 0)}</span>
+                  </div>
+                );
+              })}
+              <div className="mt-1 flex items-center justify-between border-t border-hairline-soft pt-2 text-body-sm">
+                <span className="text-muted">Total da Movepark</span>
+                <span className="font-medium tabular-nums text-ink">{formatBRL(fareTotal)}</span>
+              </div>
             </div>
           )}
         </CardContent>

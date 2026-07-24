@@ -130,6 +130,24 @@ export function fareMix(rows: { fare_tier: string | null }[]): Record<string, nu
 }
 
 /**
+ * Mix de tarifa com a RECEITA da tarifa (o que a Movepark ganha por tipo). Visão de Super
+ * Admin. `fare_price_cents` vem em centavos; a receita sai em reais.
+ */
+export function fareRevenueMix(
+  rows: { fare_tier: string | null; fare_price_cents: number | null }[],
+): Record<string, { count: number; revenue: number }> {
+  const mix: Record<string, { count: number; revenue: number }> = {};
+  for (const r of rows) {
+    if (!r.fare_tier) continue;
+    const entry = mix[r.fare_tier] ?? { count: 0, revenue: 0 };
+    entry.count += 1;
+    entry.revenue += Number(r.fare_price_cents ?? 0) / 100;
+    mix[r.fare_tier] = entry;
+  }
+  return mix;
+}
+
+/**
  * Canal de origem: site (fluxo próprio) vs API (reserva criada por chave de API,
  * ex.: o bot). `created_via_api_key_id` preenchido marca a API.
  */

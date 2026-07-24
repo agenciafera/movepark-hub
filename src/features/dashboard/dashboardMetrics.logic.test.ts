@@ -9,6 +9,7 @@ import {
   pendingReviews,
   averageLeadTimeDays,
   fareMix,
+  fareRevenueMix,
   channelMix,
   aggregateOccupancy,
   occupancyRate,
@@ -126,6 +127,20 @@ describe("fareMix / channelMix", () => {
         { fare_tier: null },
       ]),
     ).toEqual({ basica: 1, flex: 2 });
+  });
+
+  it("mix com receita da tarifa (centavos → reais), ignorando sem tarifa", () => {
+    expect(
+      fareRevenueMix([
+        { fare_tier: "flex", fare_price_cents: 1290 },
+        { fare_tier: "flex", fare_price_cents: 1290 },
+        { fare_tier: "superflex", fare_price_cents: 2490 },
+        { fare_tier: null, fare_price_cents: 999 },
+      ]),
+    ).toEqual({
+      flex: { count: 2, revenue: 25.8 },
+      superflex: { count: 1, revenue: 24.9 },
+    });
   });
 
   it("separa site (fluxo próprio) de API (chave de API)", () => {

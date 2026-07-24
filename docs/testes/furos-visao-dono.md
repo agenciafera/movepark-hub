@@ -178,9 +178,11 @@ média (lead time), ocupação dos próximos 7 dias, RevPAR do período e origem
 de receita diária; cancelamento com referência de mercado (destrava com o F1); nota e avaliações;
 selo de alta demanda hoje; e a operação de hoje.
 
-**Fora de propósito do dono:** o mix de tarifa (Básica/Flex/Superflex) revela a margem da Movepark
-por reserva, então é visão de Super Admin. A função `fareMix` (`dashboardMetrics.logic.ts`) fica
-pronta e testada para a visão do manager, mas não entra no dashboard do dono.
+**Mix de tarifa: fora do dono, feito no Super Admin.** O mix de tarifa (Básica/Flex/Superflex)
+revela a margem da Movepark por reserva, então é visão de Super Admin. O dashboard do manager
+(`src/features/dashboard/ManagerDashboard.tsx`) ganhou o card "Receita de tarifas" com contagem e
+receita por tipo (`fareRevenueMix`, hub-wide, na área `hub_admin`). No painel do dono, nada de mix
+de tarifa.
 
 **Ocupação e RevPAR: feitos sem backend novo**, reaproveitando a RPC
 `operator_location_occupancy` (por unidade, agregada no cliente): o dashboard mostra a ocupação

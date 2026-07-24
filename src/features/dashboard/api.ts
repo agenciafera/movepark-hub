@@ -7,6 +7,7 @@ import {
   averageLeadTimeDays,
   channelMix,
   aggregateOccupancy,
+  fareRevenueMix,
 } from "./dashboardMetrics.logic";
 
 function isoStartOfMonth(d = new Date()) {
@@ -105,6 +106,28 @@ export function useRevenueLastDays(days = 30) {
       return Array.from(map.entries())
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([date, total]) => ({ date, total }));
+    },
+  });
+}
+
+/**
+ * Mix de tarifa com a receita da tarifa (o que a Movepark ganha por tipo), hub-wide.
+ * Visão de Super Admin (a RLS de hub_admin vê todas as reservas). Não expor no /operator.
+ */
+export function useFareRevenueMix(days = 30) {
+  return useQuery({
+    queryKey: ["dashboard", "fare-revenue-mix", days],
+    queryFn: async () => {
+      const since = subDays(new Date(), days).toISOString();
+      const { data, error } = await supabase
+        .from("booking")
+        .select("fare_tier, fare_price_cents")
+        .gte("check_in_at", since)
+        .in("status", ["confirmed", "checked_in", "completed"]);
+      if (error) throw error;
+      return fareRevenueMix(
+        (data ?? []) as { fare_tier: string | null; fare_price_cents: number | null }[],
+      );
     },
   });
 }
