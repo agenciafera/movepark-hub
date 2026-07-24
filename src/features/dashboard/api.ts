@@ -1,7 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { startOfDay, startOfMonth, subDays, subMonths } from "date-fns";
 import { supabase } from "@/lib/supabase";
-import { summarizePeriod, averageLeadTimeDays, channelMix } from "./dashboardMetrics.logic";
+import type { LocationOccupancyRow } from "@/types/domain";
+import {
+  summarizePeriod,
+  averageLeadTimeDays,
+  channelMix,
+  aggregateOccupancy,
+} from "./dashboardMetrics.logic";
 
 function isoStartOfMonth(d = new Date()) {
   return startOfMonth(d).toISOString();
@@ -185,6 +191,36 @@ export function useHighDemandToday(locationIds?: string[]) {
       });
       if (error) throw error;
       return (data ?? []).length;
+    },
+  });
+}
+
+/**
+ * Ocupação agregada das unidades no escopo, num intervalo de datas. Chama a RPC
+ * `operator_location_occupancy` (já segura, por unidade) e soma no cliente. Serve pra
+ * ocupação do dashboard e pra base do RevPAR (capacidade-dia).
+ */
+export function useOccupancyAgg(locationIds: string[] | undefined, from: string, to: string) {
+  return useQuery({
+    queryKey: ["dashboard", "occupancy-agg", locationIds, from, to],
+    enabled: !!locationIds?.length,
+    staleTime: 30_000,
+    queryFn: async (): Promise<{ capacityDays: number; bookedDays: number }> => {
+      const results = await Promise.all(
+        (locationIds ?? []).map((id) =>
+          supabase.rpc("operator_location_occupancy", {
+            p_location_id: id,
+            p_from: from,
+            p_to: to,
+          }),
+        ),
+      );
+      const rows: LocationOccupancyRow[] = [];
+      for (const res of results) {
+        if (res.error) throw res.error;
+        rows.push(...((res.data ?? []) as LocationOccupancyRow[]));
+      }
+      return aggregateOccupancy(rows);
     },
   });
 }

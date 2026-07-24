@@ -10,7 +10,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { bookingCustomerName } from "@/features/bookings/bookings.logic";
-import { startOfDay, endOfDay } from "date-fns";
+import { startOfDay, endOfDay, format, addDays, subDays } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -30,6 +30,7 @@ import {
   useOperatorPeriodSummary,
   useUpcomingBookingsCount,
   useHighDemandToday,
+  useOccupancyAgg,
 } from "./api";
 import {
   pctDelta,
@@ -38,10 +39,13 @@ import {
   cancellationBenchmark,
   averageRating,
   pendingReviews,
+  occupancyRate,
+  revpar,
 } from "./dashboardMetrics.logic";
 import { useRevenueByDay, useStatusFunnel, type ReportPeriod } from "@/features/reports/api";
 import { usePayoutBalance } from "@/features/payouts/api";
 import { useOperatorReviews } from "@/features/reviews/operatorApi";
+import { useOperatorLocations } from "@/features/locations/api";
 import { RecipientKycBanner } from "@/features/payouts/RecipientKycBanner";
 import { useAuth } from "@/auth/context";
 import { useScopedLocationIds } from "@/auth/useScopedLocationIds";
@@ -102,6 +106,16 @@ export default function OperatorDashboard() {
   const timeline = useTodayTimeline(scopedLocationIds);
   const upcoming = useUpcomingBookingsCount(period, scopedLocationIds);
   const highDemand = useHighDemandToday(scopedLocationIds);
+  // Ocupação é por unidade (RPC por location_id), então precisa dos ids reais da empresa:
+  // scopedLocationIds vem undefined para o operador real (a RLS resolve o resto).
+  const locations = useOperatorLocations(effectiveCompanyIds);
+  const occLocationIds = locations.data?.map((l) => l.id);
+  // Janela futura de 7 dias (indicador de demanda) e a do período (base do RevPAR).
+  const today = format(new Date(), "yyyy-MM-dd");
+  const in7 = format(addDays(new Date(), 7), "yyyy-MM-dd");
+  const periodAgo = format(subDays(new Date(), period), "yyyy-MM-dd");
+  const occ7 = useOccupancyAgg(occLocationIds, today, in7);
+  const occPeriod = useOccupancyAgg(occLocationIds, periodAgo, today);
 
   const cur = summary.data?.current;
   const prev = summary.data?.previous;
@@ -112,6 +126,8 @@ export default function OperatorDashboard() {
   const leadTime = summary.data?.leadTimeDays ?? 0;
   const channel = summary.data?.channelMix ?? { site: 0, api: 0 };
   const isHighDemand = (highDemand.data ?? 0) > 0;
+  const occ7Rate = occupancyRate(occ7.data?.bookedDays ?? 0, occ7.data?.capacityDays ?? 0);
+  const revparValue = revpar(cur?.revenue ?? 0, occPeriod.data?.capacityDays ?? 0);
 
   const periodLabel = `${period} dias`;
 
@@ -169,7 +185,7 @@ export default function OperatorDashboard() {
       </div>
 
       {/* Demanda e futuro */}
-      <div className="grid grid-cols-1 gap-4 tablet:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-4">
         <KpiCard
           label={`Reservas futuras (${periodLabel})`}
           value={upcoming.data ?? 0}
@@ -182,21 +198,18 @@ export default function OperatorDashboard() {
           hint="da reserva ao check-in"
           isLoading={summary.isLoading}
         />
-        <Card>
-          <CardContent className="flex flex-col gap-2 p-6">
-            <span className="text-caption text-muted">Origem ({periodLabel})</span>
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center justify-between text-body-sm">
-                <span className="text-muted">Pelo site</span>
-                <span className="tabular-nums text-ink">{channel.site}</span>
-              </div>
-              <div className="flex items-center justify-between text-body-sm">
-                <span className="text-muted">Pela API</span>
-                <span className="tabular-nums text-ink">{channel.api}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <KpiCard
+          label="Ocupação (próx. 7 dias)"
+          value={occ7.data?.capacityDays ? `${occ7Rate.toFixed(0)}%` : "-"}
+          hint="das vagas dedicadas"
+          isLoading={occ7.isLoading}
+        />
+        <KpiCard
+          label={`RevPAR (${periodLabel})`}
+          value={occPeriod.data?.capacityDays ? formatBRL(revparValue) : "-"}
+          hint="receita por vaga-dia"
+          isLoading={occPeriod.isLoading}
+        />
       </div>
 
       {/* Receita diária + saúde */}
@@ -279,6 +292,22 @@ export default function OperatorDashboard() {
               <span className="text-caption text-muted">
                 {pending === 0 ? "Nenhuma aguardando resposta" : `${pending} aguardando resposta`}
               </span>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="flex flex-col gap-2 p-6">
+              <span className="text-caption text-muted">Origem ({periodLabel})</span>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between text-body-sm">
+                  <span className="text-muted">Pelo site</span>
+                  <span className="tabular-nums text-ink">{channel.site}</span>
+                </div>
+                <div className="flex items-center justify-between text-body-sm">
+                  <span className="text-muted">Pela API</span>
+                  <span className="tabular-nums text-ink">{channel.api}</span>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>

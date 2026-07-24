@@ -144,3 +144,30 @@ export function channelMix(
   }
   return { site, api };
 }
+
+/** Soma capacidade e ocupação (booked) das linhas de ocupação, ignorando datas bloqueadas. */
+export function aggregateOccupancy(
+  rows: { capacity: number | null; booked_count: number | null; blocked: boolean | null }[],
+): { capacityDays: number; bookedDays: number } {
+  let capacityDays = 0;
+  let bookedDays = 0;
+  for (const r of rows) {
+    if (r.blocked) continue;
+    capacityDays += Number(r.capacity ?? 0);
+    bookedDays += Number(r.booked_count ?? 0);
+  }
+  return { capacityDays, bookedDays };
+}
+
+/** Taxa de ocupação (%) = vagas ocupadas sobre a capacidade disponível no período. */
+export function occupancyRate(bookedDays: number, capacityDays: number): number {
+  return capacityDays > 0 ? (bookedDays / capacityDays) * 100 : 0;
+}
+
+/**
+ * RevPAR (receita por vaga-dia disponível): total no período dividido pela capacidade-dia.
+ * É o RevPAR de hotelaria aplicado à vaga. Zero se não há capacidade.
+ */
+export function revpar(revenue: number, capacityDays: number): number {
+  return capacityDays > 0 ? revenue / capacityDays : 0;
+}

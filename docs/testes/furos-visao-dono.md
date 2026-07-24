@@ -174,16 +174,19 @@ agregação client-side nova sobre dados que já temos, **[backend novo]** preci
 **Status: implementado** (`src/features/dashboard/OperatorDashboard.tsx`, lógica testada em
 `dashboardMetrics.logic.ts`). Entregue: seletor de período; KPIs de receita e reservas com Δ vs
 período anterior, ticket médio e saldo a repassar; reservas futuras (pace simples), antecedência
-média (lead time) e origem (site vs API); gráfico de receita diária; cancelamento com referência
-de mercado (destrava com o F1); nota e avaliações; selo de alta demanda hoje; e a operação de hoje.
+média (lead time), ocupação dos próximos 7 dias, RevPAR do período e origem (site vs API); gráfico
+de receita diária; cancelamento com referência de mercado (destrava com o F1); nota e avaliações;
+selo de alta demanda hoje; e a operação de hoje.
 
 **Fora de propósito do dono:** o mix de tarifa (Básica/Flex/Superflex) revela a margem da Movepark
 por reserva, então é visão de Super Admin. A função `fareMix` (`dashboardMetrics.logic.ts`) fica
 pronta e testada para a visão do manager, mas não entra no dashboard do dono.
 
-**Ainda por fazer (backend novo, sem depender de decisão):** ocupação vs capacidade no dashboard
-com agregador multi-unidade, RevPAR/RevPAS, comparativo por unidade e atribuição por origem
-escopada ao dono.
+**Ocupação e RevPAR: feitos sem backend novo**, reaproveitando a RPC
+`operator_location_occupancy` (por unidade, agregada no cliente): o dashboard mostra a ocupação
+dos próximos 7 dias e o RevPAR do período (receita por vaga-dia). **Ainda por fazer (backend
+novo):** comparativo por unidade e atribuição por origem escopada ao dono (o RPC de atribuição
+hoje é só hub_admin).
 
 **Bloco 1 · Dinheiro (topo)**
 - Receita líquida do período (depois da comissão) e variação vs período anterior. [líquida:

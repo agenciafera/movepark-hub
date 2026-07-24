@@ -10,6 +10,9 @@ import {
   averageLeadTimeDays,
   fareMix,
   channelMix,
+  aggregateOccupancy,
+  occupancyRate,
+  revpar,
 } from "./dashboardMetrics.logic";
 
 describe("summarizePeriod", () => {
@@ -133,5 +136,26 @@ describe("fareMix / channelMix", () => {
         { created_via_api_key_id: null },
       ]),
     ).toEqual({ site: 2, api: 1 });
+  });
+});
+
+describe("ocupação e RevPAR", () => {
+  it("agrega capacidade e ocupação, ignorando datas bloqueadas", () => {
+    const rows = [
+      { capacity: 100, booked_count: 40, blocked: false },
+      { capacity: 100, booked_count: 30, blocked: false },
+      { capacity: 100, booked_count: 0, blocked: true }, // bloqueada: fora da conta
+    ];
+    expect(aggregateOccupancy(rows)).toEqual({ capacityDays: 200, bookedDays: 70 });
+  });
+
+  it("taxa de ocupação e guarda de divisão por zero", () => {
+    expect(occupancyRate(70, 200)).toBe(35);
+    expect(occupancyRate(0, 0)).toBe(0);
+  });
+
+  it("RevPAR é receita por vaga-dia disponível", () => {
+    expect(revpar(1000, 200)).toBe(5);
+    expect(revpar(1000, 0)).toBe(0);
   });
 });
