@@ -83,14 +83,19 @@ select is_empty(
 );
 
 -- ── ordenacao: veca antes de vecb ───────────────────────────────────────────
+-- current_setting() devolve TEXT: o cast para uuid e obrigatorio, senao nao casa com a assinatura
+-- match_knowledge(text, uuid, uuid, integer) e o teste morre com "function does not exist".
+-- GLOBAL, LOCA e DESTD compartilham o mesmo vetor (vec(1)), entao empatam em similaridade: qual
+-- deles vem primeiro nao e deterministico. O que a ordenacao garante e que o vetor distante fica
+-- por ultimo. Asserir a ultima posicao (4 linhas no total) e estavel.
 select is(
-  (select content from public.match_knowledge(pg_temp.vec(1), current_setting('test.loca'), null, 20) order by similarity desc limit 1),
-  'LOCA'::text,
-  'ordena por similaridade (o mais proximo primeiro nao e o GLOBALFAR)'
+  (select content from public.match_knowledge(pg_temp.vec(1), current_setting('test.loca')::uuid, null, 20) order by similarity desc limit 1 offset 3),
+  'GLOBALFAR'::text,
+  'ordena por similaridade (o vetor distante GLOBALFAR fica por ultimo)'
 );
 select ok(
-  (select similarity from public.match_knowledge(pg_temp.vec(1), current_setting('test.loca'), null, 20) where content = 'GLOBALFAR')
-  < (select similarity from public.match_knowledge(pg_temp.vec(1), current_setting('test.loca'), null, 20) where content = 'GLOBAL'),
+  (select similarity from public.match_knowledge(pg_temp.vec(1), current_setting('test.loca')::uuid, null, 20) where content = 'GLOBALFAR')
+  < (select similarity from public.match_knowledge(pg_temp.vec(1), current_setting('test.loca')::uuid, null, 20) where content = 'GLOBAL'),
   'GLOBALFAR (vetor diferente) tem similaridade menor que GLOBAL'
 );
 
