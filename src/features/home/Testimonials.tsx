@@ -71,7 +71,7 @@ export function Testimonials() {
   return (
     <section ref={ref} className="bg-surface-soft py-16 desktop:py-20">
       <div className="mx-auto max-w-[1280px] px-6 desktop:px-8">
-        <p data-reveal className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
+        <p data-reveal className="mb-2 text-badge uppercase tracking-[0.4px] text-mp-indigo">
           Avaliações verificadas
         </p>
         <h2 data-reveal className="mb-4 text-balance text-display-2xl text-ink">

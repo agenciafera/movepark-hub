@@ -4,6 +4,7 @@ import { ArrowRight, Plane, Tag } from "lucide-react";
 import { usePopularOffers, type PopularOffer } from "@/features/search/api";
 import { useSavedListings } from "@/features/search/useSavedListings";
 import { ParkingCard, ParkingCardBadge, type ParkingCardAmenity } from "@/features/search/ParkingCard";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { gsap } from "@/lib/gsap";
@@ -158,7 +159,7 @@ export function PopularParkingLots() {
       data-testid="popular-parking-lots"
       className="mx-auto w-full max-w-[1280px] px-6 py-16 desktop:px-8"
     >
-      <p data-reveal="header" className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
+      <p data-reveal="header" className="mb-2 text-badge uppercase tracking-[0.4px] text-mp-indigo">
         Os mais reservados
       </p>
       <h2 data-reveal="header" className="mb-8 text-display-2xl text-ink">
@@ -188,12 +189,11 @@ export function PopularParkingLots() {
       </div>
 
       <div className="mt-10 flex justify-center">
-        <Link
-          to="/search"
-          className="inline-flex items-center gap-2 rounded-full border border-hairline bg-canvas px-6 py-3 text-button-sm font-semibold text-ink transition-shadow hover:shadow-tier"
-        >
-          Ver todos os estacionamentos <ArrowRight className="h-4 w-4" />
-        </Link>
+        <Button asChild variant="outline">
+          <Link to="/search">
+            Ver todos os estacionamentos <ArrowRight className="h-4 w-4" />
+          </Link>
+        </Button>
       </div>
     </section>
   );

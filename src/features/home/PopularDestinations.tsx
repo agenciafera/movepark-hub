@@ -37,7 +37,7 @@ export function PopularDestinations() {
 
   return (
     <section className="mx-auto w-full max-w-[1280px] px-6 py-16 desktop:px-8">
-      <p className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
+      <p className="mb-2 text-badge uppercase tracking-[0.4px] text-mp-indigo">
         Os mais buscados
       </p>
       <h2 className="mb-8 text-[28px] leading-[1.1] font-bold tracking-tight text-ink tablet:text-[36px]">

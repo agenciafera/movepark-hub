@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useGsapReveal } from "@/hooks/useGsapReveal";
 
 export function CtaBanner() {
@@ -37,7 +38,7 @@ export function CtaBanner() {
 
         {/* Conteúdo — alinhado à esquerda */}
         <div className="relative z-10 px-10 py-20 desktop:px-16 desktop:py-28">
-          <p className="mb-4 text-caption-sm font-bold uppercase tracking-widest text-white/60">
+          <p className="mb-4 text-badge uppercase tracking-[0.4px] text-white/70">
             Reserve com antecedência
           </p>
 
@@ -52,12 +53,11 @@ export function CtaBanner() {
             Preço garantido, cancelamento grátis e voucher na hora. Sem filas, sem surpresas.
           </p>
 
-          <Link
-            to="/search"
-            className="inline-flex items-center gap-2 rounded-full bg-mp-primary px-8 py-4 text-button-md font-semibold text-white transition-all hover:bg-mp-primary-active hover:gap-3"
-          >
-            Buscar estacionamento <ArrowRight className="h-4 w-4" />
-          </Link>
+          <Button asChild>
+            <Link to="/search">
+              Buscar estacionamento <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
         </div>
 
       </div>

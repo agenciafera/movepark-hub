@@ -2,6 +2,7 @@ import { useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { MapPin, Heart, Share2, CheckCircle, ArrowRight, Star, ShieldCheck } from "lucide-react";
 import { gsap } from "@/lib/gsap";
+import { Button } from "@/components/ui/button";
 import { HOW_IT_WORKS } from "@/features/how-it-works/copy";
 
 function BookingCardMockup() {
@@ -166,7 +167,7 @@ export function HowItWorks() {
 
           {/* Coluna esquerda: headline + passos verticais */}
           <div>
-            <p data-reveal="hw-header" className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
+            <p data-reveal="hw-header" className="mb-2 text-badge uppercase tracking-[0.4px] text-mp-indigo">
               {HOW_IT_WORKS.eyebrow}
             </p>
             <h2 data-reveal="hw-header" className="mb-3 text-display-2xl text-ink" style={{ textWrap: "balance" } as React.CSSProperties}>
@@ -198,12 +199,11 @@ export function HowItWorks() {
               ))}
             </ol>
 
-            <Link
-              to="/search"
-              className="mt-10 inline-flex items-center gap-2 rounded-full bg-mp-primary px-6 py-3 text-button-sm font-semibold text-white transition-colors hover:bg-mp-primary-active"
-            >
-              Buscar estacionamento <ArrowRight className="h-4 w-4" />
-            </Link>
+            <Button asChild className="mt-10">
+              <Link to="/search">
+                Buscar estacionamento <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
           </div>
 
           {/* Coluna direita: card de reserva confirmada */}

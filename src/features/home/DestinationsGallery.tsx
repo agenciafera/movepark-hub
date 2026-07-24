@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Plane, ArrowRight } from "lucide-react";
 import { useRef, useEffect } from "react";
 import { gsap } from "@/lib/gsap";
+import { Button } from "@/components/ui/button";
 
 const CARD_W  = 400;   // px — largura do card
 const GAP     = 20;    // px — espaço entre cards
@@ -115,7 +116,7 @@ export function DestinationsGallery() {
 
       {/* Cabeçalho */}
       <div ref={headerRef} className="mx-auto mb-10 max-w-[1280px] px-6 text-center desktop:px-8">
-        <p data-reveal="dg-header" className="mb-2 text-caption-sm font-bold uppercase tracking-widest text-mp-violet">
+        <p data-reveal="dg-header" className="mb-2 text-badge uppercase tracking-[0.4px] text-mp-indigo">
           Destinos mais procurados
         </p>
         <h2
@@ -130,12 +131,11 @@ export function DestinationsGallery() {
           Conheça os principais aeroportos e terminais do Brasil com estacionamentos verificados.
         </p>
         <div data-reveal="dg-header">
-          <Link
-            to="/search"
-            className="inline-flex items-center gap-2 rounded-full bg-mp-primary px-6 py-3 text-button-sm font-semibold text-white transition-colors hover:bg-mp-primary-active"
-          >
-            Ver todos os destinos <ArrowRight className="h-4 w-4" />
-          </Link>
+          <Button asChild>
+            <Link to="/search">
+              Ver todos os destinos <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
         </div>
       </div>
 
