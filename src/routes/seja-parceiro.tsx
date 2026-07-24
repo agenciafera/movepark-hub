@@ -16,6 +16,7 @@ import {
   Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { YouTubeEmbed } from "@/components/shared/YouTubeEmbed";
 import { cn } from "@/lib/utils";
 import { FaqList } from "@/features/faqs/FaqList";
 import type { FaqCombinedItem } from "@/features/faqs/api";
@@ -742,13 +743,10 @@ export default function SejaParceiroPage() {
         </h2>
         <div className="mt-8 overflow-hidden">
           <div className="aspect-video">
-            <iframe
-              className="h-full w-full"
-              src="https://www.youtube.com/embed/ZkbAd7B6CIo"
+            <YouTubeEmbed
+              videoId="ZkbAd7B6CIo"
               title="Movepark: vídeo institucional"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              referrerPolicy="strict-origin-when-cross-origin"
-              allowFullScreen
+              className="h-full w-full"
             />
           </div>
         </div>

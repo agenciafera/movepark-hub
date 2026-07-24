@@ -8,6 +8,10 @@ import { useSearchResults } from "@/features/search/useSearchResults";
 import { useFaqCombined } from "@/features/faqs/api";
 import type { Destination } from "@/types/domain";
 
+// O iframe do mapa some do render de teste: o happy-dom lança ao conectar um iframe
+// (page loading desabilitado), e a rejeição não capturada fazia o gate piscar.
+vi.mock("@/components/shared/MapEmbed", () => ({ MapEmbed: () => null }));
+
 // useLoaderData lança fora de um data router; no teste o caminho é via hook (useDestinationBySlug).
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");

@@ -1,9 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HelmetProvider } from "react-helmet-async";
 import { renderWithProviders } from "@/test/utils";
 import SejaParceiroPage from "@/routes/seja-parceiro";
+
+// O iframe do YouTube some do render de teste: o happy-dom lança ao conectar um
+// iframe (page loading desabilitado), e a rejeição não capturada fazia o gate piscar.
+vi.mock("@/components/shared/YouTubeEmbed", () => ({ YouTubeEmbed: () => null }));
 
 function renderPage() {
   renderWithProviders(

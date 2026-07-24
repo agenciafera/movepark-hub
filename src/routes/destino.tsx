@@ -12,6 +12,7 @@ import { computeResultBadges } from "@/features/search/searchBadges";
 import { topRated } from "@/features/reviews/reviews.logic";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { MapEmbed } from "@/components/shared/MapEmbed";
 import { breadcrumbSchema, destinationSchema, faqSchema } from "@/lib/jsonld";
 import { imageSrcSet, optimizedImageUrl } from "@/lib/storage";
 import { formatBRL } from "@/lib/format";
@@ -292,11 +293,10 @@ export default function DestinoPage() {
         {/* Mapa */}
         <section className="mt-10">
           <h2 className="mb-4 text-display-md text-ink">Localização</h2>
-          <iframe
+          <MapEmbed
             title={`Mapa de ${destination.name}`}
             src={osm}
             className="h-80 w-full rounded-md border border-hairline"
-            loading="lazy"
           />
         </section>
 
