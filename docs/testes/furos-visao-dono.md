@@ -190,14 +190,18 @@ dos próximos 7 dias e o RevPAR do período (receita por vaga-dia). **Ainda por 
 novo):** comparativo por unidade e atribuição por origem escopada ao dono (o RPC de atribuição
 hoje é só hub_admin).
 
-**Escopo no dashboard (ADR-005), achado da verificação da Q-015.** O dashboard e os Relatórios
-não espelhavam o escopo (sem `RequireScope`, e os cards não checavam `hasScope`). Corrigido em
-parte: o card de Avaliações agora some para quem não tem `reviews:read` (ex.: papel Financeiro),
-igual à sidebar. **Falta:** gatear os cards de dinheiro (Receita, Ticket, RevPAR, gráfico de
-receita, Saldo) por `finance:read`/`payouts:read`, porque o papel Operação os vê hoje sem ter o
-escopo (pede um pequeno ajuste de layout). Liga na Q-015 (blindar a visão do parceiro sensível):
-o papel Financeiro já esconde toda a EDIÇÃO (Serviços, Preços, Promoções, API) pela sidebar, então
-blindar escrita é configuração; o que falta blindar é a leitura de dinheiro pelo papel Operação.
+**Escopo no dashboard (ADR-005), achado da verificação da Q-015 (FEITO).** O dashboard não
+espelhava o escopo (sem `RequireScope`, cards sem `hasScope`). Agora espelha, igual à sidebar:
+o dashboard do operator (`OperatorDashboard.tsx`) ficou em blocos gateados. Operacional (Reservas,
+futuras, antecedência, ocupação) todo mundo vê; **dinheiro** (Receita, Ticket, RevPAR, gráfico,
+Saldo) exige `finance:read`/`payouts:read`, então o papel **Operação não vê mais receita nem
+saldo**; **Avaliações** exige `reviews:read`, então o **Financeiro não vê**. Teste de componente
+cobre os três perfis. Liga na Q-015: como o papel Financeiro já esconde toda a EDIÇÃO pela sidebar
+(Serviços, Preços, Promoções, API), blindar um parceiro sensível virou **configuração de papel**,
+não desenvolvimento caso a caso. **Continua sendo decisão:** o Financeiro tem `pricing:read` e
+`parking-types:read`, ou seja, vê preço e catálogo; se o risco é cópia, é a opção (b) do Q-015
+(tirar esses escopos do pacote). Falta ainda gatear os **Relatórios** (`/operator/reports`) do
+mesmo jeito.
 
 **Bloco 1 · Dinheiro (topo)**
 - Receita líquida do período (depois da comissão) e variação vs período anterior. [líquida:
