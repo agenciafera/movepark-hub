@@ -15,6 +15,7 @@ const filled: AddressValue = {
   complement: "Portão azul",
   latitude: -25.52,
   longitude: -49.17,
+  placeId: "ChIJ0testplaceid",
 };
 
 describe("AddressField", () => {
@@ -27,7 +28,7 @@ describe("AddressField", () => {
   it("sem endereço, mostra estado vazio com ação de adicionar", () => {
     renderWithProviders(
       <AddressField
-        value={{ address: "", complement: "", latitude: null, longitude: null }}
+        value={{ address: "", complement: "", latitude: null, longitude: null, placeId: null }}
         onChange={vi.fn()}
       />,
     );
@@ -59,11 +60,13 @@ describe("AddressField", () => {
     await userEvent.type(compl, "Entrada lateral");
     await userEvent.click(within(dialog).getByRole("button", { name: "Usar este endereço" }));
 
+    // O place_id sobrevive a uma edição que só mexe no complemento (aditivo).
     expect(onChange).toHaveBeenCalledWith({
       address: "Av. Rocha Pombo, s/n - Águas Belas",
       complement: "Entrada lateral",
       latitude: -25.52,
       longitude: -49.17,
+      placeId: "ChIJ0testplaceid",
     });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });

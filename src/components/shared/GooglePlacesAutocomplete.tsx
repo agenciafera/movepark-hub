@@ -18,11 +18,14 @@ export type PlaceSelection = {
   address: string;
   latitude: number;
   longitude: number;
+  /** Place ID do Google, quando a predição traz (identificador estável do lugar). */
+  placeId?: string;
 };
 
 // Shim mínimo da superfície do Places (New) que usamos (evita dependência de @types/google.maps).
 type GLatLng = { lat: () => number; lng: () => number };
 type GPlace = {
+  id?: string | null;
   formattedAddress?: string | null;
   displayName?: string | null;
   location?: GLatLng | null;
@@ -189,7 +192,13 @@ function PlacesElement({ id, onSelect, placeholder }: PlacesElementProps) {
       const address = place.formattedAddress ?? place.displayName ?? "";
       const loc = place.location;
       if (loc) {
-        onSelectRef.current({ address, latitude: loc.lat(), longitude: loc.lng() });
+        // `place.id` (Place ID) já vem populado na Place da predição, sem fetchFields.
+        onSelectRef.current({
+          address,
+          latitude: loc.lat(),
+          longitude: loc.lng(),
+          placeId: place.id ?? undefined,
+        });
       }
     }
 

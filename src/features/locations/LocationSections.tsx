@@ -17,7 +17,7 @@ import { uploadCompanyAsset } from "@/lib/storage";
 import { useAdminDestinations } from "@/features/destinations/api";
 import { AmenityPicker } from "@/features/amenities/AmenityPicker";
 import { useNearestDestination } from "./api";
-import { slugify, type LocationFormApi } from "./useLocationForm";
+import { googleMapsUrlFromPlaceId, slugify, type LocationFormApi } from "./useLocationForm";
 import type { EntityStatus, Location } from "@/types/domain";
 
 // Sentinela do <Select> para "sem âncora" (o Radix Select não aceita value="").
@@ -141,14 +141,37 @@ export function LocationSections({
             complement: f.addressComplement,
             latitude: f.latitude,
             longitude: f.longitude,
+            placeId: f.googlePlaceId || null,
           }}
           onChange={(next) => {
             f.setAddress(next.address);
             f.setAddressComplement(next.complement);
             f.setLatitude(next.latitude);
             f.setLongitude(next.longitude);
+            // O negócio do Google é apartado do endereço: guardo o place_id que a
+            // busca trouxe e, só quando o link ainda está vazio, pré-preencho de
+            // forma aditiva. Se o parceiro já colou um link próprio, não sobrescrevo.
+            f.setGooglePlaceId(next.placeId ?? "");
+            if (next.placeId && f.googleMapsUrl.trim() === "") {
+              f.setGoogleMapsUrl(googleMapsUrlFromPlaceId(next.placeId));
+            }
           }}
         />
+        <Field
+          label="Google Meu Negócio / Maps"
+          htmlFor="google-maps-url"
+          wide
+          hint="Link do perfil da unidade no Google, com fotos e avaliações. Vem do endereço quando você busca no mapa, e você pode trocar pelo seu."
+        >
+          <Input
+            id="google-maps-url"
+            type="url"
+            inputMode="url"
+            value={f.googleMapsUrl}
+            onChange={(e) => f.setGoogleMapsUrl(e.target.value)}
+            placeholder="https://maps.google.com/..."
+          />
+        </Field>
       </Section>
 
       <Section

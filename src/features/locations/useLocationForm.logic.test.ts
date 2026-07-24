@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { parsePositiveInt, isValidMinutes } from "./useLocationForm";
+import { parsePositiveInt, isValidMinutes, googleMapsUrlFromPlaceId } from "./useLocationForm";
+
+describe("googleMapsUrlFromPlaceId", () => {
+  it("monta o deep link de Maps a partir do place_id", () => {
+    expect(googleMapsUrlFromPlaceId("ChIJ0testplaceid")).toBe(
+      "https://www.google.com/maps/place/?q=place_id:ChIJ0testplaceid",
+    );
+  });
+});
 
 describe("parsePositiveInt", () => {
   it("aceita inteiro positivo, recusa zero/negativo/lixo", () => {

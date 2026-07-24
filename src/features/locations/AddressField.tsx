@@ -21,6 +21,8 @@ export type AddressValue = {
   complement: string;
   latitude: number | null;
   longitude: number | null;
+  /** Place ID que o autocomplete trouxe junto do endereço, quando disponível. */
+  placeId: string | null;
 };
 
 /**
@@ -146,7 +148,12 @@ function AddressEditDialog({
               value={draft.address}
               onChange={(a) => set({ address: a })}
               onSelect={(p) =>
-                set({ address: p.address, latitude: p.latitude, longitude: p.longitude })
+                set({
+                  address: p.address,
+                  latitude: p.latitude,
+                  longitude: p.longitude,
+                  placeId: p.placeId ?? draft.placeId,
+                })
               }
             />
             {isGooglePlacesEnabled && (

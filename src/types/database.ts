@@ -1739,6 +1739,48 @@ export type Database = {
           },
         ]
       }
+      knowledge_source_queue: {
+        Row: {
+          attempts: number
+          enqueued_at: string
+          id: string
+          last_error: string | null
+          max_attempts: number
+          next_attempt_at: string
+          op: string
+          source_id: string
+          source_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          enqueued_at?: string
+          id?: string
+          last_error?: string | null
+          max_attempts?: number
+          next_attempt_at?: string
+          op?: string
+          source_id: string
+          source_type: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          enqueued_at?: string
+          id?: string
+          last_error?: string | null
+          max_attempts?: number
+          next_attempt_at?: string
+          op?: string
+          source_id?: string
+          source_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       legal_document: {
         Row: {
           created_at: string
@@ -1818,6 +1860,8 @@ export type Database = {
           email: string | null
           external_ref: string | null
           geog: unknown
+          google_maps_url: string | null
+          google_place_id: string | null
           has_notice: boolean
           has_passenger_quantity: boolean
           has_pcd_config: boolean
@@ -1853,6 +1897,8 @@ export type Database = {
           email?: string | null
           external_ref?: string | null
           geog?: unknown
+          google_maps_url?: string | null
+          google_place_id?: string | null
           has_notice?: boolean
           has_passenger_quantity?: boolean
           has_pcd_config?: boolean
@@ -1888,6 +1934,8 @@ export type Database = {
           email?: string | null
           external_ref?: string | null
           geog?: unknown
+          google_maps_url?: string | null
+          google_place_id?: string | null
           has_notice?: boolean
           has_passenger_quantity?: boolean
           has_pcd_config?: boolean
@@ -4176,6 +4224,10 @@ export type Database = {
           label: string
         }[]
       }
+      enqueue_knowledge_resync: {
+        Args: { p_op: string; p_source_id: string; p_source_type: string }
+        Returns: undefined
+      }
       expire_paid_date_change_hold: {
         Args: { p_payment_id: string }
         Returns: Json
@@ -4270,6 +4322,29 @@ export type Database = {
       }
       is_company_owner: { Args: { p_company_id: string }; Returns: boolean }
       is_hub_admin: { Args: never; Returns: boolean }
+      knowledge_embed_key_valid: { Args: { p_key: string }; Returns: boolean }
+      knowledge_queue_claim: {
+        Args: { p_limit?: number }
+        Returns: {
+          attempts: number
+          enqueued_at: string
+          id: string
+          last_error: string | null
+          max_attempts: number
+          next_attempt_at: string
+          op: string
+          source_id: string
+          source_type: string
+          status: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "knowledge_source_queue"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       location_has_photo: { Args: { p_photos: Json }; Returns: boolean }
       locations_high_demand_today: {
         Args: { p_location_ids: string[] }

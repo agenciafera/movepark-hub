@@ -15,6 +15,15 @@ export function isValidMinutes(value: string): boolean {
   return value.trim() === "" || parsePositiveInt(value) !== null;
 }
 
+/**
+ * Link de Maps a partir de um Place ID. Deep link documentado do Google para
+ * abrir um lugar pelo identificador. Usado para pré-preencher o campo de negócio
+ * quando o autocomplete traz o place_id; o parceiro pode trocar por um link próprio.
+ */
+export function googleMapsUrlFromPlaceId(placeId: string): string {
+  return `https://www.google.com/maps/place/?q=place_id:${placeId}`;
+}
+
 export function slugify(s: string) {
   return s
     .toLowerCase()
@@ -41,6 +50,8 @@ type Snapshot = {
   slug: string;
   address: string;
   addressComplement: string;
+  googlePlaceId: string;
+  googleMapsUrl: string;
   timezone: string;
   status: EntityStatus;
   phone: string;
@@ -79,6 +90,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
   const [slug, setSlug] = React.useState("");
   const [address, setAddress] = React.useState("");
   const [addressComplement, setAddressComplement] = React.useState("");
+  const [googlePlaceId, setGooglePlaceId] = React.useState("");
+  const [googleMapsUrl, setGoogleMapsUrl] = React.useState("");
   const [timezone, setTimezone] = React.useState("America/Sao_Paulo");
   const [status, setStatus] = React.useState<EntityStatus>("active");
   const [phone, setPhone] = React.useState("");
@@ -105,6 +118,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       slug: location?.slug ?? "",
       address: location?.address ?? "",
       addressComplement: location?.address_complement ?? "",
+      googlePlaceId: location?.google_place_id ?? "",
+      googleMapsUrl: location?.google_maps_url ?? "",
       timezone: location?.timezone ?? "America/Sao_Paulo",
       status: (location?.status ?? "active") as EntityStatus,
       phone: location?.phone ?? "",
@@ -135,6 +150,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     setSlug(baseline.slug);
     setAddress(baseline.address);
     setAddressComplement(baseline.addressComplement);
+    setGooglePlaceId(baseline.googlePlaceId);
+    setGoogleMapsUrl(baseline.googleMapsUrl);
     setTimezone(baseline.timezone);
     setStatus(baseline.status);
     setPhone(baseline.phone);
@@ -165,6 +182,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     slug,
     address,
     addressComplement,
+    googlePlaceId,
+    googleMapsUrl,
     timezone,
     status,
     phone,
@@ -237,6 +256,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       slug: slug || slugify(name),
       address: address || null,
       address_complement: addressComplement.trim() || null,
+      google_place_id: googlePlaceId.trim() || null,
+      google_maps_url: googleMapsUrl.trim() || null,
       timezone,
       status,
       phone: phone || null,
@@ -260,6 +281,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       name,
       address: address || null,
       address_complement: addressComplement.trim() || null,
+      google_place_id: googlePlaceId.trim() || null,
+      google_maps_url: googleMapsUrl.trim() || null,
       phone: phone || null,
       email: email || null,
       notice: notice || null,
@@ -313,6 +336,10 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       setAddress,
       addressComplement,
       setAddressComplement,
+      googlePlaceId,
+      setGooglePlaceId,
+      googleMapsUrl,
+      setGoogleMapsUrl,
       timezone,
       setTimezone,
       status,

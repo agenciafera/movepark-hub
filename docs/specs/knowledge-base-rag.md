@@ -94,7 +94,7 @@ Campos que não existem hoje e aparecem em quase toda base:
 
 | Info | Hoje | Ação | Tarefa |
 |---|---|---|---|
-| Link do Google Maps / Meu Negócio | Não persiste (o Places joga o `place_id` fora) | Criar `location.google_place_id` (+ `google_maps_url`), apartado do endereço, pré-preenchível e refinável | [86ajp6vhh](https://app.clickup.com/t/86ajp6vhh) |
+| Link do Google Maps / Meu Negócio | **Feito.** `location.google_place_id` + `google_maps_url`, apartados do endereço. O autocomplete do Places captura o `place_id` e pré-preenche o link de forma aditiva; a camada `auto` do `get-faq` devolve o link na resposta de endereço | [86ajp6vhh](https://app.clickup.com/t/86ajp6vhh) ✅ |
 | Horário de funcionamento | Só existe `timezone` | Criar campo de horário (24h vs comercial; Nova Iguaçu não é 24h) | [86ajp6vnf](https://app.clickup.com/t/86ajp6vnf) |
 | Tolerância de saída | Não existe no cálculo | Criar `tolerance_minutes` na engine de cálculo | [86ajp6vrq](https://app.clickup.com/t/86ajp6vrq) |
 

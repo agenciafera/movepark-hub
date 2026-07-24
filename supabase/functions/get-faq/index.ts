@@ -91,6 +91,7 @@ type LocationRow = {
   reservation_policy: string | null;
   latitude: number | null;
   longitude: number | null;
+  google_maps_url: string | null;
 };
 
 type LptRow = {
@@ -116,7 +117,7 @@ async function buildAutoFaq(supa, locationId: string): Promise<FaqItem[]> {
     supa
       .from("location")
       .select(
-        "id, name, address, phone, email, timezone, notice, has_notice, reservation_policy, latitude, longitude",
+        "id, name, address, phone, email, timezone, notice, has_notice, reservation_policy, latitude, longitude, google_maps_url",
       )
       .eq("id", locationId)
       .maybeSingle(),
@@ -148,6 +149,9 @@ async function buildAutoFaq(supa, locationId: string): Promise<FaqItem[]> {
       lines.push(
         `Coordenadas: ${L.latitude.toFixed(5)}, ${L.longitude.toFixed(5)}.`,
       );
+    }
+    if (L.google_maps_url) {
+      lines.push(`Google Maps: ${L.google_maps_url}`);
     }
     items.push({
       id: `auto:${L.id}:address`,
