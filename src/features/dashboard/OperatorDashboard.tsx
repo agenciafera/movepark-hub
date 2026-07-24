@@ -167,8 +167,9 @@ export default function OperatorDashboard() {
       {/* Operacional do período (bookings/occupancy:read, todos os papéis) */}
       <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-4">
         <KpiCard
-          label={`Reservas (${periodLabel})`}
+          label={`Reservas pagas (${periodLabel})`}
           value={cur?.count ?? 0}
+          hint="confirmadas, em uso ou concluídas"
           trend={cur && prev ? formatDelta(pctDelta(cur.count, prev.count)) : undefined}
           isLoading={summary.isLoading}
         />

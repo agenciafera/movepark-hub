@@ -39,7 +39,7 @@ describe("OperatorDashboard: escopo dos cards", () => {
   it("papel Operação (sem finance/payouts/reviews): esconde dinheiro e avaliações", () => {
     renderWithScopes(["bookings:read", "occupancy:read"]);
     // Operacional continua
-    expect(screen.getByText("Reservas (30 dias)")).toBeInTheDocument();
+    expect(screen.getByText("Reservas pagas (30 dias)")).toBeInTheDocument();
     expect(screen.getByText("Ocupação (próx. 7 dias)")).toBeInTheDocument();
     // Dinheiro some
     expect(screen.queryByText("Receita (30 dias)")).not.toBeInTheDocument();
