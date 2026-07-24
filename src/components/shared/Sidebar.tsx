@@ -14,7 +14,7 @@ export function Sidebar({
   variant: "manager" | "operator";
   brandTitle?: string;
 }) {
-  const { hasScope, effectiveCompanyIds } = useAuth();
+  const { hasScope, effectiveCompanyIds, impersonatedCompanyId } = useAuth();
   const sections = filterSectionsByScopes(
     variant === "manager" ? managerSections : operatorSections,
     hasScope,
@@ -24,7 +24,14 @@ export function Sidebar({
   // parceiro precisa ("estou mexendo em qual conta?"). O `brandTitle` genérico
   // fica de fallback: o hub_admin não pertence a uma empresa, então no manager
   // continua "Backoffice" até ele impersonar, quando o nome passa a valer.
-  const company = useCompany(effectiveCompanyIds[0]);
+  //
+  // No operator o nome vem da empresa em escopo. No manager NÃO pode vir de
+  // `effectiveCompanyIds[0]`: para o hub_admin isso é só a primeira empresa da
+  // lista e aparecia como se ele fosse dela (ex.: "Virapark"). Só mostra o nome
+  // quando está de fato impersonando.
+  const subtitleCompanyId =
+    variant === "operator" ? effectiveCompanyIds[0] : (impersonatedCompanyId ?? undefined);
+  const company = useCompany(subtitleCompanyId);
   const subtitle = company.data?.name ?? brandTitle;
   // Leads novos aguardando análise → badge no item "Parceiros" (só no manager).
   const pendingPartners = usePendingPartnerCount(variant === "manager");
