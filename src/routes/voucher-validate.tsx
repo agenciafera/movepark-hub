@@ -17,6 +17,7 @@ const statusLabel: Record<BookingStatus, string> = {
   checked_in: "Em uso",
   completed: "Concluída",
   cancelled: "Cancelada",
+  expired: "Expirada",
   no_show: "Não compareceu",
 };
 

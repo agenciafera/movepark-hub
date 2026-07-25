@@ -75,6 +75,19 @@ describe("cancellationRate / benchmark", () => {
     expect(cancellationRate([]).rate).toBe(0);
   });
 
+  it("exclui expired (abandono) e pending do denominador", () => {
+    const r = cancellationRate([
+      { status: "confirmed", count: 6 },
+      { status: "completed", count: 2 },
+      { status: "cancelled", count: 2 },
+      { status: "expired", count: 90 }, // abandono: não conta
+      { status: "pending", count: 5 }, // em aberto: não conta
+    ]);
+    expect(r.total).toBe(10); // 6 + 2 + 2
+    expect(r.cancelled).toBe(2);
+    expect(r.rate).toBe(20); // 2 / 10
+  });
+
   it("classifica contra a referência de mercado", () => {
     expect(cancellationBenchmark(15).tone).toBe("good");
     expect(cancellationBenchmark(30).tone).toBe("warn");

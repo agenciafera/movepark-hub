@@ -62,19 +62,21 @@ test.describe("Roteiro O: jornada do dono (Abbapark)", () => {
     await expect(page.getByRole("columnheader", { name: "Status" })).toBeVisible();
   });
 
-  test("O-02: o dono vê as reservas canceladas", async ({ page }) => {
-    // Regressão do F1: cancelar faz soft-delete (`deleted_at`), mas a lista do painel
-    // PRECISA mostrar as canceladas. A RLS de `booking` já restringe por empresa, então
-    // a lista deixou de filtrar `deleted_at` (ver src/features/bookings/api.ts). O Abbapark
-    // tem canceladas, então com o filtro em "Cancelada" pelo menos uma linha aparece.
+  test("O-02: o dono vê as reservas encerradas (soft-delete não esconde)", async ({ page }) => {
+    // Regressão do F1: encerrar uma reserva faz soft-delete (`deleted_at`), mas a lista do
+    // painel PRECISA mostrá-la. A RLS de `booking` já restringe por empresa, então a lista
+    // deixou de filtrar `deleted_at` (ver src/features/bookings/api.ts).
+    //
+    // Depois da separação abandono vs cancelamento, os pending que expiraram no Abbapark são
+    // `expired` (não `cancelled`), então o filtro "Expirada" é o que tem linhas aqui.
     await page.goto("/operator/bookings");
     await page.locator("#booking-status").click();
-    await page.getByRole("option", { name: "Cancelada" }).click();
+    await page.getByRole("option", { name: "Expirada" }).click();
     // Confirma que o filtro foi aplicado (evita falso-positivo de timing).
-    await expect(page.locator("#booking-status")).toContainText("Cancelada");
+    await expect(page.locator("#booking-status")).toContainText("Expirada");
 
     await expect(
-      page.getByRole("row").filter({ hasText: "Cancelada" }).first(),
+      page.getByRole("row").filter({ hasText: "Expirada" }).first(),
     ).toBeVisible({ timeout: 10_000 });
   });
 

@@ -102,7 +102,7 @@ export function isCheckoutBlocked(
   status: string,
   now: Date = new Date(),
 ): boolean {
-  if (status === "cancelled") return true;
+  if (status === "cancelled" || status === "expired") return true;
   return status === "pending" && !!expiresAt && new Date(expiresAt) < now;
 }
 

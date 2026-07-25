@@ -35,6 +35,7 @@ const statusLabel: Record<string, string> = {
   checked_in: "Em uso",
   completed: "Concluída",
   cancelled: "Cancelada",
+  expired: "Expirada",
   no_show: "No-show",
 };
 

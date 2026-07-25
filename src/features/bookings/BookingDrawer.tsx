@@ -26,6 +26,7 @@ const allowed: Record<BookingStatus, BookingStatus[]> = {
   checked_in: ["completed", "cancelled"],
   completed: [],
   cancelled: [],
+  expired: [],
   no_show: [],
 };
 

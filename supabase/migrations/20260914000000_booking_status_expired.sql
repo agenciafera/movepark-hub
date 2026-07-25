@@ -1,0 +1,12 @@
+-- Status `expired`: separa carrinho ABANDONADO (pending que expirou, nunca pago) do
+-- CANCELAMENTO de verdade (reserva paga e depois cancelada). Antes os dois caíam em
+-- `cancelled`, o que inflava a taxa de cancelamento e escondia que a maioria era abandono.
+--
+-- Ver docs/specs/booking-flow.md (seção "Abandono vs cancelamento") para a semântica completa,
+-- inclusive o conceito DERIVADO de "recuperável" (expired + check-in ainda no futuro = lead que
+-- o marketing pode reconquistar). Recuperável NÃO é status: depende do tempo, é calculado.
+--
+-- `ADD VALUE` precisa vir sozinho numa migration: o Postgres só libera o valor novo depois do
+-- commit da transação, então a lógica e o backfill que usam 'expired' ficam na migration seguinte
+-- (20260914010000_booking_expired_logic.sql).
+alter type public.booking_status add value if not exists 'expired' after 'cancelled';

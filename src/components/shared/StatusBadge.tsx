@@ -7,6 +7,7 @@ export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
   checked_in: "Em uso",
   completed: "Concluída",
   cancelled: "Cancelada",
+  expired: "Expirada",
   no_show: "No-show",
 };
 
@@ -16,6 +17,8 @@ const tones = {
   checked_in: "active",
   completed: "completed",
   cancelled: "cancelled",
+  // Abandono (pending que expirou, nunca pago): tom neutro, não o vermelho de cancelado.
+  expired: "neutral",
   no_show: "cancelled",
 } as const;
 

@@ -15,6 +15,7 @@ onde tem furo. Cada furo aponta o arquivo que comprova.
 | F1 | O dono não vê as próprias reservas canceladas (**CORRIGIDO**) | Alta | `src/features/bookings/api.ts` (lista deixou de filtrar `deleted_at`) |
 | F2 | Reservas de teste de segurança poluem a lista real do dono | Média | dados em produção (3 bookings "Test Pentest", valor R$ 0,00) |
 | F3 | "Preço base · R$ 0,00" aparece em todo card de preço | Baixa | `src/routes/operator/pricing.tsx:59` |
+| F4 | Carrinho abandonado inflava o "cancelamento" (**CORRIGIDO** com status `expired`) | Alta | migrations `20260914000000`/`20260914010000` (abandono ≠ cancelamento) |
 
 Lacunas de administração (o que a vitrine/detalhe mostram e o dono não gerencia):
 ver a seção "Lacunas de administração".
@@ -58,6 +59,36 @@ operador e pelo manager) deixou de filtrar `deleted_at`. O `deleted_at` continua
 **Cobertura.** `O-02` em `e2e/owner/O01-dono-jornada.spec.ts` (agora passa de verdade) e o teste
 de regressão de CI `src/features/bookings/useBookings.test.tsx`, que falha se a lista voltar a
 mandar `deleted_at` na query.
+
+## F4 · Carrinho abandonado inflava o "cancelamento" (Alta, CORRIGIDO)
+
+**Sintoma.** Ao destravar a visão de canceladas (F1), o número não fechava com a realidade: o
+Abbapark aparecia com dezenas de "canceladas" que ninguém cancelou. Elas eram carrinhos que
+expiraram sem pagamento, misturados com cancelamentos de verdade na mesma linha `cancelled`.
+
+**Causa.** O ciclo de vida tinha um só status terminal para dois eventos opostos: quem nunca pagou
+(pending que o hold expirou) e quem pagou e depois cancelou caíam ambos em `cancelled`. No banco
+vivo, ~87% do que estava como `cancelled` era, na verdade, carrinho abandonado. A taxa de
+cancelamento do dashboard (Bloco 3) ficava sem sentido, e não dava para o marketing separar quem
+abandonou (recuperável) de quem cancelou de propósito.
+
+**Correção aplicada.** Novo status **`expired`** (abandono) separado de `cancelled` (cancelamento
+com dinheiro envolvido). O determinante é o pagamento, não o status de origem: `pending` cru sem
+pagamento comprometido vira `expired`; o resto vira `cancelled`. A decisão vive num ponto só
+(`cancel_booking_with_release`/`api_cancel_booking`), e o cron delega a ele. Backfill reclassificou
+os `cancelled` legados sem pagamento para `expired`. Migrations `20260914000000` (enum) +
+`20260914010000` (lógica + backfill); regra e o conceito de "recuperável" documentados forte em
+[booking-flow.md](../specs/booking-flow.md) seção "Abandono vs cancelamento".
+
+**Efeito no dono.** A taxa de cancelamento passa a medir cancelamento de reserva **paga** (o número
+que fala de operação e satisfação); abandono é topo de funil, medido à parte. E abre a porta para
+recuperação de carrinho: `expired` com check-in ainda no futuro é reconquistável (ver "A construir").
+
+**Cobertura.** pgTAP `supabase/tests/booking_expired.test.sql` (cron expira abandono; cancel de
+pending não pago → `expired`; cancel de reserva paga → `cancelled`; pending pago não é expirado pelo
+cron; idempotência). `O-02` do roteiro do dono filtra "Expirada" (o Abbapark hoje tem expiradas, não
+canceladas). Testes de UI: `bookings.logic.test.ts` (`isRecoverableExpired`), `dashboardMetrics.logic.ts`
+(cancelamento exclui `expired`).
 
 ## F2 · Dados de teste de segurança na lista real do dono (Média)
 
@@ -144,6 +175,13 @@ Revisadas com o produto. Quase todas as lacunas são intencionais:
   vaga dedicada e um compromisso de manter disponível. **Falta decisão de produto/legal:** se e
   como isso vira compromisso amarrado (SLA de vaga, penalidade), o que se liga à tarefa "Contrato
   do parceiro: SLA de vaga, penalidade e retenção".
+- **Recuperação de carrinho abandonado (destravada pelo F4).** Com `expired` separado de
+  `cancelled`, dá para reconquistar quem abandonou: a fila é uma query por `status = 'expired' AND
+  check_in_at > now()` (o "recuperável", derivado do relógio, nunca um status), mais filtros de
+  contato/consentimento. Falta a decisão de produto do canal (e-mail/WhatsApp "sua vaga ainda está
+  disponível"), o registro do que já foi abordado (evento de marketing, ex. `booking_recovery_attempt`,
+  ortogonal ao ciclo de vida) e onde isso mora (Manager/marketing). O helper puro
+  `isRecoverableExpired` (`src/features/bookings/bookings.logic.ts`) já existe para a UI.
 - **Área do dono para ver o acordo aceito (bloqueada por conteúdo).** Hoje o sistema só guarda
   `company.contract_accepted_at` e `company.contract_version` (assinatura simulada), sem o texto
   do acordo. Uma tela que só mostra "aceito em X, versão Y" fica oca. Antes de construir, o time
@@ -175,7 +213,8 @@ agregação client-side nova sobre dados que já temos, **[backend novo]** preci
 `dashboardMetrics.logic.ts`). Entregue: seletor de período; KPIs de receita e reservas com Δ vs
 período anterior, ticket médio e saldo a repassar; reservas futuras (pace simples), antecedência
 média (lead time), ocupação dos próximos 7 dias, RevPAR do período e origem (site vs API); gráfico
-de receita diária; cancelamento com referência de mercado (destrava com o F1); nota e avaliações;
+de receita diária; cancelamento com referência de mercado (destrava com o F1, e agora honesto pelo
+F4: a taxa exclui `expired`/abandono do denominador); nota e avaliações;
 selo de alta demanda hoje; e a operação de hoje.
 
 **Mix de tarifa: fora do dono, feito no Super Admin.** O mix de tarifa (Básica/Flex/Superflex)
@@ -222,8 +261,9 @@ cai na aba Reservas/funil, que é `bookings:read`). Teste de componente cobre os
 **Bloco 3 · Saúde da operação**
 - Funil (criadas → confirmadas → concluídas) com taxa de cancelamento e no-show, contra a
   referência de mercado (os bons seguram cancelamento em 15% a 20%). [funil: `useStatusFunnel`
-  **pronto**; **atenção:** a taxa de cancelamento depende do **F1**, porque as canceladas somem
-  pelo soft-delete. O número só fecha depois de resolver o F1]
+  **pronto**; a taxa de cancelamento depende do **F1** (as canceladas somiam pelo soft-delete) e do
+  **F4** (abandono agora é `expired`, fora do denominador do cancelamento). Ambos resolvidos, o
+  número fecha]
 - Antecedência média das reservas (lead time), de `created_at` até o check-in. [**corte novo**]
 - Mix de tarifa (Básica/Flex/Superflex) e canal (site vs API/bot). [**corte novo** sobre
   `fare_tier`/`origin`/`created_via_api_key_id`]

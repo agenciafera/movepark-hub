@@ -91,7 +91,7 @@ select throws_ok(
 
 update public.location_parking_type set has_minimum_date = false where id = current_setting('test.lpt')::uuid;
 
--- ── 6) expiração de pending abandonado libera o hold e cancela ─────────────
+-- ── 6) expiração de pending abandonado libera o hold e marca expired ────────
 do $$
 declare r jsonb;
 begin
@@ -113,7 +113,7 @@ select is(
 select is(
   (select status::text from public.booking
    where id = (current_setting('test.exp')::jsonb ->> 'booking_id')::uuid),
-  'cancelled', 'cron_expire_pending_bookings marca a reserva como cancelled');
+  'expired', 'cron_expire_pending_bookings marca o abandono como expired');
 
 select * from finish();
 rollback;

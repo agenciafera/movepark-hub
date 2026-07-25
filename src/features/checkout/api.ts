@@ -22,7 +22,7 @@ export type PriceBreakdown = {
 export type BookingForCheckout = {
   id: string;
   code: string;
-  status: "pending" | "confirmed" | "checked_in" | "completed" | "cancelled" | "no_show";
+  status: "pending" | "confirmed" | "checked_in" | "completed" | "cancelled" | "expired" | "no_show";
   total_amount: number;
   currency: string;
   price_breakdown: PriceBreakdown | null;
@@ -272,10 +272,10 @@ export function useCancelBooking() {
     mutationFn: async (args: { bookingId: string }) => {
       // Libera capacidade
       await supabase.rpc("release_booking_capacity", { p_booking_id: args.bookingId });
-      // Marca como cancelada
+      // Pending nunca pago que o cliente largou = abandono → `expired` (não `cancelled`).
       const { error } = await supabase
         .from("booking")
-        .update({ status: "cancelled", deleted_at: new Date().toISOString() })
+        .update({ status: "expired", deleted_at: new Date().toISOString() })
         .eq("id", args.bookingId);
       if (error) throw error;
     },

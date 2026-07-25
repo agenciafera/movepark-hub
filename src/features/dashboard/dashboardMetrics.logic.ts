@@ -64,6 +64,10 @@ export function cancellationRate(funnel: FunnelRow[]): {
   let cancelled = 0;
   let noShow = 0;
   for (const f of funnel) {
+    // `expired` (carrinho abandonado, nunca pago) e `pending` (ainda em aberto) ficam FORA da
+    // taxa: o denominador é só reserva que chegou a um desfecho pago. Sem isso, o abandono
+    // inflava a taxa (ex.: 84% que eram quase todos abandono).
+    if (f.status === "expired" || f.status === "pending") continue;
     total += f.count;
     if (f.status === "cancelled") cancelled += f.count;
     if (f.status === "no_show") noShow += f.count;

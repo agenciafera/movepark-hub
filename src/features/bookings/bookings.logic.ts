@@ -20,7 +20,8 @@ export type BucketableBooking = {
 export function bucketBooking(b: BucketableBooking, now: Date = new Date()): MyBookingStatus {
   if (b.status === "checked_in") return "active";
   if (b.status === "completed") return "history";
-  if (b.status === "cancelled" || b.status === "no_show") return "cancelled";
+  if (b.status === "cancelled" || b.status === "no_show" || b.status === "expired")
+    return "cancelled";
   if (b.status === "pending") {
     if (b.expires_at && new Date(b.expires_at) < now) return "cancelled";
     return "upcoming";
@@ -28,6 +29,22 @@ export function bucketBooking(b: BucketableBooking, now: Date = new Date()): MyB
   // confirmed
   if (new Date(b.check_out_at) < now) return "history";
   return "upcoming";
+}
+
+/**
+ * Reserva expirada que ainda dá pra RECUPERAR: o carrinho foi abandonado (`expired`), mas o
+ * check-in ainda está no futuro, então o cliente ainda pode ser reconquistado a reservar aquela
+ * data (base para recuperação de carrinho pelo marketing).
+ *
+ * É DERIVADO, não um status: um `expired` deixa de ser recuperável assim que o check-in passa.
+ * Por isso NÃO viramos "recoverable" um status do banco; calcula-se com o relógio. Ver
+ * docs/specs/booking-flow.md (seção "Abandono vs cancelamento").
+ */
+export function isRecoverableExpired(
+  b: { status: string; check_in_at: string },
+  now: Date = new Date(),
+): boolean {
+  return b.status === "expired" && new Date(b.check_in_at) > now;
 }
 
 /**

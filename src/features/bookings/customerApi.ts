@@ -7,7 +7,7 @@ export type { MyBookingStatus };
 export type MyBookingListItem = {
   id: string;
   code: string;
-  status: "pending" | "confirmed" | "checked_in" | "completed" | "cancelled" | "no_show";
+  status: "pending" | "confirmed" | "checked_in" | "completed" | "cancelled" | "expired" | "no_show";
   check_in_at: string;
   check_out_at: string;
   expires_at: string | null;

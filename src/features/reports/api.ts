@@ -50,7 +50,15 @@ export function useStatusFunnel(periodDays: ReportPeriod, locationIds?: string[]
       for (const row of data ?? []) {
         counts.set(row.status, (counts.get(row.status) ?? 0) + 1);
       }
-      const order = ["pending", "confirmed", "checked_in", "completed", "cancelled", "no_show"];
+      const order = [
+        "pending",
+        "confirmed",
+        "checked_in",
+        "completed",
+        "cancelled",
+        "expired",
+        "no_show",
+      ];
       return order
         .filter((s) => counts.has(s))
         .map((s) => ({ status: s, count: counts.get(s) ?? 0 }));

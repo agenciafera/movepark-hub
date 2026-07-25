@@ -24,6 +24,7 @@ const statusOptions: { value: BookingStatus | "all"; label: string }[] = [
   { value: "checked_in", label: "Em uso" },
   { value: "completed", label: "Concluída" },
   { value: "cancelled", label: "Cancelada" },
+  { value: "expired", label: "Expirada" },
 ];
 
 export default function OperatorBookings() {

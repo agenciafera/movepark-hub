@@ -4819,6 +4819,7 @@ export type Database = {
         | "checked_in"
         | "completed"
         | "cancelled"
+        | "expired"
         | "no_show"
       company_role: "owner" | "operator" | "manager" | "finance"
       discount_type: "percent" | "fixed"
@@ -4997,6 +4998,7 @@ export const Constants = {
         "checked_in",
         "completed",
         "cancelled",
+        "expired",
         "no_show",
       ],
       company_role: ["owner", "operator", "manager", "finance"],

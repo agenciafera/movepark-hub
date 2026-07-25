@@ -103,7 +103,11 @@ booking
 ├── location_id → location
 ├── vehicle_id → vehicle (nullable)
 ├── check_in_at, check_out_at (check: check_out > check_in)
-├── status: booking_status (pending/confirmed/checked_in/completed/cancelled/no_show)
+├── status: booking_status (pending/confirmed/checked_in/completed/cancelled/expired/no_show)
+│     └── expired = carrinho abandonado (pending que venceu sem nunca ser pago); cancelled = reserva
+│         com dinheiro envolvido e depois cancelada. Determinante é o pagamento, não o status de
+│         origem. "Recuperável" (expired + check_in_at futuro) é DERIVADO, nunca um status.
+│         Ver docs/specs/booking-flow.md · seção "Abandono vs cancelamento".
 ├── total_amount, currency
 └── notes, created_at, updated_at, deleted_at
 

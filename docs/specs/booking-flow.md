@@ -4,12 +4,18 @@
 > (`create_booking_atomic` segura `location_parking_availability.booked_count` por data, com
 > `expires_at = now() + booking_hold_minutes`) — **não** na confirmação do pagamento. A confirmação
 > **não** re-incrementa. O hold é liberado (`release_booking_capacity`) no **cancelamento** e na
-> **expiração** de `pending` não pago, que vira **`cancelled`** (não `no_show`) via
-> `cron_expire_pending_bookings` (pg_cron `expire-pending-bookings`, a cada 5 min).
+> **expiração** de `pending` não pago, que vira **`expired`** (abandono, não `cancelled` nem
+> `no_show`) via `cron_expire_pending_bookings` (pg_cron `expire-pending-bookings`, a cada 5 min).
 > `minimum_stay`/`minimum_date`/antecedência são validados na criação. A **entrada não pode ser
 > retroativa** (piso incondicional `assert_check_in_not_past`, bug E2.2.1): vale na criação e na
 > troca de datas (pendente e paga), com espelho `past_ok` em `check_availability` para o front. Ver
 > [capacity-rules.md](./capacity-rules.md).
+>
+> **Abandono ≠ cancelamento (status `expired`).** Um `pending` que vence sem nunca ter sido pago é
+> **carrinho abandonado** e vira **`expired`**, não `cancelled`. `cancelled` fica reservado para
+> reserva que teve dinheiro envolvido (paga/comprometida) e depois foi cancelada. Isso limpa a taxa
+> de cancelamento (que antes inflava com abandono) e destrava recuperação de carrinho pelo marketing.
+> Regra e semântica completas na seção **[Abandono vs cancelamento](#abandono-vs-cancelamento-expired-vs-cancelled)**.
 >
 > **Janela de expiração configurável + blindagem de pagamento (E0.3.1-a, ADR-005).** A janela do
 > hold é **uma config única** em `app_setting.booking_hold_minutes` (default 30, editável no Manager
@@ -50,30 +56,39 @@
 | `confirmed` | Pagamento confirmado | ✅ |
 | `checked_in` | QR escaneado, veículo no estacionamento | ✅ |
 | `completed` | Saída registrada, reserva encerrada | ✅ |
-| `cancelled` | Cancelada (pelo usuário ou sistema) | ✅ |
+| `cancelled` | Cancelada com dinheiro envolvido (paga/comprometida e depois cancelada) | ✅ |
+| `expired` | **Carrinho abandonado**: `pending` que venceu sem nunca ter sido pago | ✅ |
 | `no_show` | Não compareceu dentro do prazo | ✅ |
 
 > No legado os status eram: `new`, `in_progress`, `complete`, `canceled`, `expired`, `refund-requested`.
-> No Hub os nomes foram normalizados para o domínio real de estacionamento.
+> No Hub os nomes foram normalizados para o domínio real de estacionamento. O `expired` **volta**
+> aqui de propósito, com semântica clara (abandono ≠ cancelamento); ver a seção dedicada abaixo.
 
 ### Transições válidas
 
 ```
 pending ──────→ confirmed   (pagamento aprovado)
-pending ──────→ cancelled   (falha no pagamento / cancelamento antes do pagamento)
-pending ──────→ cancelled   (expires_at ultrapassado sem pagamento — job libera o hold)
+pending ──────→ expired     (expires_at ultrapassado SEM pagamento: carrinho abandonado, job libera o hold)
+pending ──────→ cancelled   (pending que JÁ tinha pagamento comprometido e foi cancelado)
 
 confirmed ────→ checked_in  (QR escaneado na entrada)
-confirmed ────→ cancelled   (cancelamento após pagamento — inicia reembolso)
-confirmed ────→ no_show     (não compareceu — transição automática por job)
+confirmed ────→ cancelled   (cancelamento após pagamento: inicia reembolso)
+confirmed ────→ no_show     (não compareceu: transição automática por job)
 
 checked_in ───→ completed   (saída registrada)
 checked_in ───→ cancelled   (emergência operacional)
 
-completed ────→ (terminal — sem transições)
-cancelled ────→ (terminal — sem transições)
-no_show ──────→ (terminal — sem transições)
+completed ────→ (terminal, sem transições)
+cancelled ────→ (terminal, mas pagamento tardio pode reconfirmar: ver confirm_or_refund_booking)
+expired ──────→ (terminal, mas pagamento tardio pode reconfirmar: ver confirm_or_refund_booking)
+no_show ──────→ (terminal, sem transições)
 ```
+
+> **`pending` → `expired` vs `pending` → `cancelled`.** O que decide é ter havido **dinheiro
+> envolvido**, não o status de origem. Um `pending` cru (nenhum pagamento comprometido) que é
+> encerrado (pelo cron ou por cancelamento) vira **`expired`**. Um `pending` que já tem pagamento
+> `paid`/`authorized`/cartão em voo (a janela entre pagar e o webhook confirmar) vira **`cancelled`**:
+> tem estorno a fazer, não é abandono. Detalhe na seção **Abandono vs cancelamento**.
 
 ---
 
@@ -210,13 +225,14 @@ POST /webhooks/payment/{provider}
 Reservas com `expires_at` preenchido (pagamentos assíncronos como PIX) precisam
 ser expiradas automaticamente.
 
-**Regra (implementada — E0.3.1-a, ADR-005):**
-- Cancela apenas `status = pending` cujo `expires_at < now() - booking_hold_grace_minutes` (folga
-  para atraso de webhook, default 2 min) **E** que **não** tenha pagamento comprometido — o cron
-  reconcilia contra `payment`: pula quem tem `paid`/`authorized` ou `method=card` não-terminal.
+**Regra (implementada, E0.3.1-a, ADR-005):**
+- Expira apenas `status = pending` cujo `expires_at < now() - booking_hold_grace_minutes` (folga
+  para atraso de webhook, default 2 min) **E** que **não** tenha pagamento comprometido: o cron
+  reconcilia contra `payment` e pula quem tem `paid`/`authorized` ou `method=card` não-terminal.
   **PIX apenas gerado e não pago** (`method=pix, status=pending`) continua expirando normalmente.
-- Cancela via **`cancel_booking_with_release`** (único ponto idempotente de cancelar+liberar), que
-  chama `release_booking_capacity` e marca **`cancelled`** + `deleted_at`.
+- Encerra via **`cancel_booking_with_release`** (único ponto idempotente de encerrar+liberar), que
+  chama `release_booking_capacity` e marca o status terminal + `deleted_at`. Como esses pendentes
+  nunca foram pagos, o status resultante é **`expired`** (abandono), não `cancelled`.
 - Executado por pg_cron `expire-pending-bookings` (a cada 5 min).
 - O hold **foi** criado na reserva, então expirar **precisa** liberá-lo (senão a vaga vaza).
 
@@ -224,6 +240,88 @@ ser expiradas automaticamente.
 `now() + booking_hold_minutes` (config única em `app_setting`, default 30) na criação, e
 `create-pix-charge`/`create-card-charge` **renovam** `expires_at` ao gerar o pagamento — o QR PIX usa
 o **mesmo** valor, então o hold sempre cobre a validade do QR.
+
+---
+
+## Abandono vs cancelamento (`expired` vs `cancelled`)
+
+Este status carrega peso: ele separa duas coisas que antes viravam a mesma linha (`cancelled`) e
+que significam negócios opostos.
+
+- **`expired` = carrinho abandonado.** A pessoa criou um `pending`, segurou a vaga, e **nunca pagou**.
+  O hold venceu (ou alguém encerrou a reserva não paga). Ninguém desistiu de uma compra: a compra
+  nunca aconteceu. É perda de topo de funil, não de cliente.
+- **`cancelled` = cancelamento real.** Houve **dinheiro envolvido** (reserva paga ou com pagamento
+  comprometido) e depois ela foi desfeita. Aqui há estorno a tratar, política de janela de Tarifa,
+  impacto em receita e no parceiro.
+
+### Por que a distinção importa (o peso do status)
+
+1. **Taxa de cancelamento honesta.** Misturar abandono com cancelamento inflava a métrica: no
+   backfill deste banco, ~87% do que estava como `cancelled` era, na verdade, carrinho abandonado. O
+   dashboard do dono e os relatórios passam a medir cancelamento de reserva **paga**, que é o número
+   que fala de satisfação e de operação. Abandono é outra história (topo de funil), medida à parte.
+2. **Recuperação de carrinho pelo marketing.** Abandono é recuperável; cancelamento pago já teve o
+   dinheiro de volta. Sem separar os dois, não dá para saber a quem oferecer "sua vaga ainda está
+   disponível" sem incomodar quem já cancelou de propósito. Ver **Recuperável** abaixo.
+3. **Integrações não disparam à toa.** Os triggers de WPS/White-Label observam `new.status =
+   'cancelled'`. Como abandono nunca foi confirmado ao parceiro, marcá-lo `expired` (e não
+   `cancelled`) **não** dispara sincronização de cancelamento: nada é "cancelado" lá fora porque
+   nada chegou a existir lá fora. O backfill de legado (cancelled → expired) por isso é seguro.
+
+### A regra: o determinante é o dinheiro, não o status de origem
+
+`expired` acontece **só** quando a reserva é um `pending` **cru**, sem **nenhum pagamento
+comprometido**. Qualquer outra coisa que seja encerrada é `cancelled`.
+
+| Situação ao encerrar | Vira | Por quê |
+|---|---|---|
+| `pending` sem pagamento (PIX gerado e não pago, ou nada) | `expired` | carrinho abandonado, sem dinheiro |
+| `pending` com pagamento `paid`/`authorized`/cartão em voo | `cancelled` | janela pré-confirmação: já há dinheiro |
+| `confirmed` / `checked_in` cancelado | `cancelled` | só se chega nesses status depois de pagar |
+
+"Pagamento comprometido" = `payment` com `status in (paid, authorized, refunded)`, com `paid_at`, ou
+`method = card` que não falhou/cancelou. A decisão vive em **um lugar**: `cancel_booking_with_release`
+(usada pela Edge `cancel-booking`, pelo webhook e pelo cron) e a irmã `api_cancel_booking` (Public
+API). O cron `cron_expire_pending_bookings` **delega** a ela, então nunca há uma segunda cópia da
+regra. Implementado em `supabase/migrations/20260914000000_booking_status_expired.sql` (enum) +
+`20260914010000_booking_expired_logic.sql` (lógica + backfill); cobertura em
+`supabase/tests/booking_expired.test.sql`.
+
+### Recuperável: `expired` + check-in ainda no futuro (derivado, nunca um status)
+
+Um `expired` **recuperável** é o abandono que o marketing ainda dá para reconquistar: o carrinho foi
+abandonado, **mas a data de entrada (`check_in_at`) ainda está no futuro**, então a pessoa ainda
+poderia reservar aquela estadia. Um `expired` cujo check-in já passou é história: não há o que
+recuperar.
+
+**Recuperável é DERIVADO, não um status do banco.** A propriedade **decai com o relógio**: o mesmo
+`expired` é recuperável hoje e deixa de ser amanhã, sem nada mudar na reserva. Cravar "recoverable"
+como status obrigaria um job para "expirar o recuperável" a cada minuto, e o valor certo dependeria
+de quando alguém olhou. Por isso a regra é:
+
+```
+recuperável  ⇔  status = 'expired'  E  check_in_at > now()
+```
+
+Calculado com o relógio, onde e quando for preciso, **nunca** persistido:
+- **Front:** `isRecoverableExpired(booking, now)` em `src/features/bookings/bookings.logic.ts`
+  (puro, `now` injetável, testado em `bookings.logic.test.ts`).
+- **Marketing/recuperação:** a fila de "recuperar carrinho" é uma **query** por `status = 'expired'
+  AND check_in_at > now()` (mais os filtros de contato/consentimento), não uma coluna. Assim a lista
+  está sempre certa no instante em que roda, e um abandono cujo check-in passou sai dela sozinho.
+
+> **Não crie um status `recoverable`.** Se um dia o produto precisar marcar "já abordamos este
+> abandono", isso é um **evento de marketing** (ex.: `booking_recovery_attempt` com timestamp),
+> ortogonal ao ciclo de vida da reserva, e não um sétimo `booking_status`. O status diz o que a
+> reserva é; recuperável diz o que dá para fazer com ela agora, e isso é do relógio e do CRM.
+
+### Pagamento tardio ainda reconfirma
+
+Como antes, se o pagamento aterrissa depois do encerramento (o gap pagar↔webhook), a reserva pode
+sair do terminal: `confirm_or_refund_booking` trata `expired` **igual** a `cancelled` (reconfirma se
+há vaga via `acquire_booking_capacity`, senão estorna). Ou seja, `expired` é terminal para o fluxo
+normal, mas não é uma sentença: dinheiro que chega atrasado é honrado ou devolvido, nunca engolido.
 
 ---
 
@@ -272,15 +370,20 @@ o **mesmo** valor, então o hold sempre cobre a validade do QR.
   (estorno total) e `charge.partial_canceled` (estorno parcial). Esta conta emite `charge.*` (não há
   `order.*` nem `charge.canceled`); o full refund/void é o próprio `charge.refunded`.
 - **Capacidade:** cancelar + liberar a vaga é uma RPC única e **idempotente por status**,
-  `cancel_booking_with_release` (noop se já `cancelled`), chamada **tanto** pela Edge **quanto** pelo
-  webhook — a vaga nunca é liberada em dobro (`release_booking_capacity` não é idempotente sozinha).
+  `cancel_booking_with_release` (noop se já `cancelled` ou `expired`), chamada **tanto** pela Edge
+  **quanto** pelo webhook: a vaga nunca é liberada em dobro (`release_booking_capacity` não é
+  idempotente sozinha). O status terminal que ela grava é `expired` para abandono (pending cru sem
+  pagamento) e `cancelled` para o resto (ver seção **Abandono vs cancelamento**).
 - **Taxa no estorno:** como o parceiro é `liable`/`charge_processing_fee` no split, a taxa de
   processamento já retida normalmente **não** volta e recai no parceiro (consistente com o ADR-004).
 
-### Cancelamento automático
+### Encerramento automático
 
-- `no_show`: triggered por job quando `expires_at` ultrapassa sem pagamento
-- Não gera reembolso (nada foi cobrado)
+- `expired`: `pending` cru cujo `expires_at` venceu sem pagamento (carrinho abandonado). Libera o
+  hold; não há reembolso (nada foi cobrado). Ver **Expiração de reservas pendentes** e **Abandono vs
+  cancelamento**.
+- `no_show`: reserva **confirmada** (paga) cujo cliente não compareceu na janela de check-in. É outro
+  caso, sobre reserva paga, e não se confunde com abandono.
 
 ---
 

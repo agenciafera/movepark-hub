@@ -68,6 +68,15 @@ export function voucherValidity(b: VoucherBookingLike, now: Date): VoucherValidi
         withinWindow: null,
         message: "Reserva cancelada.",
       };
+    case "expired":
+      // Abandono: pending que expirou sem pagamento. Nunca teve voucher válido.
+      return {
+        state: "cancelled",
+        canCheckIn: false,
+        tone: "error",
+        withinWindow: null,
+        message: "Reserva expirada (não foi paga).",
+      };
     case "no_show":
       return {
         state: "no_show",

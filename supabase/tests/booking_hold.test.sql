@@ -86,7 +86,7 @@ select is(
   (select status::text from public.booking where id = current_setting('test.bk_paid')::uuid),
   'pending', 'cron NÃO cancela reserva com pagamento paid');
 
--- ── 4) cron CANCELA PIX ocioso (pix/pending) e libera a capacidade ─────────
+-- ── 4) cron EXPIRA PIX ocioso (pix/pending) e libera a capacidade ──────────
 do $$
 declare r jsonb; v_bk uuid;
 begin
@@ -102,7 +102,7 @@ end $$;
 
 select is(
   (select status::text from public.booking where id = current_setting('test.bk_idle')::uuid),
-  'cancelled', 'cron cancela PIX apenas gerado e não pago (ocioso)');
+  'expired', 'cron expira PIX apenas gerado e não pago (ocioso = abandono)');
 select is(
   coalesce((select booked_count from public.location_parking_availability
    where location_parking_type_id = current_setting('test.lpt')::uuid and date = '2026-10-11'), 0),
@@ -133,7 +133,7 @@ end $$;
 
 select is(
   (select status::text from public.booking where id = current_setting('test.bk_grace')::uuid),
-  'cancelled', 'além do grace (expirou há 10min) cancela');
+  'expired', 'além do grace (expirou há 10min) expira o abandono');
 
 -- ── 6) confirm_or_refund_booking: os 3 outcomes ────────────────────────────
 -- 6a) pending → confirmed

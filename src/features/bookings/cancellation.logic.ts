@@ -38,7 +38,7 @@ export function cancellationStatus(
  * - `pending` → pode a qualquer hora (hold não pago, só libera a vaga);
  * - `confirmed` dentro da janela da Tarifa → pode, com estorno integral (`free`);
  * - `confirmed` fora da janela → BLOQUEADO (decisão PO jul/2026; só staff cancela);
- * - demais estados (checked_in/completed/cancelled/no_show) → terminal, não cancela.
+ * - demais estados (checked_in/completed/cancelled/expired/no_show) → terminal, não cancela.
  * `now` é injetado para testabilidade.
  */
 export type SelfCancelGate =

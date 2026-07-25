@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { bucketBooking, bookingCustomerName, type BucketableBooking } from "./bookings.logic";
+import {
+  bucketBooking,
+  bookingCustomerName,
+  isRecoverableExpired,
+  type BucketableBooking,
+} from "./bookings.logic";
 
 const NOW = new Date("2026-06-13T12:00:00Z");
 
@@ -22,9 +27,10 @@ describe("bucketBooking", () => {
     expect(bucketBooking(booking({ status: "completed" }), NOW)).toBe("history");
   });
 
-  it("cancelled e no_show → cancelled", () => {
+  it("cancelled, no_show e expired → cancelled", () => {
     expect(bucketBooking(booking({ status: "cancelled" }), NOW)).toBe("cancelled");
     expect(bucketBooking(booking({ status: "no_show" }), NOW)).toBe("cancelled");
+    expect(bucketBooking(booking({ status: "expired" }), NOW)).toBe("cancelled");
   });
 
   it("pending não expirado → upcoming", () => {
@@ -51,6 +57,26 @@ describe("bucketBooking", () => {
 
   it("confirmed futuro → upcoming", () => {
     expect(bucketBooking(booking({ status: "confirmed" }), NOW)).toBe("upcoming");
+  });
+});
+
+describe("isRecoverableExpired", () => {
+  it("expired com check-in no futuro é recuperável", () => {
+    expect(isRecoverableExpired({ status: "expired", check_in_at: "2026-06-20T10:00:00Z" }, NOW)).toBe(
+      true,
+    );
+  });
+
+  it("expired com check-in no passado não é recuperável", () => {
+    expect(isRecoverableExpired({ status: "expired", check_in_at: "2026-06-10T10:00:00Z" }, NOW)).toBe(
+      false,
+    );
+  });
+
+  it("cancelled não é recuperável (só expired)", () => {
+    expect(
+      isRecoverableExpired({ status: "cancelled", check_in_at: "2026-06-20T10:00:00Z" }, NOW),
+    ).toBe(false);
   });
 });
 
