@@ -121,6 +121,79 @@ export async function simulateConsumerPrice(
   };
 }
 
+/** Resolve o `location.id` da unidade do Abbapark por slug (sem id cravado). */
+export async function resolveAbbaparkLocationId(): Promise<string> {
+  const { data, error } = await admin
+    .from("location")
+    .select("id, company!inner(slug)")
+    .eq("slug", ABBAPARK_OWNER.locationSlug)
+    .eq("company.slug", ABBAPARK_OWNER.companySlug)
+    .single();
+  if (error) throw error;
+  return data.id as string;
+}
+
+/**
+ * Semeia (ou reseta) uma reserva CONFIRMADA de teste no Abbapark, para os specs de
+ * operação (check-in por QR, transições no drawer). Feito pelo `admin`
+ * (service_role), que passa pelo guard `booking_guard_status_transition` (só cliente
+ * é barrado). Upsert por `code` (único): reutiliza a MESMA linha a cada rodada, sem
+ * acumular. Reseta o estado para `confirmed`, sem check-in/saída, e reativa (`deleted_at
+ * = null`). Código com prefixo `OTEST-` para ser óbvio que é artefato de teste.
+ */
+export async function upsertConfirmedTestBooking(opts: {
+  code: string;
+  locationId: string;
+  profileId: string;
+  checkInAt: string;
+  checkOutAt: string;
+}): Promise<void> {
+  const { error } = await admin.from("booking").upsert(
+    {
+      code: opts.code,
+      location_id: opts.locationId,
+      profile_id: opts.profileId,
+      check_in_at: opts.checkInAt,
+      check_out_at: opts.checkOutAt,
+      status: "confirmed",
+      checked_in_at: null,
+      checked_out_at: null,
+      deleted_at: null,
+      total_amount: 50,
+      customer_name: "Teste Roteiro O",
+      customer_first_name: "Teste",
+      customer_last_name: "Roteiro O",
+    },
+    { onConflict: "code" },
+  );
+  if (error) throw error;
+}
+
+/** Status atual de uma reserva pelo código (para asserção). */
+export async function getBookingStatusByCode(code: string): Promise<string | null> {
+  const { data, error } = await admin
+    .from("booking")
+    .select("status")
+    .eq("code", code)
+    .maybeSingle();
+  if (error) throw error;
+  return (data?.status as string) ?? null;
+}
+
+/**
+ * Aposenta a reserva de teste: marca `deleted_at` (soft), tirando-a das telas ativas.
+ * NÃO faz delete de booking (política da suíte + FK RESTRICT). O `upsert` acima
+ * reativa a mesma linha na próxima rodada, então não acumula resíduo.
+ */
+export async function retireTestBooking(code: string): Promise<void> {
+  const { error } = await admin
+    .from("booking")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("code", code)
+    .is("deleted_at", null);
+  if (error) throw error;
+}
+
 /** Snapshot de preço de uma reserva pelo código (para conferir o parking). */
 export async function bookingParkingPrice(code: string): Promise<{
   status: string;

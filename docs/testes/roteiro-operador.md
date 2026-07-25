@@ -31,8 +31,8 @@ Status de cada caso é **derivado de evidência** (arquivo:linha, commit, teste)
 | O-11 | Tipo de vaga e capacidade dedicada | **PRONTO** · pgTAP `capacity.test.sql` + RLS `lpt_operator_update` |
 | O-12 | Preço é server-authoritative e exige `pricing:write` | **PRONTO** · e2e (O-03) + `regate_operator_rpcs.sql:103-107` |
 | O-13 | Reservas: filtro por status e busca por código | **PRONTO** · `bookings.tsx:20-93` · e2e do filtro só via O-02 |
-| O-14 | Detalhe da reserva e transições válidas (guard no banco) | **PRONTO** · `BookingDrawer.test.tsx` + pgTAP `booking_status_guard.test.sql` |
-| O-15 | Check-in por QR: confirmed vira checked_in | **PRONTO** · pgTAP `booking_status_guard.test.sql` + `voucher.logic.test.ts` · sem e2e da tela |
+| O-14 | Detalhe da reserva e transições válidas (guard no banco) | **PRONTO** · e2e `O02-operacao-reservas.spec.ts` (O-14) + `BookingDrawer.test.tsx` |
+| O-15 | Check-in por QR: confirmed vira checked_in | **PRONTO** · e2e `O02-operacao-reservas.spec.ts` (O-15) + pgTAP `booking_status_guard.test.sql` |
 | O-16 | Extrato de repasse e saldo (finance:read / payouts:read) | **PRONTO** · `finance.test.tsx` + pgTAP `payout_*` |
 | O-17 | KYC do recebedor: só o Dono salva (payouts:write) | **PRONTO** · pgTAP `payout_kyc.test.sql` + e2e `T10/T15/T16` |
 | O-18 | Cupons, descontos e serviços adicionais (CRUD por escopo) | **PRONTO** · pgTAP `coupon_rpc`/`discount_rpc`/`addon_rpc` |
@@ -177,7 +177,7 @@ Fonte da verdade dos papéis e escopos: seed `company_role_scope` em `supabase/m
 - **Passos:** abrir `/voucher/validate?code=<code>` como operador, "Registrar entrada".
 - **Depois:** `booking.status` vira `checked_in` e `checked_in_at` é gravado (UPDATE direto gateado por `booking_operator_update`). Só `confirmed` libera check-in; `pending`/`cancelled`/`expired`/`no_show`/`completed` bloqueiam (`voucher.logic.ts:104-115`), com janela -30min/+2h como aviso, não bloqueio.
 - **Efeitos colaterais:** nenhum além do status.
-- **Armadilhas:** a rota é pública (conteúdo por papel): anônimo cai no login do operador, cliente vê aviso. Operador comum não vê o nome do cliente (RLS). **Sem e2e da tela** (achado O-21). Não confundir com `retroactive_check_in.test.sql`, que é sobre entrada com data no passado, não check-in por QR.
+- **Armadilhas:** a rota é pública (conteúdo por papel): anônimo cai no login do operador, cliente vê aviso. Operador comum não vê o nome do cliente (RLS). Não confundir com `retroactive_check_in.test.sql`, que é sobre entrada com data no passado, não check-in por QR.
 
 ## O-16 · Extrato de repasse e saldo  [PRONTO · `finance.test.tsx` + pgTAP `payout_*`]
 
@@ -228,13 +228,14 @@ Fonte da verdade dos papéis e escopos: seed `company_role_scope` em `supabase/m
 
 ## Cobertura automatizada e lacunas
 
-**Coberto por automação:** O-01/02/03 (e2e `O01-dono-jornada`), O-06/07/08/09 (pgTAP `operator_rpc_scope` + Vitest `OperatorDashboard.test.tsx`, `reports.test.tsx`, `Sidebar.logic.test.ts`), O-11/12 (pgTAP `capacity`, `pricing`, `operator_pricing_dates`), O-14/15 (pgTAP `booking_status_guard`, Vitest `BookingDrawer.test.tsx`, `voucher.logic.test.ts`), O-16/17 (pgTAP `payout_*`, e2e `T10/T15/T16`), O-18/19 (pgTAP `coupon_rpc`/`discount_rpc`/`addon_rpc`/`high_demand_signal`), O-20 (Vitest `reports.test.tsx`).
+**Coberto por automação:** O-01/02/03 (e2e `O01-dono-jornada`), O-14/15 (e2e `O02-operacao-reservas` + pgTAP `booking_status_guard`, Vitest `BookingDrawer.test.tsx`/`voucher.logic.test.ts`), O-06/07/08/09 (pgTAP `operator_rpc_scope` + Vitest `OperatorDashboard.test.tsx`, `reports.test.tsx`, `Sidebar.logic.test.ts`), O-11/12 (pgTAP `capacity`, `pricing`, `operator_pricing_dates`), O-16/17 (pgTAP `payout_*`, e2e `T10/T15/T16`), O-18/19 (pgTAP `coupon_rpc`/`discount_rpc`/`addon_rpc`/`high_demand_signal`), O-20 (Vitest `reports.test.tsx`).
 
 **Sem rede de regressão (lacunas, candidatos a e2e):**
-- `/operator/bookings`: filtro e detalhe (O-13/O-14) só têm cobertura de unidade e o filtro Expirada do O-02; falta e2e do drawer e das transições na tela.
-- `/voucher/validate`: check-in por QR (O-15) tem pgTAP da transição, mas nenhum e2e da tela.
+- `/operator/bookings`: o filtro por status (O-13) só tem e2e pelo caminho Expirada do O-02; o detalhe/transições já têm e2e (O-14, `O02-operacao-reservas`).
 - Impersonation hub_admin (O-05): sem e2e ponta a ponta.
 - Bounce de rota por escopo (`RequireScope` → `/operator`): sem e2e; hoje só a lógica de sidebar é testada.
+
+O `O02-operacao-reservas.spec.ts` fechou as duas maiores lacunas (check-in por QR e transição no drawer). Ele semeia uma reserva confirmada de teste no Abbapark pelo `admin` (service_role), roda a ação do operador e confere no banco; a reserva de teste (`OTEST-*`) é reutilizada por código fixo e aposentada por soft-delete, sem delete de booking.
 
 ## Limpeza
 
