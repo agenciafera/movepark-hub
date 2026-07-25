@@ -90,6 +90,20 @@ no_show ──────→ (terminal, sem transições)
 > `paid`/`authorized`/cartão em voo (a janela entre pagar e o webhook confirmar) vira **`cancelled`**:
 > tem estorno a fazer, não é abandono. Detalhe na seção **Abandono vs cancelamento**.
 
+> **Guarda de transição server-authoritative (trigger, migration `20260915000000`).** A criação e a
+> transição de status são impostas no banco, não só na UI. O trigger `booking_guard_status_transition`
+> (BEFORE INSERT OR UPDATE) deixa o **servidor** (service_role das Edges/webhook/cron e funções
+> SECURITY DEFINER) livre e o **staff** (operador da empresa ou hub_admin) fazer as transições
+> operacionais (check-in, no-show, concluir, cancelar como override). O **cliente dono** só pode
+> editar a PRÓPRIA reserva enquanto `pending` (dados do checkout: identidade, veículo, passageiros) e
+> abandonar/cancelar (`pending → expired/cancelled`). Ele **não** pode: criar reserva por INSERT
+> direto (nasce sempre pela Edge `create-booking`/`create_booking_atomic`); promover status (`→
+> confirmed/checked_in/completed/no_show`, que seria bypass de pagamento, já que a página de check-in
+> libera por `confirmed`); nem mexer em dinheiro/escopo (`total_amount`, `price_breakdown`,
+> `fare_tier`, `location_id`, datas). Fecha o buraco da RLS `booking_owner_update`/`booking_owner_insert`
+> (que só checavam `profile_id = auth.uid()`). Confirmar, estornar, upgrade de tarifa e troca de datas
+> passam por Edge/RPC server-authoritative. Cobertura: `supabase/tests/booking_status_guard.test.sql`.
+
 ---
 
 ## Sequência de checkout
