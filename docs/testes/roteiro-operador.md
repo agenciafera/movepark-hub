@@ -39,6 +39,7 @@ Status de cada caso é **derivado de evidência** (arquivo:linha, commit, teste)
 | O-19 | Ocupação e bloqueio de data | **PRONTO** · `occupancy.tsx` + `regate_operator_rpcs.sql:196,229` |
 | O-20 | Relatórios: funil livre, Receita gateada por finance | **PRONTO** · `reports.tsx` + `reports.test.tsx` |
 | O-21 | Relatórios que faltam (achado) | **ACHADO** · comparativo por unidade e atribuição escopada ao dono não existem |
+| O-22 | Rota gateada por escopo devolve pro dashboard | **PRONTO** · e2e `operator/O22-escopo-rota.spec.ts` |
 
 Furos da varredura (detalhe em `furos-visao-dono.md`): F1 (canceladas) **corrigido**, F3 (preço base R$ 0) **corrigido**, F4 (abandono vs cancelamento, status `expired`) **corrigido**. F2 (3 reservas de teste "Test Pentest"/R$ 0 no Abbapark) segue como dado de teste conhecido em produção; limpeza é operação de banco, não código.
 
@@ -224,17 +225,25 @@ Fonte da verdade dos papéis e escopos: seed `company_role_scope` em `supabase/m
 - **O que falta (não é bug, é escopo):** comparativo período-anterior por unidade; ocupação agregada de várias unidades numa chamada; RevPAR/RevPAS por vaga disponível; take-rate exposto como número; atribuição por origem **escopada ao dono** (o RPC `booking_attribution` hoje é só `hub_admin`). Detalhe em `furos-visao-dono.md` (seção Dashboard, "O que pede backend novo").
 - **Por que fica registrado:** são relatórios que o dono pediria e que dependem de RPC/endpoint novo, não de UI. Marcado como achado do roteiro, não como caso pendente.
 
+## O-22 · Rota gateada por escopo devolve pro dashboard  [PRONTO · e2e `operator/O22-escopo-rota.spec.ts`]
+
+- **Antes:** membro com papel **Operação** (`operator`) numa empresa. O papel tem `occupancy:read`, e não tem `pricing:write` nem `finance:read`.
+- **Passos:** com esse usuário, abrir `/operator/pricing`, depois `/operator/finance`, depois `/operator/occupancy`.
+- **Depois:** as duas primeiras devolvem pro `/operator` (dashboard), porque `RequireScope` faz `Navigate to="/operator"` sem o escopo; a terceira abre normalmente (título "Ocupação").
+- **Efeitos colaterais:** nenhum na navegação. O teste semeia e apaga a company da fixture Mercy, e rebaixa o vínculo dela para Operação (revertido junto com a fixture).
+- **Armadilhas:** o **Dono tem todos os escopos** e o hub_admin fura todo gate (`hasScope` sempre true), então com eles nada é negado e o caso não prova nada. Rebaixar papel só na fixture Mercy, nunca no dono do Abbapark, que é parceiro real. O **controle positivo** (Ocupação abrindo) é obrigatório: sem ele, o caso passaria mesmo se a área inteira estivesse caindo no dashboard por outro motivo.
+
 ---
 
 ## Cobertura automatizada e lacunas
 
-**Coberto por automação:** O-01/02/03 (e2e `O01-dono-jornada`), O-14/15 (e2e `O02-operacao-reservas` + pgTAP `booking_status_guard`, Vitest `BookingDrawer.test.tsx`/`voucher.logic.test.ts`), O-06/07/08/09 (pgTAP `operator_rpc_scope` + Vitest `OperatorDashboard.test.tsx`, `reports.test.tsx`, `Sidebar.logic.test.ts`), O-11/12 (pgTAP `capacity`, `pricing`, `operator_pricing_dates`), O-16/17 (pgTAP `payout_*`, e2e `T10/T15/T16`), O-18/19 (pgTAP `coupon_rpc`/`discount_rpc`/`addon_rpc`/`high_demand_signal`), O-20 (Vitest `reports.test.tsx`).
+**Coberto por automação:** O-01/02/03 (e2e `O01-dono-jornada`), O-14/15 (e2e `O02-operacao-reservas` + pgTAP `booking_status_guard`, Vitest `BookingDrawer.test.tsx`/`voucher.logic.test.ts`), O-05 (e2e `manager/T06-impersonation`), O-22 (e2e `operator/O22-escopo-rota`), O-06/07/08/09 (pgTAP `operator_rpc_scope` + Vitest `OperatorDashboard.test.tsx`, `reports.test.tsx`, `Sidebar.logic.test.ts`), O-11/12 (pgTAP `capacity`, `pricing`, `operator_pricing_dates`), O-16/17 (pgTAP `payout_*`, e2e `T10/T15/T16`), O-18/19 (pgTAP `coupon_rpc`/`discount_rpc`/`addon_rpc`/`high_demand_signal`), O-20 (Vitest `reports.test.tsx`).
 
-Impersonation (O-05) tem e2e próprio em `e2e/manager/T06-impersonation.spec.ts`, na suíte normal do manager: impersonar mexe só na sessão local, não escreve no banco, então não precisa da trava `tx`.
+Impersonation (O-05) tem e2e próprio em `e2e/manager/T06-impersonation.spec.ts`, na suíte normal do manager: impersonar mexe só na sessão local, não escreve no banco, então não precisa da trava `tx`. O bounce de rota por escopo (O-22) roda em `e2e/operator/O22-escopo-rota.spec.ts`, na suíte normal do operador, rebaixando o papel só na fixture Mercy.
 
-**Sem rede de regressão (lacuna que sobrou):**
-- Bounce de rota por escopo (`RequireScope` → `/operator`): sem e2e. Exige um membro real com papel operator/finance (o dono e o hub_admin furam todo gate), então o custo é criar/alternar vínculo de papel em produção. O servidor já está coberto por pgTAP (`operator_rpc_scope.test.sql`, 42501) e o front pela lógica da sidebar (`Sidebar.logic.test.ts`), que é onde o risco real mora.
+**Sem rede de regressão (o que sobrou):**
 - `/operator/bookings`: o filtro por status (O-13) só tem e2e pelo caminho Expirada do O-02; o detalhe e as transições já têm e2e (O-14).
+- Os demais casos são cobertos por pgTAP ou teste de componente, como listado acima.
 
 O `O02-operacao-reservas.spec.ts` fechou as duas maiores lacunas (check-in por QR e transição no drawer). Ele semeia uma reserva confirmada de teste no Abbapark pelo `admin` (service_role), roda a ação do operador e confere no banco; a reserva de teste (`OTEST-*`) é reutilizada por código fixo e aposentada por soft-delete, sem delete de booking.
 

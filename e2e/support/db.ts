@@ -152,6 +152,32 @@ export async function seedFixtureCompany(
   return companyId;
 }
 
+/**
+ * Troca o PAPEL do operador de teste na company da fixture (ADR-005).
+ *
+ * Existe para provar gate de escopo pela UI: o Dono tem todos os escopos, então com
+ * ele nada é negado. Rebaixar o vínculo para `operator`/`finance`/`manager` é o único
+ * jeito de ver a negação acontecer no navegador.
+ *
+ * Só mexe na fixture Mercy (o `companyId` vem de `seedFixtureCompany`). O papel volta
+ * a `owner` sozinho na próxima chamada de `seedFixtureCompany` (que faz upsert com
+ * `role: "owner"`), então um teardown que falhe não deixa a fixture rebaixada para os
+ * outros specs.
+ */
+export async function setFixtureMemberRole(
+  companyId: string,
+  role: "owner" | "manager" | "operator" | "finance",
+) {
+  assertFixtureScoped();
+  const profileId = await findUserIdByEmail(env.operatorEmail);
+  const { error } = await admin
+    .from("profile_company")
+    .update({ role })
+    .eq("profile_id", profileId)
+    .eq("company_id", companyId);
+  if (error) throw error;
+}
+
 /** Bucket público onde o wizard grava as fotos da unidade. */
 const PUBLIC_BUCKET = "assets-public";
 
