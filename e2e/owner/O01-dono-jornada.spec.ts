@@ -4,7 +4,8 @@
  * Dono = peu+operador@fera.ag, owner da company Abbapark (unidade Aeroporto
  * Afonso Pena). O roteiro cobre a visão dele ponta a ponta:
  *   O-01  conferir as reservas da empresa;
- *   O-02  ver as reservas canceladas   → FURO CONHECIDO (test.fail);
+ *   O-02  ver as reservas encerradas (o F1 foi corrigido; hoje o Abbapark tem
+ *         `expired`, então o filtro que traz linhas é "Expirada");
  *   O-03  mudar a diária de um tipo de vaga, e provar que o valor novo propaga
  *         pro motor de preço (a RPC que a busca usa), pro checkout do consumidor
  *         (breakdown da reserva) e de volta pro painel do dono.
