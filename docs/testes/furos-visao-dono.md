@@ -14,7 +14,7 @@ onde tem furo. Cada furo aponta o arquivo que comprova.
 |---|---|---|---|
 | F1 | O dono não vê as próprias reservas canceladas (**CORRIGIDO**) | Alta | `src/features/bookings/api.ts` (lista deixou de filtrar `deleted_at`) |
 | F2 | Reservas de teste de segurança poluem a lista real do dono | Média | dados em produção (3 bookings "Test Pentest", valor R$ 0,00) |
-| F3 | "Preço base · R$ 0,00" aparece em todo card de preço | Baixa | `src/routes/operator/pricing.tsx:59` |
+| F3 | "Preço base · R$ 0,00" aparece em todo card de preço (**CORRIGIDO**) | Baixa | `src/routes/operator/pricing.tsx` (some quando `base_price` é 0) |
 | F4 | Carrinho abandonado inflava o "cancelamento" (**CORRIGIDO** com status `expired`) | Alta | migrations `20260914000000`/`20260914010000` (abandono ≠ cancelamento) |
 
 Lacunas de administração (o que a vitrine/detalhe mostram e o dono não gerencia):
@@ -106,6 +106,10 @@ o preço base "não entra no cálculo" e serve de referência. Mostrar R$ 0,00 c
 confunde: parece que a vaga é de graça. Ou some quando é 0, ou vira o valor de referência
 de verdade. É a pendência já conhecida de "seed de capacidade/base_price" (ver
 `docs/specs/README.md`).
+
+**Correção aplicada.** O chip "Preço base" só aparece quando `base_price > 0`
+(`src/routes/operator/pricing.tsx`). Com o placeholder em 0, ele some, então nada de "R$ 0,00"
+enganando. Quando o base_price real for semeado, o chip volta sozinho como referência.
 
 ## Insights da jornada (não são furos)
 

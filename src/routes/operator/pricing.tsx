@@ -55,9 +55,11 @@ function PricingCard({
             <CardTitle>{lpt.company_parking_type.parking_type.name}</CardTitle>
             <div className="flex flex-wrap items-center gap-2">
               <StrategyChip strategy={lpt.pricing_rule?.strategy ?? null} />
-              <span className="text-caption text-muted">
-                Preço base · {formatBRL(Number(lpt.company_parking_type.base_price))}
-              </span>
+              {Number(lpt.company_parking_type.base_price) > 0 && (
+                <span className="text-caption text-muted">
+                  Preço base · {formatBRL(Number(lpt.company_parking_type.base_price))}
+                </span>
+              )}
               {!lpt.is_active && (
                 <span className="rounded-full bg-surface-soft px-2 py-0.5 text-caption text-muted">
                   Tipo inativo
