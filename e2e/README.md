@@ -51,7 +51,7 @@ bun run test:e2e:ui       # modo interativo
 
 Relatório HTML em `playwright-report/`. Trace e vídeo ficam guardados só quando um teste falha.
 
-`bun run test:e2e` roda "tudo" menos o `e2e-consumer-tx`, que só existe quando pedido pelo nome. Ver "Consumidor (roteiro C)" abaixo.
+`bun run test:e2e` roda "tudo" menos os projects transacionais (`e2e-consumer-tx` e `e2e-owner-tx`), que se pulam sozinhos quando não são pedidos pelo nome. Ver "Consumidor (roteiro C)" e "Dono de estacionamento (roteiro D)" abaixo.
 
 ## Bypass de auth
 
@@ -75,6 +75,7 @@ Já existem em produção, não precisam ser criados. São os mesmos do `CLAUDE.
 | `hub_admin` (super admin) | `developer@fera.ag` | `/manager/*` |
 | `company_operator` (Mercy) | `peu+mercy@fera.ag` | `/operator/*` e o onboarding do parceiro |
 | `customer` | `peu+teste1@fera.ag` | reservas: busca, checkout, `/bookings` (projects `e2e-consumer` e `e2e-consumer-tx`) |
+| `company_operator` (Abbapark) | `peu+operador@fera.ag` | dono de estacionamento real: `/operator/*` do roteiro D (projects `e2e-owner` e `e2e-owner-tx`) |
 
 O usuário do parceiro é um só ao longo de toda a jornada: entra como lead público e, aprovado, vira o operador da unidade que cadastrou. Por isso os specs de `/operator` precisam de uma company vinculada a ele.
 
@@ -186,6 +187,21 @@ Ficam em `support/consumer.ts`, com o motivo de cada uma. Ao contrário de `db.t
 
 Uma unidade só aparece na busca pública com recebedor ativo (gate `is_listed`). Fixture que sumir da busca sem motivo aparente: confira o `is_listed` antes de suspeitar do código.
 
+## Dono de estacionamento (roteiro D)
+
+A área do parceiro vive em `e2e/owner/` e segue a mesma partição do consumidor, pelo mesmo motivo: efeito colateral.
+
+| Project | Specs | O que faz | Como roda |
+|---|---|---|---|
+| `e2e-owner` | `R01-reservas-filtro` | Filtro e busca de reservas. Só leitura. | roda na suíte padrão |
+| `e2e-owner-tx` | `O01-dono-jornada`, `O02-operacao-reservas` | Muda preço real, cria reserva e transita status. **Escreve.** | `bunx playwright test --project=e2e-owner-tx` |
+
+**A convenção de nome decide o project**, e o default é o guardado: `R<nn>-*.spec.ts` é leitura e cai no `e2e-owner`; qualquer outro nome cai no `e2e-owner-tx`, atrás da trava. Assim um spec novo que escreva e esqueça a convenção não vaza para a suíte que roda sem argumento.
+
+O dono aqui é `peu+operador@fera.ag`, owner do **Abbapark**, que é company de parceiro **real** (não é fixture descartável). Por isso os specs dele revertem o que mexem: o preço volta ao snapshot no `afterAll`, e as reservas de teste (`OTEST-*`) são reutilizadas por código fixo e aposentadas por soft-delete, nunca apagadas.
+
+Dois casos do roteiro D moram fora de `e2e/owner/`, porque precisam de outra sessão: `manager/T06-impersonation` (hub_admin entrando como operador) e `operator/O22-escopo-rota` (bounce de rota por escopo, que rebaixa o papel na fixture Mercy). O roteiro completo está em `docs/testes/roteiro-operador.md`.
+
 ## Guardas de escrita
 
 Como o alvo é produção, a limpeza tem travas em `support/db.ts`:
@@ -207,7 +223,8 @@ As fotos que o wizard sobe vão para o Storage (`assets-public/<company_id>/`), 
 
 ```
 playwright.config.ts     # raiz; projects: setup, e2e-public, e2e-manager, e2e-operator,
-                         # e2e-consumer, smoke (+ e2e-consumer-tx, só sob demanda)
+                         # e2e-consumer, e2e-owner, smoke
+                         # (+ e2e-consumer-tx e e2e-owner-tx, só sob demanda)
 e2e/
   tsconfig.json          # isolado do app e do Vitest
   support/
@@ -232,8 +249,15 @@ e2e/
   manager/
     T04-kanban-mover.spec.ts
     T05-kanban-tela-cheia.spec.ts
+    T06-impersonation.spec.ts          # roteiro D (O-05); só sessão local
   operator/
     T07-publish-wizard.spec.ts
+    T10/T11/T15/T16-*.spec.ts          # KYC e contrato do recebimento (E1.3)
+    O22-escopo-rota.spec.ts            # roteiro D (O-22); rebaixa papel na fixture
+  owner/                               # roteiro D, dono do Abbapark (parceiro real)
+    R01-reservas-filtro.spec.ts        # leitura: filtro e busca
+    O01-dono-jornada.spec.ts           # tx: muda preço real, cria booking
+    O02-operacao-reservas.spec.ts      # tx: check-in por QR e transição no drawer
   consumer/
     C01-vitrine-agrupada.spec.ts       # leitura
     C02-card-beneficio-vs-tipo.spec.ts # leitura, test.fail()

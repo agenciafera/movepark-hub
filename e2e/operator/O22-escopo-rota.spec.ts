@@ -43,18 +43,30 @@ test("O-22: rota sem o escopo do papel devolve pro dashboard, e a permitida abre
   page,
 }) => {
   // Preços exige `pricing:write`. O papel Operação não tem: volta pro dashboard.
+  // A asserção é pelo conteúdo (que reexecuta até aparecer) e só depois pela URL.
   await page.goto("/operator/pricing");
-  await page.waitForURL(/\/operator\/?$/, { timeout: 20_000 });
-  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(page).toHaveURL(/\/operator\/?$/);
 
   // Repasses exige `finance:read`. Também não tem: mesmo destino.
   await page.goto("/operator/finance");
-  await page.waitForURL(/\/operator\/?$/, { timeout: 20_000 });
-  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(page).toHaveURL(/\/operator\/?$/);
 
   // CONTROLE POSITIVO: Ocupação exige `occupancy:read`, que o papel TEM. Se esta
   // parte falhar junto com as de cima, o problema não é o gate de escopo.
+  //
+  // `exact` aqui não é preciosismo: sem ele o nome "Ocupação" casa TAMBÉM com o
+  // título do estado vazio ("Sem dados de ocupação"), e o teste passa a falhar por
+  // strict mode conforme a fixture tenha ou não dados naquele momento. Foi essa a
+  // causa do flake original, não corrida de sessão.
   await page.goto("/operator/occupancy");
-  await expect(page.getByRole("heading", { name: "Ocupação" })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("heading", { name: "Ocupação", exact: true })).toBeVisible({
+    timeout: 30_000,
+  });
   await expect(page).toHaveURL(/\/operator\/occupancy/);
 });

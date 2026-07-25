@@ -103,10 +103,26 @@ export default defineConfig({
      *
      * storageState default é o do dono; o passo da reserva abre um contexto à parte
      * com a sessão do cliente.
+     *
+     * CONVENÇÃO DE NOME em `e2e/owner/`, e ela decide em que project o spec cai:
+     *   - `R<nn>-*.spec.ts` → só LEITURA, roda na suíte padrão (project `e2e-owner`);
+     *   - qualquer outro nome → tratado como ESCRITA, fica atrás da trava tx.
+     * O default é o guardado de propósito: um spec novo que escreva e esqueça a
+     * convenção cai no project travado, não na suíte que roda sem argumento.
      */
     {
       name: OWNER_PROJECT,
-      testMatch: /owner\/.*\.spec\.ts$/,
+      testMatch: /owner\/(?!R\d)[^/]*\.spec\.ts$/,
+      dependencies: ["setup"],
+      use: { ...devices["Desktop Chrome"], storageState: ABBAPARK_OWNER_STATE },
+    },
+    /**
+     * Roteiro O, parte de LEITURA: painel do dono sem efeito colateral (filtro e busca
+     * de reservas). Mesma sessão do dono, sem a trava tx, porque não escreve nada.
+     */
+    {
+      name: "e2e-owner",
+      testMatch: /owner\/R\d+[^/]*\.spec\.ts$/,
       dependencies: ["setup"],
       use: { ...devices["Desktop Chrome"], storageState: ABBAPARK_OWNER_STATE },
     },

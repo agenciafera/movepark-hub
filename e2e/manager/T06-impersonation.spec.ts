@@ -23,6 +23,11 @@ test.describe("Impersonation do hub_admin", () => {
     page,
   }) => {
     await page.goto("/manager/companies");
+    // `exact` evita casar com título de estado vazio que contenha a mesma palavra
+    // (strict mode). Timeout largo porque a tela só monta depois que a sessão resolve.
+    await expect(page.getByRole("heading", { name: "Empresas", exact: true })).toBeVisible({
+      timeout: 30_000,
+    });
 
     // Filtra pela empresa alvo para não depender da ordem dos cards.
     await page.getByPlaceholder("Buscar por nome ou slug").fill(COMPANY);

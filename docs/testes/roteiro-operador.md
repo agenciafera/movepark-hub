@@ -7,7 +7,7 @@ check-in por QR, extrato de repasse e KYC do recebedor, catálogo comercial e re
 - **Baseline:** 25/07/2026, verificado contra a `main` (gates rodados: typecheck, lint, `bun run test`, `bun run test:db`).
 - **Alvo:** produção (`hub.movepark.co` + projeto `mgaigbezdalbyuqiofcf`). Não existe staging do Hub.
 - **Usuário:** `peu+operador@fera.ag`, dono (owner) da company **Abbapark** (unidade Aeroporto Afonso Pena), já vinculado em `profile_company`. Papéis de negação (Gerente/Operação/Financeiro) precisam de um membro com esse papel; o dono e o hub_admin furam todo gate de escopo (ver O-06).
-- **Automação:** `e2e/owner/O01-dono-jornada.spec.ts` (project `e2e-owner-tx`, transacional, roda só por nome). O restante da cobertura é pgTAP e Vitest, apontado caso a caso.
+- **Automação:** os specs do dono vivem em `e2e/owner/`, partidos por efeito colateral (mesma ideia do roteiro C). Os que **escrevem** (`O01-dono-jornada`, `O02-operacao-reservas`) ficam no project `e2e-owner-tx`, que só roda pedindo pelo nome; os de **leitura** (`R01-reservas-filtro`) ficam no `e2e-owner` e rodam na suíte padrão. Fora daí, `e2e/manager/T06-impersonation` e `e2e/operator/O22-escopo-rota` também cobrem casos deste roteiro. O restante é pgTAP e Vitest, apontado caso a caso.
 - **Gateway em SANDBOX:** cobranças deste roteiro não movem dinheiro real e não precisam de estorno.
 
 O nome no ClickUp é "Roteiro D". Os casos usam o prefixo **O-** (owner) para casar com o spec em `e2e/owner/`.
@@ -30,7 +30,7 @@ Status de cada caso é **derivado de evidência** (arquivo:linha, commit, teste)
 | O-10 | Editar a unidade (dados, horário, comodidades) | **PRONTO** · `location-edit.test.tsx` + RLS `location_operator_update` |
 | O-11 | Tipo de vaga e capacidade dedicada | **PRONTO** · pgTAP `capacity.test.sql` + RLS `lpt_operator_update` |
 | O-12 | Preço é server-authoritative e exige `pricing:write` | **PRONTO** · e2e (O-03) + `regate_operator_rpcs.sql:103-107` |
-| O-13 | Reservas: filtro por status e busca por código | **PRONTO** · `bookings.tsx:20-93` · e2e do filtro só via O-02 |
+| O-13 | Reservas: filtro por status e busca por código | **PRONTO** · e2e `owner/R01-reservas-filtro.spec.ts` |
 | O-14 | Detalhe da reserva e transições válidas (guard no banco) | **PRONTO** · e2e `O02-operacao-reservas.spec.ts` (O-14) + `BookingDrawer.test.tsx` |
 | O-15 | Check-in por QR: confirmed vira checked_in | **PRONTO** · e2e `O02-operacao-reservas.spec.ts` (O-15) + pgTAP `booking_status_guard.test.sql` |
 | O-16 | Extrato de repasse e saldo (finance:read / payouts:read) | **PRONTO** · `finance.test.tsx` + pgTAP `payout_*` |
@@ -156,13 +156,13 @@ Fonte da verdade dos papéis e escopos: seed `company_role_scope` em `supabase/m
 - **Efeitos colaterais:** muda o preço público da unidade na hora.
 - **Armadilhas:** salvar uma curva que inverte (faixa maior mais barata) avisa; o motor é server-authoritative, então a UI não é a fonte da verdade do preço.
 
-## O-13 · Reservas: filtro por status e busca por código  [PRONTO · `bookings.tsx:20-93`]
+## O-13 · Reservas: filtro por status e busca por código  [PRONTO · e2e `owner/R01-reservas-filtro.spec.ts`]
 
 - **Antes:** a empresa tem reservas em status variados.
 - **Passos:** em `/operator/bookings`, filtrar por status (all, pending, confirmed, checked_in, completed, cancelled, expired) e buscar por código (input, ou `?q=` da command palette).
 - **Depois:** a lista reflete o filtro e a busca. O escopo por empresa é aplicado.
 - **Efeitos colaterais:** nenhum.
-- **Armadilhas:** o filtro de status **não** inclui `no_show` (`statusOptions`, `bookings.tsx:20-28`); se um dia houver `no_show`, ele só aparece em "Todos". E2E do filtro existe só pelo caminho do O-02 (Expirada).
+- **Armadilhas:** o filtro de status **não** inclui `no_show` (`statusOptions`, `bookings.tsx:20-28`); se um dia houver `no_show`, ele só aparece em "Todos". No e2e, assertar só que o status escolhido aparece **não** prova nada (sem filtro a lista traz todos), então cada caso confere também que o outro status sumiu da tela.
 
 ## O-14 · Detalhe da reserva e transições válidas  [PRONTO · `BookingDrawer.test.tsx` + pgTAP `booking_status_guard.test.sql`]
 
@@ -237,13 +237,11 @@ Fonte da verdade dos papéis e escopos: seed `company_role_scope` em `supabase/m
 
 ## Cobertura automatizada e lacunas
 
-**Coberto por automação:** O-01/02/03 (e2e `O01-dono-jornada`), O-14/15 (e2e `O02-operacao-reservas` + pgTAP `booking_status_guard`, Vitest `BookingDrawer.test.tsx`/`voucher.logic.test.ts`), O-05 (e2e `manager/T06-impersonation`), O-22 (e2e `operator/O22-escopo-rota`), O-06/07/08/09 (pgTAP `operator_rpc_scope` + Vitest `OperatorDashboard.test.tsx`, `reports.test.tsx`, `Sidebar.logic.test.ts`), O-11/12 (pgTAP `capacity`, `pricing`, `operator_pricing_dates`), O-16/17 (pgTAP `payout_*`, e2e `T10/T15/T16`), O-18/19 (pgTAP `coupon_rpc`/`discount_rpc`/`addon_rpc`/`high_demand_signal`), O-20 (Vitest `reports.test.tsx`).
+**Coberto por automação:** O-01/02/03 (e2e `O01-dono-jornada`), O-13 (e2e `owner/R01-reservas-filtro`), O-14/15 (e2e `O02-operacao-reservas` + pgTAP `booking_status_guard`, Vitest `BookingDrawer.test.tsx`/`voucher.logic.test.ts`), O-05 (e2e `manager/T06-impersonation`), O-22 (e2e `operator/O22-escopo-rota`), O-06/07/08/09 (pgTAP `operator_rpc_scope` + Vitest `OperatorDashboard.test.tsx`, `reports.test.tsx`, `Sidebar.logic.test.ts`), O-11/12 (pgTAP `capacity`, `pricing`, `operator_pricing_dates`), O-16/17 (pgTAP `payout_*`, e2e `T10/T15/T16`), O-18/19 (pgTAP `coupon_rpc`/`discount_rpc`/`addon_rpc`/`high_demand_signal`), O-20 (Vitest `reports.test.tsx`).
 
 Impersonation (O-05) tem e2e próprio em `e2e/manager/T06-impersonation.spec.ts`, na suíte normal do manager: impersonar mexe só na sessão local, não escreve no banco, então não precisa da trava `tx`. O bounce de rota por escopo (O-22) roda em `e2e/operator/O22-escopo-rota.spec.ts`, na suíte normal do operador, rebaixando o papel só na fixture Mercy.
 
-**Sem rede de regressão (o que sobrou):**
-- `/operator/bookings`: o filtro por status (O-13) só tem e2e pelo caminho Expirada do O-02; o detalhe e as transições já têm e2e (O-14).
-- Os demais casos são cobertos por pgTAP ou teste de componente, como listado acima.
+**Sem rede de regressão:** nenhuma lacuna aberta. Todo caso do roteiro tem e2e, pgTAP ou teste de componente, como listado acima. Os casos que restam sem e2e de tela (O-04, O-06 a O-12, O-16 a O-20) são de regra de servidor ou de gating de componente, onde pgTAP e Testing Library provam mais barato e mais fundo que o navegador.
 
 O `O02-operacao-reservas.spec.ts` fechou as duas maiores lacunas (check-in por QR e transição no drawer). Ele semeia uma reserva confirmada de teste no Abbapark pelo `admin` (service_role), roda a ação do operador e confere no banco; a reserva de teste (`OTEST-*`) é reutilizada por código fixo e aposentada por soft-delete, sem delete de booking.
 

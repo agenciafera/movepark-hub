@@ -121,6 +121,26 @@ export async function simulateConsumerPrice(
   };
 }
 
+/**
+ * Um código de reserva do Abbapark no status pedido, para os casos de LEITURA
+ * (filtro e busca no painel). Só lê: não cria nada. Devolve null quando a empresa não
+ * tem reserva nesse status, para o spec pular em vez de falhar por falta de dado.
+ */
+export async function findAbbaparkBookingCode(
+  status: "completed" | "expired" | "cancelled" | "confirmed",
+): Promise<string | null> {
+  const { data, error } = await admin
+    .from("booking")
+    .select("code, location!inner(slug, company!inner(slug))")
+    .eq("location.slug", ABBAPARK_OWNER.locationSlug)
+    .eq("location.company.slug", ABBAPARK_OWNER.companySlug)
+    .eq("status", status)
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return (data?.code as string) ?? null;
+}
+
 /** Resolve o `location.id` da unidade do Abbapark por slug (sem id cravado). */
 export async function resolveAbbaparkLocationId(): Promise<string> {
   const { data, error } = await admin
