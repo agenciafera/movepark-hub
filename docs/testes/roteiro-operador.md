@@ -22,7 +22,7 @@ Status de cada caso é **derivado de evidência** (arquivo:linha, commit, teste)
 | O-02 | O dono vê as reservas encerradas (expired), soft-delete não esconde | **PRONTO** · e2e (O-02) + commit `e1d2438` (F1) + `d380845` (expired) |
 | O-03 | Mudar o preço propaga para busca, checkout e painel | **PRONTO** · e2e (O-03) |
 | O-04 | Escopo: o dono só enxerga as unidades da própria empresa | **PRONTO** · sem e2e · RLS + `useScopedLocationIds.ts:13` |
-| O-05 | hub_admin entra como operador (impersonation) | **PRONTO** · sem e2e · `AuthProvider.tsx:76-124` |
+| O-05 | hub_admin entra como operador (impersonation) | **PRONTO** · e2e `manager/T06-impersonation.spec.ts` |
 | O-06 | Pacotes de escopo por papel (Dono/Gerente/Operação/Financeiro) | **PRONTO** · pgTAP `operator_rpc_scope.test.sql` |
 | O-07 | Operação NÃO vê dinheiro (receita, ticket, RevPAR, saldo) | **PRONTO** · `OperatorDashboard.test.tsx` + `reports.test.tsx` |
 | O-08 | Financeiro NÃO vê edição nem avaliações | **PRONTO** · seed `permission_scopes.sql:95-105` + `OperatorDashboard.test.tsx` |
@@ -86,13 +86,13 @@ Fonte da verdade dos papéis e escopos: seed `company_role_scope` em `supabase/m
 - **Efeitos colaterais:** nenhum.
 - **Armadilhas:** o filtro do front é conveniência; a barreira real é a RLS. Um operador de outra empresa que tente ler por fora da UI é barrado no banco (ver O-09).
 
-## O-05 · hub_admin entra como operador (impersonation)  [PRONTO · sem e2e · `AuthProvider.tsx:76-124`]
+## O-05 · hub_admin entra como operador (impersonation)  [PRONTO · e2e `manager/T06-impersonation.spec.ts`]
 
 - **Antes:** logado como `hub_admin` (`developer@fera.ag`).
 - **Passos:** em `/manager/companies`, clicar para entrar como a empresa (`startImpersonation(companyId)`); navega para `/operator`.
 - **Depois:** `effectiveRole` vira `company_operator` e `effectiveCompanyIds` vira a empresa-alvo; o `ImpersonationBanner` aparece no shell do operador; "sair" (`stopImpersonation`) volta para `/manager`. A empresa impersonada persiste em `localStorage` (`mp:impersonated-company-id`) e trocar invalida as queries.
 - **Efeitos colaterais:** nenhum (muda só a sessão local).
-- **Armadilhas:** hub_admin tem `hasScope` sempre `true`, então impersonando ele **vê tudo**. Para provar negação por papel, use um membro real com papel operator/finance, não o admin impersonando. **Sem e2e** deste fluxo (achado O-21).
+- **Armadilhas:** hub_admin tem `hasScope` sempre `true`, então impersonando ele **vê tudo**. Para provar negação por papel, use um membro real com papel operator/finance, não o admin impersonando.
 
 ## O-06 · Pacotes de escopo por papel  [PRONTO · pgTAP `operator_rpc_scope.test.sql`]
 
@@ -230,10 +230,11 @@ Fonte da verdade dos papéis e escopos: seed `company_role_scope` em `supabase/m
 
 **Coberto por automação:** O-01/02/03 (e2e `O01-dono-jornada`), O-14/15 (e2e `O02-operacao-reservas` + pgTAP `booking_status_guard`, Vitest `BookingDrawer.test.tsx`/`voucher.logic.test.ts`), O-06/07/08/09 (pgTAP `operator_rpc_scope` + Vitest `OperatorDashboard.test.tsx`, `reports.test.tsx`, `Sidebar.logic.test.ts`), O-11/12 (pgTAP `capacity`, `pricing`, `operator_pricing_dates`), O-16/17 (pgTAP `payout_*`, e2e `T10/T15/T16`), O-18/19 (pgTAP `coupon_rpc`/`discount_rpc`/`addon_rpc`/`high_demand_signal`), O-20 (Vitest `reports.test.tsx`).
 
-**Sem rede de regressão (lacunas, candidatos a e2e):**
-- `/operator/bookings`: o filtro por status (O-13) só tem e2e pelo caminho Expirada do O-02; o detalhe/transições já têm e2e (O-14, `O02-operacao-reservas`).
-- Impersonation hub_admin (O-05): sem e2e ponta a ponta.
-- Bounce de rota por escopo (`RequireScope` → `/operator`): sem e2e; hoje só a lógica de sidebar é testada.
+Impersonation (O-05) tem e2e próprio em `e2e/manager/T06-impersonation.spec.ts`, na suíte normal do manager: impersonar mexe só na sessão local, não escreve no banco, então não precisa da trava `tx`.
+
+**Sem rede de regressão (lacuna que sobrou):**
+- Bounce de rota por escopo (`RequireScope` → `/operator`): sem e2e. Exige um membro real com papel operator/finance (o dono e o hub_admin furam todo gate), então o custo é criar/alternar vínculo de papel em produção. O servidor já está coberto por pgTAP (`operator_rpc_scope.test.sql`, 42501) e o front pela lógica da sidebar (`Sidebar.logic.test.ts`), que é onde o risco real mora.
+- `/operator/bookings`: o filtro por status (O-13) só tem e2e pelo caminho Expirada do O-02; o detalhe e as transições já têm e2e (O-14).
 
 O `O02-operacao-reservas.spec.ts` fechou as duas maiores lacunas (check-in por QR e transição no drawer). Ele semeia uma reserva confirmada de teste no Abbapark pelo `admin` (service_role), roda a ação do operador e confere no banco; a reserva de teste (`OTEST-*`) é reutilizada por código fixo e aposentada por soft-delete, sem delete de booking.
 
