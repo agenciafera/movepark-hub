@@ -28,6 +28,14 @@ describe("ListingStickyBar", () => {
     expect(screen.queryByText("A partir de")).not.toBeInTheDocument();
   });
 
+  it("respeita a safe area no rodapé (não gruda na borda de baixo do celular)", () => {
+    const { container } = render(
+      <ListingStickyBar summary={summary()} basePrice={30} onReserve={() => {}} />,
+    );
+    const bar = container.querySelector("div.fixed");
+    expect(bar?.className).toContain("pb-[max(0.75rem,var(--safe-bottom))]");
+  });
+
   it("sem datas cai no 'A partir de' com o preço de balcão", () => {
     render(
       <ListingStickyBar

@@ -88,7 +88,9 @@ export default function ListingPage() {
   const initialTo = toStr ? new Date(toStr) : null;
 
   const mobileCardRef = React.useRef<HTMLDivElement>(null);
-  const [showStickyBar, setShowStickyBar] = React.useState(false);
+  // Nasce visível no mobile: preço é a informação nº 1 da decisão e não pode exigir
+  // scroll. O observer abaixo só a ESCONDE quando o card de reserva já está na tela.
+  const [showStickyBar, setShowStickyBar] = React.useState(true);
   // Resumo vivo do card de reserva do mobile pra alimentar o CTA fixo com o total real.
   const [summary, setSummary] = React.useState<ReservationSummary | null>(null);
 
@@ -113,7 +115,11 @@ export default function ListingPage() {
     if (!el) return;
     const obs = new IntersectionObserver(
       ([entry]) => setShowStickyBar(!entry.isIntersecting),
-      { threshold: 0 },
+      // rootMargin encolhe a base da viewport em 35%: o card de reserva só conta como
+      // "à vista" quando sobe pro miolo da tela, não quando apenas espia no rodapé no
+      // load. Assim a barra nasce visível (card ainda embaixo) e some só quando o card
+      // está de fato na tela, onde o CTA próprio dele assume.
+      { threshold: 0, rootMargin: "0px 0px -35% 0px" },
     );
     obs.observe(el);
     return () => obs.disconnect();
@@ -206,7 +212,10 @@ export default function ListingPage() {
   return (
     <>
       <ListingTrustBar />
-      <div className="mx-auto w-full max-w-[1280px] px-4 py-8 desktop:px-8">
+      {/* pb no mobile reserva a altura da barra fixa de preço (que agora nasce
+          visível), pra o fim do conteúdo não ficar atrás dela. No desktop a barra
+          não existe, então volta ao py-8. */}
+      <div className="mx-auto w-full max-w-[1280px] px-4 pt-8 pb-[calc(5.5rem+var(--safe-bottom))] desktop:px-8 desktop:pb-8">
       <Helmet>
         <title>{pageTitle}</title>
         <meta name="description" content={pageDesc} />

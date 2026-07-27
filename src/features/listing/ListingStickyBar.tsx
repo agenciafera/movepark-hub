@@ -20,7 +20,7 @@ export function ListingStickyBar({ summary, basePrice, onReserve }: Props) {
   const canReserve = summary?.canReserve ?? false;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-4 border-t border-hairline bg-canvas/95 px-4 py-3 backdrop-blur-sm desktop:hidden">
+    <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-4 border-t border-hairline bg-canvas/95 px-4 pt-3 pb-[max(0.75rem,var(--safe-bottom))] backdrop-blur-sm desktop:hidden">
       <div className="min-w-0">
         {canReserve && summary ? (
           <>

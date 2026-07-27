@@ -18,9 +18,11 @@ const labelClass = "text-tab-label";
 export function ConsumerBottomNav() {
   const { session } = useAuth();
   return (
-    // `pb-[var(--safe-bottom)]` afasta os itens do indicador de home: sem isso o
-    // último toque cai em cima da faixa do sistema e o dedo erra o alvo.
-    <nav className="tablet:hidden fixed bottom-0 left-0 right-0 z-40 grid grid-cols-4 border-t border-hairline bg-canvas pb-[var(--safe-bottom)]">
+    // `pb` afasta os itens da borda de baixo. `max(0.5rem, safe-area)` garante uma
+    // folga mínima mesmo em aparelho sem recorte (onde safe-area = 0) e respeita o
+    // indicador de home onde ele existe, sem empilhar os dois. Sem isso o último toque
+    // cai em cima da faixa do sistema e o dedo erra o alvo.
+    <nav className="tablet:hidden fixed bottom-0 left-0 right-0 z-40 grid grid-cols-4 border-t border-hairline bg-canvas pb-[max(0.5rem,var(--safe-bottom))]">
       {/* Col 1: Destinos — sempre (a busca já vive no navbar/hero) */}
       <NavLink to="/destinos" className={({ isActive }) => cn(baseItem, isActive && activeItem)}>
         <MapPin className="h-5 w-5" />
