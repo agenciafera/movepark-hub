@@ -44,9 +44,10 @@ export function AccountSidebar() {
           to={item.to}
           className={({ isActive }) =>
             cn(
-              "flex items-center gap-3 rounded-sm px-3 py-2 text-body-sm text-muted transition-colors hover:bg-surface-soft hover:text-ink",
-              isActive &&
-                "bg-canvas font-medium text-ink shadow-tier",
+              "group flex items-center gap-3 rounded-sm px-3 py-2 text-body-sm text-muted transition-colors hover:bg-surface-soft hover:text-ink",
+              // Ativo = pílula pale com texto e ícone em indigo (acento da marca),
+              // o mesmo idioma da sidebar de categorias da FAQ.
+              isActive && "bg-mp-pale font-medium text-mp-indigo",
             )
           }
         >
