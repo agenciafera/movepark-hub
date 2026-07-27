@@ -29,26 +29,47 @@ type Props = {
   icon?: LucideIcon;
   /** Cor do chip do ícone. Default: indigo (marca). */
   accent?: KpiAccent;
+  /** Card em destaque: faixa navy preenchida, texto branco. Use no KPI principal. */
+  highlight?: boolean;
 };
 
-export function KpiCard({ label, value, hint, trend, isLoading, icon: Icon, accent = "indigo" }: Props) {
+export function KpiCard({
+  label,
+  value,
+  hint,
+  trend,
+  isLoading,
+  icon: Icon,
+  accent = "indigo",
+  highlight = false,
+}: Props) {
   return (
-    <Card>
+    <Card className={cn(highlight && "border-transparent bg-dashboard-hero text-white")}>
       <CardContent className="flex items-start justify-between gap-3 p-6">
         <div className="flex min-w-0 flex-col gap-2">
-          <span className="text-caption text-muted">{label}</span>
+          <span className={cn("text-caption", highlight ? "text-white/60" : "text-muted")}>
+            {label}
+          </span>
           {isLoading ? (
-            <Skeleton className="h-9 w-32" />
+            <Skeleton className={cn("h-9 w-32", highlight && "bg-white/20")} />
           ) : (
-            <span className="text-display-xl text-ink">{value}</span>
+            <span className={cn("text-display-xl", highlight ? "text-white" : "text-ink")}>
+              {value}
+            </span>
           )}
           <div className="flex items-center gap-2 text-body-sm">
-            {hint && <span className="text-muted">{hint}</span>}
+            {hint && (
+              <span className={highlight ? "text-white/60" : "text-muted"}>{hint}</span>
+            )}
             {trend && (
               <span
                 className={cn(
                   "text-caption",
-                  trend.positive === false ? "text-error" : "text-success",
+                  highlight
+                    ? "text-white/80"
+                    : trend.positive === false
+                      ? "text-error"
+                      : "text-success",
                 )}
               >
                 {trend.value}
@@ -60,7 +81,7 @@ export function KpiCard({ label, value, hint, trend, isLoading, icon: Icon, acce
           <span
             className={cn(
               "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
-              ACCENT[accent],
+              highlight ? "bg-white/15 text-white" : ACCENT[accent],
             )}
             aria-hidden
           >

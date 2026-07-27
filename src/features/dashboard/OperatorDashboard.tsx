@@ -8,6 +8,9 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import {
   CalendarCheck,
@@ -19,6 +22,8 @@ import {
   Banknote,
   Flame,
   LineChart as LineChartIcon,
+  PieChart as PieChartIcon,
+  Gauge,
   Star,
   Radio,
 } from "lucide-react";
@@ -34,7 +39,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { KpiCard } from "@/components/shared/KpiCard";
-import { StatusBadge } from "@/components/shared/StatusBadge";
+import { StatusBadge, BOOKING_STATUS_LABELS } from "@/components/shared/StatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { cn } from "@/lib/utils";
 import {
@@ -137,6 +142,74 @@ function OccupancyRing({ rate }: { rate: number }) {
         />
       </svg>
       <span className="absolute text-title-md tabular-nums text-ink">{pct.toFixed(0)}%</span>
+    </div>
+  );
+}
+
+// Cor por situação da reserva: tints de marca/semânticos (nada de violeta chapado
+// decorativo além do "em uso", que é o mp-primary como acento de dado).
+const STATUS_COLOR: Record<string, string> = {
+  pending: "hsl(var(--warning))",
+  confirmed: "hsl(var(--mp-indigo))",
+  checked_in: "hsl(var(--mp-primary))",
+  completed: "hsl(var(--success))",
+  cancelled: "hsl(var(--error))",
+  expired: "hsl(var(--muted))",
+  no_show: "hsl(var(--mp-red-deep))",
+};
+
+/** Donut "Reservas por situação": rosca colorida + legenda com a contagem. */
+function StatusDonut({ rows }: { rows: { status: string; count: number }[] }) {
+  const data = rows.filter((r) => r.count > 0);
+  const total = data.reduce((acc, r) => acc + r.count, 0);
+  if (total === 0) {
+    return (
+      <EmptyState
+        title="Sem reservas no período"
+        description="A distribuição por situação aparece aqui."
+      />
+    );
+  }
+  return (
+    <div className="flex flex-col items-center gap-6 tablet:flex-row">
+      <div className="relative h-40 w-40 shrink-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              dataKey="count"
+              nameKey="status"
+              innerRadius="68%"
+              outerRadius="100%"
+              paddingAngle={2}
+              stroke="none"
+            >
+              {data.map((d) => (
+                <Cell key={d.status} fill={STATUS_COLOR[d.status] ?? "hsl(var(--muted))"} />
+              ))}
+            </Pie>
+          </PieChart>
+        </ResponsiveContainer>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-display-md tabular-nums text-ink">{total}</span>
+          <span className="text-caption text-muted">reservas</span>
+        </div>
+      </div>
+      <ul className="flex w-full flex-col gap-1.5">
+        {data.map((d) => (
+          <li key={d.status} className="flex items-center gap-2 text-body-sm">
+            <span
+              className="h-2.5 w-2.5 shrink-0 rounded-full"
+              style={{ background: STATUS_COLOR[d.status] ?? "hsl(var(--muted))" }}
+              aria-hidden
+            />
+            <span className="text-muted">
+              {BOOKING_STATUS_LABELS[d.status as keyof typeof BOOKING_STATUS_LABELS] ?? d.status}
+            </span>
+            <span className="ml-auto tabular-nums text-ink">{d.count}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -244,7 +317,7 @@ export default function OperatorDashboard() {
           trend={cur && prev ? formatDelta(pctDelta(cur.count, prev.count)) : undefined}
           isLoading={summary.isLoading}
           icon={CalendarCheck}
-          accent="indigo"
+          highlight
         />
         <KpiCard
           label={`Reservas futuras (${periodLabel})`}
@@ -362,25 +435,51 @@ export default function OperatorDashboard() {
         </Card>
       )}
 
-      {/* Saúde da operação: ocupação (anel), cancelamento, avaliações e origem. */}
-      <div
-        className={cn(
-          "grid grid-cols-1 gap-4 tablet:grid-cols-2",
-          canReviews ? "desktop:grid-cols-4" : "desktop:grid-cols-3",
-        )}
-      >
+      {/* Visualizações: distribuição por situação (donut) + ocupação (anel). */}
+      <div className="grid grid-cols-1 gap-4 desktop:grid-cols-2">
         <Card>
-          <CardContent className="flex items-center gap-4 p-6">
-            <OccupancyRing rate={occ7Rate} />
-            <div className="flex flex-col gap-1">
-              <span className="text-caption text-muted">Ocupação (próx. 7 dias)</span>
-              <span className="text-body-sm text-body">
-                {occ7.data?.capacityDays ? "das vagas dedicadas" : "sem capacidade cadastrada"}
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-mp-pale text-mp-indigo">
+                <PieChartIcon className="h-4 w-4" aria-hidden />
               </span>
-            </div>
+              Reservas por situação ({periodLabel})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {funnel.isLoading ? (
+              <Skeleton className="h-40 w-full" />
+            ) : (
+              <StatusDonut rows={funnel.data ?? []} />
+            )}
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-mp-pale text-mp-indigo">
+                <Gauge className="h-4 w-4" aria-hidden />
+              </span>
+              Ocupação (próx. 7 dias)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-center gap-6">
+            <OccupancyRing rate={occ7Rate} />
+            <span className="text-body-sm text-body">
+              {occ7.data?.capacityDays ? "das vagas dedicadas" : "sem capacidade cadastrada"}
+            </span>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Saúde da operação: cancelamento, avaliações e origem. */}
+      <div
+        className={cn(
+          "grid grid-cols-1 gap-4 tablet:grid-cols-2",
+          canReviews ? "desktop:grid-cols-3" : "desktop:grid-cols-2",
+        )}
+      >
         <Card>
           <CardContent className="flex flex-col gap-2 p-6">
             <span className="text-caption text-muted">Cancelamento ({periodLabel})</span>
