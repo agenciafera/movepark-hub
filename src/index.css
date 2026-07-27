@@ -290,6 +290,15 @@
       hsl(var(--mp-pale)) 100%
     );
   }
+  /* Faixa/hero de destaque dos painéis (dashboard do dono). Base navy profunda com um
+     brilho violeta no canto: dá personalidade e premium sem pintar de violeta chapado
+     (o violeta-CTA segue reservado a acionável). Texto branco em cima é AA folgado. */
+  .bg-dashboard-hero {
+    background-color: hsl(var(--mp-navy));
+    background-image:
+      radial-gradient(115% 130% at 88% -25%, hsl(var(--mp-violet) / 0.55) 0%, transparent 55%),
+      linear-gradient(120deg, hsl(var(--mp-navy)) 0%, hsl(var(--mp-indigo)) 100%);
+  }
 }
 
 /* Google Places autocomplete (PlaceAutocompleteElement). O web component tem shadow DOM fechado,

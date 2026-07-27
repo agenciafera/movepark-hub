@@ -42,7 +42,7 @@ Tom: direto, humano e confiante — sem juridiquês, sem superlativo vazio. A Mo
 
 2. **Confiança antes do clique.** O consumidor está confiando à Movepark sua viagem ao aeroporto. Sinais de confiança (preço fixo, política clara, confirmação instantânea) chegam antes do CTA — não depois.
 
-3. **Personalidade no detalhe, não no barulho.** A marca vive no micro-copy ("Vaga garantida. Boa viagem."), no estado de confirmação, na mensagem de erro que não culpa o usuário. Não em gradientes decorativos nem em eyebrows repetidos.
+3. **Personalidade no lugar certo.** No consumidor, a marca vive no detalhe: o micro-copy ("Vaga garantida. Boa viagem."), o estado de confirmação, a mensagem de erro que não culpa o usuário. Nos painéis logados, sobretudo no dashboard do dono, ela também é visual: cor nos dados, KPI com acento e ícone, faixa de destaque com gradiente de fundo, ilustração nos estados vazios. A marca evita dois extremos: o barulho gratuito (piscar, gamificar, decorar sem função) e o wireframe sem opinião. Gradiente sempre como fundo, nunca como texto.
 
 4. **Mobile-first, aeroporto-first.** O contexto de uso padrão é um viajante no celular a caminho do aeroporto. Um polegar, conexão 4G variável, luz de sol. Otimize para isso antes de otimizar para desktop.
 

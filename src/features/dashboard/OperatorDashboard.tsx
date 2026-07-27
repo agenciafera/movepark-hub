@@ -9,6 +9,19 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
+import {
+  CalendarCheck,
+  CalendarClock,
+  Clock,
+  Wallet,
+  Receipt,
+  TrendingUp,
+  Banknote,
+  Flame,
+  LineChart as LineChartIcon,
+  Star,
+  Radio,
+} from "lucide-react";
 import { bookingCustomerName } from "@/features/bookings/bookings.logic";
 import { startOfDay, endOfDay, format, addDays, subDays } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +34,6 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { KpiCard } from "@/components/shared/KpiCard";
-import { PageHeader } from "@/components/shared/PageHeader";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { cn } from "@/lib/utils";
@@ -91,6 +103,44 @@ function formatRating(avg: number): string {
   return avg.toFixed(1).replace(".", ",");
 }
 
+/** Mini-stat do hero: número grande sobre a faixa navy, num tile translúcido. */
+function HeroStat({ label, value, isLoading }: { label: string; value: number; isLoading?: boolean }) {
+  return (
+    <div className="rounded-xl bg-white/10 px-4 py-3">
+      <div className="text-caption text-white/60">{label}</div>
+      <div className="mt-0.5 text-display-md tabular-nums text-white">
+        {isLoading ? "…" : value}
+      </div>
+    </div>
+  );
+}
+
+/** Anel de ocupação em SVG (controlado, sem depender de layout do recharts). */
+function OccupancyRing({ rate }: { rate: number }) {
+  const r = 42;
+  const circ = 2 * Math.PI * r;
+  const pct = Math.max(0, Math.min(100, rate));
+  const dash = (pct / 100) * circ;
+  return (
+    <div className="relative flex h-24 w-24 shrink-0 items-center justify-center">
+      <svg viewBox="0 0 100 100" className="h-24 w-24 -rotate-90">
+        <circle cx="50" cy="50" r={r} fill="none" stroke="hsl(var(--surface-strong))" strokeWidth="10" />
+        <circle
+          cx="50"
+          cy="50"
+          r={r}
+          fill="none"
+          stroke="hsl(var(--mp-indigo))"
+          strokeWidth="10"
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${circ}`}
+        />
+      </svg>
+      <span className="absolute text-title-md tabular-nums text-ink">{pct.toFixed(0)}%</span>
+    </div>
+  );
+}
+
 export default function OperatorDashboard() {
   const { session, effectiveCompanyIds, hasScope } = useAuth();
   const { ids: scopedLocationIds } = useScopedLocationIds();
@@ -138,58 +188,79 @@ export default function OperatorDashboard() {
   const revparValue = revpar(cur?.revenue ?? 0, occPeriod.data?.capacityDays ?? 0);
 
   const periodLabel = `${period} dias`;
+  const firstName = session?.firstName ?? "";
+  const heroSubline = session?.companyIds.length
+    ? "Aqui está a operação de hoje e o resumo do período."
+    : "Você ainda não está vinculado a uma empresa.";
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Dashboard"
-        description={
-          session?.companyIds.length
-            ? "Receita e reservas do período, mais a operação de hoje."
-            : "Você ainda não está vinculado a uma empresa."
-        }
-        actions={
-          <Select value={String(period)} onValueChange={(v) => setPeriod(Number(v) as ReportPeriod)}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7">Últimos 7 dias</SelectItem>
-              <SelectItem value="30">Últimos 30 dias</SelectItem>
-              <SelectItem value="90">Últimos 90 dias</SelectItem>
-            </SelectContent>
-          </Select>
-        }
-      />
+      {/* Faixa de boas-vindas: gradiente da marca, o pulso de hoje e o seletor de período. */}
+      <section className="relative overflow-hidden rounded-2xl bg-dashboard-hero px-6 py-7 text-white shadow-tier desktop:px-8">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-caption font-bold uppercase tracking-[0.4px] text-white/60">
+              Painel do parceiro
+            </p>
+            <h1 className="mt-1 text-display-lg text-white">
+              Olá{firstName ? `, ${firstName}` : ""} 👋
+            </h1>
+            <p className="mt-1 max-w-md text-body-md text-white/75">{heroSubline}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {isHighDemand && (
+              <span className="hidden items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-caption font-medium text-white tablet:inline-flex">
+                <Flame className="h-3.5 w-3.5" aria-hidden /> Em alta demanda hoje
+              </span>
+            )}
+            <Select value={String(period)} onValueChange={(v) => setPeriod(Number(v) as ReportPeriod)}>
+              <SelectTrigger className="w-40 border-white/25 bg-white/10 text-white [&_svg]:text-white/70 hover:bg-white/15">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7">Últimos 7 dias</SelectItem>
+                <SelectItem value="30">Últimos 30 dias</SelectItem>
+                <SelectItem value="90">Últimos 90 dias</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="mt-6 grid grid-cols-3 gap-3">
+          <HeroStat label="Reservas hoje" value={stats.data?.bookingsToday ?? 0} isLoading={stats.isLoading} />
+          <HeroStat label="Check-ins" value={stats.data?.checkInsToday ?? 0} isLoading={stats.isLoading} />
+          <HeroStat label="Check-outs" value={stats.data?.checkOutsToday ?? 0} isLoading={stats.isLoading} />
+        </div>
+      </section>
 
       <RecipientKycBanner companyId={companyId} />
 
       {/* Operacional do período (bookings/occupancy:read, todos os papéis) */}
-      <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
         <KpiCard
           label={`Reservas pagas (${periodLabel})`}
           value={cur?.count ?? 0}
           hint="confirmadas, em uso ou concluídas"
           trend={cur && prev ? formatDelta(pctDelta(cur.count, prev.count)) : undefined}
           isLoading={summary.isLoading}
+          icon={CalendarCheck}
+          accent="indigo"
         />
         <KpiCard
           label={`Reservas futuras (${periodLabel})`}
           value={upcoming.data ?? 0}
           hint="com check-in daqui pra frente"
           isLoading={upcoming.isLoading}
+          icon={CalendarClock}
+          accent="sky"
         />
         <KpiCard
           label="Antecedência média"
           value={cur?.count ? `${leadTime.toFixed(1).replace(".", ",")} dias` : "-"}
           hint="da reserva ao check-in"
           isLoading={summary.isLoading}
-        />
-        <KpiCard
-          label="Ocupação (próx. 7 dias)"
-          value={occ7.data?.capacityDays ? `${occ7Rate.toFixed(0)}%` : "-"}
-          hint="das vagas dedicadas"
-          isLoading={occ7.isLoading}
+          icon={Clock}
+          accent="teal"
         />
       </div>
 
@@ -202,6 +273,8 @@ export default function OperatorDashboard() {
               value={formatBRL(cur?.revenue ?? 0)}
               trend={cur && prev ? formatDelta(pctDelta(cur.revenue, prev.revenue)) : undefined}
               isLoading={summary.isLoading}
+              icon={Wallet}
+              accent="green"
             />
           )}
           {canFinance && (
@@ -210,6 +283,8 @@ export default function OperatorDashboard() {
               value={formatBRL(cur?.ticket ?? 0)}
               hint="por reserva paga"
               isLoading={summary.isLoading}
+              icon={Receipt}
+              accent="indigo"
             />
           )}
           {canFinance && (
@@ -218,6 +293,8 @@ export default function OperatorDashboard() {
               value={occPeriod.data?.capacityDays ? formatBRL(revparValue) : "-"}
               hint="receita por vaga-dia"
               isLoading={occPeriod.isLoading}
+              icon={TrendingUp}
+              accent="teal"
             />
           )}
           {canPayouts && (
@@ -226,6 +303,8 @@ export default function OperatorDashboard() {
               value={formatBRL((balance.data?.balance_cents ?? 0) / 100)}
               hint="líquido menos saques"
               isLoading={balance.isLoading}
+              icon={Banknote}
+              accent="green"
             />
           )}
         </div>
@@ -235,7 +314,12 @@ export default function OperatorDashboard() {
       {canFinance && (
         <Card>
           <CardHeader>
-            <CardTitle>Receita diária</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-mp-pale text-mp-indigo">
+                <LineChartIcon className="h-4 w-4" aria-hidden />
+              </span>
+              Receita diária
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {revenue.isLoading ? (
@@ -278,8 +362,25 @@ export default function OperatorDashboard() {
         </Card>
       )}
 
-      {/* Saúde da operação */}
-      <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
+      {/* Saúde da operação: ocupação (anel), cancelamento, avaliações e origem. */}
+      <div
+        className={cn(
+          "grid grid-cols-1 gap-4 tablet:grid-cols-2",
+          canReviews ? "desktop:grid-cols-4" : "desktop:grid-cols-3",
+        )}
+      >
+        <Card>
+          <CardContent className="flex items-center gap-4 p-6">
+            <OccupancyRing rate={occ7Rate} />
+            <div className="flex flex-col gap-1">
+              <span className="text-caption text-muted">Ocupação (próx. 7 dias)</span>
+              <span className="text-body-sm text-body">
+                {occ7.data?.capacityDays ? "das vagas dedicadas" : "sem capacidade cadastrada"}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardContent className="flex flex-col gap-2 p-6">
             <span className="text-caption text-muted">Cancelamento ({periodLabel})</span>
@@ -300,7 +401,9 @@ export default function OperatorDashboard() {
         {canReviews && (
           <Card>
             <CardContent className="flex flex-col gap-2 p-6">
-              <span className="text-caption text-muted">Avaliações</span>
+              <span className="flex items-center gap-1.5 text-caption text-muted">
+                <Star className="h-3.5 w-3.5 text-amber-500" aria-hidden /> Avaliações
+              </span>
               {reviews.isLoading ? (
                 <Skeleton className="h-9 w-24" />
               ) : rating.count === 0 ? (
@@ -320,8 +423,10 @@ export default function OperatorDashboard() {
 
         <Card>
           <CardContent className="flex flex-col gap-2 p-6">
-            <span className="text-caption text-muted">Origem ({periodLabel})</span>
-            <div className="flex flex-col gap-1">
+            <span className="flex items-center gap-1.5 text-caption text-muted">
+              <Radio className="h-3.5 w-3.5 text-mp-indigo" aria-hidden /> Origem ({periodLabel})
+            </span>
+            <div className="mt-1 flex flex-col gap-1">
               <div className="flex items-center justify-between text-body-sm">
                 <span className="text-muted">Pelo site</span>
                 <span className="tabular-nums text-ink">{channel.site}</span>
@@ -335,34 +440,17 @@ export default function OperatorDashboard() {
         </Card>
       </div>
 
-      {/* Operação de hoje */}
+      {/* Chegadas e saídas de hoje */}
       <Card>
         <CardHeader>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <CardTitle>Hoje</CardTitle>
-            {isHighDemand && (
-              <span className="rounded-full bg-surface-soft px-2.5 py-0.5 text-caption text-success">
-                Em alta demanda hoje
-              </span>
-            )}
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-mp-pale text-mp-indigo">
+              <Clock className="h-4 w-4" aria-hidden />
+            </span>
+            Chegadas e saídas de hoje
+          </CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-6">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="flex flex-col gap-1">
-              <span className="text-caption text-muted">Reservas</span>
-              <span className="text-display-md text-ink">{stats.data?.bookingsToday ?? 0}</span>
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-caption text-muted">Check-ins</span>
-              <span className="text-display-md text-ink">{stats.data?.checkInsToday ?? 0}</span>
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-caption text-muted">Check-outs</span>
-              <span className="text-display-md text-ink">{stats.data?.checkOutsToday ?? 0}</span>
-            </div>
-          </div>
-
+        <CardContent>
           {timeline.isLoading ? (
             <div className="space-y-2">
               {Array.from({ length: 4 }).map((_, i) => (

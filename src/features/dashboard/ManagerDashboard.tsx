@@ -1,5 +1,6 @@
 import * as React from "react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { CalendarCheck, Wallet, Receipt, Building2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { KpiCard } from "@/components/shared/KpiCard";
@@ -46,6 +47,8 @@ export default function ManagerDashboard() {
               : undefined
           }
           isLoading={stats.isLoading}
+          icon={CalendarCheck}
+          accent="indigo"
         />
         <KpiCard
           label="Receita do Mês"
@@ -57,17 +60,23 @@ export default function ManagerDashboard() {
               : undefined
           }
           isLoading={stats.isLoading}
+          icon={Wallet}
+          accent="green"
         />
         <KpiCard
           label="Ticket Médio"
           value={formatBRL(stats.data?.averageTicketThisMonth ?? 0)}
           hint="mês atual"
           isLoading={stats.isLoading}
+          icon={Receipt}
+          accent="teal"
         />
         <KpiCard
           label="Empresas Ativas"
           value={stats.data?.activeCompanies ?? 0}
           isLoading={stats.isLoading}
+          icon={Building2}
+          accent="sky"
         />
       </div>
 
