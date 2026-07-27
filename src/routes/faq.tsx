@@ -3,6 +3,13 @@ import { useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { cn } from "@/lib/utils";
 import { useFaqCategories, useFaqs } from "@/features/faqs/api";
@@ -71,6 +78,17 @@ export default function FaqPage() {
     setParams(next, { replace: true });
   }
 
+  // Uma fonte só para as duas superfícies (sidebar no desktop, select no mobile):
+  // "Todas" na frente e as categorias do banco. `slug: null` é a opção "Todas".
+  const categoryOptions = React.useMemo(
+    () => [
+      { key: "all", slug: null as string | null, label: "Todas" },
+      ...(cats.data ?? []).map((c) => ({ key: c.id, slug: c.slug, label: c.label })),
+    ],
+    [cats.data],
+  );
+  const activeSlug = categorySlug ?? null;
+
   const faqJsonLd = list.data?.length
     ? JSON.stringify(
         faqSchema((list.data ?? []).map((f) => ({ question: f.question, answer: f.answer }))),
@@ -113,33 +131,42 @@ export default function FaqPage() {
         </div>
       </PageHeader>
 
+      {/* Mobile: categoria vira um select. A lista de botões empilhada empurrava as
+          perguntas pra baixo e, quando ficava lado a lado, estourava a largura. */}
+      <div className="mb-6 tablet:hidden">
+        <Select
+          value={activeSlug ?? "all"}
+          onValueChange={(v) => setCategory(v === "all" ? null : v)}
+        >
+          <SelectTrigger aria-label="Categoria">
+            <SelectValue placeholder="Categoria" />
+          </SelectTrigger>
+          <SelectContent>
+            {categoryOptions.map((o) => (
+              <SelectItem key={o.key} value={o.slug ?? "all"}>
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="grid grid-cols-1 gap-8 tablet:grid-cols-[200px_1fr]">
-        <aside className="space-y-1">
-          <button
-            type="button"
-            onClick={() => setCategory(null)}
-            className={cn(
-              "w-full rounded-sm px-3 py-2 text-left text-body-sm transition-colors",
-              !categorySlug
-                ? "bg-mp-pale text-mp-indigo"
-                : "text-muted hover:bg-surface-soft hover:text-ink",
-            )}
-          >
-            Todas
-          </button>
-          {(cats.data ?? []).map((c) => (
+        {/* Desktop: mesma seleção como sidebar de botões. */}
+        <aside className="hidden space-y-1 tablet:block">
+          {categoryOptions.map((o) => (
             <button
-              key={c.id}
+              key={o.key}
               type="button"
-              onClick={() => setCategory(c.slug)}
+              onClick={() => setCategory(o.slug)}
               className={cn(
                 "w-full rounded-sm px-3 py-2 text-left text-body-sm transition-colors",
-                categorySlug === c.slug
+                activeSlug === o.slug
                   ? "bg-mp-pale text-mp-indigo"
                   : "text-muted hover:bg-surface-soft hover:text-ink",
               )}
             >
-              {c.label}
+              {o.label}
             </button>
           ))}
         </aside>
