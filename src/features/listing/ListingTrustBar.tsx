@@ -1,5 +1,7 @@
+import * as React from "react";
 import { ShieldCheck, CalendarX, Tag } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
 /**
@@ -8,15 +10,17 @@ import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
  * concorrência). Rola junto com o conteúdo (não é mais sticky): a versão fixa roubava
  * espaço vertical e incomodava no scroll.
  *
- * No mobile os itens passam sozinhos num carrossel (marquee), pra mostrar os 3 sem
- * empilhar e sem gastar tela. Sob `prefers-reduced-motion` o movimento para: cai numa
- * linha estática rolável, com os 3 itens acessíveis.
+ * No mobile é um carrossel: mostra um diferencial por vez, avança sozinho de um em um
+ * e o usuário pode arrastar (swipe) pro lado. Sob `prefers-reduced-motion` o avanço
+ * automático para; o swipe continua funcionando.
  */
 const DIFERENCIAIS: { icon: LucideIcon; title: string; sub: string }[] = [
   { icon: ShieldCheck, title: "Vaga garantida", sub: "ou cobrimos a diferença" },
   { icon: CalendarX, title: "Cancelamento grátis", sub: "até 24h antes" },
   { icon: Tag, title: "Preço travado", sub: "sem surpresa no balcão" },
 ];
+
+const AUTO_ADVANCE_MS = 3500;
 
 function TrustItem({ d, showSub = false }: { d: (typeof DIFERENCIAIS)[number]; showSub?: boolean }) {
   return (
@@ -32,57 +36,90 @@ function TrustItem({ d, showSub = false }: { d: (typeof DIFERENCIAIS)[number]; s
   );
 }
 
-// Fade nas laterais do marquee (o Tailwind não traz utilitário de máscara).
-const FADE = "linear-gradient(to right, transparent, #000 8%, #000 92%, transparent)";
-
-export function ListingTrustBar() {
+/**
+ * Carrossel do mobile. Scroll-snap horizontal (um item por "slide"), então o swipe é
+ * nativo. O auto-avanço rola pro próximo slide a cada alguns segundos, em loop, e
+ * pausa enquanto o dedo está na tela. Sob reduced-motion o timer nem monta.
+ */
+function TrustCarousel() {
   const reduced = usePrefersReducedMotion();
+  const trackRef = React.useRef<HTMLDivElement>(null);
+  const [index, setIndex] = React.useState(0);
+  // Pausa o avanço automático enquanto o usuário está arrastando.
+  const pausedRef = React.useRef(false);
+
+  const goTo = React.useCallback((i: number, smooth: boolean) => {
+    const el = trackRef.current;
+    if (!el) return;
+    el.scrollTo({ left: i * el.clientWidth, behavior: smooth ? "smooth" : "auto" });
+  }, []);
+
+  React.useEffect(() => {
+    if (reduced) return;
+    const id = window.setInterval(() => {
+      if (pausedRef.current) return;
+      const el = trackRef.current;
+      if (!el) return;
+      const count = DIFERENCIAIS.length;
+      // Lê a posição real (fonte da verdade) pra retomar de onde o usuário parou.
+      const cur = el.clientWidth ? Math.round(el.scrollLeft / el.clientWidth) : 0;
+      goTo((cur + 1) % count, true);
+    }, AUTO_ADVANCE_MS);
+    return () => window.clearInterval(id);
+  }, [reduced, goTo]);
+
+  const onScroll = () => {
+    const el = trackRef.current;
+    if (!el || !el.clientWidth) return;
+    const i = Math.round(el.scrollLeft / el.clientWidth);
+    setIndex((prev) => (prev === i ? prev : i));
+  };
 
   return (
-    <div className="border-b border-hairline bg-canvas">
-      {/* Mobile: carrossel automático (marquee), no padrão do PartnerLogos — dois
-          blocos idênticos + trilho até -50% pra loop sem emenda. Sob reduced-motion
-          o hook troca por uma linha estática rolável (todos os 3 alcançáveis). */}
-      <div className="tablet:hidden">
-        {reduced ? (
-          <div className="flex items-center gap-8 overflow-x-auto px-4 py-2.5 scrollbar-none">
-            {DIFERENCIAIS.map((d) => (
-              <TrustItem key={d.title} d={d} />
-            ))}
+    <div className="tablet:hidden">
+      <div
+        ref={trackRef}
+        onScroll={onScroll}
+        onPointerDown={() => (pausedRef.current = true)}
+        onPointerUp={() => (pausedRef.current = false)}
+        onPointerCancel={() => (pausedRef.current = false)}
+        onPointerLeave={() => (pausedRef.current = false)}
+        className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain scrollbar-none"
+      >
+        {DIFERENCIAIS.map((d) => (
+          <div
+            key={d.title}
+            className="flex w-full shrink-0 snap-center items-center justify-center px-4 py-2.5"
+          >
+            <TrustItem d={d} showSub />
           </div>
-        ) : (
-          <>
-            <style>{`
-              @keyframes mp-trust-marquee {
-                from { transform: translateX(0); }
-                to   { transform: translateX(-50%); }
-              }
-              .mp-trust-track { animation: mp-trust-marquee 16s linear infinite; }
-              @media (prefers-reduced-motion: reduce) {
-                .mp-trust-track { animation: none; }
-              }
-            `}</style>
-            <div
-              className="relative overflow-hidden py-2.5"
-              style={{ maskImage: FADE, WebkitMaskImage: FADE }}
-            >
-              <div className="mp-trust-track flex w-max">
-                {[0, 1].map((b) => (
-                  <div
-                    key={b}
-                    aria-hidden={b === 1}
-                    className="flex shrink-0 items-center gap-8 pr-8"
-                  >
-                    {DIFERENCIAIS.map((d) => (
-                      <TrustItem key={d.title} d={d} />
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
+        ))}
       </div>
+
+      {/* Indicador de posição (também navega ao toque) */}
+      <div className="flex justify-center gap-1.5 pb-2">
+        {DIFERENCIAIS.map((d, i) => (
+          <button
+            key={d.title}
+            type="button"
+            aria-label={`Ir para: ${d.title}`}
+            aria-current={i === index}
+            onClick={() => goTo(i, !reduced)}
+            className={cn(
+              "h-1.5 rounded-full transition-all",
+              i === index ? "w-4 bg-mp-indigo" : "w-1.5 bg-hairline",
+            )}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function ListingTrustBar() {
+  return (
+    <div className="border-b border-hairline bg-canvas">
+      <TrustCarousel />
 
       {/* Desktop: linha centralizada que rola junto com o conteúdo (sem sticky). */}
       <div className="mx-auto hidden max-w-[1280px] items-center justify-center gap-12 px-8 py-2.5 tablet:flex">
