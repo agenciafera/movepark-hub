@@ -54,13 +54,13 @@ export function Sidebar({
         <Monogram size={28} className="brightness-0 invert" />
       </div>
 
-      <nav className="flex flex-col gap-4">
+      <nav className="flex flex-col gap-7">
         {sections.map((section, index) => (
           <div key={section.title ?? index} className="flex flex-col gap-1">
             {section.title && (
               <>
                 {/* Desktop mostra o título do grupo; no tablet (só-ícone) sobra um filete separando. */}
-                <span className="hidden desktop:block px-3 pb-1 text-caption font-medium uppercase tracking-[0.3px] text-white/40">
+                <span className="hidden desktop:block px-3 pb-1 text-[11px] font-semibold uppercase tracking-[0.5px] text-white/40">
                   {section.title}
                 </span>
                 {index > 0 && (
