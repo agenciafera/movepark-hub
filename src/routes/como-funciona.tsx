@@ -1,6 +1,8 @@
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { Search, CalendarCheck, Car, QrCode, ShieldCheck, Clock, MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 const STEPS = [
   {
@@ -13,7 +15,7 @@ const STEPS = [
     icon: CalendarCheck,
     n: "02",
     title: "Reserve em 2 minutos",
-    desc: "Escolha o estacionamento ideal e finalize o pagamento — PIX ou cartão de crédito. Preço fixo: o valor exibido é o que você paga. Sem surpresas na saída.",
+    desc: "Escolha o estacionamento ideal e finalize o pagamento por PIX ou cartão de crédito. Preço fixo: o valor exibido é o que você paga. Sem surpresas na saída.",
   },
   {
     icon: Car,
@@ -65,21 +67,16 @@ export default function ComoFuncionaPage() {
       </Helmet>
 
       <div className="mx-auto w-full max-w-[1080px] px-4 py-12 desktop:px-8">
-        {/* Hero */}
-        <header className="mb-16 max-w-2xl space-y-4">
-          <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-muted-steel">
-            Passo a passo
-          </span>
-          <h1 className="text-display-xl text-ink">
-            Reserve sua vaga em menos de 2 minutos.
-          </h1>
-          <p className="text-body-md text-body">
-            Da busca ao check-in, tudo pelo celular. Sem ligação, sem fila, sem estresse.
-          </p>
-        </header>
+        <PageHeader
+          variant="content"
+          className="mb-16 max-w-2xl"
+          title="Reserve sua vaga em menos de 2 minutos."
+          description="Da busca ao check-in, tudo pelo celular. Sem ligação, sem fila, sem estresse."
+        />
 
         {/* Passo a passo */}
-        <section className="mb-20">
+        <section className="mb-16">
+          <h2 className="mb-8 text-display-sm text-ink">Passo a passo</h2>
           <div className="relative space-y-0">
             {STEPS.map((step, i) => (
               <div key={step.n} className="relative flex gap-6 pb-12 last:pb-0">
@@ -87,17 +84,17 @@ export default function ComoFuncionaPage() {
                 {i < STEPS.length - 1 && (
                   <div className="absolute left-[19px] top-10 h-full w-px bg-hairline" />
                 )}
-                {/* Ícone */}
-                <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-mp-primary bg-canvas">
-                  <step.icon className="h-5 w-5 text-mp-indigo" />
+                {/* Ícone (mesmo tratamento dos cards de benefício: pale + indigo) */}
+                <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-mp-pale text-mp-indigo">
+                  <step.icon className="h-5 w-5" />
                 </div>
                 {/* Conteúdo */}
                 <div className="pt-1">
-                  <div className="mb-0.5 text-[11px] font-bold uppercase tracking-[0.4px] text-muted-steel">
+                  <div className="mb-0.5 text-badge uppercase tracking-[0.4px] text-muted">
                     Passo {step.n}
                   </div>
-                  <h2 className="text-title-md text-ink">{step.title}</h2>
-                  <p className="mt-2 max-w-lg text-body-md text-muted">{step.desc}</p>
+                  <h3 className="text-title-md text-ink">{step.title}</h3>
+                  <p className="mt-2 max-w-lg text-body-md text-body">{step.desc}</p>
                 </div>
               </div>
             ))}
@@ -106,15 +103,15 @@ export default function ComoFuncionaPage() {
 
         {/* Benefícios */}
         <section className="mb-16">
-          <h2 className="mb-8 text-title-md text-ink">Por que usar a Movepark?</h2>
+          <h2 className="mb-8 text-display-sm text-ink">Por que usar a Movepark?</h2>
           <div className="grid grid-cols-1 gap-6 tablet:grid-cols-3">
             {BENEFITS.map((b) => (
               <div key={b.title} className="rounded-md border border-hairline bg-canvas p-6">
                 <span className="mb-4 flex h-10 w-10 items-center justify-center rounded-sm bg-mp-pale text-mp-indigo">
                   <b.icon className="h-5 w-5" />
                 </span>
-                <div className="text-title-sm text-ink">{b.title}</div>
-                <div className="mt-1 text-body-sm text-muted">{b.desc}</div>
+                <h3 className="text-title-sm text-ink">{b.title}</h3>
+                <p className="mt-1 text-body-sm text-muted">{b.desc}</p>
               </div>
             ))}
           </div>
@@ -122,12 +119,12 @@ export default function ComoFuncionaPage() {
 
         {/* Dúvidas rápidas */}
         <section className="mb-16">
-          <h2 className="mb-6 text-title-md text-ink">Dúvidas rápidas</h2>
+          <h2 className="mb-6 text-display-sm text-ink">Dúvidas rápidas</h2>
           <div className="space-y-6">
             {FAQ_FUNC.map((item) => (
               <div key={item.q}>
-                <div className="text-title-sm text-ink">{item.q}</div>
-                <div className="mt-1 text-body-sm text-muted">{item.a}</div>
+                <h3 className="text-title-sm text-ink">{item.q}</h3>
+                <p className="mt-1 text-body-sm text-body">{item.a}</p>
               </div>
             ))}
           </div>
@@ -140,16 +137,13 @@ export default function ComoFuncionaPage() {
 
         {/* CTA */}
         <section className="rounded-md bg-mp-pale px-8 py-10 text-center">
-          <h2 className="mb-2 text-title-md text-ink">Pronto para reservar?</h2>
-          <p className="mb-6 text-body-md text-muted">
+          <h2 className="mb-2 text-display-sm text-ink">Pronto para reservar?</h2>
+          <p className="mx-auto mb-6 max-w-md text-body-md text-body">
             Encontre sua vaga e garanta tranquilidade na próxima viagem.
           </p>
-          <Link
-            to="/"
-            className="inline-flex h-12 items-center rounded-sm bg-mp-primary px-6 text-button-sm font-semibold text-white transition-colors hover:bg-mp-primary/90"
-          >
-            Buscar estacionamento
-          </Link>
+          <Button asChild>
+            <Link to="/">Buscar estacionamento</Link>
+          </Button>
         </section>
       </div>
     </>
