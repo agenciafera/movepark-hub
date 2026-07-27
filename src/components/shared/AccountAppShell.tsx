@@ -16,7 +16,7 @@ export function AccountAppShell() {
   const isRoot = location.pathname === "/account" || location.pathname === "/account/";
 
   return (
-    <div className="flex min-h-screen flex-col bg-canvas">
+    <div className="flex min-h-screen flex-col bg-panel">
       <ConsumerTopbar />
 
       <div className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 desktop:px-8 desktop:py-10">

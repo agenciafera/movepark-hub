@@ -31,7 +31,7 @@ export function AppShell({ variant, brandTitle, topbarRightSlot }: Props) {
             vão branco. Com `relative`, esses absolutos ficam contidos no main. */}
         <main
           data-scroll-root
-          className="relative flex-1 overflow-auto pb-[var(--bottom-nav-space)] tablet:pb-0"
+          className="relative flex-1 overflow-auto bg-panel pb-[var(--bottom-nav-space)] tablet:pb-0"
         >
           <div className="mx-auto w-full max-w-[1280px] px-4 py-6 desktop:px-8">
             {variant === "operator" && <OperatorJourneyBanner />}

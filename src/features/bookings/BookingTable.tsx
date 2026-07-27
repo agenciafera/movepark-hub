@@ -23,7 +23,7 @@ type Props = {
 export function BookingTable({ bookings, isLoading, onRowClick, showCompany = true }: Props) {
   if (isLoading) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-2 rounded-md border border-hairline bg-canvas p-4">
         {Array.from({ length: 6 }).map((_, i) => (
           <Skeleton key={i} className="h-12 w-full" />
         ))}
@@ -33,15 +33,17 @@ export function BookingTable({ bookings, isLoading, onRowClick, showCompany = tr
 
   if (!bookings || bookings.length === 0) {
     return (
-      <EmptyState
-        title="Nenhuma reserva encontrada"
-        description="Ajuste os filtros para ver resultados."
-      />
+      <div className="rounded-md border border-hairline bg-canvas">
+        <EmptyState
+          title="Nenhuma reserva encontrada"
+          description="Ajuste os filtros para ver resultados."
+        />
+      </div>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-md border border-hairline">
+    <div className="overflow-hidden rounded-md border border-hairline bg-canvas">
       <Table>
         <TableHeader>
           <TableRow>

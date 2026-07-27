@@ -41,6 +41,10 @@
     --surface-soft: 240 7% 97%;        /* #F7F7F8 */
     --surface-strong: 220 30% 92%;     /* #E0E5F2 */
     --surface-pale: var(--mp-pale);
+    /* Fundo dos painéis logados (manager/operator/conta). Cinza cool um pouco mais
+       presente que o surface-soft, pra os cards brancos "subirem" em vez de sumir
+       num fundo branco. */
+    --panel: 220 24% 95%;              /* #ECEFF4 */
 
     /* Hairlines & borders */
     --hairline: 0 0% 88%;              /* #E0E0E0 */
@@ -101,6 +105,7 @@
     --surface-soft: 240 5% 15%;        /* #242428 hover/painel */
     --surface-strong: 240 5% 20%;      /* #303036 */
     --surface-pale: 239 30% 22%;       /* tinta violeta escura (pale/badge) */
+    --panel: 240 8% 8%;                /* fundo de painel, mais fundo que o card */
 
     /* Hairlines & borders */
     --hairline: 240 5% 24%;            /* #393940 */
@@ -293,6 +298,9 @@
   /* Faixa/hero de destaque dos painéis (dashboard do dono). Base navy profunda com um
      brilho violeta no canto: dá personalidade e premium sem pintar de violeta chapado
      (o violeta-CTA segue reservado a acionável). Texto branco em cima é AA folgado. */
+  .bg-panel {
+    background-color: hsl(var(--panel));
+  }
   .bg-dashboard-hero {
     background-color: hsl(var(--mp-navy));
     background-image:
