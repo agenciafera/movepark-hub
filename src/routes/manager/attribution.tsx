@@ -104,7 +104,7 @@ export default function ManagerAttribution() {
           ) : (data?.by_origin ?? []).length === 0 ? (
             <EmptyState title="Sem reservas no período" description="Nada pra atribuir ainda." />
           ) : (
-            <div className="overflow-hidden rounded-md border border-hairline">
+            <div className="overflow-hidden rounded-md border border-hairline bg-canvas">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -137,7 +137,7 @@ export default function ManagerAttribution() {
           ) : (data?.by_utm_source ?? []).length === 0 ? (
             <p className="text-body-sm text-muted">Sem reservas no período.</p>
           ) : (
-            <div className="overflow-hidden rounded-md border border-hairline">
+            <div className="overflow-hidden rounded-md border border-hairline bg-canvas">
               <Table>
                 <TableHeader>
                   <TableRow>

@@ -452,7 +452,7 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
         <div className="my-5 h-px bg-hairline" />
 
         {/* Datas — mesmo seletor de intervalo (range) da busca */}
-        <div className="overflow-hidden rounded-md border border-hairline">
+        <div className="overflow-hidden rounded-md border border-hairline bg-canvas">
           <DateRangePicker
             from={from}
             to={to}
@@ -491,7 +491,7 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
         {/* Seletor de tarifa */}
         <div className="mt-5">
           <div className="mb-2 text-body-sm font-semibold text-ink">Escolha sua tarifa</div>
-          <div className="divide-y divide-hairline overflow-hidden rounded-md border border-hairline">
+          <div className="divide-y divide-hairline overflow-hidden rounded-md border border-hairline bg-canvas">
             {pricedFares.map((fare) => {
               const isSelected = selectedFare === fare.id;
               return (

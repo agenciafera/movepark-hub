@@ -93,7 +93,7 @@ export default function ManagerFinancePayouts() {
       ) : companies.length === 0 ? (
         <EmptyState title="Sem repasses" description="Nenhum pagamento confirmado no mês selecionado." />
       ) : (
-        <div className="overflow-hidden rounded-md border border-hairline">
+        <div className="overflow-hidden rounded-md border border-hairline bg-canvas">
           <Table>
             <TableHeader>
               <TableRow>

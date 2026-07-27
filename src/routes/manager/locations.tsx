@@ -52,7 +52,7 @@ export default function ManagerLocations() {
           description="Cadastre a primeira unidade para essa empresa."
         />
       ) : (
-        <div className="overflow-hidden rounded-md border border-hairline">
+        <div className="overflow-hidden rounded-md border border-hairline bg-canvas">
           <Table>
             <TableHeader>
               <TableRow>

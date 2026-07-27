@@ -63,7 +63,7 @@ export function PriceTableDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="overflow-hidden rounded-md border border-hairline">
+        <div className="overflow-hidden rounded-md border border-hairline bg-canvas">
           <Table>
             <TableHeader>
               <TableRow>

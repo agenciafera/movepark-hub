@@ -92,7 +92,7 @@ export default function ManagerFinanceBilling() {
       ) : (data ?? []).length === 0 ? (
         <EmptyState title="Sem movimentação" description="Nenhuma reserva no mês selecionado." />
       ) : (
-        <div className="overflow-hidden rounded-md border border-hairline">
+        <div className="overflow-hidden rounded-md border border-hairline bg-canvas">
           <Table>
             <TableHeader>
               <TableRow>

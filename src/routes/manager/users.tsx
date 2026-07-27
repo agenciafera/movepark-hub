@@ -118,7 +118,7 @@ export default function ManagerUsers() {
       ) : filtered.length === 0 ? (
         <EmptyState title="Nenhum usuário" description="Convide usuários via Supabase Auth." />
       ) : (
-        <div className="overflow-hidden rounded-md border border-hairline">
+        <div className="overflow-hidden rounded-md border border-hairline bg-canvas">
           <Table>
             <TableHeader>
               <TableRow>

@@ -55,8 +55,12 @@ export default function BookingsListPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1080px] px-4 py-8 desktop:px-8">
-      <PageHeader title="Minhas reservas" description="Acesse seus vouchers e histórico." />
+    // Fundo de painel (como as áreas logadas): os cards de reserva brancos sobem em
+    // vez de sumir no branco do shell do consumer. `min-h`: cobre a altura útil pra
+    // não deixar um vão branco embaixo quando há poucas reservas.
+    <div className="min-h-[calc(100vh-4rem)] bg-panel">
+      <div className="mx-auto w-full max-w-[1080px] px-4 py-8 desktop:px-8">
+        <PageHeader title="Minhas reservas" description="Acesse seus vouchers e histórico." />
 
       <Tabs value={activeTab} onValueChange={(v) => setTab(v as MyBookingStatus)} className="mt-6">
         <TabsList className="overflow-x-auto overflow-y-hidden">
@@ -73,6 +77,7 @@ export default function BookingsListPage() {
           </TabsContent>
         ))}
       </Tabs>
+      </div>
     </div>
   );
 }

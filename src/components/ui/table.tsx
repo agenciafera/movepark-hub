@@ -3,7 +3,10 @@ import { cn } from "@/lib/utils";
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
-    <div className="relative w-full overflow-auto">
+    // `bg-canvas` garante que a tabela seja uma superfície branca: sobre o fundo de
+    // painel cinza das áreas logadas, uma tabela transparente sumiria. Quem já
+    // envolve a tabela numa moldura (Card ou div com borda) não muda de aparência.
+    <div className="relative w-full overflow-auto bg-canvas">
       <table
         ref={ref}
         className={cn("w-full caption-bottom text-body-sm", className)}

@@ -176,7 +176,7 @@ export default function OperatorFinance() {
               </div>
 
               {(company.lines ?? []).length > 0 && (
-                <div className="overflow-hidden rounded-md border border-hairline">
+                <div className="overflow-hidden rounded-md border border-hairline bg-canvas">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -225,7 +225,7 @@ export default function OperatorFinance() {
               Nenhum saque ainda. As transferências para a sua conta são agregadas (diluindo a taxa de saque).
             </p>
           ) : (
-            <div className="overflow-hidden rounded-md border border-hairline">
+            <div className="overflow-hidden rounded-md border border-hairline bg-canvas">
               <Table>
                 <TableHeader>
                   <TableRow>
