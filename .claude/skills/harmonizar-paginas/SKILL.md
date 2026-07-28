@@ -113,7 +113,7 @@ formato:
 <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-mp-indigo">
 ```
 
-- Nunca `text-mp-primary` (viola a regra do violeta reservado).
+- Nunca `text-mp-primary` no eyebrow: o violeta é pra ação e destaques pontuais, não pra um rótulo que se repete em toda seção (violeta em tudo = destaque em nada). Num número/indicador-chave o violeta é bem-vindo; no eyebrow, não.
 - Nunca `text-muted-steel` (reprova o AA).
 - Um por seção, no máximo. Nunca dois no mesmo bloco.
 

@@ -28,7 +28,7 @@ Refazer o wizard de `/onboarding` (`src/features/onboarding/*`) num fluxo curto,
 
 ## 2. Fluxo proposto (split-screen)
 
-Uma ideia por tela à esquerda; à direita, o **card da unidade se montando ao vivo** + slot de foto reservado. Voz da marca (Nubank-like), violeta reservado à ação (DESIGN.md).
+Uma ideia por tela à esquerda; à direita, o **card da unidade se montando ao vivo** + slot de foto reservado. Voz da marca (Nubank-like), violeta pra ação e destaque (DESIGN.md).
 
 **Etapa A — Essencial (publica):**
 1. **Boas-vindas** — o que vamos configurar + "nada de CNPJ/papelada agora".

@@ -127,14 +127,14 @@ components:
 
 Um sistema de design que respeita o tempo do viajante. Cada elemento existe para remover fricção — não para chamar atenção. A beleza está na ausência de obstáculos: o usuário encontra a vaga, confirma o preço, reserva em dois toques e segue viagem. Quando o design funciona de verdade, ele some.
 
-O sistema é construído sobre uma tese de contenção deliberada: o violeta (#5D5FEF) aparece exclusivamente em elementos acionáveis. Fora dos CTAs, recua. Isso cria um contrato não-verbal com o usuário — quando vê aquela cor, sabe que pode agir. O restante da interface é neutro e preciso: navy profundo para texto, brancos limpos para superfície, cinzas estruturais para hierarquia.
+O sistema é construído sobre uma tese de contenção deliberada: o violeta (#5D5FEF) é a cor de destaque da Movepark. Aparece nos elementos acionáveis (botões, links de ação, seleção ativa) e também no que a marca quer que o olho encontre primeiro: um número-chave, o indicador que importa, o destaque de um painel. Fora desses pontos, recua. Isso cria um contrato não-verbal com o usuário: quando vê aquela cor, sabe que ali há algo para fazer ou algo que a Movepark está destacando. O que o violeta nunca é: decoração de preenchimento (borda decorativa, fundo de seção, texto corrido inteiro em violeta). O restante da interface é neutro e preciso: navy profundo para texto, brancos limpos para superfície, cinzas estruturais para hierarquia.
 
 A influência do Nubank está na voz, não no visual: comunicação direta, sem juridiquês, com calor humano no micro-copy. "Vaga garantida. Boa viagem." não é uma frase corporativa — é a confirmação de que o sistema cumpriu sua parte do acordo.
 
 **O que este sistema rejeita explicitamente:** verde neon ou laranja de aplicativos de mobilidade urbana; minimalismo excessivo sem opinião (brancura total, tipografia micro, ausência de marca); tom institucional corporativo de banco tradicional.
 
 **Key Characteristics:**
-- Violeta reservado para ação — raro o suficiente para ser inconfundível
+- Violeta para ação e destaque — raro o suficiente para ser inconfundível
 - Tipografia Inter com tracking negativo em displays: precisa, não "projetada"
 - Único tier de sombra com tinta navy: coerente, não decorativo
 - Raio sm (8px) em interativos, md (14px) em containers: distinção por função
@@ -145,7 +145,7 @@ A influência do Nubank está na voz, não no visual: comunicação direta, sem 
 Uma paleta de contenção estratégica: uma cor de ação, uma cor de profundidade, um sinal de alerta, e neutros que nunca ficam no caminho.
 
 ### Primary
-- **Confiança Digital** (#5D5FEF — violet-cta): A cor de ação da Movepark. Usada exclusivamente em botões primários, links de call-to-action e indicadores de seleção ativa. Sua presença é um contrato: quando aparece, há algo para fazer. Quando não há ação disponível, some.
+- **Confiança Digital** (#5D5FEF — violet-cta): A cor de ação e de destaque da Movepark. Usada em botões primários, links de call-to-action, indicadores de seleção ativa e nos números/indicadores-chave que a marca quer destacar (ex: a comissão da Movepark, o KPI principal de um painel). Sua presença é um contrato: quando aparece, ali há algo para fazer ou algo em destaque. Fora desses pontos, some.
 - **Índigo Profundo** (#4041A3 — indigo-active): O estado hover/active do violet-cta. Mais escuro, mais firme — transmite que o sistema respondeu ao toque. Também aparece como cor de informação (ícones e badges de status "active").
 
 ### Secondary
@@ -164,7 +164,7 @@ Uma paleta de contenção estratégica: uma cor de ação, uma cor de profundida
 - **Surface Strong** (#E0E5F2 — surface-strong): Separadores, backgrounds de hover em itens de lista, badges de superfície. Tem um toque de azul-steel que remete ao navy sem competir.
 
 ### Named Rules
-**A Regra do Violeta Reservado.** O `violet-cta` aparece em ≤10% de qualquer tela. Sua raridade é o ponto — é a cor de ação, não de decoração. Nunca use-o em texto estático, bordas decorativas, ou backgrounds de seção.
+**A Regra do Violeta Reservado.** O `violet-cta` aparece em ≤10% de qualquer tela. Sua raridade é o ponto: é a cor de ação e de destaque, não de decoração. Use-o em elementos acionáveis e em destaques deliberados (um número-chave, o indicador que importa). O que continua proibido é o violeta como preenchimento decorativo: borda decorativa, background de seção, texto corrido inteiro em violeta, ou gradiente em texto. Regra prática: se todo mundo na tela está em violeta, nada está em destaque; escolha o que importa e deixe o resto neutro.
 
 **A Regra do Canvas Neutro.** O background do body é sempre branco puro (#FFFFFF). Nunca morno, nunca bege, nunca "papel". Calor de marca vem do violet-cta, do navy e do micro-copy — não da temperatura do fundo.
 
@@ -248,7 +248,7 @@ Componente de alta frequência no sistema — toda reserva, vaga e usuário tem 
 ## 6. Do's and Don'ts
 
 ### Do:
-- **Do** reservar o violet-cta (#5D5FEF) exclusivamente para elementos acionáveis. Botão primário, link de CTA, indicador de seleção ativa. Nunca em texto decorativo, bordas ou backgrounds de seção.
+- **Do** usar o violet-cta (#5D5FEF) para ação e para destaque. Botão primário, link de CTA, seleção ativa, e os números/indicadores-chave que a marca quer destacar (ex: comissão da Movepark, KPI principal). Mantenha raro e intencional: nunca como preenchimento decorativo (borda decorativa, background de seção, texto corrido inteiro), nunca em gradiente de texto.
 - **Do** usar tracking negativo em display e headline (—0.8px e —0.5px respectivamente). A precisão é intencional.
 - **Do** usar `shadow-tier` em cards interativos no estado hover e em elementos elevados estruturalmente (dropdowns, modals). Repouso = plano.
 - **Do** manter o canvas em branco puro (#FFFFFF). Não adicione temperatura — calor de marca vem dos tokens de cor e do micro-copy, não do background.
@@ -264,7 +264,7 @@ Componente de alta frequência no sistema — toda reserva, vaga e usuário tem 
 - **Don't** usar glassmorphism (backdrop-filter: blur + transparência) como padrão decorativo. Efeito de vidro é caro e raro — somente quando materialmente melhora a UX.
 - **Don't** repetir o mesmo card-icon-heading-text em grid sem variação. Grids de cards idênticos comunicam commoditização — use hierarquia, tamanhos variados, ou destaque para quebrar a monotonia.
 - **Do** dar aos painéis logados (manager, operator, conta) um fundo de painel cinza (`.bg-panel`, `--panel`), não branco, pra os cards e tabelas brancos subirem em vez de sumir num fundo branco (o efeito "wireframe"). Sidebar navy, topbar branca, conteúdo sobre o cinza. Toda tabela/lista mora numa superfície branca (`Card` ou `bg-canvas` com borda), nunca solta sobre o cinza.
-- **Do** dar personalidade aos painéis logados, sobretudo ao dashboard do dono (o parceiro abre isso todo dia e precisa encantar, não parecer wireframe). KPIs com ícone e chip de acento (`KpiCard` com `icon`/`accent`), data-viz colorida (gráfico, anel de progresso, sparkline) e faixa de destaque com gradiente de **fundo** (utilitário `.bg-dashboard-hero`, base navy com brilho violeta no canto, texto branco em cima). A cor do painel vem de dados, tints semânticos (verde/âmbar/vermelho de status) e da faixa navy. O violeta-CTA (#5D5FEF) segue reservado a acionável: não vira fundo chapado de card estático nem borda decorativa. Gradiente continua proibido em texto.
-- **Do** usar o eyebrow uppercase acima da seção como sistema deliberado da marca (decisão de produto, 16/07/2026). Formato único: `text-[11px] font-bold uppercase tracking-[0.4px]`, no máximo um por seção. A cor é `mp-indigo` (8.4:1) ou `muted` (5.4:1). **Nunca** `mp-primary`, que quebraria a regra do violeta reservado, e **nunca** `muted-steel`, que dá 3.2:1 sobre canvas e reprova o AA. Ver a skill `harmonizar-paginas`.
+- **Do** dar personalidade aos painéis logados, sobretudo ao dashboard do dono (o parceiro abre isso todo dia e precisa encantar, não parecer wireframe). KPIs com ícone e chip de acento (`KpiCard` com `icon`/`accent`), data-viz colorida (gráfico, anel de progresso, sparkline) e faixa de destaque com gradiente de **fundo** (utilitário `.bg-dashboard-hero`, base navy com brilho violeta no canto, texto branco em cima). A cor do painel vem de dados, tints semânticos (verde/âmbar/vermelho de status), da faixa navy e do violeta nos destaques-chave. O violeta-CTA (#5D5FEF) marca ação e destaque (um número que importa, o KPI principal), mas não vira fundo chapado de card estático nem borda decorativa. Gradiente continua proibido em texto.
+- **Do** usar o eyebrow uppercase acima da seção como sistema deliberado da marca (decisão de produto, 16/07/2026). Formato único: `text-[11px] font-bold uppercase tracking-[0.4px]`, no máximo um por seção. A cor é `mp-indigo` (8.4:1) ou `muted` (5.4:1). **Nunca** `mp-primary`: o violeta é pra ação e pra destaques pontuais, não pra um rótulo que se repete em toda seção (violeta em tudo = destaque em nada). E **nunca** `muted-steel`, que dá 3.2:1 sobre canvas e reprova o AA. Ver a skill `harmonizar-paginas`.
 - **Don't** usar tom institucional corporativo, juridiquês ou disclaimers no hero. A Movepark fala com o usuário como o Nubank fala — direto, humano, sem distância de pessoa jurídica.
 - **Don't** colocar números sequenciais (01 / 02 / 03) como eyebrows de seção genérica. Números só aparecem quando a sequência carrega informação real (um processo de 3 passos, um fluxo ordenado).
