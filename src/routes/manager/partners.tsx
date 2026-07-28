@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -237,17 +238,22 @@ export default function ManagerPartners() {
     <div className="flex flex-col gap-6">
       <PageHeader title="Parceiros" description="Solicitações de cadastro de estacionamentos." />
 
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2">
-          <ViewToggle view={view} onChange={setView} />
-          {view === "kanban" && apps.length > 0 && (
-            <Button variant="secondary" size="sm" onClick={() => setFullscreen(true)}>
-              <Maximize2 className="h-4 w-4" /> Tela cheia
-            </Button>
-          )}
-        </div>
-        {filtersEl}
-      </div>
+      {/* Barra de controles numa superfície branca, como o card de filtros das
+          outras páginas: sobre o fundo de painel cinza, os controles precisam de
+          uma superfície pra não ficarem soltos. */}
+      <Card>
+        <CardContent className="flex flex-col gap-3 p-4">
+          <div className="flex items-center gap-2">
+            <ViewToggle view={view} onChange={setView} />
+            {view === "kanban" && apps.length > 0 && (
+              <Button variant="secondary" size="sm" onClick={() => setFullscreen(true)}>
+                <Maximize2 className="h-4 w-4" /> Tela cheia
+              </Button>
+            )}
+          </div>
+          {filtersEl}
+        </CardContent>
+      </Card>
 
       {content}
       {drawers}
