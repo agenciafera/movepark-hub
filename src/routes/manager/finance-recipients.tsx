@@ -76,7 +76,7 @@ export default function ManagerFinanceRecipients() {
         <Card>
           <CardContent className="p-5">
             <div className="text-caption text-muted">Precisam de atenção</div>
-            <div className="text-display-sm text-warning">{summary.needsAttention}</div>
+            <div className="text-display-sm text-mp-primary">{summary.needsAttention}</div>
           </CardContent>
         </Card>
       </div>
