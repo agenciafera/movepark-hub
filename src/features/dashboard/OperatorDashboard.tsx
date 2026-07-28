@@ -120,28 +120,54 @@ function HeroStat({ label, value, isLoading }: { label: string; value: number; i
   );
 }
 
-/** Anel de ocupação em SVG (controlado, sem depender de layout do recharts). */
+/**
+ * Gauge de ocupação: arco de 270° (aberto embaixo) com traço grosso e gradiente da
+ * marca (indigo→violeta). O grupo é girado 135° pra o vão do arco cair embaixo; o
+ * texto fica fora do SVG, sem girar.
+ */
 function OccupancyRing({ rate }: { rate: number }) {
-  const r = 42;
+  const r = 40;
   const circ = 2 * Math.PI * r;
+  const arc = 0.75; // 270°
   const pct = Math.max(0, Math.min(100, rate));
-  const dash = (pct / 100) * circ;
+  const track = arc * circ;
+  const value = (pct / 100) * arc * circ;
   return (
-    <div className="relative flex h-24 w-24 shrink-0 items-center justify-center">
-      <svg viewBox="0 0 100 100" className="h-24 w-24 -rotate-90">
-        <circle cx="50" cy="50" r={r} fill="none" stroke="hsl(var(--surface-strong))" strokeWidth="10" />
-        <circle
-          cx="50"
-          cy="50"
-          r={r}
-          fill="none"
-          stroke="hsl(var(--mp-indigo))"
-          strokeWidth="10"
-          strokeLinecap="round"
-          strokeDasharray={`${dash} ${circ}`}
-        />
+    <div className="relative flex h-28 w-28 shrink-0 items-center justify-center">
+      <svg viewBox="0 0 100 100" className="h-28 w-28">
+        <defs>
+          <linearGradient id="occ-grad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="hsl(var(--mp-indigo))" />
+            <stop offset="100%" stopColor="hsl(var(--mp-violet))" />
+          </linearGradient>
+        </defs>
+        <g transform="rotate(135 50 50)">
+          <circle
+            cx="50"
+            cy="50"
+            r={r}
+            fill="none"
+            stroke="hsl(var(--surface-strong))"
+            strokeWidth="11"
+            strokeLinecap="round"
+            strokeDasharray={`${track} ${circ}`}
+          />
+          <circle
+            cx="50"
+            cy="50"
+            r={r}
+            fill="none"
+            stroke="url(#occ-grad)"
+            strokeWidth="11"
+            strokeLinecap="round"
+            strokeDasharray={`${value} ${circ}`}
+          />
+        </g>
       </svg>
-      <span className="absolute text-title-md tabular-nums text-ink">{pct.toFixed(0)}%</span>
+      <div className="absolute flex flex-col items-center">
+        <span className="text-display-sm tabular-nums text-ink">{pct.toFixed(0)}%</span>
+        <span className="text-caption text-muted">ocupação</span>
+      </div>
     </div>
   );
 }
@@ -179,9 +205,10 @@ function StatusDonut({ rows }: { rows: { status: string; count: number }[] }) {
               data={data}
               dataKey="count"
               nameKey="status"
-              innerRadius="68%"
+              innerRadius="70%"
               outerRadius="100%"
-              paddingAngle={2}
+              paddingAngle={3}
+              cornerRadius={5}
               stroke="none"
             >
               {data.map((d) => (
@@ -521,17 +548,33 @@ export default function OperatorDashboard() {
         )}
 
         <Card>
-          <CardContent className="flex flex-col gap-2 p-6">
+          <CardContent className="flex flex-col gap-3 p-6">
             <span className="flex items-center gap-1.5 text-caption text-muted">
               <Radio className="h-3.5 w-3.5 text-mp-indigo" aria-hidden /> Origem ({periodLabel})
             </span>
-            <div className="mt-1 flex flex-col gap-1">
+            <div className="flex h-2.5 overflow-hidden rounded-full bg-surface-strong">
+              <div
+                className="bg-mp-indigo"
+                style={{ width: `${channel.site + channel.api ? (channel.site / (channel.site + channel.api)) * 100 : 0}%` }}
+              />
+              <div
+                className="bg-mp-violet"
+                style={{ width: `${channel.site + channel.api ? (channel.api / (channel.site + channel.api)) * 100 : 0}%` }}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
               <div className="flex items-center justify-between text-body-sm">
-                <span className="text-muted">Pelo site</span>
+                <span className="flex items-center gap-1.5 text-muted">
+                  <span className="h-2 w-2 shrink-0 rounded-full bg-mp-indigo" aria-hidden />
+                  Pelo site
+                </span>
                 <span className="tabular-nums text-ink">{channel.site}</span>
               </div>
               <div className="flex items-center justify-between text-body-sm">
-                <span className="text-muted">Pela API</span>
+                <span className="flex items-center gap-1.5 text-muted">
+                  <span className="h-2 w-2 shrink-0 rounded-full bg-mp-violet" aria-hidden />
+                  Pela API
+                </span>
                 <span className="tabular-nums text-ink">{channel.api}</span>
               </div>
             </div>
