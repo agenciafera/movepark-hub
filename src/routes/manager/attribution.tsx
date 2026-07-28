@@ -182,7 +182,7 @@ function Kpi({
         {loading ? (
           <Skeleton className="mt-1 h-8 w-20" />
         ) : (
-          <div className={strong ? "text-display-sm text-mp-primary" : "text-display-sm text-ink"}>
+          <div className={strong ? "text-display-sm font-bold text-ink" : "text-display-sm text-ink"}>
             {value}
           </div>
         )}

@@ -82,7 +82,7 @@ export default function ManagerFinancePayouts() {
             </div>
             <div className="text-right">
               <div className="text-caption text-muted">Comissão Movepark</div>
-              <div className="text-display-sm text-mp-primary">{brl(totalCommission)}</div>
+              <div className="text-display-sm text-ink">{brl(totalCommission)}</div>
             </div>
           </div>
         </CardContent>
@@ -117,7 +117,7 @@ export default function ManagerFinancePayouts() {
                   <TableCell className="text-right tabular-nums text-ink">
                     {brl(c.net_partner_cents)}
                   </TableCell>
-                  <TableCell className="text-right tabular-nums text-mp-primary">
+                  <TableCell className="text-right tabular-nums text-ink">
                     {brl(c.movepark_commission_cents)}
                   </TableCell>
                 </TableRow>
