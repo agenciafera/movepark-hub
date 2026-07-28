@@ -15,6 +15,7 @@ import {
 import {
   CalendarCheck,
   CalendarClock,
+  CalendarDays,
   Clock,
   Wallet,
   Receipt,
@@ -26,7 +27,10 @@ import {
   Gauge,
   Star,
   Radio,
+  LogIn,
+  LogOut,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { bookingCustomerName } from "@/features/bookings/bookings.logic";
 import { startOfDay, endOfDay, format, addDays, subDays } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -109,11 +113,24 @@ function formatRating(avg: number): string {
 }
 
 /** Mini-stat do hero: número grande sobre a faixa navy, num tile translúcido. */
-function HeroStat({ label, value, isLoading }: { label: string; value: number; isLoading?: boolean }) {
+function HeroStat({
+  label,
+  value,
+  icon: Icon,
+  isLoading,
+}: {
+  label: string;
+  value: number;
+  icon: LucideIcon;
+  isLoading?: boolean;
+}) {
   return (
-    <div className="rounded-xl bg-white/10 px-4 py-3">
-      <div className="text-caption text-white/60">{label}</div>
-      <div className="mt-0.5 text-display-md tabular-nums text-white">
+    <div className="rounded-xl bg-white/10 px-4 py-3.5 ring-1 ring-inset ring-white/10">
+      <div className="flex items-center gap-1.5 text-caption-sm text-white/60">
+        <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        <span className="truncate">{label}</span>
+      </div>
+      <div className="mt-1.5 text-display-xl tabular-nums leading-none text-white">
         {isLoading ? "…" : value}
       </div>
     </div>
@@ -164,10 +181,9 @@ function OccupancyRing({ rate }: { rate: number }) {
           />
         </g>
       </svg>
-      <div className="absolute flex flex-col items-center">
-        <span className="text-display-sm tabular-nums text-ink">{pct.toFixed(0)}%</span>
-        <span className="text-caption text-muted">ocupação</span>
-      </div>
+      {/* Só o número: o título do card já diz "Ocupação", então repetir "ocupação"
+          aqui dentro só engorda o miolo. O anel já comunica que é um medidor. */}
+      <span className="absolute text-display-sm tabular-nums text-ink">{pct.toFixed(0)}%</span>
     </div>
   );
 }
@@ -314,7 +330,7 @@ export default function OperatorDashboard() {
               </span>
             )}
             <Select value={String(period)} onValueChange={(v) => setPeriod(Number(v) as ReportPeriod)}>
-              <SelectTrigger className="w-40 border-white/25 bg-white/10 text-white [&_svg]:text-white/70 hover:bg-white/15">
+              <SelectTrigger className="h-11 w-[190px] border-white/25 bg-white/10 text-white [&_svg]:text-white/70 hover:bg-white/15">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -327,9 +343,9 @@ export default function OperatorDashboard() {
         </div>
 
         <div className="mt-6 grid grid-cols-3 gap-3">
-          <HeroStat label="Reservas hoje" value={stats.data?.bookingsToday ?? 0} isLoading={stats.isLoading} />
-          <HeroStat label="Check-ins" value={stats.data?.checkInsToday ?? 0} isLoading={stats.isLoading} />
-          <HeroStat label="Check-outs" value={stats.data?.checkOutsToday ?? 0} isLoading={stats.isLoading} />
+          <HeroStat label="Reservas hoje" value={stats.data?.bookingsToday ?? 0} icon={CalendarDays} isLoading={stats.isLoading} />
+          <HeroStat label="Check-ins" value={stats.data?.checkInsToday ?? 0} icon={LogIn} isLoading={stats.isLoading} />
+          <HeroStat label="Check-outs" value={stats.data?.checkOutsToday ?? 0} icon={LogOut} isLoading={stats.isLoading} />
         </div>
       </section>
 

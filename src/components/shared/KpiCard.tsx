@@ -46,36 +46,58 @@ export function KpiCard({
   return (
     <Card className={cn(highlight && "border-transparent bg-dashboard-hero text-white")}>
       <CardContent className="flex items-start justify-between gap-3 p-6">
-        <div className="flex min-w-0 flex-col gap-2">
-          <span className={cn("text-caption", highlight ? "text-white/60" : "text-muted")}>
+        <div className="flex min-w-0 flex-col">
+          {/* Três tiers claros: rótulo (quieto, médio) → valor (herói, bold) →
+              sublinha (nota de rodapé, menor e mais clara). Cada um difere em
+              tamanho, peso E cor, pra hierarquia ler de relance. */}
+          <span
+            className={cn(
+              "text-caption font-medium",
+              highlight ? "text-white/70" : "text-muted",
+            )}
+          >
             {label}
           </span>
           {isLoading ? (
-            <Skeleton className={cn("h-9 w-32", highlight && "bg-white/20")} />
+            <Skeleton className={cn("mt-2 h-8 w-28", highlight && "bg-white/20")} />
           ) : (
-            <span className={cn("text-display-xl", highlight ? "text-white" : "text-ink")}>
+            <span
+              className={cn(
+                "mt-1.5 text-display-xl tabular-nums",
+                highlight ? "text-white" : "text-ink",
+              )}
+            >
               {value}
             </span>
           )}
-          <div className="flex items-center gap-2 text-body-sm">
-            {hint && (
-              <span className={highlight ? "text-white/60" : "text-muted"}>{hint}</span>
-            )}
-            {trend && (
-              <span
-                className={cn(
-                  "text-caption",
-                  highlight
-                    ? "text-white/80"
-                    : trend.positive === false
-                      ? "text-error"
-                      : "text-success",
-                )}
-              >
-                {trend.value}
-              </span>
-            )}
-          </div>
+          {(hint || trend) && (
+            <div className="mt-1.5 flex items-center gap-2">
+              {hint && (
+                <span
+                  className={cn(
+                    "text-caption-sm",
+                    highlight ? "text-white/50" : "text-muted-soft",
+                  )}
+                >
+                  {hint}
+                </span>
+              )}
+              {trend && (
+                <span
+                  className={cn(
+                    "text-caption-sm font-medium",
+                    highlight
+                      ? "text-white/80"
+                      : trend.positive === false
+                        ? "text-error"
+                        : "text-success",
+                  )}
+                >
+                  {trend.value}
+                </span>
+              )}
+            </div>
+          )}
         </div>
         {Icon && (
           <span

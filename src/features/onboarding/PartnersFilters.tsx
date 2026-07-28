@@ -77,7 +77,7 @@ export function PartnersFilters({ apps, filters, onChange, resultCount }: Props)
           value={filters.responsavel}
           onValueChange={(v) => onChange({ responsavel: v })}
         >
-          <SelectTrigger className="w-auto min-w-[13rem] gap-2 rounded-full">
+          <SelectTrigger className="h-11 w-auto min-w-[13rem] gap-2">
             <User className="h-4 w-4 text-muted" />
             <SelectValue />
           </SelectTrigger>
@@ -92,7 +92,7 @@ export function PartnersFilters({ apps, filters, onChange, resultCount }: Props)
         </Select>
 
         <Select value={filters.status} onValueChange={(v) => onChange({ status: v })}>
-          <SelectTrigger className="w-auto min-w-[11rem] gap-2 rounded-full">
+          <SelectTrigger className="h-11 w-auto min-w-[11rem] gap-2">
             <ThumbsUp className="h-4 w-4 text-muted" />
             <SelectValue />
           </SelectTrigger>
@@ -109,7 +109,7 @@ export function PartnersFilters({ apps, filters, onChange, resultCount }: Props)
           value={filters.sort}
           onValueChange={(v) => onChange({ sort: v as PartnersSort })}
         >
-          <SelectTrigger className="w-auto min-w-[12rem] gap-2 rounded-full">
+          <SelectTrigger className="h-11 w-auto min-w-[12rem] gap-2">
             <ArrowDownUp className="h-4 w-4 text-muted" />
             <SelectValue />
           </SelectTrigger>
@@ -124,7 +124,7 @@ export function PartnersFilters({ apps, filters, onChange, resultCount }: Props)
 
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2 rounded-full">
+            <Button variant="outline" size="sm" className="h-11 gap-2">
               <SlidersHorizontal className="h-4 w-4" />
               Filtros{advCount > 0 ? ` (${advCount})` : ""}
             </Button>
