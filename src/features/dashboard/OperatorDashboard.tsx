@@ -29,6 +29,7 @@ import {
   Radio,
   LogIn,
   LogOut,
+  Ban,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { bookingCustomerName } from "@/features/bookings/bookings.logic";
@@ -524,17 +525,21 @@ export default function OperatorDashboard() {
         )}
       >
         <Card>
-          <CardContent className="flex flex-col gap-2 p-6">
-            <span className="text-caption text-muted">Cancelamento ({periodLabel})</span>
+          <CardContent className="flex flex-col p-6">
+            <span className="flex items-center gap-1.5 text-caption text-muted">
+              <Ban className="h-3.5 w-3.5 text-muted-soft" aria-hidden /> Cancelamento ({periodLabel})
+            </span>
             {funnel.isLoading ? (
-              <Skeleton className="h-9 w-24" />
+              <Skeleton className="mt-2 h-8 w-24" />
             ) : (
-              <span className="text-display-md text-ink">
+              <span className="mt-1.5 text-display-xl tabular-nums text-ink">
                 {cancel.rate.toFixed(0).replace(".", ",")}%
               </span>
             )}
-            <span className={cn("text-caption", toneClass[benchmark.tone])}>{benchmark.label}</span>
-            <span className="text-caption text-muted">
+            <span className={cn("mt-1.5 text-caption-sm font-medium", toneClass[benchmark.tone])}>
+              {benchmark.label}
+            </span>
+            <span className="mt-0.5 text-caption-sm text-muted-soft">
               {cancel.cancelled} canceladas e {cancel.noShow} no-show de {cancel.total} reservas
             </span>
           </CardContent>
@@ -542,21 +547,21 @@ export default function OperatorDashboard() {
 
         {canReviews && (
           <Card>
-            <CardContent className="flex flex-col gap-2 p-6">
+            <CardContent className="flex flex-col p-6">
               <span className="flex items-center gap-1.5 text-caption text-muted">
                 <Star className="h-3.5 w-3.5 text-amber-500" aria-hidden /> Avaliações
               </span>
               {reviews.isLoading ? (
-                <Skeleton className="h-9 w-24" />
+                <Skeleton className="mt-2 h-8 w-24" />
               ) : rating.count === 0 ? (
-                <span className="text-body-md text-muted">Ainda sem avaliação</span>
+                <span className="mt-1.5 text-title-md text-muted-soft">Ainda sem avaliação</span>
               ) : (
-                <span className="text-display-md text-ink">
+                <span className="mt-1.5 flex items-baseline gap-1.5 text-display-xl tabular-nums text-ink">
                   {formatRating(rating.avg)}
-                  <span className="text-body-sm text-muted"> de 5 · {rating.count}</span>
+                  <span className="text-caption-sm font-normal text-muted-soft">de 5 · {rating.count}</span>
                 </span>
               )}
-              <span className="text-caption text-muted">
+              <span className="mt-1.5 text-caption-sm text-muted-soft">
                 {pending === 0 ? "Nenhuma aguardando resposta" : `${pending} aguardando resposta`}
               </span>
             </CardContent>
@@ -584,14 +589,14 @@ export default function OperatorDashboard() {
                   <span className="h-2 w-2 shrink-0 rounded-full bg-mp-indigo" aria-hidden />
                   Pelo site
                 </span>
-                <span className="tabular-nums text-ink">{channel.site}</span>
+                <span className="font-medium tabular-nums text-ink">{channel.site}</span>
               </div>
               <div className="flex items-center justify-between text-body-sm">
                 <span className="flex items-center gap-1.5 text-muted">
                   <span className="h-2 w-2 shrink-0 rounded-full bg-mp-violet" aria-hidden />
                   Pela API
                 </span>
-                <span className="tabular-nums text-ink">{channel.api}</span>
+                <span className="font-medium tabular-nums text-ink">{channel.api}</span>
               </div>
             </div>
           </CardContent>
