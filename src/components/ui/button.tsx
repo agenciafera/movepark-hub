@@ -16,7 +16,7 @@ const buttonVariants = cva(
         danger: "bg-error !text-white hover:opacity-90",
         pill: "bg-mp-primary !text-white rounded-full px-4 h-9 text-button-sm hover:bg-mp-primary-active",
         outline:
-          "border border-hairline bg-canvas text-ink hover:bg-surface-soft",
+          "border border-hairline bg-surface-strong text-ink hover:brightness-95",
       },
       size: {
         default: "h-12 px-6 text-button-md",
