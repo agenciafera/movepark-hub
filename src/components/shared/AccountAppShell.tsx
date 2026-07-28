@@ -40,7 +40,11 @@ export function AccountAppShell() {
         <div className="flex gap-10">
           <AccountSidebar />
           <main className="min-w-0 flex-1 pb-[var(--bottom-nav-space)] tablet:pb-0">
-            <Outlet />
+            {/* Painel de conteúdo branco: sobre o fundo cinza, dá superfície às páginas
+                da conta (perfil, veículos, etc.), que antes ficavam soltas no cinza. */}
+            <div className="rounded-md border border-hairline bg-canvas p-5 desktop:p-8">
+              <Outlet />
+            </div>
           </main>
         </div>
       </div>

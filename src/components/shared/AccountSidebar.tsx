@@ -37,37 +37,41 @@ export function AccountSidebar() {
   }
 
   return (
-    <aside className="hidden desktop:flex h-fit w-60 shrink-0 flex-col gap-1 sticky top-24">
-      {items.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          className={({ isActive }) =>
-            cn(
-              "group flex items-center gap-3 rounded-sm px-3 py-2 text-body-sm text-muted transition-colors hover:bg-surface-soft hover:text-ink",
-              // Ativo = pílula pale com texto e ícone em indigo (acento da marca),
-              // o mesmo idioma da sidebar de categorias da FAQ.
-              isActive && "bg-mp-pale font-medium text-mp-indigo",
-            )
-          }
-        >
-          <item.icon className="h-4 w-4" />
-          {item.label}
-        </NavLink>
-      ))}
+    <aside className="hidden h-fit w-60 shrink-0 flex-col gap-4 sticky top-24 desktop:flex">
+      {/* Nav num card branco: sobre o fundo de painel cinza das áreas logadas, a
+          sidebar precisa de superfície pra ler como sidebar (antes era lista solta). */}
+      <nav className="flex flex-col gap-1 rounded-md border border-hairline bg-canvas p-2">
+        {items.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) =>
+              cn(
+                "group flex items-center gap-3 rounded-sm px-3 py-2 text-body-sm text-muted transition-colors hover:bg-surface-soft hover:text-ink",
+                // Ativo = pílula pale com texto e ícone em indigo (acento da marca),
+                // o mesmo idioma da sidebar de categorias da FAQ.
+                isActive && "bg-mp-pale font-medium text-mp-indigo",
+              )
+            }
+          >
+            <item.icon className="h-4 w-4" />
+            {item.label}
+          </NavLink>
+        ))}
 
-      <ReferralShareCard className="mt-4" />
+        <div className="mt-1 border-t border-hairline pt-1">
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="flex w-full items-center gap-3 rounded-sm px-3 py-2 text-body-sm text-error hover:bg-surface-soft"
+          >
+            <LogOut className="h-4 w-4" />
+            Sair
+          </button>
+        </div>
+      </nav>
 
-      <div className="mt-3 border-t border-hairline pt-3">
-        <button
-          type="button"
-          onClick={handleSignOut}
-          className="flex w-full items-center gap-3 rounded-sm px-3 py-2 text-body-sm text-error hover:bg-surface-soft"
-        >
-          <LogOut className="h-4 w-4" />
-          Sair
-        </button>
-      </div>
+      <ReferralShareCard />
     </aside>
   );
 }
