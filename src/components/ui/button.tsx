@@ -11,8 +11,8 @@ const buttonVariants = cva(
         primary:
           "bg-mp-primary !text-white hover:bg-mp-primary-active disabled:bg-mp-primary-disabled",
         secondary:
-          "bg-canvas text-ink border border-ink hover:bg-surface-soft",
-        ghost: "bg-transparent text-ink hover:underline underline-offset-4",
+          "bg-surface-strong text-ink hover:brightness-95",
+        ghost: "bg-transparent text-ink underline underline-offset-4 hover:text-mp-primary",
         danger: "bg-error !text-white hover:opacity-90",
         pill: "bg-mp-primary !text-white rounded-full px-4 h-9 text-button-sm hover:bg-mp-primary-active",
         outline:
