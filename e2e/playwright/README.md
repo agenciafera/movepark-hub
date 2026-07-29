@@ -227,7 +227,7 @@ playwright.config.ts     # raiz; testDir aponta para e2e/playwright
                          # e2e-consumer, e2e-owner, smoke
                          # (+ e2e-consumer-tx e e2e-owner-tx, só sob demanda)
 e2e/
-  windup/                # cenários do Windup, outra ferramenta. Ver ../../windup.config.mjs
+  windup/                # cenários do Windup, outra ferramenta. Ver ../../windup.config.ts
   playwright/
     tsconfig.json        # isolado do app e do Vitest
     support/
