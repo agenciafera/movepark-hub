@@ -57,8 +57,9 @@ active ───────────────→ suspended            (bl
   `RecipientStatus` (espelha o enum SQL), `GatewayConfigError`. Cobranças (`createCharge`/`refund`)
   entram em E0.1.2/.3 — a interface reserva o lugar.
 - **`pagarme.ts`** — `PagarmeGateway` + helpers puros testáveis: `pagarmeBaseUrl` (host ÚNICO da
-  Core v5 `api.pagar.me`; o ambiente teste/produção é definido pela **chave** `sk_test_`/`sk_live_`,
-  não por host — `sdx-api` é da skill de Checkout e **não** atende a Core v5), `pagarmeAuthHeader`
+  Core v5 `api.pagar.me`; o ambiente é definido pela **chave**, não por host: só o teste tem prefixo
+  (`sk_test_`), a chave viva é `sk_<hash>` (**não** existe `sk_live_`; `sdx-api` é da skill de
+  Checkout e **não** atende a Core v5), `pagarmeAuthHeader`
   (Basic `base64(secret:)`), `mapRecipientStatus`, `normalizeRequirements`, `extractKycUrl`,
   `buildCreateRecipientBody`, `buildRecipientResult`.
 - **`mock.ts`** — `MockGateway` (aprova na hora; paridade com `payment.provider='mock'`).
@@ -221,8 +222,10 @@ service_role).
 
 Edge **`pagarme-webhook`** (`verify_jwt=false`, deploy com `--no-verify-jwt`): valida **Basic auth**
 (secret `PAGARME_WEBHOOK_BASIC_AUTH` = `user:pass`, configurado no painel do Pagar.me) com **comparação
-em tempo constante** e **fail-closed em produção** (chave `sk_live_` exige o secret; sem ele → 401.
-Em staging `sk_test_` continua opcional). **Idempotência** por id do evento (`payment_webhook_event`),
+em tempo constante** e **fail-closed em produção** (`isProductionKey()`: qualquer chave que não seja
+`sk_test_` exige o secret; sem ele → 401. Em staging `sk_test_` continua opcional. A checagem nasceu
+como `startsWith("sk_live_")`, prefixo que a Core v5 não usa, e deixava o webhook aberto em produção).
+**Idempotência** por id do evento (`payment_webhook_event`),
 casa o `payment` por `provider_payment_id` (order id, ou `metadata.booking_id`) e decide a ação pelo
 **TIPO do evento** via `webhookIntentFromType()` — **não** pelo `data.status` (num estorno de PIX a
 Pagar.me manda `charge.refunded` com `data.status:"paid"`; confiar no status fazia o estorno nunca

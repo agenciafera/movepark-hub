@@ -1,7 +1,7 @@
 // Edge Function: /pagarme-webhook
 // Recebe os webhooks do Pagar.me (E0.1.2/.4) e reflete o status no payment + booking.
 // Autenticação: Basic auth configurado no painel do Pagar.me (secret PAGARME_WEBHOOK_BASIC_AUTH,
-// formato "user:pass"), comparado em tempo constante e EXIGIDO em produção (sk_live_).
+// formato "user:pass"), comparado em tempo constante e EXIGIDO em produção (chave não `sk_test_`).
 // Idempotência por id do evento (tabela payment_webhook_event).
 // verify_jwt = false (o Pagar.me não envia JWT do Supabase).
 // No `pago`: confirma a reserva e pré-gera o voucher (service role, pós-resposta).
@@ -19,6 +19,7 @@ import { refundShouldCancelBooking } from "../_shared/refund.ts";
 import { sendWhatsAppTemplate } from "../_shared/whatsapp.ts";
 import {
   decidePaymentStatus,
+  isProductionKey,
   type MatchedPayment,
   parseRecipientEvent,
   parseTransferEvent,
@@ -71,9 +72,9 @@ async function notifyBookingConfirmed(admin: any, bookingId: string): Promise<vo
   });
 }
 
-/** Em produção (chave sk_live_) o webhook exige Basic auth; em staging (sk_test_) é opcional. */
+/** Em produção o webhook exige Basic auth; em staging (chave `sk_test_`) é opcional. */
 function isProduction(): boolean {
-  return (Deno.env.get("PAGARME_SECRET_KEY") ?? "").startsWith("sk_live_");
+  return isProductionKey(Deno.env.get("PAGARME_SECRET_KEY"));
 }
 
 /** Agenda uma tarefa pós-resposta (não bloqueia o 2xx); cai pra await se indisponível. */

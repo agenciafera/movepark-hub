@@ -1,6 +1,7 @@
 import { assertEquals } from "jsr:@std/assert";
 import {
   decidePaymentStatus,
+  isProductionKey,
   type MatchedPayment,
   parseRecipientEvent,
   parseTransferEvent,
@@ -44,6 +45,18 @@ Deno.test("parseRecipientEvent: extrai id e status do recipient.updated", () => 
 Deno.test("parseRecipientEvent: payload vazio → nulos", () => {
   assertEquals(parseRecipientEvent({}), { type: "", recipientId: null, rawStatus: null });
   assertEquals(parseRecipientEvent(null), { type: "", recipientId: null, rawStatus: null });
+});
+
+// Regressão: a checagem antiga era `startsWith("sk_live_")`, prefixo que a Core v5 não usa. Com a
+// chave viva real (`sk_<hash>`) o webhook caía em "staging" e aceitava POST sem Basic auth.
+Deno.test("isProductionKey: só a chave de teste (sk_test_) não é produção", () => {
+  assertEquals(isProductionKey("sk_873989d0838e49699b2a4bbfbf64e1be"), true);
+  assertEquals(isProductionKey("sk_live_abc123"), true);
+  assertEquals(isProductionKey("sk_test_abc123"), false);
+  assertEquals(isProductionKey("  sk_test_abc123  "), false);
+  assertEquals(isProductionKey(""), false);
+  assertEquals(isProductionKey(undefined), false);
+  assertEquals(isProductionKey(null), false);
 });
 
 Deno.test("verifyBasicAuth: sem credencial configurada → aceita só fora de produção", () => {

@@ -39,6 +39,18 @@ export function verifyBasicAuth(
   return timingSafeEqual(m[1].trim(), expectedB64);
 }
 
+/**
+ * Detecta se a chave do Pagar.me é de PRODUÇÃO. A Core v5 marca só o ambiente de teste com o
+ * prefixo `sk_test_`; a chave viva é `sk_<hash>`, **sem** prefixo `sk_live_`. Por isso a checagem
+ * é pela negativa: chave presente e que não seja de teste = produção (fail-closed no webhook).
+ * Chave ausente/vazia não é produção (ambiente sem gateway configurado).
+ */
+export function isProductionKey(secretKey: string | undefined | null): boolean {
+  const key = (secretKey ?? "").trim();
+  if (!key) return false;
+  return !key.startsWith("sk_test_");
+}
+
 export interface ParsedEvent {
   eventId: string | null;
   type: string;
