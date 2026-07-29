@@ -85,59 +85,61 @@ export function MotorCrescimento() {
 
   return (
     <div className="space-y-8">
-      <PageHeader
-        eyebrow="Movepark Clube"
-        title="Seu motor de crescimento"
-        description="Cada reserva concluída te dá mais dinheiro de volta e te aproxima do próximo nível."
-      />
-
-      {/* Nível (hero navy) */}
-      <section className="overflow-hidden rounded-lg bg-mp-navy text-white">
-        {membership.isLoading || !m ? (
-          <div className="p-6 tablet:p-8">
-            <Skeleton className="h-24 w-full rounded-md bg-white/10" />
+      {/* Hero split, espelhando o layout do Indique e Ganhe: texto à esquerda, cartão
+          de nível (navy) à direita no lugar do diagrama. */}
+      <section className="grid gap-8 tablet:grid-cols-[1.1fr_0.9fr] tablet:items-center">
+        <div className="space-y-5">
+          <div className="text-mp-indigo">
+            <span className="text-micro-label uppercase tracking-wide">Movepark Clube</span>
           </div>
-        ) : (
-          <div className="flex flex-col gap-6 p-6 tablet:flex-row tablet:items-center tablet:justify-between tablet:p-8">
-            <div className="space-y-4">
-              <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-balance text-display-2xl text-ink">
+            Ganhe <span className="text-mp-primary">dinheiro de volta</span> em cada reserva.
+          </h1>
+          <p className="max-w-lg text-body-md text-muted">
+            Você sobe de nível a cada reserva, e o percentual de volta cresce com você.
+          </p>
+        </div>
+
+        {/* Cartão de nível (navy) */}
+        <div className="rounded-lg bg-mp-navy text-white">
+          {membership.isLoading || !m ? (
+            <div className="p-6 tablet:p-7">
+              <Skeleton className="h-40 w-full rounded-md bg-white/10" />
+            </div>
+          ) : (
+            <div className="flex flex-col gap-5 p-6 tablet:p-7">
+              <div className="flex items-start justify-between gap-3">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-mp-violet px-3 py-1 text-badge uppercase text-white">
                   <Rocket className="h-3.5 w-3.5" />
                   {m.tier_name}
                 </span>
-                <span className="text-body-sm text-white/70">
-                  {next ? (
-                    <>
-                      Faltam {next.bookings_needed} reserva{next.bookings_needed === 1 ? "" : "s"} para
-                      o <span className="text-white">{next.name}</span>
-                    </>
-                  ) : (
-                    "Você chegou ao topo do Clube"
-                  )}
-                </span>
+                <div className="text-right">
+                  <p className="text-caption-sm uppercase tracking-wide text-white/60">Você recebe</p>
+                  <p className="text-display-lg leading-none text-white">{cashbackPct}</p>
+                  <p className="text-caption-sm text-white/60">de volta</p>
+                </div>
               </div>
-
-              <div className="max-w-md space-y-2">
+              <div className="space-y-2">
                 <div className="h-2 overflow-hidden rounded-full bg-white/15">
                   <div
                     className="h-full rounded-full bg-mp-teal transition-all duration-slow"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-                <p className="text-caption-sm text-white/60">
-                  {m.window_bookings} reserva{m.window_bookings === 1 ? "" : "s"} nos últimos 12 meses
-                  {m.perks?.length ? ` · ${m.perks[0]}` : ""}
+                <p className="text-caption-sm text-white/70">
+                  {next ? (
+                    <>
+                      Faltam {next.bookings_needed} reserva{next.bookings_needed === 1 ? "" : "s"} para o{" "}
+                      <span className="text-white">{next.name}</span>
+                    </>
+                  ) : (
+                    "Você chegou ao topo do Clube"
+                  )}
                 </p>
               </div>
             </div>
-
-            <div className="shrink-0 rounded-md bg-white/10 px-5 py-4 text-center backdrop-blur">
-              <p className="text-caption-sm uppercase tracking-wide text-white/60">Você recebe</p>
-              <p className="text-display-2xl leading-none text-white">{cashbackPct}</p>
-              <p className="text-caption-sm text-white/70">de volta em cada reserva</p>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </section>
 
       {/* Carteira + recompra */}
