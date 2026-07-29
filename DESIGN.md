@@ -152,7 +152,7 @@ Uma paleta de contenção estratégica: uma cor de ação, uma cor de profundida
 - **Sinal Vermelho** (#DA455E — red-signal): Cor de alerta, cancelamento e ação destrutiva. Não é um vermelho de erro genérico — tem personalidade (rosado, quente) que o separa do erro técnico (#C13515). Aparece em badges de cancelamento, CTAs de cancelar reserva, e alertas de prazo.
 
 ### Tertiary
-- **Azul Teal Suave** (#A6DBDF — teal-soft): Acento secundário calmo. Aparece em ilustrações, ícones decorativos, e variações de surface em contextos de confirmação ou "sucesso suave". Não compete com o violet-cta.
+- **Azul Teal Suave** (#A6DBDF — teal-soft): Acento secundário calmo. Aparece em ilustrações, ícones decorativos, e variações de surface em contextos de confirmação ou "sucesso suave". Não compete com o violet-cta. A linguagem completa de ilustração (estilo, paleta travada, prompts do Recraft) vive em [`docs/design-system/illustrations.md`](docs/design-system/illustrations.md).
 - **Azul Pálido** (#E4F2FF — pale-blue): Surface de destaque leve. Usado em banners informativos, badges de status "ativo", e backgrounds de seções que precisam de distinção suave sem peso visual.
 
 ### Neutral
@@ -255,6 +255,7 @@ Componente de alta frequência no sistema — toda reserva, vaga e usuário tem 
 - **Do** usar o navy-ink (#29263F) como tinta principal. Não `#000000`. A diferença é sutil mas o resultado é mais coerente com a sombra `shadow-tier`.
 - **Do** verificar contraste antes de usar `muted-text` (#6A6A6A) sobre qualquer superfície não-canvas. Ele passa 4.5:1 sobre canvas, mas pode falhar sobre surfaces coloridas.
 - **Do** escrever micro-copy que confirma e humaniza: "Vaga garantida", "Boa viagem", "Sua reserva está segura". A voz da Movepark é a do navegador confiante — quem sabe o caminho e compartilha sem condescendência.
+- **Do** respeitar as três lanes de imagem: **foto** (raster, hero de aeroporto) vem do `gemini-image`; **ilustração** (vetor, vazios/sucesso/onboarding) vem do Recraft no estilo `movepark-rota-v1` (ver [`docs/design-system/illustrations.md`](docs/design-system/illustrations.md)); **ícone** de UI é Lucide. Não troque uma lane pela outra (ilustração no lugar de ícone, foto no lugar de spot de estado vazio).
 
 ### Don't:
 - **Don't** usar verde neon, laranja saturado ou qualquer cor de aplicativos de mobilidade urbana (Uber/99). A Movepark não compete por atenção com notificações piscando.
