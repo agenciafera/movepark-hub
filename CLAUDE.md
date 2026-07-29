@@ -261,7 +261,7 @@ Use sempre estes. Não crie usuário novo para testar, e não apague nenhum dele
 
 **Ciclo de vida do parceiro:** `peu+mercy@fera.ag` começa como lead público. Quando é aprovado e conclui o cadastro, ele **vira o operador da unidade que cadastrou**. Ou seja, o mesmo usuário atravessa onboarding e depois responde como `company_operator` daquela unidade. Um roteiro que testa `/operator` depende de o onboarding ter chegado até esse ponto, ou de o vínculo em `profile_company` ser semeado.
 
-A suíte E2E automatiza isso em `e2e/support/db.ts` (`seedFixtureCompany`) e documenta a armadilha: a limpeza da fixture apaga a company, e o vínculo cai por cascata. Ver `e2e/README.md`.
+A suíte E2E automatiza isso em `e2e/playwright/support/db.ts` (`seedFixtureCompany`) e documenta a armadilha: a limpeza da fixture apaga a company, e o vínculo cai por cascata. Ver `e2e/playwright/README.md`.
 
 ### Escrever ou revisar roteiro de teste
 

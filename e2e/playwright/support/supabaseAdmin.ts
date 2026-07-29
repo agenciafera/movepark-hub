@@ -9,7 +9,7 @@
  * Nenhum dos dois persiste sessão: quem persiste é o navegador do Playwright.
  */
 import { createClient } from "@supabase/supabase-js";
-import type { Database } from "../../src/types/database";
+import type { Database } from "../../../src/types/database";
 import { env } from "./env";
 
 const noPersist = {

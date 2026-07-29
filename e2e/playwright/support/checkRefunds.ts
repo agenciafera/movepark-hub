@@ -1,7 +1,7 @@
 /**
  * C-22 do roteiro do consumidor: conferência do fechamento assíncrono do estorno.
  *
- *     bun run e2e/support/checkRefunds.ts
+ *     bun run e2e/playwright/support/checkRefunds.ts
  *
  * POR QUE ISTO É UM SCRIPT E NÃO UM SPEC. O estorno de PIX fecha em três tempos,
  * e o pior caso legítimo leva perto de 30 minutos: a `reconcile-refunds` só olha

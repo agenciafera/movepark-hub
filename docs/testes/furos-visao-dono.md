@@ -3,7 +3,7 @@
 Achados da varredura da jornada do dono (parceiro) no painel `/operator`, feita em
 24/07/2026 com o dono real `peu+operador@fera.ag` (owner da company **Abbapark**,
 unidade Aeroporto Afonso Pena). O roteiro automatizado que cobre essa jornada é
-`e2e/owner/O01-dono-jornada.spec.ts` (project `e2e-owner-tx`).
+`e2e/playwright/owner/O01-dono-jornada.spec.ts` (project `e2e-owner-tx`).
 
 O foco é a experiência do dono, além do passou/falhou: o que está fácil, o que falta,
 onde tem furo. Cada furo aponta o arquivo que comprova.
@@ -56,7 +56,7 @@ operador e pelo manager) deixou de filtrar `deleted_at`. O `deleted_at` continua
 "cancelada em" mostrado no detalhe, e a capacidade segue liberada por `release_booking_capacity`
 (independe do `deleted_at`), então nada de capacidade muda. Não precisou de migration nem backfill.
 
-**Cobertura.** `O-02` em `e2e/owner/O01-dono-jornada.spec.ts` (agora passa de verdade) e o teste
+**Cobertura.** `O-02` em `e2e/playwright/owner/O01-dono-jornada.spec.ts` (agora passa de verdade) e o teste
 de regressão de CI `src/features/bookings/useBookings.test.tsx`, que falha se a lista voltar a
 mandar `deleted_at` na query.
 

@@ -10,7 +10,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const ROOT = path.resolve(import.meta.dirname, "../..");
+const ROOT = path.resolve(import.meta.dirname, "../../..");
 
 /**
  * `process.loadEnvFile` é do Node (20.12+) e é o caminho normal aqui, já que o
@@ -42,7 +42,7 @@ function required(name: string, hint: string): string {
   const value = process.env[name];
   if (!value) {
     throw new Error(
-      `[e2e] Falta o env ${name}.\n` + `      ${hint}\n` + `      Veja e2e/README.md e .env.e2e.example.`,
+      `[e2e] Falta o env ${name}.\n` + `      ${hint}\n` + `      Veja e2e/playwright/README.md e .env.e2e.example.`,
     );
   }
   return value;
@@ -73,7 +73,7 @@ export const env = {
    * Aeroporto Afonso Pena), já vinculado em `profile_company`. Diferente do
    * operador Mercy (fixture descartável), este responde por uma company real de
    * parceiro, então a jornada dele (roteiro O) só LÊ, e o único write (preço) é
-   * revertido no fim. Ver `e2e/support/owner.ts`.
+   * revertido no fim. Ver `e2e/playwright/support/owner.ts`.
    */
   abbaparkOwnerEmail: process.env.E2E_ABBAPARK_OWNER_EMAIL ?? "peu+operador@fera.ag",
 } as const;

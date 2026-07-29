@@ -6,7 +6,7 @@ vaga, checkout, PIX e "Minhas reservas".
 - **Baseline:** 22/07/2026, reverificado contra a `main` (todos os gates rodados).
 - **Alvo:** produção (`hub.movepark.co` + projeto `mgaigbezdalbyuqiofcf`). Não existe staging do Hub.
 - **Usuário:** `peu+teste1@fera.ag` (papel `customer`, já existe, não criar outro).
-- **Automação:** `e2e/consumer/`. Dois projects: `e2e-consumer` (leitura, roda no fluxo padrão) e
+- **Automação:** `e2e/playwright/consumer/`. Dois projects: `e2e-consumer` (leitura, roda no fluxo padrão) e
   `e2e-consumer-tx` (transacional, só roda com `--project=e2e-consumer-tx`).
 - **Gateway em SANDBOX:** as cobranças deste roteiro não movimentam dinheiro real e não precisam
   de estorno.
@@ -149,7 +149,7 @@ não consegue cancelar, só o staff.
 
 ---
 
-## C-01 · Vitrine da home: mais vendidos, um card por empresa  [**PRONTO** · verificado 22/07/2026 · commit `257d4b1` · coberto por `e2e/consumer/C01-vitrine-mais-vendidos.spec.ts`]
+## C-01 · Vitrine da home: mais vendidos, um card por empresa  [**PRONTO** · verificado 22/07/2026 · commit `257d4b1` · coberto por `e2e/playwright/consumer/C01-vitrine-mais-vendidos.spec.ts`]
 
 > **Este caso trocou de natureza em 22/07.** Antes exigia o oposto: que nenhuma unidade aparecesse
 > em dois cards, porque a home agrupava por location. A decisão nova alinha a home à busca (o card é
@@ -194,7 +194,7 @@ não consegue cancelar, só o staff.
 > O que **não** mudou: a amenidade da unidade não pode contradizer o tipo de vaga (C-04). Com um
 > card por tipo isso fica mais visível, não menos.
 
-## C-02 · Cada card é um tipo de vaga, e nenhum benefício contradiz o tipo  [**CORRIGIDO** · verificado 22/07/2026 · commits `f66002e` e `291201f` · coberto por `e2e/consumer/C02-card-beneficio-vs-tipo.spec.ts`]
+## C-02 · Cada card é um tipo de vaga, e nenhum benefício contradiz o tipo  [**CORRIGIDO** · verificado 22/07/2026 · commits `f66002e` e `291201f` · coberto por `e2e/playwright/consumer/C02-card-beneficio-vs-tipo.spec.ts`]
 
 - **Antes:** `/search` num destino onde o Abbapark apareça (3 tipos ativos, com a amenidade `covered`).
 - **Passos:** contar os cards do Abbapark e ler os benefícios de cada um.
@@ -218,7 +218,7 @@ não consegue cancelar, só o staff.
   - Caso de controle: `maxi-park/maxi-park` tem os mesmos tipos e **não** tem a amenidade `covered`.
     Se o defeito aparecer nos dois, a causa não é a amenidade e a investigação recomeça.
 
-## C-03 · Contador da busca bate com o número de cards  [**CORRIGIDO** · verificado 22/07/2026 · caiu junto com o C-02 · coberto por `e2e/consumer/C03-contador-vagas.spec.ts`]
+## C-03 · Contador da busca bate com o número de cards  [**CORRIGIDO** · verificado 22/07/2026 · caiu junto com o C-02 · coberto por `e2e/playwright/consumer/C03-contador-vagas.spec.ts`]
 
 - **Antes:** `/search` com resultados.
 - **Passos:** comparar o número do topo com a quantidade de cards na tela.
@@ -234,7 +234,7 @@ não consegue cancelar, só o staff.
     unidade aparecia em duas páginas, cada uma com parte dos tipos. Isso também desaparece com o
     C-02.
 
-## C-04 · Detalhe informa corretamente coberto ou descoberto  [**CORRIGIDO** · verificado 22/07/2026 · commit `291201f` · coberto por `e2e/consumer/C04-detalhe-sem-contradicao.spec.ts`]
+## C-04 · Detalhe informa corretamente coberto ou descoberto  [**CORRIGIDO** · verificado 22/07/2026 · commit `291201f` · coberto por `e2e/playwright/consumer/C04-detalhe-sem-contradicao.spec.ts`]
 
 - **Antes:** `/p/abbapark/aeroporto-afonso-pena/uncovered`.
 - **Passos:** ler o subtítulo, a descrição do tipo e a seção "O que essa vaga oferece".
@@ -249,7 +249,7 @@ não consegue cancelar, só o staff.
   esta página quebrada. Repita em `/maxi-park/maxi-park/uncovered` para confirmar que sem a
   amenidade a contradição some.
 
-## C-05 · Detalhe induz upgrade e nunca oferece downgrade  [**PRONTO** · verificado 22/07/2026 · commits `25321bf` e `e174423` · coberto por `e2e/consumer/C05-upgrade-sem-downgrade.spec.ts`]
+## C-05 · Detalhe induz upgrade e nunca oferece downgrade  [**PRONTO** · verificado 22/07/2026 · commits `25321bf` e `e174423` · coberto por `e2e/playwright/consumer/C05-upgrade-sem-downgrade.spec.ts`]
 
 Este caso **trocou de natureza**. Antes ele cobrava um seletor de tipo de vaga no detalhe. A reunião
 descartou o seletor: a escolha do tipo passa a acontecer na busca, no card, e o detalhe só empurra
@@ -289,7 +289,7 @@ para cima.
   - O upgrade **pós-venda** em "minha conta" foi levantado na reunião e **não** foi decidido. Não
     o teste como se existisse.
 
-## C-06 · Escolher datas cria a reserva e segura a vaga  [PRONTO · coberto por `e2e/consumer/C06-criar-reserva.spec.ts` · `src/features/listing/ReservationCard.tsx:283-296`]
+## C-06 · Escolher datas cria a reserva e segura a vaga  [PRONTO · coberto por `e2e/playwright/consumer/C06-criar-reserva.spec.ts` · `src/features/listing/ReservationCard.tsx:283-296`]
 
 - **Antes:** logado como `peu+teste1@fera.ag`, na página da fixture mais barata.
   ```sql
@@ -312,7 +312,7 @@ para cima.
   - Data de entrada retroativa é bloqueada (commit `4eeae96`). Ao rodar o roteiro num dia diferente,
     ajuste as datas em vez de reclamar do bloqueio.
 
-## C-07 · Checkout passo 1: identidade e contato  [PRONTO · coberto por `e2e/consumer/C07-checkout-identidade.spec.ts` · `src/features/checkout/Step1Identity.tsx`]
+## C-07 · Checkout passo 1: identidade e contato  [PRONTO · coberto por `e2e/playwright/consumer/C07-checkout-identidade.spec.ts` · `src/features/checkout/Step1Identity.tsx`]
 
 - **Antes:** em `/checkout/:code`, passo 1.
 - **Passos:** preencher nome, e-mail, telefone e CPF do pagador. Confirmar.
@@ -327,7 +327,7 @@ para cima.
   - O CPF é exigido só no passo do PIX, não aqui. CPF inválido passa batido no passo 1 e só estoura
     depois (`create-pix-charge/index.ts:162-167`), o que faz parecer erro de pagamento.
 
-## C-08 · Checkout passo 2: veículo  [PRONTO · coberto por `e2e/consumer/C08-checkout-veiculo.spec.ts` · `src/features/checkout/Step2Vehicle.tsx`]
+## C-08 · Checkout passo 2: veículo  [PRONTO · coberto por `e2e/playwright/consumer/C08-checkout-veiculo.spec.ts` · `src/features/checkout/Step2Vehicle.tsx`]
 
 - **Antes:** passo 2 do checkout.
 - **Passos:** informar placa, modelo e cor. Confirmar.
@@ -336,7 +336,7 @@ para cima.
 - **Armadilhas:** o cliente de teste acumula veículos a cada execução. Antes de reportar
   "veículo duplicado", confira se não é resíduo de rodada anterior.
 
-## C-09 · Checkout passo 3: gerar o QR do PIX  [PRONTO · coberto por `e2e/consumer/C09-pix-qrcode.spec.ts` · `supabase/functions/create-pix-charge/index.ts`]
+## C-09 · Checkout passo 3: gerar o QR do PIX  [PRONTO · coberto por `e2e/playwright/consumer/C09-pix-qrcode.spec.ts` · `supabase/functions/create-pix-charge/index.ts`]
 
 - **Antes:** passo 3, reserva `pending` e não expirada.
 - **Passos:** aceitar os Termos, clicar em "Gerar PIX".
@@ -357,7 +357,7 @@ para cima.
   - O código de mock (`useMockPayment`, Edge `mock-payment`) ainda existe no repo mas está **órfão**.
     Não há caminho de produção que o use. Não teste por ali achando que é o fluxo.
 
-## C-10 · PIX pago confirma a reserva e avança pro passo 4  [PRONTO · coberto por `e2e/consumer/C10-pix-confirma.spec.ts` · `supabase/functions/pagarme-webhook/index.ts:369-372`]
+## C-10 · PIX pago confirma a reserva e avança pro passo 4  [PRONTO · coberto por `e2e/playwright/consumer/C10-pix-confirma.spec.ts` · `supabase/functions/pagarme-webhook/index.ts:369-372`]
 
 - **Antes:** QR gerado no C-09, `payment.status = 'pending'`.
 - **Passos:** aguardar. Na conta Pagar.me atual o PIX liquida sozinho. Medido no histórico de
@@ -380,7 +380,7 @@ para cima.
   - A liquidação automática é característica da conta atual do gateway. Se um dia a conta virar
     produção real com PIX pago por humano, este caso deixa de ser automatizável e vira manual.
 
-## C-11 · "Minhas reservas" mostra a reserva com o tipo de vaga  [PRONTO · coberto por `e2e/consumer/C11-minhas-reservas.spec.ts` · `src/features/bookings/CustomerBookingCard.tsx:31-32`]
+## C-11 · "Minhas reservas" mostra a reserva com o tipo de vaga  [PRONTO · coberto por `e2e/playwright/consumer/C11-minhas-reservas.spec.ts` · `src/features/bookings/CustomerBookingCard.tsx:31-32`]
 
 - **Antes:** reserva confirmada no C-10.
 - **Passos:** abrir `/bookings`, aba "Próximas".
@@ -545,7 +545,7 @@ diferente da que nasceu com ela.
 
 ---
 
-## C-14 · Baixar o voucher em PDF  [PRONTO · coberto por `e2e/consumer/C14-voucher-download.spec.ts` · `supabase/functions/voucher-pdf/index.ts`]
+## C-14 · Baixar o voucher em PDF  [PRONTO · coberto por `e2e/playwright/consumer/C14-voucher-download.spec.ts` · `supabase/functions/voucher-pdf/index.ts`]
 
 - **Antes:** reserva `confirmed` vinda do C-10.
 - **Passos:** em `/bookings/:code`, clicar em "Baixar PDF". Repetir no passo 4 do checkout, que usa o
@@ -571,7 +571,7 @@ diferente da que nasceu com ela.
     é a **resposta da Edge `voucher-pdf`**, que é exatamente o que o app usa para abrir. Custou duas
     execuções para descobrir, as duas acusando o produto de um problema que era do teste.
 
-## C-15 · Voucher não existe antes da confirmação  [PRONTO · coberto por `e2e/consumer/C15-voucher-antes-confirmacao.spec.ts` + `supabase/functions/voucher-pdf/logic.test.ts` · `_shared/voucher/fields.ts:63`]
+## C-15 · Voucher não existe antes da confirmação  [PRONTO · coberto por `e2e/playwright/consumer/C15-voucher-antes-confirmacao.spec.ts` + `supabase/functions/voucher-pdf/logic.test.ts` · `_shared/voucher/fields.ts:63`]
 
 - **Antes:** reserva `pending`, PIX ainda não pago.
 - **Passos:** tentar baixar o voucher pela Edge, com o JWT do dono da reserva.
@@ -592,7 +592,7 @@ diferente da que nasceu com ela.
     voucher válido e **não** mostra o botão. É inconsistência real, não erro de execução. Registre,
     não force.
 
-## C-16 · Upgrade de tarifa: Básica para Superflex  [PRONTO · coberto por `e2e/consumer/C16-upgrade-tarifa.spec.ts` · `supabase/migrations/20260720000000_fare_upgrade.sql:14-55`]
+## C-16 · Upgrade de tarifa: Básica para Superflex  [PRONTO · coberto por `e2e/playwright/consumer/C16-upgrade-tarifa.spec.ts` · `supabase/migrations/20260720000000_fare_upgrade.sql:14-55`]
 
 - **Antes:** reserva `confirmed` na tarifa Básica, com check-in no futuro.
   ```sql
@@ -660,7 +660,7 @@ diferente da que nasceu com ela.
     global) e `supabase/tests/admin_set_fare.test.sql` cobre o editor (hub_admin grava, operador e dono
     são barrados, Básica fica grátis). `location_fare.test.sql` saiu.
 
-## C-19 · Cancelar dentro da janela devolve 100%  [PRONTO · coberto por `e2e/consumer/C19-cancelar-dentro-janela.spec.ts` + `supabase/tests/fare_cancel_window.test.sql` · `supabase/functions/cancel-booking/index.ts:147-185`]
+## C-19 · Cancelar dentro da janela devolve 100%  [PRONTO · coberto por `e2e/playwright/consumer/C19-cancelar-dentro-janela.spec.ts` + `supabase/tests/fare_cancel_window.test.sql` · `supabase/functions/cancel-booking/index.ts:147-185`]
 
 - **Antes:** reserva `confirmed` e paga, tarifa Básica, com check-in a **mais de 24h**.
   ```sql
@@ -681,7 +681,7 @@ diferente da que nasceu com ela.
   - O cancelamento grava `deleted_at`. Reserva cancelada some das listagens que filtram soft delete,
     e aparece na aba "Canceladas" de `/bookings`. Não conclua que sumiu.
 
-## C-20 · Cancelar fora da janela é bloqueado  [PRONTO · coberto por `e2e/consumer/C20-cancelar-fora-janela.spec.ts` · `bookings-detail.tsx:367-377` e `cancel-booking/index.ts:133-142`]
+## C-20 · Cancelar fora da janela é bloqueado  [PRONTO · coberto por `e2e/playwright/consumer/C20-cancelar-fora-janela.spec.ts` · `bookings-detail.tsx:367-377` e `cancel-booking/index.ts:133-142`]
 
 - **Antes:** reserva `confirmed` e paga, tarifa Básica, com check-in a **menos de 24h**. Leia a
   armadilha do `fare_cancel_until` acima antes de montar esta reserva.
@@ -698,7 +698,7 @@ diferente da que nasceu com ela.
   - Reserva **`pending`** (não paga) cancela em qualquer horário, sem estorno. Não confunda com
     quebra do gate: o gate vale para reserva paga.
 
-## C-21 · Superflex cancela até 1 minuto antes  [PRONTO · coberto por `e2e/consumer/C21-superflex-um-minuto.spec.ts` + `supabase/tests/fare_cancel_window.test.sql` · `20260717000000_fare_tiers.sql:46-70`]
+## C-21 · Superflex cancela até 1 minuto antes  [PRONTO · coberto por `e2e/playwright/consumer/C21-superflex-um-minuto.spec.ts` + `supabase/tests/fare_cancel_window.test.sql` · `20260717000000_fare_tiers.sql:46-70`]
 
 - **Antes:** reserva `confirmed` e paga na tarifa **Superflex**, com check-in daqui a poucos minutos.
 - **Passos:** cancelar faltando mais de 1 minuto. Repetir outra reserva e tentar faltando menos.
@@ -713,7 +713,7 @@ diferente da que nasceu com ela.
   - `check_in_at` muito próximo do agora esbarra no bloqueio de data retroativa da criação da reserva
     (commit `4eeae96`). Deixe alguns minutos de folga.
 
-## C-22 · Estorno de PIX fecha de forma assíncrona  [PRONTO · verificado por `e2e/support/checkRefunds.ts` · `cancel-booking/index.ts:175-184` e `pagarme-webhook/index.ts:424-446`]
+## C-22 · Estorno de PIX fecha de forma assíncrona  [PRONTO · verificado por `e2e/playwright/support/checkRefunds.ts` · `cancel-booking/index.ts:175-184` e `pagarme-webhook/index.ts:424-446`]
 
 Este é o caso que responde ao "o estorno demora um pouco mais". Ele demora, e o roteiro precisa dizer
 quanto e por quê, senão alguém abre bug de algo que ainda está no prazo.

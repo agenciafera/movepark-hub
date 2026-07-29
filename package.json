@@ -9,7 +9,7 @@
     "build": "tsc -b && node --import ./scripts/ws-polyfill.mjs node_modules/.bin/vite-react-ssg build",
     "preview": "bun run build && wrangler dev",
     "lint": "eslint .",
-    "typecheck": "tsc -b --noEmit && tsc -p e2e/tsconfig.json --noEmit",
+    "typecheck": "tsc -b --noEmit && tsc -p e2e/playwright/tsconfig.json --noEmit",
     "test": "./scripts/vitest-run.sh --project unit",
     "test:unit": "./scripts/vitest-run.sh --project unit",
     "test:watch": "vitest --project unit",

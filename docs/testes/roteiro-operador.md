@@ -7,10 +7,10 @@ check-in por QR, extrato de repasse e KYC do recebedor, catálogo comercial e re
 - **Baseline:** 25/07/2026, verificado contra a `main` (gates rodados: typecheck, lint, `bun run test`, `bun run test:db`).
 - **Alvo:** produção (`hub.movepark.co` + projeto `mgaigbezdalbyuqiofcf`). Não existe staging do Hub.
 - **Usuário:** `peu+operador@fera.ag`, dono (owner) da company **Abbapark** (unidade Aeroporto Afonso Pena), já vinculado em `profile_company`. Papéis de negação (Gerente/Operação/Financeiro) precisam de um membro com esse papel; o dono e o hub_admin furam todo gate de escopo (ver O-06).
-- **Automação:** os specs do dono vivem em `e2e/owner/`, partidos por efeito colateral (mesma ideia do roteiro C). Os que **escrevem** (`O01-dono-jornada`, `O02-operacao-reservas`) ficam no project `e2e-owner-tx`, que só roda pedindo pelo nome; os de **leitura** (`R01-reservas-filtro`) ficam no `e2e-owner` e rodam na suíte padrão. Fora daí, `e2e/manager/T06-impersonation` e `e2e/operator/O22-escopo-rota` também cobrem casos deste roteiro. O restante é pgTAP e Vitest, apontado caso a caso.
+- **Automação:** os specs do dono vivem em `e2e/playwright/owner/`, partidos por efeito colateral (mesma ideia do roteiro C). Os que **escrevem** (`O01-dono-jornada`, `O02-operacao-reservas`) ficam no project `e2e-owner-tx`, que só roda pedindo pelo nome; os de **leitura** (`R01-reservas-filtro`) ficam no `e2e-owner` e rodam na suíte padrão. Fora daí, `e2e/playwright/manager/T06-impersonation` e `e2e/playwright/operator/O22-escopo-rota` também cobrem casos deste roteiro. O restante é pgTAP e Vitest, apontado caso a caso.
 - **Gateway em SANDBOX:** cobranças deste roteiro não movem dinheiro real e não precisam de estorno.
 
-O nome no ClickUp é "Roteiro D". Os casos usam o prefixo **O-** (owner) para casar com o spec em `e2e/owner/`.
+O nome no ClickUp é "Roteiro D". Os casos usam o prefixo **O-** (owner) para casar com o spec em `e2e/playwright/owner/`.
 
 Status de cada caso é **derivado de evidência** (arquivo:linha, commit, teste), nunca declarado. Quem revisar reconfere no código antes de mexer em qualquer linha de status.
 
@@ -47,7 +47,7 @@ Furos da varredura (detalhe em `furos-visao-dono.md`): F1 (canceladas) **corrigi
 
 | Papel na prova | Quem | Como chega |
 |---|---|---|
-| Dono (owner) | `peu+operador@fera.ag`, company Abbapark | vínculo `profile_company` já semeado (`e2e/auth/abbapark-owner.setup.ts`) |
+| Dono (owner) | `peu+operador@fera.ag`, company Abbapark | vínculo `profile_company` já semeado (`e2e/playwright/auth/abbapark-owner.setup.ts`) |
 | Negação por papel | membro com `company_role` = manager/operator/finance | precisa existir um `profile_company` com esse papel; os pgTAP criam o membro na hora |
 | Super admin | `developer@fera.ag` (`hub_admin`) | fura todo gate; usado só para impersonation (O-05) |
 
@@ -239,7 +239,7 @@ Fonte da verdade dos papéis e escopos: seed `company_role_scope` em `supabase/m
 
 **Coberto por automação:** O-01/02/03 (e2e `O01-dono-jornada`), O-13 (e2e `owner/R01-reservas-filtro`), O-14/15 (e2e `O02-operacao-reservas` + pgTAP `booking_status_guard`, Vitest `BookingDrawer.test.tsx`/`voucher.logic.test.ts`), O-05 (e2e `manager/T06-impersonation`), O-22 (e2e `operator/O22-escopo-rota`), O-06/07/08/09 (pgTAP `operator_rpc_scope` + Vitest `OperatorDashboard.test.tsx`, `reports.test.tsx`, `Sidebar.logic.test.ts`), O-11/12 (pgTAP `capacity`, `pricing`, `operator_pricing_dates`), O-16/17 (pgTAP `payout_*`, e2e `T10/T15/T16`), O-18/19 (pgTAP `coupon_rpc`/`discount_rpc`/`addon_rpc`/`high_demand_signal`), O-20 (Vitest `reports.test.tsx`).
 
-Impersonation (O-05) tem e2e próprio em `e2e/manager/T06-impersonation.spec.ts`, na suíte normal do manager: impersonar mexe só na sessão local, não escreve no banco, então não precisa da trava `tx`. O bounce de rota por escopo (O-22) roda em `e2e/operator/O22-escopo-rota.spec.ts`, na suíte normal do operador, rebaixando o papel só na fixture Mercy.
+Impersonation (O-05) tem e2e próprio em `e2e/playwright/manager/T06-impersonation.spec.ts`, na suíte normal do manager: impersonar mexe só na sessão local, não escreve no banco, então não precisa da trava `tx`. O bounce de rota por escopo (O-22) roda em `e2e/playwright/operator/O22-escopo-rota.spec.ts`, na suíte normal do operador, rebaixando o papel só na fixture Mercy.
 
 **Sem rede de regressão:** nenhuma lacuna aberta. Todo caso do roteiro tem e2e, pgTAP ou teste de componente, como listado acima. Os casos que restam sem e2e de tela (O-04, O-06 a O-12, O-16 a O-20) são de regra de servidor ou de gating de componente, onde pgTAP e Testing Library provam mais barato e mais fundo que o navegador.
 

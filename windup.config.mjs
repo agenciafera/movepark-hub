@@ -16,7 +16,7 @@ export default defineConfig({
       google: { apiKeyEnv: "GEMINI_API_KEY" },
     },
   },
-  scenarios: "e2e/scenarios",
+  scenarios: "e2e/windup",
   framework: "react-router",
   // O teto padrão (20) deixava 42 arquivos de fora do índice. O app tem 84 rotas.
   scan: { llmAssist: { enabled: true, maxCalls: 80 } },

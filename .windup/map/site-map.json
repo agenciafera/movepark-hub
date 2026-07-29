@@ -3195,8 +3195,9 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-29T12:30:32.373Z",
-      "last_seen": "2026-07-29T12:30:32.373Z",
-      "seen_count": 1
+      "last_seen": "2026-07-29T12:41:58.945Z",
+      "seen_count": 2,
+      "stale": false
     }
   },
   "transitions": [],

@@ -1,18 +1,18 @@
 import { defineConfig, devices } from "@playwright/test";
-import { env } from "./e2e/support/env";
+import { env } from "./e2e/playwright/support/env";
 import {
   ABBAPARK_OWNER_STATE,
   CUSTOMER_STATE,
   MANAGER_STATE,
   OPERATOR_STATE,
-} from "./e2e/support/session";
+} from "./e2e/playwright/support/session";
 
 /**
  * Camada E2E de navegador. Separada do Vitest de propósito: o Vitest só olha
  * `src/**` e `test/**`, então os `.spec.ts` daqui não colidem com ele.
  *
  * Os projects rodam em cadeia: `setup` gera os storageStates, e os projects
- * autenticados dependem dele. Quem roda em `e2e/public` não tem sessão.
+ * autenticados dependem dele. Quem roda em `e2e/playwright/public` não tem sessão.
  */
 
 /**
@@ -25,7 +25,7 @@ import {
  *      isso em `MP_E2E_TX`. Derivar do argv mantém a decisão presa a UMA
  *      invocação: nada fica exportado no shell para valer na execução seguinte.
  *
- *   2. os specs consultam `MP_E2E_TX` via `guardTx()` (e2e/support/consumer.ts)
+ *   2. os specs consultam `MP_E2E_TX` via `guardTx()` (e2e/playwright/support/consumer.ts)
  *      e se pulam sozinhos quando ela não está ligada.
  *
  * Por que não bastava não registrar o project quando o argv não pede: o worker
@@ -50,7 +50,7 @@ const txRequested = [TX_PROJECT, OWNER_PROJECT].some((name) =>
 if (txRequested) process.env.MP_E2E_TX = "1";
 
 export default defineConfig({
-  testDir: "./e2e",
+  testDir: "./e2e/playwright",
   fullyParallel: false,
   workers: 1,
   forbidOnly: !!process.env.CI,
@@ -104,7 +104,7 @@ export default defineConfig({
      * storageState default é o do dono; o passo da reserva abre um contexto à parte
      * com a sessão do cliente.
      *
-     * CONVENÇÃO DE NOME em `e2e/owner/`, e ela decide em que project o spec cai:
+     * CONVENÇÃO DE NOME em `e2e/playwright/owner/`, e ela decide em que project o spec cai:
      *   - `R<nn>-*.spec.ts` → só LEITURA, roda na suíte padrão (project `e2e-owner`);
      *   - qualquer outro nome → tratado como ESCRITA, fica atrás da trava tx.
      * O default é o guardado de propósito: um spec novo que escreva e esqueça a
@@ -166,7 +166,7 @@ export default defineConfig({
      *     bunx playwright test --project=e2e-consumer-tx
      *
      * A limpeza é por CANCELAMENTO pelo produto, nunca por delete: ver
-     * `docs/testes/roteiro-consumidor-reserva.md` e `e2e/README.md`. A exceção é
+     * `docs/testes/roteiro-consumidor-reserva.md` e `e2e/playwright/README.md`. A exceção é
      * o C-20, que de propósito deixa uma reserva fora da janela: essa só o staff
      * fecha.
      */

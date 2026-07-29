@@ -26,7 +26,7 @@ Duas correções minhas na mesma revisão vieram do mesmo erro: declarei T-06 e 
 
 Nenhum caso pode dizer "FALTA", "PRONTO" ou "PARCIAL" sem trazer a evidência ao lado. Formato obrigatório:
 
-- `PRONTO · coberto por e2e/manager/T05-kanban-tela-cheia.spec.ts`
+- `PRONTO · coberto por e2e/playwright/manager/T05-kanban-tela-cheia.spec.ts`
 - `PRONTO · sem teste · Sidebar.tsx:57 (commit 75b7a58)`
 - `PENDENTE · verificado em <data> · git log de src/features/onboarding/ sem commit relacionado`
 
