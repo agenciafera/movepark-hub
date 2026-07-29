@@ -14,6 +14,11 @@ import {
   aggregateOccupancy,
   occupancyRate,
   revpar,
+  fillStayBuckets,
+  sharePct,
+  flowTotals,
+  hourLabel,
+  STAY_BUCKETS,
 } from "./dashboardMetrics.logic";
 
 describe("summarizePeriod", () => {
@@ -185,5 +190,77 @@ describe("ocupação e RevPAR", () => {
   it("RevPAR é receita por vaga-dia disponível", () => {
     expect(revpar(1000, 200)).toBe(5);
     expect(revpar(1000, 0)).toBe(0);
+  });
+});
+
+describe("fillStayBuckets", () => {
+  it("devolve as seis faixas na ordem, mesmo quando a RPC omite as vazias", () => {
+    const out = fillStayBuckets([
+      { sort: 4, bookings: 7, revenue: 900 },
+      { sort: 1, bookings: 3, revenue: 100 },
+    ]);
+    expect(out).toHaveLength(STAY_BUCKETS.length);
+    expect(out.map((b) => b.sort)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(out[0]).toMatchObject({ bookings: 3, revenue: 100 });
+    expect(out[3]).toMatchObject({ bookings: 7, revenue: 900 });
+    // As faixas sem reserva entram zeradas, não somem do gráfico.
+    expect(out[1]).toMatchObject({ bookings: 0, revenue: 0 });
+    expect(out[5]).toMatchObject({ bookings: 0, revenue: 0 });
+  });
+
+  it("lista vazia vira seis faixas zeradas", () => {
+    expect(fillStayBuckets([]).every((b) => b.bookings === 0)).toBe(true);
+  });
+});
+
+describe("sharePct", () => {
+  it("arredonda o percentual da parte sobre o total", () => {
+    expect(sharePct(25, 100)).toBe(25);
+    expect(sharePct(1, 3)).toBe(33);
+  });
+
+  it("sem total, devolve zero em vez de NaN", () => {
+    expect(sharePct(5, 0)).toBe(0);
+  });
+});
+
+describe("flowTotals", () => {
+  const hours = [
+    { hour: 6, vehicles: 2, passengers: 4, pcd: 1 },
+    { hour: 8, vehicles: 9, passengers: 12, pcd: 0 },
+    { hour: 20, vehicles: 1, passengers: 2, pcd: 0 },
+  ];
+
+  it("soma veículos, passageiros e PCDs do dia", () => {
+    expect(flowTotals(hours)).toMatchObject({ vehicles: 12, passengers: 18, pcd: 1 });
+  });
+
+  it("aponta a hora de pico e quantos carros chegaram nela", () => {
+    expect(flowTotals(hours)).toMatchObject({ peakHour: 8, peakVehicles: 9 });
+  });
+
+  it("dia sem movimento não tem pico", () => {
+    expect(flowTotals([{ hour: 0, vehicles: 0, passengers: 0, pcd: 0 }])).toMatchObject({
+      vehicles: 0,
+      peakHour: null,
+    });
+    expect(flowTotals([])).toMatchObject({ vehicles: 0, peakHour: null });
+  });
+
+  it("no empate fica a primeira hora", () => {
+    expect(
+      flowTotals([
+        { hour: 7, vehicles: 3, passengers: 0, pcd: 0 },
+        { hour: 15, vehicles: 3, passengers: 0, pcd: 0 },
+      ]).peakHour,
+    ).toBe(7);
+  });
+});
+
+describe("hourLabel", () => {
+  it("mostra a hora cheia com dois dígitos", () => {
+    expect(hourLabel(0)).toBe("00h");
+    expect(hourLabel(6)).toBe("06h");
+    expect(hourLabel(23)).toBe("23h");
   });
 });

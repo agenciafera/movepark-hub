@@ -58,39 +58,82 @@ Configurações
 
 ### 4.1 Dashboard
 
-**Rota:** `/manager`
+**Rota:** `/manager` · ✅ implementado
 
-**Objetivo:** visão geral da saúde financeira e operacional da plataforma.
+**Objetivo:** a operação da rede num painel só: o movimento de hoje, o resultado do período
+e onde o volume está.
 
-#### KPI Cards (topo, 4 colunas)
+**Origem dos indicadores.** O backoffice legado (`movepark-backoffice-v4`) tinha três abas
+(Marketing, Visão Geral, Visão Diária) com indicadores que o Hub não cobria. A revisão de
+jul/2026 trouxe os que mudam decisão (diárias vendidas, destino, permanência, fluxo horário,
+novos x recorrentes) e deixou de fora o que não é indicador: o **simulador de preços** do
+legado é ferramenta de precificação e mora em [`fares.md`](./fares.md) / `/manager/tarifas`,
+não no dashboard.
+
+**Seletor de período:** 7, 30 ou 90 dias, no cabeçalho. Todo bloco de período respeita a
+escolha e compara com o **período anterior do mesmo tamanho**.
+
+**Eixo de data:** o dashboard lê pelo **check-in** (quando o carro ocupa a vaga), a leitura de
+operação. Aquisição (canal, UTM) roda por `created_at` e vive em `/manager/attribution`,
+que o rodapé do dashboard referencia em vez de duplicar.
+
+#### Linha 1: hoje
+
+| Card | Valor | Nota |
+|---|---|---|
+| Chegadas de hoje | `int` | vs. ontem; janela do dia **fechada nos dois lados** |
+| Check-ins de hoje | `int` | carros que já entraram (`checked_in_at`) |
+| Check-outs de hoje | `int` | carros que já saíram (`checked_out_at`) |
+| Rede ativa | `int` | unidades ativas, com as empresas na sublinha |
+
+#### Linha 2: o período
 
 | Card | Valor | Variação |
 |---|---|---|
-| Reservas Hoje | `int` | vs. ontem |
-| Receita do Mês | `R$ xxx` | vs. mês anterior |
-| Ticket Médio | `R$ xxx` | vs. mês anterior |
-| Empresas Ativas | `int` | — |
+| Receita | `R$ xxx` | vs. período anterior |
+| Diárias vendidas | `int` | vs. período anterior; sublinha com a contagem de reservas |
+| Ticket médio | `R$ xxx` | vs. período anterior |
+| Receita por diária | `R$ xxx` | sublinha com a permanência média |
 
-> Cards usam `{component.reservation-card}` style — white surface, `{rounded.md}`, 1px hairline border, shadow tier.
+> **Diária (vaga-dia)** é dia-calendário ocupado, de `check_in_at::date` a
+> `(check_out_at - 1µs)::date`, a mesma convenção da capacidade
+> ([capacity-rules.md](./capacity-rules.md)). Estadia no mesmo dia conta 1. É o indicador de
+> volume real: 600 reservas de 2 dias e 600 de 10 dias ocupam o pátio de formas diferentes, e
+> só a contagem de reservas não mostra isso.
 
-#### Gráfico de Receita
+#### Blocos
 
-- Linha/área, últimos 30 dias
-- Filtro por empresa (multi-select dropdown)
-- Tooltip com valor diário ao hover
+- **Receita por dia de check-in**: área, no período escolhido.
+- **Por destino**: receita, reservas e diárias por aeroporto, com barra de participação. A
+  média da rede escondia a diferença entre GRU, CGH e Tietê.
+- **Permanência**: distribuição por faixa de diárias (1 · 2-3 · 4-6 · 7-14 · 15-29 · 30+).
+  Faixa sem reserva aparece zerada, não some do gráfico.
+- **Clientes**: primeira reserva x já tinham reservado (o "primeira compra" e "clientes
+  fiéis" do legado). Um cliente é o `profile_id` ou, sem conta, o e-mail do pedido.
+- **Cancelamento**: canceladas + no-show sobre as reservas que chegaram a um desfecho pago;
+  `expired` (abandono) fica fora do denominador e aparece na sublinha.
+- **Receita de tarifas**: o que a Movepark ganha por tier (Básica/Flex/Superflex). Visão de
+  Super Admin: não vai pro `/operator`.
+- **Fluxo de veículos por hora**: entradas e saídas hora a hora num dia, com seletor de data,
+  totais de veículos e passageiros, hora de pico e PCDs. A hora sai no **fuso da unidade**. É
+  o indicador de escala de equipe: 9 carros às 8h e nenhum às 15h muda a escala do dia.
+- **Top unidades**: ranking por receita, com reservas e diárias.
+- **Reservas recentes**: as 20 últimas; clique abre o detalhe.
 
-#### Tabela — Reservas Recentes
+#### Implementação
 
-Colunas: `#ID` · `Cliente` · `Empresa` · `Localização` · `Vaga` · `Check-in` · `Check-out` · `Valor` · `Status`
+Duas RPCs `SECURITY DEFINER` gateadas por `is_hub_admin()`, em
+`supabase/migrations/20260916000000_manager_dashboard_rpcs.sql`:
 
-- Paginação (20/página)
-- Link rápido para detalhe da reserva
-- Badge de status: `confirmed` (green) · `pending` (yellow) · `cancelled` (red) · `completed` (muted)
+| RPC | Devolve |
+|---|---|
+| `manager_dashboard_overview(p_from, p_to)` | `current`/`previous`, `statuses`, `customers`, `by_destination`, `length_of_stay`, `top_locations` |
+| `manager_daily_flow(p_date)` | `entries` e `exits`, 24 horas cada, com `vehicles`/`passengers`/`pcd` |
 
-#### Top Empresas (ranking)
-
-- Lista ranqueada por receita no mês
-- Bar chart horizontal inline em cada linha
+A agregação mora no banco; o front (`src/features/dashboard/`) só exibe. `anon` não tem
+EXECUTE nas duas. Testes: pgTAP `manager_dashboard.test.sql` (gate, grants, diária
+dia-calendário, cancelada fora da receita, recorrente, hora no fuso da unidade) e Vitest
+`ManagerDashboard.test.tsx` + `dashboardMetrics.logic.test.ts`.
 
 ---
 

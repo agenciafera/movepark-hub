@@ -45,7 +45,9 @@ export function pctDelta(current: number, previous: number): number | null {
 }
 
 /** Formata o delta pro `trend` do KpiCard ("+12%" / "-8%"), ou undefined se não há base. */
-export function formatDelta(delta: number | null): { value: string; positive: boolean } | undefined {
+export function formatDelta(
+  delta: number | null,
+): { value: string; positive: boolean } | undefined {
   if (delta === null || !Number.isFinite(delta)) return undefined;
   const rounded = Math.round(delta);
   return { value: `${rounded > 0 ? "+" : ""}${rounded}% vs anterior`, positive: rounded >= 0 };
@@ -90,7 +92,10 @@ export function cancellationBenchmark(rate: number): {
 }
 
 /** Nota média e quantas avaliações têm nota, a partir da lista de reviews. */
-export function averageRating(reviews: { rating: number | null }[]): { avg: number; count: number } {
+export function averageRating(reviews: { rating: number | null }[]): {
+  avg: number;
+  count: number;
+} {
   const rated = reviews.filter((r) => typeof r.rating === "number");
   const sum = rated.reduce((acc, r) => acc + (r.rating ?? 0), 0);
   return { avg: rated.length ? sum / rated.length : 0, count: rated.length };
@@ -107,9 +112,7 @@ const DAY_MS = 1000 * 60 * 60 * 24;
  * Antecedência média (lead time): dias entre a criação da reserva e o check-in.
  * Diferença negativa (dado torto) é tratada como 0. Zero se não houver reserva.
  */
-export function averageLeadTimeDays(
-  rows: { created_at: string; check_in_at: string }[],
-): number {
+export function averageLeadTimeDays(rows: { created_at: string; check_in_at: string }[]): number {
   if (rows.length === 0) return 0;
   const total = rows.reduce((acc, r) => {
     const diff = (new Date(r.check_in_at).getTime() - new Date(r.created_at).getTime()) / DAY_MS;
@@ -155,9 +158,10 @@ export function fareRevenueMix(
  * Canal de origem: site (fluxo próprio) vs API (reserva criada por chave de API,
  * ex.: o bot). `created_via_api_key_id` preenchido marca a API.
  */
-export function channelMix(
-  rows: { created_via_api_key_id: string | null }[],
-): { site: number; api: number } {
+export function channelMix(rows: { created_via_api_key_id: string | null }[]): {
+  site: number;
+  api: number;
+} {
   let site = 0;
   let api = 0;
   for (const r of rows) {
@@ -192,4 +196,79 @@ export function occupancyRate(bookedDays: number, capacityDays: number): number 
  */
 export function revpar(revenue: number, capacityDays: number): number {
   return capacityDays > 0 ? revenue / capacityDays : 0;
+}
+
+// ── Dashboard do Manager ────────────────────────────────────────────────────
+
+/**
+ * Faixas de permanência do dashboard do Manager. O `sort` casa com o `case` da RPC
+ * `manager_dashboard_overview`; mudar um lado exige mudar o outro.
+ */
+export const STAY_BUCKETS = [
+  { sort: 1, label: "1 diária" },
+  { sort: 2, label: "2 a 3" },
+  { sort: 3, label: "4 a 6" },
+  { sort: 4, label: "7 a 14" },
+  { sort: 5, label: "15 a 29" },
+  { sort: 6, label: "30 ou mais" },
+] as const;
+
+export type StayBucketRow = { sort: number; bookings: number; revenue: number };
+
+/**
+ * Completa as faixas que a RPC não devolveu (as sem reserva) com zero, na ordem.
+ * Sem isso o gráfico pula faixas e engana a leitura da distribuição.
+ */
+export function fillStayBuckets(
+  rows: StayBucketRow[],
+): { sort: number; label: string; bookings: number; revenue: number }[] {
+  return STAY_BUCKETS.map((b) => {
+    const row = rows.find((r) => r.sort === b.sort);
+    return {
+      sort: b.sort,
+      label: b.label,
+      bookings: row?.bookings ?? 0,
+      revenue: row?.revenue ?? 0,
+    };
+  });
+}
+
+/** Percentual de uma parte sobre o total, arredondado. Zero quando não há total. */
+export function sharePct(part: number, total: number): number {
+  return total > 0 ? Math.round((part / total) * 100) : 0;
+}
+
+export type FlowHour = { hour: number; vehicles: number; passengers: number; pcd: number };
+
+/**
+ * Totais do dia e a hora de pico do fluxo. `peakHour` é null quando não há
+ * movimento; no empate fica a primeira hora (a leitura do dia começa cedo).
+ */
+export function flowTotals(hours: FlowHour[]): {
+  vehicles: number;
+  passengers: number;
+  pcd: number;
+  peakHour: number | null;
+  peakVehicles: number;
+} {
+  let vehicles = 0;
+  let passengers = 0;
+  let pcd = 0;
+  let peakHour: number | null = null;
+  let peakVehicles = 0;
+  for (const h of hours) {
+    vehicles += h.vehicles;
+    passengers += h.passengers;
+    pcd += h.pcd;
+    if (h.vehicles > peakVehicles) {
+      peakVehicles = h.vehicles;
+      peakHour = h.hour;
+    }
+  }
+  return { vehicles, passengers, pcd, peakHour, peakVehicles };
+}
+
+/** Hora cheia no formato do painel ("06h", "18h"). */
+export function hourLabel(hour: number): string {
+  return `${String(hour).padStart(2, "0")}h`;
 }

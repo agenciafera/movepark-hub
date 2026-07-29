@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { startOfDay, startOfMonth, subDays, subMonths } from "date-fns";
+import { startOfDay, startOfMonth, subDays, addDays, format } from "date-fns";
 import { supabase } from "@/lib/supabase";
-import type { LocationOccupancyRow } from "@/types/domain";
+import type { DailyFlow, LocationOccupancyRow, ManagerOverview } from "@/types/domain";
 import {
   summarizePeriod,
   averageLeadTimeDays,
@@ -20,30 +20,37 @@ function isoStartOfDay(d = new Date()) {
 export type ManagerStats = {
   bookingsToday: number;
   bookingsYesterday: number;
-  revenueThisMonth: number;
-  revenueLastMonth: number;
-  averageTicketThisMonth: number;
+  checkInsToday: number;
+  checkOutsToday: number;
   activeCompanies: number;
+  activeLocations: number;
 };
 
+/**
+ * O pulso de hoje no Manager: chegadas previstas, quem já entrou e quem já saiu, e o
+ * tamanho da rede ativa. Todo recorte de "hoje" é fechado nos dois lados: sem o
+ * `lt` do fim do dia, "reservas hoje" virava "todas as reservas de hoje em diante"
+ * e a comparação com ontem não queria dizer nada.
+ */
 async function fetchManagerStats(): Promise<ManagerStats> {
   const now = new Date();
   const todayStart = isoStartOfDay(now);
+  const tomorrowStart = isoStartOfDay(addDays(now, 1));
   const yesterdayStart = isoStartOfDay(subDays(now, 1));
-  const monthStart = isoStartOfMonth(now);
-  const lastMonthStart = isoStartOfMonth(subMonths(now, 1));
 
   const [
     bookingsToday,
     bookingsYesterday,
-    revenueThisMonth,
-    revenueLastMonth,
+    checkInsToday,
+    checkOutsToday,
     activeCompanies,
+    activeLocations,
   ] = await Promise.all([
     supabase
       .from("booking")
       .select("id", { count: "exact", head: true })
-      .gte("check_in_at", todayStart),
+      .gte("check_in_at", todayStart)
+      .lt("check_in_at", tomorrowStart),
     supabase
       .from("booking")
       .select("id", { count: "exact", head: true })
@@ -51,30 +58,29 @@ async function fetchManagerStats(): Promise<ManagerStats> {
       .lt("check_in_at", todayStart),
     supabase
       .from("booking")
-      .select("total_amount")
-      .gte("check_in_at", monthStart)
-      .in("status", ["confirmed", "checked_in", "completed"]),
+      .select("id", { count: "exact", head: true })
+      .gte("checked_in_at", todayStart)
+      .lt("checked_in_at", tomorrowStart),
     supabase
       .from("booking")
-      .select("total_amount")
-      .gte("check_in_at", lastMonthStart)
-      .lt("check_in_at", monthStart)
-      .in("status", ["confirmed", "checked_in", "completed"]),
+      .select("id", { count: "exact", head: true })
+      .gte("checked_out_at", todayStart)
+      .lt("checked_out_at", tomorrowStart),
     supabase.from("company").select("id", { count: "exact", head: true }).eq("status", "active"),
+    supabase
+      .from("location")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "active")
+      .is("deleted_at", null),
   ]);
-
-  const sum = (rows: { total_amount: number }[] | null) =>
-    (rows ?? []).reduce((acc, r) => acc + Number(r.total_amount ?? 0), 0);
-  const revenue = sum(revenueThisMonth.data ?? []);
-  const monthBookingsCount = revenueThisMonth.data?.length ?? 0;
 
   return {
     bookingsToday: bookingsToday.count ?? 0,
     bookingsYesterday: bookingsYesterday.count ?? 0,
-    revenueThisMonth: revenue,
-    revenueLastMonth: sum(revenueLastMonth.data ?? []),
-    averageTicketThisMonth: monthBookingsCount ? revenue / monthBookingsCount : 0,
+    checkInsToday: checkInsToday.count ?? 0,
+    checkOutsToday: checkOutsToday.count ?? 0,
     activeCompanies: activeCompanies.count ?? 0,
+    activeLocations: activeLocations.count ?? 0,
   };
 }
 
@@ -85,29 +91,46 @@ export function useManagerStats() {
   });
 }
 
-export type DailyRevenue = { date: string; total: number };
-
-export function useRevenueLastDays(days = 30) {
+/**
+ * Resumo do período no Manager (RPC `manager_dashboard_overview`, só hub_admin).
+ * Receita, diárias vendidas, permanência, destino e novos x recorrentes saem
+ * agregados do banco: o front não varre reserva pra somar.
+ */
+export function useManagerOverview(days: number) {
   return useQuery({
-    queryKey: ["dashboard", "revenue", days],
-    queryFn: async (): Promise<DailyRevenue[]> => {
-      const since = subDays(new Date(), days).toISOString();
-      const { data, error } = await supabase
-        .from("booking")
-        .select("check_in_at, total_amount")
-        .gte("check_in_at", since)
-        .in("status", ["confirmed", "checked_in", "completed"]);
+    queryKey: ["dashboard", "manager-overview", days],
+    staleTime: 60_000,
+    queryFn: async (): Promise<ManagerOverview> => {
+      const now = new Date();
+      const { data, error } = await supabase.rpc("manager_dashboard_overview", {
+        p_from: subDays(now, days).toISOString(),
+        p_to: now.toISOString(),
+      });
       if (error) throw error;
-      const map = new Map<string, number>();
-      for (const row of data ?? []) {
-        const key = (row.check_in_at as string).slice(0, 10);
-        map.set(key, (map.get(key) ?? 0) + Number(row.total_amount ?? 0));
-      }
-      return Array.from(map.entries())
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([date, total]) => ({ date, total }));
+      return data as unknown as ManagerOverview;
     },
   });
+}
+
+/**
+ * Fluxo de veículos hora a hora num dia (RPC `manager_daily_flow`, só hub_admin).
+ * `date` é a data local no formato `yyyy-MM-dd`; a hora sai no fuso de cada unidade.
+ */
+export function useManagerDailyFlow(date: string) {
+  return useQuery({
+    queryKey: ["dashboard", "manager-daily-flow", date],
+    staleTime: 60_000,
+    queryFn: async (): Promise<DailyFlow> => {
+      const { data, error } = await supabase.rpc("manager_daily_flow", { p_date: date });
+      if (error) throw error;
+      return data as unknown as DailyFlow;
+    },
+  });
+}
+
+/** Hoje no formato que a RPC de fluxo espera. */
+export function todayIsoDate() {
+  return format(new Date(), "yyyy-MM-dd");
 }
 
 /**
@@ -254,20 +277,25 @@ export function useOperatorStats(locationIds?: string[]) {
     queryFn: async (): Promise<OperatorStats> => {
       const now = new Date();
       const todayStart = isoStartOfDay(now);
+      const tomorrowStart = isoStartOfDay(addDays(now, 1));
       const monthStart = isoStartOfMonth(now);
 
+      // "Hoje" fecha nos dois lados: só `gte` faria o card contar todo o futuro.
       const baseToday = supabase
         .from("booking")
         .select("id", { count: "exact", head: true })
-        .gte("check_in_at", todayStart);
+        .gte("check_in_at", todayStart)
+        .lt("check_in_at", tomorrowStart);
       const baseCheckIn = supabase
         .from("booking")
         .select("id", { count: "exact", head: true })
-        .gte("checked_in_at", todayStart);
+        .gte("checked_in_at", todayStart)
+        .lt("checked_in_at", tomorrowStart);
       const baseCheckOut = supabase
         .from("booking")
         .select("id", { count: "exact", head: true })
-        .gte("checked_out_at", todayStart);
+        .gte("checked_out_at", todayStart)
+        .lt("checked_out_at", tomorrowStart);
       const baseRevenue = supabase
         .from("booking")
         .select("total_amount")
@@ -275,7 +303,9 @@ export function useOperatorStats(locationIds?: string[]) {
         .in("status", ["confirmed", "checked_in", "completed"]);
 
       const today = locationIds?.length ? baseToday.in("location_id", locationIds) : baseToday;
-      const checkIn = locationIds?.length ? baseCheckIn.in("location_id", locationIds) : baseCheckIn;
+      const checkIn = locationIds?.length
+        ? baseCheckIn.in("location_id", locationIds)
+        : baseCheckIn;
       const checkOut = locationIds?.length
         ? baseCheckOut.in("location_id", locationIds)
         : baseCheckOut;

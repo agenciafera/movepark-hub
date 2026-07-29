@@ -4382,6 +4382,11 @@ export type Database = {
         }
         Returns: string
       }
+      manager_daily_flow: { Args: { p_date: string }; Returns: Json }
+      manager_dashboard_overview: {
+        Args: { p_from: string; p_to: string }
+        Returns: Json
+      }
       match_knowledge: {
         Args: {
           p_destination_id?: string

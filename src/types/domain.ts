@@ -137,3 +137,62 @@ export type BookingAttribution = {
   by_origin: { origin: string; count: number; confirmed: number }[];
   by_utm_source: { utm_source: string; count: number }[];
 };
+
+/**
+ * Resumo do dashboard do Manager no período (retorno de manager_dashboard_overview).
+ * Eixo de data = check-in. "Diária" (vehicle_days) é dia-calendário ocupado, a mesma
+ * convenção da capacidade.
+ */
+export type ManagerOverview = {
+  current: {
+    bookings: number;
+    revenue: number;
+    ticket: number;
+    vehicle_days: number;
+    revenue_per_vehicle_day: number;
+    avg_stay_days: number;
+    passengers: number;
+    pcd: number;
+    fare_revenue: number;
+  };
+  previous: { bookings: number; revenue: number; ticket: number; vehicle_days: number };
+  statuses: {
+    total: number;
+    cancelled: number;
+    no_show: number;
+    expired: number;
+    pending: number;
+  };
+  customers: { new: number; returning: number };
+  by_destination: {
+    code: string;
+    name: string;
+    bookings: number;
+    revenue: number;
+    vehicle_days: number;
+  }[];
+  length_of_stay: { sort: number; bookings: number; revenue: number; vehicle_days: number }[];
+  top_locations: {
+    id: string;
+    name: string;
+    company_name: string;
+    bookings: number;
+    revenue: number;
+    vehicle_days: number;
+  }[];
+};
+
+/** Uma hora do fluxo de veículos (retorno de manager_daily_flow). */
+export type DailyFlowHour = {
+  hour: number;
+  vehicles: number;
+  passengers: number;
+  pcd: number;
+};
+
+/** Fluxo de entradas e saídas de um dia, hora a hora, no fuso de cada unidade. */
+export type DailyFlow = {
+  date: string;
+  entries: DailyFlowHour[];
+  exits: DailyFlowHour[];
+};
