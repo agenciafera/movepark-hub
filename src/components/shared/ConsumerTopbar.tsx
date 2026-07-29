@@ -232,7 +232,7 @@ export function ConsumerTopbar() {
               <DropdownMenuSeparator />
               {effectiveRole === "customer" && (
                 <>
-                  <DropdownMenuItem onClick={() => navigate("/bookings")}>
+                  <DropdownMenuItem onClick={() => navigate("/account/reservas")}>
                     <Calendar className="h-4 w-4" /> Minhas reservas
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/account")}>

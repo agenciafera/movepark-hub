@@ -14,10 +14,6 @@ export function AccountAppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const isRoot = location.pathname === "/account" || location.pathname === "/account/";
-  // Minhas reservas é uma lista sobre o painel cinza (os cards de reserva brancos
-  // sobem no cinza), então dispensa a superfície branca. As demais telas da conta
-  // (perfil, veículos, clube, indique) ganham o card branco, pra não ficarem soltas.
-  const fullBleed = location.pathname.startsWith("/account/reservas");
 
   return (
     <div className="flex min-h-screen flex-col bg-panel">
@@ -44,15 +40,12 @@ export function AccountAppShell() {
         <div className="flex gap-10">
           <AccountSidebar />
           <main className="min-w-0 flex-1 pb-[var(--bottom-nav-space)] tablet:pb-0">
-            {fullBleed ? (
+            {/* Painel de conteúdo branco: toda tela da conta (perfil, veículos, reservas,
+                clube, indique) mora nessa superfície branca, pra ficarem consistentes e
+                não soltas no cinza. */}
+            <div className="rounded-md border border-hairline bg-canvas p-5 desktop:p-8">
               <Outlet />
-            ) : (
-              /* Painel de conteúdo branco: sobre o fundo cinza, dá superfície às páginas
-                 da conta (perfil, veículos, etc.), que antes ficavam soltas no cinza. */
-              <div className="rounded-md border border-hairline bg-canvas p-5 desktop:p-8">
-                <Outlet />
-              </div>
-            )}
+            </div>
           </main>
         </div>
       </div>
