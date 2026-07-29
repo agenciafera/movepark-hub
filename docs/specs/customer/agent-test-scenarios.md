@@ -1192,3 +1192,33 @@ usuário do site; chave `mp_` confiável com `identity:assert` = agente externo 
 **Ainda não construído (canal WhatsApp):** `assert_verified_identity` e o escopo `identity:assert` não
 existem no código. É o que falta para o agente de WhatsApp autenticar um número já verificado pela Meta
 sem OTP. Ver o plano em `agent-booking.md`.
+
+---
+
+## 24. Revalidação de 29/07/2026 (retomada)
+
+Seis dias e **63 commits** depois da rodada de 23/07, revalidei o que já tinha sido provado, para
+saber o que sobreviveu. Nada regrediu.
+
+| O que | Como conferi | Resultado |
+|---|---|---|
+| Gates | `typecheck`, `lint`, `test`, `test:edge`, `lint:openapi` | verdes: 1087 vitest, 381 deno, 0 erro de lint, drift em sincronia (65 tools) |
+| F1 · MCP público | `tools/list` | 10 tools de leitura, com `search_knowledge` |
+| RAG | `tools/call search_knowledge` "tem tolerância se eu me atrasar na saída?" | acerta a FAQ de tolerância no topo (0.803) |
+| F3 · transacional sem JWT | `create_booking` sem token | recusado ("Faça login primeiro") |
+| F4 · escopo de plataforma | `tools/list` no `/customer` sem chave | 21 tools, `create_checkout_link` **ausente** |
+| F5 · parceiro sem chave | `tools/list` no `/partner` | erro de chave ausente |
+| Pipeline de frescor | `cron.job_run_details` + resync forçado | **60 execuções em 2h** (uma a cada 2 min); enfileirei um resync às 13:29:35 e a fila **drenou sozinha** até 13:32, com os chunks intactos em 40 (o `content_hash` bateu e reusou o embedding, sem gastar chamada de API) |
+
+O teste do pipeline é o que mais vale: prova que o laço **fila → cron → worker → embedding** está
+vivo em produção e é idempotente, não só que foi deployado um dia.
+
+**O que mudou no ambiente e afeta este roteiro:**
+
+- A suíte Playwright cresceu para 35 specs (consumidor, operador, dono, manager, lead público), mas
+  **nenhuma cobre o assistente, o MCP ou a Public API**. Tudo aqui continua manual.
+- O commit `ad92bbc` mostra a idempotência derivada funcionando de um jeito que ninguém tinha
+  previsto: a suíte E2E quebrou porque todos os casos usavam a mesma data e caíam no
+  `idempotent_replay`. A correção foi dar uma data por caso (offset `startInDays`). Vale como aviso
+  para quem rodar os roteiros à mão: **repetir o mesmo caso nas mesmas datas devolve a mesma reserva,
+  e isso é o produto certo, não um bug do teste.**
