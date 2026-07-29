@@ -49,9 +49,12 @@ Atributos concretos (valem para todas as peças):
   foco. É a "rota" da marca. Use com parcimônia, como tempero, não como papel de parede.
 - **Um único foco por peça.** Espaço negativo generoso (a peça costuma dividir espaço com
   texto de UI).
-- **Pessoas (quando houver):** estilizadas, simples e diversas, mas **nunca** no clichê
-  "corporate memphis" (bonecos de membros gigantes, mãos enormes, poses genéricas). Prefira
-  mostrar mãos, carro, objeto ou cena a colocar um boneco no centro.
+- **Pessoas (quando houver):** podem ser protagonistas, no estilo **geométrico editorial**
+  (formas angulares e confiantes, blocos de cor plana que se sobrepõem, rosto com traços
+  mínimos, gente diversa e real). É assim que a referência boa acerta (ver seção 10). O que
+  **nunca** entra é o clichê "corporate memphis"/Alegria: bonecos de membros gigantes, mãos
+  enormes, poses genéricas, sorriso vazio. Se a cena não pede gente, um carro/objeto/cena
+  resolve igual.
 - **Vocabulário de assunto:** carro em três-quartos (simplificado), estrutura de
   estacionamento, silhueta mínima de terminal e torre de controle, aviãozinho subindo,
   celular com o app, voucher com QR, van de traslado, mala, linha de rota e pin de local,
@@ -274,9 +277,18 @@ palette, flat vector, one focal point. No text.
 Toda peça nova entra nesta tabela, com o prompt e o `style_id`, igual ao `image-prompts.md`
 faz com as fotos. Assim dá pra regenerar depois sem adivinhar.
 
-| Asset | Onde aparece | Style | Prompt | Data |
+| Asset | Onde aparece | Origem | Prompt | Data |
 |---|---|---|---|---|
-| _(primeira peça entra aqui)_ | | `movepark-rota-v1` | ver seção 6 | |
+| `il-empty-reservas.webp` | Estado vazio "sem reservas futuras" (`/account/reservas`) | Exemplo raster (Gemini) | seção 6 · sem reservas | 2026-07 |
+| `il-empty-favoritos.webp` | Estado vazio "sem favoritos" (`/account/saved`) | Exemplo raster (Gemini) | seção 6 · sem favoritos | 2026-07 |
+| `il-sucesso-voucher.webp` | Sucesso / voucher confirmado (checkout, voucher) | Exemplo raster (Gemini) | seção 6 · voucher | 2026-07 |
+| `il-destino-aeroporto.webp` | Destino aeroporto (`/destinos`) | Exemplo raster (Gemini) | seção 6 · destino | 2026-07 |
+
+> **Estes quatro são sementes de exemplo, não a versão final.** Foram gerados no
+> `gemini-image` (raster, `.webp`) para (a) mostrar a linguagem no design system agora e
+> (b) servir de **referência para criar o Style `movepark-rota-v1` no Recraft** (seção 4).
+> A versão de produção de cada um deve virar **SVG do Recraft** e substituir o `.webp` no
+> mesmo caminho. Enquanto isso, o `.webp` já pluga no `EmptyState` via a prop `illustration`.
 
 ### 8.4. Checklist antes de commitar uma ilustração
 
@@ -300,3 +312,41 @@ faz com as fotos. Assim dá pra regenerar depois sem adivinhar.
   regressão, mesmo que "bonita".
 - **Este doc é normativo.** Ao criar arte nova ou mudar a linguagem, atualize este arquivo no
   mesmo PR (padrão dos specs do projeto). O `DESIGN.md` aponta pra cá.
+
+---
+
+## 10. Referência e padrões de uso
+
+Boa referência de produto que usa ilustração muito bem: o **Nav Dasa** (plataforma de saúde
+da Dasa). Vale estudar. O que ele acerta e a gente adota (adaptando à paleta e ao tom calmo
+da Movepark, sem a gritaria de azul/amarelo saturado deles):
+
+- **Ilustração vive em superfície de cor, não só no branco.** Os spots deles moram em cards
+  coloridos (azul, navy, um acento). Na Movepark: a ilustração pode assentar numa faixa/card
+  **navy** (`bg-dashboard-hero`), **pale blue** (`bg-mp-pale`) ou branco. A paleta da arte
+  combina com a superfície (arte clara sobre navy, arte com navy sobre pale/branco). Isso dá o
+  ar "premium editorial" em vez de clip-art solto.
+- **Pessoas com caráter, geométricas e confiantes.** As figuras deles são angulares, de cor
+  chapada sobrescrita, rosto mínimo, gente diversa. Não são bonecos memphis. É o nível de
+  acabamento que a gente busca quando a cena pede gente (ver a regra de pessoas na seção 2).
+- **Ícone e ilustração em lanes separadas e óbvias.** No Nav Dasa, atalhos são **ícones de
+  linha** (leves, monocromáticos); features e heros são **ilustração cheia**. Nunca misturam.
+  Mesma regra nossa: Lucide para ação/atalho, ilustração para momento/feature.
+- **Sistema, não peças avulsas.** Hero, cards de feature, promo do dashboard, rodapé: tudo na
+  mesma família. É o que o Style travado (`movepark-rota-v1`) garante aqui.
+
+Onde a ilustração Movepark cabe (padrões de superfície):
+
+| Padrão | Superfície | Exemplo |
+|---|---|---|
+| Estado vazio | card branco / `surface-soft` | sem reservas, sem favoritos |
+| Card de feature / promo | navy (`bg-dashboard-hero`) ou pale | "Repetir reserva", Clube |
+| Confirmação | branco ou pale | voucher garantido |
+| Hero leve de destino | faixa pale/navy | página de destino |
+
+> **Honestidade sobre as sementes atuais.** Os quatro `.webp` da seção 8.3 são a versão
+> **calma e centrada em objeto** da linguagem (carro, voucher, aeroporto). Combinam com o tom
+> premium da Movepark, mas são mais quietos que o Nav Dasa. Se a gente quiser puxar pra um
+> registro mais **editorial e com gente** (mais perto da energia da referência, sem copiar a
+> gritaria), dá pra gerar um segundo lote com figuras geométricas e usar como semente do Style.
+> Decisão de direção de arte, registrada aqui quando batida.

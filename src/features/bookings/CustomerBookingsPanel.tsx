@@ -19,12 +19,13 @@ const tabs: { id: MyBookingStatus; label: string }[] = [
 
 const emptyCopy: Record<
   MyBookingStatus,
-  { title: string; description: string; icon: LucideIcon }
+  { title: string; description: string; icon: LucideIcon; illustration?: string }
 > = {
   upcoming: {
     title: "Você ainda não tem reservas futuras.",
     description: "Comece buscando uma vaga.",
     icon: CalendarClock,
+    illustration: "/illustrations/il-empty-reservas.webp",
   },
   active: {
     title: "Nada em uso agora.",
