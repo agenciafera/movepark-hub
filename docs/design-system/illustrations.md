@@ -283,8 +283,8 @@ faz com as fotos. Assim dá pra regenerar depois sem adivinhar.
 | `il-empty-favoritos.webp` | Estado vazio "sem favoritos" (`/account/saved`) | Gemini (sem versão Recraft ainda) | seção 6 · sem favoritos | 2026-07 |
 | `il-sucesso-voucher.webp` | Sucesso / voucher confirmado (checkout, voucher) | Recraft (rasterizado) | seção 6 · voucher | 2026-07 |
 | `il-destino-aeroporto.webp` | Destino aeroporto (`/destinos`) | Recraft (rasterizado) | seção 6 · destino | 2026-07 |
-| `il-traslado-shuttle.webp` | Traslado / shuttle (a ligar) | Recraft (rasterizado) | seção 6 · traslado | 2026-07 |
-| `il-confianca-parceria.webp` | Confiança / parceria, aperto de mão (a ligar) | Recraft (rasterizado) | seção 6 · confiança | 2026-07 |
+| `il-traslado-shuttle.webp` | Página de destino · "Como funciona o traslado" (`/destinos/:slug`) · **em uso** | Recraft (rasterizado) | seção 6 · traslado | 2026-07 |
+| `il-confianca-parceria.webp` | Seja parceiro · CTA final (banda navy) · **em uso** | Recraft (rasterizado) | seção 6 · confiança | 2026-07 |
 | `il-clube-cashback.webp` | Clube · carteira vazia (`/account/clube`, saldo R$ 0) · **em uso** | Recraft (rasterizado) | seção 6 · clube | 2026-07 |
 | `il-people-viajante.webp` | Direção B (com gente) · viajante indo pro carro | Gemini | seção 5.1 (variante gente) | 2026-07 |
 | `il-people-reserva-app.webp` | Direção B (com gente) · gate do Clube (`/account/clube`) · **em uso** | Gemini | seção 5.1 (variante gente) | 2026-07 |

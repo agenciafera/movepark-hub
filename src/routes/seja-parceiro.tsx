@@ -841,6 +841,13 @@ export default function SejaParceiroPage() {
           ink dá ~13:1; não uso violeta (reservado a acionável). */}
       <section className="bg-mp-navy">
         <div className="mx-auto max-w-[1080px] px-4 py-16 text-center text-white desktop:px-8 desktop:py-20">
+          {/* Aperto de mão (ilustração da marca): fecha a página no momento de "vamos
+              ser parceiros". Fundo claro da arte moldado como tile pra assentar na banda navy. */}
+          <img
+            src="/illustrations/il-confianca-parceria.webp"
+            alt=""
+            className="mx-auto mb-6 h-28 w-auto rounded-2xl"
+          />
           <span className="text-badge uppercase tracking-[0.4px] text-white/70">Risco zero</span>
           <h2 className="mx-auto mt-3 max-w-2xl text-balance text-display-2xl text-white">
             Você está pronto pra <HighlightSweep>encher suas vagas?</HighlightSweep>

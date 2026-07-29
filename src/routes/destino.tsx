@@ -290,6 +290,25 @@ export default function DestinoPage() {
           </div>
         </section>
 
+        {/* Como funciona o traslado (educativo, com ilustração da marca) */}
+        <section className="mt-10">
+          <div className="grid grid-cols-1 items-center gap-6 rounded-lg bg-mp-pale p-6 tablet:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] desktop:gap-10 desktop:p-8">
+            <img
+              src="/illustrations/il-traslado-shuttle.webp"
+              alt=""
+              className="mx-auto h-40 w-auto tablet:mx-0"
+            />
+            <div>
+              <h2 className="text-balance text-display-md text-ink">Como funciona o traslado</h2>
+              <p className="mt-3 text-body-md text-body">
+                Você deixa o carro no estacionamento parceiro e um transfer leva você até o
+                terminal. Na volta, é só avisar que ele passa te buscar. O tempo e a frequência
+                ficam na página de cada estacionamento.
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* Mapa */}
         <section className="mt-10">
           <h2 className="mb-4 text-display-md text-ink">Localização</h2>
