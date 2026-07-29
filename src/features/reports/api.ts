@@ -32,6 +32,36 @@ export function useRevenueByDay(periodDays: ReportPeriod, locationIds?: string[]
   });
 }
 
+/**
+ * Receita por dia num intervalo livre (o filtro do Manager escolhe o período, não
+ * mais uma janela fixa de 7/30/90). `from` inclusivo, `to` exclusivo.
+ */
+export function useRevenueByRange(fromIso: string, toIso: string, locationIds?: string[]) {
+  return useQuery({
+    queryKey: ["reports", "revenue-range", fromIso, toIso, locationIds],
+    queryFn: async (): Promise<DailyRevenueRow[]> => {
+      let q = supabase
+        .from("booking")
+        .select("check_in_at, total_amount")
+        .gte("check_in_at", fromIso)
+        .lt("check_in_at", toIso)
+        .in("status", ["confirmed", "checked_in", "completed"]);
+      if (locationIds?.length) q = q.in("location_id", locationIds);
+      const { data, error } = await q;
+      if (error) throw error;
+      const map = new Map<string, DailyRevenueRow>();
+      for (const row of data ?? []) {
+        const key = (row.check_in_at as string).slice(0, 10);
+        const current = map.get(key) ?? { date: key, total: 0, count: 0 };
+        current.total += Number(row.total_amount ?? 0);
+        current.count += 1;
+        map.set(key, current);
+      }
+      return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
+    },
+  });
+}
+
 export type StatusFunnelRow = {
   status: string;
   count: number;

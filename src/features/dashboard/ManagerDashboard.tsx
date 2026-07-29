@@ -31,13 +31,6 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -53,14 +46,11 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { BookingTable } from "@/features/bookings/BookingTable";
 import { BookingModal } from "@/features/bookings/BookingModal";
 import { useRecentBookings } from "@/features/bookings/api";
-import { useRevenueByDay, type ReportPeriod } from "@/features/reports/api";
-import {
-  useManagerStats,
-  useManagerOverview,
-  useManagerDailyFlow,
-  useFareRevenueMix,
-  todayIsoDate,
-} from "./api";
+import { useRevenueByRange } from "@/features/reports/api";
+import { useManagerFilters } from "@/features/manager-filters/context";
+import { ManagerFilterBar } from "@/features/manager-filters/ManagerFilterBar";
+import { compareLabel, periodLabel } from "@/features/manager-filters/managerFilters.logic";
+import { useManagerStats, useManagerOverview, useManagerDailyFlow, todayIsoDate } from "./api";
 import {
   pctDelta,
   formatDelta,
@@ -69,7 +59,7 @@ import {
   hourLabel,
   sharePct,
 } from "./dashboardMetrics.logic";
-import { FARE_TIER_ORDER, FARE_TIER_LABEL } from "@/lib/fares";
+import { FARE_TIER_LABEL } from "@/lib/fares";
 import { formatBRL } from "@/lib/format";
 import type { BookingWithRelations } from "@/types/domain";
 
@@ -99,22 +89,30 @@ function SectionTitle({
 }
 
 export default function ManagerDashboard() {
-  const [period, setPeriod] = React.useState<ReportPeriod>(30);
+  const { period, range, compareRange, scopedLocationIds } = useManagerFilters();
   const [flowDate, setFlowDate] = React.useState(todayIsoDate);
   const [selected, setSelected] = React.useState<BookingWithRelations | null>(null);
 
-  const stats = useManagerStats();
-  const overview = useManagerOverview(period);
-  const revenue = useRevenueByDay(period);
-  const fareRev = useFareRevenueMix(period);
-  const flow = useManagerDailyFlow(flowDate);
-  const recent = useRecentBookings(20);
+  const stats = useManagerStats(scopedLocationIds);
+  const overview = useManagerOverview(range, compareRange, scopedLocationIds);
+  const revenue = useRevenueByRange(
+    range.from.toISOString(),
+    range.to.toISOString(),
+    scopedLocationIds,
+  );
+  const flow = useManagerDailyFlow(flowDate, scopedLocationIds);
+  const recent = useRecentBookings(20, scopedLocationIds);
 
   const cur = overview.data?.current;
   const prev = overview.data?.previous;
   const statuses = overview.data?.statuses;
   const customers = overview.data?.customers;
-  const periodLabel = `${period} dias`;
+  const label = periodLabel(period, range);
+  // Sem comparação escolhida, o card não mostra variação: um "+12%" sem base
+  // declarada é pior que nenhum número.
+  const vs = compareLabel(period, compareRange);
+  const delta = (a: number | undefined, b: number | undefined) =>
+    compareRange && a !== undefined && b !== undefined ? formatDelta(pctDelta(a, b)) : undefined;
 
   const destinations = overview.data?.by_destination ?? [];
   const destinationRevenue = destinations.reduce((acc, d) => acc + Number(d.revenue), 0);
@@ -130,7 +128,8 @@ export default function ManagerDashboard() {
     saidas: flow.data?.exits[i]?.vehicles ?? 0,
   }));
 
-  const fareTotal = Object.values(fareRev.data ?? {}).reduce((acc, e) => acc + e.revenue, 0);
+  const fares = overview.data?.by_fare ?? [];
+  const fareTotal = fares.reduce((acc, f) => acc + Number(f.revenue), 0);
 
   const customersTotal = (customers?.new ?? 0) + (customers?.returning ?? 0);
   const cancelBase = (statuses?.total ?? 0) - (statuses?.expired ?? 0) - (statuses?.pending ?? 0);
@@ -140,22 +139,8 @@ export default function ManagerDashboard() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Dashboard"
-        description="O movimento de hoje e o resultado do período em toda a rede."
-        actions={
-          <Select
-            value={String(period)}
-            onValueChange={(v) => setPeriod(Number(v) as ReportPeriod)}
-          >
-            <SelectTrigger className="h-11 w-[180px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7">Últimos 7 dias</SelectItem>
-              <SelectItem value="30">Últimos 30 dias</SelectItem>
-              <SelectItem value="90">Últimos 90 dias</SelectItem>
-            </SelectContent>
-          </Select>
-        }
+        description="O movimento de hoje e o resultado do período escolhido."
+        actions={<ManagerFilterBar />}
       />
 
       {/* Hoje: o que a operação precisa saber agora. */}
@@ -199,23 +184,22 @@ export default function ManagerDashboard() {
         />
       </div>
 
-      {/* Período: dinheiro e volume, sempre com o período anterior do lado. */}
+      {/* Período: dinheiro e volume, com a comparação escolhida no filtro. */}
       <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-4">
         <KpiCard
-          label={`Receita (${periodLabel})`}
+          label={`Receita (${label})`}
           value={formatBRL(cur?.revenue ?? 0)}
-          trend={cur && prev ? formatDelta(pctDelta(cur.revenue, prev.revenue)) : undefined}
+          hint={vs ?? undefined}
+          trend={delta(cur?.revenue, prev?.revenue)}
           isLoading={overview.isLoading}
           icon={Wallet}
           accent="green"
         />
         <KpiCard
-          label={`Diárias vendidas (${periodLabel})`}
+          label={`Diárias vendidas (${label})`}
           value={int(cur?.vehicle_days)}
           hint={`${int(cur?.bookings)} reservas`}
-          trend={
-            cur && prev ? formatDelta(pctDelta(cur.vehicle_days, prev.vehicle_days)) : undefined
-          }
+          trend={delta(cur?.vehicle_days, prev?.vehicle_days)}
           isLoading={overview.isLoading}
           icon={CarFront}
           accent="indigo"
@@ -224,7 +208,7 @@ export default function ManagerDashboard() {
           label="Ticket médio"
           value={formatBRL(cur?.ticket ?? 0)}
           hint="por reserva paga"
-          trend={cur && prev ? formatDelta(pctDelta(cur.ticket, prev.ticket)) : undefined}
+          trend={delta(cur?.ticket, prev?.ticket)}
           isLoading={overview.isLoading}
           icon={Receipt}
           accent="amber"
@@ -296,7 +280,7 @@ export default function ManagerDashboard() {
         {/* Onde o volume está: o Hub vende em vários aeroportos, e a média esconde isso. */}
         <Card>
           <CardHeader>
-            <SectionTitle icon={MapPin}>Por destino ({periodLabel})</SectionTitle>
+            <SectionTitle icon={MapPin}>Por destino ({label})</SectionTitle>
           </CardHeader>
           <CardContent>
             {overview.isLoading ? (
@@ -338,7 +322,7 @@ export default function ManagerDashboard() {
         {/* Permanência: define capacidade e onde a tabela de preço precisa mudar. */}
         <Card>
           <CardHeader>
-            <SectionTitle icon={CalendarRange}>Permanência ({periodLabel})</SectionTitle>
+            <SectionTitle icon={CalendarRange}>Permanência ({label})</SectionTitle>
           </CardHeader>
           <CardContent>
             {overview.isLoading ? (
@@ -383,7 +367,7 @@ export default function ManagerDashboard() {
         <Card>
           <CardContent className="flex flex-col gap-3 p-6">
             <span className="flex items-center gap-1.5 text-caption text-muted">
-              <Users className="h-3.5 w-3.5 text-mp-indigo" aria-hidden /> Clientes ({periodLabel})
+              <Users className="h-3.5 w-3.5 text-mp-indigo" aria-hidden /> Clientes ({label})
             </span>
             {overview.isLoading ? (
               <Skeleton className="h-16 w-full" />
@@ -431,8 +415,7 @@ export default function ManagerDashboard() {
         <Card>
           <CardContent className="flex flex-col p-6">
             <span className="flex items-center gap-1.5 text-caption text-muted">
-              <Ban className="h-3.5 w-3.5 text-muted-soft" aria-hidden /> Cancelamento (
-              {periodLabel})
+              <Ban className="h-3.5 w-3.5 text-muted-soft" aria-hidden /> Cancelamento ({label})
             </span>
             {overview.isLoading ? (
               <Skeleton className="mt-2 h-8 w-24" />
@@ -456,26 +439,21 @@ export default function ManagerDashboard() {
           <CardContent className="flex flex-col gap-3 p-6">
             <span className="flex items-center gap-1.5 text-caption text-muted">
               <Ticket className="h-3.5 w-3.5 text-mp-indigo" aria-hidden /> Receita de tarifas (
-              {periodLabel})
+              {label})
             </span>
-            {fareRev.isLoading ? (
+            {overview.isLoading ? (
               <Skeleton className="h-24 w-full" />
             ) : (
               <div className="flex flex-col gap-1.5">
-                {FARE_TIER_ORDER.map((tier) => {
-                  const entry = fareRev.data?.[tier];
-                  return (
-                    <div key={tier} className="flex items-center justify-between text-body-sm">
-                      <span className="text-muted">
-                        {FARE_TIER_LABEL[tier]}{" "}
-                        <span className="text-caption">({int(entry?.count)})</span>
-                      </span>
-                      <span className="tabular-nums text-ink">
-                        {formatBRL(entry?.revenue ?? 0)}
-                      </span>
-                    </div>
-                  );
-                })}
+                {fares.map((f) => (
+                  <div key={f.tier} className="flex items-center justify-between text-body-sm">
+                    <span className="text-muted">
+                      {FARE_TIER_LABEL[f.tier as keyof typeof FARE_TIER_LABEL] ?? f.tier}{" "}
+                      <span className="text-caption">({int(f.bookings)})</span>
+                    </span>
+                    <span className="tabular-nums text-ink">{formatBRL(Number(f.revenue))}</span>
+                  </div>
+                ))}
                 <div className="mt-1 flex items-center justify-between border-t border-hairline-soft pt-2 text-body-sm">
                   <span className="text-muted">Total</span>
                   <span className="font-medium tabular-nums text-mp-primary">
@@ -573,7 +551,7 @@ export default function ManagerDashboard() {
 
       <Card>
         <CardHeader>
-          <SectionTitle icon={Building2}>Top unidades ({periodLabel})</SectionTitle>
+          <SectionTitle icon={Building2}>Top unidades ({label})</SectionTitle>
         </CardHeader>
         <CardContent>
           {overview.isLoading ? (

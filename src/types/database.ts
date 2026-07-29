@@ -4111,7 +4111,7 @@ export type Database = {
         }[]
       }
       booking_attribution: {
-        Args: { p_from: string; p_to: string }
+        Args: { p_from: string; p_location_ids?: string[]; p_to: string }
         Returns: Json
       }
       cancel_booking_with_release: {
@@ -4382,9 +4382,18 @@ export type Database = {
         }
         Returns: string
       }
-      manager_daily_flow: { Args: { p_date: string }; Returns: Json }
+      manager_daily_flow: {
+        Args: { p_date: string; p_location_ids?: string[] }
+        Returns: Json
+      }
       manager_dashboard_overview: {
-        Args: { p_from: string; p_to: string }
+        Args: {
+          p_compare_from?: string
+          p_compare_to?: string
+          p_from: string
+          p_location_ids?: string[]
+          p_to: string
+        }
         Returns: Json
       }
       match_knowledge: {

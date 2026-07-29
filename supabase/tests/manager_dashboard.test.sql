@@ -9,23 +9,26 @@
 
 begin;
 set local time zone 'UTC';
-select plan(15);
+select plan(17);
 
-select has_function('public', 'manager_dashboard_overview', ARRAY['timestamptz', 'timestamptz'],
-  'manager_dashboard_overview(timestamptz, timestamptz) existe');
-select has_function('public', 'manager_daily_flow', ARRAY['date'],
-  'manager_daily_flow(date) existe');
+select has_function('public', 'manager_dashboard_overview',
+  ARRAY['timestamptz', 'timestamptz', 'timestamptz', 'timestamptz', 'uuid[]'],
+  'manager_dashboard_overview(from, to, compare_from, compare_to, location_ids) existe');
+select has_function('public', 'manager_daily_flow', ARRAY['date', 'uuid[]'],
+  'manager_daily_flow(date, uuid[]) existe');
 select is(
   (select prosecdef from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and p.proname = 'manager_dashboard_overview'),
   true, 'manager_dashboard_overview é SECURITY DEFINER');
 
 -- ── Grants: privilegiada, então anon fica de fora ────────────────────────────
-select ok(not has_function_privilege('anon', 'public.manager_dashboard_overview(timestamptz, timestamptz)', 'EXECUTE'),
+select ok(not has_function_privilege('anon',
+  'public.manager_dashboard_overview(timestamptz, timestamptz, timestamptz, timestamptz, uuid[])', 'EXECUTE'),
   'anon NÃO executa manager_dashboard_overview');
-select ok(not has_function_privilege('anon', 'public.manager_daily_flow(date)', 'EXECUTE'),
+select ok(not has_function_privilege('anon', 'public.manager_daily_flow(date, uuid[])', 'EXECUTE'),
   'anon NÃO executa manager_daily_flow');
-select ok(has_function_privilege('authenticated', 'public.manager_dashboard_overview(timestamptz, timestamptz)', 'EXECUTE'),
+select ok(has_function_privilege('authenticated',
+  'public.manager_dashboard_overview(timestamptz, timestamptz, timestamptz, timestamptz, uuid[])', 'EXECUTE'),
   'authenticated mantém EXECUTE (o gate é o is_hub_admin lá dentro)');
 
 -- ── Fixture: hub_admin, customer, destino/unidade próprios e reservas ────────
@@ -150,6 +153,22 @@ select is(
   (public.manager_dashboard_overview(now() - interval '30 days', now()) #>> '{customers,returning}')::int,
   current_setting('test.ret_before')::int + 1,
   'reserva nova de quem já comprou entra como cliente recorrente');
+reset role;
+
+-- ── Recorte por unidade ──────────────────────────────────────────────────────
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.ua'))::text, true);
+-- Filtrando pela unidade da fixture, o total do período é só o dela (3 pagas: 400 + 100 + 150).
+select is(
+  (public.manager_dashboard_overview(now() - interval '30 days', now(), null, null,
+     array[current_setting('test.loc')::uuid]) #>> '{current,bookings}')::int,
+  3, 'p_location_ids recorta o resumo na unidade escolhida');
+-- Array vazio quer dizer "todas", não "nenhuma": o filtro limpo não pode zerar a tela.
+select is(
+  (public.manager_dashboard_overview(now() - interval '30 days', now(), null, null, '{}'::uuid[])
+     #>> '{current,bookings}')::int,
+  (public.manager_dashboard_overview(now() - interval '30 days', now()) #>> '{current,bookings}')::int,
+  'array vazio de unidades vale como toda a rede');
 reset role;
 
 -- ── Fluxo horário: a hora sai no fuso da unidade ─────────────────────────────

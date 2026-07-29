@@ -1,6 +1,3 @@
-import * as React from "react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -11,71 +8,31 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { useManagerFilters } from "@/features/manager-filters/context";
+import { ManagerFilterBar } from "@/features/manager-filters/ManagerFilterBar";
+import { formatRangeLabel } from "@/features/manager-filters/managerFilters.logic";
 import { useBookingAttribution } from "@/features/attribution/api";
-
-function recentMonths(n: number) {
-  const out: { value: string; label: string; from: string; to: string }[] = [];
-  const now = new Date();
-  for (let i = 0; i < n; i++) {
-    const start = new Date(Date.UTC(now.getFullYear(), now.getMonth() - i, 1));
-    const end = new Date(Date.UTC(now.getFullYear(), now.getMonth() - i + 1, 1));
-    out.push({
-      value: start.toISOString().slice(0, 7),
-      label: format(start, "MMMM yyyy", { locale: ptBR }),
-      from: start.toISOString(),
-      to: end.toISOString(),
-    });
-  }
-  return out;
-}
 
 const pct = (part: number, total: number) => (total > 0 ? Math.round((part / total) * 100) : 0);
 
 export default function ManagerAttribution() {
-  const months = React.useMemo(() => recentMonths(12), []);
-  const [monthKey, setMonthKey] = React.useState(months[0].value);
-  const period = months.find((m) => m.value === monthKey) ?? months[0];
-
-  const { data, isLoading } = useBookingAttribution(period.from, period.to);
+  const { range, scopedLocationIds } = useManagerFilters();
+  const { data, isLoading } = useBookingAttribution(
+    range.from.toISOString(),
+    range.to.toISOString(),
+    scopedLocationIds,
+  );
   const totals = data?.totals ?? { hub: 0, external: 0, total: 0 };
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Atribuição"
-        description="De onde vêm as reservas: canal Hub (venda direta) × white-label, e a origem/UTM de cada uma."
+        description={`De onde vieram as reservas criadas em ${formatRangeLabel(range)}: canal Hub (venda direta) x white-label, e a origem/UTM de cada uma.`}
+        actions={<ManagerFilterBar showCompare={false} />}
       />
-
-      <Card>
-        <CardContent className="flex flex-wrap items-end gap-4 p-4">
-          <div className="flex flex-col gap-1.5">
-            <span className="text-caption text-muted">Período</span>
-            <div className="w-48">
-              <Select value={monthKey} onValueChange={setMonthKey}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {months.map((m) => (
-                    <SelectItem key={m.value} value={m.value}>
-                      {m.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* KPIs hub × white-label */}
       <div className="grid gap-4 tablet:grid-cols-3">
@@ -92,13 +49,18 @@ export default function ManagerAttribution() {
           sub={`${pct(totals.external, totals.total)}% do total`}
           loading={isLoading}
         />
-        <Kpi label="Total no período" value={totals.total} sub="todas as reservas" loading={isLoading} />
+        <Kpi
+          label="Total no período"
+          value={totals.total}
+          sub="todas as reservas"
+          loading={isLoading}
+        />
       </div>
 
       {/* Por origem */}
       <Card>
         <CardContent className="flex flex-col gap-3 p-4">
-          <h3 className="text-body font-medium text-ink">Por origem</h3>
+          <h3 className="font-medium text-body text-ink">Por origem</h3>
           {isLoading ? (
             <Skeleton className="h-24 w-full" />
           ) : (data?.by_origin ?? []).length === 0 ? (
@@ -118,7 +80,9 @@ export default function ManagerAttribution() {
                     <TableRow key={r.origin}>
                       <TableCell className="text-ink">{r.origin}</TableCell>
                       <TableCell className="text-right tabular-nums">{r.count}</TableCell>
-                      <TableCell className="text-right tabular-nums text-muted">{r.confirmed}</TableCell>
+                      <TableCell className="text-right tabular-nums text-muted">
+                        {r.confirmed}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -131,7 +95,7 @@ export default function ManagerAttribution() {
       {/* Por utm_source */}
       <Card>
         <CardContent className="flex flex-col gap-3 p-4">
-          <h3 className="text-body font-medium text-ink">Por fonte de marketing (utm_source)</h3>
+          <h3 className="font-medium text-body text-ink">Por fonte de marketing (utm_source)</h3>
           {isLoading ? (
             <Skeleton className="h-20 w-full" />
           ) : (data?.by_utm_source ?? []).length === 0 ? (

@@ -4,7 +4,8 @@ import type { ReviewWithAuthor } from "@/types/domain";
 
 export const managerReviewsKeys = {
   all: ["manager-reviews"] as const,
-  list: (onlyUnpublished: boolean) => [...managerReviewsKeys.all, onlyUnpublished] as const,
+  list: (onlyUnpublished: boolean, locationIds?: string[]) =>
+    [...managerReviewsKeys.all, onlyUnpublished, locationIds] as const,
 };
 
 export type ManagerReview = ReviewWithAuthor & {
@@ -13,18 +14,17 @@ export type ManagerReview = ReviewWithAuthor & {
 };
 
 /** Todas as avaliações (hub_admin lê tudo via RLS), p/ moderação. */
-export function useAllReviews(onlyUnpublished = false) {
+export function useAllReviews(onlyUnpublished = false, locationIds?: string[]) {
   return useQuery({
-    queryKey: managerReviewsKeys.list(onlyUnpublished),
+    queryKey: managerReviewsKeys.list(onlyUnpublished, locationIds),
     queryFn: async (): Promise<ManagerReview[]> => {
       let q = supabase
         .from("review")
-        .select(
-          "*, profile:profiles(full_name), location:location(name, company:company(name))",
-        )
+        .select("*, profile:profiles(full_name), location:location(name, company:company(name))")
         .order("created_at", { ascending: false })
         .limit(300);
       if (onlyUnpublished) q = q.eq("is_published", false);
+      if (locationIds?.length) q = q.in("location_id", locationIds);
       const { data, error } = await q;
       if (error) throw error;
       // deno-lint-ignore no-explicit-any

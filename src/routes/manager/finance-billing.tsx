@@ -1,6 +1,3 @@
-import * as React from "react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,37 +9,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { useManagerFilters } from "@/features/manager-filters/context";
+import { ManagerFilterBar } from "@/features/manager-filters/ManagerFilterBar";
+import { formatRangeLabel } from "@/features/manager-filters/managerFilters.logic";
 import { useCompanyFinance } from "@/features/finance/api";
 import { formatBRL } from "@/lib/format";
 
-function recentMonths(n: number) {
-  const out: { value: string; label: string; date: Date }[] = [];
-  const now = new Date();
-  for (let i = 0; i < n; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    out.push({
-      value: d.toISOString().slice(0, 7),
-      label: format(d, "MMMM yyyy", { locale: ptBR }),
-      date: d,
-    });
-  }
-  return out;
-}
-
 export default function ManagerFinanceBilling() {
-  const months = React.useMemo(() => recentMonths(12), []);
-  const [monthKey, setMonthKey] = React.useState(months[0].value);
-  const selectedMonth = months.find((m) => m.value === monthKey)?.date ?? new Date();
-  const { data, isLoading } = useCompanyFinance(selectedMonth);
+  const { range, scopedLocationIds } = useManagerFilters();
+  const { data, isLoading } = useCompanyFinance(
+    range.from.toISOString(),
+    range.to.toISOString(),
+    scopedLocationIds,
+  );
   const totalGross = (data ?? []).reduce((acc, r) => acc + r.grossRevenue, 0);
   // Comissão real por empresa (take_rate_bps), não mais taxa fixa.
   const totalCommission = (data ?? []).reduce(
@@ -54,35 +35,19 @@ export default function ManagerFinanceBilling() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Faturamento"
-        description="Receita consolidada por empresa parceira."
+        description={`Receita por empresa parceira em ${formatRangeLabel(range)}.`}
+        actions={<ManagerFilterBar showCompare={false} />}
       />
 
       <Card>
-        <CardContent className="flex flex-col gap-4 p-6 tablet:flex-row tablet:items-end">
-          <div className="flex w-full tablet:w-60 flex-col gap-1.5">
-            <label className="text-caption text-muted">Mês de referência</label>
-            <Select value={monthKey} onValueChange={setMonthKey}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {months.map((m) => (
-                  <SelectItem key={m.value} value={m.value}>
-                    {m.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <CardContent className="flex flex-wrap items-center justify-end gap-8 p-6">
+          <div className="text-right">
+            <div className="text-caption text-muted">Receita bruta</div>
+            <div className="text-display-sm text-ink">{formatBRL(totalGross)}</div>
           </div>
-          <div className="grid grid-cols-2 gap-6 tablet:ml-auto">
-            <div className="text-right">
-              <div className="text-caption text-muted">Receita bruta</div>
-              <div className="text-display-sm text-ink">{formatBRL(totalGross)}</div>
-            </div>
-            <div className="text-right">
-              <div className="text-caption text-muted">Comissão Movepark</div>
-              <div className="text-display-sm text-mp-primary">{formatBRL(totalCommission)}</div>
-            </div>
+          <div className="text-right">
+            <div className="text-caption text-muted">Comissão Movepark</div>
+            <div className="text-display-sm text-mp-primary">{formatBRL(totalCommission)}</div>
           </div>
         </CardContent>
       </Card>
@@ -90,7 +55,7 @@ export default function ManagerFinanceBilling() {
       {isLoading ? (
         <Skeleton className="h-64 w-full" />
       ) : (data ?? []).length === 0 ? (
-        <EmptyState title="Sem movimentação" description="Nenhuma reserva no mês selecionado." />
+        <EmptyState title="Sem movimentação" description="Nenhuma reserva no período escolhido." />
       ) : (
         <div className="overflow-hidden rounded-md border border-hairline bg-canvas">
           <Table>

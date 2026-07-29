@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/table";
 import { formatDate } from "@/lib/format";
 import { RatingStars } from "@/features/reviews/RatingStars";
+import { useManagerFilters } from "@/features/manager-filters/context";
+import { ManagerFilterBar } from "@/features/manager-filters/ManagerFilterBar";
 import {
   useAllReviews,
   useSetReviewPublished,
@@ -24,7 +26,8 @@ import {
 
 export default function ManagerReviews() {
   const [onlyUnpublished, setOnlyUnpublished] = React.useState(false);
-  const { data, isLoading } = useAllReviews(onlyUnpublished);
+  const { scopedLocationIds } = useManagerFilters();
+  const { data, isLoading } = useAllReviews(onlyUnpublished, scopedLocationIds);
   const setPublished = useSetReviewPublished();
 
   async function toggle(r: ManagerReview) {
@@ -42,13 +45,17 @@ export default function ManagerReviews() {
         title="Avaliações"
         description="Modere as avaliações dos estacionamentos. Despublicar remove da página da unidade e recalcula a nota."
         actions={
-          <Button
-            variant={onlyUnpublished ? "primary" : "secondary"}
-            size="sm"
-            onClick={() => setOnlyUnpublished((v) => !v)}
-          >
-            {onlyUnpublished ? "Mostrando despublicadas" : "Só despublicadas"}
-          </Button>
+          <>
+            {/* Moderação não tem recorte de tempo: a fila é a fila. Só a unidade filtra. */}
+            <ManagerFilterBar showPeriod={false} />
+            <Button
+              variant={onlyUnpublished ? "primary" : "secondary"}
+              size="sm"
+              onClick={() => setOnlyUnpublished((v) => !v)}
+            >
+              {onlyUnpublished ? "Mostrando despublicadas" : "Só despublicadas"}
+            </Button>
+          </>
         }
       />
 

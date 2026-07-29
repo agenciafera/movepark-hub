@@ -16,7 +16,7 @@ select ok(has_function_privilege('anon', 'public.member_has_scope(uuid, text)', 
 -- ── RPCs privilegiadas: anon NÃO executa (amostra representativa) ─────────────
 select ok(not has_function_privilege('anon', 'public.set_company_take_rate(uuid, integer)', 'execute'),
   'anon NÃO executa set_company_take_rate');
-select ok(not has_function_privilege('anon', 'public.booking_attribution(timestamptz, timestamptz)', 'execute'),
+select ok(not has_function_privilege('anon', 'public.booking_attribution(timestamptz, timestamptz, uuid[])', 'execute'),
   'anon NÃO executa booking_attribution');
 select ok(not has_function_privilege('anon', 'public.wl_company_config(uuid)', 'execute'),
   'anon NÃO executa wl_company_config');

@@ -2,12 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { startOfDay, startOfMonth, subDays, addDays, format } from "date-fns";
 import { supabase } from "@/lib/supabase";
 import type { DailyFlow, LocationOccupancyRow, ManagerOverview } from "@/types/domain";
+import type { Range } from "@/features/manager-filters/managerFilters.logic";
 import {
   summarizePeriod,
   averageLeadTimeDays,
   channelMix,
   aggregateOccupancy,
-  fareRevenueMix,
 } from "./dashboardMetrics.logic";
 
 function isoStartOfMonth(d = new Date()) {
@@ -32,11 +32,13 @@ export type ManagerStats = {
  * `lt` do fim do dia, "reservas hoje" virava "todas as reservas de hoje em diante"
  * e a comparação com ontem não queria dizer nada.
  */
-async function fetchManagerStats(): Promise<ManagerStats> {
+async function fetchManagerStats(locationIds?: string[]): Promise<ManagerStats> {
   const now = new Date();
   const todayStart = isoStartOfDay(now);
   const tomorrowStart = isoStartOfDay(addDays(now, 1));
   const yesterdayStart = isoStartOfDay(subDays(now, 1));
+  const scope = <T extends { in: (col: string, v: string[]) => T }>(q: T) =>
+    locationIds?.length ? q.in("location_id", locationIds) : q;
 
   const [
     bookingsToday,
@@ -46,26 +48,34 @@ async function fetchManagerStats(): Promise<ManagerStats> {
     activeCompanies,
     activeLocations,
   ] = await Promise.all([
-    supabase
-      .from("booking")
-      .select("id", { count: "exact", head: true })
-      .gte("check_in_at", todayStart)
-      .lt("check_in_at", tomorrowStart),
-    supabase
-      .from("booking")
-      .select("id", { count: "exact", head: true })
-      .gte("check_in_at", yesterdayStart)
-      .lt("check_in_at", todayStart),
-    supabase
-      .from("booking")
-      .select("id", { count: "exact", head: true })
-      .gte("checked_in_at", todayStart)
-      .lt("checked_in_at", tomorrowStart),
-    supabase
-      .from("booking")
-      .select("id", { count: "exact", head: true })
-      .gte("checked_out_at", todayStart)
-      .lt("checked_out_at", tomorrowStart),
+    scope(
+      supabase
+        .from("booking")
+        .select("id", { count: "exact", head: true })
+        .gte("check_in_at", todayStart)
+        .lt("check_in_at", tomorrowStart),
+    ),
+    scope(
+      supabase
+        .from("booking")
+        .select("id", { count: "exact", head: true })
+        .gte("check_in_at", yesterdayStart)
+        .lt("check_in_at", todayStart),
+    ),
+    scope(
+      supabase
+        .from("booking")
+        .select("id", { count: "exact", head: true })
+        .gte("checked_in_at", todayStart)
+        .lt("checked_in_at", tomorrowStart),
+    ),
+    scope(
+      supabase
+        .from("booking")
+        .select("id", { count: "exact", head: true })
+        .gte("checked_out_at", todayStart)
+        .lt("checked_out_at", tomorrowStart),
+    ),
     supabase.from("company").select("id", { count: "exact", head: true }).eq("status", "active"),
     supabase
       .from("location")
@@ -84,10 +94,10 @@ async function fetchManagerStats(): Promise<ManagerStats> {
   };
 }
 
-export function useManagerStats() {
+export function useManagerStats(locationIds?: string[]) {
   return useQuery({
-    queryKey: ["dashboard", "manager-stats"],
-    queryFn: fetchManagerStats,
+    queryKey: ["dashboard", "manager-stats", locationIds],
+    queryFn: () => fetchManagerStats(locationIds),
   });
 }
 
@@ -96,15 +106,27 @@ export function useManagerStats() {
  * Receita, diárias vendidas, permanência, destino e novos x recorrentes saem
  * agregados do banco: o front não varre reserva pra somar.
  */
-export function useManagerOverview(days: number) {
+export function useManagerOverview(
+  range: Range,
+  compareRange: Range | null,
+  locationIds?: string[],
+) {
+  const from = range.from.toISOString();
+  const to = range.to.toISOString();
+  const compareFrom = compareRange?.from.toISOString() ?? null;
+  const compareTo = compareRange?.to.toISOString() ?? null;
   return useQuery({
-    queryKey: ["dashboard", "manager-overview", days],
+    queryKey: ["dashboard", "manager-overview", from, to, compareFrom, compareTo, locationIds],
     staleTime: 60_000,
     queryFn: async (): Promise<ManagerOverview> => {
-      const now = new Date();
       const { data, error } = await supabase.rpc("manager_dashboard_overview", {
-        p_from: subDays(now, days).toISOString(),
-        p_to: now.toISOString(),
+        p_from: from,
+        p_to: to,
+        // Sem comparação escolhida, a RPC cai no período anterior do mesmo tamanho.
+        ...(compareFrom && compareTo
+          ? { p_compare_from: compareFrom, p_compare_to: compareTo }
+          : {}),
+        ...(locationIds?.length ? { p_location_ids: locationIds } : {}),
       });
       if (error) throw error;
       return data as unknown as ManagerOverview;
@@ -116,12 +138,15 @@ export function useManagerOverview(days: number) {
  * Fluxo de veículos hora a hora num dia (RPC `manager_daily_flow`, só hub_admin).
  * `date` é a data local no formato `yyyy-MM-dd`; a hora sai no fuso de cada unidade.
  */
-export function useManagerDailyFlow(date: string) {
+export function useManagerDailyFlow(date: string, locationIds?: string[]) {
   return useQuery({
-    queryKey: ["dashboard", "manager-daily-flow", date],
+    queryKey: ["dashboard", "manager-daily-flow", date, locationIds],
     staleTime: 60_000,
     queryFn: async (): Promise<DailyFlow> => {
-      const { data, error } = await supabase.rpc("manager_daily_flow", { p_date: date });
+      const { data, error } = await supabase.rpc("manager_daily_flow", {
+        p_date: date,
+        ...(locationIds?.length ? { p_location_ids: locationIds } : {}),
+      });
       if (error) throw error;
       return data as unknown as DailyFlow;
     },
@@ -131,28 +156,6 @@ export function useManagerDailyFlow(date: string) {
 /** Hoje no formato que a RPC de fluxo espera. */
 export function todayIsoDate() {
   return format(new Date(), "yyyy-MM-dd");
-}
-
-/**
- * Mix de tarifa com a receita da tarifa (o que a Movepark ganha por tipo), hub-wide.
- * Visão de Super Admin (a RLS de hub_admin vê todas as reservas). Não expor no /operator.
- */
-export function useFareRevenueMix(days = 30) {
-  return useQuery({
-    queryKey: ["dashboard", "fare-revenue-mix", days],
-    queryFn: async () => {
-      const since = subDays(new Date(), days).toISOString();
-      const { data, error } = await supabase
-        .from("booking")
-        .select("fare_tier, fare_price_cents")
-        .gte("check_in_at", since)
-        .in("status", ["confirmed", "checked_in", "completed"]);
-      if (error) throw error;
-      return fareRevenueMix(
-        (data ?? []) as { fare_tier: string | null; fare_price_cents: number | null }[],
-      );
-    },
-  });
 }
 
 export type OperatorStats = {

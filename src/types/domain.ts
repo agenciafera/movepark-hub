@@ -172,6 +172,8 @@ export type ManagerOverview = {
     vehicle_days: number;
   }[];
   length_of_stay: { sort: number; bookings: number; revenue: number; vehicle_days: number }[];
+  /** Receita de tarifa por tier (o que a Movepark ganha). Visão de Super Admin. */
+  by_fare: { tier: string; bookings: number; revenue: number }[];
   top_locations: {
     id: string;
     name: string;

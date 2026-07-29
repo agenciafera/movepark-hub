@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { Database } from "@/types/database";
 import type { Location, LocationWithDestination } from "@/types/domain";
+import type { LocationOption } from "@/features/manager-filters/managerFilters.logic";
 
 type LocationInsert = Database["public"]["Tables"]["location"]["Insert"];
 type LocationUpdate = Database["public"]["Tables"]["location"]["Update"];
@@ -89,6 +90,37 @@ export function useOperatorLocations(companyIds: string[] | undefined) {
       return (data ?? []) as unknown as OperatorLocation[];
     },
     enabled: ids.length > 0,
+  });
+}
+
+/**
+ * Todas as unidades da rede, com a empresa, pro seletor de unidade do Manager.
+ * Sem recorte por empresa de propósito: o hub_admin filtra a rede inteira. As
+ * apagadas ficam de fora (soft delete); as inativas continuam, porque histórico
+ * de reserva de unidade desativada ainda precisa ser filtrável.
+ */
+export function useManagerLocations() {
+  return useQuery({
+    queryKey: [...locationsKeys.all, "manager-options"] as const,
+    staleTime: 5 * 60_000,
+    queryFn: async (): Promise<LocationOption[]> => {
+      const { data, error } = await supabase
+        .from("location")
+        .select("id, name, company:company(id, name)")
+        .is("deleted_at", null)
+        .order("name");
+      if (error) throw error;
+      const rows = (data ?? []) as unknown as {
+        id: string;
+        name: string;
+        company: { id: string; name: string } | null;
+      }[];
+      return rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        companyName: r.company?.name ?? "Sem empresa",
+      }));
+    },
   });
 }
 

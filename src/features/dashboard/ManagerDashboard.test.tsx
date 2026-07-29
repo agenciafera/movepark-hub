@@ -30,6 +30,10 @@ const OVERVIEW = {
     { sort: 1, bookings: 184, revenue: 5000, vehicle_days: 184 },
     { sort: 4, bookings: 78, revenue: 20000, vehicle_days: 700 },
   ],
+  by_fare: [
+    { tier: "superflex", bookings: 12, revenue: 298.8 },
+    { tier: "flex", bookings: 8, revenue: 103.2 },
+  ],
   top_locations: [
     {
       id: "loc-1",
@@ -77,7 +81,7 @@ describe("ManagerDashboard", () => {
     renderDashboard();
 
     // Diárias vendidas (vaga-dia) é o indicador de volume que o painel não tinha.
-    expect(await screen.findByText("Diárias vendidas (30 dias)")).toBeInTheDocument();
+    expect(await screen.findByText("Diárias vendidas (Últimos 30 dias)")).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText("5.356")).toBeInTheDocument());
 
     // Quebra por destino: a média da rede escondia o aeroporto.

@@ -18,7 +18,7 @@ export const bookingsKeys = {
   all: ["bookings"] as const,
   list: (filters: BookingFilters) => [...bookingsKeys.all, "list", filters] as const,
   detail: (id: string) => [...bookingsKeys.all, "detail", id] as const,
-  recent: () => [...bookingsKeys.all, "recent"] as const,
+  recent: (locationIds?: string[]) => [...bookingsKeys.all, "recent", locationIds] as const,
 };
 
 const baseSelect =
@@ -61,16 +61,18 @@ export function useBookings(filters: BookingFilters) {
   });
 }
 
-export function useRecentBookings(limit = 20) {
+export function useRecentBookings(limit = 20, locationIds?: string[]) {
   return useQuery({
-    queryKey: bookingsKeys.recent(),
+    queryKey: bookingsKeys.recent(locationIds),
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("booking")
         .select(baseSelect)
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
         .limit(limit);
+      if (locationIds?.length) q = q.in("location_id", locationIds);
+      const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as unknown as BookingWithRelations[];
     },
@@ -139,4 +141,3 @@ export function useCancelBookingStaff() {
     },
   });
 }
-

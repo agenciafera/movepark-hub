@@ -56,6 +56,54 @@ Configurações
 
 ---
 
+### 4.0 Filtros do painel (período e unidade)
+
+O painel abre no consolidado da rede, e por muito tempo era só isso que dava para ver. Duas
+peças compartilhadas resolvem: **unidade** e **período**, iguais em toda tela de dado.
+
+**Onde mora.** O estado (`ManagerFilterProvider`, montado no `ManagerLayout`) vale para todo o
+painel, então trocar de página não zera o recorte: quem olhou julho no Dashboard continua em
+julho ao abrir Reservas. Fica em `sessionStorage`, que dura a aba. Uma preferência de análise
+não deve sobreviver a semanas e fazer o painel abrir num recorte antigo sem ninguém lembrar
+por quê. A barra é `<ManagerFilterBar />`, colocada no `actions` do `PageHeader`.
+
+**Unidade.** Multi-seleção com busca, agrupada por empresa. Nenhuma marcada quer dizer
+**todas** (o consolidado), que é o estado inicial. Unidade apagada sai da seleção salva
+sozinha, senão um id morto filtraria a tela para zero sem nada marcado explicando o vazio.
+
+**Período.** Atalhos por horizonte, mais intervalo escolhido no calendário:
+
+| Grupo | Opções |
+|---|---|
+| Dia | Hoje · Ontem |
+| Semana | Esta semana · Semana passada · Últimos 7 dias |
+| Mês | Este mês · Mês passado · Últimos 30 dias |
+| Ano | Últimos 90 dias · Este ano · Ano passado · Personalizado |
+
+A semana começa na **segunda**: o painel lê operação, e a semana de trabalho fecha de segunda
+a domingo. O intervalo é `from` inclusivo e `to` **exclusivo** (`>= from` e `< to`), a mesma
+leitura das RPCs; a UI mostra a ponta final como o dia inclusivo que a pessoa escolheu.
+
+**Comparação.** Período anterior (mesmo tamanho, colado no início) · mesmo período do ano
+passado · datas à mão · sem comparação. Sem comparação escolhida o card não mostra variação:
+um "+12%" sem base declarada é pior que nenhum número. O card diz contra o quê está comparando
+("vs. período anterior", "vs. ano passado").
+
+**Onde está aplicado:**
+
+| Tela | Unidade | Período | Comparação |
+|---|---|---|---|
+| Dashboard (§4.1) | sim | sim | sim |
+| Reservas (§4.5) | sim | sim (o filtro de busca por código passa por cima) | não |
+| Faturamento (§4.6) | sim | sim | não |
+| Atribuição (§4.11) | sim | sim | não |
+| Avaliações (§4.9) | sim | não (moderação é fila, não recorte de tempo) | não |
+
+No servidor, o recorte viaja como `p_location_ids uuid[]` nas RPCs (`null` ou `{}` = toda a
+rede) e como `.in("location_id", ids)` nas leituras diretas.
+
+---
+
 ### 4.1 Dashboard
 
 **Rota:** `/manager` · ✅ implementado
@@ -70,8 +118,8 @@ novos x recorrentes) e deixou de fora o que não é indicador: o **simulador de 
 legado é ferramenta de precificação e mora em [`fares.md`](./fares.md) / `/manager/tarifas`,
 não no dashboard.
 
-**Seletor de período:** 7, 30 ou 90 dias, no cabeçalho. Todo bloco de período respeita a
-escolha e compara com o **período anterior do mesmo tamanho**.
+**Filtros:** unidade e período vêm da barra compartilhada (§4.0). Todo bloco de período
+respeita a escolha e compara com a janela que o usuário escolheu.
 
 **Eixo de data:** o dashboard lê pelo **check-in** (quando o carro ocupa a vaga), a leitura de
 operação. Aquisição (canal, UTM) roda por `created_at` e vive em `/manager/attribution`,
@@ -90,9 +138,9 @@ que o rodapé do dashboard referencia em vez de duplicar.
 
 | Card | Valor | Variação |
 |---|---|---|
-| Receita | `R$ xxx` | vs. período anterior |
-| Diárias vendidas | `int` | vs. período anterior; sublinha com a contagem de reservas |
-| Ticket médio | `R$ xxx` | vs. período anterior |
+| Receita | `R$ xxx` | vs. a base de comparação escolhida |
+| Diárias vendidas | `int` | vs. a base escolhida; sublinha com a contagem de reservas |
+| Ticket médio | `R$ xxx` | vs. a base escolhida |
 | Receita por diária | `R$ xxx` | sublinha com a permanência média |
 
 > **Diária (vaga-dia)** é dia-calendário ocupado, de `check_in_at::date` a
@@ -122,13 +170,14 @@ que o rodapé do dashboard referencia em vez de duplicar.
 
 #### Implementação
 
-Duas RPCs `SECURITY DEFINER` gateadas por `is_hub_admin()`, em
-`supabase/migrations/20260916000000_manager_dashboard_rpcs.sql`:
+Duas RPCs `SECURITY DEFINER` gateadas por `is_hub_admin()`
+(`20260916000000_manager_dashboard_rpcs.sql`, ampliadas em
+`20260917000000_manager_filters_location_and_compare.sql`):
 
 | RPC | Devolve |
 |---|---|
-| `manager_dashboard_overview(p_from, p_to)` | `current`/`previous`, `statuses`, `customers`, `by_destination`, `length_of_stay`, `top_locations` |
-| `manager_daily_flow(p_date)` | `entries` e `exits`, 24 horas cada, com `vehicles`/`passengers`/`pcd` |
+| `manager_dashboard_overview(p_from, p_to, p_compare_from, p_compare_to, p_location_ids)` | `current`/`previous`, `statuses`, `customers`, `by_destination`, `length_of_stay`, `by_fare`, `top_locations` |
+| `manager_daily_flow(p_date, p_location_ids)` | `entries` e `exits`, 24 horas cada, com `vehicles`/`passengers`/`pcd` |
 
 A agregação mora no banco; o front (`src/features/dashboard/`) só exibe. `anon` não tem
 EXECUTE nas duas. Testes: pgTAP `manager_dashboard.test.sql` (gate, grants, diária

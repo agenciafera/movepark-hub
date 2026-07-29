@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { endOfMonth, startOfMonth } from "date-fns";
 import { supabase } from "@/lib/supabase";
 
 export type CompanyFinance = {
@@ -11,18 +10,23 @@ export type CompanyFinance = {
   takeRateBps: number;
 };
 
-export function useCompanyFinance(month: Date) {
+/**
+ * Receita por empresa no intervalo (`from` inclusivo, `to` exclusivo), com recorte
+ * opcional por unidade. O intervalo vem do filtro do Manager, então "faturamento"
+ * deixa de ser só mês fechado e aceita qualquer recorte.
+ */
+export function useCompanyFinance(fromIso: string, toIso: string, locationIds?: string[]) {
   return useQuery({
-    queryKey: ["finance", "company", month.toISOString().slice(0, 7)],
+    queryKey: ["finance", "company", fromIso, toIso, locationIds],
     queryFn: async (): Promise<CompanyFinance[]> => {
-      const from = startOfMonth(month).toISOString();
-      const to = endOfMonth(month).toISOString();
-      const { data, error } = await supabase
+      let q = supabase
         .from("booking")
         .select("total_amount, location:location(company:company(id, name, take_rate_bps))")
-        .gte("check_in_at", from)
-        .lte("check_in_at", to)
+        .gte("check_in_at", fromIso)
+        .lt("check_in_at", toIso)
         .in("status", ["confirmed", "checked_in", "completed"]);
+      if (locationIds?.length) q = q.in("location_id", locationIds);
+      const { data, error } = await q;
       if (error) throw error;
 
       const map = new Map<string, CompanyFinance>();

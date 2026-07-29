@@ -2,13 +2,13 @@ begin;
 select plan(3);
 
 -- A função existe
-select has_function('public', 'booking_attribution', ARRAY['timestamptz', 'timestamptz'],
-  'booking_attribution(timestamptz, timestamptz) existe');
+select has_function('public', 'booking_attribution', ARRAY['timestamptz', 'timestamptz', 'uuid[]'],
+  'booking_attribution(timestamptz, timestamptz, uuid[]) existe');
 
 -- anon não executa (revoke do public)
 select function_privs_are(
-  'public', 'booking_attribution', ARRAY['timestamptz', 'timestamptz'], 'anon', ARRAY[]::text[],
-  'anon não tem EXECUTE em booking_attribution'
+  'public', 'booking_attribution', ARRAY['timestamptz', 'timestamptz', 'uuid[]'], 'anon',
+  ARRAY[]::text[], 'anon não tem EXECUTE em booking_attribution'
 );
 
 -- Sem ser hub_admin (auth.uid nulo no contexto de teste) → 42501
