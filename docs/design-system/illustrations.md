@@ -287,11 +287,11 @@ faz com as fotos. Assim dá pra regenerar depois sem adivinhar.
 | `il-people-reserva-app.webp` | Direção B (com gente) · reservando no app | Exemplo raster (Gemini) | seção 5.1 (variante gente) | 2026-07 |
 | `il-people-parceiro.webp` | Direção B (com gente) · parceiro no estacionamento | Exemplo raster (Gemini) | seção 5.1 (variante gente) | 2026-07 |
 
-> **Duas direções em cima da mesa (decisão de direção de arte, ver seção 10).** As quatro
-> `il-empty-*`/`il-sucesso-*`/`il-destino-*` são a **Direção A: calma, centrada em objeto**.
-> As três `il-people-*` são a **Direção B: editorial, com gente** (mais perto da energia da
-> referência, sem a gritaria). Ambas usam a mesma paleta e o motivo diagonal. Quando a direção
-> for batida, a perdedora sai e a vencedora vira a base do Style `movepark-rota-v1`.
+> **Direção decidida: híbrido (jul/2026).** As duas famílias ficam, cada uma no seu papel
+> (mapa na seção 10.1). As quatro `il-empty-*`/`il-sucesso-*`/`il-destino-*` são a **Direção A:
+> calma, centrada em objeto**. As três `il-people-*` são a **Direção B: editorial, com gente**.
+> Ambas usam a mesma paleta e o mesmo motivo diagonal, então convivem. As **duas** viram
+> semente do Style `movepark-rota-v1` no Recraft (seção 4).
 >
 > **Estes são sementes de exemplo, não a versão final.** Foram gerados no
 > `gemini-image` (raster, `.webp`) para (a) mostrar a linguagem no design system agora e
@@ -344,18 +344,30 @@ da Movepark, sem a gritaria de azul/amarelo saturado deles):
 - **Sistema, não peças avulsas.** Hero, cards de feature, promo do dashboard, rodapé: tudo na
   mesma família. É o que o Style travado (`movepark-rota-v1`) garante aqui.
 
-Onde a ilustração Movepark cabe (padrões de superfície):
+### 10.1. Direção A vs B: qual usar onde (híbrido)
+
+Decisão de direção de arte (jul/2026): **as duas famílias ficam**. É como a referência faz na
+prática (gente no hero, arte mais simples nos utilitários). O critério é o momento:
+
+| Momento | Direção | Por quê | Exemplo de asset |
+|---|---|---|---|
+| Hero / marketing / onboarding | **B (gente)** | calor humano vende, dá rosto à jornada | `il-people-viajante`, `il-people-reserva-app` |
+| Seja parceiro | **B (gente)** | fala com o dono do estacionamento | `il-people-parceiro` |
+| Promo do Clube / carteira | **B (gente)** ou objeto | depende do tom da promo | `il-people-*` ou objeto |
+| Estado vazio | **A (objeto)** | clareza e calma, sem drama | `il-empty-reservas`, `il-empty-favoritos` |
+| Confirmação / sucesso | **A (objeto)** | foco no que foi feito, não em quem | `il-sucesso-voucher` |
+| Erro / caminho errado | **A (objeto)** | low-drama, objetivo | (a gerar) |
+| Hero leve de destino | **A (objeto)** | cena de lugar, não de pessoa | `il-destino-aeroporto` |
+
+Regra de bolso: **gente onde a marca quer conectar; objeto onde o usuário quer resolver.** As
+duas usam a mesma paleta, o mesmo motivo diagonal e o mesmo tom calmo, então nunca destoam
+lado a lado.
+
+Onde a ilustração assenta (superfície):
 
 | Padrão | Superfície | Exemplo |
 |---|---|---|
 | Estado vazio | card branco / `surface-soft` | sem reservas, sem favoritos |
 | Card de feature / promo | navy (`bg-dashboard-hero`) ou pale | "Repetir reserva", Clube |
 | Confirmação | branco ou pale | voucher garantido |
-| Hero leve de destino | faixa pale/navy | página de destino |
-
-> **Honestidade sobre as sementes atuais.** Os quatro `.webp` da seção 8.3 são a versão
-> **calma e centrada em objeto** da linguagem (carro, voucher, aeroporto). Combinam com o tom
-> premium da Movepark, mas são mais quietos que o Nav Dasa. Se a gente quiser puxar pra um
-> registro mais **editorial e com gente** (mais perto da energia da referência, sem copiar a
-> gritaria), dá pra gerar um segundo lote com figuras geométricas e usar como semente do Style.
-> Decisão de direção de arte, registrada aqui quando batida.
+| Hero (gente) | faixa pale/navy | onboarding, seja parceiro |
