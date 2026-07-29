@@ -3132,8 +3132,9 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-29T12:30:26.935Z",
-      "last_seen": "2026-07-29T12:30:26.935Z",
-      "seen_count": 1
+      "last_seen": "2026-07-29T12:54:04.837Z",
+      "seen_count": 4,
+      "stale": false
     },
     "sig:eb1cb13a1fa9ce8c": {
       "urls_seen": [
@@ -3144,6 +3145,7 @@
       "interactive": [
         "a",
         "a",
+        "button id=radix-:r5: type=button text=Destinos",
         "button type=button",
         "a text=Seja parceiro",
         "a text=Entrar",
@@ -3195,12 +3197,22 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-29T12:30:32.373Z",
-      "last_seen": "2026-07-29T12:41:58.945Z",
-      "seen_count": 2,
+      "last_seen": "2026-07-29T12:54:04.816Z",
+      "seen_count": 5,
       "stale": false
     }
   },
-  "transitions": [],
+  "transitions": [
+    {
+      "from": "sig:eb1cb13a1fa9ce8c",
+      "action": {
+        "type": "wait_for",
+        "selector": "body"
+      },
+      "to": "sig:9762b1205e6e924b",
+      "seen_count": 1
+    }
+  ],
   "assist_seen": {
     "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/RequireRole.tsx": "765ada6e77de4390",
     "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/RequireScope.tsx": "a2f057480106706e",

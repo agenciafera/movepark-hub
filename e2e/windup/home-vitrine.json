@@ -1,9 +1,10 @@
 {
   "scenario_id": "home-vitrine",
   "start_url": "/",
-  "task": "Na home, verifique que a vitrine 'Estacionamentos Populares' aparece com cards de estacionamento mostrando preço em reais.",
+  "task": "Na home, confirme que o texto exato 'Estacionamentos Populares' está visível na página e que aparece pelo menos um preço no formato 'R$'.",
   "hints": [
     "Cenário de leitura pura: não preencha a busca, não reserve, não faça login.",
-    "A vitrine fica abaixo do formulário de busca, sob o rótulo 'OS MAIS RESERVADOS'."
+    "A postcondição final DEVE usar 'text_contains', com selector 'main' e text 'Estacionamentos Populares'.",
+    "Não use uma postcondição de simples visibilidade ('selector') com alvo 'body', 'main', 'div' ou 'h2'. Todos continuam visíveis se a vitrine sumir, e o teste passaria à toa."
   ]
 }

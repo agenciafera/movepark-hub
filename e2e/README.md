@@ -34,5 +34,38 @@ bunx windup new "descreva o teste aqui"   # cria o cenário
 bunx windup explain <id>                  # mostra o plano em cache, passo a passo
 ```
 
-Vale conferir o plano com `explain` depois de criar um cenário: a qualidade da
-verificação final depende de quão específica foi a descrição.
+### Um verde do Windup ainda não é cobertura
+
+Medido em 29/07/2026, no cenário `home-vitrine`. O planner gerou uma
+postcondição vazia: `expect: { selector: "body" }`. O teste passa, mas removendo
+a vitrine inteira do DOM ele continua passando, porque `body` segue lá.
+
+O formato não é o limite. O `Expect` do Windup aceita `text_contains`, `count`,
+`not_visible`, `attribute`, `selector_value` e `url`, e o executor usa `locator`
+do Playwright, então `text=` e `:has-text()` funcionam. Quem não usa isso é o
+planner.
+
+O que já foi tentado, sem resolver:
+
+- reescrever a `task` citando o texto exato a verificar;
+- hint nomeando `text_contains` com o selector e o texto prontos;
+- hint proibindo `body`, `main`, `div` e `h2` como alvo;
+- trocar o modelo: `gemini-3.1-pro-preview` devolveu uma ação só, com
+  `expect: { selector: "main" }`. Não é questão de modelo fraco.
+
+Enquanto isso não mudar: **leia o plano antes de confiar no cenário.**
+
+```bash
+bunx windup explain <id>                                     # resumo legível
+cat .windup/cache/trajetorias/<id>.json | jq '.plan.actions'  # os seletores crus
+```
+
+Se a postcondição final for `body` ou `main`, o cenário não está testando nada.
+
+Duas armadilhas de cache que atrapalham a iteração:
+
+- editar só os **hints** não invalida o cache, e a execução seguinte replica o
+  plano velho sem avisar. Só a mudança da `task` invalida. Para forçar,
+  `bunx windup cache clear`;
+- replanejar não é barato como a doc sugere. Um replanejamento aqui custou 4
+  chamadas, 63 segundos e $0,043, contra os ~3s e $0,002 anunciados.
