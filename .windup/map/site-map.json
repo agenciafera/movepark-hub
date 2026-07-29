@@ -1,0 +1,3267 @@
+{
+  "map_version": "0.1",
+  "last_scan_sha": "f404e2e5cbe16642a1a585e304f03bb3350535e1",
+  "pages": {
+    "static:ab4f3798abddf969": {
+      "urls_seen": [
+        "/ajuda"
+      ],
+      "url_pattern": "**/ajuda",
+      "title": "",
+      "interactive": [
+        "a href=/faq text=Ver todas as perguntas frequentes →",
+        "a href=/contato text=Falar com o suporte"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.683Z",
+      "last_seen": "2026-07-29T12:29:12.569Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/ajuda.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx"
+      ],
+      "stale": false
+    },
+    "static:1da0e557da8550ce": {
+      "urls_seen": [
+        "/bookings-detail"
+      ],
+      "url_pattern": "**/bookings-detail",
+      "title": "",
+      "interactive": [
+        "a href=/bookings text=Minhas reservas",
+        "a href=/bookings",
+        "a href=https://www.google.com/maps?q=$,$",
+        "button text=Alterar datas",
+        "button data-test=fare-upgrade-trigger text=Fazer upgrade de Tarifa",
+        "button text=Trocar veículo",
+        "a href=tel:$",
+        "a href=mailto:$",
+        "button text=Editar avaliação",
+        "button text=Avaliar",
+        "a href=/checkout/$ text=Continuar pagamento",
+        "button data-test=cancel-booking-trigger text=Cancelar reserva",
+        "button data-test=voucher-download-pdf",
+        "button text=Manter reserva",
+        "button data-test=cancel-booking-confirm",
+        "button text=Fechar",
+        "button data-test=fare-upgrade-option-$ type=button",
+        "button data-test=fare-upgrade-submit",
+        "label id=rating-overall text=Sua nota geral",
+        "label for=r-comment text=Comentário (opcional)",
+        "textarea id=r-comment text=Como foi sua experiência?",
+        "button type=button text=Cancelar"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.685Z",
+      "last_seen": "2026-07-29T12:29:12.573Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/bookings-detail.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/StatusBadge.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/separator.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/Voucher.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/voucher.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/CancelBookingDialog.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/cancellation.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/booking-modifications.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/UpgradeActionHint.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/fares/FareDisplay.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/fares/FareUpgradeDialog.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/ChangeVehicleDialog.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/ChangeDatesDialog.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/ChangeDatesPaidDialog.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/customerApi.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/guarantee/whatsapp.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/reviews/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/reviews/ReviewForm.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/reviews/RatingStars.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/format.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/fares.ts"
+      ],
+      "stale": false
+    },
+    "static:23dcf5261f151951": {
+      "urls_seen": [
+        "/bookings-list"
+      ],
+      "url_pattern": "**/bookings-list",
+      "title": "",
+      "interactive": [
+        "a href=/ text=Buscar vaga",
+        "a href=/bookings/$"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.686Z",
+      "last_seen": "2026-07-29T12:29:12.574Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/bookings-list.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/tabs.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/customerApi.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/CustomerBookingCard.tsx"
+      ],
+      "stale": false
+    },
+    "static:810b6271ae39fc5a": {
+      "urls_seen": [
+        "/cancelamento"
+      ],
+      "url_pattern": "**/cancelamento",
+      "title": "",
+      "interactive": [
+        "a href=/contato text=Fale com o suporte →"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.686Z",
+      "last_seen": "2026-07-29T12:29:12.574Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/cancelamento.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx"
+      ],
+      "stale": false
+    },
+    "static:3ff05a7ed82155e7": {
+      "urls_seen": [
+        "/checkout"
+      ],
+      "url_pattern": "**/checkout",
+      "title": "",
+      "interactive": [
+        "a href=/ text=Voltar pra home",
+        "a href=/ text=Buscar de novo",
+        "button type=submit text=Continuar",
+        "button text=Entendi",
+        "label for=id-first-name text=Nome",
+        "input id=id-first-name text=Nome",
+        "label for=id-last-name text=Sobrenome",
+        "input id=id-last-name text=Sobrenome",
+        "label for=id-email text=E-mail",
+        "input id=id-email type=email",
+        "input id=id-email type=email text=seu@email.com",
+        "label for=id-phone text=Telefone",
+        "label for=other-first-name text=Nome do passageiro",
+        "input id=other-first-name text=Nome",
+        "label for=other-last-name text=Sobrenome do passageiro",
+        "input id=other-last-name text=Sobrenome",
+        "label for=other-phone text=Telefone do passageiro",
+        "input id=accept-terms type=checkbox",
+        "label for=accept-terms text=Aceito os",
+        "button type=button text=Termos e Condições",
+        "label for=plate text=Placa",
+        "input id=plate text=ABC-1D23",
+        "label for=model text=Modelo",
+        "input id=model text=Honda Civic",
+        "label for=color text=Cor",
+        "input id=color text=Prata",
+        "button type=button text=Voltar à consulta",
+        "button type=button text=Cancelar",
+        "label for=passengers text=Passageiros no transfer",
+        "input id=passengers type=number text=1",
+        "label for=pay-tax-id text=CPF ou CNPJ",
+        "input id=pay-tax-id text=CPF ou CNPJ",
+        "label for=card-choice text=Cartão",
+        "label for=card-number text=Número do cartão",
+        "input id=card-number text=0000 0000 0000 0000",
+        "label for=card-name text=Nome no cartão",
+        "input id=card-name text=NOME SOBRENOME",
+        "label for=card-expiry text=Validade (MM/AA)",
+        "input id=card-expiry text=12/27",
+        "label for=card-cvv text=CVV",
+        "input id=card-cvv text=123",
+        "label for=installments text=Parcelas",
+        "button data-test=voucher-download-pdf-step4",
+        "a href=/bookings text=Ir pras minhas reservas",
+        "a text=Ver endereço"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.688Z",
+      "last_seen": "2026-07-29T12:29:12.576Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/checkout.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/checkout/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/checkout/handoff.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/checkout/Countdown.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/checkout/KeepAliveModal.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/checkout/Stepper.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/checkout/Step1Identity.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/checkout/Step2Vehicle.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/checkout/Step3Payment.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/checkout/Step4Confirmation.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/checkout/SummaryCard.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/format.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/utils.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/checkout/checkout.logic.ts"
+      ],
+      "stale": false
+    },
+    "static:48422f2db0b18876": {
+      "urls_seen": [
+        "/como-funciona"
+      ],
+      "url_pattern": "**/como-funciona",
+      "title": "",
+      "interactive": [
+        "a href=/faq text=Ver todas as dúvidas →",
+        "a href=/ text=Buscar estacionamento"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.688Z",
+      "last_seen": "2026-07-29T12:29:12.576Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/como-funciona.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx"
+      ],
+      "stale": false
+    },
+    "static:a8b1c6f2a36f8ec2": {
+      "urls_seen": [
+        "/consumer-typography/contract/test"
+      ],
+      "url_pattern": "**/consumer-typography/contract/test",
+      "title": "",
+      "interactive": [],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.689Z",
+      "last_seen": "2026-07-29T12:29:12.576Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/consumer-typography.contract.test.ts"
+      ],
+      "stale": false
+    },
+    "static:68d35a21abde6aba": {
+      "urls_seen": [
+        "/contato"
+      ],
+      "url_pattern": "**/contato",
+      "title": "",
+      "interactive": [
+        "a href=/faq text=Central de Perguntas Frequentes",
+        "button type=button text=Enviar outra mensagem",
+        "label for=nome text=Nome",
+        "input id=nome text=Seu nome",
+        "label for=email text=E-mail",
+        "input id=email type=email text=seu@email.com",
+        "label for=mensagem text=Mensagem",
+        "textarea id=mensagem text=Descreva sua dúvida ou solicitação…",
+        "button type=submit text=Enviar mensagem"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.691Z",
+      "last_seen": "2026-07-29T12:29:12.577Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/contato.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/input.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/textarea.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/label.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx"
+      ],
+      "stale": false
+    },
+    "static:27ef201b76a2e128": {
+      "urls_seen": [
+        "/design-system"
+      ],
+      "url_pattern": "**/design-system",
+      "title": "",
+      "interactive": [
+        "button text=Reservar",
+        "a href=/login text=Voltar para o Hub",
+        "button text=Reservar agora",
+        "button text=Salvar",
+        "button text=Ver mais",
+        "a href=#typography text=Ver todos os destinos",
+        "button text=Pressed",
+        "button text=Indisponível",
+        "button text=Seja um operador",
+        "button text=Outline",
+        "button text=Excluir",
+        "label for=ds-name text=Nome",
+        "input id=ds-name",
+        "label for=ds-email text=E-mail",
+        "input id=ds-email",
+        "label for=ds-doc text=CPF",
+        "input id=ds-doc text=000.000.000-00",
+        "button text=Confirmar"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.692Z",
+      "last_seen": "2026-07-29T12:29:12.578Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/design-system.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/Brand.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/badge.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/card.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/input.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/label.tsx"
+      ],
+      "stale": false
+    },
+    "static:aba906513436035d": {
+      "urls_seen": [
+        "/destino/logic/test"
+      ],
+      "url_pattern": "**/destino/logic/test",
+      "title": "",
+      "interactive": [],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.692Z",
+      "last_seen": "2026-07-29T12:29:12.578Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/destino.logic.test.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/destino.logic.ts"
+      ],
+      "stale": false
+    },
+    "static:8d7f2e1bb027f696": {
+      "urls_seen": [
+        "/destino/logic"
+      ],
+      "url_pattern": "**/destino/logic",
+      "title": "",
+      "interactive": [],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.692Z",
+      "last_seen": "2026-07-29T12:29:12.578Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/destino.logic.ts"
+      ],
+      "stale": false
+    },
+    "static:4b7a237d17c510b5": {
+      "urls_seen": [
+        "/destino/test"
+      ],
+      "url_pattern": "**/destino/test",
+      "title": "",
+      "interactive": [
+        "a href=/search text=Buscar estacionamentos",
+        "a href=/ text=Início",
+        "a href=/destinos text=Destinos",
+        "a href=/search?dest=$ text=Ver todos os estacionamentos e escolher ",
+        "a href=/destinos/$"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.693Z",
+      "last_seen": "2026-07-29T12:29:12.579Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/destino.test.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/test/utils.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/destino.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/destinations/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/search/useSearchResults.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/faqs/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/types/domain.ts"
+      ],
+      "stale": false
+    },
+    "static:734939cc7efc8416": {
+      "urls_seen": [
+        "/destino"
+      ],
+      "url_pattern": "**/destino",
+      "title": "",
+      "interactive": [
+        "a href=/search text=Buscar estacionamentos",
+        "a href=/ text=Início",
+        "a href=/destinos text=Destinos",
+        "a href=/search?dest=$ text=Ver todos os estacionamentos e escolher ",
+        "a href=/destinos/$",
+        "input text=de imagem pública (mesma lista do bucket"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.694Z",
+      "last_seen": "2026-07-29T12:29:12.582Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/destino.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/types/domain.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/destinations/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/search/useSearchResults.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/faqs/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/faqs/FaqList.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/search/ResultCard.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/search/searchBadges.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/reviews/reviews.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/jsonld.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/storage.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/format.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/destino.logic.ts"
+      ],
+      "stale": false
+    },
+    "static:c370619642eb982f": {
+      "urls_seen": [
+        "/destinos/test"
+      ],
+      "url_pattern": "**/destinos/test",
+      "title": "",
+      "interactive": [
+        "a href=/destinos/$"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.694Z",
+      "last_seen": "2026-07-29T12:29:12.582Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/destinos.test.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/test/utils.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/destinos.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/search/api.ts"
+      ],
+      "stale": false
+    },
+    "static:e7bbea9356f0b99d": {
+      "urls_seen": [
+        "/destinos"
+      ],
+      "url_pattern": "**/destinos",
+      "title": "",
+      "interactive": [
+        "a href=/destinos/$"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.694Z",
+      "last_seen": "2026-07-29T12:29:12.582Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/destinos.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/search/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/jsonld.ts"
+      ],
+      "stale": false
+    },
+    "static:a2557b8d5a9637c8": {
+      "urls_seen": [
+        "/docs"
+      ],
+      "url_pattern": "**/docs",
+      "title": "",
+      "interactive": [
+        "button type=button aria-label=Copiar",
+        "a href=#$",
+        "input text=Buscar endpoint…",
+        "a href=https://hub.movepark.co/openapi.yaml text=OpenAPI 3.1 ↗",
+        "a href=/operator/api-keys text=/operator/api-keys",
+        "a href=https://hub.movepark.co/.well-known/mcp/server-card.json text=server-card.json",
+        "a href=https://hub.movepark.co/.well-known/mcp/partner-card.json text=partner-card.json"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.695Z",
+      "last_seen": "2026-07-29T12:29:12.583Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/docs.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/input.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/utils.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/docs/apiDocs.ts"
+      ],
+      "stale": false
+    },
+    "static:1965ee0fd57296a1": {
+      "urls_seen": [
+        "/faq"
+      ],
+      "url_pattern": "**/faq",
+      "title": "",
+      "interactive": [
+        "input text=Buscar pergunta…",
+        "button type=button text=Todas",
+        "a href=/manager/faq/categorias",
+        "input aria-label=Publicado",
+        "button aria-label=Mais ações",
+        "label for=faq-location text=Estacionamento",
+        "label for=faq-destination text=Destino",
+        "label for=question text=Pergunta",
+        "input id=question text=Como faço o check-in?",
+        "label for=answer text=Resposta",
+        "textarea id=answer text=Resposta em texto. Quebras de linha são respeitadas.",
+        "label for=faq-category text=Categoria",
+        "label for=sort text=Ordem",
+        "input id=sort type=number",
+        "button type=button text=Cancelar"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.696Z",
+      "last_seen": "2026-07-29T12:29:12.584Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/faq.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/faq.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/operator/faq.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/input.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/utils.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/faqs/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/faqs/FaqList.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/jsonld.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/select.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/faqs/FaqAdminTable.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/faqs/FaqForm.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/faqs/types.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/supabase.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts"
+      ],
+      "stale": false
+    },
+    "static:2cc974af6afc822c": {
+      "urls_seen": [
+        "/home"
+      ],
+      "url_pattern": "**/home",
+      "title": "",
+      "interactive": [
+        "a href=/search?dest=$",
+        "a href=/search text=Ver todos os destinos",
+        "a href=/search text=Ver todos os estacionamentos",
+        "button type=button aria-label=Salvar",
+        "button type=button aria-label=Compartilhar",
+        "button type=button aria-label=Ver no mapa",
+        "a href=/search text=Buscar estacionamento"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.696Z",
+      "last_seen": "2026-07-29T12:29:12.585Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/home.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/home/Hero.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/home/DestinationsGallery.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/home/PopularParkingLots.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/home/HowItWorks.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/home/TrustBand.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/home/CtaBanner.tsx"
+      ],
+      "stale": false
+    },
+    "static:e5a82bd015fbfc94": {
+      "urls_seen": [
+        "/listing"
+      ],
+      "url_pattern": "**/listing",
+      "title": "",
+      "interactive": [
+        "a href=/ text=Voltar pra home",
+        "a href=/search?$",
+        "button type=button aria-label=Abrir foto $ de $",
+        "button type=button aria-label=Ir para a foto $",
+        "button type=button text=Ver preços por duração",
+        "label for=pax text=Passageiros",
+        "input id=pax type=number",
+        "label for=pcd text=Vaga acessível PCD",
+        "button type=button text=Ver o que cada tarifa inclui",
+        "input data-test=coupon-input aria-label=Código do cupom text=Cupom de desconto",
+        "button data-test=coupon-apply type=button",
+        "button text=Reservar",
+        "button type=button aria-label=Rolar para a esquerda",
+        "button type=button aria-label=Rolar para a direita",
+        "input text=de imagem pública (mesma lista do bucket",
+        "a data-test=listing-upgrade-offer"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.699Z",
+      "last_seen": "2026-07-29T12:29:12.587Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/listing.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/separator.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/PhotoGrid.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/AmenityList.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/HowToArrive.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/TerminalDistances.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/ReservationCard.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/ListingStickyBar.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/reservation.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/ListingTrustBar.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/RecommendedCarousel.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/tldr.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/reviews/ReviewsBlock.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/reviews/RatingStars.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/reviews/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/search/useSavedListings.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/faqs/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/faqs/FaqList.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/faqs/FaqList.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/dialog.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/storage.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/utils.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/cancellation.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/search/amenities.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/UpgradeVagaNudge.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/upgrade.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/guarantee/copy.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/jsonld.ts"
+      ],
+      "stale": false
+    },
+    "static:ec9be82bdd251fe4": {
+      "urls_seen": [
+        "/login/test"
+      ],
+      "url_pattern": "**/login/test",
+      "title": "",
+      "interactive": [
+        "a aria-label=Ir para a página inicial da Movepark href=/",
+        "label for=email text=E-mail",
+        "input id=email type=email text=seu@email.com",
+        "label for=phone text=WhatsApp",
+        "button type=button text=Reenviar código",
+        "a href=/"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.699Z",
+      "last_seen": "2026-07-29T12:29:12.587Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/login.test.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/login.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/test/utils.tsx"
+      ],
+      "stale": false
+    },
+    "static:7e93fba0bc7adda8": {
+      "urls_seen": [
+        "/login"
+      ],
+      "url_pattern": "**/login",
+      "title": "",
+      "interactive": [
+        "a aria-label=Ir para a página inicial da Movepark href=/",
+        "label for=email text=E-mail",
+        "input id=email type=email text=seu@email.com",
+        "label for=phone text=WhatsApp",
+        "button type=button text=Reenviar código",
+        "a href=/",
+        "input aria-label=Dígito $"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.700Z",
+      "last_seen": "2026-07-29T12:29:12.588Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/login.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/input.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/label.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/phone-field.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/card.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/otp-input.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/Brand.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/GoogleButton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/postLoginRedirect.ts"
+      ],
+      "stale": false
+    },
+    "static:39cab4b1fa6b20e4": {
+      "urls_seen": [
+        "/motor-preview"
+      ],
+      "url_pattern": "**/motor-preview",
+      "title": "",
+      "interactive": [
+        "a href=/login?next=/account/clube",
+        "button text=Entrar"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.701Z",
+      "last_seen": "2026-07-29T12:29:12.589Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/motor-preview.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/growth/MotorCrescimento.tsx"
+      ],
+      "stale": false
+    },
+    "static:5911afa8767652ac": {
+      "urls_seen": [
+        "/onboarding"
+      ],
+      "url_pattern": "**/onboarding",
+      "title": "",
+      "interactive": [
+        "button text=Sair",
+        "label for=unit-name text=Nome do estacionamento",
+        "input id=unit-name text=Ex: Estacionamento Aeroporto",
+        "label for=unit-address text=Endereço",
+        "label for=lat text=Latitude",
+        "input id=lat text=-23.5505",
+        "label for=lng text=Longitude",
+        "input id=lng text=-46.6333",
+        "label for=destination text=Ponto de referência (opcional)",
+        "label for=pt-base-$ text=Preço de balcão/diária",
+        "label for=pt-cap-$ text=Capacidade",
+        "input id=pt-cap-$ type=number",
+        "button text=Continuar"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.701Z",
+      "last_seen": "2026-07-29T12:29:12.591Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/onboarding.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/Brand.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/onboarding/wizardApi.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/onboarding/publish/PublishWizard.tsx"
+      ],
+      "stale": false
+    },
+    "static:f3170b3394f86b61": {
+      "urls_seen": [
+        "/parking-types"
+      ],
+      "url_pattern": "**/parking-types",
+      "title": "",
+      "interactive": [
+        "input id=active-$",
+        "label for=cap-$ text=Capacidade",
+        "input id=cap-$ type=number",
+        "button text=Salvar",
+        "label for=wlcat-select-$ text=Unidade (category)",
+        "label for=wlprod-select-$ text=Tipo de vaga (product)",
+        "label for=wlcat-$ text=category_slug",
+        "input id=wlcat-$ text=unidade-aeroporto",
+        "label for=wlprod-$ text=product_slug",
+        "input id=wlprod-$ text=vaga-coberta"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.702Z",
+      "last_seen": "2026-07-29T12:29:12.591Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/parking-types.tsx"
+      ],
+      "stale": false
+    },
+    "static:40c8a143c5658409": {
+      "urls_seen": [
+        "/privacidade"
+      ],
+      "url_pattern": "**/privacidade",
+      "title": "",
+      "interactive": [],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.702Z",
+      "last_seen": "2026-07-29T12:29:12.591Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/privacidade.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/legal/LegalDocumentPage.tsx"
+      ],
+      "stale": false
+    },
+    "static:6fb5b7787ecacd91": {
+      "urls_seen": [
+        "/search"
+      ],
+      "url_pattern": "**/search",
+      "title": "",
+      "interactive": [
+        "button text=Limpar filtros",
+        "button text=Limpar",
+        "input id=am-$"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.703Z",
+      "last_seen": "2026-07-29T12:29:12.592Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/search.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/search/ResultsHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/search/SearchFilters.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/search/useSearchResults.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/search/searchBadges.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/search/dates.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/search/useSavedListings.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/search/ResultCard.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/search/amenities.logic.ts"
+      ],
+      "stale": false
+    },
+    "static:f6ca91d12705b6b2": {
+      "urls_seen": [
+        "/seja-parceiro/test"
+      ],
+      "url_pattern": "**/seja-parceiro/test",
+      "title": "",
+      "interactive": [],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.703Z",
+      "last_seen": "2026-07-29T12:29:12.592Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/seja-parceiro.test.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/test/utils.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/seja-parceiro.tsx"
+      ],
+      "stale": false
+    },
+    "static:3d5f0569f2c7ed4a": {
+      "urls_seen": [
+        "/seja-parceiro"
+      ],
+      "url_pattern": "**/seja-parceiro",
+      "title": "",
+      "interactive": [
+        "label for=pl-name text=Seu nome",
+        "input id=pl-name text=Nome e sobrenome",
+        "label for=pl-email text=E-mail",
+        "input id=pl-email type=email text=voce@estacionamento.com",
+        "label for=pl-phone text=WhatsApp",
+        "label for=pl-company text=Nome do estacionamento",
+        "input id=pl-company text=Ex: Estacionamento Centro",
+        "label for=pl-spots text=Vagas (aprox.)",
+        "input id=pl-spots type=number text=Ex: 50",
+        "a href=/privacidade text=Política de Privacidade"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.704Z",
+      "last_seen": "2026-07-29T12:29:12.593Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/seja-parceiro.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/utils.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/faqs/FaqList.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/faqs/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/onboarding/PartnerLeadModal.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/partners/PartnerLogos.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/hooks/useGsapReveal.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/gsap.ts"
+      ],
+      "stale": false
+    },
+    "static:b6aad450d17bf7df": {
+      "urls_seen": [
+        "/sobre/test"
+      ],
+      "url_pattern": "**/sobre/test",
+      "title": "",
+      "interactive": [
+        "a href=/search text=Buscar estacionamento",
+        "a href=/seja-parceiro text=Quero ser parceiro",
+        "a href=/destinos/$",
+        "a href=/destinos text=Ver todos os destinos"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.704Z",
+      "last_seen": "2026-07-29T12:29:12.593Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/sobre.test.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/test/utils.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/sobre.tsx"
+      ],
+      "stale": false
+    },
+    "static:f158b57b996435a5": {
+      "urls_seen": [
+        "/sobre"
+      ],
+      "url_pattern": "**/sobre",
+      "title": "",
+      "interactive": [
+        "a href=/search text=Buscar estacionamento",
+        "a href=/seja-parceiro text=Quero ser parceiro",
+        "a href=/destinos/$",
+        "a href=/destinos text=Ver todos os destinos"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.704Z",
+      "last_seen": "2026-07-29T12:29:12.593Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/sobre.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/HeroMesh.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/partners/PartnerLogos.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/how-it-works/copy.ts"
+      ],
+      "stale": false
+    },
+    "static:e7be0d85bad9a1a2": {
+      "urls_seen": [
+        "/termos"
+      ],
+      "url_pattern": "**/termos",
+      "title": "",
+      "interactive": [],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.704Z",
+      "last_seen": "2026-07-29T12:29:12.594Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/termos.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/legal/LegalDocumentPage.tsx"
+      ],
+      "stale": false
+    },
+    "static:be77e21851ce4c83": {
+      "urls_seen": [
+        "/voucher-validate/test"
+      ],
+      "url_pattern": "**/voucher-validate/test",
+      "title": "",
+      "interactive": [
+        "a href=/login?next=$ text=Entrar como operador",
+        "a text=Ver minha reserva"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.705Z",
+      "last_seen": "2026-07-29T12:29:12.594Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/voucher-validate.test.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/test/utils.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/voucher-validate.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/voucher/api.ts"
+      ],
+      "stale": false
+    },
+    "static:c91f33539aaf9abb": {
+      "urls_seen": [
+        "/voucher-validate"
+      ],
+      "url_pattern": "**/voucher-validate",
+      "title": "",
+      "interactive": [
+        "a href=/login?next=$ text=Entrar como operador",
+        "a text=Ver minha reserva"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.705Z",
+      "last_seen": "2026-07-29T12:29:12.595Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/voucher-validate.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/format.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/utils.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/voucher/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/voucher/voucher.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/types/domain.ts"
+      ],
+      "stale": false
+    },
+    "static:8a5edab282632443": {
+      "urls_seen": [
+        "/"
+      ],
+      "url_pattern": "**/",
+      "title": "",
+      "interactive": [
+        "a href=/search?dest=$",
+        "a href=/search text=Ver todos os destinos",
+        "a href=/search text=Ver todos os estacionamentos",
+        "button type=button aria-label=Salvar",
+        "button type=button aria-label=Compartilhar",
+        "button type=button aria-label=Ver no mapa",
+        "a href=/search text=Buscar estacionamento"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.706Z",
+      "last_seen": "2026-07-29T12:29:12.595Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/home.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/home/Hero.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/home/DestinationsGallery.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/home/PopularParkingLots.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/home/HowItWorks.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/home/TrustBand.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/home/CtaBanner.tsx"
+      ],
+      "stale": false
+    },
+    "static:a3f2b196a8ced43c": {
+      "urls_seen": [
+        "/p/:operatorSlug/:locationSlug/:parkingTypeCode"
+      ],
+      "url_pattern": "**/p/:operatorSlug/:locationSlug/:parkingTypeCode",
+      "title": "",
+      "interactive": [
+        "a href=/ text=Voltar pra home",
+        "a href=/search?$",
+        "button type=button aria-label=Abrir foto $ de $",
+        "button type=button aria-label=Ir para a foto $",
+        "button type=button text=Ver preços por duração",
+        "label for=pax text=Passageiros",
+        "input id=pax type=number",
+        "label for=pcd text=Vaga acessível PCD",
+        "button type=button text=Ver o que cada tarifa inclui",
+        "input data-test=coupon-input aria-label=Código do cupom text=Cupom de desconto",
+        "button data-test=coupon-apply type=button",
+        "button text=Reservar",
+        "button type=button aria-label=Rolar para a esquerda",
+        "button type=button aria-label=Rolar para a direita",
+        "input text=de imagem pública (mesma lista do bucket",
+        "a data-test=listing-upgrade-offer"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.708Z",
+      "last_seen": "2026-07-29T12:29:12.598Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/listing.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/separator.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/PhotoGrid.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/AmenityList.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/HowToArrive.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/TerminalDistances.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/ReservationCard.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/ListingStickyBar.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/reservation.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/ListingTrustBar.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/RecommendedCarousel.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/tldr.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/reviews/ReviewsBlock.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/reviews/RatingStars.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/reviews/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/search/useSavedListings.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/faqs/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/faqs/FaqList.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/faqs/FaqList.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/dialog.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/storage.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/utils.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/cancellation.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/search/amenities.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/UpgradeVagaNudge.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/upgrade.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/guarantee/copy.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/jsonld.ts"
+      ],
+      "stale": false
+    },
+    "static:cd20d0c01b914630": {
+      "urls_seen": [
+        "/destinos/:slug"
+      ],
+      "url_pattern": "**/destinos/:slug",
+      "title": "",
+      "interactive": [
+        "a href=/search text=Buscar estacionamentos",
+        "a href=/ text=Início",
+        "a href=/destinos text=Destinos",
+        "a href=/search?dest=$ text=Ver todos os estacionamentos e escolher ",
+        "a href=/destinos/$",
+        "input text=de imagem pública (mesma lista do bucket"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.709Z",
+      "last_seen": "2026-07-29T12:29:12.600Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/destino.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/types/domain.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/destinations/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/search/useSearchResults.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/faqs/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/faqs/FaqList.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/search/ResultCard.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/search/searchBadges.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/reviews/reviews.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/jsonld.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/storage.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/format.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/destino.logic.ts"
+      ],
+      "stale": false
+    },
+    "static:9899dbbf09b3c440": {
+      "urls_seen": [
+        "/bookings"
+      ],
+      "url_pattern": "**/bookings",
+      "title": "",
+      "interactive": [
+        "a href=/ text=Buscar vaga",
+        "label for=search text=Busca",
+        "input id=search text=Código da reserva",
+        "label for=booking-status text=Status",
+        "label for=from text=Check-in de",
+        "input id=from type=date",
+        "label for=to text=até",
+        "input id=to type=date",
+        "a href=/bookings/$",
+        "button text=Cancelar reserva",
+        "button text=Voltar",
+        "input aria-label=Nova placa text=Nova placa",
+        "button text=Trocar placa",
+        "button text=Confirmar",
+        "button text=Check-in",
+        "button text=Check-out",
+        "button text=Não compareceu"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.711Z",
+      "last_seen": "2026-07-29T12:29:12.602Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/bookings-list.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/bookings.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/operator/bookings.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/tabs.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/customerApi.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/CustomerBookingCard.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/card.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/input.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/select.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/label.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/BookingTable.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/BookingModal.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/types/domain.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/BookingDrawer.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/useScopedLocationIds.ts"
+      ],
+      "stale": false
+    },
+    "static:e9ae6f44086550f1": {
+      "urls_seen": [
+        "/bookings/:code"
+      ],
+      "url_pattern": "**/bookings/:code",
+      "title": "",
+      "interactive": [
+        "a href=/bookings text=Minhas reservas",
+        "a href=/bookings",
+        "a href=https://www.google.com/maps?q=$,$",
+        "button text=Alterar datas",
+        "button data-test=fare-upgrade-trigger text=Fazer upgrade de Tarifa",
+        "button text=Trocar veículo",
+        "a href=tel:$",
+        "a href=mailto:$",
+        "button text=Editar avaliação",
+        "button text=Avaliar",
+        "a href=/checkout/$ text=Continuar pagamento",
+        "button data-test=cancel-booking-trigger text=Cancelar reserva",
+        "button data-test=voucher-download-pdf",
+        "button text=Manter reserva",
+        "button data-test=cancel-booking-confirm",
+        "button text=Fechar",
+        "button data-test=fare-upgrade-option-$ type=button",
+        "button data-test=fare-upgrade-submit",
+        "label id=rating-overall text=Sua nota geral",
+        "label for=r-comment text=Comentário (opcional)",
+        "textarea id=r-comment text=Como foi sua experiência?",
+        "button type=button text=Cancelar"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.713Z",
+      "last_seen": "2026-07-29T12:29:12.604Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/bookings-detail.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/StatusBadge.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/separator.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/Voucher.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/voucher.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/CancelBookingDialog.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/cancellation.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/booking-modifications.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/UpgradeActionHint.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/fares/FareDisplay.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/fares/FareUpgradeDialog.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/ChangeVehicleDialog.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/ChangeDatesDialog.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/ChangeDatesPaidDialog.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/bookings/customerApi.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/guarantee/whatsapp.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/reviews/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/reviews/ReviewForm.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/reviews/RatingStars.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/format.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/fares.ts"
+      ],
+      "stale": false
+    },
+    "static:868e6eb62341335c": {
+      "urls_seen": [
+        "/checkout/:code"
+      ],
+      "url_pattern": "**/checkout/:code",
+      "title": "",
+      "interactive": [
+        "a href=/ text=Voltar pra home",
+        "a href=/ text=Buscar de novo",
+        "button type=submit text=Continuar",
+        "button text=Entendi",
+        "label for=id-first-name text=Nome",
+        "input id=id-first-name text=Nome",
+        "label for=id-last-name text=Sobrenome",
+        "input id=id-last-name text=Sobrenome",
+        "label for=id-email text=E-mail",
+        "input id=id-email type=email",
+        "input id=id-email type=email text=seu@email.com",
+        "label for=id-phone text=Telefone",
+        "label for=other-first-name text=Nome do passageiro",
+        "input id=other-first-name text=Nome",
+        "label for=other-last-name text=Sobrenome do passageiro",
+        "input id=other-last-name text=Sobrenome",
+        "label for=other-phone text=Telefone do passageiro",
+        "input id=accept-terms type=checkbox",
+        "label for=accept-terms text=Aceito os",
+        "button type=button text=Termos e Condições",
+        "label for=plate text=Placa",
+        "input id=plate text=ABC-1D23",
+        "label for=model text=Modelo",
+        "input id=model text=Honda Civic",
+        "label for=color text=Cor",
+        "input id=color text=Prata",
+        "button type=button text=Voltar à consulta",
+        "button type=button text=Cancelar",
+        "label for=passengers text=Passageiros no transfer",
+        "input id=passengers type=number text=1",
+        "label for=pay-tax-id text=CPF ou CNPJ",
+        "input id=pay-tax-id text=CPF ou CNPJ",
+        "label for=card-choice text=Cartão",
+        "label for=card-number text=Número do cartão",
+        "input id=card-number text=0000 0000 0000 0000",
+        "label for=card-name text=Nome no cartão",
+        "input id=card-name text=NOME SOBRENOME",
+        "label for=card-expiry text=Validade (MM/AA)",
+        "input id=card-expiry text=12/27",
+        "label for=card-cvv text=CVV",
+        "input id=card-cvv text=123",
+        "label for=installments text=Parcelas",
+        "button data-test=voucher-download-pdf-step4",
+        "a href=/bookings text=Ir pras minhas reservas",
+        "a text=Ver endereço"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.715Z",
+      "last_seen": "2026-07-29T12:29:12.606Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/checkout.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/checkout/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/checkout/handoff.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/checkout/Countdown.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/checkout/KeepAliveModal.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/checkout/Stepper.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/checkout/Step1Identity.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/checkout/Step2Vehicle.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/checkout/Step3Payment.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/checkout/Step4Confirmation.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/checkout/SummaryCard.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/format.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/utils.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/checkout/checkout.logic.ts"
+      ],
+      "stale": false
+    },
+    "static:bbf5727261ca8c55": {
+      "urls_seen": [
+        "/auth/callback"
+      ],
+      "url_pattern": "**/auth/callback",
+      "title": "",
+      "interactive": [],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.715Z",
+      "last_seen": "2026-07-29T12:29:12.606Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/auth/callback.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/Brand.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/postLoginRedirect.ts"
+      ],
+      "stale": false
+    },
+    "static:6c7fd5961d5cd7c6": {
+      "urls_seen": [
+        "/entrar"
+      ],
+      "url_pattern": "**/entrar",
+      "title": "",
+      "interactive": [],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.715Z",
+      "last_seen": "2026-07-29T12:29:12.606Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx"
+      ],
+      "stale": false
+    },
+    "static:847d8d45dc581631": {
+      "urls_seen": [
+        "/signup"
+      ],
+      "url_pattern": "**/signup",
+      "title": "",
+      "interactive": [],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.715Z",
+      "last_seen": "2026-07-29T12:29:12.606Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx"
+      ],
+      "stale": false
+    },
+    "static:4ee6db1ca8b40021": {
+      "urls_seen": [
+        "/voucher/validate"
+      ],
+      "url_pattern": "**/voucher/validate",
+      "title": "",
+      "interactive": [
+        "a href=/login?next=$ text=Entrar como operador",
+        "a text=Ver minha reserva"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.716Z",
+      "last_seen": "2026-07-29T12:29:12.607Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/voucher-validate.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/format.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/utils.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/voucher/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/voucher/voucher.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/types/domain.ts"
+      ],
+      "stale": false
+    },
+    "static:a112efbd8741d2ad": {
+      "urls_seen": [
+        "/account/complete-profile"
+      ],
+      "url_pattern": "**/account/complete-profile",
+      "title": "",
+      "interactive": [
+        "a aria-label=Ir para a página inicial da Movepark href=/",
+        "label for=first-name text=Nome",
+        "input id=first-name",
+        "label for=last-name text=Sobrenome",
+        "input id=last-name",
+        "label for=cpf text=CPF ou CNPJ",
+        "input id=cpf text=CPF ou CNPJ",
+        "a href=/"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.717Z",
+      "last_seen": "2026-07-29T12:29:12.608Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/account/complete-profile.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/input.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/label.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/card.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/Brand.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/profile/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/masks.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/documents.ts"
+      ],
+      "stale": false
+    },
+    "static:441bb226c5de8e21": {
+      "urls_seen": [
+        "/account"
+      ],
+      "url_pattern": "**/account",
+      "title": "",
+      "interactive": [
+        "a href=/destinos/$",
+        "button text=Destinos",
+        "a href=/destinos text=Ver todos os destinos",
+        "a aria-label=Ir para a home href=/",
+        "a aria-label=Movepark href=/",
+        "a href=/seja-parceiro text=Seja parceiro",
+        "a href=/login text=Entrar",
+        "button aria-label=Menu da conta",
+        "a href=/destinos",
+        "a href=/bookings",
+        "a href=/login",
+        "a href=/account",
+        "a href=/seja-parceiro",
+        "a href=/ajuda"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.717Z",
+      "last_seen": "2026-07-29T12:29:12.608Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/AccountAppShell.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/ConsumerTopbar.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/ConsumerFooter.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/ConsumerBottomNav.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/AccountSidebar.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx"
+      ],
+      "stale": false
+    },
+    "static:cb25593f0b5fade6": {
+      "urls_seen": [
+        "/clube"
+      ],
+      "url_pattern": "**/clube",
+      "title": "",
+      "interactive": [
+        "a href=/login?next=/account/clube",
+        "button text=Entrar"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.717Z",
+      "last_seen": "2026-07-29T12:29:12.608Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/account/clube.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/growth/MotorCrescimento.tsx"
+      ],
+      "stale": false
+    },
+    "static:09004d9b3abbed5d": {
+      "urls_seen": [
+        "/indicar"
+      ],
+      "url_pattern": "**/indicar",
+      "title": "",
+      "interactive": [
+        "a href=/account/clube text=Movepark Clube"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.717Z",
+      "last_seen": "2026-07-29T12:29:12.609Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/account/indicar.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/growth/IndiqueGanhe.tsx"
+      ],
+      "stale": false
+    },
+    "static:55d685028857dd6c": {
+      "urls_seen": [
+        "/profile"
+      ],
+      "url_pattern": "**/profile",
+      "title": "",
+      "interactive": [
+        "label for=first-name text=Nome",
+        "input id=first-name",
+        "label for=last-name text=Sobrenome",
+        "input id=last-name",
+        "label for=email text=E-mail",
+        "input id=email",
+        "label for=phone text=Telefone",
+        "input id=phone",
+        "a href=/account/security text=Segurança › Meus logins",
+        "label for=cpf text=CPF ou CNPJ",
+        "input id=cpf text=CPF ou CNPJ",
+        "label for=birth text=Data de nascimento",
+        "input id=birth type=date",
+        "label for=profile-lang text=Idioma preferido"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.718Z",
+      "last_seen": "2026-07-29T12:29:12.610Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/account/profile.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/input.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/label.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/select.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/profile/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/masks.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/documents.ts"
+      ],
+      "stale": false
+    },
+    "static:ba7df020a5b4a9ad": {
+      "urls_seen": [
+        "/vehicles"
+      ],
+      "url_pattern": "**/vehicles",
+      "title": "",
+      "interactive": [
+        "button aria-label=Mais opções",
+        "input id=default-lookup",
+        "label for=plate text=Placa",
+        "input id=plate text=ABC-1D23",
+        "label for=model text=Modelo",
+        "input id=model text=Honda Civic",
+        "label for=vehicle-color text=Cor",
+        "input id=default",
+        "button type=button text=Voltar à consulta",
+        "button type=button text=Cancelar"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.719Z",
+      "last_seen": "2026-07-29T12:29:12.611Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/account/vehicles.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/badge.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/dropdown-menu.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/vehicles/VehicleForm.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/vehicles/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts"
+      ],
+      "stale": false
+    },
+    "static:6bec5c410f41e1dc": {
+      "urls_seen": [
+        "/addresses"
+      ],
+      "url_pattern": "**/addresses",
+      "title": "",
+      "interactive": [
+        "button aria-label=Mais opções",
+        "label for=label text=Apelido",
+        "input id=label text=Casa, trabalho…",
+        "label for=cep text=CEP",
+        "input id=cep text=00000-000",
+        "label for=number text=Número",
+        "input id=number text=123",
+        "label for=street text=Logradouro",
+        "input id=street text=Rua, av., travessa…",
+        "label for=complement text=Complemento",
+        "input id=complement text=Apto, bloco, referência…",
+        "label for=district text=Bairro",
+        "input id=district",
+        "label for=city text=Cidade",
+        "input id=city",
+        "label for=state text=UF",
+        "input id=default",
+        "button type=button text=Cancelar"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.720Z",
+      "last_seen": "2026-07-29T12:29:12.612Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/account/addresses.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/badge.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/dropdown-menu.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/addresses/AddressForm.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/addresses/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/types/database.ts"
+      ],
+      "stale": false
+    },
+    "static:d96428f1034115b0": {
+      "urls_seen": [
+        "/cards"
+      ],
+      "url_pattern": "**/cards",
+      "title": "",
+      "interactive": [
+        "button aria-label=Mais opções",
+        "label for=number text=Número do cartão",
+        "input id=number text=0000 0000 0000 0000",
+        "label for=holder text=Nome impresso no cartão",
+        "input id=holder text=NOME COMPLETO",
+        "label for=expiry text=Validade",
+        "input id=expiry text=MM/AA",
+        "label for=cvv text=CVV",
+        "input id=cvv text=123",
+        "input id=default",
+        "button type=button text=Cancelar"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.721Z",
+      "last_seen": "2026-07-29T12:29:12.614Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/account/cards.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/badge.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/dropdown-menu.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/payment-methods/PaymentMethodForm.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/payment-methods/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/types/database.ts"
+      ],
+      "stale": false
+    },
+    "static:21f970492a9ea5bf": {
+      "urls_seen": [
+        "/saved"
+      ],
+      "url_pattern": "**/saved",
+      "title": "",
+      "interactive": [
+        "button text=Tentar de novo",
+        "a href=/search",
+        "button text=Buscar estacionamentos",
+        "button type=button aria-label=Remover $ dos favoritos"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.722Z",
+      "last_seen": "2026-07-29T12:29:12.615Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/account/saved.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/supabase.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/search/useSavedListings.ts"
+      ],
+      "stale": false
+    },
+    "static:ceab3f7c0202b5de": {
+      "urls_seen": [
+        "/preferences"
+      ],
+      "url_pattern": "**/preferences",
+      "title": "",
+      "interactive": [
+        "label for=pref-lang text=Idioma",
+        "label for=pref-currency text=Moeda",
+        "input aria-label=Tema escuro"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.722Z",
+      "last_seen": "2026-07-29T12:29:12.616Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/account/preferences.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/label.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/switch.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/select.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/theme.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/profile/api.ts"
+      ],
+      "stale": false
+    },
+    "static:1d2a376104d54dd5": {
+      "urls_seen": [
+        "/security"
+      ],
+      "url_pattern": "**/security",
+      "title": "",
+      "interactive": [
+        "button text=Em breve",
+        "label for=delete-confirm-email text=Para confirmar, digite seu e-mail (",
+        "input id=delete-confirm-email type=email text=seu@email.com",
+        "button text=Cancelar",
+        "button text=Remover",
+        "button text=Conectar"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.723Z",
+      "last_seen": "2026-07-29T12:29:12.617Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/account/security.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/profile/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/account/DeleteAccountDialog.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/identity/MyLoginsSection.tsx"
+      ],
+      "stale": false
+    },
+    "static:beac024318c328dd": {
+      "urls_seen": [
+        "/manager"
+      ],
+      "url_pattern": "**/manager",
+      "title": "",
+      "interactive": [],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.723Z",
+      "last_seen": "2026-07-29T12:29:12.617Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/layout.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/AppShell.tsx"
+      ],
+      "stale": false
+    },
+    "static:965e43e2b9e71740": {
+      "urls_seen": [
+        "/companies"
+      ],
+      "url_pattern": "**/companies",
+      "title": "",
+      "interactive": [
+        "input text=Buscar por nome ou slug",
+        "button text=Editar",
+        "a href=/manager/companies/$/locations text=Unidades",
+        "label for=name text=Nome",
+        "input id=name",
+        "label for=slug text=Slug",
+        "input id=slug",
+        "label for=legal text=Razão social",
+        "input id=legal",
+        "label for=tax text=CNPJ",
+        "input id=tax text=00.000.000/0000-00",
+        "label for=company-status text=Status",
+        "label for=wl-domain text=Domínio do backend WL",
+        "input id=wl-domain text=ferapark.movepark.com.br",
+        "label for=wl-tenant text=Tenant (header X-Tenant / whitelabel key",
+        "input id=wl-tenant text=ex: ferapark",
+        "label for=wps-url text=URL do webhook do pátio",
+        "input id=wps-url type=url text=https://wps.parceiro.com/webhooks/movepark",
+        "label for=wps-secret text=Segredo (HMAC)",
+        "input id=wps-secret type=password",
+        "button type=button text=Cancelar"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.724Z",
+      "last_seen": "2026-07-29T12:29:12.618Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/companies.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/card.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/input.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/StatusBadge.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/companies/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/companies/CompanyForm.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/types/domain.ts"
+      ],
+      "stale": false
+    },
+    "static:6d0f8c425c9cab43": {
+      "urls_seen": [
+        "/partners"
+      ],
+      "url_pattern": "**/partners",
+      "title": "",
+      "interactive": [
+        "button text=Aprovar e enviar convite",
+        "button text=Reenviar convite",
+        "button text=Recusar",
+        "label for=reason text=Motivo (enviado ao parceiro)",
+        "textarea id=reason text=Ex: não atende à região de cobertura no momento.",
+        "button text=Cancelar",
+        "button type=button aria-label=Remover filtro $",
+        "input type=date aria-label=De",
+        "input type=date aria-label=Até",
+        "label for=filtro-cidade text=Cidade ou UF",
+        "input id=filtro-cidade text=Ex: São Paulo",
+        "label for=filtro-vagas text=Vagas mínimas",
+        "input id=filtro-vagas type=number text=Ex: 50",
+        "button text=Limpar filtros avançados"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.725Z",
+      "last_seen": "2026-07-29T12:29:12.620Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/partners.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/utils.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/badge.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/table.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/onboarding/managerApi.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/onboarding/partnerActionMessages.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/onboarding/ApplicationDrawer.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/onboarding/RejectDialog.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/onboarding/PartnersKanban.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/onboarding/PartnersFilters.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/onboarding/partnersFilters.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/onboarding/status.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/types/domain.ts"
+      ],
+      "stale": false
+    },
+    "static:4dda25aeb4498ed1": {
+      "urls_seen": [
+        "/destinations"
+      ],
+      "url_pattern": "**/destinations",
+      "title": "",
+      "interactive": [
+        "a href=/destinos/$",
+        "button text=Editar",
+        "button text=Terminais",
+        "button text=FAQ",
+        "button text=Excluir",
+        "label for=d-code text=Code *",
+        "input id=d-code text=GRU",
+        "label for=dest-type text=Tipo",
+        "label for=d-name text=Nome *",
+        "input id=d-name",
+        "label for=d-short text=Nome curto",
+        "input id=d-short text=Guarulhos",
+        "label for=d-slug text=Slug (URL)",
+        "input id=d-slug text=aeroporto-de-guarulhos",
+        "label for=d-city text=Cidade *",
+        "input id=d-city",
+        "label for=d-state text=UF",
+        "label for=d-lat text=Latitude *",
+        "input id=d-lat text=-23.43",
+        "label for=d-lng text=Longitude *",
+        "input id=d-lng text=-46.47",
+        "label for=d-sort text=Ordem",
+        "input id=d-sort type=number",
+        "label for=d-mt text=Meta title",
+        "input id=d-mt text=Estacionamento em ... | Movepark",
+        "label for=d-md text=Meta description",
+        "textarea id=d-md",
+        "label for=d-intro text=Texto de conteúdo (parágrafos separados ",
+        "textarea id=d-intro",
+        "button type=button text=Cancelar",
+        "label for=p-name text=Nome *",
+        "input id=p-name text=Terminal 2",
+        "label for=point-type text=Tipo",
+        "label for=p-lat text=Latitude *",
+        "input id=p-lat text=-23.4327",
+        "label for=p-lng text=Longitude *",
+        "input id=p-lng text=-46.4730",
+        "label for=p-sort text=Ordem",
+        "input id=p-sort type=number"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.726Z",
+      "last_seen": "2026-07-29T12:29:12.621Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/destinations.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/badge.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/table.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/destinations/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/destinations/DestinationForm.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/destinations/DestinationPointsDialog.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/destinations/DestinationFaqDialog.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/types/domain.ts"
+      ],
+      "stale": false
+    },
+    "static:4f118d95ef591abc": {
+      "urls_seen": [
+        "/companies/:id/locations"
+      ],
+      "url_pattern": "**/companies/:id/locations",
+      "title": "",
+      "interactive": [
+        "button text=Editar",
+        "a href=/manager/companies/$/locations/$/parking-types text=Tipos de vaga",
+        "button type=button text=Cancelar"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.726Z",
+      "last_seen": "2026-07-29T12:29:12.622Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/locations.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/table.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/StatusBadge.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/companies/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/locations/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/locations/LocationForm.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/types/domain.ts"
+      ],
+      "stale": false
+    },
+    "static:8a522899686bcd8a": {
+      "urls_seen": [
+        "/companies/:companyId/locations/:locationId/parking-types"
+      ],
+      "url_pattern": "**/companies/:companyId/locations/:locationId/parking-types",
+      "title": "",
+      "interactive": [
+        "input id=active-$",
+        "label for=cap-$ text=Capacidade",
+        "input id=cap-$ type=number",
+        "button text=Salvar",
+        "label for=wlcat-select-$ text=Unidade (category)",
+        "label for=wlprod-select-$ text=Tipo de vaga (product)",
+        "label for=wlcat-$ text=category_slug",
+        "input id=wlcat-$ text=unidade-aeroporto",
+        "label for=wlprod-$ text=product_slug",
+        "input id=wlprod-$ text=vaga-coberta"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.727Z",
+      "last_seen": "2026-07-29T12:29:12.623Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/parking-types.tsx"
+      ],
+      "stale": false
+    },
+    "static:954dac294d87c952": {
+      "urls_seen": [
+        "/users"
+      ],
+      "url_pattern": "**/users",
+      "title": "",
+      "interactive": [
+        "input text=Buscar por nome ou ID",
+        "button text=Vincular empresa",
+        "label for=user-company text=Empresa",
+        "label for=user-role text=Papel na empresa",
+        "button text=Cancelar",
+        "label for=invite-email text=E-mail",
+        "input id=invite-email type=email text=pessoa@empresa.com",
+        "label for=invite-role text=Papel",
+        "button text=Confirmar",
+        "button text=Remover"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.728Z",
+      "last_seen": "2026-07-29T12:29:12.624Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/users.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/operator/users.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/card.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/input.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/badge.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/table.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/select.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/dialog.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/label.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/users/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/companies/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/format.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/types/domain.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/team/team.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/team/api.ts"
+      ],
+      "stale": false
+    },
+    "static:3f5547f6170b3fb7": {
+      "urls_seen": [
+        "/finance/billing"
+      ],
+      "url_pattern": "**/finance/billing",
+      "title": "",
+      "interactive": [],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.729Z",
+      "last_seen": "2026-07-29T12:29:12.625Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/finance-billing.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/card.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/badge.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/table.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/select.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/finance/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/format.ts"
+      ],
+      "stale": false
+    },
+    "static:f317e67cda848596": {
+      "urls_seen": [
+        "/finance/commissions"
+      ],
+      "url_pattern": "**/finance/commissions",
+      "title": "",
+      "interactive": [
+        "input type=number aria-label=Comissão de $ em porcentagem"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.729Z",
+      "last_seen": "2026-07-29T12:29:12.625Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/finance-commissions.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/card.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/companies/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/table.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/input.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/finance-commissions.logic.ts"
+      ],
+      "stale": false
+    },
+    "static:c682212b0c3ca68f": {
+      "urls_seen": [
+        "/finance/payouts"
+      ],
+      "url_pattern": "**/finance/payouts",
+      "title": "",
+      "interactive": [],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.731Z",
+      "last_seen": "2026-07-29T12:29:12.626Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/finance-payouts.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/card.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/table.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/select.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/payouts/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/format.ts"
+      ],
+      "stale": false
+    },
+    "static:4fd667bf3d81b2bb": {
+      "urls_seen": [
+        "/finance/recipients"
+      ],
+      "url_pattern": "**/finance/recipients",
+      "title": "",
+      "interactive": [
+        "a text=Link de verificação",
+        "button text=Preencher KYC",
+        "button text=Editar KYC",
+        "button text=Configurar repasse",
+        "button text=Cancelar"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.732Z",
+      "last_seen": "2026-07-29T12:29:12.627Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/finance-recipients.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/badge.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/card.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/table.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/payouts/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/payouts/status.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/payouts/PayoutKycDialog.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/payouts/PayoutSettingsDialog.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/finance-recipients.logic.ts"
+      ],
+      "stale": false
+    },
+    "static:873f6b95368d097d": {
+      "urls_seen": [
+        "/attribution"
+      ],
+      "url_pattern": "**/attribution",
+      "title": "",
+      "interactive": [],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.732Z",
+      "last_seen": "2026-07-29T12:29:12.627Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/attribution.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/card.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/table.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/select.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/attribution/api.ts"
+      ],
+      "stale": false
+    },
+    "static:b048b8c0ea22932d": {
+      "urls_seen": [
+        "/reviews"
+      ],
+      "url_pattern": "**/reviews",
+      "title": "",
+      "interactive": [
+        "textarea text=Responda publicamente a esta avaliação…",
+        "button text=Cancelar",
+        "button text=Editar resposta",
+        "button text=Responder"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.733Z",
+      "last_seen": "2026-07-29T12:29:12.628Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/reviews.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/operator/reviews.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/badge.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/table.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/format.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/reviews/RatingStars.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/reviews/managerApi.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/card.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/textarea.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/reviews/operatorApi.ts"
+      ],
+      "stale": false
+    },
+    "static:59e182a0efabeb44": {
+      "urls_seen": [
+        "/faq/categorias"
+      ],
+      "url_pattern": "**/faq/categorias",
+      "title": "",
+      "interactive": [
+        "button aria-label=Mais ações",
+        "label for=label text=Nome",
+        "input id=label text=Pagamentos",
+        "label for=slug text=Slug",
+        "input id=slug text=pagamentos",
+        "label for=sort text=Ordem",
+        "input id=sort type=number",
+        "button type=button text=Cancelar"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.734Z",
+      "last_seen": "2026-07-29T12:29:12.630Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/faq-categorias.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/dropdown-menu.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/faqs/FaqCategoryForm.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/faqs/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/faqs/types.ts"
+      ],
+      "stale": false
+    },
+    "static:a3e7e0fa6ed61a43": {
+      "urls_seen": [
+        "/tarifas"
+      ],
+      "url_pattern": "**/tarifas",
+      "title": "",
+      "interactive": [
+        "input aria-label=Tarifa $ ativa",
+        "label for=label-$ text=Rótulo",
+        "input id=label-$",
+        "label for=price-$ text=Preço",
+        "label for=win-$ text=Cancelamento grátis (min antes do check-",
+        "input id=win-$ type=number",
+        "input aria-label=Selo popular"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.734Z",
+      "last_seen": "2026-07-29T12:29:12.631Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/tarifas.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/fares/FareEditor.tsx"
+      ],
+      "stale": false
+    },
+    "static:2c56bef4a1f9cf09": {
+      "urls_seen": [
+        "/settings"
+      ],
+      "url_pattern": "**/settings",
+      "title": "",
+      "interactive": [
+        "label for=from text=Remetente (De:)",
+        "input id=from text=Movepark Hub <hub@movepark.co>",
+        "label for=inbox text=Caixa interna para novos leads",
+        "input id=inbox text=(vazio = não envia alerta interno)",
+        "label for=movepark-recipient text=Recebedor master da Movepark",
+        "input id=movepark-recipient text=rp_xxxxxxxxxxxxxxxx",
+        "label for=card-enabled text=Aceitar cartão parcelado",
+        "input id=card-enabled",
+        "label for=max-inst text=Máximo de parcelas",
+        "input id=max-inst type=number",
+        "label for=free-inst text=Parcelas sem juros (até)",
+        "input id=free-inst type=number",
+        "label for=interest text=Juros ao mês (%)",
+        "input id=interest type=number",
+        "label for=min-inst text=Parcela mínima (R$)",
+        "input id=min-inst type=number",
+        "label for=absorb text=Quem paga o juros",
+        "select id=absorb",
+        "label for=hold-minutes text=Hold da reserva (min)",
+        "input id=hold-minutes type=number",
+        "label for=grace-minutes text=Folga do cancelamento (min)",
+        "input id=grace-minutes type=number",
+        "label for=max-minutes text=Renovação máxima (min)",
+        "input id=max-minutes type=number",
+        "label for=platform-name text=Nome",
+        "input id=platform-name",
+        "label for=support text=E-mail de suporte",
+        "input id=support type=email",
+        "label for=tpl-confirm text=Confirmação de reserva",
+        "textarea id=tpl-confirm",
+        "label for=tpl-cancel text=Cancelamento",
+        "textarea id=tpl-cancel",
+        "label for=op-name text=Nome do operador logado",
+        "input id=op-name",
+        "label for=op-email text=E-mail",
+        "input id=op-email",
+        "label for=op-companies text=Empresas vinculadas",
+        "input id=op-companies"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.735Z",
+      "last_seen": "2026-07-29T12:29:12.632Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/settings.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/operator/settings.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/card.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/tabs.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/input.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/label.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/textarea.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/switch.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/settings/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/installments.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/bookingHold.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts"
+      ],
+      "stale": false
+    },
+    "static:0596a980f7d6f003": {
+      "urls_seen": [
+        "/legal"
+      ],
+      "url_pattern": "**/legal",
+      "title": "",
+      "interactive": [],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.735Z",
+      "last_seen": "2026-07-29T12:29:12.632Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/legal.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/card.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/utils.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/legal/RichTextEditor.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/legal/api.ts"
+      ],
+      "stale": false
+    },
+    "static:028159d183766227": {
+      "urls_seen": [
+        "/operator"
+      ],
+      "url_pattern": "**/operator",
+      "title": "",
+      "interactive": [],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.736Z",
+      "last_seen": "2026-07-29T12:29:12.633Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/operator/layout.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/AppShell.tsx"
+      ],
+      "stale": false
+    },
+    "static:8594ef6aba17f179": {
+      "urls_seen": [
+        "/locations"
+      ],
+      "url_pattern": "**/locations",
+      "title": "",
+      "interactive": [
+        "a href=/operator/locations/$/parking-types text=Tipos de vaga",
+        "a href=/operator/locations/$/editar text=Editar"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.736Z",
+      "last_seen": "2026-07-29T12:29:12.633Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/operator/locations.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/card.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/StatusBadge.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/locations/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts"
+      ],
+      "stale": false
+    },
+    "static:d2e4ffa077ef088a": {
+      "urls_seen": [
+        "/locations/:locationId/editar"
+      ],
+      "url_pattern": "**/locations/:locationId/editar",
+      "title": "",
+      "interactive": [
+        "a href=/operator/locations text=Ir para Unidades",
+        "a href=/operator/locations text=Cancelar",
+        "button type=button text=Continuar editando",
+        "button type=button text=Sair sem salvar",
+        "select text=para \"sem âncora\" (o Radix Select não ac",
+        "input id=name",
+        "input id=google-maps-url type=url text=https://maps.google.com/...",
+        "input id=phone",
+        "input id=email type=email",
+        "input id=tolerance-minutes type=number text=60",
+        "textarea id=notice text=Ex.: Use a Rua Padre Celestino Pavan. O GPS erra a entrada.",
+        "textarea id=directions text=Ex.: Entre pela rua lateral (não pela entrada principal). Recepção coberta à direita.",
+        "input id=shuttle-freq type=number text=15",
+        "input id=shuttle-terminal type=number text=6",
+        "textarea id=policy text=Ex.: Cancelamento grátis até 24h antes do check-in.",
+        "input id=slug",
+        "input id=tz",
+        "input id=external-ref text=ex: lote-01",
+        "label for=destination text=Destino (âncora de proximidade)",
+        "button type=button text=Detectar mais próximo"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.737Z",
+      "last_seen": "2026-07-29T12:29:12.635Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/operator/location-edit.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/dialog.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/locations/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/locations/useLocationForm.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/locations/LocationSections.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts"
+      ],
+      "stale": false
+    },
+    "static:f4f1f413a871fa09": {
+      "urls_seen": [
+        "/locations/:locationId/parking-types"
+      ],
+      "url_pattern": "**/locations/:locationId/parking-types",
+      "title": "",
+      "interactive": [
+        "input id=active-$",
+        "label for=cap-$ text=Capacidade",
+        "input id=cap-$ type=number",
+        "button text=Salvar",
+        "label for=wlcat-select-$ text=Unidade (category)",
+        "label for=wlprod-select-$ text=Tipo de vaga (product)",
+        "label for=wlcat-$ text=category_slug",
+        "input id=wlcat-$ text=unidade-aeroporto",
+        "label for=wlprod-$ text=product_slug",
+        "input id=wlprod-$ text=vaga-coberta"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.737Z",
+      "last_seen": "2026-07-29T12:29:12.635Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/parking-types.tsx"
+      ],
+      "stale": false
+    },
+    "static:420499c21ee058ef": {
+      "urls_seen": [
+        "/reports"
+      ],
+      "url_pattern": "**/reports",
+      "title": "",
+      "interactive": [],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.738Z",
+      "last_seen": "2026-07-29T12:29:12.636Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/operator/reports.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/card.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/tabs.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/select.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/reports/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/useScopedLocationIds.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/format.ts"
+      ],
+      "stale": false
+    },
+    "static:c15ff6d327dc52fe": {
+      "urls_seen": [
+        "/occupancy"
+      ],
+      "url_pattern": "**/occupancy",
+      "title": "",
+      "interactive": [
+        "label for=loc text=Unidade",
+        "select id=loc",
+        "label for=from text=De",
+        "input id=from type=date",
+        "label for=to text=Até",
+        "input id=to type=date",
+        "button text=Cancelar",
+        "button text=Bloquear vendas"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.738Z",
+      "last_seen": "2026-07-29T12:29:12.636Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/operator/occupancy.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/card.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/label.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/input.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/locations/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/availability/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/availability/occupancy.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/availability/OccupancyCalendar.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts"
+      ],
+      "stale": false
+    },
+    "static:ff235c14cdf618e3": {
+      "urls_seen": [
+        "/addons"
+      ],
+      "url_pattern": "**/addons",
+      "title": "",
+      "interactive": [
+        "button text=Disponibilidade",
+        "button aria-label=Excluir",
+        "label for=a-name text=Nome *",
+        "input id=a-name text=Ex: Lava-jato",
+        "label for=a-desc text=Descrição",
+        "textarea id=a-desc text=Detalhes opcionais exibidos ao cliente.",
+        "label for=a-sort text=Ordem",
+        "input id=a-sort type=number",
+        "button type=button text=Cancelar"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.739Z",
+      "last_seen": "2026-07-29T12:29:12.637Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/operator/addons.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/badge.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/table.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/format.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/types/domain.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/addons/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/addons/addons.logic.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/addons/AddonForm.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/addons/AddonAvailability.tsx"
+      ],
+      "stale": false
+    },
+    "static:7394a2bb766646ca": {
+      "urls_seen": [
+        "/pricing"
+      ],
+      "url_pattern": "**/pricing",
+      "title": "",
+      "interactive": [
+        "a href=/operator/locations/$/parking-types text=Capacidade e regras",
+        "label for=prule-strategy text=Modelo de cálculo",
+        "label for=prule-oneday text=Preço 1 dia",
+        "label for=prule-twodays text=Preço 2 dias",
+        "label for=prule-incbase text=Base (3+ dias)",
+        "label for=prule-incmult text=Multiplicador por dia",
+        "label for=prule-monthly text=Pacote mensal (30 dias)",
+        "label for=prule-monthlydaily text=Diária dos dias avulsos",
+        "label for=prule-h-initial text=0 a 30 min",
+        "label for=prule-h-onehour text=31 a 60 min",
+        "label for=prule-h-extra text=Cada hora extra",
+        "label for=prule-h-daily text=Teto diário",
+        "label for=prule-h-hoursperday text=Horas que formam 1 diária",
+        "input id=prule-h-hoursperday type=number",
+        "label for=prule-surcharge-source text=Tipo base (mesma empresa)",
+        "label for=prule-surcharge-mult text=Multiplicador",
+        "label for=prule-fractional-policy text=Política",
+        "label for=prule-fractional-tol text=Tolerância (horas)",
+        "input id=prule-fractional-tol type=number",
+        "label for=prule-oldprice-strategy text=Estratégia",
+        "label for=prule-oldprice-mult text=Multiplicador do preço de balcão",
+        "label for=prule-advance text=Antecedência mínima (minutos)",
+        "input id=prule-advance type=number text=Ex.: 30",
+        "label for=bp text=Valor referência",
+        "button text=Cancelar",
+        "button text=Manter as faixas",
+        "button text=Trocar mesmo assim",
+        "label for=ci text=Check-in",
+        "input id=ci type=datetime-local",
+        "label for=co text=Check-out",
+        "input id=co type=datetime-local"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.742Z",
+      "last_seen": "2026-07-29T12:29:12.639Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/operator/pricing.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/card.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/locations/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/companies/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/parking-types/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/parking-types/PricingRuleEditor.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/parking-types/PricingSimulationTable.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/parking-types/PricingSummary.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/parking-types/pricing-curve.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/parking-types/CurveInversionAlert.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/format.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/types/domain.ts"
+      ],
+      "stale": false
+    },
+    "static:ee9dda8b632ca3c3": {
+      "urls_seen": [
+        "/coupons"
+      ],
+      "url_pattern": "**/coupons",
+      "title": "",
+      "interactive": [
+        "button aria-label=Excluir"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.742Z",
+      "last_seen": "2026-07-29T12:29:12.640Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/operator/coupons.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/tabs.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/coupons/CouponsTab.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/discounts/DiscountsTab.tsx"
+      ],
+      "stale": false
+    },
+    "static:57d0a82f901615da": {
+      "urls_seen": [
+        "/finance"
+      ],
+      "url_pattern": "**/finance",
+      "title": "",
+      "interactive": [
+        "button text=Configurar recebimento",
+        "button text=Cancelar"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.743Z",
+      "last_seen": "2026-07-29T12:29:12.642Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/operator/finance.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/card.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/badge.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/table.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/select.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/payouts/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/payouts/PayoutSettingsDialog.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/payouts/status.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/format.ts"
+      ],
+      "stale": false
+    },
+    "static:94f04d85c3ddb770": {
+      "urls_seen": [
+        "/api-keys"
+      ],
+      "url_pattern": "**/api-keys",
+      "title": "",
+      "interactive": [],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.743Z",
+      "last_seen": "2026-07-29T12:29:12.642Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/operator/api-keys.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/api-keys/ApiKeysTable.tsx"
+      ],
+      "stale": false
+    },
+    "static:921d68b635f8d35c": {
+      "urls_seen": [
+        "/operator/preview/:locationId"
+      ],
+      "url_pattern": "**/operator/preview/:locationId",
+      "title": "",
+      "interactive": [
+        "a href=/operator",
+        "a href=/operator/recebimento text=Cadastrar recebimento",
+        "a text=Abrir página pública"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.744Z",
+      "last_seen": "2026-07-29T12:29:12.643Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/operator/unit-preview.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/Brand.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/card.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/onboarding/publish/UnitPreviewCard.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/onboarding/publish/previewApi.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/OnboardingJourney.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PhotosCallout.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/ConfettiBurst.tsx"
+      ],
+      "stale": false
+    },
+    "static:d73f076fd2575d02": {
+      "urls_seen": [
+        "/operator/recebimento"
+      ],
+      "url_pattern": "**/operator/recebimento",
+      "title": "",
+      "interactive": [
+        "a href=/operator",
+        "button text=Voltar aos dados",
+        "a text=Fazer a verificação",
+        "a href=/operator text=Ir para o painel",
+        "button type=button text=Fazer depois",
+        "button type=button text=Continuar"
+      ],
+      "source": "static",
+      "first_seen": "2026-07-29T12:28:39.745Z",
+      "last_seen": "2026-07-29T12:29:12.644Z",
+      "seen_count": 2,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/operator/recebimento.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/Brand.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/card.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/checkbox.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/payouts/PayoutKycWizard.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/payouts/kyc.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/payouts/api.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/payouts/contract.ts",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/payouts/RevenueMotivator.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/OnboardingJourney.tsx",
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/ConfettiBurst.tsx"
+      ],
+      "stale": false
+    },
+    "llm:93c124d551e25036": {
+      "urls_seen": [
+        "/account/saved"
+      ],
+      "url_pattern": "**/account/saved",
+      "title": "",
+      "interactive": [
+        "div role=menuitem text=Favoritos"
+      ],
+      "source": "llm",
+      "first_seen": "2026-07-29T12:28:56.662Z",
+      "last_seen": "2026-07-29T12:28:56.662Z",
+      "seen_count": 1,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/CheckoutShell.tsx"
+      ],
+      "stale": false
+    },
+    "llm:cbbbb050182a1a6f": {
+      "urls_seen": [
+        "/p/:slug"
+      ],
+      "url_pattern": "**/p/:slug",
+      "title": "",
+      "interactive": [
+        "ConsumerTopbar",
+        "ConsumerFooter",
+        "ChatWidget"
+      ],
+      "source": "llm",
+      "first_seen": "2026-07-29T12:28:56.662Z",
+      "last_seen": "2026-07-29T12:28:56.662Z",
+      "seen_count": 1,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/ConsumerAppShell.tsx"
+      ],
+      "stale": false
+    },
+    "llm:b7e654360abdb159": {
+      "urls_seen": [
+        "/manager/partners"
+      ],
+      "url_pattern": "**/manager/partners",
+      "title": "",
+      "interactive": [
+        "NavLink aria-label=... title=..."
+      ],
+      "source": "llm",
+      "first_seen": "2026-07-29T12:28:56.662Z",
+      "last_seen": "2026-07-29T12:28:56.662Z",
+      "seen_count": 1,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/Sidebar.tsx"
+      ],
+      "stale": false
+    },
+    "llm:e58c62662f0180e8": {
+      "urls_seen": [
+        "/account/indicar"
+      ],
+      "url_pattern": "**/account/indicar",
+      "title": "",
+      "interactive": [
+        "button type=button text=Compartilhar",
+        "button type=button text=copiar link",
+        "a href=/account/indicar text=Como funciona"
+      ],
+      "source": "llm",
+      "first_seen": "2026-07-29T12:28:56.662Z",
+      "last_seen": "2026-07-29T12:28:56.662Z",
+      "seen_count": 1,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/growth/ReferralShareCard.tsx"
+      ],
+      "stale": false
+    },
+    "llm:e690869223d8fa64": {
+      "urls_seen": [
+        "/p/:companySlug/:locationSlug"
+      ],
+      "url_pattern": "**/p/:companySlug/:locationSlug",
+      "title": "",
+      "interactive": [
+        "Link to=/p/:companySlug/:locationSlug"
+      ],
+      "source": "llm",
+      "first_seen": "2026-07-29T12:28:56.662Z",
+      "last_seen": "2026-07-29T12:28:56.662Z",
+      "seen_count": 1,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/OperatorCard.tsx"
+      ],
+      "stale": false
+    },
+    "llm:ad4ba4fc0bcc85b7": {
+      "urls_seen": [
+        "/:slug"
+      ],
+      "url_pattern": "**/:slug",
+      "title": "",
+      "interactive": [
+        "div class=mx-auto w-full max-w-[720px] px-4 py-12 desktop:px-8",
+        "PageHeader variant=content title=heading",
+        "p text-body-sm text-muted",
+        "Skeleton class=h-6 w-48",
+        "Skeleton class=h-24 w-full",
+        "div class=LEGAL_PROSE_CLASS",
+        "p text-body-md text-muted"
+      ],
+      "source": "llm",
+      "first_seen": "2026-07-29T12:29:43.496Z",
+      "last_seen": "2026-07-29T12:29:43.496Z",
+      "seen_count": 1,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/legal/LegalDocumentPage.tsx"
+      ],
+      "stale": false
+    },
+    "llm:13fcfe796a1c3bc9": {
+      "urls_seen": [
+        "/manager/attribution"
+      ],
+      "url_pattern": "**/manager/attribution",
+      "title": "",
+      "interactive": [
+        "Select onValueChange=setMonthKey",
+        "SelectTrigger",
+        "SelectValue",
+        "SelectContent"
+      ],
+      "source": "llm",
+      "first_seen": "2026-07-29T12:29:43.496Z",
+      "last_seen": "2026-07-29T12:29:43.496Z",
+      "seen_count": 1,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/attribution.tsx"
+      ],
+      "stale": false
+    },
+    "llm:6812990a9a7c5e9c": {
+      "urls_seen": [
+        "/manager/finance-billing"
+      ],
+      "url_pattern": "**/manager/finance-billing",
+      "title": "",
+      "interactive": [
+        "Select value=monthKey",
+        "SelectTrigger",
+        "SelectItem"
+      ],
+      "source": "llm",
+      "first_seen": "2026-07-29T12:29:43.496Z",
+      "last_seen": "2026-07-29T12:29:43.496Z",
+      "seen_count": 1,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/finance-billing.tsx"
+      ],
+      "stale": false
+    },
+    "llm:063846ac2b8714a5": {
+      "urls_seen": [
+        "/manager/finance-payouts"
+      ],
+      "url_pattern": "**/manager/finance-payouts",
+      "title": "",
+      "interactive": [
+        "Select value=monthKey",
+        "SelectItem value=m.value"
+      ],
+      "source": "llm",
+      "first_seen": "2026-07-29T12:29:43.496Z",
+      "last_seen": "2026-07-29T12:29:43.496Z",
+      "seen_count": 1,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/finance-payouts.tsx"
+      ],
+      "stale": false
+    },
+    "llm:6520e872c29fe206": {
+      "urls_seen": [
+        "/manager/legal"
+      ],
+      "url_pattern": "**/manager/legal",
+      "title": "",
+      "interactive": [
+        "button type=button text=Termos de Uso",
+        "button type=button text=Política de Privacidade",
+        "button type=button text=Publicar nova versão"
+      ],
+      "source": "llm",
+      "first_seen": "2026-07-29T12:29:43.496Z",
+      "last_seen": "2026-07-29T12:29:43.496Z",
+      "seen_count": 1,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/legal.tsx"
+      ],
+      "stale": false
+    },
+    "llm:90ac4d0ab63e987b": {
+      "urls_seen": [
+        "/operator/api-keys"
+      ],
+      "url_pattern": "**/operator/api-keys",
+      "title": "",
+      "interactive": [
+        "PageHeader title=\"API\" description=\"Chaves de API para integrar seus sistemas (ex.: WPS) à Public API do Movepark. Veja a documentação em api.movepark.co/docs.\"",
+        "EmptyState title=\"Sem empresa vinculada\" description=\"Solicite à equipe Movepark a vinculação da sua empresa.\"",
+        "ApiKeysTable"
+      ],
+      "source": "llm",
+      "first_seen": "2026-07-29T12:29:43.496Z",
+      "last_seen": "2026-07-29T12:29:43.496Z",
+      "seen_count": 1,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/operator/api-keys.tsx"
+      ],
+      "stale": false
+    },
+    "llm:e36f15c44687982f": {
+      "urls_seen": [
+        "/operator/reports"
+      ],
+      "url_pattern": "**/operator/reports",
+      "title": "",
+      "interactive": [
+        "tag=Select name=period",
+        "tag=TabsTrigger value=revenue text=Receita",
+        "tag=TabsTrigger value=bookings text=Reservas",
+        "tag=TabsTrigger value=export text=Exportar",
+        "tag=Button text=Receita diária",
+        "tag=Button text=Funil de status"
+      ],
+      "source": "llm",
+      "first_seen": "2026-07-29T12:29:43.496Z",
+      "last_seen": "2026-07-29T12:29:43.496Z",
+      "seen_count": 1,
+      "files": [
+        "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/operator/reports.tsx"
+      ],
+      "stale": false
+    },
+    "sig:9762b1205e6e924b": {
+      "urls_seen": [
+        "http://localhost:5180/"
+      ],
+      "url_pattern": "**/",
+      "title": "Movepark | Estacionamentos em aeroportos e destinos",
+      "interactive": [
+        "a",
+        "a",
+        "button id=radix-:r5: type=button text=Destinos",
+        "button type=button",
+        "a text=Seja parceiro",
+        "a text=Entrar",
+        "button type=button text=OndeAeroporto, cidade ou bairro",
+        "button type=button text=Check-in30 jul · 22:00",
+        "button type=button text=Check-out04 ago · 08:00",
+        "button type=button text=Veículo Carro",
+        "select text=Carro Moto",
+        "button type=submit text=Buscar",
+        "a text=Buscar estacionamento",
+        "button type=button",
+        "button type=button",
+        "button type=button",
+        "a text=Ver todos os destinos",
+        "a text=Aeroporto de GuarulhosGuarulhos · SP12 e",
+        "a text=Aeroporto de CongonhasSão Paulo · SP5 es",
+        "a text=Aeroporto Internacional de ConfinsBelo H",
+        "a text=Aeroporto do GaleãoRio de Janeiro · RJ4 ",
+        "a text=Aeroporto Santos DumontRio de Janeiro · ",
+        "a text=Aeroporto Afonso PenaCuritiba · PR4 esta",
+        "a text=Aeroporto de ViracoposCampinas · SP6 est",
+        "a text=Aeroporto Salgado FilhoPorto Alegre · RS",
+        "a text=Aeroporto de BrasíliaBrasília · DF4 esta",
+        "a text=Terminal TietêSão Paulo · SP2 estacionam",
+        "a text=Aeroporto de GuarulhosGuarulhos · SP12 e",
+        "a text=Aeroporto de CongonhasSão Paulo · SP5 es",
+        "a text=Aeroporto Internacional de ConfinsBelo H",
+        "a text=Aeroporto do GaleãoRio de Janeiro · RJ4 ",
+        "a text=Aeroporto Santos DumontRio de Janeiro · ",
+        "a text=Aeroporto Afonso PenaCuritiba · PR4 esta",
+        "a text=Aeroporto de ViracoposCampinas · SP6 est",
+        "a text=Aeroporto Salgado FilhoPorto Alegre · RS",
+        "a text=Aeroporto de BrasíliaBrasília · DF4 esta",
+        "a text=Terminal TietêSão Paulo · SP2 estacionam",
+        "a text=Buscar estacionamento",
+        "a text=Sobre nós",
+        "a text=Termos de uso",
+        "a text=Política de privacidade",
+        "a text=Seja parceiro",
+        "a text=Painel do estacionamento",
+        "a text=Perguntas frequentes",
+        "a text=Como funciona",
+        "a text=Política de cancelamento",
+        "a text=Fale conosco",
+        "a text=Destinos",
+        "a text=Entrar",
+        "a text=Parceiro",
+        "a text=Ajuda"
+      ],
+      "source": "execution",
+      "first_seen": "2026-07-29T12:30:26.935Z",
+      "last_seen": "2026-07-29T12:30:26.935Z",
+      "seen_count": 1
+    },
+    "sig:eb1cb13a1fa9ce8c": {
+      "urls_seen": [
+        "http://localhost:5180/"
+      ],
+      "url_pattern": "**/",
+      "title": "Movepark | Estacionamentos em aeroportos e destinos",
+      "interactive": [
+        "a",
+        "a",
+        "button type=button",
+        "a text=Seja parceiro",
+        "a text=Entrar",
+        "button type=button text=OndeAeroporto, cidade ou bairro",
+        "button type=button text=Check-in30 jul · 22:00",
+        "button type=button text=Check-out04 ago · 08:00",
+        "button type=button text=Veículo Carro",
+        "select text=Carro Moto",
+        "button type=submit text=Buscar",
+        "a text=Buscar estacionamento",
+        "button type=button",
+        "button type=button",
+        "button type=button",
+        "a text=Ver todos os destinos",
+        "a text=Aeroporto de GuarulhosGuarulhos · SP12 e",
+        "a text=Aeroporto de CongonhasSão Paulo · SP5 es",
+        "a text=Aeroporto Internacional de ConfinsBelo H",
+        "a text=Aeroporto do GaleãoRio de Janeiro · RJ4 ",
+        "a text=Aeroporto Santos DumontRio de Janeiro · ",
+        "a text=Aeroporto Afonso PenaCuritiba · PR4 esta",
+        "a text=Aeroporto de ViracoposCampinas · SP6 est",
+        "a text=Aeroporto Salgado FilhoPorto Alegre · RS",
+        "a text=Aeroporto de BrasíliaBrasília · DF4 esta",
+        "a text=Terminal TietêSão Paulo · SP2 estacionam",
+        "a text=Aeroporto de GuarulhosGuarulhos · SP12 e",
+        "a text=Aeroporto de CongonhasSão Paulo · SP5 es",
+        "a text=Aeroporto Internacional de ConfinsBelo H",
+        "a text=Aeroporto do GaleãoRio de Janeiro · RJ4 ",
+        "a text=Aeroporto Santos DumontRio de Janeiro · ",
+        "a text=Aeroporto Afonso PenaCuritiba · PR4 esta",
+        "a text=Aeroporto de ViracoposCampinas · SP6 est",
+        "a text=Aeroporto Salgado FilhoPorto Alegre · RS",
+        "a text=Aeroporto de BrasíliaBrasília · DF4 esta",
+        "a text=Terminal TietêSão Paulo · SP2 estacionam",
+        "a text=Buscar estacionamento",
+        "a text=Sobre nós",
+        "a text=Termos de uso",
+        "a text=Política de privacidade",
+        "a text=Seja parceiro",
+        "a text=Painel do estacionamento",
+        "a text=Perguntas frequentes",
+        "a text=Como funciona",
+        "a text=Política de cancelamento",
+        "a text=Fale conosco",
+        "a text=Destinos",
+        "a text=Entrar",
+        "a text=Parceiro",
+        "a text=Ajuda"
+      ],
+      "source": "execution",
+      "first_seen": "2026-07-29T12:30:32.373Z",
+      "last_seen": "2026-07-29T12:30:32.373Z",
+      "seen_count": 1
+    }
+  },
+  "transitions": [],
+  "assist_seen": {
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/RequireRole.tsx": "765ada6e77de4390",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/RequireScope.tsx": "a2f057480106706e",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/AppProviders.tsx": "b7ad2cc20c5e7719",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/BackLink.tsx": "a6d5f3f287011155",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/BottomNav.tsx": "80a08ed5e8978464",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/CheckoutShell.tsx": "5a24bb5314095b7d",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/ConsumerAppShell.tsx": "2721e88583005c98",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/ImpersonationBanner.tsx": "2f81edfba015b9db",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/RootErrorBoundary.tsx": "e0315b17be9f3f43",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/ScrollToTop.tsx": "5d451a4feff2e7fc",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/Sidebar.tsx": "2b2d4f02a508ab10",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/Topbar.tsx": "7ef7eb3dfdddec40",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/assistant/ChatWidget.tsx": "fb3c4818ec5550a9",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/command-palette/CommandPalette.tsx": "1a8f9462f60dc9a3",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/growth/ReferralShareCard.tsx": "285f49f3c1ea576f",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/home/CategoryStrip.tsx": "aff1ece10ca40cab",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/home/PopularDestinations.tsx": "da0234a049ca945e",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/listing/OperatorCard.tsx": "d19f4ca6dd52420a",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/onboarding/LeadForm.tsx": "8637d7ab247152c7",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/onboarding/ThankYou.tsx": "2d100a7f2e9559ec",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/search/SearchBarPill.tsx": "3ba44371d4dd26a3",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/account/index.tsx": "8ce8c65d9daaf9c5",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/context.ts": "86d63db9252c6c38",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/postLoginRedirect.ts": "113ba368826c2267",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/auth/useScopedLocationIds.ts": "c132720df2597007",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/format.ts": "68c4795a1de6e48c",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/lib/utils.ts": "028d3a77e45e925a",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/destino.logic.ts": "ce79f5f9f30d0e74",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/privacidade.tsx": "7c53d92bc6e07955",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/seja-parceiro.tsx": "e56bab1a8952c0f3",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/termos.tsx": "060a77d72f3c2268",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/test/utils.tsx": "2fcbcf9566b5d614",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/AppShell.tsx": "2b176df15dc07f63",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/Brand.tsx": "f18a01b742421362",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/EmptyState.tsx": "32c3ee5a1d0a0f74",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/shared/PageHeader.tsx": "86cb3a92a3d67288",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/badge.tsx": "83839ccc52ea0e3a",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/button.tsx": "5f35f826ea9db698",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/card.tsx": "3b01a835724b4494",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/select.tsx": "43e3b1f51bcc0be5",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/skeleton.tsx": "db3d3cec02bdb87c",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/table.tsx": "473a40cdeff71411",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/components/ui/tabs.tsx": "0ee1d5756ea0d0e8",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/api-keys/ApiKeysTable.tsx": "0fecf78c96e9b02b",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/attribution/api.ts": "80b5e522e44d2ee7",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/finance/api.ts": "a98b67e6188057d8",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/legal/LegalDocumentPage.tsx": "00a987ced4d856cc",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/legal/RichTextEditor.tsx": "e20b474396eb3c66",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/legal/api.ts": "edfd7c89aeda3a5f",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/payouts/api.ts": "2d426d089662cb3e",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/features/reports/api.ts": "e54c82fc2c62b692",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/auth/callback.tsx": "5f9bbec604ae4d8d",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/attribution.tsx": "8b2472d95161ee55",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/finance-billing.tsx": "26df8586f177f188",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/finance-payouts.tsx": "e65a08128387c6ab",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/layout.tsx": "ea55ca95238f24ad",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/legal.tsx": "764f08666c21fed6",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/operator/api-keys.tsx": "6906bc728f94956c",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/operator/layout.tsx": "aa79370448c57c51",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/operator/reports.tsx": "f0c8da3a304d873e",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/manager/dashboard.tsx": "4d1e9082f26c9dbc",
+    "/Users/kallef/PhpstormProjects/orbital/FERA/movepark-hub/src/routes/operator/dashboard.tsx": "b6b5e540e988cda4"
+  }
+}

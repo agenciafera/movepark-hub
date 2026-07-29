@@ -1,0 +1,61 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "home-vitrine",
+    "start_url": "/",
+    "start_sig": "sig:eb1cb13a1fa9ce8c"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "home-vitrine",
+    "start_url": "http://localhost:5180/",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "h2",
+          "description": "Vitrine de estacionamentos populares"
+        },
+        "timeout_ms": 5000,
+        "use": "Verificar se a vitrine de estacionamentos populares está visível"
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "Conteúdo principal da página"
+        },
+        "timeout_ms": 5000,
+        "use": "Verificar a presença dos cards com preço em reais"
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "Verificação final da vitrine"
+        },
+        "timeout_ms": 5000,
+        "use": "Validar cards com preço",
+        "expect": {
+          "selector": "main"
+        }
+      }
+    ],
+    "task": "Na home, verifique que a vitrine 'Estacionamentos Populares' aparece com cards de estacionamento mostrando preço em reais.",
+    "generated_by": {
+      "model": "google/gemini-3.1-flash-lite",
+      "at": "2026-07-29T12:30:26.544Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-07-29T12:30:26.959Z",
+    "last_replayed_at": "2026-07-29T12:30:32.396Z",
+    "replay_count": 1,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

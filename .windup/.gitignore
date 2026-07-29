@@ -1,0 +1,4 @@
+# Ephemeral / sensitive — do NOT commit. The plan cache (cache/) and site map (map/) ARE committed: that's what makes replays $0 with no LLM anywhere.
+state/
+runs/
+reports/

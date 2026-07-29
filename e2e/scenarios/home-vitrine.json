@@ -1,0 +1,9 @@
+{
+  "scenario_id": "home-vitrine",
+  "start_url": "/",
+  "task": "Na home, verifique que a vitrine 'Estacionamentos Populares' aparece com cards de estacionamento mostrando preço em reais.",
+  "hints": [
+    "Cenário de leitura pura: não preencha a busca, não reserve, não faça login.",
+    "A vitrine fica abaixo do formulário de busca, sob o rótulo 'OS MAIS RESERVADOS'."
+  ]
+}
