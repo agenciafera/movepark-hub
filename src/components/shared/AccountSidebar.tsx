@@ -17,11 +17,11 @@ import { useAuth } from "@/auth/context";
 import { ReferralShareCard } from "@/features/growth/ReferralShareCard";
 
 // Perfil vem primeiro (padrão de dashboard). Minhas reservas logo abaixo, por ser
-// a ação mais frequente do cliente. "/bookings" mora fora do shell da conta, então
-// é um link de saída (não fica "ativo" na sidebar), mas é o lugar das reservas.
+// a ação mais frequente do cliente, e dentro do próprio shell da conta
+// (`/account/reservas`) pra não perder a sidebar ao abrir as reservas.
 const items = [
   { to: "/account/profile", icon: User2, label: "Perfil" },
-  { to: "/bookings", icon: Ticket, label: "Minhas reservas" },
+  { to: "/account/reservas", icon: Ticket, label: "Minhas reservas" },
   { to: "/account/clube", icon: Sparkles, label: "Movepark Clube" },
   { to: "/account/vehicles", icon: Car, label: "Veículos" },
   { to: "/account/addresses", icon: MapPin, label: "Endereços" },

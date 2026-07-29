@@ -14,13 +14,10 @@ export function AccountAppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const isRoot = location.pathname === "/account" || location.pathname === "/account/";
-  // Páginas ricas (Clube, Indique) trazem os próprios cards, então ficam direto
-  // no painel cinza. Envolvê-las no card branco criaria card dentro de card e
-  // achataria os cards internos (branco no branco). As telas de formulário sim
-  // ganham a superfície branca, pra não ficarem soltas no cinza.
-  const fullBleed =
-    location.pathname.startsWith("/account/clube") ||
-    location.pathname.startsWith("/account/indicar");
+  // Minhas reservas é uma lista sobre o painel cinza (os cards de reserva brancos
+  // sobem no cinza), então dispensa a superfície branca. As demais telas da conta
+  // (perfil, veículos, clube, indique) ganham o card branco, pra não ficarem soltas.
+  const fullBleed = location.pathname.startsWith("/account/reservas");
 
   return (
     <div className="flex min-h-screen flex-col bg-panel">

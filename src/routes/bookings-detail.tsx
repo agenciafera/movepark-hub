@@ -31,7 +31,7 @@ import { RatingStars } from "@/features/reviews/RatingStars";
 import { formatBRL, formatDateTime, formatDuration } from "@/lib/format";
 import { FARE_TIER_LABEL, fareReais } from "@/lib/fares";
 
-export default function BookingDetailPage() {
+export default function BookingDetailPage({ backTo = "/bookings" }: { backTo?: string }) {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { data: booking, isLoading, error } = useBookingDetail(code);
@@ -89,7 +89,7 @@ export default function BookingDetailPage() {
           description="Verifique o código e tente de novo."
           action={
             <Button asChild>
-              <Link to="/bookings">Minhas reservas</Link>
+              <Link to={backTo}>Minhas reservas</Link>
             </Button>
           }
         />
@@ -140,7 +140,7 @@ export default function BookingDetailPage() {
   return (
     <div className="mx-auto w-full max-w-[1080px] px-4 py-8 desktop:px-8">
       <Button variant="ghost" size="sm" asChild className="mb-4 -ml-3 print:hidden">
-        <Link to="/bookings">
+        <Link to={backTo}>
           <ArrowLeft className="h-4 w-4" />
           Minhas reservas
         </Link>
@@ -439,7 +439,7 @@ export default function BookingDetailPage() {
         booking={booking}
         open={cancelOpen}
         onOpenChange={setCancelOpen}
-        onCancelled={() => navigate("/bookings")}
+        onCancelled={() => navigate(backTo)}
       />
 
       <FareUpgradeDialog

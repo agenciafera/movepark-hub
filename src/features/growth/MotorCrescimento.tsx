@@ -266,9 +266,9 @@ export function MotorCrescimento() {
               <div
                 key={nivel.code}
                 className={cn(
-                  "rounded-md border p-4 shadow-tier transition-shadow",
+                  "rounded-md border p-4 transition-shadow",
                   atual
-                    ? "border-mp-primary bg-surface-pale"
+                    ? "border-mp-primary bg-surface-pale shadow-tier"
                     : "border-hairline bg-canvas",
                 )}
               >

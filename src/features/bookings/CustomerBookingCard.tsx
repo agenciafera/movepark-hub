@@ -11,14 +11,16 @@ import type { MyBookingListItem } from "./customerApi";
 
 type Props = {
   item: MyBookingListItem;
+  /** Base da rota de detalhe, pra o clique ficar no shell certo (consumer ou conta). */
+  detailBase?: string;
 };
 
-export function CustomerBookingCard({ item }: Props) {
+export function CustomerBookingCard({ item, detailBase = "/bookings" }: Props) {
   const relative = formatRelativeDay(item.check_in_at);
 
   return (
     <Link
-      to={`/bookings/${item.code}`}
+      to={`${detailBase}/${item.code}`}
       className="flex flex-col gap-4 rounded-md border border-hairline bg-canvas p-5 no-underline transition-shadow duration-base ease-standard hover:shadow-tier tablet:flex-row tablet:items-center"
     >
       <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-md bg-soft-gradient">

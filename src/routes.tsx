@@ -41,6 +41,8 @@ import CancelamentoPage from "@/routes/cancelamento";
 import ComoFuncionaPage from "@/routes/como-funciona";
 
 import AccountIndexPage from "@/routes/account/index";
+import AccountReservasPage from "@/routes/account/reservas";
+import AccountReservaDetailPage from "@/routes/account/reserva-detail";
 import AccountClubePage from "@/routes/account/clube";
 import AccountIndicarPage from "@/routes/account/indicar";
 import AccountProfilePage from "@/routes/account/profile";
@@ -241,6 +243,8 @@ export const routes: RouteRecord[] = [
             element: <AccountAppShell />,
             children: [
               { index: true, element: <AccountIndexPage /> },
+              { path: "reservas", element: <AccountReservasPage /> },
+              { path: "reservas/:code", element: <AccountReservaDetailPage /> },
               { path: "clube", element: <AccountClubePage /> },
               { path: "indicar", element: <AccountIndicarPage /> },
               { path: "profile", element: <AccountProfilePage /> },
