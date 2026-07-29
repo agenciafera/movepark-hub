@@ -15,7 +15,6 @@ import {
   Copy,
   Check,
   Car,
-  Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -77,9 +76,13 @@ export function MotorCrescimento() {
       <div className="space-y-6">
         <PageHeader eyebrow="Movepark Clube" title="Seu motor de crescimento" />
         <div className="flex flex-col items-center gap-4 rounded-lg border border-hairline bg-canvas p-10 text-center shadow-tier">
-          <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-surface-soft">
-            <Lock className="h-5 w-5 text-mp-indigo" />
-          </span>
+          {/* Ilustração de gente (Direção B): momento de "entrar e se conectar", mais
+              caloroso que um cadeado. Ver docs/design-system/illustrations.md §10.1. */}
+          <img
+            src="/illustrations/il-people-reserva-app.webp"
+            alt=""
+            className="h-40 w-auto"
+          />
           <div className="space-y-1">
             <h2 className="text-title-md text-ink">Entre para ver seu Clube</h2>
             <p className="max-w-sm text-body-sm text-muted">

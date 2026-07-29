@@ -351,10 +351,11 @@ prática (gente no hero, arte mais simples nos utilitários). O critério é o m
 
 | Momento | Direção | Por quê | Exemplo de asset |
 |---|---|---|---|
-| Hero / marketing / onboarding | **B (gente)** | calor humano vende, dá rosto à jornada | `il-people-viajante`, `il-people-reserva-app` |
-| Seja parceiro | **B (gente)** | fala com o dono do estacionamento | `il-people-parceiro` |
+| Gate / login / boas-vindas no app | **B (gente)** | momento de conectar e entrar | `il-people-reserva-app` (gate do Clube, **já em uso**) |
+| Onboarding logado, promo com rosto | **B (gente)** | calor humano dá rosto à jornada | `il-people-viajante`, `il-people-reserva-app` |
+| Partner onboarding no app | **B (gente)** | fala com o dono do estacionamento | `il-people-parceiro` |
 | Promo do Clube / carteira | **B (gente)** ou objeto | depende do tom da promo | `il-people-*` ou objeto |
-| Estado vazio | **A (objeto)** | clareza e calma, sem drama | `il-empty-reservas`, `il-empty-favoritos` |
+| Estado vazio | **A (objeto)** | clareza e calma, sem drama | `il-empty-reservas` (**já em uso**), `il-empty-favoritos` |
 | Confirmação / sucesso | **A (objeto)** | foco no que foi feito, não em quem | `il-sucesso-voucher` |
 | Erro / caminho errado | **A (objeto)** | low-drama, objetivo | (a gerar) |
 | Hero leve de destino | **A (objeto)** | cena de lugar, não de pessoa | `il-destino-aeroporto` |
@@ -362,6 +363,10 @@ prática (gente no hero, arte mais simples nos utilitários). O critério é o m
 Regra de bolso: **gente onde a marca quer conectar; objeto onde o usuário quer resolver.** As
 duas usam a mesma paleta, o mesmo motivo diagonal e o mesmo tom calmo, então nunca destoam
 lado a lado.
+
+> **Hero de marketing público continua na lane de FOTO.** As landings `seja-parceiro` e `sobre`
+> já têm hero fotográfico forte (gemini) e ficam assim. A ilustração de gente entra nos momentos
+> **dentro do app** (gate, onboarding logado, promo), não substitui o hero de foto da landing.
 
 Onde a ilustração assenta (superfície):
 
