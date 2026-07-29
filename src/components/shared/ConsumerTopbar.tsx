@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/auth/context";
+import { userInitials } from "@/lib/initials";
 import { postLogoutPath } from "@/auth/postLoginRedirect";
 import { useDestinations } from "@/features/search/api";
 import { Monogram, Wordmark } from "./Brand";
@@ -122,12 +123,7 @@ export function ConsumerTopbar() {
   const vehicleParam =
     searchParams.get("vehicle") === "motorcycle" ? "motorcycle" : "car";
 
-  const initials = (session?.fullName ?? session?.email ?? "?")
-    .split(" ")
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  const initials = userInitials(session?.fullName, session?.email);
 
   return (
     <header className="sticky top-0 z-40 border-b border-hairline bg-canvas">
@@ -232,11 +228,11 @@ export function ConsumerTopbar() {
               <DropdownMenuSeparator />
               {effectiveRole === "customer" && (
                 <>
-                  <DropdownMenuItem onClick={() => navigate("/account/reservas")}>
-                    <Calendar className="h-4 w-4" /> Minhas reservas
-                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/account")}>
                     <User2 className="h-4 w-4" /> Conta
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/account/reservas")}>
+                    <Calendar className="h-4 w-4" /> Minhas reservas
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/account/saved")}>
                     <Heart className="h-4 w-4" /> Favoritos

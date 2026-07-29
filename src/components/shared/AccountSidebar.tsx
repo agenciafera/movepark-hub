@@ -11,9 +11,11 @@ import {
   LogOut,
   ChevronRight,
   Sparkles,
+  Gift,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/context";
+import { userInitials } from "@/lib/initials";
 import { ReferralShareCard } from "@/features/growth/ReferralShareCard";
 
 // Perfil vem primeiro (padrão de dashboard). Minhas reservas logo abaixo, por ser
@@ -23,6 +25,7 @@ const items = [
   { to: "/account/profile", icon: User2, label: "Perfil" },
   { to: "/account/reservas", icon: Ticket, label: "Minhas reservas" },
   { to: "/account/clube", icon: Sparkles, label: "Movepark Clube" },
+  { to: "/account/indicar", icon: Gift, label: "Indique e ganhe" },
   { to: "/account/vehicles", icon: Car, label: "Veículos" },
   { to: "/account/addresses", icon: MapPin, label: "Endereços" },
   { to: "/account/cards", icon: CreditCard, label: "Cartões" },
@@ -37,7 +40,8 @@ export function AccountSidebar() {
   const navigate = useNavigate();
 
   const firstName = session?.firstName ?? session?.email ?? "";
-  const initial = firstName.trim().charAt(0).toUpperCase() || "?";
+  // Mesmas iniciais do avatar da topbar (helper compartilhado): "Diego Guedes" → "DG".
+  const initials = userInitials(session?.fullName, session?.email);
 
   async function handleSignOut() {
     await signOut();
@@ -50,7 +54,7 @@ export function AccountSidebar() {
           separado da navegação. Avatar com a inicial + nome. */}
       <div className="flex items-center gap-3 rounded-md border border-hairline bg-canvas p-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-mp-pale text-title-sm font-semibold text-mp-indigo">
-          {initial}
+          {initials}
         </span>
         <div className="min-w-0">
           <p className="text-caption-sm text-muted">Olá,</p>
