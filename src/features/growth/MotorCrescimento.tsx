@@ -134,7 +134,7 @@ export function MotorCrescimento() {
     <div className="space-y-8">
       <PageHeader
         eyebrow="Movepark Clube"
-        title={`Olá, ${firstName}`}
+        title="Seu motor de crescimento"
         description="Cada reserva concluída te dá mais dinheiro de volta e te aproxima do próximo nível."
       />
 
@@ -266,9 +266,9 @@ export function MotorCrescimento() {
               <div
                 key={nivel.code}
                 className={cn(
-                  "rounded-md border p-4 transition-shadow",
+                  "rounded-md border p-4 shadow-tier transition-shadow",
                   atual
-                    ? "border-mp-primary bg-surface-pale shadow-tier"
+                    ? "border-mp-primary bg-surface-pale"
                     : "border-hairline bg-canvas",
                 )}
               >

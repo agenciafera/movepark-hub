@@ -14,6 +14,13 @@ export function AccountAppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const isRoot = location.pathname === "/account" || location.pathname === "/account/";
+  // Páginas ricas (Clube, Indique) trazem os próprios cards, então ficam direto
+  // no painel cinza. Envolvê-las no card branco criaria card dentro de card e
+  // achataria os cards internos (branco no branco). As telas de formulário sim
+  // ganham a superfície branca, pra não ficarem soltas no cinza.
+  const fullBleed =
+    location.pathname.startsWith("/account/clube") ||
+    location.pathname.startsWith("/account/indicar");
 
   return (
     <div className="flex min-h-screen flex-col bg-panel">
@@ -40,11 +47,15 @@ export function AccountAppShell() {
         <div className="flex gap-10">
           <AccountSidebar />
           <main className="min-w-0 flex-1 pb-[var(--bottom-nav-space)] tablet:pb-0">
-            {/* Painel de conteúdo branco: sobre o fundo cinza, dá superfície às páginas
-                da conta (perfil, veículos, etc.), que antes ficavam soltas no cinza. */}
-            <div className="rounded-md border border-hairline bg-canvas p-5 desktop:p-8">
+            {fullBleed ? (
               <Outlet />
-            </div>
+            ) : (
+              /* Painel de conteúdo branco: sobre o fundo cinza, dá superfície às páginas
+                 da conta (perfil, veículos, etc.), que antes ficavam soltas no cinza. */
+              <div className="rounded-md border border-hairline bg-canvas p-5 desktop:p-8">
+                <Outlet />
+              </div>
+            )}
           </main>
         </div>
       </div>

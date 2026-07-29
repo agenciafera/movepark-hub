@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   User2,
+  Ticket,
   Car,
   MapPin,
   CreditCard,
@@ -15,9 +16,13 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/context";
 import { ReferralShareCard } from "@/features/growth/ReferralShareCard";
 
+// Perfil vem primeiro (padrão de dashboard). Minhas reservas logo abaixo, por ser
+// a ação mais frequente do cliente. "/bookings" mora fora do shell da conta, então
+// é um link de saída (não fica "ativo" na sidebar), mas é o lugar das reservas.
 const items = [
-  { to: "/account/clube", icon: Sparkles, label: "Movepark Clube" },
   { to: "/account/profile", icon: User2, label: "Perfil" },
+  { to: "/bookings", icon: Ticket, label: "Minhas reservas" },
+  { to: "/account/clube", icon: Sparkles, label: "Movepark Clube" },
   { to: "/account/vehicles", icon: Car, label: "Veículos" },
   { to: "/account/addresses", icon: MapPin, label: "Endereços" },
   { to: "/account/cards", icon: CreditCard, label: "Cartões" },
@@ -28,8 +33,11 @@ const items = [
 
 /** Sidebar — desktop fica à esquerda 240px. Mobile esconde (usa SidebarMobile). */
 export function AccountSidebar() {
-  const { signOut } = useAuth();
+  const { session, signOut } = useAuth();
   const navigate = useNavigate();
+
+  const firstName = session?.firstName ?? session?.email ?? "";
+  const initial = firstName.trim().charAt(0).toUpperCase() || "?";
 
   async function handleSignOut() {
     await signOut();
@@ -38,6 +46,18 @@ export function AccountSidebar() {
 
   return (
     <aside className="hidden h-fit w-60 shrink-0 flex-col gap-4 sticky top-24 desktop:flex">
+      {/* Card de saudação fixo no topo da sidebar: identifica de quem é a conta,
+          separado da navegação. Avatar com a inicial + nome. */}
+      <div className="flex items-center gap-3 rounded-md border border-hairline bg-canvas p-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-mp-pale text-title-sm font-semibold text-mp-indigo">
+          {initial}
+        </span>
+        <div className="min-w-0">
+          <p className="text-caption-sm text-muted">Olá,</p>
+          <p className="truncate text-title-sm text-ink">{firstName}</p>
+        </div>
+      </div>
+
       {/* Nav num card branco: sobre o fundo de painel cinza das áreas logadas, a
           sidebar precisa de superfície pra ler como sidebar (antes era lista solta). */}
       <nav className="flex flex-col gap-1 rounded-md border border-hairline bg-canvas p-2">
