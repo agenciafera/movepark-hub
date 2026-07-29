@@ -3132,8 +3132,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-29T12:30:26.935Z",
-      "last_seen": "2026-07-29T12:54:04.837Z",
-      "seen_count": 4,
+      "last_seen": "2026-07-29T13:42:17.628Z",
+      "seen_count": 7,
       "stale": false
     },
     "sig:eb1cb13a1fa9ce8c": {
@@ -3145,7 +3145,6 @@
       "interactive": [
         "a",
         "a",
-        "button id=radix-:r5: type=button text=Destinos",
         "button type=button",
         "a text=Seja parceiro",
         "a text=Entrar",
@@ -3197,8 +3196,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-29T12:30:32.373Z",
-      "last_seen": "2026-07-29T12:54:04.816Z",
-      "seen_count": 5,
+      "last_seen": "2026-07-29T13:42:17.531Z",
+      "seen_count": 7,
       "stale": false
     }
   },
@@ -3211,6 +3210,15 @@
       },
       "to": "sig:9762b1205e6e924b",
       "seen_count": 1
+    },
+    {
+      "from": "sig:eb1cb13a1fa9ce8c",
+      "action": {
+        "type": "wait_for",
+        "selector": "h2"
+      },
+      "to": "sig:9762b1205e6e924b",
+      "seen_count": 2
     }
   ],
   "assist_seen": {

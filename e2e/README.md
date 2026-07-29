@@ -25,7 +25,7 @@ Cenário escrito em português num JSON. O Windup chama o LLM uma vez para monta
 um plano de ações e daí em diante replica esse plano sem modelo nenhum: cerca de
 600ms e custo zero por execução.
 
-Config em [`../windup.config.mjs`](../windup.config.mjs), apontando para o dev
+Config em [`../windup.config.ts`](../windup.config.ts), apontando para o dev
 server local na 5173. Roda sem `.env.e2e`, mas o planejamento de um cenário novo
 precisa da `GEMINI_API_KEY` no `.env.local`.
 
@@ -34,38 +34,41 @@ bunx windup new "descreva o teste aqui"   # cria o cenário
 bunx windup explain <id>                  # mostra o plano em cache, passo a passo
 ```
 
-### Um verde do Windup ainda não é cobertura
+### Estado em 29/07/2026: instalado, sem cobertura utilizável
 
-Medido em 29/07/2026, no cenário `home-vitrine`. O planner gerou uma
-postcondição vazia: `expect: { selector: "body" }`. O teste passa, mas removendo
-a vitrine inteira do DOM ele continua passando, porque `body` segue lá.
+O `home-vitrine` **não passa**, e isso é o estado honesto, não um teste
+quebrado. O planner não consegue produzir uma asserção válida para uma
+verificação de texto trivial.
 
-O formato não é o limite. O `Expect` do Windup aceita `text_contains`, `count`,
-`not_visible`, `attribute`, `selector_value` e `url`, e o executor usa `locator`
-do Playwright, então `text=` e `:has-text()` funcionam. Quem não usa isso é o
-planner.
+Histórico curto. Na 1.4.0 o cenário passava com `expect: { selector: "body" }`,
+que é falso positivo: removendo a vitrine inteira do DOM, ele continuava
+passando. A 1.5.0 trouxe um guard que rejeita postcondição trivial e falha alto
+em vez de dar verde à toa. O guard funciona e a mensagem de erro é ótima. O que
+não mudou é o planner: ele segue devolvendo `body` e agora bate no guard.
 
-O que já foi tentado, sem resolver:
+Tentado sem sucesso, nas duas versões:
 
-- reescrever a `task` citando o texto exato a verificar;
-- hint nomeando `text_contains` com o selector e o texto prontos;
-- hint proibindo `body`, `main`, `div` e `h2` como alvo;
-- trocar o modelo: `gemini-3.1-pro-preview` devolveu uma ação só, com
-  `expect: { selector: "main" }`. Não é questão de modelo fraco.
+- `task` citando o texto exato a verificar;
+- hint nomeando `text_contains` com selector e texto prontos;
+- hint avisando que a home tem 5 `h2`, então asserção em `h2` não discrimina;
+- trocar o modelo para `gemini-3.1-pro-preview`.
 
-Enquanto isso não mudar: **leia o plano antes de confiar no cenário.**
+**O guard ainda tem furo.** A blocklist cobre `body`, `html`, `main`, `div` e
+`#root`. Um `expect: { selector: "h2" }` passa, e nesta home isso é igualmente
+vazio: são 5 `h2`, então a asserção sobrevive à remoção da vitrine. Foi assim
+que um `windup new --validate` gerou um cenário "validado" que não testa nada.
+
+Enquanto o planner não melhorar: **leia o plano antes de confiar no cenário.**
 
 ```bash
-bunx windup explain <id>                                     # resumo legível
-cat .windup/cache/trajetorias/<id>.json | jq '.plan.actions'  # os seletores crus
+bunx windup explain <id>                                      # já sinaliza plano fraco
+cat .windup/cache/trajetorias/<id>.json | jq '.plan.actions'   # os seletores crus
 ```
 
-Se a postcondição final for `body` ou `main`, o cenário não está testando nada.
+Se a postcondição final for um seletor genérico que existe em mais de um lugar
+da página, o cenário não está testando nada.
 
-Duas armadilhas de cache que atrapalham a iteração:
-
-- editar só os **hints** não invalida o cache, e a execução seguinte replica o
-  plano velho sem avisar. Só a mudança da `task` invalida. Para forçar,
-  `bunx windup cache clear`;
-- replanejar não é barato como a doc sugere. Um replanejamento aqui custou 4
-  chamadas, 63 segundos e $0,043, contra os ~3s e $0,002 anunciados.
+Sobre custo: replanejar não é barato como a doc sugere. As tentativas aqui
+custaram entre 3 e 5 chamadas, de 27 a 89 segundos, e até $0,091 por
+replanejamento, contra os ~3s e $0,002 anunciados. O replay em si continua
+cumprindo o prometido: 0 chamadas, ~600ms, $0.
