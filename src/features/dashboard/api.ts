@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import type { DailyFlow, LocationOccupancyRow, ManagerOverview } from "@/types/domain";
 import type { Range } from "@/features/manager-filters/managerFilters.logic";
 import {
-  summarizePeriod,
+  summarizeRanges,
   averageLeadTimeDays,
   channelMix,
   aggregateOccupancy,
@@ -167,40 +167,61 @@ export type OperatorStats = {
 
 export type PeriodDays = 7 | 30 | 90;
 
+type PaidBookingRow = {
+  check_in_at: string;
+  check_out_at: string;
+  total_amount: number | string | null;
+  created_at: string;
+  created_via_api_key_id: string | null;
+};
+
 /**
- * Receita, reservas e ticket médio do período, com o período ANTERIOR do mesmo
- * tamanho para comparar. Uma query só: busca 2× o período e o `summarizePeriod`
- * separa. Conta só reservas que valem receita (confirmed/checked_in/completed).
+ * fare_tier NÃO entra aqui: o mix de tarifa (Básica/Flex/Superflex) revela quanto a
+ * Movepark ganha por reserva e é visão de Super Admin, não do dono. O canal (site/API)
+ * é operacional e pode aparecer para o dono.
  */
-export function useOperatorPeriodSummary(periodDays: PeriodDays, locationIds?: string[]) {
+async function fetchPaidBookings(
+  from: string,
+  to: string,
+  locationIds?: string[],
+): Promise<PaidBookingRow[]> {
+  let q = supabase
+    .from("booking")
+    .select("check_in_at, check_out_at, total_amount, created_at, created_via_api_key_id")
+    .gte("check_in_at", from)
+    .lt("check_in_at", to)
+    .in("status", ["confirmed", "checked_in", "completed"]);
+  if (locationIds?.length) q = q.in("location_id", locationIds);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as PaidBookingRow[];
+}
+
+/**
+ * Receita, reservas, ticket e diárias vendidas do período, com a janela de
+ * comparação que o parceiro escolheu. Cada janela é uma query própria e fechada:
+ * comparar com o ano passado buscando tudo de uma vez traria um ano inteiro de
+ * reserva pra somar dois números. Conta só reserva que vale receita.
+ */
+export function useOperatorPeriodSummary(
+  range: Range,
+  compareRange: Range | null,
+  locationIds?: string[],
+) {
+  const from = range.from.toISOString();
+  const to = range.to.toISOString();
+  const prevFrom = compareRange?.from.toISOString() ?? null;
+  const prevTo = compareRange?.to.toISOString() ?? null;
   return useQuery({
-    queryKey: ["dashboard", "operator-period", periodDays, locationIds],
+    queryKey: ["dashboard", "operator-period", from, to, prevFrom, prevTo, locationIds],
     queryFn: async () => {
-      const now = new Date();
-      const periodStart = subDays(now, periodDays).toISOString();
-      const windowStart = subDays(now, periodDays * 2).toISOString();
-      // fare_tier NÃO entra aqui: o mix de tarifa (Básica/Flex/Superflex) revela quanto a
-      // Movepark ganha por reserva e é visão de Super Admin, não do dono. O canal (site/API)
-      // é operacional e pode aparecer para o dono.
-      let q = supabase
-        .from("booking")
-        .select("check_in_at, total_amount, created_at, created_via_api_key_id")
-        .gte("check_in_at", windowStart)
-        .in("status", ["confirmed", "checked_in", "completed"]);
-      if (locationIds?.length) q = q.in("location_id", locationIds);
-      const { data, error } = await q;
-      if (error) throw error;
-      const rows = (data ?? []) as {
-        check_in_at: string;
-        total_amount: number | string | null;
-        created_at: string;
-        created_via_api_key_id: string | null;
-      }[];
-      const split = summarizePeriod(rows, periodStart);
-      // Lead time e canal são do período atual (as reservas com check-in dentro dele).
-      const currentRows = rows.filter((r) => r.check_in_at >= periodStart);
+      const [currentRows, previousRows] = await Promise.all([
+        fetchPaidBookings(from, to, locationIds),
+        prevFrom && prevTo ? fetchPaidBookings(prevFrom, prevTo, locationIds) : null,
+      ]);
       return {
-        ...split,
+        ...summarizeRanges(currentRows, previousRows),
+        // Antecedência e canal são do período atual.
         leadTimeDays: averageLeadTimeDays(currentRows),
         channelMix: channelMix(currentRows),
       };
@@ -209,7 +230,7 @@ export function useOperatorPeriodSummary(periodDays: PeriodDays, locationIds?: s
 }
 
 /** Reservas confirmadas com check-in nos próximos `periodDays`: o olhar pra frente. */
-export function useUpcomingBookingsCount(periodDays: PeriodDays, locationIds?: string[]) {
+export function useUpcomingBookingsCount(periodDays: number, locationIds?: string[]) {
   return useQuery({
     queryKey: ["dashboard", "operator-upcoming", periodDays, locationIds],
     queryFn: async (): Promise<number> => {

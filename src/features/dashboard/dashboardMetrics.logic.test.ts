@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  summarizePeriod,
+  summarizeRanges,
+  stayDays,
   pctDelta,
   formatDelta,
   cancellationRate,
@@ -21,25 +22,66 @@ import {
   STAY_BUCKETS,
 } from "./dashboardMetrics.logic";
 
-describe("summarizePeriod", () => {
-  const rows = [
-    { check_in_at: "2026-07-20T08:00:00Z", total_amount: 100 }, // atual
-    { check_in_at: "2026-07-18T08:00:00Z", total_amount: "50" }, // atual (string)
-    { check_in_at: "2026-07-05T08:00:00Z", total_amount: 30 }, // anterior
-    { check_in_at: "2026-07-01T08:00:00Z", total_amount: null }, // anterior, sem valor
-  ];
-
-  it("separa atual e anterior e calcula receita, contagem e ticket", () => {
-    const { current, previous } = summarizePeriod(rows, "2026-07-15T00:00:00Z");
-    expect(current).toEqual({ revenue: 150, count: 2, ticket: 75 });
-    expect(previous).toEqual({ revenue: 30, count: 2, ticket: 15 });
+describe("stayDays", () => {
+  it("conta dia-calendário ocupado, e a estadia no mesmo dia vale 1", () => {
+    // 20 → 23 ocupa 20, 21, 22 e 23: 4 diárias, igual à convenção da capacidade.
+    expect(stayDays("2026-07-20T10:00:00Z", "2026-07-23T10:00:00Z")).toBe(4);
+    expect(stayDays("2026-07-20T08:00:00Z", "2026-07-20T20:00:00Z")).toBe(1);
   });
 
-  it("ticket é 0 quando não há reserva", () => {
-    expect(summarizePeriod([], "2026-07-15T00:00:00Z").current).toEqual({
+  it("check-out exatamente à meia-noite não puxa mais um dia", () => {
+    expect(stayDays("2026-07-20T00:00:00Z", "2026-07-21T00:00:00Z")).toBe(1);
+  });
+
+  it("data inválida não vira NaN somado na conta", () => {
+    expect(stayDays("nao-e-data", "2026-07-21T00:00:00Z")).toBe(0);
+  });
+});
+
+describe("summarizeRanges", () => {
+  const current = [
+    {
+      check_in_at: "2026-07-20T08:00:00Z",
+      check_out_at: "2026-07-22T08:00:00Z",
+      total_amount: 100,
+    },
+    {
+      check_in_at: "2026-07-18T08:00:00Z",
+      check_out_at: "2026-07-18T20:00:00Z",
+      total_amount: "50",
+    },
+  ];
+  const previous = [
+    { check_in_at: "2026-06-20T08:00:00Z", check_out_at: "2026-06-21T08:00:00Z", total_amount: 30 },
+    {
+      check_in_at: "2026-06-01T08:00:00Z",
+      check_out_at: "2026-06-02T08:00:00Z",
+      total_amount: null,
+    },
+  ];
+
+  it("soma receita, reservas, ticket e diárias de cada janela", () => {
+    const { current: c, previous: p } = summarizeRanges(current, previous);
+    // 3 diárias (20, 21, 22) + 1 (mesmo dia)
+    expect(c).toEqual({ revenue: 150, count: 2, ticket: 75, vehicleDays: 4 });
+    expect(p).toEqual({ revenue: 30, count: 2, ticket: 15, vehicleDays: 4 });
+  });
+
+  it("sem comparação, o período anterior volta zerado", () => {
+    expect(summarizeRanges(current, null).previous).toEqual({
       revenue: 0,
       count: 0,
       ticket: 0,
+      vehicleDays: 0,
+    });
+  });
+
+  it("ticket é 0 quando não há reserva", () => {
+    expect(summarizeRanges([], null).current).toEqual({
+      revenue: 0,
+      count: 0,
+      ticket: 0,
+      vehicleDays: 0,
     });
   });
 });

@@ -30,18 +30,12 @@ import {
   LogIn,
   LogOut,
   Ban,
+  CarFront,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { bookingCustomerName } from "@/features/bookings/bookings.logic";
 import { startOfDay, endOfDay, format, addDays, subDays } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { KpiCard } from "@/components/shared/KpiCard";
 import { StatusBadge, BOOKING_STATUS_LABELS } from "@/components/shared/StatusBadge";
@@ -64,7 +58,18 @@ import {
   occupancyRate,
   revpar,
 } from "./dashboardMetrics.logic";
-import { useRevenueByDay, useStatusFunnel, type ReportPeriod } from "@/features/reports/api";
+import { useRevenueByRange, useStatusFunnelRange } from "@/features/reports/api";
+import { PeriodPicker } from "@/features/manager-filters/PeriodPicker";
+import {
+  DEFAULT_PERIOD,
+  compareLabel,
+  formatRangeLabel,
+  periodDays,
+  periodLabel,
+  resolveCompare,
+  resolvePeriod,
+  type PeriodState,
+} from "@/features/manager-filters/managerFilters.logic";
 import { usePayoutBalance } from "@/features/payouts/api";
 import { useOperatorReviews } from "@/features/reviews/operatorApi";
 import { useOperatorLocations } from "@/features/locations/api";
@@ -72,7 +77,7 @@ import { RecipientKycBanner } from "@/features/payouts/RecipientKycBanner";
 import { useAuth } from "@/auth/context";
 import { useScopedLocationIds } from "@/auth/useScopedLocationIds";
 import { supabase } from "@/lib/supabase";
-import { formatBRL, formatTime } from "@/lib/format";
+import { formatBRL, formatDate, formatTime } from "@/lib/format";
 import type { BookingWithRelations } from "@/types/domain";
 
 const baseSelect =
@@ -113,8 +118,8 @@ function formatRating(avg: number): string {
   return avg.toFixed(1).replace(".", ",");
 }
 
-/** Mini-stat do hero: número grande sobre a faixa navy, num tile translúcido. */
-function HeroStat({
+/** Mini-stat do card "Hoje": mesmo formato do herói, mas sobre superfície clara. */
+function TodayStat({
   label,
   value,
   icon: Icon,
@@ -126,12 +131,12 @@ function HeroStat({
   isLoading?: boolean;
 }) {
   return (
-    <div className="rounded-xl bg-white/10 px-4 py-3.5 ring-1 ring-inset ring-white/10">
-      <div className="flex items-center gap-1.5 text-caption-sm text-white/60">
-        <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+    <div className="rounded-xl bg-surface-soft px-4 py-3.5">
+      <div className="flex items-center gap-1.5 text-caption-sm text-muted">
+        <Icon className="h-3.5 w-3.5 shrink-0 text-mp-indigo" aria-hidden />
         <span className="truncate">{label}</span>
       </div>
-      <div className="mt-1.5 text-display-xl tabular-nums leading-none text-white">
+      <div className="mt-1.5 text-display-xl tabular-nums leading-none text-ink">
         {isLoading ? "…" : value}
       </div>
     </div>
@@ -262,7 +267,10 @@ export default function OperatorDashboard() {
   const { session, effectiveCompanyIds, hasScope } = useAuth();
   const { ids: scopedLocationIds } = useScopedLocationIds();
   const companyId = effectiveCompanyIds[0];
-  const [period, setPeriod] = React.useState<ReportPeriod>(30);
+  const [period, setPeriod] = React.useState<PeriodState>(DEFAULT_PERIOD);
+  const range = resolvePeriod(period);
+  const compareRange = resolveCompare(period, range);
+  const days = periodDays(range);
   // O dashboard espelha o escopo (ADR-005), do mesmo jeito que a sidebar: quem não tem o escopo
   // não vê o card. reviews:read → Avaliações; finance:read → receita/ticket/RevPAR/gráfico;
   // payouts:read → saldo. O papel Operação, por exemplo, não vê dinheiro; o Financeiro não vê
@@ -273,13 +281,15 @@ export default function OperatorDashboard() {
   const canMoney = canFinance || canPayouts;
 
   const stats = useOperatorStats(scopedLocationIds);
-  const summary = useOperatorPeriodSummary(period, scopedLocationIds);
-  const revenue = useRevenueByDay(period, scopedLocationIds);
-  const funnel = useStatusFunnel(period, scopedLocationIds);
+  const summary = useOperatorPeriodSummary(range, compareRange, scopedLocationIds);
+  const rangeFrom = range.from.toISOString();
+  const rangeTo = range.to.toISOString();
+  const revenue = useRevenueByRange(rangeFrom, rangeTo, scopedLocationIds);
+  const funnel = useStatusFunnelRange(rangeFrom, rangeTo, scopedLocationIds);
   const balance = usePayoutBalance(companyId);
   const reviews = useOperatorReviews(companyId);
   const timeline = useTodayTimeline(scopedLocationIds);
-  const upcoming = useUpcomingBookingsCount(period, scopedLocationIds);
+  const upcoming = useUpcomingBookingsCount(days, scopedLocationIds);
   const highDemand = useHighDemandToday(scopedLocationIds);
   // Ocupação é por unidade (RPC por location_id), então precisa dos ids reais da empresa:
   // scopedLocationIds vem undefined para o operador real (a RLS resolve o resto).
@@ -288,9 +298,12 @@ export default function OperatorDashboard() {
   // Janela futura de 7 dias (indicador de demanda) e a do período (base do RevPAR).
   const today = format(new Date(), "yyyy-MM-dd");
   const in7 = format(addDays(new Date(), 7), "yyyy-MM-dd");
-  const periodAgo = format(subDays(new Date(), period), "yyyy-MM-dd");
   const occ7 = useOccupancyAgg(occLocationIds, today, in7);
-  const occPeriod = useOccupancyAgg(occLocationIds, periodAgo, today);
+  const occPeriod = useOccupancyAgg(
+    occLocationIds,
+    format(range.from, "yyyy-MM-dd"),
+    format(subDays(range.to, 1), "yyyy-MM-dd"),
+  );
 
   const cur = summary.data?.current;
   const prev = summary.data?.previous;
@@ -304,7 +317,12 @@ export default function OperatorDashboard() {
   const occ7Rate = occupancyRate(occ7.data?.bookedDays ?? 0, occ7.data?.capacityDays ?? 0);
   const revparValue = revpar(cur?.revenue ?? 0, occPeriod.data?.capacityDays ?? 0);
 
-  const periodLabel = `${period} dias`;
+  const label = periodLabel(period, range);
+  // Sem comparação escolhida o card não mostra variação: um "+12%" sem base
+  // declarada é pior que nenhum número.
+  const vs = compareLabel(period, compareRange);
+  const delta = (a: number | undefined, b: number | undefined) =>
+    compareRange && a !== undefined && b !== undefined ? formatDelta(pctDelta(a, b)) : undefined;
   const firstName = session?.firstName ?? "";
   const heroSubline = session?.companyIds.length
     ? "Aqui está a operação de hoje e o resumo do período."
@@ -312,59 +330,107 @@ export default function OperatorDashboard() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Faixa de boas-vindas: gradiente da marca, o pulso de hoje e o seletor de período. */}
-      <section className="relative overflow-hidden rounded-2xl bg-dashboard-hero px-6 py-7 text-white shadow-tier desktop:px-8">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-caption font-bold uppercase tracking-[0.4px] text-white/60">
-              Painel do parceiro
-            </p>
-            <h1 className="mt-1 text-display-lg text-white">
-              Olá{firstName ? `, ${firstName}` : ""} 👋
-            </h1>
-            <p className="mt-1 max-w-md text-body-md text-white/75">{heroSubline}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {isHighDemand && (
-              <span className="hidden items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-caption font-medium text-white tablet:inline-flex">
-                <Flame className="h-3.5 w-3.5" aria-hidden /> Em alta demanda hoje
-              </span>
-            )}
-            <Select value={String(period)} onValueChange={(v) => setPeriod(Number(v) as ReportPeriod)}>
-              <SelectTrigger className="h-11 w-[190px] border-white/25 bg-white/10 text-white [&_svg]:text-white/70 hover:bg-white/15">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7">Últimos 7 dias</SelectItem>
-                <SelectItem value="30">Últimos 30 dias</SelectItem>
-                <SelectItem value="90">Últimos 90 dias</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+      {/* Saudação e o pulso de hoje: dois cards, lado a lado. Juntos, a saudação
+          roubava a atenção dos números e os números sujavam a saudação. */}
+      <div className="grid gap-4 desktop:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
+        <section className="bg-dashboard-hero relative overflow-hidden rounded-2xl px-6 py-7 text-white shadow-tier desktop:px-8">
+          <p className="text-caption font-bold uppercase tracking-[0.4px] text-white/60">
+            Painel do parceiro
+          </p>
+          <h1 className="mt-1 text-display-lg text-white">
+            Olá{firstName ? `, ${firstName}` : ""} 👋
+          </h1>
+          <p className="mt-1 max-w-md text-body-md text-white/75">{heroSubline}</p>
+          {isHighDemand && (
+            <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-caption font-medium text-white">
+              <Flame className="h-3.5 w-3.5" aria-hidden /> Em alta demanda hoje
+            </span>
+          )}
+        </section>
 
-        <div className="mt-6 grid grid-cols-3 gap-3">
-          <HeroStat label="Reservas hoje" value={stats.data?.bookingsToday ?? 0} icon={CalendarDays} isLoading={stats.isLoading} />
-          <HeroStat label="Check-ins" value={stats.data?.checkInsToday ?? 0} icon={LogIn} isLoading={stats.isLoading} />
-          <HeroStat label="Check-outs" value={stats.data?.checkOutsToday ?? 0} icon={LogOut} isLoading={stats.isLoading} />
-        </div>
-      </section>
+        <Card>
+          <CardContent className="flex h-full flex-col justify-center gap-4 p-6">
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="text-title-md text-ink">Hoje</span>
+              <span className="text-caption-sm text-muted-soft">{formatDate(new Date())}</span>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <TodayStat
+                label="Reservas"
+                value={stats.data?.bookingsToday ?? 0}
+                icon={CalendarDays}
+                isLoading={stats.isLoading}
+              />
+              <TodayStat
+                label="Check-ins"
+                value={stats.data?.checkInsToday ?? 0}
+                icon={LogIn}
+                isLoading={stats.isLoading}
+              />
+              <TodayStat
+                label="Check-outs"
+                value={stats.data?.checkOutsToday ?? 0}
+                icon={LogOut}
+                isLoading={stats.isLoading}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <RecipientKycBanner companyId={companyId} />
 
-      {/* Operacional do período (bookings/occupancy:read, todos os papéis) */}
-      <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
+      {/* Daqui pra baixo, tudo respeita o período escolhido. */}
+      <div className="flex flex-wrap items-end justify-between gap-3 pt-2">
+        <div>
+          <h2 className="text-display-sm text-ink">Resumo do período</h2>
+          <p className="mt-0.5 text-body-sm text-muted">{formatRangeLabel(range)}</p>
+        </div>
+        <PeriodPicker value={period} onChange={setPeriod} className="w-full tablet:w-[230px]" />
+      </div>
+
+      {/* Os três do legado: dinheiro, entradas e ocupação. Destaque de cor só neles. */}
+      <div
+        className={cn(
+          "grid grid-cols-1 gap-4 tablet:grid-cols-2",
+          canFinance ? "desktop:grid-cols-3" : "desktop:grid-cols-2",
+        )}
+      >
+        {canFinance && (
+          <KpiCard
+            label={`Receita (${label})`}
+            value={formatBRL(cur?.revenue ?? 0)}
+            hint={vs ?? undefined}
+            trend={delta(cur?.revenue, prev?.revenue)}
+            isLoading={summary.isLoading}
+            icon={Wallet}
+            highlight
+          />
+        )}
         <KpiCard
-          label={`Reservas pagas (${periodLabel})`}
+          label={`Reservas pagas (${label})`}
           value={cur?.count ?? 0}
           hint="confirmadas, em uso ou concluídas"
-          trend={cur && prev ? formatDelta(pctDelta(cur.count, prev.count)) : undefined}
+          trend={delta(cur?.count, prev?.count)}
           isLoading={summary.isLoading}
           icon={CalendarCheck}
           highlight
         />
         <KpiCard
-          label={`Reservas futuras (${periodLabel})`}
+          label={`Diárias vendidas (${label})`}
+          value={cur?.vehicleDays ?? 0}
+          hint="vagas ocupadas por dia"
+          trend={delta(cur?.vehicleDays, prev?.vehicleDays)}
+          isLoading={summary.isLoading}
+          icon={CarFront}
+          highlight
+        />
+      </div>
+
+      {/* Operacional (bookings/occupancy:read, todos os papéis) */}
+      <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
+        <KpiCard
+          label={`Reservas futuras (${label})`}
           value={upcoming.data ?? 0}
           hint="com check-in daqui pra frente"
           isLoading={upcoming.isLoading}
@@ -379,36 +445,27 @@ export default function OperatorDashboard() {
           icon={Clock}
           accent="teal"
         />
+        {canFinance && (
+          <KpiCard
+            label="Ticket médio"
+            value={formatBRL(cur?.ticket ?? 0)}
+            hint="por reserva paga"
+            trend={delta(cur?.ticket, prev?.ticket)}
+            isLoading={summary.isLoading}
+            icon={Receipt}
+            accent="indigo"
+          />
+        )}
       </div>
 
-      {/* Dinheiro (finance:read / payouts:read). O papel Operação não vê. */}
+      {/* Dinheiro que não é manchete (finance:read / payouts:read). */}
       {canMoney && (
-        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
           {canFinance && (
             <KpiCard
-              label={`Receita (${periodLabel})`}
-              value={formatBRL(cur?.revenue ?? 0)}
-              trend={cur && prev ? formatDelta(pctDelta(cur.revenue, prev.revenue)) : undefined}
-              isLoading={summary.isLoading}
-              icon={Wallet}
-              accent="green"
-            />
-          )}
-          {canFinance && (
-            <KpiCard
-              label="Ticket médio"
-              value={formatBRL(cur?.ticket ?? 0)}
-              hint="por reserva paga"
-              isLoading={summary.isLoading}
-              icon={Receipt}
-              accent="indigo"
-            />
-          )}
-          {canFinance && (
-            <KpiCard
-              label={`RevPAR (${periodLabel})`}
+              label={`RevPAR (${label})`}
               value={occPeriod.data?.capacityDays ? formatBRL(revparValue) : "-"}
-              hint="receita por vaga-dia"
+              hint="receita por vaga-dia disponível"
               isLoading={occPeriod.isLoading}
               icon={TrendingUp}
               accent="teal"
@@ -462,7 +519,11 @@ export default function OperatorDashboard() {
                       tickFormatter={(d: string) => d.slice(5)}
                       tick={{ fontSize: 12 }}
                     />
-                    <YAxis tickFormatter={(v: number) => formatBRL(v)} tick={{ fontSize: 12 }} width={90} />
+                    <YAxis
+                      tickFormatter={(v: number) => formatBRL(v)}
+                      tick={{ fontSize: 12 }}
+                      width={90}
+                    />
                     <Tooltip formatter={(v: number) => formatBRL(v)} />
                     <Area
                       type="monotone"
@@ -487,7 +548,7 @@ export default function OperatorDashboard() {
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-mp-pale text-mp-indigo">
                 <PieChartIcon className="h-4 w-4" aria-hidden />
               </span>
-              Reservas por situação ({periodLabel})
+              Reservas por situação ({label})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -527,7 +588,7 @@ export default function OperatorDashboard() {
         <Card>
           <CardContent className="flex flex-col p-6">
             <span className="flex items-center gap-1.5 text-caption text-muted">
-              <Ban className="h-3.5 w-3.5 text-muted-soft" aria-hidden /> Cancelamento ({periodLabel})
+              <Ban className="h-3.5 w-3.5 text-muted-soft" aria-hidden /> Cancelamento ({label})
             </span>
             {funnel.isLoading ? (
               <Skeleton className="mt-2 h-8 w-24" />
@@ -558,7 +619,9 @@ export default function OperatorDashboard() {
               ) : (
                 <span className="mt-1.5 flex items-baseline gap-1.5 text-display-xl tabular-nums text-ink">
                   {formatRating(rating.avg)}
-                  <span className="text-caption-sm font-normal text-muted-soft">de 5 · {rating.count}</span>
+                  <span className="text-caption-sm font-normal text-muted-soft">
+                    de 5 · {rating.count}
+                  </span>
                 </span>
               )}
               <span className="mt-1.5 text-caption-sm text-muted-soft">
@@ -571,16 +634,20 @@ export default function OperatorDashboard() {
         <Card>
           <CardContent className="flex flex-col gap-3 p-6">
             <span className="flex items-center gap-1.5 text-caption text-muted">
-              <Radio className="h-3.5 w-3.5 text-mp-indigo" aria-hidden /> Origem ({periodLabel})
+              <Radio className="h-3.5 w-3.5 text-mp-indigo" aria-hidden /> Origem ({label})
             </span>
             <div className="flex h-2.5 overflow-hidden rounded-full bg-surface-strong">
               <div
                 className="bg-mp-indigo"
-                style={{ width: `${channel.site + channel.api ? (channel.site / (channel.site + channel.api)) * 100 : 0}%` }}
+                style={{
+                  width: `${channel.site + channel.api ? (channel.site / (channel.site + channel.api)) * 100 : 0}%`,
+                }}
               />
               <div
                 className="bg-mp-violet"
-                style={{ width: `${channel.site + channel.api ? (channel.api / (channel.site + channel.api)) * 100 : 0}%` }}
+                style={{
+                  width: `${channel.site + channel.api ? (channel.api / (channel.site + channel.api)) * 100 : 0}%`,
+                }}
               />
             </div>
             <div className="flex flex-col gap-1">

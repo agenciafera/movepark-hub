@@ -20,29 +20,39 @@ function renderWithScopes(scopes: string[]) {
   });
 }
 
-const ALL = [
-  "finance:read",
-  "payouts:read",
-  "reviews:read",
-  "bookings:read",
-  "occupancy:read",
-];
+const ALL = ["finance:read", "payouts:read", "reviews:read", "bookings:read", "occupancy:read"];
 
 describe("OperatorDashboard: escopo dos cards", () => {
   it("com finance/payouts/reviews: mostra dinheiro e avaliações", () => {
     renderWithScopes(ALL);
-    expect(screen.getByText("Receita (30 dias)")).toBeInTheDocument();
+    expect(screen.getByText("Receita (Últimos 30 dias)")).toBeInTheDocument();
     expect(screen.getByText("Saldo a repassar")).toBeInTheDocument();
     expect(screen.getByText("Avaliações")).toBeInTheDocument();
+  });
+
+  /**
+   * Os três em destaque espelham os KPIs de topo do backoffice legado: dinheiro,
+   * entrada de veículos e ocupação (diárias). Só eles levam a faixa navy.
+   */
+  it("destaca receita, reservas pagas e diárias vendidas", () => {
+    const { container } = renderWithScopes(ALL);
+    expect(screen.getByText("Diárias vendidas (Últimos 30 dias)")).toBeInTheDocument();
+    expect(container.querySelectorAll(".bg-dashboard-hero")).toHaveLength(4); // 3 KPIs + saudação
+  });
+
+  it("sem finance, o destaque cai pra dois (reservas e diárias)", () => {
+    const { container } = renderWithScopes(["bookings:read", "occupancy:read"]);
+    expect(screen.getByText("Diárias vendidas (Últimos 30 dias)")).toBeInTheDocument();
+    expect(container.querySelectorAll(".bg-dashboard-hero")).toHaveLength(3);
   });
 
   it("papel Operação (sem finance/payouts/reviews): esconde dinheiro e avaliações", () => {
     renderWithScopes(["bookings:read", "occupancy:read"]);
     // Operacional continua
-    expect(screen.getByText("Reservas pagas (30 dias)")).toBeInTheDocument();
+    expect(screen.getByText("Reservas pagas (Últimos 30 dias)")).toBeInTheDocument();
     expect(screen.getByText("Ocupação (próx. 7 dias)")).toBeInTheDocument();
     // Dinheiro some
-    expect(screen.queryByText("Receita (30 dias)")).not.toBeInTheDocument();
+    expect(screen.queryByText("Receita (Últimos 30 dias)")).not.toBeInTheDocument();
     expect(screen.queryByText("Ticket médio")).not.toBeInTheDocument();
     expect(screen.queryByText(/RevPAR/)).not.toBeInTheDocument();
     expect(screen.queryByText("Saldo a repassar")).not.toBeInTheDocument();
@@ -52,7 +62,7 @@ describe("OperatorDashboard: escopo dos cards", () => {
 
   it("papel Financeiro (sem reviews): mostra dinheiro, esconde avaliações", () => {
     renderWithScopes(["finance:read", "payouts:read", "bookings:read", "occupancy:read"]);
-    expect(screen.getByText("Receita (30 dias)")).toBeInTheDocument();
+    expect(screen.getByText("Receita (Últimos 30 dias)")).toBeInTheDocument();
     expect(screen.getByText("Saldo a repassar")).toBeInTheDocument();
     expect(screen.queryByText("Avaliações")).not.toBeInTheDocument();
   });

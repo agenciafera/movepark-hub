@@ -7,34 +7,63 @@
  * reviews), sem backend novo.
  */
 
-export type PeriodStat = { revenue: number; count: number; ticket: number };
+export type PeriodStat = {
+  revenue: number;
+  count: number;
+  ticket: number;
+  /** Diárias vendidas (vaga-dia): dia-calendário ocupado, somado nas reservas do período. */
+  vehicleDays: number;
+};
 
-type RevenueRow = { check_in_at: string; total_amount: number | string | null };
+export type StayRow = {
+  check_in_at: string;
+  check_out_at: string;
+  total_amount: number | string | null;
+};
+
+const DAY = 86_400_000;
 
 /**
- * Divide as reservas em período atual (>= início) e anterior (< início), e devolve
- * receita, contagem e ticket médio de cada. A janela de origem deve trazer os dois
- * períodos (ex.: 2× o período pra comparar com o anterior).
+ * Diárias de uma estadia: dias-calendário ocupados, de `check_in` até o dia do
+ * `check_out` menos um instante. É a mesma convenção da capacidade e da RPC do
+ * Manager, então uma estadia que entra e sai no mesmo dia vale 1.
+ *
+ * A conta roda em UTC de propósito: o resto do front já fatia o ISO pra pegar a
+ * data (`check_in_at.slice(0, 10)`), e misturar fuso local aqui faria o mesmo
+ * booking contar diferente conforme a máquina de quem olha.
  */
-export function summarizePeriod(
-  rows: RevenueRow[],
-  periodStartIso: string,
-): { current: PeriodStat; previous: PeriodStat } {
-  const cur = { revenue: 0, count: 0 };
-  const prev = { revenue: 0, count: 0 };
+export function stayDays(checkInIso: string, checkOutIso: string): number {
+  const start = Math.floor(Date.parse(checkInIso) / DAY);
+  const end = Math.floor((Date.parse(checkOutIso) - 1) / DAY);
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return 0;
+  return Math.max(1, end - start + 1);
+}
+
+const empty = (): PeriodStat => ({ revenue: 0, count: 0, ticket: 0, vehicleDays: 0 });
+
+function accumulate(rows: StayRow[]): PeriodStat {
+  const out = empty();
   for (const r of rows) {
-    const amount = Number(r.total_amount ?? 0);
-    if (r.check_in_at >= periodStartIso) {
-      cur.revenue += amount;
-      cur.count += 1;
-    } else {
-      prev.revenue += amount;
-      prev.count += 1;
-    }
+    out.revenue += Number(r.total_amount ?? 0);
+    out.count += 1;
+    out.vehicleDays += stayDays(r.check_in_at, r.check_out_at);
   }
+  out.ticket = out.count ? out.revenue / out.count : 0;
+  return out;
+}
+
+/**
+ * Resume o período atual e o de comparação. Cada lista já vem do banco recortada
+ * na sua janela, então aqui é só somar: receita, reservas, ticket e diárias.
+ * Sem comparação escolhida, `previous` volta zerado.
+ */
+export function summarizeRanges(
+  currentRows: StayRow[],
+  previousRows: StayRow[] | null,
+): { current: PeriodStat; previous: PeriodStat } {
   return {
-    current: { ...cur, ticket: cur.count ? cur.revenue / cur.count : 0 },
-    previous: { ...prev, ticket: prev.count ? prev.revenue / prev.count : 0 },
+    current: accumulate(currentRows),
+    previous: previousRows ? accumulate(previousRows) : empty(),
   };
 }
 

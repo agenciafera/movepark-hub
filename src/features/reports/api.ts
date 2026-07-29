@@ -67,6 +67,25 @@ export type StatusFunnelRow = {
   count: number;
 };
 
+const FUNNEL_ORDER = [
+  "pending",
+  "confirmed",
+  "checked_in",
+  "completed",
+  "cancelled",
+  "expired",
+  "no_show",
+];
+
+function tallyStatuses(rows: { status: string }[]): StatusFunnelRow[] {
+  const counts = new Map<string, number>();
+  for (const row of rows) counts.set(row.status, (counts.get(row.status) ?? 0) + 1);
+  return FUNNEL_ORDER.filter((s) => counts.has(s)).map((s) => ({
+    status: s,
+    count: counts.get(s) ?? 0,
+  }));
+}
+
 export function useStatusFunnel(periodDays: ReportPeriod, locationIds?: string[]) {
   return useQuery({
     queryKey: ["reports", "funnel", periodDays, locationIds],
@@ -76,22 +95,25 @@ export function useStatusFunnel(periodDays: ReportPeriod, locationIds?: string[]
       if (locationIds && locationIds.length > 0) q = q.in("location_id", locationIds);
       const { data, error } = await q;
       if (error) throw error;
-      const counts = new Map<string, number>();
-      for (const row of data ?? []) {
-        counts.set(row.status, (counts.get(row.status) ?? 0) + 1);
-      }
-      const order = [
-        "pending",
-        "confirmed",
-        "checked_in",
-        "completed",
-        "cancelled",
-        "expired",
-        "no_show",
-      ];
-      return order
-        .filter((s) => counts.has(s))
-        .map((s) => ({ status: s, count: counts.get(s) ?? 0 }));
+      return tallyStatuses(data ?? []);
+    },
+  });
+}
+
+/** Funil de status num intervalo livre (`from` inclusivo, `to` exclusivo). */
+export function useStatusFunnelRange(fromIso: string, toIso: string, locationIds?: string[]) {
+  return useQuery({
+    queryKey: ["reports", "funnel-range", fromIso, toIso, locationIds],
+    queryFn: async (): Promise<StatusFunnelRow[]> => {
+      let q = supabase
+        .from("booking")
+        .select("status")
+        .gte("check_in_at", fromIso)
+        .lt("check_in_at", toIso);
+      if (locationIds?.length) q = q.in("location_id", locationIds);
+      const { data, error } = await q;
+      if (error) throw error;
+      return tallyStatuses(data ?? []);
     },
   });
 }
