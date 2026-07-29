@@ -64,7 +64,11 @@ export function LocationPicker({ value, onChange, className }: Props) {
         </button>
       </PopoverTrigger>
 
-      <PopoverContent align="end" className="w-[320px] max-w-[calc(100vw-2rem)] p-0">
+      <PopoverContent
+        align="end"
+        collisionPadding={16}
+        className="max-h-[var(--radix-popover-content-available-height)] w-[320px] max-w-[calc(100vw-2rem)] overflow-y-auto p-0"
+      >
         <div className="border-b border-hairline p-3">
           <div className="relative">
             <Search

@@ -130,7 +130,7 @@ describe("rótulos", () => {
 
   it("um dia só não vira intervalo", () => {
     const r = resolvePeriod(state({ preset: "today" }), NOW);
-    expect(formatRangeLabel(r)).toBe("15 de jul de 2026");
+    expect(formatRangeLabel(r)).toBe("15 jul 2026");
   });
 
   it("a ponta final do rótulo é o dia inclusivo, não o exclusivo interno", () => {

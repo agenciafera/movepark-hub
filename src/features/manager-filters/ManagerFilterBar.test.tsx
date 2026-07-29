@@ -15,9 +15,7 @@ const LOCATIONS = [
 ];
 
 function renderBar() {
-  server.use(
-    http.get(`${SUPABASE_URL}/rest/v1/location`, () => HttpResponse.json(LOCATIONS)),
-  );
+  server.use(http.get(`${SUPABASE_URL}/rest/v1/location`, () => HttpResponse.json(LOCATIONS)));
   return renderWithProviders(
     <ManagerFilterProvider>
       <ManagerFilterBar />
@@ -43,8 +41,12 @@ describe("ManagerFilterBar", () => {
     await user.click(screen.getByText("Últimos 30 dias"));
     await user.click(await screen.findByRole("button", { name: "Este mês" }));
 
-    await waitFor(() => expect(screen.getByText("Este mês")).toBeInTheDocument());
-    expect(screen.queryByText("Últimos 30 dias")).not.toBeInTheDocument();
+    // O menu segue aberto de propósito (dá pra ajustar comparação e datas antes de
+    // aplicar), então "Este mês" aparece no gatilho E na linha marcada da lista, e
+    // "Últimos 30 dias" sobra só como atalho, sem estar mais no gatilho.
+    await waitFor(() => expect(screen.getAllByText("Este mês")).toHaveLength(2));
+    expect(screen.getAllByText("Últimos 30 dias")).toHaveLength(1);
+    expect(screen.getByRole("button", { expanded: true })).toHaveTextContent("Este mês");
   });
 
   it("escolher uma unidade tira a tela do consolidado", async () => {
@@ -78,9 +80,7 @@ describe("ManagerFilterBar", () => {
   });
 
   it("o filtro de unidade some quando a tela não usa (moderação)", () => {
-    server.use(
-      http.get(`${SUPABASE_URL}/rest/v1/location`, () => HttpResponse.json(LOCATIONS)),
-    );
+    server.use(http.get(`${SUPABASE_URL}/rest/v1/location`, () => HttpResponse.json(LOCATIONS)));
     renderWithProviders(
       <ManagerFilterProvider>
         <ManagerFilterBar showPeriod={false} />

@@ -168,18 +168,21 @@ export function resolveCompare(state: PeriodState, period: Range): Range | null 
 /**
  * Rótulo curto do intervalo pro botão e pra sublinha dos cards. A ponta final é
  * mostrada como dia inclusivo (o que a pessoa escolheu), não como o exclusivo interno.
+ *
+ * Formato enxuto de propósito ("30 jun a 29 jul 2026"): o gatilho do filtro tem
+ * ~230px e a versão com "de" no meio estourava e vinha truncada com reticências.
  */
 export function formatRangeLabel(range: Range): string {
   const start = range.from;
   const end = subDays(range.to, 1);
-  if (isSameDay(start, end)) return format(start, "d 'de' MMM 'de' yyyy", { locale: ptBR });
+  const day = (d: Date) => format(d, "d MMM", { locale: ptBR });
+  const dayYear = (d: Date) => format(d, "d MMM yyyy", { locale: ptBR });
+  if (isSameDay(start, end)) return dayYear(start);
   if (isSameMonth(start, end) && isSameYear(start, end)) {
-    return `${format(start, "d")} a ${format(end, "d 'de' MMM 'de' yyyy", { locale: ptBR })}`;
+    return `${format(start, "d")} a ${dayYear(end)}`;
   }
-  if (isSameYear(start, end)) {
-    return `${format(start, "d 'de' MMM", { locale: ptBR })} a ${format(end, "d 'de' MMM 'de' yyyy", { locale: ptBR })}`;
-  }
-  return `${format(start, "d MMM yyyy", { locale: ptBR })} a ${format(end, "d MMM yyyy", { locale: ptBR })}`;
+  if (isSameYear(start, end)) return `${day(start)} a ${dayYear(end)}`;
+  return `${dayYear(start)} a ${dayYear(end)}`;
 }
 
 /** Nome do período escolhido: o rótulo do preset, ou as datas quando é personalizado. */
