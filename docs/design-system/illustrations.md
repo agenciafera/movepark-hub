@@ -279,19 +279,26 @@ faz com as fotos. Assim dá pra regenerar depois sem adivinhar.
 
 | Asset | Onde aparece | Origem | Prompt | Data |
 |---|---|---|---|---|
-| `il-empty-reservas.webp` | Estado vazio "sem reservas futuras" (`/account/reservas`) | Exemplo raster (Gemini) | seção 6 · sem reservas | 2026-07 |
-| `il-empty-favoritos.webp` | Estado vazio "sem favoritos" (`/account/saved`) | Exemplo raster (Gemini) | seção 6 · sem favoritos | 2026-07 |
-| `il-sucesso-voucher.webp` | Sucesso / voucher confirmado (checkout, voucher) | Exemplo raster (Gemini) | seção 6 · voucher | 2026-07 |
-| `il-destino-aeroporto.webp` | Destino aeroporto (`/destinos`) | Exemplo raster (Gemini) | seção 6 · destino | 2026-07 |
-| `il-people-viajante.webp` | Direção B (com gente) · viajante indo pro carro | Exemplo raster (Gemini) | seção 5.1 (variante gente) | 2026-07 |
-| `il-people-reserva-app.webp` | Direção B (com gente) · reservando no app | Exemplo raster (Gemini) | seção 5.1 (variante gente) | 2026-07 |
-| `il-people-parceiro.webp` | Direção B (com gente) · parceiro no estacionamento | Exemplo raster (Gemini) | seção 5.1 (variante gente) | 2026-07 |
+| `il-empty-reservas.webp` | Estado vazio "sem reservas futuras" (`/account/reservas`) · **em uso** | Recraft (rasterizado) | seção 6 · sem reservas | 2026-07 |
+| `il-empty-favoritos.webp` | Estado vazio "sem favoritos" (`/account/saved`) | Gemini (sem versão Recraft ainda) | seção 6 · sem favoritos | 2026-07 |
+| `il-sucesso-voucher.webp` | Sucesso / voucher confirmado (checkout, voucher) | Recraft (rasterizado) | seção 6 · voucher | 2026-07 |
+| `il-destino-aeroporto.webp` | Destino aeroporto (`/destinos`) | Recraft (rasterizado) | seção 6 · destino | 2026-07 |
+| `il-traslado-shuttle.webp` | Traslado / shuttle (a ligar) | Recraft (rasterizado) | seção 6 · traslado | 2026-07 |
+| `il-confianca-parceria.webp` | Confiança / parceria, aperto de mão (a ligar) | Recraft (rasterizado) | seção 6 · confiança | 2026-07 |
+| `il-clube-cashback.webp` | Clube / dinheiro de volta (a ligar) | Recraft (rasterizado) | seção 6 · clube | 2026-07 |
+| `il-people-viajante.webp` | Direção B (com gente) · viajante indo pro carro | Gemini | seção 5.1 (variante gente) | 2026-07 |
+| `il-people-reserva-app.webp` | Direção B (com gente) · gate do Clube (`/account/clube`) · **em uso** | Gemini | seção 5.1 (variante gente) | 2026-07 |
+| `il-people-parceiro.webp` | Direção B (com gente) · parceiro no estacionamento | Gemini | seção 5.1 (variante gente) | 2026-07 |
 
-> **Direção decidida: híbrido (jul/2026).** As duas famílias ficam, cada uma no seu papel
-> (mapa na seção 10.1). As quatro `il-empty-*`/`il-sucesso-*`/`il-destino-*` são a **Direção A:
-> calma, centrada em objeto**. As três `il-people-*` são a **Direção B: editorial, com gente**.
-> Ambas usam a mesma paleta e o mesmo motivo diagonal, então convivem. As **duas** viram
-> semente do Style `movepark-rota-v1` no Recraft (seção 4).
+> **Fonte atual: Recraft nos objetos, Gemini na gente (jul/2026).** O lote de objeto veio do
+> Recraft (`movepark-rota-v1` em construção) e substituiu os exemplos do Gemini nesses contextos.
+> As de gente (Direção B) seguem do Gemini até virem versões do Recraft. Híbrido mantido (mapa na
+> seção 10.1): objeto pra resolver, gente pra conectar.
+>
+> **Dois pontos pra próxima rodada no Recraft:** (1) a paleta esfriou (muito azul-cornflower,
+> pouco violeta-foco #5D5FEF e teal #A6DBDF) — reforçar esses dois na paleta travada; (2) o export
+> SVG do Recraft veio **traçado (raster), pesado** (21 a 95 KB, milhares de paths), então tudo foi
+> **rasterizado pra WebP** (10 a 28 KB). Pra SVG limpo de verdade, usar o export vetorial nativo.
 >
 > **Estes são sementes de exemplo, não a versão final.** Foram gerados no
 > `gemini-image` (raster, `.webp`) para (a) mostrar a linguagem no design system agora e
