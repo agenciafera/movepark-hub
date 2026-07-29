@@ -283,8 +283,17 @@ faz com as fotos. Assim dá pra regenerar depois sem adivinhar.
 | `il-empty-favoritos.webp` | Estado vazio "sem favoritos" (`/account/saved`) | Exemplo raster (Gemini) | seção 6 · sem favoritos | 2026-07 |
 | `il-sucesso-voucher.webp` | Sucesso / voucher confirmado (checkout, voucher) | Exemplo raster (Gemini) | seção 6 · voucher | 2026-07 |
 | `il-destino-aeroporto.webp` | Destino aeroporto (`/destinos`) | Exemplo raster (Gemini) | seção 6 · destino | 2026-07 |
+| `il-people-viajante.webp` | Direção B (com gente) · viajante indo pro carro | Exemplo raster (Gemini) | seção 5.1 (variante gente) | 2026-07 |
+| `il-people-reserva-app.webp` | Direção B (com gente) · reservando no app | Exemplo raster (Gemini) | seção 5.1 (variante gente) | 2026-07 |
+| `il-people-parceiro.webp` | Direção B (com gente) · parceiro no estacionamento | Exemplo raster (Gemini) | seção 5.1 (variante gente) | 2026-07 |
 
-> **Estes quatro são sementes de exemplo, não a versão final.** Foram gerados no
+> **Duas direções em cima da mesa (decisão de direção de arte, ver seção 10).** As quatro
+> `il-empty-*`/`il-sucesso-*`/`il-destino-*` são a **Direção A: calma, centrada em objeto**.
+> As três `il-people-*` são a **Direção B: editorial, com gente** (mais perto da energia da
+> referência, sem a gritaria). Ambas usam a mesma paleta e o motivo diagonal. Quando a direção
+> for batida, a perdedora sai e a vencedora vira a base do Style `movepark-rota-v1`.
+>
+> **Estes são sementes de exemplo, não a versão final.** Foram gerados no
 > `gemini-image` (raster, `.webp`) para (a) mostrar a linguagem no design system agora e
 > (b) servir de **referência para criar o Style `movepark-rota-v1` no Recraft** (seção 4).
 > A versão de produção de cada um deve virar **SVG do Recraft** e substituir o `.webp` no
