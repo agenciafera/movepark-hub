@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { Gift, Share2, Copy, Check, Link2, Sparkles } from "lucide-react";
+import { Share2, Copy, Check, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -15,10 +15,9 @@ import { useReferrals } from "./api";
 import { firstNameOf, whatsappShareUrl } from "./growth.logic";
 
 /**
- * Página dedicada do Indique e Ganhe — explica claramente o benefício de
- * recomendar a Movepark e entrega o link/compartilhamento em destaque.
- * Inspirada em programas de indicação de referência (hero + gerador de link +
- * como funciona + FAQ). Consome o link real de get_my_referrals.
+ * Página dedicada do Indique e Ganhe: explica o benefício de recomendar a
+ * Movepark e entrega o link/compartilhamento em destaque (hero + gerador de
+ * link + como funciona + FAQ). Consome o link real de get_my_referrals.
  */
 
 const PASSOS = [
@@ -43,7 +42,7 @@ const PASSOS = [
 const FAQ = [
   {
     q: "Como faço para participar?",
-    a: "É automático — todo cliente Movepark já tem um link exclusivo. Copie o link acima e compartilhe com quem você quiser.",
+    a: "É automático: todo cliente Movepark já tem um link exclusivo. Copie o link acima e compartilhe com quem você quiser.",
   },
   {
     q: "Quando eu recebo meus R$ 25?",
@@ -51,11 +50,11 @@ const FAQ = [
   },
   {
     q: "Tem limite de indicações?",
-    a: "Não. Indique quantos amigos quiser — cada primeira reserva concluída de um indicado te dá mais R$ 25.",
+    a: "Não. Indique quantos amigos quiser. Cada primeira reserva concluída de um indicado te dá mais R$ 25.",
   },
   {
     q: "O que o meu amigo ganha?",
-    a: "R$ 25 de desconto na primeira reserva dele — um presente de boas-vindas com a sua indicação.",
+    a: "R$ 25 de desconto na primeira reserva dele, um presente de boas-vindas com a sua indicação.",
   },
   {
     q: "Onde acompanho minhas indicações?",
@@ -94,8 +93,7 @@ export function IndiqueGanhe() {
       {/* Hero */}
       <section className="grid gap-8 tablet:grid-cols-[1.1fr_0.9fr] tablet:items-center">
         <div className="space-y-5">
-          <div className="flex items-center gap-2 text-mp-indigo">
-            <Gift className="h-5 w-5" />
+          <div className="text-mp-indigo">
             <span className="text-micro-label uppercase tracking-wide">Indique e ganhe</span>
           </div>
           <h1 className="text-display-2xl text-ink">
@@ -109,7 +107,7 @@ export function IndiqueGanhe() {
         </div>
 
         {/* Diagrama */}
-        <div className="rounded-lg border border-hairline bg-surface-pale p-6 shadow-tier">
+        <div className="rounded-lg border border-hairline bg-surface-pale p-6">
           <div className="flex items-center gap-3">
             <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-mp-primary text-white">
               <Link2 className="h-5 w-5" />
@@ -142,11 +140,8 @@ export function IndiqueGanhe() {
       </section>
 
       {/* Gerador / link exclusivo */}
-      <section className="rounded-lg border border-hairline bg-canvas p-6 shadow-tier tablet:p-8">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-mp-violet" />
-          <h2 className="text-display-sm text-ink">Seu link exclusivo, {firstName}</h2>
-        </div>
+      <section className="rounded-lg border border-hairline bg-canvas p-6 tablet:p-8">
+        <h2 className="text-display-sm text-ink">Seu link exclusivo, {firstName}</h2>
         <p className="mt-1 text-body-sm text-muted">
           Copie e mande no WhatsApp, ou compartilhe direto. É só um toque.
         </p>
@@ -176,7 +171,7 @@ export function IndiqueGanhe() {
         <h2 className="text-display-sm text-ink">Como funciona</h2>
         <div className="grid gap-4 tablet:grid-cols-3">
           {PASSOS.map((p) => (
-            <div key={p.n} className="rounded-md border border-hairline bg-canvas p-5 shadow-tier">
+            <div key={p.n} className="rounded-md border border-hairline bg-canvas p-5">
               <span className="inline-flex h-9 w-9 items-center justify-center rounded-sm border border-mp-primary text-title-md font-medium text-mp-primary">
                 {p.n}
               </span>
@@ -190,7 +185,7 @@ export function IndiqueGanhe() {
       {/* Detalhes / FAQ */}
       <section className="space-y-4">
         <h2 className="text-display-sm text-ink">Detalhes do programa</h2>
-        <div className="rounded-lg border border-hairline bg-canvas px-6 shadow-tier">
+        <div className="rounded-lg border border-hairline bg-canvas px-6">
           <Accordion type="single" collapsible>
             {FAQ.map((item, i) => (
               <AccordionItem key={i} value={`item-${i}`}>
