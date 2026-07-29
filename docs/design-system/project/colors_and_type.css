@@ -37,6 +37,7 @@
   --colors-canvas:            #FFFFFF;
   --colors-surface-soft:      #F7F7F8;
   --colors-surface-strong:    #E0E5F2;
+  --colors-panel:             #ECEFF4;          /* fundo de painel das areas logadas (cards flat sobem nele) */
   --colors-surface-pale:      var(--mp-pale);  /* gentle brand-tinted surface */
   --colors-surface-inverse:   var(--mp-navy);
 
@@ -282,6 +283,7 @@ a:hover { color: var(--colors-primary); }
 .mp-indigo   { color: var(--mp-indigo); }
 .mp-canvas   { background: var(--colors-canvas); }
 .mp-surface  { background: var(--colors-surface-soft); }
+.mp-panel    { background: var(--colors-panel); }
 .mp-pale     { background: var(--mp-pale); }
 .mp-shadow   { box-shadow: var(--shadow-card); }
 .mp-pill     { border-radius: var(--radius-full); }
