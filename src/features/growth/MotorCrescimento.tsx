@@ -201,6 +201,19 @@ export function MotorCrescimento() {
             </div>
             {wallet.isLoading || !wallet.data ? (
               <Skeleton className="h-10 w-40 rounded-md" />
+            ) : wallet.data.balance_cents === 0 ? (
+              // Carteira zerada: a ilustração de "dinheiro de volta" aquece o R$ 0,00,
+              // que sozinho fica sem graça pra quem ainda não completou uma reserva.
+              <>
+                <img
+                  src="/illustrations/il-clube-cashback.webp"
+                  alt=""
+                  className="mb-3 h-24 w-auto"
+                />
+                <p className="text-display-2xl leading-none text-ink">
+                  {brlFromCents(0)}
+                </p>
+              </>
             ) : (
               <>
                 <p className="text-display-2xl leading-none text-ink">

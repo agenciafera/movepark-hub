@@ -285,7 +285,7 @@ faz com as fotos. Assim dá pra regenerar depois sem adivinhar.
 | `il-destino-aeroporto.webp` | Destino aeroporto (`/destinos`) | Recraft (rasterizado) | seção 6 · destino | 2026-07 |
 | `il-traslado-shuttle.webp` | Traslado / shuttle (a ligar) | Recraft (rasterizado) | seção 6 · traslado | 2026-07 |
 | `il-confianca-parceria.webp` | Confiança / parceria, aperto de mão (a ligar) | Recraft (rasterizado) | seção 6 · confiança | 2026-07 |
-| `il-clube-cashback.webp` | Clube / dinheiro de volta (a ligar) | Recraft (rasterizado) | seção 6 · clube | 2026-07 |
+| `il-clube-cashback.webp` | Clube · carteira vazia (`/account/clube`, saldo R$ 0) · **em uso** | Recraft (rasterizado) | seção 6 · clube | 2026-07 |
 | `il-people-viajante.webp` | Direção B (com gente) · viajante indo pro carro | Gemini | seção 5.1 (variante gente) | 2026-07 |
 | `il-people-reserva-app.webp` | Direção B (com gente) · gate do Clube (`/account/clube`) · **em uso** | Gemini | seção 5.1 (variante gente) | 2026-07 |
 | `il-people-parceiro.webp` | Direção B (com gente) · parceiro no estacionamento | Gemini | seção 5.1 (variante gente) | 2026-07 |
