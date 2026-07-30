@@ -111,5 +111,8 @@
     "vitest": "^3.2.6",
     "windupjs": "1.8.0",
     "wrangler": "^4.105.0"
+  },
+  "patchedDependencies": {
+    "windupjs@1.8.0": "patches/windupjs@1.8.0.patch"
   }
 }

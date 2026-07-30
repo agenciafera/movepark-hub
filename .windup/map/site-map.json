@@ -3148,13 +3148,12 @@
         "a text=Destinos",
         "a text=Entrar",
         "a text=Parceiro",
-        "a text=Ajuda",
-        "button type=button"
+        "a text=Ajuda"
       ],
       "source": "execution",
       "first_seen": "2026-07-29T12:30:26.935Z",
-      "last_seen": "2026-07-30T14:35:16.269Z",
-      "seen_count": 17,
+      "last_seen": "2026-07-30T15:27:05.931Z",
+      "seen_count": 21,
       "stale": false
     },
     "sig:eb1cb13a1fa9ce8c": {
@@ -3162,7 +3161,8 @@
         "http://localhost:5180/",
         "http://localhost:56040/",
         "http://localhost:56040/destinos",
-        "http://localhost:56040/como-funciona"
+        "http://localhost:56040/como-funciona",
+        "http://localhost:56040/cancelamento"
       ],
       "url_pattern": "**/",
       "title": "Movepark | Estacionamentos em aeroportos e destinos",
@@ -3220,8 +3220,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-29T12:30:32.373Z",
-      "last_seen": "2026-07-30T14:35:15.906Z",
-      "seen_count": 23,
+      "last_seen": "2026-07-30T15:27:05.600Z",
+      "seen_count": 35,
       "stale": false
     },
     "sig:2644ef779c146a8c": {
@@ -3276,8 +3276,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T13:22:55.662Z",
-      "last_seen": "2026-07-30T14:35:14.800Z",
-      "seen_count": 3,
+      "last_seen": "2026-07-30T15:27:04.817Z",
+      "seen_count": 7,
       "stale": false
     },
     "sig:42bd6642a8c0077e": {
@@ -3318,8 +3318,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T13:24:35.920Z",
-      "last_seen": "2026-07-30T14:35:15.203Z",
-      "seen_count": 5,
+      "last_seen": "2026-07-30T15:27:05.219Z",
+      "seen_count": 8,
       "stale": false
     },
     "sig:c6d9d2df64e4156f": {
@@ -3359,9 +3359,161 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T13:25:36.949Z",
-      "last_seen": "2026-07-30T14:35:16.698Z",
-      "seen_count": 5,
+      "last_seen": "2026-07-30T15:27:06.293Z",
+      "seen_count": 9,
       "stale": false
+    },
+    "sig:5f04617cfcb270ea": {
+      "urls_seen": [
+        "http://localhost:56040/faq"
+      ],
+      "url_pattern": "**/faq",
+      "title": "Perguntas Frequentes | Movepark",
+      "interactive": [
+        "a",
+        "a",
+        "button id=radix-:rf: type=button text=Destinos",
+        "button type=button text=OndeAeroporto, cidade ou bairro",
+        "button type=button text=Check-in31 jul · 22:00",
+        "button type=button text=Check-out05 ago · 08:00",
+        "button type=button text=Veículo Carro",
+        "select text=Carro Moto",
+        "button type=submit text=Buscar",
+        "button type=button text=Buscar vaga",
+        "button type=button",
+        "a text=Seja parceiro",
+        "a text=Entrar",
+        "input placeholder=Buscar pergunta…",
+        "button type=button text=Todas",
+        "button type=button text=Todas",
+        "button type=button text=Reservas",
+        "button type=button text=Pagamentos",
+        "button type=button text=Cancelamento",
+        "button type=button text=Check-in / Acesso",
+        "button type=button text=Veículos",
+        "button id=radix-:rh: type=button text=Posso trocar o veículo depois da reserva",
+        "button id=radix-:rj: type=button text=Como cancelo uma reserva?Cancelamento",
+        "button id=radix-:rl: type=button text=O que apresentar na chegada ao estaciona",
+        "button id=radix-:rn: type=button text=Como faço uma reserva?Reservas",
+        "button id=radix-:rp: type=button text=Quais formas de pagamento aceitam?Pagame",
+        "button id=radix-:rr: type=button text=Posso reservar pra outra pessoa dirigir?",
+        "button id=radix-:rt: type=button text=Posso chegar antes ou sair depois do hor",
+        "button id=radix-:rv: type=button text=O PIX expira em quanto tempo?Pagamentos",
+        "a text=Sobre nós",
+        "a text=Termos de uso",
+        "a text=Política de privacidade",
+        "a text=Seja parceiro",
+        "a text=Painel do estacionamento",
+        "a text=Perguntas frequentes",
+        "a text=Como funciona",
+        "a text=Política de cancelamento",
+        "a text=Fale conosco",
+        "a text=Destinos",
+        "a text=Entrar",
+        "a text=Parceiro",
+        "a text=Ajuda"
+      ],
+      "source": "execution",
+      "first_seen": "2026-07-30T15:18:03.469Z",
+      "last_seen": "2026-07-30T15:18:03.469Z",
+      "seen_count": 1
+    },
+    "sig:b2249cbe09f94f28": {
+      "urls_seen": [
+        "http://localhost:56040/faq"
+      ],
+      "url_pattern": "**/faq",
+      "title": "Perguntas Frequentes | Movepark",
+      "interactive": [
+        "a",
+        "a",
+        "button id=radix-:rf: type=button text=Destinos",
+        "button type=button text=OndeAeroporto, cidade ou bairro",
+        "button type=button text=Check-in31 jul · 22:00",
+        "button type=button text=Check-out05 ago · 08:00",
+        "button type=button text=Veículo Carro",
+        "select text=Carro Moto",
+        "button type=submit text=Buscar",
+        "button type=button text=Buscar vaga",
+        "button type=button",
+        "a text=Seja parceiro",
+        "a text=Entrar",
+        "input placeholder=Buscar pergunta…",
+        "button type=button text=Todas",
+        "button type=button text=Todas",
+        "button type=button text=Reservas",
+        "button type=button text=Pagamentos",
+        "button type=button text=Cancelamento",
+        "button type=button text=Check-in / Acesso",
+        "button type=button text=Veículos",
+        "button id=radix-:rh: type=button text=Posso trocar o veículo depois da reserva",
+        "button id=radix-:rj: type=button text=Como cancelo uma reserva?Cancelamento",
+        "button id=radix-:rl: type=button text=O que apresentar na chegada ao estaciona",
+        "button id=radix-:rn: type=button text=Como faço uma reserva?Reservas",
+        "button id=radix-:rp: type=button text=Quais formas de pagamento aceitam?Pagame",
+        "button id=radix-:rr: type=button text=Posso reservar pra outra pessoa dirigir?",
+        "button id=radix-:rt: type=button text=Posso chegar antes ou sair depois do hor",
+        "button id=radix-:rv: type=button text=O PIX expira em quanto tempo?Pagamentos",
+        "a text=Sobre nós",
+        "a text=Termos de uso",
+        "a text=Política de privacidade",
+        "a text=Seja parceiro",
+        "a text=Painel do estacionamento",
+        "a text=Perguntas frequentes",
+        "a text=Como funciona",
+        "a text=Política de cancelamento",
+        "a text=Fale conosco",
+        "a text=Destinos",
+        "a text=Entrar",
+        "a text=Parceiro",
+        "a text=Ajuda",
+        "button type=button"
+      ],
+      "source": "execution",
+      "first_seen": "2026-07-30T15:18:04.441Z",
+      "last_seen": "2026-07-30T15:18:04.441Z",
+      "seen_count": 1
+    },
+    "sig:b805d148d91ff81c": {
+      "urls_seen": [
+        "http://localhost:56040/seja-parceiro"
+      ],
+      "url_pattern": "**/seja-parceiro",
+      "title": "Seja parceiro | Movepark",
+      "interactive": [
+        "a",
+        "a",
+        "button id=radix-:rf: type=button text=Destinos",
+        "button type=button",
+        "a text=Seja parceiro",
+        "a text=Entrar",
+        "button text=Quero ser parceiro",
+        "button text=Começar agora",
+        "button id=radix-:r3: type=button text=Quanto custa para ser parceiro?",
+        "button id=radix-:r5: type=button text=Como eu recebo o dinheiro das reservas?",
+        "button id=radix-:r7: type=button text=Preciso ter exclusividade com a Movepark",
+        "button id=radix-:r9: type=button text=Quanto tempo até entrar no ar?",
+        "button id=radix-:rb: type=button text=Eu continuo no controle dos preços?",
+        "button id=radix-:rd: type=button text=A Movepark investe em divulgação?",
+        "button text=Quero ser parceiro",
+        "a text=Sobre nós",
+        "a text=Termos de uso",
+        "a text=Política de privacidade",
+        "a text=Seja parceiro",
+        "a text=Painel do estacionamento",
+        "a text=Perguntas frequentes",
+        "a text=Como funciona",
+        "a text=Política de cancelamento",
+        "a text=Fale conosco",
+        "a text=Destinos",
+        "a text=Entrar",
+        "a text=Parceiro",
+        "a text=Ajuda"
+      ],
+      "source": "execution",
+      "first_seen": "2026-07-30T15:25:44.737Z",
+      "last_seen": "2026-07-30T15:25:44.737Z",
+      "seen_count": 1
     }
   },
   "transitions": [
@@ -3372,7 +3524,7 @@
         "selector": "body"
       },
       "to": "sig:9762b1205e6e924b",
-      "seen_count": 7
+      "seen_count": 8
     },
     {
       "from": "sig:eb1cb13a1fa9ce8c",
@@ -3390,7 +3542,34 @@
         "selector": "h1"
       },
       "to": "sig:2644ef779c146a8c",
+      "seen_count": 2
+    },
+    {
+      "from": "sig:5f04617cfcb270ea",
+      "action": {
+        "type": "goto",
+        "selector": "http://localhost:56040/faq"
+      },
+      "to": "sig:b2249cbe09f94f28",
       "seen_count": 1
+    },
+    {
+      "from": "sig:c6d9d2df64e4156f",
+      "action": {
+        "type": "wait_for",
+        "selector": "h2"
+      },
+      "to": "sig:b805d148d91ff81c",
+      "seen_count": 1
+    },
+    {
+      "from": "sig:eb1cb13a1fa9ce8c",
+      "action": {
+        "type": "wait_for",
+        "selector": "main"
+      },
+      "to": "sig:9762b1205e6e924b",
+      "seen_count": 2
     }
   ],
   "assist_seen": {

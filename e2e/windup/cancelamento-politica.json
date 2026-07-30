@@ -1,0 +1,6 @@
+{
+  "scenario_id": "cancelamento-politica",
+  "start_url": "/cancelamento",
+  "task": "Verifique que a página exibe o texto 'Prazo por Tarifa'.",
+  "tags": ["smoke", "leitura"]
+}

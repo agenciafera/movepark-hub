@@ -1,0 +1,45 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "cancelamento-politica",
+    "start_url": "/cancelamento",
+    "start_sig": "sig:eb1cb13a1fa9ce8c",
+    "scenario_sig": "9eb0f99ad3eec628"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "cancelamento-politica",
+    "start_url": "http://localhost:56040/cancelamento",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "h2",
+          "description": "Heading 'Prazo por Tarifa'"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "h2",
+            "text": "Prazo por Tarifa"
+          },
+          "selector": "h2"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Verifique que a página exibe o texto 'Prazo por Tarifa'.",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-07-30T15:24:32.376Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-07-30T15:24:32.583Z",
+    "last_replayed_at": "2026-07-30T15:27:03.872Z",
+    "replay_count": 2,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

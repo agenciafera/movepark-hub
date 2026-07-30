@@ -15,8 +15,14 @@
         "id": "a1",
         "type": "wait_for",
         "target": {
-          "selector": "body",
-          "description": "Wait for the page to load"
+          "selector": "h1",
+          "description": "Main heading with 'Encha suas vagas com reservas online'"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "h1",
+            "text": "Encha suas vagas com reservas online"
+          }
         },
         "timeout_ms": 5000
       },
@@ -24,29 +30,30 @@
         "id": "a2",
         "type": "wait_for",
         "target": {
-          "selector": "body",
-          "description": "Confirm texts are present"
+          "selector": "h2",
+          "description": "Section heading with 'Vaga vazia não volta.'"
         },
-        "timeout_ms": 1000,
         "expect": {
           "text_contains": {
-            "selector": "body",
-            "text": "Encha suas vagas com reservas online"
-          }
-        }
+            "selector": "main",
+            "text": "Vaga vazia não volta."
+          },
+          "selector": "h2"
+        },
+        "timeout_ms": 5000
       }
     ],
     "task": "Verifique que a página exibe o texto 'Encha suas vagas com reservas online' e o texto 'Vaga vazia não volta.'.",
     "generated_by": {
-      "model": "google/gemini-3.1-flash-lite",
-      "at": "2026-07-30T13:25:36.633Z"
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-07-30T15:25:44.479Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-07-30T13:25:36.961Z",
-    "last_replayed_at": "2026-07-30T14:35:16.712Z",
-    "replay_count": 4,
+    "created_at": "2026-07-30T15:25:44.737Z",
+    "last_replayed_at": "2026-07-30T15:27:06.312Z",
+    "replay_count": 2,
     "replay_failures": 0,
     "plan_generation": 1
   }

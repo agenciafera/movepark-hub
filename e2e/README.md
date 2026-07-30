@@ -25,22 +25,59 @@ Camada de **smoke de leitura**, adicional ao Playwright e sem sobreposição com
 ele. Prova que as páginas públicas renderizam o próprio conteúdo, e nada além
 disso. Nenhum cenário escreve, clica ou faz login.
 
-Cinco cenários, todos verdes em replay: **0 chamadas de LLM, $0, 4 segundos o
+Seis cenários, todos verdes em replay: **0 chamadas de LLM, $0, 3 segundos o
 conjunto inteiro.**
 
 | Cenário | Rota | O que assere |
 |---|---|---|
 | `home-vitrine` | `/` | "Estacionamentos Populares" |
 | `como-funciona` | `/como-funciona` | "Reserve sua vaga em menos de 2 minutos." |
-| `destinos-catalogo` | `/destinos` | "Destinos atendidos pela Movepark" |
+| `destinos-catalogo` | `/destinos` | "Mais buscados" |
+| `cancelamento-politica` | `/cancelamento` | "Prazo por Tarifa" |
 | `faq-publica` | `/faq` | "Perguntas frequentes" |
-| `seja-parceiro` | `/seja-parceiro` | "Encha suas vagas com reservas online" |
+| `seja-parceiro` | `/seja-parceiro` | "Vaga vazia não volta." |
 
 Config em [`../windup.config.ts`](../windup.config.ts), apontando para o dev
 server local na 5173. **Precisa do `bun run dev` no ar.** Roda sem `.env.e2e`,
 que é justamente a graça: é o único teste de navegador que roda numa máquina
-limpa. Planejar um cenário novo precisa da `GEMINI_API_KEY` no `.env.local`;
-replay não precisa de chave nenhuma.
+limpa.
+
+### O planner é a assinatura Claude, não a chave do Gemini
+
+Planejar usa o `claude` CLI pelo perfil **`fera`** (conta da empresa), ligado a
+esta pasta por um `.envrc` que o direnv carrega. Custo reportado: **$0**, porque
+sai da assinatura. Replay não usa modelo nenhum, então não depende de nada
+disso.
+
+Para trabalhar nos cenários você precisa do perfil logado:
+
+```bash
+npx windup claude status --profile fera
+npx windup claude login --profile fera --force   # se cair
+```
+
+O `.envrc` não é versionado (guarda caminho absoluto de home), então cada
+máquina roda o `login --profile fera` uma vez.
+
+Se preferir planejar pelo Gemini numa execução, `--llm google` usa a
+`GEMINI_API_KEY` do `.env.local`. Não recomendado: ver a comparação abaixo.
+
+### Duas correções que este projeto carrega
+
+O `patches/windupjs@1.8.0.patch` (via `bun patch`) conserta um bug que **impede
+o `claude-code` de funcionar**: o adapter faz `spawn` da CLI sem opção `stdio`,
+então o stdin do filho vira um pipe que ninguém escreve nem fecha; a CLI espera
+3 segundos, avisa e sai com código 1. O patch passa
+`stdio: ["ignore", "pipe", "pipe"]`.
+
+E o `model` na config precisa ser **explícito**. Sem ele, o Windup cai no
+default do Google e manda `gemini-3.1-flash-lite` como `--model` para a CLI do
+Claude, que responde 404. O erro chega como `the claude CLI exited with code 1`,
+sem dizer o motivo, porque a CLI devolve o detalhe no stdout e o adapter só
+mostra o stderr.
+
+Os dois foram reportados. Ao subir de versão, teste se ainda são necessários e
+remova o patch se não forem.
 
 ### Por que só leitura, e por que não convertemos o Playwright
 
@@ -74,81 +111,36 @@ bunx windup explain <id>                                      # sinaliza plano f
 cat .windup/cache/trajetorias/<id>.json | jq '.plan.actions'   # os seletores crus
 ```
 
-### Aresta conhecida: planejar é caro e sai na sorte
+### Por que o planner é o Claude, e não o Gemini
 
-Em algumas páginas o planner entra em **loop**: repete ação atrás de ação até
-estourar o teto de 8192 tokens de saída, e o JSON chega cortado. O erro aparece
-como `degenerate/truncated response at the token limit`.
+Os seis cenários foram planejados nas duas ferramentas. A diferença não é sutil.
 
-Dá para ver acontecendo com `LOG_LEVEL=debug`:
+| | Gemini 3.1 flash-lite | Claude (assinatura) |
+|---|---|---|
+| Chamadas por cenário | 1 a 6 | **1, sempre** |
+| Tempo por cenário | 4s a 120s | 9s a 25s |
+| Custo dos seis | ~$0,90 | **$0** |
+| Cenários que nunca saíram | `/cancelamento` | nenhum |
+| Ações por plano | 3 | 1 a 2 |
+
+O Gemini entrava em **loop** em algumas páginas: repetia ação atrás de ação até
+estourar o teto de 8192 tokens de saída, e o JSON chegava cortado
+(`degenerate/truncated response at the token limit`). Dá para ver com
+`LOG_LEVEL=debug`:
 
 ```
-[planner] attempt 1.1: truncated=true out_tokens=8176 len=24507
-  tail="…\"value_ref\": \"Reserve sua vaga em"
 [planner] attempt 1.2: truncated=true out_tokens=8176 len=24005
   tail="…{ \"id\": \"a82\", \"type\": \"wait_for\", …"
 ```
 
-O `"id": "a82"` entrega o problema: é a **ação número 82**, num schema que
-limita a 30. Um plano bom tem 3 ações e ~440 tokens. O teto de 8192 é trava de
-custo funcionando; o defeito está antes dele.
+O `"id": "a82"` entrega: é a **ação número 82**, num schema que limita a 30.
+Não era tamanho de página nem de task, e trocar para `gemini-3.1-pro-preview`
+não resolvia. A `/cancelamento` consumiu 4 tentativas e $0,61 sem nunca sair;
+pelo Claude saiu de primeira, em 9 segundos.
 
-Não é tamanho de página nem de task. A `/como-funciona` tem 255 elementos e
-sofre; a `/seja-parceiro` tem 450 e passa de primeira. Encurtar a task para um
-literal só não mudou nada. Trocar para `gemini-3.1-pro-preview` também não.
+Se algum dia precisar voltar ao Gemini, `--llm google` continua funcionando, mas
+espere esse comportamento de volta.
 
-**É sorte, não impossibilidade.** A `/como-funciona` só entrou depois de várias
-tentativas, quando uma delas não degenerou. A `/cancelamento` ficou de fora:
-3 tentativas, 18 chamadas, $0,38, nenhum plano.
-
-Custo total para deixar estes cinco no ar: **cerca de $0,90**, contra os
-~$0,0025 por cenário anunciados. Por isso `.windup/cache` é versionado: o preço
-é pago uma vez, por quem escreve. Quem clona o repo roda de graça.
-
-Consequência prática: **cresça essa camada em lotes pequenos**, e não conte com
-planejar um cenário novo no meio de uma tarefa com pressa.
-
-### Estado em 29/07/2026 (Windup 1.6.0): funcionando
-
-O `home-vitrine` passa e a asserção é real. Verificado quebrando o produto de
-propósito: troquei o texto do `<h2>` em `src/features/home/PopularParkingLots.tsx`
-e o cenário **falhou**; revertendo, voltou a passar. É o teste de regressão que
-qualquer teste automatizado deve sobreviver.
-
-O plano em cache:
-
-```json
-{ "expect": { "text_contains": { "selector": "body", "text": "Estacionamentos Populares" } } }
-```
-
-Quando a `task` cita o texto entre aspas, o Windup escreve essa postcondição
-sozinho, de forma determinística, sem chamada extra de LLM e só depois de
-confirmar que a página realmente contém o texto. **Então escreva o texto a
-verificar entre aspas na `task`.** É o que separa um cenário útil de um vazio.
-
-Custo medido: 1 chamada, 3,7s e $0,0024 para planejar; replay em 969ms com 0
-chamadas e $0.
-
-Histórico, porque explica as regras acima. Na 1.4.0 o cenário passava com
-`expect: { selector: "body" }`, falso positivo que sobrevivia à remoção da
-vitrine. A 1.5.0 passou a rejeitar postcondição trivial, mas o planner continuava
-devolvendo `body` e nada era autorável. A 1.6.0 fechou as duas pontas: o
-pre-pass determinístico acima, e um guard que **conta matches na página ao vivo**
-e recusa seletor de visibilidade nua que casa mais de um elemento
-(`"h2" matches 5 elements on this page`).
-
-Ainda assim, **leia o plano antes de confiar no cenário**:
-
-```bash
-bunx windup explain <id>                                      # sinaliza plano fraco
-cat .windup/cache/trajetorias/<id>.json | jq '.plan.actions'   # os seletores crus
-```
-
-Duas arestas que sobraram:
-
-- o planner trunca resposta com frequência nesta base (`truncated response`), e aí
-  o replanejamento sobe para 3 a 5 chamadas, 40 a 90 segundos e até $0,069. O
-  caminho bom só acontece quando a task cita o texto entre aspas;
-- quando o produto quebra de verdade, a mensagem que aparece é a do
-  replanejamento que falhou, não "o texto esperado não foi encontrado". Dá para
-  confundir regressão do app com problema da ferramenta.
+Por que `.windup/cache` é versionado, mesmo agora que planejar é grátis: replay
+não precisa de conta, de chave, nem do `claude` CLI instalado. Quem clonar o
+repo roda os seis em 3 segundos sem configurar nada.
