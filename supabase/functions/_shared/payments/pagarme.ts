@@ -458,7 +458,9 @@ export class PagarmeGateway implements PaymentGateway {
    * Só existe quando o recebedor precisa da prova de vida; se não precisar (ex.: staging
    * aprovado automaticamente), o gateway responde 404 e devolvemos null.
    */
-  private async fetchKycLink(externalId: string): Promise<string | null> {
+  private async fetchKycLink(
+    externalId: string,
+  ): Promise<{ url: string | null; httpStatus: number; body: unknown }> {
     const res = await fetch(
       `${pagarmeBaseUrl(this.secretKey)}/recipients/${externalId}/kyc_link`,
       {
@@ -470,28 +472,37 @@ export class PagarmeGateway implements PaymentGateway {
       },
     );
     const raw = await res.text();
+    let body: unknown = raw.slice(0, 1000);
+    try {
+      body = JSON.parse(raw);
+    } catch {
+      // resposta não-JSON: guarda o texto cru truncado
+    }
     if (!res.ok) {
       // 404 = prova de vida não aplicável; 400 = sem id. Loga porque um link que não vem
       // deixa o parceiro travado sem sinal nenhum na UI.
       console.error("[pagarme] kyc_link falhou", res.status, raw.slice(0, 500));
-      return null;
+      return { url: null, httpStatus: res.status, body };
     }
-    let body: { url?: string } | null = null;
-    try {
-      body = JSON.parse(raw);
-    } catch {
-      body = null;
-    }
-    if (!body?.url) console.error("[pagarme] kyc_link sem url", res.status, raw.slice(0, 500));
-    return body?.url ?? null;
+    const url = (body as { url?: string } | null)?.url ?? null;
+    if (!url) console.error("[pagarme] kyc_link sem url", res.status, raw.slice(0, 500));
+    return { url, httpStatus: res.status, body };
   }
 
-  /** Se o recebedor não está aprovado, tenta anexar o link de prova de vida. */
+  /**
+   * Se o recebedor não está aprovado, tenta anexar o link de prova de vida. A tentativa fica
+   * registrada em `raw.kyc_link_attempt` — sem isso, uma falha aqui some (o link nunca aparece
+   * pro parceiro e não sobra rastro nenhum no `payout_recipient_event`).
+   */
   private async withKycLink(result: RecipientResult): Promise<RecipientResult> {
     if (!result.externalId || !recipientCanNeedKyc(result.status)) return result;
-    const url = await this.fetchKycLink(result.externalId);
-    if (!url) return result;
-    return { ...result, kycUrl: url, status: "action_required" };
+    const attempt = await this.fetchKycLink(result.externalId);
+    const raw =
+      result.raw && typeof result.raw === "object"
+        ? { ...(result.raw as Record<string, unknown>), kyc_link_attempt: attempt }
+        : result.raw;
+    if (!attempt.url) return { ...result, raw };
+    return { ...result, raw, kycUrl: attempt.url, status: "action_required" };
   }
 
   async createRecipient(input: RecipientInput): Promise<RecipientResult> {
