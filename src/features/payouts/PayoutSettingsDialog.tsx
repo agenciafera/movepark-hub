@@ -42,19 +42,21 @@ export function PayoutSettingsDialog({ companyId, open, onOpenChange }: Props) {
   const update = useUpdateRecipientPayout();
   const { data: recipient } = useRecipient(open ? companyId : undefined);
 
-  // NULL nas colunas = herda o default global (hoje Mensal/dia 1); refletimos isso na dica "herdado"
-  // e no fallback do formulário (pra não exibir "Diário" quando a empresa na verdade recebe mensal).
+  // NULL nas colunas = herda o default global (app_setting `payout_transfer_*`); refletimos isso na
+  // dica "herdado" e no fallback do formulário, pra não exibir uma cadência que a empresa não tem.
+  // O default hoje é transferência automática DESLIGADA, Mensal/dia 1: o parceiro acumula saldo na
+  // Pagar.me e saca quando quiser. Se mudar o global, mude aqui junto (o front é só espelho).
   const inheritsTransfer = recipient?.transfer_interval == null;
   const [interval, setInterval] = React.useState<TransferInterval>("Monthly");
   const [day, setDay] = React.useState(1);
-  const [enabled, setEnabled] = React.useState(true);
+  const [enabled, setEnabled] = React.useState(false);
 
   React.useEffect(() => {
     if (!open) return;
     const iv = (recipient?.transfer_interval as TransferInterval) ?? "Monthly";
     setInterval(iv);
     setDay(coerceDay(iv, recipient?.transfer_day ?? 1));
-    setEnabled(recipient?.transfer_enabled ?? true);
+    setEnabled(recipient?.transfer_enabled ?? false);
   }, [open, recipient]);
 
   function changeInterval(next: TransferInterval) {

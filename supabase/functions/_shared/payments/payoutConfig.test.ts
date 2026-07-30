@@ -24,6 +24,16 @@ Deno.test("resolveTransfer: herda o global quando a empresa não tem config", ()
   assertEquals(resolveTransfer(emptyRow, g), { enabled: true, interval: "Daily", day: 0 });
 });
 
+// Config vigente: o recebedor do parceiro nasce com transferência automática DESLIGADA (o saldo
+// fica na Pagar.me até o saque). O global manda; só uma coluna preenchida na empresa reativa.
+Deno.test("resolveTransfer: global desligado → recebedor novo nasce sem transferência automática", () => {
+  const g = { payout_transfer_enabled: "false", payout_transfer_interval: "Monthly", payout_transfer_day: "1" };
+  assertEquals(resolveTransfer(emptyRow, g), { enabled: false, interval: "Monthly", day: 1 });
+  assertEquals(resolveTransfer(null, g), { enabled: false, interval: "Monthly", day: 1 });
+  // Override explícito da empresa continua ganhando do global.
+  assertEquals(resolveTransfer({ ...emptyRow, transfer_enabled: true }, g).enabled, true);
+});
+
 Deno.test("resolveTransfer: config da empresa sobrepõe o global", () => {
   const g = { payout_transfer_interval: "daily", payout_transfer_day: "0" };
   const row = { ...emptyRow, transfer_interval: "Weekly", transfer_day: 3, transfer_enabled: true };

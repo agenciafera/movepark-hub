@@ -469,8 +469,20 @@ export class PagarmeGateway implements PaymentGateway {
         },
       },
     );
-    if (!res.ok) return null; // 404 = prova de vida não aplicável; 400 = sem id
-    const body = (await res.json().catch(() => null)) as { url?: string } | null;
+    const raw = await res.text();
+    if (!res.ok) {
+      // 404 = prova de vida não aplicável; 400 = sem id. Loga porque um link que não vem
+      // deixa o parceiro travado sem sinal nenhum na UI.
+      console.error("[pagarme] kyc_link falhou", res.status, raw.slice(0, 500));
+      return null;
+    }
+    let body: { url?: string } | null = null;
+    try {
+      body = JSON.parse(raw);
+    } catch {
+      body = null;
+    }
+    if (!body?.url) console.error("[pagarme] kyc_link sem url", res.status, raw.slice(0, 500));
     return body?.url ?? null;
   }
 
