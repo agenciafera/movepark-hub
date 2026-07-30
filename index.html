@@ -6,6 +6,23 @@
     <!-- viewport-fit=cover é o que faz `env(safe-area-inset-*)` valer no iOS. Sem ele
          o inset volta 0 e a barra inferior fica colada no indicador de home. -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- Google Tag Manager. Fica o mais alto possível no head, como o GTM pede. O
+         container é GTM-KHBBZT9; o ID é público (vai no HTML), então não é env var.
+         O script é async: não bloqueia o paint nem o script de tema abaixo.
+         A CSP em public/_headers precisa liberar googletagmanager.com. -->
+    <script>
+      (function (w, d, s, l, i) {
+        w[l] = w[l] || [];
+        w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
+        var f = d.getElementsByTagName(s)[0],
+          j = d.createElement(s),
+          dl = l != "dataLayer" ? "&l=" + l : "";
+        j.async = true;
+        j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
+        f.parentNode.insertBefore(j, f);
+      })(window, document, "script", "dataLayer", "GTM-KHBBZT9");
+    </script>
+    <!-- End Google Tag Manager -->
     <!-- Tema (claro/grafite): aplica a classe antes do paint pra não piscar. -->
     <script>
       (function () {
@@ -28,6 +45,16 @@
     <!--app-head-->
   </head>
   <body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript
+      ><iframe
+        src="https://www.googletagmanager.com/ns.html?id=GTM-KHBBZT9"
+        height="0"
+        width="0"
+        style="display: none; visibility: hidden"
+      ></iframe
+    ></noscript>
+    <!-- End Google Tag Manager (noscript) -->
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
