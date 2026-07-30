@@ -4,7 +4,7 @@ import { mockAuth, mockSession, renderWithProviders } from "@/test/utils";
 import OperatorDashboard from "./OperatorDashboard";
 
 /**
- * ADR-005: o dashboard espelha o escopo, igual à sidebar. Achado da verificação da Q-015
+ * ADR-005: o painel espelha o escopo, igual à sidebar. Achado da verificação da Q-015
  * (blindar a visão do parceiro sensível). O papel Operação não vê dinheiro; o Financeiro
  * não vê avaliações.
  */
@@ -20,41 +20,32 @@ function renderWithScopes(scopes: string[]) {
   });
 }
 
-const ALL = ["finance:read", "payouts:read", "reviews:read", "bookings:read", "occupancy:read"];
+const ALL = [
+  "finance:read",
+  "finance:write",
+  "payouts:read",
+  "reviews:read",
+  "bookings:read",
+  "occupancy:read",
+];
 
 describe("OperatorDashboard: escopo dos cards", () => {
   it("com finance/payouts/reviews: mostra dinheiro e avaliações", () => {
     renderWithScopes(ALL);
-    expect(screen.getByText("Receita (Últimos 30 dias)")).toBeInTheDocument();
+    expect(screen.getByText("Receita do período")).toBeInTheDocument();
     expect(screen.getByText("Saldo a repassar")).toBeInTheDocument();
     expect(screen.getByText("Avaliações")).toBeInTheDocument();
-  });
-
-  /**
-   * Os três em destaque espelham os KPIs de topo do backoffice legado: dinheiro,
-   * entrada de veículos e ocupação (diárias). Só eles levam a faixa navy.
-   */
-  it("destaca receita, reservas pagas e diárias vendidas", () => {
-    const { container } = renderWithScopes(ALL);
-    expect(screen.getByText("Diárias vendidas (Últimos 30 dias)")).toBeInTheDocument();
-    expect(container.querySelectorAll(".bg-dashboard-hero")).toHaveLength(4); // 3 KPIs + saudação
-  });
-
-  it("sem finance, o destaque cai pra dois (reservas e diárias)", () => {
-    const { container } = renderWithScopes(["bookings:read", "occupancy:read"]);
-    expect(screen.getByText("Diárias vendidas (Últimos 30 dias)")).toBeInTheDocument();
-    expect(container.querySelectorAll(".bg-dashboard-hero")).toHaveLength(3);
   });
 
   it("papel Operação (sem finance/payouts/reviews): esconde dinheiro e avaliações", () => {
     renderWithScopes(["bookings:read", "occupancy:read"]);
     // Operacional continua
-    expect(screen.getByText("Reservas pagas (Últimos 30 dias)")).toBeInTheDocument();
-    expect(screen.getByText("Ocupação (próx. 7 dias)")).toBeInTheDocument();
+    expect(screen.getByText("Reservas pagas")).toBeInTheDocument();
+    expect(screen.getByText("Ocupação")).toBeInTheDocument();
+    expect(screen.getByText("Agenda do dia")).toBeInTheDocument();
     // Dinheiro some
-    expect(screen.queryByText("Receita (Últimos 30 dias)")).not.toBeInTheDocument();
-    expect(screen.queryByText("Ticket médio")).not.toBeInTheDocument();
-    expect(screen.queryByText(/RevPAR/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Receita do período")).not.toBeInTheDocument();
+    expect(screen.queryByText("RevPAR")).not.toBeInTheDocument();
     expect(screen.queryByText("Saldo a repassar")).not.toBeInTheDocument();
     // Avaliações some
     expect(screen.queryByText("Avaliações")).not.toBeInTheDocument();
@@ -62,8 +53,23 @@ describe("OperatorDashboard: escopo dos cards", () => {
 
   it("papel Financeiro (sem reviews): mostra dinheiro, esconde avaliações", () => {
     renderWithScopes(["finance:read", "payouts:read", "bookings:read", "occupancy:read"]);
-    expect(screen.getByText("Receita (Últimos 30 dias)")).toBeInTheDocument();
+    expect(screen.getByText("Receita do período")).toBeInTheDocument();
     expect(screen.getByText("Saldo a repassar")).toBeInTheDocument();
     expect(screen.queryByText("Avaliações")).not.toBeInTheDocument();
+  });
+
+  /**
+   * A meta é escrita, então tem escopo próprio (`finance:write`). Quem só lê
+   * finanças vê o card, mas não o botão de editar.
+   */
+  it("sem finance:write, o card de receita não oferece editar a meta", () => {
+    renderWithScopes(["finance:read", "bookings:read"]);
+    expect(screen.getByText("Receita do período")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /meta/i })).not.toBeInTheDocument();
+  });
+
+  it("com finance:write, o botão de definir meta aparece", () => {
+    renderWithScopes(ALL);
+    expect(screen.getByRole("button", { name: /meta/i })).toBeInTheDocument();
   });
 });

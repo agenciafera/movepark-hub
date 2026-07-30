@@ -86,37 +86,63 @@ Configurações
 
 ### 4.1 Dashboard
 
-**Rota:** `/operator`
+**Rota:** `/operator` · ✅ implementado (design "Dashboard Operador v2", jul/2026)
 
-**Objetivo:** visão do dia-a-dia operacional da empresa.
+**Objetivo:** o parceiro abre o painel e sabe, sem clicar, como o período foi e o que
+acontece hoje.
 
-#### KPI Cards (topo, 4 colunas)
+**Filtro de período:** o mesmo `PeriodPicker` do Manager (§4.0 de
+[manager-panel.md](./manager-panel.md)): hoje, ontem, semana, mês, ano, intervalo no
+calendário e comparação. Ele fica no cabeçalho e vale para todos os blocos de período.
 
-| Card | Valor | Período |
-|---|---|---|
-| Reservas Hoje | `int` | Hoje |
-| Check-ins Hoje | `int` | Hoje |
-| Check-outs Hoje | `int` | Hoje |
-| Receita do Mês | `R$ xxx` | Mês atual |
+**Escopo (ADR-005):** o painel espelha o escopo, igual à sidebar. `finance:read` libera
+receita, gráfico e RevPAR; `payouts:read` libera o saldo; `reviews:read` libera avaliações;
+`finance:write` libera editar a meta. O papel Operação não vê dinheiro.
 
-> Se houver múltiplas localizações, os cards refletem a localização selecionada no seletor global (ou "Todas").
+#### Linha 1
 
-#### Timeline do Dia
+| Bloco | O que mostra |
+|---|---|
+| **Leitura do período** | Uma frase sobre o que os números dizem, em card navy |
+| **Receita do período** | Realizado em card violeta, com a barra de meta |
+| **Ocupação** | Medidor de meia-lua dos próximos 7 dias, com a folga de vaga-dia |
 
-- Lista cronológica de check-ins e check-outs previstos para hoje
-- Cada linha: horário · nome do cliente · tipo de vaga · placa (se disponível) · status
-- Atualização em tempo real (ou polling a cada 30s)
+> **A leitura nunca é escrita à mão.** `periodInsight()` escolhe entre um conjunto fechado
+> de frases, cada uma com a condição que a torna verdadeira: nada pago, receita empilhada
+> no fim do período, conversão baixa, ou o retrato sem adjetivo. Quando nenhuma condição se
+> sustenta, a função devolve `null` e o card diz que ainda não há leitura. Frase genérica
+> sobre número é pior que nenhuma frase.
 
-#### Gráfico de Ocupação
+#### Linha 2
 
-- Barras por período do dia (manhã/tarde/noite) ou por hora
-- Comparativo com mesmo dia da semana anterior
-- Filtro por localização
+- **Receita diária:** área no período escolhido, com o melhor dia destacado no cabeçalho.
+- **Reservas pagas:** o número, a conversão sobre o criado e a quebra por situação. O
+  denominador é toda reserva criada no período, então `expired` (abandono) aparece do lado
+  de `cancelled` em vez de sumir.
 
-#### Reservas Pendentes de Confirmação
+#### Linha 3
 
-- Lista das reservas aguardando ação do operador (se o fluxo exigir confirmação manual)
-- Botões inline: "Confirmar" / "Recusar"
+- **Qualidade da operação:** antecedência, permanência, no-show e cancelamento, com a
+  referência de mercado ([dashboardMetrics.logic](../../src/features/dashboard/dashboardMetrics.logic.ts)).
+- **Cards de apoio:** RevPAR, reservas futuras, saldo a repassar e avaliações, cada um sob
+  o seu escopo.
+- **Origem das reservas:** site x API.
+- **Agenda do dia:** tira de 7 dias navegável e a linha do tempo por hora. A faixa de horas
+  se ajusta ao movimento (uma hora de folga de cada lado); dia sem reserva mostra o horário
+  comercial.
+
+#### Meta de receita
+
+A meta é da empresa (`company.monthly_revenue_goal_cents`, em centavos) e nula quer dizer
+"sem meta": o card mostra só o realizado, sem barra, em vez de inventar um alvo. Quem tem
+`finance:write` edita direto no card. A escrita passa pela RPC `operator_set_revenue_goal`
+(SECURITY DEFINER, gate `member_has_scope`), e valor zero limpa a meta em vez de gravar
+R$ 0,00. Migration `20260918000000_company_revenue_goal.sql`, pgTAP `revenue_goal.test.sql`.
+
+> A linha `('owner', 'finance:write')` em `company_role_scope` não é opcional:
+> `member_has_scope`, que é o gate real das RPCs, lê o pacote do papel e **não** dá o
+> catálogo inteiro ao dono como o `current_member_scopes` faz. Sem ela o próprio dono seria
+> barrado. Todo escopo novo de empresa precisa da linha do dono.
 
 ---
 

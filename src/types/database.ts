@@ -826,6 +826,7 @@ export type Database = {
           id: string
           legal_name: string | null
           logo_url: string | null
+          monthly_revenue_goal_cents: number | null
           name: string
           onboarding_status: Database["public"]["Enums"]["onboarding_status"]
           slug: string
@@ -848,6 +849,7 @@ export type Database = {
           id?: string
           legal_name?: string | null
           logo_url?: string | null
+          monthly_revenue_goal_cents?: number | null
           name: string
           onboarding_status?: Database["public"]["Enums"]["onboarding_status"]
           slug: string
@@ -870,6 +872,7 @@ export type Database = {
           id?: string
           legal_name?: string | null
           logo_url?: string | null
+          monthly_revenue_goal_cents?: number | null
           name?: string
           onboarding_status?: Database["public"]["Enums"]["onboarding_status"]
           slug?: string
@@ -4570,6 +4573,10 @@ export type Database = {
       }
       operator_set_discount_active: {
         Args: { p_discount_rule_id: string; p_is_active: boolean }
+        Returns: undefined
+      }
+      operator_set_revenue_goal: {
+        Args: { p_company_id: string; p_goal_cents: number }
         Returns: undefined
       }
       operator_set_location_addon: {

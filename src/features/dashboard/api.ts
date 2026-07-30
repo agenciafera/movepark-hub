@@ -1,7 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { startOfDay, startOfMonth, subDays, addDays, format } from "date-fns";
 import { supabase } from "@/lib/supabase";
-import type { DailyFlow, LocationOccupancyRow, ManagerOverview } from "@/types/domain";
+import type {
+  BookingWithRelations,
+  DailyFlow,
+  LocationOccupancyRow,
+  ManagerOverview,
+} from "@/types/domain";
 import type { Range } from "@/features/manager-filters/managerFilters.logic";
 import {
   summarizeRanges,
@@ -156,6 +161,74 @@ export function useManagerDailyFlow(date: string, locationIds?: string[]) {
 /** Hoje no formato que a RPC de fluxo espera. */
 export function todayIsoDate() {
   return format(new Date(), "yyyy-MM-dd");
+}
+
+/**
+ * Meta de receita da empresa (centavos) e o que ela já vendeu contra isso. Nula
+ * quer dizer "sem meta": o card mostra só o realizado em vez de inventar um alvo.
+ */
+export function useCompanyRevenueGoal(companyId: string | undefined) {
+  return useQuery({
+    queryKey: ["dashboard", "revenue-goal", companyId],
+    enabled: !!companyId,
+    staleTime: 5 * 60_000,
+    queryFn: async (): Promise<number | null> => {
+      const { data, error } = await supabase
+        .from("company")
+        .select("monthly_revenue_goal_cents")
+        .eq("id", companyId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.monthly_revenue_goal_cents ?? null;
+    },
+  });
+}
+
+/** Define a meta (RPC `operator_set_revenue_goal`, exige `finance:write`). */
+export function useSetRevenueGoal(companyId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (goalCents: number | null) => {
+      if (!companyId) throw new Error("Empresa não identificada.");
+      const { error } = await supabase.rpc("operator_set_revenue_goal", {
+        p_company_id: companyId,
+        p_goal_cents: goalCents ?? 0,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["dashboard", "revenue-goal"] }),
+  });
+}
+
+const agendaSelect =
+  "*, profile:profiles(id, full_name, tax_id), location:location(id, name, slug, timezone, company:company(id, name, slug)), vehicle:vehicle(id, license_plate, model, color)";
+
+/**
+ * Reservas de um dia (chegando ou saindo), pra agenda do painel do parceiro.
+ * `dateIso` é a data local (`yyyy-MM-dd`); o recorte é do 00:00 ao 24:00 local.
+ */
+export function useDayAgenda(dateIso: string, locationIds?: string[]) {
+  return useQuery({
+    queryKey: ["operator", "day-agenda", dateIso, locationIds],
+    queryFn: async (): Promise<BookingWithRelations[]> => {
+      const [y, m, d] = dateIso.split("-").map(Number);
+      const dayStart = new Date(y, (m ?? 1) - 1, d ?? 1).toISOString();
+      const dayEnd = new Date(y, (m ?? 1) - 1, (d ?? 1) + 1).toISOString();
+      let q = supabase
+        .from("booking")
+        .select(agendaSelect)
+        .or(
+          `and(check_in_at.gte.${dayStart},check_in_at.lt.${dayEnd}),and(check_out_at.gte.${dayStart},check_out_at.lt.${dayEnd})`,
+        )
+        .order("check_in_at", { ascending: true })
+        .limit(80);
+      if (locationIds?.length) q = q.in("location_id", locationIds);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as unknown as BookingWithRelations[];
+    },
+    refetchInterval: 60_000,
+  });
 }
 
 export type OperatorStats = {
