@@ -51,6 +51,17 @@ describe("RecipientKycBanner — prova de vida no painel do parceiro", () => {
     expect(link).toHaveAttribute("target", "_blank");
   });
 
+  it("renderiza o QR code gerado a partir do link", async () => {
+    mockRecipient({
+      status: "action_required",
+      kyc_url: KYC_URL,
+      last_provider_status: "affiliation",
+    });
+    render();
+    const img = await screen.findByRole("img", { name: /QR code da prova de vida/i });
+    expect(img).toHaveAttribute("src", expect.stringContaining("data:image/png"));
+  });
+
   it("avisa que o link vale 20 minutos", async () => {
     mockRecipient({
       status: "action_required",
@@ -67,5 +78,6 @@ describe("RecipientKycBanner — prova de vida no painel do parceiro", () => {
     expect(await screen.findByText(/Prova de vida pendente/i)).toBeInTheDocument();
     expect(screen.getByText(/Estamos preparando o link/i)).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Fazer prova de vida/i })).toBeNull();
+    expect(screen.queryByRole("img", { name: /QR code/i })).toBeNull();
   });
 });

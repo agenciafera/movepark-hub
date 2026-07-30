@@ -6,8 +6,15 @@
 // e "o link chegou" existe uma janela real (a Edge busca o link no poll, não no webhook), e é
 // nessa janela que o parceiro ficava sem ver nada na tela.
 
-/** Status cru do gateway em que a prova de vida foi exigida e o link pode ser gerado. */
-const PROVIDER_STATUS_AWAITING_KYC = "registration";
+/**
+ * Status cru do gateway em que a prova de vida foi exigida e o link pode ser gerado.
+ * Medido em produção em 30/07/2026 no recebedor `re_cms7wc1eievek0l9tfxnb8wz2`:
+ * `registration` vem com `kyc_details = pending / in_analysis` e o `kyc_link` não responde 200;
+ * `affiliation` vem com `partially_denied / additional_documents_required` e aí o link sai.
+ * Trocar por `registration` inverte o banner: incomoda durante a análise e cala justamente
+ * quando a prova de vida é exigida.
+ */
+const PROVIDER_STATUS_AWAITING_KYC = "affiliation";
 
 export type KycBannerState =
   | { kind: "hidden" }
