@@ -1,0 +1,64 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "home-vitrine",
+    "start_url": "/",
+    "start_sig": "sig:eb1cb13a1fa9ce8c",
+    "scenario_sig": "47eb9668ff75af26"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "home-vitrine",
+    "start_url": "http://localhost:5180/",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Wait for page content to load"
+        },
+        "timeout_ms": 5000,
+        "use": "body"
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Verify the text 'Estacionamentos Populares' exists on the page"
+        },
+        "timeout_ms": 5000,
+        "use": "body"
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Final check for text presence"
+        },
+        "timeout_ms": 5000,
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Estacionamentos Populares"
+          }
+        }
+      }
+    ],
+    "task": "Na home, verifique que o texto 'Estacionamentos Populares' aparece na página.",
+    "generated_by": {
+      "model": "google/gemini-3.1-flash-lite",
+      "at": "2026-07-30T12:43:35.260Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-07-30T12:43:35.672Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}
