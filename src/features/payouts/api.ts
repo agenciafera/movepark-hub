@@ -146,6 +146,7 @@ type RawRecipient = {
   status: string;
   external_recipient_id: string | null;
   kyc_url: string | null;
+  kyc_url_expires_at: string | null;
   requirements: unknown;
   deleted_at: string | null;
 };
@@ -168,7 +169,7 @@ export function useRecipientsOverview() {
       const { data, error } = await supabase
         .from("company")
         .select(
-          "id, name, onboarding_status, payout_recipient(provider, status, external_recipient_id, kyc_url, requirements, deleted_at), company_payout_account(deleted_at)",
+          "id, name, onboarding_status, payout_recipient(provider, status, external_recipient_id, kyc_url, kyc_url_expires_at, requirements, deleted_at), company_payout_account(deleted_at)",
         )
         .is("deleted_at", null)
         .order("name");
@@ -178,7 +179,11 @@ export function useRecipientsOverview() {
   });
 }
 
-type SyncArgs = { company_id: string; action: "create" | "refresh"; provider?: string };
+type SyncArgs = {
+  company_id: string;
+  action: "create" | "refresh" | "reissue_kyc";
+  provider?: string;
+};
 
 async function callSyncRecipient(args: SyncArgs) {
   const {
@@ -201,6 +206,7 @@ async function callSyncRecipient(args: SyncArgs) {
     status: string;
     external_recipient_id: string | null;
     kyc_url: string | null;
+    kyc_url_expires_at: string | null;
     requirements: PayoutRequirement[];
   };
 }

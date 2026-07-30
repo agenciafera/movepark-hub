@@ -32,7 +32,7 @@ describe("mapRecipientRow", () => {
       raw({
         id: "k5",
         name: "E",
-        payout_recipient: { provider: "pagarme", status: "active", external_recipient_id: "rp", kyc_url: null, requirements: [], deleted_at: null },
+        payout_recipient: { provider: "pagarme", status: "active", external_recipient_id: "rp", kyc_url: null, kyc_url_expires_at: null, requirements: [], deleted_at: null },
       }),
     );
     expect(row.recipientStatus).toBe("active");
@@ -46,7 +46,7 @@ describe("mapRecipientRow", () => {
         name: "Virapark",
         onboarding_status: "active",
         payout_recipient: [
-          { provider: "pagarme", status: "active", external_recipient_id: "rp_1", kyc_url: null, requirements: [], deleted_at: null },
+          { provider: "pagarme", status: "active", external_recipient_id: "rp_1", kyc_url: null, kyc_url_expires_at: null, requirements: [], deleted_at: null },
         ],
       }),
     );
@@ -66,8 +66,8 @@ describe("mapRecipientRow", () => {
         id: "c4",
         name: "X",
         payout_recipient: [
-          { provider: "pagarme", status: "active", external_recipient_id: "rp_old", kyc_url: null, requirements: [], deleted_at: "2026-01-01" },
-          { provider: "outro", status: "active", external_recipient_id: "rp_y", kyc_url: null, requirements: [], deleted_at: null },
+          { provider: "pagarme", status: "active", external_recipient_id: "rp_old", kyc_url: null, kyc_url_expires_at: null, requirements: [], deleted_at: "2026-01-01" },
+          { provider: "outro", status: "active", external_recipient_id: "rp_y", kyc_url: null, kyc_url_expires_at: null, requirements: [], deleted_at: null },
         ],
       }),
     );
@@ -85,7 +85,7 @@ describe("mapRecipientRow", () => {
             provider: "pagarme",
             status: "action_required",
             external_recipient_id: "rp_2",
-            kyc_url: "https://kyc",
+            kyc_url: "https://kyc", kyc_url_expires_at: null,
             requirements: [{ code: "doc", message: "Envie o documento" }],
             deleted_at: null,
           },
@@ -102,7 +102,7 @@ describe("mapRecipientRow", () => {
 describe("buildRecipientOverview", () => {
   it("ordena pendências primeiro, depois por nome", () => {
     const rows = buildRecipientOverview([
-      raw({ id: "a", name: "Zeta", onboarding_status: "active", payout_recipient: [{ provider: "pagarme", status: "active", external_recipient_id: "rp", kyc_url: null, requirements: [], deleted_at: null }] }),
+      raw({ id: "a", name: "Zeta", onboarding_status: "active", payout_recipient: [{ provider: "pagarme", status: "active", external_recipient_id: "rp", kyc_url: null, kyc_url_expires_at: null, requirements: [], deleted_at: null }] }),
       raw({ id: "b", name: "Beta", onboarding_status: "active" }), // sem recebedor → atenção
       raw({ id: "c", name: "Alfa", onboarding_status: "active" }), // sem recebedor → atenção
     ]);
@@ -115,7 +115,7 @@ describe("buildRecipientOverview", () => {
 describe("summarizeRecipients", () => {
   it("conta total, aptos e pendentes", () => {
     const rows = buildRecipientOverview([
-      raw({ id: "a", name: "A", payout_recipient: [{ provider: "pagarme", status: "active", external_recipient_id: "rp", kyc_url: null, requirements: [], deleted_at: null }] }),
+      raw({ id: "a", name: "A", payout_recipient: [{ provider: "pagarme", status: "active", external_recipient_id: "rp", kyc_url: null, kyc_url_expires_at: null, requirements: [], deleted_at: null }] }),
       raw({ id: "b", name: "B" }),
       raw({ id: "c", name: "C", onboarding_status: "pending_review" }),
     ]);
