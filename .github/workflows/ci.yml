@@ -58,6 +58,65 @@ jobs:
           deno-version: v2.x
       - run: deno test --no-check --allow-env --allow-net supabase/functions
 
+  # Não-bloqueante: mede a cobertura e publica o relatório. Reporta, não barra.
+  #
+  # Fica fora do portão porque o número sozinho não diz onde está o risco: quem aponta
+  # o buraco com nome e sobrenome são os três guards de inventário (mutations, rotas e
+  # Edge Functions), e esses rodam no job `quality`, que barra.
+  coverage:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.13
+      - run: bun install --frozen-lockfile
+      - run: bun run coverage
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: coverage/
+
+  # Gate obrigatório: cenários Windup contra o dev server, em replay.
+  #
+  # Replay não chama LLM nenhum: o plano de ações vive versionado em .windup/cache e é executado
+  # de forma determinística. Por isso este job não precisa de chave de modelo nem de segredo, e
+  # roda em segundos. Um cache miss (cenário novo, ou plano que quebrou) precisaria planejar, e
+  # sem a CLI do Claude aqui isso falha em menos de 1s com `failure [config]`. É o comportamento
+  # desejado: quem escreve o cenário roda `windup run` na própria máquina e commita o plano
+  # gerado junto, em .windup/cache.
+  #
+  # É o único gate de navegador do projeto. A suíte Playwright NÃO roda no CI de propósito:
+  # ela escreve em produção e os specs transacionais cobram de verdade no Pagar.me.
+  windup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.13
+      - run: bun install --frozen-lockfile
+      # O Chromium do Playwright é o motor do Windup; playwright-core não baixa binário sozinho.
+      - run: bunx playwright install --with-deps chromium
+      # Sem a chave do Google, igual à suíte Playwright: mantém o render determinístico e sem
+      # chamada externa paga. A porta 5273 é a mesma que o playwright.config.ts usa.
+      - name: Sobe o dev server
+        run: |
+          VITE_GOOGLE_MAPS_API_KEY= PORT=5273 bun run dev &
+          for i in $(seq 1 90); do
+            curl -sf -o /dev/null http://localhost:5273/ && echo "dev server no ar" && exit 0
+            sleep 2
+          done
+          echo "dev server não subiu em 180s"; exit 1
+      - run: bunx windup run --all --base-url http://localhost:5273 --reporter junit
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windup-report
+          path: .windup/reports/
+
   # Não-bloqueante: bate no ambiente vivo (read-only). Cobre o motor de preço (simulate_price) e os
   # contratos das superfícies publicadas: MCP (as três superfícies, gates de sessão e de escopo),
   # busca semântica da base de conhecimento e Public API (401 sem chave, cards e openapi no ar com

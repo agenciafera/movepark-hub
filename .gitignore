@@ -7,6 +7,9 @@ Thumbs.db
 .vscode/
 *.swp
 
+# Relatório de cobertura do Vitest — gerado, some a cada run
+coverage/
+
 # Env / secrets — .env é versionado (só contém chaves públicas VITE_*)
 .env.local
 .env.*.local

@@ -51,6 +51,11 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reportsDirectory: "./coverage",
+      reporter: ["text-summary", "json-summary", "html"],
+      // Sem `include`, o v8 só conta arquivo que algum teste importou. As features
+      // sem teste nenhum ficavam fora do denominador e o número subia sozinho: era
+      // uma média dos arquivos já cobertos, não do projeto.
+      include: ["src/**"],
       exclude: [
         "src/types/**",
         "src/components/ui/**",
@@ -59,7 +64,26 @@ export default defineConfig({
         "src/main.tsx",
         "src/worker.ts",
         "**/*.d.ts",
+        // Ferramentas internas e catálogo visual: a prova deles é olhar, não asserir.
+        "src/routes/design-system.tsx",
+        "src/routes/motor-preview.tsx",
       ],
+      /**
+       * Catraca, não meta. Os números são o piso MEDIDO menos uma folga, e sobem
+       * sozinhos com `autoUpdate` quando a cobertura melhora (o bump vem no
+       * mesmo commit). Piso separado para `src/routes/**` de propósito: são 14
+       * mil linhas de composição de JSX cuja prova barata é o Windup abrindo a
+       * página, não o jsdom montando com providers falsos. Sem piso próprio, a
+       * pressão do número global empurra justamente para o teste caro e fraco.
+       *
+       * Regra: threshold que reprova um PR que não mexeu em código é bug do
+       * threshold. Baixe o número no mesmo PR e siga.
+       */
+      thresholds: {
+        autoUpdate: true,
+        lines: 47.93,
+        branches: 74.1,
+      },
     },
   },
 });

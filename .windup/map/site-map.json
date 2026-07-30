@@ -3148,12 +3148,13 @@
         "a text=Destinos",
         "a text=Entrar",
         "a text=Parceiro",
-        "a text=Ajuda"
+        "a text=Ajuda",
+        "button type=button"
       ],
       "source": "execution",
       "first_seen": "2026-07-29T12:30:26.935Z",
-      "last_seen": "2026-07-30T15:27:05.931Z",
-      "seen_count": 21,
+      "last_seen": "2026-07-30T18:14:01.406Z",
+      "seen_count": 25,
       "stale": false
     },
     "sig:eb1cb13a1fa9ce8c": {
@@ -3162,7 +3163,10 @@
         "http://localhost:56040/",
         "http://localhost:56040/destinos",
         "http://localhost:56040/como-funciona",
-        "http://localhost:56040/cancelamento"
+        "http://localhost:56040/cancelamento",
+        "http://localhost:5180/cancelamento",
+        "http://localhost:5180/como-funciona",
+        "http://localhost:5180/destinos"
       ],
       "url_pattern": "**/",
       "title": "Movepark | Estacionamentos em aeroportos e destinos",
@@ -3220,13 +3224,14 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-29T12:30:32.373Z",
-      "last_seen": "2026-07-30T15:27:05.600Z",
-      "seen_count": 35,
+      "last_seen": "2026-07-30T18:14:00.957Z",
+      "seen_count": 49,
       "stale": false
     },
     "sig:2644ef779c146a8c": {
       "urls_seen": [
-        "http://localhost:56040/destinos"
+        "http://localhost:56040/destinos",
+        "http://localhost:5180/destinos"
       ],
       "url_pattern": "**/destinos",
       "title": "Destinos atendidos | Estacionamento perto de aeroportos | Movepark",
@@ -3276,13 +3281,14 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T13:22:55.662Z",
-      "last_seen": "2026-07-30T15:27:04.817Z",
-      "seen_count": 7,
+      "last_seen": "2026-07-30T18:05:17.182Z",
+      "seen_count": 10,
       "stale": false
     },
     "sig:42bd6642a8c0077e": {
       "urls_seen": [
-        "http://localhost:56040/faq"
+        "http://localhost:56040/faq",
+        "http://localhost:5180/faq"
       ],
       "url_pattern": "**/faq",
       "title": "Perguntas Frequentes | Movepark",
@@ -3318,13 +3324,14 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T13:24:35.920Z",
-      "last_seen": "2026-07-30T15:27:05.219Z",
-      "seen_count": 8,
+      "last_seen": "2026-07-30T18:14:00.438Z",
+      "seen_count": 12,
       "stale": false
     },
     "sig:c6d9d2df64e4156f": {
       "urls_seen": [
-        "http://localhost:56040/seja-parceiro"
+        "http://localhost:56040/seja-parceiro",
+        "http://localhost:5180/seja-parceiro"
       ],
       "url_pattern": "**/seja-parceiro",
       "title": "Seja parceiro | Movepark",
@@ -3359,8 +3366,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T13:25:36.949Z",
-      "last_seen": "2026-07-30T15:27:06.293Z",
-      "seen_count": 9,
+      "last_seen": "2026-07-30T18:14:02.350Z",
+      "seen_count": 13,
       "stale": false
     },
     "sig:5f04617cfcb270ea": {
@@ -3514,6 +3521,66 @@
       "first_seen": "2026-07-30T15:25:44.737Z",
       "last_seen": "2026-07-30T15:25:44.737Z",
       "seen_count": 1
+    },
+    "sig:95f23b77537a835a": {
+      "urls_seen": [
+        "http://localhost:5180/manager/users"
+      ],
+      "url_pattern": "**/manager/users",
+      "title": "Movepark Hub",
+      "interactive": [
+        "a text=Dashboard",
+        "a text=Empresas",
+        "a text=Parceiros",
+        "a text=Destinos",
+        "a text=Reservas",
+        "a text=Financeiro",
+        "a text=Repasses",
+        "a text=Comissões",
+        "a text=Recebedores",
+        "a text=Tarifas",
+        "a text=Atribuição",
+        "a text=Avaliações",
+        "a text=FAQ",
+        "a text=Usuários",
+        "a text=Documentos legais",
+        "a text=Configurações",
+        "button type=button text=Buscar reserva, unidade, cupom...⌘K",
+        "button",
+        "button id=radix-:r3: type=button text=QW",
+        "input placeholder=Buscar por nome ou ID",
+        "button type=button text=Admin Hub",
+        "button text=Vincular empresa",
+        "a text=Início",
+        "a text=Empresas",
+        "a text=Reservas",
+        "a text=Usuários",
+        "button type=button text=Mais"
+      ],
+      "source": "execution",
+      "first_seen": "2026-07-30T18:02:37.797Z",
+      "last_seen": "2026-07-30T18:14:01.968Z",
+      "seen_count": 5,
+      "stale": false
+    },
+    "sig:ec1c271b1242bb10": {
+      "urls_seen": [
+        "http://localhost:5180/login?next=%2Fmanager%2Fusers"
+      ],
+      "url_pattern": "**/login",
+      "title": "Movepark Hub",
+      "interactive": [
+        "a text=Hub",
+        "button type=button text=Continuar com Google",
+        "button type=button text=Entrar com e-mail",
+        "button type=button text=Entrar com WhatsApp",
+        "a text=Voltar para o início"
+      ],
+      "source": "execution",
+      "first_seen": "2026-07-30T18:03:15.518Z",
+      "last_seen": "2026-07-30T18:03:34.978Z",
+      "seen_count": 2,
+      "stale": false
     }
   },
   "transitions": [
@@ -3542,7 +3609,7 @@
         "selector": "h1"
       },
       "to": "sig:2644ef779c146a8c",
-      "seen_count": 2
+      "seen_count": 3
     },
     {
       "from": "sig:5f04617cfcb270ea",
@@ -3569,7 +3636,7 @@
         "selector": "main"
       },
       "to": "sig:9762b1205e6e924b",
-      "seen_count": 2
+      "seen_count": 6
     }
   ],
   "assist_seen": {
