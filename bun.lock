@@ -86,7 +86,7 @@
         "typescript": "^5.9.3",
         "vite": "^6.4.3",
         "vitest": "^3.2.6",
-        "windupjs": "1.6.0",
+        "windupjs": "1.8.0",
         "wrangler": "^4.105.0",
       },
     },
@@ -1682,7 +1682,7 @@
 
     "why-is-node-running": ["why-is-node-running@2.3.0", "", { "dependencies": { "siginfo": "^2.0.0", "stackback": "0.0.2" }, "bin": { "why-is-node-running": "cli.js" } }, "sha512-hUrmaWBdVDcxvYqnyh09zunKzROWjbZTiNy8dBEjkS7ehEDQibXJ7XvlmtbwuTclUiIyN+CyXQD4Vmko8fNm8w=="],
 
-    "windupjs": ["windupjs@1.6.0", "", { "dependencies": { "@clack/prompts": "^1.7.0", "@google/genai": "^2.11.0", "ajv": "^8.20.0", "ajv-formats": "^3.0.1", "c12": "^4.0.0-beta.5", "commander": "^14.0.3", "dotenv": "^17.4.2", "jiti": "^2.7.0", "picomatch": "^4.0.5", "playwright-core": "^1.61.1" }, "peerDependencies": { "vitest": ">=1.0.0" }, "optionalPeers": ["vitest"], "bin": { "windup": "dist/cli.js" } }, "sha512-WbOto/8p4BBOz6Z3BdEOhInjPpiShXDC5iMyxUhWURirfZkr1qZN2LSKTrD0lB9NjZ81SSqwfRI53VY2UzpV+Q=="],
+    "windupjs": ["windupjs@1.8.0", "", { "dependencies": { "@clack/prompts": "^1.7.0", "@google/genai": "^2.11.0", "ajv": "^8.20.0", "ajv-formats": "^3.0.1", "c12": "^4.0.0-beta.5", "commander": "^14.0.3", "dotenv": "^17.4.2", "jiti": "^2.7.0", "picomatch": "^4.0.5", "playwright-core": "^1.61.1" }, "peerDependencies": { "vitest": ">=1.0.0" }, "optionalPeers": ["vitest"], "bin": { "windup": "dist/cli.js" } }, "sha512-ufRchBQ5H5eBbcvQE1U/bT8Z8ojingSg7jgjwbgo1F4cIRxPDJM60Gqhc3o47hQPLe1JqTswTTboH6Q2/sPVYQ=="],
 
     "word-wrap": ["word-wrap@1.2.5", "", {}, "sha512-BN22B5eaMMI9UMtjrGd5g5eCYPpCPDUy0FJXbYsaT5zYxjFOckS53SQDE3pWkVoWpHXVb3BrYcEN4Twa55B5cA=="],
 

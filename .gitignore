@@ -14,6 +14,10 @@ Thumbs.db
 # Claude Code — config pessoal (permissões locais), por dev; não versionar
 .claude/settings.local.json
 
+# direnv — o `windup claude login --profile` escreve aqui um CLAUDE_CONFIG_DIR
+# com caminho absoluto da home de quem rodou. É por máquina, não por projeto.
+.envrc
+
 # Supabase
 supabase/.temp/
 supabase/.branches/
