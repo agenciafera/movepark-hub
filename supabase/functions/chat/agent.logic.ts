@@ -239,6 +239,18 @@ export function extractText(content: GeminiContent | undefined | null): string {
     .trim();
 }
 
+/**
+ * O candidato veio sem nada aproveitável: nem texto, nem chamada de tool.
+ *
+ * Acontece de verdade. Na rodada de 23/07 (§20 de agent-test-scenarios.md) foi observado em 2 de ~14
+ * turnos: o POST voltava 200, `used_tools` vazio, e o usuário via "Desculpe, não consegui responder
+ * agora". Repetir a mesma pergunta resolvia nas duas vezes, então é flutuação do modelo, não erro
+ * nosso. Quem chama usa isto para tentar de novo antes de desistir na cara do usuário.
+ */
+export function isEmptyCandidate(content: GeminiContent | undefined | null): boolean {
+  return extractFunctionCalls(content).length === 0 && extractText(content) === "";
+}
+
 /** Monta o content `user` com os functionResponse de cada tool executada. */
 export function functionResponseContent(
   results: Array<{ name: string; response: Record<string, unknown> }>,

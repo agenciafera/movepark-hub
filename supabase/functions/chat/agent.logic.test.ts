@@ -4,6 +4,7 @@ import {
   extractText,
   functionResponseContent,
   geminiTools,
+  isEmptyCandidate,
   LEGACY_TXN,
   McpTransportError,
   needsLogin,
@@ -192,4 +193,30 @@ Deno.test("sessionBlock deslogado manda CHAMAR a tool (é o que acende o botão 
   const b = sessionBlock(false);
   assertEquals(b.includes("CHAME a ferramenta"), true);
   assertEquals(b.toLowerCase().includes("botão entrar"), true);
+});
+
+// Regressão do achado da §20 (rodada de 23/07): em 2 de ~14 turnos o Gemini devolveu candidato sem
+// parts e o usuário levou "Desculpe, não consegui responder agora". A Edge passa a tentar de novo
+// uma vez antes de desistir; este predicado é o gatilho.
+Deno.test("isEmptyCandidate: candidato sem texto e sem tool é vazio", () => {
+  assertEquals(isEmptyCandidate({ role: "model", parts: [] }), true);
+  assertEquals(isEmptyCandidate({ role: "model", parts: [{ text: "   " }] }), true);
+  assertEquals(isEmptyCandidate(null), true);
+  assertEquals(isEmptyCandidate(undefined), true);
+});
+
+Deno.test("isEmptyCandidate: com texto OU com functionCall não é vazio", () => {
+  assertEquals(isEmptyCandidate({ role: "model", parts: [{ text: "oi" }] }), false);
+  assertEquals(
+    isEmptyCandidate({
+      role: "model",
+      parts: [{ functionCall: { name: "search_parking", args: {} } }],
+    }),
+    false,
+  );
+  // o caso que mais importa: tool sem texto nenhum continua sendo resposta válida
+  assertEquals(
+    isEmptyCandidate({ role: "model", parts: [{ text: "" }, { functionCall: { name: "get_faq", args: {} } }] }),
+    false,
+  );
 });

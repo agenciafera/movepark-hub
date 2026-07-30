@@ -27,6 +27,8 @@ import { findTool, isToolCallable, listTools, missingRequired, type Endpoint } f
 import { extractApiKey, keyPrefix, sha256Hex } from "./auth.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 import { callRead, READ_TOOL_NAMES } from "../_shared/assistant-tools.ts";
+import { hasValidCheckDigits } from "../_shared/payments/documents.ts";
+import { isValidPhoneBr } from "../_shared/payments/contact.ts";
 import { buildCreateBookingBody, CUSTOMER_TXN_NAMES, otpRequestParams, otpVerifyParams } from "./customer.logic.ts";
 
 const CORS = {
@@ -377,6 +379,19 @@ async function callCustomerTxn(
 
     case "set_booking_customer": {
       // Só os campos informados (undefined não sobrescreve). tax_id/phone são exigidos no pagamento.
+      //
+      // Validação na porta de entrada (achado §16-2 / roteiro G4): o formulário do site valida CPF e
+      // DDD, mas quem escreve por aqui (agente, chatbot) não passa pelo formulário. Sem checar,
+      // gravávamos o dado ruim, o assistente respondia "pronto, gravado" e o usuário só descobria no
+      // pagamento. A mensagem de erro diz o que fazer, para o agente corrigir na mesma conversa.
+      if (a.tax_id !== undefined && !hasValidCheckDigits(a.tax_id as string)) {
+        throw new Error(
+          "CPF ou CNPJ inválido. Confirme os números e envie de novo (11 dígitos no CPF, 14 no CNPJ).",
+        );
+      }
+      if (a.phone !== undefined && !isValidPhoneBr(a.phone as string)) {
+        throw new Error("Telefone inválido. Informe o número com DDD (11 dígitos no celular).");
+      }
       const patch: Record<string, unknown> = {};
       if (a.tax_id !== undefined) patch.customer_tax_id = a.tax_id;
       if (a.phone !== undefined) patch.customer_phone = a.phone;

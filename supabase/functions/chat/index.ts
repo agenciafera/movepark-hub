@@ -19,6 +19,7 @@ import {
   functionResponseContent,
   type GeminiContent,
   geminiTools,
+  isEmptyCandidate,
   LEGACY_TXN,
   MAX_TOOL_ROUNDS,
   McpTransportError,
@@ -199,9 +200,22 @@ Deno.serve(async (req: Request) => {
   // O usuário tentou uma ação que exige login mas não está logado: o front mostra um botão "Entrar".
   let loginRequired = false;
 
+  // Orçamento de 1 retry para candidato vazio, por REQUEST (não por rodada): um modelo
+  // persistentemente vazio dobraria as chamadas em cada uma das 6 rodadas se fosse por rodada.
+  let emptyRetries = 1;
+  async function askGemini(payload: GeminiContent[]): Promise<GeminiContent | null> {
+    const content = await callGemini(apiKey, model, systemPrompt, payload);
+    if (isEmptyCandidate(content) && emptyRetries > 0) {
+      emptyRetries--;
+      // Mesmo payload de propósito: o modelo é não determinístico e repetir costuma resolver.
+      return await callGemini(apiKey, model, systemPrompt, payload);
+    }
+    return content;
+  }
+
   try {
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-      const content = await callGemini(apiKey, model, systemPrompt, contents);
+      const content = await askGemini(contents);
       const calls = extractFunctionCalls(content);
       if (calls.length === 0) {
         return json({ reply: extractText(content) || "Desculpe, não consegui responder agora.", used_tools: usedTools, login_required: loginRequired });

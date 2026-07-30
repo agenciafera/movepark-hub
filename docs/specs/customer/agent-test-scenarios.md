@@ -508,8 +508,13 @@ select customer_tax_id from booking where code = 'MP-XXXX';
 ```
 - **Passa:** ou ele recusa o CPF na conversa, ou grava e **avisa que o pagamento vai validar**.
 - **Bug:** dizer "pronto, gravado" e seguir como se estivesse tudo certo. `set_booking_customer`
-  **não valida CPF** ([mcp/index.ts:390](../../../supabase/functions/mcp/index.ts:390)): grava a string
-  crua. Quem valida é a Edge de pagamento, com 422, lá na frente. O usuário descobre no pior momento.
+  **não validava CPF**: gravava a string crua, e quem recusava era o pagamento, lá na frente.
+  **CORRIGIDO em 29/07:** `set_booking_customer` valida dígito verificador (`hasValidCheckDigits`) e
+  DDD (`isValidPhoneBr`) antes de gravar, com mensagem que diz o que corrigir. Detalhe que só
+  apareceu ao implementar: a Edge de pagamento **nunca** validou dígito verificador, só comprimento
+  (`isValidChargeDocument`), então `111.111.111-11` passava por ela também. Quem validava era o
+  formulário do site, que o agente não usa. O gate de cobrança segue por comprimento de propósito,
+  para não recusar registro antigo; a escrita é que ficou estrita.
 - **Por que importa:** 111.111.111-11 tem dígito verificador válido pela conta, mas é CPF nulo.
   Use também `123.456.789-00` (dígito errado de fato).
 
@@ -979,8 +984,10 @@ pergunta resolveu nas duas vezes. É flutuação do modelo, não erro nosso, mas
   duas reservas. Isto foi observado na prática: o `create_booking` só efetivou uma vez (MP-C16868,
   `total_pendentes = 1`).
 
-Mitigação possível (aberta): a Edge poderia **re-tentar uma vez** internamente quando o candidato do
-Gemini volta sem parts, em vez de já devolver o fallback ao usuário.
+**CORRIGIDO em 29/07.** A Edge agora tenta de novo **uma vez** quando o candidato volta sem parts,
+antes de devolver o fallback. O orçamento de retry é por **request**, não por rodada: por rodada, um
+modelo persistentemente vazio dobraria as chamadas em cada uma das 6. O gatilho é o predicado puro
+`isEmptyCandidate` (`chat/agent.logic.ts`), com teste de regressão em `agent.logic.test.ts`.
 
 ## 21. Grupo K · Caminho logado que toca cada transacional
 
@@ -1033,8 +1040,8 @@ select customer_tax_id, customer_email, customer_phone from booking where code =
 ```
 - **Passa:** `used_tools` = `set_booking_customer`; as três colunas gravadas.
 - **Bug:** dizer "gravado" com o banco inalterado; ou gravar num campo errado.
-- **Armadilha (achado aberto, ver G4):** `set_booking_customer` **não valida CPF**. Se você mandar
-  `111.111.111-11`, ele grava e segue. Aqui usamos um CPF de teste válido de propósito, para o passo
+- **Armadilha (corrigida em 29/07, ver G4):** `set_booking_customer` **passou a validar** CPF e DDD.
+  Mandar `111.111.111-11` agora devolve erro pedindo para confirmar os números, em vez de gravar. Aqui usamos um CPF de teste válido de propósito, para o passo
   não mascarar esse buraco. O G4 é quem testa o CPF inválido.
 
 ### K-05 · Cadastrar veículo (add_vehicle)
