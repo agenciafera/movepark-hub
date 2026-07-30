@@ -78,11 +78,18 @@ export default defineConfig({
        *
        * Regra: threshold que reprova um PR que não mexeu em código é bug do
        * threshold. Baixe o número no mesmo PR e siga.
+       *
+       * `autoUpdate` fica DESLIGADO, e isso já foi testado na prática: com ele
+       * ligado o piso grudou no valor exato medido (74.1 de branches) e o CI
+       * reprovou no primeiro run com 74.09%, um branch de diferença em 3988,
+       * puro ruído de ambiente. Piso é chão com folga, não marca d'água.
+       * Ao subir a cobertura de verdade, suba o número aqui à mão.
+       *
+       * Medido em 30/07/2026: linhas 47.93%, branches 74.09%.
        */
       thresholds: {
-        autoUpdate: true,
-        lines: 47.93,
-        branches: 74.1,
+        lines: 46,
+        branches: 72,
       },
     },
   },
