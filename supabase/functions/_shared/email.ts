@@ -259,6 +259,21 @@ function button(href: string, label: string): string {
   return `<a href="${href}" style="display:inline-block;background:${BRAND.violet};color:#ffffff;text-decoration:none;font-family:${FONT};font-size:16px;font-weight:600;line-height:1;padding:15px 30px;border-radius:8px;">${label}</a>`;
 }
 
+/**
+ * Prova de vida (KYC) do recebedor. Leva ao painel de propósito, sem o link do gateway dentro:
+ * esse link vale 20 minutos e chegaria morto em quase todo e-mail aberto fora da hora.
+ */
+export function tplKycLinkIssued(contactName: string): { subject: string; html: string } {
+  return {
+    subject: "Prova de vida pendente no seu cadastro",
+    html: shell("Falta a prova de vida", `
+      <p style="margin:0 0 14px">Olá, ${escapeHtml(firstName(contactName))}. Para liberar seus repasses, falta a verificação de identidade do responsável pela conta.</p>
+      <p style="margin:0 0 14px">É rápido: entre no painel, aponte a câmera do celular e siga as instruções.</p>
+      <p style="margin:0 0 22px;text-align:center">${button(`${siteUrl()}/operator`, "Fazer a verificação")}</p>
+      <p style="margin:0;font-size:14px;color:${BRAND.muted}">O link da verificação vale 20 minutos. Se o seu expirar, você gera outro no painel com um clique.</p>`),
+  };
+}
+
 export function tplLeadReceived(contactName: string): { subject: string; html: string } {
   return {
     subject: "Recebemos o cadastro do seu estacionamento",

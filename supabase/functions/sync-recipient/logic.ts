@@ -3,7 +3,48 @@
 
 import type { RecipientInput, RecipientKyc } from "../_shared/payments/types.ts";
 
-export type SyncAction = "create" | "refresh";
+export type SyncAction = "create" | "refresh" | "reissue_kyc";
+
+/**
+ * Decide o que fazer quando o parceiro pede um link novo de prova de vida.
+ *
+ * `serve_existing`: já existe link vivo, devolve ele. Emitir outro só invalidaria o que o parceiro
+ * talvez já tenha aberto no celular, e gastaria uma chamada no gateway à toa.
+ * `cooldown`: emitiu agora há pouco, segura. Não existe rate limit na borda das Edge Functions,
+ * então o freio mora aqui.
+ * `reissue`: pode emitir.
+ */
+export function shouldReissueKycLink(args: {
+  expiresAt: string | null | undefined;
+  lastIssuedAt: string | null | undefined;
+  now: Date;
+  cooldownSeconds?: number;
+}): "serve_existing" | "cooldown" | "reissue" {
+  const nowMs = args.now.getTime();
+  const cooldownMs = (args.cooldownSeconds ?? 60) * 1000;
+
+  const expiresMs = args.expiresAt ? Date.parse(args.expiresAt) : NaN;
+  if (!Number.isNaN(expiresMs) && expiresMs > nowMs) return "serve_existing";
+
+  const issuedMs = args.lastIssuedAt ? Date.parse(args.lastIssuedAt) : NaN;
+  if (!Number.isNaN(issuedMs) && nowMs - issuedMs < cooldownMs) return "cooldown";
+
+  return "reissue";
+}
+
+/**
+ * O link vigente ainda vale? Usado pelo cron para não queimar link novo a cada volta: emitir
+ * invalida o anterior e zeraria o contador do parceiro no meio da prova de vida.
+ */
+export function hasLiveKycLink(
+  kycUrl: string | null | undefined,
+  expiresAt: string | null | undefined,
+  now: Date,
+): boolean {
+  if (!kycUrl?.trim() || !expiresAt) return false;
+  const ms = Date.parse(expiresAt);
+  return !Number.isNaN(ms) && ms > now.getTime();
+}
 
 export interface SyncInput {
   company_id: string;
@@ -18,8 +59,8 @@ export function parseSyncInput(raw: unknown): { input?: SyncInput; error?: strin
   const companyId = typeof o.company_id === "string" ? o.company_id.trim() : "";
   if (!companyId) return { error: "company_id é obrigatório." };
   const action = o.action;
-  if (action !== "create" && action !== "refresh") {
-    return { error: "action precisa ser 'create' ou 'refresh'." };
+  if (action !== "create" && action !== "refresh" && action !== "reissue_kyc") {
+    return { error: "action precisa ser 'create', 'refresh' ou 'reissue_kyc'." };
   }
   const provider =
     typeof o.provider === "string" && o.provider.trim() ? o.provider.trim() : "pagarme";

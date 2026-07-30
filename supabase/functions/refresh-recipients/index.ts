@@ -53,7 +53,11 @@ Deno.serve(async (req: Request) => {
   let updated = 0;
   for (const rec of recipients ?? []) {
     try {
-      const result = await gateway.getRecipient(rec.external_recipient_id!);
+      // `kycLink: false` de propósito: emitir link no gateway INVALIDA o anterior e reinicia a
+      // validade de 20 minutos. Se o cron emitisse a cada volta, o contador do parceiro voltaria
+      // ao topo sozinho e o link que ele abriu no celular morreria no meio da prova de vida.
+      // Quem emite é o `create` e o botão de reemitir, ambos ação explícita do parceiro.
+      const result = await gateway.getRecipient(rec.external_recipient_id!, { kycLink: false });
       if (!result.externalId) {
         // Resposta inválida do gateway (ex.: 401 de allowlist de IP): não mexe no status,
         // mas grava o evento. Sem isso a falha some e o recebedor congela sem rastro.
@@ -76,7 +80,8 @@ Deno.serve(async (req: Request) => {
         .update({
           status: result.status,
           last_provider_status: result.rawStatus,
-          kyc_url: result.kycUrl,
+          // NÃO toca em kyc_url/kyc_url_expires_at: este poll não emite link, então não tem
+          // nada novo para gravar, e sobrescrever com null apagaria o link vivo do parceiro.
           requirements: result.requirements,
         })
         .eq("id", rec.id);

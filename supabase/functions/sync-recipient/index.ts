@@ -3,14 +3,19 @@
 // abstração `_shared/payments`. Grava o vínculo (external_recipient_id, status, link de KYC,
 // pendências) em `payout_recipient` e registra a resposta crua em `payout_recipient_event`.
 //
-// Restrito a hub_admin. A coleta de KYC/dados bancários (UI do parceiro) é E1.3 — aqui os dados
-// vêm de `company_payout_account` (preenchidos manualmente para o recebedor de teste).
+// Aberta a hub_admin e ao DONO da própria empresa (com contrato assinado). Os dados de KYC e banco
+// vêm de `company_payout_account`, preenchidos pelo parceiro na E1.3.
 //
 // POST /functions/v1/sync-recipient
-// Authorization: Bearer <JWT hub_admin>
-// { "company_id": "uuid", "action": "create" | "refresh", "provider"?: "pagarme" }
+// Authorization: Bearer <JWT hub_admin ou dono da empresa>
+// { "company_id": "uuid", "action": "create" | "refresh" | "reissue_kyc", "provider"?: "pagarme" }
 //
-// Resposta: { ok, status, external_recipient_id, kyc_url, requirements }
+// - create:      cria o recebedor no gateway, guarda o link de prova de vida e avisa por e-mail.
+// - refresh:     só relê o status. NÃO emite link (emitir invalida o anterior).
+// - reissue_kyc: emite um link novo de prova de vida. Devolve o vigente se ainda estiver vivo e
+//                tem cooldown de 60s, porque não existe rate limit na borda das Edge Functions.
+//
+// Resposta: { ok, status, external_recipient_id, kyc_url, kyc_url_expires_at, requirements }
 
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -21,9 +26,11 @@ import {
   gatewayErrorMessage,
   parseSyncInput,
   redactRecipientBody,
+  shouldReissueKycLink,
   type PayoutAccountRow,
 } from "./logic.ts";
 import { buildCreateRecipientBody } from "../_shared/payments/pagarme.ts";
+import { getEmailConfig, sendEmail, tplKycLinkIssued } from "../_shared/email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -36,6 +43,52 @@ function jsonResponse(body: unknown, status = 200) {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+/**
+ * Avisa o parceiro por e-mail que a prova de vida está pendente, UMA vez por emissão de link.
+ *
+ * A unicidade vem de `kyc_link_email_sent_at`, reivindicado por UPDATE condicional antes de
+ * qualquer envio: dois cliques quase simultâneos resultam num e-mail só. O cron não emite link e
+ * portanto nunca chega aqui, que é o que impede os 4 e-mails por hora.
+ *
+ * Destinatário: o contato da ficha de KYC, com o contato do onboarding como reserva.
+ */
+// deno-lint-ignore no-explicit-any
+async function notifyKycLink(admin: any, recipientId: string, companyId: string, fallbackEmail: string | null) {
+  const { data: claimed } = await admin
+    .from("payout_recipient")
+    .update({ kyc_link_email_sent_at: new Date().toISOString() })
+    .eq("id", recipientId)
+    .is("kyc_link_email_sent_at", null)
+    .select("id")
+    .maybeSingle();
+  if (!claimed) return;
+
+  const { data: account } = await admin
+    .from("company_payout_account")
+    .select("kyc_details")
+    .eq("company_id", companyId)
+    .is("deleted_at", null)
+    .maybeSingle();
+  const kyc = (account as { kyc_details: Record<string, unknown> | null } | null)?.kyc_details;
+  const kycEmail = typeof kyc?.email === "string" && kyc.email.trim() ? kyc.email.trim() : null;
+  const to = kycEmail ?? fallbackEmail;
+  if (!to) return;
+
+  const { data: onboarding } = await admin
+    .from("company_onboarding")
+    .select("contact_name")
+    .eq("company_id", companyId)
+    .maybeSingle();
+
+  const { from } = await getEmailConfig(admin);
+  if (!from) return;
+
+  const mail = tplKycLinkIssued(
+    (onboarding as { contact_name: string | null } | null)?.contact_name ?? "",
+  );
+  await sendEmail({ from, to, subject: mail.subject, html: mail.html });
 }
 
 /** Roda em background — não bloqueia nem derruba a resposta. */
@@ -136,7 +189,7 @@ Deno.serve(async (req: Request) => {
   // Garante a linha de payout_recipient (nasce em draft).
   let { data: recipient } = await admin
     .from("payout_recipient")
-    .select("id, external_recipient_id, status, provider, transfer_enabled, transfer_interval, transfer_day, anticipation_enabled, anticipation_type, anticipation_volume_percentage, anticipation_delay, anticipation_days")
+    .select("id, external_recipient_id, status, provider, kyc_url, kyc_url_expires_at, transfer_enabled, transfer_interval, transfer_day, anticipation_enabled, anticipation_type, anticipation_volume_percentage, anticipation_delay, anticipation_days")
     .eq("company_id", input.company_id)
     .eq("provider", input.provider)
     .is("deleted_at", null)
@@ -146,7 +199,7 @@ Deno.serve(async (req: Request) => {
     const { data: created, error: createErr } = await admin
       .from("payout_recipient")
       .insert({ company_id: input.company_id, provider: input.provider, status: "draft" })
-      .select("id, external_recipient_id, status, provider, transfer_enabled, transfer_interval, transfer_day, anticipation_enabled, anticipation_type, anticipation_volume_percentage, anticipation_delay, anticipation_days")
+      .select("id, external_recipient_id, status, provider, kyc_url, kyc_url_expires_at, transfer_enabled, transfer_interval, transfer_day, anticipation_enabled, anticipation_type, anticipation_volume_percentage, anticipation_delay, anticipation_days")
       .single();
     if (createErr) return jsonResponse({ error: createErr.message }, 500);
     recipient = created;
@@ -161,17 +214,18 @@ Deno.serve(async (req: Request) => {
   }
 
   // ── REFRESH ───────────────────────────────────────────────────────────────
+  // Só lê o status. Não emite link: emitir invalida o anterior e reinicia os 20 minutos, e quem
+  // aperta "Sincronizar" quer saber como está a ficha, não derrubar o link que o parceiro abriu.
   if (input.action === "refresh") {
     if (!recipient.external_recipient_id) {
       return jsonResponse({ error: "Recebedor ainda não foi criado no gateway." }, 400);
     }
-    const result = await gateway.getRecipient(recipient.external_recipient_id);
+    const result = await gateway.getRecipient(recipient.external_recipient_id, { kycLink: false });
     await admin
       .from("payout_recipient")
       .update({
         status: result.status,
         last_provider_status: result.rawStatus,
-        kyc_url: result.kycUrl,
         requirements: result.requirements,
       })
       .eq("id", recipient.id);
@@ -188,7 +242,85 @@ Deno.serve(async (req: Request) => {
       ok: true,
       status: result.status,
       external_recipient_id: result.externalId,
+      kyc_url: recipient.kyc_url ?? null,
+      kyc_url_expires_at: recipient.kyc_url_expires_at ?? null,
+      requirements: result.requirements,
+    });
+  }
+
+  // ── REEMITIR LINK DE PROVA DE VIDA ────────────────────────────────────────
+  if (input.action === "reissue_kyc") {
+    if (!recipient.external_recipient_id) {
+      return jsonResponse({ error: "Recebedor ainda não foi criado no gateway." }, 400);
+    }
+
+    const { data: lastIssue } = await admin
+      .from("payout_recipient_event")
+      .select("created_at")
+      .eq("payout_recipient_id", recipient.id)
+      .eq("kind", "kyc_link")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const decision = shouldReissueKycLink({
+      expiresAt: recipient.kyc_url_expires_at,
+      lastIssuedAt: (lastIssue as { created_at: string } | null)?.created_at ?? null,
+      now: new Date(),
+    });
+
+    if (decision === "serve_existing") {
+      return jsonResponse({
+        ok: true,
+        reused: true,
+        status: recipient.status,
+        external_recipient_id: recipient.external_recipient_id,
+        kyc_url: recipient.kyc_url,
+        kyc_url_expires_at: recipient.kyc_url_expires_at,
+        requirements: [],
+      });
+    }
+    if (decision === "cooldown") {
+      return jsonResponse({ error: "Aguarde um minuto para gerar outro link." }, 429);
+    }
+
+    const result = await gateway.getRecipient(recipient.external_recipient_id, { kycLink: true });
+    if (!result.kycUrl) {
+      return jsonResponse(
+        { error: "O gateway não liberou um link agora. Tente de novo em alguns minutos." },
+        502,
+      );
+    }
+
+    await admin
+      .from("payout_recipient")
+      .update({
+        status: result.status,
+        last_provider_status: result.rawStatus,
+        kyc_url: result.kycUrl,
+        kyc_url_expires_at: result.kycExpiresAt,
+        kyc_link_email_sent_at: null,
+        requirements: result.requirements,
+      })
+      .eq("id", recipient.id);
+
+    runBg(
+      admin.from("payout_recipient_event").insert({
+        payout_recipient_id: recipient.id,
+        kind: "kyc_link",
+        http_status: result.httpStatus,
+        request: null,
+        response: result.raw,
+      }),
+    );
+    runBg(notifyKycLink(admin, recipient.id, input.company_id, contactEmail));
+
+    return jsonResponse({
+      ok: true,
+      status: result.status,
+      external_recipient_id: result.externalId,
       kyc_url: result.kycUrl,
+      kyc_url_expires_at: result.kycExpiresAt,
       requirements: result.requirements,
     });
   }
@@ -267,9 +399,13 @@ Deno.serve(async (req: Request) => {
       status: result.status,
       last_provider_status: result.rawStatus,
       kyc_url: result.kycUrl,
+      kyc_url_expires_at: result.kycExpiresAt,
+      kyc_link_email_sent_at: null,
       requirements: result.requirements,
     })
     .eq("id", recipient.id);
+
+  if (result.kycUrl) runBg(notifyKycLink(admin, recipient.id, input.company_id, contactEmail));
 
   runBg(
     admin.from("payout_recipient_event").insert({
@@ -287,6 +423,7 @@ Deno.serve(async (req: Request) => {
     status: result.status,
     external_recipient_id: result.externalId,
     kyc_url: result.kycUrl,
+    kyc_url_expires_at: result.kycExpiresAt,
     requirements: result.requirements,
   });
 });

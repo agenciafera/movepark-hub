@@ -12,6 +12,7 @@ import {
   normalizeRequirements,
   pagarmeAuthHeader,
   pagarmeBaseUrl,
+  parseKycExpiresAt,
   recipientCanNeedKyc,
 } from "./pagarme.ts";
 import type { CardChargeInput, PixChargeInput, RecipientInput } from "./types.ts";
@@ -365,4 +366,44 @@ Deno.test("chargeStatusToPaymentStatus: authorized passa direto; canceled vira c
   assertEquals(chargeStatusToPaymentStatus("authorized"), "authorized");
   assertEquals(chargeStatusToPaymentStatus("paid"), "paid");
   assertEquals(chargeStatusToPaymentStatus("canceled"), "cancelled");
+});
+
+Deno.test("parseKycExpiresAt: lê o expires_at real do gateway", () => {
+  // Corpo capturado em produção em 30/07/2026 (a doc promete `expiration_date`, vem `expires_at`).
+  assertEquals(
+    parseKycExpiresAt({ url: "https://x", expires_at: "2026-07-30T20:46:41Z" }),
+    "2026-07-30T20:46:41.000Z",
+  );
+});
+
+Deno.test("parseKycExpiresAt: aceita o expiration_date da documentação", () => {
+  assertEquals(
+    parseKycExpiresAt({ expiration_date: "2024-02-10T20:35:46.046Z" }),
+    "2024-02-10T20:35:46.046Z",
+  );
+});
+
+Deno.test("parseKycExpiresAt: string sem fuso é lida como UTC", () => {
+  // Se caísse no Date.parse cru, o valor viraria hora local e o contador de 20 min erraria em horas.
+  assertEquals(parseKycExpiresAt({ expires_at: "2026-07-30T20:46:41" }), "2026-07-30T20:46:41.000Z");
+});
+
+Deno.test("parseKycExpiresAt: offset explícito é preservado como instante", () => {
+  assertEquals(
+    parseKycExpiresAt({ expires_at: "2026-07-30T17:46:41-03:00" }),
+    "2026-07-30T20:46:41.000Z",
+  );
+});
+
+Deno.test("parseKycExpiresAt: ausente, vazio ou inválido vira null", () => {
+  assertEquals(parseKycExpiresAt({ url: "https://x" }), null);
+  assertEquals(parseKycExpiresAt({ expires_at: "   " }), null);
+  assertEquals(parseKycExpiresAt({ expires_at: "nao é data" }), null);
+  assertEquals(parseKycExpiresAt(null), null);
+  assertEquals(parseKycExpiresAt("string solta"), null);
+});
+
+Deno.test("buildRecipientResult: nasce sem validade (quem preenche é o kyc_link)", () => {
+  const r = buildRecipientResult(200, { id: "re_1", status: "affiliation" });
+  assertEquals(r.kycExpiresAt, null);
 });

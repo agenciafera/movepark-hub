@@ -104,6 +104,24 @@ export function normalizeRequirements(body: unknown): RecipientRequirement[] {
   return out;
 }
 
+/**
+ * Normaliza a validade do link de prova de vida para ISO com offset.
+ *
+ * A doc do Pagar.me diz que o campo é `expiration_date`; o que chega de verdade é `expires_at`
+ * (medido em produção em 30/07/2026), então aceita os dois. String sem fuso é tratada como UTC:
+ * sem isso o `Date.parse` assumiria o fuso de quem roda e o contador de 20 minutos erraria em horas.
+ */
+export function parseKycExpiresAt(body: unknown): string | null {
+  if (!body || typeof body !== "object") return null;
+  const b = body as Record<string, unknown>;
+  const raw = b.expires_at ?? b.expiration_date;
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  const s = raw.trim();
+  const hasZone = /(?:[zZ]|[+-]\d{2}:?\d{2})$/.test(s);
+  const ms = Date.parse(hasZone ? s : `${s}Z`);
+  return Number.isNaN(ms) ? null : new Date(ms).toISOString();
+}
+
 /** Extrai o link de verificação/KYC da resposta, se presente. */
 export function extractKycUrl(body: unknown): string | null {
   if (!body || typeof body !== "object") return null;
@@ -253,6 +271,7 @@ export function buildRecipientResult(httpStatus: number, body: unknown): Recipie
     status,
     rawStatus,
     kycUrl,
+    kycExpiresAt: null,
     requirements,
     raw: body,
     httpStatus,
@@ -460,7 +479,7 @@ export class PagarmeGateway implements PaymentGateway {
    */
   private async fetchKycLink(
     externalId: string,
-  ): Promise<{ url: string | null; httpStatus: number; body: unknown }> {
+  ): Promise<{ url: string | null; expiresAt: string | null; httpStatus: number; body: unknown }> {
     const res = await fetch(
       `${pagarmeBaseUrl(this.secretKey)}/recipients/${externalId}/kyc_link`,
       {
@@ -482,11 +501,11 @@ export class PagarmeGateway implements PaymentGateway {
       // 404 = prova de vida não aplicável; 400 = sem id. Loga porque um link que não vem
       // deixa o parceiro travado sem sinal nenhum na UI.
       console.error("[pagarme] kyc_link falhou", res.status, raw.slice(0, 500));
-      return { url: null, httpStatus: res.status, body };
+      return { url: null, expiresAt: null, httpStatus: res.status, body };
     }
     const url = (body as { url?: string } | null)?.url ?? null;
     if (!url) console.error("[pagarme] kyc_link sem url", res.status, raw.slice(0, 500));
-    return { url, httpStatus: res.status, body };
+    return { url, expiresAt: parseKycExpiresAt(body), httpStatus: res.status, body };
   }
 
   /**
@@ -502,7 +521,13 @@ export class PagarmeGateway implements PaymentGateway {
         ? { ...(result.raw as Record<string, unknown>), kyc_link_attempt: attempt }
         : result.raw;
     if (!attempt.url) return { ...result, raw };
-    return { ...result, raw, kycUrl: attempt.url, status: "action_required" };
+    return {
+      ...result,
+      raw,
+      kycUrl: attempt.url,
+      kycExpiresAt: attempt.expiresAt,
+      status: "action_required",
+    };
   }
 
   async createRecipient(input: RecipientInput): Promise<RecipientResult> {
@@ -510,8 +535,14 @@ export class PagarmeGateway implements PaymentGateway {
     return this.withKycLink(result);
   }
 
-  async getRecipient(externalId: string): Promise<RecipientResult> {
+  async getRecipient(
+    externalId: string,
+    opts?: { kycLink?: boolean },
+  ): Promise<RecipientResult> {
     const result = await this.request("GET", `/recipients/${externalId}`);
+    // Emitir link tem efeito colateral no gateway (invalida o anterior), então quem só quer ler
+    // o status passa `kycLink: false`.
+    if (opts?.kycLink === false) return result;
     return this.withKycLink(result);
   }
 

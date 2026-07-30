@@ -5,6 +5,8 @@ import {
   maskTail,
   parseSyncInput,
   redactRecipientBody,
+  shouldReissueKycLink,
+  hasLiveKycLink,
   type PayoutAccountRow,
 } from "./logic.ts";
 
@@ -92,4 +94,73 @@ Deno.test("redactRecipientBody mascara documento e número de conta", () => {
   assertEquals(out.register_information.document, "**********0199");
   assertEquals(out.default_bank_account.account_number, "*7890");
   assertEquals(out.default_bank_account.bank, "341"); // não sensível, intacto
+});
+
+Deno.test("parseSyncInput aceita reissue_kyc", () => {
+  const { input, error } = parseSyncInput({ company_id: "c1", action: "reissue_kyc" });
+  assertEquals(error, undefined);
+  assertEquals(input?.action, "reissue_kyc");
+});
+
+Deno.test("parseSyncInput recusa action desconhecida", () => {
+  const { error } = parseSyncInput({ company_id: "c1", action: "explode" });
+  assertEquals(typeof error, "string");
+});
+
+const NOW = new Date("2026-07-30T20:30:00Z");
+
+Deno.test("shouldReissueKycLink: link vivo é reaproveitado", () => {
+  // Emitir outro invalidaria o que o parceiro talvez já tenha aberto no celular.
+  assertEquals(
+    shouldReissueKycLink({
+      expiresAt: "2026-07-30T20:46:41Z",
+      lastIssuedAt: "2026-07-30T20:26:41Z",
+      now: NOW,
+    }),
+    "serve_existing",
+  );
+});
+
+Deno.test("shouldReissueKycLink: expirado mas emitido agora há pouco segura", () => {
+  assertEquals(
+    shouldReissueKycLink({
+      expiresAt: "2026-07-30T20:29:00Z",
+      lastIssuedAt: "2026-07-30T20:29:30Z",
+      now: NOW,
+    }),
+    "cooldown",
+  );
+});
+
+Deno.test("shouldReissueKycLink: expirado e fora do cooldown reemite", () => {
+  assertEquals(
+    shouldReissueKycLink({
+      expiresAt: "2026-07-30T20:10:00Z",
+      lastIssuedAt: "2026-07-30T19:50:00Z",
+      now: NOW,
+    }),
+    "reissue",
+  );
+});
+
+Deno.test("shouldReissueKycLink: sem link nenhum reemite", () => {
+  assertEquals(
+    shouldReissueKycLink({ expiresAt: null, lastIssuedAt: null, now: NOW }),
+    "reissue",
+  );
+});
+
+Deno.test("shouldReissueKycLink: validade ilegível não trava o parceiro", () => {
+  assertEquals(
+    shouldReissueKycLink({ expiresAt: "qualquer coisa", lastIssuedAt: null, now: NOW }),
+    "reissue",
+  );
+});
+
+Deno.test("hasLiveKycLink: exige url E validade no futuro", () => {
+  assertEquals(hasLiveKycLink("https://x", "2026-07-30T20:46:41Z", NOW), true);
+  assertEquals(hasLiveKycLink("https://x", "2026-07-30T20:10:00Z", NOW), false);
+  assertEquals(hasLiveKycLink(null, "2026-07-30T20:46:41Z", NOW), false);
+  assertEquals(hasLiveKycLink("   ", "2026-07-30T20:46:41Z", NOW), false);
+  assertEquals(hasLiveKycLink("https://x", null, NOW), false);
 });

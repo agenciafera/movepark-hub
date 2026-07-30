@@ -74,18 +74,20 @@ export class MockGateway implements PaymentGateway {
       status: "active",
       rawStatus: "active",
       kycUrl: null,
+      kycExpiresAt: null,
       requirements: [],
       raw: { mock: true },
       httpStatus: 200,
     });
   }
 
-  getRecipient(externalId: string): Promise<RecipientResult> {
+  getRecipient(externalId: string, _opts?: { kycLink?: boolean }): Promise<RecipientResult> {
     return Promise.resolve({
       externalId,
       status: "active",
       rawStatus: "active",
       kycUrl: null,
+      kycExpiresAt: null,
       requirements: [],
       raw: { mock: true },
       httpStatus: 200,

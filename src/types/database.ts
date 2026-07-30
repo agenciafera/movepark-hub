@@ -2617,7 +2617,9 @@ export type Database = {
           deleted_at: string | null
           external_recipient_id: string | null
           id: string
+          kyc_link_email_sent_at: string | null
           kyc_url: string | null
+          kyc_url_expires_at: string | null
           last_provider_status: string | null
           provider: string
           requirements: Json
@@ -2638,7 +2640,9 @@ export type Database = {
           deleted_at?: string | null
           external_recipient_id?: string | null
           id?: string
+          kyc_link_email_sent_at?: string | null
           kyc_url?: string | null
+          kyc_url_expires_at?: string | null
           last_provider_status?: string | null
           provider?: string
           requirements?: Json
@@ -2659,7 +2663,9 @@ export type Database = {
           deleted_at?: string | null
           external_recipient_id?: string | null
           id?: string
+          kyc_link_email_sent_at?: string | null
           kyc_url?: string | null
+          kyc_url_expires_at?: string | null
           last_provider_status?: string | null
           provider?: string
           requirements?: Json

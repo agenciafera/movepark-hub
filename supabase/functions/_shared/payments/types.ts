@@ -115,6 +115,11 @@ export interface RecipientResult {
   rawStatus: string | null;
   /** Link de verificação/KYC fornecido pelo gateway, quando houver. */
   kycUrl: string | null;
+  /**
+   * Validade do `kycUrl`, em ISO com offset. No Pagar.me o link vive 20 minutos, então guardar
+   * isso é o que permite contar o tempo na tela e decidir quando vale reemitir.
+   */
+  kycExpiresAt: string | null;
   requirements: RecipientRequirement[];
   /** Resposta crua (já redigida de segredos) para o log. */
   raw: unknown;
@@ -221,7 +226,12 @@ export interface PaymentGateway {
   /** Cria/registra o recebedor no gateway a partir dos dados agnósticos. */
   createRecipient(input: RecipientInput): Promise<RecipientResult>;
   /** Relê o estado atual do recebedor no gateway. */
-  getRecipient(externalId: string): Promise<RecipientResult>;
+  /**
+   * Lê o recebedor no gateway. `opts.kycLink: false` pula a emissão do link de prova de vida.
+   * Emitir link tem efeito colateral: cada chamada cria um link novo e invalida o anterior, o que
+   * zeraria o contador do parceiro a cada poll do cron.
+   */
+  getRecipient(externalId: string, opts?: { kycLink?: boolean }): Promise<RecipientResult>;
   /** Cria uma cobrança PIX com split. */
   createPixCharge(input: PixChargeInput): Promise<ChargeResult>;
   /** Cria uma cobrança com cartão de crédito (parcelado) + split. */
