@@ -1,0 +1,6 @@
+{
+  "scenario_id": "tmp-guard",
+  "start_url": "/",
+  "task": "Na home, verifique que um heading de nivel 2 esta visivel.",
+  "hints": ["A verificacao final deve ser a visibilidade do seletor h2."]
+}

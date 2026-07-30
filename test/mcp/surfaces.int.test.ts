@@ -96,6 +96,39 @@ describe("MCP consumidor · gates de sessão e de escopo", () => {
     );
   });
 
+  // Grupo J5 · enumeração. Se a busca da reserva rodasse ANTES do gate de sessão, a mensagem de erro
+  // diria se o código existe ("não encontrada" contra "faça login"), e isso é um oráculo: dá para
+  // varrer códigos até achar os válidos. A asserção é que a resposta é idêntica para qualquer
+  // formato de código, o que só acontece se a sessão for exigida primeiro.
+  // Conferido à mão em 29/07 com um código real (MP-C16868): mesma mensagem de um inventado.
+  //
+  // Duas coisas ficaram de fora de propósito, observadas ao escrever o teste em 29/07:
+  // `""` cai antes, em "parâmetro obrigatório ausente" (validação de forma, não de existência), e um
+  // payload de injeção tipo `' or 1=1 --` é barrado pelo WAF do Cloudflare com 403 HTML, sem chegar à
+  // função. Os dois são comportamentos corretos, mas de outra camada: misturá-los aqui mediria a
+  // borda, não a ordem dos gates.
+  it("J5 · não existe oráculo de código de reserva antes da autenticação", async () => {
+    const codigos = ["MP-000000", "MP-ZZZZZZ", "MP-1", "mp-c16868", "AAAAAA"];
+    const mensagens = await Promise.all(
+      codigos.map(async (booking_code) => {
+        const r = await rpc("/customer", "tools/call", {
+          name: "get_booking",
+          arguments: { booking_code },
+        });
+        return errorMessage(r);
+      }),
+    );
+    // Esta linha é o que impede o teste de ser vacuoso. Se a busca passasse a rodar antes do gate,
+    // códigos inexistentes responderiam "reserva não encontrada": continuariam IDÊNTICOS entre si (o
+    // laço abaixo passaria), mas deixariam de casar com /login/. Por isso as duas asserções.
+    expect(mensagens[0]).toMatch(/login|sess(ã|a)o/i);
+    for (const m of mensagens) {
+      expect(m, `mensagem diferente vaza existência de código: ${JSON.stringify(mensagens)}`).toBe(
+        mensagens[0],
+      );
+    }
+  });
+
   it("oferece as tools de login e as de leitura (o registro é compartilhado)", async () => {
     const [pub, cust] = await Promise.all([toolNames(""), toolNames("/customer")]);
     for (const t of pub) {

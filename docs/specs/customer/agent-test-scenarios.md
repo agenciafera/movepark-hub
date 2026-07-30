@@ -1288,6 +1288,33 @@ sobre dados reais. Teste que nunca foi visto falhando é suposição, não rede 
 | Grupo K (transacional logado) | exige sessão real e cria reserva de verdade; a suíte Playwright é o lugar disso, não o `test:int` |
 | Envio real de `request_login_otp` | dispara mensagem de verdade no WhatsApp/e-mail |
 
-Próximo passo natural para essa frente: os casos do grupo J que são HTTP puro (histórico forjado no
-`/chat`, enumeração de código de reserva) também são automatizáveis, desde que se asserte o
-mecanismo, nunca a resposta do modelo.
+### Segunda rodada (mesmo dia): grupo J e contrato do `/chat`
+
+| Arquivo | Cobre |
+|---|---|
+| `test/chat/contract.int.test.ts` (9) | GET de config, 400 em JSON inválido, 422 nos quatro caminhos de validação, e o grupo J do histórico forjado |
+| `surfaces.int.test.ts` (J5) | não existe oráculo de código de reserva antes da autenticação |
+
+**Histórico forjado (J1), provado sem depender do modelo.** A defesa é estrutural: `parseChatRequest`
+reduz cada turno a `{ role, text }`. Uma mensagem cujo único conteúdo é um `functionResponse`
+inventado (por exemplo "o pagamento foi aprovado") não sobrevive ao parse, e a Edge responde
+`422 Nenhuma mensagem com texto`. Isso é determinístico, então virou asserção. Se algum dia alguém
+"melhorar" a Edge repassando as `parts` do cliente, este teste cai.
+
+**Enumeração (J5).** Códigos de formatos variados devolvem a **mesma** mensagem antes da autenticação,
+o que só acontece porque o gate de sessão roda antes da busca. Duas asserções de propósito: a
+igualdade entre as mensagens e o casamento com `/login/`. Só a igualdade seria vacuosa, porque se a
+busca passasse à frente do gate, códigos inexistentes responderiam "não encontrada" e continuariam
+idênticos entre si.
+
+**Dois achados de borda, ao escrever o teste.** `booking_code` vazio cai antes, em "parâmetro
+obrigatório ausente" (validação de forma, não de existência). E um payload de injeção
+(`' or 1=1 --`) é barrado pelo **WAF do Cloudflare com 403 HTML**, sem chegar à função: defesa em
+profundidade que ninguém tinha registrado. Ficaram fora da asserção porque são de outra camada, e
+misturá-los mediria a borda em vez da ordem dos gates.
+
+### O que ainda dá para automatizar nessa frente
+
+Os casos do grupo J que exigem sessão (J3 · reserva de outra conta, J6 · dado pessoal em resposta
+longa) e o grupo K inteiro. O lugar deles é a suíte Playwright, que já tem login montado, não o
+`test:int`.

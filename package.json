@@ -109,7 +109,7 @@
     "typescript": "^5.9.3",
     "vite": "^6.4.3",
     "vitest": "^3.2.6",
-    "windupjs": "1.5.0",
+    "windupjs": "1.6.0",
     "wrangler": "^4.105.0"
   }
 }

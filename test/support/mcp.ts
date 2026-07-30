@@ -16,6 +16,29 @@ export const API_BASE = process.env.API_BASE_URL ?? "https://api.movepark.co";
 /** Origem canônica do site, onde moram openapi.yaml e os cards de descoberta. */
 export const HUB_BASE = process.env.HUB_BASE_URL ?? "https://hub.movepark.co";
 
+/**
+ * Edge do assistente do site. É pública por design (`verify_jwt=false`, a bolinha chama anônima),
+ * então estas asserções não precisam de credencial.
+ */
+export const CHAT_BASE = process.env.CHAT_BASE_URL ??
+  "https://mgaigbezdalbyuqiofcf.supabase.co/functions/v1/chat";
+
+/** POST no /chat com corpo cru (string), para poder mandar JSON inválido de propósito. */
+export async function postChatRaw(body: string): Promise<{ status: number; json: unknown }> {
+  const res = await fetch(CHAT_BASE, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body,
+  });
+  const json = await res.json().catch(() => null);
+  return { status: res.status, json };
+}
+
+/** POST no /chat com um objeto. */
+export function postChat(body: unknown) {
+  return postChatRaw(JSON.stringify(body));
+}
+
 /** Códigos de erro JSON-RPC que o gateway usa (ver supabase/functions/mcp/index.ts). */
 export const JSONRPC = {
   INVALID_REQUEST: -32600,
