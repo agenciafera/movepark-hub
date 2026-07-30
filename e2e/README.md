@@ -25,12 +25,13 @@ Camada de **smoke de leitura**, adicional ao Playwright e sem sobreposição com
 ele. Prova que as páginas públicas renderizam o próprio conteúdo, e nada além
 disso. Nenhum cenário escreve, clica ou faz login.
 
-Quatro cenários, todos verdes em replay: **0 chamadas de LLM, $0, 3,1 segundos
-o conjunto inteiro.**
+Cinco cenários, todos verdes em replay: **0 chamadas de LLM, $0, 4 segundos o
+conjunto inteiro.**
 
 | Cenário | Rota | O que assere |
 |---|---|---|
 | `home-vitrine` | `/` | "Estacionamentos Populares" |
+| `como-funciona` | `/como-funciona` | "Reserve sua vaga em menos de 2 minutos." |
 | `destinos-catalogo` | `/destinos` | "Destinos atendidos pela Movepark" |
 | `faq-publica` | `/faq` | "Perguntas frequentes" |
 | `seja-parceiro` | `/seja-parceiro` | "Encha suas vagas com reservas online" |
@@ -73,19 +74,39 @@ bunx windup explain <id>                                      # sinaliza plano f
 cat .windup/cache/trajetorias/<id>.json | jq '.plan.actions'   # os seletores crus
 ```
 
-### Aresta conhecida: o planner trunca
+### Aresta conhecida: planejar é caro e sai na sorte
 
-Duas páginas ficaram de fora porque o planner não consegue montar plano para
-elas: `/como-funciona` e `/cancelamento`. Falham com `degenerate/truncated
-response at the token limit`, sempre em 6 chamadas e $0,128 por tentativa.
+Em algumas páginas o planner entra em **loop**: repete ação atrás de ação até
+estourar o teto de 8192 tokens de saída, e o JSON chega cortado. O erro aparece
+como `degenerate/truncated response at the token limit`.
 
-Não é tamanho de página nem de task: `/como-funciona` tem 255 elementos e falha,
-enquanto `/seja-parceiro` tem 450 e passa. Encurtar a task para um único literal
-não mudou nada. É determinístico por página.
+Dá para ver acontecendo com `LOG_LEVEL=debug`:
 
-Planejar os quatro que ficaram custou $0,38 no total, contra os ~$0,0025 por
-cenário anunciados. **Planejar é caro e instável; replay é grátis e sólido.**
-Por isso `.windup/cache` é versionado: quem clonar o repo não paga nada.
+```
+[planner] attempt 1.1: truncated=true out_tokens=8176 len=24507
+  tail="…\"value_ref\": \"Reserve sua vaga em"
+[planner] attempt 1.2: truncated=true out_tokens=8176 len=24005
+  tail="…{ \"id\": \"a82\", \"type\": \"wait_for\", …"
+```
+
+O `"id": "a82"` entrega o problema: é a **ação número 82**, num schema que
+limita a 30. Um plano bom tem 3 ações e ~440 tokens. O teto de 8192 é trava de
+custo funcionando; o defeito está antes dele.
+
+Não é tamanho de página nem de task. A `/como-funciona` tem 255 elementos e
+sofre; a `/seja-parceiro` tem 450 e passa de primeira. Encurtar a task para um
+literal só não mudou nada. Trocar para `gemini-3.1-pro-preview` também não.
+
+**É sorte, não impossibilidade.** A `/como-funciona` só entrou depois de várias
+tentativas, quando uma delas não degenerou. A `/cancelamento` ficou de fora:
+3 tentativas, 18 chamadas, $0,38, nenhum plano.
+
+Custo total para deixar estes cinco no ar: **cerca de $0,90**, contra os
+~$0,0025 por cenário anunciados. Por isso `.windup/cache` é versionado: o preço
+é pago uma vez, por quem escreve. Quem clona o repo roda de graça.
+
+Consequência prática: **cresça essa camada em lotes pequenos**, e não conte com
+planejar um cenário novo no meio de uma tarefa com pressa.
 
 ### Estado em 29/07/2026 (Windup 1.6.0): funcionando
 

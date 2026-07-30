@@ -1,0 +1,60 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "como-funciona",
+    "start_url": "/como-funciona",
+    "start_sig": "sig:eb1cb13a1fa9ce8c",
+    "scenario_sig": "491f97c04343db69"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "como-funciona",
+    "start_url": "http://localhost:56040/como-funciona",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "goto",
+        "url": "http://localhost:56040/como-funciona"
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "The main body content of the page."
+        },
+        "timeout_ms": 5000,
+        "use": "Wait for the page to load and check for the specific text."
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "The main body content of the page."
+        },
+        "timeout_ms": 1000,
+        "use": "Verify that the text is present on the page.",
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Reserve sua vaga em menos de 2 minutos."
+          }
+        }
+      }
+    ],
+    "task": "Verifique que a página exibe o texto 'Reserve sua vaga em menos de 2 minutos.'.",
+    "generated_by": {
+      "model": "google/gemini-3.1-flash-lite",
+      "at": "2026-07-30T13:40:58.532Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-07-30T13:40:58.963Z",
+    "last_replayed_at": "2026-07-30T13:45:56.331Z",
+    "replay_count": 3,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

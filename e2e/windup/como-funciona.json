@@ -1,0 +1,9 @@
+{
+  "scenario_id": "como-funciona",
+  "start_url": "/como-funciona",
+  "task": "Verifique que a página exibe o texto 'Reserve sua vaga em menos de 2 minutos.'.",
+  "tags": [
+    "smoke",
+    "leitura"
+  ]
+}
