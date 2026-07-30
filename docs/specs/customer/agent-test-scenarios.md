@@ -294,6 +294,11 @@ hi, do you have parking at GRU next week?
 
 ## 9. MCP direto (curl)
 
+> **F1 a F5 agora são automatizados.** Viraram `test/mcp/surfaces.int.test.ts`, que roda em
+> `bun run test:int` e no CI (job `live-integration`). O curl abaixo continua útil para investigar à
+> mão, mas **não precisa mais ser repetido a cada dúvida**: o teste cobre o mesmo e ainda vigia o que
+> o olho não vê (nenhuma tool transacional vazando para o anônimo). Ver §25.
+
 Para checar as superfícies sem passar pelo assistente. Ver [mcp.md](../mcp.md).
 
 ### F1 · Consumidor público lista as tools
@@ -1222,3 +1227,60 @@ vivo em produção e é idempotente, não só que foi deployado um dia.
   `idempotent_replay`. A correção foi dar uma data por caso (offset `startInDays`). Vale como aviso
   para quem rodar os roteiros à mão: **repetir o mesmo caso nas mesmas datas devolve a mesma reserva,
   e isso é o produto certo, não um bug do teste.**
+
+---
+
+## 25. Automação: o que saiu da mão (29/07/2026)
+
+Rodei ~30 cenários à mão em duas sessões e sobravam ~50. Cada deploy invalidava os anteriores, e a
+suíte Playwright, que já tem 35 specs, não tocava assistente, MCP nem Public API. Manter isso manual
+era pagar o mesmo custo para sempre.
+
+A parte que é **requisição e asserção, sem browser**, virou teste. Roda em `bun run test:int` e no CI
+pelo job `live-integration` (não bloqueante de propósito, ver o comentário no `ci.yml`).
+
+| Arquivo | Cobre | Substitui |
+|---|---|---|
+| `test/mcp/surfaces.int.test.ts` (13) | handshake, códigos JSON-RPC, as 3 superfícies, gates de sessão e de escopo | F1 a F5 |
+| `test/mcp/knowledge.int.test.ts` (6) | recuperação semântica, ordenação, teto de k, isolamento de escopo | parte da verificação de RAG feita à mão |
+| `test/api/public-api.int.test.ts` (6) | 401 sem chave e com chave inválida, openapi e cards no ar, sha256 coerente | conferência manual de descoberta |
+| `test/support/mcp.ts` | helper de JSON-RPC e as bases (sobrescrevíveis por env) | o `curl` repetido |
+
+### O que esses testes pegam que o curl manual não pegava
+
+- **Tool de escrita vazando para o anônimo.** A lista `TRANSACTIONAL_NAMES` é verificada contra a
+  superfície pública a cada rodada. Ninguém confere isso de olho.
+- **Escopo do RAG.** Sem unidade, toda resposta tem que ser `global`. Hoje existem 30 chunks de
+  `destination` e 2 de `location` no banco: se o filtro quebrar, eles aparecem, e o teste grita.
+- **Esconder não é barrar.** O `create_checkout_link` é testado nas duas pontas: ausente do
+  `tools/list` **e** inchamável.
+- **Deploy parcial na descoberta.** O `sha256` do card publicado é comparado com o que o
+  `agent-skills/index.json` publicado declara. O drift guard confere o repo; isto confere o que está
+  no ar.
+
+### Duas decisões de projeto que valem manter
+
+**Nada de asserir prosa de LLM.** Todas as afirmações são sobre mecanismo (escopo, código de erro,
+teto de k, trecho recuperado do banco). Um teste que depende do texto que o Gemini escolheu escrever
+pisca, e teste que pisca é pior que teste ausente, porque treina o time a ignorar vermelho.
+
+**Todo guarda tem um guarda.** A proteção "nenhuma transacional no público" usa `not.toContain`: um
+nome digitado errado nunca casaria e o teste passaria vazio. Por isso existe um caso que confirma que
+cada nome vigiado é uma tool real. Mesma ideia no RAG: o teste "só devolve global" ganhou um
+**controle positivo** que prova que escopo `destination` é alcançável quando pedido. Sem ele, a suíte
+ficaria verde num banco sem conteúdo de outro escopo, sem estar provando nada.
+
+Antes de fechar, inverti de propósito a asserção de escopo e confirmei que a suíte fica **vermelha**
+sobre dados reais. Teste que nunca foi visto falhando é suposição, não rede de segurança.
+
+### O que continua manual, e por quê
+
+| O que | Por quê |
+|---|---|
+| Cenários de conversa (Partes I e II, grupos G/H/I/J) | dependem do julgamento do modelo: qual tool ele escolhe, se ele desiste, se inventa. Automatizar asserindo prosa geraria teste instável |
+| Grupo K (transacional logado) | exige sessão real e cria reserva de verdade; a suíte Playwright é o lugar disso, não o `test:int` |
+| Envio real de `request_login_otp` | dispara mensagem de verdade no WhatsApp/e-mail |
+
+Próximo passo natural para essa frente: os casos do grupo J que são HTTP puro (histórico forjado no
+`/chat`, enumeração de código de reserva) também são automatizáveis, desde que se asserte o
+mecanismo, nunca a resposta do modelo.

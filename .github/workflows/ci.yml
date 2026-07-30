@@ -58,9 +58,16 @@ jobs:
           deno-version: v2.x
       - run: deno test --no-check --allow-env --allow-net supabase/functions
 
-  # Não-bloqueante: bate na função simulate_price do banco vivo (read-only).
+  # Não-bloqueante: bate no ambiente vivo (read-only). Cobre o motor de preço (simulate_price) e os
+  # contratos das superfícies publicadas: MCP (as três superfícies, gates de sessão e de escopo),
+  # busca semântica da base de conhecimento e Public API (401 sem chave, cards e openapi no ar com
+  # sha256 coerente). Ver docs/specs/customer/agent-test-scenarios.md §25.
+  #
+  # Por que não bloqueia: depende de rede e do estado deployado. Uma instabilidade de infra ou um
+  # deploy ainda não propagado travaria PRs sem relação com a mudança. O valor aqui é o sinal, não o
+  # portão: se ficar vermelho, alguma superfície pública regrediu.
   # URL + anon key são públicos (anon key já vai embutida no frontend / .env versionado).
-  pricing-integration:
+  live-integration:
     runs-on: ubuntu-latest
     continue-on-error: true
     env:

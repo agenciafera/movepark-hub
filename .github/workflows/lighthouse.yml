@@ -2,7 +2,7 @@ name: Lighthouse
 
 # Mede Performance/SEO/A11y/Best-Practices da home e do /search a cada PR.
 # Não-bloqueante (continue-on-error, asserções em "warn"), no mesmo espírito do job
-# pricing-integration: o número fica visível no PR sem travar o merge por flutuação
+# live-integration: o número fica visível no PR sem travar o merge por flutuação
 # de rede (o /search puxa dados do Supabase vivo no runtime, como em produção).
 on:
   # Trabalho é direto na main (sem feature branches), então medimos no push da main.
@@ -23,7 +23,7 @@ jobs:
     continue-on-error: true
     env:
       # URL + anon key são públicos (a anon key já vai embutida no frontend). Mesma
-      # convenção do job pricing-integration em ci.yml.
+      # convenção do job live-integration em ci.yml.
       VITE_SUPABASE_URL: https://mgaigbezdalbyuqiofcf.supabase.co
       VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nYWlnYmV6ZGFsYnl1cWlvZmNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MTcxOTksImV4cCI6MjA5NTI5MzE5OX0.H7f344gtsOeMF3dyCQTpfBNvjPhQkKXVrhlIDmZ85LE
     steps:
