@@ -54,7 +54,23 @@ Deno.serve(async (req: Request) => {
   for (const rec of recipients ?? []) {
     try {
       const result = await gateway.getRecipient(rec.external_recipient_id!);
-      if (!result.externalId) continue; // resposta inválida do gateway: não mexe
+      if (!result.externalId) {
+        // Resposta inválida do gateway (ex.: 401 de allowlist de IP): não mexe no status,
+        // mas grava o evento. Sem isso a falha some e o recebedor congela sem rastro.
+        console.error(
+          "[refresh-recipients] getRecipient sem id",
+          rec.external_recipient_id,
+          result.httpStatus,
+        );
+        await admin.from("payout_recipient_event").insert({
+          payout_recipient_id: rec.id,
+          kind: "refresh",
+          http_status: result.httpStatus,
+          request: null,
+          response: result.raw,
+        });
+        continue;
+      }
       await admin
         .from("payout_recipient")
         .update({
