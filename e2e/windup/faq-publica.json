@@ -1,0 +1,7 @@
+{
+  "scenario_id": "faq-publica",
+  "start_url": "/faq",
+  "task": "Verifique que a página exibe o texto 'Perguntas frequentes'.",
+  "tags": ["smoke", "leitura"],
+  "hints": ["Leitura pura: não expanda nenhuma pergunta."]
+}

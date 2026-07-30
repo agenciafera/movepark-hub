@@ -21,18 +21,71 @@ O detalhe todo está no [README da suíte](playwright/README.md).
 
 ## windup/
 
-Cenário escrito em português num JSON. O Windup chama o LLM uma vez para montar
-um plano de ações e daí em diante replica esse plano sem modelo nenhum: cerca de
-600ms e custo zero por execução.
+Camada de **smoke de leitura**, adicional ao Playwright e sem sobreposição com
+ele. Prova que as páginas públicas renderizam o próprio conteúdo, e nada além
+disso. Nenhum cenário escreve, clica ou faz login.
+
+Quatro cenários, todos verdes em replay: **0 chamadas de LLM, $0, 3,1 segundos
+o conjunto inteiro.**
+
+| Cenário | Rota | O que assere |
+|---|---|---|
+| `home-vitrine` | `/` | "Estacionamentos Populares" |
+| `destinos-catalogo` | `/destinos` | "Destinos atendidos pela Movepark" |
+| `faq-publica` | `/faq` | "Perguntas frequentes" |
+| `seja-parceiro` | `/seja-parceiro` | "Encha suas vagas com reservas online" |
 
 Config em [`../windup.config.ts`](../windup.config.ts), apontando para o dev
-server local na 5173. Roda sem `.env.e2e`, mas o planejamento de um cenário novo
-precisa da `GEMINI_API_KEY` no `.env.local`.
+server local na 5173. **Precisa do `bun run dev` no ar.** Roda sem `.env.e2e`,
+que é justamente a graça: é o único teste de navegador que roda numa máquina
+limpa. Planejar um cenário novo precisa da `GEMINI_API_KEY` no `.env.local`;
+replay não precisa de chave nenhuma.
+
+### Por que só leitura, e por que não convertemos o Playwright
+
+O formato do Windup tem **cinco tipos de ação**: `goto`, `click`, `fill`,
+`wait_for` e `use`. Isso põe fora de alcance boa parte do que a suíte Playwright
+faz, e não é questão de esforço:
+
+| A suíte usa | Onde | No Windup |
+|---|---|---|
+| arrasto HTML5 nativo | T-04, T-05 (kanban) | não existe ação de arrasto |
+| upload de arquivo | T-07 (foto do wizard) | não existe ação de upload |
+| download | C-14, C-15 (voucher PDF) | não dá para asserir |
+| dois contextos de browser | O-01 (dono + cliente) | não é expressável |
+
+Some a isso que os specs transacionais existem para proteger dinheiro real
+(`guardTx()`, `MP_E2E_TX`, limpeza FK-safe). O Windup tem `setup`/`teardown`
+como comandos de shell, mas nada equivalente a travar project por nome.
+
+### Como escrever um cenário que preste
+
+**Ponha o texto a verificar entre aspas na `task`.** Quando o Windup vê um
+literal entre aspas, ele escreve a postcondição `text_contains` sozinho, sem
+chamada extra de LLM e só depois de confirmar que a página contém o texto. Fora
+desse caminho, o planner tende a devolver seletor genérico, que o guard recusa.
+
+Prefira um texto que prove que o **conteúdo** renderizou, não só o título da
+página, e confira o plano antes de confiar:
 
 ```bash
-bunx windup new "descreva o teste aqui"   # cria o cenário
-bunx windup explain <id>                  # mostra o plano em cache, passo a passo
+bunx windup explain <id>                                      # sinaliza plano fraco
+cat .windup/cache/trajetorias/<id>.json | jq '.plan.actions'   # os seletores crus
 ```
+
+### Aresta conhecida: o planner trunca
+
+Duas páginas ficaram de fora porque o planner não consegue montar plano para
+elas: `/como-funciona` e `/cancelamento`. Falham com `degenerate/truncated
+response at the token limit`, sempre em 6 chamadas e $0,128 por tentativa.
+
+Não é tamanho de página nem de task: `/como-funciona` tem 255 elementos e falha,
+enquanto `/seja-parceiro` tem 450 e passa. Encurtar a task para um único literal
+não mudou nada. É determinístico por página.
+
+Planejar os quatro que ficaram custou $0,38 no total, contra os ~$0,0025 por
+cenário anunciados. **Planejar é caro e instável; replay é grátis e sólido.**
+Por isso `.windup/cache` é versionado: quem clonar o repo não paga nada.
 
 ### Estado em 29/07/2026 (Windup 1.6.0): funcionando
 

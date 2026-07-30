@@ -1,0 +1,62 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "destinos-catalogo",
+    "start_url": "/destinos",
+    "start_sig": "sig:eb1cb13a1fa9ce8c",
+    "scenario_sig": "603358e823c13801"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "destinos-catalogo",
+    "start_url": "http://localhost:56040/destinos",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "Wait for the main heading to load"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "h2",
+          "description": "Wait for the 'Mais buscados' heading to load"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "Final verification of the page content"
+        },
+        "timeout_ms": 5000,
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Destinos atendidos pela Movepark"
+          }
+        }
+      }
+    ],
+    "task": "Verifique que a página exibe o texto 'Destinos atendidos pela Movepark' e o texto 'Mais buscados'.",
+    "generated_by": {
+      "model": "google/gemini-3.1-flash-lite",
+      "at": "2026-07-30T13:22:55.311Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-07-30T13:22:55.685Z",
+    "last_replayed_at": "2026-07-30T13:29:04.038Z",
+    "replay_count": 1,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

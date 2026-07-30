@@ -1,0 +1,7 @@
+{
+  "scenario_id": "destinos-catalogo",
+  "start_url": "/destinos",
+  "task": "Verifique que a página exibe o texto 'Destinos atendidos pela Movepark' e o texto 'Mais buscados'.",
+  "tags": ["smoke", "leitura"],
+  "hints": ["Leitura pura: não clique em nenhum destino, apenas verifique o catálogo."]
+}

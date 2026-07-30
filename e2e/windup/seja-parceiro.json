@@ -1,0 +1,7 @@
+{
+  "scenario_id": "seja-parceiro",
+  "start_url": "/seja-parceiro",
+  "task": "Verifique que a página exibe o texto 'Encha suas vagas com reservas online' e o texto 'Vaga vazia não volta.'.",
+  "tags": ["smoke", "leitura"],
+  "hints": ["Leitura pura: NÃO abra o modal 'Seja parceiro' e NÃO envie lead, isso cria registro no banco."]
+}
