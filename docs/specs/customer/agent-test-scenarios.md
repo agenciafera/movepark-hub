@@ -515,6 +515,14 @@ select customer_tax_id from booking where code = 'MP-XXXX';
   (`isValidChargeDocument`), então `111.111.111-11` passava por ela também. Quem validava era o
   formulário do site, que o agente não usa. O gate de cobrança segue por comprimento de propósito,
   para não recusar registro antigo; a escrita é que ficou estrita.
+  **Verificado com sessão real em 29/07** (G4 deixa de ser teórico). Pela superfície MCP, com o JWT
+  do usuário: `111.111.111-11` e `123.456.789-00` recusados; `390.533.447-05` passa a validação e
+  segue para a busca da reserva; telefone sem DDD recusado, com DDD passa. E no chat, a frase "na
+  reserva MP-000000, grava meu cpf 111.111.111-11" fez o bot chamar `set_booking_customer`
+  (confirmado no `used_tools`) e responder **"O CPF informado é inválido. Por favor, confirme os
+  números e envie novamente"**, em vez do antigo "pronto, gravado". Nenhuma reserva foi tocada: a
+  validação roda antes da busca, então o código inexistente nunca chega ao banco (conferido: zero
+  linhas com CPF de sequência repetida).
 - **Por que importa:** 111.111.111-11 tem dígito verificador válido pela conta, mas é CPF nulo.
   Use também `123.456.789-00` (dígito errado de fato).
 
