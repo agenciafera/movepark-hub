@@ -30,11 +30,3 @@ export function parseChangeDatesPaidInput(
     },
   };
 }
-
-/** Telefone BR → { ddd, number } ou null (mesma regra do create-fare-upgrade). */
-export function parseBrPhone(value: string | null | undefined): { ddd: string; number: string } | null {
-  let digits = (value ?? "").replace(/\D/g, "");
-  if (digits.startsWith("55") && digits.length > 11) digits = digits.slice(2);
-  if (digits.length < 10) return null;
-  return { ddd: digits.slice(0, 2), number: digits.slice(2, 13) };
-}

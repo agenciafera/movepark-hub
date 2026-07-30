@@ -1,8 +1,8 @@
 import { assertEquals } from "jsr:@std/assert";
+// `parseBrPhone` mora em _shared/payments/contact.ts e é testada lá.
 import {
   checkBookingUpgradable,
   checkUpgradeDelta,
-  parseBrPhone,
   parseUpgradeInput,
   reaisToCents,
 } from "./logic.ts";
@@ -20,10 +20,8 @@ Deno.test("parseUpgradeInput: aceita níveis válidos e normaliza", () => {
   });
 });
 
-Deno.test("reaisToCents / parseBrPhone", () => {
+Deno.test("reaisToCents", () => {
   assertEquals(reaisToCents(12.9), 1290);
-  assertEquals(parseBrPhone("(19) 98801-3420"), { ddd: "19", number: "988013420" });
-  assertEquals(parseBrPhone("123"), null);
 });
 
 // ── C-17 · Upgrade: downgrade e prazo bloqueados ────────────────────────────

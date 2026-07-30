@@ -60,7 +60,14 @@ export function buildComponents(
   return components;
 }
 
-/** Telefone BR → E.164 só com dígitos (Meta espera 55DDDNUMERO). null se inválido. */
+/**
+ * Telefone BR → E.164 só com dígitos (Meta espera 55DDDNUMERO). null se inválido.
+ *
+ * Parece com `parseBrPhone` (`_shared/payments/contact.ts`), mas é o inverso e NÃO deve ser
+ * unificada: aqui o destino é a Cloud API da Meta, que quer uma string única com o DDI, então o 55 é
+ * ACRESCENTADO quando falta e o mínimo é 12 dígitos. Lá o destino é o Pagar.me, que quer ddd e
+ * número em campos separados e sem DDI, então o 55 é REMOVIDO.
+ */
 export function toWhatsAppNumber(phone: string | null | undefined): string | null {
   let digits = (phone ?? "").replace(/\D/g, "");
   if (!digits) return null;

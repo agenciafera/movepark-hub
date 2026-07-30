@@ -17,8 +17,9 @@ import {
   getGateway,
   GatewayConfigError,
 } from "../_shared/payments/index.ts";
-import { buildPixItems, parseBrPhone, reaisToCents } from "./logic.ts";
+import { buildPixItems, reaisToCents } from "./logic.ts";
 import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
+import { parseBrPhone } from "../_shared/payments/contact.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

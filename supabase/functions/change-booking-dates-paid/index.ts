@@ -18,7 +18,8 @@ import {
   GatewayConfigError,
 } from "../_shared/payments/index.ts";
 import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
-import { parseBrPhone, parseChangeDatesPaidInput } from "./logic.ts";
+import { parseBrPhone } from "../_shared/payments/contact.ts";
+import { parseChangeDatesPaidInput } from "./logic.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

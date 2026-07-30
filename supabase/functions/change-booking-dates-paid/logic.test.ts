@@ -1,5 +1,6 @@
 import { assertEquals } from "jsr:@std/assert";
-import { parseBrPhone, parseChangeDatesPaidInput } from "./logic.ts";
+// `parseBrPhone` mora em _shared/payments/contact.ts e é testada lá.
+import { parseChangeDatesPaidInput } from "./logic.ts";
 
 Deno.test("parseChangeDatesPaidInput: exige código e datas válidas", () => {
   assertEquals(parseChangeDatesPaidInput({}).error, "booking_code é obrigatório.");
@@ -28,11 +29,4 @@ Deno.test("parseChangeDatesPaidInput: check_out após check_in + normaliza ISO",
     checkInAt: "2027-05-20T12:00:00.000Z",
     checkOutAt: "2027-05-24T12:00:00.000Z",
   });
-});
-
-Deno.test("parseBrPhone: normaliza com/sem DDI e rejeita curto", () => {
-  assertEquals(parseBrPhone("+55 11 98772-7182"), { ddd: "11", number: "987727182" });
-  assertEquals(parseBrPhone("11987727182"), { ddd: "11", number: "987727182" });
-  assertEquals(parseBrPhone("123"), null);
-  assertEquals(parseBrPhone(null), null);
 });

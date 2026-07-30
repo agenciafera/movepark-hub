@@ -13,11 +13,11 @@ import { chargeStatusToPaymentStatus, getGateway, GatewayConfigError } from "../
 import {
   checkBookingUpgradable,
   checkUpgradeDelta,
-  parseBrPhone,
   parseUpgradeInput,
   reaisToCents,
 } from "./logic.ts";
 import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
+import { parseBrPhone } from "../_shared/payments/contact.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
