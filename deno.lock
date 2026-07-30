@@ -193,7 +193,7 @@
         "npm:vite-react-ssg@~0.9.1-beta.1",
         "npm:vite@^6.4.3",
         "npm:vitest@^3.2.6",
-        "npm:windupjs@1.5.0",
+        "npm:windupjs@1.6.0",
         "npm:wrangler@^4.105.0",
         "npm:ws@^8.21.0",
         "npm:zod@^3.25.76"

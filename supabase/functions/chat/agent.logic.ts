@@ -272,8 +272,9 @@ export function sessionBlock(isLoggedIn: boolean): string {
     ? "\n\n[Sessão] O usuário ESTÁ logado. Pode reservar e cancelar: chame as ferramentas transacionais " +
         "direto, sem pedir login."
     : "\n\n[Sessão] O usuário NÃO está logado. Se ele pedir para reservar ou cancelar, CHAME a ferramenta " +
-        "transacional assim mesmo: o sistema barra e devolve a orientação de login, e é isso que faz o app " +
-        "mostrar o botão Entrar. Nunca diga que reservou ou cancelou.";
+        "transacional assim mesmo: o sistema barra e devolve a orientação de login. Nunca diga que reservou " +
+        "ou cancelou. Ao pedir que ele entre, fale só do que ele precisa fazer: não descreva a tela nem cite " +
+        "botões, porque o app já mostra o caminho.";
 }
 
 /** Nomes curtos de dia da semana, na ordem de Date.getDay() (0 = domingo). */

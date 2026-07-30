@@ -184,3 +184,88 @@ Deno.test("nowContext: fuso de São Paulo com offset -03:00", () => {
   assertEquals(n.time, "14:30");
   assertEquals(n.timezone, "America/Sao_Paulo");
 });
+
+// ── Erro instrutivo e resolução tolerante (achado §18-1.2/1.3) ────────────────
+//
+// O modelo chuta "guarulhos" em vez do slug canônico longo, e antes disto levava só "Destino não
+// encontrado" e desistia. Stub próprio porque estes caminhos usam `or()` e precisam simular o miss.
+
+/** Devolve os resultados na ORDEM em que as queries acontecem. */
+function stubSeq(results: unknown[], rpcResult: unknown = []) {
+  const calls: Record<string, unknown>[] = [];
+  let i = 0;
+  const next = () => (i < results.length ? results[i++] : []);
+  const chain = (table: string) => {
+    const rec: Record<string, unknown> = { table };
+    calls.push(rec);
+    const self: Record<string, unknown> = {};
+    for (const m of ["select", "eq", "is", "order", "limit", "or"]) {
+      self[m] = (...args: unknown[]) => {
+        rec[m] = args[0];
+        return self;
+      };
+    }
+    self.maybeSingle = () => {
+      const d = next();
+      return Promise.resolve({ data: Array.isArray(d) ? (d[0] ?? null) : d, error: null });
+    };
+    self.then = (res: (v: unknown) => unknown) => res({ data: next(), error: null });
+    return self;
+  };
+  return {
+    calls,
+    from: (t: string) => chain(t),
+    rpc: (fn: string, args: unknown) => {
+      calls.push({ rpc: fn, args });
+      return Promise.resolve({ data: rpcResult, error: null });
+    },
+    functions: { invoke: () => Promise.resolve({ data: {}, error: null }) },
+  };
+}
+
+Deno.test("get_destination: slug exato continua no caminho rápido (sem fallback)", async () => {
+  const sb = stubSeq([{ id: "d1", slug: "aeroporto-de-congonhas" }, []]);
+  const out = await callRead(sb, "get_destination", { slug: "aeroporto-de-congonhas" });
+  assertEquals((out as { id: string }).id, "d1");
+  // só duas queries: o destino e os pontos. Nenhuma tentativa de resolver por ilike.
+  assertEquals(sb.calls.filter((c) => c.or !== undefined).length, 0);
+});
+
+Deno.test("get_destination: termo humano resolve por código/nome quando o slug não bate", async () => {
+  const sb = stubSeq([null, [{ id: "d2", slug: "aeroporto-internacional-de-sao-paulo-guarulhos" }], []]);
+  const out = await callRead(sb, "get_destination", { slug: "guarulhos" });
+  assertEquals((out as { id: string }).id, "d2");
+  const fallback = sb.calls.find((c) => c.or !== undefined);
+  assertEquals(typeof fallback?.or, "string");
+});
+
+Deno.test("get_destination: dois candidatos não resolvem (ambiguidade vira erro com opções)", async () => {
+  const sb = stubSeq([null, [{ id: "a" }, { id: "b" }], [{ slug: "s1" }, { slug: "s2" }]]);
+  const err = await assertRejects(() => callRead(sb, "get_destination", { slug: "aeroporto" }));
+  assertEquals((err as Error).message.includes("s1, s2"), true);
+});
+
+Deno.test("get_destination: não encontrado lista os slugs válidos (erro instrutivo)", async () => {
+  const sb = stubSeq([null, [], [{ slug: "aeroporto-de-congonhas" }, { slug: "aeroporto-do-galeao" }]]);
+  const err = await assertRejects(() => callRead(sb, "get_destination", { slug: "narnia" }));
+  const msg = (err as Error).message;
+  assertEquals(msg.includes("narnia"), true);
+  assertEquals(msg.includes("aeroporto-de-congonhas, aeroporto-do-galeao"), true);
+});
+
+Deno.test("simulate_price: erro do motor ganha as unidades da empresa", async () => {
+  const sb = stubSeq([[{ slug: "aeroporto-congonhas" }, { slug: "aeroporto-guarulhos" }]], {
+    error: "Tipo de vaga não encontrado: aerovalet / congonhas / covered",
+  });
+  const out = await callRead(sb, "simulate_price", { company: "aerovalet", location: "congonhas" });
+  const msg = (out as { error: string }).error;
+  assertEquals(msg.includes("Tipo de vaga não encontrado"), true);
+  assertEquals(msg.includes("aeroporto-congonhas, aeroporto-guarulhos"), true);
+});
+
+Deno.test("simulate_price: sucesso passa intacto (não mexe no payload do motor)", async () => {
+  const sb = stubSeq([], { price: 95.7, strategy: "uniform_by_duration" });
+  const out = await callRead(sb, "simulate_price", { company: "aerovalet", days: 3 });
+  assertEquals((out as { price: number }).price, 95.7);
+  assertEquals((out as { error?: string }).error, undefined);
+});

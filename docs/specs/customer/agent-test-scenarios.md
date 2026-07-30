@@ -778,7 +778,7 @@ Vieram da leitura do código, não de execução. Precisam de roteiro rodado par
 | 3 | O prompt não fala de tarifa, mas `fare_tier` muda o prazo de cancelamento | [customer.logic.ts:105](../../../supabase/functions/mcp/customer.logic.ts:105) | G7 |
 | 4 | `passenger_first_name`, `passenger_last_name` e `passenger_phone` existem na `booking` e **nenhuma ferramenta escreve** nelas | schema da `booking` | B6 |
 | 5 | Token vencido vira `McpTransportError` e cai no fallback, que falha igual | [chat/index.ts:81](../../../supabase/functions/chat/index.ts:81) | I1 |
-| 6 | O gate de login descreve o mecanismo na copy ("O app mostrará um botão") | [chat/index.ts:218](../../../supabase/functions/chat/index.ts:218) | §11 |
+| 6 | ~~O gate de login descreve o mecanismo na copy ("O app mostrará um botão")~~ | **CORRIGIDO em 29/07:** a mensagem do gate e o `sessionBlock` mandam pedir o login sem descrever a tela. A instrução de **chamar** a ferramenta ficou (é ela que acende o botão), com teste travando as duas coisas | §11 |
 
 O item 4 muda a resposta esperada do B6: hoje o roteiro aceita "diz o que consegue", mas o schema
 mostra que o lugar para guardar o passageiro **existe**. Ou se expõe uma ferramenta que escreve nele,
@@ -853,13 +853,17 @@ seguinte. Ele precisa reaprender a cada turno, gastando rodada do teto de 6.
    chat: "quanto fica 3 diárias na aerovalet de congonhas numa vaga coberta?" agora responde
    **R$ 95,70**, batendo com `simulate_price(...,covered,3)`. Antes: "não consegui simular o preço".
    Regressão em `assistant-tools.test.ts`. Edges `chat` e `mcp` redeployadas.
-2. **EM ABERTO.** Aceitar nome/código além do slug em `get_destination` e `location` de
-   `simulate_price` (resolver por `slug ilike` / `short_name` / `code`), em vez de igualdade crua. Na
-   reverificação o modelo contornou chamando `list_locations` para achar o slug antes do
-   `simulate_price`, então o enum sozinho já destravou o caso comum, mas o slug longo do destino
-   continua frágil em contexto poluído.
-3. **EM ABERTO.** Fazer o erro da tool ser instrutivo: devolver "use um destes: ..." em vez de "não
-   encontrado", para o modelo se corrigir na rodada seguinte.
+2. **FEITO em 29/07.** `get_destination` resolve o termo humano por slug, `code`, `short_name` ou
+   nome, e só no miss exato (o slug certo segue no caminho rápido). Ambiguidade não resolve: dois
+   candidatos viram erro com as opções, para a tool não escolher o destino errado por conta própria.
+   Verificado ao vivo: `guarulhos` e `CGH` agora resolvem, e antes davam "não encontrado".
+3. **FEITO em 29/07.** O erro passou a dizer o que serve. `get_destination` inexistente lista os
+   slugs publicados; o erro do motor de preço ganha as unidades daquela empresa. Verificado ao vivo:
+   `simulate_price(aerovalet, "congonhas", ...)` agora responde
+   `Tipo de vaga não encontrado: ... Unidades desta empresa: aeroporto-guarulhos,
+   terminal-rodoviario-tiete, aeroporto-congonhas.`, então o modelo tem o slug certo para a próxima
+   rodada. **A resolução não entrou no motor de propósito:** pricing tem casos golden, e afrouxar a
+   chave lá mudaria o que a busca cobra. Quem tolera o termo humano é a camada do agente.
 
 ### Achado 2 · resposta de cabeça sobre tipos de vaga, incompleta (e uma correção sobre a tool)
 

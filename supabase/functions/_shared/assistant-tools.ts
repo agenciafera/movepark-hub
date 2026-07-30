@@ -247,15 +247,37 @@ export async function callRead(
         }),
       );
 
-    case "simulate_price":
-      return unwrap(
+    case "simulate_price": {
+      const sim = unwrap(
         await sb.rpc("simulate_price", {
           p_company: a.company,
           p_location: a.location ?? null,
           p_parking_type: a.parking_type ?? null,
           p_days: Number(a.days ?? 1),
         }),
-      );
+      ) as { error?: string } | null;
+
+      // O motor é keyed em slug/code exatos e devolve só "não encontrado". O modelo chuta
+      // "congonhas" em vez de "aeroporto-congonhas" e o usuário ouve "não consegui simular o preço"
+      // numa unidade que TEM preço (achado §18-1.1/1.3). Aqui o erro passa a dizer o que serve.
+      // A resolução não entra no motor de propósito: pricing tem casos golden, e afrouxar a chave lá
+      // mudaria o que a busca cobra. Quem tolera o termo humano é a camada do agente.
+      if (sim?.error) {
+        const opcoes = unwrap(
+          await sb
+            .from("location")
+            .select("slug, company:company_id!inner(slug)")
+            .eq("company.slug", String(a.company ?? "").trim().toLowerCase())
+            .is("deleted_at", null)
+            .limit(10),
+        ) as Array<{ slug: string }>;
+        const dica = opcoes.length
+          ? ` Unidades desta empresa: ${opcoes.map((o) => o.slug).join(", ")}.`
+          : " Use list_companies para ver as empresas e list_locations para as unidades.";
+        return { ...sim, error: `${sim.error}.${dica}` };
+      }
+      return sim;
+    }
 
     case "get_faq":
       return unwrap(
@@ -326,15 +348,44 @@ export async function callRead(
       );
 
     case "get_destination": {
-      const dest = unwrap(
-        await sb
-          .from("destination")
-          .select(`${DESTINATION_COLS}, intro`)
-          .eq("slug", a.slug as string)
-          .eq("is_published", true)
-          .maybeSingle(),
-      ) as { id?: string } | null;
-      if (!dest?.id) throw new Error("Destino não encontrado.");
+      // O slug canônico é longo (`aeroporto-internacional-de-sao-paulo-guarulhos`) e o modelo tende a
+      // chutar "guarulhos" ou "GRU". Antes disto ele levava "Destino não encontrado", e em contexto
+      // poluído desistia em vez de consultar a lista (achado §18-1.2). Aqui o termo é resolvido por
+      // slug, código, nome curto ou nome, e o erro passa a dizer quais existem (§18-1.3).
+      const termo = String(a.slug ?? "").trim();
+      let dest = termo
+        ? (unwrap(
+          await sb
+            .from("destination")
+            .select(`${DESTINATION_COLS}, intro`)
+            .eq("slug", termo)
+            .eq("is_published", true)
+            .maybeSingle(),
+        ) as { id?: string } | null)
+        : null;
+
+      if (!dest?.id && termo) {
+        const like = `%${termo.replace(/[%_]/g, (c) => `\\${c}`)}%`;
+        const candidatos = unwrap(
+          await sb
+            .from("destination")
+            .select(`${DESTINATION_COLS}, intro`)
+            .eq("is_published", true)
+            .or(`slug.ilike.${like},code.ilike.${termo},short_name.ilike.${like},name.ilike.${like}`)
+            .limit(2),
+        ) as Array<{ id?: string }>;
+        // Só resolve quando não há ambiguidade: dois candidatos viram erro instrutivo.
+        if (candidatos.length === 1) dest = candidatos[0];
+      }
+
+      if (!dest?.id) {
+        const opcoes = unwrap(
+          await sb.from("destination").select("slug").eq("is_published", true).order("sort_order").limit(15),
+        ) as Array<{ slug: string }>;
+        throw new Error(
+          `Destino não encontrado para "${termo}". Use um destes slugs: ${opcoes.map((o) => o.slug).join(", ")}.`,
+        );
+      }
       const points = unwrap(
         await sb
           .from("destination_point")

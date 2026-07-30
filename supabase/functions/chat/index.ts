@@ -229,7 +229,10 @@ Deno.serve(async (req: Request) => {
         try {
           if (needsLogin(call.name, isLoggedIn)) {
             loginRequired = true;
-            results.push({ name: call.name, response: { error: "login_required", message: "Peça ao usuário para entrar antes de reservar ou cancelar (o app mostra um botão Entrar)." } });
+            // A mensagem instrui o modelo, mas ele costuma repassá-la quase literal, então não pode
+            // descrever a interface: na rodada de 21/07 o bot respondeu "o app mostrará um botão para
+            // você entrar", vazando o mecanismo na copy (achado §16-6).
+            results.push({ name: call.name, response: { error: "login_required", message: "Esta ação exige que o usuário esteja com a conta conectada. Diga que ele precisa entrar para continuar, sem descrever a tela nem citar botões." } });
             continue;
           }
           const out = TRANSACTIONAL.has(call.name)

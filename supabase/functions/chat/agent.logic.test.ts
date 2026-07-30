@@ -165,7 +165,7 @@ Deno.test("sessionBlock diz ao modelo o estado de login", () => {
   assertEquals(logado.toLowerCase().includes("sem pedir login"), true);
   const deslogado = sessionBlock(false);
   assertEquals(deslogado.includes("NÃO está logado"), true);
-  assertEquals(deslogado.toLowerCase().includes("botão entrar"), true);
+  assertEquals(deslogado.includes("CHAME a ferramenta"), true);
 });
 
 // Regressão do achado A3 (roteiro de testes): o modelo afirmava "sexta, 01/08" sendo 01/08 um sábado.
@@ -189,10 +189,18 @@ Deno.test("calendarBlock manda consultar em vez de calcular", () => {
   assertEquals(b.split(";").length, 4); // hoje + 3 dias
 });
 
-Deno.test("sessionBlock deslogado manda CHAMAR a tool (é o que acende o botão Entrar)", () => {
+// A chamada da tool é o que acende o botão no front (o gate marca login_required), então a instrução
+// de CHAMAR tem que ficar. O que saiu foi a descrição da interface: o modelo repassava "o app mostrará
+// um botão", vazando o mecanismo na copy (achado §16-6).
+Deno.test("sessionBlock deslogado manda CHAMAR a tool (é o que acende o botão no front)", () => {
   const b = sessionBlock(false);
   assertEquals(b.includes("CHAME a ferramenta"), true);
-  assertEquals(b.toLowerCase().includes("botão entrar"), true);
+});
+
+Deno.test("sessionBlock não descreve a interface (nem manda o modelo descrever)", () => {
+  const b = sessionBlock(false).toLowerCase();
+  assertEquals(b.includes("botão entrar"), false);
+  assertEquals(b.includes("não descreva a tela"), true);
 });
 
 // Regressão do achado da §20 (rodada de 23/07): em 2 de ~14 turnos o Gemini devolveu candidato sem
