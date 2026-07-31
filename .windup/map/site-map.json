@@ -3153,8 +3153,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-29T12:30:26.935Z",
-      "last_seen": "2026-07-31T16:16:56.899Z",
-      "seen_count": 32,
+      "last_seen": "2026-07-31T16:30:01.350Z",
+      "seen_count": 33,
       "stale": false
     },
     "sig:eb1cb13a1fa9ce8c": {
@@ -3172,7 +3172,7 @@
         "http://localhost:5180/sobre"
       ],
       "url_pattern": "**/",
-      "title": "Como Funciona | Movepark",
+      "title": "Termos de Uso | Movepark",
       "interactive": [
         "a",
         "a",
@@ -3186,8 +3186,6 @@
         "button type=button",
         "a text=Seja parceiro",
         "a text=Entrar",
-        "a text=Ver todas as dúvidas →",
-        "a text=Buscar estacionamento",
         "a text=Sobre nós",
         "a text=Termos de uso",
         "a text=Política de privacidade",
@@ -3204,8 +3202,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-29T12:30:32.373Z",
-      "last_seen": "2026-07-31T16:16:54.338Z",
-      "seen_count": 59,
+      "last_seen": "2026-07-31T16:30:52.336Z",
+      "seen_count": 60,
       "stale": false
     },
     "sig:2644ef779c146a8c": {
@@ -3220,7 +3218,7 @@
         "http://localhost:5180/sobre"
       ],
       "url_pattern": "**/destinos",
-      "title": "Sobre nós | Movepark",
+      "title": "Termos de Uso | Movepark",
       "interactive": [
         "a",
         "a",
@@ -3235,18 +3233,9 @@
         "button type=button",
         "a text=Seja parceiro",
         "a text=Entrar",
-        "a text=Buscar estacionamento",
-        "a text=Quero ser parceiro",
-        "a text=Jardim PaulistaSão Paulo",
-        "a text=GuarulhosGRU",
-        "a text=Afonso PenaCWB",
-        "a text=LisboaLIS",
-        "a text=CentroSão Paulo",
-        "a text=CongonhasCGH",
-        "a text=ViracoposVCP",
-        "a text=FaroFAO",
-        "a text=Ver todos os destinos",
-        "a text=Buscar estacionamento",
+        "a text=Política de Cancelamento",
+        "a text=Política de Privacidade",
+        "a text=Entre em contato",
         "a text=Sobre nós",
         "a text=Termos de uso",
         "a text=Política de privacidade",
@@ -3263,8 +3252,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T13:22:55.662Z",
-      "last_seen": "2026-07-31T16:17:22.911Z",
-      "seen_count": 48,
+      "last_seen": "2026-07-31T16:30:52.501Z",
+      "seen_count": 55,
       "stale": false
     },
     "sig:42bd6642a8c0077e": {
@@ -3554,8 +3543,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T15:18:04.441Z",
-      "last_seen": "2026-07-31T16:16:56.885Z",
-      "seen_count": 3,
+      "last_seen": "2026-07-31T16:29:59.322Z",
+      "seen_count": 4,
       "stale": false
     },
     "sig:b805d148d91ff81c": {
@@ -3598,8 +3587,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T15:25:44.737Z",
-      "last_seen": "2026-07-31T16:17:22.210Z",
-      "seen_count": 7,
+      "last_seen": "2026-07-31T16:30:52.051Z",
+      "seen_count": 8,
       "stale": false
     },
     "sig:95f23b77537a835a": {
@@ -3777,8 +3766,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:46:22.794Z",
-      "last_seen": "2026-07-31T16:16:52.260Z",
-      "seen_count": 27,
+      "last_seen": "2026-07-31T16:29:44.724Z",
+      "seen_count": 32,
       "stale": false
     },
     "sig:32ea8b629364b656": {
@@ -3838,8 +3827,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:46:23.420Z",
-      "last_seen": "2026-07-31T16:16:48.871Z",
-      "seen_count": 5,
+      "last_seen": "2026-07-31T16:29:34.254Z",
+      "seen_count": 6,
       "stale": false
     },
     "sig:dbe4277c10825f11": {
@@ -3900,8 +3889,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:46:23.644Z",
-      "last_seen": "2026-07-31T16:16:48.915Z",
-      "seen_count": 5,
+      "last_seen": "2026-07-31T16:29:34.284Z",
+      "seen_count": 6,
       "stale": false
     },
     "sig:63b4f276654d776e": {
@@ -3958,12 +3947,13 @@
         "a text=Destinos",
         "a text=Entrar",
         "a text=Parceiro",
-        "a text=Ajuda"
+        "a text=Ajuda",
+        "button type=button"
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:20.083Z",
-      "last_seen": "2026-07-31T16:16:54.441Z",
-      "seen_count": 5,
+      "last_seen": "2026-07-31T16:29:51.794Z",
+      "seen_count": 6,
       "stale": false
     },
     "sig:30b80afac064bfc7": {
@@ -4006,8 +3996,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:26.734Z",
-      "last_seen": "2026-07-31T16:17:08.816Z",
-      "seen_count": 30,
+      "last_seen": "2026-07-31T16:30:22.425Z",
+      "seen_count": 36,
       "stale": false
     },
     "sig:00208007c0a1c596": {
@@ -4140,8 +4130,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:28.312Z",
-      "last_seen": "2026-07-31T16:16:56.894Z",
-      "seen_count": 5,
+      "last_seen": "2026-07-31T16:29:56.400Z",
+      "seen_count": 6,
       "stale": false
     },
     "sig:5f9442af211e8be5": {
@@ -4185,8 +4175,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:29.958Z",
-      "last_seen": "2026-07-31T16:16:54.332Z",
-      "seen_count": 5,
+      "last_seen": "2026-07-31T16:29:52.749Z",
+      "seen_count": 6,
       "stale": false
     },
     "sig:f4a52eca245bd7d5": {
@@ -4228,8 +4218,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:48.684Z",
-      "last_seen": "2026-07-31T16:16:59.990Z",
-      "seen_count": 5,
+      "last_seen": "2026-07-31T16:30:03.163Z",
+      "seen_count": 6,
       "stale": false
     },
     "sig:f229d562bc655a9f": {
@@ -4272,8 +4262,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:55.153Z",
-      "last_seen": "2026-07-31T16:17:10.960Z",
-      "seen_count": 21,
+      "last_seen": "2026-07-31T16:30:27.191Z",
+      "seen_count": 25,
       "stale": false
     },
     "sig:0220ddecfb1188ce": {
@@ -4317,8 +4307,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:56.027Z",
-      "last_seen": "2026-07-31T16:17:07.946Z",
-      "seen_count": 25,
+      "last_seen": "2026-07-31T16:30:20.628Z",
+      "seen_count": 30,
       "stale": false
     },
     "sig:deb61410f48cc824": {
@@ -4363,8 +4353,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:48:54.170Z",
-      "last_seen": "2026-07-31T16:17:08.276Z",
-      "seen_count": 5,
+      "last_seen": "2026-07-31T16:30:20.620Z",
+      "seen_count": 6,
       "stale": false
     },
     "sig:9e475390a54a6c61": {
@@ -4404,8 +4394,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:16.750Z",
-      "last_seen": "2026-07-31T16:17:14.196Z",
-      "seen_count": 15,
+      "last_seen": "2026-07-31T16:30:34.351Z",
+      "seen_count": 18,
       "stale": false
     },
     "sig:216bc20eae546abf": {
@@ -4445,8 +4435,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:27.416Z",
-      "last_seen": "2026-07-31T16:17:12.555Z",
-      "seen_count": 5,
+      "last_seen": "2026-07-31T16:30:31.848Z",
+      "seen_count": 6,
       "stale": false
     },
     "sig:7c87997d1435748b": {
@@ -4486,8 +4476,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:45.163Z",
-      "last_seen": "2026-07-31T16:17:20.197Z",
-      "seen_count": 27,
+      "last_seen": "2026-07-31T16:30:47.858Z",
+      "seen_count": 32,
       "stale": false
     },
     "sig:0de7196068dc995b": {
@@ -4527,8 +4517,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:46.524Z",
-      "last_seen": "2026-07-31T16:17:14.190Z",
-      "seen_count": 5,
+      "last_seen": "2026-07-31T16:30:34.239Z",
+      "seen_count": 6,
       "stale": false
     },
     "sig:0e77bbe16451b1b2": {
@@ -4567,8 +4557,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:03.481Z",
-      "last_seen": "2026-07-31T16:17:17.775Z",
-      "seen_count": 5,
+      "last_seen": "2026-07-31T16:30:40.670Z",
+      "seen_count": 6,
       "stale": false
     },
     "sig:330a98d155e0b087": {
@@ -4608,8 +4598,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:13.982Z",
-      "last_seen": "2026-07-31T16:17:19.479Z",
-      "seen_count": 5,
+      "last_seen": "2026-07-31T16:30:46.380Z",
+      "seen_count": 6,
       "stale": false
     },
     "sig:d338797fc9985ff4": {
@@ -4650,8 +4640,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:23.245Z",
-      "last_seen": "2026-07-31T16:17:20.145Z",
-      "seen_count": 5,
+      "last_seen": "2026-07-31T16:30:47.670Z",
+      "seen_count": 6,
       "stale": false
     },
     "sig:ca978112ca1bbdca": {
@@ -4665,8 +4655,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:40.542Z",
-      "last_seen": "2026-07-31T16:17:23.428Z",
-      "seen_count": 5,
+      "last_seen": "2026-07-31T16:30:53.994Z",
+      "seen_count": 6,
       "stale": false
     },
     "sig:56110ea72b7f7df7": {
@@ -4797,7 +4787,7 @@
         "selector": "h1"
       },
       "to": "sig:2644ef779c146a8c",
-      "seen_count": 7
+      "seen_count": 8
     },
     {
       "from": "sig:5f04617cfcb270ea",
