@@ -23,9 +23,6 @@ const SEM_TESTE = [
   "addons:useUpsertAddon",
   "addons:useSetLocationAddon",
   "addons:useDeleteAddon",
-  "addresses:useCreateAddress",
-  "addresses:useUpdateAddress",
-  "addresses:useDeleteAddress",
   "amenities:useSetLocationAmenities",
   "api-keys:useUpdateApiKeyScopes",
   "availability:useSetDateBlocked",
@@ -33,9 +30,6 @@ const SEM_TESTE = [
   "bookings:useChangeBookingVehicle",
   "bookings:useChangeBookingDates",
   "bookings:useChangePaidBookingDates",
-  "checkout:useCancelBooking",
-  "checkout:useRenewBookingHold",
-  "checkout:useMockPayment",
   "companies:useSetCompanyTakeRate",
   "coupons:useUpsertCoupon",
   "coupons:useSetCouponActive",
@@ -71,9 +65,6 @@ const SEM_TESTE = [
   "parking-types:useUpdateCompanyParkingType",
   "parking-types:useOperatorSetPricing",
   "parking-types:useSimulatePrice",
-  "payment-methods:useCreatePaymentMethod",
-  "payment-methods:useSetDefaultPaymentMethod",
-  "payment-methods:useDeletePaymentMethod",
   "payouts:useSavePayoutAccountAdmin",
   "payouts:useSavePayoutAccountSelf",
   "payouts:useAcceptContract",
@@ -90,10 +81,8 @@ const SEM_TESTE = [
   "users:useUpdateUserRole",
   "users:useLinkUserCompany",
   "users:useUnlinkUserCompany",
-  "vehicles:useCreateVehicle",
-  "vehicles:useUpdateVehicle",
-  "vehicles:useDeleteVehicle",
-  "voucher:useVoucherCheckIn",];
+  "voucher:useVoucherCheckIn",
+];
 
 /** Todo `api.ts` / `*Api.ts` de feature, onde os hooks de dados moram. */
 function arquivosDeApi(dir: string): string[] {
