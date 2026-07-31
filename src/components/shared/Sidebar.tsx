@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { Building2, ChevronsUpDown, ShieldAlert } from "lucide-react";
+import { Building2, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/context";
 import { usePendingPartnerCount } from "@/features/onboarding/managerApi";
@@ -8,6 +8,7 @@ import { managerSections, operatorSections } from "./nav-items";
 import { Monogram, Wordmark } from "./Brand";
 import { useCompany } from "@/features/companies/api";
 import { useNetworkSize } from "@/features/locations/api";
+import { CompanySwitcher } from "./CompanySwitcher";
 
 export function Sidebar({
   variant,
@@ -37,14 +38,16 @@ export function Sidebar({
   const network = useNetworkSize(variant === "manager" && !impersonatedCompanyId);
 
   const contextName = company.data?.name ?? (variant === "manager" ? "Rede completa" : "Sua conta");
+  // No manager sem impersonar, a linha de baixo é o tamanho da rede. Impersonando
+  // ou no operator, o nome da empresa já diz tudo e a linha some: "Trocar unidade"
+  // esteve aqui e era promessa vazia, porque o painel do parceiro não troca de
+  // empresa ativa.
   const contextDetail =
     variant === "manager" && !impersonatedCompanyId
       ? network.data
         ? `${network.data.locations} ${network.data.locations === 1 ? "unidade" : "unidades"} · ${network.data.companies} ${network.data.companies === 1 ? "empresa" : "empresas"}`
         : "toda a rede"
-      : effectiveCompanyIds.length > 1
-        ? "Trocar unidade"
-        : null;
+      : null;
 
   // Leads novos aguardando análise → badge no item "Parceiros" (só no manager).
   const pendingPartners = usePendingPartnerCount(variant === "manager");
@@ -64,25 +67,25 @@ export function Sidebar({
         <Monogram size={28} className="brightness-0 invert" />
       </div>
 
-      {/* Contexto: de quem é a conta que está na tela. */}
-      <div className="hidden items-center gap-3 rounded-md bg-white/[0.06] p-3 desktop:flex">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-mp-primary/25 text-white/80">
-          <Building2 className="h-4 w-4" aria-hidden />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-body-sm font-medium text-white" title={contextName}>
-            {contextName}
+      {/* Contexto: de quem é a conta que está na tela. No manager ele também
+          troca de conta, que é o que o bloco sugere ao nomear a conta. */}
+      {variant === "manager" ? (
+        <CompanySwitcher name={contextName} detail={contextDetail} />
+      ) : (
+        <div className="hidden items-center gap-3 rounded-md bg-white/[0.06] p-3 desktop:flex">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-mp-primary/25 text-white/80">
+            <Building2 className="h-4 w-4" aria-hidden />
           </span>
-          {contextDetail && (
-            <span className="mt-0.5 block truncate text-caption text-white/55">
-              {contextDetail}
+          <span className="min-w-0 flex-1">
+            <span
+              className="block truncate text-body-sm font-medium text-white"
+              title={contextName}
+            >
+              {contextName}
             </span>
-          )}
-        </span>
-        {effectiveCompanyIds.length > 1 && variant === "operator" && (
-          <ChevronsUpDown className="h-4 w-4 shrink-0 text-white/55" aria-hidden />
-        )}
-      </div>
+          </span>
+        </div>
+      )}
 
       <nav className="flex flex-1 flex-col gap-6">
         {sections.map((section, index) => (

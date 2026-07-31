@@ -12,8 +12,10 @@ export const companiesKeys = {
   detail: (id: string) => [...companiesKeys.all, "detail", id] as const,
 };
 
-export function useCompanies() {
+/** `enabled` existe pro seletor da sidebar só buscar a lista quando o menu abre. */
+export function useCompanies(enabled = true) {
   return useQuery({
+    enabled,
     queryKey: companiesKeys.list(),
     queryFn: async (): Promise<Company[]> => {
       const { data, error } = await supabase
@@ -32,11 +34,7 @@ export function useCompany(id: string | undefined) {
     queryKey: id ? companiesKeys.detail(id) : ["companies", "detail", "none"],
     queryFn: async (): Promise<Company | null> => {
       if (!id) return null;
-      const { data, error } = await supabase
-        .from("company")
-        .select("*")
-        .eq("id", id)
-        .maybeSingle();
+      const { data, error } = await supabase.from("company").select("*").eq("id", id).maybeSingle();
       if (error) throw error;
       return (data ?? null) as Company | null;
     },
@@ -48,11 +46,7 @@ export function useCreateCompany() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload: CompanyInsert) => {
-      const { data, error } = await supabase
-        .from("company")
-        .insert(payload)
-        .select()
-        .single();
+      const { data, error } = await supabase.from("company").insert(payload).select().single();
       if (error) throw error;
       return data as Company;
     },
