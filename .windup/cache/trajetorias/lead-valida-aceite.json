@@ -1,0 +1,118 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "lead-valida-aceite",
+    "start_url": "/seja-parceiro",
+    "start_sig": "sig:b805d148d91ff81c",
+    "scenario_sig": "128f41b94bdc84d2"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "lead-valida-aceite",
+    "start_url": "http://localhost:5180/seja-parceiro",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "click",
+        "target": {
+          "selector": "main button:has-text('Quero ser parceiro')",
+          "description": "Botão Quero ser parceiro na página principal"
+        },
+        "expect": {
+          "selector": "[role=\"dialog\"]"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a2",
+        "type": "fill",
+        "target": {
+          "selector": "#pl-name",
+          "description": "Campo nome no passo 1 do modal"
+        },
+        "value": "QA Teste",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "fill",
+        "target": {
+          "selector": "#pl-email",
+          "description": "Campo e-mail no passo 1 do modal"
+        },
+        "value": "qa@windup.local",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "fill",
+        "target": {
+          "selector": "#pl-phone",
+          "description": "Campo telefone no passo 1 do modal"
+        },
+        "value": "11999990000",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a5",
+        "type": "click",
+        "target": {
+          "selector": "[role=\"dialog\"] button:has-text('Continuar')",
+          "description": "Botão Continuar no passo 1 do modal"
+        },
+        "expect": {
+          "selector": "#pl-company"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a6",
+        "type": "fill",
+        "target": {
+          "selector": "#pl-company",
+          "description": "Campo empresa no passo 2 do modal"
+        },
+        "value": "Estacionamento QA",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a7",
+        "type": "fill",
+        "target": {
+          "selector": "#pl-spots",
+          "description": "Campo número de vagas no passo 2 do modal"
+        },
+        "value": "50",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a8",
+        "type": "click",
+        "target": {
+          "selector": "[role=\"dialog\"] button:has-text('Quero ser parceiro')",
+          "description": "Botão Quero ser parceiro dentro do modal no passo 2 (sem marcar autorização)"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "[role=\"dialog\"]",
+            "text": "É preciso autorizar o contato para continuar."
+          }
+        },
+        "timeout_ms": 10000
+      }
+    ],
+    "task": "Clique em 'Quero ser parceiro'. No passo 1 preencha 'pl-name' com 'QA Teste', 'pl-email' com 'qa@windup.local' e 'pl-phone' com '11999990000', e clique em 'Continuar'. No passo 2 preencha 'pl-company' com 'Estacionamento QA', preencha 'pl-spots' com '50' e clique no botão 'Quero ser parceiro' que está DENTRO do modal sem marcar a autorização. Verifique que a página exibe o texto 'É preciso autorizar o contato para continuar.'.",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-07-31T17:28:42.339Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-07-31T17:28:46.831Z",
+    "last_replayed_at": "2026-07-31T17:30:37.302Z",
+    "replay_count": 1,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

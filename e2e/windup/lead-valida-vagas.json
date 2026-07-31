@@ -1,0 +1,32 @@
+{
+  "scenario_id": "lead-valida-vagas",
+  "start_url": "/seja-parceiro",
+  "task": "Clique em 'Quero ser parceiro'. No passo 1 preencha 'pl-name' com 'QA Teste', 'pl-email' com 'qa@windup.local' e 'pl-phone' com '11999990000', e clique em 'Continuar'. No passo 2 preencha 'pl-company' com 'Estacionamento QA' e clique no botão 'Quero ser parceiro' que está DENTRO do modal sem informar as vagas. Verifique que a página exibe o texto 'Informe o número de vagas.'.",
+  "tags": [
+    "validacao",
+    "formulario"
+  ],
+  "hints": [
+    "O botão que abre o formulário tem o texto 'Quero ser parceiro'.",
+    "Passo 1: inputs de id 'pl-name', 'pl-email' e 'pl-phone'. Passo 2: 'pl-company' e 'pl-spots'.",
+    "Os botões saem pelo TEXTO. No passo 1 o botão é 'Continuar'; no passo 2 o botão de enviar TAMBÉM se chama 'Quero ser parceiro', igual ao que abriu o modal, então pegue o que está dentro do dialog.",
+    "O modal é uma div com role=dialog, não a tag <dialog>.",
+    "A verificação final deve usar text_contains com selector '[role=\"dialog\"]': a mensagem de erro fica dentro do modal.",
+    "Deixe o input 'pl-spots' vazio."
+  ],
+  "network": [
+    {
+      "url": "**/functions/v1/capture-partner-lead*",
+      "json": {
+        "ok": true
+      }
+    },
+    {
+      "url": "**/functions/v1/submit-partner-lead*",
+      "json": {
+        "ok": true,
+        "company_id": "c-fake"
+      }
+    }
+  ]
+}
