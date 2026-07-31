@@ -44,7 +44,11 @@ export function AppShell({ variant, brandTitle, topbarRightSlot }: Props) {
           data-scroll-root
           className="relative flex-1 overflow-auto pb-[var(--bottom-nav-space)] tablet:pb-0"
         >
-          <div className="mx-auto w-full max-w-[1280px] px-4 pb-6 tablet:px-1">
+          {/* Sem trava de largura: o arquivo de design deixa o main ocupar o que
+              sobra da sidebar, e num painel de dados a largura é útil (o gráfico
+              e o ranking respiram). Com `max-w-[1280px]` sobravam ~290px de vão
+              morto à direita em 1920px. */}
+          <div className="w-full px-4 pb-6 tablet:px-1">
             {variant === "operator" && <OperatorJourneyBanner />}
             <Outlet />
           </div>
