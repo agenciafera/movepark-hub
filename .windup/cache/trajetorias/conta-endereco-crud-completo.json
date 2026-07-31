@@ -1,0 +1,131 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "conta-endereco-crud-completo",
+    "start_url": "/account/addresses",
+    "start_sig": "sig:c59d8801fff3d40d",
+    "scenario_sig": "1510ea37c25bee8d"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "conta-endereco-crud-completo",
+    "start_url": "http://localhost:5180/account/addresses",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "click",
+        "target": {
+          "selector": "main button:has-text(\"Novo endereço\")",
+          "description": "Botão Novo endereço para abrir o formulário pela primeira vez"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "fill",
+        "target": {
+          "selector": "#street",
+          "description": "Campo de logradouro"
+        },
+        "value": "Rua Windup",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "fill",
+        "target": {
+          "selector": "#number",
+          "description": "Campo de número"
+        },
+        "value": "250",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "fill",
+        "target": {
+          "selector": "#city",
+          "description": "Campo de cidade"
+        },
+        "value": "Campinas",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a5",
+        "type": "click",
+        "target": {
+          "selector": "button:has-text(\"Salvar\")",
+          "description": "Botão Salvar para gravar o primeiro endereço"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a6",
+        "type": "click",
+        "target": {
+          "selector": "main button:has-text(\"Novo endereço\")",
+          "description": "Botão Novo endereço para abrir o formulário pela segunda vez"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a7",
+        "type": "fill",
+        "target": {
+          "selector": "#street",
+          "description": "Campo de logradouro para o segundo endereço"
+        },
+        "value": "Rua Segunda",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a8",
+        "type": "fill",
+        "target": {
+          "selector": "#number",
+          "description": "Campo de número para o segundo endereço"
+        },
+        "value": "300",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a9",
+        "type": "fill",
+        "target": {
+          "selector": "#city",
+          "description": "Campo de cidade para o segundo endereço"
+        },
+        "value": "Santos",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a10",
+        "type": "click",
+        "target": {
+          "selector": "button:has-text(\"Salvar\")",
+          "description": "Botão Salvar para gravar o segundo endereço"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Rua Existente"
+          }
+        },
+        "timeout_ms": 10000
+      }
+    ],
+    "task": "A pagina ja lista o endereco Rua Existente. Clique em Novo endereco, preencha o input de id street com Rua Windup, o input de id number com 250 e o input de id city com Campinas, e clique em Salvar. Depois clique em Novo endereco de novo, preencha o input de id street com Rua Segunda, o input de id number com 300 e o input de id city com Santos, e clique em Salvar. Por fim verifique que a pagina ainda exibe o texto Rua Existente.",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-07-31T20:33:45.935Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-07-31T20:33:49.290Z",
+    "last_replayed_at": "2026-07-31T20:37:27.309Z",
+    "replay_count": 1,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

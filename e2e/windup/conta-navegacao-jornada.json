@@ -1,0 +1,88 @@
+{
+  "scenario_id": "conta-navegacao-jornada",
+  "start_url": "/account/profile",
+  "task": "Comece no Perfil. Clique no item Veiculos do menu lateral e verifique que a pagina exibe o texto Veiculos. Depois clique no item Enderecos e verifique que a pagina exibe o texto Enderecos. Depois clique no item Cartoes e verifique que a pagina exibe o texto Cartoes. Por fim clique no item Seguranca e verifique que a pagina exibe o texto Seguranca.",
+  "tags": [
+    "jornada",
+    "navegacao",
+    "autenticado"
+  ],
+  "hints": [
+    "Jornada de navegacao pelo menu lateral da area do cliente, atravessando quatro telas numa execucao so.",
+    "Os itens do menu sao links com os textos Perfil, Veiculos, Enderecos, Cartoes, Favoritos, Preferencias e Seguranca.",
+    "Cada verificacao intermediaria confirma que a rota trocou antes de seguir para a proxima.",
+    "Depois de cada clique, ESPERE o titulo da nova pagina aparecer antes de verificar: a troca de rota e assincrona e o main fica vazio por um instante.",
+    "Assere o titulo no h1 de cada tela, nao no main inteiro."
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.windup-nao-assinado\",\"token_type\":\"bearer\",\"expires_in\":999999999,\"expires_at\":4102444800,\"refresh_token\":\"windup-fake-refresh\",\"user\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"qa@windup.local\"}}"
+    }
+  },
+  "network": [
+    {
+      "url": "**/rpc/get_my_identities*",
+      "json": {
+        "email": "qa@windup.local",
+        "phone": null,
+        "email_verified": true,
+        "phone_verified": false,
+        "providers": [
+          {
+            "provider": "email",
+            "last_sign_in_at": "2026-07-01T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.windup-nao-assinado",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "windup-fake-refresh",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "customer"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/company_role_scope*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ]
+}
