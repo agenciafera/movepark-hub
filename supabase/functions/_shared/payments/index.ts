@@ -6,7 +6,10 @@ import { PagarmeGateway } from "./pagarme.ts";
 import { MockGateway } from "./mock.ts";
 
 export * from "./types.ts";
-export { buildSplit } from "./split.ts";
+// Reexport NOMEADO: quem importar daqui algo que não esteja nesta lista quebra o BOOT da Edge
+// (503 em qualquer request, inclusive OPTIONS), não a chamada. Ao exportar algo novo em split.ts
+// e usar numa função, acrescente aqui no mesmo commit.
+export { buildSplit, isGatewaySplitEnabled } from "./split.ts";
 
 /** ChargeStatus (gateway) → enum SQL `payment_status` ('canceled' vira 'cancelled'). */
 export function chargeStatusToPaymentStatus(status: ChargeStatus): string {

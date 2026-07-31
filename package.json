@@ -15,7 +15,7 @@
     "test:watch": "vitest --project unit",
     "test:int": "./scripts/vitest-run.sh --project integration",
     "test:db": "supabase test db",
-    "test:edge": "deno test --no-check --allow-env --allow-net supabase/functions",
+    "test:edge": "deno test --no-check --allow-env --allow-net --allow-read supabase/functions",
     "coverage": "./scripts/vitest-run.sh --project unit --coverage",
     "gen:types": "supabase gen types typescript --linked > src/types/database.ts",
     "deploy": "bun run build && wrangler deploy",
