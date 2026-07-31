@@ -1,0 +1,64 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "conta-perfil-edita-jornada",
+    "start_url": "/account/profile",
+    "start_sig": "sig:0dcff3a175658e77",
+    "scenario_sig": "6ea4d0f3e4372865"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "conta-perfil-edita-jornada",
+    "start_url": "http://localhost:5180/account/profile",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "fill",
+        "target": {
+          "selector": "#first-name",
+          "description": "Campo de nome"
+        },
+        "value": "Alterado",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "fill",
+        "target": {
+          "selector": "#last-name",
+          "description": "Campo de sobrenome"
+        },
+        "value": "Pelo Windup",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "click",
+        "target": {
+          "selector": "button:has-text('Salvar alterações')",
+          "description": "Botão Salvar alterações"
+        },
+        "expect": {
+          "selector_value": {
+            "selector": "#first-name",
+            "value": "Alterado"
+          }
+        },
+        "timeout_ms": 10000
+      }
+    ],
+    "task": "Na página de perfil, apague o conteúdo do input de id 'first-name' e preencha com 'Alterado', apague o input de id 'last-name' e preencha com 'Pelo Windup', e clique em 'Salvar'. Depois verifique que o input de id 'first-name' contém 'Alterado'.",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-07-31T19:31:04.506Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-07-31T19:31:06.099Z",
+    "last_replayed_at": "2026-07-31T19:33:04.826Z",
+    "replay_count": 1,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

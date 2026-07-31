@@ -1,0 +1,33 @@
+{
+  "scenario_id": "lead-jornada-completa",
+  "start_url": "/seja-parceiro",
+  "task": "Clique em 'Quero ser parceiro'. No passo 1, preencha o input de id 'pl-name' com 'QA Windup', o input de id 'pl-email' com 'qa@windup.local' e o input de id 'pl-phone' com '11999990000', e clique em 'Continuar'. No passo 2, preencha o input de id 'pl-company' com 'Estacionamento QA' e o input de id 'pl-spots' com '50', marque o checkbox de autorização de contato e clique no botão 'Quero ser parceiro' que está dentro do modal. Verifique que a página exibe o texto 'Recebemos seu cadastro'.",
+  "tags": [
+    "jornada",
+    "formulario"
+  ],
+  "hints": [
+    "Jornada completa do lead, dos dois passos até a confirmação.",
+    "Passo 1: inputs 'pl-name', 'pl-email', 'pl-phone'. O botão é 'Continuar'.",
+    "Passo 2: inputs 'pl-company' e 'pl-spots', mais um checkbox de autorização que precisa ser MARCADO.",
+    "O checkbox do Radix NAO e um input[type=checkbox]: e um button com role=checkbox. Clique nele pelo role ou pelo texto do rotulo que comeca com Autorizo a Movepark.",
+    "O botão de enviar do passo 2 também se chama 'Quero ser parceiro', igual ao que abriu o modal: use o que está dentro do dialog.",
+    "A confirmação aparece dentro do modal. Assere com text_contains e selector '[role=\"dialog\"]'."
+  ],
+  "network": [
+    {
+      "url": "**/functions/v1/capture-partner-lead*",
+      "json": {
+        "ok": true
+      }
+    },
+    {
+      "url": "**/functions/v1/submit-partner-lead*",
+      "json": {
+        "ok": true,
+        "company_id": "c-fake",
+        "already_submitted": false
+      }
+    }
+  ]
+}
