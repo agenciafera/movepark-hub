@@ -33,19 +33,31 @@ para o gateway e passou a ser o razão de quanto devemos ao parceiro. É dele qu
 e `payout_balance` derivam, então o extrato do parceiro continua correto: o que muda é onde o
 dinheiro está, não a conta.
 
-**Como o repasse sai daqui: EM VERIFICAÇÃO.** A doc da v5 sugere que `POST /transfers` é saque
-(o exemplo de resposta traz `source_type: recipient` e `target_type: bank_account`, com o
-`recipient_id` como origem dos fundos). Se for isso, não haveria rota para creditar um recebedor
-fora do split, e o repasse teria que sair por fora do gateway. **Mas isso ainda não foi comprovado
-na prática, e a doc do Pagar.me já errou duas vezes neste projeto** (prometeu `expiration_date` e
-entrega `expires_at`; prometeu `base64` e entrega `base64_qrcode`). O exemplo de resposta tem cara
-de v4 (`id` inteiro, `date_created`), o que reforça a desconfiança.
+**Como o repasse sai daqui: RESOLVIDO por teste em produção (31/07/2026).** `POST /transfers` é
+**saque, não repasse**. Executado com `{ amount: 1000, recipient_id: <Agência Fera> }`, devolveu:
 
-Teste pendente no workflow n8n `80lgEb2uOYQqSPzn` ("Pagarme - Transferencia (probe)"): dispara
-`POST /transfers` com `{ amount, recipient_id }` e compara o saldo do recebedor antes e depois.
-**Não decida a arquitetura do repasse antes desse resultado.** Se creditar, o recebedor, o KYC e a
-prova de vida sobrevivem e o repasse vira chamada de API; se sacar, o repasse sai por PIX/TED da
-conta da Movepark e todo o conceito de recebedor fica dispensável.
+```json
+{ "id": 539328550, "status": "transferred", "fee": 367,
+  "source_type": "recipient", "source_id": "re_cms7wc1eievek0l9tfxnb8wz2",
+  "target_type": "bank_account", "target_id": "47337772",
+  "funding_estimated_date": "2026-08-01T03:00:00.000Z" }
+```
+
+O `recipient_id` é a ORIGEM dos fundos e o destino é a conta bancária DELE. O saldo comprovou: a
+Agência Fera foi de 11329 para 9962 (os 1000 do saque mais 367 de taxa) e o saldo do master da
+Movepark não se moveu. **Não existe rota para creditar um recebedor fora do split de um pedido.**
+
+Consequência para a arquitetura: com o split desligado, nenhum valor novo entra no saldo do parceiro
+no gateway, e a rota de saque fica sem uso porque não há o que sacar. **O repasse sai por fora do
+Pagar.me**: a Movepark saca do próprio saldo e paga o parceiro por PIX/TED. Isso torna o recebedor,
+o KYC e a prova de vida dispensáveis no modelo final, e é o que o plano de migração precisa
+endereçar. Reprodutível no workflow n8n `80lgEb2uOYQqSPzn` ("Pagarme - Transferencia (probe)"), com
+o nó de transferência desligado por padrão porque move dinheiro real.
+
+**Também validado no mesmo dia: a cobrança sem split funciona.** MP-BE2E2B (R$ 102,90) saiu sem a
+chave `split` e caiu inteira no master da Movepark; o saldo do parceiro não recebeu nada; e o
+`payment.split` foi gravado com as duas pernas (7650 parceiro / 2640 Movepark), mantendo o extrato
+de pé. Payload sem split, razão preservado.
 
 **Medido em produção (31/07/2026), o que já é fato:**
 
