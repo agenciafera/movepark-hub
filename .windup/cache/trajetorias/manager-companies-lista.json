@@ -1,44 +1,44 @@
 {
   "cache_version": "0.2",
   "key": {
-    "scenario_id": "manager-companies",
+    "scenario_id": "manager-companies-lista",
     "start_url": "/manager/companies",
     "start_sig": "sig:f229d562bc655a9f",
-    "scenario_sig": "4c52b02107a83925"
+    "scenario_sig": "017ad66d332d68d3"
   },
   "plan": {
     "plan_version": "0.1",
-    "scenario_id": "manager-companies",
+    "scenario_id": "manager-companies-lista",
     "start_url": "http://localhost:5180/manager/companies",
     "actions": [
       {
         "id": "a1",
         "type": "wait_for",
         "target": {
-          "selector": "h1",
-          "description": "Heading 'Empresas' on the companies page"
+          "selector": "main",
+          "description": "main content area"
         },
         "expect": {
           "text_contains": {
-            "selector": "h1",
-            "text": "Empresas"
+            "selector": "main",
+            "text": "Estacionamento Alfa"
           },
-          "selector": "h1"
+          "selector": "main"
         },
         "timeout_ms": 5000
       }
     ],
-    "task": "Verifique que a página exibe o texto 'Empresas'.",
+    "task": "Verifique que a página exibe o texto 'Estacionamento Alfa'.",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-07-31T16:01:17.504Z"
+      "at": "2026-07-31T17:40:40.455Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-07-31T16:01:22.772Z",
-    "last_replayed_at": "2026-07-31T17:44:54.109Z",
-    "replay_count": 11,
+    "created_at": "2026-07-31T17:40:53.293Z",
+    "last_replayed_at": "2026-07-31T17:44:55.903Z",
+    "replay_count": 3,
     "replay_failures": 0,
     "plan_generation": 1
   }

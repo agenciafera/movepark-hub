@@ -1,0 +1,45 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "account-addresses-lista",
+    "start_url": "/account/addresses",
+    "start_sig": "sig:c59d8801fff3d40d",
+    "scenario_sig": "8e66125b27690fbe"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "account-addresses-lista",
+    "start_url": "http://localhost:5180/account/addresses",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "main li",
+          "description": "address list item containing Rua do Teste"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main li",
+            "text": "Rua do Teste"
+          },
+          "selector": "main li"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Verifique que a página exibe o texto 'Rua do Teste'.",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-07-31T17:40:26.046Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-07-31T17:40:28.855Z",
+    "last_replayed_at": "2026-07-31T17:44:27.083Z",
+    "replay_count": 3,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

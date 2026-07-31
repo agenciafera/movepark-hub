@@ -1,13 +1,13 @@
 diff --git a/dist/chunk-KQ4BVS4I.js b/dist/chunk-KQ4BVS4I.js
-index 4ad95dc7490d3b745fde877cc632205c284f3115..e078f95c4e6bfe6fe3ace38943ba1fe12a285843 100644
+index 4ad95dc7490d3b745fde877cc632205c284f3115..f80f9d71a5d1b5dc0e45394ffd078886c4d8598f 100644
 --- a/dist/chunk-KQ4BVS4I.js
 +++ b/dist/chunk-KQ4BVS4I.js
 @@ -180,6 +180,9 @@ Respond ONLY with valid JSON matching this JSON Schema. No prose, no markdown fe
  ${JSON.stringify(req.schema)}` : req.prompt;
        return new Promise((resolve, reject) => {
          const child = spawn("claude", ["-p", content, "--output-format", "json", "--model", model], {
-+          // patch local: sem stdio o stdin do filho fica um pipe aberto que
-+          // ninguém escreve nem fecha; a CLI espera 3s, avisa e sai com codigo 1.
++          // patch local: sem stdio o stdin do filho vira um pipe aberto que ninguem
++          // escreve nem fecha; a CLI espera 3s, avisa e sai com codigo 1.
 +          stdio: ["ignore", "pipe", "pipe"],
            cwd: tmpdir(),
            // The CLI spawns the agent loop; give it the same 5 min the wrapper gets.
