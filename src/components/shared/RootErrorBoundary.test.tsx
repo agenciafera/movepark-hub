@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { RootErrorBoundary } from "./RootErrorBoundary";
@@ -18,6 +18,15 @@ function renderWithLoaderError(error: unknown) {
 }
 
 describe("RootErrorBoundary", () => {
+  // Limpa ANTES também, não só depois. O cooldown do recoverFromStaleBuild vive
+  // no sessionStorage, e o stale-build.test.ts escreve na mesma chave: se ele
+  // rodar antes neste worker, o reload não dispara e o caso do build velho
+  // falha com "spy called 0 times". Foi assim que o CI ficou vermelho uma vez,
+  // com o teste passando local, porque a ordem entre arquivos muda.
+  beforeEach(() => {
+    sessionStorage.clear();
+  });
+
   afterEach(() => {
     sessionStorage.clear();
     vi.restoreAllMocks();
