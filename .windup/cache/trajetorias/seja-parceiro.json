@@ -3,20 +3,20 @@
   "key": {
     "scenario_id": "seja-parceiro",
     "start_url": "/seja-parceiro",
-    "start_sig": "sig:c6d9d2df64e4156f",
+    "start_sig": "sig:b805d148d91ff81c",
     "scenario_sig": "48d45078ff6b0f5a"
   },
   "plan": {
     "plan_version": "0.1",
     "scenario_id": "seja-parceiro",
-    "start_url": "http://localhost:56040/seja-parceiro",
+    "start_url": "http://localhost:5180/seja-parceiro",
     "actions": [
       {
         "id": "a1",
         "type": "wait_for",
         "target": {
           "selector": "h1",
-          "description": "Main heading with 'Encha suas vagas com reservas online'"
+          "description": "Heading with 'Encha suas vagas com reservas online'"
         },
         "expect": {
           "text_contains": {
@@ -31,11 +31,11 @@
         "type": "wait_for",
         "target": {
           "selector": "h2",
-          "description": "Section heading with 'Vaga vazia não volta.'"
+          "description": "Heading with 'Vaga vazia não volta.'"
         },
         "expect": {
           "text_contains": {
-            "selector": "main",
+            "selector": "h2",
             "text": "Vaga vazia não volta."
           },
           "selector": "h2"
@@ -46,14 +46,14 @@
     "task": "Verifique que a página exibe o texto 'Encha suas vagas com reservas online' e o texto 'Vaga vazia não volta.'.",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-07-30T15:25:44.479Z"
+      "at": "2026-07-31T16:03:31.710Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-07-30T15:25:44.737Z",
-    "last_replayed_at": "2026-07-30T19:01:00.088Z",
-    "replay_count": 7,
+    "created_at": "2026-07-31T16:03:33.972Z",
+    "last_replayed_at": "2026-07-31T16:16:01.979Z",
+    "replay_count": 2,
     "replay_failures": 0,
     "plan_generation": 1
   }

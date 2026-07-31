@@ -1,0 +1,12 @@
+{
+  "scenario_id": "contato",
+  "start_url": "/contato",
+  "task": "Verifique que a página exibe o texto 'Fale conosco'.",
+  "tags": [
+    "smoke",
+    "leitura"
+  ],
+  "hints": [
+    "Leitura pura: não preencha formulário nem envie nada."
+  ]
+}

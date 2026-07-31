@@ -1,0 +1,45 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "manager-finance-recipients",
+    "start_url": "/manager/finance/recipients",
+    "start_sig": "sig:0220ddecfb1188ce",
+    "scenario_sig": "d9ede83a52645121"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "manager-finance-recipients",
+    "start_url": "http://localhost:5180/manager/finance/recipients",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "Recebedores page heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "h1",
+            "text": "Recebedores"
+          },
+          "selector": "h1"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Verifique que a página exibe o texto 'Recebedores'.",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-07-31T16:01:47.481Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-07-31T16:01:49.282Z",
+    "last_replayed_at": "2026-07-31T16:15:44.528Z",
+    "replay_count": 2,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "scenario_id": "ajuda",
+  "start_url": "/ajuda",
+  "task": "Verifique que a página exibe o texto 'Como podemos ajudar'.",
+  "tags": [
+    "smoke",
+    "leitura"
+  ],
+  "hints": [
+    "Leitura pura: não preencha formulário nem envie nada."
+  ]
+}

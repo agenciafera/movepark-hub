@@ -1,43 +1,43 @@
 {
   "cache_version": "0.2",
   "key": {
-    "scenario_id": "manager-users-render",
-    "start_url": "/manager/users",
-    "start_sig": "sig:f229d562bc655a9f",
-    "scenario_sig": "f6acea183cff4d2a"
+    "scenario_id": "operator-locations",
+    "start_url": "/operator/locations",
+    "start_sig": "sig:7c87997d1435748b",
+    "scenario_sig": "c8b0161a24365881"
   },
   "plan": {
     "plan_version": "0.1",
-    "scenario_id": "manager-users-render",
-    "start_url": "http://localhost:5180/manager/users",
+    "scenario_id": "operator-locations",
+    "start_url": "http://localhost:5180/operator/locations",
     "actions": [
       {
         "id": "a1",
         "type": "wait_for",
         "target": {
           "selector": "h1",
-          "description": "Usuários page heading"
+          "description": "Heading 'Unidades' on the locations page"
         },
         "expect": {
           "text_contains": {
             "selector": "h1",
-            "text": "Usuários"
+            "text": "Unidades"
           },
           "selector": "h1"
         },
         "timeout_ms": 5000
       }
     ],
-    "task": "Verifique que a página exibe o texto Usuários.",
+    "task": "Verifique que a página exibe o texto 'Unidades'.",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-07-31T16:02:18.899Z"
+      "at": "2026-07-31T16:03:01.286Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-07-31T16:02:23.256Z",
-    "last_replayed_at": "2026-07-31T16:15:50.377Z",
+    "created_at": "2026-07-31T16:03:02.767Z",
+    "last_replayed_at": "2026-07-31T16:15:56.078Z",
     "replay_count": 2,
     "replay_failures": 0,
     "plan_generation": 1

@@ -1,43 +1,43 @@
 {
   "cache_version": "0.2",
   "key": {
-    "scenario_id": "como-funciona",
-    "start_url": "/como-funciona",
-    "start_sig": "sig:2644ef779c146a8c",
-    "scenario_sig": "491f97c04343db69"
+    "scenario_id": "contato",
+    "start_url": "/contato",
+    "start_sig": "sig:7ee472eb0fd6c82b",
+    "scenario_sig": "92c01b2ecb3d0d8c"
   },
   "plan": {
     "plan_version": "0.1",
-    "scenario_id": "como-funciona",
-    "start_url": "http://localhost:5180/como-funciona",
+    "scenario_id": "contato",
+    "start_url": "http://localhost:5180/contato",
     "actions": [
       {
         "id": "a1",
         "type": "wait_for",
         "target": {
           "selector": "h1",
-          "description": "Main heading with reservation tagline"
+          "description": "Heading 'Fale conosco'"
         },
         "expect": {
           "text_contains": {
             "selector": "h1",
-            "text": "Reserve sua vaga em menos de 2 minutos."
+            "text": "Fale conosco"
           },
           "selector": "h1"
         },
         "timeout_ms": 5000
       }
     ],
-    "task": "Verifique que a página exibe o texto 'Reserve sua vaga em menos de 2 minutos.'.",
+    "task": "Verifique que a página exibe o texto 'Fale conosco'.",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-07-31T16:00:40.634Z"
+      "at": "2026-07-31T16:00:39.909Z"
     }
   },
   "status": "active",
   "stats": {
     "created_at": "2026-07-31T16:00:41.444Z",
-    "last_replayed_at": "2026-07-31T16:15:32.226Z",
+    "last_replayed_at": "2026-07-31T16:15:32.239Z",
     "replay_count": 2,
     "replay_failures": 0,
     "plan_generation": 1

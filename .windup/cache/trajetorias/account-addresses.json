@@ -1,0 +1,45 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "account-addresses",
+    "start_url": "/account/addresses",
+    "start_sig": "sig:0dcff3a175658e77",
+    "scenario_sig": "5d0b374520910aa6"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "account-addresses",
+    "start_url": "http://localhost:5180/account/addresses",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h1",
+          "description": "Heading 'Endereços' on the addresses page"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h1",
+            "text": "Endereços"
+          },
+          "selector": "main h1"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Verifique que a página exibe o texto 'Endereços'.",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-07-31T15:59:59.792Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-07-31T16:00:02.960Z",
+    "last_replayed_at": "2026-07-31T16:15:26.745Z",
+    "replay_count": 2,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}
