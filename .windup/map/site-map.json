@@ -3153,8 +3153,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-29T12:30:26.935Z",
-      "last_seen": "2026-07-31T17:50:28.448Z",
-      "seen_count": 42,
+      "last_seen": "2026-07-31T19:26:39.207Z",
+      "seen_count": 43,
       "stale": false
     },
     "sig:eb1cb13a1fa9ce8c": {
@@ -3173,11 +3173,10 @@
         "http://localhost:5180/ajuda"
       ],
       "url_pattern": "**/",
-      "title": "Sobre nós | Movepark",
+      "title": "Termos de Uso | Movepark",
       "interactive": [
         "a",
         "a",
-        "button id=radix-:r8: type=button text=Destinos",
         "button type=button text=OndeAeroporto, cidade ou bairro",
         "button type=button text=Check-in01 ago · 22:00",
         "button type=button text=Check-out06 ago · 08:00",
@@ -3188,18 +3187,6 @@
         "button type=button",
         "a text=Seja parceiro",
         "a text=Entrar",
-        "a text=Buscar estacionamento",
-        "a text=Quero ser parceiro",
-        "a text=Jardim PaulistaSão Paulo",
-        "a text=GuarulhosGRU",
-        "a text=Afonso PenaCWB",
-        "a text=LisboaLIS",
-        "a text=CentroSão Paulo",
-        "a text=CongonhasCGH",
-        "a text=ViracoposVCP",
-        "a text=FaroFAO",
-        "a text=Ver todos os destinos",
-        "a text=Buscar estacionamento",
         "a text=Sobre nós",
         "a text=Termos de uso",
         "a text=Política de privacidade",
@@ -3216,8 +3203,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-29T12:30:32.373Z",
-      "last_seen": "2026-07-31T17:51:39.042Z",
-      "seen_count": 70,
+      "last_seen": "2026-07-31T19:27:39.846Z",
+      "seen_count": 71,
       "stale": false
     },
     "sig:2644ef779c146a8c": {
@@ -3267,8 +3254,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T13:22:55.662Z",
-      "last_seen": "2026-07-31T17:51:45.152Z",
-      "seen_count": 117,
+      "last_seen": "2026-07-31T19:27:41.521Z",
+      "seen_count": 124,
       "stale": false
     },
     "sig:42bd6642a8c0077e": {
@@ -3278,7 +3265,7 @@
         "http://localhost:5180/docs"
       ],
       "url_pattern": "**/faq",
-      "title": "Perguntas Frequentes | Movepark",
+      "title": "Documentação da API & MCP · Movepark",
       "interactive": [
         "a",
         "a",
@@ -3292,9 +3279,99 @@
         "button type=button",
         "a text=Seja parceiro",
         "a text=Entrar",
-        "input placeholder=Buscar pergunta…",
-        "button type=button text=Todas",
-        "button type=button text=Todas",
+        "a text=OpenAPI 3.1 ↗",
+        "input placeholder=Buscar endpoint…",
+        "a text=Visão geral",
+        "a text=Autenticação",
+        "a text=Escopos",
+        "a text=Convenções",
+        "a text=Status codes",
+        "a text=Limites",
+        "a text=Unidades4",
+        "button type=button",
+        "a text=Disponibilidade & Preço2",
+        "button type=button",
+        "a text=Reservas6",
+        "button type=button",
+        "a text=Tipos de vaga (escrita)1",
+        "button type=button",
+        "a text=Cupons4",
+        "button type=button",
+        "a text=Descontos automáticos4",
+        "button type=button",
+        "a text=Serviços adicionais4",
+        "button type=button",
+        "a text=Avaliações2",
+        "button type=button",
+        "a text=Ocupação1",
+        "button type=button",
+        "a text=FAQ1",
+        "button type=button",
+        "a text=MCP",
+        "input placeholder=Buscar endpoint…",
+        "a text=Visão geral",
+        "a text=Autenticação",
+        "a text=Escopos",
+        "a text=Convenções",
+        "a text=Status codes",
+        "a text=Limites",
+        "a text=Unidades4",
+        "button type=button",
+        "a text=Disponibilidade & Preço2",
+        "button type=button",
+        "a text=Reservas6",
+        "button type=button",
+        "a text=Tipos de vaga (escrita)1",
+        "button type=button",
+        "a text=Cupons4",
+        "button type=button",
+        "a text=Descontos automáticos4",
+        "button type=button",
+        "a text=Serviços adicionais4",
+        "button type=button",
+        "a text=Avaliações2",
+        "button type=button",
+        "a text=Ocupação1",
+        "button type=button",
+        "a text=FAQ1",
+        "button type=button",
+        "a text=MCP",
+        "button type=button",
+        "a text=/operator/api-keys",
+        "button type=button",
+        "button type=button text=GET/v1/locationslocations:read",
+        "button type=button text=GET/v1/locations/{id}locations:read",
+        "button type=button text=GET/v1/locations/{id}/parking-typesparki",
+        "button type=button text=POST/v1/locations/{id}locations:write",
+        "button type=button text=GET/v1/availabilityavailability:read",
+        "button type=button text=POST/v1/pricing/simulatepricing:read",
+        "button type=button text=GET/v1/bookingsbookings:read",
+        "button type=button text=GET/v1/bookings/{id}bookings:read",
+        "button type=button text=POST/v1/bookingsbookings:write",
+        "button type=button text=POST/v1/bookings/{id}/cancelbookings:can",
+        "button type=button text=POST/v1/bookings/{id}/check-inbookings:c",
+        "button type=button text=POST/v1/bookings/{id}/check-outbookings:",
+        "button type=button text=POST/v1/parking-types/{id}parking-types:",
+        "button type=button text=GET/v1/couponscoupons:read",
+        "button type=button text=POST/v1/couponscoupons:write",
+        "button type=button text=POST/v1/coupons/{id}/activecoupons:write",
+        "button type=button text=POST/v1/coupons/{id}/deletecoupons:write",
+        "button type=button text=GET/v1/discountsdiscounts:read",
+        "button type=button text=POST/v1/discountsdiscounts:write",
+        "button type=button text=POST/v1/discounts/{id}/activediscounts:w",
+        "button type=button text=POST/v1/discounts/{id}/deletediscounts:w",
+        "button type=button text=GET/v1/addonsaddons:read",
+        "button type=button text=POST/v1/addonsaddons:write",
+        "button type=button text=POST/v1/addons/{id}/locationsaddons:writ",
+        "button type=button text=POST/v1/addons/{id}/deleteaddons:write",
+        "button type=button text=GET/v1/reviewsreviews:read",
+        "button type=button text=POST/v1/reviews/{id}/respondreviews:writ",
+        "button type=button text=GET/v1/occupancyoccupancy:read",
+        "button type=button text=GET/v1/faqfaq:read",
+        "button type=button",
+        "button type=button",
+        "a text=server-card.json",
+        "a text=partner-card.json",
         "a text=Sobre nós",
         "a text=Termos de uso",
         "a text=Política de privacidade",
@@ -3311,8 +3388,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T13:24:35.920Z",
-      "last_seen": "2026-07-31T16:49:39.123Z",
-      "seen_count": 17,
+      "last_seen": "2026-07-31T19:26:34.693Z",
+      "seen_count": 18,
       "stale": false
     },
     "sig:c6d9d2df64e4156f": {
@@ -3325,7 +3402,6 @@
       "interactive": [
         "a",
         "a",
-        "button id=radix-:rf: type=button text=Destinos",
         "button type=button",
         "a text=Seja parceiro",
         "a text=Entrar",
@@ -3354,8 +3430,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T13:25:36.949Z",
-      "last_seen": "2026-07-31T17:51:38.997Z",
-      "seen_count": 17,
+      "last_seen": "2026-07-31T19:23:43.108Z",
+      "seen_count": 19,
       "stale": false
     },
     "sig:5f04617cfcb270ea": {
@@ -3506,12 +3582,13 @@
         "a text=Destinos",
         "a text=Entrar",
         "a text=Parceiro",
-        "a text=Ajuda"
+        "a text=Ajuda",
+        "button type=button"
       ],
       "source": "execution",
       "first_seen": "2026-07-30T15:25:44.737Z",
-      "last_seen": "2026-07-31T17:51:39.083Z",
-      "seen_count": 81,
+      "last_seen": "2026-07-31T19:27:39.520Z",
+      "seen_count": 92,
       "stale": false
     },
     "sig:95f23b77537a835a": {
@@ -3629,8 +3706,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T12:42:59.515Z",
-      "last_seen": "2026-07-31T17:43:20.709Z",
-      "seen_count": 8,
+      "last_seen": "2026-07-31T19:26:37.073Z",
+      "seen_count": 9,
       "stale": false
     },
     "sig:0dcff3a175658e77": {
@@ -3689,8 +3766,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:46:22.794Z",
-      "last_seen": "2026-07-31T17:51:45.603Z",
-      "seen_count": 115,
+      "last_seen": "2026-07-31T19:27:42.243Z",
+      "seen_count": 132,
       "stale": false
     },
     "sig:32ea8b629364b656": {
@@ -3750,8 +3827,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:46:23.420Z",
-      "last_seen": "2026-07-31T17:49:52.490Z",
-      "seen_count": 15,
+      "last_seen": "2026-07-31T19:26:24.610Z",
+      "seen_count": 16,
       "stale": false
     },
     "sig:dbe4277c10825f11": {
@@ -3812,8 +3889,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:46:23.644Z",
-      "last_seen": "2026-07-31T17:49:52.479Z",
-      "seen_count": 15,
+      "last_seen": "2026-07-31T19:26:26.310Z",
+      "seen_count": 16,
       "stale": false
     },
     "sig:63b4f276654d776e": {
@@ -3870,13 +3947,12 @@
         "a text=Destinos",
         "a text=Entrar",
         "a text=Parceiro",
-        "a text=Ajuda",
-        "button type=button"
+        "a text=Ajuda"
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:20.083Z",
-      "last_seen": "2026-07-31T17:50:13.414Z",
-      "seen_count": 14,
+      "last_seen": "2026-07-31T19:26:32.628Z",
+      "seen_count": 15,
       "stale": false
     },
     "sig:30b80afac064bfc7": {
@@ -3919,8 +3995,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:26.734Z",
-      "last_seen": "2026-07-31T17:51:13.075Z",
-      "seen_count": 90,
+      "last_seen": "2026-07-31T19:27:10.095Z",
+      "seen_count": 96,
       "stale": false
     },
     "sig:00208007c0a1c596": {
@@ -4053,8 +4129,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:28.312Z",
-      "last_seen": "2026-07-31T17:50:21.234Z",
-      "seen_count": 15,
+      "last_seen": "2026-07-31T19:26:35.385Z",
+      "seen_count": 16,
       "stale": false
     },
     "sig:5f9442af211e8be5": {
@@ -4098,8 +4174,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:29.958Z",
-      "last_seen": "2026-07-31T17:50:14.654Z",
-      "seen_count": 15,
+      "last_seen": "2026-07-31T19:26:34.475Z",
+      "seen_count": 16,
       "stale": false
     },
     "sig:f4a52eca245bd7d5": {
@@ -4141,8 +4217,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:48.684Z",
-      "last_seen": "2026-07-31T17:50:52.103Z",
-      "seen_count": 15,
+      "last_seen": "2026-07-31T19:26:50.470Z",
+      "seen_count": 16,
       "stale": false
     },
     "sig:f229d562bc655a9f": {
@@ -4185,8 +4261,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:55.153Z",
-      "last_seen": "2026-07-31T17:51:15.651Z",
-      "seen_count": 66,
+      "last_seen": "2026-07-31T19:27:13.436Z",
+      "seen_count": 73,
       "stale": false
     },
     "sig:0220ddecfb1188ce": {
@@ -4230,8 +4306,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:56.027Z",
-      "last_seen": "2026-07-31T17:51:09.230Z",
-      "seen_count": 80,
+      "last_seen": "2026-07-31T19:27:08.205Z",
+      "seen_count": 88,
       "stale": false
     },
     "sig:deb61410f48cc824": {
@@ -4276,8 +4352,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:48:54.170Z",
-      "last_seen": "2026-07-31T17:51:11.648Z",
-      "seen_count": 15,
+      "last_seen": "2026-07-31T19:27:08.668Z",
+      "seen_count": 16,
       "stale": false
     },
     "sig:9e475390a54a6c61": {
@@ -4317,8 +4393,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:16.750Z",
-      "last_seen": "2026-07-31T17:51:23.049Z",
-      "seen_count": 45,
+      "last_seen": "2026-07-31T19:27:21.079Z",
+      "seen_count": 50,
       "stale": false
     },
     "sig:216bc20eae546abf": {
@@ -4358,8 +4434,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:27.416Z",
-      "last_seen": "2026-07-31T17:51:21.639Z",
-      "seen_count": 15,
+      "last_seen": "2026-07-31T19:27:16.790Z",
+      "seen_count": 16,
       "stale": false
     },
     "sig:7c87997d1435748b": {
@@ -4399,8 +4475,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:45.163Z",
-      "last_seen": "2026-07-31T17:51:34.031Z",
-      "seen_count": 82,
+      "last_seen": "2026-07-31T19:27:35.884Z",
+      "seen_count": 88,
       "stale": false
     },
     "sig:0de7196068dc995b": {
@@ -4440,8 +4516,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:46.524Z",
-      "last_seen": "2026-07-31T17:51:23.045Z",
-      "seen_count": 15,
+      "last_seen": "2026-07-31T19:27:20.807Z",
+      "seen_count": 19,
       "stale": false
     },
     "sig:0e77bbe16451b1b2": {
@@ -4480,8 +4556,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:03.481Z",
-      "last_seen": "2026-07-31T17:51:28.602Z",
-      "seen_count": 15,
+      "last_seen": "2026-07-31T19:27:28.222Z",
+      "seen_count": 16,
       "stale": false
     },
     "sig:330a98d155e0b087": {
@@ -4521,8 +4597,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:13.982Z",
-      "last_seen": "2026-07-31T17:51:30.128Z",
-      "seen_count": 15,
+      "last_seen": "2026-07-31T19:27:31.827Z",
+      "seen_count": 16,
       "stale": false
     },
     "sig:d338797fc9985ff4": {
@@ -4563,8 +4639,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:23.245Z",
-      "last_seen": "2026-07-31T17:51:34.075Z",
-      "seen_count": 15,
+      "last_seen": "2026-07-31T19:27:34.903Z",
+      "seen_count": 16,
       "stale": false
     },
     "sig:ca978112ca1bbdca": {
@@ -4578,8 +4654,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:40.542Z",
-      "last_seen": "2026-07-31T17:51:45.146Z",
-      "seen_count": 15,
+      "last_seen": "2026-07-31T19:27:41.584Z",
+      "seen_count": 16,
       "stale": false
     },
     "sig:56110ea72b7f7df7": {
@@ -4731,8 +4807,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T16:54:47.570Z",
-      "last_seen": "2026-07-31T17:50:46.545Z",
-      "seen_count": 65,
+      "last_seen": "2026-07-31T19:26:47.485Z",
+      "seen_count": 77,
       "stale": false
     },
     "sig:0112eb8401335d27": {
@@ -4795,8 +4871,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T17:21:42.604Z",
-      "last_seen": "2026-07-31T17:50:13.215Z",
-      "seen_count": 8,
+      "last_seen": "2026-07-31T19:26:32.092Z",
+      "seen_count": 10,
       "stale": false
     },
     "sig:34581fbdfb157f99": {
@@ -4846,8 +4922,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T17:21:44.244Z",
-      "last_seen": "2026-07-31T17:50:46.285Z",
-      "seen_count": 24,
+      "last_seen": "2026-07-31T19:26:47.453Z",
+      "seen_count": 30,
       "stale": false
     },
     "sig:c81c82460995a2b3": {
@@ -4915,8 +4991,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T17:24:38.025Z",
-      "last_seen": "2026-07-31T17:50:28.375Z",
-      "seen_count": 11,
+      "last_seen": "2026-07-31T19:26:38.829Z",
+      "seen_count": 15,
       "stale": false
     },
     "sig:76497e0b0ca8e6c9": {
@@ -4974,8 +5050,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T17:26:00.975Z",
-      "last_seen": "2026-07-31T17:51:45.835Z",
-      "seen_count": 10,
+      "last_seen": "2026-07-31T19:27:42.374Z",
+      "seen_count": 12,
       "stale": false
     },
     "sig:e3b0c44298fc1c14": {
@@ -5084,8 +5160,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T17:40:24.049Z",
-      "last_seen": "2026-07-31T17:50:09.044Z",
-      "seen_count": 15,
+      "last_seen": "2026-07-31T19:26:30.776Z",
+      "seen_count": 18,
       "stale": false
     },
     "sig:ad8b3fbf0876c52c": {
@@ -5270,6 +5346,227 @@
       "last_seen": "2026-07-31T17:44:05.313Z",
       "seen_count": 2,
       "stale": false
+    },
+    "sig:997d26f451fa9a15": {
+      "urls_seen": [
+        "http://localhost:5180/manager/destinations"
+      ],
+      "url_pattern": "**/manager/destinations",
+      "title": "Movepark Hub",
+      "interactive": [
+        "button type=button text=Rede completa0 unidades · 0 empresas",
+        "a text=Dashboard",
+        "a text=Empresas",
+        "a text=Parceiros",
+        "a text=Destinos",
+        "a text=Reservas",
+        "a text=Financeiro",
+        "a text=Repasses",
+        "a text=Comissões",
+        "a text=Recebedores",
+        "a text=Tarifas",
+        "a text=Atribuição",
+        "a text=Avaliações",
+        "a text=FAQ",
+        "a text=Usuários",
+        "a text=Documentos legais",
+        "a text=Configurações",
+        "button type=button text=Buscar reserva, unidade, cupom⌘K",
+        "button type=button",
+        "button id=radix-:r4: type=button text=QW",
+        "button text=Novo destino",
+        "a text=Início",
+        "a text=Empresas",
+        "a text=Reservas",
+        "a text=Usuários",
+        "button type=button text=Mais",
+        "input id=d-code placeholder=GRU",
+        "button id=dest-type type=button text=Aeroporto",
+        "select text=AeroportoRodoviáriaCentroBairroOutro",
+        "input id=d-name",
+        "input id=d-short placeholder=Guarulhos",
+        "input id=d-slug placeholder=aeroporto-de-guarulhos",
+        "input id=d-city",
+        "button id=d-state type=button text=UF",
+        "select text=AcreAlagoasAmapáAmazonasBahiaCearáDistri",
+        "input id=d-lat placeholder=-23.43",
+        "input id=d-lng placeholder=-46.47",
+        "input id=d-sort type=number",
+        "button type=button",
+        "input type=checkbox",
+        "button type=button",
+        "input type=checkbox",
+        "input id=d-mt placeholder=Estacionamento em ... | Movepark",
+        "input id=img-up-1 type=file",
+        "textarea id=d-md",
+        "textarea id=d-intro",
+        "button type=button text=Cancelar",
+        "button type=submit text=Salvar",
+        "button type=button text=Fechar"
+      ],
+      "source": "execution",
+      "first_seen": "2026-07-31T19:24:08.924Z",
+      "last_seen": "2026-07-31T19:26:53.568Z",
+      "seen_count": 2,
+      "stale": false
+    },
+    "sig:fe5ad84a4aed370b": {
+      "urls_seen": [
+        "http://localhost:5180/operator/addons"
+      ],
+      "url_pattern": "**/operator/addons",
+      "title": "Movepark Hub",
+      "interactive": [
+        "a text=Dashboard",
+        "a text=Reservas",
+        "a text=Ocupação",
+        "a text=Unidades",
+        "a text=Serviços",
+        "a text=Avaliações",
+        "a text=Preços",
+        "a text=Promoções",
+        "a text=Repasses",
+        "a text=Relatórios",
+        "a text=Usuários",
+        "a text=FAQ",
+        "a text=API",
+        "a text=Configurações",
+        "button type=button text=Buscar reserva, unidade, cupom⌘K",
+        "button type=button",
+        "button id=radix-:r3: type=button text=QW",
+        "a text=Continuar",
+        "button text=Novo serviço",
+        "button text=Novo serviço",
+        "a text=Início",
+        "a text=Reservas",
+        "a text=Ocupação",
+        "a text=Preços",
+        "button type=button text=Mais",
+        "input id=a-name placeholder=Ex: Lava-jato",
+        "textarea id=a-desc placeholder=Detalhes opcionais exibidos ao cliente.",
+        "input placeholder=0,00",
+        "input id=a-sort type=number",
+        "button type=button",
+        "button type=button text=Cancelar",
+        "button type=submit text=Salvar",
+        "button type=button text=Fechar"
+      ],
+      "source": "execution",
+      "first_seen": "2026-07-31T19:24:09.051Z",
+      "last_seen": "2026-07-31T19:27:16.748Z",
+      "seen_count": 2,
+      "stale": false
+    },
+    "sig:db0102561708d1ac": {
+      "urls_seen": [
+        "http://localhost:5180/manager/faq"
+      ],
+      "url_pattern": "**/manager/faq",
+      "title": "Movepark Hub",
+      "interactive": [
+        "button type=button text=Rede completa0 unidades · 0 empresas",
+        "a text=Dashboard",
+        "a text=Empresas",
+        "a text=Parceiros",
+        "a text=Destinos",
+        "a text=Reservas",
+        "a text=Financeiro",
+        "a text=Repasses",
+        "a text=Comissões",
+        "a text=Recebedores",
+        "a text=Tarifas",
+        "a text=Atribuição",
+        "a text=Avaliações",
+        "a text=FAQ",
+        "a text=Usuários",
+        "a text=Documentos legais",
+        "a text=Configurações",
+        "button type=button text=Buscar reserva, unidade, cupom⌘K",
+        "button type=button",
+        "button id=radix-:r4: type=button text=QW",
+        "a text=Categorias",
+        "button text=Nova pergunta",
+        "input placeholder=Buscar pergunta…",
+        "button type=button text=Todos os escopos",
+        "button type=button text=Todas as categorias",
+        "a text=Início",
+        "a text=Empresas",
+        "a text=Reservas",
+        "a text=Usuários",
+        "button type=button text=Mais",
+        "input id=question placeholder=Como faço o check-in?",
+        "textarea id=answer placeholder=Resposta em texto. Quebras de linha são respeitadas.",
+        "button id=faq-category type=button text=Sem categoria",
+        "select",
+        "input id=sort type=number",
+        "button type=button",
+        "input type=checkbox",
+        "button type=button text=Cancelar",
+        "button type=submit text=Salvar",
+        "button type=button text=Fechar"
+      ],
+      "source": "execution",
+      "first_seen": "2026-07-31T19:24:12.199Z",
+      "last_seen": "2026-07-31T19:26:58.888Z",
+      "seen_count": 2,
+      "stale": false
+    },
+    "sig:4fca3398e1014f3b": {
+      "urls_seen": [
+        "http://localhost:5180/operator/coupons"
+      ],
+      "url_pattern": "**/operator/coupons",
+      "title": "Movepark Hub",
+      "interactive": [
+        "a text=Dashboard",
+        "a text=Reservas",
+        "a text=Ocupação",
+        "a text=Unidades",
+        "a text=Serviços",
+        "a text=Avaliações",
+        "a text=Preços",
+        "a text=Promoções",
+        "a text=Repasses",
+        "a text=Relatórios",
+        "a text=Usuários",
+        "a text=FAQ",
+        "a text=API",
+        "a text=Configurações",
+        "button type=button text=Buscar reserva, unidade, cupom⌘K",
+        "button type=button",
+        "button id=radix-:r3: type=button text=QW",
+        "a text=Continuar",
+        "button id=radix-:r5:-trigger-coupons type=button text=Cupons",
+        "button id=radix-:r5:-trigger-discounts type=button text=Descontos",
+        "button text=Novo cupom",
+        "button text=Novo cupom",
+        "a text=Início",
+        "a text=Reservas",
+        "a text=Ocupação",
+        "a text=Preços",
+        "button type=button text=Mais",
+        "input id=c-code placeholder=PROMO10",
+        "button id=coupon-type type=button text=Percentual (%)",
+        "select text=Percentual (%)Valor fixo (R$)",
+        "input id=c-value type=number placeholder=10",
+        "input id=c-max type=number placeholder=Ilimitado",
+        "input id=c-from type=date",
+        "input id=c-until type=date",
+        "textarea id=c-desc placeholder=Para que serve este cupom.",
+        "input id=c-minamount placeholder=0,00",
+        "input id=c-mindays type=number placeholder=Sem mínimo",
+        "input id=c-peruser type=number placeholder=Ilimitado",
+        "input id=c-sort type=number",
+        "button type=button",
+        "button type=button text=Cancelar",
+        "button type=submit text=Salvar",
+        "button type=button text=Fechar"
+      ],
+      "source": "execution",
+      "first_seen": "2026-07-31T19:26:11.186Z",
+      "last_seen": "2026-07-31T19:27:21.057Z",
+      "seen_count": 2,
+      "stale": false
     }
   },
   "transitions": [
@@ -5298,7 +5595,7 @@
         "selector": "h1"
       },
       "to": "sig:2644ef779c146a8c",
-      "seen_count": 15
+      "seen_count": 16
     },
     {
       "from": "sig:5f04617cfcb270ea",
@@ -5397,7 +5694,7 @@
         "selector": "h1"
       },
       "to": "sig:00208007c0a1c596",
-      "seen_count": 1
+      "seen_count": 2
     },
     {
       "from": "sig:b805d148d91ff81c",
@@ -5406,7 +5703,7 @@
         "selector": "main button:has-text('Quero ser parceiro')"
       },
       "to": "sig:3f40933715753efc",
-      "seen_count": 61
+      "seen_count": 71
     },
     {
       "from": "sig:b805d148d91ff81c",
@@ -5442,7 +5739,7 @@
         "selector": "[role=\"dialog\"] button:has-text('Continuar')"
       },
       "to": "sig:34581fbdfb157f99",
-      "seen_count": 21
+      "seen_count": 26
     },
     {
       "from": "sig:0dcff3a175658e77",
@@ -5469,7 +5766,7 @@
         "selector": "#pl-company"
       },
       "to": "sig:34581fbdfb157f99",
-      "seen_count": 2
+      "seen_count": 3
     },
     {
       "from": "sig:0dcff3a175658e77",
@@ -5478,7 +5775,7 @@
         "selector": "main button:has-text(\"Novo endereço\")"
       },
       "to": "sig:c81c82460995a2b3",
-      "seen_count": 11
+      "seen_count": 15
     },
     {
       "from": "sig:0dcff3a175658e77",
@@ -5487,7 +5784,7 @@
         "selector": "main button"
       },
       "to": "sig:76497e0b0ca8e6c9",
-      "seen_count": 8
+      "seen_count": 10
     },
     {
       "from": "sig:e3b0c44298fc1c14",
@@ -5505,7 +5802,7 @@
         "selector": "main button:has-text('Quero ser parceiro')"
       },
       "to": "sig:3f40933715753efc",
-      "seen_count": 1
+      "seen_count": 3
     },
     {
       "from": "sig:0dcff3a175658e77",
@@ -5550,7 +5847,7 @@
         "selector": "main button:has-text(\"Novo cartão\")"
       },
       "to": "sig:0112eb8401335d27",
-      "seen_count": 3
+      "seen_count": 5
     },
     {
       "from": "sig:0112eb8401335d27",
@@ -5559,7 +5856,7 @@
         "selector": "[role=\"dialog\"] button:has-text(\"Salvar\")"
       },
       "to": "sig:0dcff3a175658e77",
-      "seen_count": 3
+      "seen_count": 5
     },
     {
       "from": "sig:c81c82460995a2b3",
@@ -5568,7 +5865,7 @@
         "selector": "button:has-text(\"Salvar\")"
       },
       "to": "sig:0dcff3a175658e77",
-      "seen_count": 3
+      "seen_count": 5
     },
     {
       "from": "sig:e3b0c44298fc1c14",
@@ -5578,6 +5875,42 @@
       },
       "to": "sig:0dcff3a175658e77",
       "seen_count": 1
+    },
+    {
+      "from": "sig:0220ddecfb1188ce",
+      "action": {
+        "type": "click",
+        "selector": "button[text='Novo destino'], button:has-text('Novo destino')"
+      },
+      "to": "sig:997d26f451fa9a15",
+      "seen_count": 2
+    },
+    {
+      "from": "sig:9e475390a54a6c61",
+      "action": {
+        "type": "click",
+        "selector": "button:has-text('Novo serviço')"
+      },
+      "to": "sig:fe5ad84a4aed370b",
+      "seen_count": 2
+    },
+    {
+      "from": "sig:f229d562bc655a9f",
+      "action": {
+        "type": "click",
+        "selector": "button:has-text('Nova pergunta')"
+      },
+      "to": "sig:db0102561708d1ac",
+      "seen_count": 2
+    },
+    {
+      "from": "sig:0de7196068dc995b",
+      "action": {
+        "type": "click",
+        "selector": "[role=\"tabpanel\"] button:first-of-type"
+      },
+      "to": "sig:4fca3398e1014f3b",
+      "seen_count": 2
     }
   ],
   "assist_seen": {
