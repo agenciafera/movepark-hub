@@ -1,12 +1,13 @@
 {
   "scenario_id": "ajuda",
   "start_url": "/ajuda",
-  "task": "Verifique que a página exibe o texto 'Como podemos ajudar'.",
+  "task": "Verifique que o cabecalho exibe o texto Destinos, que a pagina exibe o texto Como podemos ajudar, e que o rodape exibe o texto Seja parceiro.",
   "tags": [
     "smoke",
     "leitura"
   ],
   "hints": [
-    "Leitura pura: não preencha formulário nem envie nada."
+    "Tres verificacoes independentes: o cabecalho do site, o conteudo proprio da pagina e o rodape.",
+    "O cabecalho e o <header> e o rodape e o <footer>; o conteudo da pagina fica no <main>."
   ]
 }

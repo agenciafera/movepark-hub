@@ -4,7 +4,7 @@
     "scenario_id": "contato",
     "start_url": "/contato",
     "start_sig": "sig:7ee472eb0fd6c82b",
-    "scenario_sig": "92c01b2ecb3d0d8c"
+    "scenario_sig": "fc366243ef5064d5"
   },
   "plan": {
     "plan_version": "0.1",
@@ -15,30 +15,60 @@
         "id": "a1",
         "type": "wait_for",
         "target": {
-          "selector": "h1",
-          "description": "Heading 'Fale conosco'"
+          "selector": "header",
+          "description": "Cabeçalho do site"
         },
         "expect": {
           "text_contains": {
-            "selector": "h1",
+            "selector": "header",
+            "text": "Destinos"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h1",
+          "description": "Título principal da página Fale conosco"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h1",
             "text": "Fale conosco"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "footer",
+          "description": "Rodapé do site"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "footer",
+            "text": "Seja parceiro"
           },
-          "selector": "h1"
+          "selector": "footer"
         },
         "timeout_ms": 5000
       }
     ],
-    "task": "Verifique que a página exibe o texto 'Fale conosco'.",
+    "task": "Verifique que o cabecalho exibe o texto Destinos, que a pagina exibe o texto Fale conosco, e que o rodape exibe o texto Seja parceiro.",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-07-31T16:00:39.909Z"
+      "at": "2026-07-31T20:02:01.341Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-07-31T16:00:41.444Z",
-    "last_replayed_at": "2026-07-31T19:44:13.231Z",
-    "replay_count": 15,
+    "created_at": "2026-07-31T20:02:02.553Z",
+    "last_replayed_at": "2026-07-31T20:08:30.103Z",
+    "replay_count": 1,
     "replay_failures": 0,
     "plan_generation": 1
   }

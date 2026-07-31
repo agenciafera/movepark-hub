@@ -4,7 +4,7 @@
     "scenario_id": "privacidade",
     "start_url": "/privacidade",
     "start_sig": "sig:2644ef779c146a8c",
-    "scenario_sig": "ccc90aec10565939"
+    "scenario_sig": "d9e8514cf22dcb50"
   },
   "plan": {
     "plan_version": "0.1",
@@ -15,30 +15,60 @@
         "id": "a1",
         "type": "wait_for",
         "target": {
-          "selector": "h1",
-          "description": "Heading de nível 1 com o título da página"
+          "selector": "header",
+          "description": "Cabeçalho do site"
         },
         "expect": {
           "text_contains": {
-            "selector": "h1",
+            "selector": "header",
+            "text": "Destinos"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h1",
+          "description": "Título principal da página de privacidade"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h1",
             "text": "Política de Privacidade"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "footer",
+          "description": "Rodapé do site"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "footer",
+            "text": "Seja parceiro"
           },
-          "selector": "h1"
+          "selector": "footer"
         },
         "timeout_ms": 5000
       }
     ],
-    "task": "Verifique que a página exibe o texto 'Política de Privacidade'.",
+    "task": "Verifique que o cabecalho exibe o texto Destinos, que a pagina exibe o texto Política de Privacidade, e que o rodape exibe o texto Seja parceiro.",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-07-31T16:03:25.010Z"
+      "at": "2026-07-31T20:04:34.140Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-07-31T16:03:26.946Z",
-    "last_replayed_at": "2026-07-31T19:46:00.327Z",
-    "replay_count": 15,
+    "created_at": "2026-07-31T20:04:36.395Z",
+    "last_replayed_at": "2026-07-31T20:09:37.577Z",
+    "replay_count": 1,
     "replay_failures": 0,
     "plan_generation": 1
   }
