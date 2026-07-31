@@ -1,0 +1,119 @@
+{
+  "scenario_id": "operator-cupom-jornada",
+  "start_url": "/operator/coupons",
+  "task": "Clique em 'Novo cupom', preencha o input de id 'c-code' com 'WINDUP10', preencha o input de id 'c-value' com '10' e clique em 'Salvar'. Verifique que o formulário fecha depois de salvar.",
+  "tags": [
+    "jornada",
+    "criacao",
+    "autenticado"
+  ],
+  "hints": [
+    "O botão que abre o formulário tem o texto 'Novo cupom'.",
+    "Os campos obrigatórios são os inputs de id 'c-code' (código) e 'c-value' (valor do desconto).",
+    "O tipo de desconto já vem com um padrão selecionado, não precisa mexer.",
+    "O botão de gravar tem o texto 'Salvar'.",
+    "A prova de sucesso e o modal FECHAR: postcondicao not_visible com selector [role=\"dialog\"]. Nao assere a mensagem, que e toast do sonner e some sozinha."
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.windup-nao-assinado\",\"token_type\":\"bearer\",\"expires_in\":999999999,\"expires_at\":4102444800,\"refresh_token\":\"windup-fake-refresh\",\"user\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"qa@windup.local\"}}"
+    }
+  },
+  "network": [
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.windup-nao-assinado",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "windup-fake-refresh",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "company_operator"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company*",
+      "json": [
+        {
+          "company_id": "00000000-0000-4000-8000-0000000000c1",
+          "role": "owner"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/company_role_scope*",
+      "json": [
+        {
+          "role": "owner",
+          "scope": "occupancy:read"
+        },
+        {
+          "role": "owner",
+          "scope": "addons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "pricing:write"
+        },
+        {
+          "role": "owner",
+          "scope": "coupons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "reviews:read"
+        },
+        {
+          "role": "owner",
+          "scope": "team:read"
+        },
+        {
+          "role": "owner",
+          "scope": "finance:read"
+        },
+        {
+          "role": "owner",
+          "scope": "api-keys:write"
+        },
+        {
+          "role": "owner",
+          "scope": "locations:write"
+        },
+        {
+          "role": "owner",
+          "scope": "bookings:read"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ]
+}

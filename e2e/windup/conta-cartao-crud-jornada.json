@@ -1,0 +1,132 @@
+{
+  "scenario_id": "conta-cartao-crud-jornada",
+  "start_url": "/account/cards",
+  "task": "A página já lista um cartão terminado em '4242'. Clique em 'Novo cartão', preencha o input de id 'number' com '5555444433332222', o input de id 'holder' com 'QA WINDUP', o input de id 'expiry' com '11/29' e o input de id 'cvv' com '321', e clique em 'Salvar'. Depois verifique que a página ainda exibe o texto '4242'.",
+  "tags": [
+    "jornada",
+    "criacao",
+    "autenticado"
+  ],
+  "hints": [
+    "A lista já vem com um cartão pelo stub: criar outro não pode derrubar o que estava na tela.",
+    "O botão que abre o formulário tem o texto 'Novo cartão'.",
+    "Os campos são os inputs de id 'number', 'holder', 'expiry' e 'cvv'.",
+    "O botão de gravar tem o texto 'Salvar'.",
+    "A verificação final é sobre a LISTA, no <main>, depois que o modal fechar."
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.windup-nao-assinado\",\"token_type\":\"bearer\",\"expires_in\":999999999,\"expires_at\":4102444800,\"refresh_token\":\"windup-fake-refresh\",\"user\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"qa@windup.local\"}}"
+    }
+  },
+  "network": [
+    {
+      "url": "**/rest/v1/payment_method*",
+      "json": [
+        {
+          "id": "pm-1",
+          "profile_id": "00000000-0000-4000-8000-000000000001",
+          "provider": "mock",
+          "brand": "visa",
+          "last4": "4242",
+          "holder_name": "QA WINDUP",
+          "expiry_month": 12,
+          "expiry_year": 2030,
+          "is_default": true,
+          "created_at": "2026-08-01T12:00:00Z",
+          "deleted_at": null
+        }
+      ]
+    },
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.windup-nao-assinado",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "windup-fake-refresh",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "customer"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/company_role_scope*",
+      "json": [
+        {
+          "role": "owner",
+          "scope": "occupancy:read"
+        },
+        {
+          "role": "owner",
+          "scope": "addons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "pricing:write"
+        },
+        {
+          "role": "owner",
+          "scope": "coupons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "reviews:read"
+        },
+        {
+          "role": "owner",
+          "scope": "team:read"
+        },
+        {
+          "role": "owner",
+          "scope": "finance:read"
+        },
+        {
+          "role": "owner",
+          "scope": "api-keys:write"
+        },
+        {
+          "role": "owner",
+          "scope": "locations:write"
+        },
+        {
+          "role": "owner",
+          "scope": "bookings:read"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ]
+}
