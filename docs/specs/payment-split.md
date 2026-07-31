@@ -15,6 +15,45 @@ Regra fixa do projeto:
   (`supabase/functions/_shared/payments`); o Pagar.me existe só no adapter. Trocar de gateway no
   futuro = novo adapter, sem tocar no domínio.
 
+## Transição para custódia — o split no gateway virou interruptor (jul/2026)
+
+**Estado atual: o split NÃO é enviado ao Pagar.me.** A chave `app_setting.pagarme_split_enabled`
+nasce como `'false'` (migration `20260920000000_pagarme_split_toggle.sql`). Com ela desligada, as
+quatro Edges que cobram (`create-pix-charge`, `create-card-charge`, `create-fare-upgrade`,
+`change-booking-dates-paid`) omitem a chave `split` do pedido e o valor cai inteiro na conta da
+Movepark. A Pagar.me abriu uma conta escrow para a Movepark, e o repasse ao parceiro passa a ser
+operação nossa.
+
+Detalhe que não é opcional: a chave precisa ser **omitida**, nunca enviada como array vazio. A API
+valida o array e recusa o pedido. Está resolvido em `buildOrderBody` e `buildCardOrderBody` com
+spread condicional, e coberto por teste.
+
+**O snapshot `payment.split` continua sendo gravado nos dois modos.** Ele deixou de ser instrução
+para o gateway e passou a ser o razão de quanto devemos ao parceiro. É dele que `payout_statement`
+e `payout_balance` derivam, então o extrato do parceiro continua correto: o que muda é onde o
+dinheiro está, não a conta.
+
+**Limitação da API que define o desenho.** Não existe rota no Pagar.me v5 para creditar um
+recebedor fora do split de um pedido. O `POST /transfers` move saldo **de um recebedor para a conta
+bancária dele** (`source_type: recipient`, `target_type: bank_account`), não entre recebedores.
+Consequência: enquanto o split estiver desligado, nenhum valor novo entra no saldo do parceiro no
+gateway, e o repasse sai por fora (saque da Movepark mais PIX/TED). Isso torna o recebedor, o KYC e
+a prova de vida dispensáveis no modelo final, e é o que o plano de migração precisa endereçar.
+
+**Reverter é trocar a chave para `'true'`.** O código dos dois modos convive.
+
+### Pontos abertos que a custódia expõe
+
+- `payout_balance` soma só `status = 'paid'` e **não desconta estorno**. Isso era inofensivo quando
+  o gateway revertia proporcionalmente do parceiro; com custódia, vira repasse indevido.
+- `payout_withdrawal` só é alimentada pelos webhooks `transfer.*`. Sem saldo do parceiro no
+  gateway, ela para de receber linhas e o "já transferido" da tela do parceiro congela.
+- A taxa real do gateway nunca entrou no nosso banco: o desconto acontecia dentro do Pagar.me pelo
+  flag `charge_processing_fee`. Com custódia, a taxa é custo nosso e precisa virar lançamento.
+- `create-fare-upgrade` e `change-booking-dates-paid` gravam split de uma perna só, 100% Movepark,
+  mas com `liable: true`. Como `payout_statement` classifica `liable = true` como parceiro, essas
+  receitas entram no extrato como repasse devido. É bug independente da custódia.
+
 ## Por que um estado próprio de "ficha para receber"
 
 `company.onboarding_status` (`pending_review→approved→in_progress→active→rejected`) é sobre

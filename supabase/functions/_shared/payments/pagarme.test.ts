@@ -407,3 +407,42 @@ Deno.test("buildRecipientResult: nasce sem validade (quem preenche é o kyc_link
   const r = buildRecipientResult(200, { id: "re_1", status: "affiliation" });
   assertEquals(r.kycExpiresAt, null);
 });
+
+Deno.test("buildOrderBody: sem split, a chave é OMITIDA do corpo (custódia)", () => {
+  // Mandar `split: []` não é equivalente: a API valida o array e recusa o pedido.
+  const body = buildOrderBody({
+    externalCode: "MP-SEMSPLIT",
+    amountCents: 14790,
+    customer: { name: "C", email: "c@ex.com", document: "39053344705", type: "individual" },
+    items: [{ amount: 14790, description: "Reserva", quantity: 1 }],
+    expiresInSeconds: 1800,
+  }) as Record<string, any>;
+  assertEquals("split" in body.payments[0], false);
+  assertEquals(body.payments[0].payment_method, "pix");
+  assertEquals(body.payments[0].pix.expires_in, 1800);
+});
+
+Deno.test("buildOrderBody: split vazio também some do corpo", () => {
+  const body = buildOrderBody({
+    externalCode: "MP-VAZIO",
+    amountCents: 1000,
+    customer: { name: "C", email: "c@ex.com", document: null, type: "individual" },
+    items: [{ amount: 1000, description: "x", quantity: 1 }],
+    split: [],
+    expiresInSeconds: 900,
+  }) as Record<string, any>;
+  assertEquals("split" in body.payments[0], false);
+});
+
+Deno.test("buildCardOrderBody: sem split, a chave é OMITIDA de credit_card", () => {
+  const body = buildCardOrderBody({
+    externalCode: "MP-CARDSEM",
+    amountCents: 10000,
+    customer: { name: "C", email: "c@ex.com", document: null, type: "individual" },
+    items: [{ amount: 10000, description: "x", quantity: 1 }],
+    card: { cardToken: "tok" },
+    installments: 1,
+  }) as Record<string, any>;
+  assertEquals("split" in body.payments[0].credit_card, false);
+  assertEquals(body.payments[0].credit_card.installments, 1);
+});

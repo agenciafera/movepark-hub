@@ -1,5 +1,5 @@
 import { assertEquals, assertThrows } from "jsr:@std/assert";
-import { buildSplit } from "./split.ts";
+import { buildSplit, isGatewaySplitEnabled } from "./split.ts";
 
 // PIX/à vista: chargedCents == baseCents (regressão — comportamento original).
 Deno.test("buildSplit: comissão + parceiro somam o total; parceiro absorve taxas", () => {
@@ -123,4 +123,20 @@ Deno.test("buildSplit: Tarifa + juros de parcelamento somam na perna da Movepark
   });
   assertEquals(rules.find((r) => r.recipientId === "rp_partner")!.amount, 8500);
   assertEquals(rules.find((r) => r.recipientId === "rp_mp")!.amount, 3790); // 1500 + 1290 + 1000
+});
+
+Deno.test("isGatewaySplitEnabled: default é LIGADO quando a chave não existe", () => {
+  // Chave ausente ou vazia não pode desligar split por acidente.
+  assertEquals(isGatewaySplitEnabled(undefined), true);
+  assertEquals(isGatewaySplitEnabled(null), true);
+  assertEquals(isGatewaySplitEnabled(""), true);
+  assertEquals(isGatewaySplitEnabled("   "), true);
+});
+
+Deno.test("isGatewaySplitEnabled: só 'false' desliga", () => {
+  assertEquals(isGatewaySplitEnabled("false"), false);
+  assertEquals(isGatewaySplitEnabled("FALSE"), false);
+  assertEquals(isGatewaySplitEnabled("  false  "), false);
+  assertEquals(isGatewaySplitEnabled("true"), true);
+  assertEquals(isGatewaySplitEnabled("qualquer coisa"), true);
 });

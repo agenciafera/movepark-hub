@@ -341,7 +341,9 @@ export function buildOrderBody(input: PixChargeInput): Record<string, unknown> {
       {
         payment_method: "pix",
         pix: { expires_in: input.expiresInSeconds },
-        split: mapGatewaySplit(input.split),
+        // Sem split, a chave sai do corpo. Mandar `split: []` não é equivalente: a API valida o
+        // array e recusa. Ausente = o valor cai inteiro na conta da chave de API (custódia).
+        ...(input.split?.length ? { split: mapGatewaySplit(input.split) } : {}),
       },
     ],
     metadata: input.metadata,
@@ -397,7 +399,8 @@ export function buildCardOrderBody(input: CardChargeInput): Record<string, unkno
           installments: input.installments,
           statement_descriptor: input.statementDescriptor ?? "MOVEPARK",
           ...cardRef,
-          split: mapGatewaySplit(input.split),
+          // Mesma regra do PIX: sem split a chave é omitida, nunca enviada vazia.
+          ...(input.split?.length ? { split: mapGatewaySplit(input.split) } : {}),
         },
       },
     ],

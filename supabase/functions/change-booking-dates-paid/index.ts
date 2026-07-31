@@ -16,6 +16,7 @@ import {
   chargeStatusToPaymentStatus,
   getGateway,
   GatewayConfigError,
+  isGatewaySplitEnabled,
 } from "../_shared/payments/index.ts";
 import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
 import { parseBrPhone } from "../_shared/payments/contact.ts";
@@ -210,10 +211,13 @@ Deno.serve(async (req: Request) => {
 
   const { data: setting } = await admin
     .from("app_setting")
-    .select("value")
-    .eq("key", "pagarme_movepark_recipient_id")
-    .maybeSingle();
-  const moveparkRecipientId = (setting?.value ?? "").trim();
+    .select("key, value")
+    .in("key", ["pagarme_movepark_recipient_id", "pagarme_split_enabled"]);
+  const settingMap = Object.fromEntries(
+    ((setting ?? []) as { key: string; value: string | null }[]).map((s) => [s.key, s.value]),
+  );
+  const moveparkRecipientId = (settingMap.pagarme_movepark_recipient_id ?? "").trim();
+  const splitEnabled = isGatewaySplitEnabled(settingMap.pagarme_split_enabled);
   if (!moveparkRecipientId) {
     return jsonResponse({ error: "Recebedor master da Movepark não configurado." }, 503);
   }
@@ -265,7 +269,9 @@ Deno.serve(async (req: Request) => {
     items: [
       { amount: deltaCents, description: `Alteração de datas · ${booking.code}`, quantity: 1 },
     ],
-    split,
+    // Com a custódia ligada o gateway não recebe split: o valor cai inteiro na Movepark.
+    // O snapshot gravado em `payment.split` segue sendo o razão do que devemos ao parceiro.
+    split: splitEnabled ? split : undefined,
     expiresInSeconds: PIX_EXPIRES_IN_SECONDS,
     metadata: { booking_id: booking.id, booking_code: booking.code, kind: "date_change" },
   });

@@ -7,6 +7,20 @@
 
 import type { SplitRule } from "./types.ts";
 
+/**
+ * O split é enviado ao gateway? Lê `app_setting.pagarme_split_enabled`.
+ *
+ * Desligado, o valor cai inteiro na conta da Movepark (custódia) e o repasse ao parceiro passa a
+ * ser operação nossa. O snapshot em `payment.split` continua sendo gravado nos dois casos: ele é o
+ * razão de quanto devemos ao parceiro, e é dele que `payout_statement`/`payout_balance` derivam.
+ *
+ * Default LIGADO: chave ausente ou vazia não pode desligar split por acidente.
+ */
+export function isGatewaySplitEnabled(settingValue: string | null | undefined): boolean {
+  if (settingValue == null || settingValue.trim() === "") return true;
+  return settingValue.trim().toLowerCase() !== "false";
+}
+
 export interface BuildSplitArgs {
   /** Total efetivamente cobrado (com juros de parcelamento, se houver). */
   chargedCents: number;

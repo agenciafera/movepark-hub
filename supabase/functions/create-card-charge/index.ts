@@ -16,6 +16,7 @@ import {
   chargeStatusToPaymentStatus,
   getGateway,
   GatewayConfigError,
+  isGatewaySplitEnabled,
 } from "../_shared/payments/index.ts";
 import { computeInstallmentPlan, parseInstallmentPolicy } from "../_shared/payments/installments.ts";
 import { buildCardItems, extractCardId, parseCardInput, reaisToCents } from "./logic.ts";
@@ -134,9 +135,10 @@ Deno.serve(async (req: Request) => {
   const { data: settings } = await admin
     .from("app_setting")
     .select("key, value")
-    .in("key", ["pagarme_movepark_recipient_id", "card_installment_policy"]);
+    .in("key", ["pagarme_movepark_recipient_id", "card_installment_policy", "pagarme_split_enabled"]);
   const settingMap = Object.fromEntries((settings ?? []).map((s) => [s.key, s.value]));
   const moveparkRecipientId = (settingMap.pagarme_movepark_recipient_id ?? "").trim();
+  const splitEnabled = isGatewaySplitEnabled(settingMap.pagarme_split_enabled);
   const policy = parseInstallmentPolicy(settingMap.card_installment_policy);
   if (!policy.enabled) return jsonResponse({ error: "Pagamento com cartão indisponível." }, 422);
 
@@ -218,7 +220,9 @@ Deno.serve(async (req: Request) => {
       type: customerTypeFor(booking.customer_tax_id),
     },
     items: buildCardItems(booking.code, baseCents, interestCents),
-    split,
+    // Com a custódia ligada o gateway não recebe split: o valor cai inteiro na Movepark.
+    // O snapshot gravado em `payment.split` segue sendo o razão do que devemos ao parceiro.
+    split: splitEnabled ? split : undefined,
     card: cardRef,
     installments: input.installments,
     metadata: { booking_id: booking.id, booking_code: booking.code, base_cents: String(baseCents) },

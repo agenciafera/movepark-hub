@@ -13,6 +13,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   buildSplit,
+  isGatewaySplitEnabled,
   chargeStatusToPaymentStatus,
   getGateway,
   GatewayConfigError,
@@ -123,12 +124,15 @@ Deno.serve(async (req: Request) => {
   }
 
   // 3. Recebedor master da Movepark (configurável no Manager)
-  const { data: setting } = await admin
+  const { data: settings } = await admin
     .from("app_setting")
-    .select("value")
-    .eq("key", "pagarme_movepark_recipient_id")
-    .maybeSingle();
-  const moveparkRecipientId = (setting?.value ?? "").trim();
+    .select("key, value")
+    .in("key", ["pagarme_movepark_recipient_id", "pagarme_split_enabled"]);
+  const settingMap = Object.fromEntries(
+    ((settings ?? []) as { key: string; value: string | null }[]).map((s) => [s.key, s.value]),
+  );
+  const moveparkRecipientId = (settingMap.pagarme_movepark_recipient_id ?? "").trim();
+  const splitEnabled = isGatewaySplitEnabled(settingMap.pagarme_split_enabled);
 
   // 4. Split. A Tarifa (E2.8) é receita de serviço Movepark, FORA do split da vaga: o base do
   // parceiro exclui a tarifa, e o excedente (= tarifa) cai na perna da Movepark via buildSplit.
@@ -200,7 +204,9 @@ Deno.serve(async (req: Request) => {
       phone,
     },
     items: buildPixItems(booking.code, totalCents),
-    split,
+    // Com a custódia ligada o gateway não recebe split: o valor cai inteiro na Movepark. O
+    // snapshot logo abaixo continua gravando as pernas, que é o razão do que devemos ao parceiro.
+    split: splitEnabled ? split : undefined,
     expiresInSeconds: holdMinutes * 60,
     metadata: { booking_id: booking.id, booking_code: booking.code },
   });

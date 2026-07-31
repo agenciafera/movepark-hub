@@ -166,7 +166,11 @@ export interface PixChargeInput {
   amountCents: number;
   customer: ChargeCustomer;
   items: ChargeItem[];
-  split: SplitRule[];
+  /**
+   * Pernas do split no gateway. OPCIONAL: quando ausente, o pedido não carrega split e o valor
+   * cai inteiro na conta da chave de API (modelo de custódia). Ver `app_setting.pagarme_split_enabled`.
+   */
+  split?: SplitRule[];
   expiresInSeconds: number;
   /** Repassado em metadata da order (p/ casar no webhook). */
   metadata?: Record<string, string>;
@@ -179,7 +183,11 @@ export interface CardChargeInput {
   amountCents: number;
   customer: ChargeCustomer;
   items: ChargeItem[];
-  split: SplitRule[];
+  /**
+   * Pernas do split no gateway. OPCIONAL: quando ausente, o pedido não carrega split e o valor
+   * cai inteiro na conta da chave de API (modelo de custódia). Ver `app_setting.pagarme_split_enabled`.
+   */
+  split?: SplitRule[];
   /** token (tokenização client-side, single-use) OU cardId (cartão salvo). */
   card: { cardToken?: string; cardId?: string };
   installments: number;
