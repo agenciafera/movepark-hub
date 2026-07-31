@@ -6,7 +6,7 @@
 -- Transação com rollback.
 
 begin;
-select plan(11);
+select plan(12);
 
 select has_column('public', 'company', 'monthly_revenue_goal_cents',
   'company.monthly_revenue_goal_cents existe');
