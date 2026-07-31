@@ -56,7 +56,14 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - run: deno test --no-check --allow-env --allow-net supabase/functions
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.13
+      # Chama o script em vez de repetir o comando: as duas cópias já derivaram
+      # uma vez. O package.json ganhou `--allow-read` (o barrel.contract.test.ts
+      # faz Deno.readDir) e o CI ficou para trás, quebrando o job.
+      # `bun run` só executa a linha do script, não precisa de bun install.
+      - run: bun run test:edge
 
   # Não-bloqueante: mede a cobertura e publica o relatório. Reporta, não barra.
   #
