@@ -103,17 +103,19 @@ select throws_ok(
   'operador NÃO cria saque para a própria empresa');
 
 -- UPDATE sem policy aplicável NÃO estoura: o USING filtra e sobram 0 linhas.
--- Por isso a asserção conta linhas afetadas em vez de esperar exceção.
-select is(
-  (with u as (
-     update public.payout_recipient set requirements = '["forjado"]'::jsonb
-      where company_id = current_setting('test.cA')::uuid
-      returning 1)
-   select count(*)::int from u),
-  0,
-  'operador NÃO altera o próprio recebedor (afeta 0 linhas, sem erro)');
+-- Então o update roda solto aqui (sem erro, sem efeito) e a prova de que não
+-- pegou vem depois, lendo a linha como postgres. CTE com update dentro de
+-- subconsulta não serve: o Postgres recusa data-modifying CTE fora do topo.
+update public.payout_recipient set requirements = '["forjado"]'::jsonb
+ where company_id = current_setting('test.cA')::uuid;
 
 reset role;
+
+select is(
+  (select requirements from public.payout_recipient
+    where company_id = current_setting('test.cA')::uuid),
+  '[]'::jsonb,
+  'operador NÃO altera o próprio recebedor (a linha continua intacta)');
 
 -- ── hub_admin enxerga os dois lados ────────────────────────────────────────
 set local role authenticated;
