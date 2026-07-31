@@ -16,4 +16,20 @@ describe("OnboardingJourney", () => {
     render(<OnboardingJourney current="preview" />);
     expect(screen.getByText(/fotos/i)).toBeInTheDocument();
   });
+
+  it("na fase Vender pede para publicar, e não anuncia que já está no ar", () => {
+    // A fase só é concluída com is_listed, e o recebedor ainda pode estar em análise no gateway.
+    // Dizer "está no ar, recebendo reservas" aqui prometia ao parceiro algo que não aconteceu.
+    render(<OnboardingJourney current="vender" completed={["preview", "recebimento"]} />);
+    expect(screen.getByText(/Falta publicar sua unidade/i)).toBeInTheDocument();
+    expect(screen.queryByText(/está no ar, recebendo reservas/i)).toBeNull();
+  });
+
+  it("o hint explícito sobrescreve o texto padrão da fase", () => {
+    render(
+      <OnboardingJourney current="recebimento" completed={["preview"]} hint="Em análise no banco." />,
+    );
+    expect(screen.getByText("Em análise no banco.")).toBeInTheDocument();
+    expect(screen.queryByText(/começar a vender/i)).toBeNull();
+  });
 });

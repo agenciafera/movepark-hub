@@ -32,19 +32,6 @@ export function shouldReissueKycLink(args: {
   return "reissue";
 }
 
-/**
- * O link vigente ainda vale? Usado pelo cron para não queimar link novo a cada volta: emitir
- * invalida o anterior e zeraria o contador do parceiro no meio da prova de vida.
- */
-export function hasLiveKycLink(
-  kycUrl: string | null | undefined,
-  expiresAt: string | null | undefined,
-  now: Date,
-): boolean {
-  if (!kycUrl?.trim() || !expiresAt) return false;
-  const ms = Date.parse(expiresAt);
-  return !Number.isNaN(ms) && ms > now.getTime();
-}
 
 export interface SyncInput {
   company_id: string;

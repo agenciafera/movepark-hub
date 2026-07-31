@@ -25,7 +25,10 @@ const STAGES: StageDef[] = [
 const NEXT_HINT: Record<JourneyStage, string> = {
   preview: "Monte seu estacionamento, suba as fotos e veja como ele fica.",
   recebimento: "Cadastre seus dados de recebimento para começar a vender.",
-  vender: "Tudo pronto! Seu estacionamento está no ar, recebendo reservas.",
+  // A fase "vender" é onde o parceiro AINDA precisa publicar (deriveJourney só a conclui com
+  // is_listed). Dizer que está no ar aqui é falso, e mais falso ainda porque o recebedor pode
+  // estar em análise no gateway.
+  vender: "Falta publicar sua unidade para começar a receber reservas.",
 };
 
 export function OnboardingJourney({

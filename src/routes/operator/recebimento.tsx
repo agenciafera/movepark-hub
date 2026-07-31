@@ -143,9 +143,17 @@ export default function OperatorRecebimento() {
           </div>
 
           {!loading && (
+            // Enviar o formulário não conclui o recebimento: o gateway ainda analisa a ficha e
+            // costuma pedir prova de vida antes de liberar. Marcar como concluído aqui prometia
+            // ao parceiro que já estava vendendo.
             <OnboardingJourney
-              current={step === "done" ? "vender" : "recebimento"}
-              completed={step === "done" ? ["preview", "recebimento"] : ["preview"]}
+              current="recebimento"
+              completed={["preview"]}
+              hint={
+                step === "done"
+                  ? "Recebemos seus dados. O banco parceiro está analisando e pode pedir uma prova de vida. Avisamos por e-mail quando liberar."
+                  : undefined
+              }
               estimate={step === "done" ? undefined : "5 minutos"}
             />
           )}

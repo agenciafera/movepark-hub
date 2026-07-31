@@ -30,7 +30,7 @@ import {
   type PayoutAccountRow,
 } from "./logic.ts";
 import { buildCreateRecipientBody } from "../_shared/payments/pagarme.ts";
-import { getEmailConfig, sendEmail, tplKycLinkIssued } from "../_shared/email.ts";
+import { notifyKycPending } from "../_shared/kyc-link.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -43,52 +43,6 @@ function jsonResponse(body: unknown, status = 200) {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
-}
-
-/**
- * Avisa o parceiro por e-mail que a prova de vida está pendente, UMA vez por emissão de link.
- *
- * A unicidade vem de `kyc_link_email_sent_at`, reivindicado por UPDATE condicional antes de
- * qualquer envio: dois cliques quase simultâneos resultam num e-mail só. O cron não emite link e
- * portanto nunca chega aqui, que é o que impede os 4 e-mails por hora.
- *
- * Destinatário: o contato da ficha de KYC, com o contato do onboarding como reserva.
- */
-// deno-lint-ignore no-explicit-any
-async function notifyKycLink(admin: any, recipientId: string, companyId: string, fallbackEmail: string | null) {
-  const { data: claimed } = await admin
-    .from("payout_recipient")
-    .update({ kyc_link_email_sent_at: new Date().toISOString() })
-    .eq("id", recipientId)
-    .is("kyc_link_email_sent_at", null)
-    .select("id")
-    .maybeSingle();
-  if (!claimed) return;
-
-  const { data: account } = await admin
-    .from("company_payout_account")
-    .select("kyc_details")
-    .eq("company_id", companyId)
-    .is("deleted_at", null)
-    .maybeSingle();
-  const kyc = (account as { kyc_details: Record<string, unknown> | null } | null)?.kyc_details;
-  const kycEmail = typeof kyc?.email === "string" && kyc.email.trim() ? kyc.email.trim() : null;
-  const to = kycEmail ?? fallbackEmail;
-  if (!to) return;
-
-  const { data: onboarding } = await admin
-    .from("company_onboarding")
-    .select("contact_name")
-    .eq("company_id", companyId)
-    .maybeSingle();
-
-  const { from } = await getEmailConfig(admin);
-  if (!from) return;
-
-  const mail = tplKycLinkIssued(
-    (onboarding as { contact_name: string | null } | null)?.contact_name ?? "",
-  );
-  await sendEmail({ from, to, subject: mail.subject, html: mail.html });
 }
 
 /** Roda em background — não bloqueia nem derruba a resposta. */
@@ -313,7 +267,7 @@ Deno.serve(async (req: Request) => {
         response: result.raw,
       }),
     );
-    runBg(notifyKycLink(admin, recipient.id, input.company_id, contactEmail));
+    runBg(notifyKycPending(admin, recipient.id, input.company_id));
 
     return jsonResponse({
       ok: true,
@@ -405,7 +359,7 @@ Deno.serve(async (req: Request) => {
     })
     .eq("id", recipient.id);
 
-  if (result.kycUrl) runBg(notifyKycLink(admin, recipient.id, input.company_id, contactEmail));
+  if (result.kycUrl) runBg(notifyKycPending(admin, recipient.id, input.company_id));
 
   runBg(
     admin.from("payout_recipient_event").insert({

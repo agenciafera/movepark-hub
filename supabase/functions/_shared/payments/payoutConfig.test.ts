@@ -40,8 +40,18 @@ Deno.test("resolveTransfer: config da empresa sobrepõe o global", () => {
   assertEquals(resolveTransfer(row, g), { enabled: true, interval: "Weekly", day: 3 });
 });
 
-Deno.test("resolveTransfer: sem global nem empresa → hardcoded (Daily/0)", () => {
-  assertEquals(resolveTransfer(null, {}), { enabled: true, interval: "Daily", day: 0 });
+Deno.test("resolveTransfer: sem global nem empresa → transferência DESLIGADA", () => {
+  // Se a linha do app_setting sumir, o recebedor não pode voltar a repassar sozinho: o dinheiro
+  // fica no saldo até um saque explícito.
+  assertEquals(resolveTransfer(null, {}), { enabled: false, interval: "Daily", day: 0 });
+});
+
+Deno.test("resolveTransfer: o global ainda manda ligar quando quiser", () => {
+  assertEquals(resolveTransfer(null, { payout_transfer_enabled: "true" }), {
+    enabled: true,
+    interval: "Daily",
+    day: 0,
+  });
 });
 
 Deno.test("normalizeTransferDay: força a faixa por intervalo", () => {

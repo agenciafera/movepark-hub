@@ -6,7 +6,6 @@ import {
   parseSyncInput,
   redactRecipientBody,
   shouldReissueKycLink,
-  hasLiveKycLink,
   type PayoutAccountRow,
 } from "./logic.ts";
 
@@ -157,10 +156,3 @@ Deno.test("shouldReissueKycLink: validade ilegível não trava o parceiro", () =
   );
 });
 
-Deno.test("hasLiveKycLink: exige url E validade no futuro", () => {
-  assertEquals(hasLiveKycLink("https://x", "2026-07-30T20:46:41Z", NOW), true);
-  assertEquals(hasLiveKycLink("https://x", "2026-07-30T20:10:00Z", NOW), false);
-  assertEquals(hasLiveKycLink(null, "2026-07-30T20:46:41Z", NOW), false);
-  assertEquals(hasLiveKycLink("   ", "2026-07-30T20:46:41Z", NOW), false);
-  assertEquals(hasLiveKycLink("https://x", null, NOW), false);
-});

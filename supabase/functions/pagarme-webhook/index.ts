@@ -13,6 +13,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway } from "../_shared/payments/index.ts";
 import { mapRecipientStatus } from "../_shared/payments/pagarme.ts";
+import {
+  issueKycLinkAndNotify,
+  PROVIDER_STATUS_AWAITING_KYC,
+} from "../_shared/kyc-link.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 import { sendBookingConfirmationEmail } from "../_shared/booking-confirmation.ts";
 import { refundShouldCancelBooking } from "../_shared/refund.ts";
@@ -159,7 +163,7 @@ Deno.serve(async (req: Request) => {
     if (!rc.recipientId) return json({ ok: true, matched: false });
     const { data: rec } = await admin
       .from("payout_recipient")
-      .select("id")
+      .select("id, company_id, provider, external_recipient_id, kyc_url, kyc_url_expires_at")
       .eq("provider", "pagarme")
       .eq("external_recipient_id", rc.recipientId)
       .is("deleted_at", null)
@@ -169,10 +173,19 @@ Deno.serve(async (req: Request) => {
       return json({ ok: true, matched: false });
     }
     const status = mapRecipientStatus(rc.rawStatus);
+
+    // Aprovado ou recusado: o link vigente perdeu a função. Limpar evita o banner mostrar
+    // contador zerado para quem já passou.
+    const terminal = status === "active" || status === "refused";
     await admin
       .from("payout_recipient")
-      .update({ status, last_provider_status: rc.rawStatus })
+      .update({
+        status,
+        last_provider_status: rc.rawStatus,
+        ...(terminal ? { kyc_url: null, kyc_url_expires_at: null } : {}),
+      })
       .eq("id", rec.id);
+
     await runAfterResponse(
       (async () => {
         await admin.from("payout_recipient_event").insert({
@@ -182,6 +195,16 @@ Deno.serve(async (req: Request) => {
           request: null,
           response: body as Record<string, unknown>,
         });
+        // O gateway acabou de pedir a prova de vida. É AQUI que o link passa a existir: no
+        // create o recebedor ainda está em `registration` e não há link nenhum para emitir.
+        // Sem isto o parceiro nunca é avisado e só descobre a pendência se voltar ao painel.
+        if (rc.rawStatus?.toLowerCase() === PROVIDER_STATUS_AWAITING_KYC) {
+          try {
+            await issueKycLinkAndNotify(admin, rec);
+          } catch (e) {
+            console.error("[pagarme-webhook] falha ao emitir link de KYC", rec.id, e);
+          }
+        }
       })(),
     );
     return json({ ok: true, status });

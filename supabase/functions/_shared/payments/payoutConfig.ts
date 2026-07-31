@@ -21,7 +21,10 @@ export type GlobalSettings = Record<string, string | null | undefined>;
 export const TRANSFER_INTERVALS = ["Daily", "Weekly", "Monthly"] as const;
 export const ANTICIPATION_TYPES = ["full", "1025"] as const;
 
-const HARD_TRANSFER: TransferSettings = { enabled: true, interval: "Daily", day: 0 };
+// Transferência automática nasce DESLIGADA: o dinheiro fica no saldo do recebedor até um saque
+// explícito. Se o default fosse `true` e a linha do app_setting sumisse, todo recebedor novo
+// voltaria a repassar sozinho sem ninguém pedir.
+const HARD_TRANSFER: TransferSettings = { enabled: false, interval: "Daily", day: 0 };
 const HARD_ANTICIPATION: AnticipationSettings = {
   enabled: false,
   type: "full",
