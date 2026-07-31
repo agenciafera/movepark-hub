@@ -3153,8 +3153,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-29T12:30:26.935Z",
-      "last_seen": "2026-07-31T16:30:01.350Z",
-      "seen_count": 33,
+      "last_seen": "2026-07-31T16:59:47.550Z",
+      "seen_count": 35,
       "stale": false
     },
     "sig:eb1cb13a1fa9ce8c": {
@@ -3172,20 +3172,45 @@
         "http://localhost:5180/sobre"
       ],
       "url_pattern": "**/",
-      "title": "Termos de Uso | Movepark",
+      "title": "Movepark | Estacionamentos em aeroportos e destinos",
       "interactive": [
         "a",
         "a",
+        "button type=button",
+        "a text=Seja parceiro",
+        "a text=Entrar",
         "button type=button text=OndeAeroporto, cidade ou bairro",
         "button type=button text=Check-in01 ago · 22:00",
         "button type=button text=Check-out06 ago · 08:00",
         "button type=button text=Veículo Carro",
         "select text=Carro Moto",
         "button type=submit text=Buscar",
-        "button type=button text=Buscar vaga",
+        "a text=Buscar estacionamento",
         "button type=button",
-        "a text=Seja parceiro",
-        "a text=Entrar",
+        "button type=button",
+        "button type=button",
+        "a text=Ver todos os destinos",
+        "a text=Aeroporto de GuarulhosGuarulhos · SP12 e",
+        "a text=Aeroporto de CongonhasSão Paulo · SP5 es",
+        "a text=Aeroporto Internacional de ConfinsBelo H",
+        "a text=Aeroporto do GaleãoRio de Janeiro · RJ4 ",
+        "a text=Aeroporto Santos DumontRio de Janeiro · ",
+        "a text=Aeroporto Afonso PenaCuritiba · PR4 esta",
+        "a text=Aeroporto de ViracoposCampinas · SP6 est",
+        "a text=Aeroporto Salgado FilhoPorto Alegre · RS",
+        "a text=Aeroporto de BrasíliaBrasília · DF4 esta",
+        "a text=Terminal TietêSão Paulo · SP2 estacionam",
+        "a text=Aeroporto de GuarulhosGuarulhos · SP12 e",
+        "a text=Aeroporto de CongonhasSão Paulo · SP5 es",
+        "a text=Aeroporto Internacional de ConfinsBelo H",
+        "a text=Aeroporto do GaleãoRio de Janeiro · RJ4 ",
+        "a text=Aeroporto Santos DumontRio de Janeiro · ",
+        "a text=Aeroporto Afonso PenaCuritiba · PR4 esta",
+        "a text=Aeroporto de ViracoposCampinas · SP6 est",
+        "a text=Aeroporto Salgado FilhoPorto Alegre · RS",
+        "a text=Aeroporto de BrasíliaBrasília · DF4 esta",
+        "a text=Terminal TietêSão Paulo · SP2 estacionam",
+        "a text=Buscar estacionamento",
         "a text=Sobre nós",
         "a text=Termos de uso",
         "a text=Política de privacidade",
@@ -3202,8 +3227,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-29T12:30:32.373Z",
-      "last_seen": "2026-07-31T16:30:52.336Z",
-      "seen_count": 60,
+      "last_seen": "2026-07-31T16:49:39.099Z",
+      "seen_count": 63,
       "stale": false
     },
     "sig:2644ef779c146a8c": {
@@ -3252,8 +3277,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T13:22:55.662Z",
-      "last_seen": "2026-07-31T16:30:52.501Z",
-      "seen_count": 55,
+      "last_seen": "2026-07-31T17:00:44.797Z",
+      "seen_count": 69,
       "stale": false
     },
     "sig:42bd6642a8c0077e": {
@@ -3263,11 +3288,10 @@
         "http://localhost:5180/docs"
       ],
       "url_pattern": "**/faq",
-      "title": "Documentação da API & MCP · Movepark",
+      "title": "Perguntas Frequentes | Movepark",
       "interactive": [
         "a",
         "a",
-        "button id=radix-:r8: type=button text=Destinos",
         "button type=button text=OndeAeroporto, cidade ou bairro",
         "button type=button text=Check-in01 ago · 22:00",
         "button type=button text=Check-out06 ago · 08:00",
@@ -3278,99 +3302,9 @@
         "button type=button",
         "a text=Seja parceiro",
         "a text=Entrar",
-        "a text=OpenAPI 3.1 ↗",
-        "input placeholder=Buscar endpoint…",
-        "a text=Visão geral",
-        "a text=Autenticação",
-        "a text=Escopos",
-        "a text=Convenções",
-        "a text=Status codes",
-        "a text=Limites",
-        "a text=Unidades4",
-        "button type=button",
-        "a text=Disponibilidade & Preço2",
-        "button type=button",
-        "a text=Reservas6",
-        "button type=button",
-        "a text=Tipos de vaga (escrita)1",
-        "button type=button",
-        "a text=Cupons4",
-        "button type=button",
-        "a text=Descontos automáticos4",
-        "button type=button",
-        "a text=Serviços adicionais4",
-        "button type=button",
-        "a text=Avaliações2",
-        "button type=button",
-        "a text=Ocupação1",
-        "button type=button",
-        "a text=FAQ1",
-        "button type=button",
-        "a text=MCP",
-        "input placeholder=Buscar endpoint…",
-        "a text=Visão geral",
-        "a text=Autenticação",
-        "a text=Escopos",
-        "a text=Convenções",
-        "a text=Status codes",
-        "a text=Limites",
-        "a text=Unidades4",
-        "button type=button",
-        "a text=Disponibilidade & Preço2",
-        "button type=button",
-        "a text=Reservas6",
-        "button type=button",
-        "a text=Tipos de vaga (escrita)1",
-        "button type=button",
-        "a text=Cupons4",
-        "button type=button",
-        "a text=Descontos automáticos4",
-        "button type=button",
-        "a text=Serviços adicionais4",
-        "button type=button",
-        "a text=Avaliações2",
-        "button type=button",
-        "a text=Ocupação1",
-        "button type=button",
-        "a text=FAQ1",
-        "button type=button",
-        "a text=MCP",
-        "button type=button",
-        "a text=/operator/api-keys",
-        "button type=button",
-        "button type=button text=GET/v1/locationslocations:read",
-        "button type=button text=GET/v1/locations/{id}locations:read",
-        "button type=button text=GET/v1/locations/{id}/parking-typesparki",
-        "button type=button text=POST/v1/locations/{id}locations:write",
-        "button type=button text=GET/v1/availabilityavailability:read",
-        "button type=button text=POST/v1/pricing/simulatepricing:read",
-        "button type=button text=GET/v1/bookingsbookings:read",
-        "button type=button text=GET/v1/bookings/{id}bookings:read",
-        "button type=button text=POST/v1/bookingsbookings:write",
-        "button type=button text=POST/v1/bookings/{id}/cancelbookings:can",
-        "button type=button text=POST/v1/bookings/{id}/check-inbookings:c",
-        "button type=button text=POST/v1/bookings/{id}/check-outbookings:",
-        "button type=button text=POST/v1/parking-types/{id}parking-types:",
-        "button type=button text=GET/v1/couponscoupons:read",
-        "button type=button text=POST/v1/couponscoupons:write",
-        "button type=button text=POST/v1/coupons/{id}/activecoupons:write",
-        "button type=button text=POST/v1/coupons/{id}/deletecoupons:write",
-        "button type=button text=GET/v1/discountsdiscounts:read",
-        "button type=button text=POST/v1/discountsdiscounts:write",
-        "button type=button text=POST/v1/discounts/{id}/activediscounts:w",
-        "button type=button text=POST/v1/discounts/{id}/deletediscounts:w",
-        "button type=button text=GET/v1/addonsaddons:read",
-        "button type=button text=POST/v1/addonsaddons:write",
-        "button type=button text=POST/v1/addons/{id}/locationsaddons:writ",
-        "button type=button text=POST/v1/addons/{id}/deleteaddons:write",
-        "button type=button text=GET/v1/reviewsreviews:read",
-        "button type=button text=POST/v1/reviews/{id}/respondreviews:writ",
-        "button type=button text=GET/v1/occupancyoccupancy:read",
-        "button type=button text=GET/v1/faqfaq:read",
-        "button type=button",
-        "button type=button",
-        "a text=server-card.json",
-        "a text=partner-card.json",
+        "input placeholder=Buscar pergunta…",
+        "button type=button text=Todas",
+        "button type=button text=Todas",
         "a text=Sobre nós",
         "a text=Termos de uso",
         "a text=Política de privacidade",
@@ -3383,13 +3317,12 @@
         "a text=Destinos",
         "a text=Entrar",
         "a text=Parceiro",
-        "a text=Ajuda",
-        "button type=button"
+        "a text=Ajuda"
       ],
       "source": "execution",
       "first_seen": "2026-07-30T13:24:35.920Z",
-      "last_seen": "2026-07-31T16:15:35.163Z",
-      "seen_count": 16,
+      "last_seen": "2026-07-31T16:49:39.123Z",
+      "seen_count": 17,
       "stale": false
     },
     "sig:c6d9d2df64e4156f": {
@@ -3499,7 +3432,7 @@
       "interactive": [
         "a",
         "a",
-        "button id=radix-:rf: type=button text=Destinos",
+        "button id=radix-:rv: type=button text=Destinos",
         "button type=button text=OndeAeroporto, cidade ou bairro",
         "button type=button text=Check-in01 ago · 22:00",
         "button type=button text=Check-out06 ago · 08:00",
@@ -3518,14 +3451,14 @@
         "button type=button text=Cancelamento",
         "button type=button text=Check-in / Acesso",
         "button type=button text=Veículos",
-        "button id=radix-:rh: type=button text=Posso trocar o veículo depois da reserva",
-        "button id=radix-:rj: type=button text=Como cancelo uma reserva?Cancelamento",
-        "button id=radix-:rl: type=button text=O que apresentar na chegada ao estaciona",
-        "button id=radix-:rn: type=button text=Como faço uma reserva?Reservas",
-        "button id=radix-:rp: type=button text=Quais formas de pagamento aceitam?Pagame",
-        "button id=radix-:rr: type=button text=Posso reservar pra outra pessoa dirigir?",
-        "button id=radix-:rt: type=button text=Posso chegar antes ou sair depois do hor",
-        "button id=radix-:rv: type=button text=O PIX expira em quanto tempo?Pagamentos",
+        "button id=radix-:rf: type=button text=Posso trocar o veículo depois da reserva",
+        "button id=radix-:rh: type=button text=Como cancelo uma reserva?Cancelamento",
+        "button id=radix-:rj: type=button text=O que apresentar na chegada ao estaciona",
+        "button id=radix-:rl: type=button text=Como faço uma reserva?Reservas",
+        "button id=radix-:rn: type=button text=Quais formas de pagamento aceitam?Pagame",
+        "button id=radix-:rp: type=button text=Posso reservar pra outra pessoa dirigir?",
+        "button id=radix-:rr: type=button text=Posso chegar antes ou sair depois do hor",
+        "button id=radix-:rt: type=button text=O PIX expira em quanto tempo?Pagamentos",
         "a text=Sobre nós",
         "a text=Termos de uso",
         "a text=Política de privacidade",
@@ -3538,13 +3471,12 @@
         "a text=Destinos",
         "a text=Entrar",
         "a text=Parceiro",
-        "a text=Ajuda",
-        "button type=button"
+        "a text=Ajuda"
       ],
       "source": "execution",
       "first_seen": "2026-07-30T15:18:04.441Z",
-      "last_seen": "2026-07-31T16:29:59.322Z",
-      "seen_count": 4,
+      "last_seen": "2026-07-31T16:59:41.690Z",
+      "seen_count": 5,
       "stale": false
     },
     "sig:b805d148d91ff81c": {
@@ -3587,8 +3519,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T15:25:44.737Z",
-      "last_seen": "2026-07-31T16:30:52.051Z",
-      "seen_count": 8,
+      "last_seen": "2026-07-31T17:00:42.750Z",
+      "seen_count": 20,
       "stale": false
     },
     "sig:95f23b77537a835a": {
@@ -3701,13 +3633,12 @@
         "a text=Destinos",
         "a text=Entrar",
         "a text=Parceiro",
-        "a text=Ajuda",
-        "button type=button"
+        "a text=Ajuda"
       ],
       "source": "execution",
       "first_seen": "2026-07-31T12:42:59.515Z",
-      "last_seen": "2026-07-31T16:15:35.229Z",
-      "seen_count": 3,
+      "last_seen": "2026-07-31T16:49:39.227Z",
+      "seen_count": 4,
       "stale": false
     },
     "sig:0dcff3a175658e77": {
@@ -3766,8 +3697,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:46:22.794Z",
-      "last_seen": "2026-07-31T16:29:44.724Z",
-      "seen_count": 32,
+      "last_seen": "2026-07-31T16:59:34.404Z",
+      "seen_count": 42,
       "stale": false
     },
     "sig:32ea8b629364b656": {
@@ -3827,8 +3758,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:46:23.420Z",
-      "last_seen": "2026-07-31T16:29:34.254Z",
-      "seen_count": 6,
+      "last_seen": "2026-07-31T16:59:27.693Z",
+      "seen_count": 8,
       "stale": false
     },
     "sig:dbe4277c10825f11": {
@@ -3889,8 +3820,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:46:23.644Z",
-      "last_seen": "2026-07-31T16:29:34.284Z",
-      "seen_count": 6,
+      "last_seen": "2026-07-31T16:59:27.664Z",
+      "seen_count": 8,
       "stale": false
     },
     "sig:63b4f276654d776e": {
@@ -3947,13 +3878,12 @@
         "a text=Destinos",
         "a text=Entrar",
         "a text=Parceiro",
-        "a text=Ajuda",
-        "button type=button"
+        "a text=Ajuda"
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:20.083Z",
-      "last_seen": "2026-07-31T16:29:51.794Z",
-      "seen_count": 6,
+      "last_seen": "2026-07-31T16:59:38.455Z",
+      "seen_count": 7,
       "stale": false
     },
     "sig:30b80afac064bfc7": {
@@ -3996,8 +3926,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:26.734Z",
-      "last_seen": "2026-07-31T16:30:22.425Z",
-      "seen_count": 36,
+      "last_seen": "2026-07-31T17:00:18.661Z",
+      "seen_count": 48,
       "stale": false
     },
     "sig:00208007c0a1c596": {
@@ -4125,13 +4055,12 @@
         "a text=Destinos",
         "a text=Entrar",
         "a text=Parceiro",
-        "a text=Ajuda",
-        "button type=button"
+        "a text=Ajuda"
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:28.312Z",
-      "last_seen": "2026-07-31T16:29:56.400Z",
-      "seen_count": 6,
+      "last_seen": "2026-07-31T16:59:41.703Z",
+      "seen_count": 8,
       "stale": false
     },
     "sig:5f9442af211e8be5": {
@@ -4175,8 +4104,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:29.958Z",
-      "last_seen": "2026-07-31T16:29:52.749Z",
-      "seen_count": 6,
+      "last_seen": "2026-07-31T16:59:39.244Z",
+      "seen_count": 8,
       "stale": false
     },
     "sig:f4a52eca245bd7d5": {
@@ -4218,8 +4147,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:48.684Z",
-      "last_seen": "2026-07-31T16:30:03.163Z",
-      "seen_count": 6,
+      "last_seen": "2026-07-31T16:59:57.411Z",
+      "seen_count": 8,
       "stale": false
     },
     "sig:f229d562bc655a9f": {
@@ -4262,8 +4191,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:55.153Z",
-      "last_seen": "2026-07-31T16:30:27.191Z",
-      "seen_count": 25,
+      "last_seen": "2026-07-31T17:00:19.035Z",
+      "seen_count": 33,
       "stale": false
     },
     "sig:0220ddecfb1188ce": {
@@ -4307,8 +4236,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:56.027Z",
-      "last_seen": "2026-07-31T16:30:20.628Z",
-      "seen_count": 30,
+      "last_seen": "2026-07-31T17:00:13.406Z",
+      "seen_count": 40,
       "stale": false
     },
     "sig:deb61410f48cc824": {
@@ -4353,8 +4282,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:48:54.170Z",
-      "last_seen": "2026-07-31T16:30:20.620Z",
-      "seen_count": 6,
+      "last_seen": "2026-07-31T17:00:18.085Z",
+      "seen_count": 8,
       "stale": false
     },
     "sig:9e475390a54a6c61": {
@@ -4394,8 +4323,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:16.750Z",
-      "last_seen": "2026-07-31T16:30:34.351Z",
-      "seen_count": 18,
+      "last_seen": "2026-07-31T17:00:28.568Z",
+      "seen_count": 24,
       "stale": false
     },
     "sig:216bc20eae546abf": {
@@ -4435,8 +4364,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:27.416Z",
-      "last_seen": "2026-07-31T16:30:31.848Z",
-      "seen_count": 6,
+      "last_seen": "2026-07-31T17:00:27.020Z",
+      "seen_count": 8,
       "stale": false
     },
     "sig:7c87997d1435748b": {
@@ -4476,8 +4405,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:45.163Z",
-      "last_seen": "2026-07-31T16:30:47.858Z",
-      "seen_count": 32,
+      "last_seen": "2026-07-31T17:00:41.058Z",
+      "seen_count": 42,
       "stale": false
     },
     "sig:0de7196068dc995b": {
@@ -4517,8 +4446,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:46.524Z",
-      "last_seen": "2026-07-31T16:30:34.239Z",
-      "seen_count": 6,
+      "last_seen": "2026-07-31T17:00:27.006Z",
+      "seen_count": 8,
       "stale": false
     },
     "sig:0e77bbe16451b1b2": {
@@ -4557,8 +4486,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:03.481Z",
-      "last_seen": "2026-07-31T16:30:40.670Z",
-      "seen_count": 6,
+      "last_seen": "2026-07-31T17:00:33.266Z",
+      "seen_count": 8,
       "stale": false
     },
     "sig:330a98d155e0b087": {
@@ -4598,8 +4527,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:13.982Z",
-      "last_seen": "2026-07-31T16:30:46.380Z",
-      "seen_count": 6,
+      "last_seen": "2026-07-31T17:00:37.829Z",
+      "seen_count": 8,
       "stale": false
     },
     "sig:d338797fc9985ff4": {
@@ -4640,8 +4569,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:23.245Z",
-      "last_seen": "2026-07-31T16:30:47.670Z",
-      "seen_count": 6,
+      "last_seen": "2026-07-31T17:00:39.031Z",
+      "seen_count": 8,
       "stale": false
     },
     "sig:ca978112ca1bbdca": {
@@ -4655,8 +4584,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:40.542Z",
-      "last_seen": "2026-07-31T16:30:53.994Z",
-      "seen_count": 6,
+      "last_seen": "2026-07-31T17:00:44.948Z",
+      "seen_count": 8,
       "stale": false
     },
     "sig:56110ea72b7f7df7": {
@@ -4723,7 +4652,6 @@
       "interactive": [
         "a",
         "a",
-        "button id=radix-:r8: type=button text=Destinos",
         "button type=button text=OndeAeroporto, cidade ou bairro",
         "button type=button text=Check-in01 ago · 22:00",
         "button type=button text=Check-out06 ago · 08:00",
@@ -4757,8 +4685,59 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T16:15:32.145Z",
-      "last_seen": "2026-07-31T16:15:32.145Z",
-      "seen_count": 1
+      "last_seen": "2026-07-31T16:49:35.719Z",
+      "seen_count": 2,
+      "stale": false
+    },
+    "sig:3f40933715753efc": {
+      "urls_seen": [
+        "http://localhost:5180/seja-parceiro"
+      ],
+      "url_pattern": "**/seja-parceiro",
+      "title": "Seja parceiro | Movepark",
+      "interactive": [
+        "a",
+        "a",
+        "button id=radix-:rf: type=button text=Destinos",
+        "button type=button",
+        "a text=Seja parceiro",
+        "a text=Entrar",
+        "button text=Quero ser parceiro",
+        "button text=Começar agora",
+        "button id=radix-:r3: type=button text=Quanto custa para ser parceiro?",
+        "button id=radix-:r5: type=button text=Como eu recebo o dinheiro das reservas?",
+        "button id=radix-:r7: type=button text=Preciso ter exclusividade com a Movepark",
+        "button id=radix-:r9: type=button text=Quanto tempo até entrar no ar?",
+        "button id=radix-:rb: type=button text=Eu continuo no controle dos preços?",
+        "button id=radix-:rd: type=button text=A Movepark investe em divulgação?",
+        "button text=Quero ser parceiro",
+        "a text=Sobre nós",
+        "a text=Termos de uso",
+        "a text=Política de privacidade",
+        "a text=Seja parceiro",
+        "a text=Painel do estacionamento",
+        "a text=Perguntas frequentes",
+        "a text=Como funciona",
+        "a text=Política de cancelamento",
+        "a text=Fale conosco",
+        "a text=Destinos",
+        "a text=Entrar",
+        "a text=Parceiro",
+        "a text=Ajuda",
+        "button type=button",
+        "input type=text",
+        "input id=pl-name placeholder=Nome e sobrenome",
+        "input id=pl-email type=email placeholder=voce@estacionamento.com",
+        "select text=AfghanistanÅland IslandsAlbaniaAlgeriaAm",
+        "input id=pl-phone type=tel placeholder=Digite seu número",
+        "button type=button text=Continuar",
+        "button type=button text=Fechar"
+      ],
+      "source": "execution",
+      "first_seen": "2026-07-31T16:54:47.570Z",
+      "last_seen": "2026-07-31T16:59:51.093Z",
+      "seen_count": 10,
+      "stale": false
     }
   },
   "transitions": [
@@ -4787,7 +4766,7 @@
         "selector": "h1"
       },
       "to": "sig:2644ef779c146a8c",
-      "seen_count": 8
+      "seen_count": 9
     },
     {
       "from": "sig:5f04617cfcb270ea",
@@ -4814,7 +4793,7 @@
         "selector": "main"
       },
       "to": "sig:9762b1205e6e924b",
-      "seen_count": 7
+      "seen_count": 8
     },
     {
       "from": "sig:eb1cb13a1fa9ce8c",
@@ -4823,7 +4802,7 @@
         "selector": "h2"
       },
       "to": "sig:2644ef779c146a8c",
-      "seen_count": 1
+      "seen_count": 2
     },
     {
       "from": "sig:0dcff3a175658e77",
@@ -4877,7 +4856,7 @@
         "selector": "h1"
       },
       "to": "sig:9a009a75cb95f5d7",
-      "seen_count": 1
+      "seen_count": 2
     },
     {
       "from": "sig:42bd6642a8c0077e",
@@ -4886,6 +4865,33 @@
         "selector": "h1"
       },
       "to": "sig:00208007c0a1c596",
+      "seen_count": 1
+    },
+    {
+      "from": "sig:b805d148d91ff81c",
+      "action": {
+        "type": "click",
+        "selector": "main button:has-text('Quero ser parceiro')"
+      },
+      "to": "sig:3f40933715753efc",
+      "seen_count": 8
+    },
+    {
+      "from": "sig:b805d148d91ff81c",
+      "action": {
+        "type": "click",
+        "selector": "main button"
+      },
+      "to": "sig:3f40933715753efc",
+      "seen_count": 1
+    },
+    {
+      "from": "sig:b805d148d91ff81c",
+      "action": {
+        "type": "click",
+        "selector": "button:has-text('Quero ser parceiro')"
+      },
+      "to": "sig:3f40933715753efc",
       "seen_count": 1
     }
   ],

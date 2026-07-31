@@ -1,0 +1,30 @@
+{
+  "scenario_id": "lead-valida-nome",
+  "start_url": "/seja-parceiro",
+  "task": "Clique em 'Quero ser parceiro', depois clique em 'Continuar' sem preencher nenhum campo. Verifique que a página exibe o texto 'Informe seu nome.'.",
+  "tags": [
+    "validacao",
+    "formulario"
+  ],
+  "hints": [
+    "O botão que abre o formulário tem o texto 'Quero ser parceiro'.",
+    "Os campos do passo 1 são os inputs de id 'pl-name', 'pl-email' e 'pl-phone'.",
+    "O botão de avançar tem o texto 'Continuar' e fica dentro do dialog.",
+    "Não preencha nada antes de clicar em Continuar."
+  ],
+  "network": [
+    {
+      "url": "**/functions/v1/capture-partner-lead*",
+      "json": {
+        "ok": true
+      }
+    },
+    {
+      "url": "**/functions/v1/submit-partner-lead*",
+      "json": {
+        "ok": true,
+        "company_id": "c-fake"
+      }
+    }
+  ]
+}
