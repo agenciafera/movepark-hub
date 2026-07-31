@@ -33,12 +33,32 @@ para o gateway e passou a ser o razão de quanto devemos ao parceiro. É dele qu
 e `payout_balance` derivam, então o extrato do parceiro continua correto: o que muda é onde o
 dinheiro está, não a conta.
 
-**Limitação da API que define o desenho.** Não existe rota no Pagar.me v5 para creditar um
-recebedor fora do split de um pedido. O `POST /transfers` move saldo **de um recebedor para a conta
-bancária dele** (`source_type: recipient`, `target_type: bank_account`), não entre recebedores.
-Consequência: enquanto o split estiver desligado, nenhum valor novo entra no saldo do parceiro no
-gateway, e o repasse sai por fora (saque da Movepark mais PIX/TED). Isso torna o recebedor, o KYC e
-a prova de vida dispensáveis no modelo final, e é o que o plano de migração precisa endereçar.
+**Como o repasse sai daqui: EM VERIFICAÇÃO.** A doc da v5 sugere que `POST /transfers` é saque
+(o exemplo de resposta traz `source_type: recipient` e `target_type: bank_account`, com o
+`recipient_id` como origem dos fundos). Se for isso, não haveria rota para creditar um recebedor
+fora do split, e o repasse teria que sair por fora do gateway. **Mas isso ainda não foi comprovado
+na prática, e a doc do Pagar.me já errou duas vezes neste projeto** (prometeu `expiration_date` e
+entrega `expires_at`; prometeu `base64` e entrega `base64_qrcode`). O exemplo de resposta tem cara
+de v4 (`id` inteiro, `date_created`), o que reforça a desconfiança.
+
+Teste pendente no workflow n8n `80lgEb2uOYQqSPzn` ("Pagarme - Transferencia (probe)"): dispara
+`POST /transfers` com `{ amount, recipient_id }` e compara o saldo do recebedor antes e depois.
+**Não decida a arquitetura do repasse antes desse resultado.** Se creditar, o recebedor, o KYC e a
+prova de vida sobrevivem e o repasse vira chamada de API; se sacar, o repasse sai por PIX/TED da
+conta da Movepark e todo o conceito de recebedor fica dispensável.
+
+**Medido em produção (31/07/2026), o que já é fato:**
+
+- Saldo é **por recebedor**: `GET /recipients/{id}/balance` responde 200 com `available_amount`,
+  `waiting_funds_amount` e `transferred_amount`. `GET /balance` no nível da conta dá **404**.
+- O dinheiro da Movepark cai no recebedor master (`app_setting.pagarme_movepark_recipient_id`).
+- **A taxa do gateway é R$ 1,46 numa venda de R$ 147,90 (0,99%)** e hoje sai inteira do parceiro:
+  a perna dele recebeu 11475 e ficou com 11329 disponível, enquanto a perna da Movepark recebeu
+  3315 e ficou com 3315. É o custo que nunca entrou no nosso banco e que a custódia transfere
+  para a Movepark.
+- `POST /transfers` tem rate limit apertado (`x-ratelimit-limit: 7`). Repasse em lote precisa
+  respeitar isso, e a rota aceita header `Idempotency-Key` (usar desde o início, senão retry vira
+  transferência duplicada).
 
 **Reverter é trocar a chave para `'true'`.** O código dos dois modos convive.
 
