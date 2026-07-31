@@ -125,6 +125,33 @@ export function useManagerLocations() {
 }
 
 /**
+ * Tamanho da rede (unidades e empresas ativas), pro bloco de contexto da sidebar
+ * do Manager. Duas contagens, sem trazer linha: é rótulo, não relatório.
+ */
+export function useNetworkSize(enabled = true) {
+  return useQuery({
+    queryKey: [...locationsKeys.all, "network-size"] as const,
+    enabled,
+    staleTime: 5 * 60_000,
+    queryFn: async (): Promise<{ locations: number; companies: number }> => {
+      const [locations, companies] = await Promise.all([
+        supabase
+          .from("location")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "active")
+          .is("deleted_at", null),
+        supabase
+          .from("company")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "active")
+          .is("deleted_at", null),
+      ]);
+      return { locations: locations.count ?? 0, companies: companies.count ?? 0 };
+    },
+  });
+}
+
+/**
  * Resumo do que a unidade tem, para o card da listagem.
  *
  * Só conta tipo de vaga ATIVO: um tipo desativado não vende, então somar a

@@ -3,10 +3,6 @@ import { LogOut, Bell, Search } from "lucide-react";
 import { useAuth } from "@/auth/context";
 import { postLogoutPath } from "@/auth/postLoginRedirect";
 import {
-  Avatar,
-  AvatarFallback,
-} from "@/components/ui/avatar";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -14,7 +10,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
 import { Monogram } from "./Brand";
 
 export function Topbar({
@@ -50,9 +45,9 @@ export function Topbar({
     .toUpperCase();
 
   return (
-    // h-16 e não h-20: 80px era o dobro da pílula de busca que a barra carrega.
-    // Num painel de dados aberto em notebook, 16px de volta em toda tela conta.
-    <header className="flex h-16 items-center gap-4 border-b border-hairline bg-canvas px-4 desktop:px-6">
+    // Sem régua e sem fundo próprio: a barra fica sobre o fundo da página e os
+    // controles viram pílulas soltas de 48px, como no Dashboard v2.
+    <header className="flex shrink-0 flex-wrap items-center gap-2.5 px-4 pt-4 tablet:px-0 tablet:pt-0">
       <div className="tablet:hidden">
         <Monogram size={28} />
       </div>
@@ -62,25 +57,27 @@ export function Topbar({
       <button
         type="button"
         onClick={onOpenSearch}
-        className="hidden tablet:flex flex-1 max-w-md items-center gap-2 rounded-full border border-hairline bg-canvas px-4 py-2.5 text-body-sm text-muted transition-colors hover:bg-surface-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2"
+        className="hidden h-12 max-w-md flex-1 items-center gap-2.5 rounded-full bg-canvas px-5 text-body-sm text-muted transition-colors hover:bg-surface-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 tablet:flex"
       >
         <Search className="h-4 w-4 shrink-0" />
-        <span>Buscar reserva, unidade, cupom...</span>
-        <kbd className="ml-auto hidden rounded-xs border border-hairline px-1.5 py-0.5 text-caption-sm font-sans desktop:inline">
+        <span className="truncate">Buscar reserva, unidade, cupom</span>
+        <kbd className="ml-auto hidden rounded-xs bg-surface-soft px-1.5 py-0.5 font-sans text-caption-sm desktop:inline">
           {atalho}
         </kbd>
       </button>
       <div className="flex-1" />
       {rightSlot}
-      <Button variant="outline" size="icon" aria-label="Notificações">
-        <Bell className="h-4 w-4" />
-      </Button>
+      <button
+        type="button"
+        aria-label="Notificações"
+        className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-canvas text-ink transition-colors hover:bg-surface-soft"
+      >
+        <Bell className="h-5 w-5" />
+      </button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="flex items-center gap-2 rounded-full p-1 hover:bg-surface-soft">
-            <Avatar>
-              <AvatarFallback>{initials}</AvatarFallback>
-            </Avatar>
+          <button className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-mp-navy text-body-sm font-semibold text-white transition-opacity hover:opacity-90">
+            {initials}
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
