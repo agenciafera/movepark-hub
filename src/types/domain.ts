@@ -164,6 +164,14 @@ export type ManagerOverview = {
     pending: number;
   };
   customers: { new: number; returning: number };
+  /** Tamanho da rede no escopo e quantas unidades geraram receita no período. */
+  network: { locations_total: number; locations_with_revenue: number };
+  /**
+   * Comissão retida pela Movepark (take_rate por empresa) e o que sobra pro
+   * parceiro. Não confundir com `current.fare_revenue`, que é a tarifa cobrada
+   * do cliente: são receitas diferentes.
+   */
+  money: { commission: number; payout: number };
   by_destination: {
     code: string;
     name: string;

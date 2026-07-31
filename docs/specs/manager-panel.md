@@ -106,83 +106,78 @@ rede) e como `.in("location_id", ids)` nas leituras diretas.
 
 ### 4.1 Dashboard
 
-**Rota:** `/manager` · ✅ implementado
+**Rota:** `/manager` · ✅ implementado (design "Dashboard Manager v2", jul/2026)
 
-**Objetivo:** a operação da rede num painel só: o movimento de hoje, o resultado do período
-e onde o volume está.
+**Objetivo:** a visão da rede. O Manager abre e sabe quanto entrou, de onde veio e
+qual unidade está parada.
 
-**Origem dos indicadores.** O backoffice legado (`movepark-backoffice-v4`) tinha três abas
-(Marketing, Visão Geral, Visão Diária) com indicadores que o Hub não cobria. A revisão de
-jul/2026 trouxe os que mudam decisão (diárias vendidas, destino, permanência, fluxo horário,
-novos x recorrentes) e deixou de fora o que não é indicador: o **simulador de preços** do
-legado é ferramenta de precificação e mora em [`fares.md`](./fares.md) / `/manager/tarifas`,
-não no dashboard.
+**Filtros:** unidade e período vêm da barra compartilhada (§4.0), com comparação.
 
-**Filtros:** unidade e período vêm da barra compartilhada (§4.0). Todo bloco de período
-respeita a escolha e compara com a janela que o usuário escolheu.
+#### Linha 1
 
-**Eixo de data:** o dashboard lê pelo **check-in** (quando o carro ocupa a vaga), a leitura de
-operação. Aquisição (canal, UTM) roda por `created_at` e vive em `/manager/attribution`,
-que o rodapé do dashboard referencia em vez de duplicar.
+| Bloco | O que mostra |
+|---|---|
+| **Leitura do período** | Uma frase sobre o que os números dizem, em card navy |
+| **Receita da rede** | Realizado em card violeta, com repasse ao parceiro e comissão retida |
+| **Rede com receita** | Medidor de meia-lua: quantas unidades venderam, do total ativo |
 
-#### Linha 1: hoje
+> **A leitura nunca é escrita à mão.** `networkInsight()` escolhe entre um conjunto
+> fechado de frases: rede parada, receita presa numa unidade, muita unidade sem
+> reserva, crescimento por recompra, ou o retrato sem adjetivo. Quando nenhuma
+> condição se sustenta, devolve `null` e o card diz que ainda não há leitura.
 
-| Card | Valor | Nota |
-|---|---|---|
-| Chegadas de hoje | `int` | vs. ontem; janela do dia **fechada nos dois lados** |
-| Check-ins de hoje | `int` | carros que já entraram (`checked_in_at`) |
-| Check-outs de hoje | `int` | carros que já saíram (`checked_out_at`) |
-| Rede ativa | `int` | unidades ativas, com as empresas na sublinha |
+> **Comissão não é a mesma coisa que tarifa.** `money.commission` é o take rate por
+> empresa sobre a reserva; `current.fare_revenue` é a tarifa (Básica/Flex/Superflex)
+> cobrada do cliente. O painel mostra as duas em cards diferentes de propósito.
 
-#### Linha 2: o período
+#### Linha 2
 
-| Card | Valor | Variação |
-|---|---|---|
-| Receita | `R$ xxx` | vs. a base de comparação escolhida |
-| Diárias vendidas | `int` | vs. a base escolhida; sublinha com a contagem de reservas |
-| Ticket médio | `R$ xxx` | vs. a base escolhida |
-| Receita por diária | `R$ xxx` | sublinha com a permanência média |
+- **Receita por dia de check-in:** área no período, com o melhor dia no cabeçalho.
+- **Concentração:** participação da unidade líder, barra de participação e o top 3.
+  `headCount` responde "quantas unidades somam 80% da receita", que é a leitura de
+  risco: se uma cair, quanto do período vai junto.
 
-> **Diária (vaga-dia)** é dia-calendário ocupado, de `check_in_at::date` a
-> `(check_out_at - 1µs)::date`, a mesma convenção da capacidade
-> ([capacity-rules.md](./capacity-rules.md)). Estadia no mesmo dia conta 1. É o indicador de
-> volume real: 600 reservas de 2 dias e 600 de 10 dias ocupam o pátio de formas diferentes, e
-> só a contagem de reservas não mostra isso.
+#### Linha 3
 
-#### Blocos
+- **Receita de tarifas** e **Ticket médio** (com receita por diária, permanência e
+  passageiros) na coluna da esquerda.
+- **Ranking do período:** todas as unidades ativas, com a barra medida contra a
+  **líder** (não contra o total), que é o que dá leitura de distância. A unidade
+  **sem reserva aparece na lista** com zero, porque é ela que o Manager precisa
+  enxergar; o rodapé leva pra revisão das unidades paradas.
 
-- **Receita por dia de check-in**: área, no período escolhido.
-- **Por destino**: receita, reservas e diárias por aeroporto, com barra de participação. A
-  média da rede escondia a diferença entre GRU, CGH e Tietê.
-- **Permanência**: distribuição por faixa de diárias (1 · 2-3 · 4-6 · 7-14 · 15-29 · 30+).
-  Faixa sem reserva aparece zerada, não some do gráfico.
-- **Clientes**: primeira reserva x já tinham reservado (o "primeira compra" e "clientes
-  fiéis" do legado). Um cliente é o `profile_id` ou, sem conta, o e-mail do pedido.
-- **Cancelamento**: canceladas + no-show sobre as reservas que chegaram a um desfecho pago;
-  `expired` (abandono) fica fora do denominador e aparece na sublinha.
-- **Receita de tarifas**: o que a Movepark ganha por tier (Básica/Flex/Superflex). Visão de
-  Super Admin: não vai pro `/operator`.
-- **Fluxo de veículos por hora**: entradas e saídas hora a hora num dia, com seletor de data,
-  totais de veículos e passageiros, hora de pico e PCDs. A hora sai no **fuso da unidade**. É
-  o indicador de escala de equipe: 9 carros às 8h e nenhum às 15h muda a escala do dia.
-- **Top unidades**: ranking por receita, com reservas e diárias.
-- **Reservas recentes**: as 20 últimas; clique abre o detalhe.
+#### Linha 4
+
+- **Permanência das reservas:** as seis faixas, sempre todas. Faixa vazia continua
+  na lista, porque o buraco na distribuição é informação.
+- **Clientes:** novos e recorrentes.
+
+#### Blocos fora do design v2
+
+**Por destino** e **Fluxo de veículos por hora** não estão no `Dashboard Manager
+v2`, mas vieram da revisão do backoffice legado (jul/2026) e seguem no painel, no
+mesmo idioma visual. O fluxo horário é o indicador de escala de equipe e a quebra
+por destino desfaz a média da rede. Sai também **Reservas recentes**, com atalho
+pra Atribuição.
 
 #### Implementação
 
 Duas RPCs `SECURITY DEFINER` gateadas por `is_hub_admin()`
 (`20260916000000_manager_dashboard_rpcs.sql`, ampliadas em
-`20260917000000_manager_filters_location_and_compare.sql`):
+`20260917000000_manager_filters_location_and_compare.sql` e
+`20260919000000_manager_dashboard_network.sql`):
 
 | RPC | Devolve |
 |---|---|
-| `manager_dashboard_overview(p_from, p_to, p_compare_from, p_compare_to, p_location_ids)` | `current`/`previous`, `statuses`, `customers`, `by_destination`, `length_of_stay`, `by_fare`, `top_locations` |
+| `manager_dashboard_overview(p_from, p_to, p_compare_from, p_compare_to, p_location_ids)` | `current`/`previous`, `statuses`, `customers`, `network`, `money`, `by_destination`, `length_of_stay`, `by_fare`, `top_locations` |
 | `manager_daily_flow(p_date, p_location_ids)` | `entries` e `exits`, 24 horas cada, com `vehicles`/`passengers`/`pcd` |
 
-A agregação mora no banco; o front (`src/features/dashboard/`) só exibe. `anon` não tem
-EXECUTE nas duas. Testes: pgTAP `manager_dashboard.test.sql` (gate, grants, diária
-dia-calendário, cancelada fora da receita, recorrente, hora no fuso da unidade) e Vitest
-`ManagerDashboard.test.tsx` + `dashboardMetrics.logic.test.ts`.
+`top_locations` é `left join` sobre as unidades ativas, então a unidade parada vem
+com zero em vez de sumir. A agregação mora no banco; o front
+(`src/features/dashboard/`) só exibe, e a lógica derivada fica em
+`managerInsights.logic.ts`. `anon` não tem EXECUTE nas duas. Testes: pgTAP
+`manager_dashboard.test.sql`, Vitest `ManagerDashboard.test.tsx` +
+`managerInsights.logic.test.ts`.
 
 ---
 

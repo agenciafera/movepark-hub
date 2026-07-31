@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { startOfDay, startOfMonth, subDays, addDays, format } from "date-fns";
+import { format } from "date-fns";
 import { supabase } from "@/lib/supabase";
 import type {
   BookingWithRelations,
@@ -14,97 +14,6 @@ import {
   channelMix,
   aggregateOccupancy,
 } from "./dashboardMetrics.logic";
-
-function isoStartOfMonth(d = new Date()) {
-  return startOfMonth(d).toISOString();
-}
-function isoStartOfDay(d = new Date()) {
-  return startOfDay(d).toISOString();
-}
-
-export type ManagerStats = {
-  bookingsToday: number;
-  bookingsYesterday: number;
-  checkInsToday: number;
-  checkOutsToday: number;
-  activeCompanies: number;
-  activeLocations: number;
-};
-
-/**
- * O pulso de hoje no Manager: chegadas previstas, quem já entrou e quem já saiu, e o
- * tamanho da rede ativa. Todo recorte de "hoje" é fechado nos dois lados: sem o
- * `lt` do fim do dia, "reservas hoje" virava "todas as reservas de hoje em diante"
- * e a comparação com ontem não queria dizer nada.
- */
-async function fetchManagerStats(locationIds?: string[]): Promise<ManagerStats> {
-  const now = new Date();
-  const todayStart = isoStartOfDay(now);
-  const tomorrowStart = isoStartOfDay(addDays(now, 1));
-  const yesterdayStart = isoStartOfDay(subDays(now, 1));
-  const scope = <T extends { in: (col: string, v: string[]) => T }>(q: T) =>
-    locationIds?.length ? q.in("location_id", locationIds) : q;
-
-  const [
-    bookingsToday,
-    bookingsYesterday,
-    checkInsToday,
-    checkOutsToday,
-    activeCompanies,
-    activeLocations,
-  ] = await Promise.all([
-    scope(
-      supabase
-        .from("booking")
-        .select("id", { count: "exact", head: true })
-        .gte("check_in_at", todayStart)
-        .lt("check_in_at", tomorrowStart),
-    ),
-    scope(
-      supabase
-        .from("booking")
-        .select("id", { count: "exact", head: true })
-        .gte("check_in_at", yesterdayStart)
-        .lt("check_in_at", todayStart),
-    ),
-    scope(
-      supabase
-        .from("booking")
-        .select("id", { count: "exact", head: true })
-        .gte("checked_in_at", todayStart)
-        .lt("checked_in_at", tomorrowStart),
-    ),
-    scope(
-      supabase
-        .from("booking")
-        .select("id", { count: "exact", head: true })
-        .gte("checked_out_at", todayStart)
-        .lt("checked_out_at", tomorrowStart),
-    ),
-    supabase.from("company").select("id", { count: "exact", head: true }).eq("status", "active"),
-    supabase
-      .from("location")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "active")
-      .is("deleted_at", null),
-  ]);
-
-  return {
-    bookingsToday: bookingsToday.count ?? 0,
-    bookingsYesterday: bookingsYesterday.count ?? 0,
-    checkInsToday: checkInsToday.count ?? 0,
-    checkOutsToday: checkOutsToday.count ?? 0,
-    activeCompanies: activeCompanies.count ?? 0,
-    activeLocations: activeLocations.count ?? 0,
-  };
-}
-
-export function useManagerStats(locationIds?: string[]) {
-  return useQuery({
-    queryKey: ["dashboard", "manager-stats", locationIds],
-    queryFn: () => fetchManagerStats(locationIds),
-  });
-}
 
 /**
  * Resumo do período no Manager (RPC `manager_dashboard_overview`, só hub_admin).
@@ -230,13 +139,6 @@ export function useDayAgenda(dateIso: string, locationIds?: string[]) {
     refetchInterval: 60_000,
   });
 }
-
-export type OperatorStats = {
-  bookingsToday: number;
-  checkInsToday: number;
-  checkOutsToday: number;
-  revenueThisMonth: number;
-};
 
 export type PeriodDays = 7 | 30 | 90;
 
@@ -364,65 +266,6 @@ export function useOccupancyAgg(locationIds: string[] | undefined, from: string,
         rows.push(...((res.data ?? []) as LocationOccupancyRow[]));
       }
       return aggregateOccupancy(rows);
-    },
-  });
-}
-
-export function useOperatorStats(locationIds?: string[]) {
-  return useQuery({
-    queryKey: ["dashboard", "operator-stats", locationIds],
-    queryFn: async (): Promise<OperatorStats> => {
-      const now = new Date();
-      const todayStart = isoStartOfDay(now);
-      const tomorrowStart = isoStartOfDay(addDays(now, 1));
-      const monthStart = isoStartOfMonth(now);
-
-      // "Hoje" fecha nos dois lados: só `gte` faria o card contar todo o futuro.
-      const baseToday = supabase
-        .from("booking")
-        .select("id", { count: "exact", head: true })
-        .gte("check_in_at", todayStart)
-        .lt("check_in_at", tomorrowStart);
-      const baseCheckIn = supabase
-        .from("booking")
-        .select("id", { count: "exact", head: true })
-        .gte("checked_in_at", todayStart)
-        .lt("checked_in_at", tomorrowStart);
-      const baseCheckOut = supabase
-        .from("booking")
-        .select("id", { count: "exact", head: true })
-        .gte("checked_out_at", todayStart)
-        .lt("checked_out_at", tomorrowStart);
-      const baseRevenue = supabase
-        .from("booking")
-        .select("total_amount")
-        .gte("check_in_at", monthStart)
-        .in("status", ["confirmed", "checked_in", "completed"]);
-
-      const today = locationIds?.length ? baseToday.in("location_id", locationIds) : baseToday;
-      const checkIn = locationIds?.length
-        ? baseCheckIn.in("location_id", locationIds)
-        : baseCheckIn;
-      const checkOut = locationIds?.length
-        ? baseCheckOut.in("location_id", locationIds)
-        : baseCheckOut;
-      const revenue = locationIds?.length
-        ? baseRevenue.in("location_id", locationIds)
-        : baseRevenue;
-
-      const [t, ci, co, rev] = await Promise.all([today, checkIn, checkOut, revenue]);
-
-      const revenueTotal = (rev.data ?? []).reduce(
-        (acc, r) => acc + Number(r.total_amount ?? 0),
-        0,
-      );
-
-      return {
-        bookingsToday: t.count ?? 0,
-        checkInsToday: ci.count ?? 0,
-        checkOutsToday: co.count ?? 0,
-        revenueThisMonth: revenueTotal,
-      };
     },
   });
 }
