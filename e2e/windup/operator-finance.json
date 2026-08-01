@@ -1,7 +1,7 @@
 {
   "scenario_id": "operator-finance",
   "start_url": "/operator/finance",
-  "task": "Verifique que a página exibe o texto 'Repasses'.",
+  "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Repasses\", depois o texto \"Sua jornada na Movepark\", depois o texto \"Proximo passo\".",
   "tags": [
     "smoke",
     "leitura",
@@ -108,5 +108,10 @@
       "url": "**/rpc/**",
       "json": []
     }
+  ],
+  "hints": [
+    "Tres verificacoes independentes na mesma tela.",
+    "A empresa do stub nao tem unidade publicada, entao abaixo do titulo a tela mostra o gate de onboarding do parceiro em vez do conteudo da area.",
+    "As duas ultimas checagens caem nesse gate e provam que ele renderiza."
   ]
 }

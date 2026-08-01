@@ -1,7 +1,7 @@
 {
   "scenario_id": "manager-users",
   "start_url": "/manager/users",
-  "task": "Verifique que a URL final termina em /manager/users, que a pagina exibe o texto Usuarios, e que a pagina NAO exibe o texto Entrar com Google.",
+  "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Usuários\", depois a descricao \"Gerencie papéis e vínculos com empresas.\", depois o texto \"Papel\".",
   "tags": [
     "smoke",
     "leitura",
@@ -105,7 +105,8 @@
     }
   ],
   "hints": [
-    "Tres verificacoes: a URL (prova que o guard de papel deixou passar e nao redirecionou), o conteudo da pagina, e a ausencia do convite de login (provaria sessao caida).",
-    "Para a URL use a postcondicao url. Para a ausencia use not_visible."
+    "Tres verificacoes independentes na mesma tela: o titulo do cabecalho, a descricao logo abaixo dele, e o conteudo da area de lista.",
+    "Faca cada uma como uma etapa propria, nao junte tudo numa condicao so.",
+    "A lista traz o proprio usuario logado pelo stub, entao a terceira checagem cai no cabecalho da tabela."
   ]
 }

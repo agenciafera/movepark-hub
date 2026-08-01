@@ -4,41 +4,71 @@
     "scenario_id": "operator-pricing",
     "start_url": "/operator/pricing",
     "start_sig": "sig:7c87997d1435748b",
-    "scenario_sig": "94dd5f75c06e65ab"
+    "scenario_sig": "db5ae4e6903eb0e6"
   },
   "plan": {
     "plan_version": "0.1",
     "scenario_id": "operator-pricing",
-    "start_url": "http://localhost:5180/operator/pricing",
+    "start_url": "http://localhost:5273/operator/pricing",
     "actions": [
       {
         "id": "a1",
         "type": "wait_for",
         "target": {
           "selector": "h1",
-          "description": "Heading 'Preços' on the pricing page"
+          "description": "Page heading Preços (level 1)"
         },
         "expect": {
           "text_contains": {
             "selector": "h1",
             "text": "Preços"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1 + p",
+          "description": "Description paragraph immediately after the Preços heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "h1 + p",
+            "text": "O preço da diária que o cliente paga, por unidade e tipo de"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "h3",
+          "description": "Empty-state heading Sem unidades vinculadas"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "h3",
+            "text": "Sem unidades vinculadas"
           },
-          "selector": "h1"
+          "selector": "h3"
         },
         "timeout_ms": 5000
       }
     ],
-    "task": "Verifique que a página exibe o texto 'Preços'.",
+    "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Preços\", depois a descricao \"O preço da diária que o cliente paga, por unidade e tipo de \", depois o texto \"Sem unidades vinculadas\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-07-31T16:03:05.991Z"
+      "at": "2026-08-01T15:53:40.492Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-07-31T16:03:10.748Z",
-    "last_replayed_at": "2026-07-31T20:38:38.650Z",
-    "replay_count": 18,
+    "created_at": "2026-08-01T15:53:43.860Z",
+    "last_replayed_at": "2026-08-01T16:15:34.336Z",
+    "replay_count": 2,
     "replay_failures": 0,
     "plan_generation": 1
   }

@@ -4,7 +4,7 @@
     "scenario_id": "manager-finance-billing",
     "start_url": "/manager/finance/billing",
     "start_sig": "sig:30b80afac064bfc7",
-    "scenario_sig": "bb18e5761f8d5042"
+    "scenario_sig": "9df3bb54769334bd"
   },
   "plan": {
     "plan_version": "0.1",
@@ -15,30 +15,60 @@
         "id": "a1",
         "type": "wait_for",
         "target": {
-          "selector": "h1",
-          "description": "Page heading"
+          "selector": "main h1",
+          "description": "Page heading Faturamento"
         },
         "expect": {
           "text_contains": {
-            "selector": "h1",
+            "selector": "main h1",
             "text": "Faturamento"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h3 + p",
+          "description": "Empty state description paragraph below Sem movimentação heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h3 + p",
+            "text": "Nenhuma reserva no período escolhido."
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h3",
+          "description": "Empty state heading Sem movimentação"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h3",
+            "text": "Sem movimentação"
           },
-          "selector": "h1"
+          "selector": "main h3"
         },
         "timeout_ms": 5000
       }
     ],
-    "task": "Verifique que a página exibe o texto 'Faturamento'.",
+    "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Faturamento\", depois a descricao \"Nenhuma reserva no período escolhido.\", depois o texto \"Sem movimentação\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-07-31T16:01:41.940Z"
+      "at": "2026-08-01T15:43:10.487Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-07-31T16:01:43.386Z",
-    "last_replayed_at": "2026-07-31T20:38:11.486Z",
-    "replay_count": 18,
+    "created_at": "2026-08-01T15:43:13.457Z",
+    "last_replayed_at": "2026-08-01T16:13:22.456Z",
+    "replay_count": 3,
     "replay_failures": 0,
     "plan_generation": 1
   }

@@ -1,7 +1,7 @@
 {
   "scenario_id": "operator-reviews",
   "start_url": "/operator/reviews",
-  "task": "Verifique que a página exibe o texto 'Avaliações'.",
+  "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Avaliações\", depois a descricao \"O que os clientes dizem das suas unidades. Responda publicam\", depois o texto \"Sua jornada na Movepark\".",
   "tags": [
     "smoke",
     "leitura",
@@ -108,5 +108,10 @@
       "url": "**/rpc/**",
       "json": []
     }
+  ],
+  "hints": [
+    "Tres verificacoes independentes na mesma tela: o titulo do cabecalho, a descricao logo abaixo dele, e o conteudo da area de lista.",
+    "Faca cada uma como uma etapa propria, nao junte tudo numa condicao so.",
+    "A empresa do stub nao tem unidade, entao a tela mostra o gate de onboarding do parceiro. A terceira checagem cai nesse bloco, e prova que o gate renderiza."
   ]
 }

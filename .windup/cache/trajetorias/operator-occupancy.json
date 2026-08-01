@@ -4,41 +4,71 @@
     "scenario_id": "operator-occupancy",
     "start_url": "/operator/occupancy",
     "start_sig": "sig:0e77bbe16451b1b2",
-    "scenario_sig": "1ae99aadd7694d78"
+    "scenario_sig": "38651b0cf19eb92d"
   },
   "plan": {
     "plan_version": "0.1",
     "scenario_id": "operator-occupancy",
-    "start_url": "http://localhost:5180/operator/occupancy",
+    "start_url": "http://localhost:5273/operator/occupancy",
     "actions": [
       {
         "id": "a1",
         "type": "wait_for",
         "target": {
-          "selector": "h1",
-          "description": "Heading Ocupação"
+          "selector": "main h1",
+          "description": "Page title heading level 1"
         },
         "expect": {
           "text_contains": {
-            "selector": "h1",
+            "selector": "main h1",
             "text": "Ocupação"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h3 + p",
+          "description": "Description paragraph immediately after the empty-state heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h3 + p",
+            "text": "Escolha uma unidade e um período com vagas ativas."
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h3",
+          "description": "Empty state heading level 3"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h3",
+            "text": "Sem dados de ocupação"
           },
-          "selector": "h1"
+          "selector": "main h3"
         },
         "timeout_ms": 5000
       }
     ],
-    "task": "Verifique que a página exibe o texto 'Ocupação'.",
+    "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Ocupação\", depois a descricao \"Escolha uma unidade e um período com vagas ativas.\", depois o texto \"Sem dados de ocupação\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-07-31T16:02:57.396Z"
+      "at": "2026-08-01T15:53:33.964Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-07-31T16:03:00.296Z",
-    "last_replayed_at": "2026-07-31T20:38:36.492Z",
-    "replay_count": 18,
+    "created_at": "2026-08-01T15:53:38.375Z",
+    "last_replayed_at": "2026-08-01T16:15:32.005Z",
+    "replay_count": 2,
     "replay_failures": 0,
     "plan_generation": 1
   }

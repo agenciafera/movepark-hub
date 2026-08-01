@@ -4,7 +4,7 @@
     "scenario_id": "manager-finance-commissions",
     "start_url": "/manager/finance/commissions",
     "start_sig": "sig:30b80afac064bfc7",
-    "scenario_sig": "d7b78eaffa736a9d"
+    "scenario_sig": "c0a71b247f9a3065"
   },
   "plan": {
     "plan_version": "0.1",
@@ -15,30 +15,60 @@
         "id": "a1",
         "type": "wait_for",
         "target": {
-          "selector": "h1",
-          "description": "Page heading"
+          "selector": "main h1",
+          "description": "Page heading Comissões"
         },
         "expect": {
           "text_contains": {
-            "selector": "h1",
+            "selector": "main h1",
             "text": "Comissões"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "h3 + p",
+          "description": "Empty state description paragraph after the Sem empresas heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "h3 + p",
+            "text": "Nenhuma empresa cadastrada."
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h3",
+          "description": "Empty state heading Sem empresas"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h3",
+            "text": "Sem empresas"
           },
-          "selector": "h1"
+          "selector": "main h3"
         },
         "timeout_ms": 5000
       }
     ],
-    "task": "Verifique que a página exibe o texto 'Comissões'.",
+    "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Comissões\", depois a descricao \"Nenhuma empresa cadastrada.\", depois o texto \"Sem empresas\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-07-31T16:01:38.419Z"
+      "at": "2026-08-01T15:43:20.578Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-07-31T16:01:40.817Z",
-    "last_replayed_at": "2026-07-31T20:38:12.588Z",
-    "replay_count": 18,
+    "created_at": "2026-08-01T15:43:30.424Z",
+    "last_replayed_at": "2026-08-01T16:13:23.269Z",
+    "replay_count": 3,
     "replay_failures": 0,
     "plan_generation": 1
   }

@@ -1,7 +1,7 @@
 {
   "scenario_id": "manager-companies",
   "start_url": "/manager/companies",
-  "task": "Verifique que a página exibe o texto 'Empresas'.",
+  "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Empresas\", depois a descricao \"Empresas parceiras da plataforma.\", depois o texto \"Nenhuma empresa encontrada\".",
   "tags": [
     "smoke",
     "leitura",
@@ -103,5 +103,10 @@
       "url": "**/rpc/**",
       "json": []
     }
+  ],
+  "hints": [
+    "Tres verificacoes independentes na mesma tela: o titulo do cabecalho, a descricao logo abaixo dele, e o conteudo da area de lista.",
+    "Faca cada uma como uma etapa propria, nao junte tudo numa condicao so.",
+    "A lista vem vazia pelo stub, entao a terceira checagem cai no estado vazio da tela."
   ]
 }

@@ -4,12 +4,12 @@
     "scenario_id": "operator-reports",
     "start_url": "/operator/reports",
     "start_sig": "sig:330a98d155e0b087",
-    "scenario_sig": "1a9a3802b5f4388f"
+    "scenario_sig": "3015bd7b88381578"
   },
   "plan": {
     "plan_version": "0.1",
     "scenario_id": "operator-reports",
-    "start_url": "http://localhost:5180/operator/reports",
+    "start_url": "http://localhost:5273/operator/reports",
     "actions": [
       {
         "id": "a1",
@@ -22,23 +22,53 @@
           "text_contains": {
             "selector": "h1",
             "text": "Relatórios"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main p",
+          "description": "Description paragraph below the heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Análise de desempenho operacional."
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "Main content area containing the onboarding gate paragraph"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Sua jornada na Movepark"
           },
-          "selector": "h1"
+          "selector": "main"
         },
         "timeout_ms": 5000
       }
     ],
-    "task": "Verifique que a página exibe o texto 'Relatórios'.",
+    "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Relatórios\", depois a descricao \"Análise de desempenho operacional.\", depois o texto \"Sua jornada na Movepark\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-07-31T16:03:07.957Z"
+      "at": "2026-08-01T16:09:18.411Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-07-31T16:03:11.613Z",
-    "last_replayed_at": "2026-07-31T20:38:39.650Z",
-    "replay_count": 18,
+    "created_at": "2026-08-01T16:09:22.476Z",
+    "last_replayed_at": "2026-08-01T16:15:37.853Z",
+    "replay_count": 1,
     "replay_failures": 0,
     "plan_generation": 1
   }

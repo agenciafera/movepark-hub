@@ -4,41 +4,71 @@
     "scenario_id": "operator-faq",
     "start_url": "/operator/faq",
     "start_sig": "sig:9e475390a54a6c61",
-    "scenario_sig": "2814e7a235f266aa"
+    "scenario_sig": "788ec4d508613a88"
   },
   "plan": {
     "plan_version": "0.1",
     "scenario_id": "operator-faq",
-    "start_url": "http://localhost:5180/operator/faq",
+    "start_url": "http://localhost:5273/operator/faq",
     "actions": [
       {
         "id": "a1",
         "type": "wait_for",
         "target": {
-          "selector": "h1",
-          "description": "FAQ page main heading"
+          "selector": "main h1",
+          "description": "FAQ page main heading level 1"
         },
         "expect": {
           "text_contains": {
-            "selector": "h1",
+            "selector": "main h1",
             "text": "FAQ"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h1 + p",
+          "description": "Description paragraph immediately following the FAQ heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h1 + p",
+            "text": "Perguntas e respostas específicas dos seus estacionamentos."
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h3",
+          "description": "Empty state heading indicating no linked units"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h3",
+            "text": "Sem unidades vinculadas"
           },
-          "selector": "h1"
+          "selector": "main h3"
         },
         "timeout_ms": 5000
       }
     ],
-    "task": "Verifique que a página exibe o texto 'FAQ'.",
+    "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"FAQ\", depois a descricao \"Perguntas e respostas específicas dos seus estacionamentos.\", depois o texto \"Sem unidades vinculadas\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-07-31T16:02:39.010Z"
+      "at": "2026-08-01T15:51:49.647Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-07-31T16:02:41.222Z",
-    "last_replayed_at": "2026-07-31T20:38:31.988Z",
-    "replay_count": 18,
+    "created_at": "2026-08-01T15:51:52.362Z",
+    "last_replayed_at": "2026-08-01T16:15:19.965Z",
+    "replay_count": 2,
     "replay_failures": 0,
     "plan_generation": 1
   }

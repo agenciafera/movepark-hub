@@ -4,7 +4,7 @@
     "scenario_id": "account-vehicles",
     "start_url": "/account/vehicles",
     "start_sig": "sig:0dcff3a175658e77",
-    "scenario_sig": "ac722133dd09a583"
+    "scenario_sig": "c2f4a040146c3332"
   },
   "plan": {
     "plan_version": "0.1",
@@ -16,29 +16,59 @@
         "type": "wait_for",
         "target": {
           "selector": "main h1",
-          "description": "Veículos page heading"
+          "description": "Vehicles page main heading"
         },
         "expect": {
           "text_contains": {
             "selector": "main h1",
             "text": "Veículos"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main p",
+          "description": "Description paragraph below the heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main p",
+            "text": "Salve veículos pra agilizar suas reservas."
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h3",
+          "description": "Empty state heading for first vehicle"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h3",
+            "text": "Cadastre seu primeiro veículo"
           },
-          "selector": "main h1"
+          "selector": "main h3"
         },
         "timeout_ms": 5000
       }
     ],
-    "task": "Verifique que a página exibe o texto 'Veículos'.",
+    "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Veículos\", depois a descricao \"Salve veículos pra agilizar suas reservas.\", depois o texto \"Cadastre seu primeiro veículo\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-07-31T16:00:20.703Z"
+      "at": "2026-08-01T15:36:33.986Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-07-31T16:00:24.655Z",
-    "last_replayed_at": "2026-07-31T20:37:17.306Z",
-    "replay_count": 18,
+    "created_at": "2026-08-01T15:36:41.453Z",
+    "last_replayed_at": "2026-08-01T16:12:28.606Z",
+    "replay_count": 4,
     "replay_failures": 0,
     "plan_generation": 1
   }
