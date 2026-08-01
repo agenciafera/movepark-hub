@@ -4,19 +4,49 @@
     "scenario_id": "account-vehicles-lista",
     "start_url": "/account/vehicles",
     "start_sig": "sig:c59d8801fff3d40d",
-    "scenario_sig": "032e9bcc13ed5670"
+    "scenario_sig": "2b30861d4784994c"
   },
   "plan": {
     "plan_version": "0.1",
     "scenario_id": "account-vehicles-lista",
-    "start_url": "http://localhost:5180/account/vehicles",
+    "start_url": "http://localhost:5273/account/vehicles",
     "actions": [
       {
         "id": "a1",
         "type": "wait_for",
         "target": {
+          "selector": "main h1",
+          "description": "Título principal da página de Veículos"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h1",
+            "text": "Veículos"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main p",
+          "description": "Descrição abaixo do título"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main p",
+            "text": "Salve veículos pra agilizar suas reservas."
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
           "selector": "main li",
-          "description": "Vehicle list item"
+          "description": "Linha da listagem com a placa ABC1D23"
         },
         "expect": {
           "text_contains": {
@@ -28,17 +58,17 @@
         "timeout_ms": 5000
       }
     ],
-    "task": "Verifique que a página exibe o texto 'ABC1D23'.",
+    "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Veículos\", depois a descricao \"Salve veículos pra agilizar suas reservas.\", depois o dado da linha \"ABC1D23\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-07-31T17:40:20.919Z"
+      "at": "2026-08-01T16:18:33.791Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-07-31T17:40:24.114Z",
-    "last_replayed_at": "2026-08-01T16:12:30.261Z",
-    "replay_count": 15,
+    "created_at": "2026-08-01T16:18:34.868Z",
+    "last_replayed_at": "2026-08-01T17:07:11.221Z",
+    "replay_count": 7,
     "replay_failures": 0,
     "plan_generation": 1
   }

@@ -4,41 +4,71 @@
     "scenario_id": "operator-bookings",
     "start_url": "/operator/bookings",
     "start_sig": "sig:216bc20eae546abf",
-    "scenario_sig": "f0b57898e1e5d5f4"
+    "scenario_sig": "a717f96997eaa669"
   },
   "plan": {
     "plan_version": "0.1",
     "scenario_id": "operator-bookings",
-    "start_url": "http://localhost:5180/operator/bookings",
+    "start_url": "http://localhost:5273/operator/bookings",
     "actions": [
       {
         "id": "a1",
         "type": "wait_for",
         "target": {
           "selector": "h1",
-          "description": "Main page heading"
+          "description": "Reservas page heading level 1"
         },
         "expect": {
           "text_contains": {
             "selector": "h1",
             "text": "Reservas"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "Main content area"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Gestão das reservas da sua empresa"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "Main content area with onboarding journey text"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Sua jornada na Movepark"
           },
-          "selector": "h1"
+          "selector": "main"
         },
         "timeout_ms": 5000
       }
     ],
-    "task": "Verifique que a página exibe o texto 'Reservas'.",
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Reservas\". Passo 2: verifique que a pagina exibe o texto \"Gestão das reservas da sua empresa\". Passo 3: verifique que a pagina exibe o texto \"Sua jornada na Movepark\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-07-31T16:02:34.609Z"
+      "at": "2026-08-01T16:32:23.713Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-07-31T16:02:37.639Z",
-    "last_replayed_at": "2026-08-01T16:14:29.248Z",
-    "replay_count": 21,
+    "created_at": "2026-08-01T16:32:25.491Z",
+    "last_replayed_at": "2026-08-01T17:08:00.634Z",
+    "replay_count": 6,
     "replay_failures": 0,
     "plan_generation": 1
   }

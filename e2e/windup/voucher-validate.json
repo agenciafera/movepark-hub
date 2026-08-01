@@ -1,12 +1,24 @@
 {
   "scenario_id": "voucher-validate",
-  "start_url": "/voucher/validate",
-  "task": "Verifique que a página exibe o texto 'Validação de voucher'.",
+  "start_url": "/voucher/validate?code=MP-TESTE",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Validacao de voucher\". Passo 2: verifique que a pagina exibe o texto \"Entre com sua conta de operador\". Passo 3: verifique que a pagina exibe o texto \"Entrar como operador\".",
   "tags": [
     "smoke",
     "leitura"
   ],
   "hints": [
-    "Leitura pura: não preencha formulário nem envie nada."
+    "Sao passos numerados: cada um vira uma acao propria do plano.",
+    "Use text_contains com selector body em cada checagem.",
+    "Sem sessao de operador a tela mostra so o convite de login: e esse o caminho que este cenario cobre."
+  ],
+  "network": [
+    {
+      "url": "**/rest/v1/rpc/**",
+      "json": null
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    }
   ]
 }

@@ -4,19 +4,49 @@
     "scenario_id": "account-addresses-lista",
     "start_url": "/account/addresses",
     "start_sig": "sig:c59d8801fff3d40d",
-    "scenario_sig": "8e66125b27690fbe"
+    "scenario_sig": "e39d340424bf64ba"
   },
   "plan": {
     "plan_version": "0.1",
     "scenario_id": "account-addresses-lista",
-    "start_url": "http://localhost:5180/account/addresses",
+    "start_url": "http://localhost:5273/account/addresses",
     "actions": [
       {
         "id": "a1",
         "type": "wait_for",
         "target": {
+          "selector": "main h1",
+          "description": "Page title heading Endereços"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h1",
+            "text": "Endereços"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main p",
+          "description": "Description paragraph below the heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main p",
+            "text": "Cadastre endereços pra agilizar reservas e referência."
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
           "selector": "main li",
-          "description": "address list item containing Rua do Teste"
+          "description": "Address list item containing Rua do Teste"
         },
         "expect": {
           "text_contains": {
@@ -28,17 +58,17 @@
         "timeout_ms": 5000
       }
     ],
-    "task": "Verifique que a página exibe o texto 'Rua do Teste'.",
+    "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Endereços\", depois a descricao \"Cadastre endereços pra agilizar reservas e referência.\", depois o dado da linha \"Rua do Teste\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-07-31T17:40:26.046Z"
+      "at": "2026-08-01T16:18:01.826Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-07-31T17:40:28.855Z",
-    "last_replayed_at": "2026-08-01T16:12:16.886Z",
-    "replay_count": 15,
+    "created_at": "2026-08-01T16:18:03.132Z",
+    "last_replayed_at": "2026-08-01T17:07:04.280Z",
+    "replay_count": 7,
     "replay_failures": 0,
     "plan_generation": 1
   }

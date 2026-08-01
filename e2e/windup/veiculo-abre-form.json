@@ -1,16 +1,20 @@
 {
   "scenario_id": "veiculo-abre-form",
   "start_url": "/account/vehicles",
-  "task": "Clique em 'Novo veículo'. Verifique que a página exibe o texto 'Placa'.",
+  "task": "Passo 1: clique em \"Novo veiculo\". Passo 2: verifique que o formulario exibe o texto \"Placa\". Passo 3: preencha o input de id \"plate-lookup\" com \"QAW1A11\". Passo 4: verifique que esse input contem \"QAW-1A11\". Passo 5: verifique que o formulario exibe o texto \"Informe a placa\".",
   "tags": [
     "validacao",
     "formulario",
     "autenticado"
   ],
   "hints": [
-    "O botão que abre o formulário tem o texto 'Novo veículo'.",
-    "O formulário tem os campos de id 'plate', 'model' e 'vehicle-color'.",
-    "A verificação final deve usar text_contains com selector '[role=\"dialog\"]'. O formulário abre num portal do Radix FORA do <main>, então asserir em main nunca enxerga o conteúdo dele."
+    "O botao que abre o formulario tem o texto \"Novo veiculo\".",
+    "O unico campo visivel de inicio e o de placa, o input de id \"plate-lookup\": modelo e cor so aparecem depois que a consulta de placa confirma.",
+    "Para o rotulo use text_contains com selector [role=\"dialog\"], NAO um seletor label[for=...].",
+    "Para conferir o valor digitado use a postcondicao selector_value no input \"plate-lookup\".",
+    "O campo aplica mascara de placa: digitar QAW1A11 resulta em QAW-1A11 com hifen. A verificacao tem que esperar o valor MASCARADO.",
+    "Sao cinco passos numerados; execute cada um como uma acao propria do plano, sem juntar verificacoes.",
+    "O botao Salvar so aparece depois que a consulta de placa confirma; ate la a tela pede a placa."
   ],
   "seed": {
     "localStorage": {
@@ -18,6 +22,12 @@
     }
   },
   "network": [
+    {
+      "url": "**/functions/v1/lookup-vehicle-plate*",
+      "json": {
+        "found": false
+      }
+    },
     {
       "url": "**/auth/v1/user*",
       "json": {

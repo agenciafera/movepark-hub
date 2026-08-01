@@ -1,13 +1,15 @@
 {
   "scenario_id": "manager-destinations-lista",
   "start_url": "/manager/destinations",
-  "task": "Verifique que a página exibe o texto 'Aeroporto QA'.",
+  "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Destinos\", depois a descricao \"Aeroportos e destinos com página própria (SEO). Control\", depois o dado da linha \"Aeroporto QA\".",
   "tags": [
     "listagem",
     "autenticado"
   ],
   "hints": [
-    "A listagem vem estubada com linhas de verdade, então o alvo é o conteúdo da linha, não o estado vazio."
+    "Tres verificacoes: o cabecalho da tela, a descricao abaixo dele e o conteudo da LINHA da listagem.",
+    "A listagem vem estubada com linha de verdade, entao a ultima checagem prova que a tela renderiza dado, nao estado vazio.",
+    "Faca cada uma como etapa propria."
   ],
   "seed": {
     "localStorage": {

@@ -4,41 +4,59 @@
     "scenario_id": "home-vitrine",
     "start_url": "/",
     "start_sig": "sig:9762b1205e6e924b",
-    "scenario_sig": "47eb9668ff75af26"
+    "scenario_sig": "1e34503e5144cc6a"
   },
   "plan": {
     "plan_version": "0.1",
     "scenario_id": "home-vitrine",
-    "start_url": "http://localhost:5180/",
+    "start_url": "http://localhost:5273/",
     "actions": [
       {
         "id": "a1",
         "type": "wait_for",
         "target": {
-          "selector": "main",
-          "description": "Conteúdo principal da home"
+          "selector": "h2:has-text(\"Estacionamentos Populares\")",
+          "description": "Heading nível 2 'Estacionamentos Populares'"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "h2:has-text(\"O que você tem em toda reserva\")",
+          "description": "Heading nível 2 'O que você tem em toda reserva'"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "h3:has-text(\"Cancelamento grátis\")",
+          "description": "Heading nível 3 'Cancelamento grátis'"
         },
         "expect": {
           "text_contains": {
-            "selector": "main",
-            "text": "Estacionamentos Populares"
+            "selector": "h3:has-text(\"Cancelamento grátis\")",
+            "text": "Cancelamento grátis"
           },
-          "selector": "main"
+          "selector": "h3:has-text(\"Cancelamento grátis\")"
         },
         "timeout_ms": 5000
       }
     ],
-    "task": "Na home, verifique que o texto 'Estacionamentos Populares' aparece na página.",
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Estacionamentos Populares\". Passo 2: verifique que a pagina exibe o texto \"O que você tem em toda reserva\". Passo 3: verifique que a pagina exibe o texto \"Cancelamento grátis\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-07-31T16:01:01.073Z"
+      "at": "2026-08-01T16:39:48.376Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-07-31T16:01:02.099Z",
-    "last_replayed_at": "2026-08-01T16:12:53.441Z",
-    "replay_count": 22,
+    "created_at": "2026-08-01T16:39:49.113Z",
+    "last_replayed_at": "2026-08-01T17:07:28.571Z",
+    "replay_count": 4,
     "replay_failures": 0,
     "plan_generation": 1
   }

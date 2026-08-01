@@ -1,7 +1,13 @@
 {
   "scenario_id": "seja-parceiro",
   "start_url": "/seja-parceiro",
-  "task": "Verifique que a página exibe o texto 'Encha suas vagas com reservas online' e o texto 'Vaga vazia não volta.'.",
-  "tags": ["smoke", "leitura"],
-  "hints": ["Leitura pura: NÃO abra o modal 'Seja parceiro' e NÃO envie lead, isso cria registro no banco."]
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Encha suas vagas com reservas online\". Passo 2: verifique que a pagina exibe o texto \"Vaga vazia não volta.\". Passo 3: verifique que a pagina exibe o texto \"Como funciona\".",
+  "tags": [
+    "smoke",
+    "leitura"
+  ],
+  "hints": [
+    "Sao passos numerados: cada um vira uma acao propria do plano.",
+    "Os tres textos ficam em partes diferentes da mesma tela."
+  ]
 }

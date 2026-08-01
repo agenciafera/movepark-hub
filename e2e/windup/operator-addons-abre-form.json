@@ -1,14 +1,15 @@
 {
   "scenario_id": "operator-addons-abre-form",
   "start_url": "/operator/addons",
-  "task": "Clique em 'Novo servico'. Verifique que a pagina exibe o texto 'Preco base'.",
+  "task": "Clique em \"Novo serviço\". Depois verifique, em tres checagens separadas, que o formulario exibe o campo \"Nome\", depois o campo \"Descrição\", depois o campo \"Preço base\".",
   "tags": [
     "formulario",
     "autenticado"
   ],
   "hints": [
-    "O botao que abre o formulario tem o texto 'Novo servico'.",
-    "A verificacao final deve usar text_contains com selector [role=\"dialog\"]. O formulario abre num portal do Radix FORA do <main>."
+    "O botao que abre o formulario tem o texto \"Novo serviço\".",
+    "As tres checagens sao sobre rotulos de campo DENTRO do modal, uma etapa cada.",
+    "O formulario abre num portal do Radix FORA do <main>: use text_contains com selector [role=\"dialog\"]."
   ],
   "seed": {
     "localStorage": {

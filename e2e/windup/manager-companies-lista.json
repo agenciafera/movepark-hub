@@ -1,13 +1,15 @@
 {
   "scenario_id": "manager-companies-lista",
   "start_url": "/manager/companies",
-  "task": "Verifique que a página exibe o texto 'Estacionamento Alfa'.",
+  "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Empresas\", depois a descricao \"Empresas parceiras da plataforma.\", depois o dado da linha \"Estacionamento Alfa\".",
   "tags": [
     "listagem",
     "autenticado"
   ],
   "hints": [
-    "A listagem vem estubada com linhas de verdade, então o alvo é o conteúdo da linha, não o estado vazio."
+    "Tres verificacoes: o cabecalho da tela, a descricao abaixo dele e o conteudo da LINHA da listagem.",
+    "A listagem vem estubada com linha de verdade, entao a ultima checagem prova que a tela renderiza dado, nao estado vazio.",
+    "Faca cada uma como etapa propria."
   ],
   "seed": {
     "localStorage": {

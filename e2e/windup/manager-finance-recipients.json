@@ -1,7 +1,7 @@
 {
   "scenario_id": "manager-finance-recipients",
   "start_url": "/manager/finance/recipients",
-  "task": "Verifique que a página exibe o texto 'Recebedores'.",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Recebedores\". Passo 2: verifique que a pagina exibe o texto \"Status de cada empresa no gateway de pagamento\". Passo 3: verifique que a pagina exibe o texto \"Pagar.me\".",
   "tags": [
     "smoke",
     "leitura",
@@ -103,5 +103,9 @@
       "url": "**/rpc/**",
       "json": []
     }
+  ],
+  "hints": [
+    "Sao passos numerados: cada um vira uma acao propria do plano.",
+    "Os tres textos ficam em partes diferentes da mesma tela: titulo, descricao e um trecho do corpo."
   ]
 }

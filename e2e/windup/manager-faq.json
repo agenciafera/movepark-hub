@@ -1,7 +1,7 @@
 {
   "scenario_id": "manager-faq",
   "start_url": "/manager/faq",
-  "task": "Verifique que a página exibe o texto 'FAQ'.",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"FAQ\". Passo 2: verifique que a pagina exibe o texto \"Fonte da verdade da FAQ em camadas\". Passo 3: verifique que a pagina exibe o texto \"global\".",
   "tags": [
     "smoke",
     "leitura",
@@ -103,5 +103,9 @@
       "url": "**/rpc/**",
       "json": []
     }
+  ],
+  "hints": [
+    "Sao passos numerados: cada um vira uma acao propria do plano.",
+    "Os tres textos ficam em partes diferentes da mesma tela: titulo, descricao e um trecho do corpo."
   ]
 }

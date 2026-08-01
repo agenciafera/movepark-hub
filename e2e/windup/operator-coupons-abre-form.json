@@ -1,14 +1,15 @@
 {
   "scenario_id": "operator-coupons-abre-form",
   "start_url": "/operator/coupons",
-  "task": "Clique em 'Novo cupom'. Verifique que a pagina exibe o texto 'Código'.",
+  "task": "Clique em \"Novo cupom\". Depois verifique, em tres checagens separadas, que o formulario exibe o campo \"Código\", depois o campo \"Tipo de desconto\", depois o campo \"Valor do desconto\".",
   "tags": [
     "formulario",
     "autenticado"
   ],
   "hints": [
-    "O botao que abre o formulario tem o texto 'Novo cupom'.",
-    "A verificacao final deve usar text_contains com selector [role=\"dialog\"]. O formulario abre num portal do Radix FORA do <main>."
+    "O botao que abre o formulario tem o texto \"Novo cupom\".",
+    "As tres checagens sao sobre rotulos de campo DENTRO do modal, uma etapa cada.",
+    "O formulario abre num portal do Radix FORA do <main>: use text_contains com selector [role=\"dialog\"]."
   ],
   "seed": {
     "localStorage": {

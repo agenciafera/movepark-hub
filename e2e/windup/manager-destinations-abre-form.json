@@ -1,14 +1,15 @@
 {
   "scenario_id": "manager-destinations-abre-form",
   "start_url": "/manager/destinations",
-  "task": "Clique em 'Novo destino'. Verifique que a pagina exibe o texto 'Latitude'.",
+  "task": "Clique em \"Novo destino\". Depois verifique, em tres checagens separadas, que o formulario exibe o campo \"Code\", depois o campo \"Nome\", depois o campo \"Cidade\".",
   "tags": [
     "formulario",
     "autenticado"
   ],
   "hints": [
-    "O botao que abre o formulario tem o texto 'Novo destino'.",
-    "A verificacao final deve usar text_contains com selector [role=\"dialog\"]. O formulario abre num portal do Radix FORA do <main>."
+    "O botao que abre o formulario tem o texto \"Novo destino\".",
+    "As tres checagens sao sobre rotulos de campo DENTRO do modal, uma etapa cada.",
+    "O formulario abre num portal do Radix FORA do <main>: use text_contains com selector [role=\"dialog\"]."
   ],
   "seed": {
     "localStorage": {

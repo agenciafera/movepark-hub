@@ -4,41 +4,71 @@
     "scenario_id": "manager-bookings",
     "start_url": "/manager/bookings",
     "start_sig": "sig:f4a52eca245bd7d5",
-    "scenario_sig": "f0b57898e1e5d5f4"
+    "scenario_sig": "ec37b083ab7f25b6"
   },
   "plan": {
     "plan_version": "0.1",
     "scenario_id": "manager-bookings",
-    "start_url": "http://localhost:5180/manager/bookings",
+    "start_url": "http://localhost:5273/manager/bookings",
     "actions": [
       {
         "id": "a1",
         "type": "wait_for",
         "target": {
-          "selector": "h1",
-          "description": "Reservas page heading"
+          "selector": "main h1",
+          "description": "Page heading 'Reservas'"
         },
         "expect": {
           "text_contains": {
-            "selector": "h1",
+            "selector": "main h1",
             "text": "Reservas"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main p",
+          "description": "Paragraph containing 'Reservas com check-in em'"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main p",
+            "text": "Reservas com check-in em"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main button",
+          "description": "Button 'Todas as unidades'"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main button",
+            "text": "Todas as unidades"
           },
-          "selector": "h1"
+          "selector": "main button"
         },
         "timeout_ms": 5000
       }
     ],
-    "task": "Verifique que a página exibe o texto 'Reservas'.",
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Reservas\". Passo 2: verifique que a pagina exibe o texto \"Reservas com check-in em\". Passo 3: verifique que a pagina exibe o texto \"Todas as unidades\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-07-31T16:01:06.971Z"
+      "at": "2026-08-01T16:58:29.246Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-07-31T16:01:12.934Z",
-    "last_replayed_at": "2026-08-01T16:13:08.305Z",
-    "replay_count": 22,
+    "created_at": "2026-08-01T16:58:30.486Z",
+    "last_replayed_at": "2026-08-01T17:07:39.241Z",
+    "replay_count": 1,
     "replay_failures": 0,
     "plan_generation": 1
   }

@@ -1,7 +1,7 @@
 {
   "scenario_id": "lead-valida-nome",
   "start_url": "/seja-parceiro",
-  "task": "Clique em 'Quero ser parceiro', depois clique em 'Continuar' sem preencher nenhum campo. Verifique que a página exibe o texto 'Informe seu nome.'.",
+  "task": "Passo 1: clique em \"Quero ser parceiro\". Passo 2: verifique que o modal exibe o texto \"Cadastre seu estacionamento\". Passo 3: clique em \"Continuar\" sem preencher nenhum campo. Passo 4: verifique que o modal exibe o texto \"Informe seu nome.\".",
   "tags": [
     "validacao",
     "formulario"
@@ -10,7 +10,9 @@
     "O botão que abre o formulário tem o texto 'Quero ser parceiro'.",
     "Os campos do passo 1 são os inputs de id 'pl-name', 'pl-email' e 'pl-phone'.",
     "O botão de avançar tem o texto 'Continuar' e fica dentro do dialog.",
-    "Não preencha nada antes de clicar em Continuar."
+    "Não preencha nada antes de clicar em Continuar.",
+    "Sao passos numerados: cada um vira uma acao propria do plano.",
+    "Nao preencha nada antes de clicar em Continuar."
   ],
   "network": [
     {

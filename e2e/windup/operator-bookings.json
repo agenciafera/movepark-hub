@@ -1,7 +1,7 @@
 {
   "scenario_id": "operator-bookings",
   "start_url": "/operator/bookings",
-  "task": "Verifique que a página exibe o texto 'Reservas'.",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Reservas\". Passo 2: verifique que a pagina exibe o texto \"Gestão das reservas da sua empresa\". Passo 3: verifique que a pagina exibe o texto \"Sua jornada na Movepark\".",
   "tags": [
     "smoke",
     "leitura",
@@ -108,5 +108,9 @@
       "url": "**/rpc/**",
       "json": []
     }
+  ],
+  "hints": [
+    "Sao passos numerados: cada um vira uma acao propria do plano, sem juntar verificacoes num expect so.",
+    "Os tres textos ficam em partes diferentes da mesma tela."
   ]
 }

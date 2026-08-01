@@ -4,41 +4,71 @@
     "scenario_id": "account-security",
     "start_url": "/account/security",
     "start_sig": "sig:0dcff3a175658e77",
-    "scenario_sig": "b599b5dc88512254"
+    "scenario_sig": "efad2bad1c6a867a"
   },
   "plan": {
     "plan_version": "0.1",
     "scenario_id": "account-security",
-    "start_url": "http://localhost:5180/account/security",
+    "start_url": "http://localhost:5273/account/security",
     "actions": [
       {
         "id": "a1",
         "type": "wait_for",
         "target": {
           "selector": "main h1",
-          "description": "Heading Segurança on the security page"
+          "description": "Main page heading 'Segurança'"
         },
         "expect": {
           "text_contains": {
             "selector": "main h1",
             "text": "Segurança"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h2:has-text('Sessões ativas')",
+          "description": "Section heading 'Sessões ativas'"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h2:has-text('Sessões ativas')",
+            "text": "Sessões ativas"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h2:has-text('Zona de perigo')",
+          "description": "Section heading 'Zona de perigo'"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h2:has-text('Zona de perigo')",
+            "text": "Zona de perigo"
           },
-          "selector": "main h1"
+          "selector": "main h2:has-text('Zona de perigo')"
         },
         "timeout_ms": 5000
       }
     ],
-    "task": "Verifique que a página exibe o texto 'Segurança'.",
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Segurança\". Passo 2: verifique que a pagina exibe o texto \"Sessões ativas\". Passo 3: verifique que a pagina exibe o texto \"Zona de perigo\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-07-31T16:07:34.376Z"
+      "at": "2026-08-01T16:29:51.217Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-07-31T16:07:35.540Z",
-    "last_replayed_at": "2026-08-01T16:12:27.087Z",
-    "replay_count": 23,
+    "created_at": "2026-08-01T16:29:53.562Z",
+    "last_replayed_at": "2026-08-01T17:07:09.914Z",
+    "replay_count": 6,
     "replay_failures": 0,
     "plan_generation": 1
   }

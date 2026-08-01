@@ -1,16 +1,16 @@
 {
   "scenario_id": "endereco-abre-form",
   "start_url": "/account/addresses",
-  "task": "Clique em 'Novo endereço'. Verifique que a página exibe o texto 'Logradouro'.",
+  "task": "Clique em \"Novo endereço\". Depois verifique, em tres checagens separadas, que o formulario exibe o campo \"CEP\", depois o campo \"Logradouro\", depois o campo \"Número\".",
   "tags": [
     "validacao",
     "formulario",
     "autenticado"
   ],
   "hints": [
-    "O botão que abre o formulário tem o texto 'Novo endereço'.",
-    "O formulário tem os campos de id 'cep', 'street', 'number', 'city' e 'state'.",
-    "A verificação final deve usar text_contains com selector '[role=\"dialog\"]'. O formulário abre num portal do Radix FORA do <main>, então asserir em main nunca enxerga o conteúdo dele."
+    "O botao que abre o formulario tem o texto \"Novo endereço\".",
+    "As tres checagens sao sobre rotulos de campo DENTRO do modal, uma etapa cada.",
+    "O formulario abre num portal do Radix FORA do <main>: use text_contains com selector [role=\"dialog\"]."
   ],
   "seed": {
     "localStorage": {

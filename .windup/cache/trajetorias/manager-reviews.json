@@ -4,41 +4,71 @@
     "scenario_id": "manager-reviews",
     "start_url": "/manager/reviews",
     "start_sig": "sig:0220ddecfb1188ce",
-    "scenario_sig": "95f60952d7961cda"
+    "scenario_sig": "38782ecc7119ca94"
   },
   "plan": {
     "plan_version": "0.1",
     "scenario_id": "manager-reviews",
-    "start_url": "http://localhost:5180/manager/reviews",
+    "start_url": "http://localhost:5273/manager/reviews",
     "actions": [
       {
         "id": "a1",
         "type": "wait_for",
         "target": {
           "selector": "h1",
-          "description": "Heading 'Avaliações' on the reviews page"
+          "description": "Page heading Avaliações"
         },
         "expect": {
           "text_contains": {
             "selector": "h1",
             "text": "Avaliações"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main p",
+          "description": "Description paragraph below the heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main p",
+            "text": "Modere as avaliações dos estacionamentos"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main p",
+          "description": "Paragraph containing the word Despublicar"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main p",
+            "text": "Despublicar"
           },
-          "selector": "h1"
+          "selector": "main p"
         },
         "timeout_ms": 5000
       }
     ],
-    "task": "Verifique que a página exibe o texto 'Avaliações'.",
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Avaliações\". Passo 2: verifique que a pagina exibe o texto \"Modere as avaliações dos estacionamentos\". Passo 3: verifique que a pagina exibe o texto \"Despublicar\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-07-31T16:01:59.103Z"
+      "at": "2026-08-01T16:59:28.058Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-07-31T16:02:03.239Z",
-    "last_replayed_at": "2026-08-01T16:13:30.201Z",
-    "replay_count": 22,
+    "created_at": "2026-08-01T16:59:30.472Z",
+    "last_replayed_at": "2026-08-01T17:07:54.430Z",
+    "replay_count": 1,
     "replay_failures": 0,
     "plan_generation": 1
   }

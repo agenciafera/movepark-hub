@@ -1,9 +1,13 @@
 {
   "scenario_id": "como-funciona",
   "start_url": "/como-funciona",
-  "task": "Verifique que a página exibe o texto 'Reserve sua vaga em menos de 2 minutos.'.",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Reserve sua vaga em menos de 2 minutos.\". Passo 2: verifique que a pagina exibe o texto \"Passo a passo\". Passo 3: verifique que a pagina exibe o texto \"Por que usar a Movepark?\".",
   "tags": [
     "smoke",
     "leitura"
+  ],
+  "hints": [
+    "Sao passos numerados: cada um vira uma acao propria do plano.",
+    "Os tres textos ficam em partes diferentes da mesma tela."
   ]
 }

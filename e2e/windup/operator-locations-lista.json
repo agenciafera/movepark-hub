@@ -1,13 +1,15 @@
 {
   "scenario_id": "operator-locations-lista",
   "start_url": "/operator/locations",
-  "task": "Verifique que a página exibe o texto 'Unidade Central QA'.",
+  "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Unidades\", depois a descricao \"Endereço, fotos e dados de cada unidade. Capacidade e p\", depois o dado da linha \"Unidade Central QA\".",
   "tags": [
     "listagem",
     "autenticado"
   ],
   "hints": [
-    "A listagem vem estubada com linhas de verdade, então o alvo é o conteúdo da linha, não o estado vazio."
+    "Tres verificacoes: o cabecalho da tela, a descricao abaixo dele e o conteudo da LINHA da listagem.",
+    "A listagem vem estubada com linha de verdade, entao a ultima checagem prova que a tela renderiza dado, nao estado vazio.",
+    "Faca cada uma como etapa propria."
   ],
   "seed": {
     "localStorage": {

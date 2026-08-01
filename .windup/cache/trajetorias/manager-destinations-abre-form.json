@@ -4,40 +4,80 @@
     "scenario_id": "manager-destinations-abre-form",
     "start_url": "/manager/destinations",
     "start_sig": "sig:0220ddecfb1188ce",
-    "scenario_sig": "ad3d452466b1ce03"
+    "scenario_sig": "b9d8382d9e8adde9"
   },
   "plan": {
     "plan_version": "0.1",
     "scenario_id": "manager-destinations-abre-form",
-    "start_url": "http://localhost:5180/manager/destinations",
+    "start_url": "http://localhost:5273/manager/destinations",
     "actions": [
       {
         "id": "a1",
         "type": "click",
         "target": {
-          "selector": "button[text='Novo destino'], button:has-text('Novo destino')",
-          "description": "Novo destino button"
+          "selector": "button:has-text('Novo destino')",
+          "description": "Botão Novo destino"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role=\"dialog\"] label[for=\"d-code\"]",
+          "description": "Rótulo do campo Code dentro do diálogo"
         },
         "expect": {
           "text_contains": {
             "selector": "[role=\"dialog\"]",
-            "text": "Latitude"
+            "text": "Code"
           }
         },
         "timeout_ms": 10000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role=\"dialog\"] label[for=\"d-name\"]",
+          "description": "Rótulo do campo Nome dentro do diálogo"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "[role=\"dialog\"]",
+            "text": "Nome"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role=\"dialog\"] label[for=\"d-city\"]",
+          "description": "Rótulo do campo Cidade dentro do diálogo"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "[role=\"dialog\"]",
+            "text": "Cidade"
+          },
+          "selector": "[role=\"dialog\"] label[for=\"d-city\"]"
+        },
+        "timeout_ms": 5000
       }
     ],
-    "task": "Clique em 'Novo destino'. Verifique que a pagina exibe o texto 'Latitude'.",
+    "task": "Clique em \"Novo destino\". Depois verifique, em tres checagens separadas, que o formulario exibe o campo \"Code\", depois o campo \"Nome\", depois o campo \"Cidade\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-07-31T19:24:04.654Z"
+      "at": "2026-08-01T16:20:47.913Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-07-31T19:24:08.932Z",
-    "last_replayed_at": "2026-08-01T16:13:13.191Z",
-    "replay_count": 10,
+    "created_at": "2026-08-01T16:20:49.307Z",
+    "last_replayed_at": "2026-08-01T17:07:42.710Z",
+    "replay_count": 7,
     "replay_failures": 0,
     "plan_generation": 1
   }

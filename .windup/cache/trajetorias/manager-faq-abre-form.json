@@ -4,19 +4,34 @@
     "scenario_id": "manager-faq-abre-form",
     "start_url": "/manager/faq",
     "start_sig": "sig:f229d562bc655a9f",
-    "scenario_sig": "0c741aee12fe68b2"
+    "scenario_sig": "b517037f4e3006d6"
   },
   "plan": {
     "plan_version": "0.1",
     "scenario_id": "manager-faq-abre-form",
-    "start_url": "http://localhost:5180/manager/faq",
+    "start_url": "http://localhost:5273/manager/faq",
     "actions": [
       {
         "id": "a1",
         "type": "click",
         "target": {
           "selector": "button:has-text('Nova pergunta')",
-          "description": "Nova pergunta button that opens the FAQ form"
+          "description": "Botão Nova pergunta"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "[role=\"dialog\"]",
+            "text": "Pergunta"
+          }
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role=\"dialog\"]",
+          "description": "Modal do formulário de FAQ"
         },
         "expect": {
           "text_contains": {
@@ -24,20 +39,36 @@
             "text": "Resposta"
           }
         },
-        "timeout_ms": 10000
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role=\"dialog\"]",
+          "description": "Modal do formulário de FAQ"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "[role=\"dialog\"]",
+            "text": "Categoria"
+          },
+          "selector": "[role=\"dialog\"]"
+        },
+        "timeout_ms": 5000
       }
     ],
-    "task": "Clique em 'Nova pergunta'. Verifique que a pagina exibe o texto 'Resposta'.",
+    "task": "Clique em \"Nova pergunta\". Depois verifique, em tres checagens separadas, que o formulario exibe o campo \"Pergunta\", depois o campo \"Resposta\", depois o campo \"Categoria\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-07-31T19:24:09.889Z"
+      "at": "2026-08-01T16:21:09.271Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-07-31T19:24:12.201Z",
-    "last_replayed_at": "2026-08-01T16:13:20.427Z",
-    "replay_count": 10,
+    "created_at": "2026-08-01T16:21:10.572Z",
+    "last_replayed_at": "2026-08-01T17:07:47.268Z",
+    "replay_count": 7,
     "replay_failures": 0,
     "plan_generation": 1
   }
