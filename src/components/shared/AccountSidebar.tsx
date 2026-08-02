@@ -49,7 +49,7 @@ export function AccountSidebar() {
   }
 
   return (
-    <aside className="hidden h-fit w-60 shrink-0 flex-col gap-4 sticky top-24 desktop:flex">
+    <aside className="sticky top-24 hidden h-fit w-60 shrink-0 flex-col gap-4 desktop:flex">
       {/* Card de saudação fixo no topo da sidebar: identifica de quem é a conta,
           separado da navegação. Avatar com a inicial + nome. */}
       <div className="flex items-center gap-3 rounded-md border border-hairline bg-canvas p-3">
@@ -71,7 +71,12 @@ export function AccountSidebar() {
             to={item.to}
             className={({ isActive }) =>
               cn(
-                "group flex items-center gap-3 rounded-sm px-3 py-2 text-body-sm text-muted transition-colors hover:bg-surface-soft hover:text-ink",
+                // Item de navegação é acionável, então leva a tinta navy do
+                // DESIGN.md, a mesma do menu do topbar (que herda `text-ink` do
+                // DropdownMenuContent). Estava em `text-muted`, que a spec reserva
+                // pra label secundária e metadata: os mesmos destinos apareciam
+                // cinza aqui e escuros lá.
+                "group flex items-center gap-3 rounded-sm px-3 py-2 text-body-sm text-ink transition-colors hover:bg-surface-soft",
                 // Ativo = pílula pale com texto e ícone em indigo (acento da marca),
                 // o mesmo idioma da sidebar de categorias da FAQ.
                 isActive && "bg-mp-pale font-medium text-mp-indigo",
@@ -111,7 +116,7 @@ export function AccountMobileMenu() {
   }
 
   return (
-    <div className="desktop:hidden space-y-2">
+    <div className="space-y-2 desktop:hidden">
       {items.map((item) => (
         <NavLink
           key={item.to}
