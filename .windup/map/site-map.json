@@ -3087,8 +3087,8 @@
         "a text=Seja parceiro",
         "a text=Entrar",
         "button type=button text=OndeAeroporto, cidade ou bairro",
-        "button type=button text=Check-in02 ago · 22:00",
-        "button type=button text=Check-out07 ago · 08:00",
+        "button type=button text=Check-in04 ago · 22:00",
+        "button type=button text=Check-out09 ago · 08:00",
         "button type=button text=Veículo Carro",
         "select text=Carro Moto",
         "button type=submit text=Buscar",
@@ -3154,8 +3154,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-29T12:30:26.935Z",
-      "last_seen": "2026-08-01T17:07:28.548Z",
-      "seen_count": 58,
+      "last_seen": "2026-08-03T18:15:57.487Z",
+      "seen_count": 66,
       "stale": false
     },
     "sig:eb1cb13a1fa9ce8c": {
@@ -3233,8 +3233,8 @@
         "a",
         "button id=radix-:r8: type=button text=Destinos",
         "button type=button text=OndeAeroporto, cidade ou bairro",
-        "button type=button text=Check-in02 ago · 22:00",
-        "button type=button text=Check-out07 ago · 08:00",
+        "button type=button text=Check-in04 ago · 22:00",
+        "button type=button text=Check-out09 ago · 08:00",
         "button type=button text=Veículo Carro",
         "select text=Carro Moto",
         "button type=submit text=Buscar",
@@ -3262,8 +3262,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T13:22:55.662Z",
-      "last_seen": "2026-08-01T17:08:14.728Z",
-      "seen_count": 234,
+      "last_seen": "2026-08-03T18:16:02.634Z",
+      "seen_count": 262,
       "stale": false
     },
     "sig:42bd6642a8c0077e": {
@@ -3403,7 +3403,8 @@
     "sig:c6d9d2df64e4156f": {
       "urls_seen": [
         "http://localhost:56040/seja-parceiro",
-        "http://localhost:5180/seja-parceiro"
+        "http://localhost:5180/seja-parceiro",
+        "http://localhost:5273/seja-parceiro"
       ],
       "url_pattern": "**/seja-parceiro",
       "title": "Seja parceiro | Movepark",
@@ -3438,8 +3439,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T13:25:36.949Z",
-      "last_seen": "2026-07-31T19:46:03.004Z",
-      "seen_count": 20,
+      "last_seen": "2026-08-03T17:58:17.742Z",
+      "seen_count": 21,
       "stale": false
     },
     "sig:5f04617cfcb270ea": {
@@ -3552,8 +3553,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T15:18:04.441Z",
-      "last_seen": "2026-08-01T16:52:13.971Z",
-      "seen_count": 13,
+      "last_seen": "2026-08-01T17:09:52.936Z",
+      "seen_count": 14,
       "stale": false
     },
     "sig:b805d148d91ff81c": {
@@ -3597,8 +3598,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T15:25:44.737Z",
-      "last_seen": "2026-08-01T17:08:13.286Z",
-      "seen_count": 238,
+      "last_seen": "2026-08-03T18:15:58.790Z",
+      "seen_count": 274,
       "stale": false
     },
     "sig:95f23b77537a835a": {
@@ -3646,7 +3647,10 @@
       "urls_seen": [
         "http://localhost:5180/login?next=%2Fmanager%2Fusers",
         "http://localhost:5180/login?next=%2Foperator%2Fpricing",
-        "http://localhost:5180/login?next=%2Faccount%2Fvehicles"
+        "http://localhost:5180/login?next=%2Faccount%2Fvehicles",
+        "http://localhost:5273/login",
+        "http://localhost:5273/login?next=/account",
+        "http://localhost:5273/login?next=/account/vehicles"
       ],
       "url_pattern": "**/login",
       "title": "Movepark Hub",
@@ -3659,8 +3663,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T18:03:15.518Z",
-      "last_seen": "2026-07-31T16:11:41.555Z",
-      "seen_count": 20,
+      "last_seen": "2026-08-03T18:16:10.930Z",
+      "seen_count": 35,
       "stale": false
     },
     "sig:9a009a75cb95f5d7": {
@@ -3675,8 +3679,8 @@
         "a",
         "button id=radix-:ra: type=button text=Destinos",
         "button type=button text=OndeAeroporto, cidade ou bairro",
-        "button type=button text=Check-in02 ago · 22:00",
-        "button type=button text=Check-out07 ago · 08:00",
+        "button type=button text=Check-in04 ago · 22:00",
+        "button type=button text=Check-out09 ago · 08:00",
         "button type=button text=Veículo Carro",
         "select text=Carro Moto",
         "button type=submit text=Buscar",
@@ -3717,8 +3721,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T12:42:59.515Z",
-      "last_seen": "2026-08-01T16:57:28.307Z",
-      "seen_count": 13,
+      "last_seen": "2026-08-03T18:14:28.636Z",
+      "seen_count": 15,
       "stale": false
     },
     "sig:0dcff3a175658e77": {
@@ -3733,7 +3737,8 @@
         "http://localhost:5273/account/cards",
         "http://localhost:5273/account/saved",
         "http://localhost:5273/account/security",
-        "http://localhost:5273/account/vehicles"
+        "http://localhost:5273/account/vehicles",
+        "http://localhost:5273/account/clube"
       ],
       "url_pattern": "**/account/cards",
       "title": "Movepark Hub",
@@ -3741,8 +3746,8 @@
         "a",
         "a",
         "button type=button text=OndeAeroporto, cidade ou bairro",
-        "button type=button text=Check-in02 ago · 22:00",
-        "button type=button text=Check-out07 ago · 08:00",
+        "button type=button text=Check-in04 ago · 22:00",
+        "button type=button text=Check-out09 ago · 08:00",
         "button type=button text=Veículo Carro",
         "select text=Carro Moto",
         "button type=submit text=Buscar",
@@ -3782,8 +3787,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:46:22.794Z",
-      "last_seen": "2026-08-01T17:08:15.629Z",
-      "seen_count": 334,
+      "last_seen": "2026-08-03T18:16:04.405Z",
+      "seen_count": 384,
       "stale": false
     },
     "sig:32ea8b629364b656": {
@@ -3797,8 +3802,8 @@
         "a",
         "a",
         "button type=button text=OndeAeroporto, cidade ou bairro",
-        "button type=button text=Check-in02 ago · 22:00",
-        "button type=button text=Check-out07 ago · 08:00",
+        "button type=button text=Check-in04 ago · 22:00",
+        "button type=button text=Check-out09 ago · 08:00",
         "button type=button text=Veículo Carro",
         "select text=Carro Moto",
         "button type=submit text=Buscar",
@@ -3844,8 +3849,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:46:23.420Z",
-      "last_seen": "2026-08-01T17:07:07.135Z",
-      "seen_count": 32,
+      "last_seen": "2026-08-03T18:13:57.395Z",
+      "seen_count": 36,
       "stale": false
     },
     "sig:dbe4277c10825f11": {
@@ -3859,8 +3864,8 @@
         "a",
         "a",
         "button type=button text=OndeAeroporto, cidade ou bairro",
-        "button type=button text=Check-in02 ago · 22:00",
-        "button type=button text=Check-out07 ago · 08:00",
+        "button type=button text=Check-in04 ago · 22:00",
+        "button type=button text=Check-out09 ago · 08:00",
         "button type=button text=Veículo Carro",
         "select text=Carro Moto",
         "button type=submit text=Buscar",
@@ -3907,13 +3912,14 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:46:23.644Z",
-      "last_seen": "2026-08-01T17:07:19.907Z",
-      "seen_count": 63,
+      "last_seen": "2026-08-03T18:14:17.647Z",
+      "seen_count": 77,
       "stale": false
     },
     "sig:63b4f276654d776e": {
       "urls_seen": [
-        "http://localhost:5180/account/security"
+        "http://localhost:5180/account/security",
+        "http://localhost:5273/manager"
       ],
       "url_pattern": "**/account/security",
       "title": "Movepark Hub",
@@ -3922,8 +3928,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:46:59.132Z",
-      "last_seen": "2026-07-31T16:06:56.990Z",
-      "seen_count": 5,
+      "last_seen": "2026-08-03T18:06:54.511Z",
+      "seen_count": 13,
       "stale": false
     },
     "sig:7ee472eb0fd6c82b": {
@@ -3938,8 +3944,8 @@
         "a",
         "button id=radix-:r8: type=button text=Destinos",
         "button type=button text=OndeAeroporto, cidade ou bairro",
-        "button type=button text=Check-in02 ago · 22:00",
-        "button type=button text=Check-out07 ago · 08:00",
+        "button type=button text=Check-in04 ago · 22:00",
+        "button type=button text=Check-out09 ago · 08:00",
         "button type=button text=Veículo Carro",
         "select text=Carro Moto",
         "button type=submit text=Buscar",
@@ -3966,13 +3972,12 @@
         "a text=Destinos",
         "a text=Entrar",
         "a text=Parceiro",
-        "a text=Ajuda",
-        "button type=button"
+        "a text=Ajuda"
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:20.083Z",
-      "last_seen": "2026-08-01T17:07:21.640Z",
-      "seen_count": 30,
+      "last_seen": "2026-08-03T18:14:18.287Z",
+      "seen_count": 34,
       "stale": false
     },
     "sig:30b80afac064bfc7": {
@@ -4021,8 +4026,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:26.734Z",
-      "last_seen": "2026-08-01T17:07:55.904Z",
-      "seen_count": 187,
+      "last_seen": "2026-08-03T18:15:24.978Z",
+      "seen_count": 211,
       "stale": false
     },
     "sig:00208007c0a1c596": {
@@ -4037,8 +4042,8 @@
         "a",
         "button id=radix-:r8: type=button text=Destinos",
         "button type=button text=OndeAeroporto, cidade ou bairro",
-        "button type=button text=Check-in02 ago · 22:00",
-        "button type=button text=Check-out07 ago · 08:00",
+        "button type=button text=Check-in04 ago · 22:00",
+        "button type=button text=Check-out09 ago · 08:00",
         "button type=button text=Veículo Carro",
         "select text=Carro Moto",
         "button type=submit text=Buscar",
@@ -4156,8 +4161,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:28.312Z",
-      "last_seen": "2026-08-01T17:07:23.212Z",
-      "seen_count": 31,
+      "last_seen": "2026-08-03T18:14:23.890Z",
+      "seen_count": 35,
       "stale": false
     },
     "sig:5f9442af211e8be5": {
@@ -4202,8 +4207,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:29.958Z",
-      "last_seen": "2026-08-01T17:07:21.509Z",
-      "seen_count": 33,
+      "last_seen": "2026-08-03T18:14:20.797Z",
+      "seen_count": 37,
       "stale": false
     },
     "sig:f4a52eca245bd7d5": {
@@ -4235,7 +4240,7 @@
         "button type=button",
         "button id=radix-:r4: type=button text=QW",
         "button type=button text=Todas as unidadestoda a rede",
-        "button type=button text=Últimos 30 dias3 jul a 1 ago 2026",
+        "button type=button text=Últimos 30 dias5 jul a 3 ago 2026",
         "input id=search placeholder=Código da reserva",
         "button id=booking-status type=button text=Todos",
         "a text=Início",
@@ -4246,8 +4251,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:48.684Z",
-      "last_seen": "2026-08-01T17:07:39.224Z",
-      "seen_count": 32,
+      "last_seen": "2026-08-03T18:14:46.546Z",
+      "seen_count": 36,
       "stale": false
     },
     "sig:f229d562bc655a9f": {
@@ -4293,8 +4298,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:55.153Z",
-      "last_seen": "2026-08-01T17:07:57.492Z",
-      "seen_count": 170,
+      "last_seen": "2026-08-03T18:15:29.359Z",
+      "seen_count": 194,
       "stale": false
     },
     "sig:0220ddecfb1188ce": {
@@ -4343,8 +4348,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:56.027Z",
-      "last_seen": "2026-08-01T17:07:54.407Z",
-      "seen_count": 226,
+      "last_seen": "2026-08-03T18:15:20.922Z",
+      "seen_count": 262,
       "stale": false
     },
     "sig:deb61410f48cc824": {
@@ -4390,8 +4395,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:48:54.170Z",
-      "last_seen": "2026-08-01T17:07:54.412Z",
-      "seen_count": 31,
+      "last_seen": "2026-08-03T18:15:22.864Z",
+      "seen_count": 35,
       "stale": false
     },
     "sig:9e475390a54a6c61": {
@@ -4434,8 +4439,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:16.750Z",
-      "last_seen": "2026-08-01T17:08:04.362Z",
-      "seen_count": 114,
+      "last_seen": "2026-08-03T18:15:43.388Z",
+      "seen_count": 130,
       "stale": false
     },
     "sig:216bc20eae546abf": {
@@ -4476,8 +4481,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:27.416Z",
-      "last_seen": "2026-08-01T17:08:00.621Z",
-      "seen_count": 31,
+      "last_seen": "2026-08-03T18:15:38.611Z",
+      "seen_count": 35,
       "stale": false
     },
     "sig:7c87997d1435748b": {
@@ -4491,7 +4496,8 @@
         "http://localhost:5273/operator/locations",
         "http://localhost:5273/operator/pricing",
         "http://localhost:5273/operator/users",
-        "http://localhost:5273/operator/reviews"
+        "http://localhost:5273/operator/reviews",
+        "http://localhost:5273/operator"
       ],
       "url_pattern": "**/operator/finance",
       "title": "Movepark Hub",
@@ -4522,8 +4528,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:45.163Z",
-      "last_seen": "2026-08-01T17:08:11.793Z",
-      "seen_count": 182,
+      "last_seen": "2026-08-03T18:15:55.470Z",
+      "seen_count": 208,
       "stale": false
     },
     "sig:0de7196068dc995b": {
@@ -4564,8 +4570,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:46.524Z",
-      "last_seen": "2026-08-01T17:08:03.442Z",
-      "seen_count": 81,
+      "last_seen": "2026-08-03T18:15:43.275Z",
+      "seen_count": 97,
       "stale": false
     },
     "sig:0e77bbe16451b1b2": {
@@ -4605,8 +4611,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:03.481Z",
-      "last_seen": "2026-08-01T17:08:07.973Z",
-      "seen_count": 31,
+      "last_seen": "2026-08-03T18:15:49.549Z",
+      "seen_count": 35,
       "stale": false
     },
     "sig:330a98d155e0b087": {
@@ -4647,8 +4653,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:13.982Z",
-      "last_seen": "2026-08-01T17:08:09.666Z",
-      "seen_count": 32,
+      "last_seen": "2026-08-03T18:15:52.017Z",
+      "seen_count": 36,
       "stale": false
     },
     "sig:d338797fc9985ff4": {
@@ -4690,8 +4696,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:23.245Z",
-      "last_seen": "2026-08-01T17:08:11.295Z",
-      "seen_count": 31,
+      "last_seen": "2026-08-03T18:15:54.414Z",
+      "seen_count": 35,
       "stale": false
     },
     "sig:ca978112ca1bbdca": {
@@ -4707,8 +4713,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:40.542Z",
-      "last_seen": "2026-08-01T17:08:56.377Z",
-      "seen_count": 39,
+      "last_seen": "2026-08-03T18:16:06.346Z",
+      "seen_count": 43,
       "stale": false
     },
     "sig:56110ea72b7f7df7": {
@@ -4723,8 +4729,8 @@
         "a",
         "button id=radix-:ra: type=button text=Destinos",
         "button type=button text=OndeAeroporto, cidade ou bairro",
-        "button type=button text=Check-in02 ago · 22:00",
-        "button type=button text=Check-out07 ago · 08:00",
+        "button type=button text=Check-in04 ago · 22:00",
+        "button type=button text=Check-out09 ago · 08:00",
         "button type=button text=Veículo Carro",
         "select text=Carro Moto",
         "button type=submit text=Buscar",
@@ -4765,8 +4771,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T16:00:55.225Z",
-      "last_seen": "2026-08-01T17:07:25.982Z",
-      "seen_count": 6,
+      "last_seen": "2026-08-03T17:55:14.304Z",
+      "seen_count": 7,
       "stale": false
     },
     "sig:97fd3824af748373": {
@@ -4862,8 +4868,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T16:54:47.570Z",
-      "last_seen": "2026-08-01T17:07:37.024Z",
-      "seen_count": 191,
+      "last_seen": "2026-08-03T18:14:42.417Z",
+      "seen_count": 219,
       "stale": false
     },
     "sig:0112eb8401335d27": {
@@ -4877,8 +4883,8 @@
         "a",
         "a",
         "button type=button text=OndeAeroporto, cidade ou bairro",
-        "button type=button text=Check-in02 ago · 22:00",
-        "button type=button text=Check-out07 ago · 08:00",
+        "button type=button text=Check-in04 ago · 22:00",
+        "button type=button text=Check-out09 ago · 08:00",
         "button type=button text=Veículo Carro",
         "select text=Carro Moto",
         "button type=submit text=Buscar",
@@ -4927,8 +4933,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T17:21:42.604Z",
-      "last_seen": "2026-08-01T17:07:13.854Z",
-      "seen_count": 27,
+      "last_seen": "2026-08-03T18:14:06.373Z",
+      "seen_count": 31,
       "stale": false
     },
     "sig:34581fbdfb157f99": {
@@ -4979,8 +4985,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T17:21:44.244Z",
-      "last_seen": "2026-08-01T17:07:35.396Z",
-      "seen_count": 96,
+      "last_seen": "2026-08-03T18:14:41.067Z",
+      "seen_count": 112,
       "stale": false
     },
     "sig:c81c82460995a2b3": {
@@ -4994,8 +5000,8 @@
         "a",
         "a",
         "button type=button text=OndeAeroporto, cidade ou bairro",
-        "button type=button text=Check-in02 ago · 22:00",
-        "button type=button text=Check-out07 ago · 08:00",
+        "button type=button text=Check-in04 ago · 22:00",
+        "button type=button text=Check-out09 ago · 08:00",
         "button type=button text=Veículo Carro",
         "select text=Carro Moto",
         "button type=submit text=Buscar",
@@ -5049,8 +5055,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T17:24:38.025Z",
-      "last_seen": "2026-08-01T17:07:24.661Z",
-      "seen_count": 48,
+      "last_seen": "2026-08-03T18:14:26.455Z",
+      "seen_count": 56,
       "stale": false
     },
     "sig:76497e0b0ca8e6c9": {
@@ -5064,8 +5070,8 @@
         "a",
         "a",
         "button type=button text=OndeAeroporto, cidade ou bairro",
-        "button type=button text=Check-in02 ago · 22:00",
-        "button type=button text=Check-out07 ago · 08:00",
+        "button type=button text=Check-in04 ago · 22:00",
+        "button type=button text=Check-out09 ago · 08:00",
         "button type=button text=Veículo Carro",
         "select text=Carro Moto",
         "button type=submit text=Buscar",
@@ -5109,8 +5115,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T17:26:00.975Z",
-      "last_seen": "2026-08-01T17:08:15.707Z",
-      "seen_count": 34,
+      "last_seen": "2026-08-03T18:16:04.532Z",
+      "seen_count": 38,
       "stale": false
     },
     "sig:e3b0c44298fc1c14": {
@@ -5119,15 +5125,16 @@
         "http://localhost:5180/manager/companies",
         "http://localhost:5180/account/vehicles",
         "http://localhost:5180/manager/destinations",
-        "http://localhost:5180/manager/settings"
+        "http://localhost:5180/manager/settings",
+        "http://localhost:5273/manager"
       ],
       "url_pattern": "**/account/cards",
       "title": "Movepark Hub",
       "interactive": [],
       "source": "execution",
       "first_seen": "2026-07-31T17:27:35.377Z",
-      "last_seen": "2026-08-01T15:36:49.707Z",
-      "seen_count": 6,
+      "last_seen": "2026-08-03T17:57:23.567Z",
+      "seen_count": 7,
       "stale": false
     },
     "sig:c59d8801fff3d40d": {
@@ -5145,8 +5152,8 @@
         "a",
         "a",
         "button type=button text=OndeAeroporto, cidade ou bairro",
-        "button type=button text=Check-in02 ago · 22:00",
-        "button type=button text=Check-out07 ago · 08:00",
+        "button type=button text=Check-in04 ago · 22:00",
+        "button type=button text=Check-out09 ago · 08:00",
         "button type=button text=Veículo Carro",
         "select text=Carro Moto",
         "button type=submit text=Buscar",
@@ -5186,8 +5193,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T17:40:24.049Z",
-      "last_seen": "2026-08-01T17:07:17.901Z",
-      "seen_count": 113,
+      "last_seen": "2026-08-03T18:14:12.626Z",
+      "seen_count": 137,
       "stale": false
     },
     "sig:ad8b3fbf0876c52c": {
@@ -5435,8 +5442,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T19:24:08.924Z",
-      "last_seen": "2026-08-01T17:07:45.515Z",
-      "seen_count": 33,
+      "last_seen": "2026-08-03T18:14:59.772Z",
+      "seen_count": 41,
       "stale": false
     },
     "sig:fe5ad84a4aed370b": {
@@ -5483,8 +5490,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T19:24:09.051Z",
-      "last_seen": "2026-08-01T17:07:59.091Z",
-      "seen_count": 18,
+      "last_seen": "2026-08-03T18:15:36.066Z",
+      "seen_count": 22,
       "stale": false
     },
     "sig:db0102561708d1ac": {
@@ -5538,8 +5545,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T19:24:12.199Z",
-      "last_seen": "2026-08-01T17:07:47.242Z",
-      "seen_count": 18,
+      "last_seen": "2026-08-03T18:15:04.336Z",
+      "seen_count": 22,
       "stale": false
     },
     "sig:4fca3398e1014f3b": {
@@ -5596,8 +5603,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T19:26:11.186Z",
-      "last_seen": "2026-08-01T17:08:02.968Z",
-      "seen_count": 33,
+      "last_seen": "2026-08-03T18:15:42.773Z",
+      "seen_count": 41,
       "stale": false
     },
     "sig:cbd8ec10f1fc3614": {
@@ -5611,8 +5618,8 @@
         "a",
         "a",
         "button type=button text=OndeAeroporto, cidade ou bairro",
-        "button type=button text=Check-in02 ago · 22:00",
-        "button type=button text=Check-out07 ago · 08:00",
+        "button type=button text=Check-in04 ago · 22:00",
+        "button type=button text=Check-out09 ago · 08:00",
         "button type=button text=Veículo Carro",
         "select text=Carro Moto",
         "button type=submit text=Buscar",
@@ -5666,8 +5673,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T19:31:11.696Z",
-      "last_seen": "2026-08-01T17:07:17.973Z",
-      "seen_count": 29,
+      "last_seen": "2026-08-03T18:14:12.800Z",
+      "seen_count": 37,
       "stale": false
     },
     "sig:707f7d4d103fa57c": {
@@ -5731,8 +5738,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T19:42:56.979Z",
-      "last_seen": "2026-08-01T17:07:45.526Z",
-      "seen_count": 15,
+      "last_seen": "2026-08-03T18:14:59.824Z",
+      "seen_count": 19,
       "stale": false
     },
     "sig:27efdf8b710e7ec1": {
@@ -5746,8 +5753,8 @@
         "a",
         "a",
         "button type=button text=OndeAeroporto, cidade ou bairro",
-        "button type=button text=Check-in02 ago · 22:00",
-        "button type=button text=Check-out07 ago · 08:00",
+        "button type=button text=Check-in04 ago · 22:00",
+        "button type=button text=Check-out09 ago · 08:00",
         "button type=button text=Veículo Carro",
         "select text=Carro Moto",
         "button type=submit text=Buscar",
@@ -5796,8 +5803,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T19:42:57.079Z",
-      "last_seen": "2026-08-01T17:07:15.966Z",
-      "seen_count": 15,
+      "last_seen": "2026-08-03T18:14:09.526Z",
+      "seen_count": 19,
       "stale": false
     },
     "sig:dc63c588ba8193ee": {
@@ -5884,8 +5891,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-01T16:31:37.632Z",
-      "last_seen": "2026-08-01T17:07:54.469Z",
-      "seen_count": 7,
+      "last_seen": "2026-08-03T18:15:22.995Z",
+      "seen_count": 11,
       "stale": false
     },
     "sig:02b28bca46f05df8": {
@@ -5926,8 +5933,234 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-01T16:33:25.020Z",
-      "last_seen": "2026-08-01T17:08:11.333Z",
-      "seen_count": 7,
+      "last_seen": "2026-08-03T18:15:54.546Z",
+      "seen_count": 11,
+      "stale": false
+    },
+    "sig:d81fd038a56350e0": {
+      "urls_seen": [
+        "http://localhost:5273/motor-preview"
+      ],
+      "url_pattern": "**/motor-preview",
+      "title": "Movepark Hub",
+      "interactive": [
+        "a",
+        "a",
+        "button id=radix-:r8: type=button text=Destinos",
+        "button type=button text=OndeAeroporto, cidade ou bairro",
+        "button type=button text=Check-in04 ago · 22:00",
+        "button type=button text=Check-out09 ago · 08:00",
+        "button type=button text=Veículo Carro",
+        "select text=Carro Moto",
+        "button type=submit text=Buscar",
+        "button type=button text=Buscar vaga",
+        "button type=button",
+        "a text=Seja parceiro",
+        "a text=Entrar",
+        "a text=Entrar",
+        "button text=Entrar",
+        "a text=Sobre nós",
+        "a text=Termos de uso",
+        "a text=Política de privacidade",
+        "a text=Seja parceiro",
+        "a text=Painel do estacionamento",
+        "a text=Perguntas frequentes",
+        "a text=Como funciona",
+        "a text=Política de cancelamento",
+        "a text=Fale conosco",
+        "a text=Destinos",
+        "a text=Entrar",
+        "a text=Parceiro",
+        "a text=Ajuda"
+      ],
+      "source": "execution",
+      "first_seen": "2026-08-03T17:49:13.361Z",
+      "last_seen": "2026-08-03T17:59:58.684Z",
+      "seen_count": 2,
+      "stale": false
+    },
+    "sig:5d463acbe0fb72a3": {
+      "urls_seen": [
+        "http://localhost:5273/account/indicar"
+      ],
+      "url_pattern": "**/account/indicar",
+      "title": "Movepark Hub",
+      "interactive": [
+        "a",
+        "a",
+        "button type=button text=OndeAeroporto, cidade ou bairro",
+        "button type=button text=Check-in04 ago · 22:00",
+        "button type=button text=Check-out09 ago · 08:00",
+        "button type=button text=Veículo Carro",
+        "select text=Carro Moto",
+        "button type=submit text=Buscar",
+        "button type=button text=Buscar vaga",
+        "button type=button",
+        "button id=radix-:r6: type=button text=QW",
+        "button text=Conta",
+        "a text=Perfil",
+        "a text=Minhas reservas",
+        "a text=Movepark Clube",
+        "a text=Indique e ganhe",
+        "a text=Veículos",
+        "a text=Endereços",
+        "a text=Cartões",
+        "a text=Favoritos",
+        "a text=Preferências",
+        "a text=Segurança",
+        "button type=button text=Sair",
+        "button type=button text=Compartilhar",
+        "button type=button text=· copiar link",
+        "a text=Como funciona",
+        "button text=Copiar link",
+        "button text=Compartilhar no WhatsApp",
+        "button id=radix-:r8: type=button text=Como faço para participar?",
+        "button id=radix-:ra: type=button text=Quando eu recebo meus R$ 25?",
+        "button id=radix-:rc: type=button text=Tem limite de indicações?",
+        "button id=radix-:re: type=button text=O que o meu amigo ganha?",
+        "button id=radix-:rg: type=button text=Onde acompanho minhas indicações?",
+        "button id=radix-:ri: type=button text=O crédito expira?",
+        "a text=Movepark Clube",
+        "a text=Sobre nós",
+        "a text=Termos de uso",
+        "a text=Política de privacidade",
+        "a text=Seja parceiro",
+        "a text=Painel do estacionamento",
+        "a text=Perguntas frequentes",
+        "a text=Como funciona",
+        "a text=Política de cancelamento",
+        "a text=Fale conosco",
+        "a text=Destinos",
+        "a text=Reservas",
+        "a text=Conta",
+        "a text=Ajuda"
+      ],
+      "source": "execution",
+      "first_seen": "2026-08-03T17:50:14.981Z",
+      "last_seen": "2026-08-03T17:59:40.389Z",
+      "seen_count": 2,
+      "stale": false
+    },
+    "sig:6233cbef99b8b3dd": {
+      "urls_seen": [
+        "http://localhost:5273/account/reservas"
+      ],
+      "url_pattern": "**/account/reservas",
+      "title": "Movepark Hub",
+      "interactive": [
+        "a",
+        "a",
+        "button type=button text=OndeAeroporto, cidade ou bairro",
+        "button type=button text=Check-in04 ago · 22:00",
+        "button type=button text=Check-out09 ago · 08:00",
+        "button type=button text=Veículo Carro",
+        "select text=Carro Moto",
+        "button type=submit text=Buscar",
+        "button type=button text=Buscar vaga",
+        "button type=button",
+        "button id=radix-:r6: type=button text=QW",
+        "button text=Conta",
+        "a text=Perfil",
+        "a text=Minhas reservas",
+        "a text=Movepark Clube",
+        "a text=Indique e ganhe",
+        "a text=Veículos",
+        "a text=Endereços",
+        "a text=Cartões",
+        "a text=Favoritos",
+        "a text=Preferências",
+        "a text=Segurança",
+        "button type=button text=Sair",
+        "button type=button text=Compartilhar",
+        "button type=button text=· copiar link",
+        "a text=Como funciona",
+        "button id=radix-:r8:-trigger-upcoming type=button text=Próximas",
+        "button id=radix-:r8:-trigger-active type=button text=Em uso",
+        "button id=radix-:r8:-trigger-history type=button text=Histórico",
+        "button id=radix-:r8:-trigger-cancelled type=button text=Canceladas",
+        "a text=Buscar vaga",
+        "a text=Sobre nós",
+        "a text=Termos de uso",
+        "a text=Política de privacidade",
+        "a text=Seja parceiro",
+        "a text=Painel do estacionamento",
+        "a text=Perguntas frequentes",
+        "a text=Como funciona",
+        "a text=Política de cancelamento",
+        "a text=Fale conosco",
+        "a text=Destinos",
+        "a text=Reservas",
+        "a text=Conta",
+        "a text=Ajuda"
+      ],
+      "source": "execution",
+      "first_seen": "2026-08-03T17:50:32.379Z",
+      "last_seen": "2026-08-03T18:00:34.440Z",
+      "seen_count": 2,
+      "stale": false
+    },
+    "sig:0f9ef7275af9e390": {
+      "urls_seen": [
+        "http://localhost:5273/account/complete-profile"
+      ],
+      "url_pattern": "**/account/complete-profile",
+      "title": "Movepark Hub",
+      "interactive": [
+        "a text=Hub",
+        "input id=first-name",
+        "input id=last-name",
+        "input id=cpf placeholder=CPF ou CNPJ",
+        "button type=submit text=Continuar",
+        "a text=Voltar para o início"
+      ],
+      "source": "execution",
+      "first_seen": "2026-08-03T17:51:59.980Z",
+      "last_seen": "2026-08-03T18:14:10.734Z",
+      "seen_count": 6,
+      "stale": false
+    },
+    "sig:9941cd9dea64ba25": {
+      "urls_seen": [
+        "http://localhost:5273/manager"
+      ],
+      "url_pattern": "**/manager",
+      "title": "Movepark Hub",
+      "interactive": [
+        "button type=button text=Rede completa0 unidades · 0 empresas",
+        "a text=Dashboard",
+        "a text=Empresas",
+        "a text=Parceiros",
+        "a text=Destinos",
+        "a text=Reservas",
+        "a text=Financeiro",
+        "a text=Repasses",
+        "a text=Comissões",
+        "a text=Recebedores",
+        "a text=Tarifas",
+        "a text=Atribuição",
+        "a text=Avaliações",
+        "a text=FAQ",
+        "a text=Usuários",
+        "a text=Documentos legais",
+        "a text=Configurações",
+        "button type=button text=Buscar reserva, unidade, cupom⌘K",
+        "button type=button",
+        "button id=radix-:r4: type=button text=QW",
+        "button type=button text=Todas as unidadestoda a rede",
+        "button type=button text=Últimos 30 dias5 jul a 3 ago 2026",
+        "a text=Ver todas",
+        "input type=date",
+        "a text=Ver a origem das reservas",
+        "a text=Início",
+        "a text=Empresas",
+        "a text=Reservas",
+        "a text=Usuários",
+        "button type=button text=Mais"
+      ],
+      "source": "execution",
+      "first_seen": "2026-08-03T18:09:30.226Z",
+      "last_seen": "2026-08-03T18:15:34.301Z",
+      "seen_count": 4,
       "stale": false
     }
   },
@@ -6065,7 +6298,7 @@
         "selector": "main button:has-text('Quero ser parceiro')"
       },
       "to": "sig:3f40933715753efc",
-      "seen_count": 185
+      "seen_count": 213
     },
     {
       "from": "sig:b805d148d91ff81c",
@@ -6092,7 +6325,7 @@
         "selector": "main button:has-text('Novo cartão')"
       },
       "to": "sig:0112eb8401335d27",
-      "seen_count": 14
+      "seen_count": 18
     },
     {
       "from": "sig:3f40933715753efc",
@@ -6101,7 +6334,7 @@
         "selector": "[role=\"dialog\"] button:has-text('Continuar')"
       },
       "to": "sig:34581fbdfb157f99",
-      "seen_count": 55
+      "seen_count": 61
     },
     {
       "from": "sig:0dcff3a175658e77",
@@ -6128,7 +6361,7 @@
         "selector": "#pl-company"
       },
       "to": "sig:34581fbdfb157f99",
-      "seen_count": 28
+      "seen_count": 34
     },
     {
       "from": "sig:0dcff3a175658e77",
@@ -6137,7 +6370,7 @@
         "selector": "main button:has-text(\"Novo endereço\")"
       },
       "to": "sig:c81c82460995a2b3",
-      "seen_count": 48
+      "seen_count": 56
     },
     {
       "from": "sig:0dcff3a175658e77",
@@ -6191,7 +6424,7 @@
         "selector": "[role=\"dialog\"] button:has-text('Quero ser parceiro')"
       },
       "to": "sig:34581fbdfb157f99",
-      "seen_count": 13
+      "seen_count": 17
     },
     {
       "from": "sig:0dcff3a175658e77",
@@ -6227,7 +6460,7 @@
         "selector": "button:has-text(\"Salvar\")"
       },
       "to": "sig:0dcff3a175658e77",
-      "seen_count": 22
+      "seen_count": 26
     },
     {
       "from": "sig:e3b0c44298fc1c14",
@@ -6254,7 +6487,7 @@
         "selector": "button:has-text('Novo serviço')"
       },
       "to": "sig:fe5ad84a4aed370b",
-      "seen_count": 18
+      "seen_count": 22
     },
     {
       "from": "sig:f229d562bc655a9f",
@@ -6263,7 +6496,7 @@
         "selector": "button:has-text('Nova pergunta')"
       },
       "to": "sig:db0102561708d1ac",
-      "seen_count": 18
+      "seen_count": 22
     },
     {
       "from": "sig:0de7196068dc995b",
@@ -6272,7 +6505,7 @@
         "selector": "[role=\"tabpanel\"] button:first-of-type"
       },
       "to": "sig:4fca3398e1014f3b",
-      "seen_count": 33
+      "seen_count": 41
     },
     {
       "from": "sig:c59d8801fff3d40d",
@@ -6281,7 +6514,7 @@
         "selector": "main button:has-text(\"Novo endereço\")"
       },
       "to": "sig:cbd8ec10f1fc3614",
-      "seen_count": 29
+      "seen_count": 37
     },
     {
       "from": "sig:34581fbdfb157f99",
@@ -6290,7 +6523,7 @@
         "selector": "[role=\"dialog\"] button:has-text('Quero ser parceiro')"
       },
       "to": "sig:b805d148d91ff81c",
-      "seen_count": 17
+      "seen_count": 21
     },
     {
       "from": "sig:e3b0c44298fc1c14",
@@ -6308,7 +6541,7 @@
         "selector": "#d-code"
       },
       "to": "sig:707f7d4d103fa57c",
-      "seen_count": 15
+      "seen_count": 19
     },
     {
       "from": "sig:c59d8801fff3d40d",
@@ -6317,7 +6550,7 @@
         "selector": "button:has-text(\"Novo cartão\")"
       },
       "to": "sig:27efdf8b710e7ec1",
-      "seen_count": 15
+      "seen_count": 19
     },
     {
       "from": "sig:707f7d4d103fa57c",
@@ -6326,7 +6559,7 @@
         "selector": "button:has-text('Salvar')"
       },
       "to": "sig:0220ddecfb1188ce",
-      "seen_count": 15
+      "seen_count": 19
     },
     {
       "from": "sig:4fca3398e1014f3b",
@@ -6335,7 +6568,7 @@
         "selector": "[role=\"dialog\"] button[type=\"submit\"]"
       },
       "to": "sig:0de7196068dc995b",
-      "seen_count": 15
+      "seen_count": 19
     },
     {
       "from": "sig:0220ddecfb1188ce",
@@ -6344,7 +6577,7 @@
         "selector": "button:has-text('Novo destino')"
       },
       "to": "sig:997d26f451fa9a15",
-      "seen_count": 22
+      "seen_count": 30
     },
     {
       "from": "sig:e3b0c44298fc1c14",
@@ -6398,7 +6631,7 @@
         "selector": "main h1"
       },
       "to": "sig:0dcff3a175658e77",
-      "seen_count": 10
+      "seen_count": 14
     },
     {
       "from": "sig:0112eb8401335d27",
@@ -6407,7 +6640,7 @@
         "selector": "[role=\"dialog\"] button:has-text('Salvar')"
       },
       "to": "sig:0dcff3a175658e77",
-      "seen_count": 11
+      "seen_count": 15
     },
     {
       "from": "sig:0dcff3a175658e77",
@@ -6416,7 +6649,7 @@
         "selector": "main button:has-text(\"Novo veículo\")"
       },
       "to": "sig:76497e0b0ca8e6c9",
-      "seen_count": 11
+      "seen_count": 15
     },
     {
       "from": "sig:deb61410f48cc824",
@@ -6425,7 +6658,7 @@
         "selector": "[id=\"radix-:r6:-trigger-partners\"]"
       },
       "to": "sig:1fada002e8ba1d54",
-      "seen_count": 7
+      "seen_count": 11
     },
     {
       "from": "sig:d338797fc9985ff4",
@@ -6434,7 +6667,25 @@
         "selector": "[id$='-trigger-notifications']"
       },
       "to": "sig:02b28bca46f05df8",
-      "seen_count": 7
+      "seen_count": 11
+    },
+    {
+      "from": "sig:63b4f276654d776e",
+      "action": {
+        "type": "click",
+        "selector": "button[type=button]"
+      },
+      "to": "sig:e3b0c44298fc1c14",
+      "seen_count": 1
+    },
+    {
+      "from": "sig:c6d9d2df64e4156f",
+      "action": {
+        "type": "wait_for",
+        "selector": "main h1"
+      },
+      "to": "sig:b805d148d91ff81c",
+      "seen_count": 1
     }
   ],
   "assist_seen": {

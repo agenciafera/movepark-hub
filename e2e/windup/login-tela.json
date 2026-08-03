@@ -1,0 +1,13 @@
+{
+  "scenario_id": "login-tela",
+  "start_url": "/login",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"WhatsApp\". Passo 2: verifique que a URL termina em /login. Passo 3: verifique que a pagina NAO exibe o texto \"Minhas reservas\".",
+  "tags": [
+    "smoke",
+    "leitura"
+  ],
+  "hints": [
+    "Sao passos numerados: cada um vira uma acao propria.",
+    "A terceira checagem usa not_visible e prova que a tela de login nao mostra area logada."
+  ]
+}

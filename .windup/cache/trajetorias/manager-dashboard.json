@@ -1,27 +1,27 @@
 {
   "cache_version": "0.2",
   "key": {
-    "scenario_id": "manager-bookings",
-    "start_url": "/manager/bookings",
-    "start_sig": "sig:f4a52eca245bd7d5",
-    "scenario_sig": "ec37b083ab7f25b6"
+    "scenario_id": "manager-dashboard",
+    "start_url": "/manager",
+    "start_sig": "sig:9941cd9dea64ba25",
+    "scenario_sig": "0efc134970bd938b"
   },
   "plan": {
     "plan_version": "0.1",
-    "scenario_id": "manager-bookings",
-    "start_url": "http://localhost:5273/manager/bookings",
+    "scenario_id": "manager-dashboard",
+    "start_url": "http://localhost:5273/manager",
     "actions": [
       {
         "id": "a1",
         "type": "wait_for",
         "target": {
           "selector": "main h1",
-          "description": "Page heading 'Reservas'"
+          "description": "Heading 'Visão da rede' nivel 1"
         },
         "expect": {
           "text_contains": {
             "selector": "main h1",
-            "text": "Reservas"
+            "text": "Visão da rede"
           }
         },
         "timeout_ms": 5000
@@ -31,12 +31,12 @@
         "type": "wait_for",
         "target": {
           "selector": "main p",
-          "description": "Paragraph containing 'Reservas com check-in em'"
+          "description": "Parágrafo contendo 'O resultado da rede em'"
         },
         "expect": {
           "text_contains": {
-            "selector": "main p",
-            "text": "Reservas com check-in em"
+            "selector": "main",
+            "text": "O resultado da rede em"
           }
         },
         "timeout_ms": 5000
@@ -46,11 +46,11 @@
         "type": "wait_for",
         "target": {
           "selector": "main button",
-          "description": "Button 'Todas as unidades'"
+          "description": "Botão 'Todas as unidades'"
         },
         "expect": {
           "text_contains": {
-            "selector": "main button",
+            "selector": "main",
             "text": "Todas as unidades"
           },
           "selector": "main button"
@@ -58,17 +58,17 @@
         "timeout_ms": 5000
       }
     ],
-    "task": "Passo 1: verifique que a pagina exibe o texto \"Reservas\". Passo 2: verifique que a pagina exibe o texto \"Reservas com check-in em\". Passo 3: verifique que a pagina exibe o texto \"Todas as unidades\".",
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Visão da rede\". Passo 2: verifique que a pagina exibe o texto \"O resultado da rede em\". Passo 3: verifique que a pagina exibe o texto \"Todas as unidades\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-08-01T16:58:29.246Z"
+      "at": "2026-08-03T18:15:30.978Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-08-01T16:58:30.486Z",
-    "last_replayed_at": "2026-08-03T18:14:46.588Z",
-    "replay_count": 5,
+    "created_at": "2026-08-03T18:15:34.380Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
     "replay_failures": 0,
     "plan_generation": 1
   }

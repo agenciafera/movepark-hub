@@ -1,0 +1,14 @@
+{
+  "scenario_id": "entrar-redireciona",
+  "start_url": "/entrar?next=/account",
+  "task": "Passo 1: aguarde a pagina carregar. Passo 2: verifique que a URL final contem \"/login\". Passo 3: verifique que a pagina exibe o texto \"WhatsApp\".",
+  "tags": [
+    "smoke",
+    "leitura"
+  ],
+  "hints": [
+    "Esta rota e legada e redireciona para /login.",
+    "Passo 2 usa a postcondicao url; passo 3 confirma que a tela de login realmente renderizou.",
+    "Nao preencha nem envie nada: nao ha formulario a submeter aqui."
+  ]
+}

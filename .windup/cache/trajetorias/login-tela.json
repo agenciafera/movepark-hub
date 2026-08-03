@@ -1,0 +1,69 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "login-tela",
+    "start_url": "/login",
+    "start_sig": "sig:ec1c271b1242bb10",
+    "scenario_sig": "6942ac6accfa346c"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "login-tela",
+    "start_url": "http://localhost:5273/login",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "button[type='button']:nth-of-type(3)",
+          "description": "Botão 'Entrar com WhatsApp'"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "button[type='button']:nth-of-type(3)",
+            "text": "WhatsApp"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "button[type='button']:nth-of-type(3)",
+          "description": "Botão 'Entrar com WhatsApp' (verificação de URL)"
+        },
+        "expect": {
+          "url": "**/login"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "button[type='button']:nth-of-type(3)",
+          "description": "Botão 'Entrar com WhatsApp' (verificação de área não logada)"
+        },
+        "expect": {
+          "not_visible": "a[href='/bookings']",
+          "selector": "button[type='button']:nth-of-type(3)"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: verifique que a pagina exibe o texto \"WhatsApp\". Passo 2: verifique que a URL termina em /login. Passo 3: verifique que a pagina NAO exibe o texto \"Minhas reservas\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-03T18:03:37.497Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-03T18:03:37.935Z",
+    "last_replayed_at": "2026-08-03T18:14:43.874Z",
+    "replay_count": 2,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

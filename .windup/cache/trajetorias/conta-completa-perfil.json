@@ -1,0 +1,75 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "conta-completa-perfil",
+    "start_url": "/account/complete-profile",
+    "start_sig": "sig:0f9ef7275af9e390",
+    "scenario_sig": "9c2ed7ef74034036"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "conta-completa-perfil",
+    "start_url": "http://localhost:5273/account/complete-profile",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "page body containing heading text"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Falta pouco"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "label[for='last-name']",
+          "description": "Sobrenome label for last name field"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "label[for='last-name']",
+            "text": "Sobrenome"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "label[for='cpf']",
+          "description": "CPF ou CNPJ label for document field"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "label[for='cpf']",
+            "text": "CPF ou CNPJ"
+          },
+          "selector": "label[for='cpf']"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Falta pouco\". Passo 2: verifique que a pagina exibe o texto \"Sobrenome\". Passo 3: verifique que a pagina exibe o texto \"CPF ou CNPJ\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-03T18:02:56.167Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-03T18:02:57.228Z",
+    "last_replayed_at": "2026-08-03T18:14:10.769Z",
+    "replay_count": 2,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}
