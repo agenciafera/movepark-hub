@@ -3154,8 +3154,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-29T12:30:26.935Z",
-      "last_seen": "2026-08-03T18:15:57.487Z",
-      "seen_count": 66,
+      "last_seen": "2026-08-03T18:20:04.545Z",
+      "seen_count": 69,
       "stale": false
     },
     "sig:eb1cb13a1fa9ce8c": {
@@ -3262,8 +3262,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T13:22:55.662Z",
-      "last_seen": "2026-08-03T18:16:02.634Z",
-      "seen_count": 262,
+      "last_seen": "2026-08-03T18:20:08.916Z",
+      "seen_count": 269,
       "stale": false
     },
     "sig:42bd6642a8c0077e": {
@@ -3598,8 +3598,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T15:25:44.737Z",
-      "last_seen": "2026-08-03T18:15:58.790Z",
-      "seen_count": 274,
+      "last_seen": "2026-08-03T18:20:05.987Z",
+      "seen_count": 283,
       "stale": false
     },
     "sig:95f23b77537a835a": {
@@ -3663,8 +3663,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T18:03:15.518Z",
-      "last_seen": "2026-08-03T18:16:10.930Z",
-      "seen_count": 35,
+      "last_seen": "2026-08-03T18:20:06.384Z",
+      "seen_count": 38,
       "stale": false
     },
     "sig:9a009a75cb95f5d7": {
@@ -3787,8 +3787,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:46:22.794Z",
-      "last_seen": "2026-08-03T18:16:04.405Z",
-      "seen_count": 384,
+      "last_seen": "2026-08-03T18:20:10.372Z",
+      "seen_count": 396,
       "stale": false
     },
     "sig:32ea8b629364b656": {
@@ -3849,8 +3849,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:46:23.420Z",
-      "last_seen": "2026-08-03T18:13:57.395Z",
-      "seen_count": 36,
+      "last_seen": "2026-08-03T18:18:22.935Z",
+      "seen_count": 37,
       "stale": false
     },
     "sig:dbe4277c10825f11": {
@@ -3912,8 +3912,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:46:23.644Z",
-      "last_seen": "2026-08-03T18:14:17.647Z",
-      "seen_count": 77,
+      "last_seen": "2026-08-03T18:18:41.162Z",
+      "seen_count": 80,
       "stale": false
     },
     "sig:63b4f276654d776e": {
@@ -3972,12 +3972,13 @@
         "a text=Destinos",
         "a text=Entrar",
         "a text=Parceiro",
-        "a text=Ajuda"
+        "a text=Ajuda",
+        "button type=button"
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:20.083Z",
-      "last_seen": "2026-08-03T18:14:18.287Z",
-      "seen_count": 34,
+      "last_seen": "2026-08-03T18:18:41.798Z",
+      "seen_count": 35,
       "stale": false
     },
     "sig:30b80afac064bfc7": {
@@ -4026,8 +4027,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:26.734Z",
-      "last_seen": "2026-08-03T18:15:24.978Z",
-      "seen_count": 211,
+      "last_seen": "2026-08-03T18:19:38.778Z",
+      "seen_count": 217,
       "stale": false
     },
     "sig:00208007c0a1c596": {
@@ -4161,8 +4162,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:28.312Z",
-      "last_seen": "2026-08-03T18:14:23.890Z",
-      "seen_count": 35,
+      "last_seen": "2026-08-03T18:18:44.962Z",
+      "seen_count": 36,
       "stale": false
     },
     "sig:5f9442af211e8be5": {
@@ -4207,8 +4208,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:29.958Z",
-      "last_seen": "2026-08-03T18:14:20.797Z",
-      "seen_count": 37,
+      "last_seen": "2026-08-03T18:18:43.028Z",
+      "seen_count": 38,
       "stale": false
     },
     "sig:f4a52eca245bd7d5": {
@@ -4251,8 +4252,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:48.684Z",
-      "last_seen": "2026-08-03T18:14:46.546Z",
-      "seen_count": 36,
+      "last_seen": "2026-08-03T18:19:08.558Z",
+      "seen_count": 37,
       "stale": false
     },
     "sig:f229d562bc655a9f": {
@@ -4298,8 +4299,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:55.153Z",
-      "last_seen": "2026-08-03T18:15:29.359Z",
-      "seen_count": 194,
+      "last_seen": "2026-08-03T18:19:41.625Z",
+      "seen_count": 200,
       "stale": false
     },
     "sig:0220ddecfb1188ce": {
@@ -4348,8 +4349,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:56.027Z",
-      "last_seen": "2026-08-03T18:15:20.922Z",
-      "seen_count": 262,
+      "last_seen": "2026-08-03T18:19:34.988Z",
+      "seen_count": 271,
       "stale": false
     },
     "sig:deb61410f48cc824": {
@@ -4395,8 +4396,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:48:54.170Z",
-      "last_seen": "2026-08-03T18:15:22.864Z",
-      "seen_count": 35,
+      "last_seen": "2026-08-03T18:19:36.866Z",
+      "seen_count": 36,
       "stale": false
     },
     "sig:9e475390a54a6c61": {
@@ -4439,8 +4440,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:16.750Z",
-      "last_seen": "2026-08-03T18:15:43.388Z",
-      "seen_count": 130,
+      "last_seen": "2026-08-03T18:19:51.359Z",
+      "seen_count": 134,
       "stale": false
     },
     "sig:216bc20eae546abf": {
@@ -4481,8 +4482,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:27.416Z",
-      "last_seen": "2026-08-03T18:15:38.611Z",
-      "seen_count": 35,
+      "last_seen": "2026-08-03T18:19:46.880Z",
+      "seen_count": 36,
       "stale": false
     },
     "sig:7c87997d1435748b": {
@@ -4528,8 +4529,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:45.163Z",
-      "last_seen": "2026-08-03T18:15:55.470Z",
-      "seen_count": 208,
+      "last_seen": "2026-08-03T18:20:02.654Z",
+      "seen_count": 214,
       "stale": false
     },
     "sig:0de7196068dc995b": {
@@ -4570,8 +4571,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:46.524Z",
-      "last_seen": "2026-08-03T18:15:43.275Z",
-      "seen_count": 97,
+      "last_seen": "2026-08-03T18:19:51.234Z",
+      "seen_count": 101,
       "stale": false
     },
     "sig:0e77bbe16451b1b2": {
@@ -4611,8 +4612,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:03.481Z",
-      "last_seen": "2026-08-03T18:15:49.549Z",
-      "seen_count": 35,
+      "last_seen": "2026-08-03T18:19:56.967Z",
+      "seen_count": 36,
       "stale": false
     },
     "sig:330a98d155e0b087": {
@@ -4653,8 +4654,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:13.982Z",
-      "last_seen": "2026-08-03T18:15:52.017Z",
-      "seen_count": 36,
+      "last_seen": "2026-08-03T18:19:59.400Z",
+      "seen_count": 37,
       "stale": false
     },
     "sig:d338797fc9985ff4": {
@@ -4696,8 +4697,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:23.245Z",
-      "last_seen": "2026-08-03T18:15:54.414Z",
-      "seen_count": 35,
+      "last_seen": "2026-08-03T18:20:01.831Z",
+      "seen_count": 36,
       "stale": false
     },
     "sig:ca978112ca1bbdca": {
@@ -4713,8 +4714,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:40.542Z",
-      "last_seen": "2026-08-03T18:16:06.346Z",
-      "seen_count": 43,
+      "last_seen": "2026-08-03T18:20:10.704Z",
+      "seen_count": 44,
       "stale": false
     },
     "sig:56110ea72b7f7df7": {
@@ -4766,13 +4767,12 @@
         "a text=Destinos",
         "a text=Entrar",
         "a text=Parceiro",
-        "a text=Ajuda",
-        "button type=button"
+        "a text=Ajuda"
       ],
       "source": "execution",
       "first_seen": "2026-07-31T16:00:55.225Z",
-      "last_seen": "2026-08-03T17:55:14.304Z",
-      "seen_count": 7,
+      "last_seen": "2026-08-03T18:18:49.870Z",
+      "seen_count": 8,
       "stale": false
     },
     "sig:97fd3824af748373": {
@@ -4857,7 +4857,6 @@
         "a text=Entrar",
         "a text=Parceiro",
         "a text=Ajuda",
-        "button type=button",
         "input type=text",
         "input id=pl-name placeholder=Nome e sobrenome",
         "input id=pl-email type=email placeholder=voce@estacionamento.com",
@@ -4868,8 +4867,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T16:54:47.570Z",
-      "last_seen": "2026-08-03T18:14:42.417Z",
-      "seen_count": 219,
+      "last_seen": "2026-08-03T18:19:04.659Z",
+      "seen_count": 226,
       "stale": false
     },
     "sig:0112eb8401335d27": {
@@ -4933,8 +4932,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T17:21:42.604Z",
-      "last_seen": "2026-08-03T18:14:06.373Z",
-      "seen_count": 31,
+      "last_seen": "2026-08-03T18:18:31.674Z",
+      "seen_count": 32,
       "stale": false
     },
     "sig:34581fbdfb157f99": {
@@ -4985,8 +4984,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T17:21:44.244Z",
-      "last_seen": "2026-08-03T18:14:41.067Z",
-      "seen_count": 112,
+      "last_seen": "2026-08-03T18:19:03.636Z",
+      "seen_count": 116,
       "stale": false
     },
     "sig:c81c82460995a2b3": {
@@ -5055,8 +5054,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T17:24:38.025Z",
-      "last_seen": "2026-08-03T18:14:26.455Z",
-      "seen_count": 56,
+      "last_seen": "2026-08-03T18:18:47.456Z",
+      "seen_count": 58,
       "stale": false
     },
     "sig:76497e0b0ca8e6c9": {
@@ -5115,8 +5114,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T17:26:00.975Z",
-      "last_seen": "2026-08-03T18:16:04.532Z",
-      "seen_count": 38,
+      "last_seen": "2026-08-03T18:20:10.530Z",
+      "seen_count": 39,
       "stale": false
     },
     "sig:e3b0c44298fc1c14": {
@@ -5193,8 +5192,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T17:40:24.049Z",
-      "last_seen": "2026-08-03T18:14:12.626Z",
-      "seen_count": 137,
+      "last_seen": "2026-08-03T18:18:37.007Z",
+      "seen_count": 143,
       "stale": false
     },
     "sig:ad8b3fbf0876c52c": {
@@ -5442,8 +5441,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T19:24:08.924Z",
-      "last_seen": "2026-08-03T18:14:59.772Z",
-      "seen_count": 41,
+      "last_seen": "2026-08-03T18:19:17.823Z",
+      "seen_count": 43,
       "stale": false
     },
     "sig:fe5ad84a4aed370b": {
@@ -5490,8 +5489,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T19:24:09.051Z",
-      "last_seen": "2026-08-03T18:15:36.066Z",
-      "seen_count": 22,
+      "last_seen": "2026-08-03T18:19:44.324Z",
+      "seen_count": 23,
       "stale": false
     },
     "sig:db0102561708d1ac": {
@@ -5545,8 +5544,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T19:24:12.199Z",
-      "last_seen": "2026-08-03T18:15:04.336Z",
-      "seen_count": 22,
+      "last_seen": "2026-08-03T18:19:20.964Z",
+      "seen_count": 23,
       "stale": false
     },
     "sig:4fca3398e1014f3b": {
@@ -5603,8 +5602,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T19:26:11.186Z",
-      "last_seen": "2026-08-03T18:15:42.773Z",
-      "seen_count": 41,
+      "last_seen": "2026-08-03T18:19:50.758Z",
+      "seen_count": 43,
       "stale": false
     },
     "sig:cbd8ec10f1fc3614": {
@@ -5673,8 +5672,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T19:31:11.696Z",
-      "last_seen": "2026-08-03T18:14:12.800Z",
-      "seen_count": 37,
+      "last_seen": "2026-08-03T18:18:37.193Z",
+      "seen_count": 39,
       "stale": false
     },
     "sig:707f7d4d103fa57c": {
@@ -5738,8 +5737,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T19:42:56.979Z",
-      "last_seen": "2026-08-03T18:14:59.824Z",
-      "seen_count": 19,
+      "last_seen": "2026-08-03T18:19:17.860Z",
+      "seen_count": 20,
       "stale": false
     },
     "sig:27efdf8b710e7ec1": {
@@ -5803,8 +5802,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T19:42:57.079Z",
-      "last_seen": "2026-08-03T18:14:09.526Z",
-      "seen_count": 19,
+      "last_seen": "2026-08-03T18:18:34.360Z",
+      "seen_count": 20,
       "stale": false
     },
     "sig:dc63c588ba8193ee": {
@@ -5891,8 +5890,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-01T16:31:37.632Z",
-      "last_seen": "2026-08-03T18:15:22.995Z",
-      "seen_count": 11,
+      "last_seen": "2026-08-03T18:19:37.081Z",
+      "seen_count": 12,
       "stale": false
     },
     "sig:02b28bca46f05df8": {
@@ -5933,8 +5932,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-01T16:33:25.020Z",
-      "last_seen": "2026-08-03T18:15:54.546Z",
-      "seen_count": 11,
+      "last_seen": "2026-08-03T18:20:01.974Z",
+      "seen_count": 12,
       "stale": false
     },
     "sig:d81fd038a56350e0": {
@@ -6115,8 +6114,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-03T17:51:59.980Z",
-      "last_seen": "2026-08-03T18:14:10.734Z",
-      "seen_count": 6,
+      "last_seen": "2026-08-03T18:18:34.431Z",
+      "seen_count": 7,
       "stale": false
     },
     "sig:9941cd9dea64ba25": {
@@ -6159,8 +6158,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-03T18:09:30.226Z",
-      "last_seen": "2026-08-03T18:15:34.301Z",
-      "seen_count": 4,
+      "last_seen": "2026-08-03T18:19:12.311Z",
+      "seen_count": 5,
       "stale": false
     }
   },
@@ -6298,7 +6297,7 @@
         "selector": "main button:has-text('Quero ser parceiro')"
       },
       "to": "sig:3f40933715753efc",
-      "seen_count": 213
+      "seen_count": 220
     },
     {
       "from": "sig:b805d148d91ff81c",
@@ -6325,7 +6324,7 @@
         "selector": "main button:has-text('Novo cartão')"
       },
       "to": "sig:0112eb8401335d27",
-      "seen_count": 18
+      "seen_count": 19
     },
     {
       "from": "sig:3f40933715753efc",
@@ -6334,7 +6333,7 @@
         "selector": "[role=\"dialog\"] button:has-text('Continuar')"
       },
       "to": "sig:34581fbdfb157f99",
-      "seen_count": 61
+      "seen_count": 63
     },
     {
       "from": "sig:0dcff3a175658e77",
@@ -6361,7 +6360,7 @@
         "selector": "#pl-company"
       },
       "to": "sig:34581fbdfb157f99",
-      "seen_count": 34
+      "seen_count": 36
     },
     {
       "from": "sig:0dcff3a175658e77",
@@ -6370,7 +6369,7 @@
         "selector": "main button:has-text(\"Novo endereço\")"
       },
       "to": "sig:c81c82460995a2b3",
-      "seen_count": 56
+      "seen_count": 58
     },
     {
       "from": "sig:0dcff3a175658e77",
@@ -6460,7 +6459,7 @@
         "selector": "button:has-text(\"Salvar\")"
       },
       "to": "sig:0dcff3a175658e77",
-      "seen_count": 26
+      "seen_count": 27
     },
     {
       "from": "sig:e3b0c44298fc1c14",
@@ -6487,7 +6486,7 @@
         "selector": "button:has-text('Novo serviço')"
       },
       "to": "sig:fe5ad84a4aed370b",
-      "seen_count": 22
+      "seen_count": 23
     },
     {
       "from": "sig:f229d562bc655a9f",
@@ -6496,7 +6495,7 @@
         "selector": "button:has-text('Nova pergunta')"
       },
       "to": "sig:db0102561708d1ac",
-      "seen_count": 22
+      "seen_count": 23
     },
     {
       "from": "sig:0de7196068dc995b",
@@ -6505,7 +6504,7 @@
         "selector": "[role=\"tabpanel\"] button:first-of-type"
       },
       "to": "sig:4fca3398e1014f3b",
-      "seen_count": 41
+      "seen_count": 43
     },
     {
       "from": "sig:c59d8801fff3d40d",
@@ -6514,7 +6513,7 @@
         "selector": "main button:has-text(\"Novo endereço\")"
       },
       "to": "sig:cbd8ec10f1fc3614",
-      "seen_count": 37
+      "seen_count": 39
     },
     {
       "from": "sig:34581fbdfb157f99",
@@ -6523,7 +6522,7 @@
         "selector": "[role=\"dialog\"] button:has-text('Quero ser parceiro')"
       },
       "to": "sig:b805d148d91ff81c",
-      "seen_count": 21
+      "seen_count": 22
     },
     {
       "from": "sig:e3b0c44298fc1c14",
@@ -6541,7 +6540,7 @@
         "selector": "#d-code"
       },
       "to": "sig:707f7d4d103fa57c",
-      "seen_count": 19
+      "seen_count": 20
     },
     {
       "from": "sig:c59d8801fff3d40d",
@@ -6550,7 +6549,7 @@
         "selector": "button:has-text(\"Novo cartão\")"
       },
       "to": "sig:27efdf8b710e7ec1",
-      "seen_count": 19
+      "seen_count": 20
     },
     {
       "from": "sig:707f7d4d103fa57c",
@@ -6559,7 +6558,7 @@
         "selector": "button:has-text('Salvar')"
       },
       "to": "sig:0220ddecfb1188ce",
-      "seen_count": 19
+      "seen_count": 20
     },
     {
       "from": "sig:4fca3398e1014f3b",
@@ -6568,7 +6567,7 @@
         "selector": "[role=\"dialog\"] button[type=\"submit\"]"
       },
       "to": "sig:0de7196068dc995b",
-      "seen_count": 19
+      "seen_count": 20
     },
     {
       "from": "sig:0220ddecfb1188ce",
@@ -6577,7 +6576,7 @@
         "selector": "button:has-text('Novo destino')"
       },
       "to": "sig:997d26f451fa9a15",
-      "seen_count": 30
+      "seen_count": 32
     },
     {
       "from": "sig:e3b0c44298fc1c14",
@@ -6631,7 +6630,7 @@
         "selector": "main h1"
       },
       "to": "sig:0dcff3a175658e77",
-      "seen_count": 14
+      "seen_count": 15
     },
     {
       "from": "sig:0112eb8401335d27",
@@ -6640,7 +6639,7 @@
         "selector": "[role=\"dialog\"] button:has-text('Salvar')"
       },
       "to": "sig:0dcff3a175658e77",
-      "seen_count": 15
+      "seen_count": 16
     },
     {
       "from": "sig:0dcff3a175658e77",
@@ -6649,7 +6648,7 @@
         "selector": "main button:has-text(\"Novo veículo\")"
       },
       "to": "sig:76497e0b0ca8e6c9",
-      "seen_count": 15
+      "seen_count": 16
     },
     {
       "from": "sig:deb61410f48cc824",
@@ -6658,7 +6657,7 @@
         "selector": "[id=\"radix-:r6:-trigger-partners\"]"
       },
       "to": "sig:1fada002e8ba1d54",
-      "seen_count": 11
+      "seen_count": 12
     },
     {
       "from": "sig:d338797fc9985ff4",
@@ -6667,7 +6666,7 @@
         "selector": "[id$='-trigger-notifications']"
       },
       "to": "sig:02b28bca46f05df8",
-      "seen_count": 11
+      "seen_count": 12
     },
     {
       "from": "sig:63b4f276654d776e",
