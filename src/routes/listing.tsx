@@ -356,6 +356,7 @@ export default function ListingPage() {
               address={listing.location.address}
               latitude={listing.location.latitude}
               longitude={listing.location.longitude}
+              placeId={listing.location.google_place_id}
               notice={listing.location.notice}
               hasNotice={listing.location.has_notice}
               directionsText={listing.location.directions_text}

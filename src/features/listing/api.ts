@@ -32,6 +32,8 @@ export type ListingDetail = {
     timezone: string;
     latitude: number | null;
     longitude: number | null;
+    /** Place ID do Google, capturado no cadastro do endereço. Dá o pin exato no mapa. */
+    google_place_id: string | null;
     has_pcd_config: boolean;
     has_passenger_quantity: boolean;
     review_avg: number | null;
@@ -55,7 +57,7 @@ const baseSelect = `
   location:location!inner(
     id, slug, name, address, phone, email, notice, has_notice,
     directions_text, shuttle_frequency_minutes, shuttle_to_terminal_minutes,
-    reservation_policy, timezone, latitude, longitude,
+    reservation_policy, timezone, latitude, longitude, google_place_id,
     has_pcd_config, has_passenger_quantity, review_avg, review_count, photos,
     company:company!inner(id, slug, name, legal_name, created_at),
     amenities:location_amenity(
@@ -139,6 +141,7 @@ export async function fetchListing(
       timezone: m.location.timezone,
       latitude: m.location.latitude != null ? Number(m.location.latitude) : null,
       longitude: m.location.longitude != null ? Number(m.location.longitude) : null,
+      google_place_id: m.location.google_place_id ?? null,
       has_pcd_config: m.location.has_pcd_config,
       has_passenger_quantity: m.location.has_passenger_quantity,
       review_avg: m.location.review_avg != null ? Number(m.location.review_avg) : null,

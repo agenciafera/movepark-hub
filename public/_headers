@@ -2,7 +2,7 @@
   Link: </.well-known/api-catalog>; rel="api-catalog"
   Link: </.well-known/mcp/server-card.json>; rel="service-desc"
   # Headers de segurança (E0.6 · scan #1). CSP fica como ponto a validar (precisa
-  # allowlist de supabase/pagarme/osm) — ver docs/security/scan-2026-06-23.md.
+  # allowlist de supabase/pagarme/google) - ver docs/security/scan-2026-06-23.md.
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
@@ -10,13 +10,17 @@
   Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=()
   Cross-Origin-Opener-Policy: same-origin
   # CSP em report-only (S5): observa violações sem bloquear. Promover a Content-Security-Policy
-  # (enforce) depois de validar que não há violação legítima. Allowlist: supabase, pagar.me, osm, google.
+  # (enforce) depois de validar que não há violação legítima. Allowlist: supabase, pagar.me, google.
   # GTM (container GTM-KHBBZT9): googletagmanager.com em script-src (gtm.js) e frame-src (ns.html do
   # noscript). O container carrega GA4 (G-L99117RGEY) e Google Ads (AW-11286871587, AW-326904374),
   # então connect-src precisa dos coletores: google-analytics.com (GA4) e ad.doubleclick.net +
   # www.google.com/ccm/collect (Ads, verificados na rede em 30/07/2026). googleadservices.com e
   # googleads.g.doubleclick.net ficam em script-src para quando uma tag de conversão do Ads disparar.
-  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.pagar.me https://*.movepark.co https://nominatim.openstreetmap.org https://www.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://ad.doubleclick.net https://www.google.com; frame-src 'self' https://www.openstreetmap.org https://accounts.google.com https://www.googletagmanager.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  # Google Maps: o iframe da Embed API (destino e detalhe da unidade) pede `frame-src www.google.com`
+  # (já presente pelo ccm/collect do Ads); a JS API do painel do operador (Places + preview do ponto)
+  # pede maps.googleapis.com em script-src e connect-src. O OpenStreetMap saiu junto com o iframe que
+  # o usava, e o nominatim foi embora com ele (nenhum código chamava).
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://maps.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.pagar.me https://*.movepark.co https://maps.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://ad.doubleclick.net https://www.google.com; frame-src 'self' https://www.google.com https://accounts.google.com https://www.googletagmanager.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
 
 /.well-known/api-catalog
   Content-Type: application/linkset+json

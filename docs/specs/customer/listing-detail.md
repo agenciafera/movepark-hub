@@ -183,9 +183,11 @@ Ordem de renderização dentro da seção "Como chegar":
 3. **Traslado** — linha honesta composta de `shuttle_frequency_minutes` + `shuttle_to_terminal_minutes`
    via `formatShuttle()` → "a cada 15 min · ~6 min ao terminal". Cada parte é opcional; sem dados, a
    linha some. Números positivos garantidos por CHECK no banco.
-4. **Endereço + mini-mapa** (`MiniMap`) — endereço em `body-md`. Hoje placeholder com botão
-   "Ver no Google Maps" (handoff externo); MapLibre + MapTiler é upgrade pós-MVP (mesma stack do
-   search — ver [search-results.md §7](search-results.md#stack-do-mapa--decis%C3%A3o-t%C3%A9cnica)).
+4. **Endereço + mini-mapa** (`MiniMap`): endereço em `body-md` + mapa do Google (Maps Embed API,
+   via `GoogleMapEmbed`) + botão "Ver no Google Maps" para abrir a rota fora. O pin sai do
+   `location.google_place_id` quando a unidade tem, e cai para lat/lng ou endereço quando não.
+   Sem key ou sem endereço plotável, o bloco degrada para um placeholder neutro do mesmo tamanho.
+   Ver [search-results.md §7](search-results.md#stack-do-mapa--decis%C3%A3o-t%C3%A9cnica).
 
 Campos novos do PRD-11 são editáveis no `LocationForm` (admin **e** operador — conteúdo do parceiro).
 Distância **não** vem daqui — é proximidade calculada (DAT-04). Migration

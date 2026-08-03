@@ -12,7 +12,7 @@ import { computeResultBadges } from "@/features/search/searchBadges";
 import { topRated } from "@/features/reviews/reviews.logic";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { MapEmbed } from "@/components/shared/MapEmbed";
+import { GoogleMapEmbed } from "@/components/shared/GoogleMapEmbed";
 import { breadcrumbSchema, destinationSchema, faqSchema } from "@/lib/jsonld";
 import { imageSrcSet, optimizedImageUrl } from "@/lib/storage";
 import { formatBRL } from "@/lib/format";
@@ -125,10 +125,9 @@ export default function DestinoPage() {
     to: win.to,
   });
   const faqItems = (faqs.data ?? []).map((f) => ({ question: f.question, answer: f.answer }));
+  // O JSON-LD pede número; o banco entrega `numeric`, que chega como string.
   const lat = Number(destination.latitude);
   const lng = Number(destination.longitude);
-  const bboxD = 0.03;
-  const osm = `https://www.openstreetmap.org/export/embed.html?bbox=${lng - bboxD}%2C${lat - bboxD}%2C${lng + bboxD}%2C${lat + bboxD}&layer=mapnik&marker=${lat}%2C${lng}`;
 
   return (
     <>
@@ -312,9 +311,10 @@ export default function DestinoPage() {
         {/* Mapa */}
         <section className="mt-10">
           <h2 className="mb-4 text-display-md text-ink">Localização</h2>
-          <MapEmbed
+          <GoogleMapEmbed
             title={`Mapa de ${destination.name}`}
-            src={osm}
+            target={{ latitude: destination.latitude, longitude: destination.longitude }}
+            zoom={13}
             className="h-80 w-full rounded-md border border-hairline"
           />
         </section>

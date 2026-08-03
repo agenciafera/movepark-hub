@@ -110,7 +110,7 @@ Já temos uma SPA Vite + React 18 + Tailwind + shadcn/ui + Supabase. O Consumer 
 ```
 
 **Stack adicional necessária**:
-- **Mapa**: [`maplibre-gl`](https://maplibre.org/) (cliente open-source, ~200KB gzipped) + [MapTiler Cloud](https://www.maptiler.com/cloud/) (tiles, free tier 100k loads/mês, US$ 0,50/1000 acima). Quando escalar > 100k sessões/mês, migrar tiles pra [Protomaps](https://protomaps.com/) self-hosted em Cloudflare R2 (mesmo client, troca só a URL). Detalhes em [search-results.md §7](search-results.md#stack-do-mapa--decis%C3%A3o-t%C3%A9cnica).
+- **Mapa**: Google Maps, sem dependência nova no `package.json`. Nas páginas públicas (destino e detalhe da unidade) é a **Maps Embed API** via iframe, gratuita e fora do bundle; no painel do operador é a **Maps JavaScript API**, carregada sob demanda pelo mesmo bootstrap do autocomplete de endereço. Detalhes em [search-results.md §7](search-results.md#stack-do-mapa--decis%C3%A3o-t%C3%A9cnica).
 - `react-day-picker` (já temos em deps)
 - Server-side image optimization (Supabase Storage transforms)
 - LGPD/cookies banner
@@ -132,7 +132,7 @@ Já temos uma SPA Vite + React 18 + Tailwind + shadcn/ui + Supabase. O Consumer 
 
 - [ ] Photography library — não existe ainda; usar placeholders neutros (Unsplash) até as fotos reais chegarem.
 - [x] Gateway de pagamento: **MVP mockado** via Edge Function `mock-payment` (PIX confirma em ~3s, cartão em ~1s). Gateway real fica pra pós-MVP. Detalhes em [checkout.md §5](checkout.md#5-step-3--pagamento).
-- [x] Provider de mapa: **MapLibre GL + MapTiler Cloud** no MVP → migrar tiles pra **Protomaps self-hosted** na escala. Detalhes em [search-results.md §7](search-results.md#stack-do-mapa--decis%C3%A3o-t%C3%A9cnica).
+- [x] Provider de mapa: **Google Maps** em todo o produto (ago/2026). Embed API nas páginas públicas, JavaScript API no painel do operador. Reverte a escolha anterior por MapLibre + MapTiler, que nunca chegou a ser implementada. Detalhes em [search-results.md §7](search-results.md#stack-do-mapa--decis%C3%A3o-t%C3%A9cnica).
 - [ ] Como modelamos reviews? Tabela `review (booking_id, rating, comment, created_at)` ligada a booking pós-uso?
 - [ ] "Wishlist / saved" precisa de tabela `profile_saved_parking (profile_id, location_parking_type_id)`.
 - [ ] LGPD: cookies banner, consentimento, deletar conta.

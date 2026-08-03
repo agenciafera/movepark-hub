@@ -169,7 +169,7 @@ Placeholder com ícone genérico (`Car`) sobre `bg-surface-soft` + texto "Foto e
 Click no toggle `[Mapa ▭]` no header. Layout vira split 50/50:
 
 - **Esquerda (lista)**: scroll vertical, cards um pouco mais compactos (sem badge "Vaga favorita" pra economizar espaço).
-- **Direita (mapa)**: MapLibre com tiles abertos. Pin = estacionamento. Cor do pin = `mp-red`. Tamanho 32×40 (typical map pin shape). Hover/click no card destaca o pin correspondente (anel `mp-navy` ao redor).
+- **Direita (mapa)**: Google Maps. Pin = estacionamento. Cor do pin = `mp-red`. Tamanho 32×40 (typical map pin shape). Hover/click no card destaca o pin correspondente (anel `mp-navy` ao redor). Ainda não implementado; a API a usar está em aberto (ver §7).
 
 ### Comportamento do mapa
 - Zoom inicial ajustado pra mostrar todos os pins.
@@ -177,24 +177,31 @@ Click no toggle `[Mapa ▭]` no header. Layout vira split 50/50:
 - Click no pin: abre **mini-card flutuante** sobre o mapa com foto, título, preço, "Ver detalhes".
 - Bounds change → URL ganha `bbox=lat1,lng1,lat2,lng2`. Botão "Buscar nesta área" aparece quando o usuário move o mapa significativamente.
 
-### Stack do mapa — decisão técnica
+### Stack do mapa · decisão técnica
 
-**Cliente**: [MapLibre GL JS](https://maplibre.org/) — fork open-source do Mapbox GL JS, mantido por fundação independente. Bundle ~200KB gzipped, renderiza via WebGL, suporta vector tiles, estilo via JSON. Trocar de tile provider depois é mudar 1 URL no style.
+**Google Maps em todo o produto.** Decidido em ago/2026, revertendo a escolha anterior por MapLibre
++ MapTiler (registrada aqui e nunca implementada). O motivo é ter uma stack só: o autocomplete de
+endereço do onboarding e o preview do ponto no painel do operador já rodavam em Google (Places API
+New + Maps JavaScript API), a key já existe e já está restrita por referrer. Manter um segundo
+provedor só para o consumidor custava um vocabulário paralelo (outro client, outra key, outro
+domínio no CSP) sem ganho visível para quem usa.
 
-**Tile provider (Fase 1 — MVP)**: [MapTiler Cloud](https://www.maptiler.com/cloud/).
-- **Free tier**: 100k tile loads / mês (~10k sessões com mapa).
-- Acima: **US$ 0,50 / 1000 tile loads** (5–10× mais barato que Mapbox ou Google).
-- **MapTiler Studio** permite criar style customizado "Movepark Light" e exportar JSON.
-- Geocoder embutido — reaproveitável no autocomplete de aeroportos/endereços da search bar.
+Qual API depende da superfície:
 
-**Tile provider (Fase 3 — escala, > 100k sessões/mês)**: [Protomaps](https://protomaps.com/) self-hosted (`.pmtiles` em Cloudflare R2 ou S3).
-- Migração trivial — só troca a URL da source no MapLibre.
-- Custo despenca pra ~US$ 20/mês mesmo com 50M+ tile loads.
+| Superfície | API | Por quê |
+|---|---|---|
+| Destino (`/destinos/*`) e detalhe da unidade (`/p/*`) | **Maps Embed API** (iframe) | Público, pré-renderizado, tráfego alto. Gratuita e sem teto, some do bundle e carrega lazy. |
+| Painel do operador (endereço da unidade) | **Maps JavaScript API** | Precisa de mapa vivo e marcador reposicionável. Volume baixo, dentro da cota. |
+| Busca (`/search`), quando o painel de mapa existir | a decidir | Pins sincronizados aos cards pedem JS API; medir o volume antes de assumir o custo. |
 
-**Por que não Google Maps / Mapbox**:
-- Google: US$ 7 / 1000 map loads + paleta engessada + branding obrigatório.
-- Mapbox: ~3× mais caro que MapTiler, sem vantagem técnica relevante (MapLibre dá o mesmo client gratuito).
-- Airbnb usou Mapbox historicamente (saiu do Google em 2017 por custo), mas tem squad dedicado e volume que justifica enterprise deal. Não é o nosso caso.
+Implementação: `googleMapEmbed.logic.ts` (montagem da URL, testada) + `GoogleMapEmbed.tsx`
+(iframe ou fallback). O alvo do pin sai na ordem `google_place_id` → coordenada → endereço, porque o
+Place ID rende o pin com o nome do estabelecimento em vez de um marcador anônimo.
+
+**Custo.** A Embed API não cobra. A JS API tem 10 mil carregamentos de mapa por mês na faixa gratuita
+e ~US$ 7/1000 acima disso, o que só vira assunto se a busca ganhar mapa. Se um dia o volume justificar,
+a saída continua aberta: o embed está atrás de um componente só, e trocar de provedor é reescrever
+esse arquivo.
 
 ### Style do mapa
 Discreto — o destaque visual deve ser **os pins**, não o terreno.

@@ -91,8 +91,9 @@ e inserts manuais sem slug continuam funcionando. Índice `destination_published
   com `sort=rating_desc`/`min_rating`, filtrada por `review_count > 0` (`topRated()`), acima da
   lista geral e oculta sem dados; **FAQ em camadas** (`global + destination`, ADR-002) via
   `useFaqCombined({ destinationId })` — a Edge `get-faq` mescla e deduplica, e o `faqSchema`
-  é montado do mesmo conjunto (um único `FAQPage`, respostas idênticas às visíveis); **mapa** OSM
-  embed centrado em lat/lng.
+  é montado do mesmo conjunto (um único `FAQPage`, respostas idênticas às visíveis); **mapa** do
+  Google (Maps Embed API via `GoogleMapEmbed`) centrado em lat/lng, zoom 13 para pegar o entorno
+  do aeroporto.
 
 ### Busca: destino é escopo (topo), sidebar refina
 

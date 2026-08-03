@@ -6,6 +6,8 @@ type Props = {
   address: string | null;
   latitude: number | null;
   longitude: number | null;
+  /** Place ID do Google da unidade, quando cadastrado. Repassado ao mapa. */
+  placeId?: string | null;
   /** Aviso crítico de entrada (PRD-11: o `notice` vira o alerta "o GPS erra a entrada"). */
   notice: string | null;
   hasNotice: boolean;
@@ -24,6 +26,7 @@ export function HowToArrive({
   address,
   latitude,
   longitude,
+  placeId,
   notice,
   hasNotice,
   directionsText,
@@ -60,7 +63,12 @@ export function HowToArrive({
         </div>
       )}
 
-      <MiniMap address={address} latitude={latitude} longitude={longitude} />
+      <MiniMap
+        address={address}
+        latitude={latitude}
+        longitude={longitude}
+        placeId={placeId}
+      />
     </div>
   );
 }
