@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   brlFromCents,
+  brlShort,
   daysUntil,
   tierProgress,
   cashbackPctLabel,
@@ -57,14 +58,31 @@ describe("firstNameOf", () => {
   });
 });
 
+describe("brlShort", () => {
+  it("tira os centavos quando eles são zero", () => {
+    expect(brlShort(25)).toBe(brlFromCents(2500).replace(",00", ""));
+    expect(brlShort(25)).not.toContain(",00");
+  });
+  it("valor quebrado mantém os centavos", () => {
+    expect(brlShort(25.5)).toContain(",50");
+  });
+});
+
 describe("compartilhamento de indicação", () => {
   const link = "https://hub.movepark.co/r/JOAO2X9";
-  it("monta a mensagem com o link", () => {
-    expect(referralMessage(link)).toContain(link);
-    expect(referralMessage(link)).toContain("R$ 25 de desconto");
+  it("monta a mensagem com o link e o valor do programa", () => {
+    expect(referralMessage(link, 25)).toContain(link);
+    // `brlFromCents` usa Intl, que separa "R$" do número com espaço não separável:
+    // comparar com literal de espaço comum falha por um caractere invisível.
+    expect(referralMessage(link, 25)).toContain(`${brlFromCents(2500)} de desconto`);
+  });
+  /** O valor é config: mudar o programa não pode exigir mexer no código. */
+  it("o valor da mensagem acompanha o programa", () => {
+    expect(referralMessage(link, 40)).toContain(`${brlFromCents(4000)} de desconto`);
+    expect(referralMessage(link, 40)).not.toContain(brlFromCents(2500));
   });
   it("gera a URL do WhatsApp com a mensagem codificada", () => {
-    const url = whatsappShareUrl(link);
+    const url = whatsappShareUrl(link, 25);
     expect(url.startsWith("https://wa.me/?text=")).toBe(true);
     expect(url).toContain(encodeURIComponent(link));
   });

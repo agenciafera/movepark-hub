@@ -1,11 +1,18 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Download, Calendar as CalendarIcon, CheckCircle2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  Download,
+  Calendar as CalendarIcon,
+  CheckCircle2,
+  ExternalLink,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { toDataUrl } from "@/lib/qr";
-import { formatDateTime, formatTime } from "@/lib/format";
+import { formatBRL, formatDate, formatTime, formatWeekdayDate } from "@/lib/format";
 import { Wordmark } from "@/components/shared/Brand";
+import { FARE_TIER_LABEL } from "@/lib/fares";
+import { nightsOf } from "@/features/account/accountSummary.logic";
 import { useVoucherPdf, type MyBookingDetail } from "./customerApi";
 import { isVoucherReceipt } from "./voucher.logic";
 
@@ -13,11 +20,24 @@ type Props = {
   booking: MyBookingDetail;
 };
 
+/**
+ * O voucher no formato de bilhete (design "Detalhe da Reserva"): cabeça navy com a
+ * unidade, o corpo com os quatro dados que a portaria pede e, abaixo do recorte, o
+ * QR e o código.
+ *
+ * O bilhete é autocontido de propósito: na impressão o resto da página é
+ * `print:hidden`, então tudo o que precisa sair no papel mora aqui.
+ */
 export function Voucher({ booking }: Props) {
   const [qrUrl, setQrUrl] = React.useState<string | null>(null);
   const pdf = useVoucherPdf();
   // Estadia concluída: o documento deixa de servir para entrar e passa a servir para prestar contas.
   const receipt = isVoucherReceipt(booking.status);
+  const noites = nightsOf(booking);
+  const maps =
+    booking.location_detail.latitude != null
+      ? `https://www.google.com/maps?q=${booking.location_detail.latitude},${booking.location_detail.longitude}`
+      : null;
 
   React.useEffect(() => {
     let active = true;
@@ -43,115 +63,172 @@ export function Voucher({ booking }: Props) {
   }
 
   return (
-    <div className="rounded-md border border-hairline bg-canvas p-6 print:border-0 print:p-0">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 print:hidden">
-        <h3 className="text-title-md text-ink">{receipt ? "Comprovante" : "Voucher"}</h3>
-        <div className="flex gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={downloadPdf}
-            disabled={pdf.isPending}
-            data-testid="voucher-download-pdf"
-          >
-            <Download className="h-4 w-4" />
-            {pdf.isPending ? "Gerando…" : receipt ? "Baixar comprovante" : "Baixar PDF"}
-          </Button>
-          {/* Estadia concluída não entra no calendário: o evento já passou. */}
-          {!receipt && (
-            <Button variant="secondary" size="sm" asChild>
-              <a
-                href={buildIcsHref(booking)}
-                download={`movepark-${booking.code}.ics`}
-              >
-                <CalendarIcon className="h-4 w-4" />
-                Calendário
-              </a>
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Cabeçalho impresso */}
-      <div className="hidden print:flex print:items-center print:justify-between print:border-b print:border-hairline print:pb-4">
+    <div className="overflow-hidden rounded-lg bg-canvas print:rounded-none">
+      {/* Cabeçalho impresso: no papel o navy não sai, então a marca entra em cima. */}
+      <div className="hidden print:mb-4 print:flex print:items-center print:justify-between print:border-b print:border-hairline print:pb-4">
         <Wordmark height={18} />
         <span className="text-caption text-muted">
           {receipt ? "Comprovante de estadia" : "Voucher de reserva"}
         </span>
       </div>
 
-      <div className="flex flex-col items-center gap-3 text-center">
-        <div className="text-caption text-muted">Código</div>
-        <div className="text-display-md font-bold tracking-wide tabular-nums">
-          {booking.code}
+      <div className="bg-mp-navy p-6 text-white print:bg-transparent print:p-0 print:text-ink">
+        <div className="flex justify-end">
+          <span className="text-badge uppercase tracking-[0.5px] text-white/60 print:text-muted">
+            {receipt ? "Comprovante" : "Voucher"}
+          </span>
         </div>
-
-        {/* O QR é o crachá de entrada. Depois do check-out ele não abre mais nada, então some. */}
-        {!receipt && (
-          <div className="my-2">
-            {qrUrl ? (
-              <img
-                src={qrUrl}
-                width={240}
-                height={240}
-                alt={`QR ${booking.code}`}
-                className="mx-auto"
-              />
-            ) : (
-              <Skeleton className="h-60 w-60" />
-            )}
-          </div>
-        )}
-
-        {receipt ? (
-          <p className="inline-flex items-center gap-1.5 rounded-sm bg-badge-confirmed-bg px-2 py-1 text-body-sm text-badge-confirmed-fg">
-            <CheckCircle2 className="h-4 w-4" />
-            Estadia concluída em {formatDateTime(booking.check_out_at)}
-          </p>
-        ) : booking.status === "checked_in" && booking.checked_in_at ? (
-          <p className="inline-flex items-center gap-1.5 rounded-sm bg-badge-confirmed-bg px-2 py-1 text-body-sm text-badge-confirmed-fg">
-            <CheckCircle2 className="h-4 w-4" />
-            Entrada registrada às {formatTime(booking.checked_in_at)}
-          </p>
-        ) : (
-          <p className="text-body-sm text-muted">
-            Apresente esse QR na chegada à vaga.
-          </p>
+        <h3 className="mt-5 text-display-md leading-tight text-white print:text-ink">
+          {booking.parking_type?.name ?? "Vaga"} · {booking.location.company.name}
+        </h3>
+        <p className="mt-2 text-caption-sm leading-relaxed text-white/75 print:text-muted">
+          {booking.location.company.name === booking.location.name
+            ? booking.location.address
+            : [booking.location.name, booking.location.address].filter(Boolean).join(" · ")}
+        </p>
+        {maps && (
+          <a
+            href={maps}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-4 inline-flex h-[38px] items-center gap-2 rounded-full bg-white/15 px-4 text-caption-sm font-semibold text-white no-underline transition-colors hover:bg-white/25 print:hidden"
+          >
+            <ExternalLink className="h-4 w-4" aria-hidden />
+            Como chegar
+          </a>
         )}
       </div>
 
-      {/* Detalhes só na impressão: na tela a coluna principal já mostra tudo (evita duplicar);
-          no PDF/impressão o `main` é print:hidden, então o voucher precisa ser autocontido. */}
-      <div className="mt-6 hidden space-y-2 border-t border-hairline-soft pt-5 text-body-sm print:block">
-        <Row label="Estacionamento" value={booking.location.company.name} />
-        {booking.location.company.name !== booking.location.name && (
-          <Row label="Unidade" value={booking.location.name} />
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-5 p-6">
+        <TicketField label="Check-in" value={formatWeekdayDate(booking.check_in_at)}>
+          {formatTime(booking.check_in_at)}
+        </TicketField>
+        <TicketField label="Check-out" value={formatWeekdayDate(booking.check_out_at)}>
+          {formatTime(booking.check_out_at)}
+        </TicketField>
+        <div>
+          <dt className="text-badge uppercase tracking-[0.4px] text-muted">Veículo</dt>
+          <dd className="mt-2">
+            {booking.vehicle ? (
+              <>
+                <span className="inline-flex h-6 items-center rounded-xs bg-mp-navy px-2 text-badge tracking-[0.6px] text-white">
+                  {booking.vehicle.license_plate}
+                </span>
+                <span className="mt-1.5 block text-caption-sm text-muted">
+                  {[booking.vehicle.model, booking.vehicle.color].filter(Boolean).join(" · ") ||
+                    "Sem detalhes"}
+                </span>
+              </>
+            ) : (
+              <span className="text-caption-sm text-muted">Não informado</span>
+            )}
+          </dd>
+        </div>
+        <TicketField label="Permanência" value={`${noites} ${noites === 1 ? "diária" : "diárias"}`}>
+          Tarifa {FARE_TIER_LABEL[booking.fare_tier]}
+        </TicketField>
+      </dl>
+
+      {/* Recorte do bilhete. Os círculos vazam pras bordas e são pintados com a cor
+          do fundo da página, então só funcionam sobre `bg-panel`. */}
+      <div className="relative h-6 print:hidden" aria-hidden>
+        <span className="bg-panel absolute -left-3 top-0 h-6 w-6 rounded-full" />
+        <span className="bg-panel absolute -right-3 top-0 h-6 w-6 rounded-full" />
+        <span className="absolute left-6 right-6 top-3 border-t-2 border-dashed border-surface-strong" />
+      </div>
+
+      <div className="flex flex-col items-center px-6 pb-6 pt-2 text-center">
+        {/* O QR fica no comprovante também: ele aponta pra página de validação da
+            reserva, que continua resolvendo depois do check-out. Deixa de abrir a
+            cancela e passa a servir de consulta, que é pra isso que o comprovante existe. */}
+        <div className="rounded-md p-3.5 ring-1 ring-inset ring-hairline">
+          {qrUrl ? (
+            <img
+              src={qrUrl}
+              width={176}
+              height={176}
+              alt={`QR ${booking.code}`}
+              className="block"
+            />
+          ) : (
+            <Skeleton className="h-44 w-44" />
+          )}
+        </div>
+
+        <div className="mt-4 text-badge uppercase tracking-[0.5px] text-muted">
+          Código da reserva
+        </div>
+        <div className="mt-1.5 text-display-xl tracking-[0.02em] tabular-nums text-ink">
+          {booking.code}
+        </div>
+
+        {receipt ? (
+          <Pill tone="ok">Estadia concluída em {formatDate(booking.check_out_at)}</Pill>
+        ) : booking.status === "checked_in" && booking.checked_in_at ? (
+          <Pill tone="ok">Entrada registrada às {formatTime(booking.checked_in_at)}</Pill>
+        ) : booking.payment?.paid_at ? (
+          <Pill tone="ok">Pagamento confirmado · {formatBRL(booking.total_amount)}</Pill>
+        ) : (
+          <p className="mt-3.5 text-caption-sm text-muted">Apresente esse QR na chegada à vaga.</p>
         )}
-        {booking.location.address && (
-          <Row label="Endereço" value={booking.location.address} />
-        )}
-        <Row label="Tipo" value={booking.parking_type?.name ?? "Vaga"} />
-        <Row label="Check-in" value={formatDateTime(booking.check_in_at)} />
-        <Row label="Check-out" value={formatDateTime(booking.check_out_at)} />
-        {booking.vehicle && (
-          <Row
-            label="Veículo"
-            value={`${booking.vehicle.license_plate}${
-              booking.vehicle.model ? ` · ${booking.vehicle.model}` : ""
-            }`}
-          />
-        )}
+
+        <div className={cn("mt-5 grid w-full gap-2.5 print:hidden", !receipt && "grid-cols-2")}>
+          <button
+            type="button"
+            onClick={downloadPdf}
+            disabled={pdf.isPending}
+            data-testid="voucher-download-pdf"
+            className="flex h-11 items-center justify-center gap-2 rounded-md bg-mp-navy text-caption-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            <Download className="h-4 w-4" aria-hidden />
+            {pdf.isPending ? "Gerando…" : "Baixar PDF"}
+          </button>
+          {/* Estadia concluída não entra no calendário: o evento já passou. */}
+          {!receipt && (
+            <a
+              href={buildIcsHref(booking)}
+              download={`movepark-${booking.code}.ics`}
+              className="flex h-11 items-center justify-center gap-2 rounded-md bg-surface-soft text-caption-sm font-semibold text-ink no-underline transition-colors hover:bg-mp-pale"
+            >
+              <CalendarIcon className="h-4 w-4" aria-hidden />
+              Calendário
+            </a>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
+function TicketField({
+  label,
+  value,
+  children,
+}: {
+  label: string;
+  value: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="flex justify-between gap-3">
-      <span className="text-muted">{label}</span>
-      <span className="text-right text-ink">{value}</span>
+    <div>
+      <dt className="text-badge uppercase tracking-[0.4px] text-muted">{label}</dt>
+      <dd>
+        <span className="mt-1.5 block text-title-md text-ink">{value}</span>
+        <span className="mt-0.5 block text-caption-sm text-muted">{children}</span>
+      </dd>
     </div>
+  );
+}
+
+function Pill({ tone, children }: { tone: "ok"; children: React.ReactNode }) {
+  return (
+    <span className="mt-3.5 inline-flex items-center gap-2 rounded-full bg-surface-soft px-3.5 py-2 text-caption-sm font-semibold text-ink">
+      <CheckCircle2
+        className={tone === "ok" ? "h-4 w-4 shrink-0 text-success" : "h-4 w-4 shrink-0"}
+        aria-hidden
+      />
+      {children}
+    </span>
   );
 }
 

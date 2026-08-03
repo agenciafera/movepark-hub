@@ -29,7 +29,7 @@ export function ReferralShareCard({ className }: { className?: string }) {
 
   function compartilhar() {
     if (!data) return;
-    window.open(whatsappShareUrl(data.link), "_blank", "noopener");
+    window.open(whatsappShareUrl(data.link, data.reward_amount), "_blank", "noopener");
   }
 
   return (

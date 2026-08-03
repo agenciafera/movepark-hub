@@ -5,6 +5,8 @@ import {
   formatDate,
   formatDateTime,
   formatDayTime,
+  formatDayTimeInline,
+  formatWeekdayDate,
   formatDistance,
   formatDuration,
   formatRating,
@@ -54,6 +56,28 @@ describe("formatDayTime", () => {
   it("data+hora compacta sem ano e sem ponto no mês", () => {
     expect(formatDayTime(new Date(2026, 6, 8, 22, 0))).toBe("8 jul · 22:00");
     expect(formatDayTime(new Date(2026, 0, 3, 9, 5))).toBe("3 jan · 09:05");
+  });
+});
+
+describe("formatDayTimeInline", () => {
+  it("retorna — para vazio", () => {
+    expect(formatDayTimeInline(null)).toBe("—");
+  });
+  /** O middot do `formatDayTime` viraria item de lista quando a linha já separa por " · ". */
+  it("usa vírgula e dia com zero à esquerda, pra caber numa linha separada por middot", () => {
+    expect(formatDayTimeInline(new Date(2026, 7, 3, 22, 0))).toBe("03 ago, 22:00");
+    expect(formatDayTimeInline(new Date(2026, 0, 3, 9, 5))).toBe("03 jan, 09:05");
+  });
+});
+
+describe("formatWeekdayDate", () => {
+  it("retorna — para vazio", () => {
+    expect(formatWeekdayDate(null)).toBe("—");
+  });
+  /** Quem viaja pensa em "terça", não em "04/08/2026". */
+  it("traz o dia da semana e dispensa o ano", () => {
+    expect(formatWeekdayDate(new Date(2026, 7, 4))).toBe("ter, 04 ago");
+    expect(formatWeekdayDate(new Date(2026, 7, 9))).toBe("dom, 09 ago");
   });
 });
 

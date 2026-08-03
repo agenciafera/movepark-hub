@@ -13,6 +13,7 @@ const badgeVariants = cva("inline-flex items-center rounded-full px-2.5 h-[22px]
       pending: "bg-badge-pending-bg text-badge-pending-fg",
       completed: "bg-badge-completed-bg text-badge-completed-fg",
       cancelled: "bg-badge-cancelled-bg text-badge-cancelled-fg",
+      noshow: "bg-badge-noshow-bg text-badge-noshow-fg",
       neutral: "bg-surface-soft text-muted",
     },
   },

@@ -37,6 +37,26 @@ export function formatDayTime(value: string | Date | null | undefined): string {
 }
 
 /**
+ * Data com o dia da semana: `ter, 04 ago`. No voucher o dia da semana importa mais
+ * que o ano, porque quem viaja pensa em "terça", não em "04/08/2026".
+ */
+export function formatWeekdayDate(value: string | Date | null | undefined): string {
+  if (!value) return "—";
+  return format(new Date(value), "EEEEEE, dd MMM", { locale: ptBR }).replace(/\./g, "");
+}
+
+/**
+ * Mesma data de `formatDayTime`, com dia zerado à esquerda e vírgula no lugar do
+ * ponto médio. Serve pra quando o valor entra numa linha que já usa " · " pra
+ * separar itens: com o middot interno, "3 ago · 19:00 · 6 diárias" lê como três
+ * itens em vez de dois.
+ */
+export function formatDayTimeInline(value: string | Date | null | undefined): string {
+  if (!value) return "—";
+  return format(new Date(value), "dd MMM, HH:mm", { locale: ptBR }).replace(/\./g, "");
+}
+
+/**
  * Pista de proximidade humana a partir de uma data: `hoje`, `amanhã`, `ontem`,
  * `em 3 dias`, `há 5 dias`. Fora de uma janela de ~30 dias retorna `null` (evita
  * "em 340 dias"). `now` é injetável para testes.

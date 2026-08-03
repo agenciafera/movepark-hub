@@ -18,6 +18,11 @@ export type MyBookingListItem = {
     slug: string;
     address: string | null;
     company: { name: string; slug: string };
+    /**
+     * Aeroporto/destino da unidade. Opcional porque só a listagem da conta pede esse
+     * join; o detalhe da reserva e o voucher não precisam dele.
+     */
+    destination?: { city: string; short_name: string | null } | null;
   };
   parking_type: { name: string; code: string } | null;
 };
@@ -26,50 +31,68 @@ const baseSelect = `
   id, code, status, check_in_at, check_out_at, expires_at, total_amount, created_at,
   location:location!inner(
     name, slug, address,
-    company:company!inner(name, slug)
+    company:company!inner(name, slug),
+    destination:destination(city, short_name)
   ),
   booking_item:booking_item!inner(
     item_type, parking_type:parking_type(name, code)
   )
 `;
 
-export function useMyBookings(
-  profileId: string | undefined,
-  bucket: MyBookingStatus,
-) {
+async function fetchMyBookings(profileId: string | undefined): Promise<MyBookingListItem[]> {
+  if (!profileId) return [];
+  const { data, error } = await supabase
+    .from("booking")
+    .select(baseSelect)
+    .eq("profile_id", profileId)
+    .order("check_in_at", { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  return (data ?? []).map((row) => {
+    // deno-lint-ignore no-explicit-any
+    const r = row as any;
+    const parkingItem = (r.booking_item ?? []).find(
+      // deno-lint-ignore no-explicit-any
+      (b: any) => b.item_type === "parking",
+    );
+    return {
+      id: r.id,
+      code: r.code,
+      status: r.status,
+      check_in_at: r.check_in_at,
+      check_out_at: r.check_out_at,
+      expires_at: r.expires_at,
+      total_amount: Number(r.total_amount),
+      created_at: r.created_at,
+      location: { ...r.location, destination: r.location?.destination ?? null },
+      parking_type: parkingItem?.parking_type ?? null,
+    } as MyBookingListItem;
+  });
+}
+
+/**
+ * A key NÃO leva o balde: a consulta é sempre a mesma (as 100 últimas reservas do
+ * perfil) e o balde é recorte de cliente. Com o balde na key, as quatro abas da tela
+ * de reservas refaziam a mesma busca quatro vezes, cada uma no seu cache.
+ */
+const myBookingsKey = (profileId: string | undefined) =>
+  ["my-bookings", profileId ?? "anon"] as const;
+
+/** Todas as reservas do perfil, sem recorte. */
+export function useAllMyBookings(profileId: string | undefined) {
   return useQuery({
-    queryKey: ["my-bookings", profileId ?? "anon", bucket] as const,
-    queryFn: async (): Promise<MyBookingListItem[]> => {
-      if (!profileId) return [];
-      const { data, error } = await supabase
-        .from("booking")
-        .select(baseSelect)
-        .eq("profile_id", profileId)
-        .order("check_in_at", { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      const items = (data ?? []).map((row) => {
-        // deno-lint-ignore no-explicit-any
-        const r = row as any;
-        const parkingItem = (r.booking_item ?? []).find(
-          // deno-lint-ignore no-explicit-any
-          (b: any) => b.item_type === "parking",
-        );
-        return {
-          id: r.id,
-          code: r.code,
-          status: r.status,
-          check_in_at: r.check_in_at,
-          check_out_at: r.check_out_at,
-          expires_at: r.expires_at,
-          total_amount: Number(r.total_amount),
-          created_at: r.created_at,
-          location: r.location,
-          parking_type: parkingItem?.parking_type ?? null,
-        } as MyBookingListItem;
-      });
-      return items.filter((b) => bucketBooking(b) === bucket);
-    },
+    queryKey: myBookingsKey(profileId),
+    queryFn: () => fetchMyBookings(profileId),
+    enabled: !!profileId,
+    staleTime: 30_000,
+  });
+}
+
+export function useMyBookings(profileId: string | undefined, bucket: MyBookingStatus) {
+  return useQuery({
+    queryKey: myBookingsKey(profileId),
+    queryFn: () => fetchMyBookings(profileId),
+    select: (items: MyBookingListItem[]) => items.filter((b) => bucketBooking(b) === bucket),
     enabled: !!profileId,
     staleTime: 30_000,
   });
@@ -100,6 +123,8 @@ export type MyBookingDetail = MyBookingListItem & {
     reservation_policy: string | null;
     latitude: number | null;
     longitude: number | null;
+    /** Minutos que a unidade segura a vaga após o horário do check-in. */
+    tolerance_minutes: number | null;
   };
 };
 
@@ -116,7 +141,7 @@ export function useBookingDetail(code: string | undefined) {
            fare_tier, fare_price_cents, fare_cancel_until, fare_benefits,
            location:location!inner(
              name, slug, address, phone, email, notice, reservation_policy,
-             latitude, longitude,
+             latitude, longitude, tolerance_minutes,
              company:company!inner(name, slug)
            ),
            vehicle:vehicle(id, license_plate, model, color),
@@ -192,6 +217,8 @@ export function useBookingDetail(code: string | undefined) {
           reservation_policy: r.location.reservation_policy,
           latitude: r.location.latitude != null ? Number(r.location.latitude) : null,
           longitude: r.location.longitude != null ? Number(r.location.longitude) : null,
+          tolerance_minutes:
+            r.location.tolerance_minutes != null ? Number(r.location.tolerance_minutes) : null,
         },
       };
     },

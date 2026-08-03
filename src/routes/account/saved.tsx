@@ -1,100 +1,16 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { Heart, Car, ArrowRight } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { useSavedListings } from "@/features/search/useSavedListings";
-
-type SavedListingDetail = {
-  id: string;
-  operator: { slug: string; name: string };
-  location: {
-    slug: string;
-    name: string;
-    address: string | null;
-    cover_image: string | null;
-  };
-  parking_type: { code: string; name: string };
-};
-
-function useSavedListingsDetail(ids: string[]) {
-  return useQuery({
-    queryKey: ["saved-listings-detail", ids.slice().sort().join(",")],
-    queryFn: async (): Promise<SavedListingDetail[]> => {
-      if (ids.length === 0) return [];
-      // O tipo de vaga (código/nome) vem por company_parking_type → parking_type;
-      // location_parking_type não tem "parking_type_code" (isso dava erro PGRST200
-      // e deixava a lista de favoritos sempre vazia).
-      const { data, error } = await supabase
-        .from("location_parking_type")
-        .select(
-          `
-          id,
-          location:location!inner (
-            slug,
-            name,
-            address,
-            photos,
-            company:company!inner ( slug, name )
-          ),
-          company_parking_type:company_parking_type!inner (
-            parking_type:parking_type!inner ( code, name )
-          )
-        `,
-        )
-        .in("id", ids);
-      if (error) throw error;
-      return (data ?? []).map((row) => {
-        const rec = row as unknown as {
-          id: string;
-          location: {
-            slug: string;
-            name: string;
-            address: string | null;
-            photos: unknown;
-            company: { slug: string; name: string } | null;
-          } | null;
-          company_parking_type: {
-            parking_type: { code: string; name: string } | null;
-          } | null;
-        };
-        const parkingType = rec.company_parking_type?.parking_type;
-        // Capa = 1ª foto da galeria, a mesma regra da busca (search/index.ts).
-        const photos = rec.location?.photos;
-        const cover =
-          Array.isArray(photos) && typeof photos[0] === "string" ? (photos[0] as string) : null;
-        return {
-          id: rec.id,
-          operator: {
-            slug: rec.location?.company?.slug ?? "",
-            name: rec.location?.company?.name ?? "",
-          },
-          location: {
-            slug: rec.location?.slug ?? "",
-            name: rec.location?.name ?? "",
-            address: rec.location?.address ?? null,
-            cover_image: cover,
-          },
-          parking_type: {
-            code: parkingType?.code ?? "",
-            name: parkingType?.name ?? "",
-          },
-        };
-      });
-    },
-    enabled: ids.length > 0,
-    staleTime: 60_000,
-  });
-}
+import { useSavedListings, useSavedListingsDetail } from "@/features/search/useSavedListings";
 
 /** Skeleton espelhando o card de favorito (mesma forma e altura) — evita salto de layout. */
 function SavedCardSkeleton() {
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl border border-hairline bg-canvas">
+    <div className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-canvas">
       <Skeleton className="aspect-[4/3] w-full rounded-none" />
       <div className="flex flex-col gap-3 p-5">
         <Skeleton className="h-5 w-3/4" />
@@ -147,7 +63,7 @@ export default function SavedPage() {
             return (
               <article
                 key={item.id}
-                className="group relative flex flex-col overflow-hidden rounded-2xl border border-hairline bg-canvas transition-shadow hover:shadow-tier"
+                className="group relative flex flex-col overflow-hidden rounded-lg border border-hairline bg-canvas transition-shadow hover:shadow-tier"
               >
                 <Link to={url} className="relative block aspect-[4/3] overflow-hidden bg-surface-soft">
                   {item.location.cover_image ? (

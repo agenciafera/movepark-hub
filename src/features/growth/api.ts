@@ -38,6 +38,12 @@ export type MembershipInfo = {
 export type ReferralInfo = {
   code: string;
   link: string;
+  /**
+   * Quanto cada lado ganha por indicação concluída, em reais. Vem de
+   * `app_setting.referral_reward_amount` (fonte única, a mesma que o crédito usa),
+   * pra tela não prometer um valor diferente do que a carteira paga.
+   */
+  reward_amount: number;
   counts: { pending: number; qualified: number; rewarded: number };
   referrals: {
     id: string;

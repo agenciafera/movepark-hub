@@ -14,40 +14,53 @@ export function AccountAppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const isRoot = location.pathname === "/account" || location.pathname === "/account/";
+  // Telas já redesenhadas compõem os próprios cards (design "Minha Conta Cliente")
+  // e saem do painel branco: dentro dele ficavam card branco sobre painel branco.
+  // As que ainda não passaram pelo redesenho continuam no painel, senão ficariam
+  // soltas no cinza. Ao redesenhar uma, acrescente o prefixo aqui.
+  const REDESENHADAS = [
+    "/account/profile",
+    "/account/vehicles",
+    "/account/addresses",
+    "/account/saved",
+    "/account/reservas",
+    "/account/cards",
+  ];
+  const ownsSurface = REDESENHADAS.some((p) => location.pathname.startsWith(p));
 
   return (
     <div className="flex min-h-screen flex-col bg-panel">
       <ConsumerTopbar />
 
-      <div className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 desktop:px-8 desktop:py-10">
-        {/* Header da seção em mobile (não-root) com botão voltar */}
-        <div className="desktop:hidden mb-4">
-          {!isRoot ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="-ml-3"
-              onClick={() => navigate("/account")}
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Conta
-            </Button>
+      {/* Enquadramento do design: sidebar navy flutuante com 20px de respiro e o
+          conteúdo ocupando o que sobra. Sem trava de largura, igual aos painéis. */}
+      <div className="flex flex-1 gap-5 px-4 py-6 desktop:p-5">
+        <AccountSidebar />
+        <main className="flex min-w-0 flex-1 flex-col pb-[var(--bottom-nav-space)] tablet:pb-0">
+          {/* Header da seção em mobile (não-root) com botão voltar */}
+          <div className="mb-4 desktop:hidden">
+            {!isRoot ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="-ml-3"
+                onClick={() => navigate("/account")}
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Conta
+              </Button>
+            ) : (
+              <h1 className="text-display-lg text-ink">Conta</h1>
+            )}
+          </div>
+          {ownsSurface ? (
+            <Outlet />
           ) : (
-            <h1 className="text-display-lg text-ink">Conta</h1>
-          )}
-        </div>
-
-        <div className="flex gap-10">
-          <AccountSidebar />
-          <main className="min-w-0 flex-1 pb-[var(--bottom-nav-space)] tablet:pb-0">
-            {/* Painel de conteúdo branco: toda tela da conta (perfil, veículos, reservas,
-                clube, indique) mora nessa superfície branca, pra ficarem consistentes e
-                não soltas no cinza. */}
-            <div className="rounded-md border border-hairline bg-canvas p-5 desktop:p-8">
+            <div className="rounded-lg border border-hairline bg-canvas p-5 desktop:p-8">
               <Outlet />
             </div>
-          </main>
-        </div>
+          )}
+        </main>
       </div>
 
       <ConsumerFooter />

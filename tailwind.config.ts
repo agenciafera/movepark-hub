@@ -67,6 +67,8 @@ const config: Config = {
         "badge-completed-bg": "hsl(var(--badge-completed-bg))",
         "badge-completed-fg": "hsl(var(--badge-completed-fg))",
         "badge-cancelled-bg": "hsl(var(--badge-cancelled-bg))",
+        "badge-noshow-bg": "hsl(var(--badge-noshow-bg))",
+        "badge-noshow-fg": "hsl(var(--badge-noshow-fg))",
         "badge-cancelled-fg": "hsl(var(--badge-cancelled-fg))",
 
         // shadcn aliases mapped so primitives keep working

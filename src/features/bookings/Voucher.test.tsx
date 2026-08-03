@@ -45,6 +45,7 @@ function booking(status: MyBookingDetail["status"]): MyBookingDetail {
       reservation_policy: null,
       latitude: null,
       longitude: null,
+    tolerance_minutes: null,
     },
   };
 }
@@ -53,7 +54,10 @@ describe("Voucher", () => {
   it("reserva confirmada: é voucher de entrada, com QR e calendário", () => {
     renderWithProviders(<Voucher booking={booking("confirmed")} />);
 
-    expect(screen.getByRole("heading", { name: "Voucher" })).toBeInTheDocument();
+    // No bilhete, "Voucher" é o eyebrow; o heading é a unidade, que é o que a
+    // portaria confere.
+    expect(screen.getByText("Voucher")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Abbapark/ })).toBeInTheDocument();
     expect(screen.getByText("Baixar PDF")).toBeInTheDocument();
     expect(screen.getByText("Calendário")).toBeInTheDocument();
     expect(screen.getByText(/Apresente esse QR na chegada/)).toBeInTheDocument();
@@ -64,17 +68,21 @@ describe("Voucher", () => {
 
     // O que o defeito escondia: existe caminho para baixar.
     expect(screen.getByTestId("voucher-download-pdf")).toBeInTheDocument();
-    expect(screen.getByText("Baixar comprovante")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Comprovante" })).toBeInTheDocument();
+    expect(screen.getByText("Baixar PDF")).toBeInTheDocument();
+    expect(screen.getByText("Comprovante")).toBeInTheDocument();
     expect(screen.getByText(/Estadia concluída em/)).toBeInTheDocument();
   });
 
-  it("C-15: no comprovante, o QR de entrada e o calendário saem", () => {
+  it("C-15: no comprovante o calendário sai, mas o QR fica", async () => {
     renderWithProviders(<Voucher booking={booking("completed")} />);
 
-    // O QR só abre a cancela; depois do check-out não abre mais nada.
-    expect(screen.queryByText(/Apresente esse QR na chegada/)).not.toBeInTheDocument();
     // O evento já passou: não faz sentido oferecer "adicionar ao calendário".
     expect(screen.queryByText("Calendário")).not.toBeInTheDocument();
+    // A instrução de chegada some, porque não há mais chegada.
+    expect(screen.queryByText(/Apresente esse QR na chegada/)).not.toBeInTheDocument();
+    // O QR continua: ele aponta pra validação da reserva, que segue resolvendo
+    // depois do check-out, e é por ele que se consulta o comprovante.
+    // `find`: a geração do QR é assíncrona, então no primeiro quadro há skeleton.
+    expect(await screen.findByRole("img", { name: /QR MP-A8K7P2/ })).toBeInTheDocument();
   });
 });

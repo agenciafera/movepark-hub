@@ -1,7 +1,7 @@
 {
   "scenario_id": "account-addresses",
   "start_url": "/account/addresses",
-  "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Endereços\", depois a descricao \"Cadastre endereços pra agilizar reservas e referência.\", depois o texto \"Cadastre seu primeiro endereço\".",
+  "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Endereços salvos\", depois a descricao \"Usados como referência nas suas reservas.\", depois o texto \"Cadastre seu primeiro endereço\".",
   "tags": [
     "smoke",
     "leitura",

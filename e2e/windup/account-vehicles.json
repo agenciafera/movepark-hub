@@ -1,7 +1,7 @@
 {
   "scenario_id": "account-vehicles",
   "start_url": "/account/vehicles",
-  "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Veículos\", depois a descricao \"Salve veículos pra agilizar suas reservas.\", depois o texto \"Cadastre seu primeiro veículo\".",
+  "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Veículos salvos\", depois a descricao \"O padrão vem pré-selecionado no checkout.\", depois o texto \"Cadastre seu primeiro veículo\".",
   "tags": [
     "smoke",
     "leitura",

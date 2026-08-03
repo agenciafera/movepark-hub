@@ -26,6 +26,12 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   address?: AddressRow | null;
+  /**
+   * Abre já com o CEP preenchido e consultado. É o caminho do card "Adicionar pelo
+   * CEP" da página: o usuário digita o CEP lá fora e chega aqui só pra completar o
+   * número.
+   */
+  initialCep?: string | null;
 };
 
 function cepMask(value: string) {
@@ -34,7 +40,7 @@ function cepMask(value: string) {
   return `${v.slice(0, 5)}-${v.slice(5)}`;
 }
 
-export function AddressForm({ open, onOpenChange, address }: Props) {
+export function AddressForm({ open, onOpenChange, address, initialCep }: Props) {
   const { session } = useAuth();
   const create = useCreateAddress();
   const update = useUpdateAddress();
@@ -54,7 +60,7 @@ export function AddressForm({ open, onOpenChange, address }: Props) {
   React.useEffect(() => {
     if (!open) return;
     setLabel(address?.label ?? "");
-    setCep(cepMask(address?.postal_code ?? ""));
+    setCep(cepMask(address?.postal_code ?? initialCep ?? ""));
     setStreet(address?.street ?? "");
     setNumber(address?.number ?? "");
     setComplement(address?.complement ?? "");
@@ -62,10 +68,11 @@ export function AddressForm({ open, onOpenChange, address }: Props) {
     setCity(address?.city ?? "");
     setState(address?.state ?? "");
     setIsDefault(address?.is_default ?? false);
-  }, [open, address]);
+  }, [open, address, initialCep]);
 
-  async function handleCepBlur() {
-    const digits = cep.replace(/\D/g, "");
+  /** Consulta o CEP e preenche tudo menos o número. Usada no blur do campo e na
+      abertura vinda do card "Adicionar pelo CEP" da página. */
+  const fillFromCep = React.useCallback(async (digits: string) => {
     if (digits.length !== 8) return;
     setLookingUp(true);
     try {
@@ -79,7 +86,18 @@ export function AddressForm({ open, onOpenChange, address }: Props) {
     } finally {
       setLookingUp(false);
     }
+  }, []);
+
+  function handleCepBlur() {
+    void fillFromCep(cep.replace(/\D/g, ""));
   }
+
+  // Chegou com CEP da página: já consulta, senão o usuário teria que sair e voltar
+  // no campo pra disparar o blur.
+  React.useEffect(() => {
+    if (!open || address || !initialCep) return;
+    void fillFromCep(initialCep.replace(/\D/g, ""));
+  }, [open, address, initialCep, fillFromCep]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

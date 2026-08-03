@@ -1,17 +1,11 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { CreditCard, Info, MoreVertical, Plus, Star } from "lucide-react";
+import { CreditCard, Plus, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { AccountCard, AccountRow, RowAction } from "@/components/shared/AccountCard";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { PaymentMethodForm } from "@/features/payment-methods/PaymentMethodForm";
 import {
   useDeletePaymentMethod,
@@ -33,7 +27,7 @@ const brandLabels: Record<string, string> = {
 };
 
 function formatExpiry(month: number | null, year: number | null) {
-  if (!month || !year) return "-";
+  if (!month || !year) return null;
   const mm = String(month).padStart(2, "0");
   const yy = String(year % 100).padStart(2, "0");
   return `${mm}/${yy}`;
@@ -45,123 +39,125 @@ export default function CardsPage() {
   const setDefault = useSetDefaultPaymentMethod();
   const remove = useDeletePaymentMethod();
   const [formOpen, setFormOpen] = React.useState(false);
+  const [pendingDelete, setPendingDelete] = React.useState<PaymentMethodRow | null>(null);
 
   async function makeDefault(c: PaymentMethodRow) {
     if (!session) return;
     try {
-      await setDefault.mutateAsync({
-        id: c.id,
-        profileId: session.userId,
-      });
+      await setDefault.mutateAsync({ id: c.id, profileId: session.userId });
       toast.success("Cartão padrão atualizado");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro");
     }
   }
 
-  async function handleDelete(c: PaymentMethodRow) {
-    if (!confirm(`Remover o cartão •••• ${c.last4}?`)) return;
+  async function confirmDelete() {
+    if (!pendingDelete) return;
     try {
-      await remove.mutateAsync(c.id);
+      await remove.mutateAsync(pendingDelete.id);
       toast.success("Cartão removido");
+      setPendingDelete(null);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro");
     }
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Cartões"
-        description="Cartões salvos pra reservar mais rápido."
-        actions={
-          <Button onClick={() => setFormOpen(true)} size="sm">
-            <Plus className="h-4 w-4" />
-            Novo cartão
-          </Button>
-        }
-      />
+    <div className="space-y-5">
+      <header>
+        <h1 className="text-display-xl text-ink">Cartões</h1>
+        <p className="mt-2 text-body-md text-muted">Cartões salvos pra reservar mais rápido.</p>
+      </header>
 
-      <div className="flex gap-3 rounded-md border border-hairline bg-mp-pale/40 p-4 text-body-sm text-mp-indigo">
-        <Info className="h-4 w-4 shrink-0" />
-        <p>
-          Hoje os cartões são mockados pra simular o fluxo. Quando integrarmos
-          gateway real, eles serão tokenizados. O número fica só com o
-          gateway, nunca no nosso banco.
-        </p>
-      </div>
-
-      {list.isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 2 }).map((_, i) => (
-            <Skeleton key={i} className="h-20 w-full rounded-md" />
-          ))}
-        </div>
-      ) : list.data?.length === 0 ? (
-        <EmptyState
-          icon={<CreditCard className="h-10 w-10" />}
-          title="Cadastre seu primeiro cartão"
-          description="Ele vai aparecer pré-selecionado no checkout."
+      <div className="grid grid-cols-1 gap-5 desktop:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <AccountCard
+          title="Cartões salvos"
+          subtitle="Usados no checkout e nas cobranças de extensão."
           action={
-            <Button onClick={() => setFormOpen(true)}>
+            <Button size="sm" onClick={() => setFormOpen(true)}>
               <Plus className="h-4 w-4" />
               Novo cartão
             </Button>
           }
-        />
-      ) : (
-        <ul className="space-y-3">
-          {list.data?.map((c) => (
-            <li
-              key={c.id}
-              className="flex items-center gap-4 rounded-md border border-hairline bg-canvas p-4"
-            >
-              <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-mp-pale text-mp-indigo">
-                <CreditCard className="h-5 w-5" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-title-md text-ink">
-                    {brandLabels[c.brand] ?? "Cartão"} •••• {c.last4}
-                  </span>
-                  {c.is_default && (
-                    <Badge tone="active">
-                      <Star className="mr-1 h-3 w-3" />
-                      Padrão
-                    </Badge>
-                  )}
-                </div>
-                <div className="text-body-sm text-muted">
-                  {c.holder_name ? `${c.holder_name} · ` : ""}
-                  Vencimento {formatExpiry(c.expiry_month, c.expiry_year)}
-                </div>
-              </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" aria-label="Mais opções">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {!c.is_default && (
-                    <DropdownMenuItem onClick={() => makeDefault(c)}>
-                      Tornar padrão
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem
-                    className="!text-error"
-                    onClick={() => handleDelete(c)}
-                  >
-                    Excluir
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </li>
-          ))}
-        </ul>
-      )}
+        >
+          {list.isLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <Skeleton key={i} className="h-20 w-full rounded-md" />
+              ))}
+            </div>
+          ) : list.data?.length === 0 ? (
+            <EmptyState
+              icon={<CreditCard className="h-10 w-10" />}
+              title="Cadastre seu primeiro cartão"
+              description="Ele vai aparecer pré-selecionado no checkout."
+            />
+          ) : (
+            <ul className="space-y-3">
+              {list.data?.map((c) => {
+                const vence = formatExpiry(c.expiry_month, c.expiry_year);
+                return (
+                  <AccountRow
+                    key={c.id}
+                    icon={<CreditCard className="h-5 w-5" />}
+                    title={`${brandLabels[c.brand] ?? "Cartão"} •••• ${c.last4}`}
+                    isDefault={c.is_default}
+                    detail={
+                      [c.holder_name, vence ? `vence ${vence}` : null]
+                        .filter(Boolean)
+                        .join(" · ") || null
+                    }
+                    actions={
+                      <>
+                        {!c.is_default && (
+                          <RowAction tone="primary" onClick={() => makeDefault(c)}>
+                            Tornar padrão
+                          </RowAction>
+                        )}
+                        <RowAction tone="danger" onClick={() => setPendingDelete(c)}>
+                          Remover
+                        </RowAction>
+                      </>
+                    }
+                  />
+                );
+              })}
+            </ul>
+          )}
+        </AccountCard>
+
+        <section className="rounded-lg border border-hairline bg-canvas p-5 desktop:p-7">
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-mp-pale text-mp-indigo">
+              <ShieldCheck className="h-5 w-5" aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-title-md text-ink">O número nunca fica com a gente</h2>
+              <p className="mt-2 text-body-sm leading-relaxed text-muted">
+                No nosso banco ficam só a bandeira e os 4 últimos dígitos. O número completo não é
+                gravado em lugar nenhum.
+              </p>
+            </div>
+          </div>
+          {/* O cadastro de cartão salvo ainda é simulado. Esconder isso deixaria o
+              cliente achar que já dá pra cobrar por aqui. */}
+          <p className="mt-5 border-t border-hairline pt-5 text-caption-sm leading-relaxed text-muted">
+            Por enquanto o cartão salvo serve pra simular o fluxo de reserva. A cobrança de verdade
+            passa pelo gateway, no checkout.
+          </p>
+        </section>
+      </div>
 
       <PaymentMethodForm open={formOpen} onOpenChange={setFormOpen} />
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(open) => !open && setPendingDelete(null)}
+        title={`Remover o cartão •••• ${pendingDelete?.last4 ?? ""}?`}
+        description="Ele sai da sua lista. Suas reservas já pagas não mudam."
+        pending={remove.isPending}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import type { BookingStatus, EntityStatus } from "@/types/domain";
+import { BOOKING_STATUS_TONES } from "./statusBadge.logic";
 
 export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
   pending: "Pendente",
@@ -11,20 +12,10 @@ export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
   no_show: "No-show",
 };
 
-const tones = {
-  pending: "pending",
-  confirmed: "confirmed",
-  checked_in: "active",
-  completed: "completed",
-  cancelled: "cancelled",
-  // Abandono (pending que expirou, nunca pago): tom neutro, não o vermelho de cancelado.
-  expired: "neutral",
-  no_show: "cancelled",
-} as const;
-
 export function StatusBadge({ status }: { status: BookingStatus }) {
-  return <Badge tone={tones[status]}>{BOOKING_STATUS_LABELS[status]}</Badge>;
+  return <Badge tone={BOOKING_STATUS_TONES[status]}>{BOOKING_STATUS_LABELS[status]}</Badge>;
 }
+
 
 // Status de entidade (localização, empresa): active/inactive/suspended. Feminino
 // porque concorda com "unidade"/"empresa".

@@ -1,7 +1,7 @@
 {
   "scenario_id": "endereco-abre-form",
   "start_url": "/account/addresses",
-  "task": "Clique em \"Novo endereço\". Depois verifique, em tres checagens separadas, que o formulario exibe o campo \"CEP\", depois o campo \"Logradouro\", depois o campo \"Número\".",
+  "task": "Clique em \"Novo endereço\". Depois verifique, em tres checagens separadas, que o formulario exibe o campo \"Logradouro\", depois o campo \"Número\", depois o campo \"Complemento\".",
   "tags": [
     "validacao",
     "formulario",

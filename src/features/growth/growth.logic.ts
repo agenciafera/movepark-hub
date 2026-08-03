@@ -7,6 +7,14 @@ export function brlFromCents(cents: number): string {
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+/**
+ * Valor sem os centavos quando eles são zero: "R$ 25" em vez de "R$ 25,00". Serve
+ * pra headline, onde os dois zeros só pesam. Valor quebrado mantém os centavos.
+ */
+export function brlShort(reais: number): string {
+  return brlFromCents(reais * 100).replace(/,00$/, "");
+}
+
 /** Dias inteiros (arredondando pra cima) de agora até a data ISO; nunca negativo. */
 export function daysUntil(iso: string, now: number = Date.now()): number {
   const diff = new Date(iso).getTime() - now;
@@ -29,15 +37,19 @@ export function firstNameOf(fullName: string | null | undefined, fallback = "cli
   return fullName?.trim().split(/\s+/)[0] || fallback;
 }
 
-/** Mensagem de indicação pronta pra compartilhar. */
-export function referralMessage(link: string): string {
+/**
+ * Mensagem de indicação pronta pra compartilhar. O valor entra por parâmetro: ele é
+ * config do programa (`app_setting.referral_reward_amount`), e cravar aqui deixaria
+ * a mensagem prometendo um número que o crédito pode não pagar mais.
+ */
+export function referralMessage(link: string, rewardAmount: number): string {
   return (
-    `Ganhei um presente pra você no Movepark: R$ 25 de desconto na sua 1ª reserva. ` +
-    `É só usar meu link: ${link}`
+    `Ganhei um presente pra você no Movepark: ${brlFromCents(rewardAmount * 100)} de desconto ` +
+    `na sua 1ª reserva. É só usar meu link: ${link}`
   );
 }
 
 /** URL de compartilhamento no WhatsApp com a mensagem de indicação. */
-export function whatsappShareUrl(link: string): string {
-  return `https://wa.me/?text=${encodeURIComponent(referralMessage(link))}`;
+export function whatsappShareUrl(link: string, rewardAmount: number): string {
+  return `https://wa.me/?text=${encodeURIComponent(referralMessage(link, rewardAmount))}`;
 }

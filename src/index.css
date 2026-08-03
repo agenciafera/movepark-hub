@@ -75,10 +75,17 @@
     --badge-active-fg: var(--mp-indigo);
     --badge-pending-bg: 38 100% 92%;
     --badge-pending-fg: var(--warning);
-    --badge-completed-bg: var(--surface-soft);
-    --badge-completed-fg: var(--muted);
+    /* Concluída ganhou cor própria: em cinza ela ficava idêntica à expirada, e
+       numa lista de 20 reservas as duas viravam a mesma mancha. Teal porque é
+       "terminou bem" sem disputar com o verde de "confirmada". */
+    --badge-completed-bg: 184 44% 92%;
+    --badge-completed-fg: 184 62% 24%;
     --badge-cancelled-bg: 6 73% 94%;
     --badge-cancelled-fg: var(--error);
+    /* No-show também terminou mal, mas não é cancelamento: vermelho mais fechado
+       (rosado) pra ler diferente de "cancelada" de relance. */
+    --badge-noshow-bg: 350 62% 94%;
+    --badge-noshow-fg: 350 56% 34%;
 
     /* Scrim — navy-tinted, not pure black */
     --scrim: 248 26% 20% / 0.55;
@@ -139,10 +146,12 @@
     --badge-active-fg: 239 72% 82%;
     --badge-pending-bg: 38 38% 20%;
     --badge-pending-fg: 38 88% 68%;
-    --badge-completed-bg: 240 5% 18%;
-    --badge-completed-fg: 0 0% 66%;
+    --badge-completed-bg: 184 30% 18%;
+    --badge-completed-fg: 184 52% 70%;
     --badge-cancelled-bg: 6 38% 20%;
     --badge-cancelled-fg: 6 74% 72%;
+    --badge-noshow-bg: 350 34% 22%;
+    --badge-noshow-fg: 350 68% 76%;
 
     /* Scrim mais denso no escuro */
     --scrim: 0 0% 0% / 0.6;
@@ -306,6 +315,38 @@
     background-image:
       radial-gradient(115% 130% at 88% -25%, hsl(var(--mp-violet) / 0.55) 0%, transparent 55%),
       linear-gradient(120deg, hsl(var(--mp-navy)) 0%, hsl(var(--mp-indigo)) 100%);
+  }
+  /* Mesh da marca, três camadas, do handoff "Minha Conta Cliente". Difere do
+     `.bg-dashboard-hero` por ter o brilho pálido subindo do canto inferior esquerdo,
+     que é o que dá o volume do card. Fica separado de propósito: os dashboards já
+     foram validados com o hero de duas camadas e mudá-lo deslocaria as duas telas.
+     Os valores são os do design e são literais, não derivados dos tokens HSL. */
+  .bg-brand-mesh {
+    background-color: #29263f;
+    background-image:
+      radial-gradient(
+        circle at 2% 108%,
+        rgb(228 242 255 / 88%) 0%,
+        rgb(228 242 255 / 52%) 10%,
+        rgb(228 242 255 / 20%) 20%,
+        rgb(228 242 255 / 5%) 30%,
+        rgb(228 242 255 / 0%) 40%
+      ),
+      radial-gradient(
+        115% 130% at 98% 42%,
+        rgb(93 95 239 / 100%) 0%,
+        rgb(93 95 239 / 72%) 20%,
+        rgb(93 95 239 / 32%) 40%,
+        rgb(93 95 239 / 7%) 56%,
+        rgb(93 95 239 / 0%) 68%
+      ),
+      radial-gradient(
+        120% 110% at 22% 6%,
+        rgb(64 65 163 / 96%) 0%,
+        rgb(64 65 163 / 58%) 26%,
+        rgb(64 65 163 / 22%) 48%,
+        rgb(64 65 163 / 0%) 68%
+      );
   }
 }
 

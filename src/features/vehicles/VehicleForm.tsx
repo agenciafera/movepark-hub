@@ -39,9 +39,16 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   vehicle?: Vehicle | null;
+  /**
+   * Abre direto no formulário manual com a placa preenchida. É o caminho de quando a
+   * consulta da página não encontrou o veículo: sem isso, o único jeito de levar a
+   * placa até aqui seria forjar um `vehicle`, e aí o form entraria em modo de edição
+   * e tentaria dar update num id que não existe.
+   */
+  initialPlate?: string | null;
 };
 
-export function VehicleForm({ open, onOpenChange, vehicle }: Props) {
+export function VehicleForm({ open, onOpenChange, vehicle, initialPlate }: Props) {
   const { session } = useAuth();
   const create = useCreateVehicle();
   const update = useUpdateVehicle();
@@ -56,12 +63,12 @@ export function VehicleForm({ open, onOpenChange, vehicle }: Props) {
 
   React.useEffect(() => {
     if (!open) return;
-    setMode(vehicle ? "manual" : "lookup");
-    setPlate(vehicle?.license_plate ?? "");
+    setMode(vehicle || initialPlate ? "manual" : "lookup");
+    setPlate(vehicle?.license_plate ?? initialPlate ?? "");
     setModel(vehicle?.model ?? "");
     setColor(vehicle?.color ?? "");
     setIsDefault(vehicle?.is_default ?? false);
-  }, [open, vehicle]);
+  }, [open, vehicle, initialPlate]);
 
   async function handleConfirmLookup(data: ConfirmedVehicle) {
     if (!session) return;

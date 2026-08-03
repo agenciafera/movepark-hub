@@ -148,3 +148,90 @@ export function useSyncSavedListingsOnLogin() {
       });
   }, [session, qc]);
 }
+
+export type SavedListingDetail = {
+  id: string;
+  operator: { slug: string; name: string };
+  location: {
+    slug: string;
+    name: string;
+    address: string | null;
+    cover_image: string | null;
+  };
+  parking_type: { code: string; name: string };
+};
+
+/**
+ * Os dados exibíveis dos favoritos. Mora aqui junto do resto do favorito; estava
+ * dentro de `routes/account/saved.tsx`, e era a única página da conta que falava com
+ * o Supabase direto na rota.
+ */
+export function useSavedListingsDetail(ids: string[]) {
+  return useQuery({
+    queryKey: ["saved-listings-detail", ids.slice().sort().join(",")],
+    queryFn: async (): Promise<SavedListingDetail[]> => {
+      if (ids.length === 0) return [];
+      // O tipo de vaga (código/nome) vem por company_parking_type → parking_type;
+      // location_parking_type não tem "parking_type_code" (isso dava erro PGRST200
+      // e deixava a lista de favoritos sempre vazia).
+      const { data, error } = await supabase
+        .from("location_parking_type")
+        .select(
+          `
+          id,
+          location:location!inner (
+            slug,
+            name,
+            address,
+            photos,
+            company:company!inner ( slug, name )
+          ),
+          company_parking_type:company_parking_type!inner (
+            parking_type:parking_type!inner ( code, name )
+          )
+        `,
+        )
+        .in("id", ids);
+      if (error) throw error;
+      return (data ?? []).map((row) => {
+        const rec = row as unknown as {
+          id: string;
+          location: {
+            slug: string;
+            name: string;
+            address: string | null;
+            photos: unknown;
+            company: { slug: string; name: string } | null;
+          } | null;
+          company_parking_type: {
+            parking_type: { code: string; name: string } | null;
+          } | null;
+        };
+        const parkingType = rec.company_parking_type?.parking_type;
+        // Capa = 1ª foto da galeria, a mesma regra da busca (search/index.ts).
+        const photos = rec.location?.photos;
+        const cover =
+          Array.isArray(photos) && typeof photos[0] === "string" ? (photos[0] as string) : null;
+        return {
+          id: rec.id,
+          operator: {
+            slug: rec.location?.company?.slug ?? "",
+            name: rec.location?.company?.name ?? "",
+          },
+          location: {
+            slug: rec.location?.slug ?? "",
+            name: rec.location?.name ?? "",
+            address: rec.location?.address ?? null,
+            cover_image: cover,
+          },
+          parking_type: {
+            code: parkingType?.code ?? "",
+            name: parkingType?.name ?? "",
+          },
+        };
+      });
+    },
+    enabled: ids.length > 0,
+    staleTime: 60_000,
+  });
+}

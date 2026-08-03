@@ -1,8 +1,7 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { Share2, Copy, Check, Link2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Share2, Copy, Check, Mail } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Accordion,
@@ -10,70 +9,77 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
+import { AccountCard } from "@/components/shared/AccountCard";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { useAuth } from "@/auth/context";
 import { useReferrals } from "./api";
-import { firstNameOf, whatsappShareUrl } from "./growth.logic";
+import { brlFromCents, brlShort, referralMessage, whatsappShareUrl } from "./growth.logic";
+import { inviteRows, referralEarnings, referralFunnel } from "./referralSummary.logic";
 
 /**
- * Página dedicada do Indique e Ganhe: explica o benefício de recomendar a
- * Movepark e entrega o link/compartilhamento em destaque (hero + gerador de
- * link + como funciona + FAQ). Consome o link real de get_my_referrals.
+ * Indique e Ganhe em blocos (design "Minha Conta Cliente"): o link em destaque à
+ * esquerda, o que já foi ganho à direita, e os convites logo abaixo. "Como
+ * funciona" e o FAQ ficam no fim, porque quem já entendeu o programa vem aqui só
+ * pra pegar o link.
  */
 
-const PASSOS = [
-  {
-    n: 1,
-    titulo: "Copie e compartilhe seu link",
-    texto: "Envie seu link exclusivo para amigos e familiares que dirigem.",
-  },
-  {
-    n: 2,
-    titulo: "Seu amigo reserva com desconto",
-    texto: "Ele ganha R$ 25 de desconto na 1ª reserva dele com a Movepark.",
-  },
-  {
-    n: 3,
-    titulo: "Vocês dois ganham",
-    texto:
-      "Quando a reserva dele é concluída, você recebe R$ 25 de volta na sua carteira Movepark.",
-  },
-];
+/** Os textos citam o prêmio, então dependem do valor vigente do programa. */
+function passosDoPrograma(premio: string) {
+  return [
+    {
+      n: 1,
+      titulo: "Copie e compartilhe seu link",
+      texto: "Envie seu link exclusivo para amigos e familiares que dirigem.",
+    },
+    {
+      n: 2,
+      titulo: "Seu amigo reserva com desconto",
+      texto: `Ele ganha ${premio} de desconto na 1ª reserva dele com a Movepark.`,
+    },
+    {
+      n: 3,
+      titulo: "Vocês dois ganham",
+      texto: `Quando a reserva dele é concluída, você recebe ${premio} de volta na sua carteira.`,
+    },
+  ];
+}
 
-const FAQ = [
-  {
-    q: "Como faço para participar?",
-    a: "É automático: todo cliente Movepark já tem um link exclusivo. Copie o link acima e compartilhe com quem você quiser.",
-  },
-  {
-    q: "Quando eu recebo meus R$ 25?",
-    a: "Assim que a 1ª reserva do seu indicado for concluída (não só reservada). Isso garante que a indicação foi real e protege o programa contra fraude.",
-  },
-  {
-    q: "Tem limite de indicações?",
-    a: "Não. Indique quantos amigos quiser. Cada primeira reserva concluída de um indicado te dá mais R$ 25.",
-  },
-  {
-    q: "O que o meu amigo ganha?",
-    a: "R$ 25 de desconto na primeira reserva dele, um presente de boas-vindas com a sua indicação.",
-  },
-  {
-    q: "Onde acompanho minhas indicações?",
-    a: "No Movepark Clube, dentro da sua conta, você vê quantas indicações estão pendentes e quantas já foram recompensadas.",
-  },
-  {
-    q: "O crédito expira?",
-    a: "O crédito vale por 90 dias a partir do momento em que entra na sua carteira.",
-  },
-];
+function faqDoPrograma(premio: string) {
+  return [
+    {
+      q: "Como faço para participar?",
+      a: "É automático: todo cliente Movepark já tem um link exclusivo. Copie o link acima e compartilhe com quem você quiser.",
+    },
+    {
+      q: `Quando eu recebo meus ${premio}?`,
+      a: "Assim que a 1ª reserva do seu indicado for concluída, não só reservada. Isso garante que a indicação foi real e protege o programa contra fraude.",
+    },
+    {
+      q: "Tem limite de indicações?",
+      a: `Não. Indique quantos amigos quiser. Cada primeira reserva concluída de um indicado te dá mais ${premio}.`,
+    },
+    {
+      q: "O que o meu amigo ganha?",
+      a: `${premio} de desconto na primeira reserva dele, um presente de boas-vindas com a sua indicação.`,
+    },
+    {
+      q: "O crédito expira?",
+      a: "O crédito vale por 90 dias a partir do momento em que entra na sua carteira.",
+    },
+  ];
+}
 
 export function IndiqueGanhe() {
   const { session } = useAuth();
   const { data, isLoading } = useReferrals(!!session?.userId);
   const [copiado, setCopiado] = React.useState(false);
-  const firstName = firstNameOf(session?.fullName);
 
   const link = data?.link ?? "";
   const linkDisplay = link.replace(/^https?:\/\//, "");
+  const premio = data ? brlShort(data.reward_amount) : "";
+  const ganhos = referralEarnings(data?.referrals ?? []);
+  const funil = referralFunnel(data?.referrals ?? []);
+  const convites = inviteRows(data?.referrals ?? []);
 
   function copiar() {
     if (!link) return;
@@ -84,125 +90,215 @@ export function IndiqueGanhe() {
   }
 
   function compartilhar() {
-    if (!link) return;
-    window.open(whatsappShareUrl(link), "_blank", "noopener");
+    if (!data) return;
+    window.open(whatsappShareUrl(data.link, data.reward_amount), "_blank", "noopener");
+  }
+
+  function porEmail() {
+    if (!data) return;
+    const corpo = encodeURIComponent(referralMessage(data.link, data.reward_amount));
+    const assunto = encodeURIComponent("Um presente pra sua próxima viagem");
+    window.location.href = `mailto:?subject=${assunto}&body=${corpo}`;
   }
 
   return (
-    <div className="space-y-10">
-      {/* Hero */}
-      <section className="grid gap-8 tablet:grid-cols-[1.1fr_0.9fr] tablet:items-center">
-        <div className="space-y-5">
-          <div className="text-mp-indigo">
-            <span className="text-micro-label uppercase tracking-wide">Indique e ganhe</span>
-          </div>
-          <h1 className="text-display-2xl text-ink">
-            Ganhe <span className="text-mp-primary">R$ 25</span> indicando a Movepark.
-          </h1>
-          <p className="max-w-lg text-body-md text-muted">
-            Presenteie um amigo com <span className="text-ink">R$ 25 de desconto</span> na 1ª reserva
-            dele. Quando ele usar, <span className="text-ink">você ganha R$ 25</span> de volta na sua
-            carteira. Simples assim.
-          </p>
-        </div>
-
-        {/* Diagrama */}
-        <div className="rounded-lg border border-hairline bg-surface-pale p-6">
-          <div className="flex items-center gap-3">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-mp-primary text-white">
-              <Link2 className="h-5 w-5" />
-            </span>
-            <div>
-              <p className="text-title-sm text-ink">Você compartilha o link</p>
-              <p className="text-caption-sm text-muted">e acompanha quem entrou</p>
-            </div>
-          </div>
-          <div className="my-3 ml-5 h-5 border-l border-dashed border-border-strong" />
-          <div className="space-y-2">
-            {["Amigo reservou", "Amiga reservou", "Colega reservou"].map((label, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between rounded-md border border-hairline bg-canvas px-3 py-2"
-              >
-                <span className="flex items-center gap-2 text-body-sm text-ink">
-                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-surface-soft text-caption-sm text-muted-steel">
-                    {["M", "J", "L"][i]}
-                  </span>
-                  {label}
-                </span>
-                <span className="rounded-full bg-badge-confirmed-bg px-2.5 py-0.5 text-caption-sm font-medium text-badge-confirmed-fg">
-                  + R$ 25
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Gerador / link exclusivo */}
-      <section className="rounded-lg border border-hairline bg-canvas p-6 tablet:p-8">
-        <h2 className="text-display-sm text-ink">Seu link exclusivo, {firstName}</h2>
-        <p className="mt-1 text-body-sm text-muted">
-          Copie e mande no WhatsApp, ou compartilhe direto. É só um toque.
+    <div className="space-y-5">
+      <header>
+        <h1 className="text-display-xl text-ink">Indique e ganhe</h1>
+        <p className="mt-2 text-body-md text-muted">
+          {premio
+            ? `Cada amigo que reservar te dá ${premio}, e conta para o seu nível.`
+            : "Cada amigo que reservar vira crédito na sua conta, e conta para o seu nível."}
         </p>
+      </header>
 
-        {isLoading || !data ? (
-          <Skeleton className="mt-5 h-12 w-full rounded-sm" />
+      {/* Bloco 1: o link, que é o motivo de a página existir, e o placar ao lado. */}
+      <div className="grid grid-cols-1 gap-5 desktop:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <section className="bg-brand-mesh flex flex-col rounded-lg p-6 text-white desktop:p-7">
+          <span className="inline-flex self-start rounded-full bg-white/20 px-3 py-1.5 text-caption font-semibold text-white">
+            Seu link
+          </span>
+          <p className="mt-4 text-display-md leading-tight text-white">
+            {premio ? `Dê ${premio}, ganhe ${premio}` : "Indique a Movepark"}
+          </p>
+          <p className="mt-2 text-body-sm text-white/80">
+            Você recebe quando a primeira reserva do seu amigo for concluída.
+          </p>
+
+          {isLoading || !data ? (
+            <Skeleton className="mt-6 h-12 w-full rounded-full bg-white/10" />
+          ) : (
+            <>
+              <div className="mt-6 flex items-center gap-2 rounded-full bg-white/15 p-1.5 pl-5">
+                <span className="min-w-0 flex-1 truncate font-mono text-body-sm text-white">
+                  {linkDisplay}
+                </span>
+                <button
+                  type="button"
+                  onClick={copiar}
+                  className="flex h-10 shrink-0 items-center gap-2 rounded-full bg-white px-4 text-caption-sm font-bold text-mp-navy transition-colors hover:bg-mp-pale"
+                >
+                  {copiado ? (
+                    <Check className="h-4 w-4 text-success" aria-hidden />
+                  ) : (
+                    <Copy className="h-4 w-4" aria-hidden />
+                  )}
+                  {copiado ? "Copiado" : "Copiar"}
+                </button>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={compartilhar}
+                  className="inline-flex h-10 items-center gap-2 rounded-full bg-white/15 px-4 text-caption-sm font-semibold text-white transition-colors hover:bg-white/25"
+                >
+                  <Share2 className="h-4 w-4" aria-hidden />
+                  WhatsApp
+                </button>
+                <button
+                  type="button"
+                  onClick={porEmail}
+                  className="inline-flex h-10 items-center gap-2 rounded-full bg-white/15 px-4 text-caption-sm font-semibold text-white transition-colors hover:bg-white/25"
+                >
+                  <Mail className="h-4 w-4" aria-hidden />
+                  E-mail
+                </button>
+              </div>
+            </>
+          )}
+        </section>
+
+        <AccountCard title="O que você já ganhou">
+          {isLoading ? (
+            <Skeleton className="h-12 w-32 rounded-md" />
+          ) : (
+            <>
+              <p className="text-display-2xl leading-none tabular-nums text-ink">
+                {brlFromCents(ganhos.total * 100)}
+              </p>
+              <p className="mt-1.5 text-body-sm text-muted">
+                {ganhos.count === 1
+                  ? "1 indicação recompensada"
+                  : `${ganhos.count} indicações recompensadas`}
+              </p>
+
+              {/* Barra do funil: só aparece quando há indicação, senão são três
+                  faixas cinzas sem significado. */}
+              {convites.length > 0 && (
+                <div className="mt-5 flex h-2 gap-1 overflow-hidden rounded-full">
+                  {funil.map((passo) => (
+                    <span
+                      key={passo.key}
+                      className={
+                        passo.key === "rewarded"
+                          ? "rounded-full bg-mp-primary"
+                          : passo.key === "qualified"
+                            ? "rounded-full bg-mp-indigo"
+                            : "rounded-full bg-surface-strong"
+                      }
+                      style={{ width: `${passo.share}%` }}
+                    />
+                  ))}
+                </div>
+              )}
+
+              <dl className="mt-4 space-y-3">
+                {funil.map((passo) => (
+                  <div key={passo.key} className="flex items-center justify-between gap-3">
+                    <dt className="flex items-center gap-2 text-body-sm text-muted">
+                      <span
+                        aria-hidden
+                        className={
+                          passo.key === "rewarded"
+                            ? "h-2 w-2 shrink-0 rounded-full bg-mp-primary"
+                            : passo.key === "qualified"
+                              ? "h-2 w-2 shrink-0 rounded-full bg-mp-indigo"
+                              : "h-2 w-2 shrink-0 rounded-full bg-surface-strong"
+                        }
+                      />
+                      {passo.label}
+                    </dt>
+                    <dd className="text-body-sm font-semibold tabular-nums text-ink">
+                      {passo.count}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+
+              <p className="mt-5 border-t border-hairline pt-4 text-caption-sm leading-relaxed text-muted">
+                O crédito entra na sua carteira automaticamente, sem precisar resgatar.
+              </p>
+            </>
+          )}
+        </AccountCard>
+      </div>
+
+      {/* Bloco 2: quem já foi convidado e em que pé está. */}
+      <AccountCard title="Seus convites">
+        {isLoading ? (
+          <Skeleton className="h-24 w-full rounded-md" />
+        ) : convites.length === 0 ? (
+          <EmptyState
+            icon={<Share2 className="h-10 w-10" aria-hidden />}
+            title="Nenhum convite ainda"
+            description="Compartilhe seu link e acompanhe por aqui quem entrou."
+          />
         ) : (
-          <div className="mt-5 flex flex-col gap-3 tablet:flex-row">
-            <div className="flex flex-1 items-center gap-2 rounded-sm border border-hairline bg-surface-soft px-4 py-3">
-              <Link2 className="h-4 w-4 shrink-0 text-muted" />
-              <span className="truncate font-mono text-body-sm text-ink">{linkDisplay}</span>
-            </div>
-            <Button variant="outline" size="default" onClick={copiar} className="shrink-0">
-              {copiado ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
-              {copiado ? "Copiado" : "Copiar link"}
-            </Button>
-            <Button variant="primary" size="default" onClick={compartilhar} className="shrink-0">
-              <Share2 className="h-4 w-4" />
-              Compartilhar no WhatsApp
-            </Button>
-          </div>
+          <ul className="space-y-1">
+            {convites.map((c) => (
+              <li key={c.id} className="flex items-center gap-3 rounded-md p-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-mp-pale text-caption-sm font-semibold text-mp-indigo">
+                  {c.initials}
+                </span>
+                <span className="min-w-0 flex-1 truncate text-body-sm text-ink">{c.name}</span>
+                <span
+                  className={
+                    c.paid
+                      ? "shrink-0 rounded-full bg-badge-confirmed-bg px-2.5 py-1 text-caption-sm font-semibold text-badge-confirmed-fg"
+                      : "shrink-0 rounded-full bg-surface-soft px-2.5 py-1 text-caption-sm font-semibold text-muted"
+                  }
+                >
+                  {c.status}
+                </span>
+              </li>
+            ))}
+          </ul>
         )}
-      </section>
+      </AccountCard>
 
-      {/* Como funciona */}
-      <section className="space-y-4">
-        <h2 className="text-display-sm text-ink">Como funciona</h2>
-        <div className="grid gap-4 tablet:grid-cols-3">
-          {PASSOS.map((p) => (
-            <div key={p.n} className="rounded-md border border-hairline bg-canvas p-5">
+      {/* Bloco 3: a explicação, no fim, pra quem ainda não entendeu o programa. */}
+      <AccountCard title="Como funciona">
+        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-3">
+          {passosDoPrograma(premio || "o crédito").map((p) => (
+            <div key={p.n}>
               <span className="inline-flex h-9 w-9 items-center justify-center rounded-sm border border-mp-primary text-title-md font-medium text-mp-primary">
                 {p.n}
               </span>
               <p className="mt-3 text-title-md text-ink">{p.titulo}</p>
-              <p className="mt-1 text-body-sm text-muted">{p.texto}</p>
+              <p className="mt-1 text-body-sm leading-relaxed text-muted">{p.texto}</p>
             </div>
           ))}
         </div>
-      </section>
+      </AccountCard>
 
-      {/* Detalhes / FAQ */}
-      <section className="space-y-4">
-        <h2 className="text-display-sm text-ink">Detalhes do programa</h2>
-        <div className="rounded-lg border border-hairline bg-canvas px-6">
-          <Accordion type="single" collapsible>
-            {FAQ.map((item, i) => (
-              <AccordionItem key={i} value={`item-${i}`}>
-                <AccordionTrigger>{item.q}</AccordionTrigger>
-                <AccordionContent>{item.a}</AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </div>
-        <p className="text-caption-sm text-muted">
-          Acompanhe suas indicações e seu saldo no{" "}
+      <AccountCard title="Detalhes do programa">
+        <Accordion type="single" collapsible>
+          {faqDoPrograma(premio || "o crédito").map((item, i) => (
+            <AccordionItem key={i} value={`item-${i}`}>
+              <AccordionTrigger>{item.q}</AccordionTrigger>
+              <AccordionContent>{item.a}</AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+        <p className="mt-4 text-caption-sm text-muted">
+          Acompanhe seu saldo no{" "}
           <Link to="/account/clube" className="text-mp-indigo hover:underline">
             Movepark Clube
           </Link>
           .
         </p>
-      </section>
+      </AccountCard>
     </div>
   );
 }
