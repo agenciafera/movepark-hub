@@ -1,0 +1,90 @@
+{
+  "scenario_id": "conta-endereco-edita-jornada",
+  "start_url": "/account/addresses",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Rua Existente\". Passo 2: clique no botao de rotulo \"Mais opcoes\" da linha do endereco. Passo 3: clique no item \"Editar\" do menu. Passo 4: verifique que o formulario exibe o texto \"Logradouro\". Passo 5: apague o input de id \"street\" e preencha com \"Rua Editada\". Passo 6: clique em \"Salvar\". Passo 7: verifique que o formulario fechou.",
+  "tags": [
+    "jornada",
+    "edicao",
+    "autenticado"
+  ],
+  "hints": [
+    "A linha ja existe pelo stub; o menu de acoes e o botao com aria-label \"Mais opcoes\".",
+    "O formulario abre num portal do Radix FORA do <main>: use selector [role=\"dialog\"] nas checagens dele.",
+    "O passo 7 e not_visible em [role=\"dialog\"], que e a prova deterministica de que salvou.",
+    "Sao passos numerados: cada um vira uma acao propria."
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x\",\"token_type\":\"bearer\",\"expires_in\":999999999,\"expires_at\":4102444800,\"refresh_token\":\"r\",\"user\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"qa@windup.local\"}}"
+    }
+  },
+  "network": [
+    {
+      "url": "**/rest/v1/address*",
+      "json": [
+        {
+          "id": "a-1",
+          "profile_id": "00000000-0000-4000-8000-000000000001",
+          "label": "Casa QA",
+          "street": "Rua Existente",
+          "number": "10",
+          "district": "Centro",
+          "city": "Sao Paulo",
+          "state": "SP",
+          "zip_code": "01000000",
+          "is_default": true,
+          "created_at": "2026-08-01T12:00:00Z"
+        }
+      ]
+    },
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "r",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "customer"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/company_role_scope*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ]
+}
