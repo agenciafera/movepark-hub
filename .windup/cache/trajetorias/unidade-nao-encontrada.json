@@ -1,0 +1,68 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "unidade-nao-encontrada",
+    "start_url": "/p/inexistente/inexistente/XXX",
+    "start_sig": "sig:eb1cb13a1fa9ce8c",
+    "scenario_sig": "647b624c107240cf"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "unidade-nao-encontrada",
+    "start_url": "http://localhost:5273/p/inexistente/inexistente/XXX",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h3",
+          "description": "Título 'Vaga não encontrada' no conteúdo principal"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Vaga não encontrada"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "Conteúdo principal da página sem botão de reserva"
+        },
+        "expect": {
+          "not_visible": "button:has-text(\"Reservar\")"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main a[href=\"/\"]",
+          "description": "Link 'Voltar pra home' como caminho de volta à busca"
+        },
+        "expect": {
+          "selector": "main a[href=\"/\"]"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Vaga não encontrada\". Passo 2: verifique que a pagina NAO exibe o texto \"Reservar\". Passo 3: verifique que a pagina exibe algum caminho de volta para a busca.",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-03T23:37:13.946Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-03T23:37:17.351Z",
+    "last_replayed_at": "2026-08-03T23:39:31.303Z",
+    "replay_count": 1,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}
