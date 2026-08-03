@@ -1,0 +1,135 @@
+{
+  "scenario_id": "conta-reserva-detalhe",
+  "start_url": "/account/reservas/MP-QA-001",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"MP-QA-001\". Passo 2: verifique que a pagina exibe o texto \"Unidade QA\". Passo 3: verifique que a pagina exibe o texto \"ABC1D23\".",
+  "tags": [
+    "smoke",
+    "leitura",
+    "parametrica",
+    "autenticado"
+  ],
+  "hints": [
+    "Sao passos numerados: cada um vira uma acao propria do plano.",
+    "Use text_contains com selector body em cada checagem.",
+    "A rota tem parametro e os dados vem do stub."
+  ],
+  "network": [
+    {
+      "url": "**/rest/v1/booking?*",
+      "json": {
+        "id": "b-1",
+        "code": "MP-QA-001",
+        "status": "confirmed",
+        "check_in_at": "2026-08-10T22:00:00Z",
+        "check_out_at": "2026-08-15T08:00:00Z",
+        "expires_at": null,
+        "total_amount": 150,
+        "created_at": "2026-08-01T12:00:00Z",
+        "passenger_count": 2,
+        "has_pcd": false,
+        "checked_in_at": null,
+        "fare_tier": "basica",
+        "fare_price_cents": 15000,
+        "fare_cancel_until": "2026-08-09T22:00:00Z",
+        "fare_benefits": [],
+        "location": {
+          "name": "Unidade QA",
+          "slug": "unidade-qa",
+          "address": "Rua QA, 100",
+          "phone": "1130000000",
+          "email": "qa@x.com",
+          "notice": null,
+          "reservation_policy": null,
+          "latitude": -22.9,
+          "longitude": -47.1,
+          "tolerance_minutes": 30,
+          "company": {
+            "name": "Empresa QA",
+            "slug": "empresa-qa"
+          }
+        },
+        "vehicle": {
+          "id": "v-1",
+          "license_plate": "ABC1D23",
+          "model": "Onix",
+          "color": "Prata"
+        },
+        "items": [
+          {
+            "id": "i-1",
+            "item_type": "parking",
+            "unit_price": 150,
+            "subtotal": 150,
+            "parking_type": {
+              "name": "Coberta",
+              "code": "COB"
+            },
+            "add_on_service": null
+          }
+        ],
+        "payments": [
+          {
+            "status": "paid",
+            "provider": "pagarme",
+            "paid_at": "2026-08-01T12:00:00Z",
+            "created_at": "2026-08-01T12:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "r",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles?*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "customer"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company?*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/company_role_scope?*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x\",\"token_type\":\"bearer\",\"expires_in\":999999999,\"expires_at\":4102444800,\"refresh_token\":\"r\",\"user\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"qa@windup.local\"}}"
+    }
+  }
+}

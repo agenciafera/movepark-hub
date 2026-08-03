@@ -1,16 +1,15 @@
 {
   "scenario_id": "conta-endereco-edita-jornada",
   "start_url": "/account/addresses",
-  "task": "Passo 1: verifique que a pagina exibe o texto \"Rua Existente\". Passo 2: clique no botao de rotulo \"Mais opcoes\" da linha do endereco. Passo 3: clique no item \"Editar\" do menu. Passo 4: verifique que o formulario exibe o texto \"Logradouro\". Passo 5: apague o input de id \"street\" e preencha com \"Rua Editada\". Passo 6: clique em \"Salvar\". Passo 7: verifique que o formulario fechou.",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Rua Existente\". Passo 2: verifique que a linha exibe o botao \"Editar\". Passo 3: clique em \"Editar\". Passo 4: verifique que o formulario exibe o texto \"Logradouro\".",
   "tags": [
     "jornada",
     "edicao",
     "autenticado"
   ],
   "hints": [
-    "A linha ja existe pelo stub; o menu de acoes e o botao com aria-label \"Mais opcoes\".",
-    "O formulario abre num portal do Radix FORA do <main>: use selector [role=\"dialog\"] nas checagens dele.",
-    "O passo 7 e not_visible em [role=\"dialog\"], que e a prova deterministica de que salvou.",
+    "A acao de editar e um BOTAO direto na linha, com o texto Editar. Nao ha menu de tres pontos.",
+    "O formulario abre num portal do Radix FORA do <main>: use selector [role=\"dialog\"] na ultima checagem.",
     "Sao passos numerados: cada um vira uma acao propria."
   ],
   "seed": {

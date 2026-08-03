@@ -1,7 +1,7 @@
 {
   "scenario_id": "account-cards",
   "start_url": "/account/cards",
-  "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Cartões\", depois a descricao \"Cartões salvos pra reservar mais rápido.\", depois o texto \"Cadastre seu primeiro cartão\".",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Cartões\". Passo 2: verifique que a pagina exibe o texto \"Cartões salvos\". Passo 3: verifique que a pagina exibe o texto \"Cadastre seu primeiro cartão\".",
   "tags": [
     "smoke",
     "leitura",

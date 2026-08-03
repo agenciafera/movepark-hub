@@ -1,20 +1,17 @@
 {
   "scenario_id": "veiculo-abre-form",
   "start_url": "/account/vehicles",
-  "task": "Passo 1: clique em \"Novo veiculo\". Passo 2: verifique que o formulario exibe o texto \"Placa\". Passo 3: preencha o input de id \"plate-lookup\" com \"QAW1A11\". Passo 4: verifique que esse input contem \"QAW-1A11\". Passo 5: verifique que o formulario exibe o texto \"Informe a placa\".",
+  "task": "Passo 1: clique em \"Adicionar veículo\". Passo 2: verifique que o formulario exibe o texto \"Placa\". Passo 3: preencha o input de id \"plate-lookup\" com \"QAW1A11\". Passo 4: verifique que o formulario exibe o texto \"Informe a placa\".",
   "tags": [
     "validacao",
     "formulario",
     "autenticado"
   ],
   "hints": [
-    "O botao que abre o formulario tem o texto \"Novo veiculo\".",
-    "O unico campo visivel de inicio e o de placa, o input de id \"plate-lookup\": modelo e cor so aparecem depois que a consulta de placa confirma.",
-    "Para o rotulo use text_contains com selector [role=\"dialog\"], NAO um seletor label[for=...].",
-    "Para conferir o valor digitado use a postcondicao selector_value no input \"plate-lookup\".",
-    "O campo aplica mascara de placa: digitar QAW1A11 resulta em QAW-1A11 com hifen. A verificacao tem que esperar o valor MASCARADO.",
-    "Sao cinco passos numerados; execute cada um como uma acao propria do plano, sem juntar verificacoes.",
-    "O botao Salvar so aparece depois que a consulta de placa confirma; ate la a tela pede a placa."
+    "O botao que abre o formulario pode se chamar Adicionar veiculo ou Novo veiculo: use o que estiver na tela.",
+    "O campo de placa e o input de id plate-lookup; modelo e cor so aparecem depois que a consulta confirma.",
+    "Use text_contains com selector [role=\"dialog\"] nas checagens do formulario.",
+    "Sao passos numerados: cada um vira uma acao propria."
   ],
   "seed": {
     "localStorage": {

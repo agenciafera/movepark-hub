@@ -1,0 +1,138 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "conta-navegacao-jornada",
+    "start_url": "/account/profile",
+    "start_sig": "sig:dbe4277c10825f11",
+    "scenario_sig": "dbcd0f4fcaf5c845"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "conta-navegacao-jornada",
+    "start_url": "http://localhost:5180/account/profile",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "click",
+        "target": {
+          "selector": "a[href=\"/account/vehicles\"]",
+          "description": "Veículos link in sidebar navigation"
+        },
+        "expect": {
+          "url": "**/account/vehicles"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h1",
+          "description": "Page heading on Veículos page"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h1",
+            "text": "Veículos"
+          }
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a3",
+        "type": "click",
+        "target": {
+          "selector": "a[href=\"/account/addresses\"]",
+          "description": "Endereços link in sidebar navigation"
+        },
+        "expect": {
+          "url": "**/account/addresses"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a4",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h1",
+          "description": "Page heading on Endereços page"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h1",
+            "text": "Endereços"
+          }
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a5",
+        "type": "click",
+        "target": {
+          "selector": "a[href=\"/account/cards\"]",
+          "description": "Cartões link in sidebar navigation"
+        },
+        "expect": {
+          "url": "**/account/cards"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a6",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h1",
+          "description": "Page heading on Cartões page"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h1",
+            "text": "Cartões"
+          }
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a7",
+        "type": "click",
+        "target": {
+          "selector": "a[href=\"/account/security\"]",
+          "description": "Segurança link in sidebar navigation"
+        },
+        "expect": {
+          "url": "**/account/security"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a8",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h1",
+          "description": "Page heading on Segurança page"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h1",
+            "text": "Segurança"
+          },
+          "selector": "main h1"
+        },
+        "timeout_ms": 10000
+      }
+    ],
+    "task": "Comece no Perfil. Clique no item Veiculos do menu lateral e verifique que a pagina exibe o texto Veiculos. Depois clique no item Enderecos e verifique que a pagina exibe o texto Enderecos. Depois clique no item Cartoes e verifique que a pagina exibe o texto Cartoes. Por fim clique no item Seguranca e verifique que a pagina exibe o texto Seguranca.",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-07-31T20:36:55.774Z"
+    }
+  },
+  "status": "stale",
+  "stats": {
+    "created_at": "2026-07-31T20:36:57.692Z",
+    "last_replayed_at": "2026-08-03T20:26:51.606Z",
+    "replay_count": 19,
+    "replay_failures": 1,
+    "plan_generation": 1
+  }
+}

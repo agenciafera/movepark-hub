@@ -1,7 +1,7 @@
 {
   "scenario_id": "account-profile",
   "start_url": "/account/profile",
-  "task": "Passo 1: verifique que a pagina exibe o texto \"Perfil\". Passo 2: verifique que a pagina exibe o texto \"Suas informações pessoais\". Passo 3: verifique que a pagina exibe o texto \"Nome\".",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Informações pessoais\". Passo 2: verifique que a pagina exibe o texto \"Sobrenome\". Passo 3: verifique que a pagina exibe o texto \"CPF ou CNPJ\".",
   "tags": [
     "smoke",
     "leitura",

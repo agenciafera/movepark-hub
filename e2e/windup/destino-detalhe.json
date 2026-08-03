@@ -1,0 +1,85 @@
+{
+  "scenario_id": "destino-detalhe",
+  "start_url": "/destinos/aeroporto-qa",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Aeroporto QA\". Passo 2: verifique que a pagina exibe o texto \"Campinas\". Passo 3: verifique que a pagina exibe o texto \"Estacionamento perto do Aeroporto QA\".",
+  "tags": [
+    "smoke",
+    "leitura",
+    "parametrica"
+  ],
+  "hints": [
+    "Sao passos numerados: cada um vira uma acao propria do plano.",
+    "Use text_contains com selector body em cada checagem.",
+    "A rota tem parametro e os dados vem do stub."
+  ],
+  "network": [
+    {
+      "url": "**/rest/v1/destination?*",
+      "json": [
+        {
+          "id": "d-1",
+          "name": "Aeroporto QA",
+          "short_name": "QA",
+          "slug": "aeroporto-qa",
+          "code": "QAX",
+          "city": "Campinas",
+          "state": "SP",
+          "is_published": true,
+          "latitude": -22.9,
+          "longitude": -47.1,
+          "intro": "Estacionamento perto do Aeroporto QA.",
+          "created_at": "2026-08-01T12:00:00Z"
+        }
+      ]
+    },
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "r",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles?*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "customer"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company?*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/company_role_scope?*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ]
+}

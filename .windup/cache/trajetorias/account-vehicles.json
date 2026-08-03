@@ -3,25 +3,25 @@
   "key": {
     "scenario_id": "account-vehicles",
     "start_url": "/account/vehicles",
-    "start_sig": "sig:0dcff3a175658e77",
-    "scenario_sig": "c2f4a040146c3332"
+    "start_sig": "sig:c7ced58c6632bf02",
+    "scenario_sig": "d0a6f0f589e3358e"
   },
   "plan": {
     "plan_version": "0.1",
     "scenario_id": "account-vehicles",
-    "start_url": "http://localhost:5180/account/vehicles",
+    "start_url": "http://localhost:5273/account/vehicles",
     "actions": [
       {
         "id": "a1",
         "type": "wait_for",
         "target": {
-          "selector": "main h1",
-          "description": "Vehicles page main heading"
+          "selector": "main h2",
+          "description": "Heading 'Veículos salvos' in main content"
         },
         "expect": {
           "text_contains": {
-            "selector": "main h1",
-            "text": "Veículos"
+            "selector": "main h2",
+            "text": "Veículos salvos"
           }
         },
         "timeout_ms": 5000
@@ -30,13 +30,13 @@
         "id": "a2",
         "type": "wait_for",
         "target": {
-          "selector": "main p",
-          "description": "Description paragraph below the heading"
+          "selector": "main h3",
+          "description": "Heading 'Cadastre seu primeiro veículo' in main content"
         },
         "expect": {
           "text_contains": {
-            "selector": "main p",
-            "text": "Salve veículos pra agilizar suas reservas."
+            "selector": "main h3",
+            "text": "Cadastre seu primeiro veículo"
           }
         },
         "timeout_ms": 5000
@@ -45,30 +45,30 @@
         "id": "a3",
         "type": "wait_for",
         "target": {
-          "selector": "main h3",
-          "description": "Empty state heading for first vehicle"
+          "selector": "main p",
+          "description": "Paragraph with empty state description about pre-selection in next reservations"
         },
         "expect": {
           "text_contains": {
-            "selector": "main h3",
-            "text": "Cadastre seu primeiro veículo"
+            "selector": "main",
+            "text": "Vai aparecer pré-selecionado nas próximas reservas"
           },
-          "selector": "main h3"
+          "selector": "main p"
         },
         "timeout_ms": 5000
       }
     ],
-    "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Veículos\", depois a descricao \"Salve veículos pra agilizar suas reservas.\", depois o texto \"Cadastre seu primeiro veículo\".",
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Veículos salvos\". Passo 2: verifique que a pagina exibe o texto \"Cadastre seu primeiro veículo\". Passo 3: verifique que a pagina exibe o texto \"Vai aparecer pré-selecionado nas próximas reservas\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-08-01T15:36:33.986Z"
+      "at": "2026-08-03T21:05:44.207Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-08-01T15:36:41.453Z",
-    "last_replayed_at": "2026-08-03T20:26:37.731Z",
-    "replay_count": 18,
+    "created_at": "2026-08-03T21:05:45.432Z",
+    "last_replayed_at": "2026-08-03T21:25:36.464Z",
+    "replay_count": 2,
     "replay_failures": 0,
     "plan_generation": 1
   }

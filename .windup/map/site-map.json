@@ -3154,8 +3154,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-29T12:30:26.935Z",
-      "last_seen": "2026-08-03T20:28:09.449Z",
-      "seen_count": 73,
+      "last_seen": "2026-08-03T21:27:01.382Z",
+      "seen_count": 83,
       "stale": false
     },
     "sig:eb1cb13a1fa9ce8c": {
@@ -3225,7 +3225,8 @@
         "http://localhost:5273/destinos",
         "http://localhost:5273/privacidade",
         "http://localhost:5273/sobre",
-        "http://localhost:5273/termos"
+        "http://localhost:5273/termos",
+        "http://localhost:5273/destinos/aeroporto-qa"
       ],
       "url_pattern": "**/destinos",
       "title": "Termos de Uso | Movepark",
@@ -3263,8 +3264,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T13:22:55.662Z",
-      "last_seen": "2026-08-03T20:28:13.309Z",
-      "seen_count": 283,
+      "last_seen": "2026-08-03T21:27:03.712Z",
+      "seen_count": 324,
       "stale": false
     },
     "sig:42bd6642a8c0077e": {
@@ -3510,10 +3511,10 @@
       "interactive": [
         "a",
         "a",
-        "button id=radix-:rf: type=button text=Destinos",
+        "button id=radix-:rv: type=button text=Destinos",
         "button type=button text=OndeAeroporto, cidade ou bairro",
-        "button type=button text=Check-in02 ago · 22:00",
-        "button type=button text=Check-out07 ago · 08:00",
+        "button type=button text=Check-in04 ago · 22:00",
+        "button type=button text=Check-out09 ago · 08:00",
         "button type=button text=Veículo Carro",
         "select text=Carro Moto",
         "button type=submit text=Buscar",
@@ -3529,14 +3530,14 @@
         "button type=button text=Cancelamento",
         "button type=button text=Check-in / Acesso",
         "button type=button text=Veículos",
-        "button id=radix-:rh: type=button text=Posso trocar o veículo depois da reserva",
-        "button id=radix-:rj: type=button text=Como cancelo uma reserva?Cancelamento",
-        "button id=radix-:rl: type=button text=O que apresentar na chegada ao estaciona",
-        "button id=radix-:rn: type=button text=Como faço uma reserva?Reservas",
-        "button id=radix-:rp: type=button text=Quais formas de pagamento aceitam?Pagame",
-        "button id=radix-:rr: type=button text=Posso reservar pra outra pessoa dirigir?",
-        "button id=radix-:rt: type=button text=Posso chegar antes ou sair depois do hor",
-        "button id=radix-:rv: type=button text=O PIX expira em quanto tempo?Pagamentos",
+        "button id=radix-:rf: type=button text=Posso trocar o veículo depois da reserva",
+        "button id=radix-:rh: type=button text=Como cancelo uma reserva?Cancelamento",
+        "button id=radix-:rj: type=button text=O que apresentar na chegada ao estaciona",
+        "button id=radix-:rl: type=button text=Como faço uma reserva?Reservas",
+        "button id=radix-:rn: type=button text=Quais formas de pagamento aceitam?Pagame",
+        "button id=radix-:rp: type=button text=Posso reservar pra outra pessoa dirigir?",
+        "button id=radix-:rr: type=button text=Posso chegar antes ou sair depois do hor",
+        "button id=radix-:rt: type=button text=O PIX expira em quanto tempo?Pagamentos",
         "a text=Sobre nós",
         "a text=Termos de uso",
         "a text=Política de privacidade",
@@ -3554,8 +3555,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T15:18:04.441Z",
-      "last_seen": "2026-08-01T17:09:52.936Z",
-      "seen_count": 14,
+      "last_seen": "2026-08-03T21:18:53.263Z",
+      "seen_count": 16,
       "stale": false
     },
     "sig:b805d148d91ff81c": {
@@ -3599,8 +3600,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T15:25:44.737Z",
-      "last_seen": "2026-08-03T20:28:10.453Z",
-      "seen_count": 301,
+      "last_seen": "2026-08-03T21:27:01.741Z",
+      "seen_count": 346,
       "stale": false
     },
     "sig:95f23b77537a835a": {
@@ -3665,8 +3666,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T18:03:15.518Z",
-      "last_seen": "2026-08-03T20:28:11.301Z",
-      "seen_count": 45,
+      "last_seen": "2026-08-03T21:27:02.600Z",
+      "seen_count": 60,
       "stale": false
     },
     "sig:9a009a75cb95f5d7": {
@@ -3723,8 +3724,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T12:42:59.515Z",
-      "last_seen": "2026-08-03T18:39:38.804Z",
-      "seen_count": 16,
+      "last_seen": "2026-08-03T21:25:59.524Z",
+      "seen_count": 19,
       "stale": false
     },
     "sig:0dcff3a175658e77": {
@@ -3740,7 +3741,8 @@
         "http://localhost:5273/account/saved",
         "http://localhost:5273/account/security",
         "http://localhost:5273/account/vehicles",
-        "http://localhost:5273/account/clube"
+        "http://localhost:5273/account/clube",
+        "http://localhost:5273/account/reservas/MP-QA-001"
       ],
       "url_pattern": "**/account/cards",
       "title": "Movepark Hub",
@@ -3756,23 +3758,19 @@
         "button type=button text=Buscar vaga",
         "button type=button",
         "button id=radix-:r6: type=button text=QW",
-        "button text=Conta",
-        "a text=Perfil",
         "a text=Minhas reservas",
+        "a text=Favoritos",
         "a text=Movepark Clube",
         "a text=Indique e ganhe",
+        "a text=Perfil",
         "a text=Veículos",
-        "a text=Endereços",
         "a text=Cartões",
-        "a text=Favoritos",
+        "a text=Endereços",
         "a text=Preferências",
         "a text=Segurança",
         "button type=button text=Sair",
-        "button type=button text=Compartilhar",
-        "button type=button text=· copiar link",
-        "a text=Como funciona",
-        "button text=Novo veículo",
-        "button text=Novo veículo",
+        "button text=Conta",
+        "button text=Novo cartão",
         "a text=Sobre nós",
         "a text=Termos de uso",
         "a text=Política de privacidade",
@@ -3789,8 +3787,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:46:22.794Z",
-      "last_seen": "2026-08-03T20:28:14.913Z",
-      "seen_count": 420,
+      "last_seen": "2026-08-03T21:26:51.195Z",
+      "seen_count": 462,
       "stale": false
     },
     "sig:32ea8b629364b656": {
@@ -3812,21 +3810,18 @@
         "button type=button text=Buscar vaga",
         "button type=button",
         "button id=radix-:r6: type=button text=QW",
-        "button text=Conta",
-        "a text=Perfil",
         "a text=Minhas reservas",
+        "a text=Favoritos",
         "a text=Movepark Clube",
         "a text=Indique e ganhe",
+        "a text=Perfil",
         "a text=Veículos",
-        "a text=Endereços",
         "a text=Cartões",
-        "a text=Favoritos",
+        "a text=Endereços",
         "a text=Preferências",
         "a text=Segurança",
         "button type=button text=Sair",
-        "button type=button text=Compartilhar",
-        "button type=button text=· copiar link",
-        "a text=Como funciona",
+        "button text=Conta",
         "button id=pref-lang type=button text=Português (Brasil)",
         "button id=pref-currency type=button text=Real (R$)",
         "button type=button",
@@ -3851,8 +3846,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:46:23.420Z",
-      "last_seen": "2026-08-03T20:26:33.386Z",
-      "seen_count": 39,
+      "last_seen": "2026-08-03T21:25:33.784Z",
+      "seen_count": 44,
       "stale": false
     },
     "sig:dbe4277c10825f11": {
@@ -3980,8 +3975,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:20.083Z",
-      "last_seen": "2026-08-03T20:26:54.466Z",
-      "seen_count": 37,
+      "last_seen": "2026-08-03T21:25:49.172Z",
+      "seen_count": 42,
       "stale": false
     },
     "sig:30b80afac064bfc7": {
@@ -4030,8 +4025,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:26.734Z",
-      "last_seen": "2026-08-03T20:27:40.734Z",
-      "seen_count": 229,
+      "last_seen": "2026-08-03T21:26:40.379Z",
+      "seen_count": 259,
       "stale": false
     },
     "sig:00208007c0a1c596": {
@@ -4165,8 +4160,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:28.312Z",
-      "last_seen": "2026-08-03T20:26:56.967Z",
-      "seen_count": 38,
+      "last_seen": "2026-08-03T21:25:53.890Z",
+      "seen_count": 43,
       "stale": false
     },
     "sig:5f9442af211e8be5": {
@@ -4211,8 +4206,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:29.958Z",
-      "last_seen": "2026-08-03T20:26:55.420Z",
-      "seen_count": 40,
+      "last_seen": "2026-08-03T21:25:50.317Z",
+      "seen_count": 45,
       "stale": false
     },
     "sig:f4a52eca245bd7d5": {
@@ -4255,8 +4250,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:48.684Z",
-      "last_seen": "2026-08-03T20:27:17.640Z",
-      "seen_count": 39,
+      "last_seen": "2026-08-03T21:26:15.742Z",
+      "seen_count": 44,
       "stale": false
     },
     "sig:f229d562bc655a9f": {
@@ -4302,8 +4297,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:55.153Z",
-      "last_seen": "2026-08-03T20:27:43.582Z",
-      "seen_count": 212,
+      "last_seen": "2026-08-03T21:26:42.874Z",
+      "seen_count": 242,
       "stale": false
     },
     "sig:0220ddecfb1188ce": {
@@ -4352,8 +4347,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:56.027Z",
-      "last_seen": "2026-08-03T20:27:38.297Z",
-      "seen_count": 289,
+      "last_seen": "2026-08-03T21:26:37.856Z",
+      "seen_count": 334,
       "stale": false
     },
     "sig:deb61410f48cc824": {
@@ -4399,8 +4394,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:48:54.170Z",
-      "last_seen": "2026-08-03T20:27:39.480Z",
-      "seen_count": 38,
+      "last_seen": "2026-08-03T21:26:39.087Z",
+      "seen_count": 43,
       "stale": false
     },
     "sig:9e475390a54a6c61": {
@@ -4443,8 +4438,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:16.750Z",
-      "last_seen": "2026-08-03T20:27:52.715Z",
-      "seen_count": 142,
+      "last_seen": "2026-08-03T21:26:52.452Z",
+      "seen_count": 162,
       "stale": false
     },
     "sig:216bc20eae546abf": {
@@ -4485,8 +4480,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:27.416Z",
-      "last_seen": "2026-08-03T20:27:48.231Z",
-      "seen_count": 38,
+      "last_seen": "2026-08-03T21:26:47.886Z",
+      "seen_count": 43,
       "stale": false
     },
     "sig:7c87997d1435748b": {
@@ -4532,8 +4527,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:45.163Z",
-      "last_seen": "2026-08-03T20:28:07.657Z",
-      "seen_count": 226,
+      "last_seen": "2026-08-03T21:26:59.357Z",
+      "seen_count": 256,
       "stale": false
     },
     "sig:0de7196068dc995b": {
@@ -4574,8 +4569,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:46.524Z",
-      "last_seen": "2026-08-03T20:27:51.856Z",
-      "seen_count": 109,
+      "last_seen": "2026-08-03T21:26:52.474Z",
+      "seen_count": 129,
       "stale": false
     },
     "sig:0e77bbe16451b1b2": {
@@ -4615,8 +4610,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:03.481Z",
-      "last_seen": "2026-08-03T20:27:57.503Z",
-      "seen_count": 38,
+      "last_seen": "2026-08-03T21:26:55.446Z",
+      "seen_count": 43,
       "stale": false
     },
     "sig:330a98d155e0b087": {
@@ -4657,8 +4652,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:13.982Z",
-      "last_seen": "2026-08-03T20:28:00.327Z",
-      "seen_count": 39,
+      "last_seen": "2026-08-03T21:26:56.733Z",
+      "seen_count": 44,
       "stale": false
     },
     "sig:d338797fc9985ff4": {
@@ -4700,8 +4695,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:23.245Z",
-      "last_seen": "2026-08-03T20:28:04.690Z",
-      "seen_count": 38,
+      "last_seen": "2026-08-03T21:26:58.061Z",
+      "seen_count": 43,
       "stale": false
     },
     "sig:ca978112ca1bbdca": {
@@ -4717,8 +4712,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:40.542Z",
-      "last_seen": "2026-08-03T20:28:15.289Z",
-      "seen_count": 46,
+      "last_seen": "2026-08-03T21:27:04.929Z",
+      "seen_count": 51,
       "stale": false
     },
     "sig:56110ea72b7f7df7": {
@@ -4872,8 +4867,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T16:54:47.570Z",
-      "last_seen": "2026-08-03T20:27:14.440Z",
-      "seen_count": 240,
+      "last_seen": "2026-08-03T21:26:11.921Z",
+      "seen_count": 275,
       "stale": false
     },
     "sig:0112eb8401335d27": {
@@ -4895,23 +4890,20 @@
         "button type=button text=Buscar vaga",
         "button type=button",
         "button id=radix-:r6: type=button text=QW",
-        "button text=Conta",
-        "a text=Perfil",
         "a text=Minhas reservas",
+        "a text=Favoritos",
         "a text=Movepark Clube",
         "a text=Indique e ganhe",
+        "a text=Perfil",
         "a text=Veículos",
-        "a text=Endereços",
         "a text=Cartões",
-        "a text=Favoritos",
+        "a text=Endereços",
         "a text=Preferências",
         "a text=Segurança",
         "button type=button text=Sair",
-        "button type=button text=Compartilhar",
-        "button type=button text=· copiar link",
-        "a text=Como funciona",
+        "button text=Conta",
         "button text=Novo cartão",
-        "button text=Novo cartão",
+        "button type=button text=Remover",
         "a text=Sobre nós",
         "a text=Termos de uso",
         "a text=Política de privacidade",
@@ -4937,8 +4929,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T17:21:42.604Z",
-      "last_seen": "2026-08-03T20:26:41.286Z",
-      "seen_count": 34,
+      "last_seen": "2026-08-03T21:25:40.484Z",
+      "seen_count": 44,
       "stale": false
     },
     "sig:34581fbdfb157f99": {
@@ -4989,8 +4981,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T17:21:44.244Z",
-      "last_seen": "2026-08-03T20:27:13.374Z",
-      "seen_count": 124,
+      "last_seen": "2026-08-03T21:26:10.590Z",
+      "seen_count": 144,
       "stale": false
     },
     "sig:c81c82460995a2b3": {
@@ -5082,23 +5074,21 @@
         "button type=button text=Buscar vaga",
         "button type=button",
         "button id=radix-:r6: type=button text=QW",
-        "button text=Conta",
-        "a text=Perfil",
         "a text=Minhas reservas",
+        "a text=Favoritos",
         "a text=Movepark Clube",
         "a text=Indique e ganhe",
+        "a text=Perfil",
         "a text=Veículos",
-        "a text=Endereços",
         "a text=Cartões",
-        "a text=Favoritos",
+        "a text=Endereços",
         "a text=Preferências",
         "a text=Segurança",
         "button type=button text=Sair",
-        "button type=button text=Compartilhar",
-        "button type=button text=· copiar link",
-        "a text=Como funciona",
+        "button text=Conta",
         "button text=Novo veículo",
-        "button text=Novo veículo",
+        "input id=plate-lookup placeholder=ABC-1D23",
+        "button type=button text=Prefiro cadastrar manualmente",
         "a text=Sobre nós",
         "a text=Termos de uso",
         "a text=Política de privacidade",
@@ -5119,8 +5109,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T17:26:00.975Z",
-      "last_seen": "2026-08-03T20:28:15.043Z",
-      "seen_count": 41,
+      "last_seen": "2026-08-03T21:28:14.166Z",
+      "seen_count": 48,
       "stale": false
     },
     "sig:e3b0c44298fc1c14": {
@@ -5447,8 +5437,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T19:24:08.924Z",
-      "last_seen": "2026-08-03T20:27:26.335Z",
-      "seen_count": 47,
+      "last_seen": "2026-08-03T21:26:24.863Z",
+      "seen_count": 57,
       "stale": false
     },
     "sig:fe5ad84a4aed370b": {
@@ -5495,8 +5485,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T19:24:09.051Z",
-      "last_seen": "2026-08-03T20:27:46.051Z",
-      "seen_count": 25,
+      "last_seen": "2026-08-03T21:26:45.448Z",
+      "seen_count": 30,
       "stale": false
     },
     "sig:db0102561708d1ac": {
@@ -5550,8 +5540,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T19:24:12.199Z",
-      "last_seen": "2026-08-03T20:27:28.673Z",
-      "seen_count": 25,
+      "last_seen": "2026-08-03T21:26:27.799Z",
+      "seen_count": 30,
       "stale": false
     },
     "sig:4fca3398e1014f3b": {
@@ -5608,8 +5598,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T19:26:11.186Z",
-      "last_seen": "2026-08-03T20:27:51.382Z",
-      "seen_count": 47,
+      "last_seen": "2026-08-03T21:26:51.996Z",
+      "seen_count": 57,
       "stale": false
     },
     "sig:cbd8ec10f1fc3614": {
@@ -5743,8 +5733,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T19:42:56.979Z",
-      "last_seen": "2026-08-03T20:27:26.384Z",
-      "seen_count": 22,
+      "last_seen": "2026-08-03T21:26:24.874Z",
+      "seen_count": 27,
       "stale": false
     },
     "sig:27efdf8b710e7ec1": {
@@ -5896,8 +5886,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-01T16:31:37.632Z",
-      "last_seen": "2026-08-03T20:27:39.620Z",
-      "seen_count": 14,
+      "last_seen": "2026-08-03T21:26:39.149Z",
+      "seen_count": 19,
       "stale": false
     },
     "sig:02b28bca46f05df8": {
@@ -5938,20 +5928,20 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-01T16:33:25.020Z",
-      "last_seen": "2026-08-03T20:28:04.931Z",
-      "seen_count": 14,
+      "last_seen": "2026-08-03T21:26:58.111Z",
+      "seen_count": 19,
       "stale": false
     },
     "sig:d81fd038a56350e0": {
       "urls_seen": [
-        "http://localhost:5273/motor-preview"
+        "http://localhost:5273/motor-preview",
+        "http://localhost:5273/bookings/MP-QA-001"
       ],
       "url_pattern": "**/motor-preview",
       "title": "Movepark Hub",
       "interactive": [
         "a",
         "a",
-        "button id=radix-:r8: type=button text=Destinos",
         "button type=button text=OndeAeroporto, cidade ou bairro",
         "button type=button text=Check-in04 ago · 22:00",
         "button type=button text=Check-out09 ago · 08:00",
@@ -5960,10 +5950,18 @@
         "button type=submit text=Buscar",
         "button type=button text=Buscar vaga",
         "button type=button",
-        "a text=Seja parceiro",
-        "a text=Entrar",
-        "a text=Entrar",
-        "button text=Entrar",
+        "button id=radix-:r8: type=button text=QW",
+        "a text=Minhas reservas",
+        "a text=Como chegar",
+        "button type=button text=Baixar PDF",
+        "a text=Calendário",
+        "button type=button text=Cancelar reserva",
+        "button type=button text=Alterar datas disponível na FlexFazer up",
+        "button type=button text=Trocar veículo disponível na FlexFazer u",
+        "button text=Fazer upgrade de Tarifa",
+        "a text=Acionar garantia pela unidade",
+        "a text=1130000000",
+        "a text=qa@x.com",
         "a text=Sobre nós",
         "a text=Termos de uso",
         "a text=Política de privacidade",
@@ -5974,14 +5972,15 @@
         "a text=Política de cancelamento",
         "a text=Fale conosco",
         "a text=Destinos",
-        "a text=Entrar",
-        "a text=Parceiro",
-        "a text=Ajuda"
+        "a text=Reservas",
+        "a text=Conta",
+        "a text=Ajuda",
+        "button type=button"
       ],
       "source": "execution",
       "first_seen": "2026-08-03T17:49:13.361Z",
-      "last_seen": "2026-08-03T17:59:58.684Z",
-      "seen_count": 2,
+      "last_seen": "2026-08-03T21:27:00.634Z",
+      "seen_count": 8,
       "stale": false
     },
     "sig:5d463acbe0fb72a3": {
@@ -6120,8 +6119,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-03T17:51:59.980Z",
-      "last_seen": "2026-08-03T20:26:43.766Z",
-      "seen_count": 9,
+      "last_seen": "2026-08-03T21:25:40.626Z",
+      "seen_count": 14,
       "stale": false
     },
     "sig:9941cd9dea64ba25": {
@@ -6164,8 +6163,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-03T18:09:30.226Z",
-      "last_seen": "2026-08-03T20:27:20.968Z",
-      "seen_count": 7,
+      "last_seen": "2026-08-03T21:26:19.681Z",
+      "seen_count": 12,
       "stale": false
     },
     "sig:5cba6c69c489b53c": {
@@ -6280,8 +6279,310 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-03T20:16:36.657Z",
-      "last_seen": "2026-08-03T20:28:04.971Z",
-      "seen_count": 5,
+      "last_seen": "2026-08-03T21:26:58.961Z",
+      "seen_count": 11,
+      "stale": false
+    },
+    "sig:91839fc8aa0ef775": {
+      "urls_seen": [
+        "http://localhost:5273/account/addresses"
+      ],
+      "url_pattern": "**/account/addresses",
+      "title": "Movepark Hub",
+      "interactive": [
+        "a",
+        "a",
+        "button type=button text=OndeAeroporto, cidade ou bairro",
+        "button type=button text=Check-in04 ago · 22:00",
+        "button type=button text=Check-out09 ago · 08:00",
+        "button type=button text=Veículo Carro",
+        "select text=Carro Moto",
+        "button type=submit text=Buscar",
+        "button type=button text=Buscar vaga",
+        "button type=button",
+        "button id=radix-:r6: type=button text=QW",
+        "a text=Minhas reservas",
+        "a text=Favoritos",
+        "a text=Movepark Clube",
+        "a text=Indique e ganhe",
+        "a text=Perfil",
+        "a text=Veículos",
+        "a text=Cartões",
+        "a text=Endereços",
+        "a text=Preferências",
+        "a text=Segurança",
+        "button type=button text=Sair",
+        "button text=Conta",
+        "button text=Novo endereço",
+        "input id=cep-lookup placeholder=00000-000",
+        "button text=Buscar",
+        "a text=Sobre nós",
+        "a text=Termos de uso",
+        "a text=Política de privacidade",
+        "a text=Seja parceiro",
+        "a text=Painel do estacionamento",
+        "a text=Perguntas frequentes",
+        "a text=Como funciona",
+        "a text=Política de cancelamento",
+        "a text=Fale conosco",
+        "a text=Destinos",
+        "a text=Reservas",
+        "a text=Conta",
+        "a text=Ajuda"
+      ],
+      "source": "execution",
+      "first_seen": "2026-08-03T20:47:20.306Z",
+      "last_seen": "2026-08-03T21:26:51.063Z",
+      "seen_count": 46,
+      "stale": false
+    },
+    "sig:25474f4cdc1ae203": {
+      "urls_seen": [
+        "http://localhost:5273/account/profile"
+      ],
+      "url_pattern": "**/account/profile",
+      "title": "Movepark Hub",
+      "interactive": [
+        "a",
+        "a",
+        "button type=button text=OndeAeroporto, cidade ou bairro",
+        "button type=button text=Check-in04 ago · 22:00",
+        "button type=button text=Check-out09 ago · 08:00",
+        "button type=button text=Veículo Carro",
+        "select text=Carro Moto",
+        "button type=submit text=Buscar",
+        "button type=button text=Buscar vaga",
+        "button type=button",
+        "button id=radix-:r6: type=button text=QW",
+        "a text=Minhas reservas",
+        "a text=Favoritos",
+        "a text=Movepark Clube",
+        "a text=Indique e ganhe",
+        "a text=Perfil",
+        "a text=Veículos",
+        "a text=Cartões",
+        "a text=Endereços",
+        "a text=Preferências",
+        "a text=Segurança",
+        "button type=button text=Sair",
+        "button text=Conta",
+        "a text=Reservar uma vaga",
+        "a text=Ver o Clube",
+        "a text=Verificar",
+        "a text=Informar",
+        "a text=Salvar",
+        "a text=Definir",
+        "input id=first-name",
+        "input id=last-name",
+        "input id=cpf placeholder=CPF ou CNPJ",
+        "input id=birth type=date",
+        "button id=profile-lang type=button text=Português (Brasil)",
+        "button text=Descartar",
+        "button text=Salvar alterações",
+        "a text=Adicionar",
+        "a text=Gerenciar meus logins",
+        "a text=Sobre nós",
+        "a text=Termos de uso",
+        "a text=Política de privacidade",
+        "a text=Seja parceiro",
+        "a text=Painel do estacionamento",
+        "a text=Perguntas frequentes",
+        "a text=Como funciona",
+        "a text=Política de cancelamento",
+        "a text=Fale conosco",
+        "a text=Destinos",
+        "a text=Reservas",
+        "a text=Conta",
+        "a text=Ajuda"
+      ],
+      "source": "execution",
+      "first_seen": "2026-08-03T20:47:26.118Z",
+      "last_seen": "2026-08-03T21:26:50.578Z",
+      "seen_count": 20,
+      "stale": false
+    },
+    "sig:c7ced58c6632bf02": {
+      "urls_seen": [
+        "http://localhost:5273/account/vehicles"
+      ],
+      "url_pattern": "**/account/vehicles",
+      "title": "Movepark Hub",
+      "interactive": [
+        "a",
+        "a",
+        "button type=button text=OndeAeroporto, cidade ou bairro",
+        "button type=button text=Check-in04 ago · 22:00",
+        "button type=button text=Check-out09 ago · 08:00",
+        "button type=button text=Veículo Carro",
+        "select text=Carro Moto",
+        "button type=submit text=Buscar",
+        "button type=button text=Buscar vaga",
+        "button type=button",
+        "button id=radix-:r6: type=button text=QW",
+        "a text=Minhas reservas",
+        "a text=Favoritos",
+        "a text=Movepark Clube",
+        "a text=Indique e ganhe",
+        "a text=Perfil",
+        "a text=Veículos",
+        "a text=Cartões",
+        "a text=Endereços",
+        "a text=Preferências",
+        "a text=Segurança",
+        "button type=button text=Sair",
+        "button text=Conta",
+        "button text=Novo veículo",
+        "input id=plate-lookup placeholder=ABC-1D23",
+        "button type=button text=Prefiro cadastrar manualmente",
+        "a text=Sobre nós",
+        "a text=Termos de uso",
+        "a text=Política de privacidade",
+        "a text=Seja parceiro",
+        "a text=Painel do estacionamento",
+        "a text=Perguntas frequentes",
+        "a text=Como funciona",
+        "a text=Política de cancelamento",
+        "a text=Fale conosco",
+        "a text=Destinos",
+        "a text=Reservas",
+        "a text=Conta",
+        "a text=Ajuda"
+      ],
+      "source": "execution",
+      "first_seen": "2026-08-03T20:48:03.951Z",
+      "last_seen": "2026-08-03T21:28:14.090Z",
+      "seen_count": 25,
+      "stale": false
+    },
+    "sig:6d4cb38c0cade13b": {
+      "urls_seen": [
+        "http://localhost:5273/account/addresses"
+      ],
+      "url_pattern": "**/account/addresses",
+      "title": "Movepark Hub",
+      "interactive": [
+        "a",
+        "a",
+        "button type=button text=OndeAeroporto, cidade ou bairro",
+        "button type=button text=Check-in04 ago · 22:00",
+        "button type=button text=Check-out09 ago · 08:00",
+        "button type=button text=Veículo Carro",
+        "select text=Carro Moto",
+        "button type=submit text=Buscar",
+        "button type=button text=Buscar vaga",
+        "button type=button",
+        "button id=radix-:r6: type=button text=QW",
+        "a text=Minhas reservas",
+        "a text=Favoritos",
+        "a text=Movepark Clube",
+        "a text=Indique e ganhe",
+        "a text=Perfil",
+        "a text=Veículos",
+        "a text=Cartões",
+        "a text=Endereços",
+        "a text=Preferências",
+        "a text=Segurança",
+        "button type=button text=Sair",
+        "button text=Conta",
+        "button text=Novo endereço",
+        "input id=cep-lookup placeholder=00000-000",
+        "button text=Buscar",
+        "a text=Sobre nós",
+        "a text=Termos de uso",
+        "a text=Política de privacidade",
+        "a text=Seja parceiro",
+        "a text=Painel do estacionamento",
+        "a text=Perguntas frequentes",
+        "a text=Como funciona",
+        "a text=Política de cancelamento",
+        "a text=Fale conosco",
+        "a text=Destinos",
+        "a text=Reservas",
+        "a text=Conta",
+        "a text=Ajuda",
+        "input id=label placeholder=Casa, trabalho…",
+        "input id=cep placeholder=00000-000",
+        "input id=number placeholder=123",
+        "input id=street placeholder=Rua, av., travessa…",
+        "input id=complement placeholder=Apto, bloco, referência…",
+        "input id=district",
+        "input id=city",
+        "button id=state type=button text=UF",
+        "select text=AcreAlagoasAmapáAmazonasBahiaCearáDistri",
+        "button id=default type=button",
+        "input type=checkbox",
+        "button type=button text=Cancelar",
+        "button type=submit text=Salvar",
+        "button type=button text=Fechar"
+      ],
+      "source": "execution",
+      "first_seen": "2026-08-03T20:48:49.104Z",
+      "last_seen": "2026-08-03T21:25:56.574Z",
+      "seen_count": 22,
+      "stale": false
+    },
+    "sig:b2aa8fee22eea89f": {
+      "urls_seen": [
+        "http://localhost:5273/account/vehicles"
+      ],
+      "url_pattern": "**/account/vehicles",
+      "title": "Movepark Hub",
+      "interactive": [
+        "a",
+        "a",
+        "button type=button text=OndeAeroporto, cidade ou bairro",
+        "button type=button text=Check-in04 ago · 22:00",
+        "button type=button text=Check-out09 ago · 08:00",
+        "button type=button text=Veículo Carro",
+        "select text=Carro Moto",
+        "button type=submit text=Buscar",
+        "button type=button text=Buscar vaga",
+        "button type=button",
+        "button id=radix-:r6: type=button text=QW",
+        "a text=Minhas reservas",
+        "a text=Favoritos",
+        "a text=Movepark Clube",
+        "a text=Indique e ganhe",
+        "a text=Perfil",
+        "a text=Veículos1",
+        "a text=Cartões",
+        "a text=Endereços",
+        "a text=Preferências",
+        "a text=Segurança",
+        "button type=button text=Sair",
+        "button text=Conta",
+        "button text=Novo veículo",
+        "button type=button text=Editar",
+        "button type=button text=Remover",
+        "input id=plate-lookup placeholder=ABC-1D23",
+        "button type=button text=Prefiro cadastrar manualmente",
+        "a text=Sobre nós",
+        "a text=Termos de uso",
+        "a text=Política de privacidade",
+        "a text=Seja parceiro",
+        "a text=Painel do estacionamento",
+        "a text=Perguntas frequentes",
+        "a text=Como funciona",
+        "a text=Política de cancelamento",
+        "a text=Fale conosco",
+        "a text=Destinos",
+        "a text=Reservas",
+        "a text=Conta",
+        "a text=Ajuda",
+        "input id=plate placeholder=ABC-1D23",
+        "input id=model placeholder=Honda Civic",
+        "button id=vehicle-color type=button text=Prata",
+        "select text=BrancoPretoPrataCinzaVermelhoAzulVerdeMa",
+        "button id=default type=button",
+        "input type=checkbox",
+        "button type=button text=Cancelar",
+        "button type=submit text=Salvar",
+        "button type=button text=Fechar"
+      ],
+      "source": "execution",
+      "first_seen": "2026-08-03T21:19:45.610Z",
+      "last_seen": "2026-08-03T21:25:48.059Z",
+      "seen_count": 2,
       "stale": false
     }
   },
@@ -6419,7 +6720,7 @@
         "selector": "main button:has-text('Quero ser parceiro')"
       },
       "to": "sig:3f40933715753efc",
-      "seen_count": 234
+      "seen_count": 269
     },
     {
       "from": "sig:b805d148d91ff81c",
@@ -6446,7 +6747,7 @@
         "selector": "main button:has-text('Novo cartão')"
       },
       "to": "sig:0112eb8401335d27",
-      "seen_count": 21
+      "seen_count": 26
     },
     {
       "from": "sig:3f40933715753efc",
@@ -6455,7 +6756,7 @@
         "selector": "[role=\"dialog\"] button:has-text('Continuar')"
       },
       "to": "sig:34581fbdfb157f99",
-      "seen_count": 65
+      "seen_count": 70
     },
     {
       "from": "sig:0dcff3a175658e77",
@@ -6482,7 +6783,7 @@
         "selector": "#pl-company"
       },
       "to": "sig:34581fbdfb157f99",
-      "seen_count": 40
+      "seen_count": 50
     },
     {
       "from": "sig:0dcff3a175658e77",
@@ -6545,7 +6846,7 @@
         "selector": "[role=\"dialog\"] button:has-text('Quero ser parceiro')"
       },
       "to": "sig:34581fbdfb157f99",
-      "seen_count": 19
+      "seen_count": 24
     },
     {
       "from": "sig:0dcff3a175658e77",
@@ -6608,7 +6909,7 @@
         "selector": "button:has-text('Novo serviço')"
       },
       "to": "sig:fe5ad84a4aed370b",
-      "seen_count": 25
+      "seen_count": 30
     },
     {
       "from": "sig:f229d562bc655a9f",
@@ -6617,7 +6918,7 @@
         "selector": "button:has-text('Nova pergunta')"
       },
       "to": "sig:db0102561708d1ac",
-      "seen_count": 25
+      "seen_count": 30
     },
     {
       "from": "sig:0de7196068dc995b",
@@ -6626,7 +6927,7 @@
         "selector": "[role=\"tabpanel\"] button:first-of-type"
       },
       "to": "sig:4fca3398e1014f3b",
-      "seen_count": 47
+      "seen_count": 57
     },
     {
       "from": "sig:c59d8801fff3d40d",
@@ -6644,7 +6945,7 @@
         "selector": "[role=\"dialog\"] button:has-text('Quero ser parceiro')"
       },
       "to": "sig:b805d148d91ff81c",
-      "seen_count": 24
+      "seen_count": 29
     },
     {
       "from": "sig:e3b0c44298fc1c14",
@@ -6662,7 +6963,7 @@
         "selector": "#d-code"
       },
       "to": "sig:707f7d4d103fa57c",
-      "seen_count": 22
+      "seen_count": 27
     },
     {
       "from": "sig:c59d8801fff3d40d",
@@ -6680,7 +6981,7 @@
         "selector": "button:has-text('Salvar')"
       },
       "to": "sig:0220ddecfb1188ce",
-      "seen_count": 22
+      "seen_count": 27
     },
     {
       "from": "sig:4fca3398e1014f3b",
@@ -6689,7 +6990,7 @@
         "selector": "[role=\"dialog\"] button[type=\"submit\"]"
       },
       "to": "sig:0de7196068dc995b",
-      "seen_count": 22
+      "seen_count": 27
     },
     {
       "from": "sig:0220ddecfb1188ce",
@@ -6698,7 +6999,7 @@
         "selector": "button:has-text('Novo destino')"
       },
       "to": "sig:997d26f451fa9a15",
-      "seen_count": 36
+      "seen_count": 46
     },
     {
       "from": "sig:e3b0c44298fc1c14",
@@ -6761,7 +7062,7 @@
         "selector": "[role=\"dialog\"] button:has-text('Salvar')"
       },
       "to": "sig:0dcff3a175658e77",
-      "seen_count": 18
+      "seen_count": 23
     },
     {
       "from": "sig:0dcff3a175658e77",
@@ -6779,7 +7080,7 @@
         "selector": "[id=\"radix-:r6:-trigger-partners\"]"
       },
       "to": "sig:1fada002e8ba1d54",
-      "seen_count": 14
+      "seen_count": 19
     },
     {
       "from": "sig:d338797fc9985ff4",
@@ -6788,7 +7089,7 @@
         "selector": "[id$='-trigger-notifications']"
       },
       "to": "sig:02b28bca46f05df8",
-      "seen_count": 14
+      "seen_count": 19
     },
     {
       "from": "sig:63b4f276654d776e",
@@ -6834,6 +7135,123 @@
       },
       "to": "sig:c59d8801fff3d40d",
       "seen_count": 3
+    },
+    {
+      "from": "sig:0dcff3a175658e77",
+      "action": {
+        "type": "click",
+        "selector": "button:has-text(\"Novo cartão\")"
+      },
+      "to": "sig:0112eb8401335d27",
+      "seen_count": 5
+    },
+    {
+      "from": "sig:91839fc8aa0ef775",
+      "action": {
+        "type": "click",
+        "selector": "main button:has-text(\"Novo endereço\")"
+      },
+      "to": "sig:6d4cb38c0cade13b",
+      "seen_count": 15
+    },
+    {
+      "from": "sig:91839fc8aa0ef775",
+      "action": {
+        "type": "click",
+        "selector": "button:has-text(\"Novo endereço\")"
+      },
+      "to": "sig:6d4cb38c0cade13b",
+      "seen_count": 5
+    },
+    {
+      "from": "sig:6d4cb38c0cade13b",
+      "action": {
+        "type": "click",
+        "selector": "button:has-text(\"Salvar\")"
+      },
+      "to": "sig:91839fc8aa0ef775",
+      "seen_count": 5
+    },
+    {
+      "from": "sig:c7ced58c6632bf02",
+      "action": {
+        "type": "click",
+        "selector": "main button:has-text(\"Novo veículo\")"
+      },
+      "to": "sig:76497e0b0ca8e6c9",
+      "seen_count": 2
+    },
+    {
+      "from": "sig:c7ced58c6632bf02",
+      "action": {
+        "type": "click",
+        "selector": "button:has-text(\"Novo veículo\")"
+      },
+      "to": "sig:76497e0b0ca8e6c9",
+      "seen_count": 2
+    },
+    {
+      "from": "sig:c7ced58c6632bf02",
+      "action": {
+        "type": "click",
+        "selector": "button:has-text('Novo veículo')"
+      },
+      "to": "sig:76497e0b0ca8e6c9",
+      "seen_count": 2
+    },
+    {
+      "from": "sig:91839fc8aa0ef775",
+      "action": {
+        "type": "click",
+        "selector": "main li button[type=\"button\"]:first-of-type"
+      },
+      "to": "sig:6d4cb38c0cade13b",
+      "seen_count": 2
+    },
+    {
+      "from": "sig:c7ced58c6632bf02",
+      "action": {
+        "type": "click",
+        "selector": "main ul li button[type=button]:first-of-type"
+      },
+      "to": "sig:b2aa8fee22eea89f",
+      "seen_count": 2
+    },
+    {
+      "from": "sig:25474f4cdc1ae203",
+      "action": {
+        "type": "click",
+        "selector": "a[href=\"/account/vehicles\"]"
+      },
+      "to": "sig:c7ced58c6632bf02",
+      "seen_count": 1
+    },
+    {
+      "from": "sig:c7ced58c6632bf02",
+      "action": {
+        "type": "click",
+        "selector": "a[href=\"/account/addresses\"]"
+      },
+      "to": "sig:91839fc8aa0ef775",
+      "seen_count": 1
+    },
+    {
+      "from": "sig:91839fc8aa0ef775",
+      "action": {
+        "type": "click",
+        "selector": "a[href=\"/account/cards\"]"
+      },
+      "to": "sig:0dcff3a175658e77",
+      "seen_count": 1
+    },
+    {
+      "from": "sig:c7ced58c6632bf02",
+      "action": {
+        "type": "click",
+        "selector": "main button:has-text('Novo veículo')"
+      },
+      "to": "sig:76497e0b0ca8e6c9",
+      "seen_count": 1
     }
   ],
   "assist_seen": {

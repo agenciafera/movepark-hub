@@ -1,15 +1,15 @@
 {
   "scenario_id": "conta-veiculo-edita-jornada",
   "start_url": "/account/vehicles",
-  "task": "Passo 1: verifique que a pagina exibe o texto \"ABC1D23\". Passo 2: clique no botao de rotulo \"Mais opcoes\" da linha do veiculo. Passo 3: verifique que o menu exibe o texto \"Editar\". Passo 4: clique no item \"Editar\" do menu. Passo 5: verifique que o formulario exibe o texto \"Placa\".",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"ABC1D23\". Passo 2: verifique que a linha exibe o botao \"Editar\". Passo 3: clique em \"Editar\". Passo 4: verifique que o formulario exibe o texto \"Placa\".",
   "tags": [
     "jornada",
     "edicao",
     "autenticado"
   ],
   "hints": [
-    "A linha ja existe pelo stub; o menu de acoes e o botao com aria-label \"Mais opcoes\".",
-    "O formulario abre num portal do Radix FORA do <main>: use selector [role=\"dialog\"].",
+    "A acao de editar e um BOTAO direto na linha, com o texto Editar. Nao ha menu de tres pontos.",
+    "O formulario abre num portal do Radix FORA do <main>: use selector [role=\"dialog\"] na ultima checagem.",
     "Sao passos numerados: cada um vira uma acao propria."
   ],
   "seed": {

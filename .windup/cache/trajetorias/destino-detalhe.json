@@ -1,0 +1,75 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "destino-detalhe",
+    "start_url": "/destinos/aeroporto-qa",
+    "start_sig": "sig:2644ef779c146a8c",
+    "scenario_sig": "cca1a85ba6e4d2e2"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "destino-detalhe",
+    "start_url": "http://localhost:5273/destinos/aeroporto-qa",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Corpo da página com texto Aeroporto QA"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Aeroporto QA"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Corpo da página com texto Campinas"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Campinas"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Corpo da página com texto Estacionamento perto do Aeroporto QA"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Estacionamento perto do Aeroporto QA"
+          },
+          "selector": "body"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Aeroporto QA\". Passo 2: verifique que a pagina exibe o texto \"Campinas\". Passo 3: verifique que a pagina exibe o texto \"Estacionamento perto do Aeroporto QA\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-03T20:46:02.135Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-03T20:46:03.621Z",
+    "last_replayed_at": "2026-08-03T21:25:51.621Z",
+    "replay_count": 5,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

@@ -1,7 +1,7 @@
 {
   "scenario_id": "account-addresses",
   "start_url": "/account/addresses",
-  "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Endereços salvos\", depois a descricao \"Usados como referência nas suas reservas.\", depois o texto \"Cadastre seu primeiro endereço\".",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Endereços salvos\". Passo 2: verifique que a pagina exibe o texto \"Cadastre seu primeiro endereço\". Passo 3: verifique que a pagina exibe o texto \"Pode ser casa, trabalho ou destino frequente\".",
   "tags": [
     "smoke",
     "leitura",
