@@ -1,0 +1,66 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "busca-sem-resultado",
+    "start_url": "/search?dest=VAZIO",
+    "start_sig": "sig:eb1cb13a1fa9ce8c",
+    "scenario_sig": "7a9dcf22601a8119"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "busca-sem-resultado",
+    "start_url": "http://localhost:5273/search?dest=VAZIO",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "search results heading confirming the search has finished loading"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "main content area"
+        },
+        "expect": {
+          "not_visible": "text=Unidade Central QA"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "h3",
+          "description": "empty-state heading indicating no results were found"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "h3",
+            "text": "Nenhuma vaga"
+          },
+          "selector": "h3"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: aguarde a busca terminar. Passo 2: verifique que a pagina NAO exibe o texto \"Unidade Central QA\". Passo 3: verifique que a pagina exibe algum aviso de que nao ha resultado.",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-03T22:36:16.688Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-03T22:36:18.040Z",
+    "last_replayed_at": "2026-08-03T22:36:50.451Z",
+    "replay_count": 1,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

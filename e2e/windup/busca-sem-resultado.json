@@ -1,0 +1,40 @@
+{
+  "scenario_id": "busca-sem-resultado",
+  "start_url": "/search?dest=VAZIO",
+  "task": "Passo 1: aguarde a busca terminar. Passo 2: verifique que a pagina NAO exibe o texto \"Unidade Central QA\". Passo 3: verifique que a pagina exibe algum aviso de que nao ha resultado.",
+  "tags": [
+    "smoke",
+    "leitura",
+    "busca"
+  ],
+  "hints": [
+    "A Edge de busca devolve lista VAZIA neste cenario: prova o estado sem resultado.",
+    "Sao passos numerados: cada um vira uma acao propria do plano.",
+    "O passo 2 usa not_visible. O passo 3 procura o texto do estado vazio que a tela mostrar."
+  ],
+  "network": [
+    {
+      "url": "**/functions/v1/search*",
+      "json": {
+        "destination": null,
+        "days": 5,
+        "total": 0,
+        "limit": 20,
+        "offset": 0,
+        "results": [],
+        "facets": {
+          "operators": [],
+          "destinations": []
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ]
+}
