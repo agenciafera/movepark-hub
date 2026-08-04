@@ -8,6 +8,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
+import { autorizado, decidir, REFRESHABLE } from "./logic.ts";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -16,14 +17,15 @@ function json(body: unknown, status = 200) {
   });
 }
 
-// Status que ainda podem mudar no gateway (vale reavaliar). 'active'/'refused' são terminais.
-const REFRESHABLE = ["pending", "action_required"];
-
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  const expected = Deno.env.get("REFRESH_RECIPIENTS_KEY");
-  if (!expected || req.headers.get("x-refresh-recipients-key") !== expected) {
+  if (
+    !autorizado(
+      Deno.env.get("REFRESH_RECIPIENTS_KEY"),
+      req.headers.get("x-refresh-recipients-key"),
+    )
+  ) {
     return json({ error: "unauthorized" }, 401);
   }
 
@@ -45,7 +47,7 @@ Deno.serve(async (req: Request) => {
     .from("payout_recipient")
     .select("id, external_recipient_id, status")
     .eq("provider", "pagarme")
-    .in("status", REFRESHABLE)
+    .in("status", [...REFRESHABLE])
     .not("external_recipient_id", "is", null)
     .is("deleted_at", null);
   if (error) return json({ error: error.message }, 500);
@@ -58,40 +60,27 @@ Deno.serve(async (req: Request) => {
       // ao topo sozinho e o link que ele abriu no celular morreria no meio da prova de vida.
       // Quem emite é o `create` e o botão de reemitir, ambos ação explícita do parceiro.
       const result = await gateway.getRecipient(rec.external_recipient_id!, { kycLink: false });
-      if (!result.externalId) {
-        // Resposta inválida do gateway (ex.: 401 de allowlist de IP): não mexe no status,
-        // mas grava o evento. Sem isso a falha some e o recebedor congela sem rastro.
+      // A decisão (atualizar ou só registrar, e com qual patch) mora em logic.ts, sob
+      // teste. Aqui fica só a execução.
+      const d = decidir({ id: rec.id, status: rec.status }, result);
+
+      if (d.tipo === "so_evento") {
         console.error(
           "[refresh-recipients] getRecipient sem id",
           rec.external_recipient_id,
-          result.httpStatus,
+          d.httpStatus,
         );
-        await admin.from("payout_recipient_event").insert({
-          payout_recipient_id: rec.id,
-          kind: "refresh",
-          http_status: result.httpStatus,
-          request: null,
-          response: result.raw,
-        });
-        continue;
+      } else {
+        await admin.from("payout_recipient").update(d.patch).eq("id", d.recipientId);
+        if (d.mudouStatus) updated += 1;
       }
-      await admin
-        .from("payout_recipient")
-        .update({
-          status: result.status,
-          last_provider_status: result.rawStatus,
-          // NÃO toca em kyc_url/kyc_url_expires_at: este poll não emite link, então não tem
-          // nada novo para gravar, e sobrescrever com null apagaria o link vivo do parceiro.
-          requirements: result.requirements,
-        })
-        .eq("id", rec.id);
-      if (result.status !== rec.status) updated += 1;
+
       await admin.from("payout_recipient_event").insert({
-        payout_recipient_id: rec.id,
+        payout_recipient_id: d.recipientId,
         kind: "refresh",
-        http_status: result.httpStatus,
+        http_status: d.httpStatus,
         request: null,
-        response: result.raw,
+        response: d.response,
       });
     } catch (e) {
       console.error("[refresh-recipients] falha em", rec.external_recipient_id, e);
