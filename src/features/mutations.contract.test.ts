@@ -59,19 +59,12 @@ const SEM_TESTE = [
   "onboarding:useSubmitGo2ParkInterest",
   "onboarding:usePartnerAction",
   "onboarding:useOnboardingData",
-  "parking-types:useUpdateLocationParkingType",
-  "parking-types:useEnableCompanyParkingType",
-  "parking-types:useCreateLocationParkingType",
-  "parking-types:useUpdateCompanyParkingType",
-  "parking-types:useOperatorSetPricing",
-  "parking-types:useSimulatePrice",
   "profile:useUpdateProfile",
   "profile:useSignOutEverywhere",
   "reviews:useSubmitReview",
   "reviews:useSetReviewPublished",
   "reviews:useRespondReview",
   "settings:useUpdateAppSettings",
-  "voucher:useVoucherCheckIn",
 ];
 
 /** Todo `api.ts` / `*Api.ts` de feature, onde os hooks de dados moram. */
