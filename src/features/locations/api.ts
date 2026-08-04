@@ -1,7 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { Database } from "@/types/database";
-import type { Location, LocationWithDestination } from "@/types/domain";
+import type {
+  CheckoutMode,
+  Location,
+  LocationExternalReadiness,
+  LocationWithDestination,
+} from "@/types/domain";
 import type { LocationOption } from "@/features/manager-filters/managerFilters.logic";
 
 type LocationInsert = Database["public"]["Tables"]["location"]["Insert"];
@@ -24,6 +29,7 @@ export const locationsKeys = {
   forOperator: () => [...locationsKeys.all, "operator"] as const,
   nearestDestination: (lat: number, lng: number) =>
     [...locationsKeys.all, "nearest-destination", lat, lng] as const,
+  externalReadiness: (id: string) => [...locationsKeys.all, "external-readiness", id] as const,
 };
 
 export function useLocationsByCompany(companyId: string | undefined) {
@@ -182,6 +188,47 @@ export function useLocation(id: string | undefined) {
       return (data ?? null) as Location | null;
     },
     enabled: !!id,
+  });
+}
+
+/**
+ * Pré-voo do checkout externo (E0.14). Diz se dá para apontar a unidade para o
+ * white-label e, quando não dá, o que falta. Só hub_admin recebe resposta: a RPC
+ * recusa qualquer outro JWT.
+ */
+export function useLocationExternalReadiness(id: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: id ? locationsKeys.externalReadiness(id) : ["locations", "external-readiness", "none"],
+    queryFn: async (): Promise<LocationExternalReadiness | null> => {
+      if (!id) return null;
+      const { data, error } = await supabase.rpc("location_external_readiness", {
+        p_location_id: id,
+      });
+      if (error) throw error;
+      return data as unknown as LocationExternalReadiness;
+    },
+    enabled: !!id && enabled,
+  });
+}
+
+/**
+ * Muda onde a reserva da unidade fecha. A UI é espelho: quem decide é o banco, que
+ * exige hub_admin e reprova o pré-voo incompleto (trigger location_checkout_mode_guard).
+ */
+export function useSetCheckoutMode() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, mode }: { id: string; mode: CheckoutMode }) => {
+      const { data, error } = await supabase
+        .from("location")
+        .update({ checkout_mode: mode })
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as Location;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: locationsKeys.all }),
   });
 }
 

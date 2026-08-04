@@ -6,7 +6,7 @@
 // webhook de `affiliation` chega, o parceiro nunca é avisado e só descobre a pendência se voltar
 // ao painel por conta própria.
 
-import { getEmailConfig, sendEmail, tplKycLinkIssued } from "./email.ts";
+import { getEmailConfig, sendPartnerEmail, tplKycLinkIssued } from "./email.ts";
 import { getGateway } from "./payments/index.ts";
 
 /** Status cru do gateway em que a prova de vida foi exigida e o link pode ser gerado. */
@@ -67,7 +67,7 @@ export async function notifyKycPending(admin: any, recipientId: string, companyI
   if (!from) return;
 
   const mail = tplKycLinkIssued(ob?.contact_name ?? "");
-  await sendEmail({ from, to, subject: mail.subject, html: mail.html });
+  await sendPartnerEmail(admin, { companyId, from, to, subject: mail.subject, html: mail.html });
 }
 
 /**

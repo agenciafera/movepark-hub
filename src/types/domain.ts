@@ -52,6 +52,25 @@ export type DiscountType = Enums<"discount_type">;
 export type MinimumStayUnit = Enums<"minimum_stay_unit">;
 export type LocationParkingType = Tables<"location_parking_type">;
 
+/**
+ * Onde a reserva da unidade fecha (E0.14): no checkout do Hub ou no white-label do
+ * parceiro. O banco guarda como texto com CHECK; aqui o tipo é fechado.
+ */
+export type CheckoutMode = "hub" | "external";
+
+/** O parceiro sabe que existe no Hub? (E0.14) `silent` liga as guardas de silêncio. */
+export type HubRelationship = "silent" | "onboarded";
+
+/** Pré-voo do modo externo (RPC `location_external_readiness`). */
+export type LocationExternalReadiness = {
+  ready: boolean;
+  /** Campos que faltam na empresa: wl_public_domain, wl_domain, wl_tenant_key. */
+  missing_company: string[];
+  /** Quantos tipos de vaga ativos estão sem De/Para com o white-label. */
+  unmapped_count: number;
+  unmapped_names: string[];
+};
+
 /** Linha de ocupação por data (retorno de operator_location_occupancy). */
 export type LocationOccupancyRow = {
   location_parking_type_id: string;

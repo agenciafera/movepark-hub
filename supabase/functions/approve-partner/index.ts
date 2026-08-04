@@ -12,7 +12,7 @@
 
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { sendEmail, siteUrl, getEmailConfig, tplApprovalInvite, tplRejection } from "../_shared/email.ts";
+import { sendPartnerEmail, siteUrl, getEmailConfig, tplApprovalInvite, tplRejection } from "../_shared/email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -131,7 +131,7 @@ Deno.serve(async (req: Request) => {
       emailError = "Remetente (partner_email_from) não configurado";
     } else {
       const mail = tplRejection(contactName, input.rejection_reason);
-      const r = await sendEmail({ from, to: contactEmail, subject: mail.subject, html: mail.html });
+      const r = await sendPartnerEmail(admin, { companyId, from, to: contactEmail, subject: mail.subject, html: mail.html });
       emailSent = r.ok;
       emailError = r.error ?? null;
     }
@@ -189,7 +189,7 @@ Deno.serve(async (req: Request) => {
     emailError = "Remetente (partner_email_from) não configurado";
   } else {
     const mail = tplApprovalInvite(contactName, actionLink);
-    const r = await sendEmail({ from, to: contactEmail, subject: mail.subject, html: mail.html });
+    const r = await sendPartnerEmail(admin, { companyId, from, to: contactEmail, subject: mail.subject, html: mail.html });
     emailSent = r.ok;
     emailError = r.error ?? null;
   }

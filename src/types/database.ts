@@ -823,6 +823,7 @@ export type Database = {
           contract_version: string | null
           created_at: string
           deleted_at: string | null
+          hub_relationship: string
           id: string
           legal_name: string | null
           logo_url: string | null
@@ -835,6 +836,7 @@ export type Database = {
           tax_id: string | null
           updated_at: string
           wl_domain: string | null
+          wl_public_domain: string | null
           wl_sync_enabled: boolean
           wl_tenant_key: string | null
           wps_webhook_enabled: boolean
@@ -846,6 +848,7 @@ export type Database = {
           contract_version?: string | null
           created_at?: string
           deleted_at?: string | null
+          hub_relationship?: string
           id?: string
           legal_name?: string | null
           logo_url?: string | null
@@ -858,6 +861,7 @@ export type Database = {
           tax_id?: string | null
           updated_at?: string
           wl_domain?: string | null
+          wl_public_domain?: string | null
           wl_sync_enabled?: boolean
           wl_tenant_key?: string | null
           wps_webhook_enabled?: boolean
@@ -869,6 +873,7 @@ export type Database = {
           contract_version?: string | null
           created_at?: string
           deleted_at?: string | null
+          hub_relationship?: string
           id?: string
           legal_name?: string | null
           logo_url?: string | null
@@ -881,6 +886,7 @@ export type Database = {
           tax_id?: string | null
           updated_at?: string
           wl_domain?: string | null
+          wl_public_domain?: string | null
           wl_sync_enabled?: boolean
           wl_tenant_key?: string | null
           wps_webhook_enabled?: boolean
@@ -1856,6 +1862,9 @@ export type Database = {
           address: string | null
           address_complement: string | null
           business_hours: Json | null
+          checkout_mode: string
+          checkout_mode_changed_at: string | null
+          checkout_mode_changed_by: string | null
           company_id: string
           created_at: string
           deleted_at: string | null
@@ -1896,6 +1905,9 @@ export type Database = {
           address?: string | null
           address_complement?: string | null
           business_hours?: Json | null
+          checkout_mode?: string
+          checkout_mode_changed_at?: string | null
+          checkout_mode_changed_by?: string | null
           company_id: string
           created_at?: string
           deleted_at?: string | null
@@ -1936,6 +1948,9 @@ export type Database = {
           address?: string | null
           address_complement?: string | null
           business_hours?: Json | null
+          checkout_mode?: string
+          checkout_mode_changed_at?: string | null
+          checkout_mode_changed_by?: string | null
           company_id?: string
           created_at?: string
           deleted_at?: string | null
@@ -1973,6 +1988,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "location_checkout_mode_changed_by_fkey"
+            columns: ["checkout_mode_changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "location_company_id_fkey"
             columns: ["company_id"]
@@ -4147,6 +4169,7 @@ export type Database = {
         Returns: Json
       }
       company_can_receive: { Args: { p_company_id: string }; Returns: boolean }
+      company_is_silent: { Args: { p_company_id: string }; Returns: boolean }
       company_list_members: {
         Args: { p_company_id: string }
         Returns: {
@@ -4259,6 +4282,12 @@ export type Database = {
         }
         Returns: Json
       }
+      external_checkout_url: {
+        Args: {
+          lpt: Database["public"]["Tables"]["location_parking_type"]["Row"]
+        }
+        Returns: string
+      }
       find_user_by_identifier: {
         Args: { p_channel: string; p_identifier: string }
         Returns: string
@@ -4362,6 +4391,10 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      location_external_readiness: {
+        Args: { p_location_id: string }
+        Returns: Json
       }
       location_has_photo: { Args: { p_photos: Json }; Returns: boolean }
       locations_high_demand_today: {
@@ -4575,10 +4608,6 @@ export type Database = {
         Args: { p_discount_rule_id: string; p_is_active: boolean }
         Returns: undefined
       }
-      operator_set_revenue_goal: {
-        Args: { p_company_id: string; p_goal_cents: number }
-        Returns: undefined
-      }
       operator_set_location_addon: {
         Args: {
           p_add_on_service_id: string
@@ -4599,6 +4628,10 @@ export type Database = {
           p_rule: Json
           p_tiers?: Json
         }
+        Returns: undefined
+      }
+      operator_set_revenue_goal: {
+        Args: { p_company_id: string; p_goal_cents: number }
         Returns: undefined
       }
       operator_update_api_key_scopes: {
@@ -4704,6 +4737,7 @@ export type Database = {
         Returns: Json
       }
       redeem_referral_code: { Args: { p_code: string }; Returns: Json }
+      referral_reward_amount: { Args: never; Returns: number }
       release_booking_capacity: {
         Args: { p_booking_id: string }
         Returns: undefined
@@ -4724,9 +4758,11 @@ export type Database = {
           contract_version: string | null
           created_at: string
           deleted_at: string | null
+          hub_relationship: string
           id: string
           legal_name: string | null
           logo_url: string | null
+          monthly_revenue_goal_cents: number | null
           name: string
           onboarding_status: Database["public"]["Enums"]["onboarding_status"]
           slug: string
@@ -4735,6 +4771,7 @@ export type Database = {
           tax_id: string | null
           updated_at: string
           wl_domain: string | null
+          wl_public_domain: string | null
           wl_sync_enabled: boolean
           wl_tenant_key: string | null
           wps_webhook_enabled: boolean
@@ -4827,6 +4864,7 @@ export type Database = {
           wl_tenant_key: string
         }[]
       }
+      wl_public_host: { Args: { p_domain: string }; Returns: string }
       wl_reconcile_apply: {
         Args: { p_lpt_id: string; p_rows: Json }
         Returns: number

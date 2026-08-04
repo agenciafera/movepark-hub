@@ -128,6 +128,44 @@ export async function sendEmail({ from, to, subject, html, replyTo }: SendArgs):
   }
 }
 
+/**
+ * Envio para PARCEIRO, com a guarda de silêncio do E0.14.
+ *
+ * Empresa com `hub_relationship = 'silent'` não sabe que existe no Hub, e um único e-mail
+ * automático derruba a estratégia inteira de forma irreversível. Por isso o filtro fica aqui,
+ * na origem do envio, e não dentro de cada template: template novo nasce coberto.
+ *
+ * Falha fechada de propósito: se não der para ler a empresa, não manda. Deixar de enviar um
+ * convite é recuperável; avisar o parceiro errado não é.
+ *
+ * Todo e-mail cujo destinatário é o parceiro (convite, aprovação, recusa, KYC, repasse) passa
+ * por aqui. `sendEmail` cru continua valendo para cliente final e para caixa interna.
+ */
+export async function sendPartnerEmail(
+  // deno-lint-ignore no-explicit-any
+  admin: any,
+  args: SendArgs & { companyId: string },
+): Promise<{ ok: boolean; error?: string; silenced?: boolean }> {
+  const { companyId, ...mail } = args;
+
+  const { data, error } = await admin
+    .from("company")
+    .select("hub_relationship")
+    .eq("id", companyId)
+    .maybeSingle();
+
+  if (error || !data) {
+    console.error("[silence] não foi possível ler a empresa; e-mail não enviado:", error);
+    return { ok: false, error: "Empresa não encontrada para a guarda de silêncio" };
+  }
+  if (data.hub_relationship === "silent") {
+    console.warn("[silence] empresa silenciosa; e-mail bloqueado na origem:", mail.subject);
+    return { ok: false, silenced: true, error: "Empresa silenciosa (hub_relationship = silent)" };
+  }
+
+  return sendEmail(mail);
+}
+
 // ───────────────────────────────────────── templates ─────────────────────────────────────────
 
 const FONT = "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";

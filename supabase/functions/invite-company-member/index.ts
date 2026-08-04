@@ -11,7 +11,7 @@
 
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { sendEmail, siteUrl, getEmailConfig, tplTeamInvite } from "../_shared/email.ts";
+import { sendPartnerEmail, siteUrl, getEmailConfig, tplTeamInvite } from "../_shared/email.ts";
 import { isAssignableRole, normalizeEmail, ROLE_LABEL, type AssignableRole } from "./logic.ts";
 
 const corsHeaders = {
@@ -157,7 +157,8 @@ Deno.serve(async (req: Request) => {
     }
     if (from) {
       const mail = tplTeamInvite(companyName, ROLE_LABEL[newRole], actionLink);
-      runBg(sendEmail({ from, to: email, subject: mail.subject, html: mail.html }));
+      // Passa pela guarda de silêncio (E0.14): empresa silent não recebe convite.
+      runBg(sendPartnerEmail(admin, { companyId, from, to: email, subject: mail.subject, html: mail.html }));
     }
   }
 

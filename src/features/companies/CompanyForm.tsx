@@ -49,6 +49,8 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
   const [status, setStatus] = React.useState<EntityStatus>("active");
   const [wlDomain, setWlDomain] = React.useState("");
   const [wlTenantKey, setWlTenantKey] = React.useState("");
+  const [wlPublicDomain, setWlPublicDomain] = React.useState("");
+  const [silent, setSilent] = React.useState(false);
   const [wlSyncEnabled, setWlSyncEnabled] = React.useState(false);
   const [wpsUrl, setWpsUrl] = React.useState("");
   const [wpsSecret, setWpsSecret] = React.useState("");
@@ -65,6 +67,8 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
       setStatus(company?.status ?? "active");
       setWlDomain(company?.wl_domain ?? "");
       setWlTenantKey(company?.wl_tenant_key ?? "");
+      setWlPublicDomain(company?.wl_public_domain ?? "");
+      setSilent(company?.hub_relationship === "silent");
       setWlSyncEnabled(company?.wl_sync_enabled ?? false);
       setWpsUrl(company?.wps_webhook_url ?? "");
       setWpsSecret("");
@@ -94,6 +98,8 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
       status,
       wl_domain: wlHost,
       wl_tenant_key: wlTenant,
+      wl_public_domain: normalizeWlDomain(wlPublicDomain),
+      hub_relationship: silent ? "silent" : "onboarded",
       wl_sync_enabled: wlSyncEnabled,
       wps_webhook_url: wpsUrlTrim,
       wps_webhook_enabled: wpsEnabled,
@@ -210,6 +216,42 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
                 value={wlTenantKey}
                 onChange={(e) => setWlTenantKey(e.target.value)}
                 placeholder="ex: ferapark"
+              />
+            </div>
+            {/* E0.14: o domínio que recebe o cliente na saída externa. Separado de propósito do
+                backend acima; derivar um do outro quebra no dia em que o parceiro usar domínio
+                próprio. */}
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="wl-public-domain">Domínio público do white-label</Label>
+              <Input
+                id="wl-public-domain"
+                value={wlPublicDomain}
+                onChange={(e) => setWlPublicDomain(e.target.value)}
+                placeholder="virapark.movepark.co"
+              />
+              <p className="text-caption text-muted">
+                O site que o cliente vê. O campo acima é o backend, com outro domínio.
+              </p>
+            </div>
+          </div>
+
+          {/* Relação silenciosa (E0.14): a empresa existe na vitrine sem saber disso. */}
+          <div className="mt-2 flex flex-col gap-4 rounded-md border border-hairline p-4 tablet:col-span-2">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p id="silent-title" className="text-body-sm font-medium text-ink">
+                  Relação silenciosa
+                </p>
+                <p id="silent-desc" className="text-caption text-muted">
+                  O parceiro não sabe que existe no Hub. Bloqueia e-mail, onboarding, recebedor de
+                  repasse e convite de usuário.
+                </p>
+              </div>
+              <Switch
+                checked={silent}
+                onCheckedChange={setSilent}
+                aria-labelledby="silent-title"
+                aria-describedby="silent-desc"
               />
             </div>
           </div>

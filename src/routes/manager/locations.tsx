@@ -14,10 +14,12 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { EntityStatusBadge } from "@/components/shared/StatusBadge";
+import { Badge } from "@/components/ui/badge";
 import { useCompany } from "@/features/companies/api";
 import { useLocationsByCompany } from "@/features/locations/api";
 import { LocationForm } from "@/features/locations/LocationForm";
-import type { Location } from "@/types/domain";
+import { CheckoutModeDialog } from "@/features/locations/CheckoutModeDialog";
+import type { CheckoutMode, Location } from "@/types/domain";
 
 export default function ManagerLocations() {
   const { id: companyId } = useParams<{ id: string }>();
@@ -25,6 +27,7 @@ export default function ManagerLocations() {
   const { data, isLoading } = useLocationsByCompany(companyId);
   const [editing, setEditing] = React.useState<Location | null>(null);
   const [formOpen, setFormOpen] = React.useState(false);
+  const [checkoutFor, setCheckoutFor] = React.useState<Location | null>(null);
 
   function openCreate() {
     setEditing(null);
@@ -61,6 +64,7 @@ export default function ManagerLocations() {
                 <TableHead>Endereço</TableHead>
                 <TableHead>Destino</TableHead>
                 <TableHead>Fuso</TableHead>
+                <TableHead>Checkout</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -78,6 +82,13 @@ export default function ManagerLocations() {
                   </TableCell>
                   <TableCell>{loc.timezone}</TableCell>
                   <TableCell>
+                    {(loc.checkout_mode as CheckoutMode) === "external" ? (
+                      <Badge tone="pending">Externo</Badge>
+                    ) : (
+                      <Badge tone="neutral">Hub</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
                     <EntityStatusBadge status={loc.status} />
                   </TableCell>
                   <TableCell className="text-right">
@@ -91,6 +102,9 @@ export default function ManagerLocations() {
                         }}
                       >
                         Editar
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setCheckoutFor(loc)}>
+                        Checkout
                       </Button>
                       <Button size="sm" variant="ghost" asChild>
                         <Link
@@ -114,6 +128,16 @@ export default function ManagerLocations() {
           companyId={companyId}
           location={editing}
           onOpenChange={setFormOpen}
+        />
+      )}
+
+      {checkoutFor && (
+        <CheckoutModeDialog
+          open
+          locationId={checkoutFor.id}
+          locationName={checkoutFor.name}
+          mode={checkoutFor.checkout_mode as CheckoutMode}
+          onOpenChange={(o) => !o && setCheckoutFor(null)}
         />
       )}
     </div>
