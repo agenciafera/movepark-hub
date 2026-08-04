@@ -1,0 +1,84 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "erro-reservas-500",
+    "start_url": "/bookings",
+    "start_sig": "sig:2644ef779c146a8c",
+    "scenario_sig": "a3dcf99cb6c90192"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "erro-reservas-500",
+    "start_url": "http://localhost:5273/bookings",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "main content area loaded with server error message"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "servidor indisponivel"
+          }
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "page body without any booking detail card link (proxy for Unidade QA not displayed)"
+        },
+        "expect": {
+          "not_visible": "a[href^='/bookings/']"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "page body without MP7K2X booking code reference link"
+        },
+        "expect": {
+          "not_visible": "a[href*='MP7K2X']"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "main content showing server error, not an empty-state message about no reservations"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "servidor indisponivel"
+          },
+          "selector": "main"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: aguarde a pagina carregar. Passo 2: verifique que a pagina NAO exibe o texto \"Unidade QA\", ou seja, nenhuma reserva foi inventada quando a consulta falhou. Passo 3: verifique que a pagina NAO exibe o texto \"MP7K2X\". Passo 4: verifique que a pagina NAO exibe o texto \"ainda nao tem reservas\", ou seja, falha de servidor nao se disfarca de lista vazia.",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-04T17:57:36.162Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-04T17:57:37.748Z",
+    "last_replayed_at": "2026-08-04T18:22:21.064Z",
+    "replay_count": 1,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "scenario_id": "erro-reservas-500",
+  "start_url": "/bookings",
+  "task": "Passo 1: aguarde a pagina carregar. Passo 2: verifique que a pagina NAO exibe o texto \"Unidade QA\", ou seja, nenhuma reserva foi inventada quando a consulta falhou. Passo 3: verifique que a pagina NAO exibe o texto \"MP7K2X\". Passo 4: verifique que a pagina NAO exibe o texto \"ainda nao tem reservas\", ou seja, falha de servidor nao se disfarca de lista vazia.",
+  "tags": [
+    "autenticado",
+    "erro",
+    "reserva"
+  ],
+  "hints": [
+    "Sao passos numerados: execute cada um como uma acao propria do plano, na ordem.",
+    "Para checar texto use text_contains com selector body. Para o valor de um input use selector_value. Para checar endereco use a postcondicao url com contains, nunca um seletor da pagina de destino. Dialogos do Radix montam fora do main: use o seletor [role=\"dialog\"].",
+    "A consulta das reservas devolve 500, e o painel troca a lista por um aviso de erro.",
+    "O passo 4 e o que importa: mostrar o estado vazio quando o servidor caiu faria a pessoa achar que perdeu a reserva."
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x\",\"token_type\":\"bearer\",\"expires_in\":999999999,\"expires_at\":4102444800,\"refresh_token\":\"r\",\"user\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"qa@windup.local\"}}"
+    }
+  },
+  "network": [
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "r",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles?*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "customer"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company?*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/company_role_scope?*",
+      "json": [
+        {
+          "role": "owner",
+          "scope": "bookings:read"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/booking?*",
+      "status": 500,
+      "json": {
+        "message": "servidor indisponivel"
+      }
+    },
+    {
+      "url": "**/rpc/get_my_wallet*",
+      "json": {
+        "balance": 0,
+        "cashback": 0,
+        "transactions": []
+      }
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ]
+}

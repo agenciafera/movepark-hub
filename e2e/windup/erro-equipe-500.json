@@ -1,0 +1,106 @@
+{
+  "scenario_id": "erro-equipe-500",
+  "start_url": "/operator/users",
+  "task": "Passo 1: aguarde a pagina carregar. Passo 2: verifique que a pagina exibe o texto \"Usuarios da empresa\" (procure por \"rios da empresa\"), ou seja, a tela em si se manteve de pe. Passo 3: verifique que a pagina NAO exibe o texto \"Dona da Empresa\". Passo 4: verifique que a pagina NAO exibe o texto \"portaria@empresa.local\", ou seja, nenhum e-mail sobrou de cache.",
+  "tags": [
+    "autenticado",
+    "erro",
+    "operator",
+    "equipe"
+  ],
+  "hints": [
+    "Sao passos numerados: execute cada um como uma acao propria do plano, na ordem.",
+    "Para checar texto use text_contains com selector body. Para o valor de um input use selector_value. Para checar endereco use a postcondicao url com contains, nunca um seletor da pagina de destino. Dialogos do Radix montam fora do main: use o seletor [role=\"dialog\"].",
+    "A RPC company_list_members devolve 500 e a lista nao carrega, mas o cabecalho da tela continua.",
+    "O passo 4 e a checagem de vazamento: dado que nao veio nao pode aparecer por nenhum caminho."
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x\",\"token_type\":\"bearer\",\"expires_in\":999999999,\"expires_at\":4102444800,\"refresh_token\":\"r\",\"user\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"qa@windup.local\"}}"
+    }
+  },
+  "network": [
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "r",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles?*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "company_operator"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company?*",
+      "json": [
+        {
+          "company_id": "00000000-0000-4000-8000-0000000000c1",
+          "role": "owner"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/company_role_scope?*",
+      "json": [
+        {
+          "role": "owner",
+          "scope": "team:read"
+        },
+        {
+          "role": "owner",
+          "scope": "team:write"
+        },
+        {
+          "role": "owner",
+          "scope": "bookings:read"
+        }
+      ]
+    },
+    {
+      "url": "**/rpc/company_list_members*",
+      "status": 500,
+      "json": {
+        "message": "servidor indisponivel"
+      }
+    },
+    {
+      "url": "**/rpc/get_my_wallet*",
+      "json": {
+        "balance": 0,
+        "cashback": 0,
+        "transactions": []
+      }
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ]
+}

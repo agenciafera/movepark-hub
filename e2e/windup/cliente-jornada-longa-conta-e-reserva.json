@@ -1,0 +1,224 @@
+{
+  "scenario_id": "cliente-jornada-longa-conta-e-reserva",
+  "start_url": "/bookings",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Proxima reserva\" (procure por \"xima reserva\"). Passo 2: verifique que a pagina exibe o texto \"Unidade QA\". Passo 3: verifique que a pagina exibe o texto \"Ver voucher\". Passo 4: verifique que a pagina exibe o texto \"Seu ano ate agora\" (procure por \"Seu ano\"). Passo 5: clique no link \"Ver voucher\". Passo 6: verifique que a pagina exibe o texto \"ABC1D23\", que so existe no detalhe da reserva e portanto prova a navegacao. Passo 7: verifique que a pagina exibe o texto \"Vaga Coberta\". Passo 8: verifique que a pagina exibe o texto \"187,50\". Passo 9: verifique que a pagina exibe o texto \"Alterar datas\". Passo 10: clique no botao \"Alterar datas\". Passo 11: verifique que existe o seletor [role=\"dialog\"]. Passo 12: clique no botao de fechar do dialogo, que tem o texto \"Fechar\". Passo 13: verifique que o seletor [role=\"dialog\"] nao esta mais visivel. Passo 14: verifique que a pagina ainda exibe o texto \"ABC1D23\", ou seja, desistir da alteracao nao mexeu na reserva. Passo 15: navegue para o endereco /account/vehicles. Passo 16: verifique que a pagina exibe o texto \"culos salvos\". Passo 17: navegue para o endereco /account/cards. Passo 18: verifique que a pagina exibe o texto \"Novo cart\". Passo 19: navegue para o endereco /bookings. Passo 20: verifique que a pagina volta a exibir o texto \"Unidade QA\", ou seja, a reserva continua la depois do passeio pela conta.",
+  "tags": [
+    "jornada",
+    "jornada-longa",
+    "autenticado",
+    "reserva",
+    "navegacao"
+  ],
+  "hints": [
+    "Sao passos numerados: execute cada um como uma acao propria do plano, na ordem.",
+    "Para checar texto use text_contains com selector body. Para o valor de um input use selector_value. Para checar endereco use a postcondicao url com contains, nunca um seletor da pagina de destino. Dialogos do Radix montam fora do main: use o seletor [role=\"dialog\"].",
+    "E o passeio de quem ja tem reserva: confere o voucher, pensa em mudar a data, desiste, da uma olhada nos veiculos e nos cartoes e volta.",
+    "Os passos 10 a 14 sao o padrao de quem se arrepende: abre a alteracao, olha, fecha, e a reserva continua como estava.",
+    "O passo 20 fecha o circuito: sair da area de reservas e voltar nao pode perder o que ja estava carregado."
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x\",\"token_type\":\"bearer\",\"expires_in\":999999999,\"expires_at\":4102444800,\"refresh_token\":\"r\",\"user\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"qa@windup.local\"}}"
+    }
+  },
+  "network": [
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "r",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles?*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "customer"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company?*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/company_role_scope?*",
+      "json": [
+        {
+          "role": "owner",
+          "scope": "bookings:read"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/booking?*code=eq.MP7K2X*",
+      "json": {
+        "id": "bk-1",
+        "code": "MP7K2X",
+        "status": "confirmed",
+        "check_in_at": "2027-03-10T08:00:00Z",
+        "check_out_at": "2027-03-15T18:00:00Z",
+        "expires_at": null,
+        "total_amount": 187.5,
+        "created_at": "2026-08-01T12:00:00Z",
+        "location": {
+          "id": "00000000-0000-4000-8000-0000000000a1",
+          "company_id": "00000000-0000-4000-8000-0000000000c1",
+          "name": "Unidade QA",
+          "slug": "unidade-qa",
+          "address": "Av. dos Testes, 1000",
+          "is_listed": true,
+          "city": "Campinas",
+          "state": "SP",
+          "status": "active",
+          "created_at": "2026-08-01T12:00:00Z",
+          "deleted_at": null,
+          "company": {
+            "name": "Empresa QA",
+            "slug": "empresa-qa"
+          },
+          "destination": {
+            "city": "Campinas",
+            "short_name": "VCP"
+          },
+          "phone": "+551140028922",
+          "email": "unidade@qa.local",
+          "notice": "Chegue com 20 minutos de antecedencia.",
+          "reservation_policy": "Cancelamento gratuito ate 24h antes.",
+          "latitude": -22.9,
+          "longitude": -47.06,
+          "tolerance_minutes": 30
+        },
+        "booking_item": [
+          {
+            "item_type": "parking",
+            "parking_type": {
+              "name": "Vaga Coberta",
+              "code": "COB"
+            }
+          }
+        ],
+        "passenger_count": 2,
+        "has_pcd": false,
+        "checked_in_at": null,
+        "fare_tier": "flex",
+        "fare_price_cents": 18750,
+        "fare_cancel_until": "2027-03-09T08:00:00Z",
+        "fare_benefits": {
+          "change_dates": true,
+          "change_vehicle": true
+        },
+        "vehicle": {
+          "id": "v1",
+          "license_plate": "ABC1D23",
+          "model": "Onix",
+          "color": "Prata"
+        },
+        "items": [
+          {
+            "id": "bi-1",
+            "item_type": "parking",
+            "unit_price": 37.5,
+            "subtotal": 187.5,
+            "parking_type": {
+              "name": "Vaga Coberta",
+              "code": "COB"
+            },
+            "add_on_service": null
+          }
+        ],
+        "payments": [
+          {
+            "status": "paid",
+            "provider": "pagarme",
+            "paid_at": "2026-08-01T12:00:00Z",
+            "created_at": "2026-08-01T12:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "url": "**/rest/v1/booking?*limit=100*",
+      "json": [
+        {
+          "id": "bk-1",
+          "code": "MP7K2X",
+          "status": "confirmed",
+          "check_in_at": "2027-03-10T08:00:00Z",
+          "check_out_at": "2027-03-15T18:00:00Z",
+          "expires_at": null,
+          "total_amount": 187.5,
+          "created_at": "2026-08-01T12:00:00Z",
+          "location": {
+            "id": "00000000-0000-4000-8000-0000000000a1",
+            "company_id": "00000000-0000-4000-8000-0000000000c1",
+            "name": "Unidade QA",
+            "slug": "unidade-qa",
+            "address": "Av. dos Testes, 1000",
+            "is_listed": true,
+            "city": "Campinas",
+            "state": "SP",
+            "status": "active",
+            "created_at": "2026-08-01T12:00:00Z",
+            "deleted_at": null,
+            "company": {
+              "name": "Empresa QA",
+              "slug": "empresa-qa"
+            },
+            "destination": {
+              "city": "Campinas",
+              "short_name": "VCP"
+            }
+          },
+          "booking_item": [
+            {
+              "item_type": "parking",
+              "parking_type": {
+                "name": "Vaga Coberta",
+                "code": "COB"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/booking?*",
+      "json": null
+    },
+    {
+      "url": "**/rpc/get_my_wallet*",
+      "json": {
+        "balance": 0,
+        "cashback": 0,
+        "transactions": []
+      }
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ]
+}
