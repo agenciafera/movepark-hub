@@ -37,7 +37,22 @@ Cobertura garantida por teste em [`src/worker.test.ts`](../../src/worker.test.ts
 
 ## Operação
 
-Para acelerar a saída das 56 URLs já indexadas: cadastrar `hub.movepark.co` como propriedade no Search Console e usar **Remoções › Ocultação temporária** (vale 6 meses). A saída definitiva vem do recrawl lendo o `noindex`, o que leva de dias a semanas.
+O `movepark.co` já é uma **propriedade de domínio** (`sc-domain:movepark.co`) no Search Console, então cobre todos os subdomínios. Não existe propriedade separada do `hub.` nem é preciso criar uma.
+
+Remoção temporária do prefixo `https://hub.movepark.co/` enviada em **04/08/2026** (vale ~6 meses, reversível a qualquer momento). Ela apenas esconde; a saída definitiva vem do recrawl lendo o `noindex`, o que leva de dias a semanas.
+
+Baseline medido em 04/08/2026, antes do `noindex` propagar: **233 páginas indexadas no domínio, 18 delas no `hub.movepark.co`**. Duas eram rotas de painel: `/operator` e `/operator/api-keys`. Também apareceram `/search?dest=POA` e uma listagem com query string (`?from=&to=&src=home-popular`), ou seja, URL parametrizada indexada como duplicata.
+
+Nenhum sitemap do `hub.` chegou a ser submetido: a propriedade só tem os dois do WordPress (`movepark.co/sitemap.xml` e `page-sitemap.xml`). O sitemap do Hub só era descoberto pelo `robots.txt`.
+
+### Outros subdomínios indexados
+
+A mesma propriedade de domínio revelou dois subdomínios fora do `hub.` no índice, ambos fora deste repositório:
+
+| Subdomínio | O que é | Situação |
+|---|---|---|
+| `n8n.movepark.co` | instância n8n de automação | indexado; ferramenta interna exposta na busca |
+| `virapark.movepark.co` | white-label do parceiro Virapark (Vercel) | indexado; pode ser intencional para o SEO do parceiro |
 
 ## Checklist da migração para o `movepark.co`
 
