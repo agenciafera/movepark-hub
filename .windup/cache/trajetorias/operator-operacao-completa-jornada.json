@@ -1,0 +1,282 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "operator-operacao-completa-jornada",
+    "start_url": "/operator/bookings",
+    "start_sig": "sig:216bc20eae546abf",
+    "scenario_sig": "d83c0d4b165d8a94"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "operator-operacao-completa-jornada",
+    "start_url": "http://localhost:5273/operator/bookings",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "Reservas page main heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "h1",
+            "text": "Reservas"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "click",
+        "target": {
+          "selector": "a[href='/operator/locations']",
+          "description": "Unidades sidebar navigation link"
+        },
+        "expect": {
+          "url": "**/operator/locations*"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "Unidades page content area"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Unidades"
+          }
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a4",
+        "type": "click",
+        "target": {
+          "selector": "a[href='/operator/coupons']",
+          "description": "Promoções sidebar navigation link"
+        },
+        "expect": {
+          "url": "**/operator/coupons*"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a5",
+        "type": "click",
+        "target": {
+          "selector": "button:has-text('Novo cupom')",
+          "description": "Novo cupom button to open coupon creation form"
+        },
+        "expect": {
+          "selector": "[role='dialog']"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a6",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role='dialog']",
+          "description": "coupon creation form dialog"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "[role='dialog']",
+            "text": "Código"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a7",
+        "type": "fill",
+        "target": {
+          "selector": "#c-code",
+          "description": "coupon code input field"
+        },
+        "value": "OPERACAO20",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a8",
+        "type": "fill",
+        "target": {
+          "selector": "#c-value",
+          "description": "coupon value input field"
+        },
+        "value": "20",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a9",
+        "type": "click",
+        "target": {
+          "selector": "[role='dialog'] button:has-text('Salvar')",
+          "description": "Save coupon button inside dialog"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a10",
+        "type": "wait_for",
+        "target": {
+          "selector": "button:has-text('Novo cupom')",
+          "description": "Novo cupom button visible after dialog closes"
+        },
+        "expect": {
+          "not_visible": "[role='dialog']"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a11",
+        "type": "click",
+        "target": {
+          "selector": "a[href='/operator/addons']",
+          "description": "Serviços adicionais sidebar navigation link"
+        },
+        "expect": {
+          "url": "**/operator/addons*"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a12",
+        "type": "click",
+        "target": {
+          "selector": "button:has-text('Novo serviço')",
+          "description": "Novo serviço button to open service creation form"
+        },
+        "expect": {
+          "selector": "[role='dialog']"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a13",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role='dialog']",
+          "description": "service creation form dialog"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "[role='dialog']",
+            "text": "Preço base"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a14",
+        "type": "fill",
+        "target": {
+          "selector": "#a-name",
+          "description": "service name input field"
+        },
+        "value": "Lavagem QA",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a15",
+        "type": "wait_for",
+        "target": {
+          "selector": "#a-name",
+          "description": "service name input after fill"
+        },
+        "expect": {
+          "selector_value": {
+            "selector": "#a-name",
+            "value": "Lavagem QA"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a16",
+        "type": "click",
+        "target": {
+          "selector": "[role='dialog'] button:has-text('Cancelar')",
+          "description": "Cancel button in service form dialog"
+        },
+        "expect": {
+          "not_visible": "[role='dialog']"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a17",
+        "type": "click",
+        "target": {
+          "selector": "a[href='/operator/reports']",
+          "description": "Relatórios sidebar navigation link"
+        },
+        "expect": {
+          "url": "**/operator/reports*"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a18",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "Relatórios page content area"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Relatórios"
+          }
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a19",
+        "type": "click",
+        "target": {
+          "selector": "a[href='/operator/settings']",
+          "description": "Configurações sidebar navigation link"
+        },
+        "expect": {
+          "url": "**/operator/settings*"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a20",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "settings page content area"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Preferências da sua empresa"
+          },
+          "selector": "main"
+        },
+        "timeout_ms": 10000
+      }
+    ],
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Reservas\". Passo 2: clique no item \"Unidades\" do menu lateral. Passo 3: verifique que a pagina exibe o texto \"Unidades\". Passo 4: clique no item \"Promoções\" do menu lateral. Passo 5: clique em \"Novo cupom\". Passo 6: verifique que o formulario exibe o texto \"Código\". Passo 7: preencha o input de id \"c-code\" com \"OPERACAO20\". Passo 8: preencha o input de id \"c-value\" com \"20\". Passo 9: clique em \"Salvar\". Passo 10: verifique que o formulario fechou. Passo 11: clique no item \"Serviços adicionais\" do menu lateral. Passo 12: clique em \"Novo serviço\". Passo 13: verifique que o formulario exibe o texto \"Preço base\". Passo 14: preencha o input de id \"a-name\" com \"Lavagem QA\". Passo 15: verifique que o input de id \"a-name\" contem \"Lavagem QA\". Passo 16: feche o formulario clicando em \"Cancelar\". Passo 17: clique no item \"Relatórios\" do menu lateral. Passo 18: verifique que a pagina exibe o texto \"Relatórios\". Passo 19: clique no item \"Configurações\" do menu lateral. Passo 20: verifique que a pagina exibe o texto \"Preferências da sua empresa\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-04T13:41:35.546Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-04T13:41:38.924Z",
+    "last_replayed_at": "2026-08-04T13:57:45.000Z",
+    "replay_count": 2,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

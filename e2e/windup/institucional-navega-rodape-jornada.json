@@ -1,0 +1,29 @@
+{
+  "scenario_id": "institucional-navega-rodape-jornada",
+  "start_url": "/",
+  "tags": [
+    "jornada-longa",
+    "leitura"
+  ],
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Estacione em qualquer aeroporto do Brasil\". Passo 2: clique no link \"Sobre nós\" do rodape. Passo 3: verifique que a pagina exibe o texto \"Vaga garantida\". Passo 4: clique no link \"Termos de uso\" do rodape. Passo 5: verifique que a pagina exibe o texto \"Termos de Uso\". Passo 6: clique no link \"Política de privacidade\" do rodape. Passo 7: verifique que a pagina exibe o texto \"Política de Privacidade\". Passo 8: clique no link \"Seja parceiro\" do rodape. Passo 9: verifique que a pagina exibe o texto \"Encha suas vagas com reservas online\".",
+  "hints": [
+    "Jornada de quem navega pelo rodape: atravessa quatro paginas institucionais numa execucao.",
+    "Os links do rodape sao Sobre nos, Termos de uso, Politica de privacidade, Estacionamentos e Seja parceiro.",
+    "Depois de cada clique que troca de tela, espere o titulo novo aparecer antes de verificar.",
+    "Sao passos numerados: execute CADA UM como uma acao propria do plano."
+  ],
+  "network": [
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    },
+    {
+      "url": "**/functions/v1/**",
+      "json": {}
+    }
+  ]
+}

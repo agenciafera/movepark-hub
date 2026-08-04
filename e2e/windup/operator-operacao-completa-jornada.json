@@ -1,0 +1,138 @@
+{
+  "scenario_id": "operator-operacao-completa-jornada",
+  "start_url": "/operator/bookings",
+  "tags": [
+    "jornada-longa",
+    "autenticado"
+  ],
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Reservas\". Passo 2: clique no item \"Unidades\" do menu lateral. Passo 3: verifique que a pagina exibe o texto \"Unidades\". Passo 4: clique no item \"Promoções\" do menu lateral. Passo 5: clique em \"Novo cupom\". Passo 6: verifique que o formulario exibe o texto \"Código\". Passo 7: preencha o input de id \"c-code\" com \"OPERACAO20\". Passo 8: preencha o input de id \"c-value\" com \"20\". Passo 9: clique em \"Salvar\". Passo 10: verifique que o formulario fechou. Passo 11: clique no item \"Serviços adicionais\" do menu lateral. Passo 12: clique em \"Novo serviço\". Passo 13: verifique que o formulario exibe o texto \"Preço base\". Passo 14: preencha o input de id \"a-name\" com \"Lavagem QA\". Passo 15: verifique que o input de id \"a-name\" contem \"Lavagem QA\". Passo 16: feche o formulario clicando em \"Cancelar\". Passo 17: clique no item \"Relatórios\" do menu lateral. Passo 18: verifique que a pagina exibe o texto \"Relatórios\". Passo 19: clique no item \"Configurações\" do menu lateral. Passo 20: verifique que a pagina exibe o texto \"Preferências da sua empresa\".",
+  "hints": [
+    "Sessao completa de parceiro: atravessa seis telas, cadastra um cupom e comeca um servico adicional.",
+    "O passo 10 e not_visible em [role=\"dialog\"]. O passo 15 usa selector_value.",
+    "Ao trocar de tela com o modal aberto o app pode fechar sozinho: siga os passos na ordem.",
+    "Depois de cada clique que troca de tela, espere o titulo novo aparecer antes de verificar.",
+    "Formulario abre em portal do Radix FORA do <main>: use selector [role=\"dialog\"] nas checagens dele.",
+    "Sao passos numerados: execute CADA UM como uma acao propria do plano.",
+    "O modal aberto bloqueia o menu lateral: feche com Cancelar antes de navegar."
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x\",\"token_type\":\"bearer\",\"expires_in\":999999999,\"expires_at\":4102444800,\"refresh_token\":\"r\",\"user\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"qa@windup.local\"}}"
+    }
+  },
+  "network": [
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "r",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles?*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "company_operator"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company?*",
+      "json": [
+        {
+          "company_id": "00000000-0000-4000-8000-0000000000c1",
+          "role": "owner"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/company_role_scope?*",
+      "json": [
+        {
+          "role": "owner",
+          "scope": "occupancy:read"
+        },
+        {
+          "role": "owner",
+          "scope": "addons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "pricing:write"
+        },
+        {
+          "role": "owner",
+          "scope": "coupons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "reviews:read"
+        },
+        {
+          "role": "owner",
+          "scope": "team:read"
+        },
+        {
+          "role": "owner",
+          "scope": "finance:read"
+        },
+        {
+          "role": "owner",
+          "scope": "api-keys:write"
+        },
+        {
+          "role": "owner",
+          "scope": "locations:write"
+        },
+        {
+          "role": "owner",
+          "scope": "bookings:read"
+        }
+      ]
+    },
+    {
+      "url": "**/rpc/manager_daily_flow*",
+      "json": {
+        "hours": [],
+        "total_in": 0,
+        "total_out": 0
+      }
+    },
+    {
+      "url": "**/rpc/manager_dashboard_overview*",
+      "json": {
+        "bookings_today": 0,
+        "revenue_cents": 0,
+        "commission_cents": 0,
+        "payout_cents": 0,
+        "occupancy_pct": 0
+      }
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ]
+}
