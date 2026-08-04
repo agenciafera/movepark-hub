@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/auth/context";
 import { detectBrand, useCreatePaymentMethod } from "./api";
-import { parseValidade } from "./PaymentMethodForm.logic";
+import { parseValidade } from "@/lib/card-expiry";
 
 type Props = {
   open: boolean;

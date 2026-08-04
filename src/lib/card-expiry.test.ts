@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseValidade } from "./PaymentMethodForm.logic";
+import { parseValidade } from "./card-expiry";
 
 /** "hoje" fixo, para que o teste da borda do mês não dependa do dia em que roda. */
 const HOJE = new Date("2026-08-04T12:00:00Z");
@@ -9,10 +9,21 @@ describe("parseValidade", () => {
     expect(parseValidade("11/29", HOJE)).toEqual({ mes: 11, ano: 2029 });
   });
 
-  // Só dígitos e barra: a máscara do campo já descarta o resto antes de chegar aqui.
-  it.each(["00/29", "13/29", "11/", "", "/29"])("recusa %s", (entrada) => {
-    expect(parseValidade(entrada, HOJE)).toBeNull();
+  // O campo do checkout não tem máscara: aceita a barra ou a ausência dela.
+  it("lê MMAA sem barra, como vem do checkout", () => {
+    expect(parseValidade("1129", HOJE)).toEqual({ mes: 11, ano: 2029 });
   });
+
+  it("ignora espaços em volta", () => {
+    expect(parseValidade(" 11/29 ", HOJE)).toEqual({ mes: 11, ano: 2029 });
+  });
+
+  it.each(["00/29", "13/29", "11/", "", "/29", "1/29", "11/2029", "ab/cd", "0029"])(
+    "recusa %s",
+    (entrada) => {
+      expect(parseValidade(entrada, HOJE)).toBeNull();
+    },
+  );
 
   it("recusa ano que já passou", () => {
     expect(parseValidade("01/20", HOJE)).toBeNull();

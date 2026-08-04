@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/utils";
@@ -60,8 +60,22 @@ vi.mock("./api", async (importOriginal) => {
 
 import { Step3Payment } from "./Step3Payment";
 import { tokenizeCard } from "@/lib/pagarme-tokenize";
+import { toast } from "sonner";
+
+function preencheCartao(validade: string) {
+  fireEvent.change(screen.getByLabelText("Número do cartão"), {
+    target: { value: "4111111111111111" },
+  });
+  fireEvent.change(screen.getByLabelText("Nome no cartão"), { target: { value: "Tony Stark" } });
+  fireEvent.change(screen.getByLabelText("Validade (MM/AA)"), { target: { value: validade } });
+  fireEvent.change(screen.getByLabelText("CVV"), { target: { value: "123" } });
+}
 
 describe("Step3Payment", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("gera o PIX e mostra o QR + aguardo de confirmação", async () => {
     renderWithProviders(
       <Step3Payment
@@ -107,6 +121,60 @@ describe("Step3Payment", () => {
     await waitFor(() =>
       expect(cardMutate).toHaveBeenCalledWith(
         expect.objectContaining({ booking_code: "MP-ABC123", card_token: "token_1", installments: 1 }),
+      ),
+    );
+  });
+
+  // Regressão: a validade era conferida só na faixa do mês, sem comparar com
+  // hoje. Um cartão vencido seguia para a tokenização no Pagar.me, e a recusa
+  // só voltava do gateway, como erro genérico de pagamento.
+  it("cartão vencido não chega na tokenização", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <Step3Payment
+        bookingId="bk-1"
+        bookingCode="MP-ABC123"
+        totalAmount={100}
+        customerTaxId="04810388417"
+        paymentStatus={null}
+        onBack={() => {}}
+      />,
+    );
+    await user.click(screen.getByRole("tab", { name: /Cartão/i }));
+    await screen.findByLabelText("Número do cartão");
+
+    preencheCartao("01/20");
+    fireEvent.click(screen.getByRole("button", { name: /Pagar com cartão/i }));
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Validade inválida (use MM/AA)."));
+    expect(tokenizeCard).not.toHaveBeenCalled();
+    expect(cardMutate).not.toHaveBeenCalled();
+  });
+
+  // O campo do checkout não tem máscara: quem digita "1230" sem a barra tem um
+  // cartão bom, e recusar isso seria trocar um bug por outro.
+  it("aceita a validade digitada sem barra", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <Step3Payment
+        bookingId="bk-1"
+        bookingCode="MP-ABC123"
+        totalAmount={100}
+        customerTaxId="04810388417"
+        paymentStatus={null}
+        onBack={() => {}}
+      />,
+    );
+    await user.click(screen.getByRole("tab", { name: /Cartão/i }));
+    await screen.findByLabelText("Número do cartão");
+
+    preencheCartao("1230");
+    fireEvent.click(screen.getByRole("button", { name: /Pagar com cartão/i }));
+
+    await waitFor(() =>
+      expect(tokenizeCard).toHaveBeenCalledWith(
+        "pk_test_x",
+        expect.objectContaining({ exp_month: 12, exp_year: 2030 }),
       ),
     );
   });

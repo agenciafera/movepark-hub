@@ -23,6 +23,7 @@ import { toSvgString } from "@/lib/qr";
 import { formatBRL } from "@/lib/format";
 import { computeInstallmentPlan } from "@/lib/installments";
 import { tokenizeCard } from "@/lib/pagarme-tokenize";
+import { parseValidade } from "@/lib/card-expiry";
 import { documentMask, onlyDigits } from "@/lib/masks";
 import { isValidCnpj, isValidCpf } from "@/lib/documents";
 import { useAuth } from "@/auth/context";
@@ -38,15 +39,6 @@ type Props = {
   paymentStatus: "pending" | "authorized" | "paid" | "refunded" | "failed" | "cancelled" | null;
   onBack: () => void;
 };
-
-/** "MM/AA" → { month, year } (4 dígitos) ou null. */
-function parseExpiry(s: string): { month: number; year: number } | null {
-  const m = s.replace(/\s/g, "").match(/^(\d{2})\/?(\d{2})$/);
-  if (!m) return null;
-  const month = parseInt(m[1], 10);
-  if (month < 1 || month > 12) return null;
-  return { month, year: 2000 + parseInt(m[2], 10) };
-}
 
 export function Step3Payment({
   bookingId,
@@ -132,16 +124,16 @@ export function Step3Payment({
       if (cardChoice !== "new") {
         await card.mutateAsync({ booking_code: bookingCode, installments, payment_method_id: cardChoice });
       } else {
-        const expiry = parseExpiry(cardExpiry);
-        if (!expiry) {
+        const validade = parseValidade(cardExpiry, new Date());
+        if (!validade) {
           toast.error("Validade inválida (use MM/AA).");
           return;
         }
         const tok = await tokenizeCard(config.data!.public_key, {
           number: cardNumber,
           holder_name: cardName,
-          exp_month: expiry.month,
-          exp_year: expiry.year,
+          exp_month: validade.mes,
+          exp_year: validade.ano,
           cvv: cardCvv,
         });
         await card.mutateAsync({
@@ -152,8 +144,8 @@ export function Step3Payment({
           holder_name: cardName,
           brand: tok.brand,
           last4: tok.last4,
-          exp_month: expiry.month,
-          exp_year: expiry.year,
+          exp_month: validade.mes,
+          exp_year: validade.ano,
         });
       }
       toast.success("Pagamento aprovado. Confirmando…");
