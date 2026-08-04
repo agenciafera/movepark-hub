@@ -3154,8 +3154,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-29T12:30:26.935Z",
-      "last_seen": "2026-08-04T14:32:09.685Z",
-      "seen_count": 109,
+      "last_seen": "2026-08-04T14:54:45.039Z",
+      "seen_count": 115,
       "stale": false
     },
     "sig:eb1cb13a1fa9ce8c": {
@@ -3212,8 +3212,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-29T12:30:32.373Z",
-      "last_seen": "2026-08-04T14:32:13.485Z",
-      "seen_count": 152,
+      "last_seen": "2026-08-04T14:54:49.792Z",
+      "seen_count": 170,
       "stale": false
     },
     "sig:2644ef779c146a8c": {
@@ -3272,8 +3272,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T13:22:55.662Z",
-      "last_seen": "2026-08-04T14:32:12.653Z",
-      "seen_count": 428,
+      "last_seen": "2026-08-04T14:54:48.624Z",
+      "seen_count": 452,
       "stale": false
     },
     "sig:42bd6642a8c0077e": {
@@ -3519,7 +3519,7 @@
       "interactive": [
         "a",
         "a",
-        "button id=radix-:rf: type=button text=Destinos",
+        "button id=radix-:rv: type=button text=Destinos",
         "button type=button text=OndeAeroporto, cidade ou bairro",
         "button type=button text=Check-in05 ago · 22:00",
         "button type=button text=Check-out10 ago · 08:00",
@@ -3538,14 +3538,14 @@
         "button type=button text=Cancelamento",
         "button type=button text=Check-in / Acesso",
         "button type=button text=Veículos",
-        "button id=radix-:rh: type=button text=Posso trocar o veículo depois da reserva",
-        "button id=radix-:rj: type=button text=Como cancelo uma reserva?Cancelamento",
-        "button id=radix-:rl: type=button text=O que apresentar na chegada ao estaciona",
-        "button id=radix-:rn: type=button text=Como faço uma reserva?Reservas",
-        "button id=radix-:rp: type=button text=Quais formas de pagamento aceitam?Pagame",
-        "button id=radix-:rr: type=button text=Posso reservar pra outra pessoa dirigir?",
-        "button id=radix-:rt: type=button text=Posso chegar antes ou sair depois do hor",
-        "button id=radix-:rv: type=button text=O PIX expira em quanto tempo?Pagamentos",
+        "button id=radix-:rf: type=button text=Posso trocar o veículo depois da reserva",
+        "button id=radix-:rh: type=button text=Como cancelo uma reserva?Cancelamento",
+        "button id=radix-:rj: type=button text=O que apresentar na chegada ao estaciona",
+        "button id=radix-:rl: type=button text=Como faço uma reserva?Reservas",
+        "button id=radix-:rn: type=button text=Quais formas de pagamento aceitam?Pagame",
+        "button id=radix-:rp: type=button text=Posso reservar pra outra pessoa dirigir?",
+        "button id=radix-:rr: type=button text=Posso chegar antes ou sair depois do hor",
+        "button id=radix-:rt: type=button text=O PIX expira em quanto tempo?Pagamentos",
         "a text=Sobre nós",
         "a text=Termos de uso",
         "a text=Política de privacidade",
@@ -3563,8 +3563,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T15:18:04.441Z",
-      "last_seen": "2026-08-04T14:20:16.150Z",
-      "seen_count": 22,
+      "last_seen": "2026-08-04T14:53:20.198Z",
+      "seen_count": 24,
       "stale": false
     },
     "sig:b805d148d91ff81c": {
@@ -3608,8 +3608,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T15:25:44.737Z",
-      "last_seen": "2026-08-04T14:32:10.490Z",
-      "seen_count": 522,
+      "last_seen": "2026-08-04T14:54:46.465Z",
+      "seen_count": 564,
       "stale": false
     },
     "sig:95f23b77537a835a": {
@@ -3674,8 +3674,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-30T18:03:15.518Z",
-      "last_seen": "2026-08-04T14:32:11.164Z",
-      "seen_count": 99,
+      "last_seen": "2026-08-04T14:54:46.891Z",
+      "seen_count": 112,
       "stale": false
     },
     "sig:9a009a75cb95f5d7": {
@@ -3732,8 +3732,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T12:42:59.515Z",
-      "last_seen": "2026-08-04T14:31:06.985Z",
-      "seen_count": 25,
+      "last_seen": "2026-08-04T14:49:31.663Z",
+      "seen_count": 26,
       "stale": false
     },
     "sig:0dcff3a175658e77": {
@@ -3798,8 +3798,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:46:22.794Z",
-      "last_seen": "2026-08-04T14:30:49.940Z",
-      "seen_count": 607,
+      "last_seen": "2026-08-04T14:53:00.166Z",
+      "seen_count": 643,
       "stale": false
     },
     "sig:32ea8b629364b656": {
@@ -3857,8 +3857,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:46:23.420Z",
-      "last_seen": "2026-08-04T14:30:32.893Z",
-      "seen_count": 70,
+      "last_seen": "2026-08-04T14:52:46.287Z",
+      "seen_count": 76,
       "stale": false
     },
     "sig:dbe4277c10825f11": {
@@ -3986,8 +3986,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:20.083Z",
-      "last_seen": "2026-08-04T14:30:51.714Z",
-      "seen_count": 55,
+      "last_seen": "2026-08-04T14:53:01.954Z",
+      "seen_count": 58,
       "stale": false
     },
     "sig:30b80afac064bfc7": {
@@ -4036,8 +4036,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:26.734Z",
-      "last_seen": "2026-08-04T14:31:46.414Z",
-      "seen_count": 376,
+      "last_seen": "2026-08-04T14:54:13.224Z",
+      "seen_count": 406,
       "stale": false
     },
     "sig:00208007c0a1c596": {
@@ -4171,8 +4171,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:28.312Z",
-      "last_seen": "2026-08-04T14:30:57.333Z",
-      "seen_count": 56,
+      "last_seen": "2026-08-04T14:53:09.109Z",
+      "seen_count": 59,
       "stale": false
     },
     "sig:5f9442af211e8be5": {
@@ -4217,8 +4217,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:29.958Z",
-      "last_seen": "2026-08-04T14:30:53.407Z",
-      "seen_count": 58,
+      "last_seen": "2026-08-04T14:53:04.287Z",
+      "seen_count": 61,
       "stale": false
     },
     "sig:f4a52eca245bd7d5": {
@@ -4261,8 +4261,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:48.684Z",
-      "last_seen": "2026-08-04T14:31:25.330Z",
-      "seen_count": 57,
+      "last_seen": "2026-08-04T14:53:40.018Z",
+      "seen_count": 60,
       "stale": false
     },
     "sig:f229d562bc655a9f": {
@@ -4308,8 +4308,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:55.153Z",
-      "last_seen": "2026-08-04T14:31:47.874Z",
-      "seen_count": 370,
+      "last_seen": "2026-08-04T14:54:15.079Z",
+      "seen_count": 407,
       "stale": false
     },
     "sig:0220ddecfb1188ce": {
@@ -4323,7 +4323,8 @@
         "http://localhost:5273/manager/faq/categorias",
         "http://localhost:5273/manager/finance/recipients",
         "http://localhost:5273/manager/legal",
-        "http://localhost:5273/manager/reviews"
+        "http://localhost:5273/manager/reviews",
+        "http://localhost:5273/manager/companies/00000000-0000-4000-8000-0000000000c1/locations"
       ],
       "url_pattern": "**/manager/destinations",
       "title": "Movepark Hub",
@@ -4358,8 +4359,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:47:56.027Z",
-      "last_seen": "2026-08-04T14:31:45.012Z",
-      "seen_count": 517,
+      "last_seen": "2026-08-04T14:54:11.116Z",
+      "seen_count": 565,
       "stale": false
     },
     "sig:deb61410f48cc824": {
@@ -4405,8 +4406,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:48:54.170Z",
-      "last_seen": "2026-08-04T14:31:45.354Z",
-      "seen_count": 56,
+      "last_seen": "2026-08-04T14:54:11.761Z",
+      "seen_count": 59,
       "stale": false
     },
     "sig:9e475390a54a6c61": {
@@ -4449,8 +4450,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:16.750Z",
-      "last_seen": "2026-08-04T14:32:01.282Z",
-      "seen_count": 223,
+      "last_seen": "2026-08-04T14:54:32.247Z",
+      "seen_count": 238,
       "stale": false
     },
     "sig:216bc20eae546abf": {
@@ -4491,8 +4492,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:27.416Z",
-      "last_seen": "2026-08-04T14:31:59.954Z",
-      "seen_count": 75,
+      "last_seen": "2026-08-04T14:54:30.464Z",
+      "seen_count": 84,
       "stale": false
     },
     "sig:7c87997d1435748b": {
@@ -4539,8 +4540,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:45.163Z",
-      "last_seen": "2026-08-04T14:32:05.108Z",
-      "seen_count": 359,
+      "last_seen": "2026-08-04T14:54:38.687Z",
+      "seen_count": 386,
       "stale": false
     },
     "sig:0de7196068dc995b": {
@@ -4581,8 +4582,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:49:46.524Z",
-      "last_seen": "2026-08-04T14:31:53.474Z",
-      "seen_count": 192,
+      "last_seen": "2026-08-04T14:54:21.815Z",
+      "seen_count": 207,
       "stale": false
     },
     "sig:0e77bbe16451b1b2": {
@@ -4622,8 +4623,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:03.481Z",
-      "last_seen": "2026-08-04T14:31:58.380Z",
-      "seen_count": 56,
+      "last_seen": "2026-08-04T14:54:29.276Z",
+      "seen_count": 59,
       "stale": false
     },
     "sig:330a98d155e0b087": {
@@ -4664,8 +4665,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:13.982Z",
-      "last_seen": "2026-08-04T14:32:01.889Z",
-      "seen_count": 57,
+      "last_seen": "2026-08-04T14:54:33.298Z",
+      "seen_count": 60,
       "stale": false
     },
     "sig:d338797fc9985ff4": {
@@ -4707,8 +4708,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:23.245Z",
-      "last_seen": "2026-08-04T14:32:03.532Z",
-      "seen_count": 56,
+      "last_seen": "2026-08-04T14:54:35.340Z",
+      "seen_count": 59,
       "stale": false
     },
     "sig:ca978112ca1bbdca": {
@@ -4724,8 +4725,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T15:50:40.542Z",
-      "last_seen": "2026-08-04T14:32:14.925Z",
-      "seen_count": 64,
+      "last_seen": "2026-08-04T14:54:51.637Z",
+      "seen_count": 67,
       "stale": false
     },
     "sig:56110ea72b7f7df7": {
@@ -4880,8 +4881,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T16:54:47.570Z",
-      "last_seen": "2026-08-04T14:31:22.401Z",
-      "seen_count": 412,
+      "last_seen": "2026-08-04T14:53:57.237Z",
+      "seen_count": 445,
       "stale": false
     },
     "sig:0112eb8401335d27": {
@@ -4942,8 +4943,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T17:21:42.604Z",
-      "last_seen": "2026-08-04T14:30:36.197Z",
-      "seen_count": 70,
+      "last_seen": "2026-08-04T14:52:47.505Z",
+      "seen_count": 76,
       "stale": false
     },
     "sig:34581fbdfb157f99": {
@@ -4994,8 +4995,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T17:21:44.244Z",
-      "last_seen": "2026-08-04T14:31:20.368Z",
-      "seen_count": 220,
+      "last_seen": "2026-08-04T14:53:33.491Z",
+      "seen_count": 238,
       "stale": false
     },
     "sig:c81c82460995a2b3": {
@@ -5122,8 +5123,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T17:26:00.975Z",
-      "last_seen": "2026-08-04T14:32:14.130Z",
-      "seen_count": 61,
+      "last_seen": "2026-08-04T14:54:50.463Z",
+      "seen_count": 64,
       "stale": false
     },
     "sig:e3b0c44298fc1c14": {
@@ -5266,8 +5267,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T17:41:01.725Z",
-      "last_seen": "2026-08-04T14:17:59.273Z",
-      "seen_count": 17,
+      "last_seen": "2026-08-04T14:54:41.142Z",
+      "seen_count": 22,
       "stale": false
     },
     "sig:03180569c661531d": {
@@ -5389,8 +5390,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T17:42:42.318Z",
-      "last_seen": "2026-08-04T14:32:06.618Z",
-      "seen_count": 11,
+      "last_seen": "2026-08-04T14:50:13.289Z",
+      "seen_count": 12,
       "stale": false
     },
     "sig:997d26f451fa9a15": {
@@ -5453,8 +5454,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T19:24:08.924Z",
-      "last_seen": "2026-08-04T14:31:42.745Z",
-      "seen_count": 115,
+      "last_seen": "2026-08-04T14:54:08.386Z",
+      "seen_count": 130,
       "stale": false
     },
     "sig:fe5ad84a4aed370b": {
@@ -5501,8 +5502,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T19:24:09.051Z",
-      "last_seen": "2026-08-04T14:32:00.842Z",
-      "seen_count": 52,
+      "last_seen": "2026-08-04T14:54:31.783Z",
+      "seen_count": 58,
       "stale": false
     },
     "sig:db0102561708d1ac": {
@@ -5556,8 +5557,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T19:24:12.199Z",
-      "last_seen": "2026-08-04T14:31:34.441Z",
-      "seen_count": 43,
+      "last_seen": "2026-08-04T14:53:59.277Z",
+      "seen_count": 46,
       "stale": false
     },
     "sig:4fca3398e1014f3b": {
@@ -5614,8 +5615,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T19:26:11.186Z",
-      "last_seen": "2026-08-04T14:31:52.909Z",
-      "seen_count": 94,
+      "last_seen": "2026-08-04T14:54:21.439Z",
+      "seen_count": 103,
       "stale": false
     },
     "sig:cbd8ec10f1fc3614": {
@@ -5749,8 +5750,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-31T19:42:56.979Z",
-      "last_seen": "2026-08-04T14:31:42.759Z",
-      "seen_count": 61,
+      "last_seen": "2026-08-04T14:54:08.425Z",
+      "seen_count": 70,
       "stale": false
     },
     "sig:27efdf8b710e7ec1": {
@@ -5904,8 +5905,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-01T16:31:37.632Z",
-      "last_seen": "2026-08-04T14:31:45.409Z",
-      "seen_count": 32,
+      "last_seen": "2026-08-04T14:54:11.822Z",
+      "seen_count": 35,
       "stale": false
     },
     "sig:02b28bca46f05df8": {
@@ -5946,8 +5947,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-01T16:33:25.020Z",
-      "last_seen": "2026-08-04T14:32:03.573Z",
-      "seen_count": 32,
+      "last_seen": "2026-08-04T14:54:35.405Z",
+      "seen_count": 35,
       "stale": false
     },
     "sig:d81fd038a56350e0": {
@@ -5997,8 +5998,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-03T17:49:13.361Z",
-      "last_seen": "2026-08-04T14:32:09.130Z",
-      "seen_count": 21,
+      "last_seen": "2026-08-04T14:54:44.376Z",
+      "seen_count": 24,
       "stale": false
     },
     "sig:5d463acbe0fb72a3": {
@@ -6137,8 +6138,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-03T17:51:59.980Z",
-      "last_seen": "2026-08-04T14:30:40.062Z",
-      "seen_count": 27,
+      "last_seen": "2026-08-04T14:52:49.806Z",
+      "seen_count": 30,
       "stale": false
     },
     "sig:9941cd9dea64ba25": {
@@ -6181,8 +6182,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-03T18:09:30.226Z",
-      "last_seen": "2026-08-04T14:31:42.201Z",
-      "seen_count": 34,
+      "last_seen": "2026-08-04T14:54:07.379Z",
+      "seen_count": 40,
       "stale": false
     },
     "sig:5cba6c69c489b53c": {
@@ -6297,8 +6298,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-03T20:16:36.657Z",
-      "last_seen": "2026-08-04T14:32:04.682Z",
-      "seen_count": 24,
+      "last_seen": "2026-08-04T14:54:36.564Z",
+      "seen_count": 27,
       "stale": false
     },
     "sig:91839fc8aa0ef775": {
@@ -6350,8 +6351,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-03T20:47:20.306Z",
-      "last_seen": "2026-08-04T14:31:03.317Z",
-      "seen_count": 220,
+      "last_seen": "2026-08-04T14:53:16.224Z",
+      "seen_count": 262,
       "stale": false
     },
     "sig:25474f4cdc1ae203": {
@@ -6415,8 +6416,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-03T20:47:26.118Z",
-      "last_seen": "2026-08-04T14:30:48.235Z",
-      "seen_count": 77,
+      "last_seen": "2026-08-04T14:52:58.097Z",
+      "seen_count": 92,
       "stale": false
     },
     "sig:c7ced58c6632bf02": {
@@ -6468,8 +6469,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-03T20:48:03.951Z",
-      "last_seen": "2026-08-04T14:32:14.084Z",
-      "seen_count": 114,
+      "last_seen": "2026-08-04T14:54:50.344Z",
+      "seen_count": 135,
       "stale": false
     },
     "sig:6d4cb38c0cade13b": {
@@ -6535,8 +6536,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-03T20:48:49.104Z",
-      "last_seen": "2026-08-04T14:31:00.674Z",
-      "seen_count": 112,
+      "last_seen": "2026-08-04T14:53:12.875Z",
+      "seen_count": 133,
       "stale": false
     },
     "sig:b2aa8fee22eea89f": {
@@ -6589,7 +6590,7 @@
         "a text=Ajuda",
         "input id=plate placeholder=ABC-1D23",
         "input id=model placeholder=Honda Civic",
-        "button id=vehicle-color type=button text=Selecione",
+        "button id=vehicle-color type=button text=Prata",
         "select text=BrancoPretoPrataCinzaVermelhoAzulVerdeMa",
         "button id=default type=button",
         "input type=checkbox",
@@ -6599,8 +6600,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-03T21:19:45.610Z",
-      "last_seen": "2026-08-04T14:30:51.331Z",
-      "seen_count": 15,
+      "last_seen": "2026-08-04T14:53:01.245Z",
+      "seen_count": 18,
       "stale": false
     },
     "sig:6dc1312f387e117e": {
@@ -6705,8 +6706,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-04T00:10:58.601Z",
-      "last_seen": "2026-08-04T14:32:07.664Z",
-      "seen_count": 11,
+      "last_seen": "2026-08-04T14:54:41.870Z",
+      "seen_count": 14,
       "stale": false
     },
     "sig:ac48cd48b27cb84e": {
@@ -6751,8 +6752,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-04T00:18:27.968Z",
-      "last_seen": "2026-08-04T14:31:42.161Z",
-      "seen_count": 13,
+      "last_seen": "2026-08-04T14:54:07.501Z",
+      "seen_count": 16,
       "stale": false
     },
     "sig:71b9200608792583": {
@@ -6797,8 +6798,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-04T00:27:50.031Z",
-      "last_seen": "2026-08-04T14:31:40.641Z",
-      "seen_count": 10,
+      "last_seen": "2026-08-04T14:54:05.574Z",
+      "seen_count": 13,
       "stale": false
     },
     "sig:b1625053c5cbdae1": {
@@ -6838,8 +6839,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-04T00:29:39.946Z",
-      "last_seen": "2026-08-04T14:31:58.226Z",
-      "seen_count": 10,
+      "last_seen": "2026-08-04T14:54:28.533Z",
+      "seen_count": 13,
       "stale": false
     },
     "sig:85f2e86a6f138571": {
@@ -6880,8 +6881,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-04T00:29:40.086Z",
-      "last_seen": "2026-08-04T14:31:58.361Z",
-      "seen_count": 10,
+      "last_seen": "2026-08-04T14:54:28.666Z",
+      "seen_count": 13,
       "stale": false
     },
     "sig:378f130afc134f32": {
@@ -6964,8 +6965,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-04T13:30:47.277Z",
-      "last_seen": "2026-08-04T14:31:09.457Z",
-      "seen_count": 9,
+      "last_seen": "2026-08-04T14:53:22.444Z",
+      "seen_count": 12,
       "stale": false
     },
     "sig:3dc54e16dad37543": {
@@ -7069,8 +7070,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-04T13:34:29.628Z",
-      "last_seen": "2026-08-04T14:32:00.387Z",
-      "seen_count": 9,
+      "last_seen": "2026-08-04T14:54:30.737Z",
+      "seen_count": 12,
       "stale": false
     },
     "sig:aec63d9bebf5b59e": {
@@ -7110,8 +7111,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-04T13:34:30.134Z",
-      "last_seen": "2026-08-04T14:32:00.756Z",
-      "seen_count": 9,
+      "last_seen": "2026-08-04T14:54:31.654Z",
+      "seen_count": 12,
       "stale": false
     },
     "sig:99fdbf8ae5142abb": {
@@ -7156,8 +7157,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-04T13:37:56.086Z",
-      "last_seen": "2026-08-04T14:31:43.534Z",
-      "seen_count": 8,
+      "last_seen": "2026-08-04T14:54:09.322Z",
+      "seen_count": 11,
       "stale": false
     },
     "sig:f1e75d9ca5fa9b71": {
@@ -7197,8 +7198,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-04T13:41:38.761Z",
-      "last_seen": "2026-08-04T14:32:01.424Z",
-      "seen_count": 8,
+      "last_seen": "2026-08-04T14:54:32.390Z",
+      "seen_count": 11,
       "stale": false
     },
     "sig:bc5eb3d8076e7fe2": {
@@ -7239,8 +7240,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-04T13:41:38.922Z",
-      "last_seen": "2026-08-04T14:32:01.563Z",
-      "seen_count": 8,
+      "last_seen": "2026-08-04T14:54:32.543Z",
+      "seen_count": 11,
       "stale": false
     },
     "sig:8fbcb62427dab68a": {
@@ -7300,8 +7301,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-04T14:03:58.403Z",
-      "last_seen": "2026-08-04T14:30:46.506Z",
-      "seen_count": 5,
+      "last_seen": "2026-08-04T14:52:55.608Z",
+      "seen_count": 8,
       "stale": false
     },
     "sig:6f57a741d70b7e7e": {
@@ -7318,8 +7319,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-04T14:25:04.338Z",
-      "last_seen": "2026-08-04T14:30:30.228Z",
-      "seen_count": 6,
+      "last_seen": "2026-08-04T14:52:43.788Z",
+      "seen_count": 15,
       "stale": false
     },
     "sig:a53c801888732c15": {
@@ -7346,8 +7347,119 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-04T14:29:50.518Z",
-      "last_seen": "2026-08-04T14:30:41.607Z",
-      "seen_count": 2,
+      "last_seen": "2026-08-04T14:52:40.724Z",
+      "seen_count": 5,
+      "stale": false
+    },
+    "sig:7e8073a4ee49397d": {
+      "urls_seen": [
+        "http://localhost:5273/operator/locations/00000000-0000-4000-8000-0000000000l1/parking-types",
+        "http://localhost:5273/operator/locations/00000000-0000-4000-8000-0000000000a1/parking-types"
+      ],
+      "url_pattern": "**/operator/locations/00000000-0000-4000-8000-0000000000l1/parking-types",
+      "title": "Movepark Hub",
+      "interactive": [
+        "a text=Dashboard",
+        "a text=Reservas",
+        "a text=Ocupação",
+        "a text=Unidades",
+        "a text=Serviços",
+        "a text=Avaliações",
+        "a text=Preços",
+        "a text=Promoções",
+        "a text=Repasses",
+        "a text=Relatórios",
+        "a text=Usuários",
+        "a text=FAQ",
+        "a text=API",
+        "a text=Configurações",
+        "button type=button text=Buscar reserva, unidade, cupom⌘K",
+        "button type=button",
+        "button id=radix-:r3: type=button text=QW",
+        "a text=Voltar para Unidades",
+        "button text=Novo tipo",
+        "button id=active-lpt-1 type=button",
+        "input id=cap-lpt-1 type=number",
+        "button text=Salvar",
+        "button text=Regras de reserva",
+        "button text=Simular preços",
+        "button text=Configurar precificação",
+        "a text=Início",
+        "a text=Reservas",
+        "a text=Ocupação",
+        "a text=Preços",
+        "button type=button text=Mais"
+      ],
+      "source": "execution",
+      "first_seen": "2026-08-04T14:37:02.787Z",
+      "last_seen": "2026-08-04T14:54:37.305Z",
+      "seen_count": 6,
+      "stale": false
+    },
+    "sig:7d0a66871f06c686": {
+      "urls_seen": [
+        "http://localhost:5273/manager/companies/00000000-0000-4000-8000-0000000000c1/locations"
+      ],
+      "url_pattern": "**/manager/companies/00000000-0000-4000-8000-0000000000c1/locations",
+      "title": "Movepark Hub",
+      "interactive": [
+        "button type=button text=Rede completa0 unidades · 0 empresas",
+        "a text=Dashboard",
+        "a text=Empresas",
+        "a text=Parceiros",
+        "a text=Destinos",
+        "a text=Reservas",
+        "a text=Financeiro",
+        "a text=Repasses",
+        "a text=Comissões",
+        "a text=Recebedores",
+        "a text=Tarifas",
+        "a text=Atribuição",
+        "a text=Avaliações",
+        "a text=FAQ",
+        "a text=Usuários",
+        "a text=Documentos legais",
+        "a text=Configurações",
+        "button type=button text=Buscar reserva, unidade, cupom⌘K",
+        "button type=button",
+        "button id=radix-:r4: type=button text=QW",
+        "a text=Voltar para Empresas",
+        "button text=Nova unidade",
+        "button text=Editar",
+        "a text=Tipos de vaga",
+        "a text=Início",
+        "a text=Empresas",
+        "a text=Reservas",
+        "a text=Usuários",
+        "button type=button text=Mais",
+        "input id=name",
+        "button type=button text=Adicionar endereço",
+        "input id=google-maps-url type=url placeholder=https://maps.google.com/...",
+        "input id=phone",
+        "input id=email type=email",
+        "button id=is-24h type=button",
+        "input id=tolerance-minutes type=number placeholder=60",
+        "textarea id=notice placeholder=Ex.: Use a Rua Padre Celestino Pavan. O GPS erra a entrada.",
+        "textarea id=directions placeholder=Ex.: Entre pela rua lateral (não pela entrada principal). Recepção coberta à direita.",
+        "input id=shuttle-freq type=number placeholder=15",
+        "input id=shuttle-terminal type=number placeholder=6",
+        "input id=img-gal-1 type=file",
+        "textarea id=policy placeholder=Ex.: Cancelamento grátis até 24h antes do check-in.",
+        "input id=slug",
+        "button id=status type=button text=Ativa",
+        "select text=AtivaInativaSuspensa",
+        "input id=tz",
+        "input id=external-ref placeholder=ex: lote-01",
+        "button id=destination type=button text=Nenhum",
+        "select text=Nenhum",
+        "button type=button text=Cancelar",
+        "button type=submit text=Salvar",
+        "button type=button text=Fechar"
+      ],
+      "source": "execution",
+      "first_seen": "2026-08-04T14:47:48.146Z",
+      "last_seen": "2026-08-04T14:53:55.458Z",
+      "seen_count": 4,
       "stale": false
     }
   },
@@ -7485,7 +7597,7 @@
         "selector": "main button:has-text('Quero ser parceiro')"
       },
       "to": "sig:3f40933715753efc",
-      "seen_count": 382
+      "seen_count": 409
     },
     {
       "from": "sig:b805d148d91ff81c",
@@ -7512,7 +7624,7 @@
         "selector": "main button:has-text('Novo cartão')"
       },
       "to": "sig:0112eb8401335d27",
-      "seen_count": 39
+      "seen_count": 42
     },
     {
       "from": "sig:3f40933715753efc",
@@ -7521,7 +7633,7 @@
         "selector": "[role=\"dialog\"] button:has-text('Continuar')"
       },
       "to": "sig:34581fbdfb157f99",
-      "seen_count": 90
+      "seen_count": 94
     },
     {
       "from": "sig:0dcff3a175658e77",
@@ -7548,7 +7660,7 @@
         "selector": "#pl-company"
       },
       "to": "sig:34581fbdfb157f99",
-      "seen_count": 82
+      "seen_count": 89
     },
     {
       "from": "sig:0dcff3a175658e77",
@@ -7611,7 +7723,7 @@
         "selector": "[role=\"dialog\"] button:has-text('Quero ser parceiro')"
       },
       "to": "sig:34581fbdfb157f99",
-      "seen_count": 33
+      "seen_count": 36
     },
     {
       "from": "sig:0dcff3a175658e77",
@@ -7674,7 +7786,7 @@
         "selector": "button:has-text('Novo serviço')"
       },
       "to": "sig:fe5ad84a4aed370b",
-      "seen_count": 44
+      "seen_count": 47
     },
     {
       "from": "sig:f229d562bc655a9f",
@@ -7683,7 +7795,7 @@
         "selector": "button:has-text('Nova pergunta')"
       },
       "to": "sig:db0102561708d1ac",
-      "seen_count": 43
+      "seen_count": 46
     },
     {
       "from": "sig:0de7196068dc995b",
@@ -7692,7 +7804,7 @@
         "selector": "[role=\"tabpanel\"] button:first-of-type"
       },
       "to": "sig:4fca3398e1014f3b",
-      "seen_count": 94
+      "seen_count": 103
     },
     {
       "from": "sig:c59d8801fff3d40d",
@@ -7710,7 +7822,7 @@
         "selector": "[role=\"dialog\"] button:has-text('Quero ser parceiro')"
       },
       "to": "sig:b805d148d91ff81c",
-      "seen_count": 42
+      "seen_count": 45
     },
     {
       "from": "sig:e3b0c44298fc1c14",
@@ -7728,7 +7840,7 @@
         "selector": "#d-code"
       },
       "to": "sig:707f7d4d103fa57c",
-      "seen_count": 61
+      "seen_count": 70
     },
     {
       "from": "sig:c59d8801fff3d40d",
@@ -7746,7 +7858,7 @@
         "selector": "button:has-text('Salvar')"
       },
       "to": "sig:0220ddecfb1188ce",
-      "seen_count": 40
+      "seen_count": 43
     },
     {
       "from": "sig:4fca3398e1014f3b",
@@ -7755,7 +7867,7 @@
         "selector": "[role=\"dialog\"] button[type=\"submit\"]"
       },
       "to": "sig:0de7196068dc995b",
-      "seen_count": 40
+      "seen_count": 43
     },
     {
       "from": "sig:0220ddecfb1188ce",
@@ -7764,7 +7876,7 @@
         "selector": "button:has-text('Novo destino')"
       },
       "to": "sig:997d26f451fa9a15",
-      "seen_count": 96
+      "seen_count": 108
     },
     {
       "from": "sig:e3b0c44298fc1c14",
@@ -7827,7 +7939,7 @@
         "selector": "[role=\"dialog\"] button:has-text('Salvar')"
       },
       "to": "sig:0dcff3a175658e77",
-      "seen_count": 36
+      "seen_count": 39
     },
     {
       "from": "sig:0dcff3a175658e77",
@@ -7845,7 +7957,7 @@
         "selector": "[id=\"radix-:r6:-trigger-partners\"]"
       },
       "to": "sig:1fada002e8ba1d54",
-      "seen_count": 32
+      "seen_count": 35
     },
     {
       "from": "sig:d338797fc9985ff4",
@@ -7854,7 +7966,7 @@
         "selector": "[id$='-trigger-notifications']"
       },
       "to": "sig:02b28bca46f05df8",
-      "seen_count": 32
+      "seen_count": 35
     },
     {
       "from": "sig:63b4f276654d776e",
@@ -7908,7 +8020,7 @@
         "selector": "button:has-text(\"Novo cartão\")"
       },
       "to": "sig:0112eb8401335d27",
-      "seen_count": 18
+      "seen_count": 21
     },
     {
       "from": "sig:91839fc8aa0ef775",
@@ -7917,7 +8029,7 @@
         "selector": "main button:has-text(\"Novo endereço\")"
       },
       "to": "sig:6d4cb38c0cade13b",
-      "seen_count": 69
+      "seen_count": 81
     },
     {
       "from": "sig:91839fc8aa0ef775",
@@ -7926,7 +8038,7 @@
         "selector": "button:has-text(\"Novo endereço\")"
       },
       "to": "sig:6d4cb38c0cade13b",
-      "seen_count": 27
+      "seen_count": 33
     },
     {
       "from": "sig:6d4cb38c0cade13b",
@@ -7935,7 +8047,7 @@
         "selector": "button:has-text(\"Salvar\")"
       },
       "to": "sig:91839fc8aa0ef775",
-      "seen_count": 18
+      "seen_count": 21
     },
     {
       "from": "sig:c7ced58c6632bf02",
@@ -7971,7 +8083,7 @@
         "selector": "main li button[type=\"button\"]:first-of-type"
       },
       "to": "sig:6d4cb38c0cade13b",
-      "seen_count": 15
+      "seen_count": 18
     },
     {
       "from": "sig:c7ced58c6632bf02",
@@ -7980,7 +8092,7 @@
         "selector": "main ul li button[type=button]:first-of-type"
       },
       "to": "sig:b2aa8fee22eea89f",
-      "seen_count": 15
+      "seen_count": 18
     },
     {
       "from": "sig:25474f4cdc1ae203",
@@ -7989,7 +8101,7 @@
         "selector": "a[href=\"/account/vehicles\"]"
       },
       "to": "sig:c7ced58c6632bf02",
-      "seen_count": 16
+      "seen_count": 21
     },
     {
       "from": "sig:c7ced58c6632bf02",
@@ -7998,7 +8110,7 @@
         "selector": "a[href=\"/account/addresses\"]"
       },
       "to": "sig:91839fc8aa0ef775",
-      "seen_count": 16
+      "seen_count": 19
     },
     {
       "from": "sig:91839fc8aa0ef775",
@@ -8007,7 +8119,7 @@
         "selector": "a[href=\"/account/cards\"]"
       },
       "to": "sig:0dcff3a175658e77",
-      "seen_count": 14
+      "seen_count": 17
     },
     {
       "from": "sig:c7ced58c6632bf02",
@@ -8016,7 +8128,7 @@
         "selector": "main button:has-text('Novo veículo')"
       },
       "to": "sig:76497e0b0ca8e6c9",
-      "seen_count": 14
+      "seen_count": 17
     },
     {
       "from": "sig:b805d148d91ff81c",
@@ -8025,7 +8137,7 @@
         "selector": "main button:has-text(\"Quero ser parceiro\")"
       },
       "to": "sig:3f40933715753efc",
-      "seen_count": 24
+      "seen_count": 30
     },
     {
       "from": "sig:3f40933715753efc",
@@ -8034,7 +8146,7 @@
         "selector": "[role=\"dialog\"] button:has-text(\"Continuar\")"
       },
       "to": "sig:34581fbdfb157f99",
-      "seen_count": 15
+      "seen_count": 19
     },
     {
       "from": "sig:25474f4cdc1ae203",
@@ -8043,7 +8155,7 @@
         "selector": "main"
       },
       "to": "sig:c7ced58c6632bf02",
-      "seen_count": 11
+      "seen_count": 12
     },
     {
       "from": "sig:c7ced58c6632bf02",
@@ -8052,7 +8164,7 @@
         "selector": "main"
       },
       "to": "sig:91839fc8aa0ef775",
-      "seen_count": 11
+      "seen_count": 14
     },
     {
       "from": "sig:6d4cb38c0cade13b",
@@ -8061,7 +8173,7 @@
         "selector": "main"
       },
       "to": "sig:91839fc8aa0ef775",
-      "seen_count": 13
+      "seen_count": 16
     },
     {
       "from": "sig:91839fc8aa0ef775",
@@ -8070,7 +8182,7 @@
         "selector": "main"
       },
       "to": "sig:0dcff3a175658e77",
-      "seen_count": 13
+      "seen_count": 16
     },
     {
       "from": "sig:0dcff3a175658e77",
@@ -8079,7 +8191,7 @@
         "selector": "main"
       },
       "to": "sig:32ea8b629364b656",
-      "seen_count": 13
+      "seen_count": 16
     },
     {
       "from": "sig:34581fbdfb157f99",
@@ -8088,7 +8200,7 @@
         "selector": "[role=\"dialog\"] button:has-text(\"Quero ser parceiro\")"
       },
       "to": "sig:b805d148d91ff81c",
-      "seen_count": 13
+      "seen_count": 16
     },
     {
       "from": "sig:f229d562bc655a9f",
@@ -8097,7 +8209,7 @@
         "selector": "h1"
       },
       "to": "sig:0220ddecfb1188ce",
-      "seen_count": 21
+      "seen_count": 27
     },
     {
       "from": "sig:707f7d4d103fa57c",
@@ -8106,7 +8218,7 @@
         "selector": "h1"
       },
       "to": "sig:0220ddecfb1188ce",
-      "seen_count": 13
+      "seen_count": 16
     },
     {
       "from": "sig:0220ddecfb1188ce",
@@ -8115,7 +8227,7 @@
         "selector": "h1"
       },
       "to": "sig:30b80afac064bfc7",
-      "seen_count": 21
+      "seen_count": 27
     },
     {
       "from": "sig:30b80afac064bfc7",
@@ -8124,7 +8236,7 @@
         "selector": "main"
       },
       "to": "sig:ac48cd48b27cb84e",
-      "seen_count": 12
+      "seen_count": 15
     },
     {
       "from": "sig:eb1cb13a1fa9ce8c",
@@ -8151,7 +8263,7 @@
         "selector": "h1"
       },
       "to": "sig:71b9200608792583",
-      "seen_count": 10
+      "seen_count": 13
     },
     {
       "from": "sig:0220ddecfb1188ce",
@@ -8178,7 +8290,7 @@
         "selector": "a[href='/operator/locations']"
       },
       "to": "sig:7c87997d1435748b",
-      "seen_count": 11
+      "seen_count": 15
     },
     {
       "from": "sig:7c87997d1435748b",
@@ -8187,7 +8299,7 @@
         "selector": "a[href='/operator/reports']"
       },
       "to": "sig:b1625053c5cbdae1",
-      "seen_count": 10
+      "seen_count": 13
     },
     {
       "from": "sig:b1625053c5cbdae1",
@@ -8196,7 +8308,7 @@
         "selector": "a[href='/operator/settings']"
       },
       "to": "sig:85f2e86a6f138571",
-      "seen_count": 10
+      "seen_count": 13
     },
     {
       "from": "sig:7c87997d1435748b",
@@ -8241,7 +8353,7 @@
         "selector": "[role=\"dialog\"] button:has-text(\"Salvar\")"
       },
       "to": "sig:91839fc8aa0ef775",
-      "seen_count": 8
+      "seen_count": 11
     },
     {
       "from": "sig:dc63c588ba8193ee",
@@ -8268,7 +8380,7 @@
         "selector": "main"
       },
       "to": "sig:847699e1816b38b3",
-      "seen_count": 9
+      "seen_count": 12
     },
     {
       "from": "sig:eb1cb13a1fa9ce8c",
@@ -8304,7 +8416,7 @@
         "selector": "button:has-text('Novo cupom')"
       },
       "to": "sig:3fdea288adfa3717",
-      "seen_count": 9
+      "seen_count": 12
     },
     {
       "from": "sig:3fdea288adfa3717",
@@ -8322,7 +8434,7 @@
         "selector": "button:has-text('Novo serviço')"
       },
       "to": "sig:fe5ad84a4aed370b",
-      "seen_count": 8
+      "seen_count": 11
     },
     {
       "from": "sig:9941cd9dea64ba25",
@@ -8331,7 +8443,7 @@
         "selector": "body"
       },
       "to": "sig:f229d562bc655a9f",
-      "seen_count": 8
+      "seen_count": 11
     },
     {
       "from": "sig:f229d562bc655a9f",
@@ -8340,7 +8452,7 @@
         "selector": "body"
       },
       "to": "sig:30b80afac064bfc7",
-      "seen_count": 16
+      "seen_count": 21
     },
     {
       "from": "sig:30b80afac064bfc7",
@@ -8349,7 +8461,7 @@
         "selector": "button:has-text('Novo destino')"
       },
       "to": "sig:997d26f451fa9a15",
-      "seen_count": 8
+      "seen_count": 11
     },
     {
       "from": "sig:707f7d4d103fa57c",
@@ -8358,7 +8470,7 @@
         "selector": "[role='dialog']"
       },
       "to": "sig:0220ddecfb1188ce",
-      "seen_count": 8
+      "seen_count": 11
     },
     {
       "from": "sig:0220ddecfb1188ce",
@@ -8367,7 +8479,7 @@
         "selector": "body"
       },
       "to": "sig:f229d562bc655a9f",
-      "seen_count": 8
+      "seen_count": 11
     },
     {
       "from": "sig:30b80afac064bfc7",
@@ -8376,7 +8488,7 @@
         "selector": "body"
       },
       "to": "sig:99fdbf8ae5142abb",
-      "seen_count": 8
+      "seen_count": 11
     },
     {
       "from": "sig:216bc20eae546abf",
@@ -8385,7 +8497,7 @@
         "selector": "main"
       },
       "to": "sig:7c87997d1435748b",
-      "seen_count": 7
+      "seen_count": 9
     },
     {
       "from": "sig:3fdea288adfa3717",
@@ -8394,7 +8506,7 @@
         "selector": "button:has-text('Novo cupom')"
       },
       "to": "sig:aec63d9bebf5b59e",
-      "seen_count": 8
+      "seen_count": 11
     },
     {
       "from": "sig:fe5ad84a4aed370b",
@@ -8403,7 +8515,7 @@
         "selector": "[role='dialog'] button:has-text('Cancelar')"
       },
       "to": "sig:9e475390a54a6c61",
-      "seen_count": 8
+      "seen_count": 11
     },
     {
       "from": "sig:9e475390a54a6c61",
@@ -8412,7 +8524,7 @@
         "selector": "main"
       },
       "to": "sig:f1e75d9ca5fa9b71",
-      "seen_count": 8
+      "seen_count": 11
     },
     {
       "from": "sig:f1e75d9ca5fa9b71",
@@ -8421,7 +8533,7 @@
         "selector": "main"
       },
       "to": "sig:bc5eb3d8076e7fe2",
-      "seen_count": 8
+      "seen_count": 10
     },
     {
       "from": "sig:aec63d9bebf5b59e",
@@ -8430,6 +8542,33 @@
         "selector": "a[href='/operator/addons']"
       },
       "to": "sig:9e475390a54a6c61",
+      "seen_count": 1
+    },
+    {
+      "from": "sig:0220ddecfb1188ce",
+      "action": {
+        "type": "click",
+        "selector": "button:has-text('Nova unidade')"
+      },
+      "to": "sig:7d0a66871f06c686",
+      "seen_count": 4
+    },
+    {
+      "from": "sig:f1e75d9ca5fa9b71",
+      "action": {
+        "type": "click",
+        "selector": "a[href='/operator/settings']"
+      },
+      "to": "sig:bc5eb3d8076e7fe2",
+      "seen_count": 1
+    },
+    {
+      "from": "sig:f229d562bc655a9f",
+      "action": {
+        "type": "click",
+        "selector": "a[href='/manager/partners']"
+      },
+      "to": "sig:30b80afac064bfc7",
       "seen_count": 1
     }
   ],

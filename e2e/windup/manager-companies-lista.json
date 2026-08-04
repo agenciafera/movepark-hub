@@ -18,6 +18,51 @@
   },
   "network": [
     {
+      "url": "**/rest/v1/company_role_scope*",
+      "json": [
+        {
+          "role": "owner",
+          "scope": "occupancy:read"
+        },
+        {
+          "role": "owner",
+          "scope": "addons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "pricing:write"
+        },
+        {
+          "role": "owner",
+          "scope": "coupons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "reviews:read"
+        },
+        {
+          "role": "owner",
+          "scope": "team:read"
+        },
+        {
+          "role": "owner",
+          "scope": "finance:read"
+        },
+        {
+          "role": "owner",
+          "scope": "api-keys:write"
+        },
+        {
+          "role": "owner",
+          "scope": "locations:write"
+        },
+        {
+          "role": "owner",
+          "scope": "bookings:read"
+        }
+      ]
+    },
+    {
       "url": "**/rest/v1/company*",
       "json": [
         {
@@ -74,51 +119,6 @@
     {
       "url": "**/rest/v1/profile_company*",
       "json": []
-    },
-    {
-      "url": "**/rest/v1/company_role_scope*",
-      "json": [
-        {
-          "role": "owner",
-          "scope": "occupancy:read"
-        },
-        {
-          "role": "owner",
-          "scope": "addons:write"
-        },
-        {
-          "role": "owner",
-          "scope": "pricing:write"
-        },
-        {
-          "role": "owner",
-          "scope": "coupons:write"
-        },
-        {
-          "role": "owner",
-          "scope": "reviews:read"
-        },
-        {
-          "role": "owner",
-          "scope": "team:read"
-        },
-        {
-          "role": "owner",
-          "scope": "finance:read"
-        },
-        {
-          "role": "owner",
-          "scope": "api-keys:write"
-        },
-        {
-          "role": "owner",
-          "scope": "locations:write"
-        },
-        {
-          "role": "owner",
-          "scope": "bookings:read"
-        }
-      ]
     },
     {
       "url": "**/rest/v1/**",

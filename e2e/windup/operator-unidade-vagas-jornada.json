@@ -1,0 +1,165 @@
+{
+  "scenario_id": "operator-unidade-vagas-jornada",
+  "start_url": "/operator/locations/00000000-0000-4000-8000-0000000000a1/parking-types",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Unidade QA\". Passo 2: verifique que a pagina exibe o texto \"capacidade e regras\". Passo 3: verifique que a pagina exibe o texto \"Vaga Coberta\". Passo 4: verifique que a pagina exibe o texto \"Capacidade\". Passo 5: verifique que o campo com seletor #cap-lpt-1 tem o valor \"50\". Passo 6: preencha o campo #cap-lpt-1 com o valor 85. Passo 7: verifique que o campo #cap-lpt-1 agora tem o valor \"85\". Passo 8: preencha o campo #cap-lpt-1 com o valor 0. Passo 9: verifique que o campo #cap-lpt-1 agora tem o valor \"0\".",
+  "tags": [
+    "jornada",
+    "autenticado",
+    "parametrica",
+    "operator"
+  ],
+  "hints": [
+    "Sao passos numerados: execute cada um como uma acao propria do plano, na ordem.",
+    "Para checar texto use text_contains com selector body. Para checar o valor de um input use selector_value com o seletor de id informado.",
+    "A capacidade vive num input numerico com id cap-lpt-1, entao o numero 50 nao aparece no corpo da pagina: use selector_value.",
+    "O campo so aceita edicao porque a sessao carrega o escopo parking-types:write. Sem ele o input nasce desabilitado e o fill estoura o timeout.",
+    "Os passos 6 a 9 provam que o campo aceita edicao local e aceita zero, sem salvar nada no servidor."
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x\",\"token_type\":\"bearer\",\"expires_in\":999999999,\"expires_at\":4102444800,\"refresh_token\":\"r\",\"user\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"qa@windup.local\"}}"
+    }
+  },
+  "network": [
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "r",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles?*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "company_operator"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company?*",
+      "json": [
+        {
+          "company_id": "00000000-0000-4000-8000-0000000000c1",
+          "role": "owner"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/company_role_scope?*",
+      "json": [
+        {
+          "role": "owner",
+          "scope": "occupancy:read"
+        },
+        {
+          "role": "owner",
+          "scope": "addons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "pricing:write"
+        },
+        {
+          "role": "owner",
+          "scope": "parking-types:write"
+        },
+        {
+          "role": "owner",
+          "scope": "coupons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "reviews:read"
+        },
+        {
+          "role": "owner",
+          "scope": "team:read"
+        },
+        {
+          "role": "owner",
+          "scope": "finance:read"
+        },
+        {
+          "role": "owner",
+          "scope": "api-keys:write"
+        },
+        {
+          "role": "owner",
+          "scope": "locations:write"
+        },
+        {
+          "role": "owner",
+          "scope": "bookings:read"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/location_parking_type?*",
+      "json": [
+        {
+          "id": "lpt-1",
+          "location_id": "00000000-0000-4000-8000-0000000000a1",
+          "company_parking_type_id": "cpt-1",
+          "capacity": 50,
+          "is_active": true,
+          "created_at": "2026-08-01T12:00:00Z",
+          "updated_at": "2026-08-01T12:00:00Z",
+          "company_parking_type": {
+            "id": "cpt-1",
+            "base_price": 30,
+            "parking_type": {
+              "id": "pt-1",
+              "code": "COB",
+              "name": "Vaga Coberta"
+            }
+          },
+          "pricing_rule": null
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/location?*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-0000000000a1",
+          "company_id": "00000000-0000-4000-8000-0000000000c1",
+          "name": "Unidade QA",
+          "slug": "unidade-qa",
+          "is_listed": true,
+          "city": "Campinas",
+          "state": "SP",
+          "status": "active",
+          "created_at": "2026-08-01T12:00:00Z",
+          "deleted_at": null
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ]
+}
