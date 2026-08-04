@@ -1,0 +1,18 @@
+{
+  "scenario_id": "rota-inexistente-jornada",
+  "start_url": "/essa-rota-nao-existe",
+  "task": "Passo 1: verifique que a url NAO contem mais \"essa-rota-nao-existe\". Passo 2: verifique que a pagina exibe o texto \"Estacionamentos Populares\". Passo 3: verifique que a pagina exibe o texto \"O que voce tem em toda reserva\" (procure por \"em toda reserva\"). Passo 4: verifique que a barra do topo exibe o texto \"Entrar\", ou seja, a sessao continua anonima. Passo 5: clique no link \"Entrar\" da barra do topo. Passo 6: verifique que a url agora contem \"/login\". Passo 7: verifique que a pagina de login exibe o texto \"Entre na Movepark\".",
+  "tags": [
+    "jornada",
+    "publico",
+    "erro",
+    "rota"
+  ],
+  "hints": [
+    "Sao passos numerados: execute cada um como uma acao propria do plano, na ordem.",
+    "Para checar texto use text_contains com selector body. Para o valor de um input use selector_value. Para checar endereco use a postcondicao url com contains, nunca um seletor da pagina de destino.",
+    "O catch-all de rotas manda quem erra o endereco para a home, em vez de mostrar um 404 seco.",
+    "Os passos 2 e 3 provam que a home carregou de verdade, e nao so que a url mudou.",
+    "Do passo 4 em diante a jornada segue como um visitante anonimo faria: da home para o login."
+  ]
+}

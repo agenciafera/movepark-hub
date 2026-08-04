@@ -42,21 +42,12 @@ const COBERTAS_POR_PLAYWRIGHT: Record<string, string> = {
 };
 
 /** Rotas que nenhum teste de navegador abre. Só encolhe. */
-const SEM_COBERTURA = [
-  "/motor-preview",
-  "/destinos/:slug",
-  "/account",
-  "/account/reservas",
-  "/account/reservas/:code",
-  "/account/clube",
-  "/account/indicar",
-  "/manager/companies/:id/locations",
-  "/manager/companies/:companyId/locations/:locationId/parking-types",
-  "/operator",
-  "/operator/locations/:locationId/editar",
-  "/operator/locations/:locationId/parking-types",
-  "*",
-];
+/**
+ * Vazia: toda rota declarada em routes.tsx tem cenário de navegador, seja Windup
+ * (o padrão) ou Playwright (o mapa acima, com o motivo escrito). Uma rota nova
+ * entra aqui só com data e motivo, e sai no commit que escreve o cenário.
+ */
+const SEM_COBERTURA: string[] = [];
 
 /**
  * Resolve os `path:` de routes.tsx. Filha é relativa ao pai, e o pai sempre
@@ -82,7 +73,10 @@ function rotasDeclaradas(): string[] {
 
 /** Uma URL cobre uma rota quando os segmentos casam, com `:param` como coringa. */
 function casa(rota: string, url: string): boolean {
-  if (rota === "*") return false;
+  // O catch-all não tem endereço literal: o que o cobre é um cenário que abre
+  // uma rota inexistente de propósito e prova o redirecionamento. Reconhece-se
+  // por qualquer url que nenhuma outra rota declarada consiga casar.
+  if (rota === "*") return url.startsWith("/essa-rota-nao-existe");
   const limpa = url.split("?")[0].replace(/\/$/, "") || "/";
   const r = rota.split("/").filter(Boolean);
   const u = limpa.split("/").filter(Boolean);

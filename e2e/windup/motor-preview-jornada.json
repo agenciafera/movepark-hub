@@ -1,0 +1,16 @@
+{
+  "scenario_id": "motor-preview-jornada",
+  "start_url": "/motor-preview",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Entre para ver seu Clube\". Passo 2: verifique que a pagina exibe o texto \"Seu nivel, seu dinheiro de volta\" (procure por \"dinheiro de volta\"). Passo 3: verifique que a pagina exibe o texto \"link de indicacao\" (procure por \"link de indica\"). Passo 4: verifique que existe a ilustracao da pagina, checando o seletor img. Passo 5: clique no botao \"Entrar\". Passo 6: verifique SOMENTE a url, com a postcondicao url do tipo contains e o valor \"/login\". Nao use seletor nenhum neste passo. Passo 7: verifique que a tela de login exibe o texto \"Entre na Movepark\". Passo 8: verifique que a tela de login exibe o texto \"Reserve em segundos. Sem senha\".",
+  "tags": [
+    "jornada",
+    "publico",
+    "ferramenta-interna"
+  ],
+  "hints": [
+    "Sao passos numerados: execute cada um como uma acao propria do plano, na ordem.",
+    "Para checar texto use text_contains com selector body. Para o valor de um input use selector_value. Para checar endereco use a postcondicao url com contains, nunca um seletor da pagina de destino.",
+    "A rota e a previa publica do Clube. Sem sessao ela nao mostra nivel nem saldo: mostra o convite para entrar.",
+    "A postcondicao de url do Windup olha so o caminho, nao a query, entao o next=/account/clube nao da para asserir aqui: os passos 7 e 8 provam que a tela de login carregou de verdade."
+  ]
+}

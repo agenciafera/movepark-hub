@@ -1,0 +1,126 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "rota-inexistente-jornada",
+    "start_url": "/essa-rota-nao-existe",
+    "start_sig": "sig:9762b1205e6e924b",
+    "scenario_sig": "e1df42143ed76645"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "rota-inexistente-jornada",
+    "start_url": "http://localhost:5273/essa-rota-nao-existe",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "html",
+          "description": "page document after catch-all redirect away from invalid route"
+        },
+        "expect": {
+          "url": "http://localhost:5273/"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "page body containing the popular parking section heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Estacionamentos Populares"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "page body containing the reservation benefits heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "em toda reserva"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "wait_for",
+        "target": {
+          "selector": "header",
+          "description": "top navigation bar showing Entrar for anonymous session"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "header",
+            "text": "Entrar"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a5",
+        "type": "click",
+        "target": {
+          "selector": "header a[href='/login']",
+          "description": "Entrar link in the top navigation bar"
+        },
+        "expect": {
+          "url": "**/login"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a6",
+        "type": "wait_for",
+        "target": {
+          "selector": "html",
+          "description": "page document now on the login route"
+        },
+        "expect": {
+          "url": "**/login"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a7",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "login page body with welcome heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Entre na Movepark"
+          },
+          "selector": "body"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: verifique que a url NAO contem mais \"essa-rota-nao-existe\". Passo 2: verifique que a pagina exibe o texto \"Estacionamentos Populares\". Passo 3: verifique que a pagina exibe o texto \"O que voce tem em toda reserva\" (procure por \"em toda reserva\"). Passo 4: verifique que a barra do topo exibe o texto \"Entrar\", ou seja, a sessao continua anonima. Passo 5: clique no link \"Entrar\" da barra do topo. Passo 6: verifique que a url agora contem \"/login\". Passo 7: verifique que a pagina de login exibe o texto \"Entre na Movepark\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-04T16:18:57.108Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-04T16:18:58.107Z",
+    "last_replayed_at": "2026-08-04T16:23:57.823Z",
+    "replay_count": 1,
+    "replay_failures": 0,
+    "plan_generation": 2
+  }
+}
