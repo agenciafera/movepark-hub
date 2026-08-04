@@ -129,7 +129,7 @@ ou `@teste.com`. A premissa do silêncio se sustenta hoje.
 | Guardas de silêncio | triggers em `company_onboarding`, `payout_recipient`, `profile_company` e no `onboarding_status` da própria empresa |
 | Silêncio no e-mail | `sendPartnerEmail()` em `supabase/functions/_shared/email.ts` |
 | Manager | coluna e diálogo de Checkout em `/manager/companies/:id/locations`; domínio público e "Relação silenciosa" no cadastro da empresa |
-| Testes | pgTAP `checkout_mode_external.test.sql` (22), Deno `_shared/partner-email.test.ts` (5), Vitest `CheckoutModeDialog.test.tsx` + `locations/api.test.tsx` (8) |
+| Testes | pgTAP `checkout_mode_external.test.sql` (24), Deno `_shared/partner-email.test.ts` (5), Vitest `CheckoutModeDialog.test.tsx` + `locations/api.test.tsx` (8) |
 
 **Quem é "backend" para as guardas.** As regras duras deixam passar quem chega **sem JWT**
 (service role, migration, seed) e exigem `hub_admin` de quem chega **com** JWT. Não dá para
@@ -151,7 +151,26 @@ do formato `^[a-z0-9][a-z0-9._-]*$`, o pré-voo reprova e a URL sai nula. Sem li
 torto. O host não é atacável por esse caminho: fica antes da primeira barra e vem de
 `wl_public_domain`, coluna que só `hub_admin` grava.
 
-**As guardas de silêncio são de entrada.** Enquanto a empresa é `silent`, não nasce onboarding,
-recebedor nem vínculo de usuário. O que já existe não é apagado: o Virapark tem `payout_recipient`
-e três perfis internos, e desmontar isso é decisão de gente, não de migration.
+**As guardas de silêncio são de entrada, e isso é literal.** Enquanto a empresa é `silent`, não
+nasce onboarding, recebedor nem vínculo de usuário. Linha que já existe continua sendo atualizada:
+a primeira versão pegava `UPDATE` também e teria quebrado o cron `refresh-recipients`, que
+sincroniza o status do recebedor com o gateway a cada volta, justamente na empresa recém
+silenciada (o Virapark tem recebedor). Só o `UPDATE` que troca a `company_id` para uma empresa
+silenciosa é entrada disfarçada, e esse continua barrado. O que já existe também não é apagado:
+desmontar recebedor e perfis é decisão de gente, não de migration.
+
+## Virapark ligado em 04/08/2026
+
+Primeira unidade real em modo externo, virada por `developer@fera.ag` (o carimbo em
+`checkout_mode_changed_by` registra isso).
+
+- `wl_public_domain = virapark.movepark.co` (o backend segue em `virapark-app.movepark.co`)
+- URL de saída: `https://virapark.movepark.co/virapark/vaga-coberta?utm_source=movepark&utm_medium=organic&utm_campaign=afiliado-movepark`, verificada no navegador: o caminho e os UTM chegam inteiros, sem redirect que coma a marcação
+- `hub_relationship = silent`, com as guardas conferidas contra o estado real: recebedor novo, usuário novo, onboarding novo e mudança de `onboarding_status` barrados; a reconciliação do recebedor que já existia continua passando
+- Os três perfis ligados à empresa são internos (`@fera.ag`), então a premissa do silêncio se sustenta
+
+⚠️ **A página pública ainda não honra isso.** Nenhuma superfície do consumidor lê `checkout_mode`
+hoje: quem faz isso é E0.15. Até lá, o Virapark continua vendendo pelo checkout do Hub e o dado
+diz "externo" sem que a tela mude. Não é regressão (antes da E0.14 a coluna nem existia), mas é a
+razão de E0.15 ser a próxima da fila. Reverter é um `update` de uma linha.
 

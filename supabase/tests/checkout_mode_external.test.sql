@@ -8,7 +8,7 @@
 --   4. empresa silenciosa não ganha onboarding, recebedor nem usuário.
 
 begin;
-select plan(22);
+select plan(24);
 
 -- ── fixtures (como postgres; RLS não se aplica) ────────────────────────────
 do $$
@@ -186,6 +186,32 @@ select throws_ok(
   format($$ insert into public.payout_recipient(company_id, provider) values (%L, 'pagarme') $$,
          current_setting('test.silent')),
   '42501', null, 'empresa silenciosa não ganha recebedor de repasse'
+);
+
+-- Recebedor que já existia continua reconciliando. O cron `refresh-recipients` atualiza o status
+-- desses registros a cada volta; se a guarda pegasse UPDATE, silenciar a empresa quebraria o cron
+-- justamente para quem tem recebedor (é o caso do Virapark).
+do $$
+declare v_rec uuid;
+begin
+  insert into public.payout_recipient(company_id, provider, external_recipient_id)
+    values (current_setting('test.company')::uuid, 'pagarme', 're_e014')
+    returning id into v_rec;
+  update public.company set hub_relationship = 'silent'
+    where id = current_setting('test.company')::uuid;
+  perform set_config('test.recipient', v_rec::text, false);
+end $$;
+
+select lives_ok(
+  format($$ update public.payout_recipient set last_provider_status = 'active' where id = %L $$,
+         current_setting('test.recipient')),
+  'recebedor existente continua reconciliando com a empresa silenciosa'
+);
+
+select throws_ok(
+  format($$ update public.payout_recipient set company_id = %L where id = %L $$,
+         current_setting('test.silent'), current_setting('test.recipient')),
+  '42501', null, 'mudar o recebedor DE empresa para uma silenciosa é entrada disfarçada'
 );
 
 select * from finish();

@@ -289,6 +289,14 @@ security definer
 set search_path = public, pg_temp
 as $$
 begin
+  -- A guarda é de ENTRADA: o que não pode é a linha NASCER numa empresa silenciosa. Atualizar
+  -- linha que já existe segue livre, senão o cron `refresh-recipients` (que sincroniza o status
+  -- do recebedor com o gateway a cada volta) passaria a estourar justamente na empresa que a
+  -- gente silenciou. Só o UPDATE que MUDA de empresa é entrada disfarçada, e esse cai aqui.
+  if tg_op = 'UPDATE' and new.company_id is not distinct from old.company_id then
+    return new;
+  end if;
+
   if public.company_is_silent(new.company_id) then
     raise exception
       'empresa silenciosa (hub_relationship = silent): % bloqueado em %', tg_op, tg_table_name
