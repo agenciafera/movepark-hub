@@ -1,0 +1,66 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "erro-manager-destinos",
+    "start_url": "/manager/destinations",
+    "start_sig": "sig:0220ddecfb1188ce",
+    "scenario_sig": "85587819afa5df78"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "erro-manager-destinos",
+    "start_url": "http://localhost:5273/manager/destinations",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "page main heading"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "heading with text Destinos"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "h1",
+            "text": "Destinos"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "heading confirming page is stable"
+        },
+        "expect": {
+          "not_visible": "text=SONDA_QUE_NAO_EXISTE",
+          "selector": "h1"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: aguarde a pagina carregar. Passo 2: verifique que a pagina exibe o texto \"Destinos\". Passo 3: verifique que a pagina NAO exibe o texto \"SONDA_QUE_NAO_EXISTE\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-04T00:04:52.836Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-04T00:04:54.248Z",
+    "last_replayed_at": "2026-08-04T00:45:06.005Z",
+    "replay_count": 3,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

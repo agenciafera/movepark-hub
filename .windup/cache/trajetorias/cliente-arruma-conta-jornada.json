@@ -1,0 +1,247 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "cliente-arruma-conta-jornada",
+    "start_url": "/account/profile",
+    "start_sig": "sig:25474f4cdc1ae203",
+    "scenario_sig": "50c5315930095d67"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "cliente-arruma-conta-jornada",
+    "start_url": "http://localhost:5273/account/profile",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "main content area on profile page"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Informações pessoais"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "fill",
+        "target": {
+          "selector": "#first-name",
+          "description": "first name input"
+        },
+        "value": "Joana",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "fill",
+        "target": {
+          "selector": "#last-name",
+          "description": "last name input"
+        },
+        "value": "Windup",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "wait_for",
+        "target": {
+          "selector": "#first-name",
+          "description": "first name input field"
+        },
+        "expect": {
+          "selector_value": {
+            "selector": "#first-name",
+            "value": "Joana"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a5",
+        "type": "click",
+        "target": {
+          "selector": "button:has-text(\"Salvar alterações\")",
+          "description": "save profile button"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a6",
+        "type": "click",
+        "target": {
+          "selector": "a[href=\"/account/vehicles\"]",
+          "description": "Veículos sidebar menu link"
+        },
+        "expect": {
+          "url": "**/account/vehicles"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a7",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "main content on vehicles page"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Veículos salvos"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a8",
+        "type": "click",
+        "target": {
+          "selector": "a[href=\"/account/addresses\"]",
+          "description": "Endereços sidebar menu link"
+        },
+        "expect": {
+          "url": "**/account/addresses"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a9",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "main content on addresses page"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Endereços salvos"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a10",
+        "type": "click",
+        "target": {
+          "selector": "main button:has-text(\"Novo endereço\")",
+          "description": "add new address button"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a11",
+        "type": "fill",
+        "target": {
+          "selector": "[role=\"dialog\"] #street",
+          "description": "street input in address dialog"
+        },
+        "value": "Rua da Jornada",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a12",
+        "type": "fill",
+        "target": {
+          "selector": "[role=\"dialog\"] #city",
+          "description": "city input in address dialog"
+        },
+        "value": "Campinas",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a13",
+        "type": "click",
+        "target": {
+          "selector": "[role=\"dialog\"] button:has-text(\"Salvar\")",
+          "description": "save address button inside dialog"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a14",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "addresses page main content after dialog closes"
+        },
+        "expect": {
+          "not_visible": "[role=\"dialog\"]"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a15",
+        "type": "click",
+        "target": {
+          "selector": "a[href=\"/account/cards\"]",
+          "description": "Cartões sidebar menu link"
+        },
+        "expect": {
+          "url": "**/account/cards"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a16",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "main content on cards page"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Cartões salvos"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a17",
+        "type": "click",
+        "target": {
+          "selector": "a[href=\"/account/preferences\"]",
+          "description": "Preferências sidebar menu link"
+        },
+        "expect": {
+          "url": "**/account/preferences"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a18",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "main content on preferences page"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Preferências"
+          },
+          "selector": "main"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Informações pessoais\". Passo 2: apague o input de id \"first-name\" e preencha com \"Joana\". Passo 3: apague o input de id \"last-name\" e preencha com \"Windup\". Passo 4: verifique que o input de id \"first-name\" contem \"Joana\". Passo 5: clique em \"Salvar\". Passo 6: clique no item \"Veículos\" do menu lateral. Passo 7: verifique que a pagina exibe o texto \"Veículos salvos\". Passo 8: clique no item \"Endereços\" do menu lateral. Passo 9: verifique que a pagina exibe o texto \"Endereços salvos\". Passo 10: clique no botao de adicionar endereco. Passo 11: preencha o input de id \"street\" com \"Rua da Jornada\". Passo 12: preencha o input de id \"city\" com \"Campinas\". Passo 13: clique em \"Salvar\". Passo 14: verifique que o formulario fechou. Passo 15: clique no item \"Cartões\" do menu lateral. Passo 16: verifique que a pagina exibe o texto \"Cartões salvos\". Passo 17: clique no item \"Preferências\" do menu lateral. Passo 18: verifique que a pagina exibe o texto \"Preferências\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-04T00:16:51.288Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-04T00:16:54.456Z",
+    "last_replayed_at": "2026-08-04T00:43:58.343Z",
+    "replay_count": 3,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

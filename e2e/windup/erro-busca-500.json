@@ -1,0 +1,31 @@
+{
+  "scenario_id": "erro-busca-500",
+  "start_url": "/search?dest=QAX",
+  "tags": [
+    "erro",
+    "adversarial"
+  ],
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Onde\". Passo 2: verifique que a pagina NAO exibe o texto \"Unidade Central QA\". Passo 3: verifique que a pagina exibe o texto \"Check-in\".",
+  "hints": [
+    "A Edge de busca responde 500 de proposito. O ponto e provar que a tela NAO some: o formulario de busca continua de pe.",
+    "Use text_contains com selector body.",
+    "Sao passos numerados: execute cada um como uma acao propria."
+  ],
+  "network": [
+    {
+      "url": "**/functions/v1/search*",
+      "status": 500,
+      "json": {
+        "error": "falha interna"
+      }
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ]
+}

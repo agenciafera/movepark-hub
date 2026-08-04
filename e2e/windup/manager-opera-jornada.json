@@ -1,0 +1,128 @@
+{
+  "scenario_id": "manager-opera-jornada",
+  "start_url": "/manager/companies",
+  "tags": [
+    "jornada-longa",
+    "autenticado"
+  ],
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Empresas\". Passo 2: clique no item \"Destinos\" do menu lateral. Passo 3: verifique que a pagina exibe o texto \"Destinos\". Passo 4: clique em \"Novo destino\". Passo 5: verifique que o formulario exibe o texto \"Latitude\". Passo 6: preencha o input de id \"d-code\" com \"JOR\". Passo 7: preencha o input de id \"d-name\" com \"Aeroporto da Jornada\". Passo 8: preencha o input de id \"d-city\" com \"Santos\". Passo 9: preencha o input de id \"d-lat\" com \"-23.9\". Passo 10: preencha o input de id \"d-lng\" com \"-46.3\". Passo 11: clique em \"Salvar\". Passo 12: verifique que o formulario fechou. Passo 13: clique no item \"Tarifas\" do menu lateral. Passo 14: verifique que a pagina exibe o texto \"Tarifas\". Passo 15: clique no item \"Configurações\" do menu lateral. Passo 16: verifique que a pagina exibe o texto \"Ajustes globais da plataforma\".",
+  "hints": [
+    "Sessao de um administrador: navega, cadastra um destino completo e continua navegando.",
+    "O passo 12 e not_visible em [role=\"dialog\"].",
+    "Depois de cada clique que troca de tela, espere o titulo novo aparecer antes de verificar: a troca de rota e assincrona.",
+    "Formulario abre em portal do Radix FORA do <main>: use selector [role=\"dialog\"] nas checagens dele.",
+    "Sao passos numerados: execute CADA UM como uma acao propria do plano. Nao junte verificacoes num expect so."
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x\",\"token_type\":\"bearer\",\"expires_in\":999999999,\"expires_at\":4102444800,\"refresh_token\":\"r\",\"user\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"qa@windup.local\"}}"
+    }
+  },
+  "network": [
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "r",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles?*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "hub_admin"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company?*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/company_role_scope?*",
+      "json": [
+        {
+          "role": "owner",
+          "scope": "occupancy:read"
+        },
+        {
+          "role": "owner",
+          "scope": "addons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "pricing:write"
+        },
+        {
+          "role": "owner",
+          "scope": "coupons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "reviews:read"
+        },
+        {
+          "role": "owner",
+          "scope": "team:read"
+        },
+        {
+          "role": "owner",
+          "scope": "finance:read"
+        },
+        {
+          "role": "owner",
+          "scope": "api-keys:write"
+        },
+        {
+          "role": "owner",
+          "scope": "locations:write"
+        },
+        {
+          "role": "owner",
+          "scope": "bookings:read"
+        }
+      ]
+    },
+    {
+      "url": "**/rpc/get_my_identities*",
+      "json": {
+        "email": "qa@windup.local",
+        "phone": null,
+        "email_verified": true,
+        "phone_verified": false,
+        "providers": [
+          {
+            "provider": "email",
+            "last_sign_in_at": "2026-07-01T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ]
+}

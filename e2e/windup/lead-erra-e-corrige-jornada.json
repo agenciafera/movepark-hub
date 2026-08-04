@@ -1,0 +1,33 @@
+{
+  "scenario_id": "lead-erra-e-corrige-jornada",
+  "start_url": "/seja-parceiro",
+  "tags": [
+    "jornada-longa",
+    "adversarial"
+  ],
+  "task": "Passo 1: clique em \"Quero ser parceiro\". Passo 2: clique em \"Continuar\" sem preencher nada e verifique que o modal exibe \"Informe seu nome.\". Passo 3: preencha o input de id \"pl-name\" com \"Joana QA\". Passo 4: preencha o input de id \"pl-email\" com \"joana@\" e clique em \"Continuar\". Passo 5: verifique que o modal exibe o texto \"Informe um e-mail válido.\". Passo 6: apague o input de id \"pl-email\" e preencha com \"joana@windup.local\". Passo 7: clique em \"Continuar\" e verifique que o modal exibe \"Informe seu WhatsApp.\". Passo 8: preencha o input de id \"pl-phone\" com \"11999990000\". Passo 9: clique em \"Continuar\". Passo 10: clique no botao \"Quero ser parceiro\" dentro do modal e verifique que ele exibe \"Informe o nome do estacionamento.\". Passo 11: preencha o input de id \"pl-company\" com \"Estacionamento da Joana\". Passo 12: clique no botao \"Quero ser parceiro\" dentro do modal e verifique que ele exibe \"Informe o número de vagas.\". Passo 13: preencha o input de id \"pl-spots\" com \"80\". Passo 14: clique no botao \"Quero ser parceiro\" dentro do modal e verifique que ele exibe \"É preciso autorizar o contato para continuar.\". Passo 15: marque o checkbox de autorizacao de contato. Passo 16: clique no botao \"Quero ser parceiro\" dentro do modal. Passo 17: verifique que o modal exibe o texto \"Recebemos seu cadastro\".",
+  "hints": [
+    "Simula uma pessoa de verdade: erra campo por campo, le a mensagem, corrige e segue ate concluir.",
+    "Passa pelas SEIS validacoes do formulario antes do sucesso.",
+    "O botao de enviar do passo 2 tambem se chama Quero ser parceiro: use o que esta DENTRO do dialog.",
+    "O checkbox do Radix e um button com role=checkbox, nao um input.",
+    "Formulario abre em portal do Radix FORA do <main>: use selector [role=\"dialog\"] nas checagens dele.",
+    "Sao passos numerados: execute CADA UM como uma acao propria do plano. Nao junte verificacoes num expect so."
+  ],
+  "network": [
+    {
+      "url": "**/functions/v1/capture-partner-lead*",
+      "json": {
+        "ok": true
+      }
+    },
+    {
+      "url": "**/functions/v1/submit-partner-lead*",
+      "json": {
+        "ok": true,
+        "company_id": "c-fake",
+        "already_submitted": false
+      }
+    }
+  ]
+}

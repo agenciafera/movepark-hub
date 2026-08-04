@@ -1,0 +1,28 @@
+{
+  "scenario_id": "lead-whatsapp-curto",
+  "start_url": "/seja-parceiro",
+  "tags": [
+    "validacao",
+    "adversarial"
+  ],
+  "task": "Passo 1: clique em \"Quero ser parceiro\". Passo 2: preencha o input de id \"pl-name\" com \"QA\". Passo 3: preencha o input de id \"pl-email\" com \"qa@windup.local\". Passo 4: preencha o input de id \"pl-phone\" com \"119\". Passo 5: clique em \"Continuar\" e verifique que o modal exibe o texto \"Informe seu WhatsApp.\".",
+  "hints": [
+    "O telefone 119 tem menos de 8 digitos: e o limite inferior da validacao.",
+    "Sao passos numerados: execute cada um como uma acao propria do plano.",
+    "O formulario abre num portal do Radix FORA do <main>: use text_contains com selector [role=\"dialog\"]."
+  ],
+  "network": [
+    {
+      "url": "**/functions/v1/capture-partner-lead*",
+      "json": {
+        "ok": true
+      }
+    },
+    {
+      "url": "**/functions/v1/submit-partner-lead*",
+      "json": {
+        "ok": true
+      }
+    }
+  ]
+}

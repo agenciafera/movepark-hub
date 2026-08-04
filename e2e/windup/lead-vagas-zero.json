@@ -1,0 +1,29 @@
+{
+  "scenario_id": "lead-vagas-zero",
+  "start_url": "/seja-parceiro",
+  "tags": [
+    "validacao",
+    "adversarial"
+  ],
+  "task": "Passo 1: clique em \"Quero ser parceiro\". Passo 2: preencha \"pl-name\" com \"QA\", \"pl-email\" com \"qa@windup.local\" e \"pl-phone\" com \"11999990000\", e clique em \"Continuar\". Passo 3: preencha o input de id \"pl-company\" com \"Estacionamento QA\". Passo 4: preencha o input de id \"pl-spots\" com \"0\". Passo 5: clique no botao \"Quero ser parceiro\" dentro do modal e verifique que ele exibe o texto \"Informe o número de vagas.\".",
+  "hints": [
+    "Zero vaga tem que ser recusado: a regra exige pelo menos uma.",
+    "O botao de enviar do passo 2 tambem se chama Quero ser parceiro: use o que esta DENTRO do dialog.",
+    "Sao passos numerados: execute cada um como uma acao propria do plano.",
+    "O formulario abre num portal do Radix FORA do <main>: use text_contains com selector [role=\"dialog\"]."
+  ],
+  "network": [
+    {
+      "url": "**/functions/v1/capture-partner-lead*",
+      "json": {
+        "ok": true
+      }
+    },
+    {
+      "url": "**/functions/v1/submit-partner-lead*",
+      "json": {
+        "ok": true
+      }
+    }
+  ]
+}

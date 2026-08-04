@@ -1,0 +1,78 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "permissao-cliente-no-operator",
+    "start_url": "/operator/bookings",
+    "start_sig": "sig:ad8b3fbf0876c52c",
+    "scenario_sig": "7d79f951191e28ae"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "permissao-cliente-no-operator",
+    "start_url": "http://localhost:5273/operator/bookings",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "Main heading of the home page, confirming the redirect from /operator/bookings has completed"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "Main heading used as anchor to verify the final URL is the site root"
+        },
+        "expect": {
+          "url": "http://localhost:5273/"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "Hero heading containing the main value proposition text"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Estacione em qualquer aeroporto do Brasil"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Page body to confirm absence of the word Empresas"
+        },
+        "expect": {
+          "not_visible": "text=Empresas",
+          "selector": "body"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: aguarde o redirecionamento terminar. Passo 2: verifique que a URL final e a raiz do site. Passo 3: verifique que a pagina exibe o texto \"Estacione em qualquer aeroporto do Brasil\". Passo 4: verifique que a pagina NAO exibe o texto \"Empresas\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-04T00:31:52.026Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-04T00:32:03.077Z",
+    "last_replayed_at": "2026-08-04T00:47:37.505Z",
+    "replay_count": 2,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "scenario_id": "lead-email-sem-dominio",
+  "start_url": "/seja-parceiro",
+  "tags": [
+    "validacao",
+    "adversarial"
+  ],
+  "task": "Passo 1: clique em \"Quero ser parceiro\". Passo 2: preencha o input de id \"pl-name\" com \"QA\". Passo 3: preencha o input de id \"pl-email\" com \"qa@\". Passo 4: clique em \"Continuar\". Passo 5: verifique que o modal exibe o texto \"Informe um e-mail válido.\".",
+  "hints": [
+    "O valor qa@ tem arroba mas nao tem dominio: e o caso de borda do regex de e-mail.",
+    "Sao passos numerados: execute cada um como uma acao propria do plano.",
+    "O formulario abre num portal do Radix FORA do <main>: use text_contains com selector [role=\"dialog\"]."
+  ],
+  "network": [
+    {
+      "url": "**/functions/v1/capture-partner-lead*",
+      "json": {
+        "ok": true
+      }
+    },
+    {
+      "url": "**/functions/v1/submit-partner-lead*",
+      "json": {
+        "ok": true
+      }
+    }
+  ]
+}
