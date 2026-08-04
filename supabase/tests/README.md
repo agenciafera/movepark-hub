@@ -13,14 +13,16 @@ dump fiel do banco vivo) + **seed** (`supabase/seed.sql`, só catálogo/pricing,
 Por isso o schema e os dados de preço batem com produção.
 
 ## Arquivos
-- `pricing.test.sql` — motor de preço (`simulate_price`), valores golden de `docs/simulacao-precos.md`,
+- `pricing.test.sql` - motor de preço (`simulate_price`), valores golden de `docs/simulacao-precos.md`,
   cobrindo as 7 estratégias + flips ⚠️ + a regressão do BUG-001. Espelha `test/pricing/cases.ts`.
-- `onboarding_rpc.test.sql` — cadeia de RPCs do onboarding (lead → wizard → go-live) + `slugify`/slug único.
-- `storage_buckets.test.sql` — OPS-05: visibilidade dos buckets (`assets-public` público; `vouchers`/`partner-uploads` privados) e RLS de `storage.objects` (escopo por prefixo `company_id`, admin vê tudo, anon não escreve/lê privado).
+- `onboarding_rpc.test.sql` - cadeia de RPCs do onboarding (lead → wizard → go-live) + `slugify`/slug único.
+- `storage_buckets.test.sql` - OPS-05: visibilidade dos buckets (`assets-public` público; `vouchers`/`partner-uploads` privados) e RLS de `storage.objects` (escopo por prefixo `company_id`, admin vê tudo, anon não escreve/lê privado).
+- `api_grants_inventory.test.sql` - varre **todas** as `api_*` de uma vez: nenhuma executável por `anon` ou `authenticated`, todas `SECURITY DEFINER`, todas alcançáveis por `service_role`. Diferente do `anon_privileged_rpcs.test.sql`, que lista função por função e não enxerga a função criada amanhã. Fecha o default do Postgres: função nova no schema `public` nasce executável por PUBLIC, e esquecer o `revoke` numa migration é silencioso.
+- `api_isolation.test.sql` - as três funções que sustentam o isolamento entre inquilinos (`api_key_assert_company_access`, `api_assert_lpt_company`, `api_assert_scopes`), que eram chamadas por quase toda `api_*` sem nenhuma asserção. Cobre a empresa vizinha pedindo um id que não é dela, o escopo fora do catálogo e o escopo interno (`payouts:write`) tentando entrar numa chave de API. Os erros são asseridos pelo `errcode` (`P0001` de domínio, `42501` de privilégio), não pela mensagem, que é copy.
 
 ## Nota sobre o histórico de migrations
-O repo foi **rebaselineado** a partir do banco vivo (o histórico anterior estava divergente — várias
+O repo foi **rebaselineado** a partir do banco vivo (o histórico anterior estava divergente - várias
 migrations aplicadas direto via MCP/dashboard, nunca commitadas). O banco continua sendo a fonte da
 verdade. Se um dia for usar `supabase db push`, o histórico remoto (`supabase_migrations.schema_migrations`,
-~39 linhas) precisa de um `supabase migration repair` para refletir só o baseline — passo de metadata,
+~39 linhas) precisa de um `supabase migration repair` para refletir só o baseline - passo de metadata,
 feito sob demanda.
