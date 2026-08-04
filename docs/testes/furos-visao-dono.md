@@ -13,7 +13,7 @@ onde tem furo. Cada furo aponta o arquivo que comprova.
 | # | Furo | Gravidade | Onde |
 |---|---|---|---|
 | F1 | O dono não vê as próprias reservas canceladas (**CORRIGIDO**) | Alta | `src/features/bookings/api.ts` (lista deixou de filtrar `deleted_at`) |
-| F2 | Reservas de teste de segurança poluem a lista real do dono | Média | dados em produção (3 bookings "Test Pentest", valor R$ 0,00) |
+| F2 | Reservas de teste de segurança são **tudo** o que o dono vê (medido 04/08) | Média | dados em produção (3 bookings "Test Pentest", valor R$ 0,00) |
 | F3 | "Preço base · R$ 0,00" aparece em todo card de preço (**CORRIGIDO**) | Baixa | `src/routes/operator/pricing.tsx` (some quando `base_price` é 0) |
 | F4 | Carrinho abandonado inflava o "cancelamento" (**CORRIGIDO** com status `expired`) | Alta | migrations `20260914000000`/`20260914010000` (abandono ≠ cancelamento) |
 
@@ -97,6 +97,25 @@ e uma sem cliente, todas com **Valor R$ 0,00** e status Concluída. São artefat
 de segurança que vazaram para produção e agora moram na visão de reservas de um parceiro
 real. O código está certo; o problema é higiene de dados: convém limpar (cancelar ou
 arquivar) para o dono não ver reserva de R$ 0,00 no painel dele.
+
+**Ainda aberto, e maior do que parecia (medido em 04/08/2026).** As três continuam
+visíveis, e não são parte do que o dono vê: são **tudo** o que ele vê. A empresa tem 33
+reservas, e as outras 30 estão expiradas ou com `deleted_at`, então não entram na lista.
+Sobra isto:
+
+| código | status | valor | cliente |
+|---|---|---|---|
+| `MP-INJECT2` | completed | R$ 0,00 | Test Pentest 2 |
+| `MP-INJECT1` | completed | R$ 0,00 | Test Pentest |
+| `MP-290C7D` | completed | R$ 0,00 | (sem nome) |
+
+Consequência prática: o painel do parceiro mostra três estadias concluídas, receita
+contabilizada de R$ 0,00 e ticket médio zerado. Não é ruído no meio do dado real, é o
+dado inteiro.
+
+A limpeza mais barata é soft delete (`deleted_at`), que é o que o resto do sistema já usa
+e o painel filtra: some da lista sem apagar a linha, e desfazer é um `update`. Fica como
+decisão de quem cuida do dado, não do código.
 
 ## F3 · "Preço base · R$ 0,00" em todo card de preço (Baixa)
 
