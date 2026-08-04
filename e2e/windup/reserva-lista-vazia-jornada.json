@@ -1,0 +1,103 @@
+{
+  "scenario_id": "reserva-lista-vazia-jornada",
+  "start_url": "/bookings",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Minhas reservas\". Passo 2: verifique que a pagina exibe o texto \"Voce ainda nao tem reservas\" (procure por \"ainda nao tem\"). Passo 3: verifique que a pagina exibe o texto \"Comece buscando uma vaga\". Passo 4: verifique que a pagina exibe o texto \"Buscar vaga\". Passo 5: clique no botao \"Buscar vaga\". Passo 6: verifique que a url agora contem \"/search\".",
+  "tags": [
+    "jornada",
+    "autenticado",
+    "reserva",
+    "estado-vazio"
+  ],
+  "hints": [
+    "Sao passos numerados: execute cada um como uma acao propria do plano, na ordem.",
+    "Para checar texto use text_contains com selector body. Dialogos do Radix montam fora do main: use o seletor [role=\"dialog\"].",
+    "Sem reserva nenhuma a tela cai no estado vazio, que oferece o atalho para a busca.",
+    "O passo 6 prova que o atalho do estado vazio leva mesmo para a busca."
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x\",\"token_type\":\"bearer\",\"expires_in\":999999999,\"expires_at\":4102444800,\"refresh_token\":\"r\",\"user\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"qa@windup.local\"}}"
+    }
+  },
+  "network": [
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "r",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles?*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "customer"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company?*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/company_role_scope?*",
+      "json": [
+        {
+          "role": "owner",
+          "scope": "bookings:read"
+        },
+        {
+          "role": "owner",
+          "scope": "occupancy:read"
+        },
+        {
+          "role": "owner",
+          "scope": "reviews:read"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/booking?*limit=100*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/booking?*",
+      "json": null
+    },
+    {
+      "url": "**/rpc/get_my_wallet*",
+      "json": {
+        "balance": 0,
+        "cashback": 0,
+        "pending": 0,
+        "transactions": []
+      }
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ]
+}

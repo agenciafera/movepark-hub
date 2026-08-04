@@ -1,0 +1,101 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "reserva-lista-vazia-jornada",
+    "start_url": "/bookings",
+    "start_sig": "sig:2644ef779c146a8c",
+    "scenario_sig": "a174641015497aed"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "reserva-lista-vazia-jornada",
+    "start_url": "http://localhost:5273/bookings",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "h2",
+          "description": "Heading Minhas reservas"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Minhas reservas"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "h3",
+          "description": "Heading Você ainda não tem reservas"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "ainda não tem"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main p",
+          "description": "Paragraph Comece buscando uma vaga"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Comece buscando uma vaga"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "wait_for",
+        "target": {
+          "selector": "a[href='/search']",
+          "description": "Link Buscar vaga no estado vazio"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Buscar vaga"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a5",
+        "type": "click",
+        "target": {
+          "selector": "a[href='/search']",
+          "description": "Link Buscar vaga que navega para a página de busca"
+        },
+        "expect": {
+          "url": "**/search"
+        },
+        "timeout_ms": 10000
+      }
+    ],
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Minhas reservas\". Passo 2: verifique que a pagina exibe o texto \"Voce ainda nao tem reservas\" (procure por \"ainda nao tem\"). Passo 3: verifique que a pagina exibe o texto \"Comece buscando uma vaga\". Passo 4: verifique que a pagina exibe o texto \"Buscar vaga\". Passo 5: clique no botao \"Buscar vaga\". Passo 6: verifique que a url agora contem \"/search\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-04T15:01:48.826Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-04T15:01:50.706Z",
+    "last_replayed_at": "2026-08-04T15:56:41.769Z",
+    "replay_count": 3,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

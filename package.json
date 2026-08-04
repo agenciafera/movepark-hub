@@ -23,7 +23,7 @@
     "gen:cards": "node scripts/gen-card-hashes.mjs",
     "lint:openapi": "node scripts/check-openapi-drift.mjs",
     "test:windup": "windup run --all",
-    "report:windup": "windup run --all --reporter json && node scripts/windup-suite-report.mjs",
+    "report:windup": "windup run --all --reporter json --base-url ${WINDUP_BASE_URL:-http://localhost:5173} && node scripts/windup-suite-report.mjs",
     "test:e2e": "NODE_OPTIONS=\"--import ./scripts/ws-polyfill.mjs\" playwright test",
     "test:e2e:ui": "NODE_OPTIONS=\"--import ./scripts/ws-polyfill.mjs\" playwright test --ui",
     "test:e2e:smoke": "NODE_OPTIONS=\"--import ./scripts/ws-polyfill.mjs\" playwright test --project=e2e-public --project=smoke"
