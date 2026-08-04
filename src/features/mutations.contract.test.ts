@@ -20,9 +20,6 @@ const FEATURES = join(process.cwd(), "src", "features");
 
 /** Mutations ainda sem teste. Só encolhe. Ver docs do plano de cobertura. */
 const SEM_TESTE = [
-  "addons:useUpsertAddon",
-  "addons:useSetLocationAddon",
-  "addons:useDeleteAddon",
   "amenities:useSetLocationAmenities",
   "api-keys:useUpdateApiKeyScopes",
   "availability:useSetDateBlocked",
@@ -31,18 +28,12 @@ const SEM_TESTE = [
   "bookings:useChangeBookingDates",
   "bookings:useChangePaidBookingDates",
   "companies:useSetCompanyTakeRate",
-  "coupons:useUpsertCoupon",
-  "coupons:useSetCouponActive",
-  "coupons:useDeleteCoupon",
   "destinations:useCreateDestination",
   "destinations:useUpdateDestination",
   "destinations:useDeleteDestination",
   "destinations:useCreateDestinationPoint",
   "destinations:useUpdateDestinationPoint",
   "destinations:useDeleteDestinationPoint",
-  "discounts:useUpsertDiscount",
-  "discounts:useSetDiscountActive",
-  "discounts:useDeleteDiscount",
   "faqs:useUpsertFaqCategory",
   "faqs:useDeleteFaqCategory",
   "faqs:useCreateFaq",
