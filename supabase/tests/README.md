@@ -46,7 +46,7 @@ Levantamento de 04/08/2026, comparando `supabase db dump --linked` com o repo:
 | `referral_reward_amount` executável por `anon` | vivo (fechado) | migration 20260922000000 |
 | guarda de silêncio barrando todo UPDATE | vivo (só entrada) | 20260921000000, no corpo de `assert_company_not_silent` |
 | 4 RPCs do motor de crescimento executáveis por `anon` (`recompute_membership`, `get_or_create_referral_code`, `get_my_membership`, `get_my_referrals`) | vivo (fechado) | migration 20260923000000 |
-| 3 funções-trigger da base de conhecimento executáveis por `anon` | repo (fechado por 20260913000000) | **pendente no vivo** |
+| 3 funções-trigger da base de conhecimento executáveis por `anon` | repo (fechado por 20260913000000) | aplicado no vivo em 04/08/2026; conferido: 0 de 24 funções-trigger alcançáveis por `anon` ou `authenticated` |
 
 As cinco migrations da E0.14 que só existiam no vivo **não** viraram arquivo uma a uma: o estado
 final delas já está em 20260921000000, conferido função a função. Está anotado no cabeçalho de lá,
