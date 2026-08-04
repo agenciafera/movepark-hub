@@ -21,17 +21,12 @@ const FEATURES = join(process.cwd(), "src", "features");
 /** Mutations ainda sem teste. Só encolhe. Ver docs do plano de cobertura. */
 const SEM_TESTE = [
   "amenities:useSetLocationAmenities",
-  "api-keys:useUpdateApiKeyScopes",
-  "availability:useSetDateBlocked",
   "bookings:useVoucherPdf",
   "bookings:useChangeBookingVehicle",
   "bookings:useChangeBookingDates",
   "bookings:useChangePaidBookingDates",
-  "companies:useSetCompanyTakeRate",
   "fares:useCreateFareUpgrade",
   "growth:useRedeemReferral",
-  "identity:useRequestAttachOtp",
-  "identity:useConfirmAttach",
   "legal:usePublishLegalDocument",
   "legal:useAcceptTerms",
   "locations:useCreateLocation",
