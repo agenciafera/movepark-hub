@@ -121,10 +121,16 @@ order by b.created_at desc;
 
 ### Casos que já nascem marcados
 
-Três specs de leitura guardam defeito conhecido em vez de esconder:
+> **Desatualizado, corrigido em 04/08/2026.** O bloco abaixo descrevia três specs
+> travados em `test.fail()`/`test.fixme()` enquanto o defeito estivesse de pé. Os
+> defeitos foram corrigidos e as marcações saíram: hoje C-02, C-03, C-04 e C-05 rodam
+> como teste normal (1, 1, 2 e 2 casos). Fica como registro de como o padrão funciona,
+> porque ele volta a ser útil no próximo defeito conhecido.
 
-- **C-02, C-03 e o caso Abbapark do C-04** estão em `test.fail()`. A asserção descreve o comportamento **correto**, que hoje não existe. Enquanto o defeito estiver de pé, o Playwright espera a falha e a suíte fica verde; no dia em que a correção entrar, o teste passa e o `test.fail()` acusa "passou mas era pra falhar". São o aceite da tarefa ClickUp `86ajmwawc`.
-- **C-05** está em `test.fixme()`: o seletor de tipo de vaga no detalhe não existe, então não há o que automatizar. O spec já entra escrito para virar teste de aceite quando o recurso chegar.
+Três specs de leitura guardaram defeito conhecido em vez de esconder:
+
+- **C-02, C-03 e o caso Abbapark do C-04** estavam em `test.fail()`. A asserção descrevia o comportamento **correto**, que na época não existia. Enquanto o defeito estava de pé, o Playwright esperava a falha e a suíte ficava verde; quando a correção entrou, o teste passou e o `test.fail()` acusou "passou mas era pra falhar", que é o sinal de remover a marcação. Foram o aceite da tarefa ClickUp `86ajmwawc`.
+- **C-05** esteve em `test.fixme()` enquanto o seletor de tipo de vaga no detalhe não existia. O spec já tinha sido escrito para virar teste de aceite quando o recurso chegasse, e foi o que aconteceu: hoje roda com dois casos.
 
 O C-04 tem também um caso de **controle** que passa hoje: o Maxi Park tem os mesmos tipos de vaga do Abbapark mas não tem a amenidade `covered` na location, e lá a contradição some. É o que prova que a causa é a amenidade vazando pro tipo, não o tipo em si.
 
@@ -165,7 +171,10 @@ O script é só leitura. Ele lista os estornos das últimas 24h do cliente de te
 
 A copy da política de cancelamento é texto fixo em 24 horas (`cancellation.logic.ts:64-67`) e não reflete a Superflex, que cancela até 1 minuto antes. É defeito de **copy**, não de gate: o sistema recusa e aceita cancelamento na hora certa, e é o que o C-19, o C-20 e o C-21 provam.
 
-O teste do comportamento correto está escrito em `src/features/bookings/CancellationPolicy.test.tsx`, em `it.skip`, para o CI seguir verde e o caso virar aceite quando o fix entrar ([86ajmwhg5](https://app.clickup.com/t/86ajmwhg5)).
+O teste do comportamento correto está em `src/features/bookings/CancellationPolicy.test.tsx`.
+**Não está mais em `it.skip`:** o fix entrou em 21/07 (commit `b1bb8de`) e os 7 casos rodam
+normalmente, cobrindo os três pontos onde a política aparece (listing, checkout e card) mais
+o contra-exemplo. Ver [86ajmwhg5](https://app.clickup.com/t/86ajmwhg5).
 
 ### Como as janelas de cancelamento são montadas
 
@@ -268,9 +277,9 @@ e2e/
       O02-operacao-reservas.spec.ts    # tx: check-in por QR e transição no drawer
     consumer/
       C01-vitrine-mais-vendidos.spec.ts  # leitura
-      C02-card-beneficio-vs-tipo.spec.ts # leitura, test.fail()
-      C03-contador-vagas.spec.ts         # leitura, test.fail()
-      C04-detalhe-sem-contradicao.spec.ts# leitura, test.fail() + caso de controle
+      C02-card-beneficio-vs-tipo.spec.ts # leitura
+      C03-contador-vagas.spec.ts         # leitura
+      C04-detalhe-sem-contradicao.spec.ts# leitura + caso de controle
       C05-upgrade-sem-downgrade.spec.ts  # leitura
       C24-cupom-promo10.spec.ts          # leitura
       C06-criar-reserva.spec.ts          # tx: cria booking
