@@ -75,6 +75,24 @@ de participação; se um link sair sem ela, a receita cai quase pela metade naqu
 `wl_domain`); `virapark.movepark.co` é o frontend e é quem recebe a tag. **Não derivar** um do
 outro removendo o `-app`, que quebra no dia em que um parceiro usar domínio próprio.
 
+**O UTM do botão prevalece sobre o que veio de fora (decidido em 04/08/2026).** Se o cliente
+chegou ao Hub com `?utm_source=google&utm_campaign=black-friday`, esses valores **não** entram no
+link de saída: a tripla sai sempre fixa. Os dois conjuntos respondem perguntas diferentes em
+sistemas diferentes. O UTM de entrada responde "o que trouxe essa pessoa até a Movepark?", é
+capturado em `src/lib/utm.ts` (last-touch em `sessionStorage`), vira `booking.utm_*` e alimenta o
+`/manager/attribution`. O UTM de saída responde "quem mandou esse visitante pra você?" no Analytics
+do parceiro, e a resposta é sempre a mesma: a Movepark, como afiliado.
+
+Repassar seria entregar a marcação comercial para o tráfego controlar: o relatório do parceiro
+diria que a visita veio do Google, a comissão daquela venda cairia quase pela metade, e cairia em
+silêncio, só nos links de quem chegou por campanha. **Mesclar UTM de entrada na URL de saída é
+proibido**, inclusive "só no `utm_content`". O pgTAP compara a URL inteira, então a tentativa
+quebra o teste antes de quebrar a receita.
+
+Efeito colateral aceito: não dá para responder "qual campanha da Movepark gerou este clique de
+saída?" olhando só a URL. Quando essa pergunta importar, a resposta é o evento da E0.16, que é
+nosso e não trafega no link do parceiro.
+
 ✅ Verificado em 03/08/2026: o frontend aceita o **mesmo** slug da API
 (`/virapark/vaga-coberta` carrega). Não precisa de campo de slug público; `/vaga-avulsa` é
 alias antigo.
