@@ -1,0 +1,39 @@
+{
+  "scenario_id": "assistente-erro-do-servidor-jornada",
+  "start_url": "/",
+  "task": "Passo 1: clique no botao com aria-label \"Abrir assistente\". Passo 2: verifique que a pagina exibe o texto \"Assistente Movepark\". Passo 3: preencha o campo com aria-label \"Mensagem\" com \"oi\". Passo 4: clique no botao com aria-label \"Enviar\". Passo 5: verifique que a pagina exibe o texto \"Desculpe, deu um erro\". Passo 6: verifique que a pagina exibe o texto \"Assistente Movepark\", ou seja, o chat continua aberto depois do erro. Passo 7: verifique que a pagina exibe o texto \"oi\", ou seja, a mensagem da pessoa nao se perdeu.",
+  "tags": [
+    "jornada",
+    "publico",
+    "assistente",
+    "erro"
+  ],
+  "hints": [
+    "Sao passos numerados: execute cada um como uma acao propria do plano, na ordem.",
+    "Para checar texto use text_contains com selector body. Para o valor de um input use selector_value. Para checar endereco use a postcondicao url com contains, nunca um seletor da pagina de destino.",
+    "O 500 e so no POST: o GET da configuracao continua respondendo, senao o assistente estaria desligado e o cenario nem abriria o chat.",
+    "Os passos 6 e 7 sao os que valem: erro nao pode fechar o chat nem apagar o que a pessoa escreveu."
+  ],
+  "network": [
+    {
+      "url": "**/functions/v1/chat*",
+      "method": "POST",
+      "status": 500,
+      "json": {
+        "error": "modelo indisponivel"
+      }
+    },
+    {
+      "url": "**/functions/v1/chat*",
+      "json": {
+        "enabled": true,
+        "model": "gemini-3.1-flash",
+        "reply": "Achei 3 estacionamentos perto do aeroporto de Viracopos a partir de R$ 29 a diaria.",
+        "used_tools": [
+          "search_parking"
+        ],
+        "login_required": false
+      }
+    }
+  ]
+}

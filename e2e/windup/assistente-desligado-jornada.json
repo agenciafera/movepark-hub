@@ -1,0 +1,32 @@
+{
+  "scenario_id": "assistente-desligado-jornada",
+  "start_url": "/",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Estacionamentos Populares\". Passo 2: verifique que a pagina NAO exibe o texto \"Assistente Movepark\". Passo 3: verifique que NAO existe nenhum elemento com o seletor [aria-label=\"Abrir assistente\"]. Passo 4: verifique que a pagina exibe o texto \"Cancelamento gr\", ou seja, o resto da home segue de pe.",
+  "tags": [
+    "jornada",
+    "publico",
+    "assistente",
+    "configuracao"
+  ],
+  "hints": [
+    "Sao passos numerados: execute cada um como uma acao propria do plano, na ordem.",
+    "Para checar texto use text_contains com selector body. Para o valor de um input use selector_value. Para checar endereco use a postcondicao url com contains, nunca um seletor da pagina de destino.",
+    "A configuracao chatbot_enabled desliga o assistente pelo servidor, sem deploy.",
+    "Desligado quer dizer sumir de verdade: nem a bolinha pode ficar, senao a pessoa clica e nao acontece nada.",
+    "O passo 4 e o contrapeso: desligar o chat nao pode derrubar a pagina junto."
+  ],
+  "network": [
+    {
+      "url": "**/functions/v1/chat*",
+      "json": {
+        "enabled": false,
+        "model": "gemini-3.1-flash",
+        "reply": "Achei 3 estacionamentos perto do aeroporto de Viracopos a partir de R$ 29 a diaria.",
+        "used_tools": [
+          "search_parking"
+        ],
+        "login_required": false
+      }
+    }
+  ]
+}

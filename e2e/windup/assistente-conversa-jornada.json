@@ -1,0 +1,31 @@
+{
+  "scenario_id": "assistente-conversa-jornada",
+  "start_url": "/",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Estacionamentos Populares\". Passo 2: clique no botao com aria-label \"Abrir assistente\". Passo 3: verifique que a pagina exibe o texto \"Assistente Movepark\". Passo 4: verifique que a pagina exibe o texto \"Sou o assistente da Movepark\". Passo 5: preencha o campo com aria-label \"Mensagem\" com \"quero uma vaga em viracopos\". Passo 6: clique no botao com aria-label \"Enviar\". Passo 7: verifique que a pagina exibe o texto \"quero uma vaga em viracopos\", ou seja, a propria mensagem entrou na conversa. Passo 8: verifique que a pagina exibe o texto \"Achei 3 estacionamentos\". Passo 9: clique no botao com aria-label \"Fechar assistente\". Passo 10: verifique que a pagina NAO exibe mais o texto \"Assistente Movepark\". Passo 11: verifique que a pagina ainda exibe o texto \"Estacionamentos Populares\".",
+  "tags": [
+    "jornada",
+    "publico",
+    "assistente"
+  ],
+  "hints": [
+    "Sao passos numerados: execute cada um como uma acao propria do plano, na ordem.",
+    "Para checar texto use text_contains com selector body. Para o valor de um input use selector_value. Para checar endereco use a postcondicao url com contains, nunca um seletor da pagina de destino.",
+    "A bolinha do chat vive no shell do consumidor, entao ela existe em qualquer pagina publica.",
+    "A saudacao ja esta na tela antes da primeira mensagem: ela e fixa no componente, nao vem do servidor.",
+    "O passo 7 prova que a conversa guarda o que a pessoa escreveu, e o 8 que a resposta do servidor entrou. Os passos 10 e 11 provam que fechar o chat nao leva a pagina junto."
+  ],
+  "network": [
+    {
+      "url": "**/functions/v1/chat*",
+      "json": {
+        "enabled": true,
+        "model": "gemini-3.1-flash",
+        "reply": "Achei 3 estacionamentos perto do aeroporto de Viracopos a partir de R$ 29 a diaria.",
+        "used_tools": [
+          "search_parking"
+        ],
+        "login_required": false
+      }
+    }
+  ]
+}

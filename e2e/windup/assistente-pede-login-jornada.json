@@ -1,0 +1,30 @@
+{
+  "scenario_id": "assistente-pede-login-jornada",
+  "start_url": "/",
+  "task": "Passo 1: clique no botao com aria-label \"Abrir assistente\". Passo 2: verifique que a pagina exibe o texto \"Assistente Movepark\". Passo 3: verifique que a pagina NAO exibe o texto \"Entrar para reservar\". Passo 4: preencha o campo com aria-label \"Mensagem\" com \"quero reservar essa vaga agora\". Passo 5: clique no botao com aria-label \"Enviar\". Passo 6: verifique que a pagina exibe o texto \"Pra reservar eu preciso que voce entre na sua conta\". Passo 7: verifique que a pagina exibe o texto \"Entrar para reservar\". Passo 8: clique no link \"Entrar para reservar\". Passo 9: verifique, com a postcondicao url do tipo contains e o valor \"/login\", que o endereco mudou. Nao use seletor nenhum neste passo.",
+  "tags": [
+    "jornada",
+    "publico",
+    "assistente",
+    "permissao"
+  ],
+  "hints": [
+    "Sao passos numerados: execute cada um como uma acao propria do plano, na ordem.",
+    "Para checar texto use text_contains com selector body. Para o valor de um input use selector_value. Para checar endereco use a postcondicao url com contains, nunca um seletor da pagina de destino.",
+    "Reservar exige conta. Quando o assistente esbarra nisso, o servidor devolve login_required e a tela troca o texto por um atalho.",
+    "O passo 3 e o par do 7: o atalho nao pode estar na tela antes de o servidor pedir login, senao ele nao prova nada.",
+    "O assistente pede login em vez de reservar sozinho, que e o comportamento certo: a reserva sai no nome de alguem."
+  ],
+  "network": [
+    {
+      "url": "**/functions/v1/chat*",
+      "json": {
+        "enabled": true,
+        "model": "gemini-3.1-flash",
+        "reply": "Pra reservar eu preciso que voce entre na sua conta. A reserva sai no seu nome, com o seu e-mail.",
+        "used_tools": [],
+        "login_required": true
+      }
+    }
+  ]
+}
