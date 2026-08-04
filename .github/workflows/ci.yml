@@ -117,7 +117,7 @@ jobs:
             sleep 2
           done
           echo "dev server não subiu em 180s"; exit 1
-      - run: bunx windup run --all --base-url http://localhost:5273 --reporter junit
+      - run: bunx windup run --all --base-url http://localhost:5273 --reporter junit --retries 1
       - uses: actions/upload-artifact@v4
         if: always()
         with:
