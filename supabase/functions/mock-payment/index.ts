@@ -24,6 +24,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendBookingConfirmationEmail } from "../_shared/booking-confirmation.ts";
+import { avaliarGuardaAmbiente } from "./logic.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -49,6 +50,16 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // Guarda de ambiente. Esta função confirma reserva SEM COBRAR, então ligada em
+  // produção ela é uma porta de estacionamento grátis: qualquer pessoa logada cria
+  // uma reserva de verdade, chama aqui com o próprio JWT e sai com voucher válido.
+  // Falha fechada de propósito; ver logic.ts. Religar é variável de ambiente.
+  const guarda = avaliarGuardaAmbiente(Deno.env.get("MOCK_PAYMENT_ENABLED"));
+  if (!guarda.permitido) {
+    return jsonResponse({ error: guarda.erro }, guarda.status);
+  }
+
   if (req.method !== "POST") {
     return jsonResponse({ error: "Method not allowed" }, 405);
   }

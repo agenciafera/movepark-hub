@@ -152,6 +152,16 @@ Tabs no topo:
 [📱 PIX] [💳 Cartão]
 ```
 
+> **Desatualizado a partir daqui (ago/2026).** O pagamento do produto é o Pagar.me:
+> `create-pix-charge` e `create-card-charge`, com confirmação por webhook. As duas
+> seções abaixo descrevem o MVP mockado e ficam como registro histórico.
+>
+> A Edge `mock-payment` continua no repo, mas **falha fechada**: sem
+> `MOCK_PAYMENT_ENABLED=true` ela responde 404. O motivo é direto: ela confirma
+> reserva sem cobrar, então ligada em produção qualquer pessoa com conta cria uma
+> reserva de verdade, chama a rota com o próprio JWT e sai com voucher válido para
+> apresentar na portaria do parceiro. Ver `supabase/functions/mock-payment/logic.ts`.
+
 #### PIX (mock)
 - Botão **"Gerar PIX"** → chama Edge Function `POST /functions/v1/mock-payment` com `booking_code` e `method='pix'`.
 - A function:
