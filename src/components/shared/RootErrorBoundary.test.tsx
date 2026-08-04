@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { RootErrorBoundary } from "./RootErrorBoundary";
 
@@ -18,11 +18,14 @@ function renderWithLoaderError(error: unknown) {
 }
 
 describe("RootErrorBoundary", () => {
-  // Limpa ANTES também, não só depois. O cooldown do recoverFromStaleBuild vive
-  // no sessionStorage, e o stale-build.test.ts escreve na mesma chave: se ele
-  // rodar antes neste worker, o reload não dispara e o caso do build velho
-  // falha com "spy called 0 times". Foi assim que o CI ficou vermelho uma vez,
-  // com o teste passando local, porque a ordem entre arquivos muda.
+  // Limpa ANTES também, não só depois: o cooldown do recoverFromStaleBuild vive no
+  // sessionStorage e o stale-build.test.ts escreve na mesma chave.
+  //
+  // Isso sozinho NÃO curou o vermelho intermitente do CI, e a razão é outra: o
+  // errorElement do React Router monta numa transição assíncrona, então o efeito
+  // que chama o reload roda DEPOIS do commit em que o texto aparece. Num runner
+  // lento, o findByText resolve antes de o efeito rodar. Por isso a asserção do
+  // reload usa waitFor: ela espera o efeito, sem afrouxar o "exatamente uma vez".
   beforeEach(() => {
     sessionStorage.clear();
   });
@@ -44,7 +47,7 @@ describe("RootErrorBoundary", () => {
     );
 
     expect(await screen.findByText(/Atualizando/i)).toBeInTheDocument();
-    expect(reload).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
   });
 
   it("erro genuíno → mostra tela amigável, sem recarregar", async () => {
