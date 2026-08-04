@@ -21,6 +21,12 @@
 
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  decidirUtm,
+  montarArgsRpc,
+  validarEntrada,
+  type CreateBookingInput,
+} from "./logic.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,22 +34,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-
-interface CreateBookingInput {
-  location_parking_type_id: string;
-  check_in_at: string;
-  check_out_at: string;
-  vehicle_id?: string | null;
-  passenger_count?: number | null;
-  has_pcd?: boolean;
-  add_on_service_ids?: string[] | null;
-  coupon_code?: string | null;
-  origin?: string | null;
-  fare_tier?: "basica" | "flex" | "superflex" | null;
-  utm_source?: string | null;
-  utm_medium?: string | null;
-  utm_campaign?: string | null;
-}
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -92,11 +82,9 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "Invalid JSON" }, 400);
   }
 
-  if (!input.location_parking_type_id) {
-    return jsonResponse({ error: "location_parking_type_id é obrigatório" }, 400);
-  }
-  if (!input.check_in_at || !input.check_out_at) {
-    return jsonResponse({ error: "check_in_at e check_out_at são obrigatórios" }, 400);
+  const validacao = validarEntrada(input);
+  if (!validacao.ok) {
+    return jsonResponse({ error: validacao.erro }, validacao.status);
   }
 
   // Service role pra executar o RPC com privilégios (SECURITY DEFINER já cobre)
@@ -108,19 +96,10 @@ Deno.serve(async (req: Request) => {
     { auth: { persistSession: false } },
   );
 
-  const { data, error } = await admin.rpc("create_booking_atomic", {
-    p_profile_id: profileId,
-    p_location_parking_type_id: input.location_parking_type_id,
-    p_check_in_at: input.check_in_at,
-    p_check_out_at: input.check_out_at,
-    p_passenger_count: input.passenger_count ?? null,
-    p_has_pcd: input.has_pcd ?? false,
-    p_vehicle_id: input.vehicle_id ?? null,
-    p_add_on_ids: input.add_on_service_ids ?? null,
-    p_coupon_code: input.coupon_code ?? null,
-    p_origin: input.origin ?? null,
-    p_fare_tier: input.fare_tier ?? "basica",
-  });
+  const { data, error } = await admin.rpc(
+    "create_booking_atomic",
+    montarArgsRpc(profileId, input),
+  );
 
   if (error) {
     // Erros lançados pelo plpgsql vêm aqui (mensagens em PT-BR já)
@@ -129,15 +108,12 @@ Deno.serve(async (req: Request) => {
 
   // Atribuição (E2.4.1): grava os UTMs na reserva recém-criada. Best-effort — não bloqueia.
   const bookingId = (data as { booking_id?: string })?.booking_id;
-  if (bookingId && (input.utm_source || input.utm_medium || input.utm_campaign)) {
+  const utm = decidirUtm(bookingId, input);
+  if (utm.gravar) {
     const { error: utmErr } = await admin
       .from("booking")
-      .update({
-        utm_source: input.utm_source ?? null,
-        utm_medium: input.utm_medium ?? null,
-        utm_campaign: input.utm_campaign ?? null,
-      })
-      .eq("id", bookingId);
+      .update(utm.patch)
+      .eq("id", bookingId!);
     if (utmErr) console.error("utm update falhou:", utmErr.message);
   }
 
