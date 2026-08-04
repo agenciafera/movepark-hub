@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/auth/context";
 import { detectBrand, useCreatePaymentMethod } from "./api";
+import { parseValidade } from "./PaymentMethodForm.logic";
 
 type Props = {
   open: boolean;
@@ -51,7 +52,6 @@ export function PaymentMethodForm({ open, onOpenChange }: Props) {
 
   const digits = number.replace(/\D/g, "");
   const brand = digits.length >= 4 ? detectBrand(digits) : null;
-  const [mm, yy] = expiry.split("/");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -60,9 +60,8 @@ export function PaymentMethodForm({ open, onOpenChange }: Props) {
       toast.error("Número do cartão incompleto");
       return;
     }
-    const monthNum = parseInt(mm ?? "", 10);
-    const yearNum = parseInt(yy ?? "", 10);
-    if (!monthNum || monthNum < 1 || monthNum > 12 || !yearNum) {
+    const validade = parseValidade(expiry, new Date());
+    if (!validade) {
       toast.error("Validade inválida");
       return;
     }
@@ -71,8 +70,8 @@ export function PaymentMethodForm({ open, onOpenChange }: Props) {
         profile_id: session.userId,
         card_number: digits,
         holder_name: holder.trim() || undefined,
-        expiry_month: monthNum,
-        expiry_year: 2000 + yearNum,
+        expiry_month: validade.mes,
+        expiry_year: validade.ano,
         is_default: isDefault,
       });
       toast.success("Cartão adicionado");

@@ -4,12 +4,12 @@
     "scenario_id": "conta-cartao-mes-invalido-jornada",
     "start_url": "/account/cards",
     "start_sig": "sig:0dcff3a175658e77",
-    "scenario_sig": "934048fb46c49c4d"
+    "scenario_sig": "648448773a866fbe"
   },
   "plan": {
     "plan_version": "0.1",
     "scenario_id": "conta-cartao-mes-invalido-jornada",
-    "start_url": "http://localhost:5273/account/cards",
+    "start_url": "http://localhost:5274/account/cards",
     "actions": [
       {
         "id": "a1",
@@ -18,7 +18,10 @@
           "selector": "main button:has-text(\"Novo cartão\")",
           "description": "Novo cartão button in main content area"
         },
-        "timeout_ms": 5000
+        "expect": {
+          "selector": "[role=\"dialog\"]"
+        },
+        "timeout_ms": 10000
       },
       {
         "id": "a2",
@@ -45,7 +48,7 @@
         "type": "fill",
         "target": {
           "selector": "#expiry",
-          "description": "Card expiry date input field"
+          "description": "Card expiry input field"
         },
         "value": "00/29",
         "timeout_ms": 5000
@@ -65,7 +68,7 @@
         "type": "click",
         "target": {
           "selector": "[role=\"dialog\"] button:has-text(\"Salvar\")",
-          "description": "Salvar button inside the card form dialog"
+          "description": "Salvar button inside the card dialog"
         },
         "timeout_ms": 5000
       },
@@ -74,7 +77,7 @@
         "type": "wait_for",
         "target": {
           "selector": "body",
-          "description": "Page body expected to contain the validation error toast"
+          "description": "Page body containing the Sonner toast with validation error"
         },
         "expect": {
           "text_contains": {
@@ -82,14 +85,14 @@
             "text": "Validade inv"
           }
         },
-        "timeout_ms": 5000
+        "timeout_ms": 10000
       },
       {
         "id": "a8",
         "type": "wait_for",
         "target": {
           "selector": "[role=\"dialog\"]",
-          "description": "Card form dialog that must remain visible after validation error"
+          "description": "Dialog still visible after invalid month error"
         },
         "expect": {
           "selector": "[role=\"dialog\"]"
@@ -101,7 +104,7 @@
         "type": "fill",
         "target": {
           "selector": "#expiry",
-          "description": "Card expiry date input field"
+          "description": "Card expiry input field"
         },
         "value": "07/32",
         "timeout_ms": 5000
@@ -111,20 +114,10 @@
         "type": "click",
         "target": {
           "selector": "[role=\"dialog\"] button:has-text(\"Salvar\")",
-          "description": "Salvar button inside the card form dialog"
-        },
-        "timeout_ms": 5000
-      },
-      {
-        "id": "a11",
-        "type": "wait_for",
-        "target": {
-          "selector": "body",
-          "description": "Page body after successful save — dialog must be gone"
+          "description": "Salvar button inside the card dialog with valid month"
         },
         "expect": {
-          "not_visible": "[role=\"dialog\"]",
-          "selector": "body"
+          "not_visible": "[role=\"dialog\"]"
         },
         "timeout_ms": 10000
       }
@@ -132,15 +125,15 @@
     "task": "Passo 1: clique no botao \"Novo cartao\" (o rotulo comeca com \"Novo cart\"). Passo 2: preencha o campo #number com \"5555444433332222\". Passo 3: preencha o campo #holder com \"QA WINDUP\". Passo 4: preencha o campo #expiry com \"00/29\". Passo 5: preencha o campo #cvv com \"123\". Passo 6: clique no botao \"Salvar\". Passo 7: verifique que a PAGINA (selector body, nao o dialogo) exibe o texto \"Validade inv\", porque o erro sai num toast montado fora do dialogo. Passo 8: verifique que o seletor [role=\"dialog\"] continua visivel. Passo 9: preencha o campo #expiry com \"07/32\". Passo 10: clique no botao \"Salvar\". Passo 11: verifique que o seletor [role=\"dialog\"] nao esta mais visivel.",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-08-04T16:42:09.792Z"
+      "at": "2026-08-04T19:08:09.038Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-08-04T16:42:11.728Z",
-    "last_replayed_at": "2026-08-04T18:41:02.235Z",
-    "replay_count": 7,
+    "created_at": "2026-08-04T19:08:11.099Z",
+    "last_replayed_at": null,
+    "replay_count": 5,
     "replay_failures": 0,
-    "plan_generation": 1
+    "plan_generation": 2
   }
 }
