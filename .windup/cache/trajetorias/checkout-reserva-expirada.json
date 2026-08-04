@@ -1,0 +1,72 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "checkout-reserva-expirada",
+    "start_url": "/checkout/MP-CHK-001",
+    "start_sig": "sig:6f57a741d70b7e7e",
+    "scenario_sig": "5d7a8883d9e5f63e"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "checkout-reserva-expirada",
+    "start_url": "http://localhost:5273/checkout/MP-CHK-001",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Página carregada com mensagem de reserva expirada"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Sua reserva expirou"
+          }
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Página sem botão de pagamento"
+        },
+        "expect": {
+          "not_visible": "button[type=submit]"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "a[href='/']",
+          "description": "Link Buscar de novo para nova busca"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Buscar de novo"
+          },
+          "selector": "a[href='/']"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Sua reserva expirou\". Passo 2: verifique que a pagina NAO exibe o texto \"Pagar\". Passo 3: verifique que a pagina exibe algum caminho para buscar de novo.",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-04T14:25:03.120Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-04T14:25:04.363Z",
+    "last_replayed_at": "2026-08-04T14:30:28.772Z",
+    "replay_count": 1,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

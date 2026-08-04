@@ -1,0 +1,132 @@
+{
+  "scenario_id": "checkout-reserva-de-outro",
+  "start_url": "/checkout/MP-CHK-001",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Reserva não pertence a você\". Passo 2: verifique que a pagina NAO exibe o texto \"Vaga Coberta\". Passo 3: verifique que a pagina NAO exibe o texto \"Pagar\".",
+  "tags": [
+    "checkout",
+    "adversarial",
+    "autenticado",
+    "erro"
+  ],
+  "hints": [
+    "A reserva existe mas pertence a OUTRO perfil: e a tentativa de abrir checkout alheio pelo codigo.",
+    "Prova que o dado da reserva de terceiro nao vaza na tela.",
+    "Sao passos numerados: execute cada um como uma acao propria do plano.",
+    "Use text_contains com selector body em cada checagem."
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x\",\"token_type\":\"bearer\",\"expires_in\":999999999,\"expires_at\":4102444800,\"refresh_token\":\"r\",\"user\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"qa@windup.local\"}}"
+    }
+  },
+  "network": [
+    {
+      "url": "**/rest/v1/booking?*",
+      "json": {
+        "id": "b-1",
+        "code": "MP-CHK-001",
+        "status": "pending",
+        "total_amount": 150,
+        "currency": "BRL",
+        "price_breakdown": null,
+        "check_in_at": "2026-08-10T22:00:00Z",
+        "check_out_at": "2026-08-15T08:00:00Z",
+        "fare_cancel_until": null,
+        "expires_at": "2026-08-01T13:00:00Z",
+        "created_at": "2026-08-01T12:00:00Z",
+        "passenger_count": 2,
+        "has_pcd": false,
+        "vehicle_id": null,
+        "profile_id": "00000000-0000-4000-8000-00000000000f",
+        "customer_name": "QA Windup",
+        "customer_first_name": "QA",
+        "customer_last_name": "Windup",
+        "customer_phone": null,
+        "customer_email": "qa@windup.local",
+        "customer_tax_id": null,
+        "passenger_first_name": null,
+        "passenger_last_name": null,
+        "passenger_phone": null,
+        "location": {
+          "id": "l-1",
+          "slug": "unidade-qa",
+          "name": "Unidade Central QA",
+          "address": "Rua QA, 100",
+          "company": {
+            "slug": "empresa-qa",
+            "name": "Empresa QA"
+          }
+        },
+        "items": [
+          {
+            "id": "i-1",
+            "item_type": "parking",
+            "quantity": 1,
+            "unit_price": 150,
+            "subtotal": 150,
+            "parking_type": {
+              "code": "COB",
+              "name": "Vaga Coberta"
+            },
+            "add_on_service": null
+          }
+        ],
+        "coupons": [],
+        "payments": []
+      }
+    },
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "r",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles?*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "customer"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company?*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/company_role_scope?*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    },
+    {
+      "url": "**/functions/v1/**",
+      "json": {}
+    }
+  ]
+}
