@@ -1,0 +1,120 @@
+{
+  "scenario_id": "operator-equipe-sem-escrita-jornada",
+  "start_url": "/operator/users",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Usuarios da empresa\" (procure por \"rios da empresa\"), ou seja, quem tem team:read entra. Passo 2: verifique que a pagina exibe o texto \"Dona da Empresa\". Passo 3: verifique que a pagina exibe o texto \"Portaria Noturna\". Passo 4: verifique que a pagina NAO exibe o texto \"Convidar usu\", porque sem team:write o convite some da tela. Passo 5: verifique que a url continua contendo \"/operator/users\".",
+  "tags": [
+    "jornada",
+    "autenticado",
+    "operator",
+    "equipe",
+    "escopo",
+    "permissao"
+  ],
+  "hints": [
+    "Sao passos numerados: execute cada um como uma acao propria do plano, na ordem.",
+    "Para checar texto use text_contains com selector body. Para o valor de um input use selector_value. Para checar endereco use a postcondicao url com contains, nunca um seletor da pagina de destino. Dialogos do Radix montam fora do main: use o seletor [role=\"dialog\"].",
+    "Este cenario e o par do anterior, e a unica diferenca entre os dois e o escopo team:write no stub.",
+    "Ler e escrever sao portoes separados: sem team:write a pessoa continua vendo a equipe, mas perde o convite.",
+    "A UI espelhando o escopo nunca e a unica barreira. Quem recusa de verdade e o servidor, e isso e teste de banco, nao de navegador."
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x\",\"token_type\":\"bearer\",\"expires_in\":999999999,\"expires_at\":4102444800,\"refresh_token\":\"r\",\"user\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"qa@windup.local\"}}"
+    }
+  },
+  "network": [
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "r",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles?*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "company_operator"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company?*",
+      "json": [
+        {
+          "company_id": "00000000-0000-4000-8000-0000000000c1",
+          "role": "manager"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/company_role_scope?*",
+      "json": [
+        {
+          "role": "manager",
+          "scope": "team:read"
+        },
+        {
+          "role": "manager",
+          "scope": "bookings:read"
+        },
+        {
+          "role": "manager",
+          "scope": "occupancy:read"
+        }
+      ]
+    },
+    {
+      "url": "**/rpc/company_list_members*",
+      "json": [
+        {
+          "profile_id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "email": "qa@windup.local",
+          "role": "manager",
+          "created_at": "2026-08-01T12:00:00Z"
+        },
+        {
+          "profile_id": "00000000-0000-4000-8000-0000000000d2",
+          "full_name": "Dona da Empresa",
+          "email": "dona@empresa.local",
+          "role": "owner",
+          "created_at": "2026-07-01T12:00:00Z"
+        },
+        {
+          "profile_id": "00000000-0000-4000-8000-0000000000d3",
+          "full_name": "Portaria Noturna",
+          "email": "portaria@empresa.local",
+          "role": "operator",
+          "created_at": "2026-07-15T12:00:00Z"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ]
+}
