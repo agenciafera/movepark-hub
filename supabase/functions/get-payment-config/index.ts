@@ -7,7 +7,7 @@
 // → { public_key, installment_policy }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { parseInstallmentPolicy } from "../_shared/payments/installments.ts";
+import { montarConfigPublica } from "./logic.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -36,11 +36,12 @@ Deno.serve(async (req: Request) => {
     .eq("key", "card_installment_policy")
     .maybeSingle();
 
-  const policy = parseInstallmentPolicy(setting?.value);
-  const publicKey = Deno.env.get("PAGARME_PUBLIC_KEY") ?? "";
+  // A rota e aberta: o corpo abaixo e publico. O montarConfigPublica recusa chave
+  // com cara de secreta, para um erro de configuracao nao virar vazamento. Ver logic.ts.
+  const config = montarConfigPublica(Deno.env.get("PAGARME_PUBLIC_KEY"), setting?.value);
 
   return new Response(
-    JSON.stringify({ public_key: publicKey, installment_policy: policy }),
+    JSON.stringify(config),
     {
       status: 200,
       headers: {
