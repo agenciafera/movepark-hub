@@ -1,0 +1,133 @@
+{
+  "scenario_id": "operator-servico-obrigatorio-jornada",
+  "start_url": "/operator/addons",
+  "task": "Passo 1: clique no botao que abre o formulario de novo servico adicional. Passo 2: verifique que existe o seletor [role=\"dialog\"]. Passo 3: verifique que o dialogo exibe o texto \"Novo servico adicional\" (procure por \"servi\" e \"adicional\", use o trecho \"adicional\"). Passo 4: clique no botao \"Salvar\" sem preencher nada. Passo 5: verifique que o seletor [role=\"dialog\"] continua visivel. Passo 6: preencha o campo de nome do servico com \"Lava-jato QA\". Passo 7: verifique que o campo de nome agora tem o valor \"Lava-jato QA\". Passo 8: verifique que o dialogo ainda exibe o texto \"adicional\".",
+  "tags": [
+    "jornada",
+    "autenticado",
+    "validacao",
+    "operator",
+    "servico"
+  ],
+  "hints": [
+    "Sao passos numerados: execute cada um como uma acao propria do plano, na ordem.",
+    "Para checar texto use text_contains com selector body. Para o valor de um input use selector_value. Para checar endereco use a postcondicao url com contains, nunca um seletor da pagina de destino. Dialogos do Radix montam fora do main: use o seletor [role=\"dialog\"].",
+    "O placeholder do campo de nome e Ex: Lava-jato, que ajuda a identifica-lo.",
+    "O passo 5 prova que o nome e mesmo obrigatorio, e nao so um rotulo com asterisco."
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x\",\"token_type\":\"bearer\",\"expires_in\":999999999,\"expires_at\":4102444800,\"refresh_token\":\"r\",\"user\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"qa@windup.local\"}}"
+    }
+  },
+  "network": [
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "r",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles?*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "company_operator"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company?*",
+      "json": [
+        {
+          "company_id": "00000000-0000-4000-8000-0000000000c1",
+          "role": "owner"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/company_role_scope?*",
+      "json": [
+        {
+          "role": "owner",
+          "scope": "coupons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "addons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "pricing:write"
+        },
+        {
+          "role": "owner",
+          "scope": "parking-types:write"
+        },
+        {
+          "role": "owner",
+          "scope": "locations:write"
+        },
+        {
+          "role": "owner",
+          "scope": "reviews:read"
+        },
+        {
+          "role": "owner",
+          "scope": "occupancy:read"
+        },
+        {
+          "role": "owner",
+          "scope": "bookings:read"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/location?*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-0000000000a1",
+          "company_id": "00000000-0000-4000-8000-0000000000c1",
+          "name": "Unidade QA",
+          "slug": "unidade-qa",
+          "is_listed": true,
+          "city": "Campinas",
+          "state": "SP",
+          "status": "active",
+          "created_at": "2026-08-01T12:00:00Z",
+          "deleted_at": null
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/add_on_service*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ]
+}

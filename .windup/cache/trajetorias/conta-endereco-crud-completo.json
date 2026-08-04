@@ -123,8 +123,8 @@
   "status": "active",
   "stats": {
     "created_at": "2026-07-31T20:33:49.290Z",
-    "last_replayed_at": "2026-08-04T16:21:50.543Z",
-    "replay_count": 42,
+    "last_replayed_at": "2026-08-04T16:56:20.561Z",
+    "replay_count": 43,
     "replay_failures": 0,
     "plan_generation": 1
   }

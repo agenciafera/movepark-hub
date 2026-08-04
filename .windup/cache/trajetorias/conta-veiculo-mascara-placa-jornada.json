@@ -1,0 +1,174 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "conta-veiculo-mascara-placa-jornada",
+    "start_url": "/account/vehicles",
+    "start_sig": "sig:c7ced58c6632bf02",
+    "scenario_sig": "6057c41f8d2b673c"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "conta-veiculo-mascara-placa-jornada",
+    "start_url": "http://localhost:5273/account/vehicles",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "click",
+        "target": {
+          "selector": "main button:has-text(\"Novo veículo\")",
+          "description": "Novo veículo button in main content area"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role=\"dialog\"]",
+          "description": "Dialog opened after clicking Novo veículo"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role=\"dialog\"]",
+          "description": "Dialog containing Informe a placa text"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "[role=\"dialog\"]",
+            "text": "Informe a placa"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "fill",
+        "target": {
+          "selector": "[role=\"dialog\"] #plate-lookup",
+          "description": "Plate lookup field inside the dialog"
+        },
+        "value": "ab",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a5",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role=\"dialog\"] #plate-lookup",
+          "description": "Plate lookup field expected to show uppercased AB"
+        },
+        "expect": {
+          "selector_value": {
+            "selector": "[role=\"dialog\"] #plate-lookup",
+            "value": "AB"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a6",
+        "type": "fill",
+        "target": {
+          "selector": "[role=\"dialog\"] #plate-lookup",
+          "description": "Plate lookup field inside the dialog"
+        },
+        "value": "abc",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a7",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role=\"dialog\"] #plate-lookup",
+          "description": "Plate lookup field expected to show uppercased ABC without hyphen"
+        },
+        "expect": {
+          "selector_value": {
+            "selector": "[role=\"dialog\"] #plate-lookup",
+            "value": "ABC"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a8",
+        "type": "fill",
+        "target": {
+          "selector": "[role=\"dialog\"] #plate-lookup",
+          "description": "Plate lookup field inside the dialog"
+        },
+        "value": "abc1",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a9",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role=\"dialog\"] #plate-lookup",
+          "description": "Plate lookup field expected to show ABC-1 with hyphen inserted after third char"
+        },
+        "expect": {
+          "selector_value": {
+            "selector": "[role=\"dialog\"] #plate-lookup",
+            "value": "ABC-1"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a10",
+        "type": "fill",
+        "target": {
+          "selector": "[role=\"dialog\"] #plate-lookup",
+          "description": "Plate lookup field inside the dialog"
+        },
+        "value": "ab!c1@d2",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a11",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role=\"dialog\"] #plate-lookup",
+          "description": "Plate lookup field expected to show ABC-1D2 with special chars stripped"
+        },
+        "expect": {
+          "selector_value": {
+            "selector": "[role=\"dialog\"] #plate-lookup",
+            "value": "ABC-1D2"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a12",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role=\"dialog\"]",
+          "description": "Dialog still visible after all plate mask fills"
+        },
+        "expect": {
+          "selector": "[role=\"dialog\"]"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: clique no botao \"Novo veiculo\" (o rotulo comeca com \"Novo ve\"). Passo 2: verifique que existe o seletor [role=\"dialog\"]. Passo 3: verifique que o dialogo exibe o texto \"Informe a placa\". Passo 4: preencha o campo #plate-lookup com \"ab\". Passo 5: verifique que o campo #plate-lookup agora tem o valor \"AB\". Passo 6: preencha o campo #plate-lookup com \"abc\". Passo 7: verifique que o campo #plate-lookup agora tem o valor \"ABC\". Passo 8: preencha o campo #plate-lookup com \"abc1\". Passo 9: verifique que o campo #plate-lookup agora tem o valor \"ABC-1\". Passo 10: preencha o campo #plate-lookup com \"ab!c1@d2\". Passo 11: verifique que o campo #plate-lookup agora tem o valor \"ABC-1D2\". Passo 12: verifique que o seletor [role=\"dialog\"] continua visivel.",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-04T16:55:47.139Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-04T16:55:48.851Z",
+    "last_replayed_at": "2026-08-04T16:56:26.628Z",
+    "replay_count": 1,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

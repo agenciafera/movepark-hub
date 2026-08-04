@@ -1,0 +1,195 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "conta-cartao-valida-jornada",
+    "start_url": "/account/cards",
+    "start_sig": "sig:0dcff3a175658e77",
+    "scenario_sig": "1c0d8a1082b91cb5"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "conta-cartao-valida-jornada",
+    "start_url": "http://localhost:5273/account/cards",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "click",
+        "target": {
+          "selector": "main button:has-text('Novo cartão')",
+          "description": "Novo cartão button to open card form dialog"
+        },
+        "expect": {
+          "selector": "[role='dialog']"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role='dialog']",
+          "description": "card form dialog"
+        },
+        "expect": {
+          "selector": "[role='dialog']"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "fill",
+        "target": {
+          "selector": "#number",
+          "description": "card number field"
+        },
+        "value": "4111",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "fill",
+        "target": {
+          "selector": "#holder",
+          "description": "card holder name field"
+        },
+        "value": "QA WINDUP",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a5",
+        "type": "fill",
+        "target": {
+          "selector": "#expiry",
+          "description": "card expiry date field"
+        },
+        "value": "13/29",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a6",
+        "type": "fill",
+        "target": {
+          "selector": "#cvv",
+          "description": "card CVV field"
+        },
+        "value": "123",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a7",
+        "type": "click",
+        "target": {
+          "selector": "[role='dialog'] button:has-text('Salvar')",
+          "description": "Salvar button in card form dialog"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a8",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role='dialog']",
+          "description": "card form dialog showing incomplete card number error"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "incompleto"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a9",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role='dialog']",
+          "description": "card form dialog still visible after validation error"
+        },
+        "expect": {
+          "selector": "[role='dialog']"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a10",
+        "type": "fill",
+        "target": {
+          "selector": "#number",
+          "description": "card number field"
+        },
+        "value": "5555444433332222",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a11",
+        "type": "click",
+        "target": {
+          "selector": "[role='dialog'] button:has-text('Salvar')",
+          "description": "Salvar button in card form dialog"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a12",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role='dialog']",
+          "description": "card form dialog showing invalid expiry error"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Validade inv"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a13",
+        "type": "fill",
+        "target": {
+          "selector": "#expiry",
+          "description": "card expiry date field"
+        },
+        "value": "11/29",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a14",
+        "type": "click",
+        "target": {
+          "selector": "[role='dialog'] button:has-text('Salvar')",
+          "description": "Salvar button in card form dialog"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a15",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h1",
+          "description": "Cartões page heading visible after dialog closes on success"
+        },
+        "expect": {
+          "not_visible": "[role='dialog']",
+          "selector": "main h1"
+        },
+        "timeout_ms": 10000
+      }
+    ],
+    "task": "Passo 1: clique no botao \"Novo cartao\" (o rotulo comeca com \"Novo cart\"). Passo 2: verifique que existe o seletor [role=\"dialog\"]. Passo 3: preencha o campo #number com \"4111\". Passo 4: preencha o campo #holder com \"QA WINDUP\". Passo 5: preencha o campo #expiry com \"13/29\". Passo 6: preencha o campo #cvv com \"123\". Passo 7: clique no botao \"Salvar\". Passo 8: verifique que o dialogo exibe o texto \"Numero do cartao incompleto\" (procure por \"cart\" e \"incompleto\", use o trecho \"incompleto\"). Passo 9: verifique que o seletor [role=\"dialog\"] continua visivel, ou seja, o formulario nao fechou. Passo 10: preencha o campo #number com \"5555444433332222\". Passo 11: clique no botao \"Salvar\". Passo 12: verifique que o dialogo exibe o texto \"Validade invalida\" (procure por \"Validade inv\"). Passo 13: preencha o campo #expiry com \"11/29\". Passo 14: clique no botao \"Salvar\". Passo 15: verifique que o seletor [role=\"dialog\"] nao esta mais visivel.",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-04T16:30:11.747Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-04T16:30:13.732Z",
+    "last_replayed_at": "2026-08-04T16:56:16.086Z",
+    "replay_count": 1,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

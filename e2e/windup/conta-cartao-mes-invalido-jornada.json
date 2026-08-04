@@ -1,0 +1,112 @@
+{
+  "scenario_id": "conta-cartao-mes-invalido-jornada",
+  "start_url": "/account/cards",
+  "task": "Passo 1: clique no botao \"Novo cartao\" (o rotulo comeca com \"Novo cart\"). Passo 2: preencha o campo #number com \"5555444433332222\". Passo 3: preencha o campo #holder com \"QA WINDUP\". Passo 4: preencha o campo #expiry com \"00/29\". Passo 5: preencha o campo #cvv com \"123\". Passo 6: clique no botao \"Salvar\". Passo 7: verifique que a PAGINA (selector body, nao o dialogo) exibe o texto \"Validade inv\", porque o erro sai num toast montado fora do dialogo. Passo 8: verifique que o seletor [role=\"dialog\"] continua visivel. Passo 9: preencha o campo #expiry com \"07/32\". Passo 10: clique no botao \"Salvar\". Passo 11: verifique que o seletor [role=\"dialog\"] nao esta mais visivel.",
+  "tags": [
+    "jornada",
+    "autenticado",
+    "validacao",
+    "cartao"
+  ],
+  "hints": [
+    "Sao passos numerados: execute cada um como uma acao propria do plano, na ordem.",
+    "Para checar texto use text_contains com selector body. Para o valor de um input use selector_value. Para checar endereco use a postcondicao url com contains, nunca um seletor da pagina de destino. Dialogos do Radix montam fora do main: use o seletor [role=\"dialog\"].",
+    "O mes 00 nao existe, e a validacao recusa qualquer mes fora da faixa de 1 a 12.",
+    "O erro nao aparece dentro do dialogo: e um toast do Sonner, montado em outro ponto do body. Checar dentro do [role=\"dialog\"] da falso negativo.",
+    "A validacao de hoje NAO compara a validade com a data corrente, entao um cartao vencido passa. Esse buraco esta anotado como tarefa separada e de proposito nao virou assercao aqui: um teste verde sobre o comportamento errado transformaria o bug em contrato.",
+    "O passo 8 e o que separa validacao de verdade de aviso decorativo: com erro, o formulario nao pode fechar."
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x\",\"token_type\":\"bearer\",\"expires_in\":999999999,\"expires_at\":4102444800,\"refresh_token\":\"r\",\"user\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"qa@windup.local\"}}"
+    }
+  },
+  "network": [
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "r",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles?*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "customer"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company?*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/company_role_scope?*",
+      "json": [
+        {
+          "role": "owner",
+          "scope": "coupons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "addons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "pricing:write"
+        },
+        {
+          "role": "owner",
+          "scope": "parking-types:write"
+        },
+        {
+          "role": "owner",
+          "scope": "locations:write"
+        },
+        {
+          "role": "owner",
+          "scope": "reviews:read"
+        },
+        {
+          "role": "owner",
+          "scope": "occupancy:read"
+        },
+        {
+          "role": "owner",
+          "scope": "bookings:read"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/payment_method*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ]
+}
