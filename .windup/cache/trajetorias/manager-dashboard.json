@@ -67,8 +67,8 @@
   "status": "active",
   "stats": {
     "created_at": "2026-08-03T18:15:34.380Z",
-    "last_replayed_at": "2026-08-04T18:43:09.555Z",
-    "replay_count": 33,
+    "last_replayed_at": "2026-08-04T20:14:39.196Z",
+    "replay_count": 34,
     "replay_failures": 0,
     "plan_generation": 1
   }
