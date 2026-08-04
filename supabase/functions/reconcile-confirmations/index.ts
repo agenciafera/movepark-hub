@@ -11,6 +11,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
+import { autorizado, BATCH_LIMIT, confirmationCutoffIso, decidirAcao } from "./logic.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 
 function json(body: unknown, status = 200) {
@@ -19,9 +20,6 @@ function json(body: unknown, status = 200) {
     headers: { "Content-Type": "application/json" },
   });
 }
-
-// Só reconcilia pagamentos confirmados há mais de N min (dá tempo do webhook chegar primeiro).
-const CUTOFF_MINUTES = 10;
 
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -34,7 +32,7 @@ Deno.serve(async (req: Request) => {
 
   // A chave interna vem do Vault (mesma que o cron envia) — sem env var, sem sincronizar segredo.
   const { data: expected } = await admin.rpc("reconcile_confirmations_expected_key");
-  if (!expected || req.headers.get("x-reconcile-confirmations-key") !== expected) {
+  if (!autorizado(expected, req.headers.get("x-reconcile-confirmations-key"))) {
     return json({ error: "unauthorized" }, 401);
   }
 
@@ -47,7 +45,7 @@ Deno.serve(async (req: Request) => {
   }
 
   // Pagamento pago cuja reserva NÃO confirmou (webhook paid perdido): pending preso ou cancelled.
-  const cutoff = new Date(Date.now() - CUTOFF_MINUTES * 60_000).toISOString();
+  const cutoff = confirmationCutoffIso(Date.now());
   const { data: payments, error } = await admin
     .from("payment")
     .select("id, provider_charge_id, booking_id, booking:booking_id!inner(status)")
@@ -55,7 +53,7 @@ Deno.serve(async (req: Request) => {
     .eq("status", "paid")
     .in("booking.status", ["pending", "cancelled"])
     .lt("updated_at", cutoff)
-    .limit(100);
+    .limit(BATCH_LIMIT);
   if (error) return json({ error: error.message }, 500);
 
   const siteUrl = Deno.env.get("PUBLIC_SITE_URL") ?? "https://hub.movepark.co";
@@ -68,19 +66,18 @@ Deno.serve(async (req: Request) => {
         p_booking_id: p.booking_id,
         p_payment_id: p.id,
       });
-      const outcome = (cr as { outcome?: string; charge_id?: string } | null)?.outcome;
+      const r = cr as { outcome?: string; charge_id?: string } | null;
+      // A decisão mora em logic.ts, sob teste. Aqui fica só a execução.
+      const acao = decidirAcao(r?.outcome, r?.charge_id, p.provider_charge_id);
 
-      if (outcome === "needs_refund") {
-        const chargeId = (cr as { charge_id?: string }).charge_id ?? p.provider_charge_id;
-        if (chargeId) {
-          await gateway.refundCharge({ chargeId });
-          await admin
-            .from("payment")
-            .update({ refunded_at: new Date().toISOString() })
-            .eq("id", p.id);
-          refunded += 1;
-        }
-      } else if (outcome === "confirmed" || outcome === "reconfirmed") {
+      if (acao.tipo === "estornar") {
+        await gateway.refundCharge({ chargeId: acao.chargeId });
+        await admin
+          .from("payment")
+          .update({ refunded_at: new Date().toISOString() })
+          .eq("id", p.id);
+        refunded += 1;
+      } else if (acao.tipo === "confirmar") {
         // Webhook perdido → o voucher pode não ter sido gerado; gera aqui (idempotente).
         await generateAndStoreVoucher(admin, p.booking_id, siteUrl).catch(() => null);
         confirmed += 1;
