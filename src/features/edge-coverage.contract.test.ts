@@ -22,9 +22,7 @@ const SEM_TESTE = [
   "approve-partner",
   "capture-partner-lead",
   "knowledge-search",
-  "reconcile-confirmations",
   "redeem-checkout-handoff",
-  "refresh-recipients",
   "wl-sync",
 ];
 
