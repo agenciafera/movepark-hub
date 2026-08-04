@@ -19,28 +19,12 @@ import { join, dirname, relative } from "node:path";
 const FEATURES = join(process.cwd(), "src", "features");
 
 /** Mutations ainda sem teste. Só encolhe. Ver docs do plano de cobertura. */
-const SEM_TESTE = [
-  "amenities:useSetLocationAmenities",
-  "bookings:useVoucherPdf",
-  "bookings:useChangeBookingVehicle",
-  "bookings:useChangeBookingDates",
-  "bookings:useChangePaidBookingDates",
-  "fares:useCreateFareUpgrade",
-  "growth:useRedeemReferral",
-  "legal:usePublishLegalDocument",
-  "legal:useAcceptTerms",
-  "locations:useCreateLocation",
-  "locations:useUpdateLocation",
-  "onboarding:useSubmitGo2ParkInterest",
-  "onboarding:usePartnerAction",
-  "onboarding:useOnboardingData",
-  "profile:useUpdateProfile",
-  "profile:useSignOutEverywhere",
-  "reviews:useSubmitReview",
-  "reviews:useSetReviewPublished",
-  "reviews:useRespondReview",
-  "settings:useUpdateAppSettings",
-];
+/**
+ * Vazia: toda mutation exportada por um `api.ts` de feature tem teste de contrato de
+ * rede. Uma mutation nova entra aqui só com data e motivo, e sai no commit que
+ * escreve o teste.
+ */
+const SEM_TESTE: string[] = [];
 
 /** Todo `api.ts` / `*Api.ts` de feature, onde os hooks de dados moram. */
 function arquivosDeApi(dir: string): string[] {
@@ -53,14 +37,20 @@ function arquivosDeApi(dir: string): string[] {
 
 /**
  * Um hook é mutation se `useMutation` aparece entre a assinatura dele e a do
- * próximo export. Delimitar importa: uma janela fixa de caracteres captura o
- * `useMutation` do vizinho e classifica query como mutation.
+ * PRÓXIMO hook, exportado ou não. Delimitar pelo próximo *export* não basta: um
+ * helper interno (`function useRpc(...)`, sem export) que usa `useMutation` cai
+ * dentro da janela do último export do arquivo e classifica query como mutation.
+ * Foi o que aconteceu com `useOnboardingData`, que é `useQuery`.
  */
 function mutationsDe(source: string): string[] {
-  const marcas = [...source.matchAll(/export (?:async )?function (use[A-Z]\w*)/g)];
-  return marcas
+  const todas = [...source.matchAll(/(?:export )?(?:async )?function (use[A-Z]\w*)/g)];
+  const exportadas = new Set(
+    [...source.matchAll(/export (?:async )?function (use[A-Z]\w*)/g)].map((m) => m[1]),
+  );
+  return todas
     .filter((m, i) => {
-      const fim = i + 1 < marcas.length ? marcas[i + 1].index! : source.length;
+      if (!exportadas.has(m[1])) return false;
+      const fim = i + 1 < todas.length ? todas[i + 1].index! : source.length;
       return /useMutation\s*[<(]/.test(source.slice(m.index!, fim));
     })
     .map((m) => m[1]);
