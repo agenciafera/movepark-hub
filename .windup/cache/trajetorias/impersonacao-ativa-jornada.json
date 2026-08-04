@@ -1,0 +1,120 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "impersonacao-ativa-jornada",
+    "start_url": "/operator",
+    "start_sig": "sig:7c87997d1435748b",
+    "scenario_sig": "f6ae6787a3fe8e25"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "impersonacao-ativa-jornada",
+    "start_url": "http://localhost:5273/operator",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "page body"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Modo operador"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "page body"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Sair do modo"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "page body"
+        },
+        "expect": {
+          "url": "**/operator**"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "click",
+        "target": {
+          "selector": "button:has-text('Sair do modo')",
+          "description": "Sair do modo button in the operator sidebar footer"
+        },
+        "expect": {
+          "url": "**/manager**"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a5",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "page body after returning to manager panel"
+        },
+        "expect": {
+          "url": "**/manager**"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a6",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "page body on manager panel"
+        },
+        "expect": {
+          "not_visible": ":text('Modo operador')"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a7",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "page body on manager panel"
+        },
+        "expect": {
+          "not_visible": "button:has-text('Sair do modo')",
+          "selector": "body"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Modo operador\". Passo 2: verifique que a pagina exibe o texto \"Sair do modo\". Passo 3: verifique que a url contem \"/operator\". Passo 4: clique no botao \"Sair do modo\". Passo 5: verifique, com a postcondicao url do tipo contains e o valor \"/manager\", que o endereco mudou. Nao use seletor nenhum neste passo. Passo 6: verifique que a pagina NAO exibe mais o texto \"Modo operador\". Passo 7: verifique que a pagina NAO exibe mais o texto \"Sair do modo\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-04T17:34:23.701Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-04T17:34:25.322Z",
+    "last_replayed_at": "2026-08-04T17:35:28.431Z",
+    "replay_count": 1,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

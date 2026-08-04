@@ -1,0 +1,109 @@
+{
+  "scenario_id": "impersonacao-nao-promove-cliente-jornada",
+  "start_url": "/operator",
+  "task": "Passo 1: verifique que a pagina NAO exibe o texto \"Modo operador\". Passo 2: verifique que a pagina NAO exibe o texto \"Sair do modo\". Passo 3: verifique que a pagina NAO exibe o texto \"Empresa QA\", ou seja, nenhum dado de parceiro apareceu. Passo 4: verifique que a pagina NAO exibe o texto \"Empresas\", ou seja, tambem nao ganhou a navegacao do hub_admin. Passo 5: verifique que a url NAO contem \"/operator\".",
+  "tags": [
+    "jornada",
+    "autenticado",
+    "impersonacao",
+    "permissao",
+    "seguranca"
+  ],
+  "hints": [
+    "Sao passos numerados: execute cada um como uma acao propria do plano, na ordem.",
+    "Para checar texto use text_contains com selector body. Para o valor de um input use selector_value. Para checar endereco use a postcondicao url com contains, nunca um seletor da pagina de destino. Dialogos do Radix montam fora do main: use o seletor [role=\"dialog\"].",
+    "O localStorage ja vem com a chave de impersonacao gravada, e mesmo assim nao acontece nada: so hub_admin pode impersonar.",
+    "Esta e a assercao de seguranca do bloco. Gravar a chave na mao e trivial para qualquer pessoa com o console aberto, e nao pode promover ninguem.",
+    "O papel efetivo e recalculado a partir do papel real da sessao, nunca a partir do que esta guardado no navegador."
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x\",\"token_type\":\"bearer\",\"expires_in\":999999999,\"expires_at\":4102444800,\"refresh_token\":\"r\",\"user\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"qa@windup.local\"}}",
+      "mp:impersonated-company-id": "00000000-0000-4000-8000-0000000000c1"
+    }
+  },
+  "network": [
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "r",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles?*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "customer"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company?*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/company_role_scope?*",
+      "json": [
+        {
+          "role": "owner",
+          "scope": "bookings:read"
+        },
+        {
+          "role": "owner",
+          "scope": "occupancy:read"
+        },
+        {
+          "role": "owner",
+          "scope": "team:read"
+        },
+        {
+          "role": "owner",
+          "scope": "pricing:write"
+        },
+        {
+          "role": "owner",
+          "scope": "locations:write"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/company?*",
+      "json": {
+        "id": "00000000-0000-4000-8000-0000000000c1",
+        "name": "Empresa QA",
+        "slug": "empresa-qa",
+        "status": "active",
+        "created_at": "2026-08-01T12:00:00Z",
+        "take_rate_bps": 1500,
+        "deleted_at": null
+      }
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ]
+}
