@@ -12,7 +12,7 @@ parceiro não. O levantamento de 29/07 mediu o buraco:
 | O que | Situação medida |
 |---|---|
 | 33 tools de parceiro | **nenhuma executada**. O gate de escopo tem 10 testes (deno), a execução tem zero |
-| 33 funções `api_*` que elas chamam | **4 com pgTAP** (`api_create_booking`, `api_set_pricing`, `api_set_date_blocked`, `api_wps_event`). **29 sem nenhum** |
+| 33 funções `api_*` que elas chamam | medido em 29/07: **4 com pgTAP**, 29 sem nenhum. **Desatualizado, ver §6** |
 | 34 operações da Public API | só o **401** testado. Nenhuma chamada com chave válida |
 | Chaves `mp_` no projeto | **zero, desde sempre**. O caminho de criar chave também nunca rodou |
 
@@ -146,34 +146,42 @@ imediatamente após a asserção.
 ### B.6 Avaliação e integração
 `respond_review` (B-21) e `wps_event` (B-22, por último).
 
-## 6. Frente C · pgTAP das 29 funções sem teste
+## 6. Frente C · pgTAP das funções `api_*`
 
-**Não depende de chave nenhuma** e é o que protege a longo prazo. As 29 sem cobertura hoje:
+**Não depende de chave nenhuma** e é o que protege a longo prazo.
+
+> **Atualizado em 04/08/2026.** A prioridade 1 e a 3 desta frente foram feitas. O que sobra é a
+> prioridade 2, as escritas. Os números de 29/07 na tabela da §1 ficaram para trás.
+
+### Já coberto
+
+| Arquivo | O que cobre |
+|---|---|
+| `api_grants_inventory.test.sql` | as **36** de uma vez: nenhuma executável por `anon` ou `authenticated`, todas `SECURITY DEFINER`, todas alcançáveis por `service_role`. Varre o conjunto, então função nova nasce coberta |
+| `api_isolation.test.sql` | `api_assert_lpt_company`, `api_assert_scopes` e `api_key_assert_company_access`. Era a prioridade 1, e com razão: quase todas as outras dependem dela |
+| `api_read_scope.test.sql` | o efeito nas leituras: `api_list_locations`, `api_get_location`, `api_list_coupons`, `api_list_addons`. Empresa vizinha não alcança id alheio, e lista é sempre array |
+| `api_pricing_write.test.sql` | `api_set_pricing` e `api_set_date_blocked` (já existia) |
+| `api_keys_rpc.test.sql` | gestão de chave e verificação (já existia) |
+
+### O que falta
+
+As **escritas** keyed por `company_id`, asserindo as duas coisas ao mesmo tempo: que recusam
+`company_id` alheio e que gravam o que prometem.
 
 ```
-api_assert_lpt_company   api_cancel_booking       api_change_booking_dates
-api_change_booking_vehicle api_checkin_booking    api_checkout_booking
-api_delete_addon         api_delete_coupon        api_delete_discount
-api_get_booking          api_get_location         api_list_addons
-api_list_bookings        api_list_coupons         api_list_discounts
-api_list_locations       api_list_parking_types   api_list_reviews
-api_location_occupancy   api_respond_review       api_set_coupon_active
-api_set_discount_active  api_set_location_addon   api_simulate_price
-api_update_location      api_update_parking_type  api_upsert_addon
-api_upsert_coupon        api_upsert_discount
+api_upsert_coupon        api_upsert_discount      api_upsert_addon
+api_delete_coupon        api_delete_discount      api_delete_addon
+api_set_coupon_active    api_set_discount_active  api_set_location_addon
+api_update_location      api_update_parking_type  api_respond_review
+api_cancel_booking       api_change_booking_dates api_change_booking_vehicle
+api_checkin_booking      api_checkout_booking
 ```
 
-Prioridade sugerida, por risco:
+As de reserva (as cinco últimas) precisam de fixture de reserva, que o seed não tem: é o que as torna
+mais caras que as outras, não a regra em si.
 
-1. **`api_assert_lpt_company`** primeiro. É a função que garante que uma empresa não toca o recurso de
-   outra: quase todas as demais dependem dela. Um teste dela cobre a base de todas.
-2. **As de escrita** (`upsert_*`, `delete_*`, `set_*_active`, `update_*`): asserir que recusam
-   `company_id` alheio e que gravam o que prometem.
-3. **As de leitura**: asserir que o resultado é filtrado por empresa.
-
-Arquivo sugerido: `supabase/tests/api_partner_rpcs.test.sql`, no molde de
-`supabase/tests/api_pricing_write.test.sql` (que já cobre duas delas). Fixtures com **duas** empresas,
-para o isolamento ser asserido de verdade, e `rollback` no fim.
+Molde: `supabase/tests/api_pricing_write.test.sql`. Fixtures com **duas** empresas, para o isolamento
+ser asserido de verdade, e `rollback` no fim.
 
 ## 7. Frente D · Public API (34 operações)
 

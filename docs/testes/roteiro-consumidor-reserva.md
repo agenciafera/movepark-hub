@@ -747,8 +747,11 @@ quanto e por quê, senão alguém abre bug de algo que ainda está no prazo.
     cru do payload leva à conclusão errada.
   - Estorno **parcial** feito na mão no painel do Pagar.me é tratado de forma defensiva: registra o
     valor e **não** cancela a reserva (`:293-310`). Não use o painel para "ajudar" o teste.
-  - `reconcile-refunds` **não tem nenhum teste** hoje. É o único dos três caminhos de estorno sem
-    cobertura, e a lógica está inline no `Deno.serve`, sem `logic.ts` extraído.
+  - **Desatualizado (corrigido em 04/08/2026):** o texto dizia que `reconcile-refunds` não tinha
+    nenhum teste e que a lógica estava inline. As duas coisas deixaram de ser verdade: ela tem
+    `logic.ts` com 8 testes `deno`, e desde 04/08 as outras quatro Edges do caminho do dinheiro
+    seguem o mesmo molde (`mock-payment`, `get-payment-config`, `create-booking`,
+    `refresh-recipients`, `reconcile-confirmations`).
 
 ## C-23 · Copy da política de cancelamento bate com a tarifa  [**CORRIGIDO** · verificado 22/07/2026 · commit `b1bb8de`]
 
