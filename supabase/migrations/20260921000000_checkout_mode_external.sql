@@ -1,6 +1,23 @@
 -- E0.14 · Modo de checkout por local e relação silenciosa com o parceiro
 -- Spec: docs/specs/checkout-externo-por-local.md
 --
+-- CONSOLIDA cinco migrations do banco vivo (aplicadas via MCP, nunca commitadas uma a
+-- uma). Não recrie nenhuma delas como arquivo separado: o estado final aqui já é o
+-- delas, conferido função a função contra um `supabase db dump --linked` (corpo e
+-- grants idênticos).
+--
+--   20260804180634  checkout_mode_external                    → seções 1 a 6
+--   20260804181418  checkout_mode_external_revoke_trigger_..  → seção 6, bloco DO final
+--   20260804182716  checkout_mode_external_harden_silence_..  → seção 6, revokes de
+--                                                               assert_company_not_silent
+--                                                               e company_is_silent
+--   20260804182954  checkout_mode_external_slug_guard         → seções 2 e 3 (wl_slug_safe
+--                                                               + os dois guardas de slug
+--                                                               em external_checkout_url)
+--   20260804184843  silence_guard_entry_only                  → seção 6, o `tg_op = UPDATE`
+--                                                               no topo de
+--                                                               assert_company_not_silent
+--
 -- Dois eixos, dois níveis, duas perguntas:
 --   company.hub_relationship  → "o parceiro sabe que existe no Hub?"  (silent | onboarded)
 --   location.checkout_mode    → "onde a reserva fecha?"               (hub | external)
