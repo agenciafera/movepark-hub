@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Car, CloudRain, KeyRound, Star, Bike, Container } from "lucide-react";
+import { Bicycle, Car, CloudRain, Key, Package, Star } from "@phosphor-icons/react";
 import { useParkingTypeCatalog } from "@/features/search/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -7,10 +7,10 @@ import { cn } from "@/lib/utils";
 const iconByCode: Record<string, React.ComponentType<{ className?: string }>> = {
   covered: Car,
   uncovered: CloudRain,
-  valet: KeyRound,
+  valet: Key,
   premium: Star,
-  motorcycle: Bike,
-  garage: Container,
+  motorcycle: Bicycle,
+  garage: Package,
 };
 
 export function CategoryStrip() {

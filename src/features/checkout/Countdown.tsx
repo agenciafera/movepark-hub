@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Hourglass, AlertTriangle } from "lucide-react";
+import { Hourglass, Warning } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -59,7 +59,7 @@ export function Countdown({ expiresAt, onExpire }: Props) {
       aria-live="polite"
     >
       {expired ? (
-        <AlertTriangle className="h-4 w-4" />
+        <Warning className="h-4 w-4" />
       ) : (
         <Hourglass className="h-4 w-4" />
       )}

@@ -1,4 +1,4 @@
-import { MapPin, Tag } from "lucide-react";
+import { MapPin, Tag } from "@phosphor-icons/react";
 import { formatDistance } from "@/lib/format";
 import { isTypeDescriptorAmenity } from "./amenities.logic";
 import { ParkingCard, ParkingCardBadge, type ParkingCardAmenity } from "./ParkingCard";

@@ -5,31 +5,7 @@
 // de flexibilidade Básica/Flex/Superflex da Movepark, editadas só pelo Super Admin no /manager
 // (a unidade não toca nelas). Cada item tem um ícone próprio: em tablet a sidebar é só-ícone.
 
-import {
-  BarChart3,
-  Building2,
-  Calendar,
-  CalendarRange,
-  CircleDollarSign,
-  Handshake,
-  HelpCircle,
-  KeyRound,
-  Landmark,
-  LayoutDashboard,
-  MapPin,
-  Percent,
-  PieChart,
-  Plane,
-  Receipt,
-  ScrollText,
-  Settings,
-  ShieldCheck,
-  Sparkles,
-  Star,
-  Tag,
-  Users,
-  Wallet,
-} from "lucide-react";
+import { Airplane, Bank, Buildings, Calendar, CalendarBlank, ChartBar, ChartPie, CurrencyCircleDollar, Gear, Handshake, Key, MapPin, Percent, Question, Receipt, Scroll, ShieldCheck, Sparkle, SquaresFour, Star, Tag, Users, Wallet } from "@phosphor-icons/react";
 import type { NavItem, NavSection } from "./Sidebar.logic";
 
 export type NavIcon = React.ComponentType<{ className?: string }>;
@@ -40,10 +16,10 @@ export const managerSections: Section[] = [
   {
     title: "Operação",
     items: [
-      { to: "/manager", label: "Dashboard", shortLabel: "Início", icon: LayoutDashboard },
-      { to: "/manager/companies", label: "Empresas", icon: Building2 },
+      { to: "/manager", label: "Dashboard", shortLabel: "Início", icon: SquaresFour },
+      { to: "/manager/companies", label: "Empresas", icon: Buildings },
       { to: "/manager/partners", label: "Parceiros", icon: Handshake },
-      { to: "/manager/destinations", label: "Destinos", icon: Plane },
+      { to: "/manager/destinations", label: "Destinos", icon: Airplane },
       { to: "/manager/bookings", label: "Reservas", icon: Calendar },
     ],
   },
@@ -53,19 +29,19 @@ export const managerSections: Section[] = [
       { to: "/manager/finance/billing", label: "Financeiro", icon: Wallet },
       { to: "/manager/finance/payouts", label: "Repasses", icon: Receipt },
       { to: "/manager/finance/commissions", label: "Comissões", icon: Percent },
-      { to: "/manager/finance/recipients", label: "Recebedores", icon: Landmark },
+      { to: "/manager/finance/recipients", label: "Recebedores", icon: Bank },
       { to: "/manager/tarifas", label: "Tarifas", icon: ShieldCheck },
-      { to: "/manager/attribution", label: "Atribuição", icon: PieChart },
+      { to: "/manager/attribution", label: "Atribuição", icon: ChartPie },
     ],
   },
   {
     title: "Conta",
     items: [
       { to: "/manager/reviews", label: "Avaliações", icon: Star },
-      { to: "/manager/faq", label: "FAQ", icon: HelpCircle },
+      { to: "/manager/faq", label: "FAQ", icon: Question },
       { to: "/manager/users", label: "Usuários", icon: Users },
-      { to: "/manager/legal", label: "Documentos legais", icon: ScrollText },
-      { to: "/manager/settings", label: "Configurações", icon: Settings },
+      { to: "/manager/legal", label: "Documentos legais", icon: Scroll },
+      { to: "/manager/settings", label: "Configurações", icon: Gear },
     ],
   },
 ];
@@ -76,16 +52,16 @@ export const operatorSections: Section[] = [
   {
     title: "Operação",
     items: [
-      { to: "/operator", label: "Dashboard", shortLabel: "Início", icon: LayoutDashboard },
+      { to: "/operator", label: "Dashboard", shortLabel: "Início", icon: SquaresFour },
       { to: "/operator/bookings", label: "Reservas", icon: Calendar },
       {
         to: "/operator/occupancy",
         label: "Ocupação",
-        icon: CalendarRange,
+        icon: CalendarBlank,
         scope: "occupancy:read",
       },
       { to: "/operator/locations", label: "Unidades", shortLabel: "Unidades", icon: MapPin },
-      { to: "/operator/addons", label: "Serviços", icon: Sparkles, scope: "addons:write" },
+      { to: "/operator/addons", label: "Serviços", icon: Sparkle, scope: "addons:write" },
       { to: "/operator/reviews", label: "Avaliações", icon: Star, scope: "reviews:read" },
     ],
   },
@@ -95,7 +71,7 @@ export const operatorSections: Section[] = [
       {
         to: "/operator/pricing",
         label: "Preços",
-        icon: CircleDollarSign,
+        icon: CurrencyCircleDollar,
         scope: "pricing:write",
       },
       { to: "/operator/coupons", label: "Promoções", icon: Tag, scope: "coupons:write" },
@@ -105,16 +81,16 @@ export const operatorSections: Section[] = [
     title: "Financeiro",
     items: [
       { to: "/operator/finance", label: "Repasses", icon: Receipt, scope: "finance:read" },
-      { to: "/operator/reports", label: "Relatórios", icon: BarChart3 },
+      { to: "/operator/reports", label: "Relatórios", icon: ChartBar },
     ],
   },
   {
     title: "Conta",
     items: [
       { to: "/operator/users", label: "Usuários", icon: Users, scope: "team:read" },
-      { to: "/operator/faq", label: "FAQ", icon: HelpCircle },
-      { to: "/operator/api-keys", label: "API", icon: KeyRound, scope: "api-keys:write" },
-      { to: "/operator/settings", label: "Configurações", icon: Settings },
+      { to: "/operator/faq", label: "FAQ", icon: Question },
+      { to: "/operator/api-keys", label: "API", icon: Key, scope: "api-keys:write" },
+      { to: "/operator/settings", label: "Configurações", icon: Gear },
     ],
   },
 ];

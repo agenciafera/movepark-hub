@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { MapPin, Calendar, User2, HelpCircle, LogIn, Store } from "lucide-react";
+import { Calendar, MapPin, Question, SignIn, Storefront, User } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/context";
 
@@ -37,7 +37,7 @@ export function ConsumerBottomNav() {
         </NavLink>
       ) : (
         <NavLink to="/login" className={({ isActive }) => cn(baseItem, isActive && activeItem)}>
-          <LogIn className="h-5 w-5" />
+          <SignIn className="h-5 w-5" />
           <span className={labelClass}>Entrar</span>
         </NavLink>
       )}
@@ -45,19 +45,19 @@ export function ConsumerBottomNav() {
       {/* Col 3: Conta (logado) | Seja parceiro (anônimo) */}
       {session ? (
         <NavLink to="/account" className={({ isActive }) => cn(baseItem, isActive && activeItem)}>
-          <User2 className="h-5 w-5" />
+          <User className="h-5 w-5" />
           <span className={labelClass}>Conta</span>
         </NavLink>
       ) : (
         <NavLink to="/seja-parceiro" className={({ isActive }) => cn(baseItem, isActive && activeItem)}>
-          <Store className="h-5 w-5" />
+          <Storefront className="h-5 w-5" />
           <span className={labelClass}>Parceiro</span>
         </NavLink>
       )}
 
       {/* Col 4: Ajuda — sempre */}
       <NavLink to="/ajuda" className={({ isActive }) => cn(baseItem, isActive && activeItem)}>
-        <HelpCircle className="h-5 w-5" />
+        <Question className="h-5 w-5" />
         <span className={labelClass}>Ajuda</span>
       </NavLink>
     </nav>

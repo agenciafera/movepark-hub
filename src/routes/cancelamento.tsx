@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
-import { CheckCircle, LifeBuoy } from "lucide-react";
+import { CheckCircle, Lifebuoy } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/shared/PageHeader";
 
 const RULES = [
@@ -13,7 +13,7 @@ const RULES = [
     detail: "O valor total volta no mesmo método de pagamento, em até 10 dias úteis.",
   },
   {
-    icon: LifeBuoy,
+    icon: Lifebuoy,
     color: "text-mp-indigo",
     bg: "bg-mp-pale",
     title: "Depois do prazo",

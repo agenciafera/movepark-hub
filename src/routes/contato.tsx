@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Helmet } from "react-helmet-async";
-import { Mail, MessageCircle, Clock } from "lucide-react";
+import { ChatCircle, Clock, Envelope } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,14 +11,14 @@ type FormState = "idle" | "success";
 
 const CHANNELS = [
   {
-    icon: MessageCircle,
+    icon: ChatCircle,
     title: "WhatsApp",
     desc: "Resposta rápida em horário comercial",
     action: "Iniciar conversa",
     href: "https://wa.me/5511999999999",
   },
   {
-    icon: Mail,
+    icon: Envelope,
     title: "E-mail",
     desc: "contato@movepark.co",
     action: "Enviar e-mail",
@@ -118,7 +118,7 @@ export default function ContatoPage() {
             {state === "success" ? (
               <div className="flex flex-col items-center gap-4 py-8 text-center">
                 <span className="flex h-14 w-14 items-center justify-center rounded-full bg-mp-pale text-mp-indigo">
-                  <Mail className="h-7 w-7" />
+                  <Envelope className="h-7 w-7" />
                 </span>
                 <h2 className="text-display-sm text-ink">Mensagem enviada!</h2>
                 <p className="text-body-sm text-muted">

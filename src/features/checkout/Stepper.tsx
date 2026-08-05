@@ -1,15 +1,16 @@
-import { Check } from "lucide-react";
+import { Check } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 const steps = [
   { id: 1, label: "Identificação" },
   { id: 2, label: "Veículo" },
-  { id: 3, label: "Pagamento" },
-  { id: 4, label: "Confirmação" },
+  { id: 3, label: "Adicionais" },
+  { id: 4, label: "Pagamento" },
+  { id: 5, label: "Confirmação" },
 ];
 
 type Props = {
-  current: 1 | 2 | 3 | 4;
+  current: 1 | 2 | 3 | 4 | 5;
 };
 
 export function Stepper({ current }: Props) {

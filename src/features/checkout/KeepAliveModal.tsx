@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Hourglass, ShieldCheck, Timer } from "lucide-react";
+import { Hourglass, ShieldCheck, Timer } from "@phosphor-icons/react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_BOOKING_HOLD_MAX_MINUTES } from "@/lib/bookingHold";

@@ -1,5 +1,9 @@
-import { MapPin, CreditCard, Ticket } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { CreditCard, MapPin, Ticket } from "@phosphor-icons/react";
+import type { ComponentType } from "react";
+import type { IconProps } from "@phosphor-icons/react";
+
+/** No Phosphor, `Icon` é valor; o tipo do componente é este. */
+type Icon = ComponentType<IconProps>;
 
 /**
  * Fonte única do "como funciona". A home e a /sobre mostravam a mesma explicação com
@@ -16,17 +20,17 @@ export const HOW_IT_WORKS = {
   lead: "Do destino ao voucher em menos de 2 minutos.",
   steps: [
     {
-      Icon: MapPin as LucideIcon,
+      Icon: MapPin as Icon,
       title: "Busque pelo destino",
       text: "Diga pra onde vai e quando. A gente mostra os estacionamentos parceiros com preço fechado e o tipo de vaga: coberto, descoberto ou valet.",
     },
     {
-      Icon: CreditCard as LucideIcon,
+      Icon: CreditCard as Icon,
       title: "Reserve e pague online",
       text: "PIX ou cartão. O voucher com QR Code chega na hora, no seu e-mail e na sua conta.",
     },
     {
-      Icon: Ticket as LucideIcon,
+      Icon: Ticket as Icon,
       title: "Chegue e deixe o carro",
       text: "Mostre o QR Code na portaria. Na volta, é só pegar o carro.",
     },

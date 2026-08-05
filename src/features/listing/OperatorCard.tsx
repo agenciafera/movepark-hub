@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { BadgeCheck, Building2, MapPin } from "lucide-react";
+import { Buildings, MapPin, SealCheck } from "@phosphor-icons/react";
 import type { ListingDetail } from "./api";
 
 function yearsOnPlatform(createdAt: string): number {
@@ -20,13 +20,13 @@ export function OperatorCard({ company, others }: Props) {
     <div className="rounded-md border border-hairline bg-canvas p-6">
       <div className="flex items-start gap-4">
         <div className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-mp-pale">
-          <Building2 className="h-7 w-7 text-mp-indigo" />
+          <Buildings className="h-7 w-7 text-mp-indigo" />
         </div>
         <div className="flex-1 space-y-2">
           <div className="flex items-center gap-2">
             <h3 className="text-title-md text-ink">{company.name}</h3>
             <span className="inline-flex items-center gap-1 rounded-full bg-mp-pale px-3 py-1 text-caption-sm text-mp-indigo">
-              <BadgeCheck className="h-3.5 w-3.5" />
+              <SealCheck className="h-3.5 w-3.5" />
               Operador verificado
             </span>
           </div>

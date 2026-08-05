@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Camera, AlertCircle, Sparkles } from "lucide-react";
+import { Camera, Sparkle, WarningCircle } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -26,7 +26,7 @@ export function PhotosCallout({
   /** peso do botão. "secondary" quando existe um CTA mais importante ao lado (ex: continuar cadastro). */
   ctaVariant?: "primary" | "secondary";
 }) {
-  const EyebrowIcon = hasPhotos ? Sparkles : AlertCircle;
+  const EyebrowIcon = hasPhotos ? Sparkle : WarningCircle;
   const eyebrow = hasPhotos ? "Quanto mais fotos, mais reservas" : "Obrigatório para vender";
   const title = hasPhotos
     ? "Que tal mais algumas fotos?"

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Car, ChevronLeft, ChevronRight, Grid2x2, ImageIcon } from "lucide-react";
+import { Car, CaretLeft, CaretRight, Image, SquaresFour } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { imageSrcSet, optimizedImageUrl } from "@/lib/storage";
 import {
@@ -90,7 +90,7 @@ export function PhotoGrid({ title, photoUrls }: Props) {
             onClick={() => openAt(0)}
             className="absolute bottom-3 right-3 inline-flex items-center gap-2 rounded-full border border-hairline bg-canvas/95 px-3 py-1.5 text-body-sm font-medium text-ink shadow-tier backdrop-blur transition hover:bg-canvas"
           >
-            <Grid2x2 className="h-4 w-4" />
+            <SquaresFour className="h-4 w-4" />
             Ver todas as fotos
             {photos.length > 1 && <span className="text-muted">({photos.length})</span>}
           </button>
@@ -240,7 +240,7 @@ function Lightbox({ title, photos, open, active, onOpenChange, onActiveChange }:
 }
 
 function NavButton({ side, onClick }: { side: "left" | "right"; onClick: () => void }) {
-  const Icon = side === "left" ? ChevronLeft : ChevronRight;
+  const Icon = side === "left" ? CaretLeft : CaretRight;
   return (
     <button
       type="button"
@@ -261,7 +261,7 @@ function PlaceholderInner({ large = false }: { large?: boolean }) {
     <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-mp-indigo/40">
       <Car className={large ? "h-16 w-16" : "h-10 w-10"} />
       <span className="text-caption-sm flex items-center gap-1">
-        <ImageIcon className="h-3 w-3" />
+        <Image className="h-3 w-3" />
         Foto em breve
       </span>
     </div>

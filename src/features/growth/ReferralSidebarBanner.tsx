@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Copy, Gift, Share2 } from "lucide-react";
+import { Copy, Gift, ShareNetwork } from "@phosphor-icons/react";
 import { useAuth } from "@/auth/context";
 import { useReferrals } from "./api";
 import { brlShort, whatsappShareUrl } from "./growth.logic";
@@ -69,7 +69,7 @@ export function ReferralSidebarBanner() {
         onClick={compartilhar}
         className="relative mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-sm bg-white text-caption-sm font-bold text-mp-navy transition-colors hover:bg-mp-pale"
       >
-        <Share2 className="h-[15px] w-[15px]" aria-hidden />
+        <ShareNetwork className="h-[15px] w-[15px]" aria-hidden />
         Compartilhar
       </button>
 

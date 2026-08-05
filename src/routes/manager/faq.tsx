@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { Plus, Search, Settings2 } from "lucide-react";
+import { Faders, MagnifyingGlass, Plus } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,7 +49,7 @@ export default function ManagerFaq() {
           <div className="flex gap-2">
             <Button variant="secondary" size="sm" asChild>
               <Link to="/manager/faq/categorias">
-                <Settings2 className="h-4 w-4" />
+                <Faders className="h-4 w-4" />
                 Categorias
               </Link>
             </Button>
@@ -63,7 +63,7 @@ export default function ManagerFaq() {
 
       <div className="flex flex-col gap-3 tablet:flex-row tablet:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+          <MagnifyingGlass className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
           <Input
             placeholder="Buscar pergunta…"
             value={query}

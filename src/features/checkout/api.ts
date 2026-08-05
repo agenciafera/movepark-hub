@@ -58,6 +58,8 @@ export type BookingForCheckout = {
     unit_price: number;
     subtotal: number;
     parking_type: { code: string; name: string } | null;
+    /** Id do serviço, pro passo de adicionais abrir com o que já está marcado. */
+    add_on_service_id: string | null;
     add_on_service: { name: string } | null;
   }[];
   payment: {
@@ -95,7 +97,7 @@ export function useCheckoutBooking(code: string | undefined) {
            customer_tax_id, passenger_first_name, passenger_last_name, passenger_phone,
            location:location!inner(id, slug, name, address,
              company:company!inner(slug, name)),
-           items:booking_item(id, item_type, quantity, unit_price, subtotal,
+           items:booking_item(id, item_type, quantity, unit_price, subtotal, add_on_service_id,
              parking_type:parking_type(code, name),
              add_on_service:add_on_service(name)
            ),
@@ -151,6 +153,7 @@ export function useCheckoutBooking(code: string | undefined) {
             unit_price: Number(it.unit_price),
             subtotal: Number(it.subtotal),
             parking_type: it.parking_type,
+            add_on_service_id: it.add_on_service_id ?? null,
             add_on_service: it.add_on_service,
           }),
         ),
@@ -532,6 +535,22 @@ export function useCreateCardCharge() {
         throw new Error(err.error ?? `Falha ao processar o cartão (HTTP ${res.status})`);
       }
       return res.json();
+    },
+  });
+}
+
+export function useSetBookingAddons() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { code: string; addOnIds: string[] }) => {
+      const { error } = await supabase.rpc("set_booking_addons", {
+        p_code: args.code,
+        p_add_on_ids: args.addOnIds,
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_d, args) => {
+      qc.invalidateQueries({ queryKey: ["checkout-booking", args.code] });
     },
   });
 }

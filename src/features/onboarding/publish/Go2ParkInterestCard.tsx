@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Check } from "lucide-react";
+import { Check } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { useSubmitGo2ParkInterest } from "@/features/onboarding/go2parkApi";
 

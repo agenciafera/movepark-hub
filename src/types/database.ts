@@ -4751,6 +4751,10 @@ export type Database = {
         Args: { p_location_id: string }
         Returns: undefined
       }
+      set_booking_addons: {
+        Args: { p_add_on_ids: string[]; p_code: string }
+        Returns: Json
+      }
       set_company_take_rate: {
         Args: { p_company_id: string; p_take_rate_bps: number }
         Returns: {

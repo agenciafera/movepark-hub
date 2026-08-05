@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Check, Inbox, Phone, Mail, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Check, Envelope, Phone, ShieldCheck, Tray } from "@phosphor-icons/react";
 import { BOOKING_STATUS_LABELS } from "@/components/shared/StatusBadge";
 import {
   BOOKING_STATUS_TONES,
@@ -92,7 +92,7 @@ export default function BookingDetailPage({ backTo = "/bookings" }: { backTo?: s
     return (
       <div className="mx-auto w-full max-w-[1080px] px-4 py-8 desktop:px-8">
         <EmptyState
-          icon={<Inbox className="h-10 w-10" />}
+          icon={<Tray className="h-10 w-10" />}
           title="Reserva não encontrada"
           description="Verifique o código e tente de novo."
           action={
@@ -413,7 +413,7 @@ export default function BookingDetailPage({ backTo = "/bookings" }: { backTo?: s
                       href={`mailto:${booking.location_detail.email}`}
                       className="inline-flex items-center gap-2 text-body-sm text-ink no-underline hover:underline"
                     >
-                      <Mail className="h-4 w-4 text-mp-indigo" aria-hidden />
+                      <Envelope className="h-4 w-4 text-mp-indigo" aria-hidden />
                       {booking.location_detail.email}
                     </a>
                   )}

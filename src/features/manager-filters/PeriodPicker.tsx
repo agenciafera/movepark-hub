@@ -1,7 +1,7 @@
 import * as React from "react";
 import { subDays } from "date-fns";
 import type { DateRange } from "react-day-picker";
-import { CalendarDays, Check, ChevronDown } from "lucide-react";
+import { CalendarBlank, CaretDown, Check } from "@phosphor-icons/react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -169,14 +169,14 @@ export function PeriodPicker({ value, onChange, showCompare = true, className }:
             className,
           )}
         >
-          <CalendarDays className="h-4 w-4 shrink-0 text-mp-indigo" aria-hidden />
+          <CalendarBlank className="h-4 w-4 shrink-0 text-mp-indigo" aria-hidden />
           <span className="flex min-w-0 flex-col">
             <span className="truncate text-body-sm font-medium text-ink">
               {periodLabel(value, range)}
             </span>
             <span className="truncate text-caption-sm text-muted">{formatRangeLabel(range)}</span>
           </span>
-          <ChevronDown className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+          <CaretDown className="h-4 w-4 shrink-0 text-muted" aria-hidden />
         </button>
       </PopoverTrigger>
 

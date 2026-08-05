@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Filter, X } from "lucide-react";
+import { FunnelSimple, X } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -201,7 +201,7 @@ export function SearchFiltersSheet(props: Props) {
     <Sheet>
       <SheetTrigger asChild>
         <Button variant="secondary" size="sm" className="desktop:hidden">
-          <Filter className="h-4 w-4" />
+          <FunnelSimple className="h-4 w-4" />
           Filtros{props.activeCount > 0 ? ` (${props.activeCount})` : ""}
         </Button>
       </SheetTrigger>

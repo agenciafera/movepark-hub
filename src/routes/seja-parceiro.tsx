@@ -1,20 +1,6 @@
 import * as React from "react";
 import { Helmet } from "react-helmet-async";
-import {
-  ArrowRight,
-  Wallet,
-  Megaphone,
-  CreditCard,
-  ShieldCheck,
-  Tag,
-  BadgeCheck,
-  Quote,
-  X,
-  FileText,
-  Radio,
-  Banknote,
-  Check,
-} from "lucide-react";
+import { ArrowRight, Check, CreditCard, FileText, Megaphone, Money, Quotes, Radio, SealCheck, ShieldCheck, Tag, Wallet, X } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { YouTubeEmbed } from "@/components/shared/YouTubeEmbed";
 import { cn } from "@/lib/utils";
@@ -55,7 +41,7 @@ const STEPS = [
   },
   {
     n: 3,
-    icon: Banknote,
+    icon: Money,
     title: "Dinheiro na conta",
     desc: "A Movepark garante o pagamento e faz o repasse organizado. Sem inadimplência, sem cobrança manual.",
   },
@@ -98,7 +84,7 @@ const BENEFITS = [
     desc: "Você define a tabela. A gente ajuda com estratégia: sazonalidade, promoções e desconto por diária longa.",
   },
   {
-    icon: BadgeCheck,
+    icon: SealCheck,
     title: "Sua marca em destaque",
     desc: "Seu estacionamento aparece verificado, com fotos, avaliações e reputação construída.",
   },
@@ -780,7 +766,7 @@ export default function SejaParceiroPage() {
                     decoding="async"
                     className={cn("w-auto object-contain", t.logoSize)}
                   />
-                  <Quote className="h-6 w-6 shrink-0 text-mp-violet" aria-hidden />
+                  <Quotes className="h-6 w-6 shrink-0 text-mp-violet" aria-hidden />
                 </div>
                 <blockquote className="mt-6 flex-1 text-body-md text-ink">“{t.quote}”</blockquote>
                 <figcaption className="mt-6 border-t border-hairline pt-4 text-body-sm text-muted">

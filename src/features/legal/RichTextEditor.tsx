@@ -2,7 +2,7 @@ import * as React from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
-import { Bold, Italic, Heading2, Heading3, List, ListOrdered, Link2, Unlink } from "lucide-react";
+import { Link as LinkIcon, LinkBreak, List, ListNumbers, TextB, TextHThree, TextHTwo, TextItalic } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -81,28 +81,28 @@ export function RichTextEditor({ initialContent, onChange }: Props) {
     <div className="rounded-lg border border-hairline">
       <div className="flex flex-wrap gap-1 border-b border-hairline bg-surface p-2">
         <ToolbarButton title="Negrito" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
-          <Bold className="h-4 w-4" />
+          <TextB className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton title="Itálico" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}>
-          <Italic className="h-4 w-4" />
+          <TextItalic className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton title="Título (H2)" active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
-          <Heading2 className="h-4 w-4" />
+          <TextHTwo className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton title="Subtítulo (H3)" active={editor.isActive("heading", { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>
-          <Heading3 className="h-4 w-4" />
+          <TextHThree className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton title="Lista" active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()}>
           <List className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton title="Lista numerada" active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
-          <ListOrdered className="h-4 w-4" />
+          <ListNumbers className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton title="Link" active={editor.isActive("link")} onClick={setLink}>
-          <Link2 className="h-4 w-4" />
+          <LinkIcon className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton title="Remover link" onClick={() => editor.chain().focus().unsetLink().run()}>
-          <Unlink className="h-4 w-4" />
+          <LinkBreak className="h-4 w-4" />
         </ToolbarButton>
       </div>
       <EditorContent

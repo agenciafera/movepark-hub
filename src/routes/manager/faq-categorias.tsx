@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { MoreVertical, Plus } from "lucide-react";
+import { DotsThreeVertical, Plus } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
@@ -78,7 +78,7 @@ export default function ManagerFaqCategorias() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" aria-label="Mais ações">
-                    <MoreVertical className="h-4 w-4" />
+                    <DotsThreeVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">

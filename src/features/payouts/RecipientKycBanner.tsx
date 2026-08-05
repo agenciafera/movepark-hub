@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ShieldAlert } from "lucide-react";
+import { ShieldWarning } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/context";
@@ -67,7 +67,7 @@ export function RecipientKycBanner({ companyId }: { companyId: string | undefine
       )}
       <div className="flex flex-1 flex-col gap-3">
         <div className="flex items-start gap-3">
-          <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-badge-pending-fg" />
+          <ShieldWarning className="mt-0.5 h-5 w-5 shrink-0 text-badge-pending-fg" />
           <div className="flex flex-col gap-1">
             <p className="text-body-sm font-medium text-ink">Prova de vida pendente</p>
 

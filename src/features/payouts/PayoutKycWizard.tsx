@@ -2,7 +2,7 @@ import * as React from "react";
 import { useForm, FormProvider, type Control, type Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "@phosphor-icons/react";
 import { SubStepBar } from "@/components/shared/SubStepBar";
 import { payoutKycSchema, type PayoutKycForm as KycValues } from "./kyc";
 import {

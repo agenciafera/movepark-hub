@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link, useParams } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Plus } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import {
   Table,

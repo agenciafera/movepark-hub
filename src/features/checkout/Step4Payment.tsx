@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Copy, CreditCard, Hourglass, Smartphone } from "lucide-react";
+import { ArrowLeft, Copy, CreditCard, DeviceMobile, Hourglass } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,7 +40,7 @@ type Props = {
   onBack: () => void;
 };
 
-export function Step3Payment({
+export function Step4Payment({
   bookingId,
   bookingCode,
   totalAmount,
@@ -201,7 +201,7 @@ export function Step3Payment({
       <Tabs defaultValue="pix">
         <TabsList>
           <TabsTrigger value="pix" className="inline-flex items-center gap-2">
-            <Smartphone className="h-4 w-4" />
+            <DeviceMobile className="h-4 w-4" />
             PIX
           </TabsTrigger>
           <TabsTrigger value="card" className="inline-flex items-center gap-2">

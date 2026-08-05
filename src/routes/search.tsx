@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { Inbox } from "lucide-react";
+import { Tray } from "@phosphor-icons/react";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -202,7 +202,7 @@ export default function SearchResultsPage() {
 
           {!isLoading && !error && data && data.results.length === 0 && (
             <EmptyState
-              icon={<Inbox className="h-10 w-10" />}
+              icon={<Tray className="h-10 w-10" />}
               title="Nenhuma vaga pra esse período"
               description={
                 activeCount > 0

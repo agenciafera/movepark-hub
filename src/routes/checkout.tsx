@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { ArrowRight, ChevronDown, Inbox } from "lucide-react";
+import { ArrowRight, CaretDown, Tray } from "@phosphor-icons/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -16,8 +16,9 @@ import { KeepAliveModal } from "@/features/checkout/KeepAliveModal";
 import { Stepper } from "@/features/checkout/Stepper";
 import { Step1Identity } from "@/features/checkout/Step1Identity";
 import { Step2Vehicle } from "@/features/checkout/Step2Vehicle";
-import { Step3Payment } from "@/features/checkout/Step3Payment";
-import { Step4Confirmation } from "@/features/checkout/Step4Confirmation";
+import { Step3Addons } from "@/features/checkout/Step3Addons";
+import { Step4Payment } from "@/features/checkout/Step4Payment";
+import { Step5Confirmation } from "@/features/checkout/Step5Confirmation";
 import { SummaryCard } from "@/features/checkout/SummaryCard";
 import { formatBRL } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -54,7 +55,7 @@ function MobileBookingSummary({ booking }: { booking: BookingForCheckout }) {
           <span className="text-display-sm text-ink tabular-nums">
             {formatBRL(booking.total_amount)}
           </span>
-          <ChevronDown
+          <CaretDown
             className={cn("h-4 w-4 text-muted transition-transform duration-200", open && "rotate-180")}
           />
         </div>
@@ -140,7 +141,7 @@ export default function CheckoutPage() {
     return (
       <div className="mx-auto w-full max-w-[1080px] px-4 py-12 desktop:px-8">
         <EmptyState
-          icon={<Inbox className="h-10 w-10" />}
+          icon={<Tray className="h-10 w-10" />}
           title="Reserva não encontrada"
           description="O link pode estar errado ou a reserva foi cancelada."
           action={
@@ -224,21 +225,31 @@ export default function CheckoutPage() {
                   onNext={() => setStep(3)}
                 />
               ) : step === 3 ? (
-                <Step3Payment
+                <Step3Addons
+                  code={booking.code}
+                  locationId={booking.location.id}
+                  selectedIds={booking.items
+                    .filter((i) => i.item_type === "add_on" && i.add_on_service_id)
+                    .map((i) => i.add_on_service_id as string)}
+                  onBack={() => setStep(2)}
+                  onNext={() => setStep(4)}
+                />
+              ) : step === 4 ? (
+                <Step4Payment
                   bookingId={booking.id}
                   bookingCode={booking.code}
                   totalAmount={booking.total_amount}
                   customerTaxId={booking.customer_tax_id}
                   paymentStatus={booking.payment?.status ?? null}
-                  onBack={() => setStep(2)}
+                  onBack={() => setStep(3)}
                 />
               ) : (
-                <Step4Confirmation booking={booking} />
+                <Step5Confirmation booking={booking} />
               )}
             </div>
 
             {/* Resumo accordion — abaixo do form, mobile/tablet apenas, exceto confirmação */}
-            {!expired && step !== 4 && (
+            {!expired && step !== 5 && (
               <div className={cn("mt-6 desktop:hidden", showMobileCta && "pb-20")}>
                 <MobileBookingSummary booking={booking} />
               </div>

@@ -1,13 +1,13 @@
-import { Tag, MapPin, BusFront, Umbrella, ConciergeBell, type LucideIcon } from "lucide-react";
+import { Bell, Bus, MapPin, Tag, Umbrella, type Icon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import type { SearchBadge, SearchBadgeKind } from "./searchBadges";
 
-const ICON: Record<SearchBadgeKind, LucideIcon> = {
+const ICON: Record<SearchBadgeKind, Icon> = {
   cheapest: Tag,
   closest: MapPin,
-  shuttle: BusFront,
+  shuttle: Bus,
   covered: Umbrella,
-  valet: ConciergeBell,
+  valet: Bell,
 };
 
 /** Comparativos ganham destaque sólido; atributos ficam em pill clara. */

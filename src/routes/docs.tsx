@@ -1,30 +1,7 @@
 import * as React from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
-import {
-  Search,
-  Copy,
-  Check,
-  KeyRound,
-  ChevronRight,
-  BookOpen,
-  ShieldCheck,
-  ListChecks,
-  CircleAlert,
-  Gauge,
-  MapPin,
-  CalendarCheck,
-  Ticket,
-  SquareParking,
-  Tag,
-  Percent,
-  Sparkles,
-  Star,
-  BarChart3,
-  HelpCircle,
-  Bot,
-  type LucideIcon,
-} from "lucide-react";
+import { BookOpen, CalendarCheck, CarProfile, CaretRight, ChartBar, Check, Copy, Gauge, Key, ListChecks, MagnifyingGlass, MapPin, Percent, Question, Robot, ShieldCheck, Sparkle, Star, Tag, Ticket, WarningCircle, type Icon } from "@phosphor-icons/react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
@@ -42,25 +19,25 @@ import {
   type HttpMethod,
 } from "@/features/docs/apiDocs";
 
-const GROUP_ICON: Record<string, LucideIcon> = {
+const GROUP_ICON: Record<string, Icon> = {
   locations: MapPin,
   availability: CalendarCheck,
   bookings: Ticket,
-  "parking-types": SquareParking,
+  "parking-types": CarProfile,
   coupons: Tag,
   discounts: Percent,
-  addons: Sparkles,
+  addons: Sparkle,
   reviews: Star,
-  occupancy: BarChart3,
-  faq: HelpCircle,
+  occupancy: ChartBar,
+  faq: Question,
 };
 
-const TOP_SECTIONS: { id: string; label: string; icon: LucideIcon }[] = [
+const TOP_SECTIONS: { id: string; label: string; icon: Icon }[] = [
   { id: "overview", label: "Visão geral", icon: BookOpen },
-  { id: "auth", label: "Autenticação", icon: KeyRound },
+  { id: "auth", label: "Autenticação", icon: Key },
   { id: "scopes", label: "Escopos", icon: ShieldCheck },
   { id: "conventions", label: "Convenções", icon: ListChecks },
-  { id: "status", label: "Status codes", icon: CircleAlert },
+  { id: "status", label: "Status codes", icon: WarningCircle },
   { id: "ratelimit", label: "Limites", icon: Gauge },
 ];
 
@@ -124,7 +101,7 @@ function EndpointCard({ e, forceOpen }: { e: Endpoint; forceOpen: boolean }) {
             {e.scope}
           </span>
         )}
-        <ChevronRight className={cn("h-4 w-4 shrink-0 text-muted transition-transform", open && "rotate-90", !e.scope && "ml-auto")} />
+        <CaretRight className={cn("h-4 w-4 shrink-0 text-muted transition-transform", open && "rotate-90", !e.scope && "ml-auto")} />
       </button>
 
       {open && (
@@ -166,7 +143,7 @@ function EndpointCard({ e, forceOpen }: { e: Endpoint; forceOpen: boolean }) {
   );
 }
 
-function SectionTitle({ id, icon: Icon, title }: { id: string; icon: LucideIcon; title: string }) {
+function SectionTitle({ id, icon: Icon, title }: { id: string; icon: Icon; title: string }) {
   return (
     <h2 id={id} className="flex scroll-mt-24 items-center gap-2 text-display-sm text-ink">
       <Icon className="h-5 w-5 text-mp-primary" />
@@ -208,7 +185,7 @@ export default function DocsPage() {
     return () => obs.disconnect();
   }, []);
 
-  const navLink = (id: string, label: string, Icon: LucideIcon) => (
+  const navLink = (id: string, label: string, Icon: Icon) => (
     <a
       href={`#${id}`}
       className={cn(
@@ -224,7 +201,7 @@ export default function DocsPage() {
   const Sidebar = (
     <div className="space-y-4">
       <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+        <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
         <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar endpoint…" className="pl-9" />
       </div>
 
@@ -256,7 +233,7 @@ export default function DocsPage() {
                   aria-label={expanded ? "Recolher" : "Expandir"}
                   aria-expanded={expanded}
                 >
-                  <ChevronRight className={cn("h-3.5 w-3.5 transition-transform", expanded && "rotate-90")} />
+                  <CaretRight className={cn("h-3.5 w-3.5 transition-transform", expanded && "rotate-90")} />
                 </button>
               </div>
               {expanded && (
@@ -278,7 +255,7 @@ export default function DocsPage() {
         })}
 
         <p className="px-2 pb-1 pt-3 text-caption-sm font-bold uppercase tracking-wide text-muted-steel">Agentes</p>
-        {navLink("mcp", "MCP", Bot)}
+        {navLink("mcp", "MCP", Robot)}
       </nav>
     </div>
   );
@@ -333,7 +310,7 @@ export default function DocsPage() {
           </section>
 
           <section className="space-y-4">
-            <SectionTitle id="auth" icon={KeyRound} title="Autenticação" />
+            <SectionTitle id="auth" icon={Key} title="Autenticação" />
             <p className="text-body-sm text-muted">
               Envie sua chave no header <code>Authorization: Bearer mp_live_…</code> (ou{" "}
               <code>X-API-Key</code>). Crie e gerencie chaves em{" "}
@@ -342,7 +319,7 @@ export default function DocsPage() {
             </p>
             <CodeBlock label="Exemplo (cURL)" code={`curl ${API_BASE}/v1/locations \\\n  -H "Authorization: Bearer mp_live_xxxxxxxx"`} />
             <p className="flex items-center gap-2 text-caption-sm text-muted">
-              <KeyRound className="h-4 w-4" /> Cada endpoint exige um <strong>escopo</strong>; chaves sem ele recebem <code>403</code>.
+              <Key className="h-4 w-4" /> Cada endpoint exige um <strong>escopo</strong>; chaves sem ele recebem <code>403</code>.
             </p>
           </section>
 
@@ -380,7 +357,7 @@ export default function DocsPage() {
           </section>
 
           <section className="space-y-4">
-            <SectionTitle id="status" icon={CircleAlert} title="Status codes" />
+            <SectionTitle id="status" icon={WarningCircle} title="Status codes" />
             <div className="overflow-x-auto rounded-md border border-hairline">
               <table className="w-full text-body-sm">
                 <thead className="bg-surface-soft text-left text-muted-steel">
@@ -430,7 +407,7 @@ export default function DocsPage() {
           })}
 
           <section className="space-y-4">
-            <SectionTitle id="mcp" icon={Bot} title="MCP: para agentes de IA" />
+            <SectionTitle id="mcp" icon={Robot} title="MCP: para agentes de IA" />
             <p className="text-body-sm text-muted">
               Servidor <strong>MCP</strong> (Model Context Protocol, Streamable HTTP / JSON-RPC 2.0) com
               duas superfícies: <strong>consumidor</strong> (público, descoberta) e <strong>parceiro</strong>{" "}

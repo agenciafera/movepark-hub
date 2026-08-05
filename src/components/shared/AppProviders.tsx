@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
+import { IconContext } from "@phosphor-icons/react";
 import { queryClient } from "@/lib/query-client";
 import { AuthProvider } from "@/auth/AuthProvider";
 import { hasSupabaseEnv } from "@/lib/supabase";
@@ -54,15 +55,20 @@ export function AppProviders() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Título-padrão (fallback). Páginas que definem o próprio <title> via Helmet
-          sobrescrevem; assim cada página tem exatamente um <title>. */}
-      <Helmet defaultTitle="Movepark Hub" />
-      <AuthProvider>
-        <ScrollToTop />
-        <SavedListingsSync />
-        <Toaster position="bottom-right" richColors />
-        <Outlet />
-      </AuthProvider>
+      {/* Padrão dos ícones num lugar só. Quase todo uso do projeto dimensiona por
+          classe (`h-4 w-4`), que sobrepõe o `size`; o context serve pros que não
+          passam nada e pra fixar o peso do traço. */}
+      <IconContext.Provider value={{ size: 20, weight: "regular" }}>
+        {/* Título-padrão (fallback). Páginas que definem o próprio <title> via Helmet
+            sobrescrevem; assim cada página tem exatamente um <title>. */}
+        <Helmet defaultTitle="Movepark Hub" />
+        <AuthProvider>
+          <ScrollToTop />
+          <SavedListingsSync />
+          <Toaster position="bottom-right" richColors />
+          <Outlet />
+        </AuthProvider>
+      </IconContext.Provider>
     </QueryClientProvider>
   );
 }

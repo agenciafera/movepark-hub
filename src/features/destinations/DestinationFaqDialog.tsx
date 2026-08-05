@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Plus } from "lucide-react";
+import { Plus } from "@phosphor-icons/react";
 import {
   Dialog,
   DialogContent,

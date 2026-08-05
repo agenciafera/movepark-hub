@@ -2,7 +2,7 @@
 // Fonte única — use aqui ao renderizar qualquer destino (combobox, filtros, cards, SEO).
 // Os tipos espelham o CHECK de `destination.type` (ver docs/specs/destinations.md).
 
-import { Plane, Bus, Building2, MapPin, Compass, type LucideIcon } from "lucide-react";
+import { Airplane, Buildings, Bus, Compass, MapPin, type Icon } from "@phosphor-icons/react";
 
 export type DestinationType =
   | "airport"
@@ -15,19 +15,19 @@ export type DestinationTypeMeta = {
   /** Label curto em pt-BR para exibição. */
   label: string;
   /** Ícone representativo do tipo. */
-  icon: LucideIcon;
+  icon: Icon;
 };
 
 export const destinationTypeMeta: Record<DestinationType, DestinationTypeMeta> = {
-  airport: { label: "Aeroporto", icon: Plane },
+  airport: { label: "Aeroporto", icon: Airplane },
   bus_terminal: { label: "Rodoviária", icon: Bus },
-  city_center: { label: "Centro", icon: Building2 },
+  city_center: { label: "Centro", icon: Buildings },
   district: { label: "Bairro", icon: MapPin },
   custom: { label: "Outro", icon: Compass },
 };
 
 /** Ícone do tipo, com fallback (MapPin) para valores fora do enum. */
-export function destinationTypeIcon(type: string | null | undefined): LucideIcon {
+export function destinationTypeIcon(type: string | null | undefined): Icon {
   return destinationTypeMeta[type as DestinationType]?.icon ?? MapPin;
 }
 

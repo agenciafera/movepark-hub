@@ -1,4 +1,4 @@
-import { AlertTriangle } from "lucide-react";
+import { Warning } from "@phosphor-icons/react";
 import { formatBRL } from "@/lib/format";
 import type { CurveInversion } from "./pricing-curve";
 
@@ -19,7 +19,7 @@ export function CurveInversionAlert({ inversion, onOpenSimulation }: Props) {
       onClick={onOpenSimulation}
       className="flex w-full items-start gap-2 rounded-sm bg-badge-pending-bg p-3 text-left text-body-sm text-warning"
     >
-      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+      <Warning className="mt-0.5 h-4 w-4 shrink-0" />
       <span>
         {inversion.days} dias custa {formatBRL(inversion.price)} e {inversion.nextDays} dias custa{" "}
         {formatBRL(inversion.nextPrice)}. Quem fica menos tempo paga mais. Veja a tabela inteira.

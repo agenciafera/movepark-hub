@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { Check, Download, Calendar as CalendarIcon } from "lucide-react";
+import { Calendar as CalendarIcon, Check, Download } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toDataUrl } from "@/lib/qr";
@@ -13,7 +13,7 @@ type Props = {
   booking: BookingForCheckout;
 };
 
-export function Step4Confirmation({ booking }: Props) {
+export function Step5Confirmation({ booking }: Props) {
   const [qrUrl, setQrUrl] = React.useState<string | null>(null);
   const pdf = useVoucherPdf();
 

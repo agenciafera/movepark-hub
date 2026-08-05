@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Copy, Check } from "lucide-react";
+import { Check, Copy } from "@phosphor-icons/react";
 import {
   Dialog,
   DialogContent,

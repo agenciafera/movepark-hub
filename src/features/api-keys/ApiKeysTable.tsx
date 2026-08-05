@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Plus, KeyRound, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowsClockwise, Key, Plus, Trash } from "@phosphor-icons/react";
 import {
   Table,
   TableBody,
@@ -56,7 +56,7 @@ export function ApiKeysTable({ companyId }: { companyId: string }) {
         <Skeleton className="h-40 w-full" />
       ) : !keys || keys.length === 0 ? (
         <EmptyState
-          icon={<KeyRound className="h-10 w-10" />}
+          icon={<Key className="h-10 w-10" />}
           title="Nenhuma chave de API"
           description="Crie uma chave para integrar seus sistemas (ex.: WPS) à API do Movepark."
           action={
@@ -112,10 +112,10 @@ export function ApiKeysTable({ companyId }: { companyId: string }) {
                   {k.status === "active" && (
                     <div className="inline-flex gap-1">
                       <Button variant="ghost" size="sm" onClick={() => onRotate(k)} title="Rotacionar">
-                        <RefreshCw className="h-4 w-4" />
+                        <ArrowsClockwise className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="sm" onClick={() => onRevoke(k)} title="Revogar">
-                        <Trash2 className="h-4 w-4" />
+                        <Trash className="h-4 w-4" />
                       </Button>
                     </div>
                   )}

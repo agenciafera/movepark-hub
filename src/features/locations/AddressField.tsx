@@ -1,5 +1,5 @@
 import * as React from "react";
-import { MapPin, Pencil } from "lucide-react";
+import { MapPin, Pencil } from "@phosphor-icons/react";
 import {
   Dialog,
   DialogContent,

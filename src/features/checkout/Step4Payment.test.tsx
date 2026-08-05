@@ -58,7 +58,7 @@ vi.mock("./api", async (importOriginal) => {
   };
 });
 
-import { Step3Payment } from "./Step3Payment";
+import { Step4Payment } from "./Step4Payment";
 import { tokenizeCard } from "@/lib/pagarme-tokenize";
 import { toast } from "sonner";
 
@@ -71,14 +71,14 @@ function preencheCartao(validade: string) {
   fireEvent.change(screen.getByLabelText("CVV"), { target: { value: "123" } });
 }
 
-describe("Step3Payment", () => {
+describe("Step4Payment", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("gera o PIX e mostra o QR + aguardo de confirmação", async () => {
     renderWithProviders(
-      <Step3Payment
+      <Step4Payment
         bookingId="bk-1"
         bookingCode="MP-ABC123"
         totalAmount={100}
@@ -97,7 +97,7 @@ describe("Step3Payment", () => {
   it("cartão novo: tokeniza e cobra com parcelas", async () => {
     const user = userEvent.setup();
     renderWithProviders(
-      <Step3Payment
+      <Step4Payment
         bookingId="bk-1"
         bookingCode="MP-ABC123"
         totalAmount={100}
@@ -131,7 +131,7 @@ describe("Step3Payment", () => {
   it("cartão vencido não chega na tokenização", async () => {
     const user = userEvent.setup();
     renderWithProviders(
-      <Step3Payment
+      <Step4Payment
         bookingId="bk-1"
         bookingCode="MP-ABC123"
         totalAmount={100}
@@ -156,7 +156,7 @@ describe("Step3Payment", () => {
   it("aceita a validade digitada sem barra", async () => {
     const user = userEvent.setup();
     renderWithProviders(
-      <Step3Payment
+      <Step4Payment
         bookingId="bk-1"
         bookingCode="MP-ABC123"
         totalAmount={100}

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Plus, MapPin, ExternalLink } from "lucide-react";
+import { ArrowSquareOut, MapPin, Plus } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -92,7 +92,7 @@ export default function ManagerDestinations() {
                       className="ml-1 inline-flex text-muted hover:text-ink"
                       title="Abrir página"
                     >
-                      <ExternalLink className="h-3.5 w-3.5" />
+                      <ArrowSquareOut className="h-3.5 w-3.5" />
                     </a>
                     <div className="text-caption text-muted">/{d.slug}</div>
                   </TableCell>

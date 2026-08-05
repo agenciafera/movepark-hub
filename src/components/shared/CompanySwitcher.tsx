@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Building2, Check, ChevronsUpDown, Network, Search } from "lucide-react";
+import { Buildings, CaretUpDown, Check, MagnifyingGlass, Network } from "@phosphor-icons/react";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -64,7 +64,7 @@ export function CompanySwitcher({ name, detail }: Props) {
           className="hidden w-full items-center gap-3 rounded-md bg-white/[0.06] p-3 text-left transition-colors hover:bg-white/10 desktop:flex"
         >
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-mp-primary/25 text-white/80">
-            <Building2 className="h-4 w-4" aria-hidden />
+            <Buildings className="h-4 w-4" aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-body-sm font-medium text-white" title={name}>
@@ -74,14 +74,14 @@ export function CompanySwitcher({ name, detail }: Props) {
               <span className="mt-0.5 block truncate text-caption text-white/55">{detail}</span>
             )}
           </span>
-          <ChevronsUpDown className="h-4 w-4 shrink-0 text-white/55" aria-hidden />
+          <CaretUpDown className="h-4 w-4 shrink-0 text-white/55" aria-hidden />
         </button>
       </PopoverTrigger>
 
       <PopoverContent align="start" className="w-[300px] p-0">
         <div className="border-b border-hairline p-3">
           <div className="relative">
-            <Search
+            <MagnifyingGlass
               className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
               aria-hidden
             />

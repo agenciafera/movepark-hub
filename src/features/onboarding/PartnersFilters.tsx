@@ -1,4 +1,4 @@
-import { ArrowDownUp, SlidersHorizontal, ThumbsUp, User, X } from "lucide-react";
+import { ArrowsDownUp, SlidersHorizontal, ThumbsUp, User, X } from "@phosphor-icons/react";
 import {
   Select,
   SelectContent,
@@ -110,7 +110,7 @@ export function PartnersFilters({ apps, filters, onChange, resultCount }: Props)
           onValueChange={(v) => onChange({ sort: v as PartnersSort })}
         >
           <SelectTrigger className="h-11 w-auto min-w-[12rem] gap-2">
-            <ArrowDownUp className="h-4 w-4 text-muted" />
+            <ArrowsDownUp className="h-4 w-4 text-muted" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

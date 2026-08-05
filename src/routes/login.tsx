@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, Mail, MessageCircle } from "lucide-react";
+import { ArrowLeft, ChatCircle, Envelope } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -196,7 +196,7 @@ export default function LoginPage() {
                 className="w-full justify-center gap-2"
                 onClick={() => setMode("email")}
               >
-                <Mail className="h-4 w-4" />
+                <Envelope className="h-4 w-4" />
                 Entrar com e-mail
               </Button>
               <Button
@@ -205,7 +205,7 @@ export default function LoginPage() {
                 className="w-full justify-center gap-2"
                 onClick={() => setMode("phone")}
               >
-                <MessageCircle className="h-4 w-4" />
+                <ChatCircle className="h-4 w-4" />
                 Entrar com WhatsApp
               </Button>
               <p className="pt-2 text-center text-caption-sm text-muted">

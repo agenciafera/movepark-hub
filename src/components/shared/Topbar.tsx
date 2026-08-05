@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { LogOut, Bell, Search } from "lucide-react";
+import { Bell, MagnifyingGlass, SignOut } from "@phosphor-icons/react";
 import { useAuth } from "@/auth/context";
 import { postLogoutPath } from "@/auth/postLoginRedirect";
 import {
@@ -59,7 +59,7 @@ export function Topbar({
         onClick={onOpenSearch}
         className="hidden h-12 max-w-md flex-1 items-center gap-2.5 rounded-full bg-canvas px-5 text-body-sm text-muted transition-colors hover:bg-surface-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 tablet:flex"
       >
-        <Search className="h-4 w-4 shrink-0" />
+        <MagnifyingGlass className="h-4 w-4 shrink-0" />
         <span className="truncate">Buscar reserva, unidade, cupom</span>
         <kbd className="ml-auto hidden rounded-xs bg-surface-soft px-1.5 py-0.5 font-sans text-caption-sm desktop:inline">
           {atalho}
@@ -84,7 +84,7 @@ export function Topbar({
           <DropdownMenuLabel>{session?.fullName ?? session?.email}</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => void handleSignOut()}>
-            <LogOut className="h-4 w-4" /> Sair
+            <SignOut className="h-4 w-4" /> Sair
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

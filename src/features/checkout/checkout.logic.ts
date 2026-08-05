@@ -5,7 +5,7 @@
 
 import { isValidPhoneNumber } from "react-phone-number-input";
 
-export type CheckoutStep = 1 | 2 | 3 | 4;
+export type CheckoutStep = 1 | 2 | 3 | 4 | 5;
 
 // Validação básica de e-mail: um "@" com algo antes e um domínio com ponto depois. Não tenta ser
 // RFC-completo (isso mora na verificação real, futura); só barra digitação claramente inválida.
@@ -116,18 +116,21 @@ export interface InitialStepArgs {
 }
 
 /**
- * Passo inicial do checkout. Regra: só pula pro pagamento (passo 3) quando o link pediu E a reserva
+ * Passo inicial do checkout. Regra: só pula pro pagamento (passo 4) quando o link pediu E a reserva
  * está pronta de fato (dados do pagador + Termos aceitos). Deriva do estado, nunca confia só no
  * parâmetro do link: se falta algo, cai no passo 1 (onde o usuário completa e aceita os Termos).
+ *
+ * Pular direto pro pagamento também pula os adicionais, e é o certo: quem chega por esse link já
+ * fechou o que queria, e interromper com uma oferta seria empurrada.
  */
 export function resolveInitialStep(a: InitialStepArgs): CheckoutStep {
-  if (a.requestedPay && a.hasPayerData && a.termsAccepted) return 3;
+  if (a.requestedPay && a.hasPayerData && a.termsAccepted) return 4;
   return 1;
 }
 
-/** Passo pra onde auto-avançar quando o pagamento confirma (Step 4); null = não mexe. */
+/** Passo pra onde auto-avançar quando o pagamento confirma (confirmação); null = não mexe. */
 export function nextStepOnConfirm(status: string, current: CheckoutStep): CheckoutStep | null {
-  return status === "confirmed" && current !== 4 ? 4 : null;
+  return status === "confirmed" && current !== 5 ? 5 : null;
 }
 
 /** Polling: recarrega enquanto a reserva ou o último pagamento estiverem pendentes. */

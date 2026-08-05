@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Plane, Bus, MapPin } from "lucide-react";
+import { Airplane, Bus, MapPin } from "@phosphor-icons/react";
 import {
   destinationTypeIcon,
   destinationTypeLabel,
@@ -19,7 +19,7 @@ describe("destination-types", () => {
   });
 
   it("resolve ícone conhecido", () => {
-    expect(destinationTypeIcon("airport")).toBe(Plane);
+    expect(destinationTypeIcon("airport")).toBe(Airplane);
     expect(destinationTypeIcon("bus_terminal")).toBe(Bus);
   });
 

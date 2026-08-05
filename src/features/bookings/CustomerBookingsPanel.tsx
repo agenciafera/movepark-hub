@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { CalendarClock, ChevronLeft, ChevronRight, MapPin, RotateCcw, Wallet } from "lucide-react";
+import { ArrowCounterClockwise, CalendarDot, CaretLeft, CaretRight, MapPin, Wallet } from "@phosphor-icons/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -83,7 +83,7 @@ export function CustomerBookingsPanel({ detailBase = "/bookings" }: { detailBase
     return (
       <AccountCard title="Minhas reservas" subtitle="Seus vouchers e seu histórico.">
         <EmptyState
-          icon={<CalendarClock className="h-10 w-10" aria-hidden />}
+          icon={<CalendarDot className="h-10 w-10" aria-hidden />}
           title="Você ainda não tem reservas."
           description="Comece buscando uma vaga."
           action={
@@ -178,7 +178,7 @@ export function CustomerBookingsPanel({ detailBase = "/bookings" }: { detailBase
               {last.data.listingUrl && (
                 <Button asChild variant="secondary" size="sm" className="mt-4 w-full">
                   <Link to={last.data.listingUrl}>
-                    <RotateCcw className="h-4 w-4" />
+                    <ArrowCounterClockwise className="h-4 w-4" />
                     Repetir última reserva
                   </Link>
                 </Button>
@@ -331,7 +331,7 @@ function Paginator({
           aria-label="Página anterior"
           className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-soft text-ink transition-colors hover:bg-surface-strong disabled:opacity-40 disabled:hover:bg-surface-soft"
         >
-          <ChevronLeft className="h-4 w-4" aria-hidden />
+          <CaretLeft className="h-4 w-4" aria-hidden />
         </button>
         <span className="text-caption-sm tabular-nums text-muted">
           {page.page} de {page.pages}
@@ -343,7 +343,7 @@ function Paginator({
           aria-label="Próxima página"
           className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-soft text-ink transition-colors hover:bg-surface-strong disabled:opacity-40 disabled:hover:bg-surface-soft"
         >
-          <ChevronRight className="h-4 w-4" aria-hidden />
+          <CaretRight className="h-4 w-4" aria-hidden />
         </button>
       </div>
     </nav>

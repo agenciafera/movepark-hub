@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Car, Plus, ScanLine } from "lucide-react";
+import { Car, Plus, Scan } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -161,7 +161,7 @@ export default function VehiclesPage() {
 
         <section className="rounded-lg border border-hairline bg-surface-soft p-5 desktop:p-7">
           <div className="flex items-center gap-2">
-            <ScanLine className="h-4 w-4 shrink-0 text-mp-indigo" aria-hidden />
+            <Scan className="h-4 w-4 shrink-0 text-mp-indigo" aria-hidden />
             <h2 className="text-title-md text-ink">A placa vale na portaria</h2>
           </div>
           <p className="mt-2 text-body-sm leading-relaxed text-muted">

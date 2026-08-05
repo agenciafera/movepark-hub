@@ -1,7 +1,7 @@
 import * as React from "react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
-import { BadgeCheck, CheckCircle2 } from "lucide-react";
+import { CheckCircle, SealCheck } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -273,7 +273,7 @@ function ContactRow({ label, value }: { label: string; value: string | null }) {
         <span className="break-all text-body-sm text-ink">{value ?? "Não adicionado"}</span>
         {value ? (
           <span className="inline-flex items-center gap-1 text-caption-sm font-medium text-success">
-            <BadgeCheck className="h-3.5 w-3.5" aria-hidden />
+            <SealCheck className="h-3.5 w-3.5" aria-hidden />
             verificado
           </span>
         ) : (
@@ -482,7 +482,7 @@ function CompletionCard({ completion }: { completion: ReturnType<typeof profileC
       <ul className="mt-6 flex-1 space-y-3">
         {completion.steps.map((step) => (
           <li key={step.key} className="flex items-center gap-3">
-            <CheckCircle2
+            <CheckCircle
               className={cn(
                 "h-5 w-5 shrink-0",
                 step.done ? "fill-mp-primary text-white" : "text-muted/30",

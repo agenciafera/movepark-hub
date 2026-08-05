@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Sun, Moon } from "lucide-react";
+import { Moon, Sun } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { getStoredTheme, setStoredTheme, type Theme } from "@/lib/theme";
 

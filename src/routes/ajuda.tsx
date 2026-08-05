@@ -1,14 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
-import {
-  CreditCard,
-  CalendarX,
-  QrCode,
-  MapPin,
-  ShieldCheck,
-  HelpCircle,
-  MessageCircle,
-} from "lucide-react";
+import { CalendarX, ChatCircle, CreditCard, MapPin, QrCode, Question, ShieldCheck } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/PageHeader";
 
@@ -44,7 +36,7 @@ const CATEGORIES = [
     href: "/faq?cat=seguranca",
   },
   {
-    icon: HelpCircle,
+    icon: Question,
     title: "Dúvidas gerais",
     desc: "Conta, reservas, notificações e mais.",
     href: "/faq",
@@ -130,7 +122,7 @@ export default function AjudaPage() {
 
         {/* Não encontrou */}
         <section className="rounded-md bg-surface-soft px-8 py-10 text-center">
-          <MessageCircle className="mx-auto mb-4 h-10 w-10 text-mp-indigo" />
+          <ChatCircle className="mx-auto mb-4 h-10 w-10 text-mp-indigo" />
           <h2 className="mb-2 text-display-sm text-ink">Não encontrou o que precisava?</h2>
           <p className="mb-6 text-body-sm text-muted">
             Nossa equipe responde em até 1 dia útil.

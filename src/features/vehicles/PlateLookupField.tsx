@@ -1,4 +1,4 @@
-import { AlertCircle, Car, Check, Loader2, Search } from "lucide-react";
+import { Car, Check, CircleNotch, MagnifyingGlass, WarningCircle } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,7 +43,7 @@ export function PlateLookupField({ onConfirm, onManual, confirming }: Props) {
             disabled={status === "found" || confirming}
           />
           {status === "looking_up" && (
-            <Loader2
+            <CircleNotch
               className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted"
               aria-label="Consultando placa"
             />
@@ -105,7 +105,7 @@ export function PlateLookupField({ onConfirm, onManual, confirming }: Props) {
       {(status === "not_found" || status === "error") && (
         <div className="space-y-3 rounded-md border border-hairline bg-surface-soft p-5">
           <div className="flex items-start gap-3">
-            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+            <WarningCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
             <p className="text-body-sm text-ink">
               {status === "error"
                 ? (error ?? "Não deu pra consultar a placa agora.")
@@ -114,7 +114,7 @@ export function PlateLookupField({ onConfirm, onManual, confirming }: Props) {
           </div>
           <div className="flex flex-wrap justify-end gap-2">
             <Button type="button" variant="secondary" onClick={flow.retry}>
-              <Search className="h-4 w-4" />
+              <MagnifyingGlass className="h-4 w-4" />
               Consultar de novo
             </Button>
             <Button type="button" onClick={() => onManual(plate)}>

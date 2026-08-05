@@ -1,11 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import {
-  Download,
-  Calendar as CalendarIcon,
-  CheckCircle2,
-  ExternalLink,
-} from "lucide-react";
+import { ArrowSquareOut, Calendar as CalendarIcon, CheckCircle, Download } from "@phosphor-icons/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { toDataUrl } from "@/lib/qr";
@@ -93,7 +88,7 @@ export function Voucher({ booking }: Props) {
             rel="noreferrer"
             className="mt-4 inline-flex h-[38px] items-center gap-2 rounded-full bg-white/15 px-4 text-caption-sm font-semibold text-white no-underline transition-colors hover:bg-white/25 print:hidden"
           >
-            <ExternalLink className="h-4 w-4" aria-hidden />
+            <ArrowSquareOut className="h-4 w-4" aria-hidden />
             Como chegar
           </a>
         )}
@@ -223,7 +218,7 @@ function TicketField({
 function Pill({ tone, children }: { tone: "ok"; children: React.ReactNode }) {
   return (
     <span className="mt-3.5 inline-flex items-center gap-2 rounded-full bg-surface-soft px-3.5 py-2 text-caption-sm font-semibold text-ink">
-      <CheckCircle2
+      <CheckCircle
         className={tone === "ok" ? "h-4 w-4 shrink-0 text-success" : "h-4 w-4 shrink-0"}
         aria-hidden
       />

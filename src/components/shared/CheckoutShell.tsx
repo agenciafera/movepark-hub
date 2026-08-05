@@ -1,5 +1,5 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { LogOut, User2, Calendar, Heart, LayoutDashboard } from "lucide-react";
+import { Calendar, Heart, SignOut, SquaresFour, User } from "@phosphor-icons/react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -69,7 +69,7 @@ function CheckoutTopbar() {
                       <Calendar className="h-4 w-4" /> Minhas reservas
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate("/account")}>
-                      <User2 className="h-4 w-4" /> Conta
+                      <User className="h-4 w-4" /> Conta
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate("/account/saved")}>
                       <Heart className="h-4 w-4" /> Favoritos
@@ -78,17 +78,17 @@ function CheckoutTopbar() {
                 )}
                 {effectiveRole === "hub_admin" && (
                   <DropdownMenuItem onClick={() => navigate("/manager")}>
-                    <LayoutDashboard className="h-4 w-4" /> Ir pro Manager
+                    <SquaresFour className="h-4 w-4" /> Ir pro Manager
                   </DropdownMenuItem>
                 )}
                 {effectiveRole === "company_operator" && (
                   <DropdownMenuItem onClick={() => navigate("/operator")}>
-                    <LayoutDashboard className="h-4 w-4" /> Ir pro Operator
+                    <SquaresFour className="h-4 w-4" /> Ir pro Operator
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => void handleSignOut()}>
-                  <LogOut className="h-4 w-4" /> Sair
+                  <SignOut className="h-4 w-4" /> Sair
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

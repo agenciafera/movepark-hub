@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { ShieldCheck, LogOut } from "lucide-react";
+import { ShieldCheck, SignOut } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useSignOutEverywhere } from "@/features/profile/api";
@@ -74,7 +74,7 @@ export default function SecurityPage() {
             onClick={handleSignOutAll}
             disabled={signOutAll.isPending}
           >
-            <LogOut className="h-4 w-4" />
+            <SignOut className="h-4 w-4" />
             {signOutAll.isPending ? "Saindo…" : "Sair de todos"}
           </Button>
         </div>

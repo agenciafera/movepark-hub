@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Plus, Tag, Pencil, Trash2 } from "lucide-react";
+import { Pencil, Plus, Tag, Trash } from "@phosphor-icons/react";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -139,7 +139,7 @@ export function DiscountsTab({ companyId }: { companyId: string }) {
                         disabled={del.isPending}
                         aria-label="Excluir"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   </TableCell>

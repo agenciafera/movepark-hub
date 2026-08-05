@@ -1,7 +1,7 @@
 import * as React from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { Save } from "lucide-react";
+import { FloppyDisk } from "@phosphor-icons/react";
 import {
   Sheet,
   SheetContent,
@@ -579,7 +579,7 @@ export function PricingRuleEditor({
               disabled={submitting || !!blockedReason}
               title={blockedReason ?? undefined}
             >
-              <Save className="h-4 w-4" />
+              <FloppyDisk className="h-4 w-4" />
               {submitting ? "Salvando…" : "Salvar precificação"}
             </Button>
           </div>

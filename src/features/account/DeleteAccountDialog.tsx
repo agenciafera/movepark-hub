@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Trash } from "@phosphor-icons/react";
 import {
   Dialog,
   DialogContent,
@@ -50,7 +50,7 @@ export function DeleteAccountDialog() {
       }}
     >
       <Button variant="danger" size="sm" onClick={() => setOpen(true)}>
-        <Trash2 className="h-4 w-4" />
+        <Trash className="h-4 w-4" />
         Excluir conta
       </Button>
 

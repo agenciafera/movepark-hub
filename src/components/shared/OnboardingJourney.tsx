@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { Check, Eye, Landmark, Rocket, ArrowRight, Clock } from "lucide-react";
+import { ArrowRight, Bank, Check, Clock, Eye, Rocket } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +18,7 @@ type StageDef = { key: JourneyStage; label: string; icon: React.ComponentType<{ 
 
 const STAGES: StageDef[] = [
   { key: "preview", label: "Preview", icon: Eye },
-  { key: "recebimento", label: "Recebimento", icon: Landmark },
+  { key: "recebimento", label: "Recebimento", icon: Bank },
   { key: "vender", label: "Publicar/Vender", icon: Rocket },
 ];
 

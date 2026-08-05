@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { MapPin, Plus, Search } from "lucide-react";
+import { MagnifyingGlass, MapPin, Plus } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -164,7 +164,7 @@ export default function AddressesPage() {
                 maxLength={9}
               />
               <Button variant="secondary" onClick={openFromCep} className="shrink-0">
-                <Search className="h-4 w-4" />
+                <MagnifyingGlass className="h-4 w-4" />
                 Buscar
               </Button>
             </div>

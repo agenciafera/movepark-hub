@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ArrowSquareOut } from "@phosphor-icons/react";
 import { formatBRL, formatDateTime, formatDuration } from "@/lib/format";
 import { freeCancelDeadlineLabel, cancellationPolicyLines } from "@/features/bookings/cancellation.logic";
 import { useAvailability } from "@/features/listing/api";
@@ -58,7 +58,7 @@ export function SummaryCard({ booking, bare }: Props) {
                 className="inline-flex items-center gap-1 text-body-sm text-mp-primary hover:underline"
               >
                 Ver endereço
-                <ExternalLink className="h-3.5 w-3.5" />
+                <ArrowSquareOut className="h-3.5 w-3.5" />
               </a>
             )}
           </div>

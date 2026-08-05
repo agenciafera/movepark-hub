@@ -1,4 +1,4 @@
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CurrencyInput } from "@/components/ui/currency-input";
@@ -154,7 +154,7 @@ export function PricingTierEditor({ strategy, tiers, onChange }: Props) {
             onClick={() => removeTier(tier.id)}
             title="Remover faixa"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash className="h-4 w-4" />
             <span className="tablet:hidden">Remover faixa</span>
           </Button>
         </div>

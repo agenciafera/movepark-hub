@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { Edit2, MoreVertical, Trash2 } from "lucide-react";
+import { DotsThreeVertical, PencilSimple, Trash } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -114,13 +114,13 @@ export function FaqAdminTable({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" aria-label="Mais ações">
-                    <MoreVertical className="h-4 w-4" />
+                    <DotsThreeVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   {onEdit && (
                     <DropdownMenuItem onClick={() => onEdit(faq)}>
-                      <Edit2 className="h-4 w-4" />
+                      <PencilSimple className="h-4 w-4" />
                       Editar
                     </DropdownMenuItem>
                   )}
@@ -128,7 +128,7 @@ export function FaqAdminTable({
                     className="!text-error"
                     onClick={() => handleDelete(faq)}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash className="h-4 w-4" />
                     Remover
                   </DropdownMenuItem>
                 </DropdownMenuContent>

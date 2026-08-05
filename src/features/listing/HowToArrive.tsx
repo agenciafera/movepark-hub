@@ -1,4 +1,4 @@
-import { AlertTriangle, Bus } from "lucide-react";
+import { Bus, Warning } from "@phosphor-icons/react";
 import { MiniMap } from "./MiniMap";
 import { formatShuttle } from "./howToArrive.logic";
 
@@ -45,7 +45,7 @@ export function HowToArrive({
           role="alert"
           className="flex gap-3 rounded-md border border-error bg-badge-cancelled-bg p-3"
         >
-          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-error" />
+          <Warning className="mt-0.5 h-5 w-5 shrink-0 text-error" />
           <p className="text-body-sm text-ink">{notice}</p>
         </div>
       )}

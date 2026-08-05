@@ -1,4 +1,4 @@
-import { MapPin, BusFront, Check } from "lucide-react";
+import { Bus, Check, MapPin } from "@phosphor-icons/react";
 import { formatBRL } from "@/lib/format";
 
 /**
@@ -61,7 +61,7 @@ export function UnitPreviewCard({
 
         {hasShuttle && (
           <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-mp-pale px-2.5 py-1 text-caption-sm font-medium text-mp-indigo">
-            <BusFront className="h-3.5 w-3.5" /> Com transfer
+            <Bus className="h-3.5 w-3.5" /> Com transfer
           </span>
         )}
 

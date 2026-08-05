@@ -1,5 +1,9 @@
-import { ShieldCheck, Tag, BadgeCheck, Headphones, CheckCircle, Lock, Star } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { CheckCircle, Headphones, Lock, SealCheck, ShieldCheck, Star, Tag } from "@phosphor-icons/react";
+import type { ComponentType } from "react";
+import type { IconProps } from "@phosphor-icons/react";
+
+/** No Phosphor, `Icon` é valor; o tipo do componente é este. */
+type Icon = ComponentType<IconProps>;
 import { useGsapReveal } from "@/hooks/useGsapReveal";
 
 // ---- Ilustrações animadas por diferencial ----
@@ -51,7 +55,7 @@ function VerifiedIllustration() {
         <div className="min-w-0">
           <div className="flex items-center gap-1">
             <span className="truncate text-[13px] font-semibold text-ink">Garagem Central</span>
-            <BadgeCheck className="tb-badge-pop h-4 w-4 shrink-0 text-mp-primary" />
+            <SealCheck className="tb-badge-pop h-4 w-4 shrink-0 text-mp-primary" />
           </div>
           <div className="mt-0.5 flex items-center gap-1">
             <Star className="tb-star h-3 w-3 fill-mp-navy stroke-none" />
@@ -89,7 +93,7 @@ function SupportIllustration() {
 // ---- Config dos cards ----
 
 type Item = {
-  icon: LucideIcon;
+  icon: Icon;
   title: string;
   text: string;
   Illustration: () => JSX.Element;
@@ -109,7 +113,7 @@ const items: Item[] = [
     Illustration: PriceIllustration,
   },
   {
-    icon: BadgeCheck,
+    icon: SealCheck,
     title: "Estacionamentos verificados",
     text: "Parceiros aprovados e avaliados pela Movepark.",
     Illustration: VerifiedIllustration,

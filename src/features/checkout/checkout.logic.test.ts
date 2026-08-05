@@ -87,17 +87,17 @@ describe("isCheckoutBlocked", () => {
 });
 
 describe("nextStepOnConfirm", () => {
-  it("avança pro 4 quando confirmado e ainda não está no 4", () => {
-    expect(nextStepOnConfirm("confirmed", 1)).toBe(4);
-    expect(nextStepOnConfirm("confirmed", 3)).toBe(4);
+  it("avança pra confirmação quando o pagamento entra", () => {
+    expect(nextStepOnConfirm("confirmed", 1)).toBe(5);
+    expect(nextStepOnConfirm("confirmed", 4)).toBe(5);
   });
 
-  it("não mexe se já está no 4", () => {
-    expect(nextStepOnConfirm("confirmed", 4)).toBeNull();
+  it("não mexe se já está na confirmação", () => {
+    expect(nextStepOnConfirm("confirmed", 5)).toBeNull();
   });
 
   it("não avança enquanto pendente", () => {
-    expect(nextStepOnConfirm("pending", 3)).toBeNull();
+    expect(nextStepOnConfirm("pending", 4)).toBeNull();
   });
 });
 
@@ -180,7 +180,7 @@ describe("resolveInitialStep (deep-link do handoff)", () => {
   it("cai no pagamento só quando pedido E pronto (dados + termos)", () => {
     expect(
       resolveInitialStep({ requestedPay: true, hasPayerData: true, termsAccepted: true }),
-    ).toBe(3);
+    ).toBe(4);
   });
 
   it("sem pedir pagamento, começa no passo 1 (comportamento normal intacto)", () => {

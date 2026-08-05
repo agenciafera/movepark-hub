@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { Share2, Copy, Check, Mail } from "lucide-react";
+import { Check, Copy, Envelope, ShareNetwork } from "@phosphor-icons/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Accordion,
@@ -153,7 +153,7 @@ export function IndiqueGanhe() {
                   onClick={compartilhar}
                   className="inline-flex h-10 items-center gap-2 rounded-full bg-white/15 px-4 text-caption-sm font-semibold text-white transition-colors hover:bg-white/25"
                 >
-                  <Share2 className="h-4 w-4" aria-hidden />
+                  <ShareNetwork className="h-4 w-4" aria-hidden />
                   WhatsApp
                 </button>
                 <button
@@ -161,7 +161,7 @@ export function IndiqueGanhe() {
                   onClick={porEmail}
                   className="inline-flex h-10 items-center gap-2 rounded-full bg-white/15 px-4 text-caption-sm font-semibold text-white transition-colors hover:bg-white/25"
                 >
-                  <Mail className="h-4 w-4" aria-hidden />
+                  <Envelope className="h-4 w-4" aria-hidden />
                   E-mail
                 </button>
               </div>
@@ -240,7 +240,7 @@ export function IndiqueGanhe() {
           <Skeleton className="h-24 w-full rounded-md" />
         ) : convites.length === 0 ? (
           <EmptyState
-            icon={<Share2 className="h-10 w-10" aria-hidden />}
+            icon={<ShareNetwork className="h-10 w-10" aria-hidden />}
             title="Nenhum convite ainda"
             description="Compartilhe seu link e acompanhe por aqui quem entrou."
           />

@@ -1,4 +1,4 @@
-import { Star } from "lucide-react";
+import { Star } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { formatRating } from "@/lib/format";
 import { ratingLabel } from "./reviews.logic";

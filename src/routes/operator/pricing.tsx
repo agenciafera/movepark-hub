@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { SlidersHorizontal, Table2 } from "lucide-react";
+import { SlidersHorizontal, Table } from "@phosphor-icons/react";
 import { useAuth } from "@/auth/context";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -86,7 +86,7 @@ function PricingCard({
               lpt.pricing_rule ? undefined : "Configure uma estratégia primeiro pra simular preços"
             }
           >
-            <Table2 className="h-4 w-4" />
+            <Table className="h-4 w-4" />
             Ver tabela
           </Button>
           <Button

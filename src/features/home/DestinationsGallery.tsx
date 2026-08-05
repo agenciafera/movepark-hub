@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Plane, ArrowRight } from "lucide-react";
+import { Airplane, ArrowRight } from "@phosphor-icons/react";
 import { useRef, useEffect } from "react";
 import { gsap } from "@/lib/gsap";
 import { Button } from "@/components/ui/button";
@@ -65,7 +65,7 @@ function DestinationCard({
           {label}
         </p>
         <p className="mt-1 flex items-center gap-1.5 text-[13px] text-white/70">
-          <Plane className="h-3 w-3 shrink-0" aria-hidden />
+          <Airplane className="h-3 w-3 shrink-0" aria-hidden />
           {city} · {state}
         </p>
         <div className="mt-3 overflow-hidden">

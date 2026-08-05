@@ -2,17 +2,7 @@ import * as React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { toast } from "sonner";
-import {
-  ArrowLeft,
-  Check,
-  Download,
-  Landmark,
-  FileText,
-  ShieldCheck,
-  ShieldQuestion,
-  ExternalLink,
-  Clock,
-} from "lucide-react";
+import { ArrowLeft, ArrowSquareOut, Bank, Check, Clock, Download, FileText, ShieldCheck, ShieldChevron } from "@phosphor-icons/react";
 import { useAuth } from "@/auth/context";
 import { Wordmark } from "@/components/shared/Brand";
 import { Button } from "@/components/ui/button";
@@ -177,7 +167,7 @@ export default function OperatorRecebimento() {
               </div>
               <div className="flex flex-wrap gap-x-6 gap-y-2 text-caption-sm text-muted-steel">
                 <span className="flex items-center gap-1.5">
-                  <Landmark className="h-3.5 w-3.5" /> Conta bancária
+                  <Bank className="h-3.5 w-3.5" /> Conta bancária
                 </span>
                 <span className="flex items-center gap-1.5">
                   <FileText className="h-3.5 w-3.5" /> CNPJ e dados da empresa
@@ -276,12 +266,12 @@ export default function OperatorRecebimento() {
                   </p>
                   <Button asChild className="w-fit">
                     <a href={recipient.kycUrl} target="_blank" rel="noreferrer">
-                      Fazer a verificação <ExternalLink className="h-4 w-4" />
+                      Fazer a verificação <ArrowSquareOut className="h-4 w-4" />
                     </a>
                   </Button>
                   <details className="group text-body-sm">
                     <summary className="flex cursor-pointer items-center gap-1.5 font-medium text-mp-indigo">
-                      <ShieldQuestion className="h-4 w-4" /> Entenda o que é isso
+                      <ShieldChevron className="h-4 w-4" /> Entenda o que é isso
                     </summary>
                     <p className="mt-2 text-caption-sm text-muted">
                       Essa verificação (chamada de KYC) é uma exigência das regras de pagamento no

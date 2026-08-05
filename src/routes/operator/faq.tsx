@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, ChevronDown } from "lucide-react";
+import { CaretDown, Plus } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -132,7 +132,7 @@ export default function OperatorFaq() {
               Aparecem em todos os estacionamentos. Só a equipe Movepark edita.
             </div>
           </div>
-          <ChevronDown
+          <CaretDown
             className={`h-4 w-4 text-muted transition-transform ${
               showGlobal ? "rotate-180" : ""
             }`}

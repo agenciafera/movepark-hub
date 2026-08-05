@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { AlertTriangle, ImageOff } from "lucide-react";
+import { ImageBroken, Warning } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -66,7 +66,7 @@ export default function OperatorLocations() {
         // Sem este ramo, uma queda de rede caía no empty state e dizia ao parceiro
         // que ele não tem unidades cadastradas.
         <EmptyState
-          icon={<AlertTriangle className="h-10 w-10" />}
+          icon={<Warning className="h-10 w-10" />}
           title="Não conseguimos carregar suas unidades"
           description="Pode ter sido a conexão. Tente de novo."
           action={
@@ -105,7 +105,7 @@ export default function OperatorLocations() {
                       </p>
                       {photos === 0 && (
                         <p className="flex items-center gap-1.5 text-body-sm text-warning">
-                          <ImageOff className="h-4 w-4 shrink-0" aria-hidden="true" />
+                          <ImageBroken className="h-4 w-4 shrink-0" aria-hidden="true" />
                           Sem foto, não aparece na busca
                         </p>
                       )}

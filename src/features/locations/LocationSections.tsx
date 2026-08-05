@@ -1,5 +1,5 @@
 import * as React from "react";
-import { AlertCircle } from "lucide-react";
+import { WarningCircle } from "@phosphor-icons/react";
 import { Input } from "@/components/ui/input";
 import { AddressField } from "./AddressField";
 import { BusinessHoursField } from "./BusinessHoursField";
@@ -297,7 +297,7 @@ export function LocationSections({
           />
           {f.photos.length === 0 ? (
             <p className="mt-2 flex items-start gap-1.5 text-caption-sm text-error">
-              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <WarningCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               Suba pelo menos 1 foto. Sem foto, a unidade não entra na busca e não vende.
             </p>
           ) : (

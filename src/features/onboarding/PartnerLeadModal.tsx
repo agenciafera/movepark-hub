@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowRight, ArrowLeft, Lock } from "lucide-react";
+import { ArrowLeft, ArrowRight, Lock } from "@phosphor-icons/react";
 import {
   Dialog,
   DialogContent,

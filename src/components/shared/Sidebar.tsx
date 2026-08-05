@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { Building2, ShieldAlert } from "lucide-react";
+import { Buildings, ShieldWarning } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/context";
 import { usePendingPartnerCount } from "@/features/onboarding/managerApi";
@@ -74,7 +74,7 @@ export function Sidebar({
       ) : (
         <div className="hidden items-center gap-3 rounded-md bg-white/[0.06] p-3 desktop:flex">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-mp-primary/25 text-white/80">
-            <Building2 className="h-4 w-4" aria-hidden />
+            <Buildings className="h-4 w-4" aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
             <span
@@ -154,7 +154,7 @@ export function Sidebar({
       {impersonating && (
         <div className="hidden rounded-md bg-mp-red/15 p-4 ring-1 ring-inset ring-mp-red/30 desktop:block">
           <div className="flex items-center gap-2">
-            <ShieldAlert className="h-4 w-4 shrink-0 text-mp-red" aria-hidden />
+            <ShieldWarning className="h-4 w-4 shrink-0 text-mp-red" aria-hidden />
             <span className="text-caption font-bold text-white">Modo operador</span>
           </div>
           <p className="mt-2 text-caption leading-relaxed text-white/60">

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { CheckCircle2, Clock } from "lucide-react";
+import { CheckCircle, Clock } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 
 type Props = {
@@ -13,7 +13,7 @@ export function ThankYou({ alreadySubmitted }: Props) {
         {alreadySubmitted ? (
           <Clock className="h-12 w-12" />
         ) : (
-          <CheckCircle2 className="h-12 w-12" />
+          <CheckCircle className="h-12 w-12" />
         )}
       </div>
       <div className="space-y-2">

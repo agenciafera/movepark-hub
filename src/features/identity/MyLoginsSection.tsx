@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Mail, Phone, LogIn } from "lucide-react";
+import { Envelope, Phone, SignIn } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIdentities, useLinkGoogle, useUnlinkProvider, type Channel } from "./api";
@@ -49,7 +49,7 @@ export function MyLoginsSection() {
       <div className="divide-y divide-hairline rounded-md border border-hairline bg-canvas">
         {/* E-mail */}
         <Row
-          icon={<Mail className="h-5 w-5" />}
+          icon={<Envelope className="h-5 w-5" />}
           title="E-mail"
           value={id.email}
           verified={id.email_verified}
@@ -73,7 +73,7 @@ export function MyLoginsSection() {
         />
         {/* Google */}
         <Row
-          icon={<LogIn className="h-5 w-5" />}
+          icon={<SignIn className="h-5 w-5" />}
           title="Google"
           value={hasGoogle ? "Conectado" : null}
           verified={hasGoogle}

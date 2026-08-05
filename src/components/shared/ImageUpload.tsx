@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { ImagePlus, Star, Upload, X } from "lucide-react";
+import { ImageSquare, Star, Upload, X } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,7 +73,7 @@ export function ImageUploadField({
           <img src={value} alt={label ?? "Imagem"} className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-muted">
-            <ImagePlus className="h-8 w-8" />
+            <ImageSquare className="h-8 w-8" />
           </div>
         )}
       </div>
@@ -214,7 +214,7 @@ export function ImageGalleryField({
                 disabled || uploading ? "pointer-events-none opacity-50" : "cursor-pointer hover:border-mp-primary hover:text-ink",
               )}
             >
-              <ImagePlus className="h-4 w-4" />
+              <ImageSquare className="h-4 w-4" />
               {uploading ? "Enviando…" : "+ Foto"}
             </label>
           </>

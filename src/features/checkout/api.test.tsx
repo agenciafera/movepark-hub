@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import { edge, falha, renderMutation, rpc, tabela } from "@/test/msw/supabase";
 import { supabase } from "@/lib/supabase";
-import { useCancelBooking, useMockPayment, useRenewBookingHold } from "./api";
+import {
+  useCancelBooking,
+  useMockPayment,
+  useRenewBookingHold,
+  useSetBookingAddons,
+} from "./api";
 
 /**
  * Contrato de rede dos hooks de escrita do checkout.
@@ -125,5 +130,41 @@ describe("useMockPayment", () => {
     await expect(result.current.mutateAsync({ booking_code: "MP-1", method: "pix" })).rejects.toThrow(
       /HTTP 500/,
     );
+  });
+});
+
+describe("useSetBookingAddons", () => {
+  /**
+   * O ponto do hook: mandar só os ids. `booking_item` é gravável pelo dono, então
+   * se o preço saísse daqui o cliente escolheria quanto paga. Quem precifica e
+   * soma o total é a RPC.
+   */
+  it("manda o código e os ids, e nenhum preço", async () => {
+    const chamada = rpc("set_booking_addons", { json: {} });
+
+    const { result } = renderMutation(() => useSetBookingAddons());
+    await result.current.mutateAsync({ code: "MP-1", addOnIds: ["a1", "a2"] });
+
+    expect(chamada.chamadas).toHaveLength(1);
+    expect(chamada.ultimoBody).toEqual({ p_code: "MP-1", p_add_on_ids: ["a1", "a2"] });
+    expect(Object.keys(chamada.ultimoBody as object)).toHaveLength(2);
+  });
+
+  it("lista vazia limpa os adicionais em vez de virar no-op", async () => {
+    const chamada = rpc("set_booking_addons", { json: {} });
+
+    const { result } = renderMutation(() => useSetBookingAddons());
+    await result.current.mutateAsync({ code: "MP-1", addOnIds: [] });
+
+    expect(chamada.ultimoBody).toEqual({ p_code: "MP-1", p_add_on_ids: [] });
+  });
+
+  it("propaga o erro do servidor em vez de seguir como se tivesse salvo", async () => {
+    falha("rpc", "set_booking_addons", 400, "os adicionais só podem mudar antes do pagamento");
+
+    const { result } = renderMutation(() => useSetBookingAddons());
+    await expect(
+      result.current.mutateAsync({ code: "MP-1", addOnIds: ["a1"] }),
+    ).rejects.toThrow(/antes do pagamento/);
   });
 });

@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { Gift, Share2, Copy, Check } from "lucide-react";
+import { Check, Copy, Gift, ShareNetwork } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/context";
 import { useReferrals } from "./api";
@@ -57,7 +57,7 @@ export function ReferralShareCard({ className }: { className?: string }) {
             onClick={compartilhar}
             className="mt-3 flex h-9 w-full items-center justify-center gap-2 rounded-sm bg-mp-primary text-button-sm font-medium text-white transition-colors hover:bg-mp-primary-active"
           >
-            <Share2 className="h-4 w-4" />
+            <ShareNetwork className="h-4 w-4" />
             Compartilhar
           </button>
           <button

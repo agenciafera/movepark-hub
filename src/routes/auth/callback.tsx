@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { CircleNotch } from "@phosphor-icons/react";
 import { Wordmark } from "@/components/shared/Brand";
 import { useAuth } from "@/auth/context";
 import { postLoginPath } from "@/auth/postLoginRedirect";
@@ -26,7 +26,7 @@ export default function AuthCallbackPage() {
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-soft-gradient px-4 py-12">
       <Wordmark height={28} />
       <div className="flex flex-col items-center gap-2 text-center">
-        <Loader2 className="h-6 w-6 animate-spin text-mp-indigo" />
+        <CircleNotch className="h-6 w-6 animate-spin text-mp-indigo" />
         <p className="text-body-md text-body">Concluindo seu login…</p>
       </div>
     </div>

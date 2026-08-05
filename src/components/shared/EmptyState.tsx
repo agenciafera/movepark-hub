@@ -1,4 +1,4 @@
-import { Inbox } from "lucide-react";
+import { Tray } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -39,7 +39,7 @@ export function EmptyState({
           className="mb-1 h-32 w-auto max-w-[220px] select-none"
         />
       ) : (
-        <div className="text-muted-soft">{icon ?? <Inbox className="h-10 w-10" />}</div>
+        <div className="text-muted-soft">{icon ?? <Tray className="h-10 w-10" />}</div>
       )}
       <div className="space-y-1">
         <h3 className="text-title-md text-ink">{title}</h3>

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Users, UserPlus } from "lucide-react";
+import { UserPlus, Users } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Card } from "@/components/ui/card";

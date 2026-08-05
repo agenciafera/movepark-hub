@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { MessageCircle, Send, X } from "lucide-react";
+import { ChatCircle, PaperPlaneTilt, X } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/context";
 import { useChatConfig, useSendChat } from "./api";
@@ -61,7 +61,7 @@ export function ChatWidget() {
         onClick={() => setOpen(true)}
         className="fixed bottom-[calc(5rem+var(--safe-bottom))] right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-mp-primary text-white shadow-lg transition hover:bg-mp-primary-active tablet:bottom-6 tablet:right-6"
       >
-        <MessageCircle className="h-6 w-6" />
+        <ChatCircle className="h-6 w-6" />
       </button>
     );
   }
@@ -105,7 +105,7 @@ export function ChatWidget() {
           className="h-10 flex-1 rounded-md border border-neutral-200 px-3 text-body-sm outline-none focus:border-mp-primary"
         />
         <Button type="submit" size="icon" disabled={!canSend(input, send.isPending)} aria-label="Enviar">
-          <Send className="h-4 w-4" />
+          <PaperPlaneTilt className="h-4 w-4" />
         </Button>
       </form>
     </div>

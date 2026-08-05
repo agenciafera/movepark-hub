@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, MapPin, Tag, CornerDownLeft } from "lucide-react";
+import { ArrowElbowDownLeft, Calendar, MapPin, Tag } from "@phosphor-icons/react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
   Command,
@@ -120,7 +120,7 @@ export function CommandPalette({
           </CommandList>
 
           <div className="flex items-center justify-end gap-1.5 border-t border-hairline-soft px-3 py-2 text-caption-sm text-muted">
-            <CornerDownLeft className="h-3 w-3" aria-hidden="true" />
+            <ArrowElbowDownLeft className="h-3 w-3" aria-hidden="true" />
             para abrir
             <kbd className="ml-2 rounded-xs border border-hairline px-1.5 py-0.5 font-sans">esc</kbd>
             para fechar

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { AlertTriangle } from "lucide-react";
+import { Warning } from "@phosphor-icons/react";
 import {
   Dialog,
   DialogContent,
@@ -142,7 +142,7 @@ export function PayoutSettingsDialog({ companyId, open, onOpenChange }: Props) {
               />
             </div>
             <p className="flex items-start gap-1.5 text-caption text-muted">
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />
+              <Warning className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />
               Requer liberação prévia junto à Pagar.me. Solicite pra habilitar aqui.
             </p>
           </div>

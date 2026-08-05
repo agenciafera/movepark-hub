@@ -1,12 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { Plane, Bus, Building2, MapPin, ArrowRight, Image } from "lucide-react";
+import { Airplane, ArrowRight, Buildings, Bus, Image, MapPin } from "@phosphor-icons/react";
 import { usePopularDestinations, type Destination } from "@/features/search/api";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const iconByType: Record<Destination["type"], React.ComponentType<{ className?: string }>> = {
-  airport: Plane,
+  airport: Airplane,
   bus_terminal: Bus,
-  city_center: Building2,
+  city_center: Buildings,
   district: MapPin,
   custom: MapPin,
 };
@@ -62,7 +62,7 @@ export function PopularDestinations() {
 
             <div className="relative z-10">
               <span className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white">
-                <Plane className="h-5 w-5" />
+                <Airplane className="h-5 w-5" />
               </span>
               <div className="mb-1 text-[22px] font-bold leading-tight text-white">
                 {featured.short_name ?? featured.name}

@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowRight, ArrowLeft, MapPin, BusFront, Sparkles, Camera } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bus, Camera, MapPin, Sparkle } from "@phosphor-icons/react";
 import { Wordmark } from "@/components/shared/Brand";
 import { OnboardingJourney } from "@/components/shared/OnboardingJourney";
 import { SubStepBar } from "@/components/shared/SubStepBar";
@@ -426,7 +426,7 @@ export function PublishWizard({ data, companyId }: Props) {
                           : "border-hairline bg-canvas text-ink hover:border-mp-primary/50")
                       }
                     >
-                      <BusFront className="h-5 w-5 shrink-0" />
+                      <Bus className="h-5 w-5 shrink-0" />
                       {opt.label}
                     </button>
                   ))}
@@ -435,7 +435,7 @@ export function PublishWizard({ data, companyId }: Props) {
                 {hasShuttle === true && <Go2ParkInterestCard companyId={companyId} />}
                 <div className="rounded-md bg-surface-pale p-4">
                   <p className="flex items-center gap-2 text-body-sm text-ink">
-                    <Sparkles className="h-4 w-4 text-mp-violet" /> Falta só as fotos. Comodidades e
+                    <Sparkle className="h-4 w-4 text-mp-violet" /> Falta só as fotos. Comodidades e
                     horários você ajusta depois, no painel.
                   </p>
                 </div>

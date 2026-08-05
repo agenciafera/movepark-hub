@@ -2,18 +2,7 @@ import * as React from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { toast } from "sonner";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Building2,
-  Check,
-  Copy,
-  Eye,
-  ExternalLink,
-  Landmark,
-  PartyPopper,
-  ShieldCheck,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowSquareOut, Bank, Buildings, Check, Confetti, Copy, Eye, ShieldCheck } from "@phosphor-icons/react";
 import { Wordmark } from "@/components/shared/Brand";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -89,7 +78,7 @@ export default function UnitPreviewPage() {
                 }
               >
                 <ConfettiBurst />
-                <PartyPopper
+                <Confetti
                   className={
                     "mt-0.5 h-6 w-6 shrink-0 " + (unit.isListed ? "text-success" : "text-mp-indigo")
                   }
@@ -153,10 +142,10 @@ export default function UnitPreviewPage() {
                       </p>
                       <ul className="mt-3 flex flex-col gap-2.5">
                         <li className="flex items-center gap-2.5 text-body-sm text-ink">
-                          <Landmark className="h-4 w-4 shrink-0 text-mp-indigo" /> Conta bancária
+                          <Bank className="h-4 w-4 shrink-0 text-mp-indigo" /> Conta bancária
                         </li>
                         <li className="flex items-center gap-2.5 text-body-sm text-ink">
-                          <Building2 className="h-4 w-4 shrink-0 text-mp-indigo" /> CNPJ e dados da
+                          <Buildings className="h-4 w-4 shrink-0 text-mp-indigo" /> CNPJ e dados da
                           empresa
                         </li>
                         <li className="flex items-center gap-2.5 text-body-sm text-ink">
@@ -211,7 +200,7 @@ export default function UnitPreviewPage() {
                           {unit.isActive && (
                             <Button asChild size="sm" variant="ghost" className="mt-2 w-fit">
                               <a href={unit.publicUrl!} target="_blank" rel="noreferrer">
-                                Abrir página pública <ExternalLink className="h-4 w-4" />
+                                Abrir página pública <ArrowSquareOut className="h-4 w-4" />
                               </a>
                             </Button>
                           )}

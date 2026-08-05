@@ -1,5 +1,5 @@
 import * as React from "react";
-import { BadgeCheck, CalendarClock, ShieldCheck, TrendingUp, Wallet } from "lucide-react";
+import { CalendarDot, SealCheck, ShieldCheck, TrendUp, Wallet } from "@phosphor-icons/react";
 
 /**
  * Painel de estímulo na etapa 2 (recebimento). Troca os "indicadores de receita" com animação
@@ -15,12 +15,12 @@ const INDICATORS: Indicator[] = [
     text: "O cliente paga a reserva antes de chegar. Você não corre atrás.",
   },
   {
-    icon: TrendingUp,
+    icon: TrendUp,
     title: "Vaga ociosa vira receita",
     text: "O dia que passou não volta. Cada reserva é dinheiro que ficaria na mesa.",
   },
   {
-    icon: CalendarClock,
+    icon: CalendarDot,
     title: "Caixa previsível",
     text: "Reservas com antecedência dão previsibilidade pro seu faturamento.",
   },
@@ -30,7 +30,7 @@ const INDICATORS: Indicator[] = [
     text: "Sem mensalidade, sem taxa de adesão. Você só divide quando vende.",
   },
   {
-    icon: BadgeCheck,
+    icon: SealCheck,
     title: "Repasse direto",
     text: "O valor cai na conta que você cadastrar, no repasse combinado.",
   },

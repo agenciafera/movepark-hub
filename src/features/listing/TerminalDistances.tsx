@@ -1,4 +1,4 @@
-import { MapPin } from "lucide-react";
+import { MapPin } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { formatDistance } from "@/lib/format";
 import { useLocationTerminals, type TerminalDistance } from "./api";

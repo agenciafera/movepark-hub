@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle } from "lucide-react";
+import { Warning } from "@phosphor-icons/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatBRL } from "@/lib/format";
 import { fetchDraftCurve, findCurveInversions, PREVIEW_DAYS } from "./pricing-curve";
@@ -83,7 +83,7 @@ export function PricingPreview({ rule, tiers, blockedReason }: Props) {
 
           {inversion && (
             <p className="flex items-start gap-2 rounded-sm bg-badge-pending-bg p-3 text-body-sm text-warning">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <Warning className="mt-0.5 h-4 w-4 shrink-0" />
               <span>
                 {inversion.days} dias custa {formatBRL(inversion.price)} e {inversion.nextDays} dias
                 custa {formatBRL(inversion.nextPrice)}. Quem fica menos tempo paga mais.

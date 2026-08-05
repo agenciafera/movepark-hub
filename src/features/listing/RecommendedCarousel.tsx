@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { Car, ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { Car, CaretLeft, CaretRight, Star } from "@phosphor-icons/react";
 import { useSearchResults } from "@/features/search/useSearchResults";
 import { formatBRL } from "@/lib/format";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -67,7 +67,7 @@ export function RecommendedCarousel({
             )}
             aria-label="Rolar para a esquerda"
           >
-            <ChevronLeft className="h-4 w-4 text-ink" />
+            <CaretLeft className="h-4 w-4 text-ink" />
           </button>
           <button
             type="button"
@@ -79,7 +79,7 @@ export function RecommendedCarousel({
             )}
             aria-label="Rolar para a direita"
           >
-            <ChevronRight className="h-4 w-4 text-ink" />
+            <CaretRight className="h-4 w-4 text-ink" />
           </button>
         </div>
       </div>

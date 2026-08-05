@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link, useLoaderData, useParams, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { ArrowLeft, ArrowRight, BadgeCheck, Building2, Bus, CalendarX, Car, Heart, MapPin, ShieldCheck, Star } from "lucide-react";
+import { ArrowLeft, ArrowRight, Buildings, Bus, CalendarX, Car, Heart, MapPin, SealCheck, ShieldCheck, Star } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
@@ -238,7 +238,7 @@ export default function ListingPage() {
         <script type="application/ld+json">
           {JSON.stringify(
             breadcrumbSchema([
-              { name: "Home", url: "https://hub.movepark.co" },
+              { name: "House", url: "https://hub.movepark.co" },
               { name: listing.location.name, url: pageUrl },
             ]),
           )}
@@ -528,7 +528,7 @@ function ListingKnowSection({ listing }: { listing: ListingDetail }) {
       extra: null,
     },
     {
-      icon: <Building2 className="h-7 w-7 text-ink" />,
+      icon: <Buildings className="h-7 w-7 text-ink" />,
       title: listing.company.name,
       lines: [
         `Parceiro Movepark há ${years} ${years === 1 ? "ano" : "anos"}.`,
@@ -552,7 +552,7 @@ function ListingKnowSection({ listing }: { listing: ListingDetail }) {
               <p className="text-body-md font-semibold text-ink">{col.title}</p>
               {"badge" in col && col.badge && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-mp-pale px-2 py-0.5 text-caption-sm text-mp-indigo">
-                  <BadgeCheck className="h-3 w-3" />
+                  <SealCheck className="h-3 w-3" />
                   Verificado
                 </span>
               )}

@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Plus, Building2, UserCog } from "lucide-react";
+import { Buildings, Plus, UserGear } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -70,7 +70,7 @@ export default function ManagerCompanies() {
         </div>
       ) : filtered.length === 0 ? (
         <EmptyState
-          icon={<Building2 className="h-10 w-10" />}
+          icon={<Buildings className="h-10 w-10" />}
           title="Nenhuma empresa encontrada"
           description="Crie a primeira empresa para começar."
         />
@@ -92,7 +92,7 @@ export default function ManagerCompanies() {
                 </div>
                 <div className="flex flex-wrap gap-2 pt-2">
                   <Button size="sm" onClick={() => impersonate(c)}>
-                    <UserCog className="h-4 w-4" />
+                    <UserGear className="h-4 w-4" />
                     Entrar como operador
                   </Button>
                   <Button size="sm" variant="secondary" onClick={() => openEdit(c)}>

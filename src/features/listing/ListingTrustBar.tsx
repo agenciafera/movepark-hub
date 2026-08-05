@@ -1,6 +1,10 @@
 import * as React from "react";
-import { ShieldCheck, CalendarX, Tag } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { CalendarX, ShieldCheck, Tag } from "@phosphor-icons/react";
+import type { ComponentType } from "react";
+import type { IconProps } from "@phosphor-icons/react";
+
+/** No Phosphor, `Icon` é valor; o tipo do componente é este. */
+type Icon = ComponentType<IconProps>;
 import { cn } from "@/lib/utils";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
@@ -14,7 +18,7 @@ import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
  * e o usuário pode arrastar (swipe) pro lado. Sob `prefers-reduced-motion` o avanço
  * automático para; o swipe continua funcionando.
  */
-const DIFERENCIAIS: { icon: LucideIcon; title: string; sub: string }[] = [
+const DIFERENCIAIS: { icon: Icon; title: string; sub: string }[] = [
   { icon: ShieldCheck, title: "Vaga garantida", sub: "ou cobrimos a diferença" },
   { icon: CalendarX, title: "Cancelamento grátis", sub: "até 24h antes" },
   { icon: Tag, title: "Preço travado", sub: "sem surpresa no balcão" },

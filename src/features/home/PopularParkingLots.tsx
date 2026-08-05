@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useRef, useEffect } from "react";
-import { ArrowRight, Plane, Tag } from "lucide-react";
+import { Airplane, ArrowRight, Tag } from "@phosphor-icons/react";
 import { usePopularOffers, type PopularOffer } from "@/features/search/api";
 import { useSavedListings } from "@/features/search/useSavedListings";
 import { ParkingCard, ParkingCardBadge, type ParkingCardAmenity } from "@/features/search/ParkingCard";
@@ -84,7 +84,7 @@ function PopularOfferCard({
       title={location.company.name}
       parkingTypeName={parking_type.name}
       parkingTypeCode={parking_type.code}
-      metaIcon={location.destination ? Plane : undefined}
+      metaIcon={location.destination ? Airplane : undefined}
       meta={destinationMeta(location)}
       rating={{ avg: location.review_avg, count: location.review_count }}
       amenities={topAmenityPills(location.amenities)}

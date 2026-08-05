@@ -1,4 +1,4 @@
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "@phosphor-icons/react";
 
 type Props = {
   /** Rótulo da ação bloqueada, ex.: "Alterar datas". */

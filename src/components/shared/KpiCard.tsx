@@ -1,4 +1,8 @@
-import type { LucideIcon } from "lucide-react";
+import type { ComponentType } from "react";
+import type { IconProps } from "@phosphor-icons/react";
+
+/** No Phosphor, `Icon` é valor; o tipo do componente é este. */
+type Icon = ComponentType<IconProps>;
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -26,7 +30,7 @@ type Props = {
   trend?: { value: string; positive?: boolean };
   isLoading?: boolean;
   /** Ícone do canto (dá leitura de relance). Sem ele, o card é só texto. */
-  icon?: LucideIcon;
+  icon?: Icon;
   /** Cor do chip do ícone. Default: indigo (marca). */
   accent?: KpiAccent;
   /** Card em destaque: faixa navy preenchida, texto branco. Use no KPI principal. */

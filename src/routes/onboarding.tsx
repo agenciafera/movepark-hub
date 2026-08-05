@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Navigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { Clock, XCircle } from "lucide-react";
+import { Clock, XCircle } from "@phosphor-icons/react";
 import { Wordmark } from "@/components/shared/Brand";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/context";

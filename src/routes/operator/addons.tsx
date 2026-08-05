@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Plus, Sparkles, MapPin, Pencil, Trash2 } from "lucide-react";
+import { MapPin, Pencil, Plus, Sparkle, Trash } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -78,7 +78,7 @@ export default function OperatorAddons() {
         <Skeleton className="h-64 w-full" />
       ) : (data ?? []).length === 0 ? (
         <EmptyState
-          icon={<Sparkles className="h-10 w-10" />}
+          icon={<Sparkle className="h-10 w-10" />}
           title="Nenhum serviço cadastrado"
           description="Crie o primeiro serviço adicional da sua empresa."
           action={
@@ -139,7 +139,7 @@ export default function OperatorAddons() {
                         disabled={del.isPending}
                         aria-label="Excluir"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   </TableCell>

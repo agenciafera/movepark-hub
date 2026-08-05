@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ArrowSquareOut } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { GoogleMapEmbed } from "@/components/shared/GoogleMapEmbed";
 import { buildGoogleMapsHref } from "@/components/shared/googleMapEmbed.logic";
@@ -31,7 +31,7 @@ export function MiniMap({ address, latitude, longitude, placeId }: Props) {
 
       <Button variant="secondary" size="sm" asChild>
         <a href={buildGoogleMapsHref(target)} target="_blank" rel="noreferrer">
-          <ExternalLink className="h-4 w-4" />
+          <ArrowSquareOut className="h-4 w-4" />
           Ver no Google Maps
         </a>
       </Button>

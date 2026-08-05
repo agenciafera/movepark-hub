@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-import { ChevronRight, Info, ShieldCheck, X } from "lucide-react";
+import { CaretRight, Info, ShieldCheck, X } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
@@ -37,7 +37,6 @@ import {
   useDebounced,
   useCreateBooking,
   useValidateCoupon,
-  useLocationAddOns,
   type ListingDetail,
 } from "./api";
 import { availabilityUi } from "./availability.logic";
@@ -47,10 +46,8 @@ import { PriceTableDialog } from "./PriceTableDialog";
 import { FareComparisonDialog } from "./FareComparisonDialog";
 import { couponDiscountLabel, couponErrorMessage, type CouponPreview } from "./coupon.logic";
 import {
-  addOnsTotal,
   bookingTotal,
   mergeUnitFares,
-  selectedAddOns,
   type ReservationSummary,
 } from "./reservation.logic";
 import { cn } from "@/lib/utils";
@@ -146,9 +143,6 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
   const [applied, setApplied] = React.useState<CouponPreview | null>(null);
   const [couponMsg, setCouponMsg] = React.useState<string | null>(null);
 
-  const addOnsQuery = useLocationAddOns(listing.location.id);
-  const addOns = addOnsQuery.data ?? [];
-  const [selectedAddOnIds, setSelectedAddOnIds] = React.useState<string[]>([]);
 
   // Tarifas com preço/on-off REAIS da unidade (E2.8-f); cai nos defaults se o catálogo não carregar.
   const unitFaresQuery = useUnitFares(listing.id);
@@ -160,12 +154,6 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
       }),
     [unitFaresQuery.data],
   );
-
-  function toggleAddOn(id: string) {
-    setSelectedAddOnIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
-  }
 
   const days = daysBetween(from, to);
   const debouncedDays = useDebounced(days, 300);
@@ -268,7 +256,7 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
         passengers,
         hasPcd,
         fare: selectedFare,
-        addOnIds: selectedAddOnIds,
+        addOnIds: [],
         coupon: applied?.code ?? couponCode ?? null,
       });
       const next = encodeURIComponent(location.pathname + location.search);
@@ -286,7 +274,6 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
         check_out_at: to.toISOString(),
         passenger_count: listing.location.has_passenger_quantity ? passengers : null,
         has_pcd: listing.location.has_pcd_config ? hasPcd : false,
-        add_on_service_ids: selectedAddOnIds,
         coupon_code: applied?.code ?? null,
         // Tarifa escolhida (E2.8): o id "basic" da UI mapeia pro enum "basica" do banco.
         fare_tier: selectedFare === "basic" ? "basica" : selectedFare,
@@ -300,17 +287,17 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
   }
 
   const parkingPrice = sim.data?.price ?? 0;
-  const chosenAddOns = selectedAddOns(addOns, selectedAddOnIds);
-  const addOnsSum = addOnsTotal(addOns, selectedAddOnIds);
   const discount = applied?.discount ?? 0;
-  const parkingBase = bookingTotal(parkingPrice, discount, addOnsSum);
+  // Sem adicionais nesta tela: eles são escolhidos no passo próprio do checkout,
+  // que recalcula o total no servidor. Aqui o preço é vaga + tarifa − desconto.
+  const parkingBase = bookingTotal(parkingPrice, discount, 0);
 
   const fareOption =
     pricedFares.find((f) => f.id === selectedFare) ?? pricedFares[0] ?? FARE_OPTIONS[1];
   const fareSurcharge = canReserve ? fareOption.surcharge : 0;
   const displayTotal = parkingBase + fareSurcharge;
 
-  const hasFareOrAddOns = canReserve && (fareSurcharge > 0 || chosenAddOns.length > 0 || applied);
+  const hasFareOrAddOns = canReserve && (fareSurcharge > 0 || !!applied);
 
   // Publica o resumo vivo pro CTA fixo do mobile (total real da reserva, estilo Airbnb).
   // Ref pro callback pra não depender da identidade dele (o pai pode passar inline).
@@ -351,7 +338,6 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
     if (intent.fare === "basic" || intent.fare === "flex" || intent.fare === "superflex") {
       setSelectedFare(intent.fare);
     }
-    setSelectedAddOnIds(intent.addOnIds);
     if (intent.coupon) {
       setCouponInput(intent.coupon);
       setCouponCode(intent.coupon);
@@ -577,7 +563,7 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
             className="mt-2 flex items-center gap-1 text-caption text-mp-indigo hover:underline"
           >
             Ver o que cada tarifa inclui
-            <ChevronRight className="h-3 w-3" />
+            <CaretRight className="h-3 w-3" />
           </button>
         </div>
 
@@ -599,37 +585,6 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
             role="status"
           >
             {availUi.message}
-          </div>
-        )}
-
-        {/* Serviços adicionais */}
-        {addOns.length > 0 && (
-          <div className="mt-4 space-y-2">
-            <div className="text-caption font-semibold text-muted-steel">Serviços adicionais</div>
-            {addOns.map((a) => (
-              <label
-                key={a.id}
-                className="flex cursor-pointer items-start justify-between gap-3 rounded-sm border border-hairline p-3"
-              >
-                <span className="flex items-start gap-2">
-                  <input
-                    type="checkbox"
-                    className="mt-0.5"
-                    checked={selectedAddOnIds.includes(a.id)}
-                    onChange={() => toggleAddOn(a.id)}
-                  />
-                  <span>
-                    <span className="block text-body-sm text-ink">{a.name}</span>
-                    {a.description && (
-                      <span className="block text-caption text-muted">{a.description}</span>
-                    )}
-                  </span>
-                </span>
-                <span className="shrink-0 text-body-sm text-ink tabular-nums">
-                  {formatBRL(a.price)}
-                </span>
-              </label>
-            ))}
           </div>
         )}
 
@@ -698,12 +653,6 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
                   <span className="text-body-sm text-muted tabular-nums">{formatBRL(fareSurcharge)}</span>
                 </div>
               )}
-              {chosenAddOns.map((a) => (
-                <div key={a.id} className="flex justify-between">
-                  <span className="text-body-sm text-muted">{a.name}</span>
-                  <span className="text-body-sm text-muted tabular-nums">{formatBRL(a.price)}</span>
-                </div>
-              ))}
               {applied && (
                 <div className="flex justify-between">
                   <span className="text-body-sm text-badge-confirmed-fg">Desconto</span>

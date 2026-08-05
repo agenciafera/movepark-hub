@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { MapPin, Heart, Share2, CheckCircle, ArrowRight, Star, ShieldCheck } from "lucide-react";
+import { ArrowRight, CheckCircle, Heart, MapPin, ShareNetwork, ShieldCheck, Star } from "@phosphor-icons/react";
 import { gsap } from "@/lib/gsap";
 import { Button } from "@/components/ui/button";
 import { HOW_IT_WORKS } from "@/features/how-it-works/copy";
@@ -118,7 +118,7 @@ function BookingCardMockup() {
             </button>
             <button type="button" aria-label="Compartilhar"
               className="flex h-9 w-9 items-center justify-center rounded-full border border-hairline text-muted hover:text-mp-indigo">
-              <Share2 className="h-4 w-4" aria-hidden />
+              <ShareNetwork className="h-4 w-4" aria-hidden />
             </button>
             <button type="button" aria-label="Ver no mapa"
               className="flex h-9 w-9 items-center justify-center rounded-full border border-hairline text-muted hover:text-mp-indigo">

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useMutation } from "@tanstack/react-query";
-import { AlertTriangle, Calculator } from "lucide-react";
+import { Calculator, Warning } from "@phosphor-icons/react";
 import { format, differenceInMinutes, addDays } from "date-fns";
 import { supabase } from "@/lib/supabase";
 import {
@@ -118,7 +118,7 @@ export function PricingSimulationDialog({
 
           <TabsContent value="buckets">
             <p className="mb-3 flex items-center gap-1.5 text-caption text-muted">
-              <AlertTriangle className="h-3.5 w-3.5 text-warning" aria-hidden="true" />
+              <Warning className="h-3.5 w-3.5 text-warning" aria-hidden="true" />
               marca a inversão de faixa: ficar mais dias sai mais barato.
             </p>
             {isLoading ? (
@@ -156,7 +156,7 @@ export function PricingSimulationDialog({
                             ) : r.price !== null ? (
                               <span className="inline-flex items-center gap-1.5">
                                 {flip && (
-                                  <AlertTriangle
+                                  <Warning
                                     className="h-3.5 w-3.5 text-warning"
                                     aria-label="Inversão de faixa"
                                   />

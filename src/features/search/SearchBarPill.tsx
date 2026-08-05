@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { addDays, addHours, set } from "date-fns";
-import { Search, Car, Bike } from "lucide-react";
+import { Bicycle, Car, MagnifyingGlass } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -122,7 +122,7 @@ export function SearchBarPill({
           className="h-12 w-full gap-2 rounded-full tablet:w-12 tablet:gap-0 tablet:px-0"
           aria-label="Buscar"
         >
-          <Search className="h-5 w-5 shrink-0" />
+          <MagnifyingGlass className="h-5 w-5 shrink-0" />
           <span className="tablet:hidden">Buscar</span>
         </Button>
       </div>
@@ -156,7 +156,7 @@ function VehicleField({
           </SelectItem>
           <SelectItem value="motorcycle">
             <span className="inline-flex items-center gap-2">
-              <Bike className="h-4 w-4" /> Moto
+              <Bicycle className="h-4 w-4" /> Moto
             </span>
           </SelectItem>
         </SelectContent>

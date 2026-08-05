@@ -1,24 +1,5 @@
 import * as React from "react";
-import {
-  Bell,
-  Calendar,
-  Car,
-  ChevronLeft,
-  ChevronRight,
-  CircleCheck,
-  Clock,
-  Globe,
-  Heart,
-  Home,
-  Info,
-  MapPin,
-  QrCode,
-  Search,
-  Shield,
-  Star,
-  TriangleAlert,
-  X,
-} from "lucide-react";
+import { Bell, Calendar, Car, CaretLeft, CaretRight, CheckCircle, Clock, Globe, Heart, House, Info, MagnifyingGlass, MapPin, QrCode, Shield, Star, Warning, X } from "@phosphor-icons/react";
 import { Wordmark, Monogram } from "@/components/shared/Brand";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -208,7 +189,7 @@ function NavStub() {
       <div className="flex h-20 items-center justify-between border-b border-hairline px-8">
         <Wordmark height={28} />
         <div className="flex gap-8">
-          <NavTab active label="Vagas" icon={<Home className="h-5 w-5" />} />
+          <NavTab active label="Vagas" icon={<House className="h-5 w-5" />} />
           <NavTab
             label="Mensal"
             icon={<Calendar className="h-5 w-5" />}
@@ -403,11 +384,11 @@ function DatePickerStub() {
     <div className="w-[320px]">
       <div className="mb-3 flex items-center justify-between">
         <button className="flex h-7 w-7 items-center justify-center rounded-full ring-1 ring-inset ring-hairline">
-          <ChevronLeft className="h-3.5 w-3.5" />
+          <CaretLeft className="h-3.5 w-3.5" />
         </button>
         <div className="text-[15px] font-semibold text-ink">Maio 2026</div>
         <button className="flex h-7 w-7 items-center justify-center rounded-full ring-1 ring-inset ring-hairline">
-          <ChevronRight className="h-3.5 w-3.5" />
+          <CaretRight className="h-3.5 w-3.5" />
         </button>
       </div>
       <div className="grid grid-cols-7 gap-0.5">
@@ -463,7 +444,7 @@ function SearchPill() {
         <span className="mt-0.5 text-body-sm text-muted">Por quanto tempo</span>
       </div>
       <button className="ml-2 flex h-12 w-12 items-center justify-center rounded-full bg-mp-primary text-on-primary">
-        <Search className="h-5 w-5" />
+        <MagnifyingGlass className="h-5 w-5" />
       </button>
     </div>
   );
@@ -703,7 +684,7 @@ export default function DesignSystemPage() {
                       { w: 300, label: "Light" },
                       { w: 400, label: "Regular" },
                       { w: 500, label: "Medium" },
-                      { w: 700, label: "Bold" },
+                      { w: 700, label: "TextB" },
                       { w: 900, label: "Black" },
                     ].map((g) => (
                       <div key={g.w} className="flex flex-col items-center gap-2">
@@ -1092,8 +1073,8 @@ export default function DesignSystemPage() {
             <Specimen>
               <div className="grid grid-cols-3 gap-4 tablet:grid-cols-6 desktop:grid-cols-8">
                 {[
-                  { icon: <Home />, label: "Home" },
-                  { icon: <Search />, label: "Search" },
+                  { icon: <House />, label: "House" },
+                  { icon: <MagnifyingGlass />, label: "MagnifyingGlass" },
                   { icon: <MapPin />, label: "MapPin" },
                   { icon: <Calendar />, label: "Calendar" },
                   { icon: <Clock />, label: "Clock" },
@@ -1124,16 +1105,16 @@ export default function DesignSystemPage() {
             <Specimen>
               <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
                 <div className="flex items-center gap-3">
-                  <CircleCheck className="h-5 w-5 text-success" />
+                  <CheckCircle className="h-5 w-5 text-success" />
                   <div>
-                    <span className="text-caption text-ink">CircleCheck</span>
+                    <span className="text-caption text-ink">CheckCircle</span>
                     <span className="ml-2 font-mono text-[11px] text-muted">text-success</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <TriangleAlert className="h-5 w-5 text-warning" />
+                  <Warning className="h-5 w-5 text-warning" />
                   <div>
-                    <span className="text-caption text-ink">TriangleAlert</span>
+                    <span className="text-caption text-ink">Warning</span>
                     <span className="ml-2 font-mono text-[11px] text-muted">text-warning</span>
                   </div>
                 </div>
@@ -1170,7 +1151,7 @@ export default function DesignSystemPage() {
                   <Token>estrela de rating</Token>
                 </div>
                 <div className="flex flex-col items-center gap-2">
-                  <Search className="h-5 w-5 text-on-primary" style={{ background: "hsl(var(--mp-primary))", borderRadius: 9999, padding: 10, boxSizing: "content-box" }} />
+                  <MagnifyingGlass className="h-5 w-5 text-on-primary" style={{ background: "hsl(var(--mp-primary))", borderRadius: 9999, padding: 10, boxSizing: "content-box" }} />
                   <Token>orb de busca · mp-primary</Token>
                 </div>
               </div>

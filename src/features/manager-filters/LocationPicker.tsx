@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Building2, Check, ChevronDown, Search } from "lucide-react";
+import { Buildings, CaretDown, Check, MagnifyingGlass } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -51,7 +51,7 @@ export function LocationPicker({ value, onChange, className }: Props) {
             className,
           )}
         >
-          <Building2 className="h-4 w-4 shrink-0 text-mp-indigo" aria-hidden />
+          <Buildings className="h-4 w-4 shrink-0 text-mp-indigo" aria-hidden />
           <span className="flex min-w-0 flex-col">
             <span className="truncate text-body-sm font-medium text-ink">
               {locationsLabel(value, options)}
@@ -60,7 +60,7 @@ export function LocationPicker({ value, onChange, className }: Props) {
               {selectedCount === 0 ? "toda a rede" : "recorte aplicado"}
             </span>
           </span>
-          <ChevronDown className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+          <CaretDown className="h-4 w-4 shrink-0 text-muted" aria-hidden />
         </button>
       </PopoverTrigger>
 
@@ -71,7 +71,7 @@ export function LocationPicker({ value, onChange, className }: Props) {
       >
         <div className="border-b border-hairline p-3">
           <div className="relative">
-            <Search
+            <MagnifyingGlass
               className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
               aria-hidden
             />

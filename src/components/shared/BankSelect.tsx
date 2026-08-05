@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ChevronsUpDown, Check } from "lucide-react";
+import { CaretUpDown, Check } from "@phosphor-icons/react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
@@ -54,7 +54,7 @@ export function BankSelect({
           <span className="truncate">
             {value ? `${value} - ${selectedName ?? "Banco"}` : "Selecione o banco"}
           </span>
-          <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted" />
+          <CaretUpDown className="h-4 w-4 shrink-0 text-muted" />
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">

@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
-import { ArrowRight, ArrowUpRight, ShieldCheck, MapPin, Star, Users } from "lucide-react";
+import { ArrowRight, ArrowUpRight, MapPin, ShieldCheck, Star, Users } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { PartnerLogos } from "@/features/partners/PartnerLogos";
 import { HOW_IT_WORKS } from "@/features/how-it-works/copy";

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { CreditCard, Plus, ShieldCheck } from "lucide-react";
+import { CreditCard, Plus, ShieldCheck } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";

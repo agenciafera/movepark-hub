@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ArrowLeft, ArrowRight, Car, Plus, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Car, Check, Plus } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AccessibilityIcon } from "@/components/shared/AccessibilityIcon";

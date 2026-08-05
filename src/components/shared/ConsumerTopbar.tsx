@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { Search, Heart, User2, LogOut, LayoutDashboard, Calendar, ChevronDown, MapPin, Gift } from "lucide-react";
+import { Calendar, CaretDown, Gift, Heart, MagnifyingGlass, MapPin, SignOut, SquaresFour, User } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -62,7 +62,7 @@ function DestinosMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className="hidden items-center gap-1 rounded-sm px-2 py-1.5 text-body-sm text-ink hover:bg-surface-soft tablet:inline-flex">
-          Destinos <ChevronDown className="h-4 w-4" />
+          Destinos <CaretDown className="h-4 w-4" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="max-h-[70vh] min-w-[260px] overflow-y-auto">
@@ -161,7 +161,7 @@ export function ConsumerTopbar() {
               onClick={() => setSearchOpen(true)}
               className="flex h-12 w-full items-center gap-3 rounded-full border border-hairline bg-canvas px-4 text-body-sm text-muted shadow-tier transition-shadow hover:shadow-tier tablet:hidden"
             >
-              <Search className="h-4 w-4 shrink-0" />
+              <MagnifyingGlass className="h-4 w-4 shrink-0" />
               {/* O rótulo curto é o mesmo do título do modal que este botão abre.
                   "Onde · Quando · Veículo" media 222px e não sobrava espaço no header. */}
               <span className="truncate">{destParam ? destParam : "Buscar vaga"}</span>
@@ -229,7 +229,7 @@ export function ConsumerTopbar() {
               {effectiveRole === "customer" && (
                 <>
                   <DropdownMenuItem onClick={() => navigate("/account")}>
-                    <User2 className="h-4 w-4" /> Conta
+                    <User className="h-4 w-4" /> Conta
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/account/reservas")}>
                     <Calendar className="h-4 w-4" /> Minhas reservas
@@ -244,17 +244,17 @@ export function ConsumerTopbar() {
               )}
               {effectiveRole === "hub_admin" && (
                 <DropdownMenuItem onClick={() => navigate("/manager")}>
-                  <LayoutDashboard className="h-4 w-4" /> Ir pro Manager
+                  <SquaresFour className="h-4 w-4" /> Ir pro Manager
                 </DropdownMenuItem>
               )}
               {effectiveRole === "company_operator" && (
                 <DropdownMenuItem onClick={() => navigate("/operator")}>
-                  <LayoutDashboard className="h-4 w-4" /> Ir pro Operator
+                  <SquaresFour className="h-4 w-4" /> Ir pro Operator
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => void handleSignOut()}>
-                <LogOut className="h-4 w-4" /> Sair
+                <SignOut className="h-4 w-4" /> Sair
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

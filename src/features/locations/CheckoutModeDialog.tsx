@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { AlertTriangle } from "lucide-react";
+import { Warning } from "@phosphor-icons/react";
 import {
   Dialog,
   DialogContent,
@@ -86,7 +86,7 @@ export function CheckoutModeDialog({
             <Skeleton className="h-16 w-full" />
           ) : blockers.length > 0 && !isExternal ? (
             <div className="flex gap-3 rounded-md border border-hairline bg-surface-soft p-4">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden />
+              <Warning className="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden />
               <div className="flex flex-col gap-1">
                 <p className="text-body-sm font-medium text-ink">
                   Falta configurar antes de apontar para fora

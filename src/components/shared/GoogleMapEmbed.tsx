@@ -1,4 +1,4 @@
-import { MapPin } from "lucide-react";
+import { MapPin } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { MapEmbed } from "./MapEmbed";
 import {

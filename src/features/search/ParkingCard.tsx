@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { Car, Heart } from "lucide-react";
+import { Car, Heart } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { formatBRL } from "@/lib/format";
 import { RatingBadge } from "@/features/reviews/RatingStars";
@@ -31,7 +31,7 @@ export type ParkingCardProps = {
   /** Código do `parking_type` (covered/uncovered/valet…) — define a cor do chip. */
   parkingTypeCode?: string;
   /** Linha de metadados em `text-muted`. Muda por superfície: destino na home, unidade
-   *  + distância na busca. `metaIcon` é o ícone que a antecede (Plane, MapPin…). */
+   *  + distância na busca. `metaIcon` é o ícone que a antecede (Airplane, MapPin…). */
   meta?: React.ReactNode;
   metaIcon?: IconType;
   /** Nota agregada. O `RatingBadge` some sozinho quando não há avaliação. */

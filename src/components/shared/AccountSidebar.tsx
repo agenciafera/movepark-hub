@@ -1,18 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import {
-  User2,
-  Ticket,
-  Car,
-  MapPin,
-  CreditCard,
-  Heart,
-  Bell,
-  Lock,
-  LogOut,
-  ChevronRight,
-  Sparkles,
-  Gift,
-} from "lucide-react";
+import { Bell, Car, CaretRight, CreditCard, Gift, Heart, Lock, MapPin, SignOut, Sparkle, Ticket, User } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/context";
 import { userInitials } from "@/lib/initials";
@@ -33,14 +20,14 @@ const sections = [
     items: [
       { to: "/account/reservas", icon: Ticket, label: "Minhas reservas" },
       { to: "/account/saved", icon: Heart, label: "Favoritos" },
-      { to: "/account/clube", icon: Sparkles, label: "Movepark Clube" },
+      { to: "/account/clube", icon: Sparkle, label: "Movepark Clube" },
       { to: "/account/indicar", icon: Gift, label: "Indique e ganhe" },
     ],
   },
   {
     title: "Meus dados",
     items: [
-      { to: "/account/profile", icon: User2, label: "Perfil" },
+      { to: "/account/profile", icon: User, label: "Perfil" },
       { to: "/account/vehicles", icon: Car, label: "Veículos" },
       { to: "/account/cards", icon: CreditCard, label: "Cartões" },
       { to: "/account/addresses", icon: MapPin, label: "Endereços" },
@@ -149,7 +136,7 @@ export function AccountSidebar() {
         onClick={handleSignOut}
         className="flex w-full items-center gap-3 rounded-sm px-3 py-2.5 text-body-sm font-medium text-white/55 transition-colors hover:bg-white/[0.06] hover:text-white"
       >
-        <LogOut className="h-4 w-4 shrink-0" />
+        <SignOut className="h-4 w-4 shrink-0" />
         Sair
       </button>
 
@@ -177,7 +164,7 @@ export function AccountMobileMenu() {
         >
           <item.icon className="h-5 w-5 text-mp-indigo" />
           <span className="flex-1">{item.label}</span>
-          <ChevronRight className="h-4 w-4 text-muted" />
+          <CaretRight className="h-4 w-4 text-muted" />
         </NavLink>
       ))}
 
@@ -188,7 +175,7 @@ export function AccountMobileMenu() {
         onClick={handleSignOut}
         className="mt-4 flex w-full items-center gap-3 rounded-md border border-hairline bg-canvas px-4 py-3 text-body-md text-error hover:shadow-tier"
       >
-        <LogOut className="h-5 w-5" />
+        <SignOut className="h-5 w-5" />
         Sair
       </button>
     </div>

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { RefreshCw, Clock, Trophy, Zap, Rocket, Flag, Car, Gift } from "lucide-react";
+import { ArrowsClockwise, Car, Clock, Flag, Gift, Lightning, Rocket, Trophy } from "@phosphor-icons/react";
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ type LadderTier = {
 // Catálogo fixo dos 4 níveis (espelha membership_tier). O nível ATUAL e o
 // progresso vêm do banco; a escada em si é o catálogo do produto.
 const LADDER: LadderTier[] = [
-  { code: "ignicao", nome: "Ignição", criterio: "no cadastro", cashback: "2%", icon: Zap },
+  { code: "ignicao", nome: "Ignição", criterio: "no cadastro", cashback: "2%", icon: Lightning },
   { code: "turbo", nome: "Turbo", criterio: "2 reservas", cashback: "3%", icon: Rocket },
   { code: "nitro", nome: "Nitro", criterio: "6 reservas / 12m", cashback: "5%", icon: Trophy },
   { code: "podio", nome: "Pódio", criterio: "por convite", cashback: "máx.", icon: Flag },
@@ -233,7 +233,7 @@ export function MotorCrescimento() {
             </p>
           )}
           <Button variant="primary" className="mt-5 w-full" onClick={repetirReserva}>
-            <RefreshCw className="h-4 w-4" />
+            <ArrowsClockwise className="h-4 w-4" />
             {lastBooking.data ? "Repetir última reserva" : "Buscar estacionamento"}
           </Button>
         </AccountCard>

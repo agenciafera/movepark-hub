@@ -1,6 +1,6 @@
 import * as React from "react";
 import { NavLink } from "react-router-dom";
-import { MoreHorizontal } from "lucide-react";
+import { DotsThree } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/context";
 import {
@@ -62,7 +62,7 @@ export function BottomNav({ variant }: { variant: "manager" | "operator" }) {
             aria-label="Mais opções"
             className="flex min-h-[44px] flex-col items-center justify-center gap-1 px-1 py-2 text-muted"
           >
-            <MoreHorizontal className="h-4 w-4" />
+            <DotsThree className="h-4 w-4" />
             <span className="text-tab-label">Mais</span>
           </button>
         )}

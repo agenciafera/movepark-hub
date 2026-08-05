@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Handshake, List, SquareKanban, Maximize2, ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowsOut, Handshake, Kanban, List } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -45,7 +45,7 @@ function ViewToggle({
   onChange: (v: PartnersView) => void;
 }) {
   const options: { value: PartnersView; label: string; Icon: typeof List }[] = [
-    { value: "kanban", label: "Ver em kanban", Icon: SquareKanban },
+    { value: "kanban", label: "Ver em kanban", Icon: Kanban },
     { value: "list", label: "Ver em lista", Icon: List },
   ];
   return (
@@ -247,7 +247,7 @@ export default function ManagerPartners() {
             <ViewToggle view={view} onChange={setView} />
             {view === "kanban" && apps.length > 0 && (
               <Button variant="secondary" size="sm" onClick={() => setFullscreen(true)}>
-                <Maximize2 className="h-4 w-4" /> Tela cheia
+                <ArrowsOut className="h-4 w-4" /> Tela cheia
               </Button>
             )}
           </div>
