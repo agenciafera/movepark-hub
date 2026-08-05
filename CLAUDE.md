@@ -170,6 +170,43 @@ Regras **fixas** do projeto, não sugestões. Se algo conflitar com elas, **siga
     credencial sem OTP; foi fechado (migration `20260820000000`) porque abria sequestro de conta quando o
     login por OTP de WhatsApp é o caminho principal (ex.: agente de reserva).
 
+- **ADR-007 · Template de comunicação é canônico no código.** Os templates de e-mail (e de
+  qualquer canal futuro) vivem em `supabase/functions/_shared/email.ts`, versionados em git e
+  revisados em PR, com layout compartilhado (`shell()`) e teste (`email.test.ts`). **Não criar
+  tabela de template no banco** nem "sincronizar template com o banco": template no código E
+  editável no banco é drift garantido, e ninguém descobre qual versão foi enviada. O banco guarda
+  só **config** (`app_setting`: remetente, inbox, flags) e o log de envios. Trocar o transporte
+  (SES vs Resend) é decisão à parte e não mexe nesta regra. Custo aceito: editar copy exige deploy;
+  se um dia a edição sem deploy for necessidade real, reabra como Q em vez de improvisar via banco.
+
+- **ADR-008 · O contexto de implementação mora no repo.** Três camadas, um lar cada, e quem
+  implementa (dev ou Claude Code) lê **a spec no repo**, não o ClickUp nem `gestao/`. (1) **ClickUp**
+  é gestão e gatilho: briefing, restrições travadas inline (bloco 🔒 quando houver ADR) e a linha
+  `Spec:` apontando o caminho exato. (2) **`docs/specs/<slug>.md`** é o contexto completo,
+  versionado junto do código, com back-ref para o épico e os Q/D. (3) **`gestao/`** é narrativa de
+  estratégia e índices, fica fora do repo e **não** é lida na hora de codar. O motivo é prático:
+  contexto que só existe fora do repo não chega em execução headless, onde o MCP do ClickUp pode
+  nem estar autenticado. Ao promover um épico para execução: crie ou atualize a spec, aponte
+  `Spec:` na atividade, embuta as decisões travadas e transforme dúvida aberta em gate explícito,
+  para o desconexo aparecer como dependência no board em vez de sumir na prosa.
+
+- **ADR-009 · Promessa de transação renderiza por capacidade, nunca por template.** Nenhum bloco que
+  prometa cancelamento, alteração, tarifa, cupom, serviço extra, avaliação ou vaga garantida pode
+  renderizar incondicionalmente. Todos leem de `getLocationCapabilities(location)`, cuja fonte
+  primária é **`location.checkout_mode`** (E0.14). **Fato da unidade** (endereço, fotos, amenidades,
+  shuttle, distância) renderiza sempre, porque descreve o lugar e é verdade independente de onde a
+  reserva fecha. **Promessa de transação** só renderiza com capacidade declarada. Asterisco, nota de
+  rodapé ou disclaimer que contradiga bloco visível são **proibidos**: se a unidade não entrega, o
+  bloco não existe. A oferta vincula o fornecedor (CDC art. 30) e o asterisco não transfere
+  responsabilidade, apenas documenta que se sabia da divergência. O tipo `LocationCapabilities` é a
+  lista canônica: bloco novo na single obriga a declarar a capacidade, senão não compila, e um teste
+  falha se um bloco de promessa renderizar sem consultar capacidade. O mapa bloco a bloco (o que
+  fica e o que sai na unidade externa) está em
+  [`docs/specs/capacidades-unidade.md`](docs/specs/capacidades-unidade.md); a base
+  (`location.checkout_mode`) está em
+  [`docs/specs/checkout-externo-por-local.md`](docs/specs/checkout-externo-por-local.md).
+  Épico **E0.15**; decidido em Q-019.
+
 ## Comandos
 
 Sempre via **bun**:
