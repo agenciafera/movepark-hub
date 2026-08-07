@@ -243,6 +243,8 @@ export default function CheckoutPage() {
                 <Step3Addons
                   code={booking.code}
                   locationId={booking.location.id}
+                  vehicleId={booking.vehicle_id}
+                  operatorName={booking.location.company.name}
                   selectedIds={booking.items
                     .filter((i) => i.item_type === "add_on" && i.add_on_service_id)
                     .map((i) => i.add_on_service_id as string)}

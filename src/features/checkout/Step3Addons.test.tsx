@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/msw/server";
@@ -37,12 +37,25 @@ const CATALOGO = [
   },
 ];
 
-function render(catalogo: unknown[] = CATALOGO, selected: string[] = []) {
+const VEICULO = {
+  id: "v1",
+  profile_id: "u1",
+  license_plate: "ABC1D23",
+  model: "Ford Fiesta",
+  color: "Prata",
+  is_default: true,
+  created_at: "2026-01-01T00:00:00Z",
+};
+
+function render(
+  catalogo: unknown[] = CATALOGO,
+  selected: string[] = [],
+  veiculos: unknown[] = [VEICULO],
+) {
   const rpc = vi.fn();
   server.use(
-    http.get(`${SUPABASE_URL}/rest/v1/location_add_on_service`, () =>
-      HttpResponse.json(catalogo),
-    ),
+    http.get(`${SUPABASE_URL}/rest/v1/location_add_on_service`, () => HttpResponse.json(catalogo)),
+    http.get(`${SUPABASE_URL}/rest/v1/vehicle`, () => HttpResponse.json(veiculos)),
     http.post(`${SUPABASE_URL}/rest/v1/rpc/set_booking_addons`, async ({ request }) => {
       rpc(await request.json());
       return HttpResponse.json({});
@@ -53,6 +66,8 @@ function render(catalogo: unknown[] = CATALOGO, selected: string[] = []) {
     <Step3Addons
       code="MP-1"
       locationId="loc-1"
+      vehicleId="v1"
+      operatorName="Abbapark"
       selectedIds={selected}
       onBack={vi.fn()}
       onNext={onNext}
@@ -60,6 +75,12 @@ function render(catalogo: unknown[] = CATALOGO, selected: string[] = []) {
     { auth: mockAuth({ session: mockSession("customer") }), route: "/checkout/MP-1" },
   );
   return { ...utils, rpc, onNext };
+}
+
+/** O card do serviço, pelo nome dele. */
+async function card(nome: string) {
+  const titulo = await screen.findByText(nome);
+  return within(titulo.closest("li")!);
 }
 
 describe("Step3Addons", () => {
@@ -71,13 +92,28 @@ describe("Step3Addons", () => {
     expect(screen.queryByText("R$ 15,90")).not.toBeInTheDocument();
   });
 
+  it("chama o carro pelo modelo e diz de quem é o serviço", async () => {
+    render();
+    expect(
+      await screen.findByRole("heading", { name: "Quer algum cuidado extra com o Ford Fiesta?" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Serviços do Abbapark/)).toBeInTheDocument();
+  });
+
+  it("sem modelo cadastrado, o título fala do carro sem inventar nome", async () => {
+    render(CATALOGO, [], [{ ...VEICULO, model: null }]);
+    expect(
+      await screen.findByRole("heading", { name: "Quer algum cuidado extra com o seu carro?" }),
+    ).toBeInTheDocument();
+  });
+
   /** O passo grava só os ids: preço e total são recalculados no servidor. */
   it("manda apenas os ids escolhidos, nunca o preço", async () => {
     const user = userEvent.setup();
     const { rpc, onNext } = render();
 
-    await user.click(await screen.findByRole("button", { name: /Auto Start/ }));
-    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    await user.click((await card("Auto Start")).getByRole("button", { name: "Adicionar" }));
+    await user.click(screen.getByRole("button", { name: "Ir para o pagamento" }));
 
     await waitFor(() => expect(rpc).toHaveBeenCalled());
     const corpo = rpc.mock.calls[0][0];
@@ -88,17 +124,32 @@ describe("Step3Addons", () => {
 
   it("abre com o que já estava gravado na reserva", async () => {
     render(CATALOGO, ["a2"]);
-    const capa = await screen.findByRole("button", { name: /Capa protetora/ });
-    expect(capa).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: /Auto Start/ })).toHaveAttribute(
+    expect((await card("Capa protetora")).getByRole("button")).toHaveAttribute(
       "aria-pressed",
-      "false",
+      "true",
     );
+    expect((await card("Auto Start")).getByRole("button")).toHaveAttribute("aria-pressed", "false");
   });
 
-  it("sem nada marcado, o botão convida a seguir em frente", async () => {
+  /** Sem nada marcado ele faria o mesmo que o botão principal, então não existe. */
+  it("o atalho de descartar só aparece quando há algo marcado", async () => {
+    const user = userEvent.setup();
     render();
-    expect(await screen.findByRole("button", { name: "Seguir sem extras" })).toBeInTheDocument();
+    await screen.findByText("Auto Start");
+    expect(screen.queryByRole("button", { name: "Seguir sem extras" })).not.toBeInTheDocument();
+
+    await user.click((await card("Auto Start")).getByRole("button", { name: "Adicionar" }));
+    expect(screen.getByRole("button", { name: "Seguir sem extras" })).toBeInTheDocument();
+  });
+
+  it("descartar manda a lista vazia, não o que estava marcado", async () => {
+    const user = userEvent.setup();
+    const { rpc } = render(CATALOGO, ["a1"]);
+
+    await user.click(await screen.findByRole("button", { name: "Seguir sem extras" }));
+
+    await waitFor(() => expect(rpc).toHaveBeenCalled());
+    expect(rpc.mock.calls[0][0]).toEqual({ p_code: "MP-1", p_add_on_ids: [] });
   });
 
   /** Passo vazio só alonga o funil: some sozinho quando a unidade não oferece nada. */
