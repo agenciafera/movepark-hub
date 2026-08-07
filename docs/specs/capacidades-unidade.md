@@ -59,6 +59,12 @@ controla. Cliente chega, não tem vaga, e a página dizia garantida.
 | Consumo bloco a bloco | `src/routes/listing.tsx` e `src/features/listing/ReservationCard.tsx` |
 | Trava do ADR | `src/routes/listing.capabilities.test.tsx` (render real da página, nos dois modos) |
 
+**Unidade externa opera na Básica, e o seletor não aparece.** A Tarifa efetiva é fixada na
+grátis quando `caps.fares` é falso, e não é o acréscimo que é zerado em cada consumidor. A
+diferença importa: o seletor sumiu antes de a Tarifa sumir, o default `flex` continuou somando,
+e a single do Virapark mostrou Estacionamento R$ 161,10 com Total R$ 174,00. Fixar a tarifa
+fecha isso na origem, para a próxima tela que ler a tarifa não repetir o erro.
+
 **O card de reserva é podado, não substituído.** Datas, preço e a tabela por duração **ficam**
 na unidade externa: preço é informação da unidade (espelhada da tabela do parceiro, E0.13) e é o
 que faz a pessoa decidir. Some o que a Movepark não cumpre: seletor de tarifa, cupom, extras,

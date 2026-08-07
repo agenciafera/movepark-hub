@@ -265,7 +265,7 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
         to: to.toISOString(),
         passengers,
         hasPcd,
-        fare: selectedFare,
+        fare: effectiveFare,
         addOnIds: [],
         coupon: applied?.code ?? couponCode ?? null,
       });
@@ -286,7 +286,7 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
         has_pcd: listing.location.has_pcd_config ? hasPcd : false,
         coupon_code: applied?.code ?? null,
         // Tarifa escolhida (E2.8): o id "basic" da UI mapeia pro enum "basica" do banco.
-        fare_tier: selectedFare === "basic" ? "basica" : selectedFare,
+        fare_tier: effectiveFare === "basic" ? "basica" : effectiveFare,
         origin: originFromSrc(new URLSearchParams(location.search).get("src")),
         ...getStoredUtm(),
       });
@@ -302,12 +302,19 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
   // que recalcula o total no servidor. Aqui o preço é vaga + tarifa − desconto.
   const parkingBase = bookingTotal(parkingPrice, discount, 0);
 
+  // Unidade que não vende Tarifa opera na Básica, que é a grátis, e o seletor nem aparece:
+  // o preço fica limpo. Fixar a TARIFA aqui, em vez de zerar o acréscimo em cada consumidor,
+  // é o que impede a próxima tela que ler a tarifa de voltar a somar Flex numa unidade onde
+  // a Movepark não vende Tarifa nenhuma.
+  const effectiveFare: FareTier = caps.fares ? selectedFare : "basic";
   const fareOption =
-    pricedFares.find((f) => f.id === selectedFare) ?? pricedFares[0] ?? FARE_OPTIONS[1];
-  // Sem tarifa não há acréscimo de tarifa. Esconder o seletor e deixar o `flex` default
-  // somando no total cobrava, na unidade externa, uma Tarifa que ninguém escolheu e que a
-  // Movepark não vende ali.
-  const fareSurcharge = canReserve && caps.fares ? fareOption.surcharge : 0;
+    pricedFares.find((f) => f.id === effectiveFare) ??
+    // Sem Básica no catálogo da unidade, a externa cai na primeira sem acréscimo antes de
+    // cair na primeira da lista, que pode custar.
+    (caps.fares ? undefined : pricedFares.find((f) => f.surcharge === 0)) ??
+    pricedFares[0] ??
+    (caps.fares ? FARE_OPTIONS[1] : FARE_OPTIONS[0]);
+  const fareSurcharge = canReserve ? fareOption.surcharge : 0;
   const displayTotal = parkingBase + fareSurcharge;
 
   const hasFareOrAddOns = canReserve && (fareSurcharge > 0 || !!applied);
