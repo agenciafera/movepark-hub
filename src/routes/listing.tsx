@@ -32,6 +32,8 @@ import { isTypeDescriptorAmenity } from "@/features/search/amenities.logic";
 import { UpgradeVagaNudge } from "@/features/listing/UpgradeVagaNudge";
 import { pickUpgradeTarget } from "@/features/listing/upgrade.logic";
 import { GUARANTEE_PROMISE } from "@/features/guarantee/copy";
+import { getLocationCapabilities } from "@/features/listing/capabilities";
+import { ExternalCheckoutCard } from "@/features/listing/ExternalCheckoutCard";
 import {
   localBusinessSchema,
   productOfferSchema,
@@ -61,12 +63,17 @@ export default function ListingPage() {
     (listing?.location.review_count ?? 0) > 0 ? listing?.location.id : undefined,
     8,
   );
-  const schemaReviews: SchemaReview[] = (reviews ?? []).map((r) => ({
-    author: r.author_name,
-    rating: r.rating,
-    comment: r.comment,
-    date: r.created_at,
-  }));
+  // O JSON-LD tem que dizer o mesmo que a página. Se a nota sai da tela e continua no schema,
+  // o Google exibe no resultado de busca uma avaliação que a unidade não mostra, e o
+  // ADR-009 vale para o que a Movepark publica, não só para o que renderiza.
+  const schemaReviews: SchemaReview[] = getLocationCapabilities(listing?.location).reviews
+    ? (reviews ?? []).map((r) => ({
+        author: r.author_name,
+        rating: r.rating,
+        comment: r.comment,
+        date: r.created_at,
+      }))
+    : [];
 
   const { data: faqItems, isLoading: faqLoading } = useFaqCombined({
     locationId: listing?.location.id,
@@ -141,9 +148,14 @@ export default function ListingPage() {
       ? optimizedImageUrl(listing.location.photos[0], { width: 1200, height: 630, resize: "cover" })
       : undefined;
 
+  // Mesma regra para a FAQ: um único FAQPage por página, com as respostas idênticas às
+  // visíveis (ADR-002). Na unidade externa a global não aparece, então não pode ir no schema.
+  const faqForSchema = getLocationCapabilities(listing?.location).globalFaq
+    ? faqItems
+    : (faqItems ?? []).filter((f) => f.scope !== "global");
   const faqSchemaData =
-    faqItems && faqItems.length > 0
-      ? faqSchema(faqItems.map((f) => ({ question: f.question, answer: f.answer })))
+    faqForSchema && faqForSchema.length > 0
+      ? faqSchema(faqForSchema.map((f) => ({ question: f.question, answer: f.answer })))
       : null;
 
   if (isLoading) {
@@ -191,8 +203,13 @@ export default function ListingPage() {
   }
 
   const isSaved = saved.isSaved(listing.id);
+  // ADR-009: tudo que promete condição de transação passa por aqui. Fato da unidade (fotos,
+  // endereço, amenidades, shuttle, distância) segue renderizando sempre.
+  const caps = getLocationCapabilities(listing.location);
   // Só sobe: pickUpgradeTarget devolve o próximo tipo mais caro, ou null se já é o topo (E2.1.4).
-  const upgradeTarget = pickUpgradeTarget(listing.parking_type.code, typePrices);
+  // Na unidade externa o upsell sai junto: ele empurra para outro tipo de vaga que também fecha
+  // fora, com preço que o Hub não cobra.
+  const upgradeTarget = caps.hubCheckout ? pickUpgradeTarget(listing.parking_type.code, typePrices) : null;
   const upgradeNudge = upgradeTarget ? (
     <UpgradeVagaNudge
       target={upgradeTarget}
@@ -211,7 +228,9 @@ export default function ListingPage() {
 
   return (
     <>
-      <ListingTrustBar />
+      {/* Vaga garantida, cancelamento grátis e preço travado: as três são promessa de
+          transação, e nenhuma é nossa quando a reserva fecha fora. */}
+      {caps.guaranteedSpot && <ListingTrustBar />}
       {/* pb no mobile reserva a altura da barra fixa de preço (que agora nasce
           visível), pra o fim do conteúdo não ficar atrás dela. No desktop a barra
           não existe, então volta ao py-8. */}
@@ -264,11 +283,15 @@ export default function ListingPage() {
 
           {/* Social proof row */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <RatingBadge
-              avg={listing.location.review_avg}
-              count={listing.location.review_count}
-              href="#avaliacoes"
-            />
+            {/* Sem reserva no Hub não há avaliação nossa. Renderizar o chip mostraria nota
+                de um histórico que não se aplica mais a esta unidade. */}
+            {caps.reviews && (
+              <RatingBadge
+                avg={listing.location.review_avg}
+                count={listing.location.review_count}
+                href="#avaliacoes"
+              />
+            )}
 
             {listing.location.address && (
               <div className="flex items-center gap-1.5 text-body-sm text-muted">
@@ -306,12 +329,16 @@ export default function ListingPage() {
       {/* Mobile: card de reserva logo após as fotos */}
       <div ref={mobileCardRef} className="mt-6 desktop:hidden">
         {upgradeNudge && <div className="mb-3">{upgradeNudge}</div>}
-        <ReservationCard
-          listing={listing}
-          initialFrom={initialFrom}
-          initialTo={initialTo}
-          onSummaryChange={setSummary}
-        />
+        {caps.hubCheckout ? (
+          <ReservationCard
+            listing={listing}
+            initialFrom={initialFrom}
+            initialTo={initialTo}
+            onSummaryChange={setSummary}
+          />
+        ) : (
+          <ExternalCheckoutCard listing={listing} from={initialFrom} to={initialTo} />
+        )}
       </div>
 
       {/* Corpo em 2 colunas */}
@@ -366,18 +393,30 @@ export default function ListingPage() {
             <TerminalDistances locationId={listing.location.id} />
           </section>
 
-          {/* Avaliações: sempre visível; ReviewsBlock mostra empty state quando count = 0 */}
+          {/* Avaliações: na unidade própria fica sempre visível, e o ReviewsBlock mostra o
+              empty state quando count = 0. Na externa o bloco inteiro sai, inclusive quando
+              existe avaliação histórica: ela veio de reserva feita no Hub, num arranjo que não
+              vale mais para esta unidade. */}
+          {caps.reviews && (
+            <>
+              <Separator />
+              <ListingReviewsSection
+                locationId={listing.location.id}
+                reviewCount={listing.location.review_count}
+                reviewAvg={listing.location.review_avg}
+              />
+            </>
+          )}
+
           <Separator />
-          <ListingReviewsSection
-            locationId={listing.location.id}
-            reviewCount={listing.location.review_count}
-            reviewAvg={listing.location.review_avg}
+
+          {/* FAQ. Na unidade externa só o escopo dela: a global responde por cancelamento,
+              pagamento e reserva pela Movepark, que não é o que acontece aqui. */}
+          <ListingFaqSection
+            items={faqItems}
+            isLoading={faqLoading}
+            includeGlobal={caps.globalFaq}
           />
-
-          <Separator />
-
-          {/* FAQ */}
-          <ListingFaqSection items={faqItems} isLoading={faqLoading} />
 
           <Separator />
 
@@ -389,11 +428,15 @@ export default function ListingPage() {
         <aside className="hidden desktop:block">
           <div className="sticky top-24 space-y-3">
             {upgradeNudge}
-            <ReservationCard
-              listing={listing}
-              initialFrom={initialFrom}
-              initialTo={initialTo}
-            />
+            {caps.hubCheckout ? (
+              <ReservationCard
+                listing={listing}
+                initialFrom={initialFrom}
+                initialTo={initialTo}
+              />
+            ) : (
+              <ExternalCheckoutCard listing={listing} from={initialFrom} to={initialTo} />
+            )}
           </div>
         </aside>
       </div>
@@ -415,7 +458,7 @@ export default function ListingPage() {
       )}
 
       {/* Sticky CTA mobile: espelha o total real da reserva (referência Airbnb) */}
-      {showStickyBar && (
+      {showStickyBar && caps.hubCheckout && (
         <ListingStickyBar
           summary={summary}
           basePrice={listing.company_parking_type.base_price}
@@ -430,19 +473,30 @@ export default function ListingPage() {
 }
 
 type ListingFaqSectionProps = {
+  /** Falso na unidade externa: a FAQ global promete o que o Hub cumpre. */
+  includeGlobal?: boolean;
   items: FaqCombinedItem[] | undefined;
   isLoading: boolean;
 };
 
-function ListingFaqSection({ items, isLoading }: ListingFaqSectionProps) {
+function ListingFaqSection({ items, isLoading, includeGlobal = true }: ListingFaqSectionProps) {
   const [allOpen, setAllOpen] = React.useState(false);
 
-  if (!isLoading && (items ?? []).length === 0) return null;
+  const groupsAll = items ? groupFaqsByScope(items) : null;
+  // Filtra antes de qualquer contagem: senão o "Ver todas as N perguntas" prometeria um
+  // número que inclui as globais escondidas.
+  const visibleItems = includeGlobal
+    ? items
+    : groupsAll
+      ? [...groupsAll.location, ...groupsAll.destination]
+      : items;
 
-  const groups = items ? groupFaqsByScope(items) : null;
+  if (!isLoading && (visibleItems ?? []).length === 0) return null;
+
+  const groups = visibleItems ? groupFaqsByScope(visibleItems) : null;
   const inlineItems = groups ? [...groups.location, ...groups.destination] : undefined;
   const hasGlobal = (groups?.global.length ?? 0) > 0;
-  const totalCount = (items ?? []).length;
+  const totalCount = (visibleItems ?? []).length;
 
   return (
     <section className="space-y-4" id="faq">
@@ -450,7 +504,7 @@ function ListingFaqSection({ items, isLoading }: ListingFaqSectionProps) {
 
       {/* Só perguntas específicas do estacionamento/destino inline */}
       <FaqList
-        items={isLoading ? undefined : (inlineItems?.length ? inlineItems : items)}
+        items={isLoading ? undefined : (inlineItems?.length ? inlineItems : visibleItems)}
         isLoading={isLoading}
       />
 
@@ -468,7 +522,7 @@ function ListingFaqSection({ items, isLoading }: ListingFaqSectionProps) {
 
       <Dialog open={allOpen} onOpenChange={setAllOpen}>
         <DialogContent className="max-h-[70vh] max-w-3xl overflow-y-auto px-12 py-10">
-          <FaqList items={items} groupByScope />
+          <FaqList items={visibleItems} groupByScope />
         </DialogContent>
       </Dialog>
     </section>
@@ -505,46 +559,75 @@ function ListingReviewsSection({ locationId, reviewCount, reviewAvg }: ListingRe
   );
 }
 
+/**
+ * "O que você deve saber" (ADR-009).
+ *
+ * Na unidade externa as duas primeiras colunas saem, porque quem cumpre cancelamento e
+ * garantia é o parceiro. A terceira, que já é sobre ele, assume a declaração de
+ * responsabilidade: o bloco deixa de dizer "o que a Movepark garante" e passa a dizer "quem
+ * responde por esta reserva", sem deixar buraco no grid.
+ */
 function ListingKnowSection({ listing }: { listing: ListingDetail }) {
-  const years = Math.max(
-    1,
-    Math.floor((Date.now() - new Date(listing.company.created_at).getTime()) / (1000 * 60 * 60 * 24 * 365)),
-  );
+  const caps = getLocationCapabilities(listing.location);
+  const outras = listing.other_locations.length;
+
+  const linhasParceiro = caps.hubCheckout
+    ? [
+        // O selo já diz "Verificado"; esta linha diz o que isso significa, sem prometer
+        // transação. O tempo de casa saiu: não agrega confiança e deixava a coluna com
+        // uma linha só na maioria das empresas, que tem unidade única.
+        "Estacionamento aprovado pela Movepark antes de entrar na busca.",
+        outras > 0
+          ? `${outras} outra${outras > 1 ? "s" : ""} unidade${outras > 1 ? "s" : ""} disponível.`
+          : null,
+      ]
+    : [
+        `A reserva desta unidade é feita e administrada por ${listing.company.name}, no site do próprio estacionamento.`,
+        "Cancelamento, alteração e atendimento durante a estadia seguem as condições do estacionamento.",
+        "As garantias da Movepark não se aplicam a esta reserva.",
+      ];
 
   const columns = [
-    {
-      icon: <CalendarX className="h-7 w-7 text-ink" />,
-      title: "Política de cancelamento",
-      lines: CANCELLATION_POLICY_LINES_GENERIC,
-      extra: listing.location.reservation_policy ?? null,
-    },
-    {
-      icon: <ShieldCheck className="h-7 w-7 text-ink" />,
-      title: "Garantia Movepark",
-      lines: [
-        GUARANTEE_PROMISE,
-        "Se faltar vaga na chegada, realocamos e cobrimos a diferença, ou devolvemos 100% + crédito.",
-      ],
-      extra: null,
-    },
+    caps.cancellation
+      ? {
+          icon: <CalendarX className="h-7 w-7 text-ink" />,
+          title: "Política de cancelamento",
+          lines: CANCELLATION_POLICY_LINES_GENERIC,
+          extra: listing.location.reservation_policy ?? null,
+        }
+      : null,
+    caps.guaranteedSpot
+      ? {
+          icon: <ShieldCheck className="h-7 w-7 text-ink" />,
+          title: "Garantia Movepark",
+          lines: [
+            GUARANTEE_PROMISE,
+            "Se faltar vaga na chegada, realocamos e cobrimos a diferença, ou devolvemos 100% + crédito.",
+          ],
+          extra: null,
+        }
+      : null,
     {
       icon: <Buildings className="h-7 w-7 text-ink" />,
       title: listing.company.name,
-      lines: [
-        `Parceiro Movepark há ${years} ${years === 1 ? "ano" : "anos"}.`,
-        listing.other_locations.length > 0
-          ? `${listing.other_locations.length} outra${listing.other_locations.length > 1 ? "s" : ""} unidade${listing.other_locations.length > 1 ? "s" : ""} disponível.`
-          : null,
-      ].filter((l): l is string => l != null),
+      lines: linhasParceiro.filter((l): l is string => l != null),
       extra: null,
       badge: true,
     },
-  ] as const;
+  ].filter((c): c is NonNullable<typeof c> => c != null);
 
   return (
     <section className="space-y-6">
       <h2 className="text-display-sm text-ink">O que você deve saber</h2>
-      <div className="grid grid-cols-1 gap-8 tablet:grid-cols-3 tablet:divide-x tablet:divide-hairline">
+      <div
+        className={cn(
+          "grid grid-cols-1 gap-8 tablet:divide-x tablet:divide-hairline",
+          columns.length === 3 && "tablet:grid-cols-3",
+          columns.length === 2 && "tablet:grid-cols-2",
+          // Uma coluna só (unidade externa): largura de leitura, não a faixa inteira.
+          columns.length === 1 && "max-w-[640px]",
+        )}
+      >
         {columns.map((col, i) => (
           <div key={i} className={cn("space-y-3", i > 0 && "tablet:pl-8")}>
             {col.icon}

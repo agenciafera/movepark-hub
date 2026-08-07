@@ -9,6 +9,12 @@ export type ListingDetail = {
   id: string; // location_parking_type_id
   capacity: number;
   is_active: boolean;
+  /**
+   * URL de saída para o checkout do parceiro, montada NO SERVIDOR com a marcação de afiliado
+   * (campo computado do PostgREST). Null quando a unidade fecha no Hub ou o De/Para está
+   * incompleto. O front nunca monta essa URL; só acrescenta as datas da busca no fim.
+   */
+  external_checkout_url: string | null;
   company: {
     id: string;
     slug: string;
@@ -29,6 +35,8 @@ export type ListingDetail = {
     shuttle_frequency_minutes: number | null;
     shuttle_to_terminal_minutes: number | null;
     reservation_policy: string | null;
+    /** Onde a reserva desta unidade fecha (E0.14). Fonte primária das capacidades (ADR-009). */
+    checkout_mode: string;
     timezone: string;
     latitude: number | null;
     longitude: number | null;
@@ -53,11 +61,11 @@ export type ListingDetail = {
 };
 
 const baseSelect = `
-  id, capacity, is_active,
+  id, capacity, is_active, external_checkout_url,
   location:location!inner(
     id, slug, name, address, phone, email, notice, has_notice,
     directions_text, shuttle_frequency_minutes, shuttle_to_terminal_minutes,
-    reservation_policy, timezone, latitude, longitude, google_place_id,
+    reservation_policy, checkout_mode, timezone, latitude, longitude, google_place_id,
     has_pcd_config, has_passenger_quantity, review_avg, review_count, photos,
     company:company!inner(id, slug, name, legal_name, created_at),
     amenities:location_amenity(
@@ -96,12 +104,21 @@ export async function fetchListing(
   });
   if (!match) return null;
 
-  const companyId = (match as { location: { company: { id: string } } }).location.company.id;
+  // Cast via `unknown`: `external_checkout_url` é campo COMPUTADO do PostgREST (função que
+  // recebe a linha de location_parking_type). O `supabase gen types` não emite computed field,
+  // então o tipo gerado marca a coluna como inexistente e envenena o retorno inteiro do select,
+  // mesmo o servidor devolvendo o valor. Compor a URL no cliente para contornar isso está fora
+  // de questão (é onde a marcação de afiliado se perde), e uma RPC extra custaria round trip no
+  // caminho da página pública.
+  const matched = match as unknown as {
+    location: { id: string; company: { id: string } };
+  };
+  const companyId = matched.location.company.id;
   const { data: others } = await supabase
     .from("location")
     .select("id, name, slug")
     .eq("company_id", companyId)
-    .neq("id", (match as { location: { id: string } }).location.id)
+    .neq("id", matched.location.id)
     .is("deleted_at", null)
     .limit(6);
 
@@ -118,11 +135,15 @@ export async function fetchListing(
     id: m.id,
     capacity: m.capacity,
     is_active: m.is_active,
+    external_checkout_url: m.external_checkout_url ?? null,
     company: m.location.company,
     location: {
       id: m.location.id,
       slug: m.location.slug,
       name: m.location.name,
+      // Default 'hub' na leitura: a coluna nasceu com esse default e ler ausência como
+      // 'external' apagaria a página de toda unidade nativa se o select falhasse.
+      checkout_mode: m.location.checkout_mode ?? "hub",
       address: m.location.address,
       phone: m.location.phone,
       email: m.location.email,
@@ -204,7 +225,7 @@ export type TerminalDistance = {
 
 /**
  * Distância por terminal de uma unidade (PRD-09). Lê a view `location_point_proximity`
- * (haversine em SQL, DAT-05) — vazia quando o destino do lote não tem terminais.
+ * (haversine em SQL, DAT-05), vazia quando o destino do lote não tem terminais.
  */
 export function useLocationTerminals(locationId: string | undefined) {
   return useQuery({
@@ -255,7 +276,7 @@ export type SimulatedPrice = {
 
 /**
  * Opções de query do simulate_price para uma duração. Fonte única usada por
- * `useSimulatePrice` (uma duração) e `useDurationPrices` (tabela) — mesma key,
+ * `useSimulatePrice` (uma duração) e `useDurationPrices` (tabela): mesma key,
  * então o cache é compartilhado entre o reservation card e a tabela de preços.
  */
 function simulatePriceQueryOptions(
@@ -363,7 +384,7 @@ export function useSimulatePrice(args: {
 
 /**
  * Preços para várias durações (tabela "ver preços"). Cada duração é uma query
- * independente — compartilha cache com `useSimulatePrice` (mesma key) e carrega
+ * independente, compartilha cache com `useSimulatePrice` (mesma key) e carrega
  * incrementalmente. Retorna os resultados na ordem de `durations`.
  */
 export function useDurationPrices(args: {

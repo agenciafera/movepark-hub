@@ -50,6 +50,35 @@ nota, senão parece nota zero.
 **Vaga garantida é inegociável.** É promessa de desempenho sobre capacidade que o Hub não
 controla. Cliente chega, não tem vaga, e a página dizia garantida.
 
+## Como ficou (05/08/2026)
+
+| Peça | Onde |
+|---|---|
+| Lista canônica | `src/features/listing/capabilities.ts` (`LocationCapabilities`, `getLocationCapabilities`) |
+| Link de saída com as datas | `src/features/listing/externalCheckout.ts` (`withSearchDates`) |
+| Card de saída | `src/features/listing/ExternalCheckoutCard.tsx` |
+| Consumo bloco a bloco | `src/routes/listing.tsx` |
+| Trava do ADR | `src/routes/listing.capabilities.test.tsx` (render real da página, nos dois modos) |
+
+**A trava é de render, não de leitura de código.** O que vincula a Movepark é o que o cliente
+vê, então o teste monta a página inteira nos dois modos e afirma que nenhuma promessa sobrevive
+na externa. Selo novo posto direto na casca quebra ali, mesmo que o código pareça correto.
+
+**O JSON-LD acompanha a tela.** Nota e FAQ global saem do schema junto com os blocos. Sem isso o
+Google exibiria no resultado de busca uma avaliação que a página não mostra, e o ADR-009 vale
+para o que a Movepark publica, não só para o que renderiza.
+
+**O upsell de upgrade de vaga sai também.** Ele empurra para outro tipo de vaga que igualmente
+fecha fora, com preço que o Hub não cobra.
+
+**Default permissivo.** `checkout_mode` ausente lê como `hub`. A coluna nasceu com esse default
+e quase toda unidade é nativa; ler ausência como "sem capacidade" apagaria a página delas no
+primeiro select que esquecesse o campo.
+
+**O que ficou fora desta entrega:** o marcador no card de busca (o `search` não devolve
+`checkout_mode` hoje, e mexer nele é escopo próprio), a delimitação da copy de plataforma (card
+próprio) e o prazo de validade da exceção.
+
 ## Implementação
 
 Um objeto tipado, fonte única, não booleanos espalhados:
