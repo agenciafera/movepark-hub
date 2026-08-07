@@ -133,6 +133,32 @@ export function nextStepOnConfirm(status: string, current: CheckoutStep): Checko
   return status === "confirmed" && current !== 5 ? 5 : null;
 }
 
+/**
+ * Sequência de passos que a unidade realmente tem. O de adicionais (3) só entra
+ * quando ela oferece algum: um passo que abre vazio e se pula sozinho ainda assim
+ * apareceria no medidor de progresso, prometendo uma escolha que não existe.
+ *
+ * O id do passo é estável (o 4 é sempre pagamento) para a máquina de estados não
+ * mudar de significado. Quem renumera pra 1..n é o Stepper, na exibição.
+ */
+export function visibleSteps(hasAddons: boolean): CheckoutStep[] {
+  return hasAddons ? [1, 2, 3, 4, 5] : [1, 2, 4, 5];
+}
+
+/**
+ * Próximo passo da sequência visível. Aceita um passo fora dela (o catálogo pode
+ * esvaziar com a tela aberta) e devolve o primeiro adiante, em vez de travar.
+ */
+export function stepAfter(current: CheckoutStep, hasAddons: boolean): CheckoutStep {
+  return visibleSteps(hasAddons).find((s) => s > current) ?? current;
+}
+
+/** Passo anterior da sequência visível, com a mesma tolerância do `stepAfter`. */
+export function stepBefore(current: CheckoutStep, hasAddons: boolean): CheckoutStep {
+  const anteriores = visibleSteps(hasAddons).filter((s) => s < current);
+  return anteriores[anteriores.length - 1] ?? current;
+}
+
 /** Polling: recarrega enquanto a reserva ou o último pagamento estiverem pendentes. */
 export function shouldPollCheckout(
   status: string | null | undefined,

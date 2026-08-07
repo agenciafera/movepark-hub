@@ -22,11 +22,15 @@ import { Step5Confirmation } from "@/features/checkout/Step5Confirmation";
 import { SummaryCard } from "@/features/checkout/SummaryCard";
 import { formatBRL } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useLocationAddOns } from "@/features/listing/api";
 import {
   isCheckoutBlocked,
   nextStepOnConfirm,
   resolveCheckoutGate,
   resolveInitialStep,
+  stepAfter,
+  stepBefore,
+  visibleSteps,
   type CheckoutStep,
 } from "@/features/checkout/checkout.logic";
 import type { BookingForCheckout } from "@/features/checkout/api";
@@ -78,6 +82,13 @@ export default function CheckoutPage() {
   const { data: booking, isLoading, error } = useCheckoutBooking(code);
   const { data: termsAccepted } = useTermsAccepted(booking?.id);
   const [step, setStep] = React.useState<CheckoutStep>(1);
+
+  // O passo de adicionais só existe se a unidade oferecer algum, então a régua de
+  // progresso e a navegação dependem do catálogo. Enquanto ele não chega, o Stepper
+  // segura: desenhar 4 passos e virar 5 (ou o contrário) salta na frente do cliente.
+  const { data: addons } = useLocationAddOns(booking?.location.id);
+  const addonsCarregados = addons !== undefined;
+  const hasAddons = (addons?.length ?? 0) > 0;
 
   // Passo inicial: só cai no pagamento quando o link pediu (?pay=1) E a reserva está pronta
   // (dados do pagador + Termos aceitos). Deriva do estado; roda uma vez quando os dados chegam.
@@ -187,8 +198,12 @@ export default function CheckoutPage() {
 
       <div className="mx-auto w-full max-w-[1080px] px-4 py-8 desktop:px-8">
         <h1 className="sr-only">Finalizar reserva</h1>
-        <div className="mb-6 flex justify-center">
-          <Stepper current={step} />
+        <div className="mb-6">
+          {addonsCarregados ? (
+            <Stepper current={step} steps={visibleSteps(hasAddons)} />
+          ) : (
+            <Skeleton className="mx-auto h-7 w-full max-w-[760px] rounded-full" />
+          )}
         </div>
 
         <div className="grid grid-cols-1 gap-8 desktop:grid-cols-[1fr_420px]">
@@ -222,7 +237,7 @@ export default function CheckoutPage() {
                   passengerCount={booking.passenger_count}
                   hasPcd={booking.has_pcd}
                   onBack={() => setStep(1)}
-                  onNext={() => setStep(3)}
+                  onNext={() => setStep(stepAfter(2, hasAddons))}
                 />
               ) : step === 3 ? (
                 <Step3Addons
@@ -241,7 +256,7 @@ export default function CheckoutPage() {
                   totalAmount={booking.total_amount}
                   customerTaxId={booking.customer_tax_id}
                   paymentStatus={booking.payment?.status ?? null}
-                  onBack={() => setStep(3)}
+                  onBack={() => setStep(stepBefore(4, hasAddons))}
                 />
               ) : (
                 <Step5Confirmation booking={booking} />

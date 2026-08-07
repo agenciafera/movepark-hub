@@ -5,7 +5,10 @@ import {
   resolveCheckoutGate,
   resolveInitialStep,
   shouldPollCheckout,
+  stepAfter,
+  stepBefore,
   validateStep1Identity,
+  visibleSteps,
   type CheckoutGateArgs,
   type Step1IdentityInput,
 } from "./checkout.logic";
@@ -199,5 +202,37 @@ describe("resolveInitialStep (deep-link do handoff)", () => {
     expect(
       resolveInitialStep({ requestedPay: true, hasPayerData: true, termsAccepted: false }),
     ).toBe(1);
+  });
+});
+
+describe("sequência de passos (adicionais só quando a unidade tem)", () => {
+  it("unidade com adicionais mostra os cinco passos", () => {
+    expect(visibleSteps(true)).toEqual([1, 2, 3, 4, 5]);
+  });
+
+  it("unidade sem adicionais não expõe o passo 3", () => {
+    expect(visibleSteps(false)).toEqual([1, 2, 4, 5]);
+  });
+
+  it("do veículo vai pros adicionais quando existem, e pro pagamento quando não", () => {
+    expect(stepAfter(2, true)).toBe(3);
+    expect(stepAfter(2, false)).toBe(4);
+  });
+
+  it("voltar do pagamento respeita a mesma sequência", () => {
+    expect(stepBefore(4, true)).toBe(3);
+    expect(stepBefore(4, false)).toBe(2);
+  });
+
+  it("as pontas não saem da sequência", () => {
+    expect(stepAfter(5, true)).toBe(5);
+    expect(stepBefore(1, true)).toBe(1);
+  });
+
+  // O catálogo pode esvaziar com a tela aberta (adicional desativado no painel).
+  // Quem estiver no passo 3 precisa conseguir sair dele nos dois sentidos.
+  it("passo fora da sequência não trava a navegação", () => {
+    expect(stepAfter(3, false)).toBe(4);
+    expect(stepBefore(3, false)).toBe(2);
   });
 });
