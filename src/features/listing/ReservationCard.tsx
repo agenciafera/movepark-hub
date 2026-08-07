@@ -304,7 +304,10 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
 
   const fareOption =
     pricedFares.find((f) => f.id === selectedFare) ?? pricedFares[0] ?? FARE_OPTIONS[1];
-  const fareSurcharge = canReserve ? fareOption.surcharge : 0;
+  // Sem tarifa não há acréscimo de tarifa. Esconder o seletor e deixar o `flex` default
+  // somando no total cobrava, na unidade externa, uma Tarifa que ninguém escolheu e que a
+  // Movepark não vende ali.
+  const fareSurcharge = canReserve && caps.fares ? fareOption.surcharge : 0;
   const displayTotal = parkingBase + fareSurcharge;
 
   const hasFareOrAddOns = canReserve && (fareSurcharge > 0 || !!applied);

@@ -118,6 +118,16 @@ describe("single da unidade EXTERNA", () => {
     expect(screen.getAllByText(/Total/i).length).toBeGreaterThan(0);
   });
 
+  it("nenhuma Tarifa entra no total sem ninguém escolher", async () => {
+    // Regressão: o seletor sumiu mas o default `flex` continuava somando o acréscimo, e o
+    // total ficava R$ 12,90 acima do preço do estacionamento numa unidade onde a Movepark
+    // não vende Tarifa nenhuma.
+    montaPagina("external");
+    await screen.findAllByText(/Virapark/i);
+    expect(screen.queryAllByText(/Tarifa Flex/i)).toHaveLength(0);
+    expect(screen.queryAllByText(/Tarifa Superflex/i)).toHaveLength(0);
+  });
+
   it("não vende tarifa nem pede cupom", async () => {
     montaPagina("external");
     await screen.findAllByText(/Virapark/i);
