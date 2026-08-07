@@ -43,6 +43,8 @@ import { availabilityUi } from "./availability.logic";
 import { useUnitFares } from "@/features/fares/api";
 import { fareReais } from "@/lib/fares";
 import { PriceTableDialog } from "./PriceTableDialog";
+import { getLocationCapabilities } from "./capabilities";
+import { withSearchDates } from "./externalCheckout";
 import { FareComparisonDialog } from "./FareComparisonDialog";
 import { couponDiscountLabel, couponErrorMessage, type CouponPreview } from "./coupon.logic";
 import {
@@ -113,6 +115,14 @@ function daysBetween(a: Date | null, b: Date | null): number {
 }
 
 export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChange }: Props) {
+  // ADR-009. O que NÃO some na unidade externa: datas, preço e a tabela por duração. O preço
+  // continua sendo informação da unidade (espelhado da tabela do parceiro, E0.13), e é o que
+  // faz a pessoa decidir. O que some é o que a Movepark não cumpre: tarifa, cupom, extras e o
+  // próprio checkout.
+  const caps = getLocationCapabilities(listing.location);
+  // Extraído para a dep do efeito do resumo ficar explícita: `caps` é objeto novo a cada
+  // render, e listar ele inteiro reexecutaria o efeito à toa.
+  const promisesCancellation = caps.cancellation;
   const navigate = useNavigate();
   const location = useLocation();
   const { session, effectiveRole, isLoading: authLoading } = useAuth();
@@ -310,7 +320,7 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
       days,
       from,
       to,
-      cancellationLine: fareOption.badgeText,
+      cancellationLine: promisesCancellation ? fareOption.badgeText : null,
     });
   }, [
     canReserve,
@@ -319,6 +329,7 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
     from,
     to,
     fareOption.badgeText,
+    promisesCancellation,
     listing.company_parking_type.base_price,
   ]);
 
@@ -451,7 +462,7 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
         </div>
 
         {/* Passageiros */}
-        {listing.location.has_passenger_quantity && (
+        {caps.hubCheckout && listing.location.has_passenger_quantity && (
           <div className="mt-4 flex items-center justify-between gap-3">
             <Label htmlFor="pax">Passageiros</Label>
             <Input
@@ -467,7 +478,7 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
         )}
 
         {/* PCD */}
-        {listing.location.has_pcd_config && (
+        {caps.hubCheckout && listing.location.has_pcd_config && (
           <div className="mt-4 flex items-center justify-between gap-3">
             <Label htmlFor="pcd">Vaga acessível PCD</Label>
             <Switch checked={hasPcd} onCheckedChange={setHasPcd} />
@@ -475,6 +486,7 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
         )}
 
         {/* Seletor de tarifa */}
+        {caps.fares && (
         <div className="mt-5">
           <div className="mb-2 text-body-sm font-semibold text-ink">Escolha sua tarifa</div>
           <div className="divide-y divide-hairline overflow-hidden rounded-md border border-hairline bg-canvas">
@@ -566,6 +578,7 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
             <CaretRight className="h-3 w-3" />
           </button>
         </div>
+        )}
 
         {/* Erro do simulate_price */}
         {sim.data?.error && (
@@ -589,7 +602,7 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
         )}
 
         {/* Cupom */}
-        {canReserve && (
+        {caps.coupons && canReserve && (
           <div className="mt-4">
             {applied ? (
               <div
@@ -647,7 +660,7 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
                   <span className="text-body-sm text-muted tabular-nums">{formatBRL(parkingPrice)}</span>
                 </div>
               )}
-              {fareSurcharge > 0 && (
+              {caps.fares && fareSurcharge > 0 && (
                 <div className="flex justify-between">
                   <span className="text-body-sm text-muted">Tarifa {fareOption.label}</span>
                   <span className="text-body-sm text-muted tabular-nums">{formatBRL(fareSurcharge)}</span>
@@ -671,22 +684,45 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
           </div>
         </div>
 
-        {/* CTA */}
-        <Button
-          className="mt-4 w-full"
-          size="default"
-          onClick={handleReserve}
-          disabled={!canReserve || createBooking.isPending}
-        >
-          {createBooking.isPending
-            ? "Reservando…"
-            : !from || !to
-              ? "Escolher datas"
-              : "Reservar agora"}
-        </Button>
+        {/* CTA. Na unidade externa o botão vira link de saída, com as datas escolhidas AQUI
+            viajando junto: sem elas o cliente recomeça a seleção do outro lado. Enquanto as
+            datas não estão escolhidas o botão fica travado, para o link nunca sair pela metade.
+            A URL base vem pronta do servidor, com a marcação de afiliado. */}
+        {caps.hubCheckout ? (
+          <Button
+            className="mt-4 w-full"
+            size="default"
+            onClick={handleReserve}
+            disabled={!canReserve || createBooking.isPending}
+          >
+            {createBooking.isPending
+              ? "Reservando…"
+              : !from || !to
+                ? "Escolher datas"
+                : "Reservar agora"}
+          </Button>
+        ) : !from || !to ? (
+          <Button className="mt-4 w-full" size="default" disabled>
+            Escolher datas
+          </Button>
+        ) : (
+          <>
+            <Button asChild className="mt-4 w-full" size="default">
+              <a
+                href={withSearchDates(listing.external_checkout_url, from, to) ?? undefined}
+                data-testid="external-checkout-cta"
+              >
+                Reservar no site do estacionamento
+              </a>
+            </Button>
+            <p className="mt-3 text-caption text-muted">
+              Cancelamento, alteração e atendimento seguem as condições do estacionamento.
+            </p>
+          </>
+        )}
 
         {/* Trust badge */}
-        {!avail.data?.sold_out && (
+        {caps.cancellation && !avail.data?.sold_out && (
           <div className="mt-4 flex justify-center">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-badge-confirmed-bg px-3 py-1">
               <ShieldCheck className="h-4 w-4 text-badge-confirmed-fg" />

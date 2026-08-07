@@ -33,7 +33,6 @@ import { UpgradeVagaNudge } from "@/features/listing/UpgradeVagaNudge";
 import { pickUpgradeTarget } from "@/features/listing/upgrade.logic";
 import { GUARANTEE_PROMISE } from "@/features/guarantee/copy";
 import { getLocationCapabilities } from "@/features/listing/capabilities";
-import { ExternalCheckoutCard } from "@/features/listing/ExternalCheckoutCard";
 import {
   localBusinessSchema,
   productOfferSchema,
@@ -329,16 +328,12 @@ export default function ListingPage() {
       {/* Mobile: card de reserva logo após as fotos */}
       <div ref={mobileCardRef} className="mt-6 desktop:hidden">
         {upgradeNudge && <div className="mb-3">{upgradeNudge}</div>}
-        {caps.hubCheckout ? (
-          <ReservationCard
-            listing={listing}
-            initialFrom={initialFrom}
-            initialTo={initialTo}
-            onSummaryChange={setSummary}
-          />
-        ) : (
-          <ExternalCheckoutCard listing={listing} from={initialFrom} to={initialTo} />
-        )}
+        <ReservationCard
+          listing={listing}
+          initialFrom={initialFrom}
+          initialTo={initialTo}
+          onSummaryChange={setSummary}
+        />
       </div>
 
       {/* Corpo em 2 colunas */}
@@ -428,15 +423,11 @@ export default function ListingPage() {
         <aside className="hidden desktop:block">
           <div className="sticky top-24 space-y-3">
             {upgradeNudge}
-            {caps.hubCheckout ? (
-              <ReservationCard
-                listing={listing}
-                initialFrom={initialFrom}
-                initialTo={initialTo}
-              />
-            ) : (
-              <ExternalCheckoutCard listing={listing} from={initialFrom} to={initialTo} />
-            )}
+            <ReservationCard
+              listing={listing}
+              initialFrom={initialFrom}
+              initialTo={initialTo}
+            />
           </div>
         </aside>
       </div>
@@ -458,7 +449,7 @@ export default function ListingPage() {
       )}
 
       {/* Sticky CTA mobile: espelha o total real da reserva (referência Airbnb) */}
-      {showStickyBar && caps.hubCheckout && (
+      {showStickyBar && (
         <ListingStickyBar
           summary={summary}
           basePrice={listing.company_parking_type.base_price}

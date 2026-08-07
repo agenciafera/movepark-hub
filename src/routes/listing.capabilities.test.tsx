@@ -15,7 +15,8 @@ import ListingPage from "./listing";
  */
 
 const BASE = import.meta.env.VITE_SUPABASE_URL;
-const ROTA = "/p/virapark/virapark/covered";
+const ROTA =
+  "/p/virapark/virapark/covered?from=2026-08-12T16:00:00.000Z&to=2026-08-21T16:00:00.000Z";
 const PATH = "/p/:operatorSlug/:locationSlug/:parkingTypeCode";
 const URL_SAIDA =
   "https://virapark.movepark.co/virapark/vaga-coberta?utm_source=movepark&utm_medium=organic&utm_campaign=afiliado-movepark";
@@ -108,6 +109,22 @@ describe("single da unidade PRÓPRIA", () => {
 });
 
 describe("single da unidade EXTERNA", () => {
+  it("mantém datas, preço e a tabela por duração", async () => {
+    // O preço é informação da unidade (espelhado da tabela do parceiro) e é o que faz a
+    // pessoa decidir. Some o que a Movepark não cumpre, não o que ela mostra.
+    montaPagina("external");
+    await screen.findAllByText(/Virapark/i);
+    expect(screen.getAllByText(/Ver preços por duração/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Total/i).length).toBeGreaterThan(0);
+  });
+
+  it("não vende tarifa nem pede cupom", async () => {
+    montaPagina("external");
+    await screen.findAllByText(/Virapark/i);
+    expect(screen.queryAllByText(/Escolha sua tarifa/i)).toHaveLength(0);
+    expect(screen.queryAllByPlaceholderText(/Cupom de desconto/i)).toHaveLength(0);
+  });
+
   it("nenhuma promessa de transação sobrevive", async () => {
     montaPagina("external");
     await screen.findAllByText(/Virapark/i);

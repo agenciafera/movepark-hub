@@ -13,7 +13,8 @@ export type ReservationSummary = {
   from: Date | null;
   to: Date | null;
   /** Selo curto de cancelamento da tarifa escolhida (ex.: "Cancelamento grátis até 24h"). */
-  cancellationLine: string;
+  /** Null na unidade externa: a Movepark não cumpre cancelamento ali (ADR-009). */
+  cancellationLine: string | null;
 };
 
 export type AddOnOption = {

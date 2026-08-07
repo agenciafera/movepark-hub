@@ -56,9 +56,17 @@ controla. Cliente chega, não tem vaga, e a página dizia garantida.
 |---|---|
 | Lista canônica | `src/features/listing/capabilities.ts` (`LocationCapabilities`, `getLocationCapabilities`) |
 | Link de saída com as datas | `src/features/listing/externalCheckout.ts` (`withSearchDates`) |
-| Card de saída | `src/features/listing/ExternalCheckoutCard.tsx` |
-| Consumo bloco a bloco | `src/routes/listing.tsx` |
+| Consumo bloco a bloco | `src/routes/listing.tsx` e `src/features/listing/ReservationCard.tsx` |
 | Trava do ADR | `src/routes/listing.capabilities.test.tsx` (render real da página, nos dois modos) |
+
+**O card de reserva é podado, não substituído.** Datas, preço e a tabela por duração **ficam**
+na unidade externa: preço é informação da unidade (espelhada da tabela do parceiro, E0.13) e é o
+que faz a pessoa decidir. Some o que a Movepark não cumpre: seletor de tarifa, cupom, extras,
+passageiros, PCD e o selo de cancelamento. O botão vira link de saída e só destrava com as datas
+escolhidas, para o link nunca sair pela metade.
+
+A primeira versão desta entrega trocava o card inteiro por um card de saída enxuto, e isso
+estava errado: jogava fora o seletor de datas e o preço, que o mapa manda manter.
 
 **A trava é de render, não de leitura de código.** O que vincula a Movepark é o que o cliente
 vê, então o teste monta a página inteira nos dois modos e afirma que nenhuma promessa sobrevive
