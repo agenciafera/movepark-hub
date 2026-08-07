@@ -80,9 +80,9 @@ export function Step3Addons({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-56 w-full rounded-lg" />
+      <div className="space-y-3">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <Skeleton key={i} className="h-28 w-full rounded-lg" />
         ))}
       </div>
     );
@@ -113,7 +113,7 @@ export function Step3Addons({
         pagar.
       </p>
 
-      <ul className="mt-6 grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
+      <ul className="mt-6 space-y-3">
         {addons?.map((a) => (
           <AddonCard
             key={a.id}
@@ -165,13 +165,13 @@ function AddonCard({
   return (
     <li
       className={cn(
-        "flex flex-col rounded-lg border p-5 transition-colors",
+        "flex flex-col gap-4 rounded-lg border p-5 transition-colors tablet:flex-row tablet:items-start",
         checked ? "border-mp-primary bg-surface-pale" : "border-hairline bg-canvas",
       )}
     >
       <span
         className={cn(
-          "flex h-10 w-10 items-center justify-center rounded-md",
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-md",
           checked ? "bg-mp-primary text-white" : "bg-mp-pale text-mp-indigo",
         )}
         aria-hidden
@@ -179,14 +179,16 @@ function AddonCard({
         <Sparkle className="h-5 w-5" />
       </span>
 
-      <h3 className="mt-4 text-title-md text-ink">{addon.name}</h3>
-      {addon.description && (
-        <p className="mt-2 text-body-sm leading-relaxed text-muted">{addon.description}</p>
-      )}
+      <div className="min-w-0 flex-1">
+        <h3 className="text-title-md text-ink">{addon.name}</h3>
+        {addon.description && (
+          <p className="mt-1 text-body-sm leading-relaxed text-muted">{addon.description}</p>
+        )}
+      </div>
 
-      {/* `mt-auto` alinha preço e botão na base, pra descrições de tamanhos
-          diferentes não deixarem os cards desencontrados. */}
-      <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-5">
+      {/* No mobile o preço e o botão dividem uma linha; a partir do tablet sobem
+          pra coluna da direita, com o preço em cima. */}
+      <div className="flex shrink-0 items-center justify-between gap-3 tablet:flex-col tablet:items-end">
         <span className="text-title-md tabular-nums text-ink">{formatBRL(addon.price)}</span>
         <Button
           type="button"
