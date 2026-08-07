@@ -97,6 +97,39 @@ nosso e não trafega no link do parceiro.
 (`/virapark/vaga-coberta` carrega). Não precisa de campo de slug público; `/vaga-avulsa` é
 alias antigo.
 
+## Contexto da busca viaja no link (E0.15)
+
+Sem as datas, quem clica recomeça a seleção no site do parceiro, e a desistência acontece bem
+no ponto de saída. O white-label aceita as datas na query e **mantém a seleção**:
+
+```
+?startDateTime=2026-08-12T16%3A00%3A00.000Z&endDateTime=2026-08-21T16%3A00%3A00.000Z
+```
+
+ISO 8601 em **UTC**, com milissegundos, e os dois-pontos percent-encoded.
+
+⚠️ **Converta pelo fuso da unidade, não pelo do navegador.** `location.timezone` existe na
+tabela justamente para isso. Um check-in de 13:00 em São Paulo é `16:00:00.000Z`; se a conta
+sair pelo relógio de quem navega, o cliente que abre o link de outro fuso chega ao parceiro com
+outro horário, e a divergência aparece só no balcão.
+
+**Quem monta o quê.** A URL base, com a marcação de afiliado, continua vindo pronta do servidor
+(`external_checkout_url`). O front **só acrescenta** `startDateTime` e `endDateTime` no fim, num
+helper único e testado. Acrescentar no fim é seguro porque não toca nos parâmetros que já vieram;
+**reescrever ou remontar a query no cliente é proibido**, pelo mesmo motivo do UTM: é assim que a
+marcação de afiliado some sem ninguém notar. O teste do helper afirma que os três `utm_*`
+sobrevivem intactos depois do append.
+
+## Prazo de validade da exceção
+
+**Data de revisão: 20/01/2027**, quando a negociação com os estacionamentos acontece.
+
+A exceção é nominal e tem prazo por desenho: sem data, ela vira o caminho padrão por inércia e o
+checkout do Hub nunca é exercitado em produção, que é o risco levantado quando o modelo foi
+proposto. A data serve para **forçar a revisão**, não para desligar a venda sozinha: expirar em
+silêncio derrubaria uma unidade viva sem ninguém olhando. O comportamento no vencimento é avisar
+e destacar no Manager, mantendo a decisão de reverter com gente.
+
 ## Permissão
 
 Super admin é `user_role = 'hub_admin'`. Parceiro é `company_operator` (com `company_role`
