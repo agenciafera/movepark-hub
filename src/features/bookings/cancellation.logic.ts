@@ -109,11 +109,19 @@ export function cancellationPolicyLines(
   ];
 }
 
-/** Rótulo com o prazo concreto: "Cancele grátis até 14/06/2026 22:00". Respeita a janela da Tarifa. */
+/**
+ * Rótulo com o prazo concreto: "Cancele grátis até 14/06/2026 22:00". Respeita a
+ * janela da Tarifa.
+ *
+ * `formatar` existe pro resumo do checkout, que mostra as datas em formato curto
+ * e ficaria com duas grafias no mesmo card. Quem não passa nada continua com a
+ * data cheia, que é o certo num diálogo de cancelamento.
+ */
 export function freeCancelDeadlineLabel(
   checkInAt: string | Date,
   fareCancelUntil?: string | Date | null,
+  formatar: (d: Date) => string = formatDateTime,
 ): string {
   const { deadline } = cancellationStatus(checkInAt, new Date(0), fareCancelUntil);
-  return `Cancele grátis até ${formatDateTime(deadline)}`;
+  return `Cancele grátis até ${formatar(deadline)}`;
 }
