@@ -71,13 +71,61 @@ problema volta calado.
 ## Declaração de responsabilidade
 
 Não é asterisco nem rodapé. É informação positiva no ponto de decisão, perto do CTA.
-**Texto pendente de revisão jurídica (Q-017).** Rascunho em avaliação:
 
-> **A reserva desta unidade é feita e administrada por [Nome].** As condições de
-> cancelamento, alteração e o atendimento durante a estadia são definidos por ela.
+**Texto escolhido em 05/08/2026, ainda para validação jurídica (Q-017):**
+
+> A reserva desta unidade é feita e administrada pelo [Nome], no site dele. Cancelamento,
+> alteração e atendimento durante a estadia seguem as condições do [Nome]. As garantias da
+> Movepark não se aplicam a esta reserva.
+
+Foi preferida à versão curta, que parava em "as condições são definidas por ele", porque
+**nomear o que deixa de valer é o que o art. 54 §4 pede**: cláusula restritiva exige destaque.
+Deixar o cliente inferir sozinho que a garantia lida na home não vale aqui é a omissão que o
+art. 37 §3 trata como enganosa. Custa mais comercialmente e é a escolha certa.
 
 Isso é diferente de "você está saindo do Movepark": não cria fricção nem tela intermediária.
 A regra é **silêncio na transição, clareza na política**.
+
+## A promessa também mora fora da single
+
+Declaração na unidade **não cura** promessa feita antes dela. Quem chega pela home já leu, em
+nome da Movepark: "Preço garantido, cancelamento grátis e voucher na hora" (banner de CTA),
+"Preço garantido até a saída" (faixa de confiança), "Vaga garantida" (como funciona), além de
+`/como-funciona`, `/sobre` e a política inteira em `/cancelamento`. A oferta vincula o
+fornecedor como um todo (art. 30), não bloco a bloco.
+
+**Decidido em 05/08/2026:** as páginas de garantia ganham delimitação de escopo, não asterisco.
+Asterisco que contradiz bloco visível é o que o ADR-009 proíbe. Texto:
+
+> Estas condições valem para reservas fechadas na Movepark. Algumas unidades fecham a reserva
+> no site do próprio estacionamento, e nelas valem as condições do parceiro, informadas na
+> página da unidade.
+
+Isso é trabalho de copy de plataforma, **fora do escopo da E0.15**, e precisa de card próprio.
+
+⚠️ Achado no caminho, independente de unidade externa: `/como-funciona` afirma que cancelamento
+com **48h** tem reembolso integral, e `/cancelamento` afirma **24h** para Básica e Flex. Uma das
+duas está errada hoje, para qualquer unidade.
+
+## Card de busca
+
+Unidade externa aparece nos resultados como qualquer outra. **Decidido: testar um marcador
+curto** ("Reserva no site do parceiro"), com a ressalva de que o card já é denso e poluí-lo
+custa conversão em todas as unidades, não só nas externas. Se o teste mostrar ruído, o marcador
+sai e a declaração da single passa a ser o único ponto de informação.
+
+## Dois pontos que a navegação da single resolveu (05/08/2026)
+
+**Avaliações somem, mesmo as históricas.** O Virapark exibe "5,0 · 1 avaliação", de uma estadia
+de julho. Ela é real, mas veio de reserva feita durante os testes do Hub. Quando a single passar
+a se comportar como unidade externa, o bloco não renderiza: os componentes de avaliação são de
+unidade própria. Não é caso de exceção por histórico.
+
+**O selo "Verificado" é constante, não configuração.** Não existe campo no Manager: em
+`src/routes/listing.tsx` ele é `badge: true` fixo, e o `OperatorCard` também renderiza "Operador
+verificado" sempre. Como todo parceiro é verificado pela Movepark, hoje é verdade. Pelo critério
+do ADR-009 ele **fica**, porque endossa o parceiro e não promete condição de transação. Se um dia
+existir parceiro não verificado, isso vira campo antes de virar problema.
 
 ## Base legal (não é parecer; levar ao jurídico)
 

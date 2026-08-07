@@ -74,7 +74,7 @@ export default function ListingPage() {
   });
 
   // TLDR-first (E3.2): resumo extraível gerado dos dados da unidade. Alimenta apenas a meta
-  // description e o JSON-LD (description) — extração por IA, sem bloco visível na página.
+  // description e o JSON-LD (description): extração por IA, sem bloco visível na página.
   // Reusa a query de terminais do bloco "Distância aos terminais" (cache, sem fetch extra).
   const { data: terminals } = useLocationTerminals(listing?.location.id);
   const tldr = listing
@@ -338,7 +338,7 @@ export default function ListingPage() {
             </>
           )}
 
-          {/* O que essa vaga oferece — cards visuais */}
+          {/* O que essa vaga oferece: cards visuais */}
           {hasAmenities && (
             <>
               <section className="space-y-5">
@@ -366,7 +366,7 @@ export default function ListingPage() {
             <TerminalDistances locationId={listing.location.id} />
           </section>
 
-          {/* Avaliações — sempre visível; ReviewsBlock mostra empty state quando count = 0 */}
+          {/* Avaliações: sempre visível; ReviewsBlock mostra empty state quando count = 0 */}
           <Separator />
           <ListingReviewsSection
             locationId={listing.location.id}
@@ -381,7 +381,7 @@ export default function ListingPage() {
 
           <Separator />
 
-          {/* O que você deve saber — 3 colunas: cancelamento + garantia + estacionamento */}
+          {/* O que você deve saber, em 3 colunas: cancelamento + garantia + estacionamento */}
           <ListingKnowSection listing={listing} />
         </div>
 
@@ -414,7 +414,7 @@ export default function ListingPage() {
         </>
       )}
 
-      {/* Sticky CTA mobile — espelha o total real da reserva (referência Airbnb) */}
+      {/* Sticky CTA mobile: espelha o total real da reserva (referência Airbnb) */}
       {showStickyBar && (
         <ListingStickyBar
           summary={summary}
@@ -523,7 +523,7 @@ function ListingKnowSection({ listing }: { listing: ListingDetail }) {
       title: "Garantia Movepark",
       lines: [
         GUARANTEE_PROMISE,
-        "Se faltar vaga na chegada, realocamos e cobrimos a diferença — ou devolvemos 100% + crédito.",
+        "Se faltar vaga na chegada, realocamos e cobrimos a diferença, ou devolvemos 100% + crédito.",
       ],
       extra: null,
     },
