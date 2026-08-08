@@ -2842,6 +2842,50 @@ export type Database = {
           },
         ]
       }
+      pricing_mirror_run: {
+        Row: {
+          after: Json | null
+          anomalies: Json
+          before: Json | null
+          calls: number
+          created_at: string
+          detail: Json
+          id: string
+          kind: string
+          location_parking_type_id: string
+        }
+        Insert: {
+          after?: Json | null
+          anomalies?: Json
+          before?: Json | null
+          calls?: number
+          created_at?: string
+          detail?: Json
+          id?: string
+          kind: string
+          location_parking_type_id: string
+        }
+        Update: {
+          after?: Json | null
+          anomalies?: Json
+          before?: Json | null
+          calls?: number
+          created_at?: string
+          detail?: Json
+          id?: string
+          kind?: string
+          location_parking_type_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_mirror_run_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "location_parking_type"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pricing_rule: {
         Row: {
           advance_booking_minutes: number | null
@@ -2859,6 +2903,10 @@ export type Database = {
           incremental_one_day_price: number | null
           incremental_two_days_price: number | null
           location_parking_type_id: string
+          mirror_sampled_at: string | null
+          mirror_source: string | null
+          mirror_status: string
+          mirror_verified_at: string | null
           monthly_daily_rate: number | null
           monthly_fixed_price: number | null
           old_price_multiplier: number | null
@@ -2885,6 +2933,10 @@ export type Database = {
           incremental_one_day_price?: number | null
           incremental_two_days_price?: number | null
           location_parking_type_id: string
+          mirror_sampled_at?: string | null
+          mirror_source?: string | null
+          mirror_status?: string
+          mirror_verified_at?: string | null
           monthly_daily_rate?: number | null
           monthly_fixed_price?: number | null
           old_price_multiplier?: number | null
@@ -2911,6 +2963,10 @@ export type Database = {
           incremental_one_day_price?: number | null
           incremental_two_days_price?: number | null
           location_parking_type_id?: string
+          mirror_sampled_at?: string | null
+          mirror_source?: string | null
+          mirror_status?: string
+          mirror_verified_at?: string | null
           monthly_daily_rate?: number | null
           monthly_fixed_price?: number | null
           old_price_multiplier?: number | null
@@ -4236,6 +4292,7 @@ export type Database = {
       cron_expire_pending_bookings: { Args: never; Returns: number }
       cron_prune_api_request_log: { Args: never; Returns: number }
       cron_prune_checkout_handoff: { Args: never; Returns: number }
+      cron_prune_integration_logs: { Args: never; Returns: Json }
       current_company_ids: { Args: never; Returns: string[] }
       current_member_scopes: {
         Args: { p_company_id: string }
@@ -4722,6 +4779,7 @@ export type Database = {
           parking_type_code: string
         }[]
       }
+      pricing_rule_fingerprint: { Args: { p_rule_id: string }; Returns: Json }
       publish_legal_document: {
         Args: { p_content: string; p_slug: string }
         Returns: Json
@@ -4868,11 +4926,26 @@ export type Database = {
           wl_tenant_key: string
         }[]
       }
+      wl_mirror_apply_pricing: {
+        Args: {
+          p_anomalies?: Json
+          p_calls?: number
+          p_location_parking_type_id: string
+          p_rule: Json
+          p_tiers: Json
+        }
+        Returns: Json
+      }
+      wl_mirror_flag_divergence: {
+        Args: { p_detail: Json; p_location_parking_type_id: string }
+        Returns: undefined
+      }
       wl_public_host: { Args: { p_domain: string }; Returns: string }
       wl_reconcile_apply: {
         Args: { p_lpt_id: string; p_rows: Json }
         Returns: number
       }
+      wl_slug_safe: { Args: { p_slug: string }; Returns: boolean }
     }
     Enums: {
       booking_item_type: "parking" | "add_on"
