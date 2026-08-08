@@ -48,7 +48,7 @@ const FAQ_FUNC = [
   },
   {
     q: "Posso cancelar se mudar de planos?",
-    a: "Sim. Cancelamentos com 48h de antecedência têm reembolso integral. Veja nossa Política de Cancelamento para detalhes.",
+    a: "Sim. Dentro do prazo da sua Tarifa o reembolso é integral: 24 horas antes do check-in na Básica e na Flex, ou até 1 minuto antes na Superflex. Em unidades que fecham a reserva no site do parceiro, valem as condições dele. Veja a Política de Cancelamento.",
   },
 ];
 

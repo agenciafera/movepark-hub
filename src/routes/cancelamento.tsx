@@ -154,6 +154,19 @@ export default function CancelamentoPage() {
           </div>
         </section>
 
+        {/* Escopo da política (E0.15 · ADR-009). Não é asterisco: é informação positiva, no
+            corpo da página, sobre onde estas condições valem. Asterisco que desmente bloco
+            visível é o que a regra proíbe. */}
+        <section className="mb-14 rounded-md border border-hairline bg-canvas p-6">
+          <h2 className="text-title-sm text-ink">Unidades com reserva no site do parceiro</h2>
+          <p className="mt-2 text-body-sm text-muted">
+            Estas condições valem para reservas fechadas na Movepark. Algumas unidades fecham a
+            reserva no site do próprio estacionamento, e nelas o cancelamento, a alteração e o
+            atendimento seguem as condições do parceiro. A página da unidade avisa isso antes de
+            você reservar.
+          </p>
+        </section>
+
         {/* Suporte */}
         <section className="rounded-md bg-surface-soft px-6 py-6">
           <p className="text-body-sm text-muted">
