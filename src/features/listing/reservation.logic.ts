@@ -77,3 +77,19 @@ export function bookingTotal(
 ): number {
   return Math.max(0, parkingPrice - discount) + addOnsSum + farePrice;
 }
+
+/**
+ * Valor POR DIÁRIA a partir do total da estadia.
+ *
+ * O card mostra o número grande com o rótulo "/ diária", e o motor de preço devolve o TOTAL.
+ * Exibir o total com esse rótulo afirmava que cada uma das 9 diárias custava R$ 224,10, quando
+ * esse era o valor da estadia inteira. Valia para toda unidade com mais de uma diária.
+ *
+ * Sem datas escolhidas não há o que dividir, e uma diária só já é o próprio valor.
+ *
+ * A divisão pode não fechar de volta ao centavo (100 em 3 diárias dá 33,33 e volta 99,99). É
+ * esperado num valor por diária, e o total continua vindo do motor, não desta conta.
+ */
+export function perDayPrice(total: number, days: number): number {
+  return days > 1 ? total / days : total;
+}

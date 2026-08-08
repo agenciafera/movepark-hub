@@ -5,6 +5,7 @@ import {
   mergeUnitFares,
   selectedAddOns,
   type AddOnOption,
+  perDayPrice,
 } from "./reservation.logic";
 
 const OPTS: AddOnOption[] = [
@@ -85,5 +86,27 @@ describe("mergeUnitFares", () => {
       fmt,
     );
     expect(out.map((f) => f.id)).toEqual(["basic", "flex"]);
+  });
+});
+
+describe("perDayPrice", () => {
+  it("divide o total pelas diárias, que é o que o rótulo promete", () => {
+    // Regressão do bug visto na single do Virapark: o card mostrava R$ 224,10 com o sufixo
+    // "/ diária", quando esse era o total de 9 diárias. Valia para toda unidade.
+    expect(perDayPrice(224.1, 9)).toBeCloseTo(24.9, 2);
+  });
+
+  it("uma diária é o próprio valor", () => {
+    expect(perDayPrice(40, 1)).toBe(40);
+  });
+
+  it("sem datas escolhidas não divide por zero", () => {
+    expect(perDayPrice(40, 0)).toBe(40);
+  });
+
+  it("divisão que não fecha ao centavo devolve a fração, sem arredondar por conta própria", () => {
+    // Quem arredonda é o formatBRL na hora de mostrar; a conta aqui fica exata para o
+    // arredondamento acontecer uma vez só.
+    expect(perDayPrice(100, 3)).toBeCloseTo(33.3333, 3);
   });
 });

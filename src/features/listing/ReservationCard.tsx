@@ -51,6 +51,7 @@ import {
   bookingTotal,
   mergeUnitFares,
   type ReservationSummary,
+  perDayPrice,
 } from "./reservation.logic";
 import { cn } from "@/lib/utils";
 
@@ -400,7 +401,7 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
           {sim.data?.old_price != null && sim.data.old_price > (sim.data.price ?? 0) && (
             <div className="flex items-center gap-2">
               <span className="text-body-sm text-muted line-through tabular-nums">
-                {formatBRL(sim.data.old_price)}
+                {formatBRL(perDayPrice(sim.data.old_price, days))}
               </span>
               {sim.data.discount && (
                 <span className="rounded-sm bg-badge-confirmed-bg px-2 py-1 text-caption font-bold text-badge-confirmed-fg">
@@ -414,7 +415,7 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
           ) : sim.data?.price != null ? (
             <div className="flex items-baseline gap-1.5">
               <span className="text-display-md text-ink tabular-nums">
-                {formatBRL(sim.data.price)}
+                {formatBRL(perDayPrice(sim.data.price, days))}
               </span>
               <span className="text-body-sm text-muted">/ diária</span>
             </div>
