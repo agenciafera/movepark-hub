@@ -235,3 +235,76 @@ export async function wlGetCatalog(
   );
   return { categories, products: nested.flat() };
 }
+
+// ─────────────────────── Cotação de preço do carrinho (E0.13) ───────────────────────
+//
+// Endpoint que o amostrador de preço usa para reconstruir a tabela de uma unidade externa.
+// Fica na API pública do storefront (`/api/v3`), não na `/backend`, então NÃO leva Bearer.
+//
+// Duas armadilhas confirmadas na mão em 08/08/2026, e as duas custam meia hora se não
+// estiverem escritas:
+//   1. `X-Tenant` é OBRIGATÓRIO. Sem ele o October devolve 500 com página de exceção em HTML,
+//      não JSON, e o erro não diz o que faltou.
+//   2. A data é `Y-m-d H:i:s`, com os dois-pontos percent-encoded. Qualquer outro formato
+//      (ISO com "T", ou só a data) devolve 400 nomeando o campo.
+
+export interface WlPriceQuote {
+  price: number;
+  oldPrice: number | null;
+  /** Como o WL decompôs a duração (ex.: `1_1_i0_h21_d8_m0_y0`). Útil no log da amostragem. */
+  offerCode: string | null;
+}
+
+/** `Y-m-d H:i:s` no fuso da unidade. O WL valida o formato e recusa qualquer outro. */
+export function formatWlDateTime(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return (
+    `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ` +
+    `${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}`
+  );
+}
+
+export function buildCalculationPriceUrl(
+  domain: string,
+  p: { categorySlug: string; productSlug: string; initial: Date; final: Date },
+): string {
+  const host = normalizeWlDomain(domain);
+  const qs = new URLSearchParams({
+    initial_date: formatWlDateTime(p.initial),
+    final_date: formatWlDateTime(p.final),
+    category_slug: p.categorySlug,
+    product_slug: p.productSlug,
+  });
+  return `https://${host}${WL_PUBLIC_PATH}/cart/calculation-price?${qs.toString()}`;
+}
+
+/** Extrai preço, balcão e código da oferta da resposta do carrinho. */
+export function parseCalculationPrice(json: unknown): WlPriceQuote {
+  // deno-lint-ignore no-explicit-any
+  const j = json as any;
+  // `total_price` mora DENTRO de `data.cart`, ao lado de `positions` e `discounts`. O fallback
+  // em `data.total_price` fica porque é onde a leitura ingênua procura primeiro.
+  const total = j?.data?.cart?.total_price ?? j?.data?.total_price;
+  if (total?.price == null) {
+    throw new Error(`resposta sem total_price.price: ${JSON.stringify(json).slice(0, 200)}`);
+  }
+  return {
+    price: Number(total.price),
+    oldPrice: total.old_price == null ? null : Number(total.old_price),
+    offerCode: j?.data?.cart?.positions?.items?.[0]?.offer?.code ?? null,
+  };
+}
+
+export async function wlGetCalculationPrice(
+  c: WlConfig,
+  p: { categorySlug: string; productSlug: string; initial: Date; final: Date },
+): Promise<WlPriceQuote> {
+  const res = await fetch(buildCalculationPriceUrl(c.wl_domain!, p), {
+    headers: { Accept: "application/json", "X-Tenant": c.wl_tenant_key! },
+  });
+  const body = await res.text();
+  if (!res.ok) {
+    throw new Error(`WL calculation-price ${res.status}: ${body.slice(0, 300)}`);
+  }
+  return parseCalculationPrice(JSON.parse(body));
+}
