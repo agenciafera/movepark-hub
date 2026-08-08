@@ -417,6 +417,9 @@ verify_jwt = false
 [functions.wl-reconcile]
 verify_jwt = false
 
+[functions.wl-price-mirror]
+verify_jwt = false
+
 [functions.review-request]
 verify_jwt = false
 

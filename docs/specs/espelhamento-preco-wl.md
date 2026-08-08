@@ -1,6 +1,8 @@
 # Espelhamento de preço do white-label (E0.13)
 
 > **Épico:** E0.13 · **Fase:** 0 · **D vinculado:** D-008
+> **Status:** implementado em 08/08/2026. Migrations `*_pricing_mirror.sql` e
+> `*_pricing_mirror_cron.sql`, Edge `wl-price-mirror`, cron diário às 07:00 UTC.
 
 Reconstrói no Hub a tabela de preço de uma unidade externa **amostrando** a API de cálculo do
 parceiro. Sem consulta em tempo real.
@@ -87,3 +89,70 @@ barato**. Pior no fracionado: 6 dias + 45 min = R$ 197,40 e 6 dias + 90 min = R$
 seja, atrasar 45 minutos na saída **reduz** a conta. Existe na tabela do parceiro, não é bug
 do Hub. O amostrador detecta isso sozinho, o que torna o job também auditoria de tabela.
 
+
+## Como ficou (08/08/2026)
+
+| Peça | Onde |
+|---|---|
+| Amostrador (lógica pura, rede injetada) | `supabase/functions/_shared/wl/price-sampler.ts` |
+| Cotação no parceiro | `wlGetCalculationPrice` em `_shared/wl/client.ts` |
+| Job | Edge `wl-price-mirror`, cron diário 07:00 UTC |
+| Carimbo e log | `pricing_rule.mirror_*` + `pricing_mirror_run` |
+| Testes | deno 16 (amostrador + lógica do job), pgTAP 20 |
+
+### A chamada, com as três armadilhas
+
+```
+GET https://{wl_domain}/api/v3/cart/calculation-price
+  ?initial_date=2026-08-19%2021%3A00%3A00&final_date=...&category_slug=...&product_slug=...
+Header: X-Tenant: {wl_tenant_key}
+```
+
+1. `X-Tenant` é **obrigatório**. Sem ele o October devolve 500 com página de exceção em HTML.
+2. Data em `Y-m-d H:i:s`. ISO com `T` ou só a data devolvem 400.
+3. `total_price` mora em **`data.cart.total_price`**, não em `data.total_price`.
+
+Não usa Bearer: é o storefront público, não a `/api/v3/backend`.
+
+### O log grava evento, não batimento
+
+Passada que acha o mesmo preço **não gera linha**, só atualiza `mirror_verified_at`. O
+`wl_reconcile_log` deste projeto tem 30.834 linhas contra 225 reservas por gravar toda passada,
+e essa era a armadilha a evitar. Com 50 vagas e verificação diária, são centenas de linhas por
+ano em vez de 18 mil.
+
+A comparação é por texto com escala fixa: comparar jsonb cru faria `40` e `40.00` contarem como
+mudança e o log encheria do mesmo jeito.
+
+**O mesmo teste que economiza linha detecta a mudança de tabela do parceiro.** A otimização é o
+gatilho do alarme, não duas coisas.
+
+Retenção com régua por natureza da linha: `change` é histórico de preço e não se apaga;
+divergência e erro caem em 90 dias, seguindo o precedente do `api_request_log`. A mesma limpeza
+leva o `wl_reconcile_log`, que nunca teve retenção.
+
+### Primeira execução em produção
+
+Virapark, 08/08/2026: 42 chamadas, `changed: 1`, `divergent: 0`.
+
+Tabela reconstruída: 1 dia R$ 40,00 · 2 a 6 dias **R$ 28,90** · 7+ R$ 24,90 · balcão R$ 40,00/dia
+· tolerância 60 min.
+
+**O parceiro mudou o preço em cinco dias.** A spec registrou 2 a 6 dias a R$ 32,90 em 03/08, e a
+medição de 08/08 achou R$ 28,90. É a justificativa do job se provando: import único envelhece em
+menos de uma semana.
+
+**A anomalia D-008 sumiu junto.** Com 32,90, seis dias custavam R$ 197,40 e sete custavam
+R$ 174,30, e ficar mais tempo saía mais barato. Com 28,90 são R$ 173,40 contra R$ 174,30, e a
+curva voltou a subir. O detector continua no código, coberto por teste, porque a anomalia pode
+voltar na próxima virada.
+
+Efeito na vitrine: a single do Virapark saiu de R$ 161,10 (tabela velha do Hub) para
+**R$ 224,10**, que é o que o parceiro cobra. Os R$ 63 de divergência fecharam.
+
+### Limite conhecido
+
+A amostragem usa **uma âncora só** (30 dias à frente, meio-dia), então assume que o parceiro não
+pratica preço sazonal. Se passar a praticar, quem descobre é a verificação diferencial: os
+motores divergem nas datas fora da âncora, a regra cai para `divergent` e a vitrine para de
+mostrar preço fechado.
