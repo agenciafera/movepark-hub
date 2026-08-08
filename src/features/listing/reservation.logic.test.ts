@@ -6,6 +6,7 @@ import {
   selectedAddOns,
   type AddOnOption,
   perDayPrice,
+  counterSavings,
 } from "./reservation.logic";
 
 const OPTS: AddOnOption[] = [
@@ -108,5 +109,29 @@ describe("perDayPrice", () => {
     // Quem arredonda é o formatBRL na hora de mostrar; a conta aqui fica exata para o
     // arredondamento acontecer uma vez só.
     expect(perDayPrice(100, 3)).toBeCloseTo(33.3333, 3);
+  });
+});
+
+describe("counterSavings", () => {
+  it("calcula a economia contra o balcão", () => {
+    // Virapark, 9 diárias: balcão 9 x 40 = 360, online 224,10.
+    expect(counterSavings(360, 224.1)).toBeCloseTo(135.9, 2);
+  });
+
+  it("sem balcão não inventa economia", () => {
+    // 50 das 58 regras têm old_price_strategy = 'none'. Riscado sem lastro é âncora falsa.
+    expect(counterSavings(null, 224.1)).toBeNull();
+    expect(counterSavings(undefined, 224.1)).toBeNull();
+  });
+
+  it("balcão igual ou menor não vira economia", () => {
+    expect(counterSavings(224.1, 224.1)).toBeNull();
+    expect(counterSavings(200, 224.1)).toBeNull();
+  });
+
+  it("compara com o que a pessoa paga, tarifa incluída", () => {
+    // Tarifa Flex de 12,90 encolhe a economia anunciada, e tem que encolher mesmo: o número
+    // precisa sobreviver ao total da tela.
+    expect(counterSavings(360, 224.1 + 12.9)).toBeCloseTo(123, 2);
   });
 });

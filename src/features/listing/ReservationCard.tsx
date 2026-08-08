@@ -52,6 +52,7 @@ import {
   mergeUnitFares,
   type ReservationSummary,
   perDayPrice,
+  counterSavings,
 } from "./reservation.logic";
 import { cn } from "@/lib/utils";
 
@@ -317,6 +318,7 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
     (caps.fares ? FARE_OPTIONS[1] : FARE_OPTIONS[0]);
   const fareSurcharge = canReserve ? fareOption.surcharge : 0;
   const displayTotal = parkingBase + fareSurcharge;
+  const economia = counterSavings(sim.data?.old_price, displayTotal);
 
   const hasFareOrAddOns = canReserve && (fareSurcharge > 0 || !!applied);
 
@@ -693,6 +695,13 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
                 : formatBRL(listing.company_parking_type.base_price)}
             </span>
           </div>
+          {/* Economia contra o balcão. Fica ao lado do Total porque as duas grandezas são da
+              estadia inteira; lá em cima a comparação é por diária (riscado x preço). */}
+          {canReserve && economia != null && (
+            <p className="mt-1.5 text-body-sm font-semibold text-badge-confirmed-fg">
+              {formatBRL(economia)} mais barato que o balcão
+            </p>
+          )}
         </div>
 
         {/* CTA. Na unidade externa o botão vira link de saída, com as datas escolhidas AQUI

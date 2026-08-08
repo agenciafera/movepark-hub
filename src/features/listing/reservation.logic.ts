@@ -93,3 +93,20 @@ export function bookingTotal(
 export function perDayPrice(total: number, days: number): number {
   return days > 1 ? total / days : total;
 }
+
+/**
+ * Quanto a reserva sai abaixo do preço de balcão, ou null quando não há o que comparar.
+ *
+ * Compara o balcão com o que a pessoa vai PAGAR (total com tarifa e desconto), não com o preço
+ * da vaga sozinho: economia anunciada tem que sobreviver ao valor final da tela.
+ *
+ * Devolve null quando não há balcão ou quando ele não é maior. Preço riscado sem lastro é
+ * âncora falsa, e é isso que o CDC art. 37 trata como enganoso. O balcão da unidade externa vem
+ * medido da API do parceiro e reamostrado todo dia (E0.13); o da unidade própria depende de
+ * alguém ter preenchido.
+ */
+export function counterSavings(oldPrice: number | null | undefined, total: number): number | null {
+  if (oldPrice == null || !Number.isFinite(oldPrice)) return null;
+  const diff = oldPrice - total;
+  return diff > 0 ? diff : null;
+}
