@@ -127,8 +127,22 @@ sobrevivem intactos depois do append.
 A exceção é nominal e tem prazo por desenho: sem data, ela vira o caminho padrão por inércia e o
 checkout do Hub nunca é exercitado em produção, que é o risco levantado quando o modelo foi
 proposto. A data serve para **forçar a revisão**, não para desligar a venda sozinha: expirar em
-silêncio derrubaria uma unidade viva sem ninguém olhando. O comportamento no vencimento é avisar
-e destacar no Manager, mantendo a decisão de reverter com gente.
+silêncio derrubaria uma unidade viva sem ninguém olhando.
+
+**O prazo mora fora do código (decidido em 09/08/2026).** Não existe `checkout_mode_expires_at`
+nem aviso de vencimento no Manager, e não vamos construir. A data vive num lembrete do ClickUp
+para 20/01/2027, com a consulta das unidades ainda em `external` e o comando de reversão dentro.
+
+O motivo é proporção: hoje há **uma** unidade externa. Coluna, aviso na tela e teste para vigiar
+uma linha é mais máquina do que problema, e código que ninguém exercita apodrece. Se o conjunto
+de externas crescer a ponto de a revisão manual não dar conta, aí o aviso na tela passa a valer o
+esforço, porque deixa de depender da caixa de lembretes de uma pessoa.
+
+Reverter continua sendo uma linha:
+
+```sql
+update location set checkout_mode = 'hub' where id = '<uuid>';
+```
 
 ## Permissão
 
