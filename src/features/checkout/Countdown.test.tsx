@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen } from "@testing-library/react";
 import { Countdown } from "./Countdown";
+import { KEEP_ALIVE_THRESHOLD_SEC, keepAliveState } from "./keepAlive.logic";
 
 const AGORA = new Date("2026-08-10T12:00:00Z");
 
@@ -46,8 +47,25 @@ describe("Countdown", () => {
     expect(screen.queryByText("Vaga reservada")).not.toBeInTheDocument();
   });
 
-  it("no limite dos 5 minutos ainda está no tom calmo", () => {
-    render(<Countdown expiresAt={em(5 * 60)} />);
+  /**
+   * O limiar é o mesmo do `keepAliveState`, que mostra o modal com `secsLeft <= 300`.
+   * Se a barra virasse em `< 300`, existiria um segundo com o modal pedindo atenção
+   * e a barra ainda calma.
+   */
+  it("vira no mesmo segundo em que o modal 'Ainda está aí?' aparece", () => {
+    render(<Countdown expiresAt={em(KEEP_ALIVE_THRESHOLD_SEC)} />);
+    expect(screen.getByText("Últimos minutos")).toBeInTheDocument();
+
+    expect(keepAliveState({
+      status: "pending",
+      expiresAt: em(KEEP_ALIVE_THRESHOLD_SEC),
+      createdAt: AGORA.toISOString(),
+      nowMs: AGORA.getTime(),
+    })).toBe("warning");
+  });
+
+  it("um segundo antes do limiar ainda está no tom calmo", () => {
+    render(<Countdown expiresAt={em(KEEP_ALIVE_THRESHOLD_SEC + 1)} />);
     expect(screen.getByText("Vaga reservada")).toBeInTheDocument();
   });
 

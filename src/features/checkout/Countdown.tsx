@@ -1,14 +1,19 @@
 import * as React from "react";
 import { Alarm, Warning } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
+import { KEEP_ALIVE_THRESHOLD_SEC } from "./keepAlive.logic";
 
 type Props = {
   expiresAt: string | null;
   onExpire?: () => void;
 };
 
-/** Minutos restantes a partir dos quais a barra troca de tom. */
-const URGENTE_EM_MIN = 5;
+/**
+ * A barra esquenta no mesmo instante em que o modal "Ainda está aí?" aparece, por
+ * isso as duas leem o mesmo limiar. Com uma constante em cada lado, um ajuste num
+ * deixaria a tela avisando de um jeito e o modal de outro.
+ */
+const URGENTE_EM_MIN = KEEP_ALIVE_THRESHOLD_SEC / 60;
 
 function diffSeconds(target: Date): number {
   return Math.max(0, Math.floor((target.getTime() - Date.now()) / 1000));
@@ -52,7 +57,9 @@ export function Countdown({ expiresAt, onExpire }: Props) {
   if (!target) return null;
 
   const expired = secs === 0;
-  const urgente = !expired && secs < URGENTE_EM_MIN * 60;
+  // `<=` e não `<`: é a mesma comparação do `keepAliveState`, pra barra e modal
+  // virarem no mesmo segundo.
+  const urgente = !expired && secs <= KEEP_ALIVE_THRESHOLD_SEC;
 
   /**
    * O que o leitor de tela ouve. O número não entra aqui: `role="timer"` nasce com

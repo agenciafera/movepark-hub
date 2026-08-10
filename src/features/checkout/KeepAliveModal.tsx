@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Hourglass, ShieldCheck, Timer } from "@phosphor-icons/react";
+import { Alarm } from "@phosphor-icons/react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_BOOKING_HOLD_MAX_MINUTES } from "@/lib/bookingHold";
@@ -79,7 +79,7 @@ export function KeepAliveModal({ booking }: Props) {
           <>
             <DialogHeader>
               <span className="mb-2 inline-flex h-11 w-11 items-center justify-center rounded-full bg-badge-pending-bg text-warning">
-                <Hourglass className="h-5 w-5" />
+                <Alarm className="h-5 w-5" aria-hidden />
               </span>
               <DialogTitle>Tempo de reserva esgotado</DialogTitle>
             </DialogHeader>
@@ -93,16 +93,20 @@ export function KeepAliveModal({ booking }: Props) {
           </>
         ) : (
           <>
+            {/* O modal abre no mesmo segundo em que a barra do topo fica vermelha,
+                então herda a linguagem dela: despertador e o número em destaque
+                sobre o gradiente. Com o escudo azul de antes, a tela dizia "corre"
+                e o modal dizia "está tudo bem", no mesmo instante. */}
             <DialogHeader>
-              <span className="mb-2 inline-flex h-11 w-11 items-center justify-center rounded-full bg-mp-pale text-mp-indigo">
-                <ShieldCheck className="h-5 w-5" />
+              <span className="mb-2 inline-flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-mp-red to-mp-red-deep text-white">
+                <Alarm className="h-5 w-5" aria-hidden />
               </span>
               <DialogTitle>Ainda está aí?</DialogTitle>
             </DialogHeader>
             <p className="text-body-md text-ink">Sua vaga está reservada por mais:</p>
-            <div className="flex items-center justify-center gap-2 rounded-md bg-surface-soft py-3">
-              <Timer className="h-5 w-5 text-mp-indigo" aria-hidden="true" />
-              <span className="text-display-sm tabular-nums text-ink">{mmss}</span>
+            <div className="flex items-center justify-center gap-3 rounded-md bg-gradient-to-r from-mp-red to-mp-red-deep py-3 text-white">
+              <Alarm className="h-6 w-6 shrink-0" aria-hidden />
+              <span className="text-display-md tabular-nums">{mmss}</span>
             </div>
             <p className="text-caption text-muted">
               Se o tempo acabar antes de você finalizar a reserva, a vaga é liberada para
