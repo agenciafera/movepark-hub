@@ -35,6 +35,8 @@ export type MyBookingListItem = {
    */
   savedFromCoupon?: number;
   savedFromPromo?: number;
+  /** Diferença entre o preço de balcão da unidade e o que foi cobrado online. */
+  savedFromCounter?: number;
 };
 
 const baseSelect = `
@@ -76,6 +78,19 @@ async function fetchMyBookings(profileId: string | undefined): Promise<MyBooking
     );
     const savedFromPromo = Number(r.price_breakdown?.auto_discount?.amount ?? 0) || 0;
 
+    // `old_price` tem dois significados no snapshot, e eles se excluem (ver
+    // "Old Price / Preço de Balcão" em docs/specs/pricing-engine.md):
+    //   - com desconto automático, a âncora é o preço ANTES do desconto, então
+    //     `old_price − subtotal` é o próprio `auto_discount` e somar os dois
+    //     contaria a mesma economia duas vezes;
+    //   - sem desconto, a âncora é a tabela de balcão da unidade, e a diferença
+    //     é o que a reserva online economizou contra o preço de chegar no portão.
+    // Por isso o balcão só conta quando não houve promoção.
+    const ancora = Number(r.price_breakdown?.old_price ?? 0) || 0;
+    const cobrado = Number(r.price_breakdown?.subtotal ?? 0) || 0;
+    const savedFromCounter =
+      savedFromPromo > 0 || ancora <= cobrado ? 0 : ancora - cobrado;
+
     return {
       id: r.id,
       code: r.code,
@@ -89,6 +104,7 @@ async function fetchMyBookings(profileId: string | undefined): Promise<MyBooking
       parking_type: parkingItem?.parking_type ?? null,
       savedFromCoupon,
       savedFromPromo,
+      savedFromCounter,
     } as MyBookingListItem;
   });
 }

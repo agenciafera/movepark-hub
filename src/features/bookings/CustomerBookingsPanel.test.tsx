@@ -129,6 +129,54 @@ describe("CustomerBookingsPanel", () => {
     expect(card.getByText("R$ 240,00")).toBeInTheDocument();
   });
 
+  it("conta a diferença contra o preço de balcão da unidade", async () => {
+    render([
+      booking({
+        total_amount: 19.9,
+        price_breakdown: { old_price: 23.88, subtotal: 19.9, auto_discount: null },
+      }),
+    ]);
+
+    const card = await cardDoAno();
+    expect(card.getByText("Mais barato que no local")).toBeInTheDocument();
+    // 23,88 de balcão contra 19,90 online. Duas vezes na tela: destaque e linha.
+    expect(card.getAllByText("R$ 3,98")).toHaveLength(2);
+  });
+
+  /**
+   * Com desconto automático, `old_price` é o preço ANTES do desconto, então
+   * `old_price − subtotal` é o próprio desconto. Contar as duas coisas dobraria a
+   * economia. Ver "Old Price / Preço de Balcão" em docs/specs/pricing-engine.md.
+   */
+  it("com promoção, a âncora não vira economia extra", async () => {
+    render([
+      booking({
+        total_amount: 80,
+        price_breakdown: {
+          old_price: 100,
+          subtotal: 80,
+          auto_discount: { amount: 20, rule_id: "r1", label: "Promoção" },
+        },
+      }),
+    ]);
+
+    const card = await cardDoAno();
+    expect(card.queryByText("Mais barato que no local")).not.toBeInTheDocument();
+    expect(card.getByText("Promoções")).toBeInTheDocument();
+    // 20 de promoção, e não 40. Aparece duas vezes: no destaque e na linha, já
+    // que a promoção é a única economia do ano.
+    expect(card.getAllByText("R$ 20,00")).toHaveLength(2);
+    expect(card.queryByText("R$ 40,00")).not.toBeInTheDocument();
+  });
+
+  /** Unidade sem tabela de balcão não estima nada: a linha simplesmente não existe. */
+  it("sem preço de balcão declarado, a linha não aparece", async () => {
+    render([booking({ total_amount: 150, price_breakdown: { subtotal: 150 } })]);
+
+    const card = await cardDoAno();
+    expect(card.queryByText("Mais barato que no local")).not.toBeInTheDocument();
+  });
+
   /** Sem nenhuma economia, o card segue mostrando o gasto e não anuncia zero. */
   it("sem economia, o destaque continua sendo o gasto", async () => {
     render([booking({ total_amount: 150 })]);

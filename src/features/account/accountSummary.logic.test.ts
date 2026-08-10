@@ -185,10 +185,22 @@ describe("yearToDate", () => {
       cashback: 0,
       fromCoupon: 0,
       fromPromo: 0,
+      fromCounter: 0,
       discounts: 0,
       saved: 0,
       topDestination: null,
     });
+  });
+
+  it("soma a economia contra o balcão junto com as outras fontes", () => {
+    const r = yearToDate(
+      [booking({ id: "1", total_amount: 100, savedFromCounter: 3.98 })],
+      [],
+      AGORA,
+    );
+    expect(r.fromCounter).toBeCloseTo(3.98, 2);
+    expect(r.discounts).toBeCloseTo(3.98, 2);
+    expect(r.saved).toBeCloseTo(3.98, 2);
   });
 
   it("soma a economia por fonte, e o total junta as três", () => {

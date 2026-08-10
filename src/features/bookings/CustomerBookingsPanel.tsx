@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { ArrowCounterClockwise, CalendarDot, CaretLeft, CaretRight, MapPin, Tag, Ticket, Wallet } from "@phosphor-icons/react";
+import { ArrowCounterClockwise, CalendarDot, CaretLeft, CaretRight, MapPin, Storefront, Tag, Ticket, Wallet } from "@phosphor-icons/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -151,6 +151,19 @@ export function CustomerBookingsPanel({ detailBase = "/bookings" }: { detailBase
               {resumo.nights === 1 ? "diária" : "diárias"}
             </p>
             <dl className="mt-4 space-y-3 border-t border-hairline pt-4">
+              {/* Só aparece nas unidades que declararam tabela de balcão. Onde o
+                  parceiro não declarou, a linha some em vez de estimar. */}
+              {resumo.fromCounter > 0 && (
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="flex items-center gap-2 text-body-sm text-muted">
+                    <Storefront className="h-4 w-4 shrink-0" aria-hidden />
+                    Mais barato que no local
+                  </dt>
+                  <dd className="text-body-sm font-semibold tabular-nums text-ink">
+                    {formatBRL(resumo.fromCounter)}
+                  </dd>
+                </div>
+              )}
               {resumo.fromCoupon > 0 && (
                 <div className="flex items-center justify-between gap-3">
                   <dt className="flex items-center gap-2 text-body-sm text-muted">
