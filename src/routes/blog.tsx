@@ -42,19 +42,44 @@ function PostCard({ post }: { post: BlogPostWithDestination }) {
       <Link to={`/blog/${post.slug}/`} className="block">
         {post.cover_image_url && (
           /*
-            `contain`, não `cover`. As capas do WordPress vão de 1:1 a 2,12:1, e
-            boa parte é banner com a manchete gravada dentro da imagem. Recortar
-            para caixa fixa cortava o texto em 104 das 131 imagens.
+            Capa sem corte e sem tarja.
+
+            As capas do WordPress vão de 1:1 a 2,12:1, e boa parte é banner com a
+            manchete gravada dentro da imagem. Recortar para a caixa cortava o
+            texto em 104 das 131 imagens; trocar para `contain` resolveu o corte e
+            deixou 31 delas com tarja chapada, e as 8 quadradas preenchendo 67%
+            da caixa.
+
+            A imagem entra duas vezes: uma desfocada preenchendo o fundo, e a de
+            verdade inteira por cima. O fundo pede as DUAS dimensões (24x16, a
+            mesma proporção da caixa): com só a largura, o render devolve uma tira
+            de 16x1067 e o borrão vira listra. Custa 392 bytes contra 34 KB da
+            imagem principal.
           */
-          <img
-            src={optimizedImageUrl(post.cover_image_url, { width: 800, resize: "contain" })}
-            srcSet={imageSrcSet(post.cover_image_url, [400, 600, 800])}
-            sizes="(min-width: 1128px) 360px, (min-width: 768px) 50vw, 100vw"
-            alt=""
-            loading="lazy"
-            decoding="async"
-            className="aspect-[3/2] w-full bg-surface-soft object-contain"
-          />
+          <div className="relative aspect-[3/2] w-full overflow-hidden bg-surface-soft">
+            <img
+              src={optimizedImageUrl(post.cover_image_url, {
+                width: 24,
+                height: 16,
+                quality: 30,
+                resize: "cover",
+              })}
+              alt=""
+              aria-hidden
+              loading="lazy"
+              decoding="async"
+              className="absolute inset-0 h-full w-full scale-110 object-cover blur-lg"
+            />
+            <img
+              src={optimizedImageUrl(post.cover_image_url, { width: 800, resize: "contain" })}
+              srcSet={imageSrcSet(post.cover_image_url, [400, 600, 800])}
+              sizes="(min-width: 1128px) 360px, (min-width: 768px) 50vw, 100vw"
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="relative h-full w-full object-contain"
+            />
+          </div>
         )}
       </Link>
       <div className="flex flex-1 flex-col gap-2 p-5">

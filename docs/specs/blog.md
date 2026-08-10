@@ -316,19 +316,20 @@ produção sem risco de SEO. A migração deixa de ser um evento e vira uma chav
 
 Três desvios, todos deliberados, e o motivo de cada um.
 
-**As imagens entraram por `public/images/blog/`, e o destino final é o Storage.** São 131
-arquivos, 58,6 MB de original convertidos para 16,8 MB de WebP (qualidade 82, largura máxima
-de 1600px). Dez imagens hotlinkadas do Bing foram descartadas: já vinham quebrando e carregavam
-risco de direito autoral.
+**As imagens ficaram no Storage, em `assets-public/blog/<slug>/`.** São 131 objetos em 93 pastas,
+17 MB. O original somava 58,6 MB e foi convertido para WebP (qualidade 82, largura máxima de
+1600px) antes de subir. Dez imagens hotlinkadas do Bing foram descartadas: já vinham quebrando e
+carregavam risco de direito autoral.
 
-O bucket é o destino certo, e por dois motivos que valem mais que a conveniência do repo:
-post novo criado pelo Manager sobe imagem pelo painel, e ninguém deveria precisar commitar
-arquivo para publicar; e o endpoint de render do Supabase dá resize sob demanda, que é o que
-alimenta o `srcset` das páginas. O `scripts/import-wp-blog.mjs` já faz os dois caminhos: com
-`SUPABASE_SERVICE_ROLE_KEY` no ambiente ele sobe para `assets-public/blog/<slug>/` e grava a
-URL pública; sem a chave, grava o caminho local. O render usa `optimizedImageUrl`, que
-transforma URL do Storage e deixa caminho local passar direto, então a troca não mexe nas
-páginas.
+O bucket é o destino certo por dois motivos que valem mais que a conveniência do repositório: post
+novo criado pelo Manager sobe imagem pelo painel, e ninguém deveria precisar commitar arquivo para
+publicar; e o endpoint de render dá resize sob demanda, que é o que alimenta o `srcset` das
+páginas. Medido na capa de 217 KB: 31 KB em 400px e 95 KB em 800px, com o formato negociado pelo
+header `Accept`.
+
+O `scripts/import-wp-blog.mjs` sobe para o bucket quando há `SUPABASE_SERVICE_ROLE_KEY` no
+ambiente e cai em `public/images/blog/` quando não há. O render passa por `optimizedImageUrl`, que
+transforma URL do Storage e deixa caminho local passar direto, então os dois caminhos funcionam.
 
 **O sitemap ganhou um passo de build.** O `vite-plugin-sitemap` remove a barra final de todo
 path e não tem opção para desligar isso, então ele anunciava as 94 URLs do blog na forma que
@@ -345,10 +346,20 @@ As capas do WordPress vêm em proporções que vão de 1:1 a 2,12:1, e boa parte
 manchete gravada dentro da imagem. Uma caixa fixa com `object-cover` cortava esse texto: medido
 em 16/9, **104 das 131 imagens perdiam 15% ou mais**, e as 8 quadradas perdiam 43,8%.
 
-O índice usa caixa 3:2 (a proporção de 71 das 131) com `object-contain`, o que mantém o grid
-alinhado sem cortar nada. A página do post não fixa proporção: limita a altura em 520px e deixa
-a largura acompanhar a imagem, então não há corte nem tarja. Quem publicar capa nova pode usar
-qualquer proporção sem perder conteúdo.
+A página do post não fixa proporção: limita a altura em 520px e deixa a largura acompanhar a
+imagem, então não há corte nem tarja.
+
+O card do índice precisa de caixa fixa para o grid não ficar irregular, e aí `contain` sozinho
+deixava 31 das 93 capas com tarja chapada, as 8 quadradas preenchendo só 67%. A solução é a
+imagem duas vezes: uma cópia minúscula desfocada preenchendo o fundo (24x16, 392 bytes) e a
+imagem inteira por cima. Preenche a caixa, não corta e não chapa.
+
+**Ao pedir transform, mande sempre `resize` e, no `cover`, as duas dimensões.** O render do
+Supabase não preserva proporção com só `width`: `?width=400` num original 1600x1067 devolve
+400x1067, e `?width=16&resize=cover` devolve uma tira 16x1067 que borrada vira listra. Foi assim
+que as capas apareceram achatadas em produção, inclusive fora do blog: o `imageSrcSet` montava
+todo candidato só com `width`, e é do `srcset` que o browser escolhe. O helper agora manda
+`resize=contain` por padrão, o que também consertou a foto da unidade e o hero do destino.
 
 ### GEO
 
@@ -376,3 +387,7 @@ executa JavaScript, então este arquivo é o que faz o conteúdo do blog ser leg
   junto com a regra de URL.
 - **Webhook de rebuild.** Continua pendente. Enquanto não existir, publicar um post pelo
   `/manager/blog` grava no banco mas não aparece no site até o próximo build.
+- **Egress do Storage.** O bucket saiu de 52 para 183 objetos, e as imagens do blog passam a
+  contar egress do Supabase a cada visita não cacheada. É exatamente o gatilho de migração para o
+  Cloudflare R2 previsto em [storage-buckets.md](./storage-buckets.md). Não pesa neste volume, mas
+  entra no radar quando o blog crescer.
