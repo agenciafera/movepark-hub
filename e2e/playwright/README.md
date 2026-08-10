@@ -81,7 +81,7 @@ O usuário do parceiro é um só ao longo de toda a jornada: entra como lead pú
 
 ### A unidade da suíte precisa ficar em `checkout_mode = 'hub'`
 
-Roteiros C e O usam a **Agência Fera**. Ela substituiu o Abbapark em 10/08/2026, quando Abbapark, Nationpark, Plenty Park, Garageinn e Aeroparking viraram **unidades externas** (a reserva fecha no site do parceiro).
+Roteiros C e O usam a **Agência Fera**. Ela substituiu o Abbapark em 10/08/2026, quando Abbapark, Nationpark, Plenty Park, Garageinn e Aeropark viraram **unidades externas** (a reserva fecha no site do parceiro).
 
 Numa unidade externa a single não tem tarifa, cupom, upgrade nem card de reserva: por ADR-009, promessa de transação só renderiza com capacidade declarada. Metade dos casos deixaria de ter o que clicar, e falharia por design em vez de por defeito.
 

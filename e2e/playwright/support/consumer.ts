@@ -35,7 +35,7 @@ export type ConsumerFixture = {
  * roteiros C e O olham a single completa (tarifa, cupom, upgrade, reserva).
  *
  * Substituiu o Abbapark em 10/08/2026, quando ele virou unidade EXTERNA junto com Nationpark,
- * Plenty, Garageinn e Aeroparking. Numa unidade externa a single não tem tarifa, cupom nem
+ * Plenty, Garageinn e Aeropark. Numa unidade externa a single não tem tarifa, cupom nem
  * card de reserva (ADR-009: promessa de transação só renderiza com capacidade declarada), então
  * metade dos casos deixaria de ter o que assertar. Ao mexer na Agência Fera, mantenha-a em
  * `hub`: é a única unidade listada que ainda exercita o checkout inteiro.

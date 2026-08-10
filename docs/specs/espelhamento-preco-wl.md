@@ -154,7 +154,7 @@ Efeito na vitrine: a single do Virapark saiu de R$ 161,10 (tabela velha do Hub) 
 ### Estadia mínima do parceiro (10/08/2026)
 
 Ao ampliar de 1 para 6 unidades externas, quatro dos cinco parceiros novos recusaram a cotação
-curta: **3 diárias** em Abbapark, Nationpark e Plenty; **2** no Aeroparking. Garageinn e Virapark
+curta: **3 diárias** em Abbapark, Nationpark e Plenty; **2** no Aeropark. Garageinn e Virapark
 não têm piso.
 
 ```
