@@ -50,7 +50,6 @@ export function Step1Identity({
   const [lastName, setLastName] = React.useState("");
   const [phone, setPhone] = React.useState<string | undefined>(undefined);
   const [email, setEmail] = React.useState(customerEmail ?? "");
-  const [termsAccepted, setTermsAccepted] = React.useState(false);
   const [termsOpen, setTermsOpen] = React.useState(false);
 
   // Bloco passageiro (reserva pra outra pessoa) → só nome e telefone; ele não paga.
@@ -266,30 +265,24 @@ export function Step1Identity({
         </div>
       )}
 
-      {/* Trigger dos Termos fica FORA do label — clicar nele abre o modal
-          sem marcar/desmarcar o checkbox de aceite. */}
-      <div className="flex items-start gap-3">
-        <input
-          id="accept-terms"
-          type="checkbox"
-          checked={termsAccepted}
-          onChange={(e) => setTermsAccepted(e.target.checked)}
-          className="mt-0.5 h-4 w-4 rounded border-hairline accent-mp-indigo"
-          required
-        />
-        <span className="text-body-md text-ink">
-          <label htmlFor="accept-terms" className="cursor-pointer">
-            Aceito os
-          </label>{" "}
-          <button
-            type="button"
-            onClick={() => setTermsOpen(true)}
-            className="font-semibold underline hover:text-mp-primary"
-          >
-            Termos e Condições
-          </button>
-        </span>
-      </div>
+      {/* Aceite por clickwrap: quem registra o aceite é o submit (a RPC
+          `record_terms_acceptance`, com versão do documento, data e IP), não um
+          checkbox. A caixa marcável só travava o botão sem acrescentar prova, e
+          travava diferente em cada breakpoint: no desktop o botão ficava
+          `disabled` e mudo, no mobile a barra fixa submetia e caía no balão
+          nativo do navegador. O aviso fica colado no botão porque é isso que dá
+          ao cliente a chance de conhecer o conteúdo antes de contratar. */}
+      <p className="text-body-sm text-muted">
+        Ao continuar, você aceita os{" "}
+        <button
+          type="button"
+          onClick={() => setTermsOpen(true)}
+          className="font-semibold text-ink underline hover:text-mp-primary"
+        >
+          Termos e Condições
+        </button>
+        .
+      </p>
 
       <LegalDocumentModal
         slug="terms"
@@ -300,7 +293,7 @@ export function Step1Identity({
 
       {/* Botão desktop — no mobile a barra fixa do checkout.tsx submete o form */}
       <div className="hidden justify-end desktop:flex">
-        <Button type="submit" disabled={busy || !termsAccepted}>
+        <Button type="submit" disabled={busy}>
           {busy ? "Salvando…" : "Continuar"}
           <ArrowRight className="h-4 w-4" />
         </Button>

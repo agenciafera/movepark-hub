@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Step1Identity } from "./Step1Identity";
 import { mockAuth, mockSession, renderWithProviders } from "@/test/utils";
@@ -11,8 +11,10 @@ vi.mock("@/features/profile/api", () => ({
   useUpdateProfile: vi.fn(),
 }));
 vi.mock("./api", () => ({ useUpdateBookingCustomer: vi.fn(), useAttachPhone: vi.fn() }));
+// Espião no aceite: sem checkbox, é o submit que registra, e isso precisa de guarda.
+const aceitarTermos = vi.hoisted(() => vi.fn().mockResolvedValue({ ok: true }));
 vi.mock("@/features/legal/api", () => ({
-  useAcceptTerms: () => ({ mutateAsync: vi.fn().mockResolvedValue({ ok: true }), isPending: false }),
+  useAcceptTerms: () => ({ mutateAsync: aceitarTermos, isPending: false }),
   useLegalDocument: () => ({ data: null, isLoading: false }),
 }));
 vi.mock("@/components/ui/phone-field", () => ({
@@ -54,6 +56,10 @@ function setProfile(data: Record<string, unknown> | null) {
 }
 
 beforeEach(() => {
+  aceitarTermos.mockClear();
+  // `defaultProps` é compartilhado pelo arquivo: sem limpar, o espião acumula
+  // chamadas dos testes anteriores e "não foi chamado" nunca passa.
+  defaultProps.onNext.mockClear();
   setProfile(null);
   vi.mocked(useUpdateProfile).mockReturnValue({
     mutateAsync: vi.fn().mockResolvedValue(undefined),
@@ -149,7 +155,6 @@ describe("Step1Identity", () => {
     expect(screen.getByLabelText("Telefone")).toBeEnabled();
 
     await userEvent.type(emailInput, "diego@ex.com");
-    await userEvent.click(screen.getByRole("checkbox", { name: /Aceito os/i }));
     await userEvent.click(screen.getByRole("button", { name: /Continuar/i }));
 
     expect(updateCustomer).toHaveBeenCalledWith(
@@ -168,22 +173,47 @@ describe("Step1Identity", () => {
     expect(screen.getByLabelText("Telefone")).toBeEnabled();
   });
 
-  it("abre os Termos num modal sem marcar o checkbox de aceite", async () => {
+  it("abre os Termos num modal, sem submeter o passo", async () => {
     setProfile({ first_name: "Pedro", last_name: "Araujo" });
     renderWithProviders(<Step1Identity {...defaultProps} />, {
       auth: mockAuth({ session: mockSession("customer", { email: "pedro@ex.com" }) }),
     });
 
-    // Referência capturada antes: ao abrir o modal, o Radix marca o resto da
-    // página como aria-hidden, então guardamos o nó pra checar o estado depois.
-    const checkbox = screen.getByRole("checkbox", { name: /Aceito os/i });
-    expect(checkbox).not.toBeChecked();
-
     await userEvent.click(screen.getByText("Termos e Condições"));
 
     // Abre o modal (não navega pra outra página) …
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
-    // … e o clique no link NÃO marca o checkbox de aceite.
-    expect(checkbox).not.toBeChecked();
+    // … e ler os Termos não é aceitar: nada foi registrado nem avançou.
+    expect(aceitarTermos).not.toHaveBeenCalled();
+    expect(defaultProps.onNext).not.toHaveBeenCalled();
+  });
+
+  /**
+   * O aceite deixou de ter checkbox e virou clickwrap. A prova continua sendo a
+   * linha em `terms_acceptance`, gravada no submit com versão do documento e IP.
+   * Se este teste cair, o checkout parou de registrar o aceite.
+   */
+  it("o clique em Continuar registra o aceite dos Termos", async () => {
+    setProfile({ first_name: "Pedro", last_name: "Araujo" });
+    renderWithProviders(<Step1Identity {...defaultProps} />, {
+      auth: mockAuth({
+        session: mockSession("customer", { email: "pedro@ex.com", phone: "+5511987727182" }),
+      }),
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: /Continuar/i }));
+
+    await waitFor(() =>
+      expect(aceitarTermos).toHaveBeenCalledWith({ booking_code: "MP-TEST1" }),
+    );
+  });
+
+  // Antes, o botão nascia `disabled` esperando a marcação, sem dizer o porquê.
+  it("o botão não nasce travado", () => {
+    setProfile({ first_name: "Pedro", last_name: "Araujo" });
+    renderWithProviders(<Step1Identity {...defaultProps} />, {
+      auth: mockAuth({ session: mockSession("customer", { email: "pedro@ex.com" }) }),
+    });
+    expect(screen.getByRole("button", { name: /Continuar/i })).toBeEnabled();
   });
 });

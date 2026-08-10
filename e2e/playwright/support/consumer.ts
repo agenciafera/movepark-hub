@@ -396,7 +396,8 @@ export async function fillIdentityStep(page: Page) {
   // número vazio e o passo trava sem mensagem clara.
   await page.locator("#id-phone").fill("11987727182");
 
-  await page.locator("#accept-terms").check();
+  // Sem checkbox de aceite: o clique em Continuar é o aceite (clickwrap), e é ele
+  // que dispara o registro em `terms_acceptance`.
   await page.getByRole("button", { name: "Continuar" }).first().click();
 }
 
