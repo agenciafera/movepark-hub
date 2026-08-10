@@ -200,3 +200,54 @@ describe("contrato de URL do blog", () => {
     }
   });
 });
+
+describe("contrato de URL da taxonomia e da paginação", () => {
+  const listagens = [
+    "/blog/page/2",
+    "/blog/categoria/precos",
+    "/blog/categoria/precos/page/2",
+    "/blog/tag/traslado",
+    "/blog/tag/traslado/page/2",
+    "/blog/autor/diego",
+    "/blog/autor/diego/page/3",
+    "/blog/aeroporto/aeroporto-de-viracopos",
+  ];
+
+  it("toda listagem sem a barra devolve 301 para a versão com barra", async () => {
+    for (const path of listagens) {
+      const { env } = makeEnv();
+      const res = await worker.fetch(req(path), env);
+      expect(res.status, path).toBe(301);
+      expect(res.headers.get("Location"), path).toBe(`${path}/`);
+    }
+  });
+
+  it("toda listagem com a barra responde 200, sem salto", async () => {
+    for (const path of listagens) {
+      const { env, served } = makeEnv();
+      const res = await worker.fetch(req(`${path}/`), env);
+      expect(res.status, path).toBe(200);
+      expect(served, path).toContain(path);
+    }
+  });
+
+  it("categoria de aeroporto continua indo para o destino, e não vira arquivo do blog", async () => {
+    // O slug de aeroporto nunca virou categoria editorial: ele é o destino, e a
+    // página que converte é /destinos/<slug>.
+    for (const path of ["/blog/categoria/aeroporto-guarulhos/", "/blog/aeroporto-guarulhos/"]) {
+      const { env } = makeEnv();
+      const res = await worker.fetch(req(path), env);
+      expect(res.status, path).toBe(301);
+      expect(res.headers.get("Location"), path).toBe(
+        "/destinos/aeroporto-internacional-de-sao-paulo-guarulhos",
+      );
+    }
+  });
+
+  it("prefixo de listagem não é confundido com slug de post", async () => {
+    // Sem isto, /blog/tag/ cairia na regra de post e viraria uma página fantasma.
+    const { env } = makeEnv();
+    const res = await worker.fetch(req("/blog/categoria/precos/"), env);
+    expect(res.status).toBe(200);
+  });
+});

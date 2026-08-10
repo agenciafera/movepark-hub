@@ -19,22 +19,34 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { usePublishedDestinations } from "@/features/destinations/api";
-import { useCreateBlogPost, useUpdateBlogPost } from "./api";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  useBlogAuthors,
+  useBlogCategories,
+  useBlogTags,
+  useCreateBlogPost,
+  useSetPostTags,
+  useUpdateBlogPost,
+} from "./api";
 import { readingMinutes } from "./markdown.logic";
-import type { BlogPost } from "@/types/domain";
+import type { BlogPostWithDestination } from "@/types/domain";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  post: BlogPost | null;
+  post: BlogPostWithDestination | null;
 };
 
 const SEM_DESTINO = "sem-destino";
 
 export function BlogPostForm({ open, onOpenChange, post }: Props) {
   const destinations = usePublishedDestinations();
+  const categories = useBlogCategories();
+  const authors = useBlogAuthors();
+  const tags = useBlogTags();
   const create = useCreateBlogPost();
   const update = useUpdateBlogPost();
+  const setTags = useSetPostTags();
 
   const [slug, setSlug] = React.useState("");
   const [title, setTitle] = React.useState("");
@@ -44,6 +56,9 @@ export function BlogPostForm({ open, onOpenChange, post }: Props) {
   const [metaDescription, setMetaDescription] = React.useState("");
   const [coverImageUrl, setCoverImageUrl] = React.useState("");
   const [destinationId, setDestinationId] = React.useState<string>(SEM_DESTINO);
+  const [categoryId, setCategoryId] = React.useState<string>(SEM_DESTINO);
+  const [authorId, setAuthorId] = React.useState<string>(SEM_DESTINO);
+  const [tagIds, setTagIds] = React.useState<string[]>([]);
   const [isPublished, setIsPublished] = React.useState(false);
 
   React.useEffect(() => {
@@ -56,10 +71,13 @@ export function BlogPostForm({ open, onOpenChange, post }: Props) {
     setMetaDescription(post?.meta_description ?? "");
     setCoverImageUrl(post?.cover_image_url ?? "");
     setDestinationId(post?.destination_id ?? SEM_DESTINO);
+    setCategoryId(post?.category_id ?? SEM_DESTINO);
+    setAuthorId(post?.author_id ?? SEM_DESTINO);
+    setTagIds((post?.tags ?? []).map((t) => t.id));
     setIsPublished(post?.is_published ?? false);
   }, [open, post]);
 
-  const saving = create.isPending || update.isPending;
+  const saving = create.isPending || update.isPending || setTags.isPending;
   const slugTravado = !!post?.legacy_wp_id;
 
   async function submit(event: React.FormEvent) {
@@ -73,12 +91,16 @@ export function BlogPostForm({ open, onOpenChange, post }: Props) {
       meta_description: metaDescription.trim() || null,
       cover_image_url: coverImageUrl.trim() || null,
       destination_id: destinationId === SEM_DESTINO ? null : destinationId,
+      category_id: categoryId === SEM_DESTINO ? null : categoryId,
+      author_id: authorId === SEM_DESTINO ? null : authorId,
       is_published: isPublished,
     };
 
     try {
-      if (post) await update.mutateAsync({ id: post.id, patch: payload });
-      else await create.mutateAsync(payload);
+      const salvo = post
+        ? await update.mutateAsync({ id: post.id, patch: payload })
+        : await create.mutateAsync(payload);
+      await setTags.mutateAsync({ postId: salvo.id, tagIds });
       toast.success(post ? "Post salvo" : "Post criado");
       onOpenChange(false);
     } catch (err) {
@@ -175,6 +197,62 @@ export function BlogPostForm({ open, onOpenChange, post }: Props) {
               Sem destino, o post não mostra o bloco que leva aos estacionamentos.
             </p>
           </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="blog-category">Categoria</Label>
+            <Select value={categoryId} onValueChange={setCategoryId}>
+              <SelectTrigger id="blog-category">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={SEM_DESTINO}>Sem categoria</SelectItem>
+                {(categories.data ?? []).map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-caption-sm text-muted">
+              Tema editorial. O aeroporto é o campo Destino, logo acima.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="blog-author">Autor</Label>
+            <Select value={authorId} onValueChange={setAuthorId}>
+              <SelectTrigger id="blog-author">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={SEM_DESTINO}>Sem autor</SelectItem>
+                {(authors.data ?? []).map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <fieldset className="flex flex-col gap-2">
+            <legend className="text-title-sm text-ink">Tags</legend>
+            <div className="flex flex-wrap gap-3">
+              {(tags.data ?? []).map((t) => (
+                <label key={t.id} className="flex items-center gap-2 text-body-sm text-body">
+                  <Checkbox
+                    checked={tagIds.includes(t.id)}
+                    onCheckedChange={(marcado) =>
+                      setTagIds((atual) =>
+                        marcado ? [...atual, t.id] : atual.filter((id) => id !== t.id),
+                      )
+                    }
+                  />
+                  {t.name}
+                </label>
+              ))}
+            </div>
+          </fieldset>
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="blog-meta-title">Meta title</Label>

@@ -120,30 +120,45 @@ const redirect301 = (to: string) =>
  *
  * Devolve `null` quando a requisição não é do blog e segue o fluxo normal.
  */
+/**
+ * Prefixos de listagem do blog. Tudo que não começa por um deles, e tem um
+ * segmento só, é slug de post.
+ */
+const BLOG_LISTING_PREFIXES = new Set(["page", "categoria", "tag", "autor", "aeroporto"]);
+
 export function blogRedirect(url: URL): Response | null {
   const path = url.pathname.replace(/\/+$/, "") || "/";
 
   const legacy = BLOG_LEGACY_PATHS[path];
   if (legacy) return redirect301(legacy + url.search);
 
-  if (!path.startsWith("/blog")) return null;
+  if (path !== "/blog" && !path.startsWith("/blog/")) return null;
 
-  // /blog/categoria/<x> era a forma alternativa que o Yoast emitia.
   const segments = path.slice("/blog".length).split("/").filter(Boolean);
-  const slug = segments[0] === "categoria" ? segments[1] : segments[0];
-  if (!slug || segments.length > 2) return null;
+  if (!segments.length) return null;
 
-  if (slug in BLOG_CATEGORY_TO_DESTINATION) {
-    const destination = BLOG_CATEGORY_TO_DESTINATION[slug];
+  const semBarra = !url.pathname.endsWith("/");
+  const paraCanonica = () => redirect301(`${path}/${url.search}`);
+
+  if (BLOG_LISTING_PREFIXES.has(segments[0])) {
+    // `/blog/categoria/<aeroporto>` é a forma que o Yoast emitia, e continua
+    // indo para o destino: o slug de aeroporto nunca virou categoria editorial.
+    if (segments[0] === "categoria" && segments[1] in BLOG_CATEGORY_TO_DESTINATION) {
+      const destination = BLOG_CATEGORY_TO_DESTINATION[segments[1]];
+      return redirect301(destination ? `/destinos/${destination}` : "/blog/");
+    }
+    return semBarra ? paraCanonica() : null;
+  }
+
+  if (segments.length > 1) return null;
+
+  if (segments[0] in BLOG_CATEGORY_TO_DESTINATION) {
+    const destination = BLOG_CATEGORY_TO_DESTINATION[segments[0]];
     return redirect301(destination ? `/destinos/${destination}` : "/blog/");
   }
 
   // Post sem a barra final: a canônica é com barra, igual ao WordPress.
-  if (segments.length === 1 && !url.pathname.endsWith("/")) {
-    return redirect301(`/blog/${slug}/${url.search}`);
-  }
-
-  return null;
+  return semBarra ? paraCanonica() : null;
 }
 
 export default {

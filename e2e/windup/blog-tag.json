@@ -1,14 +1,13 @@
 {
-  "scenario_id": "blog-indice",
-  "start_url": "/blog",
-  "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Blog\", depois o texto \"Guias de estacionamento nos aeroportos\", depois o titulo do post \"Top 3 estacionamentos do Aeroporto QA\".",
+  "scenario_id": "blog-tag",
+  "start_url": "/blog/tag/traslado/",
+  "task": "Verifique, em duas checagens separadas, que a pagina exibe o rotulo \"Tag\" e depois o titulo do post \"Top 3 estacionamentos do Aeroporto QA\".",
   "tags": [
     "smoke",
     "leitura"
   ],
   "hints": [
-    "Tres verificacoes: o cabecalho da pagina, o lead abaixo dele e o card do post.",
-    "A listagem vem estubada com um post de verdade, entao a ultima checagem prova que a tela renderiza dado, nao estado vazio."
+    "Filtro por tag usa a relacao N:N entre post e tag."
   ],
   "network": [
     {

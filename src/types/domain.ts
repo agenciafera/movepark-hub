@@ -34,9 +34,16 @@ export type PayoutWithdrawal = Tables<"payout_withdrawal">;
 export type Destination = Tables<"destination">;
 /** Post do blog. O `slug` é herdado do WordPress e é contrato de URL (docs/specs/blog.md). */
 export type BlogPost = Tables<"blog_post">;
-/** Post com o destino embarcado, para o CTA e o rótulo de aeroporto. */
+/** Tema editorial do post. Aeroporto não entra aqui: ele é `destination_id`. */
+export type BlogCategory = Tables<"blog_category">;
+export type BlogTag = Tables<"blog_tag">;
+export type BlogAuthor = Tables<"blog_author">;
+/** Post com as relações que a listagem e a página usam. */
 export type BlogPostWithDestination = BlogPost & {
   destination: Pick<Destination, "id" | "name" | "short_name" | "slug"> | null;
+  category: Pick<BlogCategory, "id" | "name" | "slug"> | null;
+  author: Pick<BlogAuthor, "id" | "name" | "slug"> | null;
+  tags: Pick<BlogTag, "id" | "name" | "slug">[];
 };
 /** Ponto físico de um destino (terminal/píer/plataforma). DAT-05. */
 export type DestinationPoint = Tables<"destination_point">;

@@ -1,14 +1,14 @@
 {
-  "scenario_id": "blog-indice",
-  "start_url": "/blog",
-  "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Blog\", depois o texto \"Guias de estacionamento nos aeroportos\", depois o titulo do post \"Top 3 estacionamentos do Aeroporto QA\".",
+  "scenario_id": "blog-busca",
+  "start_url": "/blog/?q=viracopos",
+  "task": "Verifique que a pagina exibe o campo de busca com o rotulo \"Buscar no blog\" e que a listagem mostra ao menos um resultado.",
   "tags": [
     "smoke",
     "leitura"
   ],
   "hints": [
-    "Tres verificacoes: o cabecalho da pagina, o lead abaixo dele e o card do post.",
-    "A listagem vem estubada com um post de verdade, entao a ultima checagem prova que a tela renderiza dado, nao estado vazio."
+    "A busca e client-side sobre o acervo completo.",
+    "O termo vem na query string q."
   ],
   "network": [
     {

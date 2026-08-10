@@ -1,7 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { Database } from "@/types/database";
-import type { BlogPost, BlogPostWithDestination } from "@/types/domain";
+import type {
+  BlogAuthor,
+  BlogCategory,
+  BlogPost,
+  BlogPostWithDestination,
+  BlogTag,
+} from "@/types/domain";
 
 type BlogPostInsert = Database["public"]["Tables"]["blog_post"]["Insert"];
 type BlogPostUpdate = Database["public"]["Tables"]["blog_post"]["Update"];
@@ -22,7 +28,23 @@ export const blogKeys = {
  * o Manager enxergar rascunho pela mesma policy. Quem esquece o filtro aqui vaza
  * rascunho para o público, então ele mora nesta const, num lugar só.
  */
-const baseSelect = "*, destination:destination(id, name, short_name, slug)";
+const baseSelect =
+  "*, destination:destination(id, name, short_name, slug)," +
+  " category:blog_category(id, name, slug)," +
+  " author:blog_author(id, name, slug)," +
+  " tags:blog_post_tag(tag:blog_tag(id, name, slug))";
+
+/**
+ * O PostgREST devolve a N:N aninhada (`{ tag: {...} }`). Achata para `tags: [...]`,
+ * que é o formato que o tipo de domínio e as telas usam.
+ */
+// deno-lint-ignore no-explicit-any
+function flattenTags(rows: any[]): any[] {
+  return rows.map((row) => ({
+    ...row,
+    tags: (row.tags ?? []).map((t: { tag: unknown }) => t.tag).filter(Boolean),
+  }));
+}
 
 /** Público: post publicado por slug (página /blog/<slug>/). */
 export function useBlogPost(slug: string | undefined) {
@@ -38,7 +60,7 @@ export function useBlogPost(slug: string | undefined) {
         .is("deleted_at", null)
         .maybeSingle();
       if (error) throw error;
-      return (data ?? null) as BlogPostWithDestination | null;
+      return (data ? flattenTags([data])[0] : null) as BlogPostWithDestination | null;
     },
     staleTime: 5 * 60_000,
   });
@@ -56,7 +78,7 @@ export function useBlogPosts() {
         .is("deleted_at", null)
         .order("published_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as BlogPostWithDestination[];
+      return flattenTags(data ?? []) as BlogPostWithDestination[];
     },
     staleTime: 5 * 60_000,
   });
@@ -99,7 +121,7 @@ export function useAdminBlogPosts() {
         .is("deleted_at", null)
         .order("published_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as BlogPostWithDestination[];
+      return flattenTags(data ?? []) as BlogPostWithDestination[];
     },
   });
 }
@@ -145,5 +167,144 @@ export function useDeleteBlogPost() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: blogKeys.all }),
+  });
+}
+
+// ── Taxonomia ────────────────────────────────────────────────────────────────
+
+export const blogTaxonomyKeys = {
+  categories: ["blog", "categories"] as const,
+  tags: ["blog", "tags"] as const,
+  authors: ["blog", "authors"] as const,
+};
+
+export function useBlogCategories() {
+  return useQuery({
+    queryKey: blogTaxonomyKeys.categories,
+    queryFn: async (): Promise<BlogCategory[]> => {
+      const { data, error } = await supabase
+        .from("blog_category")
+        .select("*")
+        .is("deleted_at", null)
+        .order("sort_order");
+      if (error) throw error;
+      return (data ?? []) as BlogCategory[];
+    },
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useBlogTags() {
+  return useQuery({
+    queryKey: blogTaxonomyKeys.tags,
+    queryFn: async (): Promise<BlogTag[]> => {
+      const { data, error } = await supabase
+        .from("blog_tag")
+        .select("*")
+        .is("deleted_at", null)
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as BlogTag[];
+    },
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useBlogAuthors() {
+  return useQuery({
+    queryKey: blogTaxonomyKeys.authors,
+    queryFn: async (): Promise<BlogAuthor[]> => {
+      const { data, error } = await supabase
+        .from("blog_author")
+        .select("*")
+        .is("deleted_at", null)
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as BlogAuthor[];
+    },
+    staleTime: 5 * 60_000,
+  });
+}
+
+/** Substitui as tags do post de uma vez: apaga o que saiu, insere o que entrou. */
+export function useSetPostTags() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ postId, tagIds }: { postId: string; tagIds: string[] }) => {
+      const { error: delErr } = await supabase
+        .from("blog_post_tag")
+        .delete()
+        .eq("post_id", postId);
+      if (delErr) throw delErr;
+      if (!tagIds.length) return;
+      const { error } = await supabase
+        .from("blog_post_tag")
+        .insert(tagIds.map((tag_id) => ({ post_id: postId, tag_id })));
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: blogKeys.all }),
+  });
+}
+
+export function useCreateBlogCategory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: Database["public"]["Tables"]["blog_category"]["Insert"]) => {
+      const { data, error } = await supabase
+        .from("blog_category")
+        .insert(payload)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as BlogCategory;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: blogTaxonomyKeys.categories }),
+  });
+}
+
+export function useCreateBlogTag() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: Database["public"]["Tables"]["blog_tag"]["Insert"]) => {
+      const { data, error } = await supabase.from("blog_tag").insert(payload).select().single();
+      if (error) throw error;
+      return data as BlogTag;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: blogTaxonomyKeys.tags }),
+  });
+}
+
+export function useCreateBlogAuthor() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: Database["public"]["Tables"]["blog_author"]["Insert"]) => {
+      const { data, error } = await supabase.from("blog_author").insert(payload).select().single();
+      if (error) throw error;
+      return data as BlogAuthor;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: blogTaxonomyKeys.authors }),
+  });
+}
+
+export function useUpdateBlogAuthor() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      patch,
+    }: {
+      id: string;
+      patch: Database["public"]["Tables"]["blog_author"]["Update"];
+    }) => {
+      const { data, error } = await supabase
+        .from("blog_author")
+        .update(patch)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as BlogAuthor;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: blogTaxonomyKeys.authors }),
   });
 }

@@ -1,8 +1,10 @@
 # Blog
 
-> **Status:** ✅ implementado em 10/08/2026. Migration `20260929000000_blog_post.sql`,
-> importador `scripts/import-wp-blog.mjs`, rotas SSG `/blog` e `/blog/<slug>/`, política de
-> URL em `src/worker.ts`, admin em `/manager/blog`. Os 93 posts estão no banco e no build.
+> **Status:** ✅ implementado em 10/08/2026. Migrations `20260929000000_blog_post.sql` e
+> `20260930000000_blog_taxonomy.sql`, importador `scripts/import-wp-blog.mjs`, taxonomia derivada
+> em `scripts/blog-taxonomy.mjs`, rotas SSG do índice, dos arquivos e do post, política de URL em
+> `src/worker.ts`, admin em `/manager/blog`. Os 93 posts estão no banco e no build, com categoria,
+> autor e tag.
 >
 > **Objetivo:** substituir o blog WordPress em `movepark.co/blog/` preservando as 93 URLs
 > byte a byte, para não perder os 4.598 cliques que o blog responde em 16 meses.
@@ -211,12 +213,51 @@ publicado, não tem slug definido e não tem URL a preservar.
 só move o que é referenciado pelos 93 posts, e reporta o que ficou para trás em vez de copiar
 o diretório inteiro.
 
+## Taxonomia
+
+Dois eixos, de propósito.
+
+**Aeroporto** continua sendo `blog_post.destination_id`, que já existia e já alimenta o CTA e a
+página `/destinos/<slug>`. **Categoria** é tema editorial: Preços, Comparativos, Guias, Dicas de
+viagem e Como reservar. Fazer da categoria mais um nome para aeroporto criaria duas páginas
+disputando a mesma busca, que é a canibalização que a [spec de indexação](./seo-indexacao.md)
+existe para evitar.
+
+O WordPress não tinha o que importar aqui: das 11 categorias, 8 eram aeroporto, e 84 dos 93 posts
+não tinham tag nenhuma. A classificação é derivada do próprio texto por regras determinísticas em
+`scripts/blog-taxonomy.mjs`, versionadas: rodar de novo dá o mesmo resultado, e mudar a
+classificação é mudar a regra, não o banco.
+
+Tag exige sinal forte (assunto no título, ou cinco ocorrências no corpo). A primeira versão casava
+qualquer menção e punha "Segurança" em 82 dos 93 posts; tag que cobre 88% do acervo não filtra
+nada. Distribuição final: 2,0 tags por post, nenhum post sem tag, nenhuma tag cobrindo o acervo.
+
+Autores vieram do WordPress (4 pessoas, 93 posts), com nome de exibição editável no Manager. O
+`slug` não muda no rename, porque ele é a URL da página do autor.
+
 ## Rotas e renderização
 
-| Rota | Shell | Descrição |
-|---|---|---|
-| `/blog` | `ConsumerAppShell` | Índice paginado, SSG via `loader` |
-| `/blog/:slug` | `ConsumerAppShell` | Post, SSG via `getStaticPaths` + `loader` |
+| Rota | Descrição |
+|---|---|
+| `/blog/` | Índice, 12 posts por página |
+| `/blog/page/<n>/` | Paginação do índice |
+| `/blog/categoria/<slug>/` | Arquivo por tema editorial |
+| `/blog/tag/<slug>/` | Arquivo por tag |
+| `/blog/autor/<slug>/` | Arquivo por autor |
+| `/blog/aeroporto/<slug>/` | Arquivo por aeroporto, dentro do blog |
+| `/blog/<slug>/` | Post |
+
+Todos os arquivos aceitam `/page/<n>/`. A página 1 é sempre a raiz do arquivo, nunca `/page/1/`:
+duas URLs com o mesmo conteúdo é duplicata.
+
+**Arquivo e paginação respondem `noindex, follow`.** Página de arquivo é lista de links, não
+conteúdo próprio, e a de aeroporto ainda disputaria a busca com `/destinos/<slug>`, que é a página
+que converte. O `follow` mantém o rastreio, e o sitemap continua listando os 93 posts direto, então
+nenhum post depende de arquivo para ser descoberto.
+
+A busca roda no cliente, sobre o acervo completo, e só puxa a lista inteira quando há termo. Ela
+casa título, resumo, categoria, aeroporto e tag, ignora acento e exige todos os termos: com 93
+posts sobre o mesmo assunto, busca com OU devolveria quase tudo.
 
 Mesmo padrão de `/destinos` e `/destinos/:slug`. As URLs entram no `dynamicRoutes` do
 `vite-plugin-sitemap` em `vite.config.ts`. JSON-LD `BlogPosting` mais `BreadcrumbList` em

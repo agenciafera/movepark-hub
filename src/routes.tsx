@@ -4,6 +4,7 @@ import type { LoaderFunctionArgs } from "react-router-dom";
 
 import { supabase } from "@/lib/supabase";
 import { fetchListing } from "@/features/listing/api";
+import { filterPosts, pageSlice, totalPages } from "@/features/blog/listing.logic";
 
 import { AppProviders } from "@/components/shared/AppProviders";
 import { RootErrorBoundary } from "@/components/shared/RootErrorBoundary";
@@ -32,7 +33,7 @@ import OnboardingPage from "@/routes/onboarding";
 import VoucherValidatePage from "@/routes/voucher-validate";
 import DestinoPage from "@/routes/destino";
 import DestinosPage from "@/routes/destinos";
-import BlogIndexPage from "@/routes/blog";
+import BlogListingPage, { type BlogListingData } from "@/routes/blog";
 import BlogPostPage from "@/routes/blog-post";
 import SobrePage from "@/routes/sobre";
 import TermosPage from "@/routes/termos";
@@ -159,7 +160,21 @@ async function fetchAllDestinationPaths(): Promise<string[]> {
   return (data ?? []).map((d) => `/destinos/${d.slug as string}`);
 }
 
-const BLOG_SELECT = "*, destination:destination(id, name, short_name, slug)";
+const BLOG_SELECT =
+  "*, destination:destination(id, name, short_name, slug)," +
+  " category:blog_category(id, name, slug)," +
+  " author:blog_author(id, name, slug)," +
+  " tags:blog_post_tag(tag:blog_tag(id, name, slug))";
+
+/** O PostgREST devolve a N:N aninhada; a listagem e a página usam `tags: [...]`. */
+// deno-lint-ignore no-explicit-any
+function flattenTags(rows: any[]): any[] {
+  return rows.map((row) => ({
+    ...row,
+    // deno-lint-ignore no-explicit-any
+    tags: (row.tags ?? []).map((t: any) => t.tag).filter(Boolean),
+  }));
+}
 
 async function blogPostLoader({ params }: LoaderFunctionArgs) {
   const { data } = await supabase
@@ -169,7 +184,7 @@ async function blogPostLoader({ params }: LoaderFunctionArgs) {
     .eq("is_published", true)
     .is("deleted_at", null)
     .maybeSingle();
-  return data ?? null;
+  return data ? flattenTags([data])[0] : null;
 }
 
 /**
@@ -185,22 +200,109 @@ async function fetchAllBlogPaths(): Promise<string[]> {
   return (data ?? []).map((p) => `/blog/${p.slug as string}`);
 }
 
-/**
- * O índice não carrega `body_md`.
- *
- * Com o corpo dos 93 posts embarcado, o HTML de /blog saía com 689 KB, e o corpo
- * só é lido na página do post. O card precisa de título, resumo, capa e data.
- */
-async function blogIndexLoader() {
+/** Todos os posts publicados, com as relações que a listagem usa. */
+async function fetchListablePosts() {
   const { data } = await supabase
     .from("blog_post")
-    .select(
-      "id, slug, title, excerpt, cover_image_url, published_at, destination:destination(id, name, short_name, slug)",
-    )
+    .select(BLOG_SELECT)
     .eq("is_published", true)
     .is("deleted_at", null)
     .order("published_at", { ascending: false });
-  return data ?? [];
+  return flattenTags(data ?? []);
+}
+
+type BlogKind = "index" | "categoria" | "tag" | "autor" | "aeroporto";
+
+/**
+ * Loader único da listagem: índice, arquivo de taxonomia e paginação são a mesma
+ * tela com um recorte diferente. `page` vem da URL e a fatia sai daqui, então o
+ * HTML de cada página carrega 12 posts em vez dos 93.
+ */
+function blogListingLoader(kind: BlogKind) {
+  return async ({ params }: LoaderFunctionArgs): Promise<BlogListingData> => {
+    const page = Math.max(1, Number(params.page ?? 1) || 1);
+    const slug = params.slug ?? null;
+    const todos = await fetchListablePosts();
+
+    const filtrados = slug
+      ? filterPosts(todos, { [kind]: slug } as Record<string, string>)
+      : todos;
+
+    let name: string | null = null;
+    let description: string | null = null;
+    if (slug) {
+      const primeiro = filtrados[0];
+      if (kind === "categoria") {
+        const { data } = await supabase
+          .from("blog_category")
+          .select("name, description")
+          .eq("slug", slug)
+          .maybeSingle();
+        name = data?.name ?? slug;
+        description = data?.description ?? null;
+      } else if (kind === "tag") {
+        name = primeiro?.tags?.find((t: { slug: string }) => t.slug === slug)?.name ?? slug;
+      } else if (kind === "autor") {
+        name = primeiro?.author?.name ?? slug;
+      } else if (kind === "aeroporto") {
+        name = primeiro?.destination?.name ?? slug;
+      }
+    }
+
+    const base = slug ? `/blog/${kind}/${slug}` : "/blog";
+    return {
+      posts: pageSlice(filtrados, page),
+      page,
+      total: totalPages(filtrados.length),
+      kind,
+      slug,
+      name,
+      description,
+      base,
+    };
+  };
+}
+
+/** Uma URL por fatia de página, para o crawler alcançar o post da última página. */
+function blogListingPaths(kind: BlogKind, comPaginas: boolean) {
+  return async (): Promise<string[]> => {
+    const todos = await fetchListablePosts();
+
+    if (kind === "index") {
+      const total = totalPages(todos.length);
+      return Array.from({ length: Math.max(0, total - 1) }, (_, i) => `/blog/page/${i + 2}`);
+    }
+
+    const chave = {
+      categoria: (p: { category?: { slug: string } | null }) => p.category?.slug,
+      autor: (p: { author?: { slug: string } | null }) => p.author?.slug,
+      aeroporto: (p: { destination?: { slug: string } | null }) => p.destination?.slug,
+    } as const;
+
+    const slugs = new Map<string, number>();
+    if (kind === "tag") {
+      for (const p of todos) {
+        for (const t of p.tags ?? []) slugs.set(t.slug, (slugs.get(t.slug) ?? 0) + 1);
+      }
+    } else {
+      for (const p of todos) {
+        const s = chave[kind](p);
+        if (s) slugs.set(s, (slugs.get(s) ?? 0) + 1);
+      }
+    }
+
+    const paths: string[] = [];
+    for (const [slug, count] of slugs) {
+      if (!comPaginas) {
+        paths.push(`/blog/${kind}/${slug}`);
+        continue;
+      }
+      for (let page = 2; page <= totalPages(count); page++) {
+        paths.push(`/blog/${kind}/${slug}/page/${page}`);
+      }
+    }
+    return paths;
+  };
 }
 
 // Índice de destinos: carrega os publicados no build (SSG) p/ o crawler ver os links.
@@ -245,7 +347,61 @@ export const routes: RouteRecord[] = [
           { path: "/docs", element: <DocsPage /> },
           { path: "/seja-parceiro", element: <SejaParceiroPage /> },
           { path: "/motor-preview", element: <MotorPreviewPage /> },
-          { path: "/blog", element: <BlogIndexPage />, loader: blogIndexLoader },
+          { path: "/blog", element: <BlogListingPage />, loader: blogListingLoader("index") },
+          {
+            path: "/blog/page/:page",
+            element: <BlogListingPage />,
+            loader: blogListingLoader("index"),
+            getStaticPaths: blogListingPaths("index", false),
+          },
+          {
+            path: "/blog/categoria/:slug",
+            element: <BlogListingPage />,
+            loader: blogListingLoader("categoria"),
+            getStaticPaths: blogListingPaths("categoria", false),
+          },
+          {
+            path: "/blog/categoria/:slug/page/:page",
+            element: <BlogListingPage />,
+            loader: blogListingLoader("categoria"),
+            getStaticPaths: blogListingPaths("categoria", true),
+          },
+          {
+            path: "/blog/tag/:slug",
+            element: <BlogListingPage />,
+            loader: blogListingLoader("tag"),
+            getStaticPaths: blogListingPaths("tag", false),
+          },
+          {
+            path: "/blog/tag/:slug/page/:page",
+            element: <BlogListingPage />,
+            loader: blogListingLoader("tag"),
+            getStaticPaths: blogListingPaths("tag", true),
+          },
+          {
+            path: "/blog/autor/:slug",
+            element: <BlogListingPage />,
+            loader: blogListingLoader("autor"),
+            getStaticPaths: blogListingPaths("autor", false),
+          },
+          {
+            path: "/blog/autor/:slug/page/:page",
+            element: <BlogListingPage />,
+            loader: blogListingLoader("autor"),
+            getStaticPaths: blogListingPaths("autor", true),
+          },
+          {
+            path: "/blog/aeroporto/:slug",
+            element: <BlogListingPage />,
+            loader: blogListingLoader("aeroporto"),
+            getStaticPaths: blogListingPaths("aeroporto", false),
+          },
+          {
+            path: "/blog/aeroporto/:slug/page/:page",
+            element: <BlogListingPage />,
+            loader: blogListingLoader("aeroporto"),
+            getStaticPaths: blogListingPaths("aeroporto", true),
+          },
           {
             path: "/blog/:slug",
             element: <BlogPostPage />,

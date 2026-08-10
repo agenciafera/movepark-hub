@@ -40,7 +40,60 @@
             "name": "Aeroporto QA",
             "short_name": "QA",
             "slug": "aeroporto-qa"
-          }
+          },
+          "category": {
+            "id": "c-1",
+            "name": "Comparativos",
+            "slug": "comparativos"
+          },
+          "author": {
+            "id": "a-1",
+            "name": "Diego",
+            "slug": "diego"
+          },
+          "tags": [
+            {
+              "tag": {
+                "id": "t-1",
+                "name": "Traslado",
+                "slug": "traslado"
+              }
+            }
+          ],
+          "category_id": "c-1",
+          "author_id": "a-1"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/blog_category*",
+      "json": [
+        {
+          "id": "c-1",
+          "name": "Comparativos",
+          "slug": "comparativos",
+          "description": "Comparações entre estacionamentos do mesmo aeroporto.",
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/blog_tag*",
+      "json": [
+        {
+          "id": "t-1",
+          "name": "Traslado",
+          "slug": "traslado"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/blog_author*",
+      "json": [
+        {
+          "id": "a-1",
+          "name": "Diego",
+          "slug": "diego"
         }
       ]
     },

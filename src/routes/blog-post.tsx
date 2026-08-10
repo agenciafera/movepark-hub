@@ -74,7 +74,7 @@ export default function BlogPostPage() {
               image: post.cover_image_url,
               publishedAt: post.published_at,
               updatedAt: post.updated_at,
-              authorName: post.author_name,
+              authorName: post.author?.name ?? post.author_name,
               wordCount: plainText(post.body_md).split(/\s+/).filter(Boolean).length,
             }),
           )}
@@ -98,7 +98,23 @@ export default function BlogPostPage() {
           title={post.title}
         >
           <p className="text-caption-sm text-muted">
+            {post.author && (
+              <>
+                <Link to={`/blog/autor/${post.author.slug}/`} className="hover:underline">
+                  {post.author.name}
+                </Link>
+                {" · "}
+              </>
+            )}
             {formatDate(post.published_at)} · {minutes} min de leitura
+            {post.category && (
+              <>
+                {" · "}
+                <Link to={`/blog/categoria/${post.category.slug}/`} className="hover:underline">
+                  {post.category.name}
+                </Link>
+              </>
+            )}
           </p>
         </PageHeader>
 
@@ -122,6 +138,20 @@ export default function BlogPostPage() {
         <div className="mt-8">
           <PostBody markdown={post.body_md} />
         </div>
+
+        {post.tags.length > 0 && (
+          <nav aria-label="Tags do post" className="mt-10 flex flex-wrap gap-2">
+            {post.tags.map((tag) => (
+              <Link
+                key={tag.id}
+                to={`/blog/tag/${tag.slug}/`}
+                className="rounded-full border border-hairline px-3 py-1.5 text-caption text-body hover:bg-surface-soft"
+              >
+                {tag.name}
+              </Link>
+            ))}
+          </nav>
+        )}
 
         {/*
           CTA por destino. Ele é o motivo de `destination_id` existir: sem isso o

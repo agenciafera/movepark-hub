@@ -17,15 +17,17 @@ import {
 } from "@/components/ui/table";
 import { useAdminBlogPosts, useDeleteBlogPost } from "@/features/blog/api";
 import { BlogPostForm } from "@/features/blog/BlogPostForm";
+import { BlogTaxonomyDialog } from "@/features/blog/BlogTaxonomyDialog";
 import { formatDate } from "@/lib/format";
-import type { BlogPost, BlogPostWithDestination } from "@/types/domain";
+import type { BlogPostWithDestination } from "@/types/domain";
 
 export default function ManagerBlog() {
   const { data, isLoading } = useAdminBlogPosts();
   const del = useDeleteBlogPost();
-  const [editing, setEditing] = React.useState<BlogPost | null>(null);
+  const [editing, setEditing] = React.useState<BlogPostWithDestination | null>(null);
   const [formOpen, setFormOpen] = React.useState(false);
   const [busca, setBusca] = React.useState("");
+  const [taxonomiaOpen, setTaxonomiaOpen] = React.useState(false);
 
   const posts = React.useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -34,7 +36,10 @@ export default function ManagerBlog() {
       (p) =>
         p.title.toLowerCase().includes(termo) ||
         p.slug.includes(termo) ||
-        (p.destination?.name ?? "").toLowerCase().includes(termo),
+        (p.destination?.name ?? "").toLowerCase().includes(termo) ||
+        (p.category?.name ?? "").toLowerCase().includes(termo) ||
+        (p.author?.name ?? "").toLowerCase().includes(termo) ||
+        p.tags.some((t) => t.name.toLowerCase().includes(termo)),
     );
   }, [data, busca]);
 
@@ -66,9 +71,14 @@ export default function ManagerBlog() {
         title="Blog"
         description="Posts publicados em /blog/. O slug é a URL que o Google indexou, então mudá-lo quebra tráfego."
         actions={
-          <Button onClick={openCreate} size="sm">
-            <Plus className="h-4 w-4" /> Novo post
-          </Button>
+          <>
+            <Button variant="outline" size="sm" onClick={() => setTaxonomiaOpen(true)}>
+              Categorias, tags e autores
+            </Button>
+            <Button onClick={openCreate} size="sm">
+              <Plus className="h-4 w-4" /> Novo post
+            </Button>
+          </>
         }
       />
 
@@ -94,6 +104,8 @@ export default function ManagerBlog() {
           <TableHeader>
             <TableRow>
               <TableHead>Título</TableHead>
+              <TableHead>Categoria</TableHead>
+              <TableHead>Autor</TableHead>
               <TableHead>Destino</TableHead>
               <TableHead>Publicado em</TableHead>
               <TableHead>Status</TableHead>
@@ -106,6 +118,12 @@ export default function ManagerBlog() {
                 <TableCell>
                   <span className="text-title-sm text-ink">{post.title}</span>
                   <span className="block text-caption-sm text-muted">/blog/{post.slug}/</span>
+                </TableCell>
+                <TableCell className="text-body-sm text-body">
+                  {post.category?.name ?? "Sem categoria"}
+                </TableCell>
+                <TableCell className="text-body-sm text-body">
+                  {post.author?.name ?? "Sem autor"}
                 </TableCell>
                 <TableCell className="text-body-sm text-body">
                   {post.destination?.name ?? "Sem destino"}
@@ -142,6 +160,7 @@ export default function ManagerBlog() {
       )}
 
       <BlogPostForm open={formOpen} onOpenChange={setFormOpen} post={editing} />
+      <BlogTaxonomyDialog open={taxonomiaOpen} onOpenChange={setTaxonomiaOpen} />
     </div>
   );
 }
