@@ -55,17 +55,39 @@ describe.skipIf(!hasEnv)("simulate_price (motor de preço, banco vivo)", () => {
   });
 });
 
-it("guard: há casos golden cobrindo as 7 estratégias", () => {
+/**
+ * Estratégias que o banco VIVO ainda consegue exercitar.
+ *
+ * `tiered_progressive` e `surcharge` saíram daqui em 10/08/2026, quando Aeropark e Abbapark
+ * viraram unidades externas: a tabela delas passou a ser espelhada do parceiro, então o valor
+ * golden deixou de descrever aquelas linhas. O `surcharge` sumiu por tabela de arrasto, porque o
+ * único caso vivo dele era o valet do Aerovalet emprestando a tabela do Aeropark, vínculo que
+ * teve de ser cortado. As duas continuam cobertas em `supabase/tests/pricing.test.sql`, que roda
+ * contra o seed congelado, e lá existe o guard das SETE. Ver o cabeçalho de `cases.ts`.
+ *
+ * A lista é exata de propósito: perder uma estratégia daqui sem perceber é o defeito que este
+ * guard existe para pegar, e ganhar uma sem atualizar a lista também merece um olhar.
+ */
+const ESTRATEGIAS_NO_BANCO_VIVO = [
+  "uniform_by_duration",
+  "fixed_bracket",
+  "incremental_formula",
+  "monthly_remainder",
+  "hourly_capped",
+];
+
+it("guard: os casos golden cobrem as estratégias que o banco vivo ainda precifica", () => {
   const strategies = new Set(priceCases.map((c) => c.strategy));
-  expect(strategies).toEqual(
-    new Set([
-      "uniform_by_duration",
-      "surcharge",
-      "fixed_bracket",
-      "tiered_progressive",
-      "incremental_formula",
-      "monthly_remainder",
-      "hourly_capped",
-    ]),
-  );
+  expect(strategies).toEqual(new Set(ESTRATEGIAS_NO_BANCO_VIVO));
+});
+
+it("guard: nenhum caso golden aponta para unidade externa", () => {
+  // Unidade externa tem tabela espelhada do parceiro: ela muda quando ele mexe no preço dele, e
+  // o caso vira vermelho sem que nada esteja errado do nosso lado.
+  const EXTERNAS = ["abbapark", "nationpark", "plenty", "garageinn", "aeropark", "virapark"];
+  const intrusos = priceCases.filter((c) => EXTERNAS.includes(c.company));
+  expect(
+    intrusos.map((c) => `${c.company}/${c.parking_type}`),
+    "caso golden em unidade externa: mova a cobertura para o pgTAP (seed congelado)",
+  ).toEqual([]);
 });

@@ -243,7 +243,7 @@ razão de E0.15 ser a próxima da fila. Reverter é um `update` de uma linha.
 
 ## Mais cinco unidades em 10/08/2026
 
-Abbapark, Nationpark, Plenty Park, Garageinn e Aeroparking. Com o Virapark, seis unidades
+Abbapark, Nationpark, Plenty Park, Garageinn e Aeropark. Com o Virapark, seis unidades
 externas e doze vagas.
 
 | Empresa | Unidade | Tenant WL | Categoria | Tipos mapeados | Piso |
@@ -252,7 +252,7 @@ externas e doze vagas.
 | Nationpark | Aeroporto Afonso Pena | `nationpark` | `aeroporto-afonso-pena` | coberta, descoberta, premium → `vaga-max` | 3 diárias |
 | Plenty Park | Aeroporto de Congonhas | `plenty` | `aeroporto-congonhas` | coberta | 3 diárias |
 | Garageinn | Aeroporto de Viracopos | `garageinn` | `aeroporto-viracopos` | descoberta → `vaga-avulsa` | nenhum |
-| Aeroparking | Aeroporto de Guarulhos | `aeropark` | `aeroporto-guarulhos` | coberta, descoberta, valet | 2 diárias |
+| Aeropark (ex-Bandeirapark) | Aeroporto de Guarulhos | `aeropark` | `aeroporto-guarulhos` | coberta, descoberta, valet | 2 diárias |
 | Virapark | Virapark | `virapark` | `virapark` | coberta | nenhum |
 
 Ao contrário do Virapark, estas cinco ficaram em `hub_relationship = onboarded`: são parceiros
@@ -260,17 +260,20 @@ com quem já existe relação, e silenciar não teria propósito.
 
 ### O que não é óbvio
 
-**O tenant do Aeroparking chama `aeropark`, não `aeroparking`.** O slug da empresa no Hub é
-`aeroparking`, e a convenção `<slug>-app.movepark.co` levaria a um domínio que não resolve.
-Existe também um tenant `airpark`, que é outro negócio (Lisboa e Faro) e já tem unidades próprias
-no Hub. Trocar um pelo outro mandaria o cliente para o estacionamento errado, em outro país.
+**O Aeropark estava no Hub com o nome errado, como "Bandeirapark".** `bandeirapark_h7k9m4n2` é o
+nome do SCHEMA legado dele, e entrou no lugar da marca quando a empresa foi semeada. A tabela de
+metadados de [`docs/simulacao-precos.md`](../simulacao-precos.md) já registrava `aeropark` como o
+slug correto do Hub, e a [`knowledge-base-rag.md`](./knowledge-base-rag.md) já listava a
+divergência como dado sujo a corrigir. Empresa e slug renomeados em 10/08/2026.
 
-**A empresa Aeroparking não tinha unidade nenhuma no Hub.** A unidade foi criada com os dados da
-própria API do parceiro (nome, endereço, telefone, e-mail). Duas ressalvas gravadas junto: a
-coordenada é o eixo da rua, geocodificada, não o número 745; e a capacidade ficou em 0, porque
-inventar número viraria fato exibido ao cliente. Ela nasceu **`is_listed = false`** e continua
-assim: o gate de foto (`20260818000000`) não deixa listar unidade sem foto, e é a trava certa.
-Para publicar, faltam foto e conferência da coordenada.
+O erro custou uma unidade duplicada: sem cruzar o domínio `aeropark-app.movepark.co` com o que já
+existia, foi criada uma unidade nova sob a company inativa `aeroparking`, que era o mesmo
+estacionamento físico. A duplicata foi apagada (nunca teve reserva) e a company `aeroparking`
+voltou a não ter configuração de white-label. **Antes de criar unidade para um tenant novo,
+procure o `wl_domain` dele no repo e no banco.**
+
+Existe também um tenant `airpark`, que é outro negócio (Lisboa e Faro) com unidades próprias no
+Hub. Trocar um pelo outro mandaria o cliente para o país errado.
 
 **O Garageinn vende um spot só, `vaga-avulsa`.** O `external_id` e a descrição dele dizem
 `vaga-coberta`, mas a política de reserva do próprio parceiro avisa que a vaga coberta fica
@@ -281,3 +284,32 @@ prometer "Coberta" o que ele não garante é exatamente o que a ADR-009 barra.
 **Cupom só existe onde a reserva fecha.** Os dois únicos cupons do banco eram `PROMO10`
 (Abbapark) e `30OFF` (Virapark). Com as duas empresas em modo externo, nenhum dos dois tem mais
 onde ser aplicado. Ficaram como estão, e o roteiro E2E passou a usar o `FERA10`, da Agência Fera.
+
+### A tabela emprestada: o preço de uma unidade nossa mudou sozinho
+
+O valet do **Aerovalet** em Guarulhos não tinha tabela própria. Ele usava `strategy = 'surcharge'`
+com `surcharge_source_id` apontando para o valet do **Aeropark** e multiplicador 1.0, artefato do
+import legado (mesmo valet de GRU, mesma lista de preço). Quando o Aeropark virou externo, o
+espelho reescreveu a tabela dele com a do parceiro, e o Aerovalet foi junto:
+
+| Estadia | Antes | Depois do espelho |
+|---|---|---|
+| 1 diária | R$ 149,00 | sem preço (o parceiro exige 2) |
+| 6 diárias | R$ 594,00 | R$ 475,20 |
+| 18 diárias | R$ 792,00 | R$ 1.782,00 |
+| 35 diárias | R$ 924,00 | R$ 3.465,00 |
+
+O Aerovalet é unidade `hub`: a reserva fecha no checkout da Movepark, pelo preço que a tela
+mostra. Uma unidade que a gente vende foi reprecificada em silêncio pela tabela de outro parceiro,
+e teria que honrar o que aparecesse.
+
+Corrigido em duas frentes: o valet do Aerovalet ganhou tabela própria com os mesmos valores
+legados, e `wl_mirror_apply_pricing` passou a **recusar** espelhar uma vaga que serve de fonte de
+`surcharge` para outra unidade (migration `20260929000000`). Recusar é o certo: quem empresta
+tabela precisa de decisão humana antes, não de um job noturno reescrevendo por baixo.
+
+**Antes de virar uma unidade para externo, procure quem empresta a tabela dela**, com
+`select ... from pricing_rule where surcharge_source_id is not null`. Hoje sobram dois vínculos,
+os dois internos a uma mesma empresa já externa (Abbapark premium e Nationpark premium apontando
+para a coberta da própria unidade), e os dois inertes, porque essas regras deixaram de ser
+`surcharge` ao serem espelhadas.

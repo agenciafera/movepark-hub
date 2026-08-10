@@ -214,6 +214,6 @@ OU header `Accept-Language` + cookie de preferência, sem prefixo de rota. **Dec
 ## 10. Open points
 
 - [ ] SSR vs CSR para SEO de `/`, `/search`, `/p/…`. Decidir antes da fase 1.
-- [ ] Estrutura de slug: `operator/location/type` está OK? Conflito quando duas empresas têm aeroporto de mesmo nome (ex: aerovalet/guarulhos vs bandeirapark/guarulhos) — `:operatorSlug` no path resolve.
+- [ ] Estrutura de slug: `operator/location/type` está OK? Conflito quando duas empresas têm aeroporto de mesmo nome (ex: aerovalet/guarulhos vs aeropark/guarulhos) — `:operatorSlug` no path resolve.
 - [ ] Como diferenciar "Reservas em uso" de "Próximas" no UI? Tab única filtrada por status é OK ou separa rotas?
 - [ ] Footer-only legal: precisa de página `/cookies` separada do `/privacidade`? Depende do consentimento LGPD escolhido.

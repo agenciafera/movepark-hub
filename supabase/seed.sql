@@ -34,7 +34,7 @@ INSERT INTO "public"."company" ("id", "name", "slug", "legal_name", "tax_id", "s
 	('5cbced79-070b-4a0c-8fef-e6f4f1e2558b', 'Nationpark', 'nationpark', NULL, NULL, 'active', '2026-05-25 14:44:10.135186+00', '2026-06-03 17:27:57.689029+00', NULL, 'active', NULL),
 	('fee1f0d3-ac69-44a6-b7d9-fcbdf7a6a21a', 'Aerovalet', 'aerovalet', NULL, NULL, 'active', '2026-05-25 14:44:10.135186+00', '2026-06-03 17:27:57.689029+00', NULL, 'active', NULL),
 	('48a7af0a-3a0e-4660-8acf-d4df7698e4f1', 'Plenty Park', 'plenty', NULL, NULL, 'active', '2026-05-25 14:44:10.135186+00', '2026-06-03 17:27:57.689029+00', NULL, 'active', NULL),
-	('6a657ec9-6d65-4844-8483-1444ff67977f', 'Bandeirapark', 'bandeirapark', 'Bandeirapark Estacionamentos', NULL, 'active', '2026-05-25 14:44:10.135186+00', '2026-06-03 17:27:57.689029+00', NULL, 'active', NULL),
+	('6a657ec9-6d65-4844-8483-1444ff67977f', 'Aeropark', 'aeropark', 'Aeropark Estacionamentos', NULL, 'active', '2026-05-25 14:44:10.135186+00', '2026-06-03 17:27:57.689029+00', NULL, 'active', NULL),
 	('9d1db89a-adce-447d-abaf-5cd2274c7fc7', 'Airpark', 'airpark', 'Airpark Portugal', NULL, 'active', '2026-05-27 16:58:38.742614+00', '2026-06-03 17:27:57.689029+00', NULL, 'active', NULL),
 	('e5fba2c7-fe29-45bf-a212-aef7f185554f', 'Ferapark', 'ferapark', 'Fera Park', NULL, 'active', '2026-05-27 16:58:38.742614+00', '2026-06-03 17:27:57.689029+00', NULL, 'active', NULL),
 	('a73eec79-5c21-45fc-842f-58d552c93819', 'Moveparking', 'moveparking', 'Moveparking Estacionamentos', NULL, 'active', '2026-05-27 16:58:38.742614+00', '2026-06-03 17:27:57.689029+00', NULL, 'active', NULL),

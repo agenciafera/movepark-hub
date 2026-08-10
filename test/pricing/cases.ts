@@ -1,9 +1,30 @@
-// Casos golden do motor de preço — valores verificados em docs/simulacao-precos.md
+// Casos golden do motor de preço. Valores verificados em docs/simulacao-precos.md
 // (Hub = Produção em 2026-05-26) e nas fórmulas de docs/specs/pricing-engine.md.
 // Cada caso é exercido contra a função SQL `simulate_price` (read-only) no banco vivo.
 //
 // NÃO gere estes valores a partir de um snapshot da função: eles são a verdade
 // independente (produção/spec). Se a função divergir, o teste DEVE falhar.
+//
+// ## Só entra aqui unidade que o Hub ainda precifica
+//
+// Um caso daqui usa a tabela VIVA da unidade como entrada. Quando a unidade vira externa, a
+// tabela dela passa a ser espelhada do parceiro (E0.13) e muda quando o parceiro muda: o valor
+// golden deixa de descrever aquela linha e o caso vira ruído vermelho.
+//
+// Em 10/08/2026 saíram 13 casos por isso, quando Abbapark e Aeropark (ex-Bandeirapark) viraram
+// externas: 4 de `tiered_progressive` e 9 do Aeropark (5 `uniform_by_duration` + 4
+// `fixed_bracket`). O `fixed_bracket` voltou pelo valet do Aerovalet, que ganhou tabela própria
+// no mesmo dia (ver o comentário na seção).
+//
+// **A cobertura por estratégia não se perdeu, mudou de casa.** Ela vive em
+// `supabase/tests/pricing.test.sql`, que roda contra o stack local construído do
+// `supabase/seed.sql`. O seed é um retrato congelado das tabelas legadas, então `fixed_bracket`
+// e `tiered_progressive` continuam exercitados com os mesmos valores golden, e agora imunes ao
+// que o parceiro faz com o preço dele.
+//
+// O que este arquivo cobre hoje, no banco vivo: `uniform_by_duration`, `fixed_bracket`,
+// `incremental_formula`, `monthly_remainder` e `hourly_capped`. Ficaram só no pgTAP o
+// `tiered_progressive` e o `surcharge`.
 
 export type PriceCase = {
   company: string;
@@ -30,27 +51,18 @@ export const priceCases: PriceCase[] = [
   { company: "aerovalet", location: "aeroporto-guarulhos", parking_type: "uncovered", days: 35, expected: 486.5, strategy: "uniform_by_duration" },
   { company: "aerovalet", location: "terminal-rodoviario-tiete", parking_type: "covered", days: 1, expected: 24.99, strategy: "uniform_by_duration" },
   { company: "aerovalet", location: "terminal-rodoviario-tiete", parking_type: "covered", days: 35, expected: 874.65, strategy: "uniform_by_duration" },
-  { company: "bandeirapark", location: "aeroporto-guarulhos", parking_type: "covered", days: 1, expected: 27.9, strategy: "uniform_by_duration" },
-  { company: "bandeirapark", location: "aeroporto-guarulhos", parking_type: "covered", days: 6, expected: 143.4, strategy: "uniform_by_duration" },
-  { company: "bandeirapark", location: "aeroporto-guarulhos", parking_type: "covered", days: 15, expected: 358.5, strategy: "uniform_by_duration" },
-  { company: "bandeirapark", location: "aeroporto-guarulhos", parking_type: "covered", days: 17, expected: 355.3, strategy: "uniform_by_duration", note: "flip ⚠️ (15d > 17d)" },
-  { company: "bandeirapark", location: "aeroporto-guarulhos", parking_type: "covered", days: 35, expected: 731.5, strategy: "uniform_by_duration" },
-
-  // ── surcharge (BUG-001: overflow 31+d herda do tipo-base) ───────────────
-  { company: "aerovalet", location: "aeroporto-guarulhos", parking_type: "valet", days: 1, expected: 149, strategy: "surcharge" },
-  { company: "aerovalet", location: "aeroporto-guarulhos", parking_type: "valet", days: 35, expected: 924, strategy: "surcharge", note: "regressão BUG-001" },
 
   // ── fixed_bracket ───────────────────────────────────────────────────────
-  { company: "bandeirapark", location: "aeroporto-guarulhos", parking_type: "valet", days: 1, expected: 149, strategy: "fixed_bracket" },
-  { company: "bandeirapark", location: "aeroporto-guarulhos", parking_type: "valet", days: 6, expected: 594, strategy: "fixed_bracket" },
-  { company: "bandeirapark", location: "aeroporto-guarulhos", parking_type: "valet", days: 18, expected: 792, strategy: "fixed_bracket" },
-  { company: "bandeirapark", location: "aeroporto-guarulhos", parking_type: "valet", days: 35, expected: 924, strategy: "fixed_bracket", note: "overflow 31+d = 792 + (d-30)×26,40" },
-
-  // ── tiered_progressive (soma por camada) ────────────────────────────────
-  { company: "abbapark", location: "aeroporto-afonso-pena", parking_type: "covered", days: 1, expected: 19.9, strategy: "tiered_progressive" },
-  { company: "abbapark", location: "aeroporto-afonso-pena", parking_type: "covered", days: 7, expected: 141.3, strategy: "tiered_progressive", note: "6×19,90 + 1×21,90" },
-  { company: "abbapark", location: "aeroporto-afonso-pena", parking_type: "covered", days: 35, expected: 796.5, strategy: "tiered_progressive" },
-  { company: "abbapark", location: "aeroporto-afonso-pena", parking_type: "uncovered", days: 1, expected: 16.9, strategy: "tiered_progressive" },
+  // Este valet era `surcharge` com multiplicador 1.0 sobre a tabela do valet do AEROPARK, e
+  // deixou de ser em 10/08/2026: quando o Aeropark virou externo, o espelho reescreveu aquela
+  // tabela com a do parceiro e repreçou esta unidade, que é `hub` e vende pelo nosso checkout
+  // (18 diárias saltaram de R$ 792 para R$ 1.782). Recebeu tabela própria com os MESMOS valores
+  // legados, e o espelho passou a recusar reescrever tabela emprestada
+  // (`20260929000000_mirror_refuses_surcharge_source.sql`). Os valores golden não mudaram.
+  { company: "aerovalet", location: "aeroporto-guarulhos", parking_type: "valet", days: 1, expected: 149, strategy: "fixed_bracket" },
+  { company: "aerovalet", location: "aeroporto-guarulhos", parking_type: "valet", days: 6, expected: 594, strategy: "fixed_bracket" },
+  { company: "aerovalet", location: "aeroporto-guarulhos", parking_type: "valet", days: 18, expected: 792, strategy: "fixed_bracket" },
+  { company: "aerovalet", location: "aeroporto-guarulhos", parking_type: "valet", days: 35, expected: 924, strategy: "fixed_bracket", note: "overflow 31+d = 792 + (d-30)×26,40; era a regressão BUG-001" },
 
   // ── incremental_formula (1d/2d especiais; 3+ = base + dias×mult) ─────────
   { company: "airpark", location: "faro", parking_type: "covered", days: 1, expected: 25, strategy: "incremental_formula" },

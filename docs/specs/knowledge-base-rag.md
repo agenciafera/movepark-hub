@@ -104,7 +104,7 @@ Parciais que valem endurecer (sem tarefa dedicada por ora): `location.phone` é 
 
 - **Base institucional "Movepark"**: pitch B2B de vendas ("demita sua agência", "o Movepark investe no seu estacionamento"). Não é atendimento ao cliente final. Fora do RAG de atendimento; se útil, base separada de vendas/parceiro.
 - Prefixos "Resposta:", emojis decorativos e perguntas duplicadas.
-- **Dados sujos/legados** a corrigir antes da ingestão: GRU/Aeropark aponta reservas para `bandeirapark.movepark.co` (slug/marca divergente); Nationpark e Abbapark mostram o número (19) 98801-3420, que é o do Virapark, em "van atrasar"; dependência de `wa.go2park.com.br/call/<slug>` (sistema externo de chamada de van).
+- **Dados sujos/legados** a corrigir antes da ingestão: ~~GRU/Aeropark aponta reservas para `bandeirapark.movepark.co` (slug/marca divergente)~~ resolvido em 10/08/2026: a empresa foi renomeada de Bandeirapark para **Aeropark** (slug `aeropark`) e a unidade virou externa, com saída para `aeropark.movepark.co`; Nationpark e Abbapark mostram o número (19) 98801-3420, que é o do Virapark, em "van atrasar"; dependência de `wa.go2park.com.br/call/<slug>` (sistema externo de chamada de van).
 
 ## Camada por seção da base (resumo)
 
