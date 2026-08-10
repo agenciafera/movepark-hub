@@ -91,16 +91,16 @@ export function Countdown({ expiresAt, onExpire }: Props) {
           : "bg-gradient-to-r from-mp-primary to-mp-red",
       )}
     >
-      {/* O fundo sangra a tela inteira, mas o conteúdo segue o container da
-          página: sem isso o rótulo e o número grudam nas bordas do monitor,
-          longe da régua de passos logo abaixo. */}
-      <div className="mx-auto flex w-full max-w-[1080px] items-center gap-3 px-4 desktop:px-8">
+      {/* O fundo sangra a tela inteira e o grupo fica centrado. Espalhado pelo
+          container de 1080px, o rótulo ia pra uma borda e o número pra outra, com
+          um vazio no meio que separava as duas metades da mesma informação. */}
+      <div className="mx-auto flex w-full max-w-[1080px] items-center justify-center gap-3 px-4 desktop:gap-5 desktop:px-8">
         <Alarm
           className={cn("h-6 w-6 shrink-0", urgente && "animate-pulse motion-reduce:animate-none")}
           aria-hidden
         />
 
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0">
           <p className="text-[11px] font-bold uppercase leading-tight tracking-[0.4px]">
             {urgente ? "Últimos minutos" : "Vaga reservada"}
           </p>
