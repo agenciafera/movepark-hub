@@ -1,4 +1,4 @@
-// deno test — partes puras do cliente WL.
+// deno test: partes puras do cliente WL.
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
   buildAvailabilityUrl,
@@ -6,6 +6,7 @@ import {
   parseAvailabilityResponse,
   parseCategories,
   parseCategoryProducts,
+  parseMinimumStayDays,
   wlReady,
 } from "./client.ts";
 
@@ -125,4 +126,35 @@ Deno.test("parseCategoryProducts pega data.products aninhado e injeta a categori
   ]);
   assertEquals(parseCategoryProducts({ data: {} }, "u"), []);
   assertEquals(parseCategoryProducts(null, "u"), []);
+});
+
+Deno.test("parseMinimumStayDays lê o piso do 400 do parceiro", () => {
+  // Corpo REAL do Abbapark, byte a byte, capturado em 10/08/2026 pedindo 1 diária. Repare nos
+  // `í`: o October escapa os acentos, e é por isso que este teste não pode ser escrito com
+  // `JSON.stringify` de um objeto com "í" (o stringify preserva o acento e o servidor não).
+  // A primeira versão do parser passava naquele teste e falhava nas dez vagas de produção.
+  const body =
+    '{"errors":{"message":"Oops! Parece que algo deu errado. Por favor, verifique os campos ' +
+    'abaixo e corrija os erros indicados.","fields":[{"field":"reservas",' +
+    '"message":"Per\\u00edodo m\\u00ednimo de perman\\u00eancia: 3 dia(s)"}]}}';
+  assertEquals(parseMinimumStayDays(body), 3);
+});
+
+Deno.test("parseMinimumStayDays também acha o piso quando o corpo não é JSON", () => {
+  // Rede de segurança para o dia em que o parceiro devolver página de exceção em HTML.
+  assertEquals(parseMinimumStayDays("<h1>Período mínimo de permanência: 4 dia(s)</h1>"), 4);
+});
+
+Deno.test("parseMinimumStayDays aguenta o texto sem acento e com espaçamento solto", () => {
+  // O texto vem do painel do parceiro, então é editável por ele. O que não pode acontecer é a
+  // troca de um acento derrubar a amostragem inteira da vaga.
+  assertEquals(parseMinimumStayDays("Periodo minimo de permanencia:  2 dias"), 2);
+  assertEquals(parseMinimumStayDays("Período mínimo de permanência: 10 dia(s)"), 10);
+});
+
+Deno.test("parseMinimumStayDays devolve null no que não é recusa por estadia", () => {
+  assertEquals(parseMinimumStayDays('{"errors":{"message":"Produto indisponível"}}'), null);
+  assertEquals(parseMinimumStayDays("<html>500</html>"), null);
+  // Zero não é piso: seria um "mínimo" que não restringe nada e viraria laço infinito.
+  assertEquals(parseMinimumStayDays("Período mínimo de permanência: 0 dia(s)"), null);
 });

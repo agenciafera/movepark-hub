@@ -1,26 +1,30 @@
 /**
  * Fixture e helpers da jornada do DONO de estacionamento (roteiro O).
  *
- * O dono aqui é `peu+operador@fera.ag`, owner da company Abbapark (unidade
- * Aeroporto Afonso Pena) em produção. Diferente da fixture Mercy (descartável),
- * esta é uma company de parceiro REAL usada por outros testes de consumidor. Por
- * isso este roteiro:
+ * O dono aqui é `peu+agenciafera@fera.ag`, owner da company Agência Fera em
+ * produção. Diferente da fixture Mercy (descartável), esta é uma company que
+ * outros specs de consumidor também leem. Por isso este roteiro:
  *   - só LÊ o banco pelo `admin` (service_role) para conferir efeito;
  *   - o único write é a mudança de preço, feita pela UI do dono e REVERTIDA no
  *     fim pelos helpers de snapshot abaixo, para não deixar a diária alterada
- *     quebrando os specs de consumidor que leem o Abbapark.
+ *     quebrando os specs de consumidor que leem a mesma unidade.
  *
  * NUNCA use `cleanupFixture()` daqui: aquele helper é escopado em `%mercy%` e não
- * toca no Abbapark de propósito.
+ * toca na Agência Fera de propósito.
+ *
+ * Por que não é mais o Abbapark: ele virou unidade EXTERNA (checkout no site do
+ * parceiro). Numa unidade externa a single não tem tarifa, cupom nem reserva, e
+ * metade do roteiro deixaria de ter o que clicar. A Agência Fera é nossa e fica
+ * em `checkout_mode = 'hub'`: ao mexer nela, mantenha assim.
  */
 import { admin } from "./supabaseAdmin";
 
 /** Alvos do roteiro, resolvidos por slug/código (nada de id cravado). */
-export const ABBAPARK_OWNER = {
-  companySlug: "abbapark",
-  companyName: "Abbapark",
-  locationSlug: "aeroporto-afonso-pena",
-  locationName: "Aeroporto Afonso Pena",
+export const FERA_OWNER = {
+  companySlug: "agencia-fera",
+  companyName: "Agência Fera",
+  locationSlug: "agencia-fera",
+  locationName: "Agência Fera",
   /** Tipo de vaga em que o dono mexe no preço e o consumidor reserva. */
   parkingTypeCode: "uncovered",
   /** Nome como aparece no card de Preços e no editor. */
@@ -47,9 +51,9 @@ export async function resolveUncoveredRuleId(): Promise<string> {
     .select(
       "id, location!inner(slug, company!inner(slug)), company_parking_type!inner(parking_type!inner(code))",
     )
-    .eq("location.slug", ABBAPARK_OWNER.locationSlug)
-    .eq("location.company.slug", ABBAPARK_OWNER.companySlug)
-    .eq("company_parking_type.parking_type.code", ABBAPARK_OWNER.parkingTypeCode)
+    .eq("location.slug", FERA_OWNER.locationSlug)
+    .eq("location.company.slug", FERA_OWNER.companySlug)
+    .eq("company_parking_type.parking_type.code", FERA_OWNER.parkingTypeCode)
     .single();
   if (lptErr) throw lptErr;
 
@@ -107,9 +111,9 @@ export async function simulateConsumerPrice(
   days: number,
 ): Promise<{ price: number | null; old_price: number | null; error: string | null }> {
   const { data, error } = await admin.rpc("simulate_price", {
-    p_company: ABBAPARK_OWNER.companySlug,
-    p_location: ABBAPARK_OWNER.locationSlug,
-    p_parking_type: ABBAPARK_OWNER.parkingTypeCode,
+    p_company: FERA_OWNER.companySlug,
+    p_location: FERA_OWNER.locationSlug,
+    p_parking_type: FERA_OWNER.parkingTypeCode,
     p_days: days,
   });
   if (error) throw error;
@@ -122,18 +126,18 @@ export async function simulateConsumerPrice(
 }
 
 /**
- * Um código de reserva do Abbapark no status pedido, para os casos de LEITURA
+ * Um código de reserva da Agência Fera no status pedido, para os casos de LEITURA
  * (filtro e busca no painel). Só lê: não cria nada. Devolve null quando a empresa não
  * tem reserva nesse status, para o spec pular em vez de falhar por falta de dado.
  */
-export async function findAbbaparkBookingCode(
+export async function findFeraBookingCode(
   status: "completed" | "expired" | "cancelled" | "confirmed",
 ): Promise<string | null> {
   const { data, error } = await admin
     .from("booking")
     .select("code, location!inner(slug, company!inner(slug))")
-    .eq("location.slug", ABBAPARK_OWNER.locationSlug)
-    .eq("location.company.slug", ABBAPARK_OWNER.companySlug)
+    .eq("location.slug", FERA_OWNER.locationSlug)
+    .eq("location.company.slug", FERA_OWNER.companySlug)
     .eq("status", status)
     .limit(1)
     .maybeSingle();
@@ -141,20 +145,20 @@ export async function findAbbaparkBookingCode(
   return (data?.code as string) ?? null;
 }
 
-/** Resolve o `location.id` da unidade do Abbapark por slug (sem id cravado). */
-export async function resolveAbbaparkLocationId(): Promise<string> {
+/** Resolve o `location.id` da unidade da Agência Fera por slug (sem id cravado). */
+export async function resolveFeraLocationId(): Promise<string> {
   const { data, error } = await admin
     .from("location")
     .select("id, company!inner(slug)")
-    .eq("slug", ABBAPARK_OWNER.locationSlug)
-    .eq("company.slug", ABBAPARK_OWNER.companySlug)
+    .eq("slug", FERA_OWNER.locationSlug)
+    .eq("company.slug", FERA_OWNER.companySlug)
     .single();
   if (error) throw error;
   return data.id as string;
 }
 
 /**
- * Semeia (ou reseta) uma reserva CONFIRMADA de teste no Abbapark, para os specs de
+ * Semeia (ou reseta) uma reserva CONFIRMADA de teste na Agência Fera, para os specs de
  * operação (check-in por QR, transições no drawer). Feito pelo `admin`
  * (service_role), que passa pelo guard `booking_guard_status_transition` (só cliente
  * é barrado). Upsert por `code` (único): reutiliza a MESMA linha a cada rodada, sem

@@ -2,24 +2,26 @@
  * C-04 do roteiro do consumidor: o detalhe informa corretamente coberto ou
  * descoberto.
  *
- * São dois casos, e o par é o que separa causa de sintoma:
+ * O defeito original (E2.1.3, 86ajmwawc): a página da vaga DESCOBERTA dizia "Vaga em área
+ * aberta, sem cobertura" e três linhas abaixo listava "Coberto" entre os benefícios, porque o
+ * bloco lê `location_amenity` (da UNIDADE) sob um título que promete falar da VAGA. Contradição
+ * no exato ponto em que o cliente decide. Corrigido nas duas fontes, o card da busca e esta
+ * página, filtrando os descritores de tipo da lista.
  *
- *   - Abbapark: tem a amenidade `covered` na location. Antes da E2.1.3, a página
- *     da vaga DESCOBERTA dizia "Vaga em área aberta, sem cobertura" e três linhas
- *     abaixo listava "Coberto" entre os benefícios. Contradição no exato ponto em
- *     que o cliente decide.
- *   - Maxi Park (controle): mesmos tipos coberta e descoberta, sem a amenidade. A
- *     contradição nunca existiu. É a prova de que a causa é a amenidade da
- *     location vazando pro tipo de vaga, não o tipo em si.
+ * O caso roda em DUAS unidades porque a proteção é contra o vazamento voltar em qualquer base,
+ * não contra um dado específico.
  *
- * Corrigido na E2.1.3 (86ajmwawc), nas duas fontes: o card da busca e esta
- * página. O título diz "O que essa VAGA oferece", mas o conteúdo vem de
- * `location_amenity` (da UNIDADE), então os descritores de tipo são filtrados.
+ * ATENÇÃO ao ler este arquivo: ele já teve o Abbapark como "caso" (a unidade que tinha a
+ * amenidade `covered`) e o Maxi Park como controle. Hoje NENHUMA unidade tem essa amenidade, e
+ * o código `covered` nem existe mais no catálogo `amenity`, então os dois lados viraram
+ * controle. O caso segue valendo como rede de regressão, mas parou de reproduzir o defeito
+ * original: para reproduzi-lo de novo é preciso primeiro recriar uma amenidade descritora de
+ * tipo na unidade.
  *
  * Só LÊ. Não cria reserva nem cobrança.
  */
 import { test, expect, type Page } from "@playwright/test";
-import { ABBAPARK, MAXI_PARK, listingUrl, type ConsumerFixture } from "../support/consumer";
+import { AGENCIA_FERA, MAXI_PARK, listingUrl, type ConsumerFixture } from "../support/consumer";
 
 /** Texto do bloco de benefícios, ou string vazia quando a unidade não tem nenhum. */
 async function benefitsText(page: Page): Promise<string> {
@@ -40,10 +42,10 @@ async function openUncovered(page: Page, fixture: ConsumerFixture) {
   await expect(description).toContainText("sem cobertura");
 }
 
-test("C-04: Abbapark descoberta não pode listar Coberto como benefício", async ({ page }) => {
+test("C-04: Agência Fera descoberta não pode listar Coberto como benefício", async ({ page }) => {
   // Corrigido na E2.1.3 (86ajmwawc): a página da unidade filtra os descritores de
   // tipo (covered/valet/…) da lista de amenidades.
-  await openUncovered(page, ABBAPARK);
+  await openUncovered(page, AGENCIA_FERA);
 
   const benefits = await benefitsText(page);
   expect(
@@ -52,12 +54,12 @@ test("C-04: Abbapark descoberta não pode listar Coberto como benefício", async
   ).not.toContain("Coberto");
 });
 
-test("C-04 controle: Maxi Park descoberta não tem a contradição", async ({ page }) => {
+test("C-04: Maxi Park descoberta também não lista Coberto", async ({ page }) => {
   await openUncovered(page, MAXI_PARK);
 
   const benefits = await benefitsText(page);
   expect(
     benefits,
-    "sem a amenidade `covered` na location, o benefício não deveria aparecer",
+    "descritor de tipo não pode entrar na lista de benefícios da unidade",
   ).not.toContain("Coberto");
 });

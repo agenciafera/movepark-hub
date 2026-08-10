@@ -4,7 +4,10 @@
 // wl_mirror_apply_pricing. Depois compara os dois motores nas mesmas entradas; divergiu, marca
 // a regra como `divergent` e a vitrine cai para "a partir de".
 //
-// Custo por vaga: 42 chamadas de amostragem + 5 de verificação, uns 40 segundos.
+// Custo por vaga: ~42 chamadas de amostragem + 5 de verificação, uns 45 segundos. A Edge derruba
+// a invocação em 150s, então o job processa as vagas MAIS VELHAS primeiro e para de pegar vaga
+// nova quando estoura o orçamento (START_BUDGET_MS), devolvendo `skipped`. O que sobra volta no
+// topo da próxima passada. Por isso o cron roda de 3 em 3 horas: a fila inteira gira todo dia.
 //
 // Grava POR EVENTO: passada que acha o mesmo preço não deixa linha de log, só atualiza o
 // carimbo de frescor. Ver a regra e o porquê em supabase/migrations/*_pricing_mirror.sql.
@@ -19,7 +22,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { wlGetCalculationPrice, type WlConfig } from "../_shared/wl/client.ts";
 import { sampleWlPriceTable, toHubPricing, type Quote } from "../_shared/wl/price-sampler.ts";
-import { buildQuoteAnchor, pricesDiffer, VERIFY_DURATIONS } from "./logic.ts";
+import {
+  buildQuoteAnchor,
+  pricesDiffer,
+  sortByStaleness,
+  START_BUDGET_MS,
+  verifyDurations,
+} from "./logic.ts";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -52,6 +61,10 @@ Deno.serve(async (req: Request) => {
     .from("location_parking_type")
     .select(
       "id, wl_category_slug, wl_product_slug, " +
+        // FK explícita: `pricing_rule` aponta duas vezes para `location_parking_type`
+        // (a regra da vaga e o `surcharge_source_id`), e sem nomear a constraint o PostgREST
+        // recusa o embed com "more than one relationship was found".
+        "pricing_rule:pricing_rule!pricing_rule_location_parking_type_id_fkey(mirror_verified_at), " +
         "company_parking_type:company_parking_type!inner(parking_type:parking_type!inner(code)), " +
         "location:location!inner(slug, checkout_mode, " +
         "company:company!inner(slug, wl_domain, wl_tenant_key, wl_sync_enabled))",
@@ -68,11 +81,26 @@ Deno.serve(async (req: Request) => {
   let processed = 0;
   let changed = 0;
   let divergent = 0;
+  let skipped = 0;
   const errors: { id: string; message: string }[] = [];
 
-  for (const lpt of lpts ?? []) {
+  // Mais velha primeiro, e para de pegar vaga nova quando o orçamento de tempo acaba. O que
+  // sobrar volta no topo da próxima passada, então a fila roda inteira mesmo sem caber de uma vez.
+  const started = Date.now();
+  const fila = sortByStaleness(
+    lpts ?? [],
+    // deno-lint-ignore no-explicit-any
+    (r: any) => (r.pricing_rule?.mirror_verified_at as string | null) ?? null,
+  );
+
+  for (const lpt of fila) {
     // deno-lint-ignore no-explicit-any
     const row = lpt as any;
+
+    if (Date.now() - started > START_BUDGET_MS) {
+      skipped++;
+      continue;
+    }
     const cfg = row.location?.company as WlConfig | null;
     if (!cfg?.wl_domain || !cfg?.wl_tenant_key) continue;
 
@@ -101,6 +129,7 @@ Deno.serve(async (req: Request) => {
         p_tiers: tiers,
         p_calls: table.calls,
         p_anomalies: table.anomalies,
+        p_minimum_days: table.minimumDays,
       });
       if (applyErr) throw new Error(applyErr.message);
       processed++;
@@ -110,7 +139,7 @@ Deno.serve(async (req: Request) => {
       // Hub INTEIRO, não só esta unidade: do outro lado há um motor rodando com dinheiro real
       // há anos, servindo de oráculo.
       const diffs: unknown[] = [];
-      for (const days of VERIFY_DURATIONS) {
+      for (const days of verifyDurations(table.minimumDays)) {
         const wl = await quote(days, 0);
         const { data: sim } = await admin.rpc("simulate_price", {
           p_company: row.location.company.slug,
@@ -141,5 +170,6 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  return json({ ok: true, processed, changed, divergent, errors });
+  // `skipped` vai na resposta de propósito: corte silencioso lê como "cobriu tudo".
+  return json({ ok: true, processed, changed, divergent, skipped, errors });
 });

@@ -1,8 +1,9 @@
 # Espelhamento de preço do white-label (E0.13)
 
 > **Épico:** E0.13 · **Fase:** 0 · **D vinculado:** D-008
-> **Status:** implementado em 08/08/2026. Migrations `*_pricing_mirror.sql` e
-> `*_pricing_mirror_cron.sql`, Edge `wl-price-mirror`, cron diário às 07:00 UTC.
+> **Status:** implementado em 08/08/2026, ampliado em 10/08/2026 para seis unidades externas.
+> Migrations `*_pricing_mirror.sql`, `*_pricing_mirror_cron.sql`, `*_pricing_minimum_stay.sql` e
+> `*_pricing_mirror_cron_reschedule.sql`. Edge `wl-price-mirror`, cron de 3 em 3 horas.
 
 Reconstrói no Hub a tabela de preço de uma unidade externa **amostrando** a API de cálculo do
 parceiro. Sem consulta em tempo real.
@@ -149,6 +150,56 @@ voltar na próxima virada.
 
 Efeito na vitrine: a single do Virapark saiu de R$ 161,10 (tabela velha do Hub) para
 **R$ 224,10**, que é o que o parceiro cobra. Os R$ 63 de divergência fecharam.
+
+### Estadia mínima do parceiro (10/08/2026)
+
+Ao ampliar de 1 para 6 unidades externas, quatro dos cinco parceiros novos recusaram a cotação
+curta: **3 diárias** em Abbapark, Nationpark e Plenty; **2** no Aeroparking. Garageinn e Virapark
+não têm piso.
+
+```
+HTTP 400
+{"errors":{"fields":[{"field":"reservas",
+                      "message":"Período mínimo de permanência: 3 dia(s)"}]}}
+```
+
+O piso é do **carrinho**, não do produto: vale igual para coberta, descoberta e MAX do mesmo
+tenant.
+
+**O catálogo mente sobre isso.** O `minimum_stay` de cada produto em `/api/v3/categories` diz
+`0` no Abbapark (que recusa 1 e 2 diárias) e `2 horas` no Nationpark (que recusa 2 diárias). A
+recusa da cotação é a única fonte confiável, e é dela que o amostrador lê o número
+(`parseMinimumStayDays`). A subida dia a dia fica só de rede, para o dia em que o texto mudar.
+
+**Duas armadilhas que custaram uma passada inteira cada:**
+
+1. O corpo do 400 vem com os acentos escapados (`Período mínimo`). Regex no texto cru
+   não acha "mínimo". O parser tem que passar pelo `JSON.parse` antes. Um teste escrito com
+   `JSON.stringify` de um objeto com "í" **não** pega isso, porque o stringify preserva o acento
+   e o servidor não.
+2. `_apply_pricing` cotava abaixo do piso, e cotava barato: a faixa aberta (`to_day is null`)
+   casava sem olhar o `from_day`, então 1 diária numa tabela que começa no dia 3 caía na última
+   faixa e devolvia a diária mais baixa da curva (R$ 23,90 no Abbapark, contra R$ 77,70 das 3
+   diárias mínimas). A unidade subiria como a mais barata na ordenação da busca e a recusa só
+   apareceria no site do parceiro. Corrigido nas duas sobrecargas da função: sem faixa que sirva,
+   o preço é `NULL`, e a busca já descarta resultado sem preço.
+
+O piso também é espelhado para `location_parking_type.has_minimum_stay` /
+`minimum_stay_value`, e some sozinho quando o parceiro deixa de exigir.
+
+### Lote: a fila não cabe numa invocação só
+
+Com 12 vagas a ~45s cada, a passada leva uns 9 minutos e a Edge derruba em 150s sem resposta. Na
+primeira tentativa o job tomou `IDLE_TIMEOUT` no meio e deixou 7 vagas com a tabela velha do Hub
+apontando para o checkout do parceiro.
+
+O job passou a ordenar pela vaga **mais velha** (`mirror_verified_at`, nunca espelhada na frente)
+e a parar de pegar vaga nova depois de `START_BUDGET_MS`, devolvendo `skipped` na resposta. O que
+sobra volta no topo da passada seguinte, então a fila roda por rodízio em vez de matar de fome as
+últimas. O cron passou de diário para de 3 em 3 horas: mesmo tráfego contra o parceiro, só
+distribuído, e a fila inteira gira todo dia.
+
+`skipped` vai na resposta de propósito. Corte silencioso lê como "cobriu tudo".
 
 ### Limite conhecido
 

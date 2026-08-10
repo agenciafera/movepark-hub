@@ -9,10 +9,10 @@
  * Só LÊ. Não cria reserva nem cobrança.
  */
 import { test, expect } from "@playwright/test";
-import { ABBAPARK, searchUrl } from "../support/consumer";
+import { AGENCIA_FERA, searchUrl } from "../support/consumer";
 
 test("C-03: o contador do topo bate com o número de cards", async ({ page }) => {
-  await page.goto(searchUrl(ABBAPARK));
+  await page.goto(searchUrl(AGENCIA_FERA));
 
   const cards = page.getByTestId("result-card");
   await expect(cards.first()).toBeVisible({ timeout: 30_000 });

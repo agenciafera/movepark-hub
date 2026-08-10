@@ -25,6 +25,8 @@ export type SampledTable = {
   oldPriceDaily: number | null;
   /** Minutos de fração que ainda cabem na diária corrente, sem promover para a próxima. */
   toleranceMinutes: number;
+  /** Piso da tabela: menos que isso o parceiro recusa a reserva. 1 quando não há mínimo. */
+  minimumDays: number;
   calls: number;
   /** Achados que merecem olho humano. Não impedem a gravação. */
   anomalies: string[];
@@ -34,6 +36,14 @@ export type SampledTable = {
 export const MAX_DAYS = 31;
 /** Teto da busca binária da fração: um dia inteiro de minutos. */
 const DAY_MINUTES = 1440;
+/**
+ * Até onde subir procurando o piso quando o parceiro recusa sem dizer o número.
+ *
+ * Sete é o maior mínimo plausível numa tabela de estacionamento de aeroporto (uma semana).
+ * Acima disso é mais provável que a recusa seja outra coisa, e insistir só gastaria chamada
+ * escondendo o erro de verdade.
+ */
+const MAX_MINIMUM_PROBE = 7;
 
 /** Centavos, para comparar preço sem herdar o erro do ponto flutuante. */
 function cents(v: number): number {
@@ -45,20 +55,68 @@ function toReais(c: number): number {
 }
 
 /**
+ * Descobre o piso da tabela do parceiro.
+ *
+ * Caminho normal: uma chamada. Pergunta-se o preço de 1 diária; se o parceiro recusar dizendo
+ * o mínimo, é ele quem informa o número e acabou. A subida dia a dia é só a rede para o dia em
+ * que a mensagem mudar de formato: sem ela, uma vírgula no texto do parceiro voltaria a derrubar
+ * a vaga inteira.
+ */
+export async function discoverMinimumDays(
+  quote: QuoteFn,
+): Promise<{ minimumDays: number; firstQuote: Quote; calls: number }> {
+  let calls = 0;
+  for (let d = 1; d <= MAX_MINIMUM_PROBE; d++) {
+    try {
+      const firstQuote = await quote(d, 0);
+      calls++;
+      return { minimumDays: d, firstQuote, calls };
+    } catch (e) {
+      calls++;
+      const declared = (e as { minimumDays?: number }).minimumDays;
+      // Recusa por outro motivo (500, produto errado, tenant fora do ar) sobe como está: tratar
+      // como piso mascararia a falha e gravaria uma tabela truncada.
+      if (typeof declared !== "number") throw e;
+      if (declared > MAX_MINIMUM_PROBE) {
+        throw new Error(`estadia mínima de ${declared} dias, acima do teto de ${MAX_MINIMUM_PROBE}`);
+      }
+      // O parceiro disse o número: pula direto para ele em vez de subir de um em um.
+      if (declared > d) d = declared - 1;
+    }
+  }
+  throw new Error(`o parceiro recusou até ${MAX_MINIMUM_PROBE} diárias sem informar um piso`);
+}
+
+/**
  * Reconstrói a tabela inteira de uma vaga.
  *
- * Custo: `MAX_DAYS` chamadas nas bordas + 11 da busca binária. Para 31 dias, 42 chamadas.
+ * Custo: `MAX_DAYS - piso + 1` chamadas nas bordas (a do piso serve também para descobri-lo) e
+ * 11 na busca binária. Para uma vaga sem mínimo e 31 dias, 42 chamadas; com piso de 3, 40.
  */
 export async function sampleWlPriceTable(quote: QuoteFn): Promise<SampledTable> {
   const anomalies: string[] = [];
   let calls = 0;
 
+  // 0. Piso da tabela. Amostrar abaixo dele não é "faltar dado", é gravar preço que o parceiro
+  //    recusa: a busca ordenaria a unidade como a mais barata e o cliente bateria na recusa
+  //    depois do clique.
+  const { minimumDays, firstQuote, calls: minimumCalls } = await discoverMinimumDays(quote);
+  calls += minimumCalls;
+  if (minimumDays > 1) anomalies.push(`estadia mínima do parceiro: ${minimumDays} diárias`);
+
   // 1. Bordas exatas, dia a dia. É isto que encontra a fronteira sem chute, inclusive a do
   //    dia 6 para o 7, que uma grade de 5 em 5 pularia.
   const perDay: { days: number; total: number; unit: number; oldTotal: number | null }[] = [];
-  for (let d = 1; d <= MAX_DAYS; d++) {
-    const q = await quote(d, 0);
-    calls++;
+  for (let d = minimumDays; d <= MAX_DAYS; d++) {
+    let q: Quote;
+    if (d === minimumDays) {
+      // O piso já foi cotado quando foi descoberto. Perguntar de novo seria uma chamada a mais
+      // por vaga, todo dia, para receber a mesma resposta.
+      q = firstQuote;
+    } else {
+      q = await quote(d, 0);
+      calls++;
+    }
     const unitCents = cents(q.price) / d;
     if (!Number.isInteger(Math.round(unitCents * 1000) / 1000)) {
       // Diária que não fecha em centavo exato: o parceiro não está usando diária uniforme
@@ -92,14 +150,19 @@ export async function sampleWlPriceTable(quote: QuoteFn): Promise<SampledTable> 
   const oldPriceDaily = resolveOldPriceDaily(perDay, anomalies);
 
   // 4. Tolerância de fração, por busca binária num dia fixo. Procura o maior extra que ainda
-  //    cabe na diária corrente.
+  //    cabe na diária corrente. O dia fixo é o PISO, não o dia 1: abaixo do piso o parceiro
+  //    recusa, e a busca binária inteira responderia erro em vez de preço.
   const base = perDay[0];
-  const { minutes, calls: toleranceCalls } = await findToleranceMinutes(quote, base.total);
+  const { minutes, calls: toleranceCalls } = await findToleranceMinutes(
+    quote,
+    base.total,
+    minimumDays,
+  );
   calls += toleranceCalls;
 
   anomalies.push(...findCommercialAnomalies(perDay));
 
-  return { tiers, oldPriceDaily, toleranceMinutes: minutes, calls, anomalies };
+  return { tiers, oldPriceDaily, toleranceMinutes: minutes, minimumDays, calls, anomalies };
 }
 
 /**
@@ -111,6 +174,7 @@ export async function sampleWlPriceTable(quote: QuoteFn): Promise<SampledTable> 
 export async function findToleranceMinutes(
   quote: QuoteFn,
   baseTotalCents: number,
+  baseDays = 1,
 ): Promise<{ minutes: number; calls: number }> {
   let low = 0;
   let high = DAY_MINUTES;
@@ -118,7 +182,7 @@ export async function findToleranceMinutes(
 
   while (high - low > 1) {
     const mid = Math.floor((low + high) / 2);
-    const q = await quote(1, mid);
+    const q = await quote(baseDays, mid);
     calls++;
     if (cents(q.price) === baseTotalCents) low = mid;
     else high = mid;
@@ -185,7 +249,9 @@ export function toHubPricing(table: SampledTable): {
 
   if (table.oldPriceDaily != null) {
     tiers.push({
-      from_day: 1,
+      // Começa no piso, igual à tabela de venda: cotar balcão para uma estadia que o parceiro
+      // recusa mostraria um "de R$ X" que não existe em lugar nenhum.
+      from_day: table.minimumDays,
       to_day: null,
       unit_price: table.oldPriceDaily,
       is_old_price: true,

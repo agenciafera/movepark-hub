@@ -75,9 +75,17 @@ Já existem em produção, não precisam ser criados. São os mesmos do `CLAUDE.
 | `hub_admin` (super admin) | `developer@fera.ag` | `/manager/*` |
 | `company_operator` (Mercy) | `peu+mercy@fera.ag` | `/operator/*` e o onboarding do parceiro |
 | `customer` | `peu+teste1@fera.ag` | reservas: busca, checkout, `/bookings` (projects `e2e-consumer` e `e2e-consumer-tx`) |
-| `company_operator` (Abbapark) | `peu+operador@fera.ag` | dono de estacionamento real: `/operator/*` do roteiro D (projects `e2e-owner` e `e2e-owner-tx`) |
+| `company_operator` (Agência Fera) | `peu+agenciafera@fera.ag` | dono de estacionamento: `/operator/*` do roteiro D (projects `e2e-owner` e `e2e-owner-tx`) |
 
 O usuário do parceiro é um só ao longo de toda a jornada: entra como lead público e, aprovado, vira o operador da unidade que cadastrou. Por isso os specs de `/operator` precisam de uma company vinculada a ele.
+
+### A unidade da suíte precisa ficar em `checkout_mode = 'hub'`
+
+Roteiros C e O usam a **Agência Fera**. Ela substituiu o Abbapark em 10/08/2026, quando Abbapark, Nationpark, Plenty Park, Garageinn e Aeroparking viraram **unidades externas** (a reserva fecha no site do parceiro).
+
+Numa unidade externa a single não tem tarifa, cupom, upgrade nem card de reserva: por ADR-009, promessa de transação só renderiza com capacidade declarada. Metade dos casos deixaria de ter o que clicar, e falharia por design em vez de por defeito.
+
+Ao mexer na Agência Fera, mantenha `checkout_mode = 'hub'`. Hoje ela é a única unidade listada que ainda exercita o checkout inteiro, e virá-la para externo apaga a cobertura de C-24, C-05 e o passo de reserva do O-03 de uma vez. O cupom `FERA10` também é dela e é fixo: não apague.
 
 O vínculo do operador com a empresa Mercy vive em `profile_company`. A limpeza apaga a company, e o vínculo cai por cascata. Por isso existe `seedFixtureCompany(status)`: ela recria company e vínculo, e é pré-condição de todo spec de `/operator`. No fluxo real esse vínculo nasce do convite por e-mail, que não dá para automatizar.
 
@@ -129,10 +137,10 @@ order by b.created_at desc;
 
 Três specs de leitura guardaram defeito conhecido em vez de esconder:
 
-- **C-02, C-03 e o caso Abbapark do C-04** estavam em `test.fail()`. A asserção descrevia o comportamento **correto**, que na época não existia. Enquanto o defeito estava de pé, o Playwright esperava a falha e a suíte ficava verde; quando a correção entrou, o teste passou e o `test.fail()` acusou "passou mas era pra falhar", que é o sinal de remover a marcação. Foram o aceite da tarefa ClickUp `86ajmwawc`.
+- **C-02, C-03 e o primeiro caso do C-04** estavam em `test.fail()`. A asserção descrevia o comportamento **correto**, que na época não existia. Enquanto o defeito estava de pé, o Playwright esperava a falha e a suíte ficava verde; quando a correção entrou, o teste passou e o `test.fail()` acusou "passou mas era pra falhar", que é o sinal de remover a marcação. Foram o aceite da tarefa ClickUp `86ajmwawc`.
 - **C-05** esteve em `test.fixme()` enquanto o seletor de tipo de vaga no detalhe não existia. O spec já tinha sido escrito para virar teste de aceite quando o recurso chegasse, e foi o que aconteceu: hoje roda com dois casos.
 
-O C-04 tem também um caso de **controle** que passa hoje: o Maxi Park tem os mesmos tipos de vaga do Abbapark mas não tem a amenidade `covered` na location, e lá a contradição some. É o que prova que a causa é a amenidade vazando pro tipo, não o tipo em si.
+O C-04 roda em duas unidades. Ele nasceu como par caso/controle: o Abbapark tinha a amenidade `covered` na location e reproduzia a contradição, o Maxi Park não tinha e servia de controle. Hoje **nenhuma** unidade tem essa amenidade, e o código `covered` saiu do catálogo `amenity`, então os dois lados viraram controle. O caso segue como rede de regressão, mas para reproduzir o defeito original é preciso antes recriar uma amenidade descritora de tipo na unidade.
 
 ### Parte 2: voucher, upgrade e cancelamento (C-14 a C-23)
 
@@ -207,7 +215,7 @@ A área do parceiro vive em `e2e/playwright/owner/` e segue a mesma partição d
 
 **A convenção de nome decide o project**, e o default é o guardado: `R<nn>-*.spec.ts` é leitura e cai no `e2e-owner`; qualquer outro nome cai no `e2e-owner-tx`, atrás da trava. Assim um spec novo que escreva e esqueça a convenção não vaza para a suíte que roda sem argumento.
 
-O dono aqui é `peu+operador@fera.ag`, owner do **Abbapark**, que é company de parceiro **real** (não é fixture descartável). Por isso os specs dele revertem o que mexem: o preço volta ao snapshot no `afterAll`, e as reservas de teste (`OTEST-*`) são reutilizadas por código fixo e aposentadas por soft-delete, nunca apagadas.
+O dono aqui é `peu+agenciafera@fera.ag`, owner da **Agência Fera**, que é company de verdade em produção (não é fixture descartável). Por isso os specs dele revertem o que mexem: o preço volta ao snapshot no `afterAll`, e as reservas de teste (`OTEST-*`) são reutilizadas por código fixo e aposentadas por soft-delete, nunca apagadas.
 
 Dois casos do roteiro D moram fora de `e2e/playwright/owner/`, porque precisam de outra sessão: `manager/T06-impersonation` (hub_admin entrando como operador) e `operator/O22-escopo-rota` (bounce de rota por escopo, que rebaixa o papel na fixture Mercy). O roteiro completo está em `docs/testes/roteiro-operador.md`.
 
@@ -249,12 +257,12 @@ e2e/
       session.ts         # bypass de auth via magic link
       leadFlow.ts        # passos do modal "Seja parceiro"
       dragHtml5.ts       # arrasto nativo do kanban
-      owner.ts           # passos do roteiro D (dono do Abbapark)
+      owner.ts           # passos do roteiro D (dono da Agência Fera)
     auth/
       manager.setup.ts   # gera .auth/manager.json
       operator.setup.ts  # gera .auth/operator.json
       customer.setup.ts  # gera .auth/customer.json
-      abbapark-owner.setup.ts # gera .auth/abbapark-owner.json
+      fera-owner.setup.ts # gera .auth/fera-owner.json
     public/
       harness.spec.ts    # dev server + service_role, sem depender de auth
       T01-lead-parcial.spec.ts
@@ -271,7 +279,7 @@ e2e/
       T15-salvar-conta.spec.ts
       T16-assinar-contrato.spec.ts
       O22-escopo-rota.spec.ts          # roteiro D (O-22); rebaixa papel na fixture
-    owner/                             # roteiro D, dono do Abbapark (parceiro real)
+    owner/                             # roteiro D, dono da Agência Fera
       R01-reservas-filtro.spec.ts      # leitura: filtro e busca
       O01-dono-jornada.spec.ts         # tx: muda preço real, cria booking
       O02-operacao-reservas.spec.ts    # tx: check-in por QR e transição no drawer

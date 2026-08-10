@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 import { env } from "./e2e/playwright/support/env";
 import {
-  ABBAPARK_OWNER_STATE,
+  FERA_OWNER_STATE,
   CUSTOMER_STATE,
   MANAGER_STATE,
   OPERATOR_STATE,
@@ -90,13 +90,13 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], storageState: OPERATOR_STATE },
     },
     /**
-     * Roteiro O: jornada do DONO de estacionamento (peu+operador@fera.ag, owner do
-     * Abbapark). Confere reservas, tenta ver as canceladas, muda o preço da diária,
-     * confirma que o novo valor propaga pra busca e pro checkout, reserva no valor
-     * novo e lê o reflexo no painel.
+     * Roteiro O: jornada do DONO de estacionamento (peu+agenciafera@fera.ag, owner
+     * da Agência Fera). Confere reservas, tenta ver as canceladas, muda o preço da
+     * diária, confirma que o novo valor propaga pra busca e pro checkout, reserva no
+     * valor novo e lê o reflexo no painel.
      *
-     * Transacional: o passo de preço ESCREVE no Abbapark de produção (revertido no
-     * fim do spec) e a reserva cria um `booking` real (pendente, expira sozinho).
+     * Transacional: o passo de preço ESCREVE na Agência Fera de produção (revertido
+     * no fim do spec) e a reserva cria um `booking` real (pendente, expira sozinho).
      * Por isso fica atrás da mesma trava do consumidor tx: só roda por nome.
      *
      *     bunx playwright test --project=e2e-owner-tx
@@ -114,7 +114,7 @@ export default defineConfig({
       name: OWNER_PROJECT,
       testMatch: /owner\/(?!R\d)[^/]*\.spec\.ts$/,
       dependencies: ["setup"],
-      use: { ...devices["Desktop Chrome"], storageState: ABBAPARK_OWNER_STATE },
+      use: { ...devices["Desktop Chrome"], storageState: FERA_OWNER_STATE },
     },
     /**
      * Roteiro O, parte de LEITURA: painel do dono sem efeito colateral (filtro e busca
@@ -124,7 +124,7 @@ export default defineConfig({
       name: "e2e-owner",
       testMatch: /owner\/R\d+[^/]*\.spec\.ts$/,
       dependencies: ["setup"],
-      use: { ...devices["Desktop Chrome"], storageState: ABBAPARK_OWNER_STATE },
+      use: { ...devices["Desktop Chrome"], storageState: FERA_OWNER_STATE },
     },
     /**
      * Roteiro C (consumidor), parte de LEITURA: C-01 a C-05. Home, busca e

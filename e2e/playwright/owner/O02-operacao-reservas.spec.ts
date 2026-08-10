@@ -5,7 +5,7 @@
  *   O-15  check-in por QR em /voucher/validate (confirmed -> checked_in);
  *   O-14  transição no drawer de /operator/bookings (confirmed -> no_show).
  *
- * ESCREVE EM PRODUÇÃO (sandbox): semeia uma reserva CONFIRMADA de teste no Abbapark
+ * ESCREVE EM PRODUÇÃO (sandbox): semeia uma reserva CONFIRMADA de teste na Agência Fera
  * pelo `admin` (service_role, que passa pelo guard `booking_guard_status_transition`),
  * roda a ação do operador pela UI e confere o efeito no banco. A reserva de teste tem
  * código fixo (OTEST-*), é reutilizada a cada rodada (upsert por code) e aposentada no
@@ -20,7 +20,7 @@
 import { test, expect } from "@playwright/test";
 import { guardTx } from "../support/consumer";
 import {
-  resolveAbbaparkLocationId,
+  resolveFeraLocationId,
   upsertConfirmedTestBooking,
   getBookingStatusByCode,
   retireTestBooking,
@@ -42,12 +42,12 @@ function futureRange(startMinutes: number) {
   };
 }
 
-test.describe("Roteiro O: operação de reservas (Abbapark)", () => {
+test.describe("Roteiro O: operação de reservas (Agência Fera)", () => {
   let locationId = "";
   let customerId = "";
 
   test.beforeAll(async () => {
-    locationId = await resolveAbbaparkLocationId();
+    locationId = await resolveFeraLocationId();
     customerId = await findUserIdByEmail(env.customerEmail);
   });
 

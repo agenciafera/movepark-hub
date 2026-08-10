@@ -16,7 +16,7 @@
 import { test, expect } from "@playwright/test";
 
 /** Empresa alvo: a mesma do roteiro do dono, para o nome do banner ser conferível. */
-const COMPANY = "Abbapark";
+const COMPANY = "Agência Fera";
 
 test.describe("Impersonation do hub_admin", () => {
   test("O-05: hub_admin entra como operador da empresa e sai de volta pro manager", async ({

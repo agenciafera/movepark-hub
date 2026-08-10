@@ -1,16 +1,16 @@
 /**
  * Roteiro O: jornada do DONO de estacionamento.
  *
- * Dono = peu+operador@fera.ag, owner da company Abbapark (unidade Aeroporto
- * Afonso Pena). O roteiro cobre a visão dele ponta a ponta:
+ * Dono = peu+agenciafera@fera.ag, owner da company Agência Fera. O roteiro cobre
+ * a visão dele ponta a ponta:
  *   O-01  conferir as reservas da empresa;
- *   O-02  ver as reservas encerradas (o F1 foi corrigido; hoje o Abbapark tem
+ *   O-02  ver as reservas encerradas (o F1 foi corrigido; hoje a Agência Fera tem
  *         `expired`, então o filtro que traz linhas é "Expirada");
  *   O-03  mudar a diária de um tipo de vaga, e provar que o valor novo propaga
  *         pro motor de preço (a RPC que a busca usa), pro checkout do consumidor
  *         (breakdown da reserva) e de volta pro painel do dono.
  *
- * ESCREVE EM PRODUÇÃO (sandbox): o O-03 altera o preço real do Abbapark e cria
+ * ESCREVE EM PRODUÇÃO (sandbox): o O-03 altera o preço real da Agência Fera e cria
  * um `booking` de verdade (pendente, expira sozinho). O preço é REVERTIDO no
  * afterAll. Por isso o spec só roda por nome, atrás da trava tx:
  *
@@ -20,9 +20,9 @@
  * preço volta ao snapshot no afterAll.
  */
 import { test, expect } from "@playwright/test";
-import { guardTx, reserveUntilPayment, ABBAPARK } from "../support/consumer";
+import { guardTx, reserveUntilPayment, AGENCIA_FERA } from "../support/consumer";
 import {
-  ABBAPARK_OWNER,
+  FERA_OWNER,
   resolveUncoveredRuleId,
   snapshotTiers,
   restoreTiers,
@@ -41,7 +41,7 @@ const NEW_DAILY = 12.34;
  * qualquer antecedência mínima, para não colidir na dedup nem na capacidade. */
 const BOOKING_OFFSET_DAYS = 45;
 
-test.describe("Roteiro O: jornada do dono (Abbapark)", () => {
+test.describe("Roteiro O: jornada do dono (Agência Fera)", () => {
   let ruleId = "";
   let original: TierRow[] = [];
 
@@ -52,7 +52,7 @@ test.describe("Roteiro O: jornada do dono (Abbapark)", () => {
   });
 
   test.afterAll(async () => {
-    // Devolve a diária ao que era, para não deixar o Abbapark alterado.
+    // Devolve a diária ao que era, para não deixar a Agência Fera alterada.
     if (ruleId && original.length) await restoreTiers(ruleId, original);
   });
 
@@ -68,7 +68,7 @@ test.describe("Roteiro O: jornada do dono (Abbapark)", () => {
     // painel PRECISA mostrá-la. A RLS de `booking` já restringe por empresa, então a lista
     // deixou de filtrar `deleted_at` (ver src/features/bookings/api.ts).
     //
-    // Depois da separação abandono vs cancelamento, os pending que expiraram no Abbapark são
+    // Depois da separação abandono vs cancelamento, os pending que expiraram na Agência Fera são
     // `expired` (não `cancelled`), então o filtro "Expirada" é o que tem linhas aqui.
     await page.goto("/operator/bookings");
     await page.locator("#booking-status").click();
@@ -89,10 +89,10 @@ test.describe("Roteiro O: jornada do dono (Abbapark)", () => {
     await page.goto("/operator/pricing");
     const card = page
       .locator("div.rounded-md.border-hairline")
-      .filter({ hasText: ABBAPARK_OWNER.parkingTypeName });
+      .filter({ hasText: FERA_OWNER.parkingTypeName });
     await card.getByRole("button", { name: "Editar preços" }).click();
     await expect(
-      page.getByText(`Precificação: ${ABBAPARK_OWNER.parkingTypeName}`),
+      page.getByText(`Precificação: ${FERA_OWNER.parkingTypeName}`),
     ).toBeVisible();
 
     const firstTierPrice = page.getByLabel("Preço por dia").first();
@@ -113,8 +113,8 @@ test.describe("Roteiro O: jornada do dono (Abbapark)", () => {
     const customerPage = await customerContext.newPage();
     try {
       const code = await reserveUntilPayment(customerPage, BOOKING_OFFSET_DAYS, {
-        fixture: ABBAPARK,
-        typeCode: ABBAPARK_OWNER.parkingTypeCode,
+        fixture: AGENCIA_FERA,
+        typeCode: FERA_OWNER.parkingTypeCode,
       });
 
       const snap = await bookingParkingPrice(code);

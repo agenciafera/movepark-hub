@@ -15,7 +15,7 @@
  * ganha o par negativo, e entram a "Concluída" e a busca por código.
  */
 import { test, expect } from "@playwright/test";
-import { findAbbaparkBookingCode } from "../support/owner";
+import { findFeraBookingCode } from "../support/owner";
 
 /** Seleciona um status no combo da tela e espera o filtro pegar. */
 async function filtrarPor(page: import("@playwright/test").Page, label: string) {
@@ -24,7 +24,7 @@ async function filtrarPor(page: import("@playwright/test").Page, label: string) 
   await expect(page.locator("#booking-status")).toContainText(label);
 }
 
-test.describe("Roteiro O: filtro e busca de reservas (Abbapark)", () => {
+test.describe("Roteiro O: filtro e busca de reservas (Agência Fera)", () => {
   test("O-13: o filtro por status mostra só o status escolhido", async ({ page }) => {
     await page.goto("/operator/bookings");
     // `exact` evita casar com título de estado vazio que contenha a mesma palavra
@@ -49,8 +49,8 @@ test.describe("Roteiro O: filtro e busca de reservas (Abbapark)", () => {
   });
 
   test("O-13: a busca por código isola a reserva", async ({ page }) => {
-    const code = await findAbbaparkBookingCode("completed");
-    test.skip(!code, "Abbapark sem reserva concluída para servir de alvo da busca.");
+    const code = await findFeraBookingCode("completed");
+    test.skip(!code, "Agência Fera sem reserva concluída para servir de alvo da busca.");
 
     await page.goto("/operator/bookings");
     await expect(page.getByRole("heading", { name: "Reservas" })).toBeVisible({ timeout: 30_000 });

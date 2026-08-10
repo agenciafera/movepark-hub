@@ -1,11 +1,31 @@
-import { assert, assertEquals } from "jsr:@std/assert";
+import { assert, assertEquals, assertRejects } from "jsr:@std/assert";
 import {
+  discoverMinimumDays,
   findCommercialAnomalies,
   MAX_DAYS,
   sampleWlPriceTable,
   toHubPricing,
   type Quote,
 } from "./price-sampler.ts";
+import { WlMinimumStayError } from "./client.ts";
+
+/**
+ * Parceiro com piso de estadia, como Abbapark, Nationpark e Plenty (3 diárias) e Aeroparking (2).
+ * Abaixo do piso ele recusa com 400 dizendo o número, e é assim que o amostrador aprende onde a
+ * tabela começa.
+ */
+function comPiso(piso: number, diaria = 25.9) {
+  const asked: number[] = [];
+  const quote = (days: number, extra: number): Promise<Quote> => {
+    asked.push(days);
+    const d = extra > 0 ? days + 1 : days;
+    if (d < piso) {
+      return Promise.reject(new WlMinimumStayError(piso, "teste"));
+    }
+    return Promise.resolve({ price: Math.round(d * diaria * 100) / 100, oldPrice: null });
+  };
+  return { quote, asked, get calls() { return asked.length; } };
+}
 
 /**
  * A tabela real do Virapark, amostrada à mão em 03/08/2026 e registrada na spec:
@@ -116,4 +136,82 @@ Deno.test("diária que não fecha em centavo exato é denunciada", async () => {
 Deno.test("findCommercialAnomalies fica quieto em curva monotônica", () => {
   const curva = [1, 2, 3].map((d) => ({ days: d, total: d * 3000 }));
   assertEquals(findCommercialAnomalies(curva), []);
+});
+
+// ───────────────────────── Estadia mínima do parceiro ─────────────────────────
+
+Deno.test("sem piso, a descoberta custa uma chamada e devolve 1", async () => {
+  const e = espiao();
+  const { minimumDays, calls } = await discoverMinimumDays(e.quote);
+  assertEquals(minimumDays, 1);
+  assertEquals(calls, 1);
+});
+
+Deno.test("o piso vem do número que o parceiro diz, sem subir de um em um", async () => {
+  const p = comPiso(3);
+  const { minimumDays, calls } = await discoverMinimumDays(p.quote);
+  assertEquals(minimumDays, 3);
+  // Duas chamadas: a recusa no dia 1 (que já entrega o "3") e o acerto no dia 3. Sem o salto,
+  // seriam três.
+  assertEquals(calls, 2);
+});
+
+Deno.test("recusa que não é de estadia mínima sobe como erro, não vira piso", async () => {
+  const quebrado = () => Promise.reject(new Error("WL calculation-price 500: boom"));
+  await assertRejects(() => discoverMinimumDays(quebrado), Error, "boom");
+});
+
+Deno.test("a tabela de um parceiro com piso começa no piso, não no dia 1", async () => {
+  const t = await sampleWlPriceTable(comPiso(3).quote);
+  assertEquals(t.minimumDays, 3);
+  assertEquals(t.tiers, [{ fromDay: 3, toDay: null, unitPrice: 25.9 }]);
+});
+
+Deno.test("o piso entra nas anomalias, para aparecer no log da passada", async () => {
+  const t = await sampleWlPriceTable(comPiso(3).quote);
+  assert(
+    t.anomalies.some((a) => a.includes("estadia mínima do parceiro: 3")),
+    `esperava o piso nas anomalias, veio: ${JSON.stringify(t.anomalies)}`,
+  );
+});
+
+Deno.test("a faixa de balcão também começa no piso", async () => {
+  // Parceiro com piso 2 E tabela de balcão: o "de R$ X" não pode existir abaixo do piso.
+  const quote = (days: number, extra: number): Promise<Quote> => {
+    const d = extra > 0 ? days + 1 : days;
+    if (d < 2) return Promise.reject(new WlMinimumStayError(2, "teste"));
+    return Promise.resolve({ price: d * 30, oldPrice: d * 40 });
+  };
+  const t = await sampleWlPriceTable(quote);
+  assertEquals(
+    toHubPricing(t).tiers.filter((x) => x.is_old_price),
+    [{ from_day: 2, to_day: null, unit_price: 40, is_old_price: true }],
+  );
+});
+
+Deno.test("depois de achar o piso, o amostrador não pergunta mais abaixo dele", async () => {
+  const p = comPiso(3);
+  const t = await sampleWlPriceTable(p.quote);
+
+  // A sondagem que descobre o piso é a única que pode cair abaixo dele.
+  assertEquals(p.asked[0], 1);
+  assertEquals(p.asked.slice(1).filter((d) => d < 3), []);
+  assertEquals(t.calls, p.calls);
+});
+
+Deno.test("as bordas vão do piso ao teto, e a fração é medida no piso", async () => {
+  const PISO = 3;
+  const p = comPiso(PISO);
+  await sampleWlPriceTable(p.quote);
+
+  // Bordas: um dia de cada, do piso ao teto. A do piso é a própria sondagem que o descobriu.
+  const bordas = MAX_DAYS - PISO + 1;
+  assertEquals(
+    p.asked.slice(1, 1 + bordas),
+    Array.from({ length: bordas }, (_, i) => PISO + i),
+  );
+
+  // O resto é a busca binária da fração, e ela pergunta SEMPRE sobre o piso. Ancorada no dia 1,
+  // toda sondagem voltaria 400 e a tolerância sairia errada sem ninguém perceber.
+  assertEquals([...new Set(p.asked.slice(1 + bordas))], [PISO]);
 });

@@ -1,7 +1,7 @@
 // Cliente do backend white-label legado (integração de disponibilidade · E2.5.1).
 //
 // O path da API é fixo (/api/v3/backend); por empresa variam o domínio (host) e o
-// tenant (header X-Tenant). O Bearer é GLOBAL e vem do env WL_BACKEND_TOKEN — nunca
+// tenant (header X-Tenant). O Bearer é GLOBAL e vem do env WL_BACKEND_TOKEN, e nunca
 // trafega o front. Resolve-se a config por empresa via RPC wl_company_config / service-role.
 
 export const WL_API_PATH = "/api/v3/backend";
@@ -80,7 +80,7 @@ export function buildAvailabilityUrl(domain: string, p: AvailabilityParams): str
  *   { data: { units: [ { product_slug, days: [ { date, capacity, sold_wl, sold_external, available } ] } ] } }
  * Também aceita formas simples ([...], {data:[...]}, {days:[...]}) por robustez.
  * Quando `productSlug` é informado e a resposta vem por `units`, considera só a unidade
- * correspondente — evita misturar/sobrescrever o `sold_wl` de outro produto por data.
+ * correspondente, para não misturar nem sobrescrever o `sold_wl` de outro produto por data.
  */
 export function parseAvailabilityResponse(
   json: unknown,
@@ -255,6 +255,61 @@ export interface WlPriceQuote {
   offerCode: string | null;
 }
 
+/**
+ * O parceiro recusou a cotação porque a estadia é menor que o mínimo dele.
+ *
+ * Vale como DADO, não como falha: é o parceiro dizendo qual é o piso da tabela. O amostrador
+ * usa esse número para começar a curva no lugar certo, em vez de abortar a vaga inteira.
+ */
+export class WlMinimumStayError extends Error {
+  readonly minimumDays: number;
+  constructor(minimumDays: number, detail: string) {
+    super(`WL exige estadia mínima de ${minimumDays} dia(s): ${detail}`);
+    this.name = "WlMinimumStayError";
+    this.minimumDays = minimumDays;
+  }
+}
+
+/**
+ * Extrai o mínimo do 400 do parceiro.
+ *
+ * Formato real (conferido em 10/08/2026 nos cinco tenants):
+ *   { "errors": { "fields": [ { "field": "reservas",
+ *                              "message": "Período mínimo de permanência: 3 dia(s)" } ] } }
+ *
+ * O número vem SÓ na mensagem, e a mensagem é em português. Não dá para ler isso do catálogo:
+ * o `minimum_stay` de `/api/v3/categories` mente (o Abbapark declara 0 e recusa 1 e 2 dias; o
+ * Nationpark declara 2 HORAS e recusa 2 dias). A recusa da cotação é a única fonte confiável.
+ *
+ * Parseia o JSON ANTES de casar a expressão. O corpo que vem do October escapa os acentos
+ * (`Período mínimo`), então uma regex direta no texto cru não acha "mínimo" e o piso
+ * some. Foi assim que a primeira versão passou no teste e falhou nas dez vagas em produção: o
+ * `JSON.stringify` do teste preserva o acento, o servidor não. O texto cru fica de reserva para
+ * o caso de a resposta não ser JSON.
+ */
+export function parseMinimumStayDays(body: string): number | null {
+  const candidates: string[] = [body];
+  try {
+    const parsed = JSON.parse(body) as {
+      errors?: { message?: string; fields?: { message?: string }[] };
+    };
+    for (const f of parsed?.errors?.fields ?? []) {
+      if (f?.message) candidates.unshift(f.message);
+    }
+    if (parsed?.errors?.message) candidates.push(parsed.errors.message);
+  } catch {
+    // Não é JSON (página de exceção em HTML, por exemplo): sobra o texto cru.
+  }
+
+  for (const text of candidates) {
+    const match = /m[ií]nimo\s+de\s+perman[eê]ncia:\s*(\d+)\s*dia/i.exec(text);
+    if (!match) continue;
+    const days = Number(match[1]);
+    if (Number.isInteger(days) && days > 0) return days;
+  }
+  return null;
+}
+
 /** `Y-m-d H:i:s` no fuso da unidade. O WL valida o formato e recusa qualquer outro. */
 export function formatWlDateTime(d: Date): string {
   const p = (n: number) => String(n).padStart(2, "0");
@@ -304,6 +359,8 @@ export async function wlGetCalculationPrice(
   });
   const body = await res.text();
   if (!res.ok) {
+    const minimumDays = parseMinimumStayDays(body);
+    if (minimumDays != null) throw new WlMinimumStayError(minimumDays, `${p.productSlug} ${res.status}`);
     throw new Error(`WL calculation-price ${res.status}: ${body.slice(0, 300)}`);
   }
   return parseCalculationPrice(JSON.parse(body));

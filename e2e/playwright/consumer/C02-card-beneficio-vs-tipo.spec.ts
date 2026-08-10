@@ -10,34 +10,34 @@
  * Só LÊ. Não cria reserva nem cobrança.
  */
 import { test, expect } from "@playwright/test";
-import { ABBAPARK, listActiveParkingTypes, searchUrl } from "../support/consumer";
+import { AGENCIA_FERA, listActiveParkingTypes, searchUrl } from "../support/consumer";
 
-test("C-02: cada tipo de vaga do Abbapark é um card, sem benefício contraditório", async ({
+test("C-02: cada tipo de vaga da Agência Fera é um card, sem benefício contraditório", async ({
   page,
 }) => {
-  const types = await listActiveParkingTypes(ABBAPARK);
+  const types = await listActiveParkingTypes(AGENCIA_FERA);
   const typeNames = types.map((t) => t.name);
   expect(typeNames.length, "a fixture precisa ter mais de um tipo ativo").toBeGreaterThan(1);
   expect(typeNames).toContain("Vaga Descoberta");
 
-  await page.goto(searchUrl(ABBAPARK));
+  await page.goto(searchUrl(AGENCIA_FERA));
 
-  const abbaparkCards = page
+  const feraCards = page
     .getByTestId("result-card")
-    .filter({ has: page.getByRole("heading", { name: ABBAPARK.operatorName, exact: true }) });
-  await expect(abbaparkCards.first()).toBeVisible({ timeout: 30_000 });
+    .filter({ has: page.getByRole("heading", { name: AGENCIA_FERA.operatorName, exact: true }) });
+  await expect(feraCards.first()).toBeVisible({ timeout: 30_000 });
 
   // 1. Um card por tipo de vaga (decisão da reunião de 21/07). Hoje o
   //    agrupamento no cliente devolve 1 card só.
   await expect(
-    abbaparkCards,
-    `esperava ${typeNames.length} cards do Abbapark, um por tipo (${typeNames.join(", ")})`,
+    feraCards,
+    `esperava ${typeNames.length} cards da Agência Fera, um por tipo (${typeNames.join(", ")})`,
   ).toHaveCount(typeNames.length);
 
   // 2. Nenhum card pode exibir benefício que contradiga o próprio tipo. O caso
   //    concreto: "Coberto" é amenidade da UNIDADE e não pode aparecer no card
   //    cujo tipo é "Vaga Descoberta".
-  const descoberta = abbaparkCards.filter({ hasText: "Vaga Descoberta" }).first();
+  const descoberta = feraCards.filter({ hasText: "Vaga Descoberta" }).first();
   await expect(descoberta, "não achei o card da vaga descoberta").toBeVisible();
 
   const amenities = descoberta.getByTestId("result-card-amenities");

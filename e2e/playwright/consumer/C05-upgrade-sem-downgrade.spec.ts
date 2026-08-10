@@ -30,7 +30,7 @@
  *   - `listing-upgrade-price-delta`  (a diferença, que precisa ser explícita)
  */
 import { test, expect, type Page } from "@playwright/test";
-import { ABBAPARK, listActiveParkingTypes, listingUrl } from "../support/consumer";
+import { AGENCIA_FERA, listActiveParkingTypes, listingUrl } from "../support/consumer";
 
 /**
  * O detalhe monta o `ReservationCard` duas vezes: o card do desktop e o CTA fixo
@@ -46,11 +46,11 @@ test.describe("C-05", () => {
     page,
   }) => {
     // `listActiveParkingTypes` já devolve ordenado por `basePrice` crescente.
-    const types = await listActiveParkingTypes(ABBAPARK);
+    const types = await listActiveParkingTypes(AGENCIA_FERA);
     expect(types.length, "a fixture precisa de mais de um tipo ativo").toBeGreaterThan(1);
     const cheapest = types[0];
 
-    await page.goto(listingUrl(ABBAPARK, cheapest.code));
+    await page.goto(listingUrl(AGENCIA_FERA, cheapest.code));
 
     await expect(visible(page, "listing-upgrade-offer")).toBeVisible({ timeout: 30_000 });
 
@@ -60,12 +60,12 @@ test.describe("C-05", () => {
   });
 
   test("C-05b: na vaga mais cara, NÃO existe oferta de downgrade", async ({ page }) => {
-    const types = await listActiveParkingTypes(ABBAPARK);
+    const types = await listActiveParkingTypes(AGENCIA_FERA);
     expect(types.length, "a fixture precisa de mais de um tipo ativo").toBeGreaterThan(1);
     const cheapest = types[0];
     const priciest = types[types.length - 1];
 
-    await page.goto(listingUrl(ABBAPARK, priciest.code));
+    await page.goto(listingUrl(AGENCIA_FERA, priciest.code));
 
     // Quem já está no tipo melhor não é puxado para baixo. Este assert é o que
     // diferencia "induzir upgrade" de "seletor de tipo", que foi descartado.

@@ -31,25 +31,28 @@ export type ConsumerFixture = {
 };
 
 /**
- * Caso da contradição: três tipos (coberta, descoberta, premium) E a amenidade
- * `covered` na location. É onde o benefício "Coberto" vaza para dentro de um
- * card/página cujo tipo é "Vaga Descoberta".
+ * Unidade de casa: a Agência Fera é nossa, fica em `checkout_mode = 'hub'` e é onde os
+ * roteiros C e O olham a single completa (tarifa, cupom, upgrade, reserva).
+ *
+ * Substituiu o Abbapark em 10/08/2026, quando ele virou unidade EXTERNA junto com Nationpark,
+ * Plenty, Garageinn e Aeroparking. Numa unidade externa a single não tem tarifa, cupom nem
+ * card de reserva (ADR-009: promessa de transação só renderiza com capacidade declarada), então
+ * metade dos casos deixaria de ter o que assertar. Ao mexer na Agência Fera, mantenha-a em
+ * `hub`: é a única unidade listada que ainda exercita o checkout inteiro.
  */
-export const ABBAPARK: ConsumerFixture = {
-  operatorSlug: "abbapark",
-  operatorName: "Abbapark",
-  locationSlug: "aeroporto-afonso-pena",
-  locationName: "Aeroporto Afonso Pena",
-  destCode: "CWB",
-  typeCodes: ["covered", "uncovered", "premium"],
-  typeNames: ["Vaga Coberta", "Vaga Descoberta", "Vaga Premium"],
-  hasCoveredAmenity: true,
+export const AGENCIA_FERA: ConsumerFixture = {
+  operatorSlug: "agencia-fera",
+  operatorName: "Agência Fera",
+  locationSlug: "agencia-fera",
+  locationName: "Agência Fera",
+  destCode: "jardim-paulista",
+  typeCodes: ["uncovered", "covered"],
+  typeNames: ["Vaga Descoberta", "Vaga Coberta"],
+  hasCoveredAmenity: false,
 };
 
 /**
- * Caso de controle: mesmos tipos coberta/descoberta, SEM a amenidade `covered`.
- * Se o defeito aparecer aqui também, a causa é o tipo de vaga; se aparecer só no
- * Abbapark, a causa é a amenidade da location vazando pro tipo.
+ * Segunda unidade com coberta e descoberta, para o par do C-04 rodar em duas bases diferentes.
  */
 export const MAXI_PARK: ConsumerFixture = {
   operatorSlug: "maxi-park",

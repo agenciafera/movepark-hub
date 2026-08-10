@@ -1,11 +1,11 @@
 /**
- * C-24 do roteiro do consumidor: cupom PROMO10 por querystring e aplicado à mão.
+ * C-24 do roteiro do consumidor: cupom por querystring e aplicado à mão.
  *
  * Só LÊ. A validação do cupom é anônima e server-side (`validate_coupon_public`),
  * então este caso NÃO cria reserva nem cobrança. Fica no project de leitura.
  *
  * O que o caso protege, além do desconto em si:
- *   - o ESCOPO do cupom é por EMPRESA (`coupon.company_id = abbapark`), não por
+ *   - o ESCOPO do cupom é por EMPRESA (`coupon.company_id = agencia-fera`), não por
  *     tipo de vaga. Quem procurar o vínculo em `coupon_parking_type` acha a tabela
  *     vazia e conclui, errado, que o cupom é global. Vazio ali significa "todos os
  *     tipos daquela empresa" (a checagem só roda `if exists`,
@@ -21,10 +21,17 @@
  * anterior reaparece sozinho e parece bug.
  */
 import { test, expect, type Page } from "@playwright/test";
-import { ABBAPARK, MOTION_PARK, listingUrl, oneNightRange } from "../support/consumer";
+import { AGENCIA_FERA, MOTION_PARK, listingUrl, oneNightRange } from "../support/consumer";
 import { admin } from "../support/supabaseAdmin";
 
-const CODE = "PROMO10";
+/**
+ * Cupom fixo da Agência Fera, criado em 10/08/2026 para este caso.
+ *
+ * Era o PROMO10 do Abbapark até o Abbapark virar unidade externa. Cupom só existe onde a
+ * reserva fecha, então PROMO10 (Abbapark) e 30OFF (Virapark) ficaram sem onde ser aplicados e
+ * deixaram de servir de alvo. Não apague o FERA10 do banco.
+ */
+const CODE = "FERA10";
 
 /**
  * O detalhe monta o `ReservationCard` DUAS vezes: o card do desktop e o CTA fixo
@@ -48,7 +55,7 @@ async function loadCoupon() {
 }
 
 test.describe("C-24", () => {
-  test("C-24a: o cupom existe, é percentual e pertence ao Abbapark", async () => {
+  test("C-24a: o cupom existe, é percentual e pertence à Agência Fera", async () => {
     const coupon = await loadCoupon();
     expect(coupon, `cupom ${CODE} não existe no banco`).toBeTruthy();
     expect(coupon!.is_active).toBe(true);
@@ -61,7 +68,7 @@ test.describe("C-24", () => {
       .select("slug")
       .eq("id", coupon!.company_id)
       .maybeSingle();
-    expect(owner?.slug, "PROMO10 deveria pertencer ao Abbapark").toBe(ABBAPARK.operatorSlug);
+    expect(owner?.slug, `${CODE} deveria pertencer à Agência Fera`).toBe(AGENCIA_FERA.operatorSlug);
   });
 
   /**
@@ -70,9 +77,9 @@ test.describe("C-24", () => {
    * aqui não dá para assertar o valor do input, ele deixou de existir. O sinal de
    * que a querystring funcionou é o chip aparecer já com o código.
    */
-  test("C-24b: querystring ?cupom= aplica 10% no Abbapark", async ({ page }) => {
+  test("C-24b: querystring ?cupom= aplica 10% na Agência Fera", async ({ page }) => {
     const range = oneNightRange();
-    await page.goto(`${listingUrl(ABBAPARK, "uncovered", range)}&cupom=${CODE}`);
+    await page.goto(`${listingUrl(AGENCIA_FERA, "uncovered", range)}&cupom=${CODE}`);
 
     const applied = couponEl(page, "coupon-applied");
     await expect(applied).toBeVisible({ timeout: 30_000 });
@@ -83,7 +90,7 @@ test.describe("C-24", () => {
 
   test("C-24c: o alias ?coupon= funciona igual", async ({ page }) => {
     const range = oneNightRange();
-    await page.goto(`${listingUrl(ABBAPARK, "uncovered", range)}&coupon=${CODE}`);
+    await page.goto(`${listingUrl(AGENCIA_FERA, "uncovered", range)}&coupon=${CODE}`);
 
     const applied = couponEl(page, "coupon-applied");
     await expect(applied).toBeVisible({ timeout: 30_000 });
@@ -92,7 +99,7 @@ test.describe("C-24", () => {
 
   test("C-24d: aplicar à mão dá o mesmo resultado da querystring", async ({ page }) => {
     const range = oneNightRange();
-    await page.goto(listingUrl(ABBAPARK, "uncovered", range));
+    await page.goto(listingUrl(AGENCIA_FERA, "uncovered", range));
 
     const input = couponEl(page, "coupon-input");
     await expect(input).toBeVisible({ timeout: 30_000 });
@@ -107,7 +114,7 @@ test.describe("C-24", () => {
     await page.goto(`${listingUrl(MOTION_PARK, "uncovered", range)}&cupom=${CODE}`);
 
     await expect(couponEl(page, "coupon-input")).toHaveValue(CODE, { timeout: 30_000 });
-    // Recusa é o comportamento CORRETO: o cupom é do Abbapark. Não é cupom quebrado.
+    // Recusa é o comportamento CORRETO: o cupom é da Agência Fera. Não é cupom quebrado.
     await expect(couponEl(page, "coupon-applied")).toHaveCount(0);
     await expect(couponEl(page, "coupon-error")).toBeVisible({ timeout: 30_000 });
   });
