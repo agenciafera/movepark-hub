@@ -3,24 +3,26 @@ import { useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { MagnifyingGlass } from "@phosphor-icons/react";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { PageHeader } from "@/components/shared/PageHeader";
-import { cn } from "@/lib/utils";
-import { useFaqCategories, useFaqs } from "@/features/faqs/api";
-import { FaqList } from "@/features/faqs/FaqList";
-import type { FaqCombinedItem } from "@/features/faqs/api";
-import { faqSchema } from "@/lib/jsonld";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { ContentPageView } from "@/features/content/ContentPageView";
+import { RELACIONADOS } from "@/features/content/pages";
+import { readingMinutes, type Section } from "@/features/content/types";
+import { faqJsonLd } from "@/features/content/jsonld";
+import { useFaqs } from "@/features/faqs/api";
 
+/**
+ * FAQ com uma seção por categoria.
+ *
+ * Antes a categoria FILTRAVA a lista, então o leitor via um recorte por vez e as
+ * outras respostas não existiam na página nem para o buscador. Agora todas ficam
+ * na mesma página e a categoria virou âncora do índice.
+ *
+ * O `?cat=` continua valendo: a Central de Ajuda linka `/faq?cat=pagamentos` e o
+ * Manager documenta essa URL. Ele agora rola até a seção em vez de filtrar.
+ */
 export default function FaqPage() {
   const [params, setParams] = useSearchParams();
-  const cats = useFaqCategories();
-  const categorySlug = params.get("cat") ?? undefined;
   const query = params.get("q") ?? "";
   const [queryDraft, setQueryDraft] = React.useState(query);
 
@@ -42,61 +44,44 @@ export default function FaqPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryDraft]);
 
-  const list = useFaqs({
-    scope: "global",
-    categorySlug,
-    query: query || undefined,
-  });
+  const list = useFaqs({ scope: "global", query: query || undefined });
 
+  /** Uma seção por categoria, na ordem do banco, sem categoria vazia. */
+  const sections: Section[] = React.useMemo(() => {
+    const porCategoria = new Map<string, { label: string; ordem: number; itens: { q: string; a: string }[] }>();
 
-  // Adapta o shape pro FaqList (que espera FaqCombinedItem)
-  const items: FaqCombinedItem[] = React.useMemo(
-    () =>
-      (list.data ?? []).map((f) => ({
-        id: f.id,
-        scope: f.scope,
-        location_id: f.location_id,
-        destination_id: f.destination_id,
-        question: f.question,
-        answer: f.answer,
-        sort_order: f.sort_order,
-        category: f.category
-          ? {
-              slug: f.category.slug,
-              label: f.category.label,
-              sort_order: f.category.sort_order,
-            }
-          : null,
-      })),
-    [list.data],
-  );
+    for (const f of list.data ?? []) {
+      const slug = f.category?.slug ?? "outras";
+      const atual = porCategoria.get(slug) ?? {
+        label: f.category?.label ?? "Outras dúvidas",
+        ordem: f.category?.sort_order ?? 999,
+        itens: [],
+      };
+      atual.itens.push({ q: f.question, a: f.answer });
+      porCategoria.set(slug, atual);
+    }
 
-  function setCategory(slug: string | null) {
-    const next = new URLSearchParams(params);
-    if (slug) next.set("cat", slug);
-    else next.delete("cat");
-    setParams(next, { replace: true });
-  }
+    return [...porCategoria.entries()]
+      .sort((a, b) => a[1].ordem - b[1].ordem)
+      .map(([slug, c]) => ({
+        id: slug,
+        title: c.label,
+        blocks: [{ type: "faq" as const, items: c.itens }],
+      }));
+  }, [list.data]);
 
-  // Uma fonte só para as duas superfícies (sidebar no desktop, select no mobile):
-  // "Todas" na frente e as categorias do banco. `slug: null` é a opção "Todas".
-  const categoryOptions = React.useMemo(
-    () => [
-      { key: "all", slug: null as string | null, label: "Todas" },
-      ...(cats.data ?? []).map((c) => ({ key: c.id, slug: c.slug, label: c.label })),
-    ],
-    [cats.data],
-  );
-  const activeSlug = categorySlug ?? null;
+  // `?cat=` vira âncora: o link antigo continua levando ao mesmo lugar.
+  const cat = params.get("cat");
+  const prontas = sections.length > 0;
+  React.useEffect(() => {
+    if (!cat || !prontas) return;
+    document.getElementById(cat)?.scrollIntoView({ block: "start" });
+  }, [cat, prontas]);
 
-  const faqJsonLd = list.data?.length
-    ? JSON.stringify(
-        faqSchema((list.data ?? []).map((f) => ({ question: f.question, answer: f.answer }))),
-      )
-    : null;
+  const schema = faqJsonLd(sections);
 
   return (
-    <div className="mx-auto w-full max-w-[1080px] px-4 py-12 desktop:px-8">
+    <>
       <Helmet>
         <title>Perguntas Frequentes | Movepark</title>
         <meta
@@ -110,69 +95,53 @@ export default function FaqPage() {
         />
         <meta property="og:url" content="https://hub.movepark.co/faq" />
         <link rel="canonical" href="https://hub.movepark.co/faq" />
-        {faqJsonLd && (
-          <script type="application/ld+json">{faqJsonLd}</script>
-        )}
+        {schema && <script type="application/ld+json">{JSON.stringify(schema)}</script>}
       </Helmet>
-      <PageHeader
-        variant="content"
-        className="mb-8"
+
+      <ContentPageView
+        label="Perguntas frequentes"
         title="Perguntas frequentes"
-        description="Reservas, pagamentos, check-in… tudo o que você precisa saber em um lugar só."
-      >
-        <div className="relative mt-2 max-w-xl">
-          <MagnifyingGlass className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-          <Input
-            placeholder="Buscar pergunta…"
-            value={queryDraft}
-            onChange={(e) => setQueryDraft(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-      </PageHeader>
+        intro="Reservas, pagamentos e check-in, com as respostas que o suporte mais repete."
+        readMinutes={readingMinutes(sections)}
+        sections={sections}
+        related={[RELACIONADOS["como-funciona"], RELACIONADOS.cancelamento]}
+        bodyTop={
+          <>
+            <div className="relative mb-6 max-w-xl print:hidden">
+              <MagnifyingGlass
+                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+                aria-hidden
+              />
+              <Input
+                placeholder="Buscar pergunta…"
+                aria-label="Buscar pergunta"
+                value={queryDraft}
+                onChange={(e) => setQueryDraft(e.target.value)}
+                className="pl-9"
+              />
+            </div>
 
-      {/* Mobile: categoria vira um select. A lista de botões empilhada empurrava as
-          perguntas pra baixo e, quando ficava lado a lado, estourava a largura. */}
-      <div className="mb-6 tablet:hidden">
-        <Select
-          value={activeSlug ?? "all"}
-          onValueChange={(v) => setCategory(v === "all" ? null : v)}
-        >
-          <SelectTrigger aria-label="Categoria">
-            <SelectValue placeholder="Categoria" />
-          </SelectTrigger>
-          <SelectContent>
-            {categoryOptions.map((o) => (
-              <SelectItem key={o.key} value={o.slug ?? "all"}>
-                {o.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+            {list.isLoading && (
+              <div className="space-y-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-full rounded-md" />
+                ))}
+              </div>
+            )}
 
-      <div className="grid grid-cols-1 gap-8 tablet:grid-cols-[200px_1fr]">
-        {/* Desktop: mesma seleção como sidebar de botões. */}
-        <aside className="hidden space-y-1 tablet:block">
-          {categoryOptions.map((o) => (
-            <button
-              key={o.key}
-              type="button"
-              onClick={() => setCategory(o.slug)}
-              className={cn(
-                "w-full rounded-sm px-3 py-2 text-left text-body-sm transition-colors",
-                activeSlug === o.slug
-                  ? "bg-mp-pale text-mp-indigo"
-                  : "text-muted hover:bg-surface-soft hover:text-ink",
-              )}
-            >
-              {o.label}
-            </button>
-          ))}
-        </aside>
-
-        <FaqList items={items} isLoading={list.isLoading} query={query || undefined} />
-      </div>
-    </div>
+            {!list.isLoading && sections.length === 0 && (
+              <EmptyState
+                title="Nenhuma pergunta encontrada"
+                description={
+                  query
+                    ? `Nada bateu com "${query}". Tente outra palavra ou fale com o suporte.`
+                    : "As perguntas ainda não foram publicadas."
+                }
+              />
+            )}
+          </>
+        }
+      />
+    </>
   );
 }

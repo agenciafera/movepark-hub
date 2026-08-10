@@ -29,7 +29,19 @@ describe("ComoFuncionaPage — contrato de página de conteúdo", () => {
 
   it("os títulos de seção usam o token de heading de conteúdo (display-sm)", () => {
     renderPage();
-    const secao = screen.getByRole("heading", { level: 2, name: "Passo a passo" });
+    const secao = screen.getByRole("heading", { level: 2, name: "Antes da viagem" });
     expect(secao.className).toContain("text-display-sm");
+  });
+
+  /**
+   * A numeração atravessa as seções: quem lê percebe um fluxo de quatro passos,
+   * não duas listas soltas de dois.
+   */
+  it("os passos são numerados de 1 a 4 através das seções", () => {
+    const { container } = renderPage();
+    const badges = [...container.querySelectorAll("ol li > span:first-child")].map(
+      (s) => s.textContent,
+    );
+    expect(badges).toEqual(["1", "2", "3", "4"]);
   });
 });
