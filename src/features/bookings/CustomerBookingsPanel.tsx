@@ -1,15 +1,22 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { ArrowCounterClockwise, CalendarDot, CaretLeft, CaretRight, MapPin, Storefront, Tag, Ticket, Wallet } from "@phosphor-icons/react";
+import {
+  ArrowCounterClockwise,
+  CalendarDot,
+  CaretLeft,
+  CaretRight,
+  MapPin,
+  Storefront,
+  Tag,
+  Ticket,
+  Wallet,
+} from "@phosphor-icons/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { AccountCard } from "@/components/shared/AccountCard";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import {
-  BOOKING_STATUS_TONES,
-  BOOKING_TONE_SURFACE,
-} from "@/components/shared/statusBadge.logic";
+import { BOOKING_STATUS_TONES, BOOKING_TONE_SURFACE } from "@/components/shared/statusBadge.logic";
 import { useAuth } from "@/auth/context";
 import { useAllMyBookings, type MyBookingListItem } from "@/features/bookings/customerApi";
 import { bucketBooking, type MyBookingStatus } from "@/features/bookings/bookings.logic";
@@ -52,6 +59,17 @@ export function CustomerBookingsPanel({ detailBase = "/bookings" }: { detailBase
     () => yearToDate(items, wallet.data?.transactions ?? []),
     [items, wallet.data],
   );
+  /**
+   * O detalhamento do ano só existe se tiver ao menos uma linha com valor. Zerado,
+   * ele some inteiro: cada "R$ 0,00" na tela é a conta dizendo ao cliente que ele
+   * não ganhou nada reservando aqui.
+   */
+  const temDetalhe =
+    resumo.fromCounter > 0 ||
+    resumo.fromCoupon > 0 ||
+    resumo.fromPromo > 0 ||
+    resumo.cashback > 0 ||
+    !!resumo.topDestination;
 
   // Um filtro que sumiu (a última reserva daquele balde saiu) não pode deixar a lista
   // vazia pra sempre: volta pra "Todas".
@@ -150,74 +168,81 @@ export function CustomerBookingsPanel({ detailBase = "/bookings" }: { detailBase
               {resumo.stays} {resumo.stays === 1 ? "estadia" : "estadias"} · {resumo.nights}{" "}
               {resumo.nights === 1 ? "diária" : "diárias"}
             </p>
-            <dl className="mt-4 space-y-3 border-t border-hairline pt-4">
-              {/* Só aparece nas unidades que declararam tabela de balcão. Onde o
+            {/* Linha zerada não informa nada, e um bloco cheio de "R$ 0,00" faz o
+                cliente sentir que não ganha nada por reservar aqui. Sem nenhuma
+                linha, o bloco inteiro sai junto com o traço que o separa. */}
+            {temDetalhe && (
+              <dl className="mt-4 space-y-3 border-t border-hairline pt-4">
+                {/* Só aparece nas unidades que declararam tabela de balcão. Onde o
                   parceiro não declarou, a linha some em vez de estimar. */}
-              {resumo.fromCounter > 0 && (
-                <div className="flex items-center justify-between gap-3">
-                  <dt className="flex items-center gap-2 text-body-sm text-muted">
-                    <Storefront className="h-4 w-4 shrink-0" aria-hidden />
-                    Mais barato que no local
-                  </dt>
-                  <dd className="text-body-sm font-semibold tabular-nums text-ink">
-                    {formatBRL(resumo.fromCounter)}
-                  </dd>
-                </div>
-              )}
-              {resumo.fromCoupon > 0 && (
-                <div className="flex items-center justify-between gap-3">
-                  <dt className="flex items-center gap-2 text-body-sm text-muted">
-                    <Ticket className="h-4 w-4 shrink-0" aria-hidden />
-                    Cupons
-                  </dt>
-                  <dd className="text-body-sm font-semibold tabular-nums text-ink">
-                    {formatBRL(resumo.fromCoupon)}
-                  </dd>
-                </div>
-              )}
-              {resumo.fromPromo > 0 && (
-                <div className="flex items-center justify-between gap-3">
-                  <dt className="flex items-center gap-2 text-body-sm text-muted">
-                    <Tag className="h-4 w-4 shrink-0" aria-hidden />
-                    Promoções
-                  </dt>
-                  <dd className="text-body-sm font-semibold tabular-nums text-ink">
-                    {formatBRL(resumo.fromPromo)}
-                  </dd>
-                </div>
-              )}
-              <div className="flex items-center justify-between gap-3">
-                <dt className="flex items-center gap-2 text-body-sm text-muted">
-                  <Wallet className="h-4 w-4 shrink-0" aria-hidden />
-                  Recebeu de volta
-                </dt>
-                <dd className="text-body-sm font-semibold tabular-nums text-ink">
-                  {formatBRL(resumo.cashback)}
-                </dd>
-              </div>
-              {/* O gasto não sai da tela quando a economia assume o destaque: some
+                {resumo.fromCounter > 0 && (
+                  <div className="flex items-center justify-between gap-3">
+                    <dt className="flex items-center gap-2 text-body-sm text-muted">
+                      <Storefront className="h-4 w-4 shrink-0" aria-hidden />
+                      Mais barato que no local
+                    </dt>
+                    <dd className="text-body-sm font-semibold tabular-nums text-ink">
+                      {formatBRL(resumo.fromCounter)}
+                    </dd>
+                  </div>
+                )}
+                {resumo.fromCoupon > 0 && (
+                  <div className="flex items-center justify-between gap-3">
+                    <dt className="flex items-center gap-2 text-body-sm text-muted">
+                      <Ticket className="h-4 w-4 shrink-0" aria-hidden />
+                      Cupons
+                    </dt>
+                    <dd className="text-body-sm font-semibold tabular-nums text-ink">
+                      {formatBRL(resumo.fromCoupon)}
+                    </dd>
+                  </div>
+                )}
+                {resumo.fromPromo > 0 && (
+                  <div className="flex items-center justify-between gap-3">
+                    <dt className="flex items-center gap-2 text-body-sm text-muted">
+                      <Tag className="h-4 w-4 shrink-0" aria-hidden />
+                      Promoções
+                    </dt>
+                    <dd className="text-body-sm font-semibold tabular-nums text-ink">
+                      {formatBRL(resumo.fromPromo)}
+                    </dd>
+                  </div>
+                )}
+                {resumo.cashback > 0 && (
+                  <div className="flex items-center justify-between gap-3">
+                    <dt className="flex items-center gap-2 text-body-sm text-muted">
+                      <Wallet className="h-4 w-4 shrink-0" aria-hidden />
+                      Recebeu de volta
+                    </dt>
+                    <dd className="text-body-sm font-semibold tabular-nums text-ink">
+                      {formatBRL(resumo.cashback)}
+                    </dd>
+                  </div>
+                )}
+                {/* O gasto não sai da tela quando a economia assume o destaque: some
                   com ele e o card passa a contar só metade do ano. */}
-              {resumo.saved > 0 && (
-                <div className="flex items-center justify-between gap-3">
-                  <dt className="flex items-center gap-2 text-body-sm text-muted">
-                    <CalendarDot className="h-4 w-4 shrink-0" aria-hidden />
-                    Você gastou
-                  </dt>
-                  <dd className="text-body-sm font-semibold tabular-nums text-ink">
-                    {formatBRL(resumo.spent)}
-                  </dd>
-                </div>
-              )}
-              {resumo.topDestination && (
-                <div className="flex items-center justify-between gap-3">
-                  <dt className="flex items-center gap-2 text-body-sm text-muted">
-                    <MapPin className="h-4 w-4 shrink-0" aria-hidden />
-                    Destino favorito
-                  </dt>
-                  <dd className="text-body-sm font-semibold text-ink">{resumo.topDestination}</dd>
-                </div>
-              )}
-            </dl>
+                {resumo.saved > 0 && (
+                  <div className="flex items-center justify-between gap-3">
+                    <dt className="flex items-center gap-2 text-body-sm text-muted">
+                      <CalendarDot className="h-4 w-4 shrink-0" aria-hidden />
+                      Você gastou
+                    </dt>
+                    <dd className="text-body-sm font-semibold tabular-nums text-ink">
+                      {formatBRL(resumo.spent)}
+                    </dd>
+                  </div>
+                )}
+                {resumo.topDestination && (
+                  <div className="flex items-center justify-between gap-3">
+                    <dt className="flex items-center gap-2 text-body-sm text-muted">
+                      <MapPin className="h-4 w-4 shrink-0" aria-hidden />
+                      Destino favorito
+                    </dt>
+                    <dd className="text-body-sm font-semibold text-ink">{resumo.topDestination}</dd>
+                  </div>
+                )}
+              </dl>
+            )}
           </AccountCard>
 
           {last.data && (
@@ -335,7 +360,7 @@ function HistoryRow({ booking, detailBase }: { booking: MyBookingListItem; detai
             tom,
           )}
         >
-          <span className="text-body-sm font-bold leading-none tabular-nums">{dia}</span>
+          <span className="text-body-sm font-bold tabular-nums leading-none">{dia}</span>
           <span className="mt-0.5 text-caption-sm leading-none opacity-80">{mes}</span>
         </span>
         <span className="min-w-0 flex-1">

@@ -186,6 +186,31 @@ describe("CustomerBookingsPanel", () => {
     expect(card.queryByText(/economizados/)).not.toBeInTheDocument();
     expect(card.queryByText("Cupons")).not.toBeInTheDocument();
     expect(card.queryByText("Você gastou")).not.toBeInTheDocument();
+    // Sem cashback, a linha não aparece zerada.
+    expect(card.queryByText("Recebeu de volta")).not.toBeInTheDocument();
+    expect(card.queryByText("R$ 0,00")).not.toBeInTheDocument();
+  });
+
+  /** Nada a detalhar: o bloco sai inteiro, junto com o traço que o separa. */
+  it("sem nada pra detalhar, o card fica só com o número e a contagem", async () => {
+    render([
+      booking({
+        total_amount: 150,
+        location: {
+          name: "Unidade Aeroporto",
+          slug: "u",
+          address: "Rua Padre Celestino, 120",
+          company: { name: "Virapark", slug: "virapark" },
+          destination: null,
+        },
+      }),
+    ]);
+
+    const card = await cardDoAno();
+    expect(card.getByText("R$ 150,00")).toBeInTheDocument();
+    expect(card.getByText(/1 estadia/)).toBeInTheDocument();
+    expect(card.queryByRole("definition")).not.toBeInTheDocument();
+    expect(card.queryByText("Destino favorito")).not.toBeInTheDocument();
   });
 
   it("filtra o histórico pelos chips, e só mostra chip que tem resultado", async () => {
