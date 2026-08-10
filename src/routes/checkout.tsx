@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { ArrowRight, CaretDown, Tray } from "@phosphor-icons/react";
+import { ArrowRight, Tray } from "@phosphor-icons/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -20,8 +20,8 @@ import { Step3Addons } from "@/features/checkout/Step3Addons";
 import { Step4Payment } from "@/features/checkout/Step4Payment";
 import { Step5Confirmation } from "@/features/checkout/Step5Confirmation";
 import { SummaryCard } from "@/features/checkout/SummaryCard";
-import { formatBRL } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { SummaryDrawer } from "@/features/checkout/SummaryDrawer";
+import { formatDuration } from "@/lib/format";
 import { useLocationAddOns } from "@/features/listing/api";
 import {
   isCheckoutBlocked,
@@ -33,45 +33,6 @@ import {
   visibleSteps,
   type CheckoutStep,
 } from "@/features/checkout/checkout.logic";
-import type { BookingForCheckout } from "@/features/checkout/api";
-
-/** Accordion do resumo da reserva — exibido no topo do checkout em mobile/tablet. */
-function MobileBookingSummary({ booking }: { booking: BookingForCheckout }) {
-  const [open, setOpen] = React.useState(false);
-  const parkingItem = booking.items.find((i) => i.item_type === "parking");
-
-  return (
-    <div className="overflow-hidden rounded-md border border-hairline bg-canvas shadow-tier">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-4 p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink"
-        aria-expanded={open}
-      >
-        <div className="min-w-0">
-          <div className="truncate text-title-md text-ink">
-            {booking.location.company.name}
-            {parkingItem?.parking_type?.name ? ` • ${parkingItem.parking_type.name}` : ""}
-          </div>
-          <div className="text-body-sm text-muted">{booking.location.name}</div>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <span className="text-display-sm text-ink tabular-nums">
-            {formatBRL(booking.total_amount)}
-          </span>
-          <CaretDown
-            className={cn("h-4 w-4 text-muted transition-transform duration-200", open && "rotate-180")}
-          />
-        </div>
-      </button>
-      {open && (
-        <div className="border-t border-hairline p-4">
-          <SummaryCard booking={booking} bare />
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function CheckoutPage() {
   const { code } = useParams<{ code: string }>();
@@ -265,12 +226,6 @@ export default function CheckoutPage() {
               )}
             </div>
 
-            {/* Resumo accordion — abaixo do form, mobile/tablet apenas, exceto confirmação */}
-            {!expired && step !== 5 && (
-              <div className={cn("mt-6 desktop:hidden", showMobileCta && "pb-20")}>
-                <MobileBookingSummary booking={booking} />
-              </div>
-            )}
           </main>
 
           <aside className="hidden desktop:block">
@@ -281,14 +236,31 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {/* Barra CTA fixa no rodapé — mobile/tablet, steps 1 e 2 */}
-      {showMobileCta && (
-        <div className="fixed bottom-0 inset-x-0 z-20 border-t border-hairline bg-canvas px-4 py-3 desktop:hidden">
-          <Button form="checkout-step-form" type="submit" className="w-full">
-            Continuar
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </div>
+      {/* Resumo do mobile: gaveta presa no rodapé, com o CTA do passo dentro dela.
+          Fica fora do <main> pra que o `sticky` se apoie na página inteira, e não
+          na célula da grade. Na confirmação não existe mais o que resumir. */}
+      {!expired && step !== 5 && (
+        <SummaryDrawer
+          total={booking.total_amount}
+          subtitle={[
+            formatDuration(booking.check_in_at, booking.check_out_at),
+            booking.price_breakdown?.fare?.label
+              ? `Tarifa ${booking.price_breakdown.fare.label}`
+              : null,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+          cta={
+            showMobileCta ? (
+              <Button form="checkout-step-form" type="submit" className="w-full">
+                Continuar
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            ) : undefined
+          }
+        >
+          <SummaryCard booking={booking} bare />
+        </SummaryDrawer>
       )}
     </div>
   );
