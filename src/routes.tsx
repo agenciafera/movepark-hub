@@ -200,11 +200,24 @@ async function fetchAllBlogPaths(): Promise<string[]> {
   return (data ?? []).map((p) => `/blog/${p.slug as string}`);
 }
 
-/** Todos os posts publicados, com as relações que a listagem usa. */
+/**
+ * Posts publicados para a listagem, SEM `body_md`.
+ *
+ * O `BLOG_SELECT` usa `*` porque a página do post precisa do corpo. Aqui não:
+ * com o corpo, cada execução deste loader (e são 155 no build, mais uma a cada
+ * primeira navegação para uma rota de listagem) baixava 593 KB em vez de 133 KB.
+ */
+const BLOG_LIST_SELECT =
+  "id, slug, title, excerpt, cover_image_url, published_at," +
+  " destination:destination(id, name, short_name, slug)," +
+  " category:blog_category(id, name, slug)," +
+  " author:blog_author(id, name, slug)," +
+  " tags:blog_post_tag(tag:blog_tag(id, name, slug))";
+
 async function fetchListablePosts() {
   const { data } = await supabase
     .from("blog_post")
-    .select(BLOG_SELECT)
+    .select(BLOG_LIST_SELECT)
     .eq("is_published", true)
     .is("deleted_at", null)
     .order("published_at", { ascending: false });
@@ -262,6 +275,15 @@ function blogListingLoader(kind: BlogKind) {
     };
   };
 }
+
+/**
+ * O loader da listagem só roda no build e no primeiro carregamento.
+ *
+ * Sem isto o router revalidava a rota a cada mudança de URL, inclusive a query
+ * `?q=` da busca, e cada revalidação refazia a consulta inteira no servidor.
+ * Depois do primeiro paint a listagem opera sobre o acervo em memória.
+ */
+const naoRevalidar = () => false;
 
 /** Uma URL por fatia de página, para o crawler alcançar o post da última página. */
 function blogListingPaths(kind: BlogKind, comPaginas: boolean) {
@@ -352,54 +374,63 @@ export const routes: RouteRecord[] = [
             path: "/blog/page/:page",
             element: <BlogListingPage />,
             loader: blogListingLoader("index"),
+            shouldRevalidate: naoRevalidar,
             getStaticPaths: blogListingPaths("index", false),
           },
           {
             path: "/blog/categoria/:slug",
             element: <BlogListingPage />,
             loader: blogListingLoader("categoria"),
+            shouldRevalidate: naoRevalidar,
             getStaticPaths: blogListingPaths("categoria", false),
           },
           {
             path: "/blog/categoria/:slug/page/:page",
             element: <BlogListingPage />,
             loader: blogListingLoader("categoria"),
+            shouldRevalidate: naoRevalidar,
             getStaticPaths: blogListingPaths("categoria", true),
           },
           {
             path: "/blog/tag/:slug",
             element: <BlogListingPage />,
             loader: blogListingLoader("tag"),
+            shouldRevalidate: naoRevalidar,
             getStaticPaths: blogListingPaths("tag", false),
           },
           {
             path: "/blog/tag/:slug/page/:page",
             element: <BlogListingPage />,
             loader: blogListingLoader("tag"),
+            shouldRevalidate: naoRevalidar,
             getStaticPaths: blogListingPaths("tag", true),
           },
           {
             path: "/blog/autor/:slug",
             element: <BlogListingPage />,
             loader: blogListingLoader("autor"),
+            shouldRevalidate: naoRevalidar,
             getStaticPaths: blogListingPaths("autor", false),
           },
           {
             path: "/blog/autor/:slug/page/:page",
             element: <BlogListingPage />,
             loader: blogListingLoader("autor"),
+            shouldRevalidate: naoRevalidar,
             getStaticPaths: blogListingPaths("autor", true),
           },
           {
             path: "/blog/aeroporto/:slug",
             element: <BlogListingPage />,
             loader: blogListingLoader("aeroporto"),
+            shouldRevalidate: naoRevalidar,
             getStaticPaths: blogListingPaths("aeroporto", false),
           },
           {
             path: "/blog/aeroporto/:slug/page/:page",
             element: <BlogListingPage />,
             loader: blogListingLoader("aeroporto"),
+            shouldRevalidate: naoRevalidar,
             getStaticPaths: blogListingPaths("aeroporto", true),
           },
           {

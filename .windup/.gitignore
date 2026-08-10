@@ -1,4 +1,12 @@
-# Ephemeral / sensitive — do NOT commit. The plan cache (cache/) and site map (map/) ARE committed: that's what makes replays $0 with no LLM anywhere.
+# Ephemeral / sensitive — do NOT commit.
+#
+# `cache/` era commitado para o replay sair a $0 sem LLM. Saiu do git em
+# 10/08/2026 a pedido do Kallef: o replay reescreve `last_replayed_at` e
+# `replay_count` em ~161 arquivos a cada rodada, e esse ruido entrava em todo
+# `git status` e era varrido para dentro de commits sem querer. O plano em si
+# continua em disco, entao o replay local segue sem LLM; quem clonar do zero
+# planeja uma vez. O site map (map/) CONTINUA commitado.
 state/
 runs/
 reports/
+cache/

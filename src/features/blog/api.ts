@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import type { Database } from "@/types/database";
 import type {
   BlogAuthor,
+  BlogPostListItem,
   BlogCategory,
   BlogPost,
   BlogPostWithDestination,
@@ -67,25 +68,39 @@ export function useBlogPost(slug: string | undefined) {
 }
 
 /**
- * Público: posts publicados, do mais novo para o mais antigo.
+ * Colunas da listagem. NÃO traz `body_md`.
  *
- * `enabled` porque a listagem só precisa do acervo inteiro quando o dado assado
- * no build não chegou (navegação client-side) ou quando há busca. Nas páginas
- * pré-renderizadas o loader já entregou a fatia.
+ * Com `*`, os 93 posts vinham em 593 KB, quase tudo markdown que a listagem nem
+ * lê. Sem o corpo são 133 KB, e é esse payload que a busca e a paginação usam
+ * inteiro, em memória.
  */
-export function useBlogPosts(enabled = true) {
+const listSelect =
+  "id, slug, title, excerpt, cover_image_url, published_at," +
+  " destination:destination(id, name, short_name, slug)," +
+  " category:blog_category(id, name, slug)," +
+  " author:blog_author(id, name, slug)," +
+  " tags:blog_post_tag(tag:blog_tag(id, name, slug))";
+
+/**
+ * Público: o acervo inteiro, enxuto, para a listagem operar em memória.
+ *
+ * A busca e a paginação filtram e fatiam sobre este resultado, sem ida ao
+ * servidor a cada tecla ou a cada página. O TanStack Query segura o cache, então
+ * é uma requisição por sessão.
+ */
+export function useBlogPostList(enabled = true) {
   return useQuery({
     enabled,
-    queryKey: blogKeys.list(),
-    queryFn: async (): Promise<BlogPostWithDestination[]> => {
+    queryKey: [...blogKeys.list(), "light"] as const,
+    queryFn: async (): Promise<BlogPostListItem[]> => {
       const { data, error } = await supabase
         .from("blog_post")
-        .select(baseSelect)
+        .select(listSelect)
         .eq("is_published", true)
         .is("deleted_at", null)
         .order("published_at", { ascending: false });
       if (error) throw error;
-      return flattenTags(data ?? []) as BlogPostWithDestination[];
+      return flattenTags(data ?? []) as BlogPostListItem[];
     },
     staleTime: 5 * 60_000,
   });

@@ -38,6 +38,16 @@ export type BlogPost = Tables<"blog_post">;
 export type BlogCategory = Tables<"blog_category">;
 export type BlogTag = Tables<"blog_tag">;
 export type BlogAuthor = Tables<"blog_author">;
+/** O que a listagem precisa. Sem `body_md`, que é o grosso do payload. */
+export type BlogPostListItem = Pick<
+  BlogPost,
+  "id" | "slug" | "title" | "excerpt" | "cover_image_url" | "published_at"
+> & {
+  destination: Pick<Destination, "id" | "name" | "short_name" | "slug"> | null;
+  category: Pick<BlogCategory, "id" | "name" | "slug"> | null;
+  author: Pick<BlogAuthor, "id" | "name" | "slug"> | null;
+  tags: Pick<BlogTag, "id" | "name" | "slug">[];
+};
 /** Post com as relações que a listagem e a página usam. */
 export type BlogPostWithDestination = BlogPost & {
   destination: Pick<Destination, "id" | "name" | "short_name" | "slug"> | null;

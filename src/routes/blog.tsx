@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   useBlogAuthors,
   useBlogCategories,
-  useBlogPosts,
+  useBlogPostList,
   useBlogTags,
 } from "@/features/blog/api";
 import {
@@ -25,13 +25,13 @@ import { breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
 import { formatDate } from "@/lib/format";
 import { imageSrcSet, optimizedImageUrl } from "@/lib/storage";
 import { cn } from "@/lib/utils";
-import type { BlogPostWithDestination } from "@/types/domain";
+import type { BlogPostListItem } from "@/types/domain";
 
 const SITE_URL = "https://hub.movepark.co";
 
 /** O que o loader entrega para a listagem, seja ela o índice ou um arquivo. */
 export type BlogListingData = {
-  posts: BlogPostWithDestination[];
+  posts: BlogPostListItem[];
   page: number;
   total: number;
   kind: "index" | "categoria" | "tag" | "autor" | "aeroporto";
@@ -49,7 +49,7 @@ const EYEBROW: Record<BlogListingData["kind"], string | undefined> = {
   aeroporto: "Aeroporto",
 };
 
-function PostCard({ post }: { post: BlogPostWithDestination }) {
+function PostCard({ post }: { post: BlogPostListItem }) {
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-hairline bg-canvas">
       <Link to={`/blog/${post.slug}/`} className="block">
@@ -173,52 +173,73 @@ export default function BlogListingPage() {
   const tags = useBlogTags();
   const authors = useBlogAuthors();
   const [params, setParams] = useSearchParams();
-  const termo = params.get("q") ?? "";
-  const buscando = termo.trim().length > 0;
 
   /*
     O eixo vem da URL, não do loader.
 
     O `vite-react-ssg` indexa o dado assado no build por caminho SEM barra final,
     e os links do blog levam a barra, que é a canônica herdada do WordPress. Ao
-    navegar por dentro do site a chave não casava e a listagem vinha vazia, com o
-    título caindo no default "Blog". Lendo o caminho aqui, a página se sustenta
-    com ou sem o dado do build.
+    navegar por dentro do site a chave não casava e a listagem vinha vazia.
   */
-  const rota = parseBlogPath(pathname);
-  const { kind, slug, page, base } = rota;
+  const { kind, slug, page, base } = parseBlogPath(pathname);
 
-  // Puxa o acervo quando o dado do build não veio, ou quando há busca.
-  const semDadoDoBuild = !loaded?.posts?.length;
-  const todos = useBlogPosts(semDadoDoBuild || buscando);
+  /*
+    Busca em estado local, não na URL.
 
-  const doEixo = React.useMemo(() => {
-    if (loaded?.posts?.length && !buscando && loaded.page === page) return null;
-    const acervo = todos.data ?? [];
-    return slug ? filterPosts(acervo, { [kind]: slug } as Record<string, string>) : acervo;
-  }, [loaded, buscando, page, todos.data, slug, kind]);
+    Antes cada tecla escrevia em `?q=`, o router revalidava a rota e o loader
+    refazia a consulta inteira. Digitar uma palavra custava nove requisições.
+    Agora o texto filtra o acervo em memória e a URL só é atualizada depois que
+    a digitação para, para o link continuar compartilhável.
+  */
+  const [termo, setTermo] = React.useState(() => params.get("q") ?? "");
+  const buscando = termo.trim().length > 0;
 
-  const posts = buscando
-    ? searchPosts(doEixo ?? [], termo)
-    : (doEixo ? pageSlice(doEixo, page) : (loaded?.posts ?? []));
+  React.useEffect(() => {
+    const t = setTimeout(() => {
+      const atual = params.get("q") ?? "";
+      if (atual === termo) return;
+      setParams(termo ? { q: termo } : {}, { replace: true, preventScrollReset: true });
+    }, 350);
+    return () => clearTimeout(t);
+  }, [termo, params, setParams]);
 
-  const total = doEixo ? totalPages(doEixo.length) : (loaded?.total ?? 1);
-  const carregando = (semDadoDoBuild || buscando) && todos.isLoading;
+  /*
+    O acervo enxuto (sem `body_md`) vem uma vez e fica no cache do TanStack Query.
+    Busca e paginação passam a ser fatia de array, não requisição.
+  */
+  const acervo = useBlogPostList();
+  const todos = React.useMemo(() => acervo.data ?? [], [acervo.data]);
 
-  /** Nome do eixo: do loader quando veio, senão do catálogo de taxonomia. */
+  const doEixo = React.useMemo(
+    () => (slug ? filterPosts(todos, { [kind]: slug } as Record<string, string>) : todos),
+    [todos, slug, kind],
+  );
+
+  const filtrados = React.useMemo(
+    () => (buscando ? searchPosts(doEixo, termo) : doEixo),
+    [doEixo, buscando, termo],
+  );
+
+  // Enquanto o acervo não chega, mostra o que o build já pré-renderizou.
+  const temAcervo = todos.length > 0;
+  const posts = temAcervo ? (buscando ? filtrados : pageSlice(filtrados, page)) : (loaded?.posts ?? []);
+  const total = temAcervo ? totalPages(filtrados.length) : (loaded?.total ?? 1);
+  const carregando = !temAcervo && !loaded?.posts?.length && acervo.isLoading;
+
+  /** Nome do eixo: do catálogo de taxonomia, com o loader como reserva. */
   const nomeDoEixo = () => {
-    if (loaded?.name && loaded.kind === kind && loaded.slug === slug) return loaded.name;
     if (!slug) return null;
     if (kind === "categoria") return categories.data?.find((c) => c.slug === slug)?.name ?? null;
     if (kind === "tag") return tags.data?.find((t) => t.slug === slug)?.name ?? null;
     if (kind === "autor") return authors.data?.find((a) => a.slug === slug)?.name ?? null;
-    return doEixo?.[0]?.destination?.name ?? posts[0]?.destination?.name ?? null;
+    return doEixo[0]?.destination?.name ?? null;
   };
 
-  const titulo = nomeDoEixo() ?? (kind === "index" ? "Blog" : (slug ?? "Blog"));
+  const doLoader = loaded?.kind === kind && loaded?.slug === slug ? loaded : null;
+  const titulo = nomeDoEixo() ?? doLoader?.name ?? (kind === "index" ? "Blog" : (slug ?? "Blog"));
   const descricaoDoEixo =
     kind === "categoria"
-      ? (categories.data?.find((c) => c.slug === slug)?.description ?? loaded?.description ?? null)
+      ? (categories.data?.find((c) => c.slug === slug)?.description ?? doLoader?.description ?? null)
       : null;
   const lead =
     descricaoDoEixo ??
@@ -292,10 +313,7 @@ export default function BlogListingPage() {
             />
             <Input
               value={termo}
-              onChange={(e) => {
-                const v = e.target.value;
-                setParams(v ? { q: v } : {}, { replace: true });
-              }}
+              onChange={(e) => setTermo(e.target.value)}
               placeholder="Buscar no blog"
               aria-label="Buscar no blog"
               className="pl-9"
