@@ -5,7 +5,7 @@
 // de flexibilidade Básica/Flex/Superflex da Movepark, editadas só pelo Super Admin no /manager
 // (a unidade não toca nelas). Cada item tem um ícone próprio: em tablet a sidebar é só-ícone.
 
-import { Airplane, Bank, Buildings, Calendar, CalendarBlank, ChartBar, ChartPie, CurrencyCircleDollar, Gear, Handshake, Key, MapPin, Percent, Question, Receipt, Scroll, ShieldCheck, Sparkle, SquaresFour, Star, Tag, Users, Wallet } from "@phosphor-icons/react";
+import { Airplane, Article, Bank, Buildings, Calendar, CalendarBlank, ChartBar, ChartPie, CurrencyCircleDollar, Gear, Handshake, Key, MapPin, Percent, Question, Receipt, Scroll, ShieldCheck, Sparkle, SquaresFour, Star, Tag, Users, Wallet } from "@phosphor-icons/react";
 import type { NavItem, NavSection } from "./Sidebar.logic";
 
 export type NavIcon = React.ComponentType<{ className?: string }>;
@@ -38,6 +38,7 @@ export const managerSections: Section[] = [
     title: "Conta",
     items: [
       { to: "/manager/reviews", label: "Avaliações", icon: Star },
+      { to: "/manager/blog", label: "Blog", icon: Article },
       { to: "/manager/faq", label: "FAQ", icon: Question },
       { to: "/manager/users", label: "Usuários", icon: Users },
       { to: "/manager/legal", label: "Documentos legais", icon: Scroll },

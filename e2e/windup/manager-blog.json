@@ -1,0 +1,141 @@
+{
+  "scenario_id": "manager-blog",
+  "start_url": "/manager/blog",
+  "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Blog\", depois a descricao \"O slug é a URL que o Google indexou\", depois o titulo do post \"Top 3 estacionamentos do Aeroporto QA\".",
+  "tags": [
+    "smoke",
+    "leitura",
+    "autenticado"
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.windup-nao-assinado\",\"token_type\":\"bearer\",\"expires_in\":999999999,\"expires_at\":4102444800,\"refresh_token\":\"windup-fake-refresh\",\"user\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"qa@windup.local\"}}"
+    }
+  },
+  "network": [
+    {
+      "url": "**/rest/v1/blog_post?*",
+      "json": [
+        {
+          "id": "bp-1",
+          "slug": "top-3-estacionamentos-do-aeroporto-qa",
+          "title": "Top 3 estacionamentos do Aeroporto QA",
+          "excerpt": "Comparamos as tres opcoes mais usadas por quem viaja pelo Aeroporto QA.",
+          "body_md": "## Como escolher\n\nO primeiro criterio e a distancia ate o terminal.\n\n- Coberto\n- Descoberto\n",
+          "cover_image_url": null,
+          "meta_title": null,
+          "meta_description": "Guia dos estacionamentos do Aeroporto QA.",
+          "destination_id": "d-1",
+          "author_name": "Movepark",
+          "published_at": "2026-07-01T12:00:00Z",
+          "is_published": true,
+          "legacy_wp_id": 1,
+          "legacy_url": "https://movepark.co/blog/top-3-estacionamentos-do-aeroporto-qa/",
+          "created_at": "2026-07-01T12:00:00Z",
+          "updated_at": "2026-07-01T12:00:00Z",
+          "deleted_at": null,
+          "destination": {
+            "id": "d-1",
+            "name": "Aeroporto QA",
+            "short_name": "QA",
+            "slug": "aeroporto-qa"
+          }
+        }
+      ]
+    },
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.windup-nao-assinado",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "windup-fake-refresh",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "hub_admin"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/company_role_scope*",
+      "json": [
+        {
+          "role": "owner",
+          "scope": "occupancy:read"
+        },
+        {
+          "role": "owner",
+          "scope": "addons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "pricing:write"
+        },
+        {
+          "role": "owner",
+          "scope": "coupons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "reviews:read"
+        },
+        {
+          "role": "owner",
+          "scope": "team:read"
+        },
+        {
+          "role": "owner",
+          "scope": "finance:read"
+        },
+        {
+          "role": "owner",
+          "scope": "api-keys:write"
+        },
+        {
+          "role": "owner",
+          "scope": "locations:write"
+        },
+        {
+          "role": "owner",
+          "scope": "bookings:read"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ],
+  "hints": [
+    "Tres verificacoes: o cabecalho da tela, a descricao abaixo dele e a linha da tabela.",
+    "A listagem vem estubada com um post de verdade, entao a ultima checagem prova que a tela renderiza dado."
+  ]
+}

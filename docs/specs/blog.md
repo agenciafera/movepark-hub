@@ -1,6 +1,8 @@
 # Blog
 
-> **Status:** especificado, não implementado. O Hub não tem rota de blog hoje.
+> **Status:** ✅ implementado em 10/08/2026. Migration `20260929000000_blog_post.sql`,
+> importador `scripts/import-wp-blog.mjs`, rotas SSG `/blog` e `/blog/<slug>/`, política de
+> URL em `src/worker.ts`, admin em `/manager/blog`. Os 93 posts estão no banco e no build.
 >
 > **Objetivo:** substituir o blog WordPress em `movepark.co/blog/` preservando as 93 URLs
 > byte a byte, para não perder os 4.598 cliques que o blog responde em 16 meses.
@@ -269,6 +271,36 @@ preserva o ranking e joga fora a visita.
 Como o `hub.movepark.co` já responde `X-Robots-Tag: noindex, follow`, os passos 1 e 2 rodam em
 produção sem risco de SEO. A migração deixa de ser um evento e vira uma chave.
 
+## O que a execução mudou em relação ao desenho
+
+Três desvios, todos deliberados, e o motivo de cada um.
+
+**As imagens ficaram em `public/images/blog/`, não no Supabase Storage.** O desenho previa
+`assets-public/blog/<slug>/`, mas subir para o Storage exige `service_role`, que não estava
+disponível na máquina onde a migração rodou. O caminho escolhido serve as imagens pelo próprio
+Cloudflare Pages, o que na prática é melhor: mesma origem, sem egress de Storage e sem
+transformação paga. São 131 arquivos, 58,6 MB de original convertidos para 16,8 MB de WebP
+(qualidade 82, largura máxima de 1600px). Dez imagens hotlinkadas do Bing foram descartadas:
+já vinham quebrando e carregavam risco de direito autoral. Mover para o Storage depois é
+possível, mas só vale se o repo pesar; a URL pública não precisa mudar.
+
+**O sitemap ganhou um passo de build.** O `vite-plugin-sitemap` remove a barra final de todo
+path e não tem opção para desligar isso, então ele anunciava as 94 URLs do blog na forma que
+responde 301. `scripts/canonicalize-sitemap.mjs` roda depois do build e repõe a barra, e falha
+o build se sobrar alguma. Sem ele o sitemap entregaria ao Google exatamente a URL não canônica.
+
+**O índice não carrega o corpo dos posts.** Com `body_md` dos 93 posts embarcado no loader, o
+HTML de `/blog` saía com 689 KB. O card usa título, resumo, capa e data, então o loader do
+índice seleciona só isso: 240 KB, 41 KB comprimido.
+
+### GEO
+
+Cada post existe também como `public/blog/<slug>.md`, gerado por
+`node scripts/import-wp-blog.mjs --markdown`. A content negotiation que já existia em
+`src/worker.ts` passa a servir o post real em `text/markdown`, em vez de cair no `llms.txt`
+genérico. O cabeçalho do arquivo traz data, URL canônica e o link do destino. Crawler de IA não
+executa JavaScript, então este arquivo é o que faz o conteúdo do blog ser legível por agente.
+
 ## Dívida conhecida
 
 - **Duplicação de conteúdo.** São 35 posts de Guarulhos e 26 de Viracopos, muitos quase
@@ -281,3 +313,9 @@ produção sem risco de SEO. A migração deixa de ser um evento e vira uma chav
 - **Multisite.** O WordPress é uma rede com três sites (`/`, `/pt/`, `/es/`). O `/es/` tem 0
   redirects e não apareceu no levantamento de tráfego. A árvore `/pt/` é a decisão 4 em aberto
   da planilha e não pertence a esta spec.
+- **Índice sem paginação.** As 93 URLs cabem numa página só hoje (41 KB comprimido). O
+  WordPress paginava em `/blog/page/N/`, e essas URLs não têm par no Hub. Elas nunca
+  apareceram no Search Console, então ficaram fora; se o acervo crescer, a paginação entra
+  junto com a regra de URL.
+- **Webhook de rebuild.** Continua pendente. Enquanto não existir, publicar um post pelo
+  `/manager/blog` grava no banco mas não aparece no site até o próximo build.

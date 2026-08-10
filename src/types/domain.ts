@@ -32,6 +32,12 @@ export type CompanyPayoutAccount = Tables<"company_payout_account">;
 /** Saque real (transferência recebedor → banco do parceiro), E0.3.3. */
 export type PayoutWithdrawal = Tables<"payout_withdrawal">;
 export type Destination = Tables<"destination">;
+/** Post do blog. O `slug` é herdado do WordPress e é contrato de URL (docs/specs/blog.md). */
+export type BlogPost = Tables<"blog_post">;
+/** Post com o destino embarcado, para o CTA e o rótulo de aeroporto. */
+export type BlogPostWithDestination = BlogPost & {
+  destination: Pick<Destination, "id" | "name" | "short_name" | "slug"> | null;
+};
 /** Ponto físico de um destino (terminal/píer/plataforma). DAT-05. */
 export type DestinationPoint = Tables<"destination_point">;
 /** Proximidade lote → destino-âncora (view location_proximity, haversine em SQL). */

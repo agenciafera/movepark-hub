@@ -364,6 +364,74 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_post: {
+        Row: {
+          author_name: string | null
+          body_md: string
+          cover_image_url: string | null
+          created_at: string
+          deleted_at: string | null
+          destination_id: string | null
+          excerpt: string | null
+          id: string
+          is_published: boolean
+          legacy_url: string | null
+          legacy_wp_id: number | null
+          meta_description: string | null
+          meta_title: string | null
+          published_at: string
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_name?: string | null
+          body_md: string
+          cover_image_url?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          destination_id?: string | null
+          excerpt?: string | null
+          id?: string
+          is_published?: boolean
+          legacy_url?: string | null
+          legacy_wp_id?: number | null
+          meta_description?: string | null
+          meta_title?: string | null
+          published_at?: string
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_name?: string | null
+          body_md?: string
+          cover_image_url?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          destination_id?: string | null
+          excerpt?: string | null
+          id?: string
+          is_published?: boolean
+          legacy_url?: string | null
+          legacy_wp_id?: number | null
+          meta_description?: string | null
+          meta_title?: string | null
+          published_at?: string
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_post_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destination"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking: {
         Row: {
           check_in_at: string
@@ -4931,6 +4999,7 @@ export type Database = {
           p_anomalies?: Json
           p_calls?: number
           p_location_parking_type_id: string
+          p_minimum_days?: number
           p_rule: Json
           p_tiers: Json
         }

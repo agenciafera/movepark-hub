@@ -18,6 +18,14 @@ O Movepark é um hub centralizado que conecta viajantes a estacionamentos creden
 - **Descoberto**: vaga em área aberta, opção econômica
 - **Valet**: entrega do carro na entrada, sem necessidade de estacionar
 
+## Blog
+
+Guias por aeroporto: preço de diária, distância até o terminal, traslado e o que conferir antes de reservar.
+
+- [Índice do blog](https://hub.movepark.co/blog/): todos os posts publicados
+- Cada post responde em Markdown puro no mesmo endereço, com `Accept: text/markdown`. Exemplo: `curl -H "Accept: text/markdown" https://hub.movepark.co/blog/top-3-estacionamentos-do-aeroporto-de-viracopos/`
+- O cabeçalho do Markdown traz a data de publicação, a URL canônica e o link do destino correspondente
+
 ## API pública
 
 - [Documentação da API](https://api.movepark.co/docs): API REST autenticada por chave (`mp_live_…`/`mp_test_…`) com escopos; tenant-scoped por empresa

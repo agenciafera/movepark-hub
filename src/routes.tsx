@@ -32,6 +32,8 @@ import OnboardingPage from "@/routes/onboarding";
 import VoucherValidatePage from "@/routes/voucher-validate";
 import DestinoPage from "@/routes/destino";
 import DestinosPage from "@/routes/destinos";
+import BlogIndexPage from "@/routes/blog";
+import BlogPostPage from "@/routes/blog-post";
 import SobrePage from "@/routes/sobre";
 import TermosPage from "@/routes/termos";
 import PrivacidadePage from "@/routes/privacidade";
@@ -70,6 +72,7 @@ import ManagerFaq from "@/routes/manager/faq";
 import ManagerFaqCategorias from "@/routes/manager/faq-categorias";
 import ManagerPartners from "@/routes/manager/partners";
 import ManagerDestinations from "@/routes/manager/destinations";
+import ManagerBlog from "@/routes/manager/blog";
 import ManagerReviews from "@/routes/manager/reviews";
 import ManagerAttribution from "@/routes/manager/attribution";
 
@@ -156,6 +159,50 @@ async function fetchAllDestinationPaths(): Promise<string[]> {
   return (data ?? []).map((d) => `/destinos/${d.slug as string}`);
 }
 
+const BLOG_SELECT = "*, destination:destination(id, name, short_name, slug)";
+
+async function blogPostLoader({ params }: LoaderFunctionArgs) {
+  const { data } = await supabase
+    .from("blog_post")
+    .select(BLOG_SELECT)
+    .eq("slug", params.slug!)
+    .eq("is_published", true)
+    .is("deleted_at", null)
+    .maybeSingle();
+  return data ?? null;
+}
+
+/**
+ * Os slugs vêm do WordPress e são contrato de URL: cada um destes paths é uma
+ * página que o Google já conhece. Ver docs/specs/blog.md.
+ */
+async function fetchAllBlogPaths(): Promise<string[]> {
+  const { data } = await supabase
+    .from("blog_post")
+    .select("slug")
+    .eq("is_published", true)
+    .is("deleted_at", null);
+  return (data ?? []).map((p) => `/blog/${p.slug as string}`);
+}
+
+/**
+ * O índice não carrega `body_md`.
+ *
+ * Com o corpo dos 93 posts embarcado, o HTML de /blog saía com 689 KB, e o corpo
+ * só é lido na página do post. O card precisa de título, resumo, capa e data.
+ */
+async function blogIndexLoader() {
+  const { data } = await supabase
+    .from("blog_post")
+    .select(
+      "id, slug, title, excerpt, cover_image_url, published_at, destination:destination(id, name, short_name, slug)",
+    )
+    .eq("is_published", true)
+    .is("deleted_at", null)
+    .order("published_at", { ascending: false });
+  return data ?? [];
+}
+
 // Índice de destinos: carrega os publicados no build (SSG) p/ o crawler ver os links.
 async function destinosLoader() {
   const { data } = await supabase
@@ -198,6 +245,13 @@ export const routes: RouteRecord[] = [
           { path: "/docs", element: <DocsPage /> },
           { path: "/seja-parceiro", element: <SejaParceiroPage /> },
           { path: "/motor-preview", element: <MotorPreviewPage /> },
+          { path: "/blog", element: <BlogIndexPage />, loader: blogIndexLoader },
+          {
+            path: "/blog/:slug",
+            element: <BlogPostPage />,
+            loader: blogPostLoader,
+            getStaticPaths: fetchAllBlogPaths,
+          },
           { path: "/destinos", element: <DestinosPage />, loader: destinosLoader },
           {
             path: "/destinos/:slug",
@@ -272,6 +326,7 @@ export const routes: RouteRecord[] = [
               { path: "companies", element: <ManagerCompanies /> },
               { path: "partners", element: <ManagerPartners /> },
               { path: "destinations", element: <ManagerDestinations /> },
+              { path: "blog", element: <ManagerBlog /> },
               { path: "companies/:id/locations", element: <ManagerLocations /> },
               {
                 path: "companies/:companyId/locations/:locationId/parking-types",

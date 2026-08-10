@@ -37,6 +37,23 @@ async function getDestinationRoutes(sb: SupabaseClient | null): Promise<string[]
   return (data ?? []).map((d: any) => `/destinos/${d.slug}`);
 }
 
+/**
+ * Posts do blog. A barra final é obrigatória: é a URL canônica herdada do
+ * WordPress, e é ela que o Google já conhece. Ver docs/specs/blog.md.
+ */
+async function getBlogRoutes(sb: SupabaseClient | null): Promise<string[]> {
+  if (!sb) return [];
+
+  const { data } = await sb
+    .from("blog_post")
+    .select("slug")
+    .eq("is_published", true)
+    .is("deleted_at", null);
+
+  // deno-lint-ignore no-explicit-any
+  return (data ?? []).map((p: any) => `/blog/${p.slug}/`);
+}
+
 export default defineConfig(async ({ mode }) => {
   // `loadEnv` lê os .env (versionados; a anon key é pública) — o Vite NÃO injeta o
   // .env em process.env, então sem isto o sitemap sairia vazio no build local/deploy.
@@ -45,12 +62,20 @@ export default defineConfig(async ({ mode }) => {
   const key = env.VITE_SUPABASE_ANON_KEY;
   const sb = url && key ? createClient(url, key) : null;
 
-  const [listingRoutes, destinationRoutes] = await Promise.all([
+  const [listingRoutes, destinationRoutes, blogRoutes] = await Promise.all([
     getDynamicRoutes(sb),
     getDestinationRoutes(sb),
+    getBlogRoutes(sb),
   ]);
   // Índice de destinos + uma URL por destino publicado, além das listagens /p/...
-  const dynamicRoutes = ["/destinos", ...listingRoutes, ...destinationRoutes];
+  // e dos posts do blog (com barra final, contrato herdado do WordPress).
+  const dynamicRoutes = [
+    "/destinos",
+    "/blog/",
+    ...listingRoutes,
+    ...destinationRoutes,
+    ...blogRoutes,
+  ];
 
   return {
     plugins: [

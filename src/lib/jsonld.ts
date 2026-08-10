@@ -119,6 +119,45 @@ export function destinationSchema(d: {
   };
 }
 
+/**
+ * Post do blog.
+ *
+ * `mainEntityOfPage` amarra o dado estruturado à URL canônica, que é a mesma do
+ * WordPress legado. Sem isso o buscador pode tratar a página migrada como outra
+ * coisa e perder o histórico da URL.
+ */
+export function blogPostingSchema(p: {
+  title: string;
+  slug: string;
+  description?: string | null;
+  image?: string | null;
+  publishedAt: string;
+  updatedAt?: string | null;
+  authorName?: string | null;
+  wordCount?: number;
+}) {
+  const url = `${SITE_URL}/blog/${p.slug}/`;
+  return {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: p.title,
+    description: p.description ?? undefined,
+    image: p.image ? `${SITE_URL}${p.image}` : undefined,
+    datePublished: p.publishedAt,
+    dateModified: p.updatedAt ?? p.publishedAt,
+    wordCount: p.wordCount,
+    inLanguage: "pt-BR",
+    author: { "@type": "Organization", name: p.authorName || "Movepark" },
+    publisher: {
+      "@type": "Organization",
+      name: "Movepark",
+      url: SITE_URL,
+    },
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    url,
+  };
+}
+
 export function breadcrumbSchema(
   crumbs: { name: string; url: string }[],
 ) {
