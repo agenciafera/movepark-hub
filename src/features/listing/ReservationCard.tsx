@@ -45,6 +45,7 @@ import { fareReais } from "@/lib/fares";
 import { PriceTableDialog } from "./PriceTableDialog";
 import { getLocationCapabilities } from "./capabilities";
 import { withSearchDates } from "./externalCheckout";
+import { recordExitClick } from "./exitClick";
 import { FareComparisonDialog } from "./FareComparisonDialog";
 import { couponDiscountLabel, couponErrorMessage, type CouponPreview } from "./coupon.logic";
 import {
@@ -739,6 +740,10 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
               <a
                 href={withSearchDates(listing.external_checkout_url, from, to) ?? undefined}
                 data-testid="external-checkout-cta"
+                // E0.16: é o único ponto do funil que o Hub enxerga, porque a reserva nasce do
+                // outro lado. Sem `preventDefault` e sem `await`: o registro sai junto e a
+                // navegação segue. Ver `exitClick.ts`.
+                onClick={() => recordExitClick({ locationParkingTypeId: listing.id, from, to })}
               >
                 Reservar no site do estacionamento
               </a>

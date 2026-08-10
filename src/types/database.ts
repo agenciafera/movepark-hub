@@ -1682,6 +1682,87 @@ export type Database = {
           },
         ]
       }
+      external_exit_click: {
+        Row: {
+          check_in_at: string | null
+          check_out_at: string | null
+          company_id: string
+          created_at: string
+          days: number | null
+          id: string
+          location_id: string
+          location_parking_type_id: string
+          session_id: string
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          check_in_at?: string | null
+          check_out_at?: string | null
+          company_id: string
+          created_at?: string
+          days?: number | null
+          id?: string
+          location_id: string
+          location_parking_type_id: string
+          session_id: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          check_in_at?: string | null
+          check_out_at?: string | null
+          company_id?: string
+          created_at?: string
+          days?: number | null
+          id?: string
+          location_id?: string
+          location_parking_type_id?: string
+          session_id?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_exit_click_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_exit_click_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_exit_click_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_point_proximity"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "external_exit_click_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_proximity"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "external_exit_click_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "location_parking_type"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       faq: {
         Row: {
           answer: string
@@ -4698,6 +4779,18 @@ export type Database = {
         }
         Returns: string
       }
+      log_external_exit: {
+        Args: {
+          p_check_in_at?: string
+          p_check_out_at?: string
+          p_location_parking_type_id: string
+          p_session_id: string
+          p_utm_campaign?: string
+          p_utm_medium?: string
+          p_utm_source?: string
+        }
+        Returns: boolean
+      }
       manager_daily_flow: {
         Args: { p_date: string; p_location_ids?: string[] }
         Returns: Json
@@ -4711,6 +4804,18 @@ export type Database = {
           p_to: string
         }
         Returns: Json
+      }
+      manager_external_exit_clicks: {
+        Args: { p_from?: string; p_to?: string }
+        Returns: {
+          clicks: number
+          company_name: string
+          company_slug: string
+          last_click_at: string
+          location_slug: string
+          parking_type_code: string
+          sessions: number
+        }[]
       }
       match_knowledge: {
         Args: {
