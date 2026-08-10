@@ -25,6 +25,16 @@ export type MyBookingListItem = {
     destination?: { city: string; short_name: string | null } | null;
   };
   parking_type: { name: string; code: string } | null;
+  /**
+   * Quanto a reserva deixou de custar, por fonte. Vem do snapshot de preço da
+   * própria reserva, então é o desconto que valeu na compra, e não o que a regra
+   * de preço diria hoje.
+   *
+   * Opcionais porque só a listagem da conta pede esses campos: o detalhe e o
+   * voucher, que reusam este tipo, não os buscam.
+   */
+  savedFromCoupon?: number;
+  savedFromPromo?: number;
 };
 
 const baseSelect = `
@@ -36,7 +46,9 @@ const baseSelect = `
   ),
   booking_item:booking_item!inner(
     item_type, parking_type:parking_type(name, code)
-  )
+  ),
+  price_breakdown,
+  booking_coupon(discount_applied)
 `;
 
 async function fetchMyBookings(profileId: string | undefined): Promise<MyBookingListItem[]> {
@@ -55,6 +67,15 @@ async function fetchMyBookings(profileId: string | undefined): Promise<MyBooking
       // deno-lint-ignore no-explicit-any
       (b: any) => b.item_type === "parking",
     );
+    // Cupom e promoção saem do snapshot da reserva, nunca de recálculo: o desconto
+    // que valeu foi o do dia da compra.
+    const savedFromCoupon = (r.booking_coupon ?? []).reduce(
+      // deno-lint-ignore no-explicit-any
+      (sum: number, c: any) => sum + Number(c.discount_applied ?? 0),
+      0,
+    );
+    const savedFromPromo = Number(r.price_breakdown?.auto_discount?.amount ?? 0) || 0;
+
     return {
       id: r.id,
       code: r.code,
@@ -66,6 +87,8 @@ async function fetchMyBookings(profileId: string | undefined): Promise<MyBooking
       created_at: r.created_at,
       location: { ...r.location, destination: r.location?.destination ?? null },
       parking_type: parkingItem?.parking_type ?? null,
+      savedFromCoupon,
+      savedFromPromo,
     } as MyBookingListItem;
   });
 }

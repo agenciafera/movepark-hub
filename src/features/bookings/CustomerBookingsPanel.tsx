@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { ArrowCounterClockwise, CalendarDot, CaretLeft, CaretRight, MapPin, Wallet } from "@phosphor-icons/react";
+import { ArrowCounterClockwise, CalendarDot, CaretLeft, CaretRight, MapPin, Tag, Ticket, Wallet } from "@phosphor-icons/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -139,12 +139,40 @@ export function CustomerBookingsPanel({ detailBase = "/bookings" }: { detailBase
 
         <div className="space-y-5">
           <AccountCard title="Seu ano até agora">
-            <p className="text-display-md tabular-nums text-ink">{formatBRL(resumo.spent)}</p>
+            {/* Quem economizou vê a economia em destaque. Quem ainda não economizou
+                veria "R$ 0,00 economizados", que é um placar de derrota logo na
+                abertura do card, então aí o destaque continua sendo o gasto. */}
+            <p className="text-display-md tabular-nums text-ink">
+              {formatBRL(resumo.saved > 0 ? resumo.saved : resumo.spent)}
+            </p>
             <p className="mt-1 text-body-sm text-muted">
-              em {resumo.stays} {resumo.stays === 1 ? "estadia" : "estadias"} · {resumo.nights}{" "}
+              {resumo.saved > 0 ? "economizados em " : "em "}
+              {resumo.stays} {resumo.stays === 1 ? "estadia" : "estadias"} · {resumo.nights}{" "}
               {resumo.nights === 1 ? "diária" : "diárias"}
             </p>
             <dl className="mt-4 space-y-3 border-t border-hairline pt-4">
+              {resumo.fromCoupon > 0 && (
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="flex items-center gap-2 text-body-sm text-muted">
+                    <Ticket className="h-4 w-4 shrink-0" aria-hidden />
+                    Cupons
+                  </dt>
+                  <dd className="text-body-sm font-semibold tabular-nums text-ink">
+                    {formatBRL(resumo.fromCoupon)}
+                  </dd>
+                </div>
+              )}
+              {resumo.fromPromo > 0 && (
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="flex items-center gap-2 text-body-sm text-muted">
+                    <Tag className="h-4 w-4 shrink-0" aria-hidden />
+                    Promoções
+                  </dt>
+                  <dd className="text-body-sm font-semibold tabular-nums text-ink">
+                    {formatBRL(resumo.fromPromo)}
+                  </dd>
+                </div>
+              )}
               <div className="flex items-center justify-between gap-3">
                 <dt className="flex items-center gap-2 text-body-sm text-muted">
                   <Wallet className="h-4 w-4 shrink-0" aria-hidden />
@@ -154,6 +182,19 @@ export function CustomerBookingsPanel({ detailBase = "/bookings" }: { detailBase
                   {formatBRL(resumo.cashback)}
                 </dd>
               </div>
+              {/* O gasto não sai da tela quando a economia assume o destaque: some
+                  com ele e o card passa a contar só metade do ano. */}
+              {resumo.saved > 0 && (
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="flex items-center gap-2 text-body-sm text-muted">
+                    <CalendarDot className="h-4 w-4 shrink-0" aria-hidden />
+                    Você gastou
+                  </dt>
+                  <dd className="text-body-sm font-semibold tabular-nums text-ink">
+                    {formatBRL(resumo.spent)}
+                  </dd>
+                </div>
+              )}
               {resumo.topDestination && (
                 <div className="flex items-center justify-between gap-3">
                   <dt className="flex items-center gap-2 text-body-sm text-muted">

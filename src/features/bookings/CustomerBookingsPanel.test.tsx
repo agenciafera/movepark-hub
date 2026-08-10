@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/msw/server";
@@ -58,6 +58,15 @@ function render(bookings: unknown[], wallet: object = { transactions: [] }) {
   });
 }
 
+/**
+ * O card do ano, escopado. Os mesmos valores aparecem nas linhas da lista, então
+ * asserção solta na tela inteira casa com o card errado.
+ */
+async function cardDoAno() {
+  const titulo = await screen.findByText("Seu ano até agora");
+  return within(titulo.closest("section")!);
+}
+
 describe("CustomerBookingsPanel", () => {
   it("põe a próxima reserva em destaque, com o que o viajante precisa na portaria", async () => {
     render([booking(), FUTURA]);
@@ -87,12 +96,48 @@ describe("CustomerBookingsPanel", () => {
       ],
     });
 
-    expect(await screen.findByText("Seu ano até agora")).toBeInTheDocument();
+    const card = await cardDoAno();
     // 150 + 90; a futura (149,50) não conta porque ainda não aconteceu.
-    expect(screen.getByText("R$ 240,00")).toBeInTheDocument();
-    expect(screen.getByText(/2 estadias/)).toBeInTheDocument();
-    expect(screen.getByText("R$ 18,40")).toBeInTheDocument();
-    expect(screen.getByText("Guarulhos")).toBeInTheDocument();
+    expect(card.getByText("R$ 240,00")).toBeInTheDocument();
+    expect(card.getByText(/2 estadias/)).toBeInTheDocument();
+    // Sem cupom nem promoção, a economia do ano é só o cashback, então o valor
+    // aparece duas vezes: no destaque e na linha que diz de onde ele veio.
+    expect(card.getAllByText("R$ 18,40")).toHaveLength(2);
+    expect(card.getByText("Guarulhos")).toBeInTheDocument();
+  });
+
+  it("com cupom, o destaque vira a economia e o gasto continua na tela", async () => {
+    render([
+      booking({ total_amount: 150, booking_coupon: [{ discount_applied: 30 }] }),
+      booking({
+        id: "b4",
+        code: "MP-4",
+        total_amount: 90,
+        price_breakdown: { auto_discount: { amount: 12 } },
+      }),
+    ]);
+
+    const card = await cardDoAno();
+    expect(card.getByText(/economizados em 2 estadias/)).toBeInTheDocument();
+    expect(card.getByText("R$ 42,00")).toBeInTheDocument(); // 30 + 12
+    expect(card.getByText("Cupons")).toBeInTheDocument();
+    expect(card.getByText("R$ 30,00")).toBeInTheDocument();
+    expect(card.getByText("Promoções")).toBeInTheDocument();
+    expect(card.getByText("R$ 12,00")).toBeInTheDocument();
+    // O gasto não some quando a economia assume o destaque.
+    expect(card.getByText("Você gastou")).toBeInTheDocument();
+    expect(card.getByText("R$ 240,00")).toBeInTheDocument();
+  });
+
+  /** Sem nenhuma economia, o card segue mostrando o gasto e não anuncia zero. */
+  it("sem economia, o destaque continua sendo o gasto", async () => {
+    render([booking({ total_amount: 150 })]);
+
+    const card = await cardDoAno();
+    expect(card.getByText("R$ 150,00")).toBeInTheDocument();
+    expect(card.queryByText(/economizados/)).not.toBeInTheDocument();
+    expect(card.queryByText("Cupons")).not.toBeInTheDocument();
+    expect(card.queryByText("Você gastou")).not.toBeInTheDocument();
   });
 
   it("filtra o histórico pelos chips, e só mostra chip que tem resultado", async () => {

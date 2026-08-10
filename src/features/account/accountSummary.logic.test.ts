@@ -178,7 +178,60 @@ describe("yearToDate", () => {
 
   it("conta zerada não vira NaN", () => {
     const r = yearToDate([], [], AGORA);
-    expect(r).toEqual({ spent: 0, stays: 0, nights: 0, cashback: 0, topDestination: null });
+    expect(r).toEqual({
+      spent: 0,
+      stays: 0,
+      nights: 0,
+      cashback: 0,
+      fromCoupon: 0,
+      fromPromo: 0,
+      discounts: 0,
+      saved: 0,
+      topDestination: null,
+    });
+  });
+
+  it("soma a economia por fonte, e o total junta as três", () => {
+    const r = yearToDate(
+      [
+        booking({ id: "1", total_amount: 200, savedFromCoupon: 30, savedFromPromo: 10 }),
+        booking({ id: "2", total_amount: 100, savedFromCoupon: 12.68 }),
+      ],
+      [{ amount_cents: 1840, kind: "cashback", created_at: "2026-04-01T10:00:00Z" }],
+      AGORA,
+    );
+
+    expect(r.fromCoupon).toBeCloseTo(42.68, 2);
+    expect(r.fromPromo).toBe(10);
+    // `discounts` deixa o cashback de fora: desconto no preço e dinheiro de volta
+    // são coisas diferentes, mesmo que os dois entrem no total economizado.
+    expect(r.discounts).toBeCloseTo(52.68, 2);
+    expect(r.saved).toBeCloseTo(71.08, 2);
+    expect(r.spent).toBe(300);
+  });
+
+  /** Reserva sem cupom nem promoção não pode virar NaN na soma. */
+  it("reserva sem desconto conta como zero", () => {
+    const r = yearToDate([booking({ id: "1", total_amount: 100 })], [], AGORA);
+    expect(r.saved).toBe(0);
+    expect(r.discounts).toBe(0);
+  });
+
+  // A economia do ano passado não entra no ano corrente.
+  it("desconto de reserva de outro ano fica de fora", () => {
+    const r = yearToDate(
+      [
+        booking({
+          id: "1",
+          check_in_at: "2025-05-01T10:00:00Z",
+          check_out_at: "2025-05-02T10:00:00Z",
+          savedFromCoupon: 99,
+        }),
+      ],
+      [],
+      AGORA,
+    );
+    expect(r.saved).toBe(0);
   });
 });
 

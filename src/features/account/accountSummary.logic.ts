@@ -42,6 +42,16 @@ export type YearToDate = {
   stays: number;
   nights: number;
   cashback: number;
+  /** Cupom mais promoção. Cashback fica de fora: é dinheiro de volta, não desconto. */
+  discounts: number;
+  fromCoupon: number;
+  fromPromo: number;
+  /**
+   * O que o cliente deixou de gastar no ano somando as três fontes. É o número que
+   * a tela mostra em destaque, e só faz sentido junto com a quebra: um total de
+   * economia sem dizer de onde veio vira número que ninguém confere.
+   */
+  saved: number;
   topDestination: string | null;
 };
 
@@ -83,11 +93,18 @@ export function yearToDate(
     .filter((t) => t.kind === "cashback" && new Date(t.created_at).getFullYear() === year)
     .reduce((sum, t) => sum + t.amount_cents, 0);
 
+  const fromCoupon = doAno.reduce((sum, b) => sum + (b.savedFromCoupon ?? 0), 0);
+  const fromPromo = doAno.reduce((sum, b) => sum + (b.savedFromPromo ?? 0), 0);
+
   return {
     spent: doAno.reduce((sum, b) => sum + b.total_amount, 0),
     stays: doAno.length,
     nights: doAno.reduce((sum, b) => sum + nightsOf(b), 0),
     cashback: cashback / 100,
+    fromCoupon,
+    fromPromo,
+    discounts: fromCoupon + fromPromo,
+    saved: fromCoupon + fromPromo + cashback / 100,
     topDestination,
   };
 }
