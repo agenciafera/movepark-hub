@@ -30,6 +30,33 @@ describe("ConsumerBottomNav", () => {
     expect(nav?.className).toContain("pb-[max(0.5rem,var(--safe-bottom))]");
   });
 
+  /**
+   * A seleção era só o texto trocar de cinza pra preto, diferença fraca demais numa
+   * barra de 4 alvos vista na mão. O traço violeta no topo é o sinal principal.
+   */
+  it("marca a aba atual com um traço, e só ela", () => {
+    renderWithProviders(<ConsumerBottomNav />, {
+      auth: mockAuth({ session: mockSession("customer") }),
+      route: "/account",
+    });
+
+    const tracos = screen.getAllByTestId(/^tab-indicator-/);
+    expect(tracos).toHaveLength(1);
+    expect(tracos[0]).toHaveAttribute("data-testid", "tab-indicator-Conta");
+    expect(tracos[0].className).toContain("bg-mp-primary");
+    // Decoração: o leitor de tela já sabe a página atual pelo aria-current do link.
+    expect(tracos[0]).toHaveAttribute("aria-hidden");
+    expect(screen.getByRole("link", { name: "Conta" })).toHaveAttribute("aria-current", "page");
+  });
+
+  it("fora das rotas da barra, nenhuma aba fica marcada", () => {
+    renderWithProviders(<ConsumerBottomNav />, {
+      auth: mockAuth({ session: mockSession("customer") }),
+      route: "/p/virapark/virapark/covered",
+    });
+    expect(screen.queryAllByTestId(/^tab-indicator-/)).toHaveLength(0);
+  });
+
   it("logado troca Entrar/Parceiro por Reservas/Conta, mantendo Destinos e Ajuda", () => {
     renderWithProviders(<ConsumerBottomNav />, {
       auth: mockAuth({ session: mockSession("customer") }),
