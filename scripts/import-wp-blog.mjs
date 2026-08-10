@@ -13,8 +13,8 @@
  * É idempotente: o upsert usa `legacy_wp_id` como chave, então rodar de novo
  * atualiza em vez de duplicar.
  *
- * Escrita no banco: se `SUPABASE_SERVICE_ROLE_KEY` estiver no ambiente o script
- * aplica direto; senão gera SQL para ser aplicado por quem tem credencial.
+ * Imagens: com `SUPABASE_SERVICE_ROLE_KEY` no ambiente vão para o bucket
+ * `assets-public` sob `blog/<slug>/`; sem ela caem em `public/images/blog/`.
  */
 
 import { execFileSync } from "node:child_process";
@@ -26,6 +26,22 @@ const WP = "https://movepark.co/wp-json/wp/v2";
 const IMAGE_DIR = "public/images/blog";
 const MAX_WIDTH = 1600;
 const WEBP_QUALITY = 82;
+
+/**
+ * Destino das imagens.
+ *
+ * Com `SUPABASE_SERVICE_ROLE_KEY` no ambiente, sobem para o bucket `assets-public`
+ * sob `blog/<slug>/`, que é a convenção do projeto (docs/specs/storage-buckets.md)
+ * e o que dá resize sob demanda pelo endpoint de render do Supabase.
+ *
+ * Sem a chave, caem em `public/images/blog/` e são servidas pelo Cloudflare Pages.
+ * O `optimizedImageUrl` do front aceita os dois: URL do Storage ganha transform,
+ * caminho local passa direto.
+ */
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL;
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const USE_STORAGE = !!(SUPABASE_URL && SERVICE_ROLE_KEY);
+const BUCKET = "assets-public";
 
 /**
  * Categoria do WordPress → slug do destino no Hub.
@@ -179,7 +195,18 @@ async function migrateImage(url, postSlug, report) {
   const destPath = path.join(destDir, webpName);
   const publicPath = `/images/blog/${postSlug}/${webpName}`;
 
+  // Arquivo já convertido numa rodada anterior. Com o Storage ligado ele ainda
+  // precisa subir: é justamente este o caminho da migração de local para bucket,
+  // e sem isto o atalho pularia as 131 imagens que já estão no disco.
   if (fs.existsSync(destPath)) {
+    if (USE_STORAGE) {
+      const remote = await uploadToStorage(destPath, `blog/${postSlug}/${webpName}`, report);
+      if (remote) {
+        fs.rmSync(destPath, { force: true });
+        return remote;
+      }
+      return null;
+    }
     report.imagesSkipped++;
     return publicPath;
   }
@@ -202,6 +229,17 @@ async function migrateImage(url, postSlug, report) {
     report.imagesBefore += buf.length;
     report.imagesAfter += fs.statSync(destPath).size;
     report.imagesConverted++;
+
+    if (USE_STORAGE) {
+      const remote = await uploadToStorage(destPath, `blog/${postSlug}/${webpName}`, report);
+      if (remote) {
+        // O arquivo local era só o estágio da conversão; a fonte passa a ser o bucket.
+        fs.rmSync(destPath, { force: true });
+        return remote;
+      }
+      return null;
+    }
+
     return publicPath;
   } catch {
     report.imagesFailed.push(url);
@@ -209,6 +247,34 @@ async function migrateImage(url, postSlug, report) {
   } finally {
     fs.rmSync(tmp, { force: true });
   }
+}
+
+/**
+ * Sobe um arquivo para `assets-public` e devolve a URL pública.
+ *
+ * `upsert` ligado para o script continuar idempotente: rodar de novo sobrescreve
+ * em vez de estourar por conflito.
+ */
+async function uploadToStorage(localPath, objectPath, report) {
+  const res = await fetch(
+    `${SUPABASE_URL}/storage/v1/object/${BUCKET}/${objectPath}?upsert=true`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+        "Content-Type": "image/webp",
+        "x-upsert": "true",
+      },
+      body: fs.readFileSync(localPath),
+    },
+  );
+
+  if (!res.ok) {
+    report.uploadsFailed.push(`${objectPath}: HTTP ${res.status} ${await res.text()}`);
+    return null;
+  }
+  report.uploaded++;
+  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${objectPath}`;
 }
 
 function sqlString(v) {
@@ -234,6 +300,8 @@ async function main() {
     imagesBefore: 0,
     imagesAfter: 0,
     markdownWritten: 0,
+    uploaded: 0,
+    uploadsFailed: [],
   };
 
   const [posts, categories] = await Promise.all([fetchAllPosts(), fetchJson(`${WP}/categories?per_page=100`)]);
@@ -411,6 +479,8 @@ function printReport(r, dryRun) {
     console.log(`  imagens convertidas:      ${r.imagesConverted} (${mb(r.imagesBefore)} MB -> ${mb(r.imagesAfter)} MB)`);
     console.log(`  imagens já presentes:     ${r.imagesSkipped}`);
   }
+  if (r.uploaded) console.log(`  enviadas ao Storage:      ${r.uploaded} (assets-public/blog/)`);
+  if (r.uploadsFailed.length) console.log(`  falhas de upload:         ${r.uploadsFailed.length}`);
   if (r.externalDropped.length) console.log(`  imagens externas descartadas: ${r.externalDropped.length}`);
   if (r.imagesFailed.length) console.log(`  imagens com falha:        ${r.imagesFailed.length}`);
   if (r.withoutDestination.length) {

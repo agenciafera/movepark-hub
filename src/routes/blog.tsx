@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useBlogPosts } from "@/features/blog/api";
 import { breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
 import { formatDate } from "@/lib/format";
+import { imageSrcSet, optimizedImageUrl } from "@/lib/storage";
 import type { BlogPostWithDestination } from "@/types/domain";
 
 /** O índice não carrega `body_md`: o corpo só é lido na página do post. */
@@ -21,12 +22,21 @@ function PostCard({ post }: { post: PostCardData }) {
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-hairline bg-canvas">
       <Link to={`/blog/${post.slug}/`} className="block">
         {post.cover_image_url && (
+          /*
+            `contain`, não `cover`. As capas vieram do WordPress em proporções que
+            vão de 1:1 a 2,12:1, e boa parte é banner com a manchete gravada dentro
+            da imagem. Recortar para uma caixa fixa cortava o texto: com 16/9 e
+            `cover`, 104 das 131 imagens perdiam 15% ou mais, e as quadradas
+            perdiam 43,8%. A caixa é 3:2 porque é a proporção de 71 delas.
+          */
           <img
-            src={post.cover_image_url}
+            src={optimizedImageUrl(post.cover_image_url, { width: 800, resize: "contain" })}
+            srcSet={imageSrcSet(post.cover_image_url, [400, 600, 800])}
+            sizes="(min-width: 1128px) 360px, (min-width: 768px) 50vw, 100vw"
             alt=""
             loading="lazy"
             decoding="async"
-            className="aspect-[16/9] w-full object-cover"
+            className="aspect-[3/2] w-full bg-surface-soft object-contain"
           />
         )}
       </Link>

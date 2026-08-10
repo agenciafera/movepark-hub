@@ -9,6 +9,7 @@ import { useBlogPost, useRelatedPosts } from "@/features/blog/api";
 import { metaDescription, plainText, readingMinutes } from "@/features/blog/markdown.logic";
 import { blogPostingSchema, breadcrumbSchema } from "@/lib/jsonld";
 import { formatDate } from "@/lib/format";
+import { imageSrcSet, optimizedImageUrl } from "@/lib/storage";
 import type { BlogPostWithDestination } from "@/types/domain";
 
 const SITE_URL = "https://hub.movepark.co";
@@ -102,14 +103,19 @@ export default function BlogPostPage() {
         </PageHeader>
 
         {post.cover_image_url && (
-          // A proporção é fixa de propósito. As capas vieram do WordPress em
-          // formatos variados (há quadradas de 1600x1600), e sem a caixa definida
-          // elas ocupavam a tela inteira e ainda empurravam o texto ao carregar.
+          /*
+            Sem recorte: a capa é frequentemente um banner com a manchete gravada
+            dentro da imagem, e cortar come o texto. A altura é limitada para a
+            quadrada não tomar a tela inteira, e a largura acompanha a proporção
+            real, então não sobra tarja.
+          */
           <img
-            src={post.cover_image_url}
+            src={optimizedImageUrl(post.cover_image_url, { width: 1200, resize: "contain" })}
+            srcSet={imageSrcSet(post.cover_image_url, [720, 1080, 1440])}
+            sizes="(min-width: 768px) 720px, 100vw"
             alt=""
             decoding="async"
-            className="mt-8 aspect-[16/9] w-full rounded-2xl border border-hairline object-cover"
+            className="mx-auto mt-8 max-h-[520px] w-auto max-w-full rounded-2xl border border-hairline"
           />
         )}
 

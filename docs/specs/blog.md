@@ -275,14 +275,19 @@ produção sem risco de SEO. A migração deixa de ser um evento e vira uma chav
 
 Três desvios, todos deliberados, e o motivo de cada um.
 
-**As imagens ficaram em `public/images/blog/`, não no Supabase Storage.** O desenho previa
-`assets-public/blog/<slug>/`, mas subir para o Storage exige `service_role`, que não estava
-disponível na máquina onde a migração rodou. O caminho escolhido serve as imagens pelo próprio
-Cloudflare Pages, o que na prática é melhor: mesma origem, sem egress de Storage e sem
-transformação paga. São 131 arquivos, 58,6 MB de original convertidos para 16,8 MB de WebP
-(qualidade 82, largura máxima de 1600px). Dez imagens hotlinkadas do Bing foram descartadas:
-já vinham quebrando e carregavam risco de direito autoral. Mover para o Storage depois é
-possível, mas só vale se o repo pesar; a URL pública não precisa mudar.
+**As imagens entraram por `public/images/blog/`, e o destino final é o Storage.** São 131
+arquivos, 58,6 MB de original convertidos para 16,8 MB de WebP (qualidade 82, largura máxima
+de 1600px). Dez imagens hotlinkadas do Bing foram descartadas: já vinham quebrando e carregavam
+risco de direito autoral.
+
+O bucket é o destino certo, e por dois motivos que valem mais que a conveniência do repo:
+post novo criado pelo Manager sobe imagem pelo painel, e ninguém deveria precisar commitar
+arquivo para publicar; e o endpoint de render do Supabase dá resize sob demanda, que é o que
+alimenta o `srcset` das páginas. O `scripts/import-wp-blog.mjs` já faz os dois caminhos: com
+`SUPABASE_SERVICE_ROLE_KEY` no ambiente ele sobe para `assets-public/blog/<slug>/` e grava a
+URL pública; sem a chave, grava o caminho local. O render usa `optimizedImageUrl`, que
+transforma URL do Storage e deixa caminho local passar direto, então a troca não mexe nas
+páginas.
 
 **O sitemap ganhou um passo de build.** O `vite-plugin-sitemap` remove a barra final de todo
 path e não tem opção para desligar isso, então ele anunciava as 94 URLs do blog na forma que
@@ -292,6 +297,17 @@ o build se sobrar alguma. Sem ele o sitemap entregaria ao Google exatamente a UR
 **O índice não carrega o corpo dos posts.** Com `body_md` dos 93 posts embarcado no loader, o
 HTML de `/blog` saía com 689 KB. O card usa título, resumo, capa e data, então o loader do
 índice seleciona só isso: 240 KB, 41 KB comprimido.
+
+### Capas não são recortadas
+
+As capas do WordPress vêm em proporções que vão de 1:1 a 2,12:1, e boa parte é banner com a
+manchete gravada dentro da imagem. Uma caixa fixa com `object-cover` cortava esse texto: medido
+em 16/9, **104 das 131 imagens perdiam 15% ou mais**, e as 8 quadradas perdiam 43,8%.
+
+O índice usa caixa 3:2 (a proporção de 71 das 131) com `object-contain`, o que mantém o grid
+alinhado sem cortar nada. A página do post não fixa proporção: limita a altura em 520px e deixa
+a largura acompanhar a imagem, então não há corte nem tarja. Quem publicar capa nova pode usar
+qualquer proporção sem perder conteúdo.
 
 ### GEO
 
