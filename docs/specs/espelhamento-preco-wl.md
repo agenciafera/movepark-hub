@@ -8,6 +8,22 @@
 Reconstrói no Hub a tabela de preço de uma unidade externa **amostrando** a API de cálculo do
 parceiro. Sem consulta em tempo real.
 
+## Quem decide o preço não é a Movepark
+
+Em unidade externa, quem define preço é o dono do estacionamento, do lado do white-label.
+Sazonalidade, feriado, virada de tabela: entra lá primeiro e chega ao Hub depois. **O Hub exibe,
+nunca decide.** Decidido em 10/08/2026, ao fechar a atividade "Precificação sincronizada entre
+White Label e Hub" ([86ajp44m1](https://app.clickup.com/t/86ajp44m1)).
+
+A consequência prática atravessa todo este arquivo: qualquer diferença entre o que o Hub mostra e
+o que o parceiro cobra é a Movepark alterando a tabela dele, mesmo quando a diferença é de três
+centavos e vem de um arredondamento. Foi esse princípio que derrubou a saída de "tolerar a
+divergência" quando ela apareceu no valet do Aeropark.
+
+Não existe, portanto, uma lista de "exceções do WL que o Hub aceita ou recusa". O que o parceiro
+praticar, o espelho reproduz; o que ele não conseguir reproduzir vira `divergent`, e a vitrine
+para de afirmar preço fechado até alguém olhar.
+
 ## Por quê tempo real está fora
 
 A busca do Hub ficaria refém do uptime do backend do parceiro, e página lenta mata o orgânico
