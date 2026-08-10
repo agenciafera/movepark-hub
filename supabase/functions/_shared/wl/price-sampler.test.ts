@@ -57,10 +57,10 @@ function espiao() {
 Deno.test("reconstrói as três faixas do Virapark, com as bordas exatas", async () => {
   const t = await sampleWlPriceTable(espiao().quote);
   assertEquals(t.tiers, [
-    { fromDay: 1, toDay: 1, unitPrice: 40 },
-    { fromDay: 2, toDay: 6, unitPrice: 32.9 },
+    { fromDay: 1, toDay: 1, unitPrice: 40, totalPrice: null },
+    { fromDay: 2, toDay: 6, unitPrice: 32.9, totalPrice: null },
     // Aberta de propósito: acima de MAX_DAYS ninguém mediu, e fechar em 31 inventaria degrau.
-    { fromDay: 7, toDay: null, unitPrice: 24.9 },
+    { fromDay: 7, toDay: null, unitPrice: 24.9, totalPrice: null },
   ]);
 });
 
@@ -69,9 +69,9 @@ Deno.test("acha a tolerância de fração de 60 minutos", async () => {
   assertEquals(t.toleranceMinutes, 60);
 });
 
-Deno.test("lê a tabela de balcão como diária própria, não como multiplicador", async () => {
+Deno.test("lê a tabela de balcão como tabela própria, não como multiplicador", async () => {
   const t = await sampleWlPriceTable(espiao().quote);
-  assertEquals(t.oldPriceDaily, 40);
+  assertEquals(t.oldPriceTiers, [{ fromDay: 1, toDay: null, unitPrice: 40, totalPrice: null }]);
 });
 
 Deno.test("custa 42 chamadas: 31 bordas + 11 sondagens", async () => {
@@ -103,15 +103,15 @@ Deno.test("mapeia para o vocabulário do motor do Hub", async () => {
 
   assertEquals(tiers.filter((t) => !t.is_old_price).length, 3);
   assertEquals(tiers.filter((t) => t.is_old_price), [
-    { from_day: 1, to_day: null, unit_price: 40, is_old_price: true },
+    { from_day: 1, to_day: null, unit_price: 40, total_price: null, is_old_price: true },
   ]);
 });
 
 Deno.test("curva sem degrau vira uma faixa só", async () => {
   const plano = (days: number) => Promise.resolve({ price: days * 25, oldPrice: null });
   const t = await sampleWlPriceTable(plano);
-  assertEquals(t.tiers, [{ fromDay: 1, toDay: null, unitPrice: 25 }]);
-  assertEquals(t.oldPriceDaily, null);
+  assertEquals(t.tiers, [{ fromDay: 1, toDay: null, unitPrice: 25, totalPrice: null }]);
+  assertEquals(t.oldPriceTiers, null);
   assertEquals(toHubPricing(t).rule.old_price_strategy, "none");
 });
 
@@ -124,13 +124,14 @@ Deno.test("sem tolerância, a fração promove na hora", async () => {
   assertEquals(toHubPricing(t).rule.fractional_day_tolerance, 0);
 });
 
-Deno.test("diária que não fecha em centavo exato é denunciada", async () => {
-  // 3 dias por 100,00 dá 33,3333 por dia: não é diária uniforme, e forçar o mapeamento
-  // esconderia o fato.
+Deno.test("dia que não fecha em diária exata vira preço fechado, sem arredondar", async () => {
+  // 3 dias por 100,00 dá 33,3333 por dia. Arredondar para 33,33 faria o Hub cobrar 99,99, e
+  // para 33,34 faria cobrar 100,02. Nenhum dos dois é o preço do parceiro.
   const torto = (days: number) =>
     Promise.resolve({ price: days === 3 ? 100 : days * 30, oldPrice: null });
   const t = await sampleWlPriceTable(torto);
-  assert(t.anomalies.some((a) => a.includes("não divide em diária exata")));
+  const faixa = t.tiers.find((x) => x.fromDay === 3)!;
+  assertEquals(faixa, { fromDay: 3, toDay: 3, unitPrice: null, totalPrice: 100 });
 });
 
 Deno.test("findCommercialAnomalies fica quieto em curva monotônica", () => {
@@ -164,7 +165,7 @@ Deno.test("recusa que não é de estadia mínima sobe como erro, não vira piso"
 Deno.test("a tabela de um parceiro com piso começa no piso, não no dia 1", async () => {
   const t = await sampleWlPriceTable(comPiso(3).quote);
   assertEquals(t.minimumDays, 3);
-  assertEquals(t.tiers, [{ fromDay: 3, toDay: null, unitPrice: 25.9 }]);
+  assertEquals(t.tiers, [{ fromDay: 3, toDay: null, unitPrice: 25.9, totalPrice: null }]);
 });
 
 Deno.test("o piso entra nas anomalias, para aparecer no log da passada", async () => {
@@ -185,7 +186,7 @@ Deno.test("a faixa de balcão também começa no piso", async () => {
   const t = await sampleWlPriceTable(quote);
   assertEquals(
     toHubPricing(t).tiers.filter((x) => x.is_old_price),
-    [{ from_day: 2, to_day: null, unit_price: 40, is_old_price: true }],
+    [{ from_day: 2, to_day: null, unit_price: 40, total_price: null, is_old_price: true }],
   );
 });
 
@@ -214,4 +215,83 @@ Deno.test("as bordas vão do piso ao teto, e a fração é medida no piso", asyn
   // O resto é a busca binária da fração, e ela pergunta SEMPRE sobre o piso. Ancorada no dia 1,
   // toda sondagem voltaria 400 e a tolerância sairia errada sem ninguém perceber.
   assertEquals([...new Set(p.asked.slice(1 + bordas))], [PISO]);
+});
+
+// ──────────────────── Faixa de preço fechado (valet do Aeropark) ────────────────────
+
+/**
+ * A tabela real do valet do Aeropark, medida contra o parceiro em 10/08/2026.
+ *
+ * Piso de 2 diárias. De 2 a 6 soma R$ 79,20 por dia. De 6 a 10 custa **R$ 475,20 fechado**: o
+ * dia 7 custa o mesmo que o dia 6, e o 10 também. De 11 a 17, R$ 554,40. De 18 a 30, R$ 633,60.
+ * De 31 em diante volta a ser diária, R$ 21,12.
+ *
+ * É a curva que denunciou o defeito: modelada como diária, 7 diárias viravam R$ 67,89/dia e o
+ * Hub cobrava R$ 475,23 onde o parceiro cobra R$ 475,20.
+ */
+function precoValetAeropark(days: number): number {
+  if (days <= 6) return Math.round(days * 79.2 * 100) / 100;
+  if (days <= 10) return 475.2;
+  if (days <= 17) return 554.4;
+  if (days <= 30) return 633.6;
+  return Math.round(days * 21.12 * 100) / 100;
+}
+
+function valetAeropark(days: number, extra: number): Promise<Quote> {
+  const d = extra > 0 ? days + 1 : days;
+  if (d < 2) return Promise.reject(new WlMinimumStayError(2, "teste"));
+  return Promise.resolve({ price: precoValetAeropark(d), oldPrice: null });
+}
+
+Deno.test("reconhece faixa de preço fechado em vez de inventar diária", async () => {
+  const t = await sampleWlPriceTable(valetAeropark);
+  assertEquals(t.tiers, [
+    { fromDay: 2, toDay: 5, unitPrice: 79.2, totalPrice: null },
+    { fromDay: 6, toDay: 10, unitPrice: null, totalPrice: 475.2 },
+    { fromDay: 11, toDay: 17, unitPrice: null, totalPrice: 554.4 },
+    { fromDay: 18, toDay: 30, unitPrice: null, totalPrice: 633.6 },
+    // A cauda volta a ser diária, então segue aberta: 45 diárias × 21,12 = R$ 950,40, que é o
+    // que o parceiro cobra.
+    { fromDay: 31, toDay: null, unitPrice: 21.12, totalPrice: null },
+  ]);
+});
+
+Deno.test("a tabela reproduz o parceiro ao centavo, inclusive onde não divide", async () => {
+  const t = await sampleWlPriceTable(valetAeropark);
+  const { tiers } = toHubPricing(t);
+
+  // Espelha o que o `_apply_pricing` faz: acha a faixa e aplica total fechado ou dias × diária.
+  const hub = (days: number) => {
+    const faixa = tiers
+      .filter((x) => !x.is_old_price)
+      .find((x) => (x.to_day == null ? days >= x.from_day : days >= x.from_day && days <= x.to_day));
+    if (!faixa) return null;
+    return faixa.total_price ?? Math.round(days * faixa.unit_price! * 100) / 100;
+  };
+
+  for (let d = 2; d <= 31; d++) {
+    assertEquals(hub(d), precoValetAeropark(d), `${d} diárias`);
+  }
+  // Os três dias que o modelo antigo errava, nomeados: eram 475,23 / 554,45 / 554,37.
+  assertEquals(hub(7), 475.2);
+  assertEquals(hub(13), 554.4);
+  assertEquals(hub(17), 554.4);
+});
+
+Deno.test("curva com faixa fechada é gravada como fixed_bracket", async () => {
+  const t = await sampleWlPriceTable(valetAeropark);
+  assertEquals(toHubPricing(t).rule.strategy, "fixed_bracket");
+});
+
+Deno.test("faixa fechada no fim da amostragem não fica aberta", async () => {
+  // Preço fechado aberto diria "qualquer estadia acima disto custa o mesmo", que ninguém mediu.
+  // Sem faixa, o motor devolve NULL e a busca descarta, que é o honesto.
+  const platoNoFim = (days: number) => Promise.resolve({ price: days <= 5 ? days * 30 : 200, oldPrice: null });
+  const t = await sampleWlPriceTable(platoNoFim);
+  assertEquals(t.tiers[t.tiers.length - 1], {
+    fromDay: 6,
+    toDay: MAX_DAYS,
+    unitPrice: null,
+    totalPrice: 200,
+  });
 });

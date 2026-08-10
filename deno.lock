@@ -196,6 +196,7 @@
         "npm:tailwind-merge@^2.6.1",
         "npm:tailwindcss-animate@^1.0.7",
         "npm:tailwindcss@^3.4.19",
+        "npm:turndown@^7.2.4",
         "npm:typescript@^5.9.3",
         "npm:vite-plugin-sitemap@~0.8.2",
         "npm:vite-react-ssg@~0.9.2",

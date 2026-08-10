@@ -8,7 +8,7 @@
 -- como a mais barata na ordenação da busca e a recusa só apareceria no site do parceiro.
 
 begin;
-select plan(13);
+select plan(15);
 
 -- ── 1. O motor não cota abaixo da primeira faixa ────────────────────────────
 
@@ -95,6 +95,28 @@ select is(
      from public.location_parking_type where id = current_setting('test.lpt')::uuid),
   row(false, null::int, null::public.minimum_stay_unit)::text,
   'parceiro que deixou de exigir mínimo tem o carimbo limpo');
+
+-- ── 3. Faixa de preço fechado ───────────────────────────────────────────────
+--
+-- O parceiro nem sempre cobra diária. No valet do Aeropark, 6 a 10 diárias custam R$ 475,20
+-- fechado. Gravar isso como diária arredondada fazia o Hub cobrar R$ 475,23 em 7 diárias.
+
+select lives_ok($$
+  select public.wl_mirror_apply_pricing(
+    current_setting('test.lpt')::uuid,
+    '{"strategy":"fixed_bracket","old_price_strategy":"none"}'::jsonb,
+    '[{"from_day":2,"to_day":5,"unit_price":79.20,"total_price":null,"is_old_price":false},
+      {"from_day":6,"to_day":10,"unit_price":null,"total_price":475.20,"is_old_price":false}]'::jsonb,
+    40, '[]'::jsonb, 2)
+$$, 'o espelho grava faixa de preço fechado');
+
+select is(
+  (select array_agg(
+     (public.simulate_price('piso-parceiro','piso-unidade','piso_coberta', d)->>'price')::numeric
+     order by d)
+     from unnest(array[2,5,6,7,10]) d),
+  array[158.40, 396.00, 475.20, 475.20, 475.20]::numeric[],
+  'dentro da faixa fechada o preço não muda, e 7 diárias custam os R$ 475,20 do parceiro');
 
 select * from finish();
 rollback;

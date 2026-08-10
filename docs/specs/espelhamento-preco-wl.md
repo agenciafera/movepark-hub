@@ -201,6 +201,51 @@ distribuído, e a fila inteira gira todo dia.
 
 `skipped` vai na resposta de propósito. Corte silencioso lê como "cobriu tudo".
 
+### Preço fechado por faixa: o parceiro nem sempre cobra diária
+
+O amostrador nasceu assumindo que toda tabela é diária uniforme por faixa. O valet do Aeropark
+mostrou que não:
+
+| Estadia | Total do parceiro |
+|---|---|
+| 2 a 5 diárias | R$ 79,20 por dia |
+| 6 a 10 diárias | **R$ 475,20, fechado** |
+| 11 a 17 diárias | **R$ 554,40, fechado** |
+| 18 a 30 diárias | **R$ 633,60, fechado** |
+| 31 diárias em diante | R$ 21,12 por dia |
+
+Dentro de uma faixa fechada, ficar mais dias não muda a conta. Sete diárias custam o mesmo que
+seis. Modelado como diária, R$ 475,20 em 7 dias vira R$ 67,8857 por dia, arredonda para R$ 67,89,
+e o Hub passa a cobrar **R$ 475,23**. Acontecia em 4 das 30 durações medidas.
+
+Três centavos parecem nada, e são: o problema não é o tamanho. **A política de preço é do
+parceiro, e arredondar é alterar.** Quem responde pelo número na tela é a Movepark.
+
+O agrupamento passou a ter duas passadas. Primeiro procura platôs, dias seguidos com o mesmo
+total exato, que viram faixa de `total_price`. O que sobra vira faixa de `unit_price`, juntando
+dias consecutivos com a mesma diária. Um dia solto cuja diária não fecha em centavo cheio também
+vira preço fechado, de um dia só. A ordem importa: agrupar por diária primeiro quebraria o platô
+em pedaços de um dia, cada um com uma diária inventada.
+
+`pricing_tier.total_price` já existia e o `_apply_pricing` já o prefere sobre a diária, que é
+como a tabela legada do valet sempre foi modelada. Só o espelho não sabia escrever ali.
+
+Três detalhes que vieram junto:
+
+- **A cauda só fica aberta quando é diária.** Faixa fechada aberta diria "qualquer estadia acima
+  disto custa o mesmo", que ninguém mediu e é barato. Fecha em `MAX_DAYS`, o motor devolve `NULL`
+  acima disso, e a busca descarta.
+- **A tabela de BALCÃO passa pelo mesmo agrupamento.** Ela também pode ser fechada por faixa.
+  Achatá-la numa diária só (pegando a do primeiro dia e repetindo, que era o que se fazia)
+  inflava o "de R$ X" riscado nas durações longas, e com ele a linha "X mais barato que o
+  balcão". Economia é afirmação: tem que ser a do parceiro.
+- **A impressão digital da regra ganhou o `total_price`.** Sem isso, faixa fechada que mudasse de
+  valor não contaria como mudança, e a passada não gravaria log: o oposto do que o log-por-evento
+  existe para fazer.
+
+A anomalia "não divide em diária exata" saiu. Ela existia para denunciar justamente este caso, e
+agora o modelo o representa.
+
 ### Limite conhecido
 
 A amostragem usa **uma âncora só** (30 dias à frente, meio-dia), então assume que o parceiro não
