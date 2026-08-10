@@ -261,6 +261,9 @@ async function uploadToStorage(localPath, objectPath, report) {
     {
       method: "POST",
       headers: {
+        // O gateway do Supabase exige `apikey` além do bearer. Com service_role o
+        // bearer sozinho passa, então a falta só aparece quando a chave é outra.
+        apikey: SERVICE_ROLE_KEY,
         Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
         "Content-Type": "image/webp",
         "x-upsert": "true",

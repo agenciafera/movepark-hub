@@ -156,3 +156,29 @@ describe("imageSrcSet", () => {
     expect(imageSrcSet("https://cdn.externo/x.jpg", [640])).toBeUndefined();
   });
 });
+
+describe("imageSrcSet e proporção", () => {
+  const url =
+    "https://x.supabase.co/storage/v1/object/public/assets-public/blog/post/capa.webp";
+
+  it("todo candidato do srcset pede resize=contain", () => {
+    // Sem `resize`, o render do Supabase devolve 400x1067 de um 1600x1067: ele
+    // força a largura e mantém a altura, achatando a imagem. E é do srcset que
+    // o browser escolhe, então o `src` correto sozinho não salva.
+    const out = imageSrcSet(url, [400, 800]) ?? "";
+    const candidatos = out.split(", ");
+
+    expect(candidatos).toHaveLength(2);
+    for (const c of candidatos) expect(c).toContain("resize=contain");
+    expect(candidatos[0]).toContain("width=400");
+    expect(candidatos[0]).toContain("400w");
+  });
+
+  it("usa o endpoint de render, não o de objeto", () => {
+    expect(imageSrcSet(url, [400])).toContain("/storage/v1/render/image/public/");
+  });
+
+  it("URL externa não ganha srcset", () => {
+    expect(imageSrcSet("https://outro.site/foto.jpg", [400])).toBeUndefined();
+  });
+});

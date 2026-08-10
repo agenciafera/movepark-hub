@@ -126,10 +126,22 @@ export function optimizedImageUrl(
   return qs ? `${base}?${qs}` : base;
 }
 
-/** Monta um `srcset` responsivo (em `w`) a partir de uma imagem do Storage. */
-export function imageSrcSet(url: string | null | undefined, widths: number[], quality?: number): string | undefined {
+/**
+ * Monta um `srcset` responsivo (em `w`) a partir de uma imagem do Storage.
+ *
+ * `resize` é `contain` por padrão porque o endpoint de render do Supabase NÃO
+ * preserva proporção quando recebe só `width`: um original 1600x1067 pedido em
+ * `?width=400` volta 400x1067, ou seja, achatado. Como o `srcset` é o que o
+ * browser realmente escolhe, o defeito aparecia mesmo com o `src` correto.
+ */
+export function imageSrcSet(
+  url: string | null | undefined,
+  widths: number[],
+  quality?: number,
+  resize: ImageTransform["resize"] = "contain",
+): string | undefined {
   if (!isTransformableAsset(url)) return undefined; // sem transform p/ URLs externas
   return widths
-    .map((w) => `${optimizedImageUrl(url, { width: w, quality })} ${w}w`)
+    .map((w) => `${optimizedImageUrl(url, { width: w, quality, resize })} ${w}w`)
     .join(", ");
 }
