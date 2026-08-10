@@ -2,6 +2,7 @@
 
 > **Épico:** E0.14 · **Fase:** 0 · **Q vinculados:** Q-017, Q-018
 > **Status:** implementado em 04/08/2026 (migration `20260921000000_checkout_mode_external.sql`).
+> Seis unidades em modo externo desde 10/08/2026 (ver o fim deste arquivo).
 > Nada virou `external` ou `silent` na base: os defaults preservam o comportamento atual e a
 > virada é ato de `hub_admin`, unidade por unidade.
 
@@ -239,3 +240,44 @@ hoje: quem faz isso é E0.15. Até lá, o Virapark continua vendendo pelo checko
 diz "externo" sem que a tela mude. Não é regressão (antes da E0.14 a coluna nem existia), mas é a
 razão de E0.15 ser a próxima da fila. Reverter é um `update` de uma linha.
 
+
+## Mais cinco unidades em 10/08/2026
+
+Abbapark, Nationpark, Plenty Park, Garageinn e Aeroparking. Com o Virapark, seis unidades
+externas e doze vagas.
+
+| Empresa | Unidade | Tenant WL | Categoria | Tipos mapeados | Piso |
+|---|---|---|---|---|---|
+| Abbapark | Aeroporto Afonso Pena | `abbapark` | `aeroporto-afonso-pena` | coberta, descoberta, premium → `vaga-max` | 3 diárias |
+| Nationpark | Aeroporto Afonso Pena | `nationpark` | `aeroporto-afonso-pena` | coberta, descoberta, premium → `vaga-max` | 3 diárias |
+| Plenty Park | Aeroporto de Congonhas | `plenty` | `aeroporto-congonhas` | coberta | 3 diárias |
+| Garageinn | Aeroporto de Viracopos | `garageinn` | `aeroporto-viracopos` | descoberta → `vaga-avulsa` | nenhum |
+| Aeroparking | Aeroporto de Guarulhos | `aeropark` | `aeroporto-guarulhos` | coberta, descoberta, valet | 2 diárias |
+| Virapark | Virapark | `virapark` | `virapark` | coberta | nenhum |
+
+Ao contrário do Virapark, estas cinco ficaram em `hub_relationship = onboarded`: são parceiros
+com quem já existe relação, e silenciar não teria propósito.
+
+### O que não é óbvio
+
+**O tenant do Aeroparking chama `aeropark`, não `aeroparking`.** O slug da empresa no Hub é
+`aeroparking`, e a convenção `<slug>-app.movepark.co` levaria a um domínio que não resolve.
+Existe também um tenant `airpark`, que é outro negócio (Lisboa e Faro) e já tem unidades próprias
+no Hub. Trocar um pelo outro mandaria o cliente para o estacionamento errado, em outro país.
+
+**A empresa Aeroparking não tinha unidade nenhuma no Hub.** A unidade foi criada com os dados da
+própria API do parceiro (nome, endereço, telefone, e-mail). Duas ressalvas gravadas junto: a
+coordenada é o eixo da rua, geocodificada, não o número 745; e a capacidade ficou em 0, porque
+inventar número viraria fato exibido ao cliente. Ela nasceu **`is_listed = false`** e continua
+assim: o gate de foto (`20260818000000`) não deixa listar unidade sem foto, e é a trava certa.
+Para publicar, faltam foto e conferência da coordenada.
+
+**O Garageinn vende um spot só, `vaga-avulsa`.** O `external_id` e a descrição dele dizem
+`vaga-coberta`, mas a política de reserva do próprio parceiro avisa que a vaga coberta fica
+"mediante disponibilidade no local". O De/Para ficou apontando o tipo que já existia no Hub
+(Vaga Descoberta), que não promete cobertura. Vale confirmar com o parceiro antes de trocar:
+prometer "Coberta" o que ele não garante é exatamente o que a ADR-009 barra.
+
+**Cupom só existe onde a reserva fecha.** Os dois únicos cupons do banco eram `PROMO10`
+(Abbapark) e `30OFF` (Virapark). Com as duas empresas em modo externo, nenhum dos dois tem mais
+onde ser aplicado. Ficaram como estão, e o roteiro E2E passou a usar o `FERA10`, da Agência Fera.

@@ -53,6 +53,7 @@ import {
   type ReservationSummary,
   perDayPrice,
   counterSavings,
+  showcaseFromPrice,
 } from "./reservation.logic";
 import { cn } from "@/lib/utils";
 
@@ -319,6 +320,11 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
   const fareSurcharge = canReserve ? fareOption.surcharge : 0;
   const displayTotal = parkingBase + fareSurcharge;
   const economia = counterSavings(sim.data?.old_price, displayTotal);
+  // Preço de vitrine para quando a estadia escolhida não tem total: sem datas, esgotada, ou
+  // abaixo do mínimo do parceiro. `base_price` só serve de "a partir de" quando é preço de
+  // verdade; na unidade espelhada ele é 0, porque a tabela vem do parceiro e esse campo do
+  // catálogo nunca foi preenchido. Zero não é preço.
+  const fromPrice = showcaseFromPrice(listing.company_parking_type.base_price);
 
   const hasFareOrAddOns = canReserve && (fareSurcharge > 0 || !!applied);
 
@@ -421,11 +427,9 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
               </span>
               <span className="text-body-sm text-muted">/ diária</span>
             </div>
-          ) : (
-            <div className="text-display-sm text-ink">
-              A partir de {formatBRL(listing.company_parking_type.base_price)}
-            </div>
-          )}
+          ) : fromPrice != null ? (
+            <div className="text-display-sm text-ink">A partir de {formatBRL(fromPrice)}</div>
+          ) : null}
           <div className="text-body-sm text-muted">
             {days > 0
               ? `${days} ${days === 1 ? "diária" : "diárias"} · ${formatDuration(from!, to!)}`
@@ -687,14 +691,18 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
               )}
             </div>
           )}
-          <div className="flex items-baseline justify-between">
-            <span className="text-title-sm text-ink">Total</span>
-            <span className="text-display-md text-ink tabular-nums">
-              {canReserve
-                ? formatBRL(displayTotal)
-                : formatBRL(listing.company_parking_type.base_price)}
-            </span>
-          </div>
+          {/* Sem total e sem "a partir de", a linha inteira sai. É o caso da estadia abaixo do
+              mínimo do parceiro numa unidade espelhada, onde `base_price` é 0 porque a tabela
+              vem de fora: "Total R$ 0,00" ali seria pior que não mostrar preço nenhum, e o
+              aviso logo acima já diz quantas diárias a vaga exige. */}
+          {(canReserve || fromPrice != null) && (
+            <div className="flex items-baseline justify-between">
+              <span className="text-title-sm text-ink">Total</span>
+              <span className="text-display-md text-ink tabular-nums">
+                {canReserve ? formatBRL(displayTotal) : formatBRL(fromPrice!)}
+              </span>
+            </div>
+          )}
           {/* Economia contra o balcão. Fica ao lado do Total porque as duas grandezas são da
               estadia inteira; lá em cima a comparação é por diária (riscado x preço). */}
           {canReserve && economia != null && (

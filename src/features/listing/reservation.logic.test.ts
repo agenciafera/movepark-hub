@@ -6,6 +6,7 @@ import {
   selectedAddOns,
   type AddOnOption,
   perDayPrice,
+  showcaseFromPrice,
   counterSavings,
 } from "./reservation.logic";
 
@@ -133,5 +134,20 @@ describe("counterSavings", () => {
     // Tarifa Flex de 12,90 encolhe a economia anunciada, e tem que encolher mesmo: o número
     // precisa sobreviver ao total da tela.
     expect(counterSavings(360, 224.1 + 12.9)).toBeCloseTo(123, 2);
+  });
+});
+
+describe("showcaseFromPrice", () => {
+  it("usa o base_price quando ele é preço de verdade", () => {
+    expect(showcaseFromPrice(31.9)).toBe(31.9);
+  });
+
+  it("devolve null quando não há preço para mostrar", () => {
+    // Unidade espelhada: a tabela vem do parceiro e `base_price` ficou em 0. Antes disso o card
+    // exibia "Total R$ 0,00" numa vaga que o parceiro só vende a partir de 3 diárias.
+    expect(showcaseFromPrice(0)).toBeNull();
+    expect(showcaseFromPrice(null)).toBeNull();
+    expect(showcaseFromPrice(undefined)).toBeNull();
+    expect(showcaseFromPrice(Number.NaN)).toBeNull();
   });
 });

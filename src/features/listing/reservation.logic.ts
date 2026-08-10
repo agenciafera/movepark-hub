@@ -110,3 +110,17 @@ export function counterSavings(oldPrice: number | null | undefined, total: numbe
   const diff = oldPrice - total;
   return diff > 0 ? diff : null;
 }
+
+/**
+ * Preço de vitrine quando a estadia escolhida não tem total: sem datas, esgotada, ou abaixo do
+ * mínimo do parceiro.
+ *
+ * O `base_price` do catálogo serve de "a partir de" nas unidades nativas. Nas espelhadas ele é
+ * 0: a tabela vem do parceiro e esse campo nunca foi preenchido. Zero não é preço, e "Total
+ * R$ 0,00" numa vaga que o parceiro só vende a partir de 3 diárias é pior do que não mostrar
+ * preço nenhum.
+ */
+export function showcaseFromPrice(basePrice: number | null | undefined): number | null {
+  const n = Number(basePrice ?? 0);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
