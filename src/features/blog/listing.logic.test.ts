@@ -5,6 +5,7 @@ import {
   pageHref,
   pageSlice,
   pageWindow,
+  parseBlogPath,
   searchPosts,
   totalPages,
   type ListablePost,
@@ -107,5 +108,55 @@ describe("filtro por taxonomia", () => {
 
   it("filtro vazio não mexe na lista", () => {
     expect(filterPosts(acervo, {})).toHaveLength(3);
+  });
+});
+
+describe("parseBlogPath", () => {
+  // A barra final é a canônica herdada do WordPress, e o manifesto do SSG indexa
+  // sem ela. Este parser é o que faz a listagem sobreviver às duas formas.
+  it("lê o índice, com e sem barra", () => {
+    expect(parseBlogPath("/blog")).toEqual({ kind: "index", slug: null, page: 1, base: "/blog" });
+    expect(parseBlogPath("/blog/")).toEqual({ kind: "index", slug: null, page: 1, base: "/blog" });
+  });
+
+  it("lê a paginação do índice", () => {
+    expect(parseBlogPath("/blog/page/3/")).toMatchObject({ kind: "index", page: 3, base: "/blog" });
+  });
+
+  it("lê cada eixo de taxonomia", () => {
+    expect(parseBlogPath("/blog/categoria/precos/")).toEqual({
+      kind: "categoria",
+      slug: "precos",
+      page: 1,
+      base: "/blog/categoria/precos",
+    });
+    expect(parseBlogPath("/blog/tag/traslado/")).toMatchObject({ kind: "tag", slug: "traslado" });
+    expect(parseBlogPath("/blog/autor/diego")).toMatchObject({ kind: "autor", slug: "diego" });
+    expect(parseBlogPath("/blog/aeroporto/vcp/")).toMatchObject({
+      kind: "aeroporto",
+      slug: "vcp",
+    });
+  });
+
+  it("lê eixo com paginação junto", () => {
+    expect(parseBlogPath("/blog/tag/traslado/page/2/")).toEqual({
+      kind: "tag",
+      slug: "traslado",
+      page: 2,
+      base: "/blog/tag/traslado",
+    });
+  });
+
+  it("slug de post não vira eixo", () => {
+    // /blog/<slug> é post, não listagem: só os 4 prefixos conhecidos são eixo.
+    expect(parseBlogPath("/blog/top-3-estacionamentos/")).toMatchObject({
+      kind: "index",
+      slug: null,
+    });
+  });
+
+  it("página inválida cai em 1", () => {
+    expect(parseBlogPath("/blog/page/abc/")).toMatchObject({ page: 1 });
+    expect(parseBlogPath("/blog/page/0/")).toMatchObject({ page: 1 });
   });
 });

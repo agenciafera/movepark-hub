@@ -1,13 +1,26 @@
 import * as React from "react";
-import { Link, useLoaderData, useSearchParams } from "react-router-dom";
+import { Link, useLoaderData, useLocation, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { MagnifyingGlass } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useBlogCategories, useBlogPosts } from "@/features/blog/api";
-import { filterPosts, pageHref, pageWindow, searchPosts } from "@/features/blog/listing.logic";
+import {
+  useBlogAuthors,
+  useBlogCategories,
+  useBlogPosts,
+  useBlogTags,
+} from "@/features/blog/api";
+import {
+  filterPosts,
+  pageHref,
+  pageSlice,
+  pageWindow,
+  parseBlogPath,
+  searchPosts,
+  totalPages,
+} from "@/features/blog/listing.logic";
 import { breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
 import { formatDate } from "@/lib/format";
 import { imageSrcSet, optimizedImageUrl } from "@/lib/storage";
@@ -154,35 +167,64 @@ function Paginacao({ page, total, base }: { page: number; total: number; base: s
 }
 
 export default function BlogListingPage() {
-  const data = useLoaderData() as BlogListingData | null;
+  const loaded = useLoaderData() as BlogListingData | null;
+  const { pathname } = useLocation();
   const categories = useBlogCategories();
+  const tags = useBlogTags();
+  const authors = useBlogAuthors();
   const [params, setParams] = useSearchParams();
   const termo = params.get("q") ?? "";
-
-  // A busca varre o acervo inteiro, então só puxa a lista completa quando há termo.
-  const todos = useBlogPosts();
   const buscando = termo.trim().length > 0;
 
-  const kind = data?.kind ?? "index";
-  const base = data?.base ?? "/blog";
-  const page = data?.page ?? 1;
+  /*
+    O eixo vem da URL, não do loader.
 
-  const resultados = React.useMemo(() => {
-    if (!buscando) return null;
+    O `vite-react-ssg` indexa o dado assado no build por caminho SEM barra final,
+    e os links do blog levam a barra, que é a canônica herdada do WordPress. Ao
+    navegar por dentro do site a chave não casava e a listagem vinha vazia, com o
+    título caindo no default "Blog". Lendo o caminho aqui, a página se sustenta
+    com ou sem o dado do build.
+  */
+  const rota = parseBlogPath(pathname);
+  const { kind, slug, page, base } = rota;
+
+  // Puxa o acervo quando o dado do build não veio, ou quando há busca.
+  const semDadoDoBuild = !loaded?.posts?.length;
+  const todos = useBlogPosts(semDadoDoBuild || buscando);
+
+  const doEixo = React.useMemo(() => {
+    if (loaded?.posts?.length && !buscando && loaded.page === page) return null;
     const acervo = todos.data ?? [];
-    const doEixo = data?.slug
-      ? filterPosts(acervo, { [kind]: data.slug } as Record<string, string>)
-      : acervo;
-    return searchPosts(doEixo, termo);
-  }, [buscando, todos.data, termo, data?.slug, kind]);
+    return slug ? filterPosts(acervo, { [kind]: slug } as Record<string, string>) : acervo;
+  }, [loaded, buscando, page, todos.data, slug, kind]);
 
-  const posts = resultados ?? data?.posts ?? [];
-  const total = data?.total ?? 1;
+  const posts = buscando
+    ? searchPosts(doEixo ?? [], termo)
+    : (doEixo ? pageSlice(doEixo, page) : (loaded?.posts ?? []));
 
-  const titulo = data?.name ?? "Blog";
+  const total = doEixo ? totalPages(doEixo.length) : (loaded?.total ?? 1);
+  const carregando = (semDadoDoBuild || buscando) && todos.isLoading;
+
+  /** Nome do eixo: do loader quando veio, senão do catálogo de taxonomia. */
+  const nomeDoEixo = () => {
+    if (loaded?.name && loaded.kind === kind && loaded.slug === slug) return loaded.name;
+    if (!slug) return null;
+    if (kind === "categoria") return categories.data?.find((c) => c.slug === slug)?.name ?? null;
+    if (kind === "tag") return tags.data?.find((t) => t.slug === slug)?.name ?? null;
+    if (kind === "autor") return authors.data?.find((a) => a.slug === slug)?.name ?? null;
+    return doEixo?.[0]?.destination?.name ?? posts[0]?.destination?.name ?? null;
+  };
+
+  const titulo = nomeDoEixo() ?? (kind === "index" ? "Blog" : (slug ?? "Blog"));
+  const descricaoDoEixo =
+    kind === "categoria"
+      ? (categories.data?.find((c) => c.slug === slug)?.description ?? loaded?.description ?? null)
+      : null;
   const lead =
-    data?.description ??
-    "Guias de estacionamento nos aeroportos onde a Movepark opera: preço, distância do terminal e o que olhar antes de reservar.";
+    descricaoDoEixo ??
+    (kind === "index"
+      ? "Guias de estacionamento nos aeroportos onde a Movepark opera: preço, distância do terminal e o que olhar antes de reservar."
+      : `Tudo o que publicamos sobre ${titulo}.`);
 
   const canonical = `${SITE_URL}${pageHref(page, base)}`;
   // "Blog | Blog Movepark" era o que saía na página 2 do índice.
@@ -278,7 +320,7 @@ export default function BlogListingPage() {
                 to={`/blog/categoria/${c.slug}/`}
                 className={cn(
                   "rounded-full border px-3 py-1.5 text-caption",
-                  kind === "categoria" && data?.slug === c.slug
+                  kind === "categoria" && slug === c.slug
                     ? "border-mp-primary bg-mp-primary text-white"
                     : "border-hairline text-body hover:bg-surface-soft",
                 )}
@@ -289,7 +331,7 @@ export default function BlogListingPage() {
           </nav>
         </div>
 
-        {buscando && todos.isLoading ? (
+        {carregando ? (
           <div className="mt-10 grid gap-6 tablet:grid-cols-2 desktop:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="h-80 w-full rounded-2xl" />

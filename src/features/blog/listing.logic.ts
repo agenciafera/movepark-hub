@@ -96,6 +96,41 @@ export function searchPosts<T extends ListablePost>(posts: T[], query: string): 
   });
 }
 
+export type BlogKind = "index" | "categoria" | "tag" | "autor" | "aeroporto";
+
+export type BlogPath = { kind: BlogKind; slug: string | null; page: number; base: string };
+
+const EIXOS = new Set(["categoria", "tag", "autor", "aeroporto"]);
+
+/**
+ * Lê eixo, slug e página direto da URL.
+ *
+ * Existe porque o dado do loader não chega em toda navegação: o `vite-react-ssg`
+ * indexa os dados assados no build por caminho SEM barra final (`/blog/tag/x`),
+ * e os links do blog levam a barra, que é a canônica herdada do WordPress. Ao
+ * clicar de dentro do site a chave não casa e a página vinha vazia. Com o caminho
+ * lido aqui, a listagem se reconstrói do cliente e não depende mais do build.
+ */
+export function parseBlogPath(pathname: string): BlogPath {
+  const seg = pathname.replace(/\/+$/, "").split("/").filter(Boolean);
+  // seg[0] é sempre "blog"
+  const resto = seg.slice(1);
+
+  let page = 1;
+  const iPage = resto.indexOf("page");
+  if (iPage >= 0) {
+    page = Math.max(1, Number(resto[iPage + 1]) || 1);
+    resto.splice(iPage, 2);
+  }
+
+  if (resto.length >= 2 && EIXOS.has(resto[0])) {
+    const kind = resto[0] as BlogKind;
+    return { kind, slug: resto[1], page, base: `/blog/${kind}/${resto[1]}` };
+  }
+
+  return { kind: "index", slug: null, page, base: "/blog" };
+}
+
 export type BlogFilter = {
   categoria?: string;
   tag?: string;

@@ -66,9 +66,16 @@ export function useBlogPost(slug: string | undefined) {
   });
 }
 
-/** Público: posts publicados, do mais novo para o mais antigo. */
-export function useBlogPosts() {
+/**
+ * Público: posts publicados, do mais novo para o mais antigo.
+ *
+ * `enabled` porque a listagem só precisa do acervo inteiro quando o dado assado
+ * no build não chegou (navegação client-side) ou quando há busca. Nas páginas
+ * pré-renderizadas o loader já entregou a fatia.
+ */
+export function useBlogPosts(enabled = true) {
   return useQuery({
+    enabled,
     queryKey: blogKeys.list(),
     queryFn: async (): Promise<BlogPostWithDestination[]> => {
       const { data, error } = await supabase
