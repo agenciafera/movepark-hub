@@ -45,6 +45,34 @@ export async function fetchDestinationProspects(slug: string): Promise<ProspectC
   })) as ProspectCard[];
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * O lote citado no `?lote=` do "Seja parceiro" (E0.17-g), para preencher o formulário.
+ *
+ * A RLS já filtra: ficha em rascunho ou convertida não volta, e aí o formulário abre em
+ * branco, como se ninguém tivesse citado nada. Isso é o certo, porque a referência vem de
+ * um parâmetro de URL e não é prova de nada: quem decide se ela vale é a RPC, no banco.
+ * O formato é conferido antes de chegar ao PostgREST, senão um `?lote=oi` vira 400.
+ */
+export function useProspectForClaim(id: string | null) {
+  const valido = !!id && UUID_RE.test(id);
+  return useQuery({
+    queryKey: [...destinationsKeys.all, "claim", id ?? "none"] as const,
+    enabled: valido,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("prospect_location")
+        .select("id, name, slug, destination:destination(city, state)")
+        .eq("id", id!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 5 * 60_000,
+  });
+}
+
 /** Público: os lotes mapeados do destino. Cobre a navegação no cliente; no SSG o loader já traz. */
 export function useDestinationProspects(slug: string | undefined) {
   return useQuery({

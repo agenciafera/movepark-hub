@@ -16,6 +16,12 @@ export interface LeadInput {
   utm_medium?: string | null;
   utm_campaign?: string | null;
   referrer?: string | null;
+  /**
+   * Lote mapeado de onde a reivindicação partiu (E0.17-g). Não é validado aqui de
+   * propósito: quem resolve é a RPC, no banco, onde dá para conferir se a ficha existe e
+   * ainda não foi convertida. Aqui ele só atravessa.
+   */
+  prospect_location_id?: string | null;
   hp_field?: string | null;
 }
 

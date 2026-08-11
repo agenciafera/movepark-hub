@@ -15,6 +15,7 @@ import { PhoneField } from "@/components/ui/phone-field";
 import { ThankYou } from "./ThankYou";
 import { useCapturePartnerLead } from "./partnerLeadApi";
 import { useSubmitLead, type LeadResult } from "./leadApi";
+import { useProspectForClaim } from "@/features/destinations/api";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -55,6 +56,19 @@ export function PartnerLeadModal({
     }),
     [searchParams],
   );
+
+  // Reivindicação de lote mapeado (E0.17-g). O `?lote=` chega da página do lote e serve
+  // para duas coisas: preencher o que já sabemos (a Places API resolveu o nome) e ligar o
+  // lead à ficha, que é o que permite carimbar a procedência quando a unidade nascer.
+  // Não é prova de titularidade: quem valida é a RPC, e o processo de aprovação segue igual.
+  const loteId = searchParams.get("lote");
+  const claim = useProspectForClaim(loteId);
+  const loteNome = claim.data?.name ?? null;
+
+  React.useEffect(() => {
+    // Só preenche o que ainda está vazio: quem já digitou manda mais que o parâmetro.
+    if (loteNome) setCompanyName((atual) => (atual.trim() ? atual : loteNome));
+  }, [loteNome]);
 
   function reset() {
     setStep(1);
@@ -98,6 +112,7 @@ export function PartnerLeadModal({
         estimated_spots: spotsInt,
         accept_terms: accept,
         ...utm,
+        prospect_location_id: loteId,
         hp_field: hp,
       });
       setResult(r);
@@ -183,6 +198,15 @@ export function PartnerLeadModal({
 
             {step === 2 && (
               <div className="space-y-4">
+                {loteNome && (
+                  <p
+                    data-testid="claim-note"
+                    className="rounded-md bg-mp-pale px-3 py-2 text-body-sm text-body"
+                  >
+                    Você está reivindicando a página do <strong>{loteNome}</strong>. Confira o
+                    nome antes de enviar.
+                  </p>
+                )}
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="pl-company">Nome do estacionamento</Label>
                   <Input

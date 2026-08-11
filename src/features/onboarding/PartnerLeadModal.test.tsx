@@ -16,6 +16,10 @@ vi.mock("./partnerLeadApi", () => ({
 vi.mock("./leadApi", () => ({
   useSubmitLead: () => ({ mutateAsync: submitMutateAsync, isPending: false }),
 }));
+const claimData = vi.fn(() => ({ data: null }));
+vi.mock("@/features/destinations/api", () => ({
+  useProspectForClaim: () => claimData(),
+}));
 vi.mock("@/components/ui/phone-field", () => ({
   PhoneField: ({
     id,
@@ -30,9 +34,12 @@ vi.mock("@/components/ui/phone-field", () => ({
   ),
 }));
 
-function renderModal() {
+function renderModal(rota = "/seja-parceiro") {
   return render(
-    <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <MemoryRouter
+      initialEntries={[rota]}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
       <PartnerLeadModal open onOpenChange={() => {}} />
     </MemoryRouter>,
   );
@@ -41,6 +48,7 @@ function renderModal() {
 beforeEach(() => {
   captureMutateAsync.mockClear();
   submitMutateAsync.mockClear();
+  claimData.mockReturnValue({ data: null });
 });
 
 async function fillStep1() {
@@ -129,5 +137,44 @@ describe("PartnerLeadModal", () => {
       estimated_spots: 50,
       accept_terms: true,
     });
+  });
+
+  // E0.17-g: a reivindicação vinda da página do lote mapeado.
+  it("com ?lote, preenche o nome e leva a referência no envio", async () => {
+    claimData.mockReturnValue({
+      data: { id: "11111111-1111-4111-8111-111111111111", name: "Talentos Park", slug: "talentos-park" },
+    } as never);
+    renderModal("/seja-parceiro?lote=11111111-1111-4111-8111-111111111111");
+
+    await fillStep1();
+
+    // O nome já vem preenchido: a Places API resolveu isso, e fazer um lead B2B frio
+    // digitar de novo é atrito de graça.
+    expect(screen.getByLabelText("Nome do estacionamento")).toHaveValue("Talentos Park");
+    expect(screen.getByTestId("claim-note")).toHaveTextContent(/reivindicando a página do/i);
+
+    await userEvent.type(screen.getByLabelText("Vagas (aprox.)"), "50");
+    await userEvent.click(screen.getByRole("checkbox"));
+    await userEvent.click(screen.getByRole("button", { name: /Quero ser parceiro/i }));
+
+    // A referência é o que permite carimbar a procedência quando a unidade nascer.
+    expect(submitMutateAsync.mock.calls[0][0]).toMatchObject({
+      prospect_location_id: "11111111-1111-4111-8111-111111111111",
+    });
+  });
+
+  it("sem ?lote, nada muda: sem aviso e sem referência", async () => {
+    renderModal();
+    await fillStep1();
+
+    expect(screen.queryByTestId("claim-note")).toBeNull();
+    expect(screen.getByLabelText("Nome do estacionamento")).toHaveValue("");
+
+    await userEvent.type(screen.getByLabelText("Nome do estacionamento"), "Estac Centro");
+    await userEvent.type(screen.getByLabelText("Vagas (aprox.)"), "10");
+    await userEvent.click(screen.getByRole("checkbox"));
+    await userEvent.click(screen.getByRole("button", { name: /Quero ser parceiro/i }));
+
+    expect(submitMutateAsync.mock.calls[0][0].prospect_location_id).toBeNull();
   });
 });

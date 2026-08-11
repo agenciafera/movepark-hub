@@ -14,7 +14,7 @@
 -- Roda em transação com rollback.
 
 begin;
-select plan(29);
+select plan(35);
 
 -- ── fixtures (como postgres; RLS não se aplica a superuser) ──────────────────
 -- Geo no Atlântico Sul para não colidir com destino do seed/baseline: nearest_destination
@@ -235,7 +235,90 @@ select is(
   'anon chama a RPC e enxerga a ficha publicada');
 reset role;
 
--- ── 9. As funções-trigger não são RPC ────────────────────────────────────────
+-- ── 9. A reivindicação carrega a referência e carimba a procedência (E0.17-g) ─
+-- Este bloco é o que impede o pior estado do épico: a ficha mapeada e a unidade nova
+-- renderizando as duas, disputando a mesma busca. O filtro `converted_at is null` da RLS
+-- só protege se alguém escrever o carimbo, e quem escreve é o `onboarding_upsert_location`.
+do $$
+declare
+  v_company uuid; v_location uuid;
+begin
+  insert into public.prospect_location(destination_id, name, slug, address, latitude, longitude, is_published)
+  values (current_setting('test.dest')::uuid, 'Lote Claim', 'e017-lote-claim', 'Rua Claim, 1',
+          -50.0009, -30.0000, true);
+
+  perform set_config('test.claim',
+    (select id::text from public.prospect_location where slug = 'e017-lote-claim'), false);
+
+  -- O lead nasce da página do lote, com a referência.
+  select public.submit_partner_lead(
+    'Lote Claim', 'Fulano', 'e017-claim@ex.com', '+5511999999999',
+    null, null, null, null, 10, null, null, null, null, null,
+    current_setting('test.claim')::uuid) into v_company;
+  perform set_config('test.claim_company', v_company::text, false);
+
+  -- O board aprova e o dono entra: é o que destrava o wizard.
+  update public.company set onboarding_status = 'approved' where id = v_company;
+  insert into public.profile_company(profile_id, company_id, role)
+  values (current_setting('test.uadm')::uuid, v_company, 'owner');
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', current_setting('test.uadm'))::text, false);
+
+  select public.onboarding_upsert_location(
+    v_company, null, 'Lote Claim', 'Rua Claim, 1', -50.0009, -30.0000,
+    'America/Sao_Paulo', null, null, null, '[]'::jsonb,
+    current_setting('test.dest')::uuid, false) into v_location;
+  perform set_config('test.claim_location', v_location::text, false);
+end $$;
+
+select is(
+  (select prospect_location_id from public.company_onboarding
+    where company_id = current_setting('test.claim_company')::uuid),
+  current_setting('test.claim')::uuid,
+  'o lead guarda de qual lote mapeado a reivindicação partiu');
+
+select is(
+  (select converted_location_id from public.prospect_location
+    where id = current_setting('test.claim')::uuid),
+  current_setting('test.claim_location')::uuid,
+  'a unidade nascendo carimba a procedência na ficha');
+
+select isnt(
+  (select converted_at from public.prospect_location where id = current_setting('test.claim')::uuid),
+  null,
+  'o carimbo vem com data (é o `converted_at` que tira a ficha da vitrine)');
+
+select is(
+  (select count(*)::int from public.destination_prospect_cards('destino-e017')
+    where slug = 'e017-lote-claim'),
+  0,
+  'a ficha convertida some da página de destino: não concorre com a unidade nova');
+
+-- Converter NÃO publica oferta. A unidade nasce inativa e sem tipo de vaga; quem publica
+-- é o `onboarding_publish`, depois de preço e capacidade.
+select is(
+  (select status::text from public.location where id = current_setting('test.claim_location')::uuid),
+  'inactive',
+  'converter não publica oferta: a unidade nasce inativa');
+
+-- Referência que não resolve é descartada, e o lead segue. Perder atribuição é aceitável;
+-- recusar um parceiro real por causa de um parâmetro de URL não é.
+do $$
+declare v_company uuid;
+begin
+  select public.submit_partner_lead(
+    'Sem Referencia', 'Beltrano', 'e017-semref@ex.com', '+5511988888888',
+    null, null, null, null, 10, null, null, null, null, null,
+    '00000000-0000-4000-8000-0000000000ee'::uuid) into v_company;
+  perform set_config('test.semref_company', v_company::text, false);
+end $$;
+
+select ok(
+  (select prospect_location_id is null from public.company_onboarding
+    where company_id = current_setting('test.semref_company')::uuid),
+  'uuid que não existe não vira referência, e o lead entra assim mesmo');
+
+-- ── 10. As funções-trigger não são RPC ───────────────────────────────────────
 select is(
   (select count(*)::int from pg_proc p
     where p.proname in ('prospect_location_set_destination','prospect_location_guard_slug')

@@ -20,6 +20,8 @@ export type LeadPayload = {
   utm_medium?: string | null;
   utm_campaign?: string | null;
   referrer?: string | null;
+  /** Lote mapeado de onde a reivindicação partiu (E0.17-g). Resolvido no banco. */
+  prospect_location_id?: string | null;
   hp_field?: string | null;
 };
 

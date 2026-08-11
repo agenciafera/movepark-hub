@@ -219,8 +219,12 @@ export default function EstacionamentoMapeadoPage() {
           </p>
           <div className="mt-4">
             <Button asChild variant="outline">
+              {/* O `?lote=` leva a referência para o cadastro: preenche o que a Places API
+                  já resolveu e liga o lead à ficha, que é o que permite carimbar a
+                  procedência quando a unidade nascer. Não é prova de titularidade, e o
+                  processo de aprovação segue igual. */}
               <Link
-                to="/seja-parceiro"
+                to={`/seja-parceiro?lote=${prospect.id}`}
                 onClick={() =>
                   trackEvent("prospect_claim_intent", {
                     prospect_slug: prospect.slug,

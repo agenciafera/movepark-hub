@@ -104,6 +104,7 @@ Deno.serve(async (req: Request) => {
     p_utm_medium: input.utm_medium ?? null,
     p_utm_campaign: input.utm_campaign ?? null,
     p_referrer: input.referrer ?? null,
+    p_prospect_location_id: input.prospect_location_id ?? null,
   });
 
   if (error) {

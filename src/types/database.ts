@@ -1129,6 +1129,7 @@ export type Database = {
           go2park_interest_at: string | null
           internal_note: string | null
           message: string | null
+          prospect_location_id: string | null
           referrer: string | null
           rejected_at: string | null
           rejection_reason: string | null
@@ -1157,6 +1158,7 @@ export type Database = {
           go2park_interest_at?: string | null
           internal_note?: string | null
           message?: string | null
+          prospect_location_id?: string | null
           referrer?: string | null
           rejected_at?: string | null
           rejection_reason?: string | null
@@ -1185,6 +1187,7 @@ export type Database = {
           go2park_interest_at?: string | null
           internal_note?: string | null
           message?: string | null
+          prospect_location_id?: string | null
           referrer?: string | null
           rejected_at?: string | null
           rejection_reason?: string | null
@@ -1203,6 +1206,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: true
             referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_onboarding_prospect_location_id_fkey"
+            columns: ["prospect_location_id"]
+            isOneToOne: false
+            referencedRelation: "prospect_location"
             referencedColumns: ["id"]
           },
         ]
@@ -5359,6 +5369,7 @@ export type Database = {
           p_contact_role?: string
           p_estimated_spots?: number
           p_message?: string
+          p_prospect_location_id?: string
           p_referrer?: string
           p_state?: string
           p_tax_id?: string

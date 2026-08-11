@@ -135,9 +135,11 @@ describe("Página do lote mapeado (E0.17-e · ADR-010)", () => {
     expect(
       screen.getByRole("heading", { name: /É o administrador deste estacionamento/i }),
     ).toBeInTheDocument();
+    // O `?lote=` é o que liga o lead à ficha. Sem ele, quando a unidade nascer ninguém
+    // sabe de qual lote mapeado ela veio, e o carimbo de procedência vira palpite manual.
     expect(screen.getByRole("link", { name: /Reivindicar esta página/i })).toHaveAttribute(
       "href",
-      "/seja-parceiro",
+      "/seja-parceiro?lote=p1",
     );
   });
 
