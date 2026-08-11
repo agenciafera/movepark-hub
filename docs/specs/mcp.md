@@ -136,6 +136,43 @@ Login por OTP (WhatsApp/e-mail) e handoff de checkout em
 [agent-booking.md](./customer/agent-booking.md). `assert_verified_identity` (chamador confiável, sem
 OTP) fica para a integração do bot.
 
+#### Freio de disparo de OTP
+
+`request_login_otp` gasta dinheiro (WhatsApp ou e-mail) e, com
+`shouldCreateUser: true`, cria uma conta em `auth.users` por identificador novo.
+
+Medido em 11/08/2026, na URL crua do Supabase:
+
+| Camada | O que ela cobre | Estado antes |
+|---|---|---|
+| GoTrue | 60 segundos entre disparos para o **mesmo** identificador | já valia |
+| Worker (`api-worker.ts`) | 60/min por IP, **só** no path `/customer` de `mcp.movepark.co` | contornável |
+| Nada | volume **entre** identificadores diferentes | aberto |
+
+A terceira linha era o buraco: um chamador anônimo disparava para mil números
+distintos, um cada, e nenhuma camada contava. Seis disparos seguidos na URL crua
+não encostaram em freio nenhum, porque a Edge é `verify_jwt = false`, o ref do
+projeto é público e a Edge `chat` já usa esse caminho.
+
+O freio novo mora **no banco** (`otp_request_allowed`, migration
+`20261007000000`), que é o único ponto por onde todos os caminhos passam: 5 por
+identificador e 20 por IP, em janela de uma hora. Tentativa recusada também é
+registrada, senão quem estoura o limite zera a janela ao parar por um instante.
+O identificador é guardado em SHA-256: telefone e e-mail de quem tenta entrar não
+precisam existir em claro numa segunda tabela.
+
+Conferido em produção, na URL crua: o 21º disparo do mesmo IP para alvos
+distintos é recusado. `otp_request_log` também responde "quantos OTP saíram hoje
+e para quantos identificadores distintos", que antes não tinha resposta.
+
+**Em aberto, e não é remoção simples:** `verify_login_otp` devolve
+`refresh_token` sem vínculo com quem pediu o código, o que deixa um conector
+malicioso sair com credencial de longa duração se convencer o usuário a colar o
+código. Trocar por um token de audiência curta exige mudar junto o
+`create_checkout_link`, que hoje **recebe esse `refresh_token`** como argumento
+obrigatório. É decisão de desenho do handoff, em
+[agent-booking.md](./customer/agent-booking.md), não um ajuste de uma linha.
+
 #### Quem é o dono é resolvido, e o handler filtra por ele
 
 As tools transacionais **não** confiam só na RLS. `callCustomerTxn` resolve o usuário uma vez com

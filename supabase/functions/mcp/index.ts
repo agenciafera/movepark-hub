@@ -193,7 +193,7 @@ Deno.serve(async (req: Request) => {
             : endpoint === "partner"
               ? await callPartner(admin!, partner!, toolName, args)
               : endpoint === "customer"
-                ? await callCustomer(req.headers.get("Authorization"), toolName, args)
+                ? await callCustomer(req.headers.get("Authorization"), toolName, args, clientIp(req))
                 : await callPublic(toolName, args);
         resp = json(rpcResult(id, toolTextContent(data)));
         break;
@@ -310,15 +310,41 @@ async function callCustomer(
   authHeader: string | null,
   name: string,
   a: Record<string, unknown>,
+  ip: string | null,
 ): Promise<unknown> {
   if (READ_TOOL_NAMES.has(name)) return callRead(anonClient(), name, a);
 
   // Login (pré-sessão): não exige JWT.
   switch (name) {
     case "request_login_otp": {
+      /*
+        Freio antes de gastar.
+
+        O GoTrue já segura 60 segundos entre disparos para o MESMO identificador
+        (medido). O que ele não cobre é volume ENTRE identificadores: um chamador
+        anônimo dispara para mil números diferentes, um cada, e com
+        `shouldCreateUser: true` cria uma conta por número.
+
+        O freio mora no banco, e não na borda, porque a borda é contornável: esta
+        Edge é `verify_jwt = false`, o ref do projeto é público, e a Edge `chat`
+        já chama a URL crua. O identificador vai em SHA-256: ele não precisa
+        existir em claro numa segunda tabela para o freio funcionar.
+      */
+      const params = otpRequestParams(a.channel, a.identifier);
+      const admin = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), {
+        auth: { persistSession: false },
+      });
+      const { data: permitido } = await admin.rpc("otp_request_allowed", {
+        p_identifier_hash: await sha256Hex(String(a.identifier ?? "").trim().toLowerCase()),
+        p_ip: ip,
+      });
+      if (permitido === false) {
+        throw new Error("Muitas tentativas de login. Espere alguns minutos e tente de novo.");
+      }
+
       const sb = anonClient();
       // otpRequestParams valida o canal e monta o payload (phone+channel / email).
-      const { error } = await sb.auth.signInWithOtp(otpRequestParams(a.channel, a.identifier));
+      const { error } = await sb.auth.signInWithOtp(params);
       if (error) throw new Error(error.message);
       return { status: "sent", channel: a.channel };
     }

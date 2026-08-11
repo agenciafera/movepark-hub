@@ -2678,6 +2678,27 @@ export type Database = {
         }
         Relationships: []
       }
+      otp_request_log: {
+        Row: {
+          created_at: string
+          id: string
+          identifier_hash: string
+          ip: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          identifier_hash: string
+          ip?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          identifier_hash?: string
+          ip?: string | null
+        }
+        Relationships: []
+      }
       parking_type: {
         Row: {
           code: string
@@ -4591,6 +4612,7 @@ export type Database = {
       cron_prune_api_request_log: { Args: never; Returns: number }
       cron_prune_checkout_handoff: { Args: never; Returns: number }
       cron_prune_integration_logs: { Args: never; Returns: Json }
+      cron_prune_otp_request_log: { Args: never; Returns: undefined }
       current_company_ids: { Args: never; Returns: string[] }
       current_member_scopes: {
         Args: { p_company_id: string }
@@ -5086,6 +5108,10 @@ export type Database = {
           p_valid_until: string
         }
         Returns: string
+      }
+      otp_request_allowed: {
+        Args: { p_identifier_hash: string; p_ip?: string }
+        Returns: boolean
       }
       payout_balance: {
         Args: { p_company_id: string; p_provider?: string }
