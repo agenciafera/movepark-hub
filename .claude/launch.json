@@ -33,6 +33,12 @@
       ],
       "port": 5190,
       "autoPort": true
+    },
+    {
+      "name": "dist",
+      "runtimeExecutable": "bunx",
+      "runtimeArgs": ["serve", "dist", "-p", "4178"],
+      "port": 4178
     }
   ]
 }

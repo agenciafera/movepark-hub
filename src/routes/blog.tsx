@@ -56,6 +56,7 @@ function PostCard({ post }: { post: BlogPostListItem }) {
         {post.cover_image_url && (
           <CoverImage
             src={post.cover_image_url}
+            alt={post.title}
             widths={[400, 600, 800]}
             sizes="(min-width: 1128px) 360px, (min-width: 768px) 50vw, 100vw"
           />

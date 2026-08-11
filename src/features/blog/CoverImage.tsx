@@ -3,6 +3,12 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   src: string;
+  /**
+   * Texto alternativo da capa. Obrigatório: a capa é a única imagem do post que
+   * não vem do corpo, e sem alt ela some para quem lê por leitor de tela e para
+   * o buscador. No card do índice ela também é o que dá nome ao link.
+   */
+  alt: string;
   /** Larguras do `srcset`, na ordem em que o browser vai escolher. */
   widths: number[];
   /** Dica de tamanho do slot, para o browser não baixar mais do que precisa. */
@@ -26,7 +32,7 @@ type Props = {
  * `?width=16` ele devolve uma tira de 16x1067, e borrada isso vira listra em vez
  * de borrão. Custa 392 bytes contra 34 KB da imagem principal.
  */
-export function CoverImage({ src, widths, sizes, className, eager }: Props) {
+export function CoverImage({ src, alt, widths, sizes, className, eager }: Props) {
   return (
     <div
       className={cn(
@@ -46,7 +52,7 @@ export function CoverImage({ src, widths, sizes, className, eager }: Props) {
         src={optimizedImageUrl(src, { width: widths[widths.length - 1], resize: "contain" })}
         srcSet={imageSrcSet(src, widths)}
         sizes={sizes}
-        alt=""
+        alt={alt}
         loading={eager ? "eager" : "lazy"}
         decoding="async"
         className="relative h-full w-full object-contain"

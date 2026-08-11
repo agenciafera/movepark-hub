@@ -137,6 +137,7 @@ export default function BlogPostPage() {
         {post.cover_image_url && (
           <CoverImage
             src={post.cover_image_url}
+            alt={post.title}
             widths={[720, 1080, 1440]}
             sizes="(min-width: 768px) 720px, 100vw"
             className="mt-8 rounded-2xl border border-hairline"

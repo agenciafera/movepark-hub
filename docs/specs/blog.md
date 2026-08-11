@@ -475,6 +475,8 @@ corrigido em `markdown.logic.ts`:
 | `**[Nome](url)**` | o link aparecia literal dentro do negrito | 20 blocos |
 | `* * *` | virava um item de lista com o texto "* *" | 105 linhas em 14 posts |
 | post que abre em `###` | buraco no outline, sem nenhum `h2` | 9 posts |
+| `<table>` do editor clássico | o turndown derramava as células como parágrafos | 32 posts |
+| parágrafo que é só negrito | subtítulo com peso de corpo, fora do outline | 27 blocos |
 
 Três decisões que valem registrar. **Todo nó que envolve outro guarda `children`**, não texto:
 guardando o miolo como string, ou o negrito dentro do link ou o link dentro do negrito sempre
@@ -483,16 +485,51 @@ fica pendente e só fecha se o que vier depois não pertencer a ela, porque o Wo
 itens com uma linha de espaços. E o **separador temático é testado antes da lista**, senão
 `* * *` casa com o marcador de item.
 
-Sobram dois casos, e nenhum é do parser.
+Sobravam dois casos, e nenhum era do parser. Os dois foram fechados na reimportação de
+11/08/2026, junto com o que a revisão do conteúdo achou depois.
 
-**Tabela achatada na importação.** 32 dos 93 posts do WordPress têm tabela, quase sempre
-comparativo de preço, traslado e diferencial. O turndown não converte tabela e desmontou cada uma
-em parágrafos soltos: o comparativo virou uma coluna alternando número e título. Consertar exige
-três coisas juntas, uma regra de tabela no turndown, suporte a tabela no parser e reimportação dos
-32 posts.
+**Tabela voltou a ser tabela.** 32 dos 93 posts têm tabela, quase sempre comparativo de preço,
+traslado e diferencial. O turndown não converte `<table>` e desmontava cada uma em parágrafos
+soltos: o comparativo virava uma coluna alternando número e título. Agora há regra de tabela no
+turndown (célula com pipe escapado, linha curta completada até o número de colunas), bloco
+`table` no parser e render com `overflow-x-auto`, para a tabela rolar dentro dela mesma em vez de
+empurrar a página. São 249 linhas de tabela em 32 páginas.
 
-**165 parágrafos que são só negrito**, funcionando como subtítulo. Promovê-los a `h4` melhora a
-leitura, mas injeta 165 títulos no outline dos posts, o que é decisão de conteúdo.
+**Parágrafo que é só negrito virou `h4`.** O critério é estreito de propósito: nó único, negrito,
+até 80 caracteres e sem pontuação final. Frase inteira em negrito continua parágrafo. Ficaram 27
+títulos, não os 165 que a contagem crua sugeria.
+
+**Link para o site antigo virou link para o Hub.** Eram 165 no corpo dos posts, todos apontando
+para um domínio que sai do ar. Cada caminho foi mapeado: `/estacionamentos/<aeroporto>` e
+`/estacionamentos/<aeroporto>/<lote>` caem no destino (o Hub não tem página por lote), os posts que
+moraram na raiz vão para `/blog/<slug>/`, e o subdomínio de parceiro aponta para o destino onde
+aquele lote é vendido hoje. Sobrou zero link legado, e nenhum precisou virar texto.
+
+Em 4 posts o texto visível do link era a própria URL antiga. Trocar só o destino deixaria na tela
+um endereço que não existe mais, então o rótulo passa a nomear o destino ("Estacionamentos no
+Aeroporto de Guarulhos").
+
+**O regex de link casava com imagem.** Sem checar o `!` antes do colchete, `![alt](src)` entrava na
+reescrita e a imagem virava texto: 81 imagens do acervo. O `(?<!!)` é o que separa os dois casos, e
+o teste de regressão vive no dry-run, que conta imagem reaproveitada.
+
+**Alt vindo do nome do arquivo.** 8 imagens do WordPress vieram sem `alt`. Os nomes são
+descritivos ("estacionamento-aeroporto-viracopos.webp"), então viram legenda. A capa também
+passou a exigir `alt`: era o único `<img>` visível do post sem texto alternativo, e no card do
+índice ela é o que dá nome ao link.
+
+### Como a reimportação chegou ao banco sem service key
+
+O corpo dos 93 posts soma 384 KB, e não havia `SUPABASE_SERVICE_ROLE_KEY` no ambiente. O caminho
+foi pelo que já é público: os `.md` do `public/blog/` são commitados e servidos pelo worker, então
+o deploy publicou o conteúdo novo, o Postgres leu de lá com `pg_net` (`Accept: text/markdown`, com
+query de cache-bust porque a borda serviu cópia velha na primeira tentativa) e o `UPDATE` saiu de
+uma tabela de trabalho descartada logo depois.
+
+A garantia de que nada se perdeu no caminho é uma impressão só: `md5` da concatenação de
+`slug || body` em ordem de slug, calculada dos dois lados. Bateu em `4d8d435c…` com 384.309
+caracteres, antes e depois da escrita. Vale reusar esse truque em qualquer migração de conteúdo:
+uma comparação de um valor prova mais que uma amostragem.
 
 ## Dívida conhecida
 

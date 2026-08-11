@@ -67,7 +67,9 @@ function writeBlogSlugManifest(routes: string[]) {
   // ela faria o worker devolver 404 em 93 URLs que o Google já indexa, então o
   // manifest versionado fica como está e o build segue com o que tem.
   if (!routes.length) return;
-  const slugs = routes.map((r) => r.replace(/^\/blog\//, "").replace(/\/$/, ""));
+  // Ordenado porque o worker só consulta pertinência, e a ordem que vem do banco
+  // muda a cada build: sem isto o arquivo aparece modificado em todo commit.
+  const slugs = routes.map((r) => r.replace(/^\/blog\//, "").replace(/\/$/, "")).sort();
   fs.mkdirSync("public", { recursive: true });
   fs.writeFileSync("public/blog-slugs.json", JSON.stringify(slugs));
 }
