@@ -205,7 +205,10 @@ export function ContentPageView({
                       >
                         {String(i + 1).padStart(2, "0")}
                       </span>
-                      <div className="flex min-w-0 max-w-[68ch] flex-col gap-3.5">
+                      {/* `flex-1` porque flex item sem grow encolhe até o conteúdo: um
+                          bloco de linha curta (accordion, tabela) ficaria mais estreito
+                          que a medida de leitura e a régua pararia no meio da página. */}
+                      <div className="flex min-w-0 max-w-[68ch] flex-1 flex-col gap-3.5">
                         <h2 className="text-display-sm text-ink desktop:text-display-md">
                           {s.title}
                         </h2>

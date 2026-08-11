@@ -73,6 +73,18 @@ describe("ContentPageView", () => {
     expect(container.querySelector('nav[aria-label="Nesta página"]')).toBeNull();
   });
 
+  /**
+   * Regressão: a coluna do conteúdo é flex item e, sem `flex-1`, encolhia até o
+   * conteúdo. Bloco de linha curta (accordion, tabela) ficava mais estreito que a
+   * medida de leitura e a régua parava no meio da página.
+   */
+  it("a coluna do conteúdo ocupa a medida de leitura, não a largura do texto", () => {
+    const { container } = montar();
+    const coluna = container.querySelector("section#um h2")!.parentElement!;
+    expect(coluna.className).toContain("flex-1");
+    expect(coluna.className).toContain("max-w-[68ch]");
+  });
+
   it("a saída de suporte fica em toda página", () => {
     montar();
     expect(screen.getByText("Ficou alguma dúvida?")).toBeInTheDocument();
