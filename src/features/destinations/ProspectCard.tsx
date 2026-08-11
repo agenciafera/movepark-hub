@@ -1,9 +1,12 @@
+import { Link } from "react-router-dom";
 import { MapPin } from "@phosphor-icons/react";
 import type { ProspectCard as ProspectCardData } from "@/types/domain";
 import { formatDistance } from "@/lib/format";
 
 type Props = {
   item: ProspectCardData;
+  /** Slug do destino, que compõe a URL da página do lote. */
+  destinationSlug: string;
 };
 
 /**
@@ -23,17 +26,23 @@ type Props = {
  * - **Sem `<a>` de reserva, sem seletor de data, sem widget de WhatsApp.** Prometer
  *   reserva onde não existe reserva é CDC art. 30/31, e é pogo-stick puro na SERP.
  *
+ * O ÚNICO link do card é para a página do próprio lote no Hub (E0.17-e), e ele precisa
+ * existir: sem link interno a página nasce órfã, e é justamente ela que carrega o JSON-LD,
+ * a prova de demanda e o caminho de reivindicação.
+ *
  * O selo "Sem reserva online" é TEXTO no HTML, não tooltip nem `title`: o crawler precisa
  * ler, e é ele que diz ao leitor por que este card é diferente do de cima.
  */
-export function ProspectCard({ item }: Props) {
+export function ProspectCard({ item, destinationSlug }: Props) {
   return (
     <li
       data-testid="prospect-card"
-      className="flex flex-col gap-2 rounded-2xl border border-hairline bg-canvas p-5"
+      className="flex flex-col gap-2 rounded-2xl border border-hairline bg-canvas p-5 transition hover:border-mp-primary"
     >
       <div className="flex items-start justify-between gap-3">
-        <h3 className="text-balance text-title-md text-ink">{item.name}</h3>
+        <h3 className="text-balance text-title-md text-ink">
+          <Link to={`/estacionamentos/${destinationSlug}/${item.slug}`}>{item.name}</Link>
+        </h3>
         <span className="shrink-0 rounded-full border border-hairline px-2.5 py-1 text-badge text-muted">
           Sem reserva online
         </span>

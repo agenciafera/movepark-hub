@@ -33,6 +33,7 @@ import SejaParceiroPage from "@/routes/seja-parceiro";
 import OnboardingPage from "@/routes/onboarding";
 import VoucherValidatePage from "@/routes/voucher-validate";
 import DestinoPage from "@/routes/destino";
+import EstacionamentoMapeadoPage from "@/routes/estacionamento-mapeado";
 import DestinosPage from "@/routes/destinos";
 import BlogListingPage, { type BlogListingData } from "@/routes/blog";
 import BlogPostPage from "@/routes/blog-post";
@@ -171,6 +172,42 @@ async function fetchAllDestinationPaths(): Promise<string[]> {
     .select("slug")
     .eq("is_published", true);
   return (data ?? []).map((d) => `/destinos/${d.slug as string}`);
+}
+
+/** Página do lote MAPEADO (E0.17-e). Sem preço, sem reserva, sem caminho para uma. */
+async function estacionamentoMapeadoLoader({ params }: LoaderFunctionArgs) {
+  const { data: destination } = await supabase
+    .from("destination")
+    .select("*")
+    .eq("slug", params.destino!)
+    .eq("is_published", true)
+    .maybeSingle();
+  if (!destination) return null;
+
+  // A RPC já aplica `is_published` e `converted_at is null`, e é `security invoker`: o
+  // telefone não vem nem aqui, no build. Ficha convertida some da lista e a página deixa
+  // de ser gerada, que é o comportamento certo enquanto a conversão (E0.17-g) não existe
+  // para ter para onde redirecionar.
+  const prospects = await fetchDestinationProspects(params.destino!).catch(() => []);
+  const prospect = prospects.find((p) => p.slug === params.slug);
+  if (!prospect) return null;
+
+  return { destination, prospect };
+}
+
+async function fetchAllProspectPaths(): Promise<string[]> {
+  const { data } = await supabase
+    .from("prospect_location")
+    .select("slug, destination:destination(slug)")
+    .eq("is_published", true)
+    .is("converted_at", null);
+  return (data ?? [])
+    .map((p) => {
+      // deno-lint-ignore no-explicit-any
+      const destino = (p as any).destination?.slug as string | undefined;
+      return destino ? `/estacionamentos/${destino}/${p.slug as string}` : null;
+    })
+    .filter((path): path is string => path !== null);
 }
 
 const BLOG_SELECT =
@@ -458,6 +495,12 @@ export const routes: RouteRecord[] = [
             element: <DestinoPage />,
             loader: destinoLoader,
             getStaticPaths: fetchAllDestinationPaths,
+          },
+          {
+            path: "/estacionamentos/:destino/:slug",
+            element: <EstacionamentoMapeadoPage />,
+            loader: estacionamentoMapeadoLoader,
+            getStaticPaths: fetchAllProspectPaths,
           },
           {
             element: <RequireRole roles={["customer"]} />,

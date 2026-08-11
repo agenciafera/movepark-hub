@@ -1,0 +1,248 @@
+import * as React from "react";
+import { Link, useLoaderData } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
+import { MapPin } from "@phosphor-icons/react";
+import type { Destination, ProspectCard as ProspectCardData } from "@/types/domain";
+import { GoogleMapEmbed } from "@/components/shared/GoogleMapEmbed";
+import { Button } from "@/components/ui/button";
+import { breadcrumbSchema, parkingFacilitySchema } from "@/lib/jsonld";
+import { formatDistance } from "@/lib/format";
+import { trackEvent } from "@/lib/analytics";
+
+const SITE_URL = "https://hub.movepark.co";
+
+export type EstacionamentoMapeadoLoaderData = {
+  destination: Destination;
+  prospect: ProspectCardData;
+} | null;
+
+/**
+ * Página do lote MAPEADO (E0.17-e · ADR-010).
+ *
+ * Com o ADR-010 esta página fica quase trivial, e isso é o resultado do desenho: **não
+ * existe caminho de reserva para esconder, porque não existe dado de reserva.** Não há
+ * preço, tipo de vaga, capacidade nem `checkout_mode` na entidade que alimenta esta tela.
+ *
+ * O que é proibido aqui, e cada proibição tem um custo real por trás:
+ *
+ * - **Botão de reserva, seletor de data, widget de WhatsApp de reserva.** Hoje, no
+ *   WordPress, a página do não-parceiro tem um "Olá! Gostaria de fazer uma reserva?"
+ *   flutuando sobre um lote onde reserva não existe. O cliente pede, ninguém entrega:
+ *   é CDC art. 30/31 e é pogo-stick puro na SERP.
+ * - **Link para o site ou o motor de reserva do lote.** No dia em que ele abre o
+ *   Analytics e vê referral da Movepark, já está recebendo de graça exatamente o que
+ *   íamos cobrar 20%. A venda morre ali.
+ * - **Telefone.** Q-021: guardado, nunca exibido. Nem na tela, nem no JSON-LD.
+ * - **FAQ.** `faq.location_id` aponta para `location` e não existe para lote mapeado.
+ *   É por desenho, não é falta.
+ *
+ * O produto desta página não é a reserva, é **prova de demanda**: em 60 dias dá para
+ * chegar no dono com "sua página teve N visitas e M pessoas pediram para reservar aqui, e
+ * você converteu zero porque não está listado".
+ */
+export default function EstacionamentoMapeadoPage() {
+  const data = useLoaderData() as EstacionamentoMapeadoLoaderData;
+  const [demandSent, setDemandSent] = React.useState(false);
+
+  if (!data) return null;
+
+  const { destination, prospect } = data;
+  const destinationLabel = destination.short_name ?? destination.name;
+  const canonical = `${SITE_URL}/estacionamentos/${destination.slug}/${prospect.slug}`;
+  const distancia = prospect.distance_km == null ? null : formatDistance(prospect.distance_km);
+
+  const title = `Estacionamento ${prospect.name}, em ${destination.city} | Movepark`;
+  const description = distancia
+    ? `${prospect.name} fica a ${distancia} do ${destinationLabel}, em ${destination.city}. Este estacionamento ainda não tem reserva online pela Movepark.`
+    : `${prospect.name}, em ${destination.city}. Este estacionamento ainda não tem reserva online pela Movepark.`;
+
+  return (
+    <>
+      <Helmet>
+        <title>{title}</title>
+        <meta name="description" content={description} />
+        <link rel="canonical" href={canonical} />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:url" content={canonical} />
+        <script type="application/ld+json">
+          {JSON.stringify(
+            parkingFacilitySchema({
+              name: prospect.name,
+              url: canonical,
+              latitude: prospect.latitude,
+              longitude: prospect.longitude,
+              address: prospect.address,
+              city: destination.city,
+              state: destination.state,
+              country: destination.country,
+              description: prospect.description,
+              amenities: prospect.amenities,
+            }),
+          )}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify(
+            breadcrumbSchema([
+              { name: "Início", url: SITE_URL },
+              { name: "Destinos", url: `${SITE_URL}/destinos` },
+              { name: destinationLabel, url: `${SITE_URL}/destinos/${destination.slug}` },
+              { name: prospect.name, url: canonical },
+            ]),
+          )}
+        </script>
+      </Helmet>
+
+      <article className="mx-auto w-full max-w-3xl px-4 py-8 tablet:py-12">
+        <nav aria-label="Trilha de navegação" className="mb-4">
+          <ol className="flex flex-wrap items-center gap-1.5 text-body-sm text-muted">
+            <li>
+              <Link to="/" className="hover:text-ink">
+                Início
+              </Link>
+            </li>
+            <li aria-hidden className="text-muted-steel">
+              ›
+            </li>
+            <li>
+              <Link to={`/destinos/${destination.slug}`} className="hover:text-ink">
+                {destinationLabel}
+              </Link>
+            </li>
+            <li aria-hidden className="text-muted-steel">
+              ›
+            </li>
+            <li aria-current="page" className="text-ink">
+              {prospect.name}
+            </li>
+          </ol>
+        </nav>
+
+        <header className="flex flex-col gap-3">
+          <h1 className="text-balance text-display-xl text-ink">{prospect.name}</h1>
+          {/* Selo em texto, não tooltip: é a frase que explica ao leitor (e ao crawler)
+              por que esta página não tem preço nem botão. */}
+          <p>
+            <span className="inline-flex rounded-full border border-hairline px-2.5 py-1 text-badge text-muted">
+              Sem reserva online
+            </span>
+          </p>
+          <p className="text-pretty text-body-md text-muted">
+            Mapeamos este estacionamento perto do {destinationLabel}. Ainda não dá para reservar
+            pela Movepark.
+          </p>
+        </header>
+
+        <section className="mt-8 flex flex-col gap-2">
+          {prospect.address && (
+            <p className="flex items-start gap-1.5 text-body-md text-body">
+              <MapPin aria-hidden className="mt-0.5 h-5 w-5 shrink-0 text-muted" />
+              {prospect.address}
+            </p>
+          )}
+          {distancia && (
+            <p className="text-body-md text-body">
+              {distancia} do {prospect.reference_name ?? destinationLabel}
+            </p>
+          )}
+          {/* Preço declarado como ausente, e não omitido: quem chega da busca precisa saber
+              que a falta de preço é da oferta, não da página. */}
+          <p className="text-body-md text-muted">
+            Preço: não informado. Este estacionamento ainda não publica tarifas na Movepark.
+          </p>
+        </section>
+
+        {prospect.description && (
+          <section className="mt-8">
+            <p className="text-pretty text-body-md text-body">{prospect.description}</p>
+          </section>
+        )}
+
+        <section className="mt-8">
+          <h2 className="mb-3 text-display-md text-ink">Onde fica</h2>
+          <GoogleMapEmbed
+            title={`Mapa de ${prospect.name}`}
+            target={{ latitude: prospect.latitude, longitude: prospect.longitude }}
+            zoom={15}
+            className="h-72 w-full rounded-md border border-hairline"
+          />
+        </section>
+
+        {/* CTA primário: prova de demanda.
+            Não pede e-mail nem telefone de propósito. A spec define este sinal como
+            instrumentação, não mecanismo ("grava evento, não tabela nova"), e pedir
+            contato para descartar seria coletar PII sem finalidade nem guarda. Quando o
+            volume justificar uma tabela, o campo entra junto com ela. */}
+        <section className="mt-10 rounded-lg bg-mp-pale p-6">
+          {demandSent ? (
+            <p className="text-body-md text-ink" role="status">
+              Recebemos seu pedido. Quanto mais gente pede, mais rápido procuramos este
+              estacionamento.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <h2 className="text-balance text-display-md text-ink">
+                Quer reservar neste estacionamento?
+              </h2>
+              <p className="text-body-md text-body">
+                Registre seu interesse. É por onde a gente decide qual estacionamento procurar
+                primeiro.
+              </p>
+              <div>
+                <Button
+                  onClick={() => {
+                    trackEvent("prospect_demand_signal", {
+                      prospect_slug: prospect.slug,
+                      destination_slug: destination.slug,
+                    });
+                    setDemandSent(true);
+                  }}
+                >
+                  Quero reservar aqui, me avise quando abrir
+                </Button>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* CTA secundário: reivindicação. Bloco próprio, com botão, como a spec pede.
+            Enquanto o fluxo verificado do E0.17-g não existe, o botão leva ao cadastro de
+            parceiro, que é um caminho real. O que ele não pode ser é um beco. */}
+        <section className="mt-6 rounded-lg border border-hairline p-6">
+          <h2 className="text-balance text-display-md text-ink">
+            É o administrador deste estacionamento?
+          </h2>
+          <p className="mt-2 text-body-md text-body">
+            Se o estacionamento é seu, a Movepark lista com reserva online e repassa o que for
+            vendido.
+          </p>
+          <div className="mt-4">
+            <Button asChild variant="outline">
+              <Link
+                to="/seja-parceiro"
+                onClick={() =>
+                  trackEvent("prospect_claim_intent", {
+                    prospect_slug: prospect.slug,
+                    destination_slug: destination.slug,
+                  })
+                }
+              >
+                Reivindicar esta página
+              </Link>
+            </Button>
+          </div>
+        </section>
+
+        <div className="mt-10">
+          <Link
+            to={`/destinos/${destination.slug}`}
+            className="text-body-sm font-medium text-mp-primary underline"
+          >
+            Ver estacionamentos com reserva no {destinationLabel} →
+          </Link>
+        </div>
+      </article>
+    </>
+  );
+}

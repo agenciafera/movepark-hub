@@ -1,0 +1,92 @@
+{
+  "scenario_id": "estacionamento-mapeado",
+  "start_url": "/estacionamentos/aeroporto-qa/talentos-qa",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Talentos QA\". Passo 2: verifique que a pagina exibe o texto \"Sem reserva online\". Passo 3: verifique que a pagina exibe o texto \"Preco: nao informado\". Passo 4: verifique que a pagina exibe o texto \"E o administrador deste estacionamento\". Passo 5: verifique que a pagina NAO exibe o texto \"R$\".",
+  "tags": [
+    "smoke",
+    "leitura",
+    "parametrica"
+  ],
+  "hints": [
+    "Sao passos numerados: cada um vira uma acao propria do plano.",
+    "Use text_contains com selector body em cada checagem.",
+    "O passo 5 e uma ausencia: a pagina do lote mapeado nao tem preco nem caminho de reserva (E0.17-e). Use a checagem de texto ausente.",
+    "A rota tem dois parametros e os dados vem do stub: o destino do rest/v1/destination e o lote do rpc/destination_prospect_cards."
+  ],
+  "network": [
+    {
+      "url": "**/rest/v1/destination?*",
+      "json": [
+        {
+          "id": "d-1",
+          "name": "Aeroporto QA",
+          "short_name": "QA",
+          "slug": "aeroporto-qa",
+          "code": "QAX",
+          "city": "Campinas",
+          "state": "SP",
+          "country": "BR",
+          "is_published": true,
+          "latitude": -22.9,
+          "longitude": -47.1,
+          "created_at": "2026-08-01T12:00:00Z"
+        }
+      ]
+    },
+    {
+      "url": "**/rpc/destination_prospect_cards*",
+      "json": [
+        {
+          "id": "p-1",
+          "name": "Talentos QA",
+          "slug": "talentos-qa",
+          "address": "R. Projetada, 169 - Campinas - SP",
+          "latitude": -22.91,
+          "longitude": -47.11,
+          "google_maps_url": null,
+          "amenities": [],
+          "description": null,
+          "distance_km": 1.2,
+          "reference_name": null
+        }
+      ]
+    },
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles?*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "customer"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company?*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/company_role_scope?*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ]
+}

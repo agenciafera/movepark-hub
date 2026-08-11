@@ -6,6 +6,7 @@ import {
   destinationSchema,
   faqSchema,
   itemListSchema,
+  parkingFacilitySchema,
   localBusinessSchema,
   productOfferSchema,
 } from "./jsonld";
@@ -248,5 +249,61 @@ describe("blogPostingSchema: imagem", () => {
 
   it("sem capa, o campo não aparece", () => {
     expect(blogPostingSchema(base).image).toBeUndefined();
+  });
+});
+
+describe("parkingFacilitySchema · lote mapeado (E0.17-f · ADR-010)", () => {
+  const base = {
+    name: "Talentos Park",
+    url: "/estacionamentos/aeroporto-recife/talentos-park",
+    latitude: -8.1309368,
+    longitude: -34.9156297,
+    address: "R. Projetada, 169 - Boa Viagem, Recife - PE, 51150-650",
+    city: "Recife",
+    state: "PE",
+    country: "BR",
+  };
+
+  it("é ParkingFacility com geo, endereço estruturado e URL absoluta", () => {
+    const s = parkingFacilitySchema(base);
+    expect(s["@type"]).toBe("ParkingFacility");
+    expect(s.geo).toEqual({
+      "@type": "GeoCoordinates",
+      latitude: -8.1309368,
+      longitude: -34.9156297,
+    });
+    expect(s.address).toEqual({
+      "@type": "PostalAddress",
+      streetAddress: base.address,
+      addressLocality: "Recife",
+      addressRegion: "PE",
+      addressCountry: "BR",
+    });
+    expect(s.url).toBe("https://hub.movepark.co/estacionamentos/aeroporto-recife/talentos-park");
+  });
+
+  // O que o schema NÃO emite é a parte decidida. Se algum destes campos aparecer, o Hub
+  // passa a afirmar ao Google uma coisa que não verificou (horário), que não existe
+  // (avaliação), ou que não pode prometer (oferta, ADR-009). Telefone é Q-021.
+  it("não emite oferta, preço, horário, avaliação nem telefone", () => {
+    const s = parkingFacilitySchema(base) as Record<string, unknown>;
+    expect(s.offers).toBeUndefined();
+    expect(s.priceRange).toBeUndefined();
+    expect(s.openingHoursSpecification).toBeUndefined();
+    expect(s.aggregateRating).toBeUndefined();
+    expect(s.telephone).toBeUndefined();
+    expect(JSON.stringify(s)).not.toMatch(/offer|price|openingHours|aggregateRating|telephone/i);
+  });
+
+  it("endereço vazio não vira string vazia no schema", () => {
+    expect(parkingFacilitySchema({ ...base, address: null }).address.streetAddress).toBeUndefined();
+  });
+
+  it("amenidades viram LocationFeatureSpecification, e a lista vazia some", () => {
+    expect(parkingFacilitySchema(base).amenityFeature).toBeUndefined();
+    expect(parkingFacilitySchema({ ...base, amenities: [] }).amenityFeature).toBeUndefined();
+    expect(parkingFacilitySchema({ ...base, amenities: ["coberto"] }).amenityFeature).toEqual([
+      { "@type": "LocationFeatureSpecification", name: "coberto", value: true },
+    ]);
   });
 });

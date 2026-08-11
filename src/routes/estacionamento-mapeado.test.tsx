@@ -1,0 +1,169 @@
+import { describe, expect, it, vi, beforeEach } from "vitest";
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { HelmetProvider } from "react-helmet-async";
+import { renderWithProviders } from "@/test/utils";
+import EstacionamentoMapeadoPage from "@/routes/estacionamento-mapeado";
+import type { Destination, ProspectCard as ProspectCardData } from "@/types/domain";
+
+// O iframe do mapa some do render de teste: o happy-dom lança ao conectar um iframe.
+vi.mock("@/components/shared/MapEmbed", () => ({ MapEmbed: () => null }));
+
+const loaderData = vi.fn();
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
+  return { ...actual, useLoaderData: () => loaderData() };
+});
+
+function dest(overrides: Partial<Destination> = {}): Destination {
+  return {
+    id: "d1",
+    code: "REC",
+    name: "Aeroporto Internacional do Recife/Guararapes",
+    short_name: "Recife (REC)",
+    slug: "aeroporto-internacional-do-recife-guararapes",
+    type: "airport",
+    city: "Recife",
+    state: "PE",
+    country: "BR",
+    latitude: -8.1264,
+    longitude: -34.9236,
+    is_published: true,
+    ...overrides,
+  } as Destination;
+}
+
+function prospect(overrides: Partial<ProspectCardData> = {}): ProspectCardData {
+  return {
+    id: "p1",
+    name: "Talentos Park",
+    slug: "talentos-park-aeroporto-recife",
+    address: "R. Projetada, 169 - Boa Viagem, Recife - PE, 51150-650",
+    latitude: -8.1309368,
+    longitude: -34.9156297,
+    google_maps_url: "https://maps.google.com/?cid=4598899734266939223",
+    amenities: [],
+    description: null,
+    distance_km: 1.01,
+    reference_name: null,
+    ...overrides,
+  };
+}
+
+function render() {
+  return renderWithProviders(
+    <HelmetProvider>
+      <EstacionamentoMapeadoPage />
+    </HelmetProvider>,
+    {
+      route:
+        "/estacionamentos/aeroporto-internacional-do-recife-guararapes/talentos-park-aeroporto-recife",
+    },
+  );
+}
+
+beforeEach(() => {
+  loaderData.mockReturnValue({ destination: dest(), prospect: prospect() });
+  window.dataLayer = [];
+});
+
+describe("Página do lote mapeado (E0.17-e · ADR-010)", () => {
+  it("mostra o que a página tem: nome, selo, endereço, distância e a ausência de preço", () => {
+    render();
+
+    expect(screen.getByRole("heading", { level: 1, name: "Talentos Park" })).toBeInTheDocument();
+    expect(screen.getByText("Sem reserva online")).toBeInTheDocument();
+    expect(screen.getByText(/R\. Projetada, 169/)).toBeInTheDocument();
+    expect(screen.getByText(/1 km do Recife \(REC\)/)).toBeInTheDocument();
+    // Preço declarado como ausente, não omitido: quem chega da busca precisa saber que a
+    // falta de preço é da oferta, e não da página.
+    expect(screen.getByText(/Preço: não informado/)).toBeInTheDocument();
+  });
+
+  /**
+   * O entregável que a spec pede por escrito: renderizar a single de um lote mapeado e
+   * afirmar que NÃO existe nenhum elemento com ação de reserva na árvore. É o que impede
+   * alguém de reintroduzir o botão numa refatoração de layout, e é a diferença entre esta
+   * página e a do WordPress, que hoje tem um "Gostaria de fazer uma reserva?" flutuando
+   * sobre um lote onde reserva não existe.
+   */
+  it("não tem NENHUM caminho de reserva: sem botão de reservar, sem data, sem preço", () => {
+    render();
+
+    expect(screen.queryByRole("button", { name: /reservar agora|reserve|fazer reserva/i })).toBeNull();
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(screen.queryByLabelText(/check-?in|check-?out|data/i)).toBeNull();
+    expect(document.querySelectorAll('input[type="date"]')).toHaveLength(0);
+    expect(document.body).not.toHaveTextContent(/R\$/);
+    expect(document.body).not.toHaveTextContent(/por diária|diárias/i);
+  });
+
+  it("não linka o canal do parceiro, nem exibe o telefone", () => {
+    render();
+
+    const externos = [...document.querySelectorAll("a")].filter((a) =>
+      /^https?:\/\//.test(a.getAttribute("href") ?? ""),
+    );
+    // Referral da Movepark no Analytics dele é a venda dos 20% morrendo.
+    expect(externos).toHaveLength(0);
+    // Q-021: o telefone é guardado e não exibido. Ele nem chega ao componente (a RPC não
+    // devolve a coluna), e esta asserção é o alarme para o dia em que alguém "só adicionar
+    // o campo" no retorno.
+    expect(document.body).not.toHaveTextContent(/98692|\(81\)/);
+  });
+
+  it("o pedido de reserva vira evento, não tabela, e responde sem prometer aviso", async () => {
+    const user = userEvent.setup();
+    render();
+
+    await user.click(screen.getByRole("button", { name: /me avise quando abrir/i }));
+
+    expect(window.dataLayer).toContainEqual(
+      expect.objectContaining({
+        event: "prospect_demand_signal",
+        prospect_slug: "talentos-park-aeroporto-recife",
+      }),
+    );
+    // A confirmação não promete avisar ninguém: não coletamos contato, então prometer
+    // seria mentira. Ela diz o que o clique faz de verdade.
+    expect(screen.getByRole("status")).toHaveTextContent(/Recebemos seu pedido/i);
+  });
+
+  it("a reivindicação tem bloco próprio e leva a um caminho real, não a um beco", () => {
+    render();
+
+    expect(
+      screen.getByRole("heading", { name: /É o administrador deste estacionamento/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Reivindicar esta página/i })).toHaveAttribute(
+      "href",
+      "/seja-parceiro",
+    );
+  });
+
+  // A FORMA do schema é asserida em jsonld.test.ts, sobre a função pura. Aqui o que
+  // importa provar é que a página monta o bloco com os dados do lote, e não do destino.
+  it("emite o ParkingFacility do lote na página", async () => {
+    render();
+
+    const facility = await waitFor(() => {
+      const blocos = [...document.querySelectorAll('script[type="application/ld+json"]')].map((s) =>
+        JSON.parse(s.textContent ?? "{}"),
+      );
+      const encontrado = blocos.find((b) => b["@type"] === "ParkingFacility");
+      expect(encontrado).toBeTruthy();
+      return encontrado;
+    });
+
+    expect(facility.name).toBe("Talentos Park");
+    expect(facility.geo).toEqual({
+      "@type": "GeoCoordinates",
+      latitude: -8.1309368,
+      longitude: -34.9156297,
+    });
+    expect(facility.address.addressLocality).toBe("Recife");
+    expect(facility.url).toBe(
+      "https://hub.movepark.co/estacionamentos/aeroporto-internacional-do-recife-guararapes/talentos-park-aeroporto-recife",
+    );
+  });
+});

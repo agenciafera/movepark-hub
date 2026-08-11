@@ -120,6 +120,63 @@ export function destinationSchema(d: {
 }
 
 /**
+ * Lote MAPEADO, sem contrato (E0.17-f · ADR-010).
+ *
+ * `ParkingFacility` é subtipo de `LocalBusiness`, e o que este schema NÃO emite é tão
+ * decidido quanto o que ele emite:
+ *
+ * - **sem `offers` e sem `priceRange`.** `Offer` é promessa, e o ADR-009 vale para dado
+ *   estruturado do mesmo jeito que vale para bloco na tela. Este lote não vende nada aqui.
+ * - **sem `openingHoursSpecification`.** Não existe campo de horário em `prospect_location`,
+ *   e emitir a partir de um default afirmaria ao Google um horário que ninguém verificou.
+ * - **sem `aggregateRating`.** Não há avaliação: a Movepark nunca vendeu uma reserva ali.
+ * - **sem `telephone`.** Q-021: o número é guardado e não exibido, e "não exibido" inclui
+ *   o JSON-LD, que é justamente onde um dado escondido da tela continua legível.
+ *
+ * Isto é ganho líquido sobre o que existe hoje: a página do WordPress emite só `WebPage` e
+ * `ImageObject` do Yoast, sem `LocalBusiness`, sem endereço estruturado e sem `geo`.
+ */
+export function parkingFacilitySchema(p: {
+  name: string;
+  url: string;
+  latitude: number;
+  longitude: number;
+  address: string | null;
+  city: string;
+  state: string | null;
+  country: string;
+  description?: string | null;
+  amenities?: string[];
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ParkingFacility",
+    name: p.name,
+    description: p.description ?? undefined,
+    url: absoluta(p.url),
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: p.address ?? undefined,
+      addressLocality: p.city,
+      addressRegion: p.state ?? undefined,
+      addressCountry: p.country,
+    },
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: p.latitude,
+      longitude: p.longitude,
+    },
+    amenityFeature: p.amenities?.length
+      ? p.amenities.map((a) => ({
+          "@type": "LocationFeatureSpecification",
+          name: a,
+          value: true,
+        }))
+      : undefined,
+  };
+}
+
+/**
  * Post do blog.
  *
  * `mainEntityOfPage` amarra o dado estruturado à URL canônica, que é a mesma do

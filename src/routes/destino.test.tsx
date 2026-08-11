@@ -179,19 +179,31 @@ describe("DestinoPage · lotes mapeados (E0.17-d)", () => {
     expect(screen.getByText(/R\. Projetada, 169/)).toBeInTheDocument();
   });
 
-  it("o card mapeado não tem link nenhum: nem para o site do lote, nem para reserva", () => {
+  it("o único link do card é a página do lote no Hub, nunca o canal do parceiro", () => {
     vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
     vi.mocked(useDestinationProspects).mockReturnValue({ data: [prospect()] } as never);
 
     render();
 
     const card = screen.getByTestId("prospect-card");
-    // Link para o canal dele entrega de graça o que íamos cobrar 20%; link de reserva
-    // promete o que não existe (CDC art. 30/31). Nenhum dos dois pode nascer numa
-    // refatoração de layout sem este teste falhar.
-    expect(card.querySelectorAll("a")).toHaveLength(0);
+    const links = [...card.querySelectorAll("a")];
+    // Um link, e ele aponta para dentro: sem link interno a página do lote nasce órfã, e
+    // é ela que carrega o JSON-LD e o caminho de reivindicação. Link para o canal DELE
+    // entregaria de graça o que íamos cobrar 20%, e link de reserva prometeria o que não
+    // existe (CDC art. 30/31). Nenhum dos dois nasce numa refatoração sem este teste cair.
+    expect(links).toHaveLength(1);
+    expect(links[0]).toHaveAttribute(
+      "href",
+      "/estacionamentos/aeroporto-de-guarulhos/talentos-park-aeroporto-recife",
+    );
     expect(card.querySelectorAll("button")).toHaveLength(0);
     expect(card).not.toHaveTextContent(/R\$/);
+    // Nenhum href absoluto: é assim que "link para fora" apareceria.
+    expect(
+      [...card.querySelectorAll("[href]")].filter((el) =>
+        /^https?:\/\//.test(el.getAttribute("href") ?? ""),
+      ),
+    ).toHaveLength(0);
   });
 
   it("usa o nome do terminal na distância quando o destino tem um cadastrado", () => {

@@ -39,6 +39,32 @@ async function getDestinationRoutes(sb: SupabaseClient | null): Promise<string[]
 }
 
 /**
+ * Lotes MAPEADOS publicados (E0.17-e). Página sem reserva e sem preço, mas com
+ * `ParkingFacility`, endereço estruturado e geo: é conteúdo que a Movepark quer
+ * indexado, e é o que substitui as 41 URLs do WordPress no cutover. Fora do
+ * sitemap, a página dependeria só do link interno da página de destino.
+ *
+ * `converted_at is null` porque ficha convertida virou `location`: mandar as duas
+ * ao sitemap seria pedir para o Google escolher entre duas páginas nossas.
+ */
+async function getProspectRoutes(sb: SupabaseClient | null): Promise<string[]> {
+  if (!sb) return [];
+
+  const { data } = await sb
+    .from("prospect_location")
+    .select("slug, destination:destination(slug)")
+    .eq("is_published", true)
+    .is("converted_at", null);
+
+  return (data ?? [])
+    // deno-lint-ignore no-explicit-any
+    .map((p: any) =>
+      p.destination?.slug ? `/estacionamentos/${p.destination.slug}/${p.slug}` : null,
+    )
+    .filter((r: string | null): r is string => r !== null);
+}
+
+/**
  * Posts do blog. A barra final é obrigatória: é a URL canônica herdada do
  * WordPress, e é ela que o Google já conhece. Ver docs/specs/blog.md.
  */
@@ -82,10 +108,11 @@ export default defineConfig(async ({ mode }) => {
   const key = env.VITE_SUPABASE_ANON_KEY;
   const sb = url && key ? createClient(url, key) : null;
 
-  const [listingRoutes, destinationRoutes, blogRoutes] = await Promise.all([
+  const [listingRoutes, destinationRoutes, blogRoutes, prospectRoutes] = await Promise.all([
     getDynamicRoutes(sb),
     getDestinationRoutes(sb),
     getBlogRoutes(sb),
+    getProspectRoutes(sb),
   ]);
   // Índice de destinos + uma URL por destino publicado, além das listagens /p/...
   // e dos posts do blog (com barra final, contrato herdado do WordPress).
@@ -97,6 +124,7 @@ export default defineConfig(async ({ mode }) => {
     ...listingRoutes,
     ...destinationRoutes,
     ...blogRoutes,
+    ...prospectRoutes,
   ];
 
   return {

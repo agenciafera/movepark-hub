@@ -338,7 +338,7 @@ export default function DestinoPage() {
             </p>
             <ul className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
               {prospectItems.map((p) => (
-                <ProspectCard key={p.id} item={p} />
+                <ProspectCard key={p.id} item={p} destinationSlug={destination.slug} />
               ))}
             </ul>
           </section>

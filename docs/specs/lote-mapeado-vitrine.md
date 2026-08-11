@@ -3,7 +3,7 @@
 > **Épico:** [E0.17](https://app.clickup.com/t/86ajyp580) · **Fase:** 0 · **Depende de:** E0.15 (capacidades / ADR-009)
 > **Q/D:** [Q-021](https://app.clickup.com/t/86ajyp5pu) telefone **decidido em 11/08/2026: guardar, não exibir** · [Q-022](https://app.clickup.com/t/86ajz8n1j) **decidido → ADR-010** · [D-009](https://app.clickup.com/t/86ajyp5w7) deduplicação
 > **ADR:** ADR-010 (lote não-parceiro não vive na tabela transacional)
-> **Status:** especificado em 10/08/2026. **a, c e d no ar** em 11/08/2026, com Q-021 decidido. Falta b, e, f, g, h.
+> **Status:** especificado em 10/08/2026. **a, c, d, e e f no ar** em 11/08/2026, com Q-021 decidido. Falta b, g e h.
 > **Case de referência:** Talentos Park, Recife. Todo exemplo aqui usa dados reais dele.
 
 Este arquivo é **autossuficiente**: quem for implementar não precisa abrir o ClickUp nem `gestao/`. O ClickUp serve só para saber qual atividade puxar e em que ordem.
@@ -16,8 +16,8 @@ Este arquivo é **autossuficiente**: quem for implementar não precisa abrir o C
 | E0.17-b | Higienizar os registros obsoletos em `location` | [§ Higiene do legado](#higiene-dos-registros-legados-e017-b) | [86ajyp7bj](https://app.clickup.com/t/86ajyp7bj) |
 | E0.17-c | ✅ Cadastrar o Talentos Park como case-piloto | [§ O cadastro](#o-cadastro-com-o-talentos-park-e017-c) | [86ajyp7xu](https://app.clickup.com/t/86ajyp7xu) |
 | E0.17-d | ✅ Cards do lote mapeado na página de destino | [§ Página de destino](#página-de-destino-e017-d) | [86ajyp87t](https://app.clickup.com/t/86ajyp87t) |
-| E0.17-e | Single sem caminho para reserva | [§ Single](#single-e017-e) | [86ajyp8jn](https://app.clickup.com/t/86ajyp8jn) |
-| E0.17-f | JSON-LD `ParkingFacility` | [§ JSON-LD](#json-ld-e017-f) | [86ajyp8u6](https://app.clickup.com/t/86ajyp8u6) |
+| E0.17-e | ✅ Single sem caminho para reserva | [§ Single](#single-e017-e) | [86ajyp8jn](https://app.clickup.com/t/86ajyp8jn) |
+| E0.17-f | ✅ JSON-LD `ParkingFacility` | [§ JSON-LD](#json-ld-e017-f) | [86ajyp8u6](https://app.clickup.com/t/86ajyp8u6) |
 | E0.17-g | Conversão da reivindicação | [§ Conversão](#conversão-e017-g) | [86ajyp96d](https://app.clickup.com/t/86ajyp96d) |
 | E0.17-h | Painel administrativo | [§ Painel](#painel-administrativo-e017-h) | [86ajz8mvz](https://app.clickup.com/t/86ajz8mvz) |
 
@@ -280,6 +280,17 @@ Com o ADR-010 a página fica quase trivial: **não existe caminho de reserva par
 
 **Proibido:** botão de reserva, seletor de datas, widget de WhatsApp de reserva, e **link para o site ou o motor de reserva do lote**.
 
+### O que ficou no ar (11/08/2026)
+
+Rota **`/estacionamentos/:destino/:slug`**, pré-renderizada (`getStaticPaths` sobre as fichas publicadas e não convertidas), em [`src/routes/estacionamento-mapeado.tsx`](../../src/routes/estacionamento-mapeado.tsx). Entra no **sitemap** junto: sem isso a página dependeria só do link interno da página de destino. O card da seção de baixo passou a linkar para cá, e é o único link que ele tem: sem link interno a página nasce órfã, e é ela que carrega o JSON-LD e a reivindicação.
+
+Duas decisões que a spec deixou em aberto e a execução teve de fechar:
+
+- **O "me avise quando abrir" NÃO pede e-mail nem telefone.** A spec pede captura de contato e, três linhas depois, manda gravar só evento em GA4/Posthog, "não em tabela nova". As duas coisas não cabem juntas: pedir contato para descartar é coletar PII sem finalidade nem guarda. Ficou o clique como sinal (`prospect_demand_signal` no dataLayer, via `src/lib/analytics.ts`) e a confirmação não promete avisar ninguém, porque não temos como. O campo de contato entra junto com a tabela, no dia em que o volume justificar.
+- **A reivindicação leva a `/seja-parceiro`, não a um link assinado.** O fluxo com HMAC e OTP é a E0.17-g, que ainda não existe. A spec é explícita: "não deixar o botão levar a um beco". Enquanto o caminho verificado não existe, o botão leva ao caminho real que existe, e dispara `prospect_claim_intent`.
+
+O **301 da ficha convertida ficou para a E0.17-g**, e não é adiamento: hoje não existe conversão, então não existe `location` para onde redirecionar. Enquanto isso, ficha convertida simplesmente deixa de ser gerada (a RPC filtra `converted_at is null`), e quem cria o redirect é quem cria a conversão.
+
 **Por que não linkar o canal dele:** no dia em que ele abre o Analytics e vê referral da Movepark, já está recebendo de graça exatamente o que íamos cobrar 20%. A venda morre ali.
 
 **Por que não deixar o widget de reserva:** hoje, no WordPress, a página do não-parceiro tem um *"Olá! Gostaria de fazer uma reserva?"* flutuante sobre um lote onde não existe reserva. Cliente pede, ninguém entrega. Isso é CDC art. 30/31 e é pogo-stick puro na SERP.
@@ -454,11 +465,11 @@ Candidatas a chave, provavelmente em cascata:
 - [x] Talentos Park cadastrado, publicado, visível na seção de baixo de `/destinos/aeroporto-internacional-do-recife-guararapes`.
 - [x] As duas fontes na página, vendável primeiro, com o mesmo formato de distância (`formatDistance`). Em duas leituras, não numa RPC com `union all`: ver o bloco acima.
 - [x] Seções separadas de ponta a ponta (títulos, ordenação e paginação próprios); `is_popular` não existe no lado mapeado e não foi inventado.
-- [ ] Teste de componente: single de `prospect_location` não tem nenhum elemento com ação de reserva.
-- [ ] JSON-LD `ParkingFacility` presente, sem `Offer`, sem `openingHours`, sem `aggregateRating`.
+- [x] Teste de componente: single de `prospect_location` não tem nenhum elemento com ação de reserva (`estacionamento-mapeado.test.tsx`), e também não tem link externo nem telefone.
+- [x] JSON-LD `ParkingFacility` presente, sem `Offer`, sem `openingHours`, sem `aggregateRating` e sem `telephone`. Conferido no HTML do `dist`, não só no teste.
 - [ ] Painel admin permite criar, publicar e despublicar sem SQL; sugere destino por `nearest_destination()`.
 - [ ] Publicação bloqueada sem endereço; aviso de colisão de `google_place_id` com `location`.
 - [ ] Ficha convertida em modo leitura no admin.
 - [ ] `convert_prospect_location()` é idempotente, grava a procedência e **não** publica oferta.
-- [ ] URL de ficha convertida faz 301 para a `location`.
+- [ ] URL de ficha convertida faz 301 para a `location`. **Fica na E0.17-g:** sem conversão não existe destino para o redirect.
 - [ ] Registros obsoletos de prospecção resolvidos em `location`, preservando os que têm `booking`.
