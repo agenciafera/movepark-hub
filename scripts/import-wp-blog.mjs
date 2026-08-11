@@ -237,6 +237,36 @@ function ehDominioAntigo(host) {
   return /(^|\.)movepark\.(co|com\.br)$/.test(host);
 }
 
+/** Nome de exibição do destino, para quando o rótulo do link precisa ser refeito. */
+const NOME_DO_DESTINO = {
+  "aeroporto-internacional-de-sao-paulo-guarulhos": "Aeroporto de Guarulhos",
+  "aeroporto-de-viracopos": "Aeroporto de Viracopos",
+  "aeroporto-afonso-pena": "Aeroporto Afonso Pena",
+  "aeroporto-de-congonhas": "Aeroporto de Congonhas",
+  "aeroporto-de-confins": "Aeroporto de Confins",
+  "aeroporto-humberto-delgado": "Aeroporto de Lisboa",
+  "aeroporto-santos-dumont": "Aeroporto Santos Dumont",
+  "aeroporto-do-galeao": "Aeroporto do Galeão",
+  "aeroporto-de-brasilia": "Aeroporto de Brasília",
+  "aeroporto-salgado-filho": "Aeroporto Salgado Filho",
+  "terminal-rodoviario-tiete": "Terminal Rodoviário Tietê",
+};
+
+/**
+ * Rótulo legível quando o texto visível do link é a URL antiga.
+ *
+ * Em 4 posts o editor colou a URL crua como texto. Trocar só o destino deixaria
+ * na tela um endereço que não existe mais, então o rótulo também é refeito.
+ */
+function rotuloLegivel(rotulo, destino) {
+  if (!/^https?:\/\/[a-z0-9.-]*movepark\.(co|com\.br)/i.test(rotulo.trim())) return rotulo;
+  if (destino === "/") return "Movepark";
+  if (destino === "/destinos") return "Estacionamentos por aeroporto";
+  const slug = destino.match(/^\/destinos\/([^/]+)$/)?.[1];
+  const nome = slug && NOME_DO_DESTINO[slug];
+  return nome ? `Estacionamentos no ${nome}` : rotulo;
+}
+
 /**
  * Reescreve os links do corpo para rotas do Hub.
  *
@@ -276,7 +306,7 @@ function rewriteLinks(md, report) {
     const direto = LEGACY_PATH_TO_HUB[caminho];
     if (direto) {
       report.linksReescritos++;
-      return `[${rotulo}](${direto}${title})`;
+      return `[${rotuloLegivel(rotulo, direto)}](${direto}${title})`;
     }
 
     // `/estacionamentos/<aeroporto>` e `/estacionamentos/<aeroporto>/<lote>`.
@@ -284,14 +314,14 @@ function rewriteLinks(md, report) {
     const destino = aeroporto && LEGACY_AIRPORT_TO_DESTINATION[aeroporto];
     if (destino) {
       report.linksReescritos++;
-      return `[${rotulo}](/destinos/${destino}${title})`;
+      return `[${rotuloLegivel(rotulo, `/destinos/${destino}`)}](/destinos/${destino}${title})`;
     }
 
     // Subdomínio de parceiro: o lote continua existindo, só que dentro do Hub.
     const porHost = LEGACY_HOST_TO_HUB[url.hostname];
     if (porHost) {
       report.linksReescritos++;
-      return `[${rotulo}](${porHost}${title})`;
+      return `[${rotuloLegivel(rotulo, porHost)}](${porHost}${title})`;
     }
 
     // Sobrou: fica o texto, sem link. Melhor que mandar o leitor para um 404.

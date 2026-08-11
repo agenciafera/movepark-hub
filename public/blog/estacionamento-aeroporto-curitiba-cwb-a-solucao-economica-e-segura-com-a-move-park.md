@@ -69,4 +69,4 @@ A diária no **estacionamento oficial de Curitiba** (Premium) custa, em média, 
 
 **Pronto para garantir sua vaga e economizar mais de R$ 40 por dia em Curitiba?**
 
-> **Acesse agora e faça sua reserva com ABBA Park ou Nation Park através da Move Park:** **[https://movepark.co/estacionamentos/aeroporto-curitiba/](/destinos/aeroporto-afonso-pena)**
+> **Acesse agora e faça sua reserva com ABBA Park ou Nation Park através da Move Park:** **[Estacionamentos no Aeroporto Afonso Pena](/destinos/aeroporto-afonso-pena)**

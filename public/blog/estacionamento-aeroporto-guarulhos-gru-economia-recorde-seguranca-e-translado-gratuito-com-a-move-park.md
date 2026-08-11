@@ -70,4 +70,4 @@ A diária no **estacionamento oficial de Guarulhos** (Edifício Garagem) custa, 
 
 **Pronto para garantir sua vaga e economizar mais de R$ 57 por dia em Guarulhos?**
 
-> **Acesse agora e faça sua reserva com a AeroParking através da Move Park:** **[https://movepark.co/estacionamentos/aeroporto-guarulhos/](/destinos/aeroporto-internacional-de-sao-paulo-guarulhos)**
+> **Acesse agora e faça sua reserva com a AeroParking através da Move Park:** **[Estacionamentos no Aeroporto de Guarulhos](/destinos/aeroporto-internacional-de-sao-paulo-guarulhos)**
