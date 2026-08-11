@@ -1,0 +1,75 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "manager-partners",
+    "start_url": "/manager/partners",
+    "start_sig": "sig:30b80afac064bfc7",
+    "scenario_sig": "7168f004bd460a69"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "manager-partners",
+    "start_url": "http://localhost:5273/manager/partners",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h3",
+          "description": "Heading level 3 'Nenhuma solicitação' inside main"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h3",
+            "text": "Nenhuma solicitação"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h3 + p",
+          "description": "Paragraph immediately after the empty-state heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h3 + p",
+            "text": "Quando um estacionamento se cadastrar, ele aparece aqui."
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h3",
+          "description": "Empty-state heading confirming 'Nenhuma solicitação' text in the list area"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h3",
+            "text": "Nenhuma solicitação"
+          },
+          "selector": "main h3"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Nenhuma solicitação\", depois a descricao \"Quando um estacionamento se cadastrar, ele aparece aqui.\", depois o texto \"Nenhuma solicitação\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-01T15:49:52.019Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-01T15:49:55.812Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

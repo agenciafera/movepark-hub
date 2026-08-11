@@ -1,0 +1,170 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "manager-empresa-unidades-jornada",
+    "start_url": "/manager/companies/00000000-0000-4000-8000-0000000000c1/locations",
+    "start_sig": "sig:0220ddecfb1188ce",
+    "scenario_sig": "d2bc894dcd26aa10"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "manager-empresa-unidades-jornada",
+    "start_url": "http://localhost:5273/manager/companies/00000000-0000-4000-8000-0000000000c1/locations",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "Page heading containing Unidades"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Unidades"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Page body"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Unidades operacionais da empresa"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Page body"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Empresa QA"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "wait_for",
+        "target": {
+          "selector": "a[href='/manager/companies']",
+          "description": "Voltar para Empresas link"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Voltar para Empresas"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a5",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Page body"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Unidade QA"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a6",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Page body"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "unidade-qa"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a7",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Page body"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Checkout"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a8",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Page body"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Externo"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a9",
+        "type": "click",
+        "target": {
+          "selector": "button:has-text('Nova unidade')",
+          "description": "Nova unidade button"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a10",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role=\"dialog\"]",
+          "description": "Radix dialog element"
+        },
+        "expect": {
+          "selector": "[role=\"dialog\"]"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Unidades\". Passo 2: verifique que a pagina exibe o texto \"Unidades operacionais da empresa\". Passo 3: verifique que a pagina exibe o texto \"Empresa QA\". Passo 4: verifique que a pagina exibe o texto \"Voltar para Empresas\". Passo 5: verifique que a pagina exibe o texto \"Unidade QA\". Passo 6: verifique que a pagina exibe o texto \"unidade-qa\". Passo 7: verifique que a pagina exibe o texto \"Checkout\". Passo 8: verifique que a pagina exibe o texto \"Externo\". Passo 9: clique no botao \"Nova unidade\". Passo 10: verifique que abriu um dialogo, checando que existe o seletor [role=\"dialog\"].",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-04T20:13:15.346Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-04T20:13:16.806Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 2
+  }
+}

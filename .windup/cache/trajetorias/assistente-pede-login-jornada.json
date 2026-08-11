@@ -1,0 +1,136 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "assistente-pede-login-jornada",
+    "start_url": "/",
+    "start_sig": "sig:9762b1205e6e924b",
+    "scenario_sig": "c934c9f0da5fddbd"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "assistente-pede-login-jornada",
+    "start_url": "http://localhost:5273/",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "click",
+        "target": {
+          "selector": "button[aria-label=\"Abrir assistente\"]",
+          "description": "Botão para abrir o assistente Movepark"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Corpo da página com o assistente aberto"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Assistente Movepark"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Corpo da página verificando ausência do atalho de login antes da resposta do assistente"
+        },
+        "expect": {
+          "not_visible": "a:text(\"Entrar para reservar\")"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "fill",
+        "target": {
+          "selector": "[aria-label=\"Mensagem\"]",
+          "description": "Campo de texto para digitar mensagem ao assistente"
+        },
+        "value": "quero reservar essa vaga agora",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a5",
+        "type": "click",
+        "target": {
+          "selector": "button[aria-label=\"Enviar\"]",
+          "description": "Botão para enviar a mensagem ao assistente"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a6",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Corpo da página aguardando resposta do assistente solicitando login"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Pra reservar eu preciso que voce entre na sua conta"
+          }
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a7",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Corpo da página verificando presença do atalho de login exibido pelo assistente"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Entrar para reservar"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a8",
+        "type": "click",
+        "target": {
+          "selector": "a:text(\"Entrar para reservar\")",
+          "description": "Link 'Entrar para reservar' exibido pelo assistente após pedir login"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a9",
+        "type": "wait_for",
+        "target": {
+          "selector": "html",
+          "description": "Documento raiz da página de login após redirecionamento"
+        },
+        "expect": {
+          "url": "**/login**",
+          "selector": "html"
+        },
+        "timeout_ms": 10000
+      }
+    ],
+    "task": "Passo 1: clique no botao com aria-label \"Abrir assistente\". Passo 2: verifique que a pagina exibe o texto \"Assistente Movepark\". Passo 3: verifique que a pagina NAO exibe o texto \"Entrar para reservar\". Passo 4: preencha o campo com aria-label \"Mensagem\" com \"quero reservar essa vaga agora\". Passo 5: clique no botao com aria-label \"Enviar\". Passo 6: verifique que a pagina exibe o texto \"Pra reservar eu preciso que voce entre na sua conta\". Passo 7: verifique que a pagina exibe o texto \"Entrar para reservar\". Passo 8: clique no link \"Entrar para reservar\". Passo 9: verifique, com a postcondicao url do tipo contains e o valor \"/login\", que o endereco mudou. Nao use seletor nenhum neste passo.",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-04T17:43:01.437Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-04T17:43:03.414Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

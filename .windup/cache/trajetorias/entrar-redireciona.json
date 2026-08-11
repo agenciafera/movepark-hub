@@ -1,0 +1,67 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "entrar-redireciona",
+    "start_url": "/entrar?next=/account",
+    "start_sig": "sig:ec1c271b1242bb10",
+    "scenario_sig": "dba27054ca47d7da"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "entrar-redireciona",
+    "start_url": "http://localhost:5273/entrar?next=/account",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "button[type=button]",
+          "description": "any button on the page, confirming page has loaded"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "button[type=button]",
+          "description": "stable element confirming redirect to /login has completed"
+        },
+        "expect": {
+          "url": "**/login**"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "button[type=button]",
+          "description": "button confirming login page is rendered with WhatsApp option"
+        },
+        "expect": {
+          "url": "**/login**",
+          "text_contains": {
+            "selector": "body",
+            "text": "WhatsApp"
+          },
+          "selector": "button[type=button]"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: aguarde a pagina carregar. Passo 2: verifique que a URL final contem \"/login\". Passo 3: verifique que a pagina exibe o texto \"WhatsApp\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-03T18:08:28.089Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-03T18:08:28.821Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "privacidade",
+    "start_url": "/privacidade",
+    "start_sig": "sig:2644ef779c146a8c",
+    "scenario_sig": "d9e8514cf22dcb50"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "privacidade",
+    "start_url": "http://localhost:5180/privacidade",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "header",
+          "description": "Cabeçalho do site"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "header",
+            "text": "Destinos"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h1",
+          "description": "Título principal da página de privacidade"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h1",
+            "text": "Política de Privacidade"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "footer",
+          "description": "Rodapé do site"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "footer",
+            "text": "Seja parceiro"
+          },
+          "selector": "footer"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Verifique que o cabecalho exibe o texto Destinos, que a pagina exibe o texto Política de Privacidade, e que o rodape exibe o texto Seja parceiro.",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-07-31T20:04:34.140Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-07-31T20:04:36.395Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

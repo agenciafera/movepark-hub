@@ -1,0 +1,84 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "design-system",
+    "start_url": "/design-system",
+    "start_sig": "sig:5f9442af211e8be5",
+    "scenario_sig": "4ac86d908cf9d456"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "design-system",
+    "start_url": "http://localhost:5273/design-system",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "h2",
+          "description": "Any h2 heading on the page"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Page body containing Logo e monograma text"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Logo e monograma"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Page body containing Botões text"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Botões"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Page body containing Card pattern text"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Card pattern"
+          },
+          "selector": "body"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Logo e monograma\". Passo 2: verifique que a pagina exibe o texto \"Botões\". Passo 3: verifique que a pagina exibe o texto \"Card pattern\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-01T16:52:17.501Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-01T16:52:17.836Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

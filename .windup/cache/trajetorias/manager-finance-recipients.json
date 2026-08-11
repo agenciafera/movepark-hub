@@ -1,0 +1,75 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "manager-finance-recipients",
+    "start_url": "/manager/finance/recipients",
+    "start_sig": "sig:0220ddecfb1188ce",
+    "scenario_sig": "07f170d068dfdfc9"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "manager-finance-recipients",
+    "start_url": "http://localhost:5273/manager/finance/recipients",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "Page heading Recebedores"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "h1",
+            "text": "Recebedores"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main p",
+          "description": "Description paragraph below the heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main p",
+            "text": "Status de cada empresa no gateway de pagamento"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main p",
+          "description": "Description paragraph mentioning Pagar.me"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main p",
+            "text": "Pagar.me"
+          },
+          "selector": "main p"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Recebedores\". Passo 2: verifique que a pagina exibe o texto \"Status de cada empresa no gateway de pagamento\". Passo 3: verifique que a pagina exibe o texto \"Pagar.me\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-01T16:59:11.614Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-01T16:59:13.535Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

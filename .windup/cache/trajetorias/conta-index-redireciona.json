@@ -1,0 +1,70 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "conta-index-redireciona",
+    "start_url": "/account",
+    "start_sig": "sig:25474f4cdc1ae203",
+    "scenario_sig": "2125859c58dcea69"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "conta-index-redireciona",
+    "start_url": "http://localhost:5273/account",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "main content area — aguarda o redirecionamento terminar e a página carregar"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "corpo da página para verificar a URL final e conteúdo de área logada"
+        },
+        "expect": {
+          "url": "**/account/*",
+          "text_contains": {
+            "selector": "body",
+            "text": "Minha conta"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h1",
+          "description": "título principal da área do cliente"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Olá"
+          },
+          "selector": "main h1"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: aguarde o redirecionamento terminar. Passo 2: verifique que a URL final NAO e exatamente /account. Passo 3: verifique que a pagina exibe algum conteudo da area do cliente.",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-04T14:05:05.995Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-04T14:05:07.199Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

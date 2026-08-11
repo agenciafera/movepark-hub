@@ -1,0 +1,75 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "seja-parceiro",
+    "start_url": "/seja-parceiro",
+    "start_sig": "sig:b805d148d91ff81c",
+    "scenario_sig": "cf8e838f017a8cbf"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "seja-parceiro",
+    "start_url": "http://localhost:5273/seja-parceiro",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h1",
+          "description": "Main level-1 heading on the seja-parceiro page"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h1",
+            "text": "Encha suas vagas com reservas online"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "Main content area containing the 'Vaga vazia não volta.' heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Vaga vazia não volta."
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "Main content area containing the 'Como funciona' heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Como funciona"
+          },
+          "selector": "main"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Encha suas vagas com reservas online\". Passo 2: verifique que a pagina exibe o texto \"Vaga vazia não volta.\". Passo 3: verifique que a pagina exibe o texto \"Como funciona\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-01T16:41:08.603Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-01T16:41:09.329Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

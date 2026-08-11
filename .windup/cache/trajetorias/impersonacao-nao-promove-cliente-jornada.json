@@ -1,0 +1,90 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "impersonacao-nao-promove-cliente-jornada",
+    "start_url": "/operator",
+    "start_sig": "sig:f64437f18ac94e17",
+    "scenario_sig": "8921a6289217af78"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "impersonacao-nao-promove-cliente-jornada",
+    "start_url": "http://localhost:5273/operator",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "título principal da página redirecionada"
+        },
+        "expect": {
+          "not_visible": "text=\"Modo operador\""
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "título principal da página redirecionada"
+        },
+        "expect": {
+          "not_visible": "text=\"Sair do modo\""
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "título principal da página redirecionada"
+        },
+        "expect": {
+          "not_visible": "text=\"Empresa QA\""
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "título principal da página redirecionada"
+        },
+        "expect": {
+          "not_visible": "text=\"Empresas\""
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a5",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "título principal da página redirecionada"
+        },
+        "expect": {
+          "url": "http://localhost:5273/",
+          "selector": "h1"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: verifique que a pagina NAO exibe o texto \"Modo operador\". Passo 2: verifique que a pagina NAO exibe o texto \"Sair do modo\". Passo 3: verifique que a pagina NAO exibe o texto \"Empresa QA\", ou seja, nenhum dado de parceiro apareceu. Passo 4: verifique que a pagina NAO exibe o texto \"Empresas\", ou seja, tambem nao ganhou a navegacao do hub_admin. Passo 5: verifique que a url NAO contem \"/operator\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-04T17:27:45.720Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-04T17:27:47.076Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 3
+  }
+}

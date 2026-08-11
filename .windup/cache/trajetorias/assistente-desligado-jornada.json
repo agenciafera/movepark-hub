@@ -1,0 +1,84 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "assistente-desligado-jornada",
+    "start_url": "/",
+    "start_sig": "sig:9762b1205e6e924b",
+    "scenario_sig": "e8f95f77d5ae1d3c"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "assistente-desligado-jornada",
+    "start_url": "http://localhost:5273/",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Página principal carregada"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Estacionamentos Populares"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Página sem texto do assistente"
+        },
+        "expect": {
+          "not_visible": "[aria-label=\"Assistente Movepark\"]"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Página sem botão de abrir assistente"
+        },
+        "expect": {
+          "not_visible": "[aria-label=\"Abrir assistente\"]"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Página com conteúdo de cancelamento gratuito"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Cancelamento gr"
+          },
+          "selector": "body"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Estacionamentos Populares\". Passo 2: verifique que a pagina NAO exibe o texto \"Assistente Movepark\". Passo 3: verifique que NAO existe nenhum elemento com o seletor [aria-label=\"Abrir assistente\"]. Passo 4: verifique que a pagina exibe o texto \"Cancelamento gr\", ou seja, o resto da home segue de pe.",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-04T17:45:36.202Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-04T17:45:37.327Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "operator-reviews",
+    "start_url": "/operator/reviews",
+    "start_sig": "sig:7c87997d1435748b",
+    "scenario_sig": "d5d8f956df80f667"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "operator-reviews",
+    "start_url": "http://localhost:5273/operator/reviews",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h1",
+          "description": "Page heading Avaliações"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h1",
+            "text": "Avaliações"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h1 + p",
+          "description": "Description paragraph immediately after the Avaliações heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h1 + p",
+            "text": "O que os clientes dizem das suas unidades. Responda publicam"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "Main content area containing the onboarding gate"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Sua jornada na Movepark"
+          },
+          "selector": "main"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Avaliações\", depois a descricao \"O que os clientes dizem das suas unidades. Responda publicam\", depois o texto \"Sua jornada na Movepark\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-01T16:10:47.360Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-01T16:10:49.168Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

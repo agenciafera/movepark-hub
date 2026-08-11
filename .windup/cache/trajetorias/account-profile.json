@@ -1,0 +1,75 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "account-profile",
+    "start_url": "/account/profile",
+    "start_sig": "sig:25474f4cdc1ae203",
+    "scenario_sig": "5145e33e7acb0739"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "account-profile",
+    "start_url": "http://localhost:5273/account/profile",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "h2",
+          "description": "Heading 'Informações pessoais'"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Informações pessoais"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "label[for='last-name']",
+          "description": "Label 'Sobrenome'"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "label[for='last-name']",
+            "text": "Sobrenome"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "label[for='cpf']",
+          "description": "Label 'CPF ou CNPJ'"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "label[for='cpf']",
+            "text": "CPF ou CNPJ"
+          },
+          "selector": "label[for='cpf']"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Informações pessoais\". Passo 2: verifique que a pagina exibe o texto \"Sobrenome\". Passo 3: verifique que a pagina exibe o texto \"CPF ou CNPJ\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-03T21:17:20.853Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-03T21:17:22.254Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 2
+  }
+}

@@ -1,0 +1,290 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "manager-operacao-completa-jornada",
+    "start_url": "/manager",
+    "start_sig": "sig:9941cd9dea64ba25",
+    "scenario_sig": "370457ff1144c672"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "manager-operacao-completa-jornada",
+    "start_url": "http://localhost:5273/manager",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "Visão da rede main heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "h1",
+            "text": "Visão da rede"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "click",
+        "target": {
+          "selector": "a[href='/manager/companies']",
+          "description": "Empresas sidebar navigation link"
+        },
+        "expect": {
+          "url": "**/manager/companies"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Empresas parceiras page content"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Empresas parceiras da plataforma"
+          }
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a4",
+        "type": "click",
+        "target": {
+          "selector": "a[href='/manager/partners']",
+          "description": "Parceiros sidebar navigation link"
+        },
+        "expect": {
+          "url": "**/manager/partners"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a5",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Nenhuma solicitação text on partners page"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Nenhuma solicitação"
+          }
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a6",
+        "type": "click",
+        "target": {
+          "selector": "a[href='/manager/destinations']",
+          "description": "Destinos sidebar navigation link"
+        },
+        "expect": {
+          "url": "**/manager/destinations"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a7",
+        "type": "click",
+        "target": {
+          "selector": "button:has-text('Novo destino')",
+          "description": "Novo destino create button on destinations page"
+        },
+        "expect": {
+          "selector": "[role='dialog']"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a8",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role='dialog']",
+          "description": "destination creation form dialog"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "[role='dialog']",
+            "text": "Latitude"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a9",
+        "type": "fill",
+        "target": {
+          "selector": "#d-code",
+          "description": "destination code input"
+        },
+        "value": "OPX",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a10",
+        "type": "fill",
+        "target": {
+          "selector": "#d-name",
+          "description": "destination name input"
+        },
+        "value": "Aeroporto Operacao",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a11",
+        "type": "fill",
+        "target": {
+          "selector": "#d-city",
+          "description": "destination city input"
+        },
+        "value": "Recife",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a12",
+        "type": "fill",
+        "target": {
+          "selector": "#d-lat",
+          "description": "destination latitude input"
+        },
+        "value": "-8.1",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a13",
+        "type": "fill",
+        "target": {
+          "selector": "#d-lng",
+          "description": "destination longitude input"
+        },
+        "value": "-34.9",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a14",
+        "type": "click",
+        "target": {
+          "selector": "[role='dialog'] button:has-text('Salvar')",
+          "description": "Salvar submit button inside destination form dialog"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a15",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role='dialog']",
+          "description": "destination form dialog expected to close"
+        },
+        "expect": {
+          "not_visible": "[role='dialog']"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a16",
+        "type": "click",
+        "target": {
+          "selector": "a[href='/manager/faq']",
+          "description": "FAQ sidebar navigation link"
+        },
+        "expect": {
+          "url": "**/manager/faq"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a17",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "FAQ page description text"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Fonte da verdade da FAQ em camadas"
+          }
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a18",
+        "type": "click",
+        "target": {
+          "selector": "a[href='/manager/tarifas']",
+          "description": "Tarifas sidebar navigation link"
+        },
+        "expect": {
+          "url": "**/manager/tarifas"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a19",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Tarifas page text mentioning janela de cancelamento"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "janela de cancelamento"
+          }
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a20",
+        "type": "click",
+        "target": {
+          "selector": "a[href='/manager/settings']",
+          "description": "Configurações sidebar navigation link"
+        },
+        "expect": {
+          "url": "**/manager/settings"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a21",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Configurações page global platform settings text"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Ajustes globais da plataforma"
+          },
+          "selector": "body"
+        },
+        "timeout_ms": 10000
+      }
+    ],
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Visão da rede\". Passo 2: clique no item \"Empresas\" do menu lateral. Passo 3: verifique que a pagina exibe o texto \"Empresas parceiras da plataforma\". Passo 4: clique no item \"Parceiros\" do menu lateral. Passo 5: verifique que a pagina exibe o texto \"Nenhuma solicitação\". Passo 6: clique no item \"Destinos\" do menu lateral. Passo 7: clique em \"Novo destino\". Passo 8: verifique que o formulario exibe o texto \"Latitude\". Passo 9: preencha o input de id \"d-code\" com \"OPX\". Passo 10: preencha o input de id \"d-name\" com \"Aeroporto Operacao\". Passo 11: preencha o input de id \"d-city\" com \"Recife\". Passo 12: preencha o input de id \"d-lat\" com \"-8.1\". Passo 13: preencha o input de id \"d-lng\" com \"-34.9\". Passo 14: clique em \"Salvar\". Passo 15: verifique que o formulario fechou. Passo 16: clique no item \"FAQ\" do menu lateral. Passo 17: verifique que a pagina exibe o texto \"Fonte da verdade da FAQ em camadas\". Passo 18: clique no item \"Tarifas\" do menu lateral. Passo 19: verifique que a pagina exibe o texto \"janela de cancelamento\". Passo 20: clique no item \"Configurações\" do menu lateral. Passo 21: verifique que a pagina exibe o texto \"Ajustes globais da plataforma\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-04T13:37:52.269Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-04T13:37:56.090Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

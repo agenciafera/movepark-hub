@@ -1,0 +1,70 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "erro-conta-enderecos",
+    "start_url": "/account/addresses",
+    "start_sig": "sig:91839fc8aa0ef775",
+    "scenario_sig": "d36f082ed2ee2c37"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "erro-conta-enderecos",
+    "start_url": "http://localhost:5273/account/addresses",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h2",
+          "description": "Main heading indicating page has loaded"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h2",
+          "description": "Heading 'Endereços salvos' visible in main content"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h2",
+            "text": "Endereços salvos"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "Main content area"
+        },
+        "expect": {
+          "not_visible": "main *[data-sonda='SONDA_QUE_NAO_EXISTE']",
+          "text_contains": {
+            "selector": "main h2",
+            "text": "Endereços salvos"
+          },
+          "selector": "main"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: aguarde a pagina carregar. Passo 2: verifique que a pagina exibe o texto \"Endereços salvos\". Passo 3: verifique que a pagina NAO exibe o texto \"SONDA_QUE_NAO_EXISTE\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-04T00:03:27.037Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-04T00:03:28.371Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

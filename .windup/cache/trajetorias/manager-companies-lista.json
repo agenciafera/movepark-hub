@@ -1,0 +1,75 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "manager-companies-lista",
+    "start_url": "/manager/companies",
+    "start_sig": "sig:f229d562bc655a9f",
+    "scenario_sig": "6ec24ae863f86aa9"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "manager-companies-lista",
+    "start_url": "http://localhost:5273/manager/companies",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "Page heading Empresas"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "h1",
+            "text": "Empresas"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main p",
+          "description": "Description paragraph below the heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main p",
+            "text": "Empresas parceiras da plataforma."
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "Main content area containing the companies listing"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Estacionamento Alfa"
+          },
+          "selector": "main"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Empresas\", depois a descricao \"Empresas parceiras da plataforma.\", depois o dado da linha \"Estacionamento Alfa\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-01T16:18:52.777Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-01T16:18:55.113Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

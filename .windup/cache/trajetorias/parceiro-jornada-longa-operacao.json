@@ -1,0 +1,257 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "parceiro-jornada-longa-operacao",
+    "start_url": "/operator/coupons",
+    "start_sig": "sig:0de7196068dc995b",
+    "scenario_sig": "2e16d4920ab705ef"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "parceiro-jornada-longa-operacao",
+    "start_url": "http://localhost:5273/operator/coupons",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "page body containing Cupons text"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Cupons"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "click",
+        "target": {
+          "selector": "[role=\"tabpanel\"] button:first-of-type",
+          "description": "Novo cupom button in coupon tab panel"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role=\"dialog\"]",
+          "description": "new coupon dialog"
+        },
+        "expect": {
+          "selector": "[role=\"dialog\"]"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "fill",
+        "target": {
+          "selector": "#c-code",
+          "description": "coupon code input field"
+        },
+        "value": "JORNADA20",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a5",
+        "type": "wait_for",
+        "target": {
+          "selector": "#c-code",
+          "description": "coupon code input field with value JORNADA20"
+        },
+        "expect": {
+          "selector_value": {
+            "selector": "#c-code",
+            "value": "JORNADA20"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a6",
+        "type": "click",
+        "target": {
+          "selector": "[role=\"dialog\"] button:has-text(\"Fechar\")",
+          "description": "Fechar button inside coupon dialog"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a7",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role=\"dialog\"]",
+          "description": "dialog that should close after clicking Fechar"
+        },
+        "expect": {
+          "not_visible": "[role=\"dialog\"]"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a8",
+        "type": "goto",
+        "url": "http://localhost:5273/operator/addons",
+        "expect": {
+          "url": "**/operator/addons"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a9",
+        "type": "click",
+        "target": {
+          "selector": "button:has-text(\"Novo\")",
+          "description": "button to open new addon service form"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a10",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role=\"dialog\"]",
+          "description": "addon service dialog containing adicional text"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "[role=\"dialog\"]",
+            "text": "adicional"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a11",
+        "type": "click",
+        "target": {
+          "selector": "[role=\"dialog\"] button:has-text(\"Fechar\")",
+          "description": "Fechar button inside addon dialog"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a12",
+        "type": "goto",
+        "url": "http://localhost:5273/operator/users",
+        "expect": {
+          "url": "**/operator/users"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a13",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "page body containing usuarios da empresa text"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "rios da empresa"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a14",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "page body containing Convidar usu text"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Convidar usu"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a15",
+        "type": "goto",
+        "url": "http://localhost:5273/operator/locations/00000000-0000-4000-8000-0000000000a1/parking-types",
+        "expect": {
+          "url": "**/parking-types"
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a16",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "page body containing Unidade QA text"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Unidade QA"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a17",
+        "type": "wait_for",
+        "target": {
+          "selector": "#cap-lpt-1",
+          "description": "capacity input for parking type lpt-1 with initial value 50"
+        },
+        "expect": {
+          "selector_value": {
+            "selector": "#cap-lpt-1",
+            "value": "50"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a18",
+        "type": "fill",
+        "target": {
+          "selector": "#cap-lpt-1",
+          "description": "capacity input for parking type lpt-1"
+        },
+        "value": "64",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a19",
+        "type": "wait_for",
+        "target": {
+          "selector": "#cap-lpt-1",
+          "description": "capacity input for parking type lpt-1 with updated value 64"
+        },
+        "expect": {
+          "selector_value": {
+            "selector": "#cap-lpt-1",
+            "value": "64"
+          },
+          "selector": "#cap-lpt-1"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Cupons\". Passo 2: clique no botao que abre o formulario de novo cupom. Passo 3: verifique que existe o seletor [role=\"dialog\"]. Passo 4: preencha o campo de codigo do cupom com \"JORNADA20\". Passo 5: verifique que o campo de codigo tem o valor \"JORNADA20\". Passo 6: clique no botao de fechar do dialogo, que tem o texto \"Fechar\". Passo 7: verifique que o seletor [role=\"dialog\"] nao esta mais visivel. Passo 8: navegue para o endereco /operator/addons. Passo 9: clique no botao que abre o formulario de novo servico adicional. Passo 10: verifique que o dialogo exibe o texto \"adicional\". Passo 11: clique no botao de fechar do dialogo, que tem o texto \"Fechar\". Passo 12: navegue para o endereco /operator/users. Passo 13: verifique que a pagina exibe o texto \"Usuarios da empresa\" (procure por \"rios da empresa\"). Passo 14: verifique que a pagina exibe o texto \"Convidar usu\". Passo 15: navegue para o endereco /operator/locations/00000000-0000-4000-8000-0000000000a1/parking-types. Passo 16: verifique que a pagina exibe o texto \"Unidade QA\". Passo 17: verifique que o campo #cap-lpt-1 tem o valor \"50\". Passo 18: preencha o campo #cap-lpt-1 com o valor 64. Passo 19: verifique que o campo #cap-lpt-1 tem o valor \"64\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-04T18:04:01.464Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-04T18:04:06.792Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

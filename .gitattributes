@@ -1,0 +1,7 @@
+# Cache de planos do Windup: versionado (é o que faz o replay custar $0 sem LLM,
+# e o CI clona do zero), mas com os contadores de replay zerados antes de o git
+# ver o arquivo. Sem isto, cada rodada suja ~161 arquivos no `git status`.
+#
+# O filtro é registrado por `scripts/setup-git-filters.mjs`, no `bun install`.
+# Sem o registro, o git ignora esta linha e volta o ruído. Nada quebra.
+.windup/cache/trajetorias/*.json filter=windup-cache

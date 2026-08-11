@@ -1,0 +1,74 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "manager-settings",
+    "start_url": "/manager/settings",
+    "start_sig": "sig:deb61410f48cc824",
+    "scenario_sig": "dcfb01c5655eab5c"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "manager-settings",
+    "start_url": "http://localhost:5273/manager/settings",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h1",
+          "description": "Heading 'Configurações' na página principal"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h1",
+            "text": "Configurações"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main p",
+          "description": "Parágrafo 'Ajustes globais da plataforma'"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main p",
+            "text": "Ajustes globais da plataforma"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "click",
+        "target": {
+          "selector": "[id=\"radix-:r6:-trigger-partners\"]",
+          "description": "Aba 'Parceiros' no painel de configurações"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "E-mails de parceiros"
+          }
+        },
+        "timeout_ms": 10000
+      }
+    ],
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Configurações\". Passo 2: verifique que a pagina exibe o texto \"Ajustes globais da plataforma\". Passo 3: verifique que a pagina exibe o texto \"E-mails de parceiros\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-01T16:31:35.224Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-01T16:31:37.632Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

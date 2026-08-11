@@ -1,0 +1,75 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "manager-destinations-lista",
+    "start_url": "/manager/destinations",
+    "start_sig": "sig:0220ddecfb1188ce",
+    "scenario_sig": "1e85bfcb4b0e9b30"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "manager-destinations-lista",
+    "start_url": "http://localhost:5273/manager/destinations",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h1",
+          "description": "Page heading 'Destinos'"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h1",
+            "text": "Destinos"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main p",
+          "description": "Description paragraph below the heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main p",
+            "text": "Aeroportos e destinos com página própria (SEO). Control"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "table tbody tr",
+          "description": "First data row of the destinations table"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "table tbody tr",
+            "text": "Aeroporto QA"
+          },
+          "selector": "table tbody tr"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Destinos\", depois a descricao \"Aeroportos e destinos com página própria (SEO). Control\", depois o dado da linha \"Aeroporto QA\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-01T16:19:09.941Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-01T16:19:11.296Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

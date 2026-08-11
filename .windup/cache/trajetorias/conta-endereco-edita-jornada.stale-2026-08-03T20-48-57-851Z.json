@@ -1,0 +1,109 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "conta-endereco-edita-jornada",
+    "start_url": "/account/addresses",
+    "start_sig": "sig:c59d8801fff3d40d",
+    "scenario_sig": "12a2605756c25562"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "conta-endereco-edita-jornada",
+    "start_url": "http://localhost:5273/account/addresses",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "Main content area with address list"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Rua Existente"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "click",
+        "target": {
+          "selector": "button[aria-label=\"Mais opções\"]",
+          "description": "More options button on the address row"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "click",
+        "target": {
+          "selector": "[role=\"menuitem\"]:has-text(\"Editar\")",
+          "description": "Edit menu item in the dropdown"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role=\"dialog\"]",
+          "description": "Edit address form dialog"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "[role=\"dialog\"]",
+            "text": "Logradouro"
+          }
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a5",
+        "type": "fill",
+        "target": {
+          "selector": "#street",
+          "description": "Street/Logradouro input field"
+        },
+        "value": "Rua Editada",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a6",
+        "type": "click",
+        "target": {
+          "selector": "[role=\"dialog\"] button:has-text(\"Salvar\")",
+          "description": "Save button in the edit address dialog"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a7",
+        "type": "wait_for",
+        "target": {
+          "selector": "[role=\"dialog\"]",
+          "description": "Edit address form dialog that should have closed"
+        },
+        "expect": {
+          "not_visible": "[role=\"dialog\"]",
+          "selector": "[role=\"dialog\"]"
+        },
+        "timeout_ms": 10000
+      }
+    ],
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Rua Existente\". Passo 2: clique no botao de rotulo \"Mais opcoes\" da linha do endereco. Passo 3: clique no item \"Editar\" do menu. Passo 4: verifique que o formulario exibe o texto \"Logradouro\". Passo 5: apague o input de id \"street\" e preencha com \"Rua Editada\". Passo 6: clique em \"Salvar\". Passo 7: verifique que o formulario fechou.",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-03T18:37:48.750Z"
+    }
+  },
+  "status": "stale",
+  "stats": {
+    "created_at": "2026-08-03T18:37:50.641Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

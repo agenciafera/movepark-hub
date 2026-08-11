@@ -1,11 +1,16 @@
 # Ephemeral / sensitive — do NOT commit.
 #
-# `cache/` era commitado para o replay sair a $0 sem LLM. Saiu do git em
-# 10/08/2026 a pedido do Kallef: o replay reescreve `last_replayed_at` e
-# `replay_count` em ~161 arquivos a cada rodada, e esse ruido entrava em todo
-# `git status` e era varrido para dentro de commits sem querer. O plano em si
-# continua em disco, entao o replay local segue sem LLM; quem clonar do zero
-# planeja uma vez. O site map (map/) CONTINUA commitado.
+# `cache/` saiu do git em 10/08/2026, porque o replay reescreve
+# `last_replayed_at` e `replay_count` em ~161 arquivos a cada rodada e esse
+# ruido entrava em todo `git status`. Voltou em 11/08/2026, porque sem ele o CI
+# clona do zero, todo cenario da cache miss e o job fica vermelho.
+#
+# O ruido agora e resolvido por filtro de git (`.gitattributes` +
+# `scripts/windup-cache-clean.mjs`), que zera os contadores antes de o git ver o
+# arquivo. Esta regra segue valendo para arquivo NOVO de cache: o que importa
+# versionar ja esta rastreado, e rastreado vence gitignore.
+#
+# O site map (map/) CONTINUA commitado.
 state/
 runs/
 reports/

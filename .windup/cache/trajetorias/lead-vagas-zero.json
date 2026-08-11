@@ -1,0 +1,112 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "lead-vagas-zero",
+    "start_url": "/seja-parceiro",
+    "start_sig": "sig:b805d148d91ff81c",
+    "scenario_sig": "fbef181e474f704c"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "lead-vagas-zero",
+    "start_url": "http://localhost:5273/seja-parceiro",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "click",
+        "target": {
+          "selector": "main button:has-text(\"Quero ser parceiro\")",
+          "description": "Quero ser parceiro button in main content area"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "fill",
+        "target": {
+          "selector": "#pl-name",
+          "description": "Name input field in partner registration modal"
+        },
+        "value": "QA",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "fill",
+        "target": {
+          "selector": "#pl-email",
+          "description": "Email input field in partner registration modal"
+        },
+        "value": "qa@windup.local",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "fill",
+        "target": {
+          "selector": "#pl-phone",
+          "description": "Phone input field in partner registration modal"
+        },
+        "value": "11999990000",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a5",
+        "type": "click",
+        "target": {
+          "selector": "[role=\"dialog\"] button:has-text(\"Continuar\")",
+          "description": "Continuar button inside the partner registration dialog"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a6",
+        "type": "fill",
+        "target": {
+          "selector": "#pl-company",
+          "description": "Company name input field in partner registration modal"
+        },
+        "value": "Estacionamento QA",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a7",
+        "type": "fill",
+        "target": {
+          "selector": "#pl-spots",
+          "description": "Number of parking spots input field in partner registration modal"
+        },
+        "value": "0",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a8",
+        "type": "click",
+        "target": {
+          "selector": "[role=\"dialog\"] button:has-text(\"Quero ser parceiro\")",
+          "description": "Quero ser parceiro submit button inside the partner registration dialog"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "[role=\"dialog\"]",
+            "text": "Informe o número de vagas."
+          }
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: clique em \"Quero ser parceiro\". Passo 2: preencha \"pl-name\" com \"QA\", \"pl-email\" com \"qa@windup.local\" e \"pl-phone\" com \"11999990000\", e clique em \"Continuar\". Passo 3: preencha o input de id \"pl-company\" com \"Estacionamento QA\". Passo 4: preencha o input de id \"pl-spots\" com \"0\". Passo 5: clique no botao \"Quero ser parceiro\" dentro do modal e verifique que ele exibe o texto \"Informe o número de vagas.\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-04T00:06:39.541Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-04T00:06:41.506Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

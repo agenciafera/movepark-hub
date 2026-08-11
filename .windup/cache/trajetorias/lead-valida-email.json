@@ -1,0 +1,73 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "lead-valida-email",
+    "start_url": "/seja-parceiro",
+    "start_sig": "sig:b805d148d91ff81c",
+    "scenario_sig": "35894a51597d17e2"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "lead-valida-email",
+    "start_url": "http://localhost:5180/seja-parceiro",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "click",
+        "target": {
+          "selector": "main button:has-text('Quero ser parceiro')",
+          "description": "First 'Quero ser parceiro' button in main content to open the lead form dialog"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "fill",
+        "target": {
+          "selector": "#pl-name",
+          "description": "Name input field inside the dialog"
+        },
+        "value": "QA Teste",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "fill",
+        "target": {
+          "selector": "#pl-email",
+          "description": "Email input field inside the dialog"
+        },
+        "value": "email-invalido",
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "click",
+        "target": {
+          "selector": "[role=\"dialog\"] button:has-text('Continuar')",
+          "description": "Continuar button inside the dialog to submit step 1"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "[role=\"dialog\"]",
+            "text": "Informe um e-mail válido."
+          }
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Clique em 'Quero ser parceiro', preencha o input 'pl-name' com 'QA Teste', preencha o input 'pl-email' com 'email-invalido' e clique em 'Continuar'. Verifique que a página exibe o texto 'Informe um e-mail válido.'.",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-07-31T16:57:47.071Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-07-31T16:57:52.243Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

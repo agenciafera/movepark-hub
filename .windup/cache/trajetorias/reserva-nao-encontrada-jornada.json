@@ -1,0 +1,83 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "reserva-nao-encontrada-jornada",
+    "start_url": "/bookings/NAOEXISTE",
+    "start_sig": "sig:2644ef779c146a8c",
+    "scenario_sig": "a23ba880dd72cea2"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "reserva-nao-encontrada-jornada",
+    "start_url": "http://localhost:5273/bookings/NAOEXISTE",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h3",
+          "description": "Título 'Reserva não encontrada' na área principal"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "não encontrada"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "a[href='/bookings']",
+          "description": "Link 'Minhas reservas' na área principal"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Minhas reservas"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Corpo da página sem dados de outra reserva"
+        },
+        "expect": {
+          "not_visible": "text=MP7K2X"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "click",
+        "target": {
+          "selector": "a[href='/bookings']",
+          "description": "Link 'Minhas reservas' que navega para /bookings"
+        },
+        "expect": {
+          "url": "**/bookings"
+        },
+        "timeout_ms": 10000
+      }
+    ],
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Reserva nao encontrada\" (procure por \"nao encontrada\"). Passo 2: verifique que a pagina exibe o texto \"Minhas reservas\". Passo 3: verifique que a pagina NAO exibe o texto \"MP7K2X\", ou seja, nenhum dado de outra reserva vazou. Passo 4: clique no link \"Minhas reservas\". Passo 5: verifique que a url termina em \"/bookings\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-04T15:32:51.968Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-04T15:32:53.278Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}
