@@ -136,6 +136,29 @@ Login por OTP (WhatsApp/e-mail) e handoff de checkout em
 [agent-booking.md](./customer/agent-booking.md). `assert_verified_identity` (chamador confiável, sem
 OTP) fica para a integração do bot.
 
+#### Quem é o dono é resolvido, e o handler filtra por ele
+
+As tools transacionais **não** confiam só na RLS. `callCustomerTxn` resolve o usuário uma vez com
+`auth.getUser()` e acrescenta `.eq("profile_id", <dono>)` em toda consulta a `booking`.
+
+Duas razões, e as duas foram medidas:
+
+1. **O gate anterior era presença, não validação.** Era `authHeader.startsWith("Bearer ")`, que
+   aceita `"Bearer null"`, JWT expirado e qualquer string. `getUser()` fecha isso, e de quebra
+   devolve o `profile_id` que faltava.
+2. **A policy `booking_select` é larga de propósito.** Ela é `TO public` e permite
+   `is_hub_admin() OR profile_id = auth.uid() OR location_id IN (unidades da empresa)`, porque o
+   painel do operador depende disso. Fora de uma tela, isso significava que o JWT de **qualquer
+   membro** de uma empresa parceira, **sem escopo nenhum**, lia CPF e telefone de reserva de
+   terceiro passando o código, e `list_my_bookings` devolvia a agenda inteira da empresa. Medido no
+   banco vivo em 11/08/2026, com um membro de papel `finance`: a consulta antiga trazia a reserva
+   alheia com CPF e telefone, e trazia 3 reservas, nenhuma dele.
+
+A policy fica como está. Quem estreita é o handler, e
+[`supabase/tests/booking_pii_scope.test.sql`](../../supabase/tests/booking_pii_scope.test.sql) trava
+os dois lados: se alguém estreitar a policy, o teste avisa antes de o painel quebrar; se alguém tirar
+o filtro do handler, o teste mostra o que volta a vazar.
+
 > Escopos = catálogo `api_scope` (ver [public-api.md](./public-api.md) §7). Tool parceiro nova ⇒ escopo
 > existente (ou novo no catálogo) + entrada em `tools.ts` + `partner-card.json`.
 

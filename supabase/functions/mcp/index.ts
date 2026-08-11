@@ -368,6 +368,29 @@ async function callCustomerTxn(
   a: Record<string, unknown>,
 ): Promise<unknown> {
   const sb = userClient(authHeader);
+  /*
+    Quem é o dono, resolvido de verdade.
+
+    Antes daqui o único gate era `authHeader.startsWith("Bearer ")`, que é
+    presença, não validação: JWT expirado passava, e a chave `service_role` no
+    header do sujeito passava com a RLS desligada. `getUser()` resolve os dois de
+    uma vez, e ainda devolve o `profile_id` que falta abaixo.
+
+    Por que o filtro por dono, se a RLS existe: a policy `booking_select` é
+    `TO public` e permite `is_hub_admin() OR profile_id = auth.uid() OR
+    location_id IN (unidades da empresa)`. Ela foi escrita para o painel do
+    operador, onde a tela limita o que se pede. Aqui não há tela: o JWT de
+    qualquer membro de uma empresa parceira, sem escopo nenhum, lia CPF, telefone
+    e e-mail de qualquer reserva daquela empresa passando o código, e reescrevia
+    esses campos. Quem estreita é o handler; a policy fica como está, porque o
+    painel depende dela. Ver docs/specs/mcp.md.
+  */
+  const { data: sessao, error: erroSessao } = await sb.auth.getUser();
+  if (erroSessao || !sessao?.user) {
+    throw new Error("Faça login primeiro (request_login_otp e verify_login_otp).");
+  }
+  const dono = sessao.user.id;
+
   const unwrap = <T>(r: { data: T; error: { message: string } | null }): T => {
     if (r.error) throw new Error(r.error.message);
     return r.data;
@@ -421,24 +444,28 @@ async function callCustomerTxn(
       if (a.last_name !== undefined) patch.customer_last_name = a.last_name;
       if (Object.keys(patch).length === 0) return { updated: false };
       const rows = unwrap(
-        await sb.from("booking").update(patch).eq("code", a.booking_code as string).select("code").maybeSingle(),
+        await sb
+          .from("booking")
+          .update(patch)
+          .eq("code", a.booking_code as string)
+          .eq("profile_id", dono)
+          .select("code")
+          .maybeSingle(),
       ) as { code?: string } | null;
       if (!rows?.code) throw new Error("Reserva não encontrada.");
       return { updated: true, booking_code: rows.code };
     }
 
     case "add_vehicle": {
-      const { data: u } = await sb.auth.getUser();
-      if (!u?.user) throw new Error("Sessão inválida.");
       // is_default único por perfil: zera os outros antes, se for marcar como padrão.
       if (a.set_default) {
-        await sb.from("vehicle").update({ is_default: false }).eq("profile_id", u.user.id);
+        await sb.from("vehicle").update({ is_default: false }).eq("profile_id", dono);
       }
       const veh = unwrap(
         await sb
           .from("vehicle")
           .insert({
-            profile_id: u.user.id,
+            profile_id: dono,
             license_plate: a.license_plate,
             model: a.model ?? null,
             color: a.color ?? null,
@@ -456,6 +483,7 @@ async function callCustomerTxn(
           .from("booking")
           .update({ vehicle_id: a.vehicle_id })
           .eq("code", a.booking_code as string)
+          .eq("profile_id", dono)
           .select("code, vehicle_id")
           .maybeSingle(),
       ) as { code?: string } | null;
@@ -468,6 +496,7 @@ async function callCustomerTxn(
         await sb
           .from("booking")
           .select("code, status, check_in_at, check_out_at, total_amount, currency")
+          .eq("profile_id", dono)
           .is("deleted_at", null)
           .order("check_in_at", { ascending: false })
           .limit(Number(a.limit ?? 10)),
@@ -481,6 +510,7 @@ async function callCustomerTxn(
             "code, status, check_in_at, check_out_at, total_amount, currency, expires_at, customer_tax_id, customer_phone, customer_email, vehicle_id, location:location_id(name, slug)",
           )
           .eq("code", a.booking_code as string)
+          .eq("profile_id", dono)
           .maybeSingle(),
       );
 
@@ -490,6 +520,7 @@ async function callCustomerTxn(
           .from("booking")
           .select("code, status, expires_at, payment:payment(status, method, created_at)")
           .eq("code", a.booking_code as string)
+          .eq("profile_id", dono)
           .maybeSingle(),
       ) as
         | { code?: string; status?: string; expires_at?: string; payment?: Array<{ status?: string; method?: string }> }
