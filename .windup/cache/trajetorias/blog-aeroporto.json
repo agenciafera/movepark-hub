@@ -1,0 +1,60 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "blog-aeroporto",
+    "start_url": "/blog/aeroporto/aeroporto-qa/",
+    "start_sig": "sig:42bd6642a8c0077e",
+    "scenario_sig": "f7a96ca5a6de8e44"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "blog-aeroporto",
+    "start_url": "http://localhost:5273/blog/aeroporto/aeroporto-qa/",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "main content area containing the Aeroporto category label"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Aeroporto"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "article h2",
+          "description": "post title heading inside article"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "article h2",
+            "text": "Top 3 estacionamentos do Aeroporto QA"
+          },
+          "selector": "article h2"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Verifique, em duas checagens separadas, que a pagina exibe o rotulo \"Aeroporto\" e depois o titulo do post \"Top 3 estacionamentos do Aeroporto QA\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-11T21:59:53.186Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-11T21:59:54.740Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

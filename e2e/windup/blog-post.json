@@ -1,7 +1,7 @@
 {
   "scenario_id": "blog-post",
   "start_url": "/blog/top-3-estacionamentos-do-aeroporto-qa/",
-  "task": "Passo 1: verifique que a pagina exibe o texto \"Top 3 estacionamentos do Aeroporto QA\". Passo 2: verifique que a pagina exibe o texto \"O primeiro criterio e a distancia ate o terminal\". Passo 3: verifique que a pagina exibe o texto \"Vai viajar por Aeroporto QA\".",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Top 3 estacionamentos do Aeroporto QA\". Passo 2: verifique que o corpo do post, abaixo do subtitulo \"Como escolher\", exibe o texto \"O primeiro criterio e a distancia ate o terminal\". Passo 3: verifique que a pagina exibe o texto \"Vai viajar por Aeroporto QA\".",
   "tags": [
     "smoke",
     "leitura",
@@ -10,6 +10,7 @@
   "hints": [
     "Sao passos numerados: cada um vira uma acao propria do plano.",
     "Passo 2 prova que o corpo em markdown virou paragrafo renderizado.",
+    "O PRIMEIRO paragrafo do artigo e a linha de autor e data. O corpo do post comeca depois do subtitulo 'Como escolher', e e la que o texto do passo 2 esta.",
     "Passo 3 prova o bloco que leva do post para os estacionamentos do destino.",
     "A URL termina com barra de proposito: e a canonica herdada do WordPress."
   ],

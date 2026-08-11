@@ -3,8 +3,8 @@
   "key": {
     "scenario_id": "como-funciona",
     "start_url": "/como-funciona",
-    "start_sig": "sig:e46d8e8203eb1d9d",
-    "scenario_sig": "be74038d9e85132b"
+    "start_sig": "sig:2644ef779c146a8c",
+    "scenario_sig": "10119351fc19dc85"
   },
   "plan": {
     "plan_version": "0.1",
@@ -15,13 +15,13 @@
         "id": "a1",
         "type": "wait_for",
         "target": {
-          "selector": "h1",
-          "description": "Heading level 1 with the main page title"
+          "selector": "main h1",
+          "description": "Heading 'Reserve sua vaga em menos de 2 minutos.'"
         },
         "expect": {
           "text_contains": {
-            "selector": "h1",
-            "text": "Reserve sua vaga em menos de 2 minutos"
+            "selector": "main h1",
+            "text": "Reserve sua vaga em menos de 2 minutos."
           }
         },
         "timeout_ms": 5000
@@ -31,12 +31,12 @@
         "type": "wait_for",
         "target": {
           "selector": "main h2",
-          "description": "Section heading 'Antes da viagem'"
+          "description": "Heading 'Passo a passo'"
         },
         "expect": {
           "text_contains": {
             "selector": "main",
-            "text": "Antes da viagem"
+            "text": "Passo a passo"
           }
         },
         "timeout_ms": 5000
@@ -46,30 +46,30 @@
         "type": "wait_for",
         "target": {
           "selector": "main",
-          "description": "Main content area containing the 'Por que reservar pela Movepark' section heading"
+          "description": "Section heading 'Por que usar a Movepark?'"
         },
         "expect": {
           "text_contains": {
             "selector": "main",
-            "text": "Por que reservar pela Movepark"
+            "text": "Por que usar a Movepark?"
           },
           "selector": "main"
         },
         "timeout_ms": 5000
       }
     ],
-    "task": "Passo 1: verifique que a pagina exibe o texto \"Reserve sua vaga em menos de 2 minutos\". Passo 2: verifique que a pagina exibe o texto \"Antes da viagem\". Passo 3: verifique que a pagina exibe o texto \"Por que reservar pela Movepark\".",
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Reserve sua vaga em menos de 2 minutos.\". Passo 2: verifique que a pagina exibe o texto \"Passo a passo\". Passo 3: verifique que a pagina exibe o texto \"Por que usar a Movepark?\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-08-11T22:45:16.039Z"
+      "at": "2026-08-01T16:43:35.030Z"
     }
   },
-  "status": "active",
+  "status": "stale",
   "stats": {
-    "created_at": "2026-08-11T22:45:16.523Z",
+    "created_at": "2026-08-01T16:43:36.033Z",
     "last_replayed_at": null,
     "replay_count": 0,
     "replay_failures": 0,
-    "plan_generation": 2
+    "plan_generation": 1
   }
 }

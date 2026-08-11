@@ -1,0 +1,75 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "blog-post",
+    "start_url": "/blog/top-3-estacionamentos-do-aeroporto-qa/",
+    "start_sig": "sig:eb1cb13a1fa9ce8c",
+    "scenario_sig": "3254175fd928aecc"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "blog-post",
+    "start_url": "http://localhost:5273/blog/top-3-estacionamentos-do-aeroporto-qa/",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "article h1",
+          "description": "Post main title heading level 1"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "article h1",
+            "text": "Top 3 estacionamentos do Aeroporto QA"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "article h2 + p",
+          "description": "First paragraph immediately after the 'Como escolher' subtitle"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "article h2 + p",
+            "text": "O primeiro criterio e a distancia ate o terminal"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "aside h2",
+          "description": "Heading in the complementary block inviting the reader to view parking for Aeroporto QA"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "aside h2",
+            "text": "Vai viajar por Aeroporto QA"
+          },
+          "selector": "aside h2"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Top 3 estacionamentos do Aeroporto QA\". Passo 2: verifique que o corpo do post, abaixo do subtitulo \"Como escolher\", exibe o texto \"O primeiro criterio e a distancia ate o terminal\". Passo 3: verifique que a pagina exibe o texto \"Vai viajar por Aeroporto QA\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-11T22:16:48.687Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-11T22:16:50.168Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

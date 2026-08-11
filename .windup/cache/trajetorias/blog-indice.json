@@ -1,0 +1,75 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "blog-indice",
+    "start_url": "/blog",
+    "start_sig": "sig:42bd6642a8c0077e",
+    "scenario_sig": "d2eaca66dabab3e2"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "blog-indice",
+    "start_url": "http://localhost:5273/blog",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h1",
+          "description": "Page heading Blog (level 1)"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h1",
+            "text": "Blog"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main p",
+          "description": "Lead paragraph about airport parking guides"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main p",
+            "text": "Guias de estacionamento nos aeroportos"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "article h2",
+          "description": "Post title heading inside article card"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "article h2",
+            "text": "Top 3 estacionamentos do Aeroporto QA"
+          },
+          "selector": "article h2"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Blog\", depois o texto \"Guias de estacionamento nos aeroportos\", depois o titulo do post \"Top 3 estacionamentos do Aeroporto QA\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-11T22:05:06.849Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-11T22:05:08.603Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "blog-categoria",
+    "start_url": "/blog/categoria/comparativos/",
+    "start_sig": "sig:42bd6642a8c0077e",
+    "scenario_sig": "cb992eb421fe1c64"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "blog-categoria",
+    "start_url": "http://localhost:5273/blog/categoria/comparativos/",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "Main content area containing the label 'Categoria'"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Categoria"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "H1 heading 'Comparativos'"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "h1",
+            "text": "Comparativos"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "article h2",
+          "description": "Article post heading 'Top 3 estacionamentos do Aeroporto QA'"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "article h2",
+            "text": "Top 3 estacionamentos do Aeroporto QA"
+          },
+          "selector": "article h2"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Verifique, em tres checagens separadas, que a pagina exibe o rotulo \"Categoria\", depois o titulo \"Comparativos\", depois o titulo do post \"Top 3 estacionamentos do Aeroporto QA\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-08-11T22:04:17.977Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-11T22:04:19.613Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

@@ -1,13 +1,14 @@
 {
   "scenario_id": "cancelamento-politica",
   "start_url": "/cancelamento",
-  "task": "Verifique que o cabecalho exibe o texto Destinos, que a pagina exibe o texto Prazo por Tarifa, e que o rodape exibe o texto Seja parceiro.",
+  "task": "Verifique que o cabecalho exibe o texto Destinos, que a pagina exibe o texto O prazo depende da sua Tarifa, e que o rodape exibe o texto Seja parceiro.",
   "tags": [
     "smoke",
     "leitura"
   ],
   "hints": [
     "Tres verificacoes independentes: o cabecalho do site, o conteudo proprio da pagina e o rodape.",
-    "O cabecalho e o <header> e o rodape e o <footer>; o conteudo da pagina fica no <main>."
+    "O cabecalho e o <header> e o rodape e o <footer>; o conteudo da pagina fica no <main>.",
+    "O titulo da secao de prazo virou 'O prazo depende da sua Tarifa' em 11/08/2026, quando as paginas de conteudo ganharam casca unica. O cenario acompanha a copy, que e a fonte."
   ]
 }
