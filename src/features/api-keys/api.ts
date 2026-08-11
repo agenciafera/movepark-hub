@@ -16,10 +16,19 @@ export const apiKeysKeys = {
 };
 
 // ── Catálogo de escopos (tabela de referência api_scope) ─────────────────────
+//
+// Filtra o que a tela pode oferecer. Sem isso a lista trazia os 34 escopos do
+// catálogo, incluindo os de plataforma (`blog:write`, `checkout:link`) e os
+// só-internos (`payouts:write`, `team:write`): o parceiro via na tela permissão
+// que não é dele. O servidor recusa em `api_assert_scopes` (migration
+// 20261002000000), e este filtro é a segunda camada, para a tela não prometer o
+// que a RPC vai negar.
 async function fetchScopes(): Promise<ApiScope[]> {
   const { data, error } = await supabase
     .from("api_scope")
     .select("scope, module, description")
+    .eq("assignable_to_api_key", true)
+    .eq("is_platform_scope", false)
     .order("module")
     .order("scope");
   if (error) throw error;

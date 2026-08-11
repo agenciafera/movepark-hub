@@ -104,6 +104,58 @@ A E1.6 fez backfill de `owner` por padrão, então os vínculos existentes segue
 membros explicitamente `operator`/`manager`/`finance` ficam restritos. Reconfira membros não-Dono ao
 ativar.
 
+## Auditoria de isolamento (11/08/2026)
+
+Revisão das três modalidades a pedido do Kallef: Manager, operator e público.
+Achou dois furos, os dois corrigidos e travados por pgTAP
+(`supabase/tests/blog_isolation.test.sql`).
+
+### 1. Parceiro se dava escopo de plataforma
+
+`api_assert_scopes` guardava a criação e a edição de chave de API, mas só recusava
+`assignable_to_api_key = false`. Nunca olhou `is_platform_scope`.
+
+Caminho completo: qualquer membro com `api-keys:write` (o papel Dono tem) chamava
+`operator_create_api_key` pedindo `blog:write` ou `checkout:link`, e a chave saía
+com o escopo. Com ela, o parceiro escrevia e excluía post do blog da Movepark, ou
+gerava link de checkout com a marcação do bot interno. A tela ainda listava esses
+escopos, porque `fetchScopes()` lia `api_scope` sem filtro.
+
+`fares:write` escapou por acidente, não por desenho: tem
+`assignable_to_api_key = false`, então caía na outra checagem.
+
+Corrigido em `20261002000000`: escopo de plataforma só entra em chave se
+`is_hub_admin()`. A Movepark continua emitindo a chave do bot; para membro de
+empresa virou recusa explícita com `42501`. O painel também passou a filtrar, como
+segunda camada.
+
+**Nenhuma chave viva carregava escopo de plataforma**, então o furo não chegou a
+ser explorado.
+
+### 2. Rascunho do blog vazava para o `anon`
+
+`blog_post_select` era `USING (true)`, copiado do molde de `destination` para o
+Manager enxergar rascunho pela mesma policy. Em destino é inofensivo; em post é
+conteúdo que ainda não devia existir para ninguém, e o `anon` lia título, corpo e
+meta consultando o PostgREST direto com a chave pública.
+
+As superfícies de produto não vazavam (API, MCP e SSG filtram na query), mas a
+tabela estava aberta por baixo delas. Corrigido em `20261003000000`: leitura
+pública só do publicado e não excluído, com `is_hub_admin()` como segunda condição.
+
+### O que a auditoria confirmou como correto
+
+| Verificação | Resultado |
+|---|---|
+| MCP `/partner` sem chave | Recusa até o `tools/list` |
+| MCP público | 12 tools, nenhuma de escrita |
+| MCP `/customer` sem sessão | Lista as tools, mas `create_booking` e `cancel_booking` exigem login por OTP |
+| API sem chave | 401; método errado, 405 |
+| API com chave sem o escopo | 403 |
+| `anon` escrevendo em `blog_post` | INSERT recusado pela RLS; UPDATE e DELETE não casam linha, e os 93 posts seguiram intactos |
+| Escopo só-interno (`payouts:write`, `team:write`) em chave | Recusado |
+| Advisors de segurança | Nenhum de nível ERROR, nenhum citando blog |
+
 ## Arquivos
 
 - Migrations: `20260712000000_company_role_add_values.sql`, `20260713000000_permission_scopes.sql`,
