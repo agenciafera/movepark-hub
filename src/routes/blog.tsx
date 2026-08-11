@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CoverImage } from "@/features/blog/CoverImage";
 import {
   useBlogAuthors,
   useBlogCategories,
@@ -23,7 +24,6 @@ import {
 } from "@/features/blog/listing.logic";
 import { breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
 import { formatDate } from "@/lib/format";
-import { imageSrcSet, optimizedImageUrl } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import type { BlogPostListItem } from "@/types/domain";
 
@@ -54,45 +54,11 @@ function PostCard({ post }: { post: BlogPostListItem }) {
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-hairline bg-canvas">
       <Link to={`/blog/${post.slug}/`} className="block">
         {post.cover_image_url && (
-          /*
-            Capa sem corte e sem tarja.
-
-            As capas do WordPress vão de 1:1 a 2,12:1, e boa parte é banner com a
-            manchete gravada dentro da imagem. Recortar para a caixa cortava o
-            texto em 104 das 131 imagens; trocar para `contain` resolveu o corte e
-            deixou 31 delas com tarja chapada, e as 8 quadradas preenchendo 67%
-            da caixa.
-
-            A imagem entra duas vezes: uma desfocada preenchendo o fundo, e a de
-            verdade inteira por cima. O fundo pede as DUAS dimensões (24x16, a
-            mesma proporção da caixa): com só a largura, o render devolve uma tira
-            de 16x1067 e o borrão vira listra. Custa 392 bytes contra 34 KB da
-            imagem principal.
-          */
-          <div className="relative aspect-[3/2] w-full overflow-hidden bg-surface-soft">
-            <img
-              src={optimizedImageUrl(post.cover_image_url, {
-                width: 24,
-                height: 16,
-                quality: 30,
-                resize: "cover",
-              })}
-              alt=""
-              aria-hidden
-              loading="lazy"
-              decoding="async"
-              className="absolute inset-0 h-full w-full scale-110 object-cover blur-lg"
-            />
-            <img
-              src={optimizedImageUrl(post.cover_image_url, { width: 800, resize: "contain" })}
-              srcSet={imageSrcSet(post.cover_image_url, [400, 600, 800])}
-              sizes="(min-width: 1128px) 360px, (min-width: 768px) 50vw, 100vw"
-              alt=""
-              loading="lazy"
-              decoding="async"
-              className="relative h-full w-full object-contain"
-            />
-          </div>
+          <CoverImage
+            src={post.cover_image_url}
+            widths={[400, 600, 800]}
+            sizes="(min-width: 1128px) 360px, (min-width: 768px) 50vw, 100vw"
+          />
         )}
       </Link>
       <div className="flex flex-1 flex-col gap-2 p-5">
@@ -237,15 +203,23 @@ export default function BlogListingPage() {
 
   const doLoader = loaded?.kind === kind && loaded?.slug === slug ? loaded : null;
   const titulo = nomeDoEixo() ?? doLoader?.name ?? (kind === "index" ? "Blog" : (slug ?? "Blog"));
-  const descricaoDoEixo =
-    kind === "categoria"
-      ? (categories.data?.find((c) => c.slug === slug)?.description ?? doLoader?.description ?? null)
-      : null;
-  const lead =
-    descricaoDoEixo ??
-    (kind === "index"
+  /** Categoria e autor têm texto próprio cadastrado; tag e aeroporto não. */
+  const descricaoDoEixo = () => {
+    if (kind === "categoria") {
+      return categories.data?.find((c) => c.slug === slug)?.description ?? doLoader?.description;
+    }
+    if (kind === "autor") return authors.data?.find((a) => a.slug === slug)?.bio;
+    return null;
+  };
+
+  const leadPadrao =
+    kind === "index"
       ? "Guias de estacionamento nos aeroportos onde a Movepark opera: preço, distância do terminal e o que olhar antes de reservar."
-      : `Tudo o que publicamos sobre ${titulo}.`);
+      : kind === "autor"
+        ? `Posts assinados por ${titulo}.`
+        : `Tudo o que publicamos sobre ${titulo}.`;
+
+  const lead = descricaoDoEixo() ?? leadPadrao;
 
   const canonical = `${SITE_URL}${pageHref(page, base)}`;
   // "Blog | Blog Movepark" era o que saía na página 2 do índice.

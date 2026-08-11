@@ -13,12 +13,19 @@ export type MdInline =
   | { type: "text"; value: string }
   | { type: "bold"; value: string }
   | { type: "italic"; value: string }
-  | { type: "link"; href: string; label: string };
+  /** `children`, não texto: o WordPress gerou `[**Nome**](url)` em 28 links. */
+  | { type: "link"; href: string; children: MdInline[] };
+
+/** Item de lista, com no máximo um nível de sublista (é o que o acervo usa). */
+export type MdListItem = {
+  content: MdInline[];
+  sub?: { ordered: boolean; items: MdInline[][] };
+};
 
 export type MdBlock =
   | { type: "heading"; level: 2 | 3 | 4; content: MdInline[] }
   | { type: "paragraph"; content: MdInline[] }
-  | { type: "list"; ordered: boolean; items: MdInline[][] }
+  | { type: "list"; ordered: boolean; items: MdListItem[] }
   | { type: "quote"; content: MdInline[] }
   | { type: "image"; src: string; alt: string };
 
@@ -55,7 +62,9 @@ export function parseInline(input: string): MdInline[] {
     if (m[1] !== undefined) {
       if (m[1]) out.push({ type: "text", value: m[1] });
     } else if (m[3] !== undefined) {
-      out.push({ type: "link", href: m[4], label: m[3] });
+      // O rótulo é markdown também. Sem esta recursão, `[**Nome**](url)` mostrava
+      // os asteriscos na tela: eram 28 links em 17 posts do acervo migrado.
+      out.push({ type: "link", href: m[4], children: parseInline(m[3]) });
     } else if (m[5] !== undefined) {
       out.push({ type: "bold", value: m[5] });
     } else if (m[6] !== undefined) {
@@ -78,9 +87,19 @@ export function parseMarkdown(md: string): MdBlock[] {
   const blocks: MdBlock[] = [];
   const lines = (md ?? "").replace(/\r\n/g, "\n").split("\n");
 
+  type ItemEmMontagem = { text: string; sub?: { ordered: boolean; items: string[] } };
   let paragraph: string[] = [];
-  let list: { ordered: boolean; items: string[] } | null = null;
+  let list: { ordered: boolean; items: ItemEmMontagem[] } | null = null;
   let quote: string[] = [];
+  /*
+    Linha em branco não fecha a lista na hora.
+
+    O WordPress separa os itens com uma linha de espaços e coloca o corpo do item
+    indentado embaixo. Fechando na hora, a numeração reiniciava do 1 no item
+    seguinte, o que aconteceu em 5 posts. Aqui a branco fica pendente e só fecha
+    a lista se o que vier depois não pertencer a ela.
+  */
+  let brancoPendente = false;
 
   const flushParagraph = () => {
     const text = paragraph.join(" ").trim();
@@ -92,10 +111,16 @@ export function parseMarkdown(md: string): MdBlock[] {
       blocks.push({
         type: "list",
         ordered: list.ordered,
-        items: list.items.map((i) => parseInline(i)),
+        items: list.items.map((i) => ({
+          content: parseInline(i.text),
+          ...(i.sub?.items.length
+            ? { sub: { ordered: i.sub.ordered, items: i.sub.items.map((s) => parseInline(s)) } }
+            : {}),
+        })),
       });
     }
     list = null;
+    brancoPendente = false;
   };
   const flushQuote = () => {
     const text = quote.join(" ").trim();
@@ -110,11 +135,36 @@ export function parseMarkdown(md: string): MdBlock[] {
 
   for (const raw of lines) {
     const line = raw.trim();
+    const indentado = /^\s{2,}\S/.test(raw);
 
     if (!line) {
-      flushAll();
+      // Dentro de lista a branco fica pendente; fora dela fecha tudo, como antes.
+      if (list) brancoPendente = true;
+      else flushAll();
       continue;
     }
+
+    /*
+      Linha indentada com lista aberta pertence ao item corrente: ou é sublista,
+      ou é continuação do texto dele. Antes tudo virava parágrafo solto, o que
+      picotava a lista e achatava a sublista em 16 posts.
+    */
+    if (list && indentado) {
+      const item = list.items[list.items.length - 1];
+      const marcador = line.match(UNORDERED) ?? line.match(ORDERED);
+      if (item && marcador) {
+        const ordenada = ORDERED.test(line);
+        item.sub ??= { ordered: ordenada, items: [] };
+        item.sub.items.push(semPrefixoDeTitulo(marcador[1]));
+      } else if (item) {
+        item.text = `${item.text} ${semPrefixoDeTitulo(line)}`.trim();
+      }
+      brancoPendente = false;
+      continue;
+    }
+
+    // O que veio depois da branco não é da lista: fecha antes de seguir.
+    if (brancoPendente && !UNORDERED.test(line) && !ORDERED.test(line)) flushList();
 
     const image = line.match(IMAGE_ONLY);
     if (image) {
@@ -147,7 +197,8 @@ export function parseMarkdown(md: string): MdBlock[] {
         flushList();
         list = { ordered: true, items: [] };
       }
-      list.items.push(ordered[1]);
+      list.items.push({ text: semPrefixoDeTitulo(ordered[1]) });
+      brancoPendente = false;
       continue;
     }
 
@@ -159,7 +210,8 @@ export function parseMarkdown(md: string): MdBlock[] {
         flushList();
         list = { ordered: false, items: [] };
       }
-      list.items.push(unordered[1]);
+      list.items.push({ text: semPrefixoDeTitulo(unordered[1]) });
+      brancoPendente = false;
       continue;
     }
 
@@ -172,12 +224,28 @@ export function parseMarkdown(md: string): MdBlock[] {
   return blocks;
 }
 
+/**
+ * Tira o `###` que o WordPress deixou dentro de item de lista.
+ *
+ * Eram 12 itens em 3 posts mostrando o marcador na tela. O texto vira o próprio
+ * item, que a lista já destaca; abrir um heading dentro de `<li>` bagunçaria a
+ * hierarquia do documento.
+ */
+function semPrefixoDeTitulo(texto: string): string {
+  return texto.replace(/^#{1,6}\s+/, "");
+}
+
 /** Texto puro do post, para resumo automático e para o corpo em `text/markdown`. */
 export function plainText(md: string): string {
   return parseMarkdown(md)
     .flatMap((b) => {
       if (b.type === "image") return [];
-      if (b.type === "list") return b.items.map(inlineText);
+      if (b.type === "list") {
+        return b.items.flatMap((i) => [
+          inlineText(i.content),
+          ...(i.sub?.items ?? []).map(inlineText),
+        ]);
+      }
       return [inlineText(b.content)];
     })
     .join(" ")
@@ -186,9 +254,7 @@ export function plainText(md: string): string {
 }
 
 function inlineText(nodes: MdInline[]): string {
-  return nodes
-    .map((n) => (n.type === "link" ? n.label : n.type === "text" ? n.value : n.value))
-    .join("");
+  return nodes.map((n) => (n.type === "link" ? inlineText(n.children) : n.value)).join("");
 }
 
 /**

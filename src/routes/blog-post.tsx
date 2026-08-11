@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { CoverImage } from "@/features/blog/CoverImage";
 import { PostBody } from "@/features/blog/PostBody";
 import { useBlogPost, useRelatedPosts } from "@/features/blog/api";
 import { metaDescription, plainText, readingMinutes } from "@/features/blog/markdown.logic";
 import { blogPostingSchema, breadcrumbSchema } from "@/lib/jsonld";
 import { formatDate } from "@/lib/format";
-import { imageSrcSet, optimizedImageUrl } from "@/lib/storage";
+import { optimizedImageUrl } from "@/lib/storage";
 import type { BlogPostWithDestination } from "@/types/domain";
 
 const SITE_URL = "https://hub.movepark.co";
@@ -134,19 +135,12 @@ export default function BlogPostPage() {
         </PageHeader>
 
         {post.cover_image_url && (
-          /*
-            Sem recorte: a capa é frequentemente um banner com a manchete gravada
-            dentro da imagem, e cortar come o texto. A altura é limitada para a
-            quadrada não tomar a tela inteira, e a largura acompanha a proporção
-            real, então não sobra tarja.
-          */
-          <img
-            src={optimizedImageUrl(post.cover_image_url, { width: 1200, resize: "contain" })}
-            srcSet={imageSrcSet(post.cover_image_url, [720, 1080, 1440])}
+          <CoverImage
+            src={post.cover_image_url}
+            widths={[720, 1080, 1440]}
             sizes="(min-width: 768px) 720px, 100vw"
-            alt=""
-            decoding="async"
-            className="mx-auto mt-8 max-h-[520px] w-auto max-w-full rounded-2xl border border-hairline"
+            className="mt-8 rounded-2xl border border-hairline"
+            eager
           />
         )}
 

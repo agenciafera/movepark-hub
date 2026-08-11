@@ -5,6 +5,7 @@ import {
   useCreateBlogCategory,
   useCreateBlogPost,
   useCreateBlogTag,
+  useDeleteBlogAuthor,
   useDeleteBlogPost,
   useSetPostTags,
   useUpdateBlogAuthor,
@@ -139,5 +140,19 @@ describe("cadastro de taxonomia", () => {
 
     expect(patch.chamadas[0].url).toContain("id=eq.aut-1");
     expect(patch.ultimoBody).toEqual({ name: "Diego Silva" });
+  });
+});
+
+describe("useDeleteBlogAuthor", () => {
+  it("faz soft delete, sem apagar a linha", async () => {
+    // A FK de blog_post.author_id é `on delete set null`: apagar de verdade
+    // tiraria a assinatura dos posts em silêncio, e não há tela que mostre isso.
+    const patch = tabela("blog_author", "patch", { json: [] });
+
+    const { result } = renderMutation(() => useDeleteBlogAuthor());
+    await result.current.mutateAsync("aut-9");
+
+    expect(patch.chamadas[0].url).toContain("id=eq.aut-9");
+    expect(patch.ultimoBody).toHaveProperty("deleted_at");
   });
 });

@@ -38,6 +38,7 @@ export const publicAssetDir = {
   company: (companyId: string) => companyId,
   destination: (codeOrSlug: string) => `destinations/${codeOrSlug}`,
   blog: (slug: string) => `blog/${slug}`,
+  blogAuthor: (slug: string) => `blog/autores/${slug}`,
 };
 
 /**
@@ -84,6 +85,11 @@ export function uploadDestinationImage(codeOrSlug: string, name: string, file: F
 /** Imagem de post (hub_admin). Path: assets-public/blog/<slug>/. */
 export function uploadBlogImage(slug: string, name: string, file: File): Promise<string> {
   return uploadPublicAsset(publicAssetDir.blog(slug), name, file);
+}
+
+/** Avatar do autor do blog (hub_admin). Path: assets-public/blog/autores/<slug>/. */
+export function uploadBlogAuthorImage(slug: string, name: string, file: File): Promise<string> {
+  return uploadPublicAsset(publicAssetDir.blogAuthor(slug), name, file);
 }
 
 /** Assets públicos de uma empresa (logo/fotos). Path: assets-public/<company_id>/. */

@@ -308,6 +308,25 @@ export function useCreateBlogAuthor() {
   });
 }
 
+/**
+ * Soft delete do autor. A checagem de post vinculado fica na tela, que já carrega
+ * a lista: a FK é `on delete set null`, então excluir sem checar tiraria a
+ * assinatura dos posts em silêncio.
+ */
+export function useDeleteBlogAuthor() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("blog_author")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: blogTaxonomyKeys.authors }),
+  });
+}
+
 export function useUpdateBlogAuthor() {
   const qc = useQueryClient();
   return useMutation({

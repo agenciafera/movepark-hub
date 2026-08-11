@@ -291,6 +291,7 @@ chega no build seguinte, que roda sozinho a cada push na `main`.
 | `src/worker.test.ts` | O contrato de URL inteiro: os 93 slugs respondem 200 com barra, a versão sem barra devolve 301, as 11 categorias e os 17 redirects legados apontam para o alvo certo |
 | pgTAP | RLS de `blog_post`: anônimo lê publicado, não escreve; `hub_admin` escreve |
 | Vitest | Conversão HTML para Markdown e mapeamento de categoria para destino no importador |
+| Vitest | Render do markdown: rótulo de link, título dentro de item de lista, continuação indentada e sublista |
 | Vitest | Página do post e índice, incluindo o caso de post sem `destination_id` |
 
 O teste do worker se apoia num **fixture versionado com os 93 slugs**, congelado a partir do
@@ -459,6 +460,27 @@ entra em cache.
 A leitura usa a anon key, com as `vars` do `wrangler.jsonc`. Quem decide o que ela
 enxerga é a RLS: a policy de SELECT do `blog_post` só devolve publicado e não
 excluído para quem não é hub_admin, então rascunho não abre por URL adivinhada.
+
+## O que o markdown do WordPress exigiu do render
+
+O editor clássico gerou construções que um parser ingênuo mostra cru. Medido no acervo e
+corrigido em `markdown.logic.ts`:
+
+| Construção | Efeito antes | Tamanho |
+|---|---|---|
+| `[**Nome**](url)` | os asteriscos iam para a tela | 28 links em 17 posts |
+| `1.  ### **Título:**` | o `###` aparecia dentro do item | 12 itens em 3 posts |
+| Corpo do item indentado embaixo dele | virava parágrafo solto e reiniciava a numeração | 18 linhas em 5 posts |
+| `  - subitem` | a sublista era achatada no mesmo nível | 16 posts |
+
+Duas decisões que valem registrar. O rótulo do link é **markdown também**, então `parseInline`
+chama a si mesmo para os filhos. E linha em branco **não fecha lista na hora**: fica pendente e só
+fecha se o que vier depois não pertencer a ela, porque o WordPress separa os itens com uma linha
+de espaços.
+
+Sobra um caso não tratado de propósito: 165 parágrafos que são só negrito e funcionam como
+subtítulo. Promovê-los a `h4` melhora a leitura, mas injeta 165 títulos no outline dos posts, o
+que é decisão de conteúdo e não de parser.
 
 ## Dívida conhecida
 

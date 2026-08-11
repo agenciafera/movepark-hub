@@ -1,25 +1,24 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import type { MdBlock, MdInline } from "./markdown.logic";
+import type { MdBlock, MdInline, MdListItem } from "./markdown.logic";
 import { parseMarkdown } from "./markdown.logic";
 
 /** Link interno vira `<Link>` (não recarrega a página); externo abre em nova aba. */
-function InlineLink({ href, label }: { href: string; label: string }) {
+function InlineLink({ href, nodes }: { href: string; nodes: MdInline[] }) {
+  const classe = "text-mp-primary underline underline-offset-2";
+  // O rótulo é markdown: `[**Nome**](url)` precisa sair com o negrito aplicado.
+  const conteudo = <Inline nodes={nodes} />;
+
   if (href.startsWith("/")) {
     return (
-      <Link to={href} className="text-mp-primary underline underline-offset-2">
-        {label}
+      <Link to={href} className={classe}>
+        {conteudo}
       </Link>
     );
   }
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer nofollow"
-      className="text-mp-primary underline underline-offset-2"
-    >
-      {label}
+    <a href={href} target="_blank" rel="noopener noreferrer nofollow" className={classe}>
+      {conteudo}
     </a>
   );
 }
@@ -31,10 +30,24 @@ function Inline({ nodes }: { nodes: MdInline[] }) {
         if (node.type === "bold") return <strong key={i}>{node.value}</strong>;
         if (node.type === "italic") return <em key={i}>{node.value}</em>;
         if (node.type === "link")
-          return <InlineLink key={i} href={node.href} label={node.label} />;
+          return <InlineLink key={i} href={node.href} nodes={node.children} />;
         return <React.Fragment key={i}>{node.value}</React.Fragment>;
       })}
     </>
+  );
+}
+
+/** Um nível de aninhamento basta: é o que o acervo migrado usa. */
+function SubList({ sub }: { sub: NonNullable<MdListItem["sub"]> }) {
+  const items = sub.items.map((item, i) => (
+    <li key={i} className="text-body-md text-body">
+      <Inline nodes={item} />
+    </li>
+  ));
+  return sub.ordered ? (
+    <ol className="mt-2 list-decimal space-y-1 pl-5">{items}</ol>
+  ) : (
+    <ul className="mt-2 list-[circle] space-y-1 pl-5">{items}</ul>
   );
 }
 
@@ -70,7 +83,8 @@ function Block({ block }: { block: MdBlock }) {
     case "list": {
       const items = block.items.map((item, i) => (
         <li key={i} className="text-body-md text-body">
-          <Inline nodes={item} />
+          <Inline nodes={item.content} />
+          {item.sub && <SubList sub={item.sub} />}
         </li>
       ));
       return block.ordered ? (

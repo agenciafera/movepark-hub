@@ -11,15 +11,20 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ImageUploadField } from "@/components/shared/ImageUpload";
+import { uploadBlogAuthorImage } from "@/lib/storage";
 import {
+  useAdminBlogPosts,
   useBlogAuthors,
   useBlogCategories,
   useBlogTags,
   useCreateBlogAuthor,
   useCreateBlogCategory,
   useCreateBlogTag,
+  useDeleteBlogAuthor,
   useUpdateBlogAuthor,
 } from "./api";
+import type { BlogAuthor } from "@/types/domain";
 
 /** Slug a partir do nome: sem acento, minúsculo, hífen no lugar de espaço. */
 export function slugify(name: string): string {
@@ -29,6 +34,90 @@ export function slugify(name: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+/**
+ * Uma linha por autor: nome, bio, foto e exclusão.
+ *
+ * Excluir é bloqueado enquanto o autor assina algum post. A FK é
+ * `on delete set null`, então excluir sem checar tiraria a assinatura dos posts
+ * em silêncio, e não há tela que mostre isso depois.
+ */
+function AuthorRow({
+  author,
+  posts,
+  onSave,
+  onDelete,
+}: {
+  author: BlogAuthor;
+  posts: number;
+  onSave: (patch: { name: string; bio: string | null }) => void;
+  onDelete: () => void;
+}) {
+  const [name, setName] = React.useState(author.name);
+  const [bio, setBio] = React.useState(author.bio ?? "");
+  const [avatar, setAvatar] = React.useState(author.avatar_url);
+
+  const mudou = name !== author.name || bio !== (author.bio ?? "");
+
+  return (
+    <li className="flex flex-col gap-3 rounded-md border border-hairline p-4">
+      <div className="flex gap-4">
+        <div className="w-24 shrink-0">
+          <ImageUploadField
+            value={avatar}
+            onChange={(url) => {
+              setAvatar(url);
+              onSave({ name, bio: bio.trim() || null });
+            }}
+            onUpload={(file) => uploadBlogAuthorImage(author.slug, "foto", file)}
+            aspectClass="aspect-square"
+          />
+        </div>
+
+        <div className="flex flex-1 flex-col gap-2">
+          <Input
+            value={name}
+            aria-label={`Nome de ${author.name}`}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <Textarea
+            value={bio}
+            aria-label={`Bio de ${author.name}`}
+            onChange={(e) => setBio(e.target.value)}
+            placeholder="Bio curta, mostrada no topo da página do autor"
+            rows={2}
+          />
+          <span className="text-caption-sm text-muted">
+            /blog/autor/{author.slug}/ · {posts === 1 ? "1 post" : `${posts} posts`}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          disabled={posts > 0}
+          title={posts > 0 ? "Troque o autor dos posts dele antes de excluir." : undefined}
+          onClick={() => {
+            if (confirm(`Excluir o autor "${author.name}"?`)) onDelete();
+          }}
+        >
+          Excluir
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          disabled={!mudou || !name.trim()}
+          onClick={() => onSave({ name: name.trim(), bio: bio.trim() || null })}
+        >
+          Salvar
+        </Button>
+      </div>
+    </li>
+  );
 }
 
 type Props = { open: boolean; onOpenChange: (open: boolean) => void };
@@ -42,6 +131,8 @@ export function BlogTaxonomyDialog({ open, onOpenChange }: Props) {
   const createTag = useCreateBlogTag();
   const createAuthor = useCreateBlogAuthor();
   const updateAuthor = useUpdateBlogAuthor();
+  const deleteAuthor = useDeleteBlogAuthor();
+  const posts = useAdminBlogPosts();
 
   const [catName, setCatName] = React.useState("");
   const [catDesc, setCatDesc] = React.useState("");
@@ -160,24 +251,23 @@ export function BlogTaxonomyDialog({ open, onOpenChange }: Props) {
           </TabsContent>
 
           <TabsContent value="autores" className="flex flex-col gap-4 pt-4">
-            <ul className="flex flex-col gap-3">
+            <ul className="flex flex-col gap-4">
               {(authors.data ?? []).map((a) => (
-                <li key={a.id} className="flex flex-col gap-1">
-                  <Input
-                    defaultValue={a.name}
-                    aria-label={`Nome de exibição de ${a.name}`}
-                    onBlur={(e) => {
-                      const novo = e.target.value.trim();
-                      if (!novo || novo === a.name) return;
-                      submit(
-                        () => updateAuthor.mutateAsync({ id: a.id, patch: { name: novo } }),
-                        () => {},
-                        "Autor atualizado",
-                      );
-                    }}
-                  />
-                  <span className="text-caption-sm text-muted">/blog/autor/{a.slug}/</span>
-                </li>
+                <AuthorRow
+                  key={a.id}
+                  author={a}
+                  posts={(posts.data ?? []).filter((p) => p.author?.id === a.id).length}
+                  onSave={(patch) =>
+                    submit(
+                      () => updateAuthor.mutateAsync({ id: a.id, patch }),
+                      () => {},
+                      "Autor atualizado",
+                    )
+                  }
+                  onDelete={() =>
+                    submit(() => deleteAuthor.mutateAsync(a.id), () => {}, "Autor excluído")
+                  }
+                />
               ))}
             </ul>
             <div className="flex flex-col gap-2 border-t border-hairline pt-4">

@@ -1,0 +1,56 @@
+import { imageSrcSet, optimizedImageUrl } from "@/lib/storage";
+import { cn } from "@/lib/utils";
+
+type Props = {
+  src: string;
+  /** Larguras do `srcset`, na ordem em que o browser vai escolher. */
+  widths: number[];
+  /** Dica de tamanho do slot, para o browser não baixar mais do que precisa. */
+  sizes: string;
+  className?: string;
+  /** A capa do post é o LCP da página; o card do índice pode esperar. */
+  eager?: boolean;
+};
+
+/**
+ * Capa de post, sem corte e sem tarja.
+ *
+ * As capas vieram do WordPress em proporções que vão de 1:1 a 2,12:1, e boa parte
+ * é banner com a manchete gravada dentro da imagem. Recortar para a caixa cortava
+ * o texto em 104 das 131 imagens; usar só `contain` resolvia o corte e deixava 31
+ * delas com tarja chapada, as quadradas preenchendo 67% da caixa.
+ *
+ * A imagem entra duas vezes: uma cópia minúscula desfocada preenchendo o fundo, e
+ * a imagem inteira por cima. O fundo pede as DUAS dimensões (24x16, a proporção da
+ * caixa) porque o render do Supabase não preserva proporção com só a largura: com
+ * `?width=16` ele devolve uma tira de 16x1067, e borrada isso vira listra em vez
+ * de borrão. Custa 392 bytes contra 34 KB da imagem principal.
+ */
+export function CoverImage({ src, widths, sizes, className, eager }: Props) {
+  return (
+    <div
+      className={cn(
+        "relative aspect-[3/2] w-full overflow-hidden bg-surface-soft",
+        className,
+      )}
+    >
+      <img
+        src={optimizedImageUrl(src, { width: 24, height: 16, quality: 30, resize: "cover" })}
+        alt=""
+        aria-hidden
+        loading="lazy"
+        decoding="async"
+        className="absolute inset-0 h-full w-full scale-110 object-cover blur-lg"
+      />
+      <img
+        src={optimizedImageUrl(src, { width: widths[widths.length - 1], resize: "contain" })}
+        srcSet={imageSrcSet(src, widths)}
+        sizes={sizes}
+        alt=""
+        loading={eager ? "eager" : "lazy"}
+        decoding="async"
+        className="relative h-full w-full object-contain"
+      />
+    </div>
+  );
+}

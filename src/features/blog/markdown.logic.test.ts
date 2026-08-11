@@ -20,8 +20,26 @@ describe("parseInline", () => {
   it("extrai link com rótulo e destino", () => {
     expect(parseInline("veja o [destino](/destinos/aeroporto-de-viracopos) agora")).toEqual([
       { type: "text", value: "veja o " },
-      { type: "link", href: "/destinos/aeroporto-de-viracopos", label: "destino" },
+      {
+        type: "link",
+        href: "/destinos/aeroporto-de-viracopos",
+        children: [{ type: "text", value: "destino" }],
+      },
       { type: "text", value: " agora" },
+    ]);
+  });
+
+  it("parseia o markdown de dentro do rótulo do link", () => {
+    // O WordPress gerou `[**Nome**](url)` em 28 links de 17 posts. Sem parsear o
+    // rótulo, os asteriscos iam para a tela.
+    expect(parseInline("O [**Nation Park**](http://nationpark.com.br) destaca-se")).toEqual([
+      { type: "text", value: "O " },
+      {
+        type: "link",
+        href: "http://nationpark.com.br",
+        children: [{ type: "bold", value: "Nation Park" }],
+      },
+      { type: "text", value: " destaca-se" },
     ]);
   });
 
@@ -68,12 +86,18 @@ describe("parseMarkdown", () => {
       {
         type: "list",
         ordered: false,
-        items: [[{ type: "text", value: "um" }], [{ type: "text", value: "dois" }]],
+        items: [
+          { content: [{ type: "text", value: "um" }] },
+          { content: [{ type: "text", value: "dois" }] },
+        ],
       },
       {
         type: "list",
         ordered: true,
-        items: [[{ type: "text", value: "primeiro" }], [{ type: "text", value: "segundo" }]],
+        items: [
+          { content: [{ type: "text", value: "primeiro" }] },
+          { content: [{ type: "text", value: "segundo" }] },
+        ],
       },
     ]);
   });
@@ -141,5 +165,59 @@ describe("metaDescription", () => {
     expect(metaDescription(null, null, "## Título\n\nO corpo do post.")).toBe(
       "Título O corpo do post.",
     );
+  });
+});
+
+describe("lista vinda do WordPress", () => {
+  it("item que começa com título não deixa o ### na tela", () => {
+    // O editor clássico gerou "1.  ### **Reserve Voos:**" em 12 itens de 3 posts.
+    const [bloco] = parseMarkdown("1.  ### **Reserve Voos:**");
+    expect(bloco).toEqual({
+      type: "list",
+      ordered: true,
+      items: [{ content: [{ type: "bold", value: "Reserve Voos:" }] }],
+    });
+  });
+
+  it("linha indentada continua o item em vez de abrir parágrafo", () => {
+    const blocks = parseMarkdown("1.  Reserve antes\n    Garante o preço menor.");
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({ type: "list", ordered: true });
+    expect(plainText("1.  Reserve antes\n    Garante o preço menor.")).toBe(
+      "Reserve antes Garante o preço menor.",
+    );
+  });
+
+  it("linha em branco entre itens não reinicia a numeração", () => {
+    // Era o que picotava a lista em 5 posts: o item 2 abria uma lista nova.
+    const blocks = parseMarkdown("1.  Primeiro\n    \n    Detalhe do primeiro\n    \n2.  Segundo");
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({ type: "list", ordered: true });
+    expect((blocks[0] as { items: unknown[] }).items).toHaveLength(2);
+  });
+
+  it("sublista indentada vira filha do item, não irmã", () => {
+    const [bloco] = parseMarkdown("- Coberto\n  - Protegido do sol\n  - Protegido da chuva\n- Valet");
+    expect(bloco).toEqual({
+      type: "list",
+      ordered: false,
+      items: [
+        {
+          content: [{ type: "text", value: "Coberto" }],
+          sub: {
+            ordered: false,
+            items: [
+              [{ type: "text", value: "Protegido do sol" }],
+              [{ type: "text", value: "Protegido da chuva" }],
+            ],
+          },
+        },
+        { content: [{ type: "text", value: "Valet" }] },
+      ],
+    });
+  });
+
+  it("linha em branco fora de lista continua separando parágrafos", () => {
+    expect(parseMarkdown("um\n\ndois").map((b) => b.type)).toEqual(["paragraph", "paragraph"]);
   });
 });
