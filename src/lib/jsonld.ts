@@ -126,6 +126,11 @@ export function destinationSchema(d: {
  * WordPress legado. Sem isso o buscador pode tratar a página migrada como outra
  * coisa e perder o histórico da URL.
  */
+/** Deixa a URL absoluta sem duplicar o host quando ela já é absoluta. */
+function absoluta(url: string): string {
+  return /^https?:\/\//i.test(url) ? url : `${SITE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+}
+
 export function blogPostingSchema(p: {
   title: string;
   slug: string;
@@ -142,7 +147,10 @@ export function blogPostingSchema(p: {
     "@type": "BlogPosting",
     headline: p.title,
     description: p.description ?? undefined,
-    image: p.image ? `${SITE_URL}${p.image}` : undefined,
+    // A capa vem absoluta do bucket. Prefixar SITE_URL nela gerava
+    // "https://hub.movepark.cohttps://…", que nenhum crawler resolve, e deixou os
+    // 94 posts sem imagem no rich result. Só caminho relativo ganha o prefixo.
+    image: p.image ? absoluta(p.image) : undefined,
     datePublished: p.publishedAt,
     dateModified: p.updatedAt ?? p.publishedAt,
     wordCount: p.wordCount,

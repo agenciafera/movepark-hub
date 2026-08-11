@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ListingDetail } from "@/features/listing/api";
 import {
+  blogPostingSchema,
   breadcrumbSchema,
   destinationSchema,
   faqSchema,
@@ -223,5 +224,29 @@ describe("faqSchema", () => {
       name: "Posso cancelar?",
       acceptedAnswer: { "@type": "Answer", text: "Sim." },
     });
+  });
+});
+
+describe("blogPostingSchema: imagem", () => {
+  const base = { title: "t", slug: "s", publishedAt: "2026-01-01T00:00:00Z" };
+
+  it("capa do bucket entra como está, sem duplicar o host", () => {
+    // O bug: `${SITE_URL}${image}` com uma URL já absoluta produzia
+    // "https://hub.movepark.cohttps://…" nos 94 posts.
+    const url = "https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets/blog/a.jpg";
+    expect(blogPostingSchema({ ...base, image: url }).image).toBe(url);
+  });
+
+  it("caminho relativo ainda ganha o host", () => {
+    expect(blogPostingSchema({ ...base, image: "/og/home.jpg" }).image).toBe(
+      "https://hub.movepark.co/og/home.jpg",
+    );
+    expect(blogPostingSchema({ ...base, image: "og/home.jpg" }).image).toBe(
+      "https://hub.movepark.co/og/home.jpg",
+    );
+  });
+
+  it("sem capa, o campo não aparece", () => {
+    expect(blogPostingSchema(base).image).toBeUndefined();
   });
 });

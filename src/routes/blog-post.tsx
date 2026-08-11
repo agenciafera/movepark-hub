@@ -61,8 +61,27 @@ export default function BlogPostPage() {
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
+        {/*
+          A capa já é URL absoluta do bucket, então prefixar com SITE_URL produzia
+          "https://hub.movepark.cohttps://…", que nenhum crawler resolve: os 94
+          posts ficaram sem imagem no card social. O `optimizedImageUrl` devolve
+          absoluto e ainda entrega o 1.91:1 (1200x630) que o card espera, do mesmo
+          jeito que a página de destino faz.
+        */}
         {post.cover_image_url && (
-          <meta property="og:image" content={`${SITE_URL}${post.cover_image_url}`} />
+          <>
+            <meta
+              property="og:image"
+              content={optimizedImageUrl(post.cover_image_url, {
+                width: 1200,
+                height: 630,
+                resize: "cover",
+              })}
+            />
+            <meta property="og:image:width" content="1200" />
+            <meta property="og:image:height" content="630" />
+            <meta property="og:image:alt" content={post.title} />
+          </>
         )}
         <meta property="article:published_time" content={post.published_at} />
         <script type="application/ld+json">
