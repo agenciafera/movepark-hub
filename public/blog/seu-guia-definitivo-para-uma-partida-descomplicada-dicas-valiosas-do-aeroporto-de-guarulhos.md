@@ -14,25 +14,19 @@ Agora, chegou a hora de aproveitar esse guia completo, que preparamos para você
 
 Antes mesmo de chegar ao Aeroporto de Guarulhos, você pode tomar algumas medidas para garantir que tudo corra bem. Aqui estão algumas dicas para o planejamento prévio:
 
-![](https://www.abear.com.br/wp-content/uploads/2019/03/documentos-passaporte-post.jpg)
-
 ### **1\. Verifique sua Documentação**
 
 Antes de sair de casa, certifique-se de que todos os seus documentos de viagem estejam em ordem. Isso inclui passaporte, visto, carteira de motorista e cartões de embarque. Ter tudo à mão evitará atrasos e preocupações.
-
-![](https://hqbeds.com/wp-content/uploads/2020/07/iStock-842865122.jpg)
 
 ### **2\. Faça o Check-in Online**
 
 A maioria das companhias aéreas oferece a opção de check-in online. Aproveite essa comodidade para evitar filas nos balcões de check-in e economizar tempo.
 
-![](https://www.passagensimperdiveis.com.br/wp-content/uploads/2019/10/compartimento-bagagem-voo.jpeg)
-
 ### **3\. Bagagem e Peso Permitido**
 
 Verifique as políticas de bagagem da sua companhia aérea. Certifique-se de que sua bagagem atende aos requisitos de peso e dimensões permitidos. Isso evitará surpresas desagradáveis no aeroporto.
 
-![Melhor estacionamento Aeroporto Guarulhos 2025](https://movepark.co/wp-content/uploads/2025/08/melhor-estacionamento-aeroporto-guarulhos-2025-1024x683.jpg)
+![Melhor estacionamento Aeroporto Guarulhos 2025](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/seu-guia-definitivo-para-uma-partida-descomplicada-dicas-valiosas-do-aeroporto-de-guarulhos/melhor-estacionamento-aeroporto-guarulhos-2025-1024x683.webp)
 _Melhor estacionamento Aeroporto Guarulhos 2025_
 
 ### **4\. Reserve seu Estacionamento com Antecedência**

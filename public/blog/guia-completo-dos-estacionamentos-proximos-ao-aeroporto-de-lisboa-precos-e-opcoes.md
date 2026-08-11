@@ -13,85 +13,15 @@ Se você está planejando viajar a partir do Aeroporto de Lisboa e busca informa
 
 Abaixo, listamos os principais estacionamentos próximos ao Aeroporto de Lisboa, com informações sobre tarifas e distâncias:
 
-Nome do Estacionamento
-
-Diária (€)
-
-7 Dias (€)
-
-30 Dias (€)
-
-Distância até o Aeroporto
-
-**Parking ANA**
-
-A partir de 5,00
-
-A partir de 35,00
-
-A partir de 150,00
-
-Dentro do aeroporto (aeroportolisboa.pt)
-
-**EasyParking**
-
-19,00 (coberto) / 20,00 (coberto com toldo)
-
-133,00 (coberto) / 140,00 (coberto com toldo)
-
-570,00 (coberto) / 600,00 (coberto com toldo)
-
-1,5 km (easyparking.pt)
-
-**Parkos**
-
-A partir de 2,57 por dia
-
-–
-
-–
-
-Varia conforme o estacionamento escolhido (parkos.pt)
-
-**Parque Aeroporto**
-
-9,50
-
-21,00
-
-90,00
-
-1,5 km (parqueaeroporto.pt)
-
-**Aeroporto Park**
-
-7,00
-
-49,00
-
-210,00
-
-1,5 km (aeroportoparque.com)
-
-**Airpark**
-
-8,00 (descoberto) / 9,00 (coberto) / 10,00 (indoor)
-
-–
-
-–
-
-1,5 km
-
-**Redpark**
-
-7,00 (descoberto) / 8,00 (coberto) / 10,00 (indoor)
-
-–
-
-–
-
-1,5 km
+| Nome do Estacionamento | Diária (€) | 7 Dias (€) | 30 Dias (€) | Distância até o Aeroporto |
+| --- | --- | --- | --- | --- |
+| **Parking ANA** | A partir de 5,00 | A partir de 35,00 | A partir de 150,00 | Dentro do aeroporto (aeroportolisboa.pt) |
+| **EasyParking** | 19,00 (coberto) / 20,00 (coberto com toldo) | 133,00 (coberto) / 140,00 (coberto com toldo) | 570,00 (coberto) / 600,00 (coberto com toldo) | 1,5 km (easyparking.pt) |
+| **Parkos** | A partir de 2,57 por dia | – | – | Varia conforme o estacionamento escolhido (parkos.pt) |
+| **Parque Aeroporto** | 9,50 | 21,00 | 90,00 | 1,5 km (parqueaeroporto.pt) |
+| **Aeroporto Park** | 7,00 | 49,00 | 210,00 | 1,5 km (aeroportoparque.com) |
+| **Airpark** | 8,00 (descoberto) / 9,00 (coberto) / 10,00 (indoor) | – | – | 1,5 km |
+| **Redpark** | 7,00 (descoberto) / 8,00 (coberto) / 10,00 (indoor) | – | – | 1,5 km |
 
 **Detalhes dos Estacionamentos**
 

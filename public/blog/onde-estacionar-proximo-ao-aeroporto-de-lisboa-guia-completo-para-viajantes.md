@@ -9,7 +9,7 @@
 ---
 Planejar uma viagem pode ser muito empolgante, mas encontrar um estacionamento próximo ao Aeroporto Lisboa, e que seja um lugar seguro e conveniente para deixar seu carro, pode ser um desafio. Se você está voando do Aeroporto de Lisboa, não se preocupe! Este guia completo irá te ajudar a encontrar a [melhor opção de **estacionamento**](/blog/qual-o-melhor-estacionamento-no-aeroporto-lisboa-em-2024/) para sua viagem.
 
-![estacionamento próximo ao aeroporto lisboa](https://movepark.co/wp-content/uploads/2024/03/estacionamento-proximo-ao-aeroporto-lisboa.png)
+![estacionamento próximo ao aeroporto lisboa](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/onde-estacionar-proximo-ao-aeroporto-de-lisboa-guia-completo-para-viajantes/estacionamento-proximo-ao-aeroporto-lisboa.webp)
 
 ## **Opções de Estacionamento no Aeroporto de Lisboa**
 
@@ -51,7 +51,7 @@ Planejar uma viagem pode ser muito empolgante, mas encontrar um estacionamento p
 
 ## **Conclusão**
 
-Com tantas opções de [**estacionamento** no Aeroporto de Lisboa](https://movepark.co/pt/estacionamento/airpark/) disponíveis, você certamente encontrará a ideal para sua viagem. Planeje-se com antecedência, compare preços e serviços, e escolha o estacionamento que melhor atenda às suas necessidades.
+Com tantas opções de [**estacionamento** no Aeroporto de Lisboa](/destinos/aeroporto-humberto-delgado) disponíveis, você certamente encontrará a ideal para sua viagem. Planeje-se com antecedência, compare preços e serviços, e escolha o estacionamento que melhor atenda às suas necessidades.
 
 **Lembre-se:** Reserve sua vaga com antecedência, especialmente em alta temporada, para garantir sua vaga no estacionamento escolhido.
 

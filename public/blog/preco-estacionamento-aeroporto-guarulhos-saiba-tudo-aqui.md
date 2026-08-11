@@ -13,85 +13,15 @@ Se você está planejando viajar a partir do Aeroporto Internacional de Guarulho
 
 Existem diversas opções de estacionamento nas proximidades do Aeroporto Internacional de Guarulhos, cada uma com características e preços variados. Abaixo, apresentamos uma tabela comparativa com informações relevantes para auxiliá-lo na escolha:
 
-Nome do Estacionamento
-
-Diária (R$)
-
-7 Dias (R$)
-
-30 Dias (R$)
-
-Distância até o Aeroporto (min)
-
-AeroPark
-
-17,99
-
-160,93
-
-689,70
-
-10
-
-Urban Park
-
-20,90
-
-146,30
-
-627,00
-
-3
-
-Decolar Park
-
-16,90
-
-118,30
-
-270,40
-
-10
-
-Stop Park Guarulhos
-
-15,99
-
-111,93
-
-255,84
-
-3
-
-Central Park
-
-18,90
-
-132,30
-
-378,00
-
-8
-
-Estacionamento Oficial GRU
-
-70,00
-
-490,00
-
-2.100,00
-
-Dentro do Aeroporto
-
-Airport Park
-
-22,99
-
-160,93
-
-689,70
-
-5
+| Nome do Estacionamento | Diária (R$) | 7 Dias (R$) | 30 Dias (R$) | Distância até o Aeroporto (min) |
+| --- | --- | --- | --- | --- |
+| AeroPark | 17,99 | 160,93 | 689,70 | 10 |
+| Urban Park | 20,90 | 146,30 | 627,00 | 3 |
+| Decolar Park | 16,90 | 118,30 | 270,40 | 10 |
+| Stop Park Guarulhos | 15,99 | 111,93 | 255,84 | 3 |
+| Central Park | 18,90 | 132,30 | 378,00 | 8 |
+| Estacionamento Oficial GRU | 70,00 | 490,00 | 2.100,00 | Dentro do Aeroporto |
+| Airport Park | 22,99 | 160,93 | 689,70 | 5 |
 
 **Observações:**
 

@@ -9,7 +9,7 @@
 ---
 Explorar Lisboa é embarcar em uma jornada repleta de cultura, história e experiências únicas. Neste guia, vamos desvendar como você pode economizar no estacionamento do Aeroporto Humberto Delgado, tornando sua viagem ainda mais proveitosa.
 
-![estacionamento barato aeroporto lisboa](https://movepark.co/wp-content/uploads/2024/01/estacionamento-barato-aeroporto-lisboa.jpg)
+![estacionamento barato aeroporto lisboa](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/como-pagar-mais-barato-no-estacionamento-do-aeroporto-de-lisboa/estacionamento-barato-aeroporto-lisboa.webp)
 
 ## **Benefícios de Viajar por Lisboa**
 
@@ -48,7 +48,7 @@ Economizar em uma viagem não apenas alivia o orçamento, mas também possibilit
     
 4.  ### **Opte por Estacionamentos Próximos:**
     
-    _Dica:_ Escolha um [estacionamento próximo ao Aeroporto Lisboa](https://movepark.co/pt/estacionamentos/lisboa/) para facilitar o acesso e economizar tempo.
+    _Dica:_ Escolha um [estacionamento próximo ao Aeroporto Lisboa](/destinos/aeroporto-humberto-delgado) para facilitar o acesso e economizar tempo.
     
 
 ## **Escolha o AirPark: Estacionamento Seguro e Econômico**

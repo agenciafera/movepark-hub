@@ -9,6 +9,7 @@
  *   node scripts/import-wp-blog.mjs --dry-run          # relatório, não escreve nada
  *   node scripts/import-wp-blog.mjs --out /tmp/x.sql   # gera o SQL de upsert
  *   node scripts/import-wp-blog.mjs --images           # baixa e otimiza as imagens
+ *   node scripts/import-wp-blog.mjs --reuse-storage    # reaponta para o bucket
  *
  * É idempotente: o upsert usa `legacy_wp_id` como chave, então rodar de novo
  * atualiza em vez de duplicar.
@@ -38,7 +39,8 @@ const WEBP_QUALITY = 82;
  * O `optimizedImageUrl` do front aceita os dois: URL do Storage ganha transform,
  * caminho local passa direto.
  */
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL;
+const PROJECT_URL = "https://mgaigbezdalbyuqiofcf.supabase.co";
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL ?? PROJECT_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const USE_STORAGE = !!(SUPABASE_URL && SERVICE_ROLE_KEY);
 const BUCKET = "assets-public";
@@ -64,23 +66,9 @@ const CATEGORY_TO_DESTINATION = {
   uncategorized: null,
 };
 
-/** Slug de aeroporto no legado → slug do destino no Hub (para reescrever links internos). */
-const LEGACY_AIRPORT_TO_DESTINATION = {
-  "aeroporto-viracopos": "aeroporto-de-viracopos",
-  "aeroporto-afonso-pena": "aeroporto-afonso-pena",
-  "aeroporto-congonhas": "aeroporto-de-congonhas",
-  "aeroporto-guarulhos": "aeroporto-internacional-de-sao-paulo-guarulhos",
-  "aeroporto-confins": "aeroporto-de-confins",
-  "aeroporto-santos-dumont-rio": "aeroporto-santos-dumont",
-  "aeroporto-rio-galeao": "aeroporto-do-galeao",
-  "aeroporto-brasilia": "aeroporto-de-brasilia",
-  "aeroporto-salgado-filho": "aeroporto-salgado-filho",
-  "terminal-rodoviario-tiete": "terminal-rodoviario-tiete",
-  campinas: "aeroporto-de-viracopos",
-  cgh: "aeroporto-de-congonhas",
-};
-
 const args = process.argv.slice(2);
+/** Reaponta para o objeto que já está no bucket, em vez de baixar e subir de novo. */
+const REUSE_STORAGE = args.includes("--reuse-storage");
 const flag = (name) => args.includes(`--${name}`);
 const opt = (name, fallback) => {
   const i = args.indexOf(`--${name}`);
@@ -107,6 +95,38 @@ turndown.addRule("figcaption", {
 turndown.addRule("drop", {
   filter: ["script", "style", "noscript", "iframe"],
   replacement: () => "",
+});
+
+/**
+ * Tabela vira tabela em pipe.
+ *
+ * Sem esta regra o turndown descarta o `<table>` e derrama as células como
+ * parágrafos soltos: 32 dos 93 posts têm comparativo de preço, traslado e
+ * diferencial, e todos viravam uma coluna alternando número e título.
+ */
+turndown.addRule("table", {
+  filter: "table",
+  replacement: (_content, node) => {
+    const linhas = Array.from(node.querySelectorAll("tr"));
+    if (!linhas.length) return "";
+
+    const celulasDe = (tr) =>
+      Array.from(tr.querySelectorAll("th, td")).map((td) =>
+        // O pipe é o separador da sintaxe, então o que vier no texto precisa escapar.
+        turndown.turndown(td.innerHTML).replace(/\n+/g, " ").replace(/\|/g, "\\|").trim(),
+      );
+
+    const matriz = linhas.map(celulasDe).filter((l) => l.length);
+    if (!matriz.length) return "";
+
+    const colunas = Math.max(...matriz.map((l) => l.length));
+    const completa = (l) => [...l, ...Array(colunas - l.length).fill("")];
+    const emLinha = (l) => `| ${completa(l).join(" | ")} |`;
+
+    const [cabecalho, ...corpo] = matriz;
+    const separador = `|${" --- |".repeat(colunas)}`;
+    return `\n\n${[emLinha(cabecalho), separador, ...corpo.map(emLinha)].join("\n")}\n\n`;
+  },
 });
 
 async function fetchJson(url) {
@@ -151,22 +171,180 @@ function cleanHtml(html) {
 }
 
 /**
- * Reescreve links internos do legado para as rotas do Hub.
+ * Para onde vai cada caminho do site antigo.
  *
- * Só mexe no que tem par certo no Hub. Link de página de unidade fica absoluto:
- * ele pertence ao corte do /estacionamentos/, que é outra entrega.
+ * Levantado dos 93 posts: são 15 caminhos distintos apontando para o WordPress,
+ * e todos morrem no corte de domínio. Página de unidade não tem par de URL no
+ * Hub (lá é uma URL por tipo de vaga), então ela aponta para o destino, que é a
+ * página que lista aquele aeroporto e converte.
  */
-function rewriteLinks(md) {
-  let out = md;
-  for (const [legacy, hub] of Object.entries(LEGACY_AIRPORT_TO_DESTINATION)) {
-    out = out.replaceAll(
-      `https://movepark.co/estacionamentos/${legacy}/`,
-      `/destinos/${hub}`,
-    );
+const LEGACY_PATH_TO_HUB = {
+  "/": "/",
+  "/blog": "/blog/",
+  "/estacionamentos": "/destinos",
+  "/estacionamento/nation-park-aeroporto-afonso-pena": "/destinos/aeroporto-afonso-pena",
+  "/estacionamento/garage-inn-aeroporto-viracopos": "/destinos/aeroporto-de-viracopos",
+  "/estacionamento/virapark-estacionamento-viracopos": "/destinos/aeroporto-de-viracopos",
+  "/virapark/vaga-avulsa": "/destinos/aeroporto-de-viracopos",
+  "/pt/estacionamentos/lisboa": "/destinos/aeroporto-humberto-delgado",
+  "/pt/estacionamentos/lisboa/airpark": "/destinos/aeroporto-humberto-delgado",
+  "/pt/estacionamento/airpark": "/destinos/aeroporto-humberto-delgado",
+  "/o-sistema": "/como-funciona",
+  // Posts que moraram na raiz antes do prefixo /blog/.
+  "/aeroporto-guarulhos/como-encontrar-o-melhor-estacionamento-no-aeroporto-de-guarulhos":
+    "/blog/como-encontrar-o-melhor-estacionamento-no-aeroporto-de-guarulhos/",
+  "/aeroporto-guarulhos/conheca-os-5-principais-estacionamentos-no-aeroporto-de-guarulhos-em-2023":
+    "/blog/conheca-os-5-principais-estacionamentos-no-aeroporto-de-guarulhos-em-2023/",
+  "/aeroporto-guarulhos/estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes":
+    "/blog/estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes/",
+  // Post renomeado: ponce-park virou aeropark.
+  "/blog/ponce-park-descubra-se-o-estacionamento-aeroporto-gru-oferece-vagas-cobertas":
+    "/blog/aeropark-descubra-se-o-estacionamento-aeroporto-gru-oferece-vagas-cobertas/",
+};
+
+/**
+ * Slug de aeroporto no legado → slug do destino no Hub.
+ *
+ * O legado tinha `/estacionamentos/<aeroporto>` e
+ * `/estacionamentos/<aeroporto>/<lote>`. O Hub não tem página por lote, então os
+ * dois níveis caem no destino, que é onde o leitor escolhe a vaga.
+ */
+const LEGACY_AIRPORT_TO_DESTINATION = {
+  "aeroporto-viracopos": "aeroporto-de-viracopos",
+  campinas: "aeroporto-de-viracopos",
+  "aeroporto-afonso-pena": "aeroporto-afonso-pena",
+  "aeroporto-congonhas": "aeroporto-de-congonhas",
+  cgh: "aeroporto-de-congonhas",
+  "aeroporto-guarulhos": "aeroporto-internacional-de-sao-paulo-guarulhos",
+  guarulhos: "aeroporto-internacional-de-sao-paulo-guarulhos",
+  "aeroporto-confins": "aeroporto-de-confins",
+  "aeroporto-santos-dumont-rio": "aeroporto-santos-dumont",
+  "aeroporto-rio-galeao": "aeroporto-do-galeao",
+  "aeroporto-brasilia": "aeroporto-de-brasilia",
+  "aeroporto-salgado-filho": "aeroporto-salgado-filho",
+  "afonso-pena": "aeroporto-afonso-pena",
+  "terminal-rodoviario-tiete": "terminal-rodoviario-tiete",
+  lisboa: "aeroporto-humberto-delgado",
+};
+
+/** Subdomínio de parceiro → destino do Hub onde aquele lote é vendido hoje. */
+const LEGACY_HOST_TO_HUB = {
+  "poncepark.movepark.co": "/destinos/aeroporto-internacional-de-sao-paulo-guarulhos",
+};
+
+/** True para qualquer host da casa antiga, incluindo subdomínio de parceiro. */
+function ehDominioAntigo(host) {
+  return /(^|\.)movepark\.(co|com\.br)$/.test(host);
+}
+
+/**
+ * Reescreve os links do corpo para rotas do Hub.
+ *
+ * O que não tem par vira texto puro, sem link: um link para um domínio que sai
+ * do ar é pior que nenhum link, porque o leitor clica e cai num 404.
+ */
+function rewriteLinks(md, report) {
+  // O `(?<!!)` é o que separa link de imagem: sem ele o `![alt](src)` casa aqui
+  // e a imagem vira texto. Foi assim que 81 imagens quase sumiram do acervo.
+  // O terceiro grupo é o title opcional (`(url "texto")`), que o editor clássico
+  // deixou em alguns links. Sem ele no padrão, esses links passavam batido.
+  return md.replace(/(?<!!)\[([^\]]*)\]\(([^)\s]*)(\s+"[^"]*")?\)/g, (inteiro, rotulo, href, t) => {
+    const title = t ?? "";
+    if (!href) {
+      report.linksRemovidos++;
+      return rotulo;
+    }
+    if (!/^https?:\/\//.test(href)) return inteiro;
+
+    let url;
+    try {
+      url = new URL(href);
+    } catch {
+      report.linksRemovidos++;
+      return rotulo;
+    }
+    if (!ehDominioAntigo(url.hostname)) return inteiro;
+
+    const caminho = url.pathname.replace(/\/+$/, "") || "/";
+
+    // Post do blog no mesmo lugar: o slug é o mesmo dos dois lados.
+    if (caminho.startsWith("/blog/") && !LEGACY_PATH_TO_HUB[caminho]) {
+      report.linksReescritos++;
+      return `[${rotulo}](${caminho}/${title})`;
+    }
+
+    const direto = LEGACY_PATH_TO_HUB[caminho];
+    if (direto) {
+      report.linksReescritos++;
+      return `[${rotulo}](${direto}${title})`;
+    }
+
+    // `/estacionamentos/<aeroporto>` e `/estacionamentos/<aeroporto>/<lote>`.
+    const aeroporto = caminho.match(/^\/estacionamentos\/([^/]+)/)?.[1];
+    const destino = aeroporto && LEGACY_AIRPORT_TO_DESTINATION[aeroporto];
+    if (destino) {
+      report.linksReescritos++;
+      return `[${rotulo}](/destinos/${destino}${title})`;
+    }
+
+    // Subdomínio de parceiro: o lote continua existindo, só que dentro do Hub.
+    const porHost = LEGACY_HOST_TO_HUB[url.hostname];
+    if (porHost) {
+      report.linksReescritos++;
+      return `[${rotulo}](${porHost}${title})`;
+    }
+
+    // Sobrou: fica o texto, sem link. Melhor que mandar o leitor para um 404.
+    report.linksRemovidos++;
+    return rotulo;
+  });
+}
+
+/**
+ * Alt a partir do nome do arquivo, quando o WordPress não deixou nenhum.
+ *
+ * Os nomes são descritivos ("estacionamento-aeroporto-viracopos.webp"), então
+ * viram uma legenda honesta. Melhor que alt vazio numa imagem de conteúdo.
+ */
+function altDoArquivo(src) {
+  const base = (src.split("/").pop() ?? "").replace(/\.[a-z0-9]+$/i, "");
+  const texto = base.replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
+  if (!texto || /^\d+$/.test(texto)) return "";
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+/** Preenche o alt vazio de `![](src)` a partir do nome do arquivo. */
+function preencheAlt(md, report) {
+  return md.replace(/!\[\s*\]\(([^)\s]+)([^)]*)\)/g, (inteiro, src, resto) => {
+    const alt = altDoArquivo(src);
+    if (!alt) return inteiro;
+    report.altPreenchidos++;
+    return `![${alt}](${src}${resto})`;
+  });
+}
+
+/**
+ * Tira bloco repetido em sequência.
+ *
+ * O editor clássico duplicou parágrafo em 6 posts, quase sempre por copiar e
+ * colar durante a edição. Ler a mesma frase duas vezes seguidas parece defeito
+ * de render, então some na importação.
+ */
+function removeRepetidos(md, report) {
+  const vistos = new Set();
+  const saida = [];
+  for (const b of md.split(/\n{2,}/)) {
+    const chave = b.trim();
+    // O limite de 40 protege bloco curto legítimo: "Reserve agora" repetido ao
+    // longo do texto é CTA, não descuido de edição.
+    if (chave.length > 40 && vistos.has(chave)) {
+      report.blocosRepetidos++;
+      continue;
+    }
+    if (chave.length > 40) vistos.add(chave);
+    saida.push(b);
   }
-  out = out.replaceAll("https://movepark.co/blog/", "/blog/");
-  out = out.replace(/\]\(https:\/\/movepark\.co\/?\)/g, "](/)");
-  return out;
+  return saida.join("\n\n");
 }
 
 function slugifyFile(name) {
@@ -191,6 +369,20 @@ async function migrateImage(url, postSlug, report) {
   }
   const base = slugifyFile(decodeURIComponent(url.split("/").pop().split("?")[0]));
   const webpName = base.replace(/\.[a-z0-9]+$/i, "") + ".webp";
+
+  // Reimportação de conteúdo: as imagens já subiram numa rodada anterior e o
+  // nome no bucket é determinístico, então dá para reapontar sem service key.
+  // O HEAD é o que impede inventar URL: só aponta para objeto que existe mesmo.
+  if (REUSE_STORAGE) {
+    const remote = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/blog/${postSlug}/${webpName}`;
+    if ((await fetch(remote, { method: "HEAD" })).ok) {
+      report.imagesReused++;
+      return remote;
+    }
+    report.imagesFailed.push(url);
+    return null;
+  }
+
   const destDir = path.join(IMAGE_DIR, postSlug);
   const destPath = path.join(destDir, webpName);
   const publicPath = `/images/blog/${postSlug}/${webpName}`;
@@ -297,12 +489,17 @@ async function main() {
     withMetaTitle: 0,
     withMetaDescription: 0,
     imagesConverted: 0,
+    imagesReused: 0,
     imagesSkipped: 0,
     imagesFailed: [],
     externalDropped: [],
     imagesBefore: 0,
     imagesAfter: 0,
     markdownWritten: 0,
+    linksReescritos: 0,
+    linksRemovidos: 0,
+    altPreenchidos: 0,
+    blocosRepetidos: 0,
     uploaded: 0,
     uploadsFailed: [],
   };
@@ -328,9 +525,11 @@ async function main() {
       }
     }
 
-    const bodyMd = rewriteLinks(turndown.turndown(html))
-      .replace(/\n{3,}/g, "\n\n")
-      .trim();
+    let bodyMd = turndown.turndown(html);
+    bodyMd = rewriteLinks(bodyMd, report);
+    bodyMd = preencheAlt(bodyMd, report);
+    bodyMd = removeRepetidos(bodyMd, report);
+    bodyMd = bodyMd.replace(/\n{3,}/g, "\n\n").trim();
 
     const media = post._embedded?.["wp:featuredmedia"]?.[0];
     let cover = media?.source_url ?? null;
@@ -478,6 +677,11 @@ function printReport(r, dryRun) {
   console.log(`  sem destino:              ${r.withoutDestination.length}`);
   console.log(`  com meta title do Yoast:  ${r.withMetaTitle}`);
   console.log(`  com meta description:     ${r.withMetaDescription}`);
+  console.log(`  links reescritos:         ${r.linksReescritos}`);
+  console.log(`  links virados texto:      ${r.linksRemovidos}`);
+  console.log(`  alt preenchidos:          ${r.altPreenchidos}`);
+  console.log(`  blocos repetidos tirados: ${r.blocosRepetidos}`);
+  if (r.imagesReused) console.log(`  imagens reaproveitadas:   ${r.imagesReused}`);
   if (r.imagesConverted || r.imagesSkipped) {
     console.log(`  imagens convertidas:      ${r.imagesConverted} (${mb(r.imagesBefore)} MB -> ${mb(r.imagesAfter)} MB)`);
     console.log(`  imagens já presentes:     ${r.imagesSkipped}`);

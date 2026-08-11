@@ -9,7 +9,7 @@
 ---
 Se você está planejando uma viagem a partir do Aeroporto de Guarulhos, sabe que encontrar um estacionamento confiável e seguro pode ser um desafio. Mas não se preocupe, estamos aqui para ajudá-lo!
 
-![principais-estacionamentos-aeroporto-guarulhos-2023](https://movepark.co/wp-content/uploads/2023/03/principais-estacionamentos-aeroporto-guarulhos-2023-1.jpg)
+![principais-estacionamentos-aeroporto-guarulhos-2023](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/conheca-os-5-principais-estacionamentos-no-aeroporto-de-guarulhos-em-2023/principais-estacionamentos-aeroporto-guarulhos-2023-1.webp)
 
 ## Veja a lista com os 5 principais Estacionamentos do Aeroporto de Guarulhos
 

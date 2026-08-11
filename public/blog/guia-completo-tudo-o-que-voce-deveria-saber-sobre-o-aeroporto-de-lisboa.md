@@ -11,13 +11,13 @@
 
 Bem-vindo ao nosso guia completo sobre o [Aeroporto de Lisboa](https://www.aeroportolisboa.pt/), também conhecido como Aeroporto Humberto Delgado. Localizado na vibrante capital de Portugal, este aeroporto é um dos principais hubs de transporte aéreo da Europa. Se você está planejando uma viagem para Lisboa ou apenas transitando pelo aeroporto, este guia fornecerá todas as informações essenciais para uma experiência tranquila e agradável.
 
-![aeroporto-lisboa](https://movepark.co/wp-content/uploads/2024/06/lisboa-aeroporto.jpg)
+![aeroporto-lisboa](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/guia-completo-tudo-o-que-voce-deveria-saber-sobre-o-aeroporto-de-lisboa/lisboa-aeroporto.webp)
 
 ## História do Aeroporto de Lisboa
 
 O Aeroporto de Lisboa foi inaugurado em 1942, durante a Segunda Guerra Mundial, e rapidamente se tornou um ponto estratégico para a aviação europeia. Ao longo dos anos, o aeroporto passou por diversas expansões e modernizações para acompanhar o crescimento do tráfego aéreo e as necessidades dos passageiros. Em 2016, o aeroporto foi renomeado em homenagem ao famoso general Humberto Delgado, uma figura importante na história política de Portugal.
 
-![aeroporto lisboa](https://movepark.co/wp-content/uploads/2024/06/aeroporto-de-lisboa.jpg)
+![aeroporto lisboa](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/guia-completo-tudo-o-que-voce-deveria-saber-sobre-o-aeroporto-de-lisboa/aeroporto-de-lisboa.webp)
 
 ## Localização e Acessibilidade
 
@@ -52,11 +52,11 @@ Para aqueles que buscam um pouco mais de conforto, o Aeroporto de Lisboa dispõe
 
 ### Estacionamentos
 
-Existem diversas opções de [estacionamento no Aeroporto Lisboa](https://movepark.co/pt/estacionamentos/lisboa/) para atender às diferentes necessidades dos passageiros. Há estacionamentos de curto e longo prazo localizados convenientemente próximos aos terminais. Os principais estacionamentos incluem:
+Existem diversas opções de [estacionamento no Aeroporto Lisboa](/destinos/aeroporto-humberto-delgado) para atender às diferentes necessidades dos passageiros. Há estacionamentos de curto e longo prazo localizados convenientemente próximos aos terminais. Os principais estacionamentos incluem:
 
 -   **P1 (Premium):** Localizado bem em frente ao Terminal 1, ideal para estadias curtas.
 -   **P2 (Executivo):** Próximo ao Terminal 1, adequado para estadias de médio prazo.
--   **P3 (Económico):** [Estacionamento próximo ao Aeroporto Lisboa](https://movepark.co/pt/estacionamentos/lisboa/), fica um pouco mais afastado, mas com serviço de shuttle gratuito para os terminais, perfeito para estadias longas.
+-   **P3 (Económico):** [Estacionamento próximo ao Aeroporto Lisboa](/destinos/aeroporto-humberto-delgado), fica um pouco mais afastado, mas com serviço de shuttle gratuito para os terminais, perfeito para estadias longas.
 -   **P6 (Low Cost):** Opção mais econômica, também com serviço de shuttle gratuito para os terminais.
 
 Todos os estacionamentos são seguros e monitorados 24 horas por dia, oferecendo tranquilidade aos viajantes que deixam seus veículos no local.

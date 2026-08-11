@@ -17,50 +17,10 @@ Abaixo segue a tabela com valores atualizados para você fazer a comparação.
 
 ## Preços – Estacionamento Aeroporto Viracopos
 
-PERMANÊNCIA
-
-EDÍFICIO GARAGEM
-
-ESTACIONAMENTO VIRAPARK
-
-DIFERENÇA DE DIÁRIAS
-
-1 Dia
-
-R$ 56,00
-
-R$ 15,99
-
-R$ 40,01
-
-5 Dias
-
-R$ 280,00
-
-R$ 79,95
-
-R$ 200,05
-
-10 Dias
-
-R$ 560,00
-
-R$ 159,90
-
-R$ 400,10
-
-15 Dias
-
-R$ 840,00
-
-R$ 239,85
-
-R$ 600,15
-
-30 Dias
-
-R$ 1.680,00
-
-R$ 269,70
-
-R$ 1410,30
+| PERMANÊNCIA | EDÍFICIO GARAGEM | ESTACIONAMENTO VIRAPARK | DIFERENÇA DE DIÁRIAS |
+| --- | --- | --- | --- |
+| 1 Dia | R$ 56,00 | R$ 15,99 | R$ 40,01 |
+| 5 Dias | R$ 280,00 | R$ 79,95 | R$ 200,05 |
+| 10 Dias | R$ 560,00 | R$ 159,90 | R$ 400,10 |
+| 15 Dias | R$ 840,00 | R$ 239,85 | R$ 600,15 |
+| 30 Dias | R$ 1.680,00 | R$ 269,70 | R$ 1410,30 |

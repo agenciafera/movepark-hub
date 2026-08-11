@@ -7,7 +7,7 @@
 - Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-internacional-de-sao-paulo-guarulhos
 
 ---
-![](https://movepark.co/wp-content/uploads/2023/07/estacionamento-proximo-aeroporto-guarulhos.jpg)
+![Estacionamento proximo aeroporto guarulhos](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/como-encontrar-o-melhor-estacionamento-no-aeroporto-de-guarulhos/estacionamento-proximo-aeroporto-guarulhos.webp)
 
 ## Como economizar dinheiro e encontrar o melhor estacionamento no aeroporto de Guarulhos?
 

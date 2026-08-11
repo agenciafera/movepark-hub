@@ -45,37 +45,13 @@ Pagamento no Balcão:
 Valor diário: R$ 35,00  
 Total por 7 dias: R$ 245,00
 
-Permanência
-
-Preço online
-
-Preço Balcão
-
-1 dia
-
-R$ 19,99\*
-
-R$ 35,00
-
-5 dias
-
-R$ 99,95\*
-
-R$ 175,00
-
-7 dias dias
-
-R$ 139,93\*
-
-R$ 245,00
-
-15 a 30 dias
-
-R$ 299,85\*
-
-R$ 525,00
-
-\* Valor com desconto de 15%. Válido apenas para reserva online
+| Permanência | Preço online | Preço Balcão |
+| --- | --- | --- |
+| 1 dia | R$ 19,99\* | R$ 35,00 |
+| 5 dias | R$ 99,95\* | R$ 175,00 |
+| 7 dias dias | R$ 139,93\* | R$ 245,00 |
+| 15 a 30 dias | R$ 299,85\* | R$ 525,00 |
+| \* Valor com desconto de 15%. Válido apenas para reserva online |  |  |
 
 Essa análise demonstra claramente a economia substancial ao optar pelo pagamento online, reforçando a importância de planejar com antecedência.
 

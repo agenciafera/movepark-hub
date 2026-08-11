@@ -9,7 +9,7 @@
 ---
 O Aeroporto de Congonhas, oficialmente chamado [Aeroporto de São Paulo/Congonhas](/destinos/aeroporto-de-congonhas), é um dos mais movimentados e importantes do Brasil. Localizado no coração da cidade de São Paulo, ele desempenha um papel crucial no transporte aéreo nacional, conectando a metrópole a diversas outras cidades do país. Neste guia atualizado, vamos explorar todos os aspectos do Aeroporto de Congonhas, desde sua história até as melhores opções de serviços e comodidades disponíveis para os passageiros. Se você está planejando uma viagem que inclui uma passagem por Congonhas, este artigo é para você!
 
-![Aeroporto de Congonhas](https://movepark.co/wp-content/uploads/2024/07/congonhas-13x.jpg)
+![Aeroporto de Congonhas](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/aeroporto-de-congonhas-informacoes-completas/congonhas-13x.webp)
 
 ### História do Aeroporto de Congonhas
 
@@ -17,7 +17,7 @@ Inaugurado em 1936, o Aeroporto de Congonhas é um dos mais antigos do Brasil. O
 
 Ao longo das décadas, o aeroporto passou por diversas reformas e expansões para atender à crescente demanda por voos. Nos anos 1950, a construção de novas pistas e a modernização das instalações ajudaram a solidificar sua posição como um dos principais aeroportos do país. Hoje, Congonhas é conhecido por sua eficiência e conveniência, sendo especialmente popular para voos domésticos.
 
-![Estacionamento Aeroporto de Congonhas](https://movepark.co/wp-content/uploads/2024/07/aeroporto-congonhas.webp)
+![Estacionamento Aeroporto de Congonhas](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/aeroporto-de-congonhas-informacoes-completas/aeroporto-congonhas.webp)
 
 ### Estrutura e Instalações
 

@@ -9,11 +9,11 @@
 ---
 Bem-vindo à Movepark, Seu Portal para [Estacionamento com Desconto no Aeroporto](http://virapark.com.br). Quando se trata de viajar, a última coisa que você quer é se preocupar com o estacionamento do seu veículo. É aí que a Movepark entra em ação, com parcerias de estacionamento convenientes e com desconto para os viajantes que partem do Aeroporto de Viracopos. Quer encontrar o melhor estacionamento no Aeroporto Viracopos? Confira:
 
-![estacionamento aeroporto viracopos com desconto](https://movepark.co/wp-content/uploads/2024/04/estacionamento-aeroporto-viracopos-com-desconto.jpg)
+![estacionamento aeroporto viracopos com desconto](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/garanta-desconto-no-estacionamento-do-aeroporto-viracopos-com-a-movepark/estacionamento-aeroporto-viracopos-com-desconto.webp)
 
 ## **Facilidade na hora de estacionar**
 
--   **Proximidade do Aeroporto**: A Movepark oferece espaços de [estacionamento próximo ao Aeroporto de Viracopos](/destinos/aeroporto-de-viracoposvirapark-estacionamento-viracopos/), garantindo uma viagem sem estresse desde o momento em que você estaciona.
+-   **Proximidade do Aeroporto**: A Movepark oferece espaços de [estacionamento próximo ao Aeroporto de Viracopos](/destinos/aeroporto-de-viracopos), garantindo uma viagem sem estresse desde o momento em que você estaciona.
 -   Vigilância de Segurança 24/7: Com vigilância de segurança contínua, você pode viajar com tranquilidade, sabendo que seu veículo está em boas mãos enquanto você está longe.
 
 ## **Ofertas exclusivas para clientes Movepark**

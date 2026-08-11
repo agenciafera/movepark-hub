@@ -15,7 +15,7 @@ Ao viajar de avião, encontrar um bom estacionamento no Aeroporto Curitiba pode 
 
 ### Estacionamentos Privados
 
-Os [estacionamentos próximos ao Aeroporto de Curitiba](/destinos/aeroporto-afonso-penaestacionamento-aeroporto-afonso-pena-curitiba/) geralmente oferecem tarifas mais acessíveis em comparação com as opções dentro do aeroporto. Esses estabelecimentos costumam fornecer serviços de traslado gratuito até o terminal, proporcionando uma solução conveniente e econômica para os viajantes.
+Os [estacionamentos próximos ao Aeroporto de Curitiba](/destinos/aeroporto-afonso-pena) geralmente oferecem tarifas mais acessíveis em comparação com as opções dentro do aeroporto. Esses estabelecimentos costumam fornecer serviços de traslado gratuito até o terminal, proporcionando uma solução conveniente e econômica para os viajantes.
 
 ### Promoções e Descontos
 
@@ -37,7 +37,7 @@ Ao escolher um estacionamento próximo ao Aeroporto de Curitiba, é fundamental 
 
 ## Nation Park: Ótima opção de Estacionamento no Aeroporto Curitiba
 
-![Estacionamento Aeroporto Curitiba CWB](https://movepark.co/wp-content/uploads/2024/01/estacionamento-aeroporto-curitiba-cwb.jpeg)
+![Estacionamento Aeroporto Curitiba CWB](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/estacionamento-aeroporto-curitiba-alternativas-economicas-e-servicos-de-transporte/estacionamento-aeroporto-curitiba-cwb.webp)
 _Estacionamento Aeroporto Curitiba CWB_
 
 Para aqueles que buscam uma opção conveniente e confiável próximo ao Aeroporto de Curitiba, o [Estacionamento Nation Park](http://nationapark.com.br) merece destaque. Reconhecido por sua localização estratégica e serviços de alta qualidade, o Nation Park oferece tarifas competitivas e um serviço de traslado eficiente, garantindo que os passageiros cheguem ao terminal com tranquilidade e pontualidade. Com medidas de segurança rigorosas e uma equipe dedicada, o Nation Park é uma escolha confiável para quem valoriza praticidade e segurança durante sua viagem.

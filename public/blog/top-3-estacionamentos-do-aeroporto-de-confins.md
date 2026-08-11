@@ -34,29 +34,11 @@ Além disso, reservar seu estacionamento com antecedência garante sua vaga e ev
 
 Confira a seguir uma tabela comparativa com os valores de diárias dos principais estacionamentos no **Aeroporto Internacional Tancredo Neves**:
 
-**Nome do Estacionamento**
-
-**Valor da Diária**
-
-**Distância do Aeroporto**
-
-Estacionamento Oficial do Aeroporto
-
-R$ 60,00
-
-No terminal
-
-Park Confins
-
-A partir de R$ 15,90
-
-5 minutos
-
-Multipark
-
-A partir de R$ 14,90
-
-6 minutos
+| **Nome do Estacionamento** | **Valor da Diária** | **Distância do Aeroporto** |
+| --- | --- | --- |
+| Estacionamento Oficial do Aeroporto | R$ 60,00 | No terminal |
+| Park Confins | A partir de R$ 15,90 | 5 minutos |
+| Multipark | A partir de R$ 14,90 | 6 minutos |
 
 Agora, vamos detalhar cada opção para que você possa escolher o **estacionamento aeroporto Confins** que mais atende às suas necessidades.
 

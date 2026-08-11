@@ -33,29 +33,11 @@ Além disso, reservar seu estacionamento com antecedência garante sua vaga e ev
 
 Confira a seguir uma tabela comparativa com os valores de diárias dos principais estacionamentos no **Aeroporto Ministro Victor Konder**:
 
-**Nome do Estacionamento**
-
-**Valor da Diária**
-
-**Distância do Aeroporto**
-
-Estacionamento Oficial do Aeroporto
-
-R$ 55,00
-
-No terminal
-
-Prime Estacionamento
-
-A partir de R$ 14,90
-
-4 minutos
-
-Dummont Park
-
-A partir de R$ 12,90
-
-5 minutos
+| **Nome do Estacionamento** | **Valor da Diária** | **Distância do Aeroporto** |
+| --- | --- | --- |
+| Estacionamento Oficial do Aeroporto | R$ 55,00 | No terminal |
+| Prime Estacionamento | A partir de R$ 14,90 | 4 minutos |
+| Dummont Park | A partir de R$ 12,90 | 5 minutos |
 
 Agora, vamos detalhar cada opção para que você possa escolher o **estacionamento aeroporto Navegantes** que mais atende às suas necessidades.
 

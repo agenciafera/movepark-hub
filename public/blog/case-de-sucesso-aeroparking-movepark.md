@@ -13,11 +13,11 @@
 
 O Aeroparking ([https://www.aeroparking.com.br/](https://www.aeroparking.com.br/?utm_source=chatgpt.com)) é um dos estacionamentos mais conhecidos próximos ao Aeroporto Internacional de Guarulhos (GRU). Apesar de contar com localização estratégica, bons serviços e estrutura de qualidade, a empresa enfrentava um desafio comum a muitos negócios tradicionais: como crescer no digital e transformar reservas presenciais em vendas antecipadas?
 
-Foi nesse cenário que nasceu a parceria com a Movepark ([https://movepark.co/](https://movepark.co/?utm_source=chatgpt.com)), uma plataforma de reservas online especializada em estacionamentos de aeroportos. O objetivo era claro: aumentar o faturamento online e dar previsibilidade à operação.
+Foi nesse cenário que nasceu a parceria com a Movepark ([https://movepark.co/](/)), uma plataforma de reservas online especializada em estacionamentos de aeroportos. O objetivo era claro: aumentar o faturamento online e dar previsibilidade à operação.
 
 Em apenas quatro meses, o Aeroparking saiu de um faturamento de R$ 77 mil online, em março de 2025, para impressionantes R$ 300 mil mensais em julho. Esse é o relato de como tecnologia, marketing digital e parceria estratégica transformaram um estacionamento em um verdadeiro case de sucesso.
 
-![Movepark-Estacionamento Aeroporto Guarulhos parceiro](https://movepark.co/wp-content/uploads/2025/09/movepark-estacionamento-aeroporto-guarulhos-parceiro.jpg)
+![Movepark-Estacionamento Aeroporto Guarulhos parceiro](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/case-de-sucesso-aeroparking-movepark/movepark-estacionamento-aeroporto-guarulhos-parceiro.webp)
 _Movepark-Estacionamento Aeroporto Guarulhos parceiro_
 
 ## O cenário antes da parceria

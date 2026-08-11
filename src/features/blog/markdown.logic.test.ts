@@ -311,3 +311,57 @@ describe("separador temático", () => {
     expect(plainText("um\n\n* * *\n\ndois")).toBe("um dois");
   });
 });
+
+describe("tabela", () => {
+  const tabela = "| Lote | Diária |\n| --- | --- |\n| Virapark | R$ 29 |\n| GarageInn | R$ 34 |";
+
+  it("separa cabeçalho do corpo e não deixa a linha de traços virar conteúdo", () => {
+    const [bloco] = parseMarkdown(tabela) as { type: string; head: unknown[]; rows: unknown[][] }[];
+    expect(bloco.type).toBe("table");
+    expect(bloco.head).toHaveLength(2);
+    expect(bloco.rows).toHaveLength(2);
+    expect(bloco.rows[0]).toHaveLength(2);
+  });
+
+  it("a célula aceita marcação", () => {
+    const [bloco] = parseMarkdown("| a | b |\n| --- | --- |\n| **forte** | [link](/x) |") as {
+      rows: { type: string }[][][];
+    }[];
+    expect(bloco.rows[0][0][0].type).toBe("bold");
+    expect(bloco.rows[0][1][0].type).toBe("link");
+  });
+
+  it("tabela sem linha separadora não perde a primeira linha", () => {
+    const [bloco] = parseMarkdown("| a | b |") as { head: unknown[]; rows: unknown[][] }[];
+    expect(bloco.head).toHaveLength(0);
+    expect(bloco.rows).toHaveLength(1);
+  });
+
+  it("o texto da tabela entra no texto puro", () => {
+    expect(plainText(tabela)).toContain("Virapark");
+    expect(plainText(tabela)).toContain("R$ 34");
+  });
+});
+
+describe("parágrafo que é só negrito", () => {
+  it("vira subtítulo, porque o editor usava negrito no lugar de título", () => {
+    // Com um h2 real no post, o subtítulo derivado fica no degrau de baixo.
+    const blocos = parseMarkdown("## Seção\n\n**Nation Park**\n\ntexto") as {
+      type: string;
+      level: number;
+    }[];
+    expect(blocos[1].type).toBe("heading");
+    expect(blocos[1].level).toBe(4);
+  });
+
+  it("frase inteira em negrito continua parágrafo", () => {
+    // Ponto final e tamanho separam o subtítulo de uma frase enfatizada.
+    const [bloco] = parseMarkdown("**Reserve com antecedência para garantir a vaga.**");
+    expect(bloco.type).toBe("paragraph");
+  });
+
+  it("negrito no meio do texto não vira título", () => {
+    const [bloco] = parseMarkdown("O **Nation Park** é uma opção");
+    expect(bloco.type).toBe("paragraph");
+  });
+});

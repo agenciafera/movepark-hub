@@ -9,11 +9,11 @@
 ---
 Quando chega a hora de viajar, uma das preocupações é como ir e voltar do Aeroporto e, quando você vai de carro, “[onde vou estacionar o meu carro](/blog/estacionamento-no-aeroporto-de-afonso-pena-a-melhor-opcao-para-sua-viagem/)“? Se você também se identificou com esse problema, esse conteúdo é pra você. Neste artigo, vamos abordar 5 vantagens de [estacionar no Aeroporto Curitiba](/blog/facilidade-e-conforto-estacionamento-aeroporto-curitiba-cwb/). Com esse conteúdo, você vai descobrir qual é o melhor estacionamento do Aeroporto Curitiba, que vai te ajudar a economizar tempo e dinheiro.
 
-![estacionamento aeroporto curitiba](https://movepark.co/wp-content/uploads/2024/03/estacionamento-aeroporto-curitiba.png)
+![estacionamento aeroporto curitiba](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/5-vantagens-de-estacionar-no-aeroporto-de-curitiba/estacionamento-aeroporto-curitiba.webp)
 
 ## Economize Tempo e Desfrute de Conveniência
 
-O [Estacionamento no Aeroporto de Curitiba](https://movepark.co/estacionamentos/afonso-pena/) oferece uma série de vantagens significativas para os viajantes. Além de garantir a segurança do seu veículo, você também economiza tempo e desfruta de uma conveniência inigualável.
+O [Estacionamento no Aeroporto de Curitiba](/destinos/aeroporto-afonso-pena) oferece uma série de vantagens significativas para os viajantes. Além de garantir a segurança do seu veículo, você também economiza tempo e desfruta de uma conveniência inigualável.
 
 ### Estacionamento Seguro e Protegido
 
@@ -21,7 +21,7 @@ Ao optar por estacionar no [Nation Park](http://nationpark.com.br),  que é um 
 
 ### Acesso Direto ao Terminal
 
-Outra vantagem de [estacionar no Aeroporto de Curitiba](https://movepark.co/estacionamento/nation-park-aeroporto-afonso-pena/) é o acesso direto ao terminal. Isso significa que você pode chegar ao seu portão de embarque em questão de minutos, sem a necessidade de longas caminhadas ou traslados inconvenientes. Essa conveniência é especialmente valiosa para viajantes com bagagem pesada ou aqueles que estão com pouco tempo antes do voo.
+Outra vantagem de [estacionar no Aeroporto de Curitiba](/destinos/aeroporto-afonso-pena) é o acesso direto ao terminal. Isso significa que você pode chegar ao seu portão de embarque em questão de minutos, sem a necessidade de longas caminhadas ou traslados inconvenientes. Essa conveniência é especialmente valiosa para viajantes com bagagem pesada ou aqueles que estão com pouco tempo antes do voo.
 
 ### Evite Estresse e Atrasos
 

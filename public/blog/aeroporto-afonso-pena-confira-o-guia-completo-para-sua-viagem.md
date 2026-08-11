@@ -11,7 +11,7 @@
 
 Bem-vindo ao nosso guia completo sobre o Aeroporto Internacional Afonso Pena, localizado em São José dos Pinhais, na região metropolitana de Curitiba, Paraná. Este aeroporto é um dos mais importantes do sul do Brasil, conhecido por sua infraestrutura moderna e excelente atendimento ao passageiro. Neste artigo, você encontrará todas as informações essenciais para uma experiência tranquila e eficiente ao utilizar o Aeroporto.
 
-![Aeroporto Internacional Afonso Pena - Curitiba -](https://movepark.co/wp-content/uploads/2024/01/Aeroporto-de-Curitiba-scaled-1.jpeg)
+![Aeroporto Internacional Afonso Pena - Curitiba -](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/aeroporto-afonso-pena-confira-o-guia-completo-para-sua-viagem/aeroporto-de-curitiba-scaled-1.webp)
 _Aeroporto Internacional Afonso Pena – Curitiba – PR_
 
 ## História do Aeroporto Afonso Pena
@@ -24,7 +24,7 @@ O Aeroporto Afonso Pena foi inaugurado em 1946 e, desde então, tem sido um pont
 
 Nos últimos anos, o aeroporto passou por significativas reformas e expansões. Em 2016, foi inaugurado um novo terminal de passageiros, aumentando a capacidade e melhorando as instalações para atender a crescente demanda, incluindo áreas comerciais ampliadas e mais opções de alimentação.
 
-![estacionamento aeroporto afonso pena](https://movepark.co/wp-content/uploads/2024/01/2ef4cb69ab9d39cc34ef3a1f909e43b0-gpMedium.jpeg)
+![estacionamento aeroporto afonso pena](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/aeroporto-afonso-pena-confira-o-guia-completo-para-sua-viagem/2ef4cb69ab9d39cc34ef3a1f909e43b0-gpmedium.webp)
 
 ## Localização e Acessibilidade
 
@@ -59,7 +59,7 @@ Para quem busca mais conforto, o aeroporto dispõe de salas VIP que oferecem ser
 Se você vai viajar pelo Aeroporto Afonso Pena, e vai se deslocar até o aeroporto com seu veículo, veja as opções disponíveis de [estacionamento dentro do terminal](https://www.ccraeroportos.com.br/curitiba-pr/estacionamento) ou [estacionamento próximo ao aeroporto Afonso Pena](/destinos/aeroporto-afonso-pena) :
 
 -   **Estacionamento Oficial do Aeroporto Afonso Pena:** Localizado dentro do terminal, funciona 24h e possui 4.032 vagas. Possui preços mais elevados, por esse motivo, deve ser usado em estadias curtas.
--   **[Estacionamento Aeroporto Afonso Pena](/destinos/aeroporto-afonso-penaestacionamento-aeroporto-afonso-pena-curitiba/) próximo ao terminal:** Opções de médio prazo, a uma curta distância do terminal.
+-   **[Estacionamento Aeroporto Afonso Pena](/destinos/aeroporto-afonso-pena) próximo ao terminal:** Opções de médio prazo, a uma curta distância do terminal.
 
 ## Dicas de Viagem
 

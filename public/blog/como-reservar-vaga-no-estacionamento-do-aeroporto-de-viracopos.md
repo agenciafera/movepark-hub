@@ -11,8 +11,6 @@ A melhor forma de reservar uma vaga nos estacionamentos próximos ou até mesmo 
 
 A principal vantagem de efetuar a reserva online é garantir sua vaga com antecedência, e além disso você evita surpresas na hora do pagamento. Quem opta pela reserva online ainda garante um desconto exclusivo, o preço final fica menor do que o preço balcão do estacionamento.
 
-![](https://cidadaniatuttoaposto.com.br/wp-content/uploads/2018/07/passagens-aereas-baratas-rep.jpg)
-
 ## Passos importantes para reservar com segurança no Estacionamento Aeroporto Guarulhos
 
 ### Pagamento online

@@ -13,135 +13,20 @@ Se você está planejando viajar a partir do Aeroporto Internacional de Belo Hor
 
 A região ao redor do Aeroporto de Confins oferece diversas opções de estacionamento, cada uma com características e preços distintos. Abaixo, apresentamos uma tabela comparativa para facilitar sua decisão:
 
-Nome do Estacionamento
-
-Diária (R$)
-
-7 Dias (R$)
-
-30 Dias (R$)
-
-Distância até o Aeroporto
-
-**Central Park Confins**
-
-R$ 30,00 (vaga coberta)
-
-R$ 154,00
-
-Não informado
-
-1,5 km
-
-**Park Confins**
-
-R$ 19,90
-
-Não informado
-
-Não informado
-
-4 minutos de traslado gratuito
-
-**Estapar**
-
-A partir de R$ 19,90
-
-Não informado
-
-Não informado
-
-Próximo ao aeroporto
-
-**BePark**
-
-Não informado
-
-Não informado
-
-Não informado
-
-10 minutos de traslado gratuito
-
-**Multipark**
-
-R$ 28,90 (primeiros 4 dias)
-
-Não informado
-
-Não informado
-
-Próximo ao aeroporto
-
-**Premium Park**
-
-Não informado
-
-Não informado
-
-Não informado
-
-3 km
-
-**IPO Park**
-
-Não informado
-
-Não informado
-
-Não informado
-
-Próximo ao aeroporto
-
-**Estacionamento Pátio**
-
-Não informado
-
-Não informado
-
-Não informado
-
-Próximo ao aeroporto
-
-**Estacionamento Space Park**
-
-Não informado
-
-Não informado
-
-Não informado
-
-Próximo ao aeroporto
-
-**Auto Park Brasil**
-
-Não informado
-
-Não informado
-
-Não informado
-
-Próximo ao aeroporto
-
-**Nation Park Estacionamento**
-
-Não informado
-
-Não informado
-
-Não informado
-
-Próximo ao aeroporto
-
-**Estacionamento AeroPark**
-
-Não informado
-
-Não informado
-
-Não informado
-
-Próximo ao aeroporto
+| Nome do Estacionamento | Diária (R$) | 7 Dias (R$) | 30 Dias (R$) | Distância até o Aeroporto |
+| --- | --- | --- | --- | --- |
+| **Central Park Confins** | R$ 30,00 (vaga coberta) | R$ 154,00 | Não informado | 1,5 km |
+| **Park Confins** | R$ 19,90 | Não informado | Não informado | 4 minutos de traslado gratuito |
+| **Estapar** | A partir de R$ 19,90 | Não informado | Não informado | Próximo ao aeroporto |
+| **BePark** | Não informado | Não informado | Não informado | 10 minutos de traslado gratuito |
+| **Multipark** | R$ 28,90 (primeiros 4 dias) | Não informado | Não informado | Próximo ao aeroporto |
+| **Premium Park** | Não informado | Não informado | Não informado | 3 km |
+| **IPO Park** | Não informado | Não informado | Não informado | Próximo ao aeroporto |
+| **Estacionamento Pátio** | Não informado | Não informado | Não informado | Próximo ao aeroporto |
+| **Estacionamento Space Park** | Não informado | Não informado | Não informado | Próximo ao aeroporto |
+| **Auto Park Brasil** | Não informado | Não informado | Não informado | Próximo ao aeroporto |
+| **Nation Park Estacionamento** | Não informado | Não informado | Não informado | Próximo ao aeroporto |
+| **Estacionamento AeroPark** | Não informado | Não informado | Não informado | Próximo ao aeroporto |
 
 **Detalhes dos Estacionamentos**
 

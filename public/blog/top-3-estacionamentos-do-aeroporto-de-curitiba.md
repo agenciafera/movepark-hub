@@ -32,29 +32,11 @@ Além disso, reservar seu estacionamento com antecedência garante sua vaga e ev
 
 Confira a seguir uma tabela comparativa com os valores de diárias dos principais estacionamentos no **Aeroporto Afonso Pena**:
 
-**Nome do Estacionamento**
-
-**Valor da Diária**
-
-**Distância do Aeroporto**
-
-Estacionamento Oficial do Aeroporto
-
-R$ 60,00
-
-No terminal
-
-Nation Park Curitiba
-
-A partir de R$ 11,90
-
-4 minutos
-
-Abba Park
-
-A partir de R$ 9,90
-
-5 minutos
+| **Nome do Estacionamento** | **Valor da Diária** | **Distância do Aeroporto** |
+| --- | --- | --- |
+| Estacionamento Oficial do Aeroporto | R$ 60,00 | No terminal |
+| Nation Park Curitiba | A partir de R$ 11,90 | 4 minutos |
+| Abba Park | A partir de R$ 9,90 | 5 minutos |
 
 Agora, vamos detalhar cada opção para que você possa escolher o **estacionamento aeroporto Curitiba** que mais atende às suas necessidades.
 

@@ -7,9 +7,9 @@
 - Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-de-viracopos
 
 ---
-Você que precisa viajar e vai de carro até o aeroporto de Viracopos, deve ter se pensado: “[Qual o melhor estacionamento do aeroporto Viracopos](https://movepark.com.br/estacionamento/virapark-estacionamento-viracopos/)?”. Pensando em você, decidimos fazer uma avaliação e encontrar o melhor estacionamento.
+Você que precisa viajar e vai de carro até o aeroporto de Viracopos, deve ter se pensado: “[Qual o melhor estacionamento do aeroporto Viracopos](/destinos/aeroporto-de-viracopos)?”. Pensando em você, decidimos fazer uma avaliação e encontrar o melhor estacionamento.
 
-![Estacionamento Aeroporto Viracopos](https://movepark.co/wp-content/uploads/2022/09/estacionamento-virapark-1.jpeg)
+![Estacionamento Aeroporto Viracopos](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/qual-e-o-melhor-estacionamento-do-aeroporto-de-viracopos/estacionamento-virapark-1.webp)
 
 O primeiro ponto de avaliação é: Conforto e localização. Além do estacionamento oficial do Aeroporto, existe uma outra ótima opção dentro do próprio aeroporto, o CEV Garageinn, que tem todo o conforto e ótima localização do estacionamento oficial, mas é muito mais barato.
 

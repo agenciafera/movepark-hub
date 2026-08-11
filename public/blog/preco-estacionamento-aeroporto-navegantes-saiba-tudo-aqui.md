@@ -12,65 +12,13 @@ Se você está planejando viajar a partir do Aeroporto Internacional de Navegant
 
 A região ao redor do Aeroporto de Navegantes oferece diversas opções de estacionamento, cada uma com características e preços distintos. Abaixo, apresentamos uma tabela comparativa para facilitar sua decisão:
 
-Nome do Estacionamento
-
-Diária (R$)
-
-7 Dias (R$)
-
-30 Dias (R$)
-
-Distância até o Aeroporto
-
-**Dummont Park**
-
-R$ 15,00
-
-R$ 104,00
-
-Não informado
-
-400 metros
-
-**Estacionamento Catedral**
-
-R$ 15,00 (descoberto) / R$ 25,00 (coberto)
-
-R$ 120,00 (descoberto) / R$ 150,00 (coberto)
-
-Não informado
-
-100 metros
-
-**Loca Park**
-
-R$ 24,00 (primeiras 5 diárias) / R$ 18,00 (diárias subsequentes)
-
-Não informado
-
-Não informado
-
-Em frente ao aeroporto
-
-**Estacionamento Oficial**
-
-Não informado
-
-Não informado
-
-Não informado
-
-Em frente ao aeroporto
-
-**Prime Estacionamento**
-
-Não informado
-
-Não informado
-
-Não informado
-
-Próximo ao aeroporto
+| Nome do Estacionamento | Diária (R$) | 7 Dias (R$) | 30 Dias (R$) | Distância até o Aeroporto |
+| --- | --- | --- | --- | --- |
+| **Dummont Park** | R$ 15,00 | R$ 104,00 | Não informado | 400 metros |
+| **Estacionamento Catedral** | R$ 15,00 (descoberto) / R$ 25,00 (coberto) | R$ 120,00 (descoberto) / R$ 150,00 (coberto) | Não informado | 100 metros |
+| **Loca Park** | R$ 24,00 (primeiras 5 diárias) / R$ 18,00 (diárias subsequentes) | Não informado | Não informado | Em frente ao aeroporto |
+| **Estacionamento Oficial** | Não informado | Não informado | Não informado | Em frente ao aeroporto |
+| **Prime Estacionamento** | Não informado | Não informado | Não informado | Próximo ao aeroporto |
 
 **Detalhes dos Estacionamentos**
 

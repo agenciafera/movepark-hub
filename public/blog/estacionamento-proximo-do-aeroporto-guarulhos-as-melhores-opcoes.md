@@ -23,7 +23,7 @@ Os estacionamentos acima receberam boas avaliações por parte de seus clientes.
 
 Outras opções de estacionamento perto do Aeroporto Guarulhos acabamos não recomendando pois verificamos clientes reclamando de localização, problemas com iluminação e demora no transfer.
 
-![Estacionamento próximo do Aeroporto Guarulhos](https://movepark.co/wp-content/uploads/2024/12/estacionamento-aeroporto-guarulhos.jpg)
+![Estacionamento próximo do Aeroporto Guarulhos](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes/estacionamento-aeroporto-guarulhos.webp)
 _Estacionamento próximo do Aeroporto Guarulhos_
 
 ## Estacionamento perto do Aeroporto de Guarulhos – Boas práticas

@@ -7,9 +7,9 @@
 - Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-afonso-pena
 
 ---
-Planejar uma viagem pelo [Aeroporto Afonso Pena](https://movepark.co/estacionamentos/afonso-pena/), em Curitiba, exige atenção aos detalhes, especialmente na escolha do estacionamento ideal. Neste blogpost, vamos explorar dicas fundamentais sobre o Aeroporto Afonso Pena e mostrar como você pode encontrar o melhor Estacionamento do Aeroporto Afonso Pena, que seja uma opção boa, acessível e próxima ao terminal.
+Planejar uma viagem pelo [Aeroporto Afonso Pena](/destinos/aeroporto-afonso-pena), em Curitiba, exige atenção aos detalhes, especialmente na escolha do estacionamento ideal. Neste blogpost, vamos explorar dicas fundamentais sobre o Aeroporto Afonso Pena e mostrar como você pode encontrar o melhor Estacionamento do Aeroporto Afonso Pena, que seja uma opção boa, acessível e próxima ao terminal.
 
-![](https://movepark.co/wp-content/uploads/2024/01/nation-park-1.jpeg)
+![Nation park 1](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/qual-o-melhor-estacionamento-no-aeroporto-afonso-pena-em-2024/nation-park-1.webp)
 
 ## 4 Dicas para você escolher o Estacionamento Ideal
 

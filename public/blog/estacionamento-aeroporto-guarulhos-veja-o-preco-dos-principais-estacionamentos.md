@@ -9,7 +9,7 @@
 ---
 Se você está planejando uma viagem partindo do Aeroporto de Guarulhos, então já deve ter pensado no dilema do estacionamento. Afinal, deixar seu carro em um local seguro e confiável é fundamental para que você possa viajar com tranquilidade.
 
-![Estacionamento no Aeroporto Guarulhos: veja o preço dos principais estacionamentos](https://movepark.co/wp-content/uploads/2023/03/estacionamento-aeroporto-guarulhos-precos.jpg)
+![Estacionamento no Aeroporto Guarulhos: veja o preço dos principais estacionamentos](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/estacionamento-aeroporto-guarulhos-veja-o-preco-dos-principais-estacionamentos/estacionamento-aeroporto-guarulhos-precos.webp)
 
 Pensando nisso, nós, da equipe da Movepark, selecionamos os principais estacionamentos da região e seus respectivos preços para o mês de março de 2023. Assim, você pode escolher o melhor custo-benefício de acordo com as suas necessidades.
 
@@ -17,7 +17,7 @@ Pensando nisso, nós, da equipe da Movepark, selecionamos os principais estacion
 
 O **Aeropark – Estacionamento Aeroporto Guarulhos** é um dos principais estacionamentos da região e oferece diversas vantagens para os seus clientes. Além de estar muito bem localizado, é o [estacionamento próximo ao Aeroporto de Guarulhos](/destinos/aeroporto-internacional-de-sao-paulo-guarulhos) que conta com um sistema de segurança avançado e monitorado 24 horas por dia.
 
-![Estacionamento Aeroporto Guarulhos GRU Airport](https://movepark.co/wp-content/uploads/2025/03/Aeropark-Parking-Photo.jpg)
+![Estacionamento Aeroporto Guarulhos GRU Airport](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/estacionamento-aeroporto-guarulhos-veja-o-preco-dos-principais-estacionamentos/aeropark-parking-photo.webp)
 _Estacionamento Aeroporto Guarulhos GRU Airport_
 
 ## Preço dos principais estacionamentos próximos ao Aeroporto de Guarulhos em março de 2023

@@ -9,7 +9,7 @@
 ---
 Procurando por uma solução conveniente e segura de estacionamento no Aeroporto de Afonso Pena? Nós temos a solução ideal para você! Nosso estacionamento oferece uma gama de serviços premium para garantir que sua viagem comece sem preocupações e termine com tranquilidade. Com localização estratégica e atendimento de excelência, somos a escolha preferida dos viajantes que valorizam praticidade e segurança.
 
-![estacionamento aeroporto afonso pena](https://movepark.co/wp-content/uploads/2024/03/estacionamento-aeroporto-afonso-pena.png)
+![estacionamento aeroporto afonso pena](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/estacionamento-no-aeroporto-de-afonso-pena-a-melhor-opcao-para-sua-viagem/estacionamento-aeroporto-afonso-pena.webp)
 
 ## Nation Park
 
@@ -19,7 +19,7 @@ Nós, da [Nation Park](http://nationpark.com.br), somos uma excelente opção de
 
 ### Localização Privilegiada
 
-Nosso [estacionamento fica muito próximo ao Aeroporto Afonso Pena](https://movepark.co/estacionamentos/afonso-pena/), leva poucos minutos até o terminal, o que proporciona acesso rápido e fácil tanto para chegadas quanto para partidas. Com localização estratégica, evite o estresse de procurar vagas em estacionamentos lotados e chegue ao seu destino a tempo.
+Nosso [estacionamento fica muito próximo ao Aeroporto Afonso Pena](/destinos/aeroporto-afonso-pena), leva poucos minutos até o terminal, o que proporciona acesso rápido e fácil tanto para chegadas quanto para partidas. Com localização estratégica, evite o estresse de procurar vagas em estacionamentos lotados e chegue ao seu destino a tempo.
 
 ### Segurança em Primeiro Lugar
 
@@ -31,7 +31,7 @@ Oferecemos tarifas competitivas para atender às necessidades de todos os viajan
 
 ### Reservas Online
 
-Facilitamos o processo com nosso [sistema de reserva online para estacionamentos](https://movepark.co/o-sistema/), conveniente e fácil de usar. Com apenas alguns cliques, você pode garantir sua vaga de estacionamento e evitar qualquer inconveniente de última hora. Planeje sua viagem com antecedência e garanta a tranquilidade desde o momento em que sair de casa.
+Facilitamos o processo com nosso [sistema de reserva online para estacionamentos](/como-funciona), conveniente e fácil de usar. Com apenas alguns cliques, você pode garantir sua vaga de estacionamento e evitar qualquer inconveniente de última hora. Planeje sua viagem com antecedência e garanta a tranquilidade desde o momento em que sair de casa.
 
 ## Opções de Pagamento Flexíveis
 
@@ -39,4 +39,4 @@ Aceitamos uma variedade de opções de pagamento para maior conveniência dos no
 
 ## Conclusão
 
-Não perca tempo e garanta já sua vaga em nosso [estacionamento no Aeroporto de Afonso Pena](https://movepark.co/estacionamentos/afonso-pena/). Conte conosco para proporcionar uma experiência de estacionamento superior, onde sua satisfação é nossa prioridade.
+Não perca tempo e garanta já sua vaga em nosso [estacionamento no Aeroporto de Afonso Pena](/destinos/aeroporto-afonso-pena). Conte conosco para proporcionar uma experiência de estacionamento superior, onde sua satisfação é nossa prioridade.

@@ -9,7 +9,7 @@
 ---
 O **Aeroporto Internacional de Guarulhos (GRU)** oferece várias opções de estacionamento, cada uma com preços diferentes. Vou apresentar algumas alternativas para você escolher a que melhor se adequa às suas necessidades:
 
-![melhor estacionamento aeroporto guarulhos](https://movepark.co/wp-content/uploads/2024/03/estacionamento-aeroporto-guarulhos-vagas-cobertas.jpeg)
+![melhor estacionamento aeroporto guarulhos](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/qual-e-o-preco-medio-do-estacionamento-no-aeroporto-guarulhos/estacionamento-aeroporto-guarulhos-vagas-cobertas.webp)
 
 1.  ### **Ponce Park – Estacionamento Aeroporto Guarulhos**
     
@@ -49,7 +49,7 @@ O **Aeroporto Internacional de Guarulhos (GRU)** oferece várias opções de es
 
 Se você está planejando viajar pelo **Aeroporto de Guarulhos (GRU)** e pretende levar o seu veículo, lembre-se de verificar as opções de estacionamento disponíveis, considerar a segurança, a proximidade e os preços ao escolher o estacionamento para sua viagem. Escolher o [melhor  estacionamento do Aeroporto Guarulhos](/destinos/aeroporto-internacional-de-sao-paulo-guarulhos) é fundamental! Vou compartilhar dicas valiosas para que você tome a melhor decisão considerando fatores como valor, distância, segurança, disponibilidade e reserva antecipada.
 
-![melhor estacionamento aeroporto guarulhos](https://movepark.co/wp-content/uploads/2024/03/estacionamento-aeroporto-guarulhos-com-traslado.jpeg)
+![melhor estacionamento aeroporto guarulhos](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/qual-e-o-preco-medio-do-estacionamento-no-aeroporto-guarulhos/estacionamento-aeroporto-guarulhos-com-traslado.webp)
 
 ### 1\. Proximidade e Distância
 
@@ -61,7 +61,7 @@ Verifique se o estacionamento possui **câmeras de segurança** e monitorament
 
 ### 3\. Valor
 
-Compare os [**preços das diárias**](/blog/qual-o-valor-da-diaria-do-estacionamento-no-aeroporto-guarulhos/). O **Ponce Park**, oferece uma das menores tarifas da região, **apenas R$15,29** para o pagamento online. E fica a  apenas **10 minutos** do aeroporto, oferece [vagas cobertas e descobertas](/blog/ponce-park-descubra-se-o-estacionamento-aeroporto-gru-oferece-vagas-cobertas/) com serviço de transfer gratuito. Além disso, é 80% mais barato que o estacionamento oficial do aeroporto.
+Compare os [**preços das diárias**](/blog/qual-o-valor-da-diaria-do-estacionamento-no-aeroporto-guarulhos/). O **Ponce Park**, oferece uma das menores tarifas da região, **apenas R$15,29** para o pagamento online. E fica a  apenas **10 minutos** do aeroporto, oferece [vagas cobertas e descobertas](/blog/aeropark-descubra-se-o-estacionamento-aeroporto-gru-oferece-vagas-cobertas/) com serviço de transfer gratuito. Além disso, é 80% mais barato que o estacionamento oficial do aeroporto.
 
 ### 4\. Reserva Antecipada
 

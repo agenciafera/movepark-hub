@@ -11,7 +11,7 @@
 
 Bem-vindo ao nosso guia completo sobre o Aeroporto Internacional de Viracopos, localizado em Campinas, São Paulo. Conhecido por sua eficiência e infraestrutura moderna, Viracopos é um dos principais aeroportos do Brasil e um importante hub logístico. Neste artigo, você encontrará tudo o que precisa saber para aproveitar ao máximo sua passagem por este aeroporto.
 
-![como-escolher-o-melhor-estacionamento-aeroporto-viracopos](https://movepark.co/wp-content/uploads/2024/02/como-escolher-o-melhor-estacionamento-aeroporto-viracopos.jpg)
+![como-escolher-o-melhor-estacionamento-aeroporto-viracopos](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/guia-completo-descubra-o-melhor-do-aeroporto-viracopos/como-escolher-o-melhor-estacionamento-aeroporto-viracopos.webp)
 
 ## História do Aeroporto Viracopos
 
@@ -56,8 +56,8 @@ Para quem busca mais conforto, o aeroporto dispõe de salas VIP que oferecem ser
 O Aeroporto de Viracopos oferece diversas opções de estacionamento para atender às diferentes necessidades dos passageiros. Veja algumas das principais opções de estacionamento
 
 -   **Estacionamento Edifício Garagem:** Localizado dentro do terminal, ideal para estadias curtas.
--   **[Estacionamento Garage Inn](/destinos/aeroporto-de-viracoposgarage-inn-aeroporto-viracopos/):** Opções de médio prazo, a uma curta distância do terminal.
--   **[Estacionamento Próximo ao Aeroporto Viracopos](/destinos/aeroporto-de-viracoposvirapark-estacionamento-viracopos/):** Localizado um pouco mais afastado, com tarifas mais acessíveis e serviço de shuttle gratuito para o terminal.
+-   **[Estacionamento Garage Inn](/destinos/aeroporto-de-viracopos):** Opções de médio prazo, a uma curta distância do terminal.
+-   **[Estacionamento Próximo ao Aeroporto Viracopos](/destinos/aeroporto-de-viracopos):** Localizado um pouco mais afastado, com tarifas mais acessíveis e serviço de shuttle gratuito para o terminal.
 
 ## [Dicas de Viagem](/blog/dicas-de-viagem-encontre-o-estacionamento-perfeito-perto-do-aeroporto-de-guarulhos-com-o-movepark/)
 

@@ -11,7 +11,7 @@ O Aeroporto de Confins, oficialmente conhecido como Aeroporto Internacional Tanc
 
 ### **Aeroporto de Confins**
 
-![](https://movepark.co/wp-content/uploads/2024/07/aeroporto-confins-interno.jpg)
+![Aeroporto confins interno](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/tudo-sobre-o-aeroporto-de-confins-guia-completo/aeroporto-confins-interno.webp)
 
 #### **História do Aeroporto de Confins**
 
@@ -61,7 +61,7 @@ O Aeroporto de Confins proporciona acesso gratuito à internet Wi-Fi em todo o t
 
 Para garantir uma experiência tranquila, o aeroporto dispõe de balcões de atendimento ao cliente onde os passageiros podem obter informações, assistência com bagagens e outros serviços.
 
-![aeroporto de confins informação](https://movepark.co/wp-content/uploads/2024/07/aeroporto-confins-interno.jpg)
+![aeroporto de confins informação](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/tudo-sobre-o-aeroporto-de-confins-guia-completo/aeroporto-confins-interno.webp)
 
 ### **Informações Úteis para Passageiros**
 

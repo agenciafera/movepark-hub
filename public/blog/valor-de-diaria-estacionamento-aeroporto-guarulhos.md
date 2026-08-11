@@ -27,29 +27,11 @@ Essas vantagens tornam o estacionamento uma escolha prática, especialmente para
 
 A tabela abaixo apresenta os preços e distâncias dos melhores estacionamentos para ajudar na sua decisão:
 
-**Nome do Estacionamento**
-
-**Valor da Diária (R$)**
-
-**Distância do Aeroporto**
-
-Estacionamento Oficial GRU
-
-70,00
-
-Dentro do aeroporto
-
-AirportPark
-
-40,00
-
-6 minutos
-
-Urban Park
-
-35,00
-
-8 minutos
+| **Nome do Estacionamento** | **Valor da Diária (R$)** | **Distância do Aeroporto** |
+| --- | --- | --- |
+| Estacionamento Oficial GRU | 70,00 | Dentro do aeroporto |
+| AirportPark | 40,00 | 6 minutos |
+| Urban Park | 35,00 | 8 minutos |
 
 Essas opções foram selecionadas com base na segurança, custo-benefício e na qualidade dos serviços oferecidos.
 

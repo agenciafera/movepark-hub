@@ -109,6 +109,39 @@ function Block({ block }: { block: MdBlock }) {
           <Inline nodes={block.content} />
         </blockquote>
       );
+    case "table":
+      return (
+        /*
+          A rolagem fica no wrapper, não na página: comparativo de preço tem 4
+          colunas e no celular a tabela é mais larga que a tela.
+        */
+        <div className="mt-8 overflow-x-auto rounded-2xl border border-hairline">
+          <table className="w-full border-collapse text-body-sm">
+            {block.head.length > 0 && (
+              <thead>
+                <tr className="border-b border-hairline bg-surface-soft">
+                  {block.head.map((celula, i) => (
+                    <th key={i} className="px-4 py-3 text-left text-title-sm text-ink">
+                      <Inline nodes={celula} />
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+            )}
+            <tbody>
+              {block.rows.map((linha, i) => (
+                <tr key={i} className="border-b border-hairline-soft last:border-0">
+                  {linha.map((celula, j) => (
+                    <td key={j} className="px-4 py-3 align-top text-body">
+                      <Inline nodes={celula} />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
     case "rule":
       return <hr className="mt-8 border-hairline" />;
     case "image":

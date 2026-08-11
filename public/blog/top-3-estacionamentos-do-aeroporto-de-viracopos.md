@@ -23,29 +23,11 @@ Além disso, planejar onde estacionar evita imprevistos, filas e possíveis cont
 
 Confira abaixo a tabela atualizada com os valores de diária dos principais estacionamentos em Viracopos:
 
-**Nome do Estacionamento**
-
-**Valor da Diária**
-
-**Distância do Aeroporto**
-
-Estacionamento Oficial do Aeroporto
-
-R$ 55,00
-
-No terminal
-
-Virapark
-
-A partir de R$ 15,90
-
-5 minutos
-
-Garageinn Centro Empresarial Viracopos
-
-R$ 34,90
-
-Dentro do aeroporto
+| **Nome do Estacionamento** | **Valor da Diária** | **Distância do Aeroporto** |
+| --- | --- | --- |
+| Estacionamento Oficial do Aeroporto | R$ 55,00 | No terminal |
+| Virapark | A partir de R$ 15,90 | 5 minutos |
+| Garageinn Centro Empresarial Viracopos | R$ 34,90 | Dentro do aeroporto |
 
 Agora vamos detalhar cada opção para que você possa decidir qual estacionamento Viracopos atende melhor às suas necessidades.
 

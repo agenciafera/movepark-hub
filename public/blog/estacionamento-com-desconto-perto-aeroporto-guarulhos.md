@@ -11,7 +11,7 @@ Se você precisa viajar de avião, provavelmente já se deparou com o dilema de 
 
 Neste artigo, vamos compartilhar algumas dicas valiosas para encontrar [estacionamento perto do Aeroporto de Guarulhos](/destinos/aeroporto-internacional-de-sao-paulo-guarulhos) com desconto. Vamos começar!
 
-![estacionamento-perto-aeroporto-guarulhos-com-desconto](https://movepark.co/wp-content/uploads/2023/08/estacionamento-perto-aeroporto-guarulhos-com-desconto-1024x683.jpg)
+![estacionamento-perto-aeroporto-guarulhos-com-desconto](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/estacionamento-com-desconto-perto-aeroporto-guarulhos/estacionamento-perto-aeroporto-guarulhos-com-desconto-1024x683.webp)
 
 ## 1\. Pesquise online
 

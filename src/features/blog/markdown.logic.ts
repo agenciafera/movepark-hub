@@ -34,7 +34,9 @@ export type MdBlock =
   | { type: "list"; ordered: boolean; items: MdListItem[] }
   | { type: "quote"; content: MdInline[] }
   | { type: "image"; src: string; alt: string }
-  | { type: "rule" };
+  | { type: "rule" }
+  /** Cabeçalho separado do corpo: 32 posts trazem comparativo de preço. */
+  | { type: "table"; head: MdInline[][]; rows: MdInline[][][] };
 
 /**
  * Imagem sozinha na linha, com ou sem link em volta.
@@ -53,6 +55,17 @@ const QUOTE = /^>\s?(.*)$/;
  * `UNORDERED` e virava um item com o texto "* *". São 105 no acervo, em 14 posts.
  */
 const RULE = /^([-*_])(\s*\1){2,}$/;
+const TABLE_ROW = /^\|(.+)\|\s*$/;
+/** Linha separadora do cabeçalho: `| --- | :--: |`. */
+const TABLE_SEP = /^\|[\s:|-]+\|\s*$/;
+
+/** Quebra `| a | b |` nas células, já sem os pipes das pontas. */
+function celulas(linha: string): string[] {
+  return linha
+    .replace(/^\||\|\s*$/g, "")
+    .split("|")
+    .map((c) => c.trim());
+}
 
 /**
  * Quebra o texto em trechos com marcação inline.
@@ -110,10 +123,33 @@ export function parseMarkdown(md: string): MdBlock[] {
     a lista se o que vier depois não pertencer a ela.
   */
   let brancoPendente = false;
+  let tabela: string[][] | null = null;
 
   const flushParagraph = () => {
     const text = paragraph.join(" ").trim();
-    if (text) blocks.push({ type: "paragraph", content: parseInline(text) });
+    if (text) {
+      const content = parseInline(text);
+      /*
+        Parágrafo que é só negrito e curto é subtítulo, não parágrafo.
+
+        O editor clássico usava negrito no lugar de título em 165 blocos, quase
+        sempre nome de estacionamento abrindo um trecho. Renderizado como
+        parágrafo, o leitor perde a divisão e o outline fica sem os degraus.
+        O limite de tamanho e a ausência de ponto final separam o subtítulo de
+        uma frase inteira que por acaso está toda em negrito.
+      */
+      const unico = content.length === 1 ? content[0] : null;
+      // O teste é sobre o texto de dentro, não sobre o cru: "**Frase.**" termina
+      // em asterisco, e checar o cru deixava frase inteira virar título.
+      const interno = unico?.type === "bold" ? inlineText(unico.children).trim() : "";
+      const soNegrito =
+        unico?.type === "bold" && interno.length <= 80 && !/[.!?:]$/.test(interno) ? unico : null;
+      blocks.push(
+        soNegrito
+          ? { type: "heading", level: 4, content: soNegrito.children }
+          : { type: "paragraph", content },
+      );
+    }
     paragraph = [];
   };
   const flushList = () => {
@@ -132,6 +168,22 @@ export function parseMarkdown(md: string): MdBlock[] {
     list = null;
     brancoPendente = false;
   };
+  /**
+   * Fecha a tabela. A primeira linha é o cabeçalho quando veio a linha
+   * separadora; sem ela, tudo vira corpo e o cabeçalho fica vazio.
+   */
+  const flushTable = () => {
+    if (tabela && tabela.length) {
+      const [cab, ...resto] = tabela;
+      const temCabecalho = tabela.length > 1;
+      blocks.push({
+        type: "table",
+        head: temCabecalho ? cab.map((c) => parseInline(c)) : [],
+        rows: (temCabecalho ? resto : tabela).map((l) => l.map((c) => parseInline(c))),
+      });
+    }
+    tabela = null;
+  };
   const flushQuote = () => {
     const text = quote.join(" ").trim();
     if (text) blocks.push({ type: "quote", content: parseInline(text) });
@@ -141,6 +193,7 @@ export function parseMarkdown(md: string): MdBlock[] {
     flushParagraph();
     flushList();
     flushQuote();
+    flushTable();
   };
 
   for (const raw of lines) {
@@ -175,6 +228,19 @@ export function parseMarkdown(md: string): MdBlock[] {
 
     // O que veio depois da branco não é da lista: fecha antes de seguir.
     if (brancoPendente && !UNORDERED.test(line) && !ORDERED.test(line)) flushList();
+
+    const linhaDeTabela = line.match(TABLE_ROW);
+    if (linhaDeTabela) {
+      // A linha separadora só marca onde o cabeçalho termina; não vira conteúdo.
+      if (!TABLE_SEP.test(line)) {
+        flushParagraph();
+        flushList();
+        flushQuote();
+        (tabela ??= []).push(celulas(line));
+      }
+      continue;
+    }
+    flushTable();
 
     if (RULE.test(line)) {
       flushAll();
@@ -279,6 +345,9 @@ export function plainText(md: string): string {
   return parseMarkdown(md)
     .flatMap((b) => {
       if (b.type === "image" || b.type === "rule") return [];
+      if (b.type === "table") {
+        return [...b.head, ...b.rows.flat()].map(inlineText);
+      }
       if (b.type === "list") {
         return b.items.flatMap((i) => [
           inlineText(i.content),

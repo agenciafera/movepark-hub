@@ -9,7 +9,7 @@
 ---
 Se você está procurando informações detalhadas sobre o Aeroporto de Guarulhos, você veio ao lugar certo! Neste guia, vamos abordar tudo o que você precisa saber sobre o maior aeroporto do Brasil. Nossa missão é fornecer um conteúdo completo que atenda todas as suas dúvidas. Vamos lá!
 
-![](https://movepark.co/wp-content/uploads/2024/06/GRU-AIRPORT-TERMINAL-1.webp)
+![Gru airport terminal 1](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/guia-completo-sobre-o-aeroporto-de-guarulhos/gru-airport-terminal-1.webp)
 
 ## O que é o Aeroporto Guarulhos?
 
@@ -37,7 +37,7 @@ Táxis e veículos de aplicativos como Uber, 99 e Cabify são opções populares
 
 ## Terminais
 
-![](https://movepark.co/wp-content/uploads/2024/06/mapa-estacionamento-aeroporto-guarulhos.jpg)
+![Mapa estacionamento aeroporto guarulhos](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/guia-completo-sobre-o-aeroporto-de-guarulhos/mapa-estacionamento-aeroporto-guarulhos.webp)
 
 O Aeroporto de Guarulhos possui três terminais de passageiros:
 
