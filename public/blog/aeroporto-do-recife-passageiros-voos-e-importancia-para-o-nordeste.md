@@ -26,7 +26,9 @@ O contraste entre a capacidade de 15 milhões e os 9,9 milhões de hoje é o que
 
 Este é o ponto que os números de movimentação escondem. O Guararapes não serve só Pernambuco. Ele funciona como aeroporto de referência para uma faixa que vai do litoral da Paraíba ao de Alagoas, e para todo o interior pernambucano.
 
-A comparação com os vizinhos deixa isso claro. Em 2025, Maceió recebeu cerca de 3,0 milhões de passageiros e João Pessoa, 1,89 milhão. Recife sozinho fez mais que o dobro dos dois somados.
+A comparação com os vizinhos deixa isso claro. Em 2025, Maceió recebeu cerca de 3,0 milhões de passageiros e João Pessoa, 1,89 milhão.
+
+![Infográfico com os números do Aeroporto do Recife: 9,9 milhões de passageiros em 2025, contra 3,0 milhões de Maceió e 1,89 milhão de João Pessoa, mais 223 voos por dia previstos para janeiro de 2026](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/aeroporto-do-recife-passageiros-voos-e-importancia-para-o-nordeste/infografico-aeroporto-recife-numeros.webp)
 
 A geografia explica boa parte. O Guararapes fica a cerca de 120 km de João Pessoa, 130 km de Caruaru e 220 km de Maceió, de duas a três horas de carro, quase sempre pela BR-101.
 
@@ -69,3 +71,5 @@ Se você tem um estacionamento perto do Guararapes e quer receber esse viajante,
 - Aena Brasil e Diario de Pernambuco, movimentação de passageiros em 2025
 - Folha de Pernambuco, malha aérea programada para janeiro de 2026
 - Aena Brasil, plano de investimentos de R$ 580 milhões anunciado em outubro de 2025
+- Foto de capa: Portal da Copa, via Wikimedia Commons (CC BY 3.0 BR), com tratamento de cor da Movepark
+
