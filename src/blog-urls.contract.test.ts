@@ -251,3 +251,61 @@ describe("contrato de URL da taxonomia e da paginação", () => {
     expect(res.status).toBe(200);
   });
 });
+
+describe("post inexistente devolve 404, não a casca da SPA", () => {
+  /** Env com o manifesto de slugs publicado pelo build. */
+  function envComManifesto(slugs: string[]) {
+    const served: string[] = [];
+    return {
+      served,
+      env: {
+        ASSETS: {
+          fetch: vi.fn(async (request: Request) => {
+            const { pathname } = new URL(request.url);
+            served.push(pathname);
+            if (pathname === "/blog-slugs.json") {
+              return new Response(JSON.stringify(slugs), {
+                status: 200,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
+            return new Response(HTML, { status: 200, headers: { "Content-Type": "text/html" } });
+          }),
+        },
+      },
+    };
+  }
+
+  it("slug que não existe vira 404", async () => {
+    const { env } = envComManifesto(["existe"]);
+    const res = await worker.fetch(req("/blog/nao-existe/"), env);
+    expect(res.status).toBe(404);
+  });
+
+  it("slug publicado continua 200", async () => {
+    const { env } = envComManifesto(["existe"]);
+    const res = await worker.fetch(req("/blog/existe/"), env);
+    expect(res.status).toBe(200);
+  });
+
+  it("sem manifesto a regra se desliga, em vez de 404 em post real", async () => {
+    // Build antigo ou manifesto ausente: preferimos servir a mais do que sumir
+    // com post que existe.
+    //
+    // O worker guarda o manifesto no escopo do módulo (um isolate, um build), então
+    // aqui o módulo é recarregado para o cache de outro teste não vazar para este.
+    vi.resetModules();
+    const { default: fresh } = await import("./worker");
+    const assets = {
+      fetch: vi.fn(async () => new Response(HTML, { status: 200, headers: { "Content-Type": "text/html" } })),
+    };
+    const res = await fresh.fetch(req("/blog/qualquer/"), { ASSETS: assets });
+    expect(res.status).toBe(200);
+  });
+
+  it("a rota de listagem não é confundida com slug de post", async () => {
+    const { env } = envComManifesto(["existe"]);
+    expect((await worker.fetch(req("/blog/tag/traslado/"), env)).status).toBe(200);
+    expect((await worker.fetch(req("/blog/page/2/"), env)).status).toBe(200);
+  });
+});

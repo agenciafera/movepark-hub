@@ -74,6 +74,7 @@ import ManagerFaqCategorias from "@/routes/manager/faq-categorias";
 import ManagerPartners from "@/routes/manager/partners";
 import ManagerDestinations from "@/routes/manager/destinations";
 import ManagerBlog from "@/routes/manager/blog";
+import ManagerApiInterna from "@/routes/manager/api-interna";
 import ManagerReviews from "@/routes/manager/reviews";
 import ManagerAttribution from "@/routes/manager/attribution";
 
@@ -514,6 +515,7 @@ export const routes: RouteRecord[] = [
               { path: "partners", element: <ManagerPartners /> },
               { path: "destinations", element: <ManagerDestinations /> },
               { path: "blog", element: <ManagerBlog /> },
+              { path: "api-interna", element: <ManagerApiInterna /> },
               { path: "companies/:id/locations", element: <ManagerLocations /> },
               {
                 path: "companies/:companyId/locations/:locationId/parking-types",

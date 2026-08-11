@@ -198,7 +198,7 @@ export type Database = {
       }
       api_key: {
         Row: {
-          company_id: string
+          company_id: string | null
           created_at: string
           created_by: string | null
           deleted_at: string | null
@@ -214,7 +214,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          company_id: string
+          company_id?: string | null
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
@@ -230,7 +230,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          company_id?: string
+          company_id?: string | null
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
@@ -4721,6 +4721,20 @@ export type Database = {
       hold_paid_date_change: {
         Args: { p_booking_id: string; p_check_in: string; p_check_out: string }
         Returns: Json
+      }
+      hub_create_platform_api_key: {
+        Args: {
+          p_environment: string
+          p_expires_at?: string
+          p_name: string
+          p_scopes: string[]
+        }
+        Returns: Json
+      }
+      hub_list_platform_api_keys: { Args: never; Returns: Json }
+      hub_revoke_platform_api_key: {
+        Args: { p_id: string }
+        Returns: undefined
       }
       is_company_owner: { Args: { p_company_id: string }; Returns: boolean }
       is_hub_admin: { Args: never; Returns: boolean }

@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
+import fs from "node:fs";
 import path from "node:path";
 import sitemap from "vite-plugin-sitemap";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
@@ -54,6 +55,23 @@ async function getBlogRoutes(sb: SupabaseClient | null): Promise<string[]> {
   return (data ?? []).map((p: any) => `/blog/${p.slug}/`);
 }
 
+/**
+ * Manifesto de slugs publicados, lido pelo worker para devolver 404 de verdade.
+ *
+ * Sem ele, `/blog/qualquer-coisa/` caía no fallback da SPA e respondia 200 com a
+ * casca do app. Para o Google isso é soft 404: ele indexa a URL como página real
+ * e vazia, que foi parte do que sujou o índice do site legado.
+ */
+function writeBlogSlugManifest(routes: string[]) {
+  // Lista vazia é sintoma de Supabase fora do ar, não de blog sem post. Gravar
+  // ela faria o worker devolver 404 em 93 URLs que o Google já indexa, então o
+  // manifest versionado fica como está e o build segue com o que tem.
+  if (!routes.length) return;
+  const slugs = routes.map((r) => r.replace(/^\/blog\//, "").replace(/\/$/, ""));
+  fs.mkdirSync("public", { recursive: true });
+  fs.writeFileSync("public/blog-slugs.json", JSON.stringify(slugs));
+}
+
 export default defineConfig(async ({ mode }) => {
   // `loadEnv` lê os .env (versionados; a anon key é pública) — o Vite NÃO injeta o
   // .env em process.env, então sem isto o sitemap sairia vazio no build local/deploy.
@@ -69,6 +87,8 @@ export default defineConfig(async ({ mode }) => {
   ]);
   // Índice de destinos + uma URL por destino publicado, além das listagens /p/...
   // e dos posts do blog (com barra final, contrato herdado do WordPress).
+  writeBlogSlugManifest(blogRoutes);
+
   const dynamicRoutes = [
     "/destinos",
     "/blog/",

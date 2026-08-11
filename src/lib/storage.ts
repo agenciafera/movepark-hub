@@ -81,6 +81,11 @@ export function uploadDestinationImage(codeOrSlug: string, name: string, file: F
   return uploadPublicAsset(publicAssetDir.destination(codeOrSlug), name, file);
 }
 
+/** Imagem de post (hub_admin). Path: assets-public/blog/<slug>/. */
+export function uploadBlogImage(slug: string, name: string, file: File): Promise<string> {
+  return uploadPublicAsset(publicAssetDir.blog(slug), name, file);
+}
+
 /** Assets públicos de uma empresa (logo/fotos). Path: assets-public/<company_id>/. */
 export function uploadCompanyAsset(companyId: string, name: string, file: File): Promise<string> {
   return uploadPublicAsset(publicAssetDir.company(companyId), name, file);

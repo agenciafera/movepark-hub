@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/select";
 import { usePublishedDestinations } from "@/features/destinations/api";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ImageUploadField } from "@/components/shared/ImageUpload";
+import { uploadBlogImage } from "@/lib/storage";
 import {
   useBlogAuthors,
   useBlogCategories,
@@ -169,13 +171,19 @@ export function BlogPostForm({ open, onOpenChange, post }: Props) {
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="blog-cover">Imagem de capa</Label>
-            <Input
-              id="blog-cover"
-              value={coverImageUrl}
-              onChange={(e) => setCoverImageUrl(e.target.value)}
-              placeholder="/images/blog/meu-post/capa.webp"
+            <ImageUploadField
+              label="Imagem de capa"
+              value={coverImageUrl || null}
+              onChange={(url) => setCoverImageUrl(url ?? "")}
+              onUpload={(file) => uploadBlogImage(slug.trim(), "capa", file)}
+              aspectClass="aspect-[3/2]"
+              disabled={!slug.trim()}
+              disabledHint="Preencha o slug antes de enviar a capa: ele define a pasta do post."
             />
+            <p className="text-caption-sm text-muted">
+              A capa não é recortada no site. Qualquer proporção serve, e o card preenche o
+              entorno com um desfoque da própria imagem.
+            </p>
           </div>
 
           <div className="flex flex-col gap-2">

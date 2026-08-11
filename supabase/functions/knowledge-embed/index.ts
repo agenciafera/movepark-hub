@@ -58,6 +58,24 @@ async function loadSource(admin: any, sourceType: string, sourceId: string): Pro
     if (!data || data.deleted_at) return null;
     return { scope: "location", location_id: sourceId, destination_id: null, chunks: chunkProse(data[field]) };
   }
+  if (sourceType === "blog_post") {
+    const { data } = await admin
+      .from("blog_post")
+      .select("title, body_md, destination_id, is_published, deleted_at")
+      .eq("id", sourceId)
+      .maybeSingle();
+    if (!data || data.deleted_at || !data.is_published) return null;
+    // O título entra no primeiro chunk porque é ele que diz de qual aeroporto o
+    // trecho fala; sem isso um parágrafo solto sobre "a diária" não se distingue
+    // entre Viracopos e Guarulhos na hora do match.
+    return {
+      scope: data.destination_id ? "destination" : "global",
+      location_id: null,
+      destination_id: data.destination_id,
+      chunks: chunkProse(`${data.title}\n\n${data.body_md ?? ""}`),
+    };
+  }
+
   if (sourceType === "location_amenity") {
     const { data } = await admin.from("location_amenity").select("notes").eq("location_id", sourceId);
     // deno-lint-ignore no-explicit-any

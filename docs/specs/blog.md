@@ -426,6 +426,14 @@ Medido contra o banco vivo em 11/08/2026: leitura 200 e filtros corretos; escrit
 com chave sem o escopo devolve 403; sem chave, 401; método errado, 405; ciclo de
 criar como rascunho, publicar, excluir e sumir da leitura, todo verde.
 
+**A credencial e a documentação delas moram em `/manager/api-interna`**, atrás do
+`RequireRole hub_admin`. A página traz o catálogo das rotas acima, as três
+superfícies de MCP, o motivo de não existir MCP de Manager, e a emissão da chave
+de plataforma. `manager-docs.contract.test.ts` casa o catálogo com o
+`internalRoute()` do router nos dois sentidos, então rota nova sem documentação
+reprova, e documentação sem rota também. Ver
+[`permissions.md`](permissions.md) para a chave sem empresa.
+
 ## Dívida conhecida
 
 - **Duplicação de conteúdo.** São 35 posts de Guarulhos e 26 de Viracopos, muitos quase

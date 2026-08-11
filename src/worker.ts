@@ -167,6 +167,30 @@ export default {
   },
 };
 
+/**
+ * Slugs publicados, em cache por isolate.
+ *
+ * Só o sucesso entra em cache. Guardar a falha faria uma leitura ruim desligar a
+ * regra até o isolate morrer, e o custo de tentar de novo é uma leitura de asset
+ * que só acontece enquanto o manifesto realmente não está lá.
+ */
+let blogSlugsCache: Set<string> | undefined;
+
+async function blogSlugs(env: Env, url: URL): Promise<Set<string> | null> {
+  if (blogSlugsCache) return blogSlugsCache;
+  try {
+    const res = await env.ASSETS.fetch(new Request(new URL("/blog-slugs.json", url)));
+    const tipo = res.headers.get("Content-Type") ?? "";
+    // Manifesto ausente cai no fallback SPA (HTML). Sem manifesto confiável a
+    // regra se desliga, em vez de mandar 404 em post que existe.
+    if (!res.ok || !tipo.includes("json")) return null;
+    blogSlugsCache = new Set((await res.json()) as string[]);
+    return blogSlugsCache;
+  } catch {
+    return null;
+  }
+}
+
 async function serve(request: Request, env: Env): Promise<Response> {
   const accept = request.headers.get("Accept") ?? "";
 
@@ -223,6 +247,26 @@ async function serve(request: Request, env: Env): Promise<Response> {
       return new Response(null, { status: 404, headers: { "Cache-Control": "no-store" } });
     }
     return assetResponse;
+  }
+
+  /*
+    Post inexistente devolve 404, não a casca da SPA.
+
+    O `not_found_handling: single-page-application` do Pages responde 200 com o
+    index para qualquer caminho, e o Google trata isso como soft 404: indexa a URL
+    como página real e vazia. Foi parte do que sujou o índice do site legado (94
+    URLs em "rastreada, mas não indexada").
+
+    O manifesto sai do build (`writeBlogSlugManifest` no vite.config) e fica em
+    cache no escopo do módulo, então custa uma leitura por isolate, não por
+    requisição.
+  */
+  const post = url.pathname.match(/^\/blog\/([^/]+)\/?$/);
+  if (post && !BLOG_LISTING_PREFIXES.has(post[1])) {
+    const slugs = await blogSlugs(env, url);
+    if (slugs && !slugs.has(post[1])) {
+      return new Response(null, { status: 404, headers: { "Cache-Control": "no-store" } });
+    }
   }
 
   // Barra final do blog sem salto de redirect.

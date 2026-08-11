@@ -7657,6 +7657,52 @@
       "first_seen": "2026-08-04T22:29:43.647Z",
       "last_seen": "2026-08-04T22:29:43.647Z",
       "seen_count": 1
+    },
+    "sig:5d0075c55831dbea": {
+      "urls_seen": [
+        "http://localhost:5173/manager/api-interna"
+      ],
+      "url_pattern": "**/manager/api-interna",
+      "title": "Movepark Hub",
+      "interactive": [
+        "button type=button text=Rede completa0 unidades · 0 empresas",
+        "a text=Dashboard",
+        "a text=Empresas",
+        "a text=Parceiros",
+        "a text=Destinos",
+        "a text=Reservas",
+        "a text=Financeiro",
+        "a text=Repasses",
+        "a text=Comissões",
+        "a text=Recebedores",
+        "a text=Tarifas",
+        "a text=Atribuição",
+        "a text=Avaliações",
+        "a text=Blog",
+        "a text=FAQ",
+        "a text=Usuários",
+        "a text=Documentos legais",
+        "a text=API interna",
+        "a text=Configurações",
+        "button type=button text=Buscar reserva, unidade, cupom⌘K",
+        "button type=button",
+        "button id=radix-:r4: type=button text=QW",
+        "input id=pk-nome placeholder=Bot de conteúdo, n8n do blog...",
+        "input name=ambiente type=radio",
+        "input name=ambiente type=radio",
+        "button type=button",
+        "input type=checkbox",
+        "button type=submit text=Emitir chave",
+        "a text=Início",
+        "a text=Empresas",
+        "a text=Reservas",
+        "a text=Usuários",
+        "button type=button text=Mais"
+      ],
+      "source": "execution",
+      "first_seen": "2026-08-11T13:35:52.104Z",
+      "last_seen": "2026-08-11T13:35:52.104Z",
+      "seen_count": 1
     }
   },
   "transitions": [

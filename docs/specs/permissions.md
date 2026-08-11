@@ -44,6 +44,20 @@ não conta na invariante "o Dono tem todos", que vale sobre o catálogo de empre
 |---|---|---|
 | `checkout:link` | ✔ | Tool que gera link de checkout, concedida só à chave do bot interno |
 | `fares:write` | – | Editar plano de cancelamento (Básica/Flex/Superflex) por tipo de vaga |
+| `blog:write` | ✔ | Criar, publicar e excluir post pelas rotas internas do blog |
+
+### Chave de plataforma (`api_key.company_id is null`)
+
+`company_id` era NOT NULL, então uma chave da Movepark teria que ser pendurada em algum parceiro, e
+aquele parceiro a veria e poderia revogá-la em `/operator/api-keys`. Agora a coluna é nula para
+chave de plataforma, e o trigger `api_key_assert_ownership` fecha os dois lados: chave com empresa
+recusa escopo de plataforma, chave sem empresa recusa escopo de empresa. Vale para qualquer caminho
+de escrita, inclusive `service_role`, porque é trava de tabela e não de RPC.
+
+Emissão, listagem e revogação passam por `hub_create_platform_api_key`,
+`hub_list_platform_api_keys` e `hub_revoke_platform_api_key`, todas abrindo com `is_hub_admin()` e
+com revoke nominal de `anon`. A tela é `/manager/api-interna`. Migration
+`20261005000000_platform_api_keys.sql`.
 
 É o gate certo quando a resposta para "quem manda nisso?" é a Movepark. No front sai de graça: o
 `hasScope` devolve `true` para `hub_admin` (inclusive impersonando) e `false` para todo membro de
