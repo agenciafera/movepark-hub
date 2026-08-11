@@ -236,6 +236,44 @@ chamadas ficam no `api_request_log` com `company_id` nulo.
 
 ---
 
+### Como a credencial vira perfil
+
+A decisão mora numa função pura, [`resolver.ts`](../../supabase/functions/mcp/resolver.ts), com o
+lookup de chave injetado, e é medida pela matriz em `resolver.test.ts`. Antes ela eram três blocos de
+condicional dentro do `Deno.serve`, sem um único teste.
+
+| Entrada | Perfil |
+|---|---|
+| Sem credencial | a superfície do path, e as de chave recusam |
+| `Authorization: Bearer <JWT>` | o sujeito é um usuário; o perfil segue o path |
+| `Authorization: Bearer mp_…` com empresa | `partner`, e só na superfície `/partner` |
+| `Authorization: Bearer mp_…` sem empresa | `manager`, e só na superfície `/manager` |
+| `X-API-Key: mp_…` sem empresa | não credencia ninguém; só acrescenta escopo de agente |
+
+Cinco regras, e cada uma existe por um motivo medido:
+
+1. **`Authorization` é o sujeito, `X-API-Key` é o agente.** Nunca se trocam. Antes o
+   `extractApiKey` preferia o `Authorization` e descartava o `X-API-Key` em silêncio, o que fazia
+   quem mandava os dois receber 401 sem explicação. Agora isso é 400, dizendo qual header usar.
+2. **Só é chave o que começa com `mp_`,** conferido antes de tocar no banco. `keyPrefix` são 16
+   caracteres, e todo JWT HS256 do Supabase começa com a mesma constante: mandar JWT ao
+   `api_key_verify` faria dele um oráculo de prefixo válido, além de uma consulta ao banco por
+   request anônima.
+3. **A credencial confirma a superfície declarada; nunca promove.** Chave de empresa não abre o
+   Manager, chave da Movepark não abre o parceiro. São duas fontes independentes, o path e o
+   `company_id`, e é a independência que segura o dia em que uma delas estiver errada.
+4. **Recusa responde igual** para ausente, inválida, revogada e expirada. O motivo existe, e vai
+   para o log.
+5. **O path é comparado por igualdade,** e não por `includes`. Antes `/partnerX` e `/x/manager/y`
+   casavam a superfície; hoje sufixo desconhecido é 404. A comparação entende os dois caminhos que
+   chegam aqui: `/partner` pelo worker e `/functions/v1/mcp/partner` direto no Supabase, que é o que
+   a Edge `chat` usa.
+
+Conferido por mutação: oito quebras deliberadas, oito falhas na matriz. E medido em produção nas
+onze combinações da tabela acima, pelos dois caminhos.
+
+---
+
 ## 5. Descoberta (`.well-known`)
 
 - `mcp/server-card.json` — card do consumidor (tools + `inputSchema`, `url: https://mcp.movepark.co`).

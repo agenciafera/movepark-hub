@@ -27,7 +27,8 @@ import {
   toolTextContent,
 } from "./protocol.ts";
 import { findTool, isToolCallable, listTools, missingRequired, type Endpoint } from "./tools.ts";
-import { extractApiKey, keyPrefix, sha256Hex } from "./auth.ts";
+import { keyPrefix, sha256Hex } from "./auth.ts";
+import { resolverPerfil, superficieDoPath, type ChaveVerificada } from "./resolver.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 import { deleteBlogPost, publishBlogPost, upsertBlogPost } from "../_shared/blog-write.ts";
 import { callRead, READ_TOOL_NAMES } from "../_shared/assistant-tools.ts";
@@ -56,7 +57,8 @@ function env(k: string): string {
 
 interface PartnerCtx {
   api_key_id: string;
-  company_id: string;
+  // Nulo na chave da Movepark: ela não pertence a empresa nenhuma.
+  company_id: string | null;
   scopes: string[];
 }
 
@@ -66,13 +68,12 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
 
   const url = new URL(req.url);
-  const endpoint: Endpoint = url.pathname.includes("/partner")
-    ? "partner"
-    : url.pathname.includes("/customer")
-      ? "customer"
-      : url.pathname.includes("/manager")
-        ? "manager"
-        : "public";
+  // `includes` casava caminho parcial ("/partnerX", "/x/manager/y") e não
+  // distinguia sufixo desconhecido de raiz. `superficieDoPath` é exata, entende
+  // os dois caminhos até aqui (worker e URL crua do Supabase) e devolve null no
+  // que não é superfície.
+  const superficie = superficieDoPath(url.pathname);
+  const endpoint: Endpoint = superficie ?? "public";
 
   // Probe simples por GET (clientes/healthcheck)
   if (req.method === "GET") {
@@ -92,59 +93,60 @@ Deno.serve(async (req: Request) => {
   const reqMsg = payload as JsonRpcRequest;
   const id: JsonRpcId = reqMsg.id ?? null;
 
-  // Autenticação (só parceiro). Header sempre presente no transporte; validamos a chave.
-  let partner: PartnerCtx | null = null;
-  let admin: ReturnType<typeof createClient> | null = null;
-  if (endpoint === "partner" || endpoint === "manager") {
-    const key = extractApiKey(req.headers);
-    const needsAuth = reqMsg.method === "tools/list" || reqMsg.method === "tools/call";
-    if (key) {
-      admin = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), {
-        auth: { persistSession: false },
-      });
-      const hash = await sha256Hex(key);
-      const { data: v } = await admin.rpc("api_key_verify", {
-        p_key_prefix: keyPrefix(key),
-        p_key_hash: hash,
-      });
-      if (v && (v as { ok?: boolean }).ok === true) {
-        const vv = v as { api_key_id: string; company_id: string | null; scopes: string[] };
-        // A superfície escolhe o tipo de chave, não só o escopo. Chave de empresa
-        // nunca fala com o Manager, e chave da Movepark (sem empresa) nunca fala
-        // com o parceiro, onde o `company_id` é o escopo de dados. A trava de
-        // tabela `api_key_assert_ownership` já impede a mistura de escopos; esta
-        // é a segunda porta, na entrada da superfície.
-        const daPlataforma = vv.company_id == null;
-        if (daPlataforma === (endpoint === "manager")) {
-          partner = { api_key_id: vv.api_key_id, company_id: vv.company_id, scopes: vv.scopes ?? [] };
-        }
-      }
-    }
-    if (needsAuth && !partner) {
-      return json(rpcError(id, JSONRPC.INVALID_REQUEST, "Chave de API inválida ou ausente (Authorization: Bearer mp_…)."), 401);
-    }
+  /*
+    Resolução de credencial, num lugar só.
+
+    O que estava aqui eram três blocos de condicional sem teste nenhum, e cada um
+    decidia um pedaço da autorização. Agora a decisão mora em `resolver.ts`, que é
+    função pura com o lookup injetado, medida por uma matriz de credencial boa,
+    ruim, do tipo errado, no header errado e em par. Ver `resolver.test.ts`.
+
+    O que NÃO mudou de propósito: `initialize` e `ping` seguem respondendo sem
+    credencial. É isso que impede o endpoint de virar serviço gratuito de triagem
+    de chave vazada, porque a resposta é a mesma com chave boa, ruim ou ausente.
+  */
+  const precisaAuth = reqMsg.method === "tools/list" || reqMsg.method === "tools/call";
+
+  if (superficie === null) {
+    return json(rpcError(id, JSONRPC.INVALID_REQUEST, "Superfície desconhecida."), 404);
   }
 
-  // Consumidor: a identidade do usuário vem do JWT (Authorization). A chave `mp_` opcional no
-  // header X-API-Key atesta QUEM é o agente e libera as tools com escopo (hoje só
-  // create_checkout_link, que gera um link que autentica quem o abre). Sem chave → escopos vazios,
-  // e a tool nem aparece no tools/list. Ver agent-booking.md §9 item 6.
-  let callerScopes: string[] = [];
-  if (endpoint === "customer") {
-    const key = req.headers.get("x-api-key");
-    if (key) {
-      const admin2 = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), {
-        auth: { persistSession: false },
+  const admin: ReturnType<typeof createClient> = createClient(
+    env("SUPABASE_URL"),
+    env("SUPABASE_SERVICE_ROLE_KEY"),
+    { auth: { persistSession: false } },
+  );
+
+  const resolucao = await resolverPerfil({
+    path: url.pathname,
+    authorization: req.headers.get("Authorization"),
+    xApiKey: req.headers.get("x-api-key"),
+    verificar: async (chave) => {
+      const { data } = await admin.rpc("api_key_verify", {
+        p_key_prefix: keyPrefix(chave),
+        p_key_hash: await sha256Hex(chave),
       });
-      const { data: v } = await admin2.rpc("api_key_verify", {
-        p_key_prefix: keyPrefix(key),
-        p_key_hash: await sha256Hex(key),
-      });
-      if (v && (v as { ok?: boolean }).ok === true) {
-        callerScopes = (v as { scopes?: string[] }).scopes ?? [];
-      }
-    }
+      return (data ?? { ok: false }) as ChaveVerificada;
+    },
+  });
+
+  if (resolucao.status === 400) {
+    return json(
+      rpcError(id, JSONRPC.INVALID_REQUEST, "Mande a chave de API em um header só: Authorization para o sujeito, X-API-Key para o agente."),
+      400,
+    );
   }
+  if (precisaAuth && resolucao.status === 401) {
+    // Resposta idêntica para ausente, inválida, revogada e expirada. O motivo
+    // fica em `resolucao.motivo`, para o log.
+    return json(rpcError(id, JSONRPC.INVALID_REQUEST, "Chave de API inválida ou ausente (Authorization: Bearer mp_…)."), 401);
+  }
+
+  const partner: PartnerCtx | null =
+    resolucao.status === 200 && (endpoint === "partner" || endpoint === "manager")
+      ? { api_key_id: resolucao.apiKeyId!, company_id: resolucao.companyId, scopes: resolucao.escopos }
+      : null;
+  const callerScopes: string[] = endpoint === "customer" ? resolucao.escopos : [];
 
   // Notificações (sem id) não recebem resposta.
   if (isNotification(reqMsg) && reqMsg.method.startsWith("notifications/")) {
@@ -189,9 +191,9 @@ Deno.serve(async (req: Request) => {
         }
         const data =
           endpoint === "manager"
-            ? await callManager(admin!, toolName, args)
+            ? await callManager(admin, toolName, args)
             : endpoint === "partner"
-              ? await callPartner(admin!, partner!, toolName, args)
+              ? await callPartner(admin, partner!, toolName, args)
               : endpoint === "customer"
                 ? await callCustomer(req.headers.get("Authorization"), toolName, args, clientIp(req))
                 : await callPublic(toolName, args);
@@ -214,7 +216,7 @@ Deno.serve(async (req: Request) => {
   // Auditoria (Fase 1.1) — parceiro e Manager autenticados; não bloqueia a resposta.
   // O Manager entra aqui de propósito: escrita da Movepark também deixa rastro de
   // quem chamou, qual tool e quando.
-  if ((endpoint === "partner" || endpoint === "manager") && partner && admin) {
+  if ((endpoint === "partner" || endpoint === "manager") && partner) {
     const toolName =
       reqMsg.method === "tools/call"
         ? ((reqMsg.params as { name?: string } | undefined)?.name ?? null)
@@ -590,7 +592,9 @@ async function callManager(admin: any, name: string, a: Record<string, unknown>)
 }
 
 async function callPartner(admin: any, ctx: PartnerCtx, name: string, a: Record<string, unknown>): Promise<unknown> {
-  const c = ctx.company_id;
+  // Só o perfil `partner` chega aqui, e ele exige chave COM empresa: a resolução
+  // recusa antes a chave da Movepark nesta superfície.
+  const c = ctx.company_id!;
   const call = async (fn: string, args: Record<string, unknown>) => {
     const { data, error } = await admin.rpc(fn, args);
     if (error) throw error;
