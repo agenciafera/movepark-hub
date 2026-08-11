@@ -39,6 +39,7 @@ negociar a migração daquele parceiro para o Hub.
 | Tabela | `external_exit_click` |
 | Gravação | RPC `log_external_exit`, SECURITY DEFINER, `anon` + `authenticated` |
 | Leitura do funil | RPC `manager_external_exit_clicks`, hub_admin |
+| Painel | seção "Saída para unidade externa" em `/manager/attribution` |
 | Disparo | `src/features/listing/exitClick.ts` |
 | Sessão anônima | `src/lib/anonSession.ts` |
 | Retenção | 180 dias, dentro de `cron_prune_integration_logs` |
@@ -85,6 +86,23 @@ logado: a reconciliação com o parceiro se faz por unidade e data, nunca por pe
 Há um teste que varre as chaves do evento procurando `email`, `phone`, `name`, `cpf`, `profile`,
 `user`, `ip` e `document`. Ele existe porque o jeito de essa tabela virar base de rastreamento é
 alguém adicionar "só um campinho" numa terça-feira.
+
+## Onde aparece no painel
+
+Na página **Atribuição** do Manager, no fim, e não em rota própria. A página já responde "de onde
+vieram as reservas"; o clique de saída é a outra ponta da mesma pergunta, e é o que faltava para
+ela ficar inteira: em cima o que entrou como reserva, embaixo o que saiu e a gente não vê mais.
+
+A seção usa o mesmo período e o mesmo recorte por unidade da barra de filtros. Foi por isso que a
+RPC ganhou `p_location_ids`: filtrar uma unidade e ver a metade de cima mudar enquanto a de baixo
+segue mostrando a rede inteira é a pior forma de errar, porque parece que bate.
+
+Mostra cliques, sessões distintas e a média de cliques por sessão, mais a tabela por unidade e
+tipo de vaga. A diferença entre cliques e sessões é quanta gente voltou para olhar de novo.
+
+**A ressalva fica junto do número, não no rodapé:** "o Hub não vê quantas viraram venda. Esse
+número só sai do relatório do estacionamento". Sem ela, 12 cliques lidos rápido viram 12 vendas,
+e é justamente esse número que vai para a mesa de negociação com o parceiro.
 
 ## O que este épico NÃO entrega
 

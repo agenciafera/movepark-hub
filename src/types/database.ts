@@ -4806,7 +4806,7 @@ export type Database = {
         Returns: Json
       }
       manager_external_exit_clicks: {
-        Args: { p_from?: string; p_to?: string }
+        Args: { p_from?: string; p_location_ids?: string[]; p_to?: string }
         Returns: {
           clicks: number
           company_name: string
@@ -4814,6 +4814,7 @@ export type Database = {
           last_click_at: string
           location_slug: string
           parking_type_code: string
+          parking_type_name: string
           sessions: number
         }[]
       }

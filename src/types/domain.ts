@@ -181,6 +181,24 @@ export type BookingAttribution = {
 };
 
 /**
+ * Uma linha do funil de saída externa (E0.16, retorno de `manager_external_exit_clicks`).
+ *
+ * Cliente que clicou para ir reservar no site do parceiro. É o contrário da atribuição de
+ * reserva: aqui não há `booking`, porque a venda acontece do outro lado. `sessions` é gente
+ * distinta, `clicks` inclui quem voltou depois de olhar (a dedup só junta os 5 minutos).
+ */
+export type ExternalExitClickRow = {
+  company_slug: string;
+  company_name: string;
+  location_slug: string;
+  parking_type_code: string;
+  parking_type_name: string;
+  clicks: number;
+  sessions: number;
+  last_click_at: string;
+};
+
+/**
  * Resumo do dashboard do Manager no período (retorno de manager_dashboard_overview).
  * Eixo de data = check-in. "Diária" (vehicle_days) é dia-calendário ocupado, a mesma
  * convenção da capacidade.

@@ -157,12 +157,17 @@ grant execute on function public.log_external_exit(uuid, text, timestamptz, time
 -- reserva por API. O que esta RPC entrega é o elo do meio, que é o que faltava.
 create or replace function public.manager_external_exit_clicks(
   p_from timestamptz default now() - interval '30 days',
-  p_to timestamptz default now()
+  p_to timestamptz default now(),
+  -- Mesmo recorte por unidade da barra de filtros do Manager. Sem isto, filtrar uma unidade na
+  -- tela mudaria a metade de cima da página de Atribuição e deixaria a de baixo mostrando a rede
+  -- inteira, que é a pior forma de errar: parece que bate.
+  p_location_ids uuid[] default null
 ) returns table (
   company_slug text,
   company_name text,
   location_slug text,
   parking_type_code text,
+  parking_type_name text,
   clicks bigint,
   sessions bigint,
   last_click_at timestamptz
@@ -181,7 +186,7 @@ begin
   end if;
 
   return query
-  select c.slug, c.name, l.slug, pt.code,
+  select c.slug, c.name, l.slug, pt.code, pt.name,
          count(*)::bigint,
          count(distinct e.session_id)::bigint,
          max(e.created_at)
@@ -193,14 +198,15 @@ begin
     join public.parking_type pt on pt.id = cpt.parking_type_id
    where e.created_at >= p_from
      and e.created_at < p_to
-   group by c.slug, c.name, l.slug, pt.code
+     and (p_location_ids is null or e.location_id = any(p_location_ids))
+   group by c.slug, c.name, l.slug, pt.code, pt.name
    order by count(*) desc;
 end;
 $$;
 
-revoke all on function public.manager_external_exit_clicks(timestamptz, timestamptz)
+revoke all on function public.manager_external_exit_clicks(timestamptz, timestamptz, uuid[])
   from public, anon;
-grant execute on function public.manager_external_exit_clicks(timestamptz, timestamptz)
+grant execute on function public.manager_external_exit_clicks(timestamptz, timestamptz, uuid[])
   to authenticated, service_role;
 
 -- ─────────────────────────── Retenção ───────────────────────────

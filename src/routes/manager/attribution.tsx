@@ -13,7 +13,8 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { useManagerFilters } from "@/features/manager-filters/context";
 import { ManagerFilterBar } from "@/features/manager-filters/ManagerFilterBar";
 import { formatRangeLabel } from "@/features/manager-filters/managerFilters.logic";
-import { useBookingAttribution } from "@/features/attribution/api";
+import { useBookingAttribution, useExternalExitClicks } from "@/features/attribution/api";
+import { formatDateTime } from "@/lib/format";
 
 const pct = (part: number, total: number) => (total > 0 ? Math.round((part / total) * 100) : 0);
 
@@ -25,6 +26,18 @@ export default function ManagerAttribution() {
     scopedLocationIds,
   );
   const totals = data?.totals ?? { hub: 0, external: 0, total: 0 };
+
+  // A outra ponta: quem saiu para reservar no parceiro. Mesmo período e mesmo recorte de unidade
+  // da barra de filtros, senão as duas metades da página falariam de conjuntos diferentes.
+  const exitClicks = useExternalExitClicks(
+    range.from.toISOString(),
+    range.to.toISOString(),
+    scopedLocationIds,
+  );
+  const exitTotals = (exitClicks.data ?? []).reduce(
+    (acc, r) => ({ clicks: acc.clicks + r.clicks, sessions: acc.sessions + r.sessions }),
+    { clicks: 0, sessions: 0 },
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -114,6 +127,81 @@ export default function ManagerAttribution() {
                     <TableRow key={r.utm_source}>
                       <TableCell className="text-ink">{r.utm_source}</TableCell>
                       <TableCell className="text-right tabular-nums">{r.count}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Saída para o parceiro (E0.16). Fecha a página: acima é o que ENTROU como reserva,
+          aqui é o que SAIU e a gente não vê mais. */}
+      <Card>
+        <CardContent className="flex flex-col gap-3 p-4">
+          <div>
+            <h3 className="font-medium text-body text-ink">Saída para unidade externa</h3>
+            <p className="mt-1 text-body-sm text-muted">
+              Cliques em &ldquo;Reservar no site do estacionamento&rdquo;. Nessas unidades a
+              reserva fecha no parceiro, então o Hub não vê quantas viraram venda. Esse número
+              só sai do relatório do estacionamento.
+            </p>
+          </div>
+
+          <div className="grid gap-4 tablet:grid-cols-2">
+            <Kpi
+              label="Cliques de saída"
+              value={exitTotals.clicks}
+              sub={`em ${formatRangeLabel(range)}`}
+              loading={exitClicks.isLoading}
+              strong
+            />
+            <Kpi
+              label="Sessões distintas"
+              value={exitTotals.sessions}
+              sub={
+                exitTotals.sessions > 0
+                  ? `${(exitTotals.clicks / exitTotals.sessions).toFixed(1)} cliques por sessão`
+                  : "ninguém saiu no período"
+              }
+              loading={exitClicks.isLoading}
+            />
+          </div>
+
+          {exitClicks.isLoading ? (
+            <Skeleton className="h-24 w-full" />
+          ) : (exitClicks.data ?? []).length === 0 ? (
+            <EmptyState
+              title="Nenhum clique de saída no período"
+              description="Só unidades com checkout no parceiro aparecem aqui."
+            />
+          ) : (
+            <div className="overflow-x-auto rounded-md border border-hairline bg-canvas">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Estacionamento</TableHead>
+                    <TableHead>Vaga</TableHead>
+                    <TableHead className="text-right">Cliques</TableHead>
+                    <TableHead className="text-right">Sessões</TableHead>
+                    <TableHead className="text-right">Último clique</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(exitClicks.data ?? []).map((r) => (
+                    <TableRow key={`${r.company_slug}-${r.location_slug}-${r.parking_type_code}`}>
+                      <TableCell className="text-ink">{r.company_name}</TableCell>
+                      <TableCell className="text-muted">
+                        {r.parking_type_name}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">{r.clicks}</TableCell>
+                      <TableCell className="text-right tabular-nums text-muted">
+                        {r.sessions}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums text-muted">
+                        {formatDateTime(r.last_click_at)}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
