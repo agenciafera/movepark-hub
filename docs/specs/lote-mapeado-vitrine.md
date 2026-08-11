@@ -3,7 +3,7 @@
 > **Épico:** [E0.17](https://app.clickup.com/t/86ajyp580) · **Fase:** 0 · **Depende de:** E0.15 (capacidades / ADR-009)
 > **Q/D:** [Q-021](https://app.clickup.com/t/86ajyp5pu) telefone **decidido em 11/08/2026: guardar, não exibir** · [Q-022](https://app.clickup.com/t/86ajz8n1j) **decidido → ADR-010** · [D-009](https://app.clickup.com/t/86ajyp5w7) deduplicação
 > **ADR:** ADR-010 (lote não-parceiro não vive na tabela transacional)
-> **Status:** especificado em 10/08/2026. **a, c, d, e e f no ar** em 11/08/2026, com Q-021 decidido. Falta b, g e h.
+> **Status:** especificado em 10/08/2026. **a, b, c, d, e, f no ar** e **g na versão curta** (referência + carimbo; o OTP ficou para quando houver volume), tudo em 11/08/2026, com Q-021 decidido. Falta só o **h** (painel).
 > **Case de referência:** Talentos Park, Recife. Todo exemplo aqui usa dados reais dele.
 
 Este arquivo é **autossuficiente**: quem for implementar não precisa abrir o ClickUp nem `gestao/`. O ClickUp serve só para saber qual atividade puxar e em que ordem.
@@ -13,12 +13,12 @@ Este arquivo é **autossuficiente**: quem for implementar não precisa abrir o C
 | ID | Atividade | Seção aqui | ClickUp |
 |---|---|---|---|
 | E0.17-a | ✅ Criar a tabela `prospect_location` | [§ A tabela](#a-tabela) | [86ajyp71u](https://app.clickup.com/t/86ajyp71u) |
-| E0.17-b | Higienizar os registros obsoletos em `location` | [§ Higiene do legado](#higiene-dos-registros-legados-e017-b) | [86ajyp7bj](https://app.clickup.com/t/86ajyp7bj) |
+| E0.17-b | ✅ Higienizar os registros obsoletos em `location` | [§ Higiene do legado](#higiene-dos-registros-legados-e017-b) | [86ajyp7bj](https://app.clickup.com/t/86ajyp7bj) |
 | E0.17-c | ✅ Cadastrar o Talentos Park como case-piloto | [§ O cadastro](#o-cadastro-com-o-talentos-park-e017-c) | [86ajyp7xu](https://app.clickup.com/t/86ajyp7xu) |
 | E0.17-d | ✅ Cards do lote mapeado na página de destino | [§ Página de destino](#página-de-destino-e017-d) | [86ajyp87t](https://app.clickup.com/t/86ajyp87t) |
 | E0.17-e | ✅ Single sem caminho para reserva | [§ Single](#single-e017-e) | [86ajyp8jn](https://app.clickup.com/t/86ajyp8jn) |
 | E0.17-f | ✅ JSON-LD `ParkingFacility` | [§ JSON-LD](#json-ld-e017-f) | [86ajyp8u6](https://app.clickup.com/t/86ajyp8u6) |
-| E0.17-g | Conversão da reivindicação | [§ Conversão](#conversão-e017-g) | [86ajyp96d](https://app.clickup.com/t/86ajyp96d) |
+| E0.17-g | 🟡 Conversão da reivindicação (referência + carimbo; falta o OTP) | [§ Conversão](#conversão-e017-g) | [86ajyp96d](https://app.clickup.com/t/86ajyp96d) |
 | E0.17-h | Painel administrativo | [§ Painel](#painel-administrativo-e017-h) | [86ajz8mvz](https://app.clickup.com/t/86ajz8mvz) |
 
 **a** destrava **c**, **g** e **h**; **c** destrava **d**, **e** e **f**. A **b** é independente. Q-021 foi decidido em 11/08/2026, então a **e** não está mais bloqueada.
@@ -364,6 +364,19 @@ Link assinado na single: `/parceiro/onboarding?claim=<prospect_location_id>&sig=
 
 **Por quê:** a conversão explícita é melhor que um `update status` porque força decidir, uma vez e por escrito, quais campos migram do dado que a Movepark levantou para o dado que o parceiro passa a ser dono. Um update arrastaria tudo, inclusive o que foi chute nosso.
 
+### O que entrou em 11/08/2026 (versão curta), e o que ficou
+
+Decidido com o time: o link assinado com HMAC e o OTP no telefone **ficam para quando o volume tornar a triagem manual cara**. O valor deles é impedir que o concorrente reivindique o lote alheio, e com aprovação humana no board isso é defesa em profundidade, não o único portão. Não existe `convert_prospect_location()` transacional: o estacionamento passa pelo funil inteiro do mesmo jeito.
+
+O que **não** dava para adiar é o carimbo da procedência, e é ele que entrou (migration `20261014000000`):
+
+- **`company_onboarding.prospect_location_id`** (`on delete set null`, para excluir a ficha seguir sendo delete de verdade). Mora aqui, e não em `partner_lead`, porque quem cria empresa é o `submit_partner_lead`, e ele grava contato, cidade e UTM nesta tabela.
+- **A referência é validada, não confiada.** Chega de um parâmetro de URL, então uuid inventado ou de ficha já convertida é descartado, e o lead entra assim mesmo: perder atribuição é aceitável, recusar um parceiro real por causa de um parâmetro não é.
+- **O carimbo entra no `onboarding_upsert_location`**, o único ponto onde existe um `location.id` para apontar. Só no ramo de INSERT e só uma vez, então a ficha converte para a **primeira** unidade criada e a segunda não rouba o vínculo. Converter continua não publicando oferta: a unidade nasce inativa e sem tipo de vaga.
+- **O `?lote=` no "Seja parceiro"** preenche o nome que a Places API já resolveu e mostra de qual página a pessoa veio. Só preenche o que está vazio: quem digitou manda mais que a URL.
+
+Sem esse carimbo, a ficha mapeada e a unidade nova passariam a renderizar as duas, disputando a mesma busca. É o estado que o filtro `converted_at is null` da RLS foi feito para impedir, e ele só vale se alguém escrever o carimbo.
+
 **Sobre o OTP:** sem ele, qualquer um reivindica o lote do concorrente. Em aeroporto, onde 6 ou 7 lotes disputam a mesma vaga de SERP, isso não é risco teórico. O telefone que já está na ficha é a prova mais barata que existe. Não substitui a aprovação humana, que continua no board.
 
 ### Notas de implementação
@@ -412,7 +425,31 @@ Tela no admin, **separada de "Unidades"**, para não misturar inventário vendá
 
 ## Higiene dos registros legados
 
-**(E0.17-b)** — independente do resto, prioridade normal.
+**(E0.17-b)** · ✅ no ar em 11/08/2026, e a apuração mudou a premissa.
+
+> ### Não era prospecção morta, era QA em produção
+>
+> A spec supunha registros de prospecção abandonados. O banco mostrou outra coisa: **os 11 são execuções do wizard de onboarding feitas pelo time**, todas com dono `leo.henrique+NN@fera.ag` ou `peu+...@fera.ag`, com o plus-address incrementando a cada rodada (+00, +11, +19, +44, +56, +77, +88, +109, +321) e `company_onboarding` preenchido.
+>
+> Duas consequências. Limpar é mais seguro do que a spec supunha, porque não há contato comercial real para queimar. E **`Max Park`, `Maxi Park` e `Maxxi Park` não são três grafias do mesmo lote**: são três rodadas de teste do mesmo dia (16/07), em três destinos diferentes (OPO, jardim-paulista, centro-sp). Confirmado com o time: o **Maxipark** de verdade é uma rede com várias unidades, incluindo uma em Guarulhos, e **não está no banco**. Ele é candidato a `prospect_location`, não a exclusão.
+>
+> **O que estava no ar por causa disso:** `Maxi Park`, uma rodada de QA, aparecia no catálogo público (`is_listed = true`, 1 foto, 3 tipos de vaga ativos, capacidade 208) ao lado de Abbapark, Aeropark, Aerovalet, Garageinn, Nationpark, Plenty e Virapark. O cenário que a spec descreve como risco futuro já era presente.
+>
+> **A regra aplicada, uniforme:** sem reserva vai para `deleted_at` (11 registros); com reserva vai para `status = 'inactive'`, nunca delete (só `Ferapark / Unidade Aeroporto`, 1 reserva). `is_listed = false` entra junto, para o registro não voltar publicado se alguém limpar o `deleted_at` para investigar. O soft delete também libera o slug para a ficha mapeada reusar a mesma URL no remapeamento.
+>
+> ### O que ficou de fora, e precisa de decisão
+>
+> A varredura achou **mais três empresas de QA listadas publicamente** que não constam da lista da spec. Não mexi nelas: são fixtures que alguém pode estar usando, e apagar quebraria roteiro de teste em uso.
+>
+> | Empresa | Dono | Reservas | Situação |
+> |---|---|---|---|
+> | `Motion Park` | `leo.henrique+123@fera.ag` | **65** | listada; claramente fixture ativa |
+> | `Gaita Park` | `peu+gaita@fera.ag` | 1 | listada |
+> | `Lisboa Park` | `leo.henrique+145@fera.ag` | 0 | listada |
+>
+> `Agência Fera` (fixture do E2E, 4 reservas) e `Peu Park` (já `inactive`) seguem intocadas, como a spec pede.
+>
+> Fica a pergunta para o time: quais dessas fixtures ainda são usadas? As que não forem entram na mesma regra. Enquanto isso, o catálogo público tem 18 unidades, e 4 delas são de teste.
 
 **Isto NÃO é a migração dos lotes antigos para a tabela nova.** O remapeamento é feito por aeroporto, com base na lista do WordPress, porque boa parte desses estacionamentos já fechou. **O remapeamento não tem atividade e não deve ganhar uma.**
 
@@ -470,6 +507,6 @@ Candidatas a chave, provavelmente em cascata:
 - [ ] Painel admin permite criar, publicar e despublicar sem SQL; sugere destino por `nearest_destination()`.
 - [ ] Publicação bloqueada sem endereço; aviso de colisão de `google_place_id` com `location`.
 - [ ] Ficha convertida em modo leitura no admin.
-- [ ] `convert_prospect_location()` é idempotente, grava a procedência e **não** publica oferta.
+- [x] A conversão grava a procedência, é idempotente (carimba só a primeira unidade) e **não** publica oferta. Sem `convert_prospect_location()` transacional: o carimbo entra no `onboarding_upsert_location`, e o OTP ficou para quando houver volume.
 - [ ] URL de ficha convertida faz 301 para a `location`. **Fica na E0.17-g:** sem conversão não existe destino para o redirect.
-- [ ] Registros obsoletos de prospecção resolvidos em `location`, preservando os que têm `booking`.
+- [x] Registros obsoletos resolvidos em `location` (11 soft delete, 1 inativa), preservando o que tem `booking`. Eram QA em produção, não prospecção: ver a seção. **Sobram 3 fixtures de QA listadas publicamente**, fora da lista da spec, aguardando decisão do time.
