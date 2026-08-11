@@ -48,9 +48,8 @@ const BUCKET = "assets-public";
 /**
  * Categoria do WordPress → slug do destino no Hub.
  *
- * `null` é resposta legítima: Navegantes ainda não existe como destino, e
- * `dica-de-viagem`/`duvidas` não são aeroporto. Post sem destino renderiza sem
- * CTA de unidade, e passa a ter assim que o destino for criado.
+ * `null` é resposta legítima: `dica-de-viagem`, `duvidas` e `uncategorized` não
+ * são aeroporto, então o post renderiza sem CTA de unidade.
  */
 const CATEGORY_TO_DESTINATION = {
   "aeroporto-guarulhos": "aeroporto-internacional-de-sao-paulo-guarulhos",
@@ -59,11 +58,22 @@ const CATEGORY_TO_DESTINATION = {
   "aeroporto-lisboa": "aeroporto-humberto-delgado",
   "aeroporto-confins": "aeroporto-de-confins",
   "aeroporto-congonhas": "aeroporto-de-congonhas",
-  "aeroporto-navegantes": null,
+  "aeroporto-navegantes": "aeroporto-internacional-de-navegantes",
   "dica-de-viagem": null,
   duvidas: null,
   "rio-de-janeiro": null,
   uncategorized: null,
+};
+
+/**
+ * Post cujo assunto não é o da categoria.
+ *
+ * A categoria acerta em 92 dos 93, mas quem escreve às vezes arquiva em
+ * "dica de viagem" um texto que fala de um aeroporto só. O slug manda.
+ */
+const POST_TO_DESTINATION = {
+  "seu-guia-definitivo-para-uma-partida-descomplicada-dicas-valiosas-do-aeroporto-de-guarulhos":
+    "aeroporto-internacional-de-sao-paulo-guarulhos",
 };
 
 const args = process.argv.slice(2);
@@ -541,7 +551,8 @@ async function main() {
   for (const post of posts) {
     const slug = post.slug;
     const catSlug = catById.get(post.categories?.[0]) ?? null;
-    const destinationSlug = catSlug ? (CATEGORY_TO_DESTINATION[catSlug] ?? null) : null;
+    const destinationSlug =
+      POST_TO_DESTINATION[slug] ?? (catSlug ? (CATEGORY_TO_DESTINATION[catSlug] ?? null) : null);
 
     let html = cleanHtml(post.content?.rendered ?? "");
 
