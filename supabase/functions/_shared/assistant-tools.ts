@@ -143,6 +143,24 @@ export const READ_TOOLS: ReadToolDef[] = [
       "Data e hora atuais no fuso de São Paulo. Use para resolver datas relativas como 'amanhã' ou 'sexta que vem' sem perguntar ao usuário.",
     parameters: obj({}),
   },
+  {
+    name: "search_blog",
+    description:
+      "Busca guias do blog da Movepark sobre estacionamento em aeroportos (preço da diária, traslado, vaga coberta, valet, como reservar). Use para responder dúvida geral do viajante e citar a fonte. Devolve título, resumo e URL, sem o corpo.",
+    parameters: obj({
+      q: S("Termo livre; casa título e resumo"),
+      destination: S("slug do destino, ex.: aeroporto-de-viracopos"),
+      category: S("slug da categoria: precos, comparativos, guias, dicas-de-viagem, como-reservar"),
+      tag: S("slug da tag, ex.: traslado, vaga-coberta, economia"),
+      limit: INT("máximo de resultados (padrão 5)"),
+    }),
+  },
+  {
+    name: "get_blog_post",
+    description:
+      "Devolve um post do blog por slug, com o texto completo em Markdown. Use depois de search_blog quando precisar do conteúdo para responder, e cite a URL.",
+    parameters: obj({ slug: S("slug do post") }, ["slug"]),
+  },
 ];
 
 export const READ_TOOL_NAMES = new Set(READ_TOOLS.map((t) => t.name));
@@ -215,6 +233,19 @@ type Sb = any;
 function unwrap<T>(r: { data: T; error: { message: string } | null }): T {
   if (r.error) throw new Error(r.error.message);
   return r.data;
+}
+
+const SITE_URL = "https://hub.movepark.co";
+
+interface BlogRow {
+  slug: string;
+  tags?: { tag: { slug: string; name: string } }[];
+  [k: string]: unknown;
+}
+
+/** O PostgREST devolve a N:N aninhada (`{ tag: {...} }`); o modelo lê melhor plano. */
+function withFlatTags(row: BlogRow): BlogRow & { tags: { slug: string; name: string }[] } {
+  return { ...row, tags: (row.tags ?? []).map((t) => t.tag).filter(Boolean) };
 }
 
 const DESTINATION_COLS =
@@ -393,6 +424,53 @@ export async function callRead(
           .eq("destination_id", dest.id),
       );
       return { ...dest, points };
+    }
+
+    case "search_blog": {
+      // Sem `body_md`: são ~4 KB por post, e o modelo só precisa decidir qual
+      // abrir. O corpo vem depois, por get_blog_post.
+      let q = sb
+        .from("blog_post")
+        .select(
+          "slug, title, excerpt, published_at," +
+            " destination:destination(slug, name)," +
+            " category:blog_category(slug, name)," +
+            " tags:blog_post_tag(tag:blog_tag(slug, name))",
+        )
+        .eq("is_published", true)
+        .is("deleted_at", null)
+        .order("published_at", { ascending: false })
+        .limit(Number(a.limit ?? 5));
+
+      if (a.destination) q = q.eq("destination.slug", String(a.destination));
+      if (a.category) q = q.eq("category.slug", String(a.category));
+      if (a.q) q = q.or(`title.ilike.%${a.q}%,excerpt.ilike.%${a.q}%`);
+
+      let posts = (unwrap(await q) as BlogRow[]).map(withFlatTags);
+      if (a.tag) posts = posts.filter((p) => p.tags.some((t) => t.slug === a.tag));
+
+      return posts.map((p) => ({ ...p, url: `${SITE_URL}/blog/${p.slug}/` }));
+    }
+
+    case "get_blog_post": {
+      const post = unwrap(
+        await sb
+          .from("blog_post")
+          .select(
+            "slug, title, excerpt, body_md, published_at," +
+              " destination:destination(slug, name)," +
+              " category:blog_category(slug, name)," +
+              " author:blog_author(slug, name)," +
+              " tags:blog_post_tag(tag:blog_tag(slug, name))",
+          )
+          .eq("slug", String(a.slug))
+          .eq("is_published", true)
+          .is("deleted_at", null)
+          .maybeSingle(),
+      ) as BlogRow | null;
+
+      if (!post) throw new Error(`Post "${a.slug}" não encontrado. Use search_blog para achar o slug.`);
+      return { ...withFlatTags(post), url: `${SITE_URL}/blog/${post.slug}/` };
     }
 
     case "current_datetime":

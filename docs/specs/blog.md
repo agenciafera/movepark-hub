@@ -369,6 +369,63 @@ Cada post existe também como `public/blog/<slug>.md`, gerado por
 genérico. O cabeçalho do arquivo traz data, URL canônica e o link do destino. Crawler de IA não
 executa JavaScript, então este arquivo é o que faz o conteúdo do blog ser legível por agente.
 
+## API e MCP
+
+### Leitura (pública, documentada)
+
+Três rotas no gateway, escopo `blog:read`, publicadas no
+[OpenAPI](../../public/openapi.yaml) e na superfície §9 de
+[public-api.md](./public-api.md).
+
+| Rota | O que devolve |
+|---|---|
+| `GET /v1/blog/posts` | Lista, com filtros `q`, `category`, `tag`, `author`, `destination`, `limit`, `offset`. Sem `body_md` |
+| `GET /v1/blog/posts/{slug}` | Post completo, com Markdown e meta de SEO |
+| `GET /v1/blog/taxonomy` | Categorias, tags e autores, com os slugs que os filtros aceitam |
+
+O blog é a **exceção ao tenant implícito** da API: nada é filtrado por
+`company_id`, porque o conteúdo é da Movepark e já é público no site. A resposta é
+igual para qualquer chave.
+
+O filtro de `tag` roda depois da consulta, e não no PostgREST. Filtrar a N:N no
+servidor devolveria o post com a lista de tags podada, escondendo as outras.
+
+No MCP consumidor (e, pelo mesmo registro, no chat web) entram duas tools:
+`search_blog` para achar o post e `get_blog_post` para ler o corpo e citar a URL.
+
+### Escrita (interna, não documentada em superfície pública)
+
+Publicar post é ação de Manager, e **superfície pública não anuncia ação de
+Manager**. As rotas abaixo existem, funcionam e ficam fora do OpenAPI e de
+qualquer card de MCP. O contrato delas é este trecho.
+
+| Rota | Corpo | Efeito |
+|---|---|---|
+| `POST /v1/blog/posts` | `slug`, `title`, `body_md` obrigatórios; `excerpt`, `cover_image_url`, `meta_title`, `meta_description`, `category`, `author`, `destination`, `tags[]`, `is_published` | Cria ou atualiza por `slug` |
+| `POST /v1/blog/posts/{slug}/publish` | `is_published` (default `true`) | Publica ou despublica |
+| `POST /v1/blog/posts/{slug}/delete` | vazio | Soft delete |
+
+As referências entram por **slug, não por uuid**: id interno não é contrato, e
+quem escreve um post conhece `precos` e `aeroporto-de-viracopos`. Slug inexistente
+devolve 400 dizendo qual campo falhou, em vez de gravar a referência nula.
+
+Três camadas seguram o acesso:
+
+1. **Escopo de plataforma.** `blog:write` tem `is_platform_scope = true`, então o
+   trigger `company_role_scope_no_platform` recusa colocá-lo em qualquer papel de
+   empresa. Nem o Dono, que tem "todos" os escopos, alcança. Só existe numa chave
+   da própria Movepark.
+2. **`internalRoute()` no gateway.** A rota carrega a marca de interna, que o
+   `matchRoute` propaga.
+3. **O guard inverte a asserção.** `lint:openapi` **reprova** se uma rota interna
+   aparecer no OpenAPI. Ou seja, o CI protege o sigilo em vez de apenas tolerá-lo.
+   Verificado: publicar `POST /v1/blog/posts/{slug}/publish` no contrato quebra o
+   build.
+
+Medido contra o banco vivo em 11/08/2026: leitura 200 e filtros corretos; escrita
+com chave sem o escopo devolve 403; sem chave, 401; método errado, 405; ciclo de
+criar como rascunho, publicar, excluir e sumir da leitura, todo verde.
+
 ## Dívida conhecida
 
 - **Duplicação de conteúdo.** São 35 posts de Guarulhos e 26 de Viracopos, muitos quase
@@ -385,6 +442,12 @@ executa JavaScript, então este arquivo é o que faz o conteúdo do blog ser leg
   WordPress paginava em `/blog/page/N/`, e essas URLs não têm par no Hub. Elas nunca
   apareceram no Search Console, então ficaram fora; se o acervo crescer, a paginação entra
   junto com a regra de URL.
+- **Blog fora da base vetorizada.** O `knowledge-embed` indexa `faq`,
+  `directions_text`, `notice` e `reservation_policy`, e os 93 posts continuam de
+  fora. As tools `search_blog`/`get_blog_post` cobrem o caso por busca literal,
+  mas a busca semântica do RAG acharia o post por pergunta parafraseada, que é
+  como o usuário fala. Entrada natural: `blog_post.body_md` como `source_type`
+  novo, reusando o chunking que já existe.
 - **Webhook de rebuild.** Continua pendente. Enquanto não existir, publicar um post pelo
   `/manager/blog` grava no banco mas não aparece no site até o próximo build.
 - **Egress do Storage.** O bucket saiu de 52 para 183 objetos, e as imagens do blog passam a

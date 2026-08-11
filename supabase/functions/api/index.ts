@@ -155,6 +155,91 @@ interface Dispatch {
   requestId: string;
 }
 
+// ── Blog ─────────────────────────────────────────────────────────────────────
+
+/** Colunas da listagem. Sem `body_md`: são ~4 KB por post e a lista não usa. */
+const BLOG_LIST_COLS =
+  "slug, title, excerpt, cover_image_url, published_at," +
+  " destination:destination(slug, name, code)," +
+  " category:blog_category(slug, name)," +
+  " author:blog_author(slug, name)," +
+  " tags:blog_post_tag(tag:blog_tag(slug, name))";
+
+/** O PostgREST devolve a N:N aninhada (`{ tag: {...} }`). Achata para `tags: [...]`. */
+// deno-lint-ignore no-explicit-any
+function flattenBlogTags(rows: any[]): any[] {
+  return rows.map((row) => ({
+    ...row,
+    // deno-lint-ignore no-explicit-any
+    tags: (row.tags ?? []).map((t: any) => t.tag).filter(Boolean),
+  }));
+}
+
+/**
+ * Resolve categoria, autor e destino por SLUG.
+ *
+ * A API fala slug, não uuid: id interno não é contrato público, e quem escreve
+ * um post conhece "precos" e "aeroporto-de-viracopos", não o uuid deles.
+ */
+async function resolveBlogRefs(
+  // deno-lint-ignore no-explicit-any
+  admin: any,
+  b: Record<string, unknown>,
+): Promise<{ ids: Record<string, string | null> } | { error: string }> {
+  const ids: Record<string, string | null> = {
+    category_id: null,
+    author_id: null,
+    destination_id: null,
+  };
+  const alvos: [string, string, string][] = [
+    ["category", "blog_category", "category_id"],
+    ["author", "blog_author", "author_id"],
+    ["destination", "destination", "destination_id"],
+  ];
+
+  for (const [campo, tabela, coluna] of alvos) {
+    const slug = b[campo];
+    if (slug == null || slug === "") continue;
+    const { data, error } = await admin
+      .from(tabela)
+      .select("id")
+      .eq("slug", String(slug))
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return { error: `${campo} "${slug}" não existe.` };
+    ids[coluna] = data.id;
+  }
+  return { ids };
+}
+
+/** Substitui as tags do post. Devolve mensagem de erro, ou null se deu certo. */
+async function setBlogPostTags(
+  // deno-lint-ignore no-explicit-any
+  admin: any,
+  postId: string,
+  slugs: string[],
+): Promise<string | null> {
+  const { data: tags, error: tagErr } = await admin
+    .from("blog_tag")
+    .select("id, slug")
+    .in("slug", slugs);
+  if (tagErr) throw tagErr;
+
+  const achados = new Set((tags ?? []).map((t: { slug: string }) => t.slug));
+  const faltando = slugs.filter((s) => !achados.has(s));
+  if (faltando.length) return `tags inexistentes: ${faltando.join(", ")}.`;
+
+  const { error: delErr } = await admin.from("blog_post_tag").delete().eq("post_id", postId);
+  if (delErr) throw delErr;
+  if (!tags?.length) return null;
+
+  const { error } = await admin
+    .from("blog_post_tag")
+    .insert(tags.map((t: { id: string }) => ({ post_id: postId, tag_id: t.id })));
+  if (error) throw error;
+  return null;
+}
+
 async function dispatch(handler: string, d: Dispatch): Promise<Response> {
   const { admin, ctx, url, params, body, req, requestId } = d;
   const q = url.searchParams;
@@ -167,6 +252,138 @@ async function dispatch(handler: string, d: Dispatch): Promise<Response> {
   };
 
   switch (handler) {
+    // ── Blog ───────────────────────────────────────────────────────────────
+    // O blog é conteúdo da Movepark, não dado de parceiro: nada aqui é filtrado
+    // por `company_id`. O gate é o escopo, checado no gateway antes do dispatch.
+
+    case "list_blog_posts": {
+      let query = admin
+        .from("blog_post")
+        .select(BLOG_LIST_COLS)
+        .eq("is_published", true)
+        .is("deleted_at", null)
+        .order("published_at", { ascending: false })
+        .range(
+          intParam(q.get("offset"), 0),
+          intParam(q.get("offset"), 0) + intParam(q.get("limit"), 20) - 1,
+        );
+
+      const categoria = q.get("category");
+      const autor = q.get("author");
+      const destino = q.get("destination");
+      const termo = q.get("q");
+      if (categoria) query = query.eq("category.slug", categoria);
+      if (autor) query = query.eq("author.slug", autor);
+      if (destino) query = query.eq("destination.slug", destino);
+      // `q` casa título e resumo. O corpo fica de fora de propósito: busca em
+      // markdown de 4 KB por post não escala em ilike e o RAG cobre esse caso.
+      if (termo) query = query.or(`title.ilike.%${termo}%,excerpt.ilike.%${termo}%`);
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      let posts = flattenBlogTags(data ?? []);
+      const tag = q.get("tag");
+      // Tag é N:N: filtrar no PostgREST devolveria o post com a lista de tags
+      // podada, escondendo as outras. Filtra aqui, depois de montar.
+      if (tag) posts = posts.filter((p) => p.tags.some((t: { slug: string }) => t.slug === tag));
+
+      return ok({ posts }, requestId);
+    }
+
+    case "get_blog_post": {
+      const { data, error } = await admin
+        .from("blog_post")
+        .select(`${BLOG_LIST_COLS}, body_md, meta_title, meta_description`)
+        .eq("slug", params.slug)
+        .eq("is_published", true)
+        .is("deleted_at", null)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return fail("not_found", "Post não encontrado.", 404, requestId);
+      return ok(flattenBlogTags([data])[0], requestId);
+    }
+
+    case "blog_taxonomy": {
+      const [cats, tags, authors] = await Promise.all([
+        admin.from("blog_category").select("slug, name, description").is("deleted_at", null).order("sort_order"),
+        admin.from("blog_tag").select("slug, name").is("deleted_at", null).order("name"),
+        admin.from("blog_author").select("slug, name, bio").is("deleted_at", null).order("name"),
+      ]);
+      for (const r of [cats, tags, authors]) if (r.error) throw r.error;
+      return ok(
+        { categories: cats.data ?? [], tags: tags.data ?? [], authors: authors.data ?? [] },
+        requestId,
+      );
+    }
+
+    // ── Blog: escrita (interna, escopo de plataforma) ──────────────────────
+    // Não documentado em superfície pública. Ver docs/specs/blog.md.
+
+    case "upsert_blog_post": {
+      const b = (body ?? {}) as Record<string, unknown>;
+      if (!b.slug || !b.title || !b.body_md) {
+        return fail("invalid_request", "slug, title e body_md são obrigatórios.", 400, requestId);
+      }
+      const resolved = await resolveBlogRefs(admin, b);
+      if ("error" in resolved) return fail("invalid_request", resolved.error, 400, requestId);
+
+      const { data, error } = await admin
+        .from("blog_post")
+        .upsert(
+          {
+            slug: String(b.slug),
+            title: String(b.title),
+            body_md: String(b.body_md),
+            excerpt: b.excerpt == null ? null : String(b.excerpt),
+            cover_image_url: b.cover_image_url == null ? null : String(b.cover_image_url),
+            meta_title: b.meta_title == null ? null : String(b.meta_title),
+            meta_description: b.meta_description == null ? null : String(b.meta_description),
+            ...resolved.ids,
+            is_published: b.is_published === true,
+          },
+          { onConflict: "slug" },
+        )
+        .select("id, slug")
+        .single();
+      if (error) throw error;
+
+      if (Array.isArray(b.tags)) {
+        const applied = await setBlogPostTags(admin, data.id, b.tags as string[]);
+        if (applied) return fail("invalid_request", applied, 400, requestId);
+      }
+      return ok(data, requestId);
+    }
+
+    case "publish_blog_post": {
+      const b = (body ?? {}) as Record<string, unknown>;
+      const { data, error } = await admin
+        .from("blog_post")
+        .update({ is_published: b.is_published !== false })
+        .eq("slug", params.slug)
+        .is("deleted_at", null)
+        .select("slug, is_published")
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return fail("not_found", "Post não encontrado.", 404, requestId);
+      return ok(data, requestId);
+    }
+
+    case "delete_blog_post": {
+      // Soft delete: a linha guarda `legacy_wp_id` e `legacy_url`, que são o
+      // rastro da migração do WordPress e não se recupera depois.
+      const { data, error } = await admin
+        .from("blog_post")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("slug", params.slug)
+        .is("deleted_at", null)
+        .select("slug")
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return fail("not_found", "Post não encontrado.", 404, requestId);
+      return ok({ slug: data.slug, deleted: true }, requestId);
+    }
+
     case "list_locations":
       return ok(
         await call("api_list_locations", {

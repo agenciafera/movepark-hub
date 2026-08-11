@@ -250,6 +250,47 @@ paths:
         - { name: limit, in: query, schema: { type: integer, default: 20 } }
       responses:
         "200": { $ref: "#/components/responses/Object" }
+  /v1/blog/posts:
+    get:
+      tags: [blog]
+      summary: Lista os posts publicados do blog
+      description: >
+        Conteúdo editorial da Movepark, o mesmo publicado em movepark.co/blog/.
+        Não é dado de parceiro: o resultado é igual para qualquer chave. O corpo
+        do post não vem na lista, use o endpoint por slug.
+      security: [{ apiKey: [blog:read] }]
+      parameters:
+        - { name: q, in: query, description: "Casa título e resumo", schema: { type: string } }
+        - { name: category, in: query, description: "slug da categoria", schema: { type: string } }
+        - { name: tag, in: query, description: "slug da tag", schema: { type: string } }
+        - { name: author, in: query, description: "slug do autor", schema: { type: string } }
+        - { name: destination, in: query, description: "slug do destino (aeroporto)", schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 20 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+  /v1/blog/posts/{slug}:
+    get:
+      tags: [blog]
+      summary: Post completo por slug
+      description: >
+        Devolve o corpo em Markdown, a meta de SEO e as relações. O slug é o mesmo
+        da URL pública, em hub.movepark.co/blog/{slug}/.
+      security: [{ apiKey: [blog:read] }]
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /v1/blog/taxonomy:
+    get:
+      tags: [blog]
+      summary: Categorias, tags e autores do blog
+      description: >
+        Os slugs que os filtros de /v1/blog/posts aceitam.
+      security: [{ apiKey: [blog:read] }]
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
   /v1/coupons:
     get:
       tags: [coupons]

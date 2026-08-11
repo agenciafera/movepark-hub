@@ -9,11 +9,12 @@ Deno.test("normalizePath pega tudo a partir de /v1 (path do edge function)", () 
 });
 
 Deno.test("matchRoute resolve handler, escopo e params", () => {
-  assertEquals(matchRoute("GET", "/v1/locations"), { handler: "list_locations", scope: "locations:read", params: {} });
+  assertEquals(matchRoute("GET", "/v1/locations"), { handler: "list_locations", scope: "locations:read", params: {}, internal: false });
   assertEquals(matchRoute("GET", "/functions/v1/api/v1/locations/abc"), {
     handler: "get_location",
     scope: "locations:read",
     params: { id: "abc" },
+    internal: false,
   });
   assertEquals(matchRoute("GET", "/v1/locations/abc/parking-types")?.handler, "list_parking_types");
   assertEquals(matchRoute("POST", "/v1/bookings")?.scope, "bookings:write");
@@ -21,17 +22,20 @@ Deno.test("matchRoute resolve handler, escopo e params", () => {
     handler: "cancel_booking",
     scope: "bookings:cancel",
     params: { id: "xyz" },
+    internal: false,
   });
   assertEquals(matchRoute("POST", "/v1/bookings/xyz/check-in")?.scope, "bookings:checkin");
   assertEquals(matchRoute("POST", "/v1/bookings/xyz/change-dates"), {
     handler: "change_dates",
     scope: "bookings:write",
     params: { id: "xyz" },
+    internal: false,
   });
   assertEquals(matchRoute("POST", "/v1/bookings/xyz/change-vehicle"), {
     handler: "change_vehicle",
     scope: "bookings:write",
     params: { id: "xyz" },
+    internal: false,
   });
 });
 
@@ -40,11 +44,13 @@ Deno.test("matchRoute resolve as escritas de precificação (E1.4.1/2)", () => {
     handler: "set_pricing",
     scope: "pricing:write",
     params: { id: "lpt1" },
+    internal: false,
   });
   assertEquals(matchRoute("POST", "/v1/parking-types/lpt1/date-blocks"), {
     handler: "set_date_blocked",
     scope: "pricing:write",
     params: { id: "lpt1" },
+    internal: false,
   });
   // o /pricing não pode colidir com a edição base do tipo de vaga
   assertEquals(matchRoute("POST", "/v1/parking-types/lpt1")?.handler, "update_parking_type");
@@ -123,4 +129,41 @@ Deno.test("pgErrorToHttp não vaza a mensagem crua do Postgres", () => {
     pgErrorToHttp({ code: "P0001", message: "Check-out precisa ser após o check-in" }).message,
     "Check-out precisa ser após o check-in",
   );
+});
+
+Deno.test("blog: leitura é pública, escrita é interna e de plataforma", () => {
+  // Leitura vai para o OpenAPI e para o card do MCP.
+  assertEquals(matchRoute("GET", "/v1/blog/posts"), {
+    handler: "list_blog_posts",
+    scope: "blog:read",
+    params: {},
+    internal: false,
+  });
+  assertEquals(matchRoute("GET", "/v1/blog/posts/top-3-viracopos"), {
+    handler: "get_blog_post",
+    scope: "blog:read",
+    params: { slug: "top-3-viracopos" },
+    internal: false,
+  });
+  assertEquals(matchRoute("GET", "/v1/blog/taxonomy")?.scope, "blog:read");
+
+  // Escrita é ação de Manager: `internal` mantém fora da documentação pública,
+  // e o guard de drift falha se alguém documentar.
+  for (const [metodo, caminho, handler] of [
+    ["POST", "/v1/blog/posts", "upsert_blog_post"],
+    ["POST", "/v1/blog/posts/x/publish", "publish_blog_post"],
+    ["POST", "/v1/blog/posts/x/delete", "delete_blog_post"],
+  ] as const) {
+    const r = matchRoute(metodo, caminho);
+    assertEquals(r?.handler, handler);
+    assertEquals(r?.scope, "blog:write");
+    assertEquals(r?.internal, true, `${caminho} precisa ser interna`);
+  }
+});
+
+Deno.test("blog: slug do post não engole as rotas irmãs", () => {
+  // /v1/blog/taxonomy não pode casar como se `taxonomy` fosse slug de post.
+  assertEquals(matchRoute("GET", "/v1/blog/taxonomy")?.handler, "blog_taxonomy");
+  // e o GET não pode alcançar as rotas de escrita
+  assertEquals(matchRoute("GET", "/v1/blog/posts/x/publish"), null);
 });

@@ -26,10 +26,25 @@ try {
 
 const HTTP_VERBS = ["get", "post", "put", "patch", "delete"];
 
-// rotas declaradas: def("GET", "/v1/locations/:id", ...) → "GET /v1/locations/{id}"
+const asOp = (metodo, caminho) =>
+  `${metodo.toLowerCase()} ${caminho.replace(/:([A-Za-z_]+)/g, "{$1}")}`;
+
+// rotas públicas: def("GET", "/v1/locations/:id", ...) → "get /v1/locations/{id}"
 const routeOps = new Set(
-  [...router.matchAll(/def\(\s*"([A-Z]+)",\s*"([^"]+)"/g)].map(
-    (m) => `${m[1].toLowerCase()} ${m[2].replace(/:([A-Za-z_]+)/g, "{$1}")}`,
+  [...router.matchAll(/\bdef\(\s*"([A-Z]+)",\s*"([^"]+)"/g)].map((m) => asOp(m[1], m[2])),
+);
+
+/**
+ * Rotas internas da Movepark: `internalRoute("POST", "/v1/blog/posts", ...)`.
+ *
+ * Elas NÃO entram no OpenAPI, por decisão de produto: ação de Manager não se
+ * documenta em superfície pública. A asserção aqui é invertida, e é isso que faz
+ * o guard proteger o sigilo em vez de só abrir uma exceção: se alguém publicar
+ * uma delas no contrato, o CI reprova.
+ */
+const internalOps = new Set(
+  [...router.matchAll(/\binternalRoute\(\s*"([A-Z]+)",\s*"([^"]+)"/g)].map((m) =>
+    asOp(m[1], m[2]),
   ),
 );
 
@@ -43,7 +58,18 @@ const openapiOps = new Set(
 );
 
 const undocumented = [...routeOps].filter((op) => !openapiOps.has(op));
-const unserved = [...openapiOps].filter((op) => !routeOps.has(op));
+const unserved = [...openapiOps].filter((op) => !routeOps.has(op) && !internalOps.has(op));
+const vazadas = [...internalOps].filter((op) => openapiOps.has(op));
+
+if (vazadas.length) {
+  console.error("❌ Rota INTERNA documentada no OpenAPI (public/openapi.yaml):");
+  for (const op of vazadas) console.error(`   ${op}`);
+  console.error(
+    "\nAção de Manager não vai para superfície pública. Tire do contrato ou,\n" +
+      "se a rota deixou de ser interna, troque internalRoute() por def().",
+  );
+  process.exit(1);
+}
 
 if (undocumented.length || unserved.length) {
   if (undocumented.length) {
@@ -201,10 +227,14 @@ const ASSIGNABLE_SCOPES = new Set([
   "bookings:read", "bookings:write", "coupons:read", "coupons:write", "discounts:read",
   "discounts:write", "faq:read", "locations:read", "locations:write", "occupancy:read",
   "parking-types:read", "parking-types:write", "pricing:read", "pricing:write", "reviews:read",
-  "reviews:write", "wps:write", "checkout:link",
+  "reviews:write", "wps:write", "checkout:link", "blog:read", "blog:write",
 ]);
 
-const routerScopes = [...router.matchAll(/def\(\s*"[A-Z]+",\s*"[^"]+",\s*\[[^\]]*\],\s*"([^"]+)"/g)].map((m) => m[1]);
+// `def(` e `internalRoute(`: escopo de rota interna também conta como usado, senão
+// `blog:write` apareceria como órfão só por não estar no contrato público.
+const routerScopes = [
+  ...router.matchAll(/\b(?:def|internalRoute)\(\s*"[A-Z]+",\s*"[^"]+",\s*\[[^\]]*\],\s*"([^"]+)"/g),
+].map((m) => m[1]);
 // Escopos declarados em tools.ts E em customer.logic.ts (onde vive `checkout:link`).
 const toolScopes = [toolsSrc, customerSrc].flatMap((src) =>
   [...src.matchAll(/scope:\s*"([^"]+)"/g)].map((m) => m[1]),

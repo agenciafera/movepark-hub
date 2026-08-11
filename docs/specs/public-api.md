@@ -268,6 +268,9 @@ vai na URL). Respostas em JSON com envelope estável (§10). Mapeamento para a l
 | `POST /parking-types/{id}` | `parking-types:write` | `api_update_parking_type` | status/capacidade/regras |
 | `POST /parking-types/{id}/pricing` | `pricing:write` | `api_set_pricing` | base_price + regra + tiers (E1.4.1) |
 | `POST /parking-types/{id}/date-blocks` | `pricing:write` | `api_set_date_blocked` | bloqueia/desbloqueia uma data (E1.4.2) |
+| `GET /blog/posts` | `blog:read` | `blog_post` + relações | filtros `q`, `category`, `tag`, `author`, `destination`; sem `body_md` |
+| `GET /blog/posts/{slug}` | `blog:read` | idem + corpo | Markdown completo e meta de SEO; 404 se não publicado |
+| `GET /blog/taxonomy` | `blog:read` | `blog_category`/`blog_tag`/`blog_author` | os slugs que os filtros aceitam |
 
 > **Paridade:** os endpoints acima espelham as capacidades do operator panel. As RPCs `api_*` espelham
 > as `operator_*` keyed por `company_id` (o gateway já autorizou empresa+escopo) — mantenha as duas em
@@ -275,6 +278,16 @@ vai na URL). Respostas em JSON com envelope estável (§10). Mapeamento para a l
 >
 > Esta tabela **cresce por doc-as-you-build** (§12): endpoint novo ⇒ linha aqui + path no OpenAPI +
 > escopo no catálogo.
+
+> **Blog é a exceção ao tenant implícito.** Os três endpoints de `/blog` devolvem o mesmo
+> resultado para qualquer chave: o conteúdo é da Movepark, não do parceiro, e já é público no
+> site. Nada ali é filtrado por `company_id`.
+>
+> **A escrita do blog existe e não está documentada aqui, de propósito.** Criar, publicar e
+> excluir post é ação de Manager, e superfície pública não anuncia ação de Manager. As rotas são
+> declaradas com `internalRoute()` no gateway, carregam o escopo de plataforma `blog:write` e o
+> `lint:openapi` **reprova** se alguém publicá-las no contrato. O contrato delas mora em
+> [blog.md](./blog.md).
 
 ### 9.1 · Capacidades internas fora da superfície (decisão registrada em 14/07/2026)
 

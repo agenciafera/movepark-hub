@@ -79,6 +79,13 @@ Edge `chat` consome. O MCP converte com `toMcpToolDef` e roteia por `callRead`; 
 | `get_parking_types(location_id)` | `location_parking_type` (+ join) |
 | `list_destinations(limit?)` / `get_destination(slug)` | `destination` (+ `destination_point`) |
 | `current_datetime()` | data/hora no fuso `America/Sao_Paulo` (resolver datas relativas) |
+| `search_blog(q?, destination?, category?, tag?, limit?)` | `blog_post` + relações; devolve título, resumo e URL, sem o corpo |
+| `get_blog_post(slug)` | `blog_post` com o Markdown completo, para o agente citar e linkar |
+
+> **Não há tool de escrita do blog, de propósito.** Publicar post é ação de Manager, e card de MCP
+> é documentação pública: uma tool "privada" num card seria contradição. A escrita existe só na
+> API interna (`internalRoute()` + escopo de plataforma `blog:write`), documentada em
+> [blog.md](./blog.md).
 
 ### Parceiro (chave `mp_` + escopo)
 

@@ -120,7 +120,9 @@
             "type": "integer"
           }
         },
-        "required": ["query"]
+        "required": [
+          "query"
+        ]
       }
     },
     {
@@ -502,6 +504,52 @@
         "additionalProperties": false
       },
       "scope": "checkout:link"
+    },
+    {
+      "name": "search_blog",
+      "description": "Busca guias do blog sobre estacionamento em aeroportos (preço da diária, traslado, vaga coberta, valet, como reservar). Devolve título, resumo e URL, sem o corpo.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "q": {
+            "type": "string",
+            "description": "Termo livre; casa título e resumo"
+          },
+          "destination": {
+            "type": "string",
+            "description": "slug do destino, ex.: aeroporto-de-viracopos"
+          },
+          "category": {
+            "type": "string",
+            "description": "slug da categoria: precos, comparativos, guias, dicas-de-viagem, como-reservar"
+          },
+          "tag": {
+            "type": "string",
+            "description": "slug da tag, ex.: traslado, vaga-coberta, economia"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "máximo de resultados (padrão 5)"
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "get_blog_post",
+      "description": "Devolve um post do blog por slug, com o texto completo em Markdown.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "description": "slug do post"
+          }
+        },
+        "required": [
+          "slug"
+        ]
+      }
     }
   ]
 }

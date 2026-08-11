@@ -11,15 +11,43 @@
       "inputSchema": {
         "type": "object",
         "properties": {
-          "dest": { "type": "string", "description": "Código do aeroporto (ex.: GRU) ou cidade" },
-          "from": { "type": "string", "format": "date-time" },
-          "to": { "type": "string", "format": "date-time" },
-          "vehicle": { "type": "string", "enum": ["car", "motorcycle"] },
-          "category": { "type": "array", "items": { "type": "string" } },
-          "max_distance_km": { "type": "number" },
-          "limit": { "type": "integer" }
+          "dest": {
+            "type": "string",
+            "description": "Código do aeroporto (ex.: GRU) ou cidade"
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "vehicle": {
+            "type": "string",
+            "enum": [
+              "car",
+              "motorcycle"
+            ]
+          },
+          "category": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "max_distance_km": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "integer"
+          }
         },
-        "required": ["dest", "from", "to"]
+        "required": [
+          "dest",
+          "from",
+          "to"
+        ]
       }
     },
     {
@@ -28,12 +56,27 @@
       "inputSchema": {
         "type": "object",
         "properties": {
-          "company": { "type": "string", "description": "slug da empresa" },
-          "location": { "type": "string", "description": "slug da unidade" },
-          "parking_type": { "type": "string", "description": "code do tipo de vaga" },
-          "days": { "type": "integer", "minimum": 1, "default": 1 }
+          "company": {
+            "type": "string",
+            "description": "slug da empresa"
+          },
+          "location": {
+            "type": "string",
+            "description": "slug da unidade"
+          },
+          "parking_type": {
+            "type": "string",
+            "description": "code do tipo de vaga"
+          },
+          "days": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1
+          }
         },
-        "required": ["company"]
+        "required": [
+          "company"
+        ]
       }
     },
     {
@@ -42,9 +85,15 @@
       "inputSchema": {
         "type": "object",
         "properties": {
-          "location_id": { "type": "string" },
-          "query": { "type": "string" },
-          "limit": { "type": "integer" }
+          "location_id": {
+            "type": "string"
+          },
+          "query": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer"
+          }
         }
       }
     },
@@ -54,12 +103,22 @@
       "inputSchema": {
         "type": "object",
         "properties": {
-          "query": { "type": "string" },
-          "location_id": { "type": "string" },
-          "destination_id": { "type": "string" },
-          "k": { "type": "integer" }
+          "query": {
+            "type": "string"
+          },
+          "location_id": {
+            "type": "string"
+          },
+          "destination_id": {
+            "type": "string"
+          },
+          "k": {
+            "type": "integer"
+          }
         },
-        "required": ["query"]
+        "required": [
+          "query"
+        ]
       }
     },
     {
@@ -67,7 +126,11 @@
       "description": "Lista os estacionamentos parceiros (empresas) da plataforma.",
       "inputSchema": {
         "type": "object",
-        "properties": { "limit": { "type": "integer" } }
+        "properties": {
+          "limit": {
+            "type": "integer"
+          }
+        }
       }
     },
     {
@@ -75,7 +138,11 @@
       "description": "Lista unidades (estacionamentos) públicas.",
       "inputSchema": {
         "type": "object",
-        "properties": { "limit": { "type": "integer" } }
+        "properties": {
+          "limit": {
+            "type": "integer"
+          }
+        }
       }
     },
     {
@@ -83,24 +150,97 @@
       "description": "Tipos de vaga de uma unidade (coberto, descoberto, valet).",
       "inputSchema": {
         "type": "object",
-        "properties": { "location_id": { "type": "string" } },
-        "required": ["location_id"]
+        "properties": {
+          "location_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "location_id"
+        ]
       }
     },
     {
       "name": "list_destinations",
       "description": "Destinos (aeroportos/cidades) atendidos, com slug e localização.",
-      "inputSchema": { "type": "object", "properties": { "limit": { "type": "integer" } } }
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer"
+          }
+        }
+      }
     },
     {
       "name": "get_destination",
       "description": "Detalhe de um destino pelo slug, com seus pontos/terminais.",
-      "inputSchema": { "type": "object", "properties": { "slug": { "type": "string" } }, "required": ["slug"] }
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug"
+        ]
+      }
     },
     {
       "name": "current_datetime",
       "description": "Data e hora atuais no fuso de São Paulo. Use para resolver datas relativas como 'amanhã' ou 'sexta que vem' sem perguntar ao usuário.",
-      "inputSchema": { "type": "object", "properties": {}, "required": [] }
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "search_blog",
+      "description": "Busca guias do blog sobre estacionamento em aeroportos (preço da diária, traslado, vaga coberta, valet, como reservar). Devolve título, resumo e URL, sem o corpo.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "q": {
+            "type": "string",
+            "description": "Termo livre; casa título e resumo"
+          },
+          "destination": {
+            "type": "string",
+            "description": "slug do destino, ex.: aeroporto-de-viracopos"
+          },
+          "category": {
+            "type": "string",
+            "description": "slug da categoria: precos, comparativos, guias, dicas-de-viagem, como-reservar"
+          },
+          "tag": {
+            "type": "string",
+            "description": "slug da tag, ex.: traslado, vaga-coberta, economia"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "máximo de resultados (padrão 5)"
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "get_blog_post",
+      "description": "Devolve um post do blog por slug, com o texto completo em Markdown.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "description": "slug do post"
+          }
+        },
+        "required": [
+          "slug"
+        ]
+      }
     }
   ]
 }

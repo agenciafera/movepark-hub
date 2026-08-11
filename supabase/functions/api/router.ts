@@ -5,6 +5,8 @@ export interface RouteMatch {
   handler: string;
   scope: string;
   params: Record<string, string>;
+  /** Rota interna da Movepark: não vai para o OpenAPI nem para card de MCP. */
+  internal: boolean;
 }
 
 interface RouteDef {
@@ -13,6 +15,7 @@ interface RouteDef {
   keys: string[];
   scope: string;
   handler: string;
+  internal: boolean;
 }
 
 // Cada rota é declarada com seu escopo exigido (espelha api_scope/OpenAPI).
@@ -59,13 +62,38 @@ const ROUTES: RouteDef[] = [
   // Precificação (E1.4.1) e bloqueio de datas (E1.4.2)
   def("POST", "/v1/parking-types/:id/pricing", ["id"], "pricing:write", "set_pricing"),
   def("POST", "/v1/parking-types/:id/date-blocks", ["id"], "pricing:write", "set_date_blocked"),
+
+  // ── Blog ───────────────────────────────────────────────────────────────────
+  // Leitura: conteúdo público, documentado no OpenAPI e no card do MCP.
+  def("GET", "/v1/blog/posts", [], "blog:read", "list_blog_posts"),
+  def("GET", "/v1/blog/posts/:slug", ["slug"], "blog:read", "get_blog_post"),
+  def("GET", "/v1/blog/taxonomy", [], "blog:read", "blog_taxonomy"),
+
+  // Escrita: ação de Manager. `internal` mantém estas rotas FORA do OpenAPI, e o
+  // guard de drift falha se alguém documentá-las. O escopo `blog:write` é de
+  // plataforma, então só existe em chave da Movepark, nunca em chave de parceiro
+  // nem em papel de empresa. Contrato em docs/specs/blog.md.
+  internalRoute("POST", "/v1/blog/posts", [], "blog:write", "upsert_blog_post"),
+  internalRoute("POST", "/v1/blog/posts/:slug/publish", ["slug"], "blog:write", "publish_blog_post"),
+  internalRoute("POST", "/v1/blog/posts/:slug/delete", ["slug"], "blog:write", "delete_blog_post"),
 ];
 
 function def(method: string, pattern: string, keys: string[], scope: string, handler: string): RouteDef {
   const regex = new RegExp(
     "^" + pattern.replace(/:[A-Za-z_]+/g, "([^/]+)").replace(/\//g, "\\/") + "\\/?$",
   );
-  return { method, regex, keys, scope, handler };
+  return { method, regex, keys, scope, handler, internal: false };
+}
+
+/** Rota interna da Movepark. Ver o bloco do blog acima para o porquê. */
+function internalRoute(
+  method: string,
+  pattern: string,
+  keys: string[],
+  scope: string,
+  handler: string,
+): RouteDef {
+  return { ...def(method, pattern, keys, scope, handler), internal: true };
 }
 
 // Extrai o caminho normalizado ("/v1/...") da URL do edge function (que vem como
@@ -83,7 +111,7 @@ export function matchRoute(method: string, pathname: string): RouteMatch | null 
     if (!m) continue;
     const params: Record<string, string> = {};
     r.keys.forEach((k, idx) => (params[k] = decodeURIComponent(m[idx + 1])));
-    return { handler: r.handler, scope: r.scope, params };
+    return { handler: r.handler, scope: r.scope, params, internal: r.internal };
   }
   return null;
 }
