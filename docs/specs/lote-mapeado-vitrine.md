@@ -3,7 +3,7 @@
 > **Épico:** [E0.17](https://app.clickup.com/t/86ajyp580) · **Fase:** 0 · **Depende de:** E0.15 (capacidades / ADR-009)
 > **Q/D:** [Q-021](https://app.clickup.com/t/86ajyp5pu) telefone **decidido em 11/08/2026: guardar, não exibir** · [Q-022](https://app.clickup.com/t/86ajz8n1j) **decidido → ADR-010** · [D-009](https://app.clickup.com/t/86ajyp5w7) deduplicação
 > **ADR:** ADR-010 (lote não-parceiro não vive na tabela transacional)
-> **Status:** especificado em 10/08/2026. **E0.17-a no ar** (11/08/2026, migration `20261008000000_prospect_location.sql`); o resto não iniciado.
+> **Status:** especificado em 10/08/2026. **a, c e d no ar** em 11/08/2026, com Q-021 decidido. Falta b, e, f, g, h.
 > **Case de referência:** Talentos Park, Recife. Todo exemplo aqui usa dados reais dele.
 
 Este arquivo é **autossuficiente**: quem for implementar não precisa abrir o ClickUp nem `gestao/`. O ClickUp serve só para saber qual atividade puxar e em que ordem.
@@ -15,7 +15,7 @@ Este arquivo é **autossuficiente**: quem for implementar não precisa abrir o C
 | E0.17-a | ✅ Criar a tabela `prospect_location` | [§ A tabela](#a-tabela) | [86ajyp71u](https://app.clickup.com/t/86ajyp71u) |
 | E0.17-b | Higienizar os registros obsoletos em `location` | [§ Higiene do legado](#higiene-dos-registros-legados-e017-b) | [86ajyp7bj](https://app.clickup.com/t/86ajyp7bj) |
 | E0.17-c | ✅ Cadastrar o Talentos Park como case-piloto | [§ O cadastro](#o-cadastro-com-o-talentos-park-e017-c) | [86ajyp7xu](https://app.clickup.com/t/86ajyp7xu) |
-| E0.17-d | RPC de união na página de destino | [§ Página de destino](#página-de-destino-e017-d) | [86ajyp87t](https://app.clickup.com/t/86ajyp87t) |
+| E0.17-d | ✅ Cards do lote mapeado na página de destino | [§ Página de destino](#página-de-destino-e017-d) | [86ajyp87t](https://app.clickup.com/t/86ajyp87t) |
 | E0.17-e | Single sem caminho para reserva | [§ Single](#single-e017-e) | [86ajyp8jn](https://app.clickup.com/t/86ajyp8jn) |
 | E0.17-f | JSON-LD `ParkingFacility` | [§ JSON-LD](#json-ld-e017-f) | [86ajyp8u6](https://app.clickup.com/t/86ajyp8u6) |
 | E0.17-g | Conversão da reivindicação | [§ Conversão](#conversão-e017-g) | [86ajyp96d](https://app.clickup.com/t/86ajyp96d) |
@@ -206,9 +206,19 @@ Recife é o destino certo para o piloto: acabou de ser criado e tem **zero** uni
 
 ## Página de destino
 
-**(E0.17-d)** — é aqui que mora o custo de ter duas tabelas, e é a atividade que paga esse custo uma vez só.
+**(E0.17-d)** · ✅ no ar em 11/08/2026. É aqui que mora o custo de ter duas tabelas, e é a atividade que paga esse custo uma vez só.
 
-RPC única com `union all` e um discriminador, para o front consumir uma lista e não fazer dois fetches:
+> ### O que mudou na execução: não deu para fazer o `union all`
+>
+> A spec pedia **uma** RPC com `union all` e um discriminador `kind`, para o front consumir uma lista só. Foi descartado ao encostar no código: **o lado vendável desta página não é um `select from location`**. É a Edge `search`, que devolve preço calculado na janela, disponibilidade, comodidades, nota e os selos de vantagem. Um `union all` em SQL teria que largar tudo isso para caber na mesma linha do lado mapeado, que não tem preço nenhum.
+>
+> O que a RPC única compraria era um fetch a menos. O que ela custaria era o preço sumir do card do parceiro que paga 20%. Ficaram duas leituras, e o custo é pequeno porque as duas seções já são separadas na tela, paginam separado e ordenam por critérios diferentes, que é o que a própria spec exige logo abaixo.
+>
+> Entregue: **`destination_prospect_cards(p_destination_slug)`** (`20261012000000`), `SECURITY INVOKER` de propósito. Definer contornaria o grant de coluna e devolveria o telefone sem querer, que é justamente o que Q-021 fechou. A distância sai de `ST_Distance` sobre `geog`, com o terminal como referência quando o destino tem `destination_point` cadastrado e o centro do destino quando não tem: em aeroporto de um terminal só (todos, menos GRU) a geo do destino **é** a do terminal.
+>
+> **Os cards saem no HTML do build.** O `loader` da rota chama a RPC, então o selo "Sem reserva online" está no HTML pré-renderizado e não depende do JS rodar. Conferido no `dist`: o selo, o nome, o endereço e a linha de apoio estão lá, e o telefone não aparece em lugar nenhum do build.
+
+O desenho original, mantido aqui como registro:
 
 ```sql
 create or replace function destination_cards(p_destination_slug text)
@@ -441,9 +451,9 @@ Candidatas a chave, provavelmente em cascata:
 - [x] `prospect_location` criada, com `geog` gerada, índice GiST e RLS.
 - [x] Leitura pública só devolve `is_published and converted_at is null`; escrita só `is_hub_admin()`.
 - [x] Slug do prospect é unique também contra `location.slug`.
-- [ ] Talentos Park cadastrado, publicado, visível na seção de baixo de `/estacionamentos/aeroporto-recife/`.
-- [ ] `destination_cards()` devolve as duas fontes, `bookable` primeiro, com o mesmo formato de distância.
-- [ ] Seções paginadas separadamente; `is_popular` só ordena a seção vendável.
+- [x] Talentos Park cadastrado, publicado, visível na seção de baixo de `/destinos/aeroporto-internacional-do-recife-guararapes`.
+- [x] As duas fontes na página, vendável primeiro, com o mesmo formato de distância (`formatDistance`). Em duas leituras, não numa RPC com `union all`: ver o bloco acima.
+- [x] Seções separadas de ponta a ponta (títulos, ordenação e paginação próprios); `is_popular` não existe no lado mapeado e não foi inventado.
 - [ ] Teste de componente: single de `prospect_location` não tem nenhum elemento com ação de reserva.
 - [ ] JSON-LD `ParkingFacility` presente, sem `Offer`, sem `openingHours`, sem `aggregateRating`.
 - [ ] Painel admin permite criar, publicar e despublicar sem SQL; sugere destino por `nearest_destination()`.

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { Database } from "@/types/database";
-import type { Destination, DestinationPoint } from "@/types/domain";
+import type { Destination, DestinationPoint, ProspectCard } from "@/types/domain";
 
 type DestinationInsert = Database["public"]["Tables"]["destination"]["Insert"];
 type DestinationUpdate = Database["public"]["Tables"]["destination"]["Update"];
@@ -13,7 +13,49 @@ export const destinationsKeys = {
   adminList: () => [...destinationsKeys.all, "admin"] as const,
   detail: (slug: string) => [...destinationsKeys.all, "detail", slug] as const,
   points: (destinationId: string) => [...destinationsKeys.all, "points", destinationId] as const,
+  prospects: (slug: string) => [...destinationsKeys.all, "prospects", slug] as const,
 };
+
+/**
+ * Lotes MAPEADOS de um destino (E0.17-d), a seção de baixo da página.
+ *
+ * São estacionamentos sem contrato: sem preço, sem disponibilidade, sem caminho de
+ * reserva. Por isso não passam pela Edge `search`, que é o pipeline do lado vendável.
+ * A RPC é `security invoker`, então o telefone continua fora do alcance (Q-021) e
+ * rascunho/ficha convertida continuam invisíveis.
+ *
+ * Exportada solta (e não só como hook) porque o `loader` da rota a chama no BUILD: o selo
+ * "Sem reserva online" precisa estar no HTML pré-renderizado, não só depois do JS, senão
+ * o crawler não lê justamente a frase que diz o que aquele card é.
+ *
+ * `numeric` do Postgres chega como string no PostgREST: o `Number()` é o que faz o
+ * `formatDistance` receber número, e não "1.01".
+ */
+export async function fetchDestinationProspects(slug: string): Promise<ProspectCard[]> {
+  const { data, error } = await supabase.rpc("destination_prospect_cards", {
+    p_destination_slug: slug,
+  });
+  if (error) throw error;
+  return (data ?? []).map((row) => ({
+    ...row,
+    latitude: Number(row.latitude),
+    longitude: Number(row.longitude),
+    distance_km: row.distance_km == null ? null : Number(row.distance_km),
+    amenities: Array.isArray(row.amenities) ? (row.amenities as string[]) : [],
+  })) as ProspectCard[];
+}
+
+/** Público: os lotes mapeados do destino. Cobre a navegação no cliente; no SSG o loader já traz. */
+export function useDestinationProspects(slug: string | undefined) {
+  return useQuery({
+    queryKey: slug
+      ? destinationsKeys.prospects(slug)
+      : [...destinationsKeys.all, "prospects", "none"],
+    enabled: !!slug,
+    queryFn: () => fetchDestinationProspects(slug!),
+    staleTime: 5 * 60_000,
+  });
+}
 
 /** Público: um destino publicado por slug (página /destinos/:slug). */
 export function useDestinationBySlug(slug: string | undefined) {

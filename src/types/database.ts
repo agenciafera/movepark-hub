@@ -4724,6 +4724,22 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      destination_prospect_cards: {
+        Args: { p_destination_slug: string }
+        Returns: {
+          address: string
+          amenities: Json
+          description: string
+          distance_km: number
+          google_maps_url: string
+          id: string
+          latitude: number
+          longitude: number
+          name: string
+          reference_name: string
+          slug: string
+        }[]
+      }
       discount_assert_company_access: {
         Args: { p_company_id: string }
         Returns: undefined

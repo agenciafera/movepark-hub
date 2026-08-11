@@ -2,8 +2,13 @@ import * as React from "react";
 import { Link, useLoaderData, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { MapPin } from "@phosphor-icons/react";
-import type { Destination } from "@/types/domain";
-import { useDestinationBySlug, usePublishedDestinations } from "@/features/destinations/api";
+import type { Destination, ProspectCard as ProspectCardData } from "@/types/domain";
+import {
+  useDestinationBySlug,
+  useDestinationProspects,
+  usePublishedDestinations,
+} from "@/features/destinations/api";
+import { ProspectCard } from "@/features/destinations/ProspectCard";
 import { useSearchResults } from "@/features/search/useSearchResults";
 import { useFaqCombined } from "@/features/faqs/api";
 import { FaqList } from "@/features/faqs/FaqList";
@@ -48,9 +53,13 @@ function defaultWindow() {
   return { from: from.toISOString(), to: to.toISOString() };
 }
 
+/** O que `destinoLoader` entrega: o destino e os lotes mapeados, já no HTML do build. */
+type DestinoLoaderData = { destination: Destination; prospects: ProspectCardData[] } | null;
+
 export default function DestinoPage() {
   const params = useParams();
-  const loaderDest = useLoaderData() as Destination | null;
+  const loaded = useLoaderData() as DestinoLoaderData;
+  const loaderDest = loaded?.destination ?? null;
   // No SSG/loader já vem o destino; no client (nav) o hook cobre.
   const slug = params.slug;
   const query = useDestinationBySlug(loaderDest ? undefined : slug);
@@ -70,6 +79,13 @@ export default function DestinoPage() {
   const faqs = useFaqCombined({ destinationId: destination?.id, enabled: !!destination });
   // Destinos publicados p/ cross-link (internal linking entre /destinos).
   const allDestinations = usePublishedDestinations();
+  // Lotes MAPEADOS (E0.17-d): seção própria, abaixo da vendável. Leitura separada de
+  // propósito, porque o lado vendável vem da Edge `search`, com preço e disponibilidade,
+  // e um `union all` em SQL teria que largar isso para caber na mesma linha.
+  //
+  // No SSG o loader já trouxe (o selo precisa estar no HTML do build); o hook cobre a
+  // navegação no cliente, e por isso só dispara quando o loader não entregou.
+  const prospects = useDestinationProspects(loaded ? undefined : destination?.slug);
 
   if (!destination) {
     if (query.isLoading) {
@@ -114,6 +130,7 @@ export default function DestinoPage() {
     ? ([heroUrl, ogImage, squareImage].filter(Boolean) as string[])
     : undefined;
   const results = search.data?.results ?? [];
+  const prospectItems = loaded?.prospects ?? prospects.data ?? [];
   const fromPrice = lowestPerDay(results);
   const related = pickRelatedDestinations(allDestinations.data ?? [], destination.id, 6);
   const topResults = topRated(topSearch.data?.results ?? []);
@@ -263,7 +280,17 @@ export default function DestinoPage() {
               ))}
             </div>
           ) : results.length === 0 ? (
-            <EmptyState title="Nenhum estacionamento disponível para esse destino ainda." />
+            // Em destino novo (REC, NVT, CNF, GIG, SDU) a seção vendável vazia é o caso
+            // NORMAL, não a exceção: o texto aponta para a seção de baixo quando ela
+            // existe, em vez de deixar a página parecendo quebrada.
+            <EmptyState
+              title={`Ainda não temos reserva online em ${destination.short_name ?? destination.name}`}
+              description={
+                prospectItems.length > 0
+                  ? "Os estacionamentos que mapeamos na região estão logo abaixo."
+                  : undefined
+              }
+            />
           ) : (
             <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-3">
               {results.map((r) => (
@@ -279,6 +306,11 @@ export default function DestinoPage() {
               ))}
             </div>
           )}
+          {/* O CTA fica mesmo com a lista vazia, e isso é decisão, não descuido:
+              `results` vazio também é "o destino tem unidades, mas nenhuma livre na
+              janela padrão de D+7". Esconder o link nessa hora tiraria justamente o
+              "escolher datas" de quem precisa dele. Em destino sem nenhuma unidade (REC),
+              o custo é uma busca vazia; no outro caso, o custo seria um beco. */}
           <div className="mt-4">
             <Link
               to={`/search?dest=${destination.code}`}
@@ -288,6 +320,29 @@ export default function DestinoPage() {
             </Link>
           </div>
         </section>
+
+        {/* Lotes MAPEADOS (E0.17-d): seção própria, sempre ABAIXO da vendável.
+            A separação e a ordem são o produto que o parceiro compra: presença é de
+            graça, conversão é paga. Cada clique que um card mapeado rouba de um parceiro
+            ativo no mesmo aeroporto é GMV que já era nossa, trocada por nada. Por isso as
+            duas seções nunca se misturam numa lista só, e nunca paginam juntas: a
+            proporção varia demais (em Confins vão ser 7 mapeados e 0 vendáveis, em GRU o
+            inverso). */}
+        {prospectItems.length > 0 && (
+          <section className="mt-10">
+            <h2 className="mb-1 text-balance text-display-md text-ink">
+              Outros estacionamentos na região
+            </h2>
+            <p className="mb-4 text-body-md text-muted">
+              Mapeamos estes estacionamentos. Ainda não dá para reservar pela Movepark.
+            </p>
+            <ul className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
+              {prospectItems.map((p) => (
+                <ProspectCard key={p.id} item={p} />
+              ))}
+            </ul>
+          </section>
+        )}
 
         {/* Como funciona o traslado (educativo, com ilustração da marca) */}
         <section className="mt-10">

@@ -14,7 +14,7 @@
 -- Roda em transação com rollback.
 
 begin;
-select plan(24);
+select plan(29);
 
 -- ── fixtures (como postgres; RLS não se aplica a superuser) ──────────────────
 -- Geo no Atlântico Sul para não colidir com destino do seed/baseline: nearest_destination
@@ -207,7 +207,35 @@ select is(
   'hub_admin enxerga rascunho (é o que o painel do E0.17-h precisa)');
 reset role;
 
--- ── 8. As funções-trigger não são RPC ────────────────────────────────────────
+-- ── 8. destination_prospect_cards: a seção de baixo da página de destino ─────
+-- A RPC é `security invoker` de propósito. Se alguém a promover a definer para "resolver"
+-- alguma coisa, ela passa a contornar o grant de coluna e o telefone volta para a vitrine
+-- sem ninguém perceber, porque a tela não mostra e o JSON sim.
+select is(
+  (select count(*)::int from public.destination_prospect_cards('destino-e017')),
+  1,
+  'RPC devolve só a ficha publicada e não convertida (1 de 7 no destino)');
+select is(
+  (select slug from public.destination_prospect_cards('destino-e017')),
+  'e017-publicado',
+  'RPC devolve a ficha certa: nem rascunho, nem convertida');
+select ok(
+  (select distance_km from public.destination_prospect_cards('destino-e017')) between 0.09 and 0.11,
+  'RPC calcula a distância por ST_Distance (~0,1 km), no mesmo round do card vendável');
+select is(
+  (select position('phone' in pg_get_function_result(
+     'public.destination_prospect_cards(text)'::regprocedure))::int),
+  0,
+  'o retorno da RPC não tem telefone (Q-021: nem por engano num select novo)');
+
+set local role anon;
+select is(
+  (select count(*)::int from public.destination_prospect_cards('destino-e017')),
+  1,
+  'anon chama a RPC e enxerga a ficha publicada');
+reset role;
+
+-- ── 9. As funções-trigger não são RPC ────────────────────────────────────────
 select is(
   (select count(*)::int from pg_proc p
     where p.proname in ('prospect_location_set_destination','prospect_location_guard_slug')

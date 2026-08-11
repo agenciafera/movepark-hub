@@ -113,15 +113,21 @@ select is_empty(
   'com o filtro por dono que o MCP aplica, o membro não alcança a reserva alheia'
 );
 
+-- O UPDATE roda solto, e a asserção lê o telefone de volta. Antes ele estava dentro de um
+-- CTE no subselect de `is()`, e um CTE que modifica dados só é aceito no topo da
+-- instrução: o Postgres abortava com 0A000 e derrubava o arquivo inteiro antes do
+-- `finish()`. Era por isso que este arquivo dizia "planned 6, ran 5".
+--
+-- Ler de volta é asserção mais forte que contar linhas afetadas: prova que o dado
+-- continua o mesmo, e não só que o UPDATE devolveu vazio. O membro CONSEGUE ler (a
+-- asserção 4 acima mostra isso), então o que sobra medido aqui é a escrita.
+update public.booking set customer_phone = '+5511000000000'
+ where code = 'MP-PGTAP1'
+   and profile_id = '00000000-0000-4000-9000-000000000001';
+
 select is(
-  (with tentativa as (
-     update public.booking set customer_phone = '+5511000000000'
-      where code = 'MP-PGTAP1'
-        and profile_id = '00000000-0000-4000-9000-000000000001'
-     returning code
-   )
-   select count(*)::int from tentativa),
-  0,
+  (select customer_phone from public.booking where code = 'MP-PGTAP1'),
+  '+5511999999999',
   'com o filtro por dono, o membro não reescreve o contato de reserva alheia'
 );
 

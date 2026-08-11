@@ -38,6 +38,29 @@ export type Destination = Tables<"destination">;
  * pela conversão da reivindicação.
  */
 export type ProspectLocation = Tables<"prospect_location">;
+
+/**
+ * Card de lote mapeado na página de destino (RPC `destination_prospect_cards`, E0.17-d).
+ *
+ * Escrito à mão em vez de derivado de `Database[...]["Returns"]` porque o gerador não
+ * marca nulidade em retorno de função, e aqui quase tudo é nulo de verdade: lote sem
+ * endereço e sem descrição é o caso comum enquanto a ficha não foi revisada.
+ * `reference_name` é o terminal quando o destino tem um cadastrado, e nulo quando a
+ * referência é o próprio destino. `phone` NÃO existe aqui por desenho (Q-021).
+ */
+export type ProspectCard = {
+  id: string;
+  name: string;
+  slug: string;
+  address: string | null;
+  latitude: number;
+  longitude: number;
+  google_maps_url: string | null;
+  amenities: string[];
+  description: string | null;
+  distance_km: number | null;
+  reference_name: string | null;
+};
 /** Post do blog. O `slug` é herdado do WordPress e é contrato de URL (docs/specs/blog.md). */
 export type BlogPost = Tables<"blog_post">;
 /** Tema editorial do post. Aeroporto não entra aqui: ele é `destination_id`. */

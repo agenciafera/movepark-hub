@@ -3,10 +3,14 @@ import { screen } from "@testing-library/react";
 import { HelmetProvider } from "react-helmet-async";
 import { renderWithProviders } from "@/test/utils";
 import DestinoPage from "@/routes/destino";
-import { useDestinationBySlug, usePublishedDestinations } from "@/features/destinations/api";
+import {
+  useDestinationBySlug,
+  useDestinationProspects,
+  usePublishedDestinations,
+} from "@/features/destinations/api";
 import { useSearchResults } from "@/features/search/useSearchResults";
 import { useFaqCombined } from "@/features/faqs/api";
-import type { Destination } from "@/types/domain";
+import type { Destination, ProspectCard as ProspectCardData } from "@/types/domain";
 
 // O iframe do mapa some do render de teste: o happy-dom lança ao conectar um iframe
 // (page loading desabilitado), e a rejeição não capturada fazia o gate piscar.
@@ -21,6 +25,7 @@ vi.mock("react-router-dom", async () => {
 vi.mock("@/features/destinations/api", () => ({
   useDestinationBySlug: vi.fn(),
   usePublishedDestinations: vi.fn(),
+  useDestinationProspects: vi.fn(),
 }));
 // Mocka só o hook useSearchResults; o resto do módulo continua real via importOriginal.
 vi.mock("@/features/search/useSearchResults", async (importOriginal) => {
@@ -66,10 +71,28 @@ function render() {
   );
 }
 
+function prospect(overrides: Partial<ProspectCardData> = {}): ProspectCardData {
+  return {
+    id: "p1",
+    name: "Talentos Park",
+    slug: "talentos-park-aeroporto-recife",
+    address: "R. Projetada, 169 - Boa Viagem, Recife - PE, 51150-650",
+    latitude: -8.1309368,
+    longitude: -34.9156297,
+    google_maps_url: "https://maps.google.com/?cid=4598899734266939223",
+    amenities: [],
+    description: null,
+    distance_km: 1.01,
+    reference_name: null,
+    ...overrides,
+  };
+}
+
 beforeEach(() => {
   vi.mocked(useSearchResults).mockReturnValue({ data: { results: [] }, isLoading: false } as never);
   vi.mocked(useFaqCombined).mockReturnValue({ data: [] } as never);
   vi.mocked(usePublishedDestinations).mockReturnValue({ data: [] } as never);
+  vi.mocked(useDestinationProspects).mockReturnValue({ data: [] } as never);
 });
 
 describe("DestinoPage — detalhe do destino (SEO/institucional)", () => {
@@ -130,5 +153,88 @@ describe("DestinoPage — detalhe do destino (SEO/institucional)", () => {
     render();
 
     expect(screen.getByText(/Destino não encontrado/i)).toBeInTheDocument();
+  });
+});
+
+// E0.17-d · lote mapeado (ADR-010). Estes testes travam a regra comercial, não o layout:
+// presença é de graça, conversão é paga. Um card mapeado que ganhe link, preço ou botão
+// passa a competir de igual para igual com quem paga 20%.
+describe("DestinoPage · lotes mapeados (E0.17-d)", () => {
+  it("renderiza a seção própria, com o selo em texto no HTML e a distância", () => {
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
+    vi.mocked(useDestinationProspects).mockReturnValue({ data: [prospect()] } as never);
+
+    render();
+
+    expect(
+      screen.getByRole("heading", { level: 2, name: /Outros estacionamentos na região/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 3, name: "Talentos Park" })).toBeInTheDocument();
+    // Selo é TEXTO, não tooltip nem title: o crawler precisa ler.
+    expect(screen.getByText("Sem reserva online")).toBeInTheDocument();
+    // Mesmo `formatDistance` do card vendável, então 1,01 km sai como "1 km": o
+    // formatador corta o zero à direita. Se este texto divergir, o card mapeado passa a
+    // parecer de outro sistema na mesma página.
+    expect(screen.getByText("1 km")).toBeInTheDocument();
+    expect(screen.getByText(/R\. Projetada, 169/)).toBeInTheDocument();
+  });
+
+  it("o card mapeado não tem link nenhum: nem para o site do lote, nem para reserva", () => {
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
+    vi.mocked(useDestinationProspects).mockReturnValue({ data: [prospect()] } as never);
+
+    render();
+
+    const card = screen.getByTestId("prospect-card");
+    // Link para o canal dele entrega de graça o que íamos cobrar 20%; link de reserva
+    // promete o que não existe (CDC art. 30/31). Nenhum dos dois pode nascer numa
+    // refatoração de layout sem este teste falhar.
+    expect(card.querySelectorAll("a")).toHaveLength(0);
+    expect(card.querySelectorAll("button")).toHaveLength(0);
+    expect(card).not.toHaveTextContent(/R\$/);
+  });
+
+  it("usa o nome do terminal na distância quando o destino tem um cadastrado", () => {
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
+    vi.mocked(useDestinationProspects).mockReturnValue({
+      data: [prospect({ reference_name: "Terminal 2", distance_km: 0.4 })],
+    } as never);
+
+    render();
+
+    expect(screen.getByText(/400 m do Terminal 2/)).toBeInTheDocument();
+  });
+
+  it("sem lote mapeado, a seção não existe (não deixa cabeçalho órfão na página)", () => {
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
+
+    render();
+
+    expect(
+      screen.queryByRole("heading", { name: /Outros estacionamentos na região/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("seção vendável vazia aponta para a de baixo, que é o caso normal em destino novo", () => {
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
+    vi.mocked(useDestinationProspects).mockReturnValue({ data: [prospect()] } as never);
+
+    render();
+
+    expect(screen.getByText(/Ainda não temos reserva online em Guarulhos/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Os estacionamentos que mapeamos na região estão logo abaixo/i),
+    ).toBeInTheDocument();
+  });
+
+  it("sem vendável e sem mapeado, o estado vazio não promete uma seção que não existe", () => {
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
+
+    render();
+
+    expect(screen.getByText(/Ainda não temos reserva online em Guarulhos/i)).toBeInTheDocument();
+    expect(
+      screen.queryByText(/estão logo abaixo/i),
+    ).not.toBeInTheDocument();
   });
 });
