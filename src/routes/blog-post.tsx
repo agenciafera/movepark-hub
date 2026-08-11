@@ -50,6 +50,9 @@ export default function BlogPostPage() {
   const title = post.meta_title ?? post.title;
   const description = metaDescription(post.meta_description, post.excerpt, post.body_md);
   const minutes = readingMinutes(post.body_md);
+  const ogImage = post.cover_image_url
+    ? optimizedImageUrl(post.cover_image_url, { width: 1200, height: 630, resize: "cover" })
+    : null;
 
   return (
     <>
@@ -67,22 +70,15 @@ export default function BlogPostPage() {
           posts ficaram sem imagem no card social. O `optimizedImageUrl` devolve
           absoluto e ainda entrega o 1.91:1 (1200x630) que o card espera, do mesmo
           jeito que a página de destino faz.
+
+          As quatro metas vão soltas de propósito. O react-helmet-async só lê
+          filhos diretos: agrupar num fragmento faz ele descartar o bloco inteiro
+          em silêncio, que foi como o og:image sumiu da página por um deploy.
         */}
-        {post.cover_image_url && (
-          <>
-            <meta
-              property="og:image"
-              content={optimizedImageUrl(post.cover_image_url, {
-                width: 1200,
-                height: 630,
-                resize: "cover",
-              })}
-            />
-            <meta property="og:image:width" content="1200" />
-            <meta property="og:image:height" content="630" />
-            <meta property="og:image:alt" content={post.title} />
-          </>
-        )}
+        {ogImage && <meta property="og:image" content={ogImage} />}
+        {ogImage && <meta property="og:image:width" content="1200" />}
+        {ogImage && <meta property="og:image:height" content="630" />}
+        {ogImage && <meta property="og:image:alt" content={post.title} />}
         <meta property="article:published_time" content={post.published_at} />
         <script type="application/ld+json">
           {JSON.stringify(
