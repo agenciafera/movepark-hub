@@ -3465,6 +3465,107 @@ export type Database = {
         }
         Relationships: []
       }
+      prospect_location: {
+        Row: {
+          address: string | null
+          amenities: Json
+          converted_at: string | null
+          converted_location_id: string | null
+          created_at: string
+          data_source: string
+          description: string | null
+          destination_id: string
+          geog: unknown
+          google_maps_url: string | null
+          google_place_id: string | null
+          id: string
+          is_published: boolean
+          last_reviewed_at: string | null
+          latitude: number
+          longitude: number
+          name: string
+          notified_owner_at: string | null
+          phone: string | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          amenities?: Json
+          converted_at?: string | null
+          converted_location_id?: string | null
+          created_at?: string
+          data_source?: string
+          description?: string | null
+          destination_id: string
+          geog?: unknown
+          google_maps_url?: string | null
+          google_place_id?: string | null
+          id?: string
+          is_published?: boolean
+          last_reviewed_at?: string | null
+          latitude: number
+          longitude: number
+          name: string
+          notified_owner_at?: string | null
+          phone?: string | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          amenities?: Json
+          converted_at?: string | null
+          converted_location_id?: string | null
+          created_at?: string
+          data_source?: string
+          description?: string | null
+          destination_id?: string
+          geog?: unknown
+          google_maps_url?: string | null
+          google_place_id?: string | null
+          id?: string
+          is_published?: boolean
+          last_reviewed_at?: string | null
+          latitude?: number
+          longitude?: number
+          name?: string
+          notified_owner_at?: string | null
+          phone?: string | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_location_converted_location_id_fkey"
+            columns: ["converted_location_id"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_location_converted_location_id_fkey"
+            columns: ["converted_location_id"]
+            isOneToOne: false
+            referencedRelation: "location_point_proximity"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "prospect_location_converted_location_id_fkey"
+            columns: ["converted_location_id"]
+            isOneToOne: false
+            referencedRelation: "location_proximity"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "prospect_location_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destination"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       referral: {
         Row: {
           code: string

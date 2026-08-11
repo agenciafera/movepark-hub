@@ -1,295 +1,433 @@
-# Lote mapeado: unidade de vitrine no funil existente (E0.17)
+# Lote mapeado: `prospect_location` (E0.17)
 
-> **Épico:** [E0.17](https://app.clickup.com/t/86ajyp580) · **Fase:** 0
-> **Depende de:** E0.14 (`checkout_mode`, `hub_relationship`), E0.15 (capacidades / ADR-009)
-> **Q/D:** [Q-021](https://app.clickup.com/t/86ajyp5pu) telefone do lote mapeado · [D-009](https://app.clickup.com/t/86ajyp5w7) chave de deduplicação na importação
-> **ADR:** ADR-010 (tier de listagem é enforced no dado)
-> **Status:** especificado em 10/08/2026, não iniciado.
-> **Case de referência desta spec:** Talentos Park, Recife. Todo exemplo aqui usa dados reais dele.
+> **Épico:** [E0.17](https://app.clickup.com/t/86ajyp580) · **Fase:** 0 · **Depende de:** E0.15 (capacidades / ADR-009)
+> **Q/D:** [Q-021](https://app.clickup.com/t/86ajyp5pu) telefone (**aberto, bloqueia a single**) · [Q-022](https://app.clickup.com/t/86ajz8n1j) **decidido → ADR-010** · [D-009](https://app.clickup.com/t/86ajyp5w7) deduplicação
+> **ADR:** ADR-010 (lote não-parceiro não vive na tabela transacional)
+> **Status:** especificado em 10/08/2026. **E0.17-a no ar** (11/08/2026, migration `20261007000000_prospect_location.sql`); o resto não iniciado.
+> **Case de referência:** Talentos Park, Recife. Todo exemplo aqui usa dados reais dele.
+
+Este arquivo é **autossuficiente**: quem for implementar não precisa abrir o ClickUp nem `gestao/`. O ClickUp serve só para saber qual atividade puxar e em que ordem.
 
 ## Atividades
 
-| ID | Atividade | ClickUp |
-|---|---|---|
-| E0.17-a | Migration: `prospect`, `checkout_mode = none` e a guarda no banco | [86ajyp71u](https://app.clickup.com/t/86ajyp71u) |
-| E0.17-b | Reclassificar os 12 lotes de prospecção | [86ajyp7bj](https://app.clickup.com/t/86ajyp7bj) |
-| E0.17-c | Cadastrar o Talentos Park como case-piloto | [86ajyp7xu](https://app.clickup.com/t/86ajyp7xu) |
-| E0.17-d | Página de destino: seção separada e ordenação | [86ajyp87t](https://app.clickup.com/t/86ajyp87t) |
-| E0.17-e | Single sem caminho para reserva, CTA de demanda | [86ajyp8jn](https://app.clickup.com/t/86ajyp8jn) |
-| E0.17-f | JSON-LD `ParkingFacility` | [86ajyp8u6](https://app.clickup.com/t/86ajyp8u6) |
-| E0.17-g | Reivindicação: link assinado + OTP | [86ajyp96d](https://app.clickup.com/t/86ajyp96d) |
+| ID | Atividade | Seção aqui | ClickUp |
+|---|---|---|---|
+| E0.17-a | ✅ Criar a tabela `prospect_location` | [§ A tabela](#a-tabela) | [86ajyp71u](https://app.clickup.com/t/86ajyp71u) |
+| E0.17-b | Higienizar os registros obsoletos em `location` | [§ Higiene do legado](#higiene-dos-registros-legados-e017-b) | [86ajyp7bj](https://app.clickup.com/t/86ajyp7bj) |
+| E0.17-c | Cadastrar o Talentos Park como case-piloto | [§ O cadastro](#o-cadastro-com-o-talentos-park-e017-c) | [86ajyp7xu](https://app.clickup.com/t/86ajyp7xu) |
+| E0.17-d | RPC de união na página de destino | [§ Página de destino](#página-de-destino-e017-d) | [86ajyp87t](https://app.clickup.com/t/86ajyp87t) |
+| E0.17-e | Single sem caminho para reserva | [§ Single](#single-e017-e) | [86ajyp8jn](https://app.clickup.com/t/86ajyp8jn) |
+| E0.17-f | JSON-LD `ParkingFacility` | [§ JSON-LD](#json-ld-e017-f) | [86ajyp8u6](https://app.clickup.com/t/86ajyp8u6) |
+| E0.17-g | Conversão da reivindicação | [§ Conversão](#conversão-e017-g) | [86ajyp96d](https://app.clickup.com/t/86ajyp96d) |
+| E0.17-h | Painel administrativo | [§ Painel](#painel-administrativo-e017-h) | [86ajz8mvz](https://app.clickup.com/t/86ajz8mvz) |
 
-Ordem real: **a** destrava **b**, **c** e **g**; **c** destrava **d**, **e** e **f**. A atividade **e** está bloqueada por Q-021.
+**a** destrava **c**, **g** e **h**; **c** destrava **d**, **e** e **f**. A **e** está bloqueada por Q-021. A **b** é independente.
 
 ## Por quê
 
-Em 06/08/2026 o WordPress publicou **41 páginas de estacionamento que não são parceiros**, só
-para posicionamento orgânico. Elas rankeiam, e o WordPress vai ser desligado no cutover.
+Em 06/08/2026 o WordPress publicou **41 páginas de estacionamento que não são parceiros**, só para posicionamento orgânico. Elas rankeiam, e o WordPress vai ser desligado no cutover.
 
-Hoje o Hub tem 29 unidades e o WordPress tem 41. **O site que vai morrer cobre mais mercado que
-o que vai ficar.** Se o cutover acontecer antes deste épico, o Hub perde 41 URLs e a cobertura de
-Recife, Confins, Galeão, Santos Dumont e Navegantes inteira.
+Hoje o Hub tem 29 unidades e o WordPress tem 41. **O site que vai morrer cobre mais mercado que o que vai ficar.** Sem este épico o cutover perde 41 URLs e a cobertura de Recife, Confins, Galeão, Santos Dumont e Navegantes inteira.
 
-O que falta não é entidade nova. É rótulo.
+---
 
-## O modelo: nada de mecanismo novo
+## 🔒 ADR-010 — lote não-parceiro não vive na tabela transacional
 
-A tentação era criar `listing_tier`, tabela de claim e um kanban paralelo de conversão. **Está
-rejeitado.** Três eixos que já existem no schema respondem tudo:
+> Estacionamento que a Movepark mapeou e que não tem contrato mora em **`prospect_location`**, nunca em `company` + `location`. A tabela não tem preço, tipo de vaga, `checkout_mode`, `is_listed` nem recebedor: **o estado impossível é impossível por ausência de coluna, não por trigger.** Ele só entra em `location` pela conversão.
 
-| Pergunta | Coluna | Já existe? |
-|---|---|---|
-| Em que estágio do funil está? | `company.onboarding_status` | ✅ enum `pending_review \| approved \| in_progress \| active \| rejected` |
-| Aparece na vitrine de busca geral? | `location.is_listed` | ✅ boolean |
-| Tem o que vender? | `location.checkout_mode` + `location_parking_type` | ✅ |
+### A medição que decidiu
 
-E a ligação que faria o dono "recomeçar do zero" ao reivindicar **já é a chave primária**:
-`company_onboarding.company_id` é PK, 1:1 com `company`. Reivindicar não é cadastro novo, é o
-dono chegando numa `company` que já existe e ganhando a linha dele em `company_onboarding`.
+A primeira versão desta spec propunha reusar `company` + `location` com um estágio `prospect` no enum e um trigger de guarda. Foi descartada no mesmo dia depois de medir o acoplamento:
 
-Como `location.company_id` é `NOT NULL`, **todo lote mapeado já nasce como entidade de CRM**.
+| Medição | Número |
+|---|---|
+| Funções que fazem `from public.location` | **52** |
+| Dessas, quantas filtram `is_listed` | **2** |
+| Que **não** filtram | **50** |
+| Funções que mencionam `location` | 93 de 211 |
+| Policies tocando `location`/`company` | 42 de 135 |
+| Tabelas com FK para `location` | 11, incluindo **`booking`** |
+| Tabelas com FK para `company` | 17, incluindo **`payout_recipient`**, `company_payout_account`, `payout_withdrawal` |
 
-### Prova de que o padrão já roda
+O trigger protegia `checkout_mode` e `is_listed` — duas colunas — e deixava 50 funções descobertas, sem impedir que `booking.location_id` apontasse para lote sem contrato. Regra que não precisa existir é melhor que regra bem testada.
 
-Existem hoje **12 locations com `is_listed = false`**: Max Park, Maxxi Park, Vita Park, PER Park,
-Botuquara, Eco Park, Pare Park, Nine, Jaragua, Cow Lapa, Ferapark, Peu Park. É o lote de
-prospecção de SP criado a partir de 08/07. O modelo roda há um mês sem nome.
+**Ganho secundário:** criar uma unidade hoje exige empresa → unidade → tipo de vaga, três entidades e 64 colunas para guardar ~10 fatos sobre um lote que só aparece numa página de destino.
 
-E com dois rótulos errados, sendo o segundo grave:
+---
 
-1. `onboarding_status = 'active'` — herdado do default. Nunca se cadastraram. Estão no board como
-   parceiros vivos e entrariam em régua de e-mail de parceiro.
-2. `checkout_mode = 'hub'` — **não têm o que vender, mas a flag diz que têm.** No dia em que
-   alguém virar `is_listed = true` num deles, o Hub renderiza botão de reserva em lote sem
-   contrato, sem preço e sem recebedor.
+## A tabela
 
-O item 2 é a razão de ADR-010 existir.
-
-## 🔒 ADR-010 — o tier é enforced no dado, nunca no template
-
-> Uma unidade cuja empresa está em `onboarding_status = 'prospect'` **não pode**, por construção
-> de banco, ter `checkout_mode <> 'none'` nem `is_listed = true`. A garantia é constraint/trigger
-> no Postgres, não `if` no componente. Um template pode ser esquecido numa refatoração; uma
-> constraint não.
-
-Mesmo princípio de ADR-001 (geo no banco) e ADR-009 (renderizar por capacidade).
-
-## Migrations
+**(E0.17-a)** · ✅ no ar em 11/08/2026. Migration `20261007000000_prospect_location.sql`, pgTAP `supabase/tests/prospect_location.test.sql`, tipo curado `ProspectLocation` em `src/types/domain.ts`.
 
 ```sql
--- 1. estágio de funil para quem nós mapeamos e nunca levantou a mão
-alter type onboarding_status add value 'prospect' before 'pending_review';
+create table prospect_location (
+  id                    uuid primary key default gen_random_uuid(),
+  destination_id        uuid not null references destination(id) on delete restrict,
+  name                  text not null,
+  slug                  text not null unique,
+  address               text,
+  phone                 text,
+  latitude              numeric not null,
+  longitude             numeric not null,
+  geog                  geography(Point,4326)
+                          generated always as
+                          (st_setsrid(st_makepoint(longitude, latitude), 4326)::geography) stored,
+  google_place_id       text unique,
+  google_maps_url       text,
+  amenities             jsonb not null default '[]'::jsonb,
+  description           text,
+  data_source           text not null default 'manual'
+                          check (data_source in ('manual','google_places','import_wp')),
+  is_published          boolean not null default false,
+  notified_owner_at     timestamptz,
+  last_reviewed_at      timestamptz,
+  converted_location_id uuid references location(id) on delete set null,
+  converted_at          timestamptz,
+  created_at            timestamptz not null default now(),
+  updated_at            timestamptz not null default now()
+);
 
--- 2. "esta unidade não vende em lugar nenhum"
-alter table location drop constraint location_checkout_mode_check;
-alter table location add constraint location_checkout_mode_check
-  check (checkout_mode in ('hub','external','none'));
-
--- 3. procedência do dado (sem isso não há como auditar de onde veio cada campo)
-alter table location add column data_source text not null default 'manual'
-  check (data_source in ('manual','partner','google_places','import_wp'));
-alter table location add column verified_by_owner_at timestamptz;
-alter table location add column last_reviewed_at timestamptz;
-
--- 4. foto sem procedência declarada não entra
-alter table location_photo add column source text not null default 'partner_upload'
-  check (source in ('partner_upload','movepark_own','street_view_api','static_map'));
-alter table location_photo add column credit text;
+create index on prospect_location using gist (geog);
+create index on prospect_location (destination_id) where is_published;
+create unique index on prospect_location (converted_location_id)
+  where converted_location_id is not null;
 ```
 
-`alter type ... add value` não pode ser usado na mesma transação que o cria. Rodar a migration 1
-sozinha, as outras depois.
+~18 colunas contra as 64 de `company` + `location`.
 
-### A guarda (ADR-010), como trigger
+**RLS:** leitura pública só com `is_published = true and converted_at is null`. Escrita só `is_hub_admin()`. **Não existe papel de parceiro aqui** — enquanto a ficha é mapeada, ninguém de fora edita.
 
-`check` normal não enxerga outra tabela, então é trigger em `location` (INSERT/UPDATE) mais
-trigger em `company` (UPDATE de `onboarding_status`):
+### As três colunas que carregam o desenho
+
+- **`is_published`** — o liga/desliga de exibição na página de destino. Nasce `false` de propósito: cadastro entra rascunho e só aparece depois de revisado. Publicar um lote com dado errado queima o contato comercial antes da primeira conversa.
+- **`converted_location_id` + `converted_at`** — a procedência, gravada **na tabela enxuta** para `location` não engordar. Responde num `select` a pergunta que vai ser feita em toda reunião: quantos dos mapeados viraram parceiro.
+- **`google_place_id` unique** — a chave de deduplicação (ver [§ Deduplicação](#deduplicação-d-009)), e o único campo do Places que pode ser armazenado indefinidamente.
+
+### O que a tabela NÃO tem, e é o ponto
+
+`checkout_mode`, `is_listed`, `take_rate_bps`, preço, tipo de vaga, recebedor, `is_24h`, FK de `booking`, FK de `review`, FK de `payout_*`.
+
+Isto é impossível de escrever, não apenas proibido:
 
 ```sql
-create or replace function enforce_prospect_cannot_sell() returns trigger
-language plpgsql as $$
-begin
-  if (select onboarding_status from company where id = new.company_id) = 'prospect' then
-    if new.checkout_mode <> 'none' or new.is_listed then
-      raise exception
-        'location % pertence a company prospect: checkout_mode deve ser none e is_listed false',
-        new.id;
-    end if;
-  end if;
-  return new;
-end $$;
+update prospect_location set checkout_mode = 'hub' where ...;
+-- ERROR: column "checkout_mode" does not exist
 ```
 
-E o caminho inverso: rebaixar uma company para `prospect` tem que rebaixar as locations dela
-junto, não deixar órfão inconsistente.
+E `booking.location_id` não tem como apontar para um lote mapeado, porque a FK aponta para `location` e o registro não está lá.
 
-**Teste pgTAP obrigatório:** tentar `update location set is_listed = true` numa unidade de company
-`prospect` tem que levantar exceção. Se esse teste não existir, ADR-010 é comentário.
+### Notas de implementação
+
+- `geog` é **generated stored**, igual à de `location`. O índice GiST é o que mantém o **ADR-001** valendo: distância ao terminal continua sendo `ST_Distance` em tempo de consulta, nunca coluna.
+- `destination_id` é `NOT NULL`, mas dá para sugerir o valor com a função **`nearest_destination()`** que já existe, a partir de lat/long — mesmo espírito do trigger `location_set_destination`. Preencher destino à mão em dezenas de lotes é onde entra erro.
+- **Nunca** adicionar FK de `booking`, `review`, `fare` ou `payout_*` apontando para cá. Quem precisar disso converte primeiro. É a regra inteira.
+- **Regra de crescimento:** a tabela tem que resistir a engordar. Campo novo só entra se aparecer na página de destino. Se alguém pedir horário, tem que vir **nullable** — em `location`, `is_24h` é `NOT NULL DEFAULT true`, e emitir schema a partir dele faria o Hub afirmar ao Google um horário que ninguém verificou.
+- O `slug` é unique nesta tabela, mas **precisa ser unique também contra `location.slug`** (ver [§ Single](#single-e017-e)).
+
+### O que a entrega tem além do DDL
+
+Três guardas que o SQL acima não trazia escritas, e que a implementação fechou:
+
+- **`prospect_location_guard_slug_trg`** (BEFORE INSERT OR UPDATE OF slug) recusa slug que já pertence a uma `location` **viva**. Postgres não tem unique entre tabelas, e slug repetido não dá erro em lugar nenhum: ele some a ficha, e some justamente a URL que tinha ranking. Só conta `location` com `deleted_at is null`, de propósito: a higiene do legado (E0.17-b) vai aposentar lotes mortos que podem voltar como ficha mapeada **com a mesma URL**. Se a E0.17-b resolver por `status = 'inactive'` em vez de `deleted_at`, esses slugs continuam bloqueados, e aí a decisão dela vira decisão daqui.
+- **`prospect_location_set_destination_trg`** (BEFORE INSERT) preenche o `destination_id` pelo `nearest_destination()` quando vier nulo, igual ao trigger de `location`. Sem destino publicado por perto o insert falha (`23502`), que é o certo: ficha órfã não tem página onde aparecer. Conferido no banco vivo com a geo do Talentos Park: sugeriu **REC** e deu **1.012 m** até o terminal, o número da spec.
+- **`prospect_location_converted_pair_check`**: apontar `converted_location_id` sem carimbar `converted_at` é recusado. É o `converted_at is null` que tira a ficha da página de destino, então meia-conversão deixaria a ficha e a unidade nova disputando a mesma busca. A implicação é de mão única porque o `on delete set null` pode zerar a FK de uma ficha já convertida, e aí só o carimbo sobrevive.
+
+A RLS de leitura ficou `(is_published and converted_at is null) or is_hub_admin()`: o filtro de convertida mora na **policy**, não só na query, e o `hub_admin` enxerga rascunho e convertida pela segunda condição, que é o que o painel do E0.17-h precisa.
+
+---
 
 ## O cadastro, com o Talentos Park
 
+**(E0.17-c)**
+
 Fonte: `https://maps.google.com/?cid=4598899734266939223`
 
-| Campo | Valor | De onde vem |
-|---|---|---|
-| `company.name` | Talentos Park | nome público no Google |
-| `company.slug` | `talentos-park` | derivado |
-| `company.onboarding_status` | `prospect` | nós mapeamos |
-| `company.hub_relationship` | `onboarded` | não é `silent`; ver nota abaixo |
-| `company.tax_id` | `null` | **não inventar** |
-| `location.name` | Aeroporto do Recife | padrão das outras unidades |
-| `location.destination_id` | `ee60459f-0a19-4177-8d3b-c121c899939f` (REC) | destino criado em 10/08 |
-| `location.latitude/longitude` | −8.1309368 / −34.9156297 | Google Maps |
-| `location.google_place_id` | preencher via Places API | **único campo do Places armazenável para sempre** |
-| `location.google_maps_url` | `https://maps.google.com/?cid=4598899734266939223` | CID é estável |
-| `location.address` | **a preencher** | Places API ou verificação humana |
-| `location.phone` | **a preencher** | Places API; exibição depende de Q-021 |
-| `location.checkout_mode` | `none` | não vende |
-| `location.is_listed` | `false` | fora da busca geral |
-| `location.data_source` | `google_places` | procedência |
-| `location.is_24h` | ⚠️ ver armadilha | |
-| `location.has_shuttle` | `false` | ausência é o default seguro |
-| `location_parking_type` | **nenhuma linha** | sem tipo de vaga não há o que vender |
-| `location_photo` | **nenhuma linha** | ver "Fotos" |
-
-`geog` é coluna gerada, sai sozinha de lat/long. **Não escrever distância ao terminal em lugar
-nenhum**: são 1.012 m até o terminal do REC e isso é `ST_Distance` sobre `geog` em tempo de
-consulta (ADR-001).
-
-### ⚠️ Armadilha: `is_24h` tem default `true`
-
-`location.is_24h` é `NOT NULL DEFAULT true`. Inserir um lote mapeado sem tocar nesse campo faz o
-Hub **afirmar que o Talentos Park funciona 24h**, o que ninguém verificou. É exatamente a classe
-de problema do ADR-009: promessa renderizada por default em vez de por capacidade.
-
-Enquanto não houver `is_24h` nullable, a regra é: **`is_24h` de unidade `prospect` não renderiza**,
-e o bloco de horário só aparece com `verified_by_owner_at IS NOT NULL`. Se preferir resolver no
-dado, tornar a coluna nullable é o caminho limpo, e aí `null` significa "não sabemos".
-
-### Por que `hub_relationship = 'onboarded'` e não `'silent'`
-
-`silent` (E0.14) quer dizer "o parceiro tem contrato e não sabe que está no Hub". O Talentos Park
-é o oposto: não tem contrato nenhum. Os dois eixos são independentes e não devem ser confundidos.
-`hub_relationship` responde "o parceiro sabe?"; `onboarding_status` responde "em que ponto do
-funil está?".
-
-### Insert
-
 ```sql
-with c as (
-  insert into company (name, slug, onboarding_status, take_rate_bps)
-  values ('Talentos Park', 'talentos-park', 'prospect', 2000)
-  returning id
-)
-insert into location (
-  company_id, name, slug, destination_id,
-  latitude, longitude, google_maps_url,
-  checkout_mode, is_listed, data_source, has_shuttle
-)
-select c.id, 'Aeroporto do Recife', 'talentos-park-aeroporto-recife',
-       'ee60459f-0a19-4177-8d3b-c121c899939f',
-       -8.1309368, -34.9156297,
-       'https://maps.google.com/?cid=4598899734266939223',
-       'none', false, 'google_places', false
-from c;
+insert into prospect_location (
+  destination_id, name, slug, latitude, longitude,
+  google_maps_url, data_source, is_published
+) values (
+  'ee60459f-0a19-4177-8d3b-c121c899939f',   -- REC
+  'Talentos Park',
+  'talentos-park-aeroporto-recife',
+  -8.1309368, -34.9156297,
+  'https://maps.google.com/?cid=4598899734266939223',
+  'google_places',
+  false
+);
 ```
 
-`take_rate_bps` fica no default de 20% porque a coluna é `NOT NULL`. **Não é negociação**, é
-placeholder inerte enquanto não há contrato. Não usar esse valor em nenhum relatório de receita
-sem filtrar `onboarding_status <> 'prospect'`.
+Uma linha, uma tabela.
 
-## Fotos: nenhuma, e a razão não é jurídica primeiro
+**A preencher, não chutar:** `address`, `phone` e `google_place_id` saem da Places API ou de verificação humana. Deixar `null` é informação; preencher errado é dívida.
 
-1. **Comercial.** Foto do pátio dele numa página que não vende é o que transforma "exposição
-   grátis" em "tira meu nome do ar". A Aerovalet sozinha tem 3 lotes na base; esses donos se falam.
-2. **Google Places.** Conteúdo do Places não pode ser pré-buscado, cacheado nem armazenado. A
-   exceção única é o `place_id`. Foto do Places precisa ser renderizada via API a cada request,
-   com atribuição do autor, o que não indexa e não escala.
+**Por que um piloto:** carregar em volume sem ter validado um é como a Movepark descobre, em produção, que faltou um campo. Se o Talentos Park renderiza certo na página de Recife e não tem nenhum caminho para reserva, o resto é repetição.
+
+Recife é o destino certo para o piloto: acabou de ser criado e tem **zero** unidades vendáveis, então não há parceiro para canibalizar.
+
+### Notas de implementação
+
+- `geog` é coluna gerada. Não tentar inserir.
+- São **1.012 m** até o terminal do REC. Esse número **não vai para o banco**.
+- O **CID** (`4598899734266939223`) fica em `google_maps_url` porque é estável e não expira. O `google_place_id` continua sendo o campo canônico de deduplicação.
+- `is_published` nasce `false`. Não pular a revisão só porque é um registro só: o hábito é o que protege quando forem dezenas.
+- ⚠️ **Nunca mapear lote em Viracopos.** Vale zero e ofende o dono de ~80% da receita da empresa.
+
+---
+
+## Fotos e conteúdo
+
+**Nenhuma foto do lote.** Três razões, na ordem de peso:
+
+1. **Comercial.** Foto do pátio dele numa página que não vende é o que transforma "exposição grátis" em "tira meu nome do ar". A Aerovalet sozinha tem 3 lotes na base; esses donos se falam.
+2. **Google Places.** Conteúdo do Places não pode ser pré-buscado, cacheado nem armazenado. A exceção única é o `place_id`. Foto do Places precisa ser renderizada via API a cada request, com atribuição do autor, o que não indexa e não escala.
 3. **Lei 9.610/98.** O titular da foto do site dele é a pessoa para quem vamos ligar.
 
-**O que renderizar no lugar:** mapa estático (licenciado para exibição), diagrama de distância ao
-terminal a partir do `geog`, e a hero do destino, que é ativo próprio. Google não precisa de foto
-do pátio para rankear. Foto é conversão, e conversão é justamente o que o tier mapeado não tem.
-Foto vira o presente de quem reivindica.
+**No lugar:** mapa estático (licenciado para exibição), diagrama de distância ao terminal a partir do `geog`, e a hero do destino, que é ativo próprio. Google não precisa de foto do pátio para rankear. Foto é conversão, e conversão é o que a ficha mapeada não tem. **Foto é o presente de quem reivindica.**
 
-⚠️ **Risco maior que o das fotos, e já ativo no WordPress:** as descrições parecem copiadas do
-marketing do próprio lote ("A Aero Park Locadora é uma empresa preocupada com a mobilidade dos
-seus clientes..."). Isso é cópia de obra protegida **e** duplicate content. Não corrigir no
-WordPress, que vai morrer. **Corrigir na importação**, reescrevendo as 41 em texto factual.
+⚠️ **Risco maior que o das fotos, e já ativo no WordPress:** as descrições parecem copiadas do marketing do próprio lote ("A Aero Park Locadora é uma empresa preocupada com a mobilidade dos seus clientes..."). Cópia de obra protegida **e** duplicate content. A `description` tem que ser **escrita por nós**, em texto factual.
 
-## Renderização
+---
 
-### Página de destino (`/estacionamentos/aeroporto-recife/`)
+## Página de destino
 
-Duas seções, não uma lista misturada:
+**(E0.17-d)** — é aqui que mora o custo de ter duas tabelas, e é a atividade que paga esse custo uma vez só.
 
-1. **Com reserva pela Movepark** — `is_listed = true`, ordenado como hoje.
-2. **Outros estacionamentos na região** — `onboarding_status = 'prospect'` com
-   `destination_id` daquele destino. Card menor, selo "Sem reserva online", sem preço.
+RPC única com `union all` e um discriminador, para o front consumir uma lista e não fazer dois fetches:
 
-A ordenação **é** o produto que o parceiro paga. O card mapeado nunca fica acima de um vendável.
+```sql
+create or replace function destination_cards(p_destination_slug text)
+returns table (
+  kind text,            -- 'bookable' | 'prospect'
+  id uuid,
+  name text,
+  slug text,
+  distance_m numeric,   -- ST_Distance, nunca coluna (ADR-001)
+  ...
+)
+-- select 'bookable', ... from location
+--   where is_listed and destination_id = d.id and deleted_at is null
+-- union all
+-- select 'prospect', ... from prospect_location
+--   where is_published and converted_at is null and destination_id = d.id
+```
 
-⚠️ **Nunca criar lote mapeado em Viracopos.** Vale zero e ofende o dono de ~80% da receita.
-Se houver parceiro ativo naquele destino, não construir link interno para o mapeado.
+O front renderiza **duas seções**, não uma lista misturada:
 
-### Single do lote mapeado
+1. **"Com reserva pela Movepark"** — `kind = 'bookable'`, ordenação atual, cards completos com preço.
+2. **"Outros estacionamentos na região"** — `kind = 'prospect'`, card menor, selo **"Sem reserva online"**, sem preço, sem badge de vantagem.
 
-Reaproveita a máquina de capacidades do E0.15 (ADR-009), **não escreve componente novo**. Uma
-unidade `prospect` simplesmente não declara nenhuma capacidade de transação, então nada de
-promessa renderiza. O que fica:
+A busca geral (home, resultados, disponibilidade) continua lendo **só `location`** e não muda em nada.
 
-- Nome, endereço, mapa estático, distância ao terminal calculada.
-- Telefone: **pendente de Q-021**.
-- `"Preço: não informado. Este estacionamento ainda não publica tarifas na Movepark."` — fato
-  honesto, citável por LLM, e alavanca sobre o dono.
-- CTA primário: **"Quero reservar aqui, me avise quando abrir"**.
-- CTA secundário: **"É o administrador? Reivindique esta página"**, em bloco próprio.
-- **Proibido:** botão de reserva, widget de WhatsApp de reserva, link para o site ou motor de
-  reserva do lote.
+**Por quê:** o parceiro que paga 20% vai olhar essa página e perguntar por que está ao lado de quem não paga nada. A separação e a ordem são a resposta, e são literalmente o produto que ele compra — presença é de graça, conversão é paga. E cada clique que um card mapeado rouba de um parceiro ativo no mesmo aeroporto é GMV que já era nosso, trocado por nada.
 
-**Por que não linkar o canal dele:** no dia em que ele abre o Analytics e vê referral da Movepark,
-já está recebendo de graça exatamente o que íamos cobrar 20%. A venda morre ali.
+### Notas de implementação
 
-### JSON-LD
+- **Não paginar as duas seções juntas.** A proporção varia demais: em Confins vão ser 7 mapeados e 0 vendáveis, em GRU o inverso.
+- **`is_popular` só ordena dentro da seção 1.** Não existe em `prospect_location` e não deve ser inventado.
+- Filtrar `converted_at is null` **sempre**: ficha convertida virou `location` e apareceria duas vezes.
+- A distância vem de `ST_Distance` sobre `geog` nas duas fontes, **com o mesmo formato de exibição** — senão o card mapeado parece de outro sistema.
+- Selo "Sem reserva online" é **texto no HTML**, não tooltip. Precisa estar lá para o crawler ler.
+- A regra de não canibalizar vale para **link interno** também: não construir link de card vendável para card mapeado no mesmo aeroporto.
+- **Estado vazio da seção 1 é o caso normal em destino novo**, não exceção — vale para REC, NVT, CNF, GIG e SDU. O texto de topo precisa funcionar assim: *"Ainda não temos reserva online no Recife. Estes são os estacionamentos que mapeamos na região."*
 
-`ParkingFacility` com `name`, `address`, `geo`, `telephone`, `amenityFeature`. **`Offer` só com
-capacidade de transação declarada.** O WordPress hoje não emite nada disso, só `WebPage` e
-`ImageObject` do Yoast, então isso é ganho líquido sobre a página que está no ar.
+---
 
-## Reivindicação: ponto de entrada, não fluxo
+## Single
 
-Link assinado na single: `/parceiro/onboarding?claim=<location_id>&sig=<hmac>`.
+**(E0.17-e)** — ⚠️ **bloqueada por Q-021** (exibir ou não o telefone do lote).
 
-1. Resolve o `company_id` que **já existe**, pré-preenche nome, endereço e telefone.
-2. Prova de titularidade: **OTP para o telefone mapeado**, reusando a tabela `identifier_otp`
-   que já existe. Quem atende o telefone público do lote é prova suficiente para entrar na fila.
-3. `company_onboarding` ganha a linha dele (a PK é o vínculo, não há tabela nova).
-4. `onboarding_status: prospect → pending_review`. Cai no mesmo board, na mesma coluna, aprovado
-   pela mesma pessoa.
-5. A partir daí é o wizard do E1.9, sem desvio.
+Rota `/estacionamentos/{destino}/{slug}` resolve **`location` primeiro**, depois `prospect_location` com `is_published` e `converted_at is null`.
 
-**Sem o OTP não sobe de `prospect`.** Sem essa trava, qualquer um reivindica o lote do concorrente.
+Com o ADR-010 a página fica quase trivial: **não existe caminho de reserva para esconder, porque não existe dado de reserva.** O que a página tem:
+
+- Nome, endereço, mapa estático, distância ao terminal calculada do `geog`.
+- `"Preço: não informado. Este estacionamento ainda não publica tarifas na Movepark."`
+- **CTA primário:** "Quero reservar aqui, me avise quando abrir" (captura e-mail/WhatsApp).
+- **CTA secundário:** "É o administrador? Reivindique esta página" — bloco próprio, com botão.
+- Telefone: **pendente de Q-021.** Não implementar antes da decisão.
+
+**Proibido:** botão de reserva, seletor de datas, widget de WhatsApp de reserva, e **link para o site ou o motor de reserva do lote**.
+
+**Por que não linkar o canal dele:** no dia em que ele abre o Analytics e vê referral da Movepark, já está recebendo de graça exatamente o que íamos cobrar 20%. A venda morre ali.
+
+**Por que não deixar o widget de reserva:** hoje, no WordPress, a página do não-parceiro tem um *"Olá! Gostaria de fazer uma reserva?"* flutuante sobre um lote onde não existe reserva. Cliente pede, ninguém entrega. Isso é CDC art. 30/31 e é pogo-stick puro na SERP.
+
+O produto desta página não é a reserva, é **prova de demanda**: em 60 dias dá para chegar no dono com *"sua página teve N visitas e M pessoas pediram para reservar aqui, e você converteu zero porque não está listado"*.
+
+### Notas de implementação
+
+- **Colisão de slug entre as duas tabelas é possível e precisa ser impedida na origem.** Resolver `location` primeiro na rota, e garantir unicidade cruzada na hora de gerar o slug do prospect (checar contra `location.slug` antes de gravar).
+- **Teste de componente é entregável:** renderizar a single de um `prospect_location` e afirmar que não existe nenhum elemento com ação de reserva na árvore. É o que impede alguém de reintroduzir o botão numa refatoração de layout.
+- O "me avise quando abrir" grava **evento em GA4/Posthog**, não em tabela nova. É instrumentação, não mecanismo. Vira tabela se provar valor.
+- Mapa estático do Google é licenciado para exibição; foto do Places **não pode ser cacheada nem re-hospedada**. Não confundir os dois.
+- **Nada de FAQ nesta página:** `faq.location_id` aponta para `location` e não existe para prospect. É por desenho, não é falta.
+- Se `converted_at` não for nulo: **301 para a `location` que nasceu dela.** A URL antiga é justamente a que tinha ranking, e é o motivo de todo este épico existir.
+
+---
+
+## JSON-LD
+
+**(E0.17-f)**
+
+`ParkingFacility` (subtipo de `LocalBusiness`) na single, servindo as duas fontes:
+
+- Sempre: `name`, `address` (PostalAddress), `geo` (GeoCoordinates), `url`, `amenityFeature`.
+- `telephone`: depende de Q-021 para prospect; em parceiro **não entra** (lá o caminho é a reserva).
+- `openingHoursSpecification`: **não sai em prospect**, porque não existe campo de horário na tabela. É proposital.
+- `aggregateRating`: só com avaliação real. Não existe em prospect.
+- **`Offer` / `priceRange`: nunca em prospect.** `Offer` é promessa, e ADR-009 vale para dado estruturado também.
+
+**Por quê:** a página no ar hoje no WordPress emite só `WebPage` e `ImageObject` do Yoast. Nenhum `LocalBusiness`, nenhum endereço estruturado, nenhum `geo`. **Isto é ganho líquido sobre o que existe**, não paridade. E é o item de maior peso em GEO: LLM cita a fonte que tem dado estruturado.
+
+```jsonc
+{
+  "@context": "https://schema.org",
+  "@type": "ParkingFacility",
+  "name": "Talentos Park",
+  "geo": { "@type": "GeoCoordinates",
+           "latitude": -8.1309368, "longitude": -34.9156297 },
+  "address": { "@type": "PostalAddress", "addressLocality": "Recife",
+               "addressRegion": "PE", "addressCountry": "BR" }
+  // sem "offers"            → não vende
+  // sem "openingHours"      → o campo nem existe na tabela
+  // sem "aggregateRating"   → não há avaliação
+}
+```
+
+### Notas de implementação
+
+- A geração é **no build** (SSG/prerender do E0.4), então o dado precisa estar no banco antes do deploy.
+- Corrigir junto o **canonical duplicado** que existe hoje nas páginas do WordPress (duas tags `<link rel="canonical">` na mesma página). Não repetir isso no Hub.
+- Validar no Rich Results Test **e** buscando a página com user-agent de retrieval bot.
+- O `robots.txt` do Hub já libera `OAI-SearchBot`, `PerplexityBot` e `Claude-Web` e bloqueia treinamento (`Google-Extended`, `CCBot`, `Bytespider`). **Manter essa config no cutover, removendo só o `noindex`** — ver `seo-indexacao.md`.
+
+---
+
+## Conversão
+
+**(E0.17-g)**
+
+Link assinado na single: `/parceiro/onboarding?claim=<prospect_location_id>&sig=<hmac>`
+
+1. Valida a assinatura, resolve o `prospect_location` e **pré-preenche** o wizard com nome, endereço, telefone e coordenadas.
+2. **Prova de titularidade: OTP no telefone mapeado**, reusando a tabela `identifier_otp` que já existe.
+3. `convert_prospect_location(p_prospect_id, ...)`, transacional:
+   - cria `company` em `onboarding_status = 'pending_review'`
+   - cria `location` copiando os campos, **sem `location_parking_type` e com `is_listed = false`**
+   - grava `converted_location_id` e `converted_at` na ficha mapeada
+   - cria a linha em `company_onboarding` (a PK é `company_id`, e ela **é** o vínculo — não existe tabela de claim)
+4. Daí em diante é o wizard do **E1.9**, sem desvio, sem tela especial.
+5. A ficha mapeada **não é apagada**: some da página de destino pelo filtro `converted_at is null`, e a URL antiga faz 301.
+
+**Por quê:** a conversão explícita é melhor que um `update status` porque força decidir, uma vez e por escrito, quais campos migram do dado que a Movepark levantou para o dado que o parceiro passa a ser dono. Um update arrastaria tudo, inclusive o que foi chute nosso.
+
+**Sobre o OTP:** sem ele, qualquer um reivindica o lote do concorrente. Em aeroporto, onde 6 ou 7 lotes disputam a mesma vaga de SERP, isso não é risco teórico. O telefone que já está na ficha é a prova mais barata que existe. Não substitui a aprovação humana, que continua no board.
+
+### Notas de implementação
+
+- HMAC com segredo de servidor **e validade**. Sem validade, o link vaza num grupo de WhatsApp e vira porta aberta.
+- A função é `SECURITY DEFINER` e **idempotente**: chamar duas vezes com o mesmo `prospect_location` tem que falhar limpo, não criar duas companies. **Checar `converted_at is not null` na entrada** é mais barato que tratar a violação do índice unique.
+- **Converter não publica oferta.** A `location` sobe quando houver tipo de vaga e preço, que é o wizard do E1.9.
+- **Nunca copiar a `description` que a Movepark escreveu como se fosse do parceiro sem ele revisar** — o texto passa a ser responsabilidade dele.
+- Se o telefone estiver vazio (é o caso do Talentos Park hoje), o claim precisa de caminho alternativo: e-mail no domínio do lote ou triagem manual. **Não deixar o botão levar a um beco** — sem forma de verificar, o CTA vira "fale com a gente".
+
+---
+
+## Painel administrativo
+
+**(E0.17-h)**
+
+Tela no admin, **separada de "Unidades"**, para não misturar inventário vendável com mapeamento. Reaproveita a casca que já existe (`admin_search`, `manager_*`) — é CRUD, não módulo novo.
+
+**Lista**, filtrável por destino e por estado:
+
+| Coluna | Nota |
+|---|---|
+| Nome / destino | |
+| **Publicado** | toggle direto na linha, é a ação mais frequente |
+| Endereço · telefone | vazio precisa ser **visualmente óbvio**, é o que trava a publicação |
+| `google_place_id` | preenchido ou não |
+| Dono notificado em | `notified_owner_at`, a campanha B2B |
+| Revisado em | `last_reviewed_at` |
+| Convertido | link para a `location` que nasceu dela |
+
+**Ações:** criar, editar, publicar/despublicar, marcar como notificado, marcar como revisado, excluir. Sem aprovação em duas etapas — é dado nosso, não submissão de terceiro.
+
+**Três estados que a lista precisa deixar na cara:** rascunho (`is_published = false`), publicado, e convertido (`converted_at` preenchido).
+
+**Por quê:** sem tela, o cadastro vira SQL na mão, e aí ninguém que não seja dev consegue mapear um estacionamento, e o `is_published` de segurança vira letra morta porque quem insere já insere publicado. O mapeamento é feito **por aeroporto** e boa parte dos estacionamentos cadastrados em julho já fechou: isto não é carga única, é **curadoria recorrente**. Trabalho recorrente sem tela não acontece.
+
+### Notas de implementação
+
+- Ao criar, **sugerir o `destination_id` com `nearest_destination()`** a partir de lat/long.
+- **Gate de publicação: não deixar publicar sem endereço.** Ficha sem endereço na página de destino é thin content e queima a credibilidade da seção inteira.
+- **Avisar quando o `google_place_id` colidir com uma `location` existente** — é o caso de parceiro ativo, que não deve ser mapeado.
+- **Ficha convertida entra em modo leitura.** Editar depois da conversão dessincroniza do que o parceiro já vê.
+- Excluir é `delete` de verdade (não há FK de booking apontando para cá, e essa é a graça), mas **exigir confirmação**: a URL tinha ranking.
+
+---
+
+## Higiene dos registros legados
+
+**(E0.17-b)** — independente do resto, prioridade normal.
+
+**Isto NÃO é a migração dos lotes antigos para a tabela nova.** O remapeamento é feito por aeroporto, com base na lista do WordPress, porque boa parte desses estacionamentos já fechou. **O remapeamento não tem atividade e não deve ganhar uma.**
+
+O que sobra é limpar os registros mortos que ficaram em `location`:
+
+**Max Park · Maxxi Park · Vita Park · PER Park · Botuquara Park · Eco Park · Pare Park · Nine (Av. 9 de Julho) · Jaragua Park · Cow LAPA · Ferapark (Unidade Aeroporto)**
+
+Para cada um: `deleted_at` (soft delete, que a tabela já suporta) ou `status = 'inactive'`. Decidir qual no PR e aplicar igual em todos.
+
+**Por quê:** esses registros ficaram com `checkout_mode = 'hub'` sem contrato, sem recebedor e sem preço, por herança de default. Enquanto existirem assim, um `update is_listed = true` publica reserva de vaga que ninguém prometeu. A tabela nova resolve daqui para frente; ela não limpa o que já está lá. E qualquer relatório que conte unidades no Hub está somando estacionamentos que provavelmente nem existem mais.
+
+### Notas de implementação
+
+- **`Agência Fera` e `Peu Park` parecem cadastro interno de teste**, não prospecção. Não apagar junto sem confirmar.
+- Conferir se alguma tem `location_parking_type` com preço configurado — se tiver, alguém começou a montar oferta ali e não é prospecção morta.
+- Conferir se alguma tem `booking`. Se tiver, **não apagar**: é histórico financeiro. Aí é `status = 'inactive'`, nunca delete.
+- **`Max Park` / `Maxxi Park` / `Maxi Park`:** três nomes quase idênticos, criados no mesmo dia, 1 location cada, e `Maxi Park` está com `is_listed = true`. Duas quase certamente são duplicata da terceira. **Não resolver por conta própria** — confirmar qual é a real.
+- Migration versionada, não SQL solto no editor.
+
+---
+
+## Deduplicação (D-009)
+
+**Em aberto.** Ao mapear por aeroporto com base na lista do WordPress, nada impede criar ficha de um estacionamento que **já é parceiro**: `aeropark-guarulhos`, `aerovalet-*`, `virapark-*`, `garage-inn-*`, `plenty-park` e `abba-park-*` estão na lista do WP **e** são clientes ativos hoje. Ficha fantasma competindo com a página do próprio parceiro pela mesma keyword.
+
+Com o ADR-010 o risco diminuiu (não há como criar `company` duplicada de cliente real), mas duplicidade de conteúdo e de SERP continua.
+
+Candidatas a chave, provavelmente em cascata:
+
+1. **`google_place_id`** — canônico, já unique nesta tabela e existente em `location`. Custa chamada de API para resolver.
+2. **Proximidade** — `ST_DWithin` sobre `geog` com raio de 50 a 100 m + similaridade de nome. Pega os casos sem place_id, mas dois lotes vizinhos existem de verdade em aeroporto.
+3. **Slug do WordPress** — torna a carga repetível, não detecta unidade já na base com outro nome.
+
+**Encaminhamento provável:** as três em cascata, com **aviso na tela do admin** em vez de decisão automática. Colidiu com parceiro ativo, não mapeia.
+
+---
 
 ## O que este épico NÃO entrega
 
-- **Tabela de sinal de demanda.** O "me avise quando abrir" grava evento em GA4/Posthog, não em
-  tabela nova. É instrumentação, não mecanismo. Vira tabela quando provar valor.
-- **A importação das 41 URLs.** Este épico entrega o modelo e o case do Talentos Park. A carga em
-  lote é atividade própria e depende de D-009.
-- **Notificação dos donos.** É trabalho comercial, não código. Vive na task "Campanha B2B de
-  aquisição de parceiro" (86ajp47c4).
-- **Tabela comparativa de todos os lotes do aeroporto.** É a jogada de GEO que decorre disto, mas
-  é E3.2.
+- **O mapeamento em massa dos 41.** Feito por aeroporto, com base na lista do WordPress. **Não tem atividade e não deve ganhar uma.**
+- **Tabela de sinal de demanda.** O "me avise quando abrir" grava evento em GA4/Posthog. É instrumentação, não mecanismo.
+- **Notificação dos donos.** Trabalho comercial. Vive na task "Campanha B2B de aquisição de parceiro" ([86ajp47c4](https://app.clickup.com/t/86ajp47c4)).
+- **Tabela comparativa de todos os lotes do aeroporto.** É a jogada de GEO que decorre disto, mas é E3.2.
 
 ## Checklist de aceite
 
-- [ ] `alter type` aplicado; `prospect` ordena antes de `pending_review`.
-- [ ] Teste pgTAP: `is_listed = true` em unidade de company `prospect` levanta exceção.
-- [ ] Teste pgTAP: `checkout_mode = 'hub'` em unidade de company `prospect` levanta exceção.
-- [ ] Os 12 lotes de prospecção reclassificados para `prospect` / `none`.
-- [ ] Talentos Park visível em `/estacionamentos/aeroporto-recife/`, na seção de baixo, sem preço.
-- [ ] Single do Talentos Park sem nenhum caminho para reserva (teste de componente).
-- [ ] JSON-LD `ParkingFacility` presente e sem `Offer`.
-- [ ] Link de claim assinado abre o onboarding com os campos preenchidos.
-- [ ] `location_photo` recusa insert sem `source`.
-- [ ] Nenhum relatório de receita conta company `prospect`.
+- [x] `prospect_location` criada, com `geog` gerada, índice GiST e RLS.
+- [x] Leitura pública só devolve `is_published and converted_at is null`; escrita só `is_hub_admin()`.
+- [x] Slug do prospect é unique também contra `location.slug`.
+- [ ] Talentos Park cadastrado, publicado, visível na seção de baixo de `/estacionamentos/aeroporto-recife/`.
+- [ ] `destination_cards()` devolve as duas fontes, `bookable` primeiro, com o mesmo formato de distância.
+- [ ] Seções paginadas separadamente; `is_popular` só ordena a seção vendável.
+- [ ] Teste de componente: single de `prospect_location` não tem nenhum elemento com ação de reserva.
+- [ ] JSON-LD `ParkingFacility` presente, sem `Offer`, sem `openingHours`, sem `aggregateRating`.
+- [ ] Painel admin permite criar, publicar e despublicar sem SQL; sugere destino por `nearest_destination()`.
+- [ ] Publicação bloqueada sem endereço; aviso de colisão de `google_place_id` com `location`.
+- [ ] Ficha convertida em modo leitura no admin.
+- [ ] `convert_prospect_location()` é idempotente, grava a procedência e **não** publica oferta.
+- [ ] URL de ficha convertida faz 301 para a `location`.
+- [ ] Registros obsoletos de prospecção resolvidos em `location`, preservando os que têm `booking`.

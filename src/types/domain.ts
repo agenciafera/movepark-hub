@@ -32,6 +32,12 @@ export type CompanyPayoutAccount = Tables<"company_payout_account">;
 /** Saque real (transferência recebedor → banco do parceiro), E0.3.3. */
 export type PayoutWithdrawal = Tables<"payout_withdrawal">;
 export type Destination = Tables<"destination">;
+/**
+ * Lote que a Movepark mapeou e que NÃO tem contrato (E0.17 · ADR-010). Não tem preço,
+ * `checkout_mode` nem FK de `booking`: nada aqui pode virar reserva. Vira `Location` só
+ * pela conversão da reivindicação.
+ */
+export type ProspectLocation = Tables<"prospect_location">;
 /** Post do blog. O `slug` é herdado do WordPress e é contrato de URL (docs/specs/blog.md). */
 export type BlogPost = Tables<"blog_post">;
 /** Tema editorial do post. Aeroporto não entra aqui: ele é `destination_id`. */

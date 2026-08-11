@@ -75,6 +75,20 @@ destination  (aeroporto/etc — âncora de busca + página de conteúdo SEO)
 ├── is_popular, sort_order
 ├── slug (unique), meta_title, meta_description, intro, hero_image_url, is_published
 └── created_at, updated_at, deleted_at        — ver spec destinations.md
+
+prospect_location  (lote que a Movepark mapeou e que NÃO tem contrato · E0.17 · ADR-010)
+├── id, destination_id → destination (on delete restrict), name, slug (unique)
+├── address, phone, latitude, longitude, geog (PostGIS, gerada + GiST)
+├── google_place_id (unique, chave de dedup), google_maps_url, amenities (jsonb), description
+├── data_source (manual|google_places|import_wp), is_published (nasce false)
+├── notified_owner_at, last_reviewed_at        : campanha B2B e curadoria
+├── converted_location_id → location (unique parcial), converted_at   : procedência
+└── created_at, updated_at                     : sem deleted_at, excluir aqui é delete de verdade
+
+> NÃO tem preço, tipo de vaga, checkout_mode, is_listed, take_rate_bps, recebedor nem is_24h,
+> e NENHUMA FK aponta para ela: o estado impossível é impossível por ausência de coluna, não
+> por trigger. Só vira `location` pela conversão da reivindicação. Ver spec
+> [lote-mapeado-vitrine.md](./lote-mapeado-vitrine.md).
 ```
 
 ### Usuários & Veículos

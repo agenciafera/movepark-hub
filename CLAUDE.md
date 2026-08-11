@@ -207,6 +207,25 @@ Regras **fixas** do projeto, não sugestões. Se algo conflitar com elas, **siga
   [`docs/specs/checkout-externo-por-local.md`](docs/specs/checkout-externo-por-local.md).
   Épico **E0.15**; decidido em Q-019.
 
+- **ADR-010 · Lote não-parceiro não vive na tabela transacional.** Estacionamento que a Movepark
+  mapeou e que **não tem contrato** mora em **`prospect_location`**, tabela própria e enxuta ligada a
+  `destination`, **nunca** em `company` + `location`. Ela não tem preço, tipo de vaga,
+  `checkout_mode`, `is_listed`, `take_rate_bps` nem recebedor, e **nenhuma FK de `booking`,
+  `review`, `fare` ou `payout_*` aponta para ela**: o estado impossível é impossível por **ausência
+  de coluna**, não por trigger. A alternativa (reusar as tabelas com um estágio `prospect` protegido
+  por trigger) foi medida e descartada: **52 funções fazem `from public.location` e só 2 filtram
+  `is_listed`**, então o trigger protegeria duas colunas e deixaria 50 funções descobertas, além de
+  `booking.location_id` seguir podendo apontar para lote sem contrato. Exibição na página de destino
+  é controlada por `is_published` (nasce `false`), a procedência da conversão fica em
+  `prospect_location.converted_location_id` (para `location` não engordar) e `google_place_id` é
+  unique para deduplicar. O registro só entra em `location` pela função de conversão, quando o dono
+  reivindica — e converter **não** publica oferta. **Regra de crescimento:** campo novo só entra na
+  tabela se aparecer na página de destino; se alguém pedir horário, tem que vir nullable (em
+  `location`, `is_24h` é `NOT NULL DEFAULT true` e emitir schema a partir dele afirmaria ao Google um
+  horário que ninguém verificou). Ver
+  [`docs/specs/lote-mapeado-vitrine.md`](docs/specs/lote-mapeado-vitrine.md).
+  Épico **E0.17**; decidido em Q-022.
+
 ## Comandos
 
 Sempre via **bun**:
