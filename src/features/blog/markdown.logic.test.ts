@@ -11,9 +11,9 @@ describe("parseInline", () => {
   it("separa negrito, itálico e texto", () => {
     expect(parseInline("fique **atento** ao _prazo_")).toEqual([
       { type: "text", value: "fique " },
-      { type: "bold", value: "atento" },
+      { type: "bold", children: [{ type: "text", value: "atento" }] },
       { type: "text", value: " ao " },
-      { type: "italic", value: "prazo" },
+      { type: "italic", children: [{ type: "text", value: "prazo" }] },
     ]);
   });
 
@@ -37,7 +37,7 @@ describe("parseInline", () => {
       {
         type: "link",
         href: "http://nationpark.com.br",
-        children: [{ type: "bold", value: "Nation Park" }],
+        children: [{ type: "bold", children: [{ type: "text", value: "Nation Park" }] }],
       },
       { type: "text", value: " destaca-se" },
     ]);
@@ -175,7 +175,7 @@ describe("lista vinda do WordPress", () => {
     expect(bloco).toEqual({
       type: "list",
       ordered: true,
-      items: [{ content: [{ type: "bold", value: "Reserve Voos:" }] }],
+      items: [{ content: [{ type: "bold", children: [{ type: "text", value: "Reserve Voos:" }] }] }],
     });
   });
 
@@ -219,5 +219,95 @@ describe("lista vinda do WordPress", () => {
 
   it("linha em branco fora de lista continua separando parágrafos", () => {
     expect(parseMarkdown("um\n\ndois").map((b) => b.type)).toEqual(["paragraph", "paragraph"]);
+  });
+});
+
+describe("marcação aninhada nos dois sentidos", () => {
+  it("link dentro de negrito sai como link, não como texto cru", () => {
+    // `**[Nome](url)**` aparecia literal em 20 blocos: o negrito guardava o miolo
+    // como string, então o link nunca era parseado.
+    expect(parseInline("**[AeroParking](https://aeroparking.com.br/)**")).toEqual([
+      {
+        type: "bold",
+        children: [
+          {
+            type: "link",
+            href: "https://aeroparking.com.br/",
+            children: [{ type: "text", value: "AeroParking" }],
+          },
+        ],
+      },
+    ]);
+  });
+
+  it("negrito dentro de link continua saindo em negrito", () => {
+    expect(parseInline("[**Nation Park**](http://nationpark.com.br)")).toEqual([
+      {
+        type: "link",
+        href: "http://nationpark.com.br",
+        children: [{ type: "bold", children: [{ type: "text", value: "Nation Park" }] }],
+      },
+    ]);
+  });
+
+  it("itálico dentro de link também", () => {
+    expect(parseInline("[_Dica_](/blog/x/)")).toEqual([
+      {
+        type: "link",
+        href: "/blog/x/",
+        children: [{ type: "italic", children: [{ type: "text", value: "Dica" }] }],
+      },
+    ]);
+  });
+
+  it("o texto puro atravessa qualquer aninhamento", () => {
+    expect(plainText("**[AeroParking](https://x.com)** é a opção")).toBe("AeroParking é a opção");
+  });
+});
+
+describe("hierarquia de títulos", () => {
+  it("post que abre em h3 sobe a hierarquia, mantendo a estrutura relativa", () => {
+    // O h1 é o título da página; abrir em h3 pula um nível no outline.
+    const niveis = parseMarkdown("### Seção\n\n#### Detalhe\n\n### Outra seção")
+      .filter((b) => b.type === "heading")
+      .map((b) => (b as { level: number }).level);
+    expect(niveis).toEqual([2, 3, 2]);
+  });
+
+  it("post que já tem h2 não é mexido", () => {
+    const niveis = parseMarkdown("## Seção\n\n### Detalhe")
+      .filter((b) => b.type === "heading")
+      .map((b) => (b as { level: number }).level);
+    expect(niveis).toEqual([2, 3]);
+  });
+
+  it("post sem título nenhum não quebra", () => {
+    expect(parseMarkdown("só um parágrafo").map((b) => b.type)).toEqual(["paragraph"]);
+  });
+});
+
+describe("separador temático", () => {
+  it("`* * *` vira separador, não item de lista", () => {
+    // Eram 105 no acervo, em 14 posts, cada um virando um bullet com o texto "* *".
+    expect(parseMarkdown("um\n\n* * *\n\ndois").map((b) => b.type)).toEqual([
+      "paragraph",
+      "rule",
+      "paragraph",
+    ]);
+  });
+
+  it("aceita as outras formas usuais", () => {
+    for (const forma of ["---", "***", "___", "- - -", "_ _ _"]) {
+      expect(parseMarkdown(forma).map((b) => b.type), forma).toEqual(["rule"]);
+    }
+  });
+
+  it("não confunde com item de lista de verdade", () => {
+    expect(parseMarkdown("* item").map((b) => b.type)).toEqual(["list"]);
+    expect(parseMarkdown("- item").map((b) => b.type)).toEqual(["list"]);
+  });
+
+  it("o separador não entra no texto puro nem no tempo de leitura", () => {
+    expect(plainText("um\n\n* * *\n\ndois")).toBe("um dois");
   });
 });

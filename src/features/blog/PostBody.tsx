@@ -27,8 +27,18 @@ function Inline({ nodes }: { nodes: MdInline[] }) {
   return (
     <>
       {nodes.map((node, i) => {
-        if (node.type === "bold") return <strong key={i}>{node.value}</strong>;
-        if (node.type === "italic") return <em key={i}>{node.value}</em>;
+        if (node.type === "bold")
+          return (
+            <strong key={i}>
+              <Inline nodes={node.children} />
+            </strong>
+          );
+        if (node.type === "italic")
+          return (
+            <em key={i}>
+              <Inline nodes={node.children} />
+            </em>
+          );
         if (node.type === "link")
           return <InlineLink key={i} href={node.href} nodes={node.children} />;
         return <React.Fragment key={i}>{node.value}</React.Fragment>;
@@ -99,6 +109,8 @@ function Block({ block }: { block: MdBlock }) {
           <Inline nodes={block.content} />
         </blockquote>
       );
+    case "rule":
+      return <hr className="mt-8 border-hairline" />;
     case "image":
       return (
         <img

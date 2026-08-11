@@ -9,11 +9,17 @@
  * não existe caminho de XSS: o corpo nunca vira HTML, vira elemento React.
  */
 
+/**
+ * Todo nó que envolve outro guarda `children`, não texto.
+ *
+ * O WordPress aninhou marcação à vontade: `[**Nome**](url)` em 28 links e
+ * `**[Nome](url)**` em 20 blocos. Guardando o miolo como string crua, um deles
+ * sempre aparecia literal na tela, dependendo de qual ficasse por fora.
+ */
 export type MdInline =
   | { type: "text"; value: string }
-  | { type: "bold"; value: string }
-  | { type: "italic"; value: string }
-  /** `children`, não texto: o WordPress gerou `[**Nome**](url)` em 28 links. */
+  | { type: "bold"; children: MdInline[] }
+  | { type: "italic"; children: MdInline[] }
   | { type: "link"; href: string; children: MdInline[] };
 
 /** Item de lista, com no máximo um nível de sublista (é o que o acervo usa). */
@@ -27,7 +33,8 @@ export type MdBlock =
   | { type: "paragraph"; content: MdInline[] }
   | { type: "list"; ordered: boolean; items: MdListItem[] }
   | { type: "quote"; content: MdInline[] }
-  | { type: "image"; src: string; alt: string };
+  | { type: "image"; src: string; alt: string }
+  | { type: "rule" };
 
 /**
  * Imagem sozinha na linha, com ou sem link em volta.
@@ -41,6 +48,11 @@ const HEADING = /^(#{1,6})\s+(.*)$/;
 const UNORDERED = /^[-*]\s+(.*)$/;
 const ORDERED = /^\d+\.\s+(.*)$/;
 const QUOTE = /^>\s?(.*)$/;
+/**
+ * Separador temático. Precisa ser testado ANTES da lista: `* * *` casa com
+ * `UNORDERED` e virava um item com o texto "* *". São 105 no acervo, em 14 posts.
+ */
+const RULE = /^([-*_])(\s*\1){2,}$/;
 
 /**
  * Quebra o texto em trechos com marcação inline.
@@ -62,13 +74,11 @@ export function parseInline(input: string): MdInline[] {
     if (m[1] !== undefined) {
       if (m[1]) out.push({ type: "text", value: m[1] });
     } else if (m[3] !== undefined) {
-      // O rótulo é markdown também. Sem esta recursão, `[**Nome**](url)` mostrava
-      // os asteriscos na tela: eram 28 links em 17 posts do acervo migrado.
       out.push({ type: "link", href: m[4], children: parseInline(m[3]) });
     } else if (m[5] !== undefined) {
-      out.push({ type: "bold", value: m[5] });
+      out.push({ type: "bold", children: parseInline(m[5]) });
     } else if (m[6] !== undefined) {
-      out.push({ type: "italic", value: m[6] });
+      out.push({ type: "italic", children: parseInline(m[6]) });
     }
     last = start + m[0].length;
   }
@@ -166,6 +176,12 @@ export function parseMarkdown(md: string): MdBlock[] {
     // O que veio depois da branco não é da lista: fecha antes de seguir.
     if (brancoPendente && !UNORDERED.test(line) && !ORDERED.test(line)) flushList();
 
+    if (RULE.test(line)) {
+      flushAll();
+      blocks.push({ type: "rule" });
+      continue;
+    }
+
     const image = line.match(IMAGE_ONLY);
     if (image) {
       flushAll();
@@ -221,7 +237,30 @@ export function parseMarkdown(md: string): MdBlock[] {
   }
 
   flushAll();
-  return blocks;
+  return normalizaTitulos(blocks);
+}
+
+/**
+ * Sobe a hierarquia quando o post não tem nenhum `h2`.
+ *
+ * O `<h1>` é o título da página, então um post que abre em `###` pula um nível e
+ * deixa um buraco no outline, que atrapalha leitor de tela e buscador. São 9 posts
+ * do acervo. O deslocamento é relativo: se o post usa h3 e h4, vira h2 e h3, e a
+ * estrutura interna continua a mesma.
+ */
+function normalizaTitulos(blocks: MdBlock[]): MdBlock[] {
+  const niveis = blocks.filter((b) => b.type === "heading").map((b) => b.level);
+  if (!niveis.length) return blocks;
+
+  const menor = Math.min(...niveis);
+  if (menor === 2) return blocks;
+
+  const desloca = menor - 2;
+  return blocks.map((b) =>
+    b.type === "heading"
+      ? { ...b, level: Math.max(2, b.level - desloca) as 2 | 3 | 4 }
+      : b,
+  );
 }
 
 /**
@@ -239,7 +278,7 @@ function semPrefixoDeTitulo(texto: string): string {
 export function plainText(md: string): string {
   return parseMarkdown(md)
     .flatMap((b) => {
-      if (b.type === "image") return [];
+      if (b.type === "image" || b.type === "rule") return [];
       if (b.type === "list") {
         return b.items.flatMap((i) => [
           inlineText(i.content),
@@ -254,7 +293,7 @@ export function plainText(md: string): string {
 }
 
 function inlineText(nodes: MdInline[]): string {
-  return nodes.map((n) => (n.type === "link" ? inlineText(n.children) : n.value)).join("");
+  return nodes.map((n) => (n.type === "text" ? n.value : inlineText(n.children))).join("");
 }
 
 /**

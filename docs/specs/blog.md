@@ -472,15 +472,27 @@ corrigido em `markdown.logic.ts`:
 | `1.  ### **Título:**` | o `###` aparecia dentro do item | 12 itens em 3 posts |
 | Corpo do item indentado embaixo dele | virava parágrafo solto e reiniciava a numeração | 18 linhas em 5 posts |
 | `  - subitem` | a sublista era achatada no mesmo nível | 16 posts |
+| `**[Nome](url)**` | o link aparecia literal dentro do negrito | 20 blocos |
+| `* * *` | virava um item de lista com o texto "* *" | 105 linhas em 14 posts |
+| post que abre em `###` | buraco no outline, sem nenhum `h2` | 9 posts |
 
-Duas decisões que valem registrar. O rótulo do link é **markdown também**, então `parseInline`
-chama a si mesmo para os filhos. E linha em branco **não fecha lista na hora**: fica pendente e só
-fecha se o que vier depois não pertencer a ela, porque o WordPress separa os itens com uma linha
-de espaços.
+Três decisões que valem registrar. **Todo nó que envolve outro guarda `children`**, não texto:
+guardando o miolo como string, ou o negrito dentro do link ou o link dentro do negrito sempre
+aparecia cru, dependendo de qual ficasse por fora. **Linha em branco não fecha lista na hora**:
+fica pendente e só fecha se o que vier depois não pertencer a ela, porque o WordPress separa os
+itens com uma linha de espaços. E o **separador temático é testado antes da lista**, senão
+`* * *` casa com o marcador de item.
 
-Sobra um caso não tratado de propósito: 165 parágrafos que são só negrito e funcionam como
-subtítulo. Promovê-los a `h4` melhora a leitura, mas injeta 165 títulos no outline dos posts, o
-que é decisão de conteúdo e não de parser.
+Sobram dois casos, e nenhum é do parser.
+
+**Tabela achatada na importação.** 32 dos 93 posts do WordPress têm tabela, quase sempre
+comparativo de preço, traslado e diferencial. O turndown não converte tabela e desmontou cada uma
+em parágrafos soltos: o comparativo virou uma coluna alternando número e título. Consertar exige
+três coisas juntas, uma regra de tabela no turndown, suporte a tabela no parser e reimportação dos
+32 posts.
+
+**165 parágrafos que são só negrito**, funcionando como subtítulo. Promovê-los a `h4` melhora a
+leitura, mas injeta 165 títulos no outline dos posts, o que é decisão de conteúdo.
 
 ## Dívida conhecida
 
