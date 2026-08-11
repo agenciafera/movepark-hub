@@ -36,7 +36,7 @@ company (tenant)
 - **Dados:** TanStack Query (server state) + React Hook Form + Zod (forms/validação).
 - **Rotas:** React Router 6, definidas em `src/routes.tsx` como `RouteRecord[]`.
 - **Backend:** Supabase (PostgreSQL + Auth + RLS) + Edge Functions (Deno).
-- **Deploy:** **Cloudflare Pages** (deploy ativo desde jun/2026, conectado ao GitHub; build estático em `dist`). A content-negotiation de Markdown para agentes roda na borda via `src/worker.ts` (Pages Functions / `_worker.js`); `wrangler.jsonc` + `bun run deploy` permanecem para deploy direto via Workers/`wrangler`.
+- **Deploy:** **Cloudflare Workers** com assets estáticos, worker `movepark-hub` na conta `Financeiro@fera.ag` (`d124ffde17489256e3417b4e82275c6c`), ativo desde jun/2026 e conectado ao GitHub: **todo push na `main` dispara o build**, que sai no ar em ~2 minutos. Não é um projeto de Pages (a lista de Pages daquela conta é vazia); o texto anterior dizia Pages e estava errado. A borda inteira (content-negotiation de Markdown, política de índice, contrato de URL do blog) é o `src/worker.ts`, configurado em `wrangler.jsonc`. `bun run deploy` faz o deploy direto por `wrangler`, sem passar pelo GitHub.
 - **Gerenciador de pacotes:** **bun** (lockfile de texto `bun.lock` — versionado; o binário `bun.lockb` foi descontinuado por incompatibilidade entre versões de bun no CI/Cloudflare). Use sempre `bun` — não use `npm`/`yarn`/`pnpm`. Instalar deps: `bun install`; adicionar: `bun add <pkg>`.
 - **Deploy/CI rodam `bun install --frozen-lockfile` no Linux — toda dep usada no código TEM que
   estar no `package.json`.** Armadilha que derrubou CI e Cloudflare em jun/2026: um `import` de
@@ -391,7 +391,7 @@ onSuccess: () => qc.invalidateQueries({ queryKey: bookingsKeys.all })
 - Catálogo de migrations e specs em `docs/specs/README.md` e `docs/specs/database-schema.md`. Mantenha a tabela de migrations e o status dos specs atualizados ao adicionar.
 - Aplique migrations via Supabase CLI ou MCP (`mcp__claude_ai_Supabase__apply_migration`). Antes de mexer no schema, `list_tables`; ao debugar, comece por `get_logs` / `get_advisors`.
 
-> **Quem roda migration/deploy do Supabase é o Claude — não o usuário.** Ao terminar uma tarefa que mexe em schema ou Edge Functions, **eu** aplico a migration no projeto linkado (`mgaigbezdalbyuqiofcf`) e faço o deploy das Edges, sem deixar como "passo pendente" para o usuário. Migration: `mcp__*_Supabase__apply_migration` (não-interativo) ou `supabase db push` (linkado, **sem** `--project-ref`). Depois: `bun run gen:types` + commit do `database.ts`. Edges: `supabase functions deploy <nome>` (a CLI empacota o `_shared`); webhooks/funções públicas com `--no-verify-jwt`. O deploy do front é separado (Cloudflare Pages via GitHub). Se algum passo for bloqueado, aí sim peço autorização.
+> **Quem roda migration/deploy do Supabase é o Claude — não o usuário.** Ao terminar uma tarefa que mexe em schema ou Edge Functions, **eu** aplico a migration no projeto linkado (`mgaigbezdalbyuqiofcf`) e faço o deploy das Edges, sem deixar como "passo pendente" para o usuário. Migration: `mcp__*_Supabase__apply_migration` (não-interativo) ou `supabase db push` (linkado, **sem** `--project-ref`). Depois: `bun run gen:types` + commit do `database.ts`. Edges: `supabase functions deploy <nome>` (a CLI empacota o `_shared`); webhooks/funções públicas com `--no-verify-jwt`. O deploy do front é separado (Cloudflare Workers, disparado pelo push na `main`). Se algum passo for bloqueado, aí sim peço autorização.
 
 ### Edge Functions (`supabase/functions/`)
 

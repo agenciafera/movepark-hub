@@ -1,5 +1,9 @@
 interface Env {
   ASSETS: { fetch(request: Request): Promise<Response> };
+  // Só leitura pública, com a anon key (pública por design). Serve para confirmar
+  // slug de post que o manifesto do build ainda não conhece.
+  SUPABASE_URL?: string;
+  SUPABASE_ANON_KEY?: string;
 }
 
 /**
@@ -191,6 +195,53 @@ async function blogSlugs(env: Env, url: URL): Promise<Set<string> | null> {
   }
 }
 
+/**
+ * Segunda opinião para o slug que o manifesto não conhece.
+ *
+ * O manifesto nasce no build, e o site é SSG: um post publicado pelo Manager
+ * agora só entra nele no próximo deploy. Sem esta consulta, publicar deixaria a
+ * URL em 404 até alguém empurrar um commit, que é pior do que o 200 vazio que o
+ * 404 veio corrigir.
+ *
+ * Quem responde `true` é servido pela shell e renderiza no cliente, com o HTML
+ * pré-renderizado chegando no build seguinte. Quem responde `false` continua 404.
+ *
+ * O cache guarda os dois veredictos, porque o caso barulhento é bot varrendo slug
+ * inventado, e cada varredura sem cache viraria uma consulta. O teto existe para
+ * a memória não crescer com entrada que o visitante escolhe.
+ */
+const VEREDICTO_MAX = 500;
+const veredictoSlug = new Map<string, boolean>();
+
+async function postPublicado(env: Env, slug: string): Promise<boolean> {
+  const cacheado = veredictoSlug.get(slug);
+  if (cacheado !== undefined) return cacheado;
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return false;
+
+  try {
+    const consulta = new URL("/rest/v1/blog_post", env.SUPABASE_URL);
+    consulta.searchParams.set("select", "slug");
+    consulta.searchParams.set("slug", `eq.${slug}`);
+    consulta.searchParams.set("is_published", "is.true");
+    consulta.searchParams.set("deleted_at", "is.null");
+    consulta.searchParams.set("limit", "1");
+
+    const res = await fetch(consulta, {
+      headers: { apikey: env.SUPABASE_ANON_KEY, Authorization: `Bearer ${env.SUPABASE_ANON_KEY}` },
+    });
+    // Supabase fora do ar não é resposta: melhor servir a shell do que enterrar
+    // uma URL que talvez exista. Este caso não entra em cache.
+    if (!res.ok) return true;
+
+    const existe = ((await res.json()) as unknown[]).length > 0;
+    if (veredictoSlug.size >= VEREDICTO_MAX) veredictoSlug.clear();
+    veredictoSlug.set(slug, existe);
+    return existe;
+  } catch {
+    return true;
+  }
+}
+
 async function serve(request: Request, env: Env): Promise<Response> {
   const accept = request.headers.get("Accept") ?? "";
 
@@ -260,11 +311,15 @@ async function serve(request: Request, env: Env): Promise<Response> {
     O manifesto sai do build (`writeBlogSlugManifest` no vite.config) e fica em
     cache no escopo do módulo, então custa uma leitura por isolate, não por
     requisição.
+
+    Fora do manifesto, `postPublicado` dá a segunda opinião: post publicado pelo
+    Manager depois do último build existe no banco e ainda não existe no
+    manifesto, e essa URL tem que abrir na hora.
   */
   const post = url.pathname.match(/^\/blog\/([^/]+)\/?$/);
   if (post && !BLOG_LISTING_PREFIXES.has(post[1])) {
     const slugs = await blogSlugs(env, url);
-    if (slugs && !slugs.has(post[1])) {
+    if (slugs && !slugs.has(post[1]) && !(await postPublicado(env, post[1]))) {
       return new Response(null, { status: 404, headers: { "Cache-Control": "no-store" } });
     }
   }

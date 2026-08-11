@@ -3,6 +3,13 @@
   "name": "movepark-hub",
   "main": "src/worker.ts",
   "compatibility_date": "2026-06-02",
+  "vars": {
+    // Leitura pública do catálogo de posts, para o worker confirmar slug que o
+    // manifesto do build ainda não tem. A anon key é pública por design e já
+    // vive no .env versionado; a RLS é que decide o que ela enxerga.
+    "SUPABASE_URL": "https://mgaigbezdalbyuqiofcf.supabase.co",
+    "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nYWlnYmV6ZGFsYnl1cWlvZmNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MTcxOTksImV4cCI6MjA5NTI5MzE5OX0.H7f344gtsOeMF3dyCQTpfBNvjPhQkKXVrhlIDmZ85LE"
+  },
   "observability": {
     "enabled": true
   },

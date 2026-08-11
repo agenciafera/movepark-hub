@@ -278,10 +278,10 @@ descritos em [manager-panel.md](./manager-panel.md). Escrita gateada por `is_hub
 
 ## Frescor
 
-SSG significa que publicar post exige rebuild. Falta o **webhook Supabase para o Deploy Hook do
-Cloudflare Pages**, pendência já registrada em
-[agent-readiness-seo.md](./agent-readiness-seo.md) desde junho. Sem ele, publicar um post vira
-tarefa de dev, o que anula o motivo de ter escolhido banco em vez de MDX.
+SSG significa que o HTML do post nasce no build, mas publicar não espera o deploy: o worker
+confirma no banco o slug que o manifesto ainda não tem e serve a casca, e o cliente renderiza.
+Ver "Publicar sem esperar o deploy" abaixo. O HTML pré-renderizado (e a entrada no sitemap)
+chega no build seguinte, que roda sozinho a cada push na `main`.
 
 ## Testes
 
@@ -434,6 +434,27 @@ de plataforma. `manager-docs.contract.test.ts` casa o catálogo com o
 reprova, e documentação sem rota também. Ver
 [`permissions.md`](permissions.md) para a chave sem empresa.
 
+## Publicar sem esperar o deploy
+
+O site é SSG, então o HTML de um post nasce no build. Publicar pelo Manager cria
+uma URL que o manifesto do build ainda não conhece, e o 404 real do worker (feito
+para matar a casca vazia) enterraria justamente o post recém-publicado.
+
+O worker resolve com uma segunda opinião: slug fora do manifesto vira uma consulta
+`blog_post?slug=eq.<slug>&is_published=is.true&deleted_at=is.null`. Existe no banco,
+serve a casca e o cliente renderiza na hora; não existe, 404. O HTML pré-renderizado
+chega no build seguinte, e até lá a URL abre.
+
+O veredicto fica em cache no isolate, **inclusive o negativo**, porque o caso
+barulhento é bot varrendo slug inventado e cada varredura sem cache viraria uma
+consulta. O cache tem teto (500) para a memória não crescer com entrada que o
+visitante escolhe. Banco fora do ar serve a casca em vez de 404, e esse caso não
+entra em cache.
+
+A leitura usa a anon key, com as `vars` do `wrangler.jsonc`. Quem decide o que ela
+enxerga é a RLS: a policy de SELECT do `blog_post` só devolve publicado e não
+excluído para quem não é hub_admin, então rascunho não abre por URL adivinhada.
+
 ## Dívida conhecida
 
 - **Duplicação de conteúdo.** São 35 posts de Guarulhos e 26 de Viracopos, muitos quase
@@ -456,8 +477,12 @@ reprova, e documentação sem rota também. Ver
   mas a busca semântica do RAG acharia o post por pergunta parafraseada, que é
   como o usuário fala. Entrada natural: `blog_post.body_md` como `source_type`
   novo, reusando o chunking que já existe.
-- **Webhook de rebuild.** Continua pendente. Enquanto não existir, publicar um post pelo
-  `/manager/blog` grava no banco mas não aparece no site até o próximo build.
+- **HTML pré-renderizado do post novo.** A URL abre na hora (o worker confirma no banco), mas
+  até o build seguinte ela chega ao visitante como casca renderizada no cliente, sem HTML servido
+  e fora do sitemap. Para post novo isso é irrelevante hoje, porque o `hub.movepark.co` responde
+  `noindex`; vira pendência de verdade no dia do corte para o `movepark.co`. A saída completa é
+  um gatilho de build a partir do banco, que exige token de API da Cloudflare com escopo de
+  Workers Builds (o OAuth do wrangler nesta máquina não alcança `builds/*`).
 - **Egress do Storage.** O bucket saiu de 52 para 183 objetos, e as imagens do blog passam a
   contar egress do Supabase a cada visita não cacheada. É exatamente o gatilho de migração para o
   Cloudflare R2 previsto em [storage-buckets.md](./storage-buckets.md). Não pesa neste volume, mas

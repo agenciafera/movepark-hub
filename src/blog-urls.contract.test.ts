@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "./worker";
 import legacySlugs from "./features/blog/legacy-slugs.json";
 
@@ -307,5 +307,99 @@ describe("post inexistente devolve 404, não a casca da SPA", () => {
     const { env } = envComManifesto(["existe"]);
     expect((await worker.fetch(req("/blog/tag/traslado/"), env)).status).toBe(200);
     expect((await worker.fetch(req("/blog/page/2/"), env)).status).toBe(200);
+  });
+});
+
+describe("post publicado depois do build abre antes do próximo deploy", () => {
+  /**
+   * O manifesto nasce no build e o site é SSG, então publicar pelo Manager cria
+   * uma URL que o manifesto não conhece. Sem a consulta ao banco, o 404 que veio
+   * corrigir a casca vazia enterraria justamente o post recém-publicado.
+   */
+  const HTML_SHELL = "<!doctype html><html><head></head><body></body></html>";
+
+  function envDeProducao() {
+    return {
+      ASSETS: {
+        fetch: vi.fn(async (request: Request) => {
+          if (new URL(request.url).pathname === "/blog-slugs.json") {
+            return new Response(JSON.stringify(["do-build"]), {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+          return new Response(HTML_SHELL, {
+            status: 200,
+            headers: { "Content-Type": "text/html" },
+          });
+        }),
+      },
+      SUPABASE_URL: "https://exemplo.supabase.co",
+      SUPABASE_ANON_KEY: "anon-de-teste",
+    };
+  }
+
+  /** Recarrega o worker para o cache de veredicto de um teste não vazar no outro. */
+  async function workerLimpo() {
+    vi.resetModules();
+    return (await import("./worker")).default;
+  }
+
+  function stubSupabase(linhas: unknown[], status = 200) {
+    const chamadas: string[] = [];
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      chamadas.push(String(input));
+      return new Response(JSON.stringify(linhas), {
+        status,
+        headers: { "Content-Type": "application/json" },
+      });
+    });
+    return chamadas;
+  }
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("slug fora do manifesto, mas publicado no banco, responde 200", async () => {
+    const chamadas = stubSupabase([{ slug: "publicado-agora" }]);
+    const fresh = await workerLimpo();
+
+    const res = await fresh.fetch(req("/blog/publicado-agora/"), envDeProducao());
+
+    expect(res.status).toBe(200);
+    // Só o publicado e não excluído conta: um rascunho não pode abrir por URL.
+    expect(chamadas[0]).toContain("slug=eq.publicado-agora");
+    expect(chamadas[0]).toContain("is_published=is.true");
+    expect(chamadas[0]).toContain("deleted_at=is.null");
+  });
+
+  it("slug que não existe em lugar nenhum continua 404", async () => {
+    stubSupabase([]);
+    const fresh = await workerLimpo();
+
+    const res = await fresh.fetch(req("/blog/nunca-existiu/"), envDeProducao());
+
+    expect(res.status).toBe(404);
+  });
+
+  it("o veredicto fica em cache, inclusive o negativo", async () => {
+    // Varredura de bot é o caso barulhento: sem cachear o "não existe", cada
+    // slug inventado viraria uma consulta ao banco.
+    const chamadas = stubSupabase([]);
+    const fresh = await workerLimpo();
+    const env = envDeProducao();
+
+    await fresh.fetch(req("/blog/inventado/"), env);
+    await fresh.fetch(req("/blog/inventado/"), env);
+
+    expect(chamadas).toHaveLength(1);
+  });
+
+  it("banco fora do ar serve a casca, em vez de enterrar a URL", async () => {
+    stubSupabase({ message: "indisponivel" } as never, 503);
+    const fresh = await workerLimpo();
+
+    const res = await fresh.fetch(req("/blog/talvez-exista/"), envDeProducao());
+
+    expect(res.status).toBe(200);
   });
 });
