@@ -10,7 +10,7 @@ import {
   safeToolError,
   toolTextContent,
 } from "./protocol.ts";
-import { CUSTOMER_TOOLS, findTool, isToolCallable, listTools, missingRequired, PARTNER_TOOLS, PUBLIC_TOOLS } from "./tools.ts";
+import { CUSTOMER_TOOLS, findTool, isToolCallable, listTools, MANAGER_TOOLS, missingRequired, PARTNER_TOOLS, PUBLIC_TOOLS } from "./tools.ts";
 import { extractApiKey, hasScope, keyPrefix, sha256Hex } from "./auth.ts";
 
 // ── protocolo ────────────────────────────────────────────────────────────────
@@ -252,4 +252,50 @@ Deno.test("auth helpers", async () => {
     await sha256Hex(""),
     "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   );
+});
+
+
+// ── Manager (superfície interna) ─────────────────────────────────────────────
+//
+// Ela existe porque escrita da Movepark não cabe nas outras duas: parceiro é
+// tenant-scoped e consumidor é público. O que estes testes travam é o
+// isolamento: sem escopo de plataforma ela não lista nem executa nada, e as
+// tools dela não vazam para as outras superfícies.
+
+Deno.test("Manager sem escopo não lista nem executa nada", () => {
+  assertEquals(listTools("manager", []).length, 0);
+  assertEquals(listTools("manager", ["locations:read", "bookings:write"]).length, 0);
+  // Fora de escopo é tratado como inexistente: nem revela que a tool existe.
+  assertEquals(isToolCallable("manager", "upsert_blog_post", []), false);
+  assertEquals(isToolCallable("manager", "delete_blog_post", ["bookings:write"]), false);
+});
+
+Deno.test("blog:write abre as três tools do Manager", () => {
+  const names = listTools("manager", ["blog:write"]).map((t) => t.name).sort();
+  assertEquals(names, ["delete_blog_post", "publish_blog_post", "upsert_blog_post"]);
+  for (const n of names) assertEquals(isToolCallable("manager", n, ["blog:write"]), true);
+});
+
+Deno.test("tool de Manager não existe nas superfícies de fora", () => {
+  for (const t of MANAGER_TOOLS) {
+    // Nem com o escopo na mão: a superfície é que decide, não só o escopo.
+    assertEquals(isToolCallable("public", t.name), false);
+    assertEquals(isToolCallable("partner", t.name, ["blog:write"]), false);
+    assertEquals(isToolCallable("customer", t.name, ["blog:write"]), false);
+    assertEquals(findTool("partner", t.name), null);
+  }
+});
+
+Deno.test("toda tool do Manager exige escopo de plataforma", () => {
+  // Tool sem `scope` fica visível para qualquer um que alcance a superfície.
+  // Numa superfície de escrita isso seria um buraco, então a regra é dura.
+  for (const t of MANAGER_TOOLS) assertEquals(t.scope, "blog:write");
+});
+
+Deno.test("Manager valida os obrigatórios antes de escrever", () => {
+  const upsert = findTool("manager", "upsert_blog_post")!;
+  assertEquals(missingRequired(upsert, { title: "x", body_md: "y" }), "slug");
+  assertEquals(missingRequired(upsert, { slug: "a", body_md: "y" }), "title");
+  assertEquals(missingRequired(upsert, { slug: "a", title: "x", body_md: "y" }), null);
+  assertEquals(missingRequired(findTool("manager", "delete_blog_post")!, {}), "slug");
 });

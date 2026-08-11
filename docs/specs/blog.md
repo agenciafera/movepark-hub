@@ -427,6 +427,10 @@ Medido contra o banco vivo em 11/08/2026: leitura 200 e filtros corretos; escrit
 com chave sem o escopo devolve 403; sem chave, 401; método errado, 405; ciclo de
 criar como rascunho, publicar, excluir e sumir da leitura, todo verde.
 
+As mesmas três operações também são **tools de MCP** em `https://mcp.movepark.co/manager`, com a
+mesma chave de plataforma e o mesmo `_shared/blog-write.ts` por trás. A superfície é interna: sem
+card, e recusa o `tools/list` sem chave. Ver [`mcp.md`](mcp.md) §4.4.
+
 **A credencial e a documentação delas moram em `/manager/api-interna`**, atrás do
 `RequireRole hub_admin`. A página traz o catálogo das rotas acima, as três
 superfícies de MCP, o motivo de não existir MCP de Manager, e a emissão da chave

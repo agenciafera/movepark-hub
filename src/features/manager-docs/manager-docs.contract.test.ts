@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { ROTAS_INTERNAS } from "./catalog";
+import { MCP_MANAGER_ENDPOINT, ROTAS_INTERNAS, SUPERFICIES_MCP } from "./catalog";
 
 /**
  * O catálogo interno não pode divergir do gateway.
@@ -47,5 +47,48 @@ describe("catálogo interno do Manager", () => {
 
   it("cada rota explica o que responde", () => {
     expect(ROTAS_INTERNAS.filter((r) => !r.resumo || !r.respostas).map((r) => r.caminho)).toEqual([]);
+  });
+});
+
+describe("superfície de MCP do Manager", () => {
+  const tools = readFileSync(
+    join(process.cwd(), "supabase", "functions", "mcp", "tools.ts"),
+    "utf8",
+  );
+  const bloco = tools.slice(tools.indexOf("export const MANAGER_TOOLS"));
+  const nomes = [...bloco.matchAll(/name:\s*"([a-z_]+)"/g)].map((m) => m[1]);
+
+  it("lê um registro não vazio", () => {
+    expect(nomes.length).toBeGreaterThan(0);
+  });
+
+  it("as tools do Manager são as mesmas operações das rotas internas", () => {
+    // Uma regra, duas superfícies (`_shared/blog-write.ts`). Se um lado ganhar
+    // uma operação e o outro não, quem usa MCP e quem usa REST veem produtos
+    // diferentes, e a página aqui descreve só um deles.
+    const operacoes = ROTAS_INTERNAS.map((r) =>
+      r.caminho.endsWith("/publish")
+        ? "publish_blog_post"
+        : r.caminho.endsWith("/delete")
+          ? "delete_blog_post"
+          : "upsert_blog_post",
+    );
+    expect([...nomes].sort()).toEqual([...operacoes].sort());
+  });
+
+  it("toda tool do Manager exige escopo de plataforma", () => {
+    const semEscopo = nomes.filter(
+      (n) => !new RegExp(`name: "${n}"[\\s\\S]{0,220}?scope: "blog:write"`).test(bloco),
+    );
+    expect(semEscopo).toEqual([]);
+  });
+
+  it("a superfície interna aparece na tabela, e sem card", () => {
+    const manager = SUPERFICIES_MCP.find((s) => s.modalidade === "manager");
+    expect(manager?.endpoint).toBe(MCP_MANAGER_ENDPOINT);
+    // O card é o que anuncia a superfície para fora: esta não pode ter um.
+    expect(existsSync(join(process.cwd(), "public", ".well-known", "mcp", "manager-card.json"))).toBe(
+      false,
+    );
   });
 });

@@ -6,6 +6,9 @@
 //   /mcp/customer          → CONSUMIDOR autenticado: descoberta + login por OTP (request/verify)
 //                            em nome do usuário final. Auth opcional (as tools de login são pré-login;
 //                            whoami lê o JWT). Transacionais entram em F2. Ver agent-booking.md.
+//   /mcp/manager           → MOVEPARK (Authorization: Bearer mp_… de chave SEM empresa): escrita
+//                            do blog. Superfície interna: sem card público, e recusa até o
+//                            tools/list sem chave de plataforma. Ver docs/specs/blog.md.
 // Servido externamente em https://mcp.movepark.co (proxy Cloudflare Worker — src/api-worker.ts).
 // Ver docs/specs/mcp.md. server-card: /.well-known/mcp/server-card.json (+ partner/customer).
 
@@ -26,6 +29,7 @@ import {
 import { findTool, isToolCallable, listTools, missingRequired, type Endpoint } from "./tools.ts";
 import { extractApiKey, keyPrefix, sha256Hex } from "./auth.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
+import { deleteBlogPost, publishBlogPost, upsertBlogPost } from "../_shared/blog-write.ts";
 import { callRead, READ_TOOL_NAMES } from "../_shared/assistant-tools.ts";
 import { hasValidCheckDigits } from "../_shared/payments/documents.ts";
 import { isValidPhoneBr } from "../_shared/payments/contact.ts";
@@ -66,7 +70,9 @@ Deno.serve(async (req: Request) => {
     ? "partner"
     : url.pathname.includes("/customer")
       ? "customer"
-      : "public";
+      : url.pathname.includes("/manager")
+        ? "manager"
+        : "public";
 
   // Probe simples por GET (clientes/healthcheck)
   if (req.method === "GET") {
@@ -89,7 +95,7 @@ Deno.serve(async (req: Request) => {
   // Autenticação (só parceiro). Header sempre presente no transporte; validamos a chave.
   let partner: PartnerCtx | null = null;
   let admin: ReturnType<typeof createClient> | null = null;
-  if (endpoint === "partner") {
+  if (endpoint === "partner" || endpoint === "manager") {
     const key = extractApiKey(req.headers);
     const needsAuth = reqMsg.method === "tools/list" || reqMsg.method === "tools/call";
     if (key) {
@@ -102,8 +108,16 @@ Deno.serve(async (req: Request) => {
         p_key_hash: hash,
       });
       if (v && (v as { ok?: boolean }).ok === true) {
-        const vv = v as { api_key_id: string; company_id: string; scopes: string[] };
-        partner = { api_key_id: vv.api_key_id, company_id: vv.company_id, scopes: vv.scopes ?? [] };
+        const vv = v as { api_key_id: string; company_id: string | null; scopes: string[] };
+        // A superfície escolhe o tipo de chave, não só o escopo. Chave de empresa
+        // nunca fala com o Manager, e chave da Movepark (sem empresa) nunca fala
+        // com o parceiro, onde o `company_id` é o escopo de dados. A trava de
+        // tabela `api_key_assert_ownership` já impede a mistura de escopos; esta
+        // é a segunda porta, na entrada da superfície.
+        const daPlataforma = vv.company_id == null;
+        if (daPlataforma === (endpoint === "manager")) {
+          partner = { api_key_id: vv.api_key_id, company_id: vv.company_id, scopes: vv.scopes ?? [] };
+        }
       }
     }
     if (needsAuth && !partner) {
@@ -147,7 +161,9 @@ Deno.serve(async (req: Request) => {
             ? "movepark-partner"
             : endpoint === "customer"
               ? "movepark-customer"
-              : "movepark";
+              : endpoint === "manager"
+                ? "movepark-manager"
+                : "movepark";
         resp = json(rpcResult(id, initializeResult(name, cp)));
         break;
       }
@@ -172,11 +188,13 @@ Deno.serve(async (req: Request) => {
           break;
         }
         const data =
-          endpoint === "partner"
-            ? await callPartner(admin!, partner!, toolName, args)
-            : endpoint === "customer"
-              ? await callCustomer(req.headers.get("Authorization"), toolName, args)
-              : await callPublic(toolName, args);
+          endpoint === "manager"
+            ? await callManager(admin!, toolName, args)
+            : endpoint === "partner"
+              ? await callPartner(admin!, partner!, toolName, args)
+              : endpoint === "customer"
+                ? await callCustomer(req.headers.get("Authorization"), toolName, args)
+                : await callPublic(toolName, args);
         resp = json(rpcResult(id, toolTextContent(data)));
         break;
       }
@@ -193,13 +211,15 @@ Deno.serve(async (req: Request) => {
         : json(rpcError(id, JSONRPC.INTERNAL_ERROR, msg));
   }
 
-  // Auditoria (Fase 1.1) — só parceiro autenticado; não bloqueia a resposta.
-  if (endpoint === "partner" && partner && admin) {
+  // Auditoria (Fase 1.1) — parceiro e Manager autenticados; não bloqueia a resposta.
+  // O Manager entra aqui de propósito: escrita da Movepark também deixa rastro de
+  // quem chamou, qual tool e quando.
+  if ((endpoint === "partner" || endpoint === "manager") && partner && admin) {
     const toolName =
       reqMsg.method === "tools/call"
         ? ((reqMsg.params as { name?: string } | undefined)?.name ?? null)
         : null;
-    const tool = toolName ? findTool("partner", toolName) : null;
+    const tool = toolName ? findTool(endpoint, toolName) : null;
     background(
       logRequest(admin, {
         api_key_id: partner.api_key_id,
@@ -221,7 +241,8 @@ Deno.serve(async (req: Request) => {
 // ── Auditoria (Fase 1.1) ─────────────────────────────────────────────────────
 interface ApiLogRow {
   api_key_id: string;
-  company_id: string;
+  // Nulo na chave da Movepark: a escrita do blog não pertence a empresa nenhuma.
+  company_id: string | null;
   surface: "rest" | "mcp";
   method: string;
   path: string;
@@ -492,6 +513,25 @@ async function callCustomerTxn(
 
 // ── Handlers parceiro (service_role + RPCs api_*, tenant-scoped) ──────────────
 // deno-lint-ignore no-explicit-any
+/**
+ * Tools do Manager: a mesma regra da rota interna da API v1, em
+ * `_shared/blog-write.ts`. Quem autenticou já foi conferido na entrada (chave sem
+ * empresa) e o escopo `blog:write` já passou pelo `isToolCallable`.
+ */
+// deno-lint-ignore no-explicit-any
+async function callManager(admin: any, name: string, a: Record<string, unknown>): Promise<unknown> {
+  const r =
+    name === "upsert_blog_post"
+      ? await upsertBlogPost(admin, a)
+      : name === "publish_blog_post"
+        ? await publishBlogPost(admin, String(a.slug), a.is_published)
+        : await deleteBlogPost(admin, String(a.slug));
+  // Erro previsível vira exceção aqui porque o `catch` do dispatch já traduz para
+  // `isError` do MCP, que é como o cliente espera receber falha de tool.
+  if (!r.ok) throw new Error(r.message);
+  return r.data;
+}
+
 async function callPartner(admin: any, ctx: PartnerCtx, name: string, a: Record<string, unknown>): Promise<unknown> {
   const c = ctx.company_id;
   const call = async (fn: string, args: Record<string, unknown>) => {

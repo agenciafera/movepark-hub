@@ -5,7 +5,7 @@
 import { READ_TOOLS, toMcpToolDef } from "../_shared/assistant-tools.ts";
 import { CUSTOMER_AUTH_TOOLS, CUSTOMER_TXN_TOOLS } from "./customer.logic.ts";
 
-export type Endpoint = "public" | "partner" | "customer";
+export type Endpoint = "public" | "partner" | "customer" | "manager";
 
 export interface ToolDef {
   name: string;
@@ -278,10 +278,56 @@ export const CUSTOMER_TOOLS: ToolDef[] = [
   ...CUSTOMER_TXN_TOOLS,
 ];
 
+// ── Manager (Movepark) — escrita do blog, atrás de chave de plataforma ────────
+//
+// Superfície interna: `/mcp/manager`. Ela **não tem card público** e recusa até o
+// `tools/list` sem chave de plataforma válida, então de fora ela não anuncia nada.
+// O `lint:openapi` reprova o build se um nome daqui vazar para qualquer card.
+//
+// Os handlers são os mesmos da rota interna da API v1, em
+// `_shared/blog-write.ts`: uma regra, duas superfícies.
+export const MANAGER_TOOLS: ToolDef[] = [
+  {
+    name: "upsert_blog_post",
+    description: "Cria um post do blog, ou atualiza o que já tem o mesmo slug.",
+    scope: "blog:write",
+    inputSchema: obj(
+      {
+        slug: S,
+        title: S,
+        body_md: S,
+        excerpt: S,
+        cover_image_url: S,
+        meta_title: S,
+        meta_description: S,
+        category: S,
+        author: S,
+        destination: S,
+        tags: { type: "array", items: S },
+        is_published: { type: "boolean" },
+      },
+      ["slug", "title", "body_md"],
+    ),
+  },
+  {
+    name: "publish_blog_post",
+    description: "Publica ou despublica um post do blog.",
+    scope: "blog:write",
+    inputSchema: obj({ slug: S, is_published: { type: "boolean" } }, ["slug"]),
+  },
+  {
+    name: "delete_blog_post",
+    description: "Exclui um post do blog (soft delete: a linha fica, com deleted_at).",
+    scope: "blog:write",
+    inputSchema: obj({ slug: S }, ["slug"]),
+  },
+];
+
 const REGISTRY: Record<Endpoint, ToolDef[]> = {
   public: PUBLIC_TOOLS,
   partner: PARTNER_TOOLS,
   customer: CUSTOMER_TOOLS,
+  manager: MANAGER_TOOLS,
 };
 
 function registry(endpoint: Endpoint): ToolDef[] {

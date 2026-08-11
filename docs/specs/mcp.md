@@ -19,6 +19,9 @@ Substitui o MCP externo de n8n por um servidor **in-repo**, sob o mesmo doc-as-y
 - **Parceiro** (`https://mcp.movepark.co/partner`): tools tenant-scoped sobre a API v1, autenticadas por
   **chave de API** (`Authorization: Bearer mp_…`) e **gateadas por escopo**. Reusa `api_key_verify` + as
   RPCs `api_*`. As tools **visíveis** (`tools/list`) dependem dos escopos da chave.
+- **Manager** (`https://mcp.movepark.co/manager`): escrita do blog pela Movepark, autenticada por
+  **chave de plataforma** (a que tem `api_key.company_id is null`). É superfície **interna**: não tem
+  card, e recusa até o `tools/list` sem chave válida. Ver §4.4.
 
 ---
 
@@ -144,11 +147,41 @@ OTP) fica para a integração do bot.
 
 ---
 
+### Manager (`/manager`, interna)
+
+| Tool | Escopo | O que faz |
+|---|---|---|
+| `upsert_blog_post` | `blog:write` | Cria o post, ou atualiza o que já tem o mesmo slug |
+| `publish_blog_post` | `blog:write` | Publica ou despublica |
+| `delete_blog_post` | `blog:write` | Soft delete |
+
+Os handlers são os mesmos da rota interna da API v1: `_shared/blog-write.ts`. Uma regra, duas
+superfícies, porque duplicar a validação entre elas é drift garantido.
+
+**Três travas, e a primeira é a que costuma faltar:**
+
+1. **A superfície confere o tipo de chave, não só o escopo.** Chave de empresa não entra no
+   `/manager`, e chave da Movepark não entra no `/partner`. Sem isso, bastaria um dia alguém
+   conseguir `blog:write` numa chave de parceiro para ele alcançar a escrita.
+2. **`tools/list` exige a chave**, igual ao parceiro. Sem chave, a superfície não diz o que tem.
+3. **Nenhum card.** O `lint:openapi` reprova o build se um nome do `MANAGER_TOOLS` aparecer em
+   **qualquer** card, e não só no "dele": o vazamento provável é copiar e colar no card do
+   parceiro. É a mesma inversão de asserção que protege o `internalRoute()` no OpenAPI.
+
+Medido em produção em 11/08/2026, com chave de plataforma real: sem chave o `tools/list` devolve
+401; com chave devolve as três tools; a **mesma** chave no `/partner` devolve 401; `list_bookings`
+pelo `/manager` devolve "Tool indisponível"; e o ciclo de criar rascunho, publicar e excluir passa,
+com slug de categoria inexistente recusado e obrigatório ausente barrado antes de escrever. As
+chamadas ficam no `api_request_log` com `company_id` nulo.
+
+---
+
 ## 5. Descoberta (`.well-known`)
 
 - `mcp/server-card.json` — card do consumidor (tools + `inputSchema`, `url: https://mcp.movepark.co`).
 - `mcp/partner-card.json` — card do parceiro (tools + escopo + nota de auth, `url: …/partner`).
-- `agent-skills/index.json` — referencia os dois cards com `sha256` (recalcular ao mudar um card).
+- `agent-skills/index.json` — referencia os cards com `sha256` (recalcular ao mudar um card).
+- A superfície `/manager` **não** entra em nada disto, de propósito. Ver §4.4.
 - `api-catalog` + `llms.txt` — linkam os dois MCPs.
 - `.mcp.json` (config local do Claude Code) — pode apontar `movepark-hub` → `https://mcp.movepark.co`.
 

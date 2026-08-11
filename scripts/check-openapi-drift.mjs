@@ -145,6 +145,10 @@ const CARD_BY_REGISTRY = {
   PUBLIC_TOOLS: { label: "consumidor", card: "public/.well-known/mcp/server-card.json" },
   PARTNER_TOOLS: { label: "parceiro", card: "public/.well-known/mcp/partner-card.json" },
   CUSTOMER_TOOLS: { label: "consumidor autenticado", card: "public/.well-known/mcp/customer-card.json" },
+  // Superfície interna: `card: null` significa "não tem card, e não pode ter".
+  // A asserção inverte, logo abaixo: se um nome daqui aparecer em QUALQUER card,
+  // o build cai. É o mesmo remédio do `internalRoute()` no OpenAPI.
+  MANAGER_TOOLS: { label: "manager", card: null },
 };
 
 const marks = [...toolsSrc.matchAll(/export const ([A-Z][A-Z0-9_]*_TOOLS)\s*:/g)].map((m) => ({
@@ -160,11 +164,30 @@ if (unmapped.length) {
   process.exit(1);
 }
 
-const checks = marks.map((mk, i) => {
-  const { label, card } = CARD_BY_REGISTRY[mk.name];
-  const src = toolsSrc.slice(mk.start, i + 1 < marks.length ? marks[i + 1].start : undefined);
-  return { label, tools: toolNames(src), card: cardNames(card) };
-});
+const fatias = marks.map((mk, i) => ({
+  ...CARD_BY_REGISTRY[mk.name],
+  tools: toolNames(toolsSrc.slice(mk.start, i + 1 < marks.length ? marks[i + 1].start : undefined)),
+}));
+
+// Superfície interna: nenhum nome dela pode estar em card nenhum. A checagem é
+// contra TODOS os cards, não só o "dela", porque o vazamento perigoso é o nome
+// aparecer no card do consumidor ou do parceiro por copiar e colar.
+const TODOS_OS_CARDS = Object.values(CARD_BY_REGISTRY)
+  .map((c) => c.card)
+  .filter(Boolean);
+for (const { label, card, tools } of fatias.filter((f) => f.card === null)) {
+  const vazadas = tools.filter((t) => TODOS_OS_CARDS.some((c) => cardNames(c).has(t)));
+  if (vazadas.length) {
+    console.error(`❌ Tool interna do MCP (${label}) anunciada em card público:`);
+    for (const t of vazadas) console.error("   - " + t);
+    console.error("\nAção de Manager não vai para card. Tire do card, não daqui.");
+    process.exit(1);
+  }
+}
+
+const checks = fatias
+  .filter((f) => f.card !== null)
+  .map(({ label, card, tools }) => ({ label, tools, card: cardNames(card) }));
 
 let mcpDrift = false;
 for (const { label, tools, card } of checks) {
@@ -190,7 +213,10 @@ if (mcpDrift) {
 }
 
 const total = checks.reduce((n, c) => n + new Set(c.tools).size, 0);
-console.log(`✓ MCP em sincronia (tools.ts ↔ cards): ${total} tools.`);
+const internas = fatias.filter((f) => f.card === null).reduce((n, f) => n + new Set(f.tools).size, 0);
+console.log(
+  `✓ MCP em sincronia (tools.ts ↔ cards): ${total} tools, e ${internas} internas fora de todo card.`,
+);
 
 // ── Assistente web (chat) ↔ registro compartilhado ───────────────────────────
 // O chat é a terceira superfície que expõe as tools de leitura. Antes ele tinha

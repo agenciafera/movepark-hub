@@ -26,6 +26,7 @@ import { matchRoute, normalizePath, pathExists } from "./router.ts";
 import { corsHeaders, fail, ok, pgErrorToHttp } from "./respond.ts";
 import { parseWpsEvent } from "./wps.logic.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
+import { deleteBlogPost, publishBlogPost, upsertBlogPost } from "../_shared/blog-write.ts";
 
 // request id curto sem dependências externas
 function newRequestId(): string {
@@ -175,71 +176,6 @@ function flattenBlogTags(rows: any[]): any[] {
   }));
 }
 
-/**
- * Resolve categoria, autor e destino por SLUG.
- *
- * A API fala slug, não uuid: id interno não é contrato público, e quem escreve
- * um post conhece "precos" e "aeroporto-de-viracopos", não o uuid deles.
- */
-async function resolveBlogRefs(
-  // deno-lint-ignore no-explicit-any
-  admin: any,
-  b: Record<string, unknown>,
-): Promise<{ ids: Record<string, string | null> } | { error: string }> {
-  const ids: Record<string, string | null> = {
-    category_id: null,
-    author_id: null,
-    destination_id: null,
-  };
-  const alvos: [string, string, string][] = [
-    ["category", "blog_category", "category_id"],
-    ["author", "blog_author", "author_id"],
-    ["destination", "destination", "destination_id"],
-  ];
-
-  for (const [campo, tabela, coluna] of alvos) {
-    const slug = b[campo];
-    if (slug == null || slug === "") continue;
-    const { data, error } = await admin
-      .from(tabela)
-      .select("id")
-      .eq("slug", String(slug))
-      .maybeSingle();
-    if (error) throw error;
-    if (!data) return { error: `${campo} "${slug}" não existe.` };
-    ids[coluna] = data.id;
-  }
-  return { ids };
-}
-
-/** Substitui as tags do post. Devolve mensagem de erro, ou null se deu certo. */
-async function setBlogPostTags(
-  // deno-lint-ignore no-explicit-any
-  admin: any,
-  postId: string,
-  slugs: string[],
-): Promise<string | null> {
-  const { data: tags, error: tagErr } = await admin
-    .from("blog_tag")
-    .select("id, slug")
-    .in("slug", slugs);
-  if (tagErr) throw tagErr;
-
-  const achados = new Set((tags ?? []).map((t: { slug: string }) => t.slug));
-  const faltando = slugs.filter((s) => !achados.has(s));
-  if (faltando.length) return `tags inexistentes: ${faltando.join(", ")}.`;
-
-  const { error: delErr } = await admin.from("blog_post_tag").delete().eq("post_id", postId);
-  if (delErr) throw delErr;
-  if (!tags?.length) return null;
-
-  const { error } = await admin
-    .from("blog_post_tag")
-    .insert(tags.map((t: { id: string }) => ({ post_id: postId, tag_id: t.id })));
-  if (error) throw error;
-  return null;
-}
-
 async function dispatch(handler: string, d: Dispatch): Promise<Response> {
   const { admin, ctx, url, params, body, req, requestId } = d;
   const q = url.searchParams;
@@ -321,67 +257,19 @@ async function dispatch(handler: string, d: Dispatch): Promise<Response> {
     // Não documentado em superfície pública. Ver docs/specs/blog.md.
 
     case "upsert_blog_post": {
-      const b = (body ?? {}) as Record<string, unknown>;
-      if (!b.slug || !b.title || !b.body_md) {
-        return fail("invalid_request", "slug, title e body_md são obrigatórios.", 400, requestId);
-      }
-      const resolved = await resolveBlogRefs(admin, b);
-      if ("error" in resolved) return fail("invalid_request", resolved.error, 400, requestId);
-
-      const { data, error } = await admin
-        .from("blog_post")
-        .upsert(
-          {
-            slug: String(b.slug),
-            title: String(b.title),
-            body_md: String(b.body_md),
-            excerpt: b.excerpt == null ? null : String(b.excerpt),
-            cover_image_url: b.cover_image_url == null ? null : String(b.cover_image_url),
-            meta_title: b.meta_title == null ? null : String(b.meta_title),
-            meta_description: b.meta_description == null ? null : String(b.meta_description),
-            ...resolved.ids,
-            is_published: b.is_published === true,
-          },
-          { onConflict: "slug" },
-        )
-        .select("id, slug")
-        .single();
-      if (error) throw error;
-
-      if (Array.isArray(b.tags)) {
-        const applied = await setBlogPostTags(admin, data.id, b.tags as string[]);
-        if (applied) return fail("invalid_request", applied, 400, requestId);
-      }
-      return ok(data, requestId);
+      const r = await upsertBlogPost(admin, (body ?? {}) as Record<string, unknown>);
+      return r.ok ? ok(r.data, requestId) : fail(r.code, r.message, 400, requestId);
     }
 
     case "publish_blog_post": {
       const b = (body ?? {}) as Record<string, unknown>;
-      const { data, error } = await admin
-        .from("blog_post")
-        .update({ is_published: b.is_published !== false })
-        .eq("slug", params.slug)
-        .is("deleted_at", null)
-        .select("slug, is_published")
-        .maybeSingle();
-      if (error) throw error;
-      if (!data) return fail("not_found", "Post não encontrado.", 404, requestId);
-      return ok(data, requestId);
+      const r = await publishBlogPost(admin, params.slug, b.is_published);
+      return r.ok ? ok(r.data, requestId) : fail(r.code, r.message, 404, requestId);
     }
 
     case "delete_blog_post": {
-      // Soft delete: a linha guarda `legacy_wp_id` e `legacy_url`, que são o
-      // rastro da migração do WordPress e não se recupera depois.
-      const { data, error } = await admin
-        .from("blog_post")
-        .update({ deleted_at: new Date().toISOString() })
-        .eq("slug", params.slug)
-        .is("deleted_at", null)
-        .select("slug")
-        .maybeSingle();
-      if (error) throw error;
-      if (!data) return fail("not_found", "Post não encontrado.", 404, requestId);
-      return ok({ slug: data.slug, deleted: true }, requestId);
+      const r = await deleteBlogPost(admin, params.slug);
+      return r.ok ? ok(r.data, requestId) : fail(r.code, r.message, 404, requestId);
     }
 
     case "list_locations":

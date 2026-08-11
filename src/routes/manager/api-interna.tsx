@@ -17,8 +17,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  MCP_MANAGER_ENDPOINT,
   MODALIDADES,
-  MOTIVO_SEM_MCP_MANAGER,
   ROTAS_INTERNAS,
   SUPERFICIES_MCP,
 } from "@/features/manager-docs/catalog";
@@ -140,6 +140,18 @@ export default function ManagerApiInterna() {
           de nenhum parceiro e ninguém de fora consegue revogá-la. Ela também não aceita escopo de
           empresa: o banco recusa a mistura.
         </p>
+        <p className="text-body-md text-body">
+          A mesma chave abre a superfície de MCP do Manager, para quem prefere falar por tool em vez
+          de rota:
+        </p>
+        <Bloco>{`{
+  "mcpServers": {
+    "movepark-manager": {
+      "url": "${MCP_MANAGER_ENDPOINT}",
+      "headers": { "Authorization": "Bearer mp_live_..." }
+    }
+  }
+}`}</Bloco>
       </Secao>
 
       <Secao titulo="Rotas internas">
@@ -212,7 +224,11 @@ export default function ManagerApiInterna() {
         <div className="flex gap-3 rounded-sm border border-hairline p-4">
           <Warning className="mt-0.5 h-5 w-5 shrink-0 text-muted" aria-hidden />
           <p className="text-body-sm text-body">
-            <strong>Não existe MCP de Manager.</strong> {MOTIVO_SEM_MCP_MANAGER}
+            <strong>A superfície de Manager não tem card.</strong> Card é documento de
+            descoberta, e o do parceiro lista as tools dele em público. O de Manager não
+            existe, e a superfície recusa até o <code>tools/list</code> sem chave de
+            plataforma, então de fora ela não anuncia nada. O <code>lint:openapi</code>{" "}
+            reprova o build se um nome dela aparecer em qualquer card.
           </p>
         </div>
       </Secao>

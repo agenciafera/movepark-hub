@@ -13,6 +13,15 @@
 
 export type Modalidade = "manager" | "operator" | "publico";
 
+/**
+ * A superfície de MCP do Manager.
+ *
+ * Ela é interna de verdade: não tem card, e recusa até o `tools/list` sem chave
+ * de plataforma. O `lint:openapi` reprova o build se um nome dela aparecer em
+ * qualquer card, do jeito que já reprova rota interna publicada no OpenAPI.
+ */
+export const MCP_MANAGER_ENDPOINT = "https://mcp.movepark.co/manager";
+
 export interface RotaInterna {
   metodo: "GET" | "POST";
   caminho: string;
@@ -72,6 +81,15 @@ export interface SuperficieMcp {
 
 export const SUPERFICIES_MCP: SuperficieMcp[] = [
   {
+    nome: "Manager (interna)",
+    endpoint: MCP_MANAGER_ENDPOINT,
+    autenticacao: "Chave de plataforma, emitida aqui nesta página",
+    modalidade: "manager",
+    tools: "Escrita do blog: criar e atualizar, publicar e despublicar, excluir.",
+    observacao:
+      "Sem card público, e recusa até o tools/list sem chave. Chave de parceiro não entra, mesmo com o escopo: a superfície confere que a chave não tem empresa.",
+  },
+  {
     nome: "Consumidor",
     endpoint: "https://mcp.movepark.co",
     autenticacao: "Nenhuma",
@@ -97,15 +115,6 @@ export const SUPERFICIES_MCP: SuperficieMcp[] = [
   },
 ];
 
-/**
- * Por que não existe MCP de Manager.
- *
- * Card de MCP é documentação pública: o servidor anuncia as tools que tem. Uma
- * tool "privada" num card seria contradição, então a escrita da Movepark mora só
- * na API interna, com chave de plataforma.
- */
-export const MOTIVO_SEM_MCP_MANAGER =
-  "Card de MCP é documentação pública: o servidor anuncia as tools que tem. Por isso a escrita da Movepark fica só na API interna, com chave de plataforma, e não vira tool.";
 
 export interface Modalidades {
   nome: string;
