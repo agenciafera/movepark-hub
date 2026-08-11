@@ -14,7 +14,7 @@
 -- Roda em transação com rollback.
 
 begin;
-select plan(22);
+select plan(24);
 
 -- ── fixtures (como postgres; RLS não se aplica a superuser) ──────────────────
 -- Geo no Atlântico Sul para não colidir com destino do seed/baseline: nearest_destination
@@ -180,6 +180,18 @@ select throws_ok(
             values (%L,'Hack','e017-hack',-50.0,-30.0)$f$, current_setting('test.dest')),
   '42501', null,
   'anon NÃO insere ficha (escrita é só de hub_admin)');
+
+-- Q-021: o telefone é guardado e não exibido, e quem garante isso é o grant de coluna.
+-- A RLS devolve a LINHA INTEIRA da ficha publicada, então sem este corte um `select=*`
+-- com a anon key leria o número que a tela não mostra. RLS é por linha; coluna é grant.
+select throws_ok(
+  $$select phone from public.prospect_location where slug = 'e017-publicado'$$,
+  '42501', null,
+  'anon NÃO lê a coluna phone (Q-021: guardado, nunca exibido)');
+select lives_ok(
+  $$select name, address, slug, latitude, longitude, google_maps_url
+      from public.prospect_location where slug = 'e017-publicado'$$,
+  'anon lê as colunas que a página de destino renderiza');
 reset role;
 
 -- ── 7. hub_admin escreve e enxerga os três estados ───────────────────────────

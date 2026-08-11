@@ -1,7 +1,7 @@
 # Lote mapeado: `prospect_location` (E0.17)
 
 > **Épico:** [E0.17](https://app.clickup.com/t/86ajyp580) · **Fase:** 0 · **Depende de:** E0.15 (capacidades / ADR-009)
-> **Q/D:** [Q-021](https://app.clickup.com/t/86ajyp5pu) telefone (**aberto, bloqueia a single**) · [Q-022](https://app.clickup.com/t/86ajz8n1j) **decidido → ADR-010** · [D-009](https://app.clickup.com/t/86ajyp5w7) deduplicação
+> **Q/D:** [Q-021](https://app.clickup.com/t/86ajyp5pu) telefone **decidido em 11/08/2026: guardar, não exibir** · [Q-022](https://app.clickup.com/t/86ajz8n1j) **decidido → ADR-010** · [D-009](https://app.clickup.com/t/86ajyp5w7) deduplicação
 > **ADR:** ADR-010 (lote não-parceiro não vive na tabela transacional)
 > **Status:** especificado em 10/08/2026. **E0.17-a no ar** (11/08/2026, migration `20261008000000_prospect_location.sql`); o resto não iniciado.
 > **Case de referência:** Talentos Park, Recife. Todo exemplo aqui usa dados reais dele.
@@ -14,14 +14,14 @@ Este arquivo é **autossuficiente**: quem for implementar não precisa abrir o C
 |---|---|---|---|
 | E0.17-a | ✅ Criar a tabela `prospect_location` | [§ A tabela](#a-tabela) | [86ajyp71u](https://app.clickup.com/t/86ajyp71u) |
 | E0.17-b | Higienizar os registros obsoletos em `location` | [§ Higiene do legado](#higiene-dos-registros-legados-e017-b) | [86ajyp7bj](https://app.clickup.com/t/86ajyp7bj) |
-| E0.17-c | Cadastrar o Talentos Park como case-piloto | [§ O cadastro](#o-cadastro-com-o-talentos-park-e017-c) | [86ajyp7xu](https://app.clickup.com/t/86ajyp7xu) |
+| E0.17-c | ✅ Cadastrar o Talentos Park como case-piloto | [§ O cadastro](#o-cadastro-com-o-talentos-park-e017-c) | [86ajyp7xu](https://app.clickup.com/t/86ajyp7xu) |
 | E0.17-d | RPC de união na página de destino | [§ Página de destino](#página-de-destino-e017-d) | [86ajyp87t](https://app.clickup.com/t/86ajyp87t) |
 | E0.17-e | Single sem caminho para reserva | [§ Single](#single-e017-e) | [86ajyp8jn](https://app.clickup.com/t/86ajyp8jn) |
 | E0.17-f | JSON-LD `ParkingFacility` | [§ JSON-LD](#json-ld-e017-f) | [86ajyp8u6](https://app.clickup.com/t/86ajyp8u6) |
 | E0.17-g | Conversão da reivindicação | [§ Conversão](#conversão-e017-g) | [86ajyp96d](https://app.clickup.com/t/86ajyp96d) |
 | E0.17-h | Painel administrativo | [§ Painel](#painel-administrativo-e017-h) | [86ajz8mvz](https://app.clickup.com/t/86ajz8mvz) |
 
-**a** destrava **c**, **g** e **h**; **c** destrava **d**, **e** e **f**. A **e** está bloqueada por Q-021. A **b** é independente.
+**a** destrava **c**, **g** e **h**; **c** destrava **d**, **e** e **f**. A **b** é independente. Q-021 foi decidido em 11/08/2026, então a **e** não está mais bloqueada.
 
 ## Por quê
 
@@ -161,6 +161,21 @@ Uma linha, uma tabela.
 
 **A preencher, não chutar:** `address`, `phone` e `google_place_id` saem da Places API ou de verificação humana. Deixar `null` é informação; preencher errado é dívida.
 
+### O que ficou gravado (11/08/2026)
+
+Resolvido na Places API (Text Search, viés de 2 km na geo acima), não chutado. Migration `20261010000000_prospect_location_pilot_recife.sql`.
+
+| Campo | Valor | Nota |
+|---|---|---|
+| `google_place_id` | `ChIJyRH1jmMfqwcRV4eeOvGS0j8` | chave de dedup (D-009) |
+| `address` | R. Projetada, 169 - Boa Viagem, Recife - PE, 51150-650 | sem o sufixo "Brasil", igual ao formato de `location.address` |
+| `phone` | `+5581986929632` | E.164, **guardado e não exibido** (Q-021) |
+| `name` | Talentos Park | e não o "Talentos Park Aeroporto - Estacionamento" do Google: nome de exibição é copy nossa |
+| `is_published` | `false` | publica na E0.17-d, quando existir seção onde aparecer |
+| `description` | `null` | texto factual escrito por nós, ainda a fazer |
+
+O CID devolvido pela API bate com o da spec (`4598899734266939223`), o que confirma que é o mesmo lugar. `businessStatus` veio `OPERATIONAL`, então o lote não fechou (o que não vale para boa parte dos 41 do WordPress). Distância medida com o `geog`: **1.012 m** até o REC, o número que a spec previa.
+
 **Por que um piloto:** carregar em volume sem ter validado um é como a Movepark descobre, em produção, que faltou um campo. Se o Talentos Park renderiza certo na página de Recife e não tem nenhum caminho para reserva, o resto é repetição.
 
 Recife é o destino certo para o piloto: acabou de ser criado e tem **zero** unidades vendáveis, então não há parceiro para canibalizar.
@@ -235,7 +250,13 @@ A busca geral (home, resultados, disponibilidade) continua lendo **só `location
 
 ## Single
 
-**(E0.17-e)** — ⚠️ **bloqueada por Q-021** (exibir ou não o telefone do lote).
+**(E0.17-e)** · Q-021 **decidido em 11/08/2026: o telefone é guardado e não exibido.** Destravada.
+
+> **Q-021.** O número entra no banco porque é a prova de titularidade mais barata que existe para a reivindicação (E0.17-g é OTP no telefone mapeado), e não aparece na página nem no JSON-LD, pela mesma razão que a single não linka o site do lote: quem liga direto vira cliente dele de graça, e a venda dos 20% morre ali.
+>
+> A decisão virou **permissão, não layout**: a migration `20261009000000_prospect_location_public_columns.sql` revoga o `select` da tabela e concede só as colunas que a página de destino renderiza. A RLS devolve a linha inteira da ficha publicada, então sem esse corte um `select=*` com a anon key leria o telefone que a tela não mostra. RLS corta por linha; coluna é grant. Exibir passa a exigir decisão nova, não um `select` a mais.
+>
+> Efeito colateral aceito: `authenticated` cai junto, porque grant de coluna não separa `hub_admin` de cliente logado. O painel do E0.17-h lê o telefone por RPC `SECURITY DEFINER`, no molde de `manager_external_exit_clicks`.
 
 Rota `/estacionamentos/{destino}/{slug}` resolve **`location` primeiro**, depois `prospect_location` com `is_published` e `converted_at is null`.
 
@@ -245,7 +266,7 @@ Com o ADR-010 a página fica quase trivial: **não existe caminho de reserva par
 - `"Preço: não informado. Este estacionamento ainda não publica tarifas na Movepark."`
 - **CTA primário:** "Quero reservar aqui, me avise quando abrir" (captura e-mail/WhatsApp).
 - **CTA secundário:** "É o administrador? Reivindique esta página" — bloco próprio, com botão.
-- Telefone: **pendente de Q-021.** Não implementar antes da decisão.
+- Telefone: **não entra na página** (Q-021). Ele existe no banco e é ilegível para a anon key.
 
 **Proibido:** botão de reserva, seletor de datas, widget de WhatsApp de reserva, e **link para o site ou o motor de reserva do lote**.
 
@@ -273,7 +294,7 @@ O produto desta página não é a reserva, é **prova de demanda**: em 60 dias d
 `ParkingFacility` (subtipo de `LocalBusiness`) na single, servindo as duas fontes:
 
 - Sempre: `name`, `address` (PostalAddress), `geo` (GeoCoordinates), `url`, `amenityFeature`.
-- `telephone`: depende de Q-021 para prospect; em parceiro **não entra** (lá o caminho é a reserva).
+- `telephone`: **não sai em prospect** (Q-021: guardado, não exibido); em parceiro também não entra (lá o caminho é a reserva).
 - `openingHoursSpecification`: **não sai em prospect**, porque não existe campo de horário na tabela. É proposital.
 - `aggregateRating`: só com avaliação real. Não existe em prospect.
 - **`Offer` / `priceRange`: nunca em prospect.** `Offer` é promessa, e ADR-009 vale para dado estruturado também.
