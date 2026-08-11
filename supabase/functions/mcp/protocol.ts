@@ -44,11 +44,25 @@ export function rpcError(id: JsonRpcId, code: number, message: string, data?: un
 }
 
 // Resultado de `initialize` (handshake MCP).
-export function initializeResult(serverName: string, clientProtocol?: string) {
+/**
+ * `perfil` só aparece quando a credencial foi ACEITA.
+ *
+ * Sem essa condição o `initialize` viraria serviço gratuito de triagem de chave
+ * vazada: quem achasse uma descobriria de graça se ela ainda vale e se é de
+ * plataforma, num método que não exige autenticação e não tem rate limit.
+ * Com ela, a resposta é idêntica para chave boa, ruim e ausente até o momento em
+ * que a chave prova ser boa.
+ */
+export function initializeResult(
+  serverName: string,
+  clientProtocol?: string,
+  perfil?: string | null,
+) {
   return {
     protocolVersion: clientProtocol ?? MCP_PROTOCOL_VERSION,
     capabilities: { tools: { listChanged: false } },
     serverInfo: { name: serverName, version: SERVER_VERSION },
+    ...(perfil ? { perfil } : {}),
   };
 }
 

@@ -24,6 +24,13 @@
 
 export type Perfil = "public" | "partner" | "customer" | "manager";
 
+/**
+ * `"raiz"` é o path sem superfície declarada, e é o que torna a URL única
+ * possível: ali quem escolhe o perfil é a credencial. Nos outros, a superfície
+ * está declarada e a credencial só confirma.
+ */
+export type Superficie = Perfil | "raiz";
+
 /** O que `api_key_verify` devolve. */
 export interface ChaveVerificada {
   ok: boolean;
@@ -71,11 +78,14 @@ const VAZIO: Omit<Resolucao, "perfil" | "status" | "motivo"> = {
  * `/functions/v1/mcp/partner` direto no Supabase (a Edge `chat` usa esse). O
  * sufixo depois de `mcp` é o que vale, e o resto é prefixo de hospedagem.
  */
-export function superficieDoPath(path: string): Perfil | null {
+export function superficieDoPath(path: string): Superficie | null {
   let p = path.replace(/\/+$/, "");
   const i = p.lastIndexOf("/mcp");
   if (i !== -1) p = p.slice(i + 4);
-  if (p === "" || p === "/" || p === "/public") return "public";
+  // Raiz e `/public` não são a mesma coisa: a raiz aceita ser qualquer perfil,
+  // conforme a credencial; `/public` é uma escolha explícita de ficar anônimo.
+  if (p === "" || p === "/") return "raiz";
+  if (p === "/public") return "public";
   if (p === "/partner") return "partner";
   if (p === "/customer") return "customer";
   if (p === "/manager") return "manager";
@@ -109,6 +119,7 @@ export async function resolverPerfil(e: Entrada): Promise<Resolucao> {
   if (superficie === null) {
     return { perfil: "public", status: 404, motivo: "path_desconhecido", ...VAZIO };
   }
+  const naRaiz = superficie === "raiz";
 
   const sujeito = classificarSujeito(e.authorization);
   const agenteBruto = (e.xApiKey ?? "").trim();
@@ -130,11 +141,16 @@ export async function resolverPerfil(e: Entrada): Promise<Resolucao> {
     const daPlataforma = v.company_id == null;
     const alvo: Perfil = daPlataforma ? "manager" : "partner";
 
-    // A credencial confirma a superfície declarada; nunca promove nem desvia.
-    // Chave de empresa no /manager e chave da Movepark no /partner recusam com a
-    // MESMA resposta de chave inválida: quem tentou não descobre qual dos dois
-    // errou.
-    if (superficie !== alvo) {
+    // Na raiz, a credencial escolhe. Num path declarado, ela apenas confirma, e
+    // nunca promove nem desvia: chave de empresa no /manager e chave da Movepark
+    // no /partner recusam com a MESMA resposta de chave inválida, sem revelar
+    // qual dos dois errou.
+    //
+    // A diferença importa: no path declarado sobram DUAS fontes independentes, o
+    // que o cliente disse e o que o banco devolveu. É essa independência que
+    // segura o dia em que uma delas estiver errada, e é por isso que o path
+    // explícito continua existindo depois da URL única.
+    if (!naRaiz && superficie !== alvo) {
       return { perfil: "public", status: 401, motivo: `chave_fora_da_superficie_${superficie}`, ...VAZIO };
     }
 
@@ -151,10 +167,18 @@ export async function resolverPerfil(e: Entrada): Promise<Resolucao> {
 
   // ── Sujeito é JWT, ou não há sujeito ─────────────────────────────────────
   // As superfícies de chave exigem chave, inclusive para `tools/list`: sem ela
-  // não se descobre o que existe.
+  // não se descobre o que existe. Na raiz não há o que exigir, porque ninguém
+  // pediu essas superfícies.
   if (superficie === "partner" || superficie === "manager") {
     return { perfil: "public", status: 401, motivo: "credencial_ausente", ...VAZIO };
   }
+
+  // Na raiz: JWT de usuário abre o consumidor autenticado, e ausência de
+  // credencial fica no consumidor anônimo. É o que mantém o `server-card.json`
+  // honesto, porque ele descreve a raiz para quem chega sem nada.
+  const perfilDaRaiz: Perfil = naRaiz
+    ? (sujeito.tipo === "jwt" ? "customer" : "public")
+    : (superficie as Perfil);
 
   // O agente é opcional e só carrega escopo. Chave ruim degrada em silêncio,
   // porque mandar errado vale tanto quanto não mandar. O que ele nunca faz é
@@ -173,7 +197,7 @@ export async function resolverPerfil(e: Entrada): Promise<Resolucao> {
   }
 
   return {
-    perfil: superficie,
+    perfil: perfilDaRaiz,
     status: 200,
     escopos,
     companyId: null,

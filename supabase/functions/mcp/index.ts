@@ -106,11 +106,24 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   // os dois caminhos até aqui (worker e URL crua do Supabase) e devolve null no
   // que não é superfície.
   const superficie = superficieDoPath(url.pathname);
-  const endpoint: Endpoint = superficie ?? "public";
 
-  // Probe simples por GET (clientes/healthcheck)
+  // Probe por GET: descoberta para humano e para cliente que ainda não sabe qual
+  // credencial usar. Ele responde o mapa, e não o perfil, porque não há
+  // credencial garantida aqui e o perfil não deve vazar sem ela.
   if (req.method === "GET") {
-    return json({ service: "movepark-mcp", endpoint, transport: "streamable-http" });
+    return json({
+      service: "movepark-mcp",
+      superficie: superficie ?? "desconhecida",
+      transport: "streamable-http",
+      // Uma URL só resolve pelo que você manda. As outras continuam valendo, e
+      // servem para declarar a intenção em vez de deduzi-la.
+      perfil_por_credencial: {
+        "sem credencial": "consumidor anônimo",
+        "Authorization: Bearer <jwt do usuário>": "consumidor autenticado",
+        "Authorization: Bearer mp_… (chave de parceiro)": "parceiro",
+      },
+      superficies: ["/", "/public", "/partner", "/customer"],
+    });
   }
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
@@ -150,6 +163,24 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     xApiKey: req.headers.get("x-api-key"),
     verificar: deps.verificar,
   });
+
+  /*
+    O perfil efetivo vem da RESOLUÇÃO, e não do path.
+
+    Na raiz eles diferem: lá a credencial escolhe, e é isso que faz a URL única
+    funcionar. Num path declarado eles coincidem por construção, porque a
+    resolução recusa credencial que não casa com a superfície pedida.
+
+    Quando a credencial foi recusada e o método não exigia autenticação
+    (`initialize`, `ping`), cai na superfície declarada só para se apresentar
+    pelo nome certo. Nenhuma tool é listada nem executada nesse caminho.
+  */
+  const endpoint: Endpoint =
+    resolucao.status === 200
+      ? resolucao.perfil
+      : superficie === "raiz"
+        ? "public"
+        : superficie;
 
   // A recusa também é auditada. Ela retorna cedo, e por isso passa pelo mesmo
   // `auditar` de propósito: sem isso, falha de autenticação não deixaria rastro
@@ -196,7 +227,11 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
               : endpoint === "manager"
                 ? "movepark-manager"
                 : "movepark";
-        resp = json(rpcResult(id, initializeResult(name, cp)));
+        // O perfil só sai com credencial aceita. Anônimo não recebe nada que
+        // ajude a triar uma chave.
+        resp = json(
+          rpcResult(id, initializeResult(name, cp, resolucao.status === 200 && resolucao.apiKeyId ? endpoint : null)),
+        );
         break;
       }
       case "ping":

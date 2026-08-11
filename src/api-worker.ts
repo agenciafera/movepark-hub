@@ -48,9 +48,38 @@ async function handleMcp(request: Request, env: Env, url: URL): Promise<Response
       headers: { "Content-Type": "text/html; charset=utf-8", ...CORS },
     });
   }
-  // A superfície /customer dispara OTP (WhatsApp/e-mail, com custo) e devolve sessão. Sem chave
-  // para limitar por, então freia por IP na borda. O GoTrue ainda limita OTP por identificador.
-  if (env.API_RATELIMIT && url.pathname.includes("/customer") && request.method === "POST") {
+  /*
+    Allowlist de superfície.
+
+    Isto era passthrough cego: qualquer path virava `/mcp<path>` e quem decidia
+    era a Edge. Com a raiz resolvendo perfil pela credencial, path inventado não
+    pode nem chegar lá, senão um `/mcp/qualquercoisa` novo vira superfície por
+    acidente no dia em que alguém acrescentar um sufixo no servidor.
+  */
+  const rota = url.pathname.replace(/\/+$/, "") || "/";
+  if (!SUPERFICIES_MCP.has(rota)) {
+    return json(
+      { jsonrpc: "2.0", id: null, error: { code: -32600, message: "Superfície desconhecida." } },
+      404,
+    );
+  }
+
+  /*
+    Freio de borda por NOME DE TOOL, e não por path.
+
+    Antes ele valia só para o path `/customer`, o que deixava de valer no dia em
+    que a mesma tool fosse chamada pela raiz. O que custa dinheiro é
+    `request_login_otp` (WhatsApp e e-mail), então é ela que se freia, venha por
+    onde vier.
+
+    Este é o freio EXTERNO, e ele é contornável: a Edge é `verify_jwt = false` e
+    o ref do projeto é público, então dá para chamar o Supabase direto. A defesa
+    real é a do banco (`otp_request_allowed`), que todo caminho atravessa. Aqui é
+    só a primeira barreira, para o tráfego óbvio não chegar a acordar a Edge.
+  */
+  const corpoBruto = request.method === "POST" ? await request.clone().text() : "";
+  const toolPedida = nomeDaTool(corpoBruto);
+  if (env.API_RATELIMIT && TOOLS_FREADAS.has(toolPedida)) {
     const ip = clientIp(request);
     if (ip) {
       const limited = await rateLimited(env.API_RATELIMIT, `mcpc:${ip}`);
@@ -64,8 +93,8 @@ async function handleMcp(request: Request, env: Env, url: URL): Promise<Response
     }
   }
 
-  // "/" → /mcp (consumidor); "/partner" → /mcp/partner; "/customer" → /mcp/customer
-  const sub = url.pathname === "/" ? "" : url.pathname;
+  // "/" → /mcp (a raiz, que resolve o perfil pela credencial); "/partner" → /mcp/partner…
+  const sub = rota === "/" ? "" : rota;
   const target = env.SUPABASE_FUNCTIONS_URL.replace(/\/$/, "") + "/mcp" + sub + url.search;
 
   const headers = new Headers(request.headers);
@@ -156,6 +185,41 @@ function json(body: unknown, status: number, extra: Record<string, string> = {})
   });
 }
 
+/**
+ * Superfícies que existem. Path fora daqui não chega na Edge.
+ */
+const SUPERFICIES_MCP = new Set(["/", "/public", "/partner", "/customer", "/manager"]);
+
+/**
+ * Tools que custam dinheiro ou criam conta, e por isso passam pelo freio de
+ * borda. Não é lista de segurança: é lista de custo. Quem protege de verdade é
+ * o `otp_request_allowed`, no banco.
+ */
+const TOOLS_FREADAS = new Set(["request_login_otp", "verify_login_otp"]);
+
+/** Nome da tool pedida, lido do corpo JSON-RPC. String vazia quando não é um. */
+function nomeDaTool(corpo: string): string {
+  if (!corpo) return "";
+  try {
+    const d = JSON.parse(corpo) as { method?: string; params?: { name?: string } };
+    return d.method === "tools/call" ? (d.params?.name ?? "") : "";
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Contador de janela fixa.
+ *
+ * `get` e depois `put` não é atômico, e o KV é eventualmente consistente por
+ * PoP: N requisições paralelas leem o mesmo valor e passam todas, e o limite
+ * vale por ponto de presença. Ou seja, ele não segura um atacante distribuído,
+ * e não é para isso que existe.
+ *
+ * Mantido assim de propósito: trocar por Durable Object custaria latência em
+ * toda request para proteger algo que já tem defesa própria no banco. Se um dia
+ * a borda precisar ser a defesa real, é aqui que a conversa começa.
+ */
 async function rateLimited(kv: KVNamespace, prefix: string): Promise<boolean> {
   const bucket = `rl:${prefix}`;
   const current = parseInt((await kv.get(bucket)) ?? "0", 10);

@@ -236,6 +236,60 @@ chamadas ficam no `api_request_log` com `company_id` nulo.
 
 ---
 
+### Uma URL só
+
+`https://mcp.movepark.co` atende todo mundo. Na **raiz** é a credencial que
+escolhe o perfil; nos paths explícitos ela apenas **confirma** a superfície
+declarada.
+
+| O que você manda na raiz | Perfil | Tools |
+|---|---|---|
+| nada | consumidor anônimo | 12 |
+| `Authorization: Bearer <jwt>` | consumidor autenticado | 23 |
+| `Authorization: Bearer mp_…` com empresa | parceiro | conforme o escopo |
+| `Authorization: Bearer mp_…` sem empresa | Manager | 3 |
+| credencial recusada | nenhum, 401 | zero |
+
+**Por que os paths continuam existindo.** Num path declarado sobram duas fontes
+independentes, o que o cliente disse e o que o banco devolveu, e a resolução
+recusa quando elas discordam. É essa independência que segura o dia em que uma
+delas estiver errada, e foi o argumento mais forte contra unificar tudo. A raiz
+existe para a ergonomia; o path, para quem quer declarar intenção.
+
+`/public` é escolha explícita de ficar anônimo: uma chave no header ali **não**
+promove, recusa. Sem isso o path deixaria de significar algo.
+
+**Recusa não rebaixa.** Chave revogada na raiz devolve 401, e não as tools
+públicas. Rebaixar em silêncio esconderia a revogação: o parceiro veria a
+descoberta funcionando e concluiria que a chave dele vale.
+
+**Os cards continuam honestos.** `server-card.json` descreve a raiz para quem
+chega sem credencial, que é exatamente quem lê um card público. Os outros
+apontam para os paths. Nenhum precisou mudar.
+
+**`initialize` devolve o perfil**, e só com credencial aceita. Sem credencial
+válida a resposta é idêntica com chave ruim ou nenhuma, que é o que impede o
+método (aberto, sem rate limit) de virar triagem gratuita de chave vazada. A
+informação "essa chave vale" já era obtível por `tools/list`; a diferença é que
+agora as duas tentativas ficam no `api_request_log`, com o motivo.
+
+**O `GET` da raiz é descoberta**, e responde o mapa credencial→perfil sem revelar
+perfil nenhum, nem com chave boa.
+
+#### Colisão de nome entre registros
+
+Quinze nomes existem em mais de um registro. Três são perigosos: `get_booking`,
+`create_booking` e `cancel_booking` estão em parceiro **e** em consumidor, com
+argumentos e escopo de dados diferentes (`booking_id` da empresa contra
+`booking_code` do dono). Outros, como `list_locations` e `simulate_price`, são a
+mesma ideia em versão pública e tenant-scoped.
+
+Enquanto o dispatch vinha do path, isso não podia dar errado. Numa URL só, quem
+escolhe o handler é o perfil resolvido, e o dia em que alguém indexar por **nome**
+em vez de por **(perfil, nome)** o `get_booking` do parceiro roda com o contexto
+do outro. `dispatcher.test.ts` tem dois testes só para isso, e eles observam a
+diferença pelo obrigatório de cada schema.
+
 ### Recusa e auditoria
 
 A resposta de recusa é **byte a byte a mesma** para credencial ausente, inválida,

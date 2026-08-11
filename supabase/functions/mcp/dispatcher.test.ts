@@ -34,7 +34,7 @@ function ambiente() {
         case CHAVE_PARCEIRO:
           return Promise.resolve({
             ok: true, api_key_id: "k-parceiro", company_id: "empresa-1",
-            scopes: ["locations:read", "bookings:read"], environment: "live",
+            scopes: ["locations:read", "bookings:read", "pricing:read"], environment: "live",
           });
         case CHAVE_PLATAFORMA:
           return Promise.resolve({
@@ -196,17 +196,42 @@ Deno.test("parâmetro obrigatório ausente barra antes da tool rodar", async () 
 // ── 5. initialize e ping seguem abertos ────────────────────────────────────
 // É o que impede o endpoint de responder "essa chave vale?" de graça.
 
-Deno.test("initialize responde igual com chave boa, ruim e ausente", async () => {
+Deno.test("initialize responde igual com chave ruim e ausente", async () => {
+  /*
+    Mudou na fase 5, e a mudança é deliberada: com credencial **válida** o
+    `initialize` passa a devolver o perfil resolvido, que é o que torna a URL
+    única utilizável (o cliente conecta e descobre o que ele é).
+
+    O que não muda é a parte que protege: quem NÃO tem credencial válida recebe
+    exatamente a mesma resposta, tenha mandado chave ruim ou nada. Sem isso, o
+    `initialize` viraria triagem gratuita de chave vazada, num método que não
+    exige autenticação e não tem rate limit.
+
+    A informação "essa chave vale" já era obtível por `tools/list`, que responde
+    401 ou 200. A diferença é que agora as duas tentativas ficam no
+    `api_request_log`, com o motivo.
+  */
   const { deps } = ambiente();
   const corpos: string[] = [];
-  for (const cab of [{}, { Authorization: `Bearer ${CHAVE_PARCEIRO}` },
-                     { Authorization: `Bearer ${CHAVE_REVOGADA}` }]) {
+  for (const cab of [{}, { Authorization: `Bearer ${CHAVE_REVOGADA}` },
+                     { Authorization: "Bearer mp_live_naoexiste_xyzab" }]) {
     const r = await handle(
       pedido("/partner", { jsonrpc: "2.0", id: 1, method: "initialize", params: {} }, cab), deps);
     assertEquals(r.status, 200);
     corpos.push(JSON.stringify(await corpo(r)));
   }
-  assertEquals(new Set(corpos).size, 1, "initialize não pode revelar se a chave vale");
+  assertEquals(new Set(corpos).size, 1, "sem credencial válida, initialize não distingue nada");
+});
+
+Deno.test("initialize com chave ruim também vira linha de log", async () => {
+  // A triagem continua possível (por `tools/list`, e sempre foi). O que ela não
+  // pode ser é silenciosa.
+  const { deps, auditoria } = ambiente();
+  await handle(pedido("/partner", { jsonrpc: "2.0", id: 1, method: "initialize", params: {} },
+    { Authorization: `Bearer ${CHAVE_REVOGADA}` }), deps);
+  assertEquals(auditoria.length, 1);
+  assertEquals(auditoria[0].path, "chave_revoked");
+  assertEquals(auditoria[0].method, "initialize");
 });
 
 Deno.test("cada superfície se apresenta com o próprio nome", async () => {
@@ -340,4 +365,147 @@ Deno.test("preflight não exige credencial e libera os headers do MCP", async ()
   for (const h of ["authorization", "x-api-key", "content-type"]) {
     assertEquals(permitidos.toLowerCase().includes(h), true, h);
   }
+});
+
+// ── 11. A URL única ─────────────────────────────────────────────────────────
+
+Deno.test("na raiz, a credencial escolhe qual conjunto de tools aparece", async () => {
+  const { deps } = ambiente();
+  const conta = async (cab: Record<string, string>) => {
+    const b = await corpo(await handle(pedido("", listar, cab), deps)) as unknown as
+      { result: { tools: { name: string }[] } };
+    return b.result.tools.map((t) => t.name);
+  };
+
+  const anonimo = await conta({});
+  const comChaveParceiro = await conta({ Authorization: `Bearer ${CHAVE_PARCEIRO}` });
+  const comChavePlataforma = await conta({ Authorization: `Bearer ${CHAVE_PLATAFORMA}` });
+  const comJwt = await conta({ Authorization: `Bearer ${JWT_USUARIO}` });
+
+  assertEquals(anonimo.includes("search_parking"), true, "anônimo vê descoberta");
+  // `list_bookings` é só do parceiro. Cuidado ao escolher o nome do teste:
+  // `list_locations` e `simulate_price` existem nos dois registros, com
+  // significados diferentes (ver o teste de colisão abaixo).
+  assertEquals(anonimo.includes("list_bookings"), false, "anônimo não vê tool de parceiro");
+  assertEquals(anonimo.includes("upsert_blog_post"), false, "anônimo não vê tool de Manager");
+
+  assertEquals(comChaveParceiro.includes("list_bookings"), true);
+  assertEquals(comChaveParceiro.includes("upsert_blog_post"), false);
+
+  assertEquals(comChavePlataforma, ["upsert_blog_post", "publish_blog_post", "delete_blog_post"]);
+
+  assertEquals(comJwt.includes("request_login_otp"), true, "com JWT, a raiz abre o consumidor autenticado");
+});
+
+Deno.test("na raiz, chave recusada não rebaixa para público em silêncio", async () => {
+  // Rebaixar esconderia a revogação: o parceiro veria as tools de descoberta e
+  // concluiria que a chave dele funciona.
+  const { deps } = ambiente();
+  const r = await handle(pedido("", listar, { Authorization: `Bearer ${CHAVE_REVOGADA}` }), deps);
+  assertEquals(r.status, 401);
+});
+
+Deno.test("na raiz, a tool do Manager só executa com chave de plataforma", async () => {
+  const { deps, chamadas } = ambiente();
+  const args = { slug: "x", title: "t", body_md: "b" };
+
+  const comParceiro = await handle(pedido("", chamar("upsert_blog_post", args),
+    { Authorization: `Bearer ${CHAVE_PARCEIRO}` }), deps);
+  const b = await corpo(comParceiro) as unknown as { error?: { code: number } };
+  assertEquals(b.error?.code, -32602);
+  assertEquals(chamadas, []);
+
+  const comPlataforma = await handle(pedido("", chamar("upsert_blog_post", args),
+    { Authorization: `Bearer ${CHAVE_PLATAFORMA}` }), deps);
+  assertEquals(comPlataforma.status, 200);
+  assertEquals(chamadas.length, 1);
+  assertEquals(chamadas[0].endpoint, "manager");
+});
+
+Deno.test("initialize revela o perfil só depois da chave provar que vale", async () => {
+  const { deps } = ambiente();
+  const init = (cab: Record<string, string>) =>
+    handle(pedido("", { jsonrpc: "2.0", id: 1, method: "initialize", params: {} }, cab), deps);
+
+  const semNada = await corpo(await init({})) as unknown as { result: Record<string, unknown> };
+  const comRuim = await corpo(await init({ Authorization: `Bearer ${CHAVE_REVOGADA}` })) as unknown as
+    { result: Record<string, unknown> };
+  const comBoa = await corpo(await init({ Authorization: `Bearer ${CHAVE_PLATAFORMA}` })) as unknown as
+    { result: Record<string, unknown> };
+
+  assertEquals(semNada.result.perfil, undefined);
+  // Chave ruim responde igual à ausente: é o que impede a triagem gratuita.
+  assertEquals(JSON.stringify(comRuim), JSON.stringify(semNada));
+  assertEquals(comBoa.result.perfil, "manager");
+});
+
+Deno.test("o GET de descoberta não revela perfil, só o mapa", async () => {
+  const { deps } = ambiente();
+  const r = await handle(
+    new Request("https://mcp.movepark.co/", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${CHAVE_PLATAFORMA}` },
+    }), deps);
+  const b = await corpo(r) as unknown as Record<string, unknown>;
+  assertEquals(b.perfil, undefined, "nem com chave boa: o GET é anônimo por natureza");
+  assertEquals(Array.isArray(b.superficies), true);
+});
+
+// ── 12. Colisão de nome entre registros ─────────────────────────────────────
+//
+// Quinze nomes existem em mais de um registro, e três deles são perigosos:
+// `get_booking`, `create_booking` e `cancel_booking` estão em parceiro E em
+// consumidor, com argumentos e escopo de dados diferentes (o do parceiro é
+// `booking_id` da empresa; o do consumidor é `booking_code` do dono).
+//
+// Enquanto o dispatch vinha do path, isso não podia dar errado. Numa URL só,
+// quem escolhe o handler é o perfil resolvido, e o dia em que alguém indexar por
+// NOME em vez de por (perfil, nome) o `get_booking` do parceiro roda com o
+// contexto do outro. Este teste é o que impede essa refatoração de passar.
+
+Deno.test("nome que existe em dois registros resolve pelo perfil, nunca solto", async () => {
+  const { deps, chamadas } = ambiente();
+
+  // Cada registro exige um obrigatório diferente: `company` no público,
+  // `location_parking_type_id` no parceiro. É a prova mais direta de que o
+  // schema veio do registro certo.
+  await handle(pedido("", chamar("simulate_price", { company: "acme", days: 2 })), deps);
+  await handle(pedido("", chamar("simulate_price", { location_parking_type_id: "lpt-1", days: 2 }),
+    { Authorization: `Bearer ${CHAVE_PARCEIRO}` }), deps);
+
+  assertEquals(chamadas.length, 2);
+  assertEquals(chamadas[0].endpoint, "public", "anônimo cai no registro público");
+  assertEquals(chamadas[1].endpoint, "partner", "com chave de parceiro, cai no do parceiro");
+
+  // E o obrigatório do outro perfil não passa.
+  const trocado = await handle(pedido("", chamar("simulate_price", { company: "acme" }),
+    { Authorization: `Bearer ${CHAVE_PARCEIRO}` }), deps);
+  const b = await corpo(trocado) as unknown as { error: { message: string } };
+  assertEquals(b.error.message.includes("location_parking_type_id"), true);
+});
+
+Deno.test("get_booking do parceiro e do consumidor não se misturam", async () => {
+  const { deps, chamadas } = ambiente();
+
+  // O do consumidor exige `booking_code`; o do parceiro exige `booking_id`.
+  // Se o dispatch resolvesse por nome, um dos dois falharia a validação de
+  // obrigatório, e é isso que o teste observa.
+  const comJwt = await handle(
+    pedido("", chamar("get_booking", { booking_code: "MP-1" }),
+      { Authorization: `Bearer ${JWT_USUARIO}` }), deps);
+  assertEquals(comJwt.status, 200);
+  assertEquals(chamadas.at(-1)?.endpoint, "customer");
+
+  const comChave = await handle(
+    pedido("", chamar("get_booking", { booking_id: "b-1" }),
+      { Authorization: `Bearer ${CHAVE_PARCEIRO}` }), deps);
+  assertEquals(comChave.status, 200);
+  assertEquals(chamadas.at(-1)?.endpoint, "partner");
+
+  // E o argumento do outro perfil não serve: cada registro tem o próprio schema.
+  const trocado = await handle(
+    pedido("", chamar("get_booking", { booking_code: "MP-1" }),
+      { Authorization: `Bearer ${CHAVE_PARCEIRO}` }), deps);
+  const b = await corpo(trocado) as unknown as { error: { message: string } };
+  assertEquals(b.error.message.includes("booking_id"), true);
 });

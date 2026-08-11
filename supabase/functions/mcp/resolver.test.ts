@@ -304,7 +304,7 @@ Deno.test("nenhuma combinação alcança partner sem chave de empresa válida", 
 
 Deno.test("path do worker e path direto do Supabase resolvem igual", async () => {
   const pares: Array<[string, string, string]> = [
-    ["/", "/functions/v1/mcp", "public"],
+    ["/", "/functions/v1/mcp", "raiz"],
     ["/partner", "/functions/v1/mcp/partner", "partner"],
     ["/customer", "/functions/v1/mcp/customer", "customer"],
     ["/manager", "/functions/v1/mcp/manager", "manager"],
@@ -362,4 +362,75 @@ Deno.test("chave no header errado deixa rastro próprio", async () => {
     nome: "x", path: "/manager", authorization: `Bearer ${CHAVE_PARCEIRO}`, esperado: null as never,
   });
   assertEquals(r.motivo, "chave_fora_da_superficie_manager");
+});
+
+// ── 11. A URL única ─────────────────────────────────────────────────────────
+//
+// Na raiz não há superfície declarada, e é a credencial que escolhe. Nos paths
+// explícitos ela apenas confirma. Essa diferença é o desenho inteiro: no path
+// declarado sobram duas fontes independentes, e é a independência que segura o
+// dia em que uma delas estiver errada.
+
+Deno.test("na raiz, a credencial escolhe o perfil", async () => {
+  const casos: Array<[string | null, string | null, string]> = [
+    [null, null, "public"],
+    [`Bearer ${JWT_USUARIO}`, null, "customer"],
+    [`Bearer ${CHAVE_PARCEIRO}`, null, "partner"],
+    [`Bearer ${CHAVE_PLATAFORMA}`, null, "manager"],
+  ];
+  for (const [auth, x, esperado] of casos) {
+    const r = await resolverPerfil({ path: "/", authorization: auth, xApiKey: x, verificar });
+    assertEquals(r.perfil, esperado, `raiz com ${auth ?? "nada"}`);
+    assertEquals(r.status, 200);
+  }
+});
+
+Deno.test("`/public` é escolha explícita de ficar anônimo, e a chave não promove", async () => {
+  // Quem pede `/public` está dizendo "quero a superfície anônima". Uma chave no
+  // header não pode transformar isso em outra coisa: seria o path deixando de
+  // significar algo, que é justamente o que não queremos.
+  const r = await resolverPerfil({
+    path: "/public", authorization: `Bearer ${CHAVE_PARCEIRO}`, xApiKey: null, verificar,
+  });
+  assertEquals(r.perfil, "public");
+  assertEquals(r.status, 401);
+});
+
+Deno.test("na raiz, chave ruim recusa igual, sem cair para público", async () => {
+  // Rebaixar em silêncio esconderia revogação: o parceiro veria as tools
+  // públicas e acharia que a chave dele funciona.
+  for (const chave of [CHAVE_REVOGADA, CHAVE_EXPIRADA, CHAVE_INEXISTENTE]) {
+    const r = await resolverPerfil({
+      path: "/", authorization: `Bearer ${chave}`, xApiKey: null, verificar,
+    });
+    assertEquals(r.status, 401, chave);
+    assertEquals(r.perfil, "public");
+  }
+});
+
+Deno.test("a raiz não afrouxa a trava de tipo de chave", async () => {
+  // Aqui a credencial escolhe, então não há segunda fonte. O que sobra é a
+  // regra: chave sem empresa é Manager, chave com empresa é parceiro, e nenhuma
+  // das duas alcança a outra.
+  const plataforma = await resolverPerfil({
+    path: "/", authorization: `Bearer ${CHAVE_PLATAFORMA}`, xApiKey: null, verificar,
+  });
+  assertEquals(plataforma.perfil, "manager");
+  assertEquals(plataforma.companyId, null);
+
+  const parceiro = await resolverPerfil({
+    path: "/", authorization: `Bearer ${CHAVE_PARCEIRO}`, xApiKey: null, verificar,
+  });
+  assertEquals(parceiro.perfil, "partner");
+  assertEquals(parceiro.companyId, "empresa-1");
+});
+
+Deno.test("na raiz, o agente segue sendo só escopo, e nunca perfil", async () => {
+  const r = await resolverPerfil({
+    path: "/", authorization: null, xApiKey: CHAVE_PLATAFORMA, verificar,
+  });
+  // A chave da Movepark no header do AGENTE não abre o Manager: ela só carrega
+  // escopo para o sujeito que estiver ali, e não há sujeito.
+  assertEquals(r.perfil, "public");
+  assertEquals(r.escopos, ["blog:write", "checkout:link"]);
 });
