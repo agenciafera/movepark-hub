@@ -3,7 +3,7 @@
 > **Épico:** [E0.17](https://app.clickup.com/t/86ajyp580) · **Fase:** 0 · **Depende de:** E0.15 (capacidades / ADR-009)
 > **Q/D:** [Q-021](https://app.clickup.com/t/86ajyp5pu) telefone (**aberto, bloqueia a single**) · [Q-022](https://app.clickup.com/t/86ajz8n1j) **decidido → ADR-010** · [D-009](https://app.clickup.com/t/86ajyp5w7) deduplicação
 > **ADR:** ADR-010 (lote não-parceiro não vive na tabela transacional)
-> **Status:** especificado em 10/08/2026. **E0.17-a no ar** (11/08/2026, migration `20261007000000_prospect_location.sql`); o resto não iniciado.
+> **Status:** especificado em 10/08/2026. **E0.17-a no ar** (11/08/2026, migration `20261008000000_prospect_location.sql`); o resto não iniciado.
 > **Case de referência:** Talentos Park, Recife. Todo exemplo aqui usa dados reais dele.
 
 Este arquivo é **autossuficiente**: quem for implementar não precisa abrir o ClickUp nem `gestao/`. O ClickUp serve só para saber qual atividade puxar e em que ordem.
@@ -57,7 +57,7 @@ O trigger protegia `checkout_mode` e `is_listed` — duas colunas — e deixava 
 
 ## A tabela
 
-**(E0.17-a)** · ✅ no ar em 11/08/2026. Migration `20261007000000_prospect_location.sql`, pgTAP `supabase/tests/prospect_location.test.sql`, tipo curado `ProspectLocation` em `src/types/domain.ts`.
+**(E0.17-a)** · ✅ no ar em 11/08/2026. Migration `20261008000000_prospect_location.sql`, pgTAP `supabase/tests/prospect_location.test.sql`, tipo curado `ProspectLocation` em `src/types/domain.ts`.
 
 ```sql
 create table prospect_location (

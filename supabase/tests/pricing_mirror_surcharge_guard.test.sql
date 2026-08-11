@@ -1,5 +1,5 @@
 -- pgTAP: o espelho de preço recusa reescrever tabela que outra unidade empresta.
--- Migration: 20260929000000_mirror_refuses_surcharge_source.sql
+-- Migration: 20260929010000_mirror_refuses_surcharge_source.sql
 -- Spec: docs/specs/checkout-externo-por-local.md, seção "A tabela emprestada"
 --
 -- O acidente real: o valet do Aerovalet em Guarulhos usava `surcharge` com multiplicador 1.0

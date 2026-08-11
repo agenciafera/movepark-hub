@@ -58,7 +58,7 @@ export const priceCases: PriceCase[] = [
   // tabela com a do parceiro e repreçou esta unidade, que é `hub` e vende pelo nosso checkout
   // (18 diárias saltaram de R$ 792 para R$ 1.782). Recebeu tabela própria com os MESMOS valores
   // legados, e o espelho passou a recusar reescrever tabela emprestada
-  // (`20260929000000_mirror_refuses_surcharge_source.sql`). Os valores golden não mudaram.
+  // (`20260929010000_mirror_refuses_surcharge_source.sql`). Os valores golden não mudaram.
   { company: "aerovalet", location: "aeroporto-guarulhos", parking_type: "valet", days: 1, expected: 149, strategy: "fixed_bracket" },
   { company: "aerovalet", location: "aeroporto-guarulhos", parking_type: "valet", days: 6, expected: 594, strategy: "fixed_bracket" },
   { company: "aerovalet", location: "aeroporto-guarulhos", parking_type: "valet", days: 18, expected: 792, strategy: "fixed_bracket" },

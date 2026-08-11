@@ -405,6 +405,7 @@ onSuccess: () => qc.invalidateQueries({ queryKey: bookingsKeys.all })
 ### Banco de dados e migrations
 
 - Toda mudança de schema é uma **migration nova** em `supabase/migrations/` (`AAAAMMDDHHMMSS_descricao.sql`). Nunca edite migration já aplicada.
+- **O carimbo é único, e o `HHMMSS` é o que garante isso.** O hábito de escrever `AAAAMMDD000000` faz a segunda migration do mesmo dia colidir com a primeira, e aí o `supabase db reset` aborta por PK duplicada e **deixa de aplicar tudo dali pra frente**, mascarando falhas: o job `db` do CI morre antes de rodar um pgTAP sequer. Aconteceu quatro vezes até 11/08/2026 (as quatro corrigidas renumerando para `HHMMSS` real). Antes de criar o arquivo, cheque com `ls supabase/migrations/ | sed 's/_.*//' | sort | uniq -d`, que é o mesmo comando do guarda no CI.
 - Convenções SQL do schema: nomes de tabela no **singular** (`booking`, `company`), `id uuid default gen_random_uuid()`, `created_at`/`updated_at`/`deleted_at`, trigger `set_updated_at`, enums em `lower_snake`.
 - Após aplicar migration, **rode `bun run gen:types`** e comite o `database.ts` atualizado.
 - Catálogo de migrations e specs em `docs/specs/README.md` e `docs/specs/database-schema.md`. Mantenha a tabela de migrations e o status dos specs atualizados ao adicionar.

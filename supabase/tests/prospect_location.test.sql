@@ -1,5 +1,5 @@
 -- pgTAP: E0.17-a · ADR-010 · prospect_location (lote mapeado, sem contrato).
--- Migration: 20261007000000_prospect_location.sql
+-- Migration: 20261008000000_prospect_location.sql
 -- Spec: docs/specs/lote-mapeado-vitrine.md
 --
 -- O que este arquivo protege, em ordem de importância:

@@ -1,7 +1,7 @@
 # Registro de clique de saída (E0.16)
 
 > **Épico:** E0.16 · **Fase:** 0 · **Depende de:** E0.14
-> **Status:** implementado em 10/08/2026. Migration `20261001000000_external_exit_click.sql`,
+> **Status:** implementado em 10/08/2026. Migration `20261001010000_external_exit_click.sql`,
 > `src/features/listing/exitClick.ts`, `src/lib/anonSession.ts`.
 
 ## Por quê

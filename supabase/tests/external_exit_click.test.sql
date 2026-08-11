@@ -1,5 +1,5 @@
 -- pgTAP: E0.16 · registro de clique de saída da unidade externa.
--- Migration: 20261001000000_external_exit_click.sql
+-- Migration: 20261001010000_external_exit_click.sql
 -- Spec: docs/specs/clique-saida-externa.md
 --
 -- O que este arquivo protege, em ordem de importância:

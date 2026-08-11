@@ -80,7 +80,7 @@ begin
   end if;
 
   -- Outra vaga empresta esta tabela por `surcharge`? Então ela não é só desta unidade, e o
-  -- espelho não a reescreve. Ver 20260929000000_mirror_refuses_surcharge_source.sql.
+  -- espelho não a reescreve. Ver 20260929010000_mirror_refuses_surcharge_source.sql.
   select string_agg(format('%s/%s/%s', c.slug, l.slug, pt.code), ', ')
     into v_borrowers
     from public.pricing_rule pr
