@@ -409,9 +409,12 @@ export default function DocsPage() {
           <section className="space-y-4">
             <SectionTitle id="mcp" icon={Robot} title="MCP: para agentes de IA" />
             <p className="text-body-sm text-muted">
-              Servidor <strong>MCP</strong> (Model Context Protocol, Streamable HTTP / JSON-RPC 2.0) com
-              duas superfícies: <strong>consumidor</strong> (público, descoberta) e <strong>parceiro</strong>{" "}
-              (autenticado por chave). As tools visíveis no parceiro dependem dos escopos da chave.
+              Servidor <strong>MCP</strong> (Model Context Protocol, Streamable HTTP / JSON-RPC 2.0).
+              É uma <strong>URL só</strong>: sem credencial você fala com o consumidor; com uma chave{" "}
+              <code>mp_</code> você fala como parceiro, e as tools visíveis dependem dos escopos dela;
+              com a sessão de um usuário você reserva em nome dele. Os caminhos <code>/public</code>,{" "}
+              <code>/partner</code> e <code>/customer</code> continuam valendo para quem prefere
+              declarar em vez de deduzir.
             </p>
             <div className="grid grid-cols-1 gap-3 desktop:grid-cols-2">
               <CodeBlock label="Consumidor: tools/list" code={MCP_EXAMPLE_LIST} />
@@ -442,7 +445,8 @@ export default function DocsPage() {
             </div>
             <p className="text-caption-sm text-muted">
               Cards: <a href="https://hub.movepark.co/.well-known/mcp/server-card.json" className="text-mp-primary hover:underline">server-card.json</a>{" "}
-              · <a href="https://hub.movepark.co/.well-known/mcp/partner-card.json" className="text-mp-primary hover:underline">partner-card.json</a>
+              · <a href="https://hub.movepark.co/.well-known/mcp/partner-card.json" className="text-mp-primary hover:underline">partner-card.json</a>{" "}
+              · <a href="https://hub.movepark.co/.well-known/mcp/customer-card.json" className="text-mp-primary hover:underline">customer-card.json</a>
             </p>
           </section>
         </div>

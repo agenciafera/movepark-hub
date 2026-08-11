@@ -95,7 +95,7 @@ Regras **fixas** do projeto, não sugestões. Se algo conflitar com elas, **siga
   vira dívida e quebra a descoberta por humanos e agentes (o Hub é agent-ready). Um PR que adiciona/
   altera rota ou tool **sem** atualizar a doc é **incompleto** e falha na revisão (e no CI). Checklist
   mínimo por endpoint/tool: (1) `public/openapi.yaml` (path + schema + `security`/escopo) **ou** o card
-  MCP (`public/.well-known/mcp/{server,partner}-card.json`); (2) escopo no catálogo `api_scope` (seed em
+  MCP (`public/.well-known/mcp/{server,partner,customer}-card.json`; a superfície de Manager **não** tem card, e o guard reprova se um nome dela aparecer em algum); (2) escopo no catálogo `api_scope` (seed em
   migration) com `assignable_to_api_key` correto, se for novo; (3) superfície §9 de `public-api.md` /
   §4 de `mcp.md` atualizada; (4) `agent-skills/index.json` com `sha256` recalculado se um card mudou
   (`bun run gen:cards`); (5) teste (`deno test` do branch do gateway/tool; pgTAP da RPC/escopo). O CI

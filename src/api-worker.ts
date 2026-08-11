@@ -244,6 +244,19 @@ function docsHtml(): string {
 }
 
 // Página de documentação do servidor MCP (mcp.movepark.co) para humanos.
+/**
+ * Página para humano, no GET do `mcp.movepark.co`.
+ *
+ * Ela **não** lista tools. Listava, em três tabelas de 26 linhas escritas à mão,
+ * e mentia: dizia "três superfícies" depois que virou quatro, e não citava a
+ * `search_knowledge` que o teste de integração exige existir. Nenhum guard
+ * pegava, porque não havia guard.
+ *
+ * Quem descreve tools são os cards, que já são conferidos pelo `lint:openapi`
+ * (registro ↔ card, nas duas direções, mais o sha256 no índice de agent-skills).
+ * Aqui fica só o que os cards não dizem: qual credencial vira qual perfil.
+ * `api-worker.contract.test.ts` impede que a duplicação volte.
+ */
 function mcpDocsHtml(): string {
   return `<!doctype html>
 <html lang="pt-BR">
@@ -261,87 +274,42 @@ function mcpDocsHtml(): string {
     pre { background: #8881; padding: .9rem 1rem; border-radius: 8px; overflow-x: auto; font-size: 13px; }
     table { border-collapse: collapse; width: 100%; font-size: 14px; }
     th, td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid #8883; vertical-align: top; }
-    .pill { display: inline-block; background: #8882; border-radius: 999px; padding: .1rem .6rem; font-size: 12px; }
     a { color: #2563eb; }
   </style>
 </head>
 <body>
   <h1>Movepark · MCP</h1>
   <p class="sub">Servidor <strong>Model Context Protocol</strong> (Streamable HTTP / JSON-RPC 2.0).
-     Três superfícies: <strong>consumidor</strong> (público), <strong>parceiro</strong> (chave) e
-     <strong>consumidor autenticado</strong> (login por OTP).</p>
+     Uma URL só: o que você manda no cabeçalho decide o que você enxerga.</p>
 
-  <h2>Endpoints</h2>
+  <h2>Uma URL, quatro perfis</h2>
+  <p>Aponte seu cliente para <code>https://mcp.movepark.co</code>. A credencial escolhe o perfil.</p>
   <table>
-    <tr><th>Superfície</th><th>URL</th><th>Auth</th><th>Card</th></tr>
-    <tr><td>Consumidor</td><td><code>https://mcp.movepark.co</code></td><td>sem auth</td>
+    <tr><th>O que você manda</th><th>Perfil</th><th>Tools</th></tr>
+    <tr><td>nada</td><td>Consumidor</td>
         <td><a href="https://hub.movepark.co/.well-known/mcp/server-card.json">server-card.json</a></td></tr>
-    <tr><td>Parceiro</td><td><code>https://mcp.movepark.co/partner</code></td>
-        <td><code>Authorization: Bearer mp_…</code></td>
-        <td><a href="https://hub.movepark.co/.well-known/mcp/partner-card.json">partner-card.json</a></td></tr>
-    <tr><td>Consumidor autenticado</td><td><code>https://mcp.movepark.co/customer</code></td>
-        <td>login por OTP (WhatsApp/e-mail)</td>
+    <tr><td><code>Authorization: Bearer &lt;access_token&gt;</code></td><td>Consumidor autenticado</td>
         <td><a href="https://hub.movepark.co/.well-known/mcp/customer-card.json">customer-card.json</a></td></tr>
+    <tr><td><code>Authorization: Bearer mp_…</code></td><td>Parceiro</td>
+        <td><a href="https://hub.movepark.co/.well-known/mcp/partner-card.json">partner-card.json</a></td></tr>
   </table>
+  <p>O login do consumidor é por código no WhatsApp ou e-mail, com as tools
+     <code>request_login_otp</code> e <code>verify_login_otp</code>. O pagamento fica fora do MCP:
+     o agente monta a reserva e entrega um link de checkout que já cai logado.</p>
 
   <h2>Conectar</h2>
-  <p>Clientes MCP usam <strong>POST</strong> com JSON-RPC. Exemplo (<code>tools/list</code>):</p>
   <pre>curl -s https://mcp.movepark.co \\
   -H 'content-type: application/json' \\
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'</pre>
-  <p>Parceiro (a chave define as tools visíveis, por escopo):</p>
-  <pre>curl -s https://mcp.movepark.co/partner \\
+  <p>Com chave de parceiro, a lista muda conforme os escopos dela:</p>
+  <pre>curl -s https://mcp.movepark.co \\
   -H 'content-type: application/json' \\
   -H 'authorization: Bearer mp_live_…' \\
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/call",
        "params":{"name":"list_bookings","arguments":{"limit":10}}}'</pre>
-
-  <h2>Tools: consumidor (público)</h2>
-  <table>
-    <tr><th>Tool</th><th>Descrição</th></tr>
-    <tr><td><code>search_parking</code></td><td>Busca estacionamentos por destino e período.</td></tr>
-    <tr><td><code>simulate_price</code></td><td>Simula o preço de uma reserva.</td></tr>
-    <tr><td><code>get_faq</code></td><td>Perguntas frequentes (global/unidade).</td></tr>
-    <tr><td><code>list_companies</code></td><td>Estacionamentos parceiros.</td></tr>
-    <tr><td><code>list_locations</code></td><td>Unidades públicas.</td></tr>
-    <tr><td><code>get_parking_types</code></td><td>Tipos de vaga de uma unidade.</td></tr>
-    <tr><td><code>list_destinations</code> / <code>get_destination</code></td><td>Destinos (aeroportos) e terminais.</td></tr>
-    <tr><td><code>current_datetime</code></td><td>Data/hora atual (fuso de São Paulo).</td></tr>
-  </table>
-
-  <h2>Tools: parceiro (chave + escopo)</h2>
-  <p>As tools visíveis dependem dos <span class="pill">escopos</span> da chave (gerencie em
-     <code>/operator/api-keys</code>).</p>
-  <table>
-    <tr><th>Tool</th><th>Escopo</th></tr>
-    <tr><td><code>list_locations</code> / <code>get_location</code></td><td>locations:read</td></tr>
-    <tr><td><code>list_parking_types</code></td><td>parking-types:read</td></tr>
-    <tr><td><code>get_availability</code></td><td>availability:read</td></tr>
-    <tr><td><code>simulate_price</code></td><td>pricing:read</td></tr>
-    <tr><td><code>list_bookings</code> / <code>get_booking</code></td><td>bookings:read</td></tr>
-    <tr><td><code>create_booking</code></td><td>bookings:write</td></tr>
-    <tr><td><code>cancel_booking</code></td><td>bookings:cancel</td></tr>
-    <tr><td><code>check_in_booking</code> / <code>check_out_booking</code></td><td>bookings:checkin</td></tr>
-  </table>
-
-  <h2>Tools: consumidor autenticado (login por OTP)</h2>
-  <p>Para um agente reservar em nome do usuário final. Toda a descoberta acima, mais o login e a
-     reserva. As tools de reserva recebem <code>Authorization: Bearer &lt;access_token&gt;</code>.</p>
-  <table>
-    <tr><th>Tool</th><th>Descrição</th></tr>
-    <tr><td><code>request_login_otp</code></td><td>Dispara o código por WhatsApp ou e-mail (passo 1).</td></tr>
-    <tr><td><code>verify_login_otp</code></td><td>Troca o código pela sessão (access/refresh token) (passo 2).</td></tr>
-    <tr><td><code>whoami</code></td><td>Diz quem está autenticado no token atual.</td></tr>
-    <tr><td><code>create_booking</code></td><td>Cria a reserva e segura a vaga.</td></tr>
-    <tr><td><code>set_booking_customer</code></td><td>Preenche CPF, telefone e e-mail do pagador.</td></tr>
-    <tr><td><code>add_vehicle</code> / <code>set_booking_vehicle</code></td><td>Cadastra a placa e vincula à reserva.</td></tr>
-    <tr><td><code>list_my_bookings</code> / <code>get_booking</code></td><td>Lista e detalha as reservas do usuário.</td></tr>
-    <tr><td><code>get_booking_status</code></td><td>Acompanha o estado da reserva e do pagamento.</td></tr>
-    <tr><td><code>cancel_booking</code></td><td>Cancela uma reserva.</td></tr>
-    <tr><td><code>create_checkout_link</code></td><td>Gera o link de pagamento que cai logado no checkout.</td></tr>
-  </table>
-  <p>O pagamento fica fora do MCP: o agente monta a reserva e entrega um link de checkout que já cai
-     logado no passo de pagamento. Ver a spec de reserva por agente.</p>
+  <p>Prefere declarar a superfície em vez de deduzir? Os caminhos
+     <code>/public</code>, <code>/partner</code> e <code>/customer</code> continuam valendo, e aí a
+     credencial precisa casar com o que você pediu.</p>
 
   <h2>Mais</h2>
   <p>API REST (OpenAPI): <a href="https://api.movepark.co/docs">api.movepark.co/docs</a> ·

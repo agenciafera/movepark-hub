@@ -372,10 +372,11 @@ onze combinações da tabela acima, pelos dois caminhos.
 
 - `mcp/server-card.json` — card do consumidor (tools + `inputSchema`, `url: https://mcp.movepark.co`).
 - `mcp/partner-card.json` — card do parceiro (tools + escopo + nota de auth, `url: …/partner`).
-- `agent-skills/index.json` — referencia os cards com `sha256` (recalcular ao mudar um card).
+- `agent-skills/index.json` — referencia os três cards com `sha256` (recalcular ao mudar um card).
 - A superfície `/manager` **não** entra em nada disto, de propósito. Ver §4.4.
-- `api-catalog` + `llms.txt` — linkam os dois MCPs.
-- `.mcp.json` (config local do Claude Code) — pode apontar `movepark-hub` → `https://mcp.movepark.co`.
+- `api-catalog` + `llms.txt` — linkam as superfícies públicas. A de Manager não entra em nenhum dos dois.
+- `.mcp.json` (config local do Claude Code) — aponta `movepark-hub` → `https://mcp.movepark.co`, e a
+  credencial no header decide o perfil (ver §4).
 
 ---
 

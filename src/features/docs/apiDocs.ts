@@ -326,9 +326,16 @@ export const REST_GROUPS: Group[] = [
 ];
 
 // ── MCP ──────────────────────────────────────────────────────────────────────
+/**
+ * Espelha `READ_TOOLS` de `_shared/assistant-tools.ts`, que é o registro canônico
+ * do MCP público e do chat. Estava com 8 nomes contra 12 reais, sem guard nenhum:
+ * faltavam `search_knowledge`, `current_datetime`, `search_blog` e `get_blog_post`.
+ * `apiDocs.contract.test.ts` casa as duas listas.
+ */
 export const MCP_PUBLIC_TOOLS = [
-  "search_parking", "simulate_price", "get_faq", "list_companies", "list_locations",
-  "get_parking_types", "list_destinations", "get_destination",
+  "search_parking", "simulate_price", "get_faq", "search_knowledge", "list_companies",
+  "list_locations", "get_parking_types", "list_destinations", "get_destination",
+  "current_datetime", "search_blog", "get_blog_post",
 ];
 
 export const MCP_PARTNER_TOOLS: { name: string; scope: string }[] = [

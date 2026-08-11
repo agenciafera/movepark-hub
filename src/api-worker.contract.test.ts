@@ -95,3 +95,77 @@ describe("CORS", () => {
     }
   });
 });
+
+describe("página de documentação do MCP", () => {
+  const pagina = worker.slice(worker.indexOf("function mcpDocsHtml"));
+
+  /** Nomes de tool declarados nos registros da Edge. */
+  const nomesDeTool = (() => {
+    const tools = readFileSync(
+      join(process.cwd(), "supabase", "functions", "mcp", "tools.ts"),
+      "utf8",
+    );
+    const compartilhado = readFileSync(
+      join(process.cwd(), "supabase", "functions", "_shared", "assistant-tools.ts"),
+      "utf8",
+    );
+    const cliente = readFileSync(
+      join(process.cwd(), "supabase", "functions", "mcp", "customer.logic.ts"),
+      "utf8",
+    );
+    const nomes = new Set<string>();
+    for (const src of [tools, compartilhado, cliente]) {
+      for (const m of src.matchAll(/name:\s*"([a-z_]+)"/g)) nomes.add(m[1]);
+    }
+    return nomes;
+  })();
+
+  /**
+   * Citar tool em prosa ou num exemplo é diferente de republicar o catálogo.
+   * Cada nome aqui tem uma razão, e a lista só encolhe.
+   */
+  const CITAVEIS = new Map([
+    ["request_login_otp", "passo zero do login, antes de existir card"],
+    ["verify_login_otp", "passo dois do login"],
+    ["list_bookings", "exemplo de curl com chave de parceiro"],
+  ]);
+
+  it("lê um catálogo de tools não vazio", () => {
+    expect(nomesDeTool.size).toBeGreaterThan(30);
+  });
+
+  it("não republica o catálogo de tools", () => {
+    // Ela listava 26 linhas escritas à mão, em três tabelas, sem guard nenhum. E
+    // mentia: dizia "três superfícies" depois que virou quatro, e não citava a
+    // `search_knowledge` que o teste de integração exige existir. Quem descreve
+    // tools são os cards, que o `lint:openapi` já confere nas duas direções.
+    const citadas = [...nomesDeTool].filter((n) => pagina.includes(n) && !CITAVEIS.has(n));
+    expect(citadas).toEqual([]);
+
+    // E o formato que envelhece é a tabela: linha de tool com descrição ao lado.
+    // Nome solto em prosa ou em curl não drifta; tabela drifta.
+    const linhasDeTabela = [...pagina.matchAll(/<td><code>([a-z_]+)<\/code><\/td>/g)]
+      .map((m) => m[1])
+      .filter((n) => nomesDeTool.has(n));
+    expect(linhasDeTabela).toEqual([]);
+  });
+
+  it("aponta para os três cards, que são a fonte", () => {
+    for (const card of ["server-card.json", "partner-card.json", "customer-card.json"]) {
+      expect(pagina).toContain(card);
+    }
+  });
+
+  it("não anuncia a superfície interna", () => {
+    // Manager não tem card e não entra em documento público. O `lint:openapi`
+    // guarda os cards; esta página precisa da mesma regra.
+    expect(pagina.includes("/manager")).toBe(false);
+    expect(pagina.includes("manager-card")).toBe(false);
+  });
+
+  it("explica a URL única, que é o que os cards não dizem", () => {
+    expect(pagina).toContain("Uma URL");
+    // A contagem de superfícies não aparece em número: era ela que envelhecia.
+    expect(/(Três|Duas|Quatro) superfícies/.test(pagina)).toBe(false);
+  });
+});
