@@ -48,9 +48,10 @@ select set_eq(
     'payment_webhook_event', -- evento cru do gateway
     'partner_lead',          -- lead entra por Edge, nunca direto do formulário
     'knowledge_chunk',       -- base do RAG
-    'knowledge_source_queue' -- fila de ingestão da base
+    'knowledge_source_queue',-- fila de ingestão da base
+    'otp_request_log'        -- freio de disparo de OTP; o identificador vai em SHA-256
   ],
-  'as tabelas fail-closed são exatamente estas sete'
+  'as tabelas fail-closed são exatamente estas oito'
 );
 
 -- ── nenhuma escrita passa com predicado trivial ──────────────────────────────

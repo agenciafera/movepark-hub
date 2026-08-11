@@ -31,7 +31,12 @@ select plan(6);
 
 -- ── Fixture ────────────────────────────────────────────────────────────────
 -- O dono da reserva não é membro da empresa, e o membro não é dono da reserva.
--- É o par que a produção tinha. O trigger de `auth.users` cria os `profiles`.
+-- É o par que a produção tinha.
+--
+-- Os `profiles` são criados aqui, à mão, e não pelo trigger `on_auth_user_created`:
+-- ele existe no banco vivo, mas NÃO no stack local, porque o dump do baseline não leva
+-- o schema `auth`. Escrito contra o vivo, este arquivo morria no CI com violação de FK
+-- em `profile_company` antes de rodar uma asserção sequer.
 
 insert into auth.users (id, instance_id, aud, role, email)
 values
@@ -39,6 +44,12 @@ values
    'authenticated', 'authenticated', 'pgtap-membro@exemplo.test'),
   ('00000000-0000-4000-9000-000000000002', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated', 'pgtap-cliente@exemplo.test');
+
+insert into public.profiles (id, role)
+values
+  ('00000000-0000-4000-9000-000000000001', 'company_operator'),
+  ('00000000-0000-4000-9000-000000000002', 'customer')
+on conflict (id) do update set role = excluded.role;
 
 insert into public.company (id, name, slug)
 values ('00000000-0000-4000-9000-0000000000c1', 'PgTAP Estacionamentos', 'pgtap-estacionamentos');

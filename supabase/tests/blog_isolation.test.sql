@@ -21,7 +21,18 @@ select is(
 );
 
 -- ── Chave de API: parceiro não se dá escopo de plataforma ────────────────────
-set local role authenticated;
+-- O papel aqui é `service_role`, não `authenticated`, e a razão importa: `authenticated`
+-- não tem EXECUTE em `api_assert_scopes` (só `service_role` tem), então a chamada crua
+-- morria com 42501 de PERMISSÃO antes de chegar na regra. Como três das asserções abaixo
+-- esperam justamente 42501, elas passavam pelo motivo errado: a de escopo de plataforma
+-- ficava verde sem nunca ter avaliado escopo nenhum.
+--
+-- Quem chama de verdade é `operator_create_api_key`, que é SECURITY DEFINER e roda com os
+-- direitos do dono. Trocar o papel reproduz esse contexto. Quem decide o veredito continua
+-- sendo a IDENTIDADE do JWT, não o papel do Postgres: `api_assert_scopes` ramifica em
+-- `is_hub_admin()`, que lê `auth.uid()`. O `sub` abaixo não é hub_admin, então o teste
+-- continua medindo "membro de empresa".
+set local role service_role;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000000ff","role":"authenticated"}', true);
 
 select lives_ok(

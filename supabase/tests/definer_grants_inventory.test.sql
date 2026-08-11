@@ -66,9 +66,13 @@ select set_eq(
     'external_checkout_url',    -- URL de saída do white-label, nada sensível
     'get_booking_hold_max_minutes',
     'get_current_legal_document',
-    'match_knowledge'           -- busca semântica da base de conhecimento
+    'match_knowledge',          -- busca semântica da base de conhecimento
+    -- E0.16: o clique de saída é gravado por quem não está logado, que é o caso normal
+    -- na vitrine. A tabela não tem policy de escrita: só esta função grava, e ela só
+    -- aceita vaga ATIVA de unidade EXTERNA. Ver clique-saida-externa.md.
+    'log_external_exit'
   ],
-  'as SECURITY DEFINER alcançáveis por anon são exatamente estas 21'
+  'as SECURITY DEFINER alcançáveis por anon são exatamente estas 22'
 );
 
 -- ── nenhuma rotina de cron é chamável pela anon key ──────────────────────────
