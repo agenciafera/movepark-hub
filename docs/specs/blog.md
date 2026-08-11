@@ -89,7 +89,7 @@ distingui-las de post, senão viram 404 no dia do corte. O mapa é estático:
 | `aeroporto-confins` | 3 | `aeroporto-de-confins` |
 | `aeroporto-congonhas` | 3 | `aeroporto-de-congonhas` |
 | `dica-de-viagem` | 3 | `/blog/` (não é aeroporto) |
-| `aeroporto-navegantes` | 2 | **não existe no Hub** |
+| `aeroporto-navegantes` | 2 | `aeroporto-internacional-de-navegantes` |
 | `duvidas`, `rio-de-janeiro`, `uncategorized` | 0 | `/blog/` |
 
 > O Yoast emite a base da taxonomia como um ponto, gerando `/blog/./<categoria>/`. São 8 URLs
@@ -302,14 +302,17 @@ que o Google conhece.
 
 1. Schema, rotas, worker e Manager. O blog sobe vazio, invisível, porque o `hub.` responde `noindex`
 2. Importa os 93 posts e valida com o teste de contrato ainda no `hub.`
-3. **Cria os 6 destinos ausentes**, Navegantes e Recife primeiro
+3. **Dá inventário aos destinos que existem sem unidade** (Confins, Recife e Navegantes primeiro)
 4. Corrige no WordPress os dois redirects defeituosos, para não migrar defeito
 5. Vira o domínio: o `movepark.co` passa a apontar para o Hub e as 93 URLs seguem respondendo no mesmo endereço
 6. Consolidação das duplicatas vira projeto separado, medido com o Hub já rodando
 
 O passo 3 não bloqueia o passo 5 tecnicamente. Mas o post mais clicado do blog é sobre
-Navegantes, que não existe como destino, e o tema Recife puxa 2.627 cliques. Migrar sem eles
-preserva o ranking e joga fora a visita.
+Navegantes e o tema Recife puxa 2.627 cliques, e nenhum dos dois destinos tem unidade listada:
+a visita chega, lê e não encontra o que reservar. Medido em 11/08/2026, **7 destinos publicados
+têm zero unidade** (CNF, REC, NVT, GIG, BSB, POA, SDU) e o Porto tem uma unidade não listada.
+Falta oferta, não falta cadastro: todos os aeroportos que o blog cita já existem como destino,
+e os 94 posts estão vinculados.
 
 Como o `hub.movepark.co` já responde `X-Robots-Tag: noindex, follow`, os passos 1 e 2 rodam em
 produção sem risco de SEO. A migração deixa de ser um evento e vira uma chave.
