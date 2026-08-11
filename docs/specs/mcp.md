@@ -236,6 +236,46 @@ chamadas ficam no `api_request_log` com `company_id` nulo.
 
 ---
 
+### Recusa e auditoria
+
+A resposta de recusa é **byte a byte a mesma** para credencial ausente, inválida,
+revogada e expirada. Medido em produção: as quatro devolvem 401 com o mesmo
+`sha256`. Se diferissem, o endpoint viraria serviço gratuito de triagem de chave
+vazada, e ele não tem rate limit.
+
+O `initialize` e o `ping` seguem respondendo **sem** credencial, e respondem
+igual com chave boa, ruim ou ausente. É deliberado, pelo mesmo motivo.
+
+O que distingue os casos é o **log**, não a resposta:
+
+| Motivo em `api_request_log.path` | O que aconteceu |
+|---|---|
+| `credencial_ausente` | superfície de chave chamada sem chave |
+| `chave_invalid_key` | chave que não existe |
+| `chave_revoked` | chave revogada |
+| `chave_expired` | chave vencida |
+| `chave_fora_da_superficie_<x>` | chave de empresa no Manager, ou o contrário |
+| `credencial_ambigua` | chave nos dois headers ao mesmo tempo |
+
+Antes desta fase a auditoria exigia parceiro **autenticado**, então falha de
+autenticação não deixava rastro nenhum: a pergunta "quantas credenciais inválidas
+apareceram hoje" não tinha resposta. Chamada anônima do consumidor continua fora
+do log de propósito: ela não apresentou credencial, é o maior volume do servidor,
+e registrá-la trocaria uma pergunta de segurança por custo de escrita em toda
+leitura pública.
+
+### O dispatcher tem teste
+
+`handle(req, deps)` saiu de dentro do `Deno.serve` com as dependências
+injetadas, e `dispatcher.test.ts` mede o que antes dependia de ninguém errar ao
+ler o arquivo: a trava de tipo de chave, o formato do 401, o gate de escopo no
+`tools/call`, a validação de obrigatório antes de escrever, o 404 de superfície
+desconhecida e cada linha de auditoria. São 19 casos, e nenhum toca rede.
+
+Conferido por mutação: seis quebras deliberadas, seis falhas. Duas delas
+acharam defeito de verdade na primeira rodada, porque o 401 retornava cedo e
+pulava a auditoria.
+
 ### Como a credencial vira perfil
 
 A decisão mora numa função pura, [`resolver.ts`](../../supabase/functions/mcp/resolver.ts), com o

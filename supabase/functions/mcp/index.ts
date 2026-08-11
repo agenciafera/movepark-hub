@@ -28,7 +28,13 @@ import {
 } from "./protocol.ts";
 import { findTool, isToolCallable, listTools, missingRequired, type Endpoint } from "./tools.ts";
 import { keyPrefix, sha256Hex } from "./auth.ts";
-import { resolverPerfil, superficieDoPath, type ChaveVerificada } from "./resolver.ts";
+import {
+  resolverPerfil,
+  superficieDoPath,
+  type ChaveVerificada,
+  type Resolucao,
+  type Verificacao,
+} from "./resolver.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 import { deleteBlogPost, publishBlogPost, upsertBlogPost } from "../_shared/blog-write.ts";
 import { callRead, READ_TOOL_NAMES } from "../_shared/assistant-tools.ts";
@@ -62,9 +68,36 @@ interface PartnerCtx {
   scopes: string[];
 }
 
-// @ts-expect-error - Deno global
-Deno.serve(async (req: Request) => {
-  const started = Date.now();
+/**
+ * O dispatcher, separado do `Deno.serve` para poder ser medido.
+ *
+ * Ele estava inline e não tinha um único teste: a trava de tipo de chave, o
+ * formato do 401 e o gate de escopo dependiam de ninguém errar ao ler o arquivo.
+ * As dependências entram por parâmetro para o teste rodar sem rede e sem banco.
+ */
+/**
+ * O que o dispatcher precisa do mundo. Injetado para o teste rodar sem rede.
+ */
+export interface Deps {
+  /** Consulta `api_key_verify`. */
+  verificar: Verificacao;
+  /** Executa a tool já autorizada. */
+  chamarTool: (ctx: {
+    endpoint: Endpoint;
+    nome: string;
+    args: Record<string, unknown>;
+    partner: PartnerCtx | null;
+    authorization: string | null;
+    ip: string | null;
+  }) => Promise<unknown>;
+  /** Grava a linha de auditoria. Não pode lançar nem bloquear a resposta. */
+  auditar: (linha: ApiLogRow) => void;
+  /** Relógio, para o teste medir latência sem esperar. */
+  agora: () => number;
+}
+
+export async function handle(req: Request, deps: Deps): Promise<Response> {
+  const started = deps.agora();
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
 
   const url = new URL(req.url);
@@ -111,35 +144,32 @@ Deno.serve(async (req: Request) => {
     return json(rpcError(id, JSONRPC.INVALID_REQUEST, "Superfície desconhecida."), 404);
   }
 
-  const admin: ReturnType<typeof createClient> = createClient(
-    env("SUPABASE_URL"),
-    env("SUPABASE_SERVICE_ROLE_KEY"),
-    { auth: { persistSession: false } },
-  );
-
   const resolucao = await resolverPerfil({
     path: url.pathname,
     authorization: req.headers.get("Authorization"),
     xApiKey: req.headers.get("x-api-key"),
-    verificar: async (chave) => {
-      const { data } = await admin.rpc("api_key_verify", {
-        p_key_prefix: keyPrefix(chave),
-        p_key_hash: await sha256Hex(chave),
-      });
-      return (data ?? { ok: false }) as ChaveVerificada;
-    },
+    verificar: deps.verificar,
   });
 
+  // A recusa também é auditada. Ela retorna cedo, e por isso passa pelo mesmo
+  // `auditar` de propósito: sem isso, falha de autenticação não deixaria rastro
+  // nenhum, que era exatamente o buraco desta fase.
+  const recusar = (mensagem: string, status: 400 | 401): Response => {
+    const r = json(rpcError(id, JSONRPC.INVALID_REQUEST, mensagem), status);
+    auditar(req, reqMsg, endpoint, resolucao, null, status, started, deps);
+    return r;
+  };
+
   if (resolucao.status === 400) {
-    return json(
-      rpcError(id, JSONRPC.INVALID_REQUEST, "Mande a chave de API em um header só: Authorization para o sujeito, X-API-Key para o agente."),
+    return recusar(
+      "Mande a chave de API em um header só: Authorization para o sujeito, X-API-Key para o agente.",
       400,
     );
   }
   if (precisaAuth && resolucao.status === 401) {
     // Resposta idêntica para ausente, inválida, revogada e expirada. O motivo
     // fica em `resolucao.motivo`, para o log.
-    return json(rpcError(id, JSONRPC.INVALID_REQUEST, "Chave de API inválida ou ausente (Authorization: Bearer mp_…)."), 401);
+    return recusar("Chave de API inválida ou ausente (Authorization: Bearer mp_…).", 401);
   }
 
   const partner: PartnerCtx | null =
@@ -189,14 +219,14 @@ Deno.serve(async (req: Request) => {
           resp = json(rpcError(id, JSONRPC.INVALID_PARAMS, `Parâmetro obrigatório ausente: ${miss}`));
           break;
         }
-        const data =
-          endpoint === "manager"
-            ? await callManager(admin, toolName, args)
-            : endpoint === "partner"
-              ? await callPartner(admin, partner!, toolName, args)
-              : endpoint === "customer"
-                ? await callCustomer(req.headers.get("Authorization"), toolName, args, clientIp(req))
-                : await callPublic(toolName, args);
+        const data = await deps.chamarTool({
+          endpoint,
+          nome: toolName,
+          args,
+          partner,
+          authorization: req.headers.get("Authorization"),
+          ip: clientIp(req),
+        });
         resp = json(rpcResult(id, toolTextContent(data)));
         break;
       }
@@ -213,36 +243,62 @@ Deno.serve(async (req: Request) => {
         : json(rpcError(id, JSONRPC.INTERNAL_ERROR, msg));
   }
 
-  // Auditoria (Fase 1.1) — parceiro e Manager autenticados; não bloqueia a resposta.
-  // O Manager entra aqui de propósito: escrita da Movepark também deixa rastro de
-  // quem chamou, qual tool e quando.
-  if ((endpoint === "partner" || endpoint === "manager") && partner) {
-    const toolName =
-      reqMsg.method === "tools/call"
-        ? ((reqMsg.params as { name?: string } | undefined)?.name ?? null)
-        : null;
-    const tool = toolName ? findTool(endpoint, toolName) : null;
-    background(
-      logRequest(admin, {
-        api_key_id: partner.api_key_id,
-        company_id: partner.company_id,
-        surface: "mcp",
-        method: reqMsg.method,
-        path: toolName ?? reqMsg.method,
-        scope: tool?.scope ?? null,
-        status: resp.status,
-        request_id: req.headers.get("x-request-id") ?? "",
-        ip: clientIp(req),
-        latency_ms: Date.now() - started,
-      }),
-    );
-  }
+  auditar(req, reqMsg, endpoint, resolucao, partner, resp.status, started, deps);
   return resp;
-});
+}
+
+/**
+ * Auditoria da tentativa, inclusive quando ela falha.
+ *
+ * Antes daqui só entrava parceiro ou Manager **autenticado**, então falha de
+ * autenticação não deixava rastro nenhum: a pergunta "quantas credenciais
+ * inválidas apareceram hoje" não tinha resposta, e um endpoint sem rate limit
+ * podia ser varrido em silêncio.
+ *
+ * O que **não** entra: chamada anônima do consumidor. Ela não apresentou
+ * credencial, é o caso de maior volume do servidor, e registrá-la trocaria uma
+ * pergunta de segurança por um custo de escrita em toda leitura pública.
+ */
+function auditar(
+  req: Request,
+  reqMsg: JsonRpcRequest,
+  endpoint: Endpoint,
+  resolucao: Resolucao,
+  partner: PartnerCtx | null,
+  status: number,
+  started: number,
+  deps: Deps,
+): void {
+  const apresentouCredencial = resolucao.motivo !== "anonimo";
+  if (!apresentouCredencial) return;
+
+  const toolName =
+    reqMsg.method === "tools/call"
+      ? ((reqMsg.params as { name?: string } | undefined)?.name ?? null)
+      : null;
+  const tool = toolName ? findTool(endpoint, toolName) : null;
+
+  deps.auditar({
+    api_key_id: partner?.api_key_id ?? null,
+    company_id: partner?.company_id ?? null,
+    surface: "mcp",
+    method: reqMsg.method,
+    // O motivo entra no `path` quando a credencial foi recusada: é onde a
+    // consulta de auditoria procura, e ele distingue revogada de expirada sem
+    // que a resposta ao cliente distinga.
+    path: partner || resolucao.status === 200 ? (toolName ?? reqMsg.method) : resolucao.motivo,
+    scope: tool?.scope ?? null,
+    status,
+    request_id: req.headers.get("x-request-id") ?? "",
+    ip: clientIp(req),
+    latency_ms: deps.agora() - started,
+  });
+}
 
 // ── Auditoria (Fase 1.1) ─────────────────────────────────────────────────────
 interface ApiLogRow {
-  api_key_id: string;
+  // Nulo quando a credencial foi recusada: não há chave a que atribuir.
+  api_key_id: string | null;
   // Nulo na chave da Movepark: a escrita do blog não pertence a empresa nenhuma.
   company_id: string | null;
   surface: "rest" | "mcp";
@@ -771,3 +827,34 @@ async function callPartner(admin: any, ctx: PartnerCtx, name: string, a: Record<
       throw new Error(`Tool desconhecida: ${name}`);
   }
 }
+
+// ── Produção ────────────────────────────────────────────────────────────────
+
+function depsDeProducao(): Deps {
+  const admin = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), {
+    auth: { persistSession: false },
+  });
+  return {
+    verificar: async (chave) => {
+      const { data } = await admin.rpc("api_key_verify", {
+        p_key_prefix: keyPrefix(chave),
+        p_key_hash: await sha256Hex(chave),
+      });
+      return (data ?? { ok: false }) as ChaveVerificada;
+    },
+    chamarTool: ({ endpoint, nome, args, partner, authorization, ip }) =>
+      endpoint === "manager"
+        ? callManager(admin, nome, args)
+        : endpoint === "partner"
+          ? callPartner(admin, partner!, nome, args)
+          : endpoint === "customer"
+            ? callCustomer(authorization, nome, args, ip)
+            : callPublic(nome, args),
+    // Auditoria nunca derruba a request: erro aqui morre no catch de `logRequest`.
+    auditar: (linha) => background(logRequest(admin, linha)),
+    agora: () => Date.now(),
+  };
+}
+
+// @ts-expect-error - Deno global
+Deno.serve((req: Request) => handle(req, depsDeProducao()));
