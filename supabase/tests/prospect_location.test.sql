@@ -14,7 +14,7 @@
 -- Roda em transação com rollback.
 
 begin;
-select plan(35);
+select plan(36);
 
 -- ── fixtures (como postgres; RLS não se aplica a superuser) ──────────────────
 -- Geo no Atlântico Sul para não colidir com destino do seed/baseline: nearest_destination
@@ -83,13 +83,31 @@ select hasnt_column('public','prospect_location','take_rate_bps',
 select hasnt_column('public','prospect_location','is_24h',
   'ADR-010: prospect_location NÃO tem is_24h (horário que ninguém verificou não vira schema)');
 
--- Nenhuma tabela aponta para cá. É o que impede booking.location_id de nascer apontando
--- para lote sem contrato: quem precisar disso converte primeiro.
+-- Quem aponta para cá é lista EXATA, e o que ela protege é a regra do ADR-010: nenhuma
+-- tabela TRANSACIONAL (booking, review, fare, payout_*) pode se ligar a um lote sem
+-- contrato. Quem precisar disso converte primeiro.
+--
+-- `company_onboarding` entra porque é o oposto de transacional: é o lead, a mesma fase
+-- pré-contrato do próprio lote mapeado, e ele guarda de qual ficha a reivindicação partiu
+-- (E0.17-g). Uma entrada nova aqui é uma decisão de arquitetura, não um detalhe de
+-- implementação, e é por isso que a lista é exata em vez de um teto.
+select set_eq(
+  $$ select c.conrelid::regclass::text
+       from pg_constraint c
+      where c.contype = 'f' and c.confrelid = 'public.prospect_location'::regclass $$,
+  array['company_onboarding'],
+  'ADR-010: só o lead aponta para prospect_location, e nenhuma tabela transacional');
+
+-- E a FK que existe não pode custar a exclusão. "Excluir é delete de verdade" é uma
+-- propriedade que o ADR-010 comprou de propósito (a URL tinha ranking, e apagar uma ficha
+-- errada precisa ser possível); uma FK sem `on delete set null` transformaria isso em
+-- "não dá para excluir enquanto houver lead".
 select is(
-  (select count(*)::int from pg_constraint
-    where contype = 'f' and confrelid = 'public.prospect_location'::regclass),
+  (select count(*)::int from pg_constraint c
+    where c.contype = 'f' and c.confrelid = 'public.prospect_location'::regclass
+      and c.confdeltype <> 'n'),
   0,
-  'ADR-010: nenhuma FK aponta para prospect_location (booking, review, fare, payout_*)');
+  'toda FK que aponta para cá é ON DELETE SET NULL: excluir a ficha segue possível');
 
 -- ── 2. Geo: coluna gerada + PostGIS (ADR-001) ────────────────────────────────
 -- 0,0009 grau de latitude ≈ 100 m. A distância sai de ST_Distance na consulta; a única
