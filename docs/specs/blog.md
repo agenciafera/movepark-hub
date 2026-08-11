@@ -4,7 +4,8 @@
 > `20260930000000_blog_taxonomy.sql`, importador `scripts/import-wp-blog.mjs`, taxonomia derivada
 > em `scripts/blog-taxonomy.mjs`, rotas SSG do índice, dos arquivos e do post, política de URL em
 > `src/worker.ts`, admin em `/manager/blog`. Os 93 posts estão no banco e no build, com categoria,
-> autor e tag.
+> autor e tag. O acervo cresce daí para cima com post novo escrito no Hub; o fixture de contrato
+> continua congelado nos 93 slugs herdados, porque é ele que guarda o tráfego do WordPress.
 >
 > **Objetivo:** substituir o blog WordPress em `movepark.co/blog/` preservando as 93 URLs
 > byte a byte, para não perder os 4.598 cliques que o blog responde em 16 meses.
