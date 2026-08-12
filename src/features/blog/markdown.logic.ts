@@ -2,8 +2,9 @@
  * Markdown do post → blocos tipados, para render em React.
  *
  * Escopo fechado de propósito: cobre só o que os 93 posts importados do WordPress
- * usam (títulos, listas, citação, imagem, link, negrito, itálico). Sem tabela, sem
- * bloco de código, sem HTML cru — a importação não deixou nenhum.
+ * usam (títulos, listas, citação, imagem, link, negrito, itálico e tabela em pipe,
+ * que são 249 linhas em 32 posts). Sem bloco de código e sem HTML cru, porque a
+ * importação não deixou nenhum.
  *
  * O ganho de não usar uma lib de markdown com `dangerouslySetInnerHTML` é que
  * não existe caminho de XSS: o corpo nunca vira HTML, vira elemento React.
