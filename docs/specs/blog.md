@@ -499,6 +499,7 @@ corrigido em `markdown.logic.ts`:
 | post que abre em `###` | buraco no outline, sem nenhum `h2` | 9 posts |
 | `<table>` do editor clássico | o turndown derramava as células como parágrafos | 32 posts |
 | parágrafo que é só negrito | subtítulo com peso de corpo, fora do outline | 27 blocos |
+| `1\.`, `\[3, 1\]`, `\*` | a barra invertida do escape ia para a tela | 261 no acervo |
 
 Três decisões que valem registrar. **Todo nó que envolve outro guarda `children`**, não texto:
 guardando o miolo como string, ou o negrito dentro do link ou o link dentro do negrito sempre
@@ -539,6 +540,21 @@ o teste de regressão vive no dry-run, que conta imagem reaproveitada.
 descritivos ("estacionamento-aeroporto-viracopos.webp"), então viram legenda. A capa também
 passou a exigir `alt`: era o único `<img>` visível do post sem texto alternativo, e no card do
 índice ela é o que dá nome ao link.
+
+**A barra invertida do escape parou de aparecer.** O turndown escapa por precaução, sem olhar
+o contexto: `1\.` para o número não abrir lista, `\[3, 1\]` para o colchete não virar link,
+`\*` para o asterisco não abrir negrito. Dentro de um título ou no meio de uma frase nada disso
+podia acontecer, e só a barra chegava ao leitor. Eram 261 no acervo, em 38 posts.
+
+O conserto é dos dois lados, e os dois importam. O parser passou a ler o escape como manda o
+markdown, então o que for escrito daqui pra frente já renderiza certo. E a importação tira o
+escape desnecessário da origem, porque o `.md` não é só um passo intermediário: ele é servido em
+`/blog/<slug>` sob `Accept: text/markdown`, que é o que a Public API e os agentes leem.
+
+Dois casos ganharam tratamento próprio. `\*\* Texto:\*\*` era negrito que o editor digitou com
+espaço sobrando, e o WordPress mostrava os asteriscos crus: virou negrito de verdade. E o corte de
+célula de tabela passou a ignorar `\|`, que é pipe no texto e não separador, senão uma célula com
+pipe vira duas e desalinha a linha.
 
 ### Como a reimportação chegou ao banco sem service key
 
