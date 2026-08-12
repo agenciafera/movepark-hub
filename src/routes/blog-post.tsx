@@ -1,3 +1,4 @@
+import * as React from "react";
 import { Link, useLoaderData, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
@@ -5,8 +6,11 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { CoverImage } from "@/features/blog/CoverImage";
+import { PostAudio } from "@/features/blog/PostAudio";
 import { PostBody } from "@/features/blog/PostBody";
 import { PostCard } from "@/features/blog/PostCard";
+import { PostProgress } from "@/features/blog/PostProgress";
+import { PostShare } from "@/features/blog/PostShare";
 import { PostSidebar } from "@/features/blog/PostSidebar";
 import { PostSummary } from "@/features/blog/PostSummary";
 import { useBlogPost, useLatestPosts, useRelatedPosts } from "@/features/blog/api";
@@ -15,6 +19,7 @@ import {
   metaDescription,
   plainText,
   readingMinutes,
+  sectionsFrom,
 } from "@/features/blog/markdown.logic";
 import { blogPostingSchema, breadcrumbSchema } from "@/lib/jsonld";
 import { formatDate } from "@/lib/format";
@@ -58,6 +63,13 @@ export default function BlogPostPage() {
      texto, que é pior que não ter lateral. */
   const temSidebar = Boolean(post?.destination) || relacionados.length > 0;
   const ultimos = useLatestPosts(post?.slug).data ?? [];
+  const secoes = React.useMemo(() => (post ? sectionsFrom(post.body_md) : []), [post]);
+  /* A leitura em voz alta usa o texto puro: a marcação do markdown virava
+     "asterisco asterisco" na fala. */
+  const paraOuvir = React.useMemo(
+    () => (post ? `${post.title}. ${plainText(post.body_md)}` : ""),
+    [post],
+  );
 
   if (!post) {
     if (query.isLoading) {
@@ -142,6 +154,8 @@ export default function BlogPostPage() {
         </script>
       </Helmet>
 
+      <PostProgress secoes={secoes} />
+
       <article>
         {/*
           Mesma faixa do `ContentPageView` (`/faq`, `/termos`, `/cancelamento`):
@@ -194,6 +208,16 @@ export default function BlogPostPage() {
                       </>
                     )}
                   </p>
+
+                  {/*
+                    Ouvir e compartilhar ficam no cabeçalho, acima da dobra. No pé
+                    da página eles chegariam depois de seis minutos de leitura, que
+                    é onde o leitor já decidiu se fica ou sai.
+                  */}
+                  <div className="mt-5 flex flex-wrap items-center gap-3">
+                    <PostAudio texto={paraOuvir} />
+                    <PostShare title={post.title} url={canonical} />
+                  </div>
                 </PageHeader>
               </div>
 

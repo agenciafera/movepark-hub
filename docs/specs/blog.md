@@ -446,6 +446,44 @@ CSS sem efeito nenhum. Encolhido ao conteúdo, ele volta a ter espaço. O teto
 deixaria o último relacionado fora de alcance pelo artigo inteiro, já que o `sticky` só solta
 quando a linha da grade acaba.
 
+### Trilho de progresso, compartilhar e ouvir
+
+Três blocos que a página do post ganhou, todos sem serviço externo e sem script de terceiro.
+
+**Trilho de progresso** (`PostProgress`): uma barrinha por seção, fixa na lateral esquerda, a
+atual em destaque. Responde onde o leitor está num guia de seis minutos e serve de atalho entre
+seções. Cada barra é âncora de verdade, com o título da seção no nome acessível. O estado ativo
+vem do mesmo `useActiveSection` do índice das páginas de conteúdo (`IntersectionObserver`, não
+listener de scroll). **Só aparece a partir de 1280px**: entre 1128 e 1280 a margem lateral do
+container é estreita demais e o trilho encostaria no texto. Medido a 1400px, sobram 138px entre
+o fim do trilho e o começo do conteúdo.
+
+**Compartilhar** (`PostShare`): cada rede é um link comum para o endpoint público dela, sem SDK.
+Botão de rede social costuma vir com rastreador embutido; aqui o leitor só chega ao site da rede
+quando clica, e um teste cobra que nenhum `script` ou `iframe` entre na página. O botão de copiar
+depende da Clipboard API, que exige contexto seguro, então some em HTTP em vez de ficar na tela
+sem funcionar.
+
+**Ouvir o post** (`PostAudio`): Web Speech API, a voz do próprio navegador. Nada é gerado,
+armazenado nem cobrado por post, e vale para o acervo inteiro no dia em que sobe. O custo é a
+voz, que é a do sistema e varia de aparelho para aparelho. Um TTS com voz de estúdio (ElevenLabs
+e afins) exigiria chave de API, custo por post e um arquivo no bucket, e fica como upgrade.
+
+Três armadilhas da API, todas tratadas:
+
+| Armadilha | Tratamento |
+|---|---|
+| O Chrome corta a fala perto dos 15s | `falasDe()` quebra o texto em falas de até 180 caracteres, em fim de frase, e um pulso chama `resume()` enquanto fala |
+| A lista de vozes carrega assíncrona e vem vazia no primeiro acesso | `voiceschanged` |
+| A fala não morre com a página | `cancel()` na limpeza do efeito, senão a voz segue lendo por cima da tela seguinte |
+
+O corte é em fim de frase, não em número de caracteres: quebrar no meio faz a voz baixar o tom
+como se tivesse terminado. Frase maior que o teto cai no corte por palavra. O texto lido é o
+`plainText` do corpo, porque a marcação do markdown virava "asterisco asterisco" na fala.
+
+Os três só renderizam no cliente e o suporte é checado em efeito, não na renderização: decidir na
+primeira renderização faria a árvore divergir do HTML assado no build.
+
 ### O bloco recolhível do topo tem duas fontes
 
 `PostSummary` abre o corpo com um bloco fechado, e o que ele mostra depende do que existe:
