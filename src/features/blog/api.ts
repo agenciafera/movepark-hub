@@ -32,7 +32,7 @@ export const blogKeys = {
 const baseSelect =
   "*, destination:destination(id, name, short_name, slug)," +
   " category:blog_category(id, name, slug)," +
-  " author:blog_author(id, name, slug)," +
+  " author:blog_author(id, name, slug, avatar_url)," +
   " tags:blog_post_tag(tag:blog_tag(id, name, slug))";
 
 /**
@@ -78,7 +78,7 @@ const listSelect =
   "id, slug, title, excerpt, cover_image_url, published_at," +
   " destination:destination(id, name, short_name, slug)," +
   " category:blog_category(id, name, slug)," +
-  " author:blog_author(id, name, slug)," +
+  " author:blog_author(id, name, slug, avatar_url)," +
   " tags:blog_post_tag(tag:blog_tag(id, name, slug))";
 
 /**

@@ -29,11 +29,22 @@ describe("hierarquia da listagem", () => {
   it("o destaque tem manchete maior que a do card de arquivo", () => {
     const { unmount } = montar(<FeaturedPostCard post={POST} />);
     const destaque = screen.getByRole("heading", { level: 2 });
-    expect(destaque.className).toContain("text-display-sm");
+    expect(destaque.className).toContain("text-display-xl");
     unmount();
 
     montar(<PostCard post={POST} />);
-    expect(screen.getByRole("heading", { level: 2 }).className).toContain("text-title-md");
+    expect(screen.getByRole("heading", { level: 2 }).className).toContain("text-display-sm");
+  });
+
+  /**
+   * Doze molduras iguais na tela viram grade de caixas, não lista de leitura. A
+   * capa, o título e o resumo delimitam o item sozinhos.
+   */
+  it("o card não tem moldura em volta", () => {
+    const { container } = montar(<PostCard post={POST} />);
+    const card = container.querySelector("article")!;
+    expect(card.className).not.toContain("border");
+    expect(card.className).not.toContain("bg-canvas");
   });
 
   /** Card de arquivo corta o resumo; o destaque mostra inteiro. */
@@ -71,5 +82,28 @@ describe("eyebrow do card", () => {
       <PostCard post={{ ...POST, category: null, destination: null }} />,
     );
     expect(container.querySelector(".uppercase")).toBeNull();
+  });
+});
+
+/** Post é assinado por gente, e o rosto separa a assinatura de mais um metadado. */
+describe("assinatura do card", () => {
+  it("usa a foto do autor quando existe", () => {
+    const comFoto = { ...POST, author: { ...POST.author!, avatar_url: "/autores/peu.webp" } };
+    const { container } = montar(<PostCard post={comFoto} />);
+    const avatar = container.querySelector('img[src="/autores/peu.webp"]');
+    expect(avatar).not.toBeNull();
+    // Decorativo: o nome vem no texto ao lado, e alt repetido duplica a leitura.
+    expect(avatar).toHaveAttribute("alt", "");
+  });
+
+  it("sem foto, cai nas iniciais do mesmo helper da topbar", () => {
+    montar(<PostCard post={POST} />);
+    expect(screen.getByText("P")).toBeInTheDocument();
+  });
+
+  it("post sem autor não inventa avatar", () => {
+    const { container } = montar(<PostCard post={{ ...POST, author: null }} />);
+    expect(container.querySelector("img.rounded-full")).toBeNull();
+    expect(screen.getByText("06/04/2026")).toBeInTheDocument();
   });
 });

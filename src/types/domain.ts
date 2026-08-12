@@ -74,14 +74,14 @@ export type BlogPostListItem = Pick<
 > & {
   destination: Pick<Destination, "id" | "name" | "short_name" | "slug"> | null;
   category: Pick<BlogCategory, "id" | "name" | "slug"> | null;
-  author: Pick<BlogAuthor, "id" | "name" | "slug"> | null;
+  author: Pick<BlogAuthor, "id" | "name" | "slug" | "avatar_url"> | null;
   tags: Pick<BlogTag, "id" | "name" | "slug">[];
 };
 /** Post com as relações que a listagem e a página usam. */
 export type BlogPostWithDestination = BlogPost & {
   destination: Pick<Destination, "id" | "name" | "short_name" | "slug"> | null;
   category: Pick<BlogCategory, "id" | "name" | "slug"> | null;
-  author: Pick<BlogAuthor, "id" | "name" | "slug"> | null;
+  author: Pick<BlogAuthor, "id" | "name" | "slug" | "avatar_url"> | null;
   tags: Pick<BlogTag, "id" | "name" | "slug">[];
 };
 /** Ponto físico de um destino (terminal/píer/plataforma). DAT-05. */

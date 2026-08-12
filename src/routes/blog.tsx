@@ -332,7 +332,9 @@ export default function BlogListingPage() {
                   Mais recentes
                 </p>
               )}
-              <div className="grid gap-6 tablet:grid-cols-2 desktop:grid-cols-3">
+              {/* Sem moldura, quem separa uma linha da outra é o espaço: por isso
+                  o respiro vertical é maior que o horizontal. */}
+              <div className="grid gap-x-6 gap-y-12 tablet:grid-cols-2 desktop:grid-cols-3">
                 {noGrid.map((post) => (
                   <PostCard key={post.id} post={post} />
                 ))}

@@ -353,12 +353,22 @@ tem ponto de entrada: o leitor varre e sai. São dois pesos, em `features/blog/P
 | | `FeaturedPostCard` | `PostCard` |
 |---|---|---|
 | Layout | duas colunas, capa ao lado do texto | capa acima do texto |
-| Manchete | `display-sm` (20px) | `title-md` (16px) |
-| Resumo | inteiro | cortado em 3 linhas |
+| Manchete | `display-xl` (28px) | `display-sm` (20px) |
+| Resumo | inteiro, `body-md` | cortado em 3 linhas, `body-md` |
 
-A manchete do destaque para em 20px porque o contrato do consumer não deixa nenhum h2 pesar mais
-que o h1 da página (`display-xl`, 28px). Quem faz o bloco dominar é a capa grande e o resumo
-inteiro, não o tamanho da letra.
+A manchete do destaque **empata** com o h1 da página, e esse é o teto: o contrato do consumer não
+deixa nenhum h2 pesar mais que o h1. Na referência (o blog técnico do QuintoAndar no Medium) o
+destaque tem o tamanho do nome da publicação, e é essa proporção que faz o bloco abrir a página
+em vez de só ocupar espaço.
+
+**Card sem moldura.** Havia um retângulo com borda e canto arredondado em volta de cada post, e
+doze molduras iguais na tela viram grade de caixas, não lista de leitura. A capa, o título e o
+resumo delimitam o item sozinhos. Sem a moldura quem separa uma linha da outra é o espaço, então
+o respiro vertical do grid (`gap-y-12`) é o dobro do horizontal (`gap-x-6`).
+
+**A assinatura tem rosto.** Avatar do autor (`blog_author.avatar_url`), com as iniciais do mesmo
+helper da topbar quando não há foto cadastrada. Post é assinado por gente, e o rosto separa a
+assinatura de mais uma linha de metadado cinza. O `listSelect` traz `avatar_url` junto do nome.
 
 **O destaque só existe na abertura do blog**, ou seja, `kind === "index"`, página 1, sem busca
 ativa. Em arquivo de categoria, página 2 e resultado de busca o leitor já sabe o que procura, e
