@@ -13,28 +13,28 @@ Planejar uma viagem pode ser muito empolgante, mas encontrar um estacionamento p
 
 ## **Opções de Estacionamento no Aeroporto de Lisboa**
 
-### **1\. Parking ANA**
+### **1. Parking ANA**
 
 -   **Localização:** Dentro do complexo aeroportuário, com acesso direto aos terminais.
 -   **Tipos de estacionamento:** Coberto e descoberto.
 -   **Serviços:** Transfer gratuito para os terminais, lavagem de carros, etc.
 -   **Ideal para:** Quem busca comodidade e praticidade.
 
-### **2\. Estacionamento Low Cost – [Airpark](http://airpark.pt):**
+### **2. Estacionamento Low Cost – [Airpark](http://airpark.pt):**
 
 -   **Localização:** Estacionamento próximo ao Aeroporto Lisboa, com serviço de transfer ou de valet (busca e entrega de viatura dentro do terminal)
 -   **Tipos de estacionamento:** Coberto e Descoberto.
 -   **Serviços:** Transfer para os terminais, wi-fi gratuito, lavagem de carros, etc.
 -   **Ideal para:** Quem busca o menor preço.
 
-### **3\. Park & Ride:**
+### **3. Park & Ride:**
 
 -   **Localização:** Esse estacionamento fica a alguns minutos do aeroporto, com ligação por transporte público.
 -   **Tipos de estacionamento:** Coberto e descoberto.
 -   **Serviços:** Transfer para os terminais, wi-fi gratuito, etc.
 -   **Ideal para:** Quem busca uma opção mais econômica.
 
-### **4\. Parques de Estacionamento Privados:**
+### **4. Parques de Estacionamento Privados:**
 
 -   **Localização:** Diversas opções em torno do aeroporto.
 -   **Tipos de estacionamento:** Coberto e descoberto.

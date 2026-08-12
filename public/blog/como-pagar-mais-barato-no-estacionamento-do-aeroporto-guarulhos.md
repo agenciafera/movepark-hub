@@ -21,23 +21,23 @@ Economizar em uma viagem não significa apenas reduzir custos, mas também maxim
 
 ## **Como Pagar Mais Barato no Estacionamento do Aeroporto Guarulhos?**
 
-### **1\. Reserve com Antecedência:**
+### **1. Reserve com Antecedência:**
 
 -   Ao reservar seu espaço de estacionamento com antecedência, você pode aproveitar descontos exclusivos e garantir a disponibilidade, evitando surpresas de última hora.
 
-### **2\. Avalie Opções Próximas:**
+### **2. Avalie Opções Próximas:**
 
 -   Considere [estacionamentos próximos ao aeroporto guarulhos](/destinos/aeroporto-internacional-de-sao-paulo-guarulhos) que possam oferecer tarifas mais acessíveis, mantendo a conveniência da proximidade.
 
-### **3\. Pesquise Promoções e Cupons:**
+### **3. Pesquise Promoções e Cupons:**
 
 -   Muitos estacionamentos oferecem promoções sazonais e descontos especiais. Pesquise e aproveite essas oportunidades para economizar ainda mais.
 
-### **4\. Opte por Opções Econômicas:**
+### **4. Opte por Opções Econômicas:**
 
 -   Escolha estacionamentos que ofereçam tarifas econômicas, mesmo que exijam uma curta caminhada até o terminal. O custo-benefício pode ser significativo.
 
-### **5\. Considere Alternativas de Transporte:**
+### **5. Considere Alternativas de Transporte:**
 
 -   Avalie se utilizar transporte público, aplicativos de transporte ou serviços de transfer oferecidos por hotéis pode ser mais econômico do que o estacionamento tradicional.
 

@@ -365,3 +365,41 @@ describe("parágrafo que é só negrito", () => {
     expect(bloco.type).toBe("paragraph");
   });
 });
+
+describe("barra invertida de escape", () => {
+  it("some da tela e deixa o caractere que ela protegia", () => {
+    // O turndown escapa o ponto depois do número para o "1." não virar lista.
+    // Dentro de um título isso é impossível, e a barra ia para a tela.
+    const [bloco] = parseMarkdown("### 1\\. Nation Park");
+    expect(plainText("### 1\\. Nation Park")).toBe("1. Nation Park");
+    expect(bloco.type).toBe("heading");
+  });
+
+  it("colchete escapado não vira link e não mostra a barra", () => {
+    expect(plainText("uma alta de 3,47%\\[3, 1\\]")).toBe("uma alta de 3,47%[3, 1]");
+  });
+
+  it("asterisco escapado é asterisco, não abre negrito", () => {
+    expect(parseInline("R$ 15,90\\* na reserva")).toEqual([
+      { type: "text", value: "R$ 15,90" },
+      { type: "text", value: "*" },
+      { type: "text", value: " na reserva" },
+    ]);
+  });
+
+  it("barra invertida escapada sobra uma só", () => {
+    expect(plainText("caminho c:\\\\pasta")).toBe("caminho c:\\pasta");
+  });
+
+  it("pipe escapado fica dentro da célula em vez de criar coluna", () => {
+    const [bloco] = parseMarkdown("| Lote | Horário |\n| --- | --- |\n| Virapark | 8h \\| 20h |") as {
+      type: string;
+      rows: { type: string; value: string }[][][];
+    }[];
+    expect(bloco.type).toBe("table");
+    expect(bloco.rows[0]).toHaveLength(2);
+    expect(plainText("| Lote | Horário |\n| --- | --- |\n| Virapark | 8h \\| 20h |")).toContain(
+      "8h | 20h",
+    );
+  });
+});

@@ -13,22 +13,22 @@ Viajar pelo Aeroporto de Guarulhos é uma jornada emocionante, mas decidir onde 
 
 ## Agora, vamos apresentar os principais meios de transporte até o Aeroporto de Guarulhos
 
-### 1\. **Transporte Público:**
+### 1. **Transporte Público:**
 
 -   **Vantagens:** Opção econômica para quem busca economizar.
 -   **Desvantagens:** Pode ser menos conveniente e sujeito a horários fixos.
 
-### 2\. **Aplicativos de Transporte:**
+### 2. **Aplicativos de Transporte:**
 
 -   **Vantagens:** Oferece praticidade e flexibilidade.
 -   **Desvantagens:** Pode ter tarifas variáveis e depender da disponibilidade.
 
-### 3\. **Transfer de Companhias Aéreas:**
+### 3. **Transfer de Companhias Aéreas:**
 
 -   **Vantagens:** Algumas reservas de Companhias Aéreas incluem serviço de transfer.
 -   **Desvantagens:** Pode não ser a opção mais flexível e pode não estar disponível para todos.
 
-### 4\. Ir de carro e ficar em um **Estacionamento Próximo ao Aeroporto Guarulhos:**
+### 4. Ir de carro e ficar em um **Estacionamento Próximo ao Aeroporto Guarulhos:**
 
 -   **Vantagens:** Liberdade de horários, segurança para o veículo e controle total.
 -   **Desvantagens:** Pode ter custos associados e exige escolha cuidadosa do estacionamento.

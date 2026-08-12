@@ -23,7 +23,7 @@ A proximidade ao terminal torna-se vital, especialmente quando cada minuto conta
 
 Ao considerar as opções mais próximas ao Aeroporto de Guarulhos, algumas se destacam:
 
-### 1\. **Ponce Park: A Escolha Premium**
+### 1. **Ponce Park: A Escolha Premium**
 
 O **Ponce Park** não é apenas uma opção próxima; é a escolha premium. Oferecendo serviço excepcional, o Ponce Park, é o estacionamento mais próximo do Aeroporto Guarulhos que oferece uma  agilidade no serviço de transfer incomparável. É um estacionamento vai além das expectativas.
 
@@ -31,7 +31,7 @@ O **Ponce Park** não é apenas uma opção próxima; é a escolha premium. Ofer
 2.  **Proximidade Inigualável:** Localizado a uma curta distância do terminal, o Ponce Park oferece a conveniência que os viajantes exigem.
 3.  **Agilidade no Serviço de Transfer:** Com transferências rápidas e eficientes, o Ponce Park garante que você chegue aos terminais sem demora.
 
-### 2\. Outras Opções a Considerar
+### 2. Outras Opções a Considerar
 
 -   **Yellow Park:** Oferece um ambiente exclusivo para quem busca serviços personalizados e comodidades adicionais.
 -   **Airport Park:** Uma alternativa confiável, proporcionando praticidade e segurança para os viajantes.

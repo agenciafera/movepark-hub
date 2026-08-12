@@ -34,14 +34,14 @@ Esta tabela demonstra o custo-benefício imbatível de escolher a reserva na **M
 
 A **Move Park** atua como sua plataforma de reservas, conectando você a parceiros confiáveis e seguros, como a **AeroParking**, para garantir que você estacione com tranquilidade e economize.
 
-#### 1\. A Vantagem da Move Park e AeroParking: Economia Recorde e Translado Gratuito
+#### 1. A Vantagem da Move Park e AeroParking: Economia Recorde e Translado Gratuito
 
 Ao reservar sua vaga na **AeroParking** através da **Move Park**, você garante o melhor preço sem abrir mão da segurança ou agilidade.
 
 -   **Economia Significativa:** Nossos parceiros oferecem tarifas diárias que podem custar **R$ 17,99**, uma fração do preço do estacionamento oficial, liberando dinheiro para sua viagem.
 -   **Translado Gratuito 24h:** A equipe da AeroParking oferece o serviço de **leva e traz gratuito** para todos os terminais (T1, T2 e T3) de Guarulhos. Você estaciona, é levado de van e chega rapidamente à porta do embarque.
 
-#### 2\. Segurança e Confiança
+#### 2. Segurança e Confiança
 
 A segurança é nossa prioridade. A **AeroParking** é uma empresa estabelecida, com pátio monitorado 24 horas e veículo segurado, o que confere a **confiabilidade** aos clientes mais exigentes.
 

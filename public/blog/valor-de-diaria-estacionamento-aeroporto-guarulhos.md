@@ -39,7 +39,7 @@ Essas opções foram selecionadas com base na segurança, custo-benefício e na 
 
 ## **Detalhes sobre os TOP 3 Estacionamentos**
 
-### **1\. Estacionamento Oficial GRU**
+### **1. Estacionamento Oficial GRU**
 
 Localizado dentro do Aeroporto de Guarulhos, o estacionamento oficial é a escolha mais conveniente para quem não quer perder tempo. Apesar de possuir um custo mais elevado (R$70 por diária), ele oferece vagas cobertas, segurança de alta qualidade e a praticidade de estar diretamente conectado aos terminais.
 
@@ -53,7 +53,7 @@ Se o tempo é sua prioridade, essa é a melhor escolha para estacionar.
 
 * * *
 
-### **2\. AirportPark**
+### **2. AirportPark**
 
 O AirportPark combina economia e praticidade, sendo uma excelente alternativa ao estacionamento oficial. Com um valor de diária de R$40, está localizado a apenas 6 minutos dos terminais e oferece transfer gratuito em veículos modernos e confortáveis.
 
@@ -67,7 +67,7 @@ Com seu excelente serviço e localização estratégica, o AirportPark é ideal 
 
 * * *
 
-### **3\. Urban Park**
+### **3. Urban Park**
 
 O Urban Park é a opção mais acessível, com diárias a partir de R$35. Localizado a 8 minutos do Aeroporto de Guarulhos, ele é perfeito para quem busca uma opção econômica sem abrir mão de segurança. O estacionamento possui transfer pontual e vagas amplas.
 

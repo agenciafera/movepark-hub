@@ -387,6 +387,38 @@ function removeRepetidos(md, report) {
   return saida.join("\n\n");
 }
 
+/**
+ * Tira a barra invertida que o turndown pôs onde ela não protege nada.
+ *
+ * O turndown escapa por precaução, sem olhar o contexto: `1\.` para o número não
+ * virar lista, `\[3, 1\]` para o colchete não virar link, `\*` para o asterisco
+ * não abrir negrito. Dentro de um título ou no meio de uma frase nada disso pode
+ * acontecer, e a barra acaba na tela. Foram 261 no acervo.
+ *
+ * O render sabe ler o escape desde 12/08/2026, então isto é sobre o markdown em
+ * si, que é o que a Public API e os agentes leem em `/blog/<slug>.md`.
+ */
+function limpaEscapes(md, report) {
+  const antes = (md.match(/\\/g) ?? []).length;
+
+  const limpo = md
+    // `\*\* Texto:\*\*` é negrito que o editor digitou com espaço sobrando, e o
+    // WordPress mostrava os asteriscos crus. Vira negrito de verdade.
+    .replace(/\\\*\\\*\s*(.+?)\s*\\\*\\\*/g, "**$1**")
+    .replace(/\\\*/g, "*")
+    // Colchete escapado nunca é link: o turndown só escapa quando não há `(`.
+    .replace(/\\\[/g, "[")
+    .replace(/\\\]/g, "]")
+    // O ponto só precisa de escape quando o número abre a linha, senão a linha
+    // vira item de lista numerada. Em título ou no meio da frase, não precisa.
+    .replace(/^(.*?)\\\./gm, (inteiro, inicio) =>
+      /^\s*\d+$/.test(inicio) ? inteiro : `${inicio}.`,
+    );
+
+  report.escapesRemovidos += antes - (limpo.match(/\\/g) ?? []).length;
+  return limpo;
+}
+
 function slugifyFile(name) {
   return name
     .normalize("NFD")
@@ -540,6 +572,7 @@ async function main() {
     linksRemovidos: 0,
     altPreenchidos: 0,
     blocosRepetidos: 0,
+    escapesRemovidos: 0,
     uploaded: 0,
     uploadsFailed: [],
   };
@@ -570,6 +603,7 @@ async function main() {
     bodyMd = rewriteLinks(bodyMd, report);
     bodyMd = preencheAlt(bodyMd, report);
     bodyMd = removeRepetidos(bodyMd, report);
+    bodyMd = limpaEscapes(bodyMd, report);
     bodyMd = bodyMd.replace(/\n{3,}/g, "\n\n").trim();
 
     const media = post._embedded?.["wp:featuredmedia"]?.[0];
@@ -722,6 +756,7 @@ function printReport(r, dryRun) {
   console.log(`  links virados texto:      ${r.linksRemovidos}`);
   console.log(`  alt preenchidos:          ${r.altPreenchidos}`);
   console.log(`  blocos repetidos tirados: ${r.blocosRepetidos}`);
+  console.log(`  escapes removidos:        ${r.escapesRemovidos}`);
   if (r.imagesReused) console.log(`  imagens reaproveitadas:   ${r.imagesReused}`);
   if (r.imagesConverted || r.imagesSkipped) {
     console.log(`  imagens convertidas:      ${r.imagesConverted} (${mb(r.imagesBefore)} MB -> ${mb(r.imagesAfter)} MB)`);

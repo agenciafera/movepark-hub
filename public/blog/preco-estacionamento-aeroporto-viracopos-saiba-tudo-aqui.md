@@ -21,14 +21,14 @@ Para ajudá-lo a decidir, elaboramos uma tabela com os principais **preços de e
 | --- | --- | --- | --- | --- |
 | **Virapark Estacionamento** | R$ 19,90 | R$ 209,93 | R$ 899,70 | 3 minutos |
 | **Garage Inn Estacionamento** | R$ 35,00 | R$ 245,00 | R$ 1.050,00 | Dentro do Aeroporto |
-| **Estapar Oficial** | R$ 40,00\* | R$ 280,00\* | R$ 1.200,00\* | Dentro do Aeroporto |
+| **Estapar Oficial** | R$ 40,00* | R$ 280,00* | R$ 1.200,00* | Dentro do Aeroporto |
 | **Viracopos Aeroparking** | R$ 33,00 | R$ 231,00 | R$ 990,00 | 5 minutos |
 | **ParkVia** | R$ 30,00 | R$ 210,00 | R$ 900,00 | 5 minutos |
 | **JF Parking** | R$ 6,00 | R$ 42,00 | R$ 180,00 | 6 minutos |
 | **KM64 Estacionamento** | R$ 6,00 | R$ 42,00 | R$ 180,00 | 10 minutos |
 | **Bandeira Park VCP** | R$ 21,87 | R$ 153,09 | R$ 656,10 | 7 minutos |
 
-> \*Os preços apresentados são aproximados e podem variar conforme a data e a disponibilidade. Consulte diretamente o estacionamento escolhido para informações atualizadas.
+> *Os preços apresentados são aproximados e podem variar conforme a data e a disponibilidade. Consulte diretamente o estacionamento escolhido para informações atualizadas.
 
 * * *
 

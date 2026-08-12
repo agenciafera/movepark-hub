@@ -67,14 +67,14 @@ A região ao redor do Aeroporto de Confins oferece diversas opções de estacion
     -   **Tarifas**: Informações não disponíveis publicamente.
     -   **Diferenciais**: Oferece um ambiente seguro e monitorado para os veículos, com fácil acesso ao aeroporto.
     
-    **8\. Estacionamento Pátio**
+    **8. Estacionamento Pátio**
     
     -   **Localização**: Próximo ao Aeroporto de Confins.
     -   **Serviços**: Vagas cobertas e descobertas, segurança 24 horas, traslado gratuito para o aeroporto.
     -   **Tarifas**: Informações não disponíveis publicamente.
     -   **Diferenciais**: Proximidade imediata ao aeroporto, facilitando o acesso dos passageiros.
     
-    **9\. Estacionamento Space Park**
+    **9. Estacionamento Space Park**
     
     -   **Localização**: Rua Lapa Vermelha, 201, Santa Cruz, Confins/MG.
     -   **Serviços**: Vagas cobertas, segurança 24 horas, traslado gratuito para o aeroporto.
@@ -82,21 +82,21 @@ A região ao redor do Aeroporto de Confins oferece diversas opções de estacion
     -   **Diferenciais**: Proximidade de apenas 3 minutos do aeroporto, oferecendo traslado rápido e eficiente.
         
     
-    **10\. Auto Park Brasil**
+    **10. Auto Park Brasil**
     
     -   **Localização**: Próximo ao Aeroporto de Confins.
     -   **Serviços**: Vagas cobertas e descobertas, segurança 24 horas, traslado gratuito para o aeroporto.
     -   **Tarifas**: Informações não disponíveis publicamente.
     -   **Diferenciais**: Oferece um ambiente seguro e monitorado para os veículos, com fácil acesso ao aeroporto.
     
-    **11\. Nation Park Estacionamento**
+    **11. Nation Park Estacionamento**
     
     -   **Localização**: Próximo ao Aeroporto de Confins.
     -   **Serviços**: Vagas cobertas e descobertas, segurança 24 horas, traslado gratuito para o aeroporto.
     -   **Tarifas**: Informações não disponíveis publicamente.
     -   **Diferenciais**: Proximidade imediata ao aeroporto, facilitando o acesso dos passageiros.
     
-    **12\. Estacionamento AeroPark**
+    **12. Estacionamento AeroPark**
     
     -   **Localização**: Rua Gumercino Ribeiro dos Santos, 910, Alto dos Ribeiros, Confins/MG.
     -   **Serviços**: Vagas cobertas e descobertas, segurança 24 horas, traslado gratuito para o aeroporto.

@@ -13,19 +13,19 @@ Planejar uma viagem pelo [Aeroporto Afonso Pena](/destinos/aeroporto-afonso-pena
 
 ## 4 Dicas para você escolher o Estacionamento Ideal
 
-### 1\. Proximidade ao Terminal
+### 1. Proximidade ao Terminal
 
 Ao escolher um estacionamento, a proximidade ao terminal é crucial. Opções, como o Estacionamento Nation Park, oferecem fácil acesso aos terminais, garantindo conveniência durante toda a sua jornada.
 
-### 2\. Segurança como Prioridade
+### 2. Segurança como Prioridade
 
 A segurança do seu veículo é uma prioridade. o Nation Park é um estacionamento que oferece vigilância 24 horas, sistemas avançados de monitoramento proporcionam tranquilidade aos viajantes.
 
-### 3\. Serviços Adicionais
+### 3. Serviços Adicionais
 
 Considere estacionamentos que vão além do básico. Alguns estacionamento, por exemplo, oferecem serviços adicionais, como lavagem de carro e manutenção, tornando a experiência ainda mais completa.
 
-### 4\. Transparência nas Tarifas
+### 4. Transparência nas Tarifas
 
 Evite surpresas desagradáveis ao verificar as tarifas com antecedência. O Nation Park destaca-se ao praticar transparência, fornecendo informações claras sobre os custos e eliminando taxas ocultas.
 

@@ -23,7 +23,7 @@ Se prepara que o conteúdo tá caprichado, mas leve de ler.
 
 * * *
 
-## 1\. O rolê de Viracopos
+## 1. O rolê de Viracopos
 
 O **Aeroporto Internacional de Viracopos (VCP)**, em Campinas, é gigante e supermovimentado, principalmente por ser a casa da Azul. Muita gente do interior de SP e até da capital prefere embarcar por lá.
 
@@ -33,7 +33,7 @@ Spoiler: não precisa deixar um rim no estacionamento oficial pra ter segurança
 
 * * *
 
-## 2\. Tipos de estacionamento VCP
+## 2. Tipos de estacionamento VCP
 
 ### 2.1. O oficial (dentro do aeroporto)
 
@@ -55,7 +55,7 @@ Aqui entram opções como o **Virapark**, que ficam bem perto do terminal e ofer
 
 * * *
 
-## 3\. Por que os privados estão ganhando?
+## 3. Por que os privados estão ganhando?
 
 Se liga:
 
@@ -72,7 +72,7 @@ E entre todos eles, quem manda bem mesmo é o **Virapark**.
 
 * * *
 
-## 4\. Virapark: parceiro da Movepark e queridinho dos viajantes
+## 4. Virapark: parceiro da Movepark e queridinho dos viajantes
 
 👉 [Clica aqui pra conhecer o Virapark](/destinos/aeroporto-de-viracopos)
 
@@ -98,7 +98,7 @@ Basicamente, você chega, larga o carro, pega a van e em minutos tá dentro do t
 
 * * *
 
-## 5\. Tabela rápida: Oficial x Virapark
+## 5. Tabela rápida: Oficial x Virapark
 
 | Critério | Oficial VCP | Virapark |
 | --- | --- | --- |
@@ -111,7 +111,7 @@ Basicamente, você chega, larga o carro, pega a van e em minutos tá dentro do t
 
 * * *
 
-## 6\. Como reservar no Virapark sem stress
+## 6. Como reservar no Virapark sem stress
 
 1.  Entra no [site do Virapark](https://virapark.com.br/?utm_source=chatgpt.com).
     
@@ -126,7 +126,7 @@ Basicamente, você chega, larga o carro, pega a van e em minutos tá dentro do t
 
 * * *
 
-## 7\. Dicas rápidas pra não passar perrengue
+## 7. Dicas rápidas pra não passar perrengue
 
 -   **Chega com antecedência:** conta com uns 15 min a mais por causa do transfer.
     
@@ -139,7 +139,7 @@ Basicamente, você chega, larga o carro, pega a van e em minutos tá dentro do t
 
 * * *
 
-## 8\. O que a galera fala do Virapark
+## 8. O que a galera fala do Virapark
 
 Quem já usou curte principalmente:
 
@@ -154,7 +154,7 @@ Quem já usou curte principalmente:
 
 * * *
 
-## 9\. SEO na veia: por que falar de “estacionamento VCP”?
+## 9. SEO na veia: por que falar de “estacionamento VCP”?
 
 Se você caiu aqui pesquisando **estacionamento VCP**, é porque tá querendo resolver essa treta agora mesmo. E a boa notícia é que existe sim um jeito de estacionar barato, seguro e prático em Viracopos.
 
@@ -162,7 +162,7 @@ E adivinha qual é? Exatamente: o **Virapark**.
 
 * * *
 
-## 10\. Conclusão: onde deixar o carro em Viracopos?
+## 10. Conclusão: onde deixar o carro em Viracopos?
 
 Se a ideia é praticidade total e você não liga de pagar mais caro, o estacionamento oficial resolve.
 

@@ -31,14 +31,14 @@ Esta tabela mostra o porquê a Move Park é a escolha inteligente para quem busc
 
 A **Move Park** é a principal plataforma de reservas para viajantes que priorizam **economia e serviço de qualidade**, garantindo sua vaga nos melhores estacionamentos parceiros de Viracopos, como **Virapark** e **Garageinn CEV**.
 
-#### 1\. A Vantagem da Move Park: Preço e Conexão com Parceiros Confiáveis
+#### 1. A Vantagem da Move Park: Preço e Conexão com Parceiros Confiáveis
 
 Ao invés de cobrar a tarifa de balcão (o preço padrão mais alto, como os R$ 75,00 do oficial), a Move Park trabalha como um _marketplace_.
 
 -   **Economia Comprovada:** Você pode encontrar tarifas que chegam a ser **metade do preço** do Edifício Garagem oficial, reservando com antecedência na plataforma.
 -   **Parceiros de Confiança:** Garantimos as melhores ofertas entre estacionamentos externos renomados, como a **Virapark** e a **Garageinn CEV**.
 
-#### 2\. Translado Gratuito e Agilizado (Serviço Sem Estresse)
+#### 2. Translado Gratuito e Agilizado (Serviço Sem Estresse)
 
 Seu veículo fica em um pátio seguro e monitorado (seja Virapark ou Garageinn), e a equipe local faz o translado (leva e traz) **gratuito** do carro para você.
 

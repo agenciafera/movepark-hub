@@ -40,13 +40,13 @@ Para facilitar sua escolha, elaboramos uma tabela comparativa com as principais 
 
 | **Estacionamento** | **Diária (R$)** | **7 dias (R$)** | **30 dias (R$)** | **Distância ao Aeroporto** |
 | --- | --- | --- | --- | --- |
-| Estapar Aeroporto Internacional Afonso Pena | 13,90\* | 97,30\* | 417,00\* | Dentro do aeroporto |
+| Estapar Aeroporto Internacional Afonso Pena | 13,90* | 97,30* | 417,00* | Dentro do aeroporto |
 | Nation Park Estacionamento | 11,90 | 59,49 | 178,47 | 3 km (~5 minutos) |
-| PareBem Estacionamento | 34,70\* | 243,00\* | 1.041,00\* | Dentro do aeroporto |
+| PareBem Estacionamento | 34,70* | 243,00* | 1.041,00* | Dentro do aeroporto |
 | Abba Park | 9,90 | 69,30 | 297,00 | 5 minutos |
 | Best Park | 15,00 | 105,00 | 450,00 | 2 minutos |
 
-\*Valores aproximados; recomenda-se verificar os preços atualizados diretamente com os estacionamentos.
+*Valores aproximados; recomenda-se verificar os preços atualizados diretamente com os estacionamentos.
 
 ## Dicas para Economizar no Estacionamento
 

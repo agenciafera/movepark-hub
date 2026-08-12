@@ -13,15 +13,15 @@ Viajar pelo Aeroporto Viracopos é uma experiência única, mas a escolha do est
 
 ## Benefícios de Ir de Carro para o Aeroporto de Viracopos
 
-### 1\. **Conveniência e Flexibilidade**
+### 1. **Conveniência e Flexibilidade**
 
 A escolha do carro proporciona a liberdade de definir seus horários, evitando depender de transporte público ou terceiros. Essa flexibilidade é crucial para lidar com imprevistos, como trânsito ou mudanças nos horários de voo.
 
-### 2\. **Conforto Personalizado**
+### 2. **Conforto Personalizado**
 
 Desfrute do conforto do seu próprio carro, ajustando a temperatura e desfrutando de um ambiente familiar antes mesmo de chegar ao aeroporto.
 
-### 3\. **Economia de Tempo**
+### 3. **Economia de Tempo**
 
 Evite demoras e complicações associadas a outros meios de transporte, indo diretamente ao seu destino e otimizando o tempo de deslocamento.
 

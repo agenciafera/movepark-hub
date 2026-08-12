@@ -187,19 +187,19 @@ Se liga em alguns hacks que podem ajudar a gastar ainda menos:
 
 ## Perguntas frequentes sobre estacionamento GRU Airport
 
-**1\. Preciso reservar antes ou posso chegar na hora?**  
+**1. Preciso reservar antes ou posso chegar na hora?**  
 Dá para chegar na hora, mas não é recomendado. A reserva online garante preço e vaga.
 
-**2\. O traslado do AeroParking funciona 24h?**  
+**2. O traslado do AeroParking funciona 24h?**  
 Sim! Não importa se o seu voo sai de madrugada, as vans rodam o tempo todo.
 
-**3\. Posso deixar meu carro por mais de 15 dias?**  
+**3. Posso deixar meu carro por mais de 15 dias?**  
 Pode sim, e quanto maior o período, mais barato fica o valor por diária.
 
-**4\. O estacionamento é coberto?**  
+**4. O estacionamento é coberto?**  
 O AeroParking oferece tanto opções cobertas quanto descobertas, você escolhe.
 
-**5\. O pagamento é feito na hora?**  
+**5. O pagamento é feito na hora?**  
 Pode pagar online antecipado ou no local. Online geralmente sai mais barato.
 
 * * *

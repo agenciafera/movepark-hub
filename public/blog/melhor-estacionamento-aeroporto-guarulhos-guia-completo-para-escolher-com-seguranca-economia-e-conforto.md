@@ -35,19 +35,19 @@ Por isso, comparar as opções disponíveis é a melhor forma de tomar uma decis
 
 Escolher o **melhor estacionamento no GRU Airport** não é apenas uma questão de preço. Os principais critérios incluem:
 
-### 1\. **Segurança**
+### 1. **Segurança**
 
 Um bom estacionamento precisa oferecer **monitoramento por câmeras**, portões eletrônicos, iluminação adequada, controle de acesso e equipe de segurança 24h.
 
-### 2\. **Proximidade e traslado**
+### 2. **Proximidade e traslado**
 
 Mesmo que o estacionamento não esteja dentro do aeroporto, é fundamental que ele ofereça **transporte gratuito e frequente até os terminais**, com veículos confortáveis e pontuais.
 
-### 3\. **Preço competitivo**
+### 3. **Preço competitivo**
 
 Tarifas justas, pacotes promocionais para longas estadias e políticas transparentes fazem toda a diferença. Estacionamentos privados costumam ter preços **até 50% mais baixos** que os oficiais.
 
-### 4\. **Comodidade e atendimento**
+### 4. **Comodidade e atendimento**
 
 Desde o momento da reserva até a saída do estacionamento, o atendimento deve ser eficiente, rápido e respeitoso.
 

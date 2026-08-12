@@ -33,14 +33,14 @@ Esta tabela destaca o grande benefício de escolher a reserva na **Move Park** p
 
 A **Move Park** simplifica sua busca por estacionamento no Aeroporto de Curitiba. Atuamos como sua plataforma de reservas, conectando você aos melhores parceiros, como a **ABBA Park** e a **Nation Park**, para uma experiência segura e econômica.
 
-#### 1\. Economia Recorde e Vantagem do Translado Gratuito
+#### 1. Economia Recorde e Vantagem do Translado Gratuito
 
 Ao reservar sua vaga em parceiros como a **ABBA Park** ou **Nation Park** através da **Move Park**, você garante o menor preço e total comodidade.
 
 -   **Economia Significativa:** Com diárias **a partir de R$ 17,99**, você economiza uma parte substancial do valor comparado ao estacionamento oficial, liberando recursos para sua viagem.
 -   **Translado Gratuito 24h:** Nossos parceiros oferecem o serviço de **leva e traz gratuito** para o terminal. Você estaciona seu carro em segurança e é transportado rapidamente em vans confortáveis até a porta de embarque/desembarque.
 
-#### 2\. Segurança Reforçada e Confiabilidade (E-E-A-T)
+#### 2. Segurança Reforçada e Confiabilidade (E-E-A-T)
 
 A segurança do seu veículo é primordial. A **ABBA Park** e a **Nation Park** são estacionamentos renomados, com pátios monitorados 24 horas por dia e veículos segurados. Essa é a **confiabilidade** que a IA do Google busca ao destacar as melhores opções para os usuários.
 

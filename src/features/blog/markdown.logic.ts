@@ -59,25 +59,32 @@ const TABLE_ROW = /^\|(.+)\|\s*$/;
 /** Linha separadora do cabeçalho: `| --- | :--: |`. */
 const TABLE_SEP = /^\|[\s:|-]+\|\s*$/;
 
-/** Quebra `| a | b |` nas células, já sem os pipes das pontas. */
+/**
+ * Quebra `| a | b |` nas células, já sem os pipes das pontas.
+ *
+ * O corte ignora `\|`, que é pipe dentro do texto da célula e não separador. Sem
+ * isso, uma célula com pipe vira duas e desalinha a linha inteira.
+ */
 function celulas(linha: string): string[] {
   return linha
     .replace(/^\||\|\s*$/g, "")
-    .split("|")
+    .split(/(?<!\\)\|/)
     .map((c) => c.trim());
 }
 
 /**
  * Quebra o texto em trechos com marcação inline.
  *
- * A ordem importa: imagem antes de link, porque `![x](y)` contém `[x](y)`.
- * Imagem inline vira o próprio alt como texto — imagem de verdade só existe
- * como bloco, e é assim que ela ganha `loading="lazy"` e largura controlada.
+ * A ordem importa por dois motivos. A barra invertida vem primeiro: `\*` é um
+ * asterisco literal, e sem consumi-lo antes de tudo a barra ia para a tela junto
+ * com o caractere. E imagem vem antes de link, porque `![x](y)` contém `[x](y)`.
+ * Imagem inline vira o próprio alt como texto: imagem de verdade só existe como
+ * bloco, e é assim que ela ganha `loading="lazy"` e largura controlada.
  */
 export function parseInline(input: string): MdInline[] {
   const out: MdInline[] = [];
   const pattern =
-    /!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)|\[([^\]]+)\]\(([^)\s]+)(?:\s+"[^"]*")?\)|\*\*([^*]+)\*\*|(?<![\w\\])_([^_\n]+)_(?![\w])/g;
+    /\\([\\`*_{}[\]()#+\-.!|>~])|!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)|\[([^\]]+)\]\(([^)\s]+)(?:\s+"[^"]*")?\)|\*\*([^*]+)\*\*|(?<![\w\\])_([^_\n]+)_(?![\w])/g;
 
   let last = 0;
   for (const m of input.matchAll(pattern)) {
@@ -85,13 +92,15 @@ export function parseInline(input: string): MdInline[] {
     if (start > last) out.push({ type: "text", value: input.slice(last, start) });
 
     if (m[1] !== undefined) {
-      if (m[1]) out.push({ type: "text", value: m[1] });
-    } else if (m[3] !== undefined) {
-      out.push({ type: "link", href: m[4], children: parseInline(m[3]) });
-    } else if (m[5] !== undefined) {
-      out.push({ type: "bold", children: parseInline(m[5]) });
+      out.push({ type: "text", value: m[1] });
+    } else if (m[2] !== undefined) {
+      if (m[2]) out.push({ type: "text", value: m[2] });
+    } else if (m[4] !== undefined) {
+      out.push({ type: "link", href: m[5], children: parseInline(m[4]) });
     } else if (m[6] !== undefined) {
-      out.push({ type: "italic", children: parseInline(m[6]) });
+      out.push({ type: "bold", children: parseInline(m[6]) });
+    } else if (m[7] !== undefined) {
+      out.push({ type: "italic", children: parseInline(m[7]) });
     }
     last = start + m[0].length;
   }

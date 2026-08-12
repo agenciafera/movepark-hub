@@ -88,22 +88,22 @@ Estacionar próximo ao GRU Airport com a Movepark é a escolha inteligente para 
 
 ## **FAQs (Perguntas Frequentes)**
 
-### **1\. Posso reservar meu estacionamento com a Movepark no mesmo dia da minha viagem?**
+### **1. Posso reservar meu estacionamento com a Movepark no mesmo dia da minha viagem?**
 
 Sim, a Movepark oferece reservas 24/7, permitindo que você reserve seu estacionamento até mesmo no dia da sua viagem.
 
-### **2\. A Movepark oferece estacionamento coberto?**
+### **2. A Movepark oferece estacionamento coberto?**
 
 Sim, no site da Movepark, você encontrará muitas opções de estacionamento, que oferecem vagas cobertas e descobertas para atender às suas preferências.
 
-### **3\. Como faço para entrar em contato com a Movepark em caso de dúvidas ou problemas?**
+### **3. Como faço para entrar em contato com a Movepark em caso de dúvidas ou problemas?**
 
 Você pode entrar em contato com a equipe da Movepark através do seu site, por telefone ou por e-mail. Eles estão disponíveis para ajudar com qualquer dúvida ou preocupação que você possa ter.
 
-### **4\. A Movepark oferece descontos para reservas antecipadas?**
+### **4. A Movepark oferece descontos para reservas antecipadas?**
 
 Sim, no sistema da Movepark, frequentemente são oferecidos descontos e promoções especiais para reservas antecipadas. Certifique-se de verificar o site para as últimas ofertas.
 
-### **5\. Meu voo de retorno é tarde da noite. Os estacionamentos oferecem serviço de traslado durante a madrugada?**
+### **5. Meu voo de retorno é tarde da noite. Os estacionamentos oferecem serviço de traslado durante a madrugada?**
 
 Sim, o serviço de traslado funciona 24 horas por dia, 7 dias por semana, para garantir que você possa acessar seu veículo a qualquer momento, independentemente do horário do seu voo.

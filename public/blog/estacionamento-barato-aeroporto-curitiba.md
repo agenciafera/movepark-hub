@@ -61,22 +61,22 @@ Se você está em busca do estacionamento mais barato na região do aeroporto de
 
 ## **FAQs (Perguntas Frequentes)**
 
-### **1\. Os estacionamentos alternativos são seguros?**
+### **1. Os estacionamentos alternativos são seguros?**
 
 Sim, muitos estabelecimentos oferecem estacionamento seguro e confiável, com preços mais acessíveis que os estacionamentos próximos ao aeroporto.
 
-### **2\. É realmente mais barato reservar com antecedência?**
+### **2. É realmente mais barato reservar com antecedência?**
 
 Sim, geralmente as tarifas são mais baixas quando você reserva seu estacionamento com antecedência, evitando surpresas de última hora.
 
-### **3\. Como posso verificar as promoções e descontos disponíveis?**
+### **3. Como posso verificar as promoções e descontos disponíveis?**
 
 Você pode verificar as promoções e descontos nos sites dos estacionamentos ou se inscrever em suas newsletters para receber ofertas especiais por e-mail.
 
-### **4\. Quais são as opções de transporte disponíveis dos estacionamentos alternativos para o aeroporto?**
+### **4. Quais são as opções de transporte disponíveis dos estacionamentos alternativos para o aeroporto?**
 
 Muitos estacionamentos oferecem serviços de transporte gratuito ou por uma taxa adicional, como vans ou ônibus, para levar os clientes até o terminal do aeroporto.
 
-### **5\. Como posso garantir a segurança do meu veículo em um estacionamento alternativo?**
+### **5. Como posso garantir a segurança do meu veículo em um estacionamento alternativo?**
 
 Certifique-se de escolher estabelecimentos com boas avaliações de clientes e medidas de segurança, como iluminação adequada, câmeras de vigilância e controle de acesso.

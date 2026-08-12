@@ -4,6 +4,7 @@
 
 - Publicado em: 2025-01-15
 - URL: https://hub.movepark.co/blog/preco-estacionamento-aeroporto-navegantes-saiba-tudo-aqui/
+- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-internacional-de-navegantes
 
 ---
 Se você está planejando viajar a partir do Aeroporto Internacional de Navegantes e busca um estacionamento seguro e conveniente para o seu veículo, este guia detalhado irá auxiliá-lo na escolha da melhor opção.

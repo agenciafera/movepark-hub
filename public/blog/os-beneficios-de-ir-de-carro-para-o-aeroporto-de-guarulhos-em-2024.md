@@ -13,15 +13,15 @@ Viajar pelo [Aeroporto de Guarulhos](/destinos/aeroporto-internacional-de-sao-pa
 
 ## Benefícios de Ir de Carro para o Aeroporto de Guarulhos
 
-### **1\. Conveniência e Flexibilidade**
+### **1. Conveniência e Flexibilidade**
 
 Ir de carro proporciona a liberdade de definir seus próprios horários, sem depender de transporte público ou de terceiros. Essa flexibilidade é essencial para lidar com imprevistos, como trânsito ou mudanças nos horários de voo.
 
-### **2\. Conforto Personalizado**
+### **2. Conforto Personalizado**
 
 O conforto do seu próprio carro é inigualável. Você pode ajustar a temperatura, escolher sua música favorita e desfrutar de um ambiente familiar antes mesmo de chegar ao aeroporto.
 
-### **3\. Economia de Tempo**
+### **3. Economia de Tempo**
 
 Evite as complexidades e demoras associadas a outros meios de transporte. Ir de carro permite que você vá diretamente ao seu destino, otimizando seu tempo e proporcionando uma experiência mais eficiente.
 

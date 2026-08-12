@@ -43,7 +43,7 @@ Escolher um estacionamento seguro e acessível é essencial para garantir a tran
 
 | Estacionamento | Valor da Diária |
 | --- | --- |
-| Ponce Park\* (melhor opção) | R$15,29 |
+| Ponce Park* (melhor opção) | R$15,29 |
 | Airport Park | R$51,20 |
 | Urban Park | R$17,90 |
 | Econo Park | R$25,90 |

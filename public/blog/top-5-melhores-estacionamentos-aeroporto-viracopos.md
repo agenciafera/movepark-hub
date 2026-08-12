@@ -31,7 +31,7 @@ Para facilitar sua escolha, organizamos os dados das principais unidades. Tabela
 
 A seleção abaixo foi estruturada com foco no que há de mais moderno em custo-benefício e agilidade, com destaque especial para os parceiros da rede Movepark, que são referência em tecnologia no setor.
 
-### 1\. Virapark (Parceiro Movepark) – O Gamechanger do Custo-Benefício
+### 1. Virapark (Parceiro Movepark) – O Gamechanger do Custo-Benefício
 
 O **Virapark** é o queridinho de quem viaja por Campinas. Localizado a apenas 3 minutos do terminal, ele une o menor preço da região com uma estrutura de elite.
 
@@ -42,7 +42,7 @@ O **Virapark** é o queridinho de quem viaja por Campinas. Localizado a apenas 3
 -   **Diferencial:** Pátio com a maioria das vagas cobertas, protegendo o possante de sol e chuva, e transfer gratuito que funciona 24h.
     
 
-### 2\. CEV – Centro Empresarial Viracopos (Parceiro Movepark) – Premium e “Dentro de Casa”
+### 2. CEV – Centro Empresarial Viracopos (Parceiro Movepark) – Premium e “Dentro de Casa”
 
 Se você busca o “perrengue zero”, o **CEV (Garage Inn)** é a pedida. Ele é o único estacionamento privado localizado literalmente dentro do complexo aeroportuário.
 
@@ -53,7 +53,7 @@ Se você busca o “perrengue zero”, o **CEV (Garage Inn)** é a pedida. Ele �
 -   **Diferencial:** Sala VIP climatizada com Wi-Fi e café enquanto você aguarda o traslado (que é quase instantâneo por estar dentro do aeroporto).
     
 
-### 3\. Edifício Garagem (Estapar) – Praticidade Direta
+### 3. Edifício Garagem (Estapar) – Praticidade Direta
 
 O estacionamento oficial é para quem quer o máximo de proximidade, acessando o terminal por uma passarela coberta.
 
@@ -62,7 +62,7 @@ O estacionamento oficial é para quem quer o máximo de proximidade, acessando o
 -   **Dica Extra:** Se você reservar pelo aplicativo Zul+ ou site da Estapar com antecedência, consegue valores muito menores, a partir de R$ 22,00.
     
 
-### 4\. Aerovalet – Agilidade e Confiança
+### 4. Aerovalet – Agilidade e Confiança
 
 Uma opção sólida para quem busca um atendimento humanizado e rápido. Está a cerca de 5 minutos do aeroporto.
 
@@ -71,7 +71,7 @@ Uma opção sólida para quem busca um atendimento humanizado e rápido. Está a
 -   **Diferencial:** Sistema de reserva online super prático e equipe preparada para um check-in ágil.
     
 
-### 5\. BR Parking – Tecnologia e Conforto
+### 5. BR Parking – Tecnologia e Conforto
 
 O BR Parking se destaca pela sinalização eletrônica de vagas (estilo shopping) e pelas comodidades para o cliente.
 

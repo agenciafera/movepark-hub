@@ -4,6 +4,7 @@
 
 - Publicado em: 2025-02-25
 - URL: https://hub.movepark.co/blog/top-3-estacionamentos-do-aeroporto-de-navegantes/
+- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-internacional-de-navegantes
 
 ---
 # TOP 3 Estacionamentos do Aeroporto de Navegantes
