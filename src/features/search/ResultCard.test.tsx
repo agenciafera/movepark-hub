@@ -74,11 +74,18 @@ describe("ResultCard", () => {
     expect(screen.getByTestId("result-card-subline").textContent).toContain("480 m");
   });
 
-  it("sem terminal: a subline mostra só a unidade, sem distância", () => {
+  it("sem terminal: o card não mostra subline (a unidade já está no título)", () => {
     renderWithProviders(
       <ResultCard item={item()} isSaved={false} onToggleSave={vi.fn()} searchParams={new URLSearchParams()} />,
     );
-    expect(screen.getByTestId("result-card-subline").textContent).not.toContain("·");
+    expect(screen.queryByTestId("result-card-subline")).toBeNull();
+  });
+
+  it("título traz empresa e unidade, pra duas unidades da mesma empresa não ficarem iguais", () => {
+    renderWithProviders(
+      <ResultCard item={item()} isSaved={false} onToggleSave={vi.fn()} searchParams={new URLSearchParams()} />,
+    );
+    expect(screen.getByRole("heading", { name: "Aerovalet · Guarulhos" })).toBeInTheDocument();
   });
 
   it("card por tipo: exibe o tipo de vaga como identidade do card (E2.1.3)", () => {

@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { toDataUrl } from "@/lib/qr";
 import { formatBRL, formatDate, formatTime, formatWeekdayDate } from "@/lib/format";
+import { parkingTitle } from "@/lib/parkingName";
 import { Wordmark } from "@/components/shared/Brand";
 import { FARE_TIER_LABEL } from "@/lib/fares";
 import { nightsOf } from "@/features/account/accountSummary.logic";
@@ -74,12 +75,10 @@ export function Voucher({ booking }: Props) {
           </span>
         </div>
         <h3 className="mt-5 text-display-md leading-tight text-white print:text-ink">
-          {booking.parking_type?.name ?? "Vaga"} · {booking.location.company.name}
+          {parkingTitle(booking.location.company.name, booking.location.name)}
         </h3>
         <p className="mt-2 text-caption-sm leading-relaxed text-white/75 print:text-muted">
-          {booking.location.company.name === booking.location.name
-            ? booking.location.address
-            : [booking.location.name, booking.location.address].filter(Boolean).join(" · ")}
+          {[booking.parking_type?.name, booking.location.address].filter(Boolean).join(" · ")}
         </p>
         {maps && (
           <a
@@ -231,7 +230,7 @@ function buildIcsHref(booking: MyBookingDetail): string {
   const dt = (s: string) =>
     new Date(s).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
   const summary = `Movepark · ${booking.location.name}`;
-  const desc = `Reserva ${booking.code} · ${booking.location.company.name}`;
+  const desc = `Reserva ${booking.code} · ${parkingTitle(booking.location.company.name, booking.location.name)}`;
   const ics = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",

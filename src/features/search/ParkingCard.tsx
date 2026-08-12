@@ -24,7 +24,8 @@ export type ParkingCardProps = {
   href: string;
   coverImage: string | null;
   coverAlt: string;
-  /** Nome do estacionamento (empresa/operador) — o título do card. */
+  /** Título do card: `Empresa · Unidade`, montado por `parkingTitle` (@/lib/parkingName).
+   *  Nunca só a empresa: quem tem várias unidades vira uma fila de cards idênticos. */
   title: string;
   /** Tipo de vaga: a identidade do card ("Vaga Coberta"). Vem em chip colorido. */
   parkingTypeName: string;
@@ -173,7 +174,11 @@ export function ParkingCard({
       {/* Conteúdo */}
       <CardLink to={href} soldOut={soldOut} className="flex flex-1 flex-col gap-3 p-5">
         <div className="min-w-0 space-y-0.5">
-          <h3 className="line-clamp-1 text-[18px] font-bold leading-snug text-ink">{title}</h3>
+          {/* Duas linhas: "Empresa · Unidade" não cabe em uma só nos cards de 3 colunas,
+              e a parte cortada seria justamente a unidade, que é o que diferencia. */}
+          <h3 className="line-clamp-2 text-balance text-[18px] font-bold leading-snug text-ink">
+            {title}
+          </h3>
           {/* O tipo é a identidade do card: dois cards da mesma unidade só se distinguem por
               aqui. O chip ganha cor por tipo (parkingTypeStyle) pra o cliente diferenciar de
               relance na lista. */}

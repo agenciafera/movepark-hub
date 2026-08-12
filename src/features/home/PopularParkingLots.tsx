@@ -7,6 +7,7 @@ import { ParkingCard, ParkingCardBadge, type ParkingCardAmenity } from "@/featur
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { parkingTitle } from "@/lib/parkingName";
 import { gsap } from "@/lib/gsap";
 
 // Mapeamento de amenidade → label
@@ -81,7 +82,7 @@ function PopularOfferCard({
       href={url}
       coverImage={location.cover_image}
       coverAlt={location.name}
-      title={location.company.name}
+      title={parkingTitle(location.company.name, location.name)}
       parkingTypeName={parking_type.name}
       parkingTypeCode={parking_type.code}
       metaIcon={location.destination ? Airplane : undefined}

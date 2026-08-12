@@ -1,5 +1,6 @@
 import { MapPin, Tag } from "@phosphor-icons/react";
 import { formatDistance } from "@/lib/format";
+import { parkingTitle } from "@/lib/parkingName";
 import { isTypeDescriptorAmenity } from "./amenities.logic";
 import { ParkingCard, ParkingCardBadge, type ParkingCardAmenity } from "./ParkingCard";
 import type { SearchResultItem } from "./useSearchResults";
@@ -121,17 +122,20 @@ export function ResultCard({ item, isSaved, onToggleSave, searchParams, source, 
       soldOut={soldOut}
       coverImage={item.location.cover_image}
       coverAlt={`${item.parking_type.name} em ${item.location.name}`}
-      title={item.operator.name}
+      title={parkingTitle(item.operator.name, item.location.name)}
       parkingTypeName={item.parking_type.name}
       parkingTypeCode={item.parking_type.code}
       typeTestId="result-card-type"
       metaTestId="result-card-subline"
       metaIcon={terminal ? MapPin : undefined}
+      // A unidade subiu para o título, então a subline fica com o que ela não diz: a que
+      // terminal o lote atende e a que distância. Sem terminal a linha não existe.
       meta={
-        <>
-          {item.location.name}
-          {terminal && <> · {formatDistance(terminal.distance_km)}</>}
-        </>
+        terminal ? (
+          <>
+            {terminal.name} · {formatDistance(terminal.distance_km)}
+          </>
+        ) : undefined
       }
       rating={{ avg: item.location.review_avg, count: item.location.review_count }}
       amenities={amenities}

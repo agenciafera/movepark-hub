@@ -29,6 +29,7 @@ import {
   yearToDate,
 } from "@/features/account/accountSummary.logic";
 import { formatBRL, formatDayTime } from "@/lib/format";
+import { parkingTitle } from "@/lib/parkingName";
 import { cn } from "@/lib/utils";
 
 /**
@@ -247,10 +248,12 @@ export function CustomerBookingsPanel({ detailBase = "/bookings" }: { detailBase
 
           {last.data && (
             <AccountCard title="Repetir reserva">
-              <p className="text-title-md text-ink">{last.data.companyName}</p>
-              <p className="mt-1 text-body-sm text-muted">
-                {[last.data.locationName, last.data.parkingTypeName].filter(Boolean).join(" · ")}
+              <p className="text-title-md text-ink">
+                {parkingTitle(last.data.companyName, last.data.locationName)}
               </p>
+              {last.data.parkingTypeName && (
+                <p className="mt-1 text-body-sm text-muted">{last.data.parkingTypeName}</p>
+              )}
               {last.data.vehicleLabel && (
                 <p className="mt-0.5 text-body-sm text-muted">{last.data.vehicleLabel}</p>
               )}
@@ -288,11 +291,12 @@ function FocusCard({ booking, detailBase }: { booking: MyBookingListItem; detail
       </span>
       <div className="mt-2 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
         <div className="min-w-0">
-          <h2 className="text-display-sm text-white">{booking.location.company.name}</h2>
-          <p className="mt-1 text-body-sm text-white/75">
-            {booking.location.name}
-            {booking.location.address ? ` · ${booking.location.address}` : ""}
-          </p>
+          <h2 className="text-display-sm text-white">
+            {parkingTitle(booking.location.company.name, booking.location.name)}
+          </h2>
+          {booking.location.address && (
+            <p className="mt-1 text-body-sm text-white/75">{booking.location.address}</p>
+          )}
           <p className="mt-0.5 text-body-sm text-white/75">
             {[booking.parking_type?.name, `${noites} ${noites === 1 ? "diária" : "diárias"}`]
               .filter(Boolean)
@@ -365,7 +369,7 @@ function HistoryRow({ booking, detailBase }: { booking: MyBookingListItem; detai
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-body-md font-medium text-ink">
-            {booking.location.company.name}
+            {parkingTitle(booking.location.company.name, booking.location.name)}
           </span>
           <span className="mt-0.5 block truncate text-caption-sm text-muted">
             {[`${noites} ${noites === 1 ? "diária" : "diárias"}`, booking.parking_type?.name]

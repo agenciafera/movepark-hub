@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toDataUrl } from "@/lib/qr";
 import { formatDateTime } from "@/lib/format";
+import { parkingTitle } from "@/lib/parkingName";
 import { useVoucherPdf } from "@/features/bookings/customerApi";
 import type { BookingForCheckout } from "./api";
 
@@ -118,7 +119,7 @@ function buildIcsHref(booking: BookingForCheckout): string {
   const dt = (s: string) =>
     new Date(s).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
   const summary = `Movepark · ${booking.location.name}`;
-  const desc = `Reserva ${booking.code} · ${booking.location.company.name}`;
+  const desc = `Reserva ${booking.code} · ${parkingTitle(booking.location.company.name, booking.location.name)}`;
   const ics = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",

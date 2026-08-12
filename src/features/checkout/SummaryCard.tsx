@@ -1,5 +1,6 @@
 import { ArrowSquareOut, ShieldCheck, Storefront } from "@phosphor-icons/react";
 import { formatBRL, formatDuration } from "@/lib/format";
+import { parkingTitle } from "@/lib/parkingName";
 import {
   freeCancelDeadlineLabel,
   cancellationPolicyLines,
@@ -82,10 +83,11 @@ export function SummaryCard({ booking, bare }: Props) {
             )}
             <div className="min-w-0 space-y-0.5">
               <h3 className="text-title-md text-ink">
-                {booking.location.company.name}
-                {parkingItem?.parking_type?.name ? ` • ${parkingItem.parking_type.name}` : ""}
+                {parkingTitle(booking.location.company.name, booking.location.name)}
               </h3>
-              <p className="text-body-sm text-muted">{booking.location.name}</p>
+              {parkingItem?.parking_type?.name && (
+                <p className="text-body-sm text-muted">{parkingItem.parking_type.name}</p>
+              )}
               {mapsUrl && (
                 <a
                   href={mapsUrl}

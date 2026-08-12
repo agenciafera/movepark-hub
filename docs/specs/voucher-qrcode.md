@@ -49,8 +49,8 @@ O voucher é gerado automaticamente ao receber confirmação de pagamento (`book
 |---|---|
 | Código da reserva | `booking.code` |
 | URL do QR code | `https://{domain}/voucher/validate?code={booking.code}` |
-| Empresa e logo | `company.name` + logo |
-| Unidade / endereço | `location.name`, `location.address` |
+| Título (empresa · unidade) | `parkingTitle(company.name, location.name)` (`src/lib/parkingName.ts`) |
+| Endereço | `location.address` |
 | Tipo de vaga | `parking_type.name` |
 | Datas de entrada/saída | `booking.check_in_at`, `booking.check_out_at` |
 | Placa do veículo | `vehicle.license_plate` (se informado) |

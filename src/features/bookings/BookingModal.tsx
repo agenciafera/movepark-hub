@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { formatBRL, formatDateTime } from "@/lib/format";
+import { parkingTitle } from "@/lib/parkingName";
 import type { BookingWithRelations } from "@/types/domain";
 import { useAuth } from "@/auth/context";
 import { useCancelBookingStaff } from "./api";
@@ -70,7 +71,7 @@ export function BookingModal({ booking, open, onOpenChange }: Props) {
               </span>
             )}
             <span className="text-body-sm text-muted">
-              {booking.location?.company?.name} · {booking.location?.name}
+              {parkingTitle(booking.location?.company?.name, booking.location?.name)}
             </span>
           </div>
         </DialogHeader>

@@ -26,6 +26,7 @@ import { FaqList } from "@/features/faqs/FaqList";
 import { groupFaqsByScope } from "@/features/faqs/FaqList.logic";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { optimizedImageUrl } from "@/lib/storage";
+import { parkingTitle } from "@/lib/parkingName";
 import { cn } from "@/lib/utils";
 import { CANCELLATION_POLICY_LINES_GENERIC } from "@/features/bookings/cancellation.logic";
 import { isTypeDescriptorAmenity } from "@/features/search/amenities.logic";
@@ -277,7 +278,12 @@ export default function ListingPage() {
       {/* Header */}
       <div className="mb-6 flex items-start justify-between gap-4">
         <div className="space-y-2">
-          <h1 className="text-display-xl text-ink">{listing.company.name}</h1>
+          {/* Empresa · unidade, o mesmo título do card que trouxe o cliente até aqui e o
+              mesmo do <title>/JSON-LD. Só a empresa deixava três unidades da Aerovalet
+              com H1 idêntico. */}
+          <h1 className="text-balance text-display-xl text-ink">
+            {parkingTitle(listing.company.name, listing.location.name)}
+          </h1>
           <p className="text-display-sm text-muted">{listing.parking_type.name}</p>
 
           {/* Social proof row */}

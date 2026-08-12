@@ -121,8 +121,9 @@ describe("SummaryCard", () => {
       />,
     );
 
-    expect(screen.getByText("Aerovalet • Vaga coberta")).toBeInTheDocument();
-    expect(screen.getByText("Guarulhos")).toBeInTheDocument();
+    // Empresa · unidade: a Aerovalet tem três unidades, e só a marca não diz qual é.
+    expect(screen.getByText("Aerovalet · Guarulhos")).toBeInTheDocument();
+    expect(screen.getByText("Vaga coberta")).toBeInTheDocument();
     expect(screen.getByText("Check-in")).toBeInTheDocument();
     expect(screen.getByText("Check-out")).toBeInTheDocument();
     expect(screen.getByText("Auto Start")).toBeInTheDocument();
@@ -135,7 +136,7 @@ describe("SummaryCard", () => {
   it("sem foto da unidade o cabeçalho não quebra", () => {
     renderWithProviders(<SummaryCard booking={booking(null)} />);
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
-    expect(screen.getByText("Guarulhos")).toBeInTheDocument();
+    expect(screen.getByText("Aerovalet · Guarulhos")).toBeInTheDocument();
   });
 
   it("usa a primeira foto da unidade como miniatura", () => {

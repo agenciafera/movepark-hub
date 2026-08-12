@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useCancelMyBooking } from "./customerApi";
 import { formatBRL, formatDateTime } from "@/lib/format";
+import { parkingTitle } from "@/lib/parkingName";
 import { cancellationStatus, freeCancelDeadlineLabel } from "./cancellation.logic";
 import type { MyBookingDetail } from "./customerApi";
 
@@ -67,8 +68,8 @@ export function CancelBookingDialog({
         <div className="space-y-3 text-body-sm">
           <div>
             <strong className="text-ink">Reserva:</strong>{" "}
-            {booking.parking_type?.name ?? "Vaga"} ·{" "}
-            {booking.location.company.name}
+            {parkingTitle(booking.location.company.name, booking.location.name)} ·{" "}
+            {booking.parking_type?.name ?? "Vaga"}
           </div>
           <div>
             <strong className="text-ink">Check-in:</strong>{" "}
