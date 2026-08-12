@@ -1,0 +1,75 @@
+{
+  "_comentario": [
+    "Fonte única da regra de link externo. O analisador lê este arquivo e a referência",
+    "references/links-e-fontes.md explica cada lista. Ao descobrir um concorrente novo,",
+    "acrescente aqui em vez de deixar no julgamento de quem escreve.",
+    "",
+    "bloqueadas: domínio que vende, agrega ou compara vaga de estacionamento.",
+    "  Site próprio de parceiro entra aqui também: ele é parceiro na operação e",
+    "  concorrente no checkout, e o post existe para a reserva fechar no Hub.",
+    "padroes_bloqueados: pedaço de host que denuncia estacionamento. Vale para qualquer",
+    "  domínio que não seja movepark.co nem operador de aeroporto, e existe porque",
+    "  concorrente novo aparece toda semana e quase sempre tem park/vaga no nome.",
+    "operadores_aeroporto: site oficial do aeroporto. Serve de fonte para voo, terminal e",
+    "  acesso, mas nunca para a página de estacionamento deles, que é concorrente direto.",
+    "confiaveis: fonte de autoridade que dá contexto sem disputar a mesma busca."
+  ],
+
+  "bloqueadas": [
+    "garageinn.com.br",
+    "plentyestacionamento.com.br",
+    "estapar.com.br",
+    "zulplus.com.br",
+    "onepark.com.br",
+    "parkjockey.com",
+    "parkopedia.com.br",
+    "parkopedia.com",
+    "vagalume.parking",
+    "reservefacil.com.br",
+    "estacionamentofacil.com.br",
+    "aeroparking.com.br",
+    "fastpark.com.br",
+    "multipark.pt",
+    "parkvia.com",
+    "looking4parking.com",
+    "holidayextras.com",
+    "skyparksecure.com"
+  ],
+
+  "padroes_bloqueados": ["park", "parking", "estacion", "vaga", "valet", "garagem"],
+
+  "operadores_aeroporto": [
+    "gru.com.br",
+    "viracopos.com",
+    "aeroportoviracopos.net",
+    "bh-airport.com.br",
+    "aeroportodeconfins.net",
+    "ccrairports.com.br",
+    "aeroportosbrasil.com.br",
+    "flonorte.com.br",
+    "aena.es",
+    "ana.pt",
+    "aeroportolisboa.pt",
+    "infraero.gov.br"
+  ],
+
+  "confiaveis": [
+    "gov.br",
+    "anac.gov.br",
+    "ibge.gov.br",
+    "inmet.gov.br",
+    "receita.fazenda.gov.br",
+    "denatran.gov.br",
+    "detran.sp.gov.br",
+    "planalto.gov.br",
+    "wikipedia.org",
+    "g1.globo.com",
+    "folha.uol.com.br",
+    "estadao.com.br",
+    "valor.globo.com",
+    "cnnbrasil.com.br",
+    "abear.com.br",
+    "iata.org",
+    "icao.int"
+  ]
+}
