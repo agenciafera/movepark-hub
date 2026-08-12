@@ -75,7 +75,7 @@ export function PostCard({ post }: { post: BlogPostListItem }) {
             alt={post.title}
             widths={[400, 600, 800]}
             sizes="(min-width: 1128px) 360px, (min-width: 768px) 50vw, 100vw"
-            className="rounded-xl"
+            className="rounded-md"
           />
         )}
       </Link>
@@ -116,7 +116,7 @@ export function FeaturedPostCard({ post }: { post: BlogPostListItem }) {
             alt={post.title}
             widths={[600, 900, 1200]}
             sizes="(min-width: 1128px) 640px, 100vw"
-            className="rounded-2xl"
+            className="rounded-md"
             eager
           />
         </Link>

@@ -76,7 +76,7 @@ export default function BlogPostPage() {
       return (
         <div className={cn(CONTAINER, FAIXA)}>
           <Skeleton className="h-10 w-3/4" />
-          <Skeleton className="mt-6 h-64 w-full rounded-2xl" />
+          <Skeleton className="mt-6 h-64 w-full rounded-md" />
         </div>
       );
     }
@@ -227,7 +227,7 @@ export default function BlogPostPage() {
                   alt={post.title}
                   widths={[600, 900, 1200]}
                   sizes="(min-width: 1144px) 512px, 100vw"
-                  className="rounded-2xl border border-hairline desktop:order-first"
+                  className="rounded-md border border-hairline desktop:order-first"
                   eager
                 />
               )}

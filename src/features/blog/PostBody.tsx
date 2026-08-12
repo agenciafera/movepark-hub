@@ -117,7 +117,7 @@ function Block({ block, id }: { block: MdBlock; id?: string }) {
           A rolagem fica no wrapper, não na página: comparativo de preço tem 4
           colunas e no celular a tabela é mais larga que a tela.
         */
-        <div className="mt-8 overflow-x-auto rounded-2xl border border-hairline">
+        <div className="mt-8 overflow-x-auto rounded-md border border-hairline">
           <table className="w-full border-collapse text-body-sm">
             {block.head.length > 0 && (
               <thead>
@@ -153,7 +153,7 @@ function Block({ block, id }: { block: MdBlock; id?: string }) {
           alt={block.alt}
           loading="lazy"
           decoding="async"
-          className="mt-8 w-full rounded-2xl border border-hairline bg-canvas"
+          className="mt-8 w-full rounded-md border border-hairline bg-canvas"
         />
       );
   }

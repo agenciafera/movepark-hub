@@ -71,7 +71,7 @@ export function PostSidebar({ destination, relacionados }: Props) {
         preserva o ranking e não tem para onde mandar o leitor.
       */}
       {destination && (
-        <div className="rounded-2xl bg-mp-primary p-5">
+        <div className="rounded-md bg-mp-primary p-5">
           <h2 className="text-display-sm text-white">Vai viajar por {destination.name}?</h2>
           <p className="mt-2 text-body-sm leading-relaxed text-white/85">
             Compare os estacionamentos parceiros e garanta sua vaga antes de sair de casa.

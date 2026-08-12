@@ -30,7 +30,7 @@ export function PostSummary({ resumo, bodyMd }: Props) {
   if (!resumo && secoes.length < 2) return null;
 
   return (
-    <div className="mb-8 overflow-hidden rounded-2xl border border-hairline print:hidden">
+    <div className="mb-8 overflow-hidden rounded-md border border-hairline print:hidden">
       <h2>
         <button
           type="button"

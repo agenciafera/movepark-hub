@@ -446,6 +446,22 @@ CSS sem efeito nenhum. Encolhido ao conteúdo, ele volta a ter espaço. O teto
 deixaria o último relacionado fora de alcance pelo artigo inteiro, já que o `sticky` só solta
 quando a linha da grade acaba.
 
+### O raio do blog é o `rounded-md`
+
+Capa, card, CTA, resumo, tabela e imagem do corpo usam **`rounded-md` (14px)**, que é o raio de
+container do `DESIGN.md` ("mais arredondado que botões, criando distinção clara entre elemento
+interativo e container"). Botão e campo seguem em `rounded-sm` (8px), chip e avatar em
+`rounded-full`.
+
+**Cuidado com `rounded-xl` neste projeto: ele é 32px, não 12px.** A escala foi redefinida em
+`tailwind.config` (`xs` 4, `sm` 8, `md` 14, `lg` 20, `xl` 32), então o nome que no Tailwind
+padrão é discreto aqui é o raio mais forte da escala. A capa do card da listagem foi para 32px
+por causa disso e virou o elemento mais arredondado da página.
+
+`rounded-2xl` **não existe** no catálogo: ele passa porque o `borderRadius` do projeto está em
+`extend`, e aí o valor padrão do Tailwind (16px) continua respondendo. Ao escrever raio novo,
+use um dos cinco nomes da escala.
+
 ### Trilho de progresso, compartilhar e ouvir
 
 Três blocos que a página do post ganhou, todos sem serviço externo e sem script de terceiro.
