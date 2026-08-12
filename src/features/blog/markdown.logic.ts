@@ -444,6 +444,35 @@ export function leadFrom(excerpt: string | null | undefined, body: string): stri
   return inicio === chave(limpo) ? null : limpo;
 }
 
+/**
+ * Âncora de uma seção do corpo.
+ *
+ * O prefixo não é enfeite: id começando com dígito é HTML válido e seletor CSS
+ * inválido, e título de guia quase sempre começa com número ("1. Evolução…").
+ * A ordem entra no id porque o acervo repete título entre seções ("Conclusão"),
+ * e dois elementos com o mesmo id fazem a âncora cair sempre na primeira.
+ */
+export function headingId(title: string, ordem: number): string {
+  const base = title
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+  return `secao-${ordem + 1}-${base}`;
+}
+
+/** Seções do post: os `h2` do corpo, na ordem, com a âncora de cada uma. */
+export function sectionsFrom(md: string): { id: string; title: string }[] {
+  return parseMarkdown(md)
+    .filter((b) => b.type === "heading" && b.level === 2)
+    .map((b, i) => {
+      const title = inlineText((b as Extract<MdBlock, { type: "heading" }>).content);
+      return { id: headingId(title, i), title };
+    });
+}
+
 /** Minutos de leitura, arredondado para cima, mínimo 1. Base: 200 palavras/minuto. */
 export function readingMinutes(md: string): number {
   const words = plainText(md).split(/\s+/).filter(Boolean).length;

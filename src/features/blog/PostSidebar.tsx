@@ -33,22 +33,6 @@ export function PostSidebar({ destination, relacionados }: Props) {
   */
   return (
     <aside className="mt-12 flex flex-col gap-8 desktop:sticky desktop:top-24 desktop:mt-0 desktop:max-h-[calc(100dvh-7rem)] desktop:self-start desktop:overflow-y-auto desktop:overscroll-contain print:hidden">
-      {/*
-        O CTA por destino é o motivo de `destination_id` existir: sem ele o post
-        preserva o ranking e não tem para onde mandar o leitor.
-      */}
-      {destination && (
-        <div className="rounded-2xl border border-hairline bg-surface-soft p-5">
-          <h2 className="text-title-md text-ink">Vai viajar por {destination.name}?</h2>
-          <p className="mt-2 text-body-sm leading-relaxed text-body">
-            Compare os estacionamentos parceiros e garanta sua vaga antes de sair de casa.
-          </p>
-          <Button asChild className="mt-4 w-full">
-            <Link to={`/destinos/${destination.slug}`}>Ver estacionamentos</Link>
-          </Button>
-        </div>
-      )}
-
       {relacionados.length > 0 && (
         <nav aria-label="Leia também">
           <p className="text-[11px] font-bold uppercase tracking-[0.4px] text-mp-indigo">
@@ -80,6 +64,22 @@ export function PostSidebar({ destination, relacionados }: Props) {
             ))}
           </ul>
         </nav>
+      )}
+
+      {/*
+        O CTA por destino é o motivo de `destination_id` existir: sem ele o post
+        preserva o ranking e não tem para onde mandar o leitor.
+      */}
+      {destination && (
+        <div className="rounded-2xl bg-mp-primary p-5">
+          <h2 className="text-display-sm text-white">Vai viajar por {destination.name}?</h2>
+          <p className="mt-2 text-body-sm leading-relaxed text-white/85">
+            Compare os estacionamentos parceiros e garanta sua vaga antes de sair de casa.
+          </p>
+          <Button asChild variant="secondary" className="mt-4 w-full">
+            <Link to={`/destinos/${destination.slug}`}>Ver estacionamentos</Link>
+          </Button>
+        </div>
       )}
     </aside>
   );

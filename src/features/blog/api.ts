@@ -132,6 +132,33 @@ export function useRelatedPosts(destinationId: string | null | undefined, except
   });
 }
 
+/**
+ * Últimos posts publicados, para a faixa do rodapé da página do post.
+ *
+ * Consulta própria, com `limit`, em vez de reaproveitar o `useBlogPostList`: o
+ * acervo enxuto são 240 KB, e baixar o blog inteiro para mostrar três cards no pé
+ * de um artigo é caro para quem chega de busca no 4G. Pede um a mais do que
+ * mostra, porque um deles é o post que está aberto.
+ */
+export function useLatestPosts(exceptSlug?: string, limit = 3) {
+  return useQuery({
+    queryKey: [...blogKeys.list(), "latest", limit, exceptSlug ?? null] as const,
+    queryFn: async (): Promise<BlogPostListItem[]> => {
+      const { data, error } = await supabase
+        .from("blog_post")
+        .select(listSelect)
+        .eq("is_published", true)
+        .is("deleted_at", null)
+        .order("published_at", { ascending: false })
+        .limit(limit + 1);
+      if (error) throw error;
+      const posts = flattenTags(data ?? []) as BlogPostListItem[];
+      return posts.filter((p) => p.slug !== exceptSlug).slice(0, limit);
+    },
+    staleTime: 5 * 60_000,
+  });
+}
+
 /** Admin (hub_admin): todos os posts, inclusive rascunho. */
 export function useAdminBlogPosts() {
   return useQuery({
@@ -253,10 +280,7 @@ export function useSetPostTags() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ postId, tagIds }: { postId: string; tagIds: string[] }) => {
-      const { error: delErr } = await supabase
-        .from("blog_post_tag")
-        .delete()
-        .eq("post_id", postId);
+      const { error: delErr } = await supabase.from("blog_post_tag").delete().eq("post_id", postId);
       if (delErr) throw delErr;
       if (!tagIds.length) return;
       const { error } = await supabase

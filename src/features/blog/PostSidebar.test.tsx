@@ -27,6 +27,17 @@ function montar(props: Parameters<typeof PostSidebar>[0]) {
  * onde o leitor já foi embora.
  */
 describe("PostSidebar", () => {
+  /**
+   * Relacionados antes do CTA: quem está no meio da leitura procura o próximo
+   * texto, não a busca de vaga. O CTA vem depois, sem competir com ele.
+   */
+  it("os relacionados vêm antes do CTA", () => {
+    const { container } = montar({ destination: DESTINO, relacionados: [RELACIONADO] });
+    const filhos = [...container.querySelector("aside")!.children];
+    expect(filhos[0].getAttribute("aria-label")).toBe("Leia também");
+    expect(filhos[1].textContent).toContain("Vai viajar por");
+  });
+
   it("o CTA do destino aponta para a página que converte", () => {
     montar({ destination: DESTINO, relacionados: [] });
     const cta = screen.getByRole("link", { name: "Ver estacionamentos" });

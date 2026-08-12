@@ -6,8 +6,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { CoverImage } from "@/features/blog/CoverImage";
 import { PostBody } from "@/features/blog/PostBody";
+import { PostCard } from "@/features/blog/PostCard";
 import { PostSidebar } from "@/features/blog/PostSidebar";
-import { useBlogPost, useRelatedPosts } from "@/features/blog/api";
+import { PostSummary } from "@/features/blog/PostSummary";
+import { useBlogPost, useLatestPosts, useRelatedPosts } from "@/features/blog/api";
 import {
   leadFrom,
   metaDescription,
@@ -34,7 +36,8 @@ const SITE_URL = "https://hub.movepark.co";
  * formato de artigo, e esticar o parágrafo até 1016px daria 100 caracteres por
  * linha, quando o confortável para 16px para em torno de 75.
  */
-const CONTAINER = "mx-auto max-w-[1080px] px-4 py-12 desktop:px-8";
+const CONTAINER = "mx-auto w-full max-w-[1080px] px-4 desktop:px-8";
+const FAIXA = "py-12";
 /**
  * Alinhada à esquerda, não centralizada: a capa começa na borda do container, e
  * uma coluna centralizada dava à página um terceiro eixo, entre a borda da capa
@@ -54,18 +57,19 @@ export default function BlogPostPage() {
   /* Sem destino e sem relacionado a lateral seria 300px de branco ao lado do
      texto, que é pior que não ter lateral. */
   const temSidebar = Boolean(post?.destination) || relacionados.length > 0;
+  const ultimos = useLatestPosts(post?.slug).data ?? [];
 
   if (!post) {
     if (query.isLoading) {
       return (
-        <div className={CONTAINER}>
+        <div className={cn(CONTAINER, FAIXA)}>
           <Skeleton className="h-10 w-3/4" />
           <Skeleton className="mt-6 h-64 w-full rounded-2xl" />
         </div>
       );
     }
     return (
-      <div className={CONTAINER}>
+      <div className={cn(CONTAINER, FAIXA)}>
         <EmptyState
           title="Post não encontrado."
           description="Ele pode ter saído do ar."
@@ -138,8 +142,17 @@ export default function BlogPostPage() {
         </script>
       </Helmet>
 
-      <article className={CONTAINER}>
+      <article>
         {/*
+          Mesma faixa do `ContentPageView` (`/faq`, `/termos`, `/cancelamento`):
+          o cabeçalho sangra na largura toda sobre `surface-soft` e o corpo volta
+          para o branco. A referência traz a faixa em lavanda, que exigiria um
+          token de violeta pálido que o projeto não tem; o cinza cumpre o papel
+          estrutural, que é separar cabeçalho de corpo, sem inventar cor.
+        */}
+        <div className="border-b border-hairline bg-surface-soft">
+          <div className={cn(CONTAINER, FAIXA)}>
+            {/*
           Cabeçalho em duas colunas no desktop: capa ao lado do título.
 
           Empilhado, a capa era uma faixa de 520px entre a manchete e a primeira
@@ -150,47 +163,52 @@ export default function BlogPostPage() {
           No mobile a ordem do DOM manda (título, capa, texto), que é a ordem de
           leitura certa; a capa só vai para a esquerda quando há duas colunas.
         */}
-        <div className="grid gap-6 desktop:grid-cols-[1.1fr_1fr] desktop:items-center desktop:gap-10">
-          <div className="min-w-0">
-            <PageHeader
-              variant="content"
-              back={{ to: "/blog/", label: "Voltar para o blog" }}
-              eyebrow={post.destination?.name ?? undefined}
-              title={post.title}
-              description={leadFrom(post.excerpt, post.body_md) ?? undefined}
-            >
-              <p className="mt-1 text-caption-sm text-muted">
-                {post.author && (
-                  <>
-                    <Link to={`/blog/autor/${post.author.slug}/`} className="hover:underline">
-                      {post.author.name}
-                    </Link>
-                    {" · "}
-                  </>
-                )}
-                {formatDate(post.published_at)} · {minutes} min de leitura
-                {post.category && (
-                  <>
-                    {" · "}
-                    <Link to={`/blog/categoria/${post.category.slug}/`} className="hover:underline">
-                      {post.category.name}
-                    </Link>
-                  </>
-                )}
-              </p>
-            </PageHeader>
-          </div>
+            <div className="grid gap-6 desktop:grid-cols-[1.1fr_1fr] desktop:items-center desktop:gap-10">
+              <div className="min-w-0">
+                <PageHeader
+                  variant="content"
+                  back={{ to: "/blog/", label: "Voltar para o blog" }}
+                  eyebrow={post.destination?.name ?? undefined}
+                  title={post.title}
+                  description={leadFrom(post.excerpt, post.body_md) ?? undefined}
+                >
+                  <p className="mt-1 text-caption-sm text-muted">
+                    {post.author && (
+                      <>
+                        <Link to={`/blog/autor/${post.author.slug}/`} className="hover:underline">
+                          {post.author.name}
+                        </Link>
+                        {" · "}
+                      </>
+                    )}
+                    {formatDate(post.published_at)} · {minutes} min de leitura
+                    {post.category && (
+                      <>
+                        {" · "}
+                        <Link
+                          to={`/blog/categoria/${post.category.slug}/`}
+                          className="hover:underline"
+                        >
+                          {post.category.name}
+                        </Link>
+                      </>
+                    )}
+                  </p>
+                </PageHeader>
+              </div>
 
-          {post.cover_image_url && (
-            <CoverImage
-              src={post.cover_image_url}
-              alt={post.title}
-              widths={[600, 900, 1200]}
-              sizes="(min-width: 1144px) 512px, 100vw"
-              className="rounded-2xl border border-hairline desktop:order-first"
-              eager
-            />
-          )}
+              {post.cover_image_url && (
+                <CoverImage
+                  src={post.cover_image_url}
+                  alt={post.title}
+                  widths={[600, 900, 1200]}
+                  sizes="(min-width: 1144px) 512px, 100vw"
+                  className="rounded-2xl border border-hairline desktop:order-first"
+                  eager
+                />
+              )}
+            </div>
+          </div>
         </div>
 
         {/*
@@ -201,11 +219,13 @@ export default function BlogPostPage() {
         */}
         <div
           className={cn(
-            "mt-10",
+            CONTAINER,
+            FAIXA,
             temSidebar && "desktop:grid desktop:grid-cols-[minmax(0,1fr)_300px] desktop:gap-10",
           )}
         >
           <div className={temSidebar ? "min-w-0" : COLUNA_DE_LEITURA}>
+            <PostSummary resumo={post.ai_summary} bodyMd={post.body_md} />
             <PostBody markdown={post.body_md} />
 
             {post.tags.length > 0 && (
@@ -225,6 +245,31 @@ export default function BlogPostPage() {
 
           {temSidebar && <PostSidebar destination={post.destination} relacionados={relacionados} />}
         </div>
+
+        {/*
+          Faixa de saída, para quem chegou de busca e terminou o artigo.
+
+          É diferente do "Leia também" da lateral: lá são posts do mesmo destino,
+          aqui são os mais recentes do blog inteiro. Sem isso, o fim do post é um
+          beco: o leitor termina e a única saída é o botão de voltar.
+        */}
+        {ultimos.length > 0 && (
+          <div className="border-t border-hairline bg-surface-soft print:hidden">
+            <div className={cn(CONTAINER, FAIXA)}>
+              <h2 className="text-display-sm text-ink">Últimos posts</h2>
+              <div className="mt-6 grid gap-6 tablet:grid-cols-2 desktop:grid-cols-3">
+                {ultimos.map((p) => (
+                  <PostCard key={p.id} post={p} />
+                ))}
+              </div>
+              <div className="mt-8 flex justify-center">
+                <Button asChild variant="outline">
+                  <Link to="/blog/">Ver todos os posts</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </article>
     </>
   );

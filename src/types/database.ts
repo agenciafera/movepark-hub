@@ -435,6 +435,7 @@ export type Database = {
       }
       blog_post: {
         Row: {
+          ai_summary: string | null
           author_id: string | null
           author_name: string | null
           body_md: string
@@ -456,6 +457,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ai_summary?: string | null
           author_id?: string | null
           author_name?: string | null
           body_md: string
@@ -477,6 +479,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ai_summary?: string | null
           author_id?: string | null
           author_name?: string | null
           body_md?: string

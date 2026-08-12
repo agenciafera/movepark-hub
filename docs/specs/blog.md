@@ -409,12 +409,57 @@ porque todos têm destino; o caminho é coberto por teste, não por inspeção n
 O `sizes` da capa acompanha a coluna (`(min-width: 1144px) 512px, 100vw`): errar esse valor faz
 o browser baixar o candidato errado do `srcset`.
 
+**A página é uma pilha de faixas**, não um container só. O `<article>` empilha três, e cada uma
+repete o container por dentro: cabeçalho (`surface-soft`, sangrando na largura toda), corpo
+(branco) e "Últimos posts" (`surface-soft`). Faixa nova tem que repetir o container, senão sai
+desalinhada das outras; um teste percorre os filhos do `<article>` e cobra isso.
+
+A referência de design traz a faixa do cabeçalho em lavanda. Ficou em `surface-soft`, o mesmo
+cinza do `ContentPageView`, porque violeta pálido não existe no catálogo de tokens e o cinza já
+cumpre o papel estrutural de separar cabeçalho de corpo. Trocar exige token novo e edição no
+`DESIGN.md`.
+
+**Ordem da lateral: relacionados, depois o CTA.** Quem está no meio da leitura procura o próximo
+texto, não a busca de vaga. O CTA é violeta preenchido (`bg-mp-primary`), a única exceção
+deliberada à regra de que violeta só pinta elemento acionável: o card inteiro é o elemento de
+conversão da página, e o botão dentro dele usa a variante clara para não sumir no fundo.
+
+**"Últimos posts" é diferente do "Leia também".** Na lateral são posts do mesmo destino; na faixa
+do rodapé são os mais recentes do blog inteiro, com `useLatestPosts`. Sem ela, o fim do artigo é
+um beco: o leitor termina e a única saída é o botão de voltar. A consulta é própria, com `limit`,
+em vez de reaproveitar o acervo enxuto de 240 KB da listagem.
+
 **`sticky` na lateral exige `self-start`.** Por padrão o item da grade estica até a altura da
 linha, e um elemento do tamanho da própria linha nunca tem por onde grudar: o `sticky` fica no
 CSS sem efeito nenhum. Encolhido ao conteúdo, ele volta a ter espaço. O teto
 `max-h-[calc(100dvh-7rem)]` é o seguro para tela baixa: grudado, um bloco mais alto que a janela
 deixaria o último relacionado fora de alcance pelo artigo inteiro, já que o `sticky` só solta
 quando a linha da grade acaba.
+
+### O bloco recolhível do topo tem duas fontes
+
+`PostSummary` abre o corpo com um bloco fechado, e o que ele mostra depende do que existe:
+
+| Fonte | Rótulo | Quando |
+|---|---|---|
+| `blog_post.ai_summary` | "Ver resumo" | Há resumo escrito ou gerado |
+| `h2` do corpo | "Nesta página" | Não há resumo, e o post tem 2 seções ou mais |
+
+Nasce fechado: aberto por padrão ele empurraria o primeiro parágrafo para fora da tela, que é o
+que o cabeçalho em duas colunas acabou de arrumar. Índice de uma seção só não é índice, é o
+título repetido, então nesse caso o bloco não existe.
+
+**`ai_summary` é coluna separada de `excerpt` de propósito.** O `excerpt` é o resumo automático do
+WordPress e alimenta o card da listagem e a meta description; reusar aquela coluna faria uma
+edição estragar a outra superfície. Hoje `ai_summary` é nula em todo post, e a geração por IA
+ainda não existe: falta o segredo `ANTHROPIC_API_KEY` no projeto e uma Edge Function que escreva
+na coluna. Enquanto isso o índice das seções cobre o bloco.
+
+**As âncoras são contadas nos dois lados.** `sectionsFrom()` numera os `h2` para montar o índice e
+o `PostBody` numera os mesmos `h2` para escrever o `id`. Se um dos dois mudar de critério, o
+índice aponta para o nada; um teste renderiza o corpo e cobra que todo item ache seu título. O id
+leva prefixo `secao-` porque id começando com dígito é HTML válido e seletor CSS inválido, e
+título de guia quase sempre começa com número.
 
 ### O resumo só vira lead quando alguém escreveu um
 

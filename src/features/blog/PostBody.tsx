@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
 import type { MdBlock, MdInline, MdListItem } from "./markdown.logic";
-import { parseMarkdown } from "./markdown.logic";
+import { headingId, parseMarkdown } from "./markdown.logic";
 
 /** Link interno vira `<Link>` (não recarrega a página); externo abre em nova aba. */
 function InlineLink({ href, nodes }: { href: string; nodes: MdInline[] }) {
@@ -61,12 +61,14 @@ function SubList({ sub }: { sub: NonNullable<MdListItem["sub"]> }) {
   );
 }
 
-function Block({ block }: { block: MdBlock }) {
+function Block({ block, id }: { block: MdBlock; id?: string }) {
   switch (block.type) {
     case "heading": {
       if (block.level === 2) {
         return (
-          <h2 className="mt-10 text-display-sm text-ink">
+          // `scroll-mt` porque a topbar é fixa: sem ele a âncora do resumo para
+          // com o título escondido atrás dela.
+          <h2 id={id} className="mt-10 scroll-mt-24 text-display-sm text-ink">
             <Inline nodes={block.content} />
           </h2>
         );
@@ -105,7 +107,7 @@ function Block({ block }: { block: MdBlock }) {
     }
     case "quote":
       return (
-        <blockquote className="mt-6 border-l-2 border-hairline pl-4 text-body-md text-body italic">
+        <blockquote className="mt-6 border-l-2 border-hairline pl-4 text-body-md italic text-body">
           <Inline nodes={block.content} />
         </blockquote>
       );
@@ -166,11 +168,30 @@ function Block({ block }: { block: MdBlock }) {
 export function PostBody({ markdown }: { markdown: string }) {
   const blocks = React.useMemo(() => parseMarkdown(markdown), [markdown]);
 
+  /*
+    Os ids dos h2 saem daqui, contando a ordem dos h2 no corpo, exatamente como
+    `sectionsFrom` faz. É a mesma contagem nos dois lados de propósito: se um
+    deles mudar de critério, a âncora do resumo passa a apontar para o nada.
+  */
+  const ids = React.useMemo(() => {
+    let ordem = -1;
+    return blocks.map((b) => {
+      if (b.type !== "heading" || b.level !== 2) return undefined;
+      ordem += 1;
+      return headingId(inlineText(b.content), ordem);
+    });
+  }, [blocks]);
+
   return (
     <div className="[&>*:first-child]:mt-0">
       {blocks.map((block, i) => (
-        <Block key={i} block={block} />
+        <Block key={i} block={block} id={ids[i]} />
       ))}
     </div>
   );
+}
+
+/** Texto puro de uma sequência inline, para montar o id do título. */
+function inlineText(nodes: MdInline[]): string {
+  return nodes.map((n) => (n.type === "text" ? n.value : inlineText(n.children))).join("");
 }

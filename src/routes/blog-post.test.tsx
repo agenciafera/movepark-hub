@@ -47,11 +47,24 @@ function renderPost(overrides?: Partial<BlogPostWithDestination>) {
  * presa na medida de leitura.
  */
 describe("BlogPostPage: largura", () => {
-  it("o container do post é o de conteúdo (1080), não o de leitura (720)", async () => {
+  /**
+   * O `<article>` não tem mais container próprio: ele empilha faixas que sangram
+   * na largura toda, e o container mora dentro de cada uma. Quem quebra isso é
+   * quem acrescenta uma faixa nova e esquece de repetir o container, e aí ela sai
+   * desalinhada das outras.
+   */
+  it("toda faixa do post usa o container de conteúdo (1080), não o de leitura (720)", async () => {
     const { container } = renderPost();
     const article = await waitForArticle(container);
-    expect(article.className).toContain("max-w-[1080px]");
-    expect(article.className).not.toContain("max-w-[720px]");
+    const faixas = [...article.children];
+    expect(faixas.length).toBeGreaterThan(1);
+    for (const faixa of faixas) {
+      const conteudo = faixa.className.includes("max-w-[1080px]")
+        ? faixa
+        : faixa.querySelector(":scope > div");
+      expect(conteudo?.className).toContain("max-w-[1080px]");
+      expect(conteudo?.className).not.toContain("max-w-[720px]");
+    }
   });
 
   /**
