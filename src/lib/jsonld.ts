@@ -1,3 +1,5 @@
+import { getLocationCapabilities } from "@/features/listing/capabilities";
+import { showcaseFromPrice } from "@/features/listing/reservation.logic";
 import type { ListingDetail } from "@/features/listing/api";
 
 const SITE_URL = "https://hub.movepark.co";
@@ -38,17 +40,28 @@ export type SchemaReview = {
   date: string;
 };
 
-// Modelado como Product/Offer (não LocalBusiness) — a regra "self-serving" do Google
-// só habilita o rich snippet de estrela em avaliações de produto. AggregateRating/Review
-// só entram quando há avaliações publicadas (count > 0).
+// Modelado como Product/Offer, e não LocalBusiness, porque a regra "self-serving" do Google só
+// habilita o rich snippet de estrela em avaliações de produto. AggregateRating/Review só entram
+// quando há avaliações publicadas (count > 0).
+//
+// **Gateado por capacidade desde 12/08/2026 (ADR-009).** A função irmã `parkingFacilitySchema`
+// logo abaixo já dizia a regra na doc dela, que `Offer` é promessa e o ADR vale para dado
+// estruturado igual vale para bloco na tela. Esta aqui não cumpria: nas nove unidades externas
+// emitia `price: "0.00"`, `availability: InStock` e `aggregateRating` de avaliação que a página
+// esconde. As capacidades são lidas da própria `listing`, não recebidas por parâmetro, para que
+// não exista chamada desprotegida.
 export function productOfferSchema(
   listing: ListingDetail,
   reviews: SchemaReview[] = [],
   opts?: { description?: string },
 ) {
-  const count = listing.location.review_count ?? 0;
-  const avg = listing.location.review_avg;
+  const caps = getLocationCapabilities(listing.location);
+  const count = caps.reviews ? (listing.location.review_count ?? 0) : 0;
+  const avg = caps.reviews ? listing.location.review_avg : null;
   const hasRating = count > 0 && avg != null;
+  // Zero não é preço, e `Offer` sem `price` é inválido para o Google. Então sem preço não há
+  // oferta: some o bloco inteiro, em vez de publicar R$ 0,00 como se fosse o valor da diária.
+  const price = showcaseFromPrice(listing.company_parking_type.base_price);
 
   return {
     "@context": "https://schema.org",
@@ -56,15 +69,21 @@ export function productOfferSchema(
     name: `${listing.parking_type.name} · ${listing.location.name}`,
     // TLDR-first: prefere o resumo extraível quando fornecido; senão a descrição do tipo de vaga.
     description: opts?.description ?? listing.parking_type.description ?? undefined,
-    // `image` é exigido pelo Google pro rich result de Product — usa as fotos da unidade.
+    // `image` é exigido pelo Google pro rich result de Product: usa as fotos da unidade.
     image: listing.location.photos?.length ? listing.location.photos : undefined,
-    offers: {
-      "@type": "Offer",
-      priceCurrency: "BRL",
-      price: listing.company_parking_type.base_price.toFixed(2),
-      availability: "https://schema.org/InStock",
-      url: `${SITE_URL}/p/${listing.company.slug}/${listing.location.slug}/${listing.parking_type.code}`,
-    },
+    offers:
+      price != null
+        ? {
+            "@type": "Offer",
+            priceCurrency: "BRL",
+            price: price.toFixed(2),
+            // `InStock` afirma que a vaga está disponível, e quem controla a disponibilidade da
+            // unidade externa é o parceiro. É a capacidade `guaranteedSpot`, na superfície do
+            // schema. Sem ela, a oferta segue existindo com o preço e cala sobre o estoque.
+            availability: caps.guaranteedSpot ? "https://schema.org/InStock" : undefined,
+            url: `${SITE_URL}/p/${listing.company.slug}/${listing.location.slug}/${listing.parking_type.code}`,
+          }
+        : undefined,
     aggregateRating: hasRating
       ? {
           "@type": "AggregateRating",
@@ -238,7 +257,7 @@ export function breadcrumbSchema(
   };
 }
 
-/** Lista de itens (coleção) — usado na página índice de destinos. */
+/** Lista de itens (coleção), usada na página índice de destinos. */
 export function itemListSchema(items: { name: string; url: string }[]) {
   return {
     "@context": "https://schema.org",

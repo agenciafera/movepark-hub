@@ -19,6 +19,8 @@ type Overrides = {
   review_avg?: number | null;
   review_count?: number;
   photos?: string[];
+  base_price?: number;
+  checkout_mode?: "hub" | "external";
 };
 
 function makeListing(o: Overrides = {}): ListingDetail {
@@ -32,6 +34,7 @@ function makeListing(o: Overrides = {}): ListingDetail {
     location: {
       name: "Aeroporto Guarulhos",
       slug: "aeroporto-guarulhos",
+      checkout_mode: o.checkout_mode ?? "hub",
       phone: "+551130000000",
       email: "contato@aeropark",
       address,
@@ -42,7 +45,7 @@ function makeListing(o: Overrides = {}): ListingDetail {
       photos: o.photos ?? [],
     },
     parking_type: { name: "Vaga Coberta", code: "covered", description },
-    company_parking_type: { base_price: 30 },
+    company_parking_type: { base_price: o.base_price ?? 30 },
     // demais campos de ListingDetail não são usados pelos schemas
   } as unknown as ListingDetail;
 }
@@ -137,6 +140,42 @@ describe("productOfferSchema", () => {
       { author: "X", rating: 4, comment: "y", date: "2026-06-01T10:00:00Z" },
     ]);
     expect(s.review).toBeUndefined();
+  });
+});
+
+/**
+ * ADR-009 no dado estruturado (regressão de 12/08/2026).
+ *
+ * A doc de `parkingFacilitySchema` já dizia que `Offer` é promessa e que o ADR vale para schema
+ * igual vale para tela. O `productOfferSchema` não cumpria.
+ */
+describe("productOfferSchema · unidade externa", () => {
+  it("não publica aggregateRating de avaliação que a página esconde", () => {
+    const s = productOfferSchema(
+      makeListing({ checkout_mode: "external", review_avg: 5, review_count: 1 }),
+    );
+    expect(s.aggregateRating).toBeUndefined();
+    expect(s.review).toBeUndefined();
+  });
+
+  it("cala sobre o estoque, porque quem controla a vaga é o parceiro", () => {
+    const s = productOfferSchema(makeListing({ checkout_mode: "external" }));
+    expect(s.offers).toMatchObject({ price: "30.00", priceCurrency: "BRL" });
+    expect((s.offers as { availability?: string }).availability).toBeUndefined();
+  });
+
+  it("mantém o preço, que é informação da unidade e a página mostra", () => {
+    const s = productOfferSchema(makeListing({ checkout_mode: "external", base_price: 24.9 }));
+    expect((s.offers as { price?: string }).price).toBe("24.90");
+  });
+});
+
+describe("productOfferSchema · preço zero", () => {
+  it("omite offers inteiro em vez de publicar R$ 0,00", () => {
+    // Offer sem `price` é inválida para o Google, então não dá para emitir a oferta muda. Sem
+    // preço não há oferta. As unidades espelhadas têm base_price = 0.
+    const s = productOfferSchema(makeListing({ base_price: 0 }));
+    expect(s.offers).toBeUndefined();
   });
 });
 

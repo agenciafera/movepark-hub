@@ -21,7 +21,7 @@ const PATH = "/p/:operatorSlug/:locationSlug/:parkingTypeCode";
 const URL_SAIDA =
   "https://virapark.movepark.co/virapark/vaga-coberta?utm_source=movepark&utm_medium=organic&utm_campaign=afiliado-movepark";
 
-function linha(checkoutMode: "hub" | "external") {
+function linha(checkoutMode: "hub" | "external", basePrice = 40) {
   return {
     id: "lpt-1",
     capacity: 100,
@@ -60,16 +60,16 @@ function linha(checkoutMode: "hub" | "external") {
       amenities: [],
     },
     company_parking_type: {
-      base_price: 40,
+      base_price: basePrice,
       parking_type: { code: "covered", name: "Vaga Coberta", description: null },
     },
   };
 }
 
-function montaPagina(checkoutMode: "hub" | "external") {
+function montaPagina(checkoutMode: "hub" | "external", basePrice?: number) {
   server.use(
     http.get(`${BASE}/rest/v1/location_parking_type`, () =>
-      HttpResponse.json([linha(checkoutMode)]),
+      HttpResponse.json([linha(checkoutMode, basePrice)]),
     ),
   );
   // A página emite <Helmet> (meta + JSON-LD), que precisa do provider para montar.
@@ -90,6 +90,22 @@ const PROMESSAS = [
   /Preço travado/i,
 ];
 
+/**
+ * Tudo que a página PUBLICA sem mostrar: meta description e os blocos de JSON-LD.
+ *
+ * Existe porque o gate acima só olhava texto visível, e por isso passou um ano sem ver que o
+ * schema das unidades externas prometia "Cancelamento grátis até 24h", nota de avaliação,
+ * `availability: InStock` e `price: 0.00`. Promessa publicada vincula do mesmo jeito, e é esta
+ * versão que o Google indexa e a IA cita.
+ */
+function publicado(): string {
+  const meta = document.querySelector('meta[name="description"]')?.getAttribute("content") ?? "";
+  const schemas = [...document.querySelectorAll('script[type="application/ld+json"]')].map(
+    (s) => s.textContent ?? "",
+  );
+  return [meta, ...schemas].join(" ");
+}
+
 describe("single da unidade PRÓPRIA", () => {
   it("mantém as promessas, porque quem cumpre é a Movepark", async () => {
     montaPagina("hub");
@@ -105,6 +121,21 @@ describe("single da unidade PRÓPRIA", () => {
     await screen.findAllByText(/Virapark/i);
     expect(screen.queryByText(/não se aplicam a esta reserva/i)).not.toBeInTheDocument();
     expect(screen.queryAllByTestId("external-checkout-cta")).toHaveLength(0);
+  });
+
+  it("publica as promessas no schema, porque aqui elas são verdade", async () => {
+    // Contraparte do gate: capacidade que some onde não vale tem que sobreviver onde vale, senão
+    // o conserto vira apagão de SEO na unidade própria, que é a maioria da base.
+    montaPagina("hub");
+    await screen.findAllByText(/Virapark/i);
+    await waitFor(() => expect(publicado()).toMatch(/Virapark/));
+
+    const fora = publicado();
+    expect(fora).toMatch(/Cancelamento grátis até 24h/);
+    expect(fora).toMatch(/aggregateRating/);
+    expect(fora).toMatch(/InStock/);
+    expect(fora).toMatch(/"price":"40.00"/);
+    expect(fora).not.toMatch(/A reserva é feita e administrada por/);
   });
 });
 
@@ -166,5 +197,38 @@ describe("single da unidade EXTERNA", () => {
     montaPagina("external");
     await screen.findAllByText(/Virapark/i);
     expect(screen.queryByText(/avaliaç/i)).not.toBeInTheDocument();
+  });
+
+  it("nenhuma promessa sobrevive no que a página publica sem mostrar", async () => {
+    montaPagina("external");
+    await screen.findAllByText(/Virapark/i);
+    // Espera o Helmet montar antes de afirmar ausência, senão o teste passa por estar vazio.
+    await waitFor(() => expect(publicado()).toMatch(/Virapark/));
+
+    const fora = publicado();
+    expect(fora).not.toMatch(/Cancelamento grátis/i);
+    expect(fora).not.toMatch(/aggregateRating/);
+    expect(fora).not.toMatch(/Nota 5,0 de 5/);
+    expect(fora).not.toMatch(/InStock/);
+  });
+
+  it("publica de quem é a reserva, no lugar das promessas", async () => {
+    montaPagina("external");
+    await screen.findAllByText(/Virapark/i);
+    await waitFor(() =>
+      expect(publicado()).toMatch(/A reserva é feita e administrada por Virapark\./),
+    );
+  });
+
+  it("não publica preço zero quando a tabela vem espelhada do parceiro", async () => {
+    // base_price = 0 é o estado real das unidades espelhadas: a tabela vem do parceiro e o campo
+    // do catálogo nunca foi preenchido.
+    montaPagina("external", 0);
+    await screen.findAllByText(/Virapark/i);
+    await waitFor(() => expect(publicado()).toMatch(/Virapark/));
+
+    const fora = publicado();
+    expect(fora).not.toMatch(/R\$\s0,00/);
+    expect(fora).not.toMatch(/"price":"0.00"/);
   });
 });

@@ -8,11 +8,13 @@ function makeListing(o: Partial<{
   review_avg: number | null;
   review_count: number;
   base_price: number;
+  checkout_mode: "hub" | "external";
 }> = {}): ListingDetail {
   return {
     company: { name: "Aeropark" },
     location: {
       name: "Aeroporto Guarulhos",
+      checkout_mode: o.checkout_mode ?? "hub",
       shuttle_to_terminal_minutes:
         "shuttle_to_terminal_minutes" in o ? o.shuttle_to_terminal_minutes! : null,
       shuttle_frequency_minutes:
@@ -116,5 +118,73 @@ describe("buildListingTldr", () => {
   it("singulariza uma avaliação", () => {
     const { facts } = buildListingTldr(makeListing({ review_avg: 5, review_count: 1 }));
     expect(facts.find((f) => f.key === "rating")?.value).toBe("5,0 de 5 · 1 avaliação");
+  });
+});
+
+/**
+ * ADR-009 na superfície que ninguém vê (regressão de 12/08/2026).
+ *
+ * O resumo vira meta description e `description` do JSON-LD. Prometer aqui o que o card visível
+ * nega é publicar a mesma oferta indevida, só que onde o Google lê.
+ */
+describe("buildListingTldr · unidade externa", () => {
+  const externa = (o: Parameters<typeof makeListing>[0] = {}) =>
+    makeListing({ ...o, checkout_mode: "external" });
+
+  it("não promete cancelamento, porque quem cancela é o parceiro", () => {
+    const { facts, summary } = buildListingTldr(externa());
+    expect(facts.map((f) => f.key)).not.toContain("cancel");
+    expect(summary).not.toMatch(/cancelamento/i);
+  });
+
+  it("não publica nota, mesmo com avaliação histórica no banco", () => {
+    // Caso real do Virapark: 1 avaliação de reserva feita antes da virada. A página esconde o
+    // bloco (há teste de render), e o schema publicava "Nota 5,0 de 5 em 1 avaliação".
+    const { facts, summary } = buildListingTldr(externa({ review_avg: 5, review_count: 1 }));
+    expect(facts.map((f) => f.key)).not.toContain("rating");
+    expect(summary).not.toMatch(/nota|avaliaç/i);
+  });
+
+  it("diz de quem é a reserva, que é o que sobra no lugar das promessas", () => {
+    const { summary } = buildListingTldr(externa());
+    expect(summary).toContain("A reserva é feita e administrada por Aeropark.");
+  });
+
+  it("mantém preço e proximidade, que descrevem a unidade e continuam verdade", () => {
+    const { facts, summary } = buildListingTldr(
+      externa({ base_price: 24.9, shuttle_to_terminal_minutes: 6 }),
+      { nearest: terminal({ point_name: "Terminal 3", distance_km: 1.5 }) },
+    );
+    const keys = facts.map((f) => f.key);
+    expect(keys).toContain("price");
+    expect(keys).toContain("terminal");
+    expect(keys).toContain("shuttle");
+    // `\s` em vez de espaço literal: o formatBRL separa o "R$" com espaço não separável.
+    expect(summary).toMatch(/A partir de R\$\s24,90 por diária, a 1,5 km de Terminal 3/);
+  });
+});
+
+describe("buildListingTldr · preço zero", () => {
+  it("omite o preço em vez de publicar R$ 0,00", () => {
+    // `base_price` é 0 nas unidades espelhadas. "A partir de R$ 0,00 por diária" saía na meta
+    // description de todas elas.
+    const { facts, summary } = buildListingTldr(makeListing({ base_price: 0 }));
+    expect(facts.map((f) => f.key)).not.toContain("price");
+    expect(summary).not.toContain("R$ 0,00");
+  });
+
+  it("sem preço, a frase começa pela proximidade e não por vírgula solta", () => {
+    const { summary } = buildListingTldr(makeListing({ base_price: 0 }), {
+      nearest: terminal({ point_name: "Terminal 2", distance_km: 2.3 }),
+    });
+    expect(summary).toContain("A 2,3 km de Terminal 2.");
+    expect(summary).not.toMatch(/\.\s*,/);
+  });
+
+  it("sem preço e sem proximidade, a frase inteira desaparece", () => {
+    const { summary } = buildListingTldr(makeListing({ base_price: 0 }));
+    expect(summary).toBe(
+      "Vaga Coberta no Aeropark, em Aeroporto Guarulhos. Cancelamento grátis até 24h antes do check-in.",
+    );
   });
 });

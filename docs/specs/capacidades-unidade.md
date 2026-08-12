@@ -82,6 +82,10 @@ na externa. Selo novo posto direto na casca quebra ali, mesmo que o código pare
 Google exibiria no resultado de busca uma avaliação que a página não mostra, e o ADR-009 vale
 para o que a Movepark publica, não só para o que renderiza.
 
+> ⚠️ **Isto valeu só pela metade até 12/08/2026, e a correção está descrita no fim deste
+> arquivo.** O array `review[]` era gateado; o `aggregateRating`, a `offers` e a `description`
+> não eram.
+
 **O upsell de upgrade de vaga sai também.** Ele empurra para outro tipo de vaga que igualmente
 fecha fora, com preço que o Hub não cobra.
 
@@ -169,6 +173,48 @@ unidade própria. Não é caso de exceção por histórico.
 verificado" sempre. Como todo parceiro é verificado pela Movepark, hoje é verdade. Pelo critério
 do ADR-009 ele **fica**, porque endossa o parceiro e não promete condição de transação. Se um dia
 existir parceiro não verificado, isso vira campo antes de virar problema.
+
+## O gate vazou pela superfície que ninguém vê (12/08/2026)
+
+Por um ano as nove unidades externas publicaram, em `<meta name="description">` e no JSON-LD,
+exatamente as promessas que a tela ao lado negava:
+
+```
+"Vaga Coberta no Virapark, em Virapark. A partir de R$ 0,00 por diária.
+ Cancelamento grátis até 24h antes do check-in. Nota 5,0 de 5 em 1 avaliação."
+"offers": { "price": "0.00", "availability": "https://schema.org/InStock" }
+"aggregateRating": { "ratingValue": 5, "reviewCount": 1 }
+```
+
+Quatro afirmações, todas falsas naquela unidade: a Movepark não cancela, a nota é justamente a
+que a página esconde (há teste de render para isso desde 05/08), a vaga não é controlada por nós
+e R$ 0,00 não é preço nenhum.
+
+**Por que passou:** o teste do gate procura texto **visível**, com `screen.queryAllByText`, e essa
+escolha está documentada logo acima como acerto, porque é o que o cliente lê que vincula. O ponto
+cego é que promessa publicada vincula sem ser lida na tela. O resumo (`buildListingTldr`) e o
+schema (`productOfferSchema`) não renderizam nada, então o gate nunca os alcançou. Pior: o
+`review[]` era gateado e o `aggregateRating` não, o que dava um schema com nota agregada e nenhuma
+avaliação por trás.
+
+**O que mudou:**
+
+- As duas funções leem `getLocationCapabilities` **por dentro**, da própria `listing`, em vez de
+  receber capacidade por parâmetro. Quem chama não tem como esquecer.
+- Preço passa por `showcaseFromPrice`, o mesmo helper do card. Sem preço, o resumo omite a frase e
+  o schema omite a `offers` inteira, porque `Offer` sem `price` é inválida para o Google e oferta
+  muda seria pior que oferta ausente.
+- `availability: InStock` virou a capacidade `guaranteedSpot`: afirmar estoque de vaga que o
+  parceiro controla é a mesma promessa de vaga garantida, só que em dado estruturado.
+- No lugar do que saiu, entra o que é verdade: "A reserva é feita e administrada por X.", que é o
+  que o card visível já dizia. Para uma IA que leia só o resumo, é a informação que decide com
+  quem a pessoa vai falar se precisar cancelar.
+
+**O teste agora afirma sobre o que a página publica**, não só sobre o que ela mostra: um helper
+`publicado()` junta a meta description e todos os blocos de JSON-LD, e os casos rodam nos dois
+modos. O contraponto na unidade própria é parte do gate, para que o conserto não vire apagão de
+SEO na maioria da base. Verificado que os 12 casos novos falham sem o fix, e que o caso antigo de
+texto visível continua passando sem ele, que é a medida exata do ponto cego.
 
 ## Base legal (não é parecer; levar ao jurídico)
 
