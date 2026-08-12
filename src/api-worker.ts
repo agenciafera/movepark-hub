@@ -9,7 +9,7 @@ interface Env {
   SUPABASE_FUNCTIONS_URL: string; // ex.: https://<ref>.supabase.co/functions/v1
   SUPABASE_ANON_KEY: string; // injetado como `apikey` na borda (secret)
   SITE_URL?: string; // ex.: https://hub.movepark.co (fonte do openapi.yaml)
-  API_RATELIMIT?: KVNamespace; // opcional: rate-limit best-effort por prefixo de chave
+  API_RATELIMIT?: RateLimit; // opcional: rate-limit best-effort por prefixo de chave
 }
 
 const CORS = {
@@ -20,7 +20,8 @@ const CORS = {
   "Access-Control-Max-Age": "86400",
 };
 
-const RATE_LIMIT_PER_MIN = 60;
+// O limite (60/min) mora no binding `API_RATELIMIT`, em wrangler.api.jsonc:
+// mudá-lo é config, não deploy de lógica.
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -134,7 +135,7 @@ async function handleApi(request: Request, env: Env, url: URL): Promise<Response
 
   const key = bearer(request);
   if (env.API_RATELIMIT && key) {
-    const limited = await rateLimited(env.API_RATELIMIT, key.slice(0, 16));
+    const limited = await rateLimited(env.API_RATELIMIT, `api:${key.slice(0, 16)}`);
     if (limited) {
       return json({ error: { code: "rate_limited", message: "Limite de requisições excedido." } }, 429, {
         "Retry-After": "60",
@@ -209,23 +210,34 @@ function nomeDaTool(corpo: string): string {
 }
 
 /**
- * Contador de janela fixa.
+ * Contador do freio, no binding nativo de rate limiting da Cloudflare.
  *
- * `get` e depois `put` não é atômico, e o KV é eventualmente consistente por
- * PoP: N requisições paralelas leem o mesmo valor e passam todas, e o limite
- * vale por ponto de presença. Ou seja, ele não segura um atacante distribuído,
- * e não é para isso que existe.
+ * Isto era um contador escrito à mão sobre KV, e o KV é a ferramenta errada
+ * para contar: `get` e depois `put` não é atômico, o valor demora a propagar
+ * entre pontos de presença, e cada requisição freada custava UMA ESCRITA. O
+ * plano grátis dá 1.000 escritas por dia na conta inteira, então em 12/08/2026
+ * um teste de flood de OTP (870 POSTs em três minutos) queimou a cota sozinho.
+ * A partir daí todo `put` voltava 429, a exceção subia sem tratamento e a
+ * Public API respondeu 500 em toda chamada autenticada até a virada do dia.
  *
- * Mantido assim de propósito: trocar por Durable Object custaria latência em
- * toda request para proteger algo que já tem defesa própria no banco. Se um dia
- * a borda precisar ser a defesa real, é aqui que a conversa começa.
+ * O binding nativo conta dentro da Cloudflare: sem escrita, sem cota e atômico.
+ * Continua valendo POR LOCALIDADE, ou seja, o limite é aplicado em cada ponto
+ * de presença separadamente e um atacante distribuído não é barrado aqui. Isso
+ * é aceito de propósito: a defesa real do OTP é `otp_request_allowed`, no
+ * banco, que todo caminho atravessa. Se um dia a borda precisar de limite
+ * global, aí sim a conversa é Durable Object.
+ *
+ * Falha aberta. Se o binding cair ou não estiver configurado, a requisição
+ * passa em vez de virar 500: um freio de conveniência não pode ser o motivo de
+ * a API inteira parar.
  */
-async function rateLimited(kv: KVNamespace, prefix: string): Promise<boolean> {
-  const bucket = `rl:${prefix}`;
-  const current = parseInt((await kv.get(bucket)) ?? "0", 10);
-  if (current >= RATE_LIMIT_PER_MIN) return true;
-  await kv.put(bucket, String(current + 1), { expirationTtl: 60 });
-  return false;
+async function rateLimited(limiter: RateLimit, chave: string): Promise<boolean> {
+  try {
+    const { success } = await limiter.limit({ key: chave });
+    return !success;
+  } catch {
+    return false;
+  }
 }
 
 function docsHtml(): string {
@@ -318,7 +330,7 @@ function mcpDocsHtml(): string {
 </html>`;
 }
 
-interface KVNamespace {
-  get(key: string): Promise<string | null>;
-  put(key: string, value: string, opts?: { expirationTtl?: number }): Promise<void>;
+/** Binding nativo de rate limiting (`ratelimits` no wrangler.api.jsonc). */
+interface RateLimit {
+  limit(options: { key: string }): Promise<{ success: boolean }>;
 }

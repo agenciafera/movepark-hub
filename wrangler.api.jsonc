@@ -19,10 +19,13 @@
     "SUPABASE_FUNCTIONS_URL": "https://mgaigbezdalbyuqiofcf.supabase.co/functions/v1",
     "SITE_URL": "https://hub.movepark.co"
   },
-  // Rate-limit best-effort por prefixo de chave (janela fixa de 60s) no handler /v1/*.
-  "kv_namespaces": [
-    { "binding": "API_RATELIMIT", "id": "667e4a747a054ba68ec01d9fff17956d" }
+  // Freio best-effort de 60 req/min: por prefixo de chave em /v1/*, por IP nas tools de OTP.
+  // Era um contador escrito sobre KV, que cobrava uma escrita por requisição e queimou a
+  // cota grátis (1.000/dia) num teste de flood em 12/08/2026, derrubando a API com 500.
+  // O binding nativo conta dentro da Cloudflare: sem escrita, sem cota, atômico por
+  // localidade. Mudar o limite aqui é config, não deploy de lógica.
+  "ratelimits": [
+    { "name": "API_RATELIMIT", "namespace_id": "1001", "simple": { "limit": 60, "period": 60 } }
   ]
-  // SUPABASE_ANON_KEY é secret (não versionar). Rate-limit opcional:
-  // adicione um binding KV "API_RATELIMIT" via `kv_namespaces` quando ativar.
+  // SUPABASE_ANON_KEY é secret (não versionar).
 }

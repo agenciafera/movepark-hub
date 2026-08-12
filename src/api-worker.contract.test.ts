@@ -75,13 +75,53 @@ describe("freio de custo na borda", () => {
     expect(/catch\s*\{\s*return "";/.test(worker)).toBe(true);
   });
 
-  it("admite por escrito que o contador não é atômico", () => {
-    // O KV é eventualmente consistente e o get/put não é transacional: o freio
-    // de borda não segura atacante distribuído. Isso é aceito de propósito,
-    // porque a defesa real é `otp_request_allowed`, no banco. O comentário é
-    // parte do contrato: sem ele alguém confia na borda.
+  it("admite por escrito que o freio não é a defesa real", () => {
+    // O limite vale por localidade da Cloudflare, então atacante distribuído não
+    // é barrado aqui. Isso é aceito de propósito, porque quem segura é o
+    // `otp_request_allowed`, no banco. O comentário é parte do contrato: sem ele
+    // alguém confia na borda.
     expect(worker.includes("otp_request_allowed")).toBe(true);
-    expect(/não é atômico/.test(worker)).toBe(true);
+    expect(/POR LOCALIDADE/.test(worker)).toBe(true);
+  });
+
+  it("conta no binding nativo, e não num contador escrito sobre KV", () => {
+    // Contador sobre KV cobra uma escrita por requisição freada. O plano grátis
+    // dá 1.000 por dia na conta inteira, e um flood de OTP queimou a cota em
+    // três minutos (12/08/2026). O binding nativo não escreve nada.
+    expect(/limiter\.limit\(\{\s*key:/.test(worker)).toBe(true);
+    expect(worker.includes("KVNamespace")).toBe(false);
+    expect(worker.includes("expirationTtl")).toBe(false);
+  });
+
+  it("falha aberto quando o freio quebra", () => {
+    // Este é o defeito que derrubou a Public API: o erro de cota do KV subia sem
+    // tratamento e virava 500 em toda chamada autenticada. Um freio de
+    // conveniência não pode ser o motivo de a API parar.
+    const fn = worker.slice(worker.indexOf("async function rateLimited"));
+    expect(/catch\s*\{\s*return false;/.test(fn.slice(0, 400))).toBe(true);
+  });
+});
+
+describe("configuração do worker de API", () => {
+  const cfg = readFileSync(join(process.cwd(), "wrangler.api.jsonc"), "utf8");
+
+  it("declara o binding de rate limit que o código consome", () => {
+    // Código e config são um contrato só: sem o binding, `env.API_RATELIMIT` é
+    // undefined e o freio some silenciosamente.
+    expect(/"ratelimits"/.test(cfg)).toBe(true);
+    expect(/"name":\s*"API_RATELIMIT"/.test(cfg)).toBe(true);
+    expect(worker.includes("env.API_RATELIMIT")).toBe(true);
+  });
+
+  it("não volta a pendurar o freio no KV", () => {
+    expect(cfg.includes("kv_namespaces")).toBe(false);
+  });
+
+  it("usa uma janela que o binding aceita", () => {
+    // A Cloudflare só admite `period` 10 ou 60. Qualquer outro valor falha no
+    // deploy, não em runtime, então o erro aparece longe de quem editou.
+    const periodo = /"period":\s*(\d+)/.exec(cfg)?.[1];
+    expect(["10", "60"]).toContain(periodo);
   });
 });
 

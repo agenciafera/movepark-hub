@@ -332,9 +332,17 @@ deduplica por `(api_key_id, idempotency_key)` numa janela curta para evitar rese
 
 **Paginação:** `limit` (default 20, máx 100) + `offset` (ou cursor onde fizer sentido).
 
-**Rate-limit:** por `key_prefix`, na borda (Cloudflare Worker + KV `API_RATELIMIT`, janela fixa de
-60s). Default **60 req/min**; `429` com `Retry-After`. Best-effort (não-transacional). Limites por
-plano/parceiro ⇒ E4.1.
+**Rate-limit:** por `key_prefix`, na borda (Cloudflare Worker + binding nativo `API_RATELIMIT`,
+janela de 60s declarada em `wrangler.api.jsonc`). Default **60 req/min**; `429` com `Retry-After`.
+O limite vale **por localidade** da Cloudflare, então não segura atacante distribuído, e o freio
+**falha aberto**: se o binding cair, a requisição passa. Limites por plano/parceiro ⇒ E4.1.
+
+> **Não volte a contar isso no KV.** Até 12/08/2026 o contador era `get`+`put` num namespace KV, o
+> que cobrava **uma escrita por requisição freada**. O plano grátis dá 1.000 escritas por dia na
+> conta inteira: um teste de flood de OTP (870 POSTs em três minutos) queimou a cota sozinho, o erro
+> de cota subiu sem tratamento e a Public API respondeu **500 em toda chamada autenticada** até a
+> virada do dia em UTC. O binding nativo não escreve, não tem cota e é atômico por localidade.
+> Guardado por `src/api-worker.contract.test.ts`.
 
 **Datas:** ISO-8601 UTC, igual ao resto do sistema.
 

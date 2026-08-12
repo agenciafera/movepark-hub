@@ -92,10 +92,23 @@ para o agente agir em nome do usuário; o usuário consentiu ao passar o código
 Proteção contra abuso de OTP (mensagem tem custo), em duas camadas:
 - **Dura, por identificador:** o GoTrue recusa um novo OTP pro mesmo destino por ~60s (verificado em
   produção: "you can only request this after 59 seconds"). É o que trava spam pro mesmo número.
-- **Best-effort, por IP:** o `handleMcp` do worker freia `/customer` no KV `API_RATELIMIT`. Como o KV
-  é eventualmente consistente (get-then-put, igual ao `handleApi`), um burst rápido pode passar; serve
-  para spray entre muitos identificadores, não como limite rígido. Limite rígido (Durable Object) fica
-  para E4.1. ✅ no ar.
+- **Best-effort, por IP:** o `handleMcp` do worker freia as tools de OTP no binding `API_RATELIMIT`
+  (60/min). O limite é atômico, mas vale por localidade da Cloudflare, então serve para spray entre
+  muitos identificadores vindo de uma origem, não como limite rígido. E ele **falha aberto**: se o
+  binding cair, a requisição passa e quem decide é o banco. Limite rígido e global (Durable Object)
+  fica para E4.1. ✅ no ar.
+
+  Foi um contador sobre KV até 12/08/2026, quando o próprio teste de flood que validava a camada do
+  banco queimou a cota grátis de escrita e derrubou a Public API com 500. Ver o aviso em
+  [`public-api.md`](../public-api.md) §10.
+
+  **Chave por IP tem um furo conhecido, medido na validação de 12/08/2026:** com IP estável o freio
+  barra a partir da 61ª chamada no minuto (75 tentativas ⇒ 61×`200` + 14×`429`), mas o mesmo burst
+  saindo por IPv6 rotativo (WARP, VPN, operadora móvel) passa **inteiro**, porque cada requisição
+  cai num balde diferente. Quem está atrás de proxy não é barrado aqui, e isso vale tanto para o
+  usuário legítimo quanto para quem abusa. É mais uma razão para o freio de borda não ser tratado
+  como defesa: o `otp_request_allowed` fecha por identificador, que o atacante não pode rotacionar
+  de graça.
 
 **`assert_verified_identity` foi adiada de propósito.** É a capacidade mais poderosa do desenho (cria
 sessão sem OTP) e só tem uso junto do bot de WhatsApp, que ainda não existe. Exige escopo novo
