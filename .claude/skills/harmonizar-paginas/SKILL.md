@@ -68,9 +68,19 @@ cruzar o breakpoint.
 | Elemento | Classe | Computa |
 |---|---|---|
 | h1 | `PageHeader` (já aplica `text-display-xl text-ink`) | 28/700/-0.2 |
+| h1 de página de índice | `PageHeader size="lg"` (`text-display-2xl`) | 26 → 44, fluido |
 | h2 de seção | `text-display-sm` | 20/600/-0.15 |
 | h3 | `text-title-md` | 16/600 |
 | parágrafo | `text-body-md text-body` | 16/400 #424242 |
+
+**`size="lg"` é só para página de índice** (adicionado em 12/08/2026, para `/blog`). O critério é
+o que o título nomeia: numa página de índice ele é o nome de uma seção do site, então abre a
+página; numa página de documento (`/termos`, `/cancelamento`) ele é o assunto do texto, e 28px
+basta. Índice também costuma ter ação no header (busca), e o título pequeno ao lado de um input
+de 48px fica menor que o próprio campo.
+
+Ao usar `size="lg"`, confira que nenhum h2 da página passou a pesar mais que o h1: em `/blog` o
+destaque foi de 20 para 28px justamente porque o h1 subiu para 44.
 
 ### Tokens com uso restrito
 

@@ -43,4 +43,31 @@ describe("PageHeader", () => {
     );
     expect(screen.getByPlaceholderText("Buscar pergunta…")).toBeInTheDocument();
   });
+
+  /**
+   * Página de índice nomeia uma seção do site, não o assunto de um documento, e
+   * aí o título abre a página em vez de só rotulá-la.
+   */
+  it("o tamanho lg sobe o h1 um tier, sem tocar no padrão", () => {
+    const { rerender } = render(<PageHeader variant="content" size="lg" title="Blog" />);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveClass("text-display-2xl");
+
+    rerender(<PageHeader variant="content" title="Blog" />);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveClass("text-display-xl");
+  });
+
+  /** Sem teto, o lead atravessa os 1280px do container e vira linha de 140 caracteres. */
+  it("o teto de medida vai na coluna do texto, não no wrapper", () => {
+    const { container } = render(
+      <PageHeader
+        variant="content"
+        title="Blog"
+        description="Guias de estacionamento."
+        contentClassName="max-w-[54ch]"
+      />,
+    );
+    const coluna = screen.getByText("Guias de estacionamento.").parentElement!;
+    expect(coluna.className).toContain("max-w-[54ch]");
+    expect(container.firstElementChild?.className).not.toContain("max-w-[54ch]");
+  });
 });

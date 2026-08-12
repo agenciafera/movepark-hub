@@ -254,29 +254,41 @@ export default function BlogListingPage() {
       </Helmet>
 
       <div className="mx-auto max-w-[1280px] px-4 py-12 desktop:px-8">
+        {/*
+          Título grande, lead curto e busca à direita.
+
+          O título é `size="lg"` porque numa página de índice ele nomeia uma seção
+          do site, não o assunto de um documento. O lead tem teto de medida: solto,
+          ele atravessava os 1280px do container e virava uma linha de 140
+          caracteres. A busca vai no slot de ação do header, que é onde ela para de
+          empurrar as categorias para baixo.
+        */}
         <PageHeader
           variant="content"
+          size="lg"
           eyebrow={EYEBROW[kind]}
           title={titulo}
           description={lead}
+          contentClassName="max-w-[54ch]"
           back={kind === "index" ? undefined : { to: "/blog/", label: "Voltar para o blog" }}
+          actions={
+            <label className="relative block w-full tablet:w-80">
+              <MagnifyingGlass
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+                aria-hidden
+              />
+              <Input
+                value={termo}
+                onChange={(e) => setTermo(e.target.value)}
+                placeholder="Buscar no blog"
+                aria-label="Buscar no blog"
+                className="pl-9"
+              />
+            </label>
+          }
         />
 
         <div className="mt-6 flex flex-col gap-4">
-          <label className="relative block max-w-md">
-            <MagnifyingGlass
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
-              aria-hidden
-            />
-            <Input
-              value={termo}
-              onChange={(e) => setTermo(e.target.value)}
-              placeholder="Buscar no blog"
-              aria-label="Buscar no blog"
-              className="pl-9"
-            />
-          </label>
-
           <nav aria-label="Categorias" className="flex flex-wrap gap-2">
             <Link
               to="/blog/"

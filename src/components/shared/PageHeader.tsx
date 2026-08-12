@@ -13,9 +13,22 @@ type Props = {
    * "content": descrição em 16px body, o lead das páginas de conteúdo do consumer.
    */
   variant?: "admin" | "content";
+  /**
+   * Tier do h1. "default" é `display-xl` (28px), o das páginas de conteúdo.
+   *
+   * "lg" (`display-2xl`, 26px → 44px) é para página de índice, onde o título é o
+   * nome de uma seção do site e não o assunto de um documento: aí ele abre a
+   * página em vez de só rotulá-la. Vale para `/blog`.
+   */
+  size?: "default" | "lg";
   /** Bloco extra abaixo do lead, ainda dentro do header (ex: a busca da FAQ). */
   children?: React.ReactNode;
   className?: string;
+  /**
+   * Vai na coluna do texto, não no wrapper. Serve para limitar a medida do lead
+   * quando o header é largo: sem teto, ele atravessa os 1280px do container.
+   */
+  contentClassName?: string;
 };
 
 export function PageHeader({
@@ -25,8 +38,10 @@ export function PageHeader({
   back,
   actions,
   variant = "admin",
+  size = "default",
   children,
   className,
+  contentClassName,
 }: Props) {
   const isContent = variant === "content";
 
@@ -45,13 +60,15 @@ export function PageHeader({
       {/* Voltar padrão, acima do título, quando a página é filha de outra. */}
       {back && <BackLink to={back.to} label={back.label} className="mb-2" />}
       <header className="flex flex-col gap-3 tablet:flex-row tablet:items-end tablet:justify-between">
-        <div className="flex flex-col gap-2">
+        <div className={cn("flex min-w-0 flex-col gap-2", contentClassName)}>
           {eyebrow && (
             <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-mp-indigo">
               {eyebrow}
             </span>
           )}
-          <h1 className="text-display-xl text-ink">{title}</h1>
+          <h1 className={cn(size === "lg" ? "text-display-2xl" : "text-display-xl", "text-ink")}>
+            {title}
+          </h1>
           {description && (
             <p className={isContent ? "text-body-md text-body" : "text-body-sm text-muted"}>
               {description}
