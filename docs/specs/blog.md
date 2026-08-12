@@ -390,16 +390,31 @@ chegava de busca via título e imagem, rolava, e só então descobria do que o p
 mobile a ordem do DOM manda (título, capa, texto), que é a ordem de leitura certa; a capa só vai
 para a esquerda quando há duas colunas (`desktop:order-first`).
 
-Dentro do container há duas larguras, por função:
+**O corpo divide a linha com uma coluna lateral** de 300px (`PostSidebar`), que leva o CTA do
+destino e o "Leia também" com miniatura. Os dois viviam no rodapé, ou seja, depois de seis
+minutos de leitura, que é onde o leitor já foi embora.
+
+Dentro do container as larguras são:
 
 | Bloco | Largura | Por quê |
 |---|---|---|
-| Corpo e tags | `max-w-[68ch]` (684px), **alinhado à esquerda** | Medida de leitura, a mesma das páginas de conteúdo. Esticar o parágrafo até os 1016px do container daria 100 caracteres por linha. Centralizada, ela dava à página um terceiro eixo, entre a borda da capa e a do título |
+| Corpo e tags | coluna `minmax(0,1fr)` da grade, ~676px | Cai na mesma medida de leitura de 68ch. **Alinhado à esquerda**: centralizado, dava à página um terceiro eixo, entre a borda da capa e a do título |
 | Capa | metade da grade do cabeçalho (~512px) | Ao lado do título, não acima dele |
-| CTA de destino e "Leia também" | container todo | Não são leitura, e o CTA é o elemento de conversão da página |
+| Lateral | 300px | CTA e relacionados acompanhando a leitura |
+
+Sem lateral (post sem destino **e** sem relacionado) o corpo volta para `max-w-[68ch]`, senão o
+parágrafo se esticaria pelos 1016px do container. Hoje **nenhum post publicado cai nesse caso**,
+porque todos têm destino; o caminho é coberto por teste, não por inspeção na tela.
 
 O `sizes` da capa acompanha a coluna (`(min-width: 1144px) 512px, 100vw`): errar esse valor faz
 o browser baixar o candidato errado do `srcset`.
+
+**`sticky` na lateral exige `self-start`.** Por padrão o item da grade estica até a altura da
+linha, e um elemento do tamanho da própria linha nunca tem por onde grudar: o `sticky` fica no
+CSS sem efeito nenhum. Encolhido ao conteúdo, ele volta a ter espaço. O teto
+`max-h-[calc(100dvh-7rem)]` é o seguro para tela baixa: grudado, um bloco mais alto que a janela
+deixaria o último relacionado fora de alcance pelo artigo inteiro, já que o `sticky` só solta
+quando a linha da grade acaba.
 
 ### O resumo só vira lead quando alguém escreveu um
 

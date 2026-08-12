@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { CoverImage } from "@/features/blog/CoverImage";
 import { PostBody } from "@/features/blog/PostBody";
+import { PostSidebar } from "@/features/blog/PostSidebar";
 import { useBlogPost, useRelatedPosts } from "@/features/blog/api";
 import {
   leadFrom,
@@ -49,6 +50,10 @@ export default function BlogPostPage() {
   const post = loaded ?? query.data ?? null;
 
   const related = useRelatedPosts(post?.destination_id, post?.slug);
+  const relacionados = related.data ?? [];
+  /* Sem destino e sem relacionado a lateral seria 300px de branco ao lado do
+     texto, que é pior que não ter lateral. */
+  const temSidebar = Boolean(post?.destination) || relacionados.length > 0;
 
   if (!post) {
     if (query.isLoading) {
@@ -188,63 +193,38 @@ export default function BlogPostPage() {
           )}
         </div>
 
-        <div className={cn(COLUNA_DE_LEITURA, "mt-10")}>
-          <PostBody markdown={post.body_md} />
-
-          {post.tags.length > 0 && (
-            <nav aria-label="Tags do post" className="mt-10 flex flex-wrap gap-2">
-              {post.tags.map((tag) => (
-                <Link
-                  key={tag.id}
-                  to={`/blog/tag/${tag.slug}/`}
-                  className="rounded-full border border-hairline px-3 py-1.5 text-caption text-body hover:bg-surface-soft"
-                >
-                  {tag.name}
-                </Link>
-              ))}
-            </nav>
-          )}
-        </div>
-
         {/*
-          CTA por destino. Ele é o motivo de `destination_id` existir: sem isso o
-          post preserva o ranking e não tem para onde mandar o leitor. Post sem
-          destino (Navegantes, que ainda não existe no Hub) simplesmente não mostra.
-
-          Fica no container todo, fora da coluna de leitura: é o elemento de
-          conversão da página, e aqui o leitor já terminou de ler.
+          Corpo e lateral dividem a mesma linha da grade, então o `sticky` da
+          lateral tem contra o que grudar: a coluna estica junto com o texto.
+          Sem sidebar a coluna de leitura volta a valer, senão o parágrafo se
+          esticaria pelos 1016px do container.
         */}
-        {post.destination && (
-          <aside className="mt-12 rounded-2xl border border-hairline bg-surface-soft p-6">
-            <h2 className="text-display-sm text-ink">Vai viajar por {post.destination.name}?</h2>
-            <p className="mt-2 max-w-[56ch] text-body-md text-body">
-              Compare os estacionamentos parceiros e garanta sua vaga antes de sair de casa.
-            </p>
-            <Button asChild className="mt-4">
-              <Link to={`/destinos/${post.destination.slug}`}>Ver estacionamentos</Link>
-            </Button>
-          </aside>
-        )}
+        <div
+          className={cn(
+            "mt-10",
+            temSidebar && "desktop:grid desktop:grid-cols-[minmax(0,1fr)_300px] desktop:gap-10",
+          )}
+        >
+          <div className={temSidebar ? "min-w-0" : COLUNA_DE_LEITURA}>
+            <PostBody markdown={post.body_md} />
 
-        {/* Duas colunas no container largo: lista de uma coluna com 1016px de
-            largura deixa a linha do link curta e o branco à direita enorme. */}
-        {related.data && related.data.length > 0 && (
-          <section className="mt-12">
-            <h2 className="text-display-sm text-ink">Leia também</h2>
-            <ul className="mt-4 grid grid-cols-1 gap-3 tablet:grid-cols-2 tablet:gap-x-8">
-              {related.data.map((p) => (
-                <li key={p.id}>
+            {post.tags.length > 0 && (
+              <nav aria-label="Tags do post" className="mt-10 flex flex-wrap gap-2">
+                {post.tags.map((tag) => (
                   <Link
-                    to={`/blog/${p.slug}/`}
-                    className="text-body-md text-mp-primary underline underline-offset-2"
+                    key={tag.id}
+                    to={`/blog/tag/${tag.slug}/`}
+                    className="rounded-full border border-hairline px-3 py-1.5 text-caption text-body hover:bg-surface-soft"
                   >
-                    {p.title}
+                    {tag.name}
                   </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+                ))}
+              </nav>
+            )}
+          </div>
+
+          {temSidebar && <PostSidebar destination={post.destination} relacionados={relacionados} />}
+        </div>
       </article>
     </>
   );

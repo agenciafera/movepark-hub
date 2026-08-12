@@ -25,11 +25,12 @@ const POST = {
   tags: [{ id: "tag-1", name: "Campinas", slug: "campinas" }],
 } as unknown as BlogPostWithDestination;
 
-function renderPost() {
+function renderPost(overrides?: Partial<BlogPostWithDestination>) {
+  const post = { ...POST, ...overrides };
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const router = createMemoryRouter(
-    [{ path: "/blog/:slug", element: <BlogPostPage />, loader: () => POST }],
-    { initialEntries: [`/blog/${POST.slug}`] },
+    [{ path: "/blog/:slug", element: <BlogPostPage />, loader: () => post }],
+    { initialEntries: [`/blog/${post.slug}`] },
   );
   return render(
     <QueryClientProvider client={qc}>
@@ -53,15 +54,33 @@ describe("BlogPostPage: largura", () => {
     expect(article.className).not.toContain("max-w-[720px]");
   });
 
-  it("a prosa fica presa na medida de leitura de 68ch", async () => {
-    const { container } = renderPost();
+  /**
+   * Com lateral quem limita a medida é a coluna da grade; sem lateral o
+   * parágrafo se esticaria pelos 1016px do container, então o `max-w` volta.
+   */
+  it("sem lateral, a prosa volta a ser presa na medida de leitura de 68ch", async () => {
+    const { container } = renderPost({ destination: null, destination_id: null });
     const article = await waitForArticle(container);
-    const paragrafo = [...article.querySelectorAll("p")].find((p) =>
-      p.textContent?.includes("Primeiro parágrafo"),
-    )!;
+    expect(article.querySelector("aside")).toBeNull();
+    const paragrafo = paragrafoDoCorpo(article);
     expect(paragrafo.closest("div[class*='max-w-[68ch]']")).not.toBeNull();
   });
+
+  it("com lateral, a prosa divide a linha da grade com ela", async () => {
+    const { container } = renderPost();
+    const article = await waitForArticle(container);
+    expect(article.querySelector("aside")).not.toBeNull();
+    const grade = article.querySelector("aside")!.parentElement!;
+    expect(grade.className).toContain("desktop:grid-cols-[minmax(0,1fr)_300px]");
+    expect(grade.contains(paragrafoDoCorpo(article))).toBe(true);
+  });
 });
+
+function paragrafoDoCorpo(article: Element) {
+  return [...article.querySelectorAll("p")].find((p) =>
+    p.textContent?.includes("Primeiro parágrafo"),
+  )!;
+}
 
 /**
  * Empilhado, a capa era uma faixa de 520px entre a manchete e a primeira linha do
