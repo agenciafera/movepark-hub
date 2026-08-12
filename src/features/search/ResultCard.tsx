@@ -1,6 +1,7 @@
 import { MapPin, Tag } from "@phosphor-icons/react";
 import { formatDistance } from "@/lib/format";
 import { parkingTitle } from "@/lib/parkingName";
+import { stretchParamsToMinStay } from "./dates";
 import { isTypeDescriptorAmenity } from "./amenities.logic";
 import { ParkingCard, ParkingCardBadge, type ParkingCardAmenity } from "./ParkingCard";
 import type { SearchResultItem } from "./useSearchResults";
@@ -69,7 +70,9 @@ const BADGE_ICON: Partial<Record<SearchBadgeKind, typeof Tag>> = {
 };
 
 export function ResultCard({ item, isSaved, onToggleSave, searchParams, source, badges = [] }: Props) {
-  const params = new URLSearchParams(searchParams);
+  // O link precisa entregar o que o card prometeu: quando o preço veio da estadia mínima
+  // (vitrine), a janela vai esticada, senão o cliente cai na página sem o preço que viu.
+  const params = new URLSearchParams(stretchParamsToMinStay(searchParams, item.min_stay_days));
   if (source) params.set("src", source);
 
   const url = `/p/${item.operator.slug}/${item.location.slug}/${item.parking_type.code}?${params.toString()}`;
@@ -140,10 +143,20 @@ export function ResultCard({ item, isSaved, onToggleSave, searchParams, source, 
       rating={{ avg: item.location.review_avg, count: item.location.review_count }}
       amenities={amenities}
       amenitiesTestId="result-card-amenities"
+      // Na vitrine o card mostra a diária, não o total da estadia mínima: a lista mistura
+      // durações, e um total de 3 diárias ao lado de um de 2 faz o selo "Mais barato" cair no
+      // número maior da tela. Com todos exibindo diária, a comparação bate com o que se vê. A
+      // exigência vai no rótulo, que é condição do lote e não escolha nossa.
       price={{
-        total: item.price.total,
-        oldPrice: item.price.old_price,
-        unit: `${item.price.days} ${item.price.days === 1 ? "diária" : "diárias"}`,
+        total: item.min_stay_days ? item.price.per_day : item.price.total,
+        oldPrice: item.min_stay_days
+          ? item.price.old_price != null
+            ? Number((item.price.old_price / item.price.days).toFixed(2))
+            : null
+          : item.price.old_price,
+        unit: item.min_stay_days
+          ? `por diária · mínimo ${item.min_stay_days} ${item.min_stay_days === 1 ? "diária" : "diárias"}`
+          : `${item.price.days} ${item.price.days === 1 ? "diária" : "diárias"}`,
       }}
       overlay={overlay}
       imageFooter={imageFooter}

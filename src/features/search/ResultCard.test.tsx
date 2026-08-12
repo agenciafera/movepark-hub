@@ -112,6 +112,44 @@ describe("ResultCard", () => {
     );
   });
 
+  it("vitrine: mostra a diária e avisa a estadia mínima exigida pelo lote", () => {
+    // O valor grande vira a diária para o card ser comparável com os vizinhos de outra
+    // duração; o rótulo carrega a condição, que é exigência do estacionamento.
+    const base = item();
+    renderWithProviders(
+      <ResultCard
+        item={{
+          ...base,
+          price: { total: 71.7, old_price: null, per_day: 23.9, days: 3 },
+          min_stay_days: 3,
+        }}
+        isSaved={false}
+        onToggleSave={vi.fn()}
+        searchParams={new URLSearchParams()}
+      />,
+    );
+    expect(screen.getByText("por diária · mínimo 3 diárias")).toBeInTheDocument();
+    expect(screen.getByText("R$ 23,90")).toBeInTheDocument();
+    expect(screen.queryByText("R$ 71,70")).toBeNull();
+  });
+
+  it("vitrine: o link leva a janela esticada até a estadia mínima", () => {
+    // Sem isso o cliente clica num preço de 3 diárias e cai na página com 2, sem preço.
+    const base = item();
+    const { container } = renderWithProviders(
+      <ResultCard
+        item={{ ...base, price: { ...base.price, days: 3 }, min_stay_days: 3 }}
+        isSaved={false}
+        onToggleSave={vi.fn()}
+        searchParams={
+          new URLSearchParams({ from: "2026-08-19T12:00:00.000Z", to: "2026-08-21T12:00:00.000Z" })
+        }
+      />,
+    );
+    const href = container.querySelector("a")?.getAttribute("href") ?? "";
+    expect(decodeURIComponent(href)).toContain("to=2026-08-22T12:00:00.000Z");
+  });
+
   it("renderiza os badges comparativos quando passados (PRD-13)", () => {
     renderWithProviders(
       <ResultCard

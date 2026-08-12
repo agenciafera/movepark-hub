@@ -19,6 +19,13 @@ export type SearchFilters = {
   max_distance_km?: number;
   min_rating?: number;
   sort?: SearchSort;
+  /**
+   * "from" é o modo da vitrine (home e `/destinos`), que busca com uma janela fixa em vez
+   * de datas escolhidas pelo cliente: quem só vende a partir de N diárias entra com o preço
+   * dessa estadia, em vez de sumir da lista. Na `/search` fica o padrão "exact", porque ali
+   * as datas são do cliente.
+   */
+  price_mode?: "exact" | "from";
   limit?: number;
   offset?: number;
 };
@@ -55,8 +62,11 @@ export type SearchResultItem = {
     total: number;
     old_price: number | null;
     per_day: number;
+    /** Diárias que este preço cobre. Na vitrine pode ser maior que a janela buscada. */
     days: number;
   };
+  /** Estadia mínima do lote, preenchida só quando o preço veio dela (`price_mode: "from"`). */
+  min_stay_days?: number | null;
   amenities: string[];
 };
 

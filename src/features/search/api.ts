@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { calcFromPrice } from "./fromPrice";
+import { dailySeed, orderPopularRows } from "./popularOrder";
 
 export type Destination = {
   id: string;
@@ -167,71 +169,6 @@ export function usePopularLocations(limit = 5) {
 
 // --- Popular Offers (home page com preço) ---
 
-type PricingRuleRaw = {
-  strategy: string;
-  incremental_one_day_price: number | null;
-  old_price_strategy: string;
-  old_price_multiplier: number | null;
-  hourly_daily_rate: number | null;
-  pricing_tier: {
-    from_day: number;
-    to_day: number | null;
-    total_price: number | null;
-    unit_price: number | null;
-    is_old_price: boolean;
-  }[];
-};
-
-function calcOneDayPrice(rule: PricingRuleRaw | null): { price: number | null; oldPrice: number | null } {
-  if (!rule) return { price: null, oldPrice: null };
-
-  const tiers = rule.pricing_tier ?? [];
-  const active = tiers.filter((t) => !t.is_old_price);
-  const oldTiers = tiers.filter((t) => t.is_old_price);
-
-  function find1Day(ts: typeof active) {
-    return ts.find((t) => t.from_day <= 1 && (t.to_day === null || t.to_day >= 1)) ?? null;
-  }
-
-  let price: number | null = null;
-  switch (rule.strategy) {
-    case "incremental_formula":
-      price = rule.incremental_one_day_price;
-      break;
-    case "uniform_by_duration": {
-      const t = find1Day(active);
-      price = t ? (t.unit_price ?? 0) : null;
-      break;
-    }
-    case "fixed_bracket": {
-      const t = find1Day(active);
-      price = t ? (t.total_price ?? t.unit_price ?? null) : null;
-      break;
-    }
-    case "tiered_progressive": {
-      const t = active.find((t) => t.from_day <= 1);
-      price = t ? (t.unit_price ?? null) : null;
-      break;
-    }
-    case "hourly_capped":
-      price = rule.hourly_daily_rate;
-      break;
-    // surcharge e monthly_remainder omitidos — preço não calculável sem dados extras
-  }
-
-  let oldPrice: number | null = null;
-  if (price != null) {
-    if (rule.old_price_strategy === "multiplier" && rule.old_price_multiplier) {
-      oldPrice = price * rule.old_price_multiplier;
-    } else if (rule.old_price_strategy === "own_table") {
-      const t = find1Day(oldTiers);
-      if (t) oldPrice = t.total_price ?? t.unit_price ?? null;
-    }
-  }
-
-  return { price, oldPrice };
-}
-
 export type PopularOffer = {
   id: string;
   parking_type: { code: string; name: string };
@@ -254,8 +191,11 @@ export type PopularOffer = {
     } | null;
     amenities: { amenity_code: string }[];
   };
-  price_1d: number | null;
-  old_price_1d: number | null;
+  /** Preço de partida: 1 diária, ou a menor estadia que o lote vende (ver `price_days`). */
+  price_from: number | null;
+  old_price_from: number | null;
+  /** Diárias que `price_from` cobre. Maior que 1 quando o lote exige estadia mínima. */
+  price_days: number;
 };
 
 /**
@@ -267,6 +207,10 @@ export type PopularOffer = {
 export function dedupePopularOffers(offers: PopularOffer[], max: number): PopularOffer[] {
   const byCompany = new Map<string, PopularOffer>();
   for (const o of offers) {
+    // Empresa ausente acontece de verdade: a RLS do catálogo só libera `company` ativa, e há
+    // unidade listada cuja empresa não está. Antes disso a leitura de `company.id` estourava e
+    // levava a home inteira junto, então a linha sai da vitrine em vez de derrubá-la.
+    if (!o.location.company?.id) continue;
     const cur = byCompany.get(o.location.company.id);
     if (!cur || o.location.rank < cur.location.rank) {
       byCompany.set(o.location.company.id, o);
@@ -290,7 +234,9 @@ export function usePopularOffers(maxLocations = 6) {
         p_limit: maxLocations * 4,
       });
       if (rankErr) throw rankErr;
-      const rankedRows = rankRows ?? [];
+      // Quem já vendeu fica na ordem do ranking; a cauda sem venda entra embaralhada por dia,
+      // senão as mesmas unidades ficariam na vitrine para sempre por critério de desempate.
+      const rankedRows = orderPopularRows(rankRows ?? [], dailySeed(new Date()));
       if (rankedRows.length === 0) return [];
 
       // rank por lpt (a ordem de venda); as locations a buscar são as das linhas ranqueadas.
@@ -340,9 +286,17 @@ export function usePopularOffers(maxLocations = 6) {
       for (const r of (lptRaw ?? []) as any[]) {
         const loc = locMap.get(r.location_id);
         if (!loc || !r.company_parking_type?.parking_type) continue;
+        // A empresa vem null quando a RLS do catálogo não a libera para quem está deslogado
+        // (`catalog_read_company` exige company.status e onboarding_status ativos, e há unidades
+        // listadas cuja empresa não está). Sem esta guarda a seção inteira caía: o dedupe lê
+        // `company.id` e estourava, deixando a home sem os populares para todo visitante anônimo.
+        if (!loc.company) continue;
         const ruleRaw = Array.isArray(r.pricing_rule) ? r.pricing_rule[0] : r.pricing_rule;
-        const { price, oldPrice } = calcOneDayPrice(ruleRaw ?? null);
-        if (price == null) continue;
+        // "A partir de": quem só vende estadia longa entra com o preço da menor estadia que
+        // vende, em vez de sair da home por não ter preço de 1 diária (que é o normal em lote
+        // de aeroporto, e derrubava Abbapark, Nationpark e a coberta do Plenty Park).
+        const from = calcFromPrice(ruleRaw ?? null);
+        if (!from) continue;
 
         // Fonte canônica de fotos = coluna location.photos (text[]), a mesma que o operador
         // edita e o detalhe (listing) usa. A 1ª é a capa.
@@ -364,8 +318,9 @@ export function usePopularOffers(maxLocations = 6) {
             destination: loc.destination as PopularOffer["location"]["destination"],
             amenities: (loc.amenities ?? []) as { amenity_code: string }[],
           },
-          price_1d: price,
-          old_price_1d: oldPrice,
+          price_from: from.price,
+          old_price_from: from.oldPrice,
+          price_days: from.days,
         });
       }
 

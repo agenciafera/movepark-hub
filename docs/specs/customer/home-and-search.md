@@ -155,6 +155,32 @@ Lista de aeroportos pode ser hardcoded inicialmente (8-10 principais BR + PT). F
 
 ---
 
+## 6b. Estacionamentos populares (cards com preço)
+
+Seção `PopularParkingLots`, alimentada pela RPC `popular_parking_types` (ranking por reservas
+confirmadas) + preço lido da tabela do lote. Teto de **1 card por empresa**, `ParkingCard` igual
+ao da busca.
+
+**Preço "a partir de".** O card usava o preço de **1 diária** e descartava quem não tivesse
+(`price == null`). Lote de aeroporto costuma vender estadia longa e começar a tabela em 3
+diárias, então Abbapark, Nationpark e a coberta do Plenty Park nunca apareciam. Hoje
+`calcFromPrice` cai para a menor duração que a unidade vende: o card mostra a **diária** e o
+rótulo `por diária · mínimo N diárias`, e o link já leva a janela dessa estadia. Mesma regra da
+vitrine de destino (ver `search-results.md` §8b).
+
+**Ordem quando o ranking acaba.** A RPC devolve `bookings_count`. Quem já vendeu fica na ordem
+do ranking; a cauda **sem venda** entra **embaralhada com semente do dia** (`popularOrder.ts`),
+para o desempate por avaliações/cadastro não fixar as mesmas unidades na vitrine para sempre.
+Semente diária, não relógio: a home não se remexe a cada refresh e muda sozinha no dia seguinte.
+
+**Empresa fora do catálogo.** A RLS `catalog_read_company` só libera `company` com
+`status` e `onboarding_status` ativos, e existe unidade listada cuja empresa não está. Nesse caso
+o join devolve `company: null`, e a oferta é **descartada** (no hook e no `dedupePopularOffers`).
+Antes disso a leitura de `company.id` estourava e derrubava a seção inteira para todo visitante
+anônimo.
+
+---
+
 ## 7. Trust band
 
 Faixa horizontal com 4 selos. Sem ilustrações pesadas, só ícone outline + label + 1 linha de copy.

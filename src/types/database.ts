@@ -5265,6 +5265,7 @@ export type Database = {
       popular_parking_types: {
         Args: { p_limit?: number }
         Returns: {
+          bookings_count: number
           id: string
           location_id: string
           location_slug: string

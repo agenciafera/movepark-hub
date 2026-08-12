@@ -66,13 +66,26 @@ export default function DestinoPage() {
   const destination = loaderDest ?? query.data ?? null;
 
   const win = React.useMemo(defaultWindow, []);
+  // `price_mode: "from"` porque a janela aqui é nossa, não do cliente: sem ele, quem exige
+  // estadia mínima maior que a janela some da vitrine, e um destino inteiro pode ficar vazio
+  // com unidades ativas no catálogo (foi o caso de Abbapark e Nationpark em Afonso Pena).
   const search = useSearchResults(
-    destination ? { dest: destination.code, from: win.from, to: win.to, sort: "price_asc", limit: 12 } : null,
+    destination
+      ? { dest: destination.code, from: win.from, to: win.to, sort: "price_asc", price_mode: "from", limit: 12 }
+      : null,
   );
   // Curadoria "Mais bem avaliados" (08.6): só unidades já avaliadas, por nota desc.
   const topSearch = useSearchResults(
     destination
-      ? { dest: destination.code, from: win.from, to: win.to, sort: "rating_desc", min_rating: 1, limit: 4 }
+      ? {
+          dest: destination.code,
+          from: win.from,
+          to: win.to,
+          sort: "rating_desc",
+          min_rating: 1,
+          price_mode: "from",
+          limit: 4,
+        }
       : null,
   );
   // FAQ em camadas (ADR-002): global + destination, mesclado/deduplicado no edge.

@@ -41,11 +41,14 @@ export function computeResultBadges(
   const available = all.filter((r) => !r.availability?.sold_out);
   const comparable = available.length >= 2;
 
-  // Mais barato — menor price.total, só se houver variação na lista.
+  // Mais barato: menor preço por diária, só se houver variação na lista. Por diária e não
+  // pelo total porque a vitrine mistura durações: um lote que só vende 3 diárias aparece com
+  // o total de 3, e comparar com o total de 2 diárias de outro premiaria a estadia mais curta.
+  // Quando todos têm a mesma duração, que é o caso da /search, a conta dá a mesma coisa.
   if (comparable) {
-    const prices = available.map((r) => r.price.total);
+    const prices = available.map((r) => r.price.per_day);
     const min = Math.min(...prices);
-    if (Math.max(...prices) > min && item.price.total === min) {
+    if (Math.max(...prices) > min && item.price.per_day === min) {
       found.set("cheapest", "Mais barato");
     }
   }

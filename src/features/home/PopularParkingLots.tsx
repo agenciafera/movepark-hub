@@ -51,14 +51,15 @@ function destinationMeta(location: PopularOffer["location"]): string {
   return d.code ? `(${d.code}) ${label}` : label;
 }
 
-function getDefaultDates() {
+/** Janela do link do card: amanhã por `days` diárias (a estadia que o card mostrou). */
+function getDefaultDates(days = 1) {
   const now = new Date();
   const tomorrow = new Date(now);
   tomorrow.setDate(now.getDate() + 1);
-  const dayAfter = new Date(now);
-  dayAfter.setDate(now.getDate() + 2);
+  const checkout = new Date(now);
+  checkout.setDate(now.getDate() + 1 + Math.max(1, days));
   const fmt = (d: Date) => d.toISOString().split("T")[0];
-  return { from: fmt(tomorrow), to: fmt(dayAfter) };
+  return { from: fmt(tomorrow), to: fmt(checkout) };
 }
 
 function PopularOfferCard({
@@ -72,8 +73,10 @@ function PopularOfferCard({
   isSaved: boolean;
   onToggleSave: () => void;
 }) {
-  const { from, to } = getDefaultDates();
-  const { location, parking_type, price_1d, old_price_1d } = offer;
+  const { location, parking_type, price_from, old_price_from, price_days } = offer;
+  // A janela do link acompanha a estadia que o card mostrou: mandar 1 diária para um lote que
+  // só vende 3 levaria o cliente a uma página sem o preço que ele acabou de ver.
+  const { from, to } = getDefaultDates(price_days);
   const url = `/p/${location.company.slug}/${location.slug}/${parking_type.code}?from=${from}&to=${to}&src=home-popular`;
 
   return (
@@ -89,7 +92,15 @@ function PopularOfferCard({
       meta={destinationMeta(location)}
       rating={{ avg: location.review_avg, count: location.review_count }}
       amenities={topAmenityPills(location.amenities)}
-      price={{ total: price_1d, oldPrice: old_price_1d, unit: "1 diária" }}
+      // Quem exige estadia mínima mostra a diária, e não o total dela: a vitrine põe lado a
+      // lado cards de durações diferentes, e comparar total com total faria o "Mais barato"
+      // cair no número maior da tela.
+      price={{
+        total: price_days > 1 && price_from != null ? price_from / price_days : price_from,
+        oldPrice:
+          price_days > 1 && old_price_from != null ? old_price_from / price_days : old_price_from,
+        unit: price_days > 1 ? `por diária · mínimo ${price_days} diárias` : "1 diária",
+      }}
       overlay={badge ? <ParkingCardBadge icon={Tag}>{badge}</ParkingCardBadge> : undefined}
       favorite={{ isSaved, onToggle: onToggleSave }}
     />
@@ -148,8 +159,9 @@ export function PopularParkingLots() {
   if (isLoading) return <LoadingSkeleton />;
   if (!data || data.length === 0) return null;
 
-  // Computa o menor preço do conjunto para destacar o "Mais barato"
-  const prices = data.map((o) => o.price_1d ?? Infinity);
+  // Menor preço do conjunto para destacar o "Mais barato". Por diária, porque a lista mistura
+  // durações: um lote de 3 diárias tem total maior sem ser o mais caro por dia.
+  const prices = data.map((o) => (o.price_from != null ? o.price_from / o.price_days : Infinity));
   const minPrice = Math.min(...prices);
   const maxPrice = Math.max(...prices.filter((p) => p !== Infinity));
   const hasPriceVariation = data.length >= 2 && maxPrice > minPrice;
@@ -176,7 +188,10 @@ export function PopularParkingLots() {
         )}
       >
         {data.map((offer) => {
-          const isCheapest = hasPriceVariation && offer.price_1d === minPrice;
+          const isCheapest =
+            hasPriceVariation &&
+            offer.price_from != null &&
+            offer.price_from / offer.price_days === minPrice;
           return (
             <PopularOfferCard
               key={offer.id}

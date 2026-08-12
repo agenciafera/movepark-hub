@@ -24,8 +24,9 @@ function offer(
       destination: null,
       amenities: [],
     },
-    price_1d: 100,
-    old_price_1d: null,
+    price_from: 100,
+    old_price_from: null,
+    price_days: 1,
   };
 }
 
@@ -72,5 +73,20 @@ describe("dedupePopularOffers", () => {
 
   it("sem ofertas → vazio", () => {
     expect(dedupePopularOffers([], 6)).toEqual([]);
+  });
+});
+
+describe("regressão: oferta sem empresa não derruba a vitrine", () => {
+  it("ignora a oferta cuja empresa não veio (RLS do catálogo) em vez de estourar", () => {
+    // A `location` é pública, mas a `company` só é legível quando está ativa no catálogo
+    // (`catalog_read_company`). Para quem está deslogado ela chega null, e o dedupe lia
+    // `company.id` direto: um único lote nessa situação apagava a seção inteira da home.
+    const ok = offer("lpt-ok", "C1", 0);
+    const semEmpresa = offer("lpt-sem", "C2", 1);
+    // @ts-expect-error simula o que a RLS devolve: empresa ausente na linha da location
+    semEmpresa.location.company = null;
+
+    const out = dedupePopularOffers([ok, semEmpresa], 6);
+    expect(out.map((o) => o.id)).toEqual(["lpt-ok"]);
   });
 });

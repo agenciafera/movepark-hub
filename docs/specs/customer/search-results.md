@@ -135,7 +135,9 @@ Footer da sidebar: botão `[Limpar tudo]` + contador "12 filtros ativos".
 destacam o critério de compra vencedor de cada card — tiram o foco do "só preço".
 
 - **Relativos ao conjunto** de resultados, não fixos por unidade:
-  - **"Mais barato"** (🏷️ `Tag`): menor `price.total` da lista.
+  - **"Mais barato"** (🏷️ `Tag`): menor `price.per_day` da lista. Por diária e não pelo
+    total porque a vitrine mistura durações (ver "Estadia mínima na vitrine" abaixo); com
+    todos os cards na mesma duração, que é o caso da `/search`, a conta dá o mesmo resultado.
   - **"Mais perto"** / **"Mais perto do {terminal}"** (📍 `MapPin`): menor distância
     (`location.distance_km`, com fallback pro `nearest_terminal.distance_km`). O rótulo
     cita o terminal quando há `nearest_terminal` (PRD-09).
@@ -233,6 +235,33 @@ Dropdown no topo-direito do header:
 | Maior preço | `sort=price_desc` |
 | Mais próximo | `sort=distance_asc` |
 | Melhor avaliação | `sort=rating_desc` |
+
+`price_asc`/`price_desc` ordenam por **preço por diária**, não pelo total, pelo mesmo motivo do
+badge "Mais barato": a vitrine mistura durações. Com duração igual em toda a lista a ordem é
+idêntica à de antes.
+
+---
+
+## 8b. Estadia mínima na vitrine (`price_mode`)
+
+A Edge `search` aceita `price_mode: "exact" | "from"` (default `exact`).
+
+- **`exact`** é a `/search`: as datas são do cliente, e quem não tem preço nelas sai da lista.
+- **`from`** é a **vitrine** (home e `/destinos/<slug>`), que busca com uma janela fixa que o
+  cliente não escolheu. Quando o lote não tem preço nessa janela, a Edge tenta de novo com a
+  **menor estadia que ele vende** (`max` entre `location_parking_type.has_minimum_stay` em dias e
+  o menor `pricing_tier.from_day`) e devolve o item com `price.days` = a duração usada e
+  `min_stay_days` preenchido.
+
+Por que existe: a vitrine do destino pede D+7 por **2 diárias**, e lote de aeroporto costuma
+vender a partir de 3. Abbapark e Nationpark, que sozinhos respondem pelo CWB, sumiam da página
+inteira, que exibia "ainda não temos reserva online" com duas unidades ativas e precificadas.
+
+No card, `min_stay_days` muda duas coisas: o valor exibido passa a ser a **diária**
+(`price.per_day`), para o card ser comparável com os vizinhos de outra duração, e o rótulo vira
+`por diária · mínimo N diárias`. O link do card leva a janela **esticada** até esse mínimo
+(`stretchParamsToMinStay`), senão o cliente clica num preço e cai numa página que só diz que a
+vaga exige estadia maior.
 
 ---
 

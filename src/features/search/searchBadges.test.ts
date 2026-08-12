@@ -5,12 +5,16 @@ import type { SearchResultItem } from "./useSearchResults";
 function item(overrides: {
   id?: string;
   price?: number;
+  /** Diárias que o preço cobre. Só a vitrine mistura durações (estadia mínima). */
+  days?: number;
   distance?: number | null;
   terminal?: { name: string; distance_km: number } | null;
   typeCode?: string;
   amenities?: string[];
   soldOut?: boolean;
 }): SearchResultItem {
+  const total = overrides.price ?? 100;
+  const days = overrides.days ?? 5;
   return {
     id: overrides.id ?? "lpt-1",
     operator: { slug: "op", name: "Operador" },
@@ -36,7 +40,7 @@ function item(overrides: {
       near_capacity: false,
       near_capacity_message: null,
     },
-    price: { total: overrides.price ?? 100, old_price: null, per_day: 20, days: 5 },
+    price: { total, old_price: null, per_day: total / days, days },
     amenities: overrides.amenities ?? [],
   };
 }
@@ -51,6 +55,16 @@ describe("computeResultBadges", () => {
     const all = [cheap, mid];
     expect(kinds(cheap, all)).toContain("cheapest");
     expect(kinds(mid, all)).not.toContain("cheapest");
+  });
+
+  it("na vitrine, compara por diária: total maior com estadia mínima ainda pode ser o mais barato", () => {
+    // Lote que só vende 3 diárias por R$ 90 (R$ 30/dia) contra 2 diárias por R$ 80 (R$ 40/dia).
+    // Pelo total o de R$ 80 ganharia, mas quem sai mais barato por dia é o de estadia mínima.
+    const minStay = item({ id: "a", price: 90, days: 3 });
+    const curto = item({ id: "b", price: 80, days: 2 });
+    const all = [minStay, curto];
+    expect(kinds(minStay, all)).toContain("cheapest");
+    expect(kinds(curto, all)).not.toContain("cheapest");
   });
 
   it("marca o lote mais perto do conjunto", () => {
