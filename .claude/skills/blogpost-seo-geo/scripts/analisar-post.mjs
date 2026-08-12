@@ -398,7 +398,8 @@ else verde(G_SINTAXE, "Travessão", "Nenhum.");
 const duplicadas = [...puro.matchAll(/\b(\w{3,})\s+\1\b/gi)].map((m) => m[1]);
 if (duplicadas.length)
   laranja(G_SINTAXE, "Palavra repetida", `Repetição colada: ${[...new Set(duplicadas)].slice(0, 8).join(", ")}.`);
-if (/\s+[,.;:!?]/.test(corpo)) laranja(G_SINTAXE, "Pontuação", "Espaço antes de pontuação.");
+// Só espaço horizontal: `\s` pegaria a quebra de linha antes do `!` de imagem.
+if (/[ \t]+[,.;:!?]/.test(corpo)) laranja(G_SINTAXE, "Pontuação", "Espaço antes de pontuação.");
 if (/ {2,}\S/.test(corpo.replace(/^ +/gm, ""))) laranja(G_SINTAXE, "Espaçamento", "Espaço duplo no meio da frase.");
 
 // --- 4. Tabela e preço (ADR-009) --------------------------------------------
