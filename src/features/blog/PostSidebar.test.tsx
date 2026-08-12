@@ -59,6 +59,31 @@ describe("PostSidebar", () => {
     expect(screen.getByText("01/03/2026")).toBeInTheDocument();
   });
 
+  /**
+   * A caixa da miniatura segura a proporção pelo `aspect-ratio`, e altura
+   * definida vence `aspect-ratio`: como item de flex ela esticava até a altura da
+   * linha, então título de três linhas dava miniatura de 120px e título de duas
+   * dava 100px, na mesma coluna. Com `self-start` volta aos 64px de 3:2.
+   */
+  it("a miniatura não estica com o tamanho do título", () => {
+    const { container } = montar({ destination: null, relacionados: [RELACIONADO] });
+    const caixa = container.querySelector("nav img")!.parentElement!;
+    expect(caixa.className).toContain("self-start");
+    expect(caixa.className).toContain("aspect-[3/2]");
+  });
+
+  /**
+   * O raio é o mesmo número de pixels em qualquer tamanho, então na miniatura de
+   * 64px de altura ele pesa cinco vezes mais que na capa de 341px. Miniatura usa
+   * o tier de controle (8px), não o de container (14px).
+   */
+  it("a miniatura usa um raio menor que o das capas grandes", () => {
+    const { container } = montar({ destination: null, relacionados: [RELACIONADO] });
+    const caixa = container.querySelector("nav img")!.parentElement!;
+    expect(caixa.className).toContain("rounded-sm");
+    expect(caixa.className).not.toContain("rounded-md");
+  });
+
   /** Post sem destino no Hub (Navegantes) não inventa CTA. */
   it("sem destino, o CTA não existe", () => {
     montar({ destination: null, relacionados: [RELACIONADO] });

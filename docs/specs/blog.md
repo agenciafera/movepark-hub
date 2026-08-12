@@ -462,6 +462,16 @@ por causa disso e virou o elemento mais arredondado da página.
 `extend`, e aí o valor padrão do Tailwind (16px) continua respondendo. Ao escrever raio novo,
 use um dos cinco nomes da escala.
 
+**Miniatura pede um tier a menos.** O raio é o mesmo número de pixels em qualquer tamanho, então
+os 14px que valem 4,1% da altura na capa do post (511x341) viram 21,9% na miniatura da lateral
+(96x64): mesmo token, cinco vezes o peso visual. A miniatura usa `rounded-sm` (8px), o tier de
+controle.
+
+**Miniatura dentro de flex em linha precisa de `self-start`.** Altura definida vence
+`aspect-ratio`, e item de flex estica até a altura da linha por padrão. Sem isso a foto crescia
+com o texto ao lado: título de três linhas dava 120px de altura e título de duas dava 100px, na
+mesma coluna, quando a proporção 3:2 manda 64px. O aviso está no cabeçalho do `CoverImage`.
+
 ### Trilho de progresso, compartilhar e ouvir
 
 Três blocos que a página do post ganhou, todos sem serviço externo e sem script de terceiro.

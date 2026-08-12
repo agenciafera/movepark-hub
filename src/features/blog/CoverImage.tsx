@@ -31,15 +31,16 @@ type Props = {
  * caixa) porque o render do Supabase não preserva proporção com só a largura: com
  * `?width=16` ele devolve uma tira de 16x1067, e borrada isso vira listra em vez
  * de borrão. Custa 392 bytes contra 34 KB da imagem principal.
+ *
+ * **Dentro de um flex em linha, passe `self-start`.** A caixa segura a proporção
+ * pelo `aspect-ratio`, e altura definida vence `aspect-ratio`: como item de flex
+ * ela estica até a altura da linha e a imagem cresce junto com o texto ao lado.
+ * Foi o que aconteceu na lateral do post, onde a miniatura ia de 64 para 120px
+ * dependendo do tamanho do título.
  */
 export function CoverImage({ src, alt, widths, sizes, className, eager }: Props) {
   return (
-    <div
-      className={cn(
-        "relative aspect-[3/2] w-full overflow-hidden bg-surface-soft",
-        className,
-      )}
-    >
+    <div className={cn("relative aspect-[3/2] w-full overflow-hidden bg-surface-soft", className)}>
       <img
         src={optimizedImageUrl(src, { width: 24, height: 16, quality: 30, resize: "cover" })}
         alt=""

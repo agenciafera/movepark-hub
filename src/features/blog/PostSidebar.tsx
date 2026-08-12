@@ -42,13 +42,21 @@ export function PostSidebar({ destination, relacionados }: Props) {
             {relacionados.map((p) => (
               <li key={p.id}>
                 <Link to={`/blog/${p.slug}/`} className="group flex gap-3">
+                  {/*
+                    `self-start` é o que segura a proporção da miniatura. O item
+                    de flex estica até a altura da linha por padrão, e altura
+                    definida vence `aspect-ratio`: a foto crescia junto com o
+                    título, então título de três linhas dava miniatura de 120px e
+                    título de duas dava 100px, na mesma coluna. Encostada no topo
+                    ela volta aos 64px que a proporção 3:2 manda.
+                  */}
                   {p.cover_image_url && (
                     <CoverImage
                       src={p.cover_image_url}
                       alt=""
                       widths={[200, 400]}
                       sizes="96px"
-                      className="w-24 shrink-0 rounded-md"
+                      className="w-24 shrink-0 self-start rounded-sm"
                     />
                   )}
                   <span className="min-w-0">
