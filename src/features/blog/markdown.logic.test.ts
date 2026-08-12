@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  leadFrom,
   metaDescription,
   parseInline,
   parseMarkdown,
@@ -137,6 +138,36 @@ describe("plainText e readingMinutes", () => {
   });
 });
 
+describe("leadFrom", () => {
+  /**
+   * O caso que motivou a função: no post de Viracopos o lead e o primeiro
+   * parágrafo eram o mesmo texto, um embaixo do outro, com o de cima cortado.
+   */
+  it("recusa o resumo automático, que é o começo do corpo cortado", () => {
+    const body = "Sabe aquele momento que você fecha a viagem dos sonhos? Pois é.\n\nSegundo.";
+    expect(leadFrom("Sabe aquele momento que você fecha a viagem dos [...]", body)).toBeNull();
+  });
+
+  it("aceita o resumo que o editor escreveu", () => {
+    const body = "Sabe aquele momento que você fecha a viagem dos sonhos?";
+    expect(leadFrom("Comparamos cinco lotes de Viracopos.", body)).toBe(
+      "Comparamos cinco lotes de Viracopos.",
+    );
+  });
+
+  /** O resumo do WordPress volta com aspa curva onde o markdown tem aspa reta. */
+  it("compara ignorando acento, caixa e pontuação", () => {
+    const body = 'O "perrengue" de deixar o carro no aeroporto acabou.';
+    expect(leadFrom("O “PERRENGUE” de deixar o carro no aeroporto [...]", body)).toBeNull();
+  });
+
+  it("resumo vazio ou só com as reticências não vira lead", () => {
+    expect(leadFrom(null, "Qualquer corpo.")).toBeNull();
+    expect(leadFrom("   ", "Qualquer corpo.")).toBeNull();
+    expect(leadFrom("[...]", "Qualquer corpo.")).toBeNull();
+  });
+});
+
 describe("metaDescription", () => {
   it("usa a description escrita no Yoast quando existe", () => {
     expect(metaDescription("Escrita no CMS", "resumo automático", "corpo")).toBe("Escrita no CMS");
@@ -155,7 +186,12 @@ describe("metaDescription", () => {
   });
 
   it("sem frase utilizável, corta na palavra e sinaliza a continuação", () => {
-    const out = metaDescription(null, Array.from({ length: 60 }, () => "palavra").join(" "), "c", 50);
+    const out = metaDescription(
+      null,
+      Array.from({ length: 60 }, () => "palavra").join(" "),
+      "c",
+      50,
+    );
     expect(out.length).toBeLessThanOrEqual(53);
     expect(out.endsWith("...")).toBe(true);
     expect(out).not.toContain("palav.");
@@ -175,7 +211,9 @@ describe("lista vinda do WordPress", () => {
     expect(bloco).toEqual({
       type: "list",
       ordered: true,
-      items: [{ content: [{ type: "bold", children: [{ type: "text", value: "Reserve Voos:" }] }] }],
+      items: [
+        { content: [{ type: "bold", children: [{ type: "text", value: "Reserve Voos:" }] }] },
+      ],
     });
   });
 
@@ -197,7 +235,9 @@ describe("lista vinda do WordPress", () => {
   });
 
   it("sublista indentada vira filha do item, não irmã", () => {
-    const [bloco] = parseMarkdown("- Coberto\n  - Protegido do sol\n  - Protegido da chuva\n- Valet");
+    const [bloco] = parseMarkdown(
+      "- Coberto\n  - Protegido do sol\n  - Protegido da chuva\n- Valet",
+    );
     expect(bloco).toEqual({
       type: "list",
       ordered: false,
@@ -298,7 +338,10 @@ describe("separador temático", () => {
 
   it("aceita as outras formas usuais", () => {
     for (const forma of ["---", "***", "___", "- - -", "_ _ _"]) {
-      expect(parseMarkdown(forma).map((b) => b.type), forma).toEqual(["rule"]);
+      expect(
+        parseMarkdown(forma).map((b) => b.type),
+        forma,
+      ).toEqual(["rule"]);
     }
   });
 
@@ -392,7 +435,9 @@ describe("barra invertida de escape", () => {
   });
 
   it("pipe escapado fica dentro da célula em vez de criar coluna", () => {
-    const [bloco] = parseMarkdown("| Lote | Horário |\n| --- | --- |\n| Virapark | 8h \\| 20h |") as {
+    const [bloco] = parseMarkdown(
+      "| Lote | Horário |\n| --- | --- |\n| Virapark | 8h \\| 20h |",
+    ) as {
       type: string;
       rows: { type: string; value: string }[][][];
     }[];

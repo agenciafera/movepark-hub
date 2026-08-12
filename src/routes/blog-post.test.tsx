@@ -53,29 +53,52 @@ describe("BlogPostPage: largura", () => {
     expect(article.className).not.toContain("max-w-[720px]");
   });
 
-  it("a prosa continua presa na medida de leitura de 68ch", async () => {
+  it("a prosa fica presa na medida de leitura de 68ch", async () => {
     const { container } = renderPost();
     const article = await waitForArticle(container);
-    const corpo = article.querySelector("h1")!.closest("div[class*='max-w-[68ch]']");
-    expect(corpo).not.toBeNull();
     const paragrafo = [...article.querySelectorAll("p")].find((p) =>
       p.textContent?.includes("Primeiro parágrafo"),
     )!;
     expect(paragrafo.closest("div[class*='max-w-[68ch]']")).not.toBeNull();
   });
+});
 
-  /**
-   * A capa é banner com a manchete gravada dentro: ela ganha em ser maior. O
-   * `[sizes]` distingue a capa do fundo desfocado, que o `CoverImage` renderiza
-   * como um segundo `<img>` sem `srcset`.
-   */
-  it("a capa sai da coluna de leitura e usa o container inteiro", async () => {
+/**
+ * Empilhado, a capa era uma faixa de 520px entre a manchete e a primeira linha do
+ * texto: o leitor via título e imagem, rolava, e só então descobria do que o post
+ * tratava.
+ */
+describe("BlogPostPage: cabeçalho", () => {
+  it("título e capa dividem a mesma grade de duas colunas", async () => {
+    const { container } = renderPost();
+    const article = await waitForArticle(container);
+    const cabecalho = article.querySelector("h1")!.closest("div.grid")!;
+    expect(cabecalho).not.toBeNull();
+    expect(cabecalho.className).toContain("desktop:grid-cols-");
+    // O `[sizes]` distingue a capa do fundo desfocado, que o `CoverImage`
+    // renderiza como um segundo `<img>` sem `srcset`.
+    const capa = cabecalho.querySelector<HTMLImageElement>("img[sizes]")!;
+    expect(capa).not.toBeNull();
+    expect(capa.getAttribute("sizes")).toContain("512px");
+  });
+
+  /** No mobile a ordem do DOM manda: título antes da capa. */
+  it("a capa só vai para a esquerda quando há duas colunas", async () => {
     const { container } = renderPost();
     const article = await waitForArticle(container);
     const capa = article.querySelector<HTMLImageElement>("img[sizes]")!;
-    expect(capa).not.toBeNull();
-    expect(capa.closest("div[class*='max-w-[68ch]']")).toBeNull();
-    expect(capa.getAttribute("sizes")).toContain("1016px");
+    const caixa = capa.closest("div[class*='order-first']");
+    expect(caixa).not.toBeNull();
+    expect(caixa!.className).toContain("desktop:order-first");
+  });
+
+  /** O resumo já existia no banco e não aparecia em lugar nenhum da página. */
+  it("o resumo do post entra como lead abaixo do título", async () => {
+    const { container } = renderPost();
+    const article = await waitForArticle(container);
+    const lead = [...article.querySelectorAll("p")].find((p) => p.textContent === "Resumo");
+    expect(lead).toBeDefined();
+    expect(lead!.className).toContain("text-body-md");
   });
 });
 

@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CoverImage } from "@/features/blog/CoverImage";
+import { FeaturedPostCard, PostCard } from "@/features/blog/PostCard";
 import {
   useBlogAuthors,
   useBlogCategories,
@@ -23,7 +23,6 @@ import {
   totalPages,
 } from "@/features/blog/listing.logic";
 import { breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
-import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { BlogPostListItem } from "@/types/domain";
 
@@ -48,40 +47,6 @@ const EYEBROW: Record<BlogListingData["kind"], string | undefined> = {
   autor: "Autor",
   aeroporto: "Aeroporto",
 };
-
-function PostCard({ post }: { post: BlogPostListItem }) {
-  return (
-    <article className="group flex flex-col overflow-hidden rounded-2xl border border-hairline bg-canvas">
-      <Link to={`/blog/${post.slug}/`} className="block">
-        {post.cover_image_url && (
-          <CoverImage
-            src={post.cover_image_url}
-            alt={post.title}
-            widths={[400, 600, 800]}
-            sizes="(min-width: 1128px) 360px, (min-width: 768px) 50vw, 100vw"
-          />
-        )}
-      </Link>
-      <div className="flex flex-1 flex-col gap-2 p-5">
-        <div className="flex flex-wrap items-center gap-x-2 text-caption-sm text-muted">
-          {post.category && <span>{post.category.name}</span>}
-          {post.category && post.destination && <span aria-hidden>·</span>}
-          {post.destination && <span>{post.destination.name}</span>}
-        </div>
-        <h2 className="text-title-md text-ink">
-          <Link to={`/blog/${post.slug}/`} className="hover:underline">
-            {post.title}
-          </Link>
-        </h2>
-        {post.excerpt && <p className="line-clamp-3 text-body-sm text-body">{post.excerpt}</p>}
-        <p className="mt-auto pt-2 text-caption-sm text-muted">
-          {formatDate(post.published_at)}
-          {post.author && ` · ${post.author.name}`}
-        </p>
-      </div>
-    </article>
-  );
-}
 
 function Paginacao({ page, total, base }: { page: number; total: number; base: string }) {
   if (total <= 1) return null;
@@ -189,9 +154,24 @@ export default function BlogListingPage() {
 
   // Enquanto o acervo não chega, mostra o que o build já pré-renderizou.
   const temAcervo = todos.length > 0;
-  const posts = temAcervo ? (buscando ? filtrados : pageSlice(filtrados, page)) : (loaded?.posts ?? []);
+  const posts = temAcervo
+    ? buscando
+      ? filtrados
+      : pageSlice(filtrados, page)
+    : (loaded?.posts ?? []);
   const total = temAcervo ? totalPages(filtrados.length) : (loaded?.total ?? 1);
   const carregando = !temAcervo && !loaded?.posts?.length && acervo.isLoading;
+
+  /*
+    O destaque é o post mais recente, e só existe na abertura do blog.
+
+    Em arquivo de categoria, página 2 e resultado de busca ele atrapalha: nos três
+    o leitor já sabe o que procura, e promover o primeiro da lista dá a ele um peso
+    que a ordem por data não justifica.
+  */
+  const temDestaque = kind === "index" && page === 1 && !buscando && posts.length > 1;
+  const destaque = temDestaque ? posts[0] : null;
+  const noGrid = temDestaque ? posts.slice(1) : posts;
 
   /** Nome do eixo: do catálogo de taxonomia, com o loader como reserva. */
   const nomeDoEixo = () => {
@@ -266,7 +246,9 @@ export default function BlogListingPage() {
         </script>
         <script type="application/ld+json">
           {JSON.stringify(
-            itemListSchema(posts.map((p) => ({ name: p.title, url: `${SITE_URL}/blog/${p.slug}/` }))),
+            itemListSchema(
+              posts.map((p) => ({ name: p.title, url: `${SITE_URL}/blog/${p.slug}/` })),
+            ),
           )}
         </script>
       </Helmet>
@@ -334,16 +316,29 @@ export default function BlogListingPage() {
           <>
             {buscando && (
               <p className="mt-8 text-body-sm text-muted">
-                {posts.length === 1
-                  ? "1 post encontrado"
-                  : `${posts.length} posts encontrados`}
+                {posts.length === 1 ? "1 post encontrado" : `${posts.length} posts encontrados`}
               </p>
             )}
-            <div className="mt-6 grid gap-6 tablet:grid-cols-2 desktop:grid-cols-3">
-              {posts.map((post) => (
-                <PostCard key={post.id} post={post} />
-              ))}
+
+            {destaque && (
+              <div className="mt-10">
+                <FeaturedPostCard post={destaque} />
+              </div>
+            )}
+
+            <div className={destaque ? "mt-12 border-t border-hairline pt-8" : "mt-6"}>
+              {destaque && (
+                <p className="mb-5 text-[11px] font-bold uppercase tracking-[0.4px] text-mp-indigo">
+                  Mais recentes
+                </p>
+              )}
+              <div className="grid gap-6 tablet:grid-cols-2 desktop:grid-cols-3">
+                {noGrid.map((post) => (
+                  <PostCard key={post.id} post={post} />
+                ))}
+              </div>
             </div>
+
             {!buscando && <Paginacao page={page} total={total} base={base} />}
           </>
         ) : (
@@ -357,4 +352,3 @@ export default function BlogListingPage() {
     </>
   );
 }
-

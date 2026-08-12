@@ -7,7 +7,12 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { CoverImage } from "@/features/blog/CoverImage";
 import { PostBody } from "@/features/blog/PostBody";
 import { useBlogPost, useRelatedPosts } from "@/features/blog/api";
-import { metaDescription, plainText, readingMinutes } from "@/features/blog/markdown.logic";
+import {
+  leadFrom,
+  metaDescription,
+  plainText,
+  readingMinutes,
+} from "@/features/blog/markdown.logic";
 import { blogPostingSchema, breadcrumbSchema } from "@/lib/jsonld";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -20,8 +25,8 @@ const SITE_URL = "https://hub.movepark.co";
  * O post ocupa a largura de conteúdo (1080), não a de leitura (720).
  *
  * Com 720 no container inteiro o desktop entregava 656px de texto e uma capa do
- * mesmo tamanho, sobrando 360px de branco de cada lado. A capa é banner com a
- * manchete gravada dentro, então ela é o que mais perdia.
+ * mesmo tamanho, sobrando 360px de branco de cada lado. É essa largura que deixa
+ * o cabeçalho abrir em duas colunas.
  *
  * A prosa continua presa em 68ch, a mesma medida das páginas de conteúdo
  * (`ContentPageView`): container largo com coluna de leitura estreita é o
@@ -29,7 +34,13 @@ const SITE_URL = "https://hub.movepark.co";
  * linha, quando o confortável para 16px para em torno de 75.
  */
 const CONTAINER = "mx-auto max-w-[1080px] px-4 py-12 desktop:px-8";
-const COLUNA_DE_LEITURA = "mx-auto max-w-[68ch]";
+/**
+ * Alinhada à esquerda, não centralizada: a capa começa na borda do container, e
+ * uma coluna centralizada dava à página um terceiro eixo, entre a borda da capa
+ * e a borda do título. Encostada na esquerda, tudo o que se lê de cima a baixo
+ * (capa, texto, CTA, "Leia também") divide a mesma margem.
+ */
+const COLUNA_DE_LEITURA = "max-w-[68ch]";
 
 export default function BlogPostPage() {
   const params = useParams();
@@ -123,57 +134,61 @@ export default function BlogPostPage() {
       </Helmet>
 
       <article className={CONTAINER}>
-        <div className={COLUNA_DE_LEITURA}>
-          <PageHeader
-            variant="content"
-            back={{ to: "/blog/", label: "Voltar para o blog" }}
-            eyebrow={post.destination?.name ?? undefined}
-            title={post.title}
-          >
-            <p className="text-caption-sm text-muted">
-              {post.author && (
-                <>
-                  <Link to={`/blog/autor/${post.author.slug}/`} className="hover:underline">
-                    {post.author.name}
-                  </Link>
-                  {" · "}
-                </>
-              )}
-              {formatDate(post.published_at)} · {minutes} min de leitura
-              {post.category && (
-                <>
-                  {" · "}
-                  <Link to={`/blog/categoria/${post.category.slug}/`} className="hover:underline">
-                    {post.category.name}
-                  </Link>
-                </>
-              )}
-            </p>
-          </PageHeader>
+        {/*
+          Cabeçalho em duas colunas no desktop: capa ao lado do título.
+
+          Empilhado, a capa era uma faixa de 520px entre a manchete e a primeira
+          linha do texto, e quem chegava de busca via título e imagem, rolava, e só
+          então descobria do que o post tratava. Lado a lado, título, resumo e
+          primeiro parágrafo cabem na mesma tela.
+
+          No mobile a ordem do DOM manda (título, capa, texto), que é a ordem de
+          leitura certa; a capa só vai para a esquerda quando há duas colunas.
+        */}
+        <div className="grid gap-6 desktop:grid-cols-[1.1fr_1fr] desktop:items-center desktop:gap-10">
+          <div className="min-w-0">
+            <PageHeader
+              variant="content"
+              back={{ to: "/blog/", label: "Voltar para o blog" }}
+              eyebrow={post.destination?.name ?? undefined}
+              title={post.title}
+              description={leadFrom(post.excerpt, post.body_md) ?? undefined}
+            >
+              <p className="mt-1 text-caption-sm text-muted">
+                {post.author && (
+                  <>
+                    <Link to={`/blog/autor/${post.author.slug}/`} className="hover:underline">
+                      {post.author.name}
+                    </Link>
+                    {" · "}
+                  </>
+                )}
+                {formatDate(post.published_at)} · {minutes} min de leitura
+                {post.category && (
+                  <>
+                    {" · "}
+                    <Link to={`/blog/categoria/${post.category.slug}/`} className="hover:underline">
+                      {post.category.name}
+                    </Link>
+                  </>
+                )}
+              </p>
+            </PageHeader>
+          </div>
+
+          {post.cover_image_url && (
+            <CoverImage
+              src={post.cover_image_url}
+              alt={post.title}
+              widths={[600, 900, 1200]}
+              sizes="(min-width: 1144px) 512px, 100vw"
+              className="rounded-2xl border border-hairline desktop:order-first"
+              eager
+            />
+          )}
         </div>
 
-        {/*
-          A capa sai da coluna de leitura e usa o container todo: é banner com a
-          manchete gravada dentro, o bloco que mais ganha em ser maior. A caixa 3:2
-          ganha teto de altura porque 1016px de largura dariam 677px de altura, e a
-          capa empurraria o primeiro parágrafo para fora da tela. O fundo desfocado
-          do `CoverImage` é justamente o que preenche a sobra desse teto.
-
-          O `sizes` acompanha a largura nova: errar esse valor faz o browser baixar
-          o candidato errado do `srcset`.
-        */}
-        {post.cover_image_url && (
-          <CoverImage
-            src={post.cover_image_url}
-            alt={post.title}
-            widths={[720, 1080, 1440]}
-            sizes="(min-width: 1144px) 1016px, 100vw"
-            className="mt-8 max-h-[520px] rounded-2xl border border-hairline"
-            eager
-          />
-        )}
-
-        <div className={cn(COLUNA_DE_LEITURA, "mt-8")}>
+        <div className={cn(COLUNA_DE_LEITURA, "mt-10")}>
           <PostBody markdown={post.body_md} />
 
           {post.tags.length > 0 && (

@@ -45,8 +45,7 @@ export type MdBlock =
  * O WordPress embrulha imagem em link para abrir a lightbox, e o destino é o
  * próprio arquivo. O link não serve para nada aqui, então fica só a imagem.
  */
-const IMAGE_ONLY =
-  /^\[?!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)(?:\]\([^)\s]+\))?$/;
+const IMAGE_ONLY = /^\[?!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)(?:\]\([^)\s]+\))?$/;
 const HEADING = /^(#{1,6})\s+(.*)$/;
 const UNORDERED = /^[-*]\s+(.*)$/;
 const ORDERED = /^\d+\.\s+(.*)$/;
@@ -333,9 +332,7 @@ function normalizaTitulos(blocks: MdBlock[]): MdBlock[] {
 
   const desloca = menor - 2;
   return blocks.map((b) =>
-    b.type === "heading"
-      ? { ...b, level: Math.max(2, b.level - desloca) as 2 | 3 | 4 }
-      : b,
+    b.type === "heading" ? { ...b, level: Math.max(2, b.level - desloca) as 2 | 3 | 4 } : b,
   );
 }
 
@@ -405,13 +402,46 @@ function truncateAtBoundary(text: string, limit: number): string {
   // Prefere fechar numa frase inteira, desde que ela use ao menos metade do
   // espaço: abaixo disso o corte entrega uma description curta demais para
   // descrever a página.
-  const fim = Math.max(janela.lastIndexOf(". "), janela.lastIndexOf("! "), janela.lastIndexOf("? "));
+  const fim = Math.max(
+    janela.lastIndexOf(". "),
+    janela.lastIndexOf("! "),
+    janela.lastIndexOf("? "),
+  );
   if (fim >= limit * 0.5) return janela.slice(0, fim + 1).trim();
 
   const espaco = janela.lastIndexOf(" ");
   const cortado = janela.slice(0, espaco > 0 ? espaco : limit).trim();
   // Reticências só quando a frase ficou mesmo pela metade.
   return /[.!?]$/.test(cortado) ? cortado : `${cortado}...`;
+}
+
+/**
+ * Lead da página do post, ou nada.
+ *
+ * O `excerpt` dos 93 posts migrados quase sempre é o resumo automático do
+ * WordPress, que é o começo do próprio corpo cortado em "[...]". Mostrar isso
+ * como linha fina faz o leitor ler o mesmo parágrafo duas vezes seguidas, com a
+ * segunda versão truncada no meio da frase, que é pior que não ter lead nenhum.
+ *
+ * Só passa o resumo que o editor escreveu, ou seja, o que NÃO é o começo do
+ * corpo. A comparação ignora acento, pontuação e caixa, porque o resumo do
+ * WordPress passou por conversão de entidade HTML e volta com aspas diferentes
+ * das do markdown.
+ */
+export function leadFrom(excerpt: string | null | undefined, body: string): string | null {
+  const limpo = (excerpt ?? "").replace(/\[[.…]+\]\s*$/, "").trim();
+  if (!limpo) return null;
+
+  const chave = (s: string) =>
+    s
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+
+  const inicio = chave(plainText(body)).slice(0, chave(limpo).length);
+  return inicio === chave(limpo) ? null : limpo;
 }
 
 /** Minutos de leitura, arredondado para cima, mínimo 1. Base: 200 palavras/minuto. */

@@ -345,6 +345,30 @@ o build se sobrar alguma. Sem ele o sitemap entregaria ao Google exatamente a UR
 HTML de `/blog` saía com 689 KB. O card usa título, resumo, capa e data, então o loader do
 índice seleciona só isso: 240 KB, 41 KB comprimido.
 
+### Hierarquia da listagem
+
+A listagem era doze cards do mesmo tamanho, e uma página onde nada é mais importante que nada não
+tem ponto de entrada: o leitor varre e sai. São dois pesos, em `features/blog/PostCard.tsx`:
+
+| | `FeaturedPostCard` | `PostCard` |
+|---|---|---|
+| Layout | duas colunas, capa ao lado do texto | capa acima do texto |
+| Manchete | `display-sm` (20px) | `title-md` (16px) |
+| Resumo | inteiro | cortado em 3 linhas |
+
+A manchete do destaque para em 20px porque o contrato do consumer não deixa nenhum h2 pesar mais
+que o h1 da página (`display-xl`, 28px). Quem faz o bloco dominar é a capa grande e o resumo
+inteiro, não o tamanho da letra.
+
+**O destaque só existe na abertura do blog**, ou seja, `kind === "index"`, página 1, sem busca
+ativa. Em arquivo de categoria, página 2 e resultado de busca o leitor já sabe o que procura, e
+promover o primeiro da lista dá a ele um peso que a ordem por data não justifica.
+
+Categoria e destino saíram da linha da data e viraram eyebrow (`text-mp-indigo`, 11px, caixa
+alta). Na linha da data eles tinham o mesmo peso dela, então era preciso ler para descobrir do
+que o post tratava. O eyebrow **não** usa `mp-primary`: violeta é reservado a elemento
+acionável, e o rótulo não é clicável.
+
 ### Capas não são recortadas
 
 As capas do WordPress vêm em proporções que vão de 1:1 a 2,12:1, e boa parte é banner com a
@@ -352,26 +376,41 @@ manchete gravada dentro da imagem. Uma caixa fixa com `object-cover` cortava ess
 em 16/9, **104 das 131 imagens perdiam 15% ou mais**, e as 8 quadradas perdiam 43,8%.
 
 A página do post e o card do índice usam o mesmo `CoverImage`: caixa 3:2 com a imagem inteira
-por cima de uma cópia minúscula desfocada, que preenche a sobra. Não há corte nem tarja. No post
-a caixa ainda ganha teto de 520px de altura, senão os 1016px de largura do container dariam
-677px e a capa empurraria o primeiro parágrafo para fora da tela.
+por cima de uma cópia minúscula desfocada, que preenche a sobra. Não há corte nem tarja.
 
-### Largura do post
+### Largura e hierarquia do post
 
 O post usa o container de conteúdo (`max-w-[1080px]`), o mesmo das páginas de `ContentPageView`,
 e não o de leitura (720). Com 720 no container inteiro o desktop entregava 656px de texto e uma
 capa do mesmo tamanho, sobrando 360px de branco de cada lado.
 
-Dentro dele há duas larguras, por função:
+**O cabeçalho abre em duas colunas no desktop**, capa à esquerda e bloco de título à direita.
+Empilhado, a capa era uma faixa de 520px entre a manchete e a primeira linha do texto, e quem
+chegava de busca via título e imagem, rolava, e só então descobria do que o post tratava. No
+mobile a ordem do DOM manda (título, capa, texto), que é a ordem de leitura certa; a capa só vai
+para a esquerda quando há duas colunas (`desktop:order-first`).
+
+Dentro do container há duas larguras, por função:
 
 | Bloco | Largura | Por quê |
 |---|---|---|
-| Título, meta, corpo, tags | `max-w-[68ch]` centralizado (684px) | Medida de leitura, a mesma das páginas de conteúdo. Esticar o parágrafo até os 1016px do container daria 100 caracteres por linha |
-| Capa | container todo (até 1016px), com teto de 520px de altura | Banner com a manchete gravada dentro: é o bloco que mais ganha em ser maior |
+| Corpo e tags | `max-w-[68ch]` (684px), **alinhado à esquerda** | Medida de leitura, a mesma das páginas de conteúdo. Esticar o parágrafo até os 1016px do container daria 100 caracteres por linha. Centralizada, ela dava à página um terceiro eixo, entre a borda da capa e a do título |
+| Capa | metade da grade do cabeçalho (~512px) | Ao lado do título, não acima dele |
 | CTA de destino e "Leia também" | container todo | Não são leitura, e o CTA é o elemento de conversão da página |
 
-O `sizes` da capa acompanha (`(min-width: 1144px) 1016px, 100vw`): errar esse valor faz o browser
-baixar o candidato errado do `srcset`.
+O `sizes` da capa acompanha a coluna (`(min-width: 1144px) 512px, 100vw`): errar esse valor faz
+o browser baixar o candidato errado do `srcset`.
+
+### O resumo só vira lead quando alguém escreveu um
+
+O `excerpt` de quase todo post migrado é o resumo automático do WordPress, que é o começo do
+próprio corpo cortado em "[...]". Usado como linha fina, o leitor lia o mesmo parágrafo duas
+vezes seguidas, com a primeira versão truncada no meio da frase.
+
+`leadFrom()` (em `markdown.logic.ts`) só deixa passar o resumo que **não** é o começo do corpo. A
+comparação ignora acento, caixa e pontuação, porque o resumo passou por conversão de entidade
+HTML e volta com aspas diferentes das do markdown. Na listagem o `excerpt` continua sendo
+mostrado inteiro: ali ele é prévia, e o corpo não está na mesma página.
 
 O card do índice precisa de caixa fixa para o grid não ficar irregular, e aí `contain` sozinho
 deixava 31 das 93 capas com tarja chapada, as 8 quadradas preenchendo só 67%. A solução é a
