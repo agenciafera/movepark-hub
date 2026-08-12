@@ -8,7 +8,7 @@
 -- como a mais barata na ordenação da busca e a recusa só apareceria no site do parceiro.
 
 begin;
-select plan(15);
+select plan(16);
 
 -- ── 1. O motor não cota abaixo da primeira faixa ────────────────────────────
 
@@ -36,10 +36,21 @@ select is(
   pg_temp.calc('[{"from_day":1,"to_day":null,"unit_price":30}]'::jsonb, 1),
   30.00, 'tabela que começa no dia 1 continua cotando 1 diária');
 
--- A sobrecarga de 6 argumentos tem o mesmo laço copiado, e o piso vale nela também.
+-- Chamada curta, deixando os argumentos com default de fora. Enquanto existiu uma sobrecarga de
+-- 6 argumentos, esta linha nem chegava a comparar valor: as duas candidatas casavam, o Postgres
+-- recusava escolher ("function _apply_pricing is not unique") e levava o arquivo inteiro junto,
+-- com 8 dos 15 casos sem rodar. Ver 20261016093000_apply_pricing_single_signature.sql.
 select is(
   public._apply_pricing('uniform_by_duration', pg_temp.com_piso(), null, null, null, 1),
-  null, 'o piso vale também na sobrecarga de 6 argumentos');
+  null, 'a chamada de 6 argumentos resolve numa assinatura só, e o piso vale nela');
+
+-- E o motivo daquilo tem nome: sobrecarga com default é ambiguidade esperando acontecer. Uma
+-- assinatura só, para a correção do piso não depender de por qual porta o chamador entrou.
+select is(
+  (select count(*)::int from pg_proc p
+     join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname = '_apply_pricing'),
+  1, '_apply_pricing tem uma assinatura só, sem sobrecarga ambígua');
 
 -- Nenhuma regra em produção começa acima do dia 1, então a correção não mexe no que está no ar.
 select is(

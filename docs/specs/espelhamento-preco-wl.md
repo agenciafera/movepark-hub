@@ -197,8 +197,15 @@ recusa da cotação é a única fonte confiável, e é dela que o amostrador lê
    casava sem olhar o `from_day`, então 1 diária numa tabela que começa no dia 3 caía na última
    faixa e devolvia a diária mais baixa da curva (R$ 23,90 no Abbapark, contra R$ 77,70 das 3
    diárias mínimas). A unidade subiria como a mais barata na ordenação da busca e a recusa só
-   apareceria no site do parceiro. Corrigido nas duas sobrecargas da função: sem faixa que sirva,
-   o preço é `NULL`, e a busca já descarta resultado sem preço.
+   apareceria no site do parceiro. Corrigido: sem faixa que sirva, o preço é `NULL`, e a busca já
+   descarta resultado sem preço.
+
+   A correção saiu duplicada nas duas sobrecargas de `_apply_pricing` (6 e 13 argumentos) porque
+   se acreditava que as duas eram chamáveis. Não eram: a de 13 tem default em tudo a partir do
+   terceiro argumento, então qualquer chamada de 2 a 6 argumentos casava com as duas e o Postgres
+   recusava escolher (`function _apply_pricing is not unique`). A de 6 era código morto, e
+   `20261016093000_apply_pricing_single_signature.sql` a removeu. Sobrou uma assinatura, que é o
+   que garante que a próxima correção do motor valha para todo mundo.
 
 O piso também é espelhado para `location_parking_type.has_minimum_stay` /
 `minimum_stay_value`, e some sozinho quando o parceiro deixa de exigir.
