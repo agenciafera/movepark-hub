@@ -14,17 +14,22 @@
 // Em 10/08/2026 saíram 13 casos por isso, quando Abbapark e Aeropark (ex-Bandeirapark) viraram
 // externas: 4 de `tiered_progressive` e 9 do Aeropark (5 `uniform_by_duration` + 4
 // `fixed_bracket`). O `fixed_bracket` voltou pelo valet do Aerovalet, que ganhou tabela própria
-// no mesmo dia (ver o comentário na seção).
+// no mesmo dia.
+//
+// Em 12/08/2026 saíram os 17 da Aerovalet, pelo mesmo motivo: as três unidades dela (Congonhas,
+// Tietê e Guarulhos) viraram externas de uma vez, e com elas foi o último `fixed_bracket` vivo
+// daqui, aquele mesmo valet. As três dividem um white-label só, `aerovalet.movepark.co`, onde
+// cada unidade é uma categoria.
 //
 // **A cobertura por estratégia não se perdeu, mudou de casa.** Ela vive em
 // `supabase/tests/pricing.test.sql`, que roda contra o stack local construído do
-// `supabase/seed.sql`. O seed é um retrato congelado das tabelas legadas, então `fixed_bracket`
-// e `tiered_progressive` continuam exercitados com os mesmos valores golden, e agora imunes ao
-// que o parceiro faz com o preço dele.
+// `supabase/seed.sql`. O seed é um retrato congelado das tabelas legadas, então
+// `uniform_by_duration`, `fixed_bracket` e `tiered_progressive` continuam exercitados com os
+// mesmos valores golden, e agora imunes ao que o parceiro faz com o preço dele.
 //
-// O que este arquivo cobre hoje, no banco vivo: `uniform_by_duration`, `fixed_bracket`,
-// `incremental_formula`, `monthly_remainder` e `hourly_capped`. Ficaram só no pgTAP o
-// `tiered_progressive` e o `surcharge`.
+// O que este arquivo cobre hoje, no banco vivo: `incremental_formula`, `monthly_remainder` e
+// `hourly_capped`, as três estratégias que só unidade nossa pratica. Ficaram só no pgTAP o
+// `uniform_by_duration`, o `fixed_bracket`, o `tiered_progressive` e o `surcharge`.
 
 export type PriceCase = {
   company: string;
@@ -37,33 +42,6 @@ export type PriceCase = {
 };
 
 export const priceCases: PriceCase[] = [
-  // ── uniform_by_duration ────────────────────────────────────────────────
-  { company: "aerovalet", location: "aeroporto-congonhas", parking_type: "covered", days: 1, expected: 31.9, strategy: "uniform_by_duration" },
-  { company: "aerovalet", location: "aeroporto-congonhas", parking_type: "covered", days: 6, expected: 191.4, strategy: "uniform_by_duration", note: "flip ⚠️ (6d > 7d)" },
-  { company: "aerovalet", location: "aeroporto-congonhas", parking_type: "covered", days: 7, expected: 202.3, strategy: "uniform_by_duration" },
-  { company: "aerovalet", location: "aeroporto-congonhas", parking_type: "covered", days: 14, expected: 404.6, strategy: "uniform_by_duration", note: "flip ⚠️ (14d > 15d)" },
-  { company: "aerovalet", location: "aeroporto-congonhas", parking_type: "covered", days: 15, expected: 373.5, strategy: "uniform_by_duration" },
-  { company: "aerovalet", location: "aeroporto-congonhas", parking_type: "covered", days: 35, expected: 871.5, strategy: "uniform_by_duration" },
-  { company: "aerovalet", location: "aeroporto-guarulhos", parking_type: "covered", days: 1, expected: 26.9, strategy: "uniform_by_duration" },
-  { company: "aerovalet", location: "aeroporto-guarulhos", parking_type: "covered", days: 14, expected: 320.6, strategy: "uniform_by_duration", note: "flip ⚠️" },
-  { company: "aerovalet", location: "aeroporto-guarulhos", parking_type: "covered", days: 15, expected: 298.5, strategy: "uniform_by_duration" },
-  { company: "aerovalet", location: "aeroporto-guarulhos", parking_type: "uncovered", days: 1, expected: 18.9, strategy: "uniform_by_duration" },
-  { company: "aerovalet", location: "aeroporto-guarulhos", parking_type: "uncovered", days: 35, expected: 486.5, strategy: "uniform_by_duration" },
-  { company: "aerovalet", location: "terminal-rodoviario-tiete", parking_type: "covered", days: 1, expected: 24.99, strategy: "uniform_by_duration" },
-  { company: "aerovalet", location: "terminal-rodoviario-tiete", parking_type: "covered", days: 35, expected: 874.65, strategy: "uniform_by_duration" },
-
-  // ── fixed_bracket ───────────────────────────────────────────────────────
-  // Este valet era `surcharge` com multiplicador 1.0 sobre a tabela do valet do AEROPARK, e
-  // deixou de ser em 10/08/2026: quando o Aeropark virou externo, o espelho reescreveu aquela
-  // tabela com a do parceiro e repreçou esta unidade, que é `hub` e vende pelo nosso checkout
-  // (18 diárias saltaram de R$ 792 para R$ 1.782). Recebeu tabela própria com os MESMOS valores
-  // legados, e o espelho passou a recusar reescrever tabela emprestada
-  // (`20260929010000_mirror_refuses_surcharge_source.sql`). Os valores golden não mudaram.
-  { company: "aerovalet", location: "aeroporto-guarulhos", parking_type: "valet", days: 1, expected: 149, strategy: "fixed_bracket" },
-  { company: "aerovalet", location: "aeroporto-guarulhos", parking_type: "valet", days: 6, expected: 594, strategy: "fixed_bracket" },
-  { company: "aerovalet", location: "aeroporto-guarulhos", parking_type: "valet", days: 18, expected: 792, strategy: "fixed_bracket" },
-  { company: "aerovalet", location: "aeroporto-guarulhos", parking_type: "valet", days: 35, expected: 924, strategy: "fixed_bracket", note: "overflow 31+d = 792 + (d-30)×26,40; era a regressão BUG-001" },
-
   // ── incremental_formula (1d/2d especiais; 3+ = base + dias×mult) ─────────
   { company: "airpark", location: "faro", parking_type: "covered", days: 1, expected: 25, strategy: "incremental_formula" },
   { company: "airpark", location: "faro", parking_type: "covered", days: 2, expected: 28, strategy: "incremental_formula" },

@@ -10,8 +10,8 @@ A reserva da unidade externa não nasce no Hub, então não há `booking` para a
 Sem registro de saída não dá para saber se a vitrine externa converte ou se o cliente some no
 caminho, nem reconciliar com o relatório do parceiro.
 
-Quando o épico foi aberto havia uma unidade externa. Hoje são **seis**, doze vagas, cinco delas
-listadas e vendendo em quatro destinos. O clique de saída é o único ponto do funil que o Hub
+Quando o épico foi aberto havia uma unidade externa. Hoje são **nove**, dezessete vagas, todas
+listadas e vendendo em cinco destinos. O clique de saída é o único ponto do funil que o Hub
 consegue observar.
 
 ## Como

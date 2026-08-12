@@ -1,7 +1,8 @@
 # Espelhamento de preço do white-label (E0.13)
 
 > **Épico:** E0.13 · **Fase:** 0 · **D vinculado:** D-008
-> **Status:** implementado em 08/08/2026, ampliado em 10/08/2026 para seis unidades externas.
+> **Status:** implementado em 08/08/2026, ampliado em 10/08/2026 para seis unidades externas e
+> em 12/08/2026 para nove, com as três da Aerovalet (17 vagas no total).
 > Migrations `*_pricing_mirror.sql`, `*_pricing_mirror_cron.sql`, `*_pricing_minimum_stay.sql` e
 > `*_pricing_mirror_cron_reschedule.sql`. Edge `wl-price-mirror`, cron de 3 em 3 horas.
 
@@ -269,9 +270,25 @@ Três detalhes que vieram junto:
 A anomalia "não divide em diária exata" saiu. Ela existia para denunciar justamente este caso, e
 agora o modelo o representa.
 
-### Limite conhecido
+### Limites conhecidos
 
-A amostragem usa **uma âncora só** (30 dias à frente, meio-dia), então assume que o parceiro não
+**Uma âncora só.** A amostragem usa 30 dias à frente, meio-dia, então assume que o parceiro não
 pratica preço sazonal. Se passar a praticar, quem descobre é a verificação diferencial: os
 motores divergem nas datas fora da âncora, a regra cai para `divergent` e a vitrine para de
 mostrar preço fechado.
+
+**A cauda de 31 diárias em diante não é medida, é extrapolada.** O amostrador vai até 30, e o
+`divergent: 0` que ele devolve cobre só o que mediu. Não dá para tratar essa faixa como
+verificada.
+
+Na entrada da Aerovalet (12/08/2026) a extrapolação foi conferida na mão em 31, 32, 35, 45 e 60
+diárias, nas cinco vagas, e os dezessete casos bateram ao centavo. A conferência valeu a pena por
+um motivo que não se adivinha: a coberta de Congonhas **encarece** depois do trigésimo dia, de
+R$ 29,90 para R$ 40,00 por dia, porque o parceiro decompõe a estadia em mês mais dias
+(`offer.code` vira `d5_m1`) e cobra o mês pela tabela mensal, mais cara que a faixa de 15 a 30.
+Uma diária que sobe com a estadia parece defeito da extrapolação e é a regra do parceiro. Em
+35 diárias, o Hub cobrava R$ 871,50 contra os R$ 1.400,00 dele.
+
+Regra prática: **ao ligar uma unidade nova, cote acima de 30 diárias na mão.** É o mesmo tipo de
+verificação que já se faz para o piso de estadia, e pelo mesmo motivo, porque a única fonte
+confiável é o parceiro respondendo.

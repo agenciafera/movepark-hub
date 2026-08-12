@@ -2,7 +2,8 @@
 
 > **Épico:** E0.14 · **Fase:** 0 · **Q vinculados:** Q-017, Q-018
 > **Status:** implementado em 04/08/2026 (migration `20260921000000_checkout_mode_external.sql`).
-> Seis unidades em modo externo desde 10/08/2026 (ver o fim deste arquivo).
+> Nove unidades em modo externo: seis desde 10/08/2026 e as três da Aerovalet desde 12/08/2026
+> (ver o fim deste arquivo).
 > Nada virou `external` ou `silent` na base: os defaults preservam o comportamento atual e a
 > virada é ato de `hub_admin`, unidade por unidade.
 
@@ -134,10 +135,15 @@ silêncio derrubaria uma unidade viva sem ninguém olhando.
 nem aviso de vencimento no Manager, e não vamos construir. A data vive num lembrete do ClickUp
 para 20/01/2027, com a consulta das unidades ainda em `external` e o comando de reversão dentro.
 
-O motivo é proporção: hoje há **uma** unidade externa. Coluna, aviso na tela e teste para vigiar
-uma linha é mais máquina do que problema, e código que ninguém exercita apodrece. Se o conjunto
-de externas crescer a ponto de a revisão manual não dar conta, aí o aviso na tela passa a valer o
-esforço, porque deixa de depender da caixa de lembretes de uma pessoa.
+O motivo é proporção. Quando isso foi decidido havia **uma** unidade externa, e coluna, aviso na
+tela e teste para vigiar uma linha é mais máquina do que problema, ainda mais porque código que
+ninguém exercita apodrece. Se o conjunto de externas crescer a ponto de a revisão manual não dar
+conta, aí o aviso na tela passa a valer o esforço, porque deixa de depender da caixa de lembretes
+de uma pessoa.
+
+Em 12/08/2026 são **nove** unidades e dezessete vagas. A decisão continua valendo, porque a
+revisão de janeiro é uma consulta só e cabe numa sentada, mas o número já não é o mesmo que a
+sustentou: o próximo lote que entrar é hora de reabrir a conta, não de reafirmar por hábito.
 
 Reverter continua sendo uma linha:
 
@@ -325,3 +331,83 @@ tabela precisa de decisão humana antes, não de um job noturno reescrevendo por
 os dois internos a uma mesma empresa já externa (Abbapark premium e Nationpark premium apontando
 para a coberta da própria unidade), e os dois inertes, porque essas regras deixaram de ser
 `surcharge` ao serem espelhadas.
+
+## Aerovalet em 12/08/2026: três unidades num white-label só
+
+Congonhas, Tietê e Guarulhos viraram juntas. São **nove unidades externas e dezessete vagas**.
+
+| Empresa | Unidade | Tenant WL | Categoria | Tipos mapeados | Piso |
+|---|---|---|---|---|---|
+| Aerovalet | Aeroporto de Congonhas | `aerovalet` | `aeroporto-congonhas` | coberta → `vaga-coberta-cgh` | nenhum |
+| Aerovalet | Terminal Rodoviário Tietê | `aerovalet` | `terminal-rodoviario-tiete` | coberta → `vaga-coberta-tiete` | nenhum |
+| Aerovalet | Aeroporto de Guarulhos | `aerovalet` | `aeroporto-guarulhos` | coberta → `vaga-coberta-gru`, descoberta → `vaga-descoberta-gru`, valet → `valet-gru` | nenhum |
+
+`hub_relationship = onboarded`, como as cinco de 10/08. As três unidades não tinham reserva viva
+(21 registros, todos `expired`), então a virada não pegou ninguém no meio do caminho.
+
+### A categoria do white-label é a unidade
+
+É o primeiro parceiro com mais de uma unidade externa, e as três dividem o mesmo white-label:
+`aerovalet.movepark.co` na frente, `aerovalet-app.movepark.co` no backend. O que separa uma
+unidade da outra lá dentro é a **categoria**.
+
+Isso coube no modelo sem tocar em nada, e não por sorte: o domínio é da empresa
+(`company.wl_public_domain`) e o par categoria/produto é da vaga
+(`location_parking_type.wl_category_slug`/`wl_product_slug`), então `external_checkout_url` compõe
+as três URLs certas com as colunas que já existiam. É o caso que esta spec previu lá em cima, ao
+explicar por que `checkout_mode` mora em `location` e não em `company`.
+
+Para quem for mapear o próximo: **não assuma uma categoria por parceiro**. Derivar a categoria do
+slug da empresa (`/aerovalet/...`, como é no Virapark) daria 404 em duas das três unidades.
+
+### Piso de estadia: nenhum
+
+As cinco vagas foram cotadas na mão em 1, 2, 3, 4, 5, 6, 7, 10, 14, 15, 20 e 30 diárias antes da
+virada, que é a regra que ficou dos cinco parceiros de 10/08. O Aerovalet respondeu preço em
+todas. Nem a valet tem piso, apesar de o catálogo declarar 24 horas para ela: mais uma confirmação
+de que o `minimum_stay` de `/api/v3/categories` não serve como fonte.
+
+### O que o Hub estava mostrando errado
+
+O espelho passou nas cinco vagas com `mirror_status = ok` e nenhuma divergência. Comparando com a
+tabela que o Hub praticava até ontem:
+
+| Unidade / vaga | Estadia | Hub antes | Parceiro | Variação |
+|---|---|---|---|---|
+| Congonhas coberta | 1 diária | R$ 31,90 | R$ 43,90 | +37,6% |
+| Congonhas coberta | 15 diárias | R$ 373,50 | R$ 448,50 | +20,1% |
+| Congonhas coberta | 35 diárias | R$ 871,50 | R$ 1.400,00 | +60,6% |
+| Tietê coberta | 1 diária | R$ 24,99 | R$ 27,90 | +11,6% |
+| GRU coberta | 1 e 14 diárias | igual | igual | 0% |
+| GRU coberta | 15 diárias | R$ 298,50 | R$ 328,50 | +10,1% |
+| GRU descoberta | 35 diárias | R$ 486,50 | R$ 521,50 | +7,2% |
+| GRU valet | qualquer | R$ 149,00 (1d) | R$ 119,20 (1d) | -20% em toda a curva |
+
+O valet é o caso mais claro do princípio "o Hub exibe, nunca decide": o Hub cobrava exatamente a
+tabela de **balcão** do parceiro, e o parceiro vende no site dele por 80% dela. A tabela legada
+que essa vaga recebeu em 10/08, quando parou de emprestar a do Aeropark, era a lista de balcão o
+tempo todo. Ninguém teria descoberto isso sem a amostragem.
+
+### A faixa de 31 diárias em diante, que o espelho extrapola
+
+Duas vagas ficaram com uma faixa aberta que o amostrador **não mede**, porque ele vai até 30
+diárias: Congonhas com R$ 40,00 por dia (acima dos R$ 29,90 da faixa de 15 a 30) e o valet com
+R$ 21,12 por dia sobre o pacote fechado de R$ 633,60.
+
+Uma diária que sobe depois do trigésimo dia parece erro de extrapolação, e por isso foi conferida
+contra o parceiro em 31, 32, 35, 45 e 60 diárias, nas cinco vagas. **Os dezessete casos batem ao
+centavo**, inclusive os R$ 2.400,00 de 60 diárias em Congonhas. O parceiro decompõe a estadia em
+mês mais dias (`offer.code` vira `d5_m1`) e cobra o mês pela tabela mensal dele, que é mais cara
+que a faixa de 15 a 30 dias. A extrapolação do espelho acertou a regra.
+
+Fica registrado como ponto de atenção, não como pendência: o `divergent: 0` do espelho cobre só o
+que ele amostra, então **estadia acima de 30 diárias é sempre conferência manual** quando uma
+unidade nova entra.
+
+### Os 17 casos golden que saíram do `test:int`
+
+`test/pricing/cases.ts` usa a tabela viva da unidade como entrada, e a Aerovalet era a última
+unidade `hub` com `uniform_by_duration` e `fixed_bracket` ali. Os 17 casos saíram pelo mesmo
+motivo dos 13 de 10/08: com a tabela espelhada, o valor golden deixa de descrever aquela linha e
+vira vermelho quando o parceiro mexe no preço dele. As duas estratégias seguem cobertas em
+`supabase/tests/pricing.test.sql`, contra o seed congelado.
