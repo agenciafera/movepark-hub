@@ -351,8 +351,27 @@ As capas do WordPress vêm em proporções que vão de 1:1 a 2,12:1, e boa parte
 manchete gravada dentro da imagem. Uma caixa fixa com `object-cover` cortava esse texto: medido
 em 16/9, **104 das 131 imagens perdiam 15% ou mais**, e as 8 quadradas perdiam 43,8%.
 
-A página do post não fixa proporção: limita a altura em 520px e deixa a largura acompanhar a
-imagem, então não há corte nem tarja.
+A página do post e o card do índice usam o mesmo `CoverImage`: caixa 3:2 com a imagem inteira
+por cima de uma cópia minúscula desfocada, que preenche a sobra. Não há corte nem tarja. No post
+a caixa ainda ganha teto de 520px de altura, senão os 1016px de largura do container dariam
+677px e a capa empurraria o primeiro parágrafo para fora da tela.
+
+### Largura do post
+
+O post usa o container de conteúdo (`max-w-[1080px]`), o mesmo das páginas de `ContentPageView`,
+e não o de leitura (720). Com 720 no container inteiro o desktop entregava 656px de texto e uma
+capa do mesmo tamanho, sobrando 360px de branco de cada lado.
+
+Dentro dele há duas larguras, por função:
+
+| Bloco | Largura | Por quê |
+|---|---|---|
+| Título, meta, corpo, tags | `max-w-[68ch]` centralizado (684px) | Medida de leitura, a mesma das páginas de conteúdo. Esticar o parágrafo até os 1016px do container daria 100 caracteres por linha |
+| Capa | container todo (até 1016px), com teto de 520px de altura | Banner com a manchete gravada dentro: é o bloco que mais ganha em ser maior |
+| CTA de destino e "Leia também" | container todo | Não são leitura, e o CTA é o elemento de conversão da página |
+
+O `sizes` da capa acompanha (`(min-width: 1144px) 1016px, 100vw`): errar esse valor faz o browser
+baixar o candidato errado do `srcset`.
 
 O card do índice precisa de caixa fixa para o grid não ficar irregular, e aí `contain` sozinho
 deixava 31 das 93 capas com tarja chapada, as 8 quadradas preenchendo só 67%. A solução é a
