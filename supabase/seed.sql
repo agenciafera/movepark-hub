@@ -83,7 +83,7 @@ INSERT INTO "public"."amenity" ("code", "name", "description", "icon", "category
 INSERT INTO "public"."parking_type" ("id", "code", "name", "description", "created_at", "updated_at") VALUES
 	('b76d7767-72a8-43ee-8039-3a208b933ba8', 'covered', 'Vaga Coberta', 'Vaga em área coberta, protegida de intempéries', '2026-05-25 14:35:31.868846+00', '2026-05-25 14:35:31.868846+00'),
 	('2a0e4481-fa03-409e-8093-076a77e2c1c6', 'uncovered', 'Vaga Descoberta', 'Vaga em área aberta, sem cobertura', '2026-05-25 14:35:31.868846+00', '2026-05-25 14:35:31.868846+00'),
-	('c680867a-3dd4-4926-80df-f60b0a507ba2', 'valet', 'Valet', 'Operação valet — manobrista recebe e entrega o veículo', '2026-05-25 14:35:31.868846+00', '2026-05-25 14:35:31.868846+00'),
+	('c680867a-3dd4-4926-80df-f60b0a507ba2', 'valet', 'Valet', 'Operação valet: manobrista recebe e entrega o veículo', '2026-05-25 14:35:31.868846+00', '2026-05-25 14:35:31.868846+00'),
 	('c0e95498-b3da-4951-ae96-bcc6246ea170', 'premium', 'Vaga Premium', 'Vaga premium / VIP, próxima ao embarque ou diferenciada', '2026-05-25 14:35:31.868846+00', '2026-05-25 14:35:31.868846+00'),
 	('37b4a1e6-2559-4552-9dc3-6c127311d92b', 'garage', 'Garagem / Box', 'Garagem privativa ou box individual', '2026-05-25 14:35:31.868846+00', '2026-05-25 14:35:31.868846+00'),
 	('19358bfb-5a45-4d10-8007-c9122cd2e0c4', 'motorcycle', 'Vaga de Moto', 'Vaga dedicada a motocicletas', '2026-05-25 14:35:31.868846+00', '2026-05-25 14:35:31.868846+00');
