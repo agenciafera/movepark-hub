@@ -8,7 +8,7 @@
 --   4. empresa silenciosa não ganha onboarding, recebedor nem usuário.
 
 begin;
-select plan(24);
+select plan(26);
 
 -- ── fixtures (como postgres; RLS não se aplica) ────────────────────────────
 do $$
@@ -139,6 +139,28 @@ select is(
   (select checkout_mode_changed_by from public.location where id = current_setting('test.loc')::uuid),
   current_setting('test.admin')::uuid,
   'a virada fica carimbada com quem mudou'
+);
+
+-- ── nascer já em external ──────────────────────────────────────────────────
+--
+-- O toggle do Manager é UPDATE, então o INSERT ficou sem teste e ninguém viu que estava
+-- quebrado: o gatilho pedia o pré-voo pelo id da unidade, e em BEFORE INSERT a linha ainda não
+-- existe em public.location. O erro que saía era "unidade não encontrada" (P0002), que manda
+-- procurar dado apagado em vez de olhar o gatilho. Ver 20261016094000_external_readiness_on_insert.sql.
+select lives_ok(
+  format($$ insert into public.location(company_id, name, slug, checkout_mode)
+            values (%L, 'E014 Nasce Externa', 'e014-nasce-externa', 'external') $$,
+         current_setting('test.company')),
+  'unidade de empresa pronta nasce já em external'
+);
+
+-- E o pré-voo não afrouxou no caminho novo: empresa sem white-label segue recusada, agora com o
+-- 23514 de violação de regra, que é o que o Manager sabe ler.
+select throws_ok(
+  format($$ insert into public.location(company_id, name, slug, checkout_mode)
+            values (%L, 'E014 Crua Externa', 'e014-crua-externa', 'external') $$,
+         current_setting('test.silent')),
+  '23514', null, 'unidade de empresa sem white-label não nasce em external'
 );
 
 -- ── URL de saída ───────────────────────────────────────────────────────────

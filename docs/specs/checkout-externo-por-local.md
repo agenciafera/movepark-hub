@@ -190,12 +190,24 @@ ou `@teste.com`. A premissa do silêncio se sustenta hoje.
 |---|---|
 | Colunas + CHECK | `location.checkout_mode`, `checkout_mode_changed_at/by`; `company.hub_relationship`, `wl_public_domain` |
 | URL de saída | `external_checkout_url(location_parking_type)`, campo computado do PostgREST |
-| Pré-voo | `location_external_readiness(uuid)` → `{ready, missing_company, unmapped_count, unmapped_names}` |
+| Pré-voo | `location_external_readiness(uuid)` → `{ready, missing_company, unmapped_count, unmapped_names}`, sobre o miolo `_external_readiness(company_id, location_id)` |
 | Regra dura | trigger `location_checkout_mode_guard` (+ `company_hub_relationship_guard`) |
 | Guardas de silêncio | triggers em `company_onboarding`, `payout_recipient`, `profile_company` e no `onboarding_status` da própria empresa |
 | Silêncio no e-mail | `sendPartnerEmail()` em `supabase/functions/_shared/email.ts` |
 | Manager | coluna e diálogo de Checkout em `/manager/companies/:id/locations`; domínio público e "Relação silenciosa" no cadastro da empresa |
-| Testes | pgTAP `checkout_mode_external.test.sql` (24), Deno `_shared/partner-email.test.ts` (5), Vitest `CheckoutModeDialog.test.tsx` + `locations/api.test.tsx` (8) |
+| Testes | pgTAP `checkout_mode_external.test.sql` (26), Deno `_shared/partner-email.test.ts` (5), Vitest `CheckoutModeDialog.test.tsx` + `locations/api.test.tsx` (8) |
+
+**O pré-voo vale nos dois caminhos, e o INSERT ficou quebrado até 12/08/2026.** A tela do Manager
+liga o externo por UPDATE, então era só esse caminho que tinha teste. O gatilho, porém, também
+roda em INSERT, e ali perguntava o pré-voo por `new.id`: em `BEFORE INSERT` a linha ainda não
+está em `public.location`, o select não achava nada e o erro que subia era
+`location_external_readiness: unidade % não encontrada` (P0002). Criar unidade já em `external`
+era impossível, e a mensagem mandava procurar dado apagado em vez de olhar o gatilho. Quem
+respondia o pré-voo desde sempre era a **empresa**, e essa o INSERT tem em `new.company_id`: o
+miolo virou `_external_readiness(company_id, location_id)` e o gatilho passou a chamá-lo por ali.
+No INSERT não há vaga para conferir De/Para, então o conjunto sai vazio e o pré-voo aprova, que é
+a leitura certa (unidade recém-criada não tem tipo de vaga para mapear). A regra não afrouxou:
+empresa sem white-label segue recusada, agora com `23514` no lugar do P0002 enganoso.
 
 **Quem é "backend" para as guardas.** As regras duras deixam passar quem chega **sem JWT**
 (service role, migration, seed) e exigem `hub_admin` de quem chega **com** JWT. Não dá para

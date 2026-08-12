@@ -14,9 +14,15 @@ select plan(15);
 do $$
 declare
   v_co uuid; v_loc_ext uuid; v_loc_hub uuid; v_pt uuid; v_cpt uuid;
+  v_pt_desc uuid; v_cpt_desc uuid;
   v_lpt_ext uuid; v_lpt_hub uuid; v_lpt_inativa uuid;
 begin
-  insert into public.company(name, slug) values ('Saida Parceiro','saida-parceiro') returning id into v_co;
+  -- A configuração de white-label não é enfeite do fixture: o pré-voo do checkout externo
+  -- (location_external_readiness) cobra os três campos, e sem eles a unidade externa nem nasce.
+  insert into public.company(name, slug, wl_public_domain, wl_domain, wl_tenant_key, wl_sync_enabled)
+    values ('Saida Parceiro','saida-parceiro',
+            'https://saida.movepark.co/','saida-app.movepark.co','saida', false)
+    returning id into v_co;
 
   -- Unidade externa (o alvo válido) e unidade hub (que a RPC tem que recusar).
   insert into public.location(company_id, name, slug, checkout_mode)
@@ -24,16 +30,23 @@ begin
   insert into public.location(company_id, name, slug, checkout_mode)
     values (v_co, 'Saida Hub','saida-hub','hub') returning id into v_loc_hub;
 
+  -- Dois tipos de vaga porque location_parking_type é unique em (location_id,
+  -- company_parking_type_id): a vaga inativa da unidade externa precisa do próprio tipo, senão
+  -- colide com a ativa.
   insert into public.parking_type(code, name) values ('saida_coberta','Saida Coberta') returning id into v_pt;
+  insert into public.parking_type(code, name) values ('saida_descoberta','Saida Descoberta') returning id into v_pt_desc;
   insert into public.company_parking_type(company_id, parking_type_id, base_price, default_capacity)
     values (v_co, v_pt, 40, 10) returning id into v_cpt;
+  insert into public.company_parking_type(company_id, parking_type_id, base_price, default_capacity)
+    values (v_co, v_pt_desc, 30, 10) returning id into v_cpt_desc;
 
-  insert into public.location_parking_type(location_id, company_parking_type_id, capacity, is_active)
-    values (v_loc_ext, v_cpt, 10, true) returning id into v_lpt_ext;
+  insert into public.location_parking_type(location_id, company_parking_type_id, capacity, is_active,
+                                           wl_category_slug, wl_product_slug)
+    values (v_loc_ext, v_cpt, 10, true, 'saida', 'vaga-coberta') returning id into v_lpt_ext;
   insert into public.location_parking_type(location_id, company_parking_type_id, capacity, is_active)
     values (v_loc_hub, v_cpt, 10, true) returning id into v_lpt_hub;
   insert into public.location_parking_type(location_id, company_parking_type_id, capacity, is_active)
-    values (v_loc_ext, v_cpt, 10, false) returning id into v_lpt_inativa;
+    values (v_loc_ext, v_cpt_desc, 10, false) returning id into v_lpt_inativa;
 
   perform set_config('t.ext', v_lpt_ext::text, false);
   perform set_config('t.hub', v_lpt_hub::text, false);
