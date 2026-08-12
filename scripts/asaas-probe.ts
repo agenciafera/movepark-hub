@@ -127,6 +127,14 @@ async function main() {
     isFeePayer: false,
   });
   show(`POST /accounts/${subId}/escrow`, escrowCfg);
+  if (escrowCfg.status >= 400) {
+    console.log(
+      "\n>> Erro aqui quase nunca é código. O primeiro pré-requisito da Conta Escrow é a\n" +
+        "   funcionalidade estar liberada PARA A CONTA, e sandbox e produção são liberações\n" +
+        "   separadas. Se a mensagem falar em indisponibilidade, peça ao gerente do Asaas a\n" +
+        "   liberação no sandbox. Sem isso os passos 7 e 8 não provam nada.",
+    );
+  }
 
   // ── 3. Cliente pagador (na raiz) ──────────────────────────────────────────
   head(3, "Criar cliente pagador na conta raiz");
