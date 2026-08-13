@@ -85,6 +85,47 @@ describe("ConsumerMobileMenu", () => {
     expect(screen.queryByRole("link", { name: "Ir pro Manager" })).toBeNull();
   });
 
+  /**
+   * Regressão: o `NavLink` recebe `className` como função, e dentro de
+   * `SheetClose asChild` o Slot do Radix concatena `className` como string. A
+   * função ia parar no DOM como o próprio código-fonte, e o item perdia toda a
+   * estilização sem erro nenhum no console.
+   */
+  it("a classe do item é string, nunca o código de uma função", async () => {
+    const { container } = renderWithProviders(<ConsumerMobileMenu />, { route: "/destinos" });
+    await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
+
+    for (const item of container.ownerDocument.querySelectorAll("nav a")) {
+      expect(item.className).not.toContain("=>");
+      expect(item.className).toContain("min-h-11");
+    }
+  });
+
+  /** Sem a marca, o leitor não sabe em que seção está. */
+  it("marca a seção atual, e só ela", async () => {
+    const { container } = renderWithProviders(<ConsumerMobileMenu />, { route: "/destinos" });
+    await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
+
+    const marcados = [...container.ownerDocument.querySelectorAll("nav a[aria-current='page']")];
+    expect(marcados).toHaveLength(1);
+    expect(marcados[0]).toHaveTextContent("Destinos");
+    expect(marcados[0].className).toContain("text-mp-primary");
+  });
+
+  /**
+   * O violeta é o da seleção. Com todos os ícones em violeta, nenhum item se
+   * destacaria, então os demais ficam no índigo que a lista da conta já usa.
+   */
+  it("só o ícone do item atual é violeta; os outros são índigo", async () => {
+    const { container } = renderWithProviders(<ConsumerMobileMenu />, { route: "/ajuda" });
+    await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
+
+    const violetas = [...container.ownerDocument.querySelectorAll("nav a svg.text-mp-primary")];
+    const indigos = [...container.ownerDocument.querySelectorAll("nav a svg.text-mp-indigo")];
+    expect(violetas).toHaveLength(1);
+    expect(indigos.length).toBeGreaterThan(3);
+  });
+
   /** Numa lista de oito itens o ícone é o que deixa o dedo achar o alvo. */
   it("todo item da lista tem ícone", async () => {
     const { container } = renderWithProviders(<ConsumerMobileMenu />, {

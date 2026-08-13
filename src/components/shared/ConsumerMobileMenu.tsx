@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { IconProps } from "@phosphor-icons/react";
 import {
   Article,
@@ -23,7 +23,9 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useAuth } from "@/auth/context";
+import { cn } from "@/lib/utils";
 import { userInitials } from "@/lib/initials";
+import { secaoAtiva } from "./menuAtivo";
 import { postLogoutPath } from "@/auth/postLoginRedirect";
 import { Wordmark } from "./Brand";
 import { ThemeToggle } from "./ThemeToggle";
@@ -50,20 +52,45 @@ const LINKS_DA_CONTA: ItemDeMenu[] = [
 ];
 
 /**
- * Item do menu, com ícone à esquerda.
+ * Item do menu, com ícone à esquerda e marca de seção atual.
  *
  * O ícone não é enfeite: numa lista de nove itens ele é o que deixa o dedo achar
  * o alvo sem ler a lista inteira, e é o que as duas referências (QuintoAndar e
- * Airbnb) fazem. `min-h-11` mantém o alvo de toque acessível.
+ * Airbnb) fazem. A cor é `mp-indigo`, a mesma que a lista da conta
+ * (`AccountSidebar`) já usa em ícone de navegação.
+ *
+ * O item atual é o único violeta. O contrato do consumer reserva o `mp-primary`
+ * para elemento acionável e indicador de seleção, e é exatamente este caso: com
+ * todos os ícones em violeta, nenhum item se destacaria.
+ *
+ * O ativo é calculado à mão, e não pelo `NavLink`: dentro de `SheetClose asChild`
+ * o Slot do Radix concatena `className` como string, e uma `className` em função
+ * (a API do `NavLink`) ia parar no DOM como o **código-fonte da função**. O item
+ * perdia toda a estilização sem erro nenhum no console.
+ *
+ * `min-h-11` mantém o alvo de toque acessível.
  */
 function Item({ to, label, icone: Icone }: ItemDeMenu) {
+  const { pathname } = useLocation();
+  const ativo = secaoAtiva(pathname, to);
+
   return (
     <SheetClose asChild>
       <Link
         to={to}
-        className="flex min-h-11 items-center gap-3 rounded-sm px-3 py-2.5 text-body-md text-ink transition-colors hover:bg-surface-soft"
+        aria-current={ativo ? "page" : undefined}
+        className={cn(
+          "flex min-h-11 items-center gap-3 rounded-sm px-3 py-2.5 text-body-md transition-colors",
+          ativo
+            ? "bg-surface-soft font-semibold text-mp-primary"
+            : "text-ink hover:bg-surface-soft",
+        )}
       >
-        <Icone className="h-5 w-5 shrink-0 text-muted" aria-hidden />
+        <Icone
+          className={cn("h-5 w-5 shrink-0", ativo ? "text-mp-primary" : "text-mp-indigo")}
+          weight={ativo ? "fill" : "regular"}
+          aria-hidden
+        />
         {label}
       </Link>
     </SheetClose>
