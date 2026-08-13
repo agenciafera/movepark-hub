@@ -1,6 +1,14 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { CalendarBlank, CaretDown, CaretRight, Clock, FileText, ListNumbers, Printer } from "@phosphor-icons/react";
+import {
+  CalendarBlank,
+  CaretDown,
+  CaretRight,
+  Clock,
+  FileText,
+  ListNumbers,
+  Printer,
+} from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { BlockView } from "./Blocks";
@@ -93,9 +101,17 @@ export function ContentPageView({
         </div>
       </div>
 
-      {/* Índice do mobile: preso abaixo da topbar, mostrando onde o leitor está. */}
+      {/*
+        Índice do mobile: preso abaixo da topbar, mostrando onde o leitor está.
+
+        O `top` acompanha o header, que se esconde ao rolar para baixo. Com um
+        valor fixo o índice ficava parado a 64px do topo: com o header na tela ele
+        sumia 16px atrás dele, e com o header escondido sobrava um vão de 64px
+        acima. A variável é publicada pelo `useHeaderOculto`, e o padrão cobre as
+        telas onde o header nunca some.
+      */}
       {sections.length > 1 && (
-        <div className="sticky top-16 z-20 border-b border-hairline bg-canvas print:hidden desktop:hidden">
+        <div className="sticky top-[var(--topbar-offset,5rem)] z-20 border-b border-hairline bg-canvas transition-[top] duration-300 ease-out motion-reduce:transition-none desktop:hidden print:hidden">
           <button
             type="button"
             onClick={() => setMenuAberto((v) => !v)}
@@ -150,7 +166,7 @@ export function ContentPageView({
         <div className="grid grid-cols-1 gap-0 desktop:grid-cols-[260px_1fr] desktop:gap-14">
           {/* Índice do desktop. Âncoras de verdade: deep link tem que dar pra copiar. */}
           {sections.length > 1 && (
-            <div className="hidden print:hidden desktop:block">
+            <div className="hidden desktop:block print:hidden">
               <nav aria-label="Nesta página" className="sticky top-24">
                 <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.4px] text-muted">
                   Nesta página
