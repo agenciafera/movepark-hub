@@ -136,7 +136,10 @@ export function ConsumerMobileMenu() {
         <button
           type="button"
           aria-label="Abrir menu"
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-hairline text-ink transition-colors hover:bg-surface-soft tablet:hidden"
+          /* Violeta preenchido: é a única porta de navegação do celular, e um
+             botão de contorno cinza no canto some no meio do header branco. O
+             contrato reserva o violeta para elemento acionável, que é o caso. */
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-mp-primary text-white transition-colors hover:bg-mp-primary-active tablet:hidden"
         >
           {session ? (
             <span className="text-caption-sm font-bold">
