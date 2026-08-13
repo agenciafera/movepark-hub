@@ -211,7 +211,13 @@ export function ConsumerMobileMenu() {
         className="w-[320px] overflow-y-auto ease-out focus:outline-none data-[state=closed]:ease-in data-[state=closed]:[animation-duration:200ms] data-[state=open]:[animation-duration:300ms]"
       >
         <SheetHeader>
-          <Wordmark height={20} />
+          {/*
+            `self-start` porque o `SheetHeader` é uma coluna de flex e a coluna
+            estica o filho na transversal: sem ele a marca ia a 271px de largura
+            num painel de 320, esticada, com a altura de 20px travada pelo estilo
+            inline. Encostada na esquerda ela volta à proporção real.
+          */}
+          <Wordmark height={20} className="self-start" />
           {/* O Radix exige título para o leitor de tela; na tela quem nomeia o
               painel é a marca. */}
           <SheetTitle className="sr-only">Menu</SheetTitle>
