@@ -5,7 +5,7 @@ import { mockAuth, mockSession, renderWithProviders } from "@/test/utils";
 import { server } from "@/test/msw/server";
 import { ConsumerAppShell } from "./ConsumerAppShell";
 
-describe("ConsumerAppShell — bottom nav no mobile", () => {
+describe("ConsumerAppShell", () => {
   // Topbar/ChatWidget disparam fetches (destinos, config do chat); resolve com []
   // pra não deixar requisição pendente até o teardown.
   beforeEach(() => {
@@ -15,40 +15,33 @@ describe("ConsumerAppShell — bottom nav no mobile", () => {
     );
   });
 
-  it("com sessão, mostra a bottom nav e reserva o espaco dela (ex: /search)", () => {
-    renderWithProviders(<ConsumerAppShell />, {
-      route: "/search",
-      auth: mockAuth({ session: mockSession("customer") }),
-    });
-
-    expect(screen.getByRole("navigation")).toBeInTheDocument();
-    // O espaco sai de `--bottom-nav-space` (altura da barra + recorte do iPhone),
-    // e nao de um valor cravado, senao a conta desencontra quando a barra muda.
-    expect(document.querySelector("main")?.className).toContain("pb-[var(--bottom-nav-space)]");
-  });
-
   /**
-   * A barra alterna entre áreas de conta, e quem não entrou não tem nenhuma: ela
-   * virava atalho para "Entrar" ocupando 64px fixos de tela pequena. Sem sessão o
-   * espaço reservado também some, senão sobra um vão no fim de toda página.
+   * A barra fixa embaixo saiu: no mobile ocupava 64px de tela em toda página e
+   * repartia a navegação entre ela e o header, o que a avaliação de uso apontou
+   * como confuso. Junto com ela sai a reserva de espaço, senão sobra um vão no
+   * fim de toda página.
    */
-  it("sem sessão, não há bottom nav nem espaco reservado", () => {
-    renderWithProviders(<ConsumerAppShell />, {
-      route: "/search",
-      auth: mockAuth({ session: null }),
-    });
+  it.each([
+    ["/search", "com sessão", mockSession("customer")],
+    ["/search", "sem sessão", null],
+    ["/p/ferapark/unidade-aeroporto/uncovered", "na página do estacionamento", null],
+  ])("não tem barra fixa embaixo em %s (%s)", (route, _caso, session) => {
+    renderWithProviders(<ConsumerAppShell />, { route, auth: mockAuth({ session }) });
 
-    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+    expect(document.querySelector("nav.grid-cols-4")).toBeNull();
     expect(document.querySelector("main")?.className).not.toContain("--bottom-nav-space");
   });
 
-  it("esconde a bottom nav e a reserva de espaco na página do estacionamento (/p/...)", () => {
+  /** A navegação do mobile passou a ser só a aba lateral, logado ou não. */
+  it.each([
+    ["com sessão", mockSession("customer")],
+    ["sem sessão", null],
+  ])("a aba lateral do mobile aparece %s", (_caso, session) => {
     renderWithProviders(<ConsumerAppShell />, {
-      route: "/p/ferapark/unidade-aeroporto/uncovered",
+      route: "/search",
+      auth: mockAuth({ session }),
     });
 
-    // Na página do estacionamento o rodapé fixo do mobile é o CTA de reserva.
-    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
-    expect(document.querySelector("main")?.className).not.toContain("--bottom-nav-space");
+    expect(screen.getByRole("button", { name: "Abrir menu" })).toBeInTheDocument();
   });
 });

@@ -10,6 +10,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { useAuth } from "@/auth/context";
 import { ThemeToggle } from "./ThemeToggle";
 
 /**
@@ -25,18 +26,22 @@ const LINKS = [
 ];
 
 /**
- * Menu do mobile para quem não tem sessão.
+ * Aba lateral do mobile, e a única navegação de seção do celular.
  *
- * Ele existe porque a barra inferior saiu para o visitante deslogado: ela alterna
- * entre áreas de conta, e quem não entrou não tem nenhuma. Os links principais
- * passam a morar aqui, no canto onde a mão já procura menu, sem ocupar 64px fixos
- * da tela o tempo todo.
+ * A barra fixa de baixo saiu: ocupava 64px de tela em toda página e repartia a
+ * navegação entre ela e o header, o que a avaliação de uso apontou como confuso.
+ * Aqui os links moram num lugar só, no canto onde a mão já procura menu, e a
+ * tela inteira volta a ser conteúdo.
+ *
+ * Vale logado e deslogado. Muda só o rodapé do painel: quem já entrou tem a
+ * conta no avatar do header, então o "Entrar" não aparece.
  *
  * Só no mobile: no tablet para cima os mesmos destinos já estão no header e no
  * rodapé.
  */
 export function ConsumerMobileMenu() {
   const [aberto, setAberto] = React.useState(false);
+  const { session } = useAuth();
 
   return (
     <Sheet open={aberto} onOpenChange={setAberto}>
@@ -94,11 +99,15 @@ export function ConsumerMobileMenu() {
         </nav>
 
         <div className="mt-auto flex flex-col gap-4 p-6">
-          <SheetClose asChild>
-            <Button asChild className="w-full">
-              <Link to="/login">Entrar</Link>
-            </Button>
-          </SheetClose>
+          {/* Quem já entrou tem a conta no avatar do header; repetir "Entrar"
+              aqui só confundiria. */}
+          {!session && (
+            <SheetClose asChild>
+              <Button asChild className="w-full">
+                <Link to="/login">Entrar</Link>
+              </Button>
+            </SheetClose>
+          )}
           {/* O toggle sai do header no mobile por falta de largura, e aqui ele
               volta a ficar ao alcance sem precisar entrar na conta. */}
           <ThemeToggle className="self-start" />

@@ -37,7 +37,7 @@ const linkClass = "text-body-sm text-muted no-underline hover:text-ink";
 
 export function ConsumerFooter() {
   return (
-    <footer className="border-t border-hairline bg-surface-soft pb-[var(--bottom-nav-space)] tablet:pb-0">
+    <footer className="border-t border-hairline bg-surface-soft">
       <div className="mx-auto grid w-full max-w-[1280px] grid-cols-1 gap-8 px-6 py-12 tablet:grid-cols-3 desktop:grid-cols-3 desktop:px-8">
         {groups.map((g) => (
           <div key={g.title} className="space-y-3">
@@ -68,9 +68,7 @@ export function ConsumerFooter() {
               © {new Date().getFullYear()} Movepark
             </span>
           </div>
-          <div className="text-caption-sm text-muted">
-            🌎 PT-BR (R$)
-          </div>
+          <div className="text-caption-sm text-muted">🌎 PT-BR (R$)</div>
         </div>
       </div>
     </footer>

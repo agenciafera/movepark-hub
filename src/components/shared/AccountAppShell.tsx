@@ -2,7 +2,6 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "@phosphor-icons/react";
 import { ConsumerTopbar } from "./ConsumerTopbar";
 import { ConsumerFooter } from "./ConsumerFooter";
-import { ConsumerBottomNav } from "./ConsumerBottomNav";
 import { AccountSidebar } from "./AccountSidebar";
 import { Button } from "@/components/ui/button";
 
@@ -29,14 +28,14 @@ export function AccountAppShell() {
   const ownsSurface = REDESENHADAS.some((p) => location.pathname.startsWith(p));
 
   return (
-    <div className="flex min-h-screen flex-col bg-panel">
+    <div className="bg-panel flex min-h-screen flex-col">
       <ConsumerTopbar />
 
       {/* Enquadramento do design: sidebar navy flutuante com 20px de respiro e o
           conteúdo ocupando o que sobra. Sem trava de largura, igual aos painéis. */}
       <div className="flex flex-1 gap-5 px-4 py-6 desktop:p-5">
         <AccountSidebar />
-        <main className="flex min-w-0 flex-1 flex-col pb-[var(--bottom-nav-space)] tablet:pb-0">
+        <main className="flex min-w-0 flex-1 flex-col">
           {/* Header da seção em mobile (não-root) com botão voltar */}
           <div className="mb-4 desktop:hidden">
             {!isRoot ? (
@@ -64,7 +63,6 @@ export function AccountAppShell() {
       </div>
 
       <ConsumerFooter />
-      <ConsumerBottomNav />
     </div>
   );
 }

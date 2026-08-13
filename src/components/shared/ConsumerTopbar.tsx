@@ -213,13 +213,12 @@ export function ConsumerTopbar() {
               <Button variant="ghost" size="sm" className="hidden tablet:inline-flex" asChild>
                 <Link to="/seja-parceiro">Seja parceiro</Link>
               </Button>
-              {/* No mobile o visitante deslogado troca o botão pelo menu, que já leva
-                o "Entrar" dentro: são 375px de largura, e o header não comporta os
-                dois sem espremer a busca do meio. */}
+              {/* No mobile o "Entrar" mora dentro da aba lateral: são 375px de
+                  largura, e o header não comporta botão e menu sem espremer a
+                  busca do meio. */}
               <Button size="sm" variant="primary" className="hidden tablet:inline-flex" asChild>
                 <Link to="/login">Entrar</Link>
               </Button>
-              <ConsumerMobileMenu />
             </>
           )}
 
@@ -273,6 +272,13 @@ export function ConsumerTopbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
+
+          {/*
+            A aba lateral vale logado e deslogado, e é a navegação do mobile desde
+            que a barra de baixo saiu. Fica depois do avatar de propósito: é o
+            último alvo da direita, no canto onde a mão já procura menu.
+          */}
+          <ConsumerMobileMenu />
         </div>
       </div>
     </header>

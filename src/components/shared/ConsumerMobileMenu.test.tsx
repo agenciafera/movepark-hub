@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { renderWithProviders } from "@/test/utils";
+import { mockAuth, mockSession, renderWithProviders } from "@/test/utils";
 import { ConsumerMobileMenu } from "./ConsumerMobileMenu";
 
 /**
- * O menu existe porque a barra inferior saiu para quem não tem sessão: ela
- * alterna entre áreas de conta, e o visitante não tem nenhuma.
+ * O menu é a navegação do mobile desde que a barra fixa de baixo saiu, e vale
+ * logado e deslogado.
  */
 describe("ConsumerMobileMenu", () => {
   it("abre pelo botão do canto e lista os links principais", async () => {
@@ -25,6 +25,22 @@ describe("ConsumerMobileMenu", () => {
     renderWithProviders(<ConsumerMobileMenu />);
     await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
     expect(screen.getByRole("link", { name: "Entrar" })).toHaveAttribute("href", "/login");
+  });
+
+  /**
+   * O menu é a navegação do mobile desde que a barra de baixo saiu, então ele
+   * vale logado também. Quem já entrou tem a conta no avatar do header, e
+   * repetir "Entrar" aqui só confundiria.
+   */
+  it("com sessão, os mesmos links continuam, sem o Entrar", async () => {
+    renderWithProviders(<ConsumerMobileMenu />, {
+      auth: mockAuth({ session: mockSession("customer") }),
+    });
+    await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
+
+    expect(screen.getByRole("link", { name: "Destinos" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Seja parceiro" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Entrar" })).toBeNull();
   });
 
   /** Só no mobile: no tablet para cima os mesmos destinos já estão no header. */
