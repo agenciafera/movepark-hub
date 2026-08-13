@@ -4,6 +4,14 @@ import fs from "node:fs";
 import path from "node:path";
 import sitemap from "vite-plugin-sitemap";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+// Import RELATIVO e para um módulo sem nenhum import próprio: o Vite empacota este config
+// com esbuild antes de conhecer o alias "@", então qualquer coisa que puxe src/ em cadeia
+// quebraria o build.
+import {
+  SITEMAP_OPT_OUT,
+  SITEMAP_PRIVATE_PREFIXES,
+  SITEMAP_STATIC_ROUTES,
+} from "./src/lib/sitemapRoutes";
 
 const SITE_URL = "https://hub.movepark.co";
 
@@ -118,14 +126,21 @@ export default defineConfig(async ({ mode }) => {
   // e dos posts do blog (com barra final, contrato herdado do WordPress).
   writeBlogSlugManifest(blogRoutes);
 
+  // As estáticas entram por lista porque o plugin roda antes do pré-render e não teria como
+  // descobri-las sozinho (ver src/lib/sitemapRoutes.ts).
+  // Set porque o plugin já injeta "/" por conta própria: sem dedupe o sitemap sai com a
+  // home repetida, que é sitemap inválido.
   const dynamicRoutes = [
-    "/destinos",
-    "/blog/",
-    ...listingRoutes,
-    ...destinationRoutes,
-    ...blogRoutes,
-    ...prospectRoutes,
-  ];
+    ...new Set([
+      ...SITEMAP_STATIC_ROUTES,
+      "/destinos",
+      "/blog/",
+      ...listingRoutes,
+      ...destinationRoutes,
+      ...blogRoutes,
+      ...prospectRoutes,
+    ]),
+  ].filter((r) => r !== "/");
 
   return {
     plugins: [
@@ -136,13 +151,12 @@ export default defineConfig(async ({ mode }) => {
         // NÃO gerar robots.txt aqui — o plugin sobrescreveria o public/robots.txt curado
         // (allowlist/blocklist de bots + Content Signals). Só o sitemap.xml é gerado. (E0.8-a/b)
         generateRobotsTxt: false,
+        // Uma fonte só para o que fica fora: as rotas públicas com opt-out declarado e
+        // tudo abaixo dos prefixos de área logada.
         exclude: [
-          "/login",
-          "/entrar",
-          "/signup",
-          "/auth/callback",
+          ...Object.keys(SITEMAP_OPT_OUT).filter((r) => r !== "*"),
           "/forgot-password",
-          "/design-system",
+          ...SITEMAP_PRIVATE_PREFIXES.flatMap((p) => [p, `${p}/*`]),
         ],
       }),
     ],

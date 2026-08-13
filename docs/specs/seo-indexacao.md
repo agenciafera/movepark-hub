@@ -62,8 +62,35 @@ O `noindex` sai sozinho, mas o resto **não**. Nenhum item abaixo é opcional: c
 - [ ] **Hostname do sitemap.** `SITE_URL` em [`vite.config.ts`](../../vite.config.ts) define o host de todas as `<loc>`. Sitemap com host errado é ignorado.
 - [ ] **`Sitemap:` do [`robots.txt`](../../public/robots.txt)** aponta para `hub.movepark.co/sitemap.xml`.
 - [ ] **Rotas privadas precisam de `noindex` próprio.** Hoje `/manager`, `/operator`, `/account`, `/checkout` e `/bookings` só estão fora do Google porque o host inteiro está bloqueado. Quando a regra de host desligar, elas ficam indexáveis. Precisam de um `noindex` por rota, independente de host, **antes** da migração.
-- [ ] **Exclusões do sitemap.** [`vite.config.ts`](../../vite.config.ts) só exclui rotas de auth. Um build local gera `dist/sitemap.xml` com `/manager`, `/operator`, `/finance`, `/account`, `/bookings`, `/api-keys` e `/onboarding` dentro.
-- [ ] **Arquivos de rascunho em `public/`.** [`public/images/arco-iris.html`](../../public/images/arco-iris.html) é um preview do gerador de imagens que virou página pública e entrou no sitemap como `/images/arco-iris`. Varrer `public/` atrás de HTML solto antes de migrar.
+- [x] **Exclusões do sitemap.** Resolvido em 13/08/2026. A lista de exclusão do [`vite.config.ts`](../../vite.config.ts) passou a derivar de [`src/lib/sitemapRoutes.ts`](../../src/lib/sitemapRoutes.ts): opt-out declarado com motivo, mais os prefixos de área logada. Medido no `dist/` depois da mudança: 149 URLs, zero de `/manager`, `/operator`, `/account`, `/checkout`, `/bookings`, `/onboarding`, `/docs`, `/search` ou `/design-system`.
+- [x] **Arquivos de rascunho em `public/`.** `public/images/arco-iris.html` foi apagado em 13/08/2026. Varrer `public/` atrás de HTML solto continua valendo antes de migrar.
 - [ ] **301 do WordPress para o Hub.** Cada URL de `/estacionamentos/*` que sair precisa de redirect permanente para a página equivalente do Hub, senão a autoridade acumulada é perdida.
 - [ ] **`llms.txt` e cards MCP** citam `hub.movepark.co` ([`public/llms.txt`](../../public/llms.txt), `.well-known/mcp/*`). Ver ADR-003.
 - [ ] **`api.movepark.co` não muda.** A Public API fica onde está, fora da superfície de SEO.
+
+## Sitemap: o que entra e por quê
+
+O `vite-plugin-sitemap` roda no `closeBundle`, **antes** de o `vite-react-ssg` pré-renderizar.
+Naquele instante o `dist/` só tem o `index.html` do build de cliente, então o plugin não
+descobre sozinho que `/sobre` e `/faq` existem: tudo vem da lista montada no
+[`vite.config.ts`](../../vite.config.ts). Foi por isso que o sitemap publicado em 13/08/2026
+tinha 135 URLs e **nenhuma página institucional**, mesmo com as nove pré-renderizadas no
+`dist/`.
+
+A lista estática mora em [`src/lib/sitemapRoutes.ts`](../../src/lib/sitemapRoutes.ts), que
+**não pode importar nada**: o Vite empacota o config com esbuild antes de o alias `@` existir,
+então qualquer import em cadeia (por exemplo `@/routes`, que puxa `RequireRole` e o client do
+Supabase) quebra o build inteiro. Foi a primeira tentativa e ela não compila.
+
+Quem impede a lista de envelhecer é [`src/lib/sitemapRoutes.test.ts`](../../src/lib/sitemapRoutes.test.ts):
+lê o `routes.tsx` como texto e reprova qualquer rota que não esteja no sitemap, no opt-out com
+motivo escrito, ou sob prefixo de área logada. Rota nova sem decisão deixa o CI vermelho.
+
+**Pendente:** a taxonomia e a paginação do blog (48 arquivos no `dist/`: `/blog/page/N`,
+`/blog/categoria/*`, `/blog/tag/*`, `/blog/autor/*`, `/blog/aeroporto/*`) ainda ficam de fora.
+Cada uma precisa de consulta própria de slugs e de contagem de páginas. Está declarada em
+`SITEMAP_BLOG_TAXONOMY_PENDING` para o débito ficar visível em vez de virar esquecimento.
+
+**Nomes das páginas legais.** As rotas do Hub são `/termos` e `/privacidade`; o WordPress
+publica `/termos-de-uso/` e `/politica-de-privacidade/`. São nomes diferentes, então a
+migração precisa de 301 e não de URL igual. Um teste trava os dois nomes.
