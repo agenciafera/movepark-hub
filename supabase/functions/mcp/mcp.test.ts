@@ -46,6 +46,43 @@ Deno.test("safeToolError não vaza mensagem crua do Postgres", () => {
   assertEquals(safeToolError({ code: "XX000", message: "internal detail" }), "Erro ao executar a operação.");
 });
 
+Deno.test("safeToolError mascara internals do Postgres que chegam SEM code", () => {
+  // O buraco fechado em 12/08/2026: o supabase-js re-lança o erro como
+  // `new Error(error.message)`, perdendo o SQLSTATE. Antes, o caminho "sem code"
+  // devolvia essa mensagem crua, vazando tabela, coluna e policy. Agora ela passa
+  // pelo filtro de frases internas.
+  const genérico = "Erro ao executar a operação.";
+  const vazamentos = [
+    'new row violates row-level security policy for table "booking"',
+    "permission denied for table booking",
+    'duplicate key value violates unique constraint "api_key_key_prefix_key"',
+    'relation "public.payout_recipient" does not exist',
+    'column "customer_tax_id" does not exist',
+    'null value in column "profile_id" violates not-null constraint',
+    "JWT expired",
+  ];
+  for (const v of vazamentos) {
+    // Sem code, exatamente como o re-throw do supabase-js entrega.
+    assertEquals(safeToolError(new Error(v)), genérico, `deveria mascarar: ${v}`);
+  }
+});
+
+Deno.test("safeToolError NÃO mascara mensagem de app que cita um valor entre aspas", () => {
+  // A armadilha ao endurecer: nossas mensagens às vezes citam um slug/valor entre
+  // aspas (`Post "guarulhos" não encontrado`). Uma heurística de aspas mataria
+  // isso; por isso o filtro é por frase interna INGLESA, que o português nunca tem.
+  const nossas = [
+    'Post "guarulhos" não encontrado. Use search_blog para achar o slug.',
+    "Reserva não encontrada.",
+    "CPF ou CNPJ inválido. Confirme os números e envie de novo.",
+    "Faça login primeiro (request_login_otp e verify_login_otp).",
+    'Categoria "precos" não existe.',
+  ];
+  for (const m of nossas) {
+    assertEquals(safeToolError(new Error(m)), m, `deveria passar: ${m}`);
+  }
+});
+
 Deno.test("toolTextContent embrulha JSON como text content", () => {
   const r = toolTextContent({ a: 1 });
   assertEquals(r.content[0].type, "text");

@@ -79,18 +79,34 @@ export function isNotification(req: JsonRpcRequest): boolean {
   return req.id === undefined || req.method.startsWith("notifications/");
 }
 
-// Mensagem segura de erro para o cliente (espelha o pgErrorToHttp do gateway REST). Erro SEM
-// SQLSTATE = throw explícito de um handler (mensagem é nossa e segura). Com SQLSTATE: só P0001
-// (RAISE de negócio das RPCs) é propagado; qualquer outro erro interno do Postgres (unique/check/
-// FK/uuid inválido/not-null) vira genérico, pra não vazar nome de constraint, coluna ou schema.
+/**
+ * Frases internas do Postgres/PostgREST. Todas em inglês; as mensagens de app são
+ * em português e nunca batem em nenhuma delas. Uma mensagem SEM SQLSTATE que casa
+ * aqui veio de um erro do supabase-js re-lançado (`throw new Error(error.message)`),
+ * e não de um handler nosso: tabela, coluna, constraint, policy e schema não podem
+ * vazar por esse caminho.
+ */
+const POSTGRES_INTERNO =
+  /violat|permission denied|row[- ]?level security|does not exist|duplicate key|constraint|syntax error|invalid input syntax|null value in column|relation "|column "|schema "|type "|\bPGRST|JWSError|JWT (?:expired|invalid)|invalid JWT/i;
+
+// Mensagem segura de erro para o cliente (espelha o pgErrorToHttp do gateway REST). Com SQLSTATE:
+// só P0001 (RAISE de negócio das RPCs) é propagado; qualquer outro erro do Postgres (unique/check/
+// FK/uuid inválido/not-null) vira genérico. Sem SQLSTATE normalmente é `throw new Error("...")` de
+// um handler (mensagem nossa, segura), MAS o re-throw do supabase-js também perde o code e carrega
+// internals; por isso a mensagem sem code passa pelo filtro `POSTGRES_INTERNO` antes de sair.
 export function safeToolError(e: unknown): string {
   const err = e as { code?: string; message?: string };
+  const generico = "Erro ao executar a operação.";
   const code = err?.code;
-  if (!code) return err?.message ?? "Erro ao executar a operação.";
-  if (code === "P0001") return err.message ?? "Requisição inválida.";
-  if (code === "23505") return "Registro já existe (conflito de unicidade).";
-  if (["22P02", "22007", "22008", "22003", "23502", "23503", "23514"].includes(code)) {
-    return "Parâmetro inválido para esta operação.";
+  if (code) {
+    if (code === "P0001") return err.message ?? "Requisição inválida.";
+    if (code === "23505") return "Registro já existe (conflito de unicidade).";
+    if (["22P02", "22007", "22008", "22003", "23502", "23503", "23514"].includes(code)) {
+      return "Parâmetro inválido para esta operação.";
+    }
+    return generico;
   }
-  return "Erro ao executar a operação.";
+  const msg = err?.message;
+  if (!msg) return generico;
+  return POSTGRES_INTERNO.test(msg) ? generico : msg;
 }
