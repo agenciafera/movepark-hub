@@ -54,6 +54,9 @@ A mesma propriedade de domínio revelou dois subdomínios fora do `hub.` no índ
 | `n8n.movepark.co` | instância n8n de automação | indexado; ferramenta interna exposta na busca |
 | `virapark.movepark.co` | white-label do parceiro Virapark (Vercel) | indexado; pode ser intencional para o SEO do parceiro |
 
+> **A borda tem spec própria.** Comportamento do worker, configuração de assets e a regra de
+> 404 estão em [`borda-cloudflare.md`](./borda-cloudflare.md), com as medições de produção.
+
 ## Checklist da migração para o `movepark.co`
 
 O `noindex` sai sozinho, mas o resto **não**. Nenhum item abaixo é opcional: cada um, se esquecido, tira páginas do índice ou expõe o que não devia.
