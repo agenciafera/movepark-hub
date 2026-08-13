@@ -4,7 +4,7 @@
 --
 -- Como se perdeu: no rebaseline, as quatro migrations do motor (membership_engine,
 -- referral_engine e as duas de hardening acima) foram consolidadas num arquivo só,
--- `20260723500000_growth_engine_membership_referral.sql`, e dele sobraram apenas os
+-- `20260723050000_growth_engine_membership_referral.sql`, e dele sobraram apenas os
 -- três `grant ... to authenticated`. Os `revoke` ficaram de fora.
 --
 -- Por que isso não é inofensivo: no Supabase, função nova no schema `public` nasce com

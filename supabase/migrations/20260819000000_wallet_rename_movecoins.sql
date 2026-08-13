@@ -7,7 +7,7 @@
 -- Renomeia tabela, constraints, índices e a chave de `app_setting`. As três funções
 -- que referenciam a tabela/chave por nome (`get_my_wallet`, `tg_booking_completed_cashback`,
 -- `tg_booking_completed_referral`) são recriadas apontando para os novos nomes.
--- Os arquivos históricos de migration (20260723500000 / 20260724000000) NÃO são editados.
+-- Os arquivos históricos de migration (20260723050000 / 20260724000000) NÃO são editados.
 
 -- ── Tabela + constraints + índices ───────────────────────────────────────────
 alter table public.movecoins_ledger rename to wallet_ledger;

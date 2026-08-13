@@ -16,7 +16,7 @@
 ## Por que esta spec existe
 
 O schema do Motor de Crescimento (níveis, indicação, carteira) nasceu direto no banco vivo e foi
-capturado em duas migrations (`20260723500000_growth_engine_membership_referral` e
+capturado em duas migrations (`20260723050000_growth_engine_membership_referral` e
 `20260724000000_movecoins_wallet`), sem spec. Antes de mexer em cancelamento, reembolso e alteração
 de data (que vão passar a debitar e estornar saldo), a carteira precisa ser um alicerce confiável:
 validado, testado e com o contrato de reversão escrito.

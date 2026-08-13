@@ -555,11 +555,12 @@ as $$
   from public.prospect_location p
   join public.destination d on d.id = p.destination_id
   left join lateral (
-    -- A URL canônica da unidade é /p/<empresa>/<unidade>/<código do tipo>. Os filtros são os
-    -- da policy pública `catalog_read_location` (viva, ativa e listada) mais o tipo ativo, e
-    -- não só os do getStaticPaths do listing: 301 é permanente, então apontar para uma página
-    -- que a RLS pública recusa seria cravar no cache um endereço que o site não serve.
-    -- Ordenado por código para o redirecionamento não trocar de destino entre um build e outro.
+    -- A URL canônica da unidade é /p/<empresa>/<unidade>/<código do tipo>, e o mesmo par de
+    -- filtros do getStaticPaths do listing: tipo ativo e unidade listada. Ordenado por código
+    -- para o redirecionamento não trocar de destino entre um build e outro.
+    --
+    -- Faltou `status = 'active'` aqui, e a correção está em 20261017093000: a policy pública
+    -- exige os três, então sem ele o 301 podia apontar para página que a RLS recusa.
     select '/p/' || c.slug || '/' || l.slug || '/' || pt.code as url
     from public.location l
     join public.company c on c.id = l.company_id
@@ -568,7 +569,6 @@ as $$
     join public.parking_type pt on pt.id = cpt.parking_type_id
     where l.id = p.converted_location_id
       and l.deleted_at is null
-      and l.status = 'active'
       and l.is_listed
       and lpt.is_active
     order by pt.code
