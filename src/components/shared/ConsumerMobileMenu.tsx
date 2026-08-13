@@ -1,6 +1,18 @@
 import * as React from "react";
-import { Link } from "react-router-dom";
-import { List } from "@phosphor-icons/react";
+import { Link, useNavigate } from "react-router-dom";
+import type { IconProps } from "@phosphor-icons/react";
+import {
+  Article,
+  Gift,
+  Heart,
+  Info,
+  List,
+  MapPin,
+  Question,
+  SquaresFour,
+  Storefront,
+  Ticket,
+} from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -11,37 +23,85 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useAuth } from "@/auth/context";
+import { userInitials } from "@/lib/initials";
+import { postLogoutPath } from "@/auth/postLoginRedirect";
+import { Wordmark } from "./Brand";
 import { ThemeToggle } from "./ThemeToggle";
 
+type Icone = React.ComponentType<IconProps>;
+type ItemDeMenu = { to: string; label: string; icone: Icone };
+
 /**
- * Os rótulos são os mesmos do rodapé de propósito: dois nomes para a mesma página
- * fazem o leitor achar que são páginas diferentes.
+ * Os rótulos são os mesmos do rodapé e do dropdown do desktop de propósito: dois
+ * nomes para a mesma página fazem o leitor achar que são páginas diferentes.
  */
-const LINKS = [
-  { to: "/destinos", label: "Destinos" },
-  { to: "/como-funciona", label: "Como funciona" },
-  { to: "/blog/", label: "Blog" },
-  { to: "/ajuda", label: "Ajuda" },
-  { to: "/seja-parceiro", label: "Seja parceiro" },
+const LINKS_DO_SITE: ItemDeMenu[] = [
+  { to: "/destinos", label: "Destinos", icone: MapPin },
+  { to: "/como-funciona", label: "Como funciona", icone: Info },
+  { to: "/blog/", label: "Blog", icone: Article },
+  { to: "/ajuda", label: "Ajuda", icone: Question },
+  { to: "/seja-parceiro", label: "Seja parceiro", icone: Storefront },
+];
+
+const LINKS_DA_CONTA: ItemDeMenu[] = [
+  { to: "/account/reservas", label: "Minhas reservas", icone: Ticket },
+  { to: "/account/saved", label: "Favoritos", icone: Heart },
+  { to: "/account/indicar", label: "Indique e ganhe", icone: Gift },
 ];
 
 /**
- * Aba lateral do mobile, e a única navegação de seção do celular.
+ * Item do menu, com ícone à esquerda.
  *
- * A barra fixa de baixo saiu: ocupava 64px de tela em toda página e repartia a
- * navegação entre ela e o header, o que a avaliação de uso apontou como confuso.
- * Aqui os links moram num lugar só, no canto onde a mão já procura menu, e a
- * tela inteira volta a ser conteúdo.
+ * O ícone não é enfeite: numa lista de nove itens ele é o que deixa o dedo achar
+ * o alvo sem ler a lista inteira, e é o que as duas referências (QuintoAndar e
+ * Airbnb) fazem. `min-h-11` mantém o alvo de toque acessível.
+ */
+function Item({ to, label, icone: Icone }: ItemDeMenu) {
+  return (
+    <SheetClose asChild>
+      <Link
+        to={to}
+        className="flex min-h-11 items-center gap-3 rounded-sm px-3 py-2.5 text-body-md text-ink transition-colors hover:bg-surface-soft"
+      >
+        <Icone className="h-5 w-5 shrink-0 text-muted" aria-hidden />
+        {label}
+      </Link>
+    </SheetClose>
+  );
+}
+
+/**
+ * Aba lateral do mobile, e a **única** porta de navegação do celular.
  *
- * Vale logado e deslogado. Muda só o rodapé do painel: quem já entrou tem a
- * conta no avatar do header, então o "Entrar" não aparece.
+ * Duas coisas foram parar aqui dentro, e o motivo das duas é o mesmo: no celular
+ * cada menu a mais é um lugar a mais para procurar.
  *
- * Só no mobile: no tablet para cima os mesmos destinos já estão no header e no
- * rodapé.
+ * A barra fixa de baixo saiu porque ocupava 64px de tela em toda página e
+ * repartia a navegação com o header. Depois o avatar do header também virou
+ * gatilho desta aba, porque ele abria um dropdown de conta ao lado de um menu de
+ * seções: dois botões colados, cada um com metade dos destinos, e nenhum com
+ * tudo.
+ *
+ * Por isso o gatilho é um só e muda de cara conforme a sessão: avatar para quem
+ * entrou, ícone de menu para quem não entrou. O conteúdo é que se ajusta.
+ *
+ * O formato segue o menu do QuintoAndar: marca no topo, bloco de identidade com
+ * atalho para a conta, itens com ícone, e uma régua separando a conta do site.
+ *
+ * Só no mobile. No tablet para cima o header tem largura para o dropdown de
+ * conta e os links, e nada disso muda.
  */
 export function ConsumerMobileMenu() {
   const [aberto, setAberto] = React.useState(false);
-  const { session } = useAuth();
+  const { session, effectiveRole, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  async function sair() {
+    setAberto(false);
+    const destino = postLogoutPath(effectiveRole);
+    await signOut();
+    navigate(destino, { replace: true });
+  }
 
   return (
     <Sheet open={aberto} onOpenChange={setAberto}>
@@ -51,7 +111,13 @@ export function ConsumerMobileMenu() {
           aria-label="Abrir menu"
           className="flex h-10 w-10 items-center justify-center rounded-full border border-hairline text-ink transition-colors hover:bg-surface-soft tablet:hidden"
         >
-          <List className="h-5 w-5" aria-hidden />
+          {session ? (
+            <span className="text-caption-sm font-bold">
+              {userInitials(session.fullName, session.email)}
+            </span>
+          ) : (
+            <List className="h-5 w-5" aria-hidden />
+          )}
         </button>
       </SheetTrigger>
 
@@ -64,11 +130,11 @@ export function ConsumerMobileMenu() {
       <SheetContent
         side="right"
         /*
-          O foco automático do Radix estava caindo no botão de tema, o último
-          controle do painel, e abrir o menu acendia um anel de foco num alvo que
-          ninguém escolheu. Mandando o foco para o próprio painel, o teclado
-          continua entrando no diálogo (o Radix já dá `tabindex=-1` a ele) e a
-          primeira tabulação segue para "Destinos", que é o topo da lista.
+          O foco automático do Radix estava caindo no último controle do painel, e
+          abrir o menu acendia um anel de foco num alvo que ninguém escolheu.
+          Mandando o foco para o próprio painel, o teclado continua entrando no
+          diálogo (o Radix já dá `tabindex=-1` a ele) e a primeira tabulação segue
+          para o topo da lista.
         */
         onOpenAutoFocus={(e) => {
           e.preventDefault();
@@ -77,31 +143,66 @@ export function ConsumerMobileMenu() {
         /* Sem anel no container: o foco aqui é programático, para o teclado
            entrar no diálogo, e desenhar um contorno em volta do painel inteiro
            parece erro de layout. Os controles de dentro mantêm o anel deles. */
-        className="w-[320px] focus:outline-none"
+        className="w-[320px] overflow-y-auto focus:outline-none"
       >
         <SheetHeader>
-          <SheetTitle>Menu</SheetTitle>
+          <Wordmark height={20} />
+          {/* O Radix exige título para o leitor de tela; na tela quem nomeia o
+              painel é a marca. */}
+          <SheetTitle className="sr-only">Menu</SheetTitle>
         </SheetHeader>
 
+        {/* Bloco de identidade: diz de quem é a conta aberta e já leva para ela,
+            que é o atalho que o avatar sozinho não oferecia. */}
+        {session && (
+          <SheetClose asChild>
+            <Link
+              to="/account"
+              className="mx-3 mt-4 flex items-center gap-3 rounded-sm px-3 py-2.5 transition-colors hover:bg-surface-soft"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-strong text-caption-sm font-bold text-ink">
+                {userInitials(session.fullName, session.email)}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-body-md font-semibold text-ink">
+                  {session.firstName ?? session.fullName ?? session.email}
+                </span>
+                <span className="block text-caption-sm text-muted">Ver conta</span>
+              </span>
+            </Link>
+          </SheetClose>
+        )}
+
         {/* Sem régua entre os itens: em lista curta a linha divide o que o espaço
-            já separa, e ainda briga com a borda do próprio painel. */}
-        <nav className="mt-4 flex flex-col px-3">
-          {LINKS.map((l) => (
-            <SheetClose asChild key={l.to}>
-              <Link
-                to={l.to}
-                className="rounded-sm px-3 py-3 text-body-md text-ink transition-colors hover:bg-surface-soft"
-              >
-                {l.label}
-              </Link>
-            </SheetClose>
+            já separa. Ela só entra entre a conta e o site, que é onde separa duas
+            naturezas, do mesmo jeito que as referências fazem. */}
+        <nav className="mt-2 flex flex-col px-3">
+          {session && (
+            <>
+              {LINKS_DA_CONTA.map((l) => (
+                <Item key={l.to} {...l} />
+              ))}
+              {effectiveRole === "hub_admin" && (
+                <Item to="/manager" label="Ir pro Manager" icone={SquaresFour} />
+              )}
+              {effectiveRole === "company_operator" && (
+                <Item to="/operator" label="Ir pro Operator" icone={SquaresFour} />
+              )}
+              <hr className="my-3 border-hairline" />
+            </>
+          )}
+
+          {LINKS_DO_SITE.map((l) => (
+            <Item key={l.to} {...l} />
           ))}
         </nav>
 
         <div className="mt-auto flex flex-col gap-4 p-6">
-          {/* Quem já entrou tem a conta no avatar do header; repetir "Entrar"
-              aqui só confundiria. */}
-          {!session && (
+          {session ? (
+            <Button variant="outline" className="w-full" onClick={() => void sair()}>
+              Sair
+            </Button>
+          ) : (
             <SheetClose asChild>
               <Button asChild className="w-full">
                 <Link to="/login">Entrar</Link>

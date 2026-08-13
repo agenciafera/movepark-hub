@@ -226,7 +226,9 @@ export function ConsumerTopbar() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  className="flex items-center gap-2 rounded-full border border-hairline px-2 py-1 hover:shadow-tier"
+                  /* Só no desktop: no mobile o avatar é o gatilho da aba lateral,
+                     e o dropdown aqui daria dois menus colados no mesmo canto. */
+                  className="hidden items-center gap-2 rounded-full border border-hairline px-2 py-1 hover:shadow-tier tablet:flex"
                   aria-label="Menu da conta"
                 >
                   <Avatar className="h-7 w-7">

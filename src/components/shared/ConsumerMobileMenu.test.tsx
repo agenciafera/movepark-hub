@@ -28,19 +28,73 @@ describe("ConsumerMobileMenu", () => {
   });
 
   /**
-   * O menu é a navegação do mobile desde que a barra de baixo saiu, então ele
-   * vale logado também. Quem já entrou tem a conta no avatar do header, e
-   * repetir "Entrar" aqui só confundiria.
+   * O avatar do header abria um dropdown de conta ao lado deste menu: dois botões
+   * colados, cada um com metade dos destinos e nenhum com tudo. Agora o gatilho é
+   * um só, e é aqui que a conta e o site convivem.
    */
-  it("com sessão, os mesmos links continuam, sem o Entrar", async () => {
+  it("com sessão, a conta entra no mesmo painel dos links do site", async () => {
     renderWithProviders(<ConsumerMobileMenu />, {
       auth: mockAuth({ session: mockSession("customer") }),
     });
     await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
 
+    for (const nome of ["Minhas reservas", "Favoritos", "Indique e ganhe"]) {
+      expect(screen.getByRole("link", { name: nome })).toBeInTheDocument();
+    }
     expect(screen.getByRole("link", { name: "Destinos" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Seja parceiro" })).toBeInTheDocument();
+    // Quem já entrou tem "Sair", não "Entrar".
+    expect(screen.getByRole("button", { name: "Sair" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Entrar" })).toBeNull();
+  });
+
+  /** O avatar sozinho não dizia de quem era a conta nem levava a ela. */
+  it("com sessão, o topo identifica quem entrou e leva para a conta", async () => {
+    renderWithProviders(<ConsumerMobileMenu />, {
+      auth: mockAuth({ session: mockSession("customer", { firstName: "Diego" }) }),
+    });
+    await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
+
+    const identidade = screen.getByRole("link", { name: /Diego/ });
+    expect(identidade).toHaveAttribute("href", "/account");
+    expect(identidade).toHaveTextContent("Ver conta");
+  });
+
+  /**
+   * O papel do usuário decide o atalho de painel: sem isso, um hub_admin no
+   * celular não tem por onde chegar ao Manager.
+   */
+  it("hub_admin ganha o atalho do Manager, e o cliente não", async () => {
+    const { unmount } = renderWithProviders(<ConsumerMobileMenu />, {
+      auth: mockAuth({
+        session: mockSession("hub_admin"),
+        effectiveRole: "hub_admin",
+      }),
+    });
+    await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
+    expect(screen.getByRole("link", { name: "Ir pro Manager" })).toHaveAttribute(
+      "href",
+      "/manager",
+    );
+    unmount();
+
+    renderWithProviders(<ConsumerMobileMenu />, {
+      auth: mockAuth({ session: mockSession("customer"), effectiveRole: "customer" }),
+    });
+    await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
+    expect(screen.queryByRole("link", { name: "Ir pro Manager" })).toBeNull();
+  });
+
+  /** Numa lista de oito itens o ícone é o que deixa o dedo achar o alvo. */
+  it("todo item da lista tem ícone", async () => {
+    const { container } = renderWithProviders(<ConsumerMobileMenu />, {
+      auth: mockAuth({ session: mockSession("customer") }),
+    });
+    await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
+
+    const itens = [...container.ownerDocument.querySelectorAll("nav a")];
+    expect(itens.length).toBeGreaterThan(5);
+    for (const item of itens) expect(item.querySelector("svg")).not.toBeNull();
   });
 
   /** Só no mobile: no tablet para cima os mesmos destinos já estão no header. */
