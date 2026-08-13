@@ -146,8 +146,10 @@ function Item({ to, label, icone: Icone }: ItemDeMenu) {
  * O formato segue o menu do QuintoAndar: marca no topo, bloco de identidade com
  * atalho para a conta, itens com ícone, e uma régua separando a conta do site.
  *
- * Só no mobile. No tablet para cima o header tem largura para o dropdown de
- * conta e os links, e nada disso muda.
+ * Vale do celular até o tablet. A virada é em 1128, e não em 744: entre os dois
+ * a barra de busca completa não cabe no header, e os campos dela se sobrepunham.
+ * Só a partir de 1128 o header tem largura para a busca inteira, o dropdown de
+ * conta e os links soltos.
  */
 export function ConsumerMobileMenu() {
   const [aberto, setAberto] = React.useState(false);
@@ -170,7 +172,7 @@ export function ConsumerMobileMenu() {
           /* Violeta preenchido: é a única porta de navegação do celular, e um
              botão de contorno cinza no canto some no meio do header branco. O
              contrato reserva o violeta para elemento acionável, que é o caso. */
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-mp-primary text-white transition-colors hover:bg-mp-primary-active tablet:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-mp-primary text-white transition-colors hover:bg-mp-primary-active desktop:hidden"
         >
           {session ? (
             <span className="text-caption-sm font-bold">

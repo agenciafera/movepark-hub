@@ -177,10 +177,12 @@ describe("ConsumerMobileMenu", () => {
     expect(painel.className).toContain("data-[state=closed]:[animation-duration:200ms]");
   });
 
-  /** Só no mobile: no tablet para cima os mesmos destinos já estão no header. */
-  it("o gatilho não aparece a partir do tablet", () => {
+  /** A virada é em 1128: abaixo disso o header não comporta a busca inteira. */
+  it("o gatilho some só a partir do desktop", () => {
     renderWithProviders(<ConsumerMobileMenu />);
-    expect(screen.getByRole("button", { name: "Abrir menu" }).className).toContain("tablet:hidden");
+    expect(screen.getByRole("button", { name: "Abrir menu" }).className).toContain(
+      "desktop:hidden",
+    );
   });
 
   /**

@@ -66,7 +66,7 @@ function DestinosMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="hidden items-center gap-1 rounded-sm px-2 py-1.5 text-body-sm text-ink hover:bg-surface-soft tablet:inline-flex">
+        <button className="hidden items-center gap-1 rounded-sm px-2 py-1.5 text-body-sm text-ink hover:bg-surface-soft desktop:inline-flex">
           Destinos <CaretDown className="h-4 w-4" />
         </button>
       </DropdownMenuTrigger>
@@ -180,11 +180,11 @@ export function ConsumerTopbar() {
           {/* Busca real e persistente no header (sticky). Na home ela entra quando a do hero sobe. */}
           {mostrarBusca && (
             <>
-              {/* Desktop/tablet: a SearchBarPill funcional, semeada com a busca atual e preservando
+              {/* Desktop: a SearchBarPill funcional, semeada com a busca atual e preservando
                 os filtros já aplicados (estacionamento, comodidades, ordenação…). */}
               <SearchBarPill
                 variant="compact"
-                className="hidden w-full max-w-3xl tablet:flex"
+                className="hidden w-full max-w-3xl desktop:flex"
                 key={`${destParam ?? ""}|${pointParam ?? ""}|${fromParam ?? ""}|${toParam ?? ""}|${vehicleParam}`}
                 initialDest={destParam}
                 initialPoint={pointParam}
@@ -193,12 +193,17 @@ export function ConsumerTopbar() {
                 initialVehicle={vehicleParam}
                 preserveParams
               />
-              {/* Mobile: pill compacta que abre o modal de busca por cima da página (estilo Airbnb),
-                sem voltar pra home. */}
+              {/*
+                Até o desktop, a pill compacta que abre o modal de busca por cima
+                da página (estilo Airbnb), sem voltar pra home. A barra completa
+                só entra em 1128: entre 744 e 1128 os campos dela se sobrepunham,
+                e "Onde", "Check-in", "Check-out" e "Veículo" saíam empilhados um
+                por cima do outro.
+              */}
               <button
                 type="button"
                 onClick={() => setSearchOpen(true)}
-                className="flex h-12 w-full items-center gap-3 rounded-full border border-hairline bg-canvas px-4 text-body-sm text-muted shadow-tier transition-shadow hover:shadow-tier tablet:hidden"
+                className="flex h-12 w-full items-center gap-3 rounded-full border border-hairline bg-canvas px-4 text-body-sm text-muted shadow-tier transition-shadow hover:shadow-tier desktop:hidden"
               >
                 <MagnifyingGlass className="h-4 w-4 shrink-0" />
                 {/* O rótulo curto é o mesmo do título do modal que este botão abre.
@@ -211,7 +216,7 @@ export function ConsumerTopbar() {
                 clicável, o content é full-screen e opaco: cobre a página toda e não sobra brecha
                 pro clique vazar pro fundo. */}
               <Dialog open={searchOpen} onOpenChange={setSearchOpen} modal={false}>
-                <DialogContent className="inset-0 left-0 top-0 h-full max-h-none w-full max-w-none translate-x-0 translate-y-0 content-start gap-4 rounded-none border-0 tablet:hidden">
+                <DialogContent className="inset-0 left-0 top-0 h-full max-h-none w-full max-w-none translate-x-0 translate-y-0 content-start gap-4 rounded-none border-0 desktop:hidden">
                   <DialogHeader>
                     <DialogTitle>Buscar vaga</DialogTitle>
                   </DialogHeader>
@@ -235,13 +240,12 @@ export function ConsumerTopbar() {
         <div className="flex items-center gap-2">
           {!session && (
             <>
-              <Button variant="ghost" size="sm" className="hidden tablet:inline-flex" asChild>
+              <Button variant="ghost" size="sm" className="hidden desktop:inline-flex" asChild>
                 <Link to="/seja-parceiro">Seja parceiro</Link>
               </Button>
-              {/* No mobile o "Entrar" mora dentro da aba lateral: são 375px de
-                  largura, e o header não comporta botão e menu sem espremer a
-                  busca do meio. */}
-              <Button size="sm" variant="primary" className="hidden tablet:inline-flex" asChild>
+              {/* Até o desktop o "Entrar" mora dentro da aba lateral: o header
+                  não comporta botão e menu sem espremer a busca do meio. */}
+              <Button size="sm" variant="primary" className="hidden desktop:inline-flex" asChild>
                 <Link to="/login">Entrar</Link>
               </Button>
             </>
@@ -253,7 +257,7 @@ export function ConsumerTopbar() {
                 <button
                   /* Só no desktop: no mobile o avatar é o gatilho da aba lateral,
                      e o dropdown aqui daria dois menus colados no mesmo canto. */
-                  className="hidden items-center gap-2 rounded-full border border-hairline px-2 py-1 hover:shadow-tier tablet:flex"
+                  className="hidden items-center gap-2 rounded-full border border-hairline px-2 py-1 hover:shadow-tier desktop:flex"
                   aria-label="Menu da conta"
                 >
                   <Avatar className="h-7 w-7">
@@ -301,9 +305,9 @@ export function ConsumerTopbar() {
           )}
 
           {/*
-            A aba lateral vale logado e deslogado, e é a navegação do mobile desde
-            que a barra de baixo saiu. Fica depois do avatar de propósito: é o
-            último alvo da direita, no canto onde a mão já procura menu.
+            A aba lateral vale logado e deslogado, e é a navegação de tudo abaixo
+            do desktop desde que a barra de baixo saiu. Fica por último de
+            propósito: é o alvo mais à direita, no canto onde a mão procura menu.
           */}
           <ConsumerMobileMenu />
         </div>
