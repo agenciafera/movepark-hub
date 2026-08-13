@@ -167,7 +167,7 @@ booking_coupon  (pivot)
 |---|---|
 | `company`, `location`, `parking_type`, `company_parking_type`, `location_parking_type`, `add_on_service`, `location_add_on_service`, `coupon` | Leitura pública (`anon` + `authenticated`) para registros ativos |
 | `destination` | Leitura pública (`SELECT USING true`); escrita só `hub_admin` (`is_hub_admin()`). Filtro de publicação (`is_published`) é na query, não na RLS — ver destinations.md |
-| `profiles` | Owner-only: SELECT e UPDATE apenas para `auth.uid() = id` |
+| `profiles` | Owner-only: SELECT e UPDATE apenas para `auth.uid() = id`. **O UPDATE é cortado por coluna, não só por linha:** `role` e `deleted_at` saíram do grant de `authenticated` em `20261017103000`, porque policy corta linha e o dono editava a linha inteira, inclusive o próprio papel. Trocar papel é a RPC `admin_set_user_role` (gate `is_hub_admin()`); apagar conta é a RPC de anonimização. Ver [permissions.md](./permissions.md) |
 | `vehicle` | Owner-only: todas as operações para `profile_id = auth.uid()` |
 | `booking` | Owner-only: SELECT/INSERT/UPDATE para `profile_id = auth.uid()` |
 | `booking_item`, `payment`, `booking_coupon` | Acesso via ownership da `booking` pai |

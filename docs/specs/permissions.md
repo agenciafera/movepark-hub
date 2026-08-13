@@ -8,7 +8,8 @@ API** num único vocabulário: **o escopo**. "A mesma permissão = o mesmo escop
 Duas camadas, independentes:
 
 - **`user_role`** (`hub_admin` / `company_operator` / `customer`) — define a **área** do app
-  (`/manager`, `/operator`, consumidor). Inalterada.
+  (`/manager`, `/operator`, consumidor). Inalterada como modelo, mas **a coluna deixou de ser
+  gravável pelo próprio usuário** (ver abaixo).
 - **`company_role`** — papel **dentro da empresa** (`profile_company.role`). 4 presets fixos:
 
 | Papel (enum) | Rótulo | Resumo |
@@ -25,6 +26,45 @@ Duas camadas, independentes:
 > própria conta (ex.: **exclusão da conta**, E0.9) **não** são company-scoped e **não** têm escopo
 > no catálogo. A autorização é `auth.uid() = alvo` (a RPC só toca a linha do próprio usuário). Ver
 > [account-deletion.md](./customer/account-deletion.md).
+
+### `profiles.role` não é gravável por quem ele autoriza (13/08/2026)
+
+> **Autorização não pode ser escrita por quem ela autoriza.** É o mesmo princípio que o ADR-006
+> aplica à credencial, pela mesma razão.
+
+Até 13/08/2026 qualquer pessoa criava conta no `/login` (passwordless, aberto) e virava
+`hub_admin` com um `PATCH /rest/v1/profiles?id=eq.<próprio uuid>` mandando `{"role":"hub_admin"}`.
+Daí em diante passava em todo gate `is_hub_admin()` do produto: o `/manager` inteiro, as RLS de
+escrita de `location` e `company`, cupons, blog e as RPCs `manager_*`.
+
+**Por que a RLS não segurava:** policy corta **linha**, não **coluna**. As duas policies de UPDATE
+de `profiles` dizem "o dono edita a própria linha", e isso está certo; faltava alguém dizer
+**quais colunas**. Como o baseline concede `ALL ON TABLES` a `authenticated` por default
+privilege, o dono editava a linha inteira.
+
+**A correção** (`20261017103000_profiles_role_not_self_writable.sql`) é a mesma de Q-021, onde o
+telefone do lote mapeado já tinha provado que RLS não resolve corte de coluna:
+
+| Camada | O que ficou |
+|---|---|
+| Grant | `revoke update on profiles from anon, authenticated`, e regrant por coluna só em `first_name`, `last_name`, `full_name`, `avatar_url`, `birth_date`, `tax_id` e `preferences` |
+| RPC | `admin_set_user_role(p_user_id, p_role)`, `SECURITY DEFINER`, gate `is_hub_admin()` |
+| Teste | `supabase/tests/profiles_role_guard.test.sql`, com `has_column_privilege` como guard de regressão contra um regrant futuro |
+
+Ficam de fora do regrant `role` e `deleted_at` (apagar conta é a RPC de anonimização), mais `id`,
+`created_at` e `updated_at`.
+
+**Ninguém altera o próprio papel**, nem para cima nem para baixo. Para cima é a falha em si. Para
+baixo é o jeito mais fácil de trancar o painel: o último admin se rebaixa, não sobra quem promova
+ninguém, e sair disso exige acesso direto ao banco. Papel é mudança de duas pessoas.
+
+**O que não mudou:** as Edges `invite-company-member` e `approve-partner` promovem a
+`company_operator` com o client de `service_role`, então nunca dependeram do grant de
+`authenticated` e seguem iguais. O trigger de `auth.users` cria o perfil com o default `customer`.
+
+**Fica em aberto:** `profiles` tem quatro policies onde duas bastariam (duas de select e duas de
+update, uma delas sem `TO`). Não é a falha, porque policy nenhuma corta coluna, mas é confusão
+esperando para virar erro de leitura.
 
 ## Vocabulário de escopos
 

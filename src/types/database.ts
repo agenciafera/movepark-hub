@@ -4310,6 +4310,13 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_set_user_role: {
+        Args: {
+          p_role: Database["public"]["Enums"]["user_role"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       anonymize_own_account: { Args: never; Returns: undefined }
       api_assert_lpt_company: {
         Args: { p_company_id: string; p_lpt_id: string }

@@ -1,9 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import type { Database } from "@/types/database";
 import type { CompanyRole, Profile, UserRole } from "@/types/domain";
-
-type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
 
 export type UserListItem = Profile & {
   companies: { id: string; name: string }[];
@@ -53,12 +50,26 @@ export function useUsers() {
   });
 }
 
+/**
+ * Troca o papel de plataforma de um usuário.
+ *
+ * Vai por RPC, e não por `update` na tabela, porque `profiles.role` saiu do alcance de
+ * `authenticated`: a coluna era gravável pelo dono da própria linha, então qualquer conta
+ * criada no `/login` virava `hub_admin` com um PATCH no próprio perfil. RLS corta linha,
+ * coluna é grant, e o grant foi revogado em `20261017103000`. A RPC é o caminho legítimo
+ * que sobra, gateada por `is_hub_admin()` no servidor.
+ *
+ * Ela recusa alterar o próprio papel: o último admin que se rebaixa tranca o painel para
+ * todo mundo, e sair desse estado exige acesso direto ao banco.
+ */
 export function useUpdateUserRole() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, role }: { id: string; role: UserRole }) => {
-      const patch: ProfileUpdate = { role };
-      const { error } = await supabase.from("profiles").update(patch).eq("id", id);
+      const { error } = await supabase.rpc("admin_set_user_role", {
+        p_user_id: id,
+        p_role: role,
+      });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: usersKeys.all }),

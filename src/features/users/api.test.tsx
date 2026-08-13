@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { falha, renderMutation, tabela } from "@/test/msw/supabase";
+import { falha, renderMutation, rpc, tabela } from "@/test/msw/supabase";
 import { useLinkUserCompany, useUnlinkUserCompany, useUpdateUserRole } from "./api";
 
 /**
@@ -8,20 +8,24 @@ import { useLinkUserCompany, useUnlinkUserCompany, useUpdateUserRole } from "./a
  */
 
 describe("useUpdateUserRole", () => {
-  it("altera SÓ o papel, e só da pessoa informada", async () => {
-    // O patch tem que ser mínimo: um update que carregasse o perfil inteiro
-    // sobrescreveria nome e preferências com o que estava na tela.
+  it("vai pela RPC, e não por update na tabela", async () => {
+    // É o ponto inteiro de 20261017103000: `profiles.role` saiu do alcance de
+    // `authenticated`, porque a coluna era gravável pelo dono da própria linha e
+    // qualquer conta virava hub_admin com um PATCH no próprio perfil. Se alguém
+    // reescrever este hook como `.from("profiles").update({ role })`, a tela quebra
+    // com 42501 em produção, e é este teste que avisa antes.
+    const chamada = rpc("admin_set_user_role", { json: null });
     const patch = tabela("profiles", "patch", { json: [] });
 
     const { result } = renderMutation(() => useUpdateUserRole());
     await result.current.mutateAsync({ id: "u9", role: "hub_admin" });
 
-    expect(patch.ultimoBody).toEqual({ role: "hub_admin" });
-    expect(patch.chamadas[0].url).toContain("id=eq.u9");
+    expect(chamada.ultimoBody).toEqual({ p_user_id: "u9", p_role: "hub_admin" });
+    expect(patch.chamadas).toHaveLength(0);
   });
 
   it("propaga a recusa do servidor", async () => {
-    falha("tabela", "profiles", 403, "sem permissão");
+    falha("rpc", "admin_set_user_role", 403, "Sem permissão para alterar o papel de um usuário.");
 
     const { result } = renderMutation(() => useUpdateUserRole());
     await expect(
