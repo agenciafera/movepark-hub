@@ -1,7 +1,7 @@
 {
   "scenario_id": "rota-inexistente-jornada",
   "start_url": "/essa-rota-nao-existe",
-  "task": "Passo 1: verifique que a url NAO contem mais \"essa-rota-nao-existe\". Passo 2: verifique que a pagina exibe o texto \"Estacionamentos Populares\". Passo 3: verifique que a pagina exibe o texto \"O que voce tem em toda reserva\" (procure por \"em toda reserva\"). Passo 4: verifique que a barra do topo exibe o texto \"Entrar\", ou seja, a sessao continua anonima. Passo 5: clique no link \"Entrar\" da barra do topo. Passo 6: verifique que a url agora contem \"/login\". Passo 7: verifique que a pagina de login exibe o texto \"Entre na Movepark\".",
+  "task": "Passo 1: verifique que a url ainda contem \"essa-rota-nao-existe\". Passo 2: verifique que a pagina exibe o texto \"Essa página não existe\". Passo 3: verifique que a barra do topo exibe o texto \"Entrar\", ou seja, a pagina de erro fica dentro do site e a sessao continua anonima. Passo 4: clique no link \"Buscar estacionamento\" da pagina de erro. Passo 5: verifique que a url agora contem \"/search\". Passo 6: volte para tras no navegador e clique no link \"Entrar\" da barra do topo. Passo 7: verifique que a url agora contem \"/login\" e que a pagina exibe o texto \"Entre na Movepark\".",
   "tags": [
     "jornada",
     "publico",
@@ -11,8 +11,8 @@
   "hints": [
     "Sao passos numerados: execute cada um como uma acao propria do plano, na ordem.",
     "Para checar texto use text_contains com selector body. Para o valor de um input use selector_value. Para checar endereco use a postcondicao url com contains, nunca um seletor da pagina de destino.",
-    "O catch-all de rotas manda quem erra o endereco para a home, em vez de mostrar um 404 seco.",
-    "Os passos 2 e 3 provam que a home carregou de verdade, e nao so que a url mudou.",
-    "Do passo 4 em diante a jornada segue como um visitante anonimo faria: da home para o login."
+    "Quem erra o endereco recebe uma pagina de 404 dentro do site, com header e rodape, e nao um 404 seco nem um redirecionamento para a home.",
+    "O passo 3 prova que a pagina de erro esta dentro do shell do consumidor, que e o que evita o mismatch de hidratacao.",
+    "Do passo 4 em diante a jornada segue o caminho de saida que a pagina oferece: para a busca, e depois para o login."
   ]
 }

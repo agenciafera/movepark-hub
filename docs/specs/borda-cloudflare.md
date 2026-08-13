@@ -1,6 +1,6 @@
 # A borda: worker, assets e a regra de 404
 
-**Status:** documentado · **Fonte da verdade:** [`src/worker.ts`](../../src/worker.ts) e [`wrangler.jsonc`](../../wrangler.jsonc)
+**Status:** 404 real implementado (13/08/2026) · **Fonte da verdade:** [`src/worker.ts`](../../src/worker.ts) e [`wrangler.jsonc`](../../wrangler.jsonc)
 
 Este arquivo existe porque a borda é o ponto mais sensível do projeto e o único cuja verdade
 não está inteira no repositório: metade dela é comportamento do Cloudflare Workers Assets,
@@ -110,9 +110,24 @@ Content-Type errado ou com JSON inválido volta ao comportamento de hoje, nunca 
 Consequência prática: **nada precisa ser mexido no painel do Cloudflare.** A borda inteira é o
 `worker.ts` mais um manifesto gerado no build.
 
+### Como ficou
+
+| Peça | Onde |
+|---|---|
+| Manifesto dos caminhos que existem no build | [`scripts/write-paths-manifest.mjs`](../../scripts/write-paths-manifest.mjs), roda no `bun run build` |
+| Padrões de rota de app que continuam em 200 | `ROTAS_DE_APP` em [`src/worker.ts`](../../src/worker.ts) |
+| Checagem e resposta de 404 | `caminhosConhecidos` e `pagina404`, antes da negociação de markdown |
+| Página servida | [`src/routes/not-found.tsx`](../../src/routes/not-found.tsx), rota `/404` e catch-all, ambos dentro do `ConsumerAppShell` |
+| Cenários de navegador | `e2e/windup/pagina-404.json`, `rota-inexistente.json` e `rota-inexistente-jornada.json` |
+
+O manifesto tem 264 caminhos. Fora dele, por blocklist explícita, as oito telas que o SSG
+emite na raiz e os arquivos de configuração do Cloudflare (`_headers` e companhia).
+
 ### Armadilhas que a implementação precisa respeitar
 
-Cada uma destas já anulou uma tentativa de implementação.
+Cada uma destas já anulou uma tentativa de implementação, e todas estão travadas em teste
+no bloco `describe("404 real de página")` de `src/worker.test.ts`, que fica no fim do arquivo
+de propósito (o cache do manifesto vive no escopo do módulo).
 
 1. **Buscar `/404.html` no ASSETS devolve 307 com corpo vazio.** Medido acima. O worker
    carimbaria status 404 num corpo vazio, que é a tela branca que a página de 404 existe para

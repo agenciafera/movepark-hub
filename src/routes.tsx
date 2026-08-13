@@ -35,6 +35,7 @@ import VoucherValidatePage from "@/routes/voucher-validate";
 import DestinoPage from "@/routes/destino";
 import EstacionamentoMapeadoPage from "@/routes/estacionamento-mapeado";
 import DestinosPage from "@/routes/destinos";
+import NotFoundPage from "@/routes/not-found";
 import BlogListingPage, { type BlogListingData } from "@/routes/blog";
 import BlogPostPage from "@/routes/blog-post";
 import SobrePage from "@/routes/sobre";
@@ -515,6 +516,14 @@ export const routes: RouteRecord[] = [
               { path: "/bookings/:code", element: <BookingDetailPage /> },
             ],
           },
+          // 404 de verdade, nas duas metades. `/404` existe como página para o build emitir
+          // `dist/404.html`, que é o corpo que o worker serve com status 404; o catch-all
+          // renderiza o MESMO componente na navegação interna. As duas moram aqui dentro, e
+          // não fora do shell, porque precisam render a árvore idêntica: se o HTML servido
+          // vier com header e a árvore hidratada não, o React reclama de mismatch.
+          // Ver docs/specs/borda-cloudflare.md.
+          { path: "/404", element: <NotFoundPage /> },
+          { path: "*", element: <NotFoundPage /> },
         ],
       },
 
@@ -670,7 +679,6 @@ export const routes: RouteRecord[] = [
         ],
       },
 
-      { path: "*", element: <Navigate to="/" replace /> },
     ],
   },
 ];

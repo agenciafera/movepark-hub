@@ -337,24 +337,171 @@ function responderProspect(alvo: ProspectAlvo | null): Response | null {
   return alvo.permanent ? redirect301(alvo.target) : redirect302(alvo.target);
 }
 
+/**
+ * Padrões de rota do app que NÃO têm HTML próprio no `dist` e precisam continuar em 200.
+ *
+ * Esta lista é a razão de a regra de 404 morar no worker e não no `not_found_handling` do
+ * wrangler: o Workers Assets só sabe se existe arquivo, e quem sabe o que é rota de app é o
+ * `routes.tsx`. Medido em produção: `/checkout/MP-TESTE123`, `/bookings/...`,
+ * `/account/reservas/...`, `/operator/pricing` e `/manager/companies/<id>/locations` todos
+ * respondem hoje com o HTML da home, byte a byte, porque vivem do fallback SPA. Enterrar
+ * qualquer um deles em 404 não é perda de ranking, é queda de produção.
+ *
+ * As três famílias de conteúdo (`/p/`, `/destinos/`, `/estacionamentos/`) entram mesmo tendo
+ * HTML pré-renderizado, porque o manifesto nasce no build e o site é SSG: publicar um
+ * destino no Manager o deixaria em 404 até alguém empurrar um commit. `/estacionamentos/`
+ * com dois segmentos também precisa continuar abrindo, porque são as 24 páginas de aeroporto
+ * do WordPress e o checklist de migração pede 301 para elas, não 404.
+ *
+ * `/blog` inteiro fica de fora da checagem: ele já tem regra de 404 própria, com segunda
+ * opinião no banco, e duas autoridades sobre a mesma URL só criam divergência.
+ */
+const ROTAS_DE_APP: RegExp[] = [
+  /^\/checkout(\/.*)?$/,
+  /^\/bookings(\/.*)?$/,
+  /^\/account(\/.*)?$/,
+  /^\/manager(\/.*)?$/,
+  /^\/operator(\/.*)?$/,
+  /^\/onboarding$/,
+  /^\/voucher(\/.*)?$/,
+  /^\/blog(\/.*)?$/,
+  /^\/p\/[^/]+\/[^/]+\/[^/]+$/,
+  /^\/destinos(\/[^/]+)?$/,
+  /^\/estacionamentos(\/[^/]+){0,2}$/,
+];
+
+export function ehRotaDeApp(pathname: string): boolean {
+  return ROTAS_DE_APP.some((r) => r.test(pathname));
+}
+
+/**
+ * Caminhos que existem como arquivo no build, em cache por isolate.
+ *
+ * Mesmo desenho do `blogSlugs`: só o sucesso entra em cache, e manifesto ausente, com
+ * Content-Type errado ou com JSON quebrado devolve `null`. Esse fail-open é obrigatório, não
+ * cortesia: sem ele, um build sem o manifesto derrubaria o site inteiro em 404. Com ele, o
+ * pior caso é voltar ao comportamento de hoje.
+ */
+let caminhosCache: Set<string> | undefined;
+
+async function caminhosConhecidos(env: Env, url: URL): Promise<Set<string> | null> {
+  if (caminhosCache) return caminhosCache;
+  try {
+    const res = await env.ASSETS.fetch(new Request(new URL("/paths-manifest.json", url)));
+    const tipo = res.headers.get("Content-Type") ?? "";
+    if (!res.ok || !tipo.includes("json")) return null;
+    caminhosCache = new Set((await res.json()) as string[]);
+    return caminhosCache;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Corpo da página de 404, com status 404.
+ *
+ * Busca `/404` SEM extensão de propósito. O `html_handling` do Workers Assets é
+ * `auto-trailing-slash` por padrão, e pedir `/404.html` devolve 307 com corpo VAZIO: o
+ * worker carimbaria 404 numa tela branca, que é justamente o que esta página existe para
+ * evitar. Medido em produção: `/sobre.html` responde 307 para `/sobre`.
+ *
+ * Fala com o ASSETS direto, nunca reentrando em `serve()`, senão `/404` entraria em laço.
+ * Se `dist/404.html` sumir do build, o ASSETS cai no fallback SPA e devolve o index: a
+ * resposta ainda sai com status 404 e um corpo que hidrata no catch-all, então o pior caso
+ * continua correto.
+ *
+ * `no-store` porque a migração do WordPress está em curso: sem ele, uma URL que passa a
+ * existir fica presa em 404 na borda e no navegador.
+ */
+async function pagina404(env: Env, url: URL): Promise<Response> {
+  const res = await env.ASSETS.fetch(new Request(new URL("/404", url)));
+  return new Response(res.body, {
+    status: 404,
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store",
+      Vary: "Accept",
+    },
+  });
+}
+
+/** Só para o teste: o cache vive no módulo e o Vitest roda o arquivo numa instância só. */
+export function __resetCachesDoWorker(): void {
+  caminhosCache = undefined;
+  blogSlugsCache = undefined;
+  veredictoSlug.clear();
+  alvoProspect.clear();
+}
+
 async function serve(request: Request, env: Env): Promise<Response> {
   const accept = request.headers.get("Accept") ?? "";
+  const url = new URL(request.url);
 
   // Política de URL do blog antes de tudo: categoria e URL legada saem em 301
   // sem chegar no asset. Ver docs/specs/blog.md.
-  const blogHop = blogRedirect(new URL(request.url));
+  const blogHop = blogRedirect(url);
   if (blogHop) return blogHop;
 
   // Ficha de lote mapeado convertida antes da negociação de conteúdo, de propósito:
   // depois dela, um agente pedindo `Accept: text/markdown` receberia o .md velho da
   // ficha em vez do redirecionamento, e leria que o lote não aceita reserva.
-  const prospectHop = await prospectRedirect(new URL(request.url), env);
+  const prospectHop = await prospectRedirect(url, env);
   if (prospectHop) return prospectHop;
+
+  // Requisição de asset com hash (ex.: /assets/app-XXXX.js, static-loader-data-*.json):
+  // se o arquivo não existe mais (deploy novo invalidou o hash antigo), o
+  // `not_found_handling: single-page-application` devolveria o index.html (200, HTML).
+  // Isso faz o `.json()`/import do cliente estourar com "Unexpected token '<'". Preferimos
+  // um 404 limpo: o cliente trata como "build velho" e recarrega (ver src/lib/stale-build.ts).
+  //
+  // Vem ANTES da checagem de existência para o bundle com hash nunca ser consultado no
+  // manifesto, que não lista `assets/`.
+  const lastSegment = url.pathname.split("/").pop() ?? "";
+  const isAssetRequest = /\.[a-z0-9]+$/i.test(lastSegment) && !/\.html?$/i.test(lastSegment);
+  if (isAssetRequest) {
+    const assetResponse = await env.ASSETS.fetch(request);
+    const type = assetResponse.headers.get("Content-Type") ?? "";
+    if (assetResponse.ok && type.includes("text/html")) {
+      // Asset ausente que caiu no fallback SPA: devolve 404 em vez de HTML.
+      return new Response(null, { status: 404, headers: { "Cache-Control": "no-store" } });
+    }
+    return assetResponse;
+  }
+
+  /*
+    URL que não existe devolve 404 de verdade, e não a casca da SPA com 200.
+
+    Medido em produção em 13/08/2026: `/pagina-que-nao-existe-xyz` respondia 200 com o HTML
+    da home byte a byte, que é o que o Google trata como soft 404. Na migração do WordPress
+    isso viraria soft 404 em massa, porque 68 URLs que hoje recebem tráfego não têm
+    equivalente no Hub.
+
+    A checagem vem ANTES da negociação de markdown de propósito: sem isso, um agente pedindo
+    `Accept: text/markdown` numa URL inexistente recebia o `llms.txt` com 200, que é a mesma
+    mentira em outro formato.
+
+    Três saídas antes do 404, cada uma por um motivo:
+      - caminho terminado em `.html` segue para o ASSETS, preservando o 307 de
+        canonicalização que existe hoje (`/sobre.html` vira `/sobre`);
+      - `ehRotaDeApp` cobre o que o app serve sem ter arquivo próprio;
+      - manifesto ilegível desliga a regra inteira (fail-open).
+
+    `/404` é o caso especial: o arquivo existe e entraria no manifesto, então sem este
+    desvio a própria página de erro responderia 200, virando um soft 404 indexável.
+
+    Comparação em minúsculas nos dois lados por causa de `public/Estacionamentos/`, que no
+    macOS colide com a rota `/estacionamentos/` e no Linux não. Ver
+    docs/specs/borda-cloudflare.md.
+  */
+  const caminho = (url.pathname.replace(/\/+$/, "") || "/").toLowerCase();
+  if (caminho === "/404") return pagina404(env, url);
+  if (!/\.html?$/i.test(caminho) && !ehRotaDeApp(caminho)) {
+    const conhecidos = await caminhosConhecidos(env, url);
+    if (conhecidos && !conhecidos.has(caminho)) return pagina404(env, url);
+  }
 
   // Content negotiation: serve markdown when agents request it
   if (accept.includes("text/markdown")) {
-    const url = new URL(request.url);
-
     // Try to serve a pre-generated .md file for the path
     const mdRequest = new Request(new URL(url.pathname.replace(/\/?$/, ".md"), url), request);
     const mdResponse = await env.ASSETS.fetch(mdRequest);
@@ -381,24 +528,6 @@ async function serve(request: Request, env: Env): Promise<Response> {
         },
       });
     }
-  }
-
-  // Requisição de asset com hash (ex.: /assets/app-XXXX.js, static-loader-data-*.json):
-  // se o arquivo não existe mais (deploy novo invalidou o hash antigo), o
-  // `not_found_handling: single-page-application` devolveria o index.html (200, HTML).
-  // Isso faz o `.json()`/import do cliente estourar com "Unexpected token '<'". Preferimos
-  // um 404 limpo: o cliente trata como "build velho" e recarrega (ver src/lib/stale-build.ts).
-  const url = new URL(request.url);
-  const lastSegment = url.pathname.split("/").pop() ?? "";
-  const isAssetRequest = /\.[a-z0-9]+$/i.test(lastSegment) && !/\.html?$/i.test(lastSegment);
-  if (isAssetRequest) {
-    const assetResponse = await env.ASSETS.fetch(request);
-    const type = assetResponse.headers.get("Content-Type") ?? "";
-    if (assetResponse.ok && type.includes("text/html")) {
-      // Asset ausente que caiu no fallback SPA: devolve 404 em vez de HTML.
-      return new Response(null, { status: 404, headers: { "Cache-Control": "no-store" } });
-    }
-    return assetResponse;
   }
 
   /*

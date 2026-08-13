@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import worker from "./worker";
+import worker, { __resetCachesDoWorker } from "./worker";
 
 const HTML = "<!DOCTYPE html><html><head></head><body>app</body></html>";
 
@@ -286,5 +286,198 @@ describe("redirecionamento de ficha convertida", () => {
     expect(primeira.status).toBe(301);
     expect(segunda.status).toBe(301);
     expect(segunda.headers.get("Location")).toBe("/p/mercy/mercy-gru/coberto");
+  });
+});
+
+/**
+ * 404 de verdade (docs/specs/borda-cloudflare.md).
+ *
+ * Este bloco fica no FIM do arquivo de propósito. O cache do manifesto vive no escopo do
+ * módulo e o Vitest roda o arquivo inteiro numa instância só: um caso daqui que popule o
+ * cache contaminaria os `describe` de cima, onde `/estacionamentos/a/b/c` exige 200 e não
+ * está em manifesto nenhum. O `__resetCachesDoWorker` cobre o resto.
+ */
+describe("404 real de página", () => {
+  const MANIFESTO = [
+    "/",
+    "/sobre",
+    "/destinos/aeroporto-de-confins",
+    "/blog/um-post",
+    "/.well-known/api-catalog",
+    "/404",
+  ];
+  const CORPO_404 = "<!DOCTYPE html><html><body>Essa página não existe</body></html>";
+
+  /** ASSETS com manifesto e página de 404, mais o `auto-trailing-slash` do Workers Assets. */
+  function envCom404(extra: Record<string, { body: string; type: string }> = {}) {
+    const files: Record<string, { body: string; type: string }> = {
+      "/paths-manifest.json": { body: JSON.stringify(MANIFESTO), type: "application/json" },
+      "/404": { body: CORPO_404, type: "text/html" },
+      ...extra,
+    };
+    const assets = {
+      fetch: vi.fn(async (request: Request) => {
+        const { pathname } = new URL(request.url);
+        // O Workers Assets responde 307 para qualquer caminho terminado em .html, e é essa
+        // armadilha que anulou a primeira implementação: buscar /404.html devolveria um
+        // corpo VAZIO, e o worker carimbaria 404 numa tela branca. Medido em produção.
+        if (/\.html$/i.test(pathname)) {
+          const destino = pathname === "/index.html" ? "/" : pathname.slice(0, -".html".length);
+          return new Response(null, { status: 307, headers: { Location: destino } });
+        }
+        const hit = files[pathname];
+        if (hit) return new Response(hit.body, { status: 200, headers: { "Content-Type": hit.type } });
+        return new Response(HTML, { status: 200, headers: { "Content-Type": "text/html" } });
+      }),
+    };
+    return { ASSETS: assets };
+  }
+
+  afterEach(() => __resetCachesDoWorker());
+
+  it("URL inexistente responde 404 com corpo, não 200 com a home", async () => {
+    const res = await worker.fetch(req("/pagina-que-nao-existe-xyz"), envCom404());
+    expect(res.status).toBe(404);
+    expect(res.headers.get("Content-Type") ?? "").toContain("text/html");
+    expect(await res.text()).toContain("Essa página não existe");
+  });
+
+  it("o corpo do 404 não é vazio", async () => {
+    // A primeira implementação buscava /404.html, recebia 307 sem corpo e servia tela branca.
+    const res = await worker.fetch(req("/nada-aqui"), envCom404());
+    expect((await res.text()).length).toBeGreaterThan(20);
+  });
+
+  it("página que existe continua 200", async () => {
+    const res = await worker.fetch(req("/sobre"), envCom404());
+    expect(res.status).toBe(200);
+  });
+
+  it("barra final e query string não mudam o veredicto", async () => {
+    const comBarra = await worker.fetch(req("/destinos/aeroporto-de-confins/"), envCom404());
+    expect(comBarra.status).toBe(200);
+    const comQuery = await worker.fetch(req("/pagina-que-nao-existe-xyz?utm_source=x"), envCom404());
+    expect(comQuery.status).toBe(404);
+  });
+
+  // ARMADILHA CENTRAL: estas rotas não têm arquivo no dist e vivem do fallback SPA. Medido
+  // em produção: todas respondem hoje com o HTML da home byte a byte. Um 404 aqui não é
+  // perda de ranking, é queda de produção.
+  it.each([
+    ["/checkout/MP-ABC123"],
+    ["/bookings/MP-ABC123"],
+    ["/account/reservas/MP-ABC123"],
+    ["/manager/companies/1f0e/locations"],
+    ["/manager/companies/1f0e/locations/9a2b/parking-types"],
+    ["/operator/locations/9a2b/editar"],
+    ["/operator/preview/9a2b"],
+    ["/operator/pricing"],
+    ["/onboarding"],
+    ["/voucher/validate"],
+  ])("rota de app sem HTML próprio continua 200: %s", async (caminho) => {
+    const res = await worker.fetch(req(caminho), envCom404());
+    expect(res.status).toBe(200);
+  });
+
+  it("/estacionamentos com 1 e 2 segmentos continua abrindo", async () => {
+    // São as 24 páginas de aeroporto do WordPress. O checklist de migração pede 301 para
+    // elas, não 404: mandar 404 jogaria fora a autoridade que o item existe para preservar.
+    for (const caminho of ["/estacionamentos", "/estacionamentos/aeroporto-de-confins"]) {
+      const res = await worker.fetch(req(caminho), envCom404());
+      expect(res.status, caminho).toBe(200);
+      __resetCachesDoWorker();
+    }
+  });
+
+  it("caminho terminado em .html segue para o ASSETS e mantém o 307", async () => {
+    // O manifesto guarda a chave sem extensão. Sem esta saída, /sobre.html não bateria em
+    // nada e viraria 404, quebrando a canonicalização que existe hoje.
+    const res = await worker.fetch(req("/sobre.html"), envCom404());
+    expect(res.status).toBe(307);
+  });
+
+  it("arquivo sem extensão do .well-known continua 200", async () => {
+    const res = await worker.fetch(req("/.well-known/api-catalog"), envCom404());
+    expect(res.status).toBe(200);
+  });
+
+  it("/404 acessado direto responde 404, não 200", async () => {
+    // Sem este desvio a própria página de erro vira um soft 404 indexável, porque o arquivo
+    // existe e entra no manifesto.
+    const res = await worker.fetch(req("/404"), envCom404());
+    expect(res.status).toBe(404);
+    expect(await res.text()).toContain("Essa página não existe");
+  });
+
+  it("o 404 pede para não ser guardado em cache", async () => {
+    // Sem no-store, uma URL que passa a existir fica presa em 404 na borda e no navegador
+    // enquanto a migração do WordPress estiver em curso.
+    const res = await worker.fetch(req("/nada-aqui"), envCom404());
+    expect(res.headers.get("Cache-Control")).toBe("no-store");
+  });
+
+  it("agente pedindo markdown em URL inexistente recebe 404, não o llms.txt", async () => {
+    const env = envCom404({ "/llms.txt": { body: "# Movepark", type: "text/markdown" } });
+    const res = await worker.fetch(req("/nada-aqui", { Accept: "text/markdown" }), env);
+    expect(res.status).toBe(404);
+  });
+
+  it("agente pedindo markdown em página real continua recebendo markdown", async () => {
+    const env = envCom404({
+      "/sobre.md": { body: "# Sobre", type: "text/markdown" },
+      "/llms.txt": { body: "# Movepark", type: "text/markdown" },
+    });
+    const res = await worker.fetch(req("/sobre", { Accept: "text/markdown" }), env);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Content-Type") ?? "").toContain("text/markdown");
+  });
+
+  it("o 404 sai com noindex no hub e sem o header no domínio canônico", async () => {
+    const noHub = await worker.fetch(req("/nada-aqui"), envCom404());
+    expect(noHub.headers.get("X-Robots-Tag")).toBe("noindex, follow");
+    expect(noHub.status).toBe(404);
+    __resetCachesDoWorker();
+    const noApex = await worker.fetch(req("/nada-aqui", undefined, "movepark.co"), envCom404());
+    expect(noApex.headers.get("X-Robots-Tag")).toBeNull();
+    expect(noApex.status).toBe(404);
+    expect(await noApex.text()).toContain("Essa página não existe");
+  });
+
+  it("o manifesto é lido uma vez por isolate, não por requisição", async () => {
+    const env = envCom404();
+    await worker.fetch(req("/nada-1"), env);
+    await worker.fetch(req("/nada-2"), env);
+    const leituras = env.ASSETS.fetch.mock.calls.filter((c) =>
+      new URL((c[0] as Request).url).pathname.endsWith("/paths-manifest.json"),
+    );
+    expect(leituras).toHaveLength(1);
+  });
+
+  // FAIL-OPEN: sem manifesto confiável a regra se desliga inteira. É obrigatório, não
+  // cortesia: um build sem manifesto derrubaria o site em 404, e o pior caso tem que ser
+  // voltar ao comportamento de hoje.
+  it.each([
+    ["manifesto ausente", {}],
+    ["content-type errado", { "/paths-manifest.json": { body: "[]", type: "text/html" } }],
+    ["json quebrado", { "/paths-manifest.json": { body: "{{{", type: "application/json" } }],
+  ])("fail-open com %s: volta a responder 200", async (_nome, extra) => {
+    const assets = {
+      fetch: vi.fn(async (request: Request) => {
+        const { pathname } = new URL(request.url);
+        const files = extra as Record<string, { body: string; type: string }>;
+        const hit = files[pathname];
+        if (hit) return new Response(hit.body, { status: 200, headers: { "Content-Type": hit.type } });
+        return new Response(HTML, { status: 200, headers: { "Content-Type": "text/html" } });
+      }),
+    };
+    const res = await worker.fetch(req("/pagina-que-nao-existe-xyz"), { ASSETS: assets });
+    expect(res.status).toBe(200);
+  });
+
+  it("asset ausente continua 404 de corpo vazio, que é o contrato do stale-build", async () => {
+    const res = await worker.fetch(req("/assets/app-OLDHASH.js"), envCom404());
+    expect(res.status).toBe(404);
+    expect(await res.text()).toBe("");
+    expect(res.headers.get("Cache-Control")).toBe("no-store");
   });
 });

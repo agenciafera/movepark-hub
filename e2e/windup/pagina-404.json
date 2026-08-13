@@ -1,0 +1,15 @@
+{
+  "scenario_id": "pagina-404",
+  "start_url": "/404",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Essa página não existe\". Passo 2: verifique que a pagina exibe o texto \"Buscar estacionamento\". Passo 3: verifique que a pagina exibe o texto \"Ir para o início\". Passo 4: verifique que a barra do topo exibe o texto \"Entrar\", ou seja, a pagina vive dentro do shell do consumidor.",
+  "tags": [
+    "smoke",
+    "leitura",
+    "erro"
+  ],
+  "hints": [
+    "A rota /404 existe como endereco proprio para o build emitir dist/404.html, que e o corpo que a borda serve com status 404 em qualquer URL inexistente.",
+    "Sao passos numerados: execute cada um como uma acao propria, sem juntar as verificacoes num expect so.",
+    "A pagina nao imprime o caminho pedido de proposito: o corpo servido e sempre o de /404 enquanto a URL do navegador e outra, e escrever o caminho quebraria a hidratacao."
+  ]
+}

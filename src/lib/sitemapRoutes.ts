@@ -40,6 +40,7 @@ export const SITEMAP_OPT_OUT: Record<string, string> = {
   "/design-system": "catálogo visual interno",
   "/voucher/validate": "tela de operação, exige código de reserva",
   "/onboarding": "fluxo de cadastro de parceiro, sem conteúdo indexável",
+  "/404": "página de erro; indexá-la seria criar um soft 404 nosso, e o worker responde 404 nela",
   "/login": "autenticação",
   "/entrar": "redireciona para /login",
   "/signup": "redireciona para /login",

@@ -74,8 +74,10 @@ function rotasDeclaradas(): string[] {
 /** Uma URL cobre uma rota quando os segmentos casam, com `:param` como coringa. */
 function casa(rota: string, url: string): boolean {
   // O catch-all não tem endereço literal: o que o cobre é um cenário que abre
-  // uma rota inexistente de propósito e prova o redirecionamento. Reconhece-se
-  // por qualquer url que nenhuma outra rota declarada consiga casar.
+  // uma rota inexistente de propósito e prova que ela mostra a página de 404, com
+  // a URL errada preservada. Reconhece-se por qualquer url que nenhuma outra rota
+  // declarada consiga casar, e por isso o `start_url` do roteiro-jornada precisa
+  // continuar sendo exatamente `/essa-rota-nao-existe`.
   if (rota === "*") return url.startsWith("/essa-rota-nao-existe");
   const limpa = url.split("?")[0].replace(/\/$/, "") || "/";
   const r = rota.split("/").filter(Boolean);
