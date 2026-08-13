@@ -28,7 +28,6 @@ import { userInitials } from "@/lib/initials";
 import { secaoAtiva } from "./menuAtivo";
 import { postLogoutPath } from "@/auth/postLoginRedirect";
 import { Wordmark } from "./Brand";
-import { ThemeToggle } from "./ThemeToggle";
 
 type Icone = React.ComponentType<IconProps>;
 type ItemDeMenu = { to: string; label: string; icone: Icone };
@@ -239,9 +238,6 @@ export function ConsumerMobileMenu() {
               </Button>
             </SheetClose>
           )}
-          {/* O toggle sai do header no mobile por falta de largura, e aqui ele
-              volta a ficar ao alcance sem precisar entrar na conta. */}
-          <ThemeToggle className="self-start" />
         </div>
       </SheetContent>
     </Sheet>

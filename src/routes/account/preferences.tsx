@@ -15,11 +15,7 @@ import {
 import { PageHeader } from "@/components/shared/PageHeader";
 import { getStoredTheme, setStoredTheme, type Theme } from "@/lib/theme";
 import { useAuth } from "@/auth/context";
-import {
-  useProfile,
-  useUpdateProfile,
-  type Preferences,
-} from "@/features/profile/api";
+import { useProfile, useUpdateProfile, type Preferences } from "@/features/profile/api";
 
 export default function PreferencesPage() {
   const { session } = useAuth();
@@ -36,8 +32,9 @@ export default function PreferencesPage() {
   /**
    * O tema mora no localStorage, não no perfil, então vale na hora e fica fora do
    * "Salvar" desta página (que grava idioma, moeda e notificações no servidor).
-   * SSR-safe igual ao ThemeToggle: começa em "light", que é o HTML pré-renderizado,
-   * e sincroniza depois de montar.
+   * SSR-safe: começa em "light", que é o HTML pré-renderizado, e sincroniza
+   * depois de montar. Esta página é o único lugar que ajusta o tema desde que o
+   * botão do header e da aba lateral saiu.
    */
   const [theme, setTheme] = React.useState<Theme>("light");
   React.useEffect(() => {
@@ -104,10 +101,7 @@ export default function PreferencesPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader
-        title="Preferências"
-        description="Personalize como o app se comporta pra você."
-      />
+      <PageHeader title="Preferências" description="Personalize como o app se comporta pra você." />
 
       <section className="space-y-4">
         <h2 className="text-title-md text-ink">Idioma e moeda</h2>
@@ -169,10 +163,7 @@ export default function PreferencesPage() {
                 Recibo e voucher logo após confirmar o pagamento.
               </div>
             </div>
-            <Switch
-              checked={emailConfirmation}
-              onCheckedChange={dirtyOn(setEmailConfirmation)}
-            />
+            <Switch checked={emailConfirmation} onCheckedChange={dirtyOn(setEmailConfirmation)} />
           </div>
           <div className="h-px bg-hairline" />
           <div className="flex items-start justify-between gap-4">
@@ -182,10 +173,7 @@ export default function PreferencesPage() {
                 Aviso 24h antes com instruções e endereço.
               </div>
             </div>
-            <Switch
-              checked={emailReminder}
-              onCheckedChange={dirtyOn(setEmailReminder)}
-            />
+            <Switch checked={emailReminder} onCheckedChange={dirtyOn(setEmailReminder)} />
           </div>
           <div className="h-px bg-hairline" />
           <div className="flex items-start justify-between gap-4">
@@ -195,10 +183,7 @@ export default function PreferencesPage() {
                 Cupons, novidades e descontos eventuais.
               </div>
             </div>
-            <Switch
-              checked={emailOffers}
-              onCheckedChange={dirtyOn(setEmailOffers)}
-            />
+            <Switch checked={emailOffers} onCheckedChange={dirtyOn(setEmailOffers)} />
           </div>
         </div>
       </section>

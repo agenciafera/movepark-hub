@@ -30,7 +30,6 @@ import { postLogoutPath } from "@/auth/postLoginRedirect";
 import { useDestinations } from "@/features/search/api";
 import { Wordmark } from "./Brand";
 import { ConsumerMobileMenu } from "./ConsumerMobileMenu";
-import { ThemeToggle } from "./ThemeToggle";
 import { useHeaderOculto } from "./useHeaderOculto";
 import { useHeroSearchPassed } from "./useHeroSearchPassed";
 import type { Destination } from "@/features/search/api";
@@ -227,10 +226,6 @@ export function ConsumerTopbar() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* No mobile o toggle sai do header: ele custava 36px + gap e era o que
-            estourava a largura da barra em 375px. O controle de tema mora em
-            /account/preferences, que é onde ele continua acessível no celular. */}
-          <ThemeToggle className="hidden tablet:inline-flex" />
           {!session && (
             <>
               <Button variant="ghost" size="sm" className="hidden tablet:inline-flex" asChild>
