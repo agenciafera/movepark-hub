@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { http, HttpResponse } from "msw";
 import { screen } from "@testing-library/react";
-import { renderWithProviders } from "@/test/utils";
+import { mockAuth, mockSession, renderWithProviders } from "@/test/utils";
 import { server } from "@/test/msw/server";
 import { ConsumerAppShell } from "./ConsumerAppShell";
 
@@ -15,15 +15,31 @@ describe("ConsumerAppShell — bottom nav no mobile", () => {
     );
   });
 
-  it("mostra a bottom nav e reserva o espaco dela em rotas normais (ex: /search)", () => {
-    renderWithProviders(<ConsumerAppShell />, { route: "/search" });
+  it("com sessão, mostra a bottom nav e reserva o espaco dela (ex: /search)", () => {
+    renderWithProviders(<ConsumerAppShell />, {
+      route: "/search",
+      auth: mockAuth({ session: mockSession("customer") }),
+    });
 
     expect(screen.getByRole("navigation")).toBeInTheDocument();
     // O espaco sai de `--bottom-nav-space` (altura da barra + recorte do iPhone),
     // e nao de um valor cravado, senao a conta desencontra quando a barra muda.
-    expect(document.querySelector("main")?.className).toContain(
-      "pb-[var(--bottom-nav-space)]",
-    );
+    expect(document.querySelector("main")?.className).toContain("pb-[var(--bottom-nav-space)]");
+  });
+
+  /**
+   * A barra alterna entre áreas de conta, e quem não entrou não tem nenhuma: ela
+   * virava atalho para "Entrar" ocupando 64px fixos de tela pequena. Sem sessão o
+   * espaço reservado também some, senão sobra um vão no fim de toda página.
+   */
+  it("sem sessão, não há bottom nav nem espaco reservado", () => {
+    renderWithProviders(<ConsumerAppShell />, {
+      route: "/search",
+      auth: mockAuth({ session: null }),
+    });
+
+    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+    expect(document.querySelector("main")?.className).not.toContain("--bottom-nav-space");
   });
 
   it("esconde a bottom nav e a reserva de espaco na página do estacionamento (/p/...)", () => {

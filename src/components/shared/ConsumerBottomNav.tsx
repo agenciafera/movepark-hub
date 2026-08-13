@@ -1,9 +1,8 @@
 import type { ComponentType } from "react";
 import { NavLink } from "react-router-dom";
 import type { IconProps } from "@phosphor-icons/react";
-import { Calendar, MapPin, Question, SignIn, Storefront, User } from "@phosphor-icons/react";
+import { Calendar, MapPin, Question, User } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/auth/context";
 
 type Icon = ComponentType<IconProps>;
 
@@ -49,32 +48,23 @@ function TabItem({ to, icon: Icon, label }: { to: string; icon: Icon; label: str
   );
 }
 
+/**
+ * Barra inferior do mobile, só para quem tem sessão.
+ *
+ * Quem monta e desmonta é o `ConsumerAppShell`. Ela alterna entre áreas de uso
+ * recorrente, e por isso os quatro alvos são de conta: sem sessão, nenhum deles
+ * existe, e ela virava atalho para "Entrar" ocupando 64px fixos de tela pequena.
+ */
 export function ConsumerBottomNav() {
-  const { session } = useAuth();
   return (
     // `pb` afasta os itens da borda de baixo. `max(0.5rem, safe-area)` garante uma
     // folga mínima mesmo em aparelho sem recorte (onde safe-area = 0) e respeita o
     // indicador de home onde ele existe, sem empilhar os dois. Sem isso o último toque
     // cai em cima da faixa do sistema e o dedo erra o alvo.
-    <nav className="tablet:hidden fixed bottom-0 left-0 right-0 z-40 grid grid-cols-4 border-t border-hairline bg-canvas pb-[max(0.5rem,var(--safe-bottom))]">
-      {/* Col 1: Destinos — sempre (a busca já vive no navbar/hero) */}
+    <nav className="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-4 border-t border-hairline bg-canvas pb-[max(0.5rem,var(--safe-bottom))] tablet:hidden">
       <TabItem to="/destinos" icon={MapPin} label="Destinos" />
-
-      {/* Col 2: Reservas (logado) | Entrar (anônimo) */}
-      {session ? (
-        <TabItem to="/bookings" icon={Calendar} label="Reservas" />
-      ) : (
-        <TabItem to="/login" icon={SignIn} label="Entrar" />
-      )}
-
-      {/* Col 3: Conta (logado) | Seja parceiro (anônimo) */}
-      {session ? (
-        <TabItem to="/account" icon={User} label="Conta" />
-      ) : (
-        <TabItem to="/seja-parceiro" icon={Storefront} label="Parceiro" />
-      )}
-
-      {/* Col 4: Ajuda — sempre */}
+      <TabItem to="/bookings" icon={Calendar} label="Reservas" />
+      <TabItem to="/account" icon={User} label="Conta" />
       <TabItem to="/ajuda" icon={Question} label="Ajuda" />
     </nav>
   );

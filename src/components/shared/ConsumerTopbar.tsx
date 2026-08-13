@@ -1,18 +1,20 @@
 import * as React from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { Calendar, CaretDown, Gift, Heart, MagnifyingGlass, MapPin, SignOut, SquaresFour, User } from "@phosphor-icons/react";
+import {
+  Calendar,
+  CaretDown,
+  Gift,
+  Heart,
+  MagnifyingGlass,
+  MapPin,
+  SignOut,
+  SquaresFour,
+  User,
+} from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SearchBarPill } from "@/features/search/SearchBarPill";
-import {
-  Avatar,
-  AvatarFallback,
-} from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +28,9 @@ import { userInitials } from "@/lib/initials";
 import { postLogoutPath } from "@/auth/postLoginRedirect";
 import { useDestinations } from "@/features/search/api";
 import { Monogram, Wordmark } from "./Brand";
+import { ConsumerMobileMenu } from "./ConsumerMobileMenu";
 import { ThemeToggle } from "./ThemeToggle";
+import { useHeroSearchPassed } from "./useHeroSearchPassed";
 import type { Destination } from "@/features/search/api";
 
 function parseDate(value: string | null): Date | null {
@@ -104,8 +108,15 @@ export function ConsumerTopbar() {
   const [searchOpen, setSearchOpen] = React.useState(false);
   const isHome = location.pathname === "/";
   // Rotas onde a busca de vaga não faz sentido: a landing B2B de parceiro fala com um
-  // dono de estacionamento, não com um viajante — o widget de busca só divide o foco.
+  // dono de estacionamento, não com um viajante, e o widget de busca só divide o foco.
   const hideSearch = location.pathname === "/seja-parceiro";
+  /*
+    Na home a busca do header entra só depois que a barra do hero sobe. Duas
+    barras na mesma tela competem pelo mesmo clique; passada a primeira, o header
+    assume e a busca volta a estar a um toque, como nas outras páginas.
+  */
+  const heroPassou = useHeroSearchPassed(isHome);
+  const mostrarBusca = (!isHome || heroPassou) && !hideSearch;
 
   async function handleSignOut() {
     // Consumidor volta pra home; captura o papel antes de limpar a sessão.
@@ -120,146 +131,149 @@ export function ConsumerTopbar() {
   const pointParam = searchParams.get("point");
   const fromParam = searchParams.get("from");
   const toParam = searchParams.get("to");
-  const vehicleParam =
-    searchParams.get("vehicle") === "motorcycle" ? "motorcycle" : "car";
+  const vehicleParam = searchParams.get("vehicle") === "motorcycle" ? "motorcycle" : "car";
 
   const initials = userInitials(session?.fullName, session?.email);
 
   return (
     <header className="sticky top-0 z-40 border-b border-hairline bg-canvas">
       <div className="mx-auto flex h-20 w-full max-w-[1280px] items-center gap-4 px-4 desktop:px-8">
-      <Link to="/" className="hidden tablet:block shrink-0" aria-label="Ir para a home">
-        <Wordmark height={22} />
-      </Link>
-      <Link to="/" className="tablet:hidden shrink-0" aria-label="Movepark">
-        <Monogram size={28} />
-      </Link>
+        <Link to="/" className="hidden shrink-0 tablet:block" aria-label="Ir para a home">
+          <Wordmark height={22} />
+        </Link>
+        <Link to="/" className="shrink-0 tablet:hidden" aria-label="Movepark">
+          <Monogram size={28} />
+        </Link>
 
-      <DestinosMenu />
+        <DestinosMenu />
 
-      <div className="flex flex-1 justify-center">
-        {/* Busca real e persistente no header (sticky). Na home o hero já traz a barra grande. */}
-        {!isHome && !hideSearch && (
-          <>
-            {/* Desktop/tablet: a SearchBarPill funcional, semeada com a busca atual e preservando
+        <div className="flex flex-1 justify-center">
+          {/* Busca real e persistente no header (sticky). Na home ela entra quando a do hero sobe. */}
+          {mostrarBusca && (
+            <>
+              {/* Desktop/tablet: a SearchBarPill funcional, semeada com a busca atual e preservando
                 os filtros já aplicados (estacionamento, comodidades, ordenação…). */}
-            <SearchBarPill
-              variant="compact"
-              className="hidden w-full max-w-3xl tablet:flex"
-              key={`${destParam ?? ""}|${pointParam ?? ""}|${fromParam ?? ""}|${toParam ?? ""}|${vehicleParam}`}
-              initialDest={destParam}
-              initialPoint={pointParam}
-              initialFrom={parseDate(fromParam)}
-              initialTo={parseDate(toParam)}
-              initialVehicle={vehicleParam}
-              preserveParams
-            />
-            {/* Mobile: pill compacta que abre o modal de busca por cima da página (estilo Airbnb),
+              <SearchBarPill
+                variant="compact"
+                className="hidden w-full max-w-3xl tablet:flex"
+                key={`${destParam ?? ""}|${pointParam ?? ""}|${fromParam ?? ""}|${toParam ?? ""}|${vehicleParam}`}
+                initialDest={destParam}
+                initialPoint={pointParam}
+                initialFrom={parseDate(fromParam)}
+                initialTo={parseDate(toParam)}
+                initialVehicle={vehicleParam}
+                preserveParams
+              />
+              {/* Mobile: pill compacta que abre o modal de busca por cima da página (estilo Airbnb),
                 sem voltar pra home. */}
-            <button
-              type="button"
-              onClick={() => setSearchOpen(true)}
-              className="flex h-12 w-full items-center gap-3 rounded-full border border-hairline bg-canvas px-4 text-body-sm text-muted shadow-tier transition-shadow hover:shadow-tier tablet:hidden"
-            >
-              <MagnifyingGlass className="h-4 w-4 shrink-0" />
-              {/* O rótulo curto é o mesmo do título do modal que este botão abre.
+              <button
+                type="button"
+                onClick={() => setSearchOpen(true)}
+                className="flex h-12 w-full items-center gap-3 rounded-full border border-hairline bg-canvas px-4 text-body-sm text-muted shadow-tier transition-shadow hover:shadow-tier tablet:hidden"
+              >
+                <MagnifyingGlass className="h-4 w-4 shrink-0" />
+                {/* O rótulo curto é o mesmo do título do modal que este botão abre.
                   "Onde · Quando · Veículo" media 222px e não sobrava espaço no header. */}
-              <span className="truncate">{destParam ? destParam : "Buscar vaga"}</span>
-            </button>
-            {/* modal={false}: sem o body-lock/focus-trap do Radix Dialog modal, que quebra os
+                <span className="truncate">{destParam ? destParam : "Buscar vaga"}</span>
+              </button>
+              {/* modal={false}: sem o body-lock/focus-trap do Radix Dialog modal, que quebra os
                 Popover/cmdk aninhados (DestinationCombobox, DateRangePicker) portados pra fora do
                 content (tocar num destino ou dia não seleciona). Como modal={false} deixa o fundo
                 clicável, o content é full-screen e opaco: cobre a página toda e não sobra brecha
                 pro clique vazar pro fundo. */}
-            <Dialog open={searchOpen} onOpenChange={setSearchOpen} modal={false}>
-              <DialogContent className="inset-0 left-0 top-0 h-full max-h-none w-full max-w-none translate-x-0 translate-y-0 content-start gap-4 rounded-none border-0 tablet:hidden">
-                <DialogHeader>
-                  <DialogTitle>Buscar vaga</DialogTitle>
-                </DialogHeader>
-                <SearchBarPill
-                  variant="compact"
-                  className="border-0 shadow-none"
-                  initialDest={destParam}
-                  initialPoint={pointParam}
-                  initialFrom={parseDate(fromParam)}
-                  initialTo={parseDate(toParam)}
-                  initialVehicle={vehicleParam}
-                  preserveParams
-                  onSubmit={() => setSearchOpen(false)}
-                />
-              </DialogContent>
-            </Dialog>
-          </>
-        )}
-      </div>
+              <Dialog open={searchOpen} onOpenChange={setSearchOpen} modal={false}>
+                <DialogContent className="inset-0 left-0 top-0 h-full max-h-none w-full max-w-none translate-x-0 translate-y-0 content-start gap-4 rounded-none border-0 tablet:hidden">
+                  <DialogHeader>
+                    <DialogTitle>Buscar vaga</DialogTitle>
+                  </DialogHeader>
+                  <SearchBarPill
+                    variant="compact"
+                    className="border-0 shadow-none"
+                    initialDest={destParam}
+                    initialPoint={pointParam}
+                    initialFrom={parseDate(fromParam)}
+                    initialTo={parseDate(toParam)}
+                    initialVehicle={vehicleParam}
+                    preserveParams
+                    onSubmit={() => setSearchOpen(false)}
+                  />
+                </DialogContent>
+              </Dialog>
+            </>
+          )}
+        </div>
 
-      <div className="flex items-center gap-2">
-        {/* No mobile o toggle sai do header: ele custava 36px + gap e era o que
+        <div className="flex items-center gap-2">
+          {/* No mobile o toggle sai do header: ele custava 36px + gap e era o que
             estourava a largura da barra em 375px. O controle de tema mora em
             /account/preferences, que é onde ele continua acessível no celular. */}
-        <ThemeToggle className="hidden tablet:inline-flex" />
-        {!session && (
-          <>
-            <Button variant="ghost" size="sm" className="hidden tablet:inline-flex" asChild>
-              <Link to="/seja-parceiro">Seja parceiro</Link>
-            </Button>
-            <Button size="sm" variant="primary" asChild>
-              <Link to="/login">Entrar</Link>
-            </Button>
-          </>
-        )}
+          <ThemeToggle className="hidden tablet:inline-flex" />
+          {!session && (
+            <>
+              <Button variant="ghost" size="sm" className="hidden tablet:inline-flex" asChild>
+                <Link to="/seja-parceiro">Seja parceiro</Link>
+              </Button>
+              {/* No mobile o visitante deslogado troca o botão pelo menu, que já leva
+                o "Entrar" dentro: são 375px de largura, e o header não comporta os
+                dois sem espremer a busca do meio. */}
+              <Button size="sm" variant="primary" className="hidden tablet:inline-flex" asChild>
+                <Link to="/login">Entrar</Link>
+              </Button>
+              <ConsumerMobileMenu />
+            </>
+          )}
 
-        {session && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="flex items-center gap-2 rounded-full border border-hairline px-2 py-1 hover:shadow-tier"
-                aria-label="Menu da conta"
-              >
-                <Avatar className="h-7 w-7">
-                  <AvatarFallback>{initials}</AvatarFallback>
-                </Avatar>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-[220px]">
-              <DropdownMenuLabel className="line-clamp-1">
-                {session.fullName ?? session.email}
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {effectiveRole === "customer" && (
-                <>
-                  <DropdownMenuItem onClick={() => navigate("/account")}>
-                    <User className="h-4 w-4" /> Conta
+          {session && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="flex items-center gap-2 rounded-full border border-hairline px-2 py-1 hover:shadow-tier"
+                  aria-label="Menu da conta"
+                >
+                  <Avatar className="h-7 w-7">
+                    <AvatarFallback>{initials}</AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[220px]">
+                <DropdownMenuLabel className="line-clamp-1">
+                  {session.fullName ?? session.email}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {effectiveRole === "customer" && (
+                  <>
+                    <DropdownMenuItem onClick={() => navigate("/account")}>
+                      <User className="h-4 w-4" /> Conta
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/account/reservas")}>
+                      <Calendar className="h-4 w-4" /> Minhas reservas
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/account/saved")}>
+                      <Heart className="h-4 w-4" /> Favoritos
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/account/indicar")}>
+                      <Gift className="h-4 w-4" /> Indique e ganhe
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {effectiveRole === "hub_admin" && (
+                  <DropdownMenuItem onClick={() => navigate("/manager")}>
+                    <SquaresFour className="h-4 w-4" /> Ir pro Manager
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/account/reservas")}>
-                    <Calendar className="h-4 w-4" /> Minhas reservas
+                )}
+                {effectiveRole === "company_operator" && (
+                  <DropdownMenuItem onClick={() => navigate("/operator")}>
+                    <SquaresFour className="h-4 w-4" /> Ir pro Operator
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/account/saved")}>
-                    <Heart className="h-4 w-4" /> Favoritos
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/account/indicar")}>
-                    <Gift className="h-4 w-4" /> Indique e ganhe
-                  </DropdownMenuItem>
-                </>
-              )}
-              {effectiveRole === "hub_admin" && (
-                <DropdownMenuItem onClick={() => navigate("/manager")}>
-                  <SquaresFour className="h-4 w-4" /> Ir pro Manager
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => void handleSignOut()}>
+                  <SignOut className="h-4 w-4" /> Sair
                 </DropdownMenuItem>
-              )}
-              {effectiveRole === "company_operator" && (
-                <DropdownMenuItem onClick={() => navigate("/operator")}>
-                  <SquaresFour className="h-4 w-4" /> Ir pro Operator
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => void handleSignOut()}>
-                <SignOut className="h-4 w-4" /> Sair
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-      </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </div>
     </header>
   );
