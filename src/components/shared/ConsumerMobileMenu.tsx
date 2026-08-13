@@ -6,7 +6,6 @@ import {
   Gift,
   Heart,
   Info,
-  List,
   MapPin,
   Question,
   SquaresFour,
@@ -28,6 +27,39 @@ import { userInitials } from "@/lib/initials";
 import { secaoAtiva } from "./menuAtivo";
 import { postLogoutPath } from "@/auth/postLoginRedirect";
 import { Wordmark } from "./Brand";
+
+/**
+ * Traços do menu que viram X quando o painel abre.
+ *
+ * Três `span` em vez do ícone pronto porque o Phosphor troca um desenho pelo
+ * outro, e troca não tem meio do caminho: o ícone pisca. Com os traços, o de
+ * cima e o de baixo giram e se encontram no centro, e o do meio some, então o
+ * movimento conta o que está acontecendo com o painel.
+ *
+ * A morfose aparece principalmente ao fechar, quando o painel desliza para fora
+ * e devolve o botão à vista. Com o painel aberto ele fica atrás dele.
+ */
+function IconeDeMenu({ aberto }: { aberto: boolean }) {
+  const traco =
+    "absolute h-[2px] w-[18px] rounded-full bg-current transition duration-300 ease-out motion-reduce:transition-none";
+  return (
+    <span aria-hidden className="relative flex h-[18px] w-[18px] items-center justify-center">
+      {/*
+        Os dois eixos entram sempre, mesmo valendo zero. Trocar `translate` por
+        `rotate` deixava o transform composto preso no valor antigo (o traço
+        ficava deslocado e não girava), e declarar os dois faz o giro e a
+        aproximação acontecerem no mesmo movimento.
+      */}
+      <span
+        className={cn(traco, aberto ? "translate-y-0 rotate-45" : "-translate-y-[5px] rotate-0")}
+      />
+      <span className={cn(traco, aberto ? "opacity-0" : "opacity-100")} />
+      <span
+        className={cn(traco, aberto ? "translate-y-0 -rotate-45" : "translate-y-[5px] rotate-0")}
+      />
+    </span>
+  );
+}
 
 type Icone = React.ComponentType<IconProps>;
 type ItemDeMenu = { to: string; label: string; icone: Icone };
@@ -145,7 +177,7 @@ export function ConsumerMobileMenu() {
               {userInitials(session.fullName, session.email)}
             </span>
           ) : (
-            <List className="h-5 w-5" aria-hidden />
+            <IconeDeMenu aberto={aberto} />
           )}
         </button>
       </SheetTrigger>
@@ -172,7 +204,11 @@ export function ConsumerMobileMenu() {
         /* Sem anel no container: o foco aqui é programático, para o teclado
            entrar no diálogo, e desenhar um contorno em volta do painel inteiro
            parece erro de layout. Os controles de dentro mantêm o anel deles. */
-        className="w-[320px] overflow-y-auto focus:outline-none"
+        /* A entrada é mais longa que a saída de propósito: abrir apresenta o
+           painel e merece ser vista, fechar é o usuário já querendo voltar ao
+           conteúdo. O padrão do plugin (150ms para os dois) fazia o painel
+           aparecer estalado. */
+        className="w-[320px] overflow-y-auto ease-out focus:outline-none data-[state=closed]:ease-in data-[state=closed]:[animation-duration:200ms] data-[state=open]:[animation-duration:300ms]"
       >
         <SheetHeader>
           <Wordmark height={20} />

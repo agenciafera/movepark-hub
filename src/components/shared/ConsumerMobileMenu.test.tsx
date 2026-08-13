@@ -138,6 +138,45 @@ describe("ConsumerMobileMenu", () => {
     for (const item of itens) expect(item.querySelector("svg")).not.toBeNull();
   });
 
+  /**
+   * O ícone é feito de três traços, e não de dois desenhos trocados, porque
+   * troca não tem meio do caminho: o ícone piscaria. Os dois eixos entram sempre,
+   * mesmo valendo zero, senão o transform composto fica preso no valor antigo e
+   * o traço se desloca sem girar.
+   */
+  it("os traços do menu viram X quando o painel abre", async () => {
+    const { container } = renderWithProviders(<ConsumerMobileMenu />);
+    const gatilho = screen.getByRole("button", { name: "Abrir menu" });
+    const tracos = () => [...gatilho.querySelectorAll("span span")].map((t) => t.className);
+
+    const [topoFechado, meioFechado, baseFechado] = tracos();
+    expect(topoFechado).toContain("rotate-0");
+    expect(topoFechado).toContain("-translate-y-[5px]");
+    expect(meioFechado).toContain("opacity-100");
+    expect(baseFechado).toContain("rotate-0");
+    expect(baseFechado).toContain("translate-y-[5px]");
+
+    await userEvent.click(gatilho);
+
+    const [topo, meio, base] = tracos();
+    expect(topo).toContain("rotate-45");
+    expect(topo).toContain("translate-y-0");
+    expect(meio).toContain("opacity-0");
+    expect(base).toContain("-rotate-45");
+    expect(base).toContain("translate-y-0");
+    expect(container).toBeTruthy();
+  });
+
+  /** O padrão do plugin (150ms) fazia o painel aparecer estalado. */
+  it("o painel abre mais devagar do que fecha", async () => {
+    renderWithProviders(<ConsumerMobileMenu />);
+    await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
+
+    const painel = screen.getByRole("dialog");
+    expect(painel.className).toContain("data-[state=open]:[animation-duration:300ms]");
+    expect(painel.className).toContain("data-[state=closed]:[animation-duration:200ms]");
+  });
+
   /** Só no mobile: no tablet para cima os mesmos destinos já estão no header. */
   it("o gatilho não aparece a partir do tablet", () => {
     renderWithProviders(<ConsumerMobileMenu />);
