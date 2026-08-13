@@ -28,6 +28,9 @@ import type { BlogPostListItem } from "@/types/domain";
 
 const SITE_URL = "https://hub.movepark.co";
 
+/** Largura de app. O padding vertical fica com cada faixa. */
+const CONTAINER = "mx-auto w-full max-w-[1280px] px-4 desktop:px-8";
+
 /** O que o loader entrega para a listagem, seja ela o índice ou um arquivo. */
 export type BlogListingData = {
   posts: BlogPostListItem[];
@@ -253,8 +256,15 @@ export default function BlogListingPage() {
         </script>
       </Helmet>
 
-      <div className="mx-auto max-w-[1280px] px-4 py-12 desktop:px-8">
-        {/*
+      {/*
+        O cabeçalho vive numa faixa própria, como na página do post: título,
+        lead, busca e categorias são o painel de controle da listagem, e o fundo
+        os agrupa em vez de deixar tudo boiando no mesmo branco do conteúdo. A
+        faixa sangra na largura toda; o container mora dentro.
+      */}
+      <div className="border-b border-hairline bg-surface-soft">
+        <div className={cn(CONTAINER, "py-12")}>
+          {/*
           Título grande, lead curto e busca à direita.
 
           O título é `size="lg"` porque numa página de índice ele nomeia uma seção
@@ -263,65 +273,73 @@ export default function BlogListingPage() {
           caracteres. A busca vai no slot de ação do header, que é onde ela para de
           empurrar as categorias para baixo.
         */}
-        <PageHeader
-          variant="content"
-          size="lg"
-          eyebrow={EYEBROW[kind]}
-          title={titulo}
-          description={lead}
-          contentClassName="max-w-[54ch]"
-          back={kind === "index" ? undefined : { to: "/blog/", label: "Voltar para o blog" }}
-          actions={
-            <label className="relative block w-full tablet:w-80">
-              <MagnifyingGlass
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
-                aria-hidden
-              />
-              <Input
-                value={termo}
-                onChange={(e) => setTermo(e.target.value)}
-                placeholder="Buscar no blog"
-                aria-label="Buscar no blog"
-                className="pl-9"
-              />
-            </label>
-          }
-        />
+          <PageHeader
+            variant="content"
+            size="lg"
+            eyebrow={EYEBROW[kind]}
+            title={titulo}
+            description={lead}
+            contentClassName="max-w-[54ch]"
+            back={kind === "index" ? undefined : { to: "/blog/", label: "Voltar para o blog" }}
+            actions={
+              <label className="relative block w-full tablet:w-80">
+                <MagnifyingGlass
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+                  aria-hidden
+                />
+                <Input
+                  value={termo}
+                  onChange={(e) => setTermo(e.target.value)}
+                  placeholder="Buscar no blog"
+                  aria-label="Buscar no blog"
+                  className="pl-9"
+                />
+              </label>
+            }
+          />
 
-        <div className="mt-6 flex flex-col gap-4">
-          <nav aria-label="Categorias" className="flex flex-wrap gap-2">
-            <Link
-              to="/blog/"
-              className={cn(
-                "rounded-full border px-3 py-1.5 text-caption",
-                kind === "index"
-                  ? "border-mp-primary bg-mp-primary text-white"
-                  : "border-hairline text-body hover:bg-surface-soft",
-              )}
-            >
-              Todos
-            </Link>
-            {(categories.data ?? []).map((c) => (
+          {/*
+            O hover do chip é `bg-canvas`, não `surface-soft`: sobre a faixa
+            cinza o cinza do hover é a mesma cor do fundo, e o chip não responde
+            ao mouse. Aqui ele clareia em vez de escurecer.
+          */}
+          <div className="mt-6 flex flex-col gap-4">
+            <nav aria-label="Categorias" className="flex flex-wrap gap-2">
               <Link
-                key={c.id}
-                to={`/blog/categoria/${c.slug}/`}
+                to="/blog/"
                 className={cn(
                   "rounded-full border px-3 py-1.5 text-caption",
-                  kind === "categoria" && slug === c.slug
+                  kind === "index"
                     ? "border-mp-primary bg-mp-primary text-white"
-                    : "border-hairline text-body hover:bg-surface-soft",
+                    : "border-hairline text-body hover:border-mp-navy hover:bg-canvas",
                 )}
               >
-                {c.name}
+                Todos
               </Link>
-            ))}
-          </nav>
+              {(categories.data ?? []).map((c) => (
+                <Link
+                  key={c.id}
+                  to={`/blog/categoria/${c.slug}/`}
+                  className={cn(
+                    "rounded-full border px-3 py-1.5 text-caption",
+                    kind === "categoria" && slug === c.slug
+                      ? "border-mp-primary bg-mp-primary text-white"
+                      : "border-hairline text-body hover:border-mp-navy hover:bg-canvas",
+                  )}
+                >
+                  {c.name}
+                </Link>
+              ))}
+            </nav>
+          </div>
         </div>
+      </div>
 
+      <div className={cn(CONTAINER, "py-12")}>
         {carregando ? (
           <div className="mt-10 grid gap-6 tablet:grid-cols-2 desktop:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-80 w-full rounded-2xl" />
+              <Skeleton key={i} className="h-80 w-full rounded-md" />
             ))}
           </div>
         ) : posts.length ? (

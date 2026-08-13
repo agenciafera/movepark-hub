@@ -345,6 +345,18 @@ o build se sobrar alguma. Sem ele o sitemap entregaria ao Google exatamente a UR
 HTML de `/blog` saía com 689 KB. O card usa título, resumo, capa e data, então o loader do
 índice seleciona só isso: 240 KB, 41 KB comprimido.
 
+### A listagem também abre numa faixa
+
+Título, lead, busca e categorias vivem numa faixa `surface-soft` que sangra na largura toda, com
+o container por dentro, igual à página do post. Os quatro são o painel de controle da listagem, e
+o fundo os agrupa em vez de deixar tudo boiando no mesmo branco do acervo. Medido a 1200px: 257px
+de altura, e 88px de respiro antes do destaque.
+
+**O hover do chip de categoria é `bg-canvas`, não `surface-soft`.** Sobre a faixa, o cinza do
+hover é a mesma cor do fundo e o chip deixa de responder ao mouse; encostado na faixa ele precisa
+clarear, não escurecer. É a pegadinha de qualquer elemento que ganhe fundo tingido: o hover
+herdado do branco para de funcionar.
+
 ### Hierarquia da listagem
 
 A listagem era doze cards do mesmo tamanho, e uma página onde nada é mais importante que nada não
