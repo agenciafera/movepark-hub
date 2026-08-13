@@ -33,9 +33,11 @@ select cmp_ok(
 --   sair daqui             → alguém fechou um helper de RLS ou do catálogo público, e
 --                            a vitrine anônima quebra com "permission denied for function".
 --
--- O que legitima cada uma: helper chamado DENTRO de policy RLS (is_hub_admin,
--- current_company_ids, member_has_scope, current_user_role, current_owner_company_ids),
--- ou leitura de catálogo/preço que a vitrine anônima faz antes de qualquer login.
+-- O que legitima cada uma, e são três categorias: helper chamado DENTRO de policy RLS
+-- (is_hub_admin, current_company_ids, member_has_scope, current_user_role,
+-- current_owner_company_ids); leitura de catálogo/preço que a vitrine anônima faz antes de
+-- qualquer login; e consulta feita pela BORDA, porque o Cloudflare Worker também fala com o
+-- banco pela anon key, antes de a página existir.
 select set_eq(
   $$ select p.proname::text
        from pg_proc p join pg_namespace n on n.oid = p.pronamespace
@@ -70,9 +72,17 @@ select set_eq(
     -- E0.16: o clique de saída é gravado por quem não está logado, que é o caso normal
     -- na vitrine. A tabela não tem policy de escrita: só esta função grava, e ela só
     -- aceita vaga ATIVA de unidade EXTERNA. Ver clique-saida-externa.md.
-    'log_external_exit'
+    'log_external_exit',
+    -- E0.17-i: quem consulta é o Cloudflare Worker, com a anon key, para descobrir se a URL
+    -- pedida é de uma ficha mapeada que virou parceiro e para onde ela deve redirecionar.
+    -- Ela é definer justamente porque a RLS de prospect_location esconde ficha convertida de
+    -- quem tem essa chave, e sem a função a URL cairia no fallback de SPA: 200 com o shell
+    -- vazio, um soft 404 na página que tinha ranking. O que ela revela é só a URL pública da
+    -- unidade que nasceu dali, nada que a página do parceiro já não mostre. Nunca devolve
+    -- telefone, place_id nem o estado da campanha B2B. Ver lote-mapeado-vitrine.md.
+    'prospect_redirect_target'
   ],
-  'as SECURITY DEFINER alcançáveis por anon são exatamente estas 22'
+  'as SECURITY DEFINER alcançáveis por anon são exatamente estas 23'
 );
 
 -- ── nenhuma rotina de cron é chamável pela anon key ──────────────────────────

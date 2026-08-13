@@ -32,6 +32,8 @@ Dashboard
 Empresas
   └─ Localizações
   └─ Tipos de Vaga
+Destinos
+Lotes mapeados
 Reservas
 Financeiro
   └─ Faturamento
@@ -374,6 +376,46 @@ rótulo e benefícios. A Básica é sempre grátis (preço não editável). A es
 `admin_set_fare` (gate `is_hub_admin()`); a mudança vale para todos os estacionamentos e reflete na
 busca e no checkout (que leem `get_unit_fares`). O parceiro não edita tarifa (ver
 [operator-panel.md](./operator-panel.md)). Decisão de 23/07 (ClickUp `86ajnxeym` + `86ajnxf04`).
+
+---
+
+### 4.12 Lotes mapeados
+
+**Rota:** `/manager/lotes-mapeados` (só `hub_admin`) · ✅ implementado (E0.17-h, ago/2026)
+
+Curadoria dos estacionamentos que a Movepark mapeou e que **não** têm contrato
+(`prospect_location`, ADR-010). Tela **separada de Unidades** de propósito: uma lista é
+inventário vendável, a outra é mapeamento que não transaciona, e misturar as duas é como
+alguém acaba publicando reserva de vaga que ninguém prometeu.
+
+Lista filtrável por destino, por estado e por busca, com três estados na cara: **rascunho**
+(cadastrado, não aparece em lugar nenhum), **publicado** (está na página do destino agora) e
+**convertido** (virou parceiro, saiu da vitrine, guarda a procedência). Colunas: lote e
+distância ao terminal, endereço e telefone, `google_place_id`, notificado em, revisado em, e o
+toggle de publicar, que é a ação mais frequente e por isso mora na própria linha.
+
+Quatro regras que a tela não decide sozinha, porque o servidor recusa:
+
+| Regra | Onde vive |
+|---|---|
+| Publicar exige endereço | constraint `prospect_location_publish_needs_address` **e** mensagem própria na RPC |
+| Ficha convertida é somente leitura | as três RPCs de escrita recusam com `P0001` |
+| Excluir é `delete` de verdade | a tabela não tem FK de `booking` apontando para ela, e essa é a graça |
+| Só `hub_admin` escreve | `is_hub_admin()` em toda RPC, e recusa em vez de devolver vazio |
+
+**Por que RPC e não PostgREST:** a migration `20261009000000` revogou o `select` da tabela e
+reconcedeu 13 colunas, as que a página de destino renderiza (Q-021: o telefone é guardado e
+não exibido). Grant de coluna não separa `hub_admin` de cliente logado, então `phone`,
+`google_place_id`, `data_source`, os dois carimbos e `converted_location_id` são ilegíveis até
+para o admin. A escrita veio junto porque o `.select()` que o supabase-js emite depois de um
+insert esbarraria no mesmo corte.
+
+Implementação: `20261017090000_manager_prospect_location.sql` (5 RPCs `manager_prospect_*`),
+`src/features/prospect-locations/`, `src/routes/manager/lotes-mapeados.tsx`. Deduplicação
+(D-009) aparece como **aviso**, não como bloqueio: colisão de `google_place_id`, colisão de
+slug e vizinho a menos de 150 m. Dois lotes vizinhos existem de verdade em aeroporto, então
+proximidade não pode barrar sozinha. Ver
+[lote-mapeado-vitrine.md](./lote-mapeado-vitrine.md).
 
 ---
 

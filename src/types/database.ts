@@ -4984,6 +4984,80 @@ export type Database = {
           sessions: number
         }[]
       }
+      manager_prospect_location_delete: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
+      manager_prospect_location_precheck: {
+        Args: {
+          p_google_place_id?: string
+          p_id?: string
+          p_latitude: number
+          p_longitude: number
+          p_slug?: string
+        }
+        Returns: Json
+      }
+      manager_prospect_location_save: {
+        Args: {
+          p_address?: string
+          p_amenities?: Json
+          p_data_source?: string
+          p_description?: string
+          p_destination_id?: string
+          p_google_maps_url?: string
+          p_google_place_id?: string
+          p_id: string
+          p_is_published?: boolean
+          p_latitude: number
+          p_longitude: number
+          p_name: string
+          p_phone?: string
+          p_slug: string
+        }
+        Returns: string
+      }
+      manager_prospect_location_set_state: {
+        Args: {
+          p_id: string
+          p_is_published?: boolean
+          p_notified?: boolean
+          p_reviewed?: boolean
+        }
+        Returns: undefined
+      }
+      manager_prospect_locations: {
+        Args: { p_destination_id?: string; p_search?: string; p_state?: string }
+        Returns: {
+          address: string
+          amenities: Json
+          converted_at: string
+          converted_company_id: string
+          converted_location_id: string
+          converted_location_name: string
+          created_at: string
+          data_source: string
+          description: string
+          destination_id: string
+          destination_name: string
+          destination_slug: string
+          distance_m: number
+          google_maps_url: string
+          google_place_id: string
+          id: string
+          is_published: boolean
+          last_reviewed_at: string
+          latitude: number
+          longitude: number
+          name: string
+          notified_owner_at: string
+          phone: string
+          place_id_conflict_name: string
+          slug: string
+          state: string
+          updated_at: string
+        }[]
+      }
       match_knowledge: {
         Args: {
           p_destination_id?: string
@@ -5274,6 +5348,13 @@ export type Database = {
         }[]
       }
       pricing_rule_fingerprint: { Args: { p_rule_id: string }; Returns: Json }
+      prospect_redirect_target: {
+        Args: { p_destination_slug: string; p_slug: string }
+        Returns: {
+          permanent: boolean
+          target: string
+        }[]
+      }
       publish_legal_document: {
         Args: { p_content: string; p_slug: string }
         Returns: Json

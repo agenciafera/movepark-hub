@@ -3,7 +3,7 @@
 > **Épico:** [E0.17](https://app.clickup.com/t/86ajyp580) · **Fase:** 0 · **Depende de:** E0.15 (capacidades / ADR-009)
 > **Q/D:** [Q-021](https://app.clickup.com/t/86ajyp5pu) telefone **decidido em 11/08/2026: guardar, não exibir** · [Q-022](https://app.clickup.com/t/86ajz8n1j) **decidido → ADR-010** · [D-009](https://app.clickup.com/t/86ajyp5w7) deduplicação
 > **ADR:** ADR-010 (lote não-parceiro não vive na tabela transacional)
-> **Status:** especificado em 10/08/2026. **a, b, c, d, e, f no ar** e **g na versão curta** (referência + carimbo; o OTP ficou para quando houver volume), tudo em 11/08/2026, com Q-021 decidido. Falta só o **h** (painel).
+> **Status:** especificado em 10/08/2026. **a, b, c, d, e, f no ar** e **g na versão curta** (referência + carimbo), tudo em 11/08/2026, com Q-021 decidido. Em 13/08/2026 entrou o **h** (painel) e o **301 da ficha convertida**, que era a parte da **i** que não estava adiada por decisão, só à espera de existir conversão. Falta da **i** só a prova de titularidade (HMAC + OTP), adiada enquanto a aprovação humana no board for o portão.
 > **Case de referência:** Talentos Park, Recife. Todo exemplo aqui usa dados reais dele.
 
 Este arquivo é **autossuficiente**: quem for implementar não precisa abrir o ClickUp nem `gestao/`. O ClickUp serve só para saber qual atividade puxar e em que ordem.
@@ -19,7 +19,8 @@ Este arquivo é **autossuficiente**: quem for implementar não precisa abrir o C
 | E0.17-e | ✅ Single sem caminho para reserva | [§ Single](#single-e017-e) | [86ajyp8jn](https://app.clickup.com/t/86ajyp8jn) |
 | E0.17-f | ✅ JSON-LD `ParkingFacility` | [§ JSON-LD](#json-ld-e017-f) | [86ajyp8u6](https://app.clickup.com/t/86ajyp8u6) |
 | E0.17-g | 🟡 Conversão da reivindicação (referência + carimbo; falta o OTP) | [§ Conversão](#conversão-e017-g) | [86ajyp96d](https://app.clickup.com/t/86ajyp96d) |
-| E0.17-h | Painel administrativo | [§ Painel](#painel-administrativo-e017-h) | [86ajz8mvz](https://app.clickup.com/t/86ajz8mvz) |
+| E0.17-h | ✅ Painel administrativo | [§ Painel](#painel-administrativo-e017-h) | [86ajz8mvz](https://app.clickup.com/t/86ajz8mvz) |
+| E0.17-i | 🟡 301 da ficha convertida no ar; HMAC + OTP adiados | [§ Conversão](#conversão-e017-g) | [86ajzdx41](https://app.clickup.com/t/86ajzdx41) |
 
 **a** destrava **c**, **g** e **h**; **c** destrava **d**, **e** e **f**. A **b** é independente. Q-021 foi decidido em 11/08/2026, então a **e** não está mais bloqueada.
 
@@ -379,6 +380,44 @@ Sem esse carimbo, a ficha mapeada e a unidade nova passariam a renderizar as dua
 
 **Sobre o OTP:** sem ele, qualquer um reivindica o lote do concorrente. Em aeroporto, onde 6 ou 7 lotes disputam a mesma vaga de SERP, isso não é risco teórico. O telefone que já está na ficha é a prova mais barata que existe. Não substitui a aprovação humana, que continua no board.
 
+### O 301 da ficha convertida (E0.17-i), no ar em 13/08/2026
+
+O adiamento do 301 tinha uma razão que deixou de valer: *"hoje não existe conversão, então não existe `location`
+para onde redirecionar"*. A **g** passou a carimbar `converted_at`, então a ficha convertida virou estado
+alcançável, e o que sobrou foi um buraco pior que o adiamento sugeria.
+
+**O que acontecia sem o redirecionamento.** Convertida, a ficha some da RPC de cards, deixa de ser gerada pelo
+`getStaticPaths` e sai do sitemap. O `wrangler.jsonc` tem `not_found_handling: "single-page-application"`, então
+a URL que rankeava passa a responder **200 com o shell vazio da SPA**. Isso é soft 404: pior que 404, porque o
+Google registra uma página viva e sem conteúdo, e muito pior que redirecionar. E existe uma segunda janela, entre
+a conversão e o deploy seguinte, em que o HTML antigo continua no ar **renderizado inteiro**, dizendo que o lote
+não tem reserva quando ele já é parceiro. Só o Worker cobre essa janela, porque ele roda antes dos assets
+(`run_worker_first: true`).
+
+**Como ficou.** RPC `prospect_redirect_target(destino, slug)` e um ramo novo no
+[`src/worker.ts`](../../src/worker.ts), logo depois do `blogRedirect` e **antes** da negociação de Markdown, senão
+um agente pedindo `Accept: text/markdown` receberia o `.md` velho em vez do redirecionamento.
+
+| Situação da ficha | Resposta | Por quê |
+|---|---|---|
+| Não existe, ou não foi convertida | segue como hoje | a página é legítima, não há para onde mandar |
+| Convertida, unidade já listada | **301** para `/p/<empresa>/<unidade>/<código>` | é o endereço definitivo, e é ele que herda o ranking |
+| Convertida, unidade ainda não listada | **302** para `/destinos/<slug>` | converter não publica oferta: a unidade nasce inativa e sem tipo de vaga |
+
+O 302 é a parte que não estava na spec e a execução teve de decidir. Cravar 301 para a página do destino
+gravaria no cache do navegador e do Google um endereço de passagem, que muda assim que o parceiro publica, e 301
+é justamente o que ninguém revisita. Enquanto a unidade não está listada, o redirecionamento é honestamente
+temporário.
+
+A função é `SECURITY DEFINER` e concedida a `anon` de propósito: quem consulta é o Worker, com a anon key, e a
+RLS esconde ficha convertida justamente de quem tem essa chave. O que ela revela é só a URL pública da unidade
+que nasceu dali. A consulta é **fail-open**: RPC fora do ar devolve `null` e o request segue, porque um
+redirecionamento que não resolve não pode derrubar a página.
+
+**O que continua adiado:** o link assinado com HMAC e o OTP no telefone mapeado. A decisão do time não mudou, e
+a razão dela também não: com aprovação humana no board, a prova de titularidade é defesa em profundidade, não o
+único portão.
+
 ### Notas de implementação
 
 - HMAC com segredo de servidor **e validade**. Sem validade, o link vaza num grupo de WhatsApp e vira porta aberta.
@@ -420,6 +459,47 @@ Tela no admin, **separada de "Unidades"**, para não misturar inventário vendá
 - **Avisar quando o `google_place_id` colidir com uma `location` existente** — é o caso de parceiro ativo, que não deve ser mapeado.
 - **Ficha convertida entra em modo leitura.** Editar depois da conversão dessincroniza do que o parceiro já vê.
 - Excluir é `delete` de verdade (não há FK de booking apontando para cá, e essa é a graça), mas **exigir confirmação**: a URL tinha ranking.
+
+### O que ficou no ar (13/08/2026)
+
+Rota **`/manager/lotes-mapeados`**, separada de Unidades como a spec pede, em
+[`src/routes/manager/lotes-mapeados.tsx`](../../src/routes/manager/lotes-mapeados.tsx), com a feature em
+`src/features/prospect-locations/`. Migration `20261017090000_manager_prospect_location.sql`, pgTAP
+`prospect_location_admin.test.sql`.
+
+> #### O que mudou na execução: a tela inteira fala por RPC, inclusive a escrita
+>
+> A spec dizia "reaproveita a casca que já existe, é CRUD, não módulo novo", e a leitura por RPC já estava
+> prevista desde Q-021. O que a execução descobriu é que **a escrita também tem que vir para a RPC**, e não é
+> preferência: o `.select()` que o supabase-js emite depois de um `insert`/`update` pede `RETURNING`, e
+> `RETURNING` precisa de `select` nas colunas devolvidas. Como `20261009000000` revogou o `select` da tabela e
+> reconcedeu 13 colunas, um `insert().select()` estouraria `42501` mesmo com a RLS liberando a escrita.
+>
+> O ganho de ter ido por ali: as três regras do painel deixaram de morar só na tela.
+
+| Regra | Onde passou a viver |
+|---|---|
+| Publicar exige endereço | constraint `prospect_location_publish_needs_address`, mais a mensagem legível na RPC |
+| Ficha convertida é somente leitura | `save`, `set_state` e `delete` recusam com `P0001` |
+| Só `hub_admin` escreve | `is_hub_admin()` nas cinco, e **recusa** em vez de devolver vazio |
+
+As cinco RPCs: `manager_prospect_locations` (lista com `state` derivado, distância e colisão de place_id),
+`manager_prospect_location_precheck` (destino sugerido e avisos), `manager_prospect_location_save`,
+`manager_prospect_location_set_state` (as ações de linha, tri-estado: `null` não mexe no campo) e
+`manager_prospect_location_delete`.
+
+Três decisões que a spec deixou em aberto e a execução teve de fechar:
+
+- **O gate de publicação virou constraint, não regra na RPC.** A RPC também recusa, mas só para a tela receber
+  uma frase em vez do texto do Postgres. Como constraint, o gate vale para qualquer caminho de escrita, e o
+  `update is_published = true` na mão deixa de ser uma porta lateral.
+- **Ações de linha não passam pelo formulário.** Publicar, marcar notificado e marcar revisado são o trabalho
+  recorrente da curadoria; exigir abrir e reenviar o formulário inteiro para carimbar uma data é o tipo de
+  atrito que faz o carimbo não acontecer.
+- **A deduplicação (D-009) entrou como aviso, e a vizinhança entrou junto do place_id.** A spec pedia aviso de
+  colisão de `google_place_id`, mas **nenhuma `location` tem place_id gravado hoje**, então o aviso sozinho
+  nunca dispararia. O precheck avisa também quando existe estacionamento a menos de 150 m, que é o caso real.
+  Aviso, nunca bloqueio: dois lotes vizinhos existem de verdade em aeroporto, e quem decide é quem mapeia.
 
 ---
 
@@ -504,9 +584,9 @@ Candidatas a chave, provavelmente em cascata:
 - [x] Seções separadas de ponta a ponta (títulos, ordenação e paginação próprios); `is_popular` não existe no lado mapeado e não foi inventado.
 - [x] Teste de componente: single de `prospect_location` não tem nenhum elemento com ação de reserva (`estacionamento-mapeado.test.tsx`), e também não tem link externo nem telefone.
 - [x] JSON-LD `ParkingFacility` presente, sem `Offer`, sem `openingHours`, sem `aggregateRating` e sem `telephone`. Conferido no HTML do `dist`, não só no teste.
-- [ ] Painel admin permite criar, publicar e despublicar sem SQL; sugere destino por `nearest_destination()`.
-- [ ] Publicação bloqueada sem endereço; aviso de colisão de `google_place_id` com `location`.
-- [ ] Ficha convertida em modo leitura no admin.
+- [x] Painel admin permite criar, publicar e despublicar sem SQL; sugere destino por `nearest_destination()`.
+- [x] Publicação bloqueada sem endereço, por constraint e não só por regra na tela; aviso de colisão de `google_place_id` com `location`, mais aviso de vizinho a menos de 150 m, que é o caso que dispara de verdade enquanto nenhuma `location` tem place_id.
+- [x] Ficha convertida em modo leitura no admin, recusada nas três RPCs de escrita.
 - [x] A conversão grava a procedência, é idempotente (carimba só a primeira unidade) e **não** publica oferta. Sem `convert_prospect_location()` transacional: o carimbo entra no `onboarding_upsert_location`, e o OTP ficou para quando houver volume.
-- [ ] URL de ficha convertida faz 301 para a `location`. **Fica na E0.17-g:** sem conversão não existe destino para o redirect.
+- [x] URL de ficha convertida faz 301 para a `location`, no Worker, antes dos assets. Enquanto a unidade não está listada o redirecionamento é 302 para a página do destino, porque o endereço definitivo ainda vai existir e 301 é o que ninguém revisita.
 - [x] Registros obsoletos resolvidos em `location` (11 soft delete, 1 inativa), preservando o que tem `booking`. Eram QA em produção, não prospecção: ver a seção. **Sobram 3 fixtures de QA listadas publicamente**, fora da lista da spec, aguardando decisão do time.

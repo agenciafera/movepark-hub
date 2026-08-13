@@ -1,8 +1,8 @@
--- pgTAP: hardening de grants — `anon` não executa RPCs privilegiadas, mas MANTÉM os
+-- pgTAP: hardening de grants. `anon` não executa RPCs privilegiadas, mas MANTÉM os
 -- helpers usados em policies RLS. Ver 20260724000000 + 20260725000000 e ADR-005.
 
 begin;
-select plan(32);
+select plan(33);
 
 -- ── Helpers usados DENTRO de policies RLS: anon PRECISA manter EXECUTE ────────
 -- (senão SELECT anônimo no catálogo público quebra com "permission denied for function")
@@ -12,6 +12,16 @@ select ok(has_function_privilege('anon', 'public.current_company_ids()', 'execut
   'anon mantém EXECUTE em current_company_ids (usado em RLS)');
 select ok(has_function_privilege('anon', 'public.member_has_scope(uuid, text)', 'execute'),
   'anon mantém EXECUTE em member_has_scope (usado em RLS)');
+
+-- ── Definer chamada pela BORDA, com a anon key: também PRECISA manter EXECUTE ──
+-- O Cloudflare Worker (src/worker.ts) fala com o banco pela anon key, e pergunta antes de
+-- servir a rota se aquela URL é de ficha mapeada que virou parceiro. Fechar aqui não protege
+-- nada: a ficha convertida cai no fallback de SPA e a URL que tinha ranking passa a responder
+-- 200 com o shell vazio, um soft 404. A função é definer porque a RLS esconde ficha convertida
+-- justamente de quem tem essa chave, e o que ela devolve é só a URL pública da unidade que
+-- nasceu dali (nunca telefone, place_id ou estado da campanha). Ver 20261017090000 e ADR-010.
+select ok(has_function_privilege('anon', 'public.prospect_redirect_target(text, text)', 'execute'),
+  'anon mantém EXECUTE em prospect_redirect_target (é o Worker redirecionando a ficha convertida)');
 
 -- ── RPCs privilegiadas: anon NÃO executa (amostra representativa) ─────────────
 select ok(not has_function_privilege('anon', 'public.set_company_take_rate(uuid, integer)', 'execute'),
@@ -28,13 +38,13 @@ select ok(not has_function_privilege('anon', 'public.onboarding_upsert_payout_ac
   'anon NÃO executa onboarding_upsert_payout_account (KYC)');
 select ok(not has_function_privilege('anon', 'public.submit_review(uuid, integer, text, integer, integer, integer, integer)', 'execute'),
   'anon NÃO executa submit_review');
--- Estas duas vinham de grant a PUBLIC (não do grant direto) — regressão fácil de reintroduzir
+-- Estas duas vinham de grant a PUBLIC (não do grant direto), regressão fácil de reintroduzir
 select ok(not has_function_privilege('anon', 'public.is_company_owner(uuid)', 'execute'),
   'anon NÃO executa is_company_owner (grant de PUBLIC removido)');
 select ok(not has_function_privilege('anon', 'public.current_member_scopes(uuid)', 'execute'),
   'anon NÃO executa current_member_scopes (grant de PUBLIC removido)');
 
--- ── Leva 20260726000000: triggers/crons/mutações de booking — anon NÃO executa ─
+-- ── Leva 20260726000000: triggers/crons/mutações de booking, anon NÃO executa ─
 -- triggers (nunca chamáveis via RPC)
 select ok(not has_function_privilege('anon', 'public.coupon_bump_on_payment()', 'execute'),
   'anon NÃO executa coupon_bump_on_payment (trigger)');
@@ -74,7 +84,7 @@ select ok(not has_function_privilege('anon', 'public.wl_reconcile_apply(uuid, js
 -- ── authenticated CONTINUA executando (não trancamos os operadores) ──────────
 select ok(has_function_privilege('authenticated', 'public.operator_create_api_key(uuid, text, text, text[], timestamptz)', 'execute'),
   'authenticated mantém EXECUTE em operator_create_api_key');
--- o caller real de create_booking_atomic é o client service_role da Edge — deve manter EXECUTE
+-- o caller real de create_booking_atomic é o client service_role da Edge: deve manter EXECUTE
 select ok(has_function_privilege('service_role', 'public.create_booking_atomic(uuid, uuid, timestamptz, timestamptz, integer, boolean, uuid, uuid[], text, text, fare_tier)', 'execute'),
   'service_role mantém EXECUTE em create_booking_atomic (caller real da Edge)');
 

@@ -115,6 +115,12 @@ const BLOG_LEGACY_PATHS: Record<string, string> = {
 const redirect301 = (to: string) =>
   new Response(null, { status: 301, headers: { Location: to, "Cache-Control": "no-cache" } });
 
+// Irmão temporário do 301, para quando o destino final ainda vai mudar. O
+// `no-cache` importa mais aqui do que lá: o navegador guardaria o salto e
+// continuaria mandando o visitante para o lugar provisório depois da correção.
+const redirect302 = (to: string) =>
+  new Response(null, { status: 302, headers: { Location: to, "Cache-Control": "no-cache" } });
+
 /**
  * Política de URL do blog.
  *
@@ -242,6 +248,95 @@ async function postPublicado(env: Env, slug: string): Promise<boolean> {
   }
 }
 
+/**
+ * Alvo do redirecionamento da ficha de lote mapeado, em cache por isolate.
+ *
+ * O veredicto negativo (ficha que não foi convertida) entra em cache junto com o
+ * positivo, e isso é aceitável porque o isolate do Worker vive minutos: uma conversão
+ * feita agora passa a redirecionar assim que o isolate corrente for reciclado, sem
+ * depender de deploy. O custo é uma consulta por URL por isolate frio, então um bot
+ * varrendo slug inventado não vira uma consulta por requisição.
+ *
+ * Falha de rede NÃO entra em cache: guardar o erro desligaria a regra até o isolate
+ * morrer. O teto reusa o `VEREDICTO_MAX` porque o risco é o mesmo, memória crescendo
+ * com chave que o visitante escolhe.
+ */
+type ProspectAlvo = { target: string; permanent: boolean };
+const alvoProspect = new Map<string, ProspectAlvo | null>();
+
+/**
+ * Ficha de lote mapeado que virou parceiro sai da URL antiga em redirecionamento.
+ *
+ * `/estacionamentos/<destino>/<slug>` é página pública com ranking próprio. Quando o
+ * dono reivindica, a ficha ganha `converted_at` e some de tudo que a publicava: a RPC
+ * `destination_prospect_cards` para de devolver, o `getStaticPaths` para de gerar o
+ * HTML e o sitemap para de listar. Sem este bloco a URL cai no
+ * `not_found_handling: "single-page-application"` do wrangler e responde 200 com a
+ * casca vazia da SPA, que é soft 404: o Google mantém a URL indexada apontando para
+ * uma página em branco. E entre a conversão e o próximo deploy o HTML velho segue no
+ * ar dizendo que o lote não aceita reserva quando ele já é parceiro. Só o Worker cobre
+ * essa janela, porque roda antes dos assets (`run_worker_first`).
+ *
+ * A RPC devolve zero linhas quando a ficha não existe ou não foi convertida, e aí não
+ * há redirecionamento nenhum: o request segue como hoje. Convertida com a unidade já
+ * listada, o alvo é `/p/<empresa>/<unidade>/<código>` e vale 301. Convertida sem
+ * unidade listada, o alvo é `/destinos/<slug>` e vale 302, porque converter não
+ * publica oferta (a unidade nasce inativa e sem tipo de vaga): o destino final ainda
+ * vai mudar, e um 301 cravaria o provisório no cache do navegador e do Google.
+ *
+ * Qualquer falha é fail-open (env ausente, rede caindo, resposta não-ok, JSON
+ * inesperado): devolve `null` e a página abre normalmente. Redirecionamento que não
+ * sai custa ranking de uma URL; página que não abre custa o site inteiro.
+ */
+export async function prospectRedirect(url: URL, env: Env): Promise<Response | null> {
+  const segmentos = url.pathname.split("/").filter(Boolean);
+  if (segmentos.length !== 3 || segmentos[0] !== "estacionamentos") return null;
+
+  const [, destino, slug] = segmentos;
+  const chave = `${destino}/${slug}`;
+  const cacheado = alvoProspect.get(chave);
+  if (cacheado !== undefined) return responderProspect(cacheado);
+
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return null;
+
+  try {
+    const consulta = new URL("/rest/v1/rpc/prospect_redirect_target", env.SUPABASE_URL);
+    const res = await fetch(consulta, {
+      method: "POST",
+      headers: {
+        apikey: env.SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${env.SUPABASE_ANON_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ p_destination_slug: destino, p_slug: slug }),
+    });
+    if (!res.ok) return null;
+
+    const linhas = (await res.json()) as unknown;
+    if (!Array.isArray(linhas)) return null;
+
+    const linha = linhas[0] as Partial<ProspectAlvo> | undefined;
+    let alvo: ProspectAlvo | null = null;
+    if (linha) {
+      // Linha com formato estranho é tratada como falha, não como "não converteu":
+      // cachear o negativo aqui esconderia o problema até o isolate morrer.
+      if (typeof linha.target !== "string" || typeof linha.permanent !== "boolean") return null;
+      alvo = { target: linha.target, permanent: linha.permanent };
+    }
+
+    if (alvoProspect.size >= VEREDICTO_MAX) alvoProspect.clear();
+    alvoProspect.set(chave, alvo);
+    return responderProspect(alvo);
+  } catch {
+    return null;
+  }
+}
+
+function responderProspect(alvo: ProspectAlvo | null): Response | null {
+  if (!alvo) return null;
+  return alvo.permanent ? redirect301(alvo.target) : redirect302(alvo.target);
+}
+
 async function serve(request: Request, env: Env): Promise<Response> {
   const accept = request.headers.get("Accept") ?? "";
 
@@ -249,6 +344,12 @@ async function serve(request: Request, env: Env): Promise<Response> {
   // sem chegar no asset. Ver docs/specs/blog.md.
   const blogHop = blogRedirect(new URL(request.url));
   if (blogHop) return blogHop;
+
+  // Ficha de lote mapeado convertida antes da negociação de conteúdo, de propósito:
+  // depois dela, um agente pedindo `Accept: text/markdown` receberia o .md velho da
+  // ficha em vez do redirecionamento, e leria que o lote não aceita reserva.
+  const prospectHop = await prospectRedirect(new URL(request.url), env);
+  if (prospectHop) return prospectHop;
 
   // Content negotiation: serve markdown when agents request it
   if (accept.includes("text/markdown")) {
@@ -286,7 +387,7 @@ async function serve(request: Request, env: Env): Promise<Response> {
   // se o arquivo não existe mais (deploy novo invalidou o hash antigo), o
   // `not_found_handling: single-page-application` devolveria o index.html (200, HTML).
   // Isso faz o `.json()`/import do cliente estourar com "Unexpected token '<'". Preferimos
-  // um 404 limpo — o cliente trata como "build velho" e recarrega (ver src/lib/stale-build.ts).
+  // um 404 limpo: o cliente trata como "build velho" e recarrega (ver src/lib/stale-build.ts).
   const url = new URL(request.url);
   const lastSegment = url.pathname.split("/").pop() ?? "";
   const isAssetRequest = /\.[a-z0-9]+$/i.test(lastSegment) && !/\.html?$/i.test(lastSegment);
@@ -294,7 +395,7 @@ async function serve(request: Request, env: Env): Promise<Response> {
     const assetResponse = await env.ASSETS.fetch(request);
     const type = assetResponse.headers.get("Content-Type") ?? "";
     if (assetResponse.ok && type.includes("text/html")) {
-      // Asset ausente que caiu no fallback SPA — devolve 404 em vez de HTML.
+      // Asset ausente que caiu no fallback SPA: devolve 404 em vez de HTML.
       return new Response(null, { status: 404, headers: { "Cache-Control": "no-store" } });
     }
     return assetResponse;

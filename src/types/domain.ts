@@ -61,6 +61,93 @@ export type ProspectCard = {
   distance_km: number | null;
   reference_name: string | null;
 };
+
+/**
+ * Uma linha do painel de curadoria de lotes mapeados (RPC `manager_prospect_locations`,
+ * E0.17-h).
+ *
+ * Escrita à mão pelo mesmo motivo do `ProspectCard`: o gerador não marca nulidade em
+ * retorno de função, e aqui o campo vazio é o assunto da tela. Endereço nulo é o que
+ * trava a publicação, e `notified_owner_at`/`last_reviewed_at` nulos são a fila de
+ * trabalho da campanha B2B.
+ *
+ * `state` é derivado no banco em uma palavra só, para a lista não recombinar
+ * `is_published` com `converted_at` na tela e errar a ordem de precedência: ficha
+ * convertida é convertida mesmo que continue publicada.
+ *
+ * `place_id_conflict_name` é o nome da unidade viva que já usa o mesmo `google_place_id`.
+ * Preenchido, é sinal de parceiro ativo mapeado por engano (D-009). O `phone` aparece
+ * aqui porque a RPC é `security definer` e o painel é interno; ele continua fora do
+ * `ProspectCard`, que é o que vai para a página pública (Q-021).
+ */
+export type ProspectLocationAdminRow = {
+  id: string;
+  destination_id: string;
+  destination_name: string;
+  destination_slug: string;
+  name: string;
+  slug: string;
+  address: string | null;
+  phone: string | null;
+  latitude: number;
+  longitude: number;
+  google_place_id: string | null;
+  google_maps_url: string | null;
+  amenities: string[];
+  description: string | null;
+  data_source: string;
+  is_published: boolean;
+  notified_owner_at: string | null;
+  last_reviewed_at: string | null;
+  converted_location_id: string | null;
+  converted_at: string | null;
+  converted_location_name: string | null;
+  converted_company_id: string | null;
+  state: "draft" | "published" | "converted";
+  distance_m: number;
+  place_id_conflict_name: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/**
+ * Pré-checagem do formulário de lote mapeado (RPC `manager_prospect_location_precheck`).
+ *
+ * Tudo aqui é aviso, nunca decisão automática (D-009): dois lotes vizinhos existem de
+ * verdade em aeroporto, então proximidade não pode barrar sozinha. `suggested_destination`
+ * vem do `nearest_destination()`, o mesmo caminho do trigger, porque preencher destino à
+ * mão em dezenas de fichas é onde entra erro.
+ */
+export type ProspectLocationPrecheck = {
+  suggested_destination: { id: string; name: string; distance_m: number } | null;
+  place_id_conflict: { kind: "location" | "prospect"; name: string } | null;
+  slug_conflict: { kind: "location" | "prospect"; name: string } | null;
+  nearby: { kind: "location" | "prospect"; name: string; distance_m: number }[];
+};
+
+/**
+ * O que o formulário do painel manda para `manager_prospect_location_save` (E0.17-h).
+ *
+ * `id` nulo cria, preenchido edita. Latitude e longitude não são opcionais porque são
+ * elas que resolvem o destino e a distância ao terminal (ADR-001).
+ */
+export type ProspectLocationInput = {
+  id: string | null;
+  name: string;
+  slug: string;
+  latitude: number;
+  longitude: number;
+  destinationId: string | null;
+  address: string | null;
+  phone: string | null;
+  googlePlaceId: string | null;
+  googleMapsUrl: string | null;
+  description: string | null;
+  amenities: string[];
+  dataSource: string;
+  isPublished: boolean;
+};
+
 /** Post do blog. O `slug` é herdado do WordPress e é contrato de URL (docs/specs/blog.md). */
 export type BlogPost = Tables<"blog_post">;
 /** Tema editorial do post. Aeroporto não entra aqui: ele é `destination_id`. */

@@ -219,7 +219,11 @@ Regras **fixas** do projeto, não sugestões. Se algo conflitar com elas, **siga
   é controlada por `is_published` (nasce `false`), a procedência da conversão fica em
   `prospect_location.converted_location_id` (para `location` não engordar) e `google_place_id` é
   unique para deduplicar. O registro só entra em `location` pela função de conversão, quando o dono
-  reivindica — e converter **não** publica oferta. **Regra de crescimento:** campo novo só entra na
+  reivindica, e converter **não** publica oferta. **A escrita é só de `hub_admin`: não existe papel
+  de parceiro nesta tabela**, porque enquanto a ficha é mapeada ninguém de fora edita. O painel
+  (`/manager/lotes-mapeados`, E0.17-h) lê e escreve por RPC `SECURITY DEFINER`, e não por PostgREST,
+  porque o corte por coluna que esconde o telefone (Q-021) esconde também do admin. Publicar exige
+  endereço, por constraint, e ficha convertida é somente leitura. **Regra de crescimento:** campo novo só entra na
   tabela se aparecer na página de destino; se alguém pedir horário, tem que vir nullable (em
   `location`, `is_24h` é `NOT NULL DEFAULT true` e emitir schema a partir dele afirmaria ao Google um
   horário que ninguém verificou). Ver
