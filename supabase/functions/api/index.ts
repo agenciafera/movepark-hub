@@ -88,8 +88,15 @@ Deno.serve(async (req: Request) => {
     return fail("internal", "Falha ao verificar a chave.", 500, requestId);
   }
   if (!verify || verify.ok !== true) {
+    // Resposta uniforme para inválida, revogada e expirada. Antes o `reason` cru
+    // ia no texto ao cliente, e isso é um oráculo: quem acha uma chave vazada
+    // descobria de graça se ela é real (revoked/expired) ou lixo (invalid_key),
+    // confirmando que vale tentar em outro ambiente. É a mesma falha que o MCP já
+    // fechou (401 byte a byte); a REST mantinha o comportamento antigo. O motivo
+    // fica no log do Edge, para a operação, nunca na resposta.
     const reason = verify?.reason ?? "invalid_key";
-    return fail("unauthorized", `Chave inválida (${reason}).`, 401, requestId);
+    console.warn(JSON.stringify({ event: "api_key_rejected", reason, request_id: requestId }));
+    return fail("unauthorized", "Chave de API inválida ou ausente.", 401, requestId);
   }
   const ctx: AuthCtx = {
     api_key_id: verify.api_key_id,

@@ -327,6 +327,15 @@ Listas: `data` é array + `meta.pagination` (`limit`, `offset`/`cursor`, `total?
 Códigos: `401 unauthorized` (chave ausente/inválida/revogada), `403 insufficient_scope`,
 `404 not_found`, `409 conflict`, `422 validation_error`, `429 rate_limited`, `5xx internal`.
 
+O `401` é **uniforme**: chave ausente, inválida, revogada e expirada devolvem a mesma mensagem
+(`Chave de API inválida ou ausente.`). O motivo cru (`invalid_key`/`revoked`/`expired`) fica só no
+log do Edge, com o `request_id`. Sem isso, o texto vira oráculo: quem acha uma chave vazada
+descobre se ela é real (foi revogada) ou lixo, e isso confirma que vale tentar em outro ambiente. O
+MCP já respondia uniforme; a REST foi alinhada em 12/08/2026 (`test/api/public-api.int.test.ts`
+trava). A mesma disciplina vale para erro de RPC: só a mensagem de `RAISE` nossa (P0001) chega ao
+cliente; constraint, coluna e schema do Postgres são mascarados para genérico (`respond.ts`,
+`pgErrorToHttp`).
+
 **Idempotência:** mutações (`POST /bookings`) aceitam `Idempotency-Key` (header); o gateway
 deduplica por `(api_key_id, idempotency_key)` numa janela curta para evitar reserva dupla em retry.
 

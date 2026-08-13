@@ -29,6 +29,20 @@ describe("Public API · autenticação", () => {
     expect(res.status).toBe(401);
   });
 
+  it("a recusa não revela o estado da chave (oráculo de invalid/revoked/expired)", async () => {
+    // A REST vazava o motivo cru no texto (`Chave inválida (revoked)`), o que diz
+    // a quem acha uma chave se ela é real. O MCP já uniformizou; aqui a REST
+    // também: a mensagem não pode carregar o motivo. Ver docs/specs/public-api.md.
+    const res = await fetch(`${API_BASE}/v1/locations`, {
+      headers: { Authorization: "Bearer mp_live_chave_que_nao_existe" },
+    });
+    const body = (await res.json()) as { error?: { message?: string } };
+    const msg = body.error?.message ?? "";
+    for (const vaza of ["invalid_key", "revoked", "expired"]) {
+      expect(msg).not.toContain(vaza);
+    }
+  });
+
   it("não vaza dado de nenhuma empresa antes de autenticar", async () => {
     const res = await fetch(`${API_BASE}/v1/bookings`);
     expect(res.status).toBe(401);
