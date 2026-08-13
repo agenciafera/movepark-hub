@@ -3,6 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import { gsap } from "@/lib/gsap";
 import { SearchBarPill } from "@/features/search/SearchBarPill";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { formatCompactCount } from "@/lib/format";
+import { useClientesAtendidos } from "./api";
 
 function parseDate(value: string | null): Date | null {
   if (!value) return null;
@@ -41,6 +43,7 @@ const heroAvatars = [
 export function Hero() {
   const [params] = useSearchParams();
   const sectionRef = useRef<HTMLElement>(null);
+  const clientesAtendidos = useClientesAtendidos();
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -118,7 +121,10 @@ export function Hero() {
                 <StarIcon key={i} />
               ))}
             </div>
-            <span className="text-[13px] font-medium text-white/80">5.000+ clientes</span>
+            {/* O "+" existe porque a contagem arredonda para baixo. */}
+            <span className="text-[13px] font-medium text-white/80">
+              +{formatCompactCount(clientesAtendidos)} clientes
+            </span>
           </div>
         </div>
 

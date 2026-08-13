@@ -348,16 +348,19 @@ export type Database = {
       }
       app_setting: {
         Row: {
+          is_public: boolean
           key: string
           updated_at: string
           value: string
         }
         Insert: {
+          is_public?: boolean
           key: string
           updated_at?: string
           value?: string
         }
         Update: {
+          is_public?: boolean
           key?: string
           updated_at?: string
           value?: string

@@ -114,3 +114,18 @@ export function formatRating(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return "—";
   return rating1.format(value);
 }
+
+const compact1 = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
+
+/**
+ * Contagem grande em forma curta: `300000` → `300 mil`, `1250000` → `1,2 mi`.
+ *
+ * Arredonda sempre para baixo porque quem usa isso é número de vitrine, exibido
+ * com "+" na frente. Para cima, o selo afirmaria mais gente do que existe.
+ */
+export function formatCompactCount(value: number | null | undefined): string {
+  if (value === null || value === undefined || Number.isNaN(value) || value < 0) return "—";
+  if (value >= 1_000_000) return `${compact1.format(Math.floor(value / 100_000) / 10)} mi`;
+  if (value >= 1_000) return `${Math.floor(value / 1_000)} mil`;
+  return String(Math.floor(value));
+}

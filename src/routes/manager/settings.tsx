@@ -89,6 +89,69 @@ function PartnerEmailSettings() {
   );
 }
 
+/**
+ * Prova social do Hero. É a única chave de `app_setting` marcada `is_public`,
+ * então o que for salvo aqui aparece no site do consumidor sem deploy.
+ */
+export function SocialProofSettings() {
+  const { data, isLoading } = useAppSettings();
+  const update = useUpdateAppSettings();
+  const [clientes, setClientes] = React.useState("");
+  const [ready, setReady] = React.useState(false);
+
+  React.useEffect(() => {
+    if (data && !ready) {
+      setClientes(data.social_proof_customers ?? "");
+      setReady(true);
+    }
+  }, [data, ready]);
+
+  const numero = Number(clientes);
+  const invalido = clientes.trim() !== "" && (!Number.isFinite(numero) || numero <= 0);
+
+  async function save() {
+    try {
+      await update.mutateAsync({ social_proof_customers: String(Math.floor(numero)) });
+      toast.success("Prova social salva");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao salvar");
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Prova social</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="social-proof-customers">Clientes atendidos</Label>
+          <Input
+            id="social-proof-customers"
+            inputMode="numeric"
+            value={clientes}
+            onChange={(e) => setClientes(e.target.value)}
+            placeholder="300000"
+            disabled={isLoading}
+          />
+          <span className="text-caption text-muted">
+            Aparece no selo do topo da home. Escreva o número inteiro, sem ponto: 300000 vira
+            &quot;+300 mil clientes&quot;. A contagem arredonda para baixo.
+          </span>
+          {invalido && (
+            <span className="text-caption text-danger">Precisa ser um número maior que zero.</span>
+          )}
+        </div>
+        <div>
+          <Button onClick={save} disabled={update.isPending || isLoading || invalido || !clientes.trim()}>
+            {update.isPending ? "Salvando…" : "Salvar"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function PaymentsSettings() {
   const { data, isLoading } = useAppSettings();
   const update = useUpdateAppSettings();
@@ -379,7 +442,7 @@ export default function ManagerSettings() {
           <TabsTrigger value="security">Segurança</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="general">
+        <TabsContent value="general" className="flex flex-col gap-6">
           <Card>
             <CardHeader>
               <CardTitle>Plataforma</CardTitle>
@@ -395,6 +458,7 @@ export default function ManagerSettings() {
               </div>
             </CardContent>
           </Card>
+          <SocialProofSettings />
         </TabsContent>
 
         <TabsContent value="partners">

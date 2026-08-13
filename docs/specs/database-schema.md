@@ -171,6 +171,7 @@ booking_coupon  (pivot)
 | `vehicle` | Owner-only: todas as operações para `profile_id = auth.uid()` |
 | `booking` | Owner-only: SELECT/INSERT/UPDATE para `profile_id = auth.uid()` |
 | `booking_item`, `payment`, `booking_coupon` | Acesso via ownership da `booking` pai |
+| `app_setting` | Escrita só `hub_admin` (`app_setting_admin_all`). Leitura pública **por chave**, não por tabela: `app_setting_public_read` é SELECT para `anon`+`authenticated` com `USING (is_public)`, e `is_public` nasce `false`. A tabela guarda recebedor do split, remetente de e-mail e prompt do chatbot, então chave nova só vira pública por decisão explícita. Hoje a única marcada é `social_proof_customers`, que alimenta o selo do Hero. |
 
 > Nenhuma política de escrita existe ainda para staff/admin. Isso será coberto
 > quando o modelo de roles/staff for definido.

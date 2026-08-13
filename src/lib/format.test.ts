@@ -5,6 +5,7 @@ import {
   formatDate,
   formatDateTime,
   formatDayTime,
+  formatCompactCount,
   formatDayTimeInline,
   formatWeekdayDate,
   formatDistance,
@@ -152,5 +153,33 @@ describe("formatRating", () => {
     expect(formatRating(4)).toBe("4,0");
     expect(formatRating(4.8)).toBe("4,8");
     expect(formatRating(4.81)).toBe("4,81");
+  });
+});
+
+describe("formatCompactCount", () => {
+  it("encurta milhar e milhão", () => {
+    expect(formatCompactCount(300_000)).toBe("300 mil");
+    expect(formatCompactCount(5_000)).toBe("5 mil");
+    expect(formatCompactCount(1_250_000)).toBe("1,2 mi");
+  });
+
+  it("abaixo de mil mostra o número cru", () => {
+    expect(formatCompactCount(850)).toBe("850");
+    expect(formatCompactCount(0)).toBe("0");
+  });
+
+  /**
+   * O selo da home escreve "+300 mil". Arredondar para cima afirmaria mais
+   * gente do que existe, e o "+" viraria mentira.
+   */
+  it("arredonda para baixo", () => {
+    expect(formatCompactCount(305_900)).toBe("305 mil");
+    expect(formatCompactCount(1_299_000)).toBe("1,2 mi");
+  });
+
+  it("retorna — para inválidos", () => {
+    expect(formatCompactCount(null)).toBe("—");
+    expect(formatCompactCount(Number.NaN)).toBe("—");
+    expect(formatCompactCount(-5)).toBe("—");
   });
 });
