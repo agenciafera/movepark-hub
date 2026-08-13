@@ -1,9 +1,21 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { Bell, Car, CaretRight, CreditCard, Gift, Heart, Lock, MapPin, SignOut, Sparkle, Ticket, User } from "@phosphor-icons/react";
+import {
+  Bell,
+  Car,
+  CaretRight,
+  CreditCard,
+  Gift,
+  Heart,
+  Lock,
+  MapPin,
+  SignOut,
+  Sparkle,
+  Ticket,
+  User,
+} from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/context";
 import { userInitials } from "@/lib/initials";
-import { ReferralShareCard } from "@/features/growth/ReferralShareCard";
 import { useMembership } from "@/features/growth/api";
 import { ReferralSidebarBanner } from "@/features/growth/ReferralSidebarBanner";
 import { useMyBookings } from "@/features/bookings/customerApi";
@@ -42,10 +54,7 @@ const sections = [
   },
 ];
 
-/** A lista chapada ainda serve pro menu de mobile. */
-const items = sections.flatMap((s) => s.items);
-
-/** Sidebar — desktop fica à esquerda 240px. Mobile esconde (usa SidebarMobile). */
+/** Sidebar do desktop, 240px à esquerda. No mobile quem responde é o AccountMobileMenu. */
 export function AccountSidebar() {
   const { session, signOut } = useAuth();
   const navigate = useNavigate();
@@ -124,7 +133,6 @@ export function AccountSidebar() {
             })}
           </div>
         ))}
-
       </nav>
 
       {/* Indicação no rodapé, logo acima do Sair: some sozinho quando o cliente
@@ -139,12 +147,25 @@ export function AccountSidebar() {
         <SignOut className="h-4 w-4 shrink-0" />
         Sair
       </button>
-
     </aside>
   );
 }
 
-/** Lista de cards usada apenas no /account raiz em mobile. */
+const LINHA =
+  "flex min-h-12 w-full items-center gap-3 rounded-sm px-1 py-3 text-body-md no-underline transition-colors hover:bg-surface-soft";
+
+/**
+ * Menu do /account no mobile.
+ *
+ * Cada item era um retângulo com borda e sombra no hover. Dez botões empilhados
+ * viravam dez caixas: a moldura ficava com o peso visual que deveria ser do
+ * rótulo, e a lista parecia um formulário. Agora é linha corrida, com ícone à
+ * esquerda e seta à direita, que é o que a própria seta já prometia.
+ *
+ * Os grupos vieram do desktop. A lista corrida de dez itens não dizia qual era
+ * qual, e essa foi a razão de agrupar lá; no mobile o problema era o mesmo e a
+ * solução tinha ficado de fora.
+ */
 export function AccountMobileMenu() {
   const { signOut } = useAuth();
   const navigate = useNavigate();
@@ -155,27 +176,29 @@ export function AccountMobileMenu() {
   }
 
   return (
-    <div className="space-y-2 desktop:hidden">
-      {items.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          className="flex items-center gap-3 rounded-md border border-hairline bg-canvas px-4 py-3 text-body-md text-ink no-underline hover:shadow-tier"
-        >
-          <item.icon className="h-5 w-5 text-mp-indigo" />
-          <span className="flex-1">{item.label}</span>
-          <CaretRight className="h-4 w-4 text-muted" />
-        </NavLink>
+    <div className="desktop:hidden">
+      {sections.map((section) => (
+        <div key={section.title} className="mb-6">
+          <span className="mb-1 block px-1 text-[11px] font-bold uppercase tracking-[0.4px] text-mp-indigo">
+            {section.title}
+          </span>
+          {section.items.map((item) => (
+            <NavLink key={item.to} to={item.to} className={cn(LINHA, "text-ink")}>
+              <item.icon className="h-5 w-5 shrink-0 text-mp-indigo" />
+              <span className="flex-1">{item.label}</span>
+              <CaretRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+            </NavLink>
+          ))}
+        </div>
       ))}
 
-      <ReferralShareCard className="mt-4" />
+      {/* O mesmo banner do rodapé da sidebar do desktop. O card antigo daqui
+          tinha outro layout, e a mesma oferta com duas caras em duas telas faz
+          parecer que são duas ofertas. */}
+      <ReferralSidebarBanner />
 
-      <button
-        type="button"
-        onClick={handleSignOut}
-        className="mt-4 flex w-full items-center gap-3 rounded-md border border-hairline bg-canvas px-4 py-3 text-body-md text-error hover:shadow-tier"
-      >
-        <SignOut className="h-5 w-5" />
+      <button type="button" onClick={handleSignOut} className={cn(LINHA, "mt-6 text-error")}>
+        <SignOut className="h-5 w-5 shrink-0" />
         Sair
       </button>
     </div>

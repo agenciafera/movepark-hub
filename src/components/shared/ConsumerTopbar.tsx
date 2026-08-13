@@ -24,12 +24,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/auth/context";
+import { cn } from "@/lib/utils";
 import { userInitials } from "@/lib/initials";
 import { postLogoutPath } from "@/auth/postLoginRedirect";
 import { useDestinations } from "@/features/search/api";
 import { Monogram, Wordmark } from "./Brand";
 import { ConsumerMobileMenu } from "./ConsumerMobileMenu";
 import { ThemeToggle } from "./ThemeToggle";
+import { useHeaderOculto } from "./useHeaderOculto";
 import { useHeroSearchPassed } from "./useHeroSearchPassed";
 import type { Destination } from "@/features/search/api";
 
@@ -116,6 +118,7 @@ export function ConsumerTopbar() {
     assume e a busca volta a estar a um toque, como nas outras páginas.
   */
   const heroPassou = useHeroSearchPassed(isHome);
+  const oculto = useHeaderOculto();
   const mostrarBusca = (!isHome || heroPassou) && !hideSearch;
 
   async function handleSignOut() {
@@ -136,7 +139,15 @@ export function ConsumerTopbar() {
   const initials = userInitials(session?.fullName, session?.email);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-hairline bg-canvas">
+    <header
+      className={cn(
+        "sticky top-0 z-40 border-b border-hairline bg-canvas",
+        // Descer devolve a tela ao conteúdo; subir traz a navegação de volta.
+        // `will-change` evita o repintar do header inteiro a cada quadro.
+        "transition-transform duration-300 will-change-transform motion-reduce:transition-none",
+        oculto && "-translate-y-full",
+      )}
+    >
       <div className="mx-auto flex h-20 w-full max-w-[1280px] items-center gap-4 px-4 desktop:px-8">
         <Link to="/" className="hidden shrink-0 tablet:block" aria-label="Ir para a home">
           <Wordmark height={22} />
@@ -147,7 +158,11 @@ export function ConsumerTopbar() {
 
         <DestinosMenu />
 
-        <div className="flex flex-1 justify-center">
+        {/* `min-w-0` porque item de flex não encolhe abaixo do conteúdo por
+            padrão: sem ele a barra de busca segurava a largura mínima dela e
+            empurrava os botões da direita para fora da tela. A 854px o header
+            passava 63px do viewport e a página ganhava rolagem horizontal. */}
+        <div className="flex min-w-0 flex-1 justify-center">
           {/* Busca real e persistente no header (sticky). Na home ela entra quando a do hero sobe. */}
           {mostrarBusca && (
             <>
