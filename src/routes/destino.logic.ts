@@ -22,3 +22,20 @@ export function pickRelatedDestinations<
     })
     .slice(0, limit);
 }
+
+/**
+ * Bloco "Mais bem avaliados": só quem já foi avaliado, por nota desc, cortando em `limit`.
+ *
+ * A ordenação vive aqui, e não só na Edge, porque a página passou a ter duas fontes para a
+ * mesma lista: a busca com datas (que já vem ordenada por nota) e a semente do build (que
+ * vem ordenada por preço). Aplicar a mesma regra nos dois casos evita o bloco sair em ordem
+ * de preço no HTML pré-renderizado e trocar de ordem quando a busca responde.
+ */
+export function pickTopRated<
+  T extends { location: { review_count: number | null; review_avg: number | null } },
+>(items: T[], limit = 4): T[] {
+  return items
+    .filter((i) => (i.location.review_count ?? 0) > 0)
+    .sort((a, b) => (b.location.review_avg ?? 0) - (a.location.review_avg ?? 0))
+    .slice(0, limit);
+}

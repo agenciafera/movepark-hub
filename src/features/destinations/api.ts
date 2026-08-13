@@ -2,6 +2,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { Database } from "@/types/database";
 import type { Destination, DestinationPoint, ProspectCard } from "@/types/domain";
+import type { SearchResultItem } from "@/features/search/useSearchResults";
+import {
+  buildStaticUnits,
+  type ProximityRow,
+  type UnitRow,
+} from "@/features/destinations/units.logic";
 
 type DestinationInsert = Database["public"]["Tables"]["destination"]["Insert"];
 type DestinationUpdate = Database["public"]["Tables"]["destination"]["Update"];
@@ -43,6 +49,79 @@ export async function fetchDestinationProspects(slug: string): Promise<ProspectC
     distance_km: row.distance_km == null ? null : Number(row.distance_km),
     amenities: Array.isArray(row.amenities) ? (row.amenities as string[]) : [],
   })) as ProspectCard[];
+}
+
+/**
+ * Unidades VENDÁVEIS ancoradas ao destino, já no formato de card da busca.
+ *
+ * Existe pelo mesmo motivo do `fetchDestinationProspects` acima, e para o lado de cima da
+ * página: o `loader` a chama no BUILD para os cards saírem no HTML pré-renderizado. Antes
+ * disso, `dist/destinos/aeroporto-afonso-pena.html` tinha zero links `/p/` e 41 skeletons,
+ * porque a lista só existia depois do fetch da Edge `search` no cliente.
+ *
+ * NÃO chama a Edge `search` de propósito, mesmo ela sendo a dona do formato: a busca precisa
+ * de janela de datas, e data escolhida em tempo de build envelhece no primeiro dia. Aqui só
+ * entra o que é verdade sem data.
+ *
+ * Duas leituras, o mesmo desenho que a home já usa (`usePopularOffers`):
+ *   1. `location_parking_type` com a tabela de preço aninhada. O hint
+ *      `!location_parking_type_id` é obrigatório: `pricing_rule` tem duas FKs para
+ *      `location_parking_type` (a própria e `surcharge_source_id`), e sem ele o PostgREST
+ *      reclama de ambiguidade.
+ *   2. `locations_proximity`, a mesma RPC da Edge, porque distância é PostGIS e nunca conta
+ *      no TypeScript (ADR-001).
+ *
+ * O caminho até o tipo de vaga passa por `company_parking_type`. Não existe FK direta de
+ * `location_parking_type` para `parking_type`: tentar embutir direto devolve PGRST200.
+ */
+export async function fetchDestinationUnits(destination: {
+  id: string;
+  latitude: number | string | null;
+  longitude: number | string | null;
+}): Promise<SearchResultItem[]> {
+  const { data: rows, error } = await supabase
+    .from("location_parking_type")
+    .select(
+      `
+      id, capacity, is_active,
+      location:location!inner(
+        id, slug, name, address, latitude, longitude,
+        review_avg, review_count, photos, is_listed, deleted_at,
+        company:company!inner(slug, name, status),
+        amenities:location_amenity(amenity_code)
+      ),
+      company_parking_type:company_parking_type!inner(
+        parking_type:parking_type!inner(code, name)
+      ),
+      pricing_rule!location_parking_type_id(
+        strategy, incremental_one_day_price,
+        old_price_strategy, old_price_multiplier, hourly_daily_rate,
+        pricing_tier(from_day, to_day, total_price, unit_price, is_old_price)
+      )
+    `,
+    )
+    .eq("is_active", true)
+    .eq("location.destination_id", destination.id)
+    .eq("location.is_listed", true)
+    .is("location.deleted_at", null);
+  if (error) throw error;
+
+  const lat = destination.latitude == null ? null : Number(destination.latitude);
+  const lng = destination.longitude == null ? null : Number(destination.longitude);
+  // Sem geo do destino não dá para medir distância, e o card simplesmente não mostra a linha.
+  const { data: proximity } =
+    lat != null && lng != null
+      ? await supabase.rpc("locations_proximity", {
+          p_lat: lat,
+          p_lng: lng,
+          p_destination_id: destination.id,
+        })
+      : { data: [] };
+
+  return buildStaticUnits(
+    (rows ?? []) as unknown as UnitRow[],
+    (proximity ?? []) as unknown as ProximityRow[],
+  );
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

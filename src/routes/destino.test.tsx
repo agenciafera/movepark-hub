@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { HelmetProvider } from "react-helmet-async";
 import { renderWithProviders } from "@/test/utils";
 import DestinoPage from "@/routes/destino";
@@ -16,10 +16,13 @@ import type { Destination, ProspectCard as ProspectCardData } from "@/types/doma
 // (page loading desabilitado), e a rejeição não capturada fazia o gate piscar.
 vi.mock("@/components/shared/MapEmbed", () => ({ MapEmbed: () => null }));
 
-// useLoaderData lança fora de um data router; no teste o caminho é via hook (useDestinationBySlug).
+// useLoaderData lança fora de um data router. Configurável porque o caminho do SSG (com
+// loader) e o do cliente (sem) rendem coisas diferentes, e é justamente o do SSG que o bug
+// da lista não pré-renderizada vivia.
+const loaderData = vi.fn(() => null as unknown);
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
-  return { ...actual, useLoaderData: vi.fn(() => null), useParams: vi.fn(() => ({ slug: "aeroporto-de-guarulhos" })) };
+  return { ...actual, useLoaderData: () => loaderData(), useParams: vi.fn(() => ({ slug: "aeroporto-de-guarulhos" })) };
 });
 
 vi.mock("@/features/destinations/api", () => ({
@@ -257,5 +260,148 @@ describe("DestinoPage · lotes mapeados (E0.17-d)", () => {
     expect(
       screen.queryByText(/estão logo abaixo/i),
     ).not.toBeInTheDocument();
+  });
+});
+
+/** Card no formato que o loader entrega (o mesmo `SearchResultItem` da busca). */
+function unidade(over: Record<string, unknown> = {}) {
+  return {
+    id: "lpt1",
+    operator: { slug: "abbapark", name: "Abbapark" },
+    location: {
+      id: "loc1",
+      slug: "aeroporto-afonso-pena",
+      name: "Aeroporto Afonso Pena",
+      address: "Av. Rocha Pombo",
+      latitude: -25.5,
+      longitude: -49.1,
+      distance_km: 1.8,
+      nearest_terminal: null,
+      review_avg: 4.6,
+      review_count: 12,
+      cover_image: null,
+      high_demand_today: false,
+    },
+    parking_type: { code: "covered", name: "Vaga Coberta" },
+    capacity: 80,
+    availability: { remaining: null, sold_out: false, near_capacity: false, near_capacity_message: null },
+    price: { total: 30, old_price: null, per_day: 30, days: 1 },
+    min_stay_days: null,
+    amenities: [],
+    ...over,
+  };
+}
+
+function ldJson(): Record<string, unknown>[] {
+  return [...document.querySelectorAll('script[type="application/ld+json"]')].map((s) =>
+    JSON.parse(s.textContent ?? "{}"),
+  );
+}
+
+describe("lista de unidades no HTML do build", () => {
+  // O bug medido em 13/08/2026: dist/destinos/aeroporto-afonso-pena.html tinha ZERO
+  // ocorrências de "/p/", nenhum nome de unidade e 41 skeletons, porque a lista só existia
+  // depois do fetch da Edge `search` no cliente. A página que disputa "estacionamento
+  // aeroporto curitiba" (12.321 impressões no trimestre) chegava ao crawler sem oferta e
+  // sem um único link interno.
+  beforeEach(() => {
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: undefined, isLoading: false } as never);
+    vi.mocked(useSearchResults).mockReturnValue({ data: undefined, isLoading: true } as never);
+  });
+
+  it("renderiza os cards do loader antes de a busca responder", () => {
+    loaderData.mockReturnValue({ destination: dest(), prospects: [], units: [unidade()] });
+
+    render();
+
+    // O card tem mais de um link para a mesma unidade (capa e corpo); basta um deles.
+    const links = screen
+      .getAllByRole("link")
+      .map((a) => a.getAttribute("href") ?? "")
+      .filter((h) => h.startsWith("/p/"));
+    expect(links.length).toBeGreaterThan(0);
+    expect(links[0]).toContain("/p/abbapark/aeroporto-afonso-pena/covered");
+    expect(screen.getAllByText(/Abbapark/i).length).toBeGreaterThan(0);
+  });
+
+  it("emite ItemList com as unidades e com os lotes mapeados, na ordem visível", async () => {
+    loaderData.mockReturnValue({
+      destination: dest(),
+      prospects: [
+        { id: "p1", name: "Talentos Park", slug: "talentos-park", address: null, latitude: 0, longitude: 0, google_maps_url: null, amenities: [], description: null, distance_km: null, reference_name: null },
+      ],
+      units: [unidade()],
+    });
+
+    render();
+
+    const lista = await waitFor(() => {
+      const achado = ldJson().find((s) => s["@type"] === "ItemList");
+      expect(achado).toBeTruthy();
+      return achado!;
+    });
+    const itens = lista.itemListElement as { position: number; name: string; url: string }[];
+    expect(itens).toHaveLength(2);
+    // Vendável primeiro, mapeado depois: é a mesma ordem da tela, e a separação é o produto
+    // que o parceiro compra (ADR-010).
+    expect(itens[0].name).toBe("Abbapark · Vaga Coberta");
+    expect(itens[0].url).toContain("/p/abbapark/aeroporto-afonso-pena/covered");
+    expect(itens[1].name).toBe("Talentos Park");
+    expect(itens[1].url).toContain("/estacionamentos/aeroporto-de-guarulhos/talentos-park");
+  });
+
+  it("não afirma preço nem disponibilidade no dado estruturado", async () => {
+    // ADR-009: num HTML congelado, "resta 1 vaga" ou um preço de janela vira mentira na hora
+    // seguinte. O ItemList carrega só nome e URL.
+    loaderData.mockReturnValue({ destination: dest(), prospects: [], units: [unidade()] });
+
+    render();
+
+    const lista = await waitFor(() => {
+      const achado = ldJson().find((s) => s["@type"] === "ItemList");
+      expect(achado).toBeTruthy();
+      return achado!;
+    });
+    const bruto = JSON.stringify(lista);
+    expect(bruto).not.toContain("offers");
+    expect(bruto).not.toContain("InStock");
+    expect(bruto).not.toContain("price");
+  });
+
+  it("destino sem unidade diz isso, em vez de mandar skeleton para o crawler", () => {
+    // Recife e Navegantes: o loader já sabe no build que não há reserva online ali, então o
+    // HTML tem que sair com a frase que explica, não com 41 caixas cinzas.
+    loaderData.mockReturnValue({ destination: dest(), prospects: [], units: [] });
+
+    render();
+
+    expect(screen.getByText(/Ainda não temos reserva online/i)).toBeInTheDocument();
+  });
+
+  it("sem loader (navegação no cliente) o skeleton continua valendo", () => {
+    loaderData.mockReturnValue(null);
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
+
+    render();
+
+    expect(screen.queryByText(/Ainda não temos reserva online/i)).not.toBeInTheDocument();
+  });
+
+  it("o link do card não leva data assada no build", () => {
+    // `defaultWindow()` roda no build. Se from/to entrarem no href do HTML estático, todo
+    // card publicado aponta para um D+7 do dia do deploy e envelhece até o próximo build.
+    loaderData.mockReturnValue({ destination: dest(), prospects: [], units: [unidade()] });
+
+    render();
+
+    const hrefs = screen
+      .getAllByRole("link")
+      .map((a) => a.getAttribute("href") ?? "")
+      .filter((h) => h.startsWith("/p/"));
+    expect(hrefs.length).toBeGreaterThan(0);
+    for (const href of hrefs) {
+      expect(href).not.toContain("from=");
+      expect(href).not.toContain("to=");
+    }
   });
 });

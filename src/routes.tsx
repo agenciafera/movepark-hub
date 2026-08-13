@@ -3,7 +3,7 @@ import type { RouteRecord } from "vite-react-ssg";
 import type { LoaderFunctionArgs } from "react-router-dom";
 
 import { supabase } from "@/lib/supabase";
-import { fetchDestinationProspects } from "@/features/destinations/api";
+import { fetchDestinationProspects, fetchDestinationUnits } from "@/features/destinations/api";
 import { fetchListing } from "@/features/listing/api";
 import { filterPosts, pageSlice, totalPages } from "@/features/blog/listing.logic";
 
@@ -147,7 +147,7 @@ async function fetchAllListingPaths(): Promise<string[]> {
 }
 
 /**
- * O destino e os lotes MAPEADOS dele (E0.17-d).
+ * O destino, as unidades VENDÁVEIS e os lotes MAPEADOS dele (E0.17-d).
  *
  * Os mapeados entram aqui, e não só no hook do cliente, porque a página é pré-renderizada:
  * o selo "Sem reserva online" precisa sair no HTML do build. É a frase que diz ao crawler
@@ -162,9 +162,14 @@ async function destinoLoader({ params }: LoaderFunctionArgs) {
     .eq("is_published", true)
     .maybeSingle();
   if (!data) return null;
-  // Falha aqui não pode derrubar a página inteira: sem lote mapeado a seção só não existe.
-  const prospects = await fetchDestinationProspects(params.slug!).catch(() => []);
-  return { destination: data, prospects };
+  // Falha aqui não pode derrubar a página inteira: sem lote mapeado a seção só não existe,
+  // e sem unidade vendável a lista volta a depender da busca no cliente, que é o
+  // comportamento antigo. Em paralelo porque uma não depende da outra.
+  const [prospects, units] = await Promise.all([
+    fetchDestinationProspects(params.slug!).catch(() => []),
+    fetchDestinationUnits(data).catch(() => []),
+  ]);
+  return { destination: data, prospects, units };
 }
 
 async function fetchAllDestinationPaths(): Promise<string[]> {

@@ -314,3 +314,50 @@ canonical própria, e por isso precisam de conteúdo de fato diferente (preço, 
 regras do tipo). Enquanto isso não existir, elas seguem competindo entre si.
 
 Migration: `20261019090000_destination_seo_label.sql`.
+
+## A lista de estacionamentos no HTML do build
+
+Medido em 13/08/2026: `dist/destinos/aeroporto-afonso-pena.html` saía com **zero** ocorrências
+de `/p/`, nenhum nome de unidade, nenhum preço e 41 skeletons. A lista vinha de
+`useSearchResults`, que é fetch no cliente. A página que disputa "estacionamento aeroporto
+curitiba" (12.321 impressões no trimestre) chegava ao crawler sem oferta e sem um único link
+interno para as unidades. Os lotes mapeados, esses já saíam, porque o `destinoLoader` já os
+buscava.
+
+O corte que resolve é entre **fato da unidade** e **o que depende de data**:
+
+| Sai no HTML do build | Continua vindo da busca no cliente |
+|---|---|
+| a unidade existe naquele destino | vaga restante |
+| link para `/p/...`, nome, tipo de vaga | esgotado |
+| endereço, distância, terminal mais próximo | escassez ("últimas vagas") |
+| nota e número de avaliações | total da janela escolhida |
+| preço "a partir de" e estadia mínima | sinal de alta demanda |
+
+A disponibilidade nasce **neutra** na semente. Afirmar "resta 1 vaga" num HTML congelado vira
+mentira na hora seguinte, e ADR-009 não permite renderizar promessa que a unidade não
+sustenta. O `ItemList` emitido carrega só nome e URL, pelo mesmo motivo.
+
+Implementação: `fetchDestinationUnits` em [`src/features/destinations/api.ts`](../../src/features/destinations/api.ts)
+(duas leituras: `location_parking_type` com a tabela de preço aninhada, e a RPC
+`locations_proximity` para distância, que é PostGIS por ADR-001), mapeada por
+[`units.logic.ts`](../../src/features/destinations/units.logic.ts) e semeada no `destinoLoader`.
+
+Três armadilhas que custaram tempo e estão travadas em teste:
+
+1. **Não existe FK direta de `location_parking_type` para `parking_type`.** O caminho passa por
+   `company_parking_type`; embutir direto devolve `PGRST200`.
+2. **`pricing_rule` tem duas FKs para `location_parking_type`** (a própria e `surcharge_source_id`),
+   então o hint `!location_parking_type_id` é obrigatório.
+3. **`defaultWindow()` roda no build.** Se `from`/`to` entrarem no href do card, todo link
+   publicado aponta para um D+7 do dia do deploy e envelhece até o build seguinte. A janela só
+   entra depois que a busca do cliente responde.
+
+**Destino sem unidade vendável** (Recife, Navegantes, Confins) passa a sair com a frase
+"Ainda não temos reserva online em ...". Antes ia com 41 skeletons, o que não diz nada a
+ninguém. O loader já sabe no build que ali não há reserva online, então o HTML pode dizer.
+
+**Fica de fora da semente** quem usa estratégia de preço que o `calcFromPrice` não cobre
+(`tiered_progressive`, `surcharge`, `monthly_remainder`): somar faixas fora do motor viraria
+preço errado no card. Hoje são 3 regras no banco. Essas unidades continuam aparecendo pela
+busca no cliente, só não estão no HTML estático.

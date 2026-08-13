@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lowestPerDay, pickRelatedDestinations } from "./destino.logic";
+import { lowestPerDay, pickRelatedDestinations, pickTopRated } from "./destino.logic";
 
 describe("lowestPerDay", () => {
   it("retorna o menor per_day", () => {
@@ -28,5 +28,32 @@ describe("pickRelatedDestinations", () => {
 
   it("respeita o limite", () => {
     expect(pickRelatedDestinations(all, "cur", 2).map((d) => d.id)).toEqual(["c", "b"]);
+  });
+});
+
+describe("pickTopRated", () => {
+  const item = (id: string, avg: number | null, count: number) => ({
+    id,
+    location: { review_avg: avg, review_count: count },
+  });
+
+  it("só entra quem já foi avaliado", () => {
+    const r = pickTopRated([item("a", 4.9, 0), item("b", null, 0), item("c", 4.1, 3)]);
+    expect(r.map((i) => i.id)).toEqual(["c"]);
+  });
+
+  it("ordena por nota desc e corta no limite", () => {
+    // A semente do build chega ordenada por PREÇO. Sem reordenar aqui, o bloco "Mais bem
+    // avaliados" sairia no HTML em ordem de preço e trocaria de ordem quando a busca
+    // respondesse, na frente de quem está lendo.
+    const r = pickTopRated(
+      [item("c", 4.1, 3), item("a", 4.9, 10), item("b", 4.5, 2), item("d", 3.2, 1), item("e", 5, 1)],
+      3,
+    );
+    expect(r.map((i) => i.id)).toEqual(["e", "a", "b"]);
+  });
+
+  it("lista vazia devolve vazia", () => {
+    expect(pickTopRated([])).toEqual([]);
   });
 });

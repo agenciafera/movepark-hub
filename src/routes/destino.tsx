@@ -9,16 +9,15 @@ import {
   usePublishedDestinations,
 } from "@/features/destinations/api";
 import { ProspectCard } from "@/features/destinations/ProspectCard";
-import { useSearchResults } from "@/features/search/useSearchResults";
+import { useSearchResults, type SearchResultItem } from "@/features/search/useSearchResults";
 import { useFaqCombined } from "@/features/faqs/api";
 import { FaqList } from "@/features/faqs/FaqList";
 import { ResultCard } from "@/features/search/ResultCard";
 import { computeResultBadges } from "@/features/search/searchBadges";
-import { topRated } from "@/features/reviews/reviews.logic";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { GoogleMapEmbed } from "@/components/shared/GoogleMapEmbed";
-import { breadcrumbSchema, destinationSchema, faqSchema } from "@/lib/jsonld";
+import { breadcrumbSchema, destinationSchema, faqSchema, itemListSchema } from "@/lib/jsonld";
 import {
   destinationHeading,
   destinationListHeading,
@@ -30,7 +29,7 @@ import {
 } from "@/lib/seo";
 import { imageSrcSet, optimizedImageUrl } from "@/lib/storage";
 import { formatBRL } from "@/lib/format";
-import { lowestPerDay, pickRelatedDestinations } from "./destino.logic";
+import { lowestPerDay, pickRelatedDestinations, pickTopRated } from "./destino.logic";
 
 const SITE_URL = "https://hub.movepark.co";
 
@@ -62,8 +61,13 @@ function defaultWindow() {
   return { from: from.toISOString(), to: to.toISOString() };
 }
 
-/** O que `destinoLoader` entrega: o destino e os lotes mapeados, já no HTML do build. */
-type DestinoLoaderData = { destination: Destination; prospects: ProspectCardData[] } | null;
+/**
+ * O que `destinoLoader` entrega, tudo já no HTML do build: o destino, as unidades vendáveis
+ * e os lotes mapeados. `units` é a semente da lista; a busca com datas a substitui no cliente.
+ */
+type DestinoLoaderData =
+  | { destination: Destination; prospects: ProspectCardData[]; units?: SearchResultItem[] }
+  | null;
 
 export default function DestinoPage() {
   const params = useParams();
@@ -141,28 +145,48 @@ export default function DestinoPage() {
   // Imagem otimizada (resize/transform do Supabase). O og:image é 1.91:1 (1200×630,
   // padrão de card social); pro JSON-LD damos também a versão quadrada (1:1), porque o
   // Google aceita múltiplas proporções e prefere ter 16:9/4:3/1:1. Tudo gerado on-the-fly
-  // pelo endpoint de resize — não precisa subir um asset quadrado separado.
+  // pelo endpoint de resize, sem precisar subir um asset quadrado separado.
   const heroUrl = destination.hero_image_url;
   const ogImage = optimizedImageUrl(heroUrl, { width: 1200, height: 630, resize: "cover" });
   const squareImage = optimizedImageUrl(heroUrl, { width: 1200, height: 1200, resize: "cover" });
   // 1ª imagem = original (canônica, full-res, sem /transform); seguida das versões
   // recortadas 1.91:1 e 1:1. O Google aceita múltiplas proporções e trata a 1ª como
-  // principal — por isso a original vem na frente.
+  // principal, e por isso a original vem na frente.
   const schemaImages = heroUrl
     ? ([heroUrl, ogImage, squareImage].filter(Boolean) as string[])
     : undefined;
-  const results = search.data?.results ?? [];
+  // A busca com datas manda quando responde; até lá vale a semente do build. As duas usam
+  // o id do location_parking_type como chave, então o React reaproveita o DOM em vez de
+  // trocar o bloco inteiro na frente de quem está lendo.
+  const results = search.data?.results ?? loaded?.units ?? [];
   const prospectItems = loaded?.prospects ?? prospects.data ?? [];
+  // ItemList espelhando exatamente o que está visível, na mesma ordem: primeiro as unidades
+  // vendáveis, depois os lotes mapeados. Espelhar importa porque dado estruturado que
+  // descreve algo que a página não mostra é o que o Google trata como spam. Só nome e URL:
+  // preço e disponibilidade dependem de data e não podem ser afirmados num HTML congelado
+  // (ADR-009).
+  const listaSchema = [
+    ...results.map((r) => ({
+      name: `${r.operator.name} · ${r.parking_type.name}`,
+      url: `${SITE_URL}/p/${r.operator.slug}/${r.location.slug}/${r.parking_type.code}`,
+    })),
+    ...prospectItems.map((p) => ({
+      name: p.name,
+      url: `${SITE_URL}/estacionamentos/${destination.slug}/${p.slug}`,
+    })),
+  ];
   const fromPrice = lowestPerDay(results);
   const related = pickRelatedDestinations(allDestinations.data ?? [], destination.id, 6);
-  const topResults = topRated(topSearch.data?.results ?? []);
+  // Mesma regra nas duas fontes: a busca já vem por nota, a semente do build vem por preço.
+  const topResults = pickTopRated(topSearch.data?.results ?? loaded?.units ?? [], 4);
   // Um card por tipo de vaga, o MESMO card da busca (ResultCard): um único modelo de card entre
   // home, busca e destino (E2.1.3).
-  const searchWindowParams = new URLSearchParams({
-    dest: destination.code,
-    from: win.from,
-    to: win.to,
-  });
+  // A janela só entra no href DEPOIS que a busca do cliente responde. `defaultWindow()`
+  // roda no build, e assar um D+7 do dia do deploy dentro do link deixaria todo card
+  // apontando para uma data vencida até o próximo build.
+  const searchWindowParams = search.data
+    ? new URLSearchParams({ dest: destination.code, from: win.from, to: win.to })
+    : new URLSearchParams({ dest: destination.code });
   const faqItems = (faqs.data ?? []).map((f) => ({ question: f.question, answer: f.answer }));
   // O JSON-LD pede número; o banco entrega `numeric`, que chega como string.
   const lat = Number(destination.latitude);
@@ -199,6 +223,9 @@ export default function DestinoPage() {
             ]),
           )}
         </script>
+        {listaSchema.length > 0 && (
+          <script type="application/ld+json">{JSON.stringify(itemListSchema(listaSchema))}</script>
+        )}
         {faqItems.length > 0 && (
           <script type="application/ld+json">{JSON.stringify(faqSchema(faqItems))}</script>
         )}
@@ -297,7 +324,11 @@ export default function DestinoPage() {
           <h2 className="mb-4 text-balance text-display-md text-ink">
             {destinationListHeading(destination)}
           </h2>
-          {search.isLoading ? (
+          {/* Skeleton só quando de fato não se sabe nada ainda. No HTML do build o loader já
+              respondeu: se ele trouxe zero unidade, o destino não tem reserva online e o
+              certo é mandar a frase que explica isso, não 41 caixas cinzas. Sem loader
+              (navegação no cliente) o skeleton continua valendo. */}
+          {search.isLoading && results.length === 0 && !loaded?.units ? (
             <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-3">
               {Array.from({ length: 6 }).map((_, i) => (
                 <ParkingCardSkeleton key={i} />
