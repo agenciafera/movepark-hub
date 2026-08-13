@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils";
 import { userInitials } from "@/lib/initials";
 import { postLogoutPath } from "@/auth/postLoginRedirect";
 import { useDestinations } from "@/features/search/api";
-import { Wordmark } from "./Brand";
+import { Monogram, Wordmark } from "./Brand";
 import { ConsumerMobileMenu } from "./ConsumerMobileMenu";
 import { useHeaderOculto } from "./useHeaderOculto";
 import { useHeroSearchPassed } from "./useHeroSearchPassed";
@@ -155,12 +155,19 @@ export function ConsumerTopbar() {
           ainda não conhece a marca. Vai menor no mobile (18px contra 22) para o
           nome caber sem espremer a busca do meio.
         */}
-        {/* Duas instâncias porque o `Wordmark` aplica a altura como estilo
-            inline, e estilo inline vence classe: `tablet:h-[22px]` não teria
-            efeito nenhum. */}
-        <Link to="/" className="shrink-0" aria-label="Ir para a home">
-          <Wordmark height={18} className="tablet:hidden" />
-          <Wordmark height={22} className="hidden tablet:block" />
+        {/*
+          Monograma no celular, marca inteira do tablet para cima.
+
+          A marca inteira já esteve aqui e voltou atrás: os 121px dela contra os
+          28 do símbolo espremiam a busca do meio numa tela de 375. O símbolo
+          sozinho não diz o nome para quem não conhece a marca, e esse é o custo
+          aceito em troca do espaço.
+        */}
+        <Link to="/" className="hidden shrink-0 tablet:block" aria-label="Ir para a home">
+          <Wordmark height={22} />
+        </Link>
+        <Link to="/" className="shrink-0 tablet:hidden" aria-label="Movepark">
+          <Monogram size={28} />
         </Link>
 
         <DestinosMenu />
@@ -191,7 +198,7 @@ export function ConsumerTopbar() {
               <button
                 type="button"
                 onClick={() => setSearchOpen(true)}
-                className="flex h-11 w-full max-w-[190px] items-center gap-3 rounded-full border border-hairline bg-canvas px-3.5 text-body-sm text-muted shadow-tier transition-shadow hover:shadow-tier tablet:hidden"
+                className="flex h-12 w-full items-center gap-3 rounded-full border border-hairline bg-canvas px-4 text-body-sm text-muted shadow-tier transition-shadow hover:shadow-tier tablet:hidden"
               >
                 <MagnifyingGlass className="h-4 w-4 shrink-0" />
                 {/* O rótulo curto é o mesmo do título do modal que este botão abre.
