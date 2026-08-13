@@ -3,28 +3,17 @@ import { Airplane, ArrowRight } from "@phosphor-icons/react";
 import { useRef, useEffect } from "react";
 import { gsap } from "@/lib/gsap";
 import { Button } from "@/components/ui/button";
-import { proximaPosicao } from "./carousel.logic";
+import { proximaPosicao, suavizar } from "./carousel.logic";
 
 const CARD_W = 400; // px, teto da largura do card (no celular ele encolhe)
+const CARD_H = 420; // px, altura única de todos os cards
 const GAP = 20; // px, espaço entre cards
 
-// Alturas e deslocamentos verticais, que criam o layout desalinhado
-const HEIGHTS = [300, 400, 340, 430, 320, 380, 410, 330, 390, 350];
-const OFFSETS = [0, 70, 28, 90, 50, 15, 75, 40, 82, 55];
+/** Intervalo entre um passo e o próximo, em ms. */
+const INTERVALO = 4000;
 
-// Altura do container = max(height + offset) + margem de scaleY
-// max: 430 + 90 = 520 → +80px para o hover scale crescer para baixo → 600px
-const CONTAINER_H = 600;
-
-/**
- * Velocidade do avanço automático, em pixels por segundo.
- *
- * Vem de px/s e não da duração da volta porque agora o usuário também arrasta: a
- * posição muda por fora da animação, e uma duração fixa exigiria recalcular o
- * ponto de partida a cada toque. Em px/s o avanço é sempre o mesmo, comece de
- * onde começar. Os 4200px do conjunto em 55s davam ~76px/s.
- */
-const VELOCIDADE = 76;
+/** Duração de um passo, em ms. */
+const DURACAO = 600;
 
 const DEST_COUNTS: Record<string, number> = {
   GRU: 12,
@@ -115,23 +104,19 @@ const items: { label: string; city: string; state: string; dest: string; img: st
 // Duplica os items para loop contínuo
 const loopItems = [...items, ...items];
 
-function DestinationCard({
-  label,
-  city,
-  state,
-  dest,
-  img,
-  height,
-}: (typeof items)[number] & { height: number }) {
+function DestinationCard({ label, city, state, dest, img }: (typeof items)[number]) {
   const count = DEST_COUNTS[dest] ?? 2;
   return (
     <Link
       to={`/search?dest=${dest}`}
-      className="group relative block overflow-hidden rounded-2xl bg-surface-strong transition-transform duration-500 ease-out hover:scale-y-[1.18]"
+      /* O realce do mouse é só a sombra e o zoom da imagem. A esticada vertical
+         que existia aqui deformava o card, e num carrossel que anda sozinho o
+         cursor esbarra em card atrás de card. */
+      className="group relative block overflow-hidden rounded-2xl bg-surface-strong transition-shadow hover:shadow-tier"
       /* `min()` porque 400px é mais largo que um celular de 375: o card ficava
          sempre cortado e nunca dava para ver um inteiro. Os 78vw deixam a borda
          do próximo aparecendo, que é o convite para arrastar. */
-      style={{ width: `min(${CARD_W}px, 78vw)`, height, transformOrigin: "top center" }}
+      style={{ width: `min(${CARD_W}px, 78vw)`, height: CARD_H }}
     >
       <img
         src={img}
@@ -151,11 +136,11 @@ function DestinationCard({
           <Airplane className="h-3 w-3 shrink-0" aria-hidden />
           {city} · {state}
         </p>
-        <div className="mt-3 overflow-hidden">
-          <span className="inline-block translate-y-5 rounded-full bg-white/95 px-3 py-1 text-[12px] font-semibold text-ink opacity-0 transition-all delay-100 duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-            {count} estacionamentos
-          </span>
-        </div>
+        {/* Sempre visível. Escondido atrás do hover, o dado não existia no
+            celular, que é de onde vem a maior parte do acesso. */}
+        <span className="mt-3 inline-block rounded-full bg-white/95 px-3 py-1 text-[12px] font-semibold text-ink">
+          {count} {count === 1 ? "estacionamento" : "estacionamentos"}
+        </span>
       </div>
     </Link>
   );
@@ -167,6 +152,10 @@ export function DestinationsGallery() {
   const trilhoRef = useRef<HTMLDivElement>(null);
   /* Pausa o avanço enquanto a mão está no carrossel, e por um tempo depois. */
   const pausadoAte = useRef(0);
+  /* Passo em andamento. O tween mexe no `scrollLeft`, o que dispara `onScroll`:
+     sem essa trava o tratador de arrasto daria a volta no meio da animação. */
+  const animando = useRef(false);
+  const tweenRef = useRef(0);
 
   /*
     A largura de um conjunto é medida no DOM, não calculada de constante: o card
@@ -196,12 +185,14 @@ export function DestinationsGallery() {
   }, []);
 
   /*
-    O avanço automático virou rolagem de verdade, não `transform`.
+    O avanço é de um card por vez, a cada `INTERVALO`, e não um deslize contínuo.
 
-    Com `translateX` o usuário não tem como arrastar: o dedo rola a página, não a
-    trilha. Movendo o `scrollLeft` de um container rolável, o arrasto no celular
-    passa a funcionar de graça, com a inércia do próprio sistema, e o automático
-    continua por cima.
+    O deslize de marquee nunca parava num card inteiro: o olho pegava sempre uma
+    imagem no meio do corte, e o carrossel lia como enfeite em vez de lista de
+    destino. Andar em passo cheio deixa um card sempre alinhado na borda.
+
+    Continua sendo `scrollLeft` de um container rolável, não `transform`, porque
+    é o que dá o arrasto e a inércia do sistema no celular sem uma linha de JS.
   */
   useEffect(() => {
     const trilho = trilhoRef.current;
@@ -209,33 +200,46 @@ export function DestinationsGallery() {
     // Quem pediu menos movimento fica só com o arrasto.
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
 
-    let frame = 0;
-    let anterior = 0;
-
-    const passo = (agora: number) => {
-      const decorrido = anterior ? (agora - anterior) / 1000 : 0;
-      anterior = agora;
-      if (agora >= pausadoAte.current && decorrido > 0 && decorrido < 0.5) {
-        trilho.scrollLeft = proximaPosicao(
-          trilho.scrollLeft,
-          VELOCIDADE * decorrido,
-          larguraDoSet(),
-        );
-      }
-      frame = requestAnimationFrame(passo);
+    /* O passo sai do card renderizado, não da constante: `min(400px, 78vw)`
+       encolhe com a tela, e um número cravado erraria o alinhamento no celular. */
+    const passoDoCard = () => {
+      const card = trilho.querySelector<HTMLElement>("[data-card]");
+      return card ? card.getBoundingClientRect().width + GAP : 0;
     };
-    frame = requestAnimationFrame(passo);
 
-    /* Aba em segundo plano não recebe rAF; ao voltar, o primeiro delta seria
-       gigante. Zerar o relógio evita o salto. */
-    const aoVoltar = () => {
-      anterior = 0;
+    const avancar = () => {
+      const passo = passoDoCard();
+      const set = larguraDoSet();
+      if (passo <= 0 || set <= 0) return;
+
+      const de = trilho.scrollLeft;
+      const inicio = performance.now();
+      animando.current = true;
+
+      const quadro = (agora: number) => {
+        const t = (agora - inicio) / DURACAO;
+        if (t >= 1) {
+          /* A normalização só acontece no fim do passo. Feita durante, o corte
+             para o conjunto gêmeo cairia no meio da animação e apareceria. */
+          trilho.scrollLeft = proximaPosicao(de, passo, set);
+          animando.current = false;
+          return;
+        }
+        trilho.scrollLeft = de + passo * suavizar(t);
+        tweenRef.current = requestAnimationFrame(quadro);
+      };
+      tweenRef.current = requestAnimationFrame(quadro);
     };
-    document.addEventListener("visibilitychange", aoVoltar);
+
+    const relogio = window.setInterval(() => {
+      if (performance.now() < pausadoAte.current || animando.current) return;
+      avancar();
+    }, INTERVALO);
 
     return () => {
-      cancelAnimationFrame(frame);
-      document.removeEventListener("visibilitychange", aoVoltar);
+      window.clearInterval(relogio);
+      cancelAnimationFrame(tweenRef.current);
+      animando.current = false;
     };
   }, []);
 
@@ -251,7 +255,7 @@ export function DestinationsGallery() {
   */
   const aoRolar = () => {
     const trilho = trilhoRef.current;
-    if (!trilho) return;
+    if (!trilho || animando.current) return;
     const set = larguraDoSet();
     if (set <= 0) return;
     if (trilho.scrollLeft >= set) trilho.scrollLeft -= set;
@@ -289,7 +293,7 @@ export function DestinationsGallery() {
       </div>
 
       {/*
-        Carrossel: avança sozinho e aceita arrasto.
+        Carrossel: anda um card por vez e aceita arrasto.
 
         `overflow-x-auto` é o que dá o arrasto e a inércia do sistema no celular
         sem uma linha de JS. `scrollbar-none` esconde a barra, que num carrossel
@@ -306,23 +310,15 @@ export function DestinationsGallery() {
         onMouseEnter={segurar}
         onMouseMove={segurar}
         className="scrollbar-none touch-pan-x overflow-x-auto overscroll-x-contain"
-        style={{ height: CONTAINER_H }}
         aria-label="Destinos mais procurados"
         role="group"
       >
         <div className="flex w-max" style={{ gap: GAP }}>
-          {loopItems.map((item, i) => {
-            const idx = i % items.length;
-            return (
-              <div
-                key={`${item.dest}-${i}`}
-                className="shrink-0"
-                style={{ marginTop: OFFSETS[idx] }}
-              >
-                <DestinationCard {...item} height={HEIGHTS[idx]} />
-              </div>
-            );
-          })}
+          {loopItems.map((item, i) => (
+            <div key={`${item.dest}-${i}`} data-card className="shrink-0">
+              <DestinationCard {...item} />
+            </div>
+          ))}
         </div>
       </div>
     </section>

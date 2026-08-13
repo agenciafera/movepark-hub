@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { proximaPosicao } from "./carousel.logic";
+import { proximaPosicao, suavizar } from "./carousel.logic";
 
 const SET = 4200;
 
@@ -29,5 +29,31 @@ describe("proximaPosicao", () => {
   /** Antes da medida do layout a largura é 0, e dividir o loop por ela travaria. */
   it("sem largura medida, a posição não muda", () => {
     expect(proximaPosicao(120, 76, 0)).toBe(120);
+  });
+});
+
+describe("suavizar", () => {
+  it("começa parado e termina no fim exato do passo", () => {
+    expect(suavizar(0)).toBe(0);
+    expect(suavizar(1)).toBe(1);
+  });
+
+  it("na metade do tempo o card está na metade do caminho", () => {
+    expect(suavizar(0.5)).toBeCloseTo(0.5, 10);
+  });
+
+  /** Acelerar no início é o que tira a partida seca do passo. */
+  it("anda menos que o tempo no primeiro quarto e mais no último", () => {
+    expect(suavizar(0.25)).toBeLessThan(0.25);
+    expect(suavizar(0.75)).toBeGreaterThan(0.75);
+  });
+
+  /**
+   * Aba em segundo plano não recebe quadro. Ao voltar, o relógio do passo já
+   * estourou o fim, e sem o grampo o card passaria do lugar e voltaria.
+   */
+  it("grampeia progresso fora de [0, 1]", () => {
+    expect(suavizar(4.2)).toBe(1);
+    expect(suavizar(-0.3)).toBe(0);
   });
 });
