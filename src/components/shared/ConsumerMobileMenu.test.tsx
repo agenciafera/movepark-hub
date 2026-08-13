@@ -32,6 +32,31 @@ describe("ConsumerMobileMenu", () => {
     renderWithProviders(<ConsumerMobileMenu />);
     expect(screen.getByRole("button", { name: "Abrir menu" }).className).toContain("tablet:hidden");
   });
+
+  /**
+   * O foco automático do Radix caía no botão de tema, o último controle do
+   * painel, e abrir o menu acendia um anel num alvo que ninguém escolheu.
+   */
+  it("ao abrir, o foco fica no painel, e a primeira tabulação é o topo da lista", async () => {
+    renderWithProviders(<ConsumerMobileMenu />);
+    await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
+
+    const painel = screen.getByRole("dialog");
+    expect(document.activeElement).toBe(painel);
+
+    const tabaveis = [...painel.querySelectorAll<HTMLElement>("a[href], button")];
+    expect(tabaveis[0]).toHaveTextContent("Destinos");
+  });
+
+  /** Régua entre itens de lista curta divide o que o espaço já separa. */
+  it("os itens não têm régua e o texto recua junto com o título", async () => {
+    renderWithProviders(<ConsumerMobileMenu />);
+    await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
+
+    const item = screen.getByRole("link", { name: "Destinos" });
+    expect(item.className).not.toContain("border-b");
+    expect(item.className).toContain("px-3");
+  });
 });
 
 function rotuloDe(href: string) {

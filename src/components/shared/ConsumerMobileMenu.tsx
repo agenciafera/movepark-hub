@@ -50,17 +50,42 @@ export function ConsumerMobileMenu() {
         </button>
       </SheetTrigger>
 
-      <SheetContent side="right" className="sm:w-[320px] w-[280px]">
+      {/*
+        O `SheetContent` não traz padding próprio: quem tinha era só o
+        `SheetHeader`. Por isso o padding mora em cada bloco daqui, e não no
+        container: assim o item do menu pode sangrar até a borda no hover e ainda
+        ter o texto recuado.
+      */}
+      <SheetContent
+        side="right"
+        /*
+          O foco automático do Radix estava caindo no botão de tema, o último
+          controle do painel, e abrir o menu acendia um anel de foco num alvo que
+          ninguém escolheu. Mandando o foco para o próprio painel, o teclado
+          continua entrando no diálogo (o Radix já dá `tabindex=-1` a ele) e a
+          primeira tabulação segue para "Destinos", que é o topo da lista.
+        */
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          (e.currentTarget as HTMLElement | null)?.focus();
+        }}
+        /* Sem anel no container: o foco aqui é programático, para o teclado
+           entrar no diálogo, e desenhar um contorno em volta do painel inteiro
+           parece erro de layout. Os controles de dentro mantêm o anel deles. */
+        className="w-[320px] focus:outline-none"
+      >
         <SheetHeader>
           <SheetTitle>Menu</SheetTitle>
         </SheetHeader>
 
-        <nav className="mt-6 flex flex-col">
+        {/* Sem régua entre os itens: em lista curta a linha divide o que o espaço
+            já separa, e ainda briga com a borda do próprio painel. */}
+        <nav className="mt-4 flex flex-col px-3">
           {LINKS.map((l) => (
             <SheetClose asChild key={l.to}>
               <Link
                 to={l.to}
-                className="border-b border-hairline py-3.5 text-body-md text-ink last:border-0"
+                className="rounded-sm px-3 py-3 text-body-md text-ink transition-colors hover:bg-surface-soft"
               >
                 {l.label}
               </Link>
@@ -68,7 +93,7 @@ export function ConsumerMobileMenu() {
           ))}
         </nav>
 
-        <div className="mt-6 flex flex-col gap-3">
+        <div className="mt-auto flex flex-col gap-4 p-6">
           <SheetClose asChild>
             <Button asChild className="w-full">
               <Link to="/login">Entrar</Link>
