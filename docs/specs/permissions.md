@@ -62,9 +62,33 @@ ninguém, e sair disso exige acesso direto ao banco. Papel é mudança de duas p
 `company_operator` com o client de `service_role`, então nunca dependeram do grant de
 `authenticated` e seguem iguais. O trigger de `auth.users` cria o perfil com o default `customer`.
 
-**Fica em aberto:** `profiles` tem quatro policies onde duas bastariam (duas de select e duas de
-update, uma delas sem `TO`). Não é a falha, porque policy nenhuma corta coluna, mas é confusão
-esperando para virar erro de leitura.
+### As policies de `profiles`, consolidadas (13/08/2026)
+
+Eram quatro onde duas bastam (`20261017110000_profiles_policies_consolidadas.sql`). Não era a
+falha, porque policy nenhuma corta coluna, mas é a confusão que ajudou a escondê-la: com quatro
+policies permissivas sobre a mesma tabela, ler "quem pode o quê" exige unir predicados de cabeça,
+e foi assim que a pergunta "mas a RLS não protege?" passou a ter uma resposta que parecia sim.
+
+As duas que saíram estavam **inteiramente contidas** nas que ficaram, então o comportamento
+efetivo não mudou:
+
+| Saiu | Estava contida em |
+|---|---|
+| `profile_owner_select` `USING (id = auth.uid())` | `profiles_select` `USING (id = auth.uid() OR is_hub_admin())` |
+| `profile_owner_update` `USING/CHECK (id = auth.uid())` | `profiles_update` `USING (id = auth.uid() OR is_hub_admin())` |
+
+Ficaram `profiles_select` e `profiles_update`, agora com `TO authenticated` e com o `WITH CHECK`
+escrito em vez de herdado do `USING`. Nenhuma das duas mudanças altera efeito: o anônimo já lia
+zero linha (`auth.uid()` é nulo sem sessão) e `service_role` tem BYPASSRLS, então as Edges que
+leem `profiles` com o client de admin não sentem. As duas coisas foram conferidas no vivo antes de
+mexer, e as seis leituras e escritas foram conferidas de novo depois.
+
+**Continua faltando de propósito:** não existe policy de INSERT nem de DELETE. Perfil nasce pelo
+trigger de `auth.users` e some por `anonymize_own_account()`, os dois `SECURITY DEFINER`, então
+`authenticated` não cria nem apaga linha aqui. A ausência é a regra.
+
+**A divisão de trabalho, que é o resumo dos dois consertos:** a policy diz **qual linha**, o grant
+diz **qual coluna**. Confundir os dois foi a falha.
 
 ## Vocabulário de escopos
 

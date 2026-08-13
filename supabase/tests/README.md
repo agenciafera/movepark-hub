@@ -26,15 +26,22 @@ Por isso o schema e os dados de preço batem com produção.
 - `api_booking_scope.test.sql` - as escritas de RESERVA, as de maior consequencia do conjunto: mexem numa reserva ja vendida, com um cliente do outro lado. Se a vizinha alcancasse uma reserva alheia, cancelaria a viagem de alguem ou registraria entrada de um carro que nao chegou, sem gerar erro para ninguem. A fixture cria a reserva na propria transacao, com chave de API como ator (booking_actor_check exige profile_id ou created_via_api_key_id).
 - `prospect_location.test.sql` - E0.17-a · ADR-010: a FORMA da tabela do lote mapeado, que é o ADR inteiro. Afirma que `checkout_mode`, `is_listed`, `take_rate_bps` e `is_24h` NÃO existem e que nenhuma FK aponta para a tabela, então falha no dia em que alguém "só adiciona uma coluninha" e reabre o estado impossível. Cobre também o slug único contra `location.slug` (Postgres não expressa unique entre tabelas, e slug repetido não dá erro: some a ficha e some a URL que tinha ranking) e a RLS, que precisa esconder rascunho E ficha convertida.
 - `prospect_location_admin.test.sql` - E0.17-h: as REGRAS que o painel colocou no servidor, enquanto o irmão acima protege a forma da tabela. As cinco RPCs são `SECURITY DEFINER` porque o corte de coluna de Q-021 esconde telefone e place_id até do `hub_admin`, e definer com gate furado devolve para qualquer cliente logado exatamente o dado que a tabela nega, sem nada na tela denunciando. Cobre o gate de publicação nos dois caminhos (a constraint pega o update na mão, a RPC devolve a frase para a tela), a ficha convertida como somente leitura e o 301 da ficha convertida, único caminho aberto a `anon` de propósito.
-- `profiles_role_guard.test.sql` - `profiles.role` não é gravável por quem ele autoriza. Até 13/08/2026 qualquer conta criada no `/login` virava `hub_admin` com um PATCH no próprio perfil, porque policy corta linha e não coluna. As asserções vêm em dois níveis: `has_column_privilege` é o guard barato contra um `grant update on profiles` futuro reabrir tudo em silêncio, e o comportamento prova que a tela da conta continua editando nome e preferências, que é o que quebra quando alguém fecha coluna demais.
+- `profiles_role_guard.test.sql` - `profiles.role` não é gravável por quem ele autoriza, e o contorno das policies da tabela. Até 13/08/2026 qualquer conta criada no `/login` virava `hub_admin` com um PATCH no próprio perfil, porque policy corta linha e não coluna. As asserções vêm em dois níveis: `has_column_privilege` é o guard barato contra um `grant update on profiles` futuro reabrir tudo em silêncio, e o comportamento prova que a tela da conta continua editando nome e preferências, que é o que quebra quando alguém fecha coluna demais. O bloco final trava a consolidação das policies num `set_eq`: policy permissiva soma com OR, então uma quinta acrescentada sem querer só ALARGA o acesso, e alargar não quebra teste nenhum. Só lista exata cobra.
 - `api_isolation.test.sql` - as três funções que sustentam o isolamento entre inquilinos (`api_key_assert_company_access`, `api_assert_lpt_company`, `api_assert_scopes`), que eram chamadas por quase toda `api_*` sem nenhuma asserção. Cobre a empresa vizinha pedindo um id que não é dela, o escopo fora do catálogo e o escopo interno (`payouts:write`) tentando entrar numa chave de API. Os erros são asseridos pelo `errcode` (`P0001` de domínio, `42501` de privilégio), não pela mensagem, que é copy.
 
 ## Nota sobre o histórico de migrations
 O repo foi **rebaselineado** a partir do banco vivo (o histórico anterior estava divergente - várias
-migrations aplicadas direto via MCP/dashboard, nunca commitadas). O banco continua sendo a fonte da
-verdade. Se um dia for usar `supabase db push`, o histórico remoto (`supabase_migrations.schema_migrations`,
-~39 linhas) precisa de um `supabase migration repair` para refletir só o baseline - passo de metadata,
-feito sob demanda.
+migrations aplicadas direto via MCP/dashboard, nunca commitadas).
+
+**Em 13/08/2026 o histórico foi alinhado e `supabase db push` passa a ser o caminho.** O remoto
+guardava 232 versões pré-rebaseline que o repo não tem, e o `repair` foi feito nos dois sentidos
+(as órfãs remotas como `reverted`, as locais já aplicadas como `applied`). Hoje são 176 pareadas e
+zero órfãs dos dois lados. Migration nova entra por `supabase db push`, de preferência precedida de
+`--dry-run`, que lista exatamente o que vai subir.
+
+Um detalhe que travava tudo e não era óbvio: `20260723500000` tinha **hora 50** no carimbo. O apply
+local tolerava, mas o `migration repair` recusava o lote inteiro por causa dela. Renomeada para
+`20260723050000`, mesma posição na ordem.
 
 ### O padrão volta, e o CI não vê
 

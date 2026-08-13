@@ -13,7 +13,7 @@
 -- que quebra na vida real quando alguém fecha coluna demais.
 
 begin;
-select plan(16);
+select plan(24);
 
 -- ── fixtures (como postgres; RLS não se aplica a superuser) ──────────────────
 do $$
@@ -143,6 +143,69 @@ select ok(
   not has_function_privilege('anon', 'public.admin_set_user_role(uuid, public.user_role)', 'execute')
   and has_function_privilege('authenticated', 'public.admin_set_user_role(uuid, public.user_role)', 'execute'),
   'admin_set_user_role: anon não executa, authenticated executa');
+
+-- ── 5. As policies, depois de consolidadas (20261017110000) ──────────────────
+--
+-- Eram quatro onde duas bastam, e as duas que saíram estavam contidas nas que ficaram. O `set_eq`
+-- é o guard contra a volta: policy permissiva soma com OR, então uma quinta policy acrescentada
+-- sem querer só ALARGA o acesso, e alargar não quebra teste nenhum. Só uma lista exata cobra.
+
+select set_eq(
+  $$select policyname::text from pg_policies where schemaname = 'public' and tablename = 'profiles'$$,
+  array['profiles_select', 'profiles_update'],
+  'profiles tem exatamente duas policies, uma de leitura e uma de escrita');
+
+select is(
+  (select count(*)::int from pg_policies
+    where schemaname = 'public' and tablename = 'profiles' and cmd in ('INSERT', 'DELETE')),
+  0,
+  'nenhuma policy de INSERT ou DELETE: perfil nasce por trigger e some por RPC, os dois definer');
+
+set local role authenticated;
+select pg_temp.as_user(current_setting('test.ucust'));
+
+select is(
+  (select count(*)::int from public.profiles where id = current_setting('test.ucust')::uuid),
+  1,
+  'customer lê a própria linha');
+
+select is(
+  (select count(*)::int from public.profiles where id = current_setting('test.ualvo')::uuid),
+  0,
+  'customer NÃO lê a linha de outra pessoa');
+
+-- Escrever na linha alheia não levanta erro: a RLS só não casa nenhuma linha, e o update
+-- responde "0 rows". É por isso que a asserção olha o valor no fim, e não o erro.
+select lives_ok(
+  format($$update public.profiles set first_name = 'Invadido' where id = %L$$,
+         current_setting('test.ualvo')),
+  'update na linha alheia não estoura, só não pega nenhuma linha');
+
+reset role;
+
+select is(
+  (select first_name from public.profiles where id = current_setting('test.ualvo')::uuid),
+  'Alvo',
+  'e a linha alheia continua intacta');
+
+set local role authenticated;
+select pg_temp.as_user(current_setting('test.uadm'));
+
+select is(
+  (select count(*)::int from public.profiles where id = current_setting('test.ualvo')::uuid),
+  1,
+  'hub_admin lê a linha de terceiro (é a lista de Usuários do Manager)');
+
+reset role;
+
+set local role anon;
+
+select is(
+  (select count(*)::int from public.profiles),
+  0,
+  'anon não lê perfil nenhum');
+
+reset role;
 
 select * from finish();
 rollback;
