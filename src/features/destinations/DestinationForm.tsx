@@ -57,6 +57,7 @@ export function DestinationForm({ open, destination, onOpenChange }: Props) {
     is_popular: false,
     is_published: true,
     sort_order: "100",
+    seo_label: "",
     meta_title: "",
     meta_description: "",
     intro: "",
@@ -80,6 +81,7 @@ export function DestinationForm({ open, destination, onOpenChange }: Props) {
       is_popular: d?.is_popular ?? false,
       is_published: d?.is_published ?? true,
       sort_order: d?.sort_order != null ? String(d.sort_order) : "100",
+      seo_label: d?.seo_label ?? "",
       meta_title: d?.meta_title ?? "",
       meta_description: d?.meta_description ?? "",
       intro: d?.intro ?? "",
@@ -111,6 +113,7 @@ export function DestinationForm({ open, destination, onOpenChange }: Props) {
       is_popular: f.is_popular,
       is_published: f.is_published,
       sort_order: Number(f.sort_order || 100),
+      seo_label: f.seo_label.trim() || null,
       meta_title: f.meta_title.trim() || null,
       meta_description: f.meta_description.trim() || null,
       intro: f.intro.trim() || null,
@@ -212,9 +215,23 @@ export function DestinationForm({ open, destination, onOpenChange }: Props) {
           <div className="tablet:col-span-2">
             <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.4px] text-muted-steel">SEO / Conteúdo</div>
           </div>
+          <div className="flex flex-col gap-1.5 tablet:col-span-2">
+            <Label htmlFor="d-seo">Rótulo de SEO</Label>
+            <Input
+              id="d-seo"
+              value={f.seo_label}
+              onChange={(e) => set("seo_label", e.target.value)}
+              placeholder="Aeroporto Curitiba, Afonso Pena (CWB)"
+            />
+            <p className="text-body-sm text-muted">
+              Vira o título e o H1 da página, com a palavra Estacionamento na frente. Escreva na
+              ordem em que as pessoas buscam, sem preposição, e separe por vírgula a segunda forma
+              de chamar o mesmo lugar.
+            </p>
+          </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="d-mt">Meta title</Label>
-            <Input id="d-mt" value={f.meta_title} onChange={(e) => set("meta_title", e.target.value)} placeholder="Estacionamento em ... | Movepark" />
+            <Input id="d-mt" value={f.meta_title} onChange={(e) => set("meta_title", e.target.value)} placeholder="deixe vazio para usar o rótulo de SEO" />
           </div>
           <div className="flex flex-col gap-1.5 tablet:col-span-2">
             <ImageUploadField

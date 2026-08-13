@@ -46,7 +46,8 @@ destination
 ├── sort_order      int         — ordenação no menu/listagens
 │   ── colunas SEO/conteúdo (migration 20260609120000) ──
 ├── slug            text unique not null — segmento da URL /destinos/<slug>
-├── meta_title      text|null   — <title>/og:title (fallback: "Estacionamento em <name> | Movepark")
+├── seo_label       text|null   : rótulo de SEO na ordem de busca ("Aeroporto Curitiba, Afonso Pena (CWB)")
+├── meta_title      text|null   : override do <title>/og:title; vazio usa o seo_label
 ├── meta_description text|null  — meta description / og:description
 ├── intro           text|null   — corpo da página; parágrafos separados por linha em branco
 ├── hero_image_url  text|null   — imagem de topo (opcional)
@@ -83,7 +84,7 @@ e inserts manuais sem slug continuam funcionando. Índice `destination_published
 - **Página pública** (`src/routes/destino.tsx`): `<Helmet>` com title/description (fallbacks),
   canonical e og para `https://hub.movepark.co/destinos/<slug>`; três blocos **JSON-LD**
   (`destinationSchema` → `@type: Place`, `breadcrumbSchema`, `faqSchema`); H1
-  "Estacionamento em <short_name ?? name>"; `intro` dividido em parágrafos; hero opcional;
+  "Estacionamento <seo_label sem o código>" (ver "Estrutura de palavra-chave" abaixo); `intro` dividido em parágrafos; hero opcional;
   **lista de estacionamentos** via `useSearchResults({ dest: code, … })` (próximos 7 dias,
   ordenado por preço) — o Edge `search` restringe ao destino pelo vínculo
   `location.destination_id` (DAT-04), listando só os lotes **ancorados** àquele destino, não o
@@ -257,3 +258,59 @@ limit 1;
 > Ambas só expõem destinos publicados (`is_published = true`) — coerente com a página
 > pública e o `getStaticPaths`. Para os estacionamentos próximos em `get_destination`,
 > encadeie a Edge Function `search` passando `dest = code` (mesmo caminho da página).
+
+## Estrutura de palavra-chave (title, H1, H2)
+
+Medido no Search Console em 13/08/2026 (propriedade `sc-domain:movepark.co`, 3 meses,
+4.260 cliques e 521.377 impressões):
+
+| Padrão da consulta | Cliques | Impressões |
+|---|---|---|
+| `estacionamento aeroporto <X>` (colado) | 647 | 50.402 |
+| `estacionamento <prep> aeroporto <X>` | 177 | 14.061 |
+| consulta contendo "aeroporto" | 998 (40,6%) | 97.501 |
+| "estacionamento" no singular | 1.480 (60,2%) | 127.017 |
+| "estacionamentos" no plural | 71 (2,9%) | 5.473 |
+| marca de parceiro (`virapark`, `aeropark`, `congonhas park`…) | 785 | 114.327 |
+
+Daí as três regras, implementadas em [`src/lib/seo.ts`](../../src/lib/seo.ts) e travadas em
+`src/lib/seo.test.ts`:
+
+1. **Sem preposição entre "Estacionamento" e o lugar.** O bigrama colado vale 3,7x mais
+   clique que a forma com preposição. Singular, nunca plural.
+2. **A palavra "aeroporto" entra no rótulo**, porque ela aparece em 40,6% dos cliques e o
+   H1 antigo ("Estacionamento em Afonso Pena") não a tinha.
+3. **A segunda forma de chamar o aeroporto entra separada por vírgula**, e só quando tem
+   volume: pelo menos 15% dos cliques do destino e no mínimo 50 cliques no período. Isso
+   deu Afonso Pena (108 cliques em CWB), Campinas (109 em VCP) e Belo Horizonte (56 em CNF).
+
+| Elemento | Forma | Exemplo (CWB) |
+|---|---|---|
+| `<title>` | `Estacionamento {seo_label} \| Movepark` | Estacionamento Aeroporto Curitiba, Afonso Pena (CWB) \| Movepark |
+| H1 | `Estacionamento {seo_label sem código}` | Estacionamento Aeroporto Curitiba, Afonso Pena |
+| H2 da lista | `Estacionamentos {primeira forma + código}` | Estacionamentos Aeroporto Curitiba (CWB) |
+| H2 do traslado | `Traslado até o {primeira forma}` | Traslado até o Aeroporto Curitiba |
+| H2 do mapa | `Onde fica o {primeira forma}` | Onde fica o Aeroporto Curitiba |
+| H2 da FAQ | `Perguntas frequentes: estacionamento {primeira forma}` | Perguntas frequentes: estacionamento Aeroporto Curitiba |
+
+Os H2 variam a forma de propósito. Repetir o bigrama exato em título, H1 e todos os H2 da
+mesma página é sinal de spam, não de relevância.
+
+**Destino que não é aeroporto** (`type != 'airport'`) não recebe a palavra "aeroporto", e os
+H2 de traslado e mapa voltam ao texto genérico, porque o artigo mudaria de gênero
+("Traslado até o Rodoviária Tietê" está errado). O Tietê também trocou de rótulo: é buscado
+como "rodoviária tietê" (2.842 impressões somadas), não como "terminal rodoviário".
+
+**Página da unidade** (`/p/...`) segue a mesma fonte, com a marca na frente:
+
+| Elemento | Forma | Exemplo |
+|---|---|---|
+| `<title>` | `{Empresa}: Estacionamento {primeira forma}, {tipo de vaga} \| Movepark` | Abbapark: Estacionamento Aeroporto Curitiba, Vaga Coberta \| Movepark |
+| H1 | `{Empresa} · {tipo de vaga} · {primeira forma}` | Abbapark · Vaga Coberta · Aeroporto Curitiba |
+
+O tipo de vaga no H1 é o que faz as três páginas da mesma unidade (`covered`, `premium`,
+`uncovered`) deixarem de ter cabeçalho idêntico. Elas continuam indexáveis, cada uma com
+canonical própria, e por isso precisam de conteúdo de fato diferente (preço, capacidade e
+regras do tipo). Enquanto isso não existir, elas seguem competindo entre si.
+
+Migration: `20261019090000_destination_seo_label.sql`.

@@ -27,6 +27,7 @@ import { groupFaqsByScope } from "@/features/faqs/FaqList.logic";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { optimizedImageUrl } from "@/lib/storage";
 import { parkingTitle } from "@/lib/parkingName";
+import { listingDescription, listingHeading, listingTitle } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 import { CANCELLATION_POLICY_LINES_GENERIC } from "@/features/bookings/cancellation.logic";
 import { isTypeDescriptorAmenity } from "@/features/search/amenities.logic";
@@ -132,13 +133,23 @@ export default function ListingPage() {
     return () => obs.disconnect();
   }, [listing]);
 
-  const pageTitle = listing
-    ? `${listing.parking_type.name} · ${listing.location.name} | Movepark`
-    : "Estacionamento | Movepark";
+  // Título, H1 e descrição saem de @/lib/seo, que é onde mora a razão da forma. Resumo
+  // curto: a marca da unidade abre o título (785 cliques do período vêm de consulta de
+  // marca de parceiro) e o tipo de vaga fecha, que é o que faz as três páginas da mesma
+  // unidade deixarem de disputar entre si.
+  const seoArgs = listing
+    ? {
+        companyName: listing.company.name,
+        parkingTypeName: listing.parking_type.name,
+        destination: listing.location.destination,
+        locationName: listing.location.name,
+      }
+    : null;
+  const pageTitle = seoArgs ? listingTitle(seoArgs) : "Estacionamento | Movepark";
   const pageDesc =
     tldr?.summary ??
-    (listing
-      ? `Reserve ${listing.parking_type.name} em ${listing.location.name}. ${listing.location.address ?? ""}`
+    (seoArgs && listing
+      ? listingDescription({ ...seoArgs, city: listing.location.destination?.city ?? null })
       : "");
   const pageUrl = listing
     ? `https://hub.movepark.co/p/${listing.company.slug}/${listing.location.slug}/${listing.parking_type.code}`
@@ -282,7 +293,7 @@ export default function ListingPage() {
               mesmo do <title>/JSON-LD. Só a empresa deixava três unidades da Aerovalet
               com H1 idêntico. */}
           <h1 className="text-balance text-display-xl text-ink">
-            {parkingTitle(listing.company.name, listing.location.name)}
+            {seoArgs ? listingHeading(seoArgs) : parkingTitle(listing.company.name, listing.location.name)}
           </h1>
           <p className="text-display-sm text-muted">{listing.parking_type.name}</p>
 

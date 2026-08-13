@@ -1471,6 +1471,7 @@ export type Database = {
           meta_description: string | null
           meta_title: string | null
           name: string
+          seo_label: string | null
           short_name: string | null
           slug: string
           sort_order: number
@@ -1494,6 +1495,7 @@ export type Database = {
           meta_description?: string | null
           meta_title?: string | null
           name: string
+          seo_label?: string | null
           short_name?: string | null
           slug: string
           sort_order?: number
@@ -1517,6 +1519,7 @@ export type Database = {
           meta_description?: string | null
           meta_title?: string | null
           name?: string
+          seo_label?: string | null
           short_name?: string | null
           slug?: string
           sort_order?: number

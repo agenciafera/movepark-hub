@@ -19,13 +19,22 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { GoogleMapEmbed } from "@/components/shared/GoogleMapEmbed";
 import { breadcrumbSchema, destinationSchema, faqSchema } from "@/lib/jsonld";
+import {
+  destinationHeading,
+  destinationListHeading,
+  destinationTitle,
+  faqHeading,
+  locationHeading,
+  shuttleHeading,
+  topRatedHeading,
+} from "@/lib/seo";
 import { imageSrcSet, optimizedImageUrl } from "@/lib/storage";
 import { formatBRL } from "@/lib/format";
 import { lowestPerDay, pickRelatedDestinations } from "./destino.logic";
 
 const SITE_URL = "https://hub.movepark.co";
 
-/** Skeleton espelhando o ResultCard (mesma forma/altura) — evita salto de layout. */
+/** Skeleton espelhando o ResultCard (mesma forma/altura), evita salto de layout. */
 function ParkingCardSkeleton() {
   return (
     <div className="flex flex-col overflow-hidden rounded-2xl border border-hairline bg-canvas">
@@ -124,7 +133,7 @@ export default function DestinoPage() {
     );
   }
 
-  const title = destination.meta_title ?? `Estacionamento em ${destination.name} | Movepark`;
+  const title = destination.meta_title ?? destinationTitle(destination);
   const description =
     destination.meta_description ??
     `Reserve estacionamento próximo a ${destination.name}, em ${destination.city}. Compare preços, comodidades e garanta sua vaga com antecedência.`;
@@ -228,7 +237,7 @@ export default function DestinoPage() {
             {destination.state ? ` · ${destination.state}` : ""}
           </span>
           <h1 className="text-balance text-display-xl text-ink">
-            Estacionamento em {destination.short_name ?? destination.name}
+            {destinationHeading(destination)}
           </h1>
           {destination.intro ? (
             <div className="space-y-3 text-pretty text-body-md text-muted">
@@ -266,7 +275,7 @@ export default function DestinoPage() {
         {topResults.length > 0 && (
           <section className="mt-10">
             <h2 className="mb-4 text-balance text-display-md text-ink">
-              Mais bem avaliados em {destination.short_name ?? destination.name}
+              {topRatedHeading(destination)}
             </h2>
             <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-3">
               {topResults.map((r) => (
@@ -285,7 +294,9 @@ export default function DestinoPage() {
 
         {/* Estacionamentos */}
         <section className="mt-10">
-          <h2 className="mb-4 text-balance text-display-md text-ink">Estacionamentos em {destination.short_name ?? destination.name}</h2>
+          <h2 className="mb-4 text-balance text-display-md text-ink">
+            {destinationListHeading(destination)}
+          </h2>
           {search.isLoading ? (
             <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-3">
               {Array.from({ length: 6 }).map((_, i) => (
@@ -366,7 +377,7 @@ export default function DestinoPage() {
               className="mx-auto h-40 w-auto tablet:mx-0"
             />
             <div>
-              <h2 className="text-balance text-display-md text-ink">Como funciona o traslado</h2>
+              <h2 className="text-balance text-display-md text-ink">{shuttleHeading(destination)}</h2>
               <p className="mt-3 text-body-md text-body">
                 Você deixa o carro no estacionamento parceiro e um transfer leva você até o
                 terminal. Na volta, é só avisar que ele passa te buscar. O tempo e a frequência
@@ -378,7 +389,7 @@ export default function DestinoPage() {
 
         {/* Mapa */}
         <section className="mt-10">
-          <h2 className="mb-4 text-display-md text-ink">Localização</h2>
+          <h2 className="mb-4 text-display-md text-ink">{locationHeading(destination)}</h2>
           <GoogleMapEmbed
             title={`Mapa de ${destination.name}`}
             target={{ latitude: destination.latitude, longitude: destination.longitude }}
@@ -390,7 +401,7 @@ export default function DestinoPage() {
         {/* FAQ — camadas destino + global (ADR-002), mesmo componente de listing.tsx/faq.tsx */}
         {(faqs.isLoading || faqItems.length > 0) && (
           <section className="mt-10">
-            <h2 className="mb-4 text-display-md text-ink">Perguntas frequentes</h2>
+            <h2 className="mb-4 text-display-md text-ink">{faqHeading(destination)}</h2>
             <FaqList
               items={faqs.isLoading ? undefined : faqs.data}
               isLoading={faqs.isLoading}

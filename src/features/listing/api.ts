@@ -47,6 +47,13 @@ export type ListingDetail = {
     review_avg: number | null;
     review_count: number;
     photos: string[];
+    /**
+     * Destino âncora da unidade, só com o que o SEO precisa. O título e o H1 da página
+     * nomeiam o aeroporto porque consulta de marca de parceiro quase sempre vem com a
+     * cidade junto ("aeropark guarulhos", "garageinn viracopos"), e o título antigo não
+     * trazia nem a marca nem o aeroporto. Nulo em unidade sem destino vinculado.
+     */
+    destination: { seo_label: string | null; short_name: string | null; name: string; type: string | null; city: string | null } | null;
   };
   parking_type: {
     code: string;
@@ -68,6 +75,7 @@ const baseSelect = `
     reservation_policy, checkout_mode, timezone, latitude, longitude, google_place_id,
     has_pcd_config, has_passenger_quantity, review_avg, review_count, photos,
     company:company!inner(id, slug, name, legal_name, created_at),
+    destination:destination(seo_label, short_name, name, type, city),
     amenities:location_amenity(
       amenity:amenity(code, name, icon, category, sort_order)
     )
@@ -144,6 +152,8 @@ export async function fetchListing(
       // Default 'hub' na leitura: a coluna nasceu com esse default e ler ausência como
       // 'external' apagaria a página de toda unidade nativa se o select falhasse.
       checkout_mode: m.location.checkout_mode ?? "hub",
+      // Embed pode voltar null (unidade sem destino âncora) ou objeto. O SEO trata os dois.
+      destination: m.location.destination ?? null,
       address: m.location.address,
       phone: m.location.phone,
       email: m.location.email,

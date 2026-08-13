@@ -40,6 +40,7 @@ function dest(overrides: Partial<Destination> = {}): Destination {
     code: "GRU",
     name: "Aeroporto Internacional de São Paulo / Guarulhos",
     short_name: "Guarulhos",
+    seo_label: "Aeroporto Guarulhos (GRU)",
     slug: "aeroporto-de-guarulhos",
     type: "airport",
     city: "Guarulhos",
@@ -95,20 +96,28 @@ beforeEach(() => {
   vi.mocked(useDestinationProspects).mockReturnValue({ data: [] } as never);
 });
 
-describe("DestinoPage — detalhe do destino (SEO/institucional)", () => {
+describe("DestinoPage: detalhe do destino (SEO/institucional)", () => {
   it("renderiza H1 por destino, parágrafos do intro e CTA pra busca sem fluxo de compra", () => {
     vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
 
     render();
 
+    // O H1 tem que trazer "Aeroporto" colado em "Estacionamento": era o buraco medido no
+    // Search Console (40,6% dos cliques vêm de consulta com a palavra "aeroporto", e o H1
+    // antigo era "Estacionamento em Guarulhos", sem ela).
     expect(
-      screen.getByRole("heading", { level: 1, name: /Estacionamento em Guarulhos/i }),
+      screen.getByRole("heading", { level: 1, name: "Estacionamento Aeroporto Guarulhos" }),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { level: 1, name: /Estacionamento em /i }),
+    ).not.toBeInTheDocument();
     // Conteúdo descritivo por região (intro com 2 parágrafos)
     expect(screen.getByText(/Primeiro parágrafo do destino/i)).toBeInTheDocument();
     expect(screen.getByText(/contexto da região/i)).toBeInTheDocument();
     // H2 estruturado da seção de estacionamentos
-    expect(screen.getByRole("heading", { level: 2, name: /Estacionamentos em Guarulhos/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Estacionamentos Aeroporto Guarulhos (GRU)" }),
+    ).toBeInTheDocument();
     // CTA leva pra busca (não embute checkout/reserva)
     expect(
       screen.getByRole("link", { name: /Ver todos os estacionamentos/i }),
@@ -130,7 +139,7 @@ describe("DestinoPage — detalhe do destino (SEO/institucional)", () => {
     vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
     vi.mocked(usePublishedDestinations).mockReturnValue({
       data: [
-        dest(), // atual (id d1) — deve ser excluído
+        dest(), // atual (id d1), deve ser excluído
         dest({ id: "d2", slug: "aeroporto-de-viracopos", name: "Aeroporto de Viracopos", short_name: "Viracopos" }),
         dest({ id: "d3", slug: "aeroporto-de-congonhas", name: "Aeroporto de Congonhas", short_name: "Congonhas" }),
       ],
