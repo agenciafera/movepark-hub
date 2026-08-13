@@ -47,6 +47,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | [legal-documents.md](./legal-documents.md) | Documentos legais versionados (termos, privacidade, contrato do parceiro) e o registro de aceite |
 | [storage-buckets.md](./storage-buckets.md) | Buckets de Storage (OPS-05): `assets-public`, `vouchers` e `partner-uploads`, com as regras de escrita por empresa |
 | [agent-readiness-seo.md](./agent-readiness-seo.md) | Prontidão para agentes e SEO (E0.4): `llms.txt`, `.well-known`, content negotiation de Markdown na borda, JSON-LD |
+| [borda-cloudflare.md](./borda-cloudflare.md) | **A borda (worker + assets):** o que está no ar no worker `movepark-hub`, o que cada valor de `assets` faz medido em produção, por que o `not_found_handling` não muda, e as 12 armadilhas que a regra de 404 precisa respeitar. Reconferência por `scripts/probe-borda.sh` |
 | [seo-indexacao.md](./seo-indexacao.md) | **Domínio canônico e indexação:** `movepark.co` é o canônico, `hub.movepark.co` responde `noindex` por regra de host no worker (allowlist `INDEXABLE_HOSTS`). Contém o checklist da migração do Hub para o apex |
 | [design-tokens.md](./design-tokens.md) | Tokens de cor, tipografia e espaçamento (o handoff visual completo fica em `docs/design-system/`) |
 | [customer/README.md](./customer/README.md) | Índice das specs do consumidor: home e busca, detalhe da unidade, checkout, conta, minhas reservas, fluxos de auth, identidade unificada, exclusão de conta |
