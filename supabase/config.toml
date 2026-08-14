@@ -420,6 +420,9 @@ verify_jwt = false
 [functions.review-request]
 verify_jwt = false
 
+[functions.google-place-refresh]
+verify_jwt = false
+
 [functions.chat]
 verify_jwt = false
 
