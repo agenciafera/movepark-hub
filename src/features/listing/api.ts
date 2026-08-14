@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import type { CouponPreview } from "./coupon.logic";
 import type { AddOnOption } from "./reservation.logic";
 import type { AvailabilityCheck, MinStayUnit } from "./availability.logic";
+import type { GooglePlaceSnapshot, GoogleReviewItem } from "@/types/domain";
 
 export type ListingDetail = {
   id: string; // location_parking_type_id
@@ -65,6 +66,11 @@ export type ListingDetail = {
   };
   amenities: { code: string; name: string; icon: string | null; category: string }[];
   other_locations: { id: string; name: string; slug: string }[];
+  /**
+   * Espelho do Google carregado no build. O bloco precisa sair no HTML: crawler de IA não
+   * executa JS. `null` quando a unidade não tem place_id ou o snapshot venceu.
+   */
+  google: GooglePlaceSnapshot | null;
 };
 
 const baseSelect = `
@@ -139,6 +145,26 @@ export async function fetchListing(
     // deno-lint-ignore no-explicit-any
     .sort((a: any, b: any) => (a.sort_order ?? 999) - (b.sort_order ?? 999));
 
+  // Espelho do Google (§6 de avaliacoes-google.md): busca no loader do SSG, nunca em hook, pro
+  // bloco sair no HTML pré-renderizado. A policy de leitura já esconde snapshot velho/oculto; o
+  // componente confere de novo no cliente, porque o HTML publicado também é cache (§5 da spec).
+  let google: GooglePlaceSnapshot | null = null;
+  if (m.location.google_place_id) {
+    const { data: snap, error: snapError } = await supabase
+      .from("google_place_snapshot")
+      .select("place_id, rating, user_rating_count, maps_uri, reviews, fetched_at")
+      .eq("place_id", m.location.google_place_id)
+      .maybeSingle();
+    if (snapError) throw snapError;
+    google = snap
+      ? ({
+          ...snap,
+          rating: snap.rating != null ? Number(snap.rating) : null,
+          reviews: (snap.reviews ?? []) as GoogleReviewItem[],
+        } as GooglePlaceSnapshot)
+      : null;
+  }
+
   return {
     id: m.id,
     capacity: m.capacity,
@@ -185,6 +211,7 @@ export async function fetchListing(
     },
     amenities: amenitiesRaw,
     other_locations: (others ?? []) as { id: string; name: string; slug: string }[],
+    google,
   };
 }
 

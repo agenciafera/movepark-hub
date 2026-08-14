@@ -35,8 +35,16 @@ externa, não é, e quem anunciou foi a Movepark.
 | Cupom de desconto | mostra | **não renderiza** | `coupon.company_id` |
 | Serviços extras | mostra | **não renderiza** | `location_add_on_service` |
 | Avaliações e nota | mostra | **não renderiza** | `review.booking_id` |
+| Avaliações do Google | mostra | **mostra** | `google_place_snapshot` |
 | Vaga garantida | mostra | **não renderiza** | depende de o Hub controlar disponibilidade |
 | FAQ | global + da unidade | **só escopo da unidade** | `faq.scope` + `location_id` |
+
+**A avaliação do Google é fato da unidade, não promessa de transação.** Reputação descreve o
+lugar e é verdade independente de onde a reserva fecha, igual a endereço, foto e amenidade. Por
+isso o bloco renderiza também na unidade externa, e é assim que ele preenche o vazio que a linha
+acima deixa. `LocationCapabilities` não ganha capacidade nova, porque não há promessa a declarar.
+A nota continua fora do `aggregateRating` do JSON-LD. Ver
+[avaliacoes-google.md](./avaliacoes-google.md).
 
 Dois detalhes que economizam trabalho:
 

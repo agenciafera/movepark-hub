@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ListingDetail } from "@/features/listing/api";
+import type { GooglePlaceSnapshot } from "@/types/domain";
 import {
   blogPostingSchema,
   breadcrumbSchema,
@@ -21,6 +22,7 @@ type Overrides = {
   photos?: string[];
   base_price?: number;
   checkout_mode?: "hub" | "external";
+  google?: GooglePlaceSnapshot | null;
 };
 
 function makeListing(o: Overrides = {}): ListingDetail {
@@ -46,6 +48,7 @@ function makeListing(o: Overrides = {}): ListingDetail {
     },
     parking_type: { name: "Vaga Coberta", code: "covered", description },
     company_parking_type: { base_price: o.base_price ?? 30 },
+    google: "google" in o ? o.google : null,
     // demais campos de ListingDetail não são usados pelos schemas
   } as unknown as ListingDetail;
 }
@@ -96,6 +99,25 @@ describe("productOfferSchema", () => {
     const s = productOfferSchema(makeListing());
     expect(s.aggregateRating).toBeUndefined();
     expect(s.review).toBeUndefined();
+  });
+
+  it("nao deixa a nota do Google virar aggregateRating: o Google proibe marcar avaliacao de outro site como sua", () => {
+    const s = productOfferSchema(
+      makeListing({
+        review_avg: null,
+        review_count: 0,
+        google: {
+          place_id: "ChIJ_x",
+          rating: 4.8,
+          user_rating_count: 500,
+          maps_uri: "https://maps.google.com/?cid=1",
+          reviews: [],
+          fetched_at: new Date().toISOString(),
+        },
+      }),
+    );
+    expect(s.aggregateRating).toBeUndefined();
+    expect(JSON.stringify(s)).not.toContain("aggregateRating");
   });
 
   it("inclui image (exigido pelo rich result de Product) quando há fotos", () => {

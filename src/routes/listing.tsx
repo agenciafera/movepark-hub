@@ -17,6 +17,7 @@ import { ListingTrustBar } from "@/features/listing/ListingTrustBar";
 import { RecommendedCarousel } from "@/features/listing/RecommendedCarousel";
 import { buildListingTldr, nearestTerminal } from "@/features/listing/tldr.logic";
 import { ReviewsBlock } from "@/features/reviews/ReviewsBlock";
+import { GoogleReviewsBlock } from "@/features/reviews/GoogleReviewsBlock";
 import { RatingBadge } from "@/features/reviews/RatingStars";
 import { useLocationReviews } from "@/features/reviews/api";
 import { useListing, useLocationTerminals, useLocationTypePrices, type ListingDetail } from "@/features/listing/api";
@@ -433,6 +434,13 @@ export default function ListingPage() {
               />
             </>
           )}
+
+          {/* Avaliações do Google: fato da unidade, não promessa de transação (ADR-009 §7 de
+              avaliacoes-google.md). Renderiza sempre, inclusive na unidade externa; o próprio
+              componente decide se tem o que mostrar, então não entra Separator fixo aqui (o
+              space-y do container já cuida do espaçamento quando o bloco existe, e não sobra
+              divisor solto quando não existe). */}
+          <GoogleReviewsBlock snapshot={listing.google} placeName={listing.location.name} />
 
           <Separator />
 
