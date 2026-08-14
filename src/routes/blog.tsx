@@ -25,6 +25,7 @@ import {
 import { breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
 import { cn } from "@/lib/utils";
 import type { BlogPostListItem } from "@/types/domain";
+import { OgImage } from "@/lib/ogImage";
 
 const SITE_URL = "https://hub.movepark.co";
 
@@ -255,6 +256,7 @@ export default function BlogListingPage() {
           )}
         </script>
       </Helmet>
+      <OgImage area="conteudo" />
 
       {/*
         O cabeçalho vive numa faixa própria, como na página do post: título,

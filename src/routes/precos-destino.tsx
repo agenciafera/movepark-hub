@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { formatBRL, formatDate } from "@/lib/format";
 import { breadcrumbSchema } from "@/lib/jsonld";
 import { cn } from "@/lib/utils";
+import { OgImage } from "@/lib/ogImage";
 import {
   buildMatrix,
   destinationSummary,
@@ -127,6 +128,7 @@ export default function PrecosDestinoPage() {
           {JSON.stringify(produtosSchema(destination, matrix.rows))}
         </script>
       </Helmet>
+      <OgImage area="precos" />
 
       <article className="mx-auto w-full max-w-[1080px] px-4 py-12">
         <nav aria-label="Trilha de navegação" className="mb-4">

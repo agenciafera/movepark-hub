@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Link, useLoaderData, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
+import { OgImage } from "@/lib/ogImage";
 import { MapPin } from "@phosphor-icons/react";
 import type { Destination, ProspectCard as ProspectCardData } from "@/types/domain";
 import {
@@ -248,6 +249,9 @@ export default function DestinoPage() {
           <script type="application/ld+json">{JSON.stringify(faqSchema(faqItems))}</script>
         )}
       </Helmet>
+      {/* Destino sem hero cadastrada usa a imagem da área, não a genérica da marca
+          que o shell dá. Hoje é o caso de Goiânia, que não tem foto livre. */}
+      {!ogImage && <OgImage area="destinos" />}
 
       <article className="mx-auto w-full max-w-5xl px-4 py-8 tablet:py-12">
         {/* Breadcrumb (espelha o BreadcrumbList do JSON-LD, agora visível) */}

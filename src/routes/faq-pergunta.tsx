@@ -17,6 +17,7 @@ import type { FaqPageData } from "@/features/faqs/api";
 import { durationLabel } from "@/features/price-index/priceIndex.logic";
 import { formatBRL } from "@/lib/format";
 import { breadcrumbSchema, faqSchema } from "@/lib/jsonld";
+import { OgImage } from "@/lib/ogImage";
 
 const SITE_URL = "https://hub.movepark.co";
 
@@ -98,6 +99,7 @@ export default function FaqPerguntaPage() {
         <script type="application/ld+json">{JSON.stringify(schema)}</script>
         <script type="application/ld+json">{JSON.stringify(breadcrumb)}</script>
       </Helmet>
+      <OgImage area="conteudo" />
 
       <article className="mx-auto w-full max-w-3xl px-4 py-8 tablet:py-12">
         {/* Breadcrumb visível (espelha o BreadcrumbList do JSON-LD) */}

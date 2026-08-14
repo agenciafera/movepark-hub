@@ -22,9 +22,9 @@ export default function HomePage() {
         />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://hub.movepark.co" />
-        <meta property="og:image" content="https://hub.movepark.co/og/home.jpg" />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
+        {/* A og:image vem do shell (área `marca`). Aqui ela apontava para
+            /og/home.jpg, arquivo que nunca foi commitado: o card da home ia com
+            404 no lugar da imagem. */}
         <link rel="canonical" href="https://hub.movepark.co" />
       </Helmet>
       <Hero />

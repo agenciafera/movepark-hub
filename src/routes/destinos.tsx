@@ -4,6 +4,7 @@ import { MapPin } from "@phosphor-icons/react";
 import { useDestinations, type Destination } from "@/features/search/api";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
+import { OgImage } from "@/lib/ogImage";
 
 const SITE_URL = "https://hub.movepark.co";
 
@@ -66,6 +67,7 @@ export default function DestinosPage() {
           <script type="application/ld+json">{JSON.stringify(itemListSchema(listItems))}</script>
         )}
       </Helmet>
+      <OgImage area="destinos" />
 
       <div className="mx-auto w-full max-w-5xl px-4 py-8 tablet:py-12">
         <header className="flex flex-col gap-3">

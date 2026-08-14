@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Link, useLoaderData, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
+import { OgImage } from "@/lib/ogImage";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -153,6 +154,8 @@ export default function BlogPostPage() {
           )}
         </script>
       </Helmet>
+      {/* Post sem capa cai na imagem de conteúdo, não na genérica da marca. */}
+      {!ogImage && <OgImage area="conteudo" />}
 
       <PostProgress secoes={secoes} />
 

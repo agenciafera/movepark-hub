@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { formatBRL, formatDate } from "@/lib/format";
 import { breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
 import { cn } from "@/lib/utils";
+import { OgImage } from "@/lib/ogImage";
 import {
   destinationSummary,
   formatDistance,
@@ -266,6 +267,7 @@ export default function PrecosPage() {
         <script type="application/ld+json">{JSON.stringify(breadcrumb)}</script>
         <script type="application/ld+json">{JSON.stringify(lista)}</script>
       </Helmet>
+      <OgImage area="precos" />
 
       <div className="mx-auto w-full max-w-[1080px] px-4 py-12">
         <PageHeader

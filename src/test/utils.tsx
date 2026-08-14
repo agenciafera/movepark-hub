@@ -1,6 +1,7 @@
 import * as React from "react";
 import { vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { HelmetProvider } from "react-helmet-async";
 import { render } from "@testing-library/react";
 import { MemoryRouter, RouterProvider, createMemoryRouter } from "react-router-dom";
 import { AuthContext } from "@/auth/context";
@@ -79,9 +80,15 @@ export function renderWithProviders(
     </MemoryRouter>
   );
 
+  // O HelmetProvider vem do `vite-react-ssg` na app real, não do nosso código, então
+  // componente com <Helmet> renderiza em produção mas quebra em teste isolado
+  // ("Cannot read properties of undefined"). Entra aqui para o teste refletir a árvore
+  // de verdade, e não para contornar o erro.
   return render(
-    <QueryClientProvider client={qc}>
-      <AuthContext.Provider value={opts?.auth ?? mockAuth()}>{tree}</AuthContext.Provider>
-    </QueryClientProvider>,
+    <HelmetProvider>
+      <QueryClientProvider client={qc}>
+        <AuthContext.Provider value={opts?.auth ?? mockAuth()}>{tree}</AuthContext.Provider>
+      </QueryClientProvider>
+    </HelmetProvider>,
   );
 }

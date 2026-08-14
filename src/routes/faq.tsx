@@ -11,6 +11,7 @@ import { faqJsonLd } from "@/features/content/jsonld";
 import { itemListSchema } from "@/lib/jsonld";
 import type { FaqIndexItem } from "@/features/faqs/api";
 import { buildFaqSections, filterFaqs } from "@/features/faqs/faqIndex.logic";
+import { OgImage } from "@/lib/ogImage";
 
 const SITE_URL = "https://hub.movepark.co";
 
@@ -88,6 +89,7 @@ export default function FaqPage() {
           <script type="application/ld+json">{JSON.stringify(itemListSchema(paginas))}</script>
         )}
       </Helmet>
+      <OgImage area="conteudo" />
 
       <ContentPageView
         label="Perguntas frequentes"

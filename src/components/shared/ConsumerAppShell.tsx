@@ -2,6 +2,7 @@ import { Outlet } from "react-router-dom";
 import { ConsumerTopbar } from "./ConsumerTopbar";
 import { ConsumerFooter } from "./ConsumerFooter";
 import { ChatWidget } from "@/features/assistant/ChatWidget";
+import { OgImage } from "@/lib/ogImage";
 
 /**
  * Casca do consumer.
@@ -14,6 +15,10 @@ import { ChatWidget } from "@/features/assistant/ChatWidget";
 export function ConsumerAppShell() {
   return (
     <div className="flex min-h-screen flex-col bg-canvas">
+      {/* Imagem-padrão do card de compartilhamento. Cada página sobrescreve com a
+          sua (o destino usa a hero, a unidade usa a foto); as que não têm imagem
+          própria param de compartilhar sem card, que era o caso de quase todas. */}
+      <OgImage area="marca" />
       <ConsumerTopbar />
       <main className="flex-1">
         <Outlet />
