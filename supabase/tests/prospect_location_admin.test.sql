@@ -273,7 +273,7 @@ select is(
   (select google_place_id from public.manager_prospect_locations(current_setting('test.dest')::uuid)
     where slug = 'e17h-publicado'),
   'PLACE-E17H-VIVA',
-  'a lista do painel inclui o google_place_id, que a tabela nega');
+  'a lista do painel inclui o google_place_id, que a tabela hoje também concede a anon/authenticated (migration de avaliações)');
 
 select throws_ok(
   $$select phone from public.prospect_location where slug = 'e17h-publicado'$$,

@@ -48,10 +48,15 @@ type Props = {
  * esta página existe para fazer.
  */
 export function ProspectCard({ item, destinationSlug }: Props) {
+  const badge = pickCardBadge(
+    { avg: null, count: 0 },
+    { rating: item.google_rating, count: item.google_rating_count },
+  );
+
   return (
     <li
       data-testid="prospect-card"
-      className="relative flex flex-col gap-2 rounded-2xl border border-hairline bg-canvas p-5 transition hover:border-mp-primary focus-within:border-mp-primary"
+      className="relative flex flex-col gap-2 rounded-2xl border border-hairline bg-canvas p-5 transition focus-within:border-mp-primary hover:border-mp-primary"
     >
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-balance text-title-md text-ink">
@@ -85,21 +90,14 @@ export function ProspectCard({ item, destinationSlug }: Props) {
       {/* Mesmo `pickCardBadge` do card vendável, com a Movepark sempre vazia: a regra de UM
           selo só vale aqui igual, e passar pela mesma função é o que garante que os dois
           lados da página não divirjam quando a regra mudar. */}
-      {(() => {
-        const badge = pickCardBadge(
-          { avg: null, count: 0 },
-          { rating: item.google_rating, count: item.google_rating_count },
-        );
-        if (!badge) return null;
-        return (
-          <RatingBadge
-            avg={badge.avg}
-            count={badge.count}
-            className="text-body-sm"
-            suffix="no Google"
-          />
-        );
-      })()}
+      {badge && (
+        <RatingBadge
+          avg={badge.avg}
+          count={badge.count}
+          className="text-body-sm"
+          suffix="no Google"
+        />
+      )}
     </li>
   );
 }
