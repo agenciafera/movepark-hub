@@ -6,6 +6,7 @@ import { SearchBarPill } from "@/features/search/SearchBarPill";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { formatCompactCount } from "@/lib/format";
 import { CLIPES, clipesPara, deveCarregarVideo, deveCruzar, proximoClipe } from "./heroVideo.logic";
+import { useContagemAnimada } from "@/hooks/useContagemAnimada";
 import { useClientesAtendidos } from "./api";
 
 function parseDate(value: string | null): Date | null {
@@ -46,6 +47,9 @@ export function Hero() {
   const [params] = useSearchParams();
   const sectionRef = useRef<HTMLElement>(null);
   const clientesAtendidos = useClientesAtendidos();
+  /* O número sobe de zero na abertura. Parado, ele lê como enfeite; subindo, o
+     olho para nele e a prova social é a primeira coisa que a página entrega. */
+  const contagem = useContagemAnimada(clientesAtendidos);
 
   /*
     O vídeo só monta depois do primeiro efeito, e é esse atraso que protege o
@@ -268,30 +272,47 @@ export function Hero() {
       />
 
       <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center justify-center px-6 pb-20 pt-32 text-center desktop:px-8 desktop:pb-24">
-        {/* Badge de prova social */}
+        {/*
+          Prova social.
+
+          Sem a pílula de vidro que existia aqui. Ela parecia proteger a leitura
+          sobre o vídeo, e media o contrário: o véu branco clareia o fundo atrás
+          de texto branco e derrubava o contraste de 14,4:1 para 7:1. Quem segura
+          a legibilidade são os dois gradientes da seção, que já estão no lugar.
+          Tirada a pílula, o número também deixa de ser um chip e pode crescer.
+
+          `display-xl` (28px) contra o `display-3xl` do H1, que vai a 56px: o
+          número ganha peso sem disputar a manchete.
+        */}
         <div
           data-hero="badge"
-          className="mb-8 inline-flex items-center gap-3 rounded-full border border-white/15 px-4 py-2"
-          style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(8px)" }}
+          /* Empilhado e centrado no celular, em linha no desktop. Em linha numa
+             tela de 375 o número era espremido até quebrar em "+300 / mil", e as
+             estrelas iam parar longe dele, na outra ponta. */
+          className="mb-8 flex flex-col items-center gap-3 desktop:flex-row desktop:justify-center desktop:gap-4"
         >
           <div className="flex -space-x-2">
             {heroAvatars.map((src) => (
-              <Avatar key={src} className="h-6 w-6 ring-1 ring-white/20">
+              <Avatar key={src} className="h-9 w-9 ring-2 ring-white/25">
                 <AvatarImage src={src} alt="Viajante" />
                 <AvatarFallback>?</AvatarFallback>
               </Avatar>
             ))}
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="flex gap-0.5">
-              {[0, 1, 2, 3, 4].map((i) => (
-                <StarIcon key={i} />
-              ))}
+
+          <div className="text-center desktop:text-left">
+            <div className="flex items-center justify-center gap-2 desktop:justify-start">
+              {/* O "+" existe porque a contagem arredonda para baixo. */}
+              <span className="whitespace-nowrap text-display-xl tabular-nums text-white">
+                +{formatCompactCount(contagem)}
+              </span>
+              <div className="flex gap-0.5">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <StarIcon key={i} />
+                ))}
+              </div>
             </div>
-            {/* O "+" existe porque a contagem arredonda para baixo. */}
-            <span className="text-[13px] font-medium text-white/80">
-              +{formatCompactCount(clientesAtendidos)} clientes
-            </span>
+            <p className="text-body-sm text-white/75">clientes já reservaram com a Movepark</p>
           </div>
         </div>
 

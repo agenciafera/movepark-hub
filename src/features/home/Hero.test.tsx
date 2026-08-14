@@ -67,20 +67,29 @@ async function chegarAoFim(i: number) {
 }
 
 describe("Hero — selo de prova social", () => {
+  /* Com movimento reduzido a contagem não roda e o número fica parado no alvo,
+     que é o que estes casos querem medir: de onde vem o valor, não a animação. */
+  beforeEach(() => ambiente({ movimentoReduzido: true }));
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   /**
    * O número nasce cravado no componente, então o SSG publica o selo no HTML e
    * o crawler vê o número. Se dependesse da rede, a home iria ao ar sem ele.
    */
   it("mostra o número padrão antes de qualquer resposta do servidor", () => {
     renderWithProviders(<Hero />);
-    expect(screen.getByText("+300 mil clientes")).toBeInTheDocument();
+    expect(screen.getByText("+300 mil")).toBeInTheDocument();
+    expect(screen.getByText("clientes já reservaram com a Movepark")).toBeInTheDocument();
   });
 
   it("assume o valor do app_setting quando ele difere do padrão", async () => {
     tabela("app_setting", "get", { json: [{ value: "412000" }] });
     renderWithProviders(<Hero />);
     await waitFor(() => {
-      expect(screen.getByText("+412 mil clientes")).toBeInTheDocument();
+      expect(screen.getByText("+412 mil")).toBeInTheDocument();
     });
   });
 
@@ -92,7 +101,7 @@ describe("Hero — selo de prova social", () => {
     tabela("app_setting", "get", { json: [{ value: "0" }] });
     renderWithProviders(<Hero />);
     await waitFor(() => {
-      expect(screen.getByText("+300 mil clientes")).toBeInTheDocument();
+      expect(screen.getByText("+300 mil")).toBeInTheDocument();
     });
   });
 
@@ -101,8 +110,42 @@ describe("Hero — selo de prova social", () => {
     falha("tabela", "app_setting", 500);
     renderWithProviders(<Hero />);
     await waitFor(() => {
-      expect(screen.getByText("+300 mil clientes")).toBeInTheDocument();
+      expect(screen.getByText("+300 mil")).toBeInTheDocument();
     });
+  });
+
+  /**
+   * Regressão de contraste, medida no navegador: a pílula de vidro que existia
+   * atrás deste bloco parecia protegê-lo e fazia o contrário. O véu branco
+   * clareia o fundo atrás de texto branco e derrubava o contraste de 14,4:1
+   * para 7:1.
+   */
+  it("o número não fica dentro de uma pílula de fundo claro", () => {
+    const { container } = renderWithProviders(<Hero />);
+    const bloco = container.querySelector('[data-hero="badge"]') as HTMLElement;
+    expect(bloco).toBeTruthy();
+    expect(bloco.className).not.toMatch(/rounded-full/);
+    expect(bloco.getAttribute("style") ?? "").not.toMatch(/background|backdrop/);
+  });
+
+  /** Número grande sem virar manchete: o H1 vai a 56px, o número para em 28px. */
+  it("o número usa o tamanho de display, e não um px solto", () => {
+    renderWithProviders(<Hero />);
+    const numero = screen.getByText("+300 mil");
+    expect(numero.className).toContain("text-display-xl");
+    expect(numero.className).not.toMatch(/text-\[\d+px\]/);
+  });
+
+  /**
+   * Regressão de celular: em linha numa tela de 375 o número era espremido até
+   * quebrar em "+300 / mil", e as estrelas iam parar na outra ponta do bloco.
+   */
+  it("empilha no celular e o número não quebra no meio", () => {
+    const { container } = renderWithProviders(<Hero />);
+    const bloco = container.querySelector('[data-hero="badge"]') as HTMLElement;
+    expect(bloco.className).toContain("flex-col");
+    expect(bloco.className).toContain("desktop:flex-row");
+    expect(screen.getByText("+300 mil").className).toContain("whitespace-nowrap");
   });
 });
 
