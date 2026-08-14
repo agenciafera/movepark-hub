@@ -229,6 +229,25 @@ describe("DestinoPage · lotes mapeados (E0.17-d)", () => {
     ).toHaveLength(0);
   });
 
+  it("o card mapeado é clicável inteiro, e o texto do link continua sendo só o nome", () => {
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
+    vi.mocked(useDestinationProspects).mockReturnValue({ data: [prospect()] } as never);
+
+    render();
+
+    const card = screen.getByTestId("prospect-card");
+    const link = card.querySelector("a")!;
+    // Área de clique esticada por `::after` sobre o card, que precisa de `relative` no pai.
+    // Sem isso o alvo vira o título, um retângulo pequeno demais para o polegar, enquanto o
+    // card vendável logo acima é clicável inteiro. Envolver o card todo num `<Link>` também
+    // resolveria o alvo, mas engoliria endereço, distância e selo no texto âncora.
+    expect(card.className).toContain("relative");
+    expect(link.className).toContain("after:absolute");
+    expect(link.className).toContain("after:inset-0");
+    expect(link).toHaveTextContent("Talentos Park");
+    expect(link).not.toHaveTextContent(/Sem reserva online|R\. Projetada/);
+  });
+
   it("usa o nome do terminal na distância quando o destino tem um cadastrado", () => {
     vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
     vi.mocked(useDestinationProspects).mockReturnValue({

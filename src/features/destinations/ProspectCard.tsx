@@ -32,16 +32,28 @@ type Props = {
  *
  * O selo "Sem reserva online" é TEXTO no HTML, não tooltip nem `title`: o crawler precisa
  * ler, e é ele que diz ao leitor por que este card é diferente do de cima.
+ *
+ * O card inteiro é clicável, igual ao vendável da seção de cima: quem chega aqui não
+ * distingue as duas seções pelo alvo do clique, e acertar só o título é um alvo pequeno
+ * no polegar. A área vem de um `::after` esticado sobre o card, e não de um `<Link>`
+ * envolvendo tudo, porque assim o texto do link continua sendo só o nome do lote. Link
+ * engolindo endereço, distância e o selo vira texto âncora poluído, que é o oposto do que
+ * esta página existe para fazer.
  */
 export function ProspectCard({ item, destinationSlug }: Props) {
   return (
     <li
       data-testid="prospect-card"
-      className="flex flex-col gap-2 rounded-2xl border border-hairline bg-canvas p-5 transition hover:border-mp-primary"
+      className="relative flex flex-col gap-2 rounded-2xl border border-hairline bg-canvas p-5 transition hover:border-mp-primary focus-within:border-mp-primary"
     >
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-balance text-title-md text-ink">
-          <Link to={`/estacionamentos/${destinationSlug}/${item.slug}`}>{item.name}</Link>
+          <Link
+            to={`/estacionamentos/${destinationSlug}/${item.slug}`}
+            className="after:absolute after:inset-0 after:content-['']"
+          >
+            {item.name}
+          </Link>
         </h3>
         <span className="shrink-0 rounded-full border border-hairline px-2.5 py-1 text-badge text-muted">
           Sem reserva online
