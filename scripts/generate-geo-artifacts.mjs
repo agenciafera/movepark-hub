@@ -48,26 +48,53 @@ if (!SUPABASE_URL || !ANON_KEY) {
   process.exit(1);
 }
 
+/**
+ * Retry com backoff pras leituras: o script aborta o build quando falha (regredir
+ * a superfície GEO em silêncio seria pior), então um flake de rede ou um
+ * statement_timeout do papel anon no meio do build de deploy não pode ser
+ * sentença. Três tentativas espaçadas seguram o caso transiente; o erro
+ * persistente continua derrubando o build, que é o combinado.
+ */
+async function comRetry(rotulo, tenta, tentativas = 3) {
+  let ultimo;
+  for (let i = 1; i <= tentativas; i += 1) {
+    try {
+      return await tenta();
+    } catch (e) {
+      ultimo = e;
+      if (i < tentativas) {
+        console.warn(`geo-artifacts: ${rotulo} falhou (tentativa ${i}), tentando de novo...`);
+        await new Promise((r) => setTimeout(r, i * 2000));
+      }
+    }
+  }
+  throw ultimo;
+}
+
 async function rest(pathAndQuery) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${pathAndQuery}`, {
-    headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` },
+  return comRetry(`REST ${pathAndQuery.split("?")[0]}`, async () => {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${pathAndQuery}`, {
+      headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` },
+    });
+    if (!res.ok) throw new Error(`REST ${pathAndQuery}: ${res.status}`);
+    return res.json();
   });
-  if (!res.ok) throw new Error(`REST ${pathAndQuery}: ${res.status}`);
-  return res.json();
 }
 
 async function rpc(name, body = {}) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
-    method: "POST",
-    headers: {
-      apikey: ANON_KEY,
-      Authorization: `Bearer ${ANON_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
+  return comRetry(`RPC ${name}`, async () => {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
+      method: "POST",
+      headers: {
+        apikey: ANON_KEY,
+        Authorization: `Bearer ${ANON_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`RPC ${name}: ${res.status}`);
+    return res.json();
   });
-  if (!res.ok) throw new Error(`RPC ${name}: ${res.status}`);
-  return res.json();
 }
 
 // ---------------------------------------------------------------------------

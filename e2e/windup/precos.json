@@ -1,14 +1,14 @@
 {
   "scenario_id": "precos",
   "start_url": "/precos",
-  "task": "Verifique que a pagina exibe o titulo Indice de precos de estacionamento, uma secao Precos por destino com pelo menos um cartao de destino, e a secao De onde vem estes precos.",
+  "task": "Verifique que a pagina exibe o titulo Indice de precos de estacionamento, uma tabela por destino com as colunas Diaria avulsa, 7 dias e 15 dias, e pelo menos um link Reservar.",
   "tags": [
     "smoke",
     "leitura"
   ],
   "hints": [
-    "A pagina e o indice de precos, com um resumo em quatro numeros no topo.",
-    "Cada cartao de destino mostra o menor preco por duracao e o link Ver tabela completa.",
-    "O link Ver tabela completa leva para /precos/<slug do destino>."
+    "A pagina e o indice de precos: um resumo em quatro numeros no topo e uma tabela editorial por aeroporto.",
+    "Cada linha da tabela e uma vaga de parceiro Movepark, ordenada pela diaria mais baixa; o link Reservar leva para /p/...",
+    "O link Tabela completa de cada destino leva para /precos/<slug>."
   ]
 }
