@@ -31,8 +31,15 @@ const BUCKET = "https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/publi
 export const OG_FALLBACK = {
   /** Marca. Home, institucional, e qualquer rota sem imagem própria. */
   marca: `${BUCKET}/marca-70c1657.jpg`,
-  /** Índice de destinos, e destino que ainda não tem hero. */
-  destinos: `${BUCKET}/destinos-16dc358.jpg`,
+  /**
+   * Índice de destinos, e só ele.
+   *
+   * Paisagem de aeroporto afirma geografia, então esta é deliberadamente sem
+   * litoral, serra ou skyline: a primeira versão tinha praia, e como destino sem
+   * hero caía aqui, o card de Goiânia (a 800 km do mar) mostrava mar. Destino sem
+   * hero passou a usar `marca`, que não afirma lugar nenhum.
+   */
+  destinos: `${BUCKET}/destinos-50b6548.jpg`,
   /** Índice de preços e a página de preço por destino. */
   precos: `${BUCKET}/precos-54ed7ac.jpg`,
   /** FAQ e blog. */

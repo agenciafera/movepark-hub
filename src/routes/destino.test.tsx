@@ -248,6 +248,26 @@ describe("DestinoPage · lotes mapeados (E0.17-d)", () => {
     expect(link).not.toHaveTextContent(/Sem reserva online|R\. Projetada/);
   });
 
+  it("destino sem hero usa a imagem da marca, não a paisagem de destinos", async () => {
+    // Paisagem afirma geografia: a de destinos já teve litoral, e o card de Goiânia,
+    // a 800 km do mar, mostrava mar. Sem hero, o card não pode sugerir lugar nenhum.
+    vi.mocked(useDestinationBySlug).mockReturnValue({
+      data: dest({ hero_image_url: null }),
+      isLoading: false,
+    } as never);
+    vi.mocked(useDestinationProspects).mockReturnValue({ data: [] } as never);
+
+    render();
+
+    const og = await waitFor(() => {
+      const m = document.head.querySelector('meta[property="og:image"]');
+      expect(m).toBeTruthy();
+      return m!.getAttribute("content")!;
+    });
+    expect(og).toContain("/og/marca-");
+    expect(og).not.toContain("/og/destinos-");
+  });
+
   it("usa o nome do terminal na distância quando o destino tem um cadastrado", () => {
     vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
     vi.mocked(useDestinationProspects).mockReturnValue({

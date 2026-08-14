@@ -249,9 +249,14 @@ export default function DestinoPage() {
           <script type="application/ld+json">{JSON.stringify(faqSchema(faqItems))}</script>
         )}
       </Helmet>
-      {/* Destino sem hero cadastrada usa a imagem da área, não a genérica da marca
-          que o shell dá. Hoje é o caso de Goiânia, que não tem foto livre. */}
-      {!ogImage && <OgImage area="destinos" />}
+      {/* Destino sem hero cai na imagem da MARCA, nunca na de destinos.
+
+          A de destinos é uma paisagem de aeroporto, e paisagem afirma geografia: a
+          primeira versão tinha litoral, e o card de Goiânia (a 800 km do mar, e hoje
+          o único destino sem hero) passou a mostrar praia. Foto de aeroporto que não
+          é aquele aeroporto engana mesmo sendo genérica, então aqui vale a imagem que
+          não afirma lugar nenhum. */}
+      {!ogImage && <OgImage area="marca" />}
 
       <article className="mx-auto w-full max-w-5xl px-4 py-8 tablet:py-12">
         {/* Breadcrumb (espelha o BreadcrumbList do JSON-LD, agora visível) */}
