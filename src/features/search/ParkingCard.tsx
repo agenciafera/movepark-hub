@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Car, Heart } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { formatBRL } from "@/lib/format";
+import { contasDoConsumidorLigadas } from "@/lib/features";
 import { RatingBadge } from "@/features/reviews/RatingStars";
 import { parkingTypeChipClass } from "./parkingTypeStyle";
 
@@ -151,8 +152,9 @@ export function ParkingCard({
         {imageFooter && <div className="absolute bottom-3 left-3">{imageFooter}</div>}
       </CardLink>
 
-      {/* Favorito */}
-      {favorite && (
+      {/* Favorito. O gate mora aqui porque este card é o gargalo do coração:
+          busca, home e destino passam todos por ele. */}
+      {favorite && contasDoConsumidorLigadas() && (
         <button
           type="button"
           onClick={(e) => {

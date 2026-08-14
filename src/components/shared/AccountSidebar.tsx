@@ -14,6 +14,7 @@ import {
   User,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
+import { contasDoConsumidorLigadas } from "@/lib/features";
 import { useAuth } from "@/auth/context";
 import { userInitials } from "@/lib/initials";
 import { useMembership } from "@/features/growth/api";
@@ -26,7 +27,7 @@ import { useMyVehicles } from "@/features/vehicles/api";
  * cadastra uma vez (dados) e o resto (conta). Lista corrida de dez itens não
  * dizia qual era qual.
  */
-const sections = [
+const secoesBrutas = [
   {
     title: "Minhas viagens",
     items: [
@@ -53,6 +54,22 @@ const sections = [
     ],
   },
 ];
+
+/**
+ * Favoritos sai da sidebar junto com o resto do favoritar. Grupo que fica vazio
+ * some inteiro, senão sobraria um título sem itens embaixo.
+ *
+ * Calculado a cada render, e não uma vez no módulo: como constante de topo, o
+ * valor congelaria no estado da chave no instante do import. Em produção a
+ * chave é literal do build e o resultado seria o mesmo, mas a diferença
+ * apareceu no teste, onde ela muda entre casos.
+ */
+function secoesVisiveis() {
+  if (contasDoConsumidorLigadas()) return secoesBrutas;
+  return secoesBrutas
+    .map((s) => ({ ...s, items: s.items.filter((i) => i.to !== "/account/saved") }))
+    .filter((s) => s.items.length > 0);
+}
 
 /** Sidebar do desktop, 240px à esquerda. No mobile quem responde é o AccountMobileMenu. */
 export function AccountSidebar() {
@@ -103,7 +120,7 @@ export function AccountSidebar() {
       </div>
 
       <nav className="flex flex-1 flex-col gap-6">
-        {sections.map((section) => (
+        {secoesVisiveis().map((section) => (
           <div key={section.title} className="flex flex-col gap-0.5">
             <span className="px-3 pb-2 text-[11px] font-bold uppercase tracking-[0.4px] text-white/40">
               {section.title}
@@ -177,7 +194,7 @@ export function AccountMobileMenu() {
 
   return (
     <div className="desktop:hidden">
-      {sections.map((section) => (
+      {secoesVisiveis().map((section) => (
         <div key={section.title} className="mb-6">
           <span className="mb-1 block px-1 text-[11px] font-bold uppercase tracking-[0.4px] text-mp-indigo">
             {section.title}

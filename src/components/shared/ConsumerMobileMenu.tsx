@@ -27,6 +27,7 @@ import { userInitials } from "@/lib/initials";
 import { secaoAtiva } from "./menuAtivo";
 import { postLogoutPath } from "@/auth/postLoginRedirect";
 import { Wordmark } from "./Brand";
+import { contasDoConsumidorLigadas } from "@/lib/features";
 
 /**
  * Traços do menu que viram X quando o painel abre.
@@ -227,7 +228,7 @@ export function ConsumerMobileMenu() {
 
         {/* Bloco de identidade: diz de quem é a conta aberta e já leva para ela,
             que é o atalho que o avatar sozinho não oferecia. */}
-        {session && (
+        {session && contasDoConsumidorLigadas() && (
           <SheetClose asChild>
             <Link
               to="/account"
@@ -252,9 +253,8 @@ export function ConsumerMobileMenu() {
         <nav className="mt-2 flex flex-col px-3">
           {session && (
             <>
-              {LINKS_DA_CONTA.map((l) => (
-                <Item key={l.to} {...l} />
-              ))}
+              {contasDoConsumidorLigadas() &&
+                LINKS_DA_CONTA.map((l) => <Item key={l.to} {...l} />)}
               {effectiveRole === "hub_admin" && (
                 <Item to="/manager" label="Ir pro Manager" icone={SquaresFour} />
               )}
@@ -276,11 +276,13 @@ export function ConsumerMobileMenu() {
               Sair
             </Button>
           ) : (
-            <SheetClose asChild>
-              <Button asChild className="w-full">
-                <Link to="/login">Entrar</Link>
-              </Button>
-            </SheetClose>
+            contasDoConsumidorLigadas() && (
+              <SheetClose asChild>
+                <Button asChild className="w-full">
+                  <Link to="/login">Entrar</Link>
+                </Button>
+              </SheetClose>
+            )
           )}
         </div>
       </SheetContent>

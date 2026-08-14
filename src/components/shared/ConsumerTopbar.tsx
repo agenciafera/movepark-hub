@@ -31,6 +31,7 @@ import { useDestinations } from "@/features/search/api";
 import { Monogram, Wordmark } from "./Brand";
 import { ConsumerMobileMenu } from "./ConsumerMobileMenu";
 import { useHeaderOculto } from "./useHeaderOculto";
+import { contasDoConsumidorLigadas } from "@/lib/features";
 import { useHeroSearchPassed } from "./useHeroSearchPassed";
 import type { Destination } from "@/features/search/api";
 
@@ -245,9 +246,11 @@ export function ConsumerTopbar() {
               </Button>
               {/* Até o desktop o "Entrar" mora dentro da aba lateral: o header
                   não comporta botão e menu sem espremer a busca do meio. */}
-              <Button size="sm" variant="primary" className="hidden desktop:inline-flex" asChild>
-                <Link to="/login">Entrar</Link>
-              </Button>
+              {contasDoConsumidorLigadas() && (
+                <Button size="sm" variant="primary" className="hidden desktop:inline-flex" asChild>
+                  <Link to="/login">Entrar</Link>
+                </Button>
+              )}
             </>
           )}
 
@@ -270,7 +273,9 @@ export function ConsumerTopbar() {
                   {session.fullName ?? session.email}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {effectiveRole === "customer" && (
+                {/* Atalhos de cliente. "Ir pro Manager" e "Ir pro Operator"
+                    seguem abaixo sem gate: são navegação da equipe. */}
+                {effectiveRole === "customer" && contasDoConsumidorLigadas() && (
                   <>
                     <DropdownMenuItem onClick={() => navigate("/account")}>
                       <User className="h-4 w-4" /> Conta

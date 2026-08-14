@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/context";
 import { postLogoutPath } from "@/auth/postLoginRedirect";
 import { Wordmark } from "./Brand";
+import { contasDoConsumidorLigadas } from "@/lib/features";
 
 function CheckoutTopbar() {
   const { session, effectiveRole, signOut } = useAuth();
@@ -40,7 +41,7 @@ function CheckoutTopbar() {
         </Link>
 
         <div>
-          {!session && (
+          {!session && contasDoConsumidorLigadas() && (
             <Button size="sm" variant="ghost" asChild>
               <Link to="/entrar">Entrar</Link>
             </Button>
@@ -63,7 +64,7 @@ function CheckoutTopbar() {
                   {session.fullName ?? session.email}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {effectiveRole === "customer" && (
+                {effectiveRole === "customer" && contasDoConsumidorLigadas() && (
                   <>
                     <DropdownMenuItem onClick={() => navigate("/bookings")}>
                       <Calendar className="h-4 w-4" /> Minhas reservas

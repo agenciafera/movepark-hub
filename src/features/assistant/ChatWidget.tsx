@@ -4,6 +4,7 @@ import { ChatCircle, PaperPlaneTilt, X } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/context";
 import { useChatConfig, useSendChat } from "./api";
+import { contasDoConsumidorLigadas } from "@/lib/features";
 import {
   appendMessage,
   canSend,
@@ -81,7 +82,7 @@ export function ChatWidget() {
           <Bubble key={m.id} role={m.role} text={m.text} />
         ))}
         {send.isPending && <Bubble role="model" text="…" />}
-        {showLogin && (
+        {showLogin && contasDoConsumidorLigadas() && (
           <div className="flex justify-start">
             <Button asChild size="sm" onClick={() => setNeedsLogin(false)}>
               <Link to={loginHref}>Entrar para reservar</Link>
