@@ -194,7 +194,7 @@ Deno.serve(async (req: Request) => {
       id, capacity, is_active,
       location:location!inner(
         id, slug, name, address, latitude, longitude, status, deleted_at, is_listed,
-        review_avg, review_count, photos,
+        review_avg, review_count, photos, google_place_id,
         company:company!inner(id, slug, name, status),
         destination:destination(code, name, type),
         amenities:location_amenity(amenity_code)
@@ -423,6 +423,36 @@ Deno.serve(async (req: Request) => {
     highDemandSet = buildHighDemandSet((demandRows ?? null) as HighDemandRow[] | null);
   }
 
+  // 12c. Nota do Google como prova social do card. NÃO entra em sort=rating_desc nem em
+  // min_rating: ranking e curadoria continuam rodando só sobre a avaliação Movepark.
+  const placeIds = Array.from(
+    new Set(
+      page
+        .map((r) => r.location.google_place_id as string | null)
+        .filter((id): id is string => !!id),
+    ),
+  );
+  const snapshots = new Map<string, { rating: number | null; count: number }>();
+  if (placeIds.length > 0) {
+    // Filtro explícito e redundante à RLS de leitura (is_hidden/TTL de 30 dias), que já se
+    // aplica aqui porque esta edge lê com a anon key. Mantido de propósito: se um dia o
+    // client trocar para service role, o corte não depende só da policy pra continuar valendo.
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: snaps } = await supabase
+      .from("google_place_snapshot")
+      .select("place_id, rating, user_rating_count")
+      .in("place_id", placeIds)
+      .eq("is_hidden", false)
+      .gt("fetched_at", cutoff);
+    // deno-lint-ignore no-explicit-any
+    for (const s of (snaps ?? []) as any[]) {
+      snapshots.set(s.place_id, {
+        rating: s.rating != null ? Number(s.rating) : null,
+        count: s.user_rating_count ?? 0,
+      });
+    }
+  }
+
   // 13. Map to response shape
   const results = page.map((r) => ({
     id: r.id,
@@ -443,6 +473,10 @@ Deno.serve(async (req: Request) => {
       nearest_terminal: proximity.get(r.location.id)?.nearest_terminal ?? null,
       review_avg: r.location.review_avg != null ? Number(r.location.review_avg) : null,
       review_count: r.location.review_count ?? 0,
+      // Prova social complementar (avaliacoes-google.md §4/§6): só preenche o selo do card
+      // quando não há avaliação Movepark (ver pickCardBadge). NÃO alimenta ranking/curadoria.
+      google_rating: snapshots.get(r.location.google_place_id ?? "")?.rating ?? null,
+      google_rating_count: snapshots.get(r.location.google_place_id ?? "")?.count ?? 0,
       // Capa = 1ª foto da galeria (location.photos). null → o card usa o placeholder.
       cover_image:
         Array.isArray(r.location.photos) && r.location.photos.length > 0

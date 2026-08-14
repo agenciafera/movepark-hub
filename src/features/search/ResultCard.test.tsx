@@ -22,6 +22,8 @@ function item(
       nearest_terminal: null,
       review_avg: null,
       review_count: 0,
+      google_rating: null,
+      google_rating_count: 0,
       cover_image: null,
       high_demand_today: false,
       ...locationOverrides,

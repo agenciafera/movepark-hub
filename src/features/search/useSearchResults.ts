@@ -45,6 +45,10 @@ export type SearchResultItem = {
     nearest_terminal: { name: string; distance_km: number } | null;
     review_avg: number | null;
     review_count: number;
+    /** Prova social complementar (avaliacoes-google.md §4/§6): preenche o selo do card só
+     *  quando não há avaliação Movepark. Nunca entra em ranking/curadoria (ADR pickCardBadge). */
+    google_rating: number | null;
+    google_rating_count: number;
     /** Capa (1ª foto da galeria). null → card mostra placeholder. */
     cover_image: string | null;
     /** Sinal de demanda honesto (E3.6) — nunca um número, só presença acima do limiar. */

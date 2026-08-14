@@ -101,4 +101,34 @@ describe("ParkingCard (card único das três superfícies)", () => {
     );
     expect(screen.getByText("R$ 150,00")).toBeInTheDocument();
   });
+
+  it("mostra a nota Movepark quando ela existe, e nao mostra a do Google junto", () => {
+    renderWithProviders(
+      <ParkingCard
+        {...props({
+          rating: { avg: 4.9, count: 12 },
+          googleRating: { avg: 4.6, count: 312 },
+        })}
+      />,
+    );
+    expect(screen.getByText(/4,9/)).toBeInTheDocument();
+    expect(screen.queryByText(/no Google/i)).not.toBeInTheDocument();
+  });
+
+  it("cai para a nota do Google quando nao ha avaliacao Movepark", () => {
+    renderWithProviders(
+      <ParkingCard
+        {...props({ rating: null, googleRating: { avg: 4.6, count: 312 } })}
+      />,
+    );
+    expect(screen.getByText(/4,6/)).toBeInTheDocument();
+    expect(screen.getByText(/no Google/i)).toBeInTheDocument();
+  });
+
+  it("nao mostra selo nenhum quando nao ha nota em lugar nenhum", () => {
+    renderWithProviders(
+      <ParkingCard {...props({ rating: null, googleRating: null })} />,
+    );
+    expect(screen.queryByText(/no Google/i)).not.toBeInTheDocument();
+  });
 });

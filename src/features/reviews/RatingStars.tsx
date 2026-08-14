@@ -67,12 +67,15 @@ export function RatingBadge({
   count,
   className,
   href,
+  suffix,
 }: {
   avg: number | null | undefined;
   count: number | null | undefined;
   className?: string;
   /** Quando informado, vira link-âncora (ex.: "#avaliacoes") para a seção de reviews. */
   href?: string;
+  /** Rótulo da fonte, quando a nota não é da Movepark. Ex.: "no Google". */
+  suffix?: string;
 }) {
   const label = ratingLabel(avg, count);
   if (!label) return null;
@@ -82,6 +85,7 @@ export function RatingBadge({
       <a href={href} className={cn(base, "underline-offset-2 hover:underline", className)}>
         <Star className="h-3.5 w-3.5 fill-ink text-ink" />
         {label}
+        {suffix && <span className="text-muted">· {suffix}</span>}
       </a>
     );
   }
@@ -89,6 +93,7 @@ export function RatingBadge({
     <span className={cn(base, className)}>
       <Star className="h-3.5 w-3.5 fill-ink text-ink" />
       {label}
+      {suffix && <span className="text-muted">{suffix}</span>}
     </span>
   );
 }

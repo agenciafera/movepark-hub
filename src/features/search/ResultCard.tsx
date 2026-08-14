@@ -141,6 +141,7 @@ export function ResultCard({ item, isSaved, onToggleSave, searchParams, source, 
         ) : undefined
       }
       rating={{ avg: item.location.review_avg, count: item.location.review_count }}
+      googleRating={{ avg: item.location.google_rating, count: item.location.google_rating_count }}
       amenities={amenities}
       amenitiesTestId="result-card-amenities"
       // Na vitrine o card mostra a diária, não o total da estadia mínima: a lista mistura

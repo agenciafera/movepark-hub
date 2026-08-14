@@ -91,6 +91,8 @@ function PopularOfferCard({
       metaIcon={location.destination ? Airplane : undefined}
       meta={destinationMeta(location)}
       rating={{ avg: location.review_avg, count: location.review_count }}
+      // A vitrine dos populares não busca via edge /search: sem snapshot do Google nesta fonte.
+      googleRating={null}
       amenities={topAmenityPills(location.amenities)}
       // Quem exige estadia mínima mostra a diária, e não o total dela: a vitrine põe lado a
       // lado cards de durações diferentes, e comparar total com total faria o "Mais barato"

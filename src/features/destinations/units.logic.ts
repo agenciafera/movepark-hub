@@ -106,6 +106,10 @@ export function buildStaticUnits(rows: UnitRow[], proximity: ProximityRow[]): Se
             : null,
         review_avg: loc.review_avg ?? null,
         review_count: loc.review_count ?? 0,
+        // O build estático não consulta o snapshot do Google: a nota complementar só existe
+        // na resposta da edge /search, que substitui esta semente assim que o cliente busca.
+        google_rating: null,
+        google_rating_count: 0,
         cover_image: fotos[0] ?? null,
         // Sinal de demanda depende da janela buscada. Num HTML congelado ele seria uma
         // afirmação sem lastro, então nasce falso e só a busca do cliente pode ligá-lo.

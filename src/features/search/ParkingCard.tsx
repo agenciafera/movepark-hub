@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { formatBRL } from "@/lib/format";
 import { contasDoConsumidorLigadas } from "@/lib/features";
 import { RatingBadge } from "@/features/reviews/RatingStars";
+import { pickCardBadge } from "@/features/reviews/google.logic";
 import { parkingTypeChipClass } from "./parkingTypeStyle";
 
 /**
@@ -37,7 +38,12 @@ export type ParkingCardProps = {
   meta?: React.ReactNode;
   metaIcon?: IconType;
   /** Nota agregada. O `RatingBadge` some sozinho quando não há avaliação. */
-  rating?: { avg: number | null | undefined; count: number | null | undefined };
+  rating?: { avg: number | null | undefined; count: number | null | undefined } | null;
+  /**
+   * Nota do Google. Entra só quando não há avaliação Movepark: em 375px, dois selos viram
+   * ruído e nenhuma das notas é lida.
+   */
+  googleRating?: { avg: number | null; count: number } | null;
   amenities?: ParkingCardAmenity[];
   price: { total: number | null | undefined; oldPrice?: number | null; unit: string };
   /** Selos sobre a imagem, no canto superior esquerdo (diferenciais comparativos). */
@@ -104,6 +110,7 @@ export function ParkingCard({
   meta,
   metaIcon: MetaIcon,
   rating,
+  googleRating,
   amenities,
   price,
   overlay,
@@ -204,7 +211,21 @@ export function ParkingCard({
               <span>{meta}</span>
             </p>
           )}
-          {rating && <RatingBadge avg={rating.avg} count={rating.count} className="text-body-sm" />}
+          {(() => {
+            const badge = pickCardBadge(
+              { avg: rating?.avg ?? null, count: rating?.count ?? 0 },
+              googleRating ? { rating: googleRating.avg, count: googleRating.count } : null,
+            );
+            if (!badge) return null;
+            return (
+              <RatingBadge
+                avg={badge.avg}
+                count={badge.count}
+                className="text-body-sm"
+                suffix={badge.source === "google" ? "no Google" : undefined}
+              />
+            );
+          })()}
         </div>
 
         {/* Amenidades */}
