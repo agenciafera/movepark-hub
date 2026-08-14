@@ -96,7 +96,7 @@ existentes (padrão `operator_*`), que já validam o vínculo com a empresa.
 |---|---|
 | Rewrite + proxy | `api.movepark.co/v1/*` → `https://<project>.supabase.co/functions/v1/api/v1/*` |
 | CORS | Liberado para uso server-to-server; preflight `OPTIONS` tratado na borda |
-| Rate-limit por chave | Contador em Cloudflare KV/DO por `key_prefix` (limites em §10). v1: best-effort |
+| Rate-limit por chave | Binding nativo `API_RATELIMIT` por `key_prefix` (limites e o porquê de não ser KV em §10) |
 | Headers de plataforma | injeta `x-forwarded-*`, propaga `x-request-id`; **nunca** vaza a URL do Supabase |
 | `/openapi.yaml` e `/docs` | serve o contrato e a doc human-friendly (§11) |
 

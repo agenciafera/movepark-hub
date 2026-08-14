@@ -61,6 +61,32 @@ Métodos suportados: `initialize`, `ping`, `tools/list`, `tools/call`, e `notifi
   - Tool inexistente / fora de escopo / param obrigatório ausente → **erro JSON-RPC** (`-32602`).
   - Erro de execução (regra de negócio) → `result` com `isError:true` (convenção MCP), não erro de protocolo.
 
+### Higiene da mensagem de erro (`safeToolError`)
+
+O texto que chega ao cliente passa por `safeToolError` (`protocol.ts`), o espelho do `pgErrorToHttp`
+da REST. A regra: só mensagem **nossa** sai; internals do Postgres viram genérico.
+
+| Origem | O que sai |
+|---|---|
+| `RAISE` de negócio das RPCs (`P0001`) | a mensagem, como escrita |
+| Unicidade (`23505`) | "Registro já existe (conflito de unicidade)." |
+| Tipo/FK/not-null (`22P02`, `23502`, `23503`, `23514`…) | "Parâmetro inválido para esta operação." |
+| Qualquer outro SQLSTATE | "Erro ao executar a operação." |
+| **Sem SQLSTATE** | a mensagem, **se não parecer interna** |
+
+A última linha é a que menos se adivinha, e foi endurecida em 12/08/2026. O caminho "sem código"
+existia na suposição de que erro sem SQLSTATE é sempre um `throw` de handler nosso. Não é: o
+supabase-js re-lança como `new Error(error.message)`, perdendo o código e carregando nome de tabela,
+coluna, constraint e policy. Agora essa mensagem passa por uma denylist de frases internas
+(`violates`, `permission denied`, `row-level security`, `does not exist`, `duplicate key`,
+`constraint`, `JWT expired`…).
+
+O filtro é por **frase inglesa**, e não por heurística de aspas, de propósito: as mensagens de app
+são em português e às vezes citam um valor entre aspas (`Post "guarulhos" não encontrado`), que uma
+regra de aspas mataria. Como o Postgres fala inglês e o app fala português, os dois se separam sem
+ambiguidade. Travado em `mcp.test.ts` nos dois sentidos: mascara 7 vazamentos reais e deixa passar 5
+mensagens de app.
+
 ---
 
 ## 4. Catálogo de tools
