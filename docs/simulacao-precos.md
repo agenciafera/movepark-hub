@@ -1,7 +1,12 @@
 # Simulação de Preços — Hub vs Produção
 
 Gerado em: **2026-05-26**  
-Endpoint Hub: `https://mgaigbezdalbyuqiofcf.supabase.co/functions/v1/simulate-price`
+Fonte da coluna Hub: a Edge `simulate-price`, **que não existe mais** (despublicada em 14/08/2026,
+por reimplementar o motor de preço em paralelo e divergir dele em silêncio; ver
+`docs/specs/pricing-engine.md`). As tabelas abaixo ficam como o retrato que eram naquela data, e o
+que vale como verdade é a coluna **Produção** (o sistema legado), que é de onde os casos golden de
+`test/pricing/cases.ts` foram tirados. Para regerar qualquer número hoje, use a RPC
+`simulate_price` do banco.
 
 > **ℹ️ Atenção:** Células marcadas com `⚠️` indicam *inversão de faixa* — o preço de N dias é **maior** que o de N+k dias. Isso é esperado em estratégias `uniform_by_duration` (o cliente deveria escolher a faixa maior para economizar).
 

@@ -433,7 +433,7 @@ checklist próprio em **[mcp.md](./mcp.md)**.
 
 ### As Edges públicas que NÃO são a Public API
 
-`verify_jwt = false` quer dizer **chamável sem JWT**, e hoje 16 Edge Functions estão assim. Só três
+`verify_jwt = false` quer dizer **chamável sem JWT**, e hoje 15 Edge Functions estão assim. Só três
 (`api`, `mcp`, `chat`) são superfície de produto; as outras são webhook de entrada, worker de cron
 ou endpoint do app. Elas não entram no OpenAPI de propósito, mas cada uma precisa de gate próprio,
 senão `verify_jwt = false` vira endpoint aberto. O levantamento de 13/08/2026:
@@ -444,7 +444,6 @@ senão `verify_jwt = false` vira endpoint aberto. O levantamento de 13/08/2026:
 | Webhook de entrada | `pagarme-webhook` | Assinatura do gateway |
 | Hook do Auth | `send-whatsapp-otp` | Segredo do Send SMS Hook |
 | App do consumidor | `get-payment-config`, `redeem-checkout-handoff` | Segredo próprio, e o handoff é de uso único |
-| Legado sem gate | `simulate-price` | **Nada.** Aberta a qualquer um que saiba um slug de empresa (ver abaixo) |
 
 **A `review-request` era a exceção, e foi fechada em 13/08/2026.** Ela não tinha gate nenhum: o cron
 a chamava com a anon key no `Authorization`, e anon key é pública por design, então qualquer um
@@ -454,11 +453,11 @@ o envio e queimar cota, com `limit` até 200 por chamada. Hoje ela segue o padr�
 (migration `20261021141500_review_request_key.sql`). Medido depois do deploy: sem o header, 401; o
 cron legítimo, 200.
 
-**A órfã `simulate-price` voltou para o repo em 14/08/2026, e o que ela escondia justifica a
-regra.** Ela rodava em produção desde jun/2026 sem nunca ter estado no git. O fonte foi recuperado
-pela Management API, conferido contra produção (mesma resposta, byte a byte, nas seis empresas) e
-comitado. Aí, com o código enfim visível, um teste contra os valores golden do motor canônico
-achou **52 divergências** em 37 combinações de unidade e tipo de vaga:
+**A órfã `simulate-price` foi despublicada em 14/08/2026, e o que ela escondia justifica a regra.**
+Ela rodava em produção desde jun/2026 sem nunca ter estado no git. O fonte foi recuperado pela
+Management API e conferido contra produção (mesma resposta, byte a byte, nas seis empresas). Aí,
+com o código enfim visível, um teste contra os valores golden do motor canônico achou
+**52 divergências** em 37 combinações de unidade e tipo de vaga:
 
 | Classe | O que saía | O que o motor SQL diz |
 |---|---|---|
@@ -468,12 +467,14 @@ achou **52 divergências** em 37 combinações de unidade e tipo de vaga:
 
 As três eram o mesmo defeito de fundo: o motor respondia **0** quando não sabia. Preço zero em
 vitrine lê como promoção, e nenhum teste podia pegar isso enquanto o código só existia no servidor.
-Hoje o endpoint devolve `price: null` com `unsupported_strategy` quando não sabe calcular, e os
-números que ele publica batem com a `simulate_price` do banco. Ver `supabase/functions/simulate-price/engine.test.ts`.
 
-**O que continua aberto nela:** é pública, sem throttle e sem gate, e ainda é um segundo motor de
-preço, que é a causa-raiz da divergência. Zero tráfego orgânico nas últimas 24h medidas. A
-recomendação é despublicar; enquanto isso, o fonte está no repo e sob teste.
+**Corrigir os números não resolvia a causa, que era a duplicação.** Enquanto existissem dois
+motores calculando as mesmas 7 estratégias, a próxima mudança de regra no SQL deixaria o TypeScript
+para trás de novo. A função não tinha consumidor nenhum (nada no site, no app, na Public API ou no
+MCP a chamava; zero tráfego orgânico nas 24h medidas), então foi despublicada:
+`supabase functions delete simulate-price`. A URL antiga responde 404 e o bloco saiu do
+`config.toml`. O fonte recuperado e a análise ficam no commit `00b9a5f2`, para quem precisar do
+registro. **Regra que fica: cálculo de preço reusa a RPC `simulate_price`, sempre.**
 
 **Nunca mais deve existir uma órfã, nos dois sentidos.** O guard é
 `scripts/check-edge-functions.mjs`: camada offline no job `quality` do CI (bloco `[functions.X]`

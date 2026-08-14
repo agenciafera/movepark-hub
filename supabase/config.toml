@@ -393,9 +393,6 @@ verify_jwt = false
 [functions.mcp]
 verify_jwt = false
 
-[functions.simulate-price]
-verify_jwt = false
-
 [functions.get-payment-config]
 verify_jwt = false
 

@@ -321,15 +321,19 @@ create index on public.pricing_hourly_bracket (pricing_rule_id);
 
 ## Consumidores do motor (reuso, sem regra nova)
 
-> **Existe um segundo motor, e ele já custou caro.** A Edge `simulate-price` (com hífen, diferente
-> da RPC `simulate_price`) reimplementa estas estratégias em TypeScript, porque devolve uma grade
-> inteira de uma vez. Ela rodava em produção desde jun/2026 **sem fonte no git**, e quando o fonte
-> voltou (14/08/2026) um teste contra os mesmos valores golden achou 52 divergências: a
+> **Existiu um segundo motor, e ele custou caro.** A Edge `simulate-price` (com hífen, diferente da
+> RPC `simulate_price`) reimplementava estas estratégias em TypeScript, para devolver uma grade
+> inteira numa chamada só. Rodava em produção desde jun/2026 **sem fonte no git**, e quando o fonte
+> foi recuperado (14/08/2026) um teste contra os mesmos valores golden achou 52 divergências: a
 > `incremental_formula` descontava dois dias do multiplicador (5 dias na Airpark/Faro coberta saíam
 > R$ 37,00 em vez de R$ 55,00), a `hourly_capped` saía R$ 0,00 com HTTP 200, e o dia 1 das unidades
-> com estadia mínima também saía R$ 0,00. Corrigidas, com `supabase/functions/simulate-price/engine.test.ts`
-> batendo os dois motores. **Regra que fica: cálculo de preço novo reusa a RPC.** Uma segunda
-> implementação diverge, e diverge em silêncio. Ver `docs/specs/public-api.md` §14.
+> com estadia mínima também saía R$ 0,00. Ela foi **despublicada** no mesmo dia, porque consertar
+> os números não removia a causa: dois motores para a mesma conta divergem, e divergem em silêncio.
+> A análise e o fonte recuperado ficam no commit `00b9a5f2`.
+>
+> **Regra que fica: cálculo de preço reusa a RPC `simulate_price`.** Se um dia alguém precisar de
+> uma grade inteira numa chamada, o caminho é uma função que consulta a RPC por baixo, nunca uma
+> segunda implementação da conta. Ver `docs/specs/public-api.md` §14.
 
 - **Tabela "Ver preços por duração" (PRD-10, ✅):** o listing reusa `simulate_price` para vários
   buckets de dias (`[1,2,3,5,7,10,15,30]` + a duração buscada) via `useDurationPrices` (`useQueries`,

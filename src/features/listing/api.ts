@@ -296,7 +296,10 @@ function simulatePriceQueryOptions(
   days: number,
 ) {
   return {
-    queryKey: ["simulate-price", companySlug, locationSlug, parkingTypeCode, days] as const,
+    // Com underscore, igual ao nome da RPC. Com hífen, o nome batia com o de uma Edge Function
+    // homônima que reimplementava o motor e foi despublicada em 14/08/2026: quem grepasse por
+    // "simulate-price" caía nesta chave de cache e achava que o site chamava aquele endpoint.
+    queryKey: ["simulate_price", companySlug, locationSlug, parkingTypeCode, days] as const,
     queryFn: async (): Promise<SimulatedPrice> => {
       const { data, error } = await supabase.rpc("simulate_price", {
         p_company: companySlug!,
