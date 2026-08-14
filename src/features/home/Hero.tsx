@@ -158,6 +158,14 @@ export function Hero() {
         Ela é o LCP da home e fica na página o tempo todo, mesmo quando o vídeo
         entra por cima. É o que segura o banner quando o vídeo não carrega, seja
         por rede ruim, por economia de dados ou por erro no arquivo.
+
+        O enquadramento muda abaixo do desktop, e o motivo é geometria. O quadro
+        é 2,3:1 e a seção no celular fica mais alta que larga, então o
+        `object-cover` corta 41% de cada lado e sobram 17% da largura. Centrado,
+        essa fatia cai na lataria escura do carro e o banner vira um borrão sem
+        leitura. Em 75% ela cai na pessoa e no vão do estacionamento, que é o que
+        a foto precisa dizer. O mesmo valor vale para o vídeo, senão a troca de
+        um para o outro daria um salto de enquadramento.
       */}
       <img
         src="/images/hero-image.webp"
@@ -165,7 +173,7 @@ export function Hero() {
         aria-hidden="true"
         fetchPriority="high"
         decoding="async"
-        className="absolute inset-0 h-full w-full object-cover object-center"
+        className="absolute inset-0 h-full w-full object-cover object-[75%_center] desktop:object-center"
       />
 
       {/*
@@ -218,7 +226,7 @@ export function Hero() {
               }}
               onEnded={() => avancar(i, false)}
               className={cn(
-                "absolute inset-0 h-full w-full object-cover object-center brightness-[0.82] saturate-[1.05] transition-opacity duration-700 motion-reduce:transition-none",
+                "absolute inset-0 h-full w-full object-cover object-[75%_center] brightness-[0.82] saturate-[1.05] transition-opacity duration-700 motion-reduce:transition-none desktop:object-center",
                 videoVisivel && clipeAtivo === i ? "opacity-100" : "opacity-0",
               )}
             />

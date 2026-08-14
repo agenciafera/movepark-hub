@@ -248,6 +248,24 @@ describe("Hero — vídeo de fundo", () => {
     expect(clipeVisivel()).toBe(1);
   });
 
+  /**
+   * Regressão de enquadramento, medida no navegador: o quadro é 2,3:1 e a seção
+   * no celular fica mais alta que larga, então o `object-cover` deixa 17% da
+   * largura. Centrado, essa fatia cai na lataria escura do carro e o banner vira
+   * um borrão. Foto e vídeo precisam do mesmo valor, senão a troca de um para o
+   * outro dá um salto.
+   */
+  it("foto e vídeo compartilham o enquadramento do celular", async () => {
+    renderWithProviders(<Hero />);
+    await abrirSequencia();
+
+    expect(foto()?.className).toContain("object-[75%_center]");
+    for (const clipe of videos()) {
+      expect(clipe.className).toContain("object-[75%_center]");
+      expect(clipe.className).toContain("desktop:object-center");
+    }
+  });
+
   /** Enquanto baixa, mostrar o vídeo trocaria a foto por um retângulo preto. */
   it("o vídeo entra invisível e só aparece quando dá para tocar", async () => {
     renderWithProviders(<Hero />);
