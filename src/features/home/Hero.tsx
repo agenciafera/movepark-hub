@@ -1,9 +1,11 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { gsap } from "@/lib/gsap";
+import { cn } from "@/lib/utils";
 import { SearchBarPill } from "@/features/search/SearchBarPill";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { formatCompactCount } from "@/lib/format";
+import { deveCarregarVideo } from "./heroVideo.logic";
 import { useClientesAtendidos } from "./api";
 
 function parseDate(value: string | null): Date | null {
@@ -45,7 +47,42 @@ export function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
   const clientesAtendidos = useClientesAtendidos();
 
+  /*
+    O vídeo só monta depois do primeiro efeito, e é esse atraso que protege o
+    LCP: enquanto o navegador pinta o topo da home, o que existe na árvore é a
+    foto, com a mesma prioridade de sempre. O vídeo entra por cima depois.
+  */
+  const [carregarVideo, setCarregarVideo] = useState(false);
+  const [videoVisivel, setVideoVisivel] = useState(false);
+
   useEffect(() => {
+    const rede = (
+      navigator as Navigator & {
+        connection?: { saveData?: boolean; effectiveType?: string };
+      }
+    ).connection;
+
+    setCarregarVideo(
+      deveCarregarVideo({
+        movimentoReduzido: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false,
+        economiaDeDados: rede?.saveData,
+        tipoDeRede: rede?.effectiveType,
+      }),
+    );
+  }, []);
+
+  useEffect(() => {
+    /*
+      Lido direto do `matchMedia`, e não pelo `usePrefersReducedMotion`.
+
+      O hook começa em `false` para casar com o HTML do SSG, então na primeira
+      passada a timeline já teria zerado a opacidade do H1 antes de o estado
+      virar. Quem pediu menos movimento veria o texto piscar, que é exatamente
+      o que a preferência existe para evitar. É o mesmo padrão da
+      `DestinationsGallery`.
+    */
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({ delay: 0.1 });
       tl.fromTo('[data-hero="badge"]', { opacity: 0, y: -14 },
@@ -68,7 +105,13 @@ export function Hero() {
       className="relative overflow-hidden"
       style={{ minHeight: "640px" }}
     >
-      {/* Foto de fundo — estacionamento aéreo ao pôr-do-sol */}
+      {/*
+        Foto de fundo: estacionamento coberto na luz do fim da tarde.
+
+        Ela é o LCP da home e fica na página o tempo todo, mesmo quando o vídeo
+        entra por cima. É o que segura o banner quando o vídeo não carrega, seja
+        por rede ruim, por economia de dados ou por erro no arquivo.
+      */}
       <img
         src="/images/hero-image.webp"
         alt=""
@@ -77,6 +120,40 @@ export function Hero() {
         decoding="async"
         className="absolute inset-0 h-full w-full object-cover object-center"
       />
+
+      {/*
+        O mesmo banner em movimento, por cima da foto.
+
+        `muted` e `playsInline` não são preferência: sem os dois o iOS recusa o
+        autoplay e o banner congela no primeiro quadro. Aparece só depois do
+        `canPlay` para não trocar a foto por um retângulo preto enquanto baixa.
+
+        Sem controle nenhum e fora da ordem de tabulação: é papel de parede, e um
+        vídeo focável no topo da home colocaria um pouso morto antes da busca.
+
+        O `brightness` está medido, não é gosto. O movimento da câmera traz a
+        janela clara do fundo para trás do selo de prova social, e ali o vídeo
+        fica mais claro que a foto: o selo é branco sobre branco e some. Os dois
+        gradientes seguram o H1, mas não aquele bloco, que é pequeno e mora na
+        parte mais fraca do gradiente. Corrigir no vídeo, e não no overlay, deixa
+        o banner intacto para quem cai na foto.
+      */}
+      {carregarVideo && (
+        <video
+          src="/images/hero-video.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          aria-hidden="true"
+          tabIndex={-1}
+          onCanPlay={() => setVideoVisivel(true)}
+          className={cn(
+            "absolute inset-0 h-full w-full object-cover object-center brightness-[0.82] saturate-[1.05] transition-opacity duration-700 motion-reduce:transition-none",
+            videoVisivel ? "opacity-100" : "opacity-0",
+          )}
+        />
+      )}
 
       {/* Overlay em camadas: gradiente direcional + vignette */}
       <div
