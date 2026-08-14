@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { SearchBarPill } from "@/features/search/SearchBarPill";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { formatCompactCount } from "@/lib/format";
-import { deveCarregarVideo } from "./heroVideo.logic";
+import { CLIPES, deveCarregarVideo, deveCruzar, proximoClipe } from "./heroVideo.logic";
 import { useClientesAtendidos } from "./api";
 
 function parseDate(value: string | null): Date | null {
@@ -55,6 +55,29 @@ export function Hero() {
   const [carregarVideo, setCarregarVideo] = useState(false);
   const [videoVisivel, setVideoVisivel] = useState(false);
 
+  /*
+    Qual clipe da sequência está no ar.
+
+    O índice mora num ref além do estado porque `timeupdate` dispara umas quatro
+    vezes por segundo: sem uma trava lida na hora, os disparos que chegam entre a
+    troca e o re-render passariam todos pela mesma condição e pulariam clipe. É a
+    mesma armadilha do `useHeaderOculto`, e a saída é a mesma: decidir sobre o
+    ref, e deixar o estado só para pintar.
+  */
+  const [clipeAtivo, setClipeAtivo] = useState(0);
+  const indiceRef = useRef(0);
+  const clipesRef = useRef<(HTMLVideoElement | null)[]>([]);
+
+  /*
+    Os clipes 2 e 3 só entram na árvore depois que o primeiro consegue tocar.
+
+    Montar os três de uma vez colocaria três downloads competindo entre si logo
+    na abertura da home, e o que o usuário precisa ver primeiro é justamente o
+    primeiro. Como cada clipe dura 5s, sobra tempo de sobra para os outros
+    chegarem antes da vez deles.
+  */
+  const [carregarResto, setCarregarResto] = useState(false);
+
   useEffect(() => {
     const rede = (
       navigator as Navigator & {
@@ -99,6 +122,30 @@ export function Hero() {
     return () => ctx.revert();
   }, []);
 
+  /*
+    Acende o próximo clipe por cima do atual.
+
+    `exigirPronto` separa os dois gatilhos. No `timeupdate` a troca é adiantada
+    para o cruzamento acontecer, e aí o próximo precisa ter quadro na mão, senão
+    o crossfade revelaria um retângulo vazio. No `ended` não dá para exigir nada:
+    é a última chance, e travar ali deixaria o banner parado no último quadro
+    para sempre.
+  */
+  const avancar = (de: number, exigirPronto: boolean) => {
+    if (indiceRef.current !== de) return;
+
+    const proximo = proximoClipe(de);
+    const alvo = clipesRef.current[proximo];
+    if (exigirPronto && (alvo?.readyState ?? 0) < 2) return;
+
+    indiceRef.current = proximo;
+    if (alvo) {
+      alvo.currentTime = 0;
+      void alvo.play().catch(() => {});
+    }
+    setClipeAtivo(proximo);
+  };
+
   return (
     <section
       ref={sectionRef}
@@ -138,22 +185,45 @@ export function Hero() {
         parte mais fraca do gradiente. Corrigir no vídeo, e não no overlay, deixa
         o banner intacto para quem cai na foto.
       */}
-      {carregarVideo && (
-        <video
-          src="/images/hero-video.mp4"
-          autoPlay
-          muted
-          loop
-          playsInline
-          aria-hidden="true"
-          tabIndex={-1}
-          onCanPlay={() => setVideoVisivel(true)}
-          className={cn(
-            "absolute inset-0 h-full w-full object-cover object-center brightness-[0.82] saturate-[1.05] transition-opacity duration-700 motion-reduce:transition-none",
-            videoVisivel ? "opacity-100" : "opacity-0",
-          )}
-        />
-      )}
+      {carregarVideo &&
+        CLIPES.map((src, i) => {
+          // O primeiro abre a sequência; os outros esperam a vez.
+          const primeiro = i === 0;
+          if (!primeiro && !carregarResto) return null;
+
+          return (
+            <video
+              key={src}
+              ref={(el) => {
+                clipesRef.current[i] = el;
+              }}
+              src={src}
+              autoPlay={primeiro}
+              muted
+              playsInline
+              preload={primeiro ? "auto" : "metadata"}
+              aria-hidden="true"
+              tabIndex={-1}
+              onCanPlay={
+                primeiro
+                  ? () => {
+                      setVideoVisivel(true);
+                      setCarregarResto(true);
+                    }
+                  : undefined
+              }
+              onTimeUpdate={(e) => {
+                const el = e.currentTarget;
+                if (deveCruzar(el.currentTime, el.duration)) avancar(i, true);
+              }}
+              onEnded={() => avancar(i, false)}
+              className={cn(
+                "absolute inset-0 h-full w-full object-cover object-center brightness-[0.82] saturate-[1.05] transition-opacity duration-700 motion-reduce:transition-none",
+                videoVisivel && clipeAtivo === i ? "opacity-100" : "opacity-0",
+              )}
+            />
+          );
+        })}
 
       {/* Overlay em camadas: gradiente direcional + vignette */}
       <div

@@ -32,3 +32,41 @@ export function deveCarregarVideo(c: CondicoesDoAmbiente): boolean {
   if (c.tipoDeRede && REDES_LENTAS.has(c.tipoDeRede)) return false;
   return true;
 }
+
+/**
+ * A sequência do banner, na ordem da história: ela chega a pé, entra no carro e
+ * sai, e passa na cancela.
+ */
+export const CLIPES = [
+  "/images/hero-video.mp4",
+  "/images/hero-video-saida.mp4",
+  "/images/hero-video-cancela.mp4",
+] as const;
+
+/** Segundos em que um clipe e o seguinte tocam juntos, um sumindo no outro. */
+export const CRUZAMENTO = 0.8;
+
+/** O próximo da fila, voltando ao começo depois do último. */
+export function proximoClipe(atual: number, total: number = CLIPES.length): number {
+  return (atual + 1) % total;
+}
+
+/**
+ * Se já é hora de acender o próximo clipe por cima deste.
+ *
+ * A troca começa antes do fim, não no `ended`: esperar o fim deixaria um quadro
+ * congelado entre um clipe e outro, que é exatamente o corte seco que a
+ * sobreposição existe para esconder.
+ *
+ * `duration` é `NaN` enquanto os metadados não chegam, e `NaN` em comparação dá
+ * sempre `false`, então a guarda explícita é o que impede a troca de disparar no
+ * primeiro `timeupdate` de um vídeo que mal começou a carregar.
+ */
+export function deveCruzar(
+  tempoAtual: number,
+  duracao: number,
+  cruzamento: number = CRUZAMENTO,
+): boolean {
+  if (!Number.isFinite(duracao) || duracao <= 0) return false;
+  return duracao - tempoAtual <= cruzamento;
+}

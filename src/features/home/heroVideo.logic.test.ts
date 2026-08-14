@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deveCarregarVideo } from "./heroVideo.logic";
+import { CLIPES, CRUZAMENTO, deveCarregarVideo, deveCruzar, proximoClipe } from "./heroVideo.logic";
 
 describe("deveCarregarVideo", () => {
   it("carrega em rede boa, sem restrição nenhuma", () => {
@@ -37,5 +37,42 @@ describe("deveCarregarVideo", () => {
     expect(
       deveCarregarVideo({ movimentoReduzido: true, economiaDeDados: false, tipoDeRede: "4g" }),
     ).toBe(false);
+  });
+});
+
+describe("proximoClipe", () => {
+  it("anda um por vez", () => {
+    expect(proximoClipe(0)).toBe(1);
+    expect(proximoClipe(1)).toBe(2);
+  });
+
+  /** Depois do último a história recomeça, senão o banner morre na cancela. */
+  it("depois do último volta para o primeiro", () => {
+    expect(proximoClipe(CLIPES.length - 1)).toBe(0);
+  });
+});
+
+describe("deveCruzar", () => {
+  it("no meio do clipe ainda não é hora", () => {
+    expect(deveCruzar(1, 5)).toBe(false);
+  });
+
+  it("dentro da janela de cruzamento, é hora", () => {
+    expect(deveCruzar(5 - CRUZAMENTO + 0.1, 5)).toBe(true);
+  });
+
+  it("exatamente na borda da janela já conta", () => {
+    expect(deveCruzar(5 - CRUZAMENTO, 5)).toBe(true);
+  });
+
+  /**
+   * `duration` é `NaN` até os metadados chegarem. Sem a guarda, o primeiro
+   * `timeupdate` de um vídeo recém-montado poderia disparar a troca e o banner
+   * pularia um clipe antes de mostrá-lo.
+   */
+  it("não cruza enquanto a duração é desconhecida", () => {
+    expect(deveCruzar(0, Number.NaN)).toBe(false);
+    expect(deveCruzar(0, 0)).toBe(false);
+    expect(deveCruzar(0, Number.POSITIVE_INFINITY)).toBe(false);
   });
 });
