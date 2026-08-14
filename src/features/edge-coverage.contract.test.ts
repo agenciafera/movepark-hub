@@ -23,6 +23,11 @@ const SEM_TESTE = [
   "capture-partner-lead",
   "knowledge-search",
   "redeem-checkout-handoff",
+  // Stub inerte: responde 410 e nada mais. O fonte voltou para o repo em 14/08/2026, na
+  // varredura de paridade com produção, para o git parar de mentir sobre o que está no ar.
+  // Testar `new Response("gone", { status: 410 })` não protegeria nada; a saída é apagá-la
+  // pelo painel do Supabase, que é o que o próprio cabeçalho dela pede.
+  "wa-debug",
   "wl-sync",
 ];
 

@@ -321,6 +321,16 @@ create index on public.pricing_hourly_bracket (pricing_rule_id);
 
 ## Consumidores do motor (reuso, sem regra nova)
 
+> **Existe um segundo motor, e ele já custou caro.** A Edge `simulate-price` (com hífen, diferente
+> da RPC `simulate_price`) reimplementa estas estratégias em TypeScript, porque devolve uma grade
+> inteira de uma vez. Ela rodava em produção desde jun/2026 **sem fonte no git**, e quando o fonte
+> voltou (14/08/2026) um teste contra os mesmos valores golden achou 52 divergências: a
+> `incremental_formula` descontava dois dias do multiplicador (5 dias na Airpark/Faro coberta saíam
+> R$ 37,00 em vez de R$ 55,00), a `hourly_capped` saía R$ 0,00 com HTTP 200, e o dia 1 das unidades
+> com estadia mínima também saía R$ 0,00. Corrigidas, com `supabase/functions/simulate-price/engine.test.ts`
+> batendo os dois motores. **Regra que fica: cálculo de preço novo reusa a RPC.** Uma segunda
+> implementação diverge, e diverge em silêncio. Ver `docs/specs/public-api.md` §14.
+
 - **Tabela "Ver preços por duração" (PRD-10, ✅):** o listing reusa `simulate_price` para vários
   buckets de dias (`[1,2,3,5,7,10,15,30]` + a duração buscada) via `useDurationPrices` (`useQueries`,
   mesma cache key do reservation card) e mostra total + por-dia. Não há regra nova nem batch RPC — são

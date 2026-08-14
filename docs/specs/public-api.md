@@ -444,6 +444,7 @@ senão `verify_jwt = false` vira endpoint aberto. O levantamento de 13/08/2026:
 | Webhook de entrada | `pagarme-webhook` | Assinatura do gateway |
 | Hook do Auth | `send-whatsapp-otp` | Segredo do Send SMS Hook |
 | App do consumidor | `get-payment-config`, `redeem-checkout-handoff` | Segredo próprio, e o handoff é de uso único |
+| Legado sem gate | `simulate-price` | **Nada.** Aberta a qualquer um que saiba um slug de empresa (ver abaixo) |
 
 **A `review-request` era a exceção, e foi fechada em 13/08/2026.** Ela não tinha gate nenhum: o cron
 a chamava com a anon key no `Authorization`, e anon key é pública por design, então qualquer um
@@ -453,10 +454,33 @@ o envio e queimar cota, com `limit` até 200 por chamada. Hoje ela segue o padr�
 (migration `20261021141500_review_request_key.sql`). Medido depois do deploy: sem o header, 401; o
 cron legítimo, 200.
 
-> **Órfã conhecida:** `simulate-price` está publicada e responde em produção, mas **não tem
-> fonte no repositório** e ninguém no código a chama. É simulação de preço, então devolve dado
-> público e não PII, mas é código que roda sem poder ser revisado. Decidir entre despublicar ou
-> trazer o fonte de volta.
+**A órfã `simulate-price` voltou para o repo em 14/08/2026, e o que ela escondia justifica a
+regra.** Ela rodava em produção desde jun/2026 sem nunca ter estado no git. O fonte foi recuperado
+pela Management API, conferido contra produção (mesma resposta, byte a byte, nas seis empresas) e
+comitado. Aí, com o código enfim visível, um teste contra os valores golden do motor canônico
+achou **52 divergências** em 37 combinações de unidade e tipo de vaga:
+
+| Classe | O que saía | O que o motor SQL diz |
+|---|---|---|
+| `incremental_formula` (8 regras) | `base + (dias - 2) × mult` | `base + dias × mult`. Airpark/faro coberta em 5 dias saía R$ 37,00 contra R$ 55,00 |
+| `hourly_capped` (2 regras) | R$ 0,00, com HTTP 200 | R$ 20,00 em 1 dia. Esta estratégia precisa dos brackets horários, que a RPC nem devolve |
+| Estadia mínima | R$ 0,00 no dia 1 das unidades externas | ausência de preço |
+
+As três eram o mesmo defeito de fundo: o motor respondia **0** quando não sabia. Preço zero em
+vitrine lê como promoção, e nenhum teste podia pegar isso enquanto o código só existia no servidor.
+Hoje o endpoint devolve `price: null` com `unsupported_strategy` quando não sabe calcular, e os
+números que ele publica batem com a `simulate_price` do banco. Ver `supabase/functions/simulate-price/engine.test.ts`.
+
+**O que continua aberto nela:** é pública, sem throttle e sem gate, e ainda é um segundo motor de
+preço, que é a causa-raiz da divergência. Zero tráfego orgânico nas últimas 24h medidas. A
+recomendação é despublicar; enquanto isso, o fonte está no repo e sob teste.
+
+**Nunca mais deve existir uma órfã, nos dois sentidos.** O guard é
+`scripts/check-edge-functions.mjs`: camada offline no job `quality` do CI (bloco `[functions.X]`
+no `config.toml` sem pasta) e camada online no `security-scan.yml` (Management API ↔ pastas, nos
+dois sentidos). O sentido inverso também já tinha vítima: `submit-contact-message` estava no git,
+com teste, e nunca foi publicada, então o formulário de `/contato` batia num 404 e toda pessoa que
+escreveu levou "não foi possível enviar". Publicada em 14/08/2026.
 
 ---
 

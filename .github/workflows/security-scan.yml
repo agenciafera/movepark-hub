@@ -140,6 +140,25 @@ jobs:
           echo "⏭️ SUPABASE_ACCESS_TOKEN não configurado — advisors do Supabase pulados." >> "$GITHUB_STEP_SUMMARY"
           echo "Configure em Settings → Secrets para habilitar. Enquanto isso, rode manualmente (MCP/Dashboard)." >> "$GITHUB_STEP_SUMMARY"
 
+  # ── Paridade das Edge Functions: o repo tem que dizer a verdade sobre o ar ──
+  # Em 14/08/2026 os dois lados estavam quebrados: `simulate-price` rodava em produção desde
+  # jun/2026 sem nunca ter estado no git (e com dois defeitos de preço que ninguém podia ver), e
+  # `submit-contact-message` estava no git sem nunca ter sido publicada, então o formulário de
+  # /contato batia num 404. O CI (job `quality`) checa a camada offline; a comparação com o que
+  # está publicado precisa do token e mora aqui.
+  edge-functions-parity:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Paridade repo ↔ produção
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' }}
+        run: node scripts/check-edge-functions.mjs
+      - name: Aviso se o token não está configurado
+        if: ${{ env.SUPABASE_ACCESS_TOKEN == '' }}
+        run: echo "⏭️ SUPABASE_ACCESS_TOKEN não configurado — paridade das Edge Functions pulada." >> "$GITHUB_STEP_SUMMARY"
+
   # ── SAST — semgrep OSS (E0.6, camada leve) ───────────────────────────────
   # Análise estática do NOSSO código com rulesets da comunidade — OSS puro, SEM
   # token/conta. Modo REPORTA: `continue-on-error` não bloqueia entrega (fase 0).
