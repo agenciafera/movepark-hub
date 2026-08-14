@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { screen } from "@testing-library/react";
+import { act, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/utils";
 import { DestinationsGallery } from "./DestinationsGallery";
 
@@ -79,10 +80,10 @@ describe("DestinationsGallery — avanço automático", () => {
     expect(trilho.scrollLeft).toBe(0);
 
     // Intervalo até o passo disparar, mais a duração do passo.
-    vi.advanceTimersByTime(4000 + 600 + 50);
+    act(() => vi.advanceTimersByTime(4000 + 600 + 50));
     expect(trilho.scrollLeft).toBe(PASSO);
 
-    vi.advanceTimersByTime(4000 + 600 + 50);
+    act(() => vi.advanceTimersByTime(4000 + 600 + 50));
     expect(trilho.scrollLeft).toBe(PASSO * 2);
   });
 
@@ -92,7 +93,7 @@ describe("DestinationsGallery — avanço automático", () => {
     const { container } = renderWithProviders(<DestinationsGallery />);
     const trilho = medirTrilha(container);
 
-    vi.advanceTimersByTime(4000 + 300);
+    act(() => vi.advanceTimersByTime(4000 + 300));
     expect(trilho.scrollLeft).toBeGreaterThan(0);
     expect(trilho.scrollLeft).toBeLessThan(PASSO);
   });
@@ -107,7 +108,7 @@ describe("DestinationsGallery — avanço automático", () => {
     const trilho = medirTrilha(container);
     trilho.scrollLeft = SET - 200;
 
-    vi.advanceTimersByTime(4000 + 600 + 50);
+    act(() => vi.advanceTimersByTime(4000 + 600 + 50));
     expect(trilho.scrollLeft).toBe(SET - 200 + PASSO - SET);
   });
 
@@ -125,10 +126,61 @@ describe("DestinationsGallery — avanço automático", () => {
     try {
       const { container } = renderWithProviders(<DestinationsGallery />);
       const trilho = medirTrilha(container);
-      vi.advanceTimersByTime(4000 * 3);
+      act(() => vi.advanceTimersByTime(4000 * 3));
       expect(trilho.scrollLeft).toBe(0);
     } finally {
       window.matchMedia = matchMediaOriginal;
     }
+  });
+
+  /**
+   * O arrasto sozinho é descoberto: no desktop não há gesto que o anuncie, e
+   * quem só olha não sabe que a lista continua.
+   */
+  it("as setas andam para os dois lados", async () => {
+    const usuario = userEvent.setup();
+    const { container } = renderWithProviders(<DestinationsGallery />);
+    const trilho = medirTrilha(container);
+    trilho.scrollLeft = PASSO * 2;
+
+    await usuario.click(screen.getByRole("button", { name: "Próximos destinos" }));
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 700));
+    });
+    expect(trilho.scrollLeft).toBe(PASSO * 3);
+
+    await usuario.click(screen.getByRole("button", { name: "Destinos anteriores" }));
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 700));
+    });
+    expect(trilho.scrollLeft).toBe(PASSO * 2);
+  });
+
+  /** Voltar no começo da trilha tem que dar a volta, e não parar em zero. */
+  it("a seta de voltar dá a volta quando está no início", async () => {
+    const usuario = userEvent.setup();
+    const { container } = renderWithProviders(<DestinationsGallery />);
+    const trilho = medirTrilha(container);
+    trilho.scrollLeft = 0;
+
+    await usuario.click(screen.getByRole("button", { name: "Destinos anteriores" }));
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 700));
+    });
+    expect(trilho.scrollLeft).toBe(SET - PASSO);
+  });
+
+  /**
+   * Os pontos repetiriam, em dez alvos, o mesmo percurso que a lista de cards já
+   * oferece ao teclado. Marcar como decorativo evita esse eco no leitor de tela.
+   */
+  it("os pontos são decorativos, e as setas têm nome", () => {
+    const { container } = renderWithProviders(<DestinationsGallery />);
+    expect(screen.getByRole("button", { name: "Destinos anteriores" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Próximos destinos" })).toBeInTheDocument();
+
+    const pontos = container.querySelector('[aria-hidden="true"] > span');
+    expect(pontos).toBeTruthy();
+    expect(container.querySelectorAll("[aria-current]")).toHaveLength(0);
   });
 });

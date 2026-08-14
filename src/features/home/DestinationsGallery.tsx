@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
-import { Airplane, ArrowRight } from "@phosphor-icons/react";
-import { useRef, useEffect } from "react";
+import { Airplane, ArrowRight, CaretLeft, CaretRight } from "@phosphor-icons/react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import { gsap } from "@/lib/gsap";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { proximaPosicao, suavizar } from "./carousel.logic";
 
 const CARD_W = 400; // px, teto da largura do card (no celular ele encolhe)
@@ -156,6 +157,8 @@ export function DestinationsGallery() {
      sem essa trava o tratador de arrasto daria a volta no meio da animação. */
   const animando = useRef(false);
   const tweenRef = useRef(0);
+  /* Qual destino está na borda, para os pontos indicarem a posição. */
+  const [indice, setIndice] = useState(0);
 
   /*
     A largura de um conjunto é medida no DOM, não calculada de constante: o card
@@ -185,33 +188,47 @@ export function DestinationsGallery() {
   }, []);
 
   /*
-    O avanço é de um card por vez, a cada `INTERVALO`, e não um deslize contínuo.
+    O passo sai do card renderizado, não da constante: `min(400px, 78vw)` encolhe
+    com a tela, e um número cravado erraria o alinhamento no celular.
+  */
+  const passoDoCard = useCallback(() => {
+    const card = trilhoRef.current?.querySelector<HTMLElement>("[data-card]");
+    return card ? card.getBoundingClientRect().width + GAP : 0;
+  }, []);
+
+  /* Qual card está na borda agora, para acender o ponto certo. O resto da divisão
+     pelo número de destinos junta as duas metades da trilha no mesmo ponto. */
+  const sincronizarIndice = useCallback(() => {
+    const trilho = trilhoRef.current;
+    const passo = passoDoCard();
+    if (!trilho || passo <= 0) return;
+    setIndice(Math.round(trilho.scrollLeft / passo) % items.length);
+  }, [passoDoCard]);
+
+  /*
+    Um card por vez, e não um deslize contínuo.
 
     O deslize de marquee nunca parava num card inteiro: o olho pegava sempre uma
     imagem no meio do corte, e o carrossel lia como enfeite em vez de lista de
     destino. Andar em passo cheio deixa um card sempre alinhado na borda.
 
-    Continua sendo `scrollLeft` de um container rolável, não `transform`, porque
-    é o que dá o arrasto e a inércia do sistema no celular sem uma linha de JS.
+    Continua sendo `scrollLeft` de um container rolável, não `transform`, porque é
+    o que dá o arrasto e a inércia do sistema no celular sem uma linha de JS.
+
+    `direcao` é 1 para frente e -1 para trás. O relógio só anda para frente; as
+    setas usam os dois lados.
   */
-  useEffect(() => {
-    const trilho = trilhoRef.current;
-    if (!trilho) return;
-    // Quem pediu menos movimento fica só com o arrasto.
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-
-    /* O passo sai do card renderizado, não da constante: `min(400px, 78vw)`
-       encolhe com a tela, e um número cravado erraria o alinhamento no celular. */
-    const passoDoCard = () => {
-      const card = trilho.querySelector<HTMLElement>("[data-card]");
-      return card ? card.getBoundingClientRect().width + GAP : 0;
-    };
-
-    const avancar = () => {
-      const passo = passoDoCard();
+  const andar = useCallback(
+    (direcao: number) => {
+      const trilho = trilhoRef.current;
+      if (!trilho) return;
+      const passo = passoDoCard() * direcao;
       const set = larguraDoSet();
-      if (passo <= 0 || set <= 0) return;
+      if (passo === 0 || set <= 0) return;
 
+      /* Cancelar antes de agendar: sem isso, dois cliques seguidos deixam dois
+         tweens disputando o mesmo `scrollLeft` e o carrossel treme. */
+      cancelAnimationFrame(tweenRef.current);
       const de = trilho.scrollLeft;
       const inicio = performance.now();
       animando.current = true;
@@ -223,17 +240,25 @@ export function DestinationsGallery() {
              para o conjunto gêmeo cairia no meio da animação e apareceria. */
           trilho.scrollLeft = proximaPosicao(de, passo, set);
           animando.current = false;
+          sincronizarIndice();
           return;
         }
         trilho.scrollLeft = de + passo * suavizar(t);
         tweenRef.current = requestAnimationFrame(quadro);
       };
       tweenRef.current = requestAnimationFrame(quadro);
-    };
+    },
+    [passoDoCard, sincronizarIndice],
+  );
+
+  useEffect(() => {
+    if (!trilhoRef.current) return;
+    // Quem pediu menos movimento fica só com o arrasto e as setas.
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
 
     const relogio = window.setInterval(() => {
       if (performance.now() < pausadoAte.current || animando.current) return;
-      avancar();
+      andar(1);
     }, INTERVALO);
 
     return () => {
@@ -241,7 +266,14 @@ export function DestinationsGallery() {
       cancelAnimationFrame(tweenRef.current);
       animando.current = false;
     };
-  }, []);
+  }, [andar]);
+
+  /* O clique também segura o automático, senão o relógio atropela quem está
+     navegando na mão. */
+  const aoClicarNaSeta = (direcao: number) => () => {
+    segurar();
+    andar(direcao);
+  };
 
   /* Segura o automático enquanto interage, e devolve 2s depois do último toque. */
   const segurar = () => {
@@ -260,6 +292,7 @@ export function DestinationsGallery() {
     if (set <= 0) return;
     if (trilho.scrollLeft >= set) trilho.scrollLeft -= set;
     else if (trilho.scrollLeft <= 0) trilho.scrollLeft += set;
+    sincronizarIndice();
   };
 
   return (
@@ -320,6 +353,49 @@ export function DestinationsGallery() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/*
+        Setas e pontos.
+
+        O arrasto sozinho é descoberto: no desktop não há gesto que o anuncie, e
+        quem só olha não sabe que a lista continua. As setas dizem que dá para
+        andar, e os pontos dizem onde se está.
+
+        Os pontos são decorativos porque o mesmo salto já existe na lista de
+        cards, que é navegável por teclado. Um segundo conjunto de dez alvos
+        repetiria o percurso sem levar a lugar nenhum de novo.
+      */}
+      <div className="mt-8 flex items-center justify-center gap-5">
+        <button
+          type="button"
+          onClick={aoClicarNaSeta(-1)}
+          aria-label="Destinos anteriores"
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-hairline text-ink transition-colors hover:bg-surface-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mp-primary focus-visible:ring-offset-2"
+        >
+          <CaretLeft className="h-4 w-4" weight="bold" aria-hidden />
+        </button>
+
+        <div className="flex items-center gap-1.5" aria-hidden>
+          {items.map((item, i) => (
+            <span
+              key={item.dest}
+              className={cn(
+                "h-1.5 rounded-full transition-all duration-300",
+                i === indice ? "w-5 bg-ink" : "w-1.5 bg-hairline",
+              )}
+            />
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={aoClicarNaSeta(1)}
+          aria-label="Próximos destinos"
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-hairline text-ink transition-colors hover:bg-surface-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mp-primary focus-visible:ring-offset-2"
+        >
+          <CaretRight className="h-4 w-4" weight="bold" aria-hidden />
+        </button>
       </div>
     </section>
   );
