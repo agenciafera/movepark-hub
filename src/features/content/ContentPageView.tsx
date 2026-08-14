@@ -167,7 +167,12 @@ export function ContentPageView({
           {/* Índice do desktop. Âncoras de verdade: deep link tem que dar pra copiar. */}
           {sections.length > 1 && (
             <div className="hidden desktop:block print:hidden">
-              <nav aria-label="Nesta página" className="sticky top-24">
+              <nav
+                aria-label="Nesta página"
+                /* Acompanha o header: com `top` fixo, sobraria um vão do tamanho
+                   dele quando ele se esconde na rolagem para baixo. */
+                className="sticky top-[calc(var(--topbar-offset,5rem)+1rem)] transition-[top] duration-300 ease-out motion-reduce:transition-none"
+              >
                 <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.4px] text-muted">
                   Nesta página
                 </p>

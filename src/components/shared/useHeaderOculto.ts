@@ -1,9 +1,6 @@
 import * as React from "react";
 import { ALTURA_DO_HEADER, proximoOculto } from "./headerOculto.logic";
 
-/** A partir daqui o header não se esconde: é o breakpoint `desktop` do projeto. */
-const LARGURA_DE_DESKTOP = 1128;
-
 /**
  * Esconde o header ao descer e devolve ao subir.
  *
@@ -21,9 +18,10 @@ const LARGURA_DE_DESKTOP = 1128;
  * `passive: true` porque o listener nunca chama `preventDefault`, e sem a dica o
  * navegador segura a rolagem esperando para ver se ele vai chamar.
  *
- * Só abaixo do desktop. Em tela grande o header não custa altura de leitura, e é
- * lá que moram as colunas `sticky` que se apoiam nele (o índice das páginas de
- * conteúdo, a lateral do post, os filtros da busca).
+ * Vale em toda largura. Houve uma versão restrita ao celular, para proteger as
+ * colunas `sticky` que se apoiam no header, e era a proteção errada: ela
+ * desligava o comportamento em vez de acertar quem depende dele. Quem gruda
+ * abaixo do header lê `--topbar-offset` e acompanha.
  */
 export function useHeaderOculto(): boolean {
   const [oculto, setOculto] = React.useState(false);
@@ -61,8 +59,7 @@ export function useHeaderOculto(): boolean {
 
     const medir = () => {
       const atual = window.scrollY;
-      const emDesktop = window.innerWidth >= LARGURA_DE_DESKTOP;
-      const proximo = emDesktop ? false : proximoOculto(anterior, atual, ocultoAgora);
+      const proximo = proximoOculto(anterior, atual, ocultoAgora);
       anterior = atual;
       if (proximo === ocultoAgora) return;
       ocultoAgora = proximo;

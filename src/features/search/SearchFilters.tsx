@@ -188,7 +188,7 @@ function FilterContent({
 export function SearchFiltersSidebar(props: Props) {
   return (
     <aside className="hidden desktop:block">
-      <div className="sticky top-24 max-h-[calc(100vh-6rem)] w-72 overflow-y-auto pr-2">
+      <div className="sticky top-[calc(var(--topbar-offset,5rem)+1rem)] max-h-[calc(100vh-6rem)] w-72 overflow-y-auto pr-2 transition-[top] duration-300 ease-out motion-reduce:transition-none">
         <FilterContent {...props} />
       </div>
     </aside>

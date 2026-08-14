@@ -42,14 +42,20 @@ describe("useHeaderOculto", () => {
   });
 
   /**
-   * Em tela grande o header não custa altura de leitura, e é lá que moram as
-   * colunas `sticky` que se apoiam nele.
+   * Regressão: houve uma versão que desligava o esconder acima de 1128, para
+   * proteger as colunas `sticky` que se apoiam no header. Era a proteção errada,
+   * porque matava o comportamento em vez de acertar quem depende dele. Hoje quem
+   * gruda abaixo do header lê `--topbar-offset` e acompanha.
    */
-  it("no desktop nunca esconde", async () => {
-    largura(1280);
+  it("no desktop esconde igual, e devolve ao subir", async () => {
+    largura(1440);
     const { result } = renderHook(() => useHeaderOculto());
-    await rolar(900);
-    expect(result.current).toBe(false);
+
+    await rolar(600);
+    await waitFor(() => expect(result.current).toBe(true));
+
+    await rolar(300);
+    await waitFor(() => expect(result.current).toBe(false));
   });
 
   /**

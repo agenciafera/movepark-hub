@@ -32,7 +32,7 @@ export function PostSidebar({ destination, relacionados }: Props) {
     lateral não chega perto do teto e nada muda.
   */
   return (
-    <aside className="mt-12 flex flex-col gap-8 desktop:sticky desktop:top-24 desktop:mt-0 desktop:max-h-[calc(100dvh-7rem)] desktop:self-start desktop:overflow-y-auto desktop:overscroll-contain print:hidden">
+    <aside className="mt-12 flex flex-col gap-8 transition-[top] duration-300 ease-out motion-reduce:transition-none print:hidden desktop:sticky desktop:top-[calc(var(--topbar-offset,5rem)+1rem)] desktop:mt-0 desktop:max-h-[calc(100dvh-7rem)] desktop:self-start desktop:overflow-y-auto desktop:overscroll-contain">
       {relacionados.length > 0 && (
         <nav aria-label="Leia também">
           <p className="text-[11px] font-bold uppercase tracking-[0.4px] text-mp-indigo">

@@ -314,7 +314,7 @@ function ComoFunciona() {
         {/* Foto: fixa no desktop enquanto os passos correm ao lado. Recorte em
             retrato (aspect-[4/5]), com o foco à direita pra pegar o aperto de mão.
             `pb-12` no mobile abre o espaço que o card verde ocupa ao transbordar. */}
-        <div className="relative pb-12 tablet:col-start-1 tablet:row-start-1 tablet:row-span-2 tablet:sticky tablet:top-24 tablet:pb-0">
+        <div className="relative pb-12 transition-[top] duration-300 ease-out motion-reduce:transition-none tablet:col-start-1 tablet:row-start-1 tablet:row-span-2 tablet:sticky tablet:top-[calc(var(--topbar-offset,5rem)+1rem)] tablet:pb-0">
           <div className="overflow-hidden rounded-2xl">
             <img
               src={STEPS_IMAGE}

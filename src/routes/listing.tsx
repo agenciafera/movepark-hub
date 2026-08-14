@@ -441,7 +441,7 @@ export default function ListingPage() {
 
         {/* Card lateral sticky */}
         <aside className="hidden desktop:block">
-          <div className="sticky top-24 space-y-3">
+          <div className="sticky top-[calc(var(--topbar-offset,5rem)+1rem)] space-y-3 transition-[top] duration-300 ease-out motion-reduce:transition-none">
             {upgradeNudge}
             <ReservationCard
               listing={listing}
