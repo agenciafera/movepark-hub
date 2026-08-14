@@ -109,6 +109,11 @@ daysToExpire=60   -> HTTP 400 "O período de expiração não pode ser maior que
 Isso é decisivo para reserva antecipada: a janela de risco vai até o check-in, e reserva feita com
 dois meses de antecedência já ultrapassa o teto.
 
+O teto não está na documentação técnica, mas o próprio Asaas o publica no blog institucional: *"a
+liberação pode ser feita de três formas: automática após o prazo definido (até 45 dias), manual via
+API de pagamentos ou por desativação da funcionalidade"*
+([blog.asaas.com](https://blog.asaas.com/conta-escrow-asaas/)). Medição e fornecedor batem.
+
 **Valor sob garantia não pode ser estornado.** A garantia zera o saldo disponível, e o estorno
 precisa de saldo:
 
