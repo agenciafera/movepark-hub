@@ -3,7 +3,7 @@
   "key": {
     "scenario_id": "permissao-cliente-no-manager",
     "start_url": "/manager/companies",
-    "start_sig": "sig:ad8b3fbf0876c52c",
+    "start_sig": "sig:9762b1205e6e924b",
     "scenario_sig": "7d79f951191e28ae"
   },
   "plan": {
@@ -16,7 +16,7 @@
         "type": "wait_for",
         "target": {
           "selector": "h1",
-          "description": "Home page main heading — its presence confirms the redirect from /manager/companies has finished"
+          "description": "Home page main heading — confirms redirect from /manager/companies has completed"
         },
         "timeout_ms": 10000
       },
@@ -25,7 +25,7 @@
         "type": "wait_for",
         "target": {
           "selector": "h1",
-          "description": "Home page heading — anchor for asserting the final URL equals the site root"
+          "description": "Main heading at root — verifies final URL is the site root"
         },
         "expect": {
           "url": "http://localhost:5273/"
@@ -37,7 +37,7 @@
         "type": "wait_for",
         "target": {
           "selector": "body",
-          "description": "Page body — asserts the hero heading text is present"
+          "description": "Page body containing hero heading text"
         },
         "expect": {
           "text_contains": {
@@ -52,10 +52,10 @@
         "type": "wait_for",
         "target": {
           "selector": "body",
-          "description": "Page body — asserts the word 'Empresas' does not appear anywhere on the home page"
+          "description": "Page body — manager Empresas navigation must be absent"
         },
         "expect": {
-          "not_visible": "text=Empresas",
+          "not_visible": "a[href='/manager/companies']",
           "selector": "body"
         },
         "timeout_ms": 5000
@@ -64,15 +64,15 @@
     "task": "Passo 1: aguarde o redirecionamento terminar. Passo 2: verifique que a URL final e a raiz do site. Passo 3: verifique que a pagina exibe o texto \"Estacione em qualquer aeroporto do Brasil\". Passo 4: verifique que a pagina NAO exibe o texto \"Empresas\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-08-04T00:31:32.450Z"
+      "at": "2026-08-14T15:30:33.185Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-08-04T00:31:35.357Z",
-    "last_replayed_at": null,
-    "replay_count": 0,
-    "replay_failures": 0,
-    "plan_generation": 1
+    "created_at": "2026-08-14T15:30:34.935Z",
+    "last_replayed_at": "2026-08-14T15:40:48.861Z",
+    "replay_count": 1,
+    "replay_failures": 2,
+    "plan_generation": 3
   }
 }

@@ -15,8 +15,8 @@
         "id": "a1",
         "type": "wait_for",
         "target": {
-          "selector": "body",
-          "description": "Corpo da página de rota inexistente carregada"
+          "selector": "main h1",
+          "description": "main heading on 404 page"
         },
         "expect": {
           "url": "**/essa-rota-nao-existe"
@@ -27,12 +27,12 @@
         "id": "a2",
         "type": "wait_for",
         "target": {
-          "selector": "body",
-          "description": "Corpo da página com mensagem de erro 404"
+          "selector": "main h1",
+          "description": "404 page heading"
         },
         "expect": {
           "text_contains": {
-            "selector": "body",
+            "selector": "h1",
             "text": "Essa página não existe"
           }
         },
@@ -42,12 +42,12 @@
         "id": "a3",
         "type": "wait_for",
         "target": {
-          "selector": "header",
-          "description": "Barra do topo com link Entrar para sessão anônima"
+          "selector": "header a[href='/login']",
+          "description": "Entrar link in top navigation bar"
         },
         "expect": {
           "text_contains": {
-            "selector": "header",
+            "selector": "header a[href='/login']",
             "text": "Entrar"
           }
         },
@@ -58,7 +58,7 @@
         "type": "click",
         "target": {
           "selector": "main a[href='/search']",
-          "description": "Link Buscar estacionamento na página de erro 404"
+          "description": "Buscar estacionamento link on 404 error page"
         },
         "expect": {
           "url": "**/search"
@@ -69,6 +69,9 @@
         "id": "a5",
         "type": "goto",
         "url": "http://localhost:5273/essa-rota-nao-existe",
+        "expect": {
+          "url": "**/essa-rota-nao-existe"
+        },
         "timeout_ms": 10000
       },
       {
@@ -76,7 +79,7 @@
         "type": "click",
         "target": {
           "selector": "header a[href='/login']",
-          "description": "Link Entrar na barra do topo"
+          "description": "Entrar link in top navigation bar"
         },
         "expect": {
           "url": "**/login",
@@ -91,15 +94,15 @@
     "task": "Passo 1: verifique que a URL final termina com o caminho \"/essa-rota-nao-existe\". Passo 2: verifique que a pagina exibe o texto \"Essa página não existe\". Passo 3: verifique que a barra do topo exibe o texto \"Entrar\", ou seja, a pagina de erro fica dentro do site e a sessao continua anonima. Passo 4: clique no link \"Buscar estacionamento\" da pagina de erro. Passo 5: verifique que a url agora contem \"/search\". Passo 6: volte para tras no navegador e clique no link \"Entrar\" da barra do topo. Passo 7: verifique que a url agora contem \"/login\" e que a pagina exibe o texto \"Entre na Movepark\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-08-14T01:16:40.684Z"
+      "at": "2026-08-14T15:33:55.856Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-08-14T01:16:41.702Z",
-    "last_replayed_at": null,
-    "replay_count": 0,
-    "replay_failures": 0,
-    "plan_generation": 1
+    "created_at": "2026-08-14T15:33:57.249Z",
+    "last_replayed_at": "2026-08-14T15:41:12.931Z",
+    "replay_count": 1,
+    "replay_failures": 1,
+    "plan_generation": 2
   }
 }

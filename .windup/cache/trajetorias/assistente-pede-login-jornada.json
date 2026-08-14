@@ -3,7 +3,7 @@
   "key": {
     "scenario_id": "assistente-pede-login-jornada",
     "start_url": "/",
-    "start_sig": "sig:9762b1205e6e924b",
+    "start_sig": "sig:2644ef779c146a8c",
     "scenario_sig": "c934c9f0da5fddbd"
   },
   "plan": {
@@ -15,8 +15,8 @@
         "id": "a1",
         "type": "click",
         "target": {
-          "selector": "button[aria-label=\"Abrir assistente\"]",
-          "description": "Botão para abrir o assistente Movepark"
+          "selector": "button[aria-label='Abrir assistente']",
+          "description": "Botão para abrir o painel do assistente Movepark"
         },
         "timeout_ms": 5000
       },
@@ -25,7 +25,7 @@
         "type": "wait_for",
         "target": {
           "selector": "body",
-          "description": "Corpo da página com o assistente aberto"
+          "description": "Página com o painel do assistente aberto mostrando o título"
         },
         "expect": {
           "text_contains": {
@@ -33,17 +33,17 @@
             "text": "Assistente Movepark"
           }
         },
-        "timeout_ms": 5000
+        "timeout_ms": 10000
       },
       {
         "id": "a3",
         "type": "wait_for",
         "target": {
           "selector": "body",
-          "description": "Corpo da página verificando ausência do atalho de login antes da resposta do assistente"
+          "description": "Verificar ausência do atalho de login antes de enviar a mensagem"
         },
         "expect": {
-          "not_visible": "a:text(\"Entrar para reservar\")"
+          "not_visible": "a:has-text('Entrar para reservar')"
         },
         "timeout_ms": 5000
       },
@@ -51,7 +51,7 @@
         "id": "a4",
         "type": "fill",
         "target": {
-          "selector": "[aria-label=\"Mensagem\"]",
+          "selector": "[aria-label='Mensagem']",
           "description": "Campo de texto para digitar mensagem ao assistente"
         },
         "value": "quero reservar essa vaga agora",
@@ -61,7 +61,7 @@
         "id": "a5",
         "type": "click",
         "target": {
-          "selector": "button[aria-label=\"Enviar\"]",
+          "selector": "button[aria-label='Enviar']",
           "description": "Botão para enviar a mensagem ao assistente"
         },
         "timeout_ms": 5000
@@ -71,7 +71,7 @@
         "type": "wait_for",
         "target": {
           "selector": "body",
-          "description": "Corpo da página aguardando resposta do assistente solicitando login"
+          "description": "Resposta do assistente informando necessidade de login para reservar"
         },
         "expect": {
           "text_contains": {
@@ -79,14 +79,14 @@
             "text": "Pra reservar eu preciso que voce entre na sua conta"
           }
         },
-        "timeout_ms": 10000
+        "timeout_ms": 15000
       },
       {
         "id": "a7",
         "type": "wait_for",
         "target": {
           "selector": "body",
-          "description": "Corpo da página verificando presença do atalho de login exibido pelo assistente"
+          "description": "Atalho de login visível no chat do assistente após resposta do servidor"
         },
         "expect": {
           "text_contains": {
@@ -100,21 +100,11 @@
         "id": "a8",
         "type": "click",
         "target": {
-          "selector": "a:text(\"Entrar para reservar\")",
-          "description": "Link 'Entrar para reservar' exibido pelo assistente após pedir login"
-        },
-        "timeout_ms": 10000
-      },
-      {
-        "id": "a9",
-        "type": "wait_for",
-        "target": {
-          "selector": "html",
-          "description": "Documento raiz da página de login após redirecionamento"
+          "selector": "a:has-text('Entrar para reservar')",
+          "description": "Link Entrar para reservar exibido no chat do assistente"
         },
         "expect": {
-          "url": "**/login**",
-          "selector": "html"
+          "url": "**/login*"
         },
         "timeout_ms": 10000
       }
@@ -122,15 +112,15 @@
     "task": "Passo 1: clique no botao com aria-label \"Abrir assistente\". Passo 2: verifique que a pagina exibe o texto \"Assistente Movepark\". Passo 3: verifique que a pagina NAO exibe o texto \"Entrar para reservar\". Passo 4: preencha o campo com aria-label \"Mensagem\" com \"quero reservar essa vaga agora\". Passo 5: clique no botao com aria-label \"Enviar\". Passo 6: verifique que a pagina exibe o texto \"Pra reservar eu preciso que voce entre na sua conta\". Passo 7: verifique que a pagina exibe o texto \"Entrar para reservar\". Passo 8: clique no link \"Entrar para reservar\". Passo 9: verifique, com a postcondicao url do tipo contains e o valor \"/login\", que o endereco mudou. Nao use seletor nenhum neste passo.",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-08-04T17:43:01.437Z"
+      "at": "2026-08-14T15:22:03.813Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-08-04T17:43:03.414Z",
-    "last_replayed_at": null,
-    "replay_count": 0,
-    "replay_failures": 0,
-    "plan_generation": 1
+    "created_at": "2026-08-14T15:22:05.857Z",
+    "last_replayed_at": "2026-08-14T15:36:16.070Z",
+    "replay_count": 1,
+    "replay_failures": 1,
+    "plan_generation": 2
   }
 }

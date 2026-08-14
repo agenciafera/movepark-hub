@@ -109,9 +109,12 @@ jobs:
       - run: bunx playwright install --with-deps chromium
       # Sem a chave do Google, igual à suíte Playwright: mantém o render determinístico e sem
       # chamada externa paga. A porta 5273 é a mesma que o playwright.config.ts usa.
+      # VITE_CONSUMER_ACCOUNTS=on porque o Windup cobre jornada de login/conta (gated pela chave
+      # de lançamento em src/lib/features.ts): sem isso, o "Entrar" some do header e os cenários
+      # que dependem dele falham. Mesmo raciocínio do vi.stubEnv em src/test/setup.ts.
       - name: Sobe o dev server
         run: |
-          VITE_GOOGLE_MAPS_API_KEY= PORT=5273 bun run dev &
+          VITE_GOOGLE_MAPS_API_KEY= VITE_CONSUMER_ACCOUNTS=on PORT=5273 bun run dev &
           for i in $(seq 1 90); do
             curl -sf -o /dev/null http://localhost:5273/ && echo "dev server no ar" && exit 0
             sleep 2

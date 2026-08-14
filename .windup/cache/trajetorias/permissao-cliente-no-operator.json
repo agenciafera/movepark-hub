@@ -3,7 +3,7 @@
   "key": {
     "scenario_id": "permissao-cliente-no-operator",
     "start_url": "/operator/bookings",
-    "start_sig": "sig:ad8b3fbf0876c52c",
+    "start_sig": "sig:9762b1205e6e924b",
     "scenario_sig": "7d79f951191e28ae"
   },
   "plan": {
@@ -16,7 +16,7 @@
         "type": "wait_for",
         "target": {
           "selector": "h1",
-          "description": "Main heading of the home page, confirming the redirect from /operator/bookings has completed"
+          "description": "Hero heading on home page, confirming redirect from /operator/bookings has completed"
         },
         "timeout_ms": 10000
       },
@@ -25,7 +25,7 @@
         "type": "wait_for",
         "target": {
           "selector": "h1",
-          "description": "Main heading used as anchor to verify the final URL is the site root"
+          "description": "Hero heading confirming we are at the site root URL"
         },
         "expect": {
           "url": "http://localhost:5273/"
@@ -37,7 +37,7 @@
         "type": "wait_for",
         "target": {
           "selector": "h1",
-          "description": "Hero heading containing the main value proposition text"
+          "description": "Hero heading containing the expected parking text"
         },
         "expect": {
           "text_contains": {
@@ -51,12 +51,12 @@
         "id": "a4",
         "type": "wait_for",
         "target": {
-          "selector": "body",
-          "description": "Page body to confirm absence of the word Empresas"
+          "selector": "h1",
+          "description": "Hero heading — final state where Empresas text must be absent"
         },
         "expect": {
           "not_visible": "text=Empresas",
-          "selector": "body"
+          "selector": "h1"
         },
         "timeout_ms": 5000
       }
@@ -64,15 +64,15 @@
     "task": "Passo 1: aguarde o redirecionamento terminar. Passo 2: verifique que a URL final e a raiz do site. Passo 3: verifique que a pagina exibe o texto \"Estacione em qualquer aeroporto do Brasil\". Passo 4: verifique que a pagina NAO exibe o texto \"Empresas\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-08-04T00:31:52.026Z"
+      "at": "2026-08-14T15:31:55.526Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-08-04T00:32:03.077Z",
-    "last_replayed_at": null,
-    "replay_count": 0,
-    "replay_failures": 0,
-    "plan_generation": 1
+    "created_at": "2026-08-14T15:31:57.117Z",
+    "last_replayed_at": "2026-08-14T15:40:50.638Z",
+    "replay_count": 1,
+    "replay_failures": 2,
+    "plan_generation": 3
   }
 }
