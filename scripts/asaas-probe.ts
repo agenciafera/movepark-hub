@@ -23,7 +23,20 @@
  *   Q4  Qual a forma real do objeto `escrow` e do `split` na cobrança, para modelar as colunas.
  */
 
-const KEY = process.env.ASAAS_SANDBOX_KEY ?? "";
+// O dotenv do bun engasga com valor que começa em `$` (trata como expansão de variável e entrega
+// string vazia), então lemos o .env.local na unha quando a env var não veio pelo shell.
+function keyFromEnvFile(): string {
+  try {
+    const raw = require("node:fs").readFileSync(".env.local", "utf8") as string;
+    const line = raw.split("\n").find((l) => l.startsWith("ASAAS_SANDBOX_KEY="));
+    if (!line) return "";
+    return line.slice("ASAAS_SANDBOX_KEY=".length).trim().replace(/^['"]|['"]$/g, "");
+  } catch {
+    return "";
+  }
+}
+
+const KEY = process.env.ASAAS_SANDBOX_KEY || keyFromEnvFile();
 const BASE = "https://api-sandbox.asaas.com/v3";
 
 if (!KEY) {
@@ -39,9 +52,31 @@ if (!KEY.startsWith("$aact_hmlg_")) {
 }
 
 // Sufixo estável por execução, para dar para achar o lixo no painel depois.
-const RUN = new Date().toISOString().slice(0, 16).replace(/\D/g, "");
+// Precisa do sufixo aleatório: só a data até o minuto colide quando o probe roda duas vezes
+// seguidas, e o Asaas recusa e-mail de subconta repetido.
+const RUN =
+  new Date().toISOString().slice(0, 16).replace(/\D/g, "") +
+  "x" +
+  Math.random().toString(36).slice(2, 6);
 
 type Json = Record<string, unknown>;
+
+/**
+ * CNPJ válido e aleatório. O Asaas recusa CNPJ já usado por outra subconta, então reaproveitar um
+ * número fixo faz a segunda execução do probe morrer no passo 1.
+ */
+function randomCnpj(): string {
+  const base = Array.from({ length: 8 }, () => Math.floor(Math.random() * 10));
+  const digits = [...base, 0, 0, 0, 1]; // filial 0001
+  const dv = (weights: number[]): number => {
+    const sum = weights.reduce((acc, w, i) => acc + digits[i] * w, 0);
+    const rest = sum % 11;
+    return rest < 2 ? 0 : 11 - rest;
+  };
+  digits.push(dv([5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]));
+  digits.push(dv([6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]));
+  return digits.join("");
+}
 
 async function call(
   method: string,
@@ -94,17 +129,22 @@ async function main() {
   const rootBalance = await call("GET", "/finance/balance");
   show("GET /finance/balance", rootBalance);
 
-  const rootWallet = (me.body as { walletId?: string }).walletId ?? null;
-  console.log(`\n>> walletId da raiz: ${rootWallet ?? "(não veio no /myAccount)"}`);
+  // O /myAccount não devolve walletId; ele sai da listagem de carteiras.
+  const wallets = await call("GET", "/wallets");
+  show("GET /wallets", wallets);
+  const rootWallet =
+    ((wallets.body as { data?: { id?: string }[] }).data ?? [])[0]?.id ?? null;
+  console.log(`\n>> walletId da raiz: ${rootWallet ?? "(não encontrado)"}`);
 
   // ── 1. Subconta do parceiro ───────────────────────────────────────────────
   head(1, "Criar subconta (o parceiro)");
   const sub = await call("POST", "/accounts", {
     name: `Probe Estacionamento ${RUN}`,
     email: `probe.parceiro.${RUN}@movepark.co`,
-    cpfCnpj: "34028316000103", // CNPJ público dos Correios, só para o sandbox aceitar o dígito
+    cpfCnpj: randomCnpj(),
     companyType: "LIMITED",
-    mobilePhone: "11999999999",
+    // O sandbox recusa número com dígito repetido (invalid_mobilePhone).
+    mobilePhone: "11991234567",
     address: "Avenida Paulista",
     addressNumber: "1000",
     province: "Bela Vista",
@@ -225,7 +265,75 @@ async function main() {
       "   caso o Q1 volte negativo.",
   );
 
-  head(10, "Resumo");
+  // ── 10. O outro desenho: a cobrança nasce NA subconta ─────────────────────
+  // Se o passo 8 mostrou o dinheiro livre, a escrow só pode morder quando a cobrança é da
+  // própria subconta. Aqui a gente prova isso, e de quebra descobre se a comissão da Movepark
+  // consegue voltar por split para a carteira da raiz.
+  head(10, "Cobrança criada NA subconta, com split da comissão para a raiz [desenho alternativo]");
+  if (subKey && rootWallet) {
+    const subCustomer = await call(
+      "POST",
+      "/customers",
+      {
+        name: `Probe Cliente Sub ${RUN}`,
+        cpfCnpj: "24971563792",
+        email: `probe.cliente.sub.${RUN}@movepark.co`,
+        mobilePhone: "11988888888",
+      },
+      subKey,
+    );
+    show("POST /customers (chave da SUBCONTA)", subCustomer);
+    const subCustomerId = (subCustomer.body as { id?: string }).id ?? null;
+
+    if (subCustomerId) {
+      const subPayment = await call(
+        "POST",
+        "/payments",
+        {
+          customer: subCustomerId,
+          billingType: "PIX",
+          value: 100.0,
+          dueDate: today,
+          description: `Probe reserva na subconta ${RUN}`,
+          externalReference: `PROBE-SUB-${RUN}`,
+          // Comissão da Movepark voltando por split para a carteira da raiz.
+          split: [{ walletId: rootWallet, percentualValue: 15 }],
+        },
+        subKey,
+      );
+      show("POST /payments (chave da SUBCONTA)", subPayment);
+      const subPaymentId = (subPayment.body as { id?: string }).id ?? null;
+
+      if (subPaymentId) {
+        // A confirmação tem que sair da chave DONA da cobrança; com a raiz vem 404.
+        const subConfirm = await call(
+          "POST",
+          `/sandbox/payment/${subPaymentId}/confirm`,
+          undefined,
+          subKey,
+        );
+        console.log(`POST /sandbox/payment/${subPaymentId}/confirm -> HTTP ${subConfirm.status}`);
+
+        const subAfter = await call("GET", `/payments/${subPaymentId}`, undefined, subKey);
+        show("GET /payments/{id} (chave da SUBCONTA)", subAfter);
+        const subEscrow = (subAfter.body as { escrow?: unknown }).escrow;
+        console.log(
+          `\n>> escrow na cobrança da SUBCONTA: ${subEscrow ? JSON.stringify(subEscrow) : "AUSENTE"}`,
+        );
+
+        const balAfter = await call("GET", "/finance/balance", undefined, subKey);
+        show("GET /finance/balance (SUBCONTA, depois desta cobrança)", balAfter);
+        console.log(
+          "\n>> Se o saldo NÃO subiu os ~85 desta segunda cobrança, a escrow reteve e o desenho\n" +
+            "   alternativo funciona: a cobrança nasce na subconta e o parceiro vira o titular.",
+        );
+      }
+    }
+  } else {
+    console.log("Sem apiKey da subconta ou sem walletId da raiz, não dá para testar este desenho.");
+  }
+
+  head(11, "Resumo");
   console.log(
     [
       `subconta:      ${subId}`,
