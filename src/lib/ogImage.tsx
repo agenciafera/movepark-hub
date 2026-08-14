@@ -38,8 +38,13 @@ export const OG_FALLBACK = {
    * litoral, serra ou skyline: a primeira versão tinha praia, e como destino sem
    * hero caía aqui, o card de Goiânia (a 800 km do mar) mostrava mar. Destino sem
    * hero passou a usar `marca`, que não afirma lugar nenhum.
+   *
+   * Os aviões são brancos SEM pintura por exigência do prompt: numa geração
+   * anterior o modelo colocou livery da Delta e da United, com título na fuselagem.
+   * Marca de terceiro num asset de marketing sugere associação que não existe. Ao
+   * regerar esta imagem, confira as caudas com zoom antes de subir.
    */
-  destinos: `${BUCKET}/destinos-50b6548.jpg`,
+  destinos: `${BUCKET}/destinos-b78e562.jpg`,
   /** Índice de preços e a página de preço por destino. */
   precos: `${BUCKET}/precos-54ed7ac.jpg`,
   /** FAQ e blog. */
