@@ -143,6 +143,30 @@ conseguir estornar**, porque nunca recebe o valor cheio. Numa subconta de parcei
 float é zero, então o primeiro cancelamento sempre trava. Vale para qualquer desenho: a conta raiz
 sofre do mesmo, só que na prática tem saldo acumulado para cobrir.
 
+## A conta principal não é chamada de "conta de custódia" pelo Asaas
+
+Pergunta que apareceu na decisão e que vale ficar registrada: os Termos e Condições de Uso do Asaas
+definem a conta assim:
+
+> "Conta Asaas é definida como uma conta de pagamento digital pré-paga, **exclusiva para fins
+> comerciais**, local onde consta o saldo, bem como onde ficam registradas as transações de pagamento
+> realizadas pelo Cliente."
+
+Não há, em nenhum material do Asaas, definição da conta principal como conta de custódia. A palavra
+custódia aparece só no marketing do produto **Conta Escrow**, que retém saldo de subconta.
+
+O que joga a favor do nosso desenho: os Termos listam **"envio de pagamentos a terceiros"** entre as
+finalidades da conta. Repassar ao parceiro é uso previsto.
+
+O que não existe: cláusula dizendo que o saldo é recurso de terceiro sob nossa guarda. Perante o
+Asaas, aquele saldo é da Movepark. **A custódia é uma construção do nosso contrato com o parceiro e
+da nossa escrituração, não um tipo de conta que o gateway ofereça.**
+
+⚠️ Verificação incompleta: a página dos Termos responde **HTTP 403** a leitura automatizada, então o
+texto acima vem de trechos indexados, não do documento inteiro. A cláusula que mais importa, se
+existe restrição a movimentar recurso de terceiro ou a atuar como intermediador, **não foi lida**.
+Antes de fechar o desenho, alguém precisa ler o documento completo.
+
 ## Em aberto
 
 - **Expiração do PIX em minutos.** Não deu para testar: `GET /payments/{id}/pixQrCode` devolve
