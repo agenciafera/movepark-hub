@@ -200,11 +200,11 @@ export default function EstacionamentoMapeadoPage() {
             afirmaria ao Google, em nome da Movepark, uma nota que é dele (§6 da spec).
             Fica antes do pedido de demanda de propósito: prova social pesa mais lida antes
             do CTA do que depois. */}
-        {data.google && (
-          <section className="mt-10">
-            <GoogleReviewsBlock snapshot={data.google} placeName={prospect.name} />
-          </section>
-        )}
+        <GoogleReviewsBlock
+          snapshot={data.google ?? null}
+          placeName={prospect.name}
+          className="mt-10"
+        />
 
         {/* CTA primário: prova de demanda.
             Não pede e-mail nem telefone de propósito. A spec define este sinal como

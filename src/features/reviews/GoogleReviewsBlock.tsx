@@ -1,4 +1,5 @@
 import { GoogleLogo } from "@phosphor-icons/react";
+import { cn } from "@/lib/utils";
 import type { GooglePlaceSnapshot } from "@/types/domain";
 import { isSnapshotFresh } from "./google.logic";
 import { RatingStars, RatingSummary } from "./RatingStars";
@@ -17,16 +18,23 @@ import { RatingStars, RatingSummary } from "./RatingStars";
 export function GoogleReviewsBlock({
   snapshot,
   placeName,
+  className,
 }: {
   snapshot: GooglePlaceSnapshot | null;
   placeName: string;
+  /** Espaçamento de quem chama. Vive aqui, e não num wrapper, porque o bloco some sozinho
+   *  em três casos: sem snapshot, vencido e sem nota. Wrapper com margem deixaria um vão. */
+  className?: string;
 }) {
   if (!snapshot) return null;
   if (!isSnapshotFresh(snapshot.fetched_at)) return null;
   if (snapshot.rating == null || snapshot.user_rating_count === 0) return null;
 
   return (
-    <section className="space-y-6" aria-label={`Avaliações do Google para ${placeName}`}>
+    <section
+      className={cn("space-y-6", className)}
+      aria-label={`Avaliações do Google para ${placeName}`}
+    >
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <GoogleLogo weight="bold" className="h-5 w-5 text-muted" aria-hidden="true" />

@@ -134,6 +134,14 @@ describe("Página do lote mapeado (E0.17-e · ADR-010)", () => {
 
     expect(screen.getByRole("heading", { name: /avaliações no google/i })).toBeInTheDocument();
     expect(screen.getByText("4,4")).toBeInTheDocument();
+    // O bloco traz os primeiros links externos desta página, e eles só podem apontar para o
+    // Google: a atribuição é condição de uso do conteúdo. Link para o site ou o motor de
+    // reserva do lote continua proibido, aqui e em qualquer bloco novo.
+    const externos = [...document.querySelectorAll("a")]
+      .map((a) => a.getAttribute("href") ?? "")
+      .filter((h) => /^https?:\/\//.test(h));
+    expect(externos.length).toBeGreaterThan(0);
+    expect(externos.every((h) => /^https:\/\/(maps|www)\.google\.com\//.test(h))).toBe(true);
     // A nota do Google NÃO entra no JSON-LD: `aggregateRating` no schema afirmaria em nome
     // da Movepark uma nota que é do Google.
     const blocos = [...document.querySelectorAll('script[type="application/ld+json"]')].map((s) =>
