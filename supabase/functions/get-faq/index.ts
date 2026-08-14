@@ -50,6 +50,8 @@ type FaqItem = {
   answer: string;
   sort_order: number;
   category: Category | null;
+  /** URL própria da pergunta (/faq/<slug>). Só global/destination; auto/location não têm. */
+  slug?: string | null;
 };
 
 const AUTO_CATEGORY: Category = {
@@ -373,7 +375,7 @@ Deno.serve(async (req: Request) => {
   let q = supa
     .from("faq")
     .select(
-      "id, scope, location_id, destination_id, question, answer, sort_order, category:faq_category(slug, label, sort_order)",
+      "id, scope, location_id, destination_id, question, answer, slug, sort_order, category:faq_category(slug, label, sort_order)",
     )
     .eq("is_published", true)
     .is("deleted_at", null);

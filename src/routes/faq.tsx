@@ -1,27 +1,31 @@
 import * as React from "react";
-import { useSearchParams } from "react-router-dom";
+import { useLoaderData, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { MagnifyingGlass } from "@phosphor-icons/react";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ContentPageView } from "@/features/content/ContentPageView";
 import { RELACIONADOS } from "@/features/content/pages";
-import { readingMinutes, type Section } from "@/features/content/types";
+import { readingMinutes } from "@/features/content/types";
 import { faqJsonLd } from "@/features/content/jsonld";
-import { useFaqs } from "@/features/faqs/api";
+import { itemListSchema } from "@/lib/jsonld";
+import type { FaqIndexItem } from "@/features/faqs/api";
+import { buildFaqSections, filterFaqs } from "@/features/faqs/faqIndex.logic";
+
+const SITE_URL = "https://hub.movepark.co";
 
 /**
- * FAQ com uma seção por categoria.
+ * FAQ com uma seção por categoria (globais) e uma por destino.
  *
- * Antes a categoria FILTRAVA a lista, então o leitor via um recorte por vez e as
- * outras respostas não existiam na página nem para o buscador. Agora todas ficam
- * na mesma página e a categoria virou âncora do índice.
+ * O acervo vem do loader, então as respostas e o FAQPage (JSON-LD) existem no
+ * HTML do build; crawler de IA não executa JS e leria uma página vazia se o
+ * conteúdo dependesse de fetch no cliente. A busca filtra em memória.
  *
  * O `?cat=` continua valendo: a Central de Ajuda linka `/faq?cat=pagamentos` e o
- * Manager documenta essa URL. Ele agora rola até a seção em vez de filtrar.
+ * Manager documenta essa URL. Ele rola até a seção em vez de filtrar.
  */
 export default function FaqPage() {
+  const todas = (useLoaderData() as FaqIndexItem[] | null) ?? [];
   const [params, setParams] = useSearchParams();
   const query = params.get("q") ?? "";
   const [queryDraft, setQueryDraft] = React.useState(query);
@@ -44,31 +48,10 @@ export default function FaqPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryDraft]);
 
-  const list = useFaqs({ scope: "global", query: query || undefined });
-
-  /** Uma seção por categoria, na ordem do banco, sem categoria vazia. */
-  const sections: Section[] = React.useMemo(() => {
-    const porCategoria = new Map<string, { label: string; ordem: number; itens: { q: string; a: string }[] }>();
-
-    for (const f of list.data ?? []) {
-      const slug = f.category?.slug ?? "outras";
-      const atual = porCategoria.get(slug) ?? {
-        label: f.category?.label ?? "Outras dúvidas",
-        ordem: f.category?.sort_order ?? 999,
-        itens: [],
-      };
-      atual.itens.push({ q: f.question, a: f.answer });
-      porCategoria.set(slug, atual);
-    }
-
-    return [...porCategoria.entries()]
-      .sort((a, b) => a[1].ordem - b[1].ordem)
-      .map(([slug, c]) => ({
-        id: slug,
-        title: c.label,
-        blocks: [{ type: "faq" as const, items: c.itens }],
-      }));
-  }, [list.data]);
+  const sections = React.useMemo(
+    () => buildFaqSections(filterFaqs(todas, query)),
+    [todas, query],
+  );
 
   // `?cat=` vira âncora: o link antigo continua levando ao mesmo lugar.
   const cat = params.get("cat");
@@ -79,6 +62,11 @@ export default function FaqPage() {
   }, [cat, prontas]);
 
   const schema = faqJsonLd(sections);
+  // Índice das páginas por pergunta (ItemList): é o mapa que buscador e agente
+  // usam pra descobrir as URLs /faq/<slug>.
+  const paginas = todas
+    .filter((f) => f.slug)
+    .map((f) => ({ name: f.question, url: `${SITE_URL}/faq/${f.slug}` }));
 
   return (
     <>
@@ -93,9 +81,12 @@ export default function FaqPage() {
           property="og:description"
           content="Tire suas dúvidas sobre reservas, pagamentos, check-in e mais."
         />
-        <meta property="og:url" content="https://hub.movepark.co/faq" />
-        <link rel="canonical" href="https://hub.movepark.co/faq" />
+        <meta property="og:url" content={`${SITE_URL}/faq`} />
+        <link rel="canonical" href={`${SITE_URL}/faq`} />
         {schema && <script type="application/ld+json">{JSON.stringify(schema)}</script>}
+        {paginas.length > 0 && (
+          <script type="application/ld+json">{JSON.stringify(itemListSchema(paginas))}</script>
+        )}
       </Helmet>
 
       <ContentPageView
@@ -121,15 +112,7 @@ export default function FaqPage() {
               />
             </div>
 
-            {list.isLoading && (
-              <div className="space-y-3">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-16 w-full rounded-md" />
-                ))}
-              </div>
-            )}
-
-            {!list.isLoading && sections.length === 0 && (
+            {sections.length === 0 && (
               <EmptyState
                 title="Nenhuma pergunta encontrada"
                 description={

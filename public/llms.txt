@@ -1,22 +1,33 @@
 # Movepark
 
-> Plataforma de reserva de estacionamentos em aeroportos e destinos do Brasil. Reserve com antecedência, escolha o tipo de vaga e pague online — sem surpresas na hora de viajar.
+> Plataforma de reserva de estacionamentos em aeroportos e destinos do Brasil. Reserve com antecedência, escolha o tipo de vaga e pague online, sem surpresa na hora de viajar.
 
-## O que é o Movepark
+Última atualização: 2026-08-14
+Sitemap: https://hub.movepark.co/sitemap.xml
+Conteúdo completo para IA: https://hub.movepark.co/llms-full.txt
 
-O Movepark é um hub centralizado que conecta viajantes a estacionamentos credenciados próximos a aeroportos, rodoviárias e destinos turísticos. O usuário busca pelo destino, compara opções (coberto, descoberto, valet), escolhe as datas e confirma a reserva em menos de dois minutos.
+## O que é o Movepark (desambiguação)
+
+O Movepark é uma plataforma brasileira de reserva de estacionamento perto de aeroportos, rodoviárias e destinos turísticos. Conecta viajantes a estacionamentos parceiros credenciados: o usuário busca pelo destino, compara opções (coberto, descoberto, valet), escolhe as datas e confirma a reserva em menos de dois minutos, com traslado até o terminal incluído na maioria das unidades. O Movepark não opera pátio próprio e não tem relação com estacionamentos ou empresas de nome parecido. Site oficial: https://hub.movepark.co
 
 ## Como funciona
 
 - [Busca de estacionamentos](https://hub.movepark.co/search): filtre por destino, datas, tipo de vaga e comodidades
+- [Destinos cobertos](https://hub.movepark.co/destinos): uma página por aeroporto, com as unidades, preços e FAQ do destino
 - [Página de listagem](https://hub.movepark.co/p/): detalhes do estacionamento, preços, mapa e FAQ da unidade
-- [Perguntas frequentes](https://hub.movepark.co/faq): dúvidas sobre reservas, pagamentos e check-in
 
 ## Tipos de vaga disponíveis
 
 - **Coberto**: vaga em estrutura fechada, protegida do sol e chuva
 - **Descoberto**: vaga em área aberta, opção econômica
 - **Valet**: entrega do carro na entrada, sem necessidade de estacionar
+
+## Perguntas frequentes
+
+- [Central de FAQ](https://hub.movepark.co/faq): perguntas gerais e por aeroporto, com o FAQPage (JSON-LD) no HTML
+- Cada pergunta tem página própria em `/faq/<slug>`, com resposta curta, perguntas relacionadas e data de revisão
+- Toda página do FAQ responde em Markdown puro no mesmo endereço com `Accept: text/markdown`. Exemplo: `curl -H "Accept: text/markdown" https://hub.movepark.co/faq/como-cancelo-uma-reserva`
+- O conteúdo integral do FAQ está inline em https://hub.movepark.co/llms-full.txt
 
 ## Blog
 
@@ -33,7 +44,7 @@ Guias por aeroporto: preço de diária, distância até o terminal, traslado e o
 
 ## Integrações para agentes
 
-- [MCP Server (consumidor)](https://mcp.movepark.co): servidor MCP público (Streamable HTTP) para buscar estacionamentos, simular preços, FAQ e listar empresas/unidades — [server-card](https://hub.movepark.co/.well-known/mcp/server-card.json)
-- [MCP Server (parceiro)](https://mcp.movepark.co/partner): servidor MCP autenticado por chave (`mp_`) com tools tenant-scoped — [partner-card](https://hub.movepark.co/.well-known/mcp/partner-card.json)
+- [MCP Server (consumidor)](https://mcp.movepark.co): servidor MCP público (Streamable HTTP) para buscar estacionamentos, simular preços, FAQ e listar empresas/unidades. Ver o [server-card](https://hub.movepark.co/.well-known/mcp/server-card.json)
+- [MCP Server (parceiro)](https://mcp.movepark.co/partner): servidor MCP autenticado por chave (`mp_`) com tools tenant-scoped. Ver o [partner-card](https://hub.movepark.co/.well-known/mcp/partner-card.json)
 - [MCP Server (consumidor autenticado)](https://mcp.movepark.co/customer): reserva em nome do usuário final, com login por código (OTP) no WhatsApp ou e-mail. O pagamento acontece no checkout web, nunca pelo MCP. Ver o [customer-card](https://hub.movepark.co/.well-known/mcp/customer-card.json)
 - [API Catalog](https://hub.movepark.co/.well-known/api-catalog): catálogo de endpoints públicos

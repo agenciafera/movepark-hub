@@ -87,7 +87,14 @@ Regras **fixas** do projeto, não sugestões. Se algo conflitar com elas, **siga
   somente-leitura. Modelagem: enum `faq_scope` inclui `destination` + coluna `faq.destination_id`
   (FK → `destination`), com `CHECK` de consistência por escopo. A mescla acontece na Edge `get-faq`
   (que resolve o destino da `location` via `location.destination_id`), **nunca duplicando** linhas.
-  Implementado em `supabase/migrations/20260619000000_faq_destination_scope.sql`; ver
+  **O FAQ é pré-renderizado**: as três superfícies buscam o FAQ nos loaders SSG (as respostas e o
+  `FAQPage` têm que sair no HTML do build, porque crawler de IA não executa JS), e o accordion
+  mantém a resposta no DOM quando fechado (`forceMount`). Toda FAQ `global`/`destination`
+  publicada tem **página própria em `/faq/<slug>`** (answer-first, `FAQPage` + `BreadcrumbList`,
+  versão Markdown via `Accept: text/markdown`); o `slug` nasce por trigger e é contrato de URL
+  (não acompanha edição da pergunta).
+  Implementado em `supabase/migrations/20260621000000_faq_destination_scope.sql` +
+  `20260814145144_faq_slug_pages.sql` + `20260814145303_faq_slug_destination_suffix.sql`; ver
   [`docs/specs/destinations.md`](docs/specs/destinations.md).
 
 - **ADR-003 · Doc-as-you-build (API + MCP nascem documentadas).** Toda capacidade que é (ou pode

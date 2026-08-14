@@ -368,6 +368,9 @@ const ROTAS_DE_APP: RegExp[] = [
   /^\/p\/[^/]+\/[^/]+\/[^/]+$/,
   /^\/destinos(\/[^/]+)?$/,
   /^\/estacionamentos(\/[^/]+){0,2}$/,
+  // Mesma razão de /destinos: as páginas de pergunta (/faq/<slug>) são SSG, e uma FAQ
+  // publicada no Manager depois do build precisa abrir antes do próximo deploy.
+  /^\/faq(\/[^/]+)?$/,
 ];
 
 export function ehRotaDeApp(pathname: string): boolean {
@@ -505,7 +508,11 @@ async function serve(request: Request, env: Env): Promise<Response> {
     // Try to serve a pre-generated .md file for the path
     const mdRequest = new Request(new URL(url.pathname.replace(/\/?$/, ".md"), url), request);
     const mdResponse = await env.ASSETS.fetch(mdRequest);
-    if (mdResponse.ok) {
+    // Path sem .md correspondente cai no fallback SPA (HTML, 200): sem a checagem
+    // de content-type o worker rotulava esse HTML como text/markdown, e o agente
+    // recebia a casca do app achando que era o conteúdo.
+    const mdType = mdResponse.headers.get("Content-Type") ?? "";
+    if (mdResponse.ok && !mdType.includes("text/html")) {
       return new Response(mdResponse.body, {
         status: 200,
         headers: {

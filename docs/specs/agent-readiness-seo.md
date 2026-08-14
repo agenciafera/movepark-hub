@@ -109,6 +109,25 @@ A ferramenta (lançada 17/abr/2026) pontua 4 dimensões. Priorizar os **maduros/
   (cache compartilhado). Testes: `tldr.logic.test.ts` + casos de `description` em `jsonld.test.ts`.
 - **v2 (curadoria):** coluna `tldr` editável no Manager, sobrescrevendo o gerado — fora deste escopo.
 
+## FAQ answer-first e superfície GEO do FAQ
+
+> **✅ Implementado (ago/2026).** O FAQ saiu do client-side e virou superfície GEO completa:
+> antes, `dist/faq.html` e as páginas de destino/unidade saíam do build com skeletons e **zero**
+> `FAQPage`; crawler que não executa JS (GPTBot, ClaudeBot, PerplexityBot) não via pergunta alguma.
+
+- **Pré-render nas 3 superfícies:** loaders SSG buscam o FAQ no build (`/faq` via `fetchFaqIndex`,
+  destino/unidade via `fetchFaqCombined` na `get-faq`); respostas e `FAQPage` saem no HTML gerado.
+  O accordion (`FaqList`) usa `forceMount`: resposta fechada fica no DOM, escondida via display.
+- **Página por pergunta `/faq/<slug>`** (modelo xpark): answer-first ("Resposta rápida" +
+  `body_md` + relacionadas + CTA), `FAQPage` com `dateModified` + `BreadcrumbList`, data de
+  revisão visível. Slug autogerado por trigger; FAQ de destino carrega o aeroporto no slug
+  (`...-voo-atrasar...-guarulhos`), que é a forma como as pessoas perguntam a uma IA.
+- **Markdown negotiation do FAQ:** `scripts/generate-geo-artifacts.mjs` gera `dist/faq/<slug>.md`
+  e `dist/faq.md` no build; o worker os serve com `Accept: text/markdown` (e ganhou a checagem de
+  content-type que impedia HTML da SPA de sair rotulado como markdown).
+- **`llms-full.txt`:** FAQ integral + destinos + índice do blog inline, gerado a cada build;
+  `llms.txt` ganhou desambiguação de marca, data de atualização e ponteiros.
+
 ## Sequenciamento (ordem de prioridade)
 
 1. **HTML rastreável** (vite-react-ssg + build-time fetch Supabase) — bloqueador nº 1.

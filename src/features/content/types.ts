@@ -15,7 +15,7 @@ export type Block =
   | { type: "list"; items: string[] }
   | { type: "note"; label: string; text: string }
   | { type: "table"; rows: { k: string; v: string }[] }
-  | { type: "faq"; items: { q: string; a: string }[] }
+  | { type: "faq"; items: { q: string; a: string; slug?: string }[] }
   | { type: "steps"; items: { n: string; title: string; text: string }[] };
 
 export type Section = {

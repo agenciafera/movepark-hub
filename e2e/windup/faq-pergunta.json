@@ -1,0 +1,14 @@
+{
+  "scenario_id": "faq-pergunta",
+  "start_url": "/faq/como-cancelo-uma-reserva",
+  "task": "Verifique que a pagina exibe o titulo Como cancelo uma reserva?, uma secao com o texto Resposta rapida e um link com o texto Todas as perguntas frequentes.",
+  "tags": [
+    "smoke",
+    "leitura"
+  ],
+  "hints": [
+    "A pagina e a URL propria de uma pergunta do FAQ, no formato resposta primeiro.",
+    "O titulo e o <h1>; a resposta rapida vem logo abaixo dele, num bloco destacado.",
+    "O link Todas as perguntas frequentes leva de volta para /faq."
+  ]
+}

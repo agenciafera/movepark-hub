@@ -10,7 +10,7 @@ import {
 } from "@/features/destinations/api";
 import { ProspectCard } from "@/features/destinations/ProspectCard";
 import { useSearchResults, type SearchResultItem } from "@/features/search/useSearchResults";
-import { useFaqCombined } from "@/features/faqs/api";
+import { useFaqCombined, type FaqCombinedItem } from "@/features/faqs/api";
 import { FaqList } from "@/features/faqs/FaqList";
 import { ResultCard } from "@/features/search/ResultCard";
 import { computeResultBadges } from "@/features/search/searchBadges";
@@ -62,12 +62,17 @@ function defaultWindow() {
 }
 
 /**
- * O que `destinoLoader` entrega, tudo já no HTML do build: o destino, as unidades vendáveis
- * e os lotes mapeados. `units` é a semente da lista; a busca com datas a substitui no cliente.
+ * O que `destinoLoader` entrega, tudo já no HTML do build: o destino, as unidades vendáveis,
+ * os lotes mapeados e o FAQ mesclado (ADR-002). `units` é a semente da lista; a busca com
+ * datas a substitui no cliente. `faqs` nulo significa que o fetch do build falhou e o hook
+ * do cliente cobre.
  */
-type DestinoLoaderData =
-  | { destination: Destination; prospects: ProspectCardData[]; units?: SearchResultItem[] }
-  | null;
+type DestinoLoaderData = {
+  destination: Destination;
+  prospects: ProspectCardData[];
+  units?: SearchResultItem[];
+  faqs?: FaqCombinedItem[] | null;
+} | null;
 
 export default function DestinoPage() {
   const params = useParams();
@@ -102,7 +107,15 @@ export default function DestinoPage() {
       : null,
   );
   // FAQ em camadas (ADR-002): global + destination, mesclado/deduplicado no edge.
-  const faqs = useFaqCombined({ destinationId: destination?.id, enabled: !!destination });
+  // No SSG o loader já trouxe (as respostas têm que estar no HTML do build);
+  // o hook cobre só quando o loader não entregou.
+  const loadedFaqs = loaded?.faqs ?? null;
+  const faqsQuery = useFaqCombined({
+    destinationId: destination?.id,
+    enabled: !loadedFaqs && !!destination,
+  });
+  const faqData = loadedFaqs ?? faqsQuery.data;
+  const faqLoading = !loadedFaqs && faqsQuery.isLoading;
   // Destinos publicados p/ cross-link (internal linking entre /destinos).
   const allDestinations = usePublishedDestinations();
   // Lotes MAPEADOS (E0.17-d): seção própria, abaixo da vendável. Leitura separada de
@@ -187,7 +200,7 @@ export default function DestinoPage() {
   const searchWindowParams = search.data
     ? new URLSearchParams({ dest: destination.code, from: win.from, to: win.to })
     : new URLSearchParams({ dest: destination.code });
-  const faqItems = (faqs.data ?? []).map((f) => ({ question: f.question, answer: f.answer }));
+  const faqItems = (faqData ?? []).map((f) => ({ question: f.question, answer: f.answer }));
   // O JSON-LD pede número; o banco entrega `numeric`, que chega como string.
   const lat = Number(destination.latitude);
   const lng = Number(destination.longitude);
@@ -430,12 +443,12 @@ export default function DestinoPage() {
         </section>
 
         {/* FAQ — camadas destino + global (ADR-002), mesmo componente de listing.tsx/faq.tsx */}
-        {(faqs.isLoading || faqItems.length > 0) && (
+        {(faqLoading || faqItems.length > 0) && (
           <section className="mt-10">
             <h2 className="mb-4 text-display-md text-ink">{faqHeading(destination)}</h2>
             <FaqList
-              items={faqs.isLoading ? undefined : faqs.data}
-              isLoading={faqs.isLoading}
+              items={faqLoading ? undefined : faqData}
+              isLoading={faqLoading}
               groupByScope
               destinationLabel={`Sobre ${destination.short_name ?? destination.name}`}
             />

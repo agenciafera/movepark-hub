@@ -1785,6 +1785,7 @@ export type Database = {
       faq: {
         Row: {
           answer: string
+          body_md: string | null
           category_id: string | null
           created_at: string
           created_by: string | null
@@ -1795,12 +1796,14 @@ export type Database = {
           location_id: string | null
           question: string
           scope: Database["public"]["Enums"]["faq_scope"]
+          slug: string | null
           sort_order: number
           updated_at: string
           updated_by: string | null
         }
         Insert: {
           answer: string
+          body_md?: string | null
           category_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -1811,12 +1814,14 @@ export type Database = {
           location_id?: string | null
           question: string
           scope: Database["public"]["Enums"]["faq_scope"]
+          slug?: string | null
           sort_order?: number
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
           answer?: string
+          body_md?: string | null
           category_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -1827,6 +1832,7 @@ export type Database = {
           location_id?: string | null
           question?: string
           scope?: Database["public"]["Enums"]["faq_scope"]
+          slug?: string | null
           sort_order?: number
           updated_at?: string
           updated_by?: string | null

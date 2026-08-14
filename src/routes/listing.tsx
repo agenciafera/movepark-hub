@@ -44,6 +44,12 @@ import {
   type SchemaReview,
 } from "@/lib/jsonld";
 
+/** O que `listingLoader` entrega: a unidade e o FAQ mesclado, já no HTML do build. */
+type ListingLoaderData = {
+  listing: ListingDetail;
+  faqs: FaqCombinedItem[] | null;
+} | null;
+
 export default function ListingPage() {
   const params = useParams<{
     operatorSlug: string;
@@ -52,13 +58,13 @@ export default function ListingPage() {
   }>();
   const [searchParams] = useSearchParams();
   const saved = useSavedListings();
-  const loaderData = useLoaderData() as ListingDetail | null | undefined;
+  const loaderData = useLoaderData() as ListingLoaderData | undefined;
 
   const { data: listing, isLoading, error } = useListing(
     params.operatorSlug,
     params.locationSlug,
     params.parkingTypeCode,
-    { initialData: loaderData ?? undefined },
+    { initialData: loaderData?.listing ?? undefined },
   );
 
   const { data: reviews } = useLocationReviews(
@@ -77,10 +83,15 @@ export default function ListingPage() {
       }))
     : [];
 
-  const { data: faqItems, isLoading: faqLoading } = useFaqCombined({
+  // No SSG o loader já trouxe o FAQ (as respostas têm que estar no HTML do
+  // build); o hook cobre só quando o loader não entregou.
+  const loadedFaqs = loaderData?.faqs ?? null;
+  const faqQuery = useFaqCombined({
     locationId: listing?.location.id,
-    enabled: !!listing?.location.id,
+    enabled: !loadedFaqs && !!listing?.location.id,
   });
+  const faqItems = loadedFaqs ?? faqQuery.data;
+  const faqLoading = !loadedFaqs && faqQuery.isLoading;
 
   // TLDR-first (E3.2): resumo extraível gerado dos dados da unidade. Alimenta apenas a meta
   // description e o JSON-LD (description): extração por IA, sem bloco visível na página.

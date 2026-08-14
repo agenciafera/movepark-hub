@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Link } from "react-router-dom";
 import { CaretDown, Info } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import type { Block } from "./types";
@@ -96,7 +97,7 @@ export function BlockView({ block }: { block: Block }) {
  * fora do DOM. Na impressão todos abrem, por isso a resposta some com `hidden` em
  * vez de deixar de existir na árvore.
  */
-function FaqBlock({ items }: { items: { q: string; a: string }[] }) {
+function FaqBlock({ items }: { items: { q: string; a: string; slug?: string }[] }) {
   const [aberto, setAberto] = React.useState<number | null>(null);
   const base = React.useId();
 
@@ -130,6 +131,14 @@ function FaqBlock({ items }: { items: { q: string; a: string }[] }) {
               className="max-w-[64ch] pb-4 text-body-sm leading-[1.65] text-body print:!block"
             >
               {item.a}
+              {item.slug && (
+                <Link
+                  to={`/faq/${item.slug}`}
+                  className="mt-2 block text-body-sm font-medium text-mp-indigo underline-offset-2 hover:underline print:hidden"
+                >
+                  Página desta pergunta
+                </Link>
+              )}
             </div>
           </div>
         );

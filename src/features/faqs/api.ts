@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { pickRelatedFaqs } from "./related.logic";
 import type {
   Faq,
   FaqCategoryInsert,
@@ -179,7 +180,39 @@ export type FaqCombinedItem = {
   answer: string;
   sort_order: number;
   category: { slug: string; label: string; sort_order: number } | null;
+  /** URL própria da pergunta (/faq/<slug>). `auto` e `location` não têm página. */
+  slug?: string | null;
 };
+
+/**
+ * Fetch puro da `get-faq`, fora do React Query de propósito: os loaders SSG
+ * (destino, listing) chamam isto no build para o FAQ existir no HTML gerado.
+ * Crawler de IA não executa JS; o que não sai daqui no build não existe pra ele.
+ */
+export async function fetchFaqCombined(args: {
+  locationId?: string;
+  destinationId?: string;
+  categorySlug?: string;
+  query?: string;
+}): Promise<FaqCombinedItem[]> {
+  const res = await fetch(FN_URL, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      apikey: ANON_KEY,
+      authorization: `Bearer ${ANON_KEY}`,
+    },
+    body: JSON.stringify({
+      location_id: args.locationId,
+      destination_id: args.destinationId,
+      category_slug: args.categorySlug,
+      query: args.query,
+    }),
+  });
+  if (!res.ok) throw new Error(`get-faq ${res.status}`);
+  const json = (await res.json()) as { items: FaqCombinedItem[] };
+  return json.items ?? [];
+}
 
 export function useFaqCombined(args: {
   locationId?: string;
@@ -196,26 +229,94 @@ export function useFaqCombined(args: {
       args.categorySlug ?? "any",
       args.query ?? "",
     ],
-    queryFn: async (): Promise<FaqCombinedItem[]> => {
-      const res = await fetch(FN_URL, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          apikey: ANON_KEY,
-          authorization: `Bearer ${ANON_KEY}`,
-        },
-        body: JSON.stringify({
-          location_id: args.locationId,
-          destination_id: args.destinationId,
-          category_slug: args.categorySlug,
-          query: args.query,
-        }),
-      });
-      if (!res.ok) throw new Error(`get-faq ${res.status}`);
-      const json = (await res.json()) as { items: FaqCombinedItem[] };
-      return json.items ?? [];
-    },
+    queryFn: () =>
+      fetchFaqCombined({
+        locationId: args.locationId,
+        destinationId: args.destinationId,
+        categorySlug: args.categorySlug,
+        query: args.query,
+      }),
     enabled: args.enabled ?? true,
     staleTime: 60_000,
   });
+}
+
+// ---------- Páginas de FAQ (/faq e /faq/<slug>, SSG) ----------
+
+const FAQ_INDEX_SELECT =
+  "id, scope, destination_id, question, answer, slug, sort_order," +
+  " category:faq_category(slug, label, sort_order)," +
+  " destination:destination(name, short_name, slug)";
+
+export type FaqIndexItem = {
+  id: string;
+  scope: "global" | "destination";
+  destination_id: string | null;
+  question: string;
+  answer: string;
+  slug: string | null;
+  sort_order: number;
+  category: { slug: string; label: string; sort_order: number } | null;
+  destination: { name: string; short_name: string | null; slug: string } | null;
+};
+
+/** Acervo publicado de FAQ global + destino, pro hub /faq e pras relacionadas. */
+export async function fetchFaqIndex(): Promise<FaqIndexItem[]> {
+  const { data, error } = await supabase
+    .from("faq")
+    .select(FAQ_INDEX_SELECT)
+    .eq("is_published", true)
+    .is("deleted_at", null)
+    .in("scope", ["global", "destination"])
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as unknown as FaqIndexItem[];
+}
+
+export type FaqPageFaq = {
+  id: string;
+  scope: "global" | "destination";
+  destination_id: string | null;
+  question: string;
+  answer: string;
+  body_md: string | null;
+  slug: string;
+  updated_at: string;
+  category: { slug: string; label: string; sort_order: number } | null;
+  destination: {
+    id: string;
+    name: string;
+    short_name: string | null;
+    slug: string;
+    code: string;
+  } | null;
+};
+
+export type FaqPageData = {
+  faq: FaqPageFaq;
+  /** Outras perguntas com página, já priorizadas (mesmo destino > mesma categoria > globais). */
+  related: FaqIndexItem[];
+};
+
+/** A pergunta da página /faq/<slug> e as relacionadas. `null` = página não existe. */
+export async function fetchFaqBySlug(slug: string): Promise<FaqPageData | null> {
+  const { data, error } = await supabase
+    .from("faq")
+    .select(
+      "id, scope, destination_id, question, answer, body_md, slug, updated_at," +
+        " category:faq_category(slug, label, sort_order)," +
+        " destination:destination(id, name, short_name, slug, code)",
+    )
+    .eq("slug", slug)
+    .eq("is_published", true)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+
+  const faq = data as unknown as FaqPageFaq;
+  // Falha nas relacionadas não derruba a página: sem elas a seção só não aparece.
+  const all = await fetchFaqIndex().catch(() => [] as FaqIndexItem[]);
+  return { faq, related: pickRelatedFaqs(all, faq, 4) };
 }

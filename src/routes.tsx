@@ -5,6 +5,7 @@ import type { LoaderFunctionArgs } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { fetchDestinationProspects, fetchDestinationUnits } from "@/features/destinations/api";
 import { fetchListing } from "@/features/listing/api";
+import { fetchFaqBySlug, fetchFaqCombined, fetchFaqIndex } from "@/features/faqs/api";
 import { filterPosts, pageSlice, totalPages } from "@/features/blog/listing.logic";
 
 import { AppProviders } from "@/components/shared/AppProviders";
@@ -20,6 +21,7 @@ import SearchResultsPage from "@/routes/search";
 import ListingPage from "@/routes/listing";
 import CheckoutPage from "@/routes/checkout";
 import FaqPage from "@/routes/faq";
+import FaqPerguntaPage from "@/routes/faq-pergunta";
 import DocsPage from "@/routes/docs";
 import BookingsListPage from "@/routes/bookings-list";
 import BookingDetailPage from "@/routes/bookings-detail";
@@ -111,11 +113,17 @@ function RedirectToLogin() {
 
 async function listingLoader({ params }: LoaderFunctionArgs) {
   try {
-    return await fetchListing(
+    const listing = await fetchListing(
       params.operatorSlug!,
       params.locationSlug!,
       params.parkingTypeCode!,
     );
+    if (!listing) return null;
+    // FAQ no loader porque a página é pré-renderizada: as respostas e o FAQPage
+    // (JSON-LD) precisam sair no HTML do build. Falha aqui não derruba a página;
+    // o hook do cliente cobre quando `faqs` vem nulo.
+    const faqs = await fetchFaqCombined({ locationId: listing.location.id }).catch(() => null);
+    return { listing, faqs };
   } catch {
     return null;
   }
@@ -164,13 +172,15 @@ async function destinoLoader({ params }: LoaderFunctionArgs) {
     .maybeSingle();
   if (!data) return null;
   // Falha aqui não pode derrubar a página inteira: sem lote mapeado a seção só não existe,
-  // e sem unidade vendável a lista volta a depender da busca no cliente, que é o
-  // comportamento antigo. Em paralelo porque uma não depende da outra.
-  const [prospects, units] = await Promise.all([
+  // sem unidade vendável a lista volta a depender da busca no cliente e sem FAQ o hook do
+  // cliente cobre. Em paralelo porque nenhuma depende da outra. O FAQ entra aqui pela mesma
+  // razão das outras: as respostas e o FAQPage têm que existir no HTML do build (ADR-002).
+  const [prospects, units, faqs] = await Promise.all([
     fetchDestinationProspects(params.slug!).catch(() => []),
     fetchDestinationUnits(data).catch(() => []),
+    fetchFaqCombined({ destinationId: data.id as string }).catch(() => null),
   ]);
-  return { destination: data, prospects, units };
+  return { destination: data, prospects, units, faqs };
 }
 
 async function fetchAllDestinationPaths(): Promise<string[]> {
@@ -384,6 +394,30 @@ function blogListingPaths(kind: BlogKind, comPaginas: boolean) {
   };
 }
 
+/**
+ * FAQ do hub /faq: global + destination, no build (SSG). O acervo inteiro sai no
+ * HTML com o FAQPage; a busca da página filtra em memória sobre este dado.
+ */
+async function faqIndexLoader() {
+  return fetchFaqIndex().catch(() => []);
+}
+
+/** Página da pergunta (/faq/<slug>). `null` vira estado de não encontrada. */
+async function faqPerguntaLoader({ params }: LoaderFunctionArgs) {
+  return fetchFaqBySlug(params.slug!).catch(() => null);
+}
+
+/** Uma URL por pergunta publicada com slug (global e destination). */
+async function fetchAllFaqPaths(): Promise<string[]> {
+  const { data } = await supabase
+    .from("faq")
+    .select("slug")
+    .eq("is_published", true)
+    .is("deleted_at", null)
+    .not("slug", "is", null);
+  return (data ?? []).map((f) => `/faq/${f.slug as string}`);
+}
+
 // Índice de destinos: carrega os publicados no build (SSG) p/ o crawler ver os links.
 async function destinosLoader() {
   const { data } = await supabase
@@ -415,7 +449,13 @@ export const routes: RouteRecord[] = [
             loader: listingLoader,
             getStaticPaths: fetchAllListingPaths,
           },
-          { path: "/faq", element: <FaqPage /> },
+          { path: "/faq", element: <FaqPage />, loader: faqIndexLoader },
+          {
+            path: "/faq/:slug",
+            element: <FaqPerguntaPage />,
+            loader: faqPerguntaLoader,
+            getStaticPaths: fetchAllFaqPaths,
+          },
           { path: "/sobre", element: <SobrePage /> },
           { path: "/termos", element: <TermosPage /> },
           { path: "/privacidade", element: <PrivacidadePage /> },

@@ -73,6 +73,24 @@ async function getProspectRoutes(sb: SupabaseClient | null): Promise<string[]> {
 }
 
 /**
+ * Páginas por pergunta do FAQ (/faq/<slug>): cada pergunta global ou de destino
+ * publicada com slug é uma URL própria, answer-first, pré-renderizada no build.
+ */
+async function getFaqRoutes(sb: SupabaseClient | null): Promise<string[]> {
+  if (!sb) return [];
+
+  const { data } = await sb
+    .from("faq")
+    .select("slug")
+    .eq("is_published", true)
+    .is("deleted_at", null)
+    .not("slug", "is", null);
+
+  // deno-lint-ignore no-explicit-any
+  return (data ?? []).map((f: any) => `/faq/${f.slug}`);
+}
+
+/**
  * Posts do blog. A barra final é obrigatória: é a URL canônica herdada do
  * WordPress, e é ela que o Google já conhece. Ver docs/specs/blog.md.
  */
@@ -116,12 +134,14 @@ export default defineConfig(async ({ mode }) => {
   const key = env.VITE_SUPABASE_ANON_KEY;
   const sb = url && key ? createClient(url, key) : null;
 
-  const [listingRoutes, destinationRoutes, blogRoutes, prospectRoutes] = await Promise.all([
-    getDynamicRoutes(sb),
-    getDestinationRoutes(sb),
-    getBlogRoutes(sb),
-    getProspectRoutes(sb),
-  ]);
+  const [listingRoutes, destinationRoutes, blogRoutes, prospectRoutes, faqRoutes] =
+    await Promise.all([
+      getDynamicRoutes(sb),
+      getDestinationRoutes(sb),
+      getBlogRoutes(sb),
+      getProspectRoutes(sb),
+      getFaqRoutes(sb),
+    ]);
   // Índice de destinos + uma URL por destino publicado, além das listagens /p/...
   // e dos posts do blog (com barra final, contrato herdado do WordPress).
   writeBlogSlugManifest(blogRoutes);
@@ -139,6 +159,7 @@ export default defineConfig(async ({ mode }) => {
       ...destinationRoutes,
       ...blogRoutes,
       ...prospectRoutes,
+      ...faqRoutes,
     ]),
   ].filter((r) => r !== "/");
 

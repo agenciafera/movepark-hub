@@ -64,6 +64,31 @@ describe("worker asset fallback", () => {
     expect(res.headers.get("Content-Type") ?? "").toContain("text/markdown");
     expect(await res.text()).toContain("# Destinos");
   });
+
+  // Regressão: path sem .md caía no fallback SPA (HTML 200) e o worker rotulava a
+  // casca do app como text/markdown. O agente tem que receber o llms.txt.
+  it("cai no llms.txt quando o .md não existe, nunca em HTML rotulado de markdown", async () => {
+    const env = makeEnv({ "/llms.txt": { body: "# Movepark", type: "text/plain" } });
+    const res = await worker.fetch(req("/faq", { Accept: "text/markdown" }), env);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Content-Type") ?? "").toContain("text/markdown");
+    const body = await res.text();
+    expect(body).not.toContain("<!DOCTYPE html>");
+    expect(body).toContain("# Movepark");
+  });
+
+  it("serve o markdown da página de pergunta do FAQ", async () => {
+    const env = makeEnv({
+      "/faq/como-cancelo-uma-reserva.md": { body: "# Como cancelo", type: "text/markdown" },
+    });
+    const res = await worker.fetch(
+      req("/faq/como-cancelo-uma-reserva", { Accept: "text/markdown" }),
+      env,
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Content-Type") ?? "").toContain("text/markdown");
+    expect(await res.text()).toContain("# Como cancelo");
+  });
 });
 
 describe("política de indexação por host", () => {

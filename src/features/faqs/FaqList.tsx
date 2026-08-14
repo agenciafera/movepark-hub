@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -60,10 +61,21 @@ function RenderAccordion({
               )}
             </span>
           </AccordionTrigger>
-          <AccordionContent>
+          {/* forceMount: a resposta fica no DOM mesmo fechada. Crawler de IA não
+              clica em accordion; o que desmonta não existe pra ele (nem pro Google
+              no HTML do build). */}
+          <AccordionContent forceMount>
             <p className="whitespace-pre-wrap text-body-md text-body">
               {highlight(f.answer, query)}
             </p>
+            {f.slug && (
+              <Link
+                to={`/faq/${f.slug}`}
+                className="mt-2 inline-block text-body-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
+              >
+                Página desta pergunta
+              </Link>
+            )}
           </AccordionContent>
         </AccordionItem>
       ))}

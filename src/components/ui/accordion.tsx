@@ -40,10 +40,17 @@ AccordionTrigger.displayName = "AccordionTrigger";
 const AccordionContent = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+>(({ className, children, forceMount, ...props }, ref) => (
   <AccordionPrimitive.Content
     ref={ref}
-    className="overflow-hidden text-body-md text-body data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
+    forceMount={forceMount}
+    className={cn(
+      "overflow-hidden text-body-md text-body data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down",
+      // Com forceMount o conteúdo fechado continua na árvore (crawler e leitor sem
+      // JS enxergam a resposta) e é escondido via display, não desmontado. O custo
+      // é a animação de saída, que não roda nesse modo.
+      forceMount && "data-[state=closed]:hidden",
+    )}
     {...props}
   >
     <div className={cn("pb-4 pr-8", className)}>{children}</div>

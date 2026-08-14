@@ -152,7 +152,17 @@ A FAQ é resolvida por **escopo** e mesclada na renderização — **nunca dupli
 
 **Schema:** enum `faq_scope` inclui `destination`; `faq.destination_id` (FK → `destination`, nullable)
 com `CHECK` de consistência por escopo. RLS: leitura pública de FAQ publicada; escrita de
-`destination` é do `hub_admin`. Migration `20260619000000_faq_destination_scope.sql`.
+`destination` é do `hub_admin`. Migration `20260621000000_faq_destination_scope.sql`.
+
+**Páginas por pergunta (ago/2026):** toda FAQ `global`/`destination` publicada tem URL própria em
+**`/faq/<slug>`** (answer-first: resposta rápida + `body_md` opcional + relacionadas + CTA do
+destino), pré-renderizada no build com `FAQPage` + `BreadcrumbList` no HTML. O `slug` é preenchido
+por trigger no insert (`faq_slug_autofill`; FAQ de destino ganha o nome do aeroporto no slug) e é
+**contrato de URL**: não muda quando a pergunta é editada. Migrations
+`20260814145144_faq_slug_pages.sql` + `20260814145303_faq_slug_destination_suffix.sql`. O hub
+`/faq` lista globais por categoria e uma seção por destino, com `ItemList` das páginas; o FAQ das
+três superfícies sai no HTML do build (loaders SSG) e cada pergunta tem versão Markdown no mesmo
+endereço via `Accept: text/markdown` (`scripts/generate-geo-artifacts.mjs`).
 
 **Admin:** o **admin central de FAQ** (`/manager/faq`) é a fonte da `global` e lista todos os
 escopos (filtro de escopo). A aba **FAQ** do admin do destino (`DestinationFaqDialog`) edita só as
