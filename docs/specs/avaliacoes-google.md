@@ -181,11 +181,35 @@ chamada de servidor com `API_KEY_HTTP_REFERRER_BLOCKED`, como o
 `GOOGLE_PLACES_SERVER_KEY` separada, restrita por IP, guardada como secret do Supabase, que
 nunca vai para o bundle. A restrição por referrer da chave do browser **não muda**.
 
+### O HTML do SSG também é cache
+
+O bloco precisa sair no HTML pré-renderizado (§8), e HTML publicado **é** uma cópia do conteúdo
+do Google. A policy do §4 protege a leitura do banco e não alcança uma página que foi construída
+há 40 dias e continua servida na borda. O limite de 30 dias vale para os dois.
+
+Duas defesas, porque nenhuma sozinha fecha:
+
+1. **O refresh dispara rebuild.** Ao terminar uma passada que mudou algum snapshot, a Edge chama
+   o deploy hook do Cloudflare. Com refresh semanal, o HTML publicado fica na casa de 7 dias de
+   idade, não de 30.
+2. **O componente confere no cliente.** O payload do SSG carrega `fetched_at`, e o bloco não
+   renderiza quando ele passou de 30 dias. Página velha se corrige sozinha para o usuário real,
+   mesmo que o rebuild tenha falhado.
+
+O crawler ainda pode pegar HTML velho entre um rebuild e outro, e é por isso que a defesa 1 é a
+principal: reduzir a janela é o que resolve, o guard do cliente é rede.
+
 ## 6. Exibição
 
-**Um hook, duas fontes.** `useLocationReviews(location)` devolve `{ movepark, google }`, cada um
-com nota, contagem e itens. `ReviewsBlock` e `RatingBadge` consomem esse formato e não sabem que
-existem duas tabelas.
+**Um payload, duas fontes.** A mescla acontece onde o dado é buscado, e não num hook: a ficha
+carrega o snapshot no loader do SSG (§5), o card recebe a nota já anexada pela Edge `search`, e
+o lote mapeado recebe pela RPC `destination_prospect_cards`. `ReviewsBlock` e `RatingBadge`
+consomem o formato final e não sabem que existem duas tabelas.
+
+Não há hook novo, e isso não é atalho: o bloco **precisa** sair no HTML pré-renderizado (§8), e
+hook de cliente não põe nada no HTML. Um `useGooglePlaceSnapshot` renderizaria depois da
+hidratação, ou seja, tarde demais para o crawler e para a dobra em 4G. A lógica compartilhada
+mora em `src/features/reviews/google.logic.ts`, que é pura e testável.
 
 **A avaliação é do estacionamento, nunca do tipo de vaga.** Já vale hoje: a busca consulta
 `location_parking_type`, mas a nota vem do `location` no join, então um lote com coberto,
@@ -203,6 +227,14 @@ descoberto e valet mostra a mesma nota nos três cards. O snapshot segue igual, 
 o bloco inteiro daquele lote. Não existe esconder avaliação individual do Google. Se der para
 tirar a nota 1 e manter as cinco estrelas, não é exibir o Google, é fabricar prova social com o
 nome dele.
+
+O controle é a coluna `google_place_snapshot.is_hidden`, que entra na policy de leitura junto do
+TTL. Ela mora no snapshot e não na `location` porque a chave da tabela é o lugar, então esconder
+por `place_id` já é esconder por unidade, sem coluna nova em duas tabelas.
+
+Na primeira entrega o `hub_admin` liga e desliga por `update` direto (a policy de escrita já
+permite). Tela no Manager fica para depois, e está em [§11](#11-fora-de-escopo): construir UI
+antes de existir um caso real de uso é adivinhar o fluxo.
 
 ## 7. ADR-009: isso é fato da unidade, não promessa de transação
 
@@ -253,3 +285,5 @@ mais uma razão para o espelho existir em vez de consulta ao vivo.
 - **Responder avaliação do Google pelo Hub.** Quem responde é o dono, no Google Meu Negócio.
 - **Traduzir ou resumir o texto.** A regra de atribuição não permite.
 - **Fotos do Places.** Outro campo, outro SKU, outra regra de cache.
+- **Tela de moderação no Manager.** O `is_hidden` existe e o `hub_admin` liga e desliga por
+  `update`. A tela entra quando aparecer o primeiro caso real, não antes.
