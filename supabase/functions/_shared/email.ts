@@ -65,28 +65,6 @@ export async function getEmailConfig(admin: any): Promise<{ from: string | null;
   };
 }
 
-/**
- * Remetente e destino do formulário de contato.
- *
- * O remetente é o mesmo `partner_email_from` do resto, porque quem envia é
- * sempre a Movepark. O destino tem chave própria (`support_inbox`): contato de
- * visitante e lead de parceiro são filas diferentes, e costumam ter donos
- * diferentes do lado de dentro.
- */
-// deno-lint-ignore no-explicit-any
-export async function getContactConfig(admin: any): Promise<{ from: string | null; inbox: string | null }> {
-  const { data } = await admin
-    .from("app_setting")
-    .select("key, value")
-    .in("key", ["partner_email_from", "support_inbox"]);
-  // deno-lint-ignore no-explicit-any
-  const map: Record<string, string> = Object.fromEntries((data ?? []).map((r: any) => [r.key, r.value]));
-  return {
-    from: (map.partner_email_from || "").trim() || null,
-    inbox: (map.support_inbox || "").trim() || null,
-  };
-}
-
 interface SendArgs {
   from: string;
   to: string | string[];
@@ -204,6 +182,9 @@ function termsUrl(): string {
 }
 
 // Redes sociais do rodapé. URLs reais da marca (atualizar aqui se mudarem).
+// Sem Facebook: cada item vira <img> de /brand/social-<name>-email.png, e o ícone dele
+// não existe. O site já mostra o Facebook (ver src/lib/redes.ts); aqui ele entra quando
+// alguém desenhar o PNG no mesmo padrão dos outros três.
 const SOCIAL: { name: string; url: string; alt: string }[] = [
   { name: "instagram", url: "https://www.instagram.com/moveparkestacionamento", alt: "Instagram" },
   { name: "linkedin", url: "https://www.linkedin.com/company/movepark", alt: "LinkedIn" },
@@ -552,46 +533,4 @@ function escapeHtml(s: string): string {
   return String(s ?? "").replace(/[&<>"']/g, (c) => (
     { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!
   ));
-}
-
-/**
- * Confirmação para quem escreveu pelo formulário de /contato.
- *
- * O prazo é o mesmo que a página promete na tela. Se um dos dois mudar, o outro
- * muda junto, senão a Movepark promete uma coisa e confirma outra.
- */
-export function tplContactReceived(name: string): { subject: string; html: string } {
-  return {
-    subject: "Recebemos sua mensagem",
-    html: shell("Sua mensagem chegou aqui.", `
-      <p style="margin:0 0 14px">Olá, ${escapeHtml(firstName(name))}. Recebemos o que você escreveu.</p>
-      <p style="margin:0 0 14px">Nossa equipe responde em até <strong>1 dia útil</strong>, de segunda a sexta.</p>
-      <p style="margin:0">Se for sobre uma reserva em andamento e você precisar de resposta agora, chame no WhatsApp <a href="${SUPPORT_WHATSAPP.href}">${SUPPORT_WHATSAPP.label}</a>.</p>`),
-  };
-}
-
-/**
- * Alerta da mensagem para a caixa de suporte.
- *
- * O envio usa `replyTo` com o e-mail de quem escreveu, então responder na caixa
- * já cai na pessoa certa, sem ninguém copiar endereço na mão.
- */
-export function tplContactAlert(msg: {
-  name: string;
-  email: string;
-  message: string;
-  pageUrl?: string | null;
-}): { subject: string; html: string } {
-  return {
-    subject: `Contato pelo site: ${msg.name}`,
-    html: shell("Nova mensagem pelo site", `
-      <table style="width:100%;border-collapse:collapse;font-size:14px">
-        ${row("Nome", msg.name)}
-        ${row("E-mail", msg.email)}
-        ${row("Página", msg.pageUrl || "não informada")}
-      </table>
-      <p style="margin:16px 0 6px;color:${BRAND.muted};font-size:14px">Mensagem</p>
-      <div style="white-space:pre-wrap;padding:12px 14px;background:${BRAND.surface};border:1px solid ${BRAND.hairline};border-radius:8px;font-size:14px">${escapeHtml(msg.message)}</div>
-      <p style="margin-top:16px;color:${BRAND.muted};font-size:13px">Responder este e-mail já vai direto para quem escreveu.</p>`),
-  };
 }
