@@ -20,6 +20,9 @@ import { optimizedImageUrl } from "@/lib/storage";
  * endpoint, mesmo que alguém troque o arquivo de origem por um de outra proporção.
  * E o endpoint entrega JPEG para quem não pede WebP, que é o caso do robô do
  * WhatsApp.
+ *
+ * Imagem nova entra com uma linha em `docs/procedencia-imagens.md`, no mesmo
+ * commit: é lá que mora de onde ela veio e sob qual licença.
  */
 
 const BUCKET = "https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/og";

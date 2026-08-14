@@ -50,7 +50,7 @@ destination
 ├── meta_title      text|null   : override do <title>/og:title; vazio usa o seo_label
 ├── meta_description text|null  — meta description / og:description
 ├── intro           text|null   — corpo da página; parágrafos separados por linha em branco
-├── hero_image_url  text|null   — imagem de topo (opcional)
+├── hero_image_url  text|null   — imagem de topo (opcional; ver procedencia-imagens.md)
 ├── is_published    bool not null default true — controla visibilidade pública/SSG
 └── created_at, updated_at, deleted_at
 ```
