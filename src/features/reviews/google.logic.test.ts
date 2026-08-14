@@ -11,6 +11,18 @@ describe("isSnapshotFresh", () => {
   it("recusa snapshot de 31 dias, porque o limite de cache do Google e 30", () => {
     expect(isSnapshotFresh("2026-07-14T11:00:00Z", NOW)).toBe(false);
   });
+
+  it("recusa snapshot de exatamente 30 dias, porque o limite de cache e estritamente menor", () => {
+    expect(isSnapshotFresh("2026-07-15T12:00:00Z", NOW)).toBe(false);
+  });
+
+  it("recusa snapshot com data invalida, porque nao consegue calcular a idade", () => {
+    expect(isSnapshotFresh("garbage", NOW)).toBe(false);
+  });
+
+  it("aceita snapshot com data futura porque a idade e negativa", () => {
+    expect(isSnapshotFresh("2026-08-15T12:00:00Z", NOW)).toBe(true);
+  });
 });
 
 describe("pickCardBadge", () => {
@@ -35,5 +47,9 @@ describe("pickCardBadge", () => {
 
   it("devolve null quando o Google tem place mas nenhuma avaliacao", () => {
     expect(pickCardBadge({ avg: null, count: 0 }, { rating: null, count: 0 })).toBeNull();
+  });
+
+  it("devolve null quando o Google tem avaliacao media mas nenhuma contagem", () => {
+    expect(pickCardBadge({ avg: null, count: 0 }, { rating: 4.5, count: 0 })).toBeNull();
   });
 });
