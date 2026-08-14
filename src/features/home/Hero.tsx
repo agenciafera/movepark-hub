@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { SearchBarPill } from "@/features/search/SearchBarPill";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { formatCompactCount } from "@/lib/format";
-import { CLIPES, deveCarregarVideo, deveCruzar, proximoClipe } from "./heroVideo.logic";
+import { CLIPES, clipesPara, deveCarregarVideo, deveCruzar, proximoClipe } from "./heroVideo.logic";
 import { useClientesAtendidos } from "./api";
 
 function parseDate(value: string | null): Date | null {
@@ -78,12 +78,19 @@ export function Hero() {
   */
   const [carregarResto, setCarregarResto] = useState(false);
 
+  /* Deitado no desktop, em pé no celular. Escolhido junto com o portão, na
+     montagem, porque é a mesma decisão: o que vale a pena baixar aqui. */
+  const [clipes, setClipes] = useState<readonly string[]>(CLIPES);
+
   useEffect(() => {
     const rede = (
       navigator as Navigator & {
         connection?: { saveData?: boolean; effectiveType?: string };
       }
     ).connection;
+
+    // 1128 é o breakpoint `desktop` do Tailwind deste projeto.
+    setClipes(clipesPara(window.matchMedia?.("(min-width: 1128px)").matches ?? true));
 
     setCarregarVideo(
       deveCarregarVideo({
@@ -134,7 +141,7 @@ export function Hero() {
   const avancar = (de: number, exigirPronto: boolean) => {
     if (indiceRef.current !== de) return;
 
-    const proximo = proximoClipe(de);
+    const proximo = proximoClipe(de, clipes.length);
     const alvo = clipesRef.current[proximo];
     if (exigirPronto && (alvo?.readyState ?? 0) < 2) return;
 
@@ -194,7 +201,7 @@ export function Hero() {
         o banner intacto para quem cai na foto.
       */}
       {carregarVideo &&
-        CLIPES.map((src, i) => {
+        clipes.map((src, i) => {
           // O primeiro abre a sequência; os outros esperam a vez.
           const primeiro = i === 0;
           if (!primeiro && !carregarResto) return null;
@@ -225,8 +232,13 @@ export function Hero() {
                 if (deveCruzar(el.currentTime, el.duration)) avancar(i, true);
               }}
               onEnded={() => avancar(i, false)}
+              /* Centrado nos dois: no celular o clipe já é vertical e o corte é
+                 pequeno, e no desktop o quadro deitado aparece quase inteiro.
+                 O deslocamento de 75% que existia aqui era muleta de quando o
+                 quadro deitado tinha que caber na tela em pé, e a foto ainda
+                 precisa dele porque continua deitada. */
               className={cn(
-                "absolute inset-0 h-full w-full object-cover object-[75%_center] brightness-[0.82] saturate-[1.05] transition-opacity duration-700 motion-reduce:transition-none desktop:object-center",
+                "absolute inset-0 h-full w-full object-cover object-center brightness-[0.82] saturate-[1.05] transition-opacity duration-700 motion-reduce:transition-none",
                 videoVisivel && clipeAtivo === i ? "opacity-100" : "opacity-0",
               )}
             />

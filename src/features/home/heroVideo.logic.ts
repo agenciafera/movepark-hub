@@ -43,6 +43,32 @@ export const CLIPES = [
   "/images/hero-video-cancela.mp4",
 ] as const;
 
+/**
+ * A mesma história filmada em pé, para a tela do celular.
+ *
+ * Não é o mesmo arquivo recortado. O quadro deitado é 2,3:1 e a seção do hero no
+ * celular fica mais alta que larga, então o `object-cover` deixava 17% da
+ * largura e o banner virava um borrão. Reenquadrar melhora a média, mas não cria
+ * o que foi cortado: em vertical a cena nasce cabendo na tela.
+ */
+export const CLIPES_MOBILE = [
+  "/images/hero-video-mobile.mp4",
+  "/images/hero-video-saida-mobile.mp4",
+  "/images/hero-video-cancela-mobile.mp4",
+] as const;
+
+/**
+ * Qual conjunto tocar.
+ *
+ * Decidido uma vez, na montagem, e não a cada resize: trocar a fonte no meio da
+ * reprodução reiniciaria o clipe e daria um solavanco em quem só girou o
+ * aparelho. Quem redimensiona a janela no desktop é caso de desenvolvedor, não
+ * de usuário.
+ */
+export function clipesPara(emDesktop: boolean): readonly string[] {
+  return emDesktop ? CLIPES : CLIPES_MOBILE;
+}
+
 /** Segundos em que um clipe e o seguinte tocam juntos, um sumindo no outro. */
 export const CRUZAMENTO = 0.8;
 

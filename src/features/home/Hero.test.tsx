@@ -9,11 +9,19 @@ function ambiente({
   movimentoReduzido = false,
   economiaDeDados = false,
   tipoDeRede = "4g",
-}: { movimentoReduzido?: boolean; economiaDeDados?: boolean; tipoDeRede?: string } = {}) {
+  emDesktop = true,
+}: {
+  movimentoReduzido?: boolean;
+  economiaDeDados?: boolean;
+  tipoDeRede?: string;
+  emDesktop?: boolean;
+} = {}) {
   vi.stubGlobal(
     "matchMedia",
     vi.fn((query: string) => ({
-      matches: query.includes("prefers-reduced-motion") && movimentoReduzido,
+      matches: query.includes("prefers-reduced-motion")
+        ? movimentoReduzido
+        : query.includes("min-width") && emDesktop,
       media: query,
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
@@ -249,21 +257,40 @@ describe("Hero — vídeo de fundo", () => {
   });
 
   /**
-   * Regressão de enquadramento, medida no navegador: o quadro é 2,3:1 e a seção
-   * no celular fica mais alta que larga, então o `object-cover` deixa 17% da
-   * largura. Centrado, essa fatia cai na lataria escura do carro e o banner vira
-   * um borrão. Foto e vídeo precisam do mesmo valor, senão a troca de um para o
-   * outro dá um salto.
+   * A foto continua deitada no celular, onde o `object-cover` deixa 17% da
+   * largura. Centrada, essa fatia cai na lataria escura do carro e o banner vira
+   * um borrão, então ela é deslocada. O vídeo não precisa disso porque no
+   * celular ele já é vertical.
    */
-  it("foto e vídeo compartilham o enquadramento do celular", async () => {
+  it("a foto é reenquadrada no celular, e volta ao centro no desktop", () => {
+    renderWithProviders(<Hero />);
+    expect(foto()?.className).toContain("object-[75%_center]");
+    expect(foto()?.className).toContain("desktop:object-center");
+  });
+
+  it("o vídeo fica centrado, porque cada tela recebe o quadro certo", async () => {
+    renderWithProviders(<Hero />);
+    await abrirSequencia();
+    for (const clipe of videos()) {
+      expect(clipe.className).toContain("object-center");
+      expect(clipe.className).not.toContain("object-[75%_center]");
+    }
+  });
+
+  /**
+   * Recortar o quadro deitado para a tela em pé descartava 83% da largura. Os
+   * clipes verticais existem para o celular receber a cena já enquadrada.
+   */
+  it("no celular toca a sequência vertical", async () => {
+    ambiente({ emDesktop: false });
     renderWithProviders(<Hero />);
     await abrirSequencia();
 
-    expect(foto()?.className).toContain("object-[75%_center]");
-    for (const clipe of videos()) {
-      expect(clipe.className).toContain("object-[75%_center]");
-      expect(clipe.className).toContain("desktop:object-center");
-    }
+    expect(videos().map((v) => v.getAttribute("src"))).toEqual([
+      "/images/hero-video-mobile.mp4",
+      "/images/hero-video-saida-mobile.mp4",
+      "/images/hero-video-cancela-mobile.mp4",
+    ]);
   });
 
   /** Enquanto baixa, mostrar o vídeo trocaria a foto por um retângulo preto. */

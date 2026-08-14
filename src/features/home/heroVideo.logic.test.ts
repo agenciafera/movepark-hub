@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { CLIPES, CRUZAMENTO, deveCarregarVideo, deveCruzar, proximoClipe } from "./heroVideo.logic";
+import {
+  CLIPES,
+  CLIPES_MOBILE,
+  CRUZAMENTO,
+  clipesPara,
+  deveCarregarVideo,
+  deveCruzar,
+  proximoClipe,
+} from "./heroVideo.logic";
 
 describe("deveCarregarVideo", () => {
   it("carrega em rede boa, sem restrição nenhuma", () => {
@@ -37,6 +45,22 @@ describe("deveCarregarVideo", () => {
     expect(
       deveCarregarVideo({ movimentoReduzido: true, economiaDeDados: false, tipoDeRede: "4g" }),
     ).toBe(false);
+  });
+});
+
+describe("clipesPara", () => {
+  it("desktop toca os clipes deitados", () => {
+    expect(clipesPara(true)).toBe(CLIPES);
+  });
+
+  it("celular toca os clipes em pé", () => {
+    expect(clipesPara(false)).toBe(CLIPES_MOBILE);
+  });
+
+  /** A sequência é a mesma história dos dois lados, então tem que bater. */
+  it("os dois conjuntos contam a mesma história, na mesma ordem", () => {
+    expect(CLIPES_MOBILE).toHaveLength(CLIPES.length);
+    expect(CLIPES_MOBILE.map((s) => s.replace("-mobile", ""))).toEqual([...CLIPES]);
   });
 });
 
