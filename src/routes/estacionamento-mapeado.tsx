@@ -7,6 +7,7 @@ import { GoogleMapEmbed } from "@/components/shared/GoogleMapEmbed";
 import { Button } from "@/components/ui/button";
 import type { FaqCombinedItem } from "@/features/faqs/api";
 import { FaqList } from "@/features/faqs/FaqList";
+import { tituloLoteMapeado } from "@/features/destinations/loteMapeado.logic";
 import { breadcrumbSchema, faqSchema, parkingFacilitySchema } from "@/lib/jsonld";
 import { formatDistance } from "@/lib/format";
 import { trackEvent } from "@/lib/analytics";
@@ -59,7 +60,7 @@ export default function EstacionamentoMapeadoPage() {
   const canonical = `${SITE_URL}/estacionamentos/${destination.slug}/${prospect.slug}`;
   const distancia = prospect.distance_km == null ? null : formatDistance(prospect.distance_km);
 
-  const title = `Estacionamento ${prospect.name}, em ${destination.city} | Movepark`;
+  const title = tituloLoteMapeado(prospect.name, destination.city);
   const description = distancia
     ? `${prospect.name} fica a ${distancia} do ${destinationLabel}, em ${destination.city}. Este estacionamento ainda não tem reserva online pela Movepark.`
     : `${prospect.name}, em ${destination.city}. Este estacionamento ainda não tem reserva online pela Movepark.`;
