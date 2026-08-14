@@ -368,6 +368,28 @@ export type ManagerOverview = {
   }[];
 };
 
+/** Um item do array `reviews` do espelho do Google. A atribuição é obrigatória na exibição. */
+export type GoogleReviewItem = {
+  rating: number;
+  text: string;
+  publishTime: string;
+  relativePublishTimeDescription: string;
+  authorName: string;
+  authorPhotoUri: string | null;
+  authorUri: string | null;
+  reviewUri: string | null;
+};
+
+/** Espelho do Google Places por place_id. Conteúdo de terceiro, sob cache de 30 dias. */
+export type GooglePlaceSnapshot = {
+  place_id: string;
+  rating: number | null;
+  user_rating_count: number;
+  maps_uri: string | null;
+  reviews: GoogleReviewItem[];
+  fetched_at: string;
+};
+
 /** Uma hora do fluxo de veículos (retorno de manager_daily_flow). */
 export type DailyFlowHour = {
   hour: number;
