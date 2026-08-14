@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { EMAIL_SUPORTE, WHATSAPP_SUPORTE } from "@/lib/suporte";
 
 type FormState = "idle" | "success";
 
@@ -13,21 +14,25 @@ const CHANNELS = [
   {
     icon: ChatCircle,
     title: "WhatsApp",
-    desc: "Resposta rápida em horário comercial",
+    desc: "Fale direto com a equipe",
     action: "Iniciar conversa",
-    href: "https://wa.me/5511999999999",
+    href: WHATSAPP_SUPORTE.href,
   },
   {
     icon: Envelope,
     title: "E-mail",
-    desc: "contato@movepark.co",
+    desc: EMAIL_SUPORTE,
     action: "Enviar e-mail",
-    href: "mailto:contato@movepark.co",
+    href: `mailto:${EMAIL_SUPORTE}`,
   },
   {
     icon: Clock,
-    title: "Horário de atendimento",
-    desc: "Segunda a sexta, das 9h às 18h",
+    /* Dois atendimentos convivem aqui: o assistente do site responde sobre
+       reserva a qualquer hora, a equipe atende em dia útil. Sem dizer de quem é
+       cada janela, a home prometia 24h e esta página prometia horário
+       comercial, e uma das duas parecia mentira. */
+    title: "Atendimento com a equipe",
+    desc: "Segunda a sexta, das 9h às 18h. Fora disso, o assistente do site responde.",
     action: null,
     href: null,
   },
@@ -41,9 +46,9 @@ export default function ContatoPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const subject = encodeURIComponent(`Contato via site — ${nome}`);
+    const subject = encodeURIComponent(`Contato via site: ${nome}`);
     const body = encodeURIComponent(`Nome: ${nome}\nE-mail: ${email}\n\n${mensagem}`);
-    window.location.href = `mailto:contato@movepark.co?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:${EMAIL_SUPORTE}?subject=${subject}&body=${body}`;
     setState("success");
     setNome("");
     setEmail("");

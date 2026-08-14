@@ -120,8 +120,12 @@ const items: Item[] = [
   },
   {
     icon: Headphones,
-    title: "Atendimento 24h",
-    text: "Suporte por e-mail e telefone antes e durante sua viagem.",
+    /* Dizia "Atendimento 24h" com "suporte por e-mail e telefone", o que
+       prometia gente ao telefone de madrugada. Quem responde a qualquer hora é
+       o assistente do site; a equipe atende em dia útil, e a página de contato
+       mostra a janela dela. */
+    title: "Ajuda a qualquer hora",
+    text: "O assistente responde sobre sua reserva 24h. A equipe atende nos dias úteis.",
     Illustration: SupportIllustration,
   },
 ];
