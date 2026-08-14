@@ -175,9 +175,16 @@ endereço via `Accept: text/markdown` (`scripts/generate-geo-artifacts.mjs`).
 escopos (filtro de escopo). A aba **FAQ** do admin do destino (`DestinationFaqDialog`) edita só as
 `destination` daquele aeroporto e mostra a `global` como referência somente-leitura.
 
-**Pendência de conteúdo:** as FAQs `destination` por aeroporto (Viracopos primeiro) saem de
-`gestao/conteudo-onda1.md` (conteúdo manual Pedro/Peu + parceiro) — ainda não no repo. A
-engenharia (schema + render + admin + JSON-LD) está pronta para recebê-las.
+**Cobertura de conteúdo (ago/2026):** os **22 aeroportos** do catálogo têm pack `destination`
+completo de **8 perguntas**: as 6 do padrão (traslado, voo atrasado, coberto/descoberto, valet vs
+self-park, segurança, gabarito) mais duas de preço, **"Quanto custa estacionar no <aeroporto>?"**
+(comparativo em tabela Markdown no `body_md`, com os principais estacionamentos da região, o
+parceiro Movepark destacado em negrito e preço real do motor; concorrentes com valor público
+pesquisado em ago/2026 e "Sob consulta" quando o lote não publica tabela) e **"Qual o
+estacionamento mais barato perto do <aeroporto>?"**. Nos aeroportos sem parceiro, o comparativo
+fecha com CTA de `/seja-parceiro`; nos com parceiro, com links pra `/precos/<slug>` e
+`/destinos/<slug>`. O conteúdo mora no banco (admin de FAQ é a fonte); preço de concorrente é
+datado no texto ("consultados em agosto de 2026") para não virar promessa congelada.
 - **Índice** (`src/routes/destinos.tsx`): `<Helmet>` com title/description próprios,
   canonical/og para `https://hub.movepark.co/destinos` e dois blocos **JSON-LD**
   (`breadcrumbSchema` Início→Destinos e `itemListSchema` com a coleção de destinos); H1
