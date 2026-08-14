@@ -13,6 +13,7 @@ import { useSearchResults, type SearchResultItem } from "@/features/search/useSe
 import { useFaqCombined, type FaqCombinedItem } from "@/features/faqs/api";
 import { FaqList } from "@/features/faqs/FaqList";
 import { ResultCard } from "@/features/search/ResultCard";
+import { useSavedListings } from "@/features/search/useSavedListings";
 import { computeResultBadges } from "@/features/search/searchBadges";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -77,6 +78,10 @@ type DestinoLoaderData = {
 export default function DestinoPage() {
   const params = useParams();
   const loaded = useLoaderData() as DestinoLoaderData;
+  // Mesmo favorito da /search e da home: o coração aqui grava em `profile_saved` e leva o
+  // anônimo pro login guardando a intenção. Sem isso o card do destino é o mesmo componente
+  // com o coração inerte, e o visitante clica achando que salvou.
+  const saved = useSavedListings();
   const loaderDest = loaded?.destination ?? null;
   // No SSG/loader já vem o destino; no client (nav) o hook cobre.
   const slug = params.slug;
@@ -322,8 +327,8 @@ export default function DestinoPage() {
                 <ResultCard
                   key={`top-${r.id}`}
                   item={r}
-                  isSaved={false}
-                  onToggleSave={() => {}}
+                  isSaved={saved.isSaved(r.id)}
+                  onToggleSave={() => saved.toggle(r.id)}
                   searchParams={searchWindowParams}
                   source="destino"
                 />
@@ -365,8 +370,8 @@ export default function DestinoPage() {
                 <ResultCard
                   key={r.id}
                   item={r}
-                  isSaved={false}
-                  onToggleSave={() => {}}
+                  isSaved={saved.isSaved(r.id)}
+                  onToggleSave={() => saved.toggle(r.id)}
                   searchParams={searchWindowParams}
                   source="destino"
                   badges={computeResultBadges(r, results)}

@@ -6,9 +6,20 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { useEnviarContato } from "@/features/contato/api";
 import { EMAIL_SUPORTE, WHATSAPP_SUPORTE } from "@/lib/suporte";
 
 type FormState = "idle" | "success";
+
+/**
+ * Nome do campo-armadilha.
+ *
+ * Ele existe no HTML, fica fora da tela e nunca recebe foco de teclado. Robô de
+ * formulário preenche tudo que encontra, então valor aqui denuncia. A Edge
+ * responde sucesso mesmo assim, em vez de erro: dizer "recusado" ensinaria o
+ * robô a contornar.
+ */
+const CAMPO_ARMADILHA = "hp_field";
 
 const CHANNELS = [
   {
@@ -44,15 +55,30 @@ export default function ContatoPage() {
   const [email, setEmail] = React.useState("");
   const [mensagem, setMensagem] = React.useState("");
 
+  const [armadilha, setArmadilha] = React.useState("");
+  const enviar = useEnviarContato();
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const subject = encodeURIComponent(`Contato via site: ${nome}`);
-    const body = encodeURIComponent(`Nome: ${nome}\nE-mail: ${email}\n\n${mensagem}`);
-    window.location.href = `mailto:${EMAIL_SUPORTE}?subject=${subject}&body=${body}`;
-    setState("success");
-    setNome("");
-    setEmail("");
-    setMensagem("");
+    enviar.mutate(
+      {
+        name: nome,
+        email,
+        message: mensagem,
+        page_url: typeof window !== "undefined" ? window.location.href : null,
+        [CAMPO_ARMADILHA]: armadilha,
+      },
+      {
+        /* Só limpa depois que a Edge confirmou. Limpar antes apagaria o que a
+           pessoa escreveu junto com a chance de tentar de novo. */
+        onSuccess: () => {
+          setState("success");
+          setNome("");
+          setEmail("");
+          setMensagem("");
+        },
+      },
+    );
   }
 
   return (
@@ -144,6 +170,25 @@ export default function ContatoPage() {
                   Respondemos em até 1 dia útil.
                 </p>
                 <form onSubmit={handleSubmit} className="space-y-4">
+                  {/*
+                    Campo-armadilha. Fora da tela em vez de `display:none`, porque
+                    parte dos robôs ignora campo escondido por display. `tabIndex`
+                    negativo e `aria-hidden` mantêm ele fora do caminho de quem
+                    navega por teclado ou leitor de tela.
+                  */}
+                  <div className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden" aria-hidden>
+                    <label htmlFor={CAMPO_ARMADILHA}>Não preencha este campo</label>
+                    <input
+                      id={CAMPO_ARMADILHA}
+                      name={CAMPO_ARMADILHA}
+                      type="text"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={armadilha}
+                      onChange={(e) => setArmadilha(e.target.value)}
+                    />
+                  </div>
+
                   <div className="space-y-1.5">
                     <Label htmlFor="nome">Nome</Label>
                     <Input
@@ -152,7 +197,7 @@ export default function ContatoPage() {
                       value={nome}
                       onChange={(e) => setNome(e.target.value)}
                       required
-
+                      disabled={enviar.isPending}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -164,7 +209,7 @@ export default function ContatoPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-
+                      disabled={enviar.isPending}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -176,11 +221,23 @@ export default function ContatoPage() {
                       onChange={(e) => setMensagem(e.target.value)}
                       required
                       rows={5}
-
+                      disabled={enviar.isPending}
                     />
                   </div>
-                  <Button type="submit" className="w-full">
-                    Enviar mensagem
+
+                  {/* `role="alert"` para o leitor de tela anunciar a falha sem
+                      depender de a pessoa reencontrar o formulário. */}
+                  {enviar.isError && (
+                    <p
+                      role="alert"
+                      className="rounded-sm bg-badge-cancelled-bg px-3 py-2 text-body-sm text-error"
+                    >
+                      {enviar.error.message}
+                    </p>
+                  )}
+
+                  <Button type="submit" className="w-full" disabled={enviar.isPending}>
+                    {enviar.isPending ? "Enviando…" : "Enviar mensagem"}
                   </Button>
                 </form>
               </>

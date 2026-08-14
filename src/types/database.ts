@@ -1334,6 +1334,48 @@ export type Database = {
           },
         ]
       }
+      contact_message: {
+        Row: {
+          answered_at: string | null
+          created_at: string
+          deleted_at: string | null
+          email: string
+          email_status: string | null
+          id: string
+          message: string
+          name: string
+          page_url: string | null
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          answered_at?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          email: string
+          email_status?: string | null
+          id?: string
+          message: string
+          name: string
+          page_url?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          answered_at?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          email?: string
+          email_status?: string | null
+          id?: string
+          message?: string
+          name?: string
+          page_url?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       coupon: {
         Row: {
           code: string
