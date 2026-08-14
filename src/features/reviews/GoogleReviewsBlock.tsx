@@ -30,9 +30,15 @@ export function GoogleReviewsBlock({
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <GoogleLogo weight="bold" className="h-5 w-5 text-muted" aria-hidden="true" />
-          <h2 className="text-display-sm text-ink">Avaliações</h2>
+          <h2 className="text-display-sm text-ink">Avaliações no Google</h2>
         </div>
-        <RatingSummary avg={snapshot.rating} count={snapshot.user_rating_count} />
+        {/* A nota é o número que mais se confunde com a nota da Movepark (ReviewsBlock, na
+            mesma página). "no Google" fica em texto visível ao lado da nota, não só no
+            heading ou no ícone (que some do HTML pré-renderizado por ser aria-hidden). */}
+        <div className="flex flex-wrap items-center gap-2">
+          <RatingSummary avg={snapshot.rating} count={snapshot.user_rating_count} />
+          <span className="text-body-sm text-muted">no Google</span>
+        </div>
       </div>
 
       <ul className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
@@ -48,6 +54,9 @@ export function GoogleReviewsBlock({
                     src={r.authorPhotoUri}
                     alt={r.authorName}
                     loading="lazy"
+                    width={32}
+                    height={32}
+                    referrerPolicy="no-referrer"
                     className="size-8 rounded-full"
                   />
                 )}
@@ -89,7 +98,7 @@ export function GoogleReviewsBlock({
           rel="noreferrer nofollow"
           className="text-body-sm underline"
         >
-          Ver mais avaliações
+          Ver todas as avaliações no Google
         </a>
       )}
     </section>
