@@ -1,15 +1,16 @@
 {
-  "scenario_id": "rota-inexistente",
-  "start_url": "/rota-que-nao-existe-qa",
-  "task": "Passo 1: verifique que a URL final ainda contem \"rota-que-nao-existe-qa\", ou seja, o endereco digitado foi preservado. Passo 2: verifique que a pagina exibe o texto \"Essa página não existe\". Passo 3: verifique que a pagina exibe o texto \"Buscar estacionamento\". Passo 4: verifique que a pagina NAO exibe o texto \"Estacionamentos Populares\", ou seja, nao caiu na home.",
-  "tags": [
-    "smoke",
-    "leitura"
-  ],
-  "hints": [
-    "Rota desconhecida passou a mostrar uma pagina de 404 propria, servida com status 404 pela borda. Antes ela redirecionava para a home, e esse comportamento foi trocado de proposito.",
-    "Sao passos numerados: execute cada um como uma acao propria, sem juntar as verificacoes num expect so.",
-    "O passo 1 e o que prova o ganho: a URL errada continua visivel, em vez de sumir num redirecionamento.",
-    "O passo 4 e a guarda contra regressao: se a home aparecer, o catch-all voltou a redirecionar."
-  ]
+ "scenario_id": "rota-inexistente",
+ "start_url": "/rota-que-nao-existe-qa",
+ "task": "Passo 1: verifique que a URL final termina com o caminho \"/rota-que-nao-existe-qa\", ou seja, o endereco digitado foi preservado. Passo 2: verifique que a pagina exibe o texto \"Essa página não existe\". Passo 3: verifique que a pagina exibe o texto \"Buscar estacionamento\". Passo 4: verifique que a pagina NAO exibe o texto \"Estacionamentos Populares\", ou seja, nao caiu na home.",
+ "tags": [
+  "smoke",
+  "leitura"
+ ],
+ "hints": [
+  "Rota desconhecida passou a mostrar uma pagina de 404 propria, servida com status 404 pela borda. Antes ela redirecionava para a home, e esse comportamento foi trocado de proposito.",
+  "Sao passos numerados: execute cada um como uma acao propria, sem juntar as verificacoes num expect so.",
+  "O passo 1 e o que prova o ganho: a URL errada continua visivel, em vez de sumir num redirecionamento.",
+  "O passo 4 e a guarda contra regressao: se a home aparecer, o catch-all voltou a redirecionar.",
+  "O passo da URL usa glob de caminho (\"/<slug>\"), que e o que o matcher do Windup casa; curinga solto (\"*slug*\") nao casa."
+ ]
 }

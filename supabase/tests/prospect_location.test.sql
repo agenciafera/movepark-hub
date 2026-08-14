@@ -50,15 +50,18 @@ begin
   values (lmort, cmp, 'Unidade Morta E017', 'lote-e017-morto', -50.0006, -30.0006, dest, now());
 
   -- rascunho, publicado e convertido: os três estados que a lista do admin precisa separar.
-  insert into public.prospect_location(destination_id, name, slug, latitude, longitude, is_published)
+  -- Publicar exige endereço (constraint prospect_location_publish_needs_address, E0.17-h):
+  -- as fichas publicadas trazem address, o rascunho pode ficar sem. Sem isto o insert viola a
+  -- constraint e derruba o arquivo inteiro antes de rodar qualquer asserção.
+  insert into public.prospect_location(destination_id, name, slug, latitude, longitude, is_published, address)
   values
-    (dest, 'Rascunho E017', 'e017-rascunho',  -50.0009, -30.0000, false),
-    (dest, 'Publicado E017','e017-publicado', -50.0009, -30.0000, true);
+    (dest, 'Rascunho E017', 'e017-rascunho',  -50.0009, -30.0000, false, null),
+    (dest, 'Publicado E017','e017-publicado', -50.0009, -30.0000, true, 'Av. E017, 100');
 
   insert into public.prospect_location(
     destination_id, name, slug, latitude, longitude, is_published,
-    converted_location_id, converted_at)
-  values (dest,'Convertido E017','e017-convertido',-50.0009,-30.0000, true, lviva, now());
+    converted_location_id, converted_at, address)
+  values (dest,'Convertido E017','e017-convertido',-50.0009,-30.0000, true, lviva, now(), 'Av. E017, 200');
 
   perform set_config('test.uadm',  uadm::text,  false);
   perform set_config('test.dest',  dest::text,  false);
