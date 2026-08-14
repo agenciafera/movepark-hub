@@ -94,6 +94,50 @@ nosso enquanto está parado.
   gerar documento válido a cada execução.
 - **A Conta Escrow já estava liberada** na nossa conta de sandbox, sem pedido ao gerente.
 
+## Limites da Conta Escrow, medidos
+
+Reprodutível em [`scripts/asaas-probe-escrow-prazo.ts`](../../scripts/asaas-probe-escrow-prazo.ts)
+e [`scripts/asaas-probe-escrow-finish.ts`](../../scripts/asaas-probe-escrow-finish.ts).
+
+**O prazo máximo de retenção é 45 dias.** Varri os valores e a partir de 60 a API recusa:
+
+```
+daysToExpire=30   -> HTTP 200 aceito
+daysToExpire=60   -> HTTP 400 "O período de expiração não pode ser maior que 45."
+```
+
+Isso é decisivo para reserva antecipada: a janela de risco vai até o check-in, e reserva feita com
+dois meses de antecedência já ultrapassa o teto.
+
+**Valor sob garantia não pode ser estornado.** A garantia zera o saldo disponível, e o estorno
+precisa de saldo:
+
+```
+saldo da subconta com garantia ativa: { "balance": 0 }
+POST /payments/{id}/refund -> HTTP 400
+  "Não é possível efetuar o estorno pois não há saldo suficiente."
+```
+
+**A liberação manual funciona, mas só com a chave da raiz.** Com a chave da subconta vem 404:
+
+```
+POST /escrow/{id}/finish (chave da SUBCONTA) -> HTTP 404
+POST /escrow/{id}/finish (chave da RAIZ)     -> HTTP 200
+escrow depois: { "status": "DONE", "finishReason": "REQUESTED_BY_CUSTOMER" }
+saldo depois:  { "balance": 199.01 }
+```
+
+**Mesmo depois de liberar, o estorno falhou.** A conta recebeu o líquido e o estorno cobra o bruto:
+
+```
+saldo 199.01  ·  estorno de 200.00  ->  HTTP 400 "Saldo insuficiente."
+```
+
+A diferença é exatamente a taxa de R$ 0,99. **Toda conta que recebe precisa carregar um float para
+conseguir estornar**, porque nunca recebe o valor cheio. Numa subconta de parceiro recém-criada esse
+float é zero, então o primeiro cancelamento sempre trava. Vale para qualquer desenho: a conta raiz
+sofre do mesmo, só que na prática tem saldo acumulado para cobrir.
+
 ## Em aberto
 
 - **Expiração do PIX em minutos.** Não deu para testar: `GET /payments/{id}/pixQrCode` devolve
