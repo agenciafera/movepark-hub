@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildStaticUnits, type ProximityRow, type UnitRow } from "./units.logic";
+import type { GoogleRatingRow } from "@/features/reviews/googleApi";
 
 function regra(tiers: { from_day: number; to_day: number | null; unit_price: number }[]) {
   return {
@@ -33,6 +34,7 @@ function row(over: Partial<UnitRow> = {}, locOver: Record<string, unknown> = {})
       longitude: "-49.17",
       review_avg: 4.6,
       review_count: 12,
+      google_place_id: null,
       photos: ["https://x/foto1.webp", "https://x/foto2.webp"],
       is_listed: true,
       deleted_at: null,
@@ -154,5 +156,56 @@ describe("buildStaticUnits", () => {
   it("unidade sem foto sai com capa nula em vez de quebrar", () => {
     const [item] = buildStaticUnits([row({}, { photos: null })], prox);
     expect(item.location.cover_image).toBeNull();
+  });
+
+  describe("nota do Google na semente do SSG", () => {
+    const agora = new Date("2026-08-14T12:00:00Z");
+    const snapshot = (over: Partial<GoogleRatingRow> = {}): GoogleRatingRow => ({
+      place_id: "ChIJ_lote",
+      rating: 4.4,
+      user_rating_count: 137,
+      fetched_at: "2026-08-10T12:00:00Z",
+      ...over,
+    });
+
+    it("sai no card pré-renderizado, casada pelo place_id", () => {
+      // O card do destino chegava ao crawler sem selo nenhum, porque a nota só existia na
+      // resposta da busca no cliente.
+      const [item] = buildStaticUnits(
+        [row({}, { google_place_id: "ChIJ_lote" })],
+        prox,
+        [snapshot()],
+        agora,
+      );
+      expect(item.location.google_rating).toBe(4.4);
+      expect(item.location.google_rating_count).toBe(137);
+    });
+
+    it("snapshot de outro lugar não encosta no card", () => {
+      const [item] = buildStaticUnits(
+        [row({}, { google_place_id: "ChIJ_lote" })],
+        prox,
+        [snapshot({ place_id: "ChIJ_outro" })],
+        agora,
+      );
+      expect(item.location.google_rating).toBeNull();
+      expect(item.location.google_rating_count).toBe(0);
+    });
+
+    it("snapshot vencido fica de fora, porque o HTML publicado também é cache", () => {
+      const [item] = buildStaticUnits(
+        [row({}, { google_place_id: "ChIJ_lote" })],
+        prox,
+        [snapshot({ fetched_at: "2026-07-01T12:00:00Z" })],
+        agora,
+      );
+      expect(item.location.google_rating).toBeNull();
+    });
+
+    it("unidade sem place_id continua sem nota, sem erro", () => {
+      const [item] = buildStaticUnits([row()], prox, [snapshot()], agora);
+      expect(item.location.google_rating).toBeNull();
+      expect(item.location.google_rating_count).toBe(0);
+    });
   });
 });

@@ -80,12 +80,16 @@ export function RatingBadge({
   const label = ratingLabel(avg, count);
   if (!label) return null;
   const base = "inline-flex items-center gap-1 tabular-nums text-ink";
+  // Uma variável só para o sufixo, e não a mesma marcação repetida nos dois ramos: quando
+  // cada ramo tinha a sua, o de âncora saiu com "· no Google" e o de span com "no Google"
+  // colado na contagem. Mesma prop, duas saídas.
+  const suffixNode = suffix ? <span className="text-muted">· {suffix}</span> : null;
   if (href) {
     return (
       <a href={href} className={cn(base, "underline-offset-2 hover:underline", className)}>
         <Star className="h-3.5 w-3.5 fill-ink text-ink" />
         {label}
-        {suffix && <span className="text-muted">· {suffix}</span>}
+        {suffixNode}
       </a>
     );
   }
@@ -93,7 +97,7 @@ export function RatingBadge({
     <span className={cn(base, className)}>
       <Star className="h-3.5 w-3.5 fill-ink text-ink" />
       {label}
-      {suffix && <span className="text-muted">{suffix}</span>}
+      {suffixNode}
     </span>
   );
 }

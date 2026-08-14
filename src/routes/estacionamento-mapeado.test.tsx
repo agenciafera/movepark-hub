@@ -46,6 +46,9 @@ function prospect(overrides: Partial<ProspectCardData> = {}): ProspectCardData {
     description: null,
     distance_km: 1.01,
     reference_name: null,
+    google_place_id: null,
+    google_rating: null,
+    google_rating_count: 0,
     ...overrides,
   };
 }
@@ -110,6 +113,38 @@ describe("Página do lote mapeado (E0.17-e · ADR-010)", () => {
     // devolve a coluna), e esta asserção é o alarme para o dia em que alguém "só adicionar
     // o campo" no retorno.
     expect(document.body).not.toHaveTextContent(/98692|\(81\)/);
+  });
+
+  it("mostra as avaliações do Google quando o loader traz snapshot, e some sem ele", () => {
+    // Única prova social possível aqui: nota Movepark exige `booking`, e lote mapeado não
+    // gera nenhum. Vem do loader, não de hook, porque precisa sair no HTML do build.
+    loaderData.mockReturnValue({
+      destination: dest(),
+      prospect: prospect({ google_place_id: "ChIJ_x" }),
+      google: {
+        place_id: "ChIJ_x",
+        rating: 4.4,
+        user_rating_count: 137,
+        maps_uri: "https://maps.google.com/?cid=1",
+        fetched_at: new Date().toISOString(),
+        reviews: [],
+      },
+    });
+    const { unmount } = render();
+
+    expect(screen.getByRole("heading", { name: /avaliações no google/i })).toBeInTheDocument();
+    expect(screen.getByText("4,4")).toBeInTheDocument();
+    // A nota do Google NÃO entra no JSON-LD: `aggregateRating` no schema afirmaria em nome
+    // da Movepark uma nota que é do Google.
+    const blocos = [...document.querySelectorAll('script[type="application/ld+json"]')].map((s) =>
+      JSON.parse(s.textContent ?? "{}"),
+    );
+    expect(blocos.some((b) => "aggregateRating" in b)).toBe(false);
+    unmount();
+
+    loaderData.mockReturnValue({ destination: dest(), prospect: prospect() });
+    render();
+    expect(screen.queryByRole("heading", { name: /avaliações no google/i })).toBeNull();
   });
 
   it("o pedido de reserva vira evento, não tabela, e responde sem prometer aviso", async () => {

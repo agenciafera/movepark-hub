@@ -4807,6 +4807,9 @@ export type Database = {
           description: string
           distance_km: number
           google_maps_url: string
+          google_place_id: string
+          google_rating: number
+          google_rating_count: number
           id: string
           latitude: number
           longitude: number

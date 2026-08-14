@@ -5,6 +5,7 @@ import type { LoaderFunctionArgs } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { fetchDestinationProspects, fetchDestinationUnits } from "@/features/destinations/api";
 import { fetchListing } from "@/features/listing/api";
+import { fetchGooglePlaceSnapshot } from "@/features/reviews/googleApi";
 import { fetchFaqBySlug, fetchFaqCombined, fetchFaqIndex } from "@/features/faqs/api";
 import type { FaqPrecoContexto } from "@/features/faqs/faqPagina.logic";
 import { fetchPriceIndex } from "@/features/price-index/api";
@@ -223,7 +224,16 @@ async function estacionamentoMapeadoLoader({ params }: LoaderFunctionArgs) {
     .then((items) => items.filter((f) => f.scope === "destination"))
     .catch(() => null);
 
-  return { destination, prospect, faqs };
+  // Avaliações do Google, a única prova social que este lote pode ter: nota Movepark exige
+  // `booking`, e lote mapeado não gera nenhum. Buscado aqui, no loader, para o bloco sair no
+  // HTML do build (§6 e §8 de avaliacoes-google.md). Falha não derruba a página: sem snapshot
+  // a seção só não existe. O `google_place_id` vem da RPC porque o grant de coluna do Q-021
+  // não deixa o front ler direto da tabela.
+  const google = prospect.google_place_id
+    ? await fetchGooglePlaceSnapshot(prospect.google_place_id).catch(() => null)
+    : null;
+
+  return { destination, prospect, faqs, google };
 }
 
 async function fetchAllProspectPaths(): Promise<string[]> {

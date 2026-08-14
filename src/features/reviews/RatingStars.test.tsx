@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { RatingStars, RatingSummary } from "./RatingStars";
+import { RatingBadge, RatingStars, RatingSummary } from "./RatingStars";
 
 describe("RatingStars", () => {
   it("como seletor, é um radiogroup nomeado com 5 radios e a nota marcada", () => {
@@ -19,6 +19,29 @@ describe("RatingStars", () => {
     render(<RatingStars value={4} />);
     expect(screen.queryByRole("radiogroup")).not.toBeInTheDocument();
     expect(screen.queryByRole("radio")).not.toBeInTheDocument();
+  });
+});
+
+describe("RatingBadge", () => {
+  it("escreve o sufixo igual com e sem link", () => {
+    // Regressão: cada ramo montava o sufixo por conta própria, e o de span saía sem o
+    // separador ("248 avaliaçõesno Google"). Mesma prop, mesma saída nos dois.
+    const { container: comLink } = render(
+      <RatingBadge avg={4.6} count={248} suffix="no Google" href="#avaliacoes" />,
+    );
+    const { container: semLink } = render(<RatingBadge avg={4.6} count={248} suffix="no Google" />);
+    expect(comLink.textContent).toBe("4,6 · 248 avaliações· no Google");
+    expect(semLink.textContent).toBe(comLink.textContent);
+  });
+
+  it("sem sufixo, mostra só a nota e a contagem", () => {
+    const { container } = render(<RatingBadge avg={5} count={1} />);
+    expect(container.textContent).toBe("5,0 · 1 avaliação");
+  });
+
+  it("some sem avaliações", () => {
+    const { container } = render(<RatingBadge avg={null} count={0} suffix="no Google" />);
+    expect(container).toBeEmptyDOMElement();
   });
 });
 

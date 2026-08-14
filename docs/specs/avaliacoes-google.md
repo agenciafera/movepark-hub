@@ -4,7 +4,18 @@
 > exibido como prova social separada e rotulada, nunca somado à avaliação Movepark.
 > **Ao mudar uma regra, atualize esta spec no mesmo PR.**
 
-**Status:** desenhado em 14/08/2026, não implementado.
+**Status:** ✅ implementado em 14/08/2026, faltando ligar o refresh. No ar: tabela
+`google_place_snapshot` com TTL na policy e purge diário (`purge-google-place-snapshots`, ativo
+no `pg_cron`), bloco atribuído na ficha da unidade e na do lote mapeado, e selo único no card de
+busca, no destino e no card de lote mapeado.
+
+**Pendente, e é o que falta para a nota aparecer:** a Edge `google-place-refresh` está escrita e
+testada no repo, mas **não** foi publicada nem agendada, porque depende da
+`GOOGLE_PLACES_SERVER_KEY` (chave de servidor, restrita por IP, que ainda não existe). Sem ela a
+tabela fica vazia, e vazia é o estado correto: nenhuma superfície inventa nota, todas caem no
+comportamento de antes. Ao criar a chave: `supabase secrets set GOOGLE_PLACES_SERVER_KEY=...`,
+`supabase functions deploy google-place-refresh --no-verify-jwt` e o agendamento semanal no
+`pg_cron`.
 
 Relacionado: [reviews.md](./reviews.md) · [capacidades-unidade.md](./capacidades-unidade.md) ·
 [checkout-externo-por-local.md](./checkout-externo-por-local.md) ·
@@ -211,6 +222,22 @@ carrega o snapshot no loader do SSG (§5), o card recebe a nota já anexada pela
 o lote mapeado recebe pela RPC `destination_prospect_cards`. `ReviewsBlock` e `RatingBadge`
 consomem o formato final e não sabem que existem duas tabelas.
 
+**A RPC do lote mapeado paga um preço para continuar `security invoker`.** Ela lê
+`prospect_location.google_place_id`, e em função invoker o Postgres cobra o privilégio de coluna
+de quem chama, mesmo quando a coluna só aparece na condição do join. Como o Q-021 revogou o
+SELECT da tabela e devolveu coluna a coluna, o `google_place_id` ganhou grant próprio para
+`anon`/`authenticated` (migration `20261024093000`). Expor esse campo não abre nada: o
+`google_maps_url` que o card já mostra é
+`https://www.google.com/maps/place/?q=place_id:ChIJ...`, ou seja, o mesmo valor em texto claro.
+A alternativa (promover a função a `security definer`) foi recusada: definer contorna o grant de
+coluna e devolve o telefone no primeiro `select` distraído, que é exatamente o que o Q-021
+fechou.
+
+**O join do snapshot repete o `is_hidden` e os 30 dias.** A policy de leitura já filtra os dois
+para o público, mas a policy de escrita da tabela é `for all` gateada em `is_hub_admin()`, e
+policies permissivas se somam: para um admin logado a linha oculta e a vencida aparecem. Sem os
+filtros explícitos no join, a página pública mudaria de conteúdo conforme quem a abrisse.
+
 Não há hook novo, e isso não é atalho: o bloco **precisa** sair no HTML pré-renderizado (§8), e
 hook de cliente não põe nada no HTML. Um `useGooglePlaceSnapshot` renderizaria depois da
 hidratação, ou seja, tarde demais para o crawler e para a dobra em 4G. A lógica compartilhada
@@ -227,6 +254,13 @@ descoberto e valet mostra a mesma nota nos três cards. O snapshot segue igual, 
 | Página de destino (`/destinos/<slug>`) | Reusa o card, mesma regra. Inclui as fichas de `prospect_location` |
 | Ficha da unidade (`/p/<slug>`) | Tem espaço: mostra **as duas**, rotuladas, com o bloco do Google abaixo do Movepark |
 | Ficha do lote mapeado | Só o do Google, que é o único que existe |
+
+**A semente do destino carrega a nota, senão o selo só existe depois do JS.** A lista de
+unidades da página de destino nasce no build (`buildStaticUnits`), e não da Edge `search`, que só
+responde quando o cliente busca. Enquanto a semente mandava `google_rating: null` fixo, a unidade
+sem avaliação Movepark chegava ao crawler sem selo nenhum, que é o vazio que esta spec existe
+para fechar. O loader lê o espelho junto das unidades, numa consulta só para a página inteira, e
+descarta snapshot vencido na hora de montar o HTML.
 
 **Moderação é tudo ou nada, por unidade.** O único liga e desliga é do `hub_admin`, e vale para
 o bloco inteiro daquele lote. Não existe esconder avaliação individual do Google. Se der para

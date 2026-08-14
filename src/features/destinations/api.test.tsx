@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { falha, renderMutation, tabela } from "@/test/msw/supabase";
+import { falha, renderMutation, rpc, tabela } from "@/test/msw/supabase";
 import {
+  fetchDestinationProspects,
   useCreateDestination,
   useCreateDestinationPoint,
   useDeleteDestination,
@@ -139,5 +140,69 @@ describe("useDeleteDestinationPoint", () => {
     expect(del.chamadas[0].url).toContain("/destination_point");
     expect(del.chamadas[0].url).toContain("id=eq.pt-9");
     expect(del.chamadas[0].url).not.toContain("undefined");
+  });
+});
+
+describe("fetchDestinationProspects", () => {
+  it("converte a nota do Google, que o PostgREST devolve como string", async () => {
+    // `numeric` chega "4.4" no JSON. Sem o Number() o formatRating recebe string e o selo
+    // sai errado, do mesmo jeito que já acontecia com a distância.
+    rpc("destination_prospect_cards", {
+      json: [
+        {
+          id: "p1",
+          name: "Talentos Park",
+          slug: "talentos-park",
+          address: "R. Projetada, 169",
+          latitude: "-8.13",
+          longitude: "-34.91",
+          google_maps_url: "https://www.google.com/maps/place/?q=place_id:ChIJ_x",
+          amenities: [],
+          description: null,
+          distance_km: "1.01",
+          reference_name: null,
+          google_place_id: "ChIJ_x",
+          google_rating: "4.4",
+          google_rating_count: 137,
+        },
+      ],
+    });
+
+    const [card] = await fetchDestinationProspects("aeroporto-de-congonhas");
+
+    expect(card.google_rating).toBe(4.4);
+    expect(card.google_rating_count).toBe(137);
+    expect(card.distance_km).toBe(1.01);
+    // O place_id vem da RPC porque o grant de coluna do Q-021 impede o front de lê-lo da
+    // tabela. É ele que a ficha do lote usa para achar o snapshot inteiro.
+    expect(card.google_place_id).toBe("ChIJ_x");
+  });
+
+  it("lote sem snapshot volta sem nota, e não com zero fingindo nota", async () => {
+    rpc("destination_prospect_cards", {
+      json: [
+        {
+          id: "p2",
+          name: "Foco Park",
+          slug: "foco-park",
+          address: null,
+          latitude: "-8.13",
+          longitude: "-34.91",
+          google_maps_url: null,
+          amenities: [],
+          description: null,
+          distance_km: null,
+          reference_name: null,
+          google_place_id: "ChIJ_y",
+          google_rating: null,
+          google_rating_count: 0,
+        },
+      ],
+    });
+
+    const [card] = await fetchDestinationProspects("aeroporto-de-congonhas");
+
+    expect(card.google_rating).toBeNull();
+    expect(card.google_rating_count).toBe(0);
   });
 });

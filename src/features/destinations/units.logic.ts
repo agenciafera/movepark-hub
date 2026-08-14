@@ -18,6 +18,8 @@
  */
 import { calcFromPrice, type PricingRuleRaw } from "@/features/search/fromPrice";
 import type { SearchResultItem } from "@/features/search/useSearchResults";
+import type { GoogleRatingRow } from "@/features/reviews/googleApi";
+import { isSnapshotFresh } from "@/features/reviews/google.logic";
 
 /** Linha crua do PostgREST, no formato do select de `fetchDestinationUnits`. */
 export type UnitRow = {
@@ -33,6 +35,7 @@ export type UnitRow = {
     longitude: number | string | null;
     review_avg: number | null;
     review_count: number | null;
+    google_place_id: string | null;
     photos: unknown;
     is_listed: boolean;
     deleted_at: string | null;
@@ -64,8 +67,19 @@ function num(v: number | string | null | undefined): number | null {
  * (`sort: price_asc`). Ordem igual importa: quando a busca do cliente responde e substitui a
  * semente, os cards não podem trocar de lugar na frente de quem está lendo.
  */
-export function buildStaticUnits(rows: UnitRow[], proximity: ProximityRow[]): SearchResultItem[] {
+export function buildStaticUnits(
+  rows: UnitRow[],
+  proximity: ProximityRow[],
+  google: GoogleRatingRow[] = [],
+  now: Date = new Date(),
+): SearchResultItem[] {
   const geo = new Map(proximity.map((p) => [p.location_id, p]));
+  // Só snapshot fresco entra no HTML. A policy do banco já filtra na leitura, e conferir de
+  // novo aqui é o que protege o build: o limite de 30 dias do Google vale para a cópia que
+  // fica publicada, e uma linha vencida que escapasse viraria HTML servido por semanas.
+  const notas = new Map(
+    google.filter((g) => isSnapshotFresh(g.fetched_at, now)).map((g) => [g.place_id, g]),
+  );
   const itens: SearchResultItem[] = [];
 
   for (const row of rows) {
@@ -85,6 +99,7 @@ export function buildStaticUnits(rows: UnitRow[], proximity: ProximityRow[]): Se
     if (!from) continue;
 
     const p = geo.get(loc.id);
+    const nota = loc.google_place_id ? notas.get(loc.google_place_id) : undefined;
     const terminalNome = p?.nearest_terminal_name ?? null;
     const terminalKm = num(p?.nearest_terminal_distance_km ?? null);
     const fotos = Array.isArray(loc.photos) ? (loc.photos as string[]) : [];
@@ -106,10 +121,12 @@ export function buildStaticUnits(rows: UnitRow[], proximity: ProximityRow[]): Se
             : null,
         review_avg: loc.review_avg ?? null,
         review_count: loc.review_count ?? 0,
-        // O build estático não consulta o snapshot do Google: a nota complementar só existe
-        // na resposta da edge /search, que substitui esta semente assim que o cliente busca.
-        google_rating: null,
-        google_rating_count: 0,
+        // A nota do Google sai no HTML do build, e não só depois que a busca do cliente
+        // responde: sem isso a unidade sem avaliação Movepark chegava ao crawler sem selo
+        // nenhum, que é justamente o vazio de prova social que a spec existe para fechar.
+        // O selo em si continua sendo um só, escolhido pelo `pickCardBadge` no card.
+        google_rating: nota?.rating ?? null,
+        google_rating_count: nota?.user_rating_count ?? 0,
         cover_image: fotos[0] ?? null,
         // Sinal de demanda depende da janela buscada. Num HTML congelado ele seria uma
         // afirmação sem lastro, então nasce falso e só a busca do cliente pode ligá-lo.

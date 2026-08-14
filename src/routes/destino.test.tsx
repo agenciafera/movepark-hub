@@ -99,6 +99,9 @@ function prospect(overrides: Partial<ProspectCardData> = {}): ProspectCardData {
     description: null,
     distance_km: 1.01,
     reference_name: null,
+    google_place_id: null,
+    google_rating: null,
+    google_rating_count: 0,
     ...overrides,
   };
 }
@@ -266,6 +269,25 @@ describe("DestinoPage · lotes mapeados (E0.17-d)", () => {
     });
     expect(og).toContain("/og/marca-");
     expect(og).not.toContain("/og/destinos-");
+  });
+
+  it("mostra a nota do Google no card mapeado, rotulada, e nada quando não há snapshot", () => {
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
+    vi.mocked(useDestinationProspects).mockReturnValue({
+      data: [prospect({ google_rating: 4.4, google_rating_count: 137 })],
+    } as never);
+
+    const { unmount } = render();
+
+    // Rotulada: sem o "no Google" a nota de lá se confunde com a da Movepark, que aqui é
+    // impossível de existir (lote mapeado não gera reserva, e review exige booking).
+    const card = screen.getByTestId("prospect-card");
+    expect(card).toHaveTextContent("4,4 · 137 avaliações· no Google");
+    unmount();
+
+    vi.mocked(useDestinationProspects).mockReturnValue({ data: [prospect()] } as never);
+    render();
+    expect(screen.getByTestId("prospect-card")).not.toHaveTextContent(/avaliações/);
   });
 
   it("usa o nome do terminal na distância quando o destino tem um cadastrado", () => {

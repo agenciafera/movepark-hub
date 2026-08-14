@@ -47,6 +47,11 @@ export type ProspectLocation = Tables<"prospect_location">;
  * endereço e sem descrição é o caso comum enquanto a ficha não foi revisada.
  * `reference_name` é o terminal quando o destino tem um cadastrado, e nulo quando a
  * referência é o próprio destino. `phone` NÃO existe aqui por desenho (Q-021).
+ *
+ * `google_rating` vem do snapshot fresco do Google e é nulo na maioria das fichas: só
+ * existe depois que o refresh passou naquele place_id. `google_place_id` está aqui porque
+ * a ficha do lote usa ele para carregar o snapshot inteiro no loader do SSG, e porque já é
+ * público no `google_maps_url` do mesmo card.
  */
 export type ProspectCard = {
   id: string;
@@ -60,6 +65,9 @@ export type ProspectCard = {
   description: string | null;
   distance_km: number | null;
   reference_name: string | null;
+  google_place_id: string | null;
+  google_rating: number | null;
+  google_rating_count: number;
 };
 
 /**

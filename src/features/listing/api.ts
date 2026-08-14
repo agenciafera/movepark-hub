@@ -4,7 +4,8 @@ import { supabase } from "@/lib/supabase";
 import type { CouponPreview } from "./coupon.logic";
 import type { AddOnOption } from "./reservation.logic";
 import type { AvailabilityCheck, MinStayUnit } from "./availability.logic";
-import type { GooglePlaceSnapshot, GoogleReviewItem } from "@/types/domain";
+import type { GooglePlaceSnapshot } from "@/types/domain";
+import { fetchGooglePlaceSnapshot } from "@/features/reviews/googleApi";
 
 export type ListingDetail = {
   id: string; // location_parking_type_id
@@ -148,22 +149,11 @@ export async function fetchListing(
   // Espelho do Google (§6 de avaliacoes-google.md): busca no loader do SSG, nunca em hook, pro
   // bloco sair no HTML pré-renderizado. A policy de leitura já esconde snapshot velho/oculto; o
   // componente confere de novo no cliente, porque o HTML publicado também é cache (§5 da spec).
-  let google: GooglePlaceSnapshot | null = null;
-  if (m.location.google_place_id) {
-    const { data: snap, error: snapError } = await supabase
-      .from("google_place_snapshot")
-      .select("place_id, rating, user_rating_count, maps_uri, reviews, fetched_at")
-      .eq("place_id", m.location.google_place_id)
-      .maybeSingle();
-    if (snapError) throw snapError;
-    google = snap
-      ? ({
-          ...snap,
-          rating: snap.rating != null ? Number(snap.rating) : null,
-          reviews: (snap.reviews ?? []) as GoogleReviewItem[],
-        } as GooglePlaceSnapshot)
-      : null;
-  }
+  // A consulta mora em `reviews/googleApi.ts`: a ficha do lote mapeado carrega o mesmo
+  // snapshot, e duas cópias da mesma query divergem na primeira mudança de campo.
+  const google: GooglePlaceSnapshot | null = m.location.google_place_id
+    ? await fetchGooglePlaceSnapshot(m.location.google_place_id)
+    : null;
 
   return {
     id: m.id,

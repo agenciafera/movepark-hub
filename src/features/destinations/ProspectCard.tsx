@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import { MapPin } from "@phosphor-icons/react";
 import type { ProspectCard as ProspectCardData } from "@/types/domain";
 import { formatDistance } from "@/lib/format";
+import { pickCardBadge } from "@/features/reviews/google.logic";
+import { RatingBadge } from "@/features/reviews/RatingStars";
 
 type Props = {
   item: ProspectCardData;
@@ -19,8 +21,13 @@ type Props = {
  *   "exposição grátis" em "tira meu nome do ar". Além disso, conteúdo do Google Places não
  *   pode ser cacheado nem re-hospedado, e a foto do site do lote é obra protegida
  *   (Lei 9.610/98) de quem a Movepark vai ligar para prospectar.
- * - **Sem preço, sem selo de vantagem, sem nota.** ADR-009: promessa de transação só
- *   renderiza com capacidade declarada, e este lote não tem nenhuma.
+ * - **Sem preço e sem selo de vantagem.** ADR-009: promessa de transação só renderiza com
+ *   capacidade declarada, e este lote não tem nenhuma.
+ * - **Com a nota do Google, quando existe.** É a única exceção, e ela cabe no mesmo ADR-009:
+ *   avaliação de terceiro é FATO do lugar, verdade independente de onde a reserva fecha, e
+ *   não promete transação nenhuma. Nota Movepark aqui é impossível por desenho, porque
+ *   `review.booking_id` é `NOT NULL` e este lote nunca gerou reserva. O selo sai rotulado
+ *   "no Google" para ninguém ler a nota de lá como se fosse de quem reservou pela Movepark.
  * - **Sem link para o site ou o motor de reserva dele.** No dia em que ele abre o
  *   Analytics e vê referral da Movepark, está recebendo de graça o que íamos cobrar.
  * - **Sem `<a>` de reserva, sem seletor de data, sem widget de WhatsApp.** Prometer
@@ -74,6 +81,25 @@ export function ProspectCard({ item, destinationSlug }: Props) {
           {item.reference_name ? ` do ${item.reference_name}` : ""}
         </p>
       )}
+
+      {/* Mesmo `pickCardBadge` do card vendável, com a Movepark sempre vazia: a regra de UM
+          selo só vale aqui igual, e passar pela mesma função é o que garante que os dois
+          lados da página não divirjam quando a regra mudar. */}
+      {(() => {
+        const badge = pickCardBadge(
+          { avg: null, count: 0 },
+          { rating: item.google_rating, count: item.google_rating_count },
+        );
+        if (!badge) return null;
+        return (
+          <RatingBadge
+            avg={badge.avg}
+            count={badge.count}
+            className="text-body-sm"
+            suffix="no Google"
+          />
+        );
+      })()}
     </li>
   );
 }

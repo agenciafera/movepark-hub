@@ -2,8 +2,13 @@ import * as React from "react";
 import { Link, useLoaderData } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { MapPin } from "@phosphor-icons/react";
-import type { Destination, ProspectCard as ProspectCardData } from "@/types/domain";
+import type {
+  Destination,
+  GooglePlaceSnapshot,
+  ProspectCard as ProspectCardData,
+} from "@/types/domain";
 import { GoogleMapEmbed } from "@/components/shared/GoogleMapEmbed";
+import { GoogleReviewsBlock } from "@/features/reviews/GoogleReviewsBlock";
 import { Button } from "@/components/ui/button";
 import type { FaqCombinedItem } from "@/features/faqs/api";
 import { FaqList } from "@/features/faqs/FaqList";
@@ -20,6 +25,9 @@ export type EstacionamentoMapeadoLoaderData = {
   /** Só escopo `destination` (fato do aeroporto). A global fica fora: fala de
    *  reserva pela Movepark, que esta página não oferece. */
   faqs?: FaqCombinedItem[] | null;
+  /** Espelho do Google (§6 de avaliacoes-google.md). Nulo enquanto o refresh não passou
+   *  naquele place_id, ou quando o hub_admin desligou o bloco daquele lote. */
+  google?: GooglePlaceSnapshot | null;
 } | null;
 
 /**
@@ -185,6 +193,18 @@ export default function EstacionamentoMapeadoPage() {
             className="h-72 w-full rounded-md border border-hairline"
           />
         </section>
+
+        {/* Avaliações do Google: a única prova social que este lote pode ter, porque nota
+            Movepark exige `booking` e aqui não existe reserva. Vem rotulada e atribuída,
+            nunca somada a nada, e NÃO entra no JSON-LD acima: `aggregateRating` no schema
+            afirmaria ao Google, em nome da Movepark, uma nota que é dele (§6 da spec).
+            Fica antes do pedido de demanda de propósito: prova social pesa mais lida antes
+            do CTA do que depois. */}
+        {data.google && (
+          <section className="mt-10">
+            <GoogleReviewsBlock snapshot={data.google} placeName={prospect.name} />
+          </section>
+        )}
 
         {/* CTA primário: prova de demanda.
             Não pede e-mail nem telefone de propósito. A spec define este sinal como

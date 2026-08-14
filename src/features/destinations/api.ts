@@ -8,6 +8,7 @@ import {
   type ProximityRow,
   type UnitRow,
 } from "@/features/destinations/units.logic";
+import { fetchGoogleRatings } from "@/features/reviews/googleApi";
 
 type DestinationInsert = Database["public"]["Tables"]["destination"]["Insert"];
 type DestinationUpdate = Database["public"]["Tables"]["destination"]["Update"];
@@ -35,7 +36,12 @@ export const destinationsKeys = {
  * o crawler não lê justamente a frase que diz o que aquele card é.
  *
  * `numeric` do Postgres chega como string no PostgREST: o `Number()` é o que faz o
- * `formatDistance` receber número, e não "1.01".
+ * `formatDistance` receber número, e não "1.01". Vale igual para `google_rating`, que sem a
+ * conversão chegaria "4.4" e quebraria o `formatRating` do selo.
+ *
+ * A nota do Google sai da própria RPC (§6 de avaliacoes-google.md) porque o front anônimo não
+ * consegue ler o `google_place_id` da tabela para buscar o snapshot por conta própria: o grant
+ * de coluna do Q-021 cortou o SELECT direto.
  */
 export async function fetchDestinationProspects(slug: string): Promise<ProspectCard[]> {
   const { data, error } = await supabase.rpc("destination_prospect_cards", {
@@ -47,6 +53,8 @@ export async function fetchDestinationProspects(slug: string): Promise<ProspectC
     latitude: Number(row.latitude),
     longitude: Number(row.longitude),
     distance_km: row.distance_km == null ? null : Number(row.distance_km),
+    google_rating: row.google_rating == null ? null : Number(row.google_rating),
+    google_rating_count: row.google_rating_count ?? 0,
     amenities: Array.isArray(row.amenities) ? (row.amenities as string[]) : [],
   })) as ProspectCard[];
 }
@@ -86,7 +94,7 @@ export async function fetchDestinationUnits(destination: {
       id, capacity, is_active,
       location:location!inner(
         id, slug, name, address, latitude, longitude,
-        review_avg, review_count, photos, is_listed, deleted_at,
+        review_avg, review_count, google_place_id, photos, is_listed, deleted_at,
         company:company!inner(slug, name, status),
         amenities:location_amenity(amenity_code)
       ),
@@ -118,10 +126,18 @@ export async function fetchDestinationUnits(destination: {
         })
       : { data: [] };
 
-  return buildStaticUnits(
-    (rows ?? []) as unknown as UnitRow[],
-    (proximity ?? []) as unknown as ProximityRow[],
-  );
+  // Terceira leitura, a nota do Google, uma consulta para a página inteira. Entra aqui e não
+  // num hook porque o selo tem que sair no HTML do build (§6 e §8 de avaliacoes-google.md):
+  // até então o card pré-renderizado saía sem selo nenhum na unidade sem avaliação Movepark,
+  // e só ganhava um depois que a busca do cliente respondia. Falhar aqui não pode custar a
+  // lista: sem nota o card volta a ser o de antes.
+  const unitRows = (rows ?? []) as unknown as UnitRow[];
+  const placeIds = unitRows
+    .map((r) => r.location?.google_place_id ?? null)
+    .filter((id): id is string => !!id);
+  const google = await fetchGoogleRatings(placeIds).catch(() => []);
+
+  return buildStaticUnits(unitRows, (proximity ?? []) as unknown as ProximityRow[], google);
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
