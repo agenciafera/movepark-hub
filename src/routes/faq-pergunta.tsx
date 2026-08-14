@@ -6,21 +6,42 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { PostBody } from "@/features/blog/PostBody";
 import { formatUpdated } from "@/features/content/types";
 import { metaDescriptionFrom } from "@/features/faqs/faqIndex.logic";
+import {
+  aeroportoEmProsa,
+  introDaPergunta,
+  keywordDoTitulo,
+  shortSemCodigo,
+  type FaqPrecoContexto,
+} from "@/features/faqs/faqPagina.logic";
 import type { FaqPageData } from "@/features/faqs/api";
+import { durationLabel } from "@/features/price-index/priceIndex.logic";
+import { formatBRL } from "@/lib/format";
 import { breadcrumbSchema, faqSchema } from "@/lib/jsonld";
 
 const SITE_URL = "https://hub.movepark.co";
 
+/** O que o loader entrega: a pergunta, as relacionadas e o contexto de preço. */
+export type FaqPerguntaData = (FaqPageData & { precos: FaqPrecoContexto }) | null;
+
+/** O que conferir antes de reservar: vale pra qualquer aeroporto, por isso é fixo. */
+const CHECKLIST = [
+  "Vaga coberta ou descoberta: a coberta protege de sol e chuva, a descoberta costuma ter a menor diária.",
+  "Traslado até o terminal: confirme se está incluído e de quanto em quanto tempo sai.",
+  "Distância e tempo até o embarque: estão na página de cada estacionamento.",
+  "Cancelamento e tolerância de horário: a política aparece antes de fechar a reserva.",
+];
+
 /**
  * Página de uma pergunta do FAQ (/faq/<slug>), no formato answer-first: a
- * resposta curta abre a página, o corpo expandido (quando existe) aprofunda.
+ * resposta curta abre a página e as seções de contexto aprofundam com dado real
+ * (preços do motor, contagem de parceiros), nunca com promessa vazia.
  *
- * Cada pergunta com URL própria é uma unidade citável: buscador ranqueia a
- * long-tail e o agente de IA cita o endereço exato em vez de "o FAQ do site".
- * Pré-renderizada no build (loader + getStaticPaths em routes.tsx).
+ * Cada pergunta com URL própria é uma unidade citável, e a palavra-chave de
+ * tráfego de aeroporto ("estacionamento aeroporto guarulhos") sai no title e no
+ * primeiro parágrafo. Pré-renderizada no build (loader + getStaticPaths).
  */
 export default function FaqPerguntaPage() {
-  const data = useLoaderData() as FaqPageData | null;
+  const data = useLoaderData() as FaqPerguntaData;
 
   if (!data) {
     return (
@@ -38,15 +59,22 @@ export default function FaqPerguntaPage() {
     );
   }
 
-  const { faq, related } = data;
+  const { faq, related, precos } = data;
   const destino = faq.destination;
-  const destinoNome = destino ? (destino.short_name ?? destino.name) : null;
+  const destinoCurto = destino ? shortSemCodigo(destino.short_name, destino.name) : null;
   const canonical = `${SITE_URL}/faq/${faq.slug}`;
-  const description = metaDescriptionFrom(faq.answer);
-  const contexto = destinoNome ?? faq.category?.label ?? "Geral";
+  const keyword = keywordDoTitulo(destino);
+  const intro = introDaPergunta(destino);
+  const title = `${faq.question} · ${keyword} | Movepark`;
+  const description = `${keyword}: ${metaDescriptionFrom(faq.answer, 120)}`;
+  const contexto = destino ? (destino.short_name ?? destino.name) : (faq.category?.label ?? "Geral");
 
-  // Um único FAQPage por página (ADR-002), aqui com uma pergunta só. O
-  // dateModified diz ao leitor de máquina quando a resposta foi revisada.
+  const precoDestino = precos?.kind === "destino" ? precos.destino : null;
+  const precoRede = precos?.kind === "rede" ? precos.rede : null;
+  const diaria1 = precoDestino?.byDuration.find((d) => d.days === 1) ?? null;
+
+  // Um único FAQPage por página (ADR-002), com a resposta idêntica à visível na
+  // "Resposta rápida". O dateModified diz quando a resposta foi revisada.
   const schema = {
     ...faqSchema([{ question: faq.question, answer: faq.answer }]),
     dateModified: faq.updated_at,
@@ -60,11 +88,11 @@ export default function FaqPerguntaPage() {
   return (
     <>
       <Helmet>
-        <title>{`${faq.question} | Movepark`}</title>
+        <title>{title}</title>
         <meta name="description" content={description} />
         <link rel="canonical" href={canonical} />
         <meta property="og:type" content="article" />
-        <meta property="og:title" content={`${faq.question} | Movepark`} />
+        <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
         <script type="application/ld+json">{JSON.stringify(schema)}</script>
@@ -99,7 +127,10 @@ export default function FaqPerguntaPage() {
 
         <header>
           <h1 className="text-balance text-display-xl text-ink">{faq.question}</h1>
-          <p className="mt-3 text-caption-sm text-muted">
+          {/* Primeiro parágrafo da página: é aqui que a palavra-chave de tráfego
+              de aeroporto aparece em texto corrido. */}
+          <p className="mt-3 text-pretty text-body-md text-muted">{intro}</p>
+          <p className="mt-2 text-caption-sm text-muted">
             Atualizado em{" "}
             <time dateTime={faq.updated_at}>{formatUpdated(faq.updated_at)}</time>
           </p>
@@ -121,23 +152,122 @@ export default function FaqPerguntaPage() {
           </section>
         )}
 
-        {/* CTA por escopo: pergunta de destino leva pro destino; geral, pra busca. */}
-        <div className="mt-8 flex flex-wrap items-center gap-4">
+        {/* Quanto custa: dado real do índice de preços (motor de reservas), o
+            mesmo publicado em /precos. Sem dado, a seção não existe (ADR-009:
+            nada de número inventado num HTML congelado). */}
+        {destino && precoDestino && precoDestino.byDuration.length > 0 && (
+          <section className="mt-8">
+            <h2 className="text-display-sm text-ink">
+              Quanto custa estacionar no {aeroportoEmProsa(destino)}
+            </h2>
+            <p className="mt-2 text-body-md text-body">
+              {diaria1
+                ? `A diária nos estacionamentos parceiros perto do ${aeroportoEmProsa(destino)} começa em ${formatBRL(diaria1.from)}, e o valor por dia cai conforme a estadia.`
+                : `O valor por dia cai conforme a estadia nos estacionamentos parceiros perto do ${aeroportoEmProsa(destino)}.`}{" "}
+              Os preços saem do motor de reservas, os mesmos do checkout.
+            </p>
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full min-w-[420px] text-left text-body-sm">
+                <thead>
+                  <tr className="border-b border-hairline text-muted">
+                    <th className="py-2 pr-4 font-medium">Período</th>
+                    <th className="py-2 pr-4 font-medium">Total a partir de</th>
+                    <th className="py-2 font-medium">Por dia</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {precoDestino.byDuration.map((d) => (
+                    <tr key={d.days} className="border-b border-hairline-soft">
+                      <td className="py-2 pr-4 text-ink">{durationLabel(d.days)}</td>
+                      <td className="py-2 pr-4 text-ink">{formatBRL(d.from)}</td>
+                      <td className="py-2 text-body">{formatBRL(d.fromPerDay)}/dia</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-3 text-body-sm text-muted">
+              {precoDestino.unitCount}{" "}
+              {precoDestino.unitCount === 1 ? "estacionamento" : "estacionamentos"} de{" "}
+              {precoDestino.partnerCount}{" "}
+              {precoDestino.partnerCount === 1 ? "parceiro" : "parceiros"} no comparativo.{" "}
+              <Link
+                to={`/precos/${precoDestino.slug}`}
+                className="font-medium text-mp-indigo underline-offset-2 hover:underline"
+              >
+                Ver a tabela completa de preços
+              </Link>
+            </p>
+          </section>
+        )}
+
+        {/* Versão de rede pras perguntas gerais: números da plataforma inteira. */}
+        {!destino && precoRede && (
+          <section className="mt-8">
+            <h2 className="text-display-sm text-ink">
+              Estacionamento de aeroporto com a Movepark
+            </h2>
+            <p className="mt-2 text-body-md text-body">
+              São {precoRede.unitCount} estacionamentos comparados em{" "}
+              {precoRede.destinationCount} destinos
+              {precoRede.minDailyFrom != null
+                ? `, com diária a partir de ${formatBRL(precoRede.minDailyFrom)}`
+                : ""}
+              . O preço mostrado é o preço final da reserva, sem taxa na chegada.{" "}
+              <Link
+                to="/precos"
+                className="font-medium text-mp-indigo underline-offset-2 hover:underline"
+              >
+                Ver o índice de preços
+              </Link>
+            </p>
+          </section>
+        )}
+
+        {/* Como reservar: o passo a passo da plataforma, em um parágrafo. */}
+        <section className="mt-8">
+          <h2 className="text-display-sm text-ink">Como reservar com a Movepark</h2>
+          <p className="mt-2 text-body-md text-body">
+            Você busca pelo aeroporto, compara preço, tipo de vaga e avaliação dos
+            estacionamentos credenciados e reserva online, com o valor fechado antes de pagar.
+            Na maioria das unidades o traslado até o terminal está incluído.
+          </p>
+        </section>
+
+        {/* Checklist no padrão da página do concorrente: o que olhar antes de decidir. */}
+        <section className="mt-8">
+          <h2 className="text-display-sm text-ink">O que conferir antes de reservar</h2>
+          <ul className="mt-3 space-y-2">
+            {CHECKLIST.map((item) => (
+              <li key={item} className="flex items-start gap-2 text-body-md text-body">
+                <CaretRight className="mt-1 h-4 w-4 shrink-0 text-mp-primary" aria-hidden />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* Dois CTAs, como na referência: reservar e comparar preços. */}
+        <div className="mt-8 flex flex-wrap items-center gap-3">
           {destino ? (
-            <Button asChild>
-              <Link to={`/destinos/${destino.slug}`}>Estacionamentos em {destinoNome}</Link>
-            </Button>
+            <>
+              <Button asChild>
+                <Link to={`/destinos/${destino.slug}`}>Reservar vaga em {destinoCurto}</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to={`/precos/${destino.slug}`}>Comparar preços em {destinoCurto}</Link>
+              </Button>
+            </>
           ) : (
-            <Button asChild>
-              <Link to="/search">Buscar estacionamento</Link>
-            </Button>
+            <>
+              <Button asChild>
+                <Link to="/search">Buscar estacionamento</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/precos">Comparar preços</Link>
+              </Button>
+            </>
           )}
-          <Link
-            to="/faq"
-            className="text-body-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
-          >
-            Todas as perguntas frequentes
-          </Link>
         </div>
 
         {related.length > 0 && (
@@ -161,6 +291,15 @@ export default function FaqPerguntaPage() {
             </ul>
           </section>
         )}
+
+        <div className="mt-8">
+          <Link
+            to="/faq"
+            className="text-body-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
+          >
+            Todas as perguntas frequentes
+          </Link>
+        </div>
       </article>
     </>
   );

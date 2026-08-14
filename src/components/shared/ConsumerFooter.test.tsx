@@ -21,4 +21,14 @@ describe("ConsumerFooter — links", () => {
 
     expect(screen.getByRole("link", { name: "Blog" })).toHaveAttribute("href", "/blog/");
   });
+
+  it("a chamada pro FAQ leva à central de perguntas", () => {
+    renderWithProviders(<ConsumerFooter />);
+
+    expect(screen.getByText("Dúvidas sobre estacionamento de aeroporto?")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Ver perguntas frequentes" })).toHaveAttribute(
+      "href",
+      "/faq",
+    );
+  });
 });

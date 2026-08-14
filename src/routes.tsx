@@ -6,7 +6,9 @@ import { supabase } from "@/lib/supabase";
 import { fetchDestinationProspects, fetchDestinationUnits } from "@/features/destinations/api";
 import { fetchListing } from "@/features/listing/api";
 import { fetchFaqBySlug, fetchFaqCombined, fetchFaqIndex } from "@/features/faqs/api";
+import type { FaqPrecoContexto } from "@/features/faqs/faqPagina.logic";
 import { fetchPriceIndex } from "@/features/price-index/api";
+import { destinationSummary, overallStats } from "@/features/price-index/priceIndex.logic";
 import { filterPosts, pageSlice, totalPages } from "@/features/blog/listing.logic";
 
 import { AppProviders } from "@/components/shared/AppProviders";
@@ -212,7 +214,15 @@ async function estacionamentoMapeadoLoader({ params }: LoaderFunctionArgs) {
   const prospect = prospects.find((p) => p.slug === params.slug);
   if (!prospect) return null;
 
-  return { destination, prospect };
+  // FAQ do AEROPORTO, nunca da unidade: lote mapeado não tem FAQ própria por
+  // desenho (ADR-010), mas as perguntas do destino (traslado, segurança,
+  // gabarito) são fato do aeroporto e valem aqui. Só escopo `destination`: a
+  // global fala de reserva pela Movepark, que esta página não oferece.
+  const faqs = await fetchFaqCombined({ destinationId: destination.id as string })
+    .then((items) => items.filter((f) => f.scope === "destination"))
+    .catch(() => null);
+
+  return { destination, prospect, faqs };
 }
 
 async function fetchAllProspectPaths(): Promise<string[]> {
@@ -405,9 +415,53 @@ async function faqIndexLoader() {
   return fetchFaqIndex().catch(() => []);
 }
 
-/** Página da pergunta (/faq/<slug>). `null` vira estado de não encontrada. */
+/**
+ * Página da pergunta (/faq/<slug>). `null` vira estado de não encontrada.
+ *
+ * Junto da pergunta vai um contexto COMPACTO de preço (índice de preços do
+ * motor): a página mostra "quanto custa estacionar no aeroporto X" com dado
+ * real. Compacto porque o loader é serializado no HTML de cada uma das ~40
+ * páginas; mandar o índice inteiro multiplicaria o peso à toa.
+ */
 async function faqPerguntaLoader({ params }: LoaderFunctionArgs) {
-  return fetchFaqBySlug(params.slug!).catch(() => null);
+  const data = await fetchFaqBySlug(params.slug!).catch(() => null);
+  if (!data) return null;
+
+  const index = await fetchPriceIndex().catch(() => null);
+  let precos: FaqPrecoContexto = null;
+  if (index) {
+    if (data.faq.destination?.slug) {
+      const dest = index.destinations.find((d) => d.slug === data.faq.destination?.slug);
+      if (dest) {
+        const resumo = destinationSummary(dest, index.days);
+        precos = {
+          kind: "destino",
+          destino: {
+            slug: dest.slug,
+            unitCount: resumo.unitCount,
+            partnerCount: resumo.partnerCount,
+            byDuration: resumo.byDuration.map((d) => ({
+              days: d.days,
+              from: d.from,
+              fromPerDay: d.fromPerDay,
+            })),
+          },
+        };
+      }
+    } else {
+      const stats = overallStats(index);
+      precos = {
+        kind: "rede",
+        rede: {
+          destinationCount: stats.destinationCount,
+          unitCount: stats.unitCount,
+          minDailyFrom: stats.minDailyFrom,
+        },
+      };
+    }
+  }
+
+  return { ...data, precos };
 }
 
 /** Uma URL por pergunta publicada com slug (global e destination). */
@@ -429,7 +483,21 @@ async function fetchAllFaqPaths(): Promise<string[]> {
 async function precosLoader(): Promise<PrecosIndexData | null> {
   const data = await fetchPriceIndex().catch(() => null);
   if (!data || data.destinations.length === 0) return null;
-  return { data, generatedAt: new Date().toISOString() };
+  // Aeroportos publicados sem parceiro precificado: entram numa seção própria,
+  // linkando a página de destino (que mostra os estacionamentos mapeados).
+  const comPreco = new Set(data.destinations.map((d) => d.slug));
+  const { data: aeroportos } = await supabase
+    .from("destination")
+    .select("slug, name, short_name")
+    .eq("is_published", true)
+    .eq("type", "airport")
+    .order("sort_order");
+  const semPreco = (aeroportos ?? []).filter((a) => !comPreco.has(a.slug as string)) as {
+    slug: string;
+    name: string;
+    short_name: string | null;
+  }[];
+  return { data, semPreco, generatedAt: new Date().toISOString() };
 }
 
 /**

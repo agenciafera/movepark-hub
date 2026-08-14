@@ -155,8 +155,15 @@ com `CHECK` de consistência por escopo. RLS: leitura pública de FAQ publicada;
 `destination` é do `hub_admin`. Migration `20260621000000_faq_destination_scope.sql`.
 
 **Páginas por pergunta (ago/2026):** toda FAQ `global`/`destination` publicada tem URL própria em
-**`/faq/<slug>`** (answer-first: resposta rápida + `body_md` opcional + relacionadas + CTA do
-destino), pré-renderizada no build com `FAQPage` + `BreadcrumbList` no HTML. O `slug` é preenchido
+**`/faq/<slug>`** (answer-first), pré-renderizada no build com `FAQPage` + `BreadcrumbList` no HTML.
+A estrutura da página segue o padrão de mercado e vai além: **palavra-chave de tráfego de
+aeroporto no title e no primeiro parágrafo** ("estacionamento aeroporto guarulhos", helpers em
+`faqPagina.logic.ts`), resposta rápida, `body_md` opcional, seção **"Quanto custa estacionar"**
+com a tabela 1/7/15/30 diárias do índice de preços (dado do motor, o mesmo de `/precos/<slug>`),
+"Como reservar com a Movepark", checklist do que conferir e **dois CTAs** (reservar no destino +
+comparar preços). A página do lote mapeado (`/estacionamentos/*`) mostra o FAQ do **aeroporto**
+(escopo `destination`, nunca global: a global fala de reserva pela Movepark, que o lote não
+oferece), com o mesmo `FAQPage` espelhando o visível. O `slug` é preenchido
 por trigger no insert (`faq_slug_autofill`; FAQ de destino ganha o nome do aeroporto no slug) e é
 **contrato de URL**: não muda quando a pergunta é editada. Migrations
 `20260814145144_faq_slug_pages.sql` + `20260814145303_faq_slug_destination_suffix.sql`. O hub

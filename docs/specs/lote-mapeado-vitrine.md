@@ -304,7 +304,7 @@ O produto desta página não é a reserva, é **prova de demanda**: em 60 dias d
 - **Teste de componente é entregável:** renderizar a single de um `prospect_location` e afirmar que não existe nenhum elemento com ação de reserva na árvore. É o que impede alguém de reintroduzir o botão numa refatoração de layout.
 - O "me avise quando abrir" grava **evento em GA4/Posthog**, não em tabela nova. É instrumentação, não mecanismo. Vira tabela se provar valor.
 - Mapa estático do Google é licenciado para exibição; foto do Places **não pode ser cacheada nem re-hospedada**. Não confundir os dois.
-- **Nada de FAQ nesta página:** `faq.location_id` aponta para `location` e não existe para prospect. É por desenho, não é falta.
+- **Nada de FAQ da unidade nesta página:** `faq.location_id` aponta para `location` e não existe para prospect. É por desenho, não é falta. Desde ago/2026 a página mostra o **FAQ do aeroporto** (escopo `destination`, via loader + `get-faq`): traslado, segurança e gabarito são fato do destino e não prometem transação deste lote. A `global` fica fora, porque fala de reserva pela Movepark.
 - Se `converted_at` não for nulo: **301 para a `location` que nasceu dela.** A URL antiga é justamente a que tinha ranking, e é o motivo de todo este épico existir.
 
 ---

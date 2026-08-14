@@ -168,4 +168,50 @@ describe("Página do lote mapeado (E0.17-e · ADR-010)", () => {
       "https://hub.movepark.co/estacionamentos/aeroporto-internacional-do-recife-guararapes/talentos-park-aeroporto-recife",
     );
   });
+
+  /**
+   * FAQ do AEROPORTO (escopo destination) na página do lote: fato do destino, sem
+   * promessa de transação deste lote. A resposta fica no DOM mesmo fechada
+   * (forceMount) e o FAQPage espelha o visível.
+   */
+  it("mostra o FAQ do aeroporto quando o loader entrega, com FAQPage espelhando", async () => {
+    loaderData.mockReturnValue({
+      destination: dest(),
+      prospect: prospect(),
+      faqs: [
+        {
+          id: "fd1",
+          scope: "destination",
+          location_id: null,
+          destination_id: "d1",
+          question: "Tem traslado no Recife?",
+          answer: "Os parceiros credenciados levam até o terminal.",
+          sort_order: 0,
+          category: null,
+          slug: "tem-traslado-no-recife",
+        },
+      ],
+    });
+    render();
+
+    expect(
+      screen.getByRole("heading", { name: /Perguntas frequentes sobre estacionar perto do Recife/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Os parceiros credenciados levam até o terminal."),
+    ).toBeInTheDocument();
+
+    await waitFor(() => {
+      const blocos = [...document.querySelectorAll('script[type="application/ld+json"]')].map(
+        (s) => JSON.parse(s.textContent ?? "{}"),
+      );
+      const faqPage = blocos.find((b) => b["@type"] === "FAQPage");
+      expect(faqPage?.mainEntity?.[0]?.name).toBe("Tem traslado no Recife?");
+    });
+  });
+
+  it("sem FAQ do destino, a seção não existe", () => {
+    render();
+    expect(screen.queryByRole("heading", { name: /Perguntas frequentes/ })).toBeNull();
+  });
 });

@@ -39,6 +39,24 @@ const linkClass = "text-body-sm text-muted no-underline hover:text-ink";
 export function ConsumerFooter() {
   return (
     <footer className="border-t border-hairline bg-surface-soft">
+      {/* Chamada pro FAQ: a central responde antes de o suporte precisar responder,
+          e é porta de entrada pras páginas por pergunta (/faq/<slug>). */}
+      <div className="border-b border-hairline-soft">
+        <div className="mx-auto flex w-full max-w-[1280px] flex-col items-start justify-between gap-4 px-6 py-8 tablet:flex-row tablet:items-center desktop:px-8">
+          <div>
+            <p className="text-title-md text-ink">Dúvidas sobre estacionamento de aeroporto?</p>
+            <p className="mt-1 text-body-sm text-muted">
+              Preços, traslado, cancelamento e check-in: as respostas estão na central.
+            </p>
+          </div>
+          <Link
+            to="/faq"
+            className="inline-flex shrink-0 items-center rounded-md border border-hairline px-4 py-2 text-body-sm font-medium text-ink no-underline transition hover:border-mp-primary hover:text-mp-primary"
+          >
+            Ver perguntas frequentes
+          </Link>
+        </div>
+      </div>
       <div className="mx-auto grid w-full max-w-[1280px] grid-cols-1 gap-8 px-6 py-12 tablet:grid-cols-3 desktop:grid-cols-3 desktop:px-8">
         {groups.map((g) => (
           <div key={g.title} className="space-y-3">

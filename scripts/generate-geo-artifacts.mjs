@@ -124,50 +124,120 @@ function relacionadas(atual, max = 4) {
 }
 
 // ---------------------------------------------------------------------------
-// faq/<slug>.md
+// faq/<slug>.md — espelha a página React (answer-first + palavra-chave de
+// tráfego de aeroporto no título e no primeiro parágrafo + preços + 2 CTAs).
+// Fica numa função porque precisa dos helpers de preço declarados mais abaixo;
+// a chamada acontece depois deles.
 // ---------------------------------------------------------------------------
-fs.mkdirSync(path.join(DIST, "faq"), { recursive: true });
-
 let paginas = 0;
-for (const f of faqs) {
-  if (!f.slug) continue;
-  const rel = relacionadas(f);
-  const destino = f.scope === "destination" ? nomeDestino(f) : null;
 
-  const linhas = [
-    "---",
-    `title: "${f.question.replaceAll('"', "'")} | Movepark"`,
-    `canonical: ${urlPergunta(f)}`,
-    `updated: ${String(f.updated_at).slice(0, 10)}`,
-    ...(destino ? [`destino: ${destino}`] : []),
-    "---",
-    "",
-    `# ${f.question}`,
-    "",
-    "## Resposta rápida",
-    "",
-    f.answer,
-    "",
-  ];
+/** "Guarulhos (GRU)" vira "Guarulhos" (mesma regra de faqPagina.logic.ts). */
+const semCodigo = (shortName, name) =>
+  (shortName ?? name).replace(/\s*\([^)]*\)\s*$/, "").trim();
 
-  if (f.body_md) linhas.push(f.body_md, "");
+const keywordTitulo = (dest) => {
+  if (!dest) return "Estacionamento de Aeroporto";
+  const curto = semCodigo(dest.short_name, dest.name);
+  return dest.name.startsWith("Aeroporto")
+    ? `Estacionamento Aeroporto ${curto}`
+    : `Estacionamento ${curto}`;
+};
 
-  if (rel.length > 0) {
-    linhas.push("## Perguntas relacionadas", "");
-    for (const r of rel) linhas.push(`- [${r.question}](${urlPergunta(r)})`);
-    linhas.push("");
+const aeroportoProsa = (dest) =>
+  dest.name.startsWith("Aeroporto") && dest.name.length <= 28
+    ? dest.name
+    : `Aeroporto de ${semCodigo(dest.short_name, dest.name)}`;
+
+const CHECKLIST_FAQ = [
+  "Vaga coberta ou descoberta: a coberta protege de sol e chuva, a descoberta costuma ter a menor diária.",
+  "Traslado até o terminal: confirme se está incluído e de quanto em quanto tempo sai.",
+  "Distância e tempo até o embarque: estão na página de cada estacionamento.",
+  "Cancelamento e tolerância de horário: a política aparece antes de fechar a reserva.",
+];
+
+function gerarFaqPaginasMd(precoPorSlug, dias) {
+  fs.mkdirSync(path.join(DIST, "faq"), { recursive: true });
+
+  for (const f of faqs) {
+    if (!f.slug) continue;
+    const rel = relacionadas(f);
+    const dest = f.scope === "destination" ? f.destination : null;
+    const keyword = keywordTitulo(dest);
+    const intro = dest
+      ? `Pergunta comum de quem procura estacionamento no ${aeroportoProsa(dest)} (${dest.code}). A resposta curta vem primeiro; preços e o passo a passo estão logo abaixo.`
+      : "Pergunta comum de quem procura estacionamento de aeroporto com reserva online. A resposta curta vem primeiro; os detalhes estão logo abaixo.";
+
+    const linhas = [
+      "---",
+      `title: "${f.question.replaceAll('"', "'")} · ${keyword} | Movepark"`,
+      `canonical: ${urlPergunta(f)}`,
+      `updated: ${String(f.updated_at).slice(0, 10)}`,
+      ...(dest ? [`destino: ${nomeDestino(f)}`] : []),
+      "---",
+      "",
+      `# ${f.question}`,
+      "",
+      intro,
+      "",
+      "## Resposta rápida",
+      "",
+      f.answer,
+      "",
+    ];
+
+    if (f.body_md) linhas.push(f.body_md, "");
+
+    // Quanto custa: mesma tabela compacta da página, com dado do motor.
+    const destPreco = dest ? precoPorSlug.get(dest.slug) : null;
+    if (dest && destPreco) {
+      const resumo = resumoPorDuracao(destPreco, dias);
+      if (resumo.length > 0) {
+        linhas.push(
+          `## Quanto custa estacionar no ${aeroportoProsa(dest)}`,
+          "",
+          "Preços do motor de reservas, os mesmos do checkout. O valor por dia cai conforme a estadia.",
+          "",
+          "| Período | Total a partir de | Por dia |",
+          "| --- | --- | --- |",
+        );
+        for (const r of resumo) {
+          linhas.push(`| ${durLabel(r.dias)} | ${brl(r.total)} | ${brl(r.total / r.dias)}/dia |`);
+        }
+        linhas.push("", `Tabela completa: ${SITE_URL}/precos/${dest.slug}`, "");
+      }
+    }
+
+    linhas.push(
+      "## Como reservar com a Movepark",
+      "",
+      "Você busca pelo aeroporto, compara preço, tipo de vaga e avaliação dos estacionamentos credenciados e reserva online, com o valor fechado antes de pagar. Na maioria das unidades o traslado até o terminal está incluído.",
+      "",
+      "## O que conferir antes de reservar",
+      "",
+      ...CHECKLIST_FAQ.map((item) => `- ${item}`),
+      "",
+    );
+
+    if (rel.length > 0) {
+      linhas.push("## Perguntas relacionadas", "");
+      for (const r of rel) linhas.push(`- [${r.question}](${urlPergunta(r)})`);
+      linhas.push("");
+    }
+
+    linhas.push(
+      dest
+        ? `Reservar vaga: ${SITE_URL}/destinos/${dest.slug}`
+        : `Buscar estacionamento: ${SITE_URL}/search`,
+      dest
+        ? `Comparar preços: ${SITE_URL}/precos/${dest.slug}`
+        : `Comparar preços: ${SITE_URL}/precos`,
+      `Todas as perguntas: ${SITE_URL}/faq`,
+      "",
+    );
+
+    fs.writeFileSync(path.join(DIST, "faq", `${f.slug}.md`), linhas.join("\n"));
+    paginas += 1;
   }
-
-  linhas.push(
-    destino && f.destination?.slug
-      ? `Estacionamentos em ${destino}: ${SITE_URL}/destinos/${f.destination.slug}`
-      : `Buscar estacionamento: ${SITE_URL}/search`,
-    `Todas as perguntas: ${SITE_URL}/faq`,
-    "",
-  );
-
-  fs.writeFileSync(path.join(DIST, "faq", `${f.slug}.md`), linhas.join("\n"));
-  paginas += 1;
 }
 
 // ---------------------------------------------------------------------------
@@ -262,6 +332,10 @@ function tabelaMarkdown(dest, dias) {
 const diasIndice = priceIndex?.days ?? [1, 7, 15, 30];
 const destinosComPreco = priceIndex?.destinations ?? [];
 
+// As páginas de FAQ em Markdown usam os helpers de preço acima; geradas aqui,
+// depois que tudo está declarado.
+gerarFaqPaginasMd(new Map(destinosComPreco.map((d) => [d.slug, d])), diasIndice);
+
 fs.mkdirSync(path.join(DIST, "precos"), { recursive: true });
 
 for (const dest of destinosComPreco) {
@@ -296,6 +370,49 @@ for (const dest of destinosComPreco) {
   fs.writeFileSync(path.join(DIST, "precos", `${dest.slug}.md`), linhas.join("\n"));
 }
 
+/**
+ * Tabela do índice: top 5 vagas por destino, ordenadas pela diária avulsa,
+ * com 7 e 15 dias em R$/dia (mesmo corte editorial da página /precos).
+ */
+function tabelaTopMarkdown(dest, limit = 5) {
+  const unidades = [...unidadesCarro(dest)].sort((a, b) => {
+    for (const d of [1, 7, 15]) {
+      const ta = totalDe(a, d);
+      const tb = totalDe(b, d);
+      if (ta != null && tb != null) {
+        if (ta !== tb) return ta - tb;
+        continue;
+      }
+      if (ta != null) return -1;
+      if (tb != null) return 1;
+    }
+    return 0;
+  });
+  const linhas = [
+    "| Estacionamento | Diária avulsa | 7 dias (R$/dia) | 15 dias (R$/dia) |",
+    "| --- | --- | --- | --- |",
+  ];
+  for (const u of unidades.slice(0, limit)) {
+    const celula = (d) => {
+      const total = totalDe(u, d);
+      if (total == null) {
+        return u.min_stay_days != null && u.min_stay_days > d
+          ? `mín. ${u.min_stay_days} diárias`
+          : "ver na página";
+      }
+      return d === 1 ? brl(total) : `${brl(total / d)} (total ${brl(total)})`;
+    };
+    linhas.push(
+      `| ${u.company_name} (${u.parking_type_name}) · [reservar](${SITE_URL}/p/${u.company_slug}/${u.location_slug}/${u.parking_type_code}) | ${celula(1)} | ${celula(7)} | ${celula(15)} |`,
+    );
+  }
+  if (unidades.length > limit) {
+    const resto = unidades.length - limit;
+    linhas.push("", `Mais ${resto} ${resto === 1 ? "vaga" : "vagas"} na tabela completa.`);
+  }
+  return linhas;
+}
+
 {
   const linhas = [
     "---",
@@ -306,16 +423,24 @@ for (const dest of destinosComPreco) {
     "",
     "# Índice de preços de estacionamento",
     "",
-    "Quanto custa estacionar perto de cada aeroporto e terminal, no preço real de",
-    "reserva: diária, 7, 15 e 30 diárias, com o preço de balcão ao lado. Cada destino",
-    "tem página própria; a versão Markdown responde no mesmo endereço com o header",
-    "`Accept: text/markdown`.",
+    "Quanto custa estacionar perto de cada aeroporto, no preço real de reserva: uma",
+    "tabela por destino, ordenada pela diária mais baixa, com 7 e 15 dias em R$/dia.",
+    "Toda linha é um parceiro Movepark com reserva online. A tabela completa de cada",
+    "destino (com 30 diárias) vive em /precos/<slug>; a versão Markdown responde no",
+    "mesmo endereço com o header `Accept: text/markdown`.",
     "",
   ];
   for (const dest of destinosComPreco) {
-    linhas.push(`- [Preços em ${nomeCurto(dest)}](${SITE_URL}/precos/${dest.slug})`);
+    linhas.push(
+      `## ${nomeCurto(dest)}`,
+      "",
+      ...tabelaTopMarkdown(dest),
+      "",
+      `Tabela completa: ${SITE_URL}/precos/${dest.slug}`,
+      "",
+    );
   }
-  linhas.push("", `Conteúdo integral: ${SITE_URL}/llms-full.txt`, "");
+  linhas.push(`Conteúdo integral: ${SITE_URL}/llms-full.txt`, "");
   fs.writeFileSync(path.join(DIST, "precos.md"), linhas.join("\n"));
 }
 

@@ -5,7 +5,9 @@ import { MapPin } from "@phosphor-icons/react";
 import type { Destination, ProspectCard as ProspectCardData } from "@/types/domain";
 import { GoogleMapEmbed } from "@/components/shared/GoogleMapEmbed";
 import { Button } from "@/components/ui/button";
-import { breadcrumbSchema, parkingFacilitySchema } from "@/lib/jsonld";
+import type { FaqCombinedItem } from "@/features/faqs/api";
+import { FaqList } from "@/features/faqs/FaqList";
+import { breadcrumbSchema, faqSchema, parkingFacilitySchema } from "@/lib/jsonld";
 import { formatDistance } from "@/lib/format";
 import { trackEvent } from "@/lib/analytics";
 
@@ -14,6 +16,9 @@ const SITE_URL = "https://hub.movepark.co";
 export type EstacionamentoMapeadoLoaderData = {
   destination: Destination;
   prospect: ProspectCardData;
+  /** Só escopo `destination` (fato do aeroporto). A global fica fora: fala de
+   *  reserva pela Movepark, que esta página não oferece. */
+  faqs?: FaqCombinedItem[] | null;
 } | null;
 
 /**
@@ -33,8 +38,10 @@ export type EstacionamentoMapeadoLoaderData = {
  *   Analytics e vê referral da Movepark, já está recebendo de graça exatamente o que
  *   íamos cobrar 20%. A venda morre ali.
  * - **Telefone.** Q-021: guardado, nunca exibido. Nem na tela, nem no JSON-LD.
- * - **FAQ.** `faq.location_id` aponta para `location` e não existe para lote mapeado.
- *   É por desenho, não é falta.
+ * - **FAQ da unidade.** `faq.location_id` aponta para `location` e não existe para lote
+ *   mapeado. É por desenho, não é falta. O que a página mostra é o FAQ do AEROPORTO
+ *   (escopo `destination`): traslado, segurança e gabarito são fato do destino, valem
+ *   aqui e não prometem transação nenhuma deste lote.
  *
  * O produto desta página não é a reserva, é **prova de demanda**: em 60 dias dá para
  * chegar no dono com "sua página teve N visitas e M pessoas pediram para reservar aqui, e
@@ -47,6 +54,7 @@ export default function EstacionamentoMapeadoPage() {
   if (!data) return null;
 
   const { destination, prospect } = data;
+  const faqItems = data.faqs ?? [];
   const destinationLabel = destination.short_name ?? destination.name;
   const canonical = `${SITE_URL}/estacionamentos/${destination.slug}/${prospect.slug}`;
   const distancia = prospect.distance_km == null ? null : formatDistance(prospect.distance_km);
@@ -92,6 +100,14 @@ export default function EstacionamentoMapeadoPage() {
             ]),
           )}
         </script>
+        {/* Um único FAQPage, idêntico ao visível (ADR-002): só o FAQ do aeroporto. */}
+        {faqItems.length > 0 && (
+          <script type="application/ld+json">
+            {JSON.stringify(
+              faqSchema(faqItems.map((f) => ({ question: f.question, answer: f.answer }))),
+            )}
+          </script>
+        )}
       </Helmet>
 
       <article className="mx-auto w-full max-w-3xl px-4 py-8 tablet:py-12">
@@ -237,6 +253,17 @@ export default function EstacionamentoMapeadoPage() {
             </Button>
           </div>
         </section>
+
+        {/* FAQ do AEROPORTO (escopo destination): fato do destino, sem promessa
+            de transação deste lote. Cada pergunta linka a própria página. */}
+        {faqItems.length > 0 && (
+          <section className="mt-10">
+            <h2 className="mb-4 text-display-md text-ink">
+              Perguntas frequentes sobre estacionar perto do {destinationLabel}
+            </h2>
+            <FaqList items={faqItems} />
+          </section>
+        )}
 
         <div className="mt-10">
           <Link
