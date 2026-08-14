@@ -98,10 +98,15 @@ create table public.google_place_snapshot (
   reviews           jsonb not null default '[]'::jsonb,
   fetched_at        timestamptz not null default now(),
   fetch_error       text,
+  is_hidden         boolean not null default false,
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now()
 );
 ```
+
+`is_hidden` é o liga e desliga por unidade descrito em [§6](#6-exibição). Mora aqui, e não em
+`location`, porque a chave da tabela é o lugar: esconder por `place_id` já é esconder por
+unidade, sem coluna nova em duas tabelas.
 
 **A chave é o lugar, não o nosso registro.** `place_id` como PK faz três coisas de uma vez:
 serve `location` e `prospect_location` sem FK nova (o ADR-010 proíbe FK apontando para lote
@@ -133,7 +138,7 @@ alter table public.google_place_snapshot enable row level security;
 
 create policy google_place_snapshot_read on public.google_place_snapshot
   for select to anon, authenticated
-  using (fetched_at > now() - interval '30 days');
+  using (not is_hidden and fetched_at > now() - interval '30 days');
 
 create policy google_place_snapshot_write on public.google_place_snapshot
   for all to authenticated
