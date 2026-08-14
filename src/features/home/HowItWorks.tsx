@@ -82,8 +82,18 @@ function BookingCardMockup() {
       <div className="relative w-full max-w-[370px] overflow-hidden rounded-2xl border border-hairline bg-canvas shadow-tier">
         {/* Foto do estacionamento */}
         <div className="relative aspect-[16/8] overflow-hidden bg-surface-strong">
+          {/*
+            Imagem gerada, não foto de parceiro.
+
+            Aqui morava uma foto de lote real, que veio na importação do legado.
+            Na ficha da unidade uma foto dessas é legítima, porque descreve
+            aquele lugar; como ilustração do projeto na home, ela põe a marca de
+            um parceiro para explicar a Movepark, sem que ele tenha topado. O
+            risco é comercial antes de ser jurídico, e sobrou justo num parceiro
+            que o time decidiu não envolver agora.
+          */}
           <img
-            src="/Estacionamentos/vaga-coberta-estacionamento-aeroporto-guarulhos-aeroparking.webp"
+            src="/images/estacionamento-coberto-ilustracao.webp"
             alt=""
             aria-hidden="true"
             className="h-full w-full object-cover"
