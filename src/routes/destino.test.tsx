@@ -1,7 +1,10 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { http, HttpResponse } from "msw";
 import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { HelmetProvider } from "react-helmet-async";
-import { renderWithProviders } from "@/test/utils";
+import { mockAuth, mockSession, renderWithProviders } from "@/test/utils";
+import { server } from "@/test/msw/server";
 import DestinoPage from "@/routes/destino";
 import {
   useDestinationBySlug,
@@ -20,9 +23,17 @@ vi.mock("@/components/shared/MapEmbed", () => ({ MapEmbed: () => null }));
 // loader) e o do cliente (sem) rendem coisas diferentes, e é justamente o do SSG que o bug
 // da lista não pré-renderizada vivia.
 const loaderData = vi.fn(() => null as unknown);
+// `useNavigate` é espionado porque o favorito do anônimo termina numa navegação pro /login,
+// e a árvore de teste renderiza a página solta (sem rota de destino pra onde ir).
+const navigate = vi.fn();
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
-  return { ...actual, useLoaderData: () => loaderData(), useParams: vi.fn(() => ({ slug: "aeroporto-de-guarulhos" })) };
+  return {
+    ...actual,
+    useLoaderData: () => loaderData(),
+    useParams: vi.fn(() => ({ slug: "aeroporto-de-guarulhos" })),
+    useNavigate: () => navigate,
+  };
 });
 
 vi.mock("@/features/destinations/api", () => ({
@@ -66,12 +77,12 @@ function dest(overrides: Partial<Destination> = {}): Destination {
   } as Destination;
 }
 
-function render() {
+function render(opts?: { auth?: ReturnType<typeof mockAuth> }) {
   return renderWithProviders(
     <HelmetProvider>
       <DestinoPage />
     </HelmetProvider>,
-    { route: "/destinos/aeroporto-de-guarulhos" },
+    { route: "/destinos/aeroporto-de-guarulhos", auth: opts?.auth },
   );
 }
 
@@ -403,5 +414,91 @@ describe("lista de unidades no HTML do build", () => {
       expect(href).not.toContain("from=");
       expect(href).not.toContain("to=");
     }
+  });
+});
+
+// O coração do card é o MESMO componente da /search e da home, e por muito tempo o destino
+// passava `isSaved={false}` com um `onToggleSave` vazio: o botão aparecia, não salvava nada e
+// não levava o anônimo pro login. A chave `VITE_CONSUMER_ACCOUNTS` esconde o coração no
+// lançamento, mas ela volta, e quando voltar a divergência volta junto. Estes testes travam o
+// contrato nos DOIS blocos de card da página, que é onde a regressão nasce.
+describe("DestinoPage · favoritar (ligado no useSavedListings)", () => {
+  const SUPABASE_URL = "http://localhost:54321";
+
+  /** `useSearchResults` roda duas vezes na página: a lista (price_asc) e o bloco de mais bem
+   *  avaliados (rating_desc). Aqui cada uma responde a sua, pra os cards não se confundirem. */
+  function mockBuscas(lista: unknown[], topRated: unknown[] = []) {
+    vi.mocked(useSearchResults).mockImplementation(((filters: { sort?: string } | null) =>
+      filters?.sort === "rating_desc"
+        ? { data: { results: topRated }, isLoading: false }
+        : { data: { results: lista }, isLoading: false }) as never);
+  }
+
+  beforeEach(() => {
+    localStorage.clear();
+    navigate.mockClear();
+    loaderData.mockReturnValue(null);
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
+    mockBuscas([unidade()]);
+  });
+
+  it("anônimo: guarda a intenção e leva pro login, voltando pra esta página", async () => {
+    render();
+
+    await userEvent.click(screen.getByRole("button", { name: "Salvar nos favoritos" }));
+
+    // A intenção fica no localStorage e é migrada pra conta no login (migratePendingSaves).
+    expect(JSON.parse(localStorage.getItem("mp:saved") ?? "[]")).toEqual(["lpt1"]);
+    expect(navigate).toHaveBeenCalledWith(
+      `/login?next=${encodeURIComponent("/destinos/aeroporto-de-guarulhos")}`,
+    );
+  });
+
+  it("os dois blocos de card estão ligados, não só a lista", async () => {
+    mockBuscas([unidade()], [unidade({ id: "lpt-top" })]);
+
+    render();
+
+    const coracoes = screen.getAllByRole("button", { name: "Salvar nos favoritos" });
+    expect(coracoes).toHaveLength(2);
+    for (const botao of coracoes) await userEvent.click(botao);
+
+    // Cada card salva o SEU tipo de vaga: o do bloco curado e o da lista.
+    expect(new Set(JSON.parse(localStorage.getItem("mp:saved") ?? "[]"))).toEqual(
+      new Set(["lpt-top", "lpt1"]),
+    );
+  });
+
+  it("logado: o coração reflete o que já está salvo", async () => {
+    server.use(
+      http.get(`${SUPABASE_URL}/rest/v1/profile_saved`, () =>
+        HttpResponse.json([{ location_parking_type_id: "lpt1" }]),
+      ),
+    );
+
+    render({ auth: mockAuth({ session: mockSession("customer", { userId: "u1" }) }) });
+
+    expect(await screen.findByRole("button", { name: "Remover dos salvos" })).toBeInTheDocument();
+  });
+
+  it("logado: o clique grava em profile_saved, sem passar pelo login", async () => {
+    const gravados: unknown[] = [];
+    server.use(
+      http.get(`${SUPABASE_URL}/rest/v1/profile_saved`, () => HttpResponse.json([])),
+      http.post(`${SUPABASE_URL}/rest/v1/profile_saved`, async ({ request }) => {
+        gravados.push(await request.json());
+        return HttpResponse.json([], { status: 201 });
+      }),
+    );
+
+    render({ auth: mockAuth({ session: mockSession("customer", { userId: "u1" }) }) });
+
+    await userEvent.click(await screen.findByRole("button", { name: "Salvar nos favoritos" }));
+
+    await waitFor(() =>
+      expect(gravados).toEqual([{ profile_id: "u1", location_parking_type_id: "lpt1" }]),
+    );
+    expect(navigate).not.toHaveBeenCalled();
+    expect(localStorage.getItem("mp:saved")).toBeNull();
   });
 });
