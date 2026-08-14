@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       account_merge_log: {
@@ -1927,6 +1952,45 @@ export type Database = {
           sort_order?: number
           tier?: Database["public"]["Enums"]["fare_tier"]
           updated_at?: string
+        }
+        Relationships: []
+      }
+      google_place_snapshot: {
+        Row: {
+          created_at: string
+          fetch_error: string | null
+          fetched_at: string
+          is_hidden: boolean
+          maps_uri: string | null
+          place_id: string
+          rating: number | null
+          reviews: Json
+          updated_at: string
+          user_rating_count: number
+        }
+        Insert: {
+          created_at?: string
+          fetch_error?: string | null
+          fetched_at?: string
+          is_hidden?: boolean
+          maps_uri?: string | null
+          place_id: string
+          rating?: number | null
+          reviews?: Json
+          updated_at?: string
+          user_rating_count?: number
+        }
+        Update: {
+          created_at?: string
+          fetch_error?: string | null
+          fetched_at?: string
+          is_hidden?: boolean
+          maps_uri?: string | null
+          place_id?: string
+          rating?: number | null
+          reviews?: Json
+          updated_at?: string
+          user_rating_count?: number
         }
         Relationships: []
       }
@@ -5358,6 +5422,7 @@ export type Database = {
         Args: { p_content: string; p_slug: string }
         Returns: Json
       }
+      purge_google_place_snapshots: { Args: never; Returns: number }
       recompute_membership: {
         Args: { p_profile_id: string }
         Returns: undefined
@@ -5383,6 +5448,7 @@ export type Database = {
         Args: { p_location_id: string }
         Returns: undefined
       }
+      review_request_expected_key: { Args: never; Returns: string }
       set_booking_addons: {
         Args: { p_add_on_ids: string[]; p_code: string }
         Returns: Json
@@ -5697,6 +5763,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       booking_item_type: ["parking", "add_on"],
