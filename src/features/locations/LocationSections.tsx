@@ -318,18 +318,18 @@ export function LocationSections({
       </Section>
 
       <Section
-        title="Política de reserva"
-        description="As regras desta unidade que o cliente lê antes de reservar."
+        title="Observações da unidade"
+        description="Informação extra que o cliente lê no detalhe da unidade. Cancelamento e reembolso são regra fixa da Movepark, não deste campo."
       >
         {/* Rótulo escondido: o título da seção já nomeia o campo na tela, e
             repetir a palavra logo abaixo é ruído. O leitor de tela continua
             recebendo o label. */}
-        <Field label={<span className="sr-only">Política de reserva</span>} htmlFor="policy" wide>
+        <Field label={<span className="sr-only">Observações da unidade</span>} htmlFor="policy" wide>
           <Textarea
             id="policy"
             value={f.reservationPolicy}
             onChange={(e) => f.setReservationPolicy(e.target.value)}
-            placeholder="Ex.: Cancelamento grátis até 24h antes do check-in."
+            placeholder="Ex.: Chegue com 15 minutos de antecedência para o check-in no balcão."
           />
         </Field>
       </Section>

@@ -353,6 +353,12 @@ normal, mas não é uma sentença: dinheiro que chega atrasado é honrado ou dev
   usam o **fallback de 24h**. A Tarifa é **receita 100% Movepark** (split próprio pra Movepark, fora
   do repasse do parceiro), ver [payment-split.md](./payment-split.md). Regra completa das alterações
   (cancelar + trocar data/veículo) em [booking-modifications.md](./booking-modifications.md).
+- **`location.reservation_policy` não é a política (D-007, ✅):** é um texto livre da **unidade**,
+  exibido como adendo junto do bloco de cancelamento na página de detalhe
+  (`ListingKnowSection`, `src/routes/listing.tsx`). O detentor é a `location` (cada unidade tem o
+  seu), mas ele **não** define prazo nem regra de estorno: quem decide isso é a Tarifa, acima. Na
+  UI (`LocationSections.tsx`) o campo se chama "Observações da unidade", justamente para não se
+  passar por política.
 - **Estorno real (E0.3.2, ✅):** o cancelamento passa pela Edge **`cancel-booking`** (a verdade da
   elegibilidade é o servidor; o front só exibe). Ela autoriza **dono** (cliente) ou **staff**
   (hub_admin / operador da empresa), decide via `refundDecision({actor, fareCancelUntil, ...})` e,
