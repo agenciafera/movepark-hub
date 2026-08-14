@@ -419,14 +419,30 @@ onze combinações da tabela acima, pelos dois caminhos.
 
 ## 7. Testes & verificação
 
-- **deno** (`supabase/functions/mcp/mcp.test.ts`): protocolo (initialize/list/call), erros JSON-RPC,
-  filtro de escopo no parceiro, validação de `required`.
-- **e2e** (após deploy, `verify_jwt=false`): `initialize`/`tools/list`/`tools/call` em `mcp.movepark.co`
-  (consumidor) e `…/partner` com `Authorization: Bearer mp_test_…` (parceiro) — `tools/list` filtra por
-  escopo; sem chave → erro; tool fora de escopo → erro.
+Quatro camadas, e a divisão importa: as três primeiras rodam sem rede, então são gate de PR; a
+última fala com o ambiente publicado e só roda em `test:int`.
+
+| Arquivo | O que cobre |
+|---|---|
+| `mcp/mcp.test.ts` | protocolo (initialize/list/call), erros JSON-RPC, filtro de escopo, validação de `required`, e a higiene do `safeToolError` (§3) |
+| `mcp/resolver.test.ts` | a matriz de credencial: path declarado × `Authorization` × `X-API-Key`, com uma invariante sobre 120 combinações (nenhuma vira `manager` sem chave de plataforma) |
+| `mcp/dispatcher.test.ts` | o `handle()` HTTP com dependências injetadas: 401 byte a byte, trava de tipo de chave, gate de escopo, colisão de nome entre registros, e cada linha de auditoria |
+| `mcp/customer.logic.test.ts` | as tools de login e transacionais do consumidor, e quais exigem sessão |
+| `test/mcp/surfaces.int.test.ts` e `knowledge.int.test.ts` | contra o `mcp.movepark.co` publicado: handshake, gates de sessão e escopo, e a recuperação semântica |
+| `src/api-worker.contract.test.ts` | a borda: allowlist de superfície, freio por nome de tool, CORS e a página de docs |
+
+Conferido por mutação nas partes que decidem autorização: quebrar cada regra de propósito faz o
+teste correspondente falhar. Teste que passa sempre não protege nada.
 
 ## 8. Open points
 
 - [ ] Streaming/SSE + sessão (`Mcp-Session-Id`) — só se alguma tool virar long-running.
-- [ ] Aposentar o MCP n8n após o corte (atualizar `.mcp.json`).
+- [x] ~~Aposentar o MCP n8n~~. Feito: o `.mcp.json` hoje só declara `gemini-image`, e nenhum
+  runtime do repo aponta para o hostname público (a Edge `chat` fala com a Edge direto).
 - [ ] OAuth para o MCP parceiro (hoje é chave `mp_` no header) — avaliar em E4.1.
+- [ ] Vincular o `verify_login_otp` a quem pediu o código. Ele devolve `refresh_token` sem amarra
+  com o agente, e trocar por token de audiência curta exige mexer junto no `create_checkout_link`,
+  que recebe esse mesmo `refresh_token` como argumento obrigatório. Decisão de desenho do handoff,
+  em [agent-booking.md](./customer/agent-booking.md), não ajuste de uma linha.
+- [ ] Decidir se o parceiro passa a enxergar também as 12 tools públicas de leitura. Hoje ele perde
+  `search_parking` e `search_knowledge` na mesma conexão. Muda o `partner-card.json`.

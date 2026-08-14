@@ -38,6 +38,17 @@ Deno.serve(async (req: Request) => {
     { auth: { persistSession: false } },
   );
 
+  // A chave interna vem do Vault (mesma que o cron envia), como nas outras funções de cron.
+  //
+  // Esta era a única das doze sem gate: `verify_jwt = false` e o cron mandando a anon key, que é
+  // pública. Qualquer um disparava o envio. A idempotência por `review_request_sent_at` impedia
+  // mandar o mesmo e-mail duas vezes, então o que dava para fazer era antecipar o envio e queimar
+  // cota, com `limit` até 200 por chamada. Migration `20261021141500_review_request_key.sql`.
+  const { data: expected } = await admin.rpc("review_request_expected_key");
+  if (!expected || req.headers.get("x-review-request-key") !== expected) {
+    return json({ error: "unauthorized" }, 401);
+  }
+
   let limit = 50;
   try {
     const body = await req.json();

@@ -424,9 +424,39 @@ checklist próprio em **[mcp.md](./mcp.md)**.
   o vínculo (`*_assert_company_access`). O cliente nunca escolhe a empresa.
 - Menor privilégio: escopos mínimos por chave; `live`/`test` separados.
 - Revogação imediata (`revoked_at`) e expiração (`expires_at`); rotação sem downtime.
+- **A recusa não conta o estado da chave.** Ausente, inválida, revogada e expirada devolvem o mesmo
+  `401` (§10). O motivo vai para o log do Edge. Sem isso, quem acha uma chave vazada descobre de
+  graça se ela é real, num endpoint sem custo de tentativa.
 - Rate-limit + idempotência contra abuso e ret\-storms.
 - Auditoria via `api_request_log` (quem, o quê, quando) — base para antifraude/observabilidade (E4.1).
 - `hub_admin` pode listar/suportar chaves de qualquer empresa, mas **não** vê o segredo (só prefixo).
+
+### As Edges públicas que NÃO são a Public API
+
+`verify_jwt = false` quer dizer **chamável sem JWT**, e hoje 16 Edge Functions estão assim. Só três
+(`api`, `mcp`, `chat`) são superfície de produto; as outras são webhook de entrada, worker de cron
+ou endpoint do app. Elas não entram no OpenAPI de propósito, mas cada uma precisa de gate próprio,
+senão `verify_jwt = false` vira endpoint aberto. O levantamento de 13/08/2026:
+
+| Grupo | Funções | Como se protegem |
+|---|---|---|
+| Cron interno | `reconcile-confirmations`, `reconcile-refunds`, `refresh-recipients`, `review-request`, `wl-deliver`, `wl-price-mirror`, `wl-reconcile`, `wps-deliver` | Header `x-<nome>-key`, com o valor só no Vault e lido por RPC restrita a `service_role` |
+| Webhook de entrada | `pagarme-webhook` | Assinatura do gateway |
+| Hook do Auth | `send-whatsapp-otp` | Segredo do Send SMS Hook |
+| App do consumidor | `get-payment-config`, `redeem-checkout-handoff` | Segredo próprio, e o handoff é de uso único |
+
+**A `review-request` era a exceção, e foi fechada em 13/08/2026.** Ela não tinha gate nenhum: o cron
+a chamava com a anon key no `Authorization`, e anon key é pública por design, então qualquer um
+disparava o envio dos e-mails de avaliação. O estrago era limitado porque ela é idempotente por
+`booking.review_request_sent_at` (ninguém recebe o mesmo e-mail duas vezes), mas dava para antecipar
+o envio e queimar cota, com `limit` até 200 por chamada. Hoje ela segue o padrão das irmãs
+(migration `20261021141500_review_request_key.sql`). Medido depois do deploy: sem o header, 401; o
+cron legítimo, 200.
+
+> **Órfã conhecida:** `simulate-price` está publicada e responde em produção, mas **não tem
+> fonte no repositório** e ninguém no código a chama. É simulação de preço, então devolve dado
+> público e não PII, mas é código que roda sem poder ser revisado. Decidir entre despublicar ou
+> trazer o fonte de volta.
 
 ---
 
@@ -437,7 +467,13 @@ checklist próprio em **[mcp.md](./mcp.md)**.
 | pgTAP | RPCs `operator_*_api_key` (criação/rotação/revogação/escopos), guard de empresa, seed `api_scope` | `bun run test:db` |
 | Edge (`deno test`) | gateway: chave válida/ inválida/ revogada/ expirada, escopo presente/ ausente, 401/403/404/422, idempotência | `bun run test:edge` |
 | Componente (Vitest) | `/operator/api-keys`: criar mostra segredo 1x, revogar, gating de role (MSW) | `bun run test` |
+| Contrato da borda (Vitest) | `src/api-worker.contract.test.ts`: allowlist de superfície, freio por nome de tool, CORS, e a página de docs | `bun run test` |
+| Integração ao vivo (Vitest) | `test/api/public-api.int.test.ts` contra o `api.movepark.co` publicado: 401 estruturado com `request_id`, nada de dado antes de autenticar, e a recusa que **não** revela o estado da chave (§10) | `bun run test:int` |
 | Lint OpenAPI / drift | `openapi.yaml` válido e em sincronia com a superfície | CI (§12) |
+
+O `test:int` fica fora do gate de PR de propósito: ele fala com o ambiente publicado, então mede
+deploy, e não código. É o que pega o que o lint não vê (deploy que não subiu, card fora de sincronia
+com o índice, proxy fora do ar).
 
 ---
 
