@@ -1,0 +1,15 @@
+{
+  "name": "Movepark",
+  "short_name": "Movepark",
+  "description": "Estacionamento em aeroportos e destinos, com vaga reservada e preço fechado antes de pagar.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#29263F",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "/icon-96.png", "sizes": "96x96", "type": "image/png" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
