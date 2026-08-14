@@ -12,6 +12,7 @@ const groups: FooterGroup[] = [
       // Barra final de propósito: é a URL canônica do blog, herdada do WordPress.
       { to: "/blog/", label: "Blog" },
       { to: "/precos", label: "Índice de preços" },
+      { to: "/calculadora-estacionamento-aeroporto", label: "Calculadora de estacionamento" },
       { to: "/termos", label: "Termos de uso" },
       { to: "/privacidade", label: "Política de privacidade" },
     ],

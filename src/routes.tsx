@@ -40,6 +40,7 @@ import VoucherValidatePage from "@/routes/voucher-validate";
 import DestinoPage from "@/routes/destino";
 import PrecosPage, { type PrecosIndexData } from "@/routes/precos";
 import PrecosDestinoPage, { type PrecosDestinoData } from "@/routes/precos-destino";
+import CalculadoraPage, { type CalculadoraData } from "@/routes/calculadora";
 import EstacionamentoMapeadoPage from "@/routes/estacionamento-mapeado";
 import DestinosPage from "@/routes/destinos";
 import NotFoundPage from "@/routes/not-found";
@@ -516,6 +517,13 @@ async function precosDestinoLoader({
   return { days: data.days, destination, others, generatedAt: new Date().toISOString() };
 }
 
+/** Calculadora: o mesmo índice inteiro, para responder na hora nas durações padrão. */
+async function calculadoraLoader(): Promise<CalculadoraData | null> {
+  const data = await fetchPriceIndex().catch(() => null);
+  if (!data || data.destinations.length === 0) return null;
+  return { data, generatedAt: new Date().toISOString() };
+}
+
 /** Uma URL por destino publicado com unidade precificada. */
 async function fetchAllPrecosPaths(): Promise<string[]> {
   const data = await fetchPriceIndex().catch(() => null);
@@ -641,6 +649,11 @@ export const routes: RouteRecord[] = [
             getStaticPaths: fetchAllBlogPaths,
           },
           { path: "/precos", element: <PrecosPage />, loader: precosLoader },
+          {
+            path: "/calculadora-estacionamento-aeroporto",
+            element: <CalculadoraPage />,
+            loader: calculadoraLoader,
+          },
           {
             path: "/precos/:slug",
             element: <PrecosDestinoPage />,

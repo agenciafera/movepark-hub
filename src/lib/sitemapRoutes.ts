@@ -26,6 +26,7 @@ export const SITEMAP_STATIC_ROUTES = [
   "/termos",
   "/privacidade",
   "/seja-parceiro",
+  "/calculadora-estacionamento-aeroporto",
 ] as const;
 
 /**

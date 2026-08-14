@@ -11,6 +11,7 @@ import {
   metaDescription,
   motoUnits,
   overallStats,
+  topRows,
   unitLabel,
   type PriceDestination,
   type PriceUnit,
@@ -120,6 +121,40 @@ describe("buildMatrix", () => {
     expect(m.rows).toHaveLength(1);
     expect(carUnits([moto, barato])).toHaveLength(1);
     expect(motoUnits([moto, barato])).toHaveLength(1);
+  });
+});
+
+describe("topRows", () => {
+  const fabrica = (slug: string, precos: (number | null)[]) =>
+    unit({
+      company_slug: slug,
+      company_name: slug,
+      min_stay_days: precos[0] == null ? 3 : null,
+      prices: [1, 7, 15].map((d, i) => ({ days: d, total: precos[i], old_total: null })),
+    });
+
+  it("ordena pela diária avulsa e desempata pela duração seguinte", () => {
+    const d = dest([
+      fabrica("sem-diaria-caro", [null, 200, 400]),
+      fabrica("caro", [30, 180, 360]),
+      fabrica("barato", [20, 140, 280]),
+      fabrica("sem-diaria-barato", [null, 100, 200]),
+    ]);
+    const { rows } = topRows(d, 5);
+    expect(rows.map((r) => r.unit.company_slug)).toEqual([
+      "barato",
+      "caro",
+      "sem-diaria-barato",
+      "sem-diaria-caro",
+    ]);
+  });
+
+  it("corta no limite e conta o que ficou de fora", () => {
+    const d = dest([1, 2, 3, 4, 5, 6, 7].map((i) => fabrica(`u${i}`, [i * 10, i * 60, i * 120])));
+    const { rows, hiddenCount } = topRows(d, 5);
+    expect(rows).toHaveLength(5);
+    expect(hiddenCount).toBe(2);
+    expect(rows[0].unit.company_slug).toBe("u1");
   });
 });
 

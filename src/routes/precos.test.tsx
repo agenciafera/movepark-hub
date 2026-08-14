@@ -33,6 +33,9 @@ const UNIT: PriceUnit = {
 
 const DATA: PrecosIndexData = {
   generatedAt: "2026-08-14T15:00:00Z",
+  semPreco: [
+    { slug: "aeroporto-de-confins", name: "Aeroporto de Confins", short_name: "Confins (CNF)" },
+  ],
   data: {
     days: DIAS,
     destinations: [
@@ -74,15 +77,41 @@ describe("PrecosPage", () => {
     expect(screen.getByText("até 17%")).toBeInTheDocument();
   });
 
-  it("cada destino vira um cartão com o menor preço por duração e o link da tabela", async () => {
+  it("cada destino vira uma tabela ordenada pela diária, com 7 e 15 dias em R$/dia", async () => {
     setup();
-    const card = await screen.findByRole("link", { name: /Guarulhos \(GRU\)/ });
-    expect(card).toHaveAttribute(
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Guarulhos (GRU)" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/ordenado pela diária mais baixa/)).toBeInTheDocument();
+    const tabela = screen.getByRole("table");
+    expect(tabela.textContent).toContain("7 dias (R$/dia)");
+    expect(tabela.textContent).toContain("15 dias (R$/dia)");
+    // 7 dias por R$ 111,30 = R$ 15,90 por dia, com o total logo abaixo.
+    expect(tabela.textContent).toContain(formatBRL(15.9));
+    expect(tabela.textContent).toContain(`total ${formatBRL(111.3)}`);
+    // Não existe coluna de 30 dias no índice; ela vive na tabela completa.
+    expect(tabela.textContent).not.toContain("30 dias");
+  });
+
+  it("o parceiro fica em destaque com o link de reserva da vaga", async () => {
+    setup();
+    expect(await screen.findByText("Parceiro Movepark")).toBeInTheDocument();
+    const reservar = screen.getByRole("link", { name: "Reservar" });
+    expect(reservar).toHaveAttribute("href", "/p/aerovalet/aeroporto-guarulhos/uncovered");
+    const completa = screen.getAllByRole("link", { name: "Tabela completa" });
+    expect(completa[0]).toHaveAttribute(
       "href",
       "/precos/aeroporto-internacional-de-sao-paulo-guarulhos",
     );
-    expect(card.textContent).toContain("30 diárias");
-    expect(card.textContent).toContain(formatBRL(447));
+  });
+
+  it("aeroporto sem parceiro precificado aparece na seção própria, linkando o destino", async () => {
+    setup();
+    expect(
+      await screen.findByRole("heading", { name: "Aeroportos ainda sem reserva online" }),
+    ).toBeInTheDocument();
+    const link = screen.getByRole("link", { name: "Confins (CNF)" });
+    expect(link).toHaveAttribute("href", "/destinos/aeroporto-de-confins");
   });
 
   it("sem dado, explica e aponta para a busca", async () => {

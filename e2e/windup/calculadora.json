@@ -1,0 +1,14 @@
+{
+  "scenario_id": "calculadora",
+  "start_url": "/calculadora-estacionamento-aeroporto",
+  "task": "Verifique que a pagina exibe o titulo Calculadora de estacionamento de aeroporto, um formulario com o campo Destino e o campo Diarias, e um ranking de resultados com pelo menos um botao Reservar.",
+  "tags": [
+    "smoke",
+    "leitura"
+  ],
+  "hints": [
+    "A pagina abre ja calculada: 7 diarias no primeiro destino, com o ranking do mais barato ao mais caro.",
+    "Os atalhos 1, 7, 15 e 30 diarias recalculam na hora; o campo numerico aceita de 1 a 60.",
+    "Cada resultado tem o botao Reservar levando para /p/..."
+  ]
+}

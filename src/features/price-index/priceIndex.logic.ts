@@ -161,19 +161,47 @@ export function buildMatrix(dest: PriceDestination, days: number[], refDays = 7)
       return { key: unitKey(u), unit: u, label: unitLabel(u, units), cells };
     })
     .sort((a, b) => {
-      const ta = a.cells.find((c) => c.days === refDays)?.total ?? null;
-      const tb = b.cells.find((c) => c.days === refDays)?.total ?? null;
-      if (ta != null && tb != null && ta !== tb) return ta - tb;
-      if (ta != null && tb == null) return -1;
-      if (ta == null && tb != null) return 1;
+      // Cascata: compara a duração de referência e, em empate ou vazio dos dois
+      // lados, segue para as demais durações. Linha com preço vem antes de linha
+      // sem preço na mesma duração (a estadia mínima manda pro fim, não pro meio).
+      const seq = [refDays, ...days.filter((d) => d !== refDays)];
+      const totalDe = (row: MatrixRow, d: number) =>
+        row.cells.find((c) => c.days === d)?.total ?? null;
+      for (const d of seq) {
+        const ta = totalDe(a, d);
+        const tb = totalDe(b, d);
+        if (ta != null && tb != null) {
+          if (ta !== tb) return ta - tb;
+          continue;
+        }
+        if (ta != null) return -1;
+        if (tb != null) return 1;
+      }
       return (
-        (a.unit.min_stay_days ?? 0) - (b.unit.min_stay_days ?? 0) ||
         a.label.localeCompare(b.label, "pt-BR") ||
         a.unit.parking_type_name.localeCompare(b.unit.parking_type_name, "pt-BR")
       );
     });
 
   return { days, rows };
+}
+
+/** Durações da tabela do índice (/precos): o corte editorial de comparação. */
+export const INDEX_TOP_DAYS = [1, 7, 15];
+
+export type TopRows = {
+  rows: MatrixRow[];
+  /** Quantas linhas ficaram de fora do corte (vão para a tabela completa). */
+  hiddenCount: number;
+};
+
+/**
+ * As linhas da tabela por destino no índice: até `limit` vagas, ordenadas pela
+ * diária avulsa (quem não cota diária entra depois, pela duração seguinte).
+ */
+export function topRows(dest: PriceDestination, limit = 5): TopRows {
+  const { rows } = buildMatrix(dest, INDEX_TOP_DAYS, 1);
+  return { rows: rows.slice(0, limit), hiddenCount: Math.max(0, rows.length - limit) };
 }
 
 export type DurationSummary = {

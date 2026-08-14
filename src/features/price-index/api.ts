@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 
-import type { PriceIndexData } from "./priceIndex.logic";
+import type { PriceDestination, PriceIndexData } from "./priceIndex.logic";
 
 const TTL_MS = 5 * 60 * 1000;
 
@@ -17,6 +17,23 @@ let inflight: Promise<PriceIndexData | null> | null = null;
  * papel anon. Uma chamada serve todo mundo; na navegação client-side o TTL de
  * 5 minutos evita refazer a conta a cada troca de página.
  */
+/**
+ * Preço de UM destino numa duração fora da matriz padrão (calculadora).
+ * Chamada leve (uma duração, um destino); sem memo porque cada consulta é única.
+ */
+export async function fetchPriceForDays(
+  slug: string,
+  days: number,
+): Promise<PriceDestination | null> {
+  const { data, error } = await supabase.rpc("destination_price_index", {
+    p_days: [days],
+    p_destination: slug,
+  });
+  if (error) throw error;
+  const parsed = data as unknown as PriceIndexData | null;
+  return parsed?.destinations?.[0] ?? null;
+}
+
 export async function fetchPriceIndex(): Promise<PriceIndexData | null> {
   if (cached && Date.now() - cached.at < TTL_MS) return cached.data;
   if (!inflight) {

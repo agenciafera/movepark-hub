@@ -18,8 +18,9 @@ executa JS):
 
 | Rota | Conteúdo |
 |---|---|
-| `/precos` | Índice: retrato em 4 números (destinos, estacionamentos, menor diária, economia máxima), um cartão por destino com o menor preço nas 4 durações, metodologia |
-| `/precos/<slug>` | Página do destino: breadcrumb, **Resposta rápida** (menor preço por duração, com quem pratica), tabela unidades × durações com balcão riscado e economia %, estadia mínima explicada, seção de moto quando existe, metodologia, cross-link com os outros destinos |
+| `/precos` | Índice editorial (estrutura benchmark do índice do concorrente, decidida em 14/08/2026): retrato em 4 números, chips de navegação e **uma tabela por destino** com as **top 5 vagas ordenadas pela diária avulsa**, colunas Diária avulsa / 7 dias (R$/dia + total) / 15 dias (R$/dia + total), parceiro em destaque ("Parceiro Movepark" + link Reservar), linha de fonte com as datas, link "Tabela completa"; seção de aeroportos publicados ainda sem parceiro precificado (linka `/destinos/<slug>`); metodologia |
+| `/precos/<slug>` | Página do destino (matriz completa, **inclui 30 diárias**): breadcrumb, **Resposta rápida** (menor preço por duração, com quem pratica), tabela unidades × durações com balcão riscado e economia %, estadia mínima explicada, seção de moto quando existe, metodologia, cross-link com os outros destinos |
+| `/calculadora-estacionamento-aeroporto` | Calculadora (pedida em 14/08/2026, benchmark da calculadora do concorrente): destino + diárias (1 a 60, atalhos 1/7/15/30) viram o ranking do motor com balcão, economia e botão Reservar. Durações da matriz padrão respondem com o dado do build (SSG abre já calculada: primeiro destino, 7 diárias); outras vão à RPC com uma duração só, memoizada por consulta (`calculadora.logic.ts` + `fetchPriceForDays`). Estadia mínima sai da conta com o motivo visível. Link no rodapé do consumer |
 
 O `<slug>` é o mesmo da `destination` (contrato de URL compartilhado com
 `/destinos/<slug>`). Só destino publicado com pelo menos uma unidade listada e
