@@ -71,6 +71,31 @@ describe("AddressField", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
+  // `prospect_location` não tem coluna de complemento (ADR-010), então o lote mapeado
+  // reusa este componente com o campo desligado, em vez de ganhar um clone que diverge.
+  it("com withComplement=false, o complemento some do display e do modal", async () => {
+    renderWithProviders(<AddressField value={filled} onChange={vi.fn()} withComplement={false} />);
+    expect(screen.getByText("Av. Rocha Pombo, s/n - Águas Belas")).toBeInTheDocument();
+    expect(screen.queryByText("Portão azul")).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /Editar endereço/ }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).queryByLabelText(/Complemento/)).not.toBeInTheDocument();
+    expect(within(dialog).getByLabelText(/Endereço \(como aparece/)).toBeInTheDocument();
+  });
+
+  it("o texto do estado vazio é o que o formulário passar", () => {
+    renderWithProviders(
+      <AddressField
+        value={{ address: "", complement: "", latitude: null, longitude: null, placeId: null }}
+        onChange={vi.fn()}
+        emptyHint="Busque no Google para trazer o Place ID."
+      />,
+    );
+    expect(screen.getByText("Busque no Google para trazer o Place ID.")).toBeInTheDocument();
+    expect(screen.queryByText(/Nenhum endereço cadastrado/)).not.toBeInTheDocument();
+  });
+
   it("cancelar descarta a edição, sem chamar onChange", async () => {
     const onChange = vi.fn();
     renderWithProviders(<AddressField value={filled} onChange={onChange} />);

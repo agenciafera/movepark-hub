@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AddressField, type AddressValue } from "@/features/locations/AddressField";
 import { useAdminDestinations } from "@/features/destinations/api";
 import { useAmenityCatalog } from "@/features/amenities/api";
 import { formatDistance } from "@/lib/format";
@@ -110,6 +111,44 @@ export function ProspectLocationForm({ open, prospect, onOpenChange }: Props) {
     setF((prev) => ({ ...prev, [k]: v }));
   }
 
+  /**
+   * Endereço, ponto no mapa e Place ID vêm do MESMO componente do cadastro de
+   * unidade parceira (`AddressField` → Google Places). Antes eram três campos
+   * digitados à mão, o que produzia pino impreciso e Place ID quase sempre vazio,
+   * que é justamente o campo de que a deduplicação (D-009) depende.
+   *
+   * Quando o endereço vem do Places, a origem do dado passa a `google_places`
+   * sozinha: o campo deixa de ser declaração de quem cadastrou e vira fato.
+   */
+  const addressValue: AddressValue = {
+    address: f.address,
+    complement: "",
+    latitude: f.latitude ? Number(f.latitude) : null,
+    longitude: f.longitude ? Number(f.longitude) : null,
+    placeId: f.googlePlaceId || null,
+  };
+
+  function handleAddressChange(next: AddressValue) {
+    setF((prev) => ({
+      ...prev,
+      address: next.address,
+      latitude: next.latitude != null ? String(next.latitude) : "",
+      longitude: next.longitude != null ? String(next.longitude) : "",
+      googlePlaceId: next.placeId ?? prev.googlePlaceId,
+      dataSource:
+        next.placeId && next.placeId !== prev.googlePlaceId ? "google_places" : prev.dataSource,
+    }));
+  }
+
+  // A pré-checagem depende de lat/lng/placeId, que agora chegam de uma vez só.
+  // Sem blur para pendurar, roda quando esses três param de mudar.
+  React.useEffect(() => {
+    if (!open) return;
+    const t = setTimeout(runPrecheck, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [f.latitude, f.longitude, f.googlePlaceId, f.slug, open]);
+
   function toggleAmenity(code: string, on: boolean) {
     setF((prev) => ({
       ...prev,
@@ -151,7 +190,7 @@ export function ProspectLocationForm({ open, prospect, onOpenChange }: Props) {
     const lat = Number(f.latitude);
     const lng = Number(f.longitude);
     if (!f.latitude || !f.longitude || !Number.isFinite(lat) || !Number.isFinite(lng)) {
-      toast.error("Preencha latitude e longitude com números.");
+      toast.error("Busque o endereço no Google para fixar o ponto no mapa.");
       return;
     }
     if (!f.destinationId) {
@@ -220,35 +259,16 @@ export function ProspectLocationForm({ open, prospect, onOpenChange }: Props) {
               required
               value={f.slug}
               onChange={(e) => set("slug", slugify(e.target.value))}
-              onBlur={runPrecheck}
               placeholder="talentos-park"
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="pl-lat">Latitude *</Label>
-            <Input
-              id="pl-lat"
-              required
-              inputMode="decimal"
-              value={f.latitude}
-              onChange={(e) => set("latitude", e.target.value)}
-              onBlur={runPrecheck}
-              placeholder="-8.13"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="pl-lng">Longitude *</Label>
-            <Input
-              id="pl-lng"
-              required
-              inputMode="decimal"
-              value={f.longitude}
-              onChange={(e) => set("longitude", e.target.value)}
-              onBlur={runPrecheck}
-              placeholder="-34.92"
-            />
-          </div>
+          <AddressField
+            value={addressValue}
+            onChange={handleAddressChange}
+            withComplement={false}
+            emptyHint="Nenhum endereço. Busque no Google para fixar o ponto no mapa e trazer o Place ID, que é o que impede cadastrar duas vezes o mesmo estacionamento."
+          />
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="pl-destination">Destino *</Label>
@@ -281,15 +301,6 @@ export function ProspectLocationForm({ open, prospect, onOpenChange }: Props) {
             </Select>
           </div>
 
-          <div className="flex flex-col gap-1.5 tablet:col-span-2">
-            <Label htmlFor="pl-address">Endereço</Label>
-            <Input
-              id="pl-address"
-              value={f.address}
-              onChange={(e) => set("address", e.target.value)}
-            />
-          </div>
-
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="pl-phone">Telefone</Label>
             <Input id="pl-phone" value={f.phone} onChange={(e) => set("phone", e.target.value)} />
@@ -302,9 +313,14 @@ export function ProspectLocationForm({ open, prospect, onOpenChange }: Props) {
             <Input
               id="pl-place"
               value={f.googlePlaceId}
-              onChange={(e) => set("googlePlaceId", e.target.value)}
-              onBlur={runPrecheck}
+              readOnly
+              placeholder="vem da busca de endereço"
+              className="bg-surface-soft text-muted"
             />
+            <p className="text-caption text-muted">
+              Preenchido pela busca de endereço. É a chave que impede cadastrar duas vezes o mesmo
+              estacionamento, ou mapear um que já é parceiro.
+            </p>
           </div>
           <div className="flex flex-col gap-1.5 tablet:col-span-2">
             <Label htmlFor="pl-maps">Link do Google Maps</Label>

@@ -139,4 +139,53 @@ describe("ManagerLotesMapeados", () => {
     renderWithProviders(<ManagerLotesMapeados />);
     expect(screen.getByText(/Já é da unidade Aeropark Guarulhos/)).toBeInTheDocument();
   });
+
+  // "Sem Place ID" é a fila de curadoria de endereço: sem essa chave o pino veio de
+  // digitação ou importação, e a deduplicação do D-009 não tem em que se apoiar.
+  describe("filtro Sem Place ID", () => {
+    it("conta quantas fichas estão sem a chave", () => {
+      renderWithProviders(<ManagerLotesMapeados />);
+      // 3 das 4 linhas da fixture estão sem Place ID.
+      expect(screen.getByRole("button", { name: "Sem Place ID (3)" })).toBeInTheDocument();
+    });
+
+    it("ligado, esconde quem já tem Place ID", async () => {
+      renderWithProviders(<ManagerLotesMapeados />);
+      fireEvent.click(screen.getByRole("button", { name: /Sem Place ID/ }));
+
+      await waitFor(() => expect(screen.queryByText("Lote Duplicado")).not.toBeInTheDocument());
+      expect(screen.getByText("Talentos Park")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Sem Place ID/ })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+    });
+
+    it("com a fila zerada, o filtro fica desligado e sem contagem", () => {
+      rows.current = [makeRow({ id: "p9", name: "Só Com Chave", google_place_id: "ChIJok" })];
+      renderWithProviders(<ManagerLotesMapeados />);
+      const botao = screen.getByRole("button", { name: "Sem Place ID" });
+      expect(botao).toBeDisabled();
+      expect(screen.getByText("Só Com Chave")).toBeInTheDocument();
+    });
+
+    it("ligado sem resultado, o vazio explica a fila em vez de pedir cadastro", async () => {
+      rows.current = [
+        makeRow({ id: "p1", name: "Talentos Park", google_place_id: null }),
+        makeRow({ id: "p5", name: "Outro", google_place_id: "ChIJok" }),
+      ];
+      renderWithProviders(<ManagerLotesMapeados />);
+      fireEvent.click(screen.getByRole("button", { name: /Sem Place ID/ }));
+      await waitFor(() => expect(screen.queryByText("Outro")).not.toBeInTheDocument());
+
+      // Agora a busca devolve só ficha com chave, e o filtro continua ligado.
+      rows.current = [makeRow({ id: "p5", name: "Outro", google_place_id: "ChIJok" })];
+      fireEvent.change(screen.getByPlaceholderText(/Buscar por nome/), {
+        target: { value: "outro" },
+      });
+
+      expect(await screen.findByText("Todo mundo já tem Place ID")).toBeInTheDocument();
+      expect(screen.queryByText("Nenhum lote mapeado")).not.toBeInTheDocument();
+    });
+  });
 });

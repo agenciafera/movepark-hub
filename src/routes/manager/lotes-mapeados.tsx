@@ -73,6 +73,7 @@ export default function ManagerLotesMapeados() {
   const [destinationId, setDestinationId] = React.useState("all");
   const [state, setState] = React.useState<ProspectLocationState>("all");
   const [search, setSearch] = React.useState("");
+  const [onlyMissingPlaceId, setOnlyMissingPlaceId] = React.useState(false);
 
   const list = useProspectLocations({
     destinationId: destinationId === "all" ? undefined : destinationId,
@@ -131,7 +132,16 @@ export default function ManagerLotesMapeados() {
     }
   }
 
-  const rows = list.data ?? [];
+  /**
+   * "Sem Place ID" é a fila de curadoria de endereço, e por isso filtra no cliente:
+   * o recorte não existe na RPC (`p_state` só conhece rascunho/publicado/convertido)
+   * e a lista do painel é pequena. Sem Place ID o pino veio de endereço digitado ou
+   * importado, não da busca do Google, e a deduplicação do D-009 não tem em que se
+   * apoiar. Reabrir a ficha e buscar o endereço resolve as duas coisas de uma vez.
+   */
+  const allRows = list.data ?? [];
+  const rows = onlyMissingPlaceId ? allRows.filter((r) => !r.google_place_id) : allRows;
+  const missingPlaceIdCount = allRows.filter((r) => !r.google_place_id).length;
 
   return (
     <div className="flex flex-col gap-6">
@@ -179,6 +189,17 @@ export default function ManagerLotesMapeados() {
             <SelectItem value="converted">Convertido</SelectItem>
           </SelectContent>
         </Select>
+        <Button
+          type="button"
+          variant={onlyMissingPlaceId ? "primary" : "secondary"}
+          size="sm"
+          aria-pressed={onlyMissingPlaceId}
+          onClick={() => setOnlyMissingPlaceId((v) => !v)}
+          disabled={missingPlaceIdCount === 0 && !onlyMissingPlaceId}
+        >
+          Sem Place ID
+          {missingPlaceIdCount > 0 && ` (${missingPlaceIdCount})`}
+        </Button>
       </div>
 
       {list.isLoading ? (
@@ -186,8 +207,12 @@ export default function ManagerLotesMapeados() {
       ) : rows.length === 0 ? (
         <EmptyState
           icon={<MapTrifold className="h-10 w-10" />}
-          title="Nenhum lote mapeado"
-          description="Cadastre o estacionamento que a Movepark mapeou e ainda não é parceiro. Ele aparece na página do destino, sem preço e sem botão de reserva."
+          title={onlyMissingPlaceId ? "Todo mundo já tem Place ID" : "Nenhum lote mapeado"}
+          description={
+            onlyMissingPlaceId
+              ? "Nenhuma ficha deste recorte está sem Place ID. A fila de curadoria de endereço está zerada."
+              : "Cadastre o estacionamento que a Movepark mapeou e ainda não é parceiro. Ele aparece na página do destino, sem preço e sem botão de reserva."
+          }
         />
       ) : (
         <div className="overflow-x-auto rounded-md border border-hairline">
@@ -299,7 +324,9 @@ export default function ManagerLotesMapeados() {
                             variant="ghost"
                             size="icon"
                             disabled={converted}
-                            title={converted ? "Ficha convertida entra em modo leitura." : undefined}
+                            title={
+                              converted ? "Ficha convertida entra em modo leitura." : undefined
+                            }
                             aria-label={`Ações de ${row.name}`}
                           >
                             <DotsThreeVertical className="h-4 w-4" />
@@ -311,7 +338,9 @@ export default function ManagerLotesMapeados() {
                             Editar
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => markNotified(row)}>
-                            {row.notified_owner_at ? "Desmarcar notificado" : "Marcar como notificado"}
+                            {row.notified_owner_at
+                              ? "Desmarcar notificado"
+                              : "Marcar como notificado"}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => markReviewed(row)}>
                             {row.last_reviewed_at ? "Desmarcar revisado" : "Marcar como revisado"}

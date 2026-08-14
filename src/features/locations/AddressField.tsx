@@ -41,9 +41,18 @@ export type AddressValue = {
 export function AddressField({
   value,
   onChange,
+  withComplement = true,
+  emptyHint = "Nenhum endereço cadastrado. Sem endereço, a unidade não aparece direito na busca.",
 }: {
   value: AddressValue;
   onChange: (next: AddressValue) => void;
+  /**
+   * `prospect_location` não tem coluna de complemento (ADR-010: a tabela só cresce
+   * com o que aparece na página de destino). Desligar o campo aqui mantém UM
+   * componente de endereço no projeto, em vez de dois quase iguais que divergem.
+   */
+  withComplement?: boolean;
+  emptyHint?: string;
 }) {
   const [open, setOpen] = React.useState(false);
   const hasAddress = value.address.trim() !== "";
@@ -66,7 +75,7 @@ export function AddressField({
             <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
             <div className="flex flex-col">
               <p className="text-body-sm text-ink">{value.address}</p>
-              {value.complement.trim() && (
+              {withComplement && value.complement.trim() && (
                 <p className="text-caption text-muted">{value.complement}</p>
               )}
               {value.latitude == null && (
@@ -80,9 +89,7 @@ export function AddressField({
         </div>
       ) : (
         <div className="flex flex-col items-start gap-3 rounded-md border border-dashed border-hairline bg-surface-soft p-4">
-          <p className="text-body-sm text-muted">
-            Nenhum endereço cadastrado. Sem endereço, a unidade não aparece direito na busca.
-          </p>
+          <p className="text-body-sm text-muted">{emptyHint}</p>
           <Button type="button" variant="secondary" size="sm" onClick={() => setOpen(true)}>
             <MapPin className="h-4 w-4" />
             Adicionar endereço
@@ -93,6 +100,7 @@ export function AddressField({
       <AddressEditDialog
         open={open}
         initial={value}
+        withComplement={withComplement}
         onCancel={() => setOpen(false)}
         onSave={(next) => {
           onChange(next);
@@ -111,11 +119,13 @@ export function AddressField({
 function AddressEditDialog({
   open,
   initial,
+  withComplement,
   onCancel,
   onSave,
 }: {
   open: boolean;
   initial: AddressValue;
+  withComplement: boolean;
   onCancel: () => void;
   onSave: (next: AddressValue) => void;
 }) {
@@ -136,7 +146,8 @@ function AddressEditDialog({
         <DialogHeader>
           <DialogTitle>Endereço da unidade</DialogTitle>
           <DialogDescription>
-            Busque o endereço para fixar o ponto no mapa. O complemento é o que o mapa não sabe.
+            Busque o endereço para fixar o ponto no mapa.
+            {withComplement ? " O complemento é o que o mapa não sabe." : ""}
           </DialogDescription>
         </DialogHeader>
 
@@ -176,15 +187,17 @@ function AddressEditDialog({
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="addr-complement">Complemento / ponto de referência (opcional)</Label>
-            <Input
-              id="addr-complement"
-              value={draft.complement}
-              onChange={(e) => set({ complement: e.target.value })}
-              placeholder="Ex.: entrada pela rua lateral, portão azul"
-            />
-          </div>
+          {withComplement && (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="addr-complement">Complemento / ponto de referência (opcional)</Label>
+              <Input
+                id="addr-complement"
+                value={draft.complement}
+                onChange={(e) => set({ complement: e.target.value })}
+                placeholder="Ex.: entrada pela rua lateral, portão azul"
+              />
+            </div>
+          )}
 
           {!isGooglePlacesEnabled && (
             <div className="grid grid-cols-2 gap-3">
