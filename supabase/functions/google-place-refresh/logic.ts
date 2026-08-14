@@ -34,6 +34,15 @@ export function selectStale(
   return candidates.filter((id) => !fresh.has(id));
 }
 
+/**
+ * Guarda de autorização do refresh: só passa com o header secreto correto.
+ * `expected` ausente ou vazio nunca autoriza (evita comparar contra string vazia).
+ */
+export function isAuthorized(provided: string | null, expected: string | undefined): boolean {
+  if (!expected) return false;
+  return provided === expected;
+}
+
 type RawReview = {
   rating?: number;
   text?: { text?: string };

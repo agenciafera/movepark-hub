@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { mapPlaceDetails, REFRESH_AFTER_DAYS, selectStale } from "./logic.ts";
+import { isAuthorized, mapPlaceDetails, REFRESH_AFTER_DAYS, selectStale } from "./logic.ts";
 
 const NOW = new Date("2026-08-14T12:00:00Z");
 
@@ -19,6 +19,28 @@ Deno.test("selectStale: snapshot com mais de 7 dias entra", () => {
 
 Deno.test("selectStale: a janela e de 7 dias", () => {
   assertEquals(REFRESH_AFTER_DAYS, 7);
+});
+
+Deno.test("selectStale: snapshot com exatamente 7 dias entra (fronteira usa >, nao >=)", () => {
+  const snaps = [{ place_id: "A", fetched_at: "2026-08-07T12:00:00Z" }];
+  assertEquals(selectStale(["A"], snaps, NOW), ["A"]);
+});
+
+Deno.test("isAuthorized: sem header e recusado", () => {
+  assertEquals(isAuthorized(null, "segredo"), false);
+});
+
+Deno.test("isAuthorized: header errado e recusado", () => {
+  assertEquals(isAuthorized("errado", "segredo"), false);
+});
+
+Deno.test("isAuthorized: header correto e aceito", () => {
+  assertEquals(isAuthorized("segredo", "segredo"), true);
+});
+
+Deno.test("isAuthorized: expected ausente ou vazio nunca autoriza", () => {
+  assertEquals(isAuthorized("qualquer", undefined), false);
+  assertEquals(isAuthorized("", ""), false);
 });
 
 Deno.test("mapPlaceDetails: extrai nota, contagem e atribuicao", () => {

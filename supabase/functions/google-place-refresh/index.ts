@@ -21,7 +21,7 @@
 
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { mapPlaceDetails, selectStale } from "./logic.ts";
+import { isAuthorized, mapPlaceDetails, selectStale } from "./logic.ts";
 
 const FIELD_MASK = "id,rating,userRatingCount,googleMapsUri,reviews";
 
@@ -38,7 +38,7 @@ Deno.serve(async (req: Request) => {
 
   // @ts-expect-error - Deno env
   const expected = Deno.env.get("GOOGLE_PLACE_REFRESH_KEY");
-  if (!expected || req.headers.get("x-google-place-key") !== expected) {
+  if (!isAuthorized(req.headers.get("x-google-place-key"), expected)) {
     return json({ error: "unauthorized" }, 401);
   }
 
@@ -76,12 +76,14 @@ Deno.serve(async (req: Request) => {
   if (snaps.error) return json({ error: snaps.error.message }, 500);
 
   const all = [
-    ...(locs.data ?? []).map((r: { google_place_id: string }) => r.google_place_id),
-    ...(prospects.data ?? []).map((r: { google_place_id: string }) => r.google_place_id),
+    ...new Set([
+      ...(locs.data ?? []).map((r: { google_place_id: string }) => r.google_place_id),
+      ...(prospects.data ?? []).map((r: { google_place_id: string }) => r.google_place_id),
+    ]),
   ];
   const candidates = body.place_id
     ? all.filter((id) => id === body.place_id)
-    : selectStale([...new Set(all)], snaps.data ?? [], new Date());
+    : selectStale(all, snaps.data ?? [], new Date());
 
   let refreshed = 0;
   let failed = 0;
@@ -111,10 +113,16 @@ Deno.serve(async (req: Request) => {
       refreshed++;
     } catch (e) {
       failed++;
+      const message = e instanceof Error ? e.message : String(e);
+      // Sem snapshot prévio o update abaixo não casa nenhuma linha (é update, não upsert, de
+      // propósito: um lugar sem linha segue candidato e tenta de novo na próxima passada em vez
+      // de nascer "fresco" com fetch_error). Nesse caso a falha ficaria só no contador efêmero
+      // da resposta, então loga para aparecer nos logs da Edge também.
+      console.error(`google-place-refresh: falha ao buscar place_id=${placeId}: ${message}`);
       // Preserva o snapshot bom: só carimba o erro, sem tocar em rating/reviews.
       await admin
         .from("google_place_snapshot")
-        .update({ fetch_error: String(e) })
+        .update({ fetch_error: message })
         .eq("place_id", placeId);
     }
   }
