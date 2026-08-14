@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { fetchDestinationProspects, fetchDestinationUnits } from "@/features/destinations/api";
 import { fetchListing } from "@/features/listing/api";
 import { fetchFaqBySlug, fetchFaqCombined, fetchFaqIndex } from "@/features/faqs/api";
+import { fetchPriceIndex } from "@/features/price-index/api";
 import { filterPosts, pageSlice, totalPages } from "@/features/blog/listing.logic";
 
 import { AppProviders } from "@/components/shared/AppProviders";
@@ -35,6 +36,8 @@ import SejaParceiroPage from "@/routes/seja-parceiro";
 import OnboardingPage from "@/routes/onboarding";
 import VoucherValidatePage from "@/routes/voucher-validate";
 import DestinoPage from "@/routes/destino";
+import PrecosPage, { type PrecosIndexData } from "@/routes/precos";
+import PrecosDestinoPage, { type PrecosDestinoData } from "@/routes/precos-destino";
 import EstacionamentoMapeadoPage from "@/routes/estacionamento-mapeado";
 import DestinosPage from "@/routes/destinos";
 import NotFoundPage from "@/routes/not-found";
@@ -418,6 +421,39 @@ async function fetchAllFaqPaths(): Promise<string[]> {
   return (data ?? []).map((f) => `/faq/${f.slug as string}`);
 }
 
+/**
+ * Índice de preços (/precos): a matriz 1/7/15/30 de todos os destinos sai do
+ * motor numa chamada só (RPC destination_price_index), no build. O carimbo
+ * generatedAt é a data visível de "conferido em".
+ */
+async function precosLoader(): Promise<PrecosIndexData | null> {
+  const data = await fetchPriceIndex().catch(() => null);
+  if (!data || data.destinations.length === 0) return null;
+  return { data, generatedAt: new Date().toISOString() };
+}
+
+/**
+ * Página de preços do destino (/precos/<slug>). Busca o índice inteiro, e não
+ * só o destino, porque o fim da página cruza com os preços dos demais.
+ */
+async function precosDestinoLoader({
+  params,
+}: LoaderFunctionArgs): Promise<PrecosDestinoData | null> {
+  const data = await fetchPriceIndex().catch(() => null);
+  const destination = data?.destinations.find((d) => d.slug === params.slug) ?? null;
+  if (!data || !destination) return null;
+  const others = data.destinations
+    .filter((d) => d.slug !== destination.slug)
+    .map((d) => ({ slug: d.slug, name: d.name, short_name: d.short_name }));
+  return { days: data.days, destination, others, generatedAt: new Date().toISOString() };
+}
+
+/** Uma URL por destino publicado com unidade precificada. */
+async function fetchAllPrecosPaths(): Promise<string[]> {
+  const data = await fetchPriceIndex().catch(() => null);
+  return (data?.destinations ?? []).map((d) => `/precos/${d.slug}`);
+}
+
 // Índice de destinos: carrega os publicados no build (SSG) p/ o crawler ver os links.
 async function destinosLoader() {
   const { data } = await supabase
@@ -535,6 +571,13 @@ export const routes: RouteRecord[] = [
             element: <BlogPostPage />,
             loader: blogPostLoader,
             getStaticPaths: fetchAllBlogPaths,
+          },
+          { path: "/precos", element: <PrecosPage />, loader: precosLoader },
+          {
+            path: "/precos/:slug",
+            element: <PrecosDestinoPage />,
+            loader: precosDestinoLoader,
+            getStaticPaths: fetchAllPrecosPaths,
           },
           { path: "/destinos", element: <DestinosPage />, loader: destinosLoader },
           {

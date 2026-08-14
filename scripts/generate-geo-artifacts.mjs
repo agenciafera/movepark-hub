@@ -2,11 +2,14 @@
 /**
  * Gera os artefatos de leitura por agente (GEO) depois do build, em `dist/`:
  *
- *  - `faq/<slug>.md`  : uma página Markdown por pergunta do FAQ (answer-first),
+ *  - `faq/<slug>.md`   : uma página Markdown por pergunta do FAQ (answer-first),
  *                        servida pelo worker via `Accept: text/markdown`;
  *  - `faq.md`          : índice Markdown da central de FAQ;
- *  - `llms-full.txt`   : conteúdo integral do FAQ + destinos + índice do blog,
- *                        inline num arquivo só, pra leitura de ponta a ponta;
+ *  - `precos.md`       : índice Markdown do índice de preços (/precos);
+ *  - `precos/<slug>.md`: a tabela de preços de cada destino em Markdown, com a
+ *                        mesma ordem de blocos da página React;
+ *  - `llms-full.txt`   : conteúdo integral do FAQ + preços + destinos + índice
+ *                        do blog, inline num arquivo só, pra leitura de ponta a ponta;
  *  - `llms.txt`        : refresh da linha "Última atualização" na cópia do dist.
  *
  * Fica fora do vite de propósito: é pós-processamento de conteúdo, igual ao
@@ -53,10 +56,24 @@ async function rest(pathAndQuery) {
   return res.json();
 }
 
+async function rpc(name, body = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
+    method: "POST",
+    headers: {
+      apikey: ANON_KEY,
+      Authorization: `Bearer ${ANON_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`RPC ${name}: ${res.status}`);
+  return res.json();
+}
+
 // ---------------------------------------------------------------------------
 // dados
 // ---------------------------------------------------------------------------
-const [faqs, destinations, posts] = await Promise.all([
+const [faqs, destinations, posts, priceIndex] = await Promise.all([
   rest(
     "faq?select=id,scope,question,answer,slug,body_md,sort_order,updated_at,destination_id," +
       "category:faq_category(slug,label,sort_order)," +
@@ -72,6 +89,7 @@ const [faqs, destinations, posts] = await Promise.all([
     "blog_post?select=slug,title,published_at" +
       "&is_published=eq.true&deleted_at=is.null&order=published_at.desc",
   ),
+  rpc("destination_price_index"),
 ]);
 
 const hoje = new Date().toISOString().slice(0, 10);
@@ -188,6 +206,120 @@ for (const f of faqs) {
 }
 
 // ---------------------------------------------------------------------------
+// precos.md + precos/<slug>.md — o gêmeo Markdown do índice de preços.
+// A ordem de blocos espelha a página React: resposta rápida, tabela, origem.
+// ---------------------------------------------------------------------------
+const brl = (v) =>
+  Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const durLabel = (d) => (d === 1 ? "1 diária" : `${d} diárias`);
+const nomeCurto = (d) => d.short_name ?? d.name;
+const unidadesCarro = (dest) =>
+  (dest.units ?? []).filter((u) => u.parking_type_code !== "motorcycle");
+const totalDe = (u, d) => (u.prices ?? []).find((p) => p.days === d)?.total ?? null;
+
+/** Menor total por duração, com quem pratica. Mesma regra da página. */
+function resumoPorDuracao(dest, dias) {
+  const out = [];
+  for (const d of dias) {
+    let melhor = null;
+    for (const u of unidadesCarro(dest)) {
+      const total = totalDe(u, d);
+      if (total != null && (melhor === null || total < melhor.total)) melhor = { u, total };
+    }
+    if (melhor) out.push({ dias: d, ...melhor });
+  }
+  return out;
+}
+
+function tabelaMarkdown(dest, dias) {
+  const linhas = [
+    `| Estacionamento | ${dias.map(durLabel).join(" | ")} |`,
+    `| --- | ${dias.map(() => "---").join(" | ")} |`,
+  ];
+  const ordenadas = [...unidadesCarro(dest)].sort((a, b) => {
+    const ta = totalDe(a, 7);
+    const tb = totalDe(b, 7);
+    if (ta != null && tb != null) return ta - tb;
+    return ta != null ? -1 : tb != null ? 1 : 0;
+  });
+  for (const u of ordenadas) {
+    const celulas = dias.map((d) => {
+      const p = (u.prices ?? []).find((x) => x.days === d);
+      if (!p || p.total == null) {
+        return u.min_stay_days != null && u.min_stay_days > d
+          ? `entrada a partir de ${u.min_stay_days} diárias`
+          : "ver na página";
+      }
+      const balcao =
+        p.old_total != null && p.old_total > p.total ? ` (balcão ${brl(p.old_total)})` : "";
+      return `${brl(p.total)}${balcao}`;
+    });
+    linhas.push(`| ${u.company_name} (${u.parking_type_name}) | ${celulas.join(" | ")} |`);
+  }
+  return linhas;
+}
+
+const diasIndice = priceIndex?.days ?? [1, 7, 15, 30];
+const destinosComPreco = priceIndex?.destinations ?? [];
+
+fs.mkdirSync(path.join(DIST, "precos"), { recursive: true });
+
+for (const dest of destinosComPreco) {
+  const nome = nomeCurto(dest);
+  const linhas = [
+    "---",
+    `title: "Preços de estacionamento em ${nome}: diária, 7, 15 e 30 dias | Movepark"`,
+    `canonical: ${SITE_URL}/precos/${dest.slug}`,
+    `updated: ${hoje}`,
+    "---",
+    "",
+    `# Preços de estacionamento em ${nome}`,
+    "",
+    "O valor desta tabela é o mesmo do checkout: sai do motor de preços da Movepark",
+    "e muda junto com a tabela de cada parceiro. Balcão é a tarifa de quem chega sem reserva.",
+    "",
+    "## Resposta rápida",
+    "",
+  ];
+  for (const r of resumoPorDuracao(dest, diasIndice)) {
+    const porDia = r.dias > 1 ? `, ${brl(r.total / r.dias)} por diária` : "";
+    linhas.push(
+      `- ${durLabel(r.dias)}: a partir de ${brl(r.total)} no ${r.u.company_name} (${r.u.parking_type_name}${porDia})`,
+    );
+  }
+  linhas.push("", "## Tabela de preços", "", ...tabelaMarkdown(dest, diasIndice), "");
+  linhas.push(
+    `Reservar: ${SITE_URL}/destinos/${dest.slug}`,
+    `Índice completo: ${SITE_URL}/precos`,
+    "",
+  );
+  fs.writeFileSync(path.join(DIST, "precos", `${dest.slug}.md`), linhas.join("\n"));
+}
+
+{
+  const linhas = [
+    "---",
+    'title: "Índice de preços de estacionamento | Movepark"',
+    `canonical: ${SITE_URL}/precos`,
+    `updated: ${hoje}`,
+    "---",
+    "",
+    "# Índice de preços de estacionamento",
+    "",
+    "Quanto custa estacionar perto de cada aeroporto e terminal, no preço real de",
+    "reserva: diária, 7, 15 e 30 diárias, com o preço de balcão ao lado. Cada destino",
+    "tem página própria; a versão Markdown responde no mesmo endereço com o header",
+    "`Accept: text/markdown`.",
+    "",
+  ];
+  for (const dest of destinosComPreco) {
+    linhas.push(`- [Preços em ${nomeCurto(dest)}](${SITE_URL}/precos/${dest.slug})`);
+  }
+  linhas.push("", `Conteúdo integral: ${SITE_URL}/llms-full.txt`, "");
+  fs.writeFileSync(path.join(DIST, "precos.md"), linhas.join("\n"));
+}
+
+// ---------------------------------------------------------------------------
 // llms-full.txt
 // ---------------------------------------------------------------------------
 {
@@ -230,6 +362,19 @@ for (const f of faqs) {
     );
   }
 
+  if (destinosComPreco.length > 0) {
+    linhas.push("", "## Índice de preços (motor de reservas, valor do checkout)", "");
+    for (const dest of destinosComPreco) {
+      linhas.push(`### ${nomeCurto(dest)}`, "", `URL: ${SITE_URL}/precos/${dest.slug}`, "");
+      for (const r of resumoPorDuracao(dest, diasIndice)) {
+        linhas.push(
+          `- ${durLabel(r.dias)}: a partir de ${brl(r.total)} no ${r.u.company_name} (${r.u.parking_type_name})`,
+        );
+      }
+      linhas.push(...tabelaMarkdown(dest, diasIndice), "");
+    }
+  }
+
   linhas.push("", "## Blog (índice)", "");
   for (const p of posts) {
     linhas.push(`- ${p.title}: ${SITE_URL}/blog/${p.slug}/`);
@@ -257,5 +402,6 @@ for (const f of faqs) {
 }
 
 console.log(
-  `geo-artifacts: ${paginas} páginas de FAQ em Markdown, faq.md, llms-full.txt e data do llms.txt atualizados`,
+  `geo-artifacts: ${paginas} páginas de FAQ e ${destinosComPreco.length} de preços em Markdown, ` +
+    `faq.md, precos.md, llms-full.txt e data do llms.txt atualizados`,
 );

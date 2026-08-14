@@ -22,6 +22,13 @@ O Movepark é uma plataforma brasileira de reserva de estacionamento perto de ae
 - **Descoberto**: vaga em área aberta, opção econômica
 - **Valet**: entrega do carro na entrada, sem necessidade de estacionar
 
+## Índice de preços
+
+- [Índice de preços](https://hub.movepark.co/precos): quanto custa estacionar perto de cada aeroporto e terminal, em 1, 7, 15 e 30 diárias, com o preço de balcão ao lado
+- Cada destino tem página própria em `/precos/<slug>`, com o menor preço por duração, a tabela completa por parceiro e a data de conferência
+- O valor vem do motor de reservas e é o mesmo do checkout; a página responde em Markdown puro no mesmo endereço com `Accept: text/markdown`
+- As tabelas completas estão inline em https://hub.movepark.co/llms-full.txt
+
 ## Perguntas frequentes
 
 - [Central de FAQ](https://hub.movepark.co/faq): perguntas gerais e por aeroporto, com o FAQPage (JSON-LD) no HTML

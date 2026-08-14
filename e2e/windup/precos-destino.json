@@ -1,0 +1,14 @@
+{
+  "scenario_id": "precos-destino",
+  "start_url": "/precos/aeroporto-internacional-de-sao-paulo-guarulhos",
+  "task": "Verifique que a pagina exibe o titulo Precos de estacionamento em Guarulhos (GRU), um bloco Resposta rapida com o menor preco por duracao, uma tabela com a coluna 30 diarias e pelo menos um link Reservar.",
+  "tags": [
+    "smoke",
+    "leitura"
+  ],
+  "hints": [
+    "A pagina e a tabela de precos de um destino, no formato resposta primeiro.",
+    "O bloco Resposta rapida vem logo abaixo do cabecalho, num fundo destacado.",
+    "Cada linha da tabela e um estacionamento parceiro; o link Reservar leva para /p/..."
+  ]
+}

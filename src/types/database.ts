@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       account_merge_log: {
@@ -4756,6 +4731,10 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      destination_price_index: {
+        Args: { p_days?: number[]; p_destination?: string }
+        Returns: Json
+      }
       destination_prospect_cards: {
         Args: { p_destination_slug: string }
         Returns: {
@@ -4814,6 +4793,7 @@ export type Database = {
         }
         Returns: string
       }
+      faq_slugify: { Args: { t: string }; Returns: string }
       find_user_by_identifier: {
         Args: { p_channel: string; p_identifier: string }
         Returns: string
@@ -5717,9 +5697,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       booking_item_type: ["parking", "add_on"],

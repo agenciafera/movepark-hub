@@ -1,0 +1,14 @@
+{
+  "scenario_id": "precos",
+  "start_url": "/precos",
+  "task": "Verifique que a pagina exibe o titulo Indice de precos de estacionamento, uma secao Precos por destino com pelo menos um cartao de destino, e a secao De onde vem estes precos.",
+  "tags": [
+    "smoke",
+    "leitura"
+  ],
+  "hints": [
+    "A pagina e o indice de precos, com um resumo em quatro numeros no topo.",
+    "Cada cartao de destino mostra o menor preco por duracao e o link Ver tabela completa.",
+    "O link Ver tabela completa leva para /precos/<slug do destino>."
+  ]
+}

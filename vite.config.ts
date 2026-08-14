@@ -108,6 +108,21 @@ async function getBlogRoutes(sb: SupabaseClient | null): Promise<string[]> {
 }
 
 /**
+ * Índice de preços: /precos/<slug> por destino publicado com unidade
+ * precificada. Os slugs vêm da mesma RPC que alimenta o loader SSG, então o
+ * sitemap e o pré-render nunca divergem sobre quais páginas existem.
+ */
+async function getPrecosRoutes(sb: SupabaseClient | null): Promise<string[]> {
+  if (!sb) return [];
+
+  const { data } = await sb.rpc("destination_price_index");
+
+  // deno-lint-ignore no-explicit-any
+  const destinos = (((data as any)?.destinations ?? []) as { slug: string }[]);
+  return destinos.map((d) => `/precos/${d.slug}`);
+}
+
+/**
  * Manifesto de slugs publicados, lido pelo worker para devolver 404 de verdade.
  *
  * Sem ele, `/blog/qualquer-coisa/` caía no fallback da SPA e respondia 200 com a
@@ -134,13 +149,14 @@ export default defineConfig(async ({ mode }) => {
   const key = env.VITE_SUPABASE_ANON_KEY;
   const sb = url && key ? createClient(url, key) : null;
 
-  const [listingRoutes, destinationRoutes, blogRoutes, prospectRoutes, faqRoutes] =
+  const [listingRoutes, destinationRoutes, blogRoutes, prospectRoutes, faqRoutes, precosRoutes] =
     await Promise.all([
       getDynamicRoutes(sb),
       getDestinationRoutes(sb),
       getBlogRoutes(sb),
       getProspectRoutes(sb),
       getFaqRoutes(sb),
+      getPrecosRoutes(sb),
     ]);
   // Índice de destinos + uma URL por destino publicado, além das listagens /p/...
   // e dos posts do blog (com barra final, contrato herdado do WordPress).
@@ -154,12 +170,14 @@ export default defineConfig(async ({ mode }) => {
     ...new Set([
       ...SITEMAP_STATIC_ROUTES,
       "/destinos",
+      "/precos",
       "/blog/",
       ...listingRoutes,
       ...destinationRoutes,
       ...blogRoutes,
       ...prospectRoutes,
       ...faqRoutes,
+      ...precosRoutes,
     ]),
   ].filter((r) => r !== "/");
 

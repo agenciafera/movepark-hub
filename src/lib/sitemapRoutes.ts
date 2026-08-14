@@ -69,6 +69,8 @@ export const SITEMAP_DYNAMIC_PATTERNS = [
   "/blog",
   "/blog/:slug",
   "/faq/:slug",
+  "/precos",
+  "/precos/:slug",
 ] as const;
 
 /**
