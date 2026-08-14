@@ -67,12 +67,20 @@ function VerifiedIllustration() {
   );
 }
 
+/*
+  ADR-009: a ilustração é exemplo, mas o texto é lido por quem enxerga, e oferta
+  vincula o fornecedor (CDC art. 30). O diálogo dizia "sua vaga fica garantida
+  por 3h após o horário previsto", que é promessa de vaga garantida com prazo,
+  renderizada sem consultar capacidade nenhuma. A home não tem unidade em mãos
+  para chamar `getLocationCapabilities`, então a promessa não pode existir aqui:
+  o assistente responde, e é só isso que o card diz.
+*/
 function SupportIllustration() {
   return (
     <div aria-hidden className="mt-8 space-y-2">
       {/* Mensagem do usuário */}
       <div className="tb-msg1 max-w-[85%] rounded-xl rounded-tl-sm border border-hairline bg-canvas px-3 py-2.5 text-[12px] leading-relaxed text-ink">
-        Meu voo atrasou. A vaga continua garantida?
+        Meu voo atrasou. E agora?
       </div>
 
       {/* Indicador de digitação */}
@@ -84,7 +92,7 @@ function SupportIllustration() {
 
       {/* Resposta do suporte */}
       <div className="tb-msg2 ml-auto max-w-[85%] rounded-xl rounded-tr-sm bg-mp-primary px-3 py-2.5 text-[12px] leading-relaxed text-white">
-        Sim! Sua vaga fica garantida por 3h após o horário previsto.
+        Te explico agora as condições da sua reserva.
       </div>
     </div>
   );

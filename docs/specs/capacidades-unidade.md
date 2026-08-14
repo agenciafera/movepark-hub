@@ -150,6 +150,21 @@ Asterisco que contradiz bloco visível é o que o ADR-009 proíbe. Texto:
 
 Isso é trabalho de copy de plataforma, **fora do escopo da E0.15**, e precisa de card próprio.
 
+**Uma dessas promessas caiu em 14/08/2026: o diálogo do card de atendimento na faixa de
+confiança.** A ilustração do card "Ajuda a qualquer hora" simulava uma conversa em que o suporte
+respondia "Sim! Sua vaga fica garantida por 3h após o horário previsto". É vaga garantida com
+prazo cravado, a promessa que este documento chama de inegociável, renderizada para toda a base
+numa data em que **nenhuma** unidade fecha reserva no Hub. O diálogo agora para em "Te explico
+agora as condições da sua reserva", que é o que o próprio card promete no subtítulo.
+
+O `aria-hidden` da ilustração não salvava: ele tira o texto da árvore acessível, não da tela, e
+quem enxerga lê. Foi por isso que a trava nova (`src/features/home/TrustBand.test.tsx`) afirma
+sobre `container.textContent` em vez de `getByText`. Verificado que ela falha com a copy antiga.
+
+**O que segue de pé na home:** "Vaga garantida" no popup de `HowItWorks`, "Preço garantido,
+cancelamento grátis e voucher na hora" no `CtaBanner` e "Preço garantido até a saída" na própria
+faixa de confiança. São o mesmo problema, e continuam esperando o card de copy de plataforma.
+
 ⚠️ Achado no caminho, independente de unidade externa: `/como-funciona` afirma que cancelamento
 com **48h** tem reembolso integral, e `/cancelamento` afirma **24h** para Básica e Flex. Uma das
 duas está errada hoje, para qualquer unidade.
