@@ -159,7 +159,7 @@ export default function CalculadoraPage() {
         <script type="application/ld+json">{JSON.stringify(breadcrumb)}</script>
       </Helmet>
 
-      <div className="mx-auto w-full max-w-[1080px] px-4 py-12">
+      <div className="mx-auto w-full max-w-[1280px] px-4 py-12">
         <nav aria-label="Trilha de navegação" className="mb-4">
           <ol className="flex flex-wrap items-center gap-1.5 text-body-sm text-muted">
             <li>
@@ -196,103 +196,108 @@ export default function CalculadoraPage() {
           </p>
         </PageHeader>
 
-        <form
-          noValidate
-          className="mt-8 rounded-lg border border-hairline p-5 tablet:p-6"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void calcular(slug, daysInput);
-          }}
-        >
-          <div className="grid gap-6 tablet:grid-cols-[minmax(0,5fr)_minmax(0,5fr)_minmax(0,4fr)] tablet:items-end">
-            <label className="flex min-w-0 flex-col gap-1.5">
-              <span className="text-caption-sm font-medium text-muted">Destino</span>
-              <select
-                value={slug}
-                onChange={(e) => {
-                  setSlug(e.target.value);
-                  void calcular(e.target.value, daysInput);
-                }}
-                className="h-12 w-full rounded-sm border border-hairline bg-canvas px-3 text-body-md text-ink focus:border-mp-primary focus:outline-none"
-              >
-                {destinations.map((d) => (
-                  <option key={d.slug} value={d.slug}>
-                    {d.short_name ?? d.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <span className="text-caption-sm font-medium text-muted" id="rotulo-diarias">
-                Diárias (1 a 60)
-              </span>
-              <div className="flex h-12 items-center gap-4">
-                <input
-                  type="range"
-                  min={CALC_MIN_DAYS}
-                  max={CALC_MAX_DAYS}
-                  value={sanitizeDays(daysInput) ?? CALC_MIN_DAYS}
-                  onChange={(e) => aoMudarDias(e.target.value)}
-                  aria-label="Diárias (arraste)"
-                  className="w-full min-w-0 accent-mp-primary"
-                />
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min={CALC_MIN_DAYS}
-                  max={CALC_MAX_DAYS}
-                  value={daysInput}
-                  onChange={(e) => aoMudarDias(e.target.value)}
-                  aria-label="Diárias"
-                  aria-describedby="rotulo-diarias"
-                  className="h-12 w-20 shrink-0 rounded-sm border border-hairline bg-canvas px-3 text-center text-body-md tabular-nums text-ink focus:border-mp-primary focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="tablet:text-right" aria-live="polite">
-              <span className="text-caption-sm font-medium text-muted">Resultado</span>
-              <p className="mt-1.5 text-title-md text-ink">
-                {carregando
-                  ? "Calculando…"
-                  : result
-                    ? `${result.priced.length} de ${result.priced.length + result.blocked.length + mapeados.length} com reserva online`
-                    : "Escolha o destino"}
-              </p>
-            </div>
-          </div>
-        </form>
-
-        <div className="mt-3 flex flex-wrap items-center gap-2" aria-label="Durações comuns">
-          {CALC_QUICK_DAYS.map((d) => (
-            <button
-              key={d}
-              type="button"
-              onClick={() => {
-                setDaysInput(String(d));
-                void calcular(slug, String(d));
+        {/* Sidebar de filtros fixa no desktop: o resultado fica ao lado, sem scroll
+            até a tabela. No mobile a mesma coluna empilha em cima da lista. */}
+        <div className="mt-8 grid items-start gap-8 desktop:grid-cols-[300px_minmax(0,1fr)]">
+          <aside className="desktop:sticky desktop:top-24">
+            <form
+              noValidate
+              className="rounded-lg border border-hairline p-5"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void calcular(slug, daysInput);
               }}
-              className={cn(
-                "rounded-full border px-3 py-1.5 text-body-sm transition",
-                result?.days === d && !carregando
-                  ? "border-mp-primary text-mp-primary"
-                  : "border-hairline text-ink hover:border-mp-primary hover:text-mp-primary",
-              )}
             >
-              {durationLabel(d)}
-            </button>
-          ))}
-        </div>
+              <div className="flex flex-col gap-5">
+                <label className="flex min-w-0 flex-col gap-1.5">
+                  <span className="text-caption-sm font-medium text-muted">Destino</span>
+                  <select
+                    value={slug}
+                    onChange={(e) => {
+                      setSlug(e.target.value);
+                      void calcular(e.target.value, daysInput);
+                    }}
+                    className="h-12 w-full rounded-sm border border-hairline bg-canvas px-3 text-body-md text-ink focus:border-mp-primary focus:outline-none"
+                  >
+                    {destinations.map((d) => (
+                      <option key={d.slug} value={d.slug}>
+                        {d.short_name ?? d.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-        {erro && (
-          <p className="mt-4 text-body-sm text-mp-red" role="alert">
-            {erro}
-          </p>
-        )}
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <span className="text-caption-sm font-medium text-muted" id="rotulo-diarias">
+                    Diárias (1 a 60)
+                  </span>
+                  <div className="flex h-12 items-center gap-3">
+                    <input
+                      type="range"
+                      min={CALC_MIN_DAYS}
+                      max={CALC_MAX_DAYS}
+                      value={sanitizeDays(daysInput) ?? CALC_MIN_DAYS}
+                      onChange={(e) => aoMudarDias(e.target.value)}
+                      aria-label="Diárias (arraste)"
+                      className="w-full min-w-0 accent-mp-primary"
+                    />
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={CALC_MIN_DAYS}
+                      max={CALC_MAX_DAYS}
+                      value={daysInput}
+                      onChange={(e) => aoMudarDias(e.target.value)}
+                      aria-label="Diárias"
+                      aria-describedby="rotulo-diarias"
+                      className="h-12 w-20 shrink-0 rounded-sm border border-hairline bg-canvas px-3 text-center text-body-md tabular-nums text-ink focus:border-mp-primary focus:outline-none"
+                    />
+                  </div>
+                  <div className="mt-1 flex flex-wrap gap-2" aria-label="Durações comuns">
+                    {CALC_QUICK_DAYS.map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => {
+                          setDaysInput(String(d));
+                          void calcular(slug, String(d));
+                        }}
+                        className={cn(
+                          "rounded-full border px-3 py-1.5 text-body-sm transition",
+                          result?.days === d && !carregando
+                            ? "border-mp-primary text-mp-primary"
+                            : "border-hairline text-ink hover:border-mp-primary hover:text-mp-primary",
+                        )}
+                      >
+                        {durationLabel(d)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
+                <div className="border-t border-hairline pt-4" aria-live="polite">
+                  <span className="text-caption-sm font-medium text-muted">Resultado</span>
+                  <p className="mt-1.5 text-title-md text-ink">
+                    {carregando
+                      ? "Calculando…"
+                      : result
+                        ? `${result.priced.length} de ${result.priced.length + result.blocked.length + mapeados.length} com reserva online`
+                        : "Escolha o destino"}
+                  </p>
+                </div>
+              </div>
+            </form>
+
+            {erro && (
+              <p className="mt-3 text-body-sm text-mp-red" role="alert">
+                {erro}
+              </p>
+            )}
+          </aside>
+
+          <div className="min-w-0">
         {result && destino && (
-          <section className="mt-10" aria-live="polite">
+          <section aria-live="polite">
             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
               <h2 className="text-display-sm text-ink">
                 {durationLabel(result.days)} em {nome}
@@ -360,7 +365,9 @@ export default function CalculadoraPage() {
                       key={row.key}
                       className={cn(
                         "grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg border p-4 tablet:table-row tablet:p-0",
-                        i === 0 ? "border-mp-primary bg-mp-pale/60" : "border-hairline tablet:border-0",
+                        i === 0
+                          ? "border-mp-primary bg-mp-pale/60 tablet:border-0"
+                          : "border-hairline tablet:border-0",
                       )}
                     >
                       <td className={cn("hidden text-caption-sm tabular-nums text-muted", celulaBase, "tablet:pl-0 tablet:pr-2")}>
@@ -535,6 +542,8 @@ export default function CalculadoraPage() {
             .
           </p>
         </section>
+          </div>
+        </div>
       </div>
     </>
   );
