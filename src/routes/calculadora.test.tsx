@@ -137,13 +137,13 @@ describe("CalculadoraPage", () => {
     expect(tabela.textContent).toContain("entrada a partir de 2 diárias");
   });
 
-  it("diárias fora de 1 a 60 são recusadas com mensagem", async () => {
+  it("diárias fora de 1 a 60 são recusadas com mensagem, sem precisar de botão", async () => {
     setup();
     const user = userEvent.setup();
     const campo = await screen.findByLabelText("Diárias");
     await user.clear(campo);
     await user.type(campo, "99");
-    await user.click(screen.getByRole("button", { name: "Calcular" }));
+    // O cálculo é ao vivo (debounce curto); a recusa aparece sozinha.
     expect(await screen.findByRole("alert")).toHaveTextContent("Informe de 1 a 60 diárias.");
   });
 

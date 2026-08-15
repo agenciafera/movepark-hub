@@ -44,7 +44,7 @@ const DESCRIPTION =
   "Escolha o aeroporto e o número de diárias e veja quanto custa em cada estacionamento, " +
   "do mais barato ao mais caro. Parceiros Movepark reservam online pelo preço do checkout.";
 
-const celulaBase = "tablet:table-cell tablet:border-b tablet:border-hairline tablet:px-3 tablet:py-4 tablet:align-top";
+const celulaBase = "tablet:table-cell tablet:border-b tablet:border-hairline tablet:px-3 tablet:py-5 tablet:align-top";
 
 /**
  * Calculadora de estacionamento (/calculadora-estacionamento-aeroporto):
@@ -70,6 +70,8 @@ export default function CalculadoraPage() {
   const [erro, setErro] = React.useState<string | null>(null);
   // Consultas de duração fora da matriz padrão, para não repetir a ida ao motor.
   const consultasRef = React.useRef(new Map<string, PriceDestination>());
+  // Cálculo ao vivo: digitou ou arrastou, calcula sozinho depois de uma pausa curta.
+  const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const destino = destinations.find((d) => d.slug === slug) ?? null;
   const nome = destino ? (destino.short_name ?? destino.name) : "";
@@ -112,6 +114,13 @@ export default function CalculadoraPage() {
     },
     [destinations, standardDays],
   );
+
+  /** Digitou ou arrastou: calcula sozinho depois de uma pausa curta, sem botão. */
+  const aoMudarDias = (valor: string) => {
+    setDaysInput(valor);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => void calcular(slug, valor), 400);
+  };
 
   if (!loaded || destinations.length === 0) {
     return (
@@ -189,46 +198,70 @@ export default function CalculadoraPage() {
 
         <form
           noValidate
-          className="mt-8 flex flex-col gap-4 rounded-lg border border-hairline p-5 tablet:flex-row tablet:items-end"
+          className="mt-8 rounded-lg border border-hairline p-5 tablet:p-6"
           onSubmit={(e) => {
             e.preventDefault();
             void calcular(slug, daysInput);
           }}
         >
-          <label className="flex min-w-0 flex-1 flex-col gap-1.5">
-            <span className="text-caption-sm font-medium text-muted">Destino</span>
-            <select
-              value={slug}
-              onChange={(e) => {
-                setSlug(e.target.value);
-                void calcular(e.target.value, daysInput);
-              }}
-              className="h-12 w-full rounded-sm border border-hairline bg-canvas px-3 text-body-md text-ink focus:border-mp-primary focus:outline-none"
-            >
-              {destinations.map((d) => (
-                <option key={d.slug} value={d.slug}>
-                  {d.short_name ?? d.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="grid gap-6 tablet:grid-cols-[minmax(0,5fr)_minmax(0,5fr)_minmax(0,4fr)] tablet:items-end">
+            <label className="flex min-w-0 flex-col gap-1.5">
+              <span className="text-caption-sm font-medium text-muted">Destino</span>
+              <select
+                value={slug}
+                onChange={(e) => {
+                  setSlug(e.target.value);
+                  void calcular(e.target.value, daysInput);
+                }}
+                className="h-12 w-full rounded-sm border border-hairline bg-canvas px-3 text-body-md text-ink focus:border-mp-primary focus:outline-none"
+              >
+                {destinations.map((d) => (
+                  <option key={d.slug} value={d.slug}>
+                    {d.short_name ?? d.name}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-          <label className="flex flex-col gap-1.5">
-            <span className="text-caption-sm font-medium text-muted">Diárias</span>
-            <input
-              type="number"
-              inputMode="numeric"
-              min={CALC_MIN_DAYS}
-              max={CALC_MAX_DAYS}
-              value={daysInput}
-              onChange={(e) => setDaysInput(e.target.value)}
-              className="h-12 w-28 rounded-sm border border-hairline bg-canvas px-3 text-body-md tabular-nums text-ink focus:border-mp-primary focus:outline-none"
-            />
-          </label>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <span className="text-caption-sm font-medium text-muted" id="rotulo-diarias">
+                Diárias (1 a 60)
+              </span>
+              <div className="flex h-12 items-center gap-4">
+                <input
+                  type="range"
+                  min={CALC_MIN_DAYS}
+                  max={CALC_MAX_DAYS}
+                  value={sanitizeDays(daysInput) ?? CALC_MIN_DAYS}
+                  onChange={(e) => aoMudarDias(e.target.value)}
+                  aria-label="Diárias (arraste)"
+                  className="w-full min-w-0 accent-mp-primary"
+                />
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={CALC_MIN_DAYS}
+                  max={CALC_MAX_DAYS}
+                  value={daysInput}
+                  onChange={(e) => aoMudarDias(e.target.value)}
+                  aria-label="Diárias"
+                  aria-describedby="rotulo-diarias"
+                  className="h-12 w-20 shrink-0 rounded-sm border border-hairline bg-canvas px-3 text-center text-body-md tabular-nums text-ink focus:border-mp-primary focus:outline-none"
+                />
+              </div>
+            </div>
 
-          <Button type="submit" disabled={carregando}>
-            {carregando ? "Calculando…" : "Calcular"}
-          </Button>
+            <div className="tablet:text-right" aria-live="polite">
+              <span className="text-caption-sm font-medium text-muted">Resultado</span>
+              <p className="mt-1.5 text-title-md text-ink">
+                {carregando
+                  ? "Calculando…"
+                  : result
+                    ? `${result.priced.length} de ${result.priced.length + result.blocked.length + mapeados.length} com reserva online`
+                    : "Escolha o destino"}
+              </p>
+            </div>
+          </div>
         </form>
 
         <div className="mt-3 flex flex-wrap items-center gap-2" aria-label="Durações comuns">
@@ -335,7 +368,7 @@ export default function CalculadoraPage() {
                       </td>
                       <td className={cn("order-1 col-span-2", celulaBase, "tablet:px-0 tablet:pr-3")}>
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-title-sm text-ink">
+                          <span className="text-title-md text-ink">
                             <span className="mr-1.5 text-caption-sm tabular-nums text-muted tablet:hidden">
                               {String(i + 1).padStart(2, "0")}
                             </span>
@@ -355,7 +388,7 @@ export default function CalculadoraPage() {
                           </span>
                           <Link
                             to={listingPath(row.unit)}
-                            className="text-caption-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
+                            className="text-caption-sm font-medium text-mp-indigo underline underline-offset-4"
                           >
                             Ver ficha
                           </Link>
@@ -403,7 +436,7 @@ export default function CalculadoraPage() {
                       <td className={cn("hidden", celulaBase, "tablet:pl-0 tablet:pr-2")} />
                       <td className={cn("order-1 col-span-2", celulaBase, "tablet:px-0 tablet:pr-3")}>
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-title-sm text-ink">{row.label}</span>
+                          <span className="text-title-md text-ink">{row.label}</span>
                           <span className="text-caption-sm text-muted">
                             {row.unit.parking_type_name}
                             {formatDistance(row.unit.distance_m) && (
@@ -413,7 +446,7 @@ export default function CalculadoraPage() {
                           </span>
                           <Link
                             to={listingPath(row.unit)}
-                            className="text-caption-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
+                            className="text-caption-sm font-medium text-mp-indigo underline underline-offset-4"
                           >
                             Ver ficha
                           </Link>
@@ -440,7 +473,7 @@ export default function CalculadoraPage() {
                       <td className={cn("hidden", celulaBase, "tablet:pl-0 tablet:pr-2")} />
                       <td className={cn("order-1 col-span-2", celulaBase, "tablet:px-0 tablet:pr-3")}>
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-title-sm text-ink">{p.name}</span>
+                          <span className="text-title-md text-ink">{p.name}</span>
                           <span className="text-caption-sm text-muted">
                             {p.distance_km != null && (
                               <>{formatDistance(Math.round(p.distance_km * 1000))} · </>
@@ -449,7 +482,7 @@ export default function CalculadoraPage() {
                           </span>
                           <Link
                             to={`/estacionamentos/${destino.slug}/${p.slug}`}
-                            className="text-caption-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
+                            className="text-caption-sm font-medium text-mp-indigo underline underline-offset-4"
                           >
                             Ver ficha
                           </Link>
