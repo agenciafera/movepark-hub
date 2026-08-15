@@ -1,5 +1,5 @@
 begin;
-select plan(14);
+select plan(17);
 
 -- A tabela existe com a chave certa
 select has_table('public', 'google_place_snapshot', 'tabela google_place_snapshot existe');
@@ -114,12 +114,52 @@ select is(
   'upsert substitui o array de reviews'
 );
 
--- Purge apaga de fato o vencido
-select is(public.purge_google_place_snapshots(), 1, 'purge apaga 1 snapshot vencido');
+-- ── Purge: cumpre o cache de 30 dias sem perder a moderacao ──────────────────
+-- A armadilha que este bloco trava: `is_hidden` mora na linha que o purge apagava. Com o
+-- refresh parado um mes (o estado de hoje, a Edge nem foi publicada) a sequencia era:
+-- admin esconde o lote, o purge apaga a linha vencida, o refresh volta e insere uma linha
+-- nova com `is_hidden` no default false. O bloco reaparecia calado.
+insert into public.google_place_snapshot
+  (place_id, rating, user_rating_count, maps_uri, reviews, is_hidden, fetched_at)
+values
+  ('ChIJ_oculto_vencido', 4.2, 88, 'https://maps.google.com/?cid=9',
+   '[{"rating":5}]'::jsonb, true, now() - interval '31 days');
+
+-- Tres linhas vencidas nesta altura: ChIJ_vencido e ChIJ_admin (visiveis, apagadas) e
+-- ChIJ_oculto_vencido (escondida, esvaziada). ChIJ_fresco levou fetched_at = now() no
+-- upsert acima e fica de fora.
+select is(
+  public.purge_google_place_snapshots(),
+  3,
+  'purge trata as 3 linhas vencidas: 2 visiveis apagadas e 1 escondida esvaziada'
+);
 select is(
   (select count(*)::int from public.google_place_snapshot where place_id = 'ChIJ_vencido'),
   0,
   'o vencido sumiu da tabela'
+);
+
+-- Vencida e escondida: a linha e o flag ficam, o conteudo do Google sai.
+select is(
+  (select is_hidden from public.google_place_snapshot where place_id = 'ChIJ_oculto_vencido'),
+  true,
+  'a linha escondida sobrevive ao purge com o is_hidden intacto'
+);
+select ok(
+  (select rating is null
+      and user_rating_count = 0
+      and maps_uri is null
+      and reviews = '[]'::jsonb
+     from public.google_place_snapshot
+    where place_id = 'ChIJ_oculto_vencido'),
+  'nenhum conteudo do Google sobrevive aos 30 dias na linha escondida'
+);
+-- Idempotente: linha ja esvaziada nao volta a contar, senao o purge diario acusaria
+-- trabalho todo dia e o set_updated_at dispararia a toa.
+select is(
+  public.purge_google_place_snapshots(),
+  0,
+  'segunda passada nao trata nada: nao ha mais conteudo vencido'
 );
 
 select * from finish();

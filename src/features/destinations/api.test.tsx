@@ -164,6 +164,7 @@ describe("fetchDestinationProspects", () => {
           google_place_id: "ChIJ_x",
           google_rating: "4.4",
           google_rating_count: 137,
+          google_fetched_at: "2026-08-11T03:00:00Z",
         },
       ],
     });
@@ -173,6 +174,9 @@ describe("fetchDestinationProspects", () => {
     expect(card.google_rating).toBe(4.4);
     expect(card.google_rating_count).toBe(137);
     expect(card.distance_km).toBe(1.01);
+    // A data da coleta atravessa até o card: é ela que deixa o componente recusar nota
+    // vencida num HTML que foi construído há mais de 30 dias e continua servido na borda.
+    expect(card.google_fetched_at).toBe("2026-08-11T03:00:00Z");
     // O place_id vem da RPC porque o grant de coluna do Q-021 impede o front de lê-lo da
     // tabela. É ele que a ficha do lote usa para achar o snapshot inteiro.
     expect(card.google_place_id).toBe("ChIJ_x");
@@ -196,6 +200,7 @@ describe("fetchDestinationProspects", () => {
           google_place_id: "ChIJ_y",
           google_rating: null,
           google_rating_count: 0,
+          google_fetched_at: null,
         },
       ],
     });
@@ -204,5 +209,6 @@ describe("fetchDestinationProspects", () => {
 
     expect(card.google_rating).toBeNull();
     expect(card.google_rating_count).toBe(0);
+    expect(card.google_fetched_at).toBeNull();
   });
 });

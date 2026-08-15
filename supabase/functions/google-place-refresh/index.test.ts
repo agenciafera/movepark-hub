@@ -52,6 +52,7 @@ Deno.test("mapPlaceDetails: extrai nota, contagem e atribuicao", () => {
       {
         rating: 5,
         text: { text: "Atendimento rapido." },
+        originalText: { text: "Atendimento rapido." },
         publishTime: "2026-07-02T10:00:00Z",
         relativePublishTimeDescription: "há um mês",
         googleMapsUri: "https://maps.google.com/review/1",
@@ -70,6 +71,42 @@ Deno.test("mapPlaceDetails: extrai nota, contagem e atribuicao", () => {
   assertEquals(out.reviews[0].authorName, "Ana P.");
   assertEquals(out.reviews[0].authorUri, "https://www.google.com/maps/contrib/1");
   assertEquals(out.reviews[0].text, "Atendimento rapido.");
+});
+
+Deno.test("mapPlaceDetails: guarda o originalText, nunca a traducao de maquina", () => {
+  // A chamada manda languageCode=pt-BR, entao o Places devolve `text` traduzido quando a
+  // avaliacao foi escrita em outra lingua. Guardar essa versao e publica-la como palavra do
+  // autor quebra a regra de atribuicao (§11 da spec: sem editar, cortar ou traduzir).
+  const out = mapPlaceDetails({
+    rating: 4.8,
+    userRatingCount: 40,
+    reviews: [
+      {
+        rating: 5,
+        text: { text: "Servico rapido e equipe atenciosa." },
+        originalText: { text: "Fast service and a helpful team." },
+        publishTime: "2026-07-02T10:00:00Z",
+        authorAttribution: { displayName: "John D." },
+      },
+    ],
+  });
+  assertEquals(out.reviews[0].text, "Fast service and a helpful team.");
+});
+
+Deno.test("mapPlaceDetails: sem originalText cai no text, porque e ele ou nada", () => {
+  const out = mapPlaceDetails({
+    rating: 4.8,
+    userRatingCount: 40,
+    reviews: [
+      {
+        rating: 5,
+        text: { text: "Estacionamento limpo." },
+        publishTime: "2026-07-02T10:00:00Z",
+        authorAttribution: { displayName: "Bia M." },
+      },
+    ],
+  });
+  assertEquals(out.reviews[0].text, "Estacionamento limpo.");
 });
 
 Deno.test("mapPlaceDetails: lugar sem avaliacao nao quebra", () => {

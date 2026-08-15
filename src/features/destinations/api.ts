@@ -55,6 +55,7 @@ export async function fetchDestinationProspects(slug: string): Promise<ProspectC
     distance_km: row.distance_km == null ? null : Number(row.distance_km),
     google_rating: row.google_rating == null ? null : Number(row.google_rating),
     google_rating_count: row.google_rating_count ?? 0,
+    google_fetched_at: row.google_fetched_at ?? null,
     amenities: Array.isArray(row.amenities) ? (row.amenities as string[]) : [],
   })) as ProspectCard[];
 }

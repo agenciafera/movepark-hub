@@ -13,9 +13,20 @@ busca, no destino e no card de lote mapeado.
 testada no repo, mas **não** foi publicada nem agendada, porque depende da
 `GOOGLE_PLACES_SERVER_KEY` (chave de servidor, restrita por IP, que ainda não existe). Sem ela a
 tabela fica vazia, e vazia é o estado correto: nenhuma superfície inventa nota, todas caem no
-comportamento de antes. Ao criar a chave: `supabase secrets set GOOGLE_PLACES_SERVER_KEY=...`,
-`supabase functions deploy google-place-refresh --no-verify-jwt` e o agendamento semanal no
-`pg_cron`.
+comportamento de antes.
+
+**Para ligar, os quatro passos:**
+
+1. `supabase secrets set GOOGLE_PLACES_SERVER_KEY=...` (a chave de servidor, restrita por IP).
+2. `supabase functions deploy google-place-refresh --no-verify-jwt`.
+3. Agendamento semanal no `pg_cron`, com o header `x-google-place-key`.
+4. **A URL do deploy hook do Cloudflare em `app_setting.google_place_rebuild_hook_url`.** A
+   chave já existe no banco, semeada vazia e com `is_public = false` (migration
+   `20261025091500`). Sem preenchê-la o refresh roda e devolve `rebuilt: false` em toda
+   passada, e o HTML publicado envelhece até alguém dar push na `main`: o rebuild é a
+   **defesa principal** do prazo de 30 dias no HTML (§5), e o guard do componente é só a
+   rede. Ela nasce privada porque a policy `app_setting_public_read` entrega para `anon`
+   toda chave marcada, e deploy hook é credencial de disparo.
 
 Relacionado: [reviews.md](./reviews.md) · [capacidades-unidade.md](./capacidades-unidade.md) ·
 [checkout-externo-por-local.md](./checkout-externo-por-local.md) ·
@@ -160,8 +171,24 @@ Snapshot vencido deixa de existir para quem lê, mesmo que alguém esqueça o fi
 espírito do "o filtro de convertida na policy, não só na query" do ADR-010.
 
 **Esconder não basta, tem que apagar.** Um `pg_cron` diário roda
-`delete from google_place_snapshot where fetched_at < now() - interval '30 days'`. A policy
-protege a exibição; o purge cumpre a regra de cache.
+`purge_google_place_snapshots()`. A policy protege a exibição; o purge cumpre a regra de cache.
+
+**O purge não pode levar a moderação junto.** `is_hidden` é coluna da linha vencida, então
+apagar a linha apagava a decisão do `hub_admin`. A sequência que devolvia o bloco ao ar sem
+ninguém agir: o admin esconde o lote, o refresh fica parado um mês, o purge apaga a linha, o
+refresh volta e insere uma linha nova com `is_hidden` no default `false`. Por isso o purge
+trata as duas caudas de forma diferente:
+
+| Linha vencida | O que acontece |
+|---|---|
+| Escondida (`is_hidden`) | Perde nota, contagem, `maps_uri` e `reviews`. A linha e o flag ficam |
+| Visível | É apagada, como antes |
+
+Nos dois casos nenhum conteúdo do Google sobrevive aos 30 dias, então o limite de cache
+continua cumprido: o que sobra na linha escondida é um `place_id` (guardável
+indefinidamente) e um booleano nosso. A função devolve quantas linhas deixaram de carregar
+conteúdo do Google na passada, somando as apagadas e as esvaziadas, e é idempotente: linha
+já esvaziada não conta de novo no dia seguinte. Migration `20261025093000`.
 
 ## 5. Atualização
 
@@ -190,6 +217,14 @@ GET https://places.googleapis.com/v1/places/{place_id}?languageCode=pt-BR&region
 X-Goog-Api-Key: <GOOGLE_PLACES_SERVER_KEY>
 X-Goog-FieldMask: id,rating,userRatingCount,googleMapsUri,reviews
 ```
+
+**O texto guardado é o `originalText`, nunca o `text`.** Como a chamada manda
+`languageCode=pt-BR`, o campo `text` volta traduzido por máquina quando a avaliação foi
+escrita em outra língua, e publicar isso como palavra do autor quebra a regra de atribuição
+(§11). O mapper prefere `originalText` e só cai no `text` quando o original não vem, porque
+aí é ele ou nada. O field mask pede `reviews` inteiro de propósito: field mask não atravessa
+campo repetido, então `reviews.originalText` seria recusado com 400, e o objeto `Review`
+completo já traz os dois textos.
 
 **A chave do projeto não serve.** A `VITE_GOOGLE_MAPS_API_KEY` é restrita por referrer e recusa
 chamada de servidor com `API_KEY_HTTP_REFERRER_BLOCKED`, como o
@@ -233,10 +268,22 @@ A alternativa (promover a função a `security definer`) foi recusada: definer c
 coluna e devolve o telefone no primeiro `select` distraído, que é exatamente o que o Q-021
 fechou.
 
-**O join do snapshot repete o `is_hidden` e os 30 dias.** A policy de leitura já filtra os dois
+**Toda leitura repete o `is_hidden` e os 30 dias.** A policy de leitura já filtra os dois
 para o público, mas a policy de escrita da tabela é `for all` gateada em `is_hub_admin()`, e
 policies permissivas se somam: para um admin logado a linha oculta e a vencida aparecem. Sem os
-filtros explícitos no join, a página pública mudaria de conteúdo conforme quem a abrisse.
+filtros explícitos, a página pública mudaria de conteúdo conforme quem a abrisse, e o admin que
+escondesse um lote continuaria vendo o bloco na própria ficha, concluindo que a moderação está
+quebrada. Vale para o join da RPC `destination_prospect_cards` e para as duas funções de
+`src/features/reviews/googleApi.ts`.
+
+**O card do lote mapeado confere o frescor na renderização, e não só na consulta.** A RPC
+devolve `google_fetched_at` junto da nota porque a página `/destinos/<slug>` prefere o dado do
+**loader**, que roda no **build**: o filtro de 30 dias da RPC acontece uma vez, no dia do
+deploy, e o HTML sai congelado com aquele resultado. Sem o guard no componente, a página
+construída no dia 0 servia nota do Google no dia 31, e um `is_hidden` ligado no dia 1 nunca
+chegava nela. É a mesma defesa que a ficha (`GoogleReviewsBlock`) e a semente do destino
+(`buildStaticUnits`) já aplicavam, e era o único caminho onde nem a policy, nem o join, nem o
+hook do cliente alcançavam. Migration `20261025090000`.
 
 Não há hook novo, e isso não é atalho: o bloco **precisa** sair no HTML pré-renderizado (§8), e
 hook de cliente não põe nada no HTML. Um `useGooglePlaceSnapshot` renderizaria depois da
@@ -303,9 +350,9 @@ de IA leem sem precisar de marcação.
 
 | Camada | O que trava |
 |---|---|
-| pgTAP `google_place_snapshot.test.sql` | policy esconde snapshot com mais de 30 dias do `anon`; `hub_admin` escreve e `anon` não; purge apaga de fato; upsert por `place_id` substitui o conjunto inteiro |
-| Deno `google-place-refresh/index.test.ts` | refresh sem header secreto é recusado; seleção pega só o que está sem snapshot ou com mais de 7 dias; erro da Places API grava `fetch_error` e preserva o snapshot bom |
-| Vitest | merge das duas fontes no hook; atribuição renderiza autor, foto e link; card de busca escolhe um selo só, com prioridade Movepark; **regressão que falha se o `productOfferSchema` ganhar `aggregateRating` vindo do Google** |
+| pgTAP `google_place_snapshot.test.sql` | policy esconde snapshot com mais de 30 dias do `anon`; `hub_admin` escreve e `anon` não; purge apaga a linha vencida visível **e preserva a escondida sem o conteúdo do Google**, sendo idempotente na segunda passada; upsert por `place_id` substitui o conjunto inteiro |
+| Deno `google-place-refresh/index.test.ts` | refresh sem header secreto é recusado; seleção pega só o que está sem snapshot ou com mais de 7 dias; erro da Places API grava `fetch_error` e preserva o snapshot bom; **o mapper guarda o `originalText` e nunca a tradução de máquina** |
+| Vitest | merge das duas fontes no hook; atribuição renderiza autor, foto e link; card de busca escolhe um selo só, com prioridade Movepark; **as leituras de `googleApi.ts` filtram `is_hidden` e os 30 dias na query**; **o card do lote mapeado esconde a nota quando `google_fetched_at` passou de 30 dias**; **regressão que falha se o `productOfferSchema` ganhar `aggregateRating` vindo do Google** |
 
 ## 10. Custo e operação
 

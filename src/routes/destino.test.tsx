@@ -86,6 +86,11 @@ function render(opts?: { auth?: ReturnType<typeof mockAuth> }) {
   );
 }
 
+/** Data de coleta relativa a agora, porque o guard de frescor conta a partir do relógio. */
+function diasAtras(dias: number): string {
+  return new Date(Date.now() - dias * 24 * 60 * 60 * 1000).toISOString();
+}
+
 function prospect(overrides: Partial<ProspectCardData> = {}): ProspectCardData {
   return {
     id: "p1",
@@ -102,11 +107,16 @@ function prospect(overrides: Partial<ProspectCardData> = {}): ProspectCardData {
     google_place_id: null,
     google_rating: null,
     google_rating_count: 0,
+    google_fetched_at: null,
     ...overrides,
   };
 }
 
 beforeEach(() => {
+  // Volta ao caminho do cliente (sem loader) a cada teste. Sem isto, o primeiro teste que
+  // simula o SSG contamina todos os seguintes, porque `mockReturnValue` não se desfaz sozinho
+  // e a página prefere o dado do loader ao do hook.
+  loaderData.mockReturnValue(null);
   vi.mocked(useSearchResults).mockReturnValue({ data: { results: [] }, isLoading: false } as never);
   vi.mocked(useFaqCombined).mockReturnValue({ data: [] } as never);
   vi.mocked(usePublishedDestinations).mockReturnValue({ data: [] } as never);
@@ -274,7 +284,13 @@ describe("DestinoPage · lotes mapeados (E0.17-d)", () => {
   it("mostra a nota do Google no card mapeado, rotulada, e nada quando não há snapshot", () => {
     vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
     vi.mocked(useDestinationProspects).mockReturnValue({
-      data: [prospect({ google_rating: 4.4, google_rating_count: 137 })],
+      data: [
+        prospect({
+          google_rating: 4.4,
+          google_rating_count: 137,
+          google_fetched_at: diasAtras(3),
+        }),
+      ],
     } as never);
 
     const { unmount } = render();
@@ -288,6 +304,35 @@ describe("DestinoPage · lotes mapeados (E0.17-d)", () => {
     vi.mocked(useDestinationProspects).mockReturnValue({ data: [prospect()] } as never);
     render();
     expect(screen.getByTestId("prospect-card")).not.toHaveTextContent(/avaliações/);
+  });
+
+  it("some com a nota do Google no card mapeado quando o snapshot passou dos 30 dias", () => {
+    // Esta página prefere o dado do LOADER, que roda no build: o filtro de 30 dias da RPC
+    // acontece uma vez, no dia do deploy, e o HTML sai congelado com o resultado dele. Sem o
+    // guard no componente, a página construída no dia 0 seguia servindo a nota no dia 31, e
+    // o `is_hidden` ligado no dia 1 nunca chegava nela. É o único caminho onde nem a policy,
+    // nem o join da RPC, nem o hook do cliente alcançam.
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
+    loaderData.mockReturnValue({
+      destination: dest(),
+      prospects: [
+        prospect({
+          google_rating: 4.4,
+          google_rating_count: 137,
+          google_fetched_at: diasAtras(31),
+        }),
+      ],
+      units: [],
+    });
+
+    render();
+
+    const card = screen.getByTestId("prospect-card");
+    expect(card).not.toHaveTextContent(/no Google/);
+    expect(card).not.toHaveTextContent(/avaliações/);
+    // O resto do card continua: endereço e distância são fato do lugar, não conteúdo do
+    // Google sob prazo de cache.
+    expect(card).toHaveTextContent("Talentos Park");
   });
 
   it("usa o nome do terminal na distância quando o destino tem um cadastrado", () => {

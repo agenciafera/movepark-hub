@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { MapPin } from "@phosphor-icons/react";
 import type { ProspectCard as ProspectCardData } from "@/types/domain";
 import { formatDistance } from "@/lib/format";
-import { pickCardBadge } from "@/features/reviews/google.logic";
+import { isSnapshotFresh, pickCardBadge } from "@/features/reviews/google.logic";
 import { RatingBadge } from "@/features/reviews/RatingStars";
 
 type Props = {
@@ -48,9 +48,15 @@ type Props = {
  * esta página existe para fazer.
  */
 export function ProspectCard({ item, destinationSlug }: Props) {
+  // O prazo de 30 dias do Google vale também para a cópia que fica publicada, e esta página
+  // é a única em que ninguém mais confere: `/destinos/<slug>` prefere o dado do loader, que
+  // roda no BUILD, então a RPC filtra os 30 dias e o `is_hidden` uma vez só, no dia do
+  // deploy, e o HTML sai congelado com aquele resultado. Sem esta linha o card de uma página
+  // construída no dia 0 continuava mostrando nota do Google no dia 31.
+  const fresco = !!item.google_fetched_at && isSnapshotFresh(item.google_fetched_at);
   const badge = pickCardBadge(
     { avg: null, count: 0 },
-    { rating: item.google_rating, count: item.google_rating_count },
+    fresco ? { rating: item.google_rating, count: item.google_rating_count } : null,
   );
 
   return (

@@ -23,6 +23,14 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { isAuthorized, mapPlaceDetails, selectStale } from "./logic.ts";
 
+// `reviews` traz o objeto Review inteiro, e é dele que sai o `originalText` (o texto na
+// língua em que o autor escreveu), que é o que o espelho guarda: a chamada manda
+// `languageCode=pt-BR`, então o campo `text` volta traduzido por máquina e publicá-lo como
+// palavra do autor quebra a regra de atribuição (§11 da spec).
+//
+// Não dá para pedir `reviews.originalText` sozinho: field mask não atravessa campo repetido,
+// e um caminho com sub-campo depois de `reviews` é recusado com 400. Pedir `reviews` é o
+// jeito de ter o original, e a preferência entre os dois textos fica no `mapPlaceDetails`.
 const FIELD_MASK = "id,rating,userRatingCount,googleMapsUri,reviews";
 
 function json(body: unknown, status = 200) {

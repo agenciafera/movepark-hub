@@ -52,6 +52,10 @@ export type ProspectLocation = Tables<"prospect_location">;
  * existe depois que o refresh passou naquele place_id. `google_place_id` está aqui porque
  * a ficha do lote usa ele para carregar o snapshot inteiro no loader do SSG, e porque já é
  * público no `google_maps_url` do mesmo card.
+ *
+ * `google_fetched_at` é a data da coleta, e ela viaja junto porque este card sai no HTML do
+ * build: a RPC filtra os 30 dias na hora da consulta, e esse filtro não alcança uma página
+ * que foi construída há 40 dias e continua servida na borda. O componente confere de novo.
  */
 export type ProspectCard = {
   id: string;
@@ -68,6 +72,7 @@ export type ProspectCard = {
   google_place_id: string | null;
   google_rating: number | null;
   google_rating_count: number;
+  google_fetched_at: string | null;
 };
 
 /**

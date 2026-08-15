@@ -45,7 +45,11 @@ export function isAuthorized(provided: string | null, expected: string | undefin
 
 type RawReview = {
   rating?: number;
+  /** Versão localizada pelo `languageCode` da chamada. Traduzida por máquina quando o autor
+   *  escreveu em outra língua. */
   text?: { text?: string };
+  /** O texto na língua em que o autor escreveu. É este que a gente guarda. */
+  originalText?: { text?: string };
   publishTime?: string;
   relativePublishTimeDescription?: string;
   googleMapsUri?: string;
@@ -56,6 +60,12 @@ type RawReview = {
  * Traduz a resposta do Places (New) para a linha do espelho.
  * Review sem nome de autor é DESCARTADA: exibir sem atribuição não é permitido, então
  * guardar um dado que não pode ser mostrado só cria lixo com prazo de validade.
+ *
+ * O texto guardado é o `originalText`, e não o `text`. A chamada manda `languageCode=pt-BR`,
+ * então o `text` que volta é tradução de máquina quando a avaliação foi escrita em outra
+ * língua. Publicar isso como se fossem as palavras do autor quebra a regra de atribuição
+ * (§11: não traduzir, não resumir, não cortar). O `text` fica como reserva para o caso de o
+ * Places não mandar o original: nesse cenário é ele ou nada.
  */
 export function mapPlaceDetails(place: unknown): {
   rating: number | null;
@@ -74,7 +84,7 @@ export function mapPlaceDetails(place: unknown): {
     .filter((r) => !!r.authorAttribution?.displayName)
     .map((r) => ({
       rating: r.rating ?? 0,
-      text: r.text?.text ?? "",
+      text: r.originalText?.text ?? r.text?.text ?? "",
       publishTime: r.publishTime ?? "",
       relativePublishTimeDescription: r.relativePublishTimeDescription ?? "",
       authorName: r.authorAttribution!.displayName!,

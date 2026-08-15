@@ -4806,6 +4806,7 @@ export type Database = {
           amenities: Json
           description: string
           distance_km: number
+          google_fetched_at: string
           google_maps_url: string
           google_place_id: string
           google_rating: number
