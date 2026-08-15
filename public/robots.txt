@@ -20,26 +20,27 @@ Allow: /
 User-agent: Applebot
 Allow: /
 
-# Bots de treino — não geram referral, bloqueados por padrão
+# Bots de treino: liberados em 15/08/2026. A meta é a marca presente também no
+# conhecimento-base dos modelos, não só no retrieval. Decisão reversível aqui.
 User-agent: GPTBot
-Disallow: /
+Allow: /
 
 User-agent: ClaudeBot
-Disallow: /
+Allow: /
 
 User-agent: CCBot
-Disallow: /
+Allow: /
 
 User-agent: Google-Extended
-Disallow: /
+Allow: /
 
 User-agent: Applebot-Extended
-Disallow: /
+Allow: /
 
 User-agent: Bytespider
-Disallow: /
+Allow: /
 
 Sitemap: https://hub.movepark.co/sitemap.xml
 
 # Content Signals — preferências de uso por IA (contentsignals.org)
-Content-Signal: ai-train=no, search=yes, ai-input=yes
+Content-Signal: ai-train=yes, search=yes, ai-input=yes

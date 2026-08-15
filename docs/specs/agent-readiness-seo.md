@@ -69,6 +69,11 @@ por SSG, não por SSR.** (POC recomendado para validar o ciclo webhook→deploy.
 
 ## Descoberta (robots, sitemap, llms.txt)
 
+> **Decisão (15/08/2026):** os bots de treino (GPTBot, ClaudeBot, CCBot, Google-Extended,
+> Applebot-Extended, Bytespider) passaram a **Allow** e o Content Signal virou `ai-train=yes`.
+> A meta declarada do negócio é liderar citação em LLM, e presença no treinamento é parte
+> disso; o custo aceito é o uso do conteúdo sem referral. Reverter é editar `public/robots.txt`.
+
 - **`robots.txt`** com regras de bots de IA — separar **treino** de **retrieval ao vivo**:
   - *Permitir* (geram tráfego de citação): `OAI-SearchBot`, `ChatGPT-User`, `Claude-Web`, `PerplexityBot`, `Perplexity-User`, `Applebot`.
   - *Decidir* (treino, sem referral): `GPTBot`, `ClaudeBot`, `CCBot`, `Google-Extended`, `Applebot-Extended`, `Bytespider`.

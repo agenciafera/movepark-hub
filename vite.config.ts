@@ -91,6 +91,32 @@ async function getFaqRoutes(sb: SupabaseClient | null): Promise<string[]> {
 }
 
 /**
+ * Páginas "mais barato" (/estacionamento-mais-barato/<slug>): entra no sitemap o
+ * mesmo conjunto que o getStaticPaths gera, ou seja, destino com ao menos um
+ * preço de carro na matriz do motor (RPC destination_price_index). /precos cobre
+ * todos os destinos (mapeados entram sem preço); esta intenção não. Falha da RPC
+ * deixa as URLs fora do sitemap; as páginas continuam existindo pelo SSG.
+ */
+async function getMaisBaratoRoutes(sb: SupabaseClient | null): Promise<string[]> {
+  if (!sb) return [];
+
+  const { data } = await sb.rpc("destination_price_index", {});
+  // deno-lint-ignore no-explicit-any
+  const destinations: any[] = (data as any)?.destinations ?? [];
+  return destinations
+    .filter((d) =>
+      // deno-lint-ignore no-explicit-any
+      (d.units ?? []).some(
+        (u: any) =>
+          u.parking_type_code !== "motorcycle" &&
+          // deno-lint-ignore no-explicit-any
+          (u.prices ?? []).some((p: any) => p.total != null),
+      ),
+    )
+    .map((d) => `/estacionamento-mais-barato/${d.slug}`);
+}
+
+/**
  * Posts do blog. A barra final é obrigatória: é a URL canônica herdada do
  * WordPress, e é ela que o Google já conhece. Ver docs/specs/blog.md.
  */
@@ -149,14 +175,22 @@ export default defineConfig(async ({ mode }) => {
   const key = env.VITE_SUPABASE_ANON_KEY;
   const sb = url && key ? createClient(url, key) : null;
 
-  const [listingRoutes, destinationRoutes, blogRoutes, prospectRoutes, faqRoutes, precosRoutes] =
-    await Promise.all([
+  const [
+    listingRoutes,
+    destinationRoutes,
+    blogRoutes,
+    prospectRoutes,
+    faqRoutes,
+    precosRoutes,
+    maisBaratoRoutes,
+  ] = await Promise.all([
       getDynamicRoutes(sb),
       getDestinationRoutes(sb),
       getBlogRoutes(sb),
       getProspectRoutes(sb),
       getFaqRoutes(sb),
       getPrecosRoutes(sb),
+      getMaisBaratoRoutes(sb),
     ]);
   // Índice de destinos + uma URL por destino publicado, além das listagens /p/...
   // e dos posts do blog (com barra final, contrato herdado do WordPress).
@@ -178,6 +212,7 @@ export default defineConfig(async ({ mode }) => {
       ...prospectRoutes,
       ...faqRoutes,
       ...precosRoutes,
+      ...maisBaratoRoutes,
     ]),
   ].filter((r) => r !== "/");
 

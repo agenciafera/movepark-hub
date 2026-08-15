@@ -77,6 +77,21 @@ describe("worker asset fallback", () => {
     expect(body).toContain("# Movepark");
   });
 
+  // Consolidação por intenção: o perdedor responde 301 pro vencedor, com e sem barra.
+  it("post consolidado redireciona 301 pro vencedor do grupo", async () => {
+    const env = makeEnv({});
+    for (const path of [
+      "/blog/top-3-estacionamentos-do-aeroporto-de-viracopos/",
+      "/blog/top-3-estacionamentos-do-aeroporto-de-viracopos",
+    ]) {
+      const res = await worker.fetch(req(path), env);
+      expect(res.status).toBe(301);
+      expect(res.headers.get("Location")).toBe(
+        "/blog/quais-os-melhores-estacionamentos-do-aeroporto-viracopos-em-2024/",
+      );
+    }
+  });
+
   it("serve o markdown da página de pergunta do FAQ", async () => {
     const env = makeEnv({
       "/faq/como-cancelo-uma-reserva.md": { body: "# Como cancelo", type: "text/markdown" },

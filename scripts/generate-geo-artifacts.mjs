@@ -656,6 +656,55 @@ function tabelaTopMarkdown(dest, limit = 5) {
 }
 
 // ---------------------------------------------------------------------------
+// estacionamento-mais-barato/<slug>.md — a intenção "mais barato" em Markdown,
+// com vencedor e segunda opção por duração (mesma regra da página React).
+// ---------------------------------------------------------------------------
+{
+  fs.mkdirSync(path.join(DIST, "estacionamento-mais-barato"), { recursive: true });
+
+  for (const dest of destinosComPreco) {
+    const nome = nomeCurto(dest).replace(/\s*\([^)]*\)\s*$/, "").trim();
+    const linhasTabela = [];
+    for (const d of diasIndice) {
+      const ordenadas = unidadesCarro(dest)
+        .map((u) => ({ u, total: totalDe(u, d) }))
+        .filter((x) => x.total != null)
+        .sort((a, b) => a.total - b.total);
+      if (ordenadas.length === 0) continue;
+      const [v, vice] = ordenadas;
+      linhasTabela.push(
+        `| ${durLabel(d)} | ${v.u.company_name} (${v.u.parking_type_name}) | ${brl(v.total)} (${brl(v.total / d)}/dia) | ${vice ? `${vice.u.company_name}, ${brl(vice.total)}` : "sem segunda opção"} |`,
+      );
+    }
+    if (linhasTabela.length === 0) continue;
+
+    const linhas = [
+      "---",
+      `title: "Estacionamento mais barato em ${nome} (${dest.code}) | Movepark"`,
+      `canonical: ${SITE_URL}/estacionamento-mais-barato/${dest.slug}`,
+      `updated: ${hoje}`,
+      "---",
+      "",
+      `# Qual é o estacionamento mais barato perto de ${nome}?`,
+      "",
+      "Vencedor e segunda opção por duração, com o preço do motor de reservas (o mesmo do checkout). O ranking muda quando a tabela do parceiro muda.",
+      "",
+      "| Período | Mais barato | Total | Segunda opção |",
+      "| --- | --- | --- | --- |",
+      ...linhasTabela,
+      "",
+      `Tabela completa e preço de balcão: ${SITE_URL}/precos/${dest.slug}`,
+      `Reservar: ${SITE_URL}/destinos/${dest.slug}`,
+      "",
+    ];
+    fs.writeFileSync(
+      path.join(DIST, "estacionamento-mais-barato", `${dest.slug}.md`),
+      linhas.join("\n"),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // llms.txt: refresh da data na cópia do dist
 // ---------------------------------------------------------------------------
 {

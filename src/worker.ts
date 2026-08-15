@@ -112,6 +112,78 @@ const BLOG_LEGACY_PATHS: Record<string, string> = {
     "/blog/aeropark-descubra-se-o-estacionamento-aeroporto-gru-oferece-vagas-cobertas/",
 };
 
+/**
+ * Consolidação por intenção (15/08/2026): o acervo herdado do WordPress tinha até
+ * oito posts disputando a MESMA consulta ("melhor estacionamento Viracopos"), e o
+ * Google não elege vencedor entre páginas irmãs. Um vencedor por intenção e por
+ * aeroporto, escolhido pelos cliques de 16 meses do Search Console (planilha de
+ * migração); os demais respondem 301 pra ele e saíram de publicação no banco.
+ * Navegantes ficou de fora: o comparativo de 2026 é recente e a escolha lá é
+ * editorial. Reverter = republicar o post e tirar a entrada daqui.
+ */
+export const BLOG_CONSOLIDATED_SLUGS: Record<string, string> = {
+  // Viracopos · melhor
+  "qual-e-o-melhor-estacionamento-do-aeroporto-de-viracopos":
+    "quais-os-melhores-estacionamentos-do-aeroporto-viracopos-em-2024",
+  "qual-o-melhor-estacionamento-no-aeroporto-de-viracopos-guia-completo-para-economizar-e-viajar-com-tranquilidade":
+    "quais-os-melhores-estacionamentos-do-aeroporto-viracopos-em-2024",
+  "top-5-melhores-estacionamentos-aeroporto-viracopos":
+    "quais-os-melhores-estacionamentos-do-aeroporto-viracopos-em-2024",
+  "qual-e-o-melhor-estacionamento-aeroporto-viracopos-2022":
+    "quais-os-melhores-estacionamentos-do-aeroporto-viracopos-em-2024",
+  "top-3-estacionamentos-do-aeroporto-de-viracopos":
+    "quais-os-melhores-estacionamentos-do-aeroporto-viracopos-em-2024",
+  // Viracopos · preço
+  "quanto-custa-deixar-o-carro-no-aeroporto-viracopos-por-7-dias":
+    "como-pagar-mais-barato-no-estacionamento-do-aeroporto-viracopos-em-2024",
+  "preco-estacionamento-aeroporto-viracopos-saiba-tudo-aqui":
+    "como-pagar-mais-barato-no-estacionamento-do-aeroporto-viracopos-em-2024",
+  "quanto-custa-para-estacionar-no-aeroporto-viracopos":
+    "como-pagar-mais-barato-no-estacionamento-do-aeroporto-viracopos-em-2024",
+  // Guarulhos · melhor
+  "melhor-estacionamento-aeroporto-guarulhos-guia-completo-para-escolher-com-seguranca-economia-e-conforto":
+    "guia-atualizado-5-melhores-opcoes-de-estacionamento-no-aeroporto-guarulhos-em-2024",
+  "valor-de-diaria-estacionamento-aeroporto-guarulhos":
+    "guia-atualizado-5-melhores-opcoes-de-estacionamento-no-aeroporto-guarulhos-em-2024",
+  "melhores-opcoes-de-estacionamento-gru-airport":
+    "guia-atualizado-5-melhores-opcoes-de-estacionamento-no-aeroporto-guarulhos-em-2024",
+  "como-encontrar-o-melhor-estacionamento-no-aeroporto-de-guarulhos":
+    "guia-atualizado-5-melhores-opcoes-de-estacionamento-no-aeroporto-guarulhos-em-2024",
+  "qual-o-melhor-estacionamento-no-aeroporto-de-guarulhos-em-2024":
+    "guia-atualizado-5-melhores-opcoes-de-estacionamento-no-aeroporto-guarulhos-em-2024",
+  "qual-e-o-melhor-estacionamento-aeroporto-guarulhos-2023":
+    "guia-atualizado-5-melhores-opcoes-de-estacionamento-no-aeroporto-guarulhos-em-2024",
+  "melhor-estacionamento-aeroporto-guarulhos-2022":
+    "guia-atualizado-5-melhores-opcoes-de-estacionamento-no-aeroporto-guarulhos-em-2024",
+  // Guarulhos · preço
+  "qual-e-o-preco-medio-do-estacionamento-no-aeroporto-guarulhos":
+    "preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui",
+  "como-pagar-mais-barato-no-estacionamento-do-aeroporto-guarulhos":
+    "preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui",
+  "estacionamento-aeroporto-guarulhos-veja-o-preco-dos-principais-estacionamentos":
+    "preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui",
+  // Afonso Pena · melhor
+  "top-3-estacionamentos-do-aeroporto-de-curitiba":
+    "aeroporto-afonso-pena-5-melhores-opcoes-de-estacionamento-em-2024",
+  "qual-o-melhor-estacionamento-no-aeroporto-afonso-pena-em-2024":
+    "aeroporto-afonso-pena-5-melhores-opcoes-de-estacionamento-em-2024",
+  "estacionamento-no-aeroporto-de-afonso-pena-a-melhor-opcao-para-sua-viagem":
+    "aeroporto-afonso-pena-5-melhores-opcoes-de-estacionamento-em-2024",
+  // Afonso Pena · preço
+  "preco-estacionamento-aeroporto-afonso-pena-curitiba-saiba-tudo-aqui":
+    "quanto-custa-um-estacionamento-do-aeroporto-afonso-pena",
+  // Lisboa · melhor
+  "qual-o-melhor-estacionamento-no-aeroporto-lisboa-em-2024":
+    "descubra-o-melhor-parque-low-cost-junto-ao-aeroporto-de-lisboa",
+  "encontre-o-melhor-estacionamento-perto-do-aeroporto-de-lisboa":
+    "descubra-o-melhor-parque-low-cost-junto-ao-aeroporto-de-lisboa",
+  // Lisboa · preço
+  "quanto-custa-um-estacionamento-do-aeroporto-lisboa":
+    "quanto-custa-o-estacionamento-no-aeroporto-lisboa",
+  "como-pagar-mais-barato-no-estacionamento-do-aeroporto-de-lisboa":
+    "quanto-custa-o-estacionamento-no-aeroporto-lisboa",
+};
+
 const redirect301 = (to: string) =>
   new Response(null, { status: 301, headers: { Location: to, "Cache-Control": "no-cache" } });
 
@@ -161,6 +233,12 @@ export function blogRedirect(url: URL): Response | null {
   }
 
   if (segments.length > 1) return null;
+
+  // Post consolidado: a intenção dele agora mora no vencedor do grupo. Vem antes
+  // da canônica de barra, senão o perdedor sem barra faria dois saltos.
+  if (segments[0] in BLOG_CONSOLIDATED_SLUGS) {
+    return redirect301(`/blog/${BLOG_CONSOLIDATED_SLUGS[segments[0]]}/`);
+  }
 
   if (segments[0] in BLOG_CATEGORY_TO_DESTINATION) {
     const destination = BLOG_CATEGORY_TO_DESTINATION[segments[0]];
@@ -371,6 +449,8 @@ const ROTAS_DE_APP: RegExp[] = [
   // Mesma razão de /destinos: as páginas de pergunta (/faq/<slug>) são SSG, e uma FAQ
   // publicada no Manager depois do build precisa abrir antes do próximo deploy.
   /^\/faq(\/[^/]+)?$/,
+  // Idem: destino que ganha preço depois do build abre pelo cliente até o próximo deploy.
+  /^\/estacionamento-mais-barato\/[^/]+$/,
 ];
 
 export function ehRotaDeApp(pathname: string): boolean {

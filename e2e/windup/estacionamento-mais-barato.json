@@ -1,0 +1,14 @@
+{
+  "scenario_id": "estacionamento-mais-barato",
+  "start_url": "/estacionamento-mais-barato/aeroporto-de-viracopos",
+  "task": "Verifique que a pagina exibe um titulo que comeca com Qual e o estacionamento mais barato, uma secao com o texto Menor preco por duracao e um link com o texto Comparar precos em Viracopos.",
+  "tags": [
+    "smoke",
+    "leitura"
+  ],
+  "hints": [
+    "A pagina responde qual o estacionamento mais barato perto do aeroporto, com vencedor por duracao.",
+    "O titulo e o <h1>; a tabela de menor preco vem depois da resposta direta.",
+    "Os dois botoes de acao levam para o destino e para a pagina de precos."
+  ]
+}

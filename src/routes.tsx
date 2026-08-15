@@ -16,6 +16,7 @@ import {
   type AirportMeta,
   type IndexProspect,
 } from "@/features/price-index/priceIndex.logic";
+import { maisBaratoPorDuracao } from "@/features/price-index/maisBarato.logic";
 import { filterPosts, pageSlice, totalPages } from "@/features/blog/listing.logic";
 
 import { AppProviders } from "@/components/shared/AppProviders";
@@ -64,6 +65,7 @@ import AjudaPage from "@/routes/ajuda";
 import CancelamentoPage from "@/routes/cancelamento";
 import ComoFuncionaPage from "@/routes/como-funciona";
 import MetodologiaPage from "@/routes/metodologia";
+import EstacionamentoMaisBaratoPage from "@/routes/estacionamento-mais-barato";
 
 import AccountIndexPage from "@/routes/account/index";
 import AccountReservasPage from "@/routes/account/reservas";
@@ -429,6 +431,35 @@ function blogListingPaths(kind: BlogKind, comPaginas: boolean) {
 }
 
 /**
+ * Página "mais barato" (/estacionamento-mais-barato/<slug>): vencedor e vice por
+ * duração, do mesmo índice de preços de /precos. Uma página por consulta de
+ * dinheiro, com dado compacto no loader (o índice inteiro não viaja no HTML).
+ */
+async function maisBaratoLoader({ params }: LoaderFunctionArgs) {
+  const index = await fetchPriceIndex().catch(() => null);
+  if (!index) return null;
+  const dest = index.destinations.find((d) => d.slug === params.slug);
+  if (!dest) return null;
+  const linhas = maisBaratoPorDuracao(dest, index.days);
+  if (linhas.length === 0) return null;
+  const resumo = destinationSummary(dest, index.days);
+  return {
+    destino: { name: dest.name, short_name: dest.short_name, slug: dest.slug, code: dest.code },
+    linhas,
+    unitCount: resumo.unitCount,
+  };
+}
+
+/** Uma URL de "mais barato" por destino que tem ao menos um preço no índice. */
+async function fetchAllMaisBaratoPaths(): Promise<string[]> {
+  const index = await fetchPriceIndex().catch(() => null);
+  if (!index) return [];
+  return index.destinations
+    .filter((d) => maisBaratoPorDuracao(d, index.days).length > 0)
+    .map((d) => `/estacionamento-mais-barato/${d.slug}`);
+}
+
+/**
  * FAQ do hub /faq: global + destination, no build (SSG). O acervo inteiro sai no
  * HTML com o FAQPage; a busca da página filtra em memória sobre este dado.
  */
@@ -753,6 +784,12 @@ export const routes: RouteRecord[] = [
             element: <EstacionamentoMapeadoPage />,
             loader: estacionamentoMapeadoLoader,
             getStaticPaths: fetchAllProspectPaths,
+          },
+          {
+            path: "/estacionamento-mais-barato/:slug",
+            element: <EstacionamentoMaisBaratoPage />,
+            loader: maisBaratoLoader,
+            getStaticPaths: fetchAllMaisBaratoPaths,
           },
           {
             element: <RequireRole roles={["customer"]} />,

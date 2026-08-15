@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import worker from "./worker";
+import worker, { BLOG_CONSOLIDATED_SLUGS } from "./worker";
 import legacySlugs from "./features/blog/legacy-slugs.json";
 
 /**
@@ -10,9 +10,17 @@ import legacySlugs from "./features/blog/legacy-slugs.json";
  * deles recebe backlink, então o que preserva o tráfego é a URL responder 200 com
  * o mesmo conteúdo, não uma cadeia de redirect.
  *
+ * Emenda de 15/08/2026 (consolidação por intenção): os slugs que disputavam a
+ * MESMA consulta foram fundidos num vencedor por grupo, e o contrato deles passou
+ * a ser 301 direto pro vencedor (um salto só, nas duas formas de URL). O resto
+ * segue respondendo 200 com barra.
+ *
  * É este teste que impede alguém renomear um slug sem perceber que apagou uma
  * página que o Google conhece. Ver docs/specs/blog.md.
  */
+
+const consolidados = new Set(Object.keys(BLOG_CONSOLIDATED_SLUGS));
+const vivos = legacySlugs.filter((s) => !consolidados.has(s));
 
 const HTML = "<!DOCTYPE html><html><body>post</body></html>";
 
@@ -37,10 +45,10 @@ describe("contrato de URL do blog", () => {
     expect(legacySlugs).toContain("top-3-estacionamentos-do-aeroporto-de-navegantes");
   });
 
-  it("todo slug responde 200 na URL com barra, sem salto de redirect", async () => {
+  it("todo slug vivo responde 200 na URL com barra, sem salto de redirect", async () => {
     const naoServidos: string[] = [];
 
-    for (const slug of legacySlugs) {
+    for (const slug of vivos) {
       const { env, served } = makeEnv();
       const res = await worker.fetch(req(`/blog/${slug}/`), env);
       // 200 e nenhum redirect: a canônica do WordPress é com barra.
@@ -52,14 +60,35 @@ describe("contrato de URL do blog", () => {
     expect(naoServidos).toEqual([]);
   });
 
-  it("todo slug sem a barra devolve 301 para a versão com barra", async () => {
+  it("todo slug vivo sem a barra devolve 301 para a versão com barra", async () => {
     const errados: string[] = [];
 
-    for (const slug of legacySlugs) {
+    for (const slug of vivos) {
       const { env } = makeEnv();
       const res = await worker.fetch(req(`/blog/${slug}`), env);
       if (res.status !== 301 || res.headers.get("Location") !== `/blog/${slug}/`) {
         errados.push(`${slug} -> ${res.status} ${res.headers.get("Location")}`);
+      }
+    }
+
+    expect(errados).toEqual([]);
+  });
+
+  it("slug consolidado responde 301 direto pro vencedor, nas duas formas de URL", async () => {
+    const errados: string[] = [];
+
+    for (const [perdedor, vencedor] of Object.entries(BLOG_CONSOLIDATED_SLUGS)) {
+      // O vencedor tem que ser um slug vivo do contrato: 301 para outro 301 seria cadeia.
+      if (!legacySlugs.includes(vencedor) || consolidados.has(vencedor)) {
+        errados.push(`${perdedor} -> vencedor inválido ${vencedor}`);
+        continue;
+      }
+      for (const path of [`/blog/${perdedor}/`, `/blog/${perdedor}`]) {
+        const { env } = makeEnv();
+        const res = await worker.fetch(req(path), env);
+        if (res.status !== 301 || res.headers.get("Location") !== `/blog/${vencedor}/`) {
+          errados.push(`${path} -> ${res.status} ${res.headers.get("Location")}`);
+        }
       }
     }
 
@@ -141,7 +170,7 @@ describe("contrato de URL do blog", () => {
     const assets = {
       fetch: vi.fn(async (request: Request) => {
         const { pathname } = new URL(request.url);
-        if (pathname === "/blog/top-3-estacionamentos-do-aeroporto-de-viracopos.md") {
+        if (pathname === "/blog/top-3-estacionamentos-do-aeroporto-de-navegantes.md") {
           return new Response(md, { status: 200, headers: { "Content-Type": "text/markdown" } });
         }
         return new Response("nao encontrado", { status: 404 });
@@ -149,7 +178,7 @@ describe("contrato de URL do blog", () => {
     };
 
     const res = await worker.fetch(
-      new Request("https://hub.movepark.co/blog/top-3-estacionamentos-do-aeroporto-de-viracopos/", {
+      new Request("https://hub.movepark.co/blog/top-3-estacionamentos-do-aeroporto-de-navegantes/", {
         headers: { Accept: "text/markdown" },
       }),
       { ASSETS: assets },
