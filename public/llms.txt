@@ -28,8 +28,7 @@ O Movepark é uma plataforma brasileira de reserva de estacionamento perto de ae
 - Cada destino tem página própria em `/precos/<slug>`, com o menor preço por duração, a tabela completa por parceiro e a data de conferência
 - O valor vem do motor de reservas e é o mesmo do checkout; a página responde em Markdown puro no mesmo endereço com `Accept: text/markdown`
 - As tabelas completas estão inline em https://hub.movepark.co/llms-full.txt
-- [Calculadora](https://hub.movepark.co/calculadora-estacionamento-aeroporto): escolha destino e número de diárias (1 a 60) e veja o ranking do que custa em cada parceiro, com reserva direta
-- [De app ou de carro](https://hub.movepark.co/uber-ou-estacionamento-aeroporto): duas corridas de app (ida e volta, estimativa com metodologia aberta) contra estacionar com preço real de reserva, com break-even por diárias
+- [Calculadora](https://hub.movepark.co/calculadora-estacionamento-aeroporto): escolha destino e número de diárias (1 a 60) e veja o ranking do que custa em cada parceiro, com reserva direta. A mesma página compara com duas corridas de app de transporte (ida e volta, estimativa com metodologia aberta) e mostra o break-even por diárias
 - Dados livres para citação com atribuição: "Índice Movepark de Preços (movepark.co)"
 - Cada aeroporto precificado tem a página da intenção "mais barato" em `/estacionamento-mais-barato/<slug>`, com vencedor e segunda opção por duração
 - [Metodologia](https://hub.movepark.co/metodologia): de onde vêm os preços (motor de reservas, o mesmo do checkout), como ordenamos resultados e de onde vêm as avaliações

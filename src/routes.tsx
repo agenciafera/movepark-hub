@@ -49,9 +49,6 @@ import DestinoPage from "@/routes/destino";
 import PrecosPage, { type PrecosIndexData } from "@/routes/precos";
 import PrecosDestinoPage, { type PrecosDestinoData } from "@/routes/precos-destino";
 import CalculadoraPage, { type CalculadoraData } from "@/routes/calculadora";
-import UberOuEstacionamentoPage, {
-  type ComparadorAppData,
-} from "@/routes/uber-ou-estacionamento";
 import EstacionamentoMapeadoPage from "@/routes/estacionamento-mapeado";
 import DestinosPage from "@/routes/destinos";
 import NotFoundPage from "@/routes/not-found";
@@ -623,13 +620,6 @@ async function calculadoraLoader(): Promise<CalculadoraData | null> {
   };
 }
 
-/** Comparador app vs estacionar: só o índice precificado (a conta exige preço). */
-async function comparadorAppLoader(): Promise<ComparadorAppData | null> {
-  const data = await fetchPriceIndex().catch(() => null);
-  if (!data || data.destinations.length === 0) return null;
-  return { data, generatedAt: new Date().toISOString() };
-}
-
 /** Uma URL por destino publicado com unidade precificada. */
 async function fetchAllPrecosPaths(): Promise<string[]> {
   const data = await fetchPriceIndex().catch(() => null);
@@ -762,9 +752,10 @@ export const routes: RouteRecord[] = [
             loader: calculadoraLoader,
           },
           {
+            // O comparador de app foi centralizado na calculadora (15/08/2026);
+            // a URL antiga chegou a ir ao ar e redireciona para não virar 404.
             path: "/uber-ou-estacionamento-aeroporto",
-            element: <UberOuEstacionamentoPage />,
-            loader: comparadorAppLoader,
+            element: <Navigate to="/calculadora-estacionamento-aeroporto" replace />,
           },
           {
             path: "/precos/:slug",

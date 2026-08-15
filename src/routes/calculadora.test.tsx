@@ -194,6 +194,30 @@ describe("CalculadoraPage", () => {
     );
   });
 
+  it("compara com app na mesma página: veredito e break-even pré-renderizados", async () => {
+    setup();
+    // App a 25 km sem dinâmica: 2 corridas de 61,25 = 122,50; estacionar 7 diárias = 111,30.
+    const secao = (
+      await screen.findByRole("heading", { name: "De app ou de carro?" })
+    ).closest("section")!;
+    expect(secao.textContent).toContain(formatBRL(122.5));
+    expect(secao.textContent).toContain(formatBRL(111.3));
+    expect(within(secao as HTMLElement).getByText(/Estacionando, você economiza/).textContent).toContain(
+      formatBRL(11.2),
+    );
+    expect(secao.textContent).toContain("estacionar sai mais barato a partir de 1 diária");
+  });
+
+  it("a corrida manual sobrepõe a estimativa e pode virar o jogo", async () => {
+    setup();
+    const user = userEvent.setup();
+    const campo = await screen.findByLabelText("Valor da corrida de ida");
+    await user.type(campo, "40");
+    // 2 × 40 = 80 < 111,30: o app vence e a página diz isso na cara.
+    expect(await screen.findByText(/o app sai/)).toBeInTheDocument();
+    expect(screen.getByText("2 corridas no valor que você informou")).toBeInTheDocument();
+  });
+
   it("sem dado, explica e aponta para a busca", async () => {
     setup(null);
     expect(await screen.findByText("Calculadora indisponível")).toBeInTheDocument();

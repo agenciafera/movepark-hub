@@ -17,6 +17,16 @@ import {
   type CalcResult,
 } from "@/features/price-index/calculadora.logic";
 import {
+  COMBUSTIVEL,
+  KM_MAX,
+  KM_MIN,
+  SURGE_OPCOES,
+  TARIFA_APP_PADRAO,
+  breakEvenDays,
+  comparar,
+  sanitizeKm,
+} from "@/features/price-index/comparadorApp.logic";
+import {
   durationLabel,
   formatDistance,
   listingPath,
@@ -74,6 +84,15 @@ export default function CalculadoraPage() {
   });
   const [carregando, setCarregando] = React.useState(false);
   const [erro, setErro] = React.useState<string | null>(null);
+  // Comparador de app: distância, tarifa dinâmica, corrida real e combustível.
+  const [kmInput, setKmInput] = React.useState("25");
+  const [surge, setSurge] = React.useState<number>(1);
+  const [tarifaManual, setTarifaManual] = React.useState("");
+  const [comCombustivel, setComCombustivel] = React.useState(false);
+  // O destino nas diárias em vigor (o da matriz padrão ou o buscado no motor).
+  const [destinoCalc, setDestinoCalc] = React.useState<PriceDestination | null>(
+    destinations.find((d) => d.slug === (catalogo[0]?.slug ?? destinations[0]?.slug)) ?? null,
+  );
   // Consultas de duração fora da matriz padrão, para não repetir a ida ao motor.
   const consultasRef = React.useRef(new Map<string, PriceDestination>());
   // Cálculo ao vivo: digitou ou arrastou, calcula sozinho depois de uma pausa curta.
@@ -96,16 +115,19 @@ export default function CalculadoraPage() {
       // Destino sem parceiro precificado: não há o que consultar no motor; a
       // seção mostra os lotes mapeados (ou o aviso de mapeamento).
       if (!dest) {
+        setDestinoCalc(null);
         setResult({ days: dias, priced: [], blocked: [] });
         return;
       }
       if (standardDays.includes(dias)) {
+        setDestinoCalc(dest);
         setResult(calcResults(dest, dias));
         return;
       }
       const chave = `${destSlug}:${dias}`;
       const memo = consultasRef.current.get(chave);
       if (memo) {
+        setDestinoCalc(memo);
         setResult(calcResults(memo, dias));
         return;
       }
@@ -114,6 +136,7 @@ export default function CalculadoraPage() {
         const vivo = await fetchPriceForDays(destSlug, dias);
         if (vivo) {
           consultasRef.current.set(chave, vivo);
+          setDestinoCalc(vivo);
           setResult(calcResults(vivo, dias));
         } else {
           setResult({ days: dias, priced: [], blocked: [] });
@@ -149,6 +172,20 @@ export default function CalculadoraPage() {
       </div>
     );
   }
+
+  // Comparação com app de transporte (seção no fim da página, mesma URL).
+  const km = sanitizeKm(kmInput);
+  const manualNum = Number.parseFloat(tarifaManual.replace(",", "."));
+  const comparacao =
+    result && destinoCalc && km != null
+      ? comparar(destinoCalc, result.days, km, surge, {
+          tarifaManualIda: Number.isFinite(manualNum) && manualNum > 0 ? manualNum : null,
+          incluirCombustivel: comCombustivel,
+        })
+      : null;
+  const breakEven =
+    destinoCalc && km != null ? breakEvenDays(destinoCalc, km, surge, standardDays) : null;
+  const estacionarVence = comparacao?.economia != null && comparacao.economia > 0;
 
   const canonical = `${SITE_URL}/calculadora-estacionamento-aeroporto`;
   const titulo = "Calculadora de estacionamento de aeroporto";
@@ -286,6 +323,77 @@ export default function CalculadoraPage() {
                     ))}
                   </div>
                 </div>
+
+                <div className="flex min-w-0 flex-col gap-1.5 border-t border-hairline pt-4">
+                  <span className="text-caption-sm font-medium text-muted" id="rotulo-km">
+                    Distância até o aeroporto (km)
+                  </span>
+                  <div className="flex h-12 items-center gap-3">
+                    <input
+                      type="range"
+                      min={KM_MIN}
+                      max={KM_MAX}
+                      value={sanitizeKm(kmInput) ?? KM_MIN}
+                      onChange={(e) => setKmInput(e.target.value)}
+                      aria-label="Distância (arraste)"
+                      className="w-full min-w-0 accent-mp-primary"
+                    />
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={KM_MIN}
+                      max={KM_MAX}
+                      value={kmInput}
+                      onChange={(e) => setKmInput(e.target.value)}
+                      aria-label="Distância em km"
+                      aria-describedby="rotulo-km"
+                      className="h-12 w-20 shrink-0 rounded-sm border border-hairline bg-canvas px-3 text-center text-body-md tabular-nums text-ink focus:border-mp-primary focus:outline-none"
+                    />
+                  </div>
+                  <p className="text-caption-sm text-muted">
+                    Usada só na comparação com app de transporte, no fim da página.
+                  </p>
+                </div>
+
+                <label className="flex min-w-0 flex-col gap-1.5">
+                  <span className="text-caption-sm font-medium text-muted">Tarifa dinâmica</span>
+                  <select
+                    value={String(surge)}
+                    onChange={(e) => setSurge(Number(e.target.value))}
+                    className="h-12 w-full rounded-sm border border-hairline bg-canvas px-3 text-body-md text-ink focus:border-mp-primary focus:outline-none"
+                  >
+                    {SURGE_OPCOES.map((s) => (
+                      <option key={s} value={s}>
+                        {s === 1 ? "sem dinâmica (1x)" : `${String(s).replace(".", ",")}x`}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="flex min-w-0 flex-col gap-1.5">
+                  <span className="text-caption-sm font-medium text-muted">
+                    Corrida que o app mostrou (ida, opcional)
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="R$"
+                    value={tarifaManual}
+                    onChange={(e) => setTarifaManual(e.target.value)}
+                    aria-label="Valor da corrida de ida"
+                    className="h-12 w-full rounded-sm border border-hairline bg-canvas px-3 text-body-md tabular-nums text-ink focus:border-mp-primary focus:outline-none"
+                  />
+                </label>
+
+                <label className="flex items-center gap-2.5 text-body-sm text-body">
+                  <input
+                    type="checkbox"
+                    checked={comCombustivel}
+                    onChange={(e) => setComCombustivel(e.target.checked)}
+                    className="h-4 w-4 accent-mp-primary"
+                  />
+                  Somar combustível no lado do carro
+                </label>
 
                 <div className="border-t border-hairline pt-4" aria-live="polite">
                   <span className="text-caption-sm font-medium text-muted">Resultado</span>
@@ -567,6 +675,92 @@ export default function CalculadoraPage() {
           </section>
         )}
 
+        {comparacao && comparacao.estacionarTotal != null && (
+          <section id="de-app-ou-de-carro" className="mt-12 scroll-mt-24" aria-live="polite">
+            <h2 className="text-display-sm text-ink">De app ou de carro?</h2>
+            <p className="mt-2 text-body-sm text-muted">
+              Duas corridas de ida e volta a {comparacao.km} km contra{" "}
+              {durationLabel(comparacao.days)} de estacionamento. Ajuste a distância e a tarifa
+              dinâmica na lateral.
+            </p>
+
+            <div className="mt-4 grid gap-4 tablet:grid-cols-2">
+              <div
+                className={cn(
+                  "rounded-lg border p-5",
+                  !estacionarVence && comparacao.economia != null
+                    ? "border-mp-primary bg-mp-pale/60"
+                    : "border-hairline",
+                )}
+              >
+                <h3 className="text-title-md text-ink">De app, ida e volta</h3>
+                <p className="mt-2 text-display-sm tabular-nums text-ink">
+                  {formatBRL(comparacao.appTotal)}
+                </p>
+                <p className="mt-1 text-caption-sm text-muted">
+                  {comparacao.appManual
+                    ? "2 corridas no valor que você informou"
+                    : `2 corridas estimadas de ${formatBRL(comparacao.appTotal / 2)}${
+                        comparacao.surge > 1
+                          ? ` com dinâmica ${String(comparacao.surge).replace(".", ",")}x`
+                          : ""
+                      }`}
+                </p>
+              </div>
+
+              <div
+                className={cn(
+                  "rounded-lg border p-5",
+                  estacionarVence ? "border-mp-primary bg-mp-pale/60" : "border-hairline",
+                )}
+              >
+                <h3 className="text-title-md text-ink">De carro, estacionando</h3>
+                <p className="mt-2 text-display-sm tabular-nums text-ink">
+                  {formatBRL((comparacao.estacionarTotal ?? 0) + (comparacao.combustivel ?? 0))}
+                </p>
+                {comparacao.estacionarLabel && (
+                  <p className="mt-1 text-caption-sm text-muted">
+                    {comparacao.estacionarLabel}
+                    {comparacao.combustivel != null && (
+                      <> + combustível {formatBRL(comparacao.combustivel)}</>
+                    )}
+                    {" · "}Parceiro Movepark
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {comparacao.economia != null && (
+              <p className="mt-5 text-body-md text-body">
+                {estacionarVence ? (
+                  <>
+                    Estacionando, você economiza{" "}
+                    <strong className="font-semibold text-ink">
+                      {formatBRL(comparacao.economia)}
+                    </strong>{" "}
+                    nessa viagem, e volta no seu próprio carro.
+                  </>
+                ) : (
+                  <>
+                    Nessa distância e duração, o app sai{" "}
+                    <strong className="font-semibold text-ink">
+                      {formatBRL(Math.abs(comparacao.economia))}
+                    </strong>{" "}
+                    mais barato. Aumente as diárias ou confira a tarifa dinâmica do seu horário:
+                    a conta vira rápido.
+                  </>
+                )}
+              </p>
+            )}
+
+            {breakEven != null && (
+              <p className="mt-2 text-body-sm text-muted">
+                Nesse trajeto, estacionar sai mais barato a partir de {durationLabel(breakEven)}.
+              </p>
+            )}
+          </section>
+        )}
+
         <section id="como-funciona" className="mt-12 max-w-[720px] scroll-mt-24">
           <h2 className="text-display-sm text-ink">Como a calculadora funciona</h2>
           <p className="mt-3 text-body-md text-body">
@@ -587,14 +781,29 @@ export default function CalculadoraPage() {
             .
           </p>
           <p className="mt-3 text-body-md text-body">
-            Na dúvida entre dirigir e chamar um app, o{" "}
-            <Link
-              to="/uber-ou-estacionamento-aeroporto"
+            Na comparação com app de transporte, o lado do app é estimativa: Uber e 99 não
+            oferecem API pública de preço. Usamos a tarifa de referência da categoria básica (
+            {formatBRL(TARIFA_APP_PADRAO.bandeirada)} de partida +{" "}
+            {formatBRL(TARIFA_APP_PADRAO.porKm)} por km + {formatBRL(TARIFA_APP_PADRAO.porMinuto)}{" "}
+            por minuto, mínima de {formatBRL(TARIFA_APP_PADRAO.minima)}), com o tempo estimado a
+            30 km/h na cidade. Fonte:{" "}
+            <a
+              href={TARIFA_APP_PADRAO.fonteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
               className="font-medium text-mp-indigo underline-offset-2 hover:underline"
             >
-              comparador de app ou carro
-            </Link>{" "}
-            faz as duas contas lado a lado.
+              {TARIFA_APP_PADRAO.fonte}
+            </a>
+            , {TARIFA_APP_PADRAO.coletadoEm}. Em pico, chuva ou madrugada a tarifa dinâmica sobe
+            o valor real: por isso o controle de dinâmica e o campo para colar a corrida que o
+            seu app mostrou.
+          </p>
+          <p className="mt-3 text-body-md text-body">
+            O combustível opcional usa {COMBUSTIVEL.kmPorLitro} km/L a{" "}
+            {formatBRL(COMBUSTIVEL.precoLitro)} o litro ({COMBUSTIVEL.fonte}). Uber e 99 são
+            marcas dos seus respectivos donos; esta página compara custos e não tem relação com
+            essas empresas.
           </p>
         </section>
           </div>

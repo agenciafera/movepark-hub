@@ -28,7 +28,6 @@ export const SITEMAP_STATIC_ROUTES = [
   "/privacidade",
   "/seja-parceiro",
   "/calculadora-estacionamento-aeroporto",
-  "/uber-ou-estacionamento-aeroporto",
 ] as const;
 
 /**
@@ -47,6 +46,8 @@ export const SITEMAP_OPT_OUT: Record<string, string> = {
   "/login": "autenticação",
   "/entrar": "redireciona para /login",
   "/signup": "redireciona para /login",
+  "/uber-ou-estacionamento-aeroporto":
+    "redireciona para a calculadora; o comparador de app foi centralizado nela (15/08/2026)",
   "/auth/callback": "retorno de autenticação",
   "*": "catch-all do React Router, não é URL",
 };
