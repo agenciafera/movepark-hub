@@ -115,11 +115,19 @@ export function destinationSchema(d: {
   longitude: number;
   meta_description?: string | null;
   image?: string | string[] | null;
+  type?: string | null;
+  code?: string | null;
 }) {
   const image = Array.isArray(d.image) ? (d.image.length ? d.image : undefined) : (d.image ?? undefined);
+  // Aeroporto ganha o subtipo e o código IATA: é o que liga a página à entidade
+  // que buscador e LLM já conhecem ("GRU"), em vez de um Place genérico. O código
+  // só entra quando tem cara de IATA (3 letras); "tiete" e "centro-sp" ficam de fora.
+  const isAirport = d.type === "airport";
+  const iata = d.code && /^[A-Z]{3}$/.test(d.code) ? d.code : undefined;
   return {
     "@context": "https://schema.org",
-    "@type": "Place",
+    "@type": isAirport ? ["Place", "Airport"] : "Place",
+    iataCode: isAirport ? iata : undefined,
     name: d.name,
     description: d.meta_description ?? undefined,
     image,
@@ -239,6 +247,23 @@ export function blogPostingSchema(p: {
     },
     mainEntityOfPage: { "@type": "WebPage", "@id": url },
     url,
+  };
+}
+
+/**
+ * A entidade Movepark, para a home: nome, logo e descrição num bloco só. É o que
+ * ancora o knowledge panel e a desambiguação de marca nos LLMs (o mesmo papel do
+ * bloco de desambiguação do llms.txt, em dado estruturado).
+ */
+export function organizationSchema() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Movepark",
+    url: SITE_URL,
+    logo: `${SITE_URL}/brand/logo-movepark.svg`,
+    description:
+      "Plataforma de reserva de estacionamentos em aeroportos e destinos do Brasil: busca, comparação de preços e reserva online com traslado até o terminal.",
   };
 }
 

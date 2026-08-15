@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import { organizationSchema } from "@/lib/jsonld";
 import { Hero } from "@/features/home/Hero";
 import { DestinationsGallery } from "@/features/home/DestinationsGallery";
 import { PopularParkingLots } from "@/features/home/PopularParkingLots";
@@ -26,6 +27,9 @@ export default function HomePage() {
             /og/home.jpg, arquivo que nunca foi commitado: o card da home ia com
             404 no lugar da imagem. */}
         <link rel="canonical" href="https://hub.movepark.co" />
+        {/* A entidade Movepark: âncora do knowledge panel e da desambiguação de
+            marca nos LLMs, no dado estruturado da porta de entrada do site. */}
+        <script type="application/ld+json">{JSON.stringify(organizationSchema())}</script>
       </Helmet>
       <Hero />
       <PopularParkingLots />

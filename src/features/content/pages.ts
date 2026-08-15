@@ -200,6 +200,78 @@ export const COMO_FUNCIONA: ContentPage = {
   ],
 };
 
+/**
+ * Metodologia: de onde vem cada número do site. É a página de confiança que
+ * buscador e LLM usam para decidir quem citar (E-E-A-T), e a resposta curta é
+ * a nossa vantagem real: preço vivo do motor, não coleta manual.
+ */
+export const METODOLOGIA: ContentPage = {
+  slug: "metodologia",
+  label: "Metodologia",
+  title: "De onde vêm os preços e as notas da Movepark",
+  intro:
+    "O que aparece no site sai do motor de reservas e de regra publicada. Esta página explica de onde vem cada número.",
+  updated: "2026-08-14",
+  sections: [
+    {
+      id: "precos",
+      title: "De onde vêm os preços",
+      blocks: [
+        {
+          type: "p",
+          text: "O preço exibido no índice de preços, na calculadora e nas páginas de perguntas é o mesmo que o motor de reservas cobra no checkout. Não há coleta manual: quando o parceiro atualiza a tabela dele, o site atualiza junto. O valor de balcão, quando aparece, é a tarifa de quem chega sem reserva, informada pelo próprio parceiro.",
+        },
+        {
+          type: "note",
+          label: "Preço fechado",
+          text: "O valor que está escrito é o valor da reserva. Sem taxa na chegada.",
+        },
+      ],
+    },
+    {
+      id: "ordenacao",
+      title: "Como ordenamos os resultados",
+      blocks: [
+        {
+          type: "p",
+          text: "A ordem da busca segue o critério que você escolhe no filtro: preço, distância do terminal ou avaliação. O padrão é preço. Nas vitrines de mais reservados, o critério é o número real de reservas.",
+        },
+      ],
+    },
+    {
+      id: "parceiros",
+      title: "Parceiros e estacionamentos mapeados",
+      blocks: [
+        {
+          type: "p",
+          text: "Estacionamento parceiro tem reserva online pela Movepark, e a Movepark recebe comissão por reserva concluída. Estacionamento mapeado é uma ficha informativa de um lote que ainda não é parceiro: sem preço e sem reserva, publicada para o mapa da região ficar completo. A comissão não muda a ordenação e não esconde ficha mapeada.",
+        },
+      ],
+    },
+    {
+      id: "avaliacoes",
+      title: "De onde vêm as avaliações",
+      blocks: [
+        {
+          type: "p",
+          text: "Avaliação publicada pela Movepark vem de reserva concluída na plataforma. Nas fichas de estacionamento mapeado, a nota exibida é a do Google, com a fonte identificada ao lado.",
+        },
+      ],
+    },
+    {
+      id: "correcoes",
+      title: "Achou um dado errado?",
+      blocks: [
+        {
+          type: "p",
+          text: "Administra um estacionamento listado ou encontrou uma informação desatualizada? Fale com a gente pela página de contato. A gente confere na fonte e corrige.",
+        },
+      ],
+    },
+  ],
+  related: ["como-funciona", "faq"],
+};
+
 /** Cards de "Veja também", curados por página. */
 export const RELACIONADOS: Record<string, { to: string; title: string; description: string }> = {
   termos: {
@@ -226,5 +298,10 @@ export const RELACIONADOS: Record<string, { to: string; title: string; descripti
     to: "/como-funciona",
     title: "Como funciona",
     description: "Da busca ao check-in em quatro passos",
+  },
+  metodologia: {
+    to: "/metodologia",
+    title: "Metodologia",
+    description: "De onde vêm os preços e as notas do site",
   },
 };

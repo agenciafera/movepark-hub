@@ -23,6 +23,7 @@ export const SITEMAP_STATIC_ROUTES = [
   "/ajuda",
   "/contato",
   "/cancelamento",
+  "/metodologia",
   "/termos",
   "/privacidade",
   "/seja-parceiro",

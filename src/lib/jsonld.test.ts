@@ -263,6 +263,24 @@ describe("destinationSchema", () => {
     });
   });
 
+  it("aeroporto ganha o subtipo Airport e o código IATA", () => {
+    const s = destinationSchema({ ...base, type: "airport", code: "GRU" });
+    expect(s["@type"]).toEqual(["Place", "Airport"]);
+    expect(s.iataCode).toBe("GRU");
+  });
+
+  it("destino que não é aeroporto segue Place puro, sem iataCode", () => {
+    const s = destinationSchema({ ...base, type: "bus_terminal", code: "tiete" });
+    expect(s["@type"]).toBe("Place");
+    expect(s.iataCode).toBeUndefined();
+  });
+
+  it("código sem cara de IATA não vira iataCode nem em aeroporto", () => {
+    const s = destinationSchema({ ...base, type: "airport", code: "centro-sp" });
+    expect(s["@type"]).toEqual(["Place", "Airport"]);
+    expect(s.iataCode).toBeUndefined();
+  });
+
   it("omite description e addressRegion quando ausentes", () => {
     const s = destinationSchema({ ...base, state: null, meta_description: null });
     expect(s.description).toBeUndefined();

@@ -60,6 +60,7 @@ import ContatoPage from "@/routes/contato";
 import AjudaPage from "@/routes/ajuda";
 import CancelamentoPage from "@/routes/cancelamento";
 import ComoFuncionaPage from "@/routes/como-funciona";
+import MetodologiaPage from "@/routes/metodologia";
 
 import AccountIndexPage from "@/routes/account/index";
 import AccountReservasPage from "@/routes/account/reservas";
@@ -624,6 +625,7 @@ export const routes: RouteRecord[] = [
           { path: "/ajuda", element: <AjudaPage /> },
           { path: "/cancelamento", element: <CancelamentoPage /> },
           { path: "/como-funciona", element: <ComoFuncionaPage /> },
+          { path: "/metodologia", element: <MetodologiaPage /> },
           { path: "/docs", element: <DocsPage /> },
           { path: "/seja-parceiro", element: <SejaParceiroPage /> },
           { path: "/motor-preview", element: <MotorPreviewPage /> },

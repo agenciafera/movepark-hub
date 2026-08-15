@@ -1,0 +1,13 @@
+{
+  "scenario_id": "metodologia",
+  "start_url": "/metodologia",
+  "task": "Verifique que a pagina exibe o titulo De onde vem os precos e as notas da Movepark, uma secao com o texto De onde vem os precos e uma secao com o texto Achou um dado errado?.",
+  "tags": [
+    "smoke",
+    "leitura"
+  ],
+  "hints": [
+    "A pagina explica a origem dos numeros do site: precos do motor de reservas, ordenacao e avaliacoes.",
+    "O titulo e o <h1>; as secoes sao <h2> dentro do <main>."
+  ]
+}

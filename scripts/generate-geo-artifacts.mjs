@@ -109,7 +109,7 @@ const [faqs, destinations, posts, priceIndex] = await Promise.all([
       "&order=sort_order.asc,created_at.asc",
   ),
   rest(
-    "destination?select=name,short_name,slug,code,city,state,type" +
+    "destination?select=name,short_name,slug,code,city,state,type,seo_label,intro" +
       "&is_published=eq.true&order=sort_order.asc",
   ),
   rest(
@@ -584,6 +584,75 @@ function tabelaTopMarkdown(dest, limit = 5) {
   );
 
   fs.writeFileSync(path.join(DIST, "llms-full.txt"), linhas.join("\n"));
+}
+
+// ---------------------------------------------------------------------------
+// destinos/<slug>.md — o gêmeo Markdown da página de destino, a página que
+// disputa "estacionamento aeroporto <nome>". Mesma ordem de blocos da React:
+// intro, quanto custa, estacionamentos com link, FAQ do destino.
+// ---------------------------------------------------------------------------
+{
+  fs.mkdirSync(path.join(DIST, "destinos"), { recursive: true });
+  const precoPorSlugDest = new Map(destinosComPreco.map((d) => [d.slug, d]));
+
+  for (const d of destinations) {
+    const rotulo = d.seo_label ?? nomeCurto(d);
+    const linhas = [
+      "---",
+      `title: "Estacionamento ${rotulo} | Movepark"`,
+      `canonical: ${SITE_URL}/destinos/${d.slug}`,
+      `updated: ${hoje}`,
+      "---",
+      "",
+      `# Estacionamento ${rotulo.replace(/\s*\([^)]*\)\s*$/, "")}`,
+      "",
+    ];
+
+    if (d.intro) linhas.push(d.intro, "");
+
+    const preco = precoPorSlugDest.get(d.slug);
+    const resumo = preco ? resumoPorDuracao(preco, diasIndice) : [];
+    if (resumo.length > 0) {
+      linhas.push("## Quanto custa", "", "| Período | Total a partir de | Onde |", "| --- | --- | --- |");
+      for (const r of resumo) {
+        linhas.push(`| ${durLabel(r.dias)} | ${brl(r.total)} | ${r.u.company_name} (${r.u.parking_type_name}) |`);
+      }
+      linhas.push("", `Tabela completa e preço de balcão: ${SITE_URL}/precos/${d.slug}`, "");
+    }
+
+    const unidades = preco ? unidadesCarro(preco) : [];
+    if (unidades.length > 0) {
+      linhas.push("## Estacionamentos com reserva online", "");
+      const vistos = new Set();
+      for (const u of unidades) {
+        const chave = `${u.company_slug}/${u.location_slug}`;
+        if (vistos.has(chave)) continue;
+        vistos.add(chave);
+        linhas.push(
+          `- ${u.company_name}: ${SITE_URL}/p/${u.company_slug}/${u.location_slug}/${u.parking_type_code}`,
+        );
+      }
+      linhas.push("");
+    }
+
+    const faqsDest = porDestino.get(d.slug) ?? [];
+    if (faqsDest.length > 0) {
+      linhas.push("## Perguntas frequentes", "");
+      for (const f of faqsDest) {
+        linhas.push(`### ${f.question}`, "");
+        if (f.slug) linhas.push(`URL: ${urlPergunta(f)}`, "");
+        linhas.push(f.answer, "");
+      }
+    }
+
+    linhas.push(
+      `Reservar: ${SITE_URL}/search?dest=${encodeURIComponent(d.code)}`,
+      `Todos os destinos: ${SITE_URL}/destinos`,
+      "",
+    );
+
+    fs.writeFileSync(path.join(DIST, "destinos", `${d.slug}.md`), linhas.join("\n"));
+  }
 }
 
 // ---------------------------------------------------------------------------
