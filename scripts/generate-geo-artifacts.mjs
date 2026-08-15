@@ -109,7 +109,7 @@ const [faqs, destinations, posts, priceIndex] = await Promise.all([
       "&order=sort_order.asc,created_at.asc",
   ),
   rest(
-    "destination?select=name,short_name,slug,code,city,state" +
+    "destination?select=name,short_name,slug,code,city,state,type" +
       "&is_published=eq.true&order=sort_order.asc",
   ),
   rest(
@@ -466,6 +466,23 @@ function tabelaTopMarkdown(dest, limit = 5) {
       `Tabela completa: ${SITE_URL}/precos/${dest.slug}`,
       "",
     );
+  }
+  // A página /precos cobre o catálogo inteiro de aeroportos; o gêmeo Markdown
+  // fecha a conta listando os que ainda não têm parceiro precificado.
+  const comPreco = new Set(destinosComPreco.map((d) => d.slug));
+  const semParceiro = destinations.filter((d) => d.type === "airport" && !comPreco.has(d.slug));
+  if (semParceiro.length > 0) {
+    linhas.push(
+      "## Aeroportos ainda sem reserva online",
+      "",
+      "Nestes aeroportos a Movepark mapeia os estacionamentos da região; a ficha de cada",
+      "um (endereço e distância) fica na página do destino, e o preço é a tabela do local.",
+      "",
+    );
+    for (const d of semParceiro) {
+      linhas.push(`- ${nomeCurto(d)}: ${SITE_URL}/destinos/${d.slug}`);
+    }
+    linhas.push("");
   }
   linhas.push(`Conteúdo integral: ${SITE_URL}/llms-full.txt`, "");
   fs.writeFileSync(path.join(DIST, "precos.md"), linhas.join("\n"));

@@ -9,7 +9,13 @@ import { fetchGooglePlaceSnapshot } from "@/features/reviews/googleApi";
 import { fetchFaqBySlug, fetchFaqCombined, fetchFaqIndex } from "@/features/faqs/api";
 import type { FaqPrecoContexto } from "@/features/faqs/faqPagina.logic";
 import { fetchPriceIndex } from "@/features/price-index/api";
-import { destinationSummary, overallStats } from "@/features/price-index/priceIndex.logic";
+import {
+  INDEX_DURATIONS,
+  destinationSummary,
+  overallStats,
+  type AirportMeta,
+  type IndexProspect,
+} from "@/features/price-index/priceIndex.logic";
 import { filterPosts, pageSlice, totalPages } from "@/features/blog/listing.logic";
 
 import { AppProviders } from "@/components/shared/AppProviders";
@@ -487,28 +493,45 @@ async function fetchAllFaqPaths(): Promise<string[]> {
 }
 
 /**
- * Índice de preços (/precos): a matriz 1/7/15/30 de todos os destinos sai do
- * motor numa chamada só (RPC destination_price_index), no build. O carimbo
- * generatedAt é a data visível de "conferido em".
+ * Índice de preços (/precos): a matriz 1/7/15/30 dos destinos precificados sai
+ * do motor numa chamada só (RPC destination_price_index), e o catálogo inteiro
+ * de aeroportos publicados entra junto, com os lotes mapeados de cada um
+ * (ADR-010) para a tabela não deixar aeroporto de fora. Os lotes vêm em série
+ * por blocos pequenos: 24 RPCs simultâneas no build esbarram no statement
+ * timeout do papel anon. O carimbo generatedAt é a data de "conferido em".
  */
 async function precosLoader(): Promise<PrecosIndexData | null> {
   const data = await fetchPriceIndex().catch(() => null);
-  if (!data || data.destinations.length === 0) return null;
-  // Aeroportos publicados sem parceiro precificado: entram numa seção própria,
-  // linkando a página de destino (que mostra os estacionamentos mapeados).
-  const comPreco = new Set(data.destinations.map((d) => d.slug));
-  const { data: aeroportos } = await supabase
+  const { data: destinos } = await supabase
     .from("destination")
-    .select("slug, name, short_name")
+    .select("slug, code, name, short_name, city, state")
     .eq("is_published", true)
     .eq("type", "airport")
     .order("sort_order");
-  const semPreco = (aeroportos ?? []).filter((a) => !comPreco.has(a.slug as string)) as {
-    slug: string;
-    name: string;
-    short_name: string | null;
-  }[];
-  return { data, semPreco, generatedAt: new Date().toISOString() };
+  const aeroportos = (destinos ?? []) as AirportMeta[];
+  if (!data && aeroportos.length === 0) return null;
+
+  const prospects: Record<string, IndexProspect[]> = {};
+  const LOTE = 6;
+  for (let i = 0; i < aeroportos.length; i += LOTE) {
+    await Promise.all(
+      aeroportos.slice(i, i + LOTE).map(async (a) => {
+        const cards = await fetchDestinationProspects(a.slug).catch(() => []);
+        prospects[a.slug] = cards.map((p) => ({
+          name: p.name,
+          slug: p.slug,
+          distance_km: p.distance_km,
+        }));
+      }),
+    );
+  }
+
+  return {
+    data: data ?? { days: [...INDEX_DURATIONS], destinations: [] },
+    aeroportos,
+    prospects,
+    generatedAt: new Date().toISOString(),
+  };
 }
 
 /**

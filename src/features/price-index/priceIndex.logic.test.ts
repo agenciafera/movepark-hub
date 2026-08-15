@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  airportStates,
+  buildAirportSections,
   buildMatrix,
   carUnits,
   destinationSummary,
@@ -11,8 +13,12 @@ import {
   metaDescription,
   motoUnits,
   overallStats,
+  matchesAirportFilter,
   topRows,
   unitLabel,
+  type AirportMeta,
+  type AirportSection,
+  type IndexProspect,
   type PriceDestination,
   type PriceUnit,
 } from "./priceIndex.logic";
@@ -248,5 +254,116 @@ describe("metaDescription", () => {
     expect(meta).toContain("Teste (TST)");
     expect(meta).toContain("diária a partir de");
     expect(meta.length).toBeLessThanOrEqual(160);
+  });
+});
+
+describe("buildAirportSections", () => {
+  const meta = (slug: string, overrides: Partial<AirportMeta> = {}): AirportMeta => ({
+    slug,
+    code: "TST",
+    name: `Aeroporto ${slug}`,
+    short_name: null,
+    city: "Testópolis",
+    state: "TS",
+    ...overrides,
+  });
+  const prospect = (slug: string): IndexProspect => ({
+    name: `Lote ${slug}`,
+    slug,
+    distance_km: 1.2,
+  });
+
+  it("todo aeroporto publicado vira seção, com ou sem parceiro precificado", () => {
+    const index = { days: DIAS, destinations: [dest([unit({})])] };
+    const sections = buildAirportSections(
+      [meta("aeroporto-teste"), meta("aeroporto-vazio")],
+      index,
+      {},
+    );
+    expect(sections).toHaveLength(2);
+    expect(sections[0].dest).not.toBeNull();
+    expect(sections[1].dest).toBeNull();
+    expect(sections[1].rows).toHaveLength(0);
+  });
+
+  it("parceiro tem prioridade e o lote mapeado completa até o limite", () => {
+    const index = { days: DIAS, destinations: [dest([unit({}), unit({ company_slug: "b", company_name: "B" })])] };
+    const sections = buildAirportSections(
+      [meta("aeroporto-teste")],
+      index,
+      { "aeroporto-teste": [prospect("l1"), prospect("l2"), prospect("l3"), prospect("l4")] },
+      5,
+    );
+    expect(sections[0].rows).toHaveLength(2);
+    expect(sections[0].mapeados).toHaveLength(3);
+    expect(sections[0].hiddenProspectCount).toBe(1);
+  });
+
+  it("com o corte cheio de parceiros, os mapeados ficam todos de fora", () => {
+    const units = ["a", "b", "c", "d", "e", "f"].map((s) =>
+      unit({ company_slug: s, company_name: s, location_slug: s }),
+    );
+    const sections = buildAirportSections(
+      [meta("aeroporto-teste")],
+      { days: DIAS, destinations: [dest(units)] },
+      { "aeroporto-teste": [prospect("l1"), prospect("l2")] },
+      5,
+    );
+    expect(sections[0].rows).toHaveLength(5);
+    expect(sections[0].hiddenPartnerCount).toBe(1);
+    expect(sections[0].mapeados).toHaveLength(0);
+    expect(sections[0].hiddenProspectCount).toBe(2);
+  });
+});
+
+describe("matchesAirportFilter", () => {
+  const section = (over: Partial<AirportMeta>, comParceiro = false): AirportSection => {
+    const index = {
+      days: DIAS,
+      destinations: comParceiro ? [dest([unit({})])] : [],
+    };
+    const m: AirportMeta = {
+      slug: "aeroporto-teste",
+      code: "TST",
+      name: "Aeroporto Teste",
+      short_name: "Teste (TST)",
+      city: "Testópolis",
+      state: "TS",
+      ...over,
+    };
+    return buildAirportSections([m], index, {})[0];
+  };
+
+  it("busca ignora acento e maiúscula, e acha por cidade e código", () => {
+    const s = section({ city: "São Paulo", code: "GRU" });
+    expect(matchesAirportFilter(s, { busca: "sao paulo", uf: null, soComReserva: false })).toBe(true);
+    expect(matchesAirportFilter(s, { busca: "gru", uf: null, soComReserva: false })).toBe(true);
+    expect(matchesAirportFilter(s, { busca: "confins", uf: null, soComReserva: false })).toBe(false);
+  });
+
+  it("UF corta o resto e reserva online exige linha de parceiro", () => {
+    const semParceiro = section({ state: "SP" });
+    expect(matchesAirportFilter(semParceiro, { busca: "", uf: "SP", soComReserva: false })).toBe(true);
+    expect(matchesAirportFilter(semParceiro, { busca: "", uf: "MG", soComReserva: false })).toBe(false);
+    expect(matchesAirportFilter(semParceiro, { busca: "", uf: null, soComReserva: true })).toBe(false);
+    const comParceiro = section({ slug: "aeroporto-teste" }, true);
+    expect(matchesAirportFilter(comParceiro, { busca: "", uf: null, soComReserva: true })).toBe(true);
+  });
+});
+
+describe("airportStates", () => {
+  it("lista as UFs presentes, sem repetição e sem nulo", () => {
+    const m = (slug: string, state: string | null): AirportMeta => ({
+      slug,
+      code: null,
+      name: slug,
+      short_name: null,
+      city: null,
+      state,
+    });
+    expect(airportStates([m("a", "SP"), m("b", "MG"), m("c", "SP"), m("d", null)])).toEqual([
+      "MG",
+      "SP",
+    ]);
   });
 });

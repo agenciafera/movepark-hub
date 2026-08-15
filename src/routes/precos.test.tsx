@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { HelmetProvider } from "react-helmet-async";
 import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import PrecosPage, { type PrecosIndexData } from "@/routes/precos";
@@ -33,9 +34,38 @@ const UNIT: PriceUnit = {
 
 const DATA: PrecosIndexData = {
   generatedAt: "2026-08-14T15:00:00Z",
-  semPreco: [
-    { slug: "aeroporto-de-confins", name: "Aeroporto de Confins", short_name: "Confins (CNF)" },
+  aeroportos: [
+    {
+      slug: "aeroporto-internacional-de-sao-paulo-guarulhos",
+      code: "GRU",
+      name: "Aeroporto Internacional de São Paulo Guarulhos",
+      short_name: "Guarulhos (GRU)",
+      city: "Guarulhos",
+      state: "SP",
+    },
+    {
+      slug: "aeroporto-de-confins",
+      code: "CNF",
+      name: "Aeroporto de Confins",
+      short_name: "Confins (CNF)",
+      city: "Confins",
+      state: "MG",
+    },
+    {
+      slug: "aeroporto-santos-dumont",
+      code: "SDU",
+      name: "Aeroporto Santos Dumont",
+      short_name: "Santos Dumont (SDU)",
+      city: "Rio de Janeiro",
+      state: "RJ",
+    },
   ],
+  prospects: {
+    "aeroporto-de-confins": [
+      { name: "Golden Park", slug: "golden-park", distance_km: 1.4 },
+      { name: "Park do Aeroporto", slug: "park-do-aeroporto", distance_km: 2.1 },
+    ],
+  },
   data: {
     days: DIAS,
     destinations: [
@@ -66,52 +96,106 @@ function setup(data: PrecosIndexData | null = DATA) {
 }
 
 describe("PrecosPage", () => {
-  it("abre com o h1 do índice e o retrato em números", async () => {
+  it("abre com o h1 do índice e o retrato em números, contando todos os aeroportos", async () => {
     setup();
     expect(
       await screen.findByRole("heading", { level: 1, name: "Índice de preços de estacionamento" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Menor diária hoje")).toBeInTheDocument();
+    const aeroportosTile = screen.getByText("Aeroportos no índice");
+    expect(aeroportosTile.nextElementSibling).toHaveTextContent("3");
+    // 1 unidade de parceiro + 2 lotes mapeados de Confins.
+    const listadosTile = screen.getByText("Estacionamentos listados");
+    expect(listadosTile.nextElementSibling).toHaveTextContent("3");
     // O NBSP do Intl entre "R$" e o número pede regex com \s.
     expect(screen.getAllByText(/R\$\s18,90/).length).toBeGreaterThan(0);
     expect(screen.getByText("até 17%")).toBeInTheDocument();
   });
 
-  it("cada destino vira uma tabela ordenada pela diária, com 7 e 15 dias em R$/dia", async () => {
+  it("aeroporto com parceiro tem tabela com preços e o botão Reservar da vaga", async () => {
     setup();
-    expect(
-      await screen.findByRole("heading", { level: 2, name: "Guarulhos (GRU)" }),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/ordenado pela diária mais baixa/)).toBeInTheDocument();
-    const tabela = screen.getByRole("table");
+    const secao = (
+      await screen.findByRole("heading", { level: 2, name: "Guarulhos (GRU)" })
+    ).closest("section")!;
+    expect(within(secao).getByText(/ordenado pela diária mais baixa/)).toBeInTheDocument();
+    const tabela = within(secao).getByRole("table");
     expect(tabela.textContent).toContain("7 dias (R$/dia)");
-    expect(tabela.textContent).toContain("15 dias (R$/dia)");
-    // 7 dias por R$ 111,30 = R$ 15,90 por dia, com o total logo abaixo.
     expect(tabela.textContent).toContain(formatBRL(15.9));
     expect(tabela.textContent).toContain(`total ${formatBRL(111.3)}`);
-    // Não existe coluna de 30 dias no índice; ela vive na tabela completa.
     expect(tabela.textContent).not.toContain("30 dias");
+    expect(within(secao).getByText("Parceiro Movepark")).toBeInTheDocument();
+    const reservar = within(secao).getByRole("link", { name: "Reservar" });
+    expect(reservar).toHaveAttribute("href", "/p/aerovalet/aeroporto-guarulhos/uncovered");
   });
 
-  it("o parceiro fica em destaque com o link de reserva da vaga", async () => {
+  it("aeroporto sem parceiro entra com os lotes mapeados, sem preço e sem Reservar", async () => {
     setup();
-    expect(await screen.findByText("Parceiro Movepark")).toBeInTheDocument();
-    const reservar = screen.getByRole("link", { name: "Reservar" });
-    expect(reservar).toHaveAttribute("href", "/p/aerovalet/aeroporto-guarulhos/uncovered");
-    const completa = screen.getAllByRole("link", { name: "Tabela completa" });
-    expect(completa[0]).toHaveAttribute(
+    const secao = (
+      await screen.findByRole("heading", { level: 2, name: "Confins (CNF)" })
+    ).closest("section")!;
+    expect(within(secao).getByText("Golden Park")).toBeInTheDocument();
+    expect(
+      within(secao).getAllByText(/mapeado pela Movepark · sem reserva online/).length,
+    ).toBe(2);
+    expect(within(secao).getAllByText("consulte a tabela no local").length).toBe(2);
+    expect(within(secao).queryByRole("link", { name: "Reservar" })).not.toBeInTheDocument();
+    const ficha = within(secao).getAllByRole("link", { name: "Ver ficha" })[0];
+    expect(ficha).toHaveAttribute("href", "/estacionamentos/aeroporto-de-confins/golden-park");
+  });
+
+  it("aeroporto sem nada ainda aparece na página, apontando o seja-parceiro", async () => {
+    setup();
+    const secao = (
+      await screen.findByRole("heading", { level: 2, name: "Santos Dumont (SDU)" })
+    ).closest("section")!;
+    expect(within(secao).getByText(/Ainda estamos mapeando/)).toBeInTheDocument();
+    expect(within(secao).getByRole("link", { name: "Seja parceiro Movepark" })).toHaveAttribute(
       "href",
-      "/precos/aeroporto-internacional-de-sao-paulo-guarulhos",
+      "/seja-parceiro",
     );
   });
 
-  it("aeroporto sem parceiro precificado aparece na seção própria, linkando o destino", async () => {
+  it("a busca da lateral filtra os aeroportos, sem acento, e o limpar restaura", async () => {
     setup();
+    const user = userEvent.setup();
+    const busca = await screen.findByLabelText("Buscar aeroporto");
+    await user.type(busca, "sao paulo");
+    expect(screen.getByRole("heading", { level: 2, name: "Guarulhos (GRU)" })).toBeInTheDocument();
     expect(
-      await screen.findByRole("heading", { name: "Aeroportos ainda sem reserva online" }),
-    ).toBeInTheDocument();
-    const link = screen.getByRole("link", { name: "Confins (CNF)" });
-    expect(link).toHaveAttribute("href", "/destinos/aeroporto-de-confins");
+      screen.queryByRole("heading", { level: 2, name: "Confins (CNF)" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getAllByText("1 de 3 aeroportos").length).toBeGreaterThan(0);
+    await user.click(screen.getByRole("button", { name: "Limpar filtros" }));
+    expect(screen.getByRole("heading", { level: 2, name: "Confins (CNF)" })).toBeInTheDocument();
+  });
+
+  it("o filtro de reserva online esconde aeroporto sem parceiro precificado", async () => {
+    setup();
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("checkbox", { name: "Só com reserva online" }));
+    expect(screen.getByRole("heading", { level: 2, name: "Guarulhos (GRU)" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { level: 2, name: "Confins (CNF)" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { level: 2, name: "Santos Dumont (SDU)" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("o filtro de estado corta pelo UF", async () => {
+    setup();
+    const user = userEvent.setup();
+    await user.selectOptions(await screen.findByLabelText("Estado"), "MG");
+    expect(screen.getByRole("heading", { level: 2, name: "Confins (CNF)" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { level: 2, name: "Guarulhos (GRU)" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("filtro sem resultado explica e oferece o limpar", async () => {
+    setup();
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Buscar aeroporto"), "galeao");
+    expect(screen.getByText("Nenhum aeroporto com esse filtro.")).toBeInTheDocument();
   });
 
   it("sem dado, explica e aponta para a busca", async () => {

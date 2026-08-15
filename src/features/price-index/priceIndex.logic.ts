@@ -204,6 +204,107 @@ export function topRows(dest: PriceDestination, limit = 5): TopRows {
   return { rows: rows.slice(0, limit), hiddenCount: Math.max(0, rows.length - limit) };
 }
 
+/** Aeroporto publicado no catálogo, com ou sem parceiro precificado. */
+export type AirportMeta = {
+  slug: string;
+  code: string | null;
+  name: string;
+  short_name: string | null;
+  city: string | null;
+  state: string | null;
+};
+
+/** Lote mapeado sem contrato (ADR-010), compacto para a tabela do índice. */
+export type IndexProspect = {
+  name: string;
+  slug: string;
+  distance_km: number | null;
+};
+
+export type AirportSection = {
+  meta: AirportMeta;
+  /** Destino do motor quando existe parceiro precificado. */
+  dest: PriceDestination | null;
+  /** Vagas de parceiro dentro do corte: sempre abrem a tabela. */
+  rows: MatrixRow[];
+  /** Lotes mapeados que completam a tabela até o limite. */
+  mapeados: IndexProspect[];
+  /** Vagas de parceiro além do corte (vivem na tabela completa). */
+  hiddenPartnerCount: number;
+  /** Lotes mapeados além do corte (vivem na página do destino). */
+  hiddenProspectCount: number;
+};
+
+/**
+ * A seção de cada aeroporto no índice: TODO aeroporto publicado entra, com ou
+ * sem parceiro. Parceiro tem prioridade nas linhas (topRows, ordenado pela
+ * diária avulsa); lote mapeado sem contrato completa a tabela até `limit`,
+ * sem preço (ADR-010). Quem não tem nada ainda entra com a seção vazia, para a
+ * página cobrir o catálogo inteiro.
+ */
+export function buildAirportSections(
+  aeroportos: AirportMeta[],
+  index: PriceIndexData,
+  prospects: Record<string, IndexProspect[]>,
+  limit = 5,
+): AirportSection[] {
+  return aeroportos.map((meta) => {
+    const dest = index.destinations.find((d) => d.slug === meta.slug) ?? null;
+    const top = dest ? topRows(dest, limit) : { rows: [], hiddenCount: 0 };
+    const todos = prospects[meta.slug] ?? [];
+    const vagasLivres = Math.max(0, limit - top.rows.length);
+    return {
+      meta,
+      dest,
+      rows: top.rows,
+      mapeados: todos.slice(0, vagasLivres),
+      hiddenPartnerCount: top.hiddenCount,
+      hiddenProspectCount: Math.max(0, todos.length - vagasLivres),
+    };
+  });
+}
+
+export type AirportFilter = {
+  /** Texto livre: nome, cidade, estado ou código IATA. */
+  busca: string;
+  /** UF exata, ou null para todas. */
+  uf: string | null;
+  /** Só aeroportos com parceiro precificado (reserva online). */
+  soComReserva: boolean;
+};
+
+export const EMPTY_AIRPORT_FILTER: AirportFilter = { busca: "", uf: null, soComReserva: false };
+
+const semAcento = (s: string) =>
+  s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+export function matchesAirportFilter(section: AirportSection, f: AirportFilter): boolean {
+  if (f.soComReserva && section.rows.length === 0) return false;
+  if (f.uf && section.meta.state !== f.uf) return false;
+  const busca = semAcento(f.busca.trim());
+  if (busca) {
+    const alvo = semAcento(
+      [
+        section.meta.name,
+        section.meta.short_name ?? "",
+        section.meta.city ?? "",
+        section.meta.state ?? "",
+        section.meta.code ?? "",
+      ].join(" "),
+    );
+    if (!alvo.includes(busca)) return false;
+  }
+  return true;
+}
+
+/** UFs presentes no catálogo, ordenadas, para o filtro de estado. */
+export function airportStates(aeroportos: AirportMeta[]): string[] {
+  return [...new Set(aeroportos.map((a) => a.state).filter((s): s is string => !!s))].sort();
+}
+
 export type DurationSummary = {
   days: number;
   /** Menor total entre as vagas com preço nessa duração. */

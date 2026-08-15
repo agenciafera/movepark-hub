@@ -18,7 +18,7 @@ executa JS):
 
 | Rota | Conteúdo |
 |---|---|
-| `/precos` | Índice editorial (estrutura benchmark do índice do concorrente, decidida em 14/08/2026): retrato em 4 números, chips de navegação e **uma tabela por destino** com as **top 5 vagas ordenadas pela diária avulsa**, colunas Diária avulsa / 7 dias (R$/dia + total) / 15 dias (R$/dia + total), parceiro em destaque ("Parceiro Movepark" + link Reservar), linha de fonte com as datas, link "Tabela completa"; seção de aeroportos publicados ainda sem parceiro precificado (linka `/destinos/<slug>`); metodologia |
+| `/precos` | Índice editorial que cobre **todos os aeroportos publicados** (decidido em 14/08/2026): retrato em 4 números, **lateral de filtros** (busca sem acento por nome/cidade/UF/código, select de estado, "Só com reserva online", atalho por aeroporto; sticky no desktop, empilhada no mobile) e **uma tabela por aeroporto com até 5 estacionamentos**: vagas de parceiro primeiro (ordenadas pela diária avulsa, colunas Diária avulsa / 7 dias (R$/dia + total) / 15 dias (R$/dia + total), "Parceiro Movepark" + **botão Reservar**), e **lotes mapeados sem contrato completam o corte sem preço** (ADR-010: "consulte a tabela no local" + link Ver ficha para `/estacionamentos/<destino>/<lote>`). Aeroporto sem parceiro e sem lote mapeado entra mesmo assim, com aviso de mapeamento e link para `/seja-parceiro`. Linha de fonte com as datas, link "Tabela completa" (ou "Página do destino"); metodologia. Filtros nascem vazios no build, então o HTML pré-renderizado sai completo |
 | `/precos/<slug>` | Página do destino (matriz completa, **inclui 30 diárias**): breadcrumb, **Resposta rápida** (menor preço por duração, com quem pratica), tabela unidades × durações com balcão riscado e economia %, estadia mínima explicada, seção de moto quando existe, metodologia, cross-link com os outros destinos |
 | `/calculadora-estacionamento-aeroporto` | Calculadora (pedida em 14/08/2026, benchmark da calculadora do concorrente): destino + diárias (1 a 60, atalhos 1/7/15/30) viram o ranking do motor com balcão, economia e botão Reservar. Durações da matriz padrão respondem com o dado do build (SSG abre já calculada: primeiro destino, 7 diárias); outras vão à RPC com uma duração só, memoizada por consulta (`calculadora.logic.ts` + `fetchPriceForDays`). Estadia mínima sai da conta com o motivo visível. Link no rodapé do consumer |
 
@@ -71,10 +71,15 @@ destination_price_index(p_days int[] default '{1,7,15,30}', p_destination text d
 
 - `src/features/price-index/priceIndex.logic.ts`: lógica pura testada (ordenação por
   7 diárias, melhor preço por coluna, economia, resumos answer-first, meta description
-  derivada do dado). `api.ts` só transporta a RPC.
+  derivada do dado; `buildAirportSections` monta a seção de cada aeroporto com parceiro
+  na frente e lote mapeado completando o corte de 5, `matchesAirportFilter` resolve a
+  lateral de filtros). `api.ts` só transporta a RPC.
 - `src/routes/precos.tsx` e `src/routes/precos-destino.tsx`: páginas finas; loaders em
   `routes.tsx` (`precosLoader`/`precosDestinoLoader` + `fetchAllPrecosPaths`). O loader
-  do destino busca o índice inteiro porque o fim da página cruza com os demais.
+  do destino busca o índice inteiro porque o fim da página cruza com os demais. O
+  `precosLoader` soma o catálogo de aeroportos publicados e os lotes mapeados de cada um
+  (RPC `destination_prospect_cards`, em blocos de 6 para não esbarrar no statement
+  timeout do anon durante o build).
 - Tabela responsiva com um DOM só: `<table>` real no desktop (semântica para crawler);
   no mobile as linhas viram cartões via CSS (`block`/`grid` até `tablet:`), com o rótulo
   da duração dentro da célula.
@@ -87,8 +92,10 @@ destination_price_index(p_days int[] default '{1,7,15,30}', p_destination text d
   entre as durações) por unidade; no índice, `ItemList` das páginas.
 - Gêmeo Markdown no build (`scripts/generate-geo-artifacts.mjs`): `dist/precos.md` e
   `dist/precos/<slug>.md` com a mesma ordem de blocos e a tabela em Markdown; servidos
-  pelo worker via `Accept: text/markdown`. Tabelas também inline no `llms-full.txt`;
-  seção própria no `public/llms.txt`.
+  pelo worker via `Accept: text/markdown`. O `precos.md` fecha com a lista de aeroportos
+  ainda sem parceiro precificado (link para `/destinos/<slug>`), espelhando a cobertura
+  total da página. Tabelas também inline no `llms-full.txt`; seção própria no
+  `public/llms.txt`.
 - Sitemap: `getPrecosRoutes` em `vite.config.ts` (mesma RPC do loader, sem divergência).
 - Cobertura de rota: `e2e/windup/precos.json` e `precos-destino.json`.
 - Indexação: vale a regra de host de [seo-indexacao.md](./seo-indexacao.md) (hoje
