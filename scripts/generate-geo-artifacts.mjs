@@ -182,6 +182,16 @@ const CHECKLIST_FAQ = [
   "Cancelamento e tolerância de horário: a política aparece antes de fechar a reserva.",
 ];
 
+// Aeroporto sem parceiro precificado: a reserva fecha direto com o estacionamento,
+// então o checklist não aponta pra página de oferta da Movepark (mesma regra da
+// página React; coerência da página e ADR-009).
+const CHECKLIST_FAQ_SEM_PARCEIRO = [
+  "Vaga coberta ou descoberta: a coberta protege de sol e chuva, a descoberta costuma ter a menor diária.",
+  "Traslado até o terminal: confirme se está incluído e de quanto em quanto tempo sai.",
+  "Distância até o terminal: os estacionamentos mapeados estão na página do aeroporto.",
+  "Cancelamento e tolerância de horário: confirme a política na cotação, antes de pagar.",
+];
+
 function gerarFaqPaginasMd(precoPorSlug, dias) {
   fs.mkdirSync(path.join(DIST, "faq"), { recursive: true });
 
@@ -189,9 +199,16 @@ function gerarFaqPaginasMd(precoPorSlug, dias) {
     if (!f.slug) continue;
     const rel = relacionadas(f);
     const dest = f.scope === "destination" ? f.destination : null;
+    // Sem parceiro precificado, a página não promete reserva pela Movepark nem
+    // "preços logo abaixo": o fechamento muda de contexto (mesma regra do React).
+    // O sinal é a ausência de preço do motor, mesmo que o destino apareça no
+    // índice só com lotes mapeados.
+    const destPreco = dest ? precoPorSlug.get(dest.slug) : null;
+    const resumoPreco = dest && destPreco ? resumoPorDuracao(destPreco, dias) : [];
+    const semParceiro = Boolean(dest && resumoPreco.length === 0);
     const keyword = keywordTitulo(dest);
     const intro = dest
-      ? `Pergunta comum de quem procura estacionamento no ${aeroportoProsa(dest)} (${dest.code}). A resposta curta vem primeiro; preços e o passo a passo estão logo abaixo.`
+      ? `Pergunta comum de quem procura estacionamento no ${aeroportoProsa(dest)} (${dest.code}). A resposta curta vem primeiro; ${semParceiro ? "o comparativo da região está logo abaixo" : "preços e o passo a passo estão logo abaixo"}.`
       : "Pergunta comum de quem procura estacionamento de aeroporto com reserva online. A resposta curta vem primeiro; os detalhes estão logo abaixo.";
 
     const linhas = [
@@ -215,9 +232,8 @@ function gerarFaqPaginasMd(precoPorSlug, dias) {
     if (f.body_md) linhas.push(f.body_md, "");
 
     // Quanto custa: mesma tabela compacta da página, com dado do motor.
-    const destPreco = dest ? precoPorSlug.get(dest.slug) : null;
     if (dest && destPreco) {
-      const resumo = resumoPorDuracao(destPreco, dias);
+      const resumo = resumoPreco;
       if (resumo.length > 0) {
         linhas.push(
           `## Quanto custa estacionar no ${aeroportoProsa(dest)}`,
@@ -234,14 +250,25 @@ function gerarFaqPaginasMd(precoPorSlug, dias) {
       }
     }
 
+    if (semParceiro) {
+      linhas.push(
+        `## Como escolher o estacionamento no ${aeroportoProsa(dest)}`,
+        "",
+        `Neste aeroporto a reserva é fechada direto com o estacionamento. A página do ${aeroportoProsa(dest)} mapeia os da região, com endereço, telefone e avaliação do Google: cote dois ou três, compare o total do período e confirme o traslado antes de pagar.`,
+        "",
+      );
+    } else {
+      linhas.push(
+        "## Como reservar com a Movepark",
+        "",
+        "Você busca pelo aeroporto, compara preço, tipo de vaga e avaliação dos estacionamentos credenciados e reserva online, com o valor fechado antes de pagar. Na maioria das unidades o traslado até o terminal está incluído.",
+        "",
+      );
+    }
     linhas.push(
-      "## Como reservar com a Movepark",
-      "",
-      "Você busca pelo aeroporto, compara preço, tipo de vaga e avaliação dos estacionamentos credenciados e reserva online, com o valor fechado antes de pagar. Na maioria das unidades o traslado até o terminal está incluído.",
-      "",
       "## O que conferir antes de reservar",
       "",
-      ...CHECKLIST_FAQ.map((item) => `- ${item}`),
+      ...(semParceiro ? CHECKLIST_FAQ_SEM_PARCEIRO : CHECKLIST_FAQ).map((item) => `- ${item}`),
       "",
     );
 
@@ -253,9 +280,11 @@ function gerarFaqPaginasMd(precoPorSlug, dias) {
 
     linhas.push(
       dest
-        ? `Reservar vaga: ${SITE_URL}/destinos/${dest.slug}`
+        ? semParceiro
+          ? `Ver estacionamentos: ${SITE_URL}/destinos/${dest.slug}`
+          : `Reservar vaga: ${SITE_URL}/destinos/${dest.slug}`
         : `Buscar estacionamento: ${SITE_URL}/search`,
-      dest
+      dest && !semParceiro
         ? `Comparar preços: ${SITE_URL}/precos/${dest.slug}`
         : `Comparar preços: ${SITE_URL}/precos`,
       `Todas as perguntas: ${SITE_URL}/faq`,

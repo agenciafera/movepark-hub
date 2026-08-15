@@ -124,6 +124,68 @@ describe("FaqPerguntaPage", () => {
     expect(rel).toHaveAttribute("href", "/faq/as-vagas-em-guarulhos-sao-cobertas");
   });
 
+  /**
+   * Aeroporto sem parceiro precificado: depois da resposta rápida a página não
+   * pode prometer reserva pela Movepark. O fechamento vira "como escolher", o
+   * CTA aponta pro mapa da região e ninguém linka /precos/<slug> (não existe).
+   */
+  it("aeroporto sem parceiro mantém o contexto: sem promessa de reserva Movepark", async () => {
+    setup({
+      ...DATA,
+      faq: {
+        ...DATA.faq!,
+        question: "Tem traslado em Confins?",
+        destination_id: "cnf",
+        destination: {
+          id: "cnf",
+          name: "Aeroporto de Confins",
+          short_name: "Confins (CNF)",
+          slug: "aeroporto-de-confins",
+          code: "CNF",
+        },
+      },
+      precos: null,
+    } as FaqPerguntaData);
+    expect(
+      await screen.findByRole("heading", {
+        name: "Como escolher o estacionamento no Aeroporto de Confins",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Como reservar com a Movepark" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText(/o comparativo da região está logo abaixo/)).toBeInTheDocument();
+    const ver = screen.getByRole("link", { name: "Ver estacionamentos em Confins" });
+    expect(ver).toHaveAttribute("href", "/destinos/aeroporto-de-confins");
+    expect(
+      screen.getByRole("link", { name: "Comparar preços em outros aeroportos" }),
+    ).toHaveAttribute("href", "/precos");
+    expect(screen.queryByRole("link", { name: /Reservar vaga/ })).not.toBeInTheDocument();
+    expect(screen.getByText(/confirme a política na cotação/)).toBeInTheDocument();
+  });
+
+  /** Destino presente no índice só com lotes mapeados (sem preço) conta como sem parceiro. */
+  it("destino no índice sem preço do motor também cai no fechamento sem parceiro", async () => {
+    setup({
+      ...DATA,
+      precos: {
+        kind: "destino",
+        destino: {
+          slug: "aeroporto-internacional-de-sao-paulo-guarulhos",
+          unitCount: 0,
+          partnerCount: 0,
+          byDuration: [],
+        },
+      },
+    } as FaqPerguntaData);
+    expect(
+      await screen.findByRole("heading", { name: /Como escolher o estacionamento/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /Comparar preços em Guarulhos/ }),
+    ).not.toBeInTheDocument();
+  });
+
   it("pergunta global cai na busca e no índice de preços da rede", async () => {
     setup({
       faq: { ...DATA.faq!, scope: "global", destination_id: null, destination: null },

@@ -24,12 +24,24 @@ const SITE_URL = "https://hub.movepark.co";
 /** O que o loader entrega: a pergunta, as relacionadas e o contexto de preço. */
 export type FaqPerguntaData = (FaqPageData & { precos: FaqPrecoContexto }) | null;
 
-/** O que conferir antes de reservar: vale pra qualquer aeroporto, por isso é fixo. */
+/** O que conferir antes de reservar, onde a reserva fecha pela Movepark. */
 const CHECKLIST = [
   "Vaga coberta ou descoberta: a coberta protege de sol e chuva, a descoberta costuma ter a menor diária.",
   "Traslado até o terminal: confirme se está incluído e de quanto em quanto tempo sai.",
   "Distância e tempo até o embarque: estão na página de cada estacionamento.",
   "Cancelamento e tolerância de horário: a política aparece antes de fechar a reserva.",
+];
+
+/**
+ * Variante pra aeroporto sem parceiro precificado: a reserva fecha direto com o
+ * estacionamento, então o checklist não pode apontar pra página de oferta da
+ * Movepark (coerência da página, e ADR-009: sem promessa de transação).
+ */
+const CHECKLIST_SEM_PARCEIRO = [
+  "Vaga coberta ou descoberta: a coberta protege de sol e chuva, a descoberta costuma ter a menor diária.",
+  "Traslado até o terminal: confirme se está incluído e de quanto em quanto tempo sai.",
+  "Distância até o terminal: os estacionamentos mapeados estão na página do aeroporto.",
+  "Cancelamento e tolerância de horário: confirme a política na cotação, antes de pagar.",
 ];
 
 /**
@@ -65,7 +77,6 @@ export default function FaqPerguntaPage() {
   const destinoCurto = destino ? shortSemCodigo(destino.short_name, destino.name) : null;
   const canonical = `${SITE_URL}/faq/${faq.slug}`;
   const keyword = keywordDoTitulo(destino);
-  const intro = introDaPergunta(destino);
   const title = `${faq.question} · ${keyword} | Movepark`;
   const description = `${keyword}: ${metaDescriptionFrom(faq.answer, 120)}`;
   const contexto = destino ? (destino.short_name ?? destino.name) : (faq.category?.label ?? "Geral");
@@ -73,6 +84,14 @@ export default function FaqPerguntaPage() {
   const precoDestino = precos?.kind === "destino" ? precos.destino : null;
   const precoRede = precos?.kind === "rede" ? precos.rede : null;
   const diaria1 = precoDestino?.byDuration.find((d) => d.days === 1) ?? null;
+  // Aeroporto sem parceiro precificado: a página não pode prometer reserva pela
+  // Movepark (coerência com a resposta rápida, e ADR-009). As seções de fechamento
+  // e os CTAs mudam de contexto junto. O sinal é a ausência de preço do motor,
+  // mesmo que o destino apareça no índice só com lotes mapeados.
+  const semParceiro = Boolean(
+    destino && (!precoDestino || precoDestino.byDuration.length === 0),
+  );
+  const intro = introDaPergunta(destino, !semParceiro);
 
   // Um único FAQPage por página (ADR-002), com a resposta idêntica à visível na
   // "Resposta rápida". O dateModified diz quando a resposta foi revisada.
@@ -226,21 +245,37 @@ export default function FaqPerguntaPage() {
           </section>
         )}
 
-        {/* Como reservar: o passo a passo da plataforma, em um parágrafo. */}
-        <section className="mt-8">
-          <h2 className="text-display-sm text-ink">Como reservar com a Movepark</h2>
-          <p className="mt-2 text-body-md text-body">
-            Você busca pelo aeroporto, compara preço, tipo de vaga e avaliação dos
-            estacionamentos credenciados e reserva online, com o valor fechado antes de pagar.
-            Na maioria das unidades o traslado até o terminal está incluído.
-          </p>
-        </section>
+        {/* Fechamento em contexto: onde há parceiro, o passo a passo da reserva
+            pela Movepark; onde não há, como escolher fechando direto com o
+            estacionamento (sem prometer uma reserva que não existe ali). */}
+        {destino && semParceiro ? (
+          <section className="mt-8">
+            <h2 className="text-display-sm text-ink">
+              Como escolher o estacionamento no {aeroportoEmProsa(destino)}
+            </h2>
+            <p className="mt-2 text-body-md text-body">
+              Neste aeroporto a reserva é fechada direto com o estacionamento. A página do{" "}
+              {aeroportoEmProsa(destino)} mapeia os da região, com endereço, telefone e
+              avaliação do Google: cote dois ou três, compare o total do período e confirme o
+              traslado antes de pagar.
+            </p>
+          </section>
+        ) : (
+          <section className="mt-8">
+            <h2 className="text-display-sm text-ink">Como reservar com a Movepark</h2>
+            <p className="mt-2 text-body-md text-body">
+              Você busca pelo aeroporto, compara preço, tipo de vaga e avaliação dos
+              estacionamentos credenciados e reserva online, com o valor fechado antes de pagar.
+              Na maioria das unidades o traslado até o terminal está incluído.
+            </p>
+          </section>
+        )}
 
         {/* Checklist no padrão da página do concorrente: o que olhar antes de decidir. */}
         <section className="mt-8">
           <h2 className="text-display-sm text-ink">O que conferir antes de reservar</h2>
           <ul className="mt-3 space-y-2">
-            {CHECKLIST.map((item) => (
+            {(semParceiro ? CHECKLIST_SEM_PARCEIRO : CHECKLIST).map((item) => (
               <li key={item} className="flex items-start gap-2 text-body-md text-body">
                 <CaretRight className="mt-1 h-4 w-4 shrink-0 text-mp-primary" aria-hidden />
                 {item}
@@ -249,17 +284,31 @@ export default function FaqPerguntaPage() {
           </ul>
         </section>
 
-        {/* Dois CTAs, como na referência: reservar e comparar preços. */}
+        {/* Dois CTAs em contexto: com parceiro, reservar e comparar preços; sem
+            parceiro, ver o mapa da região e comparar em outros aeroportos. */}
         <div className="mt-8 flex flex-wrap items-center gap-3">
           {destino ? (
-            <>
-              <Button asChild>
-                <Link to={`/destinos/${destino.slug}`}>Reservar vaga em {destinoCurto}</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link to={`/precos/${destino.slug}`}>Comparar preços em {destinoCurto}</Link>
-              </Button>
-            </>
+            semParceiro ? (
+              <>
+                <Button asChild>
+                  <Link to={`/destinos/${destino.slug}`}>
+                    Ver estacionamentos em {destinoCurto}
+                  </Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link to="/precos">Comparar preços em outros aeroportos</Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button asChild>
+                  <Link to={`/destinos/${destino.slug}`}>Reservar vaga em {destinoCurto}</Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link to={`/precos/${destino.slug}`}>Comparar preços em {destinoCurto}</Link>
+                </Button>
+              </>
+            )
           ) : (
             <>
               <Button asChild>

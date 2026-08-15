@@ -161,7 +161,13 @@ aeroporto no title e no primeiro parágrafo** ("estacionamento aeroporto guarulh
 `faqPagina.logic.ts`), resposta rápida, `body_md` opcional, seção **"Quanto custa estacionar"**
 com a tabela 1/7/15/30 diárias do índice de preços (dado do motor, o mesmo de `/precos/<slug>`),
 "Como reservar com a Movepark", checklist do que conferir e **dois CTAs** (reservar no destino +
-comparar preços). A página do lote mapeado (`/estacionamentos/*`) mostra o FAQ do **aeroporto**
+comparar preços). **Coerência pós-resposta (ago/2026):** aeroporto **sem parceiro precificado**
+não promete reserva pela Movepark depois da resposta rápida: a intro não anuncia "preços logo
+abaixo", o fechamento vira "Como escolher o estacionamento no <aeroporto>" (cotar direto, com a
+página do destino como mapa da região), o checklist ganha variante sem vitrine e os CTAs viram
+"Ver estacionamentos" + "Comparar preços em outros aeroportos" (`/precos/<slug>` não existe sem
+unidade precificada). A mesma regra vale no gêmeo Markdown, e as respostas `destination` desses
+aeroportos falam "confirme com o estacionamento" em vez de apontar pra página de oferta. A página do lote mapeado (`/estacionamentos/*`) mostra o FAQ do **aeroporto**
 (escopo `destination`, nunca global: a global fala de reserva pela Movepark, que o lote não
 oferece), com o mesmo `FAQPage` espelhando o visível. O `slug` é preenchido
 por trigger no insert (`faq_slug_autofill`; FAQ de destino ganha o nome do aeroporto no slug) e é

@@ -44,10 +44,21 @@ export function aeroportoEmProsa(dest: FaqDestinoRef): string {
   return `Aeroporto de ${shortSemCodigo(dest.short_name, dest.name)}`;
 }
 
-/** Primeiro parágrafo da página: é onde a palavra-chave aparece em texto corrido. */
-export function introDaPergunta(dest: FaqDestinoRef | null | undefined): string {
+/**
+ * Primeiro parágrafo da página: é onde a palavra-chave aparece em texto corrido.
+ * `comPrecos` diz se a página vai ter a seção de preço do motor (só existe onde
+ * há parceiro precificado); sem ela, prometer "preços logo abaixo" quebraria a
+ * coerência da página.
+ */
+export function introDaPergunta(
+  dest: FaqDestinoRef | null | undefined,
+  comPrecos: boolean,
+): string {
   if (dest) {
-    return `Pergunta comum de quem procura estacionamento no ${aeroportoEmProsa(dest)} (${dest.code}). A resposta curta vem primeiro; preços e o passo a passo estão logo abaixo.`;
+    const fecho = comPrecos
+      ? "preços e o passo a passo estão logo abaixo"
+      : "o comparativo da região está logo abaixo";
+    return `Pergunta comum de quem procura estacionamento no ${aeroportoEmProsa(dest)} (${dest.code}). A resposta curta vem primeiro; ${fecho}.`;
   }
   return "Pergunta comum de quem procura estacionamento de aeroporto com reserva online. A resposta curta vem primeiro; os detalhes estão logo abaixo.";
 }
