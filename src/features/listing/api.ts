@@ -39,6 +39,12 @@ export type ListingDetail = {
     reservation_policy: string | null;
     /** Onde a reserva desta unidade fecha (E0.14). Fonte primária das capacidades (ADR-009). */
     checkout_mode: string;
+    /**
+     * A unidade opera o transfer com a Go2Park (rastreio da van em tempo real). Fato da unidade,
+     * não promessa de transação: renderiza também em checkout externo, que é onde estão as três
+     * unidades com o contrato hoje.
+     */
+    go2park_enabled: boolean;
     timezone: string;
     latitude: number | null;
     longitude: number | null;
@@ -79,7 +85,7 @@ const baseSelect = `
   location:location!inner(
     id, slug, name, address, phone, email, notice, has_notice,
     directions_text, shuttle_frequency_minutes, shuttle_to_terminal_minutes,
-    reservation_policy, checkout_mode, timezone, latitude, longitude, google_place_id,
+    reservation_policy, checkout_mode, go2park_enabled, timezone, latitude, longitude, google_place_id,
     has_pcd_config, has_passenger_quantity, review_avg, review_count, photos,
     company:company!inner(id, slug, name, legal_name, created_at),
     destination:destination(seo_label, short_name, name, type, city),
@@ -168,6 +174,9 @@ export async function fetchListing(
       // Default 'hub' na leitura: a coluna nasceu com esse default e ler ausência como
       // 'external' apagaria a página de toda unidade nativa se o select falhasse.
       checkout_mode: m.location.checkout_mode ?? "hub",
+      // Ausência lida como false: o selo do transfer ao vivo é contrato, e prometer rastreio
+      // que a unidade não tem é pior que deixar de mostrar o que ela tem.
+      go2park_enabled: m.location.go2park_enabled === true,
       // Embed pode voltar null (unidade sem destino âncora) ou objeto. O SEO trata os dois.
       destination: m.location.destination ?? null,
       address: m.location.address,

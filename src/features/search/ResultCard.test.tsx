@@ -257,4 +257,24 @@ describe("ResultCard", () => {
     expect(screen.getByText("Faltam 2 vagas")).toBeInTheDocument();
     expect(screen.queryByText(/Muito procurado/)).toBeNull();
   });
+
+  it("Go2Park: a faixa de transfer ao vivo entra no card", () => {
+    renderWithProviders(
+      <ResultCard
+        item={item({}, { go2park: true })}
+        isSaved={false}
+        onToggleSave={vi.fn()}
+        searchParams={new URLSearchParams()}
+      />,
+    );
+    expect(screen.getByTestId("go2park-badge")).toBeInTheDocument();
+    expect(screen.getByText("Transfer ao vivo")).toBeInTheDocument();
+  });
+
+  it("sem contrato Go2Park: nenhuma faixa (o diferencial é de quem tem)", () => {
+    renderWithProviders(
+      <ResultCard item={item()} isSaved={false} onToggleSave={vi.fn()} searchParams={new URLSearchParams()} />,
+    );
+    expect(screen.queryByTestId("go2park-badge")).not.toBeInTheDocument();
+  });
 });

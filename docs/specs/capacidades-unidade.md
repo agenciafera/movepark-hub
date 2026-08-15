@@ -36,6 +36,7 @@ externa, não é, e quem anunciou foi a Movepark.
 | Serviços extras | mostra | **não renderiza** | `location_add_on_service` |
 | Avaliações e nota | mostra | **não renderiza** | `review.booking_id` |
 | Avaliações do Google | mostra | **mostra** | `google_place_snapshot` |
+| Transfer com rastreio ao vivo (Go2Park) | mostra | **mostra** | `location.go2park_enabled` (ver [go2park-transfer-ao-vivo.md](./go2park-transfer-ao-vivo.md)) |
 | Vaga garantida | mostra | **não renderiza** | depende de o Hub controlar disponibilidade |
 | FAQ | global + da unidade | **só escopo da unidade** | `faq.scope` + `location_id` |
 

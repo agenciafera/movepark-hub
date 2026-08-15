@@ -194,7 +194,7 @@ Deno.serve(async (req: Request) => {
       id, capacity, is_active,
       location:location!inner(
         id, slug, name, address, latitude, longitude, status, deleted_at, is_listed,
-        review_avg, review_count, photos, google_place_id,
+        review_avg, review_count, photos, google_place_id, go2park_enabled,
         company:company!inner(id, slug, name, status),
         destination:destination(code, name, type),
         amenities:location_amenity(amenity_code)
@@ -484,6 +484,9 @@ Deno.serve(async (req: Request) => {
           : null,
       // Sinal de demanda honesto — nunca um número, só presença (E3.6).
       high_demand_today: isHighDemandToday(highDemandSet, r.location.id as string),
+      // Transfer com rastreio ao vivo (Go2Park). Fato da unidade, não promessa de transação
+      // (ADR-009): vale inclusive nas unidades de checkout externo, que são as três que o têm.
+      go2park: r.location.go2park_enabled === true,
     },
     parking_type: {
       code: r.company_parking_type.parking_type.code,

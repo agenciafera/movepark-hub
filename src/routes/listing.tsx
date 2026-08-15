@@ -36,6 +36,7 @@ import { UpgradeVagaNudge } from "@/features/listing/UpgradeVagaNudge";
 import { pickUpgradeTarget } from "@/features/listing/upgrade.logic";
 import { GUARANTEE_PROMISE } from "@/features/guarantee/copy";
 import { getLocationCapabilities } from "@/features/listing/capabilities";
+import { Go2ParkLiveChip } from "@/features/go2park/Go2ParkLive";
 import { contasDoConsumidorLigadas } from "@/lib/features";
 import {
   localBusinessSchema,
@@ -338,6 +339,11 @@ export default function ListingPage() {
               </div>
             )}
 
+            {/* Rastreio ao vivo da van: fato da unidade (ADR-009), então fica fora do gate de
+                capacidade e aparece também em unidade de checkout externo. O bloco completo
+                mora em "Como chegar"; aqui é só o sinal, ao lado do tempo de transfer. */}
+            {listing.location.go2park_enabled && <Go2ParkLiveChip />}
+
           </div>
         </div>
 
@@ -416,6 +422,7 @@ export default function ListingPage() {
               directionsText={listing.location.directions_text}
               shuttleFrequencyMinutes={listing.location.shuttle_frequency_minutes}
               shuttleToTerminalMinutes={listing.location.shuttle_to_terminal_minutes}
+              go2park={listing.location.go2park_enabled}
             />
             <TerminalDistances locationId={listing.location.id} />
           </section>

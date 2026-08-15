@@ -53,6 +53,8 @@ export type SearchResultItem = {
     cover_image: string | null;
     /** Sinal de demanda honesto (E3.6) — nunca um número, só presença acima do limiar. */
     high_demand_today: boolean;
+    /** Transfer com rastreio ao vivo (Go2Park). Fato da unidade, vale também no checkout externo. */
+    go2park?: boolean;
   };
   parking_type: { code: string; name: string };
   capacity: number;

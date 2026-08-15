@@ -3,6 +3,7 @@ import { formatDistance } from "@/lib/format";
 import { parkingTitle } from "@/lib/parkingName";
 import { stretchParamsToMinStay } from "./dates";
 import { isTypeDescriptorAmenity } from "./amenities.logic";
+import { Go2ParkLiveBadge } from "@/features/go2park/Go2ParkLive";
 import { ParkingCard, ParkingCardBadge, type ParkingCardAmenity } from "./ParkingCard";
 import type { SearchResultItem } from "./useSearchResults";
 import type { SearchBadge, SearchBadgeKind } from "./searchBadges";
@@ -144,6 +145,9 @@ export function ResultCard({ item, isSaved, onToggleSave, searchParams, source, 
       googleRating={{ avg: item.location.google_rating, count: item.location.google_rating_count }}
       amenities={amenities}
       amenitiesTestId="result-card-amenities"
+      // O rastreio ao vivo da van é o que separa estas unidades das vizinhas do mesmo aeroporto,
+      // então sai da fila de pílulas cinzas e ganha faixa própria no card.
+      highlight={item.location.go2park ? <Go2ParkLiveBadge /> : undefined}
       // Na vitrine o card mostra a diária, não o total da estadia mínima: a lista mistura
       // durações, e um total de 3 diárias ao lado de um de 2 faz o selo "Mais barato" cair no
       // número maior da tela. Com todos exibindo diária, a comparação bate com o que se vê. A

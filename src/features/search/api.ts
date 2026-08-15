@@ -190,6 +190,8 @@ export type PopularOffer = {
       slug: string;
     } | null;
     amenities: { amenity_code: string }[];
+    /** Transfer com rastreio ao vivo (Go2Park). Fato da unidade, vale também no checkout externo. */
+    go2park: boolean;
   };
   /** Preço de partida: 1 diária, ou a menor estadia que o lote vende (ver `price_days`). */
   price_from: number | null;
@@ -252,7 +254,7 @@ export function usePopularOffers(maxLocations = 6) {
           company:company_id (id, name, slug),
           destination:destination_id (id, code, name, short_name, slug),
           amenities:location_amenity (amenity_code),
-          photos
+          photos, go2park_enabled
         `)
         .in("id", locationIds);
       if (locErr) throw locErr;
@@ -317,6 +319,7 @@ export function usePopularOffers(maxLocations = 6) {
             company: loc.company as { id: string; name: string; slug: string },
             destination: loc.destination as PopularOffer["location"]["destination"],
             amenities: (loc.amenities ?? []) as { amenity_code: string }[],
+            go2park: loc.go2park_enabled === true,
           },
           price_from: from.price,
           old_price_from: from.oldPrice,

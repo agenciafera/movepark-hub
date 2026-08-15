@@ -21,7 +21,7 @@ const PATH = "/p/:operatorSlug/:locationSlug/:parkingTypeCode";
 const URL_SAIDA =
   "https://virapark.movepark.co/virapark/vaga-coberta?utm_source=movepark&utm_medium=organic&utm_campaign=afiliado-movepark";
 
-function linha(checkoutMode: "hub" | "external", basePrice = 40) {
+function linha(checkoutMode: "hub" | "external", basePrice = 40, go2park = false) {
   return {
     id: "lpt-1",
     capacity: 100,
@@ -41,6 +41,7 @@ function linha(checkoutMode: "hub" | "external", basePrice = 40) {
       shuttle_to_terminal_minutes: null,
       reservation_policy: null,
       checkout_mode: checkoutMode,
+      go2park_enabled: go2park,
       timezone: "America/Sao_Paulo",
       latitude: -23,
       longitude: -47,
@@ -66,10 +67,10 @@ function linha(checkoutMode: "hub" | "external", basePrice = 40) {
   };
 }
 
-function montaPagina(checkoutMode: "hub" | "external", basePrice?: number) {
+function montaPagina(checkoutMode: "hub" | "external", basePrice?: number, go2park = false) {
   server.use(
     http.get(`${BASE}/rest/v1/location_parking_type`, () =>
-      HttpResponse.json([linha(checkoutMode, basePrice)]),
+      HttpResponse.json([linha(checkoutMode, basePrice, go2park)]),
     ),
   );
   // A página emite <Helmet> (meta + JSON-LD), que precisa do provider para montar.
@@ -230,5 +231,31 @@ describe("single da unidade EXTERNA", () => {
     const fora = publicado();
     expect(fora).not.toMatch(/R\$\s0,00/);
     expect(fora).not.toMatch(/"price":"0.00"/);
+  });
+});
+
+/**
+ * Contraparte do gate: FATO da unidade não pode ser apagado junto com as promessas.
+ *
+ * O rastreio ao vivo da van (Go2Park) descreve o serviço do lote, não a transação, e as três
+ * unidades que o têm hoje são justamente de checkout externo. Se um dia alguém passar o bloco
+ * por `getLocationCapabilities`, o diferencial some exatamente de quem o tem, e este caso quebra.
+ */
+describe("Go2Park na single", () => {
+  it("aparece na unidade EXTERNA, porque a van tem rastreio independente de onde a reserva fecha", async () => {
+    montaPagina("external", undefined, true);
+    await screen.findAllByText(/Virapark/i);
+
+    await waitFor(() => expect(screen.getByTestId("go2park-block")).toBeInTheDocument());
+    expect(screen.getByTestId("go2park-chip")).toBeInTheDocument();
+    expect(screen.getByText(/Acompanhe a van ao vivo/)).toBeInTheDocument();
+  });
+
+  it("some na unidade sem contrato, mesmo sendo unidade própria", async () => {
+    montaPagina("hub");
+    await screen.findAllByText(/Virapark/i);
+
+    expect(screen.queryByTestId("go2park-block")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("go2park-chip")).not.toBeInTheDocument();
   });
 });

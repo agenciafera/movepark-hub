@@ -23,6 +23,7 @@ function offer(
       company: { id: companyId, name: `Co ${companyId}`, slug: companyId },
       destination: null,
       amenities: [],
+      go2park: false,
     },
     price_from: 100,
     old_price_from: null,

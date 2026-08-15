@@ -1,4 +1,5 @@
 import { Bus, Warning } from "@phosphor-icons/react";
+import { Go2ParkLiveBlock } from "@/features/go2park/Go2ParkLive";
 import { MiniMap } from "./MiniMap";
 import { formatShuttle } from "./howToArrive.logic";
 
@@ -15,6 +16,12 @@ type Props = {
   directionsText: string | null;
   shuttleFrequencyMinutes: number | null;
   shuttleToTerminalMinutes: number | null;
+  /**
+   * A unidade opera o transfer com a Go2Park (rastreio da van em tempo real). O bloco entra
+   * aqui, logo depois da frequência do transfer, porque é a mesma pergunta do cliente: como eu
+   * saio daqui e chego no terminal. Fato da unidade, então não passa por capacidade (ADR-009).
+   */
+  go2park?: boolean;
 };
 
 /**
@@ -32,6 +39,7 @@ export function HowToArrive({
   directionsText,
   shuttleFrequencyMinutes,
   shuttleToTerminalMinutes,
+  go2park = false,
 }: Props) {
   const shuttle = formatShuttle({
     frequencyMinutes: shuttleFrequencyMinutes,
@@ -62,6 +70,8 @@ export function HowToArrive({
           </span>
         </div>
       )}
+
+      {go2park && <Go2ParkLiveBlock />}
 
       <MiniMap
         address={address}

@@ -4,6 +4,7 @@ import { Airplane, ArrowRight, Tag } from "@phosphor-icons/react";
 import { usePopularOffers, type PopularOffer } from "@/features/search/api";
 import { useSavedListings } from "@/features/search/useSavedListings";
 import { ParkingCard, ParkingCardBadge, type ParkingCardAmenity } from "@/features/search/ParkingCard";
+import { Go2ParkLiveBadge } from "@/features/go2park/Go2ParkLive";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -94,6 +95,8 @@ function PopularOfferCard({
       // A vitrine dos populares não busca via edge /search: sem snapshot do Google nesta fonte.
       googleRating={null}
       amenities={topAmenityPills(location.amenities)}
+      // Rastreio ao vivo da van (Go2Park): faixa própria, fora da fila de pílulas cinzas.
+      highlight={location.go2park ? <Go2ParkLiveBadge /> : undefined}
       // Quem exige estadia mínima mostra a diária, e não o total dela: a vitrine põe lado a
       // lado cards de durações diferentes, e comparar total com total faria o "Mais barato"
       // cair no número maior da tela.

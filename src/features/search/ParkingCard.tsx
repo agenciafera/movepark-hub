@@ -45,6 +45,12 @@ export type ParkingCardProps = {
    */
   googleRating?: { avg: number | null; count: number } | null;
   amenities?: ParkingCardAmenity[];
+  /**
+   * Faixa de destaque no corpo do card, acima das amenidades. Existe para o diferencial que a
+   * pílula cinza de amenidade não consegue carregar (hoje: o transfer ao vivo da Go2Park). Fica
+   * no corpo, e não sobre a imagem, pra não disputar espaço com os selos comparativos.
+   */
+  highlight?: React.ReactNode;
   price: { total: number | null | undefined; oldPrice?: number | null; unit: string };
   /** Selos sobre a imagem, no canto superior esquerdo (diferenciais comparativos). */
   overlay?: React.ReactNode;
@@ -112,6 +118,7 @@ export function ParkingCard({
   rating,
   googleRating,
   amenities,
+  highlight,
   price,
   overlay,
   imageFooter,
@@ -227,6 +234,9 @@ export function ParkingCard({
             );
           })()}
         </div>
+
+        {/* Destaque (diferencial que não cabe numa pílula de amenidade) */}
+        {highlight}
 
         {/* Amenidades */}
         {amenities && amenities.length > 0 && (

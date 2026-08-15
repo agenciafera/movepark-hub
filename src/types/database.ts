@@ -2235,6 +2235,7 @@ export type Database = {
           email: string | null
           external_ref: string | null
           geog: unknown
+          go2park_enabled: boolean
           google_maps_url: string | null
           google_place_id: string | null
           has_notice: boolean
@@ -2278,6 +2279,7 @@ export type Database = {
           email?: string | null
           external_ref?: string | null
           geog?: unknown
+          go2park_enabled?: boolean
           google_maps_url?: string | null
           google_place_id?: string | null
           has_notice?: boolean
@@ -2321,6 +2323,7 @@ export type Database = {
           email?: string | null
           external_ref?: string | null
           geog?: unknown
+          go2park_enabled?: boolean
           google_maps_url?: string | null
           google_place_id?: string | null
           has_notice?: boolean
