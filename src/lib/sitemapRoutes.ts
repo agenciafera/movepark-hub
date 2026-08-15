@@ -28,6 +28,7 @@ export const SITEMAP_STATIC_ROUTES = [
   "/privacidade",
   "/seja-parceiro",
   "/calculadora-estacionamento-aeroporto",
+  "/uber-ou-estacionamento-aeroporto",
 ] as const;
 
 /**

@@ -586,6 +586,16 @@ export default function CalculadoraPage() {
             </Link>
             .
           </p>
+          <p className="mt-3 text-body-md text-body">
+            Na dúvida entre dirigir e chamar um app, o{" "}
+            <Link
+              to="/uber-ou-estacionamento-aeroporto"
+              className="font-medium text-mp-indigo underline-offset-2 hover:underline"
+            >
+              comparador de app ou carro
+            </Link>{" "}
+            faz as duas contas lado a lado.
+          </p>
         </section>
           </div>
         </div>

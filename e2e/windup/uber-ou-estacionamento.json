@@ -1,0 +1,14 @@
+{
+  "scenario_id": "uber-ou-estacionamento",
+  "start_url": "/uber-ou-estacionamento-aeroporto",
+  "task": "Verifique que a pagina exibe o titulo De app ou de carro para o aeroporto?, um formulario com os campos Destino, Diarias e Distancia ate o aeroporto, e dois cartoes de comparacao (De app, ida e volta / De carro, estacionando) com valores em reais.",
+  "tags": [
+    "smoke",
+    "leitura"
+  ],
+  "hints": [
+    "A pagina abre ja calculada: 7 diarias no primeiro destino, 25 km, com o cartao vencedor destacado.",
+    "O lado do estacionamento vem do motor de reservas; o lado do app e estimativa declarada, com controle de tarifa dinamica e campo manual.",
+    "A secao Como esta conta e feita traz a formula, a fonte da tarifa e os avisos de marca."
+  ]
+}
