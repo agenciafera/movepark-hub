@@ -206,9 +206,17 @@ function gerarFaqPaginasMd(precoPorSlug, dias) {
     const destPreco = dest ? precoPorSlug.get(dest.slug) : null;
     const resumoPreco = dest && destPreco ? resumoPorDuracao(destPreco, dias) : [];
     const semParceiro = Boolean(dest && resumoPreco.length === 0);
+    // Blocos de preço e de fechamento só onde preço é o assunto (mesma regra da
+    // página React): nas outras perguntas, o corpo específico sustenta a página.
+    const paginaDePreco = f.category?.slug === "pagamentos";
     const keyword = keywordTitulo(dest);
+    const fecho = !paginaDePreco
+      ? "os detalhes estão logo abaixo"
+      : semParceiro
+        ? "o comparativo da região está logo abaixo"
+        : "preços e o passo a passo estão logo abaixo";
     const intro = dest
-      ? `Pergunta comum de quem procura estacionamento no ${aeroportoProsa(dest)} (${dest.code}). A resposta curta vem primeiro; ${semParceiro ? "o comparativo da região está logo abaixo" : "preços e o passo a passo estão logo abaixo"}.`
+      ? `Pergunta comum de quem procura estacionamento no ${aeroportoProsa(dest)} (${dest.code}). A resposta curta vem primeiro; ${fecho}.`
       : "Pergunta comum de quem procura estacionamento de aeroporto com reserva online. A resposta curta vem primeiro; os detalhes estão logo abaixo.";
 
     const linhas = [
@@ -232,7 +240,7 @@ function gerarFaqPaginasMd(precoPorSlug, dias) {
     if (f.body_md) linhas.push(f.body_md, "");
 
     // Quanto custa: mesma tabela compacta da página, com dado do motor.
-    if (dest && destPreco) {
+    if (paginaDePreco && dest && destPreco) {
       const resumo = resumoPreco;
       if (resumo.length > 0) {
         linhas.push(
@@ -250,27 +258,29 @@ function gerarFaqPaginasMd(precoPorSlug, dias) {
       }
     }
 
-    if (semParceiro) {
+    if (paginaDePreco) {
+      if (semParceiro && dest) {
+        linhas.push(
+          `## Como escolher o estacionamento no ${aeroportoProsa(dest)}`,
+          "",
+          `Neste aeroporto a reserva é fechada direto com o estacionamento. A página do ${aeroportoProsa(dest)} mapeia os da região, com endereço, telefone e avaliação do Google: cote dois ou três, compare o total do período e confirme o traslado antes de pagar.`,
+          "",
+        );
+      } else {
+        linhas.push(
+          "## Como reservar com a Movepark",
+          "",
+          "Você busca pelo aeroporto, compara preço, tipo de vaga e avaliação dos estacionamentos credenciados e reserva online, com o valor fechado antes de pagar. Na maioria das unidades o traslado até o terminal está incluído.",
+          "",
+        );
+      }
       linhas.push(
-        `## Como escolher o estacionamento no ${aeroportoProsa(dest)}`,
+        "## O que conferir antes de reservar",
         "",
-        `Neste aeroporto a reserva é fechada direto com o estacionamento. A página do ${aeroportoProsa(dest)} mapeia os da região, com endereço, telefone e avaliação do Google: cote dois ou três, compare o total do período e confirme o traslado antes de pagar.`,
-        "",
-      );
-    } else {
-      linhas.push(
-        "## Como reservar com a Movepark",
-        "",
-        "Você busca pelo aeroporto, compara preço, tipo de vaga e avaliação dos estacionamentos credenciados e reserva online, com o valor fechado antes de pagar. Na maioria das unidades o traslado até o terminal está incluído.",
+        ...(semParceiro ? CHECKLIST_FAQ_SEM_PARCEIRO : CHECKLIST_FAQ).map((item) => `- ${item}`),
         "",
       );
     }
-    linhas.push(
-      "## O que conferir antes de reservar",
-      "",
-      ...(semParceiro ? CHECKLIST_FAQ_SEM_PARCEIRO : CHECKLIST_FAQ).map((item) => `- ${item}`),
-      "",
-    );
 
     if (rel.length > 0) {
       linhas.push("## Perguntas relacionadas", "");

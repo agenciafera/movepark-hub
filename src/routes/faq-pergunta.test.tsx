@@ -50,6 +50,9 @@ const DATA: FaqPerguntaData = {
   },
 };
 
+/** Blocos de preço e fechamento só entram em página desta categoria. */
+const PAGAMENTOS = { slug: "pagamentos", label: "Pagamentos", sort_order: 2 };
+
 function setup(data: FaqPerguntaData = DATA) {
   const router = createMemoryRouter(
     [{ path: "/faq/:slug", element: <FaqPerguntaPage />, loader: () => data }],
@@ -87,13 +90,35 @@ describe("FaqPerguntaPage", () => {
     expect(await screen.findByRole("heading", { name: "Como funciona" })).toBeInTheDocument();
   });
 
-  it("mostra a tabela de quanto custa com o dado do índice de preços", async () => {
-    setup();
+  it("página de preço mostra a tabela de quanto custa com o dado do índice", async () => {
+    setup({ ...DATA, faq: { ...DATA.faq!, category: PAGAMENTOS } } as FaqPerguntaData);
     expect(
       await screen.findByRole("heading", { name: /Quanto custa estacionar no Aeroporto de Guarulhos/ }),
     ).toBeInTheDocument();
     expect(screen.getByText("1 diária")).toBeInTheDocument();
     expect(screen.getByText("R$ 34,90")).toBeInTheDocument();
+  });
+
+  /**
+   * Fora da página de preço, o que sustenta a página é o corpo específico da
+   * pergunta: tabela de preço, "Como reservar" e checklist quebrariam o
+   * contexto do tema (a pergunta do exemplo é sobre traslado).
+   */
+  it("pergunta que não é de preço fica no contexto dela, sem blocos genéricos", async () => {
+    setup();
+    expect(await screen.findByRole("heading", { name: "Como funciona" })).toBeInTheDocument();
+    expect(screen.getByText(/os detalhes estão logo abaixo/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: /Quanto custa estacionar/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Como reservar com a Movepark" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "O que conferir antes de reservar" }),
+    ).not.toBeInTheDocument();
+    // Os CTAs de navegação continuam: eles não são conteúdo, são saída da página.
+    expect(screen.getByRole("link", { name: "Reservar vaga em Guarulhos" })).toBeInTheDocument();
   });
 
   it("tem os dois CTAs: reservar e comparar preços", async () => {
@@ -110,8 +135,8 @@ describe("FaqPerguntaPage", () => {
     );
   });
 
-  it("lista o checklist do que conferir antes de reservar", async () => {
-    setup();
+  it("página de preço lista o checklist do que conferir antes de reservar", async () => {
+    setup({ ...DATA, faq: { ...DATA.faq!, category: PAGAMENTOS } } as FaqPerguntaData);
     expect(
       await screen.findByRole("heading", { name: "O que conferir antes de reservar" }),
     ).toBeInTheDocument();
@@ -134,7 +159,8 @@ describe("FaqPerguntaPage", () => {
       ...DATA,
       faq: {
         ...DATA.faq!,
-        question: "Tem traslado em Confins?",
+        question: "Quanto custa estacionar em Confins?",
+        category: PAGAMENTOS,
         destination_id: "cnf",
         destination: {
           id: "cnf",
@@ -168,6 +194,7 @@ describe("FaqPerguntaPage", () => {
   it("destino no índice sem preço do motor também cai no fechamento sem parceiro", async () => {
     setup({
       ...DATA,
+      faq: { ...DATA.faq!, category: PAGAMENTOS },
       precos: {
         kind: "destino",
         destino: {
@@ -186,9 +213,15 @@ describe("FaqPerguntaPage", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("pergunta global cai na busca e no índice de preços da rede", async () => {
+  it("pergunta global de preço cai na busca e no índice de preços da rede", async () => {
     setup({
-      faq: { ...DATA.faq!, scope: "global", destination_id: null, destination: null },
+      faq: {
+        ...DATA.faq!,
+        scope: "global",
+        destination_id: null,
+        destination: null,
+        category: PAGAMENTOS,
+      },
       related: [],
       precos: { kind: "rede", rede: { destinationCount: 21, unitCount: 40, minDailyFrom: 19.9 } },
     } as FaqPerguntaData);

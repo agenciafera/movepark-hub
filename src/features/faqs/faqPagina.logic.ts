@@ -45,20 +45,26 @@ export function aeroportoEmProsa(dest: FaqDestinoRef): string {
 }
 
 /**
- * Primeiro parágrafo da página: é onde a palavra-chave aparece em texto corrido.
- * `comPrecos` diz se a página vai ter a seção de preço do motor (só existe onde
- * há parceiro precificado); sem ela, prometer "preços logo abaixo" quebraria a
- * coerência da página.
+ * O que a intro promete que vem depois da resposta rápida. Tem que bater com o
+ * que a página de fato renderiza: "precos" quando a seção de preço do motor
+ * existe (pergunta de preço em aeroporto com parceiro), "comparativo" quando a
+ * pergunta de preço é de aeroporto sem parceiro (só a tabela pesquisada), e
+ * "detalhes" pra qualquer outra pergunta (o corpo específico do tema).
  */
+export type FechoDaIntro = "precos" | "comparativo" | "detalhes";
+
+/** Primeiro parágrafo da página: é onde a palavra-chave aparece em texto corrido. */
 export function introDaPergunta(
   dest: FaqDestinoRef | null | undefined,
-  comPrecos: boolean,
+  fecho: FechoDaIntro,
 ): string {
   if (dest) {
-    const fecho = comPrecos
-      ? "preços e o passo a passo estão logo abaixo"
-      : "o comparativo da região está logo abaixo";
-    return `Pergunta comum de quem procura estacionamento no ${aeroportoEmProsa(dest)} (${dest.code}). A resposta curta vem primeiro; ${fecho}.`;
+    const fechos: Record<FechoDaIntro, string> = {
+      precos: "preços e o passo a passo estão logo abaixo",
+      comparativo: "o comparativo da região está logo abaixo",
+      detalhes: "os detalhes estão logo abaixo",
+    };
+    return `Pergunta comum de quem procura estacionamento no ${aeroportoEmProsa(dest)} (${dest.code}). A resposta curta vem primeiro; ${fechos[fecho]}.`;
   }
   return "Pergunta comum de quem procura estacionamento de aeroporto com reserva online. A resposta curta vem primeiro; os detalhes estão logo abaixo.";
 }

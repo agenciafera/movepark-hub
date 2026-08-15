@@ -61,20 +61,27 @@ describe("aeroportoEmProsa", () => {
 
 describe("introDaPergunta", () => {
   it("o primeiro parágrafo carrega a palavra-chave e o código do aeroporto", () => {
-    const intro = introDaPergunta(GRU, true);
+    const intro = introDaPergunta(GRU, "precos");
     expect(intro).toContain("estacionamento no Aeroporto de Guarulhos (GRU)");
     expect(intro).toContain("preços e o passo a passo estão logo abaixo");
   });
 
   /** Sem parceiro precificado não existe seção de preços: a intro não promete uma. */
-  it("aeroporto sem preço do motor não promete preços logo abaixo", () => {
-    const intro = introDaPergunta(SDU, false);
+  it("pergunta de preço sem preço do motor promete o comparativo, não preços", () => {
+    const intro = introDaPergunta(SDU, "comparativo");
     expect(intro).toContain("estacionamento no Aeroporto Santos Dumont (SDU)");
     expect(intro).toContain("o comparativo da região está logo abaixo");
     expect(intro).not.toContain("preços e o passo a passo");
   });
 
+  /** Fora da página de preço, a intro promete os detalhes do tema da pergunta. */
+  it("pergunta que não é de preço promete os detalhes", () => {
+    const intro = introDaPergunta(GRU, "detalhes");
+    expect(intro).toContain("os detalhes estão logo abaixo");
+    expect(intro).not.toContain("preços e o passo a passo");
+  });
+
   it("global fala de estacionamento de aeroporto", () => {
-    expect(introDaPergunta(null, true)).toContain("estacionamento de aeroporto");
+    expect(introDaPergunta(null, "detalhes")).toContain("estacionamento de aeroporto");
   });
 });

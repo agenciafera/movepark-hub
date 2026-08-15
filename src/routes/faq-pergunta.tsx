@@ -91,7 +91,15 @@ export default function FaqPerguntaPage() {
   const semParceiro = Boolean(
     destino && (!precoDestino || precoDestino.byDuration.length === 0),
   );
-  const intro = introDaPergunta(destino, !semParceiro);
+  // Os blocos de preço e de fechamento (como reservar/escolher + checklist) só
+  // entram onde preço É o assunto da pergunta (categoria "pagamentos"). Nas
+  // demais, quem sustenta a página é o corpo específico da pergunta (body_md);
+  // bloco genérico depois da resposta rápida quebra o contexto e dilui SEO/GEO.
+  const paginaDePreco = faq.category?.slug === "pagamentos";
+  const intro = introDaPergunta(
+    destino,
+    !paginaDePreco ? "detalhes" : semParceiro ? "comparativo" : "precos",
+  );
 
   // Um único FAQPage por página (ADR-002), com a resposta idêntica à visível na
   // "Resposta rápida". O dateModified diz quando a resposta foi revisada.
@@ -175,8 +183,9 @@ export default function FaqPerguntaPage() {
 
         {/* Quanto custa: dado real do índice de preços (motor de reservas), o
             mesmo publicado em /precos. Sem dado, a seção não existe (ADR-009:
-            nada de número inventado num HTML congelado). */}
-        {destino && precoDestino && precoDestino.byDuration.length > 0 && (
+            nada de número inventado num HTML congelado). Só em página de preço:
+            fora dela, a tabela quebraria o contexto da pergunta. */}
+        {paginaDePreco && destino && precoDestino && precoDestino.byDuration.length > 0 && (
           <section className="mt-8">
             <h2 className="text-display-sm text-ink">
               Quanto custa estacionar no {aeroportoEmProsa(destino)}
@@ -222,8 +231,8 @@ export default function FaqPerguntaPage() {
           </section>
         )}
 
-        {/* Versão de rede pras perguntas gerais: números da plataforma inteira. */}
-        {!destino && precoRede && (
+        {/* Versão de rede pras perguntas gerais de preço: números da plataforma. */}
+        {paginaDePreco && !destino && precoRede && (
           <section className="mt-8">
             <h2 className="text-display-sm text-ink">
               Estacionamento de aeroporto com a Movepark
@@ -245,10 +254,12 @@ export default function FaqPerguntaPage() {
           </section>
         )}
 
-        {/* Fechamento em contexto: onde há parceiro, o passo a passo da reserva
+        {/* Fechamento em contexto, só nas páginas de preço (é onde a decisão de
+            reserva é o assunto): onde há parceiro, o passo a passo da reserva
             pela Movepark; onde não há, como escolher fechando direto com o
             estacionamento (sem prometer uma reserva que não existe ali). */}
-        {destino && semParceiro ? (
+        {paginaDePreco &&
+          (destino && semParceiro ? (
           <section className="mt-8">
             <h2 className="text-display-sm text-ink">
               Como escolher o estacionamento no {aeroportoEmProsa(destino)}
@@ -269,20 +280,23 @@ export default function FaqPerguntaPage() {
               Na maioria das unidades o traslado até o terminal está incluído.
             </p>
           </section>
-        )}
+        ))}
 
-        {/* Checklist no padrão da página do concorrente: o que olhar antes de decidir. */}
-        <section className="mt-8">
-          <h2 className="text-display-sm text-ink">O que conferir antes de reservar</h2>
-          <ul className="mt-3 space-y-2">
-            {(semParceiro ? CHECKLIST_SEM_PARCEIRO : CHECKLIST).map((item) => (
-              <li key={item} className="flex items-start gap-2 text-body-md text-body">
-                <CaretRight className="mt-1 h-4 w-4 shrink-0 text-mp-primary" aria-hidden />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </section>
+        {/* Checklist do que olhar antes de decidir, também só onde a decisão de
+            preço é o assunto da página. */}
+        {paginaDePreco && (
+          <section className="mt-8">
+            <h2 className="text-display-sm text-ink">O que conferir antes de reservar</h2>
+            <ul className="mt-3 space-y-2">
+              {(semParceiro ? CHECKLIST_SEM_PARCEIRO : CHECKLIST).map((item) => (
+                <li key={item} className="flex items-start gap-2 text-body-md text-body">
+                  <CaretRight className="mt-1 h-4 w-4 shrink-0 text-mp-primary" aria-hidden />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {/* Dois CTAs em contexto: com parceiro, reservar e comparar preços; sem
             parceiro, ver o mapa da região e comparar em outros aeroportos. */}

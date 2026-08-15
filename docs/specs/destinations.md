@@ -167,7 +167,17 @@ abaixo", o fechamento vira "Como escolher o estacionamento no <aeroporto>" (cota
 página do destino como mapa da região), o checklist ganha variante sem vitrine e os CTAs viram
 "Ver estacionamentos" + "Comparar preços em outros aeroportos" (`/precos/<slug>` não existe sem
 unidade precificada). A mesma regra vale no gêmeo Markdown, e as respostas `destination` desses
-aeroportos falam "confirme com o estacionamento" em vez de apontar pra página de oferta. A página do lote mapeado (`/estacionamentos/*`) mostra o FAQ do **aeroporto**
+aeroportos falam "confirme com o estacionamento" em vez de apontar pra página de oferta.
+**Contexto por pergunta (ago/2026):** os blocos de preço do motor, "Como reservar/escolher" e o
+checklist só renderizam em página de **categoria `pagamentos`** (onde preço é o assunto); nas
+demais perguntas, quem sustenta a página depois da resposta rápida é o **`body_md` específico do
+tema**. Todas as perguntas têm corpo: as 6 base de cada aeroporto (traslado, voo atrasado,
+coberta/descoberta, valet, segurança, gabarito) com H2 de palavra-chave e fato real da praça
+(nomes de lotes, preços coberta vs descoberta, tipo do oficial) mais links internos entre as
+perguntas do mesmo aeroporto, e as 8 globais com o detalhe do produto (passo a passo, tolerâncias,
+PIX). A intro tem três fechos, sempre batendo com o que a página renderiza: "preços e o passo a
+passo" (pagamentos com parceiro), "o comparativo da região" (pagamentos sem parceiro) e "os
+detalhes" (demais). A página do lote mapeado (`/estacionamentos/*`) mostra o FAQ do **aeroporto**
 (escopo `destination`, nunca global: a global fala de reserva pela Movepark, que o lote não
 oferece), com o mesmo `FAQPage` espelhando o visível. O `slug` é preenchido
 por trigger no insert (`faq_slug_autofill`; FAQ de destino ganha o nome do aeroporto no slug) e é
