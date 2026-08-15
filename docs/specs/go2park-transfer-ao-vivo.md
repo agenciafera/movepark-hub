@@ -35,10 +35,22 @@ unidades na vitrine: quem escolhe entre quatro cards no mesmo aeroporto vê um s
 parceiro (`operator_set_location_amenities`), enquanto o contrato com a Go2Park é comercial da
 Movepark.
 
-**Quem liga.** Só `hub_admin`. A regra mora no banco, no trigger `location_go2park_guard`, pela
-mesma razão de `location_checkout_mode_guard`: com `locations:write` o parceiro ligaria o selo
+**Quem liga e desliga.** Só `hub_admin`, pelo diálogo **Configuração da unidade** em
+`/manager/companies/:id/locations` (botão "Plataforma"), que reúne os dois campos que a Movepark
+define sozinha: o modo de checkout (E0.14) e a Go2Park. A coluna **Plataforma** da tabela mostra
+os dois selos, então dá para ver quem tem contrato sem abrir nada.
+
+A permissão não depende da tela. O trigger `location_go2park_guard` recusa quem não é `hub_admin`,
+pela mesma razão de `location_checkout_mode_guard`: com `locations:write` o parceiro ligaria o selo
 por PostgREST sem passar por tela nenhuma. Sem JWT (service role, migration, seed) passa, que é
 como o próprio seed das três unidades roda.
+
+**Desligar importa tanto quanto ligar.** Contrato encerrado com o selo no ar vira promessa falsa
+no card e na página, então o caminho de desligar é testado junto com o de ligar
+(`LocationPlatformDialog.test.tsx`) e o ciclo inteiro, do clique ao selo sumindo da tabela, em
+`routes/manager/locations.test.tsx`. Esse teste nasceu de um bug real: o diálogo recebia um
+retrato da linha congelado no clique, então gravava no banco e continuava mostrando o valor
+velho. Hoje a linha é derivada da lista já carregada, que a mutation invalida.
 
 ## ADR-009: é fato, não promessa
 
@@ -104,6 +116,3 @@ O nome do produto se escreve **Go2Park** em toda superfície, e um teste em
 - **Chamar a van pela página.** Existe um `wa.go2park.com.br/call/<slug>` no fluxo legado de
   atendimento (ver [knowledge-base-rag.md](./knowledge-base-rag.md)), mas o slug não está
   modelado no Hub e um link quebrado no momento do embarque custa mais do que o link resolve.
-- **Interruptor no Manager.** Hoje o campo se liga por migration ou SQL. Com três unidades e um
-  time que fecha o contrato caso a caso, a tela ainda não se paga; a permissão já está no banco
-  para quando ela existir.

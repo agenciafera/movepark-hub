@@ -200,8 +200,8 @@ ou `@teste.com`. A premissa do silêncio se sustenta hoje.
 | Regra dura | trigger `location_checkout_mode_guard` (+ `company_hub_relationship_guard`) |
 | Guardas de silêncio | triggers em `company_onboarding`, `payout_recipient`, `profile_company` e no `onboarding_status` da própria empresa |
 | Silêncio no e-mail | `sendPartnerEmail()` em `supabase/functions/_shared/email.ts` |
-| Manager | coluna e diálogo de Checkout em `/manager/companies/:id/locations`; domínio público e "Relação silenciosa" no cadastro da empresa |
-| Testes | pgTAP `checkout_mode_external.test.sql` (26), Deno `_shared/partner-email.test.ts` (5), Vitest `CheckoutModeDialog.test.tsx` + `locations/api.test.tsx` (8) |
+| Manager | coluna **Plataforma** e diálogo "Configuração da unidade" em `/manager/companies/:id/locations`, que reúne os campos que só a Movepark define (o modo de checkout e a [Go2Park](./go2park-transfer-ao-vivo.md)); domínio público e "Relação silenciosa" no cadastro da empresa |
+| Testes | pgTAP `checkout_mode_external.test.sql` (26), Deno `_shared/partner-email.test.ts` (5), Vitest `LocationPlatformDialog.test.tsx` + `locations/api.test.tsx` + `routes/manager/locations.test.tsx` |
 
 **O pré-voo vale nos dois caminhos, e o INSERT ficou quebrado até 12/08/2026.** A tela do Manager
 liga o externo por UPDATE, então era só esse caminho que tinha teste. O gatilho, porém, também

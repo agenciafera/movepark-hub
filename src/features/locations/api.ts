@@ -232,6 +232,29 @@ export function useSetCheckoutMode() {
   });
 }
 
+/**
+ * Liga ou desliga a Go2Park (transfer com rastreio ao vivo) na unidade. Mesma régua do checkout:
+ * a UI é espelho e quem decide é o banco, que exige hub_admin no trigger `location_go2park_guard`.
+ * Desligar importa tanto quanto ligar: o selo é uma promessa de serviço, e contrato encerrado com
+ * o selo no ar vira promessa falsa no card e na página.
+ */
+export function useSetGo2Park() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
+      const { data, error } = await supabase
+        .from("location")
+        .update({ go2park_enabled: enabled })
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as Location;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: locationsKeys.all }),
+  });
+}
+
 export function useCreateLocation() {
   const qc = useQueryClient();
   return useMutation({

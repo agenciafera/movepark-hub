@@ -9,7 +9,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useLocationExternalReadiness, useSetCheckoutMode } from "./api";
+import { Separator } from "@/components/ui/separator";
+import { useLocationExternalReadiness, useSetCheckoutMode, useSetGo2Park } from "./api";
 import type { CheckoutMode, LocationExternalReadiness } from "@/types/domain";
 
 type Props = {
@@ -17,25 +18,30 @@ type Props = {
   locationId: string;
   locationName: string;
   mode: CheckoutMode;
+  /** A unidade opera o transfer com a Go2Park (`location.go2park_enabled`). */
+  go2park: boolean;
   onOpenChange: (open: boolean) => void;
 };
 
 /**
- * Onde a reserva de uma unidade fecha (E0.14).
+ * As decisões de PLATAFORMA da unidade, num lugar só: onde a reserva fecha (E0.14) e se o
+ * transfer é rastreado pela Go2Park. As duas são da Movepark, não do parceiro, e as duas têm
+ * trigger próprio no banco (`location_checkout_mode_guard`, `location_go2park_guard`).
  *
- * A UI é espelho: quem decide é o banco. `location_checkout_mode_guard` exige hub_admin e
- * reprova o pré-voo incompleto, então esconder o botão aqui não seria permissão. O que a tela
- * acrescenta é o motivo: toggle cinza sem explicação vira chamado de suporte.
+ * A UI é espelho: quem decide é o banco, então esconder o botão aqui não seria permissão. O que
+ * a tela acrescenta é o motivo, porque toggle cinza sem explicação vira chamado de suporte.
  */
-export function CheckoutModeDialog({
+export function LocationPlatformDialog({
   open,
   locationId,
   locationName,
   mode,
+  go2park,
   onOpenChange,
 }: Props) {
   const readiness = useLocationExternalReadiness(locationId, open);
   const setMode = useSetCheckoutMode();
+  const setGo2Park = useSetGo2Park();
   const isExternal = mode === "external";
 
   const blockers = readiness.data ? describeBlockers(readiness.data) : [];
@@ -50,27 +56,37 @@ export function CheckoutModeDialog({
     }
   }
 
+  async function handleGo2Park(next: boolean) {
+    try {
+      await setGo2Park.mutateAsync({ id: locationId, enabled: next });
+      toast.success(next ? "Go2Park ligada nesta unidade." : "Go2Park desligada nesta unidade.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível mudar a Go2Park.");
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Onde a reserva fecha</DialogTitle>
+          <DialogTitle>Configuração da unidade</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
           <p className="text-body-sm text-muted">
-            No Hub, a reserva de <strong className="text-ink">{locationName}</strong> fecha no nosso
-            checkout. No modo externo, o cliente termina a reserva no site do parceiro, com a
-            marcação de afiliado.
+            O que só a Movepark define em <strong className="text-ink">{locationName}</strong>. O
+            parceiro não vê nem edita estes dois campos.
           </p>
 
+          {/* ── Onde a reserva fecha (E0.14) ─────────────────────────────── */}
           <div className="flex items-center justify-between gap-4 rounded-md border border-hairline p-4">
             <div>
               <p id="checkout-mode-title" className="text-body-sm font-medium text-ink">
                 Fechar a reserva no site do parceiro
               </p>
               <p id="checkout-mode-desc" className="text-caption text-muted">
-                Vale só para esta unidade. As outras da empresa seguem como estão.
+                No modo externo o cliente termina no site do parceiro, com a marcação de afiliado.
+                Vale só para esta unidade.
               </p>
             </div>
             <Switch
@@ -103,6 +119,35 @@ export function CheckoutModeDialog({
           {isExternal && (
             <p className="text-caption text-muted">
               Nesta unidade, a Movepark não controla cancelamento, cupom nem vaga garantida.
+            </p>
+          )}
+
+          <Separator />
+
+          {/* ── Go2Park ──────────────────────────────────────────────────── */}
+          <div className="flex items-center justify-between gap-4 rounded-md border border-hairline p-4">
+            <div>
+              <p id="go2park-title" className="text-body-sm font-medium text-ink">
+                Transfer com rastreio ao vivo (Go2Park)
+              </p>
+              <p id="go2park-desc" className="text-caption text-muted">
+                Ligado, o cliente vê o selo no card e o bloco na página da unidade. Desligue no dia
+                em que o contrato acabar, senão a página promete um rastreio que a van não tem.
+              </p>
+            </div>
+            <Switch
+              checked={go2park}
+              disabled={setGo2Park.isPending}
+              onCheckedChange={handleGo2Park}
+              aria-labelledby="go2park-title"
+              aria-describedby="go2park-desc"
+            />
+          </div>
+
+          {go2park && isExternal && (
+            <p className="text-caption text-muted">
+              O selo continua aparecendo mesmo com o checkout externo: a van tem rastreio
+              independentemente de onde a reserva fecha.
             </p>
           )}
 

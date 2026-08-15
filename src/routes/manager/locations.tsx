@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { useCompany } from "@/features/companies/api";
 import { useLocationsByCompany } from "@/features/locations/api";
 import { LocationForm } from "@/features/locations/LocationForm";
-import { CheckoutModeDialog } from "@/features/locations/CheckoutModeDialog";
+import { LocationPlatformDialog } from "@/features/locations/LocationPlatformDialog";
 import type { CheckoutMode, Location } from "@/types/domain";
 
 export default function ManagerLocations() {
@@ -27,7 +27,11 @@ export default function ManagerLocations() {
   const { data, isLoading } = useLocationsByCompany(companyId);
   const [editing, setEditing] = React.useState<Location | null>(null);
   const [formOpen, setFormOpen] = React.useState(false);
-  const [checkoutFor, setCheckoutFor] = React.useState<Location | null>(null);
+  // Só o id fica no estado, e a linha sai da lista já carregada. Guardar o objeto congelava um
+  // retrato do clique: o diálogo grava, a query invalida e recarrega, e o interruptor continuava
+  // mostrando o valor velho até fechar e abrir de novo.
+  const [platformForId, setPlatformForId] = React.useState<string | null>(null);
+  const platformFor = (data ?? []).find((l) => l.id === platformForId) ?? null;
 
   function openCreate() {
     setEditing(null);
@@ -64,7 +68,7 @@ export default function ManagerLocations() {
                 <TableHead>Endereço</TableHead>
                 <TableHead>Destino</TableHead>
                 <TableHead>Fuso</TableHead>
-                <TableHead>Checkout</TableHead>
+                <TableHead>Plataforma</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -81,12 +85,18 @@ export default function ManagerLocations() {
                       : "-"}
                   </TableCell>
                   <TableCell>{loc.timezone}</TableCell>
+                  {/* Os dois campos que só a Movepark define (E0.14 + Go2Park), na mesma célula:
+                      é o mesmo diálogo que edita os dois, e coluna separada por campo faria a
+                      tabela crescer a cada decisão de plataforma nova. */}
                   <TableCell>
-                    {(loc.checkout_mode as CheckoutMode) === "external" ? (
-                      <Badge tone="pending">Externo</Badge>
-                    ) : (
-                      <Badge tone="neutral">Hub</Badge>
-                    )}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {(loc.checkout_mode as CheckoutMode) === "external" ? (
+                        <Badge tone="pending">Externo</Badge>
+                      ) : (
+                        <Badge tone="neutral">Hub</Badge>
+                      )}
+                      {loc.go2park_enabled && <Badge tone="active">Go2Park</Badge>}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <EntityStatusBadge status={loc.status} />
@@ -103,8 +113,8 @@ export default function ManagerLocations() {
                       >
                         Editar
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setCheckoutFor(loc)}>
-                        Checkout
+                      <Button size="sm" variant="ghost" onClick={() => setPlatformForId(loc.id)}>
+                        Plataforma
                       </Button>
                       <Button size="sm" variant="ghost" asChild>
                         <Link
@@ -131,13 +141,14 @@ export default function ManagerLocations() {
         />
       )}
 
-      {checkoutFor && (
-        <CheckoutModeDialog
+      {platformFor && (
+        <LocationPlatformDialog
           open
-          locationId={checkoutFor.id}
-          locationName={checkoutFor.name}
-          mode={checkoutFor.checkout_mode as CheckoutMode}
-          onOpenChange={(o) => !o && setCheckoutFor(null)}
+          locationId={platformFor.id}
+          locationName={platformFor.name}
+          mode={platformFor.checkout_mode as CheckoutMode}
+          go2park={platformFor.go2park_enabled}
+          onOpenChange={(o) => !o && setPlatformForId(null)}
         />
       )}
     </div>

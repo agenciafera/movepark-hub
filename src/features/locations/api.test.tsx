@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { waitFor } from "@testing-library/react";
 import { falha, renderMutation, tabela } from "@/test/msw/supabase";
-import { useCreateLocation, useSetCheckoutMode, useUpdateLocation } from "./api";
+import { useCreateLocation, useSetCheckoutMode, useSetGo2Park, useUpdateLocation } from "./api";
 
 /**
  * Contrato do cliente para a virada de checkout (E0.14). O que o servidor decide
@@ -24,6 +24,43 @@ describe("useSetCheckoutMode", () => {
     const { result } = renderMutation(() => useSetCheckoutMode());
 
     await expect(result.current.mutateAsync({ id: "loc-1", mode: "external" })).rejects.toThrow(
+      /hub_admin/,
+    );
+    await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+});
+
+/**
+ * Contrato do cliente para a Go2Park (transfer com rastreio ao vivo). Quem decide é o banco
+ * (trigger location_go2park_guard, exercitado em supabase/tests/location_go2park.test.sql); aqui
+ * o que importa é o patch sair enxuto e a recusa chegar inteira na tela.
+ */
+describe("useSetGo2Park", () => {
+  it("manda só go2park_enabled no patch da unidade", async () => {
+    const patch = tabela("location", "patch", { json: [{ id: "loc-1", go2park_enabled: true }] });
+    const { result } = renderMutation(() => useSetGo2Park());
+
+    await result.current.mutateAsync({ id: "loc-1", enabled: true });
+
+    expect(patch.chamadas.length).toBe(1);
+    expect(patch.ultimoBody).toEqual({ go2park_enabled: true });
+    expect(patch.chamadas[0].url).toContain("id=eq.loc-1");
+  });
+
+  it("desliga quando o contrato acaba", async () => {
+    const patch = tabela("location", "patch", { json: [{ id: "loc-1", go2park_enabled: false }] });
+    const { result } = renderMutation(() => useSetGo2Park());
+
+    await result.current.mutateAsync({ id: "loc-1", enabled: false });
+
+    expect(patch.ultimoBody).toEqual({ go2park_enabled: false });
+  });
+
+  it("propaga a recusa do banco em vez de engolir", async () => {
+    falha("tabela", "location", 403, "go2park_enabled só pode ser alterado por hub_admin");
+    const { result } = renderMutation(() => useSetGo2Park());
+
+    await expect(result.current.mutateAsync({ id: "loc-1", enabled: true })).rejects.toThrow(
       /hub_admin/,
     );
     await waitFor(() => expect(result.current.isError).toBe(true));
