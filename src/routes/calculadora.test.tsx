@@ -37,6 +37,11 @@ function unit(overrides: Partial<PriceUnit>): PriceUnit {
 
 const DATA: CalculadoraData = {
   generatedAt: "2026-08-14T15:00:00Z",
+  prospects: {
+    "aeroporto-internacional-de-sao-paulo-guarulhos": [
+      { name: "Talentos Park", slug: "talentos-park", distance_km: 1.2 },
+    ],
+  },
   data: {
     days: DIAS,
     destinations: [
@@ -86,7 +91,7 @@ function setup(data: CalculadoraData | null = DATA) {
 }
 
 describe("CalculadoraPage", () => {
-  it("abre já calculada: 7 diárias no primeiro destino, ranqueado", async () => {
+  it("abre já calculada: tabela ranqueada de 7 diárias no primeiro destino", async () => {
     setup();
     expect(
       await screen.findByRole("heading", {
@@ -94,32 +99,42 @@ describe("CalculadoraPage", () => {
         name: "Calculadora de estacionamento de aeroporto",
       }),
     ).toBeInTheDocument();
-    const secao = screen
-      .getByRole("heading", { name: "7 diárias em Guarulhos (GRU)" })
-      .closest("section")!;
-    // Ranking: Aerovalet (111,30) antes do Aeropark (132,30).
-    const lista = within(secao as HTMLElement).getAllByRole("listitem");
-    expect(lista[0].textContent).toContain("1. Aerovalet");
-    expect(lista[0].textContent).toContain(formatBRL(111.3));
-    expect(lista[0].textContent).toContain("menor preço");
+    const tabela = screen.getByRole("table");
+    // Ranking: Aerovalet (111,30) na posição 01, com o selo de menor preço.
+    expect(tabela.textContent).toContain("01");
+    expect(tabela.textContent).toContain("menor preço");
+    expect(tabela.textContent).toContain(formatBRL(15.9));
+    expect(tabela.textContent).toContain(formatBRL(111.3));
+    // Balcão de 7 diárias riscado.
+    expect(tabela.textContent).toContain(formatBRL(133.56));
   });
 
-  it("o atalho de 1 diária recalcula na hora e explica a estadia mínima", async () => {
+  it("o parceiro tem Reservar em destaque; o lote mapeado fecha a lista sem preço", async () => {
+    setup();
+    const tabela = await screen.findByRole("table");
+    const reservar = within(tabela).getAllByRole("link", { name: "Reservar" });
+    expect(reservar[0]).toHaveAttribute("href", "/p/aerovalet/aeroporto-guarulhos/uncovered");
+    // Talentos Park: mapeado pela Movepark, consulta no local, ficha própria.
+    expect(tabela.textContent).toContain("Talentos Park");
+    expect(tabela.textContent).toContain("consulte a tabela no local");
+    expect(tabela.textContent).toContain("sem reserva online");
+    const fichas = within(tabela).getAllByRole("link", { name: "Ver ficha" });
+    expect(fichas[fichas.length - 1]).toHaveAttribute(
+      "href",
+      "/estacionamentos/aeroporto-internacional-de-sao-paulo-guarulhos/talentos-park",
+    );
+  });
+
+  it("o atalho de 1 diária recalcula e mostra a estadia mínima como linha, sem preço inventado", async () => {
     setup();
     const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: "1 diária" }));
     expect(
       await screen.findByRole("heading", { name: "1 diária em Guarulhos (GRU)" }),
     ).toBeInTheDocument();
-    // O Aeropark exige 2 diárias e sai da conta, com o motivo visível.
-    expect(screen.getByText(/Fora desta conta por estadia mínima/)).toBeInTheDocument();
-    expect(screen.getByText(/Aeropark \(a partir de 2 diárias\)/)).toBeInTheDocument();
-  });
-
-  it("cada resultado tem o botão Reservar apontando para a vaga", async () => {
-    setup();
-    const links = await screen.findAllByRole("link", { name: "Reservar" });
-    expect(links[0]).toHaveAttribute("href", "/p/aerovalet/aeroporto-guarulhos/uncovered");
+    const tabela = screen.getByRole("table");
+    expect(tabela.textContent).toContain("Aeropark");
+    expect(tabela.textContent).toContain("entrada a partir de 2 diárias");
   });
 
   it("diárias fora de 1 a 60 são recusadas com mensagem", async () => {

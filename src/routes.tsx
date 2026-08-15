@@ -527,11 +527,27 @@ async function precosDestinoLoader({
   return { days: data.days, destination, others, generatedAt: new Date().toISOString() };
 }
 
-/** Calculadora: o mesmo índice inteiro, para responder na hora nas durações padrão. */
+/**
+ * Calculadora: o índice inteiro (responde na hora nas durações padrão) mais os
+ * lotes mapeados de cada destino, que fecham a lista sem preço (ADR-010).
+ */
 async function calculadoraLoader(): Promise<CalculadoraData | null> {
   const data = await fetchPriceIndex().catch(() => null);
   if (!data || data.destinations.length === 0) return null;
-  return { data, generatedAt: new Date().toISOString() };
+  const entradas = await Promise.all(
+    data.destinations.map(async (d) => {
+      const cards = await fetchDestinationProspects(d.slug).catch(() => []);
+      return [
+        d.slug,
+        cards.map((p) => ({ name: p.name, slug: p.slug, distance_km: p.distance_km })),
+      ] as const;
+    }),
+  );
+  return {
+    data,
+    prospects: Object.fromEntries(entradas),
+    generatedAt: new Date().toISOString(),
+  };
 }
 
 /** Uma URL por destino publicado com unidade precificada. */

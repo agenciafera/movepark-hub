@@ -26,21 +26,34 @@ import {
 
 const SITE_URL = "https://hub.movepark.co";
 
+/** Lote mapeado pela Movepark, ainda sem contrato: aparece sem preço (ADR-010). */
+export type CalculadoraProspect = {
+  name: string;
+  slug: string;
+  distance_km: number | null;
+};
+
 export type CalculadoraData = {
   data: PriceIndexData;
+  /** Lotes mapeados por slug de destino, para a lista ficar completa como a do concorrente. */
+  prospects: Record<string, CalculadoraProspect[]>;
   generatedAt: string;
 };
 
 const DESCRIPTION =
-  "Escolha o aeroporto e o número de diárias e veja quanto custa em cada estacionamento " +
-  "parceiro, do mais barato ao mais caro. O valor é o mesmo do checkout.";
+  "Escolha o aeroporto e o número de diárias e veja quanto custa em cada estacionamento, " +
+  "do mais barato ao mais caro. Parceiros Movepark reservam online pelo preço do checkout.";
+
+const celulaBase = "tablet:table-cell tablet:border-b tablet:border-hairline tablet:px-3 tablet:py-4 tablet:align-top";
 
 /**
  * Calculadora de estacionamento (/calculadora-estacionamento-aeroporto):
- * destino + diárias viram o ranking real do motor. As durações da matriz padrão
- * (1/7/15/30) respondem na hora com o dado do build; qualquer outra vai ao motor
- * pela mesma RPC pública, com uma duração só. O estado inicial (primeiro destino,
- * 7 diárias) é pré-renderizado, então o crawler vê resultado de verdade.
+ * destino + diárias viram o ranking real do motor, na estrutura editorial de
+ * tabela ranqueada. Parceiros Movepark vêm primeiro, com Reservar em destaque;
+ * lotes mapeados sem contrato fecham a lista sem preço, com a ficha (ADR-010).
+ * As durações da matriz padrão (1/7/15/30) respondem na hora com o dado do
+ * build; qualquer outra vai ao motor pela mesma RPC pública. O estado inicial
+ * (primeiro destino, 7 diárias) é pré-renderizado.
  */
 export default function CalculadoraPage() {
   const loaded = useLoaderData() as CalculadoraData | null;
@@ -60,6 +73,7 @@ export default function CalculadoraPage() {
 
   const destino = destinations.find((d) => d.slug === slug) ?? null;
   const nome = destino ? (destino.short_name ?? destino.name) : "";
+  const mapeados = loaded?.prospects[slug] ?? [];
 
   const calcular = React.useCallback(
     async (destSlug: string, diasBrutos: string) => {
@@ -245,39 +259,125 @@ export default function CalculadoraPage() {
         )}
 
         {result && destino && (
-          <section className="mt-8" aria-live="polite">
-            <h2 className="text-display-sm text-ink">
-              {durationLabel(result.days)} em {nome}
-            </h2>
-            {result.priced.length === 0 ? (
+          <section className="mt-10" aria-live="polite">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <h2 className="text-display-sm text-ink">
+                {durationLabel(result.days)} em {nome}
+              </h2>
+              <p className="text-body-sm text-muted">
+                {result.priced.length}{" "}
+                {result.priced.length === 1 ? "opção com reserva online" : "opções com reserva online"}
+                {mapeados.length > 0 && <> · {mapeados.length} sem contrato ainda</>}
+              </p>
+            </div>
+
+            {result.priced.length === 0 && result.blocked.length === 0 ? (
               <p className="mt-3 text-body-md text-body">
-                Nenhum parceiro cota {durationLabel(result.days)} nesse destino. Veja a tabela
-                completa ou busque por data.
+                Nenhum parceiro cota {durationLabel(result.days)} nesse destino. Veja a{" "}
+                <Link
+                  to={`/precos/${destino.slug}`}
+                  className="font-medium text-mp-indigo underline-offset-2 hover:underline"
+                >
+                  tabela completa
+                </Link>{" "}
+                ou busque por data.
               </p>
             ) : (
-              <ol className="mt-4 space-y-3">
-                {result.priced.map(({ row, cell }, i) => (
-                  <li
-                    key={row.key}
-                    className={cn(
-                      "flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg border p-4",
-                      i === 0 ? "border-mp-primary bg-mp-pale" : "border-hairline",
-                    )}
-                  >
-                    <div className="flex min-w-0 flex-col gap-0.5">
-                      <span className="text-title-sm text-ink">
-                        {i + 1}. {row.label}
-                      </span>
-                      <span className="text-caption-sm text-muted">
-                        {row.unit.parking_type_name}
-                        {formatDistance(row.unit.distance_m) && (
-                          <> · {formatDistance(row.unit.distance_m)}</>
+              <table className="mt-4 block w-full border-collapse tablet:table">
+                <caption className="sr-only">
+                  Preço de {durationLabel(result.days)} de estacionamento em {nome}
+                </caption>
+                <thead className="hidden tablet:table-header-group">
+                  <tr>
+                    <th
+                      scope="col"
+                      className="w-10 border-b border-hairline py-2 pr-2 text-left text-caption-sm font-medium text-muted"
+                    >
+                      Nº
+                    </th>
+                    <th
+                      scope="col"
+                      className="border-b border-hairline py-2 pr-3 text-left text-caption-sm font-medium text-muted"
+                    >
+                      Estacionamento
+                    </th>
+                    <th
+                      scope="col"
+                      className="border-b border-hairline px-3 py-2 text-left text-caption-sm font-medium text-muted"
+                    >
+                      R$ por dia
+                    </th>
+                    <th
+                      scope="col"
+                      className="border-b border-hairline px-3 py-2 text-left text-caption-sm font-medium text-muted"
+                    >
+                      Total ({durationLabel(result.days)})
+                    </th>
+                    <th
+                      scope="col"
+                      className="border-b border-hairline py-2 pl-3 text-left text-caption-sm font-medium text-muted"
+                    >
+                      Reserva
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="block space-y-3 tablet:table-row-group">
+                  {result.priced.map(({ row, cell }, i) => (
+                    <tr
+                      key={row.key}
+                      className={cn(
+                        "grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg border p-4 tablet:table-row tablet:p-0",
+                        i === 0 ? "border-mp-primary bg-mp-pale/60" : "border-hairline tablet:border-0",
+                      )}
+                    >
+                      <td className={cn("hidden text-caption-sm tabular-nums text-muted", celulaBase, "tablet:pl-0 tablet:pr-2")}>
+                        {String(i + 1).padStart(2, "0")}
+                      </td>
+                      <td className={cn("order-1 col-span-2", celulaBase, "tablet:px-0 tablet:pr-3")}>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-title-sm text-ink">
+                            <span className="mr-1.5 text-caption-sm tabular-nums text-muted tablet:hidden">
+                              {String(i + 1).padStart(2, "0")}
+                            </span>
+                            {row.label}
+                            {i === 0 && (
+                              <span className="ml-2 inline-block rounded-full bg-mp-primary px-2 py-0.5 align-middle text-badge uppercase text-white">
+                                menor preço
+                              </span>
+                            )}
+                          </span>
+                          <span className="text-caption-sm text-muted">
+                            {row.unit.parking_type_name}
+                            {formatDistance(row.unit.distance_m) && (
+                              <> · {formatDistance(row.unit.distance_m)}</>
+                            )}
+                            {" · "}Parceiro Movepark
+                          </span>
+                          <Link
+                            to={listingPath(row.unit)}
+                            className="text-caption-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
+                          >
+                            Ver ficha
+                          </Link>
+                        </div>
+                      </td>
+                      <td className={cn("order-3", celulaBase)}>
+                        <span className="block text-caption-sm text-muted tablet:hidden">
+                          R$ por dia
+                        </span>
+                        <span className="block text-title-md tabular-nums text-ink">
+                          {formatBRL(cell.perDay)}
+                        </span>
+                        {cell.economyPct != null && (
+                          <span className="mt-1 inline-block rounded-full bg-success/10 px-2 py-0.5 text-caption-sm font-medium text-success">
+                            reserva online: {cell.economyPct}% menor
+                          </span>
                         )}
-                        {i === 0 && <> · menor preço</>}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
+                      </td>
+                      <td className={cn("order-4", celulaBase)}>
+                        <span className="block text-caption-sm text-muted tablet:hidden">
+                          Total ({durationLabel(result.days)})
+                        </span>
                         {cell.oldTotal != null && (
                           <span className="block text-caption-sm text-muted line-through tabular-nums">
                             {formatBRL(cell.oldTotal)}
@@ -286,39 +386,103 @@ export default function CalculadoraPage() {
                         <span className="block text-title-md tabular-nums text-ink">
                           {formatBRL(cell.total)}
                         </span>
-                        <span className="block text-caption-sm tabular-nums text-muted">
-                          {result.days > 1 && cell.perDay != null && (
-                            <>{formatBRL(cell.perDay)} por diária</>
-                          )}
-                          {cell.economyPct != null && (
-                            <span className="ml-1 font-medium text-success">
-                              {cell.economyPct}% menor online
-                            </span>
-                          )}
+                      </td>
+                      <td className={cn("order-2 col-span-2 justify-self-stretch", celulaBase, "tablet:pl-3 tablet:align-middle")}>
+                        <Button asChild className="w-full tablet:w-auto">
+                          <Link to={listingPath(row.unit)}>Reservar</Link>
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+
+                  {result.blocked.map(({ row, cell }) => (
+                    <tr
+                      key={row.key}
+                      className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg border border-hairline p-4 tablet:table-row tablet:border-0 tablet:p-0"
+                    >
+                      <td className={cn("hidden", celulaBase, "tablet:pl-0 tablet:pr-2")} />
+                      <td className={cn("order-1 col-span-2", celulaBase, "tablet:px-0 tablet:pr-3")}>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-title-sm text-ink">{row.label}</span>
+                          <span className="text-caption-sm text-muted">
+                            {row.unit.parking_type_name}
+                            {formatDistance(row.unit.distance_m) && (
+                              <> · {formatDistance(row.unit.distance_m)}</>
+                            )}
+                            {" · "}Parceiro Movepark
+                          </span>
+                          <Link
+                            to={listingPath(row.unit)}
+                            className="text-caption-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
+                          >
+                            Ver ficha
+                          </Link>
+                        </div>
+                      </td>
+                      <td className={cn("order-3 col-span-2", celulaBase)} colSpan={2}>
+                        <span className="block text-body-sm text-muted">
+                          entrada a partir de {cell.minStayDays} diárias
                         </span>
-                      </div>
-                      <Button asChild>
-                        <Link to={listingPath(row.unit)}>Reservar</Link>
-                      </Button>
-                    </div>
-                  </li>
-                ))}
-              </ol>
+                      </td>
+                      <td className={cn("order-4 col-span-2", celulaBase, "tablet:pl-3")}>
+                        <span className="block text-caption-sm text-muted">
+                          reserve a partir de {cell.minStayDays} diárias
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+
+                  {mapeados.map((p) => (
+                    <tr
+                      key={p.slug}
+                      className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg border border-dashed border-hairline p-4 tablet:table-row tablet:border-0 tablet:p-0"
+                    >
+                      <td className={cn("hidden", celulaBase, "tablet:pl-0 tablet:pr-2")} />
+                      <td className={cn("order-1 col-span-2", celulaBase, "tablet:px-0 tablet:pr-3")}>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-title-sm text-ink">{p.name}</span>
+                          <span className="text-caption-sm text-muted">
+                            {p.distance_km != null && (
+                              <>{formatDistance(Math.round(p.distance_km * 1000))} · </>
+                            )}
+                            mapeado pela Movepark
+                          </span>
+                          <Link
+                            to={`/estacionamentos/${destino.slug}/${p.slug}`}
+                            className="text-caption-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
+                          >
+                            Ver ficha
+                          </Link>
+                        </div>
+                      </td>
+                      <td className={cn("order-3 col-span-2", celulaBase)} colSpan={2}>
+                        <span className="block text-body-sm text-muted">
+                          consulte a tabela no local
+                        </span>
+                      </td>
+                      <td className={cn("order-4 col-span-2", celulaBase, "tablet:pl-3")}>
+                        <span className="block text-caption-sm text-muted">sem reserva online</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
 
-            {result.blocked.length > 0 && (
-              <p className="mt-4 text-body-sm text-muted">
-                Fora desta conta por estadia mínima:{" "}
-                {result.blocked
-                  .map(({ row, cell }) => `${row.label} (a partir de ${cell.minStayDays} diárias)`)
-                  .join(", ")}
-                .
-              </p>
-            )}
+            <p className="mt-3 text-caption-sm text-muted">
+              Preços do motor de reservas Movepark, os mesmos do checkout. Estacionamento sem
+              reserva online é ficha mapeada pela nossa equipe: o preço é a tabela do local.{" "}
+              <a
+                href="#como-funciona"
+                className="font-medium text-mp-indigo underline-offset-2 hover:underline"
+              >
+                Como a calculadora funciona
+              </a>
+            </p>
           </section>
         )}
 
-        <section className="mt-12 max-w-[720px]">
+        <section id="como-funciona" className="mt-12 max-w-[720px] scroll-mt-24">
           <h2 className="text-display-sm text-ink">Como a calculadora funciona</h2>
           <p className="mt-3 text-body-md text-body">
             O valor de cada vaga sai do motor de preços da Movepark, o mesmo que fecha a reserva
@@ -326,8 +490,9 @@ export default function CalculadoraPage() {
             escolheu, sem estimativa.
           </p>
           <p className="mt-3 text-body-md text-body">
-            O preço riscado é o balcão, a tarifa de quem chega sem reservar. Para comparar os
-            destinos lado a lado, veja o{" "}
+            O preço riscado é o balcão, a tarifa de quem chega sem reservar. Estacionamentos
+            mapeados sem contrato aparecem no fim da lista, sem preço: a ficha mostra endereço e
+            comodidades, e a tabela é a do local. Para comparar os destinos lado a lado, veja o{" "}
             <Link
               to="/precos"
               className="font-medium text-mp-indigo underline-offset-2 hover:underline"
