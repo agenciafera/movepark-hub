@@ -558,18 +558,33 @@ async function precosDestinoLoader({
 async function calculadoraLoader(): Promise<CalculadoraData | null> {
   const data = await fetchPriceIndex().catch(() => null);
   if (!data || data.destinations.length === 0) return null;
-  const entradas = await Promise.all(
-    data.destinations.map(async (d) => {
-      const cards = await fetchDestinationProspects(d.slug).catch(() => []);
-      return [
-        d.slug,
-        cards.map((p) => ({ name: p.name, slug: p.slug, distance_km: p.distance_km })),
-      ] as const;
-    }),
-  );
+  // O select cobre TODOS os destinos publicados, com ou sem parceiro precificado.
+  const { data: catalogoRaw } = await supabase
+    .from("destination")
+    .select("slug, name, short_name")
+    .eq("is_published", true)
+    .order("sort_order");
+  const catalogo = (catalogoRaw ?? []) as { slug: string; name: string; short_name: string | null }[];
+  // Lotes mapeados de cada destino, em blocos de 6 para não esbarrar no
+  // statement timeout do papel anon durante o build.
+  const prospects: CalculadoraData["prospects"] = {};
+  const slugs = catalogo.map((c) => c.slug);
+  for (let i = 0; i < slugs.length; i += 6) {
+    const bloco = await Promise.all(
+      slugs.slice(i, i + 6).map(async (s) => {
+        const cards = await fetchDestinationProspects(s).catch(() => []);
+        return [
+          s,
+          cards.map((p) => ({ name: p.name, slug: p.slug, distance_km: p.distance_km })),
+        ] as const;
+      }),
+    );
+    for (const [s, cards] of bloco) prospects[s] = cards;
+  }
   return {
     data,
-    prospects: Object.fromEntries(entradas),
+    catalogo,
+    prospects,
     generatedAt: new Date().toISOString(),
   };
 }

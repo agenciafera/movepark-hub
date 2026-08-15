@@ -37,9 +37,25 @@ function unit(overrides: Partial<PriceUnit>): PriceUnit {
 
 const DATA: CalculadoraData = {
   generatedAt: "2026-08-14T15:00:00Z",
+  catalogo: [
+    {
+      slug: "aeroporto-internacional-de-sao-paulo-guarulhos",
+      name: "Aeroporto Internacional de São Paulo Guarulhos",
+      short_name: "Guarulhos (GRU)",
+    },
+    { slug: "aeroporto-de-confins", name: "Aeroporto de Confins", short_name: "Confins (CNF)" },
+    {
+      slug: "aeroporto-santos-dumont",
+      name: "Aeroporto Santos Dumont",
+      short_name: "Santos Dumont (SDU)",
+    },
+  ],
   prospects: {
     "aeroporto-internacional-de-sao-paulo-guarulhos": [
       { name: "Talentos Park", slug: "talentos-park", distance_km: 1.2 },
+    ],
+    "aeroporto-de-confins": [
+      { name: "Golden Park", slug: "golden-park", distance_km: 1.4 },
     ],
   },
   data: {
@@ -145,6 +161,37 @@ describe("CalculadoraPage", () => {
     await user.type(campo, "99");
     // O cálculo é ao vivo (debounce curto); a recusa aparece sozinha.
     expect(await screen.findByRole("alert")).toHaveTextContent("Informe de 1 a 60 diárias.");
+  });
+
+  it("destino sem parceiro entra no select e mostra os mapeados, com o seja-parceiro", async () => {
+    setup();
+    const user = userEvent.setup();
+    await user.selectOptions(await screen.findByLabelText("Destino"), "aeroporto-de-confins");
+    expect(
+      await screen.findByRole("heading", { name: "Estacionamentos em Confins (CNF)" }),
+    ).toBeInTheDocument();
+    const tabela = screen.getByRole("table");
+    expect(tabela.textContent).toContain("Golden Park");
+    expect(tabela.textContent).toContain("consulte a tabela no local");
+    expect(within(tabela).queryByRole("link", { name: "Reservar" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Seja parceiro Movepark" })).toHaveAttribute(
+      "href",
+      "/seja-parceiro",
+    );
+  });
+
+  it("destino sem parceiro e sem lote mapeado explica o mapeamento", async () => {
+    setup();
+    const user = userEvent.setup();
+    await user.selectOptions(await screen.findByLabelText("Destino"), "aeroporto-santos-dumont");
+    expect(
+      await screen.findByRole("heading", { name: "Estacionamentos em Santos Dumont (SDU)" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Ainda estamos mapeando/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "página do destino" })).toHaveAttribute(
+      "href",
+      "/destinos/aeroporto-santos-dumont",
+    );
   });
 
   it("sem dado, explica e aponta para a busca", async () => {

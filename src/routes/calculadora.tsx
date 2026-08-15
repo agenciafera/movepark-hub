@@ -35,6 +35,8 @@ export type CalculadoraProspect = {
 
 export type CalculadoraData = {
   data: PriceIndexData;
+  /** Todos os destinos publicados, com ou sem parceiro precificado. */
+  catalogo: { slug: string; name: string; short_name: string | null }[];
   /** Lotes mapeados por slug de destino, para a lista ficar completa como a do concorrente. */
   prospects: Record<string, CalculadoraProspect[]>;
   generatedAt: string;
@@ -59,13 +61,17 @@ export default function CalculadoraPage() {
   const loaded = useLoaderData() as CalculadoraData | null;
 
   const destinations = loaded?.data.destinations ?? [];
+  const catalogo = loaded?.catalogo ?? [];
   const standardDays = loaded?.data.days ?? [1, 7, 15, 30];
 
-  const [slug, setSlug] = React.useState(destinations[0]?.slug ?? "");
+  const [slug, setSlug] = React.useState(catalogo[0]?.slug ?? destinations[0]?.slug ?? "");
   const [daysInput, setDaysInput] = React.useState("7");
-  const [result, setResult] = React.useState<CalcResult | null>(() =>
-    destinations[0] ? calcResults(destinations[0], 7) : null,
-  );
+  const [result, setResult] = React.useState<CalcResult | null>(() => {
+    const inicial = catalogo[0]?.slug ?? destinations[0]?.slug;
+    if (!inicial) return null;
+    const comPreco = destinations.find((d) => d.slug === inicial);
+    return comPreco ? calcResults(comPreco, 7) : { days: 7, priced: [], blocked: [] };
+  });
   const [carregando, setCarregando] = React.useState(false);
   const [erro, setErro] = React.useState<string | null>(null);
   // Consultas de duração fora da matriz padrão, para não repetir a ida ao motor.
@@ -74,19 +80,25 @@ export default function CalculadoraPage() {
   const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const destino = destinations.find((d) => d.slug === slug) ?? null;
-  const nome = destino ? (destino.short_name ?? destino.name) : "";
+  const destinoMeta = catalogo.find((c) => c.slug === slug) ?? destino;
+  const nome = destinoMeta ? (destinoMeta.short_name ?? destinoMeta.name) : "";
   const mapeados = loaded?.prospects[slug] ?? [];
 
   const calcular = React.useCallback(
     async (destSlug: string, diasBrutos: string) => {
       const dias = sanitizeDays(diasBrutos);
       const dest = destinations.find((d) => d.slug === destSlug) ?? null;
-      if (!dest) return;
       if (dias == null) {
         setErro(`Informe de ${CALC_MIN_DAYS} a ${CALC_MAX_DAYS} diárias.`);
         return;
       }
       setErro(null);
+      // Destino sem parceiro precificado: não há o que consultar no motor; a
+      // seção mostra os lotes mapeados (ou o aviso de mapeamento).
+      if (!dest) {
+        setResult({ days: dias, priced: [], blocked: [] });
+        return;
+      }
       if (standardDays.includes(dias)) {
         setResult(calcResults(dest, dias));
         return;
@@ -219,7 +231,7 @@ export default function CalculadoraPage() {
                     }}
                     className="h-12 w-full rounded-sm border border-hairline bg-canvas px-3 text-body-md text-ink focus:border-mp-primary focus:outline-none"
                   >
-                    {destinations.map((d) => (
+                    {catalogo.map((d) => (
                       <option key={d.slug} value={d.slug}>
                         {d.short_name ?? d.name}
                       </option>
@@ -296,11 +308,17 @@ export default function CalculadoraPage() {
           </aside>
 
           <div className="min-w-0">
-        {result && destino && (
+        {result && destinoMeta && (
           <section aria-live="polite">
             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
               <h2 className="text-display-sm text-ink">
-                {durationLabel(result.days)} em {nome}
+                {destino ? (
+                  <>
+                    {durationLabel(result.days)} em {nome}
+                  </>
+                ) : (
+                  <>Estacionamentos em {nome}</>
+                )}
               </h2>
               <p className="text-body-sm text-muted">
                 {result.priced.length}{" "}
@@ -309,17 +327,30 @@ export default function CalculadoraPage() {
               </p>
             </div>
 
-            {result.priced.length === 0 && result.blocked.length === 0 ? (
-              <p className="mt-3 text-body-md text-body">
-                Nenhum parceiro cota {durationLabel(result.days)} nesse destino. Veja a{" "}
-                <Link
-                  to={`/precos/${destino.slug}`}
-                  className="font-medium text-mp-indigo underline-offset-2 hover:underline"
-                >
-                  tabela completa
-                </Link>{" "}
-                ou busque por data.
-              </p>
+            {result.priced.length + result.blocked.length + mapeados.length === 0 ? (
+              destino ? (
+                <p className="mt-3 text-body-md text-body">
+                  Nenhum parceiro cota {durationLabel(result.days)} nesse destino. Veja a{" "}
+                  <Link
+                    to={`/precos/${destino.slug}`}
+                    className="font-medium text-mp-indigo underline-offset-2 hover:underline"
+                  >
+                    tabela completa
+                  </Link>{" "}
+                  ou busque por data.
+                </p>
+              ) : (
+                <p className="mt-3 text-body-md text-body">
+                  Ainda estamos mapeando os estacionamentos de {nome}. Veja a{" "}
+                  <Link
+                    to={`/destinos/${slug}`}
+                    className="font-medium text-mp-indigo underline-offset-2 hover:underline"
+                  >
+                    página do destino
+                  </Link>
+                  .
+                </p>
+              )
             ) : (
               <table className="mt-4 block w-full border-collapse tablet:table">
                 <caption className="sr-only">
@@ -329,7 +360,7 @@ export default function CalculadoraPage() {
                   <tr>
                     <th
                       scope="col"
-                      className="w-10 border-b border-hairline py-2 pr-2 text-left text-caption-sm font-medium text-muted"
+                      className="w-14 border-b border-hairline py-2 pl-4 pr-2 text-left text-caption-sm font-medium text-muted"
                     >
                       Nº
                     </th>
@@ -353,7 +384,7 @@ export default function CalculadoraPage() {
                     </th>
                     <th
                       scope="col"
-                      className="border-b border-hairline py-2 pl-3 text-left text-caption-sm font-medium text-muted"
+                      className="border-b border-hairline py-2 pl-3 pr-4 text-left text-caption-sm font-medium text-muted"
                     >
                       Reserva
                     </th>
@@ -370,7 +401,7 @@ export default function CalculadoraPage() {
                           : "border-hairline tablet:border-0",
                       )}
                     >
-                      <td className={cn("hidden text-caption-sm tabular-nums text-muted", celulaBase, "tablet:pl-0 tablet:pr-2")}>
+                      <td className={cn("hidden text-caption-sm tabular-nums text-muted", celulaBase, "tablet:pl-4 tablet:pr-2")}>
                         {String(i + 1).padStart(2, "0")}
                       </td>
                       <td className={cn("order-1 col-span-2", celulaBase, "tablet:px-0 tablet:pr-3")}>
@@ -427,7 +458,7 @@ export default function CalculadoraPage() {
                           {formatBRL(cell.total)}
                         </span>
                       </td>
-                      <td className={cn("order-2 col-span-2 justify-self-stretch", celulaBase, "tablet:pl-3 tablet:align-middle")}>
+                      <td className={cn("order-2 col-span-2 justify-self-stretch", celulaBase, "tablet:pl-3 tablet:pr-4 tablet:align-middle")}>
                         <Button asChild className="w-full tablet:w-auto">
                           <Link to={listingPath(row.unit)}>Reservar</Link>
                         </Button>
@@ -440,7 +471,7 @@ export default function CalculadoraPage() {
                       key={row.key}
                       className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg border border-hairline p-4 tablet:table-row tablet:border-0 tablet:p-0"
                     >
-                      <td className={cn("hidden", celulaBase, "tablet:pl-0 tablet:pr-2")} />
+                      <td className={cn("hidden", celulaBase, "tablet:pl-4 tablet:pr-2")} />
                       <td className={cn("order-1 col-span-2", celulaBase, "tablet:px-0 tablet:pr-3")}>
                         <div className="flex flex-col gap-0.5">
                           <span className="text-title-md text-ink">{row.label}</span>
@@ -464,7 +495,7 @@ export default function CalculadoraPage() {
                           entrada a partir de {cell.minStayDays} diárias
                         </span>
                       </td>
-                      <td className={cn("order-4 col-span-2", celulaBase, "tablet:pl-3")}>
+                      <td className={cn("order-4 col-span-2", celulaBase, "tablet:pl-3 tablet:pr-4")}>
                         <span className="block text-caption-sm text-muted">
                           reserve a partir de {cell.minStayDays} diárias
                         </span>
@@ -477,7 +508,7 @@ export default function CalculadoraPage() {
                       key={p.slug}
                       className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg border border-dashed border-hairline p-4 tablet:table-row tablet:border-0 tablet:p-0"
                     >
-                      <td className={cn("hidden", celulaBase, "tablet:pl-0 tablet:pr-2")} />
+                      <td className={cn("hidden", celulaBase, "tablet:pl-4 tablet:pr-2")} />
                       <td className={cn("order-1 col-span-2", celulaBase, "tablet:px-0 tablet:pr-3")}>
                         <div className="flex flex-col gap-0.5">
                           <span className="text-title-md text-ink">{p.name}</span>
@@ -488,7 +519,7 @@ export default function CalculadoraPage() {
                             mapeado pela Movepark
                           </span>
                           <Link
-                            to={`/estacionamentos/${destino.slug}/${p.slug}`}
+                            to={`/estacionamentos/${slug}/${p.slug}`}
                             className="text-caption-sm font-medium text-mp-indigo underline underline-offset-4"
                           >
                             Ver ficha
@@ -500,7 +531,7 @@ export default function CalculadoraPage() {
                           consulte a tabela no local
                         </span>
                       </td>
-                      <td className={cn("order-4 col-span-2", celulaBase, "tablet:pl-3")}>
+                      <td className={cn("order-4 col-span-2", celulaBase, "tablet:pl-3 tablet:pr-4")}>
                         <span className="block text-caption-sm text-muted">sem reserva online</span>
                       </td>
                     </tr>
@@ -509,16 +540,30 @@ export default function CalculadoraPage() {
               </table>
             )}
 
-            <p className="mt-3 text-caption-sm text-muted">
-              Preços do motor de reservas Movepark, os mesmos do checkout. Estacionamento sem
-              reserva online é ficha mapeada pela nossa equipe: o preço é a tabela do local.{" "}
-              <a
-                href="#como-funciona"
-                className="font-medium text-mp-indigo underline-offset-2 hover:underline"
-              >
-                Como a calculadora funciona
-              </a>
-            </p>
+            {result.priced.length + result.blocked.length + mapeados.length > 0 && (
+              <p className="mt-3 text-caption-sm text-muted">
+                Preços do motor de reservas Movepark, os mesmos do checkout. Estacionamento sem
+                reserva online é ficha mapeada pela nossa equipe: o preço é a tabela do local.{" "}
+                <a
+                  href="#como-funciona"
+                  className="font-medium text-mp-indigo underline-offset-2 hover:underline"
+                >
+                  Como a calculadora funciona
+                </a>
+              </p>
+            )}
+
+            {!destino && (
+              <p className="mt-4 text-body-sm text-body">
+                Tem um estacionamento neste destino?{" "}
+                <Link
+                  to="/seja-parceiro"
+                  className="font-medium text-mp-indigo underline-offset-2 hover:underline"
+                >
+                  Seja parceiro Movepark
+                </Link>
+              </p>
+            )}
           </section>
         )}
 
