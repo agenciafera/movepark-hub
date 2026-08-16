@@ -56,6 +56,28 @@ describe("useSetGo2Park", () => {
     expect(patch.ultimoBody).toEqual({ go2park_enabled: false });
   });
 
+  it("grava só o número quando é ele que muda", async () => {
+    const patch = tabela("location", "patch", {
+      json: [{ id: "loc-1", go2park_whatsapp: "+5519988013420" }],
+    });
+    const { result } = renderMutation(() => useSetGo2Park());
+
+    await result.current.mutateAsync({ id: "loc-1", whatsapp: "+5519988013420" });
+
+    // Sem `go2park_enabled` no corpo: o interruptor e o número são salvos em momentos diferentes,
+    // e mandar os dois faria um sobrescrever o outro com valor de tela desatualizado.
+    expect(patch.ultimoBody).toEqual({ go2park_whatsapp: "+5519988013420" });
+  });
+
+  it("limpa o número com null quando a unidade perde a van", async () => {
+    const patch = tabela("location", "patch", { json: [{ id: "loc-1", go2park_whatsapp: null }] });
+    const { result } = renderMutation(() => useSetGo2Park());
+
+    await result.current.mutateAsync({ id: "loc-1", whatsapp: null });
+
+    expect(patch.ultimoBody).toEqual({ go2park_whatsapp: null });
+  });
+
   it("propaga a recusa do banco em vez de engolir", async () => {
     falha("tabela", "location", 403, "go2park_enabled só pode ser alterado por hub_admin");
     const { result } = renderMutation(() => useSetGo2Park());

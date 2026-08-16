@@ -45,6 +45,9 @@ export type ListingDetail = {
      * unidades com o contrato hoje.
      */
     go2park_enabled: boolean;
+    /** WhatsApp da van desta unidade (E.164), copiado do painel da Go2Park. Nulo enquanto ninguém
+     *  preencheu, e aí a página mostra o bloco sem o CTA de contato. */
+    go2park_whatsapp: string | null;
     timezone: string;
     latitude: number | null;
     longitude: number | null;
@@ -85,7 +88,7 @@ const baseSelect = `
   location:location!inner(
     id, slug, name, address, phone, email, notice, has_notice,
     directions_text, shuttle_frequency_minutes, shuttle_to_terminal_minutes,
-    reservation_policy, checkout_mode, go2park_enabled, timezone, latitude, longitude, google_place_id,
+    reservation_policy, checkout_mode, go2park_enabled, go2park_whatsapp, timezone, latitude, longitude, google_place_id,
     has_pcd_config, has_passenger_quantity, review_avg, review_count, photos,
     company:company!inner(id, slug, name, legal_name, created_at),
     destination:destination(seo_label, short_name, name, type, city),
@@ -177,6 +180,7 @@ export async function fetchListing(
       // Ausência lida como false: o selo do transfer ao vivo é contrato, e prometer rastreio
       // que a unidade não tem é pior que deixar de mostrar o que ela tem.
       go2park_enabled: m.location.go2park_enabled === true,
+      go2park_whatsapp: m.location.go2park_whatsapp ?? null,
       // Embed pode voltar null (unidade sem destino âncora) ou objeto. O SEO trata os dois.
       destination: m.location.destination ?? null,
       address: m.location.address,

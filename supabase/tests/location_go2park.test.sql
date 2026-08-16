@@ -6,7 +6,7 @@
 -- barreira que vale é a do banco. Sem este teste, a regra some no primeiro `create or replace`.
 
 begin;
-select plan(7);
+select plan(12);
 
 -- ── fixtures (como postgres; RLS não se aplica) ────────────────────────────
 do $$
@@ -43,6 +43,7 @@ end $$;
 
 -- ── estrutura ──────────────────────────────────────────────────────────────
 select has_column('public','location','go2park_enabled','location.go2park_enabled existe');
+select has_column('public','location','go2park_whatsapp','location.go2park_whatsapp existe');
 
 select is(
   (select go2park_enabled from public.location where id = current_setting('test.loc')::uuid),
@@ -60,6 +61,24 @@ select ok(
   'authenticated não executa a função-trigger'
 );
 
+-- ── o número é E.164, não texto livre ──────────────────────────────────────
+-- Texto livre aqui vira link wa.me quebrado no momento em que o cliente pousa e chama a van.
+select throws_ok(
+  format($$ update public.location set go2park_whatsapp = '(19) 98801-3420' where id = %L $$,
+    current_setting('test.loc')),
+  '23514', null, 'número fora do E.164 é recusado pelo banco'
+);
+select lives_ok(
+  format($$ update public.location set go2park_whatsapp = '+5519988013420' where id = %L $$,
+    current_setting('test.loc')),
+  'número em E.164 entra'
+);
+select lives_ok(
+  format($$ update public.location set go2park_whatsapp = null where id = %L $$,
+    current_setting('test.loc')),
+  'nulo é válido: a unidade fica sem CTA até alguém copiar o número do painel da Go2Park'
+);
+
 -- ── quem liga ──────────────────────────────────────────────────────────────
 -- O gerente tem locations:write e edita a unidade, mas não este campo.
 select pg_temp.as_user(current_setting('test.gerente'));
@@ -72,6 +91,15 @@ select pg_temp.as_user(current_setting('test.admin'));
 select lives_ok(
   format($$ update public.location set go2park_enabled = true where id = %L $$, current_setting('test.loc')),
   'hub_admin liga o Go2Park'
+);
+
+-- O número segue a mesma régua do selo: é dado comercial, e o parceiro apontaria a van para o
+-- próprio celular se pudesse escrever.
+select pg_temp.as_user(current_setting('test.gerente'));
+select throws_ok(
+  format($$ update public.location set go2park_whatsapp = '+5511999998888' where id = %L $$,
+    current_setting('test.loc')),
+  '42501', null, 'parceiro não escreve o WhatsApp da van'
 );
 
 -- Update que não toca a coluna passa por qualquer um: o trigger recusa a MUDANÇA, não a edição

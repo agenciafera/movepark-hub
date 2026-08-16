@@ -21,7 +21,12 @@ const PATH = "/p/:operatorSlug/:locationSlug/:parkingTypeCode";
 const URL_SAIDA =
   "https://virapark.movepark.co/virapark/vaga-coberta?utm_source=movepark&utm_medium=organic&utm_campaign=afiliado-movepark";
 
-function linha(checkoutMode: "hub" | "external", basePrice = 40, go2park = false) {
+function linha(
+  checkoutMode: "hub" | "external",
+  basePrice = 40,
+  go2park = false,
+  go2parkWhatsapp: string | null = null,
+) {
   return {
     id: "lpt-1",
     capacity: 100,
@@ -42,6 +47,7 @@ function linha(checkoutMode: "hub" | "external", basePrice = 40, go2park = false
       reservation_policy: null,
       checkout_mode: checkoutMode,
       go2park_enabled: go2park,
+      go2park_whatsapp: go2parkWhatsapp,
       timezone: "America/Sao_Paulo",
       latitude: -23,
       longitude: -47,
@@ -67,10 +73,15 @@ function linha(checkoutMode: "hub" | "external", basePrice = 40, go2park = false
   };
 }
 
-function montaPagina(checkoutMode: "hub" | "external", basePrice?: number, go2park = false) {
+function montaPagina(
+  checkoutMode: "hub" | "external",
+  basePrice?: number,
+  go2park = false,
+  go2parkWhatsapp: string | null = null,
+) {
   server.use(
     http.get(`${BASE}/rest/v1/location_parking_type`, () =>
-      HttpResponse.json([linha(checkoutMode, basePrice, go2park)]),
+      HttpResponse.json([linha(checkoutMode, basePrice, go2park, go2parkWhatsapp)]),
     ),
   );
   // A página emite <Helmet> (meta + JSON-LD), que precisa do provider para montar.
@@ -257,5 +268,32 @@ describe("Go2Park na single", () => {
 
     expect(screen.queryByTestId("go2park-block")).not.toBeInTheDocument();
     expect(screen.queryByTestId("go2park-chip")).not.toBeInTheDocument();
+  });
+});
+
+/**
+ * O contato da van fecha o ciclo: o bloco mostra o diferencial, e o CTA é o que faz o cliente
+ * chegar na van no dia. O número é por unidade e vem do painel da Go2Park, então enquanto não foi
+ * copiado o bloco existe sem botão. Um botão sem número certo mandaria quem acabou de pousar para
+ * o telefone de outro estacionamento.
+ */
+describe("Contato da van na single", () => {
+  it("com número, oferece salvar o contato", async () => {
+    montaPagina("external", undefined, true, "+5519988013420");
+    await screen.findAllByText(/Virapark/i);
+
+    await waitFor(() => expect(screen.getByTestId("go2park-cta")).toBeInTheDocument());
+    expect(screen.getByRole("link", { name: /WhatsApp/ })).toHaveAttribute(
+      "href",
+      expect.stringContaining("wa.me/5519988013420"),
+    );
+  });
+
+  it("sem número, o bloco fica e o CTA não", async () => {
+    montaPagina("external", undefined, true);
+    await screen.findAllByText(/Virapark/i);
+
+    await waitFor(() => expect(screen.getByTestId("go2park-block")).toBeInTheDocument());
+    expect(screen.queryByTestId("go2park-cta")).not.toBeInTheDocument();
   });
 });

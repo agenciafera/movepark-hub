@@ -27,8 +27,10 @@ unidades na vitrine: quem escolhe entre quatro cards no mesmo aeroporto vê um s
 
 ## Modelo
 
-`location.go2park_enabled boolean not null default false` (migration
-`20261026090000_location_go2park.sql`).
+| Coluna | Para quê | Migration |
+|---|---|---|
+| `go2park_enabled boolean not null default false` | A unidade tem o contrato: liga o selo e o bloco | `20261026090000_location_go2park.sql` |
+| `go2park_whatsapp text` (E.164, nulo por padrão) | Número da van desta unidade: liga o CTA de contato | `20261026140000_location_go2park_whatsapp.sql` |
 
 **Por que coluna e não amenidade.** Amenidade sairia no card como pílula cinza entre "Câmeras" e
 "24 horas", que é o oposto do destaque que o diferencial pede; e amenidade é editável pelo
@@ -52,6 +54,31 @@ no card e na página, então o caminho de desligar é testado junto com o de lig
 retrato da linha congelado no clique, então gravava no banco e continuava mostrando o valor
 velho. Hoje a linha é derivada da lista já carregada, que a mutation invalida.
 
+## O contato da van
+
+Mostrar o diferencial não basta: falta o cliente conseguir chamar a van no dia. O bloco fecha com
+dois caminhos, quando há número cadastrado.
+
+**Salvar o contato** (principal) baixa um `.vcf` com o nome "Van &lt;Empresa&gt; · &lt;Unidade&gt;". A pessoa
+abre esta página dias antes de viajar e precisa da van quando pousa; salvar agora atravessa essa
+distância, porque no aeroporto ela procura "Van" na agenda em vez de procurar a reserva, o e-mail
+ou o site. O arquivo é montado no clique (Blob), e não num `data:` URI, que é justamente o que o
+Safari do iPhone trata mal. Lógica pura em `vcard.ts`, com teste.
+
+**Abrir no WhatsApp** (secundário) é âncora comum `wa.me`, para quem já está no estacionamento.
+Sendo `<a>`, sobrevive a página sem JS.
+
+**Cada unidade tem o seu número, e ele mora no painel da Go2Park.** Até existir integração, alguém
+copia de lá para `location.go2park_whatsapp` pelo diálogo do Manager. Enquanto está vazio o bloco
+existe sem CTA: mandar quem acabou de pousar para o telefone de outro lote é pior do que não
+oferecer botão. O banco recusa qualquer coisa fora do E.164 (constraint
+`location_go2park_whatsapp_e164`), porque texto livre aqui vira link quebrado no pior momento.
+
+**Por que não reusar `location.phone`:** aquele é o telefone da portaria, canal da garantia de vaga
+([spot-guarantee.md](./spot-guarantee.md)), e a base legada já registra confusão nessa linha, com
+Nationpark e Abbapark exibindo o número do Virapark. Nas três unidades com Go2Park a `phone` está
+nula hoje, então nem serviria de ponto de partida.
+
 ## ADR-009: é fato, não promessa
 
 O rastreio da van **não** passa por `getLocationCapabilities`. Ele descreve o serviço do lote,
@@ -68,7 +95,7 @@ um caso exige o bloco na unidade externa, o outro exige a ausência dele na unid
 |---|---|---|
 | Card de busca, home e destino | `Go2ParkLiveBadge` | Faixa navy no corpo do card, acima das amenidades: ponto pulsante, "Transfer ao vivo · Go2Park" e "Acompanhe a van pelo celular" |
 | Página da unidade, cabeçalho | `Go2ParkLiveChip` | Chip navy na linha de metadados, ao lado do tempo de transfer |
-| Página da unidade, "Como chegar" | `Go2ParkLiveBlock` | Painel navy depois da frequência do transfer e antes do mapa: título, explicação e os três pontos do serviço |
+| Página da unidade, "Como chegar" | `Go2ParkLiveBlock` | Painel navy depois da frequência do transfer e antes do mapa: título, explicação, os três pontos do serviço e, com número cadastrado, o contato da van |
 
 Tudo em `src/features/go2park/Go2ParkLive.tsx`, com a copy num único objeto `GO2PARK_COPY`.
 
@@ -92,7 +119,7 @@ marca e três superfícies, e injetar a paleta de outro produto quebraria isso p
 |---|---|---|
 | `/search` e `/destinos/<slug>` | Edge `search` | `location.go2park` (mapeado de `go2park_enabled`) |
 | Home ("os mais reservados") | PostgREST em `usePopularOffers` | `location.go2park` |
-| `/p/<empresa>/<unidade>/<tipo>` | PostgREST em `fetchListing` | `location.go2park_enabled` |
+| `/p/<empresa>/<unidade>/<tipo>` | PostgREST em `fetchListing` | `location.go2park_enabled` + `go2park_whatsapp` |
 
 Ausência é lida como `false` nas três: prometer rastreio que a unidade não tem é pior que deixar
 de mostrar o que ela tem.
@@ -113,6 +140,10 @@ O nome do produto se escreve **Go2Park** em toda superfície, e um teste em
 - **Filtro "transfer ao vivo" na busca.** Com três unidades em dois aeroportos, o filtro
   esvaziaria a lista mais do que ajudaria. Quando virar filtro, o campo já está no resultado da
   Edge.
-- **Chamar a van pela página.** Existe um `wa.go2park.com.br/call/<slug>` no fluxo legado de
-  atendimento (ver [knowledge-base-rag.md](./knowledge-base-rag.md)), mas o slug não está
-  modelado no Hub e um link quebrado no momento do embarque custa mais do que o link resolve.
+- **Integração com a Go2Park.** O número é copiado à mão do painel deles. Uma API (ou um
+  webhook de mudança) tiraria o passo manual e evitaria número velho no ar quando a unidade trocar
+  de linha. Enquanto não existe, o campo é a fonte, e o valor errado é responsabilidade de quem
+  copiou.
+- **O acionador legado.** Existe um `wa.go2park.com.br/call/<slug>` no fluxo de atendimento (ver
+  [knowledge-base-rag.md](./knowledge-base-rag.md)), mas o slug não está modelado no Hub. O número
+  em E.164 resolve o mesmo com um dado só, e é o que a integração vai substituir.

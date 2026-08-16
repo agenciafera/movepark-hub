@@ -241,10 +241,25 @@ export function useSetCheckoutMode() {
 export function useSetGo2Park() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
+    mutationFn: async ({
+      id,
+      enabled,
+      whatsapp,
+    }: {
+      id: string;
+      enabled?: boolean;
+      /** E.164, ou null para limpar. Ausente = não mexe no número. */
+      whatsapp?: string | null;
+    }) => {
+      // Patch só com o que veio: o interruptor e o número são salvos em momentos diferentes, e
+      // mandar os dois sempre faria um sobrescrever o outro com valor de tela desatualizado.
+      const patch: { go2park_enabled?: boolean; go2park_whatsapp?: string | null } = {};
+      if (enabled !== undefined) patch.go2park_enabled = enabled;
+      if (whatsapp !== undefined) patch.go2park_whatsapp = whatsapp;
+
       const { data, error } = await supabase
         .from("location")
-        .update({ go2park_enabled: enabled })
+        .update(patch)
         .eq("id", id)
         .select()
         .single();

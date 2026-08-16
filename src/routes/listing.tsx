@@ -423,6 +423,9 @@ export default function ListingPage() {
               shuttleFrequencyMinutes={listing.location.shuttle_frequency_minutes}
               shuttleToTerminalMinutes={listing.location.shuttle_to_terminal_minutes}
               go2park={listing.location.go2park_enabled}
+              go2parkWhatsapp={listing.location.go2park_whatsapp}
+              companyName={listing.company.name}
+              locationName={listing.location.name}
             />
             <TerminalDistances locationId={listing.location.id} />
           </section>

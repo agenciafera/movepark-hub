@@ -22,6 +22,11 @@ type Props = {
    * saio daqui e chego no terminal. Fato da unidade, então não passa por capacidade (ADR-009).
    */
   go2park?: boolean;
+  /** WhatsApp da van (E.164). Sem ele o bloco explica o serviço e não oferece contato. */
+  go2parkWhatsapp?: string | null;
+  /** Empresa e unidade nomeiam o contato salvo na agenda ("Van Virapark · Viracopos"). */
+  companyName?: string | null;
+  locationName?: string | null;
 };
 
 /**
@@ -40,6 +45,9 @@ export function HowToArrive({
   shuttleFrequencyMinutes,
   shuttleToTerminalMinutes,
   go2park = false,
+  go2parkWhatsapp,
+  companyName,
+  locationName,
 }: Props) {
   const shuttle = formatShuttle({
     frequencyMinutes: shuttleFrequencyMinutes,
@@ -71,7 +79,13 @@ export function HowToArrive({
         </div>
       )}
 
-      {go2park && <Go2ParkLiveBlock />}
+      {go2park && (
+        <Go2ParkLiveBlock
+          whatsapp={go2parkWhatsapp}
+          companyName={companyName}
+          locationName={locationName}
+        />
+      )}
 
       <MiniMap
         address={address}

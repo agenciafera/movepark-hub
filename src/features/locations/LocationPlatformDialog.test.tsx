@@ -20,7 +20,7 @@ const INCOMPLETO: LocationExternalReadiness = {
   unmapped_names: ["Coberta", "Descoberta"],
 };
 
-function abre(mode: "hub" | "external" = "hub", go2park = false) {
+function abre(mode: "hub" | "external" = "hub", go2park = false, whatsapp: string | null = null) {
   return renderWithProviders(
     <LocationPlatformDialog
       open
@@ -28,6 +28,7 @@ function abre(mode: "hub" | "external" = "hub", go2park = false) {
       locationName="Virapark GRU"
       mode={mode}
       go2park={go2park}
+      go2parkWhatsapp={whatsapp}
       onOpenChange={() => {}}
     />,
   );
@@ -150,5 +151,59 @@ describe("LocationPlatformDialog · Go2Park", () => {
 
     await waitFor(() => expect(patch.chamadas.length).toBe(1));
     expect(patch.ultimoBody).not.toHaveProperty("checkout_mode");
+  });
+});
+
+/**
+ * O número da van vem do painel da Go2Park e é copiado à mão até existir integração. O campo só
+ * aparece com a Go2Park ligada: número guardado numa unidade sem contrato não vira botão nenhum
+ * na página, então pedir o dado ali só confunde quem preenche.
+ */
+describe("LocationPlatformDialog · WhatsApp da van", () => {
+  it("só pede o número quando a Go2Park está ligada", async () => {
+    rpc("location_external_readiness", { json: PRONTO });
+    abre("external", false);
+
+    expect(screen.queryByLabelText(/WhatsApp da van/)).not.toBeInTheDocument();
+  });
+
+  it("salva o número em E.164, mesmo digitado no formato brasileiro", async () => {
+    rpc("location_external_readiness", { json: PRONTO });
+    const patch = tabela("location", "patch", {
+      json: [{ id: "loc-1", go2park_whatsapp: "+5519988013420" }],
+    });
+    abre("external", true);
+
+    await userEvent.type(screen.getByLabelText(/WhatsApp da van/), "19988013420");
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+    await waitFor(() => expect(patch.chamadas.length).toBe(1));
+    expect(patch.ultimoBody).toEqual({ go2park_whatsapp: "+5519988013420" });
+  });
+
+  it("recusa número inválido em vez de gravar lixo que vira link quebrado", async () => {
+    rpc("location_external_readiness", { json: PRONTO });
+    const patch = tabela("location", "patch", { json: [{ id: "loc-1" }] });
+    abre("external", true);
+
+    await userEvent.type(screen.getByLabelText(/WhatsApp da van/), "123");
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/Número inválido/);
+    expect(patch.chamadas.length).toBe(0);
+  });
+
+  it("salvar o número não mexe no interruptor da Go2Park", async () => {
+    rpc("location_external_readiness", { json: PRONTO });
+    const patch = tabela("location", "patch", {
+      json: [{ id: "loc-1", go2park_whatsapp: "+5519988013420" }],
+    });
+    abre("external", true);
+
+    await userEvent.type(screen.getByLabelText(/WhatsApp da van/), "19988013420");
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+    await waitFor(() => expect(patch.chamadas.length).toBe(1));
+    expect(patch.ultimoBody).not.toHaveProperty("go2park_enabled");
   });
 });
