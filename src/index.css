@@ -68,6 +68,19 @@
     --error: 13 80% 42%;               /* #C13515 */
     --info: var(--mp-indigo);
 
+    /* Rampa ordinal do funil (dataviz). Uma cor só, do escuro pro claro, porque os degraus do
+       funil têm ordem natural. Validada pelo validate_palette do skill dataviz (--ordinal):
+       L monótono, ΔL >= 0.06 entre vizinhos e o passo mais claro a 2.51:1 do fundo branco.
+       `-fg` é a cor do rótulo DENTRO da faixa: o passo 4 é claro demais pra texto branco. */
+    --funnel-1: #29263F;
+    --funnel-2: #4041A3;
+    --funnel-3: #5D5FEF;
+    --funnel-4: #9A99EC;
+    --funnel-fg-1: #FFFFFF;
+    --funnel-fg-2: #FFFFFF;
+    --funnel-fg-3: #FFFFFF;
+    --funnel-fg-4: #29263F;
+
     /* Status badges */
     --badge-confirmed-bg: 135 38% 93%;
     --badge-confirmed-fg: var(--success);
@@ -138,6 +151,17 @@
     --warning: 34 88% 62%;
     --error: 13 82% 64%;
     --info: 239 70% 72%;
+
+    /* Rampa do funil no escuro: passos próprios, não o claro invertido. O fundo é #1a1a1e, então
+       a rampa sobe em luminosidade e o rótulo vira navy em todas as faixas. */
+    --funnel-1: #C5C4F6;
+    --funnel-2: #A5A4F0;
+    --funnel-3: #8785F0;
+    --funnel-4: #6B6DF2;
+    --funnel-fg-1: #29263F;
+    --funnel-fg-2: #29263F;
+    --funnel-fg-3: #29263F;
+    --funnel-fg-4: #FFFFFF;
 
     /* Status badges — tints escuros */
     --badge-confirmed-bg: 150 28% 18%;

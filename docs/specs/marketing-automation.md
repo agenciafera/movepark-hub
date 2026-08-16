@@ -119,7 +119,22 @@ faria toda a taxa abaixo dele virar ficção. O clique de saída para o site do 
 nasce no Hub.
 
 Cada taxa é sobre o **degrau anterior**, não sobre o topo, porque o que interessa é onde a pessoa
-desiste.
+desiste. A perda aparece escrita entre uma faixa e outra, que é onde ela acontece.
+
+**Desenho (trapézios empilhados, `funnel.logic.ts`).** A aresta de baixo de cada faixa é a aresta de
+cima da seguinte, então os trapézios se encaixam e o funil afunila a partir do dado, sem
+estreitamento decorativo. A largura segue o volume numa **escala de raiz quadrada**, não linear: com
+um funil real (236 → 53 → 31 → 24) a escala linear joga os três últimos degraus entre 10% e 22% de
+largura, onde o rótulo não cabe, e um piso simples fazia os três saírem iguais, o que escondia
+justamente a queda. A raiz preserva a ordem e comprime a cauda. Em troca, **o número exato e o
+percentual são escritos em toda faixa** e a legenda avisa que a largura é indicativa, então a
+leitura precisa nunca depende de medir no olho.
+
+Cor: rampa ordinal de uma cor só (tokens `--funnel-*` no `index.css`, claro e escuro com passos
+próprios), validada pelo `validate_palette` do skill `dataviz` em modo `--ordinal`. O `-fg` é a cor
+do rótulo dentro da faixa, porque o passo mais claro não aceita texto branco. O texto fica em uma
+camada separada do `clip-path`: dentro do elemento recortado, o rótulo do último degrau era cortado
+no meio.
 
 "Cliente novo x recorrente" ranqueia sobre o histórico inteiro e só depois recorta a janela: quem
 comprou pela primeira vez em 2024 e voltou agora conta como recorrente.
