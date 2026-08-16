@@ -1,4 +1,7 @@
-import type { Tables, Enums } from "./database";
+import type { Tables, Enums, Json } from "./database";
+
+/** Reexportado para as features não precisarem tocar em `database.ts` (que é gerado). */
+export type { Json };
 
 export type BookingStatus = Enums<"booking_status">;
 export type PaymentStatus = Enums<"payment_status">;
@@ -416,4 +419,120 @@ export type DailyFlow = {
   date: string;
   entries: DailyFlowHour[];
   exits: DailyFlowHour[];
+};
+
+// ─── Marketing (E3.1) ────────────────────────────────────────────────────────
+
+/** Coorte comportamental do contato. Derivada das reservas, nunca gravada. */
+export type MarketingCohort = Enums<"marketing_cohort">;
+/** Estágio de Growth (AARRR) do contato. */
+export type MarketingGrowthStage = Enums<"marketing_growth_stage">;
+export type MarketingChannel = Enums<"marketing_channel">;
+export type MarketingCampaignStatus = Enums<"marketing_campaign_status">;
+export type MarketingMessageStatus = Enums<"marketing_message_status">;
+
+export type MarketingContact = Tables<"marketing_contact">;
+export type MarketingPipeline = Tables<"marketing_pipeline">;
+export type MarketingPipelineStage = Tables<"marketing_pipeline_stage">;
+export type MarketingSegment = Tables<"marketing_segment">;
+export type MarketingCampaign = Tables<"marketing_campaign">;
+export type MarketingMessage = Tables<"marketing_message">;
+
+/** Uma linha do kanban/lista de leads (retorno de marketing_leads). */
+export type MarketingLeadRow = {
+  id: string;
+  pipeline_id: string;
+  stage_id: string;
+  stage_name: string;
+  contact_id: string;
+  contact_key: string;
+  display_name: string | null;
+  email: string | null;
+  phone: string | null;
+  location_id: string | null;
+  location_name: string | null;
+  title: string | null;
+  value_cents: number;
+  owner_id: string | null;
+  source: string;
+  tags: string[];
+  custom: Json;
+  sort_order: number;
+  stage_changed_at: string;
+  bookings_count: number;
+  total_spent: number;
+  avg_ticket: number;
+  days_since_last: number | null;
+  cohort: MarketingCohort | null;
+  growth_stage: MarketingGrowthStage | null;
+  subscription_candidate: boolean;
+  vehicle_model: string | null;
+  created_at: string;
+};
+
+/** Matriz de perfis por estacionamento (retorno de marketing_profile_matrix). */
+export type MarketingProfileMatrix = {
+  totals: {
+    contacts: number;
+    customers: number;
+    bookings: number;
+    revenue: number;
+    avg_ticket: number;
+    subscription_candidates: number;
+  };
+  by_cohort: Array<{
+    cohort: MarketingCohort;
+    contacts: number;
+    bookings: number;
+    revenue: number;
+    avg_ticket: number;
+    avg_days_since_last: number | null;
+    subscription_candidates: number;
+  }>;
+  by_growth_stage: Array<{
+    stage: MarketingGrowthStage;
+    contacts: number;
+    revenue: number;
+  }>;
+  by_location: Array<{
+    location_id: string;
+    location_name: string;
+    contacts: number;
+    revenue: number;
+    recurring: number;
+    subscription_candidates: number;
+  }>;
+};
+
+/** Funil de conversão (retorno de marketing_conversion_funnel). */
+export type MarketingFunnel = {
+  steps: Array<{ key: string; label: string; count: number }>;
+  losses: { expiradas: number; canceladas: number; no_show: number };
+  revenue: number;
+  exit_clicks: number;
+  new_vs_returning: { new: number; returning: number };
+};
+
+/** Contato que casou com um segmento (retorno de marketing_segment_contacts). */
+export type MarketingSegmentContact = {
+  contact_key: string;
+  display_name: string | null;
+  email: string | null;
+  phone: string | null;
+  bookings_count: number;
+  total_spent: number;
+  avg_ticket: number;
+  days_since_last: number | null;
+  cohort: MarketingCohort | null;
+  growth_stage: MarketingGrowthStage | null;
+  subscription_candidate: boolean;
+  vehicle_model: string | null;
+};
+
+/** Prévia do segmento antes de salvar (retorno de marketing_segment_preview). */
+export type MarketingSegmentPreview = {
+  total: number;
+  reachable_email: number;
+  reachable_whatsapp: number;
+  sample: Array<{ contact_key: string; doc: Record<string, unknown> }>;
 };

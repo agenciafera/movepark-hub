@@ -1,0 +1,96 @@
+{
+  "scenario_id": "manager-marketing-segmentos",
+  "start_url": "/manager/marketing/segmentos",
+  "task": "Passo 1: aguarde a pagina carregar. Passo 2: verifique que a pagina exibe o texto \"Segmentos\". Passo 3: verifique que a pagina exibe o texto \"Recorrentes do Confins\".",
+  "tags": [
+    "smoke",
+    "leitura",
+    "autenticado"
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.windup-nao-assinado\", \"token_type\": \"bearer\", \"expires_in\": 999999999, \"expires_at\": 4102444800, \"refresh_token\": \"windup-fake-refresh\", \"user\": {\"id\": \"00000000-0000-4000-8000-000000000001\", \"aud\": \"authenticated\", \"role\": \"authenticated\", \"email\": \"qa@windup.local\"}}"
+    }
+  },
+  "network": [
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.windup-nao-assinado",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "windup-fake-refresh",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "hub_admin"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/company_role_scope*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/marketing_segment*",
+      "json": [
+        {
+          "id": "seg-1",
+          "name": "Recorrentes do Confins",
+          "slug": "recorrentes-confins",
+          "description": "Quem ja voltou pelo menos uma vez",
+          "definition": {
+            "match": "all",
+            "rules": [
+              {
+                "field": "bookings_count",
+                "op": "gte",
+                "value": 2
+              }
+            ]
+          },
+          "location_ids": [],
+          "created_by": null,
+          "created_at": "2026-08-01T00:00:00Z",
+          "updated_at": "2026-08-01T00:00:00Z",
+          "deleted_at": null
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ],
+  "hints": [
+    "A lista mostra o nome do segmento e a regra dele escrita em portugues.",
+    "Sao passos numerados: execute cada um como uma acao propria do plano."
+  ]
+}

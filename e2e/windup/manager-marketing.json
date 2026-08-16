@@ -1,0 +1,112 @@
+{
+  "scenario_id": "manager-marketing",
+  "start_url": "/manager/marketing",
+  "task": "Passo 1: aguarde a pagina carregar. Passo 2: verifique que a pagina exibe o texto \"Marketing\". Passo 3: verifique que a pagina exibe o texto \"Perfis de cliente\". Passo 4: verifique que a pagina exibe o texto \"Campeao\".",
+  "tags": [
+    "smoke",
+    "leitura",
+    "autenticado"
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.windup-nao-assinado\", \"token_type\": \"bearer\", \"expires_in\": 999999999, \"expires_at\": 4102444800, \"refresh_token\": \"windup-fake-refresh\", \"user\": {\"id\": \"00000000-0000-4000-8000-000000000001\", \"aud\": \"authenticated\", \"role\": \"authenticated\", \"email\": \"qa@windup.local\"}}"
+    }
+  },
+  "network": [
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.windup-nao-assinado",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "windup-fake-refresh",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "hub_admin"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/company_role_scope*",
+      "json": []
+    },
+    {
+      "url": "**/rpc/marketing_profile_matrix*",
+      "json": {
+        "totals": {
+          "contacts": 8,
+          "customers": 8,
+          "bookings": 53,
+          "revenue": 1654,
+          "avg_ticket": 31.21,
+          "subscription_candidates": 3
+        },
+        "by_cohort": [
+          {
+            "cohort": "campeao",
+            "contacts": 2,
+            "bookings": 46,
+            "revenue": 1410.6,
+            "avg_ticket": 30.67,
+            "avg_days_since_last": 28,
+            "subscription_candidates": 2
+          }
+        ],
+        "by_growth_stage": [
+          {
+            "stage": "retencao",
+            "contacts": 3,
+            "revenue": 1410.6
+          }
+        ],
+        "by_location": [
+          {
+            "location_id": "loc-1",
+            "location_name": "Virapark",
+            "contacts": 5,
+            "revenue": 594.4,
+            "recurring": 1,
+            "subscription_candidates": 1
+          }
+        ]
+      }
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ],
+  "hints": [
+    "A tela abre na aba de perfis; a matriz lista uma linha por coorte de comportamento.",
+    "O rotulo da coorte aparece como Campeao, sem acento no plano de verificacao.",
+    "Sao passos numerados: execute cada um como uma acao propria do plano."
+  ]
+}

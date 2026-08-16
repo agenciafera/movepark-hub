@@ -436,6 +436,12 @@ verify_jwt = false
 [functions.reconcile-confirmations]
 verify_jwt = false
 
+# Descadastro de marketing pelo link do e-mail: quem clica está no cliente de e-mail, sem sessão.
+# Exigir login para sair de uma lista é dark pattern, então a função é pública e se protege pelo
+# token aleatório (unsubscribe_token), que nunca aceita e-mail cru.
+[functions.marketing-unsubscribe]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.

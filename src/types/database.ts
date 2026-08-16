@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       account_merge_log: {
@@ -796,6 +771,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "booking_coupon_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_booking_fact"
+            referencedColumns: ["booking_id"]
+          },
+          {
             foreignKeyName: "booking_coupon_coupon_id_fkey"
             columns: ["coupon_id"]
             isOneToOne: false
@@ -830,6 +812,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "booking"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_discount_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_booking_fact"
+            referencedColumns: ["booking_id"]
           },
           {
             foreignKeyName: "booking_discount_discount_rule_id_fkey"
@@ -878,6 +867,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "booking"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_fare_extension_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_booking_fact"
+            referencedColumns: ["booking_id"]
           },
         ]
       }
@@ -934,6 +930,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "booking_item_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_booking_fact"
+            referencedColumns: ["booking_id"]
+          },
+          {
             foreignKeyName: "booking_item_parking_type_id_fkey"
             columns: ["parking_type_id"]
             isOneToOne: false
@@ -984,6 +987,13 @@ export type Database = {
             referencedRelation: "booking"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "booking_modification_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_booking_fact"
+            referencedColumns: ["booking_id"]
+          },
         ]
       }
       checkout_handoff: {
@@ -1030,6 +1040,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "booking"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkout_handoff_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_booking_fact"
+            referencedColumns: ["booking_id"]
           },
           {
             foreignKeyName: "checkout_handoff_profile_id_fkey"
@@ -2661,6 +2678,586 @@ export type Database = {
           },
         ]
       }
+      marketing_campaign: {
+        Row: {
+          canvas: Json
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          finished_at: string | null
+          id: string
+          location_ids: string[]
+          name: string
+          scheduled_at: string | null
+          segment_id: string | null
+          send_cap: number
+          slug: string
+          started_at: string | null
+          stats: Json
+          status: Database["public"]["Enums"]["marketing_campaign_status"]
+          updated_at: string
+        }
+        Insert: {
+          canvas?: Json
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          finished_at?: string | null
+          id?: string
+          location_ids?: string[]
+          name: string
+          scheduled_at?: string | null
+          segment_id?: string | null
+          send_cap?: number
+          slug: string
+          started_at?: string | null
+          stats?: Json
+          status?: Database["public"]["Enums"]["marketing_campaign_status"]
+          updated_at?: string
+        }
+        Update: {
+          canvas?: Json
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          finished_at?: string | null
+          id?: string
+          location_ids?: string[]
+          name?: string
+          scheduled_at?: string | null
+          segment_id?: string | null
+          send_cap?: number
+          slug?: string
+          started_at?: string | null
+          stats?: Json
+          status?: Database["public"]["Enums"]["marketing_campaign_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_campaign_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_campaign_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_segment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_contact: {
+        Row: {
+          consent_at: string | null
+          consent_source: string | null
+          contact_key: string
+          created_at: string
+          custom: Json
+          deleted_at: string | null
+          display_name: string | null
+          email_consent: boolean
+          id: string
+          last_synced_at: string | null
+          marketing_email: string | null
+          marketing_phone: string | null
+          owner_id: string | null
+          profile_id: string | null
+          source: string
+          tags: string[]
+          unsubscribe_token: string
+          unsubscribed_at: string | null
+          updated_at: string
+          whatsapp_consent: boolean
+        }
+        Insert: {
+          consent_at?: string | null
+          consent_source?: string | null
+          contact_key: string
+          created_at?: string
+          custom?: Json
+          deleted_at?: string | null
+          display_name?: string | null
+          email_consent?: boolean
+          id?: string
+          last_synced_at?: string | null
+          marketing_email?: string | null
+          marketing_phone?: string | null
+          owner_id?: string | null
+          profile_id?: string | null
+          source?: string
+          tags?: string[]
+          unsubscribe_token?: string
+          unsubscribed_at?: string | null
+          updated_at?: string
+          whatsapp_consent?: boolean
+        }
+        Update: {
+          consent_at?: string | null
+          consent_source?: string | null
+          contact_key?: string
+          created_at?: string
+          custom?: Json
+          deleted_at?: string | null
+          display_name?: string | null
+          email_consent?: boolean
+          id?: string
+          last_synced_at?: string | null
+          marketing_email?: string | null
+          marketing_phone?: string | null
+          owner_id?: string | null
+          profile_id?: string | null
+          source?: string
+          tags?: string[]
+          unsubscribe_token?: string
+          unsubscribed_at?: string | null
+          updated_at?: string
+          whatsapp_consent?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_contact_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_contact_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_enrollment: {
+        Row: {
+          campaign_id: string
+          completed_at: string | null
+          contact_id: string
+          current_node_id: string | null
+          entered_at: string
+          id: string
+          meta: Json
+          status: Database["public"]["Enums"]["marketing_enrollment_status"]
+          wait_until: string | null
+        }
+        Insert: {
+          campaign_id: string
+          completed_at?: string | null
+          contact_id: string
+          current_node_id?: string | null
+          entered_at?: string
+          id?: string
+          meta?: Json
+          status?: Database["public"]["Enums"]["marketing_enrollment_status"]
+          wait_until?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          completed_at?: string | null
+          contact_id?: string
+          current_node_id?: string | null
+          entered_at?: string
+          id?: string
+          meta?: Json
+          status?: Database["public"]["Enums"]["marketing_enrollment_status"]
+          wait_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_enrollment_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaign"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_enrollment_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_contact"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_lead: {
+        Row: {
+          closed_at: string | null
+          contact_id: string
+          created_at: string
+          custom: Json
+          deleted_at: string | null
+          id: string
+          location_id: string | null
+          lost_reason: string | null
+          owner_id: string | null
+          pipeline_id: string
+          sort_order: number
+          source: string
+          stage_changed_at: string
+          stage_id: string
+          title: string | null
+          updated_at: string
+          value_cents: number
+        }
+        Insert: {
+          closed_at?: string | null
+          contact_id: string
+          created_at?: string
+          custom?: Json
+          deleted_at?: string | null
+          id?: string
+          location_id?: string | null
+          lost_reason?: string | null
+          owner_id?: string | null
+          pipeline_id: string
+          sort_order?: number
+          source?: string
+          stage_changed_at?: string
+          stage_id: string
+          title?: string | null
+          updated_at?: string
+          value_cents?: number
+        }
+        Update: {
+          closed_at?: string | null
+          contact_id?: string
+          created_at?: string
+          custom?: Json
+          deleted_at?: string | null
+          id?: string
+          location_id?: string | null
+          lost_reason?: string | null
+          owner_id?: string | null
+          pipeline_id?: string
+          sort_order?: number
+          source?: string
+          stage_changed_at?: string
+          stage_id?: string
+          title?: string | null
+          updated_at?: string
+          value_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_lead_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_contact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_lead_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_lead_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_point_proximity"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "marketing_lead_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_proximity"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "marketing_lead_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_lead_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_pipeline"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_lead_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_pipeline_stage"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_lead_activity: {
+        Row: {
+          actor_id: string | null
+          body: string | null
+          created_at: string
+          id: string
+          kind: string
+          lead_id: string
+          meta: Json
+        }
+        Insert: {
+          actor_id?: string | null
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          lead_id: string
+          meta?: Json
+        }
+        Update: {
+          actor_id?: string | null
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          lead_id?: string
+          meta?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_lead_activity_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_lead_activity_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_lead"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_message: {
+        Row: {
+          body: string | null
+          campaign_id: string | null
+          channel: Database["public"]["Enums"]["marketing_channel"]
+          contact_id: string
+          created_at: string
+          enrollment_id: string | null
+          error: string | null
+          id: string
+          node_id: string | null
+          sent_at: string | null
+          status: Database["public"]["Enums"]["marketing_message_status"]
+          subject: string | null
+          template_name: string | null
+          to_address: string | null
+        }
+        Insert: {
+          body?: string | null
+          campaign_id?: string | null
+          channel: Database["public"]["Enums"]["marketing_channel"]
+          contact_id: string
+          created_at?: string
+          enrollment_id?: string | null
+          error?: string | null
+          id?: string
+          node_id?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["marketing_message_status"]
+          subject?: string | null
+          template_name?: string | null
+          to_address?: string | null
+        }
+        Update: {
+          body?: string | null
+          campaign_id?: string | null
+          channel?: Database["public"]["Enums"]["marketing_channel"]
+          contact_id?: string
+          created_at?: string
+          enrollment_id?: string | null
+          error?: string | null
+          id?: string
+          node_id?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["marketing_message_status"]
+          subject?: string | null
+          template_name?: string | null
+          to_address?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_message_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaign"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_message_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_contact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_message_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_enrollment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_pipeline: {
+        Row: {
+          column_prefs: Json
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          column_prefs?: Json
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          column_prefs?: Json
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      marketing_pipeline_stage: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          is_lost: boolean
+          is_won: boolean
+          name: string
+          pipeline_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          is_lost?: boolean
+          is_won?: boolean
+          name: string
+          pipeline_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          is_lost?: boolean
+          is_won?: boolean
+          name?: string
+          pipeline_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_pipeline_stage_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_pipeline"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_segment: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          definition: Json
+          deleted_at: string | null
+          description: string | null
+          id: string
+          location_ids: string[]
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          definition?: Json
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          location_ids?: string[]
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          definition?: Json
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          location_ids?: string[]
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_segment_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_suppression: {
+        Row: {
+          channel: Database["public"]["Enums"]["marketing_channel"]
+          contact_key: string
+          created_at: string
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          channel: Database["public"]["Enums"]["marketing_channel"]
+          contact_key: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["marketing_channel"]
+          contact_key?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       membership: {
         Row: {
           completed_bookings: number
@@ -2936,6 +3533,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "booking"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_booking_fact"
+            referencedColumns: ["booking_id"]
           },
         ]
       }
@@ -3698,6 +4302,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "referral_qualifying_booking_id_fkey"
+            columns: ["qualifying_booking_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_booking_fact"
+            referencedColumns: ["booking_id"]
+          },
+          {
             foreignKeyName: "referral_referred_coupon_id_fkey"
             columns: ["referred_coupon_id"]
             isOneToOne: false
@@ -3820,6 +4431,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "review_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "marketing_booking_fact"
+            referencedColumns: ["booking_id"]
+          },
+          {
             foreignKeyName: "review_location_id_fkey"
             columns: ["location_id"]
             isOneToOne: false
@@ -3878,6 +4496,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "booking"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "terms_acceptance_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "marketing_booking_fact"
+            referencedColumns: ["booking_id"]
           },
           {
             foreignKeyName: "terms_acceptance_document_version_id_fkey"
@@ -3976,6 +4601,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "booking"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_ledger_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_booking_fact"
+            referencedColumns: ["booking_id"]
           },
           {
             foreignKeyName: "wallet_ledger_profile_id_fkey"
@@ -4208,6 +4840,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "wps_event_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_booking_fact"
+            referencedColumns: ["booking_id"]
+          },
+          {
             foreignKeyName: "wps_event_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
@@ -4276,6 +4915,69 @@ export type Database = {
             columns: ["destination_id"]
             isOneToOne: false
             referencedRelation: "destination"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_booking_fact: {
+        Row: {
+          booking_id: string | null
+          check_in_at: string | null
+          check_out_at: string | null
+          company_id: string | null
+          contact_key: string | null
+          created_at: string | null
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          fare_tier: Database["public"]["Enums"]["fare_tier"] | null
+          is_purchase: boolean | null
+          is_vacation_window: boolean | null
+          location_id: string | null
+          origin: string | null
+          profile_id: string | null
+          status: Database["public"]["Enums"]["booking_status"] | null
+          total_amount: number | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          vehicle_color: string | null
+          vehicle_model: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_point_proximity"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "booking_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_proximity"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "booking_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
             referencedColumns: ["id"]
           },
         ]
@@ -5128,6 +5830,154 @@ export type Database = {
           updated_at: string
         }[]
       }
+      marketing_contact_doc: {
+        Args: { p_location_ids?: string[] }
+        Returns: {
+          contact_key: string
+          doc: Json
+        }[]
+      }
+      marketing_contact_key: {
+        Args: { p_email: string; p_phone: string; p_profile_id: string }
+        Returns: string
+      }
+      marketing_contact_metrics: {
+        Args: { p_from?: string; p_location_ids?: string[]; p_to?: string }
+        Returns: {
+          avg_gap_days: number
+          avg_ticket: number
+          bookings_count: number
+          cancelled_count: number
+          cohort: Database["public"]["Enums"]["marketing_cohort"]
+          contact_key: string
+          days_since_first: number
+          days_since_last: number
+          display_name: string
+          distinct_locations: number
+          email: string
+          first_booking_at: string
+          growth_stage: Database["public"]["Enums"]["marketing_growth_stage"]
+          last_booking_at: string
+          last_location_id: string
+          phone: string
+          profile_id: string
+          subscription_candidate: boolean
+          total_spent: number
+          vacation_bookings: number
+          vacation_share: number
+          vehicle_color: string
+          vehicle_model: string
+        }[]
+      }
+      marketing_conversion_funnel: {
+        Args: { p_from: string; p_location_ids?: string[]; p_to: string }
+        Returns: Json
+      }
+      marketing_due_enrollments: {
+        Args: { p_campaign_id: string; p_limit?: number }
+        Returns: {
+          contact_id: string
+          contact_key: string
+          current_node_id: string
+          display_name: string
+          doc: Json
+          email: string
+          email_consent: boolean
+          email_suppressed: boolean
+          enrollment_id: string
+          phone: string
+          status: Database["public"]["Enums"]["marketing_enrollment_status"]
+          whatsapp_consent: boolean
+          whatsapp_suppressed: boolean
+        }[]
+      }
+      marketing_enroll_campaign: {
+        Args: { p_campaign_id: string }
+        Returns: Json
+      }
+      marketing_eval_definition: {
+        Args: { p_def: Json; p_doc: Json }
+        Returns: boolean
+      }
+      marketing_eval_rule: {
+        Args: { p_doc: Json; p_rule: Json }
+        Returns: boolean
+      }
+      marketing_leads: {
+        Args: {
+          p_location_ids?: string[]
+          p_pipeline_id?: string
+          p_search?: string
+        }
+        Returns: {
+          avg_ticket: number
+          bookings_count: number
+          cohort: string
+          contact_id: string
+          contact_key: string
+          created_at: string
+          custom: Json
+          days_since_last: number
+          display_name: string
+          email: string
+          growth_stage: string
+          id: string
+          location_id: string
+          location_name: string
+          owner_id: string
+          phone: string
+          pipeline_id: string
+          sort_order: number
+          source: string
+          stage_changed_at: string
+          stage_id: string
+          stage_name: string
+          subscription_candidate: boolean
+          tags: string[]
+          title: string
+          total_spent: number
+          value_cents: number
+          vehicle_model: string
+        }[]
+      }
+      marketing_move_lead: {
+        Args: { p_lead_id: string; p_sort_order?: number; p_stage_id: string }
+        Returns: undefined
+      }
+      marketing_profile_matrix: {
+        Args: { p_location_ids?: string[] }
+        Returns: Json
+      }
+      marketing_segment_contacts: {
+        Args: {
+          p_definition: Json
+          p_limit?: number
+          p_location_ids?: string[]
+        }
+        Returns: {
+          avg_ticket: number
+          bookings_count: number
+          cohort: string
+          contact_key: string
+          days_since_last: number
+          display_name: string
+          email: string
+          growth_stage: string
+          phone: string
+          subscription_candidate: boolean
+          total_spent: number
+          vehicle_model: string
+        }[]
+      }
+      marketing_segment_preview: {
+        Args: {
+          p_definition: Json
+          p_limit?: number
+          p_location_ids?: string[]
+        }
+        Returns: Json
+      }
+      marketing_sync_contacts: { Args: never; Returns: Json }
       match_knowledge: {
         Args: {
           p_destination_id?: string
@@ -5617,6 +6467,39 @@ export type Database = {
       entity_status: "active" | "inactive" | "suspended"
       faq_scope: "global" | "location" | "destination"
       fare_tier: "basica" | "flex" | "superflex"
+      marketing_campaign_status:
+        | "draft"
+        | "scheduled"
+        | "running"
+        | "paused"
+        | "done"
+        | "archived"
+      marketing_channel: "email" | "whatsapp"
+      marketing_cohort:
+        | "lead"
+        | "primeira_compra"
+        | "recorrente"
+        | "campeao"
+        | "sazonal_ferias"
+        | "em_risco"
+        | "inativo"
+      marketing_enrollment_status:
+        | "active"
+        | "waiting"
+        | "completed"
+        | "exited"
+        | "failed"
+      marketing_growth_stage:
+        | "aquisicao"
+        | "ativacao"
+        | "retencao"
+        | "reativacao"
+      marketing_message_status:
+        | "queued"
+        | "sent"
+        | "failed"
+        | "skipped"
+        | "suppressed"
       minimum_stay_unit: "minutes" | "hours" | "days" | "months"
       onboarding_status:
         | "pending_review"
@@ -5770,9 +6653,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       booking_item_type: ["parking", "add_on"],
@@ -5797,6 +6677,44 @@ export const Constants = {
       entity_status: ["active", "inactive", "suspended"],
       faq_scope: ["global", "location", "destination"],
       fare_tier: ["basica", "flex", "superflex"],
+      marketing_campaign_status: [
+        "draft",
+        "scheduled",
+        "running",
+        "paused",
+        "done",
+        "archived",
+      ],
+      marketing_channel: ["email", "whatsapp"],
+      marketing_cohort: [
+        "lead",
+        "primeira_compra",
+        "recorrente",
+        "campeao",
+        "sazonal_ferias",
+        "em_risco",
+        "inativo",
+      ],
+      marketing_enrollment_status: [
+        "active",
+        "waiting",
+        "completed",
+        "exited",
+        "failed",
+      ],
+      marketing_growth_stage: [
+        "aquisicao",
+        "ativacao",
+        "retencao",
+        "reativacao",
+      ],
+      marketing_message_status: [
+        "queued",
+        "sent",
+        "failed",
+        "skipped",
+        "suppressed",
+      ],
       minimum_stay_unit: ["minutes", "hours", "days", "months"],
       onboarding_status: [
         "pending_review",

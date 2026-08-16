@@ -49,6 +49,8 @@ export const SITEMAP_OPT_OUT: Record<string, string> = {
   "/uber-ou-estacionamento-aeroporto":
     "redireciona para a calculadora; o comparador de app foi centralizado nela (15/08/2026)",
   "/auth/callback": "retorno de autenticação",
+  "/descadastro":
+    "ação de saída da lista de marketing, aberta pelo link do e-mail; sem conteúdo e sem valor de busca",
   "*": "catch-all do React Router, não é URL",
 };
 

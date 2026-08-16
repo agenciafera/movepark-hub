@@ -99,6 +99,12 @@ import ManagerBlog from "@/routes/manager/blog";
 import ManagerApiInterna from "@/routes/manager/api-interna";
 import ManagerReviews from "@/routes/manager/reviews";
 import ManagerAttribution from "@/routes/manager/attribution";
+import DescadastroPage from "@/routes/descadastro";
+import ManagerMarketing from "@/routes/manager/marketing";
+import ManagerMarketingLeads from "@/routes/manager/marketing-leads";
+import ManagerMarketingSegments from "@/routes/manager/marketing-segments";
+import ManagerMarketingCampaigns from "@/routes/manager/marketing-campaigns";
+import ManagerMarketingCampaign from "@/routes/manager/marketing-campaign";
 
 import OperatorLayout from "@/routes/operator/layout";
 import OperatorDashboard from "@/routes/operator/dashboard";
@@ -670,6 +676,8 @@ export const routes: RouteRecord[] = [
           { path: "/contato", element: <ContatoPage /> },
           { path: "/ajuda", element: <AjudaPage /> },
           { path: "/cancelamento", element: <CancelamentoPage /> },
+          // Descadastro de marketing pelo link do e-mail. Público e sem login de propósito.
+          { path: "/descadastro", element: <DescadastroPage /> },
           { path: "/como-funciona", element: <ComoFuncionaPage /> },
           { path: "/metodologia", element: <MetodologiaPage /> },
           { path: "/docs", element: <DocsPage /> },
@@ -871,6 +879,11 @@ export const routes: RouteRecord[] = [
               { path: "finance/payouts", element: <ManagerFinancePayouts /> },
               { path: "finance/recipients", element: <ManagerFinanceRecipients /> },
               { path: "attribution", element: <ManagerAttribution /> },
+              { path: "marketing", element: <ManagerMarketing /> },
+              { path: "marketing/leads", element: <ManagerMarketingLeads /> },
+              { path: "marketing/segmentos", element: <ManagerMarketingSegments /> },
+              { path: "marketing/campanhas", element: <ManagerMarketingCampaigns /> },
+              { path: "marketing/campanhas/:id", element: <ManagerMarketingCampaign /> },
               { path: "reviews", element: <ManagerReviews /> },
               { path: "faq", element: <ManagerFaq /> },
               { path: "faq/categorias", element: <ManagerFaqCategorias /> },

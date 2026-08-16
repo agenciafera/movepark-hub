@@ -1,0 +1,71 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "manager-marketing-leads",
+    "start_url": "/manager/marketing/leads",
+    "start_sig": "sig:094b0fa362695676",
+    "scenario_sig": "326ca8d7ebc84805"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "manager-marketing-leads",
+    "start_url": "http://localhost:5399/manager/marketing/leads",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "Wait for the page heading to load"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "Verify page displays Leads heading"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "h3",
+          "description": "Verify Descoberta section heading"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "wait_for",
+        "target": {
+          "selector": "article",
+          "description": "Verify Maria Silva text in the Descoberta section"
+        },
+        "timeout_ms": 5000,
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Maria Silva"
+          }
+        }
+      }
+    ],
+    "task": "Passo 1: aguarde a pagina carregar. Passo 2: verifique que a pagina exibe o texto \"Leads\". Passo 3: verifique que a pagina exibe o texto \"Descoberta\". Passo 4: verifique que a pagina exibe o texto \"Maria Silva\".",
+    "generated_by": {
+      "model": "google/gemini-3.1-flash-lite",
+      "at": "2026-08-16T19:36:55.305Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-16T19:36:58.073Z",
+    "last_replayed_at": "2026-08-16T19:38:12.724Z",
+    "replay_count": 1,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

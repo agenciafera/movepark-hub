@@ -1,0 +1,80 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "manager-marketing",
+    "start_url": "/manager/marketing",
+    "start_sig": "sig:04506123c4a2295d",
+    "scenario_sig": "d8918bf041f48691"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "manager-marketing",
+    "start_url": "http://localhost:5399/manager/marketing",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "Wait for page heading to load"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "Verify Marketing heading"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "[id='radix-:r8:-trigger-perfis']",
+          "description": "Verify Perfis de cliente tab"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "wait_for",
+        "target": {
+          "selector": "table",
+          "description": "Verify Campeao text in table"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a5",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Final verification of all elements"
+        },
+        "timeout_ms": 5000,
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Perfis de cliente"
+          }
+        }
+      }
+    ],
+    "task": "Passo 1: aguarde a pagina carregar. Passo 2: verifique que a pagina exibe o texto \"Marketing\". Passo 3: verifique que a pagina exibe o texto \"Perfis de cliente\". Passo 4: verifique que a pagina exibe o texto \"Campeao\".",
+    "generated_by": {
+      "model": "google/gemini-3.1-flash-lite",
+      "at": "2026-08-16T19:36:44.667Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-16T19:36:47.545Z",
+    "last_replayed_at": "2026-08-16T19:38:00.759Z",
+    "replay_count": 1,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

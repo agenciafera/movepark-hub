@@ -1,0 +1,12 @@
+{
+  "scenario_id": "descadastro",
+  "start_url": "/descadastro?t=00000000-0000-4000-8000-000000000abc",
+  "task": "Passo 1: aguarde a pagina carregar. Passo 2: verifique que a pagina exibe o texto \"Quer parar de receber nossos e-mails\". Passo 3: verifique que a pagina exibe um botao com o texto \"Sim, quero sair\".",
+  "tags": ["smoke", "leitura"],
+  "hints": [
+    "E a pagina de saida da lista de marketing, aberta pelo link do rodape do e-mail.",
+    "E publica: nao pede login, porque exigir senha para sair de uma lista vira denuncia de spam.",
+    "O token vem na query string ?t=; sem ele o botao fica desabilitado.",
+    "Sao passos numerados: execute cada um como uma acao propria do plano."
+  ]
+}

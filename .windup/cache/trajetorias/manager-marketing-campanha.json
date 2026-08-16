@@ -1,0 +1,80 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "manager-marketing-campanha",
+    "start_url": "/manager/marketing/campanhas/camp-1",
+    "start_sig": "sig:e7b18f3be7104006",
+    "scenario_sig": "19be7009c3fbaf2f"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "manager-marketing-campanha",
+    "start_url": "http://localhost:5399/manager/marketing/campanhas/camp-1",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "Wait for page heading"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "Verify Reativacao de quem sumiu"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "button[id*='trigger-fluxo']",
+          "description": "Verify Fluxo tab"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "wait_for",
+        "target": {
+          "selector": "h3",
+          "description": "Verify Passos heading"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a5",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "Final verification of all elements"
+        },
+        "timeout_ms": 5000,
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Reativacao de quem sumiu"
+          }
+        }
+      }
+    ],
+    "task": "Passo 1: aguarde a pagina carregar. Passo 2: verifique que a pagina exibe o texto \"Reativacao de quem sumiu\". Passo 3: verifique que a pagina exibe o texto \"Fluxo\". Passo 4: verifique que a pagina exibe o texto \"Passos\".",
+    "generated_by": {
+      "model": "google/gemini-3.1-flash-lite",
+      "at": "2026-08-16T19:37:35.965Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-08-16T19:37:39.037Z",
+    "last_replayed_at": "2026-08-16T19:38:48.019Z",
+    "replay_count": 1,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}
