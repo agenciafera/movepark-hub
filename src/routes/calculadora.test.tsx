@@ -194,8 +194,22 @@ describe("CalculadoraPage", () => {
     );
   });
 
-  it("compara com app na mesma página: veredito e break-even pré-renderizados", async () => {
+  it("abre no modo estacionamento: a pergunta aparece e a conta de app fica guardada", async () => {
     setup();
+    expect(await screen.findByText("O que você quer calcular?")).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Preço do estacionamento/ })).toBeChecked();
+    // Sem o modo app, nem os campos nem a seção de comparação existem.
+    expect(screen.queryByLabelText("Distância em km")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "De app ou de carro?" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("table")).toBeInTheDocument();
+  });
+
+  it("escolher o modo app habilita a calculadora específica e esconde o ranking", async () => {
+    setup();
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("radio", { name: /Estacionar ou ir de app/ }));
     // App a 25 km sem dinâmica: 2 corridas de 61,25 = 122,50; estacionar 7 diárias = 111,30.
     const secao = (
       await screen.findByRole("heading", { name: "De app ou de carro?" })
@@ -206,11 +220,14 @@ describe("CalculadoraPage", () => {
       formatBRL(11.2),
     );
     expect(secao.textContent).toContain("estacionar sai mais barato a partir de 1 diária");
+    expect(screen.getByLabelText("Distância em km")).toBeInTheDocument();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });
 
   it("a corrida manual sobrepõe a estimativa e pode virar o jogo", async () => {
     setup();
     const user = userEvent.setup();
+    await user.click(await screen.findByRole("radio", { name: /Estacionar ou ir de app/ }));
     const campo = await screen.findByLabelText("Valor da corrida de ida");
     await user.type(campo, "40");
     // 2 × 40 = 80 < 111,30: o app vence e a página diz isso na cara.

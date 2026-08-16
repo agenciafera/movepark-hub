@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Link, useLoaderData } from "react-router-dom";
+import { Link, useLoaderData, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -69,10 +69,17 @@ const celulaBase = "tablet:table-cell tablet:border-b tablet:border-hairline tab
  */
 export default function CalculadoraPage() {
   const loaded = useLoaderData() as CalculadoraData | null;
+  const [searchParams] = useSearchParams();
 
   const destinations = loaded?.data.destinations ?? [];
   const catalogo = loaded?.catalogo ?? [];
   const standardDays = loaded?.data.days ?? [1, 7, 15, 30];
+
+  // O cliente escolhe O QUE comparar: preço de estacionamento (default) ou a
+  // conta contra app de transporte. A URL antiga do comparador chega ?modo=app.
+  const [modo, setModo] = React.useState<"estacionamento" | "app">(
+    searchParams.get("modo") === "app" ? "app" : "estacionamento",
+  );
 
   const [slug, setSlug] = React.useState(catalogo[0]?.slug ?? destinations[0]?.slug ?? "");
   const [daysInput, setDaysInput] = React.useState("7");
@@ -245,6 +252,56 @@ export default function CalculadoraPage() {
           </p>
         </PageHeader>
 
+        {/* A pergunta que separa as duas calculadoras: cada modo tem seus campos
+            e seu resultado, sem misturar as contas. */}
+        <fieldset className="mt-8">
+          <legend className="text-title-md text-ink">O que você quer calcular?</legend>
+          <div className="mt-3 grid gap-3 tablet:max-w-[720px] tablet:grid-cols-2">
+            <label
+              className={cn(
+                "cursor-pointer rounded-lg border p-4 transition",
+                modo === "estacionamento"
+                  ? "border-mp-primary bg-mp-pale/60"
+                  : "border-hairline hover:border-mp-primary",
+              )}
+            >
+              <input
+                type="radio"
+                name="modo"
+                value="estacionamento"
+                checked={modo === "estacionamento"}
+                onChange={() => setModo("estacionamento")}
+                className="sr-only"
+              />
+              <span className="block text-title-sm text-ink">Preço do estacionamento</span>
+              <span className="mt-1 block text-caption-sm text-muted">
+                O ranking das vagas perto do aeroporto, por diárias.
+              </span>
+            </label>
+            <label
+              className={cn(
+                "cursor-pointer rounded-lg border p-4 transition",
+                modo === "app"
+                  ? "border-mp-primary bg-mp-pale/60"
+                  : "border-hairline hover:border-mp-primary",
+              )}
+            >
+              <input
+                type="radio"
+                name="modo"
+                value="app"
+                checked={modo === "app"}
+                onChange={() => setModo("app")}
+                className="sr-only"
+              />
+              <span className="block text-title-sm text-ink">Estacionar ou ir de app?</span>
+              <span className="mt-1 block text-caption-sm text-muted">
+                O carro estacionado contra ida e volta de Uber ou 99.
+              </span>
+            </label>
+          </div>
+        </fieldset>
+
         {/* Sidebar de filtros fixa no desktop: o resultado fica ao lado, sem scroll
             até a tabela. No mobile a mesma coluna empilha em cima da lista. */}
         <div className="mt-8 grid items-start gap-8 desktop:grid-cols-[300px_minmax(0,1fr)]">
@@ -324,6 +381,8 @@ export default function CalculadoraPage() {
                   </div>
                 </div>
 
+                {modo === "app" && (
+                  <>
                 <div className="flex min-w-0 flex-col gap-1.5 border-t border-hairline pt-4">
                   <span className="text-caption-sm font-medium text-muted" id="rotulo-km">
                     Distância até o aeroporto (km)
@@ -350,9 +409,6 @@ export default function CalculadoraPage() {
                       className="h-12 w-20 shrink-0 rounded-sm border border-hairline bg-canvas px-3 text-center text-body-md tabular-nums text-ink focus:border-mp-primary focus:outline-none"
                     />
                   </div>
-                  <p className="text-caption-sm text-muted">
-                    Usada só na comparação com app de transporte, no fim da página.
-                  </p>
                 </div>
 
                 <label className="flex min-w-0 flex-col gap-1.5">
@@ -394,6 +450,8 @@ export default function CalculadoraPage() {
                   />
                   Somar combustível no lado do carro
                 </label>
+                  </>
+                )}
 
                 <div className="border-t border-hairline pt-4" aria-live="polite">
                   <span className="text-caption-sm font-medium text-muted">Resultado</span>
@@ -416,7 +474,7 @@ export default function CalculadoraPage() {
           </aside>
 
           <div className="min-w-0">
-        {result && destinoMeta && (
+        {modo === "estacionamento" && result && destinoMeta && (
           <section aria-live="polite">
             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
               <h2 className="text-display-sm text-ink">
@@ -675,8 +733,18 @@ export default function CalculadoraPage() {
           </section>
         )}
 
-        {comparacao && comparacao.estacionarTotal != null && (
-          <section id="de-app-ou-de-carro" className="mt-12 scroll-mt-24" aria-live="polite">
+        {modo === "app" && (!comparacao || comparacao.estacionarTotal == null) && (
+          <section aria-live="polite">
+            <h2 className="text-display-sm text-ink">De app ou de carro?</h2>
+            <p className="mt-3 text-body-md text-body">
+              Ainda não há parceiro com reserva online em {nome} para fazer essa conta. Escolha
+              outro destino na lateral.
+            </p>
+          </section>
+        )}
+
+        {modo === "app" && comparacao && comparacao.estacionarTotal != null && (
+          <section id="de-app-ou-de-carro" className="scroll-mt-24" aria-live="polite">
             <h2 className="text-display-sm text-ink">De app ou de carro?</h2>
             <p className="mt-2 text-body-sm text-muted">
               Duas corridas de ida e volta a {comparacao.km} km contra{" "}

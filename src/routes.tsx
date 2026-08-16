@@ -763,7 +763,7 @@ export const routes: RouteRecord[] = [
             // O comparador de app foi centralizado na calculadora (15/08/2026);
             // a URL antiga chegou a ir ao ar e redireciona para não virar 404.
             path: "/uber-ou-estacionamento-aeroporto",
-            element: <Navigate to="/calculadora-estacionamento-aeroporto" replace />,
+            element: <Navigate to="/calculadora-estacionamento-aeroporto?modo=app" replace />,
           },
           {
             path: "/precos/:slug",
