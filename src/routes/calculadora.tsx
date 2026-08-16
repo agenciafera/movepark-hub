@@ -755,9 +755,9 @@ export default function CalculadoraPage() {
             <div className="mt-4 grid gap-4 tablet:grid-cols-2">
               <div
                 className={cn(
-                  "rounded-lg border p-5",
+                  "border-y px-1 py-5",
                   !estacionarVence && comparacao.economia != null
-                    ? "border-mp-primary bg-mp-pale/60"
+                    ? "border-mp-primary bg-mp-pale/60 px-5"
                     : "border-hairline",
                 )}
               >
@@ -778,8 +778,8 @@ export default function CalculadoraPage() {
 
               <div
                 className={cn(
-                  "rounded-lg border p-5",
-                  estacionarVence ? "border-mp-primary bg-mp-pale/60" : "border-hairline",
+                  "border-y px-1 py-5",
+                  estacionarVence ? "border-mp-primary bg-mp-pale/60 px-5" : "border-hairline",
                 )}
               >
                 <h3 className="text-title-md text-ink">De carro, estacionando</h3>
