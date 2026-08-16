@@ -224,6 +224,21 @@ describe("CalculadoraPage", () => {
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });
 
+  it("quando estacionar vence, o veredito recomenda o parceiro com as datas da conta", async () => {
+    setup();
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("radio", { name: /Estacionar ou ir de app/ }));
+    // Estacionar vence (111,30 contra 122,50): o CTA já leva a duração calculada.
+    const cta = await screen.findByRole("link", { name: /Reservar por .* no Aerovalet/ });
+    const href = cta.getAttribute("href")!;
+    expect(href).toContain("/p/aerovalet/aeroporto-guarulhos/uncovered?");
+    expect(href).toContain("from=");
+    expect(href).toContain("to=");
+    expect(
+      screen.getByText(/7 diárias com entrada amanhã às 22h/),
+    ).toBeInTheDocument();
+  });
+
   it("a corrida manual sobrepõe a estimativa e pode virar o jogo", async () => {
     setup();
     const user = userEvent.setup();

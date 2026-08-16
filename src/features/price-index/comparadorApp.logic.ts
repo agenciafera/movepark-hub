@@ -8,7 +8,7 @@
  * dinâmica e de valor manual para o usuário aproximar da realidade dele.
  */
 
-import { carUnits, priceFor, type PriceDestination } from "./priceIndex.logic";
+import { carUnits, priceFor, type PriceDestination, type PriceUnit } from "./priceIndex.logic";
 
 /** Tarifa de referência de app (categoria básica). Fonte e data saem na página. */
 export type TarifaApp = {
@@ -77,6 +77,8 @@ export type Comparacao = {
   /** Menor total de estacionamento do destino para a duração. */
   estacionarTotal: number | null;
   estacionarLabel: string | null;
+  /** A vaga que pratica o menor total, para o CTA de reserva do veredito. */
+  melhorUnidade: PriceUnit | null;
   combustivel: number | null;
   /** app menos (estacionar + combustível). Positivo = estacionar economiza. */
   economia: number | null;
@@ -93,11 +95,11 @@ export function comparar(
   const corrida = manual ? (opts.tarifaManualIda as number) : estimativaCorrida(km, surge);
   const appTotal = corrida * 2;
 
-  let melhor: { total: number; label: string } | null = null;
+  let melhor: { total: number; label: string; unidade: PriceUnit } | null = null;
   for (const u of carUnits(dest.units)) {
     const total = priceFor(u, days)?.total ?? null;
     if (total != null && (melhor === null || total < melhor.total)) {
-      melhor = { total, label: `${u.company_name} (${u.parking_type_name})` };
+      melhor = { total, label: `${u.company_name} (${u.parking_type_name})`, unidade: u };
     }
   }
 
@@ -112,9 +114,26 @@ export function comparar(
     appManual: manual,
     estacionarTotal: melhor?.total ?? null,
     estacionarLabel: melhor?.label ?? null,
+    melhorUnidade: melhor?.unidade ?? null,
     combustivel,
     economia: custoEstacionar != null ? appTotal - custoEstacionar : null,
   };
+}
+
+/**
+ * Janela de reserva que fecha exatamente N diárias no motor: entrada no dia
+ * seguinte às 22h, saída N dias depois às 08h (o mesmo padrão do widget de
+ * busca; a tolerância de 60 min mantém a conta em N diárias). Alimenta o CTA
+ * do veredito, e as datas seguem ajustáveis na página da vaga.
+ */
+export function reservaWindow(base: Date, days: number): { from: string; to: string } {
+  const from = new Date(base);
+  from.setDate(from.getDate() + 1);
+  from.setHours(22, 0, 0, 0);
+  const to = new Date(from);
+  to.setDate(to.getDate() + days);
+  to.setHours(8, 0, 0, 0);
+  return { from: from.toISOString(), to: to.toISOString() };
 }
 
 /**

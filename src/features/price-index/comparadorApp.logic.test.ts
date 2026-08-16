@@ -6,6 +6,7 @@ import {
   custoCombustivel,
   estimativaCorrida,
   minutosEstimados,
+  reservaWindow,
   sanitizeKm,
   TARIFA_APP_PADRAO,
 } from "./comparadorApp.logic";
@@ -106,6 +107,31 @@ describe("breakEvenDays", () => {
       units: [unit({ prices: [1, 7].map((d) => ({ days: d, total: d * 500, old_total: null })) })],
     };
     expect(breakEvenDays(caro, 10, 1, [1, 7])).toBeNull();
+  });
+});
+
+describe("comparar: quem venceu vira recomendação", () => {
+  it("expõe a unidade do menor total para o CTA de reserva", () => {
+    const c = comparar(DEST, 7, 20, 1);
+    expect(c.melhorUnidade?.company_slug).toBe("parceiro");
+    expect(c.melhorUnidade?.parking_type_code).toBe("uncovered");
+  });
+});
+
+describe("reservaWindow", () => {
+  it("entrada amanhã às 22h e saída N dias depois às 08h", () => {
+    const base = new Date("2026-08-16T15:00:00");
+    const { from, to } = reservaWindow(base, 7);
+    const f = new Date(from);
+    const t = new Date(to);
+    expect(f.getDate()).toBe(17);
+    expect(f.getHours()).toBe(22);
+    expect(t.getDate()).toBe(24);
+    expect(t.getHours()).toBe(8);
+    // 22h → 08h com tolerância de 60 min fecha exatamente N diárias no motor:
+    // minutos = N*1440 - 840; menos 60 de tolerância ainda arredonda pra N.
+    const minutos = (t.getTime() - f.getTime()) / 60000;
+    expect(Math.ceil((minutos - 60) / 1440)).toBe(7);
   });
 });
 

@@ -24,6 +24,7 @@ import {
   TARIFA_APP_PADRAO,
   breakEvenDays,
   comparar,
+  reservaWindow,
   sanitizeKm,
 } from "@/features/price-index/comparadorApp.logic";
 import {
@@ -797,6 +798,25 @@ export default function CalculadoraPage() {
                 )}
               </div>
             </div>
+
+            {estacionarVence && comparacao.melhorUnidade && comparacao.estacionarTotal != null && (
+              <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+                <Button asChild>
+                  <Link
+                    to={`${listingPath(comparacao.melhorUnidade)}?${new URLSearchParams(
+                      reservaWindow(new Date(), comparacao.days),
+                    ).toString()}`}
+                  >
+                    Reservar por {formatBRL(comparacao.estacionarTotal)} no{" "}
+                    {comparacao.melhorUnidade.company_name}
+                  </Link>
+                </Button>
+                <span className="text-caption-sm text-muted">
+                  {comparacao.melhorUnidade.parking_type_name}, {durationLabel(comparacao.days)}{" "}
+                  com entrada amanhã às 22h. Dá para ajustar as datas na página da vaga.
+                </span>
+              </div>
+            )}
 
             {comparacao.economia != null && (
               <p className="mt-5 text-body-md text-body">
