@@ -1,14 +1,135 @@
-import { NavLink, useNavigate } from "react-router-dom";
-import { Buildings, ShieldWarning } from "@phosphor-icons/react";
+import * as React from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Buildings, CaretRight, ShieldWarning } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/context";
 import { usePendingPartnerCount } from "@/features/onboarding/managerApi";
 import { filterSectionsByScopes } from "./Sidebar.logic";
-import { managerSections, operatorSections } from "./nav-items";
+import { managerSections, operatorSections, type Item } from "./nav-items";
+import { secaoAtiva } from "./menuAtivo";
 import { Monogram, Wordmark } from "./Brand";
 import { useCompany } from "@/features/companies/api";
 import { useNetworkSize } from "@/features/locations/api";
 import { CompanySwitcher } from "./CompanySwitcher";
+
+/** Uma linha de menu que é link. Serve para item solto e para subitem. */
+function NavRow({
+  item,
+  badge = 0,
+  nested = false,
+  end = false,
+}: {
+  item: Item;
+  badge?: number;
+  nested?: boolean;
+  end?: boolean;
+}) {
+  return (
+    <NavLink
+      to={item.to}
+      end={end || item.to === "/manager" || item.to === "/operator"}
+      className={({ isActive }) =>
+        cn(
+          "relative flex items-center gap-3 rounded-sm px-3 py-2.5 text-body-sm font-medium text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white",
+          // Barra navy (identidade da marca): item ativo = pílula violeta
+          // (o violeta-CTA é permitido como indicador de seleção ativa),
+          // texto branco e peso semibold. Sem tarja lateral (proibida pelo
+          // design system) e sem sombra em repouso.
+          isActive && "bg-mp-primary font-semibold text-white",
+          // Subitem recua e afina só no desktop. No tablet a sidebar é só-ícone e o recuo
+          // empurraria o ícone para fora do centro da coluna.
+          nested && "desktop:pl-9 desktop:text-caption",
+        )
+      }
+      // No tablet o rótulo fica escondido: o title vira o tooltip do ícone.
+      title={badge > 0 ? `${item.label} (${badge} novo${badge > 1 ? "s" : ""})` : item.label}
+      aria-label={
+        badge > 0
+          ? `${item.label}, ${badge} lead${badge > 1 ? "s" : ""} novo${badge > 1 ? "s" : ""}`
+          : item.label
+      }
+    >
+      <item.icon className="h-4 w-4 shrink-0" />
+      {/* tablet (só-ícone): contador no canto do ícone */}
+      {badge > 0 && (
+        <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[10px] font-semibold leading-none text-mp-navy desktop:hidden">
+          {badge > 9 ? "9+" : badge}
+        </span>
+      )}
+      <span className="hidden desktop:inline">{item.label}</span>
+      {/* desktop: pílula com o número depois do rótulo */}
+      {badge > 0 && (
+        <span className="ml-auto hidden h-5 min-w-5 items-center justify-center rounded-full bg-white/15 px-2 text-caption-sm font-bold text-white desktop:inline-flex">
+          {badge > 99 ? "99+" : badge}
+        </span>
+      )}
+    </NavLink>
+  );
+}
+
+/**
+ * Item com subitens: uma gaveta que abre e fecha.
+ *
+ * O pai não é link. Ele existe para a área ocupar uma linha do menu em vez de quatro, e clicar
+ * nele abre a lista em vez de navegar: navegar e abrir no mesmo clique faria o usuário sair da
+ * página só para ver as opções.
+ *
+ * A gaveta nasce aberta quando a pessoa já está numa das telas de dentro, senão o menu esconderia
+ * justamente onde ela está.
+ */
+function NavGroup({ item }: { item: Item }) {
+  const { pathname } = useLocation();
+  const filhos = item.children ?? [];
+  const temFilhoAtivo = filhos.some((filho) => secaoAtiva(pathname, filho.to));
+  const [aberto, setAberto] = React.useState(temFilhoAtivo);
+
+  // Navegar para dentro do grupo (por link da página, busca, URL colada) reabre a gaveta.
+  React.useEffect(() => {
+    if (temFilhoAtivo) setAberto(true);
+  }, [temFilhoAtivo]);
+
+  return (
+    <div className="flex flex-col gap-0.5">
+      <button
+        type="button"
+        onClick={() => setAberto((v) => !v)}
+        aria-expanded={aberto}
+        title={item.label}
+        className={cn(
+          "flex items-center gap-3 rounded-sm px-3 py-2.5 text-body-sm font-medium text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white",
+          // Fechada com uma tela de dentro ativa, a linha do pai fica marcada: é o único
+          // sinal que sobra de onde a pessoa está.
+          temFilhoAtivo && !aberto && "bg-white/[0.06] text-white",
+        )}
+      >
+        <item.icon className="h-4 w-4 shrink-0" />
+        <span className="hidden desktop:inline">{item.label}</span>
+        <CaretRight
+          aria-hidden
+          className={cn(
+            "ml-auto hidden h-3 w-3 transition-transform desktop:block",
+            aberto && "rotate-90",
+          )}
+        />
+      </button>
+
+      {aberto && (
+        <div className="flex flex-col gap-0.5">
+          {filhos.map((filho) => (
+            <NavRow
+              key={filho.to}
+              item={filho}
+              nested
+              // O filho-índice divide o prefixo com os irmãos (/marketing e /marketing/leads),
+              // então sem `end` ele acenderia junto com todos eles.
+              end={filhos.some((outro) => outro.to.startsWith(`${filho.to}/`))}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function Sidebar({
   variant,
@@ -101,50 +222,17 @@ export function Sidebar({
                 )}
               </>
             )}
-            {section.items.map((item) => {
-              const badge = item.to === "/manager/partners" ? newLeads : 0;
-              return (
-                <NavLink
+            {section.items.map((item) =>
+              item.children?.length ? (
+                <NavGroup key={item.to} item={item} />
+              ) : (
+                <NavRow
                   key={item.to}
-                  to={item.to}
-                  end={item.to === "/manager" || item.to === "/operator"}
-                  className={({ isActive }) =>
-                    cn(
-                      "relative flex items-center gap-3 rounded-sm px-3 py-2.5 text-body-sm font-medium text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white",
-                      // Barra navy (identidade da marca): item ativo = pílula violeta
-                      // (o violeta-CTA é permitido como indicador de seleção ativa),
-                      // texto branco e peso semibold. Sem tarja lateral (proibida pelo
-                      // design system) e sem sombra em repouso.
-                      isActive && "bg-mp-primary font-semibold text-white",
-                    )
-                  }
-                  // No tablet o rótulo fica escondido: o title vira o tooltip do ícone.
-                  title={
-                    badge > 0 ? `${item.label} (${badge} novo${badge > 1 ? "s" : ""})` : item.label
-                  }
-                  aria-label={
-                    badge > 0
-                      ? `${item.label}, ${badge} lead${badge > 1 ? "s" : ""} novo${badge > 1 ? "s" : ""}`
-                      : item.label
-                  }
-                >
-                  <item.icon className="h-4 w-4 shrink-0" />
-                  {/* tablet (só-ícone): contador no canto do ícone */}
-                  {badge > 0 && (
-                    <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[10px] font-semibold leading-none text-mp-navy desktop:hidden">
-                      {badge > 9 ? "9+" : badge}
-                    </span>
-                  )}
-                  <span className="hidden desktop:inline">{item.label}</span>
-                  {/* desktop: pílula com o número depois do rótulo */}
-                  {badge > 0 && (
-                    <span className="ml-auto hidden h-5 min-w-5 items-center justify-center rounded-full bg-white/15 px-2 text-caption-sm font-bold text-white desktop:inline-flex">
-                      {badge > 99 ? "99+" : badge}
-                    </span>
-                  )}
-                </NavLink>
-              );
-            })}
+                  item={item}
+                  badge={item.to === "/manager/partners" ? newLeads : 0}
+                />
+              ),
+            )}
           </div>
         ))}
       </nav>

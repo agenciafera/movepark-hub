@@ -17,6 +17,13 @@ Migrations: `20261027093000_marketing_automation.sql`, `20261027094500_marketing
 `20261027100000_marketing_campaign_engine.sql`.
 Edge Functions: `marketing-run`, `marketing-unsubscribe`.
 
+**No menu, a área ocupa uma linha só.** As quatro telas ficam dentro do item **Automação**
+(`NavItem.children`, em `src/components/shared/nav-items.ts`), que abre e fecha na sidebar. Quatro
+entradas soltas empurravam a seção "Conta" para fora da dobra num notebook. O pai não é link: clicar
+nele abre a gaveta em vez de navegar, e a gaveta nasce aberta quando a pessoa já está numa das telas
+de dentro. No celular o grupo vira uma seção do menu "Mais", com o rótulo do pai como título, então
+nenhuma tela fica inalcançável.
+
 ---
 
 ## 1. Decisões de fundo

@@ -135,3 +135,94 @@ describe("tarifa é do manager, não do operador", () => {
     expect(tarifas?.label).toBe("Tarifas");
   });
 });
+
+/**
+ * Item com subitens (a área de marketing). Uma área com quatro telas ocupa uma linha do menu,
+ * e as quatro continuam alcançáveis: na gaveta no desktop, no menu "Mais" no celular.
+ */
+describe("itens com subitens", () => {
+  const icone = "i" as unknown as string;
+  const comFilhos = [
+    {
+      items: [
+        {
+          to: "/manager/marketing",
+          label: "Automação",
+          icon: icone,
+          children: [
+            { to: "/manager/marketing", label: "Perfis e funil", icon: icone },
+            { to: "/manager/marketing/leads", label: "Leads", icon: icone },
+            { to: "/manager/marketing/segmentos", label: "Segmentos", icon: icone, scope: "seg:read" },
+          ],
+        },
+      ],
+    },
+  ];
+
+  it("flattenSections devolve os filhos, não o pai", () => {
+    // O pai é gaveta, não destino: se ele entrasse, a barra do mobile ganharia um item que
+    // não leva a lugar nenhum.
+    const rotas = flattenSections(comFilhos).map((i) => i.to);
+    expect(rotas).toEqual([
+      "/manager/marketing",
+      "/manager/marketing/leads",
+      "/manager/marketing/segmentos",
+    ]);
+    expect(rotas.filter((r) => r === "/manager/marketing")).toHaveLength(1);
+  });
+
+  it("o escopo filtra o subitem, e o pai sobrevive com o resto", () => {
+    const [secao] = filterSectionsByScopes(comFilhos, () => false);
+    expect(secao.items[0].children?.map((c) => c.label)).toEqual(["Perfis e funil", "Leads"]);
+  });
+
+  it("o pai some quando todos os subitens caem por escopo", () => {
+    const soGateado = [
+      {
+        items: [
+          {
+            to: "/x",
+            label: "Grupo",
+            icon: icone,
+            children: [{ to: "/x/a", label: "A", icon: icone, scope: "nao-tenho" }],
+          },
+        ],
+      },
+    ];
+    // Pai sozinho abriria para uma lista vazia.
+    expect(filterSectionsByScopes(soGateado, () => false)).toEqual([]);
+  });
+
+  it("o menu Mais lista os subitens sob o rótulo do pai", () => {
+    const { primary, more } = buildBottomNav(comFilhos, () => true, []);
+    expect(primary).toHaveLength(0);
+    const grupo = more.find((s) => s.title === "Automação");
+    expect(grupo?.items.map((i) => i.label)).toEqual(["Perfis e funil", "Leads", "Segmentos"]);
+  });
+
+  it("subitem escolhido como destino direto não se repete no Mais", () => {
+    const { primary, more } = buildBottomNav(comFilhos, () => true, ["/manager/marketing/leads"]);
+    expect(primary.map((i) => i.to)).toEqual(["/manager/marketing/leads"]);
+    expect(more.flatMap((s) => s.items).map((i) => i.to)).not.toContain("/manager/marketing/leads");
+  });
+});
+
+/** O menu do manager tem uma linha só para marketing, com as quatro telas dentro. */
+describe("marketing ocupa uma linha do menu do manager", () => {
+  it("existe um item Automação com os quatro subitens", () => {
+    const automacao = managerSections
+      .flatMap((s) => s.items)
+      .find((i) => i.label === "Automação");
+    expect(automacao?.children?.map((c) => c.label)).toEqual([
+      "Perfis e funil",
+      "Leads",
+      "Segmentos",
+      "Campanhas",
+    ]);
+  });
+
+  it("nenhuma das telas de marketing ficou solta no topo do menu", () => {
+    const topo = managerSections.flatMap((s) => s.items).map((i) => i.to);
+    expect(topo.filter((r) => r.startsWith("/manager/marketing"))).toEqual(["/manager/marketing"]);
+  });
+});

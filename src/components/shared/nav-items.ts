@@ -5,7 +5,7 @@
 // de flexibilidade Básica/Flex/Superflex da Movepark, editadas só pelo Super Admin no /manager
 // (a unidade não toca nelas). Cada item tem um ícone próprio: em tablet a sidebar é só-ícone.
 
-import { Airplane, Article, Bank, Buildings, Calendar, CalendarBlank, ChartBar, ChartPie, CurrencyCircleDollar, Gear, Handshake, Kanban, Key, LockKey, MapPin, MapTrifold, PaperPlaneTilt, Percent, Question, Receipt, Scroll, ShieldCheck, Sparkle, SquaresFour, Star, Tag, Users, UsersThree, Wallet } from "@phosphor-icons/react";
+import { Airplane, Article, Bank, Buildings, Calendar, CalendarBlank, ChartBar, ChartPie, CurrencyCircleDollar, Gear, Handshake, Kanban, Key, LockKey, MapPin, MapTrifold, Megaphone, PaperPlaneTilt, Percent, Question, Receipt, Scroll, ShieldCheck, Sparkle, SquaresFour, Star, Tag, Users, UsersThree, Wallet } from "@phosphor-icons/react";
 import type { NavItem, NavSection } from "./Sidebar.logic";
 
 export type NavIcon = React.ComponentType<{ className?: string }>;
@@ -36,12 +36,20 @@ export const managerSections: Section[] = [
     ],
   },
   {
-    title: "Marketing",
+    // Seção sem título: o próprio item já nomeia a área, e um cabeçalho "Marketing" em cima de
+    // um item só seria a mesma palavra duas vezes.
     items: [
-      { to: "/manager/marketing", label: "Perfis e funil", icon: ChartPie },
-      { to: "/manager/marketing/leads", label: "Leads", icon: Kanban },
-      { to: "/manager/marketing/segmentos", label: "Segmentos", icon: UsersThree },
-      { to: "/manager/marketing/campanhas", label: "Campanhas", icon: PaperPlaneTilt },
+      {
+        to: "/manager/marketing",
+        label: "Automação",
+        icon: Megaphone,
+        children: [
+          { to: "/manager/marketing", label: "Perfis e funil", icon: ChartPie },
+          { to: "/manager/marketing/leads", label: "Leads", icon: Kanban },
+          { to: "/manager/marketing/segmentos", label: "Segmentos", icon: UsersThree },
+          { to: "/manager/marketing/campanhas", label: "Campanhas", icon: PaperPlaneTilt },
+        ],
+      },
     ],
   },
   {
