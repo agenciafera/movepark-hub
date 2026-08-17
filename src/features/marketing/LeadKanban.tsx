@@ -47,12 +47,7 @@ export function LeadKanban({ stages, leads, isLoading, onMove, fullscreen = fals
   }
 
   return (
-    <div
-      className={cn(
-        "flex gap-4 overflow-x-auto pb-2",
-        fullscreen && "h-full items-start",
-      )}
-    >
+    <div className={cn("flex gap-4 overflow-x-auto pb-2", fullscreen && "h-full items-start")}>
       {stages.map((stage) => {
         const daColuna = leads.filter((l) => l.stage_id === stage.id);
         const valor = daColuna.reduce((soma, l) => soma + (l.value_cents ?? 0), 0) / 100;
@@ -93,12 +88,12 @@ export function LeadKanban({ stages, leads, isLoading, onMove, fullscreen = fals
                   className={cn("size-2 rounded-full", corDaBolinha(stage.color))}
                   aria-hidden
                 />
-                <h3 className="text-sm font-medium text-ink">{stage.name}</h3>
+                <h3 className="text-body-sm font-medium text-ink">{stage.name}</h3>
               </div>
-              <span className="text-xs tabular-nums text-muted">{daColuna.length}</span>
+              <span className="text-caption-sm tabular-nums text-muted">{daColuna.length}</span>
             </header>
             {valor > 0 && (
-              <span className="px-1 text-xs text-muted">{formatBRL(valor)} em jogo</span>
+              <span className="px-1 text-caption-sm text-muted">{formatBRL(valor)} em jogo</span>
             )}
 
             <div className={cn("flex flex-col gap-2", fullscreen && "min-h-0 overflow-y-auto")}>
@@ -121,7 +116,7 @@ export function LeadKanban({ stages, leads, isLoading, onMove, fullscreen = fals
                   )}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <span className="text-sm font-medium text-ink">
+                    <span className="text-body-sm font-medium text-ink">
                       {lead.display_name || lead.email || lead.phone || "Sem nome"}
                     </span>
                     {lead.subscription_candidate && (
@@ -133,7 +128,7 @@ export function LeadKanban({ stages, leads, isLoading, onMove, fullscreen = fals
                     )}
                   </div>
 
-                  {lead.title && <p className="mt-0.5 text-xs text-muted">{lead.title}</p>}
+                  {lead.title && <p className="mt-0.5 text-caption-sm text-muted">{lead.title}</p>}
 
                   {/* Estado do checkout: é o que faz o quadro valer em tempo real. Vem primeiro
                       porque um hold prestes a vencer manda mais que a coorte. */}
@@ -144,14 +139,14 @@ export function LeadKanban({ stages, leads, isLoading, onMove, fullscreen = fals
                       <div className="mt-1.5 flex items-center gap-1">
                         <span
                           className={cn(
-                            "rounded-full border px-1.5 py-0.5 text-[11px] font-medium",
+                            "rounded-full border px-1.5 py-0.5 text-tab-label font-medium",
                             checkoutToneClasses(checkout.tone),
                           )}
                         >
                           {checkout.label}
                         </span>
                         {lead.booking_code && (
-                          <span className="text-[11px] text-muted">{lead.booking_code}</span>
+                          <span className="text-tab-label text-muted">{lead.booking_code}</span>
                         )}
                       </div>
                     );
@@ -161,7 +156,7 @@ export function LeadKanban({ stages, leads, isLoading, onMove, fullscreen = fals
                     {lead.cohort && (
                       <span
                         className={cn(
-                          "rounded-full border px-1.5 py-0.5 text-[11px] font-medium",
+                          "rounded-full border px-1.5 py-0.5 text-tab-label font-medium",
                           toneClasses(cohortTone(lead.cohort)),
                         )}
                       >
@@ -169,7 +164,7 @@ export function LeadKanban({ stages, leads, isLoading, onMove, fullscreen = fals
                       </span>
                     )}
                     {lead.location_name && (
-                      <span className="rounded-full border border-hairline bg-surface-soft px-1.5 py-0.5 text-[11px] text-muted">
+                      <span className="rounded-full border border-hairline bg-surface-soft px-1.5 py-0.5 text-tab-label text-muted">
                         {lead.location_name}
                       </span>
                     )}
@@ -177,7 +172,7 @@ export function LeadKanban({ stages, leads, isLoading, onMove, fullscreen = fals
                         ele não acompanha mais a reserva. */}
                     {lead.booking_id && !lead.auto_synced && (
                       <span
-                        className="rounded-full border border-hairline bg-surface-soft px-1.5 py-0.5 text-[11px] text-muted"
+                        className="rounded-full border border-hairline bg-surface-soft px-1.5 py-0.5 text-tab-label text-muted"
                         title="Movido na mão, então este cartão não segue mais o status da reserva."
                       >
                         movido na mão
@@ -185,7 +180,7 @@ export function LeadKanban({ stages, leads, isLoading, onMove, fullscreen = fals
                     )}
                   </div>
 
-                  <dl className="mt-2 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[11px] text-muted">
+                  <dl className="mt-2 grid grid-cols-2 gap-x-2 gap-y-0.5 text-tab-label text-muted">
                     <div className="flex items-center gap-1">
                       <dt className="sr-only">Reservas</dt>
                       <dd>{lead.bookings_count} reservas</dd>
@@ -206,7 +201,7 @@ export function LeadKanban({ stages, leads, isLoading, onMove, fullscreen = fals
               ))}
 
               {daColuna.length === 0 && (
-                <p className="rounded-md border border-dashed border-hairline px-2 py-6 text-center text-xs text-muted">
+                <p className="rounded-md border border-dashed border-hairline px-2 py-6 text-center text-caption-sm text-muted">
                   Arraste um lead para cá
                 </p>
               )}

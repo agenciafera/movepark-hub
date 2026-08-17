@@ -58,7 +58,7 @@ export function SegmentBuilder({ value, onChange, depth = 0 }: Props) {
       )}
     >
       <div className="flex items-center gap-2">
-        <span className="text-sm text-muted">Casar com</span>
+        <span className="text-body-sm text-muted">Casar com</span>
         <Select
           value={value.match}
           onValueChange={(v) => onChange({ ...value, match: v as "all" | "any" })}
@@ -74,7 +74,7 @@ export function SegmentBuilder({ value, onChange, depth = 0 }: Props) {
       </div>
 
       {value.rules.length === 0 && (
-        <p className="rounded-md border border-dashed border-hairline px-3 py-4 text-center text-sm text-muted">
+        <p className="rounded-md border border-dashed border-hairline px-3 py-4 text-center text-body-sm text-muted">
           Sem regra nenhuma, o segmento pega a base inteira.
         </p>
       )}
@@ -168,9 +168,7 @@ export function SegmentBuilder({ value, onChange, depth = 0 }: Props) {
               <CampoValor rule={no} onChange={(v) => trocarRegra(index, { value: v })} />
             )}
 
-            {def?.hint && (
-              <p className="w-full text-xs text-muted">{def.hint}</p>
-            )}
+            {def?.hint && <p className="w-full text-caption-sm text-muted">{def.hint}</p>}
 
             <Button
               type="button"
@@ -216,13 +214,7 @@ export function SegmentBuilder({ value, onChange, depth = 0 }: Props) {
   );
 }
 
-function CampoValor({
-  rule,
-  onChange,
-}: {
-  rule: SegmentRule;
-  onChange: (value: unknown) => void;
-}) {
+function CampoValor({ rule, onChange }: { rule: SegmentRule; onChange: (value: unknown) => void }) {
   const def = fieldDef(rule.field);
 
   if (rule.op === "between") {
@@ -236,7 +228,7 @@ function CampoValor({
           value={String(par[0] ?? "")}
           onChange={(e) => onChange([numeroOuVazio(e.target.value), par[1] ?? ""])}
         />
-        <span className="text-sm text-muted">e</span>
+        <span className="text-body-sm text-muted">e</span>
         <Input
           type="number"
           className="w-[100px]"
@@ -261,13 +253,11 @@ function CampoValor({
               aria-pressed={marcado}
               onClick={() =>
                 onChange(
-                  marcado
-                    ? escolhidos.filter((v) => v !== opt.value)
-                    : [...escolhidos, opt.value],
+                  marcado ? escolhidos.filter((v) => v !== opt.value) : [...escolhidos, opt.value],
                 )
               }
               className={cn(
-                "rounded-full border px-2 py-1 text-xs transition-colors",
+                "rounded-full border px-2 py-1 text-caption-sm transition-colors",
                 marcado
                   ? "border-primary bg-primary text-white"
                   : "border-hairline bg-canvas text-muted hover:border-primary",

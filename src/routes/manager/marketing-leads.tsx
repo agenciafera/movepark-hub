@@ -193,7 +193,7 @@ export default function ManagerMarketingLeads() {
       <div className="fixed inset-0 z-50 flex flex-col gap-3 bg-canvas p-3">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-baseline gap-2">
-            <h1 className="text-body font-semibold text-ink">Leads</h1>
+            <h1 className="font-semibold text-body text-ink">Leads</h1>
             <span className="text-caption-sm text-muted">quadro em tela cheia</span>
           </div>
           <Button variant="ghost" size="sm" onClick={sair}>

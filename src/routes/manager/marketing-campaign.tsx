@@ -4,7 +4,7 @@ import { FloppyDisk, PaperPlaneTilt } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Panel, PanelStat } from "@/components/shared/Panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -121,7 +121,7 @@ export default function ManagerMarketingCampaign() {
       <div className="fixed inset-0 z-50 flex flex-col gap-2 bg-canvas p-3">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-baseline gap-2">
-            <h1 className="text-body font-semibold text-ink">{campanha.data.name}</h1>
+            <h1 className="font-semibold text-body text-ink">{campanha.data.name}</h1>
             <span className="text-caption-sm text-muted">fluxo em tela cheia</span>
           </div>
           <div className="flex items-center gap-2">
@@ -201,7 +201,7 @@ export default function ManagerMarketingCampaign() {
       />
 
       {!config.data?.enabled && (
-        <p className="rounded-md border border-hairline bg-surface-soft px-3 py-2 text-sm text-muted">
+        <p className="rounded-md border border-hairline bg-surface-soft px-3 py-2 text-body-sm text-muted">
           O disparo real está desligado. Dá para rodar a campanha inteira: cada mensagem é montada e
           fica gravada como segurada, com o texto final, para conferência.
         </p>
@@ -224,67 +224,68 @@ export default function ManagerMarketingCampaign() {
         </TabsContent>
 
         <TabsContent value="publico" className="mt-4">
-          <Card>
-            <CardContent className="flex flex-col gap-4 p-4">
-              <div className="grid gap-3 tablet:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
-                  <Label>Segmento</Label>
-                  <Select value={segmentId} onValueChange={setSegmentId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Escolha o público" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(segmentos.data ?? []).map((s) => (
-                        <SelectItem key={s.id} value={s.id}>
-                          {s.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="cap-camp">Teto de pessoas nesta campanha</Label>
-                  <Input
-                    id="cap-camp"
-                    type="number"
-                    min={1}
-                    value={sendCap}
-                    onChange={(e) => setSendCap(Number(e.target.value) || 1)}
-                  />
-                  <p className="text-xs text-muted">
-                    Corta o público na matrícula. Serve de freio para a primeira execução.
-                  </p>
-                </div>
-              </div>
-
-              {segmentoEscolhido && (
-                <div className="grid gap-3 tablet:grid-cols-3">
-                  <Numero rotulo="No segmento" valor={previa.data?.total ?? 0} destaque />
-                  <Numero rotulo="Alcançáveis por e-mail" valor={previa.data?.reachable_email ?? 0} />
-                  <Numero
-                    rotulo="Alcançáveis por WhatsApp"
-                    valor={previa.data?.reachable_whatsapp ?? 0}
-                  />
-                </div>
-              )}
-
-              {problemas.length > 0 && (
-                <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
-                  <p className="text-sm font-medium text-amber-800">
-                    O fluxo ainda não está pronto para disparar
-                  </p>
-                  <ul className="mt-1 flex flex-col gap-1 text-xs text-amber-800">
-                    {problemas.map((p, i) => (
-                      <li key={i}>{p.message}</li>
+          <Panel className="flex flex-col gap-5">
+            <div className="grid gap-3 tablet:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <Label>Segmento</Label>
+                <Select value={segmentId} onValueChange={setSegmentId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Escolha o público" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(segmentos.data ?? []).map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
                     ))}
-                  </ul>
-                </div>
-              )}
-              {!segmentId && (
-                <p className="text-sm text-muted">Escolha um segmento para liberar o disparo.</p>
-              )}
-            </CardContent>
-          </Card>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="cap-camp">Teto de pessoas nesta campanha</Label>
+                <Input
+                  id="cap-camp"
+                  type="number"
+                  min={1}
+                  value={sendCap}
+                  onChange={(e) => setSendCap(Number(e.target.value) || 1)}
+                />
+                <p className="text-caption-sm text-muted">
+                  Corta o público na matrícula. Serve de freio para a primeira execução.
+                </p>
+              </div>
+            </div>
+
+            {segmentoEscolhido && (
+              <div className="grid gap-3 tablet:grid-cols-3">
+                <PanelStat rotulo="No segmento" valor={previa.data?.total ?? 0} destaque />
+                <PanelStat
+                  rotulo="Alcançáveis por e-mail"
+                  valor={previa.data?.reachable_email ?? 0}
+                />
+                <PanelStat
+                  rotulo="Alcançáveis por WhatsApp"
+                  valor={previa.data?.reachable_whatsapp ?? 0}
+                />
+              </div>
+            )}
+
+            {problemas.length > 0 && (
+              <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
+                <p className="text-body-sm font-medium text-amber-800">
+                  O fluxo ainda não está pronto para disparar
+                </p>
+                <ul className="mt-1 flex flex-col gap-1 text-caption-sm text-amber-800">
+                  {problemas.map((p, i) => (
+                    <li key={i}>{p.message}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {!segmentId && (
+              <p className="text-body-sm text-muted">Escolha um segmento para liberar o disparo.</p>
+            )}
+          </Panel>
         </TabsContent>
 
         <TabsContent value="mensagens" className="mt-4">
@@ -296,68 +297,43 @@ export default function ManagerMarketingCampaign() {
               description="Execute a campanha para ver aqui cada mensagem e o que aconteceu com ela."
             />
           ) : (
-            <Card>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Canal</TableHead>
-                        <TableHead>Para</TableHead>
-                        <TableHead>Assunto</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead>Motivo</TableHead>
-                        <TableHead>Quando</TableHead>
+            <Panel className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Canal</TableHead>
+                      <TableHead>Para</TableHead>
+                      <TableHead>Assunto</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead>Motivo</TableHead>
+                      <TableHead>Quando</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(mensagens.data ?? []).map((m) => (
+                      <TableRow key={m.id}>
+                        <TableCell className="text-muted">
+                          {m.channel === "email" ? "E-mail" : "WhatsApp"}
+                        </TableCell>
+                        <TableCell>{m.to_address || "-"}</TableCell>
+                        <TableCell className="max-w-[280px] truncate">{m.subject || "-"}</TableCell>
+                        <TableCell>{STATUS_MENSAGEM[m.status] ?? m.status}</TableCell>
+                        <TableCell className="max-w-[260px] truncate text-muted">
+                          {m.error || "-"}
+                        </TableCell>
+                        <TableCell className="text-muted">
+                          {formatDateTime(m.sent_at ?? m.created_at)}
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {(mensagens.data ?? []).map((m) => (
-                        <TableRow key={m.id}>
-                          <TableCell className="text-muted">
-                            {m.channel === "email" ? "E-mail" : "WhatsApp"}
-                          </TableCell>
-                          <TableCell>{m.to_address || "-"}</TableCell>
-                          <TableCell className="max-w-[280px] truncate">
-                            {m.subject || "-"}
-                          </TableCell>
-                          <TableCell>{STATUS_MENSAGEM[m.status] ?? m.status}</TableCell>
-                          <TableCell className="max-w-[260px] truncate text-muted">
-                            {m.error || "-"}
-                          </TableCell>
-                          <TableCell className="text-muted">
-                            {formatDateTime(m.sent_at ?? m.created_at)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </Panel>
           )}
         </TabsContent>
       </Tabs>
-    </div>
-  );
-}
-
-function Numero({
-  rotulo,
-  valor,
-  destaque,
-}: {
-  rotulo: string;
-  valor: number;
-  destaque?: boolean;
-}) {
-  return (
-    <div className="flex flex-col gap-0.5 rounded-md border border-hairline p-3">
-      <span className="text-xs text-muted">{rotulo}</span>
-      <span
-        className={`text-xl font-semibold tabular-nums ${destaque ? "text-primary" : "text-ink"}`}
-      >
-        {valor}
-      </span>
     </div>
   );
 }

@@ -30,3 +30,30 @@ export function PanelTitle({
     </div>
   );
 }
+
+/**
+ * Número de apoio: rótulo pequeno em cima, valor em destaque embaixo.
+ *
+ * É a caixinha que aparece em prévia de segmento e de público de campanha, onde o `Panel` inteiro
+ * seria pesado demais. `destaque` pinta de violeta o número que a tela quer que se leia primeiro.
+ */
+export function PanelStat({
+  rotulo,
+  valor,
+  destaque,
+}: {
+  rotulo: string;
+  valor: React.ReactNode;
+  destaque?: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-0.5 rounded-md bg-surface-soft p-4">
+      <span className="text-caption-sm text-muted">{rotulo}</span>
+      <span
+        className={cn("text-display-sm tabular-nums", destaque ? "text-mp-primary" : "text-ink")}
+      >
+        {valor}
+      </span>
+    </div>
+  );
+}

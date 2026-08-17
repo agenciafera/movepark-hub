@@ -4,7 +4,7 @@ import { Plus, Warning } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Panel } from "@/components/shared/Panel";
 import {
   Dialog,
   DialogContent,
@@ -80,54 +80,52 @@ export default function ManagerMarketingCampaigns() {
           action={<Button onClick={() => setCriando(true)}>Criar campanha</Button>}
         />
       ) : (
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Campanha</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="text-right">Enviadas</TableHead>
-                    <TableHead className="text-right">Seguradas</TableHead>
-                    <TableHead>Última execução</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(campanhas.data ?? []).map((c) => {
-                    const stats = (c.stats ?? {}) as Record<string, number | string>;
-                    return (
-                      <TableRow key={c.id}>
-                        <TableCell>
-                          <Link
-                            to={`/manager/marketing/campanhas/${c.id}`}
-                            className="font-medium text-ink hover:underline"
-                          >
-                            {c.name}
-                          </Link>
-                        </TableCell>
-                        <TableCell>
-                          <span className="rounded-full border border-hairline bg-surface-soft px-2 py-0.5 text-xs text-muted">
-                            {STATUS_LABEL[c.status] ?? c.status}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums">
-                          {Number(stats.sent ?? 0)}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums text-muted">
-                          {Number(stats.skipped ?? 0) + Number(stats.suppressed ?? 0)}
-                        </TableCell>
-                        <TableCell className="text-muted">
-                          {stats.updated_at ? formatDateTime(String(stats.updated_at)) : "-"}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+        <Panel className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Campanha</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead className="text-right">Enviadas</TableHead>
+                  <TableHead className="text-right">Seguradas</TableHead>
+                  <TableHead>Última execução</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(campanhas.data ?? []).map((c) => {
+                  const stats = (c.stats ?? {}) as Record<string, number | string>;
+                  return (
+                    <TableRow key={c.id}>
+                      <TableCell>
+                        <Link
+                          to={`/manager/marketing/campanhas/${c.id}`}
+                          className="font-medium text-ink hover:underline"
+                        >
+                          {c.name}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <span className="rounded-full border border-hairline bg-surface-soft px-2 py-0.5 text-caption-sm text-muted">
+                          {STATUS_LABEL[c.status] ?? c.status}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {Number(stats.sent ?? 0)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums text-muted">
+                        {Number(stats.skipped ?? 0) + Number(stats.suppressed ?? 0)}
+                      </TableCell>
+                      <TableCell className="text-muted">
+                        {stats.updated_at ? formatDateTime(String(stats.updated_at)) : "-"}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </Panel>
       )}
 
       {criando && <DialogNovaCampanha onClose={() => setCriando(false)} />}
@@ -144,112 +142,113 @@ function PainelDeDisparo() {
   const valorTeste = destinoTeste ?? config.data?.testRecipient ?? "";
 
   return (
-    <Card className={cn(ligado ? "border-rose-300 bg-rose-50/40" : "border-hairline")}>
-      <CardContent className="flex flex-col gap-3 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-start gap-2">
-            {ligado && <Warning className="mt-0.5 size-5 shrink-0 text-rose-600" />}
-            <div>
-              <h3 className="font-medium text-body text-ink">Disparo real</h3>
-              <p className="text-sm text-muted">
-                {ligado
-                  ? "Ligado. As campanhas mandam e-mail e WhatsApp para clientes de verdade."
-                  : "Desligado. As campanhas rodam inteiras e gravam o que sairia, sem enviar nada."}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Label htmlFor="disparo">{ligado ? "Ligado" : "Desligado"}</Label>
-            <Switch
-              id="disparo"
-              checked={ligado}
-              disabled={config.isLoading || salvar.isPending}
-              onCheckedChange={(marcado) => {
-                if (
-                  marcado &&
-                  !confirm(
-                    "Ligar o disparo faz as campanhas enviarem para clientes reais. Confirma?",
-                  )
-                ) {
-                  return;
-                }
-                salvar.mutate(
-                  { enabled: marcado },
-                  {
-                    onSuccess: () =>
-                      toast.success(marcado ? "Disparo ligado." : "Disparo desligado."),
-                    onError: (e) => toast.error(e instanceof Error ? e.message : "Falhou."),
-                  },
-                );
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="grid gap-3 tablet:grid-cols-3">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="teste">Destinatário de ensaio</Label>
-            <div className="flex gap-2">
-              <Input
-                id="teste"
-                value={valorTeste}
-                placeholder="voce@movepark.co"
-                onChange={(e) => setDestinoTeste(e.target.value)}
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  salvar.mutate(
-                    { testRecipient: valorTeste },
-                    {
-                      onSuccess: () => toast.success("Salvo."),
-                      onError: (e) => toast.error(e instanceof Error ? e.message : "Falhou."),
-                    },
-                  )
-                }
-              >
-                Salvar
-              </Button>
-            </div>
-            <p className="text-xs text-muted">
-              Com um endereço aqui, todo e-mail vai para ele em vez do cliente.
+    <Panel
+      className={cn(
+        "flex flex-col gap-4",
+        ligado && "bg-rose-50/40 ring-1 ring-inset ring-rose-200",
+      )}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-start gap-2">
+          {ligado && <Warning className="mt-0.5 size-5 shrink-0 text-rose-600" />}
+          <div>
+            <h3 className="font-medium text-body text-ink">Disparo real</h3>
+            <p className="text-body-sm text-muted">
+              {ligado
+                ? "Ligado. As campanhas mandam e-mail e WhatsApp para clientes de verdade."
+                : "Desligado. As campanhas rodam inteiras e gravam o que sairia, sem enviar nada."}
             </p>
           </div>
-
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="cap">Teto de envios por dia</Label>
-            <Input
-              id="cap"
-              type="number"
-              defaultValue={config.data?.dailyCap ?? 200}
-              onBlur={(e) =>
-                salvar.mutate(
-                  { dailyCap: Number(e.target.value) || 200 },
-                  { onError: (err) => toast.error(err instanceof Error ? err.message : "Falhou.") },
-                )
-              }
-            />
-            <p className="text-xs text-muted">Vale para todas as campanhas somadas.</p>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="remetente">Remetente</Label>
-            <Input
-              id="remetente"
-              defaultValue={config.data?.emailFrom ?? ""}
-              placeholder="Movepark <ola@movepark.co>"
-              onBlur={(e) =>
-                salvar.mutate(
-                  { emailFrom: e.target.value },
-                  { onError: (err) => toast.error(err instanceof Error ? err.message : "Falhou.") },
-                )
-              }
-            />
-          </div>
         </div>
-      </CardContent>
-    </Card>
+        <div className="flex items-center gap-2">
+          <Label htmlFor="disparo">{ligado ? "Ligado" : "Desligado"}</Label>
+          <Switch
+            id="disparo"
+            checked={ligado}
+            disabled={config.isLoading || salvar.isPending}
+            onCheckedChange={(marcado) => {
+              if (
+                marcado &&
+                !confirm("Ligar o disparo faz as campanhas enviarem para clientes reais. Confirma?")
+              ) {
+                return;
+              }
+              salvar.mutate(
+                { enabled: marcado },
+                {
+                  onSuccess: () =>
+                    toast.success(marcado ? "Disparo ligado." : "Disparo desligado."),
+                  onError: (e) => toast.error(e instanceof Error ? e.message : "Falhou."),
+                },
+              );
+            }}
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-3 tablet:grid-cols-3">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="teste">Destinatário de ensaio</Label>
+          <div className="flex gap-2">
+            <Input
+              id="teste"
+              value={valorTeste}
+              placeholder="voce@movepark.co"
+              onChange={(e) => setDestinoTeste(e.target.value)}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                salvar.mutate(
+                  { testRecipient: valorTeste },
+                  {
+                    onSuccess: () => toast.success("Salvo."),
+                    onError: (e) => toast.error(e instanceof Error ? e.message : "Falhou."),
+                  },
+                )
+              }
+            >
+              Salvar
+            </Button>
+          </div>
+          <p className="text-caption-sm text-muted">
+            Com um endereço aqui, todo e-mail vai para ele em vez do cliente.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="cap">Teto de envios por dia</Label>
+          <Input
+            id="cap"
+            type="number"
+            defaultValue={config.data?.dailyCap ?? 200}
+            onBlur={(e) =>
+              salvar.mutate(
+                { dailyCap: Number(e.target.value) || 200 },
+                { onError: (err) => toast.error(err instanceof Error ? err.message : "Falhou.") },
+              )
+            }
+          />
+          <p className="text-caption-sm text-muted">Vale para todas as campanhas somadas.</p>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="remetente">Remetente</Label>
+          <Input
+            id="remetente"
+            defaultValue={config.data?.emailFrom ?? ""}
+            placeholder="Movepark <ola@movepark.co>"
+            onBlur={(e) =>
+              salvar.mutate(
+                { emailFrom: e.target.value },
+                { onError: (err) => toast.error(err instanceof Error ? err.message : "Falhou.") },
+              )
+            }
+          />
+        </div>
+      </div>
+    </Panel>
   );
 }
 

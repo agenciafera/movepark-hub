@@ -3,7 +3,7 @@ import { Plus, Trash, Users } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Panel, PanelStat } from "@/components/shared/Panel";
 import {
   Dialog,
   DialogContent,
@@ -89,82 +89,79 @@ export default function ManagerMarketingSegments() {
           action={<Button onClick={() => setCriando(true)}>Criar segmento</Button>}
         />
       ) : (
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Segmento</TableHead>
-                    <TableHead className="text-right">Contatos</TableHead>
-                    <TableHead className="text-right">Alcançáveis</TableHead>
-                    <TableHead>Regra</TableHead>
-                    <TableHead className="w-24" />
+        <Panel className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Segmento</TableHead>
+                  <TableHead className="text-right">Contatos</TableHead>
+                  <TableHead className="text-right">Alcançáveis</TableHead>
+                  <TableHead>Regra</TableHead>
+                  <TableHead className="w-24" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(segments.data ?? []).map((seg) => (
+                  <TableRow key={seg.id}>
+                    <TableCell>
+                      <button
+                        type="button"
+                        className="text-left font-medium text-ink hover:underline"
+                        onClick={() => setEditando(seg)}
+                      >
+                        {seg.name}
+                      </button>
+                      {seg.description && (
+                        <p className="text-caption-sm text-muted">{seg.description}</p>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {counts.isLoading ? (
+                        <Skeleton className="ml-auto h-5 w-10" />
+                      ) : (
+                        <span className="font-medium tabular-nums text-ink">
+                          {counts.data?.[seg.id]?.total ?? 0}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right text-body-sm tabular-nums text-muted">
+                      {counts.isLoading ? (
+                        <Skeleton className="ml-auto h-5 w-16" />
+                      ) : (
+                        // E-mail e WhatsApp separados: um segmento grande onde quase ninguém
+                        // aceita WhatsApp é uma campanha que parecia grande e não era.
+                        <span title="Quantos dá para alcançar por e-mail e por WhatsApp">
+                          {counts.data?.[seg.id]?.reachable_email ?? 0} e-mail ·{" "}
+                          {counts.data?.[seg.id]?.reachable_whatsapp ?? 0} zap
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="max-w-[420px] text-body-sm text-muted">
+                      {describeDefinition(seg.definition as unknown as SegmentGroup)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Excluir ${seg.name}`}
+                        onClick={() => {
+                          if (!confirm(`Excluir o segmento "${seg.name}"?`)) return;
+                          remover.mutate(seg.id, {
+                            onSuccess: () => toast.success("Segmento excluído."),
+                            onError: (e) => toast.error(e instanceof Error ? e.message : "Falhou."),
+                          });
+                        }}
+                      >
+                        <Trash className="size-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(segments.data ?? []).map((seg) => (
-                    <TableRow key={seg.id}>
-                      <TableCell>
-                        <button
-                          type="button"
-                          className="text-left font-medium text-ink hover:underline"
-                          onClick={() => setEditando(seg)}
-                        >
-                          {seg.name}
-                        </button>
-                        {seg.description && (
-                          <p className="text-xs text-muted">{seg.description}</p>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {counts.isLoading ? (
-                          <Skeleton className="ml-auto h-5 w-10" />
-                        ) : (
-                          <span className="font-medium tabular-nums text-ink">
-                            {counts.data?.[seg.id]?.total ?? 0}
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right text-sm tabular-nums text-muted">
-                        {counts.isLoading ? (
-                          <Skeleton className="ml-auto h-5 w-16" />
-                        ) : (
-                          // E-mail e WhatsApp separados: um segmento grande onde quase ninguém
-                          // aceita WhatsApp é uma campanha que parecia grande e não era.
-                          <span title="Quantos dá para alcançar por e-mail e por WhatsApp">
-                            {counts.data?.[seg.id]?.reachable_email ?? 0} e-mail ·{" "}
-                            {counts.data?.[seg.id]?.reachable_whatsapp ?? 0} zap
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="max-w-[420px] text-sm text-muted">
-                        {describeDefinition(seg.definition as unknown as SegmentGroup)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label={`Excluir ${seg.name}`}
-                          onClick={() => {
-                            if (!confirm(`Excluir o segmento "${seg.name}"?`)) return;
-                            remover.mutate(seg.id, {
-                              onSuccess: () => toast.success("Segmento excluído."),
-                              onError: (e) =>
-                                toast.error(e instanceof Error ? e.message : "Falhou."),
-                            });
-                          }}
-                        >
-                          <Trash className="size-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </Panel>
       )}
 
       {(criando || editando) && (
@@ -231,9 +228,7 @@ function SegmentDialog({
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{segment ? "Editar segmento" : "Novo segmento"}</DialogTitle>
-          <DialogDescription>
-            Monte a regra e confira o público antes de salvar.
-          </DialogDescription>
+          <DialogDescription>Monte a regra e confira o público antes de salvar.</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
@@ -261,82 +256,80 @@ function SegmentDialog({
 
           <SegmentBuilder value={definicao} onChange={setDefinicao} />
 
-          <Card>
-            <CardContent className="flex flex-col gap-3 p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h4 className="font-medium text-body text-ink">Público</h4>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setVerContatos((v) => !v)}
-                >
-                  <Users className="mr-2 size-4" />
-                  {verContatos ? "Esconder contatos" : "Ver contatos"}
-                </Button>
+          <Panel className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h4 className="font-medium text-body text-ink">Público</h4>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setVerContatos((v) => !v)}
+              >
+                <Users className="mr-2 size-4" />
+                {verContatos ? "Esconder contatos" : "Ver contatos"}
+              </Button>
+            </div>
+
+            {previa.isLoading ? (
+              <Skeleton className="h-16 w-full" />
+            ) : (
+              <div className="grid gap-3 tablet:grid-cols-3">
+                <PanelStat rotulo="Casam com a regra" valor={previa.data?.total ?? 0} destaque />
+                <PanelStat
+                  rotulo="Alcançáveis por e-mail"
+                  valor={previa.data?.reachable_email ?? 0}
+                />
+                <PanelStat
+                  rotulo="Alcançáveis por WhatsApp"
+                  valor={previa.data?.reachable_whatsapp ?? 0}
+                />
               </div>
+            )}
 
-              {previa.isLoading ? (
-                <Skeleton className="h-16 w-full" />
-              ) : (
-                <div className="grid gap-3 tablet:grid-cols-3">
-                  <Numero rotulo="Casam com a regra" valor={previa.data?.total ?? 0} destaque />
-                  <Numero
-                    rotulo="Alcançáveis por e-mail"
-                    valor={previa.data?.reachable_email ?? 0}
-                  />
-                  <Numero
-                    rotulo="Alcançáveis por WhatsApp"
-                    valor={previa.data?.reachable_whatsapp ?? 0}
-                  />
-                </div>
-              )}
+            <p className="text-caption-sm text-muted">
+              Alcançável já desconta quem não tem endereço no canal, quem não deu consentimento e
+              quem se descadastrou.
+            </p>
 
-              <p className="text-xs text-muted">
-                Alcançável já desconta quem não tem endereço no canal, quem não deu consentimento e
-                quem se descadastrou.
-              </p>
+            {!validacao.ok && (
+              <ul className="flex flex-col gap-1 rounded-md border border-amber-200 bg-amber-50 p-3 text-caption-sm text-amber-800">
+                {validacao.problems.map((p) => (
+                  <li key={p}>{p}</li>
+                ))}
+              </ul>
+            )}
 
-              {!validacao.ok && (
-                <ul className="flex flex-col gap-1 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-                  {validacao.problems.map((p) => (
-                    <li key={p}>{p}</li>
-                  ))}
-                </ul>
-              )}
-
-              {verContatos && (
-                <div className="max-h-64 overflow-auto rounded-md border border-hairline">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>E-mail</TableHead>
-                        <TableHead>Perfil</TableHead>
-                        <TableHead className="text-right">Reservas</TableHead>
-                        <TableHead className="text-right">Total</TableHead>
+            {verContatos && (
+              <div className="max-h-64 overflow-auto rounded-md border border-hairline">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>E-mail</TableHead>
+                      <TableHead>Perfil</TableHead>
+                      <TableHead className="text-right">Reservas</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(contatos.data ?? []).map((c) => (
+                      <TableRow key={c.contact_key}>
+                        <TableCell>{c.display_name ?? "-"}</TableCell>
+                        <TableCell className="text-muted">{c.email ?? "-"}</TableCell>
+                        <TableCell className="text-muted">{cohortLabel(c.cohort)}</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {c.bookings_count}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {formatBRL(c.total_spent)}
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {(contatos.data ?? []).map((c) => (
-                        <TableRow key={c.contact_key}>
-                          <TableCell>{c.display_name ?? "-"}</TableCell>
-                          <TableCell className="text-muted">{c.email ?? "-"}</TableCell>
-                          <TableCell className="text-muted">{cohortLabel(c.cohort)}</TableCell>
-                          <TableCell className="text-right tabular-nums">
-                            {c.bookings_count}
-                          </TableCell>
-                          <TableCell className="text-right tabular-nums">
-                            {formatBRL(c.total_spent)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </Panel>
         </div>
 
         <DialogFooter>
@@ -349,26 +342,5 @@ function SegmentDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function Numero({
-  rotulo,
-  valor,
-  destaque,
-}: {
-  rotulo: string;
-  valor: number;
-  destaque?: boolean;
-}) {
-  return (
-    <div className="flex flex-col gap-0.5 rounded-md border border-hairline p-3">
-      <span className="text-xs text-muted">{rotulo}</span>
-      <span
-        className={`text-xl font-semibold tabular-nums ${destaque ? "text-primary" : "text-ink"}`}
-      >
-        {valor}
-      </span>
-    </div>
   );
 }

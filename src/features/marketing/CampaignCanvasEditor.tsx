@@ -81,7 +81,9 @@ export function CampaignCanvasEditor({
 }: Props) {
   const areaRef = React.useRef<HTMLDivElement>(null);
   const [selecionado, setSelecionado] = React.useState<string | null>(null);
-  const [ligando, setLigando] = React.useState<{ from: string; branch?: "yes" | "no" } | null>(null);
+  const [ligando, setLigando] = React.useState<{ from: string; branch?: "yes" | "no" } | null>(
+    null,
+  );
   const arrasto = React.useRef<{ id: string; dx: number; dy: number } | null>(null);
 
   const problemas = validateCanvas(value);
@@ -133,15 +135,13 @@ export function CampaignCanvasEditor({
         "grid gap-3",
         // A paleta e a configuração encolheram para o canvas ficar com o espaço. Antes eram
         // 220 e 300px de laterais fixas comendo metade de um notebook de 1440.
-        fullscreen
-          ? "desktop:grid-cols-[168px_1fr_236px]"
-          : "desktop:grid-cols-[180px_1fr_248px]",
+        fullscreen ? "desktop:grid-cols-[168px_1fr_236px]" : "desktop:grid-cols-[180px_1fr_248px]",
       )}
     >
       {/* Paleta */}
       <aside className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="text-sm font-medium text-ink">Passos</h3>
+          <h3 className="text-body-sm font-medium text-ink">Passos</h3>
           {onToggleFullscreen && (
             <Button
               type="button"
@@ -153,15 +153,11 @@ export function CampaignCanvasEditor({
               title={fullscreen ? "Sair da tela cheia (Esc)" : "Tela cheia"}
               aria-label={fullscreen ? "Sair da tela cheia" : "Tela cheia"}
             >
-              {fullscreen ? (
-                <CornersIn className="size-4" />
-              ) : (
-                <CornersOut className="size-4" />
-              )}
+              {fullscreen ? <CornersIn className="size-4" /> : <CornersOut className="size-4" />}
             </Button>
           )}
         </div>
-        <p className="text-xs text-muted">Arraste para a tela.</p>
+        <p className="text-caption-sm text-muted">Arraste para a tela.</p>
         {NODE_LIBRARY.map((item) => {
           const Icone = ICONS[item.type];
           return (
@@ -173,19 +169,19 @@ export function CampaignCanvasEditor({
             >
               <div className="flex items-center gap-2">
                 <Icone className="size-4 text-primary" />
-                <span className="text-sm font-medium text-ink">{item.label}</span>
+                <span className="text-body-sm font-medium text-ink">{item.label}</span>
               </div>
-              <p className="mt-0.5 text-xs text-muted">{item.hint}</p>
+              <p className="mt-0.5 text-caption-sm text-muted">{item.hint}</p>
             </div>
           );
         })}
 
         {problemas.length > 0 && (
           <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-2">
-            <p className="text-xs font-medium text-amber-800">
+            <p className="text-caption-sm font-medium text-amber-800">
               {problemas.length} ponto(s) a resolver
             </p>
-            <ul className="mt-1 flex flex-col gap-1 text-xs text-amber-800">
+            <ul className="mt-1 flex flex-col gap-1 text-caption-sm text-amber-800">
               {problemas.slice(0, 6).map((p, i) => (
                 <li key={i}>{p.message}</li>
               ))}
@@ -202,8 +198,7 @@ export function CampaignCanvasEditor({
           fullscreen ? "h-[calc(100vh-150px)]" : "h-[600px]",
         )}
         style={{
-          backgroundImage:
-            "radial-gradient(circle, rgba(0,0,0,0.08) 1px, transparent 1px)",
+          backgroundImage: "radial-gradient(circle, rgba(0,0,0,0.08) 1px, transparent 1px)",
           backgroundSize: "16px 16px",
         }}
         onDragOver={(e) => e.preventDefault()}
@@ -225,7 +220,8 @@ export function CampaignCanvasEditor({
             const para = value.nodes.find((n) => n.id === edge.to);
             if (!de || !para) return null;
             const x1 = de.x + NODE_W;
-            const y1 = de.y + NODE_H / 2 + (edge.branch === "yes" ? -14 : edge.branch === "no" ? 14 : 0);
+            const y1 =
+              de.y + NODE_H / 2 + (edge.branch === "yes" ? -14 : edge.branch === "no" ? 14 : 0);
             const x2 = para.x;
             const y2 = para.y + NODE_H / 2;
             const meio = (x1 + x2) / 2;
@@ -276,9 +272,9 @@ export function CampaignCanvasEditor({
             >
               <div className="flex items-center gap-2">
                 <Icone className="size-4 shrink-0 text-primary" />
-                <span className="text-sm font-medium text-ink">{NODE_LABELS[node.type]}</span>
+                <span className="text-body-sm font-medium text-ink">{NODE_LABELS[node.type]}</span>
               </div>
-              <p className="line-clamp-2 text-xs text-muted">{resumoDoNo(node)}</p>
+              <p className="line-clamp-2 text-caption-sm text-muted">{resumoDoNo(node)}</p>
 
               {/* Saídas */}
               <div className="mt-auto flex flex-wrap gap-1 pt-1">
@@ -296,7 +292,7 @@ export function CampaignCanvasEditor({
                       }}
                       onPointerDown={(e) => e.stopPropagation()}
                       className={cn(
-                        "rounded-full border px-1.5 py-0.5 text-[10px] font-medium",
+                        "rounded-full border px-1.5 py-0.5 text-tab-label font-medium",
                         ativa
                           ? "border-primary bg-primary text-white"
                           : jaLigada
@@ -314,7 +310,7 @@ export function CampaignCanvasEditor({
         })}
 
         {ligando && (
-          <p className="sticky bottom-2 left-2 z-10 ml-2 w-fit rounded-md bg-ink px-2 py-1 text-xs text-white">
+          <p className="sticky bottom-2 left-2 z-10 ml-2 w-fit rounded-md bg-ink px-2 py-1 text-caption-sm text-white">
             Clique no passo de destino. Esc cancela.
           </p>
         )}
@@ -322,9 +318,9 @@ export function CampaignCanvasEditor({
 
       {/* Inspetor */}
       <aside className="flex flex-col gap-3">
-        <h3 className="text-sm font-medium text-ink">Configuração</h3>
+        <h3 className="text-body-sm font-medium text-ink">Configuração</h3>
         {!noSelecionado ? (
-          <p className="rounded-md border border-dashed border-hairline p-3 text-xs text-muted">
+          <p className="rounded-md border border-dashed border-hairline p-3 text-caption-sm text-muted">
             Clique num passo para configurar.
           </p>
         ) : (
@@ -382,7 +378,7 @@ function Inspetor({
   return (
     <div className="flex flex-col gap-3 rounded-md border border-hairline bg-canvas p-3">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-medium text-ink">{NODE_LABELS[node.type]}</span>
+        <span className="text-body-sm font-medium text-ink">{NODE_LABELS[node.type]}</span>
         {node.type !== "trigger" && (
           <Button variant="ghost" size="icon" aria-label="Remover passo" onClick={onRemove}>
             <Trash className="size-4" />
@@ -411,7 +407,7 @@ function Inspetor({
               placeholder="Oi {{nome}}, faz {{dias_sem_comprar}} dias que você não viaja com a gente."
             />
           </div>
-          <p className="text-xs text-muted">
+          <p className="text-caption-sm text-muted">
             Marcações: {"{{nome}}"}, {"{{reservas}}"}, {"{{ticket_medio}}"}, {"{{total_gasto}}"},{" "}
             {"{{dias_sem_comprar}}"}, {"{{carro}}"}. O link de descadastro entra sozinho no rodapé.
           </p>
@@ -441,7 +437,7 @@ function Inspetor({
               placeholder="{{nome}}"
             />
           </div>
-          <p className="text-xs text-muted">
+          <p className="text-caption-sm text-muted">
             A Meta só entrega template aprovado, e só para quem deu opt-in de WhatsApp.
           </p>
         </>
@@ -482,10 +478,7 @@ function Inspetor({
           </div>
           <div className="flex flex-col gap-1.5">
             <Label>Operador</Label>
-            <Select
-              value={String(node.data?.op ?? "gte")}
-              onValueChange={(v) => set({ op: v })}
-            >
+            <Select value={String(node.data?.op ?? "gte")} onValueChange={(v) => set({ op: v })}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -517,16 +510,16 @@ function Inspetor({
 
       {/* Ligações que saem daqui */}
       <div className="flex flex-col gap-1 border-t border-hairline pt-2">
-        <span className="text-xs font-medium text-muted">Saídas</span>
+        <span className="text-caption-sm font-medium text-muted">Saídas</span>
         {nodeOutlets(node.type).length === 0 && (
-          <span className="text-xs text-muted">Este passo encerra o fluxo.</span>
+          <span className="text-caption-sm text-muted">Este passo encerra o fluxo.</span>
         )}
         {nodeOutlets(node.type).map((saida) => {
           const branch = saida === "next" ? undefined : saida;
           const aresta = outgoing(canvas, node.id, branch);
           const destino = canvas.nodes.find((n) => n.id === aresta?.to);
           return (
-            <div key={saida} className="flex items-center justify-between gap-2 text-xs">
+            <div key={saida} className="flex items-center justify-between gap-2 text-caption-sm">
               <span className="flex items-center gap-1 text-muted">
                 <ArrowElbowDownRight className="size-3" />
                 {saida === "next" ? "seguir" : saida === "yes" ? "sim" : "não"}

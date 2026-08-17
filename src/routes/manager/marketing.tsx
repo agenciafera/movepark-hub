@@ -67,7 +67,7 @@ export default function ManagerMarketing() {
         </TabsContent>
 
         <TabsContent value="funil" className="mt-4">
-          <p className="mb-3 text-sm text-muted">
+          <p className="mb-3 text-body-sm text-muted">
             Reservas criadas em {formatRangeLabel(range)}.
           </p>
           <ConversionFunnel data={funil.data} isLoading={funil.isLoading} />

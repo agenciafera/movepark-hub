@@ -157,7 +157,7 @@ export function LeadTable({ leads, isLoading, savedColumns, onSaveColumns }: Pro
                       {col.key === "cohort" && lead.cohort ? (
                         <span
                           className={cn(
-                            "rounded-full border px-1.5 py-0.5 text-xs font-medium",
+                            "rounded-full border px-1.5 py-0.5 text-caption-sm font-medium",
                             toneClasses(cohortTone(lead.cohort)),
                           )}
                         >
