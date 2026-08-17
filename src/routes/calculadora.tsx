@@ -1,12 +1,20 @@
 import * as React from "react";
 import { Link, useLoaderData, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
+import { ArrowRight, ArrowsLeftRight, CaretDown, Car, ShieldCheck } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { PageHeader } from "@/components/shared/PageHeader";
 import { formatBRL, formatDate } from "@/lib/format";
 import { breadcrumbSchema } from "@/lib/jsonld";
 import { cn } from "@/lib/utils";
+import { getLocationCapabilities } from "@/features/listing/capabilities";
 import { fetchPriceForDays } from "@/features/price-index/api";
 import {
   CALC_MAX_DAYS,
@@ -37,6 +45,8 @@ import {
 
 const SITE_URL = "https://hub.movepark.co";
 
+const EYEBROW = "text-badge uppercase tracking-[0.4px] text-mp-indigo";
+
 /** Lote mapeado pela Movepark, ainda sem contrato: aparece sem preço (ADR-010). */
 export type CalculadoraProspect = {
   name: string;
@@ -57,15 +67,144 @@ const DESCRIPTION =
   "Escolha o aeroporto e o número de diárias e veja quanto custa em cada estacionamento, " +
   "do mais barato ao mais caro. Parceiros Movepark reservam online pelo preço do checkout.";
 
-const celulaBase = "tablet:table-cell tablet:border-b tablet:border-hairline tablet:px-3 tablet:py-5 tablet:align-top";
+const celulaBase =
+  "tablet:table-cell tablet:border-b tablet:border-hairline-soft tablet:px-3 tablet:py-5 tablet:align-top";
+
+/** Fim de página: para onde o cliente vai depois de saber o preço. */
+const PROXIMOS = [
+  {
+    title: "Como funciona a reserva",
+    sub: "Do clique ao retorno do voo, em 7 passos",
+    to: "/como-funciona",
+    img: "/illustrations/il-people-reserva-app.webp",
+  },
+  {
+    title: "Comparar todos os destinos",
+    sub: "O índice de preços, aeroporto por aeroporto",
+    to: "/precos",
+    img: "/illustrations/il-destino-aeroporto.webp",
+  },
+  {
+    title: "Falar com o suporte",
+    sub: "Preço, traslado, cancelamento e check-in",
+    to: "/faq",
+    img: "/illustrations/il-people-viajante.webp",
+  },
+];
+
+/**
+ * Metodologia, em pergunta e resposta. Fica em accordion, mas com `forceMount`:
+ * a resposta continua no HTML quando o item está fechado, porque crawler de IA
+ * não abre accordion.
+ */
+const METODOLOGIA: { q: string; a: React.ReactNode }[] = [
+  {
+    q: "De onde vem o preço de cada vaga?",
+    a: (
+      <>
+        Do motor de preços da Movepark, o mesmo que fecha a reserva no checkout: a tabela vigente
+        do parceiro aplicada ao número de diárias que você escolheu. Não é estimativa.
+      </>
+    ),
+  },
+  {
+    q: "O que é o preço riscado?",
+    a: (
+      <>
+        É a tarifa de balcão, o que o estacionamento cobra de quem chega sem reservar. A diferença
+        entre os dois é o que você economiza reservando online.
+      </>
+    ),
+  },
+  {
+    q: "Por que alguns estacionamentos aparecem sem preço?",
+    a: (
+      <>
+        São fichas mapeadas pela nossa equipe, de estacionamentos que ainda não têm contrato com a
+        Movepark. A ficha mostra endereço e comodidades, mas o preço é a tabela do local, cobrada na
+        hora. Para comparar os destinos lado a lado, veja o{" "}
+        <Link to="/precos" className="font-medium text-mp-indigo underline-offset-2 hover:underline">
+          índice de preços
+        </Link>
+        .
+      </>
+    ),
+  },
+  {
+    q: "Como vocês calculam o custo do app de transporte?",
+    a: (
+      <>
+        É estimativa: Uber e 99 não oferecem API pública de preço. Usamos a tarifa de referência da
+        categoria básica ({formatBRL(TARIFA_APP_PADRAO.bandeirada)} de partida,{" "}
+        {formatBRL(TARIFA_APP_PADRAO.porKm)} por km e {formatBRL(TARIFA_APP_PADRAO.porMinuto)} por
+        minuto, com mínima de {formatBRL(TARIFA_APP_PADRAO.minima)}), com o tempo estimado a 30 km/h
+        na cidade. Fonte:{" "}
+        <a
+          href={TARIFA_APP_PADRAO.fonteUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-mp-indigo underline-offset-2 hover:underline"
+        >
+          {TARIFA_APP_PADRAO.fonte}
+        </a>
+        , {TARIFA_APP_PADRAO.coletadoEm}. Em pico, chuva ou madrugada a tarifa dinâmica sobe o valor
+        real: por isso o controle de dinâmica e o campo para colar a corrida que o seu app mostrou.
+      </>
+    ),
+  },
+  {
+    q: "E o combustível do carro?",
+    a: (
+      <>
+        Quando ativado, usa {COMBUSTIVEL.kmPorLitro} km/L a {formatBRL(COMBUSTIVEL.precoLitro)} o
+        litro ({COMBUSTIVEL.fonte}), no trajeto de ida e volta.
+      </>
+    ),
+  },
+];
+
+/** Linha de resultado do painel: rótulo, explicação curta e valor. */
+function LinhaResultado({
+  k,
+  hint,
+  valor,
+  tom = "ink",
+}: {
+  k: string;
+  hint: string;
+  valor: string;
+  tom?: "ink" | "success" | "muted";
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <span className="flex min-w-0 flex-col gap-0.5">
+        <span className="text-title-md text-ink">{k}</span>
+        <span className="text-pretty text-caption-sm text-muted">{hint}</span>
+      </span>
+      <span
+        className={cn(
+          "shrink-0 whitespace-nowrap text-title-md tabular-nums",
+          tom === "success" && "text-success",
+          tom === "muted" && "text-muted",
+          tom === "ink" && "text-ink",
+        )}
+      >
+        {valor}
+      </span>
+    </div>
+  );
+}
 
 /**
  * Calculadora de estacionamento (/calculadora-estacionamento-aeroporto):
- * destino + diárias viram o ranking real do motor, na estrutura editorial de
- * tabela ranqueada. Parceiros Movepark vêm primeiro, com Reservar em destaque;
- * lotes mapeados sem contrato fecham a lista sem preço, com a ficha (ADR-010).
- * As durações da matriz padrão (1/7/15/30) respondem na hora com o dado do
- * build; qualquer outra vai ao motor pela mesma RPC pública. O estado inicial
+ * destino + diárias viram o ranking real do motor. O desenho é o do Claude
+ * Design (`Calculadora Movepark v2`): o controle e o veredito moram juntos num
+ * cartão só, acima da dobra, e a lista completa vem embaixo como prova.
+ *
+ * Parceiros Movepark vêm primeiro, com Reservar em destaque; lotes mapeados sem
+ * contrato ficam numa gaveta à parte, sem preço, com a ficha (ADR-010). As
+ * durações da matriz padrão (1/7/15/30) respondem na hora com o dado do build;
+ * qualquer outra vai ao motor pela mesma RPC pública. O estado inicial
  * (primeiro destino, 7 diárias) é pré-renderizado.
  */
 export default function CalculadoraPage() {
@@ -97,6 +236,7 @@ export default function CalculadoraPage() {
   const [surge, setSurge] = React.useState<number>(1);
   const [tarifaManual, setTarifaManual] = React.useState("");
   const [comCombustivel, setComCombustivel] = React.useState(false);
+  const [mapeadosAbertos, setMapeadosAbertos] = React.useState(false);
   // O destino nas diárias em vigor (o da matriz padrão ou o buscado no motor).
   const [destinoCalc, setDestinoCalc] = React.useState<PriceDestination | null>(
     destinations.find((d) => d.slug === (catalogo[0]?.slug ?? destinations[0]?.slug)) ?? null,
@@ -181,7 +321,7 @@ export default function CalculadoraPage() {
     );
   }
 
-  // Comparação com app de transporte (seção no fim da página, mesma URL).
+  // Comparação com app de transporte (mesmo cartão, outro veredito).
   const km = sanitizeKm(kmInput);
   const manualNum = Number.parseFloat(tarifaManual.replace(",", "."));
   const comparacao =
@@ -194,6 +334,30 @@ export default function CalculadoraPage() {
   const breakEven =
     destinoCalc && km != null ? breakEvenDays(destinoCalc, km, surge, standardDays) : null;
   const estacionarVence = comparacao?.economia != null && comparacao.economia > 0;
+  const carroTotal =
+    comparacao?.estacionarTotal != null
+      ? comparacao.estacionarTotal + (comparacao.combustivel ?? 0)
+      : null;
+
+  // Melhor vaga do destino na duração escolhida: é ela que o painel promete.
+  const melhor = result?.priced[0] ?? null;
+  const maisCara = result && result.priced.length > 1 ? result.priced[result.priced.length - 1] : null;
+  const economiaMelhor =
+    melhor?.cell.oldTotal != null && melhor.cell.total != null
+      ? melhor.cell.oldTotal - melhor.cell.total
+      : null;
+  // ADR-009: cancelamento é promessa de transação. Só aparece se a unidade que o
+  // painel está recomendando fecha a reserva no Hub.
+  const melhorCancela = getLocationCapabilities(melhor?.row.unit).cancellation;
+  const dias = result?.days ?? 7;
+  const diasSanos = sanitizeDays(daysInput);
+  // A barra do ranking mede cada total contra o mais caro da lista.
+  const tetoBarra = result?.priced.length
+    ? (result.priced[result.priced.length - 1].cell.total ?? 0)
+    : 0;
+  // Destino só com lote mapeado: a gaveta deixa de ser gaveta.
+  const gavetaFixa = (result?.priced.length ?? 0) + (result?.blocked.length ?? 0) === 0;
+  const gavetaAberta = gavetaFixa || mapeadosAbertos;
 
   const canonical = `${SITE_URL}/calculadora-estacionamento-aeroporto`;
   const titulo = "Calculadora de estacionamento de aeroporto";
@@ -202,6 +366,9 @@ export default function CalculadoraPage() {
     { name: "Índice de preços", url: `${SITE_URL}/precos` },
     { name: "Calculadora", url: canonical },
   ]);
+
+  const campo =
+    "h-12 w-full rounded-sm border border-hairline bg-canvas px-3 text-body-md text-ink focus:border-mp-primary focus:outline-none";
 
   return (
     <>
@@ -216,501 +383,777 @@ export default function CalculadoraPage() {
         <script type="application/ld+json">{JSON.stringify(breadcrumb)}</script>
       </Helmet>
 
-      <div className="mx-auto w-full max-w-[1280px] px-4 py-12">
-        <nav aria-label="Trilha de navegação" className="mb-4">
-          <ol className="flex flex-wrap items-center gap-1.5 text-body-sm text-muted">
-            <li>
-              <Link to="/" className="hover:text-ink">
-                Início
-              </Link>
-            </li>
-            <li aria-hidden className="text-muted-steel">
-              ›
-            </li>
-            <li>
-              <Link to="/precos" className="hover:text-ink">
-                Índice de preços
-              </Link>
-            </li>
-            <li aria-hidden className="text-muted-steel">
-              ›
-            </li>
-            <li aria-current="page" className="text-ink">
-              Calculadora
-            </li>
-          </ol>
-        </nav>
-
-        <PageHeader
-          variant="content"
-          eyebrow="Índice de preços"
-          title={titulo}
-          description="Escolha o destino e o número de diárias. O ranking sai do motor de reservas, do mais barato ao mais caro, com o balcão ao lado."
-        >
-          <p className="text-caption-sm text-muted">
+      <div className="bg-surface-soft">
+        <div className="mx-auto w-full max-w-[1280px] px-4 pt-10 desktop:pt-14">
+          <Breadcrumb
+            className="mb-4"
+            items={[
+              { label: "Início", to: "/" },
+              { label: "Índice de preços", to: "/precos" },
+              { label: "Calculadora" },
+            ]}
+          />
+          {/* O violeta cai num indicador-chave, não em texto decorativo: é a
+              promessa da página (dez segundos até o preço). */}
+          <h1 className="text-balance text-display-3xl text-ink">
+            Saber quanto custa estacionar no aeroporto leva{" "}
+            <span className="text-mp-primary">10 segundos</span>
+          </h1>
+          <p className="mt-4 max-w-[56ch] text-pretty text-body-md text-body">
+            Escolha o destino e as diárias. O preço sai do mesmo motor que fecha a reserva no
+            checkout.
+          </p>
+          <p className="mt-2 text-caption-sm text-muted">
             Conferido no motor de reservas em{" "}
             <time dateTime={loaded.generatedAt}>{formatDate(loaded.generatedAt)}</time>
           </p>
-        </PageHeader>
+        </div>
 
-        {/* A pergunta que separa as duas calculadoras: cada modo tem seus campos
-            e seu resultado, sem misturar as contas. */}
-        <fieldset className="mt-8">
-          <legend className="text-title-md text-ink">O que você quer calcular?</legend>
-          <div className="mt-3 grid gap-3 tablet:max-w-[720px] tablet:grid-cols-2">
-            <label
-              className={cn(
-                "cursor-pointer rounded-lg border p-4 transition",
-                modo === "estacionamento"
-                  ? "border-mp-primary bg-mp-pale/60"
-                  : "border-hairline hover:border-mp-primary",
-              )}
-            >
-              <input
-                type="radio"
-                name="modo"
-                value="estacionamento"
-                checked={modo === "estacionamento"}
-                onChange={() => setModo("estacionamento")}
-                className="sr-only"
-              />
-              <span className="block text-title-sm text-ink">Preço do estacionamento</span>
-              <span className="mt-1 block text-caption-sm text-muted">
-                O ranking das vagas perto do aeroporto, por diárias.
-              </span>
-            </label>
-            <label
-              className={cn(
-                "cursor-pointer rounded-lg border p-4 transition",
-                modo === "app"
-                  ? "border-mp-primary bg-mp-pale/60"
-                  : "border-hairline hover:border-mp-primary",
-              )}
-            >
-              <input
-                type="radio"
-                name="modo"
-                value="app"
-                checked={modo === "app"}
-                onChange={() => setModo("app")}
-                className="sr-only"
-              />
-              <span className="block text-title-sm text-ink">Estacionar ou ir de app?</span>
-              <span className="mt-1 block text-caption-sm text-muted">
-                O carro estacionado contra ida e volta de Uber ou 99.
-              </span>
-            </label>
-          </div>
-        </fieldset>
-
-        {/* Sidebar de filtros fixa no desktop: o resultado fica ao lado, sem scroll
-            até a tabela. No mobile a mesma coluna empilha em cima da lista. */}
-        <div className="mt-8 grid items-start gap-8 desktop:grid-cols-[300px_minmax(0,1fr)]">
-          <aside className="desktop:sticky desktop:top-24">
-            <form
-              noValidate
-              className="rounded-lg border border-hairline p-5"
-              onSubmit={(e) => {
-                e.preventDefault();
-                void calcular(slug, daysInput);
-              }}
-            >
-              <div className="flex flex-col gap-5">
-                <label className="flex min-w-0 flex-col gap-1.5">
-                  <span className="text-caption-sm font-medium text-muted">Destino</span>
-                  <select
-                    value={slug}
-                    onChange={(e) => {
-                      setSlug(e.target.value);
-                      void calcular(e.target.value, daysInput);
-                    }}
-                    className="h-12 w-full rounded-sm border border-hairline bg-canvas px-3 text-body-md text-ink focus:border-mp-primary focus:outline-none"
+        {/* O cartão da calculadora: controle à esquerda, veredito à direita. */}
+        <div className="mx-auto w-full max-w-[1280px] px-4 pt-8">
+          <div className="rounded-lg bg-canvas p-5 shadow-tier desktop:p-8">
+            <fieldset>
+              <legend className="sr-only">O que você quer calcular?</legend>
+              <div className="flex gap-1 rounded-md bg-surface-soft p-1 tablet:inline-flex">
+                {(
+                  [
+                    { valor: "estacionamento", label: "Preço do estacionamento" },
+                    { valor: "app", label: "Estacionar ou ir de app?" },
+                  ] as const
+                ).map((m) => (
+                  <label
+                    key={m.valor}
+                    className={cn(
+                      "flex-1 cursor-pointer rounded-sm px-4 py-2.5 text-center text-title-sm transition tablet:flex-none",
+                      modo === m.valor
+                        ? "bg-canvas text-ink shadow-tier"
+                        : "text-muted hover:text-ink",
+                    )}
                   >
-                    {catalogo.map((d) => (
-                      <option key={d.slug} value={d.slug}>
-                        {d.short_name ?? d.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    <input
+                      type="radio"
+                      name="modo"
+                      value={m.valor}
+                      checked={modo === m.valor}
+                      onChange={() => setModo(m.valor)}
+                      className="sr-only"
+                    />
+                    {m.label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
 
-                <div className="flex min-w-0 flex-col gap-1.5">
-                  <span className="text-caption-sm font-medium text-muted" id="rotulo-diarias">
-                    Diárias (1 a 60)
+            <div className="mt-6 grid items-start gap-6 desktop:mt-8 desktop:grid-cols-[minmax(0,1fr)_400px] desktop:gap-10">
+              <form
+                noValidate
+                className="flex min-w-0 flex-col gap-6"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void calcular(slug, daysInput);
+                }}
+              >
+                <div className="flex flex-col gap-2">
+                  <label className="flex min-w-0 flex-col gap-2">
+                    <span className="text-title-md text-ink">Destino</span>
+                    <select
+                      value={slug}
+                      onChange={(e) => {
+                        setSlug(e.target.value);
+                        setMapeadosAbertos(false);
+                        void calcular(e.target.value, daysInput);
+                      }}
+                      className={campo}
+                    >
+                      {catalogo.map((d) => (
+                        <option key={d.slug} value={d.slug}>
+                          {d.short_name ?? d.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <span className="text-caption-sm text-muted">
+                    {result && result.priced.length > 0
+                      ? `${result.priced.length} ${
+                          result.priced.length === 1 ? "estacionamento" : "estacionamentos"
+                        } com reserva online em ${nome}`
+                      : `Sem reserva online em ${nome} por enquanto`}
                   </span>
-                  <div className="flex h-12 items-center gap-3">
-                    <input
-                      type="range"
-                      min={CALC_MIN_DAYS}
-                      max={CALC_MAX_DAYS}
-                      value={sanitizeDays(daysInput) ?? CALC_MIN_DAYS}
-                      onChange={(e) => aoMudarDias(e.target.value)}
-                      aria-label="Diárias (arraste)"
-                      className="w-full min-w-0 accent-mp-primary"
-                    />
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min={CALC_MIN_DAYS}
-                      max={CALC_MAX_DAYS}
-                      value={daysInput}
-                      onChange={(e) => aoMudarDias(e.target.value)}
-                      aria-label="Diárias"
-                      aria-describedby="rotulo-diarias"
-                      className="h-12 w-20 shrink-0 rounded-sm border border-hairline bg-canvas px-3 text-center text-body-md tabular-nums text-ink focus:border-mp-primary focus:outline-none"
-                    />
+                </div>
+
+                <div className="flex min-w-0 flex-col gap-3">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-title-md text-ink" id="rotulo-diarias">
+                      Quantas diárias
+                    </span>
+                    <span className="flex h-11 shrink-0 items-center gap-1 rounded-sm border border-hairline px-3">
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min={CALC_MIN_DAYS}
+                        max={CALC_MAX_DAYS}
+                        value={daysInput}
+                        onChange={(e) => aoMudarDias(e.target.value)}
+                        aria-label="Diárias"
+                        aria-describedby="rotulo-diarias"
+                        className="w-10 bg-transparent text-center text-body-md tabular-nums text-ink focus:outline-none"
+                      />
+                      <span className="text-body-sm text-muted">
+                        {diasSanos === 1 ? "diária" : "diárias"}
+                      </span>
+                    </span>
                   </div>
-                  <div className="mt-1 flex flex-wrap gap-2" aria-label="Durações comuns">
-                    {CALC_QUICK_DAYS.map((d) => (
-                      <button
-                        key={d}
-                        type="button"
-                        onClick={() => {
-                          setDaysInput(String(d));
-                          void calcular(slug, String(d));
-                        }}
-                        className={cn(
-                          "rounded-full border px-3 py-1.5 text-body-sm transition",
-                          result?.days === d && !carregando
-                            ? "border-mp-primary text-mp-primary"
-                            : "border-hairline text-ink hover:border-mp-primary hover:text-mp-primary",
-                        )}
-                      >
-                        {durationLabel(d)}
-                      </button>
-                    ))}
+                  <input
+                    type="range"
+                    min={CALC_MIN_DAYS}
+                    max={CALC_MAX_DAYS}
+                    value={diasSanos ?? CALC_MIN_DAYS}
+                    onChange={(e) => aoMudarDias(e.target.value)}
+                    aria-label="Diárias (arraste)"
+                    className="w-full min-w-0 accent-mp-primary"
+                  />
+                  {/* As pontas dizem só o número: o rótulo e a caixa acima já
+                      deram a unidade, e "1 diária" aqui repetia o atalho ao lado. */}
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <span className="text-caption-sm text-muted">1</span>
+                    <div className="flex flex-wrap justify-center gap-2" aria-label="Durações comuns">
+                      {CALC_QUICK_DAYS.map((d) => (
+                        <button
+                          key={d}
+                          type="button"
+                          onClick={() => {
+                            setDaysInput(String(d));
+                            void calcular(slug, String(d));
+                          }}
+                          className={cn(
+                            "rounded-full px-3 py-1.5 text-body-sm transition",
+                            result?.days === d && !carregando
+                              ? "bg-mp-navy text-white"
+                              : "bg-surface-soft text-body hover:text-ink",
+                          )}
+                        >
+                          {durationLabel(d)}
+                        </button>
+                      ))}
+                    </div>
+                    <span className="text-caption-sm text-muted">60</span>
                   </div>
                 </div>
 
                 {modo === "app" && (
                   <>
-                <div className="flex min-w-0 flex-col gap-1.5 border-t border-hairline pt-4">
-                  <span className="text-caption-sm font-medium text-muted" id="rotulo-km">
-                    Distância até o aeroporto (km)
-                  </span>
-                  <div className="flex h-12 items-center gap-3">
-                    <input
-                      type="range"
-                      min={KM_MIN}
-                      max={KM_MAX}
-                      value={sanitizeKm(kmInput) ?? KM_MIN}
-                      onChange={(e) => setKmInput(e.target.value)}
-                      aria-label="Distância (arraste)"
-                      className="w-full min-w-0 accent-mp-primary"
-                    />
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min={KM_MIN}
-                      max={KM_MAX}
-                      value={kmInput}
-                      onChange={(e) => setKmInput(e.target.value)}
-                      aria-label="Distância em km"
-                      aria-describedby="rotulo-km"
-                      className="h-12 w-20 shrink-0 rounded-sm border border-hairline bg-canvas px-3 text-center text-body-md tabular-nums text-ink focus:border-mp-primary focus:outline-none"
-                    />
-                  </div>
-                </div>
+                    <div className="flex min-w-0 flex-col gap-3 border-t border-hairline pt-6">
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-title-md text-ink" id="rotulo-km">
+                          Distância de casa
+                        </span>
+                        <span className="flex h-11 shrink-0 items-center gap-1 rounded-sm border border-hairline px-3">
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min={KM_MIN}
+                            max={KM_MAX}
+                            value={kmInput}
+                            onChange={(e) => setKmInput(e.target.value)}
+                            aria-label="Distância em km"
+                            aria-describedby="rotulo-km"
+                            className="w-10 bg-transparent text-center text-body-md tabular-nums text-ink focus:outline-none"
+                          />
+                          <span className="text-body-sm text-muted">km</span>
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min={KM_MIN}
+                        max={KM_MAX}
+                        value={km ?? KM_MIN}
+                        onChange={(e) => setKmInput(e.target.value)}
+                        aria-label="Distância (arraste)"
+                        className="w-full min-w-0 accent-mp-primary"
+                      />
+                      <div className="flex items-center justify-between">
+                        <span className="text-caption-sm text-muted">{KM_MIN} km</span>
+                        <span className="text-caption-sm text-muted">{KM_MAX} km</span>
+                      </div>
+                    </div>
 
-                <label className="flex min-w-0 flex-col gap-1.5">
-                  <span className="text-caption-sm font-medium text-muted">Tarifa dinâmica</span>
-                  <select
-                    value={String(surge)}
-                    onChange={(e) => setSurge(Number(e.target.value))}
-                    className="h-12 w-full rounded-sm border border-hairline bg-canvas px-3 text-body-md text-ink focus:border-mp-primary focus:outline-none"
-                  >
-                    {SURGE_OPCOES.map((s) => (
-                      <option key={s} value={s}>
-                        {s === 1 ? "sem dinâmica (1x)" : `${String(s).replace(".", ",")}x`}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    <div className="flex flex-col gap-3">
+                      <span className="text-title-md text-ink" id="rotulo-surge">
+                        Tarifa dinâmica do app
+                      </span>
+                      <div className="flex flex-wrap gap-2" role="group" aria-labelledby="rotulo-surge">
+                        {SURGE_OPCOES.map((s) => (
+                          <button
+                            key={s}
+                            type="button"
+                            aria-pressed={surge === s}
+                            onClick={() => setSurge(s)}
+                            className={cn(
+                              "rounded-sm px-4 py-2.5 text-body-sm transition",
+                              surge === s
+                                ? "border-2 border-mp-navy bg-surface-pale text-ink"
+                                : "border border-hairline text-body hover:text-ink",
+                            )}
+                          >
+                            {s === 1 ? "sem dinâmica" : `${String(s).replace(".", ",")}x`}
+                          </button>
+                        ))}
+                      </div>
+                      <span className="text-pretty text-caption-sm text-muted">
+                        Em pico, chuva ou madrugada o app cobra mais. Ajuste para o que você costuma
+                        ver.
+                      </span>
+                    </div>
 
-                <label className="flex min-w-0 flex-col gap-1.5">
-                  <span className="text-caption-sm font-medium text-muted">
-                    Corrida que o app mostrou (ida, opcional)
-                  </span>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="R$"
-                    value={tarifaManual}
-                    onChange={(e) => setTarifaManual(e.target.value)}
-                    aria-label="Valor da corrida de ida"
-                    className="h-12 w-full rounded-sm border border-hairline bg-canvas px-3 text-body-md tabular-nums text-ink focus:border-mp-primary focus:outline-none"
-                  />
-                </label>
+                    <label className="flex min-w-0 flex-col gap-2">
+                      <span className="text-title-md text-ink">
+                        Corrida que o app mostrou (ida, opcional)
+                      </span>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="R$"
+                        value={tarifaManual}
+                        onChange={(e) => setTarifaManual(e.target.value)}
+                        aria-label="Valor da corrida de ida"
+                        className={cn(campo, "tabular-nums")}
+                      />
+                    </label>
 
-                <label className="flex items-center gap-2.5 text-body-sm text-body">
-                  <input
-                    type="checkbox"
-                    checked={comCombustivel}
-                    onChange={(e) => setComCombustivel(e.target.checked)}
-                    className="h-4 w-4 accent-mp-primary"
-                  />
-                  Somar combustível no lado do carro
-                </label>
+                    <label className="flex cursor-pointer items-start gap-3 rounded-sm border border-hairline p-4">
+                      <input
+                        type="checkbox"
+                        checked={comCombustivel}
+                        onChange={(e) => setComCombustivel(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 shrink-0 accent-mp-primary"
+                      />
+                      <span className="flex min-w-0 flex-col gap-0.5">
+                        <span className="text-title-sm text-ink">Somar combustível ao carro</span>
+                        <span className="text-caption-sm text-muted">
+                          {COMBUSTIVEL.kmPorLitro} km/L a {formatBRL(COMBUSTIVEL.precoLitro)}, ida e
+                          volta
+                        </span>
+                      </span>
+                    </label>
                   </>
                 )}
+              </form>
 
-                <div className="border-t border-hairline pt-4" aria-live="polite">
-                  <span className="text-caption-sm font-medium text-muted">Resultado</span>
-                  <p className="mt-1.5 text-title-md text-ink">
-                    {carregando
-                      ? "Calculando…"
-                      : result
-                        ? `${result.priced.length} de ${result.priced.length + result.blocked.length + mapeados.length} com reserva online`
-                        : "Escolha o destino"}
-                  </p>
-                </div>
+              {/* Painel do veredito. É ele que responde a pergunta do modo. */}
+              <div
+                className="flex min-w-0 flex-col gap-5 rounded-md bg-surface-pale p-5 desktop:p-6"
+                aria-live="polite"
+              >
+                {modo === "estacionamento" &&
+                  (melhor && melhor.cell.total != null ? (
+                    <>
+                      <div className="flex flex-col gap-1">
+                        <span className={EYEBROW}>Melhor preço</span>
+                        <span className="text-display-3xl tabular-nums text-ink">
+                          {carregando ? "…" : formatBRL(melhor.cell.total)}
+                        </span>
+                        <span className="text-pretty text-body-sm text-body">
+                          {melhor.row.label}, {melhor.row.unit.parking_type_name}
+                          {formatDistance(melhor.row.unit.distance_m) && (
+                            <>, a {formatDistance(melhor.row.unit.distance_m)} do terminal</>
+                          )}
+                          , {durationLabel(dias)}.
+                        </span>
+                      </div>
+
+                      <div className="h-px bg-hairline" />
+
+                      <div className="flex flex-col gap-4">
+                        {economiaMelhor != null && melhor.cell.oldTotal != null && (
+                          <LinhaResultado
+                            k="Você economiza"
+                            hint={`Contra a tarifa de balcão, de ${formatBRL(melhor.cell.oldTotal)}`}
+                            valor={formatBRL(economiaMelhor)}
+                            tom="success"
+                          />
+                        )}
+                        {melhor.cell.perDay != null && (
+                          <LinhaResultado
+                            k="Preço por diária"
+                            hint="Já com a reserva online aplicada"
+                            valor={formatBRL(melhor.cell.perDay)}
+                          />
+                        )}
+                        {maisCara?.cell.total != null && (
+                          <LinhaResultado
+                            k="Opção mais cara"
+                            hint="O teto da lista, para comparar"
+                            valor={formatBRL(maisCara.cell.total)}
+                            tom="muted"
+                          />
+                        )}
+                      </div>
+
+                      <div className="h-px bg-hairline" />
+
+                      <div className="flex flex-col gap-3">
+                        <Button asChild className="w-full">
+                          <Link to={listingPath(melhor.row.unit)}>Reservar essa vaga</Link>
+                        </Button>
+                        {melhorCancela && (
+                          <span className="flex items-center justify-center gap-2 text-caption-sm font-medium text-success">
+                            <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden />
+                            Cancelamento grátis conforme a tarifa
+                          </span>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      <span className={EYEBROW}>Sem reserva online</span>
+                      <p className="text-pretty text-body-md text-body">
+                        {destino
+                          ? `Nenhum parceiro cota ${durationLabel(dias)} em ${nome}. Ajuste as diárias ou escolha outro destino.`
+                          : `Ainda estamos mapeando os estacionamentos de ${nome}.`}
+                      </p>
+                      <Button asChild variant="outline" className="w-full">
+                        <Link to={destino ? `/precos/${destino.slug}` : `/destinos/${slug}`}>
+                          {destino ? "Ver a tabela completa" : "Ver a página do destino"}
+                        </Link>
+                      </Button>
+                    </div>
+                  ))}
+
+                {modo === "app" &&
+                  (comparacao && comparacao.economia != null && carroTotal != null ? (
+                    <>
+                      <div className="flex flex-col gap-1">
+                        <span className={EYEBROW}>
+                          {estacionarVence ? "Estacionar sai mais barato" : "Ir de app sai mais barato"}
+                        </span>
+                        <span className="text-display-3xl tabular-nums text-ink">
+                          {formatBRL(Math.abs(comparacao.economia))}
+                        </span>
+                        <span className="text-pretty text-body-sm text-body">
+                          {estacionarVence ? (
+                            <>
+                              De diferença a favor do carro, com a vaga mais barata
+                              {comCombustivel ? " e o combustível da ida e volta" : ""}. Você ainda
+                              volta no seu próprio carro.
+                            </>
+                          ) : (
+                            <>
+                              De diferença a favor do app nessa distância e duração. Aumente as
+                              diárias ou confira a tarifa dinâmica do seu horário: a conta vira
+                              rápido.
+                            </>
+                          )}
+                        </span>
+                      </div>
+
+                      <div className="h-px bg-hairline" />
+
+                      <div className="flex flex-col gap-3">
+                        {(
+                          [
+                            {
+                              chave: "carro",
+                              Icone: Car,
+                              title: "Levar o carro",
+                              sub: `${comparacao.estacionarLabel ?? ""}${
+                                comCombustivel ? " + combustível" : ""
+                              }`,
+                              total: carroTotal,
+                              vence: estacionarVence,
+                            },
+                            {
+                              chave: "app",
+                              Icone: ArrowsLeftRight,
+                              title: "Ir de app",
+                              sub: comparacao.appManual
+                                ? "Ida e volta, no valor que você informou"
+                                : `Ida e volta, dinâmica ${String(comparacao.surge).replace(".", ",")}x`,
+                              total: comparacao.appTotal,
+                              vence: !estacionarVence,
+                            },
+                          ] as const
+                        ).map((linha) => (
+                          <div
+                            key={linha.chave}
+                            className={cn(
+                              "flex items-center gap-3 rounded-sm p-4",
+                              linha.vence
+                                ? "bg-mp-navy text-white"
+                                : "border border-hairline bg-canvas text-ink",
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                "flex h-8 w-8 shrink-0 items-center justify-center rounded-sm",
+                                linha.vence ? "bg-white/15 text-white" : "bg-surface-soft text-muted",
+                              )}
+                              aria-hidden
+                            >
+                              <linha.Icone className="h-4 w-4" />
+                            </span>
+                            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                              <span className="text-title-sm">{linha.title}</span>
+                              <span
+                                className={cn(
+                                  "truncate text-caption-sm",
+                                  linha.vence ? "text-white/70" : "text-muted",
+                                )}
+                              >
+                                {linha.sub}
+                              </span>
+                            </span>
+                            <span className="shrink-0 whitespace-nowrap text-display-sm tabular-nums">
+                              {formatBRL(linha.total)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {comparacao.melhorUnidade && (
+                        <Button asChild className="w-full">
+                          <Link
+                            to={`${listingPath(comparacao.melhorUnidade)}?${new URLSearchParams(
+                              reservaWindow(new Date(), comparacao.days),
+                            ).toString()}`}
+                          >
+                            Reservar a vaga mais barata
+                          </Link>
+                        </Button>
+                      )}
+
+                      <div className="flex flex-col gap-1.5">
+                        {breakEven != null && (
+                          <span className="text-pretty text-caption-sm text-muted">
+                            Nesse trajeto, estacionar sai mais barato a partir de{" "}
+                            {durationLabel(breakEven)}. A janela sugerida é entrada amanhã às 22h, e
+                            dá para ajustar as datas na página da vaga.
+                          </span>
+                        )}
+                        <span className="text-pretty text-caption-sm text-muted">
+                          O lado do app é estimativa. Uber e 99 não publicam tabela oficial.
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      <span className={EYEBROW}>De app ou de carro?</span>
+                      <p className="text-pretty text-body-md text-body">
+                        Ainda não há parceiro com reserva online em {nome} para fazer essa conta.
+                        Escolha outro destino ao lado.
+                      </p>
+                    </div>
+                  ))}
               </div>
-            </form>
+            </div>
 
             {erro && (
-              <p className="mt-3 text-body-sm text-mp-red" role="alert">
+              <p className="mt-4 text-body-sm text-mp-red" role="alert">
                 {erro}
               </p>
             )}
-          </aside>
+          </div>
+        </div>
 
-          <div className="min-w-0">
+        {/* A lista completa, que é a prova do número do painel. */}
         {modo === "estacionamento" && result && destinoMeta && (
-          <section aria-live="polite">
+          <section className="mx-auto w-full max-w-[1280px] px-4 pt-12 desktop:pt-16">
             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-              <h2 className="text-display-sm text-ink">
-                {destino ? (
-                  <>
-                    {durationLabel(result.days)} em {nome}
-                  </>
-                ) : (
-                  <>Estacionamentos em {nome}</>
-                )}
+              <h2 className="text-balance text-display-2xl text-ink">
+                Todas as opções em {nome}, da mais barata
               </h2>
               <p className="text-body-sm text-muted">
-                {result.priced.length}{" "}
-                {result.priced.length === 1 ? "opção com reserva online" : "opções com reserva online"}
+                {durationLabel(result.days)} · {result.priced.length} com reserva online
                 {mapeados.length > 0 && <> · {mapeados.length} sem contrato ainda</>}
               </p>
             </div>
 
-            {result.priced.length + result.blocked.length + mapeados.length === 0 ? (
-              destino ? (
-                <p className="mt-3 text-body-md text-body">
-                  Nenhum parceiro cota {durationLabel(result.days)} nesse destino. Veja a{" "}
-                  <Link
-                    to={`/precos/${destino.slug}`}
-                    className="font-medium text-mp-indigo underline-offset-2 hover:underline"
-                  >
-                    tabela completa
-                  </Link>{" "}
-                  ou busque por data.
-                </p>
-              ) : (
-                <p className="mt-3 text-body-md text-body">
-                  Ainda estamos mapeando os estacionamentos de {nome}. Veja a{" "}
-                  <Link
-                    to={`/destinos/${slug}`}
-                    className="font-medium text-mp-indigo underline-offset-2 hover:underline"
-                  >
-                    página do destino
-                  </Link>
-                  .
+            {result.priced.length + result.blocked.length === 0 ? (
+              mapeados.length === 0 && (
+                <p className="mt-4 text-body-md text-body">
+                  {destino ? (
+                    <>
+                      Nenhum parceiro cota {durationLabel(result.days)} nesse destino. Veja a{" "}
+                      <Link
+                        to={`/precos/${destino.slug}`}
+                        className="font-medium text-mp-indigo underline-offset-2 hover:underline"
+                      >
+                        tabela completa
+                      </Link>{" "}
+                      ou busque por data.
+                    </>
+                  ) : (
+                    <>
+                      Ainda estamos mapeando os estacionamentos de {nome}. Veja a{" "}
+                      <Link
+                        to={`/destinos/${slug}`}
+                        className="font-medium text-mp-indigo underline-offset-2 hover:underline"
+                      >
+                        página do destino
+                      </Link>
+                      .
+                    </>
+                  )}
                 </p>
               )
             ) : (
-              <table className="mt-4 block w-full border-collapse tablet:table">
-                <caption className="sr-only">
-                  Preço de {durationLabel(result.days)} de estacionamento em {nome}
-                </caption>
-                <thead className="hidden tablet:table-header-group">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="w-14 border-b border-hairline py-2 pl-4 pr-2 text-left text-caption-sm font-medium text-muted"
-                    >
-                      Nº
-                    </th>
-                    <th
-                      scope="col"
-                      className="border-b border-hairline py-2 pr-3 text-left text-caption-sm font-medium text-muted"
-                    >
-                      Estacionamento
-                    </th>
-                    <th
-                      scope="col"
-                      className="border-b border-hairline px-3 py-2 text-left text-caption-sm font-medium text-muted"
-                    >
-                      R$ por dia
-                    </th>
-                    <th
-                      scope="col"
-                      className="border-b border-hairline px-3 py-2 text-left text-caption-sm font-medium text-muted"
-                    >
-                      Total ({durationLabel(result.days)})
-                    </th>
-                    <th
-                      scope="col"
-                      className="border-b border-hairline py-2 pl-3 pr-4 text-left text-caption-sm font-medium text-muted"
-                    >
-                      Reserva
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="block space-y-3 tablet:table-row-group">
-                  {result.priced.map(({ row, cell }, i) => (
-                    <tr
-                      key={row.key}
-                      className={cn(
-                        "grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg border p-4 tablet:table-row tablet:p-0",
-                        i === 0
-                          ? "border-mp-primary bg-mp-pale/60 tablet:border-0"
-                          : "border-hairline tablet:border-0",
-                      )}
-                    >
-                      <td className={cn("hidden text-caption-sm tabular-nums text-muted", celulaBase, "tablet:pl-4 tablet:pr-2")}>
-                        {String(i + 1).padStart(2, "0")}
-                      </td>
-                      <td className={cn("order-1 col-span-2", celulaBase, "tablet:px-0 tablet:pr-3")}>
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-title-md text-ink">
-                            <span className="mr-1.5 text-caption-sm tabular-nums text-muted tablet:hidden">
+              <div className="mt-4 tablet:overflow-hidden tablet:rounded-lg tablet:bg-canvas tablet:shadow-tier">
+                <table className="block w-full border-collapse tablet:table">
+                  <caption className="sr-only">
+                    Preço de {durationLabel(result.days)} de estacionamento em {nome}
+                  </caption>
+                  <thead className="hidden tablet:table-header-group">
+                    <tr>
+                      <th
+                        scope="col"
+                        className="border-b border-hairline py-3 pl-5 pr-3 text-left text-caption-sm font-medium text-muted"
+                      >
+                        Estacionamento
+                      </th>
+                      <th
+                        scope="col"
+                        className="w-[200px] border-b border-hairline px-3 py-3 text-left text-caption-sm font-medium text-muted"
+                      >
+                        R$ por diária
+                      </th>
+                      <th
+                        scope="col"
+                        className="border-b border-hairline px-3 py-3 text-left text-caption-sm font-medium text-muted"
+                      >
+                        Total ({durationLabel(result.days)})
+                      </th>
+                      <th
+                        scope="col"
+                        className="border-b border-hairline py-3 pl-3 pr-5 text-right text-caption-sm font-medium text-muted"
+                      >
+                        Reserva
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="block space-y-3 tablet:table-row-group">
+                    {result.priced.map(({ row, cell }, i) => (
+                      <tr
+                        key={row.key}
+                        className={cn(
+                          "grid grid-cols-2 gap-x-4 gap-y-3 rounded-md border p-4 tablet:table-row tablet:border-0 tablet:p-0",
+                          i === 0
+                            ? "border-mp-navy bg-surface-pale tablet:bg-surface-pale"
+                            : "border-hairline bg-canvas tablet:bg-transparent",
+                        )}
+                      >
+                        <td className={cn("order-1 col-span-2", celulaBase, "tablet:py-4 tablet:pl-5 tablet:pr-3")}>
+                          <div className="flex items-start gap-3">
+                            <span
+                              className={cn(
+                                "flex h-8 w-8 shrink-0 items-center justify-center rounded-sm text-caption-sm tabular-nums",
+                                i === 0 ? "bg-mp-navy text-white" : "bg-surface-soft text-muted",
+                              )}
+                            >
                               {String(i + 1).padStart(2, "0")}
                             </span>
-                            {row.label}
-                            {i === 0 && (
-                              <span className="ml-2 inline-block rounded-full bg-mp-primary px-2 py-0.5 align-middle text-badge uppercase text-white">
-                                menor preço
+                            <span className="flex min-w-0 flex-col gap-0.5">
+                              <span className="text-title-md text-ink">
+                                {row.label}
+                                {i === 0 && (
+                                  <span className="ml-2 inline-block rounded-full bg-mp-teal px-2 py-0.5 align-middle text-badge uppercase text-mp-navy">
+                                    menor preço
+                                  </span>
+                                )}
                               </span>
-                            )}
+                              <span className="text-caption-sm text-muted">
+                                {row.unit.parking_type_name}
+                                {formatDistance(row.unit.distance_m) && (
+                                  <> · {formatDistance(row.unit.distance_m)}</>
+                                )}
+                                {" · "}Parceiro Movepark
+                              </span>
+                              <Link
+                                to={listingPath(row.unit)}
+                                className="text-caption-sm font-medium text-mp-indigo underline underline-offset-4"
+                              >
+                                Ver ficha
+                              </Link>
+                            </span>
+                          </div>
+                        </td>
+                        <td className={cn("order-3", celulaBase, "tablet:py-4")}>
+                          <span className="block text-caption-sm text-muted tablet:hidden">
+                            R$ por diária
                           </span>
-                          <span className="text-caption-sm text-muted">
-                            {row.unit.parking_type_name}
-                            {formatDistance(row.unit.distance_m) && (
-                              <> · {formatDistance(row.unit.distance_m)}</>
-                            )}
-                            {" · "}Parceiro Movepark
+                          {cell.total != null && tetoBarra > 0 && (
+                            <span
+                              className="mb-1.5 mt-1 block h-1.5 w-full overflow-hidden rounded-full bg-surface-soft tablet:mt-0"
+                              aria-hidden
+                            >
+                              <span
+                                className={cn(
+                                  "block h-full rounded-full",
+                                  i === 0 ? "bg-mp-navy" : "bg-muted-steel",
+                                )}
+                                style={{
+                                  width: `${Math.max(5, Math.round((cell.total / tetoBarra) * 100))}%`,
+                                }}
+                              />
+                            </span>
+                          )}
+                          <span className="block text-body-sm tabular-nums text-body">
+                            {formatBRL(cell.perDay)} / diária
                           </span>
-                          <Link
-                            to={listingPath(row.unit)}
-                            className="text-caption-sm font-medium text-mp-indigo underline underline-offset-4"
-                          >
-                            Ver ficha
-                          </Link>
-                        </div>
-                      </td>
-                      <td className={cn("order-3", celulaBase)}>
-                        <span className="block text-caption-sm text-muted tablet:hidden">
-                          R$ por dia
-                        </span>
-                        <span className="block text-title-md tabular-nums text-ink">
-                          {formatBRL(cell.perDay)}
-                        </span>
-                        {cell.economyPct != null && (
-                          <span className="mt-1 inline-block rounded-full bg-success/10 px-2 py-0.5 text-caption-sm font-medium text-success">
-                            reserva online: {cell.economyPct}% menor
+                        </td>
+                        <td className={cn("order-4", celulaBase, "tablet:py-4")}>
+                          <span className="block text-caption-sm text-muted tablet:hidden">
+                            Total ({durationLabel(result.days)})
                           </span>
-                        )}
-                      </td>
-                      <td className={cn("order-4", celulaBase)}>
-                        <span className="block text-caption-sm text-muted tablet:hidden">
-                          Total ({durationLabel(result.days)})
-                        </span>
-                        {cell.oldTotal != null && (
-                          <span className="block text-caption-sm text-muted line-through tabular-nums">
-                            {formatBRL(cell.oldTotal)}
+                          <span className="block text-display-sm tabular-nums text-ink">
+                            {formatBRL(cell.total)}
                           </span>
-                        )}
-                        <span className="block text-title-md tabular-nums text-ink">
-                          {formatBRL(cell.total)}
-                        </span>
-                      </td>
-                      <td className={cn("order-2 col-span-2 justify-self-stretch", celulaBase, "tablet:pl-3 tablet:pr-4 tablet:align-middle")}>
-                        <Button asChild className="w-full tablet:w-auto">
-                          <Link to={listingPath(row.unit)}>Reservar</Link>
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
+                          {cell.oldTotal != null && (
+                            <span className="mt-0.5 flex items-baseline gap-2">
+                              <span className="text-caption-sm tabular-nums text-muted line-through">
+                                {formatBRL(cell.oldTotal)}
+                              </span>
+                              {cell.economyPct != null && (
+                                <span className="text-caption-sm font-medium text-success">
+                                  -{cell.economyPct}%
+                                </span>
+                              )}
+                            </span>
+                          )}
+                        </td>
+                        {/* No mobile o botão fecha o card, depois do preço: o
+                            cliente decide vendo o número, não antes dele. */}
+                        <td
+                          className={cn(
+                            "order-5 col-span-2 justify-self-stretch",
+                            celulaBase,
+                            "tablet:py-4 tablet:pl-3 tablet:pr-5 tablet:text-right tablet:align-middle",
+                          )}
+                        >
+                          <Button asChild className="w-full tablet:w-auto">
+                            <Link to={listingPath(row.unit)}>Reservar</Link>
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
 
-                  {result.blocked.map(({ row, cell }) => (
-                    <tr
-                      key={row.key}
-                      className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg border border-hairline p-4 tablet:table-row tablet:border-0 tablet:p-0"
-                    >
-                      <td className={cn("hidden", celulaBase, "tablet:pl-4 tablet:pr-2")} />
-                      <td className={cn("order-1 col-span-2", celulaBase, "tablet:px-0 tablet:pr-3")}>
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-title-md text-ink">{row.label}</span>
-                          <span className="text-caption-sm text-muted">
-                            {row.unit.parking_type_name}
-                            {formatDistance(row.unit.distance_m) && (
-                              <> · {formatDistance(row.unit.distance_m)}</>
-                            )}
-                            {" · "}Parceiro Movepark
+                    {result.blocked.map(({ row, cell }) => (
+                      <tr
+                        key={row.key}
+                        className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-md border border-hairline bg-canvas p-4 tablet:table-row tablet:border-0 tablet:bg-transparent tablet:p-0"
+                      >
+                        <td className={cn("order-1 col-span-2", celulaBase, "tablet:py-4 tablet:pl-5 tablet:pr-3")}>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-title-md text-ink">{row.label}</span>
+                            <span className="text-caption-sm text-muted">
+                              {row.unit.parking_type_name}
+                              {formatDistance(row.unit.distance_m) && (
+                                <> · {formatDistance(row.unit.distance_m)}</>
+                              )}
+                              {" · "}Parceiro Movepark
+                            </span>
+                            <Link
+                              to={listingPath(row.unit)}
+                              className="text-caption-sm font-medium text-mp-indigo underline underline-offset-4"
+                            >
+                              Ver ficha
+                            </Link>
+                          </div>
+                        </td>
+                        <td className={cn("order-3 col-span-2", celulaBase, "tablet:py-4")} colSpan={2}>
+                          <span className="block text-body-sm text-muted">
+                            entrada a partir de {cell.minStayDays} diárias
                           </span>
-                          <Link
-                            to={listingPath(row.unit)}
-                            className="text-caption-sm font-medium text-mp-indigo underline underline-offset-4"
-                          >
-                            Ver ficha
-                          </Link>
-                        </div>
-                      </td>
-                      <td className={cn("order-3 col-span-2", celulaBase)} colSpan={2}>
-                        <span className="block text-body-sm text-muted">
-                          entrada a partir de {cell.minStayDays} diárias
-                        </span>
-                      </td>
-                      <td className={cn("order-4 col-span-2", celulaBase, "tablet:pl-3 tablet:pr-4")}>
-                        <span className="block text-caption-sm text-muted">
-                          reserve a partir de {cell.minStayDays} diárias
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td
+                          className={cn(
+                            "order-4 col-span-2",
+                            celulaBase,
+                            "tablet:py-4 tablet:pl-3 tablet:pr-5 tablet:text-right",
+                          )}
+                        >
+                          <span className="block text-caption-sm text-muted">
+                            reserve a partir de {cell.minStayDays} diárias
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
-                  {mapeados.map((p) => (
-                    <tr
-                      key={p.slug}
-                      className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg border border-dashed border-hairline p-4 tablet:table-row tablet:border-0 tablet:p-0"
-                    >
-                      <td className={cn("hidden", celulaBase, "tablet:pl-4 tablet:pr-2")} />
-                      <td className={cn("order-1 col-span-2", celulaBase, "tablet:px-0 tablet:pr-3")}>
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-title-md text-ink">{p.name}</span>
+            {/* Lote mapeado sem contrato: gaveta à parte, para não sujar o
+                ranking de quem tem preço (ADR-010). Abre sozinha quando é o
+                único conteúdo do destino. */}
+            {mapeados.length > 0 && (
+              <div className="mt-3 overflow-hidden rounded-lg bg-canvas shadow-tier">
+                {/* Quando o destino não tem nenhum parceiro precificado, os mapeados
+                    são o único conteúdo da seção: a gaveta some e a lista fica
+                    aberta, senão o cliente acha uma página vazia. */}
+                {gavetaFixa ? (
+                  <div className="flex flex-col gap-0.5 p-5">
+                    <span className="text-title-md text-ink">
+                      {mapeados.length} sem reserva online
+                    </span>
+                    <span className="text-pretty text-caption-sm text-muted">
+                      Mapeados pela nossa equipe. O preço é a tabela do local.
+                    </span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setMapeadosAbertos((v) => !v)}
+                    aria-expanded={mapeadosAbertos}
+                    className="flex w-full items-center justify-between gap-3 p-5 text-left"
+                  >
+                    <span className="flex min-w-0 flex-col gap-0.5">
+                      <span className="text-title-md text-ink">
+                        {mapeados.length} sem reserva online
+                      </span>
+                      <span className="text-pretty text-caption-sm text-muted">
+                        Mapeados pela nossa equipe. O preço é a tabela do local.
+                      </span>
+                    </span>
+                    <CaretDown
+                      className={cn(
+                        "h-4 w-4 shrink-0 text-muted transition-transform",
+                        mapeadosAbertos && "rotate-180",
+                      )}
+                      aria-hidden
+                    />
+                  </button>
+                )}
+                {gavetaAberta && (
+                  <ul className="flex flex-col">
+                    {mapeados.map((p) => (
+                      <li
+                        key={p.slug}
+                        className="flex items-center gap-3 border-t border-hairline-soft px-5 py-3.5"
+                      >
+                        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                          <span className="text-pretty text-title-sm text-ink">{p.name}</span>
                           <span className="text-caption-sm text-muted">
                             {p.distance_km != null && (
                               <>{formatDistance(Math.round(p.distance_km * 1000))} · </>
                             )}
                             mapeado pela Movepark
                           </span>
-                          <Link
-                            to={`/estacionamentos/${slug}/${p.slug}`}
-                            className="text-caption-sm font-medium text-mp-indigo underline underline-offset-4"
-                          >
-                            Ver ficha
-                          </Link>
-                        </div>
-                      </td>
-                      <td className={cn("order-3 col-span-2", celulaBase)} colSpan={2}>
-                        <span className="block text-body-sm text-muted">
-                          consulte a tabela no local
                         </span>
-                      </td>
-                      <td className={cn("order-4 col-span-2", celulaBase, "tablet:pl-3 tablet:pr-4")}>
-                        <span className="block text-caption-sm text-muted">sem reserva online</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        <Link
+                          to={`/estacionamentos/${slug}/${p.slug}`}
+                          className="shrink-0 text-caption-sm font-medium text-mp-indigo underline underline-offset-4"
+                        >
+                          Ver ficha
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             )}
 
             {result.priced.length + result.blocked.length + mapeados.length > 0 && (
-              <p className="mt-3 text-caption-sm text-muted">
-                Preços do motor de reservas Movepark, os mesmos do checkout. Estacionamento sem
-                reserva online é ficha mapeada pela nossa equipe: o preço é a tabela do local.{" "}
+              <p className="mt-3 text-pretty text-caption-sm text-muted">
+                Preços do motor de reservas Movepark, os mesmos do checkout.{" "}
                 <a
                   href="#como-funciona"
                   className="font-medium text-mp-indigo underline-offset-2 hover:underline"
@@ -734,168 +1177,53 @@ export default function CalculadoraPage() {
           </section>
         )}
 
-        {modo === "app" && (!comparacao || comparacao.estacionarTotal == null) && (
-          <section aria-live="polite">
-            <h2 className="text-display-sm text-ink">De app ou de carro?</h2>
-            <p className="mt-3 text-body-md text-body">
-              Ainda não há parceiro com reserva online em {nome} para fazer essa conta. Escolha
-              outro destino na lateral.
-            </p>
-          </section>
-        )}
-
-        {modo === "app" && comparacao && comparacao.estacionarTotal != null && (
-          <section id="de-app-ou-de-carro" className="scroll-mt-24" aria-live="polite">
-            <h2 className="text-display-sm text-ink">De app ou de carro?</h2>
-            <p className="mt-2 text-body-sm text-muted">
-              Duas corridas de ida e volta a {comparacao.km} km contra{" "}
-              {durationLabel(comparacao.days)} de estacionamento. Ajuste a distância e a tarifa
-              dinâmica na lateral.
-            </p>
-
-            <div className="mt-4 grid gap-4 tablet:grid-cols-2">
-              <div
-                className={cn(
-                  "border-y px-1 py-5",
-                  !estacionarVence && comparacao.economia != null
-                    ? "border-mp-primary bg-mp-pale/60 px-5"
-                    : "border-hairline",
-                )}
+        <section className="mx-auto w-full max-w-[1280px] px-4 pt-12 desktop:pt-16">
+          <h2 className="text-balance text-display-2xl text-ink">E agora</h2>
+          <div className="mt-4 grid gap-3 tablet:grid-cols-3">
+            {PROXIMOS.map((p) => (
+              <Link
+                key={p.to}
+                to={p.to}
+                className="flex items-center gap-4 rounded-lg bg-canvas p-5 shadow-tier transition hover:-translate-y-0.5"
               >
-                <h3 className="text-title-md text-ink">De app, ida e volta</h3>
-                <p className="mt-2 text-display-sm tabular-nums text-ink">
-                  {formatBRL(comparacao.appTotal)}
-                </p>
-                <p className="mt-1 text-caption-sm text-muted">
-                  {comparacao.appManual
-                    ? "2 corridas no valor que você informou"
-                    : `2 corridas estimadas de ${formatBRL(comparacao.appTotal / 2)}${
-                        comparacao.surge > 1
-                          ? ` com dinâmica ${String(comparacao.surge).replace(".", ",")}x`
-                          : ""
-                      }`}
-                </p>
-              </div>
-
-              <div
-                className={cn(
-                  "border-y px-1 py-5",
-                  estacionarVence ? "border-mp-primary bg-mp-pale/60 px-5" : "border-hairline",
-                )}
-              >
-                <h3 className="text-title-md text-ink">De carro, estacionando</h3>
-                <p className="mt-2 text-display-sm tabular-nums text-ink">
-                  {formatBRL((comparacao.estacionarTotal ?? 0) + (comparacao.combustivel ?? 0))}
-                </p>
-                {comparacao.estacionarLabel && (
-                  <p className="mt-1 text-caption-sm text-muted">
-                    {comparacao.estacionarLabel}
-                    {comparacao.combustivel != null && (
-                      <> + combustível {formatBRL(comparacao.combustivel)}</>
-                    )}
-                    {" · "}Parceiro Movepark
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {estacionarVence && comparacao.melhorUnidade && comparacao.estacionarTotal != null && (
-              <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
-                <Button asChild>
-                  <Link
-                    to={`${listingPath(comparacao.melhorUnidade)}?${new URLSearchParams(
-                      reservaWindow(new Date(), comparacao.days),
-                    ).toString()}`}
-                  >
-                    Reservar por {formatBRL(comparacao.estacionarTotal)} no{" "}
-                    {comparacao.melhorUnidade.company_name}
-                  </Link>
-                </Button>
-                <span className="text-caption-sm text-muted">
-                  {comparacao.melhorUnidade.parking_type_name}, {durationLabel(comparacao.days)}{" "}
-                  com entrada amanhã às 22h. Dá para ajustar as datas na página da vaga.
+                <span className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="text-pretty text-title-md text-ink">{p.title}</span>
+                  <span className="text-pretty text-caption-sm text-muted">{p.sub}</span>
+                  <ArrowRight className="mt-1 h-4 w-4 text-mp-indigo" aria-hidden />
                 </span>
-              </div>
-            )}
-
-            {comparacao.economia != null && (
-              <p className="mt-5 text-body-md text-body">
-                {estacionarVence ? (
-                  <>
-                    Estacionando, você economiza{" "}
-                    <strong className="font-semibold text-ink">
-                      {formatBRL(comparacao.economia)}
-                    </strong>{" "}
-                    nessa viagem, e volta no seu próprio carro.
-                  </>
-                ) : (
-                  <>
-                    Nessa distância e duração, o app sai{" "}
-                    <strong className="font-semibold text-ink">
-                      {formatBRL(Math.abs(comparacao.economia))}
-                    </strong>{" "}
-                    mais barato. Aumente as diárias ou confira a tarifa dinâmica do seu horário:
-                    a conta vira rápido.
-                  </>
-                )}
-              </p>
-            )}
-
-            {breakEven != null && (
-              <p className="mt-2 text-body-sm text-muted">
-                Nesse trajeto, estacionar sai mais barato a partir de {durationLabel(breakEven)}.
-              </p>
-            )}
-          </section>
-        )}
-
-        <section id="como-funciona" className="mt-12 max-w-[720px] scroll-mt-24">
-          <h2 className="text-display-sm text-ink">Como a calculadora funciona</h2>
-          <p className="mt-3 text-body-md text-body">
-            O valor de cada vaga sai do motor de preços da Movepark, o mesmo que fecha a reserva
-            no checkout: a tabela vigente do parceiro aplicada ao número de diárias que você
-            escolheu, sem estimativa.
-          </p>
-          <p className="mt-3 text-body-md text-body">
-            O preço riscado é o balcão, a tarifa de quem chega sem reservar. Estacionamentos
-            mapeados sem contrato aparecem no fim da lista, sem preço: a ficha mostra endereço e
-            comodidades, e a tabela é a do local. Para comparar os destinos lado a lado, veja o{" "}
-            <Link
-              to="/precos"
-              className="font-medium text-mp-indigo underline-offset-2 hover:underline"
-            >
-              índice de preços
-            </Link>
-            .
-          </p>
-          <p className="mt-3 text-body-md text-body">
-            Na comparação com app de transporte, o lado do app é estimativa: Uber e 99 não
-            oferecem API pública de preço. Usamos a tarifa de referência da categoria básica (
-            {formatBRL(TARIFA_APP_PADRAO.bandeirada)} de partida +{" "}
-            {formatBRL(TARIFA_APP_PADRAO.porKm)} por km + {formatBRL(TARIFA_APP_PADRAO.porMinuto)}{" "}
-            por minuto, mínima de {formatBRL(TARIFA_APP_PADRAO.minima)}), com o tempo estimado a
-            30 km/h na cidade. Fonte:{" "}
-            <a
-              href={TARIFA_APP_PADRAO.fonteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-mp-indigo underline-offset-2 hover:underline"
-            >
-              {TARIFA_APP_PADRAO.fonte}
-            </a>
-            , {TARIFA_APP_PADRAO.coletadoEm}. Em pico, chuva ou madrugada a tarifa dinâmica sobe
-            o valor real: por isso o controle de dinâmica e o campo para colar a corrida que o
-            seu app mostrou.
-          </p>
-          <p className="mt-3 text-body-md text-body">
-            O combustível opcional usa {COMBUSTIVEL.kmPorLitro} km/L a{" "}
-            {formatBRL(COMBUSTIVEL.precoLitro)} o litro ({COMBUSTIVEL.fonte}). Uber e 99 são
-            marcas dos seus respectivos donos; esta página compara custos e não tem relação com
-            essas empresas.
-          </p>
-        </section>
+                <img
+                  src={p.img}
+                  alt=""
+                  loading="lazy"
+                  className="h-16 w-16 shrink-0 rounded-full bg-surface-strong object-cover"
+                />
+              </Link>
+            ))}
           </div>
-        </div>
+        </section>
+
+        <section
+          id="como-funciona"
+          className="mx-auto w-full max-w-[1280px] scroll-mt-24 px-4 pb-16 pt-12 desktop:pb-24 desktop:pt-16"
+        >
+          <div className="rounded-lg bg-canvas p-5 shadow-tier desktop:p-8">
+            <h2 className="text-balance text-display-sm text-ink">Como a calculadora funciona</h2>
+            <Accordion type="single" collapsible defaultValue="m-0" className="mt-2">
+              {METODOLOGIA.map((m, i) => (
+                <AccordionItem key={m.q} value={`m-${i}`}>
+                  <AccordionTrigger>{m.q}</AccordionTrigger>
+                  <AccordionContent forceMount className="max-w-[68ch] text-pretty">
+                    {m.a}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+            <p className="mt-5 text-pretty text-caption-sm text-muted">
+              Uber e 99 são marcas dos seus respectivos donos; esta página compara custos e não tem
+              relação com essas empresas.
+            </p>
+          </div>
+        </section>
       </div>
     </>
   );

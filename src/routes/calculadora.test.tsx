@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HelmetProvider } from "react-helmet-async";
 import { RouterProvider, createMemoryRouter } from "react-router-dom";
@@ -107,34 +107,49 @@ function setup(data: CalculadoraData | null = DATA) {
 }
 
 describe("CalculadoraPage", () => {
-  it("abre já calculada: tabela ranqueada de 7 diárias no primeiro destino", async () => {
+  it("abre já calculada: painel de melhor preço e tabela ranqueada de 7 diárias", async () => {
     setup();
     expect(
       await screen.findByRole("heading", {
         level: 1,
-        name: "Calculadora de estacionamento de aeroporto",
+        name: "Saber quanto custa estacionar no aeroporto leva 10 segundos",
       }),
     ).toBeInTheDocument();
+    // O veredito responde antes da lista: melhor preço, economia contra o balcão
+    // e preço por diária, tudo do parceiro mais barato.
+    const painel = screen.getByText("Melhor preço").closest("div")!.parentElement!;
+    expect(painel.textContent).toContain(formatBRL(111.3));
+    expect(painel.textContent).toContain(formatBRL(22.26)); // 133,56 - 111,30
+    expect(painel.textContent).toContain(formatBRL(15.9));
+    expect(screen.getByRole("link", { name: "Reservar essa vaga" })).toHaveAttribute(
+      "href",
+      "/p/aerovalet/aeroporto-guarulhos/uncovered",
+    );
+
     const tabela = screen.getByRole("table");
     // Ranking: Aerovalet (111,30) na posição 01, com o selo de menor preço.
     expect(tabela.textContent).toContain("01");
     expect(tabela.textContent).toContain("menor preço");
-    expect(tabela.textContent).toContain(formatBRL(15.9));
     expect(tabela.textContent).toContain(formatBRL(111.3));
     // Balcão de 7 diárias riscado.
     expect(tabela.textContent).toContain(formatBRL(133.56));
   });
 
-  it("o parceiro tem Reservar em destaque; o lote mapeado fecha a lista sem preço", async () => {
+  it("o parceiro tem Reservar na tabela; o lote mapeado fica na gaveta, sem preço", async () => {
     setup();
     const tabela = await screen.findByRole("table");
     const reservar = within(tabela).getAllByRole("link", { name: "Reservar" });
     expect(reservar[0]).toHaveAttribute("href", "/p/aerovalet/aeroporto-guarulhos/uncovered");
-    // Talentos Park: mapeado pela Movepark, consulta no local, ficha própria.
-    expect(tabela.textContent).toContain("Talentos Park");
-    expect(tabela.textContent).toContain("consulte a tabela no local");
-    expect(tabela.textContent).toContain("sem reserva online");
-    const fichas = within(tabela).getAllByRole("link", { name: "Ver ficha" });
+    // O lote sem contrato não polui o ranking de quem tem preço (ADR-010).
+    expect(tabela.textContent).not.toContain("Talentos Park");
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /1 sem reserva online/ }));
+    expect(screen.getByText("Talentos Park")).toBeInTheDocument();
+    expect(
+      screen.getByText("Mapeados pela nossa equipe. O preço é a tabela do local."),
+    ).toBeInTheDocument();
+    const fichas = screen.getAllByRole("link", { name: "Ver ficha" });
     expect(fichas[fichas.length - 1]).toHaveAttribute(
       "href",
       "/estacionamentos/aeroporto-internacional-de-sao-paulo-guarulhos/talentos-park",
@@ -145,12 +160,10 @@ describe("CalculadoraPage", () => {
     setup();
     const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: "1 diária" }));
-    expect(
-      await screen.findByRole("heading", { name: "1 diária em Guarulhos (GRU)" }),
-    ).toBeInTheDocument();
-    const tabela = screen.getByRole("table");
+    const tabela = await screen.findByRole("table");
+    await waitFor(() => expect(tabela.textContent).toContain("entrada a partir de 2 diárias"));
     expect(tabela.textContent).toContain("Aeropark");
-    expect(tabela.textContent).toContain("entrada a partir de 2 diárias");
+    expect(tabela.textContent).toContain(formatBRL(18.9));
   });
 
   it("diárias fora de 1 a 60 são recusadas com mensagem, sem precisar de botão", async () => {
@@ -163,17 +176,19 @@ describe("CalculadoraPage", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Informe de 1 a 60 diárias.");
   });
 
-  it("destino sem parceiro entra no select e mostra os mapeados, com o seja-parceiro", async () => {
+  it("destino sem parceiro entra no select e abre os mapeados sozinho, com o seja-parceiro", async () => {
     setup();
     const user = userEvent.setup();
     await user.selectOptions(await screen.findByLabelText("Destino"), "aeroporto-de-confins");
     expect(
-      await screen.findByRole("heading", { name: "Estacionamentos em Confins (CNF)" }),
+      await screen.findByRole("heading", {
+        name: "Todas as opções em Confins (CNF), da mais barata",
+      }),
     ).toBeInTheDocument();
-    const tabela = screen.getByRole("table");
-    expect(tabela.textContent).toContain("Golden Park");
-    expect(tabela.textContent).toContain("consulte a tabela no local");
-    expect(within(tabela).queryByRole("link", { name: "Reservar" })).not.toBeInTheDocument();
+    // Sem ranking, a gaveta deixa de ser gaveta: a lista já vem aberta.
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.getByText("Golden Park")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Reservar" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Seja parceiro Movepark" })).toHaveAttribute(
       "href",
       "/seja-parceiro",
@@ -185,9 +200,11 @@ describe("CalculadoraPage", () => {
     const user = userEvent.setup();
     await user.selectOptions(await screen.findByLabelText("Destino"), "aeroporto-santos-dumont");
     expect(
-      await screen.findByRole("heading", { name: "Estacionamentos em Santos Dumont (SDU)" }),
+      await screen.findByRole("heading", {
+        name: "Todas as opções em Santos Dumont (SDU), da mais barata",
+      }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Ainda estamos mapeando/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Ainda estamos mapeando/).length).toBeGreaterThan(0);
     expect(screen.getByRole("link", { name: "página do destino" })).toHaveAttribute(
       "href",
       "/destinos/aeroporto-santos-dumont",
@@ -211,15 +228,12 @@ describe("CalculadoraPage", () => {
     const user = userEvent.setup();
     await user.click(await screen.findByRole("radio", { name: /Estacionar ou ir de app/ }));
     // App a 25 km sem dinâmica: 2 corridas de 61,25 = 122,50; estacionar 7 diárias = 111,30.
-    const secao = (
-      await screen.findByRole("heading", { name: "De app ou de carro?" })
-    ).closest("section")!;
-    expect(secao.textContent).toContain(formatBRL(122.5));
-    expect(secao.textContent).toContain(formatBRL(111.3));
-    expect(within(secao as HTMLElement).getByText(/Estacionando, você economiza/).textContent).toContain(
-      formatBRL(11.2),
-    );
-    expect(secao.textContent).toContain("estacionar sai mais barato a partir de 1 diária");
+    const veredito = await screen.findByText("Estacionar sai mais barato");
+    const painel = veredito.closest("div")!.parentElement!;
+    expect(painel.textContent).toContain(formatBRL(11.2));
+    expect(painel.textContent).toContain(formatBRL(122.5));
+    expect(painel.textContent).toContain(formatBRL(111.3));
+    expect(painel.textContent).toContain("estacionar sai mais barato a partir de 1 diária");
     expect(screen.getByLabelText("Distância em km")).toBeInTheDocument();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });
@@ -229,14 +243,12 @@ describe("CalculadoraPage", () => {
     const user = userEvent.setup();
     await user.click(await screen.findByRole("radio", { name: /Estacionar ou ir de app/ }));
     // Estacionar vence (111,30 contra 122,50): o CTA já leva a duração calculada.
-    const cta = await screen.findByRole("link", { name: /Reservar por .* no Aerovalet/ });
+    const cta = await screen.findByRole("link", { name: "Reservar a vaga mais barata" });
     const href = cta.getAttribute("href")!;
     expect(href).toContain("/p/aerovalet/aeroporto-guarulhos/uncovered?");
     expect(href).toContain("from=");
     expect(href).toContain("to=");
-    expect(
-      screen.getByText(/7 diárias com entrada amanhã às 22h/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/entrada amanhã às 22h/)).toBeInTheDocument();
   });
 
   it("a corrida manual sobrepõe a estimativa e pode virar o jogo", async () => {
@@ -246,8 +258,8 @@ describe("CalculadoraPage", () => {
     const campo = await screen.findByLabelText("Valor da corrida de ida");
     await user.type(campo, "40");
     // 2 × 40 = 80 < 111,30: o app vence e a página diz isso na cara.
-    expect(await screen.findByText(/o app sai/)).toBeInTheDocument();
-    expect(screen.getByText("2 corridas no valor que você informou")).toBeInTheDocument();
+    expect(await screen.findByText("Ir de app sai mais barato")).toBeInTheDocument();
+    expect(screen.getByText("Ida e volta, no valor que você informou")).toBeInTheDocument();
   });
 
   it("sem dado, explica e aponta para a busca", async () => {

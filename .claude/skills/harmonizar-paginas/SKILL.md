@@ -30,7 +30,7 @@ classe, porque tudo abaixo depende da faixa.
 
 | Faixa | Quais | O que é |
 |---|---|---|
-| **Hero de marketing** | `/`, `/seja-parceiro`, `/sobre`, `/como-funciona` | Abre com imagem ou faixa de marca full-bleed, headline grande, sem padding no topo |
+| **Hero de marketing** | `/`, `/seja-parceiro`, `/sobre`, `/como-funciona`, `/calculadora-estacionamento-aeroporto` | Abre com imagem ou faixa de marca full-bleed, headline grande, sem padding no topo |
 | **Página de conteúdo** | as outras 9 | Abre com `PageHeader`, coluna de leitura, padding no topo |
 | **Conteúdo com hero** | `/contato` | Corpo de conteúdo, aberto pela faixa violeta do `PageHero` (ver abaixo) |
 
@@ -49,6 +49,15 @@ mostrar as telas (busca, voucher, volta), não em descrevê-las. Abre com a faix
 `bg-brand-gradient` sangrada, com o card de sinais montado sobre a borda de
 baixo. É a primeira da faixa de hero sem foto: o gradiente da identidade faz o
 papel do full-bleed.
+
+**A `/calculadora-estacionamento-aeroporto` mudou de faixa em 17/08/2026**,
+implementando o desenho do Claude Design (`Calculadora Movepark v2.dc.html`). Ela
+é ferramenta, e o `PageHeader` a abria como documento: título de 28px acima de um
+formulário de campos altos, com o resultado só depois de rolar. Na faixa de hero
+a promessa vem primeiro ("leva 10 segundos"), e logo abaixo o cartão que junta
+controle e veredito acima da dobra. Não tem foto nem gradiente: o full-bleed aqui
+é o fundo `bg-surface-soft` da página inteira, que separa os cartões brancos do
+canvas. Container de 1280, porque a página termina numa tabela ranqueada.
 
 ### Degrau fixo embaixo de degrau fluido se cruza
 
