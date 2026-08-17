@@ -58,13 +58,13 @@ describe("ContatoPage — canais diretos", () => {
   });
 
   /**
-   * Desenho de 17/08/2026: a página abre com a faixa violeta, e não mais com o
-   * `PageHeader` sobre fundo branco. É o modelo que vai para as outras páginas
-   * de conteúdo, então a troca fica travada aqui.
+   * Desenho de 17/08/2026: a página abre com a faixa de cor cheia, e não mais
+   * com o `PageHeader` sobre fundo branco. É o modelo que vai para as outras
+   * páginas de conteúdo, então a troca fica travada aqui.
    */
-  it("abre com a faixa violeta, com o título dentro dela", () => {
+  it("abre com a faixa de cor, com o título dentro dela", () => {
     const { container } = render();
-    const faixa = container.querySelector(".bg-mp-primary");
+    const faixa = container.querySelector(".bg-mp-navy");
     expect(faixa).not.toBeNull();
     expect(faixa!.querySelector("h1")!.textContent).toBe("Fale conosco");
   });

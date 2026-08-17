@@ -20,13 +20,17 @@ type Props = {
  * Fica **fora** do container da página: quem usa põe isto antes do
  * `mx-auto max-w-[...]`, senão a faixa para no meio da tela.
  *
- * O lead é branco puro de propósito. Branco sobre o violeta da marca dá 4.86:1,
- * que passa o AA por pouco; com a translucidez que o desenho sugere, cairia para
- * ~3.9:1 e reprovaria em corpo de 16px.
+ * A faixa é `mp-navy` desde 17/08/2026: em violeta ela competia com a faixa do
+ * rodapé e com os botões, que são os pontos que a marca reserva para ação.
+ *
+ * O lead é branco puro de propósito. Sobre o navy sobra contraste (14.2:1), mas
+ * a regra vale para qualquer fundo que a faixa venha a ter: sobre o violeta o
+ * branco dá 4.86:1, e qualquer translucidez cairia para ~3.9:1, reprovando o AA
+ * em corpo de 16px.
  */
 export function PageHero({ title, description, children, className }: Props) {
   return (
-    <div className={cn("bg-mp-primary", className)}>
+    <div className={cn("bg-mp-navy", className)}>
       <div className="mx-auto w-full max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-24">
         <h1 className="text-display-3xl text-white">{title}</h1>
         {description && (

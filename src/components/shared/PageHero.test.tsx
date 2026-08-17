@@ -28,7 +28,7 @@ describe("PageHero", () => {
   it("a faixa sangra: a cor fica fora do container de leitura", () => {
     const { container } = render(<PageHero title="Fale conosco" />);
     const faixa = container.firstElementChild!;
-    expect(faixa.className).toContain("bg-mp-primary");
+    expect(faixa.className).toContain("bg-mp-navy");
     expect(faixa.className).not.toContain("max-w-");
     expect(faixa.firstElementChild!.className).toContain("max-w-[1080px]");
   });

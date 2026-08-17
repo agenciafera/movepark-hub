@@ -49,30 +49,36 @@ aqui, no mesmo PR.
 Nasceu na `/contato`, de um desenho do Diego, e vale para as páginas de conteúdo
 que forem redesenhadas a partir dele. A página continua sendo de conteúdo
 (container de 1080, h2 em `display-sm`, `PageHeader` fora), mas abre com a faixa
-violeta do **`PageHero`** (`src/components/shared/PageHero.tsx`) no lugar do
+navy do **`PageHero`** (`src/components/shared/PageHero.tsx`) no lugar do
 cabeçalho branco.
 
 | Elemento | Classe |
 |---|---|
-| Faixa | `bg-mp-primary`, fora do container (sangra) |
+| Faixa | `bg-mp-navy`, fora do container (sangra) |
 | h1 | `text-display-3xl text-white` |
 | lead | `text-body-md text-white` |
 | Respiro | `py-16 desktop:py-24` |
 
-Duas coisas não são negociáveis aqui:
+**A faixa é navy, e não violeta.** O desenho de origem trazia violeta, e a versão
+violeta chegou a rodar; ela competia com os botões e com a chamada do rodapé, que
+são os pontos onde a marca reserva a cor de ação. Em navy a faixa também casa com
+o texto da página, porque `ink` é o mesmo `mp-navy`. Pela mesma razão, ícone
+dentro do corpo é navy: violeta ali só em link ou botão.
 
-1. **O lead é branco puro.** Branco sobre `mp-primary` dá 4.86:1 e passa o AA
-   raspando; com qualquer translucidez cai para ~3.9:1 e reprova em 16px. O
-   desenho de origem sugeria um lead acinzentado, e ele não pode ser usado.
+Duas coisas não são negociáveis:
+
+1. **O lead é branco puro.** Sobre o navy sobra contraste (14.5:1), mas a regra
+   vale para qualquer fundo que a faixa venha a ter: sobre violeta o branco dá
+   4.86:1, e qualquer translucidez cai para ~3.9:1, reprovando o AA em 16px.
 2. **A faixa fica fora do container.** Quem usa põe o `PageHero` antes do
    `mx-auto max-w-[...]`, senão a cor para no meio da tela.
 
-Esta faixa abre **duas exceções conscientes** à regra "violeta só em acionável",
-e elas param aqui: o **fundo da faixa de abertura** e o **ícone do card de
-canal** na `/contato` (o do horário de atendimento não é clicável e mesmo assim é
-violeta, porque os três ícones são uma família visual). O grep 3 da verificação
-acusa esse ícone; é esperado. No corpo da página a regra continua valendo
-inteira: violeta em texto, eyebrow ou borda decorativa segue proibido.
+**A única exceção viva à regra "violeta só em acionável"** é a chamada do FAQ no
+`ConsumerFooter` (`bg-mp-primary`, em todas as páginas do consumer): ela é um CTA
+de página inteira, com botão branco de 48px e texto branco puro, medido em
+4.83:1 contra o mínimo de 4.5. A folga é curta de propósito, então texto menor ou
+cinza claro ali está fora. O rodapé perdeu a `border-t` quando ganhou essa faixa:
+a hairline virava um risco claro sobre a cor.
 
 ## Contrato de tipografia
 

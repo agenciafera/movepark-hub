@@ -64,7 +64,7 @@ function Canal({ canal }: { canal: (typeof CANAIS)[number] }) {
   const Icone = canal.icon;
   const conteudo = (
     <>
-      <Icone className="h-9 w-9 shrink-0 text-mp-primary" aria-hidden />
+      <Icone className="h-9 w-9 shrink-0 text-mp-navy" aria-hidden />
       <span className="min-w-0">
         <span className="block text-title-md text-ink">{canal.title}</span>
         <span className="mt-1 block text-body-sm text-body">{canal.desc}</span>

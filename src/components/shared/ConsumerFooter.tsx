@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import { Wordmark } from "./Brand";
 
 type FooterLink = { to: string; label: string; external?: boolean };
@@ -38,24 +39,29 @@ const groups: FooterGroup[] = [
 const linkClass = "text-body-sm text-muted no-underline hover:text-ink";
 
 export function ConsumerFooter() {
+  // Sem borda no topo: a faixa colorida da chamada já separa o rodapé do
+  // conteúdo, e a hairline aparecia como um risco claro sobre ela.
   return (
-    <footer className="border-t border-hairline bg-surface-soft">
+    <footer className="bg-surface-soft">
       {/* Chamada pro FAQ: a central responde antes de o suporte precisar responder,
           e é porta de entrada pras páginas por pergunta (/faq/<slug>). */}
-      <div className="border-b border-hairline-soft">
+      <div className="bg-mp-primary">
         <div className="mx-auto flex w-full max-w-[1280px] flex-col items-start justify-between gap-4 px-6 py-8 tablet:flex-row tablet:items-center desktop:px-8">
           <div>
-            <p className="text-title-md text-ink">Dúvidas sobre estacionamento de aeroporto?</p>
-            <p className="mt-1 text-body-sm text-muted">
+            <p className="text-title-md text-white">Dúvidas sobre estacionamento de aeroporto?</p>
+            <p className="mt-1 text-body-sm text-white">
               Preços, traslado, cancelamento e check-in: as respostas estão na central.
             </p>
           </div>
-          <Link
-            to="/faq"
-            className="inline-flex shrink-0 items-center rounded-md border border-hairline px-4 py-2 text-body-sm font-medium text-ink no-underline transition hover:border-mp-primary hover:text-mp-primary"
+          {/* Botão do sistema (8px de raio, 48px de altura). Escrito à mão ele saía
+              com `rounded-md`, que aqui é 14px, e num botão baixo virava pílula. */}
+          <Button
+            asChild
+            variant="secondary"
+            className="shrink-0 bg-white text-mp-indigo no-underline hover:bg-mp-pale hover:brightness-100"
           >
-            Ver perguntas frequentes
-          </Link>
+            <Link to="/faq">Ver perguntas frequentes</Link>
+          </Button>
         </div>
       </div>
       <div className="mx-auto grid w-full max-w-[1280px] grid-cols-1 gap-8 px-6 py-12 tablet:grid-cols-3 desktop:grid-cols-3 desktop:px-8">
