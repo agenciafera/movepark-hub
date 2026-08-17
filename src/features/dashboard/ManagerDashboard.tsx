@@ -14,11 +14,11 @@ import {
 } from "recharts";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { Panel, PanelTitle } from "@/components/shared/Panel";
 import { BookingTable } from "@/features/bookings/BookingTable";
 import { BookingModal } from "@/features/bookings/BookingModal";
 import { useRecentBookings } from "@/features/bookings/api";
@@ -47,20 +47,6 @@ import {
 const int = (n: number | null | undefined) => Number(n ?? 0).toLocaleString("pt-BR");
 const oneDecimal = (n: number) =>
   Number(n ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-
-/** Card do painel: cantos de 20px, superfície branca, sem borda. */
-function Panel({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <Card className={cn("rounded-lg border-transparent p-7", className)} {...props} />;
-}
-
-function PanelTitle({ children, aside }: { children: React.ReactNode; aside?: React.ReactNode }) {
-  return (
-    <div className="flex flex-wrap items-start justify-between gap-3">
-      <div className="min-w-0 text-title-md text-ink">{children}</div>
-      {aside && <div className="shrink-0 text-caption font-medium text-muted">{aside}</div>}
-    </div>
-  );
-}
 
 /** Meia-lua da rede: quantas unidades geraram receita, do total ativo. */
 const ARC_LENGTH = 282.74;

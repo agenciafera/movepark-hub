@@ -12,7 +12,7 @@ import {
 import { Flame, Pencil } from "@phosphor-icons/react";
 import { format, addDays, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Card } from "@/components/ui/card";
+import { Panel, PanelTitle } from "@/components/shared/Panel";
 import { Button } from "@/components/ui/button";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Label } from "@/components/ui/label";
@@ -75,20 +75,6 @@ const oneDecimal = (n: number) =>
   Number(n ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 /** Sobe a inicial: o rótulo do benchmark é fragmento e abre uma frase aqui. */
 const sentence = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
-
-/** Card do painel: cantos de 20px, superfície branca, sem borda. */
-function Panel({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <Card className={cn("rounded-lg border-transparent p-7", className)} {...props} />;
-}
-
-function PanelTitle({ children, aside }: { children: React.ReactNode; aside?: React.ReactNode }) {
-  return (
-    <div className="flex flex-wrap items-start justify-between gap-3">
-      <div className="min-w-0 text-title-md text-ink">{children}</div>
-      {aside && <div className="shrink-0 text-caption font-medium text-muted">{aside}</div>}
-    </div>
-  );
-}
 
 /** Número grande com rótulo, no formato dos cards pequenos do design. */
 function StatPanel({
