@@ -39,9 +39,12 @@ describe("ComoFuncionaPage — contrato de página de conteúdo", () => {
    */
   it("os passos são numerados de 1 a 4 através das seções", () => {
     const { container } = renderPage();
-    const badges = [...container.querySelectorAll("ol li > span:first-child")].map(
-      (s) => s.textContent,
-    );
+    // Fora das listas de navegação: a trilha de abertura também é `ol`, e o
+    // separador dela entrava na conta.
+    const passos = [...container.querySelectorAll("ol")].filter((ol) => !ol.closest("nav"));
+    const badges = passos
+      .flatMap((ol) => [...ol.querySelectorAll("li > span:first-child")])
+      .map((s) => s.textContent);
     expect(badges).toEqual(["1", "2", "3", "4"]);
   });
 });

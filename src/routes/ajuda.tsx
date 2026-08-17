@@ -2,7 +2,7 @@ import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { CalendarX, ChatCircle, CreditCard, MapPin, QrCode, Question, ShieldCheck } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/shared/PageHeader";
+import { PageHero } from "@/components/shared/PageHero";
 
 const CATEGORIES = [
   {
@@ -65,14 +65,12 @@ export default function AjudaPage() {
         <link rel="canonical" href="https://hub.movepark.co/ajuda" />
       </Helmet>
 
-      <div className="mx-auto w-full max-w-[1080px] px-4 py-12 desktop:px-8">
-        <PageHeader
-          variant="content"
-          className="mb-12 max-w-xl"
-          title="Como podemos ajudar?"
-          description="Encontre respostas rápidas sobre reservas, pagamentos, check-in e mais."
-        />
+      <PageHero
+        title="Como podemos ajudar?"
+        description="Encontre respostas rápidas sobre reservas, pagamentos, check-in e mais."
+      />
 
+      <div className="mx-auto w-full max-w-[1080px] px-4 py-12 desktop:px-8">
         {/* Categorias */}
         <section className="mb-14">
           <h2 className="mb-6 text-display-sm text-ink">Navegar por categoria</h2>

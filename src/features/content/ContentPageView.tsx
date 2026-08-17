@@ -10,6 +10,7 @@ import {
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { BlockView } from "./Blocks";
 import { useActiveSection } from "./useActiveSection";
 import { formatUpdated, type Section } from "./types";
@@ -64,23 +65,24 @@ export function ContentPageView({
 
   return (
     <div>
-      {/* Hero */}
-      <div className="border-b border-hairline bg-surface-soft">
-        <div className="mx-auto w-full max-w-[1080px] px-5 py-8 desktop:px-8 desktop:py-12">
-          <nav aria-label="Você está em" className="text-caption-sm text-muted">
-            <Link to="/" className="hover:text-ink hover:underline">
-              Início
-            </Link>
-            <span aria-hidden> / </span>
-            <span className="text-ink">{label}</span>
-          </nav>
+      {/* Hero. Navy desde 17/08/2026, no mesmo desenho da /contato: a abertura é
+          uma faixa de cor cheia, e não mais o bloco cinza com texto escuro. Sem
+          borda embaixo, que sobre a cor vira um risco claro. */}
+      <div className="bg-mp-navy">
+        <div className="mx-auto w-full max-w-[1080px] px-5 py-12 desktop:px-8 desktop:py-16">
+          <Breadcrumb tom="escuro" items={[{ label: "Início", to: "/" }, { label }]} />
 
-          <h1 className="mt-3 max-w-[16ch] text-display-xl text-ink desktop:text-display-2xl">
+          {/* 16ch quebrava "Política de cancelamento" (24 caracteres) em duas
+              linhas sem precisar. A medida ainda segura título comprido, como o
+              da /como-funciona, que continua em duas linhas de propósito. */}
+          <h1 className="mt-3 max-w-[26ch] text-display-xl text-white desktop:text-display-2xl">
             {title}
           </h1>
-          <p className="mt-3 max-w-[56ch] text-body-md leading-relaxed text-body">{intro}</p>
+          <p className="mt-3 max-w-[56ch] text-body-md leading-relaxed text-white">{intro}</p>
 
-          <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-caption-sm text-muted">
+          {/* A linha de contexto é outro assunto, não a continuação do lead: por
+              isso o respiro aqui é maior do que o que separa título e texto. */}
+          <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-caption-sm text-white/80">
             {updated && (
               <span className="inline-flex items-center gap-1.5">
                 <CalendarBlank className="h-4 w-4 shrink-0" aria-hidden />

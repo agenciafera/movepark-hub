@@ -2,6 +2,7 @@ import * as React from "react";
 import { Link, useLoaderData, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { OgImage } from "@/lib/ogImage";
+import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { MapPin } from "@phosphor-icons/react";
 import type { Destination, ProspectCard as ProspectCardData } from "@/types/domain";
 import {
@@ -377,29 +378,14 @@ export default function DestinoPage() {
 
       <article className="mx-auto w-full max-w-5xl px-4 py-8 tablet:py-12">
         {/* Breadcrumb (espelha o BreadcrumbList do JSON-LD, agora visível) */}
-        <nav aria-label="Trilha de navegação" className="mb-4">
-          <ol className="flex flex-wrap items-center gap-1.5 text-body-sm text-muted">
-            <li>
-              <Link to="/" className="hover:text-ink">
-                Início
-              </Link>
-            </li>
-            <li aria-hidden className="text-muted-steel">
-              ›
-            </li>
-            <li>
-              <Link to="/destinos" className="hover:text-ink">
-                Destinos
-              </Link>
-            </li>
-            <li aria-hidden className="text-muted-steel">
-              ›
-            </li>
-            <li aria-current="page" className="text-ink">
-              {destination.short_name ?? destination.name}
-            </li>
-          </ol>
-        </nav>
+        <Breadcrumb
+          className="mb-4"
+          items={[
+            { label: "Início", to: "/" },
+            { label: "Destinos", to: "/destinos" },
+            { label: destination.short_name ?? destination.name },
+          ]}
+        />
 
         {/* Hero */}
         <header className="flex flex-col gap-3">

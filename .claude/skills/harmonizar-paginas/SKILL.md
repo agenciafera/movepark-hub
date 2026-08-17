@@ -73,6 +73,18 @@ Duas coisas não são negociáveis:
 2. **A faixa fica fora do container.** Quem usa põe o `PageHero` antes do
    `mx-auto max-w-[...]`, senão a cor para no meio da tela.
 
+A trilha de navegação dentro da faixa é o **`Breadcrumb`**
+(`src/components/shared/Breadcrumb.tsx`), com `tom="escuro"`. O desenho é o da
+página de destino, eleito padrão em 17/08/2026: `nav` rotulada, lista `ol`,
+separador `›` em `aria-hidden` e `aria-current="page"` no último item. As páginas
+de conteúdo tinham uma trilha própria, sem lista e separada por `/`, e leitor de
+tela anunciava as duas de formas diferentes. Não escreva trilha à mão: sobre o
+navy, `text-muted` dá 2.7:1 e reprova, e é isso que o `tom` resolve.
+
+Ainda fora do padrão: o **post do blog**, que abre com "Voltar para o blog"
+(`PageHeader back`) em vez de trilha. É uma decisão de navegação em aberto, não
+um esquecimento.
+
 **A única exceção viva à regra "violeta só em acionável"** é a chamada do FAQ no
 `ConsumerFooter` (`bg-mp-primary`, em todas as páginas do consumer): ela é um CTA
 de página inteira, com botão branco de 48px e texto branco puro, medido em
