@@ -235,7 +235,7 @@ Forma precisa, não decorativa. Cantos de 8px (rounded-sm) — arredondado o suf
 
 ### Navigation
 - **Consumer Topbar:** Logo + links de nav em nav-link (16px, 600) + CTA primário. Mobile: recolhe para BottomNav (5 ícones com label, peso 500 14px).
-- **Admin Sidebar:** Links de sidebar com ícone Lucide + label em title-sm (16px, 500). Estado ativo: text violet-cta + background surface-pale.
+- **Admin Sidebar:** Links de sidebar com ícone Phosphor + label em title-sm (16px, 500). Estado ativo: text violet-cta + background surface-pale.
 
 ### Status Badges
 Componente de alta frequência no sistema — toda reserva, vaga e usuário tem um status. Forma: pill rounded-full, h 22px, texto badge (11px, 700, ls 0.1px).
@@ -255,7 +255,7 @@ Componente de alta frequência no sistema — toda reserva, vaga e usuário tem 
 - **Do** usar o navy-ink (#29263F) como tinta principal. Não `#000000`. A diferença é sutil mas o resultado é mais coerente com a sombra `shadow-tier`.
 - **Do** verificar contraste antes de usar `muted-text` (#6A6A6A) sobre qualquer superfície não-canvas. Ele passa 4.5:1 sobre canvas, mas pode falhar sobre surfaces coloridas.
 - **Do** escrever micro-copy que confirma e humaniza: "Vaga garantida", "Boa viagem", "Sua reserva está segura". A voz da Movepark é a do navegador confiante — quem sabe o caminho e compartilha sem condescendência.
-- **Do** respeitar as três lanes de imagem: **foto** (raster, hero de aeroporto) vem do `gemini-image`; **ilustração** (vetor, vazios/sucesso/onboarding) vem do Recraft no estilo `movepark-rota-v1` (ver [`docs/design-system/illustrations.md`](docs/design-system/illustrations.md)); **ícone** de UI é Lucide. Não troque uma lane pela outra (ilustração no lugar de ícone, foto no lugar de spot de estado vazio).
+- **Do** respeitar as três lanes de imagem: **foto** (raster, hero de aeroporto) vem do `gemini-image`; **ilustração** (vetor, vazios/sucesso/onboarding) vem do Recraft no estilo `movepark-rota-v1` (ver [`docs/design-system/illustrations.md`](docs/design-system/illustrations.md)); **ícone** de UI é Phosphor. Não troque uma lane pela outra (ilustração no lugar de ícone, foto no lugar de spot de estado vazio).
 
 ### Don't:
 - **Don't** usar verde neon, laranja saturado ou qualquer cor de aplicativos de mobilidade urbana (Uber/99). A Movepark não compete por atenção com notificações piscando.

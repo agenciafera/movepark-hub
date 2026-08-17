@@ -2,14 +2,14 @@ import { cn } from "@/lib/utils";
 
 /**
  * Ícone de acessibilidade do projeto. É a figura que a marca usa em qualquer lugar
- * que fale de vaga PCD, no lugar do `Accessibility` do lucide.
+ * que fale de vaga PCD, no lugar do `Wheelchair` do Phosphor.
  *
  * Três ajustes em cima do arquivo original:
  *
  * - `fill="currentColor"` no lugar do `#000000` cravado, pra ele herdar a cor do
  *   texto como os outros ícones e funcionar no tema escuro.
  * - Sem `width`/`height` fixos (o original vinha em 800px): o tamanho vem da classe,
- *   igual ao lucide (`h-5 w-5`).
+ *   igual aos ícones do Phosphor (`h-5 w-5`).
  * - Sem `<title>`: título dentro do SVG vira tooltip e nome acessível fora de hora.
  *   Por padrão o ícone é decorativo (`aria-hidden`); quando ele for a única coisa que
  *   comunica o sentido, passe `label` e ele vira `img` com nome.

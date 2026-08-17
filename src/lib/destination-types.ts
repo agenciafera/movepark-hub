@@ -1,4 +1,4 @@
-// Registro central dos tipos de destino: ícone (Lucide) + label pt-BR por tipo.
+// Registro central dos tipos de destino: ícone (Phosphor) + label pt-BR por tipo.
 // Fonte única — use aqui ao renderizar qualquer destino (combobox, filtros, cards, SEO).
 // Os tipos espelham o CHECK de `destination.type` (ver docs/specs/destinations.md).
 

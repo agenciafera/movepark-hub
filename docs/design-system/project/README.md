@@ -121,7 +121,7 @@ The full type scale lives in `colors_and_type.css` as CSS variables (`--type-dis
 ### Backgrounds & imagery
 - **Três lanes de imagem, sem misturar:** foto (raster, hero de aeroporto), **ilustração** (vetor,
   vazios/sucesso/onboarding, estilo `movepark-rota-v1`, ver `docs/design-system/illustrations.md`) e
-  ícone de UI (Lucide). Nada de textura ou padrão repetido na superfície de marca.
+  ícone de UI (Phosphor). Nada de textura ou padrão repetido na superfície de marca.
 - **Photography** is expected to be warm-cool neutral: realistic urban photography (garages, streetscapes, vehicles). No filters, no grain, no duotone.
 - Canvas do consumidor é **branco puro**; áreas logadas usam o **painel cinza** (`--panel`) com cards flat.
 - A single **brand-gradient band** (`--mp-gradient-brand`) is used for editorial hero scrims (ex: faixa navy), never on buttons or text.
@@ -173,10 +173,12 @@ A Movepark card is:
 
 ## ICONOGRAPHY
 
-Movepark's identity board doesn't ship its own icon set, so the Airbnb-shaped UI surfaces in this system substitute **Lucide icons** (`https://unpkg.com/lucide-static@latest`) - chosen because the stroke weight (1.5-2px) and rounded line caps match the calm, geometric feel of the Movepark wordmark. **This is a substitution** - flag for the user; if Movepark has its own production icon set we should swap it in.
+Movepark's identity board doesn't ship its own icon set. The production set is **Phosphor Icons** (`@phosphor-icons/react`), which replaced the Lucide substitution originally proposed here. The project default is `weight: "regular"` at `size: 20`, set once in the `IconContext.Provider` inside `src/components/shared/AppProviders.tsx`; per-icon `weight` is the exception, not the rule (`bold` on carousel arrows, `fill` on play/pause).
+
+Legacy note: `amenity.icon` in the database still stores Lucide names, so `src/lib/icon-aliases.ts` translates them on read until that data is migrated.
 
 ### Rules
-- Stroke icons only. **No filled solid icons** except for the heart save state when active and the star inside rating displays.
+- Regular weight (stroke) only. **No filled icons** except for the heart save state when active and the star inside rating displays.
 - **24px** is the default icon size in body and toolbar contexts; **20px** inside inline meta rows; **16px** inside dense table cells; **32px** for the hand-illustrated three-product top-nav tabs.
 - **Stroke color** matches the surrounding text color - `var(--colors-ink)` for active, `var(--colors-muted)` for inactive.
 - **No emoji** in product surfaces. Unicode middle-dots (`·`) and bullets are used freely as inline separators inside meta rows.
@@ -193,7 +195,7 @@ Movepark's identity board doesn't ship its own icon set, so the Airbnb-shaped UI
 
 - **Movepark codebase / Figma** - not provided. UI kits are inferred from the merged brand + Airbnb structural spec. Attach the real Figma or repo to upgrade fidelity.
 - **Photography library** - no real Movepark imagery was provided; placeholder Unsplash photography is used in the UI kit.
-- **Icon set** - substituted with Lucide (flagged).
+- ~~**Icon set** - substituted with Lucide (flagged).~~ Resolved: the project standardized on Phosphor Icons.
 - **Sub-brand systems** (e.g. Movepark for operators / fleet) - not in the source material.
 - **Loading / skeleton states** - not yet documented.
 - **Map view styling** - not captured.

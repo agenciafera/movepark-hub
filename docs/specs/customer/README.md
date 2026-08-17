@@ -77,7 +77,7 @@ Direto, brasileiro, formal-amigável. Verbos no infinitivo nos CTAs (**"Reservar
 - Distância: `0,8 km do aeroporto · 2 min de shuttle`.
 
 ### Sem emoji
-A marca é funcional. Substituímos por ícones Lucide ou unicode `·` / `·` como separador.
+A marca é funcional. Substituímos por ícones Phosphor ou unicode `·` / `·` como separador.
 
 ### Exemplos canônicos
 

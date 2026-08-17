@@ -11,7 +11,7 @@ describe("AccessibilityIcon", () => {
     expect(container.querySelector("svg")?.getAttribute("fill")).toBe("currentColor");
   });
 
-  it("recebe o tamanho pela classe, como os ícones do lucide", () => {
+  it("recebe o tamanho pela classe, como os ícones do Phosphor", () => {
     // O original vinha em 800x800 fixo.
     const { container } = render(<AccessibilityIcon className="h-4 w-4" />);
     const svg = container.querySelector("svg")!;

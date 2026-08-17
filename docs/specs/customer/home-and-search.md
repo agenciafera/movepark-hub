@@ -131,7 +131,7 @@ Lista horizontal scrollável (sem barra), inspirada em Airbnb.
 
 Cada categoria é um botão pill (`rounded-full`, `caption`, `bg-surface-soft` quando inativo, `bg-mp-navy text-white` quando ativo). Clicar → adiciona/remove o filtro de `parking_type.code` na URL e abre `/search` se ainda não estiver lá.
 
-Ícones substituíveis por Lucide (Car, CloudRain, KeyRound, Star, Bike, Container).
+Ícones substituíveis por Phosphor (Car, CloudRain, Key, Star, Bicycle, Package).
 
 ---
 
@@ -198,7 +198,7 @@ Cor: ícone em `mp-indigo`, labels em `ink`, copy em `muted`. Background `bg-sur
 
 ## 8. "Como funciona"
 
-3 passos numerados (1 · 2 · 3) com mini-ilustração (ou ícone Lucide grande):
+3 passos numerados (1 · 2 · 3) com mini-ilustração (ou ícone Phosphor grande):
 
 1. **Buscar** — Digite o aeroporto e suas datas.
 2. **Comparar** — Veja opções de várias estacionamentos num só lugar.

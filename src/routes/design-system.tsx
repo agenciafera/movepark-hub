@@ -1066,7 +1066,7 @@ export default function DesignSystemPage() {
             <SectionHeader
               eyebrow="Foundations"
               title="Iconografia"
-              description="Lucide Icons — linha 2px, ends arredondados, 24 × 24. Cor padrão: ink (navy). Nunca preencher com cor sólida exceto nos estados de destaque (heart salvo = violet)."
+              description="Phosphor Icons no peso regular, 20px por padrão (o default vem do IconContext em AppProviders). Cor padrão: ink (navy). Nunca preencher com cor sólida exceto nos estados de destaque (heart salvo = violet)."
             />
 
             <h3 className="mb-3 text-display-sm text-ink">Navegação & ações</h3>

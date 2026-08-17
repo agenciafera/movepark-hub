@@ -31,5 +31,5 @@ O protótipo inicia na home. A partir daí:
 
 - **Sem fotografias reais** — cada placa de imagem é um placeholder de gradiente alinhado à marca. Substituir por fotografia de produção quando disponível.
 - **Sem codebase real** — formas dos componentes derivadas das specs de design. Conectar ao repositório real para aumentar fidelidade.
-- **Ícones** são SVGs manuais no estilo Lucide (~1.7–2px stroke, pontas arredondadas). Trocar pelo set de ícones de produção quando disponível.
+- **Ícones** neste kit são SVGs manuais de linha (~1.7-2px stroke, pontas arredondadas), feitos antes de o set de produção existir. O set de produção hoje é o **Phosphor** (`@phosphor-icons/react`, peso `regular`): use ele no app, não estes SVGs.
 - **i18n**: copy em português brasileiro alinhada à marca.

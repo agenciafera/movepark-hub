@@ -7,7 +7,7 @@ Cada **empresa** (tenant) opera N **unidades** (estacionamentos físicos), cada 
 ## Stack
 
 - **Frontend:** React 18 + Vite + TypeScript
-- **UI:** TailwindCSS + Radix UI (shadcn) + Lucide icons
+- **UI:** TailwindCSS + Radix UI (shadcn) + Phosphor Icons
 - **Estado / dados:** TanStack Query + React Hook Form + Zod
 - **Roteamento:** React Router 6
 - **Backend:** Supabase (PostgreSQL + Auth + RLS)

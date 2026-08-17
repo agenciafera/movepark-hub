@@ -53,7 +53,7 @@ moderados. (A estrutura nasceu inspirada no Airbnb e evoluiu para linguagem pró
 - **Ilustração existe** (não é "photography-led sem ilustração"): sistema `movepark-rota-v1`, vetor
   geométrico plano, paleta da marca, motivo de lâminas diagonais. Híbrido: gente pra conectar
   (hero, onboarding), objeto pra resolver (vazios, confirmação). Ver o spec de ilustração.
-- Ícones: **Lucide** (stroke 1.5-2px).
+- Ícones: **Phosphor** (`@phosphor-icons/react`), peso `regular`, 20px por padrão.
 - **Eyebrow**: micro-label em caixa alta, no máximo um por seção, cor `indigo` ou `muted`, **nunca
   violeta**, e sem ícone decorativo quando é um rótulo que se repete.
 - Voz: **pt-BR**, sentence case, verbos diretos. **Sem travessão (em dash)** e sem vícios de IA.

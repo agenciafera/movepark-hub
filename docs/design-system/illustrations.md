@@ -7,7 +7,7 @@ linguagem de ilustração. Leia antes de gerar qualquer arte nova.
 > **Três lanes de imagem, sem sobreposição.** Cada tipo de asset tem uma ferramenta:
 > - **Foto (raster, realista)** → MCP `gemini-image` (ver `image-prompts.md` e a skill `gerar-imagens-gemini`).
 > - **Ilustração (vetor, spot art)** → **Recraft** (este doc).
-> - **Ícone de UI** → **Lucide** (nunca ilustração no lugar de ícone).
+> - **Ícone de UI** → **Phosphor** (nunca ilustração no lugar de ícone).
 >
 > Ilustração e foto não se misturam na mesma superfície. Foto carrega o clima do mundo
 > real (heros de aeroporto); ilustração carrega estado, explicação e leveza (vazios,
@@ -347,7 +347,7 @@ da Movepark, sem a gritaria de azul/amarelo saturado deles):
   acabamento que a gente busca quando a cena pede gente (ver a regra de pessoas na seção 2).
 - **Ícone e ilustração em lanes separadas e óbvias.** No Nav Dasa, atalhos são **ícones de
   linha** (leves, monocromáticos); features e heros são **ilustração cheia**. Nunca misturam.
-  Mesma regra nossa: Lucide para ação/atalho, ilustração para momento/feature.
+  Mesma regra nossa: Phosphor para ação/atalho, ilustração para momento/feature.
 - **Sistema, não peças avulsas.** Hero, cards de feature, promo do dashboard, rodapé: tudo na
   mesma família. É o que o Style travado (`movepark-rota-v1`) garante aqui.
 

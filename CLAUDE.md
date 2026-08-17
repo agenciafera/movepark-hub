@@ -32,7 +32,7 @@ company (tenant)
 ## Stack
 
 - **Front:** React 18 + TypeScript + Vite, renderizado em SSG via **`vite-react-ssg`** (não é Next, não é CRA).
-- **UI:** TailwindCSS + Radix/shadcn (`style: new-york`, `baseColor: neutral`) + Lucide.
+- **UI:** TailwindCSS + Radix/shadcn (`style: new-york`, `baseColor: neutral`) + **Phosphor Icons** (`@phosphor-icons/react`). O default do projeto (`size: 20`, `weight: "regular"`) vem do `IconContext.Provider` em `src/components/shared/AppProviders.tsx`; use `weight` no ícone só quando o caso pedir (`bold` em seta de carrossel, `fill` em play/pause). O Lucide saiu do projeto, mas os nomes dele ainda estão gravados em `amenity.icon` no banco, então `src/lib/icon-aliases.ts` traduz na leitura.
 - **Dados:** TanStack Query (server state) + React Hook Form + Zod (forms/validação).
 - **Rotas:** React Router 6, definidas em `src/routes.tsx` como `RouteRecord[]`.
 - **Backend:** Supabase (PostgreSQL + Auth + RLS) + Edge Functions (Deno).
