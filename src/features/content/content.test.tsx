@@ -68,6 +68,18 @@ describe("ContentPageView", () => {
     expect(container.querySelector("section#um")).toBeInTheDocument();
   });
 
+  /**
+   * O índice tinha um botão de imprimir que ninguém sabia explicar, e página de
+   * conteúdo não é documento pra levar no papel. Quem quiser imprimir usa o
+   * próprio navegador, e as regras `print:hidden` limpam o resultado.
+   */
+  it("o índice não oferece impressão", () => {
+    const { container } = montar();
+    const indice = container.querySelector('nav[aria-label="Nesta página"]')!;
+    expect(indice.querySelector("button")).toBeNull();
+    expect(screen.queryByRole("button", { name: /imprimir/i })).toBeNull();
+  });
+
   it("com uma seção só, não há índice pra navegar", () => {
     const { container } = montar([SECOES[0]]);
     expect(container.querySelector('nav[aria-label="Nesta página"]')).toBeNull();

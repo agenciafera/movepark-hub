@@ -7,7 +7,6 @@ import {
   Clock,
   FileText,
   ListNumbers,
-  Printer,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -39,8 +38,9 @@ type Props = {
  * Casca das páginas de conteúdo (termos, cancelamento, FAQ, como funciona).
  *
  * Uma casca só, porque a diferença entre essas páginas é o tipo de bloco, não o
- * layout. O que ela resolve: hierarquia, medida de leitura, índice com posição e
- * uma versão imprimível, que documento legal precisa ter.
+ * layout. O que ela resolve: hierarquia, medida de leitura e índice com posição.
+ * Não há botão de imprimir; quem imprime usa o próprio navegador, e as regras
+ * `print:hidden` cuidam de deixar o resultado limpo.
  *
  * Quando `children` vem, o corpo é ele (caso dos documentos do banco, que chegam
  * como HTML pronto). Senão, o corpo são as `sections`.
@@ -193,14 +193,6 @@ export function ContentPageView({
                     </li>
                   ))}
                 </ul>
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  className="mt-5 inline-flex items-center gap-2 rounded-full border border-hairline px-4 py-2 text-caption-sm font-semibold text-ink transition-colors hover:bg-surface-soft"
-                >
-                  <Printer className="h-4 w-4" aria-hidden />
-                  Imprimir
-                </button>
               </nav>
             </div>
           )}
