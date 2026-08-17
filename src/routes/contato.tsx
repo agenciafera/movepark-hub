@@ -1,13 +1,7 @@
 import { Helmet } from "react-helmet-async";
-import {
-  Clock,
-  Envelope,
-  FacebookLogo,
-  InstagramLogo,
-  LinkedinLogo,
-  WhatsappLogo,
-} from "@phosphor-icons/react";
+import { Clock, Envelope, WhatsappLogo } from "@phosphor-icons/react";
 import { PageHero } from "@/components/shared/PageHero";
+import { MARCA_DA_REDE } from "@/components/shared/SocialMarks";
 import { REDES } from "@/lib/redes";
 import { EMAIL_SUPORTE, WHATSAPP_SUPORTE } from "@/lib/suporte";
 
@@ -51,13 +45,6 @@ const CANAIS = [
     href: null,
   },
 ];
-
-/** Ícone de cada rede, casado pelo nome que vem de `REDES`. */
-const ICONE_DA_REDE: Record<string, typeof WhatsappLogo> = {
-  Instagram: InstagramLogo,
-  Facebook: FacebookLogo,
-  LinkedIn: LinkedinLogo,
-};
 
 /** Moldura do canal. Vira link quando o canal tem para onde levar. */
 function Canal({ canal }: { canal: (typeof CANAIS)[number] }) {
@@ -132,9 +119,14 @@ export default function ContatoPage() {
 
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <span className="text-title-sm text-ink">Redes sociais:</span>
-              <div className="flex items-center gap-3">
+              {/* O alvo de toque de 44px é do link, não da marca: o glifo tem
+                  24px e o resto é respiro clicável, que é o mínimo confortável
+                  para o polegar. A fileira não tem `gap` porque esse respiro já
+                  separa as marcas, e as margens negativas devolvem o espaço que
+                  ele tomaria no layout. */}
+              <div className="-my-2 -ml-2 flex items-center">
                 {REDES.map((rede) => {
-                  const Icone = ICONE_DA_REDE[rede.nome];
+                  const Marca = MARCA_DA_REDE[rede.nome];
                   return (
                     <a
                       key={rede.nome}
@@ -142,9 +134,9 @@ export default function ContatoPage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label={rede.nome}
-                      className="text-ink transition-colors hover:text-mp-primary"
+                      className="flex h-11 w-11 items-center justify-center text-ink transition-colors hover:text-mp-primary"
                     >
-                      {Icone ? <Icone className="h-7 w-7" weight="fill" aria-hidden /> : rede.nome}
+                      {Marca ? <Marca /> : rede.nome}
                     </a>
                   );
                 })}
