@@ -50,25 +50,27 @@ export function ConversionFunnel({ data, isLoading }: Props) {
             </p>
           </div>
 
-          <ol className="mx-auto flex w-full max-w-xl flex-col">
+          <ol className="mx-auto flex w-full max-w-md flex-col gap-[3px]">
             {bands.map((band, i) => (
-              <li key={band.key} className="flex flex-col">
-                {/* A perda mora entre as faixas, que é onde ela acontece. */}
+              <li key={band.key} className="relative">
+                {/*
+                  A perda fica na margem, e NÃO numa linha entre as faixas.
+                  Ela já esteve entre elas, com filete dos dois lados, e aquilo somava uns 30px de
+                  altura em cada emenda: o funil deixava de ser uma silhueta contínua e virava
+                  quatro formas soltas. Aqui ela ocupa o vazio à direita, na altura da emenda, sem
+                  entrar no desenho.
+                */}
                 {band.dropped > 0 && (
-                  <div className="flex items-center justify-center gap-2 py-1">
-                    <span className="h-px w-6 bg-hairline" aria-hidden />
-                    <span className="text-caption-sm text-muted">
-                      {band.dropped.toLocaleString("pt-BR")} não passaram daqui
-                    </span>
-                    <span className="h-px w-6 bg-hairline" aria-hidden />
-                  </div>
+                  <span className="absolute right-0 top-0 -translate-y-1/2 text-caption-sm text-muted">
+                    {band.dropped.toLocaleString("pt-BR")} saíram
+                  </span>
                 )}
 
                 {/* A forma e o texto ficam em camadas separadas de propósito: com o texto dentro
                     do elemento recortado, o `clip-path` cortava o rótulo do último degrau no meio
                     ("24 · 77% do passo anteri"). O recorte vale só para a cor. */}
                 <div
-                  className="relative flex min-h-[74px] items-center justify-center px-4 text-center"
+                  className="relative flex min-h-[76px] items-center justify-center px-4 text-center"
                   title={`${band.label}: ${band.count.toLocaleString("pt-BR")} (${band.shareOfTop}% do topo, ${band.conversion}% do passo anterior)`}
                 >
                   <div
