@@ -140,6 +140,36 @@ destaque foi de 20 para 28px justamente porque o h1 subiu para 44.
 | `rating-display` (64/900) | Só o rating da listing. É o único momento tipográfico alto da marca |
 | `uppercase-tag` (8/900) | Só onde o design pedir a tag de 8px. Não é o eyebrow (ver abaixo) |
 
+## Quebra de linha: nunca deixe uma palavra sozinha
+
+Palavra sozinha na última linha é erro de diagramação, e neste projeto ela não
+foi culpa do texto: foi de teto arbitrário. Um `max-w-[26ch]` no h1 largou
+"minutos" sozinho na `/como-funciona` e quebrou "Política de cancelamento" em
+duas linhas, enquanto cada página tinha o seu número (16ch, 26ch, 42ch, 54ch,
+56ch, 64ch, 68ch), então a mesma frase quebrava em lugar diferente conforme a
+rota.
+
+**Quem decide a quebra é o navegador.**
+
+| Onde | Classe | Por quê |
+|---|---|---|
+| Título (h1, h2, qualquer `text-display-*`) | `text-balance` | Distribui as linhas em vez de encher a primeira e sobrar o resto |
+| Texto corrido, lead, descrição de card | `text-pretty` | Impede que a última linha fique com uma palavra só |
+| Lead de abertura | `max-w-[56ch]` | Medida de leitura, um valor só no projeto |
+| Corpo longo | `max-w-[68ch]` | Medida de leitura de texto contínuo |
+
+**Teto em `ch` é proibido em heading.** Em parágrafo ele é medida de leitura e
+continua valendo; em título ele é um corte a olho, e é ele que fabrica a viúva.
+Para o título, o limite é o container da página.
+
+A única quebra aceitável com palavra curta sozinha é a que sobra quando o texto
+enche a largura real disponível. Se você está escolhendo um número para forçar a
+quebra "ficar bonita", pare: use `text-balance`.
+
+Guard: `src/components/shared/quebra-de-linha.contract.test.ts` roda no CI, varre
+os fontes do consumer e reprova heading com teto em `ch` ou abertura de página
+sem `text-balance`.
+
 ## Contrato de cor
 
 | Papel | Classe | Contraste sobre canvas |

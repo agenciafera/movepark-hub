@@ -72,13 +72,15 @@ export function ContentPageView({
         <div className="mx-auto w-full max-w-[1080px] px-5 py-12 desktop:px-8 desktop:py-16">
           <Breadcrumb tom="escuro" items={[{ label: "Início", to: "/" }, { label }]} />
 
-          {/* 16ch quebrava "Política de cancelamento" (24 caracteres) em duas
-              linhas sem precisar. A medida ainda segura título comprido, como o
-              da /como-funciona, que continua em duas linhas de propósito. */}
-          <h1 className="mt-3 max-w-[26ch] text-display-xl text-white desktop:text-display-2xl">
+          {/* Sem teto em `ch`: era ele que quebrava "Política de cancelamento" em
+              duas linhas e largava "minutos" sozinho no título da /como-funciona.
+              `text-balance` distribui as linhas e o container de 1080 é o limite. */}
+          <h1 className="mt-3 text-balance text-display-xl text-white desktop:text-display-2xl">
             {title}
           </h1>
-          <p className="mt-3 max-w-[56ch] text-body-md leading-relaxed text-white">{intro}</p>
+          <p className="mt-3 max-w-[56ch] text-pretty text-body-md leading-relaxed text-white">
+            {intro}
+          </p>
 
           {/* A linha de contexto é outro assunto, não a continuação do lead: por
               isso o respiro aqui é maior do que o que separa título e texto. */}

@@ -66,11 +66,23 @@ export function PageHeader({
               {eyebrow}
             </span>
           )}
-          <h1 className={cn(size === "lg" ? "text-display-2xl" : "text-display-xl", "text-ink")}>
+          {/* `text-balance`/`text-pretty`: título e lead não podem terminar com
+              uma palavra sozinha na última linha. */}
+          <h1
+            className={cn(
+              size === "lg" ? "text-display-2xl" : "text-display-xl",
+              "text-balance text-ink",
+            )}
+          >
             {title}
           </h1>
           {description && (
-            <p className={isContent ? "text-body-md text-body" : "text-body-sm text-muted"}>
+            <p
+              className={cn(
+                "text-pretty",
+                isContent ? "text-body-md text-body" : "text-body-sm text-muted",
+              )}
+            >
               {description}
             </p>
           )}

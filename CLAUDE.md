@@ -483,4 +483,6 @@ Contexto estratégico e visual do projeto vive em dois arquivos na raiz:
 4. Mobile-first, aeroporto-first — um polegar, 4G, luz de sol.
 5. Uma marca, três superfícies — consumer/operator/admin no mesmo sistema de design.
 
+**Quebra de linha: nunca deixe uma palavra sozinha na última linha.** Viúva é erro de diagramação, e neste projeto ela vinha de teto arbitrário: um `max-w-[26ch]` no h1 largava "minutos" sozinho na `/como-funciona`, e cada página tinha o seu número. Título usa **`text-balance`**, texto corrido usa **`text-pretty`**, e quem decide onde quebrar é o navegador. **Teto em `ch` é proibido em heading** (em parágrafo continua sendo medida de leitura: 56ch no lead, 68ch no corpo). Só é aceitável sobrar palavra curta quando o texto encheu a largura real disponível. O guard `src/components/shared/quebra-de-linha.contract.test.ts` roda no CI; a regra completa está na skill `harmonizar-paginas`.
+
 Para iterar visualmente no browser: `/impeccable live` (precisa de `bun run dev`). Para critique, audit ou polish de uma rota: `/impeccable <comando> <caminho>`.

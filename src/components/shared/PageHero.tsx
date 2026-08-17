@@ -32,9 +32,12 @@ export function PageHero({ title, description, children, className }: Props) {
   return (
     <div className={cn("bg-mp-navy", className)}>
       <div className="mx-auto w-full max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-24">
-        <h1 className="text-display-3xl text-white">{title}</h1>
+        {/* `text-balance` no título e `text-pretty` no lead: nenhum dos dois pode
+            terminar com uma palavra sozinha na última linha. Teto em `ch` no
+            título está fora, porque é ele que fabrica a viúva. */}
+        <h1 className="text-balance text-display-3xl text-white">{title}</h1>
         {description && (
-          <p className="mt-4 max-w-[56ch] text-body-md text-white">{description}</p>
+          <p className="mt-4 max-w-[56ch] text-pretty text-body-md text-white">{description}</p>
         )}
         {children}
       </div>

@@ -118,7 +118,7 @@ export default function ContatoPage() {
         <div className="grid grid-cols-1 gap-10 desktop:grid-cols-2 desktop:gap-12">
           <div>
             <h2 className="text-display-sm text-ink">Central de atendimento</h2>
-            <p className="mt-4 max-w-[42ch] text-body-md text-body">
+            <p className="mt-4 max-w-[56ch] text-pretty text-body-md text-body">
               Fale com a gente sobre reserva, cancelamento, voucher ou qualquer outra dúvida.
             </p>
           </div>
