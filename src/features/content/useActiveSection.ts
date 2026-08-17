@@ -1,12 +1,22 @@
 import * as React from "react";
+import {
+  baseDaFaixa,
+  ROOT_MARGIN,
+  secaoAtiva,
+  TOPO_FAIXA_PX,
+  type Medida,
+} from "./useActiveSection.logic";
 
 /**
  * Qual seção está sendo lida, pro índice acompanhar a rolagem.
  *
- * `IntersectionObserver` no lugar de listener de scroll: o cálculo de posição roda
- * no navegador, não a cada evento. O `rootMargin` recorta a janela de detecção pra
- * faixa logo abaixo da nav sticky (96px) até 30% da altura da tela, senão duas
- * seções ficam visíveis ao mesmo tempo e o item ativo pisca entre elas.
+ * `IntersectionObserver` no lugar de listener de scroll: ele avisa quando alguma
+ * seção cruza a faixa de leitura, sem rodar a cada evento. Quem escolhe a seção é
+ * `secaoAtiva`, medindo os alvos no momento do aviso, e não o histórico de quem
+ * entrou e saiu. Esse histórico era um `Set`, e ele guardava a seção anterior
+ * quando ela vazava uma fração de pixel dentro da faixa: o índice acendia o item
+ * de cima, ou parava de acender no fim da página. Medir na hora custa alguns
+ * `getBoundingClientRect` por aviso, que são poucos e só quando alguém cruza.
  *
  * Só toca no browser: durante o build SSG este efeito não roda, e o índice sai com
  * a primeira seção marcada.
@@ -23,20 +33,18 @@ export function useActiveSection(ids: string[]): string | null {
       .filter((el): el is HTMLElement => !!el);
     if (alvos.length === 0 || typeof IntersectionObserver === "undefined") return;
 
-    // Guarda quem está visível pra escolher sempre a primeira em ordem de página.
-    const visiveis = new Set<string>();
-    const obs = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) visiveis.add(e.target.id);
-          else visiveis.delete(e.target.id);
-        }
-        const primeira = alvos.find((el) => visiveis.has(el.id));
-        if (primeira) setAtiva(primeira.id);
-      },
-      { rootMargin: "-96px 0px -70% 0px" },
-    );
+    const escolher = () => {
+      const medidas: Medida[] = alvos.map((el) => {
+        const r = el.getBoundingClientRect();
+        return { id: el.id, topo: r.top, base: r.bottom };
+      });
+      const escolhida = secaoAtiva(medidas, TOPO_FAIXA_PX, baseDaFaixa(window.innerHeight));
+      // `null` é a página no topo, antes de qualquer seção. Aí vale o que já estava,
+      // e quem abre a página vê a primeira marcada pelo retorno lá embaixo.
+      if (escolhida) setAtiva(escolhida);
+    };
 
+    const obs = new IntersectionObserver(escolher, { rootMargin: ROOT_MARGIN });
     alvos.forEach((el) => obs.observe(el));
     return () => obs.disconnect();
   }, [chave]);
