@@ -41,13 +41,19 @@ const EYEBROW = "text-badge uppercase tracking-[0.4px] text-mp-indigo";
 
 const GUARANTEE_ICON = { seal: SealCheck, lock: LockSimple, headset: Headset };
 
-/** Numerador dos passos, comum aos três momentos. A numeração corre de 1 a 7. */
+/**
+ * Numerador dos passos, comum aos três momentos. A numeração corre de 1 a 7.
+ *
+ * A bolinha é violeta porque aqui ela é indicador-chave, o mesmo papel que o
+ * violeta já cumpre num número de destaque. Branco sobre `mp-primary` dá 4.86:1,
+ * acima do mínimo de 4.5 que o AA pede nesse tamanho.
+ */
 function Steps({ steps }: { steps: JourneyStep[] }) {
   return (
-    <ol className="flex flex-col gap-3">
+    <ol className="flex flex-col gap-5">
       {steps.map((s) => (
         <li key={s.n} className="flex items-start gap-3">
-          <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-mp-navy text-badge text-white">
+          <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-mp-primary text-badge text-white">
             {s.n}
           </span>
           <span className="text-pretty text-body-md text-body">{s.text}</span>
@@ -281,7 +287,7 @@ export default function ComoFuncionaPage() {
           indigo), o mesmo utilitário do resto do projeto: aqui o violeta é
           superfície de marca, e o acionável é o botão branco em cima dela. */}
       <section className="bg-brand-gradient">
-        <div className="mx-auto flex max-w-[1080px] flex-col items-center gap-4 px-4 pb-14 pt-16 text-center desktop:px-8 desktop:pb-16 desktop:pt-24">
+        <div className="mx-auto flex max-w-[1080px] flex-col items-center gap-4 px-4 pb-24 pt-16 text-center desktop:px-8 desktop:pb-28 desktop:pt-24">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/15 px-3.5 py-1.5 text-caption text-white">
             <SealCheck className="h-4 w-4 shrink-0" aria-hidden />
             Estacionamentos verificados em 6 aeroportos
@@ -311,35 +317,44 @@ export default function ComoFuncionaPage() {
           </div>
         </div>
 
-        {/* Faixa de sinais, montada sobre a borda do hero. O card branco sobe para
-            dentro da próxima seção, então a margem negativa mora aqui e o `pt` da
-            seção seguinte abre o espaço correspondente. */}
-        <div className="relative z-10 mx-auto -mb-12 max-w-[1080px] px-4 desktop:-mb-14 desktop:px-8">
-          <dl className="grid grid-cols-1 rounded-md bg-canvas p-5 shadow-tier tablet:grid-cols-3 desktop:px-7">
-            {JOURNEY_STATS.map((s, i) => (
-              <div
-                key={s.value}
-                className={cn(
-                  "flex flex-col gap-1 py-3.5 tablet:py-0",
-                  i > 0 && "border-t border-hairline tablet:border-l tablet:border-t-0 tablet:pl-6",
-                  i === 0 && "pt-0 tablet:pr-6",
-                  i === JOURNEY_STATS.length - 1 && "pb-0",
-                )}
-              >
-                <dt className="text-display-sm text-mp-navy">{s.value}</dt>
-                <dd className="text-pretty text-body-sm text-body">{s.label}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
       </section>
+
+      {/* Faixa de sinais, montada em cima da divisão entre o hero e o branco: o
+          card fica partido pela borda, em vez de só encostar nela.
+
+          O recuo é `-mt` num IRMÃO do hero, e não `-mb` num filho dele. Como o
+          hero não tem padding nem borda embaixo, a margem negativa de um último
+          filho ATRAVESSA a seção (margin collapsing) em vez de encurtá-la: o card
+          continuava inteiro dentro do violeta, encostado na borda. Entre irmãos a
+          margem colapsa de forma previsível e puxa o card pra cima de verdade.
+
+          No mobile o card empilha os três sinais e fica alto demais para ser
+          cortado ao meio, então lá o avanço é menor. */}
+      <div className="relative z-10 mx-auto -mt-12 max-w-[1080px] px-4 tablet:-mt-[77px] desktop:px-8">
+        <dl className="grid grid-cols-1 rounded-md bg-canvas p-6 shadow-tier tablet:grid-cols-3 tablet:p-9">
+          {JOURNEY_STATS.map((s, i) => (
+            <div
+              key={s.value}
+              className={cn(
+                "flex flex-col gap-1.5 py-4 tablet:py-0",
+                i > 0 && "border-t border-hairline tablet:border-l tablet:border-t-0 tablet:pl-7",
+                i === 0 && "pt-0 tablet:pr-7",
+                i === JOURNEY_STATS.length - 1 && "pb-0",
+              )}
+            >
+              <dt className="text-display-xl text-mp-navy">{s.value}</dt>
+              <dd className="text-pretty text-body-sm text-body">{s.label}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
 
       {/* Os três momentos. Alterna texto e painel a cada linha no desktop; no
           mobile a ordem da fonte manda e o texto vem sempre antes do painel. */}
       <section
         id="passos"
         ref={passosRef}
-        className="mx-auto max-w-[1080px] scroll-mt-24 px-4 pb-16 pt-28 desktop:px-8 desktop:pb-24 desktop:pt-36"
+        className="mx-auto max-w-[1080px] scroll-mt-24 px-4 py-16 desktop:px-8 desktop:py-24"
       >
         <div className="flex flex-col items-center gap-3 text-center" data-reveal>
           <span className={EYEBROW}>Como funciona</span>
