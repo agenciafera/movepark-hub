@@ -1,6 +1,5 @@
 import { Helmet } from "react-helmet-async";
 import {
-  ChatCircle,
   Clock,
   Envelope,
   FacebookLogo,
@@ -8,7 +7,7 @@ import {
   LinkedinLogo,
   WhatsappLogo,
 } from "@phosphor-icons/react";
-import { PageHeader } from "@/components/shared/PageHeader";
+import { PageHero } from "@/components/shared/PageHero";
 import { REDES } from "@/lib/redes";
 import { EMAIL_SUPORTE, WHATSAPP_SUPORTE } from "@/lib/suporte";
 
@@ -20,11 +19,14 @@ import { EMAIL_SUPORTE, WHATSAPP_SUPORTE } from "@/lib/suporte";
  * precisa de ajuda já chama no WhatsApp. Saíram junto a Edge
  * `submit-contact-message`, a tabela `contact_message` e os templates de e-mail
  * dela, porque superfície pública sem tela que a use envelhece sem revisão.
+ *
+ * O desenho de 17/08/2026 trocou o `PageHeader` pela faixa violeta do
+ * `PageHero` e pôs os canais numa coluna só, à direita de quem a página atende.
  */
 
 const CANAIS = [
   {
-    icon: ChatCircle,
+    icon: WhatsappLogo,
     title: "WhatsApp",
     desc: "O jeito mais rápido de falar com a equipe.",
     action: "Abrir conversa",
@@ -57,6 +59,42 @@ const ICONE_DA_REDE: Record<string, typeof WhatsappLogo> = {
   LinkedIn: LinkedinLogo,
 };
 
+/** Moldura do canal. Vira link quando o canal tem para onde levar. */
+function Canal({ canal }: { canal: (typeof CANAIS)[number] }) {
+  const Icone = canal.icon;
+  const conteudo = (
+    <>
+      <Icone className="h-9 w-9 shrink-0 text-mp-primary" aria-hidden />
+      <span className="min-w-0">
+        <span className="block text-title-md text-ink">{canal.title}</span>
+        <span className="mt-1 block text-body-sm text-body">{canal.desc}</span>
+        {canal.action && (
+          <span className="mt-2 inline-block text-body-sm font-medium text-mp-primary">
+            {canal.action} →
+          </span>
+        )}
+      </span>
+    </>
+  );
+
+  const molde = "flex items-start gap-5 rounded-md border border-hairline bg-canvas p-6";
+
+  if (!canal.href) {
+    return <div className={molde}>{conteudo}</div>;
+  }
+
+  return (
+    <a
+      href={canal.href}
+      target={canal.href.startsWith("http") ? "_blank" : undefined}
+      rel="noopener noreferrer"
+      className={`${molde} transition-colors hover:bg-surface-soft`}
+    >
+      {conteudo}
+    </a>
+  );
+}
+
 export default function ContatoPage() {
   return (
     <>
@@ -71,80 +109,52 @@ export default function ContatoPage() {
         <link rel="canonical" href="https://hub.movepark.co/contato" />
       </Helmet>
 
-      <div className="mx-auto w-full max-w-[1080px] px-4 py-12 desktop:px-8">
-        <PageHeader
-          variant="content"
-          className="mb-10 max-w-xl"
-          title="Fale conosco"
-          description="Escolha o canal que preferir. No WhatsApp a resposta é mais rápida."
-        />
+      <PageHero
+        title="Fale conosco"
+        description="Escolha o canal que preferir. No WhatsApp a resposta é mais rápida."
+      />
 
-        <div className="grid grid-cols-1 gap-8 desktop:grid-cols-2 desktop:gap-12">
-          <div className="space-y-6">
-            <h2 className="text-display-sm text-ink">Canais de atendimento</h2>
-            <div className="space-y-4">
-              {CANAIS.map((c) => (
-                <div
-                  key={c.title}
-                  className="flex items-start gap-4 rounded-md border border-hairline bg-canvas p-4"
-                >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-mp-pale text-mp-indigo">
-                    <c.icon className="h-5 w-5" />
-                  </span>
-                  <div className="flex-1">
-                    <div className="text-title-sm text-ink">{c.title}</div>
-                    <div className="mt-0.5 text-body-sm text-muted">{c.desc}</div>
-                    {c.href && c.action && (
-                      <a
-                        href={c.href}
-                        target={c.href.startsWith("http") ? "_blank" : undefined}
-                        rel="noopener noreferrer"
-                        className="mt-2 inline-block text-body-sm font-medium text-mp-indigo hover:underline"
-                      >
-                        {c.action} →
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+      <div className="mx-auto w-full max-w-[1080px] px-4 py-12 desktop:px-8 desktop:py-16">
+        <div className="grid grid-cols-1 gap-10 desktop:grid-cols-2 desktop:gap-12">
+          <div>
+            <h2 className="text-display-sm text-ink">Central de atendimento</h2>
+            <p className="mt-4 max-w-[42ch] text-body-md text-body">
+              Fale com a gente sobre reserva, cancelamento, voucher ou qualquer outra dúvida.
+            </p>
           </div>
 
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <h2 className="text-display-sm text-ink">Redes sociais</h2>
-              <p className="text-body-sm text-muted">
-                Também respondemos por mensagem direta.
-              </p>
+          <div>
+            <div className="space-y-4">
+              {CANAIS.map((c) => (
+                <Canal key={c.title} canal={c} />
+              ))}
             </div>
 
-            <div className="space-y-3">
-              {REDES.map((rede) => {
-                const Icone = ICONE_DA_REDE[rede.nome];
-                return (
-                  <a
-                    key={rede.nome}
-                    href={rede.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-4 rounded-md border border-hairline bg-canvas p-4 transition-colors hover:bg-surface-soft"
-                  >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-mp-pale text-mp-indigo">
-                      {Icone ? <Icone className="h-5 w-5" weight="fill" /> : null}
-                    </span>
-                    <span className="flex-1 text-title-sm text-ink">{rede.nome}</span>
-                    <span aria-hidden className="text-body-sm text-muted">
-                      →
-                    </span>
-                  </a>
-                );
-              })}
+            <div className="mt-8 flex flex-wrap items-center gap-4">
+              <span className="text-title-sm text-ink">Redes sociais:</span>
+              <div className="flex items-center gap-3">
+                {REDES.map((rede) => {
+                  const Icone = ICONE_DA_REDE[rede.nome];
+                  return (
+                    <a
+                      key={rede.nome}
+                      href={rede.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={rede.nome}
+                      className="text-ink transition-colors hover:text-mp-primary"
+                    >
+                      {Icone ? <Icone className="h-7 w-7" weight="fill" aria-hidden /> : rede.nome}
+                    </a>
+                  );
+                })}
+              </div>
             </div>
 
-            <div className="rounded-md bg-surface-soft px-5 py-4">
-              <p className="text-body-sm text-muted">
+            <div className="mt-8 rounded-md bg-mp-pale px-6 py-5">
+              <p className="text-body-sm text-body">
                 Também temos uma{" "}
-                <a href="/faq" className="font-medium text-mp-indigo hover:underline">
+                <a href="/faq" className="font-medium text-mp-indigo underline">
                   Central de Perguntas Frequentes
                 </a>{" "}
                 que pode resolver sua dúvida rapidinho.

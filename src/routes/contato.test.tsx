@@ -57,6 +57,24 @@ describe("ContatoPage — canais diretos", () => {
     expect(screen.getByText(/assistente do site responde/)).toBeInTheDocument();
   });
 
+  /**
+   * Desenho de 17/08/2026: a página abre com a faixa violeta, e não mais com o
+   * `PageHeader` sobre fundo branco. É o modelo que vai para as outras páginas
+   * de conteúdo, então a troca fica travada aqui.
+   */
+  it("abre com a faixa violeta, com o título dentro dela", () => {
+    const { container } = render();
+    const faixa = container.querySelector(".bg-mp-primary");
+    expect(faixa).not.toBeNull();
+    expect(faixa!.querySelector("h1")!.textContent).toBe("Fale conosco");
+  });
+
+  /** Canal sem para onde levar não vira link, senão o clique não faz nada. */
+  it("o horário de atendimento não é clicável", () => {
+    render();
+    expect(screen.queryByRole("link", { name: /Atendimento com a equipe/i })).toBeNull();
+  });
+
   it("mantém o caminho para a central de perguntas", () => {
     render();
     expect(screen.getByRole("link", { name: /Perguntas Frequentes/i })).toHaveAttribute(

@@ -31,7 +31,8 @@ classe, porque tudo abaixo depende da faixa.
 | Faixa | Quais | O que é |
 |---|---|---|
 | **Hero de marketing** | `/`, `/seja-parceiro`, `/sobre` | Abre com imagem full-bleed, headline grande, sem padding no topo |
-| **Página de conteúdo** | as outras 11 | Abre com `PageHeader`, coluna de leitura, padding no topo |
+| **Página de conteúdo** | as outras 10 | Abre com `PageHeader`, coluna de leitura, padding no topo |
+| **Conteúdo com hero** | `/contato` | Corpo de conteúdo, aberto pela faixa violeta do `PageHero` (ver abaixo) |
 
 `/seja-parceiro` é o gabarito de hero. `bookings-list.tsx` é o gabarito de
 conteúdo (é a única que já usa o `PageHeader`).
@@ -42,6 +43,36 @@ os destinos e os parceiros. Com `PageHeader` e coluna de leitura ela entregava
 texto puro, que era exatamente o problema relatado. As outras 11 continuam de
 conteúdo; mover mais alguma exige a mesma justificativa de marca e uma edição
 aqui, no mesmo PR.
+
+### Terceira faixa: página de conteúdo com hero (desde 17/08/2026)
+
+Nasceu na `/contato`, de um desenho do Diego, e vale para as páginas de conteúdo
+que forem redesenhadas a partir dele. A página continua sendo de conteúdo
+(container de 1080, h2 em `display-sm`, `PageHeader` fora), mas abre com a faixa
+violeta do **`PageHero`** (`src/components/shared/PageHero.tsx`) no lugar do
+cabeçalho branco.
+
+| Elemento | Classe |
+|---|---|
+| Faixa | `bg-mp-primary`, fora do container (sangra) |
+| h1 | `text-display-3xl text-white` |
+| lead | `text-body-md text-white` |
+| Respiro | `py-16 desktop:py-24` |
+
+Duas coisas não são negociáveis aqui:
+
+1. **O lead é branco puro.** Branco sobre `mp-primary` dá 4.86:1 e passa o AA
+   raspando; com qualquer translucidez cai para ~3.9:1 e reprova em 16px. O
+   desenho de origem sugeria um lead acinzentado, e ele não pode ser usado.
+2. **A faixa fica fora do container.** Quem usa põe o `PageHero` antes do
+   `mx-auto max-w-[...]`, senão a cor para no meio da tela.
+
+Esta faixa abre **duas exceções conscientes** à regra "violeta só em acionável",
+e elas param aqui: o **fundo da faixa de abertura** e o **ícone do card de
+canal** na `/contato` (o do horário de atendimento não é clicável e mesmo assim é
+violeta, porque os três ícones são uma família visual). O grep 3 da verificação
+acusa esse ícone; é esperado. No corpo da página a regra continua valendo
+inteira: violeta em texto, eyebrow ou borda decorativa segue proibido.
 
 ## Contrato de tipografia
 
