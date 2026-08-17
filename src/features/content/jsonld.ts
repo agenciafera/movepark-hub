@@ -1,4 +1,4 @@
-import type { ContentPage, Section } from "./types";
+import type { Section } from "./types";
 
 /**
  * JSON-LD das páginas de conteúdo.
@@ -6,27 +6,11 @@ import type { ContentPage, Section } from "./types";
  * As respostas saem dos mesmos blocos que a tela renderiza. Structured data que
  * diverge do texto visível é motivo de penalidade do Google, e aqui a divergência
  * seria estrutural: dois lugares para o mesmo texto.
+ *
+ * O `HowTo` morava aqui e saiu em 17/08/2026, quando a /como-funciona deixou de
+ * ser página de conteúdo. Os sete passos dela viraram dados próprios, e o schema
+ * passou a sair de `features/how-it-works/journey.ts`, junto do texto visível.
  */
-
-/** Passos de `/como-funciona`, na ordem em que aparecem, através das seções. */
-export function howToJsonLd(page: ContentPage) {
-  const steps = page.sections
-    .flatMap((s) => s.blocks)
-    .flatMap((b) => (b.type === "steps" ? b.items : []));
-
-  return {
-    "@context": "https://schema.org",
-    "@type": "HowTo",
-    name: page.title,
-    description: page.intro,
-    step: steps.map((s, i) => ({
-      "@type": "HowToStep",
-      position: i + 1,
-      name: s.title,
-      text: s.text,
-    })),
-  };
-}
 
 /**
  * Um único `FAQPage` por página, juntando todos os blocos de FAQ. Mais de um bloco

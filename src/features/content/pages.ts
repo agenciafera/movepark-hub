@@ -99,107 +99,6 @@ export const CANCELAMENTO: ContentPage = {
   ],
 };
 
-export const COMO_FUNCIONA: ContentPage = {
-  slug: "como-funciona",
-  label: "Como funciona",
-  title: "Reserve sua vaga em menos de 2 minutos",
-  intro:
-    "Da busca ao check-in, tudo pelo celular. Sem ligar pro estacionamento e sem fila na chegada.",
-  updated: "2026-08-10",
-  related: ["cancelamento", "faq"],
-  sections: [
-    {
-      id: "antes-da-viagem",
-      title: "Antes da viagem",
-      blocks: [
-        {
-          type: "steps",
-          items: [
-            {
-              n: "1",
-              title: "Busque sua vaga",
-              text: "Informe seu destino (aeroporto ou terminal) e as datas de entrada e saída. Em segundos, você vê todos os estacionamentos parceiros disponíveis na região, com preços e distâncias.",
-            },
-            {
-              n: "2",
-              title: "Reserve em 2 minutos",
-              text: "Escolha o estacionamento ideal e finalize o pagamento por PIX ou cartão de crédito. Preço fixo: o valor exibido é o que você paga. Sem surpresas na saída.",
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: "na-chegada",
-      title: "Na chegada",
-      blocks: [
-        {
-          // A numeração segue de onde parou: é um fluxo só, não duas listas.
-          type: "steps",
-          items: [
-            {
-              n: "3",
-              title: "Chegue e estacione",
-              text: "No dia combinado, vá diretamente ao estacionamento. Não precisa ligar antes nem esperar fila: sua vaga já está reservada e confirmada.",
-            },
-            {
-              n: "4",
-              title: "Faça check-in pelo QR Code",
-              text: "Apresente o voucher digital (QR Code) enviado por e-mail na entrada do estacionamento. O processo leva segundos. Pode partir tranquilo pro aeroporto.",
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: "por-que-movepark",
-      title: "Por que reservar pela Movepark",
-      blocks: [
-        {
-          type: "table",
-          rows: [
-            {
-              k: "Parceiros certificados",
-              v: "Todo estacionamento na plataforma passou pela avaliação da Movepark.",
-            },
-            {
-              k: "Preço fixo garantido",
-              v: "O valor da reserva não muda. Sem cobrança extra na saída.",
-            },
-            {
-              k: "Próximos ao seu destino",
-              v: "Filtramos por proximidade ao aeroporto ou terminal que você precisa.",
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: "duvidas",
-      title: "Perguntas frequentes",
-      blocks: [
-        {
-          type: "faq",
-          items: [
-            {
-              q: "Preciso imprimir o voucher?",
-              a: "Não. O QR Code no celular é suficiente. Mas você pode imprimir se preferir.",
-            },
-            {
-              q: "E se eu precisar ficar mais tempo do que o reservado?",
-              a: "Fale com o estacionamento no local. A Movepark vai ajustar o pagamento da diferença, se aplicável.",
-            },
-            {
-              q: "Posso cancelar se mudar de planos?",
-              a: "Sim. Dentro do prazo da sua Tarifa o reembolso é integral: 24 horas antes do check-in na Básica e na Flex, ou até 1 minuto antes na Superflex. Em unidades que fecham a reserva no site do parceiro, valem as condições dele. Veja a Política de Cancelamento.",
-            },
-          ],
-        },
-      ],
-    },
-  ],
-};
-
 /**
  * Metodologia: de onde vem cada número do site. É a página de confiança que
  * buscador e LLM usam para decidir quem citar (E-E-A-T), e a resposta curta é
@@ -297,7 +196,7 @@ export const RELACIONADOS: Record<string, { to: string; title: string; descripti
   "como-funciona": {
     to: "/como-funciona",
     title: "Como funciona",
-    description: "Da busca ao check-in em quatro passos",
+    description: "Da busca à chave de volta na sua mão",
   },
   metodologia: {
     to: "/metodologia",

@@ -30,8 +30,8 @@ classe, porque tudo abaixo depende da faixa.
 
 | Faixa | Quais | O que é |
 |---|---|---|
-| **Hero de marketing** | `/`, `/seja-parceiro`, `/sobre` | Abre com imagem full-bleed, headline grande, sem padding no topo |
-| **Página de conteúdo** | as outras 10 | Abre com `PageHeader`, coluna de leitura, padding no topo |
+| **Hero de marketing** | `/`, `/seja-parceiro`, `/sobre`, `/como-funciona` | Abre com imagem ou faixa de marca full-bleed, headline grande, sem padding no topo |
+| **Página de conteúdo** | as outras 9 | Abre com `PageHeader`, coluna de leitura, padding no topo |
 | **Conteúdo com hero** | `/contato` | Corpo de conteúdo, aberto pela faixa violeta do `PageHero` (ver abaixo) |
 
 `/seja-parceiro` é o gabarito de hero. `bookings-list.tsx` é o gabarito de
@@ -40,9 +40,20 @@ conteúdo (é a única que já usa o `PageHeader`).
 **`/sobre` mudou de faixa em 20/07/2026** (atividade `86ajepypm`, redesign com
 apoio visual). Ela é página de marca, não de utilidade: conta a história, mostra
 os destinos e os parceiros. Com `PageHeader` e coluna de leitura ela entregava
-texto puro, que era exatamente o problema relatado. As outras 11 continuam de
-conteúdo; mover mais alguma exige a mesma justificativa de marca e uma edição
-aqui, no mesmo PR.
+texto puro, que era exatamente o problema relatado.
+
+**`/como-funciona` mudou de faixa em 17/08/2026**, implementando o desenho do
+Claude Design (`Como funciona Movepark.dc.html`). Mesma justificativa: ela é a
+página que vende o modelo antes de o cliente confiar nele, e a prova mora em
+mostrar as telas (busca, voucher, volta), não em descrevê-las. Abre com a faixa
+`bg-brand-gradient` sangrada, com o card de sinais montado sobre a borda de
+baixo. É a primeira da faixa de hero sem foto: o gradiente da identidade faz o
+papel do full-bleed. Os h3 dos três momentos usam `display-xl` (28px), o degrau
+entre o `display-2xl` das seções e o `title-md` dos cards, para a escada de
+títulos continuar descendo.
+
+As outras 9 continuam de conteúdo; mover mais alguma exige a mesma justificativa
+de marca e uma edição aqui, no mesmo PR.
 
 ### Terceira faixa: página de conteúdo com hero (desde 17/08/2026)
 
@@ -247,8 +258,8 @@ Eram **6 CTAs escritos à mão** (`sobre.tsx:116`, `ajuda.tsx:139`,
 47 e 52px. Nenhuma é 48. Os 42px reprovam o alvo de toque de 44px, no contexto
 declarado do produto: um polegar, 4G, luz de sol.
 
-O de `sobre.tsx` saiu no redesign de 20/07/2026 (agora é `<Button asChild>`).
-**Faltam 5.**
+O de `sobre.tsx` saiu no redesign de 20/07/2026 e o de `como-funciona.tsx` no de
+17/08/2026 (os dois agora são `<Button asChild>`). **Faltam 4.**
 
 ## Procedimento
 

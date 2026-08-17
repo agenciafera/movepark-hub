@@ -5,8 +5,8 @@ import { MemoryRouter } from "react-router-dom";
 import { BlockView } from "./Blocks";
 import { ContentPageView } from "./ContentPageView";
 import { formatUpdated, readingMinutes, type Section } from "./types";
-import { faqJsonLd, howToJsonLd } from "./jsonld";
-import { CANCELAMENTO, COMO_FUNCIONA } from "./pages";
+import { faqJsonLd } from "./jsonld";
+import { CANCELAMENTO } from "./pages";
 
 const SECOES: Section[] = [
   { id: "um", title: "Primeira seção", blocks: [{ type: "p", text: "Texto da primeira." }] },
@@ -143,13 +143,6 @@ describe("blocos", () => {
 
 describe("structured data", () => {
   /** O Google penaliza schema que diverge do visível, então sai dos mesmos blocos. */
-  it("o HowTo numera os passos na ordem, através das seções", () => {
-    const jsonld = howToJsonLd(COMO_FUNCIONA);
-    expect(jsonld.step.map((s) => s.position)).toEqual([1, 2, 3, 4]);
-    expect(jsonld.step[0].name).toBe("Busque sua vaga");
-    expect(jsonld.step[3].name).toBe("Faça check-in pelo QR Code");
-  });
-
   it("o FAQPage junta os blocos de FAQ da página inteira", () => {
     const schema = faqJsonLd(CANCELAMENTO.sections);
     expect(schema?.mainEntity).toHaveLength(4);
