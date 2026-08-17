@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Helmet } from "react-helmet-async";
 import { ArrowRight, Check, CreditCard, FileText, Megaphone, Money, Quotes, Radio, SealCheck, ShieldCheck, Tag, Wallet, X } from "@phosphor-icons/react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { YouTubeEmbed } from "@/components/shared/YouTubeEmbed";
 import { cn } from "@/lib/utils";
@@ -738,10 +739,23 @@ export default function SejaParceiroPage() {
         </div>
       </section>
 
-      {/* Depoimentos: dois cards grandes em cima, três compactos embaixo, como no
-          mockup. A diferença de tamanho cria hierarquia sem precisar de número de
-          performance (que a gente não tem). `items-stretch` + `flex-1` na citação
-          alinham a assinatura na base de cada card. */}
+      {/*
+        Depoimentos em bento: um card dominante e quatro de apoio.
+
+        O desenho anterior tinha dois cards grandes lado a lado, e dois destaques
+        não destacam nada: o olho não sabe por onde começar. Aqui o primeiro
+        ocupa a coluna inteira em duas linhas e os outros quatro ficam ao lado,
+        que é o arranjo da referência trazida em 17/08/2026.
+
+        `tablet:row-span-2` no primeiro é o que monta a grade: linha 1 leva o
+        dominante e o segundo, linha 2 leva o dominante e o terceiro, e a linha 3
+        fecha com os dois últimos. Sem `md:`/`lg:` porque não existem neste
+        projeto, só `tablet` (744) e `desktop` (1128).
+
+        O rosto é a inicial, e não foto. Estas citações são ilustrativas até
+        virem as reais, e pôr foto de banco de imagem daria cara e nome a uma
+        pessoa que não falou aquilo. O logo do lote continua sendo a prova.
+      */}
       <section className="border-y border-hairline bg-surface-soft">
         <div
           ref={testimonialsRef}
@@ -752,50 +766,56 @@ export default function SejaParceiroPage() {
           </h2>
 
           <div className="mt-10 grid grid-cols-1 items-stretch gap-5 tablet:grid-cols-2">
-            {TESTIMONIALS.filter((t) => t.featured).map((t) => (
-              <figure
-                key={t.name}
-                data-reveal
-                className="flex flex-col rounded-xl border border-hairline bg-canvas p-7 desktop:p-8"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <img
-                    src={`/images/parceiros/${t.logo}`}
-                    alt={t.role.split(" · ")[1]}
-                    loading="lazy"
-                    decoding="async"
-                    className={cn("w-auto object-contain", t.logoSize)}
-                  />
-                  <Quotes className="h-6 w-6 shrink-0 text-mp-violet" aria-hidden />
-                </div>
-                <blockquote className="mt-6 flex-1 text-body-md text-ink">“{t.quote}”</blockquote>
-                <figcaption className="mt-6 border-t border-hairline pt-4 text-body-sm text-muted">
-                  <span className="text-ink">{t.name}</span> · {t.role}
-                </figcaption>
-              </figure>
-            ))}
-          </div>
+            {TESTIMONIALS.map((t, i) => {
+              const dominante = i === 0;
+              return (
+                <figure
+                  key={t.name}
+                  data-reveal
+                  className={cn(
+                    "flex flex-col rounded-md border border-hairline bg-canvas p-6 desktop:p-7",
+                    dominante && "tablet:row-span-2 desktop:p-8",
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <img
+                      src={`/images/parceiros/${t.logo}`}
+                      alt={t.role.split(" · ")[1]}
+                      loading="lazy"
+                      decoding="async"
+                      className={cn("w-auto object-contain", t.logoSize)}
+                    />
+                    <Quotes className="h-6 w-6 shrink-0 text-mp-violet" aria-hidden />
+                  </div>
 
-          <div className="mt-5 grid grid-cols-1 items-stretch gap-5 tablet:grid-cols-3">
-            {TESTIMONIALS.filter((t) => !t.featured).map((t) => (
-              <figure
-                key={t.name}
-                data-reveal
-                className="flex flex-col rounded-lg border border-hairline bg-canvas p-6"
-              >
-                <img
-                  src={`/images/parceiros/${t.logo}`}
-                  alt={t.role.split(" · ")[1]}
-                  loading="lazy"
-                  decoding="async"
-                  className={cn("w-auto object-contain", t.logoSize)}
-                />
-                <blockquote className="mt-5 flex-1 text-body-md text-ink">“{t.quote}”</blockquote>
-                <figcaption className="mt-5 border-t border-hairline pt-4 text-body-sm text-muted">
-                  <span className="text-ink">{t.name}</span> · {t.role}
-                </figcaption>
-              </figure>
-            ))}
+                  {/* `flex-1` empurra a assinatura para a base, então todas
+                      alinham entre si mesmo com citações de tamanhos diferentes. */}
+                  <blockquote
+                    className={cn(
+                      "mt-6 flex-1 text-pretty text-ink",
+                      /* No dominante a citação vira tipo de destaque. Em `display-lg`
+                         ela ocupava quatro linhas num card de 522px e sobrava um vão
+                         branco de mais de 100px antes da assinatura. */
+                      dominante ? "text-display-xl" : "text-body-md",
+                    )}
+                  >
+                    “{t.quote}”
+                  </blockquote>
+
+                  <figcaption className="mt-6 flex items-center gap-3 border-t border-hairline pt-5">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="bg-mp-pale text-title-sm text-mp-indigo">
+                        {t.name.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="min-w-0">
+                      <span className="block text-title-sm text-ink">{t.name}</span>
+                      <span className="block text-body-sm text-muted">{t.role}</span>
+                    </span>
+                  </figcaption>
+                </figure>
+              );
+            })}
           </div>
         </div>
       </section>

@@ -104,10 +104,52 @@ describe("SejaParceiroPage — como funciona", () => {
 });
 
 describe("SejaParceiroPage — depoimentos", () => {
-  it("traz dois depoimentos em destaque e três compactos, cada um com o logo do lote", () => {
+  /**
+   * Bento de 17/08/2026: o primeiro depoimento ocupa duas linhas da grade e os
+   * outros quatro ficam ao lado. O desenho anterior tinha dois cards grandes
+   * lado a lado, e dois destaques não destacam nada.
+   */
+  it("o primeiro depoimento domina a grade, e só ele", () => {
+    renderPage();
+
+    const cards = [...document.querySelectorAll("figure")];
+    expect(cards[0].className).toContain("tablet:row-span-2");
+    for (const outro of cards.slice(1)) {
+      expect(outro.className).not.toContain("row-span-2");
+    }
+  });
+
+  /**
+   * As citações são ilustrativas até virem as reais. Foto de banco de imagem
+   * daria cara e nome a alguém que não falou aquilo, então o rosto é a inicial.
+   */
+  it("as assinaturas não usam foto de pessoa", () => {
+    renderPage();
+
+    const cards = [...document.querySelectorAll("figure")];
+    for (const card of cards) {
+      const legenda = card.querySelector("figcaption")!;
+      expect(legenda.querySelector("img")).toBeNull();
+      expect(legenda.textContent?.trim().length).toBeGreaterThan(0);
+    }
+  });
+
+  /**
+   * O projeto só tem `tablet` (744) e `desktop` (1128). A referência que
+   * originou o bento vinha com `md:`/`lg:`, que aqui não existem e sairiam do
+   * CSS sem erro nenhum, deixando a grade sempre em uma coluna.
+   */
+  it("a grade usa os breakpoints do projeto", () => {
+    renderPage();
+
+    const grade = document.querySelector("figure")!.parentElement!;
+    expect(grade.className).toContain("tablet:grid-cols-2");
+    expect(grade.className).not.toMatch(/\b(md|lg|sm|xl):/);
+  });
+
+  it("traz cinco depoimentos, cada um com o logo do lote", () => {
     // Escopado ao <figure>: a faixa de parceiros no rodapé da página repete os
     // mesmos nomes, e uma busca global casaria com ela em vez do depoimento.
-    // A ordem no DOM é os dois featured primeiro, depois os três compactos.
     renderPage();
 
     const cards = [...document.querySelectorAll("figure")];
