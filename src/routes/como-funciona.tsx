@@ -379,7 +379,16 @@ export default function ComoFuncionaPage() {
                   <span className="self-start rounded-full bg-surface-pale px-3 py-1.5 text-caption text-mp-indigo">
                     {m.label}
                   </span>
-                  <h3 className="text-balance text-display-xl text-ink">{m.title}</h3>
+                  {/* Par responsivo, e não `display-xl` puro: o h2 da seção é
+                      fluido (26px no mobile, 44px no desktop) e o `display-xl` é
+                      fixo em 28px, então no celular o título do momento passava
+                      na frente do título da seção. Aqui a escada desce em toda
+                      largura: 26/20 no mobile, 34.8/28 no tablet, 44/28 no
+                      desktop. Os dois degraus são fixos, então o `tablet:` não
+                      briga com nenhum clamp. */}
+                  <h3 className="text-balance text-display-sm text-ink tablet:text-display-xl">
+                    {m.title}
+                  </h3>
                   <p className="max-w-[56ch] text-pretty text-body-md text-body">{m.lead}</p>
                   <Steps steps={m.steps} />
                 </div>

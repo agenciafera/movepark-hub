@@ -48,9 +48,26 @@ página que vende o modelo antes de o cliente confiar nele, e a prova mora em
 mostrar as telas (busca, voucher, volta), não em descrevê-las. Abre com a faixa
 `bg-brand-gradient` sangrada, com o card de sinais montado sobre a borda de
 baixo. É a primeira da faixa de hero sem foto: o gradiente da identidade faz o
-papel do full-bleed. Os h3 dos três momentos usam `display-xl` (28px), o degrau
-entre o `display-2xl` das seções e o `title-md` dos cards, para a escada de
-títulos continuar descendo.
+papel do full-bleed.
+
+### Degrau fixo embaixo de degrau fluido se cruza
+
+Os h3 dos três momentos da `/como-funciona` nasceram em `display-xl` (28px),
+por ser o degrau entre o `display-2xl` das seções e o `title-md` dos cards. Só
+que **`display-xl` é fixo e `display-2xl` é fluido** (26px no mobile, 44px no
+desktop): numa tela de 390px o h3 saía com 28px contra 26,3px do h2, e o
+subtítulo passava na frente do título.
+
+**Antes de pôr um degrau fixo debaixo de um fluido, compare os dois no menor
+breakpoint, não no desktop.** Os fluidos são só `display-3xl` e `display-2xl`;
+todo o resto é fixo, então o cruzamento acontece sempre que um fixo de 26px ou
+mais fica um nível abaixo de um deles. A saída é um par responsivo entre dois
+degraus fixos (`text-display-sm tablet:text-display-xl`), que é permitido: a
+regra de "nada de `tablet:`" existe para não brigar com o `clamp`, e aqui
+nenhum dos dois degraus tem clamp.
+
+Nenhum teste pegava isso, porque o happy-dom não calcula `clamp()`. O guard
+vive em `como-funciona.test.tsx`, sobre a classe.
 
 As outras 9 continuam de conteúdo; mover mais alguma exige a mesma justificativa
 de marca e uma edição aqui, no mesmo PR.

@@ -51,6 +51,26 @@ describe("ComoFuncionaPage — contrato de hero de marca", () => {
     }
   });
 
+  /**
+   * Regressão: o h3 do momento nasceu em `display-xl`, que é FIXO em 28px,
+   * embaixo de um h2 em `display-2xl`, que é FLUIDO (26px no mobile, 44px no
+   * desktop). Os dois se cruzam: numa tela de 390px o título do momento saía
+   * com 28px contra 26,3px do título da seção, ou seja, o subtítulo passava na
+   * frente do título. É a armadilha de misturar degrau fixo com degrau fluido
+   * em níveis vizinhos, e nenhum teste pegava porque o happy-dom não calcula
+   * `clamp()`. O par responsivo mantém a escada descendo em toda largura.
+   */
+  it("o h3 do momento nunca passa na frente do h2 da seção no mobile", () => {
+    renderPage();
+    for (const m of JOURNEY) {
+      const h3 = screen.getByRole("heading", { level: 3, name: m.title });
+      expect(h3.className).toContain("text-display-sm");
+      expect(h3.className).toContain("tablet:text-display-xl");
+      // `display-xl` sem prefixo é justamente o que valeria no mobile.
+      expect(h3.className).not.toMatch(/(^|\s)text-display-xl/);
+    }
+  });
+
   it("os dois CTAs de busca são <Button> de 48px apontando para a home", () => {
     renderPage();
     const ctas = [
