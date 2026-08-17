@@ -38,6 +38,12 @@ const lead: MarketingLeadRow = {
   subscription_candidate: true,
   vehicle_model: "Honda Civic",
   created_at: "2026-07-01T00:00:00Z",
+  booking_id: null,
+  booking_code: null,
+  booking_status: null,
+  booking_expires_at: null,
+  booking_total: null,
+  auto_synced: false,
 };
 
 describe("resolveColumns", () => {

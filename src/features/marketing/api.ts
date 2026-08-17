@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type {
@@ -10,6 +11,7 @@ import type {
   MarketingProfileMatrix,
   MarketingSegment,
   MarketingSegmentContact,
+  MarketingSegmentCount,
   MarketingSegmentPreview,
 } from "@/types/domain";
 import type { SegmentGroup } from "./segmentBuilder.logic";
@@ -24,6 +26,8 @@ export const marketingKeys = {
   leads: (pipelineId?: string, locationIds?: string[], search?: string) =>
     [...marketingKeys.all, "leads", pipelineId, locationIds, search] as const,
   segments: () => [...marketingKeys.all, "segments"] as const,
+  segmentCounts: (locationIds?: string[]) =>
+    [...marketingKeys.all, "segment-counts", locationIds] as const,
   segmentPreview: (definition: SegmentGroup, locationIds?: string[]) =>
     [...marketingKeys.all, "segment-preview", definition, locationIds] as const,
   segmentContacts: (definition: SegmentGroup, locationIds?: string[]) =>
@@ -221,6 +225,27 @@ export function useSegments() {
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as MarketingSegment[];
+    },
+  });
+}
+
+/**
+ * Quantos contatos cada segmento tem, numa chamada só para a lista inteira.
+ *
+ * Serve para bater o olho no potencial sem abrir o segmento. Uma chamada por linha faria a tela
+ * avaliar a base uma vez por segmento.
+ */
+export function useSegmentCounts(locationIds?: string[]) {
+  return useQuery({
+    queryKey: marketingKeys.segmentCounts(locationIds),
+    staleTime: 60_000,
+    queryFn: async (): Promise<Record<string, MarketingSegmentCount>> => {
+      const { data, error } = await supabase.rpc("marketing_segment_counts", {
+        ...locationArg(locationIds),
+      });
+      if (error) throw error;
+      const linhas = (data ?? []) as unknown as MarketingSegmentCount[];
+      return Object.fromEntries(linhas.map((l) => [l.segment_id, l]));
     },
   });
 }
@@ -516,4 +541,40 @@ export function useSaveDispatchConfig() {
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: marketingKeys.dispatchConfig() }),
   });
+}
+
+// ─── Tempo real ──────────────────────────────────────────────────────────────
+
+/**
+ * Mantém o kanban em dia com o checkout sem recarregar a página.
+ *
+ * O gatilho do banco move o cartão quando a reserva muda de status; aqui a gente só escuta a
+ * tabela e invalida a query. Recalcular o board no cliente a partir do evento seria manter uma
+ * segunda cópia da regra de ordenação e do recorte por unidade, que já vivem na RPC.
+ *
+ * A RLS vale no canal, então só hub_admin recebe evento. Sem sessão o Realtime nem conecta, o que
+ * é o caso do SSG no build.
+ */
+export function useLeadsRealtime(enabled = true) {
+  const qc = useQueryClient();
+
+  React.useEffect(() => {
+    if (!enabled || typeof window === "undefined") return;
+
+    const canal = supabase
+      .channel("marketing-leads")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "marketing_lead" },
+        () => {
+          // Invalida a raiz: um cartão novo mexe no kanban, na lista e na contagem da coluna.
+          qc.invalidateQueries({ queryKey: marketingKeys.all });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(canal);
+    };
+  }, [qc, enabled]);
 }

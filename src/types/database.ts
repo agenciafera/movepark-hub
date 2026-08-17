@@ -2890,6 +2890,8 @@ export type Database = {
       }
       marketing_lead: {
         Row: {
+          auto_synced: boolean
+          booking_id: string | null
           closed_at: string | null
           contact_id: string
           created_at: string
@@ -2909,6 +2911,8 @@ export type Database = {
           value_cents: number
         }
         Insert: {
+          auto_synced?: boolean
+          booking_id?: string | null
           closed_at?: string | null
           contact_id: string
           created_at?: string
@@ -2928,6 +2932,8 @@ export type Database = {
           value_cents?: number
         }
         Update: {
+          auto_synced?: boolean
+          booking_id?: string | null
           closed_at?: string | null
           contact_id?: string
           created_at?: string
@@ -2947,6 +2953,20 @@ export type Database = {
           value_cents?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "marketing_lead_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_lead_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_booking_fact"
+            referencedColumns: ["booking_id"]
+          },
           {
             foreignKeyName: "marketing_lead_contact_id_fkey"
             columns: ["contact_id"]
@@ -3156,6 +3176,7 @@ export type Database = {
           name: string
           pipeline_id: string
           sort_order: number
+          stage_key: string | null
           updated_at: string
         }
         Insert: {
@@ -3167,6 +3188,7 @@ export type Database = {
           name: string
           pipeline_id: string
           sort_order?: number
+          stage_key?: string | null
           updated_at?: string
         }
         Update: {
@@ -3178,6 +3200,7 @@ export type Database = {
           name?: string
           pipeline_id?: string
           sort_order?: number
+          stage_key?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -5913,7 +5936,13 @@ export type Database = {
           p_search?: string
         }
         Returns: {
+          auto_synced: boolean
           avg_ticket: number
+          booking_code: string
+          booking_expires_at: string
+          booking_id: string
+          booking_status: string
+          booking_total: number
           bookings_count: number
           cohort: string
           contact_id: string
@@ -5972,6 +6001,15 @@ export type Database = {
           vehicle_model: string
         }[]
       }
+      marketing_segment_counts: {
+        Args: { p_location_ids?: string[] }
+        Returns: {
+          reachable_email: number
+          reachable_whatsapp: number
+          segment_id: string
+          total: number
+        }[]
+      }
       marketing_segment_preview: {
         Args: {
           p_definition: Json
@@ -5980,7 +6018,15 @@ export type Database = {
         }
         Returns: Json
       }
+      marketing_stage_for_booking: {
+        Args: { p_status: Database["public"]["Enums"]["booking_status"] }
+        Returns: string
+      }
       marketing_sync_contacts: { Args: never; Returns: Json }
+      marketing_upsert_lead_for_booking: {
+        Args: { p_booking: Database["public"]["Tables"]["booking"]["Row"] }
+        Returns: undefined
+      }
       match_knowledge: {
         Args: {
           p_destination_id?: string

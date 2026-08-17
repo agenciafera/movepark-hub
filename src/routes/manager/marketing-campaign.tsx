@@ -68,6 +68,19 @@ export default function ManagerMarketingCampaign() {
   const mensagens = useCampaignMessages(id);
 
   const [canvas, setCanvas] = React.useState<CampaignCanvas | null>(null);
+  // Tela cheia do editor: o fluxo cresce em nós e o canvas de 600px vira o gargalo.
+  const [fullscreen, setFullscreen] = React.useState(false);
+
+  // Esc sai da tela cheia. É o gesto que todo mundo tenta primeiro, e sem ele a saída fica presa
+  // num botão que o próprio modo empurra para o canto.
+  React.useEffect(() => {
+    if (!fullscreen) return;
+    const aoTeclar = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFullscreen(false);
+    };
+    window.addEventListener("keydown", aoTeclar);
+    return () => window.removeEventListener("keydown", aoTeclar);
+  }, [fullscreen]);
   const [segmentId, setSegmentId] = React.useState<string>("");
   const [sendCap, setSendCap] = React.useState<number>(100);
 
@@ -108,6 +121,45 @@ export default function ManagerMarketingCampaign() {
       sendCap,
       ...(extra?.status ? { status: extra.status } : {}),
     });
+  }
+
+  if (fullscreen) {
+    // Sai do shell do Manager: em tela cheia a sidebar e o cabeçalho da página são justamente
+    // o espaço que o fluxo precisa.
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col gap-2 bg-canvas p-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-baseline gap-2">
+            <h1 className="text-body font-semibold text-ink">{campanha.data.name}</h1>
+            <span className="text-caption-sm text-muted">fluxo em tela cheia</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={salvar.isPending}
+              onClick={() =>
+                gravar()
+                  .then(() => toast.success("Campanha salva."))
+                  .catch((e) => toast.error(e instanceof Error ? e.message : "Falhou."))
+              }
+            >
+              <FloppyDisk className="mr-2 size-4" />
+              Salvar
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setFullscreen(false)}>
+              Sair da tela cheia
+            </Button>
+          </div>
+        </div>
+        <CampaignCanvasEditor
+          value={canvas}
+          onChange={setCanvas}
+          fullscreen
+          onToggleFullscreen={() => setFullscreen(false)}
+        />
+      </div>
+    );
   }
 
   return (
@@ -172,7 +224,12 @@ export default function ManagerMarketingCampaign() {
         </TabsList>
 
         <TabsContent value="fluxo" className="mt-4">
-          <CampaignCanvasEditor value={canvas} onChange={setCanvas} />
+          <CampaignCanvasEditor
+            value={canvas}
+            onChange={setCanvas}
+            fullscreen={fullscreen}
+            onToggleFullscreen={() => setFullscreen((v) => !v)}
+          />
         </TabsContent>
 
         <TabsContent value="publico" className="mt-4">

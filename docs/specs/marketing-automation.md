@@ -168,11 +168,51 @@ Campos disponíveis: ver `marketing_contact_doc` (SQL) e `SEGMENT_FIELDS`
 A prévia separa **quem casa** de **quem dá para alcançar** por canal. Um segmento de 4 mil pessoas em
 que só 30 aceitam WhatsApp é uma campanha que parecia grande e não era.
 
+A lista de segmentos traz as duas contagens direto na linha (`marketing_segment_counts`), para bater
+o olho no potencial de cada recorte sem abrir. É **uma chamada para a lista inteira**: uma por
+segmento faria a tela avaliar a base uma vez por linha.
+
 ---
 
 ## 6. Leads
 
 Pipeline com colunas (`marketing_pipeline_stage`) e duas visões do mesmo conjunto: kanban e lista.
+
+### 6.1 O quadro espelha o checkout, ao vivo
+
+O gatilho `marketing_sync_lead_from_booking` (em `booking`, `after insert or update of status`) cria e
+move o cartão sozinho:
+
+| Status da reserva | Etapa | O que aconteceu |
+|---|---|---|
+| `pending` | Reserva iniciada | O checkout começou e o hold está de pé |
+| `confirmed` / `checked_in` / `completed` | Cliente | Pagou |
+| `expired` / `cancelled` / `no_show` | Perdido | Largou ou desistiu |
+
+Quatro decisões que sustentam isso:
+
+1. **O gatilho falha aberto.** Qualquer erro dele vira `warning` e a reserva segue. Bloquear um
+   checkout pago para gravar uma linha de CRM seria trocar receita por relatório.
+2. **Arrastar na mão desliga a sincronia daquele cartão** (`marketing_lead.auto_synced`, zerado por
+   `marketing_move_lead`). Sem isso o cartão voltaria sozinho no próximo `update` da reserva, o que
+   lê como bug. O cartão passa a exibir "movido na mão".
+3. **A etapa é resolvida por `stage_key`, nunca por nome**, então renomear a coluna na tela não
+   quebra o gatilho.
+4. **A carga inicial usa o mesmo helper** (`marketing_upsert_lead_for_booking`) que o gatilho, e não
+   um `update` no-op: o gatilho sai cedo quando o status não muda, então o backfill não gravaria nada.
+
+**Tempo real:** `marketing_lead` está na publicação `supabase_realtime` com `replica identity full`,
+e `useLeadsRealtime` invalida a query a cada evento. A RLS vale no canal, então só `hub_admin`
+recebe. A tela recalcula pela RPC em vez de aplicar o evento no cliente, para a ordenação e o recorte
+por unidade não existirem em dois lugares.
+
+**O relógio do abandono** (`leadCheckout.logic.ts`) lê o `expires_at` do hold. Um hold vencido que o
+cron ainda não varreu continua `pending` no banco, e sem essa conta o quadro mostraria uma reserva
+morta como oportunidade quente.
+
+> **Onde o espelho começa.** O primeiro evento que o servidor enxerga é a reserva nascendo `pending`,
+> que é quando o checkout de fato abre. Passos anteriores (abrir a busca, escolher a vaga) não geram
+> linha e por isso não aparecem no quadro.
 
 - **Kanban**: arrastar e soltar nativo do HTML5, sem biblioteca. O CI roda `--frozen-lockfile` no
   Linux, então uma dependência a mais por um recurso de uma tela só é risco de build sem
@@ -200,6 +240,10 @@ Tipos: `trigger`, `email`, `whatsapp`, `wait`, `condition`, `exit`. Só a condi�
 
 O mesmo formato é lido pelo motor (`supabase/functions/marketing-run/engine.ts`). **Tipo de nó novo
 entra nos dois lugares.**
+
+O editor tem **modo tela cheia** (botão na paleta, `Esc` para sair). Ele sai do shell do Manager,
+porque a sidebar e o cabeçalho da página são justamente o espaço que um fluxo com muitos nós precisa.
+As colunas laterais também encolheram (paleta 180px, configuração 248px, contra 220 e 300).
 
 Regras que o editor impõe antes de deixar disparar (`validateCanvas`): entrada ligada, pelo menos um
 envio, e-mail com assunto e corpo, WhatsApp com template, condição com as duas saídas, espera maior

@@ -32,6 +32,7 @@ import {
   useDeleteSegment,
   useSaveSegment,
   useSegmentContacts,
+  useSegmentCounts,
   useSegmentPreview,
   useSegments,
 } from "@/features/marketing/api";
@@ -56,6 +57,9 @@ import type { MarketingSegment } from "@/types/domain";
 export default function ManagerMarketingSegments() {
   const { scopedLocationIds } = useManagerFilters();
   const segments = useSegments();
+  // Contagem de todos os segmentos numa chamada só, para bater o olho no potencial de cada um
+  // sem precisar abrir.
+  const counts = useSegmentCounts(scopedLocationIds);
   const [editando, setEditando] = React.useState<MarketingSegment | null>(null);
   const [criando, setCriando] = React.useState(false);
   const remover = useDeleteSegment();
@@ -92,6 +96,8 @@ export default function ManagerMarketingSegments() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Segmento</TableHead>
+                    <TableHead className="text-right">Contatos</TableHead>
+                    <TableHead className="text-right">Alcançáveis</TableHead>
                     <TableHead>Regra</TableHead>
                     <TableHead className="w-24" />
                   </TableRow>
@@ -111,7 +117,28 @@ export default function ManagerMarketingSegments() {
                           <p className="text-xs text-muted">{seg.description}</p>
                         )}
                       </TableCell>
-                      <TableCell className="max-w-[520px] text-sm text-muted">
+                      <TableCell className="text-right">
+                        {counts.isLoading ? (
+                          <Skeleton className="ml-auto h-5 w-10" />
+                        ) : (
+                          <span className="font-medium tabular-nums text-ink">
+                            {counts.data?.[seg.id]?.total ?? 0}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right text-sm tabular-nums text-muted">
+                        {counts.isLoading ? (
+                          <Skeleton className="ml-auto h-5 w-16" />
+                        ) : (
+                          // E-mail e WhatsApp separados: um segmento grande onde quase ninguém
+                          // aceita WhatsApp é uma campanha que parecia grande e não era.
+                          <span title="Quantos dá para alcançar por e-mail e por WhatsApp">
+                            {counts.data?.[seg.id]?.reachable_email ?? 0} e-mail ·{" "}
+                            {counts.data?.[seg.id]?.reachable_whatsapp ?? 0} zap
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="max-w-[420px] text-sm text-muted">
                         {describeDefinition(seg.definition as unknown as SegmentGroup)}
                       </TableCell>
                       <TableCell className="text-right">

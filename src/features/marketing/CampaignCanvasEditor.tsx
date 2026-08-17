@@ -2,6 +2,8 @@ import * as React from "react";
 import {
   ArrowElbowDownRight,
   ChatCircleDots,
+  CornersIn,
+  CornersOut,
   Envelope,
   Flag,
   GitBranch,
@@ -55,6 +57,9 @@ const ICONS: Record<CampaignNodeType, React.ComponentType<{ className?: string }
 type Props = {
   value: CampaignCanvas;
   onChange: (next: CampaignCanvas) => void;
+  /** Em tela cheia o canvas cresce e as duas colunas laterais encolhem. */
+  fullscreen?: boolean;
+  onToggleFullscreen?: () => void;
 };
 
 /**
@@ -68,7 +73,12 @@ type Props = {
  * Ligar é em dois toques (clica na saída, clica no destino) em vez de arrastar um fio: com fio, o
  * alvo precisa de mira precisa, e a tela é usada em notebook com trackpad.
  */
-export function CampaignCanvasEditor({ value, onChange }: Props) {
+export function CampaignCanvasEditor({
+  value,
+  onChange,
+  fullscreen = false,
+  onToggleFullscreen,
+}: Props) {
   const areaRef = React.useRef<HTMLDivElement>(null);
   const [selecionado, setSelecionado] = React.useState<string | null>(null);
   const [ligando, setLigando] = React.useState<{ from: string; branch?: "yes" | "no" } | null>(null);
@@ -118,10 +128,39 @@ export function CampaignCanvasEditor({ value, onChange }: Props) {
   }
 
   return (
-    <div className="grid gap-4 desktop:grid-cols-[220px_1fr_300px]">
+    <div
+      className={cn(
+        "grid gap-3",
+        // A paleta e a configuração encolheram para o canvas ficar com o espaço. Antes eram
+        // 220 e 300px de laterais fixas comendo metade de um notebook de 1440.
+        fullscreen
+          ? "desktop:grid-cols-[168px_1fr_236px]"
+          : "desktop:grid-cols-[180px_1fr_248px]",
+      )}
+    >
       {/* Paleta */}
       <aside className="flex flex-col gap-2">
-        <h3 className="text-sm font-medium text-ink">Passos</h3>
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-sm font-medium text-ink">Passos</h3>
+          {onToggleFullscreen && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-7"
+              onClick={onToggleFullscreen}
+              aria-pressed={fullscreen}
+              title={fullscreen ? "Sair da tela cheia (Esc)" : "Tela cheia"}
+              aria-label={fullscreen ? "Sair da tela cheia" : "Tela cheia"}
+            >
+              {fullscreen ? (
+                <CornersIn className="size-4" />
+              ) : (
+                <CornersOut className="size-4" />
+              )}
+            </Button>
+          )}
+        </div>
         <p className="text-xs text-muted">Arraste para a tela.</p>
         {NODE_LIBRARY.map((item) => {
           const Icone = ICONS[item.type];
@@ -158,7 +197,10 @@ export function CampaignCanvasEditor({ value, onChange }: Props) {
       {/* Tela */}
       <div
         ref={areaRef}
-        className="relative h-[560px] overflow-auto rounded-md border border-hairline bg-surface-soft"
+        className={cn(
+          "relative overflow-auto rounded-md border border-hairline bg-surface-soft",
+          fullscreen ? "h-[calc(100vh-150px)]" : "h-[600px]",
+        )}
         style={{
           backgroundImage:
             "radial-gradient(circle, rgba(0,0,0,0.08) 1px, transparent 1px)",

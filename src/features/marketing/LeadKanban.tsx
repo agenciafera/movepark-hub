@@ -6,6 +6,7 @@ import { formatBRL } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { MarketingLeadRow, MarketingPipelineStage } from "@/types/domain";
 import { cohortLabel, cohortTone, toneClasses } from "./cohorts";
+import { checkoutState, checkoutToneClasses } from "./leadCheckout.logic";
 
 type Props = {
   stages: MarketingPipelineStage[];
@@ -124,6 +125,28 @@ export function LeadKanban({ stages, leads, isLoading, onMove }: Props) {
 
                   {lead.title && <p className="mt-0.5 text-xs text-muted">{lead.title}</p>}
 
+                  {/* Estado do checkout: é o que faz o quadro valer em tempo real. Vem primeiro
+                      porque um hold prestes a vencer manda mais que a coorte. */}
+                  {(() => {
+                    const checkout = checkoutState(lead);
+                    if (!checkout) return null;
+                    return (
+                      <div className="mt-1.5 flex items-center gap-1">
+                        <span
+                          className={cn(
+                            "rounded-full border px-1.5 py-0.5 text-[11px] font-medium",
+                            checkoutToneClasses(checkout.tone),
+                          )}
+                        >
+                          {checkout.label}
+                        </span>
+                        {lead.booking_code && (
+                          <span className="text-[11px] text-muted">{lead.booking_code}</span>
+                        )}
+                      </div>
+                    );
+                  })()}
+
                   <div className="mt-2 flex flex-wrap items-center gap-1">
                     {lead.cohort && (
                       <span
@@ -138,6 +161,16 @@ export function LeadKanban({ stages, leads, isLoading, onMove }: Props) {
                     {lead.location_name && (
                       <span className="rounded-full border border-hairline bg-surface-soft px-1.5 py-0.5 text-[11px] text-muted">
                         {lead.location_name}
+                      </span>
+                    )}
+                    {/* Cartão que saiu da sincronia: sem esse aviso, alguém estranharia por que
+                        ele não acompanha mais a reserva. */}
+                    {lead.booking_id && !lead.auto_synced && (
+                      <span
+                        className="rounded-full border border-hairline bg-surface-soft px-1.5 py-0.5 text-[11px] text-muted"
+                        title="Movido na mão, então este cartão não segue mais o status da reserva."
+                      >
+                        movido na mão
                       </span>
                     )}
                   </div>

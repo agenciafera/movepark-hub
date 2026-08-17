@@ -17,7 +17,13 @@ import { useManagerFilters } from "@/features/manager-filters/context";
 import { ManagerFilterBar } from "@/features/manager-filters/ManagerFilterBar";
 import { LeadKanban } from "@/features/marketing/LeadKanban";
 import { LeadTable } from "@/features/marketing/LeadTable";
-import { useLeads, useMoveLead, usePipelines, useSaveColumnPrefs } from "@/features/marketing/api";
+import {
+  useLeads,
+  useLeadsRealtime,
+  useMoveLead,
+  usePipelines,
+  useSaveColumnPrefs,
+} from "@/features/marketing/api";
 import type { LeadColumnKey } from "@/features/marketing/leadColumns.logic";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +49,11 @@ export default function ManagerMarketingLeads() {
     }
   }, [pipelines.data, pipelineId]);
 
+  // O quadro acompanha o checkout: o gatilho do banco move o cartão quando a reserva muda de
+  // status, e o canal do Realtime avisa a tela. Sem isto, o operador só veria o movimento ao
+  // recarregar, que é justamente quando a informação já não vale.
+  useLeadsRealtime();
+
   const pipeline = pipelines.data?.find((p) => p.id === pipelineId);
   const leads = useLeads(pipelineId, scopedLocationIds, buscaAplicada);
   const mover = useMoveLead();
@@ -57,7 +68,7 @@ export default function ManagerMarketingLeads() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Leads"
-        description="O funil de quem ainda vai reservar e de quem já é cliente, por estacionamento."
+        description="Espelha o checkout ao vivo: entra quando a reserva começa e anda sozinho até a compra ou o abandono."
         actions={<ManagerFilterBar showPeriod={false} />}
       />
 
@@ -90,7 +101,15 @@ export default function ManagerMarketingLeads() {
           </Button>
         </form>
 
-        <div className="ml-auto flex items-center gap-1 rounded-md border border-hairline p-0.5">
+        <span className="ml-auto flex items-center gap-1.5 text-caption-sm text-muted">
+          <span className="relative flex size-2">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+          </span>
+          ao vivo
+        </span>
+
+        <div className="flex items-center gap-1 rounded-md border border-hairline p-0.5">
           <Button
             type="button"
             variant="ghost"

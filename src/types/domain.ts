@@ -468,6 +468,23 @@ export type MarketingLeadRow = {
   subscription_candidate: boolean;
   vehicle_model: string | null;
   created_at: string;
+  /** Reserva que originou o cartão, quando ele veio do checkout. */
+  booking_id: string | null;
+  booking_code: string | null;
+  booking_status: BookingStatus | null;
+  /** Quando o hold da reserva expira. É o relógio do abandono. */
+  booking_expires_at: string | null;
+  booking_total: number | null;
+  /** true = o cartão segue o status da reserva. Arrastar na mão zera. */
+  auto_synced: boolean;
+};
+
+/** Contagem de contatos de um segmento (retorno de marketing_segment_counts). */
+export type MarketingSegmentCount = {
+  segment_id: string;
+  total: number;
+  reachable_email: number;
+  reachable_whatsapp: number;
 };
 
 /** Matriz de perfis por estacionamento (retorno de marketing_profile_matrix). */
