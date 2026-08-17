@@ -40,6 +40,14 @@ if (!fs.existsSync(SITEMAP)) {
 
 const original = fs.readFileSync(SITEMAP, "utf8");
 
+// Depois do `split-sitemap.mjs` o `sitemap.xml` vira um índice, e as URLs moram nos shards.
+// Rodar o canonicalize de novo sobre o índice não acharia bloco `<url>` nenhum e passaria
+// em silêncio, dando a impressão de que a correção foi aplicada.
+if (original.includes("<sitemapindex")) {
+  console.error(`${SITEMAP} já é um índice. Rode o build inteiro em vez deste script sozinho.`);
+  process.exit(1);
+}
+
 // Só as URLs do blog, e só quando ainda não terminam em barra.
 let corrigido = original.replace(
   /(<loc>https?:\/\/[^<]*\/blog(?:\/[^<\s]*[^/<\s])?)(<\/loc>)/g,

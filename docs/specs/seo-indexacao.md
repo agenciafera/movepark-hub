@@ -90,6 +90,56 @@ Quem impede a lista de envelhecer é [`src/lib/sitemapRoutes.test.ts`](../../src
 lê o `routes.tsx` como texto e reprova qualquer rota que não esteja no sitemap, no opt-out com
 motivo escrito, ou sob prefixo de área logada. Rota nova sem decisão deixa o CI vermelho.
 
+### Um arquivo por seção, com índice (17/08/2026)
+
+O `/sitemap.xml` é um **`<sitemapindex>`** e aponta para um arquivo por tipo de conteúdo.
+Medido no build de 17/08/2026, 364 URLs no total:
+
+| Arquivo | Conteúdo | URLs |
+|---|---|---|
+| `sitemap-faq.xml` | `/faq` e `/faq/*` | 185 |
+| `sitemap-blog.xml` | `/blog/` e `/blog/*/` | 70 |
+| `sitemap-estacionamentos.xml` | lotes mapeados publicados | 43 |
+| `sitemap-destinos.xml` | `/destinos` e `/destinos/*` | 27 |
+| `sitemap-unidades.xml` | listagens `/p/*` | 17 |
+| `sitemap-paginas.xml` | home e institucionais | 11 |
+| `sitemap-precos.xml` | `/precos` e `/precos/*` | 6 |
+| `sitemap-mais-barato.xml` | `/estacionamento-mais-barato/*` | 5 |
+
+Peso nunca foi o motivo: o arquivo único tinha 79 KB contra um limite de 50 MB e 50.000 URLs.
+O motivo é a seção crescer sem que ninguém precise mexer na estrutura de novo, e o relatório
+de cobertura do Search Console passar a separar blog de FAQ de destino em vez de somar tudo
+num número só.
+
+**A porta de entrada continua em `/sitemap.xml`.** Isso preserva o `Sitemap:` do
+[`robots.txt`](../../public/robots.txt), o `<link rel="sitemap">` que o plugin injeta no
+`<head>` e a descoberta que o Google já fez. Não há o que resubmeter.
+
+**Sem paginação dentro da seção.** O Yoast quebra em 1.000 URLs por arquivo, número que é
+herança de PHP antigo e não exigência do protocolo. A maior seção teria que crescer 270 vezes
+para encostar no limite real, então paginar agora seria caminho de código que nunca roda.
+
+**Como a classificação é decidida.** O `vite.config.ts` já monta as URLs em variáveis
+separadas por origem (`blogRoutes`, `faqRoutes`, `prospectRoutes`…), e um plugin inline grava
+esse agrupamento em `node_modules/.cache/movepark-sitemap-sections.json`. O
+[`scripts/split-sitemap.mjs`](../../scripts/split-sitemap.mjs) lê o mapa, fatia o sitemap e
+apaga o mapa. **A seção vem de quem buscou a URL, nunca de prefixo de path adivinhado
+depois:** o repo já tem duas listas de prefixo que divergiram (`SITEMAP_PRIVATE_PREFIXES` com
+cinco entradas, `PRIVADOS` do canonicalize com doze), e uma terceira seria drift garantido.
+Rota nova só precisa entrar no mapa; se esquecerem, ela cai em `sitemap-paginas.xml` e o
+build **reporta como órfã** no log.
+
+Três coisas derrubam o build, todas por invariante e não por contagem: soma dos shards
+diferente da entrada, seção vinda do banco saindo vazia (mesmo sintoma de Supabase mudo que o
+`write-paths-manifest.mjs` já trata como fatal) e entrada que já é um índice, para o script
+não picotar o próprio resultado se rodar duas vezes. A lógica pura fica em
+[`scripts/sitemap-split.logic.mjs`](../../scripts/sitemap-split.logic.mjs) e é testada em
+[`src/lib/sitemapSplit.test.ts`](../../src/lib/sitemapSplit.test.ts).
+
+`lastmod`, `changefreq` e `priority` seguem uniformes (timestamp do build, `daily`, `1.0`).
+O corte por tipo é o que torna o `lastmod` real viável por seção, tirando o `updated_at` de
+cada tabela na mesma consulta que já busca os slugs. Fica como próximo passo.
+
 **Pendente:** a taxonomia e a paginação do blog (48 arquivos no `dist/`: `/blog/page/N`,
 `/blog/categoria/*`, `/blog/tag/*`, `/blog/autor/*`, `/blog/aeroporto/*`) ainda ficam de fora.
 Cada uma precisa de consulta própria de slugs e de contagem de páginas. Está declarada em

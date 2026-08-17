@@ -15,6 +15,15 @@ import {
 
 const SITE_URL = "https://hub.movepark.co";
 
+/**
+ * Onde o mapa de seções do sitemap é entregue ao `scripts/split-sitemap.mjs`.
+ *
+ * Fora do `dist/` de propósito: arquivo de trabalho que vaza para o `dist/` é arquivo que vai
+ * para produção. O split apaga o mapa depois de ler, então mapa velho de build anterior não
+ * existe para ser usado por engano.
+ */
+const MAPA_DE_SECOES = "node_modules/.cache/movepark-sitemap-sections.json";
+
 // Listagens /p/<company>/<location>/<parkingType> ativas (sitemap).
 async function getDynamicRoutes(sb: SupabaseClient | null): Promise<string[]> {
   if (!sb) return [];
@@ -216,8 +225,36 @@ export default defineConfig(async ({ mode }) => {
     ]),
   ].filter((r) => r !== "/");
 
+  /**
+   * Mapa de seções do sitemap, consumido pelo `scripts/split-sitemap.mjs`.
+   *
+   * A classificação nasce aqui, de quem buscou cada URL, e NÃO de prefixo de path adivinhado
+   * depois. Rota nova só precisa aparecer nesta lista para virar (ou entrar numa) seção; se
+   * esquecerem, ela cai em `paginas` e o split reporta como órfã.
+   *
+   * `/faq`, `/destinos`, `/precos` e `/blog/` são as capas de cada seção e viajam com ela,
+   * não com as institucionais.
+   */
+  const secoesDoSitemap: Record<string, string[]> = {
+    blog: ["/blog/", ...blogRoutes],
+    destinos: ["/destinos", ...destinationRoutes],
+    estacionamentos: [...prospectRoutes],
+    faq: ["/faq", ...faqRoutes],
+    "mais-barato": [...maisBaratoRoutes],
+    paginas: SITEMAP_STATIC_ROUTES.filter((r) => r !== "/faq"),
+    precos: ["/precos", ...precosRoutes],
+    unidades: [...listingRoutes],
+  };
+
   return {
     plugins: [
+      {
+        name: "movepark:sitemap-sections",
+        closeBundle() {
+          fs.mkdirSync(path.dirname(MAPA_DE_SECOES), { recursive: true });
+          fs.writeFileSync(MAPA_DE_SECOES, JSON.stringify(secoesDoSitemap));
+        },
+      },
       react(),
       sitemap({
         hostname: SITE_URL,
