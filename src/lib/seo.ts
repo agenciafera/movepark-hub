@@ -104,6 +104,33 @@ export function topRatedHeading(d: SeoDestination): string {
 }
 
 /**
+ * H2 da tabela de preços. Casa com a consulta como ela é digitada ("quanto custa
+ * estacionar no aeroporto de viracopos"), que é a de maior intenção comercial da
+ * página e a que o comparador concorrente responde em tabela.
+ */
+export function priceHeading(d: SeoDestination): string {
+  return ehAeroporto(d)
+    ? `Quanto custa estacionar no ${seoLabelPrimary(d)}`
+    : `Quanto custa estacionar em ${seoLabelPrimary(d)}`;
+}
+
+/**
+ * H2 do ranking de distância. Em aeroporto a âncora é o terminal, que é o que a
+ * pessoa quer alcançar; nos demais destinos o ponto de referência é o próprio
+ * destino, e "terminal" seria mentira.
+ */
+export function proximityHeading(d: SeoDestination): string {
+  return ehAeroporto(d)
+    ? `Distância até o terminal do ${seoLabelPrimary(d)}`
+    : `Distância até ${seoLabelPrimary(d)}`;
+}
+
+/** Sufixo da distância na lista: "328 m do terminal" em aeroporto e rodoviária. */
+export function proximityAnchorLabel(d: SeoDestination): string | null {
+  return d.type === "airport" || d.type === "bus_terminal" ? "do terminal" : null;
+}
+
+/**
  * `<title>` da unidade: "Abbapark: Estacionamento Aeroporto Curitiba, Vaga Coberta | Movepark".
  *
  * A marca vem primeiro porque consulta de marca de parceiro vale 785 cliques e 114.327

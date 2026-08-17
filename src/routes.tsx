@@ -178,12 +178,22 @@ async function fetchAllListingPaths(): Promise<string[]> {
 }
 
 /**
- * O destino, as unidades VENDÁVEIS e os lotes MAPEADOS dele (E0.17-d).
+ * O destino, as unidades VENDÁVEIS, os lotes MAPEADOS (E0.17-d), o FAQ, a matriz de
+ * preços e os destinos irmãos.
  *
- * Os mapeados entram aqui, e não só no hook do cliente, porque a página é pré-renderizada:
- * o selo "Sem reserva online" precisa sair no HTML do build. É a frase que diz ao crawler
- * (e ao leitor sem JS) por que aquele card não tem preço nem botão, e ela não pode
- * depender de o navegador executar um fetch.
+ * Tudo carrega aqui, e não em hook do cliente, porque a página é pré-renderizada e
+ * crawler de IA não executa JS. Cada item tem um motivo próprio:
+ *
+ * - **mapeados:** o selo "Sem reserva online" é a frase que explica por que aquele card
+ *   não tem preço nem botão, e precisa estar no HTML do build.
+ * - **FAQ:** as respostas e o `FAQPage` saem no build por ADR-002.
+ * - **preços:** a tabela de 1/7/15/30 diárias é a resposta de "quanto custa", a consulta
+ *   de maior intenção da página. `fetchPriceIndex` é single-flight com cache, então os 27
+ *   destinos compartilham UMA chamada da RPC no build (o papel anon derruba a query por
+ *   statement timeout se cada página abrir a sua).
+ * - **irmãos:** o bloco de cross-link entre destinos dependia de `usePublishedDestinations`,
+ *   um hook de cliente, e por isso não existia no HTML pré-renderizado. Eram 26 links
+ *   internos por página que nenhum crawler via.
  */
 async function destinoLoader({ params }: LoaderFunctionArgs) {
   const { data } = await supabase
@@ -193,16 +203,34 @@ async function destinoLoader({ params }: LoaderFunctionArgs) {
     .eq("is_published", true)
     .maybeSingle();
   if (!data) return null;
-  // Falha aqui não pode derrubar a página inteira: sem lote mapeado a seção só não existe,
-  // sem unidade vendável a lista volta a depender da busca no cliente e sem FAQ o hook do
-  // cliente cobre. Em paralelo porque nenhuma depende da outra. O FAQ entra aqui pela mesma
-  // razão das outras: as respostas e o FAQPage têm que existir no HTML do build (ADR-002).
-  const [prospects, units, faqs] = await Promise.all([
+  // Falha em qualquer um não pode derrubar a página: sem lote mapeado a seção só não
+  // existe, sem unidade vendável a lista volta a depender da busca no cliente, sem FAQ o
+  // hook do cliente cobre e sem preço a tabela some. Em paralelo porque nenhuma depende
+  // da outra.
+  const [prospects, units, faqs, index, irmaos] = await Promise.all([
     fetchDestinationProspects(params.slug!).catch(() => []),
     fetchDestinationUnits(data).catch(() => []),
     fetchFaqCombined({ destinationId: data.id as string }).catch(() => null),
+    fetchPriceIndex().catch(() => null),
+    (async () => {
+      const { data: irmaos } = await supabase
+        .from("destination")
+        .select("id, name, short_name, slug, is_popular, sort_order")
+        .eq("is_published", true)
+        .order("sort_order");
+      return irmaos ?? [];
+    })().catch(() => []),
   ]);
-  return { destination: data, prospects, units, faqs };
+  return {
+    destination: data,
+    prospects,
+    units,
+    faqs,
+    priceDestination:
+      index?.destinations.find((d: { slug: string }) => d.slug === params.slug) ?? null,
+    related: irmaos,
+    generatedAt: new Date().toISOString(),
+  };
 }
 
 async function fetchAllDestinationPaths(): Promise<string[]> {

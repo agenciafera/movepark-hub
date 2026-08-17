@@ -282,6 +282,85 @@ export function breadcrumbSchema(
   };
 }
 
+/**
+ * A vitrine do destino em dado estruturado: um `Product` com `AggregateOffer` por vaga
+ * de parceiro precificada, e um `ParkingFacility` seco por lote mapeado (ADR-010).
+ *
+ * Substitui o `ItemList` de nome e URL que a página emitia antes. O motivo daquele ser
+ * seco era bom e deixou de valer: enquanto a página não mostrava preço, afirmar preço no
+ * JSON-LD seria descrever algo invisível, que é o que o Google trata como spam. Agora a
+ * tabela de 1/7/15/30 diárias sai no HTML do build, vinda do mesmo motor, então o schema
+ * espelha o que está na tela. Espelhar é a regra; o que mudou foi a tela.
+ *
+ * O que continua fora, e por quê:
+ *
+ * - **`availability`.** Afirmar `InStock` é prometer vaga garantida, e quem controla o
+ *   estoque da unidade externa é o parceiro. É `guaranteedSpot` na superfície do schema
+ *   (ADR-009), a mesma trava que `productOfferSchema` já aplica.
+ * - **`aggregateRating`.** A nota é da unidade e mora na página dela. Agregar nota de
+ *   parceiro num item de lista de destino infla estrela em página que não é a do produto.
+ * - **preço no lote mapeado.** Ele não vende nada aqui, então não tem `offers` nem
+ *   `priceRange`.
+ *
+ * `priceValidUntil` não entra: a tabela é regerada a cada build e a data de conferência
+ * fica visível na página, que é o que sustenta o número sem cravar validade que ninguém
+ * garante.
+ */
+export function destinationOffersSchema(args: {
+  partners: {
+    name: string;
+    url: string;
+    description?: string | null;
+    /** Faixa de preço da matriz do build. Null quando o motor não cobriu a vaga. */
+    price: {
+      lowPrice: number;
+      highPrice: number;
+      offerCount: number;
+      guaranteedSpot: boolean;
+    } | null;
+  }[];
+  mapped: { name: string; url: string }[];
+}) {
+  const itens = [
+    ...args.partners.map((p) => ({
+      "@type": "Product" as const,
+      name: p.name,
+      description: p.description ?? undefined,
+      url: absoluta(p.url),
+      // Sem preço na matriz do build, o item fica só com nome, descrição e URL. Uma
+      // `Offer` sem `price` é inválida para o Google, e chutar um valor seria afirmar
+      // preço que a página não mostra.
+      offers: p.price
+        ? {
+            "@type": "AggregateOffer",
+            priceCurrency: "BRL",
+            lowPrice: p.price.lowPrice.toFixed(2),
+            highPrice: p.price.highPrice.toFixed(2),
+            offerCount: p.price.offerCount,
+            availability: p.price.guaranteedSpot ? "https://schema.org/InStock" : undefined,
+            url: absoluta(p.url),
+          }
+        : undefined,
+    })),
+    ...args.mapped.map((m) => ({
+      "@type": "ParkingFacility" as const,
+      name: m.name,
+      url: absoluta(m.url),
+    })),
+  ];
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    numberOfItems: itens.length,
+    itemListElement: itens.map((item, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      item,
+    })),
+  };
+}
+
 /** Lista de itens (coleção), usada na página índice de destinos. */
 export function itemListSchema(items: { name: string; url: string }[]) {
   return {

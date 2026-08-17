@@ -376,7 +376,16 @@ O corte que resolve é entre **fato da unidade** e **o que depende de data**:
 
 A disponibilidade nasce **neutra** na semente. Afirmar "resta 1 vaga" num HTML congelado vira
 mentira na hora seguinte, e ADR-009 não permite renderizar promessa que a unidade não
-sustenta. O `ItemList` emitido carrega só nome e URL, pelo mesmo motivo.
+sustenta.
+
+> **O `ItemList` deixou de ser só nome e URL em 17/08/2026.** Enquanto a página não mostrava
+> preço, afirmar preço no JSON-LD descrevia algo invisível, e é isso que o Google trata como
+> spam. Com a tabela de preços saindo no HTML do build (seção abaixo), o schema passou a
+> espelhá-la: `Product` + `AggregateOffer` por vaga com preço na matriz, `ParkingFacility` seco
+> por lote mapeado. O que continua fora é `availability`: `InStock` é promessa de vaga
+> garantida, e em `checkout_mode = external` quem controla o estoque é o parceiro (ADR-009).
+> A **lista** sai da vitrine, não da matriz, para o schema seguir descrevendo a tela quando o
+> motor não responde no build; nesse caso o item fica sem `offers`, em vez de chutar preço.
 
 Implementação: `fetchDestinationUnits` em [`src/features/destinations/api.ts`](../../src/features/destinations/api.ts)
 (duas leituras: `location_parking_type` com a tabela de preço aninhada, e a RPC
@@ -401,3 +410,67 @@ ninguém. O loader já sabe no build que ali não há reserva online, então o H
 (`tiered_progressive`, `surcharge`, `monthly_remainder`): somar faixas fora do motor viraria
 preço errado no card. Hoje são 3 regras no banco. Essas unidades continuam aparecendo pela
 busca no cliente, só não estão no HTML estático.
+
+## Quanto custa e distância no HTML do build (17/08/2026)
+
+Auditoria de 17/08/2026 comparando `/destinos/aeroporto-de-viracopos` com a página
+equivalente de um comparador concorrente (`xpark.ai/aeroportos/estacionamento-aeroporto-viracopos`):
+
+| | Movepark (antes) | Concorrente |
+|---|---|---|
+| Palavras visíveis | 1.249 | 2.319 |
+| Tabelas `<table>` | **0** | 2 |
+| Onde estava o preço | dentro de uma resposta de accordion | duas tabelas comparativas |
+| Distância por unidade | só nos lotes mapeados | tabela própria |
+| Procedência do número | ausente | fonte e data por linha |
+| Links internos no build | 45, **menos os 6 de cross-link** | 15 |
+
+A consulta que a página disputa ("estacionamento aeroporto X") é consulta de **preço**, e a
+página respondia em prosa. Quem compara em tabela, com número e data, é citado por LLM; quem
+descreve não é.
+
+O que passou a sair no HTML pré-renderizado:
+
+1. **Tabela de preços** (`DestinationPriceTable`), a matriz 1/7/15/30 diárias por vaga de
+   parceiro, com total, valor por diária, balcão riscado, economia em % e a marcação de menor
+   preço por coluna. Antecedida da resposta rápida (menor preço por duração) e da frase de
+   permanência, que mede no dado real quanto a diária cai da estadia curta para a longa.
+2. **Ranking de distância** (`DestinationProximity`), parceiro e lote mapeado na mesma régua,
+   ordenados pela distância **medida com PostGIS** (ADR-001). O concorrente digita a distância
+   à mão e erra: para a mesma unidade em Viracopos ele publica 4,5 km onde a nossa geodésica
+   mede 1,3 km. Só entra quem tem medida.
+3. **Meta description com número**, derivada do dado (`destinationMetaDescription`). A antiga
+   não trazia um único valor ("Compare preços e reserve a sua vaga"). `meta_description`
+   escrita à mão no banco continua mandando.
+4. **Cross-link entre destinos**, que dependia de `usePublishedDestinations` (hook de cliente)
+   e por isso **não existia** no HTML do build. Eram 6 links internos por página que nenhum
+   crawler via. Passou para o `destinoLoader`; o hook segue cobrindo a navegação no cliente.
+
+**Os números não podem divergir de `/precos/<slug>`.** `buildDestinoPrices` compõe em cima de
+`buildMatrix` e `destinationSummary` do índice de preços, sem reimplementar conta nenhuma
+(`src/features/destinations/destinoPrices.logic.ts`). O layout das duas páginas difere de
+propósito; a aritmética é a mesma função. A auditoria do concorrente mostra por que isso
+importa: na mesma página dele, a tabela dizia R$ 25,00/dia para o estacionamento oficial e a
+FAQ dizia R$ 75,00/dia, e a data de coleta aparecia como "junho" em três lugares e "julho" em
+outros dois.
+
+**Procedência.** A nota sob a tabela carimba "conferido no motor de reservas em <data>" a
+partir de `generatedAt` (carimbo do loader) e a tabela de parceiro mais recente a partir de
+`price_updated_at`, com link para `/metodologia`. A frase **não** promete "o valor cobrado no
+checkout": em unidade com `checkout_mode = external` quem cobra é o parceiro, e prometer o
+checkout da Movepark ali seria promessa de transação sem capacidade (ADR-009). Há teste que
+falha se essa frase reaparecer.
+
+**Custo no build.** O `destinoLoader` chama `fetchPriceIndex()`, que é single-flight com cache
+de 5 minutos: os 27 destinos compartilham **uma** chamada da RPC. Sem isso seriam 27
+simultâneas, e o papel `anon` derruba a query por statement timeout.
+
+**Gêmeo Markdown.** `scripts/generate-geo-artifacts.mjs` passou a emitir a mesma matriz por
+operadora (antes só o "a partir de" por duração) e a lista de distância, com a linha de
+procedência e o link de metodologia. Os lotes mapeados entram via `destination_prospect_cards`,
+em blocos de 6 pelo mesmo motivo de timeout.
+
+| Camada | Arquivo | O que trava |
+|---|---|---|
+| Unitário (Vitest) | `src/features/destinations/destinoPrices.logic.test.ts` | queda por permanência (inclusive o caso "sem desconto", que tem que calar), paridade do resumo com `destinationSummary`, meta description com número e corte em 160 sem quebrar palavra, ranking de distância (ordem, dedupe por location, exclusão de quem não tem medida) |
+| Componente (Vitest) | `src/routes/destino.test.tsx` | a `<table>` existe com cabeçalho por duração, total, valor por diária, balcão e economia; a frase de permanência; a nota de procedência com as duas datas e sem "cobrado no checkout"; a seção some sem parceiro precificado; o ranking de distância na ordem certa; a meta description com número; `AggregateOffer` presente com matriz e ausente sem, e `InStock` nunca emitido em checkout externo |

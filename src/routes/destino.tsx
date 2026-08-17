@@ -19,16 +19,37 @@ import { computeResultBadges } from "@/features/search/searchBadges";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { GoogleMapEmbed } from "@/components/shared/GoogleMapEmbed";
-import { breadcrumbSchema, destinationSchema, faqSchema, itemListSchema } from "@/lib/jsonld";
+import {
+  breadcrumbSchema,
+  destinationOffersSchema,
+  destinationSchema,
+  faqSchema,
+} from "@/lib/jsonld";
 import {
   destinationHeading,
   destinationListHeading,
   destinationTitle,
   faqHeading,
   locationHeading,
+  priceHeading,
+  proximityAnchorLabel,
+  proximityHeading,
+  seoLabelPrimary,
   shuttleHeading,
   topRatedHeading,
 } from "@/lib/seo";
+import { getLocationCapabilities } from "@/features/listing/capabilities";
+import type { PriceDestination } from "@/features/price-index/priceIndex.logic";
+import { carUnits, priceFor } from "@/features/price-index/priceIndex.logic";
+import {
+  DestinationPriceTable,
+  DestinationProximity,
+} from "@/features/destinations/DestinationPrices";
+import {
+  buildDestinoPrices,
+  destinationMetaDescription,
+  proximityRanking,
+} from "@/features/destinations/destinoPrices.logic";
 import { imageSrcSet, optimizedImageUrl } from "@/lib/storage";
 import { formatBRL } from "@/lib/format";
 import { lowestPerDay, pickRelatedDestinations, pickTopRated } from "./destino.logic";
@@ -69,11 +90,26 @@ function defaultWindow() {
  * datas a substitui no cliente. `faqs` nulo significa que o fetch do build falhou e o hook
  * do cliente cobre.
  */
+type RelatedDestination = {
+  id: string;
+  name: string;
+  short_name: string | null;
+  slug: string;
+  is_popular?: boolean | null;
+  sort_order?: number | null;
+};
+
 type DestinoLoaderData = {
   destination: Destination;
   prospects: ProspectCardData[];
   units?: SearchResultItem[];
   faqs?: FaqCombinedItem[] | null;
+  /** Matriz do motor de preços para este destino; null quando não há parceiro precificado. */
+  priceDestination?: PriceDestination | null;
+  /** Destinos publicados, para o cross-link sair no HTML do build. */
+  related?: RelatedDestination[];
+  /** Momento em que o build consultou o motor. */
+  generatedAt?: string;
 } | null;
 
 export default function DestinoPage() {
@@ -157,9 +193,6 @@ export default function DestinoPage() {
   }
 
   const title = destination.meta_title ?? destinationTitle(destination);
-  const description =
-    destination.meta_description ??
-    `Reserve estacionamento próximo a ${destination.name}, em ${destination.city}. Compare preços, comodidades e garanta sua vaga com antecedência.`;
   const canonical = `${SITE_URL}/destinos/${destination.slug}`;
   // Imagem otimizada (resize/transform do Supabase). O og:image é 1.91:1 (1200×630,
   // padrão de card social); pro JSON-LD damos também a versão quadrada (1:1), porque o
@@ -179,23 +212,107 @@ export default function DestinoPage() {
   // trocar o bloco inteiro na frente de quem está lendo.
   const results = search.data?.results ?? loaded?.units ?? [];
   const prospectItems = loaded?.prospects ?? prospects.data ?? [];
-  // ItemList espelhando exatamente o que está visível, na mesma ordem: primeiro as unidades
-  // vendáveis, depois os lotes mapeados. Espelhar importa porque dado estruturado que
-  // descreve algo que a página não mostra é o que o Google trata como spam. Só nome e URL:
-  // preço e disponibilidade dependem de data e não podem ser afirmados num HTML congelado
-  // (ADR-009).
-  const listaSchema = [
-    ...results.map((r) => ({
+
+  // Bloco de preço: a matriz 1/7/15/30 do motor, a mesma de /precos/<slug>.
+  const priceDest = loaded?.priceDestination ?? null;
+  const prices = priceDest ? buildDestinoPrices(priceDest) : null;
+  const generatedAt = loaded?.generatedAt ?? null;
+
+  // Ranking de distância medido no banco (PostGIS, ADR-001), juntando parceiro e lote
+  // mapeado. Some inteiro em destino sem coordenada de unidade, em vez de listar sem número.
+  const proximity = priceDest
+    ? proximityRanking({
+        units: priceDest.units,
+        prospects: prospectItems.map((p) => ({
+          name: p.name,
+          slug: p.slug,
+          distance_km: p.distance_km,
+        })),
+        destinationSlug: destination.slug,
+        anchorLabel: proximityAnchorLabel(destination),
+      })
+    : [];
+
+  // Espelha exatamente o que está visível, na mesma ordem: unidades vendáveis primeiro,
+  // lotes mapeados depois. A LISTA sai da vitrine (`results`), não da matriz de preço, para
+  // o schema continuar descrevendo a tela mesmo quando o motor não respondeu no build.
+  // A faixa de preço é opcional em cada item e só entra quando a matriz cobre aquela vaga,
+  // que é a mesma que a tabela renderiza logo acima: nunca um cálculo paralelo.
+  const matrixByKey = new Map(
+    (priceDest ? carUnits(priceDest.units) : []).map((u) => [
+      `${u.company_slug}/${u.location_slug}/${u.parking_type_code}`,
+      u,
+    ]),
+  );
+  const partnerOffers = results.map((r) => {
+    const u = matrixByKey.get(`${r.operator.slug}/${r.location.slug}/${r.parking_type.code}`);
+    const totais = (u?.prices ?? [])
+      .map((p) => p.total)
+      .filter((t): t is number => t != null && t > 0);
+    return {
       name: `${r.operator.name} · ${r.parking_type.name}`,
-      url: `${SITE_URL}/p/${r.operator.slug}/${r.location.slug}/${r.parking_type.code}`,
-    })),
-    ...prospectItems.map((p) => ({
-      name: p.name,
-      url: `${SITE_URL}/estacionamentos/${destination.slug}/${p.slug}`,
-    })),
-  ];
-  const fromPrice = lowestPerDay(results);
-  const related = pickRelatedDestinations(allDestinations.data ?? [], destination.id, 6);
+      url: `/p/${r.operator.slug}/${r.location.slug}/${r.parking_type.code}`,
+      description: `Estacionamento perto do ${seoLabelPrimary(destination)}, em ${destination.city}.`,
+      price:
+        totais.length > 0
+          ? {
+              lowPrice: Math.min(...totais),
+              highPrice: Math.max(...totais),
+              offerCount: totais.length,
+              // Vaga garantida depende de o Hub controlar o estoque (ADR-009). Em unidade
+              // com checkout externo quem controla é o parceiro, então o schema cala sobre
+              // disponibilidade em vez de afirmar InStock.
+              guaranteedSpot: getLocationCapabilities({ checkout_mode: u?.checkout_mode })
+                .guaranteedSpot,
+            }
+          : null,
+    };
+  });
+  const offersSchema =
+    partnerOffers.length > 0 || prospectItems.length > 0
+      ? destinationOffersSchema({
+          partners: partnerOffers,
+          mapped: prospectItems.map((p) => ({
+            name: p.name,
+            url: `/estacionamentos/${destination.slug}/${p.slug}`,
+          })),
+        })
+      : null;
+
+  // O "a partir de" do topo prefere a matriz do build: ela existe no HTML pré-renderizado
+  // e a busca por janela só responde depois do JS. Sem preço na matriz, cai na busca.
+  const fromPriceMatrix = priceDest
+    ? Math.min(
+        ...carUnits(priceDest.units)
+          .map((u) => priceFor(u, 1)?.total ?? null)
+          .filter((t): t is number => t != null),
+        Infinity,
+      )
+    : Infinity;
+  const fromPrice = Number.isFinite(fromPriceMatrix) ? fromPriceMatrix : lowestPerDay(results);
+
+  // Meta description: a geografia escrita à mão MAIS o preço do dado, dentro dos 160.
+  // As 26 descrições do banco não trazem um único valor, e snippet sem número perde para
+  // snippet com número na mesma SERP; por outro lado elas trazem o que dado nenhum sabe
+  // (os Terminais 1/2/3 de Guarulhos, "na Ilha do Governador"). A função encaixa as duas,
+  // e devolve o texto humano intacto quando não cabem juntas.
+  const description = destinationMetaDescription({
+    label: seoLabelPrimary(destination),
+    city: destination.city,
+    authored: destination.meta_description,
+    summary: prices?.summary ?? null,
+    prospectCount: prospectItems.length,
+    fallback: `Reserve estacionamento próximo a ${destination.name}, em ${destination.city}. Compare preços, comodidades e garanta sua vaga com antecedência.`,
+  });
+
+  // O cross-link entre destinos agora vem do loader: dependia de um hook de cliente e por
+  // isso não existia no HTML do build, deixando 6 links internos por página invisíveis
+  // para o crawler. O hook segue cobrindo a navegação no cliente.
+  const related = pickRelatedDestinations(
+    loaded?.related ?? allDestinations.data ?? [],
+    destination.id,
+    6,
+  );
   // Mesma regra nas duas fontes: a busca já vem por nota, a semente do build vem por preço.
   const topResults = pickTopRated(topSearch.data?.results ?? loaded?.units ?? [], 4);
   // Um card por tipo de vaga, o MESMO card da busca (ResultCard): um único modelo de card entre
@@ -242,8 +359,8 @@ export default function DestinoPage() {
             ]),
           )}
         </script>
-        {listaSchema.length > 0 && (
-          <script type="application/ld+json">{JSON.stringify(itemListSchema(listaSchema))}</script>
+        {offersSchema && (
+          <script type="application/ld+json">{JSON.stringify(offersSchema)}</script>
         )}
         {faqItems.length > 0 && (
           <script type="application/ld+json">{JSON.stringify(faqSchema(faqItems))}</script>
@@ -403,6 +520,18 @@ export default function DestinoPage() {
           </div>
         </section>
 
+        {/* Quanto custa: a matriz 1/7/15/30 do motor, em tabela, no HTML do build.
+            Vem logo depois da vitrine porque é a mesma pergunta que os cards abrem
+            ("a partir de R$ X") e que só a tabela fecha. */}
+        {prices && generatedAt && (
+          <DestinationPriceTable
+            prices={prices}
+            generatedAt={generatedAt}
+            destinationSlug={destination.slug}
+            heading={priceHeading(destination)}
+          />
+        )}
+
         {/* Lotes MAPEADOS (E0.17-d): seção própria, sempre ABAIXO da vendável.
             A separação e a ordem são o produto que o parceiro compra: presença é de
             graça, conversão é paga. Cada clique que um card mapeado rouba de um parceiro
@@ -425,6 +554,9 @@ export default function DestinoPage() {
             </ul>
           </section>
         )}
+
+        {/* Distância medida (PostGIS, ADR-001), parceiro e mapeado na mesma régua. */}
+        <DestinationProximity rows={proximity} heading={proximityHeading(destination)} />
 
         {/* Como funciona o traslado (educativo, com ilustração da marca) */}
         <section className="mt-10">

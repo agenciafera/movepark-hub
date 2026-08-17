@@ -119,7 +119,34 @@ const [faqs, destinations, posts, priceIndex] = await Promise.all([
   rpc("destination_price_index"),
 ]);
 
+/**
+ * Lotes mapeados por destino (ADR-010), para o gêmeo Markdown listar distância de
+ * quem não vende junto de quem vende. Em blocos de 6 porque 27 RPCs simultâneas
+ * estouram o statement timeout do papel anon durante o build. Falha de um destino
+ * derruba só a lista dele, nunca o artefato inteiro.
+ */
+const prospectsPorDestino = new Map();
+for (let i = 0; i < destinations.length; i += 6) {
+  await Promise.all(
+    destinations.slice(i, i + 6).map(async (d) => {
+      const cards = await rpc("destination_prospect_cards", { p_destination_slug: d.slug }).catch(
+        () => [],
+      );
+      prospectsPorDestino.set(
+        d.slug,
+        (cards ?? []).map((p) => ({
+          name: p.name,
+          slug: p.slug,
+          distance_km: p.distance_km == null ? null : Number(p.distance_km),
+        })),
+      );
+    }),
+  );
+}
+
 const hoje = new Date().toISOString().slice(0, 10);
+/** A mesma data em pt-BR, para prosa. O ISO fica só no frontmatter. */
+const hojeBR = hoje.split("-").reverse().join("/");
 const globais = faqs.filter((f) => f.scope === "global");
 const porDestino = new Map();
 for (const f of faqs.filter((f) => f.scope === "destination")) {
@@ -352,6 +379,14 @@ const nomeCurto = (d) => d.short_name ?? d.name;
 const unidadesCarro = (dest) =>
   (dest.units ?? []).filter((u) => u.parking_type_code !== "motorcycle");
 const totalDe = (u, d) => (u.prices ?? []).find((p) => p.days === d)?.total ?? null;
+
+/** "328 m" até 949 m; acima disso km com uma casa. Espelha `formatDistance` do app. */
+const fmtDistancia = (m) => {
+  if (m == null) return null;
+  if (m < 950) return `${m} m`;
+  const km = Math.round((m / 1000) * 10) / 10;
+  return `${Number.isInteger(km) ? String(km) : km.toFixed(1).replace(".", ",")} km`;
+};
 
 /** Menor total por duração, com quem pratica. Mesma regra da página. */
 function resumoPorDuracao(dest, dias) {
@@ -623,11 +658,57 @@ function tabelaTopMarkdown(dest, limit = 5) {
     const preco = precoPorSlugDest.get(d.slug);
     const resumo = preco ? resumoPorDuracao(preco, diasIndice) : [];
     if (resumo.length > 0) {
-      linhas.push("## Quanto custa", "", "| Período | Total a partir de | Onde |", "| --- | --- | --- |");
+      // Resposta rápida primeiro (uma linha por duração), depois a matriz completa
+      // por operadora. O gêmeo espelha a página React, que passou a trazer a matriz
+      // em vez de só o "a partir de": resumo sem comparação não sustenta citação.
+      linhas.push("## Quanto custa", "");
       for (const r of resumo) {
-        linhas.push(`| ${durLabel(r.dias)} | ${brl(r.total)} | ${r.u.company_name} (${r.u.parking_type_name}) |`);
+        linhas.push(
+          `- ${durLabel(r.dias)}: a partir de ${brl(r.total)} no ${r.u.company_name} (${r.u.parking_type_name})${r.dias > 1 ? `, ${brl(r.total / r.dias)} por diária` : ""}`,
+        );
       }
-      linhas.push("", `Tabela completa e preço de balcão: ${SITE_URL}/precos/${d.slug}`, "");
+      linhas.push("", ...tabelaMarkdown(preco, diasIndice), "");
+      linhas.push(
+        `Preços do motor de reservas da Movepark, conferidos em ${hojeBR}. O valor entre parênteses é o balcão do estacionamento, sem reserva.`,
+        "",
+        `Tabela completa: ${SITE_URL}/precos/${d.slug}`,
+        `Como apuramos: ${SITE_URL}/metodologia`,
+        "",
+      );
+    }
+
+    // Distância medida no banco (PostGIS), a mesma lista da página React. Só quem
+    // tem medida entra: distância declarada por estacionamento não vale nada aqui.
+    const comDistancia = (preco ? unidadesCarro(preco) : [])
+      .filter((u) => u.distance_m != null)
+      .reduce((acc, u) => {
+        const chave = `${u.company_slug}/${u.location_slug}`;
+        if (!acc.has(chave) || acc.get(chave).distance_m > u.distance_m) acc.set(chave, u);
+        return acc;
+      }, new Map());
+    const mapeadosDoDestino = (prospectsPorDestino.get(d.slug) ?? []).filter(
+      (p) => p.distance_km != null,
+    );
+    const ancora = d.type === "airport" || d.type === "bus_terminal" ? " do terminal" : "";
+    const linhasDistancia = [
+      ...[...comDistancia.values()].map((u) => ({
+        metros: u.distance_m,
+        texto: `- ${u.company_name}: ${fmtDistancia(u.distance_m)}${ancora} (${SITE_URL}/p/${u.company_slug}/${u.location_slug}/${u.parking_type_code})`,
+      })),
+      ...mapeadosDoDestino.map((p) => ({
+        metros: Math.round(p.distance_km * 1000),
+        texto: `- ${p.name}: ${fmtDistancia(Math.round(p.distance_km * 1000))}${ancora}, sem reserva online (${SITE_URL}/estacionamentos/${d.slug}/${p.slug})`,
+      })),
+    ].sort((a, b) => a.metros - b.metros);
+    if (linhasDistancia.length > 0) {
+      linhas.push(
+        `## Distância até ${d.type === "airport" ? "o terminal" : nomeCurto(d)}`,
+        "",
+        "Medida a partir das coordenadas de cada endereço, no banco de dados da Movepark.",
+        "",
+        ...linhasDistancia.map((l) => l.texto),
+        "",
+      );
     }
 
     const unidades = preco ? unidadesCarro(preco) : [];

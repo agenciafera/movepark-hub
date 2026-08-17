@@ -457,19 +457,25 @@ describe("lista de unidades no HTML do build", () => {
       expect(achado).toBeTruthy();
       return achado!;
     });
-    const itens = lista.itemListElement as { position: number; name: string; url: string }[];
+    const itens = lista.itemListElement as {
+      position: number;
+      item: { "@type": string; name: string; url: string };
+    }[];
     expect(itens).toHaveLength(2);
     // Vendável primeiro, mapeado depois: é a mesma ordem da tela, e a separação é o produto
-    // que o parceiro compra (ADR-010).
-    expect(itens[0].name).toBe("Abbapark · Vaga Coberta");
-    expect(itens[0].url).toContain("/p/abbapark/aeroporto-afonso-pena/covered");
-    expect(itens[1].name).toBe("Talentos Park");
-    expect(itens[1].url).toContain("/estacionamentos/aeroporto-de-guarulhos/talentos-park");
+    // que o parceiro compra (ADR-010). O tipo separa os dois: quem vende é `Product`, quem
+    // só está mapeado é `ParkingFacility` sem oferta.
+    expect(itens[0].item["@type"]).toBe("Product");
+    expect(itens[0].item.name).toBe("Abbapark · Vaga Coberta");
+    expect(itens[0].item.url).toContain("/p/abbapark/aeroporto-afonso-pena/covered");
+    expect(itens[1].item["@type"]).toBe("ParkingFacility");
+    expect(itens[1].item.name).toBe("Talentos Park");
+    expect(itens[1].item.url).toContain("/estacionamentos/aeroporto-de-guarulhos/talentos-park");
   });
 
-  it("não afirma preço nem disponibilidade no dado estruturado", async () => {
-    // ADR-009: num HTML congelado, "resta 1 vaga" ou um preço de janela vira mentira na hora
-    // seguinte. O ItemList carrega só nome e URL.
+  it("sem matriz do motor, o item vendável fica sem oferta em vez de chutar preço", async () => {
+    // A lista sai da VITRINE, não da matriz: se o motor não respondeu no build, o schema
+    // continua descrevendo a tela. O que ele não pode é inventar um preço para ter `Offer`.
     loaderData.mockReturnValue({ destination: dest(), prospects: [], units: [unidade()] });
 
     render();
@@ -479,10 +485,73 @@ describe("lista de unidades no HTML do build", () => {
       expect(achado).toBeTruthy();
       return achado!;
     });
-    const bruto = JSON.stringify(lista);
-    expect(bruto).not.toContain("offers");
-    expect(bruto).not.toContain("InStock");
-    expect(bruto).not.toContain("price");
+    const itens = lista.itemListElement as { item: Record<string, unknown> }[];
+    expect(itens).toHaveLength(1);
+    expect(itens[0].item.name).toBe("Abbapark · Vaga Coberta");
+    expect(itens[0].item.offers).toBeUndefined();
+    expect(JSON.stringify(lista)).not.toContain("InStock");
+  });
+
+  it("com matriz, emite AggregateOffer e cala sobre disponibilidade no checkout externo", async () => {
+    // ADR-009 na superfície do schema: `InStock` é promessa de vaga garantida, e quem
+    // controla o estoque da unidade externa é o parceiro. O preço, esse pode: a tabela de
+    // 1/7/15/30 diárias sai no HTML do build, e o schema espelha o que está na tela.
+    loaderData.mockReturnValue({
+      destination: dest(),
+      prospects: [],
+      units: [unidade()],
+      generatedAt: "2026-08-17T00:00:00.000Z",
+      priceDestination: {
+        slug: "aeroporto-de-guarulhos",
+        code: "GRU",
+        name: "Aeroporto de Guarulhos",
+        short_name: "Guarulhos (GRU)",
+        type: "airport",
+        city: "Guarulhos",
+        state: "SP",
+        units: [
+          {
+            company_slug: "abbapark",
+            company_name: "Abbapark",
+            location_slug: "aeroporto-afonso-pena",
+            location_name: "Abbapark",
+            parking_type_code: "covered",
+            parking_type_name: "Vaga Coberta",
+            checkout_mode: "external",
+            review_avg: null,
+            review_count: 0,
+            has_shuttle: true,
+            shuttle_minutes: null,
+            distance_m: 900,
+            min_stay_days: null,
+            price_updated_at: "2026-08-16T00:00:00.000Z",
+            prices: [
+              { days: 1, total: 30, old_total: 40 },
+              { days: 7, total: 175, old_total: 280 },
+            ],
+          },
+        ],
+      },
+    });
+
+    render();
+
+    const lista = await waitFor(() => {
+      const achado = ldJson().find((s) => s["@type"] === "ItemList");
+      expect(achado).toBeTruthy();
+      return achado!;
+    });
+    const itens = lista.itemListElement as {
+      item: { offers?: Record<string, unknown> };
+    }[];
+    expect(itens[0].item.offers).toMatchObject({
+      "@type": "AggregateOffer",
+      priceCurrency: "BRL",
+      lowPrice: "30.00",
+      highPrice: "175.00",
+      offerCount: 2,
+    });
+    expect(JSON.stringify(lista)).not.toContain("InStock");
   });
 
   it("destino sem unidade diz isso, em vez de mandar skeleton para o crawler", () => {
@@ -606,5 +675,178 @@ describe("DestinoPage · favoritar (ligado no useSavedListings)", () => {
     );
     expect(navigate).not.toHaveBeenCalled();
     expect(localStorage.getItem("mp:saved")).toBeNull();
+  });
+});
+
+describe("DestinoPage · quanto custa e distância", () => {
+  // A página disputa "estacionamento aeroporto <X>", que é consulta de PREÇO, e até
+  // 17/08/2026 respondia em prosa: os valores só existiam dentro de uma resposta de FAQ e
+  // não havia uma única <table> no HTML. O comparador concorrente responde em tabela.
+  beforeEach(() => {
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: undefined, isLoading: false } as never);
+    vi.mocked(useSearchResults).mockReturnValue({ data: undefined, isLoading: true } as never);
+  });
+
+  function unidadePreco(over: Record<string, unknown> = {}) {
+    return {
+      company_slug: "virapark",
+      company_name: "Virapark",
+      location_slug: "virapark",
+      location_name: "Virapark",
+      parking_type_code: "covered",
+      parking_type_name: "Vaga Coberta",
+      checkout_mode: "external",
+      review_avg: null,
+      review_count: 0,
+      has_shuttle: false,
+      shuttle_minutes: null,
+      distance_m: 1289,
+      min_stay_days: null,
+      price_updated_at: "2026-08-16T22:00:38.941Z",
+      prices: [
+        { days: 1, total: 40, old_total: 40 },
+        { days: 7, total: 174.3, old_total: 280 },
+        { days: 15, total: 373.5, old_total: 600 },
+        { days: 30, total: 747, old_total: 1200 },
+      ],
+      ...over,
+    };
+  }
+
+  function comPreco(units: Record<string, unknown>[] = [unidadePreco()], prospects: unknown[] = []) {
+    return {
+      destination: dest(),
+      prospects,
+      units: [],
+      generatedAt: "2026-08-17T03:00:00.000Z",
+      priceDestination: {
+        slug: "aeroporto-de-guarulhos",
+        code: "GRU",
+        name: "Aeroporto Internacional de São Paulo / Guarulhos",
+        short_name: "Guarulhos",
+        type: "airport",
+        city: "Guarulhos",
+        state: "SP",
+        units,
+      },
+    };
+  }
+
+  it("renderiza a tabela de preço por duração no HTML, com total e valor por diária", () => {
+    loaderData.mockReturnValue(comPreco());
+
+    render();
+
+    expect(
+      screen.getByRole("heading", { name: /Quanto custa estacionar no Aeroporto Guarulhos/i }),
+    ).toBeInTheDocument();
+    // Uma <table> de verdade, com cabeçalho por duração: é o formato que buscador e LLM
+    // extraem, e o que a página não tinha.
+    const tabela = screen.getByRole("table");
+    expect(tabela).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "30 diárias" })).toBeInTheDocument();
+    expect(screen.getAllByText(/R\$\s?747,00/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/R\$\s?24,90 por diária/).length).toBeGreaterThan(0);
+    // Balcão riscado e economia: o que separa o preço da Movepark do preço de chegar sem
+    // reservar. O concorrente não tem esse dado.
+    expect(screen.getAllByText(/R\$\s?1\.200,00/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/38% menor online/).length).toBeGreaterThan(0);
+  });
+
+  it("responde 'quanto custa' antes da tabela e mede a queda por permanência", () => {
+    loaderData.mockReturnValue(comPreco());
+
+    render();
+
+    expect(screen.getByText(/1 diária:/)).toBeInTheDocument();
+    // A frase que o comparador concorrente escreve à mão (e erra): aqui sai do dado.
+    expect(
+      screen.getByText(/a diária cai de/i).textContent?.replace(/\s+/g, " "),
+    ).toMatch(/R\$\s?40,00 para R\$\s?24,90 \(38% menos\).*1 para 30 diárias/);
+  });
+
+  it("data a tabela e aponta a fonte, sem prometer o checkout da Movepark", () => {
+    // Procedência é o que sustenta citação em LLM. E a frase não pode dizer "valor cobrado
+    // no checkout": em unidade com checkout externo quem cobra é o parceiro (ADR-009).
+    loaderData.mockReturnValue(comPreco());
+
+    render();
+
+    const nota = screen.getByText(/Conferido no motor de reservas em/i);
+    expect(nota.textContent).toMatch(/17\/08\/2026/);
+    expect(nota.textContent).toMatch(/tabela de parceiro mais recente de 16\/08\/2026/);
+    expect(document.body.textContent).not.toMatch(/cobrado no checkout/i);
+    expect(screen.getByRole("link", { name: /Ver a tabela completa de preços/i })).toHaveAttribute(
+      "href",
+      "/precos/aeroporto-de-guarulhos",
+    );
+    expect(
+      screen.getByRole("link", { name: /Como a Movepark apura preço e distância/i }),
+    ).toHaveAttribute("href", "/metodologia");
+  });
+
+  it("sem parceiro precificado, a seção não existe (sem cabeçalho órfão)", () => {
+    loaderData.mockReturnValue({ destination: dest(), prospects: [], units: [] });
+
+    render();
+
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Quanto custa estacionar/i)).not.toBeInTheDocument();
+  });
+
+  it("lista a distância medida, misturando parceiro e lote mapeado na mesma régua", () => {
+    // A distância sai do PostGIS (ADR-001). O comparador concorrente digita à mão: para a
+    // mesma unidade em Viracopos ele publica 4,5 km onde a geodésica mede 1,3 km.
+    loaderData.mockReturnValue(
+      comPreco(
+        [unidadePreco(), unidadePreco({ company_slug: "garageinn", company_name: "Garageinn", location_slug: "garageinn", parking_type_code: "uncovered", parking_type_name: "Vaga Descoberta", distance_m: 328 })],
+        [
+          {
+            id: "p1",
+            name: "Talentos Park",
+            slug: "talentos-park",
+            address: null,
+            latitude: 0,
+            longitude: 0,
+            google_maps_url: null,
+            amenities: [],
+            description: null,
+            distance_km: 1.2,
+            reference_name: null,
+          },
+        ],
+      ),
+    );
+
+    render();
+
+    expect(
+      screen.getByRole("heading", { name: /Distância até o terminal do Aeroporto Guarulhos/i }),
+    ).toBeInTheDocument();
+    const lista = screen.getByRole("heading", { name: /Distância até o terminal/i })
+      .parentElement!.querySelector("ul")!;
+    const linhas = [...lista.querySelectorAll("li")].map((li) =>
+      (li.textContent ?? "").replace(/\s+/g, " ").trim(),
+    );
+    // Ordem por distância medida, com o lote mapeado no meio e marcado. É o ponto:
+    // parceiro e mapeado na mesma régua, sem misturar o que dá para reservar.
+    expect(linhas).toEqual([
+      "Garageinn328 m do terminal",
+      "Talentos Park · sem reserva online1,2 km do terminal",
+      "Virapark1,3 km do terminal",
+    ]);
+  });
+
+  it("a meta description leva número em vez de promessa genérica", async () => {
+    loaderData.mockReturnValue(comPreco());
+
+    render();
+
+    await waitFor(() => {
+      const meta = document.querySelector('meta[name="description"]')?.getAttribute("content") ?? "";
+      expect(meta).toMatch(/Diária a partir de R\$\s?40,00/);
+      expect(meta).toMatch(/7 diárias por R\$\s?174,30/);
+      expect(meta.length).toBeLessThanOrEqual(160);
+    });
   });
 });
