@@ -13,6 +13,8 @@ type Props = {
   leads: MarketingLeadRow[];
   isLoading: boolean;
   onMove: (leadId: string, stageId: string) => void;
+  /** Em tela cheia a coluna usa a altura da janela e rola por dentro. */
+  fullscreen?: boolean;
 };
 
 /**
@@ -26,7 +28,7 @@ type Props = {
  * A troca é otimista e o servidor manda: `marketing_move_lead` é quem grava, registra na timeline
  * e fecha o lead quando a coluna é de ganho ou perda.
  */
-export function LeadKanban({ stages, leads, isLoading, onMove }: Props) {
+export function LeadKanban({ stages, leads, isLoading, onMove, fullscreen = false }: Props) {
   const [arrastando, setArrastando] = React.useState<string | null>(null);
   const [colunaAlvo, setColunaAlvo] = React.useState<string | null>(null);
 
@@ -45,7 +47,12 @@ export function LeadKanban({ stages, leads, isLoading, onMove }: Props) {
   }
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-2">
+    <div
+      className={cn(
+        "flex gap-4 overflow-x-auto pb-2",
+        fullscreen && "h-full items-start",
+      )}
+    >
       {stages.map((stage) => {
         const daColuna = leads.filter((l) => l.stage_id === stage.id);
         const valor = daColuna.reduce((soma, l) => soma + (l.value_cents ?? 0), 0) / 100;
@@ -58,6 +65,9 @@ export function LeadKanban({ stages, leads, isLoading, onMove }: Props) {
             className={cn(
               "flex w-72 shrink-0 flex-col gap-2 rounded-md border bg-surface-soft p-2 transition-colors",
               ativa ? "border-primary bg-primary/5" : "border-hairline",
+              // Em tela cheia a coluna vai ate o rodape e rola por dentro: sem isso a coluna mais
+              // cheia estica a pagina e as outras ficam com metros de vazio embaixo.
+              fullscreen && "max-h-full",
             )}
             onDragOver={(e) => {
               // Sem o preventDefault o navegador recusa o drop e o cartão volta para a origem.
@@ -91,7 +101,7 @@ export function LeadKanban({ stages, leads, isLoading, onMove }: Props) {
               <span className="px-1 text-xs text-muted">{formatBRL(valor)} em jogo</span>
             )}
 
-            <div className="flex flex-col gap-2">
+            <div className={cn("flex flex-col gap-2", fullscreen && "min-h-0 overflow-y-auto")}>
               {daColuna.map((lead) => (
                 <article
                   key={lead.id}

@@ -42,6 +42,7 @@ import {
 } from "@/features/marketing/canvas.logic";
 import type { SegmentGroup } from "@/features/marketing/segmentBuilder.logic";
 import { EMPTY_DEFINITION } from "@/features/marketing/segmentBuilder.logic";
+import { useFullscreen } from "@/components/shared/useFullscreen";
 import { formatDateTime } from "@/lib/format";
 
 const STATUS_MENSAGEM: Record<string, string> = {
@@ -69,18 +70,8 @@ export default function ManagerMarketingCampaign() {
 
   const [canvas, setCanvas] = React.useState<CampaignCanvas | null>(null);
   // Tela cheia do editor: o fluxo cresce em nós e o canvas de 600px vira o gargalo.
-  const [fullscreen, setFullscreen] = React.useState(false);
-
-  // Esc sai da tela cheia. É o gesto que todo mundo tenta primeiro, e sem ele a saída fica presa
-  // num botão que o próprio modo empurra para o canto.
-  React.useEffect(() => {
-    if (!fullscreen) return;
-    const aoTeclar = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setFullscreen(false);
-    };
-    window.addEventListener("keydown", aoTeclar);
-    return () => window.removeEventListener("keydown", aoTeclar);
-  }, [fullscreen]);
+  // Esc e a trava de rolagem do body moram no hook, compartilhado com o kanban de leads.
+  const { fullscreen, alternar, sair } = useFullscreen();
   const [segmentId, setSegmentId] = React.useState<string>("");
   const [sendCap, setSendCap] = React.useState<number>(100);
 
@@ -147,7 +138,7 @@ export default function ManagerMarketingCampaign() {
               <FloppyDisk className="mr-2 size-4" />
               Salvar
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => setFullscreen(false)}>
+            <Button variant="ghost" size="sm" onClick={sair}>
               Sair da tela cheia
             </Button>
           </div>
@@ -156,7 +147,7 @@ export default function ManagerMarketingCampaign() {
           value={canvas}
           onChange={setCanvas}
           fullscreen
-          onToggleFullscreen={() => setFullscreen(false)}
+          onToggleFullscreen={sair}
         />
       </div>
     );
@@ -228,7 +219,7 @@ export default function ManagerMarketingCampaign() {
             value={canvas}
             onChange={setCanvas}
             fullscreen={fullscreen}
-            onToggleFullscreen={() => setFullscreen((v) => !v)}
+            onToggleFullscreen={alternar}
           />
         </TabsContent>
 

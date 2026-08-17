@@ -206,6 +206,12 @@ e `useLeadsRealtime` invalida a query a cada evento. A RLS vale no canal, então
 recebe. A tela recalcula pela RPC em vez de aplicar o evento no cliente, para a ordenação e o recorte
 por unidade não existirem em dois lugares.
 
+**Tela cheia:** o quadro sai do shell do Manager (botão na barra, `Esc` para sair). Com cinco
+colunas de 288px, um notebook corta a última, e o kanban é justamente a tela em que se quer ver o
+funil inteiro de uma vez. O comportamento mora em `useFullscreen` (`components/shared`), o mesmo
+hook do canvas de campanha: ele trata o `Esc` e trava a rolagem do `body`, senão rolar dentro de uma
+coluna vaza para a página de baixo quando a lista acaba.
+
 **O relógio do abandono** (`leadCheckout.logic.ts`) lê o `expires_at` do hold. Um hold vencido que o
 cron ainda não varreu continua `pending` no banco, e sem essa conta o quadro mostraria uma reserva
 morta como oportunidade quente.
