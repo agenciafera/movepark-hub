@@ -270,6 +270,28 @@ formato:
 - Nunca `text-muted-steel` (reprova o AA).
 - Um por seção, no máximo. Nunca dois no mesmo bloco.
 
+## Fechamento de página: um banner só
+
+O bloco que fecha a página do consumer é o **`CtaBanner`**
+(`src/components/shared/CtaBanner.tsx`), o mesmo da home. Padronizado em
+18/08/2026: a `/como-funciona` fechava com um card navy de dois botões e a
+`/sobre` com um card `mp-pale` centralizado, dizendo praticamente a mesma coisa
+em três desenhos diferentes.
+
+Ele não aceita variação de copy, de cor nem de botão. A única prop é a largura,
+porque ela é função da página e não do banner:
+
+| Página | Prop |
+|---|---|
+| home, `/search`, `/destinos` (container app) | `<CtaBanner />` |
+| páginas de conteúdo (container 1080) | `<CtaBanner largura="conteudo" />` |
+
+A calha acompanha: `px-6` na home, `px-4` no conteúdo, `desktop:px-8` nas duas.
+
+Precisa de um segundo destino (era o "Falar com o suporte" da `/como-funciona`)?
+Ele não entra aqui: o banner tem um CTA só, e o rodapé já leva pra central de
+perguntas. Um caminho secundário mora no corpo da página, não no fechamento.
+
 ## Container e espaçamento
 
 Três larguras, por função. Nada além delas.
@@ -313,6 +335,9 @@ declarado do produto: um polegar, 4G, luz de sol.
 
 O de `sobre.tsx` saiu no redesign de 20/07/2026 e o de `como-funciona.tsx` no de
 17/08/2026 (os dois agora são `<Button asChild>`). **Faltam 4.**
+
+O `CtaBanner` usa `<Button asChild>` desde então, e desde 18/08/2026 ele é o
+fechamento das três páginas (ver a seção de fechamento acima).
 
 ## Procedimento
 

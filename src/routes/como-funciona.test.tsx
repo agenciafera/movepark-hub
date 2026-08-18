@@ -71,16 +71,17 @@ describe("ComoFuncionaPage — contrato de hero de marca", () => {
     }
   });
 
-  it("os dois CTAs de busca são <Button> de 48px apontando para a home", () => {
+  it("os dois CTAs de busca são <Button> de 48px", () => {
     renderPage();
-    const ctas = [
-      screen.getByRole("link", { name: /Buscar vaga no meu aeroporto/i }),
-      screen.getByRole("link", { name: /^Buscar vaga$/i }),
-    ];
-    for (const cta of ctas) {
-      expect(cta).toHaveAttribute("href", "/");
-      expect(cta.className).toContain("h-12");
-    }
+    // O do hero manda para a home, onde fica a busca por aeroporto.
+    const hero = screen.getByRole("link", { name: /Buscar vaga no meu aeroporto/i });
+    expect(hero).toHaveAttribute("href", "/");
+    expect(hero.className).toContain("h-12");
+
+    // O fechamento é o `CtaBanner`, o mesmo banner da home desde 18/08/2026.
+    const banner = screen.getByRole("link", { name: /^Buscar estacionamento$/i });
+    expect(banner).toHaveAttribute("href", "/search");
+    expect(banner.className).toContain("h-12");
   });
 
   /**

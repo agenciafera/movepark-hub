@@ -2,6 +2,7 @@ import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { ArrowRight, ArrowUpRight, MapPin, ShieldCheck, Star, Users } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
+import { CtaBanner } from "@/components/shared/CtaBanner";
 import { PartnerLogos } from "@/features/partners/PartnerLogos";
 import { HOW_IT_WORKS } from "@/features/how-it-works/copy";
 import { useGsapReveal } from "@/hooks/useGsapReveal";
@@ -322,28 +323,7 @@ export default function SobrePage() {
         </div>
       </section>
 
-      {/* CTA final. Já testamos o mesh (paleta aurora) aqui: o card tem só 335px de
-          altura, então as manchas ficam enormes pra caixa e a violeta cai bem no miolo,
-          onde mora o texto centralizado. Dava 1,99:1 no lead, e só passava com um véu
-          branco que apagava quase todo o efeito. Fundo chapado resolve melhor. */}
-      <section className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-24">
-        <div className="rounded-2xl bg-mp-pale px-6 py-12 text-center desktop:px-16">
-          <h2 className="mx-auto max-w-xl text-balance text-display-2xl text-ink">
-            Sua próxima viagem começa com a vaga resolvida.
-          </h2>
-          <p className="mx-auto mt-4 max-w-md text-body-md text-body">
-            Busque pelo aeroporto ou destino e reserve em poucos minutos.
-          </p>
-          <div className="mt-8 flex justify-center">
-            <Button asChild>
-              <Link to="/search">
-                Buscar estacionamento
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
+      <CtaBanner largura="conteudo" />
     </>
   );
 }

@@ -22,6 +22,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { CtaBanner } from "@/components/shared/CtaBanner";
 import { faqSchema } from "@/lib/jsonld";
 import { useGsapReveal } from "@/hooks/useGsapReveal";
 import { cn } from "@/lib/utils";
@@ -516,37 +517,7 @@ export default function ComoFuncionaPage() {
         </div>
       </section>
 
-      {/* Fechamento em navy, e não no gradiente do desenho. Logo abaixo dele vem a
-          chamada violeta do `ConsumerFooter`, e dois blocos violeta colados leem
-          como uma faixa só: é a mesma razão que tirou o violeta do `PageHero`. Em
-          navy o gradiente fica sendo o momento de marca exclusivo do hero. */}
-      <section className="mx-auto max-w-[1080px] px-4 pb-16 desktop:px-8 desktop:pb-24">
-        <div className="flex flex-col items-start gap-4 rounded-lg bg-mp-navy p-8 text-left desktop:items-center desktop:p-14 desktop:text-center">
-          <h2 className="max-w-2xl text-balance text-display-2xl text-white">
-            Encontre sua vaga para a próxima viagem
-          </h2>
-          <p className="max-w-[56ch] text-pretty text-body-md text-white">
-            Reserva em dois minutos, cancelamento grátis conforme a Tarifa e o preço que você vê é o
-            que você paga.
-          </p>
-          <div className="mt-2 flex flex-wrap gap-3">
-            <Button
-              asChild
-              variant="secondary"
-              className="bg-white text-mp-indigo no-underline hover:bg-mp-pale hover:brightness-100"
-            >
-              <Link to="/">Buscar vaga</Link>
-            </Button>
-            <Button
-              asChild
-              variant="secondary"
-              className="border border-white/40 bg-transparent text-white no-underline hover:bg-white/10 hover:brightness-100"
-            >
-              <Link to="/contato">Falar com o suporte</Link>
-            </Button>
-          </div>
-        </div>
-      </section>
+      <CtaBanner largura="conteudo" />
     </>
   );
 }

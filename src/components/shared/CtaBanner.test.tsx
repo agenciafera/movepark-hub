@@ -3,7 +3,7 @@ import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/utils";
 import { CtaBanner } from "./CtaBanner";
 
-describe("CtaBanner (home) — contrato de botão e eyebrow", () => {
+describe("CtaBanner — contrato de botão, eyebrow e largura", () => {
   it("o CTA é um <Button> de 48px (h-12) apontando para /search", () => {
     renderWithProviders(<CtaBanner />);
     const cta = screen.getByRole("link", { name: /Buscar estacionamento/i });
@@ -17,5 +17,13 @@ describe("CtaBanner (home) — contrato de botão e eyebrow", () => {
     const eyebrow = container.querySelector("p.uppercase");
     expect(eyebrow).not.toBeNull();
     expect(eyebrow?.className).not.toMatch(/text-mp-primary|text-mp-violet/);
+  });
+
+  it("a largura acompanha a página: 1280 na home, 1080 nas de conteúdo", () => {
+    const app = renderWithProviders(<CtaBanner />);
+    expect(app.container.querySelector(".max-w-\\[1280px\\]")).not.toBeNull();
+
+    const conteudo = renderWithProviders(<CtaBanner largura="conteudo" />);
+    expect(conteudo.container.querySelector(".max-w-\\[1080px\\]")).not.toBeNull();
   });
 });

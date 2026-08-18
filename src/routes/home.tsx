@@ -5,7 +5,7 @@ import { DestinationsGallery } from "@/features/home/DestinationsGallery";
 import { PopularParkingLots } from "@/features/home/PopularParkingLots";
 import { HowItWorks } from "@/features/home/HowItWorks";
 import { TrustBand } from "@/features/home/TrustBand";
-import { CtaBanner } from "@/features/home/CtaBanner";
+import { CtaBanner } from "@/components/shared/CtaBanner";
 import { SITE_URL } from "@/lib/site";
 
 export default function HomePage() {
