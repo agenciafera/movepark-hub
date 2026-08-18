@@ -6,7 +6,7 @@ function offer(
   id: string,
   companyId: string,
   rank: number,
-  opts: { locationId?: string; typeCode?: string } = {},
+  opts: { locationId?: string; typeCode?: string; destinationId?: string } = {},
 ): PopularOffer {
   const locationId = opts.locationId ?? `L-${id}`;
   return {
@@ -21,7 +21,15 @@ function offer(
       rank,
       cover_image: null,
       company: { id: companyId, name: `Co ${companyId}`, slug: companyId },
-      destination: null,
+      destination: opts.destinationId
+        ? {
+            id: opts.destinationId,
+            code: opts.destinationId,
+            name: opts.destinationId,
+            short_name: null,
+            slug: opts.destinationId,
+          }
+        : null,
       amenities: [],
       go2park: false,
     },
@@ -74,6 +82,38 @@ describe("dedupePopularOffers", () => {
 
   it("sem ofertas → vazio", () => {
     expect(dedupePopularOffers([], 6)).toEqual([]);
+  });
+
+  it("teto de 1 por DESTINO — Garageinn e Virapark não aparecem juntos (86ak28jm1)", () => {
+    // Duas empresas diferentes, mesmo destino (Viracopos): só a de melhor rank fica.
+    const out = dedupePopularOffers(
+      [
+        offer("virapark", "virapark-co", 2, { destinationId: "viracopos" }),
+        offer("garageinn", "garageinn-co", 0, { destinationId: "viracopos" }),
+        offer("aerovalet", "aerovalet-co", 1, { destinationId: "congonhas" }),
+      ],
+      6,
+    );
+    expect(out.map((o) => o.id)).toEqual(["garageinn", "aerovalet"]);
+  });
+
+  it("destino ausente não agrupa com outro destino ausente", () => {
+    const out = dedupePopularOffers([offer("a", "A", 0), offer("b", "B", 1)], 6);
+    expect(out).toHaveLength(2);
+  });
+
+  it("os dois tetos juntos: empresa primeiro, depois destino", () => {
+    const out = dedupePopularOffers(
+      [
+        // Aerovalet tem 2 unidades no mesmo destino: o teto de empresa já resolve, mas o
+        // resultado final também respeita o teto de destino.
+        offer("a1", "aerovalet", 3, { locationId: "a1", destinationId: "guarulhos" }),
+        offer("a2", "aerovalet", 0, { locationId: "a2", destinationId: "guarulhos" }),
+        offer("outra", "outra-co", 1, { destinationId: "guarulhos" }),
+      ],
+      6,
+    );
+    expect(out.map((o) => o.id)).toEqual(["a2"]);
   });
 });
 

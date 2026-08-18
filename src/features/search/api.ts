@@ -201,10 +201,14 @@ export type PopularOffer = {
 };
 
 /**
- * Teto de 1 card por EMPRESA, guardando o tipo de vaga MAIS VENDIDO daquela empresa (o de menor
- * `rank`, que vem da RPC popular_parking_types já ordenada por venda). Ordena pelo rank e corta em
- * `max`. Mais restritivo que a busca de propósito: a home é vitrine curta de destaques, não lista
- * exaustiva, então uma empresa não pode ocupar vários slots (86ajnfwgx). Pura → testável sem rede.
+ * Teto de 1 card por EMPRESA e de 1 por DESTINO, guardando sempre o tipo de vaga MAIS VENDIDO
+ * (menor `rank`, que vem da RPC popular_parking_types já ordenada por venda). Mais restritivo
+ * que a busca de propósito: a home é vitrine curta de destaques, não lista exaustiva, então nem
+ * uma empresa (86ajnfwgx) nem um destino (86ak28jm1) podem ocupar vários slots — sem o segundo
+ * teto, Garageinn e Virapark apareciam juntos, os dois em Viracopos, porque são empresas
+ * diferentes e só o primeiro teto rodava. Os dois tetos correm em sequência (empresa primeiro,
+ * porque é o corte mais fino) e SEMPRE na ordem de rank, então o card que sobrevive em cada grupo
+ * é o de melhor venda. Pura → testável sem rede.
  */
 export function dedupePopularOffers(offers: PopularOffer[], max: number): PopularOffer[] {
   const byCompany = new Map<string, PopularOffer>();
@@ -218,9 +222,20 @@ export function dedupePopularOffers(offers: PopularOffer[], max: number): Popula
       byCompany.set(o.location.company.id, o);
     }
   }
-  return [...byCompany.values()]
-    .sort((a, b) => a.location.rank - b.location.rank)
-    .slice(0, max);
+  const porEmpresa = [...byCompany.values()].sort((a, b) => a.location.rank - b.location.rank);
+
+  // Destino ausente (raro, geo incompleta) não agrupa: deixa passar, porque não há com o que
+  // colidir.
+  const destinosVistos = new Set<string>();
+  const porDestino = porEmpresa.filter((o) => {
+    const destId = o.location.destination?.id;
+    if (!destId) return true;
+    if (destinosVistos.has(destId)) return false;
+    destinosVistos.add(destId);
+    return true;
+  });
+
+  return porDestino.slice(0, max);
 }
 
 export function usePopularOffers(maxLocations = 6) {
@@ -249,13 +264,15 @@ export function usePopularOffers(maxLocations = 6) {
       // Query separada para evitar nesting profundo que impede pricing_tier de retornar
       const { data: locDetails, error: locErr } = await supabase
         .from("location")
-        .select(`
+        .select(
+          `
           id, name, slug, review_avg, review_count,
           company:company_id (id, name, slug),
           destination:destination_id (id, code, name, short_name, slug),
           amenities:location_amenity (amenity_code),
           photos, go2park_enabled
-        `)
+        `,
+        )
         .in("id", locationIds);
       if (locErr) throw locErr;
 
@@ -266,7 +283,8 @@ export function usePopularOffers(maxLocations = 6) {
       // (location_parking_type_id e surcharge_source_id), causando ambiguidade sem o hint.
       const { data: lptRaw, error: lptErr } = await supabase
         .from("location_parking_type")
-        .select(`
+        .select(
+          `
           id,
           location_id,
           company_parking_type:company_parking_type_id (
@@ -279,7 +297,8 @@ export function usePopularOffers(maxLocations = 6) {
             hourly_daily_rate,
             pricing_tier (from_day, to_day, total_price, unit_price, is_old_price)
           )
-        `)
+        `,
+        )
         .in("location_id", locationIds)
         .eq("is_active", true);
       if (lptErr) throw lptErr;
