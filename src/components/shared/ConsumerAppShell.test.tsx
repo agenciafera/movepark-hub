@@ -6,8 +6,8 @@ import { server } from "@/test/msw/server";
 import { ConsumerAppShell } from "./ConsumerAppShell";
 
 describe("ConsumerAppShell", () => {
-  // Topbar/ChatWidget disparam fetches (destinos, config do chat); resolve com []
-  // pra não deixar requisição pendente até o teardown.
+  // A Topbar dispara fetch de destinos; resolve com [] pra não deixar
+  // requisição pendente até o teardown.
   beforeEach(() => {
     server.use(
       http.get("*/rest/v1/destination", () => HttpResponse.json([])),
@@ -30,6 +30,19 @@ describe("ConsumerAppShell", () => {
 
     expect(document.querySelector("nav.grid-cols-4")).toBeNull();
     expect(document.querySelector("main")?.className).not.toContain("--bottom-nav-space");
+  });
+
+  /**
+   * O canto inferior direito comporta uma bolinha só. O assistente do site está
+   * desligado por build (`assistenteDoSiteLigado`) enquanto quem responde é a
+   * equipe no WhatsApp, então o que sobe ali é a bolinha de WhatsApp. Se as duas
+   * aparecerem juntas, uma cobre a outra.
+   */
+  it("mostra a bolinha de WhatsApp e não a do assistente", () => {
+    renderWithProviders(<ConsumerAppShell />, { route: "/", auth: mockAuth() });
+
+    expect(screen.getByRole("link", { name: /WhatsApp/i })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Abrir assistente")).toBeNull();
   });
 
   /** A navegação do mobile passou a ser só a aba lateral, logado ou não. */

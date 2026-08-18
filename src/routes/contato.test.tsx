@@ -47,14 +47,15 @@ describe("ContatoPage — canais diretos", () => {
   });
 
   /**
-   * A home promete atendimento a qualquer hora pelo assistente, e a equipe
-   * atende em dia útil. Sem dizer de quem é cada janela, uma das duas parece
-   * mentira.
+   * A página já prometeu que "o assistente do site responde" fora do horário da
+   * equipe. O assistente saiu do ar (`assistenteDoSiteLigado`), e a promessa
+   * tinha que sair junto: o que sobra é a janela da equipe, a mesma que o card
+   * de ajuda da home mostra.
    */
-  it("separa o horário da equipe do assistente que cobre o resto", () => {
-    render();
+  it("mostra a janela da equipe e não promete assistente fora dela", () => {
+    const { container } = render();
     expect(screen.getByText(/Segunda a sexta, das 9h às 18h/)).toBeInTheDocument();
-    expect(screen.getByText(/assistente do site responde/)).toBeInTheDocument();
+    expect(container.textContent ?? "").not.toMatch(/assistente/i);
   });
 
   /**

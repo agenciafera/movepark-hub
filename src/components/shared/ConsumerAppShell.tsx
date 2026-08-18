@@ -2,6 +2,8 @@ import { Outlet } from "react-router-dom";
 import { ConsumerTopbar } from "./ConsumerTopbar";
 import { ConsumerFooter } from "./ConsumerFooter";
 import { ChatWidget } from "@/features/assistant/ChatWidget";
+import { WhatsappBubble } from "@/features/support/WhatsappBubble";
+import { assistenteDoSiteLigado } from "@/lib/features";
 import { OgImage } from "@/lib/ogImage";
 
 /**
@@ -24,7 +26,9 @@ export function ConsumerAppShell() {
         <Outlet />
       </main>
       <ConsumerFooter />
-      <ChatWidget />
+      {/* Uma bolinha só nesse canto: as duas se sobreporiam. Hoje o canto é do
+          WhatsApp, e o assistente volta com `VITE_WEB_ASSISTANT=on`. */}
+      {assistenteDoSiteLigado() ? <ChatWidget /> : <WhatsappBubble />}
     </div>
   );
 }

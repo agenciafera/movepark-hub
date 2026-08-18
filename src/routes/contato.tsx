@@ -4,6 +4,7 @@ import { PageHero } from "@/components/shared/PageHero";
 import { MARCA_DA_REDE } from "@/components/shared/SocialMarks";
 import { REDES } from "@/lib/redes";
 import { EMAIL_SUPORTE, WHATSAPP_SUPORTE } from "@/lib/suporte";
+import { siteUrl } from "@/lib/site";
 
 /**
  * Página de canais, sem formulário.
@@ -35,12 +36,12 @@ const CANAIS = [
   },
   {
     icon: Clock,
-    /* Dois atendimentos convivem aqui: o assistente do site responde sobre
-       reserva a qualquer hora, a equipe atende em dia útil. Sem dizer de quem é
-       cada janela, a home prometia 24h e esta página prometia horário
-       comercial, e uma das duas parecia mentira. */
+    /* Aqui conviviam dois atendimentos, o assistente do site a qualquer hora e
+       a equipe em dia útil. O assistente saiu do ar
+       (`assistenteDoSiteLigado`), então sobrou uma janela só, e ela é a mesma
+       que o card de ajuda da home mostra. */
     title: "Atendimento com a equipe",
-    desc: "Segunda a sexta, das 9h às 18h. Fora disso, o assistente do site responde.",
+    desc: "Segunda a sexta, das 9h às 18h. Fora desse horário, deixe a mensagem no WhatsApp que a gente responde no próximo dia útil.",
     action: null,
     href: null,
   },
@@ -92,8 +93,8 @@ export default function ContatoPage() {
           content="Fale com a equipe Movepark pelo WhatsApp, e-mail ou redes sociais. Atendimento de segunda a sexta, das 9h às 18h."
         />
         <meta property="og:title" content="Fale Conosco | Movepark" />
-        <meta property="og:url" content="https://hub.movepark.co/contato" />
-        <link rel="canonical" href="https://hub.movepark.co/contato" />
+        <meta property="og:url" content={siteUrl("/contato")} />
+        <link rel="canonical" href={siteUrl("/contato")} />
       </Helmet>
 
       <PageHero

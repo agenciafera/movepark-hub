@@ -129,11 +129,12 @@ const items: Item[] = [
   {
     icon: Headphones,
     /* Dizia "Atendimento 24h" com "suporte por e-mail e telefone", o que
-       prometia gente ao telefone de madrugada. Quem responde a qualquer hora é
-       o assistente do site; a equipe atende em dia útil, e a página de contato
-       mostra a janela dela. */
-    title: "Ajuda a qualquer hora",
-    text: "O assistente responde sobre sua reserva 24h. A equipe atende nos dias úteis.",
+       prometia gente ao telefone de madrugada. Passou a prometer assistente do
+       site 24h, e o assistente saiu do ar (`assistenteDoSiteLigado`), então a
+       promessa caiu junto: hoje quem responde é a equipe, no WhatsApp, na mesma
+       janela que a página de contato mostra. */
+    title: "Ajuda no WhatsApp",
+    text: "Fale com a equipe no WhatsApp, de segunda a sexta, das 9h às 18h.",
     Illustration: SupportIllustration,
   },
 ];

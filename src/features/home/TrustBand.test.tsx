@@ -41,7 +41,7 @@ describe("TrustBand (home): ADR-009", () => {
     const { container } = renderWithProviders(<TrustBand />);
     const texto = container.textContent ?? "";
 
-    expect(texto).toContain("Ajuda a qualquer hora");
+    expect(texto).toContain("Ajuda no WhatsApp");
     expect(texto).toMatch(/Meu voo atrasou/i);
     expect(texto).toMatch(/Te explico agora as condi[çc][õo]es da sua reserva/i);
   });

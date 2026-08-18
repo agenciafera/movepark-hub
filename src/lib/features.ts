@@ -1,7 +1,7 @@
 /**
  * Chaves de funcionalidade do front, lidas no build.
  *
- * Existe uma só por enquanto, e ela nasceu do lançamento de 20/08/2026.
+ * A primeira nasceu do lançamento de 20/08/2026.
  */
 
 /**
@@ -31,4 +31,29 @@
  */
 export function contasDoConsumidorLigadas(): boolean {
   return import.meta.env.VITE_CONSUMER_ACCOUNTS === "on";
+}
+
+/**
+ * Assistente do site: a bolinha de chat do canto inferior direito
+ * (`ChatWidget`, E3.3), que fala com a Edge `chat`.
+ *
+ * **Desligado por padrão.** No lugar dele o canto recebe a bolinha de WhatsApp,
+ * que cai no atendimento da equipe. Enquanto o assistente estiver desligado, a
+ * home e a página de contato não podem prometer resposta a qualquer hora: quem
+ * responde é gente, em dia útil.
+ *
+ * **Por que é chave de build e não a config de banco.** O banco já tem
+ * `chatbot_enabled`, e ela continua valendo do lado da Edge. O que ela não
+ * resolve é a tela: a config chega depois da hidratação, então a bolinha
+ * piscaria no canto antes de sumir, e as duas bolinhas dividiriam o mesmo canto
+ * durante esse tempo. Cravada no build, o bundle nem carrega o caminho
+ * desligado.
+ *
+ * **Para ligar:** `VITE_WEB_ASSISTANT=on` no ambiente de build (no Cloudflare,
+ * em Settings › Build › Variables and Secrets, escopos Production e Preview) e
+ * publique. O `chatbot_enabled` do banco precisa estar ligado também, senão a
+ * bolinha sobe e some sozinha.
+ */
+export function assistenteDoSiteLigado(): boolean {
+  return import.meta.env.VITE_WEB_ASSISTANT === "on";
 }
