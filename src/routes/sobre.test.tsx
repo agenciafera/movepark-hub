@@ -41,7 +41,20 @@ describe("SobrePage — /sobre", () => {
     // esquerda; e a foto do passo a passo segue presente. As fotos dos destinos são
     // decorativas, porque o nome já vem no texto do link ao lado.
     expect(screen.getByAltText(/caminhando até o carro/i)).toBeInTheDocument();
-    expect(screen.getByAltText(/reservando a vaga pelo celular/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/conferindo a reserva no celular/i)).toBeInTheDocument();
+  });
+
+  /**
+   * A foto do passo a passo era a mesma `como-reservar.webp` que o CtaBanner usa
+   * de fundo, e o banner fecha esta página: a mesma mulher aparecia duas vezes na
+   * mesma rolagem, o que lê como erro de montagem e não como repetição de marca.
+   */
+  it("o passo a passo não repete a foto que o banner de fechamento usa", () => {
+    const { container } = renderPage();
+
+    const fontes = [...container.querySelectorAll("img")].map((i) => i.getAttribute("src"));
+    const daFaixa = fontes.filter((src) => src?.includes("como-reservar"));
+    expect(daFaixa).toHaveLength(1);
   });
 
   it("os cards de destino apontam pros slugs reais de /destinos", () => {

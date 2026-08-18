@@ -279,9 +279,12 @@ export default function SobrePage() {
           </div>
 
           <div className="order-1 overflow-hidden rounded-2xl tablet:order-2">
+            {/* Foto própria, e não a `como-reservar.webp`: aquela é o fundo do
+                CtaBanner, que fecha esta mesma página. A mesma imagem duas vezes
+                na rolagem lia como erro de montagem. */}
             <img
-              src="/images/como-reservar.webp"
-              alt="Viajante reservando a vaga pelo celular na área de embarque do aeroporto"
+              src="/images/sobre-como-funciona.webp"
+              alt="Viajante conferindo a reserva no celular ao lado do carro, no estacionamento do aeroporto"
               loading="lazy"
               decoding="async"
               className="aspect-[4/3] h-full w-full object-cover"
