@@ -30,6 +30,20 @@ describe("WhatsappBubble", () => {
     expect(link.getAttribute("rel")).toContain("noreferrer");
   });
 
+  /**
+   * O glifo é a marca do WhatsApp, não o `WhatsappLogo` do Phosphor: no canto da
+   * tela o desenho precisa ser reconhecido como o app antes de qualquer leitura
+   * de rótulo. A asserção olha o path porque é o que muda se alguém trocar de
+   * volta pelo ícone do icon set.
+   */
+  it("desenha a marca do WhatsApp", () => {
+    renderWithProviders(<WhatsappBubble />);
+    const svg = screen.getByRole("link", { name: /WhatsApp/i }).querySelector("svg");
+
+    expect(svg?.getAttribute("viewBox")).toBe("0 0 24 24");
+    expect(svg?.querySelector("path")?.getAttribute("d")).toContain("M17.472 14.382");
+  });
+
   /* A bolinha divide o canto inferior direito com a `ListingStickyBar` no
      mobile. Sem o desvio de 5rem ela cobre o botão de reservar da unidade. */
   it("no mobile fica acima da barra fixa de preço", () => {

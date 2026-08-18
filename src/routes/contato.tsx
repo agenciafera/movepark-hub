@@ -1,7 +1,7 @@
 import { Helmet } from "react-helmet-async";
-import { Clock, Envelope, WhatsappLogo } from "@phosphor-icons/react";
+import { Clock, Envelope } from "@phosphor-icons/react";
 import { PageHero } from "@/components/shared/PageHero";
-import { MARCA_DA_REDE } from "@/components/shared/SocialMarks";
+import { MARCA_DA_REDE, WhatsappMark } from "@/components/shared/SocialMarks";
 import { REDES } from "@/lib/redes";
 import { EMAIL_SUPORTE, WHATSAPP_SUPORTE } from "@/lib/suporte";
 import { siteUrl } from "@/lib/site";
@@ -21,7 +21,10 @@ import { siteUrl } from "@/lib/site";
 
 const CANAIS = [
   {
-    icon: WhatsappLogo,
+    /* A marca, e não o `WhatsappLogo` do Phosphor: as redes logo abaixo já usam
+       a marca de cada plataforma, e o canal principal da página não podia ser o
+       único desenhado pelo icon set. */
+    icon: WhatsappMark,
     title: "WhatsApp",
     desc: "O jeito mais rápido de falar com a equipe.",
     action: "Abrir conversa",

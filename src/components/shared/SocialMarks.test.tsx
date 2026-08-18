@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { REDES } from "@/lib/redes";
-import { FacebookMark, MARCA_DA_REDE } from "./SocialMarks";
+import { FacebookMark, MARCA_DA_REDE, WhatsappMark } from "./SocialMarks";
 
 describe("SocialMarks", () => {
   it("cobre todas as redes de `REDES`", () => {
@@ -57,5 +57,30 @@ describe("SocialMarks", () => {
 
     expect(paths).toHaveLength(1);
     expect(paths[0].getAttribute("fill-rule")).toBe("evenodd");
+  });
+});
+
+/**
+ * O WhatsApp fica de fora do `MARCA_DA_REDE` porque não é perfil de rede
+ * social: é o canal de atendimento. O que ele não pode perder é o resto do
+ * contrato das marcas, que é herdar a cor e ser decorativo por padrão.
+ */
+describe("WhatsappMark", () => {
+  it("herda a cor do texto e é decorativa por padrão", () => {
+    const { container } = render(<WhatsappMark />);
+    const svg = container.querySelector("svg");
+
+    expect(svg?.getAttribute("fill")).toBe("currentColor");
+    expect(svg?.getAttribute("aria-hidden")).toBe("true");
+  });
+
+  it("ganha nome acessível quando aparece sozinha", () => {
+    const { container } = render(<WhatsappMark label="WhatsApp" />);
+
+    expect(container.querySelector("svg")?.getAttribute("aria-label")).toBe("WhatsApp");
+  });
+
+  it("não fica fora do `MARCA_DA_REDE` por engano: ele só tem as redes de `REDES`", () => {
+    expect(Object.keys(MARCA_DA_REDE)).not.toContain("WhatsApp");
   });
 });
