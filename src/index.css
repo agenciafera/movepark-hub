@@ -18,6 +18,13 @@
        um `pb-16` cravado, senão a conta desencontra quando a barra muda de altura. */
     --bottom-nav-space: calc(4rem + var(--safe-bottom));
 
+    /* Altura publicada em runtime por quem tem uma barra fixa própria no rodapé
+       (hoje só a `ListingStickyBar`, que mede a si mesma com ResizeObserver).
+       Fica em 0px quando nenhuma está montada, e quem precisa desviar dela (a
+       `WhatsappBubble`) soma esta variável ao seu próprio offset, então ela sobe
+       só quando a barra realmente existe na tela e desce quando ela some. */
+    --sticky-bar-space: 0px;
+
     /* ============================================================
        Movepark palette
        ============================================================ */

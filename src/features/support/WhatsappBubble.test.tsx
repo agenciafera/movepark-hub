@@ -44,13 +44,15 @@ describe("WhatsappBubble", () => {
     expect(svg?.querySelector("path")?.getAttribute("d")).toContain("M17.472 14.382");
   });
 
-  /* A bolinha divide o canto inferior direito com a `ListingStickyBar` no
-     mobile. Sem o desvio de 5rem ela cobre o botão de reservar da unidade. */
-  it("no mobile fica acima da barra fixa de preço", () => {
+  /* A bolinha divide o canto inferior direito com a `ListingStickyBar`, que só
+     existe na página da unidade e publica a própria altura em runtime. Por
+     padrão (sem barra montada) a variável fica em 0px e a bolinha fica embaixo
+     mesmo; o desvio soma por cima, e não troca de página em página. */
+  it("soma o espaço da barra fixa de preço ao offset do rodapé", () => {
     renderWithProviders(<WhatsappBubble />);
     const classes = screen.getByRole("link", { name: /WhatsApp/i }).className;
 
-    expect(classes).toContain("bottom-[calc(5rem+var(--safe-bottom))]");
-    expect(classes).toContain("tablet:bottom-6");
+    expect(classes).toContain("bottom-[calc(1rem+var(--sticky-bar-space)+var(--safe-bottom))]");
+    expect(classes).toContain("tablet:bottom-[calc(1.5rem+var(--sticky-bar-space)+var(--safe-bottom))]");
   });
 });

@@ -72,4 +72,20 @@ describe("ListingStickyBar", () => {
     await user.click(screen.getByRole("button", { name: "Reservar" }));
     expect(onReserve).toHaveBeenCalledOnce();
   });
+
+  /* A WhatsappBubble lê `--sticky-bar-space` pra saber se precisa subir. Publicar
+     a altura é o que faz ela detectar a barra; zerar no unmount é o que faz a
+     bolinha descer de novo ao sair da página da unidade (regressão: sem o zero
+     no cleanup, a bolinha ficava presa lá em cima em toda página seguinte). */
+  it("publica a própria altura em --sticky-bar-space e zera ao desmontar", () => {
+    const { unmount } = render(
+      <ListingStickyBar summary={summary()} basePrice={30} onReserve={() => {}} />,
+    );
+
+    const altura = document.documentElement.style.getPropertyValue("--sticky-bar-space");
+    expect(altura).toMatch(/^\d+px$/);
+
+    unmount();
+    expect(document.documentElement.style.getPropertyValue("--sticky-bar-space")).toBe("0px");
+  });
 });
