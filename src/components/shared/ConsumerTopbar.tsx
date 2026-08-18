@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils";
 import { userInitials } from "@/lib/initials";
 import { postLogoutPath } from "@/auth/postLoginRedirect";
 import { useDestinations } from "@/features/search/api";
-import { Monogram, Wordmark } from "./Brand";
+import { Wordmark } from "./Brand";
 import { ConsumerMobileMenu } from "./ConsumerMobileMenu";
 import { useHeaderOculto } from "./useHeaderOculto";
 import { contasDoConsumidorLigadas } from "@/lib/features";
@@ -113,13 +113,19 @@ export function ConsumerTopbar() {
   // dono de estacionamento, não com um viajante, e o widget de busca só divide o foco.
   const hideSearch = location.pathname === "/seja-parceiro";
   /*
-    Na home a busca do header entra só depois que a barra do hero sobe. Duas
-    barras na mesma tela competem pelo mesmo clique; passada a primeira, o header
-    assume e a busca volta a estar a um toque, como nas outras páginas.
+    Duas leituras diferentes, porque abaixo do desktop o hero não tem mais busca.
+
+    No celular a barra grande virava um cartão de quatro linhas em cima do vídeo
+    e comia o banner inteiro. Ela saiu de lá, então o atalho do header vale desde
+    o primeiro quadro: é a única busca da tela e precisa estar sempre a um toque.
+
+    No desktop a barra do hero continua, e ali as duas competiriam pelo mesmo
+    clique: o header só assume depois que a do hero sobe.
   */
   const heroPassou = useHeroSearchPassed(isHome);
   const oculto = useHeaderOculto();
-  const mostrarBusca = (!isHome || heroPassou) && !hideSearch;
+  const mostrarBusca = !hideSearch;
+  const mostrarBarraDesktop = (!isHome || heroPassou) && !hideSearch;
 
   async function handleSignOut() {
     // Consumidor volta pra home; captura o papel antes de limpar a sessão.
@@ -148,106 +154,99 @@ export function ConsumerTopbar() {
         oculto && "-translate-y-full",
       )}
     >
-      <div className="mx-auto flex h-20 w-full max-w-[1280px] items-center gap-4 px-4 desktop:px-8">
-        {/*
-          A marca inteira também no celular. O monograma sozinho economizava
-          largura numa época em que o header carregava mais botão; com o menu
-          unificado sobrou espaço, e um símbolo isolado não diz o nome de quem
-          ainda não conhece a marca. Vai menor no mobile (18px contra 22) para o
-          nome caber sem espremer a busca do meio.
-        */}
-        {/*
-          Monograma no celular, marca inteira do tablet para cima.
+      {/*
+        Duas linhas no celular, uma no desktop.
 
-          A marca inteira já esteve aqui e voltou atrás: os 121px dela contra os
-          28 do símbolo espremiam a busca do meio numa tela de 375. O símbolo
-          sozinho não diz o nome para quem não conhece a marca, e esse é o custo
-          aceito em troca do espaço.
-        */}
-        <Link to="/" className="hidden shrink-0 tablet:block" aria-label="Ir para a home">
+        Enfileirar marca, busca e menu numa linha só deixava 243px para a busca
+        numa tela de 375, e o nome da marca não cabia junto: era o monograma
+        sozinho, que não diz o nome de quem ainda não conhece a Movepark. Em duas
+        linhas a marca volta inteira e a busca ocupa a largura do dedo.
+
+        A linha que a busca custa é devolvida com juros pelo banner: a barra
+        grande que morava lá empilhava quatro campos por cima do vídeo.
+      */}
+      <div className="mx-auto w-full max-w-[1280px] px-4 desktop:hidden">
+        <div className="relative flex h-16 items-center justify-end">
+          {/* Centrada de verdade: em `justify-between` com o menu de um lado só,
+              a marca ficava deslocada pela largura do botão. */}
+          <Link to="/" className="absolute left-1/2 -translate-x-1/2" aria-label="Ir para a home">
+            <Wordmark height={22} />
+          </Link>
+          <ConsumerMobileMenu />
+        </div>
+
+        {mostrarBusca && (
+          <div
+            /* `max-w-2xl` porque no tablet a pílula chegava a 736px de largura
+               para carregar duas palavras, e o alvo do dedo não melhora depois
+               de um ponto. */
+            className="mx-auto max-w-2xl pb-3"
+          >
+            {/*
+              O atalho que abre a busca por cima da página, no lugar da barra
+              inteira: entre 744 e 1128 os campos dela se sobrepunham, e "Onde",
+              "Check-in", "Check-out" e "Veículo" saíam empilhados um sobre o
+              outro.
+
+              Violeta só na lupa. O botão é a ação da linha, e o fundo cinza da
+              pílula é o que separa campo de página sem gritar.
+            */}
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              aria-label="Buscar vaga"
+              className="flex h-14 w-full items-center justify-between gap-3 rounded-full border border-hairline bg-surface-soft py-1.5 pl-5 pr-1.5 text-left text-body-md text-muted"
+            >
+              {/* O rótulo curto é o mesmo do título do modal que este botão abre.
+                  "Onde · Quando · Veículo" media 222px e não cabia. */}
+              <span className="truncate">{destParam ? destParam : "Buscar vaga"}</span>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-mp-primary text-white">
+                <MagnifyingGlass className="h-5 w-5" weight="bold" />
+              </span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="mx-auto hidden h-20 w-full max-w-[1280px] items-center gap-4 px-4 desktop:flex desktop:px-8">
+        <Link to="/" className="shrink-0" aria-label="Ir para a home">
           <Wordmark height={22} />
-        </Link>
-        <Link to="/" className="shrink-0 tablet:hidden" aria-label="Movepark">
-          <Monogram size={28} />
         </Link>
 
         <DestinosMenu />
 
         {/* `min-w-0` porque item de flex não encolhe abaixo do conteúdo por
             padrão: sem ele a barra de busca segurava a largura mínima dela e
-            empurrava os botões da direita para fora da tela. A 854px o header
-            passava 63px do viewport e a página ganhava rolagem horizontal. */}
+            empurrava os botões da direita para fora da tela. */}
         <div className="flex min-w-0 flex-1 justify-center">
-          {/* Busca real e persistente no header (sticky). Na home ela entra quando a do hero sobe. */}
-          {mostrarBusca && (
-            <>
-              {/* Desktop: a SearchBarPill funcional, semeada com a busca atual e preservando
-                os filtros já aplicados (estacionamento, comodidades, ordenação…). */}
-              <SearchBarPill
-                variant="compact"
-                className="hidden w-full max-w-3xl desktop:flex"
-                key={`${destParam ?? ""}|${pointParam ?? ""}|${fromParam ?? ""}|${toParam ?? ""}|${vehicleParam}`}
-                initialDest={destParam}
-                initialPoint={pointParam}
-                initialFrom={parseDate(fromParam)}
-                initialTo={parseDate(toParam)}
-                initialVehicle={vehicleParam}
-                preserveParams
-              />
-              {/*
-                Até o desktop, a pill compacta que abre o modal de busca por cima
-                da página (estilo Airbnb), sem voltar pra home. A barra completa
-                só entra em 1128: entre 744 e 1128 os campos dela se sobrepunham,
-                e "Onde", "Check-in", "Check-out" e "Veículo" saíam empilhados um
-                por cima do outro.
-              */}
-              <button
-                type="button"
-                onClick={() => setSearchOpen(true)}
-                className="flex h-12 w-full items-center gap-3 rounded-full border border-hairline bg-canvas px-4 text-body-sm text-muted shadow-tier transition-shadow hover:shadow-tier desktop:hidden"
-              >
-                <MagnifyingGlass className="h-4 w-4 shrink-0" />
-                {/* O rótulo curto é o mesmo do título do modal que este botão abre.
-                  "Onde · Quando · Veículo" media 222px e não sobrava espaço no header. */}
-                <span className="truncate">{destParam ? destParam : "Buscar vaga"}</span>
-              </button>
-              {/* modal={false}: sem o body-lock/focus-trap do Radix Dialog modal, que quebra os
-                Popover/cmdk aninhados (DestinationCombobox, DateRangePicker) portados pra fora do
-                content (tocar num destino ou dia não seleciona). Como modal={false} deixa o fundo
-                clicável, o content é full-screen e opaco: cobre a página toda e não sobra brecha
-                pro clique vazar pro fundo. */}
-              <Dialog open={searchOpen} onOpenChange={setSearchOpen} modal={false}>
-                <DialogContent className="inset-0 left-0 top-0 h-full max-h-none w-full max-w-none translate-x-0 translate-y-0 content-start gap-4 rounded-none border-0 desktop:hidden">
-                  <DialogHeader>
-                    <DialogTitle>Buscar vaga</DialogTitle>
-                  </DialogHeader>
-                  <SearchBarPill
-                    variant="compact"
-                    className="border-0 shadow-none"
-                    initialDest={destParam}
-                    initialPoint={pointParam}
-                    initialFrom={parseDate(fromParam)}
-                    initialTo={parseDate(toParam)}
-                    initialVehicle={vehicleParam}
-                    preserveParams
-                    onSubmit={() => setSearchOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
-            </>
+          {/* A SearchBarPill funcional, semeada com a busca atual e preservando os filtros já
+              aplicados (estacionamento, comodidades, ordenação…). Na home ela entra quando a do
+              hero sobe. */}
+          {mostrarBarraDesktop && (
+            <SearchBarPill
+              variant="compact"
+              className="w-full max-w-3xl"
+              key={`${destParam ?? ""}|${pointParam ?? ""}|${fromParam ?? ""}|${toParam ?? ""}|${vehicleParam}`}
+              initialDest={destParam}
+              initialPoint={pointParam}
+              initialFrom={parseDate(fromParam)}
+              initialTo={parseDate(toParam)}
+              initialVehicle={vehicleParam}
+              preserveParams
+            />
           )}
         </div>
 
         <div className="flex items-center gap-2">
           {!session && (
             <>
-              <Button variant="ghost" size="sm" className="hidden desktop:inline-flex" asChild>
+              <Button variant="ghost" size="sm" asChild>
                 <Link to="/seja-parceiro">Seja parceiro</Link>
               </Button>
-              {/* Até o desktop o "Entrar" mora dentro da aba lateral: o header
-                  não comporta botão e menu sem espremer a busca do meio. */}
+              {/* Até o desktop o "Entrar" mora dentro da aba lateral: a linha de
+                  cima do celular só comporta a marca e o menu. */}
               {contasDoConsumidorLigadas() && (
-                <Button size="sm" variant="primary" className="hidden desktop:inline-flex" asChild>
+                <Button size="sm" variant="primary" asChild>
                   <Link to="/login">Entrar</Link>
                 </Button>
               )}
@@ -258,9 +257,9 @@ export function ConsumerTopbar() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  /* Só no desktop: no mobile o avatar é o gatilho da aba lateral,
+                  /* Só no desktop: no celular o avatar é o gatilho da aba lateral,
                      e o dropdown aqui daria dois menus colados no mesmo canto. */
-                  className="hidden items-center gap-2 rounded-full border border-hairline px-2 py-1 hover:shadow-tier desktop:flex"
+                  className="flex items-center gap-2 rounded-full border border-hairline px-2 py-1 hover:shadow-tier"
                   aria-label="Menu da conta"
                 >
                   <Avatar className="h-7 w-7">
@@ -308,15 +307,32 @@ export function ConsumerTopbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-
-          {/*
-            A aba lateral vale logado e deslogado, e é a navegação de tudo abaixo
-            do desktop desde que a barra de baixo saiu. Fica por último de
-            propósito: é o alvo mais à direita, no canto onde a mão procura menu.
-          */}
-          <ConsumerMobileMenu />
         </div>
       </div>
+
+      {/* modal={false}: sem o body-lock/focus-trap do Radix Dialog modal, que quebra os
+          Popover/cmdk aninhados (DestinationCombobox, DateRangePicker) portados pra fora do
+          content (tocar num destino ou dia não seleciona). Como modal={false} deixa o fundo
+          clicável, o content é full-screen e opaco: cobre a página toda e não sobra brecha
+          pro clique vazar pro fundo. */}
+      <Dialog open={searchOpen} onOpenChange={setSearchOpen} modal={false}>
+        <DialogContent className="inset-0 left-0 top-0 h-full max-h-none w-full max-w-none translate-x-0 translate-y-0 content-start gap-4 rounded-none border-0 desktop:hidden">
+          <DialogHeader>
+            <DialogTitle>Buscar vaga</DialogTitle>
+          </DialogHeader>
+          <SearchBarPill
+            variant="compact"
+            className="border-0 shadow-none"
+            initialDest={destParam}
+            initialPoint={pointParam}
+            initialFrom={parseDate(fromParam)}
+            initialTo={parseDate(toParam)}
+            initialVehicle={vehicleParam}
+            preserveParams
+            onSubmit={() => setSearchOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }

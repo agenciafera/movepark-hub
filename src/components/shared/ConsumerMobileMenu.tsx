@@ -170,10 +170,23 @@ export function ConsumerMobileMenu() {
         <button
           type="button"
           aria-label="Abrir menu"
-          /* Violeta preenchido: é a única porta de navegação do celular, e um
-             botão de contorno cinza no canto some no meio do header branco. O
-             contrato reserva o violeta para elemento acionável, que é o caso. */
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-mp-primary text-white transition-colors hover:bg-mp-primary-active desktop:hidden"
+          /*
+            Traços em tinta, sem o círculo violeta que já esteve aqui.
+
+            O violeta preenchido existia para o botão não sumir num header
+            branco, quando ele era a única cor da linha. Com a busca logo abaixo,
+            a lupa violeta assumiu esse papel, e dois círculos violeta na mesma
+            área disputavam o mesmo toque. Aceso, o menu continua a única porta de
+            navegação, e três traços em tinta cheia não passam despercebidos.
+
+            Logado, o círculo fica: as iniciais precisam de um corpo atrás delas.
+          */
+          className={cn(
+            "flex h-10 w-10 items-center justify-center rounded-full transition-colors desktop:hidden",
+            session
+              ? "bg-mp-primary text-white hover:bg-mp-primary-active"
+              : "text-ink hover:bg-surface-soft",
+          )}
         >
           {session ? (
             <span className="text-caption-sm font-bold">
@@ -253,8 +266,7 @@ export function ConsumerMobileMenu() {
         <nav className="mt-2 flex flex-col px-3">
           {session && (
             <>
-              {contasDoConsumidorLigadas() &&
-                LINKS_DA_CONTA.map((l) => <Item key={l.to} {...l} />)}
+              {contasDoConsumidorLigadas() && LINKS_DA_CONTA.map((l) => <Item key={l.to} {...l} />)}
               {effectiveRole === "hub_admin" && (
                 <Item to="/manager" label="Ir pro Manager" icone={SquaresFour} />
               )}

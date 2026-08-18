@@ -32,10 +32,32 @@ describe("ConsumerTopbar — busca por rota", () => {
     expect(screen.getByText("Buscar vaga")).toBeInTheDocument();
   });
 
-  it("não renderiza a busca na home (o hero já traz a barra grande)", () => {
+  /**
+   * O atalho vale na home desde o primeiro quadro porque o banner não tem mais
+   * busca abaixo do desktop: a barra grande empilhava quatro campos por cima do
+   * vídeo. Sem o atalho aqui, o celular abriria a home sem nenhuma busca à vista.
+   */
+  it("na home o atalho de busca já nasce no header", () => {
     renderWithProviders(<ConsumerTopbar />, { route: "/" });
 
-    expect(screen.queryByText("Buscar vaga")).not.toBeInTheDocument();
+    expect(screen.getByText("Buscar vaga")).toBeInTheDocument();
+  });
+
+  /**
+   * No desktop o banner continua com a barra inteira, e duas na mesma tela
+   * competiriam pelo mesmo clique: a do header só entra quando a do hero sobe.
+   */
+  it("na home a barra inteira não entra antes de a do hero subir", () => {
+    const { container } = renderWithProviders(<ConsumerTopbar />, { route: "/" });
+
+    // A SearchBarPill é um <form>; o atalho do celular é um <button>.
+    expect(container.querySelector("form")).toBeNull();
+  });
+
+  it("fora da home a barra inteira já vem montada", () => {
+    const { container } = renderWithProviders(<ConsumerTopbar />, { route: "/search" });
+
+    expect(container.querySelector("form")).not.toBeNull();
   });
 
   it("abre o modal de busca ao tocar no atalho mobile (não volta pra home)", async () => {

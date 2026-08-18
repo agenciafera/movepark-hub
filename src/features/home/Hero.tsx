@@ -324,11 +324,26 @@ export function Hero() {
           Estacione em qualquer aeroporto do Brasil
         </h1>
 
-        <p data-hero="sub" className="mx-auto mb-10 max-w-xl text-pretty text-[17px] leading-relaxed text-white/65">
+        {/* `mb-6` no celular: sem a barra de busca no meio, os 40px do desktop
+            viravam um vão de 64px entre a linha de apoio e os selos. */}
+        <p
+          data-hero="sub"
+          className="mx-auto mb-6 max-w-xl text-pretty text-[17px] leading-relaxed text-white/65 desktop:mb-10"
+        >
           Compare vários estacionamentos num só lugar e reserve agora.
         </p>
 
-        <div data-hero="search" className="mx-auto w-full">
+        {/*
+          A barra grande é do desktop, onde ela é uma linha de 72px sobre um
+          banner deitado e sobra vídeo dos dois lados.
+
+          Abaixo de 1128 os campos empilham e ela vira um cartão de quatro
+          linhas: eram uns 300px de branco no meio do banner, e o vídeo que
+          justifica o topo da home aparecia em tiras. A busca de lá é o atalho do
+          header, que é fixo, nasce visível na home e abre a mesma busca por cima
+          da página. Uma busca por tela, e o banner de volta ao vídeo.
+        */}
+        <div data-hero="search" className="mx-auto hidden w-full desktop:block">
           <SearchBarPill
             initialDest={params.get("dest")}
             initialFrom={parseDate(params.get("from"))}
@@ -338,9 +353,15 @@ export function Hero() {
         </div>
 
         {/* Trust pills */}
-        <div data-hero="trust" className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+        <div
+          data-hero="trust"
+          className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2"
+        >
           {trustPills.map((label) => (
-            <span key={label} className="inline-flex items-center gap-1.5 text-[13px] text-white/70">
+            <span
+              key={label}
+              className="inline-flex items-center gap-1.5 text-[13px] text-white/70"
+            >
               <CheckIcon />
               {label}
             </span>

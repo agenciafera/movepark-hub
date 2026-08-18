@@ -149,6 +149,29 @@ describe("Hero — selo de prova social", () => {
   });
 });
 
+describe("Hero — busca", () => {
+  beforeEach(() => ambiente({ movimentoReduzido: true }));
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  /**
+   * Regressão de celular: empilhada, a barra vira um cartão de quatro campos e
+   * cobria uns 300px do banner, que é justamente o que o vídeo tem para mostrar.
+   * Abaixo de 1128 a busca é o atalho do header, que é fixo e abre a mesma busca
+   * por cima da página.
+   */
+  it("a barra grande só entra a partir do desktop", () => {
+    const { container } = renderWithProviders(<Hero />);
+    const busca = container.querySelector('[data-hero="search"]') as HTMLElement;
+
+    expect(busca).toBeTruthy();
+    expect(busca.className).toContain("hidden");
+    expect(busca.className).toContain("desktop:block");
+  });
+});
+
 describe("Hero — vídeo de fundo", () => {
   beforeEach(() => ambiente());
 
