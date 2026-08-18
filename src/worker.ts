@@ -273,6 +273,153 @@ const redirect302 = (to: string) =>
   new Response(null, { status: 302, headers: { Location: to, "Cache-Control": "no-cache" } });
 
 /**
+ * URLs institucionais do WordPress fora do namespace `/blog/`. Nomes diferentes dos do Hub,
+ * então a migração precisa de 301 e não de URL igual (`sitemapRoutes.test.ts` trava os nomes
+ * novos). `/agendar-teste/` e `/o-sistema/` eram formulário de demonstração e página de produto
+ * do site de vendas antigo; o Hub não separa "sistema" de site, então caem no destino mais
+ * próximo (seja-parceiro e como-funciona). `/` e `/blog/` não entram: já respondem no mesmo
+ * caminho nos dois lados, redirecionar seria salto para o próprio destino.
+ */
+const WP_INSTITUTIONAL_REDIRECTS: Record<string, string> = {
+  "/termos-de-uso": "/termos",
+  "/politica-de-privacidade": "/privacidade",
+  "/agendar-teste": "/seja-parceiro",
+  "/o-sistema": "/como-funciona",
+};
+
+/**
+ * Índices de aeroporto do WordPress (`/estacionamentos/<slug>/`), para a página de destino
+ * equivalente no Hub. Levantado em 18/08/2026 contra `docs/specs/wp-inventory/page-sitemap.xml`
+ * e a tabela `destination` do Supabase — ver docs/specs/inventario-urls-wordpress.md.
+ *
+ * `/estacionamentos/` (o índice) e `/estacionamentos/rio-de-janeiro/` (RJ tem dois aeroportos
+ * no Hub, Galeão e Santos Dumont, sem página conjunta) vão para `/destinos`, o mais próximo sem
+ * inventar uma escolha entre os dois.
+ */
+const WP_AEROPORTO_REDIRECTS: Record<string, string> = {
+  "/estacionamentos": "/destinos",
+  "/estacionamentos/rio-de-janeiro": "/destinos",
+  "/estacionamentos/aeroporto-viracopos": "/destinos/aeroporto-de-viracopos",
+  "/estacionamentos/aeroporto-afonso-pena": "/destinos/aeroporto-afonso-pena",
+  "/estacionamentos/aeroporto-confins": "/destinos/aeroporto-de-confins",
+  "/estacionamentos/aeroporto-navegantes": "/destinos/aeroporto-internacional-de-navegantes",
+  "/estacionamentos/aeroporto-congonhas": "/destinos/aeroporto-de-congonhas",
+  "/estacionamentos/aeroporto-brasilia": "/destinos/aeroporto-de-brasilia",
+  "/estacionamentos/aeroporto-joao-pessoa": "/destinos/aeroporto-de-joao-pessoa",
+  "/estacionamentos/aeroporto-londrina": "/destinos/aeroporto-de-londrina",
+  "/estacionamentos/aeroporto-maceio": "/destinos/aeroporto-de-maceio",
+  "/estacionamentos/aeroporto-rio-galeao": "/destinos/aeroporto-do-galeao",
+  "/estacionamentos/aeroporto-salgado-filho": "/destinos/aeroporto-salgado-filho",
+  "/estacionamentos/aeroporto-santos-dumont-rio": "/destinos/aeroporto-santos-dumont",
+  "/estacionamentos/aeroporto-recife": "/destinos/aeroporto-internacional-do-recife-guararapes",
+  "/estacionamentos/aeroporto-cuiaba": "/destinos/aeroporto-de-cuiaba",
+  "/estacionamentos/terminal-rodoviario-tiete": "/destinos/terminal-rodoviario-tiete",
+  "/estacionamentos/aeroporto-guarulhos": "/destinos/aeroporto-internacional-de-sao-paulo-guarulhos",
+};
+
+/**
+ * As 39 fichas de estacionamento do WordPress (custom post type `estacionamento`), uma por
+ * uma, contra o catálogo real do Hub em 18/08/2026. Três destinos possíveis, nesta ordem de
+ * preferência:
+ *
+ * 1. **Parceiro ativo do Hub**: vai para a ficha de reserva (`/p/<empresa>/<unidade>/<tipo>`).
+ * 2. **Lote mapeado publicado** (ADR-010, mesma marca): vai para a ficha de vitrine
+ *    (`/estacionamentos/<destino>/<slug>`), sem reserva mas com o conteúdo equivalente.
+ * 3. **Sem par confiável no Hub** (marca não encontrada, ou achada mas não publicada): vai para
+ *    a página do destino (`/destinos/<slug>`) — nunca 404, e nunca um chute de marca errada.
+ *
+ * `bandeira-park` é o caso notável do grupo 3: o WordPress publica a página dela sob Viracopos,
+ * mas o lote mapeado equivalente no Hub está em Guarulhos e não publicado (ver o card
+ * "Aeropark GRU publica as fotos do Bandeira Park como se fossem dela"). Redirecionar para uma
+ * ficha não publicada não abriria nada; vai para o destino Guarulhos, que é o correto segundo o
+ * Hub, não o WordPress.
+ */
+const WP_ESTACIONAMENTO_REDIRECTS: Record<string, string> = {
+  // Parceiros ativos do Hub
+  "/estacionamentos/aeroporto-guarulhos/aerovalet-estacionamento-aeroporto-guarulhos":
+    "/p/aerovalet/aeroporto-guarulhos/covered",
+  "/estacionamentos/aeroporto-congonhas/aerovalet-congonhas-estacionamento-aeroporto-congonhas":
+    "/p/aerovalet/aeroporto-congonhas/covered",
+  "/estacionamentos/terminal-rodoviario-tiete/aerovalet-tiete-terminal-rodoviario-tiete":
+    "/p/aerovalet/terminal-rodoviario-tiete/covered",
+  "/estacionamentos/aeroporto-congonhas/plenty-park": "/p/plenty/aeroporto-congonhas/covered",
+  "/estacionamentos/aeroporto-guarulhos/aeropark-guarulhos": "/p/aeropark/aeroporto-guarulhos/covered",
+  "/estacionamentos/aeroporto-afonso-pena/abba-park-estacionamento-aeroporto-afonso-pena":
+    "/p/abbapark/aeroporto-afonso-pena/covered",
+  "/estacionamentos/aeroporto-afonso-pena/estacionamento-aeroporto-afonso-pena-curitiba":
+    "/p/nationpark/aeroporto-afonso-pena/covered",
+  "/estacionamentos/aeroporto-viracopos/garage-inn-aeroporto-viracopos":
+    "/p/garageinn/aeroporto-viracopos/uncovered",
+  "/estacionamentos/aeroporto-viracopos/virapark-estacionamento-viracopos": "/p/virapark/virapark/covered",
+  // Lote mapeado publicado (mesma marca, mesmo destino)
+  "/estacionamentos/aeroporto-de-viracopos/br-parking-viracopos": "/estacionamentos/aeroporto-de-viracopos/br-parking-viracopos",
+  "/estacionamentos/aeroporto-viracopos/br-parking": "/estacionamentos/aeroporto-de-viracopos/br-parking-viracopos",
+  "/estacionamentos/aeroporto-viracopos/yellow-parking": "/estacionamentos/aeroporto-de-viracopos/yellow-parking-viracopos",
+  "/estacionamentos/aeroporto-confins/aeropark-confins-estacionamento-aeroporto-confins":
+    "/estacionamentos/aeroporto-de-confins/aeropark-confins-aeroporto-confins",
+  "/estacionamentos/aeroporto-confins/park-confins-estacionamento-aeroporto-confins":
+    "/estacionamentos/aeroporto-de-confins/park-confins-aeroporto-confins",
+  "/estacionamentos/aeroporto-guarulhos/econopark-gru":
+    "/estacionamentos/aeroporto-internacional-de-sao-paulo-guarulhos/econopark-aeroporto-de-guarulhos-aeroporto-guarulhos",
+  "/estacionamentos/aeroporto-guarulhos/decolar-park-gru":
+    "/estacionamentos/aeroporto-internacional-de-sao-paulo-guarulhos/decolar-park-estacionamento-aeroporto-guarulhos",
+  "/estacionamentos/aeroporto-guarulhos/flypark-gru":
+    "/estacionamentos/aeroporto-internacional-de-sao-paulo-guarulhos/flypark-aeroporto-guarulhos",
+  "/estacionamentos/aeroporto-congonhas/congonhas-park-cgh":
+    "/estacionamentos/aeroporto-de-congonhas/congonhas-park-aeroporto-congonhas",
+  "/estacionamentos/aeroporto-congonhas/one-parking-estacionamento-aeroporto-congonhas":
+    "/estacionamentos/aeroporto-de-congonhas/one-parking-congonhas-aeroporto-congonhas",
+  "/estacionamentos/cgh/the-parking-estacionamento-aeroporto-congonhas":
+    "/estacionamentos/aeroporto-de-congonhas/the-parking-estacionamento-aeroporto-congonhas",
+  "/estacionamento/express-parking": "/estacionamentos/aeroporto-de-congonhas/express-parking-aeroporto-congonhas",
+  "/estacionamentos/aeroporto-congonhas/grand-parking-estacionamento-aeroporto-congonhas":
+    "/estacionamentos/aeroporto-de-congonhas/grand-parking-aeroporto-congonhas",
+  "/estacionamentos/aeroporto-confins/estacionamento-patio-confins":
+    "/estacionamentos/aeroporto-de-confins/estacionamento-patio-aeroporto-confins",
+  "/estacionamentos/aeroporto-guarulhos/urban-park-estacionamento-aeroporto-guarulhos-cumbica":
+    "/estacionamentos/aeroporto-internacional-de-sao-paulo-guarulhos/urban-park-aeroporto-guarulhos",
+  // Sem par confiável no Hub: vai para o destino, nunca 404 nem chute de marca
+  "/estacionamentos/aeroporto-guarulhos/bandeira-park": "/destinos/aeroporto-internacional-de-sao-paulo-guarulhos",
+  "/estacionamentos/aeroporto-santos-dumont-rio/bh-park-estacionamento-aeroporto-santos-dumont":
+    "/destinos/aeroporto-santos-dumont",
+  "/estacionamentos/aeroporto-santos-dumont-rio/bossa-nova-mall-estacionamento-aeroporto-santos-dumont":
+    "/destinos/aeroporto-santos-dumont",
+  "/estacionamentos/aeroporto-rio-galeao/estapar-estacionamento-aeroporto-galeao": "/destinos/aeroporto-do-galeao",
+  "/estacionamentos/aeroporto-confins/premium-park-estacionamento-aeroporto-confins":
+    "/destinos/aeroporto-de-confins",
+  "/estacionamentos/aeroporto-confins/super-park-estacionamento-aeroporto-confins": "/destinos/aeroporto-de-confins",
+  "/estacionamentos/aeroporto-guarulhos/aeroparking-gru":
+    "/destinos/aeroporto-internacional-de-sao-paulo-guarulhos",
+  "/estacionamentos/aeroporto-guarulhos/viaje-park-gru": "/destinos/aeroporto-internacional-de-sao-paulo-guarulhos",
+  "/estacionamentos/aeroporto-congonhas/arai-park-cgh": "/destinos/aeroporto-de-congonhas",
+  "/estacionamentos/aeroporto-congonhas/mobi-city-cgh": "/destinos/aeroporto-de-congonhas",
+  "/estacionamentos/rio-de-janeiro/move-parking-nova-iguacu": "/destinos/centro-de-nova-iguacu",
+  "/estacionamentos/aeroporto-recife/aero-park-estacionamento-aeroporto-recife":
+    "/destinos/aeroporto-internacional-do-recife-guararapes",
+  "/estacionamentos/aeroporto-navegantes/prime-estacionamento-aeroporto-navegantes":
+    "/destinos/aeroporto-internacional-de-navegantes",
+  "/estacionamentos/aeroporto-confins/central-park-confins-estacionamento-aeroporto-confins":
+    "/destinos/aeroporto-de-confins",
+  "/estacionamentos/aeroporto-confins/be-park-estacionamento-aeroporto-confins": "/destinos/aeroporto-de-confins",
+  "/estacionamentos/aeroporto-guarulhos/parkindigo-estacionamento-aeroporto-guarulhos":
+    "/destinos/aeroporto-internacional-de-sao-paulo-guarulhos",
+};
+
+/**
+ * 301 das URLs institucionais, de aeroporto e de ficha de estacionamento do WordPress. Junta
+ * os três mapas acima num só lookup, pela mesma razão do `BLOG_LEGACY_PATHS`: são URLs que já
+ * têm clique e/ou backlink e não podem virar 404 silencioso no dia do corte. Roda antes de
+ * `blogRedirect` porque nenhum destes caminhos é `/blog/*`, então a ordem entre os dois não
+ * importa — mas rodar antes do fallback de asset/404 importa sempre.
+ */
+export function wpLegacyRedirect(url: URL): Response | null {
+  const path = url.pathname.replace(/\/+$/, "") || "/";
+  const destino =
+    WP_INSTITUTIONAL_REDIRECTS[path] ?? WP_AEROPORTO_REDIRECTS[path] ?? WP_ESTACIONAMENTO_REDIRECTS[path];
+  return destino ? redirect301(destino + url.search) : null;
+}
+
+/**
  * Política de URL do blog.
  *
  * O contrato é o do WordPress, porque são 93 URLs que o Google já indexou e que
@@ -604,6 +751,11 @@ export function __resetCachesDoWorker(): void {
 async function serve(request: Request, env: Env): Promise<Response> {
   const accept = request.headers.get("Accept") ?? "";
   const url = new URL(request.url);
+
+  // URL institucional, de aeroporto ou de ficha do WordPress: 301 antes de qualquer outra
+  // coisa, pelo mesmo motivo do blog logo abaixo.
+  const wpHop = wpLegacyRedirect(url);
+  if (wpHop) return wpHop;
 
   // Política de URL do blog antes de tudo: categoria e URL legada saem em 301
   // sem chegar no asset. Ver docs/specs/blog.md.

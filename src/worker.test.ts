@@ -157,6 +157,83 @@ describe("www redireciona para o apex", () => {
   });
 });
 
+describe("301 legado do WordPress (institucional, aeroporto, estacionamento)", () => {
+  it("página institucional com nome trocado", async () => {
+    const env = makeEnv({});
+    const res = await worker.fetch(req("/termos-de-uso"), env);
+
+    expect(res.status).toBe(301);
+    expect(res.headers.get("Location")).toBe("/termos");
+  });
+
+  it("índice de aeroporto vai para a página de destino", async () => {
+    const env = makeEnv({});
+    const res = await worker.fetch(req("/estacionamentos/aeroporto-guarulhos"), env);
+
+    expect(res.status).toBe(301);
+    expect(res.headers.get("Location")).toBe(
+      "/destinos/aeroporto-internacional-de-sao-paulo-guarulhos",
+    );
+  });
+
+  it("índice de estacionamentos e o caso ambíguo (RJ tem 2 aeroportos) vão para /destinos", async () => {
+    const env = makeEnv({});
+    const [indice, rio] = await Promise.all([
+      worker.fetch(req("/estacionamentos"), env),
+      worker.fetch(req("/estacionamentos/rio-de-janeiro"), env),
+    ]);
+
+    expect(indice.headers.get("Location")).toBe("/destinos");
+    expect(rio.headers.get("Location")).toBe("/destinos");
+  });
+
+  it("ficha de parceiro ativo do Hub vai direto para a página de reserva", async () => {
+    const env = makeEnv({});
+    const res = await worker.fetch(
+      req("/estacionamentos/aeroporto-viracopos/virapark-estacionamento-viracopos"),
+      env,
+    );
+
+    expect(res.status).toBe(301);
+    expect(res.headers.get("Location")).toBe("/p/virapark/virapark/covered");
+  });
+
+  it("ficha de lote mapeado publicado vai para a ficha de vitrine equivalente", async () => {
+    const env = makeEnv({});
+    const res = await worker.fetch(req("/estacionamentos/aeroporto-viracopos/br-parking"), env);
+
+    expect(res.status).toBe(301);
+    expect(res.headers.get("Location")).toBe(
+      "/estacionamentos/aeroporto-de-viracopos/br-parking-viracopos",
+    );
+  });
+
+  it("ficha sem par confiável no Hub vai para o destino, nunca 404", async () => {
+    const env = makeEnv({});
+    const res = await worker.fetch(
+      req("/estacionamentos/aeroporto-congonhas/arai-park-cgh"),
+      env,
+    );
+
+    expect(res.status).toBe(301);
+    expect(res.headers.get("Location")).toBe("/destinos/aeroporto-de-congonhas");
+  });
+
+  it("preserva a query string no redirect", async () => {
+    const env = makeEnv({});
+    const res = await worker.fetch(req("/politica-de-privacidade?utm_source=teste"), env);
+
+    expect(res.headers.get("Location")).toBe("/privacidade?utm_source=teste");
+  });
+
+  it("não pega caminho fora dos três mapas", async () => {
+    const env = makeEnv({});
+    const res = await worker.fetch(req("/estacionamentos/aeroporto-viracopos/marca-inexistente"), env);
+
+    expect(res.status).not.toBe(301);
+  });
+});
+
 describe("política de indexação por host", () => {
   it("marca noindex no subdomínio do Hub", async () => {
     const env = makeEnv({});
@@ -587,14 +664,19 @@ describe("404 real de página", () => {
     expect(res.status).toBe(200);
   });
 
-  it("/estacionamentos com 1 e 2 segmentos continua abrindo", async () => {
-    // São as 24 páginas de aeroporto do WordPress. O checklist de migração pede 301 para
-    // elas, não 404: mandar 404 jogaria fora a autoridade que o item existe para preservar.
-    for (const caminho of ["/estacionamentos", "/estacionamentos/aeroporto-de-confins"]) {
-      const res = await worker.fetch(req(caminho), envCom404());
-      expect(res.status, caminho).toBe(200);
-      __resetCachesDoWorker();
-    }
+  it("/estacionamentos com 1 e 2 segmentos nunca 404, nem os que não estão no mapa do WP", async () => {
+    // `/estacionamentos` (bare) é uma das 24 páginas de aeroporto do WordPress: desde que o
+    // WP_AEROPORTO_REDIRECTS entrou (ver describe "301 legado do WordPress"), ela 301 pro
+    // destino em vez de só não-404ar. `/estacionamentos/aeroporto-de-confins` usa o slug do
+    // Hub (com "-de-"), não o do WP ("aeroporto-confins"): não está em nenhum mapa de
+    // redirect, e mesmo assim precisa continuar abrindo (200), não virando 404.
+    const bare = await worker.fetch(req("/estacionamentos"), envCom404());
+    expect(bare.status).toBe(301);
+    __resetCachesDoWorker();
+
+    const foraDoMapa = await worker.fetch(req("/estacionamentos/aeroporto-de-confins"), envCom404());
+    expect(foraDoMapa.status).toBe(200);
+    __resetCachesDoWorker();
   });
 
   it("caminho terminado em .html segue para o ASSETS e mantém o 307", async () => {
