@@ -9,11 +9,15 @@ import {
   durationLabel,
   economyPct,
   formatDistance,
+  groupAirports,
   listingPath,
   metaDescription,
   motoUnits,
   overallStats,
   matchesAirportFilter,
+  minPerDay,
+  periodLabel,
+  sortRowsByPeriod,
   topRows,
   unitLabel,
   type AirportMeta,
@@ -365,5 +369,146 @@ describe("airportStates", () => {
       "MG",
       "SP",
     ]);
+  });
+});
+
+describe("sortRowsByPeriod", () => {
+  /**
+   * A ordem do índice responde ao seletor de período. Sem isso o topo da lista
+   * anunciava "menor preço" com o número de outra duração ao lado.
+   */
+  it("ordena pelo preço do período escolhido, e não pela diária avulsa", () => {
+    // `barato7` custa mais na diária avulsa e menos em 7 diárias que `barato1`.
+    const barato1 = unit({
+      company_slug: "a",
+      company_name: "A",
+      prices: [
+        { days: 1, total: 10, old_total: null },
+        { days: 7, total: 210, old_total: null },
+        { days: 15, total: 300, old_total: null },
+      ],
+    });
+    const barato7 = unit({
+      company_slug: "b",
+      company_name: "B",
+      prices: [
+        { days: 1, total: 50, old_total: null },
+        { days: 7, total: 70, old_total: null },
+        { days: 15, total: 450, old_total: null },
+      ],
+    });
+    const { rows } = buildMatrix(dest([barato1, barato7]), [1, 7, 15], 1);
+
+    expect(sortRowsByPeriod(rows, 1).map((r) => r.label)).toEqual(["A", "B"]);
+    expect(sortRowsByPeriod(rows, 7).map((r) => r.label)).toEqual(["B", "A"]);
+    expect(sortRowsByPeriod(rows, 15).map((r) => r.label)).toEqual(["A", "B"]);
+  });
+
+  it("linha sem preço no período cai para o fim", () => {
+    const comPreco = unit({ company_slug: "a", company_name: "A" });
+    const semDiaria = unit({
+      company_slug: "b",
+      company_name: "B",
+      min_stay_days: 3,
+      prices: [
+        { days: 7, total: 7, old_total: null },
+        { days: 15, total: 15, old_total: null },
+      ],
+    });
+    const { rows } = buildMatrix(dest([comPreco, semDiaria]), [1, 7, 15], 1);
+
+    expect(sortRowsByPeriod(rows, 1).map((r) => r.label)).toEqual(["A", "B"]);
+    // Em 7 diárias B é mais barato e passa na frente.
+    expect(sortRowsByPeriod(rows, 7).map((r) => r.label)).toEqual(["B", "A"]);
+  });
+
+  it("não muda a lista original nem quais linhas aparecem", () => {
+    const { rows } = buildMatrix(dest([unit({}), unit({ company_slug: "b", company_name: "B" })]), [1, 7, 15], 1);
+    const antes = rows.map((r) => r.label);
+    const ordenado = sortRowsByPeriod(rows, 15);
+    expect(rows.map((r) => r.label)).toEqual(antes);
+    expect(ordenado).toHaveLength(rows.length);
+  });
+});
+
+describe("periodLabel", () => {
+  it("nomeia os três períodos do seletor", () => {
+    expect(periodLabel(1)).toBe("diária avulsa");
+    expect(periodLabel(7)).toBe("7 diárias");
+    expect(periodLabel(15)).toBe("15 diárias");
+  });
+});
+
+describe("groupAirports", () => {
+  const secao = (over: Partial<AirportSection>): AirportSection => ({
+    meta: {
+      slug: "s",
+      code: null,
+      name: "Aeroporto",
+      short_name: null,
+      city: null,
+      state: "SP",
+    },
+    dest: null,
+    rows: [],
+    mapeados: [],
+    hiddenPartnerCount: 0,
+    hiddenProspectCount: 0,
+    ...over,
+  });
+
+  it("separa por aquilo que a Movepark consegue prometer em cada aeroporto", () => {
+    const { rows } = buildMatrix(dest([unit({})]), [1, 7, 15], 1);
+    const comParceiro = secao({ rows });
+    const soMapeado = secao({ mapeados: [{ name: "Lote", slug: "lote", distance_km: 1 }] });
+    const vazio = secao({});
+
+    const g = groupAirports([vazio, comParceiro, soMapeado]);
+
+    expect(g.comReserva).toEqual([comParceiro]);
+    expect(g.mapeados).toEqual([soMapeado]);
+    expect(g.aindaMapeando).toEqual([vazio]);
+  });
+
+  /** Ficha que ficou fora do corte ainda é ficha: o aeroporto não está vazio. */
+  it("aeroporto cujo lote mapeado ficou fora do corte não conta como vazio", () => {
+    const g = groupAirports([secao({ hiddenProspectCount: 2 })]);
+    expect(g.mapeados).toHaveLength(1);
+    expect(g.aindaMapeando).toHaveLength(0);
+  });
+
+  it("um aeroporto entra em exatamente um grupo", () => {
+    const { rows } = buildMatrix(dest([unit({})]), [1, 7, 15], 1);
+    const todas = [secao({ rows }), secao({ mapeados: [{ name: "L", slug: "l", distance_km: null }] }), secao({})];
+    const g = groupAirports(todas);
+    expect(g.comReserva.length + g.mapeados.length + g.aindaMapeando.length).toBe(todas.length);
+  });
+});
+
+describe("minPerDay", () => {
+  it("acompanha a duração pedida, e não só a diária avulsa", () => {
+    const caro1 = unit({
+      company_slug: "a",
+      prices: [
+        { days: 1, total: 30, old_total: null },
+        { days: 7, total: 70, old_total: null },
+      ],
+    });
+    const barato1 = unit({
+      company_slug: "b",
+      prices: [
+        { days: 1, total: 20, old_total: null },
+        { days: 7, total: 140, old_total: null },
+      ],
+    });
+    const index = { days: DIAS, destinations: [dest([caro1, barato1])] };
+
+    expect(minPerDay(index, 1)).toBe(20);
+    expect(minPerDay(index, 7)).toBe(10);
+  });
+
+  it("sem preço na duração devolve null, em vez de zero", () => {
+    const index = { days: DIAS, destinations: [dest([unit({ prices: [] })])] };
+    expect(minPerDay(index, 7)).toBeNull();
   });
 });

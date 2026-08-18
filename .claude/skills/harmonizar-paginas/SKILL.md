@@ -30,7 +30,7 @@ classe, porque tudo abaixo depende da faixa.
 
 | Faixa | Quais | O que é |
 |---|---|---|
-| **Hero de marketing** | `/`, `/seja-parceiro`, `/sobre`, `/como-funciona`, `/calculadora-estacionamento-aeroporto` | Abre com imagem ou faixa de marca full-bleed, headline grande, sem padding no topo |
+| **Hero de marketing** | `/`, `/seja-parceiro`, `/sobre`, `/como-funciona`, `/calculadora-estacionamento-aeroporto`, `/precos` | Abre com imagem ou faixa de marca full-bleed, headline grande, sem padding no topo |
 | **Página de conteúdo** | as outras 9 | Abre com `PageHeader`, coluna de leitura, padding no topo |
 | **Conteúdo com hero** | `/contato` | Corpo de conteúdo, aberto pela faixa violeta do `PageHero` (ver abaixo) |
 
@@ -59,6 +59,28 @@ veredito **monta sobre a borda de baixo do `PageHero`** (`-mt-16 desktop:-mt-20`
 com `relative z-10`), o que põe o preço acima da dobra. É o mesmo `PageHero` da
 `/contato`, que ganhou dois pontos por causa dela: `title` aceita nó (para o
 `10 segundos` sair em violeta) e existe um slot `breadcrumb` acima do h1.
+
+**A `/precos` mudou de faixa em 18/08/2026**, implementando o desenho do Claude
+Design (`Índice de preços Movepark.dc.html`), e segue a `/calculadora` ponto a
+ponto: mesmo `PageHero` navy com trilha, mesmo destaque em
+`text-mp-violet-on-navy` no h1, mesmo cartão montado sobre a borda de baixo
+(`-mt-16 desktop:-mt-20`). Aqui o cartão é o retrato do índice em quatro
+números, e o que ele põe acima da dobra é o "a partir de quanto".
+
+Duas coisas mudaram além do visual, e valem como padrão para índice:
+
+1. **Os aeroportos são agrupados pelo que a Movepark consegue prometer**
+   (`groupAirports`): com reserva online, mapeados sem reserva, e ainda
+   mapeando. A lista corrida dava o mesmo peso aos três e repetia o mesmo
+   parágrafo de "ainda estamos mapeando" em cada aeroporto vazio. Agrupado,
+   cada bloco diz de uma vez o que vale para todos dentro dele, que é também o
+   que o ADR-009 pede.
+2. **Seletor de período no lugar de três colunas**, mas o período inativo
+   continua no DOM com `hidden`. A página é pré-renderizada num período só; se
+   o inativo fosse desmontado, dois terços dos preços do índice sumiriam do
+   HTML que buscador e crawler de IA leem. **Sempre que um controle de
+   visualização filtrar conteúdo que a página promete ter, esconda por CSS, não
+   por desmontagem.** O guard está em `precos.test.tsx`.
 
 **Violeta dentro da faixa navy usa `text-mp-violet-on-navy`, nunca `text-mp-primary`.**
 O `mp-violet` (#5D5FEF) sobre o `mp-navy` dá 2.3:1 e reprova; o token novo

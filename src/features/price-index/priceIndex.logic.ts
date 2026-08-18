@@ -440,3 +440,85 @@ export function metaDescription(dest: PriceDestination, summary: DestinationSumm
   const corte = texto.slice(0, 157);
   return `${corte.slice(0, corte.lastIndexOf(" "))}…`;
 }
+
+/**
+ * Os três períodos do índice, na ordem em que o seletor mostra. São os mesmos
+ * de `INDEX_TOP_DAYS`, com o rótulo que a página escreve.
+ */
+export const INDEX_PERIODS = [
+  { days: 1, label: "Diária avulsa", note: "diária avulsa", unit: "na diária avulsa" },
+  { days: 7, label: "7 diárias", note: "7 diárias", unit: "por diária" },
+  { days: 15, label: "15 diárias", note: "15 diárias", unit: "por diária" },
+] as const;
+
+/** O período que abre a página. 7 diárias é a compra mais comum. */
+export const INDEX_DEFAULT_PERIOD = 7;
+
+export function periodLabel(days: number): string {
+  return INDEX_PERIODS.find((p) => p.days === days)?.note ?? durationLabel(days);
+}
+
+/**
+ * Ordena as linhas pelo preço do período escolhido, do menor para o maior.
+ * Linha sem preço naquele período (estadia mínima, tipicamente) cai para o fim,
+ * porque um "sob consulta" no topo da lista de menor preço confunde a leitura.
+ *
+ * Não muda QUAIS linhas aparecem: o corte de até 5 continua sendo o de
+ * `topRows`, feito pela diária avulsa. Aqui só a ordem responde ao seletor.
+ */
+export function sortRowsByPeriod(rows: MatrixRow[], days: number): MatrixRow[] {
+  const chave = (r: MatrixRow) => {
+    const cell = r.cells.find((c) => c.days === days);
+    return cell?.perDay ?? Number.POSITIVE_INFINITY;
+  };
+  return [...rows].sort((a, b) => {
+    const d = chave(a) - chave(b);
+    return d !== 0 ? d : a.label.localeCompare(b.label, "pt-BR");
+  });
+}
+
+export type AirportGroups = {
+  /** Tem parceiro precificado: dá para reservar online por aquele valor. */
+  comReserva: AirportSection[];
+  /** Sem parceiro, mas com ficha mapeada pela equipe (ADR-010). */
+  mapeados: AirportSection[];
+  /** Nem parceiro nem ficha: o aeroporto está no catálogo e nada mais. */
+  aindaMapeando: AirportSection[];
+};
+
+/**
+ * Separa os aeroportos pelo que a Movepark consegue prometer em cada um.
+ *
+ * A lista corrida tratava os três casos igual, e um aeroporto sem nada ocupava o
+ * mesmo espaço de um com cinco parceiros, cada um repetindo o mesmo parágrafo de
+ * "ainda estamos mapeando". Separado, cada grupo diz de uma vez só o que vale
+ * para todos dentro dele, que é também o que o ADR-009 pede: promessa de
+ * transação só onde ela existe.
+ */
+export function groupAirports(sections: AirportSection[]): AirportGroups {
+  const comReserva: AirportSection[] = [];
+  const mapeados: AirportSection[] = [];
+  const aindaMapeando: AirportSection[] = [];
+  for (const s of sections) {
+    if (s.rows.length > 0) comReserva.push(s);
+    else if (s.mapeados.length > 0 || s.hiddenProspectCount > 0) mapeados.push(s);
+    else aindaMapeando.push(s);
+  }
+  return { comReserva, mapeados, aindaMapeando };
+}
+
+/**
+ * Menor preço por diária do índice inteiro numa duração. Acompanha o seletor de
+ * período: anunciar "menor diária" da avulsa enquanto a tabela mostra 7 diárias
+ * põe dois números diferentes lado a lado dizendo a mesma coisa.
+ */
+export function minPerDay(data: PriceIndexData, days: number): number | null {
+  let menor: number | null = null;
+  for (const dest of data.destinations) {
+    for (const u of carUnits(dest.units)) {
+      const valor = perDay(priceFor(u, days));
+      if (valor != null && (menor === null || valor < menor)) menor = valor;
+    }
+  }
+  return menor;
+}

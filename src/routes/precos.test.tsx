@@ -83,6 +83,13 @@ const DATA: PrecosIndexData = {
   },
 };
 
+/**
+ * `formatBRL` usa NBSP entre "R$" e o número, e o normalizador do Testing
+ * Library colapsa isso para espaço comum. Sem normalizar o esperado também, a
+ * comparação falha por um caractere invisível.
+ */
+const brl = (n: number) => formatBRL(n).replace(/\u00a0/g, " ");
+
 function setup(data: PrecosIndexData | null = DATA) {
   const router = createMemoryRouter(
     [{ path: "/precos", element: <PrecosPage />, loader: () => data }],
@@ -96,106 +103,153 @@ function setup(data: PrecosIndexData | null = DATA) {
 }
 
 describe("PrecosPage", () => {
-  it("abre com o h1 do índice e o retrato em números, contando todos os aeroportos", async () => {
+  it("abre com o hero da página e o retrato em números, contando todos os aeroportos", async () => {
     setup();
-    expect(
-      await screen.findByRole("heading", { level: 1, name: "Índice de preços de estacionamento" }),
-    ).toBeInTheDocument();
-    const aeroportosTile = screen.getByText("Aeroportos no índice");
-    expect(aeroportosTile.nextElementSibling).toHaveTextContent("3");
+    const h1 = await screen.findByRole("heading", { level: 1 });
+    expect(h1).toHaveTextContent("O preço de cada estacionamento, sem consulta");
+
+    const aeroportos = screen.getByText("Aeroportos no índice");
+    expect(aeroportos.nextElementSibling).toHaveTextContent("3");
     // 1 unidade de parceiro + 2 lotes mapeados de Confins.
-    const listadosTile = screen.getByText("Estacionamentos listados");
-    expect(listadosTile.nextElementSibling).toHaveTextContent("3");
+    const listados = screen.getByText("Estacionamentos listados");
+    expect(listados.nextElementSibling).toHaveTextContent("3");
     // O NBSP do Intl entre "R$" e o número pede regex com \s.
-    expect(screen.getAllByText(/R\$\s18,90/).length).toBeGreaterThan(0);
+    // 7 diárias é o período que abre a página: 111,30 / 7 = 15,90.
+    expect(screen.getByText("Menor diária hoje, em 7 diárias").nextElementSibling).toHaveTextContent(
+      /R\$\s15,90/,
+    );
     expect(screen.getByText("até 17%")).toBeInTheDocument();
   });
 
-  it("aeroporto com parceiro tem tabela com preços e o botão Reservar da vaga", async () => {
+  it("aeroporto com parceiro entra no grupo com reserva, com preço e o Reservar da vaga", async () => {
     setup();
-    const secao = (
-      await screen.findByRole("heading", { level: 2, name: "Guarulhos (GRU)" })
+    const grupo = (
+      await screen.findByRole("heading", { level: 2, name: /Com reserva online/ })
     ).closest("section")!;
-    expect(within(secao).getByText(/ordenado pela diária mais baixa/)).toBeInTheDocument();
-    const tabela = within(secao).getByRole("table");
-    expect(tabela.textContent).toContain("7 dias (R$/dia)");
-    expect(tabela.textContent).toContain(formatBRL(15.9));
-    expect(tabela.textContent).toContain(`total ${formatBRL(111.3)}`);
-    expect(tabela.textContent).not.toContain("30 dias");
-    expect(within(secao).getByText("Parceiro Movepark")).toBeInTheDocument();
-    const reservar = within(secao).getByRole("link", { name: "Reservar" });
+    const cartao = within(grupo).getByRole("heading", { level: 3, name: /Guarulhos \(GRU\)/ }).closest("section")!;
+
+    expect(within(cartao).getByText(/ordenado pelo menor preço de 7 diárias/)).toBeInTheDocument();
+    expect(within(cartao).getByText(/Aerovalet · Vaga Descoberta/)).toBeInTheDocument();
+    expect(within(cartao).getByText(/Parceiro Movepark/)).toBeInTheDocument();
+    // 7 diárias: 111,30 / 7 = 15,90 por diária, total 111,30.
+    expect(within(cartao).getByText(brl(15.9))).toBeInTheDocument();
+    expect(within(cartao).getByText(`total ${brl(111.3)}`)).toBeInTheDocument();
+
+    const reservar = within(cartao).getByRole("link", { name: /Reservar/ });
     expect(reservar).toHaveAttribute("href", "/p/aerovalet/aeroporto-guarulhos/uncovered");
   });
 
-  it("aeroporto sem parceiro entra com os lotes mapeados, sem preço e sem Reservar", async () => {
+  /**
+   * A página é pré-renderizada num período só, e o seletor é do usuário. Se o
+   * período inativo saísse do DOM, dois terços dos preços do índice não
+   * existiriam no HTML que buscador e crawler de IA leem, justamente na página
+   * que promete "o preço de cada estacionamento, sem consulta".
+   */
+  it("os três períodos ficam no HTML, e o seletor só troca qual deles aparece", async () => {
     setup();
-    const secao = (
-      await screen.findByRole("heading", { level: 2, name: "Confins (CNF)" })
+    const cartao = (
+      await screen.findByRole("heading", { level: 3, name: /Guarulhos \(GRU\)/ })
     ).closest("section")!;
-    expect(within(secao).getByText("Golden Park")).toBeInTheDocument();
-    expect(
-      within(secao).getAllByText(/mapeado pela Movepark · sem reserva online/).length,
-    ).toBe(2);
-    expect(within(secao).getAllByText("consulte a tabela no local").length).toBe(2);
-    expect(within(secao).queryByRole("link", { name: "Reservar" })).not.toBeInTheDocument();
-    const ficha = within(secao).getAllByRole("link", { name: "Ver ficha" })[0];
-    expect(ficha).toHaveAttribute("href", "/estacionamentos/aeroporto-de-confins/golden-park");
+
+    // Diária avulsa (18,90) e 15 diárias (223,50 / 15 = 14,90) estão no
+    // documento mesmo com 7 diárias selecionado.
+    expect(within(cartao).getByText(brl(18.9))).toBeInTheDocument();
+    expect(within(cartao).getByText(`total ${brl(223.5)}`)).toBeInTheDocument();
+
+    // Mas só o bloco do período ativo está visível.
+    const totalDe7 = within(cartao).getByText(`total ${brl(111.3)}`);
+    const totalDe15 = within(cartao).getByText(`total ${brl(223.5)}`);
+    expect(totalDe7.closest("[hidden]")).toBeNull();
+    expect(totalDe15.closest("[hidden]")).not.toBeNull();
   });
 
-  it("aeroporto sem nada ainda aparece na página, apontando o seja-parceiro", async () => {
+  it("o seletor de período troca o preço em destaque e o rótulo do grupo", async () => {
     setup();
-    const secao = (
-      await screen.findByRole("heading", { level: 2, name: "Santos Dumont (SDU)" })
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Diária avulsa" }));
+
+    const cartao = screen.getByRole("heading", { level: 3, name: /Guarulhos \(GRU\)/ }).closest("section")!;
+    expect(within(cartao).getByText(/ordenado pelo menor preço de diária avulsa/)).toBeInTheDocument();
+    // Agora o bloco de 7 diárias é que está escondido.
+    expect(within(cartao).getByText(`total ${brl(111.3)}`).closest("[hidden]")).not.toBeNull();
+    expect(screen.getByText("Menor diária hoje, em diária avulsa").nextElementSibling).toHaveTextContent(
+      /R\$\s18,90/,
+    );
+  });
+
+  it("aeroporto sem parceiro entra no grupo dos mapeados, sem preço e sem Reservar", async () => {
+    setup();
+    const grupo = (
+      await screen.findByRole("heading", { level: 2, name: "Mapeados, sem reserva online" })
     ).closest("section")!;
-    expect(within(secao).getByText(/Ainda estamos mapeando/)).toBeInTheDocument();
-    expect(within(secao).getByRole("link", { name: "Seja parceiro Movepark" })).toHaveAttribute(
+
+    expect(within(grupo).getByRole("heading", { level: 3, name: "Confins (CNF)" })).toBeInTheDocument();
+    expect(within(grupo).getByText(/Golden Park/)).toBeInTheDocument();
+    expect(within(grupo).getByText(/Park do Aeroporto/)).toBeInTheDocument();
+    expect(within(grupo).queryByRole("link", { name: /Reservar/ })).not.toBeInTheDocument();
+    expect(within(grupo).getByRole("link", { name: "Ver os 2 no destino" })).toHaveAttribute(
+      "href",
+      "/destinos/aeroporto-de-confins",
+    );
+  });
+
+  it("aeroporto sem nada ainda entra no grupo de mapeamento, apontando o seja-parceiro", async () => {
+    setup();
+    const grupo = (
+      await screen.findByRole("heading", { level: 2, name: "Ainda mapeando" })
+    ).closest("section")!;
+
+    expect(within(grupo).getByRole("link", { name: "Santos Dumont (SDU)" })).toHaveAttribute(
+      "href",
+      "/destinos/aeroporto-santos-dumont",
+    );
+    expect(within(grupo).getByRole("link", { name: "Seja parceiro" })).toHaveAttribute(
       "href",
       "/seja-parceiro",
     );
   });
 
-  it("a busca da lateral filtra os aeroportos, sem acento, e o limpar restaura", async () => {
+  it("a busca filtra os aeroportos, sem acento, e o limpar restaura", async () => {
     setup();
     const user = userEvent.setup();
     const busca = await screen.findByLabelText("Buscar aeroporto");
     await user.type(busca, "sao paulo");
-    expect(screen.getByRole("heading", { level: 2, name: "Guarulhos (GRU)" })).toBeInTheDocument();
-    expect(
-      screen.queryByRole("heading", { level: 2, name: "Confins (CNF)" }),
-    ).not.toBeInTheDocument();
-    expect(screen.getAllByText("1 de 3 aeroportos").length).toBeGreaterThan(0);
+
+    expect(screen.getByRole("heading", { level: 3, name: /Guarulhos \(GRU\)/ })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 3, name: "Confins (CNF)" })).not.toBeInTheDocument();
+
     await user.click(screen.getByRole("button", { name: "Limpar filtros" }));
-    expect(screen.getByRole("heading", { level: 2, name: "Confins (CNF)" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 3, name: "Confins (CNF)" })).toBeInTheDocument();
   });
 
-  it("o filtro de reserva online esconde aeroporto sem parceiro precificado", async () => {
+  it("o filtro de reserva online esconde os grupos sem parceiro precificado", async () => {
     setup();
     const user = userEvent.setup();
     await user.click(await screen.findByRole("checkbox", { name: "Só com reserva online" }));
-    expect(screen.getByRole("heading", { level: 2, name: "Guarulhos (GRU)" })).toBeInTheDocument();
+
+    expect(screen.getByRole("heading", { level: 3, name: /Guarulhos \(GRU\)/ })).toBeInTheDocument();
     expect(
-      screen.queryByRole("heading", { level: 2, name: "Confins (CNF)" }),
+      screen.queryByRole("heading", { level: 2, name: "Mapeados, sem reserva online" }),
     ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("heading", { level: 2, name: "Santos Dumont (SDU)" }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 2, name: "Ainda mapeando" })).not.toBeInTheDocument();
   });
 
   it("o filtro de estado corta pelo UF", async () => {
     setup();
     const user = userEvent.setup();
     await user.selectOptions(await screen.findByLabelText("Estado"), "MG");
-    expect(screen.getByRole("heading", { level: 2, name: "Confins (CNF)" })).toBeInTheDocument();
-    expect(
-      screen.queryByRole("heading", { level: 2, name: "Guarulhos (GRU)" }),
-    ).not.toBeInTheDocument();
+
+    expect(screen.getByRole("heading", { level: 3, name: "Confins (CNF)" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 3, name: /Guarulhos \(GRU\)/ })).not.toBeInTheDocument();
   });
 
   it("filtro sem resultado explica e oferece o limpar", async () => {
     setup();
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Buscar aeroporto"), "galeao");
-    expect(screen.getByText("Nenhum aeroporto com esse filtro.")).toBeInTheDocument();
+
+    expect(screen.getByText("Nenhum aeroporto com esse filtro")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Limpar filtros" })).toBeInTheDocument();
   });
 
   it("sem dado, explica e aponta para a busca", async () => {
