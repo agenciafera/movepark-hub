@@ -136,9 +136,48 @@ não picotar o próprio resultado se rodar duas vezes. A lógica pura fica em
 [`scripts/sitemap-split.logic.mjs`](../../scripts/sitemap-split.logic.mjs) e é testada em
 [`src/lib/sitemapSplit.test.ts`](../../src/lib/sitemapSplit.test.ts).
 
-`lastmod`, `changefreq` e `priority` seguem uniformes (timestamp do build, `daily`, `1.0`).
-O corte por tipo é o que torna o `lastmod` real viável por seção, tirando o `updated_at` de
-cada tabela na mesma consulta que já busca os slugs. Fica como próximo passo.
+### `lastmod` real por URL (17/08/2026)
+
+**353 das 364 URLs levam a data que o banco conhece**, e não mais o timestamp do build. As 11
+que sobram são as institucionais de `sitemap-paginas.xml`, que não têm linha em banco; inventar
+data para elas seria a mentira que este trabalho existe para tirar do sitemap.
+
+| Seção | De onde vem a data | Datas distintas |
+|---|---|---|
+| blog | `greatest(published_at, updated_at)` | 69, de 22/07/2022 a 12/08/2026 |
+| unidades | `location_parking_type.updated_at` | 17 |
+| faq | `faq.updated_at` | 10 |
+| mais-barato | maior data das unidades daquele destino | 5 |
+| precos | maior data das unidades daquele destino | 5 |
+| destinos | `destination.updated_at` | 4 |
+| estacionamentos | `prospect_location.updated_at` | 2 |
+| paginas | sem data em banco, usa o default do plugin | 1 (data do build) |
+
+Cada entrada do `<sitemapindex>` carrega a **data mais recente do seu shard**, não a da
+primeira URL. Capa de seção (`/blog/`, `/faq`, `/destinos`, `/precos`) herda a data do filho
+mais recente, porque é isso que uma listagem é: ela muda quando um item muda.
+
+Um `lastmod` que anda sozinho a cada deploy é pior que nenhum, porque o Google aprende a
+ignorar o sinal do site inteiro. Era o que acontecia antes: as 364 URLs saíam com o horário do
+build, mesmo quando nada tinha mudado.
+
+**Duas correções de dado foram necessárias, e as duas valem por si.**
+
+1. **`blog_post.updated_at` guardava a data do import, não a da edição**
+   (migration `20261028120000`). O import do WordPress tocou em todas as linhas e o trigger
+   `set_updated_at` carimbou agosto de 2026 por cima do histórico: 69 posts com 3 datas
+   distintas, contra 51 de `published_at`. O `updated_at` alimenta também o `dateModified` do
+   BlogPosting, então cada post declarava ao Google ter sido modificado em agosto enquanto o
+   `datePublished` dizia 2022. A data do import não se perdeu, continua no `created_at`.
+2. **`prospect_location.updated_at` não era legível pelo `anon`**
+   (migration `20261028130000`). A tabela usa GRANT por coluna (ADR-010, Q-021) e a coluna
+   ficou de fora da allowlist. A consulta do build voltava `permission denied` com `data`
+   nulo, e as 43 fichas sumiam do sitemap inteiro; o guarda de seção vazia derrubou o build em
+   vez de publicar o índice sem elas. O GRANT novo é nominal e só para `updated_at`: o
+   telefone e o resto seguem fora.
+
+`changefreq` e `priority` continuam uniformes (`daily`, `1.0`). Prioridade igual para tudo não
+informa nada, mas também não mente; mexer nelas é outra conversa.
 
 **Pendente:** a taxonomia e a paginação do blog (48 arquivos no `dist/`: `/blog/page/N`,
 `/blog/categoria/*`, `/blog/tag/*`, `/blog/autor/*`, `/blog/aeroporto/*`) ainda ficam de fora.

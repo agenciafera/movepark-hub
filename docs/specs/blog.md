@@ -175,6 +175,16 @@ blog_post
 Índices: `blog_post_published_idx (is_published, published_at desc)` para o caminho de leitura
 pública, e `blog_post_destination_idx (destination_id)` para listar posts na página do destino.
 
+**`updated_at` é data de edição, e voltou a ser** (migration `20261028120000`). O importador
+tocou em todas as linhas e o trigger `set_updated_at` carimbou a data do import por cima: em
+17/08/2026, 69 posts publicados tinham 3 datas distintas de `updated_at`, contra 51 de
+`published_at`. Como `updated_at` alimenta o `dateModified` do BlogPosting
+([`jsonld.ts`](../../src/lib/jsonld.ts)) e agora também o `lastmod` do sitemap, cada post
+declarava ao Google ter sido modificado em agosto de 2026 enquanto o `datePublished` dizia
+2022. A migration devolveu `updated_at = published_at` nos posts que só o import tinha
+tocado; a data do import continua no `created_at`. **Quem escrever importador novo precisa
+fazer o mesmo**, senão o carimbo volta.
+
 ### RLS
 
 | Política | Regra |

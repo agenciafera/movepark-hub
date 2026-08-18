@@ -24,6 +24,41 @@ function chave(path) {
 }
 
 /**
+ * Maior data entre as recebidas, ignorando nulo, vazio e data ilegível.
+ *
+ * Devolve a string ORIGINAL da vencedora, não uma data reformatada, para quem consome falar
+ * exatamente o mesmo valor que estava na origem. Sem nenhuma data usável devolve `undefined`,
+ * e aí quem chama omite a tag, que é o que o protocolo manda fazer quando não se sabe.
+ *
+ * Compara por instante e não por texto: `2026-01-05T00:00:00.000+02:00` é ANTES de
+ * `2026-01-05T00:00:00.000Z` no relógio e DEPOIS na ordem alfabética.
+ *
+ * Também é usada pelo `vite.config.ts` para montar o lastmod das capas de seção, e é por
+ * isso que ela mora aqui: função de data duplicada em dois arquivos diverge.
+ */
+export function maisRecenteDentre(...datas) {
+  let vencedora;
+  let vencedoraEm = -Infinity;
+
+  for (const data of datas) {
+    if (!data) continue;
+    const instante = Date.parse(data);
+    if (Number.isNaN(instante) || instante <= vencedoraEm) continue;
+    vencedora = data;
+    vencedoraEm = instante;
+  }
+
+  return vencedora;
+}
+
+/** Data mais recente entre os blocos `<url>` de uma seção. */
+function maisRecente(blocos) {
+  return maisRecenteDentre(
+    ...blocos.map((bloco) => bloco.match(/<lastmod>([^<]*)<\/lastmod>/)?.[1]),
+  );
+}
+
+/**
  * @param {string} xml conteúdo do `dist/sitemap.xml` já corrigido pelo canonicalize
  * @param {Record<string, string[]>} mapaDeSecoes seção → paths, emitido pelo vite.config.ts
  */
@@ -85,15 +120,13 @@ export function dividirSitemap(xml, mapaDeSecoes) {
       nome: nomeDoArquivo(secao),
       conteudo: `${abertura}${blocosDaSecao.join("")}</urlset>`,
       urls: blocosDaSecao.length,
+      lastmod: maisRecente(blocosDaSecao),
     }));
 
   const prolog = xml.match(/^<\?xml[^>]*\?>/)?.[0] ?? "";
-  // O plugin carimba o mesmo timestamp de build em toda URL, então a primeira serve de
-  // lastmod do índice sem inventar relógio dentro de uma função pura.
-  const lastmod = xml.match(/<lastmod>([^<]*)<\/lastmod>/)?.[1];
   const entradas = arquivos
     .map(
-      ({ nome }) =>
+      ({ nome, lastmod }) =>
         `<sitemap><loc>${origem}/${nome}</loc>` +
         (lastmod ? `<lastmod>${lastmod}</lastmod>` : "") +
         `</sitemap>`,

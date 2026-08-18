@@ -4,22 +4,24 @@ import { describe, expect, it } from "vitest";
 // no `node` do encadeamento do `package.json`, mas sem teste ela seria a única peça do
 // pipeline de sitemap sem cobertura. A declaração de tipo mora em
 // `scripts/sitemap-split.logic.d.mts`. Ver docs/superpowers/specs/2026-08-17-sitemap-por-secao-design.md.
-import { dividirSitemap } from "../../scripts/sitemap-split.logic.mjs";
+import { dividirSitemap, maisRecenteDentre } from "../../scripts/sitemap-split.logic.mjs";
 
 const PROLOG = '<?xml version="1.0" encoding="UTF-8"?>';
 const ABRE_URLSET =
   '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">';
 const LASTMOD = "2026-08-14T22:43:37.432Z";
 
-function bloco(path: string): string {
+function bloco(path: string, lastmod: string = LASTMOD): string {
   return (
-    `<url><loc>https://hub.movepark.co${path}</loc><lastmod>${LASTMOD}</lastmod>` +
+    `<url><loc>https://hub.movepark.co${path}</loc><lastmod>${lastmod}</lastmod>` +
     `<changefreq>daily</changefreq><priority>1.0</priority></url>`
   );
 }
 
 function sitemapCom(paths: string[]): string {
-  return `${PROLOG}${ABRE_URLSET}${paths.map(bloco).join("")}</urlset>`;
+  // `paths.map(bloco)` passaria o índice como segundo argumento e a primeira URL sairia com
+  // `lastmod` 0. O arrow existe para isso.
+  return `${PROLOG}${ABRE_URLSET}${paths.map((p) => bloco(p)).join("")}</urlset>`;
 }
 
 /** As seis URLs abaixo espelham a forma real: home, institucional, índice e item de seção. */
@@ -30,6 +32,32 @@ const MAPA = {
   faq: ["/faq", "/faq/como-cancelar"],
   paginas: ["/", "/sobre"],
 };
+
+describe("maisRecenteDentre", () => {
+  it("devolve a maior data, na string original", () => {
+    expect(maisRecenteDentre("2022-07-22T10:00:00.000Z", "2026-06-15T00:00:00.000Z")).toBe(
+      "2026-06-15T00:00:00.000Z",
+    );
+  });
+
+  it("ignora nulo, vazio e data ilegível", () => {
+    expect(maisRecenteDentre(null, undefined, "", "2024-01-02T00:00:00.000Z", "ontem")).toBe(
+      "2024-01-02T00:00:00.000Z",
+    );
+  });
+
+  it("devolve undefined quando não sobra nenhuma data usável", () => {
+    expect(maisRecenteDentre(null, undefined, "sei lá")).toBeUndefined();
+    expect(maisRecenteDentre()).toBeUndefined();
+  });
+
+  it("compara por instante, não por ordem alfabética", () => {
+    // "2026-01-05T00:00:00Z" > "2026-01-05T00:00:00.000+02:00" no relógio, mas menor no texto.
+    expect(maisRecenteDentre("2026-01-05T00:00:00.000+02:00", "2026-01-05T00:00:00.000Z")).toBe(
+      "2026-01-05T00:00:00.000Z",
+    );
+  });
+});
 
 describe("dividirSitemap", () => {
   it("manda cada URL para o arquivo da seção declarada no mapa", () => {
@@ -94,6 +122,44 @@ describe("dividirSitemap", () => {
     // O host sai da própria URL do sitemap de origem, não de uma segunda cópia de SITE_URL.
     expect(indice).not.toContain("localhost");
     expect(indice).toContain(`<lastmod>${LASTMOD}</lastmod>`);
+  });
+
+  it("dá a cada entrada do índice o lastmod mais recente daquela seção", () => {
+    // Com lastmod real por URL, o índice não pode carimbar a data da primeira URL do shard:
+    // o Google leria "esta seção mudou em 2026-01-01" quando ela mudou em 2026-06-15.
+    const xml =
+      `${PROLOG}${ABRE_URLSET}` +
+      [
+        bloco("/blog/", "2026-01-01T00:00:00.000Z"),
+        bloco("/blog/vaga-em-confins/", "2026-06-15T00:00:00.000Z"),
+        bloco("/faq", "2025-03-02T00:00:00.000Z"),
+        bloco("/faq/como-cancelar", "2025-01-09T00:00:00.000Z"),
+      ].join("") +
+      `</urlset>`;
+
+    const { indice } = dividirSitemap(xml, {
+      blog: ["/blog/", "/blog/vaga-em-confins/"],
+      faq: ["/faq", "/faq/como-cancelar"],
+    });
+
+    expect(indice).toContain(
+      "<loc>https://hub.movepark.co/sitemap-blog.xml</loc><lastmod>2026-06-15T00:00:00.000Z</lastmod>",
+    );
+    expect(indice).toContain(
+      "<loc>https://hub.movepark.co/sitemap-faq.xml</loc><lastmod>2025-03-02T00:00:00.000Z</lastmod>",
+    );
+  });
+
+  it("omite o lastmod do índice quando a seção não tem nenhum", () => {
+    const semData =
+      `${PROLOG}${ABRE_URLSET}` +
+      `<url><loc>https://hub.movepark.co/sobre</loc></url>` +
+      `</urlset>`;
+
+    const { indice } = dividirSitemap(semData, { paginas: ["/sobre"] });
+
+    expect(indice).toContain("<loc>https://hub.movepark.co/sitemap-paginas.xml</loc>");
+    expect(indice).not.toContain("<lastmod>");
   });
 
   it("recusa entrada que já é um índice, para rodar duas vezes não picotar", () => {

@@ -12,6 +12,9 @@ import {
   SITEMAP_PRIVATE_PREFIXES,
   SITEMAP_STATIC_ROUTES,
 } from "./src/lib/sitemapRoutes";
+// Mesma função que o split usa para o lastmod do índice. Uma só, para as duas pontas não
+// divergirem sobre o que é "a data mais recente".
+import { maisRecenteDentre } from "./scripts/sitemap-split.logic.mjs";
 
 const SITE_URL = "https://hub.movepark.co";
 
@@ -24,35 +27,58 @@ const SITE_URL = "https://hub.movepark.co";
  */
 const MAPA_DE_SECOES = "node_modules/.cache/movepark-sitemap-sections.json";
 
+/**
+ * Uma URL do sitemap com a data que o banco conhece para ela.
+ *
+ * O `lastmod` só existe quando há data de verdade. Página sem linha no banco (as
+ * institucionais) fica sem, e o plugin cai no default dele. Ver a seção "Sitemap" em
+ * docs/specs/seo-indexacao.md.
+ */
+type RotaComData = { route: string; lastmod?: string };
+
 // Listagens /p/<company>/<location>/<parkingType> ativas (sitemap).
-async function getDynamicRoutes(sb: SupabaseClient | null): Promise<string[]> {
+async function getDynamicRoutes(
+  sb: SupabaseClient | null,
+): Promise<(RotaComData & { destinationId?: string })[]> {
   if (!sb) return [];
 
   const { data } = await sb
     .from("location_parking_type")
     .select(
       `
-      location:location!inner(slug, company:company!inner(slug)),
+      updated_at,
+      location:location!inner(slug, destination_id, company:company!inner(slug)),
       company_parking_type:company_parking_type!inner(parking_type:parking_type!inner(code))
     `,
     )
     .eq("is_active", true);
 
   // deno-lint-ignore no-explicit-any
-  return (data ?? []).map(
-    (r: any) =>
-      `/p/${r.location.company.slug}/${r.location.slug}/${r.company_parking_type.parking_type.code}`,
-  );
+  return (data ?? []).map((r: any) => ({
+    route: `/p/${r.location.company.slug}/${r.location.slug}/${r.company_parking_type.parking_type.code}`,
+    lastmod: r.updated_at,
+    destinationId: r.location.destination_id ?? undefined,
+  }));
 }
 
 // Páginas de destino (SEO) — /destinos/<slug> de cada destino publicado.
-async function getDestinationRoutes(sb: SupabaseClient | null): Promise<string[]> {
+async function getDestinationRoutes(
+  sb: SupabaseClient | null,
+): Promise<(RotaComData & { id: string; slug: string })[]> {
   if (!sb) return [];
 
-  const { data } = await sb.from("destination").select("slug").eq("is_published", true);
+  const { data } = await sb
+    .from("destination")
+    .select("id, slug, updated_at")
+    .eq("is_published", true);
 
   // deno-lint-ignore no-explicit-any
-  return (data ?? []).map((d: any) => `/destinos/${d.slug}`);
+  return (data ?? []).map((d: any) => ({
+    route: `/destinos/${d.slug}`,
+    lastmod: d.updated_at,
+    id: d.id,
+    slug: d.slug,
+  }));
 }
 
 /**
@@ -64,39 +90,41 @@ async function getDestinationRoutes(sb: SupabaseClient | null): Promise<string[]
  * `converted_at is null` porque ficha convertida virou `location`: mandar as duas
  * ao sitemap seria pedir para o Google escolher entre duas páginas nossas.
  */
-async function getProspectRoutes(sb: SupabaseClient | null): Promise<string[]> {
+async function getProspectRoutes(sb: SupabaseClient | null): Promise<RotaComData[]> {
   if (!sb) return [];
 
   const { data } = await sb
     .from("prospect_location")
-    .select("slug, destination:destination(slug)")
+    .select("slug, updated_at, destination:destination(slug)")
     .eq("is_published", true)
     .is("converted_at", null);
 
   return (data ?? [])
     // deno-lint-ignore no-explicit-any
-    .map((p: any) =>
-      p.destination?.slug ? `/estacionamentos/${p.destination.slug}/${p.slug}` : null,
+    .map((p: any): RotaComData | null =>
+      p.destination?.slug
+        ? { route: `/estacionamentos/${p.destination.slug}/${p.slug}`, lastmod: p.updated_at }
+        : null,
     )
-    .filter((r: string | null): r is string => r !== null);
+    .filter((r): r is RotaComData => r !== null);
 }
 
 /**
  * Páginas por pergunta do FAQ (/faq/<slug>): cada pergunta global ou de destino
  * publicada com slug é uma URL própria, answer-first, pré-renderizada no build.
  */
-async function getFaqRoutes(sb: SupabaseClient | null): Promise<string[]> {
+async function getFaqRoutes(sb: SupabaseClient | null): Promise<RotaComData[]> {
   if (!sb) return [];
 
   const { data } = await sb
     .from("faq")
-    .select("slug")
+    .select("slug, updated_at")
     .eq("is_published", true)
     .is("deleted_at", null)
     .not("slug", "is", null);
 
   // deno-lint-ignore no-explicit-any
-  return (data ?? []).map((f: any) => `/faq/${f.slug}`);
+  return (data ?? []).map((f: any) => ({ route: `/faq/${f.slug}`, lastmod: f.updated_at }));
 }
 
 /**
@@ -106,7 +134,9 @@ async function getFaqRoutes(sb: SupabaseClient | null): Promise<string[]> {
  * todos os destinos (mapeados entram sem preço); esta intenção não. Falha da RPC
  * deixa as URLs fora do sitemap; as páginas continuam existindo pelo SSG.
  */
-async function getMaisBaratoRoutes(sb: SupabaseClient | null): Promise<string[]> {
+async function getMaisBaratoRoutes(
+  sb: SupabaseClient | null,
+): Promise<{ route: string; slug: string }[]> {
   if (!sb) return [];
 
   const { data } = await sb.rpc("destination_price_index", {});
@@ -122,24 +152,30 @@ async function getMaisBaratoRoutes(sb: SupabaseClient | null): Promise<string[]>
           (u.prices ?? []).some((p: any) => p.total != null),
       ),
     )
-    .map((d) => `/estacionamento-mais-barato/${d.slug}`);
+    .map((d) => ({ route: `/estacionamento-mais-barato/${d.slug}`, slug: d.slug }));
 }
 
 /**
  * Posts do blog. A barra final é obrigatória: é a URL canônica herdada do
  * WordPress, e é ela que o Google já conhece. Ver docs/specs/blog.md.
  */
-async function getBlogRoutes(sb: SupabaseClient | null): Promise<string[]> {
+async function getBlogRoutes(sb: SupabaseClient | null): Promise<RotaComData[]> {
   if (!sb) return [];
 
   const { data } = await sb
     .from("blog_post")
-    .select("slug")
+    .select("slug, published_at, updated_at")
     .eq("is_published", true)
     .is("deleted_at", null);
 
+  // `greatest` dos dois, e não só `updated_at`: post importado do WordPress e nunca editado
+  // aqui tem os dois iguais (migration 20261028120000 devolveu o sentido ao `updated_at`),
+  // e post editado depois tem `updated_at` maior. Ver docs/specs/blog.md.
   // deno-lint-ignore no-explicit-any
-  return (data ?? []).map((p: any) => `/blog/${p.slug}/`);
+  return (data ?? []).map((p: any) => ({
+    route: `/blog/${p.slug}/`,
+    lastmod: maisRecenteDentre(p.published_at, p.updated_at),
+  }));
 }
 
 /**
@@ -147,14 +183,16 @@ async function getBlogRoutes(sb: SupabaseClient | null): Promise<string[]> {
  * precificada. Os slugs vêm da mesma RPC que alimenta o loader SSG, então o
  * sitemap e o pré-render nunca divergem sobre quais páginas existem.
  */
-async function getPrecosRoutes(sb: SupabaseClient | null): Promise<string[]> {
+async function getPrecosRoutes(
+  sb: SupabaseClient | null,
+): Promise<{ route: string; slug: string }[]> {
   if (!sb) return [];
 
   const { data } = await sb.rpc("destination_price_index");
 
   // deno-lint-ignore no-explicit-any
   const destinos = (((data as any)?.destinations ?? []) as { slug: string }[]);
-  return destinos.map((d) => `/precos/${d.slug}`);
+  return destinos.map((d) => ({ route: `/precos/${d.slug}`, slug: d.slug }));
 }
 
 /**
@@ -203,27 +241,85 @@ export default defineConfig(async ({ mode }) => {
     ]);
   // Índice de destinos + uma URL por destino publicado, além das listagens /p/...
   // e dos posts do blog (com barra final, contrato herdado do WordPress).
-  writeBlogSlugManifest(blogRoutes);
+  writeBlogSlugManifest(blogRoutes.map((r) => r.route));
+
+  /**
+   * Data de cada página de preço, herdada das unidades daquele destino.
+   *
+   * A RPC `destination_price_index` devolve preço, não data. A data honesta de uma página de
+   * preço é a da última mexida em preço ou capacidade, que mora no `location_parking_type`.
+   * Sem isto, `/precos/*` e `/estacionamento-mais-barato/*` ficariam com a data do build,
+   * que muda a cada deploy mesmo sem preço nenhum ter mudado.
+   */
+  const dataPorDestino = new Map<string, string>();
+  for (const unidade of listingRoutes) {
+    if (!unidade.destinationId || !unidade.lastmod) continue;
+    const atual = dataPorDestino.get(unidade.destinationId);
+    dataPorDestino.set(unidade.destinationId, maisRecenteDentre(atual, unidade.lastmod)!);
+  }
+  const idPorSlugDeDestino = new Map(destinationRoutes.map((d) => [d.slug, d.id]));
+  const dataDePreco = (slug: string) => {
+    const id = idPorSlugDeDestino.get(slug);
+    return id ? dataPorDestino.get(id) : undefined;
+  };
+
+  const precosComData: RotaComData[] = precosRoutes.map((p) => ({
+    route: p.route,
+    lastmod: dataDePreco(p.slug),
+  }));
+  const maisBaratoComData: RotaComData[] = maisBaratoRoutes.map((p) => ({
+    route: p.route,
+    lastmod: dataDePreco(p.slug),
+  }));
+
+  /** Capa de seção: muda quando qualquer filho muda, então herda a data mais recente deles. */
+  const capa = (path: string, filhos: RotaComData[]): RotaComData => ({
+    route: path,
+    lastmod: maisRecenteDentre(...filhos.map((f) => f.lastmod)),
+  });
+
+  const todasAsRotas: RotaComData[] = [
+    // `/faq` sai daqui e entra como capa: ela é a porta da seção de perguntas, e a data dela
+    // é a da pergunta mais recente, não a do build.
+    ...SITEMAP_STATIC_ROUTES.filter((r) => r !== "/faq").map((route) => ({ route })),
+    capa("/destinos", destinationRoutes),
+    capa("/precos", precosComData),
+    capa("/blog/", blogRoutes),
+    capa("/faq", faqRoutes),
+    ...listingRoutes,
+    ...destinationRoutes,
+    ...blogRoutes,
+    ...prospectRoutes,
+    ...faqRoutes,
+    ...precosComData,
+    ...maisBaratoComData,
+  ];
 
   // As estáticas entram por lista porque o plugin roda antes do pré-render e não teria como
   // descobri-las sozinho (ver src/lib/sitemapRoutes.ts).
   // Set porque o plugin já injeta "/" por conta própria: sem dedupe o sitemap sai com a
   // home repetida, que é sitemap inválido.
-  const dynamicRoutes = [
-    ...new Set([
-      ...SITEMAP_STATIC_ROUTES,
-      "/destinos",
-      "/precos",
-      "/blog/",
-      ...listingRoutes,
-      ...destinationRoutes,
-      ...blogRoutes,
-      ...prospectRoutes,
-      ...faqRoutes,
-      ...precosRoutes,
-      ...maisBaratoRoutes,
-    ]),
-  ].filter((r) => r !== "/");
+  const dynamicRoutes = [...new Set(todasAsRotas.map((r) => r.route))].filter((r) => r !== "/");
+
+  /**
+   * `lastmod` por rota, entregue ao plugin.
+   *
+   * A chave tem que ser a rota NORMALIZADA: o plugin roda `parse(route).name` internamente e
+   * transforma `/blog/slug/` em `/blog/slug` antes de procurar a data. Com a barra, a busca
+   * erra e o post cairia no default (data do build).
+   *
+   * Rota sem data nenhuma fica fora do mapa de propósito, e o plugin usa o default dele. É o
+   * caso das institucionais: elas não têm linha em banco, e inventar data para elas seria a
+   * mentira que este trabalho existe para tirar do sitemap.
+   */
+  const lastmodPorRota: Record<string, Date> = {};
+  for (const { route, lastmod } of todasAsRotas) {
+    if (!lastmod) continue;
+    const chave = route.replace(/\/+$/, "") || "/";
+    const data = new Date(lastmod);
+    const atual = lastmodPorRota[chave];
+    if (!atual || data > atual) lastmodPorRota[chave] = data;
+  }
 
   /**
    * Mapa de seções do sitemap, consumido pelo `scripts/split-sitemap.mjs`.
@@ -235,15 +331,16 @@ export default defineConfig(async ({ mode }) => {
    * `/faq`, `/destinos`, `/precos` e `/blog/` são as capas de cada seção e viajam com ela,
    * não com as institucionais.
    */
+  const so = (rotas: RotaComData[]) => rotas.map((r) => r.route);
   const secoesDoSitemap: Record<string, string[]> = {
-    blog: ["/blog/", ...blogRoutes],
-    destinos: ["/destinos", ...destinationRoutes],
-    estacionamentos: [...prospectRoutes],
-    faq: ["/faq", ...faqRoutes],
-    "mais-barato": [...maisBaratoRoutes],
+    blog: ["/blog/", ...so(blogRoutes)],
+    destinos: ["/destinos", ...so(destinationRoutes)],
+    estacionamentos: so(prospectRoutes),
+    faq: ["/faq", ...so(faqRoutes)],
+    "mais-barato": so(maisBaratoComData),
     paginas: SITEMAP_STATIC_ROUTES.filter((r) => r !== "/faq"),
-    precos: ["/precos", ...precosRoutes],
-    unidades: [...listingRoutes],
+    precos: ["/precos", ...so(precosComData)],
+    unidades: so(listingRoutes),
   };
 
   return {
@@ -259,6 +356,9 @@ export default defineConfig(async ({ mode }) => {
       sitemap({
         hostname: SITE_URL,
         dynamicRoutes,
+        // Data real por URL, vinda do banco. Rota ausente do mapa usa o default do plugin
+        // (data do build), que hoje é o caso só das institucionais.
+        lastmod: lastmodPorRota,
         // NÃO gerar robots.txt aqui — o plugin sobrescreveria o public/robots.txt curado
         // (allowlist/blocklist de bots + Content Signals). Só o sitemap.xml é gerado. (E0.8-a/b)
         generateRobotsTxt: false,

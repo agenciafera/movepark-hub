@@ -13,6 +13,8 @@ export interface ArquivoDeSitemap {
   conteudo: string;
   /** Quantas URLs o shard carrega. Alimenta a invariante de soma do build. */
   urls: number;
+  /** Data mais recente entre as URLs do shard. `undefined` se nenhuma tem `lastmod`. */
+  lastmod?: string;
 }
 
 export interface ResultadoDoSplit {
@@ -23,6 +25,14 @@ export interface ResultadoDoSplit {
   /** Paths que estavam no sitemap e não no mapa de seções. Caíram em `paginas`. */
   orfas: string[];
 }
+
+/**
+ * Maior data entre as recebidas, ignorando nulo, vazio e data ilegível.
+ * Devolve a string original da vencedora, ou `undefined` se nenhuma servir.
+ */
+export function maisRecenteDentre(
+  ...datas: (string | null | undefined)[]
+): string | undefined;
 
 export function dividirSitemap(
   xml: string,
