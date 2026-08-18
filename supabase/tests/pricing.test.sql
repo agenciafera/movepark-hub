@@ -13,7 +13,7 @@
 -- arquivo hoje: ao mexer nele, não remova essa cobertura sem colocá-la em outro lugar.
 
 begin;
-select plan(21);
+select plan(23);
 
 -- helper inline: preço de um caso
 create or replace function pg_temp.p(c text, l text, t text, d int)
@@ -77,6 +77,22 @@ select is(
   array['fixed_bracket','hourly_capped','incremental_formula','monthly_remainder',
         'surcharge','tiered_progressive','uniform_by_duration'],
   'as sete estratégias do motor continuam exercitadas');
+
+-- ── Segurança: empresa suspensa/inativa não deve precificar via RPC pública ──
+-- (20261029100000) get_pricing_data/simulate_price são security definer e ignoravam a RLS
+-- (catalog_read_company: status='active' and onboarding_status='active'); a busca já
+-- escondia a empresa fora do ar, mas quem tinha a URL de checkout continuava recebendo
+-- preço real direto da RPC.
+update public.company set status = 'suspended' where slug = 'aerovalet';
+
+select ok((public.simulate_price('aerovalet','aeroporto-congonhas','covered',1)->>'error') is not null,
+  'empresa suspensa: simulate_price retorna error, não preço real');
+
+select is(
+  (select count(*) from public.get_pricing_data('aerovalet','aeroporto-congonhas','covered')),
+  0::bigint, 'empresa suspensa: get_pricing_data não devolve linha');
+
+update public.company set status = 'active' where slug = 'aerovalet';
 
 select * from finish();
 rollback;

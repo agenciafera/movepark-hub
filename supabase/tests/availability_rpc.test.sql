@@ -2,7 +2,7 @@
 -- operator_location_occupancy). Roda em transação com rollback.
 
 begin;
-select plan(8);
+select plan(10);
 
 -- ── fixture: um tipo de vaga ativo do seed, capacidade = 2 ──────────────────
 do $$
@@ -88,7 +88,28 @@ select is(
     current_setting('t.ptype'), '2026-10-10T12:00:00Z', '2026-10-12T12:00:00Z') ->> 'min_date_ok')::boolean,
   false, 'min_date_ok false antes da data mínima');
 
--- ── 7) guard de ocupação: usuário sem vínculo → 42501 ──────────────────────
+-- ── 7) unidade despublicada não responde disponibilidade real ──────────────
+-- (20261029100000) check_availability/availability_batch são security definer e ignoravam
+-- a RLS (catalog_read_location: status='active' and is_listed); a busca já escondia a
+-- unidade despublicada, mas quem tinha a URL de checkout continuava recebendo remaining/
+-- sold_out reais direto da RPC.
+update public.location set is_listed = false where id = current_setting('t.loc_id')::uuid;
+
+select is(
+  public.check_availability(current_setting('t.company'), current_setting('t.location'),
+    current_setting('t.ptype'), '2026-10-10T12:00:00Z', '2026-10-12T12:00:00Z') ->> 'error',
+  format('Tipo de vaga não encontrado: %s / %s / %s',
+    current_setting('t.company'), current_setting('t.location'), current_setting('t.ptype')),
+  'unidade despublicada (is_listed=false): check_availability não encontra o tipo de vaga');
+
+select is(
+  (select count(*) from public.availability_batch(
+     array[current_setting('t.lpt')::uuid], '2026-10-10T12:00:00Z', '2026-10-12T12:00:00Z')),
+  0::bigint, 'unidade despublicada: availability_batch não devolve linha');
+
+update public.location set is_listed = true where id = current_setting('t.loc_id')::uuid;
+
+-- ── 8) guard de ocupação: usuário sem vínculo → 42501 ──────────────────────
 do $$
 declare u uuid := gen_random_uuid();
 begin
