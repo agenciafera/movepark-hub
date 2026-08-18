@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Check } from "@phosphor-icons/react";
+import { Check, GlobeHemisphereWest } from "@phosphor-icons/react";
 import {
   Command,
   CommandEmpty,
@@ -94,6 +94,33 @@ export function DestinationCombobox({
           <CommandInput placeholder="Aeroporto, código IATA, cidade..." />
           <CommandList>
             <CommandEmpty>Nenhum destino encontrado.</CommandEmpty>
+            {/*
+              Sem destino a busca roda em todos os aeroportos, e até aqui esse era
+              um estado que dava para chegar sem querer (abrindo a home) mas não
+              para escolher: depois de marcar um destino, não havia como desmarcar.
+
+              Fica fora dos grupos de país de propósito, porque não pertence a
+              nenhum, e fora do `value` de busca do cmdk pelos nomes dos destinos,
+              para não brigar com a digitação: quem escreve "GRU" quer o GRU.
+            */}
+            <CommandGroup>
+              <CommandItem
+                value="todos os destinos todo qualquer lugar"
+                onSelect={() => {
+                  onChange(null, null);
+                  setOpen(false);
+                }}
+              >
+                <GlobeHemisphereWest className="h-4 w-4 shrink-0 text-mp-indigo" />
+                <div className="flex flex-1 flex-col">
+                  <span className="text-body-sm text-ink">Todos os destinos</span>
+                  <span className="text-caption-sm text-muted">
+                    Compara os aeroportos de uma vez
+                  </span>
+                </div>
+                {!value && !pointValue && <Check className="h-4 w-4 text-mp-primary" />}
+              </CommandItem>
+            </CommandGroup>
             {grouped.map(([country, list]) => (
               <CommandGroup
                 key={country}

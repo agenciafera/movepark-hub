@@ -31,7 +31,12 @@ export function ResultsHeader({
   onSortChange,
   hasDestCoords,
 }: Props) {
-  const destName = data?.destination?.name ?? data?.destination?.code ?? "destino";
+  /*
+    Sem destino a busca é válida: ela roda em todos os aeroportos, e agora dá para
+    pedir isso pelo "Todos os destinos" do combobox. O fallback anterior era a
+    palavra "destino" solta, e o título saía "12 vagas em destino".
+  */
+  const destName = data?.destination?.name ?? data?.destination?.code ?? "todos os destinos";
   const count = data?.total ?? 0;
   // A edição da busca (destino/datas/veículo) acontece no SearchBarPill acima — aqui é só o
   // resumo do resultado + ordenação.
@@ -48,7 +53,9 @@ export function ResultsHeader({
                 Estimativa
               </span>
             )}
-            <span>{formatDateTime(from)} → {formatDateTime(to)}</span>
+            <span>
+              {formatDateTime(from)} → {formatDateTime(to)}
+            </span>
             <span className="hidden tablet:inline">·</span>
             <span>{formatDuration(from, to)}</span>
           </div>
@@ -63,9 +70,7 @@ export function ResultsHeader({
             <SelectItem value="price_asc">Menor preço</SelectItem>
             <SelectItem value="price_desc">Maior preço</SelectItem>
             <SelectItem value="rating_desc">Melhor avaliação</SelectItem>
-            {hasDestCoords && (
-              <SelectItem value="distance_asc">Mais próximo</SelectItem>
-            )}
+            {hasDestCoords && <SelectItem value="distance_asc">Mais próximo</SelectItem>}
           </SelectContent>
         </Select>
       </div>
