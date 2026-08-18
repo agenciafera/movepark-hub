@@ -3,8 +3,8 @@
 > Descubra as melhores opções de estacionamento barato ao Aeroporto de Lisboa em 2024. O Air Park se destaca pelo ótimo custo-benefício
 
 - Publicado em: 2024-01-19
-- URL: https://hub.movepark.co/blog/quanto-custa-um-estacionamento-do-aeroporto-lisboa/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-humberto-delgado
+- URL: https://movepark.co/blog/quanto-custa-um-estacionamento-do-aeroporto-lisboa/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-humberto-delgado
 
 ---
 **Descubra as melhores opções de estacionamento próximo ao Aeroporto de Lisboa em 2024. O Air Park se destaca pelo ótimo custo-benefício e atendimento de qualidade, proporcionando uma escolha econômica e conveniente.**

@@ -5,8 +5,7 @@ import { useDestinations, type Destination } from "@/features/search/api";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
 import { OgImage } from "@/lib/ogImage";
-
-const SITE_URL = "https://hub.movepark.co";
+import { SITE_URL } from "@/lib/site";
 
 const TITLE = "Destinos atendidos | Estacionamento perto de aeroportos | Movepark";
 const DESCRIPTION =

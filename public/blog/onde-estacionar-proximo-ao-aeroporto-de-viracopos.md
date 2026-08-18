@@ -3,8 +3,8 @@
 > Muitas pessoas deixam de ir de carro até o Aeroporto Viracopos porque consideram o custo do estacionamento (Edifício Garagem) muito elevado, a diária sai por R$56,00. Mas existem ótimas opções de estacionamentos próximos do Aeroporto Viracopos com preços bem abaixo. Antes de escolher o local que vai estacionar seu carro, você precisa ficar atento a [...]
 
 - Publicado em: 2022-10-21
-- URL: https://hub.movepark.co/blog/onde-estacionar-proximo-ao-aeroporto-de-viracopos/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-de-viracopos
+- URL: https://movepark.co/blog/onde-estacionar-proximo-ao-aeroporto-de-viracopos/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-de-viracopos
 
 ---
 Muitas pessoas deixam de ir de carro até o Aeroporto Viracopos porque consideram o custo do estacionamento (Edifício Garagem) muito elevado, a diária sai por R$56,00. Mas existem ótimas opções de estacionamentos próximos do Aeroporto Viracopos com preços bem abaixo.

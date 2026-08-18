@@ -20,8 +20,12 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { DEFAULT_SITE_URL } from "../src/lib/site-host.mjs";
 
-const SITE_URL = "https://hub.movepark.co";
+// Host canônico: mesma fonte do front e do sitemap. Este script escreve o corpus que as IAs
+// leem (llms-full.txt, faq/*.md, precos/*.md, destinos/*.md), então host errado aqui é o site
+// inteiro se apresentando num endereço que não existe mais.
+const SITE_URL = DEFAULT_SITE_URL;
 const DIST = "dist";
 
 // ---------------------------------------------------------------------------

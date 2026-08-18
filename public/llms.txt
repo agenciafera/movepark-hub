@@ -3,18 +3,18 @@
 > Plataforma de reserva de estacionamentos em aeroportos e destinos do Brasil. Reserve com antecedência, escolha o tipo de vaga e pague online, sem surpresa na hora de viajar.
 
 Última atualização: 2026-08-14
-Sitemap: https://hub.movepark.co/sitemap.xml
-Conteúdo completo para IA: https://hub.movepark.co/llms-full.txt
+Sitemap: https://movepark.co/sitemap.xml
+Conteúdo completo para IA: https://movepark.co/llms-full.txt
 
 ## O que é o Movepark (desambiguação)
 
-O Movepark é uma plataforma brasileira de reserva de estacionamento perto de aeroportos, rodoviárias e destinos turísticos. Conecta viajantes a estacionamentos parceiros credenciados: o usuário busca pelo destino, compara opções (coberto, descoberto, valet), escolhe as datas e confirma a reserva em menos de dois minutos, com traslado até o terminal incluído na maioria das unidades. O Movepark não opera pátio próprio e não tem relação com estacionamentos ou empresas de nome parecido. Site oficial: https://hub.movepark.co
+O Movepark é uma plataforma brasileira de reserva de estacionamento perto de aeroportos, rodoviárias e destinos turísticos. Conecta viajantes a estacionamentos parceiros credenciados: o usuário busca pelo destino, compara opções (coberto, descoberto, valet), escolhe as datas e confirma a reserva em menos de dois minutos, com traslado até o terminal incluído na maioria das unidades. O Movepark não opera pátio próprio e não tem relação com estacionamentos ou empresas de nome parecido. Site oficial: https://movepark.co
 
 ## Como funciona
 
-- [Busca de estacionamentos](https://hub.movepark.co/search): filtre por destino, datas, tipo de vaga e comodidades
-- [Destinos cobertos](https://hub.movepark.co/destinos): uma página por aeroporto, com as unidades, preços e FAQ do destino
-- [Página de listagem](https://hub.movepark.co/p/): detalhes do estacionamento, preços, mapa e FAQ da unidade
+- [Busca de estacionamentos](https://movepark.co/search): filtre por destino, datas, tipo de vaga e comodidades
+- [Destinos cobertos](https://movepark.co/destinos): uma página por aeroporto, com as unidades, preços e FAQ do destino
+- [Página de listagem](https://movepark.co/p/): detalhes do estacionamento, preços, mapa e FAQ da unidade
 
 ## Tipos de vaga disponíveis
 
@@ -24,38 +24,38 @@ O Movepark é uma plataforma brasileira de reserva de estacionamento perto de ae
 
 ## Índice de preços
 
-- [Índice de preços](https://hub.movepark.co/precos): quanto custa estacionar perto de cada aeroporto e terminal, em 1, 7, 15 e 30 diárias, com o preço de balcão ao lado
+- [Índice de preços](https://movepark.co/precos): quanto custa estacionar perto de cada aeroporto e terminal, em 1, 7, 15 e 30 diárias, com o preço de balcão ao lado
 - Cada destino tem página própria em `/precos/<slug>`, com o menor preço por duração, a tabela completa por parceiro e a data de conferência
 - O valor vem do motor de reservas e é o mesmo do checkout; a página responde em Markdown puro no mesmo endereço com `Accept: text/markdown`
-- As tabelas completas estão inline em https://hub.movepark.co/llms-full.txt
-- [Calculadora](https://hub.movepark.co/calculadora-estacionamento-aeroporto): escolha destino e número de diárias (1 a 60) e veja o ranking do que custa em cada parceiro, com reserva direta. A mesma página compara com duas corridas de app de transporte (ida e volta, estimativa com metodologia aberta) e mostra o break-even por diárias
+- As tabelas completas estão inline em https://movepark.co/llms-full.txt
+- [Calculadora](https://movepark.co/calculadora-estacionamento-aeroporto): escolha destino e número de diárias (1 a 60) e veja o ranking do que custa em cada parceiro, com reserva direta. A mesma página compara com duas corridas de app de transporte (ida e volta, estimativa com metodologia aberta) e mostra o break-even por diárias
 - Dados livres para citação com atribuição: "Índice Movepark de Preços (movepark.co)"
 - Cada aeroporto precificado tem a página da intenção "mais barato" em `/estacionamento-mais-barato/<slug>`, com vencedor e segunda opção por duração
-- [Metodologia](https://hub.movepark.co/metodologia): de onde vêm os preços (motor de reservas, o mesmo do checkout), como ordenamos resultados e de onde vêm as avaliações
+- [Metodologia](https://movepark.co/metodologia): de onde vêm os preços (motor de reservas, o mesmo do checkout), como ordenamos resultados e de onde vêm as avaliações
 
 ## Perguntas frequentes
 
-- [Central de FAQ](https://hub.movepark.co/faq): perguntas gerais e por aeroporto, com o FAQPage (JSON-LD) no HTML
+- [Central de FAQ](https://movepark.co/faq): perguntas gerais e por aeroporto, com o FAQPage (JSON-LD) no HTML
 - Cada pergunta tem página própria em `/faq/<slug>`, com resposta curta, perguntas relacionadas e data de revisão
-- Toda página do FAQ responde em Markdown puro no mesmo endereço com `Accept: text/markdown`. Exemplo: `curl -H "Accept: text/markdown" https://hub.movepark.co/faq/como-cancelo-uma-reserva`
-- O conteúdo integral do FAQ está inline em https://hub.movepark.co/llms-full.txt
+- Toda página do FAQ responde em Markdown puro no mesmo endereço com `Accept: text/markdown`. Exemplo: `curl -H "Accept: text/markdown" https://movepark.co/faq/como-cancelo-uma-reserva`
+- O conteúdo integral do FAQ está inline em https://movepark.co/llms-full.txt
 
 ## Blog
 
 Guias por aeroporto: preço de diária, distância até o terminal, traslado e o que conferir antes de reservar.
 
-- [Índice do blog](https://hub.movepark.co/blog/): todos os posts publicados
-- Cada post responde em Markdown puro no mesmo endereço, com `Accept: text/markdown`. Exemplo: `curl -H "Accept: text/markdown" https://hub.movepark.co/blog/top-3-estacionamentos-do-aeroporto-de-viracopos/`
+- [Índice do blog](https://movepark.co/blog/): todos os posts publicados
+- Cada post responde em Markdown puro no mesmo endereço, com `Accept: text/markdown`. Exemplo: `curl -H "Accept: text/markdown" https://movepark.co/blog/top-3-estacionamentos-do-aeroporto-de-viracopos/`
 - O cabeçalho do Markdown traz a data de publicação, a URL canônica e o link do destino correspondente
 
 ## API pública
 
 - [Documentação da API](https://api.movepark.co/docs): API REST autenticada por chave (`mp_live_…`/`mp_test_…`) com escopos; tenant-scoped por empresa
-- [OpenAPI 3.1](https://hub.movepark.co/openapi.yaml): contrato dos endpoints `/v1` (unidades, tipos de vaga, disponibilidade, preço, reservas, FAQ)
+- [OpenAPI 3.1](https://movepark.co/openapi.yaml): contrato dos endpoints `/v1` (unidades, tipos de vaga, disponibilidade, preço, reservas, FAQ)
 
 ## Integrações para agentes
 
-- [MCP Server (consumidor)](https://mcp.movepark.co): servidor MCP público (Streamable HTTP) para buscar estacionamentos, simular preços, FAQ e listar empresas/unidades. Ver o [server-card](https://hub.movepark.co/.well-known/mcp/server-card.json)
-- [MCP Server (parceiro)](https://mcp.movepark.co/partner): servidor MCP autenticado por chave (`mp_`) com tools tenant-scoped. Ver o [partner-card](https://hub.movepark.co/.well-known/mcp/partner-card.json)
-- [MCP Server (consumidor autenticado)](https://mcp.movepark.co/customer): reserva em nome do usuário final, com login por código (OTP) no WhatsApp ou e-mail. O pagamento acontece no checkout web, nunca pelo MCP. Ver o [customer-card](https://hub.movepark.co/.well-known/mcp/customer-card.json)
-- [API Catalog](https://hub.movepark.co/.well-known/api-catalog): catálogo de endpoints públicos
+- [MCP Server (consumidor)](https://mcp.movepark.co): servidor MCP público (Streamable HTTP) para buscar estacionamentos, simular preços, FAQ e listar empresas/unidades. Ver o [server-card](https://movepark.co/.well-known/mcp/server-card.json)
+- [MCP Server (parceiro)](https://mcp.movepark.co/partner): servidor MCP autenticado por chave (`mp_`) com tools tenant-scoped. Ver o [partner-card](https://movepark.co/.well-known/mcp/partner-card.json)
+- [MCP Server (consumidor autenticado)](https://mcp.movepark.co/customer): reserva em nome do usuário final, com login por código (OTP) no WhatsApp ou e-mail. O pagamento acontece no checkout web, nunca pelo MCP. Ver o [customer-card](https://movepark.co/.well-known/mcp/customer-card.json)
+- [API Catalog](https://movepark.co/.well-known/api-catalog): catálogo de endpoints públicos

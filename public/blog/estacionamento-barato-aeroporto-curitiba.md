@@ -3,8 +3,8 @@
 > Descubra dicas simples e eficazes para encontrar um estacionamento barato no aeroporto de Curitiba. Confira nossas dicas!
 
 - Publicado em: 2024-04-18
-- URL: https://hub.movepark.co/blog/estacionamento-barato-aeroporto-curitiba/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-afonso-pena
+- URL: https://movepark.co/blog/estacionamento-barato-aeroporto-curitiba/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-afonso-pena
 
 ---
 Voar pode ser emocionante, mas encontrar um estacionamento acessível pode ser uma preocupação. Não se preocupe! Neste artigo, vamos explorar maneiras simples e eficazes de [encontrar um estacionamento barato no Aeroporto Curitiba](/destinos/aeroporto-afonso-pena). Se você está preocupado com os custos extras, está no lugar certo.

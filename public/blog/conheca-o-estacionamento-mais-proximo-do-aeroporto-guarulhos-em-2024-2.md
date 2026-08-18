@@ -3,8 +3,8 @@
 > Melhores opções de estacionamento em 2024: destacando o Ponce Park como o estacionamento próximo ao Aeroporto Guarulhos
 
 - Publicado em: 2024-01-18
-- URL: https://hub.movepark.co/blog/conheca-o-estacionamento-mais-proximo-do-aeroporto-guarulhos-em-2024-2/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-internacional-de-sao-paulo-guarulhos
+- URL: https://movepark.co/blog/conheca-o-estacionamento-mais-proximo-do-aeroporto-guarulhos-em-2024-2/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-internacional-de-sao-paulo-guarulhos
 
 ---
 ![Whatsapp image 2023 02 16 at 10.34.11 2](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/conheca-o-estacionamento-mais-proximo-do-aeroporto-guarulhos-em-2024-2/whatsapp-image-2023-02-16-at-10.34.11-2.webp)

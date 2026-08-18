@@ -99,7 +99,7 @@ destination_price_index(p_days int[] default '{1,7,15,30}', p_destination text d
 - Sitemap: `getPrecosRoutes` em `vite.config.ts` (mesma RPC do loader, sem divergência).
 - Cobertura de rota: `e2e/windup/precos.json` e `precos-destino.json`.
 - Indexação: vale a regra de host de [seo-indexacao.md](./seo-indexacao.md) (hoje
-  `hub.movepark.co` responde noindex; as páginas nascem prontas para o cutover).
+  o Hub respondia noindex no `hub.movepark.co`; desde 18/08/2026 as páginas estão no ar e indexáveis no `movepark.co`).
 
 ## Atualização
 

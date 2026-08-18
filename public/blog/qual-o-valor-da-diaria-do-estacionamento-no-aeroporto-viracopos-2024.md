@@ -3,8 +3,8 @@
 > Descubra os custos do estacionamento no Aeroporto Viracopos em 2024. Conheça o Virapark e o GarageInn, duas opções próximas aos terminais.
 
 - Publicado em: 2024-01-17
-- URL: https://hub.movepark.co/blog/qual-o-valor-da-diaria-do-estacionamento-no-aeroporto-viracopos-2024/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-de-viracopos
+- URL: https://movepark.co/blog/qual-o-valor-da-diaria-do-estacionamento-no-aeroporto-viracopos-2024/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-de-viracopos
 
 ---
 Planejar sua viagem pelo Aeroporto Viracopos, em Campinas, envolve considerações importantes, e o custo do estacionamento é uma delas. Neste blogpost, vamos explorar dicas cruciais sobre o Aeroporto Viracopos e destacar os Estacionamentos Virapark e GarageInn, duas opções convenientes e próximas ao terminal.

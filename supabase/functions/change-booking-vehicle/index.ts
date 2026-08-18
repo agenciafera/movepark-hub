@@ -11,6 +11,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 import { parseChangeVehicleInput, plateChangeAllowed } from "./logic.ts";
+import { siteUrl } from "../_shared/site.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -162,10 +163,10 @@ Deno.serve(async (req: Request) => {
 
   // Regenera o voucher (a placa está no PDF) — best-effort, não bloqueia a resposta.
   if (booking.status === "confirmed") {
-    const siteUrl = Deno.env.get("PUBLIC_SITE_URL") ?? "https://hub.movepark.co";
+    const site = siteUrl();
     // @ts-ignore - EdgeRuntime no runtime do Supabase
     const waitUntil = typeof EdgeRuntime !== "undefined" ? EdgeRuntime?.waitUntil : undefined;
-    const task = generateAndStoreVoucher(admin, booking.id, siteUrl).catch((e) =>
+    const task = generateAndStoreVoucher(admin, booking.id, site).catch((e) =>
       console.error("[change-booking-vehicle] falha ao regenerar voucher:", booking.id, e),
     );
     if (typeof waitUntil === "function") waitUntil(task);

@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { PostShare } from "./PostShare";
 import { PostProgress } from "./PostProgress";
 
-const URL_POST = "https://hub.movepark.co/blog/estacionamento-viracopos/";
+const URL_POST = "https://movepark.co/blog/estacionamento-viracopos/";
 const TITULO = "Estacionamento em Viracopos";
 
 describe("PostShare", () => {

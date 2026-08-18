@@ -11,7 +11,7 @@
 
 ## 1. Como rodar
 
-**Onde:** a bolinha do assistente no consumidor (`hub.movepark.co` ou o dev local). Para os roteiros
+**Onde:** a bolinha do assistente no consumidor (`movepark.co` ou o dev local). Para os roteiros
 de MCP direto (§7), `curl`.
 
 **Duas passadas por roteiro, quando marcado:** uma **deslogado** e outra **logado**. O assistente

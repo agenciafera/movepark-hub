@@ -8,8 +8,7 @@ import { mesAnoAtual, type MaisBaratoLinha } from "@/features/price-index/maisBa
 import { durationLabel } from "@/features/price-index/priceIndex.logic";
 import { formatBRL } from "@/lib/format";
 import { breadcrumbSchema, faqSchema } from "@/lib/jsonld";
-
-const SITE_URL = "https://hub.movepark.co";
+import { SITE_URL } from "@/lib/site";
 
 /** O que o loader entrega: o destino e o ranking de menor preço por duração. */
 export type MaisBaratoData = {

@@ -275,7 +275,7 @@ paths:
       summary: Post completo por slug
       description: >
         Devolve o corpo em Markdown, a meta de SEO e as relações. O slug é o mesmo
-        da URL pública, em hub.movepark.co/blog/{slug}/.
+        da URL pública, em movepark.co/blog/{slug}/.
       security: [{ apiKey: [blog:read] }]
       parameters:
         - { name: slug, in: path, required: true, schema: { type: string } }

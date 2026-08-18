@@ -1,3 +1,5 @@
+import { DEFAULT_SITE_URL } from "./lib/site-host.mjs";
+
 interface Env {
   ASSETS: { fetch(request: Request): Promise<Response> };
   // Só leitura pública, com a anon key (pública por design). Serve para confirmar
@@ -9,21 +11,21 @@ interface Env {
 /**
  * Hosts liberados para indexação por buscador. É uma **allowlist**, de propósito.
  *
- * Hoje o Hub responde em `hub.movepark.co`, que é endereço técnico e NÃO pode
- * aparecer no Google: o conteúdo público daqui (`/destinos/*`, `/p/*`) disputa a
- * mesma intenção de busca que o `movepark.co` já publica, e dois domínios na mesma
- * intenção se canibalizam.
+ * Desde 18/08/2026 o Hub atende o próprio `movepark.co`, e a lista sai do host
+ * canônico em vez de repetir a string: trocar o domínio não exige lembrar deste
+ * arquivo. Antes disso o projeto respondia em `hub.movepark.co`, endereço técnico
+ * que ficava fora do Google porque o conteúdo público daqui (`/destinos/*`, `/p/*`)
+ * disputava a mesma intenção que o `movepark.co` já publicava.
  *
- * A regra é allowlist porque o Hub vai **substituir** o `movepark.co`. No dia em que
- * este projeto atender o apex, o host já está na lista e a indexação volta sozinha.
- * Um `noindex` chumbado (em `public/_headers`, num meta fixo ou num robots.txt
- * estático) viajaria junto na migração e apagaria o site novo do índice. É esse o
- * acidente que a allowlist existe para evitar.
+ * A regra continua sendo allowlist, e não um `noindex` chumbado (em `public/_headers`,
+ * num meta fixo ou num robots.txt estático): o chumbado viajaria junto numa migração
+ * e apagaria o site do índice. O `hub.movepark.co`, enquanto continuar respondendo,
+ * cai automaticamente no `noindex` por não estar na lista.
  *
  * Efeito colateral desejado: qualquer host fora da lista (`*.pages.dev`,
  * `*.workers.dev`, staging, preview) fica fora do índice permanentemente.
  */
-const INDEXABLE_HOSTS = new Set(["movepark.co"]);
+const INDEXABLE_HOSTS = new Set([new URL(DEFAULT_SITE_URL).hostname]);
 
 /**
  * Prefixos de área privada. Ficam fora do índice em **qualquer host**, inclusive no canônico.

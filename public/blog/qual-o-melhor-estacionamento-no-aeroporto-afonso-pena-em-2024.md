@@ -3,8 +3,8 @@
 > Descubra o estacionamento perfeito para sua viagem pelo Aeroporto Afonso Pena em 2024. Conheça o Nation Park, próximo ao terminal de embarque
 
 - Publicado em: 2024-01-16
-- URL: https://hub.movepark.co/blog/qual-o-melhor-estacionamento-no-aeroporto-afonso-pena-em-2024/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-afonso-pena
+- URL: https://movepark.co/blog/qual-o-melhor-estacionamento-no-aeroporto-afonso-pena-em-2024/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-afonso-pena
 
 ---
 Planejar uma viagem pelo [Aeroporto Afonso Pena](/destinos/aeroporto-afonso-pena), em Curitiba, exige atenção aos detalhes, especialmente na escolha do estacionamento ideal. Neste blogpost, vamos explorar dicas fundamentais sobre o Aeroporto Afonso Pena e mostrar como você pode encontrar o melhor Estacionamento do Aeroporto Afonso Pena, que seja uma opção boa, acessível e próxima ao terminal.

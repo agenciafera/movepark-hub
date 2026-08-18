@@ -3,8 +3,8 @@
 > TOP 3 Estacionamentos do Aeroporto de Navegantes Planejar uma viagem envolve várias decisões importantes, e escolher onde deixar o carro é uma delas. Se você está procurando o melhor estacionamento aeroporto Navegantes, chegou ao lugar certo! Neste guia, apresentaremos os 3 principais estacionamentos próximos ao Aeroporto Internacional Ministro Victor Konder, em Navegantes (SC): o Estacionamento [...]
 
 - Publicado em: 2025-02-25
-- URL: https://hub.movepark.co/blog/top-3-estacionamentos-do-aeroporto-de-navegantes/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-internacional-de-navegantes
+- URL: https://movepark.co/blog/top-3-estacionamentos-do-aeroporto-de-navegantes/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-internacional-de-navegantes
 
 ---
 # TOP 3 Estacionamentos do Aeroporto de Navegantes

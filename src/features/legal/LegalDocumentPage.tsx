@@ -7,6 +7,7 @@ import { RELACIONADOS } from "@/features/content/pages";
 import { useLegalDocument } from "./api";
 import { LEGAL_SANITIZE_CONFIG, LEGAL_PROSE_CLASS } from "./legalRender";
 import { withSectionIds } from "./legalSections";
+import { SITE_URL } from "@/lib/site";
 
 type Props = {
   slug: string;
@@ -40,7 +41,7 @@ export function LegalDocumentPage({
 }: Props) {
   const { data, isLoading } = useLegalDocument(slug);
   const heading = data?.title ?? title;
-  const url = `https://hub.movepark.co${canonicalPath}`;
+  const url = `${SITE_URL}${canonicalPath}`;
 
   const { html: safeHtml, sections } = useMemo(() => {
     if (!data?.content) return { html: "", sections: [] };

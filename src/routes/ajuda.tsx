@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { CalendarX, ChatCircle, CreditCard, MapPin, QrCode, Question, ShieldCheck } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { PageHero } from "@/components/shared/PageHero";
+import { siteUrl } from "@/lib/site";
 
 const CATEGORIES = [
   {
@@ -61,8 +62,8 @@ export default function AjudaPage() {
           content="Central de ajuda Movepark: tire dúvidas sobre reservas, pagamentos, check-in, cancelamentos e muito mais."
         />
         <meta property="og:title" content="Central de Ajuda | Movepark" />
-        <meta property="og:url" content="https://hub.movepark.co/ajuda" />
-        <link rel="canonical" href="https://hub.movepark.co/ajuda" />
+        <meta property="og:url" content={siteUrl("/ajuda")} />
+        <link rel="canonical" href={siteUrl("/ajuda")} />
       </Helmet>
 
       <PageHero

@@ -1,17 +1,19 @@
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert";
 import { decodeBase64 } from "jsr:@std/encoding/base64";
 import { htmlToBase64, siteUrl, tplApprovalInvite, tplBookingConfirmation, tplLeadAlert, tplLeadReceived, tplRejection, tplReviewRequest } from "./email.ts";
+import { DEFAULT_SITE_URL } from "./site.ts";
 import type { VoucherBooking } from "./voucher/fields.ts";
 
 Deno.test("siteUrl remove barra(s) final(is)", () => {
-  Deno.env.set("PUBLIC_SITE_URL", "https://hub.movepark.co//");
-  assertEquals(siteUrl(), "https://hub.movepark.co");
+  Deno.env.set("PUBLIC_SITE_URL", "https://movepark.co//");
+  assertEquals(siteUrl(), "https://movepark.co");
   Deno.env.delete("PUBLIC_SITE_URL");
 });
 
-Deno.test("siteUrl cai no localhost sem env", () => {
+Deno.test("siteUrl cai no host canônico sem env, e nunca no localhost", () => {
   Deno.env.delete("PUBLIC_SITE_URL");
-  assertEquals(siteUrl(), "http://localhost:5173");
+  // Link de e-mail apontando para localhost é link morto para quem recebe.
+  assertEquals(siteUrl(), DEFAULT_SITE_URL);
 });
 
 Deno.test("tplLeadReceived: assunto + primeiro nome no corpo", () => {

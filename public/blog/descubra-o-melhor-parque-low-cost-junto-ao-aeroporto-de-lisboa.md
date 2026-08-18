@@ -3,8 +3,8 @@
 > Encontre a solução low cost ideal para Parque no Aeroporto de Lisboa! Conheça o melhor parque de baixo custo e garanta sua reserva!
 
 - Publicado em: 2024-03-21
-- URL: https://hub.movepark.co/blog/descubra-o-melhor-parque-low-cost-junto-ao-aeroporto-de-lisboa/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-humberto-delgado
+- URL: https://movepark.co/blog/descubra-o-melhor-parque-low-cost-junto-ao-aeroporto-de-lisboa/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-humberto-delgado
 
 ---
 ![pqrque aeroporto lisboa](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/descubra-o-melhor-parque-low-cost-junto-ao-aeroporto-de-lisboa/guia-estacionamento-aeroporto-lisboa.webp)

@@ -26,8 +26,7 @@ import { breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
 import { cn } from "@/lib/utils";
 import type { BlogPostListItem } from "@/types/domain";
 import { OgImage } from "@/lib/ogImage";
-
-const SITE_URL = "https://hub.movepark.co";
+import { SITE_URL } from "@/lib/site";
 
 /** Largura de app. O padding vertical fica com cada faixa. */
 const CONTAINER = "mx-auto w-full max-w-[1280px] px-4 desktop:px-8";

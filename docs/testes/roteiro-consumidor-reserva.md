@@ -4,7 +4,7 @@ Prova a jornada completa de quem reserva: home, busca, detalhe da unidade, escol
 vaga, checkout, PIX e "Minhas reservas".
 
 - **Baseline:** 22/07/2026, reverificado contra a `main` (todos os gates rodados).
-- **Alvo:** produção (`hub.movepark.co` + projeto `mgaigbezdalbyuqiofcf`). Não existe staging do Hub.
+- **Alvo:** produção (`movepark.co` + projeto `mgaigbezdalbyuqiofcf`). Não existe staging do Hub.
 - **Usuário:** `peu+teste1@fera.ag` (papel `customer`, já existe, não criar outro).
 - **Automação:** `e2e/playwright/consumer/`. Dois projects: `e2e-consumer` (leitura, roda no fluxo padrão) e
   `e2e-consumer-tx` (transacional, só roda com `--project=e2e-consumer-tx`).

@@ -4,20 +4,20 @@
 
 ## Decisão
 
-O domínio canônico de SEO é o **`movepark.co`**. O `hub.movepark.co` é endereço técnico e **não deve aparecer no Google**.
+O domínio canônico de SEO é o **`movepark.co`**, e **desde 18/08/2026 é o Hub que responde nele**. Todo host fora da allowlist, incluindo o antigo `hub.movepark.co`, **não deve aparecer no Google**.
 
-O Hub vai substituir o `movepark.co`. No estado final só o `movepark.co` existe: o Hub passa a responder no apex e o WordPress sai. Até lá os dois convivem, e é essa convivência que precisa ser gerenciada.
+O estado final é só o `movepark.co` existir: o Hub no apex e o WordPress fora. A troca de host já aconteceu; o que resta é o WordPress sair de vez, com os 301 de `/estacionamentos/*` para as páginas equivalentes.
 
 ## Por que
 
-O `movepark.co` (WordPress + Yoast) e o `hub.movepark.co` (este projeto) publicam conteúdo que disputa a mesma intenção de busca:
+Enquanto os dois conviveram, o `movepark.co` (WordPress + Yoast) e o Hub publicavam conteúdo disputando a mesma intenção de busca. É esse quadro que a allowlist existia para resolver:
 
-| Intenção | `movepark.co` | `hub.movepark.co` |
+| Intenção | `movepark.co` (WordPress) | Hub (então em `hub.movepark.co`) |
 |---|---|---|
 | Estacionamento específico | 39 páginas em `/estacionamentos/<aeroporto>/<nome>/` | 41 páginas em `/p/<company>/<location>/<tipo>` |
 | Aeroporto / destino | 24 páginas em `/estacionamentos/<aeroporto>/` | 16 páginas em `/destinos/<slug>` |
 
-Dois domínios competindo pelo mesmo termo dividem sinal e se canibalizam. Enquanto o WordPress for o que rankeia, o Hub fica fora do índice.
+Dois domínios competindo pelo mesmo termo dividem sinal e se canibalizam, e por isso o Hub ficou fora do índice enquanto o WordPress era quem rankeava. Com o Hub no apex, a disputa acabou: o que sobra é migrar o que o WordPress ainda serve.
 
 ## Como funciona
 
@@ -101,20 +101,22 @@ A mesma propriedade de domínio revelou dois subdomínios fora do `hub.` no índ
 > **A borda tem spec própria.** Comportamento do worker, configuração de assets e a regra de
 > 404 estão em [`borda-cloudflare.md`](./borda-cloudflare.md), com as medições de produção.
 
-## Checklist da migração para o `movepark.co`
+## Migração para o `movepark.co` (18/08/2026)
 
-O `noindex` sai sozinho, mas o resto **não**. Nenhum item abaixo é opcional: cada um, se esquecido, tira páginas do índice ou expõe o que não devia.
+O `noindex` sai sozinho (a allowlist do worker já apontava para o apex), mas o resto **não**. Nenhum item abaixo é opcional: cada um, se esquecido, tira páginas do índice ou expõe o que não devia.
 
-- [ ] **Host canônico hardcoded.** `https://hub.movepark.co` está escrito à mão em ~20 pontos: `canonical` e `og:url` de [`home.tsx`](../../src/routes/home.tsx), [`sobre.tsx`](../../src/routes/sobre.tsx), [`faq.tsx`](../../src/routes/faq.tsx), [`ajuda.tsx`](../../src/routes/ajuda.tsx), [`contato.tsx`](../../src/routes/contato.tsx), [`cancelamento.tsx`](../../src/routes/cancelamento.tsx), [`como-funciona.tsx`](../../src/routes/como-funciona.tsx), [`docs.tsx`](../../src/routes/docs.tsx), mais as consts `SITE_URL` de [`jsonld.ts`](../../src/lib/jsonld.ts), [`destino.tsx`](../../src/routes/destino.tsx), [`destinos.tsx`](../../src/routes/destinos.tsx), [`listing.tsx`](../../src/routes/listing.tsx), [`unit-preview.tsx`](../../src/routes/operator/unit-preview.tsx), [`LegalDocumentPage.tsx`](../../src/features/legal/LegalDocumentPage.tsx), [`api-worker.ts`](../../src/api-worker.ts) e [`vite.config.ts`](../../vite.config.ts). Um canonical apontando para um subdomínio desativado tira o site novo do índice. **Centralizar numa const única antes de migrar.**
-- [ ] **Hostname do sitemap.** `SITE_URL` em [`vite.config.ts`](../../vite.config.ts) define o host de todas as `<loc>`. Sitemap com host errado é ignorado.
-- [ ] **`Sitemap:` do [`robots.txt`](../../public/robots.txt)** aponta para `hub.movepark.co/sitemap.xml`.
+- [x] **Host canônico hardcoded.** Resolvido em 18/08/2026. A string estava escrita à mão em 399 pontos do repo, dos quais 44 em `src/`. Agora o valor vive em [`src/lib/site-host.mjs`](../../src/lib/site-host.mjs) (front, `vite.config.ts` e scripts de pós-build, via [`src/lib/site.ts`](../../src/lib/site.ts)) e em [`supabase/functions/_shared/site.ts`](../../supabase/functions/_shared/site.ts) (Deno). São dois arquivos porque são três runtimes que não se importam entre si; quem impede a divergência é [`src/lib/site.contract.test.ts`](../../src/lib/site.contract.test.ts), que reprova host repetido à mão em `src/` e nas Edges, compara as duas declarações e varre a superfície estática publicada.
+- [x] **Hostname do sitemap.** Resolvido em 18/08/2026. O `hostname` do plugin sai do host canônico, com `VITE_PUBLIC_SITE_URL` sobrescrevendo em build de preview.
+- [x] **`Sitemap:` do [`robots.txt`](../../public/robots.txt).** Resolvido em 18/08/2026.
 - [x] **404 real.** Resolvido em 13/08/2026. URL inexistente responde 404 com corpo, em vez de 200 com o HTML da home. A regra vive no worker, com fail-open, e as rotas de app que não têm HTML próprio (`/checkout/:code`, `/operator/*`, `/manager/*`) continuam em 200 por padrão declarado. Ver [`borda-cloudflare.md`](./borda-cloudflare.md).
 - [x] **Rotas privadas com `noindex` próprio.** Resolvido em 18/08/2026. `/manager`, `/operator`, `/account`, `/checkout`, `/bookings`, `/onboarding` e `/voucher` respondem `noindex, follow` por regra de caminho no worker, independente de host, então continuam fora do índice depois da migração. Ver [Áreas privadas](#áreas-privadas-noindex-independente-de-host). Segue aberto o que é público mas interno (`/motor-preview`, `/design-system`, `/docs`) e o `/search` parametrizado.
 - [x] **Exclusões do sitemap.** Resolvido em 13/08/2026. A lista de exclusão do [`vite.config.ts`](../../vite.config.ts) passou a derivar de [`src/lib/sitemapRoutes.ts`](../../src/lib/sitemapRoutes.ts): opt-out declarado com motivo, mais os prefixos de área logada. Medido no `dist/` depois da mudança: 149 URLs, zero de `/manager`, `/operator`, `/account`, `/checkout`, `/bookings`, `/onboarding`, `/docs`, `/search` ou `/design-system`. Guarda extra desde 14/08/2026: [`scripts/canonicalize-sitemap.mjs`](../../scripts/canonicalize-sitemap.mjs) remove no pós-build qualquer bloco `<url>` de área privada que escape, e loga quantos caíram.
-- [x] **Arquivos de rascunho em `public/`.** `public/images/arco-iris.html` foi apagado em 13/08/2026. Varrer `public/` atrás de HTML solto continua valendo antes de migrar.
-- [ ] **301 do WordPress para o Hub.** Cada URL de `/estacionamentos/*` que sair precisa de redirect permanente para a página equivalente do Hub, senão a autoridade acumulada é perdida.
-- [ ] **`llms.txt` e cards MCP** citam `hub.movepark.co` ([`public/llms.txt`](../../public/llms.txt), `.well-known/mcp/*`). Ver ADR-003.
-- [ ] **`api.movepark.co` não muda.** A Public API fica onde está, fora da superfície de SEO.
+- [x] **Arquivos de rascunho em `public/`.** `public/images/arco-iris.html` foi apagado em 13/08/2026. Varrer `public/` atrás de HTML solto continua valendo.
+- [ ] **301 do WordPress para o Hub.** Cada URL de `/estacionamentos/*` que sair precisa de redirect permanente para a página equivalente do Hub, senão a autoridade acumulada é perdida. Isso não vive neste repo.
+- [ ] **`hub.movepark.co` enquanto continuar respondendo.** Ele não está na allowlist, então já sai com `noindex, follow`. O ideal é 301 para o apex, para o que ainda estiver indexado transferir sinal em vez de simplesmente sumir.
+- [x] **`llms.txt` e superfície `.well-known`.** Resolvido em 18/08/2026, junto com o corpus de Markdown do blog (95 arquivos) e os templates de auth. Ver ADR-003.
+- [ ] **`PUBLIC_SITE_URL` nos secrets do Supabase.** As Edge Functions leem essa env; sem ela caem no host canônico, que hoje está certo. Se estiver setada com o valor antigo, ela **vence** o default e os links de e-mail continuam apontando para o subdomínio. Conferir e apagar ou atualizar.
+- [x] **`api.movepark.co` não muda.** A Public API fica onde está, fora da superfície de SEO. `mcp.movepark.co` idem.
 
 ## Sitemap: o que entra e por quê
 

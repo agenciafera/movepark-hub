@@ -3,8 +3,8 @@
 > Existem diversas opções de estacionamentos próximos ao Aeroporto Viracopos e para tirar suas dúvidas, fizemos uma tabela com o comparativo.
 
 - Publicado em: 2022-10-21
-- URL: https://hub.movepark.co/blog/quanto-custa-para-estacionar-no-aeroporto-viracopos/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-de-viracopos
+- URL: https://movepark.co/blog/quanto-custa-para-estacionar-no-aeroporto-viracopos/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-de-viracopos
 
 ---
 Se você precisa estacionar o seu carro durante uma viagem de avião, você já sabe que encontrar um local seguro e acessível pode ser bem complicado. Nós vamos te ajudar a entender tudo o que precisa saber sobre os estacionamentos do Aeroporto Viracopos, para que você possa encontrar a vaga perfeita sem estresse.

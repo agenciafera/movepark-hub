@@ -54,8 +54,7 @@ import {
 import { imageSrcSet, optimizedImageUrl } from "@/lib/storage";
 import { formatBRL } from "@/lib/format";
 import { lowestPerDay, pickRelatedDestinations, pickTopRated } from "./destino.logic";
-
-const SITE_URL = "https://hub.movepark.co";
+import { SITE_URL } from "@/lib/site";
 
 /** Skeleton espelhando o ResultCard (mesma forma/altura), evita salto de layout. */
 function ParkingCardSkeleton() {

@@ -3,8 +3,8 @@
 > Descubra tudo sobre estacionamento GRU Airport, opções seguras, preços e vantagens do parceiro AeroParking. Reserve online e viaje tranquilo
 
 - Publicado em: 2025-09-03
-- URL: https://hub.movepark.co/blog/estacionamento-gru-airport-guia-completo-para-parar-seu-carro-com-tranquilidade/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-internacional-de-sao-paulo-guarulhos
+- URL: https://movepark.co/blog/estacionamento-gru-airport-guia-completo-para-parar-seu-carro-com-tranquilidade/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-internacional-de-sao-paulo-guarulhos
 
 ---
 Se tem uma coisa que todo mundo que viaja de avião já passou na vida é o dilema: **onde deixar o carro no aeroporto de Guarulhos (GRU Airport)?**  

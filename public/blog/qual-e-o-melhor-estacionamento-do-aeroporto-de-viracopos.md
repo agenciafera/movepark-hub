@@ -3,8 +3,8 @@
 > Descubra qual é o melhor estacionamento do Aeroporto de Viracopos em nosso artigo. Encontre a vaga perfeita para sua próxima viagem.
 
 - Publicado em: 2022-10-21
-- URL: https://hub.movepark.co/blog/qual-e-o-melhor-estacionamento-do-aeroporto-de-viracopos/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-de-viracopos
+- URL: https://movepark.co/blog/qual-e-o-melhor-estacionamento-do-aeroporto-de-viracopos/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-de-viracopos
 
 ---
 Você que precisa viajar e vai de carro até o aeroporto de Viracopos, deve ter se pensado: “[Qual o melhor estacionamento do aeroporto Viracopos](/destinos/aeroporto-de-viracopos)?”. Pensando em você, decidimos fazer uma avaliação e encontrar o melhor estacionamento.

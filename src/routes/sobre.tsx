@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { PartnerLogos } from "@/features/partners/PartnerLogos";
 import { HOW_IT_WORKS } from "@/features/how-it-works/copy";
 import { useGsapReveal } from "@/hooks/useGsapReveal";
+import { siteUrl } from "@/lib/site";
 
 // Hero de marca em foto (blue hour). Metade esquerda cai na sombra pra segurar a
 // headline branca sob o overlay navy, mesmo comportamento do hero da /seja-parceiro.
@@ -100,8 +101,8 @@ export default function SobrePage() {
           property="og:description"
           content="Nossa missão é simples: você chega no aeroporto com a vaga já reservada e o preço combinado."
         />
-        <meta property="og:url" content="https://hub.movepark.co/sobre" />
-        <link rel="canonical" href="https://hub.movepark.co/sobre" />
+        <meta property="og:url" content={siteUrl("/sobre")} />
+        <link rel="canonical" href={siteUrl("/sobre")} />
       </Helmet>
 
       {/* Hero de marca em foto, sangrando de ponta a ponta. Overlay navy em degradê

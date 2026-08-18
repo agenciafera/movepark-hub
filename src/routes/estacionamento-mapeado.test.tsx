@@ -209,7 +209,7 @@ describe("Página do lote mapeado (E0.17-e · ADR-010)", () => {
     });
     expect(facility.address.addressLocality).toBe("Recife");
     expect(facility.url).toBe(
-      "https://hub.movepark.co/estacionamentos/aeroporto-internacional-do-recife-guararapes/talentos-park-aeroporto-recife",
+      "https://movepark.co/estacionamentos/aeroporto-internacional-do-recife-guararapes/talentos-park-aeroporto-recife",
     );
   });
 

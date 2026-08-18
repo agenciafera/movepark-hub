@@ -3,8 +3,8 @@
 > De R$ 77 mil para R$ 300 mil/mês em apenas 4 meses com reservas online e estratégia digital integrada Introdução O Aeroparking (https://www.aeroparking.com.br/) é um dos estacionamentos mais conhecidos próximos ao Aeroporto Internacional de Guarulhos (GRU). Apesar de contar com localização estratégica, bons serviços e estrutura de qualidade, a empresa enfrentava um desafio comum a [...]
 
 - Publicado em: 2025-09-03
-- URL: https://hub.movepark.co/blog/case-de-sucesso-aeroparking-movepark/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-internacional-de-sao-paulo-guarulhos
+- URL: https://movepark.co/blog/case-de-sucesso-aeroparking-movepark/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-internacional-de-sao-paulo-guarulhos
 
 ---
 **De R$ 77 mil para R$ 300 mil/mês em apenas 4 meses com reservas online e estratégia digital integrada**

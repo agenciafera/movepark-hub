@@ -3,8 +3,8 @@
 > Descubra tudo sobre o Aeroporto de Confins neste guia completo, incluindo dicas e informações essenciais. Clique e confira!
 
 - Publicado em: 2024-07-15
-- URL: https://hub.movepark.co/blog/tudo-sobre-o-aeroporto-de-confins-guia-completo/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-de-confins
+- URL: https://movepark.co/blog/tudo-sobre-o-aeroporto-de-confins-guia-completo/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-de-confins
 
 ---
 O Aeroporto de Confins, oficialmente conhecido como Aeroporto Internacional Tancredo Neves, é uma das principais portas de entrada para Minas Gerais e um importante hub de conexão para voos domésticos e internacionais no Brasil. Este guia completo visa fornecer todas as informações necessárias para passageiros e visitantes, cobrindo desde a história e localização do aeroporto até dicas úteis para uma viagem tranquila.

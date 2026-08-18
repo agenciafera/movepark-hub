@@ -41,6 +41,7 @@ import { callRead, READ_TOOL_NAMES } from "../_shared/assistant-tools.ts";
 import { hasValidCheckDigits } from "../_shared/payments/documents.ts";
 import { isValidPhoneBr } from "../_shared/payments/contact.ts";
 import { buildCreateBookingBody, CUSTOMER_TXN_NAMES, otpRequestParams, otpVerifyParams } from "./customer.logic.ts";
+import { siteUrl } from "../_shared/site.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -762,7 +763,7 @@ async function callPartner(admin: any, ctx: PartnerCtx, name: string, a: Record<
       // O voucher mostra a placa: regenera em background se a reserva já está confirmada.
       if ((res as { status?: string })?.status === "confirmed") {
         background(
-          generateAndStoreVoucher(admin, (res as { booking_id: string }).booking_id, env("PUBLIC_SITE_URL") ?? "https://hub.movepark.co"),
+          generateAndStoreVoucher(admin, (res as { booking_id: string }).booking_id, siteUrl()),
         );
       }
       return res;

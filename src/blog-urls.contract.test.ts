@@ -36,7 +36,7 @@ function makeEnv() {
   return { env: { ASSETS: assets }, served };
 }
 
-const req = (path: string) => new Request(`https://hub.movepark.co${path}`);
+const req = (path: string) => new Request(`https://movepark.co${path}`);
 
 describe("contrato de URL do blog", () => {
   it("o fixture tem os 93 slugs do sitemap do WordPress", () => {
@@ -178,7 +178,7 @@ describe("contrato de URL do blog", () => {
     };
 
     const res = await worker.fetch(
-      new Request("https://hub.movepark.co/blog/top-3-estacionamentos-do-aeroporto-de-navegantes/", {
+      new Request("https://movepark.co/blog/top-3-estacionamentos-do-aeroporto-de-navegantes/", {
         headers: { Accept: "text/markdown" },
       }),
       { ASSETS: assets },

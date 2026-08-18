@@ -36,6 +36,7 @@ import {
   journeyHowToJsonLd,
   type JourneyStep,
 } from "@/features/how-it-works/journey";
+import { siteUrl } from "@/lib/site";
 
 const EYEBROW = "text-badge uppercase tracking-[0.4px] text-mp-indigo";
 
@@ -275,8 +276,8 @@ export default function ComoFuncionaPage() {
           content="Da busca à chave de volta na sua mão: reserve online, mostre o QR Code na portaria e pegue o carro no mesmo lugar. Preço fechado e vaga garantida."
         />
         <meta property="og:title" content="Como funciona | Movepark" />
-        <meta property="og:url" content="https://hub.movepark.co/como-funciona" />
-        <link rel="canonical" href="https://hub.movepark.co/como-funciona" />
+        <meta property="og:url" content={siteUrl("/como-funciona")} />
+        <link rel="canonical" href={siteUrl("/como-funciona")} />
         <script type="application/ld+json">{JSON.stringify(journeyHowToJsonLd())}</script>
         <script type="application/ld+json">
           {JSON.stringify(faqSchema(JOURNEY_FAQ.map((f) => ({ question: f.q, answer: f.a }))))}

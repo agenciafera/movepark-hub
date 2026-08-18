@@ -17,7 +17,7 @@ describe("isStaleBuildError", () => {
 
   it("reconhece chunk dinâmico com hash antigo que sumiu", () => {
     const err = new TypeError(
-      "Failed to fetch dynamically imported module: https://hub.movepark.co/assets/x-OLD.js",
+      "Failed to fetch dynamically imported module: https://movepark.co/assets/x-OLD.js",
     );
     expect(isStaleBuildError(err)).toBe(true);
   });

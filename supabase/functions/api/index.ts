@@ -27,6 +27,7 @@ import { corsHeaders, fail, ok, pgErrorToHttp } from "./respond.ts";
 import { parseWpsEvent } from "./wps.logic.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 import { deleteBlogPost, publishBlogPost, upsertBlogPost } from "../_shared/blog-write.ts";
+import { siteUrl } from "../_shared/site.ts";
 
 // request id curto sem dependências externas
 function newRequestId(): string {
@@ -409,8 +410,8 @@ async function dispatch(handler: string, d: Dispatch): Promise<Response> {
       // O voucher mostra a placa: regenera em background se a reserva já está confirmada.
       if ((res as { status?: string })?.status === "confirmed") {
         // @ts-expect-error - Deno env
-        const siteUrl = Deno.env.get("PUBLIC_SITE_URL") ?? "https://hub.movepark.co";
-        background(generateAndStoreVoucher(admin, (res as { booking_id: string }).booking_id, siteUrl));
+        const site = siteUrl();
+        background(generateAndStoreVoucher(admin, (res as { booking_id: string }).booking_id, site));
       }
       return ok(res, requestId);
     }

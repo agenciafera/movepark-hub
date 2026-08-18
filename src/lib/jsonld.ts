@@ -1,8 +1,7 @@
 import { getLocationCapabilities } from "@/features/listing/capabilities";
 import { showcaseFromPrice } from "@/features/listing/reservation.logic";
 import type { ListingDetail } from "@/features/listing/api";
-
-const SITE_URL = "https://hub.movepark.co";
+import { SITE_URL } from "@/lib/site";
 
 export function localBusinessSchema(listing: ListingDetail, opts?: { description?: string }) {
   return {
@@ -232,7 +231,7 @@ export function blogPostingSchema(p: {
     headline: p.title,
     description: p.description ?? undefined,
     // A capa vem absoluta do bucket. Prefixar SITE_URL nela gerava
-    // "https://hub.movepark.cohttps://…", que nenhum crawler resolve, e deixou os
+    // "https://movepark.cohttps://…", que nenhum crawler resolve, e deixou os
     // 94 posts sem imagem no rich result. Só caminho relativo ganha o prefixo.
     image: p.image ? absoluta(p.image) : undefined,
     datePublished: p.publishedAt,

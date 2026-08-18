@@ -11,10 +11,7 @@ import { usePreviewUnit } from "@/features/onboarding/publish/previewApi";
 import { OnboardingJourney } from "@/components/shared/OnboardingJourney";
 import { PhotosCallout } from "@/components/shared/PhotosCallout";
 import { ConfettiBurst } from "@/components/shared/ConfettiBurst";
-
-const PUBLIC_SITE_URL =
-  (import.meta.env.VITE_PUBLIC_SITE_URL as string | undefined)?.replace(/\/$/, "") ??
-  "https://hub.movepark.co";
+import { siteUrl } from "@/lib/site";
 
 export default function UnitPreviewPage() {
   const { locationId } = useParams();
@@ -22,7 +19,7 @@ export default function UnitPreviewPage() {
   const justPublished = params.get("published") === "1";
   const { data: unit, isLoading } = usePreviewUnit(locationId);
 
-  const absoluteUrl = unit?.publicUrl ? `${PUBLIC_SITE_URL}${unit.publicUrl}` : null;
+  const absoluteUrl = unit?.publicUrl ? siteUrl(unit.publicUrl) : null;
   const [copied, setCopied] = React.useState(false);
 
   async function copyUrl() {

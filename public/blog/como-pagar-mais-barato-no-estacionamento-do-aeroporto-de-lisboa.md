@@ -3,8 +3,8 @@
 > Descubra como economizar no estacionamento do Aeroporto de Lisboa, desfrutando ao máximo de sua viagem à encantadora Lisboa.
 
 - Publicado em: 2024-01-31
-- URL: https://hub.movepark.co/blog/como-pagar-mais-barato-no-estacionamento-do-aeroporto-de-lisboa/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-humberto-delgado
+- URL: https://movepark.co/blog/como-pagar-mais-barato-no-estacionamento-do-aeroporto-de-lisboa/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-humberto-delgado
 
 ---
 Explorar Lisboa é embarcar em uma jornada repleta de cultura, história e experiências únicas. Neste guia, vamos desvendar como você pode economizar no estacionamento do Aeroporto Humberto Delgado, tornando sua viagem ainda mais proveitosa.

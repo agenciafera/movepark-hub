@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { siteUrl } from "@/lib/site";
 
 /**
  * Motor de Crescimento: acesso a dados (Clube, carteira, Indicação).
@@ -11,6 +12,11 @@ import { supabase } from "@/lib/supabase";
  * - `redeem_referral_code(code)` → atribui uma indicação a um novo cliente
  * Todas são RPCs SECURITY DEFINER; as tabelas ficam trancadas por RLS.
  */
+
+/** Link de convite a partir do código. Host vem de `@/lib/site`. */
+export function referralLink(code: string): string {
+  return siteUrl(`/r/${code}`);
+}
 
 export const growthKeys = {
   membership: ["growth", "membership"] as const,
@@ -37,6 +43,13 @@ export type MembershipInfo = {
 
 export type ReferralInfo = {
   code: string;
+  /**
+   * URL de convite, montada aqui e não no banco.
+   *
+   * A RPC devolvia `'https://hub.movepark.co/r/' || v_code` com o domínio cravado no corpo
+   * da função, então trocar de domínio exigia migration e todo link já compartilhado passava
+   * a apontar para lugar nenhum. O host agora sai de `@/lib/site`, junto com o resto do app.
+   */
   link: string;
   /**
    * Quanto cada lado ganha por indicação concluída, em reais. Vem de
@@ -112,7 +125,8 @@ export function useReferrals(enabled: boolean) {
     queryFn: async (): Promise<ReferralInfo> => {
       const { data, error } = await supabase.rpc("get_my_referrals");
       if (error) throw error;
-      return data as unknown as ReferralInfo;
+      const info = data as unknown as Omit<ReferralInfo, "link">;
+      return { ...info, link: referralLink(info.code) };
     },
     enabled,
     staleTime: 60_000,

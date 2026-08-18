@@ -3,8 +3,8 @@
 > A jornada da sua viagem começa com o nosso guia completo. Dicas de estacionamento aeroporto gru, comidas, passagens e muito mais!
 
 - Publicado em: 2023-10-18
-- URL: https://hub.movepark.co/blog/seu-guia-definitivo-para-uma-partida-descomplicada-dicas-valiosas-do-aeroporto-de-guarulhos/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-internacional-de-sao-paulo-guarulhos
+- URL: https://movepark.co/blog/seu-guia-definitivo-para-uma-partida-descomplicada-dicas-valiosas-do-aeroporto-de-guarulhos/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-internacional-de-sao-paulo-guarulhos
 
 ---
 Quando se trata de viagens, a parte mais estressante muitas vezes é o processo de partida e chegada nos aeroportos. Felizmente, estamos aqui para tornar sua experiência no Aeroporto de Guarulhos (GRU) o mais tranquila e descomplicada possível. E ainda temos uma dica especial sobre como você pode encontrar o [melhor estacionamento no aeroporto GRU](/destinos/aeroporto-internacional-de-sao-paulo-guarulhos), que vai te ajudar a fazer uma bela economia.

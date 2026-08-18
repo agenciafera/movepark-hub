@@ -3,8 +3,8 @@
 > Descubra tudo sobre o Aeroporto Afonso Pena com nosso guia completo. Informações sobre terminais, transporte, estacionamento e serviços
 
 - Publicado em: 2024-07-01
-- URL: https://hub.movepark.co/blog/aeroporto-afonso-pena-confira-o-guia-completo-para-sua-viagem/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-afonso-pena
+- URL: https://movepark.co/blog/aeroporto-afonso-pena-confira-o-guia-completo-para-sua-viagem/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-afonso-pena
 
 ---
 ## Introdução

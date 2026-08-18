@@ -45,6 +45,7 @@ import {
   faqSchema,
   type SchemaReview,
 } from "@/lib/jsonld";
+import { SITE_URL } from "@/lib/site";
 
 /** O que `listingLoader` entrega: a unidade e o FAQ mesclado, já no HTML do build. */
 type ListingLoaderData = {
@@ -166,7 +167,7 @@ export default function ListingPage() {
       ? listingDescription({ ...seoArgs, city: listing.location.destination?.city ?? null })
       : "");
   const pageUrl = listing
-    ? `https://hub.movepark.co/p/${listing.company.slug}/${listing.location.slug}/${listing.parking_type.code}`
+    ? `${SITE_URL}/p/${listing.company.slug}/${listing.location.slug}/${listing.parking_type.code}`
     : "";
   const ogImage =
     listing && listing.location.photos[0]
@@ -282,7 +283,7 @@ export default function ListingPage() {
         <script type="application/ld+json">
           {JSON.stringify(
             breadcrumbSchema([
-              { name: "House", url: "https://hub.movepark.co" },
+              { name: "House", url: SITE_URL },
               { name: listing.location.name, url: pageUrl },
             ]),
           )}

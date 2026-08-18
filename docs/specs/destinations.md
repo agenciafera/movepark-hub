@@ -82,7 +82,7 @@ e inserts manuais sem slug continuam funcionando. Índice `destination_published
 | `/manager/destinations` | `ManagerLayout` / `hub_admin` | Lista + criar/editar/excluir destinos (`DestinationForm`). |
 
 - **Página pública** (`src/routes/destino.tsx`): `<Helmet>` com title/description (fallbacks),
-  canonical e og para `https://hub.movepark.co/destinos/<slug>`; três blocos **JSON-LD**
+  canonical e og para `<SITE_URL>/destinos/<slug>` (host de `@/lib/site`); três blocos **JSON-LD**
   (`destinationSchema` → `@type: Place`, `breadcrumbSchema`, `faqSchema`); H1
   "Estacionamento <seo_label sem o código>" (ver "Estrutura de palavra-chave" abaixo); `intro` dividido em parágrafos; hero opcional;
   **lista de estacionamentos** via `useSearchResults({ dest: code, … })` (próximos 7 dias,
@@ -202,7 +202,7 @@ fecha com CTA de `/seja-parceiro`; nos com parceiro, com links pra `/precos/<slu
 `/destinos/<slug>`. O conteúdo mora no banco (admin de FAQ é a fonte); preço de concorrente é
 datado no texto ("consultados em agosto de 2026") para não virar promessa congelada.
 - **Índice** (`src/routes/destinos.tsx`): `<Helmet>` com title/description próprios,
-  canonical/og para `https://hub.movepark.co/destinos` e dois blocos **JSON-LD**
+  canonical/og para `<SITE_URL>/destinos` e dois blocos **JSON-LD**
   (`breadcrumbSchema` Início→Destinos e `itemListSchema` com a coleção de destinos); H1
   "Destinos atendidos pela Movepark"; grade de cards (populares + demais) linkando cada
   `/destinos/<slug>`. Existe para que o breadcrumb das páginas de detalhe aponte para uma

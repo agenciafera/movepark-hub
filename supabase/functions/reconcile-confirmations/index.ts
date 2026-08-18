@@ -13,6 +13,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
 import { autorizado, BATCH_LIMIT, confirmationCutoffIso, decidirAcao } from "./logic.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
+import { siteUrl } from "../_shared/site.ts";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -56,7 +57,7 @@ Deno.serve(async (req: Request) => {
     .limit(BATCH_LIMIT);
   if (error) return json({ error: error.message }, 500);
 
-  const siteUrl = Deno.env.get("PUBLIC_SITE_URL") ?? "https://hub.movepark.co";
+  const site = siteUrl();
   let confirmed = 0;
   let refunded = 0;
 
@@ -79,7 +80,7 @@ Deno.serve(async (req: Request) => {
         refunded += 1;
       } else if (acao.tipo === "confirmar") {
         // Webhook perdido → o voucher pode não ter sido gerado; gera aqui (idempotente).
-        await generateAndStoreVoucher(admin, p.booking_id, siteUrl).catch(() => null);
+        await generateAndStoreVoucher(admin, p.booking_id, site).catch(() => null);
         confirmed += 1;
       }
     } catch (e) {

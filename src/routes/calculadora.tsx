@@ -59,8 +59,7 @@ import {
   type PriceDestination,
   type PriceIndexData,
 } from "@/features/price-index/priceIndex.logic";
-
-const SITE_URL = "https://hub.movepark.co";
+import { SITE_URL } from "@/lib/site";
 
 const EYEBROW = "text-badge uppercase tracking-[0.4px] text-mp-indigo";
 

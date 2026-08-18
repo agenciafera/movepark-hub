@@ -2,6 +2,7 @@ import { Helmet } from "react-helmet-async";
 import { ContentPageView } from "@/features/content/ContentPageView";
 import { METODOLOGIA, RELACIONADOS } from "@/features/content/pages";
 import { readingMinutes } from "@/features/content/types";
+import { siteUrl } from "@/lib/site";
 
 /**
  * Metodologia: a página de confiança que sustenta a citação. Buscador e LLM
@@ -19,8 +20,8 @@ export default function MetodologiaPage() {
           content="Os preços do site saem do motor de reservas, os mesmos do checkout. Como ordenamos resultados, o que é parceiro e mapeado, e de onde vêm as avaliações."
         />
         <meta property="og:title" content="Metodologia: de onde vêm os preços da Movepark" />
-        <meta property="og:url" content="https://hub.movepark.co/metodologia" />
-        <link rel="canonical" href="https://hub.movepark.co/metodologia" />
+        <meta property="og:url" content={siteUrl("/metodologia")} />
+        <link rel="canonical" href={siteUrl("/metodologia")} />
       </Helmet>
 
       <ContentPageView

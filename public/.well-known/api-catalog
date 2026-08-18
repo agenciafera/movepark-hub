@@ -1,25 +1,25 @@
 {
   "linkset": [
     {
-      "anchor": "https://hub.movepark.co",
+      "anchor": "https://movepark.co",
       "service-desc": [
         {
-          "href": "https://hub.movepark.co/openapi.yaml",
+          "href": "https://movepark.co/openapi.yaml",
           "type": "application/yaml",
           "title": "Movepark Public API — OpenAPI 3.1"
         },
         {
-          "href": "https://hub.movepark.co/.well-known/mcp/server-card.json",
+          "href": "https://movepark.co/.well-known/mcp/server-card.json",
           "type": "application/json",
           "title": "Movepark MCP Server Card (consumidor) — https://mcp.movepark.co"
         },
         {
-          "href": "https://hub.movepark.co/.well-known/mcp/partner-card.json",
+          "href": "https://movepark.co/.well-known/mcp/partner-card.json",
           "type": "application/json",
           "title": "Movepark MCP Server Card (parceiro, autenticado) — https://mcp.movepark.co/partner"
         },
         {
-          "href": "https://hub.movepark.co/.well-known/mcp/customer-card.json",
+          "href": "https://movepark.co/.well-known/mcp/customer-card.json",
           "type": "application/json",
           "title": "Movepark MCP Server Card (consumidor autenticado, login por OTP): https://mcp.movepark.co/customer"
         }
@@ -33,7 +33,7 @@
       ],
       "status": [
         {
-          "href": "https://hub.movepark.co/.well-known/mcp/server-card.json",
+          "href": "https://movepark.co/.well-known/mcp/server-card.json",
           "type": "application/json"
         }
       ]

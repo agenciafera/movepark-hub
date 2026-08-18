@@ -172,8 +172,8 @@ O par que define se a mudança está certa, e que precisa ser rodado depois de t
 toque a borda:
 
 ```bash
-curl -sS -o /dev/null -w "%{http_code}\n" https://hub.movepark.co/pagina-que-nao-existe-xyz  # esperado: 404
-curl -sS -o /dev/null -w "%{http_code}\n" https://hub.movepark.co/checkout/QUALQUERCOISA      # esperado: 200
+curl -sS -o /dev/null -w "%{http_code}\n" https://movepark.co/pagina-que-nao-existe-xyz  # esperado: 404
+curl -sS -o /dev/null -w "%{http_code}\n" https://movepark.co/checkout/QUALQUERCOISA      # esperado: 200
 ```
 
 A varredura completa por família de caminho está no script

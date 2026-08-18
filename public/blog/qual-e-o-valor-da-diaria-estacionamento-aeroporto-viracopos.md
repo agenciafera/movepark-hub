@@ -3,8 +3,8 @@
 > O aeroporto de Viracopos é um dos preferidos de quem mora no interior de São Paulo pela facilidade de acesso e também por ser bem menos movimentado como os aeroportos de Guarulhos ou Congonhas. Porém muitos passageiros tem dúvidas sobre a melhor forma de se locomover até o aeroporto. "Será que é melhor um carro [...]
 
 - Publicado em: 2022-12-07
-- URL: https://hub.movepark.co/blog/qual-e-o-valor-da-diaria-estacionamento-aeroporto-viracopos/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-de-viracopos
+- URL: https://movepark.co/blog/qual-e-o-valor-da-diaria-estacionamento-aeroporto-viracopos/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-de-viracopos
 
 ---
 O aeroporto de Viracopos é um dos preferidos de quem mora no interior de São Paulo pela facilidade de acesso e também por ser bem menos movimentado como os aeroportos de Guarulhos ou Congonhas.

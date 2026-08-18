@@ -27,8 +27,7 @@ import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { optimizedImageUrl } from "@/lib/storage";
 import type { BlogPostWithDestination } from "@/types/domain";
-
-const SITE_URL = "https://hub.movepark.co";
+import { SITE_URL } from "@/lib/site";
 
 /**
  * O post ocupa a largura de conteúdo (1080), não a de leitura (720).
@@ -115,9 +114,9 @@ export default function BlogPostPage() {
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
         {/*
-          A capa já é URL absoluta do bucket, então prefixar com SITE_URL produzia
-          "https://hub.movepark.cohttps://…", que nenhum crawler resolve: os 94
-          posts ficaram sem imagem no card social. O `optimizedImageUrl` devolve
+          A capa já é URL absoluta do bucket, então prefixar com SITE_URL colava um
+          host na frente de outro ("…movepark.co" + "https://…"), o que nenhum crawler
+          resolve: os 94 posts ficaram sem imagem no card social. O `optimizedImageUrl` devolve
           absoluto e ainda entrega o 1.91:1 (1200x630) que o card espera, do mesmo
           jeito que a página de destino faz.
 

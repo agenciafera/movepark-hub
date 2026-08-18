@@ -3,8 +3,8 @@
 > Se você está planejando uma viagem partindo do Aeroporto Internacional Afonso Pena, em Curitiba, é fundamental conhecer as opções de estacionamento disponíveis para garantir segurança, conveniência e economia. Neste guia, apresentamos uma análise detalhada dos estacionamentos próximos ao aeroporto, incluindo preços atualizados e distâncias, para ajudá-lo a tomar a melhor decisão. Opções de Estacionamento no [...]
 
 - Publicado em: 2025-01-15
-- URL: https://hub.movepark.co/blog/preco-estacionamento-aeroporto-afonso-pena-curitiba-saiba-tudo-aqui/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-afonso-pena
+- URL: https://movepark.co/blog/preco-estacionamento-aeroporto-afonso-pena-curitiba-saiba-tudo-aqui/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-afonso-pena
 
 ---
 Se você está planejando uma viagem partindo do Aeroporto Internacional Afonso Pena, em Curitiba, é fundamental conhecer as opções de estacionamento disponíveis para garantir segurança, conveniência e economia. Neste guia, apresentamos uma análise detalhada dos estacionamentos próximos ao aeroporto, incluindo preços atualizados e distâncias, para ajudá-lo a tomar a melhor decisão.

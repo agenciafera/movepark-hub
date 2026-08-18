@@ -70,10 +70,11 @@ temporário**, quando o correto para mudança definitiva é 301. Então o `/blog
 própria no worker: a URL com barra responde 200 direto, buscando o asset interno sem redirect.
 
 Isso deixa o site com duas convenções (`/blog/x/` com barra, `/destinos/x` sem). É deliberado.
-As URLs do blog são herdadas e valem tráfego; as do Hub nasceram sem barra e ainda não valem
-nada, porque o `hub.movepark.co` responde `noindex`. **Vale reabrir como política do site
-inteiro antes do corte das páginas de unidade**, já que `/estacionamentos/<x>/` também usa
-barra, mas isso não bloqueia o blog.
+As URLs do blog são herdadas e valem tráfego; as do Hub nasceram sem barra e passaram a valer
+em 18/08/2026, quando o site assumiu o `movepark.co` e saiu do `noindex`. Antes disso a
+divergência era inofensiva porque nada do Hub era indexado. **Agora vale reabrir como política
+do site inteiro antes do corte das páginas de unidade**, já que `/estacionamentos/<x>/` também
+usa barra.
 
 ### As 11 categorias
 
@@ -324,8 +325,9 @@ têm zero unidade** (CNF, REC, NVT, GIG, BSB, POA, SDU) e o Porto tem uma unidad
 Falta oferta, não falta cadastro: todos os aeroportos que o blog cita já existem como destino,
 e os 94 posts estão vinculados.
 
-Como o `hub.movepark.co` já responde `X-Robots-Tag: noindex, follow`, os passos 1 e 2 rodam em
-produção sem risco de SEO. A migração deixa de ser um evento e vira uma chave.
+Enquanto o Hub respondeu em `hub.movepark.co` com `X-Robots-Tag: noindex, follow`, os passos 1
+e 2 rodaram em produção sem risco de SEO. Desde 18/08/2026 o site atende o `movepark.co` e é
+indexável, então o que era ensaio virou produção: mudança de URL de post agora custa tráfego.
 
 ## O que a execução mudou em relação ao desenho
 
@@ -788,8 +790,9 @@ uma comparação de um valor prova mais que uma amostragem.
   novo, reusando o chunking que já existe.
 - **HTML pré-renderizado do post novo.** A URL abre na hora (o worker confirma no banco), mas
   até o build seguinte ela chega ao visitante como casca renderizada no cliente, sem HTML servido
-  e fora do sitemap. Para post novo isso é irrelevante hoje, porque o `hub.movepark.co` responde
-  `noindex`; vira pendência de verdade no dia do corte para o `movepark.co`. A saída completa é
+  e fora do sitemap. Isso era irrelevante enquanto o Hub respondia `noindex`; **desde 18/08/2026,
+  com o site no `movepark.co`, virou pendência de verdade**: post novo fica sem HTML para o
+  crawler até o próximo build. A saída completa é
   um gatilho de build a partir do banco, que exige token de API da Cloudflare com escopo de
   Workers Builds (o OAuth do wrangler nesta máquina não alcança `builds/*`).
 - **Egress do Storage.** O bucket saiu de 52 para 183 objetos, e as imagens do blog passam a

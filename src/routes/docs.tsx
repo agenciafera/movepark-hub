@@ -18,6 +18,7 @@ import {
   type Group,
   type HttpMethod,
 } from "@/features/docs/apiDocs";
+import { siteUrl } from "@/lib/site";
 
 const GROUP_ICON: Record<string, Icon> = {
   locations: MapPin,
@@ -268,7 +269,7 @@ export default function DocsPage() {
           name="description"
           content="Documentação pública da API REST e do servidor MCP do Movepark: autenticação por chave, escopos, endpoints com exemplos de request e response, status codes e integração para agentes."
         />
-        <link rel="canonical" href="https://hub.movepark.co/docs" />
+        <link rel="canonical" href={siteUrl("/docs")} />
       </Helmet>
 
       <header className="mb-8">
@@ -281,7 +282,7 @@ export default function DocsPage() {
         <div className="mt-4 flex flex-wrap gap-2 text-caption-sm">
           <span className="rounded-full bg-surface-soft px-3 py-1">REST: <code>{API_BASE}</code></span>
           <span className="rounded-full bg-surface-soft px-3 py-1">MCP: <code>{MCP_BASE}</code></span>
-          <a href="https://hub.movepark.co/openapi.yaml" className="rounded-full bg-surface-soft px-3 py-1 text-mp-primary hover:underline">
+          <a href={siteUrl("/openapi.yaml")} className="rounded-full bg-surface-soft px-3 py-1 text-mp-primary hover:underline">
             OpenAPI 3.1 ↗
           </a>
         </div>
@@ -444,9 +445,9 @@ export default function DocsPage() {
               </div>
             </div>
             <p className="text-caption-sm text-muted">
-              Cards: <a href="https://hub.movepark.co/.well-known/mcp/server-card.json" className="text-mp-primary hover:underline">server-card.json</a>{" "}
-              · <a href="https://hub.movepark.co/.well-known/mcp/partner-card.json" className="text-mp-primary hover:underline">partner-card.json</a>{" "}
-              · <a href="https://hub.movepark.co/.well-known/mcp/customer-card.json" className="text-mp-primary hover:underline">customer-card.json</a>
+              Cards: <a href={siteUrl("/.well-known/mcp/server-card.json")} className="text-mp-primary hover:underline">server-card.json</a>{" "}
+              · <a href={siteUrl("/.well-known/mcp/partner-card.json")} className="text-mp-primary hover:underline">partner-card.json</a>{" "}
+              · <a href={siteUrl("/.well-known/mcp/customer-card.json")} className="text-mp-primary hover:underline">customer-card.json</a>
             </p>
           </section>
         </div>

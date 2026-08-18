@@ -3,8 +3,8 @@
 > Descubra as melhores estratégias para economizar no estacionamento do Aeroporto de Guarulhos. Escolha o local certo e reserve sua vaga!
 
 - Publicado em: 2024-03-26
-- URL: https://hub.movepark.co/blog/qual-e-o-preco-medio-do-estacionamento-no-aeroporto-guarulhos/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-internacional-de-sao-paulo-guarulhos
+- URL: https://movepark.co/blog/qual-e-o-preco-medio-do-estacionamento-no-aeroporto-guarulhos/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-internacional-de-sao-paulo-guarulhos
 
 ---
 O **Aeroporto Internacional de Guarulhos (GRU)** oferece várias opções de estacionamento, cada uma com preços diferentes. Vou apresentar algumas alternativas para você escolher a que melhor se adequa às suas necessidades:

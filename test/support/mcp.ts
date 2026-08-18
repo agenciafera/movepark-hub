@@ -14,7 +14,7 @@ export const MCP_BASE = process.env.MCP_BASE_URL ?? "https://mcp.movepark.co";
 export const API_BASE = process.env.API_BASE_URL ?? "https://api.movepark.co";
 
 /** Origem canônica do site, onde moram openapi.yaml e os cards de descoberta. */
-export const HUB_BASE = process.env.HUB_BASE_URL ?? "https://hub.movepark.co";
+export const HUB_BASE = process.env.HUB_BASE_URL ?? "https://movepark.co";
 
 /**
  * Edge do assistente do site. É pública por design (`verify_jwt=false`, a bolinha chama anônima),

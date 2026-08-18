@@ -58,7 +58,7 @@ describe("localBusinessSchema", () => {
     const s = localBusinessSchema(makeListing());
     expect(s["@type"]).toEqual(["LocalBusiness", "ParkingFacility"]);
     expect(s.name).toBe("Aeroporto Guarulhos · Vaga Coberta");
-    expect(s.url).toBe("https://hub.movepark.co/p/aeropark/aeroporto-guarulhos/covered");
+    expect(s.url).toBe("https://movepark.co/p/aeropark/aeroporto-guarulhos/covered");
     expect(s.address).toMatchObject({ "@type": "PostalAddress", addressCountry: "BR" });
     expect(s.geo).toMatchObject({ "@type": "GeoCoordinates", latitude: -23.5 });
   });
@@ -204,21 +204,21 @@ describe("productOfferSchema · preço zero", () => {
 describe("breadcrumbSchema", () => {
   it("numera as posições a partir de 1", () => {
     const s = breadcrumbSchema([
-      { name: "Home", url: "https://hub.movepark.co" },
-      { name: "Busca", url: "https://hub.movepark.co/search" },
+      { name: "Home", url: "https://movepark.co" },
+      { name: "Busca", url: "https://movepark.co/search" },
     ]);
     expect(s["@type"]).toBe("BreadcrumbList");
     expect(s.itemListElement).toHaveLength(2);
     expect(s.itemListElement[0]).toMatchObject({ position: 1, name: "Home" });
-    expect(s.itemListElement[1]).toMatchObject({ position: 2, item: "https://hub.movepark.co/search" });
+    expect(s.itemListElement[1]).toMatchObject({ position: 2, item: "https://movepark.co/search" });
   });
 });
 
 describe("itemListSchema", () => {
   it("monta ItemList numerando posições a partir de 1", () => {
     const s = itemListSchema([
-      { name: "Aeroporto de Guarulhos", url: "https://hub.movepark.co/destinos/aeroporto-de-guarulhos" },
-      { name: "Congonhas", url: "https://hub.movepark.co/destinos/congonhas" },
+      { name: "Aeroporto de Guarulhos", url: "https://movepark.co/destinos/aeroporto-de-guarulhos" },
+      { name: "Congonhas", url: "https://movepark.co/destinos/congonhas" },
     ]);
     expect(s["@type"]).toBe("ItemList");
     expect(s.itemListElement).toHaveLength(2);
@@ -226,7 +226,7 @@ describe("itemListSchema", () => {
       "@type": "ListItem",
       position: 1,
       name: "Aeroporto de Guarulhos",
-      url: "https://hub.movepark.co/destinos/aeroporto-de-guarulhos",
+      url: "https://movepark.co/destinos/aeroporto-de-guarulhos",
     });
     expect(s.itemListElement[1]).toMatchObject({ position: 2, name: "Congonhas" });
   });
@@ -248,7 +248,7 @@ describe("destinationSchema", () => {
     const s = destinationSchema(base);
     expect(s["@type"]).toBe("Place");
     expect(s.name).toBe("Aeroporto de Guarulhos");
-    expect(s.url).toBe("https://hub.movepark.co/destinos/aeroporto-de-guarulhos");
+    expect(s.url).toBe("https://movepark.co/destinos/aeroporto-de-guarulhos");
     expect(s.description).toBe("Estacionamento perto do GRU.");
     expect(s.address).toMatchObject({
       "@type": "PostalAddress",
@@ -312,17 +312,17 @@ describe("blogPostingSchema: imagem", () => {
 
   it("capa do bucket entra como está, sem duplicar o host", () => {
     // O bug: `${SITE_URL}${image}` com uma URL já absoluta produzia
-    // "https://hub.movepark.cohttps://…" nos 94 posts.
+    // "https://movepark.cohttps://…" nos 94 posts.
     const url = "https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets/blog/a.jpg";
     expect(blogPostingSchema({ ...base, image: url }).image).toBe(url);
   });
 
   it("caminho relativo ainda ganha o host", () => {
     expect(blogPostingSchema({ ...base, image: "/og/home.jpg" }).image).toBe(
-      "https://hub.movepark.co/og/home.jpg",
+      "https://movepark.co/og/home.jpg",
     );
     expect(blogPostingSchema({ ...base, image: "og/home.jpg" }).image).toBe(
-      "https://hub.movepark.co/og/home.jpg",
+      "https://movepark.co/og/home.jpg",
     );
   });
 
@@ -358,7 +358,7 @@ describe("parkingFacilitySchema · lote mapeado (E0.17-f · ADR-010)", () => {
       addressRegion: "PE",
       addressCountry: "BR",
     });
-    expect(s.url).toBe("https://hub.movepark.co/estacionamentos/aeroporto-recife/talentos-park");
+    expect(s.url).toBe("https://movepark.co/estacionamentos/aeroporto-recife/talentos-park");
   });
 
   // O que o schema NÃO emite é a parte decidida. Se algum destes campos aparecer, o Hub

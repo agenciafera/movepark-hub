@@ -18,8 +18,7 @@ import { durationLabel } from "@/features/price-index/priceIndex.logic";
 import { formatBRL } from "@/lib/format";
 import { breadcrumbSchema, faqSchema } from "@/lib/jsonld";
 import { OgImage } from "@/lib/ogImage";
-
-const SITE_URL = "https://hub.movepark.co";
+import { SITE_URL } from "@/lib/site";
 
 /** O que o loader entrega: a pergunta, as relacionadas e o contexto de preço. */
 export type FaqPerguntaData = (FaqPageData & { precos: FaqPrecoContexto }) | null;

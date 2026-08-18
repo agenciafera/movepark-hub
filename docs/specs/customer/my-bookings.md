@@ -145,7 +145,7 @@ Auth obrigatória.
 ## 4. Voucher
 
 ### Conteúdo do QR
-URL: `https://hub.movepark.co/voucher/validate?code=MP-A8K7P2`
+URL: `https://movepark.co/voucher/validate?code=MP-A8K7P2`
 
 Ao escanear no acesso à vaga, abre a página de validação operacional que confere:
 - `booking.status == 'confirmed'`

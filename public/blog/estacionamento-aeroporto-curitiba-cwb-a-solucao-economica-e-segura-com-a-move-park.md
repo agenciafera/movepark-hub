@@ -3,8 +3,8 @@
 > Viajar a partir do Aeroporto Internacional Afonso Pena (CWB), em Curitiba, é uma experiência que começa bem antes do embarque. Uma das decisões mais importantes é encontrar um estacionamento próximo ao aeroporto de Curitiba seguro, com bom preço e conveniente. A dúvida entre o estacionamento oficial e alternativas mais econômicas é comum. A Move Park [...]
 
 - Publicado em: 2025-10-01
-- URL: https://hub.movepark.co/blog/estacionamento-aeroporto-curitiba-cwb-a-solucao-economica-e-segura-com-a-move-park/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-afonso-pena
+- URL: https://movepark.co/blog/estacionamento-aeroporto-curitiba-cwb-a-solucao-economica-e-segura-com-a-move-park/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-afonso-pena
 
 ---
 Viajar a partir do Aeroporto Internacional Afonso Pena (CWB), em Curitiba, é uma experiência que começa bem antes do embarque. Uma das decisões mais importantes é encontrar um **[estacionamento próximo ao aeroporto de Curitiba](/destinos/aeroporto-afonso-pena) seguro, com bom preço e conveniente**. A dúvida entre o estacionamento oficial e alternativas mais econômicas é comum.

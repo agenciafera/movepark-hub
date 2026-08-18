@@ -33,6 +33,7 @@ import {
   verifyBasicAuth,
   webhookIntentFromType,
 } from "./logic.ts";
+import { siteUrl } from "../_shared/site.ts";
 
 /**
  * Notifica a confirmação por WhatsApp — só Tarifas Flex+ (`fare_benefits.notifications_sms`).
@@ -409,9 +410,9 @@ Deno.serve(async (req: Request) => {
     } else {
       // confirmed / reconfirmed / noop (já confirmada) → gera voucher + notifica. generateAndStoreVoucher
       // é o gerador ÚNICO do voucher (idempotente por reserva), mesmo quando o cartão confirmou inline.
-      const siteUrl = Deno.env.get("PUBLIC_SITE_URL") ?? "https://hub.movepark.co";
+      const site = siteUrl();
       await runAfterResponse(
-        generateAndStoreVoucher(admin, payment.booking_id, siteUrl).catch((e) =>
+        generateAndStoreVoucher(admin, payment.booking_id, site).catch((e) =>
           console.error("[pagarme-webhook] falha ao gerar voucher:", payment!.booking_id, e),
         ),
       );

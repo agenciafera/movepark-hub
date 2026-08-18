@@ -13,6 +13,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { mapBookingRowToVoucher, VOUCHER_BOOKING_SELECT } from "../_shared/voucher/fields.ts";
 import { buildVoucherPdf, voucherValidateUrl } from "../_shared/voucher/pdf.ts";
 import { checkVoucherAuth, checkVoucherBooking, checkVoucherCode } from "./logic.ts";
+import { siteUrl } from "../_shared/site.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -43,7 +44,7 @@ Deno.serve(async (req: Request) => {
   // @ts-expect-error - Deno env
   const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   // @ts-expect-error - Deno env
-  const SITE_URL = Deno.env.get("PUBLIC_SITE_URL") ?? "https://hub.movepark.co";
+  const SITE_URL = siteUrl();
 
   const userClient = createClient(SUPABASE_URL, ANON_KEY, {
     auth: { persistSession: false },

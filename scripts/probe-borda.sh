@@ -6,14 +6,14 @@
 # contrato depois de todo deploy que toque `src/worker.ts`, `wrangler.jsonc` ou as rotas.
 #
 # Uso:  ./scripts/probe-borda.sh [host]
-# Ex.:  ./scripts/probe-borda.sh https://hub.movepark.co
+# Ex.:  ./scripts/probe-borda.sh https://movepark.co
 #
 # O que ler no resultado: o tamanho da home é a assinatura do fallback SPA. Qualquer caminho
 # que devolva exatamente esse tamanho está servindo a home no lugar da página pedida.
 # Contexto e decisões em docs/specs/borda-cloudflare.md.
 set -uo pipefail
 
-HOST="${1:-https://hub.movepark.co}"
+HOST="${1:-https://movepark.co}"
 
 CAMINHOS=(
   "/|home"

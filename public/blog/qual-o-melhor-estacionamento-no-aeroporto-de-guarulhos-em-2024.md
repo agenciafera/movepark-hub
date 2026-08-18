@@ -3,8 +3,8 @@
 > O melhor estacionamento do aeroporto Guarulhos em 2024 é o Ponce Park. Diárias de apenas R$15,29/dia e fica a 5min até Aeroporto Cumbica.
 
 - Publicado em: 2024-01-12
-- URL: https://hub.movepark.co/blog/qual-o-melhor-estacionamento-no-aeroporto-de-guarulhos-em-2024/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-internacional-de-sao-paulo-guarulhos
+- URL: https://movepark.co/blog/qual-o-melhor-estacionamento-no-aeroporto-de-guarulhos-em-2024/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-internacional-de-sao-paulo-guarulhos
 
 ---
 ![Estacionamento aeroporto guarulhos](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/qual-o-melhor-estacionamento-no-aeroporto-de-guarulhos-em-2024/estacionamento-aeroporto-guarulhos.webp)

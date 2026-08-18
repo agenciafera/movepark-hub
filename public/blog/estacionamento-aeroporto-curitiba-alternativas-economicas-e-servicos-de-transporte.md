@@ -3,8 +3,8 @@
 > Reserve agora seu estacionamento próximo ao Aeroporto de Curitiba e viaje com tranquilidade. Descubra opções econômicas e serviços de transporte eficientes neste guia completo.
 
 - Publicado em: 2024-03-15
-- URL: https://hub.movepark.co/blog/estacionamento-aeroporto-curitiba-alternativas-economicas-e-servicos-de-transporte/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-afonso-pena
+- URL: https://movepark.co/blog/estacionamento-aeroporto-curitiba-alternativas-economicas-e-servicos-de-transporte/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-afonso-pena
 
 ---
 ## Escolher o Estacionamento Ideal ao viajar pelo Aeroporto de Curitiba

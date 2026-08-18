@@ -12,6 +12,7 @@
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { makeToken, sha256Hex } from "./logic.ts";
+import { siteUrl } from "../_shared/site.ts";
 
 const TTL_MINUTES = 15;
 
@@ -89,7 +90,7 @@ Deno.serve(async (req: Request) => {
   }
 
   // O segredo viaja no fragment (#ht=), não em query string (não vaza em log/Referer).
-  const site = env("PUBLIC_SITE_URL") || "https://hub.movepark.co";
+  const site = siteUrl();
   const url = `${site}/checkout/${booking.code}#ht=${secret}`;
   return json({ url, expires_at: expiresAt });
 });

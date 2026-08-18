@@ -3,8 +3,8 @@
 > Reserve antecipadamente seu estacionamento no Aeroporto de Viracopos para uma viagem tranquila. Garanta sua vaga, economize e viaje seguro!
 
 - Publicado em: 2024-03-14
-- URL: https://hub.movepark.co/blog/estacionamento-aeroporto-viracopos-como-reservar-antecipadamente-e-garantir-sua-vaga/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-de-viracopos
+- URL: https://movepark.co/blog/estacionamento-aeroporto-viracopos-como-reservar-antecipadamente-e-garantir-sua-vaga/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-de-viracopos
 
 ---
 ## Virapark : O Melhor Estacionamento do Aeroporto de Viracopos

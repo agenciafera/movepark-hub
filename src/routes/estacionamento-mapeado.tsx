@@ -16,8 +16,7 @@ import { tituloLoteMapeado } from "@/features/destinations/loteMapeado.logic";
 import { breadcrumbSchema, faqSchema, parkingFacilitySchema } from "@/lib/jsonld";
 import { formatDistance } from "@/lib/format";
 import { trackEvent } from "@/lib/analytics";
-
-const SITE_URL = "https://hub.movepark.co";
+import { SITE_URL } from "@/lib/site";
 
 export type EstacionamentoMapeadoLoaderData = {
   destination: Destination;

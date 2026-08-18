@@ -4,7 +4,7 @@ HTML dos e-mails de autenticação, no mesmo casco de marca das Edge Functions
 (`supabase/functions/_shared/email.ts`). São **estáticos**: os e-mails de Auth do
 Supabase são configurados no **dashboard**, não em código.
 
-> As imagens apontam para `https://hub.movepark.co/brand/...` (servidas pelo
+> As imagens apontam para `https://movepark.co/brand/...` (servidas pelo
 > Cloudflare Pages a partir de `public/brand/`). Precisam estar publicadas em
 > produção para renderizar no e-mail. As variáveis `{{ .Token }}` e
 > `{{ .ConfirmationURL }}` são substituídas pelo Supabase no envio.

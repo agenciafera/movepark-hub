@@ -475,10 +475,10 @@
         "button type=button aria-label=Copiar",
         "a href=#$",
         "input text=Buscar endpoint…",
-        "a href=https://hub.movepark.co/openapi.yaml text=OpenAPI 3.1 ↗",
+        "a href=https://movepark.co/openapi.yaml text=OpenAPI 3.1 ↗",
         "a href=/operator/api-keys text=/operator/api-keys",
-        "a href=https://hub.movepark.co/.well-known/mcp/server-card.json text=server-card.json",
-        "a href=https://hub.movepark.co/.well-known/mcp/partner-card.json text=partner-card.json"
+        "a href=https://movepark.co/.well-known/mcp/server-card.json text=server-card.json",
+        "a href=https://movepark.co/.well-known/mcp/partner-card.json text=partner-card.json"
       ],
       "source": "static",
       "first_seen": "2026-07-29T12:28:39.695Z",

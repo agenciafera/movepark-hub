@@ -12,6 +12,8 @@
 // Lógica pura + acesso a dados via cliente injetado (`sb`), para dar teste.
 // Ver docs/specs/mcp.md e docs/specs/chatbot.md.
 
+import { siteUrl } from "./site.ts";
+
 export interface ReadToolDef {
   name: string;
   description: string;
@@ -235,7 +237,7 @@ function unwrap<T>(r: { data: T; error: { message: string } | null }): T {
   return r.data;
 }
 
-const SITE_URL = "https://hub.movepark.co";
+
 
 interface BlogRow {
   slug: string;
@@ -449,7 +451,7 @@ export async function callRead(
       let posts = (unwrap(await q) as BlogRow[]).map(withFlatTags);
       if (a.tag) posts = posts.filter((p) => p.tags.some((t) => t.slug === a.tag));
 
-      return posts.map((p) => ({ ...p, url: `${SITE_URL}/blog/${p.slug}/` }));
+      return posts.map((p) => ({ ...p, url: `${siteUrl()}/blog/${p.slug}/` }));
     }
 
     case "get_blog_post": {
@@ -470,7 +472,7 @@ export async function callRead(
       ) as BlogRow | null;
 
       if (!post) throw new Error(`Post "${a.slug}" não encontrado. Use search_blog para achar o slug.`);
-      return { ...withFlatTags(post), url: `${SITE_URL}/blog/${post.slug}/` };
+      return { ...withFlatTags(post), url: `${siteUrl()}/blog/${post.slug}/` };
     }
 
     case "current_datetime":

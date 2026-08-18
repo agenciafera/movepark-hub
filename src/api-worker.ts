@@ -5,10 +5,12 @@
 // Esconde a URL crua do Supabase e injeta o header `apikey` (anon) que o gateway exige.
 // Ver docs/specs/public-api.md e docs/specs/mcp.md.
 
+import { DEFAULT_SITE_URL } from "./lib/site-host.mjs";
+
 interface Env {
   SUPABASE_FUNCTIONS_URL: string; // ex.: https://<ref>.supabase.co/functions/v1
   SUPABASE_ANON_KEY: string; // injetado como `apikey` na borda (secret)
-  SITE_URL?: string; // ex.: https://hub.movepark.co (fonte do openapi.yaml)
+  SITE_URL?: string; // origem de onde buscar o openapi.yaml; default: o host canônico
   API_RATELIMIT?: RateLimit; // opcional: rate-limit best-effort por prefixo de chave
 }
 
@@ -121,7 +123,7 @@ async function handleApi(request: Request, env: Env, url: URL): Promise<Response
     });
   }
   if (url.pathname === "/openapi.yaml" || url.pathname === "/openapi.json") {
-    const site = env.SITE_URL ?? "https://hub.movepark.co";
+    const site = env.SITE_URL ?? DEFAULT_SITE_URL;
     const res = await fetch(new URL(url.pathname, site).toString());
     return new Response(res.body, {
       status: res.status,

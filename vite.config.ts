@@ -15,8 +15,10 @@ import {
 // Mesma função que o split usa para o lastmod do índice. Uma só, para as duas pontas não
 // divergirem sobre o que é "a data mais recente".
 import { maisRecenteDentre } from "./scripts/sitemap-split.logic.mjs";
-
-const SITE_URL = "https://hub.movepark.co";
+// Host canônico: um lugar só, compartilhado com o front e com os scripts de pós-build.
+// Aqui ele define o `hostname` de TODAS as `<loc>` do sitemap, e sitemap com host errado é
+// sitemap ignorado pelo Google.
+import { DEFAULT_SITE_URL } from "./src/lib/site-host.mjs";
 
 /**
  * Onde o mapa de seções do sitemap é entregue ao `scripts/split-sitemap.mjs`.
@@ -354,7 +356,8 @@ export default defineConfig(async ({ mode }) => {
       },
       react(),
       sitemap({
-        hostname: SITE_URL,
+        // `loadEnv` deixa o build de preview publicar o próprio host em vez do de produção.
+        hostname: (env.VITE_PUBLIC_SITE_URL || DEFAULT_SITE_URL).replace(/\/+$/, ""),
         dynamicRoutes,
         // Data real por URL, vinda do banco. Rota ausente do mapa usa o default do plugin
         // (data do build), que hoje é o caso só das institucionais.

@@ -6,6 +6,7 @@ import { PopularParkingLots } from "@/features/home/PopularParkingLots";
 import { HowItWorks } from "@/features/home/HowItWorks";
 import { TrustBand } from "@/features/home/TrustBand";
 import { CtaBanner } from "@/features/home/CtaBanner";
+import { SITE_URL } from "@/lib/site";
 
 export default function HomePage() {
   return (
@@ -22,11 +23,11 @@ export default function HomePage() {
           content="Reserve sua vaga com antecedência. Estacionamentos cobertos, descobertos e valet nos principais aeroportos e destinos do Brasil."
         />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://hub.movepark.co" />
+        <meta property="og:url" content={SITE_URL} />
         {/* A og:image vem do shell (área `marca`). Aqui ela apontava para
             /og/home.jpg, arquivo que nunca foi commitado: o card da home ia com
             404 no lugar da imagem. */}
-        <link rel="canonical" href="https://hub.movepark.co" />
+        <link rel="canonical" href={SITE_URL} />
         {/* A entidade Movepark: âncora do knowledge panel e da desambiguação de
             marca nos LLMs, no dado estruturado da porta de entrada do site. */}
         <script type="application/ld+json">{JSON.stringify(organizationSchema())}</script>

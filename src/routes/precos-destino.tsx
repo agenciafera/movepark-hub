@@ -20,8 +20,7 @@ import {
   type MatrixRow,
   type PriceDestination,
 } from "@/features/price-index/priceIndex.logic";
-
-const SITE_URL = "https://hub.movepark.co";
+import { SITE_URL } from "@/lib/site";
 
 export type PrecosDestinoData = {
   days: number[];

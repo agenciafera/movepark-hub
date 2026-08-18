@@ -5,7 +5,7 @@ edição de unidade/tipo de vaga/capacidade/preço, reservas (lista, filtro, det
 check-in por QR, extrato de repasse e KYC do recebedor, catálogo comercial e relatórios.
 
 - **Baseline:** 25/07/2026, verificado contra a `main` (gates rodados: typecheck, lint, `bun run test`, `bun run test:db`).
-- **Alvo:** produção (`hub.movepark.co` + projeto `mgaigbezdalbyuqiofcf`). Não existe staging do Hub.
+- **Alvo:** produção (`movepark.co` + projeto `mgaigbezdalbyuqiofcf`). Não existe staging do Hub.
 - **Usuário:** `peu+operador@fera.ag`, dono (owner) da company **Abbapark** (unidade Aeroporto Afonso Pena), já vinculado em `profile_company`. Papéis de negação (Gerente/Operação/Financeiro) precisam de um membro com esse papel; o dono e o hub_admin furam todo gate de escopo (ver O-06).
 - **Automação:** os specs do dono vivem em `e2e/playwright/owner/`, partidos por efeito colateral (mesma ideia do roteiro C). Os que **escrevem** (`O01-dono-jornada`, `O02-operacao-reservas`) ficam no project `e2e-owner-tx`, que só roda pedindo pelo nome; os de **leitura** (`R01-reservas-filtro`) ficam no `e2e-owner` e rodam na suíte padrão. Fora daí, `e2e/playwright/manager/T06-impersonation` e `e2e/playwright/operator/O22-escopo-rota` também cobrem casos deste roteiro. O restante é pgTAP e Vitest, apontado caso a caso.
 - **Gateway em SANDBOX:** cobranças deste roteiro não movem dinheiro real e não precisam de estorno.

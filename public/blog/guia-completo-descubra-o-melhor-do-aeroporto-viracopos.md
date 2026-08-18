@@ -3,8 +3,8 @@
 > Descubra tudo sobre o Aeroporto Viracopos com nosso guia completo. Saiba tudo sobre terminais, transporte, estacionamento, serviços e dicas
 
 - Publicado em: 2024-06-28
-- URL: https://hub.movepark.co/blog/guia-completo-descubra-o-melhor-do-aeroporto-viracopos/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-de-viracopos
+- URL: https://movepark.co/blog/guia-completo-descubra-o-melhor-do-aeroporto-viracopos/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-de-viracopos
 
 ---
 ## Introdução

@@ -17,7 +17,7 @@
   ],
   "vars": {
     "SUPABASE_FUNCTIONS_URL": "https://mgaigbezdalbyuqiofcf.supabase.co/functions/v1",
-    "SITE_URL": "https://hub.movepark.co"
+    "SITE_URL": "https://movepark.co"
   },
   // Freio best-effort de 60 req/min: por prefixo de chave em /v1/*, por IP nas tools de OTP.
   // Era um contador escrito sobre KV, que cobrava uma escrita por requisição e queimou a

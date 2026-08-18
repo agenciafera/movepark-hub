@@ -69,7 +69,7 @@ describe("brlShort", () => {
 });
 
 describe("compartilhamento de indicação", () => {
-  const link = "https://hub.movepark.co/r/JOAO2X9";
+  const link = "https://movepark.co/r/JOAO2X9";
   it("monta a mensagem com o link e o valor do programa", () => {
     expect(referralMessage(link, 25)).toContain(link);
     // `brlFromCents` usa Intl, que separa "R$" do número com espaço não separável:

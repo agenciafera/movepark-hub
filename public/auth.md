@@ -26,9 +26,9 @@ revocation_uri: https://mgaigbezdalbyuqiofcf.supabase.co/auth/v1/logout
 
 | Surface | Endpoint | Auth | Card |
 |---|---|---|---|
-| Consumer (discovery) | `https://mcp.movepark.co` | none | [server-card.json](https://hub.movepark.co/.well-known/mcp/server-card.json) |
-| Partner (tenant-scoped) | `https://mcp.movepark.co/partner` | API key `mp_` + scopes | [partner-card.json](https://hub.movepark.co/.well-known/mcp/partner-card.json) |
-| Customer (book on behalf) | `https://mcp.movepark.co/customer` | user OTP login | [customer-card.json](https://hub.movepark.co/.well-known/mcp/customer-card.json) |
+| Consumer (discovery) | `https://mcp.movepark.co` | none | [server-card.json](https://movepark.co/.well-known/mcp/server-card.json) |
+| Partner (tenant-scoped) | `https://mcp.movepark.co/partner` | API key `mp_` + scopes | [partner-card.json](https://movepark.co/.well-known/mcp/partner-card.json) |
+| Customer (book on behalf) | `https://mcp.movepark.co/customer` | user OTP login | [customer-card.json](https://movepark.co/.well-known/mcp/customer-card.json) |
 
 ## Public access (no auth required)
 

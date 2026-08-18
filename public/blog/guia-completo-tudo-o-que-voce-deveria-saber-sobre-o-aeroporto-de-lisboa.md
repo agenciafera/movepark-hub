@@ -3,8 +3,8 @@
 > Descubra tudo sobre o Aeroporto de Lisboa com nosso guia completo. Informações sobre terminais, transporte, estacionamento e serviços
 
 - Publicado em: 2024-06-27
-- URL: https://hub.movepark.co/blog/guia-completo-tudo-o-que-voce-deveria-saber-sobre-o-aeroporto-de-lisboa/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-humberto-delgado
+- URL: https://movepark.co/blog/guia-completo-tudo-o-que-voce-deveria-saber-sobre-o-aeroporto-de-lisboa/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-humberto-delgado
 
 ---
 ## Introdução

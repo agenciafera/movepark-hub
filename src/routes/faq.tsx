@@ -12,8 +12,7 @@ import { itemListSchema } from "@/lib/jsonld";
 import type { FaqIndexItem } from "@/features/faqs/api";
 import { buildFaqSections, filterFaqs } from "@/features/faqs/faqIndex.logic";
 import { OgImage } from "@/lib/ogImage";
-
-const SITE_URL = "https://hub.movepark.co";
+import { SITE_URL } from "@/lib/site";
 
 /**
  * FAQ com uma seção por categoria (globais) e uma por destino.

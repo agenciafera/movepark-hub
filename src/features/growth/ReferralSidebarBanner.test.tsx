@@ -24,7 +24,7 @@ function render(referrals: object | null) {
 
 const INFO = {
   code: "501D3D81",
-  link: "https://hub.movepark.co/r/501D3D81",
+  link: "https://movepark.co/r/501D3D81",
   reward_amount: 25,
   counts: { pending: 0, qualified: 0, rewarded: 0 },
   referrals: [],

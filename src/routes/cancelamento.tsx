@@ -2,6 +2,7 @@ import { Helmet } from "react-helmet-async";
 import { ContentPageView } from "@/features/content/ContentPageView";
 import { CANCELAMENTO, RELACIONADOS } from "@/features/content/pages";
 import { readingMinutes } from "@/features/content/types";
+import { siteUrl } from "@/lib/site";
 
 export default function CancelamentoPage() {
   const p = CANCELAMENTO;
@@ -14,8 +15,8 @@ export default function CancelamentoPage() {
           content="Regras de cancelamento e reembolso da Movepark: o prazo depende da sua Tarifa, com reembolso integral dentro da janela."
         />
         <meta property="og:title" content="Política de Cancelamento | Movepark" />
-        <meta property="og:url" content="https://hub.movepark.co/cancelamento" />
-        <link rel="canonical" href="https://hub.movepark.co/cancelamento" />
+        <meta property="og:url" content={siteUrl("/cancelamento")} />
+        <link rel="canonical" href={siteUrl("/cancelamento")} />
       </Helmet>
 
       <ContentPageView

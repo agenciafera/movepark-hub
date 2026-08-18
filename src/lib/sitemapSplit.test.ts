@@ -13,7 +13,7 @@ const LASTMOD = "2026-08-14T22:43:37.432Z";
 
 function bloco(path: string, lastmod: string = LASTMOD): string {
   return (
-    `<url><loc>https://hub.movepark.co${path}</loc><lastmod>${lastmod}</lastmod>` +
+    `<url><loc>https://movepark.co${path}</loc><lastmod>${lastmod}</lastmod>` +
     `<changefreq>daily</changefreq><priority>1.0</priority></url>`
   );
 }
@@ -117,7 +117,7 @@ describe("dividirSitemap", () => {
     expect(indice.startsWith(PROLOG)).toBe(true);
     expect(indice).toContain("<sitemapindex");
     for (const arquivo of arquivos) {
-      expect(indice).toContain(`<loc>https://hub.movepark.co/${arquivo.nome}</loc>`);
+      expect(indice).toContain(`<loc>https://movepark.co/${arquivo.nome}</loc>`);
     }
     // O host sai da própria URL do sitemap de origem, não de uma segunda cópia de SITE_URL.
     expect(indice).not.toContain("localhost");
@@ -143,27 +143,27 @@ describe("dividirSitemap", () => {
     });
 
     expect(indice).toContain(
-      "<loc>https://hub.movepark.co/sitemap-blog.xml</loc><lastmod>2026-06-15T00:00:00.000Z</lastmod>",
+      "<loc>https://movepark.co/sitemap-blog.xml</loc><lastmod>2026-06-15T00:00:00.000Z</lastmod>",
     );
     expect(indice).toContain(
-      "<loc>https://hub.movepark.co/sitemap-faq.xml</loc><lastmod>2025-03-02T00:00:00.000Z</lastmod>",
+      "<loc>https://movepark.co/sitemap-faq.xml</loc><lastmod>2025-03-02T00:00:00.000Z</lastmod>",
     );
   });
 
   it("omite o lastmod do índice quando a seção não tem nenhum", () => {
     const semData =
       `${PROLOG}${ABRE_URLSET}` +
-      `<url><loc>https://hub.movepark.co/sobre</loc></url>` +
+      `<url><loc>https://movepark.co/sobre</loc></url>` +
       `</urlset>`;
 
     const { indice } = dividirSitemap(semData, { paginas: ["/sobre"] });
 
-    expect(indice).toContain("<loc>https://hub.movepark.co/sitemap-paginas.xml</loc>");
+    expect(indice).toContain("<loc>https://movepark.co/sitemap-paginas.xml</loc>");
     expect(indice).not.toContain("<lastmod>");
   });
 
   it("recusa entrada que já é um índice, para rodar duas vezes não picotar", () => {
-    const indice = `${PROLOG}<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><sitemap><loc>https://hub.movepark.co/sitemap-blog.xml</loc></sitemap></sitemapindex>`;
+    const indice = `${PROLOG}<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><sitemap><loc>https://movepark.co/sitemap-blog.xml</loc></sitemap></sitemapindex>`;
 
     expect(() => dividirSitemap(indice, MAPA)).toThrow(/índice/i);
   });

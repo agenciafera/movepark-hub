@@ -3,8 +3,8 @@
 > Veja como reservar sua vaga no Melhor Estacionamento de Viracopos. Estacione Dentro do Aeroporto. Conforto na sua mão.
 
 - Publicado em: 2022-12-07
-- URL: https://hub.movepark.co/blog/como-reservar-vaga-no-estacionamento-do-aeroporto-de-viracopos/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-de-viracopos
+- URL: https://movepark.co/blog/como-reservar-vaga-no-estacionamento-do-aeroporto-de-viracopos/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-de-viracopos
 
 ---
 A melhor forma de reservar uma vaga nos estacionamentos próximos ou até mesmo no [estacionamento do Aeroporto de Viracopos](/blog/qual-o-valor-da-diaria-do-estacionamento-no-aeroporto-viracopos-2024/) é o pagamento antecipado para reserva de vagas.Você pode fazer a reserva online via site ou aplicativo.

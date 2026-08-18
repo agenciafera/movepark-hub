@@ -3,8 +3,8 @@
 > Descubra o valor da diária do Estacionamento Aeroporto Guarulhos e compare com outras opções disponíveis. Veja a melhor forma de economizar.
 
 - Publicado em: 2022-12-08
-- URL: https://hub.movepark.co/blog/qual-e-o-valor-da-diaria-estacionamento-aeroporto-guarulhos/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-internacional-de-sao-paulo-guarulhos
+- URL: https://movepark.co/blog/qual-e-o-valor-da-diaria-estacionamento-aeroporto-guarulhos/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-internacional-de-sao-paulo-guarulhos
 
 ---
 Para quem vai viajar pelo GRU Airport uma dúvida recorrente é sobre estacionamento. Vale a pena ou não estacionar por lá? Até que ponto ir de Aplicativo (Uber) não seria mais vantajoso?

@@ -40,7 +40,7 @@ Allow: /
 User-agent: Bytespider
 Allow: /
 
-Sitemap: https://hub.movepark.co/sitemap.xml
+Sitemap: https://movepark.co/sitemap.xml
 
 # Content Signals — preferências de uso por IA (contentsignals.org)
 Content-Signal: ai-train=yes, search=yes, ai-input=yes

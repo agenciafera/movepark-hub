@@ -11,6 +11,7 @@
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 import { encodeBase64 } from "jsr:@std/encoding/base64";
 import { formatBRDateTime, formatBRL, type VoucherBooking } from "./voucher/fields.ts";
+import { siteUrl } from "./site.ts";
 
 /**
  * Codifica o HTML como base64 quebrado em linhas de 76 chars (RFC 2045). Usamos base64 de
@@ -47,9 +48,15 @@ const BRAND = {
   pageBg: "#EDEDEF", // fundo da página (fora do card)
 };
 
-export function siteUrl(): string {
-  return (env("PUBLIC_SITE_URL") ?? "http://localhost:5173").replace(/\/+$/, "");
-}
+/**
+ * Reexportado de `./site.ts`, que é a fonte única do host.
+ *
+ * Antes daqui saía um fallback próprio, `http://localhost:5173`, e ele era pior do que
+ * parece: sem `PUBLIC_SITE_URL` no projeto, TODO e-mail transacional sairia com link para o
+ * localhost do servidor, morto para quem recebe. Um host errado o cliente reporta; um
+ * localhost ninguém consegue nem abrir. Em dev, exporte `PUBLIC_SITE_URL=http://localhost:5173`.
+ */
+export { siteUrl };
 
 // deno-lint-ignore no-explicit-any
 export async function getEmailConfig(admin: any): Promise<{ from: string | null; inbox: string | null }> {

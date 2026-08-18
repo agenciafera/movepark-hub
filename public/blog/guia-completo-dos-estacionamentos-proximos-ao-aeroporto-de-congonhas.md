@@ -3,8 +3,8 @@
 > O Aeroporto de Congonhas, em São Paulo, é um dos mais movimentados do país, recebendo diariamente milhares de passageiros. Para facilitar sua viagem, apresentamos uma lista detalhada dos estacionamentos próximos ao aeroporto, com informações sobre localização, serviços, tarifas e diferenciais de cada um. Tabela de Estacionamentos Próximos ao Aeroporto de Congonhas Nome do Estacionamento Localização [...]
 
 - Publicado em: 2025-01-15
-- URL: https://hub.movepark.co/blog/guia-completo-dos-estacionamentos-proximos-ao-aeroporto-de-congonhas/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-de-congonhas
+- URL: https://movepark.co/blog/guia-completo-dos-estacionamentos-proximos-ao-aeroporto-de-congonhas/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-de-congonhas
 
 ---
 O Aeroporto de Congonhas, em São Paulo, é um dos mais movimentados do país, recebendo diariamente milhares de passageiros. Para facilitar sua viagem, apresentamos uma lista detalhada dos estacionamentos próximos ao aeroporto, com informações sobre localização, serviços, tarifas e diferenciais de cada um.

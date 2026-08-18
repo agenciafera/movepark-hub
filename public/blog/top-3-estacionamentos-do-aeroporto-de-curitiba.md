@@ -3,8 +3,8 @@
 > TOP 3 Estacionamentos do Aeroporto de Curitiba Planejar uma viagem exige atenção a muitos detalhes, e escolher onde deixar o carro é uma dessas decisões importantes. Se você está buscando o melhor estacionamento aeroporto Curitiba, chegou ao lugar certo! Neste guia, apresentaremos os 3 principais estacionamentos próximos ao Aeroporto Internacional Afonso Pena, em São José [...]
 
 - Publicado em: 2025-02-25
-- URL: https://hub.movepark.co/blog/top-3-estacionamentos-do-aeroporto-de-curitiba/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-afonso-pena
+- URL: https://movepark.co/blog/top-3-estacionamentos-do-aeroporto-de-curitiba/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-afonso-pena
 
 ---
 # TOP 3 Estacionamentos do Aeroporto de Curitiba

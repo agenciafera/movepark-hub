@@ -3,8 +3,8 @@
 > Recife movimentou 9,9 milhões de passageiros em 2025 e lidera a malha aérea do Nordeste. Veja os números do REC e por que ele atende Paraíba e Alagoas.
 
 - Publicado em: 2026-08-11
-- URL: https://hub.movepark.co/blog/aeroporto-do-recife-passageiros-voos-e-importancia-para-o-nordeste/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-internacional-do-recife-guararapes
+- URL: https://movepark.co/blog/aeroporto-do-recife-passageiros-voos-e-importancia-para-o-nordeste/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-internacional-do-recife-guararapes
 
 ---
 

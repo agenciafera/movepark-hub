@@ -22,6 +22,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import TurndownService from "turndown";
+import { DEFAULT_SITE_URL as SITE_URL } from "../src/lib/site-host.mjs";
 
 const WP = "https://movepark.co/wp-json/wp/v2";
 const IMAGE_DIR = "public/images/blog";
@@ -707,9 +708,9 @@ function writeMarkdown(rows, report) {
       `> ${r.meta_description ?? r.excerpt ?? ""}`.trim(),
       "",
       `- Publicado em: ${r.published_at.slice(0, 10)}`,
-      `- URL: https://hub.movepark.co/blog/${r.slug}/`,
+      `- URL: ${SITE_URL}/blog/${r.slug}/`,
       r.destination_slug
-        ? `- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/${r.destination_slug}`
+        ? `- Estacionamentos deste aeroporto: ${SITE_URL}/destinos/${r.destination_slug}`
         : null,
       "",
       "---",

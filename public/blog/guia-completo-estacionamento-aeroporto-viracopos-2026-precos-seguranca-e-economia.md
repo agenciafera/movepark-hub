@@ -3,8 +3,8 @@
 > 1. Evolução Operacional de Viracopos (VCP) e Projeções 2026 O Aeroporto Internacional de Viracopos, em Campinas, consolidou-se como o hub que mais cresce no Brasil, registrando 12.826.553 passageiros em 2025, uma alta de 3,47% sobre o ano anterior.[3, 1] O destaque absoluto foi o segmento internacional, que saltou 29,21%, ultrapassando a marca de 1,1 milhão [...]
 
 - Publicado em: 2026-03-27
-- URL: https://hub.movepark.co/blog/guia-completo-estacionamento-aeroporto-viracopos-2026-precos-seguranca-e-economia/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-de-viracopos
+- URL: https://movepark.co/blog/guia-completo-estacionamento-aeroporto-viracopos-2026-precos-seguranca-e-economia/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-de-viracopos
 
 ---
 ## 1. Evolução Operacional de Viracopos (VCP) e Projeções 2026

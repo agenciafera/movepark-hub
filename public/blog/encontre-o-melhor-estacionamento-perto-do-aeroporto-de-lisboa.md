@@ -3,8 +3,8 @@
 > Encontre o estacionamento perfeito perto do Aeroporto Lisboa para uma viagem tranquila. Garanta segurança e conveniência para seu veículo!
 
 - Publicado em: 2024-03-27
-- URL: https://hub.movepark.co/blog/encontre-o-melhor-estacionamento-perto-do-aeroporto-de-lisboa/
-- Estacionamentos deste aeroporto: https://hub.movepark.co/destinos/aeroporto-humberto-delgado
+- URL: https://movepark.co/blog/encontre-o-melhor-estacionamento-perto-do-aeroporto-de-lisboa/
+- Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-humberto-delgado
 
 ---
 ## 1. Introdução

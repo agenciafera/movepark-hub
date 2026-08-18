@@ -84,7 +84,7 @@ existentes (padrão `operator_*`), que já validam o vínculo com a empresa.
 ## 4. Domínio e roteamento (Cloudflare Worker)
 
 **Decisão:** a API é servida em **`api.movepark.co`** — um subdomínio dedicado, separado do site
-(`hub.movepark.co`). O parceiro nunca vê a URL crua do Supabase (`*.supabase.co/functions/v1/...`).
+(`movepark.co`). O parceiro nunca vê a URL crua do Supabase (`*.supabase.co/functions/v1/...`).
 
 > ✅ **Decidido.** `api.movepark.co` confirmado; a exceção já está registrada no `CLAUDE.md` (a regra
 > de "sem subdomínios" continua valendo só para a superfície de SEO/consumidor). Alternativa avaliada
@@ -100,7 +100,7 @@ existentes (padrão `operator_*`), que já validam o vínculo com a empresa.
 | Headers de plataforma | injeta `x-forwarded-*`, propaga `x-request-id`; **nunca** vaza a URL do Supabase |
 | `/openapi.yaml` e `/docs` | serve o contrato e a doc human-friendly (§11) |
 
-> O worker do site (`src/worker.ts`) continua só com `hub.movepark.co`. O da API é separado para não
+> O worker do site (`src/worker.ts`) continua só com o host do site. O da API é separado para não
 > misturar content-negotiation de Markdown/SSG com proxy de API.
 
 ---
