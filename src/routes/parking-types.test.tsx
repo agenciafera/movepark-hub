@@ -146,15 +146,16 @@ describe("ParkingTypesPage · sincronização manual do espelho de preço WL", (
   });
 
   it("mostra divergente quando mirror_status é divergent", () => {
-    setup({
-      lpt: makeLpt({
-        pricing_rule: {
-          ...makeLpt().pricing_rule,
-          mirror_status: "divergent",
-        },
-      }),
-      checkoutMode: "external",
-    });
+    // Construído e recastado à parte (em vez de passar por makeLpt({ pricing_rule: ... })):
+    // o override tipado exigiria o shape inteiro de PricingRuleRow, e espalhar
+    // base.pricing_rule (nullable no tipo) infere os campos como opcionais.
+    const base = makeLpt();
+    const lpt = {
+      ...base,
+      pricing_rule: { ...base.pricing_rule!, mirror_status: "divergent" },
+    } as unknown as LocationParkingTypeWithRelations;
+
+    setup({ lpt, checkoutMode: "external" });
     expect(screen.getByText("divergente")).toBeInTheDocument();
   });
 
