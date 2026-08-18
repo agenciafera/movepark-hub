@@ -4,7 +4,6 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
-  SITEMAP_BLOG_TAXONOMY_PENDING,
   SITEMAP_DYNAMIC_PATTERNS,
   SITEMAP_OPT_OUT,
   SITEMAP_PRIVATE_PREFIXES,
@@ -34,7 +33,6 @@ const conhecidas = new Set<string>([
   ...SITEMAP_STATIC_ROUTES,
   ...Object.keys(SITEMAP_OPT_OUT),
   ...SITEMAP_DYNAMIC_PATTERNS,
-  ...SITEMAP_BLOG_TAXONOMY_PENDING,
 ]);
 
 const ehPrivada = (r: string) =>

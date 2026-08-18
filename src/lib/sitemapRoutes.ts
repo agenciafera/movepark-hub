@@ -78,14 +78,10 @@ export const SITEMAP_DYNAMIC_PATTERNS = [
   "/precos",
   "/precos/:slug",
   "/estacionamento-mais-barato/:slug",
-] as const;
-
-/**
- * Taxonomia e paginação do blog. Existem no `dist/` (48 arquivos) e ainda não entram no
- * sitemap, porque cada uma exige uma consulta própria de slugs e de contagem de páginas.
- * Ficam declaradas para o teste não cobrar decisão a cada build, e o débito fica visível.
- */
-export const SITEMAP_BLOG_TAXONOMY_PENDING = [
+  // Taxonomia e paginação do blog (18/08/2026): `getBlogTaxonomyRoutes` no `vite.config.ts`
+  // espelha a mesma contagem do `getStaticPaths` de `src/routes.tsx` (48 arquivos no dist/)
+  // e entra na seção `blog` do sitemap. Até aqui viviam em `SITEMAP_BLOG_TAXONOMY_PENDING`,
+  // como débito visível; a consulta de agrupamento foi escrita e o débito fechou.
   "/blog/page/:page",
   "/blog/categoria/:slug",
   "/blog/categoria/:slug/page/:page",

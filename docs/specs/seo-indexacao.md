@@ -226,10 +226,11 @@ build, mesmo quando nada tinha mudado.
 `changefreq` e `priority` continuam uniformes (`daily`, `1.0`). Prioridade igual para tudo não
 informa nada, mas também não mente; mexer nelas é outra conversa.
 
-**Pendente:** a taxonomia e a paginação do blog (48 arquivos no `dist/`: `/blog/page/N`,
-`/blog/categoria/*`, `/blog/tag/*`, `/blog/autor/*`, `/blog/aeroporto/*`) ainda ficam de fora.
-Cada uma precisa de consulta própria de slugs e de contagem de páginas. Está declarada em
-`SITEMAP_BLOG_TAXONOMY_PENDING` para o débito ficar visível em vez de virar esquecimento.
+**Taxonomia e paginação do blog (fechado em 18/08/2026):** `/blog/page/N`, `/blog/categoria/*`,
+`/blog/tag/*`, `/blog/autor/*` e `/blog/aeroporto/*` (48 arquivos no `dist/`) entram no sitemap
+pela mesma seção `blog`. `getBlogTaxonomyRoutes`, no `vite.config.ts`, espelha a contagem do
+`getStaticPaths` de `src/routes.tsx` (mesmo `PAGE_SIZE`), agrupando por slug de categoria, tag,
+autor e destino. Os padrões estão em `SITEMAP_DYNAMIC_PATTERNS`, junto do resto do dinâmico.
 
 **Nomes das páginas legais.** As rotas do Hub são `/termos` e `/privacidade`; o WordPress
 publica `/termos-de-uso/` e `/politica-de-privacidade/`. São nomes diferentes, então a

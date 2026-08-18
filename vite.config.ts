@@ -15,6 +15,10 @@ import {
 // Mesma função que o split usa para o lastmod do índice. Uma só, para as duas pontas não
 // divergirem sobre o que é "a data mais recente".
 import { maisRecenteDentre } from "./scripts/sitemap-split.logic.mjs";
+// Mesma paginação do getStaticPaths da listagem (src/routes.tsx): sem ela, o sitemap podia
+// contar página diferente do que o SSG de fato gera. Módulo puro, sem import próprio, então
+// entra na mesma exceção do site-host.mjs e do sitemapRoutes.ts.
+import { totalPages } from "./src/features/blog/listing.logic";
 // Host canônico: um lugar só, compartilhado com o front e com os scripts de pós-build.
 // Aqui ele define o `hostname` de TODAS as `<loc>` do sitemap, e sitemap com host errado é
 // sitemap ignorado pelo Google.
@@ -181,6 +185,83 @@ async function getBlogRoutes(sb: SupabaseClient | null): Promise<RotaComData[]> 
 }
 
 /**
+ * Taxonomia e paginação do blog: /blog/page/N, /blog/categoria/<slug>, /blog/tag/<slug>,
+ * /blog/autor/<slug>, /blog/aeroporto/<slug>, cada uma com a própria paginação.
+ *
+ * Espelha o `blogListingPaths` de `src/routes.tsx` (mesma contagem, mesmo `PAGE_SIZE`), que é
+ * quem decide quais dessas páginas o `getStaticPaths` de fato pré-renderiza no `dist/`. As
+ * duas listas divergirem seria sitemap anunciando URL que o build não gerou, ou o inverso.
+ * Ficaram de fora do sitemap desde a criação da seção (17/08/2026, ver
+ * `SITEMAP_BLOG_TAXONOMY_PENDING` em `sitemapRoutes.ts`) porque exigiam a mesma consulta de
+ * agrupamento que só valia a pena escrever uma vez.
+ */
+async function getBlogTaxonomyRoutes(sb: SupabaseClient | null): Promise<RotaComData[]> {
+  if (!sb) return [];
+
+  const { data } = await sb
+    .from("blog_post")
+    .select(
+      "published_at, updated_at," +
+        " destination:destination(slug)," +
+        " category:blog_category(slug)," +
+        " author:blog_author(slug)," +
+        " tags:blog_post_tag(tag:blog_tag(slug))",
+    )
+    .eq("is_published", true)
+    .is("deleted_at", null);
+
+  // deno-lint-ignore no-explicit-any
+  const posts = (data ?? []) as any[];
+  const rotas: RotaComData[] = [];
+
+  for (let page = 2; page <= totalPages(posts.length); page++) {
+    rotas.push({ route: `/blog/page/${page}` });
+  }
+
+  const grupos = {
+    categoria: new Map<string, { count: number; lastmods: string[] }>(),
+    tag: new Map<string, { count: number; lastmods: string[] }>(),
+    autor: new Map<string, { count: number; lastmods: string[] }>(),
+    aeroporto: new Map<string, { count: number; lastmods: string[] }>(),
+  };
+  const acumula = (
+    mapa: Map<string, { count: number; lastmods: string[] }>,
+    slug: string | undefined,
+    lastmod: string | undefined,
+  ) => {
+    if (!slug) return;
+    const atual = mapa.get(slug) ?? { count: 0, lastmods: [] };
+    atual.count += 1;
+    if (lastmod) atual.lastmods.push(lastmod);
+    mapa.set(slug, atual);
+  };
+
+  for (const p of posts) {
+    const lastmod = maisRecenteDentre(p.published_at, p.updated_at);
+    acumula(grupos.categoria, p.category?.slug, lastmod);
+    acumula(grupos.autor, p.author?.slug, lastmod);
+    acumula(grupos.aeroporto, p.destination?.slug, lastmod);
+    // deno-lint-ignore no-explicit-any
+    for (const t of (p.tags ?? []) as any[]) acumula(grupos.tag, t.tag?.slug, lastmod);
+  }
+
+  for (const [kind, mapa] of Object.entries(grupos) as [
+    keyof typeof grupos,
+    Map<string, { count: number; lastmods: string[] }>,
+  ][]) {
+    for (const [slug, { count, lastmods }] of mapa) {
+      const lastmod = maisRecenteDentre(...lastmods);
+      rotas.push({ route: `/blog/${kind}/${slug}`, lastmod });
+      for (let page = 2; page <= totalPages(count); page++) {
+        rotas.push({ route: `/blog/${kind}/${slug}/page/${page}`, lastmod });
+      }
+    }
+  }
+
+  return rotas;
+}
+
+/**
  * Índice de preços: /precos/<slug> por destino publicado com unidade
  * precificada. Os slugs vêm da mesma RPC que alimenta o loader SSG, então o
  * sitemap e o pré-render nunca divergem sobre quais páginas existem.
@@ -228,6 +309,7 @@ export default defineConfig(async ({ mode }) => {
     listingRoutes,
     destinationRoutes,
     blogRoutes,
+    blogTaxonomyRoutes,
     prospectRoutes,
     faqRoutes,
     precosRoutes,
@@ -236,6 +318,7 @@ export default defineConfig(async ({ mode }) => {
       getDynamicRoutes(sb),
       getDestinationRoutes(sb),
       getBlogRoutes(sb),
+      getBlogTaxonomyRoutes(sb),
       getProspectRoutes(sb),
       getFaqRoutes(sb),
       getPrecosRoutes(sb),
@@ -291,6 +374,7 @@ export default defineConfig(async ({ mode }) => {
     ...listingRoutes,
     ...destinationRoutes,
     ...blogRoutes,
+    ...blogTaxonomyRoutes,
     ...prospectRoutes,
     ...faqRoutes,
     ...precosComData,
@@ -335,7 +419,7 @@ export default defineConfig(async ({ mode }) => {
    */
   const so = (rotas: RotaComData[]) => rotas.map((r) => r.route);
   const secoesDoSitemap: Record<string, string[]> = {
-    blog: ["/blog/", ...so(blogRoutes)],
+    blog: ["/blog/", ...so(blogRoutes), ...so(blogTaxonomyRoutes)],
     destinos: ["/destinos", ...so(destinationRoutes)],
     estacionamentos: so(prospectRoutes),
     faq: ["/faq", ...so(faqRoutes)],
