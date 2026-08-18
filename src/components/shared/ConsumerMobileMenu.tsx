@@ -3,13 +3,22 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { IconProps } from "@phosphor-icons/react";
 import {
   Article,
+  Buildings,
+  Calculator,
+  CalendarX,
+  ChatCircle,
+  Gauge,
   Gift,
   Heart,
   Info,
+  Lifebuoy,
+  LockKey,
   MapPin,
   Question,
+  Scales,
   SquaresFour,
   Storefront,
+  Tag,
   Ticket,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
@@ -64,17 +73,64 @@ function IconeDeMenu({ aberto }: { aberto: boolean }) {
 
 type Icone = React.ComponentType<IconProps>;
 type ItemDeMenu = { to: string; label: string; icone: Icone };
+type GrupoDeMenu = { titulo: string; itens: ItemDeMenu[] };
 
 /**
- * Os rótulos são os mesmos do rodapé e do dropdown do desktop de propósito: dois
- * nomes para a mesma página fazem o leitor achar que são páginas diferentes.
+ * Busca de vaga é o motivo de alguém abrir o site, então "Destinos" fica solto no
+ * topo, antes de qualquer título de grupo. É também o único link daqui que o
+ * rodapé não tem: lá a busca já está no header em toda página.
  */
-const LINKS_DO_SITE: ItemDeMenu[] = [
-  { to: "/destinos", label: "Destinos", icone: MapPin },
-  { to: "/como-funciona", label: "Como funciona", icone: Info },
-  { to: "/blog/", label: "Blog", icone: Article },
-  { to: "/ajuda", label: "Ajuda", icone: Question },
-  { to: "/seja-parceiro", label: "Seja parceiro", icone: Storefront },
+const DESTINOS: ItemDeMenu = { to: "/destinos", label: "Destinos", icone: MapPin };
+
+/**
+ * Os grupos, os rótulos e a ordem são os **do rodapé**, item por item.
+ *
+ * O menu nasceu com cinco links porque metade destas páginas ainda não existia, e
+ * o rodapé foi crescendo sozinho: quem estava no celular só chegava em preços,
+ * calculadora, cancelamento ou contato rolando até o fim da página.
+ *
+ * Copiar a hierarquia do rodapé, e não inventar uma segunda, é o que evita o
+ * problema mais caro: dois nomes para a mesma página fazem o leitor achar que são
+ * páginas diferentes. Ao mexer no rodapé, mexa aqui no mesmo commit; o teste
+ * `ConsumerMobileMenu.test.tsx` compara as duas listas.
+ *
+ * A exceção é a Central de Ajuda, que o rodapé não lista: ela é a porta de
+ * entrada do suporte no celular, e por isso abre o grupo em vez de ficar de fora.
+ */
+const GRUPOS_DO_SITE: GrupoDeMenu[] = [
+  {
+    titulo: "Movepark",
+    itens: [
+      { to: "/sobre", label: "Sobre nós", icone: Buildings },
+      // Barra final de propósito: é a URL canônica do blog, herdada do WordPress.
+      { to: "/blog/", label: "Blog", icone: Article },
+      { to: "/precos", label: "Índice de preços", icone: Tag },
+      {
+        to: "/calculadora-estacionamento-aeroporto",
+        label: "Calculadora de estacionamento",
+        icone: Calculator,
+      },
+      { to: "/termos", label: "Termos de uso", icone: Scales },
+      { to: "/privacidade", label: "Política de privacidade", icone: LockKey },
+    ],
+  },
+  {
+    titulo: "Estacionamentos",
+    itens: [
+      { to: "/seja-parceiro", label: "Seja parceiro", icone: Storefront },
+      { to: "/operator", label: "Painel do estacionamento", icone: Gauge },
+    ],
+  },
+  {
+    titulo: "Suporte",
+    itens: [
+      { to: "/ajuda", label: "Central de ajuda", icone: Lifebuoy },
+      { to: "/faq", label: "Perguntas frequentes", icone: Question },
+      { to: "/como-funciona", label: "Como funciona", icone: Info },
+      { to: "/cancelamento", label: "Política de cancelamento", icone: CalendarX },
+      { to: "/contato", label: "Fale conosco", icone: ChatCircle },
+    ],
+  },
 ];
 
 const LINKS_DA_CONTA: ItemDeMenu[] = [
@@ -86,7 +142,7 @@ const LINKS_DA_CONTA: ItemDeMenu[] = [
 /**
  * Item do menu, com ícone à esquerda e marca de seção atual.
  *
- * O ícone não é enfeite: numa lista de nove itens ele é o que deixa o dedo achar
+ * O ícone não é enfeite: numa lista longa ele é o que deixa o dedo achar
  * o alvo sem ler a lista inteira, e é o que as duas referências (QuintoAndar e
  * Airbnb) fazem. A cor é `mp-indigo`, a mesma que a lista da conta
  * (`AccountSidebar`) já usa em ícone de navegação.
@@ -130,6 +186,34 @@ function Item({ to, label, icone: Icone }: ItemDeMenu) {
 }
 
 /**
+ * Bloco nomeado da lista, com o mesmo título e a mesma ordem do rodapé.
+ *
+ * O título é discreto de propósito: numa lista de dezesseis itens ele existe para
+ * o polegar saber onde parar de rolar, não para competir com os links. Por isso
+ * `text-muted` em corpo pequeno, e não o `text-title-sm` que o rodapé usa, onde
+ * as três colunas ficam lado a lado e o título é que separa uma da outra.
+ *
+ * Em caixa alta não vai: o contrato de escrita do projeto trata eyebrow em
+ * maiúscula como vício, e aqui a maiúscula ainda atrapalharia a leitura rápida.
+ *
+ * `role="group"` + `aria-labelledby` para o leitor de tela anunciar o título ao
+ * entrar no bloco, em vez de despejar dezesseis links num nível só.
+ */
+function Grupo({ titulo, itens }: GrupoDeMenu) {
+  const id = React.useId();
+  return (
+    <div role="group" aria-labelledby={id} className="mt-4 first:mt-0">
+      <p id={id} className="px-3 pb-1 text-caption-sm font-semibold text-muted">
+        {titulo}
+      </p>
+      {itens.map((i) => (
+        <Item key={i.to} {...i} />
+      ))}
+    </div>
+  );
+}
+
+/**
  * Aba lateral do mobile, e a **única** porta de navegação do celular.
  *
  * Duas coisas foram parar aqui dentro, e o motivo das duas é o mesmo: no celular
@@ -147,6 +231,11 @@ function Item({ to, label, icone: Icone }: ItemDeMenu) {
  * O formato segue o menu do QuintoAndar: marca no topo, bloco de identidade com
  * atalho para a conta, itens com ícone, e uma régua separando a conta do site.
  *
+ * Os links do site são os **do rodapé**, nos mesmos grupos e na mesma ordem. O
+ * menu tinha ficado com cinco links de quando metade das páginas não existia, e o
+ * celular só alcançava preços, calculadora, cancelamento ou contato rolando até o
+ * fim da página.
+ *
  * Vale do celular até o tablet. A virada é em 1128, e não em 744: entre os dois
  * a barra de busca completa não cabe no header, e os campos dela se sobrepunham.
  * Só a partir de 1128 o header tem largura para a busca inteira, o dropdown de
@@ -156,6 +245,17 @@ export function ConsumerMobileMenu() {
   const [aberto, setAberto] = React.useState(false);
   const { session, effectiveRole, signOut } = useAuth();
   const navigate = useNavigate();
+
+  /*
+    Quem opera um estacionamento já recebeu "Ir pro Operator" logo acima, e o
+    "Painel do estacionamento" do rodapé leva ao mesmo /operator. Repetido, o link
+    ainda acenderia duas vezes como seção atual dentro de /operator. O rodapé pode
+    mantê-lo porque lá ele fala com o parceiro que ainda não entrou.
+  */
+  const grupos =
+    effectiveRole === "company_operator"
+      ? GRUPOS_DO_SITE.map((g) => ({ ...g, itens: g.itens.filter((i) => i.to !== "/operator") }))
+      : GRUPOS_DO_SITE;
 
   async function sair() {
     setAberto(false);
@@ -260,10 +360,10 @@ export function ConsumerMobileMenu() {
           </SheetClose>
         )}
 
-        {/* Sem régua entre os itens: em lista curta a linha divide o que o espaço
-            já separa. Ela só entra entre a conta e o site, que é onde separa duas
-            naturezas, do mesmo jeito que as referências fazem. */}
-        <nav className="mt-2 flex flex-col px-3">
+        {/* Sem régua entre os itens: quem separa um bloco do outro é o título do
+            grupo, e a linha em cima dele viraria risco em cima de risco. A régua
+            só entra entre a conta e o site, que é onde separa duas naturezas. */}
+        <nav aria-label="Menu" className="mt-2 flex flex-col px-3 pb-2">
           {session && (
             <>
               {contasDoConsumidorLigadas() && LINKS_DA_CONTA.map((l) => <Item key={l.to} {...l} />)}
@@ -277,8 +377,10 @@ export function ConsumerMobileMenu() {
             </>
           )}
 
-          {LINKS_DO_SITE.map((l) => (
-            <Item key={l.to} {...l} />
+          <Item {...DESTINOS} />
+
+          {grupos.map((g) => (
+            <Grupo key={g.titulo} {...g} />
           ))}
         </nav>
 

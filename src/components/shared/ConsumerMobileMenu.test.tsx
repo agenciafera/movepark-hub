@@ -3,6 +3,7 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { mockAuth, mockSession, renderWithProviders } from "@/test/utils";
 import { ConsumerMobileMenu } from "./ConsumerMobileMenu";
+import { ConsumerFooter } from "./ConsumerFooter";
 
 /**
  * O menu é a navegação do mobile desde que a barra fixa de baixo saiu, e vale
@@ -14,10 +15,69 @@ describe("ConsumerMobileMenu", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
 
-    const destinos = ["/destinos", "/como-funciona", "/blog/", "/ajuda", "/seja-parceiro"];
-    for (const href of destinos) {
-      expect(screen.getByRole("link", { name: rotuloDe(href) })).toHaveAttribute("href", href);
+    for (const [href, rotulo] of Object.entries(LINKS_ESPERADOS)) {
+      expect(screen.getByRole("link", { name: rotulo })).toHaveAttribute("href", href);
     }
+  });
+
+  /**
+   * O menu nasceu com cinco links, quando metade destas páginas não existia, e
+   * quem estava no celular só chegava em preços, calculadora, cancelamento ou
+   * contato rolando a página até o rodapé. Agora ele é o rodapé, item por item, e
+   * este teste é o que impede as duas listas de divergirem de novo: ao acrescentar
+   * um link no rodapé, ele tem que aparecer aqui no mesmo commit.
+   */
+  it("leva todo link do rodapé, com o mesmo rótulo e o mesmo grupo", async () => {
+    renderWithProviders(
+      <>
+        <ConsumerMobileMenu />
+        <ConsumerFooter />
+      </>,
+    );
+    // Só as listas dos grupos: a chamada do topo e a marca do rodapé não são
+    // navegação de seção.
+    const noRodape = [...screen.getByRole("contentinfo").querySelectorAll("ul a")].map(
+      (a) => [a.getAttribute("href"), a.textContent] as const,
+    );
+    expect(noRodape.length).toBeGreaterThan(10);
+
+    await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
+    for (const [href, rotulo] of noRodape) {
+      expect(screen.getByRole("link", { name: rotulo! })).toHaveAttribute("href", href!);
+    }
+  });
+
+  /** O título é o que deixa o polegar parar de rolar no bloco certo. */
+  it("agrupa os links com os mesmos títulos do rodapé", async () => {
+    renderWithProviders(<ConsumerMobileMenu />);
+    await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
+
+    const grupos = screen.getAllByRole("group");
+    expect(grupos.map((g) => g.textContent?.slice(0, 20))).toEqual([
+      expect.stringContaining("Movepark"),
+      expect.stringContaining("Estacionamentos"),
+      expect.stringContaining("Suporte"),
+    ]);
+    // "Destinos" fica solto acima dos grupos: é o motivo de alguém abrir o site.
+    for (const g of grupos) expect(g).not.toHaveTextContent("Destinos");
+  });
+
+  /**
+   * O rodapé mostra "Painel do estacionamento" pro parceiro que ainda não entrou.
+   * Quem já opera recebe "Ir pro Operator" no bloco da conta, e os dois levam ao
+   * mesmo /operator: repetido, o link ainda acenderia duas vezes como seção atual.
+   */
+  it("não repete o /operator pra quem já opera", async () => {
+    renderWithProviders(<ConsumerMobileMenu />, {
+      auth: mockAuth({
+        session: mockSession("company_operator"),
+        effectiveRole: "company_operator",
+      }),
+    });
+    await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
+
+    expect(screen.getByRole("link", { name: "Ir pro Operator" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Painel do estacionamento" })).toBeNull();
   });
 
   /** Sem sessão o "Entrar" saiu do header no mobile: ele mora aqui dentro. */
@@ -126,7 +186,7 @@ describe("ConsumerMobileMenu", () => {
     expect(indigos.length).toBeGreaterThan(3);
   });
 
-  /** Numa lista de oito itens o ícone é o que deixa o dedo achar o alvo. */
+  /** Numa lista longa o ícone é o que deixa o dedo achar o alvo. */
   it("todo item da lista tem ícone", async () => {
     const { container } = renderWithProviders(<ConsumerMobileMenu />, {
       auth: mockAuth({ session: mockSession("customer") }),
@@ -211,12 +271,19 @@ describe("ConsumerMobileMenu", () => {
   });
 });
 
-function rotuloDe(href: string) {
-  return {
-    "/destinos": "Destinos",
-    "/como-funciona": "Como funciona",
-    "/blog/": "Blog",
-    "/ajuda": "Ajuda",
-    "/seja-parceiro": "Seja parceiro",
-  }[href]!;
-}
+const LINKS_ESPERADOS: Record<string, string> = {
+  "/destinos": "Destinos",
+  "/sobre": "Sobre nós",
+  "/blog/": "Blog",
+  "/precos": "Índice de preços",
+  "/calculadora-estacionamento-aeroporto": "Calculadora de estacionamento",
+  "/termos": "Termos de uso",
+  "/privacidade": "Política de privacidade",
+  "/seja-parceiro": "Seja parceiro",
+  "/operator": "Painel do estacionamento",
+  "/ajuda": "Central de ajuda",
+  "/faq": "Perguntas frequentes",
+  "/como-funciona": "Como funciona",
+  "/cancelamento": "Política de cancelamento",
+  "/contato": "Fale conosco",
+};
