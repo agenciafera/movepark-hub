@@ -9,6 +9,7 @@ import { AuthProvider } from "@/auth/AuthProvider";
 import { hasSupabaseEnv } from "@/lib/supabase";
 import { ScrollToTop } from "@/components/shared/ScrollToTop";
 import { SavedListingsSync } from "@/features/search/SavedListingsSync";
+import { initClarity } from "@/lib/clarity";
 import { captureUtmFromSearch } from "@/lib/utm";
 import { captureCouponFromSearch } from "@/lib/coupon";
 
@@ -48,6 +49,13 @@ export function AppProviders() {
     captureUtmFromSearch(location.search);
     captureCouponFromSearch(location.search);
   }, [location.search]);
+
+  // Microsoft Clarity: injeta uma vez, no cliente. Fica antes do early return do
+  // `hasSupabaseEnv` porque hook não pode ficar depois de retorno condicional, e fica em
+  // efeito próprio porque não depende da rota (o Clarity acompanha a navegação sozinho).
+  React.useEffect(() => {
+    initClarity();
+  }, []);
 
   if (!hasSupabaseEnv) {
     return location.pathname.startsWith("/design-system") ? <Outlet /> : <EnvMissing />;

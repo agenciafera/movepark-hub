@@ -20,7 +20,11 @@
   # (já presente pelo ccm/collect do Ads); a JS API do painel do operador (Places + preview do ponto)
   # pede maps.googleapis.com em script-src e connect-src. O OpenStreetMap saiu junto com o iframe que
   # o usava, e o nominatim foi embora com ele (nenhum código chamava).
-  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://maps.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.pagar.me https://*.movepark.co https://maps.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://ad.doubleclick.net https://www.google.com; frame-src 'self' https://www.google.com https://accounts.google.com https://www.googletagmanager.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  # Microsoft Clarity (projeto xwqaug4a9m, pacote @microsoft/clarity): www.clarity.ms em
+  # script-src (a tag) e *.clarity.ms em connect-src (o coletor responde num subdomínio de
+  # região, tipo z.clarity.ms). c.bing.com entra junto porque o Clarity espelha o sinal no
+  # UET; sem ele a violação aparece sozinha e some o dado de campanha.
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://maps.googleapis.com https://www.clarity.ms; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.pagar.me https://*.movepark.co https://maps.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://ad.doubleclick.net https://www.google.com https://*.clarity.ms https://c.bing.com; frame-src 'self' https://www.google.com https://accounts.google.com https://www.googletagmanager.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
 
 /.well-known/api-catalog
   Content-Type: application/linkset+json
