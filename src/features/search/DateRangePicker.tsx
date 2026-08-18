@@ -50,7 +50,8 @@ const startOfToday = () => new Date(new Date().toDateString());
  * busca do nome completo. Juntar strings prontas como aqui é seguro; o que quebraria
  * é montar o nome por pedaço (`before:bg-${tom}`), que ele não consegue ler.
  */
-const BAND = "relative !bg-transparent before:absolute before:inset-0 before:z-0 before:content-['']";
+const BAND =
+  "relative !bg-transparent before:absolute before:inset-0 before:z-0 before:content-['']";
 /** Faixa do intervalo confirmado (azul da marca). */
 const BAND_START_PALE = `${BAND} before:rounded-l-full before:bg-mp-pale`;
 const BAND_END_PALE = `${BAND} before:rounded-r-full before:bg-mp-pale`;
@@ -142,116 +143,145 @@ export function DateRangePicker({ from, to, onChange, triggerClassName }: Props)
         </div>
       </PopoverAnchor>
 
-      {/* Sempre abre pra baixo (não flipa pra cima): side=bottom + avoidCollisions=false. */}
-      <PopoverContent align="start" side="bottom" avoidCollisions={false} className="w-auto p-0">
-        <Calendar
-          mode="range"
-          selected={range}
-          onDayClick={handleDayClick}
-          disabled={disabledDays(from, to)}
-          defaultMonth={from ?? startOfToday()}
-          onDayMouseEnter={(day, mods) => setHovered(mods.disabled ? null : day)}
-          onDayMouseLeave={() => setHovered(null)}
-          // Prévia do intervalo sob o cursor. Fica mais clara que o intervalo confirmado
-          // (miolo tracejado, ponta só contornada) pra não passar por escolha já feita.
-          modifiers={{
-            ...(preview.middle ? { preview_middle: preview.middle } : {}),
-            ...(preview.end ? { preview_end: preview.end } : {}),
-          }}
-          // Cinza neutro na prévia, azul da marca só no intervalo confirmado: o olho
-          // separa "seria isto" de "é isto" sem precisar de legenda. A ponta sob o
-          // cursor fica só contornada, porque ainda não é escolha.
-          modifiersClassNames={{
-            preview_middle: "!rounded-none !bg-surface-soft !text-ink",
-            preview_end: cn(BAND_END_SOFT, "!text-ink"),
-          }}
-          // A faixa engloba as pontas; o círculo vem por dentro, no DayContent. Sem
-          // saída o react-day-picker marca o mesmo dia como início E fim, por isso as
-          // duas classes andam juntas.
-          classNames={{
-            day_range_start: to
-              ? BAND_START_PALE
-              : previewing
-                ? BAND_START_SOFT
-                : CAP_ONLY,
-            day_range_end: to ? BAND_END_PALE : previewing ? BAND_START_SOFT : CAP_ONLY,
-          }}
-          components={{
-            // `labels.labelDay` existe nos defaults do react-day-picker 8.10 mas não é
-            // usado no render, então o rótulo vai por aqui: número visível pro olho,
-            // frase completa pro leitor de tela. O círculo da ponta também mora aqui,
-            // pra ficar acima da faixa em vez de disputar com ela.
-            DayContent: ({ date, activeModifiers }) => {
-              const mods = activeModifiers as {
-                range_start?: boolean;
-                range_end?: boolean;
-                preview_end?: boolean;
-              };
-              const escolhida = mods.range_start || mods.range_end;
-              return (
-                <>
-                  <span
-                    aria-hidden
-                    className={cn(
-                      CIRCLE,
-                      escolhida && "bg-mp-primary font-medium text-white",
-                      // Sob o cursor a ponta é só contorno: ainda não é escolha.
-                      !escolhida &&
-                        mods.preview_end &&
-                        "bg-canvas text-ink ring-1 ring-inset ring-mp-primary",
-                    )}
-                  >
-                    {date.getDate()}
-                  </span>
-                  <span className="sr-only">{dayAriaLabel(date, activeModifiers, phase)}</span>
-                </>
-              );
-            },
-          }}
-        />
-        <div className="flex items-end gap-3 border-t border-hairline p-4">
-          <div className="flex-1">
-            <Label htmlFor="checkin-time" className="mb-2 block">Check-in</Label>
-            <Select
-              value={fmtTime(from, "08:00")}
-              onValueChange={(t) => from && onChange(setTime(from, t), to)}
-              disabled={!from}
-            >
-              <SelectTrigger id="checkin-time">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="max-h-72">
-                {TIME_SLOTS.map((t) => (
-                  <SelectItem key={t} value={t} disabled={!!from && isTimeSlotPast(from, t)}>
-                    {t}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex-1">
-            <Label htmlFor="checkout-time" className="mb-2 block">Check-out</Label>
-            <Select
-              value={fmtTime(to, "18:00")}
-              onValueChange={(t) => to && onChange(from, setTime(to, t))}
-              disabled={!to}
-            >
-              <SelectTrigger id="checkout-time">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="max-h-72">
-                {TIME_SLOTS.map((t) => (
-                  <SelectItem key={t} value={t} disabled={!!to && isTimeSlotPast(to, t)}>
-                    {t}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      {/*
+        Sempre abre pra baixo (não flipa pra cima): side=bottom + avoidCollisions=false.
+
+        O teto de altura é o que impede o painel de sair pela borda de baixo. Num
+        celular de 664px de viewport, com os campos empilhados dentro do modal de
+        busca, o painel abria em y=278 e terminava em 812: o "Aplicar" caía em 763,
+        fora da tela, e o `overflow: visible` não deixava rolar até ele. Não dava
+        para concluir a escolha de data, que é o caminho inteiro da reserva.
+
+        `--radix-popper-available-height` é o espaço que sobra até a borda, medido
+        pelo próprio Radix (ele calcula mesmo com `avoidCollisions` desligado). No
+        desktop sobra altura de sobra e o teto não morde, então nada muda lá.
+      */}
+      <PopoverContent
+        align="start"
+        side="bottom"
+        avoidCollisions={false}
+        className="flex max-h-[var(--radix-popper-available-height)] w-auto flex-col overflow-hidden p-0"
+      >
+        {/*
+          Calendário e horários rolam juntos; a barra de ação fica fixa embaixo.
+          Prender os horários também deixaria menos de 240px para um calendário de
+          330px, e aí a rolagem só mudaria de lugar. `min-h-0` porque filho de flex
+          não encolhe abaixo do conteúdo por padrão, e sem ele o overflow não corta
+          nada. `overscroll-contain` para a rolagem não vazar para a página atrás.
+        */}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          <Calendar
+            mode="range"
+            selected={range}
+            onDayClick={handleDayClick}
+            disabled={disabledDays(from, to)}
+            defaultMonth={from ?? startOfToday()}
+            onDayMouseEnter={(day, mods) => setHovered(mods.disabled ? null : day)}
+            onDayMouseLeave={() => setHovered(null)}
+            // Prévia do intervalo sob o cursor. Fica mais clara que o intervalo confirmado
+            // (miolo tracejado, ponta só contornada) pra não passar por escolha já feita.
+            modifiers={{
+              ...(preview.middle ? { preview_middle: preview.middle } : {}),
+              ...(preview.end ? { preview_end: preview.end } : {}),
+            }}
+            // Cinza neutro na prévia, azul da marca só no intervalo confirmado: o olho
+            // separa "seria isto" de "é isto" sem precisar de legenda. A ponta sob o
+            // cursor fica só contornada, porque ainda não é escolha.
+            modifiersClassNames={{
+              preview_middle: "!rounded-none !bg-surface-soft !text-ink",
+              preview_end: cn(BAND_END_SOFT, "!text-ink"),
+            }}
+            // A faixa engloba as pontas; o círculo vem por dentro, no DayContent. Sem
+            // saída o react-day-picker marca o mesmo dia como início E fim, por isso as
+            // duas classes andam juntas.
+            classNames={{
+              day_range_start: to ? BAND_START_PALE : previewing ? BAND_START_SOFT : CAP_ONLY,
+              day_range_end: to ? BAND_END_PALE : previewing ? BAND_START_SOFT : CAP_ONLY,
+            }}
+            components={{
+              // `labels.labelDay` existe nos defaults do react-day-picker 8.10 mas não é
+              // usado no render, então o rótulo vai por aqui: número visível pro olho,
+              // frase completa pro leitor de tela. O círculo da ponta também mora aqui,
+              // pra ficar acima da faixa em vez de disputar com ela.
+              DayContent: ({ date, activeModifiers }) => {
+                const mods = activeModifiers as {
+                  range_start?: boolean;
+                  range_end?: boolean;
+                  preview_end?: boolean;
+                };
+                const escolhida = mods.range_start || mods.range_end;
+                return (
+                  <>
+                    <span
+                      aria-hidden
+                      className={cn(
+                        CIRCLE,
+                        escolhida && "bg-mp-primary font-medium text-white",
+                        // Sob o cursor a ponta é só contorno: ainda não é escolha.
+                        !escolhida &&
+                          mods.preview_end &&
+                          "bg-canvas text-ink ring-1 ring-inset ring-mp-primary",
+                      )}
+                    >
+                      {date.getDate()}
+                    </span>
+                    <span className="sr-only">{dayAriaLabel(date, activeModifiers, phase)}</span>
+                  </>
+                );
+              },
+            }}
+          />
+          <div className="flex items-end gap-3 border-t border-hairline p-4">
+            <div className="flex-1">
+              <Label htmlFor="checkin-time" className="mb-2 block">
+                Check-in
+              </Label>
+              <Select
+                value={fmtTime(from, "08:00")}
+                onValueChange={(t) => from && onChange(setTime(from, t), to)}
+                disabled={!from}
+              >
+                <SelectTrigger id="checkin-time">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  {TIME_SLOTS.map((t) => (
+                    <SelectItem key={t} value={t} disabled={!!from && isTimeSlotPast(from, t)}>
+                      {t}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex-1">
+              <Label htmlFor="checkout-time" className="mb-2 block">
+                Check-out
+              </Label>
+              <Select
+                value={fmtTime(to, "18:00")}
+                onValueChange={(t) => to && onChange(from, setTime(to, t))}
+                disabled={!to}
+              >
+                <SelectTrigger id="checkout-time">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  {TIME_SLOTS.map((t) => (
+                    <SelectItem key={t} value={t} disabled={!!to && isTimeSlotPast(to, t)}>
+                      {t}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
         {/* "Limpar datas" é a saída explícita do estado. Antes o jeito de zerar era
-            clicar de novo na entrada, que apagava tudo por acidente e sem avisar. */}
-        <div className="flex items-center justify-between border-t border-hairline p-3">
+            clicar de novo na entrada, que apagava tudo por acidente e sem avisar.
+
+            `shrink-0` + fundo próprio: esta barra é a única parte que não rola, e é
+            o que garante que o "Aplicar" esteja sempre no alcance do polegar. */}
+        <div className="flex shrink-0 items-center justify-between border-t border-hairline bg-canvas p-3">
           <Button
             type="button"
             variant="ghost"

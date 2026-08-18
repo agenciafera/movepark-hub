@@ -59,23 +59,33 @@ export function DateRangeField({ mode, date, onChange, minDate, triggerClassName
         >
           <span className="text-caption font-medium text-ink">{label}</span>
           <span className="line-clamp-1 text-body-sm text-muted">
-            {date
-              ? format(date, "dd MMM · HH:mm", { locale: ptBR })
-              : "Adicionar data"}
+            {date ? format(date, "dd MMM · HH:mm", { locale: ptBR }) : "Adicionar data"}
           </span>
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-auto p-0">
+      {/* Mesmo teto do DateRangePicker: sem ele o painel sai pela borda de baixo no
+          celular e o seletor de horário fica fora do alcance. Estes campos moram
+          dentro dos diálogos de alterar data, onde a altura é ainda mais curta. */}
+      <PopoverContent
+        align="start"
+        className="max-h-[var(--radix-popper-available-height)] w-auto overflow-y-auto overscroll-contain p-0"
+      >
         <div className="flex flex-col tablet:flex-row">
           <Calendar
             mode="single"
             selected={date ?? undefined}
             onSelect={handleDay}
-            disabled={(d) => (minDate ? d < new Date(minDate.toDateString()) : d < new Date(new Date().toDateString()))}
+            disabled={(d) =>
+              minDate
+                ? d < new Date(minDate.toDateString())
+                : d < new Date(new Date().toDateString())
+            }
             defaultMonth={date ?? minDate ?? new Date()}
           />
           <div className="border-l border-hairline p-4 tablet:w-44">
-            <Label htmlFor="time-select" className="mb-2 block">Horário</Label>
+            <Label htmlFor="time-select" className="mb-2 block">
+              Horário
+            </Label>
             <Select value={fmtTime(date)} onValueChange={handleTime}>
               <SelectTrigger id="time-select">
                 <SelectValue />
