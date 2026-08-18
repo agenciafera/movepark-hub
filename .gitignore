@@ -39,6 +39,10 @@ dist/
 build/
 *.log
 
+# Cópia local do dist/ pré-corte de domínio (rollback manual, ver docs/specs/seo-indexacao.md).
+# Local só, nunca vai pro git: é um .tar.gz de dezenas de MB por snapshot.
+.dist-backups/
+
 # TypeScript build info
 *.tsbuildinfo
 
