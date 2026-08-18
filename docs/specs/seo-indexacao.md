@@ -1,6 +1,6 @@
 # Indexação e domínio canônico
 
-**Status:** implementado (regra de host no worker) · **Fonte da verdade:** `INDEXABLE_HOSTS` em [`src/worker.ts`](../../src/worker.ts)
+**Status:** implementado (regra de host + regra de rota, as duas no worker) · **Fonte da verdade:** `INDEXABLE_HOSTS` e `ROTAS_PRIVADAS` em [`src/worker.ts`](../../src/worker.ts)
 
 ## Decisão
 
@@ -21,7 +21,13 @@ Dois domínios competindo pelo mesmo termo dividem sinal e se canibalizam. Enqua
 
 ## Como funciona
 
-`applyIndexPolicy` no [`src/worker.ts`](../../src/worker.ts) acrescenta **`X-Robots-Tag: noindex, follow`** a toda resposta cujo host não esteja em `INDEXABLE_HOSTS`.
+`applyIndexPolicy` no [`src/worker.ts`](../../src/worker.ts) acrescenta **`X-Robots-Tag: noindex, follow`** por duas razões independentes:
+
+1. **Host fora da allowlist** (`INDEXABLE_HOSTS`), que é o que hoje esconde o Hub inteiro.
+2. **Caminho de área privada** (`ROTAS_PRIVADAS`), que vale em qualquer host, canônico incluído.
+
+A primeira é temporária e some no dia da migração. A segunda é permanente. Ver
+[Áreas privadas](#áreas-privadas-noindex-independente-de-host) abaixo.
 
 Três decisões importam, e mexer nelas quebra a coisa:
 
@@ -34,6 +40,44 @@ Três decisões importam, e mexer nelas quebra a coisa:
 O `follow` preserva o rastreio dos links, então a autoridade que o Hub aponta para fora não é descartada.
 
 Cobertura garantida por teste em [`src/worker.test.ts`](../../src/worker.test.ts), incluindo o caso que protege a migração (`NÃO marca noindex no domínio canônico`).
+
+## Áreas privadas: noindex independente de host
+
+Implementado em 18/08/2026. Sete prefixos respondem `X-Robots-Tag: noindex, follow` em
+**qualquer** host, sem depender da regra de host:
+
+`/manager` · `/operator` · `/account` · `/checkout` · `/bookings` · `/onboarding` · `/voucher`
+
+**Por que precisou de regra própria.** Elas estavam fora do Google por tabela, não por
+política: o host inteiro respondia `noindex`. No dia em que o `movepark.co` entrar no
+`INDEXABLE_HOSTS`, a mesma linha que devolve o site ao índice devolveria junto o painel do
+parceiro, a conta do cliente e o checkout. Não é hipótese: o baseline de 04/08/2026 já trazia
+`/operator` e `/operator/api-keys` indexados.
+
+**Detalhes que importam:**
+
+- A comparação é por **prefixo de caminho**, em minúsculas e sem barra final, casando o
+  prefixo exato ou o que vem abaixo dele. `/accountability` não é `/account`.
+- Vale em toda resposta que sai do worker, inclusive a versão Markdown pedida por agente e os
+  redirecionamentos.
+- **Não** existe `Disallow` correspondente no [`robots.txt`](../../public/robots.txt), pelo
+  mesmo motivo da regra de host: URL bloqueada ali nunca é aberta, o `noindex` nunca é lido, e
+  o que já está indexado fica preso como "indexada, porém bloqueada". O caminho de saída é
+  deixar rastrear.
+- **Não** existe meta tag equivalente no app. A política de índice tem um dono só, que é o
+  worker; duas autoridades sobre a mesma URL só criam divergência, e o cabeçalho é lido sem o
+  crawler precisar renderizar JS.
+
+A mesma família de caminhos já é recusada pelo sitemap (`SITEMAP_PRIVATE_PREFIXES` em
+[`src/lib/sitemapRoutes.ts`](../../src/lib/sitemapRoutes.ts) e o `PRIVADOS` de
+[`scripts/canonicalize-sitemap.mjs`](../../scripts/canonicalize-sitemap.mjs)). Como são listas
+separadas, um teste em [`src/worker.test.ts`](../../src/worker.test.ts) reprova prefixo que
+entre no worker e não no pós-build do sitemap.
+
+**Ainda em aberto:** rotas que são públicas mas internas por natureza (`/motor-preview`,
+`/design-system`, `/docs`) e o resultado parametrizado de `/search` continuam sem `noindex`
+próprio. Estão fora do sitemap, mas ficam indexáveis no dia do cutover se alguém as linkar.
+Decidir antes de migrar.
 
 ## Operação
 
@@ -65,7 +109,7 @@ O `noindex` sai sozinho, mas o resto **não**. Nenhum item abaixo é opcional: c
 - [ ] **Hostname do sitemap.** `SITE_URL` em [`vite.config.ts`](../../vite.config.ts) define o host de todas as `<loc>`. Sitemap com host errado é ignorado.
 - [ ] **`Sitemap:` do [`robots.txt`](../../public/robots.txt)** aponta para `hub.movepark.co/sitemap.xml`.
 - [x] **404 real.** Resolvido em 13/08/2026. URL inexistente responde 404 com corpo, em vez de 200 com o HTML da home. A regra vive no worker, com fail-open, e as rotas de app que não têm HTML próprio (`/checkout/:code`, `/operator/*`, `/manager/*`) continuam em 200 por padrão declarado. Ver [`borda-cloudflare.md`](./borda-cloudflare.md).
-- [ ] **Rotas privadas precisam de `noindex` próprio.** Hoje `/manager`, `/operator`, `/account`, `/checkout` e `/bookings` só estão fora do Google porque o host inteiro está bloqueado. Quando a regra de host desligar, elas ficam indexáveis. Precisam de um `noindex` por rota, independente de host, **antes** da migração.
+- [x] **Rotas privadas com `noindex` próprio.** Resolvido em 18/08/2026. `/manager`, `/operator`, `/account`, `/checkout`, `/bookings`, `/onboarding` e `/voucher` respondem `noindex, follow` por regra de caminho no worker, independente de host, então continuam fora do índice depois da migração. Ver [Áreas privadas](#áreas-privadas-noindex-independente-de-host). Segue aberto o que é público mas interno (`/motor-preview`, `/design-system`, `/docs`) e o `/search` parametrizado.
 - [x] **Exclusões do sitemap.** Resolvido em 13/08/2026. A lista de exclusão do [`vite.config.ts`](../../vite.config.ts) passou a derivar de [`src/lib/sitemapRoutes.ts`](../../src/lib/sitemapRoutes.ts): opt-out declarado com motivo, mais os prefixos de área logada. Medido no `dist/` depois da mudança: 149 URLs, zero de `/manager`, `/operator`, `/account`, `/checkout`, `/bookings`, `/onboarding`, `/docs`, `/search` ou `/design-system`. Guarda extra desde 14/08/2026: [`scripts/canonicalize-sitemap.mjs`](../../scripts/canonicalize-sitemap.mjs) remove no pós-build qualquer bloco `<url>` de área privada que escape, e loga quantos caíram.
 - [x] **Arquivos de rascunho em `public/`.** `public/images/arco-iris.html` foi apagado em 13/08/2026. Varrer `public/` atrás de HTML solto continua valendo antes de migrar.
 - [ ] **301 do WordPress para o Hub.** Cada URL de `/estacionamentos/*` que sair precisa de redirect permanente para a página equivalente do Hub, senão a autoridade acumulada é perdida.

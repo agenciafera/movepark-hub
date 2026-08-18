@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import worker, { __resetCachesDoWorker } from "./worker";
+import fs from "node:fs";
+import path from "node:path";
+import worker, { ROTAS_PRIVADAS, __resetCachesDoWorker, ehRotaPrivada } from "./worker";
 
 const HTML = "<!DOCTYPE html><html><head></head><body>app</body></html>";
 
@@ -150,6 +152,82 @@ describe("política de indexação por host", () => {
     const res = await worker.fetch(req("/assets/app-OLD.js"), env);
     expect(res.status).toBe(404);
     expect(res.headers.get("X-Robots-Tag")).toBe("noindex, follow");
+  });
+});
+
+/*
+  Área privada fora do índice em qualquer host.
+
+  O `noindex` de host é o que hoje esconde `/manager` e `/operator` do Google, e ele some no
+  dia da migração para o apex. Estes casos são o que sobra depois disso: se algum quebrar
+  junto com a entrada do `movepark.co` no `INDEXABLE_HOSTS`, o painel do parceiro e o checkout
+  do cliente entram no índice no mesmo deploy.
+*/
+describe("noindex por rota nas áreas privadas", () => {
+  const CANONICO = "movepark.co";
+
+  it.each([...ROTAS_PRIVADAS])("%s responde noindex mesmo no domínio canônico", async (rota) => {
+    const env = makeEnv({});
+    const res = await worker.fetch(req(rota, undefined, CANONICO), env);
+    expect(res.headers.get("X-Robots-Tag")).toBe("noindex, follow");
+  });
+
+  it("vale nas subrotas, com barra final, em caixa alta e com query string", async () => {
+    const env = makeEnv({});
+    for (const rota of [
+      "/manager/companies/abc/locations",
+      "/operator/",
+      "/Operator/api-keys",
+      "/account/reservas/MP-TESTE123",
+      "/checkout/MP-TESTE123?src=email",
+      "/voucher/validate",
+    ]) {
+      const res = await worker.fetch(req(rota, undefined, CANONICO), env);
+      expect(res.headers.get("X-Robots-Tag")).toBe("noindex, follow");
+    }
+  });
+
+  // O prefixo casa caminho, não pedaço de palavra: uma página pública que comece com as
+  // mesmas letras continua indexável.
+  it("não pega rota pública de nome parecido", async () => {
+    const env = makeEnv({});
+    for (const rota of ["/", "/destinos", "/accounting", "/operadores", "/bookings-guia"]) {
+      const res = await worker.fetch(req(rota, undefined, CANONICO), env);
+      expect(res.headers.get("X-Robots-Tag")).toBeNull();
+    }
+  });
+
+  it("vale também na resposta markdown pedida por agente", async () => {
+    const env = makeEnv({ "/llms.txt": { body: "# Movepark", type: "text/plain" } });
+    const res = await worker.fetch(
+      req("/account/reservas", { Accept: "text/markdown" }, CANONICO),
+      env,
+    );
+    expect(res.headers.get("X-Robots-Tag")).toBe("noindex, follow");
+  });
+
+  it("ehRotaPrivada separa privado de público", () => {
+    expect(ehRotaPrivada("/manager")).toBe(true);
+    expect(ehRotaPrivada("/onboarding/")).toBe(true);
+    expect(ehRotaPrivada("/account/cards")).toBe(true);
+    expect(ehRotaPrivada("/")).toBe(false);
+    expect(ehRotaPrivada("/p/empresa/unidade/COD")).toBe(false);
+    expect(ehRotaPrivada("/accountability")).toBe(false);
+  });
+
+  // Duas listas descrevem a mesma decisão em lugares diferentes: esta, que tira do índice, e a
+  // do pós-build, que tira do sitemap. Prefixo novo aqui e esquecido lá vira URL privada
+  // anunciada ao buscador.
+  it("todo prefixo privado também é recusado pelo sitemap", () => {
+    const script = fs.readFileSync(
+      path.resolve(__dirname, "../scripts/canonicalize-sitemap.mjs"),
+      "utf-8",
+    );
+    const lista = script.match(/const PRIVADOS = \[([\s\S]*?)\]/)?.[1] ?? "";
+    expect(lista).not.toBe("");
+    for (const prefixo of ROTAS_PRIVADAS) {
+      expect(lista).toContain(`"${prefixo}"`);
+    }
   });
 });
 

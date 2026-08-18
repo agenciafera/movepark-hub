@@ -26,7 +26,47 @@ interface Env {
 const INDEXABLE_HOSTS = new Set(["movepark.co"]);
 
 /**
- * Marca a resposta como não-indexável quando o host não é o canônico.
+ * Prefixos de área privada. Ficam fora do índice em **qualquer host**, inclusive no canônico.
+ *
+ * Hoje `/manager` e `/operator` estão fora do Google por tabela: o host inteiro responde
+ * `noindex`. Isso é efeito colateral, não política. No dia em que o apex entrar no
+ * `INDEXABLE_HOSTS`, a mesma linha que devolve o site ao índice devolveria junto o painel do
+ * parceiro, a conta do cliente e o checkout. E não é hipótese: o baseline de 04/08/2026 do
+ * Search Console já trazia `/operator` e `/operator/api-keys` indexados.
+ *
+ * A lista é a mesma família de caminhos que o sitemap já recusa (`SITEMAP_PRIVATE_PREFIXES` e
+ * o `PRIVADOS` do `scripts/canonicalize-sitemap.mjs`), com a diferença de que aqui a regra
+ * sobrevive à migração: não depende de host nenhum.
+ *
+ * O `robots.txt` **não** ganha `Disallow` para estes caminhos, de propósito. URL bloqueada
+ * ali nunca chega a ser aberta, o `noindex` nunca é lido, e o que já está indexado fica preso
+ * como "indexada, porém bloqueada pelo robots.txt". O caminho de saída é o oposto: deixar
+ * rastrear para que o cabeçalho seja lido. Ver docs/specs/seo-indexacao.md.
+ */
+export const ROTAS_PRIVADAS = [
+  "/manager",
+  "/operator",
+  "/account",
+  "/checkout",
+  "/bookings",
+  "/onboarding",
+  "/voucher",
+] as const;
+
+/**
+ * Compara em minúsculas e sem barra final, pelo mesmo motivo da checagem de 404: o macOS
+ * aceita `/Operator` como o mesmo arquivo e o crawler pode ter as duas formas na fila.
+ * Casa o prefixo exato ou o que vem abaixo dele, nunca o vizinho de nome parecido
+ * (`/accounting` não é `/account`).
+ */
+export function ehRotaPrivada(pathname: string): boolean {
+  const caminho = (pathname.replace(/\/+$/, "") || "/").toLowerCase();
+  return ROTAS_PRIVADAS.some((p) => caminho === p || caminho.startsWith(`${p}/`));
+}
+
+/**
+ * Marca a resposta como não-indexável quando o host não é o canônico, ou quando o caminho é
+ * de área privada (aí vale em qualquer host, o canônico incluído).
  *
  * `follow` de propósito: os links continuam sendo rastreados, então a autoridade
  * que o Hub aponta para fora não é descartada.
@@ -38,7 +78,7 @@ const INDEXABLE_HOSTS = new Set(["movepark.co"]);
  * liberado é o que faz o `noindex` ser lido e as URLs caírem do índice.
  */
 function applyIndexPolicy(response: Response, url: URL): Response {
-  if (INDEXABLE_HOSTS.has(url.hostname)) return response;
+  if (INDEXABLE_HOSTS.has(url.hostname) && !ehRotaPrivada(url.pathname)) return response;
 
   const headers = new Headers(response.headers);
   headers.set("X-Robots-Tag", "noindex, follow");
