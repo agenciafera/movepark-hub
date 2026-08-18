@@ -480,8 +480,12 @@ registro. **Regra que fica: cálculo de preço reusa a RPC `simulate_price`, sem
 `scripts/check-edge-functions.mjs`: camada offline no job `quality` do CI (bloco `[functions.X]`
 no `config.toml` sem pasta) e camada online no `security-scan.yml` (Management API ↔ pastas, nos
 dois sentidos). O sentido inverso também já tinha vítima: `submit-contact-message` estava no git,
-com teste, e nunca foi publicada, então o formulário de `/contato` batia num 404 e toda pessoa que
-escreveu levou "não foi possível enviar". Publicada em 14/08/2026.
+com teste, e nunca tinha sido publicada, então o formulário de `/contato` batia num 404 e toda
+pessoa que escreveu levou "não foi possível enviar". Publicada em 14/08/2026, e **despublicada no
+mesmo dia**: horas depois o time decidiu tirar o formulário da página (atividade `86ak11613`) e
+dropou a tabela `contact_message`, o que deixou a Edge no ar gravando num lugar que não existe
+mais. É a lição em miniatura: a paridade não é um mutirão, é uma checagem contínua, porque uma
+remoção de feature cria órfã tão rápido quanto um deploy esquecido.
 
 ---
 
