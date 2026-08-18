@@ -79,6 +79,17 @@ export const ROTAS_PRIVADAS = [
   "/bookings",
   "/onboarding",
   "/voucher",
+  // Página de saída da lista de marketing. Recebe o destinatário em `?t=<token>`, então
+  // indexá-la publica o token no índice do Google, e não só uma página magra. Estava de fora
+  // até 18/08/2026: constava do opt-out do sitemap, que não emite `noindex`, só deixa de
+  // anunciar. Enquanto o host inteiro respondia `noindex` isso não aparecia.
+  "/descadastro",
+  // Retorno de autenticação. Nada aqui é conteúdo.
+  "/auth",
+  // Ferramentas internas: catálogo visual e simulador de preço. Públicas por descuido de
+  // roteamento, nunca por decisão.
+  "/motor-preview",
+  "/design-system",
 ] as const;
 
 /**

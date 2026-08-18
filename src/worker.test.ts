@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import worker, { ROTAS_PRIVADAS, __resetCachesDoWorker, ehRotaPrivada } from "./worker";
+import { SITEMAP_PRIVATE_PREFIXES } from "./lib/sitemapRoutes";
 
 const HTML = "<!DOCTYPE html><html><head></head><body>app</body></html>";
 
@@ -261,6 +262,47 @@ describe("noindex por rota nas áreas privadas", () => {
     expect(ehRotaPrivada("/")).toBe(false);
     expect(ehRotaPrivada("/p/empresa/unidade/COD")).toBe(false);
     expect(ehRotaPrivada("/accountability")).toBe(false);
+  });
+
+  // Travado por NOME, e não derivado de outra lista, porque derivar foi justamente o erro:
+  // a primeira versão deste guard leu `SITEMAP_PRIVATE_PREFIXES` e deu verde ao remover
+  // `/descadastro`, que mora no opt-out do sitemap e não naquela lista. Guard derivado só
+  // protege o que a fonte já conhece; estes caminhos precisam de uma afirmação própria.
+  it.each([
+    // As sete áreas logadas que a migração para o apex expôs. Estavam fora do Google só
+    // porque o host inteiro respondia noindex.
+    "/manager",
+    "/operator",
+    "/account",
+    "/checkout",
+    "/bookings",
+    "/onboarding",
+    "/voucher",
+    // Carrega o destinatário em `?t=<token>`: indexar publica o token, não só a página.
+    "/descadastro",
+    // Retorno de autenticação.
+    "/auth",
+    // Ferramentas internas, públicas por descuido de roteamento.
+    "/motor-preview",
+    "/design-system",
+  ])("%s nunca pode sair da lista de rotas privadas", (area) => {
+    expect(ROTAS_PRIVADAS).toContain(area);
+    expect(ehRotaPrivada(`${area}/qualquer/coisa`)).toBe(true);
+  });
+
+  // A direção INVERSA do guard abaixo, e a que faltava até 18/08/2026.
+  //
+  // `SITEMAP_PRIVATE_PREFIXES` é o que o build recusa no sitemap. Recusar ali só significa
+  // "não anuncio"; não emite `noindex` nenhum. Enquanto o host inteiro respondia `noindex`,
+  // a diferença não aparecia. Com o apex indexável, prefixo que está lá e não está aqui é
+  // exatamente o buraco pelo qual o `/descadastro` (que carrega `?t=<token>` do destinatário)
+  // ficou indexável.
+  it("todo prefixo privado do sitemap também responde noindex", () => {
+    expect(SITEMAP_PRIVATE_PREFIXES.length).toBeGreaterThan(0);
+
+    for (const prefixo of SITEMAP_PRIVATE_PREFIXES) {
+      expect(ehRotaPrivada(prefixo), `${prefixo} sai do sitemap mas não sai do índice`).toBe(true);
+    }
   });
 
   // Duas listas descrevem a mesma decisão em lugares diferentes: esta, que tira do índice, e a
