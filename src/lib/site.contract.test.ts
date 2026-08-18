@@ -106,6 +106,17 @@ describe("domínio canônico", () => {
     expect(infratores, "importe siteUrl() de _shared/site.ts").toEqual([]);
   });
 
+  // O `wrangler.jsonc` é config JSON: a route não consegue interpolar constante, então o host
+  // ali é literal por força. Esta asserção é o que impede o literal de sobreviver a uma troca
+  // de domínio; sem ela, o `www` de um domínio velho continuaria roteado e o do novo, não.
+  it("a route do www no wrangler acompanha o host canônico", () => {
+    const cfg = ler("wrangler.jsonc");
+    const host = new URL(DEFAULT_SITE_URL).hostname;
+    const patterns = [...cfg.matchAll(/"pattern":\s*"([^"]+)"/g)].map((m) => m[1]);
+
+    expect(patterns).toContain(`www.${host}/*`);
+  });
+
   it("a superfície publicada não cita o host antigo", () => {
     const infratores = arquivos([
       "public/robots.txt",

@@ -27,6 +27,32 @@ interface Env {
  */
 const INDEXABLE_HOSTS = new Set([new URL(DEFAULT_SITE_URL).hostname]);
 
+/** O `www.` do host canônico. Existe só para ser redirecionado. */
+const HOST_WWW = `www.${new URL(DEFAULT_SITE_URL).hostname}`;
+
+/**
+ * `www.movepark.co` → 301 para o apex, com caminho e query preservados.
+ *
+ * Medido em 18/08/2026: o `www` tinha registro DNS proxiado apontando para uma origem que
+ * não existe mais, e respondia **522**. Isso é pior que não existir: 522 é erro de origem,
+ * então o Google trata como falha temporária e volta, em vez de entender que o endereço
+ * certo é outro. Quem digitou `www.` na barra também via só uma página de erro da Cloudflare.
+ *
+ * O redirect vive aqui, e não numa Redirect Rule do painel, porque a borda deste projeto é
+ * este arquivo: regra no painel é invisível no repo, não entra em teste e ninguém descobre
+ * que ela existe. O custo é uma invocação de worker por request no `www`, que é tráfego
+ * residual.
+ *
+ * 301 e não 302: o endereço canônico não vai mudar, e é o permanente que transfere sinal.
+ */
+function redirecionaWww(url: URL): Response | null {
+  if (url.hostname !== HOST_WWW) return null;
+
+  const destino = new URL(url.toString());
+  destino.hostname = new URL(DEFAULT_SITE_URL).hostname;
+  return Response.redirect(destino.toString(), 301);
+}
+
 /**
  * Prefixos de área privada. Ficam fora do índice em **qualquer host**, inclusive no canônico.
  *
@@ -293,7 +319,13 @@ export function blogRedirect(url: URL): Response | null {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    return applyIndexPolicy(await serve(request, env), new URL(request.url));
+    const url = new URL(request.url);
+
+    // Antes de tudo: no `www` não há o que servir, só para onde apontar.
+    const www = redirecionaWww(url);
+    if (www) return www;
+
+    return applyIndexPolicy(await serve(request, env), url);
   },
 };
 

@@ -13,6 +13,16 @@
   "observability": {
     "enabled": true
   },
+  // O apex NÃO entra aqui: `movepark.co` está preso a este worker por **Custom Domain**, que é
+  // outro recurso e não é gerenciado por esta lista. Medido em 18/08/2026 antes de mexer: a zona
+  // tinha zero routes, então esta entrada é aditiva. Se um dia o apex virar route, ele PRECISA
+  // entrar nesta lista junto, porque o deploy substitui o conjunto de routes pelo que está aqui.
+  //
+  // O `www` existe só para o worker devolver 301 para o apex (ver `redirecionaWww` no worker.ts).
+  // Antes disso ele respondia 522, porque tinha registro DNS proxiado para uma origem morta.
+  "routes": [
+    { "pattern": "www.movepark.co/*", "zone_name": "movepark.co" }
+  ],
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",

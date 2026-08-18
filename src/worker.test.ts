@@ -108,6 +108,54 @@ describe("worker asset fallback", () => {
   });
 });
 
+describe("www redireciona para o apex", () => {
+  it("301 para o apex, preservando caminho e query", async () => {
+    const env = makeEnv({});
+    const res = await worker.fetch(
+      req("/destinos/aeroporto-de-viracopos?src=email", undefined, "www.movepark.co"),
+      env,
+    );
+
+    expect(res.status).toBe(301);
+    expect(res.headers.get("Location")).toBe(
+      "https://movepark.co/destinos/aeroporto-de-viracopos?src=email",
+    );
+  });
+
+  it("a raiz do www também cai no apex", async () => {
+    const env = makeEnv({});
+    const res = await worker.fetch(req("/", undefined, "www.movepark.co"), env);
+
+    expect(res.status).toBe(301);
+    expect(res.headers.get("Location")).toBe("https://movepark.co/");
+  });
+
+  // O redirect roda ANTES do resto: no www não existe asset para buscar, e uma leitura
+  // de asset ali seria trabalho jogado fora a cada request.
+  it("não toca no ASSETS quando o host é www", async () => {
+    const env = makeEnv({});
+    await worker.fetch(req("/sobre", undefined, "www.movepark.co"), env);
+
+    expect(env.ASSETS.fetch).not.toHaveBeenCalled();
+  });
+
+  // A regra casa o host inteiro, não um prefixo: `www.movepark.co.evil.com` é outro
+  // domínio, e mandar um 301 nosso para ele seria redirect aberto.
+  it("não pega host que apenas começa com www.movepark.co", async () => {
+    const env = makeEnv({});
+    const res = await worker.fetch(req("/", undefined, "www.movepark.co.evil.com"), env);
+
+    expect(res.status).not.toBe(301);
+  });
+
+  it("o apex não é redirecionado", async () => {
+    const env = makeEnv({});
+    const res = await worker.fetch(req("/", undefined, "movepark.co"), env);
+
+    expect(res.status).toBe(200);
+  });
+});
+
 describe("política de indexação por host", () => {
   it("marca noindex no subdomínio do Hub", async () => {
     const env = makeEnv({});
