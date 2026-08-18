@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-import { CalendarDot, Plus, SlidersHorizontal, Table } from "@phosphor-icons/react";
+import { ArrowsClockwise, CalendarDot, Plus, SlidersHorizontal, Table } from "@phosphor-icons/react";
 import { useAuth } from "@/auth/context";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +24,7 @@ import { useCompany } from "@/features/companies/api";
 import {
   useLocationParkingTypes,
   useUpdateLocationParkingType,
+  useTriggerWlMirror,
   type LocationParkingTypeWithRelations,
 } from "@/features/parking-types/api";
 import { ParkingTypeForm } from "@/features/parking-types/ParkingTypeForm";
@@ -33,7 +34,7 @@ import { PricingSimulationDialog } from "@/features/parking-types/PricingSimulat
 import { PricingSummary, StrategyChip } from "@/features/parking-types/PricingSummary";
 import { findCurveInversions, usePricingCurve } from "@/features/parking-types/pricing-curve";
 import { CurveInversionAlert } from "@/features/parking-types/CurveInversionAlert";
-import { formatBRL, formatDate } from "@/lib/format";
+import { formatBRL, formatDate, formatDateTime } from "@/lib/format";
 
 const NO_SCOPE_HINT = "Seu perfil não pode alterar esta configuração. Fale com o dono da conta.";
 
@@ -56,6 +57,7 @@ export default function ParkingTypesPage() {
   const location = useLocationData(locationId);
   const { data, isLoading, error } = useLocationParkingTypes(locationId);
   const updateLpt = useUpdateLocationParkingType();
+  const triggerMirror = useTriggerWlMirror();
   const [createOpen, setCreateOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<LocationParkingTypeWithRelations | null>(null);
   const [editingRules, setEditingRules] = React.useState<LocationParkingTypeWithRelations | null>(
@@ -101,6 +103,22 @@ export default function ParkingTypesPage() {
       toast.success("Mapeamento WL salvo");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro");
+    }
+  }
+
+  async function triggerWlMirror(id: string) {
+    if (
+      !confirm(
+        "Isso consulta a tabela de preço real do parceiro agora, fora do ciclo automático de 3 em 3 horas. Confirma?",
+      )
+    ) {
+      return;
+    }
+    try {
+      await triggerMirror.mutateAsync(id);
+      toast.success("Sincronização disparada. O status atualiza sozinho em uns 40 segundos.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao disparar sincronização");
     }
   }
 
@@ -160,6 +178,9 @@ export default function ParkingTypesPage() {
               onUpdateWlMapping={(cat, prod) => updateWlMapping(lpt.id, cat, prod)}
               showWlMapping={!isOperator}
               wlCatalog={wlCatalog.data}
+              checkoutMode={location.data?.checkout_mode}
+              onTriggerMirror={() => triggerWlMirror(lpt.id)}
+              triggerMirrorPending={triggerMirror.isPending}
               onEditPricing={() => setEditing(lpt)}
               onEditRules={() => setEditingRules(lpt)}
               onOpenSimulation={() => setSimulating(lpt)}
@@ -213,6 +234,9 @@ type CardProps = {
   onUpdateWlMapping: (category: string | null, product: string | null) => void;
   showWlMapping: boolean;
   wlCatalog?: WlCatalog;
+  checkoutMode?: string | null;
+  onTriggerMirror: () => void;
+  triggerMirrorPending: boolean;
   onEditPricing: () => void;
   onEditRules: () => void;
   onOpenSimulation: () => void;
@@ -229,6 +253,9 @@ function ParkingTypeCard({
   onUpdateWlMapping,
   showWlMapping,
   wlCatalog,
+  checkoutMode,
+  onTriggerMirror,
+  triggerMirrorPending,
   onEditPricing,
   onEditRules,
   onOpenSimulation,
@@ -450,6 +477,35 @@ function ParkingTypeCard({
             >
               Salvar
             </Button>
+
+            {/* Espelho de preço (E0.13): só unidade externa com mapeamento salvo, nunca a nativa
+                (ela usa a tabela da própria Movepark). Gatilho de emergência; o ciclo normal já
+                roda sozinho de 3 em 3h. */}
+            {checkoutMode === "external" && lpt.wl_category_slug && lpt.wl_product_slug && (
+              <div className="flex w-full flex-wrap items-center justify-between gap-3 border-t border-hairline pt-3">
+                <span className="text-caption text-muted">
+                  Espelho de preço:{" "}
+                  {lpt.pricing_rule?.mirror_status === "divergent" ? (
+                    <span className="font-medium text-error">divergente</span>
+                  ) : lpt.pricing_rule?.mirror_verified_at ? (
+                    <span className="font-medium text-ink">
+                      ok · verificado em {formatDateTime(lpt.pricing_rule.mirror_verified_at)}
+                    </span>
+                  ) : (
+                    "ainda não sincronizado"
+                  )}
+                </span>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={onTriggerMirror}
+                  disabled={triggerMirrorPending}
+                >
+                  <ArrowsClockwise className="h-4 w-4" />
+                  {triggerMirrorPending ? "Disparando…" : "Sincronizar agora"}
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </CardContent>

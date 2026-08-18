@@ -2,9 +2,11 @@
 
 > **Épico:** E0.13 · **Fase:** 0 · **D vinculado:** D-008
 > **Status:** implementado em 08/08/2026, ampliado em 10/08/2026 para seis unidades externas e
-> em 12/08/2026 para nove, com as três da Aerovalet (17 vagas no total).
-> Migrations `*_pricing_mirror.sql`, `*_pricing_mirror_cron.sql`, `*_pricing_minimum_stay.sql` e
-> `*_pricing_mirror_cron_reschedule.sql`. Edge `wl-price-mirror`, cron de 3 em 3 horas.
+> em 12/08/2026 para nove, com as três da Aerovalet (17 vagas no total). Em 18/08/2026 ganhou
+> gatilho manual (`wl_mirror_trigger`), pra forçar a passada de uma vaga fora do ciclo.
+> Migrations `*_pricing_mirror.sql`, `*_pricing_mirror_cron.sql`, `*_pricing_minimum_stay.sql`,
+> `*_pricing_mirror_cron_reschedule.sql` e `*_wl_mirror_manual_trigger.sql`. Edge `wl-price-mirror`,
+> cron de 3 em 3 horas.
 
 Reconstrói no Hub a tabela de preço de uma unidade externa **amostrando** a API de cálculo do
 parceiro. Sem consulta em tempo real.
@@ -116,6 +118,7 @@ do Hub. O amostrador detecta isso sozinho, o que torna o job também auditoria d
 | Cotação no parceiro | `wlGetCalculationPrice` em `_shared/wl/client.ts` |
 | Job | Edge `wl-price-mirror`, cron diário 07:00 UTC |
 | Carimbo e log | `pricing_rule.mirror_*` + `pricing_mirror_run` |
+| Gatilho manual (emergência) | RPC `wl_mirror_trigger`, hub_admin, botão no Manager |
 | Testes | deno 16 (amostrador + lógica do job), pgTAP 20 |
 
 ### A chamada, com as três armadilhas
@@ -292,3 +295,35 @@ Uma diária que sobe com a estadia parece defeito da extrapolação e é a regra
 Regra prática: **ao ligar uma unidade nova, cote acima de 30 diárias na mão.** É o mesmo tipo de
 verificação que já se faz para o piso de estadia, e pelo mesmo motivo, porque a única fonte
 confiável é o parceiro respondendo.
+
+### Gatilho manual para emergência (18/08/2026)
+
+O ciclo de 3 em 3h é automático e cobre o caso normal. Pra quando não dá pra esperar (parceiro
+avisou que mudou a tabela, ou a vitrine caiu para "a partir de" e alguém quer reverificar na
+hora), existe a RPC `public.wl_mirror_trigger(p_location_parking_type_id uuid)`, chamável por
+`hub_admin` autenticado, com botão "Sincronizar agora" na tela de tipos de vaga do Manager
+(`/manager/companies/:id/locations/:id/parking-types`), visível só quando a vaga é `external` e
+tem `wl_category_slug`/`wl_product_slug` salvos.
+
+Mesmo mecanismo do cron: `net.http_post` pra `wl-price-mirror` com o secret `wl_deliver_key` do
+vault, só que disparado pela RPC em vez do `cron.schedule`. `net.http_post` é **assíncrono**
+(enfileira e devolve só um `request_id`, não o resultado do espelho), então a RPC não espera a
+Edge terminar. O botão avisa que leva uns 40 segundos (o mesmo tempo de uma vaga no job normal) e
+a tela reconsulta sozinha depois desse tempo; quem quiser conferir na hora olha
+`pricing_rule.mirror_status`/`mirror_verified_at` direto, porque não existe painel dedicado a
+isso ainda.
+
+A RPC repete as mesmas duas validações que a Edge já faz (`checkout_mode = 'external'` e De/Para
+mapeado) antes de gastar a chamada de rede, pra falhar rápido com mensagem clara em vez de
+estourar dentro do job.
+
+**`wl_sync_enabled` da empresa não entra no gate, de propósito.** Esse campo (toggle "Integração
+White-label" no cadastro da empresa) liga/desliga só a sincronização de **disponibilidade**
+(`wl-reconcile`/`wl-deliver`, E2.5.1/E2.5.2); o espelho de **preço** roda independente dele,
+porque o preço exibido tem que bater com o que o parceiro cobra mesmo que a sincronia de
+disponibilidade esteja pausada por outro motivo. O botão manual segue a mesma regra do cron, pra
+não surpreender quem espera os dois comportarem igual.
+
+Implementado em `supabase/migrations/*_wl_mirror_manual_trigger.sql`; pgTAP em
+`supabase/tests/wl_mirror_trigger.test.sql`; hook `useTriggerWlMirror` em
+`src/features/parking-types/api.ts`.

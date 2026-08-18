@@ -179,6 +179,30 @@ export function useOperatorSetPricing() {
   });
 }
 
+/**
+ * Dispara manualmente o espelho de preço WL (E0.13) pra UMA vaga externa mapeada, em caso de
+ * emergência (hub_admin). RPC SECURITY DEFINER: o gate real é is_hub_admin() no servidor, o
+ * frontend só espelha (ADR-005). A Edge que amostra de verdade roda assíncrona (uns 40s via
+ * net.http_post), então a mutation só confirma que a chamada foi aceita e enfileirada, nunca o
+ * resultado do espelho.
+ */
+export function useTriggerWlMirror() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (locationParkingTypeId: string) => {
+      const { error } = await supabase.rpc("wl_mirror_trigger", {
+        p_location_parking_type_id: locationParkingTypeId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      // O job leva uns 40s; reconsulta depois desse tempo pra trazer mirror_status/
+      // mirror_verified_at atualizados sem o admin precisar apertar F5.
+      setTimeout(() => qc.invalidateQueries({ queryKey: parkingTypesKeys.all }), 45_000);
+    },
+  });
+}
+
 /* ------------------- Outras LPTs (para escolher fonte de surcharge) ---------------- */
 
 export function useLocationParkingTypesByCompany(

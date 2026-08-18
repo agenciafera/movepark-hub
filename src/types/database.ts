@@ -6513,6 +6513,10 @@ export type Database = {
         Args: { p_detail: Json; p_location_parking_type_id: string }
         Returns: undefined
       }
+      wl_mirror_trigger: {
+        Args: { p_location_parking_type_id: string }
+        Returns: Json
+      }
       wl_public_host: { Args: { p_domain: string }; Returns: string }
       wl_reconcile_apply: {
         Args: { p_lpt_id: string; p_rows: Json }
