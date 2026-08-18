@@ -43,6 +43,10 @@ build/
 # Local só, nunca vai pro git: é um .tar.gz de dezenas de MB por snapshot.
 .dist-backups/
 
+# Backup do WordPress legado antes do congelamento (dump do banco + uploads). Local só: são
+# centenas de MB e o dump tem dado de cliente. Ver docs/specs/plano-rollback-migracao.md.
+.wp-freeze-backup/
+
 # TypeScript build info
 *.tsbuildinfo
 
