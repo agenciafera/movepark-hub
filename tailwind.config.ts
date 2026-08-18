@@ -22,6 +22,7 @@ const config: Config = {
         "mp-navy": "hsl(var(--mp-navy))",
         "mp-indigo": "hsl(var(--mp-indigo))",
         "mp-violet": "hsl(var(--mp-violet))",
+        "mp-violet-on-navy": "hsl(var(--mp-violet-on-navy))",
         "mp-pale": "hsl(var(--mp-pale))",
         "mp-teal": "hsl(var(--mp-teal))",
         "mp-red": "hsl(var(--mp-red))",

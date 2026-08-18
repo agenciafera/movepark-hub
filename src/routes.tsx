@@ -626,10 +626,10 @@ async function calculadoraLoader(): Promise<CalculadoraData | null> {
   // O select cobre TODOS os destinos publicados, com ou sem parceiro precificado.
   const { data: catalogoRaw } = await supabase
     .from("destination")
-    .select("slug, name, short_name")
+    .select("slug, name, short_name, state")
     .eq("is_published", true)
     .order("sort_order");
-  const catalogo = (catalogoRaw ?? []) as { slug: string; name: string; short_name: string | null }[];
+  const catalogo = (catalogoRaw ?? []) as CalculadoraData["catalogo"];
   // Lotes mapeados de cada destino, em blocos de 6 para não esbarrar no
   // statement timeout do papel anon durante o build.
   const prospects: CalculadoraData["prospects"] = {};

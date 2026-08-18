@@ -54,10 +54,15 @@ papel do full-bleed.
 implementando o desenho do Claude Design (`Calculadora Movepark v2.dc.html`). Ela
 é ferramenta, e o `PageHeader` a abria como documento: título de 28px acima de um
 formulário de campos altos, com o resultado só depois de rolar. Na faixa de hero
-a promessa vem primeiro ("leva 10 segundos"), e logo abaixo o cartão que junta
-controle e veredito acima da dobra. Não tem foto nem gradiente: o full-bleed aqui
-é o fundo `bg-surface-soft` da página inteira, que separa os cartões brancos do
-canvas. Container de 1280, porque a página termina numa tabela ranqueada.
+a promessa vem primeiro ("leva 10 segundos"), e o cartão que junta controle e
+veredito **monta sobre a borda de baixo do `PageHero`** (`-mt-16 desktop:-mt-20`,
+com `relative z-10`), o que põe o preço acima da dobra. É o mesmo `PageHero` da
+`/contato`, que ganhou dois pontos por causa dela: `title` aceita nó (para o
+`10 segundos` sair em violeta) e existe um slot `breadcrumb` acima do h1.
+
+**Violeta dentro da faixa navy usa `text-mp-violet-on-navy`, nunca `text-mp-primary`.**
+O `mp-violet` (#5D5FEF) sobre o `mp-navy` dá 2.3:1 e reprova; o token novo
+(#9B9CFF) dá 5.9:1. Ele existe só para isso: sobre canvas fica claro demais.
 
 ### Degrau fixo embaixo de degrau fluido se cruza
 

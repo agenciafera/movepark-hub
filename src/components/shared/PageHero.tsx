@@ -1,9 +1,12 @@
 import { cn } from "@/lib/utils";
 
 type Props = {
-  title: string;
+  /** Aceita nó, e não só string, para o hero destacar um trecho do título (ver `/calculadora-estacionamento-aeroporto`). */
+  title: React.ReactNode;
   /** Uma linha abaixo do título, dizendo o que fazer aqui. */
   description?: string;
+  /** Entra acima do título, dentro da faixa (ex.: a trilha de navegação em `tom="escuro"`). */
+  breadcrumb?: React.ReactNode;
   /** Entra abaixo do lead, ainda dentro da faixa (ex.: um botão). */
   children?: React.ReactNode;
   className?: string;
@@ -28,10 +31,11 @@ type Props = {
  * branco dá 4.86:1, e qualquer translucidez cairia para ~3.9:1, reprovando o AA
  * em corpo de 16px.
  */
-export function PageHero({ title, description, children, className }: Props) {
+export function PageHero({ title, description, breadcrumb, children, className }: Props) {
   return (
     <div className={cn("bg-mp-navy", className)}>
       <div className="mx-auto w-full max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-24">
+        {breadcrumb && <div className="mb-5">{breadcrumb}</div>}
         {/* `text-balance` no título e `text-pretty` no lead: nenhum dos dois pode
             terminar com uma palavra sozinha na última linha. Teto em `ch` no
             título está fora, porque é ele que fabrica a viúva. */}

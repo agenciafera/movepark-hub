@@ -30,6 +30,10 @@
     --mp-red: 350 67% 56%;             /* #DA455E — brand accent / warning */
     --mp-red-deep: 350 52% 45%;        /* #AE374B */
     --mp-teal: 184 44% 76%;            /* #A6DBDF */
+    /* Violeta que sobrevive ao fundo navy. O `--mp-violet` (#5D5FEF) dá 2.3:1 sobre
+       o `--mp-navy` e reprova; este (#9B9CFF) dá 5.9:1. Só para destaque DENTRO da
+       faixa navy: sobre canvas ele é claro demais. */
+    --mp-violet-on-navy: 239 100% 80%; /* #9B9CFF */
 
     /* Primary semantic aliases (Movepark violet carries the CTA load) */
     --mp-primary: var(--mp-violet);
@@ -142,6 +146,7 @@
 
     /* Marca — violeta um tom acima pra contraste no escuro */
     --mp-violet: 239 84% 71%;
+    --mp-violet-on-navy: 239 100% 80%;
     --mp-primary: var(--mp-violet);
     --mp-primary-active: 239 72% 63%;
     --mp-pale: 239 30% 22%;
