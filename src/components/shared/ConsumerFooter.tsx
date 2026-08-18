@@ -46,20 +46,21 @@ export function ConsumerFooter() {
       {/* Chamada pro FAQ: a central responde antes de o suporte precisar responder,
           e é porta de entrada pras páginas por pergunta (/faq/<slug>). */}
       <div className="bg-mp-primary">
-        <div className="mx-auto flex w-full max-w-[1280px] flex-col items-start justify-between gap-4 px-6 py-8 tablet:flex-row tablet:items-center desktop:px-8">
+        <div className="mx-auto flex w-full max-w-[1280px] flex-col items-start justify-between gap-6 px-6 py-10 tablet:flex-row tablet:items-center desktop:px-8">
           <div>
-            <p className="text-title-md text-white">Dúvidas sobre estacionamento de aeroporto?</p>
+            {/* `display-md` e não `title-md`: em 16px a chamada media o mesmo que a
+                linha de apoio logo abaixo e a faixa lia como dois parágrafos, sem
+                um começo. É um convite, e convite precisa de uma primeira voz. */}
+            <p className="text-balance text-display-md text-white">
+              Dúvidas sobre estacionamento de aeroporto?
+            </p>
             <p className="mt-1 text-body-sm text-white">
               Preços, traslado, cancelamento e check-in: as respostas estão na central.
             </p>
           </div>
-          {/* Botão do sistema (8px de raio, 48px de altura). Escrito à mão ele saía
-              com `rounded-md`, que aqui é 14px, e num botão baixo virava pílula. */}
-          <Button
-            asChild
-            variant="secondary"
-            className="shrink-0 bg-white text-mp-indigo no-underline hover:bg-mp-pale hover:brightness-100"
-          >
+          {/* Só borda. Branco cheio, o botão virava a coisa mais clara da faixa e
+              puxava o olho antes da pergunta que ele responde. */}
+          <Button asChild variant="outlineInverse" className="w-full shrink-0 tablet:w-auto">
             <Link to="/faq">Ver perguntas frequentes</Link>
           </Button>
         </div>

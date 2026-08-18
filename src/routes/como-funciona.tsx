@@ -309,16 +309,11 @@ export default function ComoFuncionaPage() {
             >
               <Link to="/">Buscar vaga no meu aeroporto</Link>
             </Button>
-            <Button
-              asChild
-              variant="secondary"
-              className="border border-white/40 bg-transparent text-white no-underline hover:bg-white/10 hover:brightness-100"
-            >
+            <Button asChild variant="outlineInverse">
               <a href="#passos">Ver os 3 momentos</a>
             </Button>
           </div>
         </div>
-
       </section>
 
       {/* Faixa de sinais, montada em cima da divisão entre o hero e o branco: o

@@ -123,7 +123,7 @@ export default function SobrePage() {
           aria-hidden
         />
         <div className="relative mx-auto max-w-[1080px] px-4 py-24 desktop:px-8 desktop:py-36">
-          <div className="max-w-2xl motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-3 motion-safe:duration-500">
+          <div className="max-w-2xl motion-safe:duration-500 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-3">
             <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-white/70">
               Quem somos
             </span>
@@ -131,9 +131,9 @@ export default function SobrePage() {
               Vaga garantida. Viagem tranquila.
             </h1>
             <p className="mt-4 max-w-xl text-body-md text-white/80">
-              A Movepark nasceu de uma frustração simples: achar vaga perto do aeroporto não
-              deveria ser jogo de sorte. Hoje conectamos viajantes a estacionamentos parceiros
-              certificados, com reserva antecipada e preço fixo.
+              A Movepark nasceu de uma frustração simples: achar vaga perto do aeroporto não deveria
+              ser jogo de sorte. Hoje conectamos viajantes a estacionamentos parceiros certificados,
+              com reserva antecipada e preço fixo.
             </p>
             <div className="mt-8 flex flex-col gap-3 tablet:flex-row tablet:items-center">
               <Button asChild className="w-full tablet:w-auto">
@@ -142,11 +142,7 @@ export default function SobrePage() {
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
-              <Button
-                asChild
-                variant="secondary"
-                className="w-full border-white/40 bg-transparent text-white hover:bg-white/10 tablet:w-auto"
-              >
+              <Button asChild variant="outlineInverse" className="w-full tablet:w-auto">
                 <Link to="/seja-parceiro">Quero ser parceiro</Link>
               </Button>
             </div>
@@ -189,7 +185,7 @@ export default function SobrePage() {
             // semântica: no DOM (e no leitor de tela) o rótulo vem antes do valor.
             <div key={n.label} data-reveal className="flex flex-col-reverse">
               <dt className="mt-1 text-body-sm text-muted">{n.label}</dt>
-              <dd className="text-display-2xl text-ink tabular-nums">{n.value}</dd>
+              <dd className="text-display-2xl tabular-nums text-ink">{n.value}</dd>
             </div>
           ))}
         </dl>

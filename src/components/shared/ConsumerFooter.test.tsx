@@ -32,3 +32,32 @@ describe("ConsumerFooter — links", () => {
     );
   });
 });
+
+describe("ConsumerFooter — a faixa da chamada", () => {
+  /**
+   * A pergunta media 16px, o mesmo da linha de apoio logo abaixo, e a faixa lia
+   * como dois parágrafos sem um começo.
+   */
+  it("a pergunta é maior que a linha de apoio", () => {
+    renderWithProviders(<ConsumerFooter />);
+
+    const pergunta = screen.getByText("Dúvidas sobre estacionamento de aeroporto?");
+    expect(pergunta.className).toContain("text-display-md");
+    expect(pergunta.className).not.toContain("text-title-md");
+  });
+
+  /**
+   * O botão era branco cheio: virava a coisa mais clara da faixa e puxava o olho
+   * antes da pergunta que ele responde. Sobre cor, o botão é só borda.
+   */
+  it("o botão é só borda, sem preenchimento branco", () => {
+    renderWithProviders(<ConsumerFooter />);
+
+    const botao = screen.getByRole("link", { name: "Ver perguntas frequentes" });
+    expect(botao.className).toContain("bg-transparent");
+    expect(botao.className).toContain("border-white/50");
+    // Por classe, e não por substring: `hover:bg-white/10` é o realce do toque,
+    // não o preenchimento.
+    expect(botao.className.split(" ")).not.toContain("bg-white");
+  });
+});
