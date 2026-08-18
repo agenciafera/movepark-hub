@@ -301,11 +301,11 @@ function mcpDocsHtml(): string {
   <table>
     <tr><th>O que você manda</th><th>Perfil</th><th>Tools</th></tr>
     <tr><td>nada</td><td>Consumidor</td>
-        <td><a href="https://hub.movepark.co/.well-known/mcp/server-card.json">server-card.json</a></td></tr>
+        <td><a href="${DEFAULT_SITE_URL}/.well-known/mcp/server-card.json">server-card.json</a></td></tr>
     <tr><td><code>Authorization: Bearer &lt;access_token&gt;</code></td><td>Consumidor autenticado</td>
-        <td><a href="https://hub.movepark.co/.well-known/mcp/customer-card.json">customer-card.json</a></td></tr>
+        <td><a href="${DEFAULT_SITE_URL}/.well-known/mcp/customer-card.json">customer-card.json</a></td></tr>
     <tr><td><code>Authorization: Bearer mp_…</code></td><td>Parceiro</td>
-        <td><a href="https://hub.movepark.co/.well-known/mcp/partner-card.json">partner-card.json</a></td></tr>
+        <td><a href="${DEFAULT_SITE_URL}/.well-known/mcp/partner-card.json">partner-card.json</a></td></tr>
   </table>
   <p>O login do consumidor é por código no WhatsApp ou e-mail, com as tools
      <code>request_login_otp</code> e <code>verify_login_otp</code>. O pagamento fica fora do MCP:
@@ -327,7 +327,7 @@ function mcpDocsHtml(): string {
 
   <h2>Mais</h2>
   <p>API REST (OpenAPI): <a href="https://api.movepark.co/docs">api.movepark.co/docs</a> ·
-     Catálogo: <a href="https://hub.movepark.co/.well-known/api-catalog">/.well-known/api-catalog</a></p>
+     Catálogo: <a href="${DEFAULT_SITE_URL}/.well-known/api-catalog">/.well-known/api-catalog</a></p>
 </body>
 </html>`;
 }

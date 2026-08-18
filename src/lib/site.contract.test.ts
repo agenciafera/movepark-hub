@@ -25,12 +25,24 @@ const RAIZ = process.cwd();
 const HOST_DO_SITE = /https:\/\/(?:hub\.)?movepark\.co/;
 const HOST_ANTIGO = /hub\.movepark\.co/;
 
-function arquivos(...padroes: string[]): string[] {
+/**
+ * Arquivos versionados sob os caminhos dados.
+ *
+ * Recebe DIRETÓRIO, e a extensão é filtrada aqui. A primeira versão passava
+ * `src/**\/*.ts` para o `git ls-files` e isso tem um buraco silencioso: nessa forma o
+ * pathspec não casa arquivo na RAIZ de `src/`, então `api-worker.ts` e `worker.ts` nunca
+ * eram lidos. O teste passava verde com quatro links mortos servidos na página pública do
+ * `mcp.movepark.co`. Guard que não enxerga o arquivo é pior que guard nenhum, porque dá
+ * confiança falsa.
+ */
+function arquivos(padroes: string[], extensoes?: string[]): string[] {
   const saida = execSync(`git ls-files ${padroes.map((p) => `'${p}'`).join(" ")}`, {
     cwd: RAIZ,
     encoding: "utf8",
   });
-  return saida.split("\n").filter(Boolean);
+  const todos = saida.split("\n").filter(Boolean);
+  if (!extensoes) return todos;
+  return todos.filter((f) => extensoes.some((e) => f.endsWith(e)));
 }
 
 const ler = (f: string) => readFileSync(`${RAIZ}/${f}`, "utf8");
@@ -65,8 +77,20 @@ describe("domínio canônico", () => {
     expect(SITE_URL).toBe(DEFAULT_SITE_URL);
   });
 
+  // Regressão do buraco de 18/08/2026: a varredura precisa enxergar a RAIZ de src/, não só
+  // as subpastas. Sem esta asserção, um pathspec errado volta a esvaziar a lista em silêncio
+  // e todos os testes abaixo passam sem ler nada.
+  it("a varredura alcança a raiz de src/, e não só as subpastas", () => {
+    const fontes = arquivos(["src"], [".ts", ".tsx", ".mjs"]);
+
+    expect(fontes).toContain("src/api-worker.ts");
+    expect(fontes).toContain("src/worker.ts");
+    expect(fontes).toContain("src/lib/site.ts");
+    expect(fontes.length).toBeGreaterThan(300);
+  });
+
   it("nenhuma fonte de src/ escreve o host à mão", () => {
-    const infratores = arquivos("src/**/*.ts", "src/**/*.tsx", "src/**/*.mjs")
+    const infratores = arquivos(["src"], [".ts", ".tsx", ".mjs"])
       .filter((f) => !f.includes(".test."))
       .filter((f) => !FONTES_DO_VALOR.has(f))
       .filter((f) => HOST_DO_SITE.test(semComentarios(f)));
@@ -75,7 +99,7 @@ describe("domínio canônico", () => {
   });
 
   it("nenhuma Edge Function escreve o host à mão", () => {
-    const infratores = arquivos("supabase/functions/**/*.ts")
+    const infratores = arquivos(["supabase/functions"], [".ts"])
       .filter((f) => !f.includes(".test.") && f !== "supabase/functions/_shared/site.ts")
       .filter((f) => HOST_DO_SITE.test(semComentarios(f)));
 
@@ -83,20 +107,20 @@ describe("domínio canônico", () => {
   });
 
   it("a superfície publicada não cita o host antigo", () => {
-    const infratores = arquivos(
+    const infratores = arquivos([
       "public/robots.txt",
       "public/llms.txt",
       "public/openapi.yaml",
       "public/auth.md",
-      "public/.well-known/**",
-      "supabase/templates/auth/*.html",
-    ).filter((f) => HOST_ANTIGO.test(ler(f)));
+      "public/.well-known",
+      "supabase/templates/auth",
+    ]).filter((f) => HOST_ANTIGO.test(ler(f)));
 
     expect(infratores, "arquivo estático precisa ser trocado à mão na migração").toEqual([]);
   });
 
   it("o corpus Markdown do blog não cita o host antigo", () => {
-    const infratores = arquivos("public/blog/*.md").filter((f) => HOST_ANTIGO.test(ler(f)));
+    const infratores = arquivos(["public/blog"], [".md"]).filter((f) => HOST_ANTIGO.test(ler(f)));
 
     expect(infratores.length, `${infratores.length} posts com host antigo`).toBe(0);
   });
