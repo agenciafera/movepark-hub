@@ -46,11 +46,18 @@ describe("Go2Park (transfer com rastreio ao vivo)", () => {
    */
   it("o clique na marca não dispara a navegação do card", async () => {
     let doCard = 0;
+    // Um `<a>` de verdade, e não um div com onClick: é o que o card é, e é o que faz o teste
+    // provar o caso real (a âncora de fora capturando o clique da âncora de dentro).
     renderWithProviders(
-      // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events
-      <div onClick={() => (doCard += 1)}>
+      <a
+        href="/p/virapark"
+        onClick={(e) => {
+          e.preventDefault();
+          doCard += 1;
+        }}
+      >
         <Go2ParkCardCredit />
-      </div>,
+      </a>,
     );
 
     await userEvent.click(screen.getByRole("link", { name: "Go2Park" }));
