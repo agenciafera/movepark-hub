@@ -16,8 +16,8 @@
     },
     {
       "name": "supabase",
-      "runtimeExecutable": "supabase",
-      "runtimeArgs": ["start"],
+      "runtimeExecutable": "bunx",
+      "runtimeArgs": ["supabase", "start"],
       "port": 54323
     },
     {
