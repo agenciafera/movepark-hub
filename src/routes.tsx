@@ -4,7 +4,7 @@ import type { LoaderFunctionArgs } from "react-router-dom";
 
 import { supabase } from "@/lib/supabase";
 import { fetchDestinationProspects, fetchDestinationUnits } from "@/features/destinations/api";
-import { fetchListing } from "@/features/listing/api";
+import { fetchListing, fetchPriceShowcase } from "@/features/listing/api";
 import { fetchGooglePlaceSnapshot } from "@/features/reviews/googleApi";
 import { fetchFaqBySlug, fetchFaqCombined, fetchFaqIndex } from "@/features/faqs/api";
 import type { FaqPrecoContexto } from "@/features/faqs/faqPagina.logic";
@@ -145,7 +145,15 @@ async function listingLoader({ params }: LoaderFunctionArgs) {
     // (JSON-LD) precisam sair no HTML do build. Falha aqui não derruba a página;
     // o hook do cliente cobre quando `faqs` vem nulo.
     const faqs = await fetchFaqCombined({ locationId: listing.location.id }).catch(() => null);
-    return { listing, faqs };
+    // A faixa de diária também no loader, e pelo mesmo motivo do FAQ: o "a partir de" do card e
+    // o `AggregateOffer` do JSON-LD precisam sair no HTML do build. `base_price` não serve para
+    // isso (é 0 em toda unidade espelhada), então o preço vem do motor.
+    const showcase = await fetchPriceShowcase(
+      params.operatorSlug!,
+      params.locationSlug!,
+      params.parkingTypeCode!,
+    ).catch(() => null);
+    return { listing, faqs, showcase };
   } catch {
     return null;
   }

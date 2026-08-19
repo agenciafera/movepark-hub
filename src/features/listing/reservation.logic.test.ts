@@ -7,6 +7,7 @@ import {
   type AddOnOption,
   perDayPrice,
   showcaseFromPrice,
+  buildPriceShowcase,
   counterSavings,
 } from "./reservation.logic";
 
@@ -149,5 +150,58 @@ describe("showcaseFromPrice", () => {
     expect(showcaseFromPrice(null)).toBeNull();
     expect(showcaseFromPrice(undefined)).toBeNull();
     expect(showcaseFromPrice(Number.NaN)).toBeNull();
+  });
+});
+
+/**
+ * A faixa de diária que alimenta o "a partir de" do card e o `AggregateOffer` do JSON-LD.
+ *
+ * Números reais da Aerovalet valet em Guarulhos, onde a tabela escalonada é mais extrema:
+ * R$ 119,20 a diária em 1 dia e R$ 21,12 em 30. É o caso que justifica faixa em vez de um
+ * preço só.
+ */
+describe("buildPriceShowcase", () => {
+  const totais = [
+    { days: 1, total: 119.2 },
+    { days: 7, total: 475.23 },
+    { days: 15, total: 554.4 },
+    { days: 30, total: 633.6 },
+  ];
+
+  it("converte total por duração em diária e devolve a faixa", () => {
+    expect(buildPriceShowcase(totais)).toEqual({
+      lowDaily: 21.12,
+      highDaily: 119.2,
+      offerCount: 4,
+    });
+  });
+
+  it("duração sem preço some da faixa em vez de derrubar as outras", () => {
+    // Estadia mínima de 2 diárias: 1 dia não tem preço por definição, e isso é ausência de
+    // oferta naquela janela, não oferta de graça.
+    const s = buildPriceShowcase([
+      { days: 1, total: null },
+      { days: 7, total: 188.3 },
+      { days: 15, total: 388.5 },
+      { days: 30, total: 777 },
+    ]);
+    expect(s).toEqual({ lowDaily: 25.9, highDaily: 26.9, offerCount: 3 });
+  });
+
+  it("tabela plana devolve faixa de um valor só", () => {
+    const s = buildPriceShowcase([
+      { days: 7, total: 195.3 },
+      { days: 15, total: 418.5 },
+    ]);
+    expect(s).toEqual({ lowDaily: 27.9, highDaily: 27.9, offerCount: 2 });
+  });
+
+  it("sem nenhuma duração com preço, não há faixa", () => {
+    expect(buildPriceShowcase([{ days: 1, total: null }])).toBeNull();
+    expect(buildPriceShowcase([])).toBeNull();
+  });
+
+  it("zero não é preço, do mesmo jeito que em showcaseFromPrice", () => {
+    expect(buildPriceShowcase([{ days: 7, total: 0 }])).toBeNull();
   });
 });

@@ -298,6 +298,42 @@ Dois defeitos vizinhos entraram no mesmo passe: `image` publicava o caminho rela
 chamava a home de **"House"**, resíduo da troca de ícones Lucide→Phosphor que renomeou uma string
 junto com os componentes. Todas as outras páginas usam "Início".
 
+## A oferta existia; era o campo que estava errado (19/08/2026)
+
+Apagar o nó consertava o erro do Search Console jogando fora um dado que a Movepark tem. **As
+dezessete unidades têm preço**, e o motor devolve os quatro pontos da tabela para todas elas. O
+que não tem preço é `company_parking_type.base_price`, campo de catálogo que ninguém preencheu
+na unidade espelhada e que **`simulate_price` sequer lê**: o preço mora em `pricing_rule` mais as
+faixas. Ler `base_price` para decidir se existe oferta era perguntar para a coluna errada.
+
+**A oferta passou a vir do motor.** `fetchPriceShowcase` consulta `simulate_price` nas durações de
+referência (1/7/15/30, as mesmas de `destination_price_index`), converte total em diária e devolve
+a faixa. Roda **no loader**, e não só no cliente, pelo mesmo motivo do FAQ: preço que só existe
+depois do JS não entra no HTML do build, e nem o schema nem o "a partir de" apareceriam para quem
+lê o HTML cru.
+
+**`AggregateOffer`, e não `Offer`.** A tabela é escalonada e a diária varia de verdade: no valet da
+Aerovalet em Guarulhos vai de R$ 119,20 em 1 diária a R$ 21,12 em 30. Um preço só cravaria uma
+duração e calaria sobre as outras três. Duração sem preço (estadia mínima do parceiro) some da
+faixa em vez de derrubá-la: é ausência de oferta naquela janela, não oferta de graça.
+
+**O mesmo número alimenta a tela.** O card lia `base_price` para o "a partir de" e por isso a
+unidade espelhada não mostrava preço nenhum antes das datas. Agora a menor diária da faixa manda
+e `base_price` é reserva, então a página publica `"lowPrice": "25.90"` e mostra "A partir de
+R$ 25,90" no mesmo HTML. O espelho que o ADR-009 pede deixa de depender de disciplina e passa a
+ser consequência da fonte única.
+
+**O que continua fora:** `availability: InStock`. Afirmar estoque é prometer vaga garantida, e
+quem controla a vaga da unidade externa é o parceiro. Preço é fato da unidade; estoque é promessa
+de transação. Verificado no build: as 17 páginas emitem `AggregateOffer` e nenhuma emite `InStock`.
+
+Preencher `base_price` no banco foi considerado e descartado: é seguro para o motor (ele não lê o
+campo), mas cria segunda fonte de verdade. O parceiro muda a tabela, o `base_price` fica velho e o
+schema passa a mentir sem ninguém ver, que é a forma mais cara desse bug voltar.
+
+O `null` de `productOfferSchema` continua, agora como rede: sem faixa, sem `base_price` e sem nota,
+o nó não é publicado.
+
 ## Base legal (não é parecer; levar ao jurídico)
 
 Oferta vincula o fornecedor (CDC art. 30); omissão relevante é publicidade enganosa (art. 37

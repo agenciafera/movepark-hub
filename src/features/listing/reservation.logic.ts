@@ -124,3 +124,42 @@ export function showcaseFromPrice(basePrice: number | null | undefined): number 
   const n = Number(basePrice ?? 0);
   return Number.isFinite(n) && n > 0 ? n : null;
 }
+
+/** Faixa de diária da unidade, calculada pelo motor de preço nas durações de referência. */
+export type PriceShowcase = {
+  /** Menor diária entre as durações com preço. É o "a partir de". */
+  lowDaily: number;
+  /** Maior diária. Igual à menor quando a tabela é plana. */
+  highDaily: number;
+  /** Quantas durações têm preço. Vira `offerCount` no JSON-LD. */
+  offerCount: number;
+};
+
+/**
+ * A faixa de diária a partir dos totais por duração que o motor devolveu.
+ *
+ * Existe porque `company_parking_type.base_price` não é o preço da unidade: nas espelhadas ele
+ * é 0 e o motor (`simulate_price`) nunca lê esse campo, então ele conta zero sobre quanto a
+ * vaga custa. O preço de verdade mora em `pricing_rule` + faixas, e é o mesmo número que o card
+ * mostra quando a pessoa escolhe as datas.
+ *
+ * A faixa é de DIÁRIA, não de total, porque a tabela é escalonada e o total não se compara
+ * entre durações: na Aerovalet, o valet sai por R$ 119,20 a diária em 1 dia e R$ 21,12 em 30.
+ * Um número só esconderia essa distância; por isso o schema emite `AggregateOffer`.
+ *
+ * Duração sem preço (estadia mínima do parceiro) simplesmente não entra: é ausência de oferta
+ * naquela janela, não oferta de graça.
+ */
+export function buildPriceShowcase(
+  totais: { days: number; total: number | null }[],
+): PriceShowcase | null {
+  const diarias = totais
+    .filter((t) => t.days > 0 && t.total != null && t.total > 0)
+    .map((t) => Math.round((t.total! / t.days) * 100) / 100);
+  if (diarias.length === 0) return null;
+  return {
+    lowDaily: Math.min(...diarias),
+    highDaily: Math.max(...diarias),
+    offerCount: diarias.length,
+  };
+}

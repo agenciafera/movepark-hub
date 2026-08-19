@@ -12,7 +12,7 @@ import { HowToArrive } from "@/features/listing/HowToArrive";
 import { TerminalDistances } from "@/features/listing/TerminalDistances";
 import { ReservationCard } from "@/features/listing/ReservationCard";
 import { ListingStickyBar } from "@/features/listing/ListingStickyBar";
-import type { ReservationSummary } from "@/features/listing/reservation.logic";
+import type { PriceShowcase, ReservationSummary } from "@/features/listing/reservation.logic";
 import { ListingTrustBar } from "@/features/listing/ListingTrustBar";
 import { RecommendedCarousel } from "@/features/listing/RecommendedCarousel";
 import { buildListingTldr, nearestTerminal } from "@/features/listing/tldr.logic";
@@ -20,7 +20,13 @@ import { ReviewsBlock } from "@/features/reviews/ReviewsBlock";
 import { GoogleReviewsBlock } from "@/features/reviews/GoogleReviewsBlock";
 import { RatingBadge } from "@/features/reviews/RatingStars";
 import { useLocationReviews } from "@/features/reviews/api";
-import { useListing, useLocationTerminals, useLocationTypePrices, type ListingDetail } from "@/features/listing/api";
+import {
+  useListing,
+  useLocationTerminals,
+  useLocationTypePrices,
+  usePriceShowcase,
+  type ListingDetail,
+} from "@/features/listing/api";
 import { useSavedListings } from "@/features/search/useSavedListings";
 import { useFaqCombined, type FaqCombinedItem } from "@/features/faqs/api";
 import { FaqList } from "@/features/faqs/FaqList";
@@ -51,6 +57,7 @@ import { SITE_URL } from "@/lib/site";
 type ListingLoaderData = {
   listing: ListingDetail;
   faqs: FaqCombinedItem[] | null;
+  showcase: PriceShowcase | null;
 } | null;
 
 export default function ListingPage() {
@@ -68,6 +75,16 @@ export default function ListingPage() {
     params.locationSlug,
     params.parkingTypeCode,
     { initialData: loaderData?.listing ?? undefined },
+  );
+
+  // Faixa de diária do motor de preço: alimenta o "a partir de" do card e o `AggregateOffer` do
+  // JSON-LD com o MESMO número, que é o que o ADR-009 pede. O loader já trouxe no build; o hook
+  // cobre a navegação por link.
+  const { data: showcase } = usePriceShowcase(
+    params.operatorSlug,
+    params.locationSlug,
+    params.parkingTypeCode,
+    loaderData?.showcase,
   );
 
   const { data: reviews } = useLocationReviews(
@@ -188,7 +205,10 @@ export default function ListingPage() {
   // checkout externo. `Product` sem `offers`, `review` ou `aggregateRating` é inválido para o
   // Google, então nesse caso a página não emite o bloco.
   const productSchemaData = listing
-    ? productOfferSchema(listing, schemaReviews, { description: tldr?.summary })
+    ? productOfferSchema(listing, schemaReviews, {
+        description: tldr?.summary,
+        showcase: showcase ?? null,
+      })
     : null;
 
   if (isLoading) {
@@ -378,6 +398,7 @@ export default function ListingPage() {
           listing={listing}
           initialFrom={initialFrom}
           initialTo={initialTo}
+          showcase={showcase}
           onSummaryChange={setSummary}
         />
       </div>
@@ -484,6 +505,7 @@ export default function ListingPage() {
               listing={listing}
               initialFrom={initialFrom}
               initialTo={initialTo}
+              showcase={showcase}
             />
           </div>
         </aside>

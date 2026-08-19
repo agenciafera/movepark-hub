@@ -2,7 +2,7 @@ import * as React from "react";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { CouponPreview } from "./coupon.logic";
-import type { AddOnOption } from "./reservation.logic";
+import { buildPriceShowcase, type AddOnOption, type PriceShowcase } from "./reservation.logic";
 import type { AvailabilityCheck, MinStayUnit } from "./availability.logic";
 import type { GooglePlaceSnapshot } from "@/types/domain";
 import { fetchGooglePlaceSnapshot } from "@/features/reviews/googleApi";
@@ -377,6 +377,74 @@ export async function fetchLocationTypes(
     code: r.company_parking_type.parking_type.code as string,
     name: r.company_parking_type.parking_type.name as string,
   }));
+}
+
+/**
+ * Durações de referência da vitrine de preço. As mesmas de `destination_price_index` e da
+ * página /precos, para que a faixa da unidade e a tabela do destino não briguem.
+ */
+export const SHOWCASE_DAYS = [1, 7, 15, 30] as const;
+
+/**
+ * Faixa de diária da unidade, direto do motor de preço.
+ *
+ * Roda no LOADER, e não só no cliente, porque a página é pré-renderizada: preço que só existe
+ * depois do JS não entra no HTML do build, e nem o `AggregateOffer` do JSON-LD nem o "a partir
+ * de" do card apareceriam para quem lê o HTML cru (crawler de IA não executa JS).
+ *
+ * Uma duração que falha vira `null` e some da faixa, em vez de derrubar as outras três: numa
+ * unidade com estadia mínima de 2 diárias, a consulta de 1 dia não tem preço por definição.
+ */
+export async function fetchPriceShowcase(
+  companySlug: string,
+  locationSlug: string,
+  parkingTypeCode: string,
+): Promise<PriceShowcase | null> {
+  const totais = await Promise.all(
+    SHOWCASE_DAYS.map(async (days) => {
+      try {
+        const { data, error } = await supabase.rpc("simulate_price", {
+          p_company: companySlug,
+          p_location: locationSlug,
+          p_parking_type: parkingTypeCode,
+          p_days: days,
+        });
+        if (error) throw error;
+        // deno-lint-ignore no-explicit-any
+        const r = data as any;
+        return { days, total: r?.price != null ? Number(r.price) : null };
+      } catch {
+        return { days, total: null };
+      }
+    }),
+  );
+  return buildPriceShowcase(totais);
+}
+
+/** Chave de cache da vitrine de preço, compartilhada entre o loader e o cliente. */
+export const priceShowcaseKey = (
+  companySlug: string | undefined,
+  locationSlug: string | undefined,
+  parkingTypeCode: string | undefined,
+) => ["price-showcase", companySlug, locationSlug, parkingTypeCode] as const;
+
+/**
+ * A vitrine de preço na página. O loader já traz no build; o hook cobre a navegação por link
+ * (soft nav), onde o HTML pré-renderizado não é buscado de novo.
+ */
+export function usePriceShowcase(
+  companySlug: string | undefined,
+  locationSlug: string | undefined,
+  parkingTypeCode: string | undefined,
+  initialData?: PriceShowcase | null,
+) {
+  return useQuery({
+    queryKey: priceShowcaseKey(companySlug, locationSlug, parkingTypeCode),
+    queryFn: () => fetchPriceShowcase(companySlug!, locationSlug!, parkingTypeCode!),
+    enabled: !!companySlug && !!locationSlug && !!parkingTypeCode,
+    initialData,
+    staleTime: 60_000,
+  });
 }
 
 /**

@@ -247,6 +247,58 @@ describe("productOfferSchema · nó sem nada que qualifique", () => {
 });
 
 /**
+ * A oferta vinda do motor de preço (19/08/2026).
+ *
+ * `base_price` é campo de catálogo que ninguém preencheu nas espelhadas e que `simulate_price`
+ * nem lê. Apagar o nó resolvia o erro do Search Console jogando fora um preço que existe; a
+ * faixa do motor devolve o `Product` válido com o mesmo número que o card mostra.
+ */
+describe("productOfferSchema · faixa do motor de preço", () => {
+  const faixa = { lowDaily: 21.12, highDaily: 119.2, offerCount: 4 };
+
+  it("publica AggregateOffer com a faixa de diária, mesmo com base_price zero", () => {
+    const s = produto(makeListing({ base_price: 0, checkout_mode: "external" }), [], {
+      showcase: faixa,
+    });
+    expect(s.offers).toMatchObject({
+      "@type": "AggregateOffer",
+      priceCurrency: "BRL",
+      lowPrice: "21.12",
+      highPrice: "119.20",
+      offerCount: 4,
+    });
+  });
+
+  it("continua calando sobre estoque na externa, porque a vaga é do parceiro", () => {
+    const s = produto(makeListing({ base_price: 0, checkout_mode: "external" }), [], {
+      showcase: faixa,
+    });
+    expect((s.offers as { availability?: string }).availability).toBeUndefined();
+  });
+
+  it("na unidade própria afirma InStock, que ali é verdade", () => {
+    const s = produto(makeListing({ base_price: 0 }), [], { showcase: faixa });
+    expect((s.offers as { availability?: string }).availability).toBe(
+      "https://schema.org/InStock",
+    );
+  });
+
+  it("a faixa manda sobre base_price, para não existirem dois preços diferentes", () => {
+    const s = produto(makeListing({ base_price: 30 }), [], { showcase: faixa });
+    expect(s.offers).toMatchObject({ "@type": "AggregateOffer", lowPrice: "21.12" });
+  });
+
+  it("sem faixa, base_price segue de reserva como Offer simples", () => {
+    const s = produto(makeListing({ base_price: 30 }));
+    expect(s.offers).toMatchObject({ "@type": "Offer", price: "30.00" });
+  });
+
+  it("o nó nulo continua de rede quando não há faixa, nem base_price, nem nota", () => {
+    expect(productOfferSchema(makeListing({ base_price: 0 }), [], { showcase: null })).toBeNull();
+  });
+});
+
+/**
  * Caminho relativo do legado (`/Estacionamentos/...`) é o formato de metade das unidades. Em
  * JSON-LD o buscador não resolve URL relativa, e `image` é campo exigido no Product.
  */

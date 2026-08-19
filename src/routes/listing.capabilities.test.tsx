@@ -80,12 +80,22 @@ function montaPagina(
   go2park = false,
   go2parkWhatsapp: string | null = null,
   photos: string[] = [],
+  /** Total por duração que o motor devolve. Sem isto, o motor não responde e não há faixa. */
+  precoPorDuracao?: Record<number, number | null>,
 ) {
   server.use(
     http.get(`${BASE}/rest/v1/location_parking_type`, () =>
       HttpResponse.json([linha(checkoutMode, basePrice, go2park, go2parkWhatsapp, photos)]),
     ),
   );
+  if (precoPorDuracao) {
+    server.use(
+      http.post(`${BASE}/rest/v1/rpc/simulate_price`, async ({ request }) => {
+        const body = (await request.json()) as { p_days: number };
+        return HttpResponse.json({ price: precoPorDuracao[body.p_days] ?? null });
+      }),
+    );
+  }
   // A página emite <Helmet> (meta + JSON-LD), que precisa do provider para montar.
   return renderWithProviders(
     <HelmetProvider>
@@ -258,6 +268,23 @@ describe("single da unidade EXTERNA", () => {
     expect(fora).not.toMatch(/"@type":"Product"/);
     // O que descreve o lugar continua publicado: o nó do lugar não exige oferta.
     expect(fora).toMatch(/"ParkingFacility"/);
+  });
+
+  it("com o motor respondendo, publica AggregateOffer e mostra o \"a partir de\"", async () => {
+    // base_price = 0 não quer dizer vaga sem preço: quer dizer campo de catálogo não
+    // preenchido. O motor sabe o preço, e é ele que decide o que a tela mostra e o que o
+    // schema afirma, com o MESMO número nos dois lugares (ADR-009).
+    montaPagina("external", 0, false, null, [], { 1: null, 7: 188.3, 15: 388.5, 30: 777 });
+    await screen.findAllByText(/Virapark/i);
+    await waitFor(() => expect(publicado()).toMatch(/AggregateOffer/));
+
+    const fora = publicado();
+    expect(fora).toMatch(/"lowPrice":"25.90"/);
+    expect(fora).toMatch(/"highPrice":"26.90"/);
+    // A vaga continua sendo do parceiro: preço sim, estoque não.
+    expect(fora).not.toMatch(/InStock/);
+    // E a tela diz o mesmo número que o schema.
+    expect(await screen.findAllByText(/A partir de R\$\s?25,90/)).not.toHaveLength(0);
   });
 
   it("publica image absoluta, porque caminho relativo do legado o buscador não resolve", async () => {

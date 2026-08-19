@@ -1,5 +1,5 @@
 import { getLocationCapabilities } from "@/features/listing/capabilities";
-import { showcaseFromPrice } from "@/features/listing/reservation.logic";
+import { showcaseFromPrice, type PriceShowcase } from "@/features/listing/reservation.logic";
 import type { ListingDetail } from "@/features/listing/api";
 import { SITE_URL } from "@/lib/site";
 
@@ -59,10 +59,18 @@ export type SchemaReview = {
 // inválido ("Especifique offers, review ou aggregateRating", no Search Console). A saída não é
 // reinventar a promessa para preencher o campo: é não publicar o nó. O que descreve o lugar
 // continua saindo no `LocalBusiness`/`ParkingFacility` ao lado, que não exige oferta.
+//
+// **A oferta passou a vir do motor de preço (19/08/2026).** O `null` acima resolvia o erro
+// apagando o nó, e apagar era desperdício: as dezessete unidades TÊM preço, só não em
+// `company_parking_type.base_price`, que é campo de catálogo que ninguém preencheu e que o
+// `simulate_price` sequer lê. Com a faixa vinda do motor (`opts.showcase`, buscada no loader do
+// SSG), toda página volta a publicar `Product` válido, com o mesmo número que o card mostra
+// quando a pessoa escolhe as datas. `base_price` fica de reserva para quando a faixa não vier,
+// e o `null` continua de rede: nó sem nada que qualifique não é publicado.
 export function productOfferSchema(
   listing: ListingDetail,
   reviews: SchemaReview[] = [],
-  opts?: { description?: string },
+  opts?: { description?: string; showcase?: PriceShowcase | null },
 ) {
   const caps = getLocationCapabilities(listing.location);
   const count = caps.reviews ? (listing.location.review_count ?? 0) : 0;
@@ -71,10 +79,35 @@ export function productOfferSchema(
   // Zero não é preço, e `Offer` sem `price` é inválido para o Google. Então sem preço não há
   // oferta: some o bloco inteiro, em vez de publicar R$ 0,00 como se fosse o valor da diária.
   const price = showcaseFromPrice(listing.company_parking_type.base_price);
+  const showcase = opts?.showcase ?? null;
+
+  // `InStock` afirma que a vaga está disponível, e quem controla a disponibilidade da unidade
+  // externa é o parceiro. É a capacidade `guaranteedSpot` na superfície do schema. Sem ela, a
+  // oferta segue existindo com o preço e cala sobre o estoque.
+  const availability = caps.guaranteedSpot ? "https://schema.org/InStock" : undefined;
+  const url = `${SITE_URL}/p/${listing.company.slug}/${listing.location.slug}/${listing.parking_type.code}`;
+
+  // A faixa do motor manda; `base_price` é reserva. `AggregateOffer` e não `Offer` porque a
+  // tabela é escalonada: uma diária só cravaria o preço de uma duração e calaria sobre as
+  // outras três.
+  const offers =
+    showcase != null
+      ? {
+          "@type": "AggregateOffer",
+          priceCurrency: "BRL",
+          lowPrice: showcase.lowDaily.toFixed(2),
+          highPrice: showcase.highDaily.toFixed(2),
+          offerCount: showcase.offerCount,
+          availability,
+          url,
+        }
+      : price != null
+        ? { "@type": "Offer", priceCurrency: "BRL", price: price.toFixed(2), availability, url }
+        : undefined;
 
   // Nó vazio é item inválido, não item incompleto: o Google reprova a página inteira no rich
   // result de Product. Sem oferta e sem nota, o nó não existe.
-  if (price == null && !hasRating) return null;
+  if (offers == null && !hasRating) return null;
 
   return {
     "@context": "https://schema.org",
@@ -85,19 +118,7 @@ export function productOfferSchema(
     // `image` é exigido pelo Google pro rich result de Product: usa as fotos da unidade,
     // absolutas, porque caminho relativo o buscador não resolve.
     image: listing.location.photos?.length ? listing.location.photos.map(absoluta) : undefined,
-    offers:
-      price != null
-        ? {
-            "@type": "Offer",
-            priceCurrency: "BRL",
-            price: price.toFixed(2),
-            // `InStock` afirma que a vaga está disponível, e quem controla a disponibilidade da
-            // unidade externa é o parceiro. É a capacidade `guaranteedSpot`, na superfície do
-            // schema. Sem ela, a oferta segue existindo com o preço e cala sobre o estoque.
-            availability: caps.guaranteedSpot ? "https://schema.org/InStock" : undefined,
-            url: `${SITE_URL}/p/${listing.company.slug}/${listing.location.slug}/${listing.parking_type.code}`,
-          }
-        : undefined,
+    offers,
     aggregateRating: hasRating
       ? {
           "@type": "AggregateRating",

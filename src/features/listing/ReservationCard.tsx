@@ -62,6 +62,11 @@ type Props = {
   listing: ListingDetail;
   initialFrom: Date | null;
   initialTo: Date | null;
+  /**
+   * Faixa de diária do motor de preço, vinda do loader. É o "a partir de" quando a estadia
+   * escolhida não tem total. Sem ela o card cai em `base_price`, que é 0 nas espelhadas.
+   */
+  showcase?: import("./reservation.logic").PriceShowcase | null;
   /** Publica o resumo vivo (total/datas/cancelamento) pro CTA fixo do mobile. */
   onSummaryChange?: (summary: ReservationSummary) => void;
 };
@@ -118,7 +123,13 @@ function daysBetween(a: Date | null, b: Date | null): number {
   return Math.max(1, Math.ceil(ms / (1000 * 60 * 60 * 24)));
 }
 
-export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChange }: Props) {
+export function ReservationCard({
+  listing,
+  initialFrom,
+  initialTo,
+  showcase,
+  onSummaryChange,
+}: Props) {
   // ADR-009. O que NÃO some na unidade externa: datas, preço e a tabela por duração. O preço
   // continua sendo informação da unidade (espelhado da tabela do parceiro, E0.13), e é o que
   // faz a pessoa decidir. O que some é o que a Movepark não cumpre: tarifa, cupom, extras e o
@@ -322,10 +333,13 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
   const displayTotal = parkingBase + fareSurcharge;
   const economia = counterSavings(sim.data?.old_price, displayTotal);
   // Preço de vitrine para quando a estadia escolhida não tem total: sem datas, esgotada, ou
-  // abaixo do mínimo do parceiro. `base_price` só serve de "a partir de" quando é preço de
-  // verdade; na unidade espelhada ele é 0, porque a tabela vem do parceiro e esse campo do
-  // catálogo nunca foi preenchido. Zero não é preço.
-  const fromPrice = showcaseFromPrice(listing.company_parking_type.base_price);
+  // abaixo do mínimo do parceiro.
+  //
+  // A menor diária do motor manda, e `base_price` é a reserva. Era o contrário, e por isso a
+  // unidade espelhada não mostrava preço nenhum antes das datas: `base_price` é 0 nela, porque
+  // a tabela vem do parceiro e esse campo do catálogo nunca foi preenchido. O motor sabe o
+  // preço mesmo assim, e é o mesmo número que aparece quando a pessoa escolhe as datas.
+  const fromPrice = showcase?.lowDaily ?? showcaseFromPrice(listing.company_parking_type.base_price);
 
   const hasFareOrAddOns = canReserve && (fareSurcharge > 0 || !!applied);
 
@@ -359,7 +373,7 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
     const intent = getBookingIntent();
     if (!intent || intent.listingId !== listing.id) return;
     hydratedRef.current = true;
-    clearBookingIntent(); // consumida — evita re-hidratar num reload manual
+    clearBookingIntent(); // consumida, evita re-hidratar num reload manual
     const f = new Date(intent.from);
     const t = new Date(intent.to);
     if (!Number.isNaN(f.getTime())) setFrom(f);
@@ -376,7 +390,7 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
     setResumePending(true);
   }, [listing.id]);
 
-  // Cupom resolveu? (aplicado, com erro, ou inexistente) — pra não auto-submeter sem o desconto.
+  // Cupom resolveu? (aplicado, com erro, ou inexistente): pra não auto-submeter sem o desconto.
   const couponReady = !couponCode || applied != null || couponMsg != null;
 
   // Auto-avança pro checkout quando a intenção retomada está pronta (sessão + disponibilidade
@@ -466,7 +480,7 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
 
         <div className="my-5 h-px bg-hairline" />
 
-        {/* Datas — mesmo seletor de intervalo (range) da busca */}
+        {/* Datas: mesmo seletor de intervalo (range) da busca */}
         <div className="overflow-hidden rounded-md border border-hairline bg-canvas">
           <DateRangePicker
             from={from}
@@ -542,7 +556,7 @@ export function ReservationCard({ listing, initialFrom, initialTo, onSummaryChan
                     {fare.label}
                   </span>
 
-                  {/* Info tooltip — controlado para funcionar no toque mobile */}
+                  {/* Info tooltip: controlado para funcionar no toque mobile */}
                   <Tooltip
                     open={openTooltip === fare.id}
                     onOpenChange={(v) => setOpenTooltip(v ? fare.id : null)}
