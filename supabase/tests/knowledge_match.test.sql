@@ -5,7 +5,7 @@
 -- 0.01 no resto) tornam a asserção estável. Roda em transação com rollback.
 
 begin;
-select plan(9);
+select plan(11);
 
 -- helper: vetor 768d com 1.0 na posicao p_dim e 0.01 no resto (determinístico)
 create or replace function pg_temp.vec(p_dim int) returns text language sql as $$
@@ -105,6 +105,58 @@ select set_eq(
   $$ values ('GLOBAL'),('GLOBALFAR') $$,
   'sem location/destination: apenas escopo global'
 );
+
+-- ── recall sob filtro seletivo (regressao de 19/08/2026) ────────────────────
+-- O bug: com o `order by` livre o planner usava o indice HNSW, que e busca APROXIMADA. Ele colhia
+-- os `hnsw.ef_search` vizinhos mais proximos (default 40) e so entao o filtro de escopo rodava
+-- sobre esses 40. Filtro seletivo derrubava candidatos ja escolhidos, e a resposta encolhia ou
+-- zerava: em producao "onde espero a van em Viracopos?" devolvia ZERO trecho, porque os 40
+-- vizinhos eram todos de destino e a pergunta chegou sem destination_id.
+--
+-- A fixture reproduz isso: 60 chunks FORA de escopo colados na consulta (mais que os 40 do
+-- ef_search) contra 8 globais mais distantes. Com pos-filtro os 60 comem os candidatos e sobra
+-- nada; com o filtro antes do ranking sobram os 6 globais pedidos.
+--
+-- `enable_seqscan = off` empurra o planner para o indice, que e a condicao em que o bug aparece.
+-- A versao correta e imune ao plano escolhido: a CTE `materialized` ordena um tuplestore, e
+-- tuplestore nao tem indice.
+do $$
+declare
+  did uuid := current_setting('test.did')::uuid;
+begin
+  -- 6 globais adicionais (vec 4), longe da consulta (vec 3). Com os 2 que ja existem, 8 elegiveis,
+  -- o mesmo numero que a base viva tinha quando o defeito foi medido.
+  insert into public.knowledge_chunk
+    (source_type, source_id, chunk_index, scope, location_id, destination_id, content, content_hash, embedding, embedding_stale)
+  select 'blog_post', gen_random_uuid(), 0, 'global', null, null,
+         'GLOBAL_EXTRA_' || g, 'gx' || g, pg_temp.vec(4)::extensions.vector(768), false
+  from generate_series(1, 6) g;
+
+  -- 60 chunks de destino, identicos a consulta (similaridade 1.0) e inelegiveis sem contexto.
+  insert into public.knowledge_chunk
+    (source_type, source_id, chunk_index, scope, location_id, destination_id, content, content_hash, embedding, embedding_stale)
+  select 'blog_post', gen_random_uuid(), 0, 'destination', null, did,
+         'RUIDO_' || g, 'r' || g, pg_temp.vec(3)::extensions.vector(768), false
+  from generate_series(1, 60) g;
+end $$;
+
+set local enable_seqscan = off;
+
+select is(
+  (select count(*)::int from public.match_knowledge(pg_temp.vec(3), null, null, 6)),
+  6,
+  'k=6 com 8 globais elegiveis devolve 6, mesmo com 60 chunks fora de escopo mais proximos'
+);
+
+select ok(
+  not exists (
+    select 1 from public.match_knowledge(pg_temp.vec(3), null, null, 20)
+    where scope <> 'global'
+  ),
+  'o ruido de destino nao vaza para a consulta sem contexto'
+);
+
+reset enable_seqscan;
 
 select finish();
 rollback;

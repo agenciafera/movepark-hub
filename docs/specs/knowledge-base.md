@@ -112,6 +112,57 @@ chat de uma vez (`READ_TOOLS.map`). Docs do ADR-003 no mesmo PR: cards `server`/
 (palavras diferentes da FAQ armazenada) embeda a query e traz a FAQ de cancelamento no topo. Testes:
 `mcp.test.ts` (a tool é de leitura em public+customer, nunca partner, chamável sem escopo).
 
+## O filtro roda antes do ranking (correção de 19/08/2026)
+
+A `match_knowledge` ordena o conjunto elegível de forma **exata**, e não pela aproximação do HNSW.
+Isso não é detalhe de performance, é o que garante que a resposta exista.
+
+**O que estava errado.** Com o `order by embedding <=> query` livre, o planner usava o índice HNSW,
+que é busca aproximada: ele caminha o grafo, colhe os `hnsw.ef_search` vizinhos mais próximos
+(default 40) e só então o `where` de escopo roda sobre esses 40. Filtro seletivo derruba candidatos
+que o índice já tinha escolhido. O filtro nunca esteve errado; errada estava a ordem.
+
+**Medido em produção, com 409 chunks:**
+
+| Sintoma | Antes | Depois |
+|---|---|---|
+| `"onde espero a van em Viracopos?"` na Edge publicada | **0 trechos** | 3 trechos |
+| k=6 com 8 globais elegíveis, consulta colada nos chunks de destino | **4 linhas** | 6 linhas |
+| Pior caso entre os 23 destinos (k=6) | 5 linhas | 6 linhas |
+
+O zero acontecia porque a pergunta é semanticamente colada nos 400 chunks de destino: os 40 vizinhos
+eram todos de destino e, sem `destination_id` no pedido, o filtro só admitia os 8 globais. Os 40
+candidatos morriam inteiros. A mesma consulta devolvia 4 com o `ef_search` padrão e 6 com
+`ef_search=1000`, que é a assinatura de recall perdido por pós-filtro.
+
+**Por que o caso sem contexto é o comum.** `location_id` e `destination_id` são opcionais na tool
+`search_knowledge`, e quem pergunta escreve "Viracopos", não um uuid. A primeira chamada de uma
+conversa quase sempre vai sem contexto, que é justo o cenário em que 401 dos 409 chunks são
+inelegíveis e o pós-filtro é mais destrutivo.
+
+**A correção** é uma CTE `materialized` (barreira de otimização): o conjunto elegível é resolvido
+primeiro, pelo btree `knowledge_chunk_scope_idx` que já existia, e a ordenação por distância roda
+sobre ele. Recall vira 100% por construção. O custo é uma varredura do conjunto elegível, barato
+porque o filtro de escopo é seletivo por natureza: uma pergunta vê no máximo (globais + os chunks de
+UM destino + os de UMA unidade), hoje ~25 de 409.
+
+**O índice HNSW ficou, dormente e de propósito.** O custo de escrita nesta escala é irrelevante e
+reconstruir HNSW numa tabela grande depois é caro. Quando o conjunto **elegível** (não a tabela)
+passar de alguns milhares, a saída não é soltar o `order by` de volta: é índice HNSW **parcial por
+escopo**, para o filtro entrar antes da caminhada do grafo em vez de depois.
+
+**O guard.** `knowledge_match.test.sql` monta 60 chunks fora de escopo mais próximos da consulta que
+os de dentro (mais que os 40 do `ef_search`) e roda com `enable_seqscan = off`, que é a condição
+exata em que o bug aparece. Verificado também no banco vivo, com 60 chunks de similaridade 1.0
+inelegíveis inseridos e removidos: 6 de 6 linhas, zero vazamento de escopo.
+
+> **Efeito colateral que vale saber:** o índice HNSW não é parcial, então chunk com
+> `embedding_stale = true` continua ocupando vaga entre os candidatos do grafo, mesmo sendo
+> descartado pelo filtro. Antes da correção, uma onda de reembedding degradaria a busca enquanto
+> durasse. Agora não.
+
+Migration `20261029110000_match_knowledge_filtra_antes_de_ranquear.sql`.
+
 **Verificado no chat do site:** a pergunta "se meu voo atrasar e eu chegar depois do horário, perco a
 vaga ou tem tolerância?" faz o modelo escolher `search_knowledge` sozinho (`used_tools` confirma) e
 responder ancorado na FAQ vetorizada ("30 minutos antes e 60 depois, sem cobrança").
