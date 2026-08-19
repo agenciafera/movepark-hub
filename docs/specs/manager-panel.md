@@ -34,6 +34,7 @@ Empresas
   └─ Tipos de Vaga
 Destinos
 Lotes mapeados
+Destaques da home
 Reservas
 Financeiro
   └─ Faturamento
@@ -416,6 +417,46 @@ Implementação: `20261017090000_manager_prospect_location.sql` (5 RPCs `manager
 slug e vizinho a menos de 150 m. Dois lotes vizinhos existem de verdade em aeroporto, então
 proximidade não pode barrar sozinha. Ver
 [lote-mapeado-vitrine.md](./lote-mapeado-vitrine.md).
+
+
+### 4.13 Destaques da home
+
+**Rota:** `/manager/destaques` (só `hub_admin`) · ✅ implementado (out/2026)
+
+Curadoria da vitrine da home. A unidade de curadoria é o **tipo de vaga**, não o
+estacionamento ("Aeropark > Vaga Coberta"), porque o card da home é uma oferta: escolher só a
+unidade deixaria de fora a decisão que muda o preço e a foto do card.
+
+Substituiu o ranking por reservas que alimentava a seção até 31/10/2026. Ele contava `booking`
+fechada no Hub, e isso deixou de medir qualquer coisa quando todo o catálogo vivo passou a
+fechar no site do parceiro: das 18 unidades listadas, as 9 de empresa ativa são todas de
+checkout externo, e o contador delas nasce zero. O efeito visível era o Aeropark Guarulhos, um
+dos que mais vendem, nunca aparecer. O histórico completo do banco eram 55 reservas em 4
+unidades, a última de 31/07/2026. Ver
+[home-and-search.md §6b](./customer/home-and-search.md).
+
+A tela lista os destaques na ordem em que saem na home, com contagem de quantos estão no ar.
+Por linha: mover para cima e para baixo, um `Switch` que liga e desliga sem perder a posição,
+link para a página pública e remover. Adicionar abre um combobox com busca sobre todo tipo de
+vaga ativo de unidade publicável de empresa ativa, já sem o que está na lista (a tabela é
+`unique` no tipo de vaga).
+
+Dois avisos que a tela dá e o banco não daria sozinho:
+
+- **"Fora do ar"** na linha cujo destaque deixou de ser publicável depois de curado (empresa
+  desativada, unidade despublicada, tipo de vaga desativado). A curadoria é só uma FK, e sem o
+  aviso o card sumiria da home sem ninguém entender por quê.
+- **"sem tabela de preço"** no candidato que entraria na lista sem virar card, porque o card
+  não monta sem o "a partir de".
+
+Sem nenhum destaque ativo a seção não renderiza na home, e a tela diz isso no estado vazio. Não
+existe fallback automático de propósito: um fallback traria de volta o ranking que foi retirado.
+
+Implementação: `20261031090000_home_featured_offer.sql` (tabela `home_featured_offer`, RLS só de
+`hub_admin`, RPC pública `home_featured_offers` com o gate de publicação),
+`src/features/home/featuredApi.ts`, `src/features/home/featured.logic.ts`,
+`src/routes/manager/destaques.tsx`. Testes: `supabase/tests/home_featured_offer.test.sql`
+(gate + grants), `featured.logic.test.ts` (ordenação) e `featuredApi.test.tsx` (contrato de rede).
 
 ---
 

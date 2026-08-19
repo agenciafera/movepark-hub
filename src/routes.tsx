@@ -102,6 +102,7 @@ import ManagerLotesMapeados from "@/routes/manager/lotes-mapeados";
 import ManagerBlog from "@/routes/manager/blog";
 import ManagerApiInterna from "@/routes/manager/api-interna";
 import ManagerReviews from "@/routes/manager/reviews";
+import ManagerDestaques from "@/routes/manager/destaques";
 import ManagerAttribution from "@/routes/manager/attribution";
 import DescadastroPage from "@/routes/descadastro";
 import ManagerMarketing from "@/routes/manager/marketing";
@@ -922,6 +923,7 @@ export const routes: RouteRecord[] = [
               { path: "marketing/campanhas", element: <ManagerMarketingCampaigns /> },
               { path: "marketing/campanhas/:id", element: <ManagerMarketingCampaign /> },
               { path: "reviews", element: <ManagerReviews /> },
+              { path: "destaques", element: <ManagerDestaques /> },
               { path: "faq", element: <ManagerFaq /> },
               { path: "faq/categorias", element: <ManagerFaqCategorias /> },
               { path: "tarifas", element: <ManagerTarifas /> },

@@ -2,7 +2,7 @@ import { Helmet } from "react-helmet-async";
 import { organizationSchema } from "@/lib/jsonld";
 import { Hero } from "@/features/home/Hero";
 import { DestinationsGallery } from "@/features/home/DestinationsGallery";
-import { PopularParkingLots } from "@/features/home/PopularParkingLots";
+import { FeaturedParkingLots } from "@/features/home/FeaturedParkingLots";
 import { HowItWorks } from "@/features/home/HowItWorks";
 import { TrustBand } from "@/features/home/TrustBand";
 import { CtaBanner } from "@/components/shared/CtaBanner";
@@ -33,7 +33,7 @@ export default function HomePage() {
         <script type="application/ld+json">{JSON.stringify(organizationSchema())}</script>
       </Helmet>
       <Hero />
-      <PopularParkingLots />
+      <FeaturedParkingLots />
       <TrustBand />
       <HowItWorks />
       <DestinationsGallery />

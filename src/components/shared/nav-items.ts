@@ -55,6 +55,7 @@ export const managerSections: Section[] = [
   {
     title: "Conta",
     items: [
+      { to: "/manager/destaques", label: "Destaques da home", icon: Sparkle },
       { to: "/manager/reviews", label: "Avaliações", icon: Star },
       { to: "/manager/blog", label: "Blog", icon: Article },
       { to: "/manager/faq", label: "FAQ", icon: Question },

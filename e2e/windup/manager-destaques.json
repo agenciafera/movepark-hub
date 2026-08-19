@@ -1,0 +1,196 @@
+{
+  "scenario_id": "manager-destaques-lista-e-adiciona",
+  "start_url": "/manager/destaques",
+  "task": "Verifique, em tres checagens separadas, que a tabela mostra \"Aeropark\", depois \"Vaga Coberta\". Em seguida clique em \"Adicionar destaque\" e verifique que o dialogo mostra \"Selecione a vaga\".",
+  "tags": [
+    "formulario",
+    "autenticado"
+  ],
+  "hints": [
+    "A tela e a curadoria da vitrine da home: lista os destaques ja escolhidos.",
+    "O botao que abre o formulario tem o texto \"Adicionar destaque\".",
+    "O dialogo abre num portal do Radix FORA do <main>: use text_contains com selector [role=\"dialog\"]."
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.windup-nao-assinado\",\"token_type\":\"bearer\",\"expires_in\":999999999,\"expires_at\":4102444800,\"refresh_token\":\"windup-fake-refresh\",\"user\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"qa@windup.local\"}}"
+    }
+  },
+  "network": [
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.windup-nao-assinado",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "windup-fake-refresh",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "hub_admin"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/company_role_scope*",
+      "json": [
+        {
+          "role": "owner",
+          "scope": "occupancy:read"
+        },
+        {
+          "role": "owner",
+          "scope": "addons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "pricing:write"
+        },
+        {
+          "role": "owner",
+          "scope": "coupons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "reviews:read"
+        },
+        {
+          "role": "owner",
+          "scope": "team:read"
+        },
+        {
+          "role": "owner",
+          "scope": "finance:read"
+        },
+        {
+          "role": "owner",
+          "scope": "api-keys:write"
+        },
+        {
+          "role": "owner",
+          "scope": "locations:write"
+        },
+        {
+          "role": "owner",
+          "scope": "bookings:read"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/home_featured_offer*",
+      "json": [
+        {
+          "id": "hf-1",
+          "sort_order": 1,
+          "is_active": true,
+          "location_parking_type": {
+            "id": "lpt-1",
+            "location": {
+              "id": "loc-1",
+              "name": "Aeroporto de Guarulhos",
+              "slug": "aeroporto-guarulhos",
+              "status": "active",
+              "is_listed": true,
+              "deleted_at": null,
+              "company": {
+                "id": "co-1",
+                "name": "Aeropark",
+                "slug": "aeropark",
+                "status": "active",
+                "onboarding_status": "active"
+              },
+              "destination": {
+                "code": "GRU",
+                "name": "Aeroporto de Guarulhos",
+                "short_name": "Guarulhos"
+              }
+            },
+            "company_parking_type": {
+              "is_active": true,
+              "parking_type": {
+                "code": "covered",
+                "name": "Vaga Coberta"
+              }
+            },
+            "pricing_rule": [
+              {
+                "id": "pr-1"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/location_parking_type*",
+      "json": [
+        {
+          "id": "lpt-2",
+          "location": {
+            "id": "loc-2",
+            "name": "Aeroporto de Congonhas",
+            "slug": "aeroporto-congonhas",
+            "status": "active",
+            "is_listed": true,
+            "deleted_at": null,
+            "company": {
+              "id": "co-2",
+              "name": "Plenty Park",
+              "slug": "plenty",
+              "status": "active",
+              "onboarding_status": "active"
+            },
+            "destination": {
+              "code": "CGH",
+              "name": "Aeroporto de Congonhas",
+              "short_name": "Congonhas"
+            }
+          },
+          "company_parking_type": {
+            "is_active": true,
+            "parking_type": {
+              "code": "covered",
+              "name": "Vaga Coberta"
+            }
+          },
+          "pricing_rule": [
+            {
+              "id": "pr-2"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ]
+}

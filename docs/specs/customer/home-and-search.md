@@ -155,29 +155,55 @@ Lista de aeroportos pode ser hardcoded inicialmente (8-10 principais BR + PT). F
 
 ---
 
-## 6b. Estacionamentos populares (cards com preço)
+## 6b. Estacionamentos em destaque (cards com preço)
 
-Seção `PopularParkingLots`, alimentada pela RPC `popular_parking_types` (ranking por reservas
-confirmadas) + preço lido da tabela do lote. Teto de **1 card por empresa**, `ParkingCard` igual
-ao da busca.
+Seção `FeaturedParkingLots`, alimentada pela RPC `home_featured_offers` + preço lido da tabela do
+lote. `ParkingCard` igual ao da busca. A lista é **curada em `/manager/destaques`**, por TIPO DE
+VAGA ("Aeropark > Vaga Coberta"), e a home mostra a curadoria inteira, na ordem gravada.
+
+**Por que a curadoria substituiu o ranking (31/10/2026).** A seção ordenava por reservas
+confirmadas no Hub (`popular_parking_types`), e isso parou de medir alguma coisa: das 18 unidades
+listadas, as 9 de empresa ativa são **todas `checkout_mode = 'external'`** (vendem no site do
+parceiro, e o Hub nunca registra a reserva), e as 9 de checkout no Hub pertencem todas a empresa
+inativa. O contador de quem está no ar nasce zero e fica zero. O histórico inteiro do banco eram
+55 reservas em 4 unidades, a última de 31/07/2026, quase tudo de teste.
+
+O sintoma que abriu o caso: o **Aeropark Guarulhos**, um dos que mais vendem, não aparecia. Ele
+caía na posição 25 de 35 do ranking, fora do `LIMIT 24`, porque (1) o contador dele é zero por
+desenho, (2) as posições 9 a 24 eram todas de empresa inativa, que a RPC nunca filtrou, e (3) o
+`popular_sort_order` só entrava como terceiro desempate, onde o default `0` de quem nunca foi
+curado passa na frente de quem alguém marcou como `1`.
+
+**O que saiu junto com o ranking:**
+
+| Regra antiga | Por que saiu |
+|---|---|
+| Ordem por `bookings_count` | media só quem fecha no Hub, e ninguém no ar fecha no Hub |
+| Embaralhamento da cauda com semente do dia (`popularOrder.ts`) | existia para a cauda empatada em zero não fixar as mesmas unidades; sem ranking não há cauda |
+| Teto de 1 card por **empresa** | continha um ranking automático; contra curadoria briga com quem curou |
+| Teto de 1 card por **destino** | idem. Era ele que prendia a vitrine em 5 cards no máximo, um por destino com empresa ativa |
+| `location.is_popular` / `popular_sort_order` | curadoria por unidade, granularidade errada: o card é uma oferta, não um estacionamento. Colunas seguem no schema sem consumidor |
 
 **Preço "a partir de".** O card usava o preço de **1 diária** e descartava quem não tivesse
 (`price == null`). Lote de aeroporto costuma vender estadia longa e começar a tabela em 3
 diárias, então Abbapark, Nationpark e a coberta do Plenty Park nunca apareciam. Hoje
 `calcFromPrice` cai para a menor duração que a unidade vende: o card mostra a **diária** e o
 rótulo `por diária · mínimo N diárias`, e o link já leva a janela dessa estadia. Mesma regra da
-vitrine de destino (ver `search-results.md` §8b).
+vitrine de destino (ver `search-results.md` §8b). Uma unidade curada **sem tabela de preço** fica
+na lista sem virar card, e o Manager avisa disso na hora de adicionar.
 
-**Ordem quando o ranking acaba.** A RPC devolve `bookings_count`. Quem já vendeu fica na ordem
-do ranking; a cauda **sem venda** entra **embaralhada com semente do dia** (`popularOrder.ts`),
-para o desempate por avaliações/cadastro não fixar as mesmas unidades na vitrine para sempre.
-Semente diária, não relógio: a home não se remexe a cada refresh e muda sozinha no dia seguinte.
+**Gate de publicação.** Está dentro da RPC `home_featured_offers`, que repete por extenso o
+predicado das RLS `catalog_read_company`/`catalog_read_location` (empresa e unidade ativas,
+unidade listada, tipo de vaga ativo). Ele mora ali porque a curadoria é uma FK para o tipo de vaga
+e nada impede a empresa de ser desativada depois. Antes, a única barreira era o `company: null`
+que a RLS devolvia ao anônimo, e isso é defesa que depende de quem lê: quem estava logado como
+`hub_admin` enxerga a `company` inteira pela policy `company_select` e via na vitrine unidade de
+empresa inativa (Motion Park, Agência Fera) que o visitante não via. Coberto por
+`supabase/tests/home_featured_offer.test.sql`.
 
-**Empresa fora do catálogo.** A RLS `catalog_read_company` só libera `company` com
-`status` e `onboarding_status` ativos, e existe unidade listada cuja empresa não está. Nesse caso
-o join devolve `company: null`, e a oferta é **descartada** (no hook e no `dedupePopularOffers`).
-Antes disso a leitura de `company.id` estourava e derrubava a seção inteira para todo visitante
-anônimo.
+**Vitrine vazia.** Sem nenhum destaque ativo a seção **não renderiza**. É explícito: o Manager
+mostra o aviso, e não existe fallback automático, porque um fallback traria de volta exatamente o
+ranking que foi retirado.
 
 ---
 

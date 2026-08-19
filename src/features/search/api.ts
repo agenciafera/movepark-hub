@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { calcFromPrice } from "./fromPrice";
-import { dailySeed, orderPopularRows } from "./popularOrder";
 
 export type Destination = {
   id: string;
@@ -61,6 +60,7 @@ export const searchKeys = {
   popularDestinations: () => [...searchKeys.all, "popular-destinations"] as const,
   popularLocations: () => [...searchKeys.all, "popular-locations"] as const,
   parkingTypeCatalog: () => [...searchKeys.all, "parking-type-catalog"] as const,
+  featuredOffers: () => [...searchKeys.all, "featured-offers"] as const,
 };
 
 /**
@@ -167,9 +167,9 @@ export function usePopularLocations(limit = 5) {
   });
 }
 
-// --- Popular Offers (home page com preço) ---
+// --- Vitrine da home (curada no Manager) ---
 
-export type PopularOffer = {
+export type FeaturedOffer = {
   id: string;
   parking_type: { code: string; name: string };
   location: {
@@ -178,8 +178,8 @@ export type PopularOffer = {
     slug: string;
     review_avg: number | null;
     review_count: number;
-    /** Posição no ranking de reservas (0 = mais reservado). Vem da RPC popular_locations. */
-    rank: number;
+    /** Posição definida na curadoria (`home_featured_offer.sort_order`). Menor aparece antes. */
+    sort_order: number;
     cover_image: string | null;
     company: { id: string; name: string; slug: string };
     destination: {
@@ -190,7 +190,7 @@ export type PopularOffer = {
       slug: string;
     } | null;
     amenities: { amenity_code: string }[];
-    /** Transfer com rastreio ao vivo (Go2Park). Fato da unidade, vale também no checkout externo. */
+    /** Transfer com rastreio ao vivo (Go2Park): fato da unidade, vale também no checkout externo. */
     go2park: boolean;
   };
   /** Preço de partida: 1 diária, ou a menor estadia que o lote vende (ver `price_days`). */
@@ -201,73 +201,44 @@ export type PopularOffer = {
 };
 
 /**
- * Teto de 1 card por EMPRESA e de 1 por DESTINO, guardando sempre o tipo de vaga MAIS VENDIDO
- * (menor `rank`, que vem da RPC popular_parking_types já ordenada por venda). Mais restritivo
- * que a busca de propósito: a home é vitrine curta de destaques, não lista exaustiva, então nem
- * uma empresa (86ajnfwgx) nem um destino (86ak28jm1) podem ocupar vários slots — sem o segundo
- * teto, Garageinn e Virapark apareciam juntos, os dois em Viracopos, porque são empresas
- * diferentes e só o primeiro teto rodava. Os dois tetos correm em sequência (empresa primeiro,
- * porque é o corte mais fino) e SEMPRE na ordem de rank, então o card que sobrevive em cada grupo
- * é o de melhor venda. Pura → testável sem rede.
+ * Vitrine da home: a lista que alguém montou em /manager/destaques, na ordem em que montou.
+ *
+ * Substituiu o ranking por venda (RPC `popular_parking_types`), que media `booking` do Hub num
+ * catálogo onde toda unidade de empresa ativa é de checkout externo: o contador delas nasce zero
+ * e fica zero, então o ranking só sabia ordenar quem já saiu do ar. Junto saíram o embaralhamento
+ * por semente do dia e os tetos de 1 por empresa e 1 por destino, que existiam para conter um
+ * ranking que ninguém controlava. Com curadoria, quem decide a composição é quem edita a lista.
+ *
+ * A RPC já devolve só o que é publicável (mesmo predicado das RLS de catálogo), então a home passa
+ * a mostrar o mesmo conjunto para visitante e para hub_admin. Antes não: o admin enxerga a
+ * `company` inteira pela policy `company_select`, e via na vitrine unidade de empresa inativa que
+ * o anônimo não via.
+ *
+ * O filtro de empresa continua repetido aqui, como na Edge `search`, porque as consultas 2 e 3
+ * passam pelo PostgREST com a RLS de quem está logado: defesa que depende do papel do leitor não é
+ * defesa.
  */
-export function dedupePopularOffers(offers: PopularOffer[], max: number): PopularOffer[] {
-  const byCompany = new Map<string, PopularOffer>();
-  for (const o of offers) {
-    // Empresa ausente acontece de verdade: a RLS do catálogo só libera `company` ativa, e há
-    // unidade listada cuja empresa não está. Antes disso a leitura de `company.id` estourava e
-    // levava a home inteira junto, então a linha sai da vitrine em vez de derrubá-la.
-    if (!o.location.company?.id) continue;
-    const cur = byCompany.get(o.location.company.id);
-    if (!cur || o.location.rank < cur.location.rank) {
-      byCompany.set(o.location.company.id, o);
-    }
-  }
-  const porEmpresa = [...byCompany.values()].sort((a, b) => a.location.rank - b.location.rank);
-
-  // Destino ausente (raro, geo incompleta) não agrupa: deixa passar, porque não há com o que
-  // colidir.
-  const destinosVistos = new Set<string>();
-  const porDestino = porEmpresa.filter((o) => {
-    const destId = o.location.destination?.id;
-    if (!destId) return true;
-    if (destinosVistos.has(destId)) return false;
-    destinosVistos.add(destId);
-    return true;
-  });
-
-  return porDestino.slice(0, max);
-}
-
-export function usePopularOffers(maxLocations = 6) {
+export function useFeaturedOffers() {
   return useQuery({
-    queryKey: [...searchKeys.popularLocations(), "offers", maxLocations],
-    queryFn: async (): Promise<PopularOffer[]> => {
-      // Passo 1: ranking por venda do TIPO DE VAGA (RPC popular_parking_types, zero-safe). Cada linha
-      // é um location_parking_type (o `id`). Buffer 4x porque o teto é 1 por empresa: várias linhas
-      // do topo podem ser da mesma empresa (ex.: Aerovalet com 2 unidades), então precisa de mais
-      // candidatos pra fechar `maxLocations` empresas distintas. Alguns lotes também caem na dedupe
-      // por não ter preço calculável.
-      const { data: rankRows, error: rankErr } = await supabase.rpc("popular_parking_types", {
-        p_limit: maxLocations * 4,
-      });
-      if (rankErr) throw rankErr;
-      // Quem já vendeu fica na ordem do ranking; a cauda sem venda entra embaralhada por dia,
-      // senão as mesmas unidades ficariam na vitrine para sempre por critério de desempate.
-      const rankedRows = orderPopularRows(rankRows ?? [], dailySeed(new Date()));
-      if (rankedRows.length === 0) return [];
+    queryKey: searchKeys.featuredOffers(),
+    queryFn: async (): Promise<FeaturedOffer[]> => {
+      // Passo 1: a curadoria, já ordenada e já filtrada pelo gate de publicação.
+      const { data: curadoria, error: curadoriaErr } = await supabase.rpc("home_featured_offers");
+      if (curadoriaErr) throw curadoriaErr;
+      const linhas = curadoria ?? [];
+      if (linhas.length === 0) return [];
 
-      // rank por lpt (a ordem de venda); as locations a buscar são as das linhas ranqueadas.
-      const rankMap = Object.fromEntries(rankedRows.map((r, i) => [r.id, i] as const));
-      const locationIds = [...new Set(rankedRows.map((r) => r.location_id))];
+      const ordem = new Map(linhas.map((r) => [r.id, r.sort_order]));
+      const locationIds = [...new Set(linhas.map((r) => r.location_id))];
 
-      // Passo 2: detalhes das locations (empresa, destino, amenidades)
-      // Query separada para evitar nesting profundo que impede pricing_tier de retornar
+      // Passo 2: detalhes das locations (empresa, destino, amenidades).
+      // Query separada para evitar nesting profundo que impede pricing_tier de retornar.
       const { data: locDetails, error: locErr } = await supabase
         .from("location")
         .select(
           `
           id, name, slug, review_avg, review_count,
-          company:company_id (id, name, slug),
+          company:company_id (id, name, slug, status),
           destination:destination_id (id, code, name, short_name, slug),
           amenities:location_amenity (amenity_code),
           photos, go2park_enabled
@@ -278,9 +249,10 @@ export function usePopularOffers(maxLocations = 6) {
 
       const locMap = new Map(((locDetails ?? []) as any[]).map((l) => [l.id, l]));
 
-      // Passo 3: ofertas ativas + pricing (nesting raso: lpt → pricing_rule → pricing_tier)
-      // Hint !location_parking_type_id necessário: pricing_rule tem 2 FKs para location_parking_type
-      // (location_parking_type_id e surcharge_source_id), causando ambiguidade sem o hint.
+      // Passo 3: pricing dos tipos de vaga curados (nesting raso: lpt → pricing_rule → tier).
+      // Hint !location_parking_type_id necessário: pricing_rule tem 2 FKs para
+      // location_parking_type (location_parking_type_id e surcharge_source_id), causando
+      // ambiguidade sem o hint.
       const { data: lptRaw, error: lptErr } = await supabase
         .from("location_parking_type")
         .select(
@@ -299,19 +271,14 @@ export function usePopularOffers(maxLocations = 6) {
           )
         `,
         )
-        .in("location_id", locationIds)
-        .eq("is_active", true);
+        .in("id", [...ordem.keys()]);
       if (lptErr) throw lptErr;
 
-      const offers: PopularOffer[] = [];
+      const offers: FeaturedOffer[] = [];
       for (const r of (lptRaw ?? []) as any[]) {
         const loc = locMap.get(r.location_id);
         if (!loc || !r.company_parking_type?.parking_type) continue;
-        // A empresa vem null quando a RLS do catálogo não a libera para quem está deslogado
-        // (`catalog_read_company` exige company.status e onboarding_status ativos, e há unidades
-        // listadas cuja empresa não está). Sem esta guarda a seção inteira caía: o dedupe lê
-        // `company.id` e estourava, deixando a home sem os populares para todo visitante anônimo.
-        if (!loc.company) continue;
+        if (!loc.company || loc.company.status !== "active") continue;
         const ruleRaw = Array.isArray(r.pricing_rule) ? r.pricing_rule[0] : r.pricing_rule;
         // "A partir de": quem só vende estadia longa entra com o preço da menor estadia que
         // vende, em vez de sair da home por não ter preço de 1 diária (que é o normal em lote
@@ -322,7 +289,6 @@ export function usePopularOffers(maxLocations = 6) {
         // Fonte canônica de fotos = coluna location.photos (text[]), a mesma que o operador
         // edita e o detalhe (listing) usa. A 1ª é a capa.
         const photos: string[] = Array.isArray(loc.photos) ? loc.photos : [];
-        const primaryPhoto = photos[0] ?? null;
 
         offers.push({
           id: r.id,
@@ -333,10 +299,10 @@ export function usePopularOffers(maxLocations = 6) {
             slug: loc.slug,
             review_avg: loc.review_avg ?? null,
             review_count: loc.review_count ?? 0,
-            rank: rankMap[r.id] ?? Number.MAX_SAFE_INTEGER,
-            cover_image: primaryPhoto,
+            sort_order: ordem.get(r.id) ?? Number.MAX_SAFE_INTEGER,
+            cover_image: photos[0] ?? null,
             company: loc.company as { id: string; name: string; slug: string },
-            destination: loc.destination as PopularOffer["location"]["destination"],
+            destination: loc.destination as FeaturedOffer["location"]["destination"],
             amenities: (loc.amenities ?? []) as { amenity_code: string }[],
             go2park: loc.go2park_enabled === true,
           },
@@ -346,8 +312,8 @@ export function usePopularOffers(maxLocations = 6) {
         });
       }
 
-      // 1 card por estacionamento (menor preço), ordenado pelo ranking de reservas, top N.
-      return dedupePopularOffers(offers, maxLocations);
+      // O PostgREST devolve na ordem dele; a ordem que vale é a da curadoria.
+      return offers.sort((a, b) => a.location.sort_order - b.location.sort_order);
     },
     staleTime: 5 * 60_000,
   });

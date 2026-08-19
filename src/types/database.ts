@@ -2036,6 +2036,41 @@ export type Database = {
         }
         Relationships: []
       }
+      home_featured_offer: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          location_parking_type_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          location_parking_type_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          location_parking_type_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_featured_offer_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: true
+            referencedRelation: "location_parking_type"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       identifier_otp: {
         Row: {
           attempts: number
@@ -5728,6 +5763,17 @@ export type Database = {
       hold_paid_date_change: {
         Args: { p_booking_id: string; p_check_in: string; p_check_out: string }
         Returns: Json
+      }
+      home_featured_offers: {
+        Args: never
+        Returns: {
+          id: string
+          location_id: string
+          location_slug: string
+          operator_slug: string
+          parking_type_code: string
+          sort_order: number
+        }[]
       }
       hub_create_platform_api_key: {
         Args: {

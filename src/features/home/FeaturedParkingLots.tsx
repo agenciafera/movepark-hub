@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useRef, useEffect } from "react";
 import { Airplane, ArrowRight, Tag } from "@phosphor-icons/react";
-import { usePopularOffers, type PopularOffer } from "@/features/search/api";
+import { useFeaturedOffers, type FeaturedOffer } from "@/features/search/api";
 import { useSavedListings } from "@/features/search/useSavedListings";
 import {
   ParkingCard,
@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { parkingTitle } from "@/lib/parkingName";
 import { gsap } from "@/lib/gsap";
+import { rotuloDeDestino } from "./featured.logic";
 
 // Mapeamento de amenidade → label
 const AMENITY_PILLS: Record<string, string> = {
@@ -48,12 +49,9 @@ function topAmenityPills(amenities: { amenity_code: string }[], n = 3): ParkingC
   return out;
 }
 
-/** Rótulo do destino no card da home: "(GRU) Guarulhos", ou o nome da unidade sem destino. */
-function destinationMeta(location: PopularOffer["location"]): string {
-  const d = location.destination;
-  if (!d) return location.name;
-  const label = d.short_name ?? d.name;
-  return d.code ? `(${d.code}) ${label}` : label;
+/** Rótulo do destino no card, ou o nome da unidade quando ela não tem destino. */
+function destinationMeta(location: FeaturedOffer["location"]): string {
+  return rotuloDeDestino(location.destination) ?? location.name;
 }
 
 /** Janela do link do card: amanhã por `days` diárias (a estadia que o card mostrou). */
@@ -67,13 +65,13 @@ function getDefaultDates(days = 1) {
   return { from: fmt(tomorrow), to: fmt(checkout) };
 }
 
-function PopularOfferCard({
+function FeaturedOfferCard({
   offer,
   badge,
   isSaved,
   onToggleSave,
 }: {
-  offer: PopularOffer;
+  offer: FeaturedOffer;
   badge?: string;
   isSaved: boolean;
   onToggleSave: () => void;
@@ -82,11 +80,11 @@ function PopularOfferCard({
   // A janela do link acompanha a estadia que o card mostrou: mandar 1 diária para um lote que
   // só vende 3 levaria o cliente a uma página sem o preço que ele acabou de ver.
   const { from, to } = getDefaultDates(price_days);
-  const url = `/p/${location.company.slug}/${location.slug}/${parking_type.code}?from=${from}&to=${to}&src=home-popular`;
+  const url = `/p/${location.company.slug}/${location.slug}/${parking_type.code}?from=${from}&to=${to}&src=home-destaque`;
 
   return (
     <ParkingCard
-      testId="popular-card"
+      testId="home-featured-card"
       href={url}
       coverImage={location.cover_image}
       coverAlt={location.name}
@@ -96,7 +94,7 @@ function PopularOfferCard({
       metaIcon={location.destination ? Airplane : undefined}
       meta={destinationMeta(location)}
       rating={{ avg: location.review_avg, count: location.review_count }}
-      // A vitrine dos populares não busca via edge /search: sem snapshot do Google nesta fonte.
+      // A vitrine não busca via edge /search: sem snapshot do Google nesta fonte.
       googleRating={null}
       amenities={topAmenityPills(location.amenities)}
       // Rastreio ao vivo da van (Go2Park): promessa na pílula sobre a foto, crédito do parceiro
@@ -147,8 +145,8 @@ function LoadingSkeleton() {
   );
 }
 
-export function PopularParkingLots() {
-  const { data, isLoading } = usePopularOffers(6);
+export function FeaturedParkingLots() {
+  const { data, isLoading } = useFeaturedOffers();
   const saved = useSavedListings();
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -196,14 +194,14 @@ export function PopularParkingLots() {
   return (
     <section
       ref={sectionRef}
-      data-testid="popular-parking-lots"
+      data-testid="home-featured"
       className="mx-auto w-full max-w-[1280px] px-6 py-16 desktop:px-8"
     >
       <p data-reveal="header" className="mb-2 text-badge uppercase tracking-[0.4px] text-mp-indigo">
-        Os mais reservados
+        Escolhidos pela Movepark
       </p>
       <h2 data-reveal="header" className="mb-8 text-display-2xl text-ink">
-        Estacionamentos Populares
+        Estacionamentos em destaque
       </h2>
 
       <div
@@ -220,7 +218,7 @@ export function PopularParkingLots() {
             offer.price_from != null &&
             offer.price_from / offer.price_days === minPrice;
           return (
-            <PopularOfferCard
+            <FeaturedOfferCard
               key={offer.id}
               offer={offer}
               badge={isCheapest ? "Mais barato" : undefined}
