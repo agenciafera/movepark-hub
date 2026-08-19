@@ -3,8 +3,12 @@ import { useRef, useEffect } from "react";
 import { Airplane, ArrowRight, Tag } from "@phosphor-icons/react";
 import { usePopularOffers, type PopularOffer } from "@/features/search/api";
 import { useSavedListings } from "@/features/search/useSavedListings";
-import { ParkingCard, ParkingCardBadge, type ParkingCardAmenity } from "@/features/search/ParkingCard";
-import { Go2ParkLiveBadge } from "@/features/go2park/Go2ParkLive";
+import {
+  ParkingCard,
+  ParkingCardBadge,
+  type ParkingCardAmenity,
+} from "@/features/search/ParkingCard";
+import { Go2ParkCardCredit, Go2ParkLivePill } from "@/features/go2park/Go2ParkLive";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -14,13 +18,13 @@ import { gsap } from "@/lib/gsap";
 // Mapeamento de amenidade → label
 const AMENITY_PILLS: Record<string, string> = {
   shuttle_free: "Transfer grátis",
-  covered:      "Coberto",
-  valet:        "Valet",
-  ev_charger:   "Carregador EV",
-  cameras_24h:  "Câmeras 24h",
-  on_site_24h:  "24 horas",
+  covered: "Coberto",
+  valet: "Valet",
+  ev_charger: "Carregador EV",
+  cameras_24h: "Câmeras 24h",
+  on_site_24h: "24 horas",
   gated_access: "Portaria",
-  self_park:    "Self-park",
+  self_park: "Self-park",
 };
 
 const AMENITY_PRIORITY = [
@@ -95,8 +99,9 @@ function PopularOfferCard({
       // A vitrine dos populares não busca via edge /search: sem snapshot do Google nesta fonte.
       googleRating={null}
       amenities={topAmenityPills(location.amenities)}
-      // Rastreio ao vivo da van (Go2Park): faixa própria, fora da fila de pílulas cinzas.
-      highlight={location.go2park ? <Go2ParkLiveBadge /> : undefined}
+      // Rastreio ao vivo da van (Go2Park): promessa na pílula sobre a foto, crédito do parceiro
+      // aqui embaixo em tom de metadado.
+      highlight={location.go2park ? <Go2ParkCardCredit /> : undefined}
       // Quem exige estadia mínima mostra a diária, e não o total dela: a vitrine põe lado a
       // lado cards de durações diferentes, e comparar total com total faria o "Mais barato"
       // cair no número maior da tela.
@@ -106,7 +111,16 @@ function PopularOfferCard({
           price_days > 1 && old_price_from != null ? old_price_from / price_days : old_price_from,
         unit: price_days > 1 ? `por diária · mínimo ${price_days} diárias` : "1 diária",
       }}
-      overlay={badge ? <ParkingCardBadge icon={Tag}>{badge}</ParkingCardBadge> : undefined}
+      // A pílula do transfer divide a fila com o selo de preço: mesma natureza (o que separa
+      // esta unidade das vizinhas) e o mesmo canto da foto.
+      overlay={
+        badge || location.go2park ? (
+          <>
+            {badge && <ParkingCardBadge icon={Tag}>{badge}</ParkingCardBadge>}
+            {location.go2park && <Go2ParkLivePill />}
+          </>
+        ) : undefined
+      }
       favorite={{ isSaved, onToggle: onToggleSave }}
     />
   );
@@ -145,7 +159,11 @@ export function PopularParkingLots() {
         "[data-reveal='header']",
         { opacity: 0, y: 20 },
         {
-          opacity: 1, y: 0, duration: 0.55, ease: "power2.out", stagger: 0.08,
+          opacity: 1,
+          y: 0,
+          duration: 0.55,
+          ease: "power2.out",
+          stagger: 0.08,
           scrollTrigger: { trigger: sectionRef.current, start: "top 88%", once: true },
         },
       );
@@ -153,7 +171,11 @@ export function PopularParkingLots() {
         "article",
         { opacity: 0, y: 36 },
         {
-          opacity: 1, y: 0, duration: 0.65, ease: "power2.out", stagger: 0.08,
+          opacity: 1,
+          y: 0,
+          duration: 0.65,
+          ease: "power2.out",
+          stagger: 0.08,
           scrollTrigger: { trigger: sectionRef.current, start: "top 80%", once: true },
         },
       );

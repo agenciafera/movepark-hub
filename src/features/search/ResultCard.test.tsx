@@ -45,7 +45,12 @@ function item(
 describe("ResultCard", () => {
   it("disponível: navega para o listing (tem links) e sem badge de esgotado", () => {
     const { container } = renderWithProviders(
-      <ResultCard item={item()} isSaved={false} onToggleSave={vi.fn()} searchParams={new URLSearchParams()} />,
+      <ResultCard
+        item={item()}
+        isSaved={false}
+        onToggleSave={vi.fn()}
+        searchParams={new URLSearchParams()}
+      />,
     );
     expect(container.querySelector("a")).not.toBeNull();
     expect(screen.queryByText(/Esgotado/)).toBeNull();
@@ -78,21 +83,36 @@ describe("ResultCard", () => {
 
   it("sem terminal: o card não mostra subline (a unidade já está no título)", () => {
     renderWithProviders(
-      <ResultCard item={item()} isSaved={false} onToggleSave={vi.fn()} searchParams={new URLSearchParams()} />,
+      <ResultCard
+        item={item()}
+        isSaved={false}
+        onToggleSave={vi.fn()}
+        searchParams={new URLSearchParams()}
+      />,
     );
     expect(screen.queryByTestId("result-card-subline")).toBeNull();
   });
 
   it("título traz empresa e unidade, pra duas unidades da mesma empresa não ficarem iguais", () => {
     renderWithProviders(
-      <ResultCard item={item()} isSaved={false} onToggleSave={vi.fn()} searchParams={new URLSearchParams()} />,
+      <ResultCard
+        item={item()}
+        isSaved={false}
+        onToggleSave={vi.fn()}
+        searchParams={new URLSearchParams()}
+      />,
     );
     expect(screen.getByRole("heading", { name: "Aerovalet · Guarulhos" })).toBeInTheDocument();
   });
 
   it("card por tipo: exibe o tipo de vaga como identidade do card (E2.1.3)", () => {
     renderWithProviders(
-      <ResultCard item={item()} isSaved={false} onToggleSave={vi.fn()} searchParams={new URLSearchParams()} />,
+      <ResultCard
+        item={item()}
+        isSaved={false}
+        onToggleSave={vi.fn()}
+        searchParams={new URLSearchParams()}
+      />,
     );
     expect(screen.getByTestId("result-card-type").textContent).toBe("Vaga coberta");
   });
@@ -100,14 +120,24 @@ describe("ResultCard", () => {
   it("C-04: amenidade descritora de tipo não vira pill no card (Coberto num card coberto é ruído)", () => {
     // item().amenities = ["covered"], que é descritor de tipo → não pode aparecer como amenidade.
     renderWithProviders(
-      <ResultCard item={item()} isSaved={false} onToggleSave={vi.fn()} searchParams={new URLSearchParams()} />,
+      <ResultCard
+        item={item()}
+        isSaved={false}
+        onToggleSave={vi.fn()}
+        searchParams={new URLSearchParams()}
+      />,
     );
     expect(screen.queryByTestId("result-card-amenities")).toBeNull();
   });
 
   it("link do card aponta para o tipo de vaga do próprio card", () => {
     const { container } = renderWithProviders(
-      <ResultCard item={item()} isSaved={false} onToggleSave={vi.fn()} searchParams={new URLSearchParams()} />,
+      <ResultCard
+        item={item()}
+        isSaved={false}
+        onToggleSave={vi.fn()}
+        searchParams={new URLSearchParams()}
+      />,
     );
     expect(container.querySelector("a")?.getAttribute("href") ?? "").toContain(
       "/p/aerovalet/aeroporto-guarulhos/covered",
@@ -196,7 +226,12 @@ describe("ResultCard", () => {
 
   it("sem source: não injeta src no link", () => {
     const { container } = renderWithProviders(
-      <ResultCard item={item()} isSaved={false} onToggleSave={vi.fn()} searchParams={new URLSearchParams()} />,
+      <ResultCard
+        item={item()}
+        isSaved={false}
+        onToggleSave={vi.fn()}
+        searchParams={new URLSearchParams()}
+      />,
     );
     expect(container.querySelector("a")?.getAttribute("href") ?? "").not.toContain("src=");
   });
@@ -240,7 +275,12 @@ describe("ResultCard", () => {
 
   it("sem alta demanda: não mostra o badge", () => {
     renderWithProviders(
-      <ResultCard item={item()} isSaved={false} onToggleSave={vi.fn()} searchParams={new URLSearchParams()} />,
+      <ResultCard
+        item={item()}
+        isSaved={false}
+        onToggleSave={vi.fn()}
+        searchParams={new URLSearchParams()}
+      />,
     );
     expect(screen.queryByText(/Muito procurado/)).toBeNull();
   });
@@ -258,7 +298,7 @@ describe("ResultCard", () => {
     expect(screen.queryByText(/Muito procurado/)).toBeNull();
   });
 
-  it("Go2Park: a faixa de transfer ao vivo entra no card", () => {
+  it("Go2Park: promessa na foto e crédito do parceiro abaixo da nota", () => {
     renderWithProviders(
       <ResultCard
         item={item({}, { go2park: true })}
@@ -267,14 +307,24 @@ describe("ResultCard", () => {
         searchParams={new URLSearchParams()}
       />,
     );
-    expect(screen.getByTestId("go2park-badge")).toBeInTheDocument();
-    expect(screen.getByText("Transfer ao vivo")).toBeInTheDocument();
+    expect(screen.getByTestId("go2park-pill")).toHaveTextContent("Transfer ao vivo");
+    expect(screen.getByTestId("go2park-card-credit")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Go2Park" })).toHaveAttribute(
+      "href",
+      "https://go2park.com.br/",
+    );
   });
 
-  it("sem contrato Go2Park: nenhuma faixa (o diferencial é de quem tem)", () => {
+  it("sem contrato Go2Park: nem pílula nem crédito (o diferencial é de quem tem)", () => {
     renderWithProviders(
-      <ResultCard item={item()} isSaved={false} onToggleSave={vi.fn()} searchParams={new URLSearchParams()} />,
+      <ResultCard
+        item={item()}
+        isSaved={false}
+        onToggleSave={vi.fn()}
+        searchParams={new URLSearchParams()}
+      />,
     );
-    expect(screen.queryByTestId("go2park-badge")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("go2park-pill")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("go2park-card-credit")).not.toBeInTheDocument();
   });
 });

@@ -204,7 +204,9 @@ describe("single da unidade EXTERNA", () => {
     expect(
       await screen.findByText(/A reserva desta unidade é feita e administrada por Virapark/i),
     ).toBeInTheDocument();
-    expect(screen.getByText(/As garantias da Movepark não se aplicam a esta reserva/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/As garantias da Movepark não se aplicam a esta reserva/i),
+    ).toBeInTheDocument();
   });
 
   it("o CTA leva para o parceiro com a marcação de afiliado", async () => {
@@ -270,7 +272,7 @@ describe("single da unidade EXTERNA", () => {
     expect(fora).toMatch(/"ParkingFacility"/);
   });
 
-  it("com o motor respondendo, publica AggregateOffer e mostra o \"a partir de\"", async () => {
+  it('com o motor respondendo, publica AggregateOffer e mostra o "a partir de"', async () => {
     // base_price = 0 não quer dizer vaga sem preço: quer dizer campo de catálogo não
     // preenchido. O motor sabe o preço, e é ele que decide o que a tela mostra e o que o
     // schema afirma, com o MESMO número nos dois lugares (ADR-009).
@@ -310,16 +312,16 @@ describe("Go2Park na single", () => {
     montaPagina("external", undefined, true);
     await screen.findAllByText(/Virapark/i);
 
-    await waitFor(() => expect(screen.getByTestId("go2park-block")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId("go2park-credit")).toBeInTheDocument());
     expect(screen.getByTestId("go2park-chip")).toBeInTheDocument();
-    expect(screen.getByText(/Acompanhe a van ao vivo/)).toBeInTheDocument();
+    expect(screen.getByText(/sem baixar app/)).toBeInTheDocument();
   });
 
   it("some na unidade sem contrato, mesmo sendo unidade própria", async () => {
     montaPagina("hub");
     await screen.findAllByText(/Virapark/i);
 
-    expect(screen.queryByTestId("go2park-block")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("go2park-credit")).not.toBeInTheDocument();
     expect(screen.queryByTestId("go2park-chip")).not.toBeInTheDocument();
   });
 });
@@ -342,11 +344,11 @@ describe("Contato da van na single", () => {
     );
   });
 
-  it("sem número, o bloco fica e o CTA não", async () => {
+  it("sem número, o crédito fica e o CTA não", async () => {
     montaPagina("external", undefined, true);
     await screen.findAllByText(/Virapark/i);
 
-    await waitFor(() => expect(screen.getByTestId("go2park-block")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId("go2park-credit")).toBeInTheDocument());
     expect(screen.queryByTestId("go2park-cta")).not.toBeInTheDocument();
   });
 });

@@ -1,5 +1,5 @@
 import { Bus, Warning } from "@phosphor-icons/react";
-import { Go2ParkLiveBlock } from "@/features/go2park/Go2ParkLive";
+import { Go2ParkPageCredit, Go2ParkVanContact } from "@/features/go2park/Go2ParkLive";
 import { MiniMap } from "./MiniMap";
 import { formatShuttle } from "./howToArrive.logic";
 
@@ -17,12 +17,12 @@ type Props = {
   shuttleFrequencyMinutes: number | null;
   shuttleToTerminalMinutes: number | null;
   /**
-   * A unidade opera o transfer com a Go2Park (rastreio da van em tempo real). O bloco entra
+   * A unidade opera o transfer com a Go2Park (rastreio da van em tempo real). O crédito entra
    * aqui, logo depois da frequência do transfer, porque é a mesma pergunta do cliente: como eu
    * saio daqui e chego no terminal. Fato da unidade, então não passa por capacidade (ADR-009).
    */
   go2park?: boolean;
-  /** WhatsApp da van (E.164). Sem ele o bloco explica o serviço e não oferece contato. */
+  /** WhatsApp da van (E.164). Sem ele não há botão de contato, só o crédito. */
   go2parkWhatsapp?: string | null;
   /** Empresa e unidade nomeiam o contato salvo na agenda ("Van Virapark · Viracopos"). */
   companyName?: string | null;
@@ -79,20 +79,20 @@ export function HowToArrive({
         </div>
       )}
 
+      {/* Crédito do parceiro entre o acesso e o endereço: responde "quem opera a van" no ponto
+          em que o cliente está montando a chegada, sem virar oferta no meio da página. */}
       {go2park && (
-        <Go2ParkLiveBlock
-          whatsapp={go2parkWhatsapp}
-          companyName={companyName}
-          locationName={locationName}
-        />
+        <>
+          <Go2ParkPageCredit />
+          <Go2ParkVanContact
+            whatsapp={go2parkWhatsapp}
+            companyName={companyName}
+            locationName={locationName}
+          />
+        </>
       )}
 
-      <MiniMap
-        address={address}
-        latitude={latitude}
-        longitude={longitude}
-        placeId={placeId}
-      />
+      <MiniMap address={address} latitude={latitude} longitude={longitude} placeId={placeId} />
     </div>
   );
 }

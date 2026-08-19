@@ -1,6 +1,4 @@
-import { BellRinging, Broadcast, DeviceMobile, DownloadSimple, Van, WhatsappLogo } from "@phosphor-icons/react";
-import type { ComponentType } from "react";
-import type { IconProps } from "@phosphor-icons/react";
+import { DownloadSimple, WhatsappLogo } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { whatsappHref } from "@/features/guarantee/whatsapp";
 import { buildVanVCard, vanVCardFilename } from "./vcard";
@@ -18,26 +16,30 @@ import { buildVanVCard, vanVCardFilename } from "./vcard";
  * 'external'`: passar isto por `getLocationCapabilities` apagaria o bloco de quem o tem. Por isso
  * o componente não consulta capacidade, do mesmo jeito que endereço, foto e shuttle não consultam.
  *
- * Dois formatos, uma voz: a faixa do card (`Go2ParkLiveBadge`) e o bloco da página da unidade
- * (`Go2ParkLiveBlock`).
+ * **É crédito de parceiro, e o tamanho segue isso.** Até 19/08/2026 a sinalização eram duas peças
+ * grandes: um bloco navy inteiro na página (título, três micro-benefícios) e uma pílula navy de
+ * duas linhas no card. Ocupavam espaço de oferta para dizer quem opera a van, e nem levavam ao
+ * site da Go2Park. Agora são três peças de uma linha: a pílula sobre a foto (promessa), o crédito
+ * na meta do card e o crédito da página (atribuição), com a marca sempre clicável.
+ *
+ * A marca não aparece na pílula de propósito: sobre a foto ela competiria com o nome do
+ * estacionamento, que é o que o cliente está procurando. A atribuição vive no texto.
  */
-type Icon = ComponentType<IconProps>;
 
+/** Site da Go2Park. A marca é sempre clicável: é crédito de parceiro, não enfeite. */
+export const GO2PARK_URL = "https://go2park.com.br/";
 /** Nome do produto. Uma palavra, `G` e `P` maiúsculos (a marca escreve GO2PARK; aqui segue o
  *  padrão de exibição do Hub, que já usa "Go2Park" no cross-sell do onboarding). */
 export const GO2PARK_NAME = "Go2Park";
 
 export const GO2PARK_COPY = {
   badge: "Transfer ao vivo",
-  badgeSub: "Acompanhe a van pelo celular",
-  blockTitle: "Acompanhe a van ao vivo",
-  blockBody:
-    "O transfer daqui roda com a Go2Park. Você vê a van andando no mapa pelo celular e sabe quanto falta para ela chegar. Sem baixar app e sem criar conta.",
-  points: [
-    { icon: Van as Icon, text: "A van no mapa, em tempo real" },
-    { icon: BellRinging as Icon, text: "Aviso quando ela está chegando" },
-    { icon: DeviceMobile as Icon, text: "Abre no navegador, sem instalar nada" },
-  ],
+  /** Crédito na meta do card. A marca é o link. */
+  cardCredit: "Transfer por",
+  /** Primeira linha do crédito da página. A marca é o link. */
+  pageCredit: "Transfer ao vivo, operado pela",
+  /** Segunda linha: consolida os três micro-benefícios que o bloco navy listava. */
+  pageCreditBody: "Você acompanha a van no mapa pelo celular, sem baixar app.",
   ctaTitle: "Salve o contato da van agora",
   ctaBody: "No dia da viagem você já chega com o número na agenda, sem procurar esta página.",
   ctaSave: "Salvar o contato da van",
@@ -60,26 +62,94 @@ function LiveDot({ className }: { className?: string }) {
 }
 
 /**
- * Faixa do card de estacionamento (busca, home e página de destino). Fundo navy no meio de um
- * card branco: destaca sem brigar com os selos violeta de "Mais barato"/"Mais perto", que moram
- * sobre a imagem. Duas linhas porque em 375px a frase inteira não cabe em uma.
+ * Link da marca. Dentro do card ele mora num `<Link>` que cobre o cartão inteiro, então o clique
+ * precisa parar aqui: sem o `stopPropagation` o toque no nome da Go2Park navegaria para a unidade
+ * em vez de abrir o site do parceiro.
  */
-export function Go2ParkLiveBadge({ className }: { className?: string }) {
+function Go2ParkLink({ className }: { className?: string }) {
   return (
-    <div
-      data-testid="go2park-badge"
+    <a
+      href={GO2PARK_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      className={className}
+    >
+      {GO2PARK_NAME}
+    </a>
+  );
+}
+
+/**
+ * Pílula sobre a foto do card: a promessa em uma linha.
+ *
+ * Entra no mesmo canto dos selos comparativos ("Mais barato"/"Mais perto") e divide a fila com
+ * eles, porque é a mesma natureza de informação: o que separa esta unidade das vizinhas.
+ *
+ * `pointer-events-none` porque o card inteiro já é um link, e uma pílula estática no meio dele só
+ * criaria um buraco no alvo de toque.
+ */
+export function Go2ParkLivePill({ className }: { className?: string }) {
+  return (
+    <span
+      data-testid="go2park-pill"
       className={cn(
-        "flex items-center gap-2.5 rounded-xl bg-mp-navy px-3 py-2 text-white",
+        "pointer-events-none inline-flex items-center gap-1.5 rounded-full bg-mp-navy/[0.86] px-2.5 py-1 text-[11.5px] font-bold tracking-[0.2px] text-white backdrop-blur-sm",
         className,
       )}
     >
-      <LiveDot />
-      <div className="min-w-0 leading-tight">
-        <p className="text-[12px] font-semibold">
-          {GO2PARK_COPY.badge}
-          <span className="ml-1.5 font-normal text-white/60">{GO2PARK_NAME}</span>
+      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-mp-teal" aria-hidden />
+      {GO2PARK_COPY.badge}
+    </span>
+  );
+}
+
+/**
+ * Crédito na meta do card, logo abaixo da nota. Uma linha, tom de metadado, sem competir com o
+ * preço nem com o nome da unidade. O sublinhado só aparece no hover, quando a intenção de clicar
+ * já existe.
+ */
+export function Go2ParkCardCredit({ className }: { className?: string }) {
+  return (
+    <p data-testid="go2park-card-credit" className={cn("text-body-sm text-muted", className)}>
+      {GO2PARK_COPY.cardCredit}{" "}
+      <Go2ParkLink className="no-underline transition-colors duration-150 hover:text-mp-indigo hover:underline" />
+    </p>
+  );
+}
+
+/**
+ * Crédito da página da unidade, dentro de "Como chegar".
+ *
+ * Duas hairlines e nada mais: sem fundo, sem raio, sem card. O bloco navy que morava aqui parava o
+ * olho como se fosse oferta, e o que ele diz é quem opera a van. A régua horizontal separa sem
+ * disputar.
+ *
+ * O ponto verde é o único uso desta cor no sistema, e é o que carrega o "ao vivo" sem animação: o
+ * DS não usa motion decorativo, e o verde já comunica sozinho.
+ */
+export function Go2ParkPageCredit({ className }: { className?: string }) {
+  return (
+    <div
+      data-testid="go2park-credit"
+      className={cn("flex items-start gap-3 border-y border-hairline py-3.5", className)}
+    >
+      <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#2FBF71]" aria-hidden />
+      <div>
+        <p className="text-[14.5px] font-bold text-ink">
+          {GO2PARK_COPY.pageCredit}{" "}
+          <a
+            href={GO2PARK_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-mp-indigo underline underline-offset-2 transition-colors hover:text-error"
+          >
+            {GO2PARK_NAME}
+          </a>
         </p>
-        <p className="truncate text-[11px] text-white/70">{GO2PARK_COPY.badgeSub}</p>
+        <p className="max-w-[52ch] text-[13.5px] leading-relaxed text-muted">
+          {GO2PARK_COPY.pageCreditBody}
+        </p>
       </div>
     </div>
   );
@@ -94,10 +164,12 @@ export function Go2ParkLiveBadge({ className }: { className?: string }) {
  * HTML do build) ainda tem um caminho.
  */
 function VanContactCta({
+  className,
   whatsapp,
   companyName,
   locationName,
 }: {
+  className?: string;
   whatsapp: string;
   companyName: string;
   locationName: string;
@@ -118,16 +190,16 @@ function VanContactCta({
   }
 
   return (
-    <div data-testid="go2park-cta" className="space-y-3 rounded-xl bg-white/5 p-4">
+    <div data-testid="go2park-cta" className={cn("space-y-3", className)}>
       <div className="space-y-1">
-        <p className="text-body-sm font-semibold text-white">{GO2PARK_COPY.ctaTitle}</p>
-        <p className="text-caption text-white/70">{GO2PARK_COPY.ctaBody}</p>
+        <p className="text-body-sm font-semibold text-ink">{GO2PARK_COPY.ctaTitle}</p>
+        <p className="text-caption text-muted">{GO2PARK_COPY.ctaBody}</p>
       </div>
       <div className="flex flex-col gap-2 tablet:flex-row">
         <button
           type="button"
           onClick={salvarContato}
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-4 py-2.5 text-body-sm font-semibold text-mp-navy transition-transform hover:scale-[1.02] motion-reduce:transform-none"
+          className="inline-flex items-center justify-center gap-2 rounded-sm border border-hairline bg-surface-strong px-4 py-2.5 text-body-sm font-semibold text-ink transition-colors hover:brightness-95"
         >
           <DownloadSimple className="h-4 w-4" aria-hidden />
           {GO2PARK_COPY.ctaSave}
@@ -137,7 +209,7 @@ function VanContactCta({
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-full border border-white/25 px-4 py-2.5 text-body-sm font-medium text-white hover:bg-white/10"
+            className="inline-flex items-center justify-center gap-2 rounded-sm border border-hairline px-4 py-2.5 text-body-sm font-medium text-ink no-underline transition-colors hover:bg-surface-soft"
           >
             <WhatsappLogo className="h-4 w-4" aria-hidden />
             {GO2PARK_COPY.ctaWhatsapp}
@@ -149,16 +221,17 @@ function VanContactCta({
 }
 
 /**
- * Bloco da página da unidade, dentro de "Como chegar" (é ali que o cliente decide como sai do
- * carro e chega ao terminal). Painel escuro pelo mesmo motivo do card: a página é branca, e o
- * diferencial precisa parar o olho no meio dela.
+ * Contato da van, na página da unidade.
  *
- * O CTA de contato só existe com número preenchido. Cada unidade tem o seu, configurado no painel
- * da Go2Park e copiado para `location.go2park_whatsapp`; sem ele o bloco explica o serviço e para
- * por aí, porque mandar o cliente para o número errado no momento do desembarque é pior do que
- * não oferecer botão nenhum.
+ * Sobreviveu à saída do bloco navy de propósito. Ele não estava na entrega de design porque hoje
+ * **nenhuma** das três unidades tem `go2park_whatsapp` preenchido, então o botão nunca chegou a
+ * aparecer numa tela: quem desenhou não tinha como saber que existia. O número é campo do Manager
+ * (`LocationPlatformDialog`), e no dia em que alguém preencher, isto volta a valer sozinho.
+ *
+ * Fora do navy e sem título próprio, para não reconstruir o bloco que acabou de sair: é uma ação
+ * discreta logo abaixo do crédito, e só existe com número.
  */
-export function Go2ParkLiveBlock({
+export function Go2ParkVanContact({
   className,
   whatsapp,
   companyName,
@@ -169,50 +242,14 @@ export function Go2ParkLiveBlock({
   companyName?: string | null;
   locationName?: string | null;
 }) {
+  if (!whatsapp || !companyName) return null;
   return (
-    <section
-      data-testid="go2park-block"
-      aria-labelledby="go2park-title"
-      className={cn("overflow-hidden rounded-2xl bg-mp-navy text-white", className)}
-    >
-      <div className="space-y-4 p-5 tablet:p-6">
-        <div className="flex items-center gap-2">
-          <LiveDot />
-          <span className="text-caption font-semibold text-mp-teal">ao vivo</span>
-          <span className="text-caption text-white/40">·</span>
-          <span className="inline-flex items-center gap-1 text-caption font-medium text-white/70">
-            <Broadcast className="h-3.5 w-3.5" aria-hidden />
-            {GO2PARK_NAME}
-          </span>
-        </div>
-
-        <div className="space-y-2">
-          <h3 id="go2park-title" className="text-display-sm text-white">
-            {GO2PARK_COPY.blockTitle}
-          </h3>
-          <p className="max-w-[52ch] text-body-md text-white/75">{GO2PARK_COPY.blockBody}</p>
-        </div>
-
-        <ul className="grid gap-3 tablet:grid-cols-3">
-          {GO2PARK_COPY.points.map((p) => (
-            <li key={p.text} className="flex items-start gap-2.5">
-              <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-white">
-                <p.icon className="h-4 w-4" aria-hidden />
-              </span>
-              <span className="text-body-sm text-white/85">{p.text}</span>
-            </li>
-          ))}
-        </ul>
-
-        {whatsapp && companyName && (
-          <VanContactCta
-            whatsapp={whatsapp}
-            companyName={companyName}
-            locationName={locationName ?? companyName}
-          />
-        )}
-      </div>
-    </section>
+    <VanContactCta
+      className={className}
+      whatsapp={whatsapp}
+      companyName={companyName}
+      locationName={locationName ?? companyName}
+    />
   );
 }
 
