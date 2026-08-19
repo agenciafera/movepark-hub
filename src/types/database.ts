@@ -2323,14 +2323,12 @@ export type Database = {
           id: string
           is_24h: boolean
           is_listed: boolean
-          is_popular: boolean
           latitude: number | null
           longitude: number | null
           name: string
           notice: string | null
           phone: string | null
           photos: Json
-          popular_sort_order: number
           reservation_policy: string | null
           review_avg: number | null
           review_count: number
@@ -2368,14 +2366,12 @@ export type Database = {
           id?: string
           is_24h?: boolean
           is_listed?: boolean
-          is_popular?: boolean
           latitude?: number | null
           longitude?: number | null
           name: string
           notice?: string | null
           phone?: string | null
           photos?: Json
-          popular_sort_order?: number
           reservation_policy?: string | null
           review_avg?: number | null
           review_count?: number
@@ -2413,14 +2409,12 @@ export type Database = {
           id?: string
           is_24h?: boolean
           is_listed?: boolean
-          is_popular?: boolean
           latitude?: number | null
           longitude?: number | null
           name?: string
           notice?: string | null
           phone?: string | null
           photos?: Json
-          popular_sort_order?: number
           reservation_policy?: string | null
           review_avg?: number | null
           review_count?: number
@@ -2453,6 +2447,65 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "destination"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      location_add_on_service: {
+        Row: {
+          add_on_service_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          location_id: string
+          price_override: number | null
+          updated_at: string
+        }
+        Insert: {
+          add_on_service_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          location_id: string
+          price_override?: number | null
+          updated_at?: string
+        }
+        Update: {
+          add_on_service_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          location_id?: string
+          price_override?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_add_on_service_add_on_service_id_fkey"
+            columns: ["add_on_service_id"]
+            isOneToOne: false
+            referencedRelation: "add_on_service"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_add_on_service_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_add_on_service_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_point_proximity"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "location_add_on_service_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_proximity"
+            referencedColumns: ["location_id"]
           },
         ]
       }
@@ -2534,6 +2587,20 @@ export type Database = {
             referencedRelation: "location"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "location_address_audit_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: true
+            referencedRelation: "location_point_proximity"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "location_address_audit_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: true
+            referencedRelation: "location_proximity"
+            referencedColumns: ["location_id"]
+          },
         ]
       }
       location_address_change: {
@@ -2593,66 +2660,35 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "location_address_change_destination_after_fkey"
+            columns: ["destination_after"]
+            isOneToOne: false
+            referencedRelation: "destination"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_address_change_destination_before_fkey"
+            columns: ["destination_before"]
+            isOneToOne: false
+            referencedRelation: "destination"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "location_address_change_location_id_fkey"
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      location_add_on_service: {
-        Row: {
-          add_on_service_id: string
-          created_at: string
-          id: string
-          is_active: boolean
-          location_id: string
-          price_override: number | null
-          updated_at: string
-        }
-        Insert: {
-          add_on_service_id: string
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          location_id: string
-          price_override?: number | null
-          updated_at?: string
-        }
-        Update: {
-          add_on_service_id?: string
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          location_id?: string
-          price_override?: number | null
-          updated_at?: string
-        }
-        Relationships: [
           {
-            foreignKeyName: "location_add_on_service_add_on_service_id_fkey"
-            columns: ["add_on_service_id"]
-            isOneToOne: false
-            referencedRelation: "add_on_service"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "location_add_on_service_location_id_fkey"
-            columns: ["location_id"]
-            isOneToOne: false
-            referencedRelation: "location"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "location_add_on_service_location_id_fkey"
+            foreignKeyName: "location_address_change_location_id_fkey"
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "location_point_proximity"
             referencedColumns: ["location_id"]
           },
           {
-            foreignKeyName: "location_add_on_service_location_id_fkey"
+            foreignKeyName: "location_address_change_location_id_fkey"
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "location_proximity"
@@ -5959,7 +5995,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
-      location_address_audit_policy: { Args: Record<PropertyKey, never>; Returns: Json }
+      location_address_audit_policy: { Args: never; Returns: Json }
       location_address_audit_queue: {
         Args: { p_limit?: number }
         Returns: {
@@ -5991,7 +6027,7 @@ export type Database = {
       location_address_door: { Args: { p_address: string }; Returns: string }
       location_address_key: { Args: { p_address: string }; Returns: string }
       location_address_number: { Args: { p_address: string }; Returns: string }
-      location_address_scan: { Args: Record<PropertyKey, never>; Returns: number }
+      location_address_scan: { Args: never; Returns: number }
       location_external_readiness: {
         Args: { p_location_id: string }
         Returns: Json
@@ -6119,7 +6155,7 @@ export type Database = {
         Args: { p_location_id: string; p_note?: string }
         Returns: undefined
       }
-      manager_location_address_scan: { Args: Record<PropertyKey, never>; Returns: number }
+      manager_location_address_scan: { Args: never; Returns: number }
       manager_prospect_location_delete: {
         Args: { p_id: string }
         Returns: undefined
@@ -6636,23 +6672,6 @@ export type Database = {
           p_to: string
         }
         Returns: Json
-      }
-      popular_locations: {
-        Args: { p_limit?: number }
-        Returns: {
-          id: string
-        }[]
-      }
-      popular_parking_types: {
-        Args: { p_limit?: number }
-        Returns: {
-          bookings_count: number
-          id: string
-          location_id: string
-          location_slug: string
-          operator_slug: string
-          parking_type_code: string
-        }[]
       }
       pricing_rule_fingerprint: { Args: { p_rule_id: string }; Returns: Json }
       prospect_redirect_target: {

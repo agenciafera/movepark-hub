@@ -12,7 +12,7 @@
     "Sao passos numerados: execute cada um como uma acao propria do plano, na ordem.",
     "Para checar texto use text_contains com selector body. Para o valor de um input use selector_value. Para checar endereco use a postcondicao url com contains, nunca um seletor da pagina de destino. Dialogos do Radix montam fora do main: use o seletor [role=\"dialog\"].",
     "A home e publica, mas quem ja tem conta tambem passa por ela: este cenario prova que a sessao nao derruba o que ela mostra.",
-    "As checagens ficam no que a home tem de fixo (selos do hero e galeria de destinos). A vitrine Estacionamentos Populares depende da RPC popular_parking_types, que aqui cai no catch-all e devolve vazio: sem dado a secao se remove sozinha, entao checar por ela daria falso negativo.",
+    "As checagens ficam no que a home tem de fixo (selos do hero e galeria de destinos). A vitrine Estacionamentos em destaque depende da RPC home_featured_offers, que aqui cai no catch-all e devolve vazio: sem dado a secao se remove sozinha, entao checar por ela daria falso negativo.",
     "O chat abre e fecha no meio, que e o que uma pessoa faz quando bate uma duvida e ela mesma resolve."
   ],
   "seed": {

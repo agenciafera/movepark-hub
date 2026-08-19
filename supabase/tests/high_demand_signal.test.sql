@@ -93,7 +93,7 @@ select ok(
 
 -- location inativa/excluída não deve vazar o sinal mesmo com reservas reais suficientes hoje
 -- (SECURITY DEFINER contorna RLS — catalog_read_location só esconde de anon/authenticated no
--- SELECT direto; a função precisa reaplicar o filtro manualmente, como popular_locations já faz).
+-- SELECT direto; a função precisa reaplicar o filtro manualmente, como check_availability faz).
 insert into public.booking (code, profile_id, location_id, check_in_at, check_out_at, status, total_amount, created_at)
 select 'MP-DEM3I' || i, current_setting('test.u')::uuid, current_setting('test.loc3')::uuid,
        now() + interval '1 day', now() + interval '2 days', 'confirmed', 100, now()

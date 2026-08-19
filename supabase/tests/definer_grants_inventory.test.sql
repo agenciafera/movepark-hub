@@ -55,9 +55,8 @@ select set_eq(
     'check_availability',
     'get_pricing_data',
     'get_unit_fares',
+    'home_featured_offers',     -- vitrine curada da home, lida pelo visitante deslogado
     'locations_high_demand_today',
-    'popular_locations',
-    'popular_parking_types',
     'simulate_price',
     -- cupom e desconto avaliados antes do login, no checkout
     'coupon_evaluate',
@@ -82,7 +81,7 @@ select set_eq(
     -- telefone, place_id nem o estado da campanha B2B. Ver lote-mapeado-vitrine.md.
     'prospect_redirect_target'
   ],
-  'as SECURITY DEFINER alcançáveis por anon são exatamente estas 23'
+  'as SECURITY DEFINER alcançáveis por anon são exatamente estas 22'
 );
 
 -- ── nenhuma rotina de cron é chamável pela anon key ──────────────────────────

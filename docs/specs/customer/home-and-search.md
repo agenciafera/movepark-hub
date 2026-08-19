@@ -182,7 +182,7 @@ curado passa na frente de quem alguém marcou como `1`.
 | Embaralhamento da cauda com semente do dia (`popularOrder.ts`) | existia para a cauda empatada em zero não fixar as mesmas unidades; sem ranking não há cauda |
 | Teto de 1 card por **empresa** | continha um ranking automático; contra curadoria briga com quem curou |
 | Teto de 1 card por **destino** | idem. Era ele que prendia a vitrine em 5 cards no máximo, um por destino com empresa ativa |
-| `location.is_popular` / `popular_sort_order` | curadoria por unidade, granularidade errada: o card é uma oferta, não um estacionamento. Colunas seguem no schema sem consumidor |
+| `location.is_popular` / `popular_sort_order` | curadoria por unidade, granularidade errada: o card é uma oferta, não um estacionamento. **Colunas dropadas** em `20261101100000`, junto com as RPCs `popular_locations` e `popular_parking_types` |
 
 **Preço "a partir de".** O card usava o preço de **1 diária** e descartava quem não tivesse
 (`price == null`). Lote de aeroporto costuma vender estadia longa e começar a tabela em 3
@@ -200,6 +200,13 @@ que a RLS devolvia ao anônimo, e isso é defesa que depende de quem lê: quem e
 `hub_admin` enxerga a `company` inteira pela policy `company_select` e via na vitrine unidade de
 empresa inativa (Motion Park, Agência Fera) que o visitante não via. Coberto por
 `supabase/tests/home_featured_offer.test.sql`.
+
+**O que sobrou do modelo antigo: nada.** A migration `20261101100000` dropou as duas colunas, o
+índice `idx_location_popular` e as duas RPCs. Coluna que não faz nada mas parece que faz é
+armadilha: `is_popular` estava `true` em quatro unidades e a leitura óbvia de quem abrisse a tabela
+seria que aquilo controla a home. As RPCs eram `SECURITY DEFINER` com EXECUTE para `anon`, ou seja,
+chamáveis por qualquer um com a anon key do bundle, e nenhuma tinha consumidor. Atenção ao ler o
+diff: `is_popular` existe em três tabelas, e as de `destination` e `fare` continuam vivas.
 
 **Vitrine vazia.** Sem nenhum destaque ativo a seção **não renderiza**. É explícito: o Manager
 mostra o aviso, e não existe fallback automático, porque um fallback traria de volta exatamente o
