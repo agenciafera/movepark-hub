@@ -914,6 +914,41 @@ describe("DestinoPage · quanto custa e distância", () => {
     ]);
   });
 
+  it("a abertura anuncia o parceiro mais perto, não o lote mapeado mais perto", () => {
+    // Depois da correção de coordenada de 19/08/2026 os dois parceiros do GRU ficaram mais
+    // longe que vários lotes mapeados. A frase fica ao lado de "N estacionamentos com
+    // reserva online", e ali um número de lote sem reserva se lê como se fosse de parceiro.
+    loaderData.mockReturnValue(
+      comPreco(
+        [unidadePreco({ distance_m: 4549 })],
+        [
+          {
+            id: "p1",
+            name: "Decolar Park",
+            slug: "decolar-park",
+            address: null,
+            latitude: 0,
+            longitude: 0,
+            google_maps_url: null,
+            amenities: [],
+            description: null,
+            distance_km: 1.6,
+            reference_name: null,
+          },
+        ],
+      ),
+    );
+
+    render();
+
+    expect(
+      screen.getByText(/o parceiro mais perto fica a 4,5 km do terminal/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/o parceiro mais perto fica a 1,6 km/i)).not.toBeInTheDocument();
+    // E a ficha rotula de quem é o número.
+    expect(screen.getByText("Parceiro mais perto")).toBeInTheDocument();
+  });
+
   it("a meta description leva número em vez de promessa genérica", async () => {
     loaderData.mockReturnValue(comPreco());
 

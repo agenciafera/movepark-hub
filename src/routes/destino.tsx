@@ -389,9 +389,23 @@ export default function DestinoPage() {
   const lng = Number(destination.longitude);
 
   // ── O que a abertura e a ficha declaram ───────────────────────────────────
-  const parceiros = new Set(results.map((r) => `${r.operator.slug}/${r.location.slug}`)).size;
+  // Duas fontes para a mesma pergunta, e as duas contam: a vitrine (Edge `search`) e a
+  // matriz do motor. Elas falham de formas diferentes, e contar só a vitrine já apagou o
+  // destino inteiro da abertura quando a semente do build voltou vazia com a matriz cheia.
+  const locaisDaVitrine = new Set(results.map((r) => `${r.operator.slug}/${r.location.slug}`));
+  const locaisDaMatriz = new Set(
+    (priceDest ? carUnits(priceDest.units) : []).map((u) => `${u.company_slug}/${u.location_slug}`),
+  );
+  const parceiros = Math.max(locaisDaVitrine.size, locaisDaMatriz.size);
   const temParceiro = parceiros > 0;
-  const maisPerto = proximity.find((p) => p.distanceLabel != null)?.distanceLabel ?? null;
+  // A distância que a abertura anuncia é a do PARCEIRO mais perto, não a do lote mais
+  // perto da região. Ela aparece ao lado de "N estacionamentos com reserva online", e ali
+  // um número que pertence a um lote sem reserva se lê como se fosse de um parceiro. Onde
+  // não há parceiro, o número volta a ser o da região, que é o que a página tem a dizer.
+  const parceiroMaisPerto =
+    proximity.find((p) => p.kind === "partner" && p.distanceLabel != null)?.distanceLabel ?? null;
+  const regiaoMaisPerto = proximity.find((p) => p.distanceLabel != null)?.distanceLabel ?? null;
+  const maisPerto = parceiroMaisPerto ?? regiaoMaisPerto;
   const nomeCurto = destination.short_name ?? destination.name;
 
   const highlights = temParceiro
@@ -401,7 +415,7 @@ export default function DestinoPage() {
           "estacionamento com reserva online",
           "estacionamentos com reserva online",
         ),
-        maisPerto ? `o mais perto fica a ${maisPerto}` : null,
+        parceiroMaisPerto ? `o parceiro mais perto fica a ${parceiroMaisPerto}` : null,
         prospectItems.length > 0
           ? plural(
               prospectItems.length,
@@ -448,7 +462,9 @@ export default function DestinoPage() {
     prospectItems.length > 0
       ? { rotulo: "Mapeados na região", valor: String(prospectItems.length) }
       : null,
-    maisPerto ? { rotulo: "Mais perto", valor: maisPerto } : null,
+    maisPerto
+      ? { rotulo: parceiroMaisPerto ? "Parceiro mais perto" : "Mais perto", valor: maisPerto }
+      : null,
     fromPrice != null ? { rotulo: "Diária a partir de", valor: formatBRL(fromPrice) } : null,
   ].filter((i): i is { rotulo: string; valor: string } => i != null);
 
@@ -542,10 +558,18 @@ export default function DestinoPage() {
               <h2 className="text-balance text-display-2xl text-ink">
                 {destinationListHeading(destination)}
               </h2>
-              {temParceiro && (
+              {/* Conta o que está na tela logo abaixo, então o gatilho é a vitrine e não
+                  `temParceiro`: com a semente do build vazia e a matriz cheia, a frase
+                  sairia anunciando "0 vagas". */}
+              {results.length > 0 && (
                 <p className="text-body-md text-body">
                   {plural(results.length, "vaga", "vagas")} em{" "}
-                  {plural(parceiros, "estacionamento parceiro", "estacionamentos parceiros")}.
+                  {plural(
+                    locaisDaVitrine.size,
+                    "estacionamento parceiro",
+                    "estacionamentos parceiros",
+                  )}
+                  .
                 </p>
               )}
             </div>
