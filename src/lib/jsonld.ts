@@ -10,7 +10,9 @@ export function localBusinessSchema(listing: ListingDetail, opts?: { description
     name: `${listing.location.name} · ${listing.parking_type.name}`,
     // TLDR-first: prefere o resumo extraível quando fornecido; senão a descrição do tipo de vaga.
     description: opts?.description ?? listing.parking_type.description ?? undefined,
-    image: listing.location.photos?.length ? listing.location.photos : undefined,
+    // Metade das unidades guarda a foto como caminho relativo do legado
+    // (`/Estacionamentos/...`), e URL relativa em JSON-LD o buscador não resolve.
+    image: listing.location.photos?.length ? listing.location.photos.map(absoluta) : undefined,
     url: `${SITE_URL}/p/${listing.company.slug}/${listing.location.slug}/${listing.parking_type.code}`,
     telephone: listing.location.phone ?? undefined,
     email: listing.location.email ?? undefined,
@@ -49,6 +51,14 @@ export type SchemaReview = {
 // emitia `price: "0.00"`, `availability: InStock` e `aggregateRating` de avaliação que a página
 // esconde. As capacidades são lidas da própria `listing`, não recebidas por parâmetro, para que
 // não exista chamada desprotegida.
+//
+// **Devolve `null` quando não sobra nada que qualifique o `Product` (19/08/2026).** O gate acima
+// consertou o conteúdo e deixou a casca: nas dezessete páginas de unidade do sitemap, todas de
+// checkout externo e com `base_price = 0`, saía um `Product` só com `name`, `description` e
+// `image`. O Google exige `offers`, `review` ou `aggregateRating` e reprova o resto como item
+// inválido ("Especifique offers, review ou aggregateRating", no Search Console). A saída não é
+// reinventar a promessa para preencher o campo: é não publicar o nó. O que descreve o lugar
+// continua saindo no `LocalBusiness`/`ParkingFacility` ao lado, que não exige oferta.
 export function productOfferSchema(
   listing: ListingDetail,
   reviews: SchemaReview[] = [],
@@ -62,14 +72,19 @@ export function productOfferSchema(
   // oferta: some o bloco inteiro, em vez de publicar R$ 0,00 como se fosse o valor da diária.
   const price = showcaseFromPrice(listing.company_parking_type.base_price);
 
+  // Nó vazio é item inválido, não item incompleto: o Google reprova a página inteira no rich
+  // result de Product. Sem oferta e sem nota, o nó não existe.
+  if (price == null && !hasRating) return null;
+
   return {
     "@context": "https://schema.org",
     "@type": "Product",
     name: `${listing.parking_type.name} · ${listing.location.name}`,
     // TLDR-first: prefere o resumo extraível quando fornecido; senão a descrição do tipo de vaga.
     description: opts?.description ?? listing.parking_type.description ?? undefined,
-    // `image` é exigido pelo Google pro rich result de Product: usa as fotos da unidade.
-    image: listing.location.photos?.length ? listing.location.photos : undefined,
+    // `image` é exigido pelo Google pro rich result de Product: usa as fotos da unidade,
+    // absolutas, porque caminho relativo o buscador não resolve.
+    image: listing.location.photos?.length ? listing.location.photos.map(absoluta) : undefined,
     offers:
       price != null
         ? {
@@ -321,26 +336,34 @@ export function destinationOffersSchema(args: {
   mapped: { name: string; url: string }[];
 }) {
   const itens = [
-    ...args.partners.map((p) => ({
-      "@type": "Product" as const,
-      name: p.name,
-      description: p.description ?? undefined,
-      url: absoluta(p.url),
-      // Sem preço na matriz do build, o item fica só com nome, descrição e URL. Uma
-      // `Offer` sem `price` é inválida para o Google, e chutar um valor seria afirmar
-      // preço que a página não mostra.
-      offers: p.price
+    ...args.partners.map((p) =>
+      // Sem preço na matriz do build, o parceiro entra como `ParkingFacility`, e não como
+      // `Product` mudo. Chutar um valor seria afirmar preço que a página não mostra, e
+      // `Product` sem `offers`, `review` nem `aggregateRating` o Google reprova como item
+      // inválido, o que derruba a lista inteira junto. Nó de lugar não exige oferta.
+      p.price
         ? {
-            "@type": "AggregateOffer",
-            priceCurrency: "BRL",
-            lowPrice: p.price.lowPrice.toFixed(2),
-            highPrice: p.price.highPrice.toFixed(2),
-            offerCount: p.price.offerCount,
-            availability: p.price.guaranteedSpot ? "https://schema.org/InStock" : undefined,
+            "@type": "Product" as const,
+            name: p.name,
+            description: p.description ?? undefined,
             url: absoluta(p.url),
+            offers: {
+              "@type": "AggregateOffer",
+              priceCurrency: "BRL",
+              lowPrice: p.price.lowPrice.toFixed(2),
+              highPrice: p.price.highPrice.toFixed(2),
+              offerCount: p.price.offerCount,
+              availability: p.price.guaranteedSpot ? "https://schema.org/InStock" : undefined,
+              url: absoluta(p.url),
+            },
           }
-        : undefined,
-    })),
+        : {
+            "@type": "ParkingFacility" as const,
+            name: p.name,
+            description: p.description ?? undefined,
+            url: absoluta(p.url),
+          },
+    ),
     ...args.mapped.map((m) => ({
       "@type": "ParkingFacility" as const,
       name: m.name,

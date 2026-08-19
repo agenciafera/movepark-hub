@@ -5,6 +5,7 @@ import {
   useEnableCompanyParkingType,
   useOperatorSetPricing,
   useSimulatePrice,
+  useTriggerWlMirror,
   useUpdateCompanyParkingType,
   useUpdateLocationParkingType,
 } from "./api";
@@ -164,6 +165,26 @@ describe("useOperatorSetPricing", () => {
     });
 
     expect((espiao.ultimoBody as { p_tiers: unknown }).p_tiers).toEqual(tiers);
+  });
+});
+
+describe("useTriggerWlMirror", () => {
+  it("dispara o espelho da vaga certa", async () => {
+    // Botão de emergência: o admin aperta quando o preço do white-label divergiu do
+    // catálogo. Mandar o id errado sincroniza a vaga errada e deixa a divergente como está.
+    const espiao = rpc("wl_mirror_trigger", { json: null });
+
+    const { result } = renderMutation(() => useTriggerWlMirror());
+    await result.current.mutateAsync("lpt-9");
+
+    expect(espiao.ultimoBody).toEqual({ p_location_parking_type_id: "lpt-9" });
+  });
+
+  it("propaga o erro da RPC em vez de fingir que sincronizou", async () => {
+    falha("rpc", "wl_mirror_trigger", 403);
+
+    const { result } = renderMutation(() => useTriggerWlMirror());
+    await expect(result.current.mutateAsync("lpt-9")).rejects.toBeTruthy();
   });
 });
 

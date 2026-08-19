@@ -184,6 +184,13 @@ export default function ListingPage() {
       ? faqSchema(faqForSchema.map((f) => ({ question: f.question, answer: f.answer })))
       : null;
 
+  // Nulo quando a unidade não tem preço nem nota publicável, que é o caso de toda unidade de
+  // checkout externo. `Product` sem `offers`, `review` ou `aggregateRating` é inválido para o
+  // Google, então nesse caso a página não emite o bloco.
+  const productSchemaData = listing
+    ? productOfferSchema(listing, schemaReviews, { description: tldr?.summary })
+    : null;
+
   if (isLoading) {
     return (
       <div className="mx-auto w-full max-w-[1280px] px-4 py-6 desktop:px-8">
@@ -277,13 +284,13 @@ export default function ListingPage() {
         <script type="application/ld+json">
           {JSON.stringify(localBusinessSchema(listing, { description: tldr?.summary }))}
         </script>
-        <script type="application/ld+json">
-          {JSON.stringify(productOfferSchema(listing, schemaReviews, { description: tldr?.summary }))}
-        </script>
+        {productSchemaData && (
+          <script type="application/ld+json">{JSON.stringify(productSchemaData)}</script>
+        )}
         <script type="application/ld+json">
           {JSON.stringify(
             breadcrumbSchema([
-              { name: "House", url: SITE_URL },
+              { name: "Início", url: SITE_URL },
               { name: listing.location.name, url: pageUrl },
             ]),
           )}

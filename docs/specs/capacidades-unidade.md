@@ -240,6 +240,49 @@ modos. O contraponto na unidade própria é parte do gate, para que o conserto n
 SEO na maioria da base. Verificado que os 12 casos novos falham sem o fix, e que o caso antigo de
 texto visível continua passando sem ele, que é a medida exata do ponto cego.
 
+## O conserto deixou a casca, e a casca era inválida (19/08/2026)
+
+O Search Console reprovou `/p/aeropark/aeroporto-guarulhos/covered` com **"Especifique
+`offers`, `review` ou `aggregateRating`"**. Não foi o checkout externo que quebrou o formato: foi
+o gate acima que tirou as três propriedades e manteve o nó.
+
+O que sobrou na página, palavra por palavra:
+
+```json
+{ "@context": "https://schema.org", "@type": "Product",
+  "name": "Vaga Coberta · Aeroporto de Guarulhos",
+  "description": "...", "image": [...] }
+```
+
+`Product` precisa de **uma** entre `offers`, `review` e `aggregateRating` para ser um item válido.
+Com as três gateadas, o nó não fica incompleto: fica **inválido**, e o Google descarta a página
+do rich result e acusa erro. As duas condições se somam em toda unidade externa:
+
+- **`offers`** sai porque `company_parking_type.base_price = 0` nas dezessete linhas espelhadas, e
+  `showcaseFromPrice` recusa zero (decisão de 12/08, correta e mantida).
+- **`aggregateRating` e `review`** saem porque `caps.reviews` é falso no checkout externo.
+
+**As dezessete URLs de `sitemap-unidades.xml` são todas de checkout externo**, então o erro valia
+para 100% das páginas de unidade indexadas, e não só para a que o Search Console mostrou.
+
+**A correção é não publicar o nó.** `productOfferSchema` devolve `null` quando não sobra nada que
+qualifique, e a rota deixa de emitir o `<script>`. Nada de SEO se perde: item inválido já não
+rendia rich result nenhum. O que descreve o lugar continua publicado no
+`LocalBusiness`/`ParkingFacility` ao lado, que não exige oferta, junto de `BreadcrumbList` e
+`FAQPage`. Preencher o campo com preço ou nota do parceiro seria reabrir exatamente o que o
+ADR-009 fechou.
+
+Duas instâncias latentes do mesmo defeito foram fechadas junto, antes de aparecerem no relatório:
+na vitrine do destino (`destinationOffersSchema`), parceiro sem preço na matriz do build virava
+`Product` mudo e agora entra como `ParkingFacility`; na página de preços, linha sem preço em
+nenhuma duração saía com `lowPrice: "Infinity"` (`Math.min()` de lista vazia) e agora fica fora
+da lista, seguindo visível na tabela.
+
+Dois defeitos vizinhos entraram no mesmo passe: `image` publicava o caminho relativo do legado
+(`/Estacionamentos/...`), que o buscador não resolve em JSON-LD, e o `BreadcrumbList` da unidade
+chamava a home de **"House"**, resíduo da troca de ícones Lucide→Phosphor que renomeou uma string
+junto com os componentes. Todas as outras páginas usam "Início".
+
 ## Base legal (não é parecer; levar ao jurídico)
 
 Oferta vincula o fornecedor (CDC art. 30); omissão relevante é publicidade enganosa (art. 37

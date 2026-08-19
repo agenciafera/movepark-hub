@@ -26,6 +26,7 @@ function linha(
   basePrice = 40,
   go2park = false,
   go2parkWhatsapp: string | null = null,
+  photos: string[] = [],
 ) {
   return {
     id: "lpt-1",
@@ -56,7 +57,7 @@ function linha(
       has_passenger_quantity: false,
       review_avg: 5,
       review_count: 1,
-      photos: [],
+      photos,
       company: {
         id: "c-1",
         slug: "virapark",
@@ -78,10 +79,11 @@ function montaPagina(
   basePrice?: number,
   go2park = false,
   go2parkWhatsapp: string | null = null,
+  photos: string[] = [],
 ) {
   server.use(
     http.get(`${BASE}/rest/v1/location_parking_type`, () =>
-      HttpResponse.json([linha(checkoutMode, basePrice, go2park, go2parkWhatsapp)]),
+      HttpResponse.json([linha(checkoutMode, basePrice, go2park, go2parkWhatsapp, photos)]),
     ),
   );
   // A página emite <Helmet> (meta + JSON-LD), que precisa do provider para montar.
@@ -242,6 +244,30 @@ describe("single da unidade EXTERNA", () => {
     const fora = publicado();
     expect(fora).not.toMatch(/R\$\s0,00/);
     expect(fora).not.toMatch(/"price":"0.00"/);
+  });
+
+  it("não publica Product sem offers, review nem aggregateRating", async () => {
+    // O que sobrou do conserto de 12/08: sem preço e sem nota, o `Product` saía só com nome,
+    // descrição e foto, e o Search Console reprovava as dezessete páginas do sitemap com
+    // "Especifique offers, review ou aggregateRating". Nó sem nada que qualifique não é emitido.
+    montaPagina("external", 0);
+    await screen.findAllByText(/Virapark/i);
+    await waitFor(() => expect(publicado()).toMatch(/Virapark/));
+
+    const fora = publicado();
+    expect(fora).not.toMatch(/"@type":"Product"/);
+    // O que descreve o lugar continua publicado: o nó do lugar não exige oferta.
+    expect(fora).toMatch(/"ParkingFacility"/);
+  });
+
+  it("publica image absoluta, porque caminho relativo do legado o buscador não resolve", async () => {
+    montaPagina("external", 0, false, null, ["/Estacionamentos/virapark/virapark_001.webp"]);
+    await screen.findAllByText(/Virapark/i);
+    await waitFor(() => expect(publicado()).toMatch(/Virapark/));
+
+    expect(publicado()).toMatch(
+      /https:\/\/movepark\.co\/Estacionamentos\/virapark\/virapark_001\.webp/,
+    );
   });
 });
 

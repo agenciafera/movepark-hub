@@ -463,9 +463,12 @@ describe("lista de unidades no HTML do build", () => {
     }[];
     expect(itens).toHaveLength(2);
     // Vendável primeiro, mapeado depois: é a mesma ordem da tela, e a separação é o produto
-    // que o parceiro compra (ADR-010). O tipo separa os dois: quem vende é `Product`, quem
-    // só está mapeado é `ParkingFacility` sem oferta.
-    expect(itens[0].item["@type"]).toBe("Product");
+    // que o parceiro compra (ADR-010). A URL separa os dois em qualquer caso: vendável aponta
+    // para `/p/...`, mapeado para `/estacionamentos/...`. O `@type` acompanha o que o item
+    // consegue afirmar: sem matriz do motor não há oferta, e `Product` sem oferta é item
+    // inválido, então quem não tem preço sai como `ParkingFacility`. Esta fixture não tem
+    // matriz, por isso os dois vêm como lugar. O caso com matriz está logo abaixo.
+    expect(itens[0].item["@type"]).toBe("ParkingFacility");
     expect(itens[0].item.name).toBe("Abbapark · Vaga Coberta");
     expect(itens[0].item.url).toContain("/p/abbapark/aeroporto-afonso-pena/covered");
     expect(itens[1].item["@type"]).toBe("ParkingFacility");
@@ -473,9 +476,14 @@ describe("lista de unidades no HTML do build", () => {
     expect(itens[1].item.url).toContain("/estacionamentos/aeroporto-de-guarulhos/talentos-park");
   });
 
-  it("sem matriz do motor, o item vendável fica sem oferta em vez de chutar preço", async () => {
+  it("sem matriz do motor, o item vendável descreve o lugar em vez de chutar preço", async () => {
     // A lista sai da VITRINE, não da matriz: se o motor não respondeu no build, o schema
     // continua descrevendo a tela. O que ele não pode é inventar um preço para ter `Offer`.
+    //
+    // Até 19/08/2026 esse item saía como `Product` sem `offers`, que é justamente o item que o
+    // Search Console reprova ("Especifique offers, review ou aggregateRating"), e que derrubou
+    // as dezessete páginas de unidade. Um item inválido invalida a lista junto, então o
+    // degradado é `ParkingFacility`: descreve o lugar, não exige oferta e não chuta nada.
     loaderData.mockReturnValue({ destination: dest(), prospects: [], units: [unidade()] });
 
     render();
@@ -488,6 +496,7 @@ describe("lista de unidades no HTML do build", () => {
     const itens = lista.itemListElement as { item: Record<string, unknown> }[];
     expect(itens).toHaveLength(1);
     expect(itens[0].item.name).toBe("Abbapark · Vaga Coberta");
+    expect(itens[0].item["@type"]).toBe("ParkingFacility");
     expect(itens[0].item.offers).toBeUndefined();
     expect(JSON.stringify(lista)).not.toContain("InStock");
   });

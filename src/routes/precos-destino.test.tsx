@@ -121,4 +121,31 @@ describe("PrecosDestinoPage", () => {
     setup(null);
     expect(await screen.findByText("Sem tabela de preços por aqui")).toBeInTheDocument();
   });
+
+  it("deixa fora do JSON-LD a linha sem preço em nenhuma duração", async () => {
+    // `Math.min()` de lista vazia é `Infinity`, e Product sem offers válida o Google reprova
+    // como item inválido, o que derruba a lista inteira. A linha segue visível na tabela.
+    setup({
+      ...DATA,
+      destination: {
+        ...DATA.destination,
+        units: [
+          unit({}),
+          unit({
+            company_slug: "sem-preco",
+            company_name: "Sem Preço",
+            prices: DIAS.map((days) => ({ days, total: null, old_total: null })),
+          }),
+        ],
+      },
+    });
+    await screen.findByRole("heading", { level: 1 });
+
+    const lista = [...document.querySelectorAll('script[type="application/ld+json"]')]
+      .map((s) => JSON.parse(s.textContent ?? "{}"))
+      .find((d) => d["@type"] === "ItemList");
+    expect(lista.itemListElement).toHaveLength(1);
+    expect(JSON.stringify(lista)).not.toContain("Infinity");
+    expect(JSON.stringify(lista)).not.toContain("Sem Preço");
+  });
 });

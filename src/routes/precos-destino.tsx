@@ -38,34 +38,42 @@ function distanciaLabel(dest: PriceDestination, m: number | null): string | null
   return dest.type === "airport" || dest.type === "bus_terminal" ? `${d} do terminal` : d;
 }
 
-/** JSON-LD: um Product por vaga, com a faixa de preço real das durações. */
+/**
+ * JSON-LD: um Product por vaga, com a faixa de preço real das durações.
+ *
+ * Linha sem preço em nenhuma duração fica de fora da lista. A matriz aceita a linha muda de
+ * propósito (quem não tem preço na duração de referência vai para o fim da tabela), mas aqui
+ * ela daria `Math.min()` de lista vazia, que é `Infinity`, e um `Product` sem `offers` válida,
+ * que o Google reprova como item inválido. A linha continua visível na tabela.
+ */
 function produtosSchema(dest: PriceDestination, rows: MatrixRow[]) {
   const nome = dest.short_name ?? dest.name;
+  const comPreco = rows
+    .map((row) => ({
+      row,
+      totais: row.cells.map((c) => c.total).filter((t): t is number => t != null),
+    }))
+    .filter((r) => r.totais.length > 0);
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    itemListElement: rows.map((row, i) => {
-      const totais = row.cells
-        .map((c) => c.total)
-        .filter((t): t is number => t != null);
-      return {
-        "@type": "ListItem",
-        position: i + 1,
-        item: {
-          "@type": "Product",
-          name: `${row.label} · ${row.unit.parking_type_name}`,
-          description: `Estacionamento perto de ${nome}, com reserva online pela Movepark.`,
-          offers: {
-            "@type": "AggregateOffer",
-            priceCurrency: "BRL",
-            lowPrice: Math.min(...totais).toFixed(2),
-            highPrice: Math.max(...totais).toFixed(2),
-            offerCount: totais.length,
-            url: `${SITE_URL}${listingPath(row.unit)}`,
-          },
+    itemListElement: comPreco.map(({ row, totais }, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      item: {
+        "@type": "Product",
+        name: `${row.label} · ${row.unit.parking_type_name}`,
+        description: `Estacionamento perto de ${nome}, com reserva online pela Movepark.`,
+        offers: {
+          "@type": "AggregateOffer",
+          priceCurrency: "BRL",
+          lowPrice: Math.min(...totais).toFixed(2),
+          highPrice: Math.max(...totais).toFixed(2),
+          offerCount: totais.length,
+          url: `${SITE_URL}${listingPath(row.unit)}`,
         },
-      };
-    }),
+      },
+    })),
   };
 }
 
