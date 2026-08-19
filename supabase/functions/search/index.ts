@@ -40,6 +40,7 @@ import { buildMinStayMap, type MinStayRow } from "./minStay.ts";
 import {
   aggregateDestinations,
   aggregateOperators,
+  filterByCategory,
   filterByDestinations,
   filterByOperators,
   type FacetItem,
@@ -232,12 +233,8 @@ Deno.serve(async (req: Request) => {
     return true;
   });
 
-  // 5. Apply category filter
-  if (params.category?.length) {
-    filtered = filtered.filter((r) =>
-      params.category!.includes(r.company_parking_type.parking_type.code),
-    );
-  }
+  // 5. Apply category filter (com equivalências — ver filterByCategory em facets.ts)
+  filtered = filterByCategory(filtered, params.category);
 
   // Estacionamento e destino NÃO são filtrados aqui — viram facetas (passo 10b) e só então
   // recortam o resultado. Manter os candidatos largos até a precificação permite calcular

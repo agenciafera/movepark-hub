@@ -2,6 +2,8 @@ import { assertEquals } from "jsr:@std/assert";
 import {
   aggregateDestinations,
   aggregateOperators,
+  type CategoryItem,
+  filterByCategory,
   filterByDestinations,
   filterByOperators,
   type FacetItem,
@@ -51,4 +53,27 @@ Deno.test("facetas independem do próprio eixo: estacionamento reflete destino e
   // Filtro de destino = GRU → estacionamentos disponíveis devem ser só aerovalet + plenty
   const ops = aggregateOperators(filterByDestinations(items, ["GRU"]));
   assertEquals(ops.map((o) => o.slug), ["aerovalet", "plenty"]);
+});
+
+const covered: CategoryItem = { company_parking_type: { parking_type: { code: "covered" } } };
+const uncovered: CategoryItem = { company_parking_type: { parking_type: { code: "uncovered" } } };
+const avulsa: CategoryItem = { company_parking_type: { parking_type: { code: "avulsa" } } };
+const categoryItems = [covered, uncovered, avulsa];
+
+Deno.test("filterByCategory é no-op quando nada foi escolhido", () => {
+  assertEquals(filterByCategory(categoryItems).length, 3);
+  assertEquals(filterByCategory(categoryItems, []).length, 3);
+});
+
+Deno.test("filterByCategory filtra por code exato quando não há equivalência", () => {
+  assertEquals(filterByCategory(categoryItems, ["covered"]), [covered]);
+});
+
+Deno.test("filterByCategory: filtrar 'uncovered' também traz 'avulsa' (Garageinn não garante cobertura)", () => {
+  const result = filterByCategory(categoryItems, ["uncovered"]);
+  assertEquals(result, [uncovered, avulsa]);
+});
+
+Deno.test("filterByCategory: filtrar 'avulsa' direto não traz 'uncovered' de volta (equivalência é só um sentido)", () => {
+  assertEquals(filterByCategory(categoryItems, ["avulsa"]), [avulsa]);
 });

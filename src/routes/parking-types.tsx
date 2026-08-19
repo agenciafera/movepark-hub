@@ -1,7 +1,14 @@
 import * as React from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowsClockwise, CalendarDot, Plus, SlidersHorizontal, Table } from "@phosphor-icons/react";
+import {
+  ArrowsClockwise,
+  CalendarDot,
+  PencilSimple,
+  Plus,
+  SlidersHorizontal,
+  Table,
+} from "@phosphor-icons/react";
 import { useAuth } from "@/auth/context";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +35,7 @@ import {
   type LocationParkingTypeWithRelations,
 } from "@/features/parking-types/api";
 import { ParkingTypeForm } from "@/features/parking-types/ParkingTypeForm";
+import { EditParkingTypeDialog } from "@/features/parking-types/EditParkingTypeDialog";
 import { CapacityRulesForm } from "@/features/parking-types/CapacityRulesForm";
 import { PricingRuleEditor } from "@/features/parking-types/PricingRuleEditor";
 import { PricingSimulationDialog } from "@/features/parking-types/PricingSimulationTable";
@@ -59,6 +67,9 @@ export default function ParkingTypesPage() {
   const updateLpt = useUpdateLocationParkingType();
   const triggerMirror = useTriggerWlMirror();
   const [createOpen, setCreateOpen] = React.useState(false);
+  const [editingType, setEditingType] = React.useState<LocationParkingTypeWithRelations | null>(
+    null,
+  );
   const [editing, setEditing] = React.useState<LocationParkingTypeWithRelations | null>(null);
   const [editingRules, setEditingRules] = React.useState<LocationParkingTypeWithRelations | null>(
     null,
@@ -184,6 +195,7 @@ export default function ParkingTypesPage() {
               onEditPricing={() => setEditing(lpt)}
               onEditRules={() => setEditingRules(lpt)}
               onOpenSimulation={() => setSimulating(lpt)}
+              onEditType={() => setEditingType(lpt)}
               canEditParkingType={canEditParkingType}
               canEditPricing={canEditPricing}
               companySlug={company.data?.slug}
@@ -191,6 +203,15 @@ export default function ParkingTypesPage() {
             />
           ))}
         </div>
+      )}
+
+      {editingType && (
+        <EditParkingTypeDialog
+          open={!!editingType}
+          onOpenChange={(open) => !open && setEditingType(null)}
+          companyParkingTypeId={editingType.company_parking_type.id}
+          currentParkingTypeId={editingType.company_parking_type.parking_type.id}
+        />
       )}
 
       {editing && companyId && location.data && company.data && (
@@ -240,6 +261,7 @@ type CardProps = {
   onEditPricing: () => void;
   onEditRules: () => void;
   onOpenSimulation: () => void;
+  onEditType: () => void;
   canEditParkingType: boolean;
   canEditPricing: boolean;
   companySlug?: string;
@@ -259,6 +281,7 @@ function ParkingTypeCard({
   onEditPricing,
   onEditRules,
   onOpenSimulation,
+  onEditType,
   canEditParkingType,
   canEditPricing,
   companySlug,
@@ -291,11 +314,21 @@ function ParkingTypeCard({
       <CardHeader>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-1.5">
-            <CardTitle>
+            <CardTitle className="flex flex-wrap items-center gap-2">
               {lpt.company_parking_type.parking_type.name}{" "}
               <span className="text-caption text-muted">
                 ({lpt.company_parking_type.parking_type.code})
               </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onEditType}
+                disabled={!canEditParkingType}
+                title={canEditParkingType ? undefined : NO_SCOPE_HINT}
+              >
+                <PencilSimple className="h-4 w-4" />
+                Editar tipo
+              </Button>
             </CardTitle>
             <div className="flex flex-wrap items-center gap-2">
               <StrategyChip strategy={lpt.pricing_rule?.strategy ?? null} />

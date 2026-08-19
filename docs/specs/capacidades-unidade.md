@@ -19,8 +19,14 @@ externa, não é, e quem anunciou foi a Movepark.
 
 ## A linha que organiza
 
-**Fato da unidade** fica sempre: endereço, fotos, distância, shuttle, coberto ou descoberto,
-24 horas, amenidades. Descreve o lugar e é verdade independente de onde a reserva fecha.
+**Fato da unidade** fica sempre: endereço, fotos, distância, shuttle, coberto, descoberto ou
+avulsa, 24 horas, amenidades. Descreve o lugar e é verdade independente de onde a reserva fecha.
+
+`avulsa` é o tipo de vaga que não tem local fixo reservado (sujeita à lotação do pátio no
+momento da chegada) — não é o mesmo fato que "descoberta" (sem cobertura física), mas conta
+como `uncovered` no filtro de busca por decisão de produto. Ver glossário em
+[`domain-model.md`](./domain-model.md) e
+[`vaga_avulsa_parking_type.sql`](../../supabase/migrations/20260819203903_vaga_avulsa_parking_type.sql).
 
 **Promessa de transação** sai quando o checkout é externo: quem cumpre é o parceiro.
 

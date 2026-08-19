@@ -65,3 +65,24 @@ export function aggregateDestinations(items: FacetItem[]): DestinationFacet[] {
   }
   return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
+
+export interface CategoryItem {
+  company_parking_type: { parking_type: { code: string } };
+}
+
+// "avulsa" (Garageinn: vaga sem local fixo, sujeita à lotação do pátio) também aparece
+// quando o cliente filtra "Descoberto" — a unidade não garante cobertura, então entra
+// nesse filtro por decisão de produto, sem precisar de pill própria pro cliente escolher.
+// O code no catálogo continua distinto: é o que permite editar e filtrar os dois tipos
+// em separado no admin. Ver supabase/migrations/20260819203903_vaga_avulsa_parking_type.sql.
+const CATEGORY_FILTER_ALIASES: Record<string, string[]> = {
+  uncovered: ["avulsa"],
+};
+
+/** Mantém só os itens cujo tipo de vaga bate com os codes escolhidos (no-op se nada
+ * escolhido), expandindo as equivalências de CATEGORY_FILTER_ALIASES. */
+export function filterByCategory<T extends CategoryItem>(items: T[], codes?: string[] | null): T[] {
+  if (!codes?.length) return items;
+  const set = new Set(codes.flatMap((c) => [c, ...(CATEGORY_FILTER_ALIASES[c] ?? [])]));
+  return items.filter((i) => set.has(i.company_parking_type.parking_type.code));
+}
