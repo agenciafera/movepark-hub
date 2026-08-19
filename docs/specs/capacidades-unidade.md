@@ -189,6 +189,19 @@ mentir para o cliente das 9 unidades que ainda reservam no Hub. `JOURNEY_COMPARI
 `JOURNEY_STATS` (`src/features/how-it-works/journey.ts`) entraram no primeiro grupo, por serem
 selo/linha de tabela, não prosa.
 
+**A mesma revisão alcançou a central de ajuda (ClickUp 86ak0e7bd), fonte que o código-fonte
+sozinho não mostra.** O `ContentPageView` publica FAQ direto do banco (`faq`, escopo `global`),
+sem consultar `getLocationCapabilities` nenhuma, porque `/faq`, `/faq/<slug>` e o merge em
+`/destinos/<slug>` não têm uma unidade só em mãos para checar (ADR-002). Duas perguntas globais
+prometiam incondicional: "Como cancelo uma reserva?" (reembolso integral em 24h, sem citar quem
+reservou fora) e "Posso chegar antes ou sair depois do horário?" (tolerância de 30/60 min sem
+cobrança, o mesmo padrão que o card de atendimento já tinha prometido e que este documento já
+chama de proibido). As duas ganharam a mesma delimitação de escopo do `/cancelamento`, editadas direto
+no banco (`update public.faq ... where id = ...`, não migration, porque é conteúdo, não schema) e
+replicadas em `supabase/seed.sql` para não divergir do que `db reset` recria. As outras 7 perguntas
+globais (como reservar, pagamento, PIX, troca de veículo, voucher na chegada) descrevem mecânica
+operacional, não vaga/cancelamento/tarifa, e ficaram de fora por não ser o que a atividade pediu.
+
 O achado abaixo (48h vs. 24h) foi reconferido nesta mesma revisão e **não reproduziu**: nenhum
 texto atual de `/como-funciona` ou `/cancelamento` cita 48h. Ou já tinha sido corrigido antes desta
 revisão, ou a citação original já estava desatualizada. Mantido aqui só como histórico.
