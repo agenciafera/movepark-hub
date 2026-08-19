@@ -13,9 +13,10 @@ import { useGsapReveal } from "@/hooks/useGsapReveal";
 import { gsap } from "@/lib/gsap";
 
 const HERO_IMAGE = "/images/seja-parceiro-acordo-sunset.webp";
-// Mesma foto do hero, como na referência do mockup. Reaproveitar não pesa: o
-// hero já carregou a imagem, e aqui ela entra recortada em retrato.
-const STEPS_IMAGE = "/images/seja-parceiro-acordo-sunset.webp";
+// Foto própria deste bloco, não a do hero. Repetir a mesma imagem duas vezes na
+// página fazia o "Como funciona" parecer eco do topo. A cena é a mesma família
+// (dono e cliente no pátio, luz de fim de tarde) e já vem recortada em 4:5.
+const STEPS_IMAGE = "/images/seja-parceiro-passos-conversa.webp";
 
 // Sinais de confiança. O destaque é um rótulo curto em todos os quatro: misturar
 // "R$ 0" (moeda), "100%" (porcentagem) e "PIX & cartão" (texto) fazia a fileira
@@ -312,26 +313,26 @@ function ComoFunciona() {
           </p>
         </div>
 
-        {/* Foto: fixa no desktop enquanto os passos correm ao lado. Recorte em
-            retrato (aspect-[4/5]), com o foco à direita pra pegar o aperto de mão.
-            `pb-12` no mobile abre o espaço que o card verde ocupa ao transbordar. */}
+        {/* Foto: fixa no desktop enquanto os passos correm ao lado. O arquivo já é
+            4:5, então `object-center` basta e não há recorte a compensar.
+            `pb-12` no mobile abre o espaço que o card ocupa ao transbordar. */}
         <div className="relative pb-12 transition-[top] duration-300 ease-out motion-reduce:transition-none tablet:col-start-1 tablet:row-start-1 tablet:row-span-2 tablet:sticky tablet:top-[calc(var(--topbar-offset,5rem)+1rem)] tablet:pb-0">
           <div className="overflow-hidden rounded-2xl">
             <img
               src={STEPS_IMAGE}
-              alt="Dono de estacionamento e cliente se cumprimentando no pátio"
+              alt="Dono de estacionamento conversando com um cliente no pátio, no fim da tarde"
               loading="lazy"
               decoding="async"
-              className="aspect-[4/5] h-full w-full object-cover object-[70%_center]"
+              className="aspect-[4/5] h-full w-full object-cover object-center"
             />
           </div>
-          {/* Card verde de sucesso, transbordando a foto no canto inferior. Verde
-              claro da escala green do Tailwind (o token `success`, #1F7A4D, é escuro
-              demais pro que o mockup pede): quadradinho green-100, círculo green-500,
-              borda green-200 e glow verde. Cantos em `rounded-md` (14px), menos
-              arredondado que o `rounded-xl` de antes. O ícone é quadrado claro com
-              um círculo verde dentro, como na referência. */}
-          <div className="absolute -bottom-2 left-6 right-2 rounded-md border border-green-200 bg-canvas p-4 shadow-[0_8px_28px_-12px_rgba(34,197,94,0.15)] desktop:left-10 desktop:right-6">
+          {/* Card de sucesso, transbordando a foto no canto inferior. O verde fica
+              só no ícone (quadradinho green-100 com círculo green-500), que é onde
+              ele significa "aprovado". Contorno e sombra são neutros: hairline do
+              sistema e sombra navy (a mesma família do `shadow-tier`, só mais funda),
+              porque sobre a foto o card precisa parecer levantado, não iluminado de
+              verde. Cantos em `rounded-md` (14px). */}
+          <div className="absolute -bottom-2 left-6 right-2 rounded-md border border-hairline bg-canvas p-4 shadow-[0_10px_30px_-8px_rgba(41,38,63,0.35)] desktop:left-10 desktop:right-6">
             <div className="flex items-center gap-3.5">
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-green-100">
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-green-500 text-white">

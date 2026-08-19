@@ -97,9 +97,37 @@ describe("SejaParceiroPage — como funciona", () => {
     expect(conteudo.className).not.toContain("opacity-40");
   });
 
-  it("o card verde de aprovação flutua sobre a foto", () => {
+  it("o card de aprovação flutua sobre a foto", () => {
     renderPage();
     expect(screen.getByText("Cadastro aprovado!")).toBeInTheDocument();
+  });
+
+  /**
+   * Regressão de 19/08/2026: o bloco "Como funciona" reusava a foto do hero, e a
+   * mesma imagem duas vezes na página fazia a seção parecer eco do topo.
+   */
+  it("a foto dos passos não é a mesma do hero", () => {
+    renderPage();
+
+    const fotos = [...document.querySelectorAll("img")]
+      .map((img) => img.getAttribute("src"))
+      .filter((src): src is string => Boolean(src?.startsWith("/images/seja-parceiro")));
+
+    expect(fotos.length).toBeGreaterThanOrEqual(2);
+    expect(new Set(fotos).size).toBe(fotos.length);
+  });
+
+  /**
+   * O verde do card fica só no ícone. Contorno e sombra são neutros: sobre a foto
+   * o card precisa parecer levantado, não iluminado de verde.
+   */
+  it("o card de aprovação tem contorno e sombra neutros", () => {
+    renderPage();
+
+    const card = screen.getByText("Cadastro aprovado!").closest("div.absolute")!;
+    expect(card.className).toContain("border-hairline");
+    expect(card.className).not.toContain("border-green");
+    expect(card.className).not.toMatch(/shadow-\[[^\]]*rgba\(34,197,94/);
   });
 });
 
