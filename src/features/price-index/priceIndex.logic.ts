@@ -30,6 +30,8 @@ export type PriceUnit = {
   distance_m: number | null;
   min_stay_days: number | null;
   price_updated_at: string | null;
+  /** Capa da unidade (`location.photos[1]` no Postgres, a mesma da busca). Vira `image` no JSON-LD. */
+  photo?: string | null;
   prices: PriceEntry[];
 };
 

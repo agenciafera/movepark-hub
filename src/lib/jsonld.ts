@@ -346,6 +346,8 @@ export function destinationOffersSchema(args: {
     name: string;
     url: string;
     description?: string | null;
+    /** Capa da unidade, a mesma do card visível. Vira `image`, que o Google pede no Product. */
+    image?: string | null;
     /** Faixa de preço da matriz do build. Null quando o motor não cobriu a vaga. */
     price: {
       lowPrice: number;
@@ -368,6 +370,7 @@ export function destinationOffersSchema(args: {
             name: p.name,
             description: p.description ?? undefined,
             url: absoluta(p.url),
+            image: p.image ? [absoluta(p.image)] : undefined,
             offers: {
               "@type": "AggregateOffer",
               priceCurrency: "BRL",

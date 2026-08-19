@@ -253,6 +253,9 @@ export default function DestinoPage() {
       name: `${r.operator.name} · ${r.parking_type.name}`,
       url: `/p/${r.operator.slug}/${r.location.slug}/${r.parking_type.code}`,
       description: `Estacionamento perto do ${seoLabelPrimary(destination)}, em ${destination.city}.`,
+      // A capa que o card ao lado já mostra. `image` é recomendado no Product, e sem ele o
+      // Search Console acusa aviso em cada item da lista.
+      image: r.location.cover_image,
       price:
         totais.length > 0
           ? {

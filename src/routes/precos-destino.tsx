@@ -38,6 +38,11 @@ function distanciaLabel(dest: PriceDestination, m: number | null): string | null
   return dest.type === "airport" || dest.type === "bus_terminal" ? `${d} do terminal` : d;
 }
 
+/** Host na frente do caminho relativo do legado, que o buscador não resolve em JSON-LD. */
+function absolutaSite(url: string): string {
+  return /^https?:\/\//i.test(url) ? url : `${SITE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+}
+
 /**
  * JSON-LD: um Product por vaga, com a faixa de preço real das durações.
  *
@@ -64,6 +69,10 @@ function produtosSchema(dest: PriceDestination, rows: MatrixRow[]) {
         "@type": "Product",
         name: `${row.label} · ${row.unit.parking_type_name}`,
         description: `Estacionamento perto de ${nome}, com reserva online pela Movepark.`,
+        // `image` é recomendado pelo Google no Product, e sem ele o Search Console acusa aviso
+        // na lista inteira. É a mesma capa que a busca e a página da unidade usam; absoluta,
+        // porque metade das unidades guarda caminho relativo do legado.
+        image: row.unit.photo ? [absolutaSite(row.unit.photo)] : undefined,
         offers: {
           "@type": "AggregateOffer",
           priceCurrency: "BRL",

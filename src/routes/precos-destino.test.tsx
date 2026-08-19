@@ -24,6 +24,7 @@ function unit(overrides: Partial<PriceUnit>): PriceUnit {
     distance_m: 477,
     min_stay_days: null,
     price_updated_at: "2026-08-14T10:00:00Z",
+    photo: "/Estacionamentos/aerovalet/guarulhos/capa.webp",
     prices: [
       { days: 1, total: 18.9, old_total: 22.68 },
       { days: 7, total: 111.3, old_total: 133.56 },
@@ -120,6 +121,20 @@ describe("PrecosDestinoPage", () => {
   it("destino sem preço explica em vez de quebrar", async () => {
     setup(null);
     expect(await screen.findByText("Sem tabela de preços por aqui")).toBeInTheDocument();
+  });
+
+  it("publica image absoluta no Product, que o Google pede", async () => {
+    setup();
+    await screen.findByRole("heading", { level: 1 });
+
+    const lista = [...document.querySelectorAll('script[type="application/ld+json"]')]
+      .map((s) => JSON.parse(s.textContent ?? "{}"))
+      .find((d) => d["@type"] === "ItemList");
+    const itens = lista.itemListElement as { item: { image?: string[] } }[];
+    expect(itens[0].item.image).toEqual([
+      "https://movepark.co/Estacionamentos/aerovalet/guarulhos/capa.webp",
+    ]);
+    expect(itens.every((i) => i.item.image)).toBe(true);
   });
 
   it("deixa fora do JSON-LD a linha sem preço em nenhuma duração", async () => {

@@ -6,7 +6,7 @@
   "scripts": {
     "prepare": "lefthook install && node scripts/setup-git-filters.mjs",
     "dev": "node --import ./scripts/ws-polyfill.mjs node_modules/.bin/vite",
-    "build": "tsc -b && node --import ./scripts/ws-polyfill.mjs node_modules/.bin/vite-react-ssg build && node scripts/canonicalize-sitemap.mjs && node scripts/split-sitemap.mjs && node scripts/write-paths-manifest.mjs && node scripts/generate-geo-artifacts.mjs",
+    "build": "tsc -b && node --import ./scripts/ws-polyfill.mjs node_modules/.bin/vite-react-ssg build && node scripts/canonicalize-sitemap.mjs && node scripts/split-sitemap.mjs && node scripts/write-paths-manifest.mjs && node scripts/generate-geo-artifacts.mjs && node scripts/audit-structured-data.mjs",
     "preview": "bun run build && wrangler dev",
     "lint": "eslint .",
     "typecheck": "tsc -b --noEmit && tsc -p e2e/playwright/tsconfig.json --noEmit",
@@ -22,6 +22,7 @@
     "deploy:api": "wrangler deploy -c wrangler.api.jsonc",
     "gen:cards": "node scripts/gen-card-hashes.mjs",
     "lint:openapi": "node scripts/check-openapi-drift.mjs",
+    "lint:schema": "node scripts/audit-structured-data.mjs",
     "lint:edge-functions": "node scripts/check-edge-functions.mjs",
     "test:windup": "windup run --all",
     "report:windup": "windup run --all --reporter json --base-url ${WINDUP_BASE_URL:-http://localhost:5173} && node scripts/windup-suite-report.mjs",

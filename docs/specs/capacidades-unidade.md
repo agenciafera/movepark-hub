@@ -334,6 +334,31 @@ schema passa a mentir sem ninguém ver, que é a forma mais cara desse bug volta
 O `null` de `productOfferSchema` continua, agora como rede: sem faixa, sem `base_price` e sem nota,
 o nó não é publicado.
 
+## A varredura do site inteiro (19/08/2026)
+
+Depois do conserto, o HTML do build foi auditado nó a nó contra as regras do Google: **476
+páginas, 4.324 nós de dado estruturado, zero erro**. O script mora em
+`scripts/audit-structured-data.mjs` e roda sobre `dist/`, então é reexecutável a cada build.
+
+O que ele fecha, além do `Product` sem `offers`: `Offer` sem `price` ou `priceCurrency`,
+`AggregateOffer` com `lowPrice` vazio ou `Infinity`, `AggregateRating` sem `reviewCount`,
+`Review` sem `author` ou nota, `Question` sem `acceptedAnswer.text`, `BreadcrumbList` com
+`position` fora de ordem, `Article` sem `headline`/`author`/`datePublished`, URL relativa em
+`url`, `image`, `logo` ou `item`, e JSON-LD que nem parseia.
+
+A varredura também pegou 34 avisos de `Product` sem `image` nas listas de `/destinos` e
+`/precos`. Na de destino a capa já estava à mão (`SearchResultItem.cover_image`); na de preços
+faltava no `destination_price_index`, e entrou pela migration `20261030093000` como o campo
+`photo` (`location.photos[1]`, a mesma capa da busca, sem campo novo exposto). Restou um aviso
+em todo o site: um post do blog com headline de 112 caracteres, onde o Google recomenda até 110.
+Encurtar é decisão de conteúdo (mexe no H1 publicado), então fica com o dono da pauta.
+
+**O script roda no fim do `bun run build`**, e não só à mão. É o único ponto por onde todo deploy
+passa: o Cloudflare builda a cada push na `main`, então schema inválido reprova o build em vez de
+virar alerta no Search Console semanas depois. Aviso não reprova, porque campo recomendado
+ausente não invalida item. O CI não tem etapa de build (o SSG precisa do banco vivo e leva
+minutos), por isso o guarda mora no build e não no job de qualidade.
+
 ## Base legal (não é parecer; levar ao jurídico)
 
 Oferta vincula o fornecedor (CDC art. 30); omissão relevante é publicidade enganosa (art. 37

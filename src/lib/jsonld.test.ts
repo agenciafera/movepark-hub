@@ -332,6 +332,20 @@ describe("destinationOffersSchema · parceiro sem preço", () => {
     expect(item.offers).toBeUndefined();
   });
 
+  it("publica image absoluta, que o Google pede no Product", () => {
+    const s = destinationOffersSchema({
+      partners: [{ ...comPreco, image: "/Estacionamentos/x/1.webp" }],
+      mapped: [],
+    });
+    const item = s.itemListElement[0].item as { image?: string[] };
+    expect(item.image).toEqual(["https://movepark.co/Estacionamentos/x/1.webp"]);
+  });
+
+  it("sem capa cadastrada, omite image em vez de publicar caminho vazio", () => {
+    const s = destinationOffersSchema({ partners: [{ ...comPreco, image: null }], mapped: [] });
+    expect((s.itemListElement[0].item as { image?: string[] }).image).toBeUndefined();
+  });
+
   it("quem tem preço segue como Product com AggregateOffer", () => {
     const s = destinationOffersSchema({ partners: [comPreco], mapped: [] });
     const item = s.itemListElement[0].item as { "@type": string; offers?: { lowPrice: string } };
