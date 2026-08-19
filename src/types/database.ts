@@ -4518,6 +4518,36 @@ export type Database = {
           },
         ]
       }
+      site_rebuild_request: {
+        Row: {
+          dispatch_id: string | null
+          dispatched_at: string | null
+          id: string
+          net_request_id: number | null
+          op: string
+          requested_at: string
+          source_table: string
+        }
+        Insert: {
+          dispatch_id?: string | null
+          dispatched_at?: string | null
+          id?: string
+          net_request_id?: number | null
+          op: string
+          requested_at?: string
+          source_table: string
+        }
+        Update: {
+          dispatch_id?: string | null
+          dispatched_at?: string | null
+          id?: string
+          net_request_id?: number | null
+          op?: string
+          requested_at?: string
+          source_table?: string
+        }
+        Relationships: []
+      }
       terms_acceptance: {
         Row: {
           accepted_at: string
@@ -5535,12 +5565,14 @@ export type Database = {
         Returns: Json
       }
       cron_complete_bookings: { Args: never; Returns: number }
+      cron_dispatch_site_rebuild: { Args: never; Returns: Json }
       cron_expire_date_change_holds: { Args: never; Returns: number }
       cron_expire_pending_bookings: { Args: never; Returns: number }
       cron_prune_api_request_log: { Args: never; Returns: number }
       cron_prune_checkout_handoff: { Args: never; Returns: number }
       cron_prune_integration_logs: { Args: never; Returns: Json }
       cron_prune_otp_request_log: { Args: never; Returns: undefined }
+      cron_prune_site_rebuild_request: { Args: never; Returns: Json }
       current_company_ids: { Args: never; Returns: string[] }
       current_member_scopes: {
         Args: { p_company_id: string }
@@ -6432,6 +6464,7 @@ export type Database = {
         Args: { p_days?: number[]; p_rule: Json; p_tiers?: Json }
         Returns: Json
       }
+      site_rebuild_decision: { Args: { p_now?: string }; Returns: Json }
       slugify: { Args: { p_text: string }; Returns: string }
       split_person_name: {
         Args: { p_full: string }
