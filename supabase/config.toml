@@ -423,6 +423,11 @@ verify_jwt = false
 [functions.google-place-refresh]
 verify_jwt = false
 
+# Autorização própria: header x-location-audit-key (cron) ou JWT de hub_admin conferido
+# contra o banco (botão do Manager). Ver docs/specs/auditoria-enderecos.md.
+[functions.location-address-audit]
+verify_jwt = false
+
 [functions.chat]
 verify_jwt = false
 

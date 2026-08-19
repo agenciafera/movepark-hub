@@ -2456,6 +2456,151 @@ export type Database = {
           },
         ]
       }
+      location_address_audit: {
+        Row: {
+          created_at: string
+          decision: string
+          decision_note: string | null
+          drift_m: number | null
+          fetch_error: string | null
+          flags: string[]
+          location_id: string
+          match_address: string | null
+          match_business_status: string | null
+          match_latitude: number | null
+          match_longitude: number | null
+          match_maps_url: string | null
+          match_name: string | null
+          match_place_id: string | null
+          name_similarity: number | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          scanned_at: string
+          updated_at: string
+          verified_at: string | null
+          verify_status: string
+        }
+        Insert: {
+          created_at?: string
+          decision?: string
+          decision_note?: string | null
+          drift_m?: number | null
+          fetch_error?: string | null
+          flags?: string[]
+          location_id: string
+          match_address?: string | null
+          match_business_status?: string | null
+          match_latitude?: number | null
+          match_longitude?: number | null
+          match_maps_url?: string | null
+          match_name?: string | null
+          match_place_id?: string | null
+          name_similarity?: number | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          scanned_at?: string
+          updated_at?: string
+          verified_at?: string | null
+          verify_status?: string
+        }
+        Update: {
+          created_at?: string
+          decision?: string
+          decision_note?: string | null
+          drift_m?: number | null
+          fetch_error?: string | null
+          flags?: string[]
+          location_id?: string
+          match_address?: string | null
+          match_business_status?: string | null
+          match_latitude?: number | null
+          match_longitude?: number | null
+          match_maps_url?: string | null
+          match_name?: string | null
+          match_place_id?: string | null
+          name_similarity?: number | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          scanned_at?: string
+          updated_at?: string
+          verified_at?: string | null
+          verify_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_address_audit_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: true
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      location_address_change: {
+        Row: {
+          address_after: string | null
+          address_before: string | null
+          changed_at: string
+          changed_by: string | null
+          destination_after: string | null
+          destination_before: string | null
+          distance_km_after: number | null
+          distance_km_before: number | null
+          id: string
+          latitude_after: number | null
+          latitude_before: number | null
+          location_id: string
+          longitude_after: number | null
+          longitude_before: number | null
+          note: string | null
+          source: string
+        }
+        Insert: {
+          address_after?: string | null
+          address_before?: string | null
+          changed_at?: string
+          changed_by?: string | null
+          destination_after?: string | null
+          destination_before?: string | null
+          distance_km_after?: number | null
+          distance_km_before?: number | null
+          id?: string
+          latitude_after?: number | null
+          latitude_before?: number | null
+          location_id: string
+          longitude_after?: number | null
+          longitude_before?: number | null
+          note?: string | null
+          source?: string
+        }
+        Update: {
+          address_after?: string | null
+          address_before?: string | null
+          changed_at?: string
+          changed_by?: string | null
+          destination_after?: string | null
+          destination_before?: string | null
+          distance_km_after?: number | null
+          distance_km_before?: number | null
+          id?: string
+          latitude_after?: number | null
+          latitude_before?: number | null
+          location_id?: string
+          longitude_after?: number | null
+          longitude_before?: number | null
+          note?: string | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_address_change_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       location_add_on_service: {
         Row: {
           add_on_service_id: string
@@ -5814,6 +5959,39 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      location_address_audit_policy: { Args: Record<PropertyKey, never>; Returns: Json }
+      location_address_audit_queue: {
+        Args: { p_limit?: number }
+        Returns: {
+          address: string
+          destination_code: string
+          google_place_id: string
+          latitude: number
+          location_id: string
+          location_name: string
+          longitude: number
+        }[]
+      }
+      location_address_audit_record: {
+        Args: {
+          p_address?: string
+          p_business_status?: string
+          p_error?: string
+          p_latitude?: number
+          p_location_id: string
+          p_longitude?: number
+          p_maps_url?: string
+          p_name?: string
+          p_name_similarity?: number
+          p_place_id?: string
+          p_status: string
+        }
+        Returns: Json
+      }
+      location_address_door: { Args: { p_address: string }; Returns: string }
+      location_address_key: { Args: { p_address: string }; Returns: string }
+      location_address_number: { Args: { p_address: string }; Returns: string }
+      location_address_scan: { Args: Record<PropertyKey, never>; Returns: number }
       location_external_readiness: {
         Args: { p_location_id: string }
         Returns: Json
@@ -5885,6 +6063,63 @@ export type Database = {
           sessions: number
         }[]
       }
+      manager_location_address_apply: {
+        Args: {
+          p_address?: string
+          p_google_maps_url?: string
+          p_google_place_id?: string
+          p_latitude?: number
+          p_location_id: string
+          p_longitude?: number
+          p_note?: string
+          p_relink_destination?: boolean
+        }
+        Returns: Json
+      }
+      manager_location_address_audit: {
+        Args: { p_only_flagged?: boolean }
+        Returns: {
+          address: string
+          company_name: string
+          decision: string
+          decision_note: string
+          destination_code: string
+          destination_id: string
+          destination_name: string
+          distance_km: number
+          drift_m: number
+          fetch_error: string
+          flags: string[]
+          google_maps_url: string
+          google_place_id: string
+          is_listed: boolean
+          latitude: number
+          location_id: string
+          location_name: string
+          longitude: number
+          match_address: string
+          match_business_status: string
+          match_latitude: number
+          match_longitude: number
+          match_maps_url: string
+          match_name: string
+          match_place_id: string
+          name_similarity: number
+          reviewed_at: string
+          scanned_at: string
+          slug: string
+          status: string
+          suggested_destination_code: string
+          suggested_distance_km: number
+          verified_at: string
+          verify_status: string
+        }[]
+      }
+      manager_location_address_dismiss: {
+        Args: { p_location_id: string; p_note?: string }
+        Returns: undefined
+      }
+      manager_location_address_scan: { Args: Record<PropertyKey, never>; Returns: number }
       manager_prospect_location_delete: {
         Args: { p_id: string }
         Returns: undefined

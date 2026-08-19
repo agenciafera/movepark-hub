@@ -553,3 +553,53 @@ export type MarketingSegmentPreview = {
   reachable_whatsapp: number;
   sample: Array<{ contact_key: string; doc: Record<string, unknown> }>;
 };
+
+/**
+ * Uma linha da auditoria de endereço das unidades (retorno de
+ * `manager_location_address_audit`): o estado atual da unidade, o veredito da última
+ * verificação e para onde a coordenada proposta ancoraria.
+ *
+ * Spec: docs/specs/auditoria-enderecos.md
+ */
+export type LocationAddressAuditRow = {
+  location_id: string;
+  location_name: string;
+  company_name: string;
+  slug: string;
+  status: string;
+  is_listed: boolean;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  google_place_id: string | null;
+  google_maps_url: string | null;
+  destination_id: string | null;
+  destination_code: string | null;
+  destination_name: string | null;
+  /** Distância ao destino ancorado hoje, em km (PostGIS). */
+  distance_km: number | null;
+  flags: string[];
+  scanned_at: string | null;
+  verified_at: string | null;
+  verify_status: LocationAddressVerifyStatus;
+  fetch_error: string | null;
+  match_place_id: string | null;
+  match_name: string | null;
+  match_address: string | null;
+  match_latitude: number | null;
+  match_longitude: number | null;
+  match_maps_url: string | null;
+  match_business_status: string | null;
+  name_similarity: number | null;
+  /** Distância entre o pino gravado e o do Google, em metros. */
+  drift_m: number | null;
+  /** Destino que passaria a ancorar a unidade se o pino do Google for aceito. */
+  suggested_destination_code: string | null;
+  suggested_distance_km: number | null;
+  decision: LocationAddressDecision;
+  decision_note: string | null;
+  reviewed_at: string | null;
+};
+
+export type LocationAddressVerifyStatus = "pending" | "ok" | "divergent" | "no_match" | "error";
+export type LocationAddressDecision = "pending" | "applied" | "dismissed";
