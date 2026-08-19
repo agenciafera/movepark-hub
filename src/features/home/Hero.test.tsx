@@ -149,6 +149,36 @@ describe("Hero — selo de prova social", () => {
   });
 });
 
+describe("Hero: palavra rotativa do H1", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  /**
+   * ClickUp 86ak0e78q: o H1 girava entre aeroporto/rodoviária/bairro, e o
+   * ponto fixo é o que o SSG publica antes de qualquer JS rodar. "aeroporto"
+   * nasce visível porque é a maioria das unidades hoje e é o termo de SEO.
+   */
+  it("nasce em 'aeroporto', sem depender de JS ou de rede", () => {
+    ambiente({ movimentoReduzido: true });
+    renderWithProviders(<Hero />);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "Estacione em qualquer aeroporto do Brasil",
+    );
+  });
+
+  it("não troca a palavra quando o sistema pede menos movimento", () => {
+    ambiente({ movimentoReduzido: true });
+    vi.useFakeTimers();
+    renderWithProviders(<Hero />);
+    act(() => {
+      vi.advanceTimersByTime(15000);
+    });
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "Estacione em qualquer aeroporto do Brasil",
+    );
+    vi.useRealTimers();
+  });
+});
+
 describe("Hero — busca", () => {
   beforeEach(() => ambiente({ movimentoReduzido: true }));
 

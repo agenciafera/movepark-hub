@@ -6,6 +6,7 @@ import { SearchBarPill } from "@/features/search/SearchBarPill";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { formatCompactCount } from "@/lib/format";
 import { CLIPES, clipesPara, deveCarregarVideo, deveCruzar, proximoClipe } from "./heroVideo.logic";
+import { ROTATING_HERO_WORDS, proximaPalavraIndex } from "./heroRotatingWord.logic";
 import { useContagemAnimada } from "@/hooks/useContagemAnimada";
 import { useClientesAtendidos } from "./api";
 
@@ -36,6 +37,32 @@ function CheckIcon() {
 }
 
 const trustPills = ["Estacionamentos verificados", "Compare em segundos", "Sem taxa da Movepark"];
+
+/**
+ * A palavra do tipo de destino, sozinha, pra não interromper a frase em
+ * volta. "aeroporto" nasce visível (o índice começa em 0), então é o que o
+ * SSG publica no HTML e o crawler lê, sem depender de JS rodar primeiro.
+ */
+function PalavraRotativa({ palavras }: { palavras: readonly string[] }) {
+  const [indice, setIndice] = useState(0);
+
+  useEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const id = setInterval(() => {
+      setIndice((i) => proximaPalavraIndex(i, palavras.length));
+    }, 2600);
+    return () => clearInterval(id);
+  }, [palavras]);
+
+  return (
+    <span
+      key={indice}
+      className="inline-block motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-500"
+    >
+      {palavras[indice]}
+    </span>
+  );
+}
 const heroAvatars = [
   "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=64&q=80",
   "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=64&q=80",
@@ -321,7 +348,7 @@ export function Hero() {
           className="mx-auto mb-5 max-w-3xl text-display-3xl text-white"
           style={{ textWrap: "balance" } as React.CSSProperties}
         >
-          Estacione em qualquer aeroporto do Brasil
+          Estacione em qualquer <PalavraRotativa palavras={ROTATING_HERO_WORDS} /> do Brasil
         </h1>
 
         {/* `mb-6` no celular: sem a barra de busca no meio, os 40px do desktop
