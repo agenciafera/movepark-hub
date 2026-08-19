@@ -1,5 +1,3 @@
-import { carUnits, priceFor, type PriceDestination } from "@/features/price-index/priceIndex.logic";
-
 // Lógica pura da página de destino (testável sem render).
 
 /** Menor preço por diária entre os resultados de busca; null se vazio. */
@@ -23,21 +21,6 @@ export function pickRelatedDestinations<
       return (a.sort_order ?? 999) - (b.sort_order ?? 999);
     })
     .slice(0, limit);
-}
-
-/**
- * Menor diária avulsa de um destino, para o card de cross-link.
- *
- * Sai da MESMA matriz que a tabela de preço da página (`priceFor(u, 1)`), e nunca de
- * uma segunda consulta: dois caminhos para o mesmo número viram dois números na
- * mesma sessão. Vaga de moto fica fora, pelo `carUnits`, porque moto compara com
- * moto e um "a partir de R$ 9,90" de moto num card de carro é engano.
- */
-export function destinationFromPrice(dest: PriceDestination): number | null {
-  const totais = carUnits(dest.units)
-    .map((u) => priceFor(u, 1)?.total ?? null)
-    .filter((t): t is number => t != null && t > 0);
-  return totais.length > 0 ? Math.min(...totais) : null;
 }
 
 /**

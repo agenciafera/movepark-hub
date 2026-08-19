@@ -173,23 +173,31 @@ describe("DestinoPage: detalhe do destino (SEO/institucional)", () => {
           slug: "aeroporto-de-viracopos",
           name: "Aeroporto de Viracopos",
           short_name: "Viracopos",
+          seo_label: "Aeroporto Viracopos (VCP)",
         }),
         dest({
           id: "d3",
           slug: "aeroporto-de-congonhas",
           name: "Aeroporto de Congonhas",
           short_name: "Congonhas",
+          seo_label: "Aeroporto Congonhas (CGH)",
         }),
       ],
     } as never);
 
     render();
 
-    expect(screen.getByRole("link", { name: "Viracopos" })).toHaveAttribute(
+    // "Aeroporto Viracopos", e não "Viracopos": o bigrama "estacionamento aeroporto <X>"
+    // é 40,6% dos cliques da página, e o cross-link é onde ele vira link interno.
+    expect(screen.getByRole("link", { name: "Aeroporto Viracopos" })).toHaveAttribute(
       "href",
       "/destinos/aeroporto-de-viracopos",
     );
-    expect(screen.getByRole("link", { name: "Congonhas" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Aeroporto Congonhas" })).toBeInTheDocument();
+    // Sem preço no card: ele é navegação, não comparação.
+    expect(screen.getByRole("link", { name: "Aeroporto Congonhas" })).not.toHaveTextContent(
+      /a partir de/i,
+    );
     // o destino atual (Guarulhos) não aparece como cross-link
     expect(screen.queryByRole("link", { name: "Guarulhos" })).not.toBeInTheDocument();
   });

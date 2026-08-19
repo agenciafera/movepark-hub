@@ -8,7 +8,6 @@ import {
   fetchDestinationProspects,
   fetchDestinationUnits,
 } from "@/features/destinations/api";
-import { destinationFromPrice } from "@/routes/destino.logic";
 import { fetchListing, fetchPriceShowcase } from "@/features/listing/api";
 import { fetchGooglePlaceSnapshot } from "@/features/reviews/googleApi";
 import { fetchFaqBySlug, fetchFaqCombined, fetchFaqIndex } from "@/features/faqs/api";
@@ -228,19 +227,13 @@ async function destinoLoader({ params }: LoaderFunctionArgs) {
     (async () => {
       const { data: irmaos } = await supabase
         .from("destination")
-        .select("id, name, short_name, slug, is_popular, sort_order")
+        .select("id, name, short_name, seo_label, type, slug, is_popular, sort_order")
         .eq("is_published", true)
         .order("sort_order");
       return irmaos ?? [];
     })().catch(() => []),
     fetchDestinationPoints(data.id as string).catch(() => []),
   ]);
-  // O "a partir de" do card de cada destino irmão sai do MESMO índice que a tabela
-  // desta página, e não de uma segunda consulta: o cross-link vira comparação em vez
-  // de uma lista de nomes, sem custar nenhuma chamada a mais no build.
-  const menorDiaria = new Map(
-    (index?.destinations ?? []).map((d) => [d.slug, destinationFromPrice(d)]),
-  );
   return {
     destination: data,
     prospects,
@@ -248,7 +241,7 @@ async function destinoLoader({ params }: LoaderFunctionArgs) {
     faqs,
     priceDestination:
       index?.destinations.find((d: { slug: string }) => d.slug === params.slug) ?? null,
-    related: irmaos.map((d) => ({ ...d, from: menorDiaria.get(d.slug as string) ?? null })),
+    related: irmaos,
     points: points.map((p) => ({ id: p.id, name: p.name })),
     generatedAt: new Date().toISOString(),
   };

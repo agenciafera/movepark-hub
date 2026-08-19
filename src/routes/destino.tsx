@@ -123,11 +123,12 @@ type RelatedDestination = {
   id: string;
   name: string;
   short_name: string | null;
+  /** Necessário para o card do cross-link sair com "Aeroporto <X>", o bigrama da busca. */
+  seo_label: string | null;
+  type: string | null;
   slug: string;
   is_popular?: boolean | null;
   sort_order?: number | null;
-  /** Menor diária avulsa do destino irmão, quando o motor cobre. */
-  from?: number | null;
 };
 
 type DestinoLoaderData = {
@@ -359,18 +360,19 @@ export default function DestinoPage() {
   // O cross-link entre destinos agora vem do loader: dependia de um hook de cliente e por
   // isso não existia no HTML do build, deixando 6 links internos por página invisíveis
   // para o crawler. O hook segue cobrindo a navegação no cliente.
-  // O hook do cliente devolve a linha inteira do destino e sem preço; o loader devolve
-  // só o que o card usa, com o "a partir de". Normaliza antes de escolher os irmãos.
+  // O hook do cliente devolve a linha inteira do destino; o loader devolve só o que o
+  // card usa. Normaliza antes de escolher os irmãos.
   const relatedSource: RelatedDestination[] =
     loaded?.related ??
     (allDestinations.data ?? []).map((d) => ({
       id: d.id,
       name: d.name,
       short_name: d.short_name,
+      seo_label: d.seo_label,
+      type: d.type,
       slug: d.slug,
       is_popular: d.is_popular,
       sort_order: d.sort_order,
-      from: null,
     }));
   const related = pickRelatedDestinations(relatedSource, destination.id, 6);
   // Um card por tipo de vaga, o MESMO card da busca (ResultCard): um único modelo de card entre
@@ -694,10 +696,16 @@ export default function DestinoPage() {
                   ))}
                 </ol>
               </div>
+              {/* Foto, não ilustração: o bloco descreve um serviço que existe no mundo
+                  físico, e o desenho vetorial da van fazia a página parecer explicar um
+                  app. A imagem mostra a parte que o texto não alcança, que é a equipe
+                  pegando a mala da mão de quem chega. */}
               <img
-                src="/illustrations/il-traslado-shuttle.webp"
-                alt=""
-                className="mx-auto h-auto w-full max-w-[420px] object-contain desktop:max-h-[360px] desktop:max-w-none"
+                src="/images/traslado-embarque-van.webp"
+                alt="Atendente do estacionamento recebe a mala de uma passageira ao lado da van do traslado"
+                width={1400}
+                height={1050}
+                className="h-full w-full rounded-lg object-cover desktop:max-h-[400px]"
                 loading="lazy"
                 decoding="async"
               />
@@ -750,16 +758,15 @@ export default function DestinoPage() {
             <ul className="grid grid-cols-2 gap-3 tablet:grid-cols-3 desktop:grid-cols-6">
               {related.map((d) => (
                 <li key={d.id}>
+                  {/* "Aeroporto Guarulhos", e não "Guarulhos (GRU)": o bigrama
+                      "estacionamento aeroporto <X>" é 40,6% dos cliques da página, e o
+                      cross-link é justamente onde ele vira link interno. Sem preço aqui,
+                      porque o card é navegação e não comparação. */}
                   <Link
                     to={`/destinos/${d.slug}`}
-                    className="flex h-full flex-col gap-1 rounded-md border border-hairline p-4 transition hover:border-mp-primary hover:shadow-tier"
+                    className="flex h-full items-center rounded-md border border-hairline p-4 text-title-md text-ink transition hover:border-mp-primary hover:shadow-tier"
                   >
-                    <span className="text-title-md text-ink">{d.short_name ?? d.name}</span>
-                    {d.from != null && (
-                      <span className="text-caption-sm tabular-nums text-muted">
-                        a partir de {formatBRL(d.from)}
-                      </span>
-                    )}
+                    {seoLabelPrimary(d)}
                   </Link>
                 </li>
               ))}
