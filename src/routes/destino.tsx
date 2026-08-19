@@ -2,15 +2,17 @@ import * as React from "react";
 import { Link, useLoaderData, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { OgImage } from "@/lib/ogImage";
-import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { MapPin } from "@phosphor-icons/react";
-import type { Destination, ProspectCard as ProspectCardData } from "@/types/domain";
+import type {
+  Destination,
+  DestinationPoint,
+  ProspectCard as ProspectCardData,
+} from "@/types/domain";
 import {
   useDestinationBySlug,
   useDestinationProspects,
   usePublishedDestinations,
 } from "@/features/destinations/api";
-import { ProspectCard } from "@/features/destinations/ProspectCard";
 import { useSearchResults, type SearchResultItem } from "@/features/search/useSearchResults";
 import { useFaqCombined, type FaqCombinedItem } from "@/features/faqs/api";
 import { FaqList } from "@/features/faqs/FaqList";
@@ -37,23 +39,25 @@ import {
   proximityHeading,
   seoLabelPrimary,
   shuttleHeading,
-  topRatedHeading,
 } from "@/lib/seo";
 import { getLocationCapabilities } from "@/features/listing/capabilities";
 import type { PriceDestination } from "@/features/price-index/priceIndex.logic";
 import { carUnits, priceFor } from "@/features/price-index/priceIndex.logic";
+import { isSnapshotFresh, pickCardBadge } from "@/features/reviews/google.logic";
 import {
   DestinationPriceTable,
   DestinationProximity,
 } from "@/features/destinations/DestinationPrices";
+import { DestinationHero } from "@/features/destinations/DestinationHero";
 import {
   buildDestinoPrices,
   destinationMetaDescription,
   proximityRanking,
+  type ProximityProspect,
 } from "@/features/destinations/destinoPrices.logic";
-import { imageSrcSet, optimizedImageUrl } from "@/lib/storage";
+import { optimizedImageUrl } from "@/lib/storage";
 import { formatBRL } from "@/lib/format";
-import { lowestPerDay, pickRelatedDestinations, pickTopRated } from "./destino.logic";
+import { lowestPerDay, pickRelatedDestinations, pointsSummary } from "./destino.logic";
 import { SITE_URL } from "@/lib/site";
 
 /** Skeleton espelhando o ResultCard (mesma forma/altura), evita salto de layout. */
@@ -84,6 +88,31 @@ function defaultWindow() {
   return { from: from.toISOString(), to: to.toISOString() };
 }
 
+/** Container da página. Uma largura só, a de app (1280), como manda a skill. */
+const CALHA = "mx-auto w-full max-w-[1280px] px-4 desktop:px-8";
+
+function plural(n: number, singular: string, plural_: string): string {
+  return `${n} ${n === 1 ? singular : plural_}`;
+}
+
+/** Uma linha da ficha do destino, ao lado do texto de abertura. */
+function Ficha({ itens }: { itens: { rotulo: string; valor: React.ReactNode }[] }) {
+  if (itens.length === 0) return null;
+  return (
+    <dl className="flex w-full flex-col rounded-md border border-hairline bg-canvas px-6 desktop:w-[320px] desktop:shrink-0">
+      {itens.map((i) => (
+        <div
+          key={i.rotulo}
+          className="flex items-baseline justify-between gap-4 border-b border-hairline-soft py-4 last:border-b-0"
+        >
+          <dt className="text-body-sm text-muted">{i.rotulo}</dt>
+          <dd className="text-right text-title-md tabular-nums text-ink">{i.valor}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 /**
  * O que `destinoLoader` entrega, tudo já no HTML do build: o destino, as unidades vendáveis,
  * os lotes mapeados e o FAQ mesclado (ADR-002). `units` é a semente da lista; a busca com
@@ -97,6 +126,8 @@ type RelatedDestination = {
   slug: string;
   is_popular?: boolean | null;
   sort_order?: number | null;
+  /** Menor diária avulsa do destino irmão, quando o motor cobre. */
+  from?: number | null;
 };
 
 type DestinoLoaderData = {
@@ -108,6 +139,8 @@ type DestinoLoaderData = {
   priceDestination?: PriceDestination | null;
   /** Destinos publicados, para o cross-link sair no HTML do build. */
   related?: RelatedDestination[];
+  /** Terminais/píeres do destino, para a ficha de abertura. */
+  points?: Pick<DestinationPoint, "id" | "name">[];
   /** Momento em que o build consultou o motor. */
   generatedAt?: string;
 } | null;
@@ -131,20 +164,13 @@ export default function DestinoPage() {
   // com unidades ativas no catálogo (foi o caso de Abbapark e Nationpark em Afonso Pena).
   const search = useSearchResults(
     destination
-      ? { dest: destination.code, from: win.from, to: win.to, sort: "price_asc", price_mode: "from", limit: 12 }
-      : null,
-  );
-  // Curadoria "Mais bem avaliados" (08.6): só unidades já avaliadas, por nota desc.
-  const topSearch = useSearchResults(
-    destination
       ? {
           dest: destination.code,
           from: win.from,
           to: win.to,
-          sort: "rating_desc",
-          min_rating: 1,
+          sort: "price_asc",
           price_mode: "from",
-          limit: 4,
+          limit: 12,
         }
       : null,
   );
@@ -160,8 +186,8 @@ export default function DestinoPage() {
   const faqLoading = !loadedFaqs && faqsQuery.isLoading;
   // Destinos publicados p/ cross-link (internal linking entre /destinos).
   const allDestinations = usePublishedDestinations();
-  // Lotes MAPEADOS (E0.17-d): seção própria, abaixo da vendável. Leitura separada de
-  // propósito, porque o lado vendável vem da Edge `search`, com preço e disponibilidade,
+  // Lotes MAPEADOS (E0.17-d): entram na lista de proximidade, marcados. Leitura separada
+  // de propósito, porque o lado vendável vem da Edge `search`, com preço e disponibilidade,
   // e um `union all` em SQL teria que largar isso para caber na mesma linha.
   //
   // No SSG o loader já trouxe (o selo precisa estar no HTML do build); o hook cobre a
@@ -212,26 +238,48 @@ export default function DestinoPage() {
   // trocar o bloco inteiro na frente de quem está lendo.
   const results = search.data?.results ?? loaded?.units ?? [];
   const prospectItems = loaded?.prospects ?? prospects.data ?? [];
+  const points = loaded?.points ?? [];
 
   // Bloco de preço: a matriz 1/7/15/30 do motor, a mesma de /precos/<slug>.
   const priceDest = loaded?.priceDestination ?? null;
   const prices = priceDest ? buildDestinoPrices(priceDest) : null;
   const generatedAt = loaded?.generatedAt ?? null;
 
+  // Endereço do parceiro vem da vitrine, não da matriz: o motor não carrega endereço.
+  const addressByLocation = new Map(
+    results.map((r) => [`${r.operator.slug}/${r.location.slug}`, r.location.address ?? null]),
+  );
+
+  // A nota do Google do lote mapeado só sobrevive 30 dias, e esta página é a única em
+  // que ninguém mais confere: o loader roda no BUILD, então o HTML sai congelado com o
+  // resultado do dia do deploy. Sem o filtro aqui, uma página construída no dia 0
+  // continuaria mostrando nota do Google no dia 31.
+  const prospectRows: ProximityProspect[] = prospectItems.map((p) => {
+    const fresco = !!p.google_fetched_at && isSnapshotFresh(p.google_fetched_at);
+    const badge = pickCardBadge(
+      { avg: null, count: 0 },
+      fresco ? { rating: p.google_rating, count: p.google_rating_count } : null,
+    );
+    return {
+      name: p.name,
+      slug: p.slug,
+      address: p.address,
+      distance_km: p.distance_km,
+      reference_name: p.reference_name,
+      rating: badge ? { avg: badge.avg, count: badge.count } : null,
+    };
+  });
+
   // Ranking de distância medido no banco (PostGIS, ADR-001), juntando parceiro e lote
-  // mapeado. Some inteiro em destino sem coordenada de unidade, em vez de listar sem número.
-  const proximity = priceDest
-    ? proximityRanking({
-        units: priceDest.units,
-        prospects: prospectItems.map((p) => ({
-          name: p.name,
-          slug: p.slug,
-          distance_km: p.distance_km,
-        })),
-        destinationSlug: destination.slug,
-        anchorLabel: proximityAnchorLabel(destination),
-      })
-    : [];
+  // mapeado. Sem matriz do motor não há distância de parceiro, e a lista fica só com os
+  // mapeados, que é melhor do que sumir com a seção inteira.
+  const proximity = proximityRanking({
+    units: priceDest?.units ?? [],
+    prospects: prospectRows,
+    destinationSlug: destination.slug,
+    anchorLabel: proximityAnchorLabel(destination),
+    addressByLocation,
+  });
 
   // Espelha exatamente o que está visível, na mesma ordem: unidades vendáveis primeiro,
   // lotes mapeados depois. A LISTA sai da vitrine (`results`), não da matriz de preço, para
@@ -311,13 +359,20 @@ export default function DestinoPage() {
   // O cross-link entre destinos agora vem do loader: dependia de um hook de cliente e por
   // isso não existia no HTML do build, deixando 6 links internos por página invisíveis
   // para o crawler. O hook segue cobrindo a navegação no cliente.
-  const related = pickRelatedDestinations(
-    loaded?.related ?? allDestinations.data ?? [],
-    destination.id,
-    6,
-  );
-  // Mesma regra nas duas fontes: a busca já vem por nota, a semente do build vem por preço.
-  const topResults = pickTopRated(topSearch.data?.results ?? loaded?.units ?? [], 4);
+  // O hook do cliente devolve a linha inteira do destino e sem preço; o loader devolve
+  // só o que o card usa, com o "a partir de". Normaliza antes de escolher os irmãos.
+  const relatedSource: RelatedDestination[] =
+    loaded?.related ??
+    (allDestinations.data ?? []).map((d) => ({
+      id: d.id,
+      name: d.name,
+      short_name: d.short_name,
+      slug: d.slug,
+      is_popular: d.is_popular,
+      sort_order: d.sort_order,
+      from: null,
+    }));
+  const related = pickRelatedDestinations(relatedSource, destination.id, 6);
   // Um card por tipo de vaga, o MESMO card da busca (ResultCard): um único modelo de card entre
   // home, busca e destino (E2.1.3).
   // A janela só entra no href DEPOIS que a busca do cliente responde. `defaultWindow()`
@@ -330,6 +385,70 @@ export default function DestinoPage() {
   // O JSON-LD pede número; o banco entrega `numeric`, que chega como string.
   const lat = Number(destination.latitude);
   const lng = Number(destination.longitude);
+
+  // ── O que a abertura e a ficha declaram ───────────────────────────────────
+  const parceiros = new Set(results.map((r) => `${r.operator.slug}/${r.location.slug}`)).size;
+  const temParceiro = parceiros > 0;
+  const maisPerto = proximity.find((p) => p.distanceLabel != null)?.distanceLabel ?? null;
+  const nomeCurto = destination.short_name ?? destination.name;
+
+  const highlights = temParceiro
+    ? [
+        plural(
+          parceiros,
+          "estacionamento com reserva online",
+          "estacionamentos com reserva online",
+        ),
+        maisPerto ? `o mais perto fica a ${maisPerto}` : null,
+        prospectItems.length > 0
+          ? plural(
+              prospectItems.length,
+              "estacionamento mapeado na região",
+              "estacionamentos mapeados na região",
+            )
+          : null,
+      ].filter((h): h is string => h != null)
+    : [
+        prospectItems.length > 0
+          ? plural(
+              prospectItems.length,
+              "estacionamento mapeado na região",
+              "estacionamentos mapeados na região",
+            )
+          : null,
+        "ainda sem reserva online por aqui",
+      ].filter((h): h is string => h != null);
+
+  const destaque =
+    temParceiro && fromPrice != null
+      ? {
+          rotulo: "A partir de",
+          valor: formatBRL(fromPrice),
+          sufixo: "/ diária",
+          cta: { label: "Ver vagas", href: "#parceiros" },
+        }
+      : prospectItems.length > 0
+        ? {
+            rotulo: "Mapeados na região",
+            valor: String(prospectItems.length),
+            cta: { label: "Ver a lista", href: "#mapeados" },
+          }
+        : null;
+
+  const ficha = [
+    points.length > 0
+      ? {
+          rotulo: points.length === 1 ? "Terminal" : "Terminais",
+          valor: pointsSummary(points.map((p) => p.name)),
+        }
+      : null,
+    temParceiro ? { rotulo: "Com reserva online", valor: String(parceiros) } : null,
+    prospectItems.length > 0
+      ? { rotulo: "Mapeados na região", valor: String(prospectItems.length) }
+      : null,
+    maisPerto ? { rotulo: "Mais perto", valor: maisPerto } : null,
+    fromPrice != null ? { rotulo: "Diária a partir de", valor: formatBRL(fromPrice) } : null,
+  ].filter((i): i is { rotulo: string; valor: string } => i != null);
 
   return (
     <>
@@ -346,11 +465,18 @@ export default function DestinoPage() {
         {ogImage && <meta property="og:image:type" content="image/jpeg" />}
         {ogImage && <meta property="og:image:width" content="1200" />}
         {ogImage && <meta property="og:image:height" content="630" />}
-        {ogImage && <meta property="og:image:alt" content={`Estacionamento em ${destination.name}`} />}
+        {ogImage && (
+          <meta property="og:image:alt" content={`Estacionamento em ${destination.name}`} />
+        )}
         {ogImage && <meta name="twitter:image" content={ogImage} />}
         <script type="application/ld+json">
           {JSON.stringify(
-            destinationSchema({ ...destination, latitude: lat, longitude: lng, image: schemaImages }),
+            destinationSchema({
+              ...destination,
+              latitude: lat,
+              longitude: lng,
+              image: schemaImages,
+            }),
           )}
         </script>
         <script type="application/ld+json">
@@ -362,9 +488,7 @@ export default function DestinoPage() {
             ]),
           )}
         </script>
-        {offersSchema && (
-          <script type="application/ld+json">{JSON.stringify(offersSchema)}</script>
-        )}
+        {offersSchema && <script type="application/ld+json">{JSON.stringify(offersSchema)}</script>}
         {faqItems.length > 0 && (
           <script type="application/ld+json">{JSON.stringify(faqSchema(faqItems))}</script>
         )}
@@ -378,133 +502,111 @@ export default function DestinoPage() {
           não afirma lugar nenhum. */}
       {!ogImage && <OgImage area="marca" />}
 
-      <article className="mx-auto w-full max-w-5xl px-4 py-8 tablet:py-12">
-        {/* Breadcrumb (espelha o BreadcrumbList do JSON-LD, agora visível) */}
-        <Breadcrumb
-          className="mb-4"
-          items={[
+      <article className="flex flex-col">
+        <DestinationHero
+          trilha={[
             { label: "Início", to: "/" },
             { label: "Destinos", to: "/destinos" },
-            { label: destination.short_name ?? destination.name },
+            { label: nomeCurto },
           ]}
+          eyebrow={`${destination.city}${destination.state ? ` · ${destination.state}` : ""}`}
+          heading={destinationHeading(destination)}
+          highlights={highlights}
+          heroUrl={heroUrl}
+          alt={destination.name}
+          destaque={destaque}
         />
 
-        {/* Hero */}
-        <header className="flex flex-col gap-3">
-          <span className="text-badge uppercase text-muted-steel">
-            {destination.city}
-            {destination.state ? ` · ${destination.state}` : ""}
-          </span>
-          <h1 className="text-balance text-display-xl text-ink">
-            {destinationHeading(destination)}
-          </h1>
-          {destination.intro ? (
-            <div className="space-y-3 text-pretty text-body-md text-muted">
-              {destination.intro.split(/\n{2,}/).map((p, i) => (
-                <p key={i}>{p}</p>
-              ))}
-            </div>
-          ) : (
-            <p className="text-pretty text-body-md text-muted">{description}</p>
-          )}
-          {fromPrice != null && (
-            <p className="text-body-md text-ink">
-              A partir de <strong className="text-display-sm">{formatBRL(fromPrice)}</strong>
-              <span className="text-muted"> / diária</span>
-            </p>
-          )}
-        </header>
+        {/* Abertura: o texto do destino ao lado da ficha de números. */}
+        <section className={`${CALHA} flex flex-col gap-10 py-12 desktop:flex-row desktop:py-16`}>
+          <div className="flex min-w-0 flex-1 flex-col gap-4">
+            {destination.intro ? (
+              destination.intro.split(/\n{2,}/).map((p, i) => (
+                <p key={i} className="max-w-[68ch] text-pretty text-body-md text-body">
+                  {p}
+                </p>
+              ))
+            ) : (
+              <p className="max-w-[68ch] text-pretty text-body-md text-body">{description}</p>
+            )}
+          </div>
+          <Ficha itens={ficha} />
+        </section>
 
-        {heroUrl && (
-          <img
-            src={optimizedImageUrl(heroUrl, { width: 1024 })}
-            srcSet={imageSrcSet(heroUrl, [640, 1024, 1536])}
-            sizes="(min-width: 1024px) 1024px, 100vw"
-            alt={destination.name}
-            width={1024}
-            height={439}
-            className="mt-6 aspect-[21/9] w-full rounded-md object-cover"
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
-          />
-        )}
-
-        {/* Mais bem avaliados (curadoria) */}
-        {topResults.length > 0 && (
-          <section className="mt-10">
-            <h2 className="mb-4 text-balance text-display-md text-ink">
-              {topRatedHeading(destination)}
-            </h2>
-            <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-3">
-              {topResults.map((r) => (
-                <ResultCard
-                  key={`top-${r.id}`}
-                  item={r}
-                  isSaved={saved.isSaved(r.id)}
-                  onToggleSave={() => saved.toggle(r.id)}
-                  searchParams={searchWindowParams}
-                  source="destino"
-                />
-              ))}
+        {/* Vagas com reserva online */}
+        <section id="parceiros" className={`${CALHA} scroll-mt-24 pb-4`}>
+          <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+            <div className="flex flex-col gap-2">
+              <h2 className="text-balance text-display-2xl text-ink">
+                {destinationListHeading(destination)}
+              </h2>
+              {temParceiro && (
+                <p className="text-body-md text-body">
+                  {plural(results.length, "vaga", "vagas")} em{" "}
+                  {plural(parceiros, "estacionamento parceiro", "estacionamentos parceiros")}.
+                </p>
+              )}
             </div>
-          </section>
-        )}
-
-        {/* Estacionamentos */}
-        <section className="mt-10">
-          <h2 className="mb-4 text-balance text-display-md text-ink">
-            {destinationListHeading(destination)}
-          </h2>
-          {/* Skeleton só quando de fato não se sabe nada ainda. No HTML do build o loader já
-              respondeu: se ele trouxe zero unidade, o destino não tem reserva online e o
-              certo é mandar a frase que explica isso, não 41 caixas cinzas. Sem loader
-              (navegação no cliente) o skeleton continua valendo. */}
-          {search.isLoading && results.length === 0 && !loaded?.units ? (
-            <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <ParkingCardSkeleton key={i} />
-              ))}
-            </div>
-          ) : results.length === 0 ? (
-            // Em destino novo (REC, NVT, CNF, GIG, SDU) a seção vendável vazia é o caso
-            // NORMAL, não a exceção: o texto aponta para a seção de baixo quando ela
-            // existe, em vez de deixar a página parecendo quebrada.
-            <EmptyState
-              title={`Ainda não temos reserva online em ${destination.short_name ?? destination.name}`}
-              description={
-                prospectItems.length > 0
-                  ? "Os estacionamentos que mapeamos na região estão logo abaixo."
-                  : undefined
-              }
-            />
-          ) : (
-            <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-3">
-              {results.map((r) => (
-                <ResultCard
-                  key={r.id}
-                  item={r}
-                  isSaved={saved.isSaved(r.id)}
-                  onToggleSave={() => saved.toggle(r.id)}
-                  searchParams={searchWindowParams}
-                  source="destino"
-                  badges={computeResultBadges(r, results)}
-                />
-              ))}
-            </div>
-          )}
-          {/* O CTA fica mesmo com a lista vazia, e isso é decisão, não descuido:
-              `results` vazio também é "o destino tem unidades, mas nenhuma livre na
-              janela padrão de D+7". Esconder o link nessa hora tiraria justamente o
-              "escolher datas" de quem precisa dele. Em destino sem nenhuma unidade (REC),
-              o custo é uma busca vazia; no outro caso, o custo seria um beco. */}
-          <div className="mt-4">
+            {/* O CTA fica mesmo com a lista vazia, e isso é decisão, não descuido:
+                `results` vazio também é "o destino tem unidades, mas nenhuma livre na
+                janela padrão de D+7". Esconder o link nessa hora tiraria justamente o
+                "escolher datas" de quem precisa dele. */}
             <Link
               to={`/search?dest=${destination.code}`}
-              className="text-body-sm font-medium text-mp-primary underline"
+              className="text-body-sm font-medium text-mp-primary underline-offset-2 hover:underline"
             >
-              Ver todos os estacionamentos e escolher datas →
+              Ver todos e escolher datas →
             </Link>
+          </div>
+
+          <div className="mt-6">
+            {/* Skeleton só quando de fato não se sabe nada ainda. No HTML do build o loader já
+                respondeu: se ele trouxe zero unidade, o destino não tem reserva online e o
+                certo é mandar a frase que explica isso, não 41 caixas cinzas. Sem loader
+                (navegação no cliente) o skeleton continua valendo. */}
+            {search.isLoading && results.length === 0 && !loaded?.units ? (
+              <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <ParkingCardSkeleton key={i} />
+                ))}
+              </div>
+            ) : results.length === 0 ? (
+              // Em destino novo (REC, NVT, CNF, GIG, SDU) a seção vendável vazia é o caso
+              // NORMAL, não a exceção: o texto aponta para a lista de baixo quando ela
+              // existe, em vez de deixar a página parecendo quebrada.
+              <EmptyState
+                title={`Ainda não temos reserva online em ${nomeCurto}`}
+                description={
+                  prospectItems.length > 0
+                    ? "Os estacionamentos que mapeamos na região estão logo abaixo, com endereço e distância medida."
+                    : undefined
+                }
+                action={
+                  prospectItems.length > 0 ? (
+                    <a
+                      href="#mapeados"
+                      className="text-body-sm font-medium text-mp-primary underline-offset-2 hover:underline"
+                    >
+                      Ver a lista da região →
+                    </a>
+                  ) : undefined
+                }
+              />
+            ) : (
+              <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-3">
+                {results.map((r) => (
+                  <ResultCard
+                    key={r.id}
+                    item={r}
+                    isSaved={saved.isSaved(r.id)}
+                    onToggleSave={() => saved.toggle(r.id)}
+                    searchParams={searchWindowParams}
+                    source="destino"
+                    badges={computeResultBadges(r, results)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
@@ -512,95 +614,152 @@ export default function DestinoPage() {
             Vem logo depois da vitrine porque é a mesma pergunta que os cards abrem
             ("a partir de R$ X") e que só a tabela fecha. */}
         {prices && generatedAt && (
-          <DestinationPriceTable
-            prices={prices}
-            generatedAt={generatedAt}
-            destinationSlug={destination.slug}
-            heading={priceHeading(destination)}
-          />
-        )}
-
-        {/* Lotes MAPEADOS (E0.17-d): seção própria, sempre ABAIXO da vendável.
-            A separação e a ordem são o produto que o parceiro compra: presença é de
-            graça, conversão é paga. Cada clique que um card mapeado rouba de um parceiro
-            ativo no mesmo aeroporto é GMV que já era nossa, trocada por nada. Por isso as
-            duas seções nunca se misturam numa lista só, e nunca paginam juntas: a
-            proporção varia demais (em Confins vão ser 7 mapeados e 0 vendáveis, em GRU o
-            inverso). */}
-        {prospectItems.length > 0 && (
-          <section className="mt-10">
-            <h2 className="mb-1 text-balance text-display-md text-ink">
-              Outros estacionamentos na região
-            </h2>
-            <p className="mb-4 text-body-md text-muted">
-              Mapeamos estes estacionamentos. Ainda não dá para reservar pela Movepark.
-            </p>
-            <ul className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
-              {prospectItems.map((p) => (
-                <ProspectCard key={p.id} item={p} destinationSlug={destination.slug} />
-              ))}
-            </ul>
+          <section className="mt-12 bg-surface-soft py-16 desktop:py-24">
+            <div className={CALHA}>
+              <DestinationPriceTable
+                prices={prices}
+                generatedAt={generatedAt}
+                destinationSlug={destination.slug}
+                heading={priceHeading(destination)}
+              />
+            </div>
           </section>
         )}
 
-        {/* Distância medida (PostGIS, ADR-001), parceiro e mapeado na mesma régua. */}
-        <DestinationProximity rows={proximity} heading={proximityHeading(destination)} />
-
-        {/* Como funciona o traslado (educativo, com ilustração da marca) */}
-        <section className="mt-10">
-          <div className="grid grid-cols-1 items-center gap-6 rounded-lg bg-mp-pale p-6 tablet:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] desktop:gap-10 desktop:p-8">
-            <img
-              src="/illustrations/il-traslado-shuttle.webp"
-              alt=""
-              className="mx-auto h-40 w-auto tablet:mx-0"
+        {/* Todos os estacionamentos da região, por distância medida (PostGIS, ADR-001).
+            Parceiro e lote mapeado na mesma régua, cada um com o seu selo: a ordem é
+            por distância, e o mapeado pode muito bem ser o mais perto (ADR-010). */}
+        {proximity.length > 0 && (
+          <section id="mapeados" className={`${CALHA} scroll-mt-24 py-16 desktop:py-20`}>
+            <DestinationProximity
+              rows={proximity}
+              heading={proximityHeading(destination)}
+              lead="Medimos a distância a partir das coordenadas de cada endereço. Nenhum número desta lista é declarado pelo estacionamento, e nos lotes sem reserva online a reserva é feita direto com eles."
             />
-            <div>
-              <h2 className="text-balance text-display-md text-ink">{shuttleHeading(destination)}</h2>
-              <p className="mt-3 text-body-md text-body">
-                Você deixa o carro no estacionamento parceiro e um transfer leva você até o
-                terminal. Na volta, é só avisar que ele passa te buscar. O tempo e a frequência
-                ficam na página de cada estacionamento.
-              </p>
+          </section>
+        )}
+
+        {/* Como funciona o traslado. Só entra onde existe parceiro: em destino que a
+            Movepark ainda está mapeando, o bloco descreveria um serviço que a página não
+            consegue entregar, e "você deixa o carro no estacionamento parceiro" não tem
+            parceiro nenhum para apontar. Onde ele entra, descreve o modelo sem prometer
+            preço nem inclusão na diária, porque isso varia por unidade (ADR-009). */}
+        {temParceiro && (
+          <section className="bg-surface-soft py-16 desktop:py-24">
+            <div
+              className={`${CALHA} grid grid-cols-1 items-center gap-10 desktop:grid-cols-2 desktop:gap-16`}
+            >
+              <div className="flex flex-col gap-4">
+                <span className="text-badge uppercase tracking-[0.4px] text-mp-indigo">
+                  O traslado
+                </span>
+                <h2 className="text-balance text-display-2xl text-ink">
+                  {shuttleHeading(destination)}
+                </h2>
+                {/* Quem oferece, e não "os parceiros oferecem": traslado é comodidade de
+                    cada unidade, e a página do destino fala de todas elas. */}
+                <p className="max-w-[56ch] text-pretty text-body-md text-body">
+                  Quem oferece traslado leva e traz você entre o estacionamento e o terminal. O
+                  tempo e a frequência ficam na página de cada estacionamento.
+                </p>
+                <ol className="mt-2 flex flex-col gap-5">
+                  {[
+                    {
+                      t: "Chegue e apresente o voucher",
+                      d: "Na portaria, o QR Code da reserva identifica você e a vaga.",
+                    },
+                    {
+                      t: "A van leva você ao terminal",
+                      d: "O trajeto do estacionamento até o terminal é feito pela van da unidade.",
+                    },
+                    {
+                      t: "Na volta, é só avisar",
+                      d: "Mande uma mensagem quando desembarcar e a van passa no ponto de encontro.",
+                    },
+                  ].map((p, i) => (
+                    <li key={p.t} className="flex gap-4">
+                      <span
+                        aria-hidden
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-mp-pale text-caption font-semibold text-mp-indigo"
+                      >
+                        {i + 1}
+                      </span>
+                      <span className="flex flex-col gap-1">
+                        <span className="text-title-md text-ink">{p.t}</span>
+                        <span className="max-w-[46ch] text-pretty text-body-sm text-body">
+                          {p.d}
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+              <img
+                src="/illustrations/il-traslado-shuttle.webp"
+                alt=""
+                className="mx-auto h-auto w-full max-w-[420px] object-contain desktop:max-h-[360px] desktop:max-w-none"
+                loading="lazy"
+                decoding="async"
+              />
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* Mapa */}
-        <section className="mt-10">
-          <h2 className="mb-4 text-display-md text-ink">{locationHeading(destination)}</h2>
+        <section className={`${CALHA} py-16 desktop:py-20`}>
+          <h2 className="mb-6 text-balance text-display-2xl text-ink">
+            {locationHeading(destination)}
+          </h2>
           <GoogleMapEmbed
             title={`Mapa de ${destination.name}`}
             target={{ latitude: destination.latitude, longitude: destination.longitude }}
             zoom={13}
-            className="h-80 w-full rounded-md border border-hairline"
+            className="h-[360px] w-full rounded-lg border border-hairline desktop:h-[420px]"
           />
         </section>
 
-        {/* FAQ — camadas destino + global (ADR-002), mesmo componente de listing.tsx/faq.tsx */}
+        {/* FAQ em camadas: destino + global (ADR-002), mesmo componente de listing.tsx e faq.tsx */}
         {(faqLoading || faqItems.length > 0) && (
-          <section className="mt-10">
-            <h2 className="mb-4 text-display-md text-ink">{faqHeading(destination)}</h2>
-            <FaqList
-              items={faqLoading ? undefined : faqData}
-              isLoading={faqLoading}
-              groupByScope
-              destinationLabel={`Sobre ${destination.short_name ?? destination.name}`}
-            />
+          <section className="bg-surface-soft py-16 desktop:py-24">
+            <div className={CALHA}>
+              <h2 className="mb-6 text-balance text-display-2xl text-ink">
+                {faqHeading(destination)}
+              </h2>
+              <FaqList
+                items={faqLoading ? undefined : faqData}
+                isLoading={faqLoading}
+                groupByScope
+                destinationLabel={`Sobre ${nomeCurto}`}
+              />
+              <Link
+                to="/faq"
+                className="mt-6 inline-block text-body-sm font-medium text-mp-primary underline-offset-2 hover:underline"
+              >
+                Ver todas as perguntas na central →
+              </Link>
+            </div>
           </section>
         )}
 
-        {/* Outros destinos — internal linking entre páginas de destino */}
+        {/* Outros destinos: internal linking entre páginas de destino */}
         {related.length > 0 && (
-          <section className="mt-12 border-t border-hairline pt-8">
-            <h2 className="mb-4 text-balance text-display-md text-ink">Estacionamento em outros destinos</h2>
-            <ul className="flex flex-wrap gap-2">
+          <section className={`${CALHA} py-16 desktop:py-20`}>
+            <h2 className="mb-6 text-balance text-display-sm text-ink">
+              Estacionamento em outros destinos
+            </h2>
+            <ul className="grid grid-cols-2 gap-3 tablet:grid-cols-3 desktop:grid-cols-6">
               {related.map((d) => (
                 <li key={d.id}>
                   <Link
                     to={`/destinos/${d.slug}`}
-                    className="inline-flex items-center rounded-full border border-hairline px-3 py-1.5 text-body-sm text-ink transition hover:border-mp-primary hover:text-mp-primary"
+                    className="flex h-full flex-col gap-1 rounded-md border border-hairline p-4 transition hover:border-mp-primary hover:shadow-tier"
                   >
-                    {d.short_name ?? d.name}
+                    <span className="text-title-md text-ink">{d.short_name ?? d.name}</span>
+                    {d.from != null && (
+                      <span className="text-caption-sm tabular-nums text-muted">
+                        a partir de {formatBRL(d.from)}
+                      </span>
+                    )}
                   </Link>
                 </li>
               ))}

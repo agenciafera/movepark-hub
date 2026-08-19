@@ -1,10 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { lowestPerDay, pickRelatedDestinations, pickTopRated } from "./destino.logic";
+import {
+  destinationFromPrice,
+  lowestPerDay,
+  pickRelatedDestinations,
+  pointsSummary,
+} from "./destino.logic";
+import type { PriceDestination, PriceUnit } from "@/features/price-index/priceIndex.logic";
 
 describe("lowestPerDay", () => {
   it("retorna o menor per_day", () => {
     expect(
-      lowestPerDay([{ price: { per_day: 40 } }, { price: { per_day: 25 } }, { price: { per_day: 33 } }]),
+      lowestPerDay([
+        { price: { per_day: 40 } },
+        { price: { per_day: 25 } },
+        { price: { per_day: 33 } },
+      ]),
     ).toBe(25);
   });
   it("null quando vazio", () => {
@@ -31,29 +41,87 @@ describe("pickRelatedDestinations", () => {
   });
 });
 
-describe("pickTopRated", () => {
-  const item = (id: string, avg: number | null, count: number) => ({
-    id,
-    location: { review_avg: avg, review_count: count },
+function unit(over: Partial<PriceUnit> = {}): PriceUnit {
+  return {
+    company_slug: "abbapark",
+    company_name: "Abbapark",
+    location_slug: "afonso-pena",
+    location_name: "Afonso Pena",
+    parking_type_code: "covered",
+    parking_type_name: "Vaga coberta",
+    checkout_mode: "hub",
+    review_avg: null,
+    review_count: 0,
+    has_shuttle: true,
+    shuttle_minutes: null,
+    distance_m: 400,
+    min_stay_days: null,
+    price_updated_at: null,
+    prices: [{ days: 1, total: 39.9, old_total: null }],
+    ...over,
+  };
+}
+
+function dest(units: PriceUnit[]): PriceDestination {
+  return {
+    slug: "aeroporto-afonso-pena",
+    code: "CWB",
+    name: "Aeroporto Afonso Pena",
+    short_name: "Curitiba",
+    type: "airport",
+    city: "São José dos Pinhais",
+    state: "PR",
+    units,
+  };
+}
+
+describe("destinationFromPrice", () => {
+  it("pega a menor diária avulsa entre as vagas de carro", () => {
+    expect(
+      destinationFromPrice(
+        dest([
+          unit({ prices: [{ days: 1, total: 39.9, old_total: null }] }),
+          unit({
+            parking_type_code: "uncovered",
+            prices: [{ days: 1, total: 24.9, old_total: null }],
+          }),
+        ]),
+      ),
+    ).toBe(24.9);
   });
 
-  it("só entra quem já foi avaliado", () => {
-    const r = pickTopRated([item("a", 4.9, 0), item("b", null, 0), item("c", 4.1, 3)]);
-    expect(r.map((i) => i.id)).toEqual(["c"]);
+  it("ignora a moto, que compara com moto", () => {
+    expect(
+      destinationFromPrice(
+        dest([
+          unit({ prices: [{ days: 1, total: 39.9, old_total: null }] }),
+          unit({
+            parking_type_code: "motorcycle",
+            prices: [{ days: 1, total: 9.9, old_total: null }],
+          }),
+        ]),
+      ),
+    ).toBe(39.9);
   });
 
-  it("ordena por nota desc e corta no limite", () => {
-    // A semente do build chega ordenada por PREÇO. Sem reordenar aqui, o bloco "Mais bem
-    // avaliados" sairia no HTML em ordem de preço e trocaria de ordem quando a busca
-    // respondesse, na frente de quem está lendo.
-    const r = pickTopRated(
-      [item("c", 4.1, 3), item("a", 4.9, 10), item("b", 4.5, 2), item("d", 3.2, 1), item("e", 5, 1)],
-      3,
+  it("null quando nenhuma vaga cota uma diária avulsa", () => {
+    expect(destinationFromPrice(dest([unit({ prices: [] })]))).toBeNull();
+  });
+});
+
+describe("pointsSummary", () => {
+  it("tira o prefixo repetido quando todos os pontos começam igual", () => {
+    expect(pointsSummary(["Terminal 1", "Terminal 2", "Terminal 3"])).toBe("Terminal 1, 2 e 3");
+  });
+
+  it("mantém os nomes inteiros quando não há prefixo comum", () => {
+    expect(pointsSummary(["Terminal Rodoviário", "Píer Sul"])).toBe(
+      "Terminal Rodoviário e Píer Sul",
     );
-    expect(r.map((i) => i.id)).toEqual(["e", "a", "b"]);
   });
 
-  it("lista vazia devolve vazia", () => {
-    expect(pickTopRated([])).toEqual([]);
+  it("ponto único sai como está, e lista vazia vira string vazia", () => {
+    expect(pointsSummary(["Terminal Único"])).toBe("Terminal Único");
+    expect(pointsSummary([])).toBe("");
   });
 });

@@ -3,7 +3,12 @@ import type { RouteRecord } from "vite-react-ssg";
 import type { LoaderFunctionArgs } from "react-router-dom";
 
 import { supabase } from "@/lib/supabase";
-import { fetchDestinationProspects, fetchDestinationUnits } from "@/features/destinations/api";
+import {
+  fetchDestinationPoints,
+  fetchDestinationProspects,
+  fetchDestinationUnits,
+} from "@/features/destinations/api";
+import { destinationFromPrice } from "@/routes/destino.logic";
 import { fetchListing, fetchPriceShowcase } from "@/features/listing/api";
 import { fetchGooglePlaceSnapshot } from "@/features/reviews/googleApi";
 import { fetchFaqBySlug, fetchFaqCombined, fetchFaqIndex } from "@/features/faqs/api";
@@ -215,7 +220,7 @@ async function destinoLoader({ params }: LoaderFunctionArgs) {
   // existe, sem unidade vendável a lista volta a depender da busca no cliente, sem FAQ o
   // hook do cliente cobre e sem preço a tabela some. Em paralelo porque nenhuma depende
   // da outra.
-  const [prospects, units, faqs, index, irmaos] = await Promise.all([
+  const [prospects, units, faqs, index, irmaos, points] = await Promise.all([
     fetchDestinationProspects(params.slug!).catch(() => []),
     fetchDestinationUnits(data).catch(() => []),
     fetchFaqCombined({ destinationId: data.id as string }).catch(() => null),
@@ -228,7 +233,14 @@ async function destinoLoader({ params }: LoaderFunctionArgs) {
         .order("sort_order");
       return irmaos ?? [];
     })().catch(() => []),
+    fetchDestinationPoints(data.id as string).catch(() => []),
   ]);
+  // O "a partir de" do card de cada destino irmão sai do MESMO índice que a tabela
+  // desta página, e não de uma segunda consulta: o cross-link vira comparação em vez
+  // de uma lista de nomes, sem custar nenhuma chamada a mais no build.
+  const menorDiaria = new Map(
+    (index?.destinations ?? []).map((d) => [d.slug, destinationFromPrice(d)]),
+  );
   return {
     destination: data,
     prospects,
@@ -236,16 +248,14 @@ async function destinoLoader({ params }: LoaderFunctionArgs) {
     faqs,
     priceDestination:
       index?.destinations.find((d: { slug: string }) => d.slug === params.slug) ?? null,
-    related: irmaos,
+    related: irmaos.map((d) => ({ ...d, from: menorDiaria.get(d.slug as string) ?? null })),
+    points: points.map((p) => ({ id: p.id, name: p.name })),
     generatedAt: new Date().toISOString(),
   };
 }
 
 async function fetchAllDestinationPaths(): Promise<string[]> {
-  const { data } = await supabase
-    .from("destination")
-    .select("slug")
-    .eq("is_published", true);
+  const { data } = await supabase.from("destination").select("slug").eq("is_published", true);
   return (data ?? []).map((d) => `/destinos/${d.slug as string}`);
 }
 
@@ -379,9 +389,7 @@ function blogListingLoader(kind: BlogKind) {
     const slug = params.slug ?? null;
     const todos = await fetchListablePosts();
 
-    const filtrados = slug
-      ? filterPosts(todos, { [kind]: slug } as Record<string, string>)
-      : todos;
+    const filtrados = slug ? filterPosts(todos, { [kind]: slug } as Record<string, string>) : todos;
 
     let name: string | null = null;
     let description: string | null = null;
@@ -1000,7 +1008,6 @@ export const routes: RouteRecord[] = [
           { path: "/operator/recebimento", element: <OperatorRecebimento /> },
         ],
       },
-
     ],
   },
 ];

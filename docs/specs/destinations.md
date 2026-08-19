@@ -472,5 +472,60 @@ em blocos de 6 pelo mesmo motivo de timeout.
 
 | Camada | Arquivo | O que trava |
 |---|---|---|
-| Unitário (Vitest) | `src/features/destinations/destinoPrices.logic.test.ts` | queda por permanência (inclusive o caso "sem desconto", que tem que calar), paridade do resumo com `destinationSummary`, meta description com número e corte em 160 sem quebrar palavra, ranking de distância (ordem, dedupe por location, exclusão de quem não tem medida) |
-| Componente (Vitest) | `src/routes/destino.test.tsx` | a `<table>` existe com cabeçalho por duração, total, valor por diária, balcão e economia; a frase de permanência; a nota de procedência com as duas datas e sem "cobrado no checkout"; a seção some sem parceiro precificado; o ranking de distância na ordem certa; a meta description com número; `AggregateOffer` presente com matriz e ausente sem, e `InStock` nunca emitido em checkout externo |
+| Unitário (Vitest) | `src/features/destinations/destinoPrices.logic.test.ts` | queda por permanência (inclusive o caso "sem desconto", que tem que calar), paridade do resumo com `destinationSummary`, meta description com número e corte em 160 sem quebrar palavra, ranking de distância (ordem, dedupe por location, lote sem medida no fim da lista, endereço e nota que a lista absorveu do card) |
+| Componente (Vitest) | `src/routes/destino.test.tsx` | a `<table>` existe com o cabeçalho do período ativo e os demais escondidos por classe (não desmontados), total, valor por diária, balcão e economia; a frase de permanência; a nota de procedência com as duas datas e sem "cobrado no checkout"; a seção some sem parceiro precificado; o ranking de distância na ordem certa; a meta description com número; `AggregateOffer` presente com matriz e ausente sem, e `InStock` nunca emitido em checkout externo |
+
+---
+
+## Redesenho da página (19/08/2026)
+
+Implementa o desenho `Página de destino Movepark.dc.html` do Claude Design (projeto
+`51065888-8930-4272-950c-7612f726c3dc`). Mudou o **desenho e o inventário de seções**; o
+motor de preço, a Edge de busca, a FAQ em camadas e o JSON-LD continuam iguais.
+
+A página trocou de faixa: era **página de conteúdo** (cabeçalho branco, `max-w-5xl`, foto no
+meio do texto) e virou **hero de marketing**, na tabela da skill `harmonizar-paginas`. A
+justificativa é a mesma da `/sobre` e da `/como-funciona`: quem abre `/destinos/<slug>` está
+decidindo **onde deixar o carro**, e a foto do aeroporto é o que responde "é aqui mesmo?" antes
+de qualquer parágrafo. Com o cabeçalho branco a página abria com um h1 solto e a foto só
+aparecia depois de rolar.
+
+| Antes | Agora |
+|---|---|
+| Cabeçalho branco, container 1024, foto abaixo do texto | Hero sangrado com a foto, trilha e h1 em branco sobre ela, container 1280 |
+| Preço "a partir de" em uma linha de texto | Cartão flutuante no hero, com o "a partir de" e o CTA para a vitrine (`#parceiros`) |
+| Intro corrida | Intro em duas colunas, com a ficha do destino (terminais, quantos parceiros, quantos mapeados, distância mais curta, diária a partir de) |
+| Bloco "Mais bem avaliados" + vitrine | Vitrine única |
+| Cards de lote mapeado + lista de distância | Lista de distância única, com selo por linha |
+| Tabela de preço com 4 colunas de duração | Seletor de período + duas colunas (total e por diária) |
+| Seções empilhadas no mesmo fundo | Faixas alternadas (`bg-surface-soft`) em preço, traslado e FAQ |
+
+Três decisões que valem além do layout:
+
+1. **"Mais bem avaliados" saiu.** Ele repetia de 1 a 4 cards da vitrine logo abaixo, e a nota
+   já aparece dentro de cada `ResultCard`. Em catálogo pequeno (GRU tem 2 parceiros e 6 vagas)
+   os dois blocos mostravam praticamente o mesmo conjunto. `pickTopRated` e a segunda chamada
+   da Edge `search` (`sort=rating_desc`) saíram junto, o que é também uma requisição a menos
+   por página.
+2. **Lote mapeado aparece uma vez só**, na lista de distância. Ver a atualização de 19/08/2026
+   em [`lote-mapeado-vitrine.md`](lote-mapeado-vitrine.md).
+3. **O seletor de período não desmonta os outros períodos.** Eles ficam no DOM com a classe
+   `hidden`, pelo mesmo motivo da `/precos`: a página é pré-renderizada num período só, e
+   desmontar os demais tiraria a maior parte dos preços do HTML que buscador e crawler de IA
+   leem. É **classe**, não o atributo `hidden`, porque o atributo perde para o
+   `tablet:table-cell` que o layout responsivo aplica dentro de media query.
+
+**O que o loader passou a trazer:** `destination_point` (os terminais, para a ficha) e o
+"a partir de" de cada destino irmão, calculado por `destinationFromPrice` sobre o índice de
+preço que o loader **já** buscava. Nenhuma chamada nova ao banco por página.
+
+**Traslado.** O bloco só renderiza onde existe parceiro. Em destino que a Movepark ainda está
+mapeando ele descreveria um serviço que a página não entrega, e "você deixa o carro no
+estacionamento parceiro" não teria parceiro para apontar. Onde entra, descreve o modelo sem
+prometer preço nem inclusão na diária, porque isso varia por unidade (ADR-009). A abertura do
+bloco fala de "quem oferece traslado", não dos parceiros no plural: traslado é comodidade de
+cada unidade.
+
+**Rolagem suave.** O CTA do hero e o atalho do estado vazio são âncoras na própria página. O
+`scroll-behavior: smooth` entrou em `src/index.css`, dentro de
+`@media (prefers-reduced-motion: no-preference)`, e vale para o site inteiro.

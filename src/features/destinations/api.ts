@@ -222,10 +222,7 @@ export function useAdminDestinations() {
   return useQuery({
     queryKey: destinationsKeys.adminList(),
     queryFn: async (): Promise<Destination[]> => {
-      const { data, error } = await supabase
-        .from("destination")
-        .select("*")
-        .order("sort_order");
+      const { data, error } = await supabase.from("destination").select("*").order("sort_order");
       if (error) throw error;
       return (data ?? []) as Destination[];
     },
@@ -274,22 +271,30 @@ export function useDeleteDestination() {
 
 // ── Pontos do destino (terminais) — DAT-05 ──────────────────────────────────
 
-/** Pontos (terminais/píeres) de um destino, ordenados. Leitura pública. */
+/**
+ * Pontos (terminais/píeres) de um destino, ordenados. Leitura pública.
+ *
+ * Exportada solta, e não só como hook, porque o `loader` de `/destinos/<slug>` a chama
+ * no BUILD: a ficha de abertura declara os terminais, e ela precisa sair no HTML
+ * pré-renderizado.
+ */
+export async function fetchDestinationPoints(destinationId: string): Promise<DestinationPoint[]> {
+  const { data, error } = await supabase
+    .from("destination_point")
+    .select("*")
+    .eq("destination_id", destinationId)
+    .order("sort_order");
+  if (error) throw error;
+  return (data ?? []) as DestinationPoint[];
+}
+
 export function useDestinationPoints(destinationId: string | undefined) {
   return useQuery({
     queryKey: destinationId
       ? destinationsKeys.points(destinationId)
       : [...destinationsKeys.all, "points", "none"],
     enabled: !!destinationId,
-    queryFn: async (): Promise<DestinationPoint[]> => {
-      const { data, error } = await supabase
-        .from("destination_point")
-        .select("*")
-        .eq("destination_id", destinationId!)
-        .order("sort_order");
-      if (error) throw error;
-      return (data ?? []) as DestinationPoint[];
-    },
+    queryFn: () => fetchDestinationPoints(destinationId!),
   });
 }
 

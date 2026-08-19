@@ -30,7 +30,7 @@ classe, porque tudo abaixo depende da faixa.
 
 | Faixa | Quais | O que é |
 |---|---|---|
-| **Hero de marketing** | `/`, `/seja-parceiro`, `/sobre`, `/como-funciona`, `/calculadora-estacionamento-aeroporto`, `/precos` | Abre com imagem ou faixa de marca full-bleed, headline grande, sem padding no topo |
+| **Hero de marketing** | `/`, `/seja-parceiro`, `/sobre`, `/como-funciona`, `/calculadora-estacionamento-aeroporto`, `/precos`, `/destinos/<slug>` | Abre com imagem ou faixa de marca full-bleed, headline grande, sem padding no topo |
 | **Página de conteúdo** | as outras 9 | Abre com `PageHeader`, coluna de leitura, padding no topo |
 | **Conteúdo com hero** | `/contato` | Corpo de conteúdo, aberto pela faixa violeta do `PageHero` (ver abaixo) |
 
@@ -104,6 +104,25 @@ nenhum dos dois degraus tem clamp.
 
 Nenhum teste pegava isso, porque o happy-dom não calcula `clamp()`. O guard
 vive em `como-funciona.test.tsx`, sobre a classe.
+
+**A `/destinos/<slug>` mudou de faixa em 19/08/2026**, implementando o desenho do
+Claude Design (`Página de destino Movepark.dc.html`). É a primeira da faixa de hero
+que abre com **foto de conteúdo** (a hero do próprio aeroporto), e não com faixa de
+marca: quem chega ali está decidindo onde deixar o carro, e a foto é o que responde
+"é aqui mesmo?" antes de qualquer parágrafo. Sobre a foto vão a trilha
+(`Breadcrumb tom="escuro"`), o eyebrow em `text-mp-teal`, o h1 em
+`text-display-3xl text-white` e um cartão branco com o "a partir de" mais o CTA para
+a vitrine.
+
+Duas regras novas saíram dela:
+
+1. **Destino sem foto cai em `bg-dashboard-hero`, nunca numa paisagem genérica.**
+   Paisagem afirma geografia, e foto de aeroporto que não é aquele aeroporto engana
+   mesmo sendo ilustrativa. É a mesma razão do `OgImage` de marca.
+2. **O eyebrow sobre foto é `text-mp-teal`, não `text-mp-indigo`.** O indigo é para
+   canvas; sobre a foto escurecida ele some. A regra de "violeta só em acionável"
+   continua valendo: o cartão do hero é branco e o botão dentro dele é o `<Button>`
+   padrão.
 
 As outras 9 continuam de conteúdo; mover mais alguma exige a mesma justificativa
 de marca e uma edição aqui, no mesmo PR.

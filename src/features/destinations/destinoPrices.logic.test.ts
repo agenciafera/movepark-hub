@@ -217,22 +217,75 @@ describe("proximityRanking", () => {
       ["Estacionamento Oficial de Viracopos (Estapar)", "1,2 km do terminal", "mapped"],
       ["Virapark", "1,3 km do terminal", "partner"],
       ["BR Parking", "2,8 km do terminal", "mapped"],
+      // Sem medida vai para o fim, e sem número: a lista promete ordem por
+      // distância, e um "sem medida" no meio quebraria a comparação.
+      ["Sem medida", null, "mapped"],
     ]);
   });
 
-  it("deixa de fora quem não tem distância medida", () => {
+  it("o lote sem distância medida entra no fim, e não some da página", () => {
+    // Desde que a lista virou a ÚNICA superfície do lote mapeado (redesenho de
+    // 19/08/2026), filtrar por distância aqui apagaria o lote inteiro da página.
     const linhas = proximityRanking({
       units: [unit({ distance_m: null })],
       prospects,
       destinationSlug: "aeroporto-de-viracopos",
     });
-    expect(linhas.map((l) => l.name)).toEqual(["Estacionamento Oficial de Viracopos (Estapar)", "BR Parking"]);
+    expect(linhas.map((l) => l.name)).toEqual([
+      "Estacionamento Oficial de Viracopos (Estapar)",
+      "BR Parking",
+      "Sem medida",
+    ]);
+  });
+
+  it("o nome do ponto vence o rótulo genérico do destino na distância", () => {
+    const linhas = proximityRanking({
+      units: [],
+      prospects: [
+        { name: "Talentos Park", slug: "talentos", distance_km: 0.4, reference_name: "Terminal 2" },
+      ],
+      destinationSlug: "aeroporto-de-guarulhos",
+      anchorLabel: "do terminal",
+    });
+    expect(linhas[0].distanceLabel).toBe("400 m do Terminal 2");
+  });
+
+  it("carrega endereço e nota do lote mapeado, que a lista absorveu do card", () => {
+    const linhas = proximityRanking({
+      units: [],
+      prospects: [
+        {
+          name: "Talentos Park",
+          slug: "talentos",
+          address: "R. Projetada, 169",
+          distance_km: 1.01,
+          rating: { avg: 4.4, count: 137 },
+        },
+      ],
+      destinationSlug: "aeroporto-de-guarulhos",
+    });
+    expect(linhas[0].address).toBe("R. Projetada, 169");
+    expect(linhas[0].rating).toEqual({ avg: 4.4, count: 137 });
+  });
+
+  it("o endereço do parceiro vem da vitrine, porque a matriz do motor não carrega endereço", () => {
+    const linhas = proximityRanking({
+      units: [unit({ distance_m: 328 })],
+      prospects: [],
+      destinationSlug: "aeroporto-de-viracopos",
+      addressByLocation: new Map([["virapark/virapark", "Av. dos Amarais, 100"]]),
+    });
+    expect(linhas[0].address).toBe("Av. dos Amarais, 100");
   });
 
   it("não repete o mesmo endereço quando a unidade tem duas vagas", () => {
     const duasVagas = [
       unit({ parking_type_code: "covered", distance_m: 1289 }),
-      unit({ parking_type_code: "uncovered", parking_type_name: "Vaga Descoberta", distance_m: 1289 }),
+      unit({
+        parking_type_code: "uncovered",
+        parking_type_name: "Vaga Descoberta",
+        distance_m: 1289,
+      }),
     ];
     const linhas = proximityRanking({
       units: duasVagas,

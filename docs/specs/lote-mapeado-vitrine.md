@@ -257,6 +257,23 @@ A busca geral (home, resultados, disponibilidade) continua lendo **só `location
 - A regra de não canibalizar vale para **link interno** também: não construir link de card vendável para card mapeado no mesmo aeroporto.
 - **Estado vazio da seção 1 é o caso normal em destino novo**, não exceção — vale para REC, NVT, CNF, GIG e SDU. O texto de topo precisa funcionar assim: *"Ainda não temos reserva online no Recife. Estes são os estacionamentos que mapeamos na região."*
 
+> **Atualização (19/08/2026, redesenho da página de destino).** A seção 2 deixou de ser uma
+> grade de cards e virou **a lista de proximidade**, que já existia logo abaixo dela. O lote
+> mapeado aparecia **duas vezes** na mesma página: em card (nome, endereço, distância, nota do
+> Google) e de novo na lista de distância (nome e distância), com informação diferente em cada
+> aparição, e a segunda parecia um resumo quebrado da primeira. A lista absorveu o que o card
+> tinha de próprio: endereço, nota do Google rotulada "no Google" e o selo em texto. Nada da
+> regra comercial mudou. A separação continua: parceiro e mapeado na **mesma lista** porque a
+> régua é a distância medida, e cada linha carrega o selo que diz de qual lado ela está
+> ("Reserva online" contra "Sem reserva online"); a **vitrine com preço fica acima**, sozinha,
+> e mapeado nenhum entra nela. O componente `ProspectCard` saiu do repositório junto, porque
+> ele não tinha outro uso. Ver `DestinationProximity` em
+> [`src/features/destinations/DestinationPrices.tsx`](../../src/features/destinations/DestinationPrices.tsx).
+>
+> Uma mudança de comportamento veio junto: **lote sem distância medida não some mais da
+> página**. Antes a lista filtrava quem não tinha medida, o que era inofensivo enquanto o card
+> existia; agora ele iria para o limbo, então entra no fim da lista, sem número.
+
 ---
 
 ## Single

@@ -205,6 +205,15 @@
   #root {
     @apply h-full;
   }
+  /* Âncora dentro da página rola, não salta. Vale para os `href="#..."` da página de
+     destino (o "Ver vagas" do topo, o atalho para a lista da região) e para qualquer
+     índice que venha depois. Quem pediu menos movimento no sistema continua com o
+     salto instantâneo. */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
   body {
     @apply bg-canvas text-ink font-sans antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";

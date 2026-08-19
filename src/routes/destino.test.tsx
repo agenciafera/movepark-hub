@@ -146,9 +146,10 @@ describe("DestinoPage: detalhe do destino (SEO/institucional)", () => {
       screen.getByRole("heading", { level: 2, name: "Estacionamentos Aeroporto Guarulhos (GRU)" }),
     ).toBeInTheDocument();
     // CTA leva pra busca (não embute checkout/reserva)
-    expect(
-      screen.getByRole("link", { name: /Ver todos os estacionamentos/i }),
-    ).toHaveAttribute("href", "/search?dest=GRU");
+    expect(screen.getByRole("link", { name: /Ver todos e escolher datas/i })).toHaveAttribute(
+      "href",
+      "/search?dest=GRU",
+    );
   });
 
   it("renderiza breadcrumb visível (Início › Destinos › destino)", () => {
@@ -167,8 +168,18 @@ describe("DestinoPage: detalhe do destino (SEO/institucional)", () => {
     vi.mocked(usePublishedDestinations).mockReturnValue({
       data: [
         dest(), // atual (id d1), deve ser excluído
-        dest({ id: "d2", slug: "aeroporto-de-viracopos", name: "Aeroporto de Viracopos", short_name: "Viracopos" }),
-        dest({ id: "d3", slug: "aeroporto-de-congonhas", name: "Aeroporto de Congonhas", short_name: "Congonhas" }),
+        dest({
+          id: "d2",
+          slug: "aeroporto-de-viracopos",
+          name: "Aeroporto de Viracopos",
+          short_name: "Viracopos",
+        }),
+        dest({
+          id: "d3",
+          slug: "aeroporto-de-congonhas",
+          name: "Aeroporto de Congonhas",
+          short_name: "Congonhas",
+        }),
       ],
     } as never);
 
@@ -193,36 +204,48 @@ describe("DestinoPage: detalhe do destino (SEO/institucional)", () => {
 });
 
 // E0.17-d · lote mapeado (ADR-010). Estes testes travam a regra comercial, não o layout:
-// presença é de graça, conversão é paga. Um card mapeado que ganhe link, preço ou botão
-// passa a competir de igual para igual com quem paga 20%.
+// presença é de graça, conversão é paga. Uma linha mapeada que ganhe preço, botão ou link
+// para o canal do parceiro passa a competir de igual para igual com quem paga 20%.
+//
+// Desde o redesenho de 19/08/2026 o lote mapeado aparece UMA vez na página, na lista de
+// proximidade, marcado. Antes ele saía em card e de novo na lista, com informação
+// diferente em cada aparição.
 describe("DestinoPage · lotes mapeados (E0.17-d)", () => {
-  it("renderiza a seção própria, com o selo em texto no HTML e a distância", () => {
+  /** A linha do lote mapeado na lista de proximidade. */
+  function linhaMapeada() {
+    return screen
+      .getAllByTestId("proximity-row")
+      .find((li) => li.getAttribute("data-kind") === "mapped")!;
+  }
+
+  it("entra na lista de proximidade com o selo em texto no HTML, endereço e distância", () => {
     vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
     vi.mocked(useDestinationProspects).mockReturnValue({ data: [prospect()] } as never);
 
     render();
 
     expect(
-      screen.getByRole("heading", { level: 2, name: /Outros estacionamentos na região/i }),
+      screen.getByRole("heading", { level: 2, name: /Distância até o terminal/i }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 3, name: "Talentos Park" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Talentos Park" })).toBeInTheDocument();
     // Selo é TEXTO, não tooltip nem title: o crawler precisa ler.
     expect(screen.getByText("Sem reserva online")).toBeInTheDocument();
-    // Mesmo `formatDistance` do card vendável, então 1,01 km sai como "1 km": o
-    // formatador corta o zero à direita. Se este texto divergir, o card mapeado passa a
+    // Mesmo `formatDistance` do lado vendável, então 1,01 km sai como "1 km": o
+    // formatador corta o zero à direita. Se este texto divergir, o lote mapeado passa a
     // parecer de outro sistema na mesma página.
-    expect(screen.getByText("1 km")).toBeInTheDocument();
-    expect(screen.getByText(/R\. Projetada, 169/)).toBeInTheDocument();
+    const linha = linhaMapeada();
+    expect(linha).toHaveTextContent("1 km do terminal");
+    expect(linha).toHaveTextContent(/R\. Projetada, 169/);
   });
 
-  it("o único link do card é a página do lote no Hub, nunca o canal do parceiro", () => {
+  it("o único link da linha é a página do lote no Hub, nunca o canal do parceiro", () => {
     vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
     vi.mocked(useDestinationProspects).mockReturnValue({ data: [prospect()] } as never);
 
     render();
 
-    const card = screen.getByTestId("prospect-card");
-    const links = [...card.querySelectorAll("a")];
+    const linha = linhaMapeada();
+    const links = [...linha.querySelectorAll("a")];
     // Um link, e ele aponta para dentro: sem link interno a página do lote nasce órfã, e
     // é ela que carrega o JSON-LD e o caminho de reivindicação. Link para o canal DELE
     // entregaria de graça o que íamos cobrar 20%, e link de reserva prometeria o que não
@@ -232,29 +255,29 @@ describe("DestinoPage · lotes mapeados (E0.17-d)", () => {
       "href",
       "/estacionamentos/aeroporto-de-guarulhos/talentos-park-aeroporto-recife",
     );
-    expect(card.querySelectorAll("button")).toHaveLength(0);
-    expect(card).not.toHaveTextContent(/R\$/);
+    expect(linha.querySelectorAll("button")).toHaveLength(0);
+    expect(linha).not.toHaveTextContent(/R\$/);
     // Nenhum href absoluto: é assim que "link para fora" apareceria.
     expect(
-      [...card.querySelectorAll("[href]")].filter((el) =>
+      [...linha.querySelectorAll("[href]")].filter((el) =>
         /^https?:\/\//.test(el.getAttribute("href") ?? ""),
       ),
     ).toHaveLength(0);
   });
 
-  it("o card mapeado é clicável inteiro, e o texto do link continua sendo só o nome", () => {
+  it("a linha é clicável inteira, e o texto do link continua sendo só o nome", () => {
     vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
     vi.mocked(useDestinationProspects).mockReturnValue({ data: [prospect()] } as never);
 
     render();
 
-    const card = screen.getByTestId("prospect-card");
-    const link = card.querySelector("a")!;
-    // Área de clique esticada por `::after` sobre o card, que precisa de `relative` no pai.
-    // Sem isso o alvo vira o título, um retângulo pequeno demais para o polegar, enquanto o
-    // card vendável logo acima é clicável inteiro. Envolver o card todo num `<Link>` também
-    // resolveria o alvo, mas engoliria endereço, distância e selo no texto âncora.
-    expect(card.className).toContain("relative");
+    const linha = linhaMapeada();
+    const link = linha.querySelector("a")!;
+    // Área de clique esticada por `::after` sobre a linha, que precisa de `relative` no pai.
+    // Sem isso o alvo vira o título, um retângulo pequeno demais para o polegar. Envolver a
+    // linha toda num `<Link>` também resolveria o alvo, mas engoliria endereço, distância e
+    // selo no texto âncora.
+    expect(linha.className).toContain("relative");
     expect(link.className).toContain("after:absolute");
     expect(link.className).toContain("after:inset-0");
     expect(link).toHaveTextContent("Talentos Park");
@@ -281,7 +304,7 @@ describe("DestinoPage · lotes mapeados (E0.17-d)", () => {
     expect(og).not.toContain("/og/destinos-");
   });
 
-  it("mostra a nota do Google no card mapeado, rotulada, e nada quando não há snapshot", () => {
+  it("mostra a nota do Google na linha mapeada, rotulada, e nada quando não há snapshot", () => {
     vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
     vi.mocked(useDestinationProspects).mockReturnValue({
       data: [
@@ -297,20 +320,19 @@ describe("DestinoPage · lotes mapeados (E0.17-d)", () => {
 
     // Rotulada: sem o "no Google" a nota de lá se confunde com a da Movepark, que aqui é
     // impossível de existir (lote mapeado não gera reserva, e review exige booking).
-    const card = screen.getByTestId("prospect-card");
-    expect(card).toHaveTextContent("4,4 · 137 avaliações· no Google");
+    expect(linhaMapeada()).toHaveTextContent("4,4 · 137 avaliações· no Google");
     unmount();
 
     vi.mocked(useDestinationProspects).mockReturnValue({ data: [prospect()] } as never);
     render();
-    expect(screen.getByTestId("prospect-card")).not.toHaveTextContent(/avaliações/);
+    expect(linhaMapeada()).not.toHaveTextContent(/avaliações/);
   });
 
-  it("some com a nota do Google no card mapeado quando o snapshot passou dos 30 dias", () => {
+  it("some com a nota do Google quando o snapshot passou dos 30 dias", () => {
     // Esta página prefere o dado do LOADER, que roda no build: o filtro de 30 dias da RPC
     // acontece uma vez, no dia do deploy, e o HTML sai congelado com o resultado dele. Sem o
-    // guard no componente, a página construída no dia 0 seguia servindo a nota no dia 31, e
-    // o `is_hidden` ligado no dia 1 nunca chegava nela. É o único caminho onde nem a policy,
+    // guard na página, a versão construída no dia 0 seguia servindo a nota no dia 31, e o
+    // `is_hidden` ligado no dia 1 nunca chegava nela. É o único caminho onde nem a policy,
     // nem o join da RPC, nem o hook do cliente alcançam.
     vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
     loaderData.mockReturnValue({
@@ -327,15 +349,15 @@ describe("DestinoPage · lotes mapeados (E0.17-d)", () => {
 
     render();
 
-    const card = screen.getByTestId("prospect-card");
-    expect(card).not.toHaveTextContent(/no Google/);
-    expect(card).not.toHaveTextContent(/avaliações/);
-    // O resto do card continua: endereço e distância são fato do lugar, não conteúdo do
+    const linha = linhaMapeada();
+    expect(linha).not.toHaveTextContent(/no Google/);
+    expect(linha).not.toHaveTextContent(/avaliações/);
+    // O resto da linha continua: endereço e distância são fato do lugar, não conteúdo do
     // Google sob prazo de cache.
-    expect(card).toHaveTextContent("Talentos Park");
+    expect(linha).toHaveTextContent("Talentos Park");
   });
 
-  it("usa o nome do terminal na distância quando o destino tem um cadastrado", () => {
+  it("usa o nome do terminal na distância quando o lote tem um cadastrado", () => {
     vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
     vi.mocked(useDestinationProspects).mockReturnValue({
       data: [prospect({ reference_name: "Terminal 2", distance_km: 0.4 })],
@@ -343,17 +365,19 @@ describe("DestinoPage · lotes mapeados (E0.17-d)", () => {
 
     render();
 
-    expect(screen.getByText(/400 m do Terminal 2/)).toBeInTheDocument();
+    // Aparece na linha e no resumo do topo da página, então a asserção escopa a linha.
+    expect(linhaMapeada()).toHaveTextContent("400 m do Terminal 2");
   });
 
-  it("sem lote mapeado, a seção não existe (não deixa cabeçalho órfão na página)", () => {
+  it("sem parceiro medido e sem lote mapeado, a lista não existe (sem cabeçalho órfão)", () => {
     vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
 
     render();
 
     expect(
-      screen.queryByRole("heading", { name: /Outros estacionamentos na região/i }),
+      screen.queryByRole("heading", { name: /Distância até o terminal/i }),
     ).not.toBeInTheDocument();
+    expect(screen.queryAllByTestId("proximity-row")).toHaveLength(0);
   });
 
   it("seção vendável vazia aponta para a de baixo, que é o caso normal em destino novo", () => {
@@ -374,9 +398,7 @@ describe("DestinoPage · lotes mapeados (E0.17-d)", () => {
     render();
 
     expect(screen.getByText(/Ainda não temos reserva online em Guarulhos/i)).toBeInTheDocument();
-    expect(
-      screen.queryByText(/estão logo abaixo/i),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/estão logo abaixo/i)).not.toBeInTheDocument();
   });
 });
 
@@ -401,7 +423,12 @@ function unidade(over: Record<string, unknown> = {}) {
     },
     parking_type: { code: "covered", name: "Vaga Coberta" },
     capacity: 80,
-    availability: { remaining: null, sold_out: false, near_capacity: false, near_capacity_message: null },
+    availability: {
+      remaining: null,
+      sold_out: false,
+      near_capacity: false,
+      near_capacity_message: null,
+    },
     price: { total: 30, old_price: null, per_day: 30, days: 1 },
     min_stay_days: null,
     amenities: [],
@@ -445,7 +472,19 @@ describe("lista de unidades no HTML do build", () => {
     loaderData.mockReturnValue({
       destination: dest(),
       prospects: [
-        { id: "p1", name: "Talentos Park", slug: "talentos-park", address: null, latitude: 0, longitude: 0, google_maps_url: null, amenities: [], description: null, distance_km: null, reference_name: null },
+        {
+          id: "p1",
+          name: "Talentos Park",
+          slug: "talentos-park",
+          address: null,
+          latitude: 0,
+          longitude: 0,
+          google_maps_url: null,
+          amenities: [],
+          description: null,
+          distance_km: null,
+          reference_name: null,
+        },
       ],
       units: [unidade()],
     });
@@ -638,8 +677,11 @@ describe("DestinoPage · favoritar (ligado no useSavedListings)", () => {
     );
   });
 
-  it("os dois blocos de card estão ligados, não só a lista", async () => {
-    mockBuscas([unidade()], [unidade({ id: "lpt-top" })]);
+  it("cada card salva o seu tipo de vaga, e a vitrine é uma só", async () => {
+    // O bloco "Mais bem avaliados" saiu no redesenho de 19/08/2026: ele repetia cards da
+    // lista logo abaixo, e a nota já aparece dentro de cada card. Uma vitrine, um coração
+    // por vaga.
+    mockBuscas([unidade(), unidade({ id: "lpt2" })], []);
 
     render();
 
@@ -647,9 +689,8 @@ describe("DestinoPage · favoritar (ligado no useSavedListings)", () => {
     expect(coracoes).toHaveLength(2);
     for (const botao of coracoes) await userEvent.click(botao);
 
-    // Cada card salva o SEU tipo de vaga: o do bloco curado e o da lista.
     expect(new Set(JSON.parse(localStorage.getItem("mp:saved") ?? "[]"))).toEqual(
-      new Set(["lpt-top", "lpt1"]),
+      new Set(["lpt1", "lpt2"]),
     );
   });
 
@@ -722,7 +763,10 @@ describe("DestinoPage · quanto custa e distância", () => {
     };
   }
 
-  function comPreco(units: Record<string, unknown>[] = [unidadePreco()], prospects: unknown[] = []) {
+  function comPreco(
+    units: Record<string, unknown>[] = [unidadePreco()],
+    prospects: unknown[] = [],
+  ) {
     return {
       destination: dest(),
       prospects,
@@ -753,9 +797,16 @@ describe("DestinoPage · quanto custa e distância", () => {
     // extraem, e o que a página não tinha.
     const tabela = screen.getByRole("table");
     expect(tabela).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: "30 diárias" })).toBeInTheDocument();
+    // O período abre em 7 diárias, a compra mais comum, e é o que a a11y enxerga.
+    expect(screen.getByRole("columnheader", { name: "Total 7 diárias" })).toBeInTheDocument();
+    // Os outros períodos continuam NO DOM, escondidos: a página é pré-renderizada num
+    // período só, e desmontar os demais tiraria a maior parte dos preços do HTML que
+    // buscador e crawler de IA leem.
+    // Escondido por CLASSE, não pelo atributo `hidden`: o atributo perde para o
+    // `tablet:table-cell` do layout responsivo e o período inativo reapareceria.
+    expect(tabela.querySelector("th.hidden")).toBeTruthy();
+    expect(tabela.textContent).toContain("Total 30 diárias");
     expect(screen.getAllByText(/R\$\s?747,00/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/R\$\s?24,90 por diária/).length).toBeGreaterThan(0);
     // Balcão riscado e economia: o que separa o preço da Movepark do preço de chegar sem
     // reservar. O concorrente não tem esse dado.
     expect(screen.getAllByText(/R\$\s?1\.200,00/).length).toBeGreaterThan(0);
@@ -769,9 +820,9 @@ describe("DestinoPage · quanto custa e distância", () => {
 
     expect(screen.getByText(/1 diária:/)).toBeInTheDocument();
     // A frase que o comparador concorrente escreve à mão (e erra): aqui sai do dado.
-    expect(
-      screen.getByText(/a diária cai de/i).textContent?.replace(/\s+/g, " "),
-    ).toMatch(/R\$\s?40,00 para R\$\s?24,90 \(38% menos\).*1 para 30 diárias/);
+    expect(screen.getByText(/a diária cai de/i).textContent?.replace(/\s+/g, " ")).toMatch(
+      /R\$\s?40,00 para R\$\s?24,90 \(38% menos\).*1 para 30 diárias/,
+    );
   });
 
   it("data a tabela e aponta a fonte, sem prometer o checkout da Movepark", () => {
@@ -808,7 +859,17 @@ describe("DestinoPage · quanto custa e distância", () => {
     // mesma unidade em Viracopos ele publica 4,5 km onde a geodésica mede 1,3 km.
     loaderData.mockReturnValue(
       comPreco(
-        [unidadePreco(), unidadePreco({ company_slug: "garageinn", company_name: "Garageinn", location_slug: "garageinn", parking_type_code: "uncovered", parking_type_name: "Vaga Descoberta", distance_m: 328 })],
+        [
+          unidadePreco(),
+          unidadePreco({
+            company_slug: "garageinn",
+            company_name: "Garageinn",
+            location_slug: "garageinn",
+            parking_type_code: "uncovered",
+            parking_type_name: "Vaga Descoberta",
+            distance_m: 328,
+          }),
+        ],
         [
           {
             id: "p1",
@@ -832,17 +893,16 @@ describe("DestinoPage · quanto custa e distância", () => {
     expect(
       screen.getByRole("heading", { name: /Distância até o terminal do Aeroporto Guarulhos/i }),
     ).toBeInTheDocument();
-    const lista = screen.getByRole("heading", { name: /Distância até o terminal/i })
-      .parentElement!.querySelector("ul")!;
-    const linhas = [...lista.querySelectorAll("li")].map((li) =>
-      (li.textContent ?? "").replace(/\s+/g, " ").trim(),
-    );
+    const linhas = screen.getAllByTestId("proximity-row").map((li) => ({
+      texto: (li.textContent ?? "").replace(/\s+/g, " ").trim(),
+      kind: li.getAttribute("data-kind"),
+    }));
     // Ordem por distância medida, com o lote mapeado no meio e marcado. É o ponto:
     // parceiro e mapeado na mesma régua, sem misturar o que dá para reservar.
     expect(linhas).toEqual([
-      "Garageinn328 m do terminal",
-      "Talentos Park · sem reserva online1,2 km do terminal",
-      "Virapark1,3 km do terminal",
+      { texto: "GarageinnReserva online328 m do terminal", kind: "partner" },
+      { texto: "Talentos ParkSem reserva online1,2 km do terminal", kind: "mapped" },
+      { texto: "ViraparkReserva online1,3 km do terminal", kind: "partner" },
     ]);
   });
 
@@ -852,7 +912,8 @@ describe("DestinoPage · quanto custa e distância", () => {
     render();
 
     await waitFor(() => {
-      const meta = document.querySelector('meta[name="description"]')?.getAttribute("content") ?? "";
+      const meta =
+        document.querySelector('meta[name="description"]')?.getAttribute("content") ?? "";
       expect(meta).toMatch(/Diária a partir de R\$\s?40,00/);
       expect(meta).toMatch(/7 diárias por R\$\s?174,30/);
       expect(meta.length).toBeLessThanOrEqual(160);

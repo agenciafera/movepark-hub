@@ -196,7 +196,10 @@ export function destinationMetaDescription(args: {
  * assim por diante. Quebra em `.`, `!` e `?`, preservando a pontuação.
  */
 function frasesDecrescentes(texto: string): string[] {
-  const frases = texto.match(/[^.!?]+[.!?]*/g)?.map((f) => f.trim()).filter(Boolean) ?? [texto];
+  const frases = texto
+    .match(/[^.!?]+[.!?]*/g)
+    ?.map((f) => f.trim())
+    .filter(Boolean) ?? [texto];
   const saidas: string[] = [];
   for (let n = frases.length; n >= 1; n--) saidas.push(frases.slice(0, n).join(" "));
   return saidas;
@@ -221,10 +224,26 @@ export type ProximityRow = {
   key: string;
   name: string;
   detail: string | null;
-  meters: number;
-  distanceLabel: string;
+  /** Endereço do lote, quando existe. Vinha do card mapeado, que a lista absorveu. */
+  address: string | null;
+  /** Nota do Google, só no lote mapeado e só quando o snapshot ainda vale. */
+  rating: { avg: number; count: number } | null;
+  /** `null` no lote sem coordenada aproveitável: ele entra no fim da lista, sem número. */
+  meters: number | null;
+  distanceLabel: string | null;
   path: string;
   kind: "partner" | "mapped";
+};
+
+/** O que a lista precisa saber de um lote mapeado para desenhar a linha. */
+export type ProximityProspect = {
+  name: string;
+  slug: string;
+  address?: string | null;
+  distance_km: number | null;
+  /** Ponto do destino mais perto deste lote ("Terminal 2"), quando o destino tem pontos. */
+  reference_name?: string | null;
+  rating?: { avg: number; count: number } | null;
 };
 
 /**
@@ -240,10 +259,16 @@ export type ProximityRow = {
  */
 export function proximityRanking(args: {
   units: PriceUnit[];
-  prospects: { name: string; slug: string; distance_km: number | null }[];
+  prospects: ProximityProspect[];
   destinationSlug: string;
   /** Rótulo do que fica no fim da frase de distância ("do terminal"). */
   anchorLabel?: string | null;
+  /**
+   * Endereço do parceiro por `company_slug/location_slug`. A matriz de preço não
+   * carrega endereço (ela é do motor), e quem tem é a vitrine; sem o mapa a linha
+   * do parceiro sai sem endereço, e a lista continua de pé.
+   */
+  addressByLocation?: Map<string, string | null>;
 }): ProximityRow[] {
   const sufixo = args.anchorLabel ? ` ${args.anchorLabel}` : "";
   const carros = carUnits(args.units);
@@ -257,8 +282,8 @@ export function proximityRanking(args: {
     if (!atual || (atual.distance_m ?? Infinity) > u.distance_m) porLocation.set(chave, u);
   }
 
-  const parceiros: ProximityRow[] = [...porLocation.values()].map((u) => ({
-    key: `p:${u.company_slug}/${u.location_slug}`,
+  const parceiros: ProximityRow[] = [...porLocation.entries()].map(([chave, u]) => ({
+    key: `p:${chave}`,
     name: unitLabel(u, carros),
     // Sem rótulo de traslado aqui, de propósito. `location.has_shuttle` está `false` nas
     // duas unidades de Viracopos enquanto os cards logo acima mostram "Transfer grátis"
@@ -266,26 +291,37 @@ export function proximityRanking(args: {
     // que promete transfer já lê como incoerência, e renderizar o inverso seria pior. O
     // traslado continua no card e na página da unidade, que é onde ele é verdade.
     detail: null,
+    address: args.addressByLocation?.get(chave) ?? null,
+    rating: null,
     meters: u.distance_m as number,
     distanceLabel: `${formatDistance(u.distance_m)}${sufixo}`,
     path: `/p/${u.company_slug}/${u.location_slug}/${u.parking_type_code}`,
     kind: "partner",
   }));
 
-  const mapeados: ProximityRow[] = args.prospects
-    .filter((p) => p.distance_km != null)
-    .map((p) => {
-      const meters = Math.round((p.distance_km as number) * 1000);
-      return {
-        key: `m:${p.slug}`,
-        name: p.name,
-        detail: "sem reserva online",
-        meters,
-        distanceLabel: `${formatDistance(meters)}${sufixo}`,
-        path: `/estacionamentos/${args.destinationSlug}/${p.slug}`,
-        kind: "mapped" as const,
-      };
-    });
+  const mapeados: ProximityRow[] = args.prospects.map((p) => {
+    const meters = p.distance_km == null ? null : Math.round(p.distance_km * 1000);
+    return {
+      key: `m:${p.slug}`,
+      name: p.name,
+      detail: "sem reserva online",
+      address: p.address ?? null,
+      rating: p.rating ?? null,
+      meters,
+      // O nome do ponto vence o rótulo genérico do destino: "400 m do Terminal 2"
+      // localiza, "400 m do terminal" só repete o que a seção já disse.
+      distanceLabel:
+        meters == null
+          ? null
+          : `${formatDistance(meters)}${p.reference_name ? ` do ${p.reference_name}` : sufixo}`,
+      path: `/estacionamentos/${args.destinationSlug}/${p.slug}`,
+      kind: "mapped" as const,
+    };
+  });
 
-  return [...parceiros, ...mapeados].sort((a, b) => a.meters - b.meters);
+  // Lote sem medida vai para o fim: a lista promete ordem por distância, e um
+  // "sem medida" no meio quebraria a leitura de quem está comparando número.
+  return [...parceiros, ...mapeados].sort(
+    (a, b) => (a.meters ?? Infinity) - (b.meters ?? Infinity),
+  );
 }

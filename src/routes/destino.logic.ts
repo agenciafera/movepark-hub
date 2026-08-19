@@ -1,3 +1,5 @@
+import { carUnits, priceFor, type PriceDestination } from "@/features/price-index/priceIndex.logic";
+
 // Lógica pura da página de destino (testável sem render).
 
 /** Menor preço por diária entre os resultados de busca; null se vazio. */
@@ -24,18 +26,38 @@ export function pickRelatedDestinations<
 }
 
 /**
- * Bloco "Mais bem avaliados": só quem já foi avaliado, por nota desc, cortando em `limit`.
+ * Menor diária avulsa de um destino, para o card de cross-link.
  *
- * A ordenação vive aqui, e não só na Edge, porque a página passou a ter duas fontes para a
- * mesma lista: a busca com datas (que já vem ordenada por nota) e a semente do build (que
- * vem ordenada por preço). Aplicar a mesma regra nos dois casos evita o bloco sair em ordem
- * de preço no HTML pré-renderizado e trocar de ordem quando a busca responde.
+ * Sai da MESMA matriz que a tabela de preço da página (`priceFor(u, 1)`), e nunca de
+ * uma segunda consulta: dois caminhos para o mesmo número viram dois números na
+ * mesma sessão. Vaga de moto fica fora, pelo `carUnits`, porque moto compara com
+ * moto e um "a partir de R$ 9,90" de moto num card de carro é engano.
  */
-export function pickTopRated<
-  T extends { location: { review_count: number | null; review_avg: number | null } },
->(items: T[], limit = 4): T[] {
-  return items
-    .filter((i) => (i.location.review_count ?? 0) > 0)
-    .sort((a, b) => (b.location.review_avg ?? 0) - (a.location.review_avg ?? 0))
-    .slice(0, limit);
+export function destinationFromPrice(dest: PriceDestination): number | null {
+  const totais = carUnits(dest.units)
+    .map((u) => priceFor(u, 1)?.total ?? null)
+    .filter((t): t is number => t != null && t > 0);
+  return totais.length > 0 ? Math.min(...totais) : null;
+}
+
+/**
+ * Os pontos do destino numa linha só, sem repetir o que se repete.
+ *
+ * O banco guarda "Terminal 1", "Terminal 2", "Terminal 3", e a ficha de abertura tem
+ * 320px: escrito por extenso, o valor ocupava três linhas e empurrava o resto. Quando
+ * todos os nomes começam pela mesma palavra, ela sai uma vez só ("Terminal 1, 2 e 3").
+ * Nomes sem prefixo comum saem inteiros, porque cortar ali inventaria um apelido.
+ */
+export function pointsSummary(names: string[]): string {
+  const limpos = names.map((n) => n.trim()).filter(Boolean);
+  if (limpos.length === 0) return "";
+  if (limpos.length === 1) return limpos[0];
+
+  const prefixo = limpos[0].split(" ")[0];
+  const todosComPrefixo =
+    prefixo.length > 1 &&
+    limpos.every((n) => n.startsWith(`${prefixo} `) && n.length > prefixo.length + 1);
+  const partes = todosComPrefixo ? limpos.map((n) => n.slice(prefixo.length + 1)) : limpos;
+  const lista = `${partes.slice(0, -1).join(", ")} e ${partes[partes.length - 1]}`;
+  return todosComPrefixo ? `${prefixo} ${lista}` : lista;
 }
