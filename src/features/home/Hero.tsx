@@ -35,7 +35,7 @@ function CheckIcon() {
   );
 }
 
-const trustPills = ["Cancelamento grátis", "Preço travado", "Estacionamentos verificados"];
+const trustPills = ["Estacionamentos verificados", "Compare em segundos", "Sem taxa da Movepark"];
 const heroAvatars = [
   "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=64&q=80",
   "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=64&q=80",

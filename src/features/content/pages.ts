@@ -15,14 +15,19 @@ export const CANCELAMENTO: ContentPage = {
   label: "Política de cancelamento",
   title: "Política de cancelamento",
   intro:
-    "Dentro do prazo da sua Tarifa, o cancelamento é grátis e o reembolso é integral. Veja os prazos abaixo.",
-  updated: "2026-08-10",
+    "Quando você reserva direto na Movepark, o cancelamento segue o prazo da sua Tarifa e o reembolso é integral dentro dele. Quando a reserva é concluída no site ou WhatsApp do estacionamento parceiro, vale a política que ele informou a você.",
+  updated: "2026-08-19",
   related: ["termos", "faq"],
   sections: [
     {
       id: "prazos",
       title: "O prazo depende da sua Tarifa",
       blocks: [
+        {
+          type: "note",
+          label: "Quando vale este prazo",
+          text: "Os prazos abaixo valem para reservas fechadas dentro do checkout da Movepark. Se você reservou direto no site ou WhatsApp do estacionamento parceiro, a política de cancelamento é a que ele informou no momento da reserva.",
+        },
         {
           type: "table",
           rows: [
@@ -47,7 +52,7 @@ export const CANCELAMENTO: ContentPage = {
       blocks: [
         {
           type: "p",
-          text: "Cancele dentro da janela da sua Tarifa. Básica e Flex: até 24 horas antes do check-in. Superflex: até 1 minuto antes.",
+          text: "Cancele dentro da janela da sua Tarifa, em reservas fechadas na Movepark. Básica e Flex: até 24 horas antes do check-in. Superflex: até 1 minuto antes.",
         },
         {
           type: "p",
@@ -78,11 +83,11 @@ export const CANCELAMENTO: ContentPage = {
           items: [
             {
               q: "Como cancelo minha reserva?",
-              a: 'Em Minhas Reservas, abra a reserva e clique em "Cancelar reserva". Dentro do prazo da sua Tarifa, o reembolso integral aparece antes de você confirmar. Passado o prazo, fale com o suporte.',
+              a: 'Se você reservou direto na Movepark: em Minhas Reservas, abra a reserva e clique em "Cancelar reserva". Dentro do prazo da sua Tarifa, o reembolso integral aparece antes de você confirmar. Se você reservou no site ou WhatsApp do estacionamento parceiro, cancele direto com ele, pelo canal que ele indicou na confirmação.',
             },
             {
               q: "O reembolso vai para onde?",
-              a: "Para o mesmo método usado no pagamento: no PIX, o valor volta para a chave usada; no cartão de crédito, aparece como estorno na fatura em até 2 ciclos de faturamento.",
+              a: "Para reservas fechadas na Movepark, o reembolso vai para o mesmo método usado no pagamento: no PIX, o valor volta para a chave usada; no cartão de crédito, aparece como estorno na fatura em até 2 ciclos de faturamento.",
             },
             {
               q: "Posso cancelar porque meu voo atrasou?",
@@ -90,7 +95,7 @@ export const CANCELAMENTO: ContentPage = {
             },
             {
               q: "E se o estacionamento não honrar a reserva?",
-              a: "Se o parceiro não tiver vaga no dia mesmo com reserva confirmada, você tem direito a reembolso integral independente do prazo. Fale imediatamente com o suporte.",
+              a: "Se você reservou direto na Movepark e o parceiro não tiver vaga no dia mesmo com a reserva confirmada, você tem direito a reembolso integral independente do prazo: fale imediatamente com o suporte. Se a reserva foi concluída no site do parceiro, o problema deve ser resolvido direto com ele; nosso suporte também pode ajudar a intermediar.",
             },
           ],
         },

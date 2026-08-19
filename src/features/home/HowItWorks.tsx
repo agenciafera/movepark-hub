@@ -72,8 +72,8 @@ function BookingCardMockup() {
             <ShieldCheck className="h-4 w-4 text-mp-indigo" aria-hidden />
           </div>
           <div>
-            <p className="text-[12px] font-semibold text-ink">Vaga garantida</p>
-            <p className="text-[11px] text-muted">Cancelamento grátis</p>
+            <p className="text-[12px] font-semibold text-ink">Estacionamento verificado</p>
+            <p className="text-[11px] text-muted">Avaliado antes de entrar no ar</p>
           </div>
         </div>
       </div>

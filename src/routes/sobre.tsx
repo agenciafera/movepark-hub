@@ -23,7 +23,7 @@ const NUMBERS = [
   { value: "26", label: "estacionamentos parceiros" },
   { value: "11", label: "destinos com vaga" },
   { value: "2 min", label: "pra reservar" },
-  { value: "100%", label: "do preço fechado na reserva" },
+  { value: "0%", label: "de taxa cobrada pela Movepark" },
 ];
 
 /** Destinos com estacionamento parceiro no ar, do mais servido pro menos. */
@@ -47,7 +47,7 @@ const VALUES = [
   {
     icon: ShieldCheck,
     title: "Transparência",
-    desc: "Preço fixo, sem surpresa. O que você vê na tela é o que você paga na saída.",
+    desc: "Preço comparado sem letra miúda. O que você vê na busca é sempre o preço mais atual do parceiro.",
   },
   {
     icon: Star,
@@ -128,12 +128,12 @@ export default function SobrePage() {
               Quem somos
             </span>
             <h1 className="mt-3 text-balance text-display-3xl text-white">
-              Vaga garantida. Viagem tranquila.
+              Reserva fácil. Viagem tranquila.
             </h1>
             <p className="mt-4 max-w-xl text-body-md text-white/80">
               A Movepark nasceu de uma frustração simples: achar vaga perto do aeroporto não deveria
               ser jogo de sorte. Hoje conectamos viajantes a estacionamentos parceiros certificados,
-              com reserva antecipada e preço fixo.
+              com reserva antecipada e preço comparado antes de decidir.
             </p>
             <div className="mt-8 flex flex-col gap-3 tablet:flex-row tablet:items-center">
               <Button asChild className="w-full tablet:w-auto">

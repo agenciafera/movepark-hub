@@ -18,7 +18,7 @@ describe("ComoFuncionaPage — contrato de hero de marca", () => {
     renderPage();
     const h1 = screen.getAllByRole("heading", { level: 1 });
     expect(h1).toHaveLength(1);
-    expect(h1[0]).toHaveTextContent(/Sua vaga garantida antes de sair de casa/i);
+    expect(h1[0]).toHaveTextContent(/Compare e reserve seu estacionamento antes de sair de casa/i);
     expect(h1[0].className).toContain("text-display-3xl");
     expect(h1[0].className).toContain("text-balance");
   });
@@ -98,9 +98,17 @@ describe("ComoFuncionaPage — contrato de hero de marca", () => {
 
   it("a comparação mostra os dois lados de cada linha", () => {
     renderPage();
-    for (const c of JOURNEY_COMPARISON) {
+    for (const c of JOURNEY_COMPARISON.filter((c) => c.k !== "Cancelamento")) {
       expect(screen.getByText(c.mp)).toBeInTheDocument();
       expect(screen.getByText(c.other)).toBeInTheDocument();
     }
+  });
+
+  /** ADR-009: sem unidade em mãos, a página não pode afirmar a política de
+   * cancelamento para a base inteira. Ela só existe filtrada pela unidade
+   * (`calculadora.tsx`). */
+  it("a linha de cancelamento fica de fora da tabela incondicional", () => {
+    renderPage();
+    expect(screen.queryByText("Grátis, conforme a Tarifa")).not.toBeInTheDocument();
   });
 });

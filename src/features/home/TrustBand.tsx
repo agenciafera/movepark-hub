@@ -1,4 +1,4 @@
-import { CheckCircle, Headphones, Lock, SealCheck, ShieldCheck, Star, Tag } from "@phosphor-icons/react";
+import { CheckCircle, Coins, Headphones, MagnifyingGlass, SealCheck, Star } from "@phosphor-icons/react";
 import type { ComponentType } from "react";
 import type { IconProps } from "@phosphor-icons/react";
 
@@ -8,38 +8,33 @@ import { useGsapReveal } from "@/hooks/useGsapReveal";
 
 // ---- Ilustrações animadas por diferencial ----
 
-function CancelIllustration() {
+function CompareIllustration() {
   return (
     <div aria-hidden className="mt-8 rounded-xl border border-hairline bg-canvas p-4">
       <div className="flex items-center justify-between">
-        <span className="text-[12px] font-semibold text-ink">Reserva #MP-1024</span>
-        <span className="tb-badge-cancelled rounded-full bg-badge-cancelled-bg px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.3px] text-badge-cancelled-fg">
-          Cancelada
-        </span>
+        <span className="text-[12px] font-semibold text-ink">Vaga coberta</span>
+        <span className="text-[13px] font-bold text-ink">R$ 32,80</span>
       </div>
-      <div className="tb-refund mt-3 flex items-center gap-2 rounded-lg bg-badge-confirmed-bg px-3 py-2">
-        <CheckCircle className="h-4 w-4 shrink-0 text-success" />
-        <span className="text-[12px] font-medium text-success">Reembolso · R$ 48,00</span>
+      <div className="mt-3 flex items-center justify-between rounded-lg bg-surface-soft px-3 py-2">
+        <span className="text-[12px] font-medium text-muted">Vaga descoberta</span>
+        <span className="text-[13px] font-bold text-muted">R$ 26,40</span>
       </div>
     </div>
   );
 }
 
-function PriceIllustration() {
+function NoFeeIllustration() {
   return (
     <div aria-hidden className="mt-8 rounded-xl border border-hairline bg-canvas p-4">
       <span className="text-[10px] font-bold uppercase tracking-[0.3px] text-muted">
         Valor da reserva
       </span>
       <div className="mt-1 flex items-baseline gap-1">
-        <span className="tb-price-num text-[28px] font-bold leading-none text-ink">R$ 24</span>
-        <span className="text-body-sm text-muted">/hora</span>
+        <span className="text-[28px] font-bold leading-none text-ink">R$ 32,80</span>
       </div>
       <div className="mt-3 flex items-center gap-1.5">
-        <Lock className="tb-lock h-3.5 w-3.5 text-mp-primary" />
-        <span className="tb-lock-label text-[12px] font-medium text-mp-primary">
-          Preço garantido até a saída
-        </span>
+        <CheckCircle className="h-3.5 w-3.5 text-mp-primary" />
+        <span className="text-[12px] font-medium text-mp-primary">Sem taxa da Movepark</span>
       </div>
     </div>
   );
@@ -109,16 +104,16 @@ type Item = {
 
 const items: Item[] = [
   {
-    icon: ShieldCheck,
-    title: "Cancelamento grátis",
-    text: "Até 24h antes da reserva, sem custo.",
-    Illustration: CancelIllustration,
+    icon: MagnifyingGlass,
+    title: "Compare em segundos",
+    text: "Preço, distância e nota de vários estacionamentos, lado a lado.",
+    Illustration: CompareIllustration,
   },
   {
-    icon: Tag,
-    title: "Preço travado",
-    text: "Sem surpresas no balcão. O valor é o da reserva.",
-    Illustration: PriceIllustration,
+    icon: Coins,
+    title: "Sem taxa da Movepark",
+    text: "Você reserva e paga direto com o estacionamento parceiro.",
+    Illustration: NoFeeIllustration,
   },
   {
     icon: SealCheck,
@@ -146,18 +141,7 @@ export function TrustBand() {
   return (
     <section ref={ref} className="px-6 py-16 desktop:px-8 desktop:py-24">
       <style>{`
-        /* ---- Card 1: Cancelamento ---- */
-        @keyframes tb-badge-cancelled {
-          0%, 10%   { opacity: 0; transform: scale(0.6) translateY(-4px); }
-          25%, 72%  { opacity: 1; transform: scale(1) translateY(0); }
-          85%, 100% { opacity: 0; transform: scale(0.6) translateY(-4px); }
-        }
         /* ---- Classes ---- */
-        .tb-badge-cancelled { animation: tb-badge-cancelled 4.5s ease-in-out infinite; }
-        .tb-refund          { animation: tb-refund 4.5s ease-in-out infinite; }
-        .tb-lock            { animation: tb-lock 3s ease-in-out infinite; }
-        .tb-lock-label      { animation: tb-lock-label 3s ease-in-out infinite; }
-        .tb-price-num       { animation: tb-price-num 3s ease-in-out infinite; }
         .tb-badge-pop       { animation: tb-badge-pop 3.5s ease-in-out infinite; }
         .tb-avatar          { animation: tb-avatar 3.5s ease-in-out infinite; }
         .tb-star            { animation: tb-star 3.5s ease-in-out infinite; }
@@ -167,32 +151,6 @@ export function TrustBand() {
         .tb-dot-1           { animation: tb-dot 0.9s ease-in-out infinite; }
         .tb-dot-2           { animation: tb-dot 0.9s ease-in-out 0.18s infinite; }
         .tb-dot-3           { animation: tb-dot 0.9s ease-in-out 0.36s infinite; }
-
-        @keyframes tb-refund {
-          0%, 28%   { opacity: 0; transform: translateY(10px); }
-          45%, 72%  { opacity: 1; transform: translateY(0); }
-          85%, 100% { opacity: 0; transform: translateY(10px); }
-        }
-
-        /* ---- Card 2: Preço ---- */
-        @keyframes tb-lock {
-          0%, 100% { transform: scale(1) rotate(0deg); }
-          20%      { transform: scale(1.3) rotate(-10deg); }
-          35%      { transform: scale(1.3) rotate(10deg); }
-          50%      { transform: scale(1) rotate(0deg); }
-        }
-
-        @keyframes tb-lock-label {
-          0%, 15%  { opacity: 0.4; }
-          30%, 70% { opacity: 1; }
-          85%, 100%{ opacity: 0.4; }
-        }
-
-        @keyframes tb-price-num {
-          0%, 15%  { opacity: 0.5; transform: scale(0.95); }
-          30%, 65% { opacity: 1; transform: scale(1); }
-          80%, 100%{ opacity: 0.5; transform: scale(0.95); }
-        }
 
         /* ---- Card 3: Verificado ---- */
         @keyframes tb-badge-pop {

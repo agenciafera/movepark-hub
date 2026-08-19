@@ -12,7 +12,7 @@ export default function CancelamentoPage() {
         <title>Política de Cancelamento | Movepark</title>
         <meta
           name="description"
-          content="Regras de cancelamento e reembolso da Movepark: o prazo depende da sua Tarifa, com reembolso integral dentro da janela."
+          content="Regras de cancelamento e reembolso da Movepark. O prazo e a política dependem de como você reservou: veja os detalhes por tipo de reserva."
         />
         <meta property="og:title" content="Política de Cancelamento | Movepark" />
         <meta property="og:url" content={siteUrl("/cancelamento")} />

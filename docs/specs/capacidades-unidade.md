@@ -170,13 +170,28 @@ O `aria-hidden` da ilustração não salvava: ele tira o texto da árvore acess�
 quem enxerga lê. Foi por isso que a trava nova (`src/features/home/TrustBand.test.tsx`) afirma
 sobre `container.textContent` em vez de `getByText`. Verificado que ela falha com a copy antiga.
 
-**O que segue de pé na home:** "Vaga garantida" no popup de `HowItWorks`, "Preço garantido,
-cancelamento grátis e voucher na hora" no `CtaBanner` e "Preço garantido até a saída" na própria
-faixa de confiança. São o mesmo problema, e continuam esperando o card de copy de plataforma.
+**Resolvido em 19/08/2026: o card de copy de plataforma que faltava.** "Vaga garantida" no popup
+de `HowItWorks`, "Preço garantido, cancelamento grátis e voucher na hora" no `CtaBanner`, "Preço
+garantido até a saída"/"Cancelamento grátis" na faixa de confiança, os selos do `Hero` e o H1 e a
+meta description de `/como-funciona` e `/sobre` saíram do ar. O pedido veio de negócio: hoje 9
+unidades publicadas ainda estão em `checkout_mode = 'hub'` (não é mais verdade que a base inteira
+é externa), mas a maioria já não é, e prometer sem condição numa página que qualquer busca pode
+levar para uma unidade externa é o mesmo problema que este documento já descrevia.
 
-⚠️ Achado no caminho, independente de unidade externa: `/como-funciona` afirma que cancelamento
-com **48h** tem reembolso integral, e `/cancelamento` afirma **24h** para Básica e Flex. Uma das
-duas está errada hoje, para qualquer unidade.
+A tática variou por superfície, e não é aleatória: **selo curto (badge, pill, estatística,
+manchete) não tem como carregar uma ressalva sem virar o asterisco que o ADR-009 proíbe**, então
+ali a promessa foi **removida** e trocada por algo verdadeiro para toda a base hoje (comparação,
+verificação, "sem taxa da Movepark", que é literal: o cliente nunca paga taxa própria da
+Movepark). **Texto longo** (FAQ, `/cancelamento`, a seção "Garantias" de `/como-funciona`) recebeu
+a **delimitação de escopo** que este documento já tinha decidido em 05/08/2026 ("Estas condições
+valem para reservas fechadas na Movepark…"), porque ali cabe a frase inteira e apagar tudo seria
+mentir para o cliente das 9 unidades que ainda reservam no Hub. `JOURNEY_COMPARISON` e
+`JOURNEY_STATS` (`src/features/how-it-works/journey.ts`) entraram no primeiro grupo, por serem
+selo/linha de tabela, não prosa.
+
+O achado abaixo (48h vs. 24h) foi reconferido nesta mesma revisão e **não reproduziu**: nenhum
+texto atual de `/como-funciona` ou `/cancelamento` cita 48h. Ou já tinha sido corrigido antes desta
+revisão, ou a citação original já estava desatualizada. Mantido aqui só como histórico.
 
 ## Card de busca
 

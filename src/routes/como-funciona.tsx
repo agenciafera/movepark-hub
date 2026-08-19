@@ -166,7 +166,7 @@ function VoucherPanel() {
         </dl>
         <p className="flex items-center gap-2 rounded-full bg-badge-confirmed-bg px-3 py-2 text-caption text-success">
           <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden />
-          Cancele grátis até 04 ago, 21:00
+          Cancele até 04 ago, 21:00
         </p>
       </div>
       <div className="flex gap-3">
@@ -274,7 +274,7 @@ export default function ComoFuncionaPage() {
         <title>Como funciona | Movepark</title>
         <meta
           name="description"
-          content="Da busca à chave de volta na sua mão: reserve online, mostre o QR Code na portaria e pegue o carro no mesmo lugar. Preço fechado e vaga garantida."
+          content="Compare estacionamentos parceiros perto do seu aeroporto e siga direto para a reserva. Sem taxa da Movepark."
         />
         <meta property="og:title" content="Como funciona | Movepark" />
         <meta property="og:url" content={siteUrl("/como-funciona")} />
@@ -295,7 +295,7 @@ export default function ComoFuncionaPage() {
             Estacionamentos verificados em 6 aeroportos
           </span>
           <h1 className="max-w-3xl text-balance text-display-3xl text-white">
-            Sua vaga garantida antes de sair de casa
+            Compare e reserve seu estacionamento antes de sair de casa
           </h1>
           <p className="max-w-[56ch] text-pretty text-body-md text-white">
             Você reserva online, deixa o carro com quem já esperava por você e segue para o
@@ -406,6 +406,10 @@ export default function ComoFuncionaPage() {
             <h2 className="max-w-2xl text-balance text-display-2xl text-ink">
               O que a Movepark garante por escrito
             </h2>
+            <p className="max-w-[56ch] text-pretty text-body-md text-body">
+              Vale para reserva fechada dentro da Movepark. Quando você reserva direto no site do
+              estacionamento parceiro, vale a condição que ele informou no momento da reserva.
+            </p>
           </div>
           <div className="mt-10 grid grid-cols-1 gap-4 tablet:grid-cols-3 desktop:mt-14">
             {JOURNEY_GUARANTEES.map((g) => {
@@ -450,7 +454,11 @@ export default function ComoFuncionaPage() {
                 Chegando sem reserva
               </span>
             </div>
-            {JOURNEY_COMPARISON.map((c, i) => (
+            {/* "Cancelamento" fica de fora aqui: sem unidade em mãos para checar a
+                capacidade real (ADR-009), a página não tem como afirmar isso pra
+                base inteira. `calculadora.tsx` busca essa mesma linha só quando a
+                unidade recomendada já passou pelo gate. */}
+            {JOURNEY_COMPARISON.filter((c) => c.k !== "Cancelamento").map((c, i) => (
               <div
                 key={c.k}
                 className={cn(

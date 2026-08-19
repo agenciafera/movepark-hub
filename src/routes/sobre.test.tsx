@@ -18,7 +18,7 @@ describe("SobrePage — /sobre", () => {
 
     const h1 = screen.getAllByRole("heading", { level: 1 });
     expect(h1).toHaveLength(1);
-    expect(h1[0]).toHaveTextContent(/Vaga garantida/i);
+    expect(h1[0]).toHaveTextContent(/Reserva fácil/i);
 
     expect(screen.getAllByRole("link", { name: /Buscar estacionamento/i })[0]).toHaveAttribute(
       "href",

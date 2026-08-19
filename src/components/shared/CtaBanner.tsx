@@ -72,7 +72,8 @@ export function CtaBanner({ largura = "app" }: { largura?: Largura }) {
           </h2>
 
           <p className="mb-10 max-w-sm text-pretty text-body-md text-white/70">
-            Preço garantido, cancelamento grátis e voucher na hora. Sem filas, sem surpresas.
+            Compare estacionamentos parceiros perto do seu embarque e siga direto para a reserva.
+            Sem taxa da Movepark.
           </p>
 
           <Button asChild>

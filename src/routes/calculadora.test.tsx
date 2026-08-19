@@ -291,7 +291,7 @@ describe("CalculadoraPage", () => {
     };
     setup(noHub);
     const tabela = await screen.findByRole("table", { name: /Reserva online contra tarifa/ });
-    expect(tabela.textContent).toContain("Reservada no seu nome");
+    expect(tabela.textContent).toContain("Reservada com o parceiro escolhido");
     expect(tabela.textContent).toContain("Grátis, conforme a Tarifa");
     expect(tabela.textContent).toContain("Sujeita a lotação");
   });

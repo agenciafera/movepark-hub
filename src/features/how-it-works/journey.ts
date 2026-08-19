@@ -90,7 +90,7 @@ export const JOURNEY: JourneyMoment[] = [
 export const JOURNEY_STATS = [
   { value: "2 min", label: "Da busca ao voucher no seu e-mail" },
   { value: "24h", label: "Entrada e saída a qualquer hora, inclusive feriado" },
-  { value: "100%", label: "Vaga garantida ou seu dinheiro de volta" },
+  { value: "0%", label: "de taxa cobrada pela Movepark" },
 ];
 
 /**
@@ -117,12 +117,23 @@ export const JOURNEY_GUARANTEES = [
 ];
 
 /** Com reserva x chegando no balcão. Uma linha por atrito que a reserva remove. */
+/**
+ * "Cancelamento" só entra na tela quando alguém a busca pela `k` já filtrada
+ * pela capacidade real da unidade (`calculadora.tsx`, `LINHAS_QUALITATIVAS`,
+ * ADR-009). Na tabela incondicional de `/como-funciona`, sem unidade em mãos
+ * para checar, essa linha é excluída na renderização (ver `ComoFuncionaPage`).
+ */
 export const JOURNEY_COMPARISON = [
-  { k: "Preço", mp: "Fechado na reserva", other: "Tabela do dia, sem previsibilidade" },
-  { k: "Vaga", mp: "Reservada no seu nome", other: "Sujeita a lotação" },
-  { k: "Chegada", mp: "QR Code na portaria", other: "Fila no balcão e cadastro na hora" },
+  { k: "Preço", mp: "Comparado entre parceiros antes de decidir", other: "Só sabe chegando" },
+  { k: "Vaga", mp: "Reservada com o parceiro escolhido", other: "Sujeita a lotação" },
+  {
+    k: "Chegada",
+    mp: "Reserva já combinada com a unidade",
+    other: "Fila no balcão e cadastro na hora",
+  },
   { k: "Cancelamento", mp: "Grátis, conforme a Tarifa", other: "Não se aplica" },
-  { k: "Imprevisto", mp: "Suporte Movepark acompanha", other: "Direto com o estacionamento" },
+  { k: "Taxa da Movepark", mp: "Nenhuma", other: "Não se aplica" },
+  { k: "Imprevisto", mp: "Suporte Movepark ajuda a resolver", other: "Direto com o estacionamento" },
 ];
 
 /**
@@ -145,11 +156,11 @@ export const JOURNEY_FAQ = [
   },
   {
     q: "Meu voo atrasou. Perco a vaga?",
-    a: "Não. A vaga continua reservada no seu nome. Se o atraso mudar as suas datas, fale com o suporte antes do horário de saída para a gente ajustar com a unidade.",
+    a: "Avise a unidade pelo contato do comprovante assim que possível. Em dúvida, fale com o suporte: a gente ajuda a resolver com o parceiro.",
   },
   {
     q: "Posso cancelar se mudar de planos?",
-    a: "Sim. Dentro do prazo da sua Tarifa o reembolso é integral: 24 horas antes do check-in na Básica e na Flex, ou até 1 minuto antes na Superflex. Em unidades que fecham a reserva no site do parceiro, valem as condições dele.",
+    a: "Depende de como você reservou. Se a reserva foi concluída no site ou WhatsApp do estacionamento parceiro, vale a política que ele informou a você. Se foi feita dentro da Movepark, o reembolso é integral dentro do prazo da sua Tarifa: 24 horas antes do check-in na Básica e na Flex, ou até 1 minuto antes na Superflex.",
   },
   {
     q: "E se eu ficar mais dias do que reservei?",
