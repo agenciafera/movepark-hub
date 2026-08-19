@@ -567,7 +567,7 @@ latitude/longitude; o mapa não renderiza. O operador grava a geo pela mesma RLS
 ### Comodidades da unidade (ClickUp 86ajnetje)
 
 O parceiro marca as comodidades da unidade no bloco **Comodidades** da edição
-(`/operator/locations/:id/editar`), como checklist sobre o catálogo `amenity` (18 códigos em 4
+(`/operator/locations/:id/editar`), como checklist sobre o catálogo `amenity` (19 códigos em 4
 categorias: `security`, `service`, `access`, `extras`). Não é texto livre: o catálogo é fechado (só
 `hub_admin` escreve nele) e é o que a busca usa para filtrar, então texto livre viraria benefício que
 ninguém acha. A mudança aparece na busca de graça: a Edge `search` já lê `location_amenity`.
@@ -583,6 +583,15 @@ ninguém acha. A mudança aparece na busca de graça: a Edge `search` já lê `l
 
 Migration `20260906000000_operator_set_location_amenities.sql`, pgTAP `location_amenity.test.sql`
 (10 casos, incluindo operador de outra empresa barrado na RPC **e** no insert direto).
+
+**Crescer o catálogo é uma migration de dados, não código.** Toda a superfície lê de `amenity`: o
+checklist do parceiro (`AmenityPicker`), o filtro da busca (`useFilterCatalogs`), a lista da unidade
+(`AmenityList`) e o formulário de lote mapeado. Uma linha nova aparece nos quatro sem tocar em
+componente. Só duas coisas pedem atenção: a `category` tem `CHECK` nos quatro valores existentes, e o
+`icon` é resolvido em `AmenityList` traduzindo nome do lucide pro Phosphor (`src/lib/icon-aliases.ts`),
+então nome que não existe em nenhuma das duas cai no fallback `Sparkle`. Última adição:
+`vending_machine` (máquina de snacks e bebidas, `extras`), migration
+`20260819195850_amenity_vending_machine.sql`.
 
 ### Editar unidade é página, não modal
 

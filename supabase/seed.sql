@@ -73,6 +73,7 @@ INSERT INTO "public"."amenity" ("code", "name", "description", "icon", "category
 	('restroom', 'Banheiros', 'Banheiros disponíveis para clientes', 'Toilet', 'extras', 10),
 	('wifi', 'Wi-Fi gratuito', 'Internet sem fio na área de espera', 'Wifi', 'extras', 20),
 	('lounge', 'Área de espera', 'Sala de estar climatizada', 'Sofa', 'extras', 30),
+	('vending_machine', 'Máquina de snacks e bebidas', 'Snacks e bebidas à venda no local', 'Coffee', 'extras', 35),
 	('flight_insurance', 'Seguro voo', 'Cobertura para atraso ou cancelamento', 'PlaneTakeoff', 'extras', 40);
 
 
