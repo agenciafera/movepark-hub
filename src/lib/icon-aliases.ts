@@ -5,6 +5,12 @@
  * valores foram gravados com os nomes do lucide. Trocar a biblioteca não reescreve o
  * que já está lá, então a tradução acontece na leitura. Enquanto o banco não for
  * migrado, este mapa é o que segura as comodidades exibindo o ícone certo.
+ *
+ * Falta de entrada aqui é um defeito silencioso: o nome não resolve, a leitura cai no
+ * `Sparkle` e a página fica com um brilho genérico no lugar do ícone, sem erro nenhum.
+ * Foi o que aconteceu com `Sofa`, `Wifi`, `Droplets` e `PlaneTakeoff`. O guard contra
+ * isso é `src/features/listing/AmenityList.logic.test.ts`, que lê o catálogo do SQL
+ * versionado e reprova qualquer nome que caia no fallback.
  */
 export const LUCIDE_TO_PHOSPHOR: Record<string, string> = {
   AlertCircle: "WarningCircle",
@@ -32,6 +38,7 @@ export const LUCIDE_TO_PHOSPHOR: Record<string, string> = {
   ConciergeBell: "Bell",
   Container: "Package",
   CornerDownLeft: "ArrowElbowDownLeft",
+  Droplets: "Drop",
   Edit2: "PencilSimple",
   ExternalLink: "ArrowSquareOut",
   Filter: "FunnelSimple",
@@ -62,6 +69,7 @@ export const LUCIDE_TO_PHOSPHOR: Record<string, string> = {
   PartyPopper: "Confetti",
   PieChart: "ChartPie",
   Plane: "Airplane",
+  PlaneTakeoff: "AirplaneTakeoff",
   Quote: "Quotes",
   RefreshCw: "ArrowsClockwise",
   RotateCcw: "ArrowCounterClockwise",
@@ -76,6 +84,7 @@ export const LUCIDE_TO_PHOSPHOR: Record<string, string> = {
   ShieldAlert: "ShieldWarning",
   ShieldQuestion: "ShieldChevron",
   Smartphone: "DeviceMobile",
+  Sofa: "Couch",
   Sparkles: "Sparkle",
   SquareKanban: "Kanban",
   SquareParking: "CarProfile",
@@ -87,5 +96,6 @@ export const LUCIDE_TO_PHOSPHOR: Record<string, string> = {
   Unlink: "LinkBreak",
   User2: "User",
   UserCog: "UserGear",
+  Wifi: "WifiHigh",
   Zap: "Lightning",
 };
