@@ -22,6 +22,35 @@ export function isValidMinutes(value: string): boolean {
 }
 
 /**
+ * Normaliza referência opcional para o banco: string vazia vira `null`. `??` NÃO pega string
+ * vazia, só null e undefined, e uma coluna `uuid` recusa `""` com `22P02`.
+ *
+ * ATENÇÃO: isto sozinho NÃO conserta a corrida do destino, e aplicá-lo sozinho é PIOR que o bug.
+ * Medido em 19/08/2026: converter o `""` para `null` fez o UPDATE passar com 200 e APAGAR o
+ * `destination_id` da unidade. O `22P02` era um fusível, não o defeito: ele estava impedindo uma
+ * escrita destrutiva. Quem protege o dado é `destinationTouched` (ver o payload abaixo).
+ */
+export function uuidOuNulo(value: string | null | undefined): string | null {
+  const v = (value ?? "").trim();
+  return v === "" ? null : v;
+}
+
+/**
+ * Traduz o erro do Postgres para a tela. Só trata o que a pessoa consegue resolver sozinha; o
+ * resto continua genérico, porque texto técnico em inglês não ajuda quem está cadastrando.
+ */
+export function mensagemDeErro(err: unknown): string {
+  const code = (err as { code?: string } | null)?.code;
+  if (code === "22P02") {
+    return "Algum campo de seleção ficou vazio. Confira o destino e tente salvar de novo.";
+  }
+  if (code === "23505") {
+    return "Já existe uma unidade com esse endereço curto (slug). Troque e salve de novo.";
+  }
+  return "Não conseguimos salvar. Tente de novo em instantes.";
+}
+
+/**
  * Minutos onde ZERO é resposta legítima (tolerância de saída: 0 = sem tolerância).
  * Diferente de `parsePositiveInt`, que trata 0 como ausência. Vazio e lixo viram 0.
  */
@@ -131,6 +160,9 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
   const [shuttleToTerminal, setShuttleToTerminal] = React.useState("");
   const [reservationPolicy, setReservationPolicy] = React.useState("");
   const [destinationId, setDestinationId] = React.useState<string | null>(null);
+  // A pessoa mexeu no campo de destino nesta sessão de edição? Só `onValueChange` liga isto, e é
+  // o que separa "escolheu Nenhum" de "o formulário perdeu o valor sozinho".
+  const [destinationTouched, setDestinationTouched] = React.useState(false);
   const [latitude, setLatitude] = React.useState<number | null>(null);
   const [longitude, setLongitude] = React.useState<number | null>(null);
   const [photos, setPhotos] = React.useState<string[]>([]);
@@ -203,6 +235,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     setShuttleToTerminal(baseline.shuttleToTerminal);
     setReservationPolicy(baseline.reservationPolicy);
     setDestinationId(baseline.destinationId);
+    setDestinationTouched(false);
     setLatitude(baseline.latitude);
     setLongitude(baseline.longitude);
     setPhotos(baseline.photos);
@@ -312,7 +345,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       notice: notice || null,
       reservation_policy: reservationPolicy || null,
       has_notice: !!notice,
-      destination_id: destinationId,
+      destination_id: uuidOuNulo(destinationId),
       company_id: companyId,
       external_ref: externalRef.trim() || null,
       latitude,
@@ -344,12 +377,26 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       ...arrivalFields,
     };
 
+    // Na EDIÇÃO, `destination_id` só vai ao banco se a pessoa mexeu no campo nesta sessão.
+    //
+    // O motivo é que o valor pode se perder sem ninguém tocar nele: a lista de destinos chega por
+    // consulta separada, e enquanto ela não monta os itens o Radix não acha o valor atual e limpa
+    // a seleção. Mandar esse estado perdido apaga o vínculo da unidade com o aeroporto, que é o
+    // que alimenta distância, ordenação por proximidade e a FAQ de destino (ADR-001, ADR-002).
+    //
+    // Omitir a chave é diferente de mandar null: o PostgREST só escreve o que recebe, então a
+    // coluna fica como está. Escolher "Nenhum" continua funcionando, porque aí `touched` é true.
+    const patchDoManager = { ...fullPayload };
+    if (!destinationTouched) {
+      delete (patchDoManager as { destination_id?: string | null }).destination_id;
+    }
+
     try {
       let savedId: string;
       if (isEdit && location) {
         await update.mutateAsync({
           id: location.id,
-          patch: operatorMode ? operatorPatch : fullPayload,
+          patch: operatorMode ? operatorPatch : patchDoManager,
         });
         savedId = location.id;
       } else {
@@ -363,9 +410,12 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       toast.success(isEdit ? "Unidade atualizada" : "Unidade criada");
       onSaved();
     } catch (err) {
-      // O erro cru do PostgREST/Postgres é técnico e em inglês; não vai pra tela.
+      // O erro cru do PostgREST/Postgres é técnico e em inglês; não vai pra tela. Mas "tente de
+      // novo" sozinho escondeu por meses um erro que NUNCA ia passar na segunda tentativa (o
+      // 22P02 do destination_id vazio), então a mensagem agora diz o que dá pra fazer quando a
+      // causa é conhecida.
       console.error("Falha ao salvar localização:", err);
-      toast.error("Não conseguimos salvar. Tente de novo em instantes.");
+      toast.error(mensagemDeErro(err));
     }
   }
 
@@ -415,7 +465,10 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       reservationPolicy,
       setReservationPolicy,
       destinationId,
-      setDestinationId,
+      setDestinationId: (v: string | null) => {
+        setDestinationTouched(true);
+        setDestinationId(v);
+      },
       latitude,
       setLatitude,
       longitude,

@@ -16,6 +16,7 @@ import {
 import { ImageGalleryField } from "@/components/shared/ImageUpload";
 import { uploadCompanyAsset } from "@/lib/storage";
 import { useAdminDestinations } from "@/features/destinations/api";
+import { uuidOuNulo } from "./useLocationForm";
 import { AmenityPicker } from "@/features/amenities/AmenityPicker";
 import { useNearestDestination } from "./api";
 import { googleMapsUrlFromPlaceId, slugify, type LocationFormApi } from "./useLocationForm";
@@ -390,12 +391,28 @@ export function LocationSections({
                 </Button>
               )}
             </div>
+            {/* `disabled` enquanto a lista não chega, e não é detalhe de UX: sem os itens
+                montados o Radix não acha o valor atual, limpa a seleção para "" e o save
+                morre com 22P02 numa coluna uuid. Ver `uuidOuNulo` no useLocationForm. */}
             <Select
-              value={f.destinationId ?? NO_DESTINATION}
-              onValueChange={(v) => f.setDestinationId(v === NO_DESTINATION ? null : v)}
+              disabled={destinations.isLoading}
+              value={uuidOuNulo(f.destinationId) ?? NO_DESTINATION}
+              onValueChange={(v) => {
+                // String vazia não é escolha de ninguém: o item "Nenhum" vale NO_DESTINATION, e
+                // um destino de verdade vale o uuid. O `""` só aparece quando o Radix não acha o
+                // valor atual entre os itens (lista ainda carregando) e limpa a seleção sozinho,
+                // disparando este callback sem interação humana. Ignorar aqui é o que impede o
+                // formulário de "decidir" apagar o destino da unidade.
+                if (v === "") return;
+                f.setDestinationId(v === NO_DESTINATION ? null : uuidOuNulo(v));
+              }}
             >
               <SelectTrigger id="destination">
-                <SelectValue placeholder="Selecione um destino" />
+                <SelectValue
+                  placeholder={
+                    destinations.isLoading ? "Carregando destinos..." : "Selecione um destino"
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={NO_DESTINATION}>Nenhum</SelectItem>
