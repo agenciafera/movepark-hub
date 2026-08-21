@@ -4,6 +4,8 @@ import { ArrowRight, Check, CreditCard, FileText, Megaphone, Money, Quotes, Radi
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { YouTubeEmbed } from "@/components/shared/YouTubeEmbed";
+import { youTubeVideoSchema } from "@/lib/jsonld";
+import { siteUrl } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { FaqList } from "@/features/faqs/FaqList";
 import type { FaqCombinedItem } from "@/features/faqs/api";
@@ -11,6 +13,24 @@ import { PartnerLeadModal } from "@/features/onboarding/PartnerLeadModal";
 import { PartnerLogos } from "@/features/partners/PartnerLogos";
 import { useGsapReveal } from "@/hooks/useGsapReveal";
 import { gsap } from "@/lib/gsap";
+
+/**
+ * O vídeo institucional desta página, declarado para o Google.
+ *
+ * Os valores são do próprio YouTube (título, data de publicação e duração reais), porque o
+ * VideoObject descreve o vídeo que está ali: dado estruturado que não bate com o que a
+ * página mostra é motivo de ação manual, não de rich result.
+ */
+const VIDEO_ID = "ZkbAd7B6CIo";
+const VIDEO_SCHEMA = youTubeVideoSchema({
+  videoId: VIDEO_ID,
+  name: "Movepark: o seu parceiro de estacionamento",
+  description:
+    "Apresentação da Movepark em 24 segundos: quem somos e como o cliente reserva vaga em estacionamento perto do aeroporto antes de viajar.",
+  uploadDate: "2024-03-21T07:19:34-07:00",
+  duration: "PT24S",
+  pageUrl: siteUrl("/seja-parceiro"),
+});
 
 const HERO_IMAGE = "/images/seja-parceiro-acordo-sunset.webp";
 // Foto própria deste bloco, não a do hero. Repetir a mesma imagem duas vezes na
@@ -476,6 +496,9 @@ export default function SejaParceiroPage() {
     <>
       <Helmet>
         <title>Seja parceiro | Movepark</title>
+        {/* Sem este bloco o Search Console recusa indexar o vídeo por falta de miniatura:
+            o iframe é do YouTube, mas quem declara o vídeo é a página que o exibe. */}
+        <script type="application/ld+json">{JSON.stringify(VIDEO_SCHEMA)}</script>
         <meta
           name="description"
           content="Coloque seu estacionamento na Movepark e receba reservas online com pagamento garantido. Sem mensalidade e sem custo de adesão para começar."
@@ -732,7 +755,7 @@ export default function SejaParceiroPage() {
         <div className="mt-8 overflow-hidden">
           <div className="aspect-video">
             <YouTubeEmbed
-              videoId="ZkbAd7B6CIo"
+              videoId={VIDEO_ID}
               title="Movepark: vídeo institucional"
               className="h-full w-full"
             />

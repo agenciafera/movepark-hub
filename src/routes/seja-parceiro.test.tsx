@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HelmetProvider } from "react-helmet-async";
 import { renderWithProviders } from "@/test/utils";
@@ -235,5 +235,31 @@ describe("SejaParceiroPage — landing de parceiro", () => {
     await userEvent.click(screen.getAllByRole("button", { name: /Quero ser parceiro/i })[0]);
 
     expect(await screen.findByText("Passo 1 de 2")).toBeInTheDocument();
+  });
+});
+
+describe("SejaParceiroPage: dado estruturado do vídeo", () => {
+  /*
+   * O Search Console recusou indexar o vídeo desta página em 20/08/2026: "nenhum URL de
+   * miniatura enviado". O player é do YouTube, mas o iframe sozinho não diz ao Google qual é
+   * a miniatura, e quem precisa declarar o vídeo é a página que o exibe.
+   */
+  function videoSchema() {
+    const script = [...document.querySelectorAll('script[type="application/ld+json"]')]
+      .map((s) => JSON.parse(s.textContent ?? "{}"))
+      .find((j) => j["@type"] === "VideoObject");
+    return script as Record<string, string> | undefined;
+  }
+
+  it("emite VideoObject com miniatura, nome, descrição e data", async () => {
+    renderPage();
+    await waitFor(() => expect(videoSchema()).toBeTruthy());
+
+    const s = videoSchema()!;
+    expect(s.thumbnailUrl).toMatch(/^https:\/\/i\.ytimg\.com\/vi\/ZkbAd7B6CIo\//);
+    expect(s.name).toBeTruthy();
+    expect(s.description).toBeTruthy();
+    expect(s.uploadDate).toBeTruthy();
+    expect(s.embedUrl).toContain("ZkbAd7B6CIo");
   });
 });

@@ -235,3 +235,36 @@ autor e destino. Os padrões estão em `SITEMAP_DYNAMIC_PATTERNS`, junto do rest
 **Nomes das páginas legais.** As rotas do Hub são `/termos` e `/privacidade`; o WordPress
 publica `/termos-de-uso/` e `/politica-de-privacidade/`. São nomes diferentes, então a
 migração precisa de 301 e não de URL igual. Um teste trava os dois nomes.
+
+## Indexação de vídeo: miniatura obrigatória (20/08/2026)
+
+O Search Console avisou que nenhum vídeo do site estava sendo indexado, com o motivo
+**"Nenhum URL de miniatura enviado"** (`WNC-20237597`).
+
+O site tem vídeo em dois lugares, e só um deles chega ao HTML que o buscador lê:
+
+| Onde | O que o crawler vê | Por que faltava miniatura |
+|---|---|---|
+| `/seja-parceiro` | `<iframe>` do YouTube, no HTML do SSG | O player é do YouTube, mas quem precisa declarar o vídeo é a página que o exibe. Sem `VideoObject`, o Google acha o vídeo e não descobre a miniatura. |
+| Home (`Hero`) | nada no HTML: o `<video>` só entra depois que o JS roda | Se o Googlebot renderiza a página, encontra seis `<video>` sem `poster`, e um vídeo sem `poster` não oferece quadro nenhum. |
+
+Correção:
+
+1. **`youTubeVideoSchema()`** em [`src/lib/jsonld.ts`](../../src/lib/jsonld.ts), emitido no
+   `Helmet` de `/seja-parceiro`. Traz os quatro campos que o Google exige (`thumbnailUrl`,
+   `name`, `description`, `uploadDate`) mais `duration` e `embedUrl`. Os valores são os reais
+   do YouTube: dado estruturado que não bate com o que a página mostra é motivo de ação
+   manual, não de rich result.
+2. **`poster` nos clipes do hero**, apontando para `/images/hero-image.webp`, que é a foto
+   que já está por baixo e mostra a mesma cena. Na tela não muda nada, porque o clipe só
+   aparece depois do `canPlay`; muda para o robô.
+
+A miniatura usa **`maxresdefault.jpg`** (1280x720). O `hqdefault` que o oEmbed devolve tem
+480px de largura, e o Google pede pelo menos 1200 para a imagem aparecer no resultado rico:
+entregaria o dado e perderia a vitrine.
+
+**O guard:** [`scripts/audit-structured-data.mjs`](../../scripts/audit-structured-data.mjs)
+reprova o build se um `VideoObject` sair sem `thumbnailUrl`, `name`, `description`,
+`uploadDate` ou sem `contentUrl`/`embedUrl`. É o mesmo motivo de o script existir: o Search
+Console avisa tarde, e isso é detectável no `dist/` antes do deploy. Vídeo novo no site nasce
+com miniatura ou não passa no `bun run lint:schema`.

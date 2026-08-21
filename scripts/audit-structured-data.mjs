@@ -109,6 +109,16 @@ function visita(no, rota, caminho = "$") {
       if (!absoluta(alvo)) err(`Article.image não absoluta: ${alvo}`);
     }
   }
+  // O que o Search Console cobrou em 20/08/2026 ("Nenhum URL de miniatura enviado"): sem
+  // miniatura o Google acha o vídeo, entende que a página tem vídeo e não indexa. Os quatro
+  // campos abaixo são os obrigatórios do Google para VideoObject.
+  if (ts.includes("VideoObject")) {
+    if (!no.name) err("VideoObject sem name");
+    if (!no.description) err("VideoObject sem description");
+    if (!no.uploadDate) err("VideoObject sem uploadDate");
+    if (!lista(no.thumbnailUrl).length) err("VideoObject sem thumbnailUrl");
+    if (!no.contentUrl && !no.embedUrl) err("VideoObject sem contentUrl nem embedUrl");
+  }
   if (ts.includes("Organization") && !no.name) err("Organization sem name");
   if ((ts.includes("LocalBusiness") || ts.includes("ParkingFacility")) && !no.name) {
     err("LocalBusiness/ParkingFacility sem name");

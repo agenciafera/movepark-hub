@@ -11,6 +11,7 @@ import {
   parkingFacilitySchema,
   localBusinessSchema,
   productOfferSchema,
+  youTubeVideoSchema,
 } from "./jsonld";
 
 type Overrides = {
@@ -549,5 +550,51 @@ describe("parkingFacilitySchema · lote mapeado (E0.17-f · ADR-010)", () => {
     expect(parkingFacilitySchema({ ...base, amenities: ["coberto"] }).amenityFeature).toEqual([
       { "@type": "LocationFeatureSpecification", name: "coberto", value: true },
     ]);
+  });
+});
+
+describe("youTubeVideoSchema", () => {
+  const base = {
+    videoId: "ZkbAd7B6CIo",
+    name: "Movepark: o seu parceiro de estacionamento",
+    description: "Apresentação da Movepark em 24 segundos.",
+    uploadDate: "2024-03-21T07:19:34-07:00",
+    duration: "PT24S",
+    pageUrl: "https://movepark.co/seja-parceiro",
+  };
+
+  // O alerta do Search Console de 20/08/2026 era exatamente a falta deste campo.
+  it("emite os quatro campos obrigatórios do Google", () => {
+    const s = youTubeVideoSchema(base) as Record<string, unknown>;
+    expect(s.thumbnailUrl).toBeTruthy();
+    expect(s.name).toBeTruthy();
+    expect(s.description).toBeTruthy();
+    expect(s.uploadDate).toBeTruthy();
+  });
+
+  it("usa a miniatura grande do YouTube, não a de 480px", () => {
+    // hqdefault tem 480 de largura e o Google pede 1200 para o resultado rico: entregaria o
+    // dado e perderia a vitrine.
+    const s = youTubeVideoSchema(base);
+    expect(s.thumbnailUrl).toBe("https://i.ytimg.com/vi/ZkbAd7B6CIo/maxresdefault.jpg");
+    expect(s.thumbnailUrl).not.toContain("hqdefault");
+  });
+
+  it("a miniatura e o embed são absolutos", () => {
+    const s = youTubeVideoSchema(base);
+    expect(s.thumbnailUrl).toMatch(/^https:\/\//);
+    expect(s.embedUrl).toBe("https://www.youtube.com/embed/ZkbAd7B6CIo");
+  });
+
+  it("aponta para a página nossa que exibe o vídeo", () => {
+    expect(youTubeVideoSchema(base).mainEntityOfPage).toEqual({
+      "@type": "WebPage",
+      "@id": "https://movepark.co/seja-parceiro",
+    });
+  });
+
+  it("duração é opcional e some quando não vem", () => {
+    const semDuracao = { ...base, duration: undefined };
+    expect(youTubeVideoSchema(semDuracao).duration).toBeUndefined();
   });
 });

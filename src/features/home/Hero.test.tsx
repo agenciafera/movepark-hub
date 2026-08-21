@@ -403,3 +403,23 @@ describe("Hero — vídeo de fundo", () => {
     expect(video()?.className).toContain("opacity-100");
   });
 });
+
+describe("Hero: miniatura do vídeo", () => {
+  beforeEach(() => ambiente());
+
+  /*
+   * O Search Console recusou indexar vídeo do site em 20/08/2026 por "nenhum URL de
+   * miniatura enviado". Um `<video>` sem `poster` não dá ao crawler nenhum quadro para usar,
+   * e aqui isso passa despercebido porque o clipe só aparece depois do `canPlay`: na tela
+   * não muda nada, no robô muda tudo.
+   */
+  it("todo clipe declara o poster, e é a foto que já está por baixo", async () => {
+    renderWithProviders(<Hero />);
+    await abrirSequencia();
+
+    expect(videos().length).toBeGreaterThan(0);
+    for (const v of videos()) {
+      expect(v.getAttribute("poster")).toBe("/images/hero-image.webp");
+    }
+  });
+});

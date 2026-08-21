@@ -244,6 +244,11 @@ export function Hero() {
                 clipesRef.current[i] = el;
               }}
               src={src}
+              /* A mesma foto que já está por baixo. Não muda nada na tela (o vídeo só
+                 aparece depois do `canPlay`), mas é o que o crawler precisa: sem `poster`
+                 o Search Console recusa indexar por "nenhum URL de miniatura enviado", e
+                 a foto é a cena que os clipes mostram. */
+              poster="/images/hero-image.webp"
               autoPlay={primeiro}
               muted
               playsInline

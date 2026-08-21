@@ -435,3 +435,49 @@ export function faqSchema(faqs: { question: string; answer: string }[]) {
     })),
   };
 }
+
+/**
+ * VideoObject de um vídeo hospedado no YouTube e embutido numa página nossa.
+ *
+ * Existe por causa de um alerta do Search Console em 20/08/2026: "Nenhum URL de miniatura
+ * enviado". O Google acha o iframe do vídeo no HTML, entende que a página tem vídeo e não
+ * consegue descobrir a miniatura sozinho, então não indexa. Iframe sem dado estruturado é
+ * exatamente esse caso: o player é do YouTube, mas quem precisa declarar o vídeo é a página
+ * que o exibe.
+ *
+ * `thumbnailUrl`, `name`, `description` e `uploadDate` são os quatro campos obrigatórios do
+ * Google para VideoObject. O guard `bun run lint:schema` reprova o build se algum sumir.
+ *
+ * A miniatura sai de `i.ytimg.com`, e `maxresdefault` (1280x720) é a maior que o YouTube
+ * publica. O Google pede pelo menos 1200px de largura para a imagem aparecer nos resultados
+ * ricos, e `hqdefault` tem 480: entrega o dado e perde a vaga na vitrine.
+ */
+export function youTubeVideoSchema(v: {
+  videoId: string;
+  name: string;
+  description: string;
+  /** ISO 8601, do próprio YouTube. Obrigatório para o Google. */
+  uploadDate: string;
+  /** ISO 8601 de duração (`PT24S`). Recomendado, e o que rende o selo de duração. */
+  duration?: string;
+  /** A página nossa onde o vídeo aparece. */
+  pageUrl: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    name: v.name,
+    description: v.description,
+    thumbnailUrl: `https://i.ytimg.com/vi/${v.videoId}/maxresdefault.jpg`,
+    uploadDate: v.uploadDate,
+    duration: v.duration,
+    embedUrl: `https://www.youtube.com/embed/${v.videoId}`,
+    inLanguage: "pt-BR",
+    publisher: {
+      "@type": "Organization",
+      name: "Movepark",
+      url: SITE_URL,
+    },
+    mainEntityOfPage: { "@type": "WebPage", "@id": v.pageUrl },
+  };
+}
