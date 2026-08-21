@@ -348,8 +348,14 @@ const WP_ESTACIONAMENTO_REDIRECTS: Record<string, string> = {
     "/p/abbapark/aeroporto-afonso-pena/covered",
   "/estacionamentos/aeroporto-afonso-pena/estacionamento-aeroporto-afonso-pena-curitiba":
     "/p/nationpark/aeroporto-afonso-pena/covered",
+  // O tipo de vaga do Garageinn foi renomeado de "uncovered" para "avulsa" depois deste
+  // mapa ter sido escrito (18/08). Alvo desatualizado não vira 404 (o padrão /p/x/y/z em
+  // ROTAS_DE_APP deixa passar de propósito), vira 200 com a casca da home e canonical
+  // apontando pra ela — Google não indexa isso como página própria. Sintoma medido em
+  // produção em 21/08: /p/garageinn/aeroporto-viracopos/uncovered não tinha listagem, e
+  // <link rel="canonical"> saía como "https://movepark.co" em vez de se auto-referenciar.
   "/estacionamentos/aeroporto-viracopos/garage-inn-aeroporto-viracopos":
-    "/p/garageinn/aeroporto-viracopos/uncovered",
+    "/p/garageinn/aeroporto-viracopos/avulsa",
   "/estacionamentos/aeroporto-viracopos/virapark-estacionamento-viracopos": "/p/virapark/virapark/covered",
   // Lote mapeado publicado (mesma marca, mesmo destino)
   "/estacionamentos/aeroporto-de-viracopos/br-parking-viracopos": "/estacionamentos/aeroporto-de-viracopos/br-parking-viracopos",

@@ -198,6 +198,21 @@ describe("301 legado do WordPress (institucional, aeroporto, estacionamento)", (
     expect(res.headers.get("Location")).toBe("/p/virapark/virapark/covered");
   });
 
+  it("ficha de parceiro ativo aponta pro código de tipo de vaga que existe hoje, não o do dia do mapa", async () => {
+    // Regressão medida em produção em 21/08: o mapa (18/08) levava o Garageinn pro código
+    // "uncovered", renomeado pra "avulsa" depois. Alvo desatualizado não vira 404 (ROTAS_DE_APP
+    // deixa qualquer /p/x/y/z passar de propósito) — vira 200 com a casca da home e
+    // <link rel="canonical"> apontando pra ela, e por isso a página nunca era indexada.
+    const env = makeEnv({});
+    const res = await worker.fetch(
+      req("/estacionamentos/aeroporto-viracopos/garage-inn-aeroporto-viracopos"),
+      env,
+    );
+
+    expect(res.status).toBe(301);
+    expect(res.headers.get("Location")).toBe("/p/garageinn/aeroporto-viracopos/avulsa");
+  });
+
   it("ficha de lote mapeado publicado vai para a ficha de vitrine equivalente", async () => {
     const env = makeEnv({});
     const res = await worker.fetch(req("/estacionamentos/aeroporto-viracopos/br-parking"), env);
