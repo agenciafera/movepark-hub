@@ -28,6 +28,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | [distance-display.md](./distance-display.md) | Exibição de distância/proximidade ao aeroporto e terminal (PRD-09): badge "mais perto do Tx" no card + lista por terminal no detalhe — consome DAT-04/DAT-05 |
 | [public-api.md](./public-api.md) | **API pública** (E0.7): endpoints versionados `/v1` sobre as RPCs existentes, chaves de API com escopos, gestão no operator, proxy `api.movepark.co` (CF Worker), OpenAPI. Contém o **ADR-003** (doc-as-you-build). MCP = Fase 2 |
 | [mcp.md](./mcp.md) | **MCP** (E0.7 Fase 2): servidor MCP in-repo (Edge `mcp`, Streamable HTTP) com duas superfícies — **consumidor** (`mcp.movepark.co`, anon) e **parceiro** (`/partner`, chave `mp_`+escopo) sobre a API v1; substitui o MCP n8n |
+| [agente-whatsapp-wl.md](./agente-whatsapp-wl.md) | Traz o agente do Dify para o Hub: conhecimento vem do RAG do Hub, reserva continua nascendo no white-label. Inventário de paridade das 7 tools, endpoints do WL (`calculation-price`, `quick-pay`), e por que o slug da unidade deixa de ser adivinhado por LLM |
 | [chatbot.md](./chatbot.md) | **Web chat do Hub** (E3.3): assistente ("bolinha") no consumidor, LLM **Gemini** (function-calling), transacional (reservar/cancelar) reusando Edges/RPCs; Edge `chat` (`verify_jwt=false`) + `ChatWidget`. MVP interno, só webchat |
 | [knowledge-base-rag.md](./knowledge-base-rag.md) | **Base de conhecimento do atendimento** (E3.3 · RAG próprio): inventário de-para das 10 bases do Notion contra a FAQ em camadas (ADR-002) + campos estruturados da `location`; marcação do que é dado estruturado, FAQ nova ou descarte; gaps (Place ID, horário, tolerância). Vetorização/tools ficam em [86ajp4560](https://app.clickup.com/t/86ajp4560) |
 | [knowledge-base.md](./knowledge-base.md) | **Base de conhecimento vetorizada** (E3.3 · RAG nativo): pgvector no próprio Postgres, embedding pelo Gemini, índice HNSW cosseno, frescor por outbox de fonte e a tool `search_knowledge` no MCP e no chat. Vetoriza só a prosa, sem criar silo paralelo à FAQ do ADR-002 |
@@ -65,6 +66,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 
 | Spec | Status |
 |---|---|
+| agente-whatsapp-wl | 🟡 Especificado em 21/08/2026, **bloqueado** nos DSLs das duas tools de consulta de reserva. Metade do trabalho já existe: preço, placa, conhecimento e o laço de function-calling. Falta a Edge do `quick-pay` |
 | domain-model | ✅ Definido |
 | pricing-engine | ✅ Analisado — migration aplicada (`20260526100000`) |
 | capacity-rules | ✅ Implementado — migration `20260614000000`. Hold na criação + release; `cron_expire_pending_bookings` (pending abandonado → `expired`); enforce de `minimum_stay`/`minimum_date`/antecedência; `check_availability`/`availability_batch` (disponibilidade no listing/busca, "esgotado"+quase-lotação); `operator_location_occupancy` + tela `/operator/occupancy`. Ver [capacity-rules.md](./capacity-rules.md) |
