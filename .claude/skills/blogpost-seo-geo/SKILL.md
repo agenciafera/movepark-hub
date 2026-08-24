@@ -46,17 +46,44 @@ variações reais ("estacionar em Confins", "estacionamento CNF", "deixar o carr
 no aeroporto de BH"), porque texto que repete a mesma frase 30 vezes soa robótico
 para o leitor e para o Google.
 
-**1.2 Canibalização.** Rode a busca no acervo antes de escrever:
+**1.2 Canibalização.** Rode a busca no acervo antes de escrever, separando post
+vivo de post morto:
 
 ```bash
-grep -ril "confins" public/blog/ | head -20
+grep -ril "confins" public/blog/ | sed 's|.*/||;s|\.md$||' | while read s; do
+  grep -q "\"$s\"" public/blog-slugs.json && echo "VIVO  $s" || echo "MORTO $s"
+done
 ```
 
-Leia os títulos que voltarem. Se já existe post cobrindo a mesma intenção, a
-decisão certa quase sempre é **atualizar o post existente** em vez de criar um
-novo: ele já tem histórico, e post novo sobre o mesmo tema rouba dele. Só crie
-post novo quando a intenção for de fato outra (preço x como reservar x
-comparativo x guia do aeroporto). Diga isso ao usuário antes de escrever.
+`public/blog/` guarda os 95 posts importados do WordPress, mas **26 deles saíram
+do ar na consolidação por intenção de 15/08/2026** e hoje respondem 301. O
+comando acima distingue os dois porque `public/blog-slugs.json` é regerado no
+build a partir do banco e lista só o que está publicado. Atualizar um post MORTO
+é trabalho perdido: a URL nunca abre.
+
+O acervo herdado tinha até oito posts disputando a MESMA consulta ("melhor
+estacionamento Viracopos"), e o Google não elege vencedor entre páginas irmãs. A
+correção elegeu **um vencedor por intenção e por aeroporto**, pelos cliques de 16
+meses do Search Console, e mandou os 26 perdedores para 301 direto no vencedor.
+O mapa `BLOG_CONSOLIDATED_SLUGS` em [`src/worker.ts`](../../../src/worker.ts) é
+a lista canônica de quem ganhou o quê:
+
+```bash
+grep -n "<slug-que-voltou-morto>" -A 1 src/worker.ts
+```
+
+Com isso na mão, decida:
+
+| O que a busca achou | O que fazer |
+|---|---|
+| Post VIVO na mesma intenção | **Atualizar esse post.** Ele tem histórico, e post novo sobre o mesmo tema rouba dele |
+| Post MORTO na mesma intenção | Atualizar o **vencedor** que o mapa aponta, nunca o morto |
+| Nada na mesma intenção | Aqui, e só aqui, cabe post novo |
+
+Intenção é preço, como reservar, comparativo ou guia do aeroporto. Mesmo
+aeroporto com intenção diferente é post novo legítimo; mesma intenção é
+canibalização, e foi ela que custou 26 páginas em agosto. Diga ao usuário em qual
+dos três casos a pauta caiu antes de escrever uma linha.
 
 **1.3 Intenção e ângulo.** Escreva em uma frase o que a pessoa quer resolver e o
 que ela precisa saber para decidir. Se a resposta couber num parágrafo, o assunto
@@ -79,6 +106,8 @@ ou uma regra de arquitetura do projeto.
 | Todo valor em R$ carrega **data de referência** e link para `/destinos/<slug>` | Tarifa sem data vira promessa que o código não consegue retirar. Com data e link, é retrato datado mais o preço vivo a um clique |
 | Link externo **nunca** para quem vende vaga | Inclui agregador, comparador, site próprio de parceiro e a página de estacionamento do próprio aeroporto. Lista em [`scripts/fontes.json`](scripts/fontes.json), regra em [`references/links-e-fontes.md`](references/links-e-fontes.md) |
 | Slug publicado **nunca** muda | Os 93 slugs herdados são o contrato de URL que guarda o tráfego, congelados em `legacy-slugs.json`. Renomear é apagar uma URL que o Google conhece |
+| Slug novo **nunca** pode estar em `BLOG_CONSOLIDATED_SLUGS` | O worker responde 301 antes de servir a página. O post existiria no banco e apareceria no Manager, mas a URL nunca abriria, e a falha é silenciosa |
+| Republicar post despublicado = republicar **e** tirar do mapa | Mexer só no `is_published` não basta: enquanto a entrada viver em `BLOG_CONSOLIDATED_SLUGS`, a URL segue em 301 e a página fica inalcançável |
 
 ## Passo 3: o arquivo de trabalho
 

@@ -96,6 +96,35 @@ distingui-las de post, senão viram 404 no dia do corte. O mapa é estático:
 > O Yoast emite a base da taxonomia como um ponto, gerando `/blog/./<categoria>/`. São 8 URLs
 > inválidas, 4 já em 404. Elas morrem junto com o WordPress e não precisam ser reproduzidas.
 
+## Consolidação por intenção (15/08/2026)
+
+Emenda ao contrato de URL. A migração foi 1:1 de propósito (decisão 2, acima), o que trouxe o
+problema do WordPress junto: até **oito posts disputando a mesma consulta** ("melhor
+estacionamento Viracopos", "quanto custa estacionar em Guarulhos"). O Google não elege vencedor
+entre páginas irmãs, então o sinal se dividia e nenhuma ranqueava, o que aparece no Search
+Console como 94 URLs em "rastreada, mas não indexada".
+
+A correção elegeu **um vencedor por intenção e por aeroporto**, pelos cliques de 16 meses do
+Search Console. Os **26 perdedores** receberam `is_published = false` no banco e passaram a
+responder **301 direto pro vencedor**, num salto só, nas duas formas de URL. O mapa é
+`BLOG_CONSOLIDATED_SLUGS` em [`src/worker.ts`](../../src/worker.ts), e é a lista canônica de
+quem ganhou cada intenção. Navegantes ficou de fora: o comparativo de 2026 é recente e a
+escolha lá é editorial.
+
+Três consequências que valem para todo post novo:
+
+- **Post novo na mesma intenção de um vencedor reabre a canibalização.** O certo é atualizar o
+  vencedor, que já tem histórico. A checagem é o portão 1.2 da skill `blogpost-seo-geo`.
+- **`public/blog/` não é o acervo vivo.** Os 95 arquivos `.md` continuam versionados, mortos
+  inclusive. Quem lista publicado é `public/blog-slugs.json`, regerado no build a partir do banco
+  (69 slugs hoje).
+- **Slug novo que colida com um perdedor nasce inalcançável**, porque o worker devolve 301 antes
+  de servir a página. Reverter uma consolidação é republicar o post **e** tirar a entrada do mapa;
+  só um dos dois não resolve.
+
+Travado por `src/blog-urls.contract.test.ts`: o vencedor tem que ser um slug vivo do contrato
+(301 para outro 301 seria cadeia) e o perdedor tem que responder 301 nas duas formas de URL.
+
 ## Os redirects que a planilha não capturou
 
 O plugin `eps-301-redirects` mantém **40 redirects ativos numa tabela do banco**
