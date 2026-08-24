@@ -162,10 +162,20 @@ exportar DSL de novo, tratar o arquivo como segredo.
 
 ## O que bloqueia a paridade
 
-Faltam os DSLs de **`Consultar reserva por número da reserva`** e **`Consultar reserva por email ou
-telefone`**. Sem eles não se sabe qual endpoint do WL respondem nem o formato da resposta. São as
-duas tools de pós-venda, que respondem "cadê meu voucher" e "minha reserva está paga". Sem elas o
-agente vende mas não atende quem já comprou.
+Faltam os DSLs de **`Consultar reserva por número da reserva`** (app `09a7331c-1e58-430f-9576-d324a157a9b3`
+no Dify) e **`Consultar reserva por email ou telefone`**. Sem eles não se sabe qual endpoint do WL
+respondem nem o formato da resposta. São as duas tools de pós-venda, que respondem "cadê meu
+voucher" e "minha reserva está paga". Sem elas o agente vende mas não atende quem já comprou.
+
+Do DSL do `Gerar link de pagamento` dá para tirar só a **assinatura** da primeira, porque ela entra
+lá como nó: recebe `order_numer` (sic, o typo está no original) e `estacionamento`, e devolve um
+`text` que um LLM transforma na mensagem de reserva duplicada. Isso diz o contrato de fora, não o
+de dentro.
+
+Vale notar onde ela é chamada: quando o `quick-pay` recusa por já existir reserva no mesmo período,
+o fluxo pega o `order_number` do erro, busca a reserva e responde com o link de pagamento dela.
+Ou seja, **a tool de consulta faz parte do caminho feliz de venda**, não é só pós-venda. O Hub
+precisa dela para tratar duplicata sem criar reserva repetida.
 
 ## Prompt
 
