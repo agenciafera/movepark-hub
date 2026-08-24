@@ -35,15 +35,15 @@ Levantamento de 21/08/2026, comparando as 7 tools do agente do Dify com o que o 
 | `consulta_preco_reserva` | `wlGetCalculationPrice` em `_shared/wl/client.ts` | ✅ existe, falta virar tool |
 | `consulta_placa_veiculo` | Edge `lookup-vehicle-plate`, mesma base externa, devolve `brand`/`model`/`color` | ✅ existe, falta virar tool |
 | Resolve unidade → slug do WL | `company.wl_domain` + `location_parking_type.wl_category_slug`/`wl_product_slug` | ✅ é dado, não palpite |
-| `gerar_link_pagamento` | nada | ❌ **Edge nova** |
-| `consulta_reserva_por_numero` | nada | ❌ **bloqueado, falta o DSL** |
-| `consulta_reserva_email_ou_telefone` | nada | ❌ **bloqueado, falta o DSL** |
+| `gerar_link_pagamento` | nada | ❌ **Edge nova** (`POST /backend/order/quick-pay`) |
+| `consulta_reserva_por_numero` | nada | ❌ **Edge nova** (`GET /backend/order/detail`) |
+| `consulta_reserva_email_ou_telefone` | nada | ❌ **Edge nova** (`GET /backend/order/last-by-user`) |
 
 O runtime também já existe: a Edge `chat` tem laço de function-calling com teto anti-loop, prompt
 em `app_setting`, 12 tools de leitura do registro compartilhado e 9 transacionais executadas pelo
 MCP `/customer`. Ela **já é cliente do nosso MCP**.
 
-## Três correções que vêm de graça ao sair do Dify
+## As correções que vêm de graça ao sair do Dify
 
 Não são melhorias de estilo: são pontos onde hoje dá para errar em silêncio.
 
@@ -60,7 +60,19 @@ estadia mínima (`WlMinimumStayError`).
 **3. O `payment_method_code` para de passar por um modelo.** O Dify tem um nó de LLM inteiro para
 converter "Link de Pagamento" em `movepark-checkout`. É constante.
 
-São três chamadas de modelo por reserva que deixam de existir.
+**4. O número da reserva para de ser normalizado por LLM.** O formato é `XXXXXX-XXXX`, e o Dify
+gasta um `gpt-4o-mini` com a instrução "NUNCA complete ou preencha com zero se tiver dígitos
+faltando". É uma regex, e a regex não inventa dígito num número de pedido.
+
+**5. O telefone para de ser normalizado por LLM.** Mesmo caso: tirar caractere especial e prefixar
+`55` quando falta o DDI. Regex.
+
+**6. Os dados da reserva param de ser extraídos por LLM.** As duas tools de consulta leem o JSON do
+WL com um extrator de modelo que recebe uma lista de caminhos (`property.license_plate`,
+`payment_response.qr_code`, e por aí). É desserialização.
+
+Somando: **seis chamadas de modelo por atendimento** que deixam de existir. Isso não é economia de
+custo, é remoção de superfície de erro. Cada uma delas pode devolver o campo errado sem falhar.
 
 ## Arquitetura
 
@@ -139,6 +151,40 @@ explicar isso em vez de criar duplicata.
 O `WL_BACKEND_TOKEN` já existe como secret e é o mesmo Bearer global usado por `wl-deliver` e
 `wl-reconcile`. **Nunca vai ao front.**
 
+### Consultar reserva pelo número
+
+```
+GET {wl_domain}/api/v3/backend/order/detail?order_number=XXXXXX-XXXX
+    Authorization: Bearer <WL_BACKEND_TOKEN>
+```
+
+O número segue o formato `XXXXXX-XXXX`. O Dify aceita o que o cliente digitar (`#123456 .
+123456-7890V` é o exemplo do próprio prompt) e limpa antes de consultar. No Hub isso é uma regex,
+e ela recusa em vez de chutar quando faltam dígitos.
+
+A resposta traz `status.name`, `payment_method.type`, `payment_response.*`, `property.interval`,
+`property.initial_date`/`final_date`, os campos do veículo e `voucher_url`.
+
+**Esta tool é parte do caminho de venda, não só do pós-venda.** Quando o `quick-pay` recusa por já
+existir reserva no mesmo período, ele devolve o `order_number`, e o fluxo consulta essa reserva
+para responder com o link de pagamento dela. Sem isso o agente ou cria duplicata ou trava numa
+mensagem de erro crua.
+
+### Consultar reserva por e-mail ou telefone
+
+```
+GET {wl_domain}/api/v3/backend/order/last-by-user?email=<e-mail>
+GET {wl_domain}/api/v3/backend/order/last-by-user?phone=5541999999999
+    Authorization: Bearer <WL_BACKEND_TOKEN>
+```
+
+Um ou outro, nunca os dois: o Dify ramifica por qual dos campos veio preenchido, e o e-mail tem
+precedência. Mesma resposta da consulta por número.
+
+O nome do endpoint é literal: devolve a **última** reserva daquela pessoa. Quem tem duas viagens
+marcadas recebe uma delas em silêncio, sem aviso de que existe outra. Vale expor isso na resposta
+da tool (quantas existem, qual está sendo mostrada) em vez de repetir o comportamento.
+
 ## Identidade: anônimo, por decisão
 
 O agente do Dify não autentica ninguém: coleta nome, e-mail e telefone na conversa e cria a
@@ -150,32 +196,56 @@ parceiro, e as do Hub exigem JWT por ADR-006. Uma não é modelo para a outra.
 
 ## Segurança
 
-**A busca de reserva por e-mail ou telefone não deve ser portada como está.** No Dify ela devolve
-dados da reserva sem nenhuma prova de posse: qualquer pessoa na conversa digita o e-mail de outra
-e recebe nome, veículo, período e link do voucher. Enquanto o Dify estiver no ar o furo existe do
-lado dele; o Hub **não** deve reproduzi-lo. Quando o DSL chegar, a decisão de portar ou não é de
-produto, e a recomendação desta spec é não expor a tool sem prova de posse do identificador.
+### A busca por e-mail ou telefone entrega o voucher de terceiro
 
-**O token do WL vazou no export do Dify.** O DSL do `Gerar link de pagamento` traz o Bearer em
-texto puro no nó de HTTP. Ele autoriza criar reserva em todos os white-labels. Rotacionar, e ao
-exportar DSL de novo, tratar o arquivo como segredo.
+Com o DSL em mãos, dá para ser exato sobre o tamanho disso. O `last-by-user` não pede nenhuma
+prova de posse: o identificador é só um parâmetro de query, autenticado pelo Bearer da Movepark,
+não pela pessoa. Quem digitar o e-mail de outra recebe nome, veículo, placa, período, status de
+pagamento e **`voucher_url`**.
 
-## O que bloqueia a paridade
+O `voucher_url` é o que importa aqui. Ele não é um recibo, é a **credencial de check-in**: quem
+tem o voucher retira o carro. A tool, como está, transforma "sei o e-mail de alguém" em "tenho o
+voucher da reserva dessa pessoa".
 
-Faltam os DSLs de **`Consultar reserva por número da reserva`** (app `09a7331c-1e58-430f-9576-d324a157a9b3`
-no Dify) e **`Consultar reserva por email ou telefone`**. Sem eles não se sabe qual endpoint do WL
-respondem nem o formato da resposta. São as duas tools de pós-venda, que respondem "cadê meu
-voucher" e "minha reserva está paga". Sem elas o agente vende mas não atende quem já comprou.
+**No Hub isso tem conserto para o telefone, e não tem para o e-mail.** No WhatsApp o número da
+conversa já é prova de posse, porque quem fala está de posse da linha. Então:
 
-Do DSL do `Gerar link de pagamento` dá para tirar só a **assinatura** da primeira, porque ela entra
-lá como nó: recebe `order_numer` (sic, o typo está no original) e `estacionamento`, e devolve um
-`text` que um LLM transforma na mensagem de reserva duplicada. Isso diz o contrato de fora, não o
-de dentro.
+| Caminho | Decisão |
+|---|---|
+| Telefone **da conversa**, vindo do metadado do WhatsApp | pode consultar |
+| Telefone **digitado** pela pessoa na conversa | não consulta |
+| E-mail | não consulta sem outro fator |
 
-Vale notar onde ela é chamada: quando o `quick-pay` recusa por já existir reserva no mesmo período,
-o fluxo pega o `order_number` do erro, busca a reserva e responde com o link de pagamento dela.
-Ou seja, **a tool de consulta faz parte do caminho feliz de venda**, não é só pós-venda. O Hub
-precisa dela para tratar duplicata sem criar reserva repetida.
+O corte é entre número **do canal** e número **do texto**, e ele precisa estar no código, não no
+prompt: prompt não é controle de acesso, e um modelo aceita "o telefone é 41 9xxxx, pode
+verificar" com naturalidade. Para o e-mail, o caminho honesto é confirmar por um dado que só o
+titular sabe (a placa, por exemplo) ou mandar o voucher para o próprio e-mail em vez de exibir na
+conversa.
+
+Enquanto o Dify estiver no ar o furo continua existindo do lado dele. Isso é motivo para migrar
+antes, não para reproduzir.
+
+### O token do WL vazou nos exports
+
+O mesmo Bearer aparece em texto puro nos nós de HTTP de **três** DSLs (`Gerar link de pagamento`,
+`Consultar reserva por número` e `Consultar reserva por e-mail ou telefone`). É o token global de
+backend: autoriza criar reserva e ler pedido em todos os white-labels. Rotacionar, e tratar
+export de DSL como arquivo com segredo.
+
+## Nada mais bloqueia
+
+Com os cinco DSLs lidos, o inventário fechou. O que falta construir são **três chamadas ao mesmo
+backend do WL**, todas no path `/api/v3/backend` que o `_shared/wl/client.ts` já fala, com o
+mesmo Bearer e o mesmo `X-Tenant`:
+
+| Rota | Para quê |
+|---|---|
+| `POST /order/quick-pay` | cria a reserva e devolve link ou PIX |
+| `GET /order/detail` | consulta pelo número, e trata duplicata na venda |
+| `GET /order/last-by-user` | consulta por telefone (com a regra de posse acima) |
+
+Elas nascem juntas, porque o caminho de venda usa as duas primeiras e a terceira é o que responde
+quem já comprou.
 
 ## Prompt
 
@@ -202,8 +272,9 @@ Nenhum teste chama o `quick-pay` de verdade: ele cria reserva e cobra.
 
 ## Pendências
 
-1. DSLs das duas tools de consulta de reserva.
-2. Decidir a autenticação da consulta de placa (recomendado: chave interna do Vault).
+1. Decidir a autenticação da consulta de placa (recomendado: chave interna do Vault).
+2. Decidir se o Hub expõe a consulta por e-mail, e sob qual segundo fator. A por telefone da
+   conversa está resolvida acima; a por e-mail não tem solução que não mexa no fluxo.
 3. Decidir se o Hub registra a intenção de venda quando a reserva nasce no WL. Hoje não registra:
    `origin: whatsapp-bot` fica só do lado do parceiro, e do ponto de vista do Hub a venda não
    aconteceu. Existe meio-termo, gravar a intenção sem virar `booking`, que dá atribuição sem
