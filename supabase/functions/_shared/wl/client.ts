@@ -243,8 +243,12 @@ export async function wlGetCatalog(
 //
 // Duas armadilhas confirmadas na mão em 08/08/2026, e as duas custam meia hora se não
 // estiverem escritas:
-//   1. `X-Tenant` é OBRIGATÓRIO. Sem ele o October devolve 500 com página de exceção em HTML,
-//      não JSON, e o erro não diz o que faltou.
+//   1. `X-Tenant` foi anotado como OBRIGATÓRIO aqui, com 500 e página de exceção em HTML sem
+//      ele. **Remedido em 24/08/2026** contra virapark, plenty e nationpark: os três devolvem
+//      200 e o MESMO preço com e sem o header, porque o domínio por empresa já identifica o
+//      tenant. Continuamos mandando, que é de graça, mas não trate a ausência dele como
+//      explicação para um 500: em agosto isso custou meia hora de investigação na direção
+//      errada, e agora custaria de novo.
 //   2. A data é `Y-m-d H:i:s`, com os dois-pontos percent-encoded. Qualquer outro formato
 //      (ISO com "T", ou só a data) devolve 400 nomeando o campo.
 
