@@ -274,3 +274,61 @@ describe("tokens do design system", () => {
     }
   });
 });
+
+/**
+ * A spec é a terceira cópia dos mesmos tokens, e era a mais defasada das três.
+ *
+ * `docs/specs/design-tokens.md` está na tabela de specs do CLAUDE.md como a referência de
+ * cor do projeto, então é o que alguém abre pra decidir "qual verde é o de sucesso". Quando
+ * este guard nasceu ela ainda respondia com a rampa anterior à identidade Movepark: `ink`
+ * era #222222 (cinza puro, não o navy), `border-strong` era #C1C1C1, e `success`, `warning`
+ * e `info` estavam a ΔE 32 a 39 do que o app renderiza. Ou seja: a resposta errada, com a
+ * confiança de uma spec.
+ *
+ * Mesmo teto de ΔE do bundle, e pelo mesmo motivo medido: aqui o ruído de arredondamento
+ * parou em 2.5 e a divergência real mais próxima estava em 5.5.
+ */
+describe("tokens da spec", () => {
+  const app = tokensDoRoot(CSS_APP);
+  const spec = readFileSync(`${RAIZ}/docs/specs/design-tokens.md`, "utf8");
+
+  /** As linhas `| \`{colors.x}\` | #hex |` das tabelas de cor. */
+  const linhas = [...spec.matchAll(/\|\s*`\{colors\.([a-z0-9-]+)\}`\s*\|\s*`?(#[0-9a-f]{6})`?\s*\|/gi)].map(
+    ([, token, hex]) => [token, hex] as const,
+  );
+
+  it("declara alguma cor (o regex não pode ter parado de casar)", () => {
+    expect(linhas.length).toBeGreaterThan(10);
+  });
+
+  it.each(linhas)("{colors.%s} é a cor que o app renderiza", (token, hexDaSpec) => {
+    const corApp = paraRgb(resolver(app, `--${token}`));
+    expect(corApp, `a spec cita {colors.${token}}, mas --${token} não existe no src/index.css`).not.toBeNull();
+
+    const corSpec = hexParaRgb(hexDaSpec)!;
+    const distancia = deltaE(corApp!, corSpec);
+    expect(
+      distancia,
+      `{colors.${token}} está documentado como ${hexDaSpec.toUpperCase()} e o app renderiza ` +
+        `${paraHex(corApp!)} (ΔE ${distancia.toFixed(2)}). Acerte a spec, que ela é o que se lê ` +
+        `pra escolher cor.`,
+    ).toBeLessThanOrEqual(TETO_DELTA_E);
+  });
+
+  /**
+   * Só o que a spec escolheu listar. Ela é prosa e pode destacar um subconjunto da escala;
+   * o que não pode é listar um valor que contradiz o Tailwind.
+   */
+  it("os raios que a spec lista batem com o Tailwind", () => {
+    const config = readFileSync(TAILWIND, "utf8");
+    const bloco = /borderRadius:\s*\{([^}]+)\}/.exec(config)![1];
+    const doTailwind = new Map(
+      [...bloco.matchAll(/(\w+):\s*"([^"]+)"/g)].map(([, nome, valor]) => [nome, valor]),
+    );
+
+    for (const [, nome, valor] of spec.matchAll(/\|\s*`\{rounded\.(\w+)\}`\s*\|\s*`?([\w.]+)`?\s*\|/g)) {
+      expect(doTailwind.get(nome), `{rounded.${nome}} não existe no tailwind.config.ts`).toBeDefined();
+      expect(valor, `{rounded.${nome}} divergiu do Tailwind`).toBe(doTailwind.get(nome));
+    }
+  });
+});

@@ -1,4 +1,4 @@
-# Design Tokens — Movepark Hub
+# Design Tokens - Movepark Hub
 
 > Identidade visual Movepark: whitespace generoso, hierarquia tipográfica clara em Inter,
 > paleta violet/indigo/navy e uma única tier de sombra tingida em navy. Benchmark completo em
@@ -23,21 +23,21 @@
 |---|---|---|
 | `{colors.canvas}` | #ffffff | Fundo padrão de todas as páginas |
 | `{colors.surface-soft}` | #f7f7f7 | Sidebar, rows pares de tabela, campos desabilitados |
-| `{colors.surface-strong}` | #f2f2f2 | Botões circulares de ação secundária |
+| `{colors.surface-strong}` | #e0e5f2 | Botões circulares de ação secundária |
 
-### Hairlines & Borders (mantidos)
+### Hairlines & Borders
 
 | Token | Valor | Uso |
 |---|---|---|
 | `{colors.hairline}` | #dddddd | Bordas de cards, separadores de tabela |
 | `{colors.hairline-soft}` | #ebebeb | Separadores secundários |
-| `{colors.border-strong}` | #c1c1c1 | Input outline em foco |
+| `{colors.border-strong}` | #818faf | Input outline em foco |
 
-### Text (mantidos)
+### Text
 
 | Token | Valor | Uso |
 |---|---|---|
-| `{colors.ink}` | #222222 | Títulos, body principal, nav links |
+| `{colors.ink}` | #29263f | Títulos, body principal, nav links |
 | `{colors.body}` | #3f3f3f | Texto corrido em descrições longas |
 | `{colors.muted}` | #6a6a6a | Labels secundários, placeholders |
 | `{colors.muted-soft}` | #929292 | Texto desabilitado |
@@ -47,10 +47,10 @@
 
 | Token | Valor | Uso |
 |---|---|---|
-| `{colors.success}` | #008a05 | Badge "confirmed", "active", toast de sucesso |
-| `{colors.warning}` | #e67e00 | Badge "pending" |
+| `{colors.success}` | #1f7a4d | Badge "confirmed", "active", toast de sucesso |
+| `{colors.warning}` | #8f5100 | Badge "pending" |
 | `{colors.error}` | #c13515 | Badge "cancelled", validação, toast de erro |
-| `{colors.info}` | #0057ff | Informações neutras |
+| `{colors.info}` | #4041a3 | Informações neutras |
 
 ### Status Badges
 
@@ -66,9 +66,9 @@
 
 ## Typography
 
-> **Inter é a fonte definitiva.** Sem custo de licença, legível em interfaces densas, pesos 100–900 disponíveis via Google Fonts (variable font `ital,opsz,wght`). Carregada em `index.html` com `display=swap`.
+> **Inter é a fonte definitiva.** Sem custo de licença, legível em interfaces densas, pesos 100-900 disponíveis via Google Fonts (variable font `ital,opsz,wght`). Carregada em `index.html` com `display=swap`.
 >
-> Pesos em uso: 400 (corpo), 500 (medium — subtítulo, botão, nav), 600 (semibold — título de card, display-sm), 700 (bold — headings, display), 900 (black — rating, tag).
+> Pesos em uso: 400 (corpo), 500 (medium: subtítulo, botão, nav), 600 (semibold: título de card, display-sm), 700 (bold: headings, display), 900 (black: rating, tag).
 
 ### Display
 
@@ -78,7 +78,7 @@
 | `display-2xl` | 44px | 700 | 1.05 | -0.5px | Hero H1 mobile, section H2 desktop |
 | `display-xl` | 28px | 700 | 1.28 | -0.2px | KPI numbers, destaques numéricos |
 | `display-lg` | 22px | 500 | 1.18 | -0.3px | Títulos de página |
-| `display-md` | 21px | 700 | 1.30 | — | Títulos de seção |
+| `display-md` | 21px | 700 | 1.30 | - | Títulos de seção |
 | `display-sm` | 20px | 600 | 1.18 | -0.15px | Sub-títulos |
 
 ### Corpo
@@ -96,14 +96,14 @@
 
 | Token | Size | Weight | Line Height | Letter Spacing | Uso |
 |---|---|---|---|---|---|
-| `rating-display` | 64px | 900 | 1.05 | -1.5px | Único momento "alto" — detalhe de vaga |
+| `rating-display` | 64px | 900 | 1.05 | -1.5px | Único momento "alto", no detalhe de vaga |
 | `badge` | 11px | 700 | 1.18 | 0.1px | Chips de destaque, badges de status |
-| `micro-label` | 12px | 700 | 1.33 | — | Labels uppercase pequenas (Chegada, Saída) |
+| `micro-label` | 12px | 700 | 1.33 | - | Labels uppercase pequenas (Chegada, Saída) |
 | `uppercase-tag` | 8px | 900 | 1.25 | 0.4px | Tags NEW, NOVO uppercase |
-| `button-md` | 16px | 500 | 1.25 | — | Labels de botões primários |
-| `button-sm` | 14px | 500 | 1.29 | — | Labels de botões secundários/pill |
-| `link` | 14px | 400 | 1.43 | — | Links inline em texto corrido |
-| `nav-link` | 16px | 600 | 1.25 | — | Links de navegação principal |
+| `button-md` | 16px | 500 | 1.25 | - | Labels de botões primários |
+| `button-sm` | 14px | 500 | 1.29 | - | Labels de botões secundários/pill |
+| `link` | 14px | 400 | 1.43 | - | Links inline em texto corrido |
+| `nav-link` | 16px | 600 | 1.25 | - | Links de navegação principal |
 
 ---
 
@@ -143,12 +143,12 @@
 ```css
 /* Card hover / dropdown / modais */
 box-shadow:
-  rgba(0, 0, 0, 0.02) 0 0 0 1px,
-  rgba(0, 0, 0, 0.04) 0 2px 6px 0,
-  rgba(0, 0, 0, 0.10) 0 4px 8px 0;
+  rgba(41, 38, 63, 0.04) 0 0 0 1px,
+  rgba(41, 38, 63, 0.06) 0 2px 6px 0,
+  rgba(41, 38, 63, 0.10) 0 4px 12px 0;
 
 /* Scrim de modal */
-background: rgba(0, 0, 0, 0.50);
+background: rgba(41, 38, 63, 0.55);
 ```
 
 ---
@@ -157,7 +157,7 @@ background: rgba(0, 0, 0, 0.50);
 
 | Contexto | Desktop | Tablet | Mobile |
 |---|---|---|---|
-| Manager/Operator — conteúdo | max-width 1280px | 100% | 100% |
+| Manager/Operator, conteúdo | max-width 1280px | 100% | 100% |
 | Sidebar | 240px (fixed) | 64px (ícones) | bottom nav |
 | KPI Cards | 4 colunas | 2 colunas | 1 coluna |
 | Tabelas | full width | scroll horizontal | cards empilhados |
@@ -203,8 +203,8 @@ white fill · rounded.md · hairline border · shadow tier · padding lg (24px)
 
 ## Open Points
 
-- [x] Paleta oficial Movepark definida — violet `#5D5FEF` / indigo `#4041A3` / navy `#29263F`
+- [x] Paleta oficial Movepark definida: violet `#5D5FEF` / indigo `#4041A3` / navy `#29263F`
 - [x] Fonte oficial: Inter (definitiva)
-- [x] Logo em SVG nas variações: wordmark (`/brand/logo-movepark.svg`) e símbolo/monograma (`/brand/simbolo-movepark.svg`) — ambos via componentes `Wordmark` e `Monogram` em `src/components/shared/Brand.tsx`
+- [x] Logo em SVG nas variações: wordmark (`/brand/logo-movepark.svg`) e símbolo/monograma (`/brand/simbolo-movepark.svg`), ambos via componentes `Wordmark` e `Monogram` em `src/components/shared/Brand.tsx`
 - [x] Iconografia: Phosphor Icons, peso `regular`, 20px por padrão (`IconContext` em `AppProviders`), cor padrão `ink` (navy). Documentado na página `/design-system`
 - [ ] Dark mode: fora do escopo por ora
