@@ -85,7 +85,8 @@ export const SUPERFICIES_MCP: SuperficieMcp[] = [
     endpoint: MCP_MANAGER_ENDPOINT,
     autenticacao: "Chave de plataforma, emitida aqui nesta página",
     modalidade: "manager",
-    tools: "Escrita do blog: criar e atualizar, publicar e despublicar, excluir.",
+    tools:
+      "Escrita do blog (criar e atualizar, publicar e despublicar, excluir) e leitura do mapeamento das unidades para o white-label, que o agente de WhatsApp usa antes de cotar.",
     observacao:
       "Sem card público, e recusa até o tools/list sem chave. Chave de parceiro não entra, mesmo com o escopo: a superfície confere que a chave não tem empresa.",
   },

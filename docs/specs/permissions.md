@@ -109,6 +109,7 @@ não conta na invariante "o Dono tem todos", que vale sobre o catálogo de empre
 | `checkout:link` | ✔ | Tool que gera link de checkout, concedida só à chave do bot interno |
 | `fares:write` | – | Editar plano de cancelamento (Básica/Flex/Superflex) por tipo de vaga |
 | `blog:write` | ✔ | Criar, publicar e excluir post pelas rotas internas do blog |
+| `wl:read` | ✔ | Ler o mapeamento unidade → slug do white-label, para o agente de WhatsApp |
 
 ### Chave de plataforma (`api_key.company_id is null`)
 

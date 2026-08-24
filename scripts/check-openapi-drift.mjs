@@ -253,7 +253,7 @@ const ASSIGNABLE_SCOPES = new Set([
   "bookings:read", "bookings:write", "coupons:read", "coupons:write", "discounts:read",
   "discounts:write", "faq:read", "locations:read", "locations:write", "occupancy:read",
   "parking-types:read", "parking-types:write", "pricing:read", "pricing:write", "reviews:read",
-  "reviews:write", "wps:write", "checkout:link", "blog:read", "blog:write",
+  "reviews:write", "wps:write", "checkout:link", "blog:read", "blog:write", "wl:read",
 ]);
 
 // `def(` e `internalRoute(`: escopo de rota interna também conta como usado, senão

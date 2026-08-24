@@ -325,8 +325,32 @@ Deno.test("tool de Manager não existe nas superfícies de fora", () => {
 
 Deno.test("toda tool do Manager exige escopo de plataforma", () => {
   // Tool sem `scope` fica visível para qualquer um que alcance a superfície.
-  // Numa superfície de escrita isso seria um buraco, então a regra é dura.
-  for (const t of MANAGER_TOOLS) assertEquals(t.scope, "blog:write");
+  // Numa superfície interna isso seria um buraco, então a regra é dura.
+  //
+  // A asserção era `=== "blog:write"` enquanto o blog era a única coisa aqui. Isso
+  // testava o inventário, não a invariante: a regra é "declara escopo de plataforma",
+  // e ela tem que continuar valendo para a próxima tool que chegar.
+  const DE_PLATAFORMA = new Set(["blog:write", "wl:read"]);
+  for (const t of MANAGER_TOOLS) {
+    assertEquals(typeof t.scope, "string", `${t.name} sem escopo`);
+    assertEquals(DE_PLATAFORMA.has(t.scope!), true, `${t.name}: escopo ${t.scope}`);
+  }
+});
+
+Deno.test("get_wl_mapping é do Manager, e só de lá", () => {
+  // O mapeamento do white-label é fiação interna. Se um dia ele escorregar para o
+  // /public, qualquer um passa a ter a lista de domínios e slugs dos parceiros.
+  assertEquals(findTool("manager", "get_wl_mapping")?.scope, "wl:read");
+  for (const superficie of ["public", "partner", "customer"] as const) {
+    assertEquals(findTool(superficie, "get_wl_mapping"), null);
+    assertEquals(isToolCallable(superficie, "get_wl_mapping", ["wl:read"]), false);
+  }
+  // Sem o escopo, some até do tools/list do Manager.
+  assertEquals(isToolCallable("manager", "get_wl_mapping", []), false);
+  assertEquals(isToolCallable("manager", "get_wl_mapping", ["blog:write"]), false);
+  assertEquals(isToolCallable("manager", "get_wl_mapping", ["wl:read"]), true);
+  // Não pede argumento nenhum: o agente chama e recebe o catálogo inteiro.
+  assertEquals(missingRequired(findTool("manager", "get_wl_mapping")!, {}), null);
 });
 
 Deno.test("Manager valida os obrigatórios antes de escrever", () => {

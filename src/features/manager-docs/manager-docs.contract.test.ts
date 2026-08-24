@@ -62,10 +62,15 @@ describe("superfície de MCP do Manager", () => {
     expect(nomes.length).toBeGreaterThan(0);
   });
 
-  it("as tools do Manager são as mesmas operações das rotas internas", () => {
+  it("as operações do blog existem nas duas superfícies", () => {
     // Uma regra, duas superfícies (`_shared/blog-write.ts`). Se um lado ganhar
     // uma operação e o outro não, quem usa MCP e quem usa REST veem produtos
     // diferentes, e a página aqui descreve só um deles.
+    //
+    // A comparação é do BLOCO DO BLOG, não do Manager inteiro: a superfície interna
+    // também hospeda leitura sem contraparte REST (`get_wl_mapping`, para o agente de
+    // WhatsApp). Comparar tudo transformaria a invariante num inventário, que quebra
+    // toda vez que a superfície cresce sem nada ter divergido.
     const operacoes = ROTAS_INTERNAS.map((r) =>
       r.caminho.endsWith("/publish")
         ? "publish_blog_post"
@@ -73,14 +78,28 @@ describe("superfície de MCP do Manager", () => {
           ? "delete_blog_post"
           : "upsert_blog_post",
     );
-    expect([...nomes].sort()).toEqual([...operacoes].sort());
+    const doBlog = nomes.filter((n) => n.endsWith("_blog_post"));
+    expect([...doBlog].sort()).toEqual([...operacoes].sort());
   });
 
   it("toda tool do Manager exige escopo de plataforma", () => {
+    // A regra é "declara escopo de plataforma", e não "é blog:write". Escopo de
+    // empresa aqui significaria que um parceiro alcança ação de Manager.
+    const plataforma = ["blog:write", "wl:read"];
     const semEscopo = nomes.filter(
-      (n) => !new RegExp(`name: "${n}"[\\s\\S]{0,220}?scope: "blog:write"`).test(bloco),
+      (n) =>
+        !plataforma.some((escopo) =>
+          new RegExp(`name: "${n}"[\\s\\S]{0,220}?scope: "${escopo}"`).test(bloco),
+        ),
     );
     expect(semEscopo).toEqual([]);
+  });
+
+  it("a tool do white-label está na página, e não só no código", () => {
+    // ADR-003: capacidade que existe e não está documentada é capacidade que ninguém
+    // descobre. Esta superfície não tem card, então a página é a única documentação.
+    const manager = SUPERFICIES_MCP.find((s) => s.modalidade === "manager");
+    expect(manager?.tools).toMatch(/white-label/i);
   });
 
   it("a superfície interna aparece na tabela, e sem card", () => {

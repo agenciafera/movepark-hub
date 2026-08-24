@@ -288,6 +288,21 @@ export const CUSTOMER_TOOLS: ToolDef[] = [
 // `_shared/blog-write.ts`: uma regra, duas superfícies.
 export const MANAGER_TOOLS: ToolDef[] = [
   {
+    // O agente de WhatsApp (a Mia, no BeastBots) precisa saber para qual domínio e com
+    // quais slugs falar antes de cotar ou reservar no white-label. No Dify essa lista é
+    // escrita à mão dentro do prompt e já está errada em produção: oferece empresa
+    // inativa e tipo de vaga que não existe. Aqui é consulta.
+    //
+    // Fica no /manager, e não no /public, porque é fiação interna da integração com o
+    // parceiro. Não é segredo (os slugs aparecem na URL do próprio white-label), mas
+    // publicá-la anonimamente seria convite para scriptar contra o backend deles.
+    name: "get_wl_mapping",
+    scope: "wl:read",
+    description:
+      "Unidades de checkout externo com o domínio e os slugs do white-label, e as diárias mínimas de cada tipo de vaga. Use antes de cotar preço ou gerar link de pagamento.",
+    inputSchema: obj({}),
+  },
+  {
     name: "upsert_blog_post",
     description: "Cria um post do blog, ou atualiza o que já tem o mesmo slug.",
     scope: "blog:write",

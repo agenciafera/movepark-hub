@@ -6823,6 +6823,7 @@ export type Database = {
         }
         Returns: Json
       }
+      wl_agent_mapping: { Args: never; Returns: Json }
       wl_company_config: {
         Args: { p_company_id: string }
         Returns: {

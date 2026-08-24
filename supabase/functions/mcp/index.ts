@@ -671,6 +671,13 @@ async function callCustomerTxn(
  */
 // deno-lint-ignore no-explicit-any
 async function callManager(admin: any, name: string, a: Record<string, unknown>): Promise<unknown> {
+  // Leitura: sai antes do bloco de escrita do blog, que assume `ok`/`message`.
+  if (name === "get_wl_mapping") {
+    const { data, error } = await admin.rpc("wl_agent_mapping");
+    if (error) throw error;
+    return { unidades: data ?? [] };
+  }
+
   const r =
     name === "upsert_blog_post"
       ? await upsertBlogPost(admin, a)

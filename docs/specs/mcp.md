@@ -19,9 +19,10 @@ Substitui o MCP externo de n8n por um servidor **in-repo**, sob o mesmo doc-as-y
 - **Parceiro** (`https://mcp.movepark.co/partner`): tools tenant-scoped sobre a API v1, autenticadas por
   **chave de API** (`Authorization: Bearer mp_…`) e **gateadas por escopo**. Reusa `api_key_verify` + as
   RPCs `api_*`. As tools **visíveis** (`tools/list`) dependem dos escopos da chave.
-- **Manager** (`https://mcp.movepark.co/manager`): escrita do blog pela Movepark, autenticada por
-  **chave de plataforma** (a que tem `api_key.company_id is null`). É superfície **interna**: não tem
-  card, e recusa até o `tools/list` sem chave válida. Ver §4.4.
+- **Manager** (`https://mcp.movepark.co/manager`): escrita do blog e leitura do mapeamento do
+  white-label, pela Movepark, autenticada por **chave de plataforma** (a que tem
+  `api_key.company_id is null`). É superfície **interna**: não tem card, e recusa até o `tools/list`
+  sem chave válida. Ver §4.4.
 
 ---
 
@@ -240,9 +241,21 @@ o filtro do handler, o teste mostra o que volta a vazar.
 | `upsert_blog_post` | `blog:write` | Cria o post, ou atualiza o que já tem o mesmo slug |
 | `publish_blog_post` | `blog:write` | Publica ou despublica |
 | `delete_blog_post` | `blog:write` | Soft delete |
+| `get_wl_mapping` | `wl:read` | Unidades de checkout externo com domínio, slugs e diárias mínimas do WL |
 
-Os handlers são os mesmos da rota interna da API v1: `_shared/blog-write.ts`. Uma regra, duas
+Os handlers do blog são os mesmos da rota interna da API v1: `_shared/blog-write.ts`. Uma regra, duas
 superfícies, porque duplicar a validação entre elas é drift garantido.
+
+**Por que o `get_wl_mapping` mora aqui.** Ele existe para o agente de WhatsApp (a Mia, no BeastBots)
+saber para qual domínio e com quais slugs falar antes de cotar ou reservar. No Dify essa lista é
+escrita à mão dentro do prompt e **já está errada em produção**: oferece a Move Parking, cuja
+empresa está inativa, e declara quatro tipos de vaga na Aerovalet Guarulhos contra os três que
+existem. Trazer o agente sem trazer a consulta junto recriaria o bug em TypeScript.
+
+Não vai para o `/public` porque é fiação interna da integração com o parceiro. Os slugs não são
+segredo (aparecem na URL do próprio white-label), mas publicá-los anonimamente, agrupados por
+domínio, é convite para scriptar contra o backend deles. Ver
+[agente-whatsapp-wl.md](./agente-whatsapp-wl.md).
 
 **Três travas, e a primeira é a que costuma faltar:**
 
