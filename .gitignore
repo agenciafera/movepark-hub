@@ -69,3 +69,6 @@ _originals/
 .env.e2e
 playwright-report/
 test-results/
+
+# Repositório separado (plataforma de chatbots Mastra do grupo), versionado no próprio git
+beast-bots/

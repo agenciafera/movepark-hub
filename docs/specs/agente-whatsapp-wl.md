@@ -35,9 +35,9 @@ Levantamento de 21/08/2026, comparando as 7 tools do agente do Dify com o que o 
 | `consulta_preco_reserva` | `wlGetCalculationPrice` em `_shared/wl/client.ts` | ✅ existe, falta virar tool |
 | `consulta_placa_veiculo` | Edge `lookup-vehicle-plate`, mesma base externa, devolve `brand`/`model`/`color` | ✅ existe, falta virar tool |
 | Resolve unidade → slug do WL | `company.wl_domain` + `location_parking_type.wl_category_slug`/`wl_product_slug` | ✅ é dado, não palpite |
-| `gerar_link_pagamento` | nada | ❌ **Edge nova** (`POST /backend/order/quick-pay`) |
-| `consulta_reserva_por_numero` | nada | ❌ **Edge nova** (`GET /backend/order/detail`) |
-| `consulta_reserva_email_ou_telefone` | nada | ❌ **Edge nova** (`GET /backend/order/last-by-user`) |
+| `gerar_link_pagamento` | nada | ❌ tool nova **no BeastBots** (`POST /backend/order/quick-pay`) |
+| `consulta_reserva_por_numero` | nada | ❌ tool nova **no BeastBots** (`GET /backend/order/detail`) |
+| `consulta_reserva_email_ou_telefone` | nada | ❌ tool nova **no BeastBots** (`GET /backend/order/last-by-user`) |
 
 O runtime também já existe: a Edge `chat` tem laço de function-calling com teto anti-loop, prompt
 em `app_setting`, 12 tools de leitura do registro compartilhado e 9 transacionais executadas pelo
@@ -77,19 +77,20 @@ custo, é remoção de superfície de erro. Cada uma delas pode devolver o campo
 ## Arquitetura
 
 ```
-WhatsApp → n8n (só transporte) → Edge do agente no Hub
-                                    │
-                    ┌───────────────┼────────────────┐
-                    ▼               ▼                ▼
-            conhecimento      tools do WL      tools do Hub
-            (RAG do Hub)    (unidade externa)  (unidade nativa)
-                            preço, placa,      MCP /customer,
-                            gerar link         com JWT
+WhatsApp → Evolution → BeastBots (tenant movepark, agente Mia)
+                            │
+              ┌─────────────┴──────────────┐
+              ▼                            ▼
+      tools do WL, locais            MCP do Hub
+      preço, reserva, consulta       conhecimento (RAG), catálogo,
+      Bearer WL_BACKEND_TOKEN        mapeamento WL, fluxo nativo
 ```
 
-O agente escolhe a família de tools pela `location.checkout_mode`. Unidade externa fala com o WL;
-unidade nativa fala com o MCP do Hub, que exige JWT. **As duas convivem de propósito**, e é a
-consequência direta de não mexer no WL.
+O agente escolhe a família de tools pela `location.checkout_mode`. Unidade externa fecha no WL,
+por tool local do BeastBots; unidade nativa fala com o MCP do Hub, que exige JWT do usuário mais a
+chave de agente confiável. **As duas convivem de propósito**, e é a consequência direta de não
+mexer no WL. O que muda com a decisão de 24/08 é que elas param de conviver **dentro** do Hub:
+a família anônima mora no runtime do agente, e o Hub segue exigindo sessão em tudo que é dele.
 
 ## As tools do WL
 
@@ -232,20 +233,35 @@ O mesmo Bearer aparece em texto puro nos nós de HTTP de **três** DSLs (`Gerar 
 backend: autoriza criar reserva e ler pedido em todos os white-labels. Rotacionar, e tratar
 export de DSL como arquivo com segredo.
 
-## Nada mais bloqueia
+## Onde as tools do WL vivem: no runtime do agente, não no Hub
 
-Com os cinco DSLs lidos, o inventário fechou. O que falta construir são **três chamadas ao mesmo
-backend do WL**, todas no path `/api/v3/backend` que o `_shared/wl/client.ts` já fala, com o
-mesmo Bearer e o mesmo `X-Tenant`:
+**Decidido em 24/08/2026 com o Kallef.** O agente passa a ser um tenant do BeastBots (plataforma
+multi-tenant sobre Mastra, repo `agenciafera/beast-bots`), e as três chamadas ao backend do WL são
+implementadas **lá**, não como Edges do Hub.
 
-| Rota | Para quê |
+| Rota do WL | Para quê |
 |---|---|
 | `POST /order/quick-pay` | cria a reserva e devolve link ou PIX |
 | `GET /order/detail` | consulta pelo número, e trata duplicata na venda |
 | `GET /order/last-by-user` | consulta por telefone (com a regra de posse acima) |
 
-Elas nascem juntas, porque o caminho de venda usa as duas primeiras e a terceira é o que responde
-quem já comprou.
+O que isso melhora, e não é só economia de código: **desaparece a tensão registrada na seção de
+identidade.** O Hub não passa a hospedar tool transacional anônima ao lado das que exigem JWT, e
+não fica o precedente de que reserva sem login é o padrão da casa. As chamadas ao WL não tocam
+banco do Hub, então não há RLS nem escopo para proteger ali; o que as protege é o
+`WL_BACKEND_TOKEN`, que passa a ser secret do BeastBots.
+
+O Hub, portanto, **não constrói Edge nenhuma** para este épico.
+
+### A única peça que continua sendo do Hub
+
+O mapeamento unidade → slug do WL (`company.wl_domain`, `location_parking_type.wl_category_slug`
+e `wl_product_slug`) **não é exposto por nenhuma tool de leitura hoje**. Ele precisa virar uma, na
+superfície interna do MCP (`/manager`, chave de plataforma), porque a correção nº 1 desta spec é
+justamente que esse slug pare de ser adivinhado. Uma lista escrita à mão dentro do Mastra
+recriaria o bug do Dify, cuja lista já está errada em três pontos.
+
+É dado do Hub, e continua saindo do Hub.
 
 ## Prompt
 
