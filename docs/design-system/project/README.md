@@ -103,7 +103,7 @@ Movepark's five **Cores Principais** plus the five-step **Escala de Cinza** map 
 | `--mp-red-deep` | `#AE374B` | Press/hover do vermelho de alerta |
 | `--mp-teal` | `#A6DBDF` | Tertiary accent - only inside the M monogram and rare brand moments |
 
-The grayscale scale (`#FFFFFF → #E0E0E0 → #E0E5F2 → #818FAF → #424242`) replaces Airbnb's neutral ramp; the steel-blue `#818FAF` is the Movepark twist on a "muted" tone - used for borders on disabled controls and the secondary muted body color.
+A escala de cinza (`#FFFFFF → #E0E0E0 → #E0E5F2 → #818FAF → #424242`) substitui a rampa neutra genérica. O steel-blue é a variação Movepark do tom "muted", e ele se divide em dois: `#818FAF` (`--colors-border-strong`) fica só em **borda**, onde o mínimo de contraste é 3:1, e o texto secundário usa `#5D6D8E` (`--colors-muted-steel`), que dá 5.19:1 sobre o canvas. Usar o tom claro em texto reprova AA.
 
 The **brand gradient** (`#4041A3 → #5D5FEF → #4041A3`) is documented in the identity board and reserved for hero scrim treatments and the empty-state illustration band. **Do not use the gradient for buttons or cards** - keep it editorial.
 

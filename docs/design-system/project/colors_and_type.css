@@ -3,7 +3,7 @@
    Foundations: Color + Type
    ============================================================
    Identidade visual Movepark: paleta navy/violet/indigo,
-   tipografia Inter (100–900), busca em pílula, cards foto-first,
+   tipografia Inter (100-900), busca em pílula, cards foto-first,
    elevação suave em navy e canvas branco generoso.
    ============================================================ */
 
@@ -13,7 +13,7 @@
 
 :root {
   /* ============================================================
-     COLORS — Movepark palette
+     COLORS - Movepark palette
      ============================================================ */
 
   /* Brand */
@@ -21,11 +21,11 @@
   --mp-indigo:      #4041A3; /* deep brand blue, used as secondary accent */
   --mp-violet:      #5D5FEF; /* bright blue-violet, gradient terminus    */
   --mp-pale:        #E4F2FF; /* pale blue tint surface                   */
-  --mp-red:         #DA455E; /* brand accent — par do monograma M; não é CTA */
+  --mp-red:         #DA455E; /* brand accent: par do monograma M; não é CTA */
   --mp-red-deep:    #AE374B; /* shadow tone of the M monogram            */
   --mp-teal:        #A6DBDF; /* teal stripe in the M monogram            */
 
-  /* Brand — semantic aliases */
+  /* Brand: semantic aliases */
   --colors-primary:           var(--mp-violet);
   --colors-primary-active:    var(--mp-indigo);   /* indigo para pressed      */
   --colors-primary-disabled:  #C5C4F6;            /* violet claro desabilitado */
@@ -52,14 +52,19 @@
   --colors-body:              #424242;          /* secondary running text     */
   --colors-muted:             #6A6A6A;
   --colors-muted-soft:        #929292;
-  --colors-muted-steel:       #818FAF;          /* Movepark steel-blue muted  */
+  /* Texto steel-blue: 5.19:1 sobre canvas. Era #818FAF, que dava 3.26:1 e reprovava
+     o AA no eyebrow de 11px e nos rótulos de sidebar. A borda (--colors-border-strong)
+     seguiu no tom claro, porque ali o mínimo é 3:1. */
+  --colors-muted-steel:       #5D6D8E;
   --colors-star-rating:       var(--mp-navy);
 
   /* Semantic */
   --colors-error:             #C13515;
   --colors-error-hover:       #B32505;
   --colors-success:           #1F7A4D;
-  --colors-warning:           #B96A00;
+  /* 6.28:1 sobre canvas e 5.59:1 sobre o badge pendente. O #B96A00 reprovava nos dois
+     fundos onde o token aparece (4.18:1 e 3.72:1). */
+  --colors-warning:           #8F5100;
   --colors-info:              var(--mp-indigo);
   --colors-legal-link:        var(--mp-indigo);
 
@@ -77,7 +82,7 @@
                "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
-  /* Type tokens — sizes / weights / line-heights / tracking */
+  /* Type tokens: sizes / weights / line-heights / tracking */
   --type-rating-display-size:   64px;
   --type-rating-display-weight: 900;
   --type-rating-display-lh:     1.05;
@@ -157,7 +162,7 @@
   --type-nav-link-lh:           1.25;
 
   /* ============================================================
-     SPACING — 4px base
+     SPACING - 4px base
      ============================================================ */
   --space-xxs:        2px;
   --space-xs:         4px;
@@ -180,7 +185,7 @@
   --radius-full:      9999px;
 
   /* ============================================================
-     ELEVATION — single shadow tier
+     ELEVATION - single shadow tier
      ============================================================ */
   --shadow-card:
       rgba(41, 38, 63, 0.04) 0 0 0 1px,
@@ -196,7 +201,7 @@
   --nav-height:       80px;
 
   /* ============================================================
-     MOTION — modest fades, no bounces
+     MOTION - modest fades, no bounces
      ============================================================ */
   --easing-standard:  cubic-bezier(0.2, 0, 0, 1);
   --easing-emphasize: cubic-bezier(0.3, 0, 0, 1);
