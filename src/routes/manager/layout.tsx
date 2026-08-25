@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/shared/AppShell";
 import { ManagerFilterProvider } from "@/features/manager-filters/ManagerFilterProvider";
+import { MiaTestWidget } from "@/features/mia/MiaTestWidget";
 
 export default function ManagerLayout() {
   // O provider fica no shell pra o recorte (período + unidade) acompanhar a
@@ -7,6 +8,8 @@ export default function ManagerLayout() {
   return (
     <ManagerFilterProvider>
       <AppShell variant="manager" brandTitle="Backoffice" />
+      {/* Ferramenta de time: só aparece para hub_admin e só com VITE_MIA_URL. */}
+      <MiaTestWidget />
     </ManagerFilterProvider>
   );
 }
