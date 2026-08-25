@@ -12,6 +12,16 @@
       "autoPort": true
     },
     {
+      "name": "mastra-studio",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-lc",
+        "cd beast-bots && N=$(ls -d \"$HOME\"/.nvm/versions/node/v22* 2>/dev/null | tail -1); [ -n \"$N\" ] && export PATH=\"$N/bin:$PATH\"; echo \"node $(node -v)\"; case \"$(node -v)\" in v2[2-9]*|v[3-9][0-9]*) ;; *) echo \"AVISO: o projeto exige Node 22+. O canal do Go2Park vai falhar.\" ;; esac; grep -q \"^MOVEPARK_MCP_API_KEY=.\" .env || echo \"AVISO: MOVEPARK_MCP_API_KEY vazia. A Mia tira duvida, mas NAO cota preco.\"; bun run dev"
+      ],
+      "port": 4111,
+      "autoPort": false
+    },
+    {
       "name": "wrangler-api",
       "runtimeExecutable": "bun",
       "runtimeArgs": [
@@ -22,15 +32,6 @@
         "wrangler.api.jsonc"
       ],
       "port": 8787
-    },
-    {
-      "name": "supabase",
-      "runtimeExecutable": "bunx",
-      "runtimeArgs": [
-        "supabase",
-        "start"
-      ],
-      "port": 54323
     },
     {
       "name": "design-system",
@@ -56,16 +57,6 @@
         "4178"
       ],
       "port": 4178
-    },
-    {
-      "name": "mastra-studio",
-      "runtimeExecutable": "bash",
-      "runtimeArgs": [
-        "-lc",
-        "cd beast-bots && N=$(ls -d \"$HOME\"/.nvm/versions/node/v22* 2>/dev/null | tail -1); [ -n \"$N\" ] && export PATH=\"$N/bin:$PATH\"; echo \"node $(node -v)\"; case \"$(node -v)\" in v2[2-9]*|v[3-9][0-9]*) ;; *) echo \"AVISO: o projeto exige Node 22+. O canal do Go2Park vai falhar.\" ;; esac; grep -q \"^MOVEPARK_MCP_API_KEY=.\" .env || echo \"AVISO: MOVEPARK_MCP_API_KEY vazia. A Mia tira duvida, mas NAO cota preco.\"; bun run dev"
-      ],
-      "port": 4111,
-      "autoPort": false
     }
   ]
 }
