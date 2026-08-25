@@ -70,12 +70,13 @@ describe("identidade de teste", () => {
     );
   });
 
-  it("a origem NÃO é de venda, que é o que impede a bolinha de fechar reserva", () => {
-    // `gerar_link_pagamento` cria pedido no sistema do parceiro e cobra. O BeastBots
-    // recusa quando a origem não é uma das três do white-label. Se alguém trocar
-    // isto por "webchat-bot" para "funcionar", volta a criar reserva de verdade — e
-    // ainda atribuída ao webchat de produção.
-    expect(identidadeDeTeste("u1", null).requestContext["movepark.origin"]).toBe("backoffice-teste");
+  it("usa uma das origens que o white-label aceita", () => {
+    // O WL só conhece reserva-online, whatsapp-bot e webchat-bot, e não muda do nosso
+    // lado. A bolinha fecha reserva de verdade, entao mandar valor fora dessa lista
+    // faria a reserva falhar no parceiro em vez de no nosso código.
+    expect(["reserva-online", "whatsapp-bot", "webchat-bot"]).toContain(
+      identidadeDeTeste("u1", null).requestContext["movepark.origin"],
+    );
   });
 
   it("separa a memória por usuário, para dois testadores não dividirem a conversa", () => {

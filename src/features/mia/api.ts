@@ -49,11 +49,15 @@ export function identidadeDeTeste(userId: string, nome: string | null) {
     requestContext: {
       "movepark.customerPhone": "5500000000000",
       "movepark.customerName": nome ?? "Backoffice (teste)",
-      // NÃO é uma das origens de venda do white-label, e isso é o que impede a
-      // bolinha de fechar reserva de verdade. `webchat-bot` estava aqui antes e era
-      // duplamente errado: criava pedido real e ainda o atribuía ao webchat de
-      // produção nos relatórios do parceiro.
-      "movepark.origin": "backoffice-teste",
+      // `webchat-bot` porque é uma das TRÊS que o white-label aceita, e ele não muda
+      // do nosso lado. A bolinha fecha reserva de verdade (decisão do Kallef em
+      // 25/08/2026: o `quick-pay` só cria o pedido e devolve o link, ninguém é
+      // cobrado até alguém pagar).
+      //
+      // A consequência aceita: reserva feita daqui entra nos números do parceiro
+      // como venda do webchat. Se um dia atrapalhar, o conserto é do lado do WL,
+      // aceitando um valor novo.
+      "movepark.origin": "webchat-bot",
     },
     memory: {
       resource: `movepark-hub:manager:${userId}`,
