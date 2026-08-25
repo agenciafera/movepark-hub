@@ -49,7 +49,11 @@ export function identidadeDeTeste(userId: string, nome: string | null) {
     requestContext: {
       "movepark.customerPhone": "5500000000000",
       "movepark.customerName": nome ?? "Backoffice (teste)",
-      "movepark.origin": "webchat-bot",
+      // NÃO é uma das origens de venda do white-label, e isso é o que impede a
+      // bolinha de fechar reserva de verdade. `webchat-bot` estava aqui antes e era
+      // duplamente errado: criava pedido real e ainda o atribuía ao webchat de
+      // produção nos relatórios do parceiro.
+      "movepark.origin": "backoffice-teste",
     },
     memory: {
       resource: `movepark-hub:manager:${userId}`,
