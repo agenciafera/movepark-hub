@@ -304,6 +304,36 @@ Mesmo padrão de `/destinos` e `/destinos/:slug`. As URLs entram no `dynamicRout
 `vite-plugin-sitemap` em `vite.config.ts`. JSON-LD `BlogPosting` mais `BreadcrumbList` em
 `src/lib/jsonld.ts`.
 
+### O `FAQPage` do post (25/08/2026)
+
+O post emite `FAQPage` com a FAQ **que ele mesmo escreveu**, derivada do corpo por
+`faqPairsFrom` ([`markdown.logic.ts`](../../src/features/blog/markdown.logic.ts)). Sem campo novo
+no banco e sem JSON-LD no markdown: a rota lê `###` terminado em `?` e leva os parágrafos e
+listas logo abaixo como resposta.
+
+**As perguntas da tabela `faq` não entram aqui, e isso é a decisão.** Elas já respondem em
+`/faq/<slug>`, em `/destinos/<slug>` e na single da unidade por causa do ADR-002. Trazê-las para
+o post colocaria a mesma pergunta com a mesma resposta numa quarta URL, que é a canibalização que
+o acervo de 93 posts já sofre. A regra editorial que vem junto: **a FAQ do post pergunta o que só
+aquele post responde**, e a pergunta genérica do aeroporto vira link para `/faq/<slug>`.
+
+Quatro recortes na leitura, cada um com um motivo medido:
+
+| Recorte | Motivo |
+|---|---|
+| Só `###`, nunca `##` | `##` é seção do corpo, com resposta que corre por parágrafos e tabelas. Recortar só o primeiro parágrafo entregaria ao Google um texto diferente do visível |
+| Só título terminado em `?` | O acervo herdado usa `###` para numerar passo (`### **1. Reserve com Antecedência:**`). Sem o filtro, os 95 posts antigos emitiriam FAQ inventada |
+| Resposta para no primeiro bloco que não é prosa | Parágrafo e lista entram; título, tabela, imagem, citação e linha param. É o que faz o `text` do `Answer` bater com o visível (ADR-002) |
+| Mínimo de duas perguntas | `FAQPage` descreve uma lista. Com uma só, quem responde é a página dela em `/faq/<slug>`, que já emite o próprio |
+
+Nível de título é o **renderizado**, não o do arquivo: `parseMarkdown` normaliza a hierarquia, e
+num corpo que só tem `###` eles sobem para `##`. Post escrito pela skill sempre abre as seções em
+`##`, então a FAQ dele cai em 3 e é lida.
+
+Cobertura em [`markdown.logic.test.ts`](../../src/features/blog/markdown.logic.test.ts) (o
+extrator) e [`blog-post.test.tsx`](../../src/routes/blog-post.test.tsx) (o schema saindo no HTML,
+e o acervo herdado não emitindo nada).
+
 ### ADR-009
 
 O post é conteúdo, não vitrine transacional. **Nenhum bloco de post promete preço,

@@ -16,13 +16,14 @@ import { PostSidebar } from "@/features/blog/PostSidebar";
 import { PostSummary } from "@/features/blog/PostSummary";
 import { useBlogPost, useLatestPosts, useRelatedPosts } from "@/features/blog/api";
 import {
+  faqPairsFrom,
   leadFrom,
   metaDescription,
   plainText,
   readingMinutes,
   sectionsFrom,
 } from "@/features/blog/markdown.logic";
-import { blogPostingSchema, breadcrumbSchema } from "@/lib/jsonld";
+import { blogPostingSchema, breadcrumbSchema, faqSchema } from "@/lib/jsonld";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { optimizedImageUrl } from "@/lib/storage";
@@ -51,6 +52,9 @@ const FAIXA = "py-12";
  */
 const COLUNA_DE_LEITURA = "max-w-[68ch]";
 
+/** Piso para o post emitir `FAQPage`: uma pergunta só não forma a lista que o tipo descreve. */
+const MIN_PERGUNTAS_NO_FAQ = 2;
+
 export default function BlogPostPage() {
   const params = useParams();
   const loaded = useLoaderData() as BlogPostWithDestination | null;
@@ -64,6 +68,31 @@ export default function BlogPostPage() {
   const temSidebar = Boolean(post?.destination) || relacionados.length > 0;
   const ultimos = useLatestPosts(post?.slug).data ?? [];
   const secoes = React.useMemo(() => (post ? sectionsFrom(post.body_md) : []), [post]);
+  /*
+    `FAQPage` do post, montado do bloco de FAQ que ele já traz escrito.
+
+    Nasce da regra de conteúdo: a skill `blogpost-seo-geo` pede 5 a 8 perguntas no
+    fim do texto, em `###`, com a resposta no parágrafo seguinte. Elas já estão na
+    tela; faltava só declará-las, porque o rich result de FAQ foi aposentado mas o
+    schema segue sendo o que os motores generativos leem para extrair pergunta e
+    resposta sem reescrever.
+
+    As perguntas da tabela `faq` não entram aqui: elas já respondem em `/faq/<slug>`,
+    em `/destinos/<slug>` e na single da unidade (ADR-002), e repetir a mesma
+    pergunta com a mesma resposta numa quarta URL é canibalização.
+
+    O piso de duas perguntas existe porque `FAQPage` descreve uma lista. Com uma só,
+    o bloco certo é a página da pergunta, que já emite o dela. Os 95 posts herdados
+    não têm FAQ escrita e caem em zero, então seguem sem emitir nada.
+
+    Memoizado pelo mesmo motivo que `secoes`: o `PostProgress` acompanha o scroll, e
+    reparsear 3.000 palavras de markdown a cada quadro sairia caro no celular.
+  */
+  const faqSchemaData = React.useMemo(() => {
+    if (!post) return null;
+    const pares = faqPairsFrom(post.body_md);
+    return pares.length >= MIN_PERGUNTAS_NO_FAQ ? faqSchema(pares) : null;
+  }, [post]);
   /* A leitura em voz alta usa o texto puro: a marcação do markdown virava
      "asterisco asterisco" na fala. */
   const paraOuvir = React.useMemo(
@@ -152,6 +181,9 @@ export default function BlogPostPage() {
             ]),
           )}
         </script>
+        {faqSchemaData && (
+          <script type="application/ld+json">{JSON.stringify(faqSchemaData)}</script>
+        )}
       </Helmet>
       {/* Post sem capa cai na imagem de conteúdo, não na genérica da marca. */}
       {!ogImage && <OgImage area="conteudo" />}

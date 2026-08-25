@@ -154,7 +154,9 @@ slug fora deles é recusado na escrita. `destination` é o slug do aeroporto em
    consegue ler inteiro e que o Google usa em rich result.
 4. **Números com unidade e fonte.** "12 minutos de traslado", "capacidade de 400
    vagas", "R$ 89,90 a diária em agosto de 2026". Adjetivo não é citável, número é.
-5. **FAQ no fim**, 5 a 8 perguntas reais, resposta de 40 a 60 palavras cada.
+5. **FAQ no fim**, 5 a 8 perguntas reais, em `###` terminado em `?`, resposta de
+   40 a 60 palavras cada no parágrafo logo abaixo. É esse formato que emite o
+   `FAQPage` da página, e cada pergunta precisa ser própria do post.
 6. **CTA para `/destinos/<slug>`**, sem prometer nada que a unidade não declare.
 
 **Tom: jovem e moderno, sem virar caricatura.** Segunda pessoa ("você chega no
@@ -201,15 +203,30 @@ precisar entrar torta em oito lugares, o problema é a frase-chave, não o texto
 
 ## Passo 6: Schema Markup
 
-A página do post já emite `BlogPosting` e `BreadcrumbList` automaticamente
-(`src/routes/blog-post.tsx` com os helpers de `src/lib/jsonld.ts`), e o `.md`
-para agentes carrega título, data e canônica no cabeçalho. O que **não** existe
-hoje é `FAQPage` no post, mesmo com o bloco de FAQ escrito.
+A página do post emite `BlogPosting`, `BreadcrumbList` e `FAQPage` sozinha
+(`src/routes/blog-post.tsx` com os helpers de `src/lib/jsonld.ts`), e o `.md` para
+agentes carrega título, data e canônica no cabeçalho.
 
-Escreva a FAQ do jeito certo mesmo assim (pergunta como `###`, resposta no
-parágrafo seguinte): é o formato que o Google entende sem JSON-LD e que a IA cita.
-Se o usuário quiser o `FAQPage` de verdade, isso é mudança de código na rota, não
-de conteúdo. As receitas, o que já é automático e o que exigiria código estão em
+O `FAQPage` sai do que **você escreveu no corpo**: `faqPairsFrom` varre o post
+atrás de `###` terminado em `?` e leva o parágrafo (ou a lista) logo abaixo como
+resposta. Ou seja, escrever a FAQ no formato certo é o que liga o schema. Três
+detalhes que decidem se a pergunta entra:
+
+- Pergunta em `###`. O `##` é seção do corpo e fica de fora.
+- O título tem que terminar em `?`. É o filtro que impede o acervo herdado, que usa
+  `###` para numerar passo, de emitir FAQ inventada.
+- A resposta começa em parágrafo ou lista. Abrindo com tabela, a pergunta é
+  descartada.
+
+Abaixo de duas perguntas o bloco não é emitido, porque `FAQPage` descreve uma lista.
+
+**A regra de conteúdo que sustenta isso: a FAQ do post pergunta o que só aquele
+post responde.** As perguntas genéricas do aeroporto já respondem em `/faq/<slug>`,
+em `/destinos/<slug>` e na single (ADR-002); repetir uma delas aqui coloca a mesma
+pergunta com a mesma resposta numa quarta URL. Se a pergunta caberia igual em
+qualquer post daquele aeroporto, linke para `/faq/<slug>` em vez de repetir.
+
+As receitas e o que ainda exigiria código estão em
 [`references/schema-markup.md`](references/schema-markup.md).
 
 ## Passo 7: publicar
@@ -253,7 +270,9 @@ Antes de dizer que o post está pronto:
    um externo de fonte reconhecida com rótulo que diz o que é.
 6. 3.000 palavras ou mais, com tabela onde houver dado comparável.
 7. Todo R$ com data de referência e link para o preço vivo.
-8. FAQ escrita, abertura autossuficiente, números com unidade.
+8. FAQ escrita no formato que liga o `FAQPage` (pergunta em `###` terminada em
+   `?`, resposta em parágrafo logo abaixo, no mínimo duas), com pergunta própria do
+   post e não cópia de `/faq/<slug>`. Abertura autossuficiente, números com unidade.
 9. Front matter completo, `category`, `tags` e `destination` dentro dos catálogos.
 10. `public/blog/<slug>.md` escrito, imagens no Storage, tudo commitado.
 11. Publicação só depois do "pode publicar" do usuário.

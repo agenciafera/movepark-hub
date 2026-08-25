@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  faqPairsFrom,
   leadFrom,
   metaDescription,
   parseInline,
@@ -446,5 +447,137 @@ describe("barra invertida de escape", () => {
     expect(plainText("| Lote | Horário |\n| --- | --- |\n| Virapark | 8h \\| 20h |")).toContain(
       "8h | 20h",
     );
+  });
+});
+
+/**
+ * O `FAQPage` do post sai daqui, então o que este bloco protege é o schema não
+ * divergir do texto visível. Divergência é erro no teste de resultados ricos e,
+ * pior, faz a IA citar uma resposta que a página não tem.
+ *
+ * Os fixtures abrem com um `##` de propósito: o `parseMarkdown` normaliza a
+ * hierarquia, e num corpo que só tem `###` eles sobem para `##`. Post escrito pela
+ * skill sempre traz seções em `##`, que é o que estes casos reproduzem.
+ */
+describe("faqPairsFrom", () => {
+  const SECAO = "## Quanto custa estacionar em Confins?\n\nDepende da duração.\n\n";
+
+  it("pega a pergunta em h3 e o parágrafo que responde", () => {
+    const md = `${SECAO}### Precisa reservar antes?\n\nNão é obrigatório, mas a diária online sai mais barata que a de balcão.`;
+
+    expect(faqPairsFrom(md)).toEqual([
+      {
+        question: "Precisa reservar antes?",
+        answer: "Não é obrigatório, mas a diária online sai mais barata que a de balcão.",
+      },
+    ]);
+  });
+
+  /**
+   * Os 95 posts herdados usam `###` para numerar passo ("### **1. Reserve com
+   * Antecedência:**"). Sem o filtro de interrogação, o acervo inteiro passaria a
+   * emitir um FAQPage inventado, com "pergunta" que ninguém perguntou.
+   */
+  it("ignora h3 que não é pergunta, que é como o acervo herdado numera passo", () => {
+    const md = [
+      SECAO,
+      "### **1. Reserve com Antecedência:**",
+      "",
+      "Quanto antes, melhor.",
+      "",
+      "### 2. Avalie Opções Próximas:",
+      "",
+      "Compare a distância.",
+    ].join("\n");
+
+    expect(faqPairsFrom(md)).toEqual([]);
+  });
+
+  /** A pergunta em negrito é a forma que o editor do acervo usa. O texto é o que vale. */
+  it("lê a pergunta por dentro do negrito", () => {
+    const md = `${SECAO}### **O estacionamento aceita Sem Parar?**\n\nDepende da unidade.`;
+    expect(faqPairsFrom(md)[0]?.question).toBe("O estacionamento aceita Sem Parar?");
+  });
+
+  it("junta os parágrafos e a lista que vêm abaixo da pergunta", () => {
+    const md = [
+      SECAO,
+      "### O que levar na chegada?",
+      "",
+      "Três coisas resolvem o check-in.",
+      "",
+      "- O código da reserva",
+      "- O documento do motorista",
+      "",
+      "Sem isso a portaria confere no sistema e demora mais.",
+    ].join("\n");
+
+    expect(faqPairsFrom(md)[0]?.answer).toBe(
+      "Três coisas resolvem o check-in. O código da reserva O documento do motorista " +
+        "Sem isso a portaria confere no sistema e demora mais.",
+    );
+  });
+
+  /**
+   * A leitura para no primeiro bloco que não é prosa. Sem isso, a resposta de uma
+   * pergunta engoliria a tabela de preço que vem abaixo, e o `text` do `Answer`
+   * deixaria de bater com o que o leitor vê embaixo da pergunta.
+   */
+  it("para a resposta no próximo título, e não atravessa a tabela", () => {
+    const md = [
+      SECAO,
+      "### Quanto custa a diária?",
+      "",
+      "R$ 18,90 em agosto de 2026.",
+      "",
+      "| Dias | Total |",
+      "| --- | --- |",
+      "| 7 | R$ 111,30 |",
+      "",
+      "### Tem vaga coberta?",
+      "",
+      "Tem, e custa cerca de 20% a mais.",
+    ].join("\n");
+
+    expect(faqPairsFrom(md)).toEqual([
+      { question: "Quanto custa a diária?", answer: "R$ 18,90 em agosto de 2026." },
+      { question: "Tem vaga coberta?", answer: "Tem, e custa cerca de 20% a mais." },
+    ]);
+  });
+
+  it("descarta pergunta sem resposta escrita abaixo", () => {
+    const md = `${SECAO}### Tem estacionamento gratuito?\n\n### Tem vaga para moto?\n\nTem.`;
+    expect(faqPairsFrom(md)).toEqual([{ question: "Tem vaga para moto?", answer: "Tem." }]);
+  });
+
+  /** Duas `Question` com o mesmo `name` em `mainEntity` reprovam no teste de resultados ricos. */
+  it("mantém só a primeira ocorrência de uma pergunta repetida", () => {
+    const md = [
+      SECAO,
+      "### Precisa reservar?",
+      "",
+      "Não é obrigatório.",
+      "",
+      "### precisa reservar?",
+      "",
+      "Resposta repetida mais abaixo.",
+    ].join("\n");
+
+    expect(faqPairsFrom(md)).toEqual([
+      { question: "Precisa reservar?", answer: "Não é obrigatório." },
+    ]);
+  });
+
+  it("não confunde seção do corpo com FAQ: h2 em forma de pergunta fica de fora", () => {
+    expect(faqPairsFrom(SECAO)).toEqual([]);
+  });
+
+  /**
+   * O acervo herdado não tem FAQ escrita. Emitir schema para ele significaria
+   * inventar pergunta, então o esperado é sair sem nada.
+   */
+  it("devolve vazio para post sem FAQ, que é o caso dos 95 herdados", () => {
+    const md = "## Uma seção\n\nUm parágrafo.\n\n## Outra seção\n\nOutro parágrafo.";
+    expect(faqPairsFrom(md)).toEqual([]);
   });
 });

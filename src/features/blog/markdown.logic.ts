@@ -478,3 +478,69 @@ export function readingMinutes(md: string): number {
   const words = plainText(md).split(/\s+/).filter(Boolean).length;
   return Math.max(1, Math.ceil(words / 200));
 }
+
+/**
+ * Pares de pergunta e resposta escritos no corpo do post, para emitir `FAQPage`.
+ *
+ * A FAQ do post é **dele**, não a da tabela `faq`. As perguntas de escopo global e
+ * de destino já respondem em `/faq/<slug>`, em `/destinos/<slug>` e na single da
+ * unidade (ADR-002): copiá-las para cá colocaria a mesma pergunta com a mesma
+ * resposta numa quarta URL, que é a canibalização que o acervo já sofre. O post
+ * pergunta o que só ele responde, e o schema sai do que está escrito nele.
+ *
+ * Três recortes, cada um por um motivo:
+ *
+ * 1. **Só `###`.** O `##` é seção do corpo, e a resposta dele se estende por vários
+ *    parágrafos e tabelas. Recortar o primeiro parágrafo de uma seção entregaria ao
+ *    Google um texto diferente do visível, que é schema inválido.
+ * 2. **Só título terminado em `?`.** O acervo herdado usa `###` para numerar passo
+ *    (`### **1. Reserve com Antecedência:**`), e sem esse filtro os 95 posts antigos
+ *    emitiriam um `FAQPage` inventado, com "pergunta" que ninguém perguntou.
+ * 3. **A resposta vai até o próximo bloco que não é prosa.** Parágrafo e lista
+ *    entram; título, tabela, imagem, citação e linha param a leitura. É o que faz o
+ *    `text` do `Answer` bater com o que o leitor vê embaixo da pergunta.
+ *
+ * Pergunta repetida fica na primeira ocorrência: `mainEntity` com duas `Question`
+ * de mesmo `name` é erro no teste de resultados ricos.
+ *
+ * Atenção ao nível: o `parseMarkdown` normaliza a hierarquia (`normalizaTitulos`),
+ * então o `###` que aqui interessa é o **renderizado**, não o que está no arquivo.
+ * Num post que só tem `###`, eles sobem para `##` e viram seção, o que é a leitura
+ * certa: sem `##` acima, aquelas perguntas são o primeiro nível do texto. Todo post
+ * escrito pela skill abre as seções em `##`, então a FAQ dele cai em 3 e é lida.
+ */
+export function faqPairsFrom(md: string): { question: string; answer: string }[] {
+  const blocks = parseMarkdown(md);
+  const pares: { question: string; answer: string }[] = [];
+  const vistas = new Set<string>();
+
+  blocks.forEach((bloco, i) => {
+    if (bloco.type !== "heading" || bloco.level !== 3) return;
+
+    const question = inlineText(bloco.content).replace(/\s+/g, " ").trim();
+    if (!question.endsWith("?")) return;
+
+    const chave = question.toLocaleLowerCase("pt-BR");
+    if (vistas.has(chave)) return;
+
+    const resposta: string[] = [];
+    for (let j = i + 1; j < blocks.length; j++) {
+      const seguinte = blocks[j];
+      if (seguinte.type === "paragraph") {
+        resposta.push(inlineText(seguinte.content));
+      } else if (seguinte.type === "list") {
+        resposta.push(seguinte.items.map((item) => inlineText(item.content)).join(" "));
+      } else {
+        break;
+      }
+    }
+
+    const answer = resposta.join(" ").replace(/\s+/g, " ").trim();
+    if (!answer) return;
+
+    vistas.add(chave);
+    pares.push({ question, answer });
+  });
+
+  return pares;
+}

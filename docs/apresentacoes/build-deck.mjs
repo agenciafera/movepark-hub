@@ -109,8 +109,9 @@ content(
      { n: "03", t: "Preço vivo", d: "/precos, /precos/&lt;slug&gt; e calculadora, com o valor cobrado no checkout." },
      { n: "04", t: "FAQ com URL própria", d: "8 globais + 8 por destino, cada uma com FAQPage e BreadcrumbList no HTML." },
      { n: "05", t: "95 posts herdados", d: "Todos com .md servido para crawler de IA que não executa JavaScript." },
-     { n: "06", t: "Bots liberados", d: "GPTBot, ClaudeBot, PerplexityBot e companhia com allow desde 15/08." },
-   ])}`,
+     { n: "06", t: "FAQPage no post", d: "Desde 25/08, a rota lê a FAQ escrita no corpo e emite o schema, sem campo novo no banco." },
+     { n: "07", t: "Bots liberados", d: "GPTBot, ClaudeBot, PerplexityBot e companhia com allow desde 15/08." },
+   ], "dense")}`,
 );
 
 /* 4 acervo torto */
@@ -555,7 +556,7 @@ push(
      <div class="cl-grid">
        <div class="cl-item"><span class="cl-n">01</span><h3>Confins tem prazo comercial?</h3><p>O conteúdo de CNF entra na Fase 1 de qualquer jeito. A pergunta é se existe meta de fechar parceiro até a semana 9, porque isso muda o CTA de captação para reserva.</p></div>
        <div class="cl-item"><span class="cl-n">02</span><h3>Quem escreve e quem grava?</h3><p>2 posts e 4 peças de Instagram por semana é o teto de uma pessoa com apoio de IA. O reels exige alguém no lote, com celular, uma vez por semana.</p></div>
-       <div class="cl-item"><span class="cl-n">03</span><h3>Vale emitir FAQPage no post?</h3><p>Hoje o post emite BlogPosting e BreadcrumbList. Somar FAQPage é mudança de código pequena e é o que fecha o ciclo do bloco de perguntas.</p></div>
+       <div class="cl-item"><span class="cl-n">03</span><h3>O acervo herdado ganha FAQ?</h3><p>O post já emite FAQPage a partir da FAQ escrita nele, mas os 95 herdados não têm nenhuma, então não emitem nada. Retrofitar a FAQ nos 15 posts mais clicados é trabalho de escrita, não de código.</p></div>
      </div>
      <p class="cl-foot">Plano completo em <b>docs/specs/plano-conteudo-aeroportos.md</b> · dados brutos em <b>docs/specs/dados/cauda-longa-aeroportos.json</b></p>
    </div>`,
@@ -647,6 +648,11 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:var(--ink);
 .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;margin-top:38px}
 .cards.four{grid-template-columns:repeat(4,1fr);gap:24px;margin-top:46px}
 .cards.six{grid-template-columns:repeat(3,1fr);gap:24px;margin-top:36px}
+.cards.dense{grid-template-columns:repeat(4,1fr);gap:20px;margin-top:34px}
+.cards.dense .card{padding:26px 24px}
+.cards.dense .cn{font-size:40px;margin-bottom:12px}
+.cards.dense .card h3{font-size:25px;margin-bottom:10px}
+.cards.dense .card p{font-size:20px;line-height:1.45}
 .card{background:var(--soft);border:1px solid var(--hair);border-radius:22px;padding:34px 32px}
 .cards.four .card{padding:38px 32px}
 .cn{font-size:44px;font-weight:800;color:var(--violet);line-height:1;margin-bottom:18px;letter-spacing:-1.5px}

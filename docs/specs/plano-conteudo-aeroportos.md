@@ -365,11 +365,16 @@ bloqueia o que quebra o site.
 
 ### 4.4 Schema
 
-`BlogPosting` e `BreadcrumbList` já saem automáticos na rota. `FAQPage` no post ainda não existe e
-é mudança de código, não de conteúdo. Escreva a FAQ no formato certo mesmo assim (pergunta em
-`###`, resposta no parágrafo seguinte), porque é o formato que o Google entende sem JSON-LD.
+`BlogPosting`, `BreadcrumbList` e `FAQPage` saem automáticos na rota. O `FAQPage` foi ligado em
+25/08/2026 e fecha o ciclo do bloco de perguntas: ele lê a FAQ que o próprio post escreveu
+(`###` terminado em `?`, com o parágrafo logo abaixo como resposta) e emite a partir de duas
+perguntas. Sem campo novo no banco: escrever a FAQ no formato certo é o que liga o schema.
 
-**Item de backlog que vale a pena:** emitir `FAQPage` no post. É o que fecha o ciclo do PAA.
+**As perguntas da tabela `faq` não entram no post.** Elas já respondem em `/faq/<slug>`, em
+`/destinos/<slug>` e na single da unidade (ADR-002), e trazê-las para cá colocaria a mesma
+pergunta com a mesma resposta numa quarta URL. A regra editorial: a FAQ do post pergunta o que
+só aquele post responde, e a pergunta genérica do aeroporto vira link para `/faq/<slug>`.
+Detalhe em [blog.md](./blog.md).
 
 ### 4.5 A checagem final de GEO
 

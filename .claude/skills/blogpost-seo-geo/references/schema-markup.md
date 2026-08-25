@@ -13,6 +13,7 @@ A rota do post (`src/routes/blog-post.tsx`) emite, para todo post publicado:
 |---|---|
 | `BlogPosting` | `headline`, `description`, `image`, `datePublished`, `author` (Organization Movepark), `publisher`, `mainEntityOfPage` |
 | `BreadcrumbList` | Início, Blog, título do post |
+| `FAQPage` | As perguntas da FAQ que **o próprio post** escreveu, quando existem pelo menos duas |
 
 Mais as metas: `title`, `description`, `canonical` com barra final, `og:type
 article`, `og:title`, `og:description`, `og:url`, `og:image` com dimensões e alt,
@@ -22,35 +23,69 @@ article`, `og:title`, `og:description`, `og:url`, `og:image` com dimensões e al
 `title`, o `meta_description`, a capa e a data. Escrever bem esses campos é o que
 alimenta o schema.
 
+## O `FAQPage` do post: como ele é montado
+
+Desde 25/08/2026 a rota emite `FAQPage` sozinha, lendo o corpo do post com
+`faqPairsFrom` (`src/features/blog/markdown.logic.ts`). Não existe campo novo no
+banco nem JSON para escrever à mão: **escrever a FAQ no formato certo é o que liga
+o schema.**
+
+A leitura tem três recortes, e é bom conhecê-los para não escrever algo que fica
+de fora sem você perceber:
+
+| Regra da leitura | O que acontece se você fugir dela |
+|---|---|
+| Pergunta em `###`, nunca em `##` | `##` é seção do corpo, e a resposta dela se estende por parágrafos e tabelas. Pergunta em `##` não entra no schema |
+| O título precisa terminar em `?` | `### 3 dicas para economizar` fica de fora, e é isso que impede o acervo herdado (que usa `###` para numerar passo) de emitir FAQ inventada |
+| A resposta vai até o próximo bloco que não é prosa | Parágrafo e lista entram. Título, tabela, imagem, citação e linha param a leitura. Se você abrir a resposta com uma tabela, o schema sai vazio e a pergunta é descartada |
+
+Mais duas coisas que o código faz e você não precisa gerenciar: pergunta repetida
+fica na primeira ocorrência, e o bloco só é emitido a partir de **duas perguntas**,
+porque `FAQPage` descreve uma lista. Com uma pergunta só, quem responde é a página
+dela em `/faq/<slug>`.
+
+### A regra de conteúdo que sustenta isso
+
+**A FAQ do post pergunta o que só aquele post responde.** As perguntas de escopo
+global e de destino já respondem em `/faq/<slug>`, em `/destinos/<slug>` e na
+single da unidade (ADR-002). Copiar uma delas para o fim do post coloca a mesma
+pergunta com a mesma resposta numa quarta URL, que é exatamente a canibalização que
+o acervo já sofre.
+
+Teste rápido antes de escrever cada pergunta: **ela caberia igual em qualquer post
+deste aeroporto?** Se cabe, o lugar dela é `/faq/<slug>`, e o post deve linkar para
+lá. Se ela só faz sentido depois de ler este post, é FAQ do post.
+
+| Superfície | Pergunta que pertence a ela |
+|---|---|
+| `/faq/<slug>` | "Quanto custa estacionar no Aeroporto de Guarulhos?" |
+| Post sobre pagar mais barato | "O desconto do Itaú Personnalité compensa a partir de quantas diárias?" |
+| Post sobre o Terminal 3 | "Dá para ir a pé do estacionamento externo até o T3?" |
+
 ## O que existe no projeto e ainda não é usado no post
 
-`src/lib/jsonld.ts` já exporta helpers prontos que a rota do post não chama:
+`itemListSchema(items)` produz `ItemList` e serve para post do tipo "as 5 melhores
+opções", que é o formato mais comum do acervo. Ligá-lo é **mudança de código na
+rota**, não de conteúdo. Se o usuário pedir, trate como tarefa de código, com teste,
+e não improvise JSON dentro do texto.
 
-- `faqSchema(faqs)` produz `FAQPage`. Usado nas páginas de destino.
-- `itemListSchema(items)` produz `ItemList`. Serve para post do tipo "as 5
-  melhores opções", que é o formato mais comum do acervo.
-- `breadcrumbSchema` já está em uso.
-
-Ligar `FAQPage` ou `ItemList` no post é **mudança de código na rota**, não de
-conteúdo: exige derivar os pares pergunta e resposta do markdown (ou guardá-los
-num campo), passar pelo helper e emitir no `Helmet`. Se o usuário pedir, trate
-como tarefa de código, com teste, e não improvise JSON dentro do texto.
-
-Duas cautelas antes de propor:
+Duas cautelas que continuam valendo:
 
 - **O ADR-002 manda um único `FAQPage` por página.** Se um dia o post passar a
-  exibir a FAQ do destino, as duas fontes não podem virar dois blocos.
-- **A resposta do schema tem que ser idêntica à visível.** Schema que promete o
-  que a página não mostra é penalizado, e a regra vale desde a FAQ em camadas.
+  exibir também a FAQ do destino, as duas fontes não podem virar dois blocos: o
+  `faqPairsFrom` teria que receber a mescla, não ganhar um irmão.
+- **A resposta do schema tem que ser idêntica à visível.** É o motivo de a leitura
+  parar no primeiro bloco que não é prosa, e de nada vir do banco.
 
 ## O que dá para conseguir só escrevendo
 
 O Google entende estrutura sem JSON-LD, e os motores generativos leem o texto,
 não a marcação. Isso significa que boa parte do ganho de "schema" vem de formato:
 
-**FAQ.** Pergunta como `###`, resposta no parágrafo imediatamente abaixo, 40 a 60
-palavras, sem depender do resto do texto. É o formato que vira citação e que o
-Google reconhece como par de pergunta e resposta mesmo sem `FAQPage`.
+**FAQ.** Pergunta como `###` terminada em `?`, resposta no parágrafo imediatamente
+abaixo, 40 a 60 palavras, sem depender do resto do texto. É o formato que vira
+citação, que o Google reconhece como par de pergunta e resposta, e que agora também
+liga o `FAQPage` da rota.
 
 **Tabela de comparação.** Cabeçalho nomeando a dimensão ("Opção", "Diária",
 "Traslado", "Cobertura"). Tabela markdown vira `<table>` de verdade no render,

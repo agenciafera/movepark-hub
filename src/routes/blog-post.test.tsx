@@ -134,6 +134,75 @@ describe("BlogPostPage: cabeçalho", () => {
   });
 });
 
+/**
+ * O `FAQPage` do post declara a FAQ que ele mesmo escreveu, e não as perguntas da
+ * tabela `faq`, que já respondem em `/faq/<slug>`, em `/destinos/<slug>` e na single
+ * da unidade (ADR-002). Repetir a mesma pergunta com a mesma resposta numa quarta URL
+ * é a canibalização que o acervo já sofre.
+ */
+describe("BlogPostPage: FAQPage", () => {
+  const CORPO_COM_FAQ = [
+    "## Quanto custa estacionar em Viracopos?",
+    "",
+    "A diária online começa em R$ 40,00 em agosto de 2026.",
+    "",
+    "## Perguntas frequentes",
+    "",
+    "### O estacionamento aceita Sem Parar?",
+    "",
+    "Depende da unidade, e a página de cada lote diz qual meio de pagamento aceita.",
+    "",
+    "### Tem vaga para moto?",
+    "",
+    "Tem, e a diária de moto é cobrada em tabela própria.",
+  ].join("\n");
+
+  async function schemas() {
+    const { waitFor } = await import("@testing-library/react");
+    return waitFor(() => {
+      const blocos = [...document.querySelectorAll('script[type="application/ld+json"]')].map(
+        (s) => JSON.parse(s.textContent ?? "{}"),
+      );
+      expect(blocos.length).toBeGreaterThan(0);
+      return blocos;
+    });
+  }
+
+  it("emite um FAQPage com as perguntas escritas no corpo do post", async () => {
+    renderPost({ body_md: CORPO_COM_FAQ });
+    const faqPage = (await schemas()).find((b) => b["@type"] === "FAQPage");
+
+    expect(faqPage?.mainEntity).toHaveLength(2);
+    expect(faqPage?.mainEntity?.[0]?.name).toBe("O estacionamento aceita Sem Parar?");
+    expect(faqPage?.mainEntity?.[0]?.acceptedAnswer?.text).toBe(
+      "Depende da unidade, e a página de cada lote diz qual meio de pagamento aceita.",
+    );
+    expect(faqPage?.mainEntity?.[1]?.name).toBe("Tem vaga para moto?");
+  });
+
+  /**
+   * Os 95 posts herdados não têm FAQ escrita. Emitir schema para eles significaria
+   * declarar ao Google uma pergunta que não está na página.
+   */
+  it("post sem FAQ escrita não emite FAQPage", async () => {
+    renderPost();
+    const blocos = await schemas();
+
+    expect(blocos.find((b) => b["@type"] === "BlogPosting")).toBeDefined();
+    expect(blocos.find((b) => b["@type"] === "FAQPage")).toBeUndefined();
+  });
+
+  /** `FAQPage` descreve uma lista. Com uma pergunta só, quem responde é `/faq/<slug>`. */
+  it("uma pergunta sozinha não vira FAQPage", async () => {
+    renderPost({
+      body_md: "## Uma seção\n\nUm parágrafo.\n\n### Precisa reservar antes?\n\nNão é obrigatório.",
+    });
+    const blocos = await schemas();
+
+    expect(blocos.find((b) => b["@type"] === "FAQPage")).toBeUndefined();
+  });
+});
+
 /** O RouterProvider resolve o loader num tick; o artigo só existe depois dele. */
 async function waitForArticle(container: HTMLElement) {
   const { waitFor } = await import("@testing-library/react");
