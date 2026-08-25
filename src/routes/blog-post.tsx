@@ -82,8 +82,12 @@ export default function BlogPostPage() {
     pergunta com a mesma resposta numa quarta URL é canibalização.
 
     O piso de duas perguntas existe porque `FAQPage` descreve uma lista. Com uma só,
-    o bloco certo é a página da pergunta, que já emite o dela. Os 95 posts herdados
-    não têm FAQ escrita e caem em zero, então seguem sem emitir nada.
+    o bloco certo é a página da pergunta, que já emite o dela.
+
+    O acervo herdado não fica todo de fora: medido em 25/08/2026, **11 dos 95 posts**
+    já trazem FAQ no formato e passaram a emitir. Isso é o comportamento desejado, e
+    não canibalização nova: aquelas perguntas já estavam visíveis na página, e o
+    schema só declara o que o leitor lê. Os outros 84 caem em zero.
 
     Memoizado pelo mesmo motivo que `secoes`: o `PostProgress` acompanha o scroll, e
     reparsear 3.000 palavras de markdown a cada quadro sairia caro no celular.

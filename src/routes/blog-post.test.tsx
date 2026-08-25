@@ -181,8 +181,9 @@ describe("BlogPostPage: FAQPage", () => {
   });
 
   /**
-   * Os 95 posts herdados não têm FAQ escrita. Emitir schema para eles significaria
-   * declarar ao Google uma pergunta que não está na página.
+   * A maior parte do acervo herdado não tem FAQ escrita (84 dos 95, medido em
+   * 25/08/2026). Emitir schema para esses significaria declarar ao Google uma
+   * pergunta que não está na página.
    */
   it("post sem FAQ escrita não emite FAQPage", async () => {
     renderPost();

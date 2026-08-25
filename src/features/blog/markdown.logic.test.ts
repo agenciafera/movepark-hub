@@ -573,10 +573,11 @@ describe("faqPairsFrom", () => {
   });
 
   /**
-   * O acervo herdado não tem FAQ escrita. Emitir schema para ele significaria
-   * inventar pergunta, então o esperado é sair sem nada.
+   * Vale para 84 dos 95 posts herdados (medido em 25/08/2026): sem FAQ escrita,
+   * emitir schema seria inventar pergunta. Os outros 11 já trazem FAQ no formato
+   * e passaram a emitir, que é o comportamento desejado.
    */
-  it("devolve vazio para post sem FAQ, que é o caso dos 95 herdados", () => {
+  it("devolve vazio para post sem FAQ, que é o caso da maior parte do acervo", () => {
     const md = "## Uma seção\n\nUm parágrafo.\n\n## Outra seção\n\nOutro parágrafo.";
     expect(faqPairsFrom(md)).toEqual([]);
   });

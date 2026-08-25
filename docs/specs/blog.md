@@ -326,6 +326,12 @@ Quatro recortes na leitura, cada um com um motivo medido:
 | Resposta para no primeiro bloco que não é prosa | Parágrafo e lista entram; título, tabela, imagem, citação e linha param. É o que faz o `text` do `Answer` bater com o visível (ADR-002) |
 | Mínimo de duas perguntas | `FAQPage` descreve uma lista. Com uma só, quem responde é a página dela em `/faq/<slug>`, que já emite o próprio |
 
+**O acervo herdado não fica todo de fora, e isso é bom.** Medido em 25/08/2026, **11 dos 95 posts**
+já trazem FAQ no formato e passaram a emitir. Não é canibalização nova: aquelas perguntas já eram
+visíveis na página, e o schema só declara o que o leitor lê. A sobreposição semântica com as páginas
+de `/faq/<slug>` existe em 3 das 50 perguntas (todas do tipo "qual o mais barato em X"), e é assunto
+da auditoria de canibalização do conteúdo, não do schema. Os outros 84 posts caem em zero.
+
 Nível de título é o **renderizado**, não o do arquivo: `parseMarkdown` normaliza a hierarquia, e
 num corpo que só tem `###` eles sobem para `##`. Post escrito pela skill sempre abre as seções em
 `##`, então a FAQ dele cai em 3 e é lida.
