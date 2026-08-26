@@ -33,9 +33,9 @@ function htmls(dir) {
 const absoluta = (u) => typeof u === "string" && /^https?:\/\//i.test(u);
 const lista = (v) => (Array.isArray(v) ? v : v == null ? [] : [v]);
 
-function visita(no, rota, caminho = "$") {
+function visita(no, rota, caminho = "$", pai = null) {
   if (Array.isArray(no)) {
-    no.forEach((x, i) => visita(x, rota, `${caminho}[${i}]`));
+    no.forEach((x, i) => visita(x, rota, `${caminho}[${i}]`, pai));
     return;
   }
   if (!no || typeof no !== "object") return;
@@ -55,8 +55,21 @@ function visita(no, rota, caminho = "$") {
     for (const u of lista(no.image)) if (!absoluta(u)) err(`Product.image não absoluta: ${u}`);
   }
   if (ts.includes("Offer")) {
-    if (no.price == null || no.price === "" || Number(no.price) <= 0) {
-      err(`Offer com price inválido: ${no.price}`);
+    // Preço zero é erro em oferta de produto, e é o CERTO em coisa declarada gratuita:
+    // o schema.org pede `price: "0"` junto de `isAccessibleForFree`, e é assim que o
+    // Google espera ver uma WebApplication sem custo. A regra antiga reprovava os dois
+    // igual, e derrubou o build do site por 17 horas por causa da calculadora.
+    const gratuitoDeclarado = pai?.isAccessibleForFree === true;
+    const preco = Number(no.price);
+    const invalido = no.price == null || no.price === "" || Number.isNaN(preco)
+      ? true
+      : gratuitoDeclarado ? preco < 0 : preco <= 0;
+    if (invalido) {
+      err(
+        gratuitoDeclarado
+          ? `Offer gratuita com price inválido: ${no.price}`
+          : `Offer com price inválido: ${no.price}`,
+      );
     }
     if (!no.priceCurrency) err("Offer sem priceCurrency");
   }
@@ -129,7 +142,7 @@ function visita(no, rota, caminho = "$") {
       if (typeof u === "string" && u.startsWith("/")) err(`${campo} relativa: ${u}`);
     }
   }
-  for (const [k, v] of Object.entries(no)) if (k !== "@type") visita(v, rota, `${caminho}.${k}`);
+  for (const [k, v] of Object.entries(no)) if (k !== "@type") visita(v, rota, `${caminho}.${k}`, no);
 }
 
 for (const f of htmls(RAIZ).sort()) {
