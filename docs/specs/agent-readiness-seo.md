@@ -133,6 +133,27 @@ A ferramenta (lançada 17/abr/2026) pontua 4 dimensões. Priorizar os **maduros/
 - **`llms-full.txt`:** FAQ integral + destinos + índice do blog inline, gerado a cada build;
   `llms.txt` ganhou desambiguação de marca, data de atualização e ponteiros.
 
+## Paridade fechada com os benchmarks (26/08/2026)
+
+> Auditoria completa de xpark.ai e bandeirapark.com.br fechou os gaps de schema e
+> citabilidade que restavam (fora multi-idioma, adiado por decisão):
+
+- **Escada de tarifa progressiva** no `AggregateOffer` das páginas de unidade:
+  `UnitPriceSpecification` por janela de diárias com `eligibleQuantity`, do
+  `PriceShowcase.porDuracao` (motor). Sem `priceValidUntil`, de propósito.
+- **`Dataset` CC-BY-4.0** + bloco visível "Para imprensa e citação" no `/precos`.
+- **`Organization` com lastro**: `sameAs` (redes de `src/lib/redes.ts`), contato e
+  slogan da garantia. `taxID`/`foundingDate` aguardam fonte verificável.
+- **`WebSite` + `SearchAction`** na home (`/search?dest={dest}`) e
+  **`WebApplication`** na calculadora.
+- **Sitemap com dicas calibradas por seção** (split sobrescreve o `daily/1.0`
+  uniforme do plugin; home 1.0/weekly, dinheiro 0.9/weekly, institucional 0.6).
+- **Desambiguação visível** ("O que a Movepark não é") no `/sobre`.
+- **Praça completa na página de mais-barato**: lotes mapeados (inclusive o
+  oficial) por link, sem preço (ADR-010), na página e no gêmeo Markdown.
+- **Achados citáveis do índice** repetidos com a mesma redação nos gêmeos
+  Markdown e no `llms-full.txt`, mais `tags` no frontmatter do FAQ.
+
 ## Sequenciamento (ordem de prioridade)
 
 1. **HTML rastreável** (vite-react-ssg + build-time fetch Supabase) — bloqueador nº 1.

@@ -485,10 +485,17 @@ async function maisBaratoLoader({ params }: LoaderFunctionArgs) {
   const linhas = maisBaratoPorDuracao(dest, index.days);
   if (linhas.length === 0) return null;
   const resumo = destinationSummary(dest, index.days);
+  // Os lotes mapeados da região (inclusive o oficial do aeroporto, quando está
+  // cadastrado) completam a resposta: o comparativo cobre os parceiros com
+  // reserva; a praça inteira aparece por link, sem preço (ADR-010).
+  const mapeados = await fetchDestinationProspects(dest.slug)
+    .then((ps) => ps.map((p) => ({ name: p.name, slug: p.slug })))
+    .catch(() => [] as { name: string; slug: string }[]);
   return {
     destino: { name: dest.name, short_name: dest.short_name, slug: dest.slug, code: dest.code },
     linhas,
     unitCount: resumo.unitCount,
+    mapeados,
   };
 }
 

@@ -13,7 +13,7 @@ import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PageHero } from "@/components/shared/PageHero";
 import { formatBRL, formatDate } from "@/lib/format";
-import { breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
+import { datasetSchema, breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
 import { cn } from "@/lib/utils";
 import { OgImage } from "@/lib/ogImage";
 import {
@@ -444,6 +444,7 @@ export default function PrecosPage() {
         <meta property="og:url" content={canonical} />
         <script type="application/ld+json">{JSON.stringify(breadcrumb)}</script>
         <script type="application/ld+json">{JSON.stringify(lista)}</script>
+        <script type="application/ld+json">{JSON.stringify(datasetSchema({ dateModified: generatedAt }))}</script>
       </Helmet>
       <OgImage area="precos" />
 
@@ -770,6 +771,13 @@ export default function PrecosPage() {
           <p className="mt-5 text-pretty text-caption-sm text-muted">
             Conferido no motor de reservas em{" "}
             <time dateTime={generatedAt}>{formatDate(generatedAt)}</time>.
+          </p>
+          {/* Engenharia de citabilidade: licença clara reduz o atrito de imprensa
+              e IA citarem o número com o nosso nome junto. */}
+          <p className="mt-3 text-pretty text-caption-sm text-muted">
+            Para imprensa e citação: reprodução livre com atribuição a "Índice Movepark de
+            Preços (movepark.co)". Os dados são contínuos, direto do motor de reservas; a
+            versão em texto vive em movepark.co/llms-full.txt. Contato: contato@movepark.co.
           </p>
         </div>
       </section>

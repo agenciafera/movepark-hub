@@ -120,6 +120,31 @@ describe("EstacionamentoMaisBaratoPage", () => {
     );
   });
 
+  /** A praça completa: mapeados (inclusive o oficial) entram por link, sem preço. */
+  it("lista os lotes mapeados da região com link pra ficha, sem preço", async () => {
+    setup({
+      ...DATA,
+      mapeados: [{ name: "Estacionamento Oficial de Viracopos (Estapar)", slug: "estacionamento-oficial-viracopos-estapar" }],
+    } as MaisBaratoData);
+    expect(
+      await screen.findByRole("heading", { name: "E os outros estacionamentos da região?" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Estacionamento Oficial de Viracopos (Estapar)" }),
+    ).toHaveAttribute(
+      "href",
+      "/estacionamentos/aeroporto-de-viracopos/estacionamento-oficial-viracopos-estapar",
+    );
+  });
+
+  it("sem lote mapeado, a seção da região não aparece", async () => {
+    setup();
+    await screen.findByRole("heading", { name: "Menor preço por duração" });
+    expect(
+      screen.queryByRole("heading", { name: "E os outros estacionamentos da região?" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("sem preço no destino, explica e aponta pro índice", async () => {
     setup(null);
     expect(await screen.findByText("Ainda não temos preços neste destino")).toBeInTheDocument();

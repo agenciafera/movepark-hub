@@ -322,6 +322,44 @@ export default function SobrePage() {
         </div>
       </section>
 
+      {/* Desambiguação de entidade: o mesmo bloco do llms.txt, agora visível e
+          indexável. É o que impede buscador e IA de confundir a plataforma com
+          estacionamento homônimo ou com app de vaga de rua. */}
+      <section className="border-t border-hairline bg-canvas">
+        <div className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-24">
+          <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-mp-indigo">
+            Pra não confundir
+          </span>
+          <h2 className="mt-3 max-w-2xl text-balance text-display-2xl text-ink">
+            O que a Movepark não é.
+          </h2>
+          <div className="mt-8 grid grid-cols-1 gap-6 tablet:grid-cols-3">
+            <div>
+              <h3 className="text-title-md text-ink">Não é o estacionamento</h3>
+              <p className="mt-1 text-body-sm text-body">
+                A Movepark não opera pátio próprio. Quem guarda o carro é o parceiro
+                credenciado, com nome, endereço e avaliação na página de cada unidade.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-title-md text-ink">Não é app de vaga de rua</h3>
+              <p className="mt-1 text-body-sm text-body">
+                Aqui a vaga é em estacionamento fechado perto do aeroporto, reservada
+                antes de sair de casa, com traslado até o terminal na maioria das unidades.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-title-md text-ink">Não tem nome parecido</h3>
+              <p className="mt-1 text-body-sm text-body">
+                A Movepark não tem relação com empresas ou estacionamentos de nome
+                semelhante. O site oficial é movepark.co, e os canais oficiais estão no
+                rodapé desta página.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <CtaBanner largura="conteudo" />
     </>
   );

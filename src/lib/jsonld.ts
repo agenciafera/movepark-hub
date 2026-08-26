@@ -2,6 +2,35 @@ import { getLocationCapabilities } from "@/features/listing/capabilities";
 import { showcaseFromPrice, type PriceShowcase } from "@/features/listing/reservation.logic";
 import type { ListingDetail } from "@/features/listing/api";
 import { SITE_URL } from "@/lib/site";
+import { REDES } from "@/lib/redes";
+import { EMAIL_SUPORTE } from "@/lib/suporte";
+
+/**
+ * A escada de tarifa progressiva como `UnitPriceSpecification`, uma por janela
+ * de diárias, com `eligibleQuantity` dizendo a faixa em que aquela diária vale.
+ * É a tabela inteira legível por máquina: quem compara preço por IA lê "1 a 6
+ * dias custa X/dia, 7 a 14 custa Y/dia" em vez de só a faixa low/high.
+ * `priceValidUntil` segue fora (ver destinationOffersSchema): validade cravada
+ * ninguém garante; o que sustenta o número é a regeração a cada build.
+ */
+function escadaDePreco(porDuracao: { days: number; total: number }[]) {
+  if (porDuracao.length < 2) return undefined;
+  return porDuracao.map((linha, i) => {
+    const proxima = porDuracao[i + 1];
+    return {
+      "@type": "UnitPriceSpecification",
+      price: (Math.round((linha.total / linha.days) * 100) / 100).toFixed(2),
+      priceCurrency: "BRL",
+      unitText: "dia",
+      eligibleQuantity: {
+        "@type": "QuantitativeValue",
+        minValue: linha.days,
+        ...(proxima ? { maxValue: proxima.days - 1 } : {}),
+        unitText: "dias",
+      },
+    };
+  });
+}
 
 export function localBusinessSchema(listing: ListingDetail, opts?: { description?: string }) {
   return {
@@ -98,6 +127,7 @@ export function productOfferSchema(
           lowPrice: showcase.lowDaily.toFixed(2),
           highPrice: showcase.highDaily.toFixed(2),
           offerCount: showcase.offerCount,
+          priceSpecification: escadaDePreco(showcase.porDuracao),
           availability,
           url,
         }
@@ -290,6 +320,12 @@ export function blogPostingSchema(p: {
  * ancora o knowledge panel e a desambiguação de marca nos LLMs (o mesmo papel do
  * bloco de desambiguação do llms.txt, em dado estruturado).
  */
+/**
+ * A entidade Movepark com lastro: redes oficiais (`sameAs`, de src/lib/redes.ts),
+ * contato de suporte e a promessa da garantia como slogan. Só entra aqui dado com
+ * fonte no repo; `taxID` (CNPJ) e `foundingDate` ficam de fora até existirem numa
+ * fonte verificável, porque entidade com dado inventado é pior que entidade magra.
+ */
 export function organizationSchema() {
   return {
     "@context": "https://schema.org",
@@ -299,6 +335,96 @@ export function organizationSchema() {
     logo: `${SITE_URL}/brand/logo-movepark.svg`,
     description:
       "Plataforma de reserva de estacionamentos em aeroportos e destinos do Brasil: busca, comparação de preços e reserva online com traslado até o terminal.",
+    slogan: "Vaga garantida ou realocamos e cobrimos a diferença.",
+    email: EMAIL_SUPORTE,
+    contactPoint: {
+      "@type": "ContactPoint",
+      contactType: "customer support",
+      email: EMAIL_SUPORTE,
+      availableLanguage: "Portuguese",
+    },
+    sameAs: REDES.map((r) => r.url),
+  };
+}
+
+/**
+ * O site como entidade pesquisável: o `SearchAction` diz ao buscador e ao agente
+ * como montar uma busca válida (`/search?dest=GRU`), no mesmo formato que o app
+ * usa. Emitido na home, uma vez por site.
+ */
+export function webSiteSchema() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Movepark",
+    url: SITE_URL,
+    inLanguage: "pt-BR",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${SITE_URL}/search?dest={dest}`,
+      },
+      "query-input": "required name=dest",
+    },
+  };
+}
+
+/**
+ * O Índice Movepark de Preços como `Dataset` citável: licença aberta com
+ * atribuição, grátis, atualizado a cada build com o preço do motor. É a
+ * engenharia de citabilidade: imprensa e IA citam dataset licenciado com muito
+ * menos atrito do que página solta.
+ */
+export function datasetSchema(args: { dateModified: string }) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Dataset",
+    name: "Índice Movepark de Preços",
+    description:
+      "Quanto custa estacionar perto de cada aeroporto atendido pela Movepark, em 1, 7, 15 e 30 diárias, com o preço de balcão ao lado. Os valores saem do motor de reservas, os mesmos do checkout, e mudam quando a tabela do parceiro muda.",
+    url: `${SITE_URL}/precos`,
+    license: "https://creativecommons.org/licenses/by/4.0/",
+    isAccessibleForFree: true,
+    inLanguage: "pt-BR",
+    dateModified: args.dateModified,
+    creator: {
+      "@type": "Organization",
+      name: "Movepark",
+      url: SITE_URL,
+    },
+    distribution: [
+      {
+        "@type": "DataDownload",
+        encodingFormat: "text/markdown",
+        contentUrl: `${SITE_URL}/precos.md`,
+      },
+      {
+        "@type": "DataDownload",
+        encodingFormat: "text/plain",
+        contentUrl: `${SITE_URL}/llms-full.txt`,
+      },
+    ],
+  };
+}
+
+/**
+ * Ferramenta interativa como `WebApplication` (calculadora, comparador): grátis,
+ * categoria de viagem, rodando no navegador. O conteúdo pré-computado da página
+ * segue sendo o que o crawler lê; o schema diz o que a ferramenta é.
+ */
+export function webApplicationSchema(args: { name: string; url: string; description: string }) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: args.name,
+    url: args.url,
+    description: args.description,
+    applicationCategory: "TravelApplication",
+    operatingSystem: "Web",
+    inLanguage: "pt-BR",
+    isAccessibleForFree: true,
+    offers: { "@type": "Offer", price: "0", priceCurrency: "BRL" },
   };
 }
 

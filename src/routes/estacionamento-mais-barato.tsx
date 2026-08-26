@@ -20,6 +20,8 @@ export type MaisBaratoData = {
   };
   linhas: MaisBaratoLinha[];
   unitCount: number;
+  /** Lotes mapeados da região (inclusive o oficial), sem preço (ADR-010). */
+  mapeados?: { name: string; slug: string }[];
 } | null;
 
 /**
@@ -48,7 +50,7 @@ export default function EstacionamentoMaisBaratoPage() {
     );
   }
 
-  const { destino, linhas, unitCount } = data;
+  const { destino, linhas, unitCount, mapeados = [] } = data;
   const curto = shortSemCodigo(destino.short_name, destino.name);
   const prosa = aeroportoEmProsa(destino);
   const mesAno = mesAnoAtual();
@@ -215,6 +217,37 @@ export default function EstacionamentoMaisBaratoPage() {
             ))}
           </ul>
         </section>
+
+        {/* A praça completa: o comparativo cobre os parceiros com reserva; os
+            demais lotes mapeados (inclusive o oficial do aeroporto, quando está
+            cadastrado) entram por link, sem preço (ADR-010). É a resposta que a
+            IA procura quando pergunta "e o estacionamento oficial?". */}
+        {mapeados.length > 0 && (
+          <section className="mt-8">
+            <h2 className="text-display-sm text-ink">
+              E os outros estacionamentos da região?
+            </h2>
+            <p className="mt-2 text-body-md text-body">
+              O comparativo acima cobre os estacionamentos com reserva online pela
+              Movepark. Estes são os demais lotes mapeados perto do {aeroportoEmProsa(destino)},
+              incluindo o oficial do aeroporto quando existe. A ficha de cada um traz
+              endereço, mapa e a nota do Google; o preço você confirma na cotação com o
+              próprio estacionamento.
+            </p>
+            <ul className="mt-3 space-y-2">
+              {mapeados.map((m) => (
+                <li key={m.slug}>
+                  <Link
+                    to={`/estacionamentos/${destino.slug}/${m.slug}`}
+                    className="font-medium text-mp-indigo underline-offset-2 hover:underline"
+                  >
+                    {m.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {/* Perguntas rápidas: o mesmo texto do FAQPage, visível (ADR-002). */}
         <section className="mt-8">

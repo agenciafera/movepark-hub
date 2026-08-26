@@ -24,7 +24,7 @@ import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PageHero } from "@/components/shared/PageHero";
 import { formatBRL, formatDate } from "@/lib/format";
-import { breadcrumbSchema } from "@/lib/jsonld";
+import { breadcrumbSchema, webApplicationSchema } from "@/lib/jsonld";
 import { cn } from "@/lib/utils";
 import { JOURNEY_COMPARISON } from "@/features/how-it-works/journey";
 import {
@@ -456,6 +456,16 @@ export default function CalculadoraPage() {
         <meta property="og:description" content={DESCRIPTION} />
         <meta property="og:url" content={canonical} />
         <script type="application/ld+json">{JSON.stringify(breadcrumb)}</script>
+        <script type="application/ld+json">
+          {JSON.stringify(
+            webApplicationSchema({
+              name: "Calculadora de estacionamento de aeroporto",
+              url: canonical,
+              description:
+                "Escolha o aeroporto e o número de diárias e veja quanto custa em cada estacionamento parceiro, com o preço do motor de reservas. Tem também o modo de comparação com carro de aplicativo.",
+            }),
+          )}
+        </script>
       </Helmet>
 
       {/* O violeta cai num indicador-chave, não em texto decorativo: é a promessa

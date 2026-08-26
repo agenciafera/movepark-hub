@@ -133,6 +133,10 @@ export type PriceShowcase = {
   highDaily: number;
   /** Quantas durações têm preço. Vira `offerCount` no JSON-LD. */
   offerCount: number;
+  /** A escada por duração (total do motor), ordenada por dias. É o que vira
+   *  `UnitPriceSpecification` com `eligibleQuantity` no schema: a tarifa
+   *  progressiva inteira legível por máquina, não só a faixa. */
+  porDuracao: { days: number; total: number }[];
 };
 
 /**
@@ -153,13 +157,15 @@ export type PriceShowcase = {
 export function buildPriceShowcase(
   totais: { days: number; total: number | null }[],
 ): PriceShowcase | null {
-  const diarias = totais
-    .filter((t) => t.days > 0 && t.total != null && t.total > 0)
-    .map((t) => Math.round((t.total! / t.days) * 100) / 100);
+  const validas = totais
+    .filter((t): t is { days: number; total: number } => t.days > 0 && t.total != null && t.total > 0)
+    .sort((a, b) => a.days - b.days);
+  const diarias = validas.map((t) => Math.round((t.total / t.days) * 100) / 100);
   if (diarias.length === 0) return null;
   return {
     lowDaily: Math.min(...diarias),
     highDaily: Math.max(...diarias),
     offerCount: diarias.length,
+    porDuracao: validas.map((t) => ({ days: t.days, total: t.total })),
   };
 }

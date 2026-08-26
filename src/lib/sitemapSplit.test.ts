@@ -162,6 +162,23 @@ describe("dividirSitemap", () => {
     expect(indice).not.toContain("<lastmod>");
   });
 
+  it("sobrescreve o daily/1.0 uniforme do plugin com a dica calibrada da seção", () => {
+    // O vite-plugin-sitemap carimba daily/1.0 em tudo; dica igual pra todo mundo
+    // é dica nenhuma. A seção manda: destino weekly/0.9, home weekly/1.0.
+    const xml = `${PROLOG}${ABRE_URLSET}<url><loc>https://movepark.co/destinos/gru</loc><changefreq>daily</changefreq><priority>1.0</priority></url><url><loc>https://movepark.co/</loc><changefreq>daily</changefreq><priority>0.5</priority></url></urlset>`;
+    const { arquivos } = dividirSitemap(xml, {
+      destinos: ["/destinos/gru"],
+      paginas: ["/"],
+    });
+    const destinos = arquivos.find((a) => a.nome === "sitemap-destinos.xml");
+    expect(destinos?.conteudo).toContain("<changefreq>weekly</changefreq>");
+    expect(destinos?.conteudo).toContain("<priority>0.9</priority>");
+    expect(destinos?.conteudo).not.toContain("daily");
+    const paginas = arquivos.find((a) => a.nome === "sitemap-paginas.xml");
+    expect(paginas?.conteudo).toContain("<priority>1.0</priority>");
+    expect(paginas?.conteudo).toContain("<changefreq>weekly</changefreq>");
+  });
+
   it("recusa entrada que já é um índice, para rodar duas vezes não picotar", () => {
     const indice = `${PROLOG}<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><sitemap><loc>https://movepark.co/sitemap-blog.xml</loc></sitemap></sitemapindex>`;
 

@@ -173,6 +173,7 @@ describe("buildPriceShowcase", () => {
       lowDaily: 21.12,
       highDaily: 119.2,
       offerCount: 4,
+      porDuracao: totais,
     });
   });
 
@@ -185,7 +186,16 @@ describe("buildPriceShowcase", () => {
       { days: 15, total: 388.5 },
       { days: 30, total: 777 },
     ]);
-    expect(s).toEqual({ lowDaily: 25.9, highDaily: 26.9, offerCount: 3 });
+    expect(s).toEqual({
+      lowDaily: 25.9,
+      highDaily: 26.9,
+      offerCount: 3,
+      porDuracao: [
+        { days: 7, total: 188.3 },
+        { days: 15, total: 388.5 },
+        { days: 30, total: 777 },
+      ],
+    });
   });
 
   it("tabela plana devolve faixa de um valor só", () => {
@@ -193,7 +203,15 @@ describe("buildPriceShowcase", () => {
       { days: 7, total: 195.3 },
       { days: 15, total: 418.5 },
     ]);
-    expect(s).toEqual({ lowDaily: 27.9, highDaily: 27.9, offerCount: 2 });
+    expect(s).toEqual({
+      lowDaily: 27.9,
+      highDaily: 27.9,
+      offerCount: 2,
+      porDuracao: [
+        { days: 7, total: 195.3 },
+        { days: 15, total: 418.5 },
+      ],
+    });
   });
 
   it("sem nenhuma duração com preço, não há faixa", () => {

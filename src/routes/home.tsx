@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { organizationSchema } from "@/lib/jsonld";
+import { organizationSchema, webSiteSchema } from "@/lib/jsonld";
 import { Hero } from "@/features/home/Hero";
 import { DestinationsGallery } from "@/features/home/DestinationsGallery";
 import { FeaturedParkingLots } from "@/features/home/FeaturedParkingLots";
@@ -31,6 +31,8 @@ export default function HomePage() {
         {/* A entidade Movepark: âncora do knowledge panel e da desambiguação de
             marca nos LLMs, no dado estruturado da porta de entrada do site. */}
         <script type="application/ld+json">{JSON.stringify(organizationSchema())}</script>
+        {/* SearchAction: ensina buscador e agente a montar /search?dest=GRU. */}
+        <script type="application/ld+json">{JSON.stringify(webSiteSchema())}</script>
       </Helmet>
       <Hero />
       <FeaturedParkingLots />

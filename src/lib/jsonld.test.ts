@@ -12,6 +12,10 @@ import {
   localBusinessSchema,
   productOfferSchema,
   youTubeVideoSchema,
+  datasetSchema,
+  organizationSchema,
+  webApplicationSchema,
+  webSiteSchema,
 } from "./jsonld";
 
 type Overrides = {
@@ -255,7 +259,17 @@ describe("productOfferSchema · nó sem nada que qualifique", () => {
  * faixa do motor devolve o `Product` válido com o mesmo número que o card mostra.
  */
 describe("productOfferSchema · faixa do motor de preço", () => {
-  const faixa = { lowDaily: 21.12, highDaily: 119.2, offerCount: 4 };
+  const faixa = {
+    lowDaily: 21.12,
+    highDaily: 119.2,
+    offerCount: 4,
+    porDuracao: [
+      { days: 1, total: 119.2 },
+      { days: 7, total: 475.23 },
+      { days: 15, total: 554.4 },
+      { days: 30, total: 633.6 },
+    ],
+  };
 
   it("publica AggregateOffer com a faixa de diária, mesmo com base_price zero", () => {
     const s = produto(makeListing({ base_price: 0, checkout_mode: "external" }), [], {
@@ -596,5 +610,84 @@ describe("youTubeVideoSchema", () => {
   it("duração é opcional e some quando não vem", () => {
     const semDuracao = { ...base, duration: undefined };
     expect(youTubeVideoSchema(semDuracao).duration).toBeUndefined();
+  });
+});
+
+describe("escada de preço no AggregateOffer", () => {
+  it("emite UnitPriceSpecification por janela de diárias, com a faixa elegível", () => {
+    // O fixture `faixa` acima tem porDuracao 1/7/15/30. A escada vira 4 degraus:
+    // 1 a 6 dias na diária avulsa, 7 a 14, 15 a 29 e 30 sem teto.
+    const escadaCompleta = {
+      lowDaily: 21.12,
+      highDaily: 119.2,
+      offerCount: 4,
+      porDuracao: [
+        { days: 1, total: 119.2 },
+        { days: 7, total: 475.23 },
+        { days: 15, total: 554.4 },
+        { days: 30, total: 633.6 },
+      ],
+    };
+    const schema = productOfferSchema(makeListing({ checkout_mode: "hub" }), [], {
+      showcase: escadaCompleta,
+    });
+    const escada = schema?.offers?.priceSpecification;
+    expect(escada).toHaveLength(4);
+    expect(escada?.[0]).toMatchObject({
+      "@type": "UnitPriceSpecification",
+      price: "119.20",
+      priceCurrency: "BRL",
+      eligibleQuantity: { minValue: 1, maxValue: 6 },
+    });
+    expect(escada?.[3]).toMatchObject({
+      price: "21.12",
+      eligibleQuantity: { minValue: 30 },
+    });
+    expect(escada?.[3]?.eligibleQuantity?.maxValue).toBeUndefined();
+  });
+
+  it("tabela de degrau único fica sem escada: faixa sozinha já diz tudo", () => {
+    const schema = productOfferSchema(makeListing({ checkout_mode: "hub" }), [], {
+      showcase: { lowDaily: 27.9, highDaily: 27.9, offerCount: 1, porDuracao: [{ days: 7, total: 195.3 }] },
+    });
+    expect(schema?.offers?.priceSpecification).toBeUndefined();
+  });
+});
+
+describe("organizationSchema", () => {
+  it("carrega as redes oficiais, o contato e o slogan da garantia", () => {
+    const s = organizationSchema();
+    expect(s.sameAs).toContain("https://www.instagram.com/moveparkestacionamento");
+    expect(s.contactPoint).toMatchObject({ "@type": "ContactPoint", email: "contato@movepark.co" });
+    expect(s.slogan).toBe("Vaga garantida ou realocamos e cobrimos a diferença.");
+  });
+});
+
+describe("webSiteSchema", () => {
+  it("ensina a montar a busca com o mesmo parâmetro que o app usa", () => {
+    const s = webSiteSchema();
+    expect(s.potentialAction.target.urlTemplate).toContain("/search?dest={dest}");
+    expect(s.potentialAction["query-input"]).toBe("required name=dest");
+  });
+});
+
+describe("datasetSchema", () => {
+  it("licencia o índice como CC-BY, grátis, com a data do build", () => {
+    const s = datasetSchema({ dateModified: "2026-08-26" });
+    expect(s.license).toBe("https://creativecommons.org/licenses/by/4.0/");
+    expect(s.isAccessibleForFree).toBe(true);
+    expect(s.dateModified).toBe("2026-08-26");
+    expect(s.distribution?.map((d: { contentUrl: string }) => d.contentUrl)).toContain(
+      "https://movepark.co/llms-full.txt",
+    );
+  });
+});
+
+describe("webApplicationSchema", () => {
+  it("declara a ferramenta grátis, de viagem, em português", () => {
+    const s = webApplicationSchema({ name: "Calculadora", url: "https://movepark.co/x", description: "d" });
+    expect(s.applicationCategory).toBe("TravelApplication");
+    expect(s.offers).toMatchObject({ price: "0" });
+    expect(s.inLanguage).toBe("pt-BR");
   });
 });

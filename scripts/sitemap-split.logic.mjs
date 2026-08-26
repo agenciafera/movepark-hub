@@ -59,6 +59,48 @@ function maisRecente(blocos) {
 }
 
 /**
+ * `changefreq` e `priority` por seção, calibrados pelo valor comercial e pelo
+ * ritmo real de mudança: preço muda com a tabela do parceiro (weekly), FAQ e
+ * blog mudam por edição (monthly), institucional quase nunca. O buscador trata
+ * os dois campos como dica, não ordem; o ganho é o crawler priorizar as páginas
+ * de dinheiro sem precisar descobrir isso sozinho.
+ */
+const DICAS_POR_SECAO = {
+  destinos: { changefreq: "weekly", priority: "0.9" },
+  precos: { changefreq: "weekly", priority: "0.9" },
+  "mais-barato": { changefreq: "weekly", priority: "0.9" },
+  unidades: { changefreq: "weekly", priority: "0.8" },
+  faq: { changefreq: "monthly", priority: "0.7" },
+  blog: { changefreq: "monthly", priority: "0.7" },
+  estacionamentos: { changefreq: "monthly", priority: "0.6" },
+  paginas: { changefreq: "monthly", priority: "0.6" },
+};
+
+/** A home é a exceção da seção `paginas`: raiz do site, prioridade máxima. */
+const DICA_DA_HOME = { changefreq: "weekly", priority: "1.0" };
+
+/**
+ * Aplica changefreq/priority da seção ao bloco `<url>`, sobrescrevendo o que o
+ * plugin emitiu: o vite-plugin-sitemap carimba `daily`/`1.0` uniforme em todas
+ * as URLs, e dica igual pra tudo é o mesmo que dica nenhuma. O mapa por seção é
+ * a autoridade.
+ */
+function comDicas(bloco, pathname, secao) {
+  const dica = pathname === "/" ? DICA_DA_HOME : DICAS_POR_SECAO[secao];
+  if (!dica) return bloco;
+  let out = bloco
+    .replace(/<changefreq>[^<]*<\/changefreq>/, `<changefreq>${dica.changefreq}</changefreq>`)
+    .replace(/<priority>[^<]*<\/priority>/, `<priority>${dica.priority}</priority>`);
+  if (!out.includes("<changefreq>")) {
+    out = out.replace("</url>", `<changefreq>${dica.changefreq}</changefreq></url>`);
+  }
+  if (!out.includes("<priority>")) {
+    out = out.replace("</url>", `<priority>${dica.priority}</priority></url>`);
+  }
+  return out;
+}
+
+/**
  * @param {string} xml conteúdo do `dist/sitemap.xml` já corrigido pelo canonicalize
  * @param {Record<string, string[]>} mapaDeSecoes seção → paths, emitido pelo vite.config.ts
  */
@@ -102,13 +144,13 @@ export function dividirSitemap(xml, mapaDeSecoes) {
 
     const secao = secaoPorPath.get(chave(url.pathname));
     if (secao) {
-      porSecao.get(secao).push(bloco);
+      porSecao.get(secao).push(comDicas(bloco, url.pathname, secao));
       continue;
     }
     // URL que o plugin descobriu sozinho varrendo o dist atrás de HTML. Vai para `paginas`
     // e é reportada; quem cobra decisão explícita é o src/lib/sitemapRoutes.test.ts.
     orfas.push(url.pathname);
-    porSecao.get("paginas").push(bloco);
+    porSecao.get("paginas").push(comDicas(bloco, url.pathname, "paginas"));
   }
 
   const arquivos = [...porSecao.entries()]
