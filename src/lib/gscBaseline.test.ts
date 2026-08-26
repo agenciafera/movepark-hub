@@ -7,6 +7,8 @@ import { describe, expect, it } from "vitest";
 // Ver docs/specs/baseline-search-console.md.
 import {
   aeroportoDaConsulta,
+  emPtBr,
+  escaparPipe,
   aeroportoDaUrl,
   classificarConsultas,
   clustersDaConsulta,
@@ -162,5 +164,23 @@ describe("numero", () => {
   it("devolve vazio no lugar de null, para o CSV não imprimir a palavra null", () => {
     expect(numero(null)).toBe("");
     expect(numero(3.14159, 2)).toBe("3.14");
+  });
+});
+
+describe("emPtBr", () => {
+  it("formata para leitura humana, com vírgula decimal e ponto de milhar", () => {
+    expect(emPtBr(46380)).toBe("46.380");
+    expect(emPtBr(6.24, 1)).toBe("6,2");
+  });
+
+  it("devolve vazio no lugar de null, para a célula sair sem número em vez de com null", () => {
+    expect(emPtBr(null, 1)).toBe("");
+  });
+});
+
+describe("escaparPipe", () => {
+  it("neutraliza o pipe, que deslocaria as colunas da tabela markdown", () => {
+    // Consulta de busca com pipe existe, e uma linha deslocada estraga a leitura do resumo.
+    expect(escaparPipe("estacionamento gru | barato")).toBe("estacionamento gru \\| barato");
   });
 });

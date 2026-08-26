@@ -82,3 +82,5 @@ export function classificarConsultas(
 ): ConsultaClassificada[];
 export function paraCsv<T>(colunas: ColunaDeCsv<T>[], linhas: T[]): string;
 export function numero(valor: number | null | undefined, casas?: number): string;
+export function emPtBr(valor: number | null | undefined, casas?: number): string;
+export function escaparPipe(texto: unknown): string;

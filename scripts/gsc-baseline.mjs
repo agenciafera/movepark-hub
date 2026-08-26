@@ -28,6 +28,8 @@ import {
   CLUSTERS,
   aeroportoDaUrl,
   classificarConsultas,
+  emPtBr,
+  escaparPipe,
   janelaDe16Meses,
   numero,
   paraCsv,
@@ -130,8 +132,10 @@ async function consultar({ token, propriedade, inicio, fim, dimensoes }) {
     }
     const pagina = dados.rows ?? [];
     linhas.push(...pagina);
-    process.stdout.write(`  ${dimensoes.join("+")}: ${linhas.length} linhas\r`);
     if (pagina.length < LIMITE_POR_PAGINA) break;
+    // Só reescreve a linha enquanto há página pela frente: com `\r` num log redirecionado a
+    // contagem parcial ficaria colada na final, como se fossem duas medições.
+    process.stdout.write(`  ${dimensoes.join("+")}: ${linhas.length} linhas...\r`);
   }
   process.stdout.write(`  ${dimensoes.join("+")}: ${linhas.length} linhas\n`);
   return linhas;
@@ -149,7 +153,7 @@ function resumoEmMarkdown({ propriedade, inicio, fim, recorte, consultas, pagina
   const porAeroporto = AEROPORTOS.map((aeroporto) => {
     const linhas = CLUSTERS.map((cluster) => {
       const c = recorte.find((r) => r.aeroporto === aeroporto.code && r.cluster === cluster.id);
-      return `| ${cluster.nome} | ${c.consultas} | ${c.cliques} | ${c.impressoes} | ${numero(c.posicao, 1) || "sem impressão"} |`;
+      return `| ${cluster.nome} | ${emPtBr(c.consultas)} | ${emPtBr(c.cliques)} | ${emPtBr(c.impressoes)} | ${emPtBr(c.posicao, 1) || "sem impressão"} |`;
     });
     const top = recorte
       .filter((r) => r.aeroporto === aeroporto.code)
@@ -158,7 +162,7 @@ function resumoEmMarkdown({ propriedade, inicio, fim, recorte, consultas, pagina
       .slice(0, 15)
       .map(
         (t) =>
-          `| ${t.consulta} | ${t.cluster} | ${t.clicks} | ${t.impressions} | ${numero(t.position, 1)} |`,
+          `| ${escaparPipe(t.consulta)} | ${t.cluster} | ${emPtBr(t.clicks)} | ${emPtBr(t.impressions)} | ${emPtBr(t.position, 1)} |`,
       );
     return [
       `### ${aeroporto.nome}`,
@@ -181,7 +185,7 @@ function resumoEmMarkdown({ propriedade, inicio, fim, recorte, consultas, pagina
     .slice(0, 30)
     .map((p) => {
       const url = p.keys[0];
-      return `| ${url} | ${aeroportoDaUrl(url) ?? "-"} | ${p.clicks} | ${p.impressions} | ${numero(p.position, 1)} |`;
+      return `| ${escaparPipe(url)} | ${aeroportoDaUrl(url) ?? "-"} | ${emPtBr(p.clicks)} | ${emPtBr(p.impressions)} | ${emPtBr(p.position, 1)} |`;
     });
 
   return [
@@ -194,11 +198,11 @@ function resumoEmMarkdown({ propriedade, inicio, fim, recorte, consultas, pagina
     "",
     "## Total da propriedade",
     "",
-    `- Consultas distintas: **${consultas.length.toLocaleString("pt-BR")}**`,
-    `- Páginas distintas: **${paginas.length.toLocaleString("pt-BR")}**`,
-    `- Cliques: **${consultas.reduce((s, l) => s + l.clicks, 0).toLocaleString("pt-BR")}**`,
-    `- Impressões: **${consultas.reduce((s, l) => s + l.impressions, 0).toLocaleString("pt-BR")}**`,
-    `- Posição média (ponderada por impressão): **${numero(posicaoPonderada(consultas), 1)}**`,
+    `- Consultas distintas: **${emPtBr(consultas.length)}**`,
+    `- Páginas distintas: **${emPtBr(paginas.length)}**`,
+    `- Cliques: **${emPtBr(consultas.reduce((s, l) => s + l.clicks, 0))}**`,
+    `- Impressões: **${emPtBr(consultas.reduce((s, l) => s + l.impressions, 0))}**`,
+    `- Posição média (ponderada por impressão): **${emPtBr(posicaoPonderada(consultas), 1)}**`,
     "",
     "## Recorte dos 3 clusters de cabeça nos 4 aeroportos da onda 1",
     "",

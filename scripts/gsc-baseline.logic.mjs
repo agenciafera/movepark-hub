@@ -195,3 +195,20 @@ export function paraCsv(colunas, linhas) {
 export function numero(valor, casas = 2) {
   return valor === null || valor === undefined || Number.isNaN(valor) ? "" : valor.toFixed(casas);
 }
+
+/**
+ * Número em pt-BR, para o resumo em markdown. Só o resumo: o CSV fica com ponto decimal e sem
+ * separador de milhar, porque quem abre CSV é planilha e script, não gente.
+ */
+export function emPtBr(valor, casas = 0) {
+  if (valor === null || valor === undefined || Number.isNaN(valor)) return "";
+  return valor.toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas });
+}
+
+/**
+ * Neutraliza o pipe dentro de célula de tabela markdown. Consulta de busca e URL trazem pipe, e
+ * um pipe cru desloca todas as colunas da linha para a direita.
+ */
+export function escaparPipe(texto) {
+  return String(texto ?? "").replace(/\|/g, "\\|");
+}
