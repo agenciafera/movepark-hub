@@ -226,3 +226,36 @@ describe("marketing ocupa uma linha do menu do manager", () => {
     expect(topo.filter((r) => r.startsWith("/manager/marketing"))).toEqual(["/manager/marketing"]);
   });
 });
+
+describe("item externo", () => {
+  const comExterno: NavSection<null>[] = [
+    {
+      title: "Conta",
+      items: [
+        { to: "/manager/settings", label: "Configurações", icon: null },
+        { to: "studio", label: "Studio dos agentes", icon: null, externo: true },
+      ],
+    },
+  ];
+
+  it("fica fora da barra inferior, inclusive do Mais", () => {
+    // A barra inferior renderiza link de rota. `to: "studio"` não é rota, e apareceria
+    // como link quebrado no celular.
+    const { primary, more } = buildBottomNav(comExterno, () => true, ["/manager/settings"]);
+    const todos = [...primary, ...more.flatMap((s) => s.items)].map((i) => i.to);
+    expect(todos).toContain("/manager/settings");
+    expect(todos).not.toContain("studio");
+  });
+
+  it("continua visível na sidebar", () => {
+    // `flattenSections` alimenta a sidebar: lá o item existe e vira botão.
+    expect(flattenSections(comExterno).map((i) => i.to)).toContain("studio");
+  });
+
+  it("o menu do manager declara o Studio como externo", () => {
+    const studio = managerSections
+      .flatMap((s) => s.items)
+      .find((i) => i.label === "Studio dos agentes");
+    expect(studio?.externo).toBe(true);
+  });
+});

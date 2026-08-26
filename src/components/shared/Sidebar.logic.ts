@@ -9,6 +9,15 @@ export type NavItem<I> = {
   /** Escopo exigido pra exibir o item (ADR-005). Ausente = visível a todos os membros. */
   scope?: string;
   /**
+   * Item que sai do app em vez de navegar: abre em aba nova, e o `to` deixa de ser rota.
+   *
+   * Existe para ferramenta que mora fora do Hub e ainda assim é trabalho de quem está
+   * aqui dentro (hoje, o Studio do Mastra). Fica de fora da barra inferior do mobile:
+   * ela é para as áreas do dia a dia, e link externo em barra de 5 ícones rouba lugar de
+   * quem é usado toda hora.
+   */
+  externo?: boolean;
+  /**
    * Subitens. Quando presente, o item vira um grupo que abre e fecha na sidebar, e o `to` dele é
    * só o destino padrão (o primeiro filho), não um link próprio.
    *
@@ -76,7 +85,13 @@ export function buildBottomNav<I>(
   primaryPaths: string[],
   maxPrimary = 4,
 ): { primary: NavItem<I>[]; more: NavSection<I>[] } {
-  const visible = filterSectionsByScopes(sections, hasScope);
+  // Item externo fica fora da barra inferior inteira, inclusive do "Mais": ela renderiza
+  // link de rota, e `to` de item externo não é rota. Ele vive só na sidebar, que sabe
+  // abri-lo em aba nova.
+  const visible = filterSectionsByScopes(sections, hasScope).map((section) => ({
+    ...section,
+    items: section.items.filter((item) => !item.externo),
+  }));
   const all = flattenSections(visible);
 
   const primary = primaryPaths

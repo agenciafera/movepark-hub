@@ -1,6 +1,8 @@
 import * as React from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Buildings, CaretRight, ShieldWarning } from "@phosphor-icons/react";
+import { toast } from "sonner";
+import { abrirStudio } from "@/features/studio/api";
+import { ArrowSquareOut, Buildings, CaretRight, ShieldWarning } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/context";
 import { usePendingPartnerCount } from "@/features/onboarding/managerApi";
@@ -24,6 +26,31 @@ function NavRow({
   nested?: boolean;
   end?: boolean;
 }) {
+  // Item externo não navega: abre outra aba. Mesmo desenho da linha, para não parecer
+  // outra coisa, e um `title` que avisa o destino antes do clique.
+  if (item.externo) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          void abrirStudio().catch((erro) => {
+            toast.error(
+              erro instanceof Error && erro.message
+                ? erro.message
+                : "Não consegui abrir o Studio agora.",
+            );
+          });
+        }}
+        title={`${item.label} (abre em nova aba)`}
+        className="relative flex w-full items-center gap-3 rounded-sm px-3 py-2.5 text-left text-body-sm font-medium text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white"
+      >
+        <item.icon className="h-4 w-4 shrink-0" />
+        <span className="hidden desktop:inline">{item.label}</span>
+        <ArrowSquareOut className="ml-auto hidden h-3.5 w-3.5 shrink-0 opacity-50 desktop:inline" />
+      </button>
+    );
+  }
+
   return (
     <NavLink
       to={item.to}

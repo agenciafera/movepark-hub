@@ -5,7 +5,7 @@
 // de flexibilidade Básica/Flex/Superflex da Movepark, editadas só pelo Super Admin no /manager
 // (a unidade não toca nelas). Cada item tem um ícone próprio: em tablet a sidebar é só-ícone.
 
-import { Airplane, Article, Bank, Buildings, Calendar, CalendarBlank, ChartBar, ChartPie, CurrencyCircleDollar, Gear, Handshake, Kanban, Key, LockKey, MapPin, MapPinArea, MapTrifold, Megaphone, PaperPlaneTilt, Percent, Question, Receipt, Scroll, ShieldCheck, Sparkle, SquaresFour, Star, Tag, Users, UsersThree, Wallet } from "@phosphor-icons/react";
+import { Airplane, Article, Bank, Buildings, Calendar, CalendarBlank, ChartBar, ChartPie, CurrencyCircleDollar, Gear, Handshake, Kanban, Key, LockKey, MapPin, MapPinArea, MapTrifold, Megaphone, PaperPlaneTilt, Percent, Question, Receipt, Robot, Scroll, ShieldCheck, Sparkle, SquaresFour, Star, Tag, Users, UsersThree, Wallet } from "@phosphor-icons/react";
 import type { NavItem, NavSection } from "./Sidebar.logic";
 
 export type NavIcon = React.ComponentType<{ className?: string }>;
@@ -63,6 +63,9 @@ export const managerSections: Section[] = [
       { to: "/manager/users", label: "Usuários", icon: Users },
       { to: "/manager/legal", label: "Documentos legais", icon: Scroll },
       { to: "/manager/api-interna", label: "API interna", icon: LockKey },
+      // Externo: o Studio é outro worker. Ver `features/studio/api.ts` para por que o
+      // token não pode vir do bundle.
+      { to: "studio", label: "Studio dos agentes", shortLabel: "Studio", icon: Robot, externo: true },
       { to: "/manager/settings", label: "Configurações", icon: Gear },
     ],
   },
