@@ -8,7 +8,7 @@ export default function ManagerLayout() {
   return (
     <ManagerFilterProvider>
       <AppShell variant="manager" brandTitle="Backoffice" />
-      {/* Ferramenta de time: só aparece para hub_admin e só com VITE_MIA_URL. */}
+      {/* Ferramenta de time: só aparece para hub_admin. A conversa passa pela Edge `mia-chat`. */}
       <MiaTestWidget />
     </ManagerFilterProvider>
   );

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/context";
 import { Bubble } from "@/features/assistant/ChatBubble";
 import { appendMessage, canSend, type ChatMessage } from "@/features/assistant/chat.logic";
-import { MIA_URL, miaConfigurada, useEnviarParaMia } from "./api";
+import { useEnviarParaMia } from "./api";
 
 /**
  * Bolinha de teste da Mia, dentro do Backoffice.
@@ -13,11 +13,12 @@ import { MIA_URL, miaConfigurada, useEnviarParaMia } from "./api";
  * sem precisar de um número real e sem passar pela Evolution. Por isso ela é
  * explícita em dizer que é teste, em vez de imitar a experiência do cliente.
  *
- * Só aparece para `hub_admin` e só quando existe `VITE_MIA_URL`. Sem a variável não
- * há botão: bolinha que só sabe dar erro é pior que bolinha nenhuma.
+ * Só aparece para `hub_admin`. A conversa passa pela Edge `mia-chat`, que confere o
+ * papel no servidor e guarda o token do Mastra: o navegador nunca fala com o BeastBots
+ * direto, e nunca escolhe de quem é o telefone da conversa.
  */
 export function MiaTestWidget() {
-  const { effectiveRole, session } = useAuth();
+  const { effectiveRole } = useAuth();
   const [open, setOpen] = React.useState(false);
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
   /**
@@ -34,13 +35,13 @@ export function MiaTestWidget() {
   const fim = React.useRef<HTMLDivElement>(null);
 
   // A memória é por usuário para dois testadores não dividirem a mesma conversa.
-  const enviar = useEnviarParaMia(session?.userId ?? "anon", session?.fullName ?? null);
+  const enviar = useEnviarParaMia();
 
   React.useEffect(() => {
     fim.current?.scrollIntoView({ block: "end" });
   }, [messages, enviar.isPending]);
 
-  if (effectiveRole !== "hub_admin" || !miaConfigurada()) return null;
+  if (effectiveRole !== "hub_admin") return null;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -114,7 +115,7 @@ export function MiaTestWidget() {
         {enviar.isPending ? <p className="text-body-sm text-muted">Mia está pensando…</p> : null}
         {erro ? (
           <p className="rounded-sm bg-red-50 px-3 py-2 text-body-sm text-red-700">
-            {erro} <span className="block text-muted">({MIA_URL})</span>
+            {erro}
           </p>
         ) : null}
         <div ref={fim} />

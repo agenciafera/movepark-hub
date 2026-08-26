@@ -3,8 +3,12 @@ import { render, renderHook, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as auth from "@/auth/context";
 import { MiaTestWidget } from "./MiaTestWidget";
-import { identidadeDeTeste, useEnviarParaMia } from "./api";
-import * as api from "./api";
+// `vi.hoisted` porque o `vi.mock` sobe para o topo do arquivo, acima de qualquer const:
+// sem isto, a fábrica roda antes de `invoke` existir.
+const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
+vi.mock("@/lib/supabase", () => ({ supabase: { functions: { invoke } } }));
+
+import { useEnviarParaMia } from "./api";
 
 function wrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -18,26 +22,23 @@ const comPapel = (effectiveRole: string | null) =>
     isLoading: false,
   } as never);
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  invoke.mockReset();
+});
 
 describe("bolinha de teste da Mia", () => {
   it("não aparece para quem não é hub_admin", () => {
     comPapel("company_operator");
-    vi.spyOn(api, "miaConfigurada").mockReturnValue(true);
     render(<MiaTestWidget />, { wrapper });
     expect(screen.queryByLabelText("Testar a Mia")).toBeNull();
   });
 
-  it("não aparece sem a Mia configurada, em vez de virar botão que só erra", () => {
+  it("aparece para hub_admin", () => {
+    // Antes havia um segundo portão, o `VITE_MIA_URL`, porque a Mia só existia no
+    // localhost de quem testava. Com a Edge no meio ela existe sempre, e o portão
+    // virava só uma forma de a bolinha sumir em produção sem ninguém entender.
     comPapel("hub_admin");
-    vi.spyOn(api, "miaConfigurada").mockReturnValue(false);
-    render(<MiaTestWidget />, { wrapper });
-    expect(screen.queryByLabelText("Testar a Mia")).toBeNull();
-  });
-
-  it("aparece para hub_admin com a Mia configurada", () => {
-    comPapel("hub_admin");
-    vi.spyOn(api, "miaConfigurada").mockReturnValue(true);
     render(<MiaTestWidget />, { wrapper });
     expect(screen.getByLabelText("Testar a Mia")).toBeTruthy();
   });
@@ -47,12 +48,15 @@ describe("as tools ficam fora do texto do agente", () => {
   it("a resposta guardada é exatamente o que o cliente leria", async () => {
     // A primeira versão concatenava `_tools: ..._` na fala. Num teste isso engana:
     // o que você lê deixa de ser o que o cliente leria.
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(
-        JSON.stringify({ text: "Vaga coberta custa R$ 144,50.", steps: [{ toolCalls: [{ payload: { toolName: "consultar_preco" } }] }] }),
-      ) as never,
-    );
-    const { result } = renderHook(() => useEnviarParaMia("u1", null), { wrapper });
+    invoke.mockReset();
+    invoke.mockResolvedValue({
+      data: {
+        text: "Vaga coberta custa R$ 144,50.",
+        steps: [{ toolCalls: [{ payload: { toolName: "consultar_preco" } }] }],
+      },
+      error: null,
+    });
+    const { result } = renderHook(() => useEnviarParaMia(), { wrapper });
     const r = await result.current.mutateAsync([{ role: "user", text: "x" }]);
     expect(r.reply).toBe("Vaga coberta custa R$ 144,50.");
     expect(r.reply).not.toContain("tools");
@@ -60,65 +64,41 @@ describe("as tools ficam fora do texto do agente", () => {
   });
 });
 
-describe("identidade de teste", () => {
-  it("NÃO usa telefone real, porque a Mia trata o número como prova de posse", () => {
-    // D43: o telefone da conversa é o que autoriza consultar reserva. Um número real
-    // aqui devolveria a reserva daquela pessoa, com placa e voucher, dentro do
-    // Backoffice.
-    expect(identidadeDeTeste("u1", "Kallef").requestContext["movepark.customerPhone"]).toBe(
-      "5500000000000",
-    );
-  });
-
-  it("usa uma das origens que o white-label aceita", () => {
-    // O WL só conhece reserva-online, whatsapp-bot e webchat-bot, e não muda do nosso
-    // lado. A bolinha fecha reserva de verdade, entao mandar valor fora dessa lista
-    // faria a reserva falhar no parceiro em vez de no nosso código.
-    expect(["reserva-online", "whatsapp-bot", "webchat-bot"]).toContain(
-      identidadeDeTeste("u1", null).requestContext["movepark.origin"],
-    );
-  });
-
-  it("separa a memória por usuário, para dois testadores não dividirem a conversa", () => {
-    expect(identidadeDeTeste("u1", null).memory.thread).not.toBe(
-      identidadeDeTeste("u2", null).memory.thread,
-    );
-  });
-
-  it("respeita o prefixo que o guarda de namespace do BeastBots exige", () => {
-    const { memory } = identidadeDeTeste("u1", null);
-    expect(memory.resource.startsWith("movepark-hub:")).toBe(true);
-    expect(memory.thread.startsWith("movepark-hub:")).toBe(true);
-  });
-});
+// Os invariantes da identidade (telefone falso, origem aceita pelo WL, memória por
+// usuário, prefixo do namespace) moraram aqui enquanto o navegador os montava. Agora
+// quem monta é a Edge `mia-chat`, e os testes foram junto, em
+// supabase/functions/mia-chat/index.test.ts. Testar aqui daria falsa sensação de
+// proteção: o valor que vale é o que a Edge manda, não o que o front sugere.
 
 describe("useEnviarParaMia", () => {
-  const responder = (body: unknown, status = 200) =>
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(JSON.stringify(body), { status }) as never,
-    );
+  const responder = (data: unknown, error: unknown = null) => {
+    invoke.mockReset();
+    invoke.mockResolvedValue({ data, error });
+    return invoke;
+  };
 
-  it("manda o histórico no formato do Mastra, com contexto e memória", async () => {
+  it("manda o histórico no formato do Mastra, e SÓ o histórico", async () => {
+    // O corpo carrega apenas `messages`. Se um dia voltar a levar `requestContext`, um
+    // admin poderia trocar o telefone e puxar a reserva de um cliente de verdade.
     const f = responder({ text: "oi" });
-    const { result } = renderHook(() => useEnviarParaMia("u1", "Kallef"), { wrapper });
+    const { result } = renderHook(() => useEnviarParaMia(), { wrapper });
     await result.current.mutateAsync([{ role: "user", text: "ola" }]);
 
-    const corpo = JSON.parse((f.mock.calls[0][1] as RequestInit).body as string);
-    // `model` é o nome do papel no nosso estado; o Mastra espera `assistant`.
-    expect(corpo.messages).toEqual([{ role: "user", content: "ola" }]);
-    expect(corpo.requestContext["movepark.customerName"]).toBe("Kallef");
-    expect(corpo.memory.thread).toBe("movepark-hub:manager:u1:main");
+    const [nome, opts] = f.mock.calls[0] as [string, { body: Record<string, unknown> }];
+    expect(nome).toBe("mia-chat");
+    expect(opts.body.messages).toEqual([{ role: "user", content: "ola" }]);
+    expect(Object.keys(opts.body)).toEqual(["messages"]);
   });
 
   it("traduz o papel `model` para `assistant`", async () => {
     const f = responder({ text: "ok" });
-    const { result } = renderHook(() => useEnviarParaMia("u1", null), { wrapper });
+    const { result } = renderHook(() => useEnviarParaMia(), { wrapper });
     await result.current.mutateAsync([
       { role: "user", text: "a" },
       { role: "model", text: "b" },
     ]);
-    const corpo = JSON.parse((f.mock.calls[0][1] as RequestInit).body as string);
-    expect(corpo.messages.map((m: { role: string }) => m.role)).toEqual(["user", "assistant"]);
+    const [, opts] = f.mock.calls[0] as [string, { body: { messages: { role: string }[] } }];
+    expect(opts.body.messages.map((m) => m.role)).toEqual(["user", "assistant"]);
   });
 
   it("extrai as tools chamadas, que é metade do valor de testar aqui", async () => {
@@ -129,29 +109,32 @@ describe("useEnviarParaMia", () => {
         { toolCalls: [{ payload: { toolName: "consultar_preco" } }] },
       ],
     });
-    const { result } = renderHook(() => useEnviarParaMia("u1", null), { wrapper });
+    const { result } = renderHook(() => useEnviarParaMia(), { wrapper });
     const r = await result.current.mutateAsync([{ role: "user", text: "x" }]);
     expect(r.tools).toEqual(["hub_list_locations", "consultar_preco"]);
   });
 
   it("resposta sem texto não vira string vazia em silêncio", async () => {
     responder({ text: "   " });
-    const { result } = renderHook(() => useEnviarParaMia("u1", null), { wrapper });
+    const { result } = renderHook(() => useEnviarParaMia(), { wrapper });
     const r = await result.current.mutateAsync([{ role: "user", text: "x" }]);
     expect(r.reply).toContain("não respondeu");
   });
 
-  it("401 explica a causa real, que é o token do Mastra fora do navegador", async () => {
-    responder({}, 401);
-    const { result } = renderHook(() => useEnviarParaMia("u1", null), { wrapper });
-    await expect(result.current.mutateAsync([{ role: "user", text: "x" }])).rejects.toThrow(/401/);
+  it("mostra a mensagem que a Edge deu, e não o erro genérico do cliente", async () => {
+    // "FunctionsHttpError" não ajuda ninguém. "Acesso restrito" diz o que aconteceu.
+    responder(null, { context: { json: async () => ({ error: "Acesso restrito." }) } });
+    const { result } = renderHook(() => useEnviarParaMia(), { wrapper });
+    await expect(result.current.mutateAsync([{ role: "user", text: "x" }])).rejects.toThrow(
+      /Acesso restrito/,
+    );
   });
 
-  it("erro de rede diz onde ela deveria estar rodando", async () => {
-    responder({}, 502);
-    const { result } = renderHook(() => useEnviarParaMia("u1", null), { wrapper });
+  it("erro sem corpo ainda vira uma frase, nunca silêncio", async () => {
+    responder(null, new Error("Failed to fetch"));
+    const { result } = renderHook(() => useEnviarParaMia(), { wrapper });
     await waitFor(async () => {
-      await expect(result.current.mutateAsync([{ role: "user", text: "x" }])).rejects.toThrow(/502/);
+      await expect(result.current.mutateAsync([{ role: "user", text: "x" }])).rejects.toThrow();
     });
   });
 });
