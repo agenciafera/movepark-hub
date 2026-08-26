@@ -24,6 +24,7 @@
     "lint:openapi": "node scripts/check-openapi-drift.mjs",
     "lint:schema": "node scripts/audit-structured-data.mjs",
     "lint:edge-functions": "node scripts/check-edge-functions.mjs",
+    "seo:gsc-baseline": "node scripts/gsc-baseline.mjs",
     "test:windup": "windup run --all",
     "report:windup": "windup run --all --reporter json --base-url ${WINDUP_BASE_URL:-http://localhost:5173} && node scripts/windup-suite-report.mjs",
     "test:e2e": "NODE_OPTIONS=\"--import ./scripts/ws-polyfill.mjs\" playwright test",

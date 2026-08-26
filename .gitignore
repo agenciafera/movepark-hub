@@ -47,6 +47,11 @@ build/
 # centenas de MB e o dump tem dado de cliente. Ver docs/specs/plano-rollback-migracao.md.
 .wp-freeze-backup/
 
+# Chave da service account do Search Console. Guarde fora do repo (ex.: ~/.config/movepark/)
+# e aponte GSC_SERVICE_ACCOUNT_JSON para ela. O padrão aqui é a segunda barreira, caso alguém
+# copie a chave para dentro do projeto por engano.
+*service-account*.json
+
 # TypeScript build info
 *.tsbuildinfo
 
