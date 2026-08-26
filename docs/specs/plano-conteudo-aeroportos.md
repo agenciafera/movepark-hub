@@ -1,6 +1,6 @@
 # Plano de conteúdo: dominar a busca de estacionamento de aeroporto
 
-> **Status:** proposto em 25/08/2026 · **Escopo:** blog do `movepark.co` + Instagram
+> **Status:** proposto em 25/08/2026, revisado em 26/08/2026 (cabeça primeiro, praças divididas, Be Park em Confins)
 > **Aeroportos da onda 1:** Viracopos (VCP), Guarulhos (GRU), Afonso Pena (CWB), Confins (CNF)
 > **Meta:** ser a resposta que o Google mostra e a que a IA cita, para toda consulta de
 > estacionamento em aeroporto do Brasil.
@@ -53,17 +53,28 @@ não é "escrever mais sobre GRU", é **consolidar GRU e abrir CNF**.
 
 ### 1.3 O furo que precisa ser dito antes de tudo
 
-**Confins não tem nenhum parceiro cadastrado.** Zero unidades em `location`, seis lotes mapeados
-em `prospect_location`. Guarulhos tem 3 unidades listadas, Viracopos 2, Afonso Pena 2.
+**Confins tem parceiro fechado, o Be Park, e ele não está no sistema.** Em 26/08/2026 não existe
+empresa, unidade nem lote mapeado com esse nome no Hub: zero registros em `company`, `location` e
+`prospect_location`. Os seis lotes mapeados de Confins são Park Confins, IPO Park, Estacionamento
+Pátio, AeroPark Confins, Auto Park Brasil e Space Park.
 
-Isso não invalida o plano, muda o CTA. Em Confins o conteúdo alimenta a vitrine de lote mapeado
-(E0.17, `/destinos/aeroporto-de-confins`) e a captação de parceiro (`/seja-parceiro`), não a
-reserva. Ranquear em Confins antes de ter oferta é o caminho certo, porque a página pronta é o
-argumento comercial que fecha o parceiro. Mas **não escreva nenhuma promessa de reserva lá**: ADR-009
-proíbe, e a IA repetiria a promessa que a página não entrega.
+Pior: o Be Park **tinha página no site antigo**, em
+`/estacionamentos/aeroporto-confins/be-park-estacionamento-aeroporto-confins/`. Hoje essa URL
+responde 301 para `/destinos/aeroporto-de-confins`, uma página que não menciona o Be Park. Quem
+chega procurando por ele cai num lugar que não fala dele, o que perde busca de marca e perde
+conversão ao mesmo tempo.
 
-Ação de negócio associada: fechar pelo menos um parceiro em Confins até o fim da Fase 2, senão a
-Fase 3 de CNF entrega tráfego que não converte.
+Enquanto o cadastro não acontece, Confins é a única praça sem tarifa, sem distância medida e sem
+reserva. **É o primeiro entregável da Fase 0**, e sem ele metade da praça do Leonardo fica parada.
+
+Comparativo das quatro praças em 26/08/2026:
+
+| Praça | Parceiros no Hub | Menor semana publicada | Posts no acervo |
+|---|---|---|---|
+| Guarulhos | 3 | R$ 111,30 na descoberta | 36 |
+| Viracopos | 2 | R$ 174,30 na coberta | 26 |
+| Afonso Pena | 2 | R$ 118,30 na descoberta | 14 |
+| Confins | **0, com o Be Park pendente de cadastro** | sem número | 3 |
 
 ### 1.4 Quem já está na frente
 
@@ -84,7 +95,9 @@ de setor de terminal e de operação (tag, moto, mensalista) está **vazia**.
 
 ## 2. As quatro alavancas
 
-A ordem é a que foi pedida, e ela também é a ordem certa de esforço por retorno.
+São os quatro mecanismos que fazem a Movepark ser encontrada e citada. Eles não mudaram na revisão
+de 26/08/2026; o que mudou foi **a ordem de ataque**, que passou a começar pela cabeça da busca.
+A ordem de execução está em [3.2](#32-a-inversão-de-prioridade-e-o-que-ela-cobra).
 
 ### Alavanca 1: o bloco "As pessoas também perguntam"
 
@@ -232,89 +245,114 @@ quando dá problema ganha essa consulta.
 
 ---
 
-## 3. As fases
+## 3. As praças e as fases
 
-Cada fase tem entrega fechada, e a seguinte só começa quando a anterior está publicada. O ritmo
-proposto é de **2 blogposts por semana** e **4 posts de Instagram por semana**, sustentável por uma
-pessoa com apoio de IA.
+### 3.1 Quem responde por quê
 
-### Fase 0: fundação e instrumentação (semana 1)
+A execução é dividida por praça, e cada pessoa responde pela cabeça, pela consolidação e pela FAQ
+do próprio aeroporto. O que é comum aos quatro, como schema e índice de preços, sai uma vez.
 
-Sem isto, o resto vira publicação às cegas.
-
-| Entrega | Detalhe |
-|---|---|
-| Baseline do Search Console | Exportar 16 meses por consulta e por página, congelar como marco zero |
-| Calibração de volume | Conta de Keyword Planner ligada, faixa de volume anexada aos 16 clusters |
-| Auditoria de canibalização | Rodar `grep -ril` no acervo por aeroporto, marcar cada post como manter, atualizar ou consolidar |
-| Decisão sobre os 33 posts não publicados | 95 posts existem, 69 estão publicados. Publicar, reescrever ou arquivar, um a um |
-| Painel de acompanhamento | Consulta, posição, impressão, clique e citação em IA, por semana |
-| Kit de marca do Instagram | Grid, tipografia grande, paleta violeta e navy, molde de carrossel e de reels |
-
-### Fase 1: dominar a pergunta (semanas 2 a 5)
-
-Alvo: bloco PAA e featured snippet nos 4 aeroportos.
-
-| Semana | Blogposts | FAQ novas |
+| Responsável | Praças | O que pesa nelas |
 |---|---|---|
-| 2 | Guarulhos: qual o melhor estacionamento, com critério aberto · Guarulhos: como pagar mais barato | 8 em GRU |
-| 3 | Viracopos: guia de preço 2026 (atualiza o post de abril) · Viracopos: qual o melhor | 8 em VCP |
-| 4 | Afonso Pena: quanto custa e como funciona · Afonso Pena: qual o mais barato | 8 em CWB |
-| 5 | Confins: guia completo de estacionamento (o post-âncora que falta) · Confins: quanto custa | 8 em CNF |
+| **Leonardo** | Viracopos (VCP) e Confins (CNF) | VCP tem a maior diferença de preço entre parceiros da rede, R$ 147,00 na semana. CNF depende do cadastro do Be Park e é o primeiro entregável dele |
+| **Diego** | Guarulhos (GRU) e Afonso Pena (CWB) | GRU concentra 141 dos 360 termos de cabeça e tem a maior consolidação a fazer, com 36 posts disputando as mesmas consultas. CWB tem o piso de três diárias nos dois parceiros |
 
-Regra de ouro da fase: **nenhum post novo sobre intenção já coberta**. Se o acervo já tem, atualiza
-o que existe e mantém o slug, porque slug publicado nunca muda.
+### 3.2 A inversão de prioridade e o que ela cobra
 
-### Fase 2: dominar o preço e a citação por IA (semanas 6 a 9)
+A primeira versão deste plano atacava a cauda longa primeiro, porque ela está vazia e é barata. A
+decisão do time em 26/08/2026 inverteu isso: **a cabeça vem primeiro**, nos clusters de preço,
+valor, diária, proximidade, barato, economia e desconto. São 360 dos 1.282 termos coletados, e é
+onde Bandeira Park e xpark já respondem.
 
-Alvo: entrar na lista de opções da visão geral de IA e do Modo IA.
+A inversão está adotada, e vale registrar o que ela cobra em troca. A cauda longa tolerava o acervo
+como está, porque cada post pegava uma intenção diferente. A cabeça não tolera: 36 posts sobre
+Guarulhos disputando a mesma consulta dividem sinal e nenhum chega ao topo. **A consolidação deixa
+de ser higiene e vira pré-requisito da Fase 1.**
 
-| Semana | Entrega |
+Ritmo proposto: **2 páginas por semana por pessoa** e **4 peças de Instagram por semana por praça**.
+
+### Fase 0: munição e medição (semana 1)
+
+| Entrega | Por quê | Quem |
+|---|---|---|
+| **Cadastrar o Be Park no Hub** | Sem ele Confins não tem tarifa, distância nem reserva | Leonardo |
+| **Mapa de canonicalização** | Definir, por aeroporto, qual URL ganha cada termo de cabeça e o que é redirecionado para ela | os dois |
+| Baseline do Search Console | 16 meses por consulta e por página, congelados como marco zero | os dois |
+| **Placar de citação em IA** | 12 consultas por mês em ChatGPT, Gemini, Perplexity e visão geral do Google, com print | os dois |
+| Bing Webmaster Tools | A busca do ChatGPT se apoia no índice da Microsoft, e ninguém checou se estamos lá | Diego |
+| Kit de marca do Instagram | Grid, tipografia grande, molde de carrossel e de reels | Diego |
+
+### Fase 1: uma URL por termo de cabeça (semanas 2 a 6)
+
+Três páginas canônicas por aeroporto, doze ao todo. Cada uma é dona de um cluster, e os posts que
+disputam a mesma consulta são redirecionados para ela.
+
+| Cluster | A página dona | O que ela precisa ter |
+|---|---|---|
+| preço, valor, diária | `/precos/<aeroporto>` reforçada, mais o post âncora de preço | Tabela por faixa de permanência, parceiros lado a lado, balcão contra online, data da tabela e método aberto |
+| barato, economia, desconto | `/estacionamento-mais-barato/<aeroporto>` | O menor total por duração, quanto se economiza contra o balcão, e o que se abre mão para chegar nele |
+| proximidade, perto, mais próximo | Post âncora de proximidade por aeroporto | Distância em km do motor, minutos de traslado, frequência da van e a conta do que a proximidade custa a mais |
+
+Regra da fase: **cada dona absorve de dois a seis posts existentes**, por 301. Slug publicado que
+vira redirect não é slug apagado, é slug que passou a apontar para quem responde melhor.
+
+### Fase 2: a camada de máquina (semanas 7 a 10)
+
+O que faz a IA preferir a Movepark quando duas fontes dizem a mesma coisa.
+
+| Entrega | Estado |
 |---|---|
-| 6 | Página comparativa por aeroporto com carimbo mensal, no molde que o Bandeira Park usa e o `/precos/<slug>` já sustenta, mais um post por aeroporto que cita cada parceiro no formato entidade mais número |
-| 7 | Guarulhos por terminal: T1, T2 e T3, com preço do edifício garagem e alternativa fora do aeroporto |
-| 8 | Confins por setor: P1, P3, E1 e E3 · Viracopos: bolsão F e edifício garagem |
-| 9 | Curitiba: áreas A, B e C · post transversal "dentro ou fora do aeroporto: a conta que decide" |
+| Bloco de fato padronizado por unidade: nome, km, minutos de traslado e diária com mês | a fazer |
+| `Product` e `Offer` nas páginas de preço | a fazer |
+| Endpoint público do índice de preços em JSON, datado, para agente ler sem raspar HTML | a fazer |
+| `llms.txt` apontando o endpoint e a frequência de mudança | ajuste no arquivo existente |
+| Carimbo automático de frescor em toda página de preço | a fazer |
+| `FAQPage` no post | ✅ entregue em 25/08/2026, nos 95 posts do acervo |
 
-Aqui entra também o item de negócio: **fechar parceiro em Confins**. A página pronta é o argumento.
+### Fase 3: prova social e frescor (semanas 11 a 14)
 
-### Fase 3: a cauda longa órfã (semanas 10 a 15)
+| Frente | Entrega | Contra quem joga |
+|---|---|---|
+| Prova social | Post por aeroporto sobre "é seguro deixar o carro", com o que verificar e o que acontece quando dá problema | A busca por "reddit", sinal de quem não confia no conteúdo comercial |
+| Frescor mensal | Carimbo e valores revistos por mês nas doze páginas de cabeça | O carimbo mensal do Bandeira Park |
+| Avaliação real | Publicar avaliação com data e volume, em vez de adjetivo | O comparador que fala de qualidade sem dado |
+| Metodologia aberta | Página explicando de onde vem cada número e com que frequência muda | A coleta à mão do xpark |
 
-Alvo: ocupar terreno onde não existe concorrente.
+### Fase 4: a cauda longa órfã (semanas 15 a 20)
 
-| Semana | Blogposts |
-|---|---|
-| 10 | Convênio de cartão e estacionamento de aeroporto: o que vale e o que não vale (GRU) · versão CNF |
-| 11 | Estacionamento de aeroporto aceita Sem Parar, ConectCar e Veloe? (guia dos 4 aeroportos) |
-| 12 | Onde deixar a moto no aeroporto (GRU e CNF) |
-| 13 | Estacionamento mensal de aeroporto: quando compensa (GRU e VCP) |
-| 14 | É seguro deixar o carro no aeroporto? O que perguntar antes de escolher |
-| 15 | Voo de madrugada, chegada de madrugada: como funciona o 24 horas |
+O terreno continua vazio e fica barato de ocupar depois que a cabeça estiver de pé. São 189 termos
+sem dono: terminal e setor (79), convênio e cartão (68), tag de pedágio (16), mensalista (15) e
+moto (11).
 
-### Fase 4: escala nacional (semanas 16 a 28)
+Regra da fase: **cada peça sai de um dado que já existe no sistema.** Cluster sem dado por trás não
+entra na pauta.
 
-Alvo: os 18 aeroportos publicados que hoje têm zero ou um post.
+### Fase 5: escala nacional (semanas 21 a 34)
 
-Ordem de ataque por demanda e por presença de lote mapeado: Congonhas, Galeão, Brasília, Recife,
-Salvador, Porto Alegre, Fortaleza, Florianópolis, Navegantes, Vitória, Cuiabá, Goiânia, Santos
-Dumont, Campo Grande, Maceió, João Pessoa, Londrina, Teresina.
+Os 18 aeroportos publicados com zero ou um post, na ordem de demanda e de lote mapeado: Congonhas,
+Galeão, Brasília, Recife, Salvador, Porto Alegre, Fortaleza, Florianópolis, Navegantes, Vitória,
+Cuiabá, Goiânia, Santos Dumont, Campo Grande, Maceió, João Pessoa, Londrina, Teresina. Molde fixo
+de guia âncora, página de preço e FAQ.
 
-Molde fixo por aeroporto, três peças: **guia âncora**, **página de preço** e **8 FAQ**. Fase 4 é
-produção industrial, não invenção: o formato já foi validado nas fases 1 a 3.
-
-### Fase 5: defesa e manutenção (contínua, a partir da semana 16)
-
-O conteúdo de preço apodrece rápido e o Google percebe.
+### Defesa: contínua, a partir da semana 7
 
 | Rotina | Frequência |
 |---|---|
-| Atualizar carimbo de mês e valores das páginas comparativas | mensal |
-| Revisar as 10 páginas com maior queda de posição | quinzenal |
-| Testar a citação em ChatGPT, Gemini, Perplexity e visão geral do Google | mensal, com registro |
-| Consolidar posts canibais restantes do acervo | mensal, 4 por mês |
-| Coletar autocomplete de novo e comparar com o baseline | trimestral |
+| **Placar de citação em IA** | mensal, com print |
+| Carimbo e valores das páginas de cabeça | mensal |
+| Revisão das dez páginas em maior queda | quinzenal |
+| Consolidação dos posts canibais restantes | 4 por mês |
+| Nova coleta de autocomplete contra o baseline | trimestral |
 
----
+### 3.3 O placar contra Bandeira Park e xpark
+
+Não existe ferramenta que meça citação em IA, então o método é manual e é o único confiável: **doze
+consultas, quatro motores, uma vez por mês, com print e data em planilha**. As consultas cobrem os
+três clusters de cabeça nos quatro aeroportos, e o que se registra é quem foi citado: Movepark,
+Bandeira Park, xpark ou nenhum dos três.
+
+A meta é enunciável em uma frase: **em 180 dias a Movepark aparece em mais respostas que Bandeira
+Park e xpark somados, nas doze consultas.**
 
 ## 4. Estrutura obrigatória do blogpost
 
@@ -470,23 +508,22 @@ Nada é escrito duas vezes. O post é a fonte, o Instagram é a distribuição.
 
 ## 6. Métricas e metas
 
-| Métrica | Baseline (a medir na Fase 0) | Meta em 90 dias | Meta em 180 dias |
+| Métrica | Hoje | 90 dias | 180 dias |
 |---|---|---|---|
-| Consultas em posição 1 a 3 | a medir | 25 | 80 |
-| Blocos PAA ocupados nos 4 aeroportos | 2 de 16 | 10 de 16 | 14 de 16 |
-| Citações em visão geral de IA e Modo IA | 0 conhecidas | 4 | 12 |
+| **Citações em IA nas 12 consultas** | 0 medidas | 6 de 12 | 10 de 12 |
+| **Movepark acima de Bandeira Park e xpark** | não medido | empate | vantagem nas 12 |
+| Termos de cabeça em posição 1 a 3 | a medir na Fase 0 | 12 | 30 |
+| Páginas canônicas de cabeça no ar | 0 de 12 | 12 de 12 | 36 (com a Fase 5) |
+| Posts canibais absorvidos por redirect | 0 de cerca de 40 | 24 | 40 |
 | Cliques orgânicos do blog por mês | a medir | +40% | +120% |
-| Páginas de FAQ indexadas | a medir | 96 | 200 |
-| Posts canibais consolidados | 0 de ~30 | 12 | 30 |
-| Aeroportos com trio completo (guia, preço, FAQ) | 0 | 4 | 12 |
-| Seguidores e salvamentos no Instagram | a medir | definir na Fase 0 | definir na Fase 0 |
+| Blocos de perguntas ocupados nos 4 aeroportos | 2 de 16 | 10 de 16 | 14 de 16 |
+| Posts do acervo emitindo `FAQPage` | ✅ 95 de 95 | manter | manter |
+| Aeroportos com trio completo | 0 | 4 | 12 |
 
-**Como medir citação em IA**, já que não existe painel para isso: rodar mensalmente as 12 consultas
+**Como medir citação em IA**, já que não existe painel: rodar mensalmente as doze consultas
 principais em ChatGPT com busca, Gemini, Perplexity e no Google com visão geral de IA, e registrar
-em planilha se a Movepark ou um parceiro foi citado, com print. É trabalho manual e é o único
-método confiável hoje.
-
----
+em planilha se a Movepark, o Bandeira Park ou o xpark foi citado, com print. É trabalho manual e é
+o único método confiável hoje.
 
 ## 7. Riscos
 
