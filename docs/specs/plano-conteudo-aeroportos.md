@@ -201,7 +201,9 @@ Foram coletados **1.282 termos únicos** em 25/08/2026, a partir de 13 raízes e
 
 1. **Search Console.** `movepark.co` já é propriedade de domínio. Exportar 16 meses por consulta
    dá volume real de impressão, que é melhor que estimativa de terceiro, porque é a demanda que já
-   chega no site.
+   chega no site. O coletor está pronto e roda com `bun run seo:gsc-baseline`, que grava
+   a pasta datada com os CSVs e o recorte dos três clusters de cabeça. Ver
+   [baseline-search-console.md](./baseline-search-console.md).
 2. **Keyword Planner.** Conta de Google Ads, mesmo sem campanha ativa, devolve faixa de volume por
    termo. Faixa larga, mas ancora a ordem de grandeza.
 3. **A regra de decisão.** Cluster entra na pauta quando aparece no autocomplete **e** tem

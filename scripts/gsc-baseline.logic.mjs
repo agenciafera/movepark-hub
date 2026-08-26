@@ -46,7 +46,7 @@ export const CLUSTERS = [
   {
     id: "proximidade",
     nome: "proximidade, perto",
-    termos: ["perto", "proximo", "proxima", "proximidade", "ao lado", "vizinho", "distancia", "em frente", "colado"],
+    termos: ["perto", "proximo", "proxima", "proximidade", "dentro", "ao lado", "vizinho", "distancia", "em frente", "colado"],
   },
   {
     id: "barato",
