@@ -35,14 +35,18 @@ type GenerateResponse = {
 
 export function useEnviarParaMia() {
   return useMutation({
-    mutationFn: async (turnos: MiaTurno[]): Promise<MiaResposta> => {
+    mutationFn: async (texto: string): Promise<MiaResposta> => {
       const { data, error } = await supabase.functions.invoke("mia-chat", {
-        body: {
-          messages: turnos.map((t) => ({
-            role: t.role === "model" ? "assistant" : "user",
-            content: t.text,
-          })),
-        },
+        // UMA mensagem, nunca o histórico.
+        //
+        // A Edge passa `memory`, entao o Mastra ja recupera a conversa do banco. Mandar
+        // o historico junto entregava tudo DUAS vezes ao modelo: em 26/08 um turno saiu
+        // com 19 mensagens no corpo e 124 na memoria da mesma thread. Isso infla token,
+        // atrasa a resposta e faz o modelo ver o mesmo turno repetido.
+        //
+        // E o que o WhatsApp sempre fez: a Evolution manda uma mensagem, a memoria cuida
+        // do resto. Os dois caminhos agora falam igual.
+        body: { messages: [{ role: "user", content: texto }] },
       });
 
       if (error) {
@@ -70,4 +74,23 @@ async function lerErro(error: unknown): Promise<string | undefined> {
   } catch {
     return error instanceof Error ? error.message : undefined;
   }
+}
+
+/**
+ * Apaga a conversa de teste, no servidor e na tela.
+ *
+ * Interface tem botão; WhatsApp é que precisa de comando digitado (lá existe `/limpar`,
+ * em `platform/channels/comandos.ts` do BeastBots). A thread apagada é sempre a de quem
+ * clicou: a Edge a deriva do JWT, e o navegador não escolhe qual.
+ */
+export function useLimparConversaDaMia() {
+  return useMutation({
+    mutationFn: async (): Promise<void> => {
+      const { error } = await supabase.functions.invoke("mia-chat", { body: { acao: "limpar" } });
+      if (error) {
+        const detalhe = await lerErro(error);
+        throw new Error(detalhe ?? "Não consegui limpar a conversa agora.");
+      }
+    },
+  });
 }

@@ -94,17 +94,47 @@ export async function handler(req: Request): Promise<Response> {
     return json({ error: "Mia não configurada: faltam MASTRA_BASE_URL ou MASTRA_ADMIN_TOKEN." }, 503);
   }
 
-  let corpo: { messages?: unknown };
+  let corpo: { messages?: unknown; acao?: unknown };
   try {
     corpo = await req.json();
   } catch {
     return json({ error: "Corpo inválido." }, 400);
   }
 
+  const uid = usuario.user.id;
+  const { memory } = identidadeDeTeste(uid, null);
+
+  /**
+   * Apagar a conversa de teste.
+   *
+   * A thread vem do `uid`, nunca do corpo: assim um admin só consegue apagar a PRÓPRIA
+   * conversa de teste, e não a de outro testador nem a de um cliente.
+   *
+   * 404 é sucesso aqui. Significa que já não havia nada, que é exatamente o estado que
+   * quem clicou pediu.
+   */
+  if (corpo.acao === "limpar") {
+    const alvo = `${base}/api/memory/threads/${encodeURIComponent(memory.thread)}?agentId=movepark-hub`;
+    try {
+      const r = await fetch(alvo, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(30_000),
+      });
+      if (!r.ok && r.status !== 404) {
+        return json({ error: `Não consegui limpar (${r.status}).` }, 502);
+      }
+      return json({ limpo: true });
+    } catch (cause) {
+      return json(
+        { error: `Não consegui limpar: ${cause instanceof Error ? cause.message : String(cause)}` },
+        504,
+      );
+    }
+  }
+
   const messages = Array.isArray(corpo.messages) ? corpo.messages : null;
   if (!messages?.length) return json({ error: "Mande ao menos uma mensagem." }, 400);
-
-  const uid = usuario.user.id;
 
   let resposta: Response;
   try {

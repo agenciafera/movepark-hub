@@ -8,7 +8,7 @@ import { MiaTestWidget } from "./MiaTestWidget";
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock("@/lib/supabase", () => ({ supabase: { functions: { invoke } } }));
 
-import { useEnviarParaMia } from "./api";
+import { useEnviarParaMia, useLimparConversaDaMia } from "./api";
 
 function wrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -57,7 +57,7 @@ describe("as tools ficam fora do texto do agente", () => {
       error: null,
     });
     const { result } = renderHook(() => useEnviarParaMia(), { wrapper });
-    const r = await result.current.mutateAsync([{ role: "user", text: "x" }]);
+    const r = await result.current.mutateAsync("x");
     expect(r.reply).toBe("Vaga coberta custa R$ 144,50.");
     expect(r.reply).not.toContain("tools");
     expect(r.tools).toEqual(["consultar_preco"]);
@@ -77,28 +77,21 @@ describe("useEnviarParaMia", () => {
     return invoke;
   };
 
-  it("manda o histórico no formato do Mastra, e SÓ o histórico", async () => {
-    // O corpo carrega apenas `messages`. Se um dia voltar a levar `requestContext`, um
-    // admin poderia trocar o telefone e puxar a reserva de um cliente de verdade.
+  it("manda UMA mensagem, nunca o histórico", async () => {
+    // A Edge passa `memory`, então o Mastra já recupera a conversa. Mandar o histórico
+    // junto entregava tudo em dobro: em 26/08 um turno saiu com 19 mensagens no corpo
+    // e 124 na memória da mesma thread.
+    //
+    // O corpo também carrega SÓ `messages`. Se voltar a levar `requestContext`, um admin
+    // poderia trocar o telefone e puxar a reserva de um cliente de verdade.
     const f = responder({ text: "oi" });
     const { result } = renderHook(() => useEnviarParaMia(), { wrapper });
-    await result.current.mutateAsync([{ role: "user", text: "ola" }]);
+    await result.current.mutateAsync("ola");
 
     const [nome, opts] = f.mock.calls[0] as [string, { body: Record<string, unknown> }];
     expect(nome).toBe("mia-chat");
     expect(opts.body.messages).toEqual([{ role: "user", content: "ola" }]);
     expect(Object.keys(opts.body)).toEqual(["messages"]);
-  });
-
-  it("traduz o papel `model` para `assistant`", async () => {
-    const f = responder({ text: "ok" });
-    const { result } = renderHook(() => useEnviarParaMia(), { wrapper });
-    await result.current.mutateAsync([
-      { role: "user", text: "a" },
-      { role: "model", text: "b" },
-    ]);
-    const [, opts] = f.mock.calls[0] as [string, { body: { messages: { role: string }[] } }];
-    expect(opts.body.messages.map((m) => m.role)).toEqual(["user", "assistant"]);
   });
 
   it("extrai as tools chamadas, que é metade do valor de testar aqui", async () => {
@@ -110,14 +103,14 @@ describe("useEnviarParaMia", () => {
       ],
     });
     const { result } = renderHook(() => useEnviarParaMia(), { wrapper });
-    const r = await result.current.mutateAsync([{ role: "user", text: "x" }]);
+    const r = await result.current.mutateAsync("x");
     expect(r.tools).toEqual(["hub_list_locations", "consultar_preco"]);
   });
 
   it("resposta sem texto não vira string vazia em silêncio", async () => {
     responder({ text: "   " });
     const { result } = renderHook(() => useEnviarParaMia(), { wrapper });
-    const r = await result.current.mutateAsync([{ role: "user", text: "x" }]);
+    const r = await result.current.mutateAsync("x");
     expect(r.reply).toContain("não respondeu");
   });
 
@@ -125,7 +118,7 @@ describe("useEnviarParaMia", () => {
     // "FunctionsHttpError" não ajuda ninguém. "Acesso restrito" diz o que aconteceu.
     responder(null, { context: { json: async () => ({ error: "Acesso restrito." }) } });
     const { result } = renderHook(() => useEnviarParaMia(), { wrapper });
-    await expect(result.current.mutateAsync([{ role: "user", text: "x" }])).rejects.toThrow(
+    await expect(result.current.mutateAsync("x")).rejects.toThrow(
       /Acesso restrito/,
     );
   });
@@ -134,7 +127,38 @@ describe("useEnviarParaMia", () => {
     responder(null, new Error("Failed to fetch"));
     const { result } = renderHook(() => useEnviarParaMia(), { wrapper });
     await waitFor(async () => {
-      await expect(result.current.mutateAsync([{ role: "user", text: "x" }])).rejects.toThrow();
+      await expect(result.current.mutateAsync("x")).rejects.toThrow();
     });
+  });
+});
+
+describe("botão de limpar", () => {
+  it("some quando não há conversa: não existe o que limpar", () => {
+    comPapel("hub_admin");
+    render(<MiaTestWidget />, { wrapper });
+    expect(screen.getByLabelText("Testar a Mia")).toBeTruthy();
+  });
+
+  it("pede à Edge para apagar, e a Edge é quem escolhe a thread", async () => {
+    // O corpo leva só a ação. A thread sai do JWT na Edge, senão um admin poderia
+    // apagar a conversa de outra pessoa mandando outro id.
+    invoke.mockReset();
+    invoke.mockResolvedValue({ data: { limpo: true }, error: null });
+    const { result } = renderHook(() => useLimparConversaDaMia(), { wrapper });
+    await result.current.mutateAsync();
+
+    const [nome, opts] = invoke.mock.calls[0] as [string, { body: Record<string, unknown> }];
+    expect(nome).toBe("mia-chat");
+    expect(opts.body).toEqual({ acao: "limpar" });
+  });
+
+  it("falha da Edge vira mensagem, nunca silêncio", async () => {
+    invoke.mockReset();
+    invoke.mockResolvedValue({
+      data: null,
+      error: { context: { json: async () => ({ error: "Acesso restrito." }) } },
+    });
+    const { result } = renderHook(() => useLimparConversaDaMia(), { wrapper });
+    await expect(result.current.mutateAsync()).rejects.toThrow(/Acesso restrito/);
   });
 });

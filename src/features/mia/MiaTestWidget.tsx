@@ -1,10 +1,10 @@
 import * as React from "react";
-import { Robot, PaperPlaneTilt, X } from "@phosphor-icons/react";
+import { Robot, PaperPlaneTilt, X, Trash } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/context";
 import { Bubble } from "@/features/assistant/ChatBubble";
 import { appendMessage, canSend, type ChatMessage } from "@/features/assistant/chat.logic";
-import { useEnviarParaMia } from "./api";
+import { useEnviarParaMia, useLimparConversaDaMia } from "./api";
 
 /**
  * Bolinha de teste da Mia, dentro do Backoffice.
@@ -36,6 +36,7 @@ export function MiaTestWidget() {
 
   // A memória é por usuário para dois testadores não dividirem a mesma conversa.
   const enviar = useEnviarParaMia();
+  const limpar = useLimparConversaDaMia();
 
   React.useEffect(() => {
     fim.current?.scrollIntoView({ block: "end" });
@@ -54,9 +55,9 @@ export function MiaTestWidget() {
     setErro(null);
 
     try {
-      const r = await enviar.mutateAsync(
-        comPergunta.map((m) => ({ role: m.role, text: m.text })),
-      );
+      // Só o texto novo: a memória do lado do agente é quem sabe o histórico. Ver o
+      // comentário em `api.ts` sobre a conversa que ia em dobro.
+      const r = await enviar.mutateAsync(texto);
       setMessages((atual) => {
         const proximo = appendMessage(atual, "model", r.reply);
         if (r.tools.length) {
@@ -90,9 +91,32 @@ export function MiaTestWidget() {
           {/* Quem está testando precisa saber que não é o bot do cliente. */}
           <p className="text-body-sm text-muted">Teste interno, com identidade fictícia</p>
         </div>
-        <button type="button" onClick={() => setOpen(false)} aria-label="Fechar" className="text-muted hover:text-ink">
-          <X size={20} />
-        </button>
+        <div className="flex items-center gap-1">
+          {/*
+            Limpar apaga a thread NO SERVIDOR, e não só a tela: senão a Mia continuaria
+            lembrando de tudo e o botão viraria mentira. O `/limpar` do WhatsApp faz a
+            mesma coisa por comando digitado; aqui a interface tem botão.
+          */}
+          <button
+            type="button"
+            onClick={() => {
+              setErro(null);
+              limpar.mutate(undefined, {
+                onSuccess: () => setMessages([]),
+                onError: (e) => setErro(e instanceof Error ? e.message : "Não consegui limpar."),
+              });
+            }}
+            disabled={limpar.isPending || enviar.isPending || messages.length === 0}
+            aria-label="Limpar conversa"
+            title="Apaga esta conversa de teste, aqui e na memória da Mia"
+            className="rounded-sm p-1 text-muted hover:text-ink disabled:opacity-40"
+          >
+            <Trash size={18} />
+          </button>
+          <button type="button" onClick={() => setOpen(false)} aria-label="Fechar" className="rounded-sm p-1 text-muted hover:text-ink">
+            <X size={20} />
+          </button>
+        </div>
       </header>
 
       <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
@@ -113,6 +137,7 @@ export function MiaTestWidget() {
           </React.Fragment>
         ))}
         {enviar.isPending ? <p className="text-body-sm text-muted">Mia está pensando…</p> : null}
+        {limpar.isPending ? <p className="text-body-sm text-muted">Limpando…</p> : null}
         {erro ? (
           <p className="rounded-sm bg-red-50 px-3 py-2 text-body-sm text-red-700">
             {erro}
