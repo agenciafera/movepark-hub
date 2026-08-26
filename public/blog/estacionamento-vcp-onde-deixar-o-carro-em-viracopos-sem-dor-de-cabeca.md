@@ -169,3 +169,26 @@ Se a ideia é praticidade total e você não liga de pagar mais caro, o estacion
 Mas se você quer viajar tranquilo, pagar menos e ainda ter atendimento top, não pensa duas vezes: **reserva no Virapark**.
 
 👉 [Garanta já sua vaga no Virapark](/destinos/aeroporto-de-viracopos) e viaje sem stress.
+
+## Perguntas frequentes
+
+### Quais são as opções de estacionamento em Viracopos?
+
+As de dentro do complexo, operadas pelo aeroporto, e as de fora, com traslado próprio. Em agosto de 2026 a Movepark listava dois pátios externos: Garageinn, a 1,0 km do terminal, e Virapark, a 3,7 km.
+
+### O pátio externo de Viracopos fica muito longe?
+
+O mais próximo fica a 1,0 km do terminal, com traslado de 3 minutos e van a cada 15. O outro fica a 3,7 km, também com van a cada 15 minutos. Nos dois casos o percurso é curto para padrão de aeroporto.
+
+### Quando o edifício garagem de Viracopos compensa?
+
+Em parada de poucas horas, quando o acesso a pé ao terminal vale mais que a diferença de tarifa. Para estadia de dias, o custo por diária costuma inverter a conta a favor dos pátios externos.
+
+### Quanto custa uma semana fora do aeroporto em Viracopos?
+
+Em agosto de 2026, R$ 174,30 no Virapark e R$ 321,30 no Garageinn, os dois com traslado próprio incluído no serviço da unidade. A diferença de R$ 147,00 acompanha 2,7 km a mais de distância até o terminal.
+
+### Preciso me preocupar com o horário do traslado em Viracopos?
+
+Os dois parceiros declaram van a cada 15 minutos e operação 24 horas, o que reduz a espera no pior caso. Ainda assim vale confirmar o ponto de encontro da volta com a equipe do lote na chegada.
+

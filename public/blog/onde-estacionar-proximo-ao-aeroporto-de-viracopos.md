@@ -25,3 +25,26 @@ Abaixo listamos estacionamentos com boa reputação na região de Campinas e que
 -   CEV Garageinn – Diária de R$25,30 (dentro do aeroporto)
 -   Bandeira Park – Diária de R$19,99
 -   Aeroparking – Diária de R$20,00
+
+## Perguntas frequentes
+
+### Qual pátio parceiro fica mais perto do terminal de Viracopos?
+
+O Garageinn, a 1,0 km do terminal, medidos pelo motor de reservas, com traslado de 3 minutos e van a cada 15. O Virapark fica a 3,7 km, também com van a cada 15 minutos e operação 24 horas.
+
+### Quanto custa estar mais perto do terminal em Viracopos?
+
+Em agosto de 2026, R$ 147,00 a mais na semana: R$ 321,30 no Garageinn, a 1,0 km, contra R$ 174,30 no Virapark, a 3,7 km. É a maior diferença por proximidade entre os aeroportos que a Movepark cobre.
+
+### Um quilômetro de distância muda o tempo de deslocamento?
+
+Muda pouco no percurso e nada na espera. O Garageinn declara 3 minutos de traslado e o Virapark opera com a mesma frequência de van, a cada 15 minutos. O tempo de espera pesa mais que os quilômetros.
+
+### Existe pátio parceiro dentro do aeroporto de Viracopos?
+
+Os parceiros listados pela Movepark ficam fora do complexo, com traslado próprio. As opções internas, como o edifício garagem, são operadas pelo próprio aeroporto e cobram pela proximidade e pelo acesso a pé ao terminal.
+
+### Dá para ir a pé do pátio parceiro até o embarque em Viracopos?
+
+Não é o caminho pensado para isso. Mesmo a 1,0 km, o trajeto passa por via de acesso ao aeroporto, sem calçada contínua e com bagagem em mãos. Os dois parceiros declaram traslado justamente para resolver esse trecho.
+

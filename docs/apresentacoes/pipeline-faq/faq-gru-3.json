@@ -1,0 +1,210 @@
+{
+  "guia-completo-sobre-o-aeroporto-de-guarulhos": {
+    "aeroporto": "GRU",
+    "angulo": "o aeroporto em si: estrutura, acesso rodoviário e onde o carro entra nessa história",
+    "faq": [
+      {
+        "q": "Qual é o nome oficial do aeroporto de Guarulhos?",
+        "a": "Aeroporto Internacional de São Paulo, em Guarulhos, conhecido pelo código IATA GRU. Ele fica no município de Guarulhos, na região metropolitana de São Paulo, e é o maior aeroporto do país em movimento de passageiros e em operação internacional."
+      },
+      {
+        "q": "Por quais rodovias se chega de carro em Guarulhos?",
+        "a": "Os acessos principais são a Rodovia Hélio Smidt, que liga o complexo à Presidente Dutra, e a ligação pela Ayrton Senna. Quem vem pela Ayrton Senna encontra praça de pedágio no caminho, e esse valor entra no custo total da viagem de carro."
+      },
+      {
+        "q": "Quantos terminais de passageiros o GRU tem?",
+        "a": "Três terminais de passageiros: 1, 2 e 3. O Terminal 3 concentra a operação internacional de longo curso, e os Terminais 1 e 2 respondem pela maior parte dos voos domésticos. O traslado dos pátios externos costuma circular entre eles."
+      },
+      {
+        "q": "Onde ficam os estacionamentos em relação aos terminais?",
+        "a": "O oficial fica dentro do complexo, com acesso a pé. Os pátios parceiros ficam fora e usam traslado: em agosto de 2026 o Aeropark estava a 2,7 km do terminal e o Aerovalet a 4,5 km, distâncias que a van cobre em minutos."
+      },
+      {
+        "q": "Guarulhos opera voos de madrugada?",
+        "a": "Opera 24 horas, sem restrição de horário noturno, e boa parte da malha internacional pousa entre quatro e seis da manhã. Os lotes parceiros listados também operam 24 horas, o que permite retirar o carro nesse intervalo."
+      }
+    ]
+  },
+  "onde-deixar-meu-carro-em-aeroporto-guarulhos": {
+    "aeroporto": "GRU",
+    "angulo": "carro próprio contra aplicativo e transporte público: como montar a conta",
+    "faq": [
+      {
+        "q": "Como comparar ir de carro com ir de aplicativo para Guarulhos?",
+        "a": "Some quatro parcelas do lado do carro: combustível da ida e da volta, pedágio se você usar a Ayrton Senna, e a estadia no pátio. Do outro lado ficam duas corridas, ida e volta, com tarifa que varia por horário e por origem."
+      },
+      {
+        "q": "A partir de quantos dias o carro perde para o aplicativo?",
+        "a": "O ponto de virada é individual, porque depende de onde você mora. Como referência, em agosto de 2026 a estadia de sete diárias na vaga descoberta do Aerovalet custava R$ 111,30, e é esse valor que entra contra o preço de duas corridas."
+      },
+      {
+        "q": "Ônibus e metrô resolvem a chegada em Guarulhos?",
+        "a": "Resolvem para quem viaja leve e sem horário apertado. O complexo é servido por linhas de ônibus e por conexão ferroviária até a região, mas a combinação de bagagem, madrugada e voo internacional é o que costuma empurrar a decisão de volta para o carro."
+      },
+      {
+        "q": "Ir de carro compensa em viagem de um dia só?",
+        "a": "Compensa se o pátio aceitar diária avulsa. Em agosto de 2026 o Aerovalet cobrava R$ 18,90 pela diária e não declarava piso de permanência, enquanto o Aeropark trabalhava com mínimo de duas diárias, o que dobra a conta de quem usa um dia."
+      },
+      {
+        "q": "Quem me leva do pátio até o terminal em Guarulhos?",
+        "a": "Depende do lote. O Aeropark declara traslado próprio, com 10 minutos até o terminal e van a cada meia hora. Lotes sem traslado próprio deixam esse trecho por sua conta, e isso precisa ser combinado antes do dia da viagem."
+      }
+    ]
+  },
+  "onde-estacionar-o-carro-no-aeroporto-de-guarulhos": {
+    "aeroporto": "GRU",
+    "angulo": "quando escolher pátio parceiro e quando o oficial resolve melhor",
+    "faq": [
+      {
+        "q": "Em que situação o pátio parceiro é a escolha óbvia em Guarulhos?",
+        "a": "Em viagem de uma semana ou mais, quando o custo por dia domina a conta. Em agosto de 2026, trinta diárias na vaga descoberta do Aerovalet saíam por R$ 447,00, média de R$ 14,90 ao dia, patamar difícil de alcançar dentro do complexo."
+      },
+      {
+        "q": "E quando o pátio de dentro do aeroporto resolve melhor?",
+        "a": "Quando a parada é curta ou o horário está apertado. Sem traslado e sem espera de van, você economiza os cerca de 40 minutos que o deslocamento externo pede no pior caso, e esse tempo vale mais que a diferença de tarifa."
+      },
+      {
+        "q": "O que muda na rotina entre um pátio parceiro e o oficial?",
+        "a": "Muda o trecho final. No parceiro você deixa o carro, pega a van e desembarca no terminal, com horário a combinar na volta. No oficial você estaciona e caminha, sem depender de terceiro para chegar no portão de embarque."
+      },
+      {
+        "q": "Vale usar pátio parceiro em voo com conexão apertada?",
+        "a": "Vale se o horário for calculado com folga. O Aeropark declara van a cada meia hora, então o pior caso soma espera mais 10 minutos de traslado. Some esse bloco antes do tempo de check-in que a companhia pede."
+      },
+      {
+        "q": "Existe diferença de tipo de vaga entre parceiro e oficial?",
+        "a": "Os dois trabalham com coberta e descoberta, e a cobertura pesa no preço nos dois lados. Por isso a comparação honesta é entre a mesma coisa: coberta contra coberta, e não coberta de dentro contra descoberta de fora."
+      }
+    ]
+  },
+  "os-beneficios-de-ir-de-carro-para-o-aeroporto-de-guarulhos-em-2024": {
+    "aeroporto": "GRU",
+    "angulo": "o custo total de ir de carro, parcela por parcela",
+    "faq": [
+      {
+        "q": "Quais custos entram na conta de ir de carro para Guarulhos?",
+        "a": "Quatro parcelas: combustível da ida, combustível da volta, pedágio no acesso pela Ayrton Senna e a estadia no pátio. A estadia é a única que dá para travar antes, e em agosto de 2026 sete diárias descobertas saíam por R$ 111,30 no Aerovalet."
+      },
+      {
+        "q": "Ir de carro vale a pena viajando sozinho?",
+        "a": "Sozinho a conta fica mais apertada, porque o custo do carro não se divide. Em grupo ele se dilui: a mesma estadia de R$ 111,30 na semana, praticada em agosto de 2026, atende uma pessoa ou quatro, enquanto o transporte por passageiro se multiplica."
+      },
+      {
+        "q": "O horário do voo muda a decisão de ir de carro?",
+        "a": "Muda bastante. Voo de madrugada e chegada de madrugada são quando aplicativo fica mais caro e mais escasso, e é aí que o carro próprio ganha. Os lotes parceiros listados em Guarulhos operam 24 horas e cobrem esse intervalo."
+      },
+      {
+        "q": "Levar bagagem pesada pesa na escolha do transporte?",
+        "a": "Pesa no conforto, principalmente com criança, prancha ou equipamento. O carro leva tudo até o pátio, e no lote com traslado a van faz o trecho final. Sem traslado próprio, esse último quilômetro fica por sua conta."
+      },
+      {
+        "q": "Dá para prever quanto vou gastar de estacionamento antes de sair?",
+        "a": "Dá, e é a parcela mais previsível da viagem. O valor da estadia sai fechado por período no momento da reserva, com o mesmo número que o motor cobra, enquanto combustível e pedágio variam com o trajeto que você escolher."
+      }
+    ]
+  },
+  "preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui": {
+    "aeroporto": "GRU",
+    "angulo": "a tabela completa: cada tipo de vaga em cada faixa de permanência",
+    "faq": [
+      {
+        "q": "Quanto custa uma semana em cada tipo de vaga em Guarulhos?",
+        "a": "No Aeropark, em agosto de 2026, sete diárias saíam por R$ 132,30 na descoberta, R$ 188,30 na coberta e R$ 475,20 no valet. No Aerovalet os mesmos sete dias custavam R$ 111,30 na descoberta e R$ 160,30 na coberta."
+      },
+      {
+        "q": "Quanto custa um mês de estacionamento em Guarulhos?",
+        "a": "Trinta diárias saíam por R$ 447,00 na descoberta e R$ 657,00 na coberta do Aerovalet em agosto de 2026. No Aeropark, R$ 537,00 e R$ 777,00 para os mesmos tipos. A média diária do mais barato fica em R$ 14,90."
+      },
+      {
+        "q": "Quanto custa o serviço de valet em Guarulhos?",
+        "a": "Em agosto de 2026 a diária avulsa de valet no Aerovalet saía por R$ 119,20, e a semana no Aeropark por R$ 475,20. O preço cobre a manobra e a entrega do carro no terminal, e não uma vaga de qualidade diferente."
+      },
+      {
+        "q": "Como o preço por dia cai conforme a estadia estica?",
+        "a": "No Aerovalet, em agosto de 2026, a descoberta saía a R$ 18,90 na diária avulsa, R$ 15,90 por dia em sete diárias, R$ 14,90 em quinze e os mesmos R$ 14,90 em trinta. A queda concentra-se na primeira semana."
+      },
+      {
+        "q": "Onde consultar a tabela atualizada de Guarulhos?",
+        "a": "No índice de preços da Movepark, que publica o valor por faixa de permanência com a data da última atualização de cada tabela. É o mesmo número que o motor cobra no fechamento, então o que está na tela é o que sai na conta."
+      }
+    ]
+  },
+  "qual-o-valor-da-diaria-do-estacionamento-no-aeroporto-guarulhos": {
+    "aeroporto": "GRU",
+    "angulo": "a diária como unidade: o que ela cobre e por que ela muda de lote para lote",
+    "faq": [
+      {
+        "q": "O que está incluído numa diária de estacionamento em Guarulhos?",
+        "a": "A vaga do tipo contratado pelo período, no endereço do lote. Traslado, quando existe, aparece declarado na ficha da unidade. Serviços como manobra pela equipe ficam em tabela separada, que é o caso do valet."
+      },
+      {
+        "q": "Por que a diária avulsa é a mais cara de todas?",
+        "a": "Porque ela não dilui o custo fixo da operação. No Aerovalet, em agosto de 2026, a avulsa custava R$ 18,90 e a média em trinta diárias caía para R$ 14,90. São R$ 4,00 por dia, ou R$ 120,00 no mês."
+      },
+      {
+        "q": "A diária muda conforme o tipo de vaga em Guarulhos?",
+        "a": "Muda, e é a maior fonte de diferença dentro do mesmo endereço. No Aerovalet, em agosto de 2026, a diária era R$ 18,90 na descoberta, R$ 26,90 na coberta e R$ 119,20 no valet, todos no mesmo pátio."
+      },
+      {
+        "q": "Duas diárias equivalem a quantas horas de uso?",
+        "a": "Depende da regra do lote, e por isso ela merece leitura antes de fechar. Onde existe piso de duas diárias, como no Aeropark em agosto de 2026, uma estadia de poucas horas já entra faturada como dois dias completos."
+      },
+      {
+        "q": "Vale comparar diárias entre lotes ou totais de estadia?",
+        "a": "Compare totais. A diária avulsa do Aerovalet era R$ 18,90 em agosto de 2026, mas sete diárias somavam R$ 111,30, e não R$ 132,30. O total pelo período que você vai usar é o único número que se compara direto."
+      }
+    ]
+  },
+  "seu-guia-definitivo-para-uma-partida-descomplicada-dicas-valiosas-do-aeroporto-de-guarulhos": {
+    "aeroporto": "GRU",
+    "angulo": "cronograma do dia da partida, com o estacionamento dentro do relógio",
+    "faq": [
+      {
+        "q": "Que horas sair de casa se eu for deixar o carro em Guarulhos?",
+        "a": "Some três blocos: o trajeto até o pátio, cerca de 40 minutos entre chegada, espera da van e desembarque no terminal, e o tempo de check-in que a companhia pede. O bloco do meio é o que a maioria esquece de contar."
+      },
+      {
+        "q": "O traslado do pátio funciona no horário do meu voo?",
+        "a": "Os parceiros listados em Guarulhos operam 24 horas, e o Aeropark declara van a cada meia hora com 10 minutos até o terminal. Ainda assim vale confirmar a frequência no horário exato do seu voo ao fechar a reserva."
+      },
+      {
+        "q": "O que deixar pronto antes de chegar no pátio?",
+        "a": "A reserva com a placa correta e o documento do condutor à mão. Placa errada é o motivo mais comum de conferência manual na portaria, e ela consome minutos justamente quando o relógio já está apertado."
+      },
+      {
+        "q": "Vale chegar mais cedo em dia de pico em Guarulhos?",
+        "a": "Vale em véspera de feriado e no fim de tarde de sexta, quando os acessos ao complexo acumulam tráfego. O tempo perdido na estrada não se recupera na fila do check-in, e a van do pátio tem horário próprio."
+      },
+      {
+        "q": "Devo reservar o estacionamento antes de comprar a passagem?",
+        "a": "Não precisa, mas reserve assim que a data estiver fechada. O preço online é menor que o balcão, e em alta temporada os pátios enchem: em agosto de 2026 a diferença entre online e balcão no Aerovalet era de 20%."
+      }
+    ]
+  },
+  "como-encontrar-o-melhor-estacionamento-no-aeroporto-de-guarulhos": {
+    "aeroporto": "GRU",
+    "angulo": "método de busca: como filtrar e o que descartar rápido",
+    "faq": [
+      {
+        "q": "Por onde começar a busca de estacionamento em Guarulhos?",
+        "a": "Pelo período exato da viagem, porque ele muda a ordem dos lotes. Um pátio pode liderar em diária avulsa e perder em trinta diárias. Com a data em mãos, o índice de preços mostra o total por faixa de permanência."
+      },
+      {
+        "q": "Como descartar rápido um lote que não serve?",
+        "a": "Olhe piso de permanência e traslado primeiro. Piso de duas ou três diárias elimina o lote para viagem de um dia, e ausência de van elimina para quem não tem como resolver o trecho final até o terminal."
+      },
+      {
+        "q": "Avaliação de outros clientes ajuda a escolher em Guarulhos?",
+        "a": "Ajuda no que ela realmente mede: atendimento, tempo de espera da van e estado do pátio. Preço e distância você confere em número, sem depender de opinião. Use a avaliação para o que o dado frio não mostra."
+      },
+      {
+        "q": "Melhor em Guarulhos quer dizer mais barato?",
+        "a": "Quer dizer melhor para a sua viagem. Para trinta dias, o custo por dia decide. Para uma noite antes de um voo às seis da manhã, a proximidade e a frequência da van decidem, e o preço vira detalhe."
+      },
+      {
+        "q": "Quantas opções vale comparar antes de fechar?",
+        "a": "Duas ou três bastam quando você compara pelos mesmos campos: total do período, distância, traslado e piso de permanência. Em agosto de 2026 a Movepark listava três endereços parceiros em Guarulhos, com perfis bem distintos entre si."
+      }
+    ]
+  }
+}

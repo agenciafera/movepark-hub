@@ -46,3 +46,26 @@ Evite demoras e complicações associadas a outros meios de transporte, indo dir
 2.  **Reserve com Antecedência:** Muitos estacionamentos oferecem descontos para reservas antecipadas, proporcionando tarifas mais acessíveis.
 3.  **Esteja Atento ao Trânsito:** Planeje sua rota considerando o trânsito e possíveis contratempos para garantir uma chegada tranquila ao aeroporto.
 4.  **Aproveite os Benefícios de Ir de Carro:** Desfrute da comodidade, flexibilidade e conforto que seu próprio carro proporciona.
+
+## Perguntas frequentes
+
+### Vale sair da capital de carro para voar por Viracopos?
+
+Costuma valer quando a passagem por Campinas compensa o trajeto. Some combustível de ida e volta, pedágio da Bandeirantes ou Anhanguera, e a estadia: em agosto de 2026 a semana em pátio parceiro começava em R$ 174,30.
+
+### Quanto custa deixar o carro uma semana em Viracopos?
+
+Em agosto de 2026, R$ 174,30 no Virapark, que fica a 3,7 km do terminal, ou R$ 321,30 no Garageinn, a 1,0 km. Os dois incluem traslado próprio a cada 15 minutos no serviço da unidade.
+
+### Viajar em grupo muda a decisão de ir de carro para Viracopos?
+
+Muda muito, porque a estadia não se divide por passageiro. Os R$ 174,30 da semana no Virapark, em agosto de 2026, valem para um ou para cinco ocupantes, enquanto o custo de transporte por pessoa se multiplica.
+
+### O trajeto até Viracopos tem pedágio?
+
+Tem, nos eixos que ligam a capital à região de Campinas. Esse valor entra no custo total da viagem de carro e precisa ser somado na comparação com aplicativo, junto do combustível de ida e de volta.
+
+### Como planejar o horário de chegada em Viracopos?
+
+Some o trajeto rodoviário, a espera pela van e o percurso até o terminal. Com van a cada 15 minutos e 3 minutos de traslado no Garageinn, o pior caso do trecho final fica em torno de 20 minutos.
+

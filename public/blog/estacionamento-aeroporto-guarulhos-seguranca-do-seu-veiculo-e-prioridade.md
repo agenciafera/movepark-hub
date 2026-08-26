@@ -24,3 +24,26 @@ Pensando nisso, listamos abaixo alguns cuidados importantes na hora de escolher 
 6.  E por último, mas não menos importante verifique a reputação do estacionamento que pretende deixar seu veículo previamente. Certifique-se que o local possui um CNPJ, pesquise as avaliações, comentários e reclamações no Google. Dessa forma você pode certificar que o local é de confiança.
 
 Espero que com essas dicas você possa fazer uma ótima escolha. Boa viagem e uma ótima e segura estadia para seu veículo.
+
+## Perguntas frequentes
+
+### O que verificar sobre segurança antes de deixar o carro em Guarulhos?
+
+Comece pela ficha do lote: monitoramento, controle de acesso na cancela, cobertura e horário de operação. Os parceiros listados em Guarulhos operam 24 horas, o que significa portaria ativa também de madrugada, quando chega a maior parte do voo internacional.
+
+### Vaga coberta interfere na segurança do carro?
+
+Interfere na conservação, mais que na segurança patrimonial. A cobertura protege pintura, borracha e painel do sol e do granizo em estadia longa. Em agosto de 2026 ela custava R$ 8,00 a mais por diária no Aerovalet, de R$ 18,90 para R$ 26,90.
+
+### O que fazer se eu encontrar um dano no carro na retirada?
+
+Registre antes de sair do pátio, com foto e comunicação à portaria na hora. Saída registrada encerra a conferência, e reclamação depois fica difícil de sustentar. Vale também fotografar o carro na entrega, o que leva menos de um minuto.
+
+### É melhor levar a chave ou deixar com o pátio em Guarulhos?
+
+Depende do serviço contratado. Na vaga comum você estaciona e leva a chave. No valet a chave fica com a equipe, que manobra o carro, e é isso que o preço maior cobre: em agosto de 2026 a semana de valet saía por R$ 475,20 no Aeropark.
+
+### Deixar o carro semanas parado traz algum risco mecânico?
+
+Bateria e pneu são os pontos que mais sofrem em estadia longa. Antes de uma viagem de trinta dias vale calibrar os pneus e checar a bateria, porque o problema costuma aparecer na volta, cansado e com bagagem na mão.
+

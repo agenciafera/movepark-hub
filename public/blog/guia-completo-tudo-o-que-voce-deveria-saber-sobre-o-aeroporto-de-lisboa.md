@@ -88,3 +88,26 @@ Lisboa é conhecida por sua rica cultura e culinária deliciosa. Não perca a op
 ## Conclusão
 
 O Aeroporto de Lisboa é mais do que um simples ponto de partida ou chegada; é um portal para a descoberta de uma das cidades mais charmosas da Europa. Com excelentes conexões de transporte, uma variedade de serviços e uma localização conveniente, o aeroporto está bem preparado para oferecer uma experiência de viagem confortável e eficiente. Esperamos que este guia tenha fornecido todas as informações que você precisa para sua próxima visita a Lisboa.
+
+## Perguntas frequentes
+
+### Qual o nome oficial do aeroporto de Lisboa?
+
+Aeroporto Humberto Delgado, identificado pelo código IATA LIS. Ele fica dentro da cidade de Lisboa, a poucos quilômetros do centro, o que o diferencia da maioria dos aeroportos internacionais, construídos longe da malha urbana e cercados por estrada em vez de bairro.
+
+### O aeroporto de Lisboa tem ligação de metrô?
+
+Tem, com estação própria na linha vermelha, o que dá acesso direto ao centro da cidade. É uma das razões pelas quais muita gente dispensa o carro em Lisboa e por que os parques do entorno atendem sobretudo quem viaja para fora.
+
+### Por que os parques de Lisboa ficam tão perto do terminal?
+
+Porque o aeroporto está dentro da cidade, cercado por bairros. Em agosto de 2026 os três parceiros da Movepark ficavam entre 400 e 700 metros do terminal, distâncias que em aeroporto brasileiro seriam medidas em quilômetros.
+
+### Vale deixar o carro em Lisboa durante uma viagem pela Europa?
+
+Vale para quem mora em Portugal e usa Lisboa como porta de entrada do continente. Os três parques parceiros operam 24 horas e trabalham com estadia de vários dias, formato desenhado para esse tipo de viagem.
+
+### O aeroporto de Lisboa opera 24 horas?
+
+A operação de voos segue restrições próprias por causa da localização urbana e da vizinhança residencial. Os parques parceiros listados, esses sim, funcionam 24 horas, o que cobre entrega e retirada do carro fora do horário comercial, inclusive na madrugada.
+

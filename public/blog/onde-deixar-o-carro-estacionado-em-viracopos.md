@@ -80,3 +80,26 @@ Antes de estacionar, verifique as políticas de segurança do estacionamento esc
 Se você optar por estacionar fora do aeroporto, aproveite os serviços de shuttle oferecidos para chegar ao terminal de forma rápida e conveniente.
 
 Com estas informações em mãos, você está pronto para encontrar o local perfeito para deixar seu carro enquanto desfruta de sua viagem a partir do Aeroporto de Viracopos. Lembre-se de escolher a opção que melhor se adequa às suas necessidades e desfrute de uma experiência livre de preocupações.
+
+## Perguntas frequentes
+
+### Qual a diferença entre o edifício garagem e o bolsão em Viracopos?
+
+O edifício garagem fica colado ao terminal, é coberto e cobra pela proximidade. O bolsão econômico fica mais afastado dentro do próprio complexo e custa menos, com deslocamento a pé maior ou transporte interno até o embarque.
+
+### Os pátios de fora ficam muito mais longe que o bolsão?
+
+Não necessariamente. Em agosto de 2026 o Garageinn estava a 1,0 km do terminal, com traslado de 3 minutos e van a cada 15. O Virapark ficava a 3,7 km, também com van a cada 15 minutos e operação 24 horas.
+
+### Quanto custa cada opção externa em Viracopos por uma semana?
+
+Em agosto de 2026, sete diárias saíam por R$ 174,30 no Virapark e R$ 321,30 no Garageinn. A diferença de R$ 147,00 acompanha 2,7 km a mais de distância e nenhuma mudança no tipo de vaga contratada.
+
+### Para viagem de um mês, qual formato ganha em Viracopos?
+
+Em agosto de 2026, trinta diárias custavam R$ 747,00 no Virapark, média de R$ 24,90 por dia, e R$ 1.377,00 no Garageinn. Em estadia longa o custo por dia domina a conta e o pátio mais afastado tende a vencer.
+
+### Dá para escolher entre coberto e descoberto em Viracopos?
+
+Depende do pátio. Em agosto de 2026 o Virapark publicava tarifa para vaga coberta e o Garageinn para vaga avulsa. O tipo aparece na página de cada unidade, junto do preço da faixa de permanência escolhida.
+

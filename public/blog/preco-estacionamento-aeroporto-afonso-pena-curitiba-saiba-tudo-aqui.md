@@ -59,3 +59,26 @@ Para facilitar sua escolha, elaboramos uma tabela comparativa com as principais 
 Ao escolher um estacionamento próximo ao Aeroporto de Curitiba, leve em conta fatores como preço, segurança, proximidade e serviços oferecidos. Planejar com antecedência pode resultar em economia e maior tranquilidade durante sua viagem.
 
 Esperamos que este guia o ajude a encontrar a opção de estacionamento que melhor atenda às suas necessidades. Desejamos uma excelente viagem!
+
+## Perguntas frequentes
+
+### Qual a tabela completa do Afonso Pena por faixa de permanência?
+
+No Abbapark, em agosto de 2026, vaga descoberta: R$ 118,30 em sete diárias, R$ 238,50 em quinze e R$ 477,00 em trinta. No Nationpark, R$ 139,30, R$ 283,50 e R$ 567,00 nos mesmos períodos, sempre com traslado incluído.
+
+### Quanto custa a vaga coberta em cada pátio de Curitiba?
+
+Em agosto de 2026, no Abbapark: R$ 153,30 em sete diárias, R$ 313,50 em quinze e R$ 627,00 em trinta. No Nationpark, R$ 174,30, R$ 358,50 e R$ 717,00 para os mesmos períodos, com a mesma estrutura de traslado.
+
+### Quanto custa a vaga premium em Curitiba?
+
+Em agosto de 2026 a semana premium custava R$ 167,30 no Abbapark e R$ 181,30 no Nationpark. Em trinta diárias os valores iam para R$ 687,00 e R$ 747,00, o teto da tabela nos dois pátios.
+
+### Existe cobrança por diária avulsa no Afonso Pena?
+
+Não entre os parceiros listados. Em agosto de 2026 os dois trabalhavam com piso de três diárias, então a menor contratação possível já parte desse período, mesmo que o carro fique menos tempo no pátio.
+
+### Onde acompanhar a tabela de Curitiba atualizada?
+
+No índice de preços da Movepark, com o total por faixa de permanência e a data da última revisão de cada tabela. O número sai do motor de reservas, o mesmo que calcula o valor no fechamento.
+

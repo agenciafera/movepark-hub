@@ -69,3 +69,26 @@ Se você deseja relaxar em grande estilo, considere a possibilidade de acessar u
 ## Conclusão
 
 Com este guia definitivo, você está pronto para enfrentar o Aeroporto de Guarulhos com confiança e tranquilidade. Planeje com antecedência, siga as dicas valiosas e lembre-se de que uma partida suave depende de um planejamento inteligente. Agora, é só aproveitar sua viagem!
+
+## Perguntas frequentes
+
+### Que horas sair de casa se eu for deixar o carro em Guarulhos?
+
+Some três blocos: o trajeto até o pátio, cerca de 40 minutos entre chegada, espera da van e desembarque no terminal, e o tempo de check-in que a companhia pede. O bloco do meio é o que a maioria esquece de contar.
+
+### O traslado do pátio funciona no horário do meu voo?
+
+Os parceiros listados em Guarulhos operam 24 horas, e o Aeropark declara van a cada meia hora com 10 minutos até o terminal. Ainda assim vale confirmar a frequência no horário exato do seu voo ao fechar a reserva.
+
+### O que deixar pronto antes de chegar no pátio?
+
+A reserva com a placa correta e o documento do condutor à mão. Placa errada é o motivo mais comum de conferência manual na portaria, e ela consome minutos justamente quando o relógio já está apertado.
+
+### Vale chegar mais cedo em dia de pico em Guarulhos?
+
+Vale em véspera de feriado e no fim de tarde de sexta, quando os acessos ao complexo acumulam tráfego. O tempo perdido na estrada não se recupera na fila do check-in, e a van do pátio tem horário próprio.
+
+### Devo reservar o estacionamento antes de comprar a passagem?
+
+Não precisa, mas reserve assim que a data estiver fechada. O preço online é menor que o balcão, e em alta temporada os pátios enchem: em agosto de 2026 a diferença entre online e balcão no Aerovalet era de 20%.
+

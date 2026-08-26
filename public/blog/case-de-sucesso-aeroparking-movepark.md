@@ -143,3 +143,26 @@ A história do Aeroparking mostra como a integração com a Movepark foi decisiv
 Mais do que números, o case prova que tecnologia, estratégia digital e parceria podem transformar negócios tradicionais em operações modernas, escaláveis e competitivas.
 
 Hoje, o Aeroparking é um dos estacionamentos mais bem avaliados próximos ao Aeroporto de Guarulhos e referência de como a digitalização pode redefinir o sucesso em um mercado altamente competitivo.
+
+## Perguntas frequentes
+
+### O que o estacionamento ganha ao entrar na Movepark?
+
+Ganha vitrine e reserva antecipada. A unidade aparece na busca por aeroporto, na página do destino e no índice de preços, com a tarifa que ela mesma define. O pátio segue operando do jeito dele, e a Movepark cuida da captação e da reserva.
+
+### O parceiro perde o controle do próprio preço?
+
+Não perde. A tabela é do parceiro, e ele altera quando quiser pelo painel. O preço publicado no site é o mesmo que o motor cobra no fechamento, e a data da última atualização aparece junto, para o viajante saber de quando é o número.
+
+### Como a Movepark ganha dinheiro nessa parceria?
+
+Por comissão sobre a reserva, definida por empresa. O viajante paga o valor anunciado e o repasse ao parceiro sai já com a comissão descontada, sem cobrança de mensalidade nem taxa de adesão para entrar na vitrine.
+
+### O estacionamento precisa trocar o sistema que já usa?
+
+Não precisa. A unidade pode receber a reserva pelo painel da Movepark e seguir com a operação de portaria que já tem. A integração mais profunda existe para quem quer, e não é condição para aparecer na busca.
+
+### Quanto tempo leva para um pátio entrar no ar?
+
+O que segura o prazo é o cadastro: endereço, fotos, tipos de vaga e a tabela de preço. Com esses dados prontos e o contrato assinado, a unidade entra na busca e na página do aeroporto, e passa a receber reserva.
+

@@ -78,3 +78,26 @@ O serviço de transporte por aplicativo se tornou uma alternativa popular para s
 ### Carro Particular
 
 Para aqueles que valorizam autonomia e conforto, o uso do carro particular pode ser uma ótima escolha. O Aeroporto Afonso Pena dispõe de um amplo estacionamento, com diferentes opções de vagas para atender às necessidades dos passageiros. Além disso, há também a opção do estacionamento [Nation Park](http://nationpark.com.br), localizado próximo ao aeroporto, que oferece facilidades adicionais. Antes da viagem, é essencial verificar as tarifas de estacionamento e a disponibilidade de vagas para garantir uma experiência tranquila.
+
+## Perguntas frequentes
+
+### Qual a maior economia disponível no Afonso Pena?
+
+Trocar de pátio. Em agosto de 2026 a semana em vaga descoberta saía por R$ 118,30 no Abbapark e R$ 139,30 no Nationpark, diferença de R$ 21,00. Em trinta diárias a distância crescia para R$ 90,00, de R$ 477,00 contra R$ 567,00.
+
+### Reservar antes rende quanto no Afonso Pena?
+
+Em agosto de 2026 a semana descoberta do Abbapark caía de R$ 131,44 no balcão para R$ 118,30 online. No Nationpark, de R$ 154,78 para R$ 139,30. A diferença é menor que em outros aeroportos, mas continua valendo.
+
+### Dispensar a cobertura economiza no Afonso Pena?
+
+Economiza R$ 35,00 na semana. Em agosto de 2026 o Abbapark cobrava R$ 118,30 pela descoberta e R$ 153,30 pela coberta. Em Curitiba, onde chove com frequência o ano todo, essa é uma economia que merece pensada.
+
+### Existe estadia mínima nos pátios do Afonso Pena?
+
+Existe nos dois. Em agosto de 2026 tanto o Abbapark quanto o Nationpark trabalhavam com piso de três diárias, então uma viagem de um ou dois dias entra faturada como três. É a regra que mais surpreende quem chega de outra praça.
+
+### Vale contratar a vaga premium no Afonso Pena?
+
+Em agosto de 2026 a premium custava R$ 167,30 na semana no Abbapark, R$ 14,00 acima da coberta comum. É a menor diferença entre categorias em Curitiba, e ela compra posicionamento dentro do pátio, não outra estrutura.
+

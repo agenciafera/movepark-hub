@@ -46,3 +46,26 @@ Evite as complexidades e demoras associadas a outros meios de transporte. Ir de 
 2.  **Reserve com Antecedência:** Muitos estacionamentos oferecem descontos para reservas antecipadas, garantindo tarifas mais acessíveis.
 3.  **Esteja Atento ao Trânsito:** Planeje sua rota considerando o trânsito e possíveis contratempos, para garantir uma chegada tranquila ao aeroporto.
 4.  **Aproveite os Benefícios de Ir de Carro:** Desfrute da comodidade, flexibilidade e conforto que seu próprio carro proporciona.
+
+## Perguntas frequentes
+
+### Quais custos entram na conta de ir de carro para Guarulhos?
+
+Quatro parcelas: combustível da ida, combustível da volta, pedágio no acesso pela Ayrton Senna e a estadia no pátio. A estadia é a única que dá para travar antes, e em agosto de 2026 sete diárias descobertas saíam por R$ 111,30 no Aerovalet.
+
+### Ir de carro vale a pena viajando sozinho?
+
+Sozinho a conta fica mais apertada, porque o custo do carro não se divide. Em grupo ele se dilui: a mesma estadia de R$ 111,30 na semana, praticada em agosto de 2026, atende uma pessoa ou quatro, enquanto o transporte por passageiro se multiplica.
+
+### O horário do voo muda a decisão de ir de carro?
+
+Muda bastante. Voo de madrugada e chegada de madrugada são quando aplicativo fica mais caro e mais escasso, e é aí que o carro próprio ganha. Os lotes parceiros listados em Guarulhos operam 24 horas e cobrem esse intervalo.
+
+### Levar bagagem pesada pesa na escolha do transporte?
+
+Pesa no conforto, principalmente com criança, prancha ou equipamento. O carro leva tudo até o pátio, e no lote com traslado a van faz o trecho final. Sem traslado próprio, esse último quilômetro fica por sua conta.
+
+### Dá para prever quanto vou gastar de estacionamento antes de sair?
+
+Dá, e é a parcela mais previsível da viagem. O valor da estadia sai fechado por período no momento da reserva, com o mesmo número que o motor cobra, enquanto combustível e pedágio variam com o trajeto que você escolher.
+

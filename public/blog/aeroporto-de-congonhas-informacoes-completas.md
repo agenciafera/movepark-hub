@@ -11,7 +11,7 @@ O Aeroporto de Congonhas, oficialmente chamado [Aeroporto de São Paulo/Congonha
 
 ![Aeroporto de Congonhas](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/aeroporto-de-congonhas-informacoes-completas/congonhas-13x.webp)
 
-### História do Aeroporto de Congonhas
+## História do Aeroporto de Congonhas
 
 Inaugurado em 1936, o Aeroporto de Congonhas é um dos mais antigos do Brasil. Originalmente construído para servir a aviação civil em uma época em que o transporte aéreo ainda estava em suas primeiras fases de desenvolvimento, Congonhas rapidamente se tornou um hub essencial para a aviação nacional. Sua localização estratégica, a apenas 8 km do centro de São Paulo, contribuiu significativamente para seu crescimento.
 
@@ -19,7 +19,7 @@ Ao longo das décadas, o aeroporto passou por diversas reformas e expansões par
 
 ![Estacionamento Aeroporto de Congonhas](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/aeroporto-de-congonhas-informacoes-completas/aeroporto-congonhas.webp)
 
-### Estrutura e Instalações
+## Estrutura e Instalações
 
 O Aeroporto de Congonhas é conhecido por sua estrutura moderna e bem organizada. Suas instalações são projetadas para proporcionar conforto e praticidade aos passageiros. Vamos dar uma olhada nos principais destaques:
 
@@ -31,7 +31,7 @@ O terminal de passageiros de Congonhas é dividido em dois andares principais, f
 
 Congonhas possui duas pistas de pouso e decolagem, que foram recentemente modernizadas para aumentar a segurança e a eficiência das operações. As pistas são conhecidas por seu comprimento relativamente curto, o que exige habilidade dos pilotos, especialmente em condições meteorológicas adversas.
 
-### Serviços e Comodidades
+## Serviços e Comodidades
 
 O Aeroporto de Congonhas oferece uma ampla gama de serviços e comodidades para garantir que sua experiência seja a mais agradável possível. Aqui estão alguns dos principais serviços disponíveis:
 
@@ -56,7 +56,7 @@ A localização central do Aeroporto de Congonhas facilita o acesso a diferentes
 -   **Ônibus**: Diversas linhas de ônibus conectam o aeroporto a diferentes regiões de São Paulo.
 -   **Carros de Aluguel**: Diversas empresas de aluguel de carros têm balcões no aeroporto, permitindo que você alugue um veículo com facilidade.
 
-### Dicas para os Passageiros
+## Dicas para os Passageiros
 
 Para tornar sua experiência no Aeroporto de Congonhas ainda mais tranquila, aqui estão algumas dicas úteis:
 
@@ -76,12 +76,35 @@ O Aeroporto de Congonhas oferece várias opções de estacionamento, desde opç�
 
 O aeroporto oferece Wi-Fi gratuito em todas as áreas do terminal. Aproveite para se manter conectado, verificar e-mails ou simplesmente passar o tempo enquanto espera pelo seu voo.
 
-### Futuro do Aeroporto de Congonhas
+## Futuro do Aeroporto de Congonhas
 
 O Aeroporto de Congonhas continua a evoluir e se modernizar. Recentemente, foram anunciados planos para novas reformas que incluirão a ampliação do terminal de passageiros e a modernização das pistas. Esses investimentos visam melhorar ainda mais a experiência dos passageiros e aumentar a capacidade do aeroporto para atender à crescente demanda.
 
-### Conclusão
+## Conclusão
 
 O Aeroporto de Congonhas é, sem dúvida, um dos principais hubs de transporte aéreo do Brasil. Com sua localização conveniente, infraestrutura moderna e uma ampla gama de serviços, ele oferece uma experiência agradável e eficiente para todos os passageiros. Seja você um viajante frequente ou alguém que está visitando São Paulo pela primeira vez, Congonhas certamente deixará uma impressão positiva.
 
 Esperamos que este guia atualizado tenha fornecido todas as informações que você precisa para aproveitar ao máximo sua próxima passagem pelo Aeroporto de Congonhas. Boa viagem!
+
+## Perguntas frequentes
+
+### Onde fica exatamente o Aeroporto de Congonhas?
+
+Na zona sul da cidade de São Paulo, dentro da malha urbana, com código IATA CGH. Essa localização é o que permite pátios a menos de um quilômetro do terminal, algo raro em aeroporto brasileiro.
+
+### Congonhas tem restrição de voo noturno?
+
+Tem restrição de operação em parte da madrugada, característica que acompanha o aeroporto por causa da vizinhança residencial da zona sul. Os pátios parceiros, porém, operam 24 horas, o que atende quem volta por outro aeroporto.
+
+### Congonhas atende voo internacional?
+
+A operação é predominantemente doméstica e de curta distância, com foco na ponte aérea e em destinos regionais. Voos de longo curso saindo de São Paulo concentram-se em Guarulhos, a cerca de 40 km dali.
+
+### Vale ir de carro para Congonhas?
+
+Vale para quem já está na zona sul e viaja poucos dias. Em agosto de 2026 a diária avulsa em pátio parceiro custava R$ 32,90, e o endereço mais próximo ficava a 700 metros do terminal.
+
+### Os pátios de Congonhas precisam de traslado?
+
+Nenhum dos dois parceiros declara van própria, porque a distância dispensa o serviço: 700 metros no Aerovalet e 900 metros no Plenty Park, medidos pelo motor de reservas em agosto de 2026. É a menor distância da rede.
+

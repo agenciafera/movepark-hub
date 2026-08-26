@@ -35,3 +35,26 @@ Se você quer evitar completamente os problemas de estacionamento, pode consider
 ## Conclusão
 
 Evitar problemas no estacionamento do Aeroporto de Guarulhos é possível com um planejamento adequado e seguindo algumas dicas simples. Ao pesquisar as opções de estacionamento, reservar com antecedência, chegar mais cedo, estar ciente das regras e considerar alternativas de transporte, você estará bem preparado para uma experiência tranquila. Lembre-se de que o estacionamento
+
+## Perguntas frequentes
+
+### Qual o erro mais caro na hora de escolher estacionamento em Guarulhos?
+
+Ignorar a estadia mínima. Em agosto de 2026 o Aeropark trabalhava com piso de duas diárias, então uma parada de seis horas entra cobrada como dois dias. Para viagem curta, o lote com diária avulsa costuma sair mais barato mesmo com tarifa maior.
+
+### O que conferir na ficha do lote antes de fechar a reserva?
+
+Quatro campos resolvem quase tudo: distância até o terminal, existência e frequência do traslado, tipo de vaga contratada e estadia mínima. Eles aparecem na página de cada unidade e explicam a maior parte das diferenças de preço.
+
+### E se meu voo mudar depois da reserva feita?
+
+A regra de alteração é do lote e aparece na página dele. Vale conferir esse ponto antes de fechar, principalmente em viagem com conexão apertada ou em época de remarcação frequente, quando a chance de a data mudar é maior.
+
+### Preciso levar algum documento ao chegar no pátio?
+
+A portaria confere a reserva e identifica o veículo, então documento do condutor e placa correta na reserva evitam espera. Placa digitada errada é o motivo mais comum de conferência manual na chegada, e ela custa minutos que fazem falta.
+
+### Como saber se o traslado alcança meu horário em Guarulhos?
+
+Pela ficha do lote. O Aeropark declara traslado de 10 minutos até o terminal, com saída a cada meia hora, e opera 24 horas. Lotes sem traslado próprio aparecem sem esse campo preenchido, o que também é informação útil.
+

@@ -73,3 +73,25 @@ Se você tem um estacionamento perto do Guararapes e quer receber esse viajante,
 - Aena Brasil, plano de investimentos de R$ 580 milhões anunciado em outubro de 2025
 - Foto de capa: Portal da Copa, via Wikimedia Commons (CC BY 3.0 BR), com tratamento de cor da Movepark
 
+## Perguntas frequentes
+
+### Qual o nome oficial do aeroporto do Recife?
+
+Aeroporto Internacional do Recife, Guararapes Gilberto Freyre, código IATA REC. Ele fica na zona sul da cidade, perto de Boa Viagem, e é o principal terminal aéreo do Nordeste em movimento de passageiros, com operação doméstica e internacional ao longo de todo o dia.
+
+### Existem estacionamentos privados perto do aeroporto do Recife?
+
+Existem, e ficam bem próximos do terminal. Em agosto de 2026 a Movepark tinha lotes mapeados a partir de 1,0 km, entre eles o Talentos Park e o Estacionamento Recife, ambos em Boa Viagem, além do Foco Park, na Imbiribeira, a 1,4 km.
+
+### A que distância do terminal ficam os lotes do Recife?
+
+Entre 1,0 km e 1,9 km, medidos pelo motor de reservas em agosto de 2026. Talentos Park e Estacionamento Recife ficam a 1,0 km, e o Foco Park, na Imbiribeira, a 1,4 km do terminal.
+
+### Por que tanta gente chega ao Recife dirigindo?
+
+Porque o aeroporto atende passageiros de vários estados do Nordeste, que percorrem centenas de quilômetros por estrada até embarcar. Para quem vem de João Pessoa, Caruaru ou Maceió, o carro costuma ser o caminho natural.
+
+### A Movepark tem tarifa publicada para o Recife?
+
+Até agosto de 2026 os lotes do Recife apareciam como mapeados, com nome, endereço e distância verificados, e sem tarifa. Preço publicado exige contrato de parceria, que é o que permite mostrar o valor cobrado no fechamento.
+

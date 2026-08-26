@@ -86,3 +86,26 @@ Campinas é conhecida por sua rica cultura e excelente gastronomia. Não perca a
 ## Conclusão
 
 O Aeroporto Internacional de Viracopos é um dos principais aeroportos do Brasil, oferecendo uma infraestrutura moderna e uma ampla gama de serviços para garantir uma experiência de viagem confortável e eficiente. Esperamos que este guia completo tenha fornecido todas as informações que você precisa para sua próxima visita a Viracopos.
+
+## Perguntas frequentes
+
+### Qual o nome oficial do aeroporto de Viracopos?
+
+Aeroporto Internacional de Viracopos, em Campinas, no interior de São Paulo, identificado pelo código IATA VCP. Ele atende a região metropolitana de Campinas e recebe passageiros de toda a Grande São Paulo em voos de baixo custo.
+
+### Vale a pena sair de São Paulo para voar por Viracopos?
+
+Vale quando a passagem compensa o trajeto, e é comum que compense. Nesse caso o carro entra na conta: em agosto de 2026 a semana em pátio parceiro custava a partir de R$ 174,30, com traslado até o terminal.
+
+### Como se chega de carro em Viracopos?
+
+O acesso principal vem pela Rodovia Santos Dumont, com ligação para a Bandeirantes e a Anhanguera, que são os eixos de quem sai da capital. O trajeto atravessa praças de pedágio, e esse valor entra no custo da viagem.
+
+### Viracopos opera de madrugada?
+
+Opera, e boa parte da malha de baixo custo usa horários de madrugada e começo da manhã. Os dois pátios parceiros listados também funcionam 24 horas, o que cobre entrega e retirada fora do horário comercial.
+
+### Onde ficam os estacionamentos em relação ao terminal de Viracopos?
+
+O oficial fica dentro do complexo, com acesso a pé. Os parceiros ficam fora: em agosto de 2026 o Garageinn estava a 1,0 km, com traslado de 3 minutos, e o Virapark a 3,7 km, ambos com van a cada 15 minutos.
+

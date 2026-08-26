@@ -9,7 +9,7 @@
 ---
 O Aeroporto de Confins, oficialmente conhecido como Aeroporto Internacional Tancredo Neves, é uma das principais portas de entrada para Minas Gerais e um importante hub de conexão para voos domésticos e internacionais no Brasil. Este guia completo visa fornecer todas as informações necessárias para passageiros e visitantes, cobrindo desde a história e localização do aeroporto até dicas úteis para uma viagem tranquila.
 
-### **Aeroporto de Confins**
+## **Aeroporto de Confins**
 
 ![Aeroporto confins interno](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/tudo-sobre-o-aeroporto-de-confins-guia-completo/aeroporto-confins-interno.webp)
 
@@ -29,7 +29,7 @@ O Aeroporto de Confins é servido por várias companhias aéreas nacionais e int
 
 O aeroporto possui uma infraestrutura moderna, com um terminal de passageiros que oferece uma variedade de serviços e comodidades. Os passageiros podem contar com áreas de descanso, opções de alimentação diversificadas, lojas de conveniência, além de serviços bancários e de câmbio.
 
-### **Como Chegar ao Aeroporto de Confins**
+## **Como Chegar ao Aeroporto de Confins**
 
 #### **Opções de Transporte Público**
 
@@ -43,7 +43,7 @@ Para aqueles que preferem mais conveniência e privacidade, serviços de táxi e
 
 O Aeroporto de Confins conta com amplas áreas de estacionamento, tanto cobertas quanto descobertas. O estacionamento é seguro e dispõe de vagas para curta e longa permanência, além de serviços de valet e áreas reservadas para passageiros com mobilidade reduzida.
 
-### **Serviços e Facilidades**
+## **Serviços e Facilidades**
 
 #### **Lojas e Restaurantes**
 
@@ -63,7 +63,7 @@ Para garantir uma experiência tranquila, o aeroporto dispõe de balcões de ate
 
 ![aeroporto de confins informação](https://mgaigbezdalbyuqiofcf.supabase.co/storage/v1/object/public/assets-public/blog/tudo-sobre-o-aeroporto-de-confins-guia-completo/aeroporto-confins-interno.webp)
 
-### **Informações Úteis para Passageiros**
+## **Informações Úteis para Passageiros**
 
 #### **Procedimentos de Check-in**
 
@@ -81,7 +81,7 @@ O aeroporto está preparado para atender passageiros com necessidades especiais,
 
 Para evitar transtornos, é importante planejar a viagem com antecedência. Verificar os documentos necessários, peso e tamanho das bagagens permitidas, e ficar atento aos horários dos voos são algumas das recomendações para uma viagem tranquila.
 
-### **Destinos e Voos**
+## **Destinos e Voos**
 
 #### **Principais Destinos Nacionais**
 
@@ -95,7 +95,7 @@ Além dos voos domésticos, o aeroporto também opera rotas internacionais para 
 
 Os horários de voos variam conforme a companhia aérea e a rota. É aconselhável consultar com antecedência os horários específicos e qualquer possível alteração para evitar surpresas.
 
-### **Desenvolvimento Futuro**
+## **Desenvolvimento Futuro**
 
 #### **Planos de Expansão**
 
@@ -109,7 +109,7 @@ Além das expansões físicas, estão previstas melhorias na infraestrutura exis
 
 O desenvolvimento contínuo do Aeroporto de Confins tem um impacto significativo no turismo e na economia local, atraindo mais visitantes e fomentando negócios na região.
 
-### **Dicas para uma Boa Experiência**
+## **Dicas para uma Boa Experiência**
 
 #### **Planejamento Antecipado**
 
@@ -127,7 +127,7 @@ Certificar-se de que a bagagem está bem identificada e dentro dos limites permi
 
 O Aeroporto de Confins oferece diversas facilidades que podem tornar a espera mais agradável. Desde áreas de descanso até opções de lazer e gastronomia, aproveitar essas facilidades pode fazer a diferença na experiência de viagem.
 
-### **Perguntas Frequentes sobre o Aeroporto de Confins**
+## **Perguntas Frequentes sobre o Aeroporto de Confins**
 
 **Quais são as principais companhias aéreas que operam no Aeroporto de Confins?**
 
@@ -153,11 +153,11 @@ Os principais destinos internacionais incluem Lisboa, Miami e Buenos Aires, com 
 
 Sim, o aeroporto está preparado para atender passageiros com necessidades especiais, oferecendo serviços de assistência e acessibilidade, como rampas, elevadores e banheiros adaptados.
 
-### **Conclusão**
+## **Conclusão**
 
 O Aeroporto de Confins é uma peça fundamental na infraestrutura de transporte aéreo do Brasil, oferecendo uma ampla gama de serviços e facilidades para garantir uma experiência de viagem agradável e eficiente. Com um contínuo desenvolvimento e planos de expansão, o aeroporto está preparado para atender às necessidades crescentes de passageiros e fortalecer sua posição como um importante hub de conexão no país.
 
-### **Links Internos e Externos Recomendados**
+## **Links Internos e Externos Recomendados**
 
 **Links Internos:**
 
@@ -170,3 +170,26 @@ O Aeroporto de Confins é uma peça fundamental na infraestrutura de transporte 
 -   [**Conexão Aeroporto**](https://www.bh-airport.com.br/SitePages/pt/localizacao/onibus.aspx): Detalhes sobre o serviço de ônibus executivo disponível para passageiros.
 
 Este guia detalhado sobre o Aeroporto de Confins foi criado para fornecer informações abrangentes e úteis, ajudando passageiros e visitantes a ter uma experiência tranquila e satisfatória.
+
+## Perguntas frequentes
+
+### Qual o nome oficial do Aeroporto de Confins?
+
+Aeroporto Internacional Tancredo Neves, código IATA CNF, situado entre os municípios de Confins e Lagoa Santa, na região metropolitana de Belo Horizonte. É o principal aeroporto de Minas Gerais em movimento de passageiros e o nome Confins pegou por causa do município que abriga o terminal.
+
+### Qual a distância entre Confins e o centro de Belo Horizonte?
+
+Cerca de 38 quilômetros, percorridos principalmente pela Linha Verde. É essa distância que torna o carro próprio uma opção comum para quem mora na capital mineira e viaja com bagagem ou em horário de madrugada.
+
+### Por que estacionar em Confins pesa mais que em outros aeroportos?
+
+Porque a alternativa é cara. Com o terminal a cerca de 38 km do centro de Belo Horizonte, duas corridas de aplicativo somam um valor alto, e o custo do carro parado passa a competir bem já em viagens curtas.
+
+### Existem estacionamentos privados perto de Confins?
+
+Existem. Em agosto de 2026 a Movepark tinha seis lotes mapeados no município de Confins, entre 2,9 km e 3,1 km do terminal, com nome, endereço e distância publicados na página do destino. Nenhum deles tinha contrato de parceria até aquela data.
+
+### Confins recebe voos internacionais?
+
+Recebe, e é o principal ponto de entrada internacional de Minas Gerais, além de concentrar a malha doméstica do estado. A operação se distribui ao longo do dia, com movimento forte no começo da manhã.
+

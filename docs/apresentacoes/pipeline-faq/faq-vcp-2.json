@@ -1,0 +1,184 @@
+{
+  "onde-deixar-o-carro-estacionado-em-viracopos": {
+    "aeroporto": "VCP",
+    "angulo": "o mapa das opções: edifício garagem, bolsão econômico e pátios de fora",
+    "faq": [
+      {
+        "q": "Qual a diferença entre o edifício garagem e o bolsão em Viracopos?",
+        "a": "O edifício garagem fica colado ao terminal, é coberto e cobra pela proximidade. O bolsão econômico fica mais afastado dentro do próprio complexo e custa menos, com deslocamento a pé maior ou transporte interno até o embarque."
+      },
+      {
+        "q": "Os pátios de fora ficam muito mais longe que o bolsão?",
+        "a": "Não necessariamente. Em agosto de 2026 o Garageinn estava a 1,0 km do terminal, com traslado de 3 minutos e van a cada 15. O Virapark ficava a 3,7 km, também com van a cada 15 minutos e operação 24 horas."
+      },
+      {
+        "q": "Quanto custa cada opção externa em Viracopos por uma semana?",
+        "a": "Em agosto de 2026, sete diárias saíam por R$ 174,30 no Virapark e R$ 321,30 no Garageinn. A diferença de R$ 147,00 acompanha 2,7 km a mais de distância e nenhuma mudança no tipo de vaga contratada."
+      },
+      {
+        "q": "Para viagem de um mês, qual formato ganha em Viracopos?",
+        "a": "Em agosto de 2026, trinta diárias custavam R$ 747,00 no Virapark, média de R$ 24,90 por dia, e R$ 1.377,00 no Garageinn. Em estadia longa o custo por dia domina a conta e o pátio mais afastado tende a vencer."
+      },
+      {
+        "q": "Dá para escolher entre coberto e descoberto em Viracopos?",
+        "a": "Depende do pátio. Em agosto de 2026 o Virapark publicava tarifa para vaga coberta e o Garageinn para vaga avulsa. O tipo aparece na página de cada unidade, junto do preço da faixa de permanência escolhida."
+      }
+    ]
+  },
+  "onde-estacionar-meu-carro-em-aeroporto-viracopos-em-2024": {
+    "aeroporto": "VCP",
+    "angulo": "ir de carro para Viracopos: quando compensa e o que entra na conta",
+    "faq": [
+      {
+        "q": "Vale sair da capital de carro para voar por Viracopos?",
+        "a": "Costuma valer quando a passagem por Campinas compensa o trajeto. Some combustível de ida e volta, pedágio da Bandeirantes ou Anhanguera, e a estadia: em agosto de 2026 a semana em pátio parceiro começava em R$ 174,30."
+      },
+      {
+        "q": "Quanto custa deixar o carro uma semana em Viracopos?",
+        "a": "Em agosto de 2026, R$ 174,30 no Virapark, que fica a 3,7 km do terminal, ou R$ 321,30 no Garageinn, a 1,0 km. Os dois incluem traslado próprio a cada 15 minutos no serviço da unidade."
+      },
+      {
+        "q": "Viajar em grupo muda a decisão de ir de carro para Viracopos?",
+        "a": "Muda muito, porque a estadia não se divide por passageiro. Os R$ 174,30 da semana no Virapark, em agosto de 2026, valem para um ou para cinco ocupantes, enquanto o custo de transporte por pessoa se multiplica."
+      },
+      {
+        "q": "O trajeto até Viracopos tem pedágio?",
+        "a": "Tem, nos eixos que ligam a capital à região de Campinas. Esse valor entra no custo total da viagem de carro e precisa ser somado na comparação com aplicativo, junto do combustível de ida e de volta."
+      },
+      {
+        "q": "Como planejar o horário de chegada em Viracopos?",
+        "a": "Some o trajeto rodoviário, a espera pela van e o percurso até o terminal. Com van a cada 15 minutos e 3 minutos de traslado no Garageinn, o pior caso do trecho final fica em torno de 20 minutos."
+      }
+    ]
+  },
+  "onde-estacionar-proximo-ao-aeroporto-de-viracopos": {
+    "aeroporto": "VCP",
+    "angulo": "proximidade em quilômetros e o que ela custa em Viracopos",
+    "faq": [
+      {
+        "q": "Qual pátio parceiro fica mais perto do terminal de Viracopos?",
+        "a": "O Garageinn, a 1,0 km do terminal, medidos pelo motor de reservas, com traslado de 3 minutos e van a cada 15. O Virapark fica a 3,7 km, também com van a cada 15 minutos e operação 24 horas."
+      },
+      {
+        "q": "Quanto custa estar mais perto do terminal em Viracopos?",
+        "a": "Em agosto de 2026, R$ 147,00 a mais na semana: R$ 321,30 no Garageinn, a 1,0 km, contra R$ 174,30 no Virapark, a 3,7 km. É a maior diferença por proximidade entre os aeroportos que a Movepark cobre."
+      },
+      {
+        "q": "Um quilômetro de distância muda o tempo de deslocamento?",
+        "a": "Muda pouco no percurso e nada na espera. O Garageinn declara 3 minutos de traslado e o Virapark opera com a mesma frequência de van, a cada 15 minutos. O tempo de espera pesa mais que os quilômetros."
+      },
+      {
+        "q": "Existe pátio parceiro dentro do aeroporto de Viracopos?",
+        "a": "Os parceiros listados pela Movepark ficam fora do complexo, com traslado próprio. As opções internas, como o edifício garagem, são operadas pelo próprio aeroporto e cobram pela proximidade e pelo acesso a pé ao terminal."
+      },
+      {
+        "q": "Dá para ir a pé do pátio parceiro até o embarque em Viracopos?",
+        "a": "Não é o caminho pensado para isso. Mesmo a 1,0 km, o trajeto passa por via de acesso ao aeroporto, sem calçada contínua e com bagagem em mãos. Os dois parceiros declaram traslado justamente para resolver esse trecho."
+      }
+    ]
+  },
+  "por-que-o-virapark-se-destaca-como-melhor-estacionamento-do-aeroporto-campinas": {
+    "aeroporto": "VCP",
+    "angulo": "o Virapark em números: o que sustenta a posição dele",
+    "faq": [
+      {
+        "q": "O que o Virapark cobra por uma semana em Campinas?",
+        "a": "Em agosto de 2026, R$ 174,30 por sete diárias em vaga coberta, o que dá R$ 24,90 por dia. No mesmo período o outro parceiro listado em Viracopos cobrava R$ 321,30, com vaga avulsa e endereço mais próximo do terminal."
+      },
+      {
+        "q": "A que distância do terminal fica o Virapark?",
+        "a": "A 3,7 km, medidos pelo motor de reservas, com traslado próprio saindo a cada 15 minutos e operação 24 horas. A distância maior é o que sustenta a diferença de R$ 147,00 na semana, em agosto de 2026, contra o pátio mais próximo do terminal."
+      },
+      {
+        "q": "O preço por dia do Virapark cai em estadia longa?",
+        "a": "Ele se mantém estável. Em agosto de 2026 a média era R$ 24,90 por dia em sete, quinze e trinta diárias, com totais de R$ 174,30, R$ 373,50 e R$ 747,00. A previsibilidade ajuda a planejar viagem longa."
+      },
+      {
+        "q": "O Virapark trabalha com vaga coberta?",
+        "a": "Trabalha, e é o tipo publicado no motor de reservas em agosto de 2026, ao preço de R$ 24,90 por dia em sete diárias. A cobertura pesa em estadia longa no interior paulista, onde o sol castiga pintura e borracha."
+      },
+      {
+        "q": "Quanto se economiza fechando o Virapark online?",
+        "a": "Em agosto de 2026, R$ 105,70 na semana: R$ 280,00 no balcão contra R$ 174,30 online. Em trinta diárias a diferença chegava a R$ 453,00, de R$ 1.200,00 para R$ 747,00 pelo mesmo período e pela mesma vaga."
+      }
+    ]
+  },
+  "quais-os-melhores-estacionamentos-do-aeroporto-viracopos-em-2024": {
+    "aeroporto": "VCP",
+    "angulo": "os critérios de comparação em Viracopos e onde cada pátio ganha",
+    "faq": [
+      {
+        "q": "Quais critérios separam os pátios de Viracopos entre si?",
+        "a": "Basicamente dois: distância até o terminal e preço por faixa de permanência. Em agosto de 2026 os dois parceiros declaravam van a cada 15 minutos e operação 24 horas, então o serviço de traslado não os diferencia."
+      },
+      {
+        "q": "Qual pátio de Viracopos ganha em preço?",
+        "a": "O Virapark, com R$ 174,30 pela semana em agosto de 2026 contra R$ 321,30 do Garageinn. Em trinta diárias a diferença cresce para R$ 630,00, de R$ 747,00 contra R$ 1.377,00, sempre no mesmo período e com traslado nos dois lados."
+      },
+      {
+        "q": "Qual pátio de Viracopos ganha em proximidade?",
+        "a": "O Garageinn, a 1,0 km do terminal contra 3,7 km do Virapark, com traslado declarado de 3 minutos. Para quem chega apertado, o percurso curto reduz a variável que mais atrapalha em dia de trânsito na região."
+      },
+      {
+        "q": "Para viagem curta, qual pátio de Viracopos escolher?",
+        "a": "Compare o total pelas diárias que você vai usar, não a tarifa cheia. Em agosto de 2026 a diária avulsa era R$ 40,00 no Virapark e R$ 59,99 no Garageinn, e nenhum dos dois declarava piso de permanência."
+      },
+      {
+        "q": "Uma lista de 2024 ainda descreve Viracopos hoje?",
+        "a": "Descreve o método, não os números. As tabelas mudaram desde então e alguns pátios trocaram de bandeira. Confira o valor com data antes de decidir, porque tarifa de aeroporto costuma ser revista mais de uma vez por ano."
+      }
+    ]
+  },
+  "qual-e-o-valor-da-diaria-estacionamento-aeroporto-viracopos": {
+    "aeroporto": "VCP",
+    "angulo": "a diária avulsa em Viracopos e o que ela representa no total",
+    "faq": [
+      {
+        "q": "Quanto custa a diária avulsa em Viracopos?",
+        "a": "Em agosto de 2026, R$ 40,00 no Virapark, em vaga coberta, e R$ 59,99 no Garageinn, em vaga avulsa. Nenhum dos dois declarava piso de permanência, então a diária única é contratável nos dois endereços."
+      },
+      {
+        "q": "A diária avulsa é proporcional ao pacote em Viracopos?",
+        "a": "Não é. No Virapark a avulsa custava R$ 40,00 em agosto de 2026, e a média em sete diárias caía para R$ 24,90 por dia. Sete avulsas somariam R$ 280,00, contra R$ 174,30 do pacote."
+      },
+      {
+        "q": "Vale contratar mais dias do que vou usar em Viracopos?",
+        "a": "Quase nunca compensa, porque a faixa cobra pelo período contratado. Em agosto de 2026 cada dia sobrando na reserva do Virapark custava R$ 24,90 sem uso. Ajustar as datas com precisão é o que evita esse desperdício."
+      },
+      {
+        "q": "Qual a diária mais barata praticada em Viracopos?",
+        "a": "Considerando o custo por dia dentro de um pacote, R$ 24,90 no Virapark em sete, quinze ou trinta diárias, nos valores de agosto de 2026. Na diária avulsa isolada, o piso era R$ 40,00 no mesmo pátio."
+      },
+      {
+        "q": "O valor da diária inclui o traslado em Viracopos?",
+        "a": "Nos dois parceiros o traslado integra o serviço da unidade e aparece declarado na ficha, com van a cada 15 minutos. O que muda entre eles é a distância percorrida: 1,0 km no Garageinn e 3,7 km no Virapark."
+      }
+    ]
+  },
+  "qual-o-valor-da-diaria-do-estacionamento-no-aeroporto-viracopos-2024": {
+    "aeroporto": "VCP",
+    "angulo": "o que faz a diária de Viracopos subir ou descer",
+    "faq": [
+      {
+        "q": "O que faz a diária variar entre pátios em Viracopos?",
+        "a": "Distância e tipo de vaga explicam quase tudo. Em agosto de 2026 o pátio a 1,0 km do terminal cobrava R$ 45,90 por dia numa semana, e o que fica a 3,7 km cobrava R$ 24,90 pelo mesmo período."
+      },
+      {
+        "q": "A época do ano muda a diária em Viracopos?",
+        "a": "Cada parceiro define a própria tabela e pode revisá-la ao longo do ano, principalmente em alta temporada. O valor exibido no site é o que o motor cobra no fechamento, com a data da última atualização visível."
+      },
+      {
+        "q": "Vaga coberta encarece a diária em Viracopos?",
+        "a": "Encarece na maior parte dos pátios, porque a estrutura custa. Em Viracopos, porém, o parceiro que publica vaga coberta era também o mais barato em agosto de 2026, a R$ 24,90 por dia numa semana."
+      },
+      {
+        "q": "A diária de Viracopos é mais cara que a de Guarulhos?",
+        "a": "Em agosto de 2026, sim, no piso de mercado. A semana mais barata custava R$ 174,30 em Viracopos, ou R$ 24,90 por dia, contra R$ 111,30 em Guarulhos, ou R$ 15,90 por dia, na vaga descoberta."
+      },
+      {
+        "q": "Como acompanhar a diária de Viracopos ao longo do ano?",
+        "a": "Pelo índice de preços da Movepark, que publica o total por faixa de permanência e a data da última atualização de cada tabela. Como o número vem do motor, ele acompanha a revisão do parceiro sem atraso editorial."
+      }
+    ]
+  }
+}

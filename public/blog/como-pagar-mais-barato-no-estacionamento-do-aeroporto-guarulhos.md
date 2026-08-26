@@ -50,3 +50,26 @@ Economizar em uma viagem não significa apenas reduzir custos, mas também maxim
 ## **Conclusão: Viaje com Inteligência Financeira**
 
 Ao viajar pelo Aeroporto de Guarulhos, a economia começa nas escolhas certas, principalmente no estacionamento. Reservar com antecedência, explorar opções próximas e aproveitar promoções são estratégias eficazes para garantir que sua viagem seja econômica e inesquecível.
+
+## Perguntas frequentes
+
+### Qual alavanca derruba mais o preço em Guarulhos?
+
+A faixa de permanência. No Aerovalet, em agosto de 2026, a diária avulsa saía por R$ 18,90 e a média em trinta diárias caía para R$ 14,90, redução de 21%. Nenhuma outra escolha isolada mexe tanto no valor por dia.
+
+### Qual a segunda maior economia disponível?
+
+Trocar a vaga coberta pela descoberta, quando a estação permite. Em agosto de 2026 a semana no Aerovalet ia de R$ 160,30 na coberta para R$ 111,30 na descoberta, R$ 49,00 de diferença pelo mesmo endereço e período.
+
+### Fechar online rende quanto em Guarulhos?
+
+Cerca de 20% sobre o balcão. Na vaga descoberta do Aerovalet o balcão marcava R$ 22,68 a diária em agosto de 2026 contra R$ 18,90 online. É a economia que não exige abrir mão de nada, só decidir antes de chegar.
+
+### Escolher lote mais distante rende quanto?
+
+Foi a menor das alavancas em agosto de 2026: R$ 21,00 na semana entre o Aerovalet, a 4,5 km, e o Aeropark, a 2,7 km. Vale conferir se a diferença compensa perder o traslado próprio que o Aeropark declara.
+
+### Combinar as alavancas muda muito o total?
+
+Muda. Trinta diárias em vaga coberta no Aeropark custavam R$ 777,00 em agosto de 2026, e o mesmo mês em descoberta no Aerovalet saía por R$ 447,00. São R$ 330,00 entre o extremo caro e o extremo econômico.
+

@@ -38,3 +38,26 @@ Transformar sua escala em Guarulhos em uma aventura inesquecível é possível! 
 ## **Estacionamento Próximo ao Aeroporto Guarulhos**
 
 Nossa dica, para você que está na região de Guarulhos ou vai viajar pelo Aeroporto GRU é o **Ponce Park**. Ele é o melhor [estacionamento do Aeroporto Guarulhos](/destinos/aeroporto-internacional-de-sao-paulo-guarulhos), ele oferece muita comodidade, além de ser  seguro e econômico. Eles ficam a apenas 15 minutos do GRU Airport. Reserve sua vaga online e aproveite sua viagem com tranquilidade!
+
+## Perguntas frequentes
+
+### Compensa deixar o carro no aeroporto durante uma escala longa?
+
+Compensa quando a escala passa de um dia. No Aerovalet Guarulhos a diária avulsa saía por R$ 18,90 em agosto de 2026, valor abaixo de duas corridas de aplicativo entre a capital e o terminal. Para escala de poucas horas, o carro no bolsão rotativo costuma resolver melhor.
+
+### Dá para sair do aeroporto e voltar no mesmo dia sem perder a vaga?
+
+A vaga é contratada por período, então sair a pé e voltar não interfere. O que muda a conta é o carro cruzar a cancela: cada entrada e saída conta como movimento, e alguns lotes cobram por isso. Confira a regra do pátio antes de programar o passeio.
+
+### Quanto tempo antes do embarque preciso chegar ao lote em Guarulhos?
+
+O Aeropark fica a 2,7 km do terminal e roda traslado de 10 minutos a cada meia hora, então 40 minutos cobrem espera mais deslocamento com folga. Some isso ao tempo de fila do check-in que a companhia recomenda para o seu voo.
+
+### Existe estacionamento aberto de madrugada em Guarulhos?
+
+Os lotes parceiros listados em Guarulhos operam 24 horas, o que atende voo internacional que chega de madrugada. Guarulhos não tem restrição de operação noturna, e a maior parte dos voos de longo curso pousa entre quatro e seis da manhã.
+
+### Vale a pena vaga coberta se o carro vai ficar poucos dias?
+
+Para uma escala curta, raramente. No Aerovalet a diária coberta saía por R$ 26,90 e a descoberta por R$ 18,90 em agosto de 2026. Em dois dias a diferença é de R$ 16,00, quantia que pesa pouco perto de uma estadia de duas semanas sob sol forte.
+

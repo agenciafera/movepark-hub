@@ -64,3 +64,26 @@ O Aeropark Guarulhos está localizado a cerca de 10 minutos do Aeroporto de Guar
 -   **Reserva Antecipada:** Alguns estacionamentos oferecem descontos para reservas feitas com antecedência.
 -   **Forma de Pagamento:** Verifique se há descontos para determinados meios de pagamento, como PIX.
 -   **Serviços Adicionais:** Considere benefícios como traslado gratuito, segurança 24 horas e possibilidade de levar as chaves
+
+## Perguntas frequentes
+
+### Quanto custa uma semana em cada tipo de vaga em Guarulhos?
+
+No Aeropark, em agosto de 2026, sete diárias saíam por R$ 132,30 na descoberta, R$ 188,30 na coberta e R$ 475,20 no valet. No Aerovalet os mesmos sete dias custavam R$ 111,30 na descoberta e R$ 160,30 na coberta.
+
+### Quanto custa um mês de estacionamento em Guarulhos?
+
+Trinta diárias saíam por R$ 447,00 na descoberta e R$ 657,00 na coberta do Aerovalet em agosto de 2026. No Aeropark, R$ 537,00 e R$ 777,00 para os mesmos tipos. A média diária do mais barato fica em R$ 14,90.
+
+### Quanto custa o serviço de valet em Guarulhos?
+
+Em agosto de 2026 a diária avulsa de valet no Aerovalet saía por R$ 119,20, e a semana no Aeropark por R$ 475,20. O preço cobre a manobra e a entrega do carro no terminal, e não uma vaga de qualidade diferente.
+
+### Como o preço por dia cai conforme a estadia estica?
+
+No Aerovalet, em agosto de 2026, a descoberta saía a R$ 18,90 na diária avulsa, R$ 15,90 por dia em sete diárias, R$ 14,90 em quinze e os mesmos R$ 14,90 em trinta. A queda concentra-se na primeira semana.
+
+### Onde consultar a tabela atualizada de Guarulhos?
+
+No índice de preços da Movepark, que publica o valor por faixa de permanência com a data da última atualização de cada tabela. É o mesmo número que o motor cobra no fechamento, então o que está na tela é o que sai na conta.
+

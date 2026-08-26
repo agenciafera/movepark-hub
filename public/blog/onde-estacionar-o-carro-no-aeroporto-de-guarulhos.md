@@ -14,7 +14,7 @@ _Estacionamento Aeroporto Guarulhos GRU Airport_
 
 * * *
 
-### **1. Por que Estacionar Próximo ao Aeroporto Vale a Pena?**
+## **1. Por que Estacionar Próximo ao Aeroporto Vale a Pena?**
 
 -   **Agilidade no deslocamento**: Estacionamentos próximos reduzem o tempo de deslocamento até o terminal, eliminando o estresse de trânsito imprevisível.
     
@@ -27,7 +27,7 @@ _Estacionamento Aeroporto Guarulhos GRU Airport_
 
 * * *
 
-### **2. AeroParking – Uma Opção Confiável e Prática**
+## **2. AeroParking – Uma Opção Confiável e Prática**
 
 #### **Localização e Distância**
 
@@ -87,7 +87,7 @@ Você pode escolher entre **vagas descobertas** ou **cobertas**, conforme sua pr
 
 * * *
 
-### **3. Como o AeroParking se Compara ao Estacionamento Oficial do GRU**
+## **3. Como o AeroParking se Compara ao Estacionamento Oficial do GRU**
 
 #### **Estacionamento Oficial do Aeroporto (Indigo Group)**
 
@@ -117,7 +117,7 @@ Você pode escolher entre **vagas descobertas** ou **cobertas**, conforme sua pr
 
 * * *
 
-### **4. Quando Escolher AeroParking — e Quando Optar Pelo Oficial**
+## **4. Quando Escolher AeroParking — e Quando Optar Pelo Oficial**
 
 **Vantagens do AeroParking:**
 
@@ -139,7 +139,7 @@ Você pode escolher entre **vagas descobertas** ou **cobertas**, conforme sua pr
 
 * * *
 
-### **5. Dicas Práticas para Escolher o Estacionamento Ideal**
+## **5. Dicas Práticas para Escolher o Estacionamento Ideal**
 
 #### **1. Calcule o tempo total da viagem:**
 
@@ -166,7 +166,7 @@ No AeroParking, você encontra Wi‑Fi gratuito e recepção 24h; outros estacio
 
 * * *
 
-### **6. Roteiro Completo: Passo a Passo para Usar AeroParking**
+## **6. Roteiro Completo: Passo a Passo para Usar AeroParking**
 
 **1. Acesse o site e faça a reserva:**  
 Escolha vaga descoberta ou coberta, selecione número de diárias ou pacote mensal.
@@ -186,7 +186,7 @@ O translado te leva de volta ao AeroParking, pronto para pegar seu veículo.
 
 * * *
 
-### **7. Conclusão**
+## **7. Conclusão**
 
 Se a sua prioridade é **economia sem abrir mão de segurança, conforto e praticidade**, o **AeroParking** é uma excelente escolha para estacionar no Aeroporto de Guarulhos. Com localização estratégica, translado frequente, opções de vagas e preços competitivos — incluindo pacotes mensais — ele oferece um equilíbrio perfeito entre qualidade e valor.
 
@@ -195,3 +195,26 @@ Se você está em dúvida, considere:
 -   **Viagem longa ou custo importante?** Vá de AeroParking.
     
 -   **Curta estadia e deseja chegar o mais perto possível?** Estacionamento oficial pode valer mais.
+
+## Perguntas frequentes
+
+### Em que situação o pátio parceiro é a escolha óbvia em Guarulhos?
+
+Em viagem de uma semana ou mais, quando o custo por dia domina a conta. Em agosto de 2026, trinta diárias na vaga descoberta do Aerovalet saíam por R$ 447,00, média de R$ 14,90 ao dia, patamar difícil de alcançar dentro do complexo.
+
+### E quando o pátio de dentro do aeroporto resolve melhor?
+
+Quando a parada é curta ou o horário está apertado. Sem traslado e sem espera de van, você economiza os cerca de 40 minutos que o deslocamento externo pede no pior caso, e esse tempo vale mais que a diferença de tarifa.
+
+### O que muda na rotina entre um pátio parceiro e o oficial?
+
+Muda o trecho final. No parceiro você deixa o carro, pega a van e desembarca no terminal, com horário a combinar na volta. No oficial você estaciona e caminha, sem depender de terceiro para chegar no portão de embarque.
+
+### Vale usar pátio parceiro em voo com conexão apertada?
+
+Vale se o horário for calculado com folga. O Aeropark declara van a cada meia hora, então o pior caso soma espera mais 10 minutos de traslado. Some esse bloco antes do tempo de check-in que a companhia pede.
+
+### Existe diferença de tipo de vaga entre parceiro e oficial?
+
+Os dois trabalham com coberta e descoberta, e a cobertura pesa no preço nos dois lados. Por isso a comparação honesta é entre a mesma coisa: coberta contra coberta, e não coberta de dentro contra descoberta de fora.
+

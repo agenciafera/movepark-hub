@@ -376,6 +376,12 @@ pergunta com a mesma resposta numa quarta URL. A regra editorial: a FAQ do post 
 só aquele post responde, e a pergunta genérica do aeroporto vira link para `/faq/<slug>`.
 Detalhe em [blog.md](./blog.md).
 
+**O acervo inteiro já está coberto.** Em 25/08/2026 os 84 posts que ainda não tinham FAQ receberam
+uma, com 422 perguntas ao todo, escritas a partir do preço do motor, das distâncias medidas e das
+regras de permanência de cada unidade. Somados aos 11 que já emitiam, **os 95 posts do acervo
+emitem `FAQPage`**. Isso adianta parte da Fase 1: o trabalho que resta ali é a FAQ dos posts novos
+e as páginas de `/faq/<slug>` que faltam para fechar o bloco de perguntas.
+
 ### 4.5 A checagem final de GEO
 
 Leia o post inteiro e pergunte: **se eu tivesse que responder "qual o melhor estacionamento em X"

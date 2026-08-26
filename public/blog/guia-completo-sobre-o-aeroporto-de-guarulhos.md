@@ -116,3 +116,26 @@ O Aeroporto Guarulhos oferece para os clientes, diversas opções de estacioname
 O Aeroporto de Guarulhos é um dos principais portais de entrada e saída do Brasil, oferecendo uma vasta gama de serviços e facilidades para todos os tipos de passageiros. Esperamos que este guia tenha ajudado a responder todas as suas dúvidas sobre o aeroporto. Para mais informações ou reservas de [estacionamento no Aeroporto Guarulhos](/destinos/aeroporto-internacional-de-sao-paulo-guarulhos), acesse o site do Movepark.
 
 Não se esqueça de compartilhar este guia com quem possa precisar e deixar seus comentários abaixo! 🚀✈️
+
+## Perguntas frequentes
+
+### Qual é o nome oficial do aeroporto de Guarulhos?
+
+Aeroporto Internacional de São Paulo, em Guarulhos, conhecido pelo código IATA GRU. Ele fica no município de Guarulhos, na região metropolitana de São Paulo, e é o maior aeroporto do país em movimento de passageiros e em operação internacional.
+
+### Por quais rodovias se chega de carro em Guarulhos?
+
+Os acessos principais são a Rodovia Hélio Smidt, que liga o complexo à Presidente Dutra, e a ligação pela Ayrton Senna. Quem vem pela Ayrton Senna encontra praça de pedágio no caminho, e esse valor entra no custo total da viagem de carro.
+
+### Quantos terminais de passageiros o GRU tem?
+
+Três terminais de passageiros: 1, 2 e 3. O Terminal 3 concentra a operação internacional de longo curso, e os Terminais 1 e 2 respondem pela maior parte dos voos domésticos. O traslado dos pátios externos costuma circular entre eles.
+
+### Onde ficam os estacionamentos em relação aos terminais?
+
+O oficial fica dentro do complexo, com acesso a pé. Os pátios parceiros ficam fora e usam traslado: em agosto de 2026 o Aeropark estava a 2,7 km do terminal e o Aerovalet a 4,5 km, distâncias que a van cobre em minutos.
+
+### Guarulhos opera voos de madrugada?
+
+Opera 24 horas, sem restrição de horário noturno, e boa parte da malha internacional pousa entre quatro e seis da manhã. Os lotes parceiros listados também operam 24 horas, o que permite retirar o carro nesse intervalo.
+

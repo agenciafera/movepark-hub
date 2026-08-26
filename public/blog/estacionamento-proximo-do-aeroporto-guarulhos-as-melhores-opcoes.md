@@ -47,3 +47,26 @@ A grande maioria dos estacionamentos que ficam perto do aeroporto de Guarulhos o
 ### Fique atento aos convênios
 
 Antes de escolher o estacionamento, saiba que muitos oferecem descontos para associados a programas de fidelidade das companhias aéreas ou portadores de determinados cartões de crédito. Vale a pena ficar atento, pois o desconto pode ser interessante.
+
+## Perguntas frequentes
+
+### Qual o pior horário para chegar de carro em Guarulhos?
+
+O fim de tarde de sexta e as vésperas de feriado, quando a Dutra e os acessos ao aeroporto acumulam tráfego. Some ao trajeto o tempo do traslado: o Aeropark declara 10 minutos até o terminal, com van a cada meia hora.
+
+### Como não esquecer onde deixei o carro na volta?
+
+Fotografe a vaga e o setor na hora de estacionar. Em pátio grande, a foto resolve em segundos o que a memória de quem voltou de doze horas de voo costuma não resolver. Vale também guardar o endereço no mapa do celular.
+
+### Como funciona a retirada do carro na volta em Guarulhos?
+
+Você aciona o traslado no ponto combinado com o lote e volta ao pátio para retirar. Nos parceiros que operam 24 horas isso vale para voo que chega de madrugada, horário em que boa parte da malha internacional pousa em Guarulhos.
+
+### O traslado atende os três terminais de Guarulhos?
+
+Os pátios com van costumam parar nos três terminais, mas o ponto exato varia por lote e por horário. Confirme com a equipe na chegada onde o veículo encosta na volta, porque caminhar entre terminais com bagagem custa tempo.
+
+### Quanto tempo somar ao trajeto por causa do estacionamento?
+
+Cerca de 40 minutos entre chegar no pátio, esperar a van e desembarcar no terminal, considerando os 10 minutos de traslado do Aeropark e a saída a cada meia hora. Esse bloco entra antes do tempo de check-in da companhia.
+

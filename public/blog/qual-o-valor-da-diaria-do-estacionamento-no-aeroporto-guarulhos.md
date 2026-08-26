@@ -48,3 +48,26 @@ Escolher um estacionamento seguro e acessível é essencial para garantir a tran
 | Urban Park | R$17,90 |
 | Econo Park | R$25,90 |
 | Indigo | R$75,00 |
+
+## Perguntas frequentes
+
+### O que está incluído numa diária de estacionamento em Guarulhos?
+
+A vaga do tipo contratado pelo período, no endereço do lote. Traslado, quando existe, aparece declarado na ficha da unidade. Serviços como manobra pela equipe ficam em tabela separada, que é o caso do valet.
+
+### Por que a diária avulsa é a mais cara de todas?
+
+Porque ela não dilui o custo fixo da operação. No Aerovalet, em agosto de 2026, a avulsa custava R$ 18,90 e a média em trinta diárias caía para R$ 14,90. São R$ 4,00 por dia, ou R$ 120,00 no mês.
+
+### A diária muda conforme o tipo de vaga em Guarulhos?
+
+Muda, e é a maior fonte de diferença dentro do mesmo endereço. No Aerovalet, em agosto de 2026, a diária era R$ 18,90 na descoberta, R$ 26,90 na coberta e R$ 119,20 no valet, todos no mesmo pátio.
+
+### Duas diárias equivalem a quantas horas de uso?
+
+Depende da regra do lote, e por isso ela merece leitura antes de fechar. Onde existe piso de duas diárias, como no Aeropark em agosto de 2026, uma estadia de poucas horas já entra faturada como dois dias completos.
+
+### Vale comparar diárias entre lotes ou totais de estadia?
+
+Compare totais. A diária avulsa do Aerovalet era R$ 18,90 em agosto de 2026, mas sete diárias somavam R$ 111,30, e não R$ 132,30. O total pelo período que você vai usar é o único número que se compara direto.
+

@@ -1,0 +1,210 @@
+{
+  "como-pagar-mais-barato-no-estacionamento-do-aeroporto-guarulhos": {
+    "aeroporto": "GRU",
+    "angulo": "as alavancas de preço em ordem de tamanho, da maior para a menor",
+    "faq": [
+      {
+        "q": "Qual alavanca derruba mais o preço em Guarulhos?",
+        "a": "A faixa de permanência. No Aerovalet, em agosto de 2026, a diária avulsa saía por R$ 18,90 e a média em trinta diárias caía para R$ 14,90, redução de 21%. Nenhuma outra escolha isolada mexe tanto no valor por dia."
+      },
+      {
+        "q": "Qual a segunda maior economia disponível?",
+        "a": "Trocar a vaga coberta pela descoberta, quando a estação permite. Em agosto de 2026 a semana no Aerovalet ia de R$ 160,30 na coberta para R$ 111,30 na descoberta, R$ 49,00 de diferença pelo mesmo endereço e período."
+      },
+      {
+        "q": "Fechar online rende quanto em Guarulhos?",
+        "a": "Cerca de 20% sobre o balcão. Na vaga descoberta do Aerovalet o balcão marcava R$ 22,68 a diária em agosto de 2026 contra R$ 18,90 online. É a economia que não exige abrir mão de nada, só decidir antes de chegar."
+      },
+      {
+        "q": "Escolher lote mais distante rende quanto?",
+        "a": "Foi a menor das alavancas em agosto de 2026: R$ 21,00 na semana entre o Aerovalet, a 4,5 km, e o Aeropark, a 2,7 km. Vale conferir se a diferença compensa perder o traslado próprio que o Aeropark declara."
+      },
+      {
+        "q": "Combinar as alavancas muda muito o total?",
+        "a": "Muda. Trinta diárias em vaga coberta no Aeropark custavam R$ 777,00 em agosto de 2026, e o mesmo mês em descoberta no Aerovalet saía por R$ 447,00. São R$ 330,00 entre o extremo caro e o extremo econômico."
+      }
+    ]
+  },
+  "estacionamento-aeroporto-guarulhos-veja-o-preco-dos-principais-estacionamentos": {
+    "aeroporto": "GRU",
+    "angulo": "preço lado a lado entre os pátios, com o que explica cada diferença",
+    "faq": [
+      {
+        "q": "Qual a diferença de preço entre os dois principais pátios de Guarulhos?",
+        "a": "Em agosto de 2026, sete diárias na vaga descoberta saíam por R$ 111,30 no Aerovalet e R$ 132,30 no Aeropark. Na coberta, R$ 160,30 contra R$ 188,30. O Aerovalet lidera nos dois tipos, com 1,8 km a mais de distância."
+      },
+      {
+        "q": "O que justifica o pátio mais caro ser mais caro em Guarulhos?",
+        "a": "Distância e traslado próprio. O Aeropark fica a 2,7 km do terminal, contra 4,5 km do Aerovalet, e declara van de 10 minutos a cada meia hora. O preço maior compra proximidade e o trecho final resolvido."
+      },
+      {
+        "q": "A ordem de preço muda conforme a duração da estadia?",
+        "a": "A ordem se manteve em agosto de 2026, mas a distância entre os dois cresce: R$ 21,00 em sete diárias, R$ 45,00 em quinze e R$ 90,00 em trinta, sempre na vaga descoberta. Quanto mais longa a viagem, mais pesa a escolha."
+      },
+      {
+        "q": "Existe pátio parceiro fora do eixo em Guarulhos?",
+        "a": "Existe o Lisboa Park, a 24,1 km do terminal, com traslado declarado. A distância muda a natureza do serviço, e ele atende principalmente quem deixa o carro por temporadas longas e planeja o deslocamento com antecedência."
+      },
+      {
+        "q": "Onde vejo esses preços atualizados sem depender do texto?",
+        "a": "No índice de preços da Movepark, que publica o total por faixa de permanência com a data de cada tabela. O número vem do motor de reservas, então o que aparece na tela é o que sai no fechamento."
+      }
+    ]
+  },
+  "melhor-estacionamento-aeroporto-guarulhos-2022": {
+    "aeroporto": "GRU",
+    "angulo": "o que mudou de 2022 para cá e o que continua valendo",
+    "faq": [
+      {
+        "q": "O que mudou no estacionamento de Guarulhos desde 2022?",
+        "a": "Mudaram as tarifas e alguns nomes de pátio, que entram e saem de operação com frequência. O que permaneceu foi a lógica: distância, traslado, tipo de vaga e piso de permanência continuam explicando quase toda a diferença de preço."
+      },
+      {
+        "q": "Vale confiar em recomendação de estacionamento de 2022?",
+        "a": "Vale pelo critério, não pelo nome nem pelo preço. Pátio de aeroporto muda de bandeira, de dono e de tabela em poucos anos, e valor de 2022 não descreve o que se cobra hoje em Guarulhos."
+      },
+      {
+        "q": "Quais pátios a Movepark lista hoje em Guarulhos?",
+        "a": "Aeropark, a 2,7 km do terminal e com traslado declarado, Aerovalet, a 4,5 km e com a menor tarifa em agosto de 2026, e Lisboa Park, a 24,1 km, voltado a estadia longa. Os três operam 24 horas."
+      },
+      {
+        "q": "Os preços subiram muito desde 2022 em Guarulhos?",
+        "a": "A comparação honesta exige as duas tabelas com data, e a de 2022 não está mais disponível no motor. O que dá para publicar com segurança é o valor de hoje: R$ 111,30 pela semana descoberta no Aerovalet em agosto de 2026."
+      },
+      {
+        "q": "Como não cair em texto desatualizado ao pesquisar?",
+        "a": "Procure a data de referência ao lado de cada valor. Texto sem data pode estar descrevendo um pátio que fechou ou uma tabela substituída três vezes. Se a data não aparece, trate o número como referência histórica."
+      }
+    ]
+  },
+  "melhores-opcoes-de-estacionamento-gru-airport": {
+    "aeroporto": "GRU",
+    "angulo": "o traslado como serviço: o que ele resolve e como avaliá-lo",
+    "faq": [
+      {
+        "q": "O traslado do pátio até o terminal é cobrado à parte em Guarulhos?",
+        "a": "Nos parceiros que declaram traslado próprio, ele integra o serviço da unidade e aparece na ficha dela. O Aeropark declara 10 minutos até o terminal, com van a cada meia hora e operação 24 horas."
+      },
+      {
+        "q": "Como avaliar se o traslado de um pátio é bom?",
+        "a": "Olhe dois números na ficha: minutos até o terminal e intervalo entre as saídas. Dez minutos de percurso com van a cada meia hora dá um pior caso de 40 minutos, e é esse pior caso que entra no seu planejamento."
+      },
+      {
+        "q": "O que fazer se o lote não tiver traslado próprio?",
+        "a": "Resolva o trecho final antes do dia da viagem, por aplicativo ou com alguém que leve. O Aerovalet, por exemplo, não declara van própria, e por isso pratica a menor tarifa entre os parceiros de Guarulhos."
+      },
+      {
+        "q": "O traslado funciona também na volta em Guarulhos?",
+        "a": "Funciona, com acionamento no ponto combinado com o lote na hora do desembarque. Nos parceiros que operam 24 horas isso cobre chegada de madrugada, horário em que boa parte da malha internacional pousa em Guarulhos e o aplicativo fica escasso."
+      },
+      {
+        "q": "Vale pagar mais caro por um pátio só pelo traslado?",
+        "a": "Em agosto de 2026 essa diferença era de R$ 21,00 na semana, entre R$ 111,30 sem van própria e R$ 132,30 com ela. Para quem viaja sozinho e com bagagem, costuma valer; para quem tem carona na volta, não."
+      }
+    ]
+  },
+  "qual-e-o-melhor-estacionamento-aeroporto-guarulhos-2023": {
+    "aeroporto": "GRU",
+    "angulo": "o que define o melhor, e por que a resposta muda com o perfil da viagem",
+    "faq": [
+      {
+        "q": "Existe um melhor estacionamento único em Guarulhos?",
+        "a": "Existe o melhor para cada viagem. Para trinta dias, ganha quem tem o menor custo por dia. Para uma noite antes de voo às seis da manhã, ganha quem está mais perto e tem van frequente. Os dois critérios raramente apontam para o mesmo pátio."
+      },
+      {
+        "q": "Qual pátio ganha em custo por dia em Guarulhos?",
+        "a": "Em agosto de 2026 o Aerovalet, com R$ 14,90 por dia na vaga descoberta em trinta diárias, contra R$ 17,90 no Aeropark no mesmo tipo e período. Ele fica a 4,5 km do terminal e não declara traslado próprio."
+      },
+      {
+        "q": "Qual pátio ganha em conveniência em Guarulhos?",
+        "a": "O Aeropark, a 2,7 km do terminal, com traslado de 10 minutos a cada meia hora e operação 24 horas. Em agosto de 2026 a semana descoberta lá custava R$ 132,30, R$ 21,00 acima do concorrente mais barato."
+      },
+      {
+        "q": "Como decidir entre custo e conveniência em Guarulhos?",
+        "a": "Divida a diferença pelo número de dias da viagem. Em agosto de 2026, numa semana, os R$ 21,00 entre os dois pátios equivaliam a R$ 3,00 por dia. Se esse valor comprar a van e 1,8 km a menos de percurso, a conveniência ganha."
+      },
+      {
+        "q": "Uma escolha feita em 2023 continua boa hoje?",
+        "a": "O critério continua, os números não. Tabelas de aeroporto mudam várias vezes ao ano, e pátio muda de bandeira. Confira o valor atual antes de repetir a escolha, mesmo que o raciocínio do texto ainda faça sentido."
+      }
+    ]
+  },
+  "qual-e-o-preco-medio-do-estacionamento-no-aeroporto-guarulhos": {
+    "aeroporto": "GRU",
+    "angulo": "preço médio: por que a média engana e o que olhar no lugar",
+    "faq": [
+      {
+        "q": "Qual o preço médio de estacionamento em Guarulhos?",
+        "a": "Média junta coisas diferentes e por isso engana. Em agosto de 2026 a diária ia de R$ 18,90 na descoberta a R$ 119,20 no valet, dentro do mesmo pátio. A média entre os dois não descreve nenhum serviço real."
+      },
+      {
+        "q": "O que olhar no lugar do preço médio?",
+        "a": "O total do período exato, no tipo de vaga que você vai usar. Sete diárias descobertas custavam R$ 111,30 no Aerovalet em agosto de 2026, e é esse número que se compara com outro pátio no mesmo tipo e prazo."
+      },
+      {
+        "q": "Qual a faixa de preço praticada em Guarulhos hoje?",
+        "a": "Em agosto de 2026, entre os parceiros listados, a semana ia de R$ 111,30 na vaga descoberta mais econômica a R$ 475,20 no valet. Coberta ficava entre R$ 160,30 e R$ 188,30 no mesmo período."
+      },
+      {
+        "q": "O preço por dia é constante ao longo da estadia?",
+        "a": "Não é. No Aerovalet, em agosto de 2026, a descoberta saía a R$ 18,90 por dia na avulsa, R$ 15,90 em sete diárias e R$ 14,90 em quinze. A queda concentra-se nos primeiros dias e depois estabiliza."
+      },
+      {
+        "q": "Média de mercado serve para negociar preço em Guarulhos?",
+        "a": "Serve para saber se uma cotação está fora da curva, e não como alvo. Cada pátio define a própria tabela, e o que muda o valor é o serviço embutido: distância, cobertura, traslado e piso de permanência."
+      }
+    ]
+  },
+  "qual-o-melhor-estacionamento-no-aeroporto-de-guarulhos-em-2024": {
+    "aeroporto": "GRU",
+    "angulo": "vaga premium e vaga comum: o que muda de verdade e quanto custa",
+    "faq": [
+      {
+        "q": "O que diferencia uma vaga premium de uma comum em Guarulhos?",
+        "a": "Em geral cobertura, localização dentro do pátio e serviço de manobra. O nome muda de lote para lote, então o que vale é o tipo declarado na ficha: descoberta, coberta ou valet, cada um com tabela própria."
+      },
+      {
+        "q": "O valet de Guarulhos cobra por diária ou por pacote?",
+        "a": "Cobra dos dois jeitos, com tabela própria. Em agosto de 2026 a diária avulsa de valet saía por R$ 119,20 no Aerovalet, e o pacote de sete diárias por R$ 475,20 no Aeropark, o que dá R$ 67,88 ao dia."
+      },
+      {
+        "q": "Vale a pena valet em viagem longa a partir de Guarulhos?",
+        "a": "Em estadia longa a conta pesa. Sete diárias de valet custavam R$ 475,20 no Aeropark em agosto de 2026 contra R$ 132,30 na vaga descoberta do mesmo pátio, diferença de R$ 342,90 pelo mesmo período."
+      },
+      {
+        "q": "Vaga coberta é o suficiente para quem quer conforto?",
+        "a": "Para a maioria, sim. Em agosto de 2026 a coberta do Aeropark saía por R$ 188,30 na semana, R$ 56,00 acima da descoberta, e resolve sol e granizo. O valet resolve outra coisa: o tempo entre o carro e o portão."
+      },
+      {
+        "q": "Como escolher entre os três tipos de vaga em Guarulhos?",
+        "a": "Pela duração e pelo horário. Estadia longa e sol forte pedem coberta; chegada apertada e bagagem pesada pedem valet; viagem curta e orçamento contado ficam bem na descoberta, que era a mais barata em agosto de 2026."
+      }
+    ]
+  },
+  "valor-de-diaria-estacionamento-aeroporto-guarulhos": {
+    "aeroporto": "GRU",
+    "angulo": "um top 3 honesto: como montar o ranking e o que ele esconde",
+    "faq": [
+      {
+        "q": "Como montar um ranking honesto de estacionamentos em Guarulhos?",
+        "a": "Fixe três variáveis antes de ordenar: o período da estadia, o tipo de vaga e a data do preço. Sem esses três, dois pátios lado a lado podem estar sendo comparados em serviços e meses diferentes."
+      },
+      {
+        "q": "Um ranking por diária avulsa serve para viagem longa?",
+        "a": "Não serve. Em agosto de 2026 a diária avulsa do Aerovalet era R$ 18,90, mas a média em trinta diárias caía para R$ 14,90. A ordem em avulsa não descreve a ordem em pacote longo."
+      },
+      {
+        "q": "O ranking muda entre vaga coberta e descoberta em Guarulhos?",
+        "a": "A distância entre os pátios muda de tamanho. Em agosto de 2026, na descoberta a semana ia de R$ 111,30 a R$ 132,30, e na coberta de R$ 160,30 a R$ 188,30. Comparar tipos diferentes desmonta o ranking."
+      },
+      {
+        "q": "O estacionamento oficial deve entrar no ranking?",
+        "a": "Deve, porque ele é a alternativa real de quem chega ao aeroporto. O que não vale é comparar coberta interna com descoberta externa: são serviços diferentes, e a diferença de preço deixa de significar alguma coisa."
+      },
+      {
+        "q": "Quantos pátios cabem num top 3 de Guarulhos?",
+        "a": "Em agosto de 2026 a Movepark listava três endereços parceiros, o que já preenche um top 3 com perfis distintos: o mais próximo com van, o mais barato sem van, e o de estadia longa a 24,1 km do terminal."
+      }
+    ]
+  }
+}

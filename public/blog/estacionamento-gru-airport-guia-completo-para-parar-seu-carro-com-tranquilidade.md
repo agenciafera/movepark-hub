@@ -234,3 +234,26 @@ Então, da próxima vez que você for viajar por Guarulhos, já sabe:
 -   AeroParking = barato, seguro, traslado grátis, reserva fácil.
     
 -   Economia de até 50% ou mais.
+
+## Perguntas frequentes
+
+### Quando o estacionamento oficial de Guarulhos compensa?
+
+Em parada curta e com pressa. O oficial fica dentro do complexo, com acesso a pé ao terminal, o que elimina traslado e espera. Para algumas horas ou uma noite, esses minutos costumam valer mais que a diferença de tarifa.
+
+### Quando o pátio externo ganha do oficial em Guarulhos?
+
+Em estadia longa, quando o custo por dia domina a conta. Trinta diárias na vaga descoberta do Aerovalet saíam por R$ 447,00 em agosto de 2026, média de R$ 14,90 por dia, patamar que o edifício garagem dentro do aeroporto não alcança.
+
+### Quantos terminais tem o Aeroporto de Guarulhos?
+
+Três: Terminal 1, Terminal 2 e Terminal 3. O Terminal 3 concentra a operação internacional de longo curso. O traslado dos pátios externos costuma parar nos três, mas confirme o ponto de desembarque com a equipe do lote na chegada.
+
+### O edifício garagem do aeroporto é a única opção interna?
+
+O complexo tem áreas cobertas e descobertas com tabelas diferentes, e a cobertura pesa no preço lá também. A comparação honesta é entre a mesma coisa: coberta interna contra coberta externa, e não coberta interna contra descoberta de fora.
+
+### Dá para trocar de opção depois que a viagem começou?
+
+Na prática, não vale. O carro já está no pátio, e mudar significa ir buscar, dirigir até outro endereço e pagar duas entradas. É por isso que a comparação precisa acontecer antes, quando ela custa apenas alguns minutos de pesquisa.
+

@@ -48,3 +48,26 @@ O Aeropark oferece tarifas competitivas, com desconto para pagamento online.
 O Aeropark Guarulhos é uma excelente opção de estacionamento para quem busca segurança, conforto e praticidade no Aeroporto de Guarulhos. Com vagas cobertas e descobertas, diversas opções de serviços e tarifas competitivas, o Aeropark tem tudo para tornar sua viagem mais tranquila.
 
 **Reserve sua vaga online agora mesmo e aproveite sua viagem sem preocupações!**
+
+## Perguntas frequentes
+
+### O Aeropark tem vaga coberta em Guarulhos?
+
+Tem, e trabalha com três tipos: descoberta, coberta e valet. Em agosto de 2026 a semana saía por R$ 132,30 na descoberta, R$ 188,30 na coberta e R$ 475,20 no valet, todos no mesmo endereço, a 2,7 km do terminal.
+
+### Quanto a cobertura encarece a semana no Aeropark?
+
+Cinquenta e seis reais. Em agosto de 2026 sete diárias saíam por R$ 132,30 na vaga descoberta e R$ 188,30 na coberta, o que dá 42% a mais. Em trinta diárias a diferença sobe para R$ 240,00, de R$ 537,00 para R$ 777,00.
+
+### A cobertura protege de granizo em São Paulo?
+
+Cobertura é estrutura física sobre a vaga, então ela barra sol direto, chuva e granizo pequeno. A ficha de cada lote diz se a cobertura é de laje, telha ou tela, e vale conferir antes de fechar, porque o material muda o quanto ela segura.
+
+### Vale trocar coberta por valet no Aeropark?
+
+São serviços diferentes. Em agosto de 2026 a semana de valet custava R$ 475,20 no Aeropark contra R$ 188,30 na coberta. O valet entrega o carro no terminal e busca lá, e é isso que está no preço, não uma vaga melhor.
+
+### O Aeropark cobra estadia mínima?
+
+Cobra. Em agosto de 2026 o lote trabalhava com piso de duas diárias, então uma estadia de algumas horas entra faturada como dois dias. Para parada curta em Guarulhos o Aerovalet, que aceita diária avulsa, costuma sair na frente.
+

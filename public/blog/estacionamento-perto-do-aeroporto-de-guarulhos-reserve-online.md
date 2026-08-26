@@ -40,3 +40,26 @@ Reservar um estacionamento perto do Aeroporto de Guarulhos online é rápido e s
 2.  Compare as opções disponíveis, levando em consideração os serviços oferecidos e as tarifas;
 3.  Selecione o estacionamento que melhor atenda às suas necessidades e faça sua reserva online;
 4.  Preencha as informações solicitadas.
+
+## Perguntas frequentes
+
+### O que a reserva online resolve além do preço em Guarulhos?
+
+Resolve a previsibilidade. Você chega sabendo o endereço, o valor total e a regra do lote, em vez de descobrir tudo na cancela com o voo se aproximando. A tarifa menor é consequência, e não o único ganho.
+
+### Quanto a reserva online economiza numa semana em Guarulhos?
+
+No Aeropark, sete diárias em vaga coberta saíam por R$ 225,96 no balcão e R$ 188,30 online em agosto de 2026, diferença de R$ 37,66. Na descoberta o mesmo período ia de R$ 158,76 para R$ 132,30.
+
+### Preciso imprimir alguma coisa para entrar no pátio?
+
+Não precisa. A portaria confere a reserva pelo sistema, com os dados do veículo informados no fechamento. Manter a placa correta na reserva é o que evita conferência manual na cancela, e não papel impresso nem comprovante no e-mail.
+
+### Reservar online prende a data de saída?
+
+A reserva fixa o período contratado, e a extensão segue a regra do lote, cobrada à parte. Por isso vale reservar já com a folga que a volta pode exigir, principalmente em viagem com conexão que costuma atrasar.
+
+### Dá para reservar em Guarulhos em cima da hora?
+
+Dá, e ainda assim sai por menos que o balcão. O que muda de véspera é a disponibilidade: em pico de férias e feriado emendado os pátios enchem, e quem reserva por último escolhe entre o que sobrou.
+

@@ -1,0 +1,62 @@
+{
+  "qual-e-o-valor-da-diaria-estacionamento-aeroporto-guarulhos": {
+    "aeroporto": "GRU",
+    "angulo": "valor da diária avulsa e como ela cai por faixa de permanência",
+    "faq": [
+      {
+        "q": "A diária fica mais barata quando eu deixo o carro mais dias?",
+        "a": "Fica, e a queda é grande. No Aerovalet Guarulhos a diária avulsa saía por R$ 18,90 em agosto de 2026, o pacote de sete diárias por R$ 111,30, o que dá R$ 15,90 por dia, e o de trinta por R$ 447,00, ou R$ 14,90 por dia."
+      },
+      {
+        "q": "Qual a diferença de preço entre vaga coberta e descoberta em Guarulhos?",
+        "a": "No Aerovalet a descoberta saía por R$ 18,90 a diária e a coberta por R$ 26,90 em agosto de 2026, oito reais de diferença por dia. Numa semana a distância vira R$ 49,00, que é o preço de tirar o carro do sol e do granizo."
+      },
+      {
+        "q": "Existe estadia mínima nos estacionamentos perto do Aeroporto de Guarulhos?",
+        "a": "Depende do lote, e isso muda a conta de viagem curta. O Aeropark trabalhava com piso de duas diárias em agosto de 2026, então algumas horas entram cobradas como dois dias. O Aerovalet não declarava piso e aceita diária avulsa."
+      },
+      {
+        "q": "Reservar online sai mais barato que pagar no balcão em Guarulhos?",
+        "a": "Sai. Na vaga descoberta do Aerovalet o balcão marcava R$ 22,68 a diária em agosto de 2026 e o preço online, R$ 18,90. São 20% de diferença no mesmo pátio, pelo mesmo serviço, só por fechar antes de chegar no aeroporto."
+      },
+      {
+        "q": "Quanto custa deixar o carro 15 dias no Aeroporto de Guarulhos?",
+        "a": "Na vaga descoberta do Aerovalet, quinze diárias saíam por R$ 223,50 em agosto de 2026, o equivalente a R$ 14,90 por dia. No Aeropark, que fica mais perto do terminal e roda traslado, o mesmo período custava R$ 268,50."
+      },
+      {
+        "q": "Vale pagar mais caro por um lote mais perto do terminal?",
+        "a": "A conta é curta e você decide com dois números. O Aeropark fica a 2,7 km do terminal, com traslado de 10 minutos a cada meia hora, e pedia R$ 132,30 por sete diárias na descoberta em agosto de 2026. O Aerovalet fica a 4,5 km e pedia R$ 111,30."
+      }
+    ]
+  },
+  "top-3-estacionamentos-do-aeroporto-de-congonhas": {
+    "aeroporto": "CGH",
+    "angulo": "comparativo entre os lotes parceiros de Congonhas, com distância e regra de permanência",
+    "faq": [
+      {
+        "q": "Qual estacionamento fica mais perto do terminal de Congonhas?",
+        "a": "O Aerovalet Congonhas fica a 700 metros do terminal e o Plenty Park a 900 metros, medidos pelo motor de reservas. Nos dois a distância é curta a ponto de dispensar van, e nenhum dos dois declara traslado próprio na ficha."
+      },
+      {
+        "q": "Sete diárias saem mais baratas em qual dos dois lotes?",
+        "a": "No Plenty Park. Em agosto de 2026 a semana em vaga coberta saía por R$ 188,30 lá e R$ 202,30 no Aerovalet. A diferença de R$ 14,00 vem junto de uma regra: o Plenty Park só aceita estadia a partir de três diárias."
+      },
+      {
+        "q": "Existe estadia mínima nos estacionamentos de Congonhas?",
+        "a": "No Plenty Park existe, três diárias, então uma parada de um dia entra cobrada como três. O Aerovalet aceita diária avulsa, que saía por R$ 32,90 em agosto de 2026. Para viagem curta essa regra pesa mais que o preço do dia."
+      },
+      {
+        "q": "Os estacionamentos de Congonhas funcionam de madrugada?",
+        "a": "Os dois lotes parceiros listados em Congonhas operam 24 horas, o que cobre retirada de madrugada. O aeroporto tem restrição de voo noturno, mas quem embarca por Congonhas e volta por outro aeroporto costuma buscar o carro fora do horário comercial."
+      },
+      {
+        "q": "Compensa o pacote de 30 dias em Congonhas?",
+        "a": "Compensa em um dos dois. Trinta diárias em vaga coberta custavam R$ 511,90 no Aerovalet e R$ 777,00 no Plenty Park em agosto de 2026. No Aerovalet o mês sai a R$ 17,06 por dia, quase metade da diária avulsa de R$ 32,90."
+      },
+      {
+        "q": "Reservar antes sai mais barato que chegar e pagar em Congonhas?",
+        "a": "Sai nos dois lotes. No Aerovalet a diária de balcão marcava R$ 43,98 em agosto de 2026 contra R$ 32,90 online. No Plenty Park a semana ia de R$ 266,00 no balcão para R$ 188,30 online, uma diferença de R$ 77,70 na mesma vaga."
+      }
+    ]
+  }
+}

@@ -88,3 +88,26 @@ Curitiba é conhecida por sua rica cultura e excelente gastronomia. Não perca a
 ## Conclusão
 
 O Aeroporto Internacional de Curitiba é um dos principais aeroportos do Brasil, oferecendo uma infraestrutura moderna e uma ampla gama de serviços para garantir uma experiência de viagem confortável e eficiente. Esperamos que este guia completo tenha fornecido todas as informações que você precisa para sua próxima visita ao Aeroporto.
+
+## Perguntas frequentes
+
+### Qual o nome e a localização oficial do aeroporto de Curitiba?
+
+Aeroporto Internacional Afonso Pena, código IATA CWB, localizado em São José dos Pinhais, na região metropolitana de Curitiba. Ele atende a capital paranaense, boa parte do litoral e o interior do estado, e é o principal aeroporto do Paraná.
+
+### Como se chega de carro ao Afonso Pena?
+
+O acesso principal vem pela BR-277 e pelo Contorno Leste, que ligam Curitiba a São José dos Pinhais. O trajeto costuma ser curto, e o tempo maior vai para o trânsito urbano nos horários de pico da capital.
+
+### O Afonso Pena opera 24 horas?
+
+O aeroporto opera voos ao longo de todo o dia, com concentração no começo da manhã e no fim da tarde. Os dois pátios parceiros listados funcionam 24 horas, o que cobre entrega e retirada fora do horário comercial.
+
+### Onde ficam os estacionamentos em relação ao terminal de Curitiba?
+
+O oficial fica dentro do complexo, com acesso a pé. Os parceiros ficam fora, a 1,4 km e 2,6 km do terminal em agosto de 2026, os dois com traslado próprio declarado de cinco minutos até o embarque.
+
+### Quanto custa deixar o carro durante uma viagem por Curitiba?
+
+Em agosto de 2026 a semana custava a partir de R$ 118,30 em vaga descoberta, no Abbapark. O piso de três diárias vale nos dois parceiros, então viagem de um dia entra cobrada como três.
+

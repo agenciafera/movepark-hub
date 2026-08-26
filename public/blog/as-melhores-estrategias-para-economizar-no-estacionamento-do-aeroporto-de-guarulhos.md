@@ -34,3 +34,26 @@ Comparado aos táxis, Uber e ao estacionamento oficial do aeroporto, o Ponce Par
 ## Conclusão
 
 Com essas estratégias, você poderá economizar significativamente no estacionamento do Aeroporto de Guarulhos, tornando sua viagem mais conveniente e acessível. Lembre-se de chegar com antecedência e aproveitar todas as vantagens oferecidas pelos [estacionamentos próximos ao GRU Airport](/destinos/aeroporto-internacional-de-sao-paulo-guarulhos). Boa viagem! 🛫🚗
+
+## Perguntas frequentes
+
+### Qual estratégia economiza mais dinheiro em Guarulhos?
+
+Fechar antes de chegar. Na vaga descoberta do Aerovalet o balcão marcava R$ 22,68 a diária em agosto de 2026 e o preço online, R$ 18,90. É 20% pelo mesmo pátio e pela mesma vaga, sem exigir nada além de decidir com antecedência.
+
+### O pacote de dias sai melhor que somar diárias avulsas?
+
+Sai. No Aerovalet, sete diárias avulsas a R$ 18,90 dariam R$ 132,30, e o pacote de sete saía por R$ 111,30 em agosto de 2026. São R$ 21,00 de diferença, e ela cresce conforme a viagem estica.
+
+### Aceitar um lote mais distante economiza quanto em Guarulhos?
+
+Em agosto de 2026, sete diárias na descoberta custavam R$ 111,30 no Aerovalet, a 4,5 km do terminal, e R$ 132,30 no Aeropark, a 2,7 km. São R$ 21,00 por 1,8 km a mais, com a contrapartida de o Aeropark ter traslado próprio.
+
+### Dispensar a cobertura vale a economia?
+
+Depende da estação e da duração. Em agosto de 2026 a semana descoberta saía por R$ 111,30 no Aerovalet e a coberta por R$ 160,30. Para uma semana de inverno em São Paulo a diferença de R$ 49,00 pesa mais que o sol; para trinta dias de verão, menos.
+
+### Estender a viagem encarece o preço já fechado?
+
+A extensão é cobrada à parte, pela regra do lote, e não pelo valor que você pagou antes. Por isso vale acertar a data de volta com folga na hora de reservar, em vez de contar com ajuste na saída.
+

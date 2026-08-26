@@ -26,3 +26,30 @@ A economia pode ser bem interessante ao ponto de fazê-lo ir de carro pois irá 
 | 10 Dias | R$ 450,00 | R$ 107,91 | R$ 342,09 |
 | 15 Dias | R$ 675,00 | R$ 161,87 | R$ 513,13 |
 | 30 Dias | R$ 1.350,00 | R$ 216,00 | R$ 1134,00 |
+
+## Perguntas frequentes
+
+### A diária fica mais barata quando eu deixo o carro mais dias?
+
+Fica, e a queda é grande. No Aerovalet Guarulhos a diária avulsa saía por R$ 18,90 em agosto de 2026, o pacote de sete diárias por R$ 111,30, o que dá R$ 15,90 por dia, e o de trinta por R$ 447,00, ou R$ 14,90 por dia.
+
+### Qual a diferença de preço entre vaga coberta e descoberta em Guarulhos?
+
+No Aerovalet a descoberta saía por R$ 18,90 a diária e a coberta por R$ 26,90 em agosto de 2026, oito reais de diferença por dia. Numa semana a distância vira R$ 49,00, que é o preço de tirar o carro do sol e do granizo.
+
+### Existe estadia mínima nos estacionamentos perto do Aeroporto de Guarulhos?
+
+Depende do lote, e isso muda a conta de viagem curta. O Aeropark trabalhava com piso de duas diárias em agosto de 2026, então algumas horas entram cobradas como dois dias. O Aerovalet não declarava piso e aceita diária avulsa.
+
+### Reservar online sai mais barato que pagar no balcão em Guarulhos?
+
+Sai. Na vaga descoberta do Aerovalet o balcão marcava R$ 22,68 a diária em agosto de 2026 e o preço online, R$ 18,90. São 20% de diferença no mesmo pátio, pelo mesmo serviço, só por fechar antes de chegar no aeroporto.
+
+### Quanto custa deixar o carro 15 dias no Aeroporto de Guarulhos?
+
+Na vaga descoberta do Aerovalet, quinze diárias saíam por R$ 223,50 em agosto de 2026, o equivalente a R$ 14,90 por dia. No Aeropark, que fica mais perto do terminal e roda traslado, o mesmo período custava R$ 268,50.
+
+### Vale pagar mais caro por um lote mais perto do terminal?
+
+A conta é curta e você decide com dois números. O Aeropark fica a 2,7 km do terminal, com traslado de 10 minutos a cada meia hora, e pedia R$ 132,30 por sete diárias na descoberta em agosto de 2026. O Aerovalet fica a 4,5 km e pedia R$ 111,30.
+

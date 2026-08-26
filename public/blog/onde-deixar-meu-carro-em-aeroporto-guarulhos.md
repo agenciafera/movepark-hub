@@ -70,3 +70,26 @@ Viajar pelo Aeroporto de Guarulhos é uma jornada emocionante, mas decidir onde 
 4.  **Planeje o Deslocamento:** Antes de sair, planeje sua rota considerando o trânsito e possíveis contratempos para garantir uma chegada tranquila
 
 Em resumo, enquanto outras opções estão disponíveis, ir de carro se destaca como a alternativa mais completa e conveniente. Oferecendo a combinação ideal de liberdade, segurança e eficiência, viajar de carro para o Aeroporto de Guarulhos é a escolha que garante uma experiência inigualável.
+
+## Perguntas frequentes
+
+### Como comparar ir de carro com ir de aplicativo para Guarulhos?
+
+Some quatro parcelas do lado do carro: combustível da ida e da volta, pedágio se você usar a Ayrton Senna, e a estadia no pátio. Do outro lado ficam duas corridas, ida e volta, com tarifa que varia por horário e por origem.
+
+### A partir de quantos dias o carro perde para o aplicativo?
+
+O ponto de virada é individual, porque depende de onde você mora. Como referência, em agosto de 2026 a estadia de sete diárias na vaga descoberta do Aerovalet custava R$ 111,30, e é esse valor que entra contra o preço de duas corridas.
+
+### Ônibus e metrô resolvem a chegada em Guarulhos?
+
+Resolvem para quem viaja leve e sem horário apertado. O complexo é servido por linhas de ônibus e por conexão ferroviária até a região, mas a combinação de bagagem, madrugada e voo internacional é o que costuma empurrar a decisão de volta para o carro.
+
+### Ir de carro compensa em viagem de um dia só?
+
+Compensa se o pátio aceitar diária avulsa. Em agosto de 2026 o Aerovalet cobrava R$ 18,90 pela diária e não declarava piso de permanência, enquanto o Aeropark trabalhava com mínimo de duas diárias, o que dobra a conta de quem usa um dia.
+
+### Quem me leva do pátio até o terminal em Guarulhos?
+
+Depende do lote. O Aeropark declara traslado próprio, com 10 minutos até o terminal e van a cada meia hora. Lotes sem traslado próprio deixam esse trecho por sua conta, e isso precisa ser combinado antes do dia da viagem.
+

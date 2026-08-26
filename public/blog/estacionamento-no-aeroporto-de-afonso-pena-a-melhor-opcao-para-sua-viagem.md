@@ -40,3 +40,26 @@ Aceitamos uma variedade de opções de pagamento para maior conveniência dos no
 ## Conclusão
 
 Não perca tempo e garanta já sua vaga em nosso [estacionamento no Aeroporto de Afonso Pena](/destinos/aeroporto-afonso-pena). Conte conosco para proporcionar uma experiência de estacionamento superior, onde sua satisfação é nossa prioridade.
+
+## Perguntas frequentes
+
+### O que o Nationpark oferece no Afonso Pena?
+
+Em agosto de 2026: endereço a 1,4 km do terminal, traslado de cinco minutos com van a cada 15, operação 24 horas e três tipos de vaga. A semana ia de R$ 139,30 na descoberta a R$ 181,30 na premium.
+
+### Em que o Nationpark ganha do outro parceiro de Curitiba?
+
+Na distância e na frequência declarada. Ele fica a 1,4 km do terminal contra 2,6 km do Abbapark, e publica van a cada 15 minutos. Em troca, cobrava R$ 21,00 a mais na semana descoberta em agosto de 2026.
+
+### Quanto custa uma quinzena no Nationpark?
+
+Em agosto de 2026, R$ 283,50 na vaga descoberta, R$ 358,50 na coberta e R$ 373,50 na premium. As três incluem o mesmo traslado de cinco minutos e a mesma operação 24 horas do pátio.
+
+### O Nationpark exige estadia mínima?
+
+Exige três diárias, mesmo piso praticado pelo outro parceiro de Curitiba em agosto de 2026. Isso significa que uma ida e volta no mesmo dia entra faturada como três dias, mesmo com o carro parado por poucas horas.
+
+### O Nationpark trabalha com vaga coberta?
+
+Trabalha, ao preço de R$ 174,30 pela semana em agosto de 2026, R$ 35,00 acima da vaga descoberta do mesmo pátio. Em Curitiba, onde chove com frequência, essa é a categoria mais procurada em estadia longa.
+

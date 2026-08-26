@@ -34,3 +34,26 @@ Para facilitar o deslocamento entre o estacionamento e os terminais, muitos serv
 ## Conclusão: Escolha Consciente para uma Viagem Sem Preocupações
 
 Escolher o estacionamento certo no Aeroporto de Guarulhos é essencial para garantir uma experiência de viagem tranquila e sem complicações. Com opções que se adaptam às diferentes necessidades dos viajantes, localização estratégica, serviços de reserva online, medidas de segurança rigorosas e transfers gratuitos, os [estacionamentos do GRU Airport](/destinos/aeroporto-internacional-de-sao-paulo-guarulhos) oferecem conveniência e conforto aos passageiros. Ao planejar sua próxima jornada, considere cuidadosamente esses fatores para garantir uma experiência de estacionamento suave e agradável no Aeroporto de Guarulhos.
+
+## Perguntas frequentes
+
+### O traslado do pátio até o terminal é cobrado à parte em Guarulhos?
+
+Nos parceiros que declaram traslado próprio, ele integra o serviço da unidade e aparece na ficha dela. O Aeropark declara 10 minutos até o terminal, com van a cada meia hora e operação 24 horas.
+
+### Como avaliar se o traslado de um pátio é bom?
+
+Olhe dois números na ficha: minutos até o terminal e intervalo entre as saídas. Dez minutos de percurso com van a cada meia hora dá um pior caso de 40 minutos, e é esse pior caso que entra no seu planejamento.
+
+### O que fazer se o lote não tiver traslado próprio?
+
+Resolva o trecho final antes do dia da viagem, por aplicativo ou com alguém que leve. O Aerovalet, por exemplo, não declara van própria, e por isso pratica a menor tarifa entre os parceiros de Guarulhos.
+
+### O traslado funciona também na volta em Guarulhos?
+
+Funciona, com acionamento no ponto combinado com o lote na hora do desembarque. Nos parceiros que operam 24 horas isso cobre chegada de madrugada, horário em que boa parte da malha internacional pousa em Guarulhos e o aplicativo fica escasso.
+
+### Vale pagar mais caro por um pátio só pelo traslado?
+
+Em agosto de 2026 essa diferença era de R$ 21,00 na semana, entre R$ 111,30 sem van própria e R$ 132,30 com ela. Para quem viaja sozinho e com bagagem, costuma valer; para quem tem carona na volta, não.
+

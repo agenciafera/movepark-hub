@@ -38,3 +38,26 @@ Reservar um estacionamento com pagamento antecipado no Aeroporto Viracopos é si
 Reservar um estacionamento com pagamento antecipado no Aeroporto Viracopos é uma maneira inteligente de começar sua viagem com o pé direito. Evite preocupações de última hora, garanta um espaço para o seu veículo e viaje com tranquilidade. Siga este guia passo a passo e desfrute de uma experiência de viagem mais suave e organizada.
 
 Lembre-se, ao viajar, cada detalhe conta, e a reserva antecipada do estacionamento é um desses detalhes que podem fazer toda a diferença. Prepare-se com antecedência e aproveite ao máximo sua jornada a partir do Aeroporto Viracopos!
+
+## Perguntas frequentes
+
+### O que o pagamento antecipado trava na reserva?
+
+Trava o valor e o período contratado. O que você paga na reserva é o total daquela faixa de permanência, e alterações posteriores seguem a regra do lote. O preço do balcão, praticado na chegada, costuma ser maior.
+
+### Quais dados preciso ter na mão para reservar em Viracopos?
+
+Placa do veículo, datas de entrada e saída, e o tipo de vaga desejado. A placa é o que a portaria confere na chegada, e digitá-la errada é o motivo mais comum de conferência manual na cancela.
+
+### Quanto o pagamento antecipado economiza em Viracopos?
+
+Em agosto de 2026, sete diárias no Virapark custavam R$ 280,00 no balcão e R$ 174,30 no preço online. No Garageinn os mesmos sete dias iam de R$ 419,93 para R$ 321,30, uma queda de R$ 98,63.
+
+### Preciso pagar tudo de uma vez para reservar?
+
+As formas aceitas aparecem na tela de fechamento e variam conforme a unidade parceira. O que define o valor cobrado é a faixa de permanência contratada, e não a forma escolhida para quitar, então a escolha de pagamento não mexe no total.
+
+### O que acontece se eu não usar a reserva paga?
+
+A política de cancelamento e de ausência é do lote e aparece na página dele antes do fechamento. Vale ler esse ponto na hora de reservar, principalmente em viagem com data ainda sujeita a mudança.
+

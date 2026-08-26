@@ -37,3 +37,26 @@ Outra dica importante, é que muitos estacionamentos oferecem desconto para seus
 Não deixe o estacionamento ser um problema na sua viagem. Escolha um dos estacionamentos selecionados pela equipe da Movepark e viaje com tranquilidade.
 
 Gostou das dicas? Compartilhe com seus amigos e familiares que também estão planejando uma viagem a partir do Aeroporto de Guarulhos.
+
+## Perguntas frequentes
+
+### Qual a diferença de preço entre os dois principais pátios de Guarulhos?
+
+Em agosto de 2026, sete diárias na vaga descoberta saíam por R$ 111,30 no Aerovalet e R$ 132,30 no Aeropark. Na coberta, R$ 160,30 contra R$ 188,30. O Aerovalet lidera nos dois tipos, com 1,8 km a mais de distância.
+
+### O que justifica o pátio mais caro ser mais caro em Guarulhos?
+
+Distância e traslado próprio. O Aeropark fica a 2,7 km do terminal, contra 4,5 km do Aerovalet, e declara van de 10 minutos a cada meia hora. O preço maior compra proximidade e o trecho final resolvido.
+
+### A ordem de preço muda conforme a duração da estadia?
+
+A ordem se manteve em agosto de 2026, mas a distância entre os dois cresce: R$ 21,00 em sete diárias, R$ 45,00 em quinze e R$ 90,00 em trinta, sempre na vaga descoberta. Quanto mais longa a viagem, mais pesa a escolha.
+
+### Existe pátio parceiro fora do eixo em Guarulhos?
+
+Existe o Lisboa Park, a 24,1 km do terminal, com traslado declarado. A distância muda a natureza do serviço, e ele atende principalmente quem deixa o carro por temporadas longas e planeja o deslocamento com antecedência.
+
+### Onde vejo esses preços atualizados sem depender do texto?
+
+No índice de preços da Movepark, que publica o total por faixa de permanência com a data de cada tabela. O número vem do motor de reservas, então o que aparece na tela é o que sai no fechamento.
+

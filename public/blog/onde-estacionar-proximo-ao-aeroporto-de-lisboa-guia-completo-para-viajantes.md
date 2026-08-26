@@ -56,3 +56,26 @@ Com tantas opções de [**estacionamento** no Aeroporto de Lisboa](/destinos/aer
 **Lembre-se:** Reserve sua vaga com antecedência, especialmente em alta temporada, para garantir sua vaga no estacionamento escolhido.
 
 **Esperamos que este guia completo tenha ajudado você a encontrar o melhor estacionamento para sua viagem!**
+
+## Perguntas frequentes
+
+### Quais alternativas existem para deixar o carro perto do aeroporto de Lisboa?
+
+Os parques do próprio aeroporto, os parques privados do entorno e as soluções de deixar o carro fora e chegar de metrô. A escolha depende de quantos dias o carro vai ficar parado e de onde você mora.
+
+### Deixar o carro longe e ir de metrô compensa em Lisboa?
+
+Compensa para estadia muito longa, quando o custo diário do parque supera a soma dos bilhetes de ida e volta. A estação do aeroporto fica na linha vermelha do metrô, com ligação direta para o centro da cidade, o que torna essa alternativa viável de verdade.
+
+### A 400 metros do terminal dá para ir a pé em Lisboa?
+
+A distância é curta o bastante para tornar isso plausível, ao contrário do que acontece nos aeroportos brasileiros da rede. Ainda assim, confirme com o parque como funciona o trajeto e se existe passeio contínuo, principalmente se você viaja com bagagem pesada ou com criança.
+
+### Como escolher entre os parques de Lisboa?
+
+Pelo total do período e pela forma de acesso ao terminal, já que as distâncias são parecidas. Em agosto de 2026 os três parceiros ficavam entre 400 e 700 metros e todos operavam 24 horas.
+
+### Preciso reservar com antecedência em Lisboa?
+
+Em temporada alta, sim, porque a cidade recebe volume grande de turistas e os parques do entorno trabalham cheios. Fora da temporada a antecedência resolve principalmente a previsibilidade: você chega sabendo o endereço, o valor e a condição contratada, sem depender do balcão.
+

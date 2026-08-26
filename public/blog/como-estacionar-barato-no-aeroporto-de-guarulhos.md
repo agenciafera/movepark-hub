@@ -42,3 +42,26 @@ Estacionar barato no Aeroporto de Guarulhos é possível, e o Ponce Park se dest
 1.  **Reserve com Antecedência:** Muitos estacionamentos oferecem descontos para reservas antecipadas.
 2.  **Considere Opções Alternativas:** Avalie estacionamentos próximos que podem oferecer tarifas mais acessíveis.
 3.  **Utilize Serviços de Transporte:** Algumas empresas oferecem transporte gratuito do estacionamento para o aeroporto, economizando em tarifas de estacionamento mais próximas.
+
+## Perguntas frequentes
+
+### Qual é o menor valor de diária praticado hoje em Guarulhos?
+
+Em agosto de 2026 o piso entre os parceiros era R$ 18,90 na vaga descoberta do Aerovalet, cobrada como diária avulsa. Em pacote de trinta diárias o mesmo lote descia para R$ 14,90 por dia, com total de R$ 447,00.
+
+### O que se abre mão ao escolher o lote mais barato?
+
+Distância e cobertura. O Aerovalet fica a 4,5 km do terminal, contra 2,7 km do Aeropark, e a tarifa mais baixa é a da vaga descoberta. Quem prioriza sombra ou traslado curto paga mais e ganha nisso.
+
+### Barato em Guarulhos significa longe do aeroporto?
+
+Não necessariamente, mas a distância entra na conta. Entre os parceiros a diferença é de 1,8 km, o que se traduz em minutos, não em dezenas de quilômetros. Lotes muito baratos e a mais de 20 km costumam devolver em tempo o que economizam em dinheiro.
+
+### O preço muda em alta temporada em Guarulhos?
+
+Cada parceiro define a própria tabela e pode ajustá-la ao longo do ano. O valor exibido no site é o que o motor cobra no fechamento, com a data da última atualização visível, então o retrato de hoje pode não valer em dezembro.
+
+### Dá para pagar menos com estadia longa em Guarulhos?
+
+Dá, e a queda é significativa. No Aerovalet a diária avulsa saía por R$ 18,90 em agosto de 2026 e a média em trinta diárias caía para R$ 14,90. São R$ 4,00 por dia, que em um mês somam R$ 120,00.
+
