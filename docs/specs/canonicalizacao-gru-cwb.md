@@ -172,10 +172,13 @@ mínima e a comparação com o estacionamento oficial.
 | `estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes` | 3.040 | ✅ verde, 0 bloqueio |
 | `quanto-custa-um-estacionamento-do-aeroporto-afonso-pena` | 3.120 | ✅ verde, 0 bloqueio |
 | `estacionamento-barato-aeroporto-curitiba` | 3.114 | ✅ verde, 0 bloqueio |
-| `conheca-o-estacionamento-mais-proximo-do-aeroporto-afonso-pena-em-2024` | 925 | a expandir |
+| `conheca-o-estacionamento-mais-proximo-do-aeroporto-afonso-pena-em-2024` | 3.025 | ✅ verde, 0 bloqueio |
 
-Ordem de prioridade pelas demandas de cluster do plano: GRU preço (70 termos), CWB preço (37),
-GRU proximidade (38), GRU barato (33), CWB barato (17), CWB proximidade (17).
+**As seis âncoras estão no padrão desde 27/08/2026.** Todas em verde no analisador da skill, com
+zero bloqueio, e a única atenção remanescente em cada uma é a densidade da frase-chave. A
+justificativa é a mesma nas seis: as frases-chave têm de quatro a seis palavras de conteúdo, e
+chegar a 0,5% exigiria repeti-las de 15 a 17 vezes em pouco mais de 3.000 palavras, o que a
+própria skill manda não forçar.
 
 ### O molde, definido pela âncora de preço de GRU
 
