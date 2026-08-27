@@ -17,16 +17,29 @@ import { supabase } from "@/lib/supabase";
  * invisível no Manager publicado. Com o BeastBots no ar, a Edge entrou e a variável
  * saiu.
  *
- * ## O que o navegador NÃO manda
+ * ## O que o navegador manda, e o que ele nunca monta
  *
- * Só as mensagens. Telefone, nome e namespace de memória são montados na Edge a partir
- * do JWT. A Mia usa o telefone da conversa como prova de posse para consultar reserva
- * (D43): se o navegador mandasse esse campo, um admin poderia trocar o número e puxar a
- * reserva de um cliente real, com placa e voucher, de dentro do Backoffice.
+ * Manda mensagem, telefone e origem. O telefone é escolhido de propósito: esta é a
+ * bancada do time, e simular o atendimento de um cliente real é o que ela serve para
+ * fazer. O que o navegador NÃO faz é montar o `requestContext`: quem monta é a Edge,
+ * campo a campo, depois de conferir o formato do número e a origem contra uma lista
+ * fechada. Nome e namespace de memória continuam saindo do JWT, e a thread nunca é a
+ * do WhatsApp de verdade daquele número. Ver o cabeçalho de `supabase/functions/mia-chat`.
  */
 export type MiaTurno = { role: "user" | "model"; text: string };
 
 export type MiaResposta = { reply: string; tools: string[] };
+
+/** As origens que o white-label conhece. A Edge recusa qualquer outra. */
+export const ORIGENS_DA_MIA = [
+  { valor: "webchat-bot", rotulo: "Webchat (esta bolinha)" },
+  { valor: "whatsapp-bot", rotulo: "WhatsApp" },
+] as const;
+
+export type OrigemDaMia = (typeof ORIGENS_DA_MIA)[number]["valor"];
+
+/** Quem a Mia pensa que está atendendo. */
+export type IdentidadeSimulada = { telefone: string; origem: OrigemDaMia };
 
 type GenerateResponse = {
   text?: string;
@@ -35,7 +48,13 @@ type GenerateResponse = {
 
 export function useEnviarParaMia() {
   return useMutation({
-    mutationFn: async (texto: string): Promise<MiaResposta> => {
+    mutationFn: async ({
+      texto,
+      identidade,
+    }: {
+      texto: string;
+      identidade: IdentidadeSimulada;
+    }): Promise<MiaResposta> => {
       const { data, error } = await supabase.functions.invoke("mia-chat", {
         // UMA mensagem, nunca o histórico.
         //
@@ -46,7 +65,11 @@ export function useEnviarParaMia() {
         //
         // E o que o WhatsApp sempre fez: a Evolution manda uma mensagem, a memoria cuida
         // do resto. Os dois caminhos agora falam igual.
-        body: { messages: [{ role: "user", content: texto }] },
+        body: {
+          messages: [{ role: "user", content: texto }],
+          telefone: identidade.telefone,
+          origem: identidade.origem,
+        },
       });
 
       if (error) {
@@ -79,14 +102,20 @@ async function lerErro(error: unknown): Promise<string | undefined> {
 /**
  * Apaga a conversa de teste, no servidor e na tela.
  *
- * Interface tem botão; WhatsApp é que precisa de comando digitado (lá existe `/limpar`,
- * em `platform/channels/comandos.ts` do BeastBots). A thread apagada é sempre a de quem
- * clicou: a Edge a deriva do JWT, e o navegador não escolhe qual.
+ * O botão existe aqui e o comando `/limpar` existe em todo canal (ele mora na porta
+ * `/chat` do BeastBots, em `platform/channels/comandos.ts`): os dois caminhos apagam a
+ * mesma thread.
+ *
+ * Qual thread depende do telefone simulado, porque cada número tem a sua. O `uid` nunca
+ * vem do navegador: quem o deriva é a Edge, a partir do JWT, então um admin só apaga
+ * conversa de teste dele.
  */
 export function useLimparConversaDaMia() {
   return useMutation({
-    mutationFn: async (): Promise<void> => {
-      const { error } = await supabase.functions.invoke("mia-chat", { body: { acao: "limpar" } });
+    mutationFn: async (identidade: IdentidadeSimulada): Promise<void> => {
+      const { error } = await supabase.functions.invoke("mia-chat", {
+        body: { acao: "limpar", telefone: identidade.telefone },
+      });
       if (error) {
         const detalhe = await lerErro(error);
         throw new Error(detalhe ?? "Não consegui limpar a conversa agora.");

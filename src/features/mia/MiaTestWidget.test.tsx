@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, renderHook, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as auth from "@/auth/context";
 import { MiaTestWidget } from "./MiaTestWidget";
@@ -44,6 +44,55 @@ describe("bolinha de teste da Mia", () => {
   });
 });
 
+describe("a identidade vem antes da conversa", () => {
+  function abrir() {
+    comPapel("hub_admin");
+    render(<MiaTestWidget />, { wrapper });
+    fireEvent.click(screen.getByLabelText("Testar a Mia"));
+  }
+
+  it("pede telefone e origem antes de deixar escrever", () => {
+    // O telefone e' o que a Mia usa como prova de posse (D43): e' premissa, nao
+    // preferencia. Pedir depois deixaria metade da conversa com outra identidade.
+    abrir();
+    expect(screen.getByLabelText("Telefone do cliente")).toBeTruthy();
+    expect(screen.getByLabelText("Origem")).toBeTruthy();
+    expect(screen.queryByLabelText("Enviar")).toBeNull();
+  });
+
+  it("libera a conversa depois de começar", () => {
+    abrir();
+    fireEvent.click(screen.getByText("Começar conversa"));
+    expect(screen.getByLabelText("Enviar")).toBeTruthy();
+    expect(screen.queryByLabelText("Telefone do cliente")).toBeNull();
+  });
+
+  it("não deixa começar com número torto", () => {
+    abrir();
+    fireEvent.change(screen.getByLabelText("Telefone do cliente"), { target: { value: "4198" } });
+    expect((screen.getByText("Começar conversa") as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("mostra no cabeçalho quem a Mia pensa que está atendendo", () => {
+    abrir();
+    fireEvent.change(screen.getByLabelText("Telefone do cliente"), {
+      target: { value: "(41) 98814-9449" },
+    });
+    fireEvent.click(screen.getByText("Começar conversa"));
+    expect(screen.getByText(/\(41\) 98814-9449/)).toBeTruthy();
+    expect(screen.getByText(/Webchat/)).toBeTruthy();
+  });
+
+  it("o botão de limpar não depende da tela estar cheia", () => {
+    // A tela comeca vazia a cada carregamento, mas a conversa vive no servidor: com a
+    // checagem antiga (`messages.length === 0`) o botao aparecia apagado justamente
+    // quando havia o que limpar.
+    abrir();
+    fireEvent.click(screen.getByText("Começar conversa"));
+    expect((screen.getByLabelText("Limpar conversa") as HTMLButtonElement).disabled).toBe(false);
+  });
+});
+
 describe("as tools ficam fora do texto do agente", () => {
   it("a resposta guardada é exatamente o que o cliente leria", async () => {
     // A primeira versão concatenava `_tools: ..._` na fala. Num teste isso engana:
@@ -57,7 +106,7 @@ describe("as tools ficam fora do texto do agente", () => {
       error: null,
     });
     const { result } = renderHook(() => useEnviarParaMia(), { wrapper });
-    const r = await result.current.mutateAsync("x");
+    const r = await result.current.mutateAsync({ texto: "x", identidade: { telefone: "5500000000000", origem: "webchat-bot" } });
     expect(r.reply).toBe("Vaga coberta custa R$ 144,50.");
     expect(r.reply).not.toContain("tools");
     expect(r.tools).toEqual(["consultar_preco"]);
@@ -82,16 +131,25 @@ describe("useEnviarParaMia", () => {
     // junto entregava tudo em dobro: em 26/08 um turno saiu com 19 mensagens no corpo
     // e 124 na memória da mesma thread.
     //
-    // O corpo também carrega SÓ `messages`. Se voltar a levar `requestContext`, um admin
-    // poderia trocar o telefone e puxar a reserva de um cliente de verdade.
+    // O corpo carrega mensagem, telefone e origem, e nada mais. O telefone é escolhido
+    // de propósito (esta é a bancada de teste), mas quem MONTA o `requestContext` e o
+    // namespace de memória continua sendo a Edge: se o navegador voltasse a mandá-los,
+    // ele escolheria a thread, e escolher a thread é escolher a conversa de quem quiser.
     const f = responder({ text: "oi" });
     const { result } = renderHook(() => useEnviarParaMia(), { wrapper });
-    await result.current.mutateAsync("ola");
+    await result.current.mutateAsync({
+      texto: "ola",
+      identidade: { telefone: "5541988149449", origem: "whatsapp-bot" },
+    });
 
     const [nome, opts] = f.mock.calls[0] as [string, { body: Record<string, unknown> }];
     expect(nome).toBe("mia-chat");
     expect(opts.body.messages).toEqual([{ role: "user", content: "ola" }]);
-    expect(Object.keys(opts.body)).toEqual(["messages"]);
+    expect(opts.body.telefone).toBe("5541988149449");
+    expect(opts.body.origem).toBe("whatsapp-bot");
+    expect(Object.keys(opts.body).sort()).toEqual(["messages", "origem", "telefone"]);
+    expect(Object.keys(opts.body)).not.toContain("requestContext");
+    expect(Object.keys(opts.body)).not.toContain("memory");
   });
 
   it("extrai as tools chamadas, que é metade do valor de testar aqui", async () => {
@@ -103,14 +161,14 @@ describe("useEnviarParaMia", () => {
       ],
     });
     const { result } = renderHook(() => useEnviarParaMia(), { wrapper });
-    const r = await result.current.mutateAsync("x");
+    const r = await result.current.mutateAsync({ texto: "x", identidade: { telefone: "5500000000000", origem: "webchat-bot" } });
     expect(r.tools).toEqual(["hub_list_locations", "consultar_preco"]);
   });
 
   it("resposta sem texto não vira string vazia em silêncio", async () => {
     responder({ text: "   " });
     const { result } = renderHook(() => useEnviarParaMia(), { wrapper });
-    const r = await result.current.mutateAsync("x");
+    const r = await result.current.mutateAsync({ texto: "x", identidade: { telefone: "5500000000000", origem: "webchat-bot" } });
     expect(r.reply).toContain("não respondeu");
   });
 
@@ -118,7 +176,7 @@ describe("useEnviarParaMia", () => {
     // "FunctionsHttpError" não ajuda ninguém. "Acesso restrito" diz o que aconteceu.
     responder(null, { context: { json: async () => ({ error: "Acesso restrito." }) } });
     const { result } = renderHook(() => useEnviarParaMia(), { wrapper });
-    await expect(result.current.mutateAsync("x")).rejects.toThrow(
+    await expect(result.current.mutateAsync({ texto: "x", identidade: { telefone: "5500000000000", origem: "webchat-bot" } })).rejects.toThrow(
       /Acesso restrito/,
     );
   });
@@ -127,7 +185,7 @@ describe("useEnviarParaMia", () => {
     responder(null, new Error("Failed to fetch"));
     const { result } = renderHook(() => useEnviarParaMia(), { wrapper });
     await waitFor(async () => {
-      await expect(result.current.mutateAsync("x")).rejects.toThrow();
+      await expect(result.current.mutateAsync({ texto: "x", identidade: { telefone: "5500000000000", origem: "webchat-bot" } })).rejects.toThrow();
     });
   });
 });
@@ -139,17 +197,19 @@ describe("botão de limpar", () => {
     expect(screen.getByLabelText("Testar a Mia")).toBeTruthy();
   });
 
-  it("pede à Edge para apagar, e a Edge é quem escolhe a thread", async () => {
-    // O corpo leva só a ação. A thread sai do JWT na Edge, senão um admin poderia
-    // apagar a conversa de outra pessoa mandando outro id.
+  it("manda a ação e o telefone, mas nunca o dono da thread", async () => {
+    // O telefone vai porque cada número simulado tem a sua conversa. O `uid` não vai:
+    // quem o deriva é a Edge, a partir do JWT, senão um admin apagaria a conversa de
+    // outro testador mandando o id dele.
     invoke.mockReset();
     invoke.mockResolvedValue({ data: { limpo: true }, error: null });
     const { result } = renderHook(() => useLimparConversaDaMia(), { wrapper });
-    await result.current.mutateAsync();
+    await result.current.mutateAsync({ telefone: "5541988149449", origem: "webchat-bot" });
 
     const [nome, opts] = invoke.mock.calls[0] as [string, { body: Record<string, unknown> }];
     expect(nome).toBe("mia-chat");
-    expect(opts.body).toEqual({ acao: "limpar" });
+    expect(opts.body).toEqual({ acao: "limpar", telefone: "5541988149449" });
+    expect(JSON.stringify(opts.body)).not.toContain("uid");
   });
 
   it("falha da Edge vira mensagem, nunca silêncio", async () => {
@@ -159,6 +219,8 @@ describe("botão de limpar", () => {
       error: { context: { json: async () => ({ error: "Acesso restrito." }) } },
     });
     const { result } = renderHook(() => useLimparConversaDaMia(), { wrapper });
-    await expect(result.current.mutateAsync()).rejects.toThrow(/Acesso restrito/);
+    await expect(
+      result.current.mutateAsync({ telefone: "5500000000000", origem: "webchat-bot" }),
+    ).rejects.toThrow(/Acesso restrito/);
   });
 });

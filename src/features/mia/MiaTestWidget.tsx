@@ -4,7 +4,14 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/context";
 import { Bubble } from "@/features/assistant/ChatBubble";
 import { appendMessage, canSend, type ChatMessage } from "@/features/assistant/chat.logic";
-import { useEnviarParaMia, useLimparConversaDaMia } from "./api";
+import {
+  ORIGENS_DA_MIA,
+  useEnviarParaMia,
+  useLimparConversaDaMia,
+  type IdentidadeSimulada,
+  type OrigemDaMia,
+} from "./api";
+import { identidadeDe, rotuloDoTelefone, telefoneAceito } from "./MiaTestWidget.logic";
 
 /**
  * Bolinha de teste da Mia, dentro do Backoffice.
@@ -15,7 +22,18 @@ import { useEnviarParaMia, useLimparConversaDaMia } from "./api";
  *
  * Só aparece para `hub_admin`. A conversa passa pela Edge `mia-chat`, que confere o
  * papel no servidor e guarda o token do Mastra: o navegador nunca fala com o BeastBots
- * direto, e nunca escolhe de quem é o telefone da conversa.
+ * direto.
+ *
+ * ## A identidade vem antes da conversa
+ *
+ * Quem abre escolhe o telefone e a origem, e só então começa. É o contrário de um chat
+ * de produto, e de propósito: o telefone é o que a Mia usa como prova de posse para
+ * achar reserva (D43), então ele não é preferência, é premissa. Pedir depois deixaria a
+ * primeira metade da conversa acontecendo com uma identidade e a segunda com outra.
+ *
+ * O navegador escolhe, mas não monta: quem monta o `requestContext` é a Edge, que confere
+ * o formato e a origem contra lista fechada, e que nunca reusa o namespace de memória do
+ * WhatsApp de verdade. Ver o cabeçalho de `supabase/functions/mia-chat/index.ts`.
  */
 export function MiaTestWidget() {
   const { effectiveRole } = useAuth();
@@ -26,13 +44,18 @@ export function MiaTestWidget() {
    *
    * A primeira versão concatenava `_tools: ..._` na própria resposta. Além de sair
    * com underscore literal (o renderizador só entende negrito), isso misturava
-   * debug com a fala do agente — e numa ferramenta de teste isso engana, porque o
+   * debug com a fala do agente, e numa ferramenta de teste isso engana, porque o
    * que você lê deixa de ser o que o cliente leria.
    */
   const [toolsPorMensagem, setToolsPorMensagem] = React.useState<Record<number, string[]>>({});
   const [input, setInput] = React.useState("");
   const [erro, setErro] = React.useState<string | null>(null);
   const fim = React.useRef<HTMLDivElement>(null);
+
+  /** `null` enquanto a identidade não foi escolhida: é a tela de antes de começar. */
+  const [identidade, setIdentidade] = React.useState<IdentidadeSimulada | null>(null);
+  const [telefoneDigitado, setTelefoneDigitado] = React.useState("");
+  const [origemEscolhida, setOrigemEscolhida] = React.useState<OrigemDaMia>("webchat-bot");
 
   // A memória é por usuário para dois testadores não dividirem a mesma conversa.
   const enviar = useEnviarParaMia();
@@ -48,6 +71,8 @@ export function MiaTestWidget() {
     e.preventDefault();
     if (!canSend(input, enviar.isPending)) return;
 
+    if (!identidade) return;
+
     const texto = input.trim();
     const comPergunta = appendMessage(messages, "user", texto);
     setMessages(comPergunta);
@@ -57,7 +82,7 @@ export function MiaTestWidget() {
     try {
       // Só o texto novo: a memória do lado do agente é quem sabe o histórico. Ver o
       // comentário em `api.ts` sobre a conversa que ia em dobro.
-      const r = await enviar.mutateAsync(texto);
+      const r = await enviar.mutateAsync({ texto, identidade });
       setMessages((atual) => {
         const proximo = appendMessage(atual, "model", r.reply);
         if (r.tools.length) {
@@ -89,7 +114,11 @@ export function MiaTestWidget() {
         <div>
           <p className="text-title-md text-ink">Mia</p>
           {/* Quem está testando precisa saber que não é o bot do cliente. */}
-          <p className="text-body-sm text-muted">Teste interno, com identidade fictícia</p>
+          <p className="text-body-sm text-muted">
+            {identidade
+              ? `${rotuloDoTelefone(identidade.telefone)} · ${rotuloDaOrigem(identidade.origem)}`
+              : "Teste interno"}
+          </p>
         </div>
         <div className="flex items-center gap-1">
           {/*
@@ -101,12 +130,21 @@ export function MiaTestWidget() {
             type="button"
             onClick={() => {
               setErro(null);
-              limpar.mutate(undefined, {
-                onSuccess: () => setMessages([]),
+              if (!identidade) return;
+              limpar.mutate(identidade, {
+                onSuccess: () => {
+                  setMessages([]);
+                  setToolsPorMensagem({});
+                },
                 onError: (e) => setErro(e instanceof Error ? e.message : "Não consegui limpar."),
               });
             }}
-            disabled={limpar.isPending || enviar.isPending || messages.length === 0}
+            /*
+              NÃO depende de `messages.length`. A tela começa vazia a cada carregamento,
+              mas a conversa vive no servidor: com a checagem antiga, quem recarregava a
+              página encontrava o botão apagado justamente quando havia o que limpar.
+            */
+            disabled={!identidade || limpar.isPending || enviar.isPending}
             aria-label="Limpar conversa"
             title="Apaga esta conversa de teste, aqui e na memória da Mia"
             className="rounded-sm p-1 text-muted hover:text-ink disabled:opacity-40"
@@ -119,11 +157,68 @@ export function MiaTestWidget() {
         </div>
       </header>
 
+      {!identidade ? (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!telefoneAceito(telefoneDigitado)) return;
+            setIdentidade(identidadeDe(telefoneDigitado, origemEscolhida));
+            setErro(null);
+          }}
+          className="flex-1 space-y-4 overflow-y-auto px-4 py-4"
+        >
+          <div>
+            <p className="text-title-md text-ink">Quem a Mia vai atender</p>
+            <p className="text-body-sm text-muted">
+              Ela usa o telefone para achar a reserva, do mesmo jeito que faz no WhatsApp.
+            </p>
+          </div>
+
+          <label className="block space-y-1">
+            <span className="text-body-sm text-body">Telefone do cliente</span>
+            <input
+              value={telefoneDigitado}
+              onChange={(e) => setTelefoneDigitado(e.target.value)}
+              inputMode="tel"
+              placeholder="(41) 98814-9449"
+              aria-label="Telefone do cliente"
+              className="h-11 w-full rounded-sm border border-neutral-200 px-3 text-body-md outline-none focus:border-mp-primary"
+            />
+            <span className="block text-body-sm text-muted">
+              {telefoneAceito(telefoneDigitado)
+                ? "Deixe em branco para conversar sem nenhum cliente."
+                : "Faltou dígito. Use DDD e número, como (41) 98814-9449."}
+            </span>
+          </label>
+
+          <label className="block space-y-1">
+            <span className="text-body-sm text-body">Origem</span>
+            <select
+              value={origemEscolhida}
+              onChange={(e) => setOrigemEscolhida(e.target.value as OrigemDaMia)}
+              aria-label="Origem"
+              className="h-11 w-full rounded-sm border border-neutral-200 px-3 text-body-md outline-none focus:border-mp-primary"
+            >
+              {ORIGENS_DA_MIA.map((o) => (
+                <option key={o.valor} value={o.valor}>
+                  {o.rotulo}
+                </option>
+              ))}
+            </select>
+            <span className="block text-body-sm text-muted">
+              É o canal que a reserva registra no sistema do parceiro.
+            </span>
+          </label>
+
+          <Button type="submit" disabled={!telefoneAceito(telefoneDigitado)} className="w-full">
+            Começar conversa
+          </Button>
+        </form>
+      ) : (
       <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
         {messages.length === 0 ? (
           <p className="text-body-sm text-muted">
-            Converse com o agente de WhatsApp sem precisar de um número. As respostas mostram quais
-            ferramentas ele chamou.
+            Escreva como se fosse o cliente. Cada resposta mostra quais ferramentas a Mia chamou.
           </p>
         ) : null}
         {messages.map((m, i) => (
@@ -145,7 +240,9 @@ export function MiaTestWidget() {
         ) : null}
         <div ref={fim} />
       </div>
+      )}
 
+      {identidade ? (
       <form onSubmit={onSubmit} className="flex items-center gap-2 border-t border-neutral-200 p-3">
         <input
           value={input}
@@ -157,6 +254,12 @@ export function MiaTestWidget() {
           <PaperPlaneTilt size={18} />
         </Button>
       </form>
+      ) : null}
     </div>
   );
+}
+
+/** O rótulo curto da origem, para o cabeçalho. */
+function rotuloDaOrigem(origem: OrigemDaMia): string {
+  return origem === "whatsapp-bot" ? "WhatsApp" : "Webchat";
 }

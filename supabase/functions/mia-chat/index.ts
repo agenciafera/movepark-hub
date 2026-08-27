@@ -11,12 +11,28 @@
 // agentes. Esse segredo não pode viver num bundle servido a quem baixar o JS, então o
 // navegador nunca fala com o BeastBots direto: fala aqui, e aqui confere o papel.
 //
-// ## Por que a identidade é montada AQUI, e não recebida
+// ## A identidade é montada AQUI, mesmo agora que o telefone é escolhido
 //
-// A Mia usa o telefone da conversa como prova de posse para consultar reserva (D43). Se
-// o navegador mandasse o `requestContext`, um admin poderia trocar o número e puxar a
-// reserva de um cliente real, com placa e voucher, de dentro do Backoffice. O corpo
-// aceito é só `messages`; telefone, nome e namespace de memória saem do JWT.
+// A Mia usa o telefone da conversa como prova de posse para consultar reserva (D43), e
+// por isso o navegador nunca mandou `requestContext`. Desde 27/08 ele pode escolher o
+// **telefone** e a **origem**, porque esta é a bancada de teste do time e testar o
+// atendimento de um cliente real é justamente o que ela serve para fazer. O que mudou é
+// só isso: o `requestContext` continua sendo MONTADO aqui, campo a campo, e o corpo é
+// uma lista fechada. Mandar uma chave a mais não a coloca no contexto.
+//
+// Três guardas seguram o que isso abriu:
+//
+// 1. **Formato conferido** (`telefoneValido`). Número torto vira 400 aqui, e não uma
+//    consulta estranha no sistema do parceiro.
+// 2. **Origem em allowlist.** O white-label só conhece três valores; um valor livre faria
+//    a reserva falhar lá dentro, longe de quem digitou.
+// 3. **A thread NUNCA é a do WhatsApp de verdade.** Ela é `manager:<uid>:<telefone>`. Se
+//    fosse o namespace real, a mensagem de teste do admin entraria na conversa daquele
+//    cliente e o admin leria o histórico dele. Simular a IDENTIDADE para as tools é o
+//    objetivo; entrar na conversa alheia não é.
+//
+// Quem digita um número que não é seu fica registrado no log da função (`[mia-chat]
+// identidade`), com quem pediu e qual número.
 
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -36,8 +52,37 @@ const json = (corpo: unknown, status = 200) =>
 // @ts-expect-error - Deno global
 const env = (k: string) => Deno.env.get(k) ?? "";
 
-/** Telefone que NÃO é de ninguém: a Mia trata o número da conversa como prova de posse. */
+/** Telefone que NÃO é de ninguém: o padrão, para quem só quer conversar com a Mia. */
 const TELEFONE_DE_TESTE = "5500000000000";
+
+/**
+ * As origens que o white-label conhece. Valor fora daqui não falha nesta Edge: falha lá
+ * na frente, ao fechar a reserva no parceiro, onde ninguém liga o erro à causa.
+ *
+ * `reserva-online` é o checkout do site, não um agente, e fica de fora da bancada de
+ * propósito: a bolinha é para testar atendimento.
+ */
+const ORIGENS = ["webchat-bot", "whatsapp-bot"] as const;
+export type Origem = (typeof ORIGENS)[number];
+
+export function origemValida(v: unknown): v is Origem {
+  return typeof v === "string" && (ORIGENS as readonly string[]).includes(v);
+}
+
+/**
+ * Só os dígitos, e só se o formato fechar.
+ *
+ * Brasil com DDI: 55 + DDD (2) + 8 ou 9 dígitos, ou seja 12 ou 13 no total. O
+ * `5500000000000` do padrão tem 13 e passa. Aceitar qualquer coisa mandaria lixo para a
+ * consulta do parceiro e devolveria erro sem sentido para quem digitou.
+ */
+export function telefoneValido(bruto: unknown): string | null {
+  if (typeof bruto !== "string") return null;
+  const digitos = bruto.replace(/\D/g, "");
+  if (digitos.length < 12 || digitos.length > 13) return null;
+  if (!digitos.startsWith("55")) return null;
+  return digitos;
+}
 
 /**
  * A identidade que a bolinha usa, montada a partir de quem está logado.
@@ -45,23 +90,33 @@ const TELEFONE_DE_TESTE = "5500000000000";
  * Exportada para o teste: são quatro invariantes que, se quebrarem, quebram em silêncio
  * e só aparecem como dado de cliente errado dentro do Backoffice.
  */
-export function identidadeDeTeste(uid: string, nome: string | null) {
+export function identidadeDeTeste(
+  uid: string,
+  nome: string | null,
+  telefone: string = TELEFONE_DE_TESTE,
+  origem: Origem = "webchat-bot",
+) {
   return {
     requestContext: {
-      // D43: o telefone da conversa é o que autoriza consultar reserva. Um número real
-      // aqui devolveria a reserva daquela pessoa, com placa e voucher.
-      "movepark.customerPhone": TELEFONE_DE_TESTE,
+      // D43: o telefone da conversa é o que autoriza consultar reserva. Aqui ele é
+      // escolhido de propósito, para simular o atendimento de um cliente de verdade.
+      "movepark.customerPhone": telefone,
       "movepark.customerName": nome ?? "Backoffice (teste)",
-      // O white-label só conhece reserva-online, whatsapp-bot e webchat-bot, e não muda
-      // do nosso lado. A bolinha fecha reserva de verdade, então valor fora dessa lista
-      // faria a reserva falhar no parceiro em vez de falhar aqui.
-      "movepark.origin": "webchat-bot",
+      "movepark.origin": origem,
     },
-    // Por usuário, para dois testadores não dividirem a mesma conversa. O prefixo
-    // `movepark-hub:` é o que o guarda de namespace do BeastBots exige.
+    /**
+     * A thread carrega o telefone, e **não** é o namespace do WhatsApp.
+     *
+     * Por usuário, para dois testadores não dividirem conversa; por telefone, para
+     * simular dois clientes sem um contaminar o outro. O que ela nunca é: a thread real
+     * daquele número. Reusar o namespace do WhatsApp faria a mensagem de teste entrar na
+     * conversa do cliente, e daria ao admin o histórico dele de brinde.
+     *
+     * O prefixo `movepark-hub:` é o que o guarda de namespace do BeastBots exige.
+     */
     memory: {
-      resource: `movepark-hub:manager:${uid}`,
-      thread: `movepark-hub:manager:${uid}:main`,
+      resource: `movepark-hub:manager:${uid}:${telefone}`,
+      thread: `movepark-hub:manager:${uid}:${telefone}:main`,
     },
   };
 }
@@ -94,7 +149,7 @@ export async function handler(req: Request): Promise<Response> {
     return json({ error: "Mia não configurada: faltam MASTRA_BASE_URL ou MASTRA_ADMIN_TOKEN." }, 503);
   }
 
-  let corpo: { messages?: unknown; acao?: unknown };
+  let corpo: { messages?: unknown; acao?: unknown; telefone?: unknown; origem?: unknown };
   try {
     corpo = await req.json();
   } catch {
@@ -102,13 +157,48 @@ export async function handler(req: Request): Promise<Response> {
   }
 
   const uid = usuario.user.id;
-  const { memory } = identidadeDeTeste(uid, null);
+
+  /**
+   * Telefone e origem vêm do corpo, e é aqui que param de ser texto livre.
+   *
+   * Campo ausente cai no padrão, para quem só abriu a bolinha e quer conversar. Campo
+   * presente e torto é 400: consultar o parceiro com lixo devolve um erro que não ajuda
+   * ninguém, e o certo é dizer isso a quem digitou.
+   */
+  const telefone = corpo.telefone === undefined || corpo.telefone === ""
+    ? TELEFONE_DE_TESTE
+    : telefoneValido(corpo.telefone);
+  if (!telefone) {
+    return json({ error: "Telefone inválido. Use DDI 55 mais DDD e número, como 5541988149449." }, 400);
+  }
+
+  const origem = corpo.origem === undefined || corpo.origem === "" ? "webchat-bot" : corpo.origem;
+  if (!origemValida(origem)) {
+    return json({ error: `Origem inválida. Vale ${ORIGENS.join(" ou ")}.` }, 400);
+  }
+
+  /**
+   * Rastro de quem simulou qual número.
+   *
+   * A bolinha alcança dado de cliente real (reserva, placa, voucher). Quem usou continua
+   * sendo `hub_admin`, e a Movepark já tem essas credenciais, mas "a empresa pode" não é
+   * o mesmo que "não precisa saber quem foi". Fica no log da função, que é o rastro
+   * possível sem inventar tabela para uma ferramenta de teste.
+   */
+  if (telefone !== TELEFONE_DE_TESTE) {
+    console.log(
+      `[mia-chat] identidade simulada uid=${uid} email=${usuario.user.email ?? "?"} telefone=${telefone} origem=${origem}`,
+    );
+  }
+
+  const { memory } = identidadeDeTeste(uid, null, telefone, origem);
 
   /**
    * Apagar a conversa de teste.
    *
-   * A thread vem do `uid`, nunca do corpo: assim um admin só consegue apagar a PRÓPRIA
-   * conversa de teste, e não a de outro testador nem a de um cliente.
+   * A thread vem do `uid` mais o telefone simulado, e o `uid` nunca vem do corpo: assim
+   * um admin só apaga conversa de teste DELE, seja qual for o número que simulou, e
+   * nunca a de outro testador nem a de um cliente no WhatsApp.
    *
    * 404 é sucesso aqui. Significa que já não havia nada, que é exatamente o estado que
    * quem clicou pediu.
@@ -148,7 +238,7 @@ export async function handler(req: Request): Promise<Response> {
       body: JSON.stringify({
         agentId: "movepark-hub",
         messages,
-        ...identidadeDeTeste(uid, perfil?.full_name ?? null),
+        ...identidadeDeTeste(uid, perfil?.full_name ?? null, telefone, origem),
       }),
       signal: AbortSignal.timeout(110_000),
     });
