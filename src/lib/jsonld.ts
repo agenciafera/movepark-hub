@@ -32,15 +32,35 @@ function escadaDePreco(porDuracao: { days: number; total: number }[]) {
   });
 }
 
+/** Dígitos verificadores do CNPJ: módulo 11 sobre os 12 e depois os 13 primeiros. */
+function cnpjValido(digitos: string): boolean {
+  if (/^(\d)\1{13}$/.test(digitos)) return false;
+  const dv = (fatia: string) => {
+    let peso = fatia.length - 7;
+    let soma = 0;
+    for (const d of fatia) {
+      soma += Number(d) * peso;
+      peso = peso === 2 ? 9 : peso - 1;
+    }
+    const resto = soma % 11;
+    return resto < 2 ? 0 : 11 - resto;
+  };
+  return (
+    dv(digitos.slice(0, 12)) === Number(digitos[12]) &&
+    dv(digitos.slice(0, 13)) === Number(digitos[13])
+  );
+}
+
 /**
- * CNPJ no formato de registro (XX.XXX.XXX/XXXX-XX). Só formata o que tem cara de
- * CNPJ: 14 dígitos, com ou sem pontuação. Qualquer outra coisa (campo de teste,
- * dado sujo) não vira `taxID`, porque identidade errada é pior que ausente.
+ * CNPJ no formato de registro (XX.XXX.XXX/XXXX-XX). Só formata o que É CNPJ:
+ * 14 dígitos com dígito verificador válido, com ou sem pontuação. Qualquer outra
+ * coisa (campo de teste, dado sujo) não vira `taxID`, porque identidade errada é
+ * pior que ausente.
  */
 function cnpjFormatado(taxId: string | null | undefined): string | undefined {
   if (!taxId) return undefined;
   const digitos = taxId.replace(/\D/g, "");
-  if (digitos.length !== 14) return undefined;
+  if (digitos.length !== 14 || !cnpjValido(digitos)) return undefined;
   return `${digitos.slice(0, 2)}.${digitos.slice(2, 5)}.${digitos.slice(5, 8)}/${digitos.slice(8, 12)}-${digitos.slice(12)}`;
 }
 
@@ -57,8 +77,10 @@ export function localBusinessSchema(listing: ListingDetail, opts?: { description
     url: `${SITE_URL}/p/${listing.company.slug}/${listing.location.slug}/${listing.parking_type.code}`,
     telephone: listing.location.phone ?? undefined,
     email: listing.location.email ?? undefined,
-    // O CNPJ vem do catálogo (conferido no site público do próprio parceiro):
-    // é o lastro de entidade que liga a unidade à empresa real.
+    // Identidade legal do parceiro, do catálogo: razão social conferida no
+    // registro público e CNPJ conferido no site do próprio parceiro. É o lastro
+    // que liga a unidade à empresa real.
+    legalName: listing.company.legal_name ?? undefined,
     taxID: cnpjFormatado(listing.company.tax_id),
     address: listing.location.address
       ? {
@@ -331,15 +353,11 @@ export function blogPostingSchema(p: {
 }
 
 /**
- * A entidade Movepark, para a home: nome, logo e descrição num bloco só. É o que
- * ancora o knowledge panel e a desambiguação de marca nos LLMs (o mesmo papel do
- * bloco de desambiguação do llms.txt, em dado estruturado).
- */
-/**
- * A entidade Movepark com lastro: redes oficiais (`sameAs`, de src/lib/redes.ts),
- * contato de suporte e a promessa da garantia como slogan. Só entra aqui dado com
- * fonte no repo; `taxID` (CNPJ) e `foundingDate` ficam de fora até existirem numa
- * fonte verificável, porque entidade com dado inventado é pior que entidade magra.
+ * A entidade Movepark, para a home: o bloco que ancora o knowledge panel e a
+ * desambiguação de marca nos LLMs (o mesmo papel do bloco do llms.txt, em dado
+ * estruturado). Só entra aqui dado com fonte verificável: redes oficiais
+ * (`sameAs`, de src/lib/redes.ts), contato de suporte, o slogan da garantia e a
+ * identidade legal (razão social e CNPJ, conferidos no registro público).
  */
 export function organizationSchema() {
   return {

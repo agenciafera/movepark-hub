@@ -717,4 +717,20 @@ describe("taxID no LocalBusiness", () => {
     sujo.company.tax_id = "123";
     expect(localBusinessSchema(sujo).taxID).toBeUndefined();
   });
+
+  /** 14 dígitos não bastam: o registro de teste do catálogo falha no módulo 11. */
+  it("CNPJ com dígito verificador errado não vira identidade", () => {
+    const fake = makeListing();
+    fake.company.tax_id = "12312312321313";
+    expect(localBusinessSchema(fake).taxID).toBeUndefined();
+  });
+
+  it("a razão social do catálogo sai como legalName, e sem ela o campo não existe", () => {
+    const listing = makeListing();
+    listing.company.legal_name = "Traces Estacionamentos e Participações Ltda";
+    expect(localBusinessSchema(listing).legalName).toBe(
+      "Traces Estacionamentos e Participações Ltda",
+    );
+    expect(localBusinessSchema(makeListing()).legalName).toBeUndefined();
+  });
 });
