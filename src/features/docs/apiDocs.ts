@@ -334,7 +334,7 @@ export const REST_GROUPS: Group[] = [
  */
 export const MCP_PUBLIC_TOOLS = [
   "search_parking", "simulate_price", "get_faq", "search_knowledge", "list_companies",
-  "list_locations", "get_parking_types", "list_destinations", "get_destination",
+  "list_locations", "get_location_info", "get_parking_types", "list_destinations", "get_destination",
   "current_datetime", "search_blog", "get_blog_post",
 ];
 
