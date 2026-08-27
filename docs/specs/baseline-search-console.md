@@ -30,12 +30,48 @@ conta de alguém morre quando essa pessoa sai ou revoga o acesso.
 Setup, uma vez:
 
 1. No Google Cloud Console, crie a service account e habilite a **Google Search Console API** no
-   projeto.
-2. Baixe a chave em JSON e guarde **fora do repositório** (ex.: `~/.config/movepark/`). O
-   `.gitignore` barra `*service-account*.json` como segunda barreira.
+   projeto. Não conceda papel de IAM nenhum: o acesso que vale mora no Search Console.
+2. Baixe a chave em JSON.
 3. No Search Console, em Configurações › Usuários e permissões, adicione o `client_email` da
-   service account como usuário **Restrito** (leitura basta).
+   service account como usuário **Restrito** (leitura basta). Só quem é proprietário da
+   propriedade consegue adicionar usuário.
 4. No `.env.local`, aponte `GSC_SERVICE_ACCOUNT_JSON` para o caminho do JSON.
+
+## Onde o arquivo mora, e o que o mantém fora do git
+
+Por decisão do time (27/08/2026), a chave fica **na raiz do projeto**, com o nome exato
+**`gsc-service-account.json`**, e o `.env.local` aponta para `./gsc-service-account.json`.
+
+**O nome é o que protege.** O que mantém o arquivo fora do git é a linha 53 do `.gitignore`,
+`*service-account*.json`, e ela casa por nome. Renomear para `gsc.json`, `credenciais.json` ou
+`key.json` tira a proteção **no mesmo instante**, sem nenhum aviso, e o arquivo passa a aparecer
+no `git status` como qualquer outro. Quem receber a chave copia com o nome de cima e não inventa
+outro.
+
+**A rede de baixo, se o nome falhar.** O `secretlint` do pre-commit (lefthook) reprova a chave
+**pelo conteúdo**, na regra `PrivateKey`, então mesmo um `git add -f` de um arquivo renomeado é
+barrado antes do commit. Verificado em 27/08/2026 com uma chave RSA descartável num nome fora do
+padrão. É rede de segurança, não a proteção principal: ela só existe na máquina de quem commita.
+
+**A raiz não é publicada.** O Cloudflare sobe só `./dist` (`wrangler.jsonc`), e o Vite copia só
+`public/`. A raiz do projeto não é nenhum dos dois, então o arquivo não vai para o ar nem entra
+no bundle. O que **nunca** pode acontecer é a chave virar variável com prefixo `VITE_`: esse
+prefixo é a instrução literal "asse isto no JavaScript do cliente" e publicaria a chave privada
+para todo visitante do site.
+
+**`git clean -fdx` apaga a chave.** Arquivo ignorado é justamente o que esse comando remove, e ele
+é o reflexo de quem está destravando build quebrado. Não é problema de segurança, é o coletor
+voltar a falhar em "Falta a credencial" sem motivo aparente. Quem levar um clean pega a chave de
+novo no cofre e recopia.
+
+**Como a chave circula.** Pelo 1Password, em item de cofre compartilhado. Nunca por Slack,
+WhatsApp, e-mail ou Drive, onde ela fica em backup de aparelho, em índice de busca e no histórico
+de quem já saiu.
+
+**Para revogar,** há duas alavancas independentes: apagar a chave em IAM › Contas de serviço ›
+Chaves, ou remover a service account de Usuários e permissões no Search Console. A primeira mata a
+credencial, a segunda mata o acesso. Chave de service account não expira sozinha, então sair do
+time não revoga nada por conta própria: alguém precisa fazer isso a mão.
 
 O script troca a chave por um access token pelo fluxo JWT bearer usando o `crypto` do Node, sem
 SDK do Google, para o repositório não ganhar uma dependência inteira por causa de um script.
