@@ -86,7 +86,12 @@ export function MiaTestWidget() {
       // comentário em `api.ts` sobre a conversa que ia em dobro.
       const r = await enviar.mutateAsync({ texto, identidade });
       setMessages((atual) => {
-        const proximo = appendMessage(atual, "model", r.reply);
+        // A saudação do canal entra ANTES da resposta, na ordem em que o cliente leria.
+        const comSaudacao = r.blocos.reduce(
+          (lista, bloco) => appendMessage(lista, "model", bloco),
+          atual,
+        );
+        const proximo = appendMessage(comSaudacao, "model", r.reply);
         if (r.tools.length) {
           setToolsPorMensagem((t) => ({ ...t, [proximo.length - 1]: r.tools }));
         }

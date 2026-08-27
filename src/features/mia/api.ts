@@ -28,7 +28,7 @@ import { supabase } from "@/lib/supabase";
  */
 export type MiaTurno = { role: "user" | "model"; text: string };
 
-export type MiaResposta = { reply: string; tools: string[] };
+export type MiaResposta = { reply: string; tools: string[]; blocos: string[] };
 
 /** As origens que o white-label conhece. A Edge recusa qualquer outra. */
 export const ORIGENS_DA_MIA = [
@@ -43,6 +43,8 @@ export type IdentidadeSimulada = { telefone: string; origem: OrigemDaMia };
 
 type GenerateResponse = {
   text?: string;
+  /** Mensagens que o canal manda ANTES da resposta, como a saudação do primeiro contato. */
+  blocos?: string[];
   steps?: Array<{ toolCalls?: Array<{ payload?: { toolName?: string } }> }>;
 };
 
@@ -83,7 +85,12 @@ export function useEnviarParaMia() {
       const tools = (resposta.steps ?? []).flatMap((s) =>
         (s.toolCalls ?? []).map((c) => c.payload?.toolName ?? "").filter(Boolean),
       );
-      return { reply: resposta.text?.trim() || "(a Mia não respondeu nada)", tools };
+      return {
+        reply: resposta.text?.trim() || "(a Mia não respondeu nada)",
+        tools,
+        // Vêm separados de propósito: são mensagens distintas na tela, como no WhatsApp.
+        blocos: (resposta.blocos ?? []).filter((b) => b?.trim()),
+      };
     },
   });
 }

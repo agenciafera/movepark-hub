@@ -60,6 +60,34 @@ describe("o histórico daquele número", () => {
     expect(opts.body).toEqual({ acao: "historico", telefone: "5541988149449" });
   });
 
+  it("a saudacao do canal chega separada da resposta", async () => {
+    // Sao mensagens distintas na tela, como sao no WhatsApp. Juntá-las numa so mudaria
+    // o que a bancada esta testando.
+    invoke.mockReset();
+    invoke.mockResolvedValue({
+      data: { text: "Claro, posso ajudar.", blocos: ["Bem-vindo!", "O que você deseja?"] },
+      error: null,
+    });
+    const { result } = renderHook(() => useEnviarParaMia(), { wrapper });
+    const r = await result.current.mutateAsync({
+      texto: "oi",
+      identidade: { telefone: "5500000000000", origem: "webchat-bot" },
+    });
+    expect(r.blocos).toEqual(["Bem-vindo!", "O que você deseja?"]);
+    expect(r.reply).toBe("Claro, posso ajudar.");
+  });
+
+  it("sem saudacao, blocos vem vazio e nada extra aparece", async () => {
+    invoke.mockReset();
+    invoke.mockResolvedValue({ data: { text: "oi" }, error: null });
+    const { result } = renderHook(() => useEnviarParaMia(), { wrapper });
+    const r = await result.current.mutateAsync({
+      texto: "oi",
+      identidade: { telefone: "5500000000000", origem: "webchat-bot" },
+    });
+    expect(r.blocos).toEqual([]);
+  });
+
   it("devolve as falas na ordem, prontas para a tela", async () => {
     invoke.mockReset();
     invoke.mockResolvedValue({
