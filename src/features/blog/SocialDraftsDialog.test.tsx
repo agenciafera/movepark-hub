@@ -64,13 +64,14 @@ describe("SocialDraftsDialog", () => {
     });
   });
 
-  it("mostra os quatro recortes do artigo", () => {
+  it("mostra os quatro recortes na ordem sugerida de publicação", () => {
     render(<SocialDraftsDialog open onOpenChange={() => {}} post={post()} />);
 
-    expect(screen.getByText("Âncora de preço")).toBeInTheDocument();
-    expect(screen.getByText("Pergunta da FAQ")).toBeInTheDocument();
-    expect(screen.getByText("Comparativo")).toBeInTheDocument();
-    expect(screen.getByText("Checklist")).toBeInTheDocument();
+    // Os quatro não saem no mesmo dia, então a posição na semana é parte da tela.
+    expect(screen.getByText("1 de 4. Âncora de preço")).toBeInTheDocument();
+    expect(screen.getByText("2 de 4. Pergunta da FAQ")).toBeInTheDocument();
+    expect(screen.getByText("3 de 4. Comparativo")).toBeInTheDocument();
+    expect(screen.getByText("4 de 4. Checklist")).toBeInTheDocument();
   });
 
   it("copia a legenda com a URL do post, que é o que o Instagram distribui", async () => {

@@ -2,8 +2,9 @@
 
 > **Status:** Fase 1 implementada em 27/08/2026. `src/features/blog/social.logic.ts`
 > (recorte determinístico, 21 testes) e `SocialDraftsDialog` em `/manager/blog`, no botão
-> **Redes** de cada linha. As fases 2 a 4 (imagem, texto polido por LLM, publicação agendada)
-> estão desenhadas aqui e não foram entregues.
+> **Redes** de cada linha. As fases 2 e 3 (imagem e texto polido por LLM) estão desenhadas aqui e
+> não foram entregues. A **fase 4 foi cancelada**: o time decidiu que não haverá publicação
+> automática.
 >
 > **Atividade:** [86ak6q0xd](https://app.clickup.com/t/86ak6q0xd), "Automatizar geração de 4
 > posts sociais a partir de 1 artigo de 3.000 palavras". Origem: reunião de pauta de 26/08/2026.
@@ -115,8 +116,8 @@ tokens do `DESIGN.md`, e baixar o PNG.
 
 Caminho recomendado: renderizar o card em DOM e exportar com `canvas` no browser, sem serviço
 novo. O `html-to-image` resolve o caso e não precisa de servidor. A alternativa (Satori numa Edge
-Function) só se paga se um dia a geração precisar rodar sem alguém na tela, o que a fase 4
-decide.
+Function) existiria para gerar a imagem sem ninguém na tela, e a decisão 4 tirou esse caso de
+cima da mesa.
 
 ## Fase 3: o polimento por LLM (proposta)
 
@@ -131,26 +132,53 @@ usam. Contrato estreito, e é o contrato que faz essa fase ser segura:
 
 Sem essas três, a fase 3 devolve exatamente os riscos que a fase 1 fechou.
 
-## Fase 4: a publicação (proposta, com dependência fora do código)
+## Fase 4: não existe
 
-Publicar direto no Instagram exige Graph API, conta Business ligada a uma Página do Facebook, app
-na Meta com `instagram_content_publish` e revisão da Meta. Isso é prazo e decisão de negócio, não
-código, e por isso está separado.
+**Decidido em 27/08/2026: não vai haver publicação automática.** A saída do Hub é o pacote pronto
+(cards mais legenda), e a publicação é manual, na ferramenta que o time já usa.
 
-O intermediário honesto, enquanto a decisão não vem: exportar o pacote (imagens mais legenda) e
-agendar na ferramenta que o time já usa. O ganho da atividade (parar de escrever quatro posts a
-partir do zero) já vem da fase 1.
+Isso encerra a Graph API do Instagram como frente de trabalho, com a conta Business, o app na Meta,
+o `instagram_content_publish` e a revisão da Meta que vinham junto. Também simplifica a fase 2: sem
+geração headless, a imagem pode ser renderizada no browser, e não sobra motivo para um Satori numa
+Edge Function.
 
-## O que precisa de decisão do time
+## As decisões do time (27/08/2026)
 
-| # | Pergunta | Por que trava |
-|---|---|---|
-| 1 | Quatro posts por artigo saem no mesmo dia ou distribuídos na semana? | Muda se a fase 4 precisa de agendamento ou só de exportação |
-| 2 | Quem aprova antes de publicar? | Define se a tela de conferência basta ou se falta um estado "aprovado" no banco |
-| 3 | Vale publicar recorte dos 69 posts do acervo herdado, ou só dos novos? | O acervo antigo tem menos tabela e menos FAQ, então rende menos recorte, e o volume de conferência é outro |
-| 4 | A fase 4 vai por Graph API ou por ferramenta de agendamento? | A Graph API tem revisão da Meta no caminho crítico |
+| # | Pergunta | Resposta | O que muda |
+|---|---|---|---|
+| 1 | Os quatro saem no mesmo dia? | **Não**, distribuídos na semana | Cada recorte tem que funcionar sozinho, e a tela numera a ordem sugerida ("1 de 4") |
+| 2 | Quem aprova? | **Diego aprova qualquer post**, e a publicação é manual | A revisão humana já está no caminho, então **não** entra estado "aprovado" no banco. A tela de conferência é a aprovação |
+| 3 | Vale recortar o acervo herdado? | Ver a medição abaixo | Só os recortes sem preço. O preço do acervo antigo está sem data |
+| 4 | Graph API ou agendador? | **Nenhum dos dois**, publicação manual | Fase 4 cancelada |
 
-Nenhuma delas bloqueia a fase 1, que já está no ar no Manager.
+A 2 tem uma consequência que vale escrever: como ninguém publica direto do Hub, o rascunho não
+precisa de máquina de estado. Um `blog_social_post` com `status` seria burocracia para um fluxo
+onde a aprovação acontece na conversa e a publicação acontece fora.
+
+## A medição do acervo herdado (decisão 3)
+
+Rodado em 27/08/2026 sobre os 47 posts publicados que têm arquivo local em `public/blog/` (os
+outros 22 vivos só existem no banco):
+
+| Recorte | Resultado |
+|---|---|
+| Posts que rendem os 4 formatos | 12 de 47 |
+| Posts que rendem 2 ou 3 | 33 de 47 |
+| Posts que rendem 1 | 2 de 47 |
+| Total de recortes possíveis | 125 |
+| **Recortes bloqueados** | **20, todos pelo mesmo motivo** |
+| Posts que citam R$ e **não** declaram data | **29 de 47** |
+| Posts com data de referência | 10 de 47 |
+
+O bloqueio é sempre o mesmo: valor em R$ sem data de referência. É a guarda funcionando, não um
+falso positivo. Os posts do WordPress são de 2024 e citam tarifa sem dizer quando ela foi apurada,
+e publicar esse número no Instagram em 2026 é o risco do CDC art. 30 que a fase 1 existe para
+fechar.
+
+Então a resposta prática da decisão 3: **o acervo herdado rende, mas só nos recortes que não
+carregam preço** (pergunta e checklist saem em 47 e 42 posts). Os recortes de preço ficam
+bloqueados até alguém datar a tarifa no artigo, e a lista de bloqueios vira a fila dessa
+atualização, que é trabalho de conteúdo e não desta entrega.
 
 ## Efeito colateral que vale registrar
 

@@ -53,7 +53,8 @@ export function SocialDraftsDialog({
           <DialogTitle>Posts para redes</DialogTitle>
           <DialogDescription>
             Recortes do artigo "{post?.title}". Todo número sai de uma tabela do texto, com a data
-            que o artigo declara.
+            que o artigo declara. A ordem abaixo é a sequência sugerida de publicação ao longo da
+            semana.
           </DialogDescription>
         </DialogHeader>
 
@@ -61,8 +62,13 @@ export function SocialDraftsDialog({
           <EmptyState title="Este artigo não sustenta nenhum recorte." />
         ) : (
           <div className="flex flex-col gap-6">
-            {derivacao.drafts.map((draft) => (
-              <DraftCard key={draft.format} draft={draft} />
+            {derivacao.drafts.map((draft, i) => (
+              <DraftCard
+                key={draft.format}
+                draft={draft}
+                posicao={i + 1}
+                total={derivacao.drafts.length}
+              />
             ))}
           </div>
         )}
@@ -84,7 +90,15 @@ export function SocialDraftsDialog({
   );
 }
 
-function DraftCard({ draft }: { draft: SocialDraft }) {
+function DraftCard({
+  draft,
+  posicao,
+  total,
+}: {
+  draft: SocialDraft;
+  posicao: number;
+  total: number;
+}) {
   const bloqueado = draft.blockers.length > 0;
 
   async function copiar() {
@@ -100,7 +114,9 @@ function DraftCard({ draft }: { draft: SocialDraft }) {
     <section className="rounded-lg border border-hairline p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h3 className="text-title-sm text-ink">{draft.label}</h3>
+          <h3 className="text-title-sm text-ink">
+            {posicao} de {total}. {draft.label}
+          </h3>
           <p className="text-caption-sm text-muted">{draft.source}</p>
         </div>
         <div className="flex items-center gap-2">
