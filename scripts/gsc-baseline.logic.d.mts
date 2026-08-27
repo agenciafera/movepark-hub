@@ -84,3 +84,7 @@ export function paraCsv<T>(colunas: ColunaDeCsv<T>[], linhas: T[]): string;
 export function numero(valor: number | null | undefined, casas?: number): string;
 export function emPtBr(valor: number | null | undefined, casas?: number): string;
 export function escaparPipe(texto: unknown): string;
+export function metaComCarimboEstavel<T extends { geradoEm: string }>(
+  metaNovo: T,
+  metaAnterior: (Partial<T> & { geradoEm?: string }) | null | undefined,
+): T;

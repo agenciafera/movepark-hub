@@ -112,6 +112,14 @@ Uma pasta por coleta, nomeada pela data final da janela:
 A pasta é versionada. Rodar de novo no mesmo dia reescreve a mesma pasta; rodar em outro dia
 cria pasta nova, e nenhuma coleta anterior é tocada.
 
+**Re-rodar não suja o `git status`.** Os seis CSVs e o `RESUMO.md` são determinísticos, e o
+`geradoEm` do `meta.json` era o único valor que andava a cada execução, o que fazia a pasta
+congelada aparecer modificada por causa do relógio, sem dado novo. Ruído assim entra de carona
+num `git add -A` alheio, então o carimbo agora é preservado quando a re-rodada devolve
+exatamente os mesmos números (`metaComCarimboEstavel`). A semântica ficou mais honesta junto:
+`geradoEm` é quando o baseline foi congelado, e re-rodada que não muda número nenhum não
+congelou nada. Se o Google revisar os dados, o carimbo anda, porque aí é outro baseline.
+
 ## Os recortes
 
 **Aeroportos da onda 1:** GRU, VCP, CNF e CWB. O casamento é por termo com fronteira de palavra,

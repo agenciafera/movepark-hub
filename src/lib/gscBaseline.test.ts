@@ -13,6 +13,7 @@ import {
   classificarConsultas,
   clustersDaConsulta,
   janelaDe16Meses,
+  metaComCarimboEstavel,
   normalizar,
   numero,
   paraCsv,
@@ -182,5 +183,56 @@ describe("escaparPipe", () => {
   it("neutraliza o pipe, que deslocaria as colunas da tabela markdown", () => {
     // Consulta de busca com pipe existe, e uma linha deslocada estraga a leitura do resumo.
     expect(escaparPipe("estacionamento gru | barato")).toBe("estacionamento gru \\| barato");
+  });
+});
+
+describe("metaComCarimboEstavel", () => {
+  const meta = (geradoEm: string, consultas = 9744) => ({
+    propriedade: "sc-domain:movepark.co",
+    inicio: "2025-04-25",
+    fim: "2026-08-24",
+    geradoEm,
+    linhas: { consultas, paginas: 709 },
+  });
+
+  it("re-rodada com os mesmos numeros mantem o carimbo original", () => {
+    // É o que impede a pasta congelada de aparecer modificada só porque o relógio andou.
+    const saida = metaComCarimboEstavel(meta("2026-08-27T20:00:00Z"), meta("2026-08-27T17:18:45Z"));
+    expect(saida.geradoEm).toBe("2026-08-27T17:18:45Z");
+  });
+
+  it("numero diferente anda com o carimbo, porque ai e outro baseline", () => {
+    const saida = metaComCarimboEstavel(
+      meta("2026-08-27T20:00:00Z", 9801),
+      meta("2026-08-27T17:18:45Z", 9744),
+    );
+    expect(saida.geradoEm).toBe("2026-08-27T20:00:00Z");
+  });
+
+  it("sem coleta anterior usa o carimbo novo", () => {
+    expect(metaComCarimboEstavel(meta("2026-08-27T20:00:00Z"), null).geradoEm).toBe(
+      "2026-08-27T20:00:00Z",
+    );
+    expect(metaComCarimboEstavel(meta("2026-08-27T20:00:00Z"), {}).geradoEm).toBe(
+      "2026-08-27T20:00:00Z",
+    );
+  });
+
+  it("ordem das chaves nao conta como mudanca de dado", () => {
+    const anterior = {
+      geradoEm: "2026-08-27T17:18:45Z",
+      linhas: { paginas: 709, consultas: 9744 },
+      fim: "2026-08-24",
+      inicio: "2025-04-25",
+      propriedade: "sc-domain:movepark.co",
+    };
+    const saida = metaComCarimboEstavel(meta("2026-08-27T20:00:00Z"), anterior);
+    expect(saida.geradoEm).toBe("2026-08-27T17:18:45Z");
+  });
+
+  it("preserva o resto do meta novo intacto", () => {
+    const saida = metaComCarimboEstavel(meta("2026-08-27T20:00:00Z"), meta("2026-08-27T17:18:45Z"));
+    expect(saida.linhas).toEqual({ consultas: 9744, paginas: 709 });
+    expect(saida.propriedade).toBe("sc-domain:movepark.co");
   });
 });

@@ -212,3 +212,35 @@ export function emPtBr(valor, casas = 0) {
 export function escaparPipe(texto) {
   return String(texto ?? "").replace(/\|/g, "\\|");
 }
+
+/** Ordena chave de objeto em profundidade, para a comparação não depender da ordem de escrita. */
+function canonico(valor) {
+  if (Array.isArray(valor)) return valor.map(canonico);
+  if (valor && typeof valor === "object") {
+    return Object.fromEntries(
+      Object.keys(valor)
+        .sort()
+        .map((chave) => [chave, canonico(valor[chave])]),
+    );
+  }
+  return valor;
+}
+
+/**
+ * Preserva o `geradoEm` anterior quando a re-rodada devolve exatamente os mesmos números.
+ *
+ * Sem isto, rodar o coletor de novo sujava o `git status` com uma diferença de uma linha que
+ * não é dado novo, só relógio, e é assim que ruído entra de carona num commit alheio. O repo
+ * já tratou a mesma doença no manifesto do blog (`af493c84`).
+ *
+ * A semântica também fica mais honesta: `geradoEm` passa a significar quando o baseline foi
+ * congelado, e re-rodada que não muda número nenhum não congelou nada de novo. Se o Google
+ * revisar os dados, aí o carimbo anda, porque aí é outro baseline.
+ */
+export function metaComCarimboEstavel(metaNovo, metaAnterior) {
+  if (!metaAnterior?.geradoEm) return metaNovo;
+  const { geradoEm: _ignorado, ...restoNovo } = metaNovo;
+  const { geradoEm: carimboAnterior, ...restoAnterior } = metaAnterior;
+  const igual = JSON.stringify(canonico(restoNovo)) === JSON.stringify(canonico(restoAnterior));
+  return igual ? { ...metaNovo, geradoEm: carimboAnterior } : metaNovo;
+}

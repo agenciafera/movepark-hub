@@ -31,6 +31,7 @@ import {
   emPtBr,
   escaparPipe,
   janelaDe16Meses,
+  metaComCarimboEstavel,
   numero,
   paraCsv,
   posicaoPonderada,
@@ -219,6 +220,15 @@ function resumoEmMarkdown({ propriedade, inicio, fim, recorte, consultas, pagina
   ].join("\n");
 }
 
+/** Meta da coleta anterior nesta mesma pasta, ou null se não há (ou está ilegível). */
+function lerMetaAnterior(destino) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(destino, "meta.json"), "utf8"));
+  } catch {
+    return null;
+  }
+}
+
 async function principal() {
   const propriedade = argumento("property", process.env.GSC_PROPERTY ?? "sc-domain:movepark.co");
   const janela = janelaDe16Meses(new Date());
@@ -312,28 +322,24 @@ async function principal() {
     ),
   );
 
-  gravar(
-    "meta.json",
-    JSON.stringify(
-      {
-        propriedade,
-        inicio,
-        fim,
-        dataState: "final",
-        geradoEm: new Date().toISOString(),
-        script: "scripts/gsc-baseline.mjs",
-        linhas: {
-          consultas: consultas.length,
-          paginas: paginas.length,
-          consultaPagina: consultaPagina.length,
-          dias: datas.length,
-          consultasClassificadas: classificadas.length,
-        },
-      },
-      null,
-      2,
-    ) + "\n",
-  );
+  const meta = {
+    propriedade,
+    inicio,
+    fim,
+    dataState: "final",
+    geradoEm: new Date().toISOString(),
+    script: "scripts/gsc-baseline.mjs",
+    linhas: {
+      consultas: consultas.length,
+      paginas: paginas.length,
+      consultaPagina: consultaPagina.length,
+      dias: datas.length,
+      consultasClassificadas: classificadas.length,
+    },
+  };
+  // Re-rodada que devolve os mesmos números mantém o carimbo original, senão o único diff
+  // seria o relógio e a pasta congelada apareceria modificada sem dado novo.
+  gravar("meta.json", JSON.stringify(metaComCarimboEstavel(meta, lerMetaAnterior(destino)), null, 2) + "\n");
 
   gravar(
     "RESUMO.md",
