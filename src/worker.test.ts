@@ -786,3 +786,34 @@ describe("404 real de página", () => {
     expect(res.headers.get("Cache-Control")).toBe("no-store");
   });
 });
+
+describe("leitura de conversa compartilhada", () => {
+  /*
+    A rota e' dinamica e nao tem HTML pre-renderizado, entao o fallback de SPA devolve a
+    casca com status 404. A pagina abre, porque o roteamento e' no navegador, mas o
+    status errado some da pre-visualizacao do WhatsApp e do Slack, e este link existe
+    justamente para ser mandado a alguem.
+  */
+  const TOKEN = "a".repeat(64);
+
+  it("responde 200 mesmo sem HTML pre-renderizado", async () => {
+    const env = {
+      ASSETS: { fetch: async () => new Response("<html>app</html>", { status: 404 }) },
+    } as never;
+    const res = await worker.fetch(new Request(`https://movepark.co/conversa/${TOKEN}`), env);
+    expect(res.status).toBe(200);
+  });
+
+  it("caminho fora do formato do token continua 404", async () => {
+    // Sem isso, qualquer coisa sob /conversa/ viraria 200 e criaria soft 404.
+    const env = {
+      ASSETS: { fetch: async () => new Response("<html>app</html>", { status: 404 }) },
+    } as never;
+    const res = await worker.fetch(new Request("https://movepark.co/conversa/qualquer"), env);
+    expect(res.status).toBe(404);
+  });
+
+  it("continua com noindex, porque o token vive na URL", () => {
+    expect(ehRotaPrivada(`/conversa/${TOKEN}`)).toBe(true);
+  });
+});
