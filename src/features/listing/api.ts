@@ -22,6 +22,8 @@ export type ListingDetail = {
     slug: string;
     name: string;
     legal_name: string | null;
+    /** CNPJ do parceiro, dígitos ou pontuado. Vira `taxID` no LocalBusiness. */
+    tax_id: string | null;
     created_at: string;
   };
   location: {
@@ -90,7 +92,7 @@ const baseSelect = `
     directions_text, shuttle_frequency_minutes, shuttle_to_terminal_minutes,
     reservation_policy, checkout_mode, go2park_enabled, go2park_whatsapp, timezone, latitude, longitude, google_place_id,
     has_pcd_config, has_passenger_quantity, review_avg, review_count, photos,
-    company:company!inner(id, slug, name, legal_name, created_at),
+    company:company!inner(id, slug, name, legal_name, tax_id, created_at),
     destination:destination(seo_label, short_name, name, type, city),
     amenities:location_amenity(
       amenity:amenity(code, name, icon, category, sort_order)

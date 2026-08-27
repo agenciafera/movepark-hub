@@ -32,6 +32,18 @@ function escadaDePreco(porDuracao: { days: number; total: number }[]) {
   });
 }
 
+/**
+ * CNPJ no formato de registro (XX.XXX.XXX/XXXX-XX). Só formata o que tem cara de
+ * CNPJ: 14 dígitos, com ou sem pontuação. Qualquer outra coisa (campo de teste,
+ * dado sujo) não vira `taxID`, porque identidade errada é pior que ausente.
+ */
+function cnpjFormatado(taxId: string | null | undefined): string | undefined {
+  if (!taxId) return undefined;
+  const digitos = taxId.replace(/\D/g, "");
+  if (digitos.length !== 14) return undefined;
+  return `${digitos.slice(0, 2)}.${digitos.slice(2, 5)}.${digitos.slice(5, 8)}/${digitos.slice(8, 12)}-${digitos.slice(12)}`;
+}
+
 export function localBusinessSchema(listing: ListingDetail, opts?: { description?: string }) {
   return {
     "@context": "https://schema.org",
@@ -45,6 +57,9 @@ export function localBusinessSchema(listing: ListingDetail, opts?: { description
     url: `${SITE_URL}/p/${listing.company.slug}/${listing.location.slug}/${listing.parking_type.code}`,
     telephone: listing.location.phone ?? undefined,
     email: listing.location.email ?? undefined,
+    // O CNPJ vem do catálogo (conferido no site público do próprio parceiro):
+    // é o lastro de entidade que liga a unidade à empresa real.
+    taxID: cnpjFormatado(listing.company.tax_id),
     address: listing.location.address
       ? {
           "@type": "PostalAddress",

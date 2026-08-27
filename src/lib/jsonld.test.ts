@@ -691,3 +691,24 @@ describe("webApplicationSchema", () => {
     expect(s.inLanguage).toBe("pt-BR");
   });
 });
+
+describe("taxID no LocalBusiness", () => {
+  it("formata o CNPJ do catálogo no padrão de registro", () => {
+    const listing = makeListing();
+    listing.company.tax_id = "17163995000104";
+    expect(localBusinessSchema(listing).taxID).toBe("17.163.995/0001-04");
+  });
+
+  it("CNPJ já pontuado sai normalizado igual", () => {
+    const listing = makeListing();
+    listing.company.tax_id = "59.075.010/0003-09";
+    expect(localBusinessSchema(listing).taxID).toBe("59.075.010/0003-09");
+  });
+
+  it("sem CNPJ ou com dado sem cara de CNPJ, o campo não existe", () => {
+    expect(localBusinessSchema(makeListing()).taxID).toBeUndefined();
+    const sujo = makeListing();
+    sujo.company.tax_id = "123";
+    expect(localBusinessSchema(sujo).taxID).toBeUndefined();
+  });
+});
