@@ -168,7 +168,7 @@ mínima e a comparação com o estacionamento oficial.
 | Âncora | Palavras | Analisador |
 | --- | --- | --- |
 | `preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui` | 3.417 | ✅ verde, 0 bloqueio |
-| `como-estacionar-barato-no-aeroporto-de-guarulhos` | 1.020 | a expandir |
+| `como-estacionar-barato-no-aeroporto-de-guarulhos` | 3.073 | ✅ verde, 0 bloqueio |
 | `estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes` | 3.040 | ✅ verde, 0 bloqueio |
 | `quanto-custa-um-estacionamento-do-aeroporto-afonso-pena` | 3.120 | ✅ verde, 0 bloqueio |
 | `estacionamento-barato-aeroporto-curitiba` | 942 | a expandir |
@@ -235,6 +235,27 @@ preço não responde: **quanto tempo isso me custa.** Três blocos entraram no m
 
 Quando um campo não está declarado na ficha, o texto diz que não está, em vez de preencher com
 estimativa. É o caso do traslado do Aerovalet, que trava a conta de tempo daquele pátio.
+
+### O que a âncora de barato acrescentou ao molde
+
+O risco desta era virar a de preço com outro título, já que os clusters são vizinhos. A saída foi
+mudar a unidade de análise: a de preço responde **quanto custa**, a de barato responde **qual
+decisão devolve mais dinheiro**.
+
+Dois blocos entraram no molde por causa dela e servem a qualquer praça:
+
+1. **O ranking de alavancas**, todas medidas na mesma faixa de permanência para a comparação ser
+   justa. Em Guarulhos, em 27/08/2026: sair do oficial devolve R$ 280,50, escolher vaga descoberta
+   devolve R$ 105,00, trocar de pátio devolve R$ 45,00 e reservar online devolve R$ 44,70.
+   O resultado contraria o senso comum duas vezes: o desconto de reserva antecipada, que é a dica
+   mais repetida do mercado, é a que menos devolve, e o tipo de vaga pesa mais que a escolha do lote.
+2. **A escada acumulada**, que mostra o total descendo degrau a degrau do oficial até o piso. Ela
+   revela que mesmo o pátio mais caro, na vaga mais cara e na tabela de balcão, ainda sai abaixo do
+   oficial de Guarulhos.
+
+A regra de comparação justa que saiu daqui: **alavancas só podem ser ranqueadas dentro da mesma
+faixa de permanência.** Comparar uma economia medida em 7 diárias com outra medida em 30 infla a
+maior e some com a menor.
 
 ### A regra de origem do número
 
