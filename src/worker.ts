@@ -73,6 +73,10 @@ function redirecionaWww(url: URL): Response | null {
  */
 export const ROTAS_PRIVADAS = [
   "/manager",
+  // Leitura de conversa compartilhada. O token vive na URL, então indexá-la publicaria
+  // a conversa de um cliente E o próprio token no índice do Google. Ela é pública para
+  // quem tem o link, e só para essa pessoa.
+  "/conversa",
   "/operator",
   "/account",
   "/checkout",

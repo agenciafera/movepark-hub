@@ -73,3 +73,28 @@ Deno.test("responder leva o texto e quem escreveu", () => {
   assertEquals(corpo.texto, "ola");
   assertEquals(corpo.assumidaPor, "uid");
 });
+
+// As acoes novas precisam estar na lista fechada, senao a Edge devolve 400 e a tela
+// para de carregar. Aconteceu: o front pedia `anexo` e `compartilhar` e a Edge recusava.
+Deno.test("as acoes de anexo e compartilhamento passam", () => {
+  assertEquals(acaoValida("anexo"), true);
+  assertEquals(acaoValida("compartilhar"), true);
+  assertEquals(acaoValida("descompartilhar"), true);
+});
+
+Deno.test("anexo leva a mensagem e a parte, e nada mais", () => {
+  const corpo = corpoParaOBeastBots("anexo", "uid", {
+    threadId: "t", messageId: "m1", parte: 2, texto: "ignorado",
+  } as never);
+  assertEquals(Object.keys(corpo).sort().join(","), "acao,agentId,messageId,parte,threadId");
+  assertEquals(corpo.parte, 2);
+});
+
+Deno.test("compartilhar nao aceita token do navegador", () => {
+  // O token e' sorteado no servidor. Aceitar um do cliente deixaria alguem fixar um
+  // link adivinhavel.
+  const corpo = corpoParaOBeastBots("compartilhar", "uid", {
+    threadId: "t", token: "aaaa",
+  } as never);
+  assertEquals("token" in corpo, false);
+});

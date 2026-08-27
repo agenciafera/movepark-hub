@@ -44,6 +44,8 @@ export const SITEMAP_OPT_OUT: Record<string, string> = {
   "/onboarding": "fluxo de cadastro de parceiro, sem conteúdo indexável",
   "/404": "página de erro; indexá-la seria criar um soft 404 nosso, e o worker responde 404 nela",
   "/login": "autenticação",
+  "/conversa/:token":
+    "leitura de conversa compartilhada por link; o token vive na URL e indexá-la publicaria a conversa de um cliente",
   "/entrar": "redireciona para /login",
   "/signup": "redireciona para /login",
   "/uber-ou-estacionamento-aeroporto":

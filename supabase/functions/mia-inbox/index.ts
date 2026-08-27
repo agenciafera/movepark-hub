@@ -46,7 +46,17 @@ const AGENT_ID = "movepark-hub";
  * admin, então tudo que passar por aqui roda com poder total. Ação nova entra aqui de
  * propósito, não por acidente.
  */
-const ACOES = ["listar", "abrir", "marcar", "assumir", "devolver", "responder"] as const;
+const ACOES = [
+  "listar",
+  "abrir",
+  "marcar",
+  "assumir",
+  "devolver",
+  "responder",
+  "anexo",
+  "compartilhar",
+  "descompartilhar",
+] as const;
 export type AcaoDaCaixa = (typeof ACOES)[number];
 
 export function acaoValida(v: unknown): v is AcaoDaCaixa {
@@ -62,7 +72,14 @@ export function acaoValida(v: unknown): v is AcaoDaCaixa {
 export function corpoParaOBeastBots(
   acao: AcaoDaCaixa,
   uid: string,
-  entrada: { threadId?: unknown; lidaAte?: unknown; limite?: unknown; texto?: unknown },
+  entrada: {
+    threadId?: unknown;
+    lidaAte?: unknown;
+    limite?: unknown;
+    texto?: unknown;
+    messageId?: unknown;
+    parte?: unknown;
+  },
 ): Record<string, unknown> {
   const base: Record<string, unknown> = { acao, agentId: AGENT_ID };
 
@@ -78,6 +95,10 @@ export function corpoParaOBeastBots(
   if (acao === "responder") {
     base.texto = typeof entrada.texto === "string" ? entrada.texto : "";
     base.assumidaPor = uid;
+  }
+  if (acao === "anexo") {
+    base.messageId = typeof entrada.messageId === "string" ? entrada.messageId : "";
+    base.parte = Number(entrada.parte ?? -1);
   }
   return base;
 }
@@ -134,7 +155,13 @@ export async function handler(req: Request): Promise<Response> {
 
   // Quem escreve para o cliente ou assume a conversa fica registrado. A caixa alcança
   // dado de cliente real, e "a empresa pode" não é o mesmo que "não precisa saber quem foi".
-  if (corpo.acao === "assumir" || corpo.acao === "devolver" || corpo.acao === "responder") {
+  if (
+    corpo.acao === "assumir" ||
+    corpo.acao === "devolver" ||
+    corpo.acao === "responder" ||
+    corpo.acao === "compartilhar" ||
+    corpo.acao === "descompartilhar"
+  ) {
     console.log(
       `[mia-inbox] ${corpo.acao} uid=${usuario.user.id} email=${usuario.user.email ?? "?"} thread=${String(enviar.threadId)}`,
     );

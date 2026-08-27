@@ -7,6 +7,8 @@ import {
   HandPalm,
   Robot,
   PaperPlaneTilt,
+  ShareNetwork,
+  LinkBreak,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -15,9 +17,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Bubble } from "@/features/assistant/ChatBubble";
+import { Anexo } from "@/features/inbox/Anexo";
 import {
   useAssumirConversa,
   useConversa,
+  useCompartilharConversa,
   useConversas,
   useDevolverConversa,
   useMarcarConversa,
@@ -55,10 +59,15 @@ export default function ManagerConversas() {
   const assumir = useAssumirConversa();
   const devolver = useDevolverConversa();
   const responder = useResponderConversa();
+  const compartilhar = useCompartilharConversa();
   const [resposta, setResposta] = React.useState("");
   const fim = React.useRef<HTMLDivElement>(null);
 
   const assumida = !!conversa.data?.assumidaPor;
+  const compartilhada = conversa.data?.compartilhada ?? null;
+
+  /** O link que se copia. Montado na tela porque o servidor não conhece o host. */
+  const linkPublico = compartilhada ? `${window.location.origin}/conversa/${compartilhada}` : "";
 
   /**
    * Rola para a última mensagem ao abrir e a cada fala nova.
@@ -258,6 +267,40 @@ export default function ManagerConversas() {
                 <Button
                   type="button"
                   size="sm"
+                  variant={compartilhada ? "primary" : "secondary"}
+                  disabled={compartilhar.isPending}
+                  onClick={() => {
+                    if (compartilhada) {
+                      compartilhar.mutate(
+                        { threadId: aberta, ligar: false },
+                        {
+                          onSuccess: () => toast.success("Link desativado."),
+                          onError: (e) =>
+                            toast.error(e instanceof Error ? e.message : "Não consegui desativar."),
+                        },
+                      );
+                      return;
+                    }
+                    compartilhar.mutate(
+                      { threadId: aberta, ligar: true },
+                      {
+                        onSuccess: (r) => {
+                          const link = `${window.location.origin}/conversa/${r.token}`;
+                          navigator.clipboard?.writeText(link).catch(() => undefined);
+                          toast.success("Link copiado. Quem receber consegue ler a conversa.");
+                        },
+                        onError: (e) =>
+                          toast.error(e instanceof Error ? e.message : "Não consegui compartilhar."),
+                      },
+                    );
+                  }}
+                >
+                  {compartilhada ? <LinkBreak size={16} /> : <ShareNetwork size={16} />}
+                  {compartilhada ? "Parar de compartilhar" : "Compartilhar"}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
                   variant="secondary"
                   disabled={marcar.isPending}
                   onClick={() =>
@@ -277,6 +320,24 @@ export default function ManagerConversas() {
                 </div>
               </header>
 
+              {compartilhada ? (
+                <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200 bg-neutral-50 px-4 py-2">
+                  <span className="text-body-sm text-body">Link de leitura ativo:</span>
+                  <code className="truncate text-body-sm text-muted">{linkPublico}</code>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => {
+                      navigator.clipboard?.writeText(linkPublico).catch(() => undefined);
+                      toast.success("Link copiado.");
+                    }}
+                  >
+                    Copiar
+                  </Button>
+                </div>
+              ) : null}
+
               <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
                 {conversa.isLoading ? (
                   <Skeleton className="h-40 w-full" />
@@ -284,11 +345,26 @@ export default function ManagerConversas() {
                   <EmptyState title="Conversa sem mensagens" />
                 ) : (
                   conversa.data?.falas.map((f, i) => (
-                    <Bubble
-                      key={i}
-                      role={f.papel === "cliente" ? "user" : "model"}
-                      text={textoDaFala(f.texto)}
-                    />
+                    <div
+                      key={f.id || i}
+                      className={`flex flex-col gap-1 ${f.papel === "cliente" ? "items-end" : "items-start"}`}
+                    >
+                      {f.texto ? (
+                        <Bubble
+                          role={f.papel === "cliente" ? "user" : "model"}
+                          text={textoDaFala(f.texto)}
+                        />
+                      ) : null}
+                      {/*
+                        `?? []` porque um formato inesperado do servidor NAO pode
+                        derrubar a tela. Aconteceu: um deploy do backend ficou para tras,
+                        a fala veio sem `anexos`, e a pagina inteira virou "Algo deu
+                        errado" em vez de mostrar a conversa que ela ja tinha.
+                      */}
+                      {(f.anexos ?? []).map((a) => (
+                        <Anexo key={a.parte} threadId={aberta} messageId={f.id} anexo={a} />
+                      ))}
+                    </div>
                   ))
                 )}
                 <div ref={fim} />

@@ -10,6 +10,7 @@ import {
   useAssumirConversa,
   useConversas,
   useDevolverConversa,
+  useCompartilharConversa,
   useMarcarConversa,
   useResponderConversa,
 } from "./api";
@@ -72,6 +73,19 @@ describe("o que o navegador manda para a Edge", () => {
     const { result } = renderHook(() => useResponderConversa(), { wrapper });
     await result.current.mutateAsync({ threadId: "t1", texto: "oi" });
     expect(corpoDaChamada()).toEqual({ acao: "responder", threadId: "t1", texto: "oi" });
+  });
+
+  it("compartilhar e parar de compartilhar mandam só a conversa", async () => {
+    // O token e' sorteado no servidor: o navegador nao propoe nem escolhe. Aceitar um
+    // token do cliente deixaria alguem fixar um link adivinhavel.
+    ok({ ok: true, token: "a".repeat(64) });
+    const { result } = renderHook(() => useCompartilharConversa(), { wrapper });
+    await result.current.mutateAsync({ threadId: "t1", ligar: true });
+    expect(corpoDaChamada()).toEqual({ acao: "compartilhar", threadId: "t1" });
+
+    ok({ ok: true, token: null });
+    await result.current.mutateAsync({ threadId: "t1", ligar: false });
+    expect(corpoDaChamada()).toEqual({ acao: "descompartilhar", threadId: "t1" });
   });
 
   it("erro da Edge vira mensagem legível, nunca silêncio", async () => {

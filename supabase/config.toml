@@ -390,6 +390,9 @@ allow_dynamic_registration = false
 [functions.api]
 verify_jwt = false
 
+[functions.conversa-publica]
+verify_jwt = false
+
 [functions.mcp]
 verify_jwt = false
 

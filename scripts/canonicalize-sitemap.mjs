@@ -20,6 +20,8 @@ const SITEMAP = "dist/sitemap.xml";
 /** Prefixos de path que nunca entram no sitemap (área logada/fluxo transacional). */
 const PRIVADOS = [
   "/manager",
+  // Leitura de conversa compartilhada: o token vive na URL. Ver ROTAS_PRIVADAS no worker.
+  "/conversa",
   "/operator",
   "/account",
   "/bookings",

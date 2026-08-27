@@ -31,13 +31,29 @@ export type ConversaDaLista = {
   assumida_em: string | null;
 };
 
-export type FalaDaConversa = { papel: "cliente" | "agente"; texto: string; em: string };
+/** A ficha de um anexo. Os bytes vêm depois, por `useAnexo`. */
+export type AnexoDaFala = {
+  parte: number;
+  mime: string;
+  tipo: "imagem" | "audio" | "video" | "figurinha" | "arquivo";
+  nome: string;
+  bytes: number;
+};
+
+export type FalaDaConversa = {
+  id: string;
+  papel: "cliente" | "agente";
+  texto: string;
+  em: string;
+  anexos: AnexoDaFala[];
+};
 
 export type ConversaAberta = {
   threadId: string;
   telefone: string;
   lidaAte: string | null;
   assumidaPor: string | null;
+  compartilhada: string | null;
   falas: FalaDaConversa[];
 };
 
@@ -45,6 +61,8 @@ export const inboxKeys = {
   all: ["inbox"] as const,
   lista: () => [...inboxKeys.all, "lista"] as const,
   conversa: (id: string) => [...inboxKeys.all, "conversa", id] as const,
+  anexo: (msg: string, parte: number) => [...inboxKeys.all, "anexo", msg, parte] as const,
+  publica: (token: string) => ["conversa-publica", token] as const,
 };
 
 /** A mensagem de erro da Edge é mais útil que "FunctionsHttpError". */
@@ -143,5 +161,80 @@ export function useResponderConversa() {
     mutationFn: ({ threadId, texto }: { threadId: string; texto: string }) =>
       chamar<{ ok: boolean }>({ acao: "responder", threadId, texto }, "Não consegui enviar."),
     onSuccess: () => qc.invalidateQueries({ queryKey: inboxKeys.all }),
+  });
+}
+
+/**
+ * Os bytes de um anexo, buscados só quando a tela vai mostrá-lo.
+ *
+ * O adapter guarda a mídia inline, em base64, dentro da mensagem: medido no banco, média
+ * de 319 KB por anexo e uma conversa somando 2,8 MB. Trazer isso na abertura faria a
+ * tela esperar megabytes antes da primeira linha. Assim a conversa abre em 5 KB e cada
+ * anexo chega sozinho.
+ *
+ * `staleTime: Infinity` porque anexo não muda: uma vez carregado, fica.
+ */
+export function useAnexo(threadId: string | null, messageId: string, parte: number, ligado: boolean) {
+  return useQuery({
+    queryKey: inboxKeys.anexo(messageId, parte),
+    enabled: ligado && !!threadId && !!messageId,
+    staleTime: Infinity,
+    gcTime: 10 * 60_000,
+    queryFn: () =>
+      chamar<{ dados: string; nome: string }>(
+        { acao: "anexo", threadId, messageId, parte },
+        "Não consegui carregar o anexo.",
+      ),
+  });
+}
+
+/** Liga e desliga o link público de leitura. Devolve o token quando liga. */
+export function useCompartilharConversa() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ threadId, ligar }: { threadId: string; ligar: boolean }) =>
+      chamar<{ ok: boolean; token: string | null }>(
+        { acao: ligar ? "compartilhar" : "descompartilhar", threadId },
+        "Não consegui mudar o compartilhamento.",
+      ),
+    onSuccess: () => qc.invalidateQueries({ queryKey: inboxKeys.all }),
+  });
+}
+
+/** Um anexo da conversa compartilhada, pelo mesmo token. */
+export function useAnexoPublico(token: string, messageId: string, parte: number, ligado: boolean) {
+  return useQuery({
+    queryKey: [...inboxKeys.publica(token), "anexo", messageId, parte],
+    enabled: ligado && !!token && !!messageId,
+    staleTime: Infinity,
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("conversa-publica", {
+        body: { token, messageId, parte },
+      });
+      if (error) throw new Error((await lerErro(error)) ?? "Não consegui carregar o anexo.");
+      return data as { dados: string };
+    },
+  });
+}
+
+/**
+ * A conversa vista por quem recebeu o link.
+ *
+ * Passa por outra Edge, sem sessão, e o token é a única credencial. Por isso ela vive
+ * aqui e não reusa `chamar`: aquela fala com a caixa de entrada inteira.
+ */
+export function useConversaPublica(token: string) {
+  return useQuery({
+    queryKey: inboxKeys.publica(token),
+    enabled: !!token,
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("conversa-publica", {
+        body: { token },
+      });
+      if (error) throw new Error((await lerErro(error)) ?? "Este link não está mais válido.");
+      return data as { threadId: string; telefone: string; falas: FalaDaConversa[] };
+    },
   });
 }

@@ -22,6 +22,10 @@ vi.mock("@/features/inbox/api", async (original) => ({
   useAssumirConversa: () => ({ mutate: assumir, isPending: false }),
   useDevolverConversa: () => ({ mutate: devolver, isPending: false }),
   useResponderConversa: () => ({ mutate: responder, isPending: false }),
+  useCompartilharConversa: () => ({ mutate: vi.fn(), isPending: false }),
+  // O anexo carrega sozinho; no teste de tela ele chega pronto.
+  useAnexo: () => ({ data: { dados: "data:image/jpeg;base64,AAA", nome: "" }, isPending: false, isError: false }),
+  useAnexoPublico: () => ({ data: undefined, isPending: false, isError: false }),
 }));
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -89,7 +93,7 @@ describe("caixa de entrada", () => {
 
   it("abrir uma conversa não lida marca como lida, sem passo manual", () => {
     lista.current = [linha()];
-    aberta.current = { threadId: "t-41", telefone: "5541988149449", lidaAte: null, assumidaPor: null, falas: [] };
+    aberta.current = { threadId: "t-41", telefone: "5541988149449", lidaAte: null, assumidaPor: null, compartilhada: null, falas: [] };
     renderWithProviders(<ManagerConversas />);
     fireEvent.click(screen.getByLabelText("Conversa com (41) 98814-9449"));
     expect(marcar).toHaveBeenCalledWith({ threadId: "t-41", lida: true });
@@ -110,9 +114,10 @@ describe("caixa de entrada", () => {
       telefone: "5541988149449",
       lidaAte: null,
       assumidaPor: null,
+      compartilhada: null,
       falas: [
-        { papel: "cliente", texto: "quero reservar", em: "2026-08-27T20:00:00.000Z" },
-        { papel: "agente", texto: "Para quais datas?", em: "2026-08-27T20:00:10.000Z" },
+        { id: "m1", papel: "cliente", texto: "quero reservar", em: "2026-08-27T20:00:00.000Z", anexos: [] },
+        { id: "m2", papel: "agente", texto: "Para quais datas?", em: "2026-08-27T20:00:10.000Z", anexos: [] },
       ],
     };
     renderWithProviders(<ManagerConversas />);
@@ -125,7 +130,7 @@ describe("caixa de entrada", () => {
     lista.current = [linha({ assumida_por: "uid-1" })];
     aberta.current = {
       threadId: "t-41", telefone: "5541988149449", lidaAte: null,
-      assumidaPor: "uid-1", falas: [],
+      assumidaPor: "uid-1", compartilhada: null, falas: [],
     };
     renderWithProviders(<ManagerConversas />);
     fireEvent.click(screen.getByLabelText("Conversa com (41) 98814-9449"));
@@ -148,7 +153,7 @@ describe("caixa de entrada", () => {
   it("não deixa escrever antes de assumir", async () => {
     // Responder sem assumir deixaria a Mia e a pessoa falando por cima uma da outra.
     lista.current = [linha()];
-    aberta.current = { threadId: "t-41", telefone: "5541988149449", lidaAte: null, assumidaPor: null, falas: [] };
+    aberta.current = { threadId: "t-41", telefone: "5541988149449", lidaAte: null, assumidaPor: null, compartilhada: null, falas: [] };
     renderWithProviders(<ManagerConversas />);
     fireEvent.click(screen.getByLabelText("Conversa com (41) 98814-9449"));
     await waitFor(() => expect(screen.getByText(/Assuma a conversa para escrever/)).toBeTruthy());
@@ -157,14 +162,14 @@ describe("caixa de entrada", () => {
 
   it("assume, e o botão passa a oferecer devolver", async () => {
     lista.current = [linha()];
-    aberta.current = { threadId: "t-41", telefone: "5541988149449", lidaAte: null, assumidaPor: null, falas: [] };
+    aberta.current = { threadId: "t-41", telefone: "5541988149449", lidaAte: null, assumidaPor: null, compartilhada: null, falas: [] };
     const { rerender } = renderWithProviders(<ManagerConversas />);
     fireEvent.click(screen.getByLabelText("Conversa com (41) 98814-9449"));
     fireEvent.click(await screen.findByRole("button", { name: /Assumir/ }));
     expect(assumir).toHaveBeenCalledWith({ threadId: "t-41" }, expect.anything());
 
     // Com a conversa assumida, o mesmo lugar devolve.
-    aberta.current = { ...aberta.current!, assumidaPor: "uid-1" };
+    aberta.current = { ...aberta.current!, assumidaPor: "uid-1", compartilhada: null };
     rerender(<ManagerConversas />);
     fireEvent.click(screen.getByLabelText("Conversa com (41) 98814-9449"));
     expect(await screen.findByRole("button", { name: /Devolver/ })).toBeTruthy();
@@ -172,7 +177,7 @@ describe("caixa de entrada", () => {
 
   it("envia a resposta e limpa o campo", async () => {
     lista.current = [linha()];
-    aberta.current = { threadId: "t-41", telefone: "5541988149449", lidaAte: null, assumidaPor: "uid-1", falas: [] };
+    aberta.current = { threadId: "t-41", telefone: "5541988149449", lidaAte: null, assumidaPor: "uid-1", compartilhada: null, falas: [] };
     renderWithProviders(<ManagerConversas />);
     fireEvent.click(screen.getByLabelText("Conversa com (41) 98814-9449"));
     const campo = await screen.findByLabelText("Resposta para o cliente");
@@ -186,22 +191,30 @@ describe("caixa de entrada", () => {
 
   it("não envia mensagem vazia", async () => {
     lista.current = [linha()];
-    aberta.current = { threadId: "t-41", telefone: "5541988149449", lidaAte: null, assumidaPor: "uid-1", falas: [] };
+    aberta.current = { threadId: "t-41", telefone: "5541988149449", lidaAte: null, assumidaPor: "uid-1", compartilhada: null, falas: [] };
     renderWithProviders(<ManagerConversas />);
     fireEvent.click(screen.getByLabelText("Conversa com (41) 98814-9449"));
     const botao = (await screen.findByLabelText("Enviar")) as HTMLButtonElement;
     expect(botao.disabled).toBe(true);
   });
 
-  it("anexo aparece como frase, não como marcador de integração", async () => {
+  it("anexo vira imagem de verdade, com link para baixar", async () => {
     lista.current = [linha()];
     aberta.current = {
       threadId: "t-41", telefone: "5541988149449", lidaAte: null, assumidaPor: null,
-      falas: [{ papel: "cliente", texto: "\\[Image]\n[Attached image/jpeg file]", em: "x" }],
+      compartilhada: null,
+      falas: [{ id: "m1", papel: "cliente", texto: "", em: "x", anexos: [
+        { parte: 2, mime: "image/jpeg", tipo: "imagem", nome: "", bytes: 1024 },
+      ] }],
     };
     renderWithProviders(<ManagerConversas />);
     fireEvent.click(screen.getByLabelText("Conversa com (41) 98814-9449"));
-    await waitFor(() => expect(screen.getByText("(imagem)")).toBeTruthy());
-    expect(screen.queryByText(/Attached image/)).toBeNull();
+    await waitFor(() =>
+      expect(screen.getByAltText("Imagem enviada na conversa")).toBeTruthy(),
+    );
+    // Baixar sai do proprio `data:`: nao criamos URL publica para midia de cliente.
+    const baixar = screen.getByText(/Baixar/).closest("a") as HTMLAnchorElement;
+    expect(baixar.getAttribute("href")?.startsWith("data:")).toBe(true);
+    expect(baixar.hasAttribute("download")).toBe(true);
   });
 });
