@@ -279,7 +279,7 @@ Ritmo proposto: **2 páginas por semana por pessoa** e **4 peças de Instagram p
 |---|---|---|
 | **Cadastrar o Be Park no Hub** | Sem ele Confins não tem tarifa, distância nem reserva | Leonardo |
 | **Mapa de canonicalização** | Definir, por aeroporto, qual URL ganha cada termo de cabeça e o que é redirecionado para ela | os dois. ✅ GRU e CWB em 27/08/2026, em [canonicalizacao-gru-cwb.md](./canonicalizacao-gru-cwb.md) |
-| Baseline do Search Console | 16 meses por consulta e por página, congelados como marco zero | os dois |
+| Baseline do Search Console | 16 meses por consulta e por página, congelados como marco zero | os dois. ✅ congelado em 27/08/2026: 9.744 consultas, 709 páginas, 1,35 milhão de impressões, em [baseline-search-console.md](./baseline-search-console.md) |
 | **Placar de citação em IA** | 12 consultas por mês em ChatGPT, Gemini, Perplexity e visão geral do Google, com print | os dois |
 | Bing Webmaster Tools | A busca do ChatGPT se apoia no índice da Microsoft, e ninguém checou se estamos lá | Diego |
 | Kit de marca do Instagram | Grid, tipografia grande, molde de carrossel e de reels | Diego |
