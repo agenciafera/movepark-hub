@@ -346,6 +346,8 @@ export function organizationSchema() {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "Movepark",
+    legalName: "Movepark Tecnologia Ltda",
+    taxID: "68.183.164/0001-35",
     url: SITE_URL,
     logo: `${SITE_URL}/brand/logo-movepark.svg`,
     description:

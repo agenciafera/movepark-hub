@@ -92,7 +92,7 @@ export function ConsumerFooter() {
           <div className="flex items-center gap-3">
             <Wordmark height={18} />
             <span className="text-caption-sm text-muted">
-              © {new Date().getFullYear()} Movepark
+              © {new Date().getFullYear()} Movepark Tecnologia Ltda · CNPJ 68.183.164/0001-35
             </span>
           </div>
           <div className="text-caption-sm text-muted">🌎 PT-BR (R$)</div>

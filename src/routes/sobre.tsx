@@ -352,8 +352,9 @@ export default function SobrePage() {
               <h3 className="text-title-md text-ink">Não tem nome parecido</h3>
               <p className="mt-1 text-body-sm text-body">
                 A Movepark não tem relação com empresas ou estacionamentos de nome
-                semelhante. O site oficial é movepark.co, e os canais oficiais estão no
-                rodapé desta página.
+                semelhante. A razão social é Movepark Tecnologia Ltda (CNPJ
+                68.183.164/0001-35), o site oficial é movepark.co, e os canais oficiais
+                estão no rodapé desta página.
               </p>
             </div>
           </div>

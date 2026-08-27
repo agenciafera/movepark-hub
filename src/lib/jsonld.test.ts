@@ -661,6 +661,12 @@ describe("organizationSchema", () => {
     expect(s.contactPoint).toMatchObject({ "@type": "ContactPoint", email: "contato@movepark.co" });
     expect(s.slogan).toBe("Vaga garantida ou realocamos e cobrimos a diferença.");
   });
+
+  it("assina com a identidade legal: razão social e CNPJ", () => {
+    const s = organizationSchema();
+    expect(s.legalName).toBe("Movepark Tecnologia Ltda");
+    expect(s.taxID).toBe("68.183.164/0001-35");
+  });
 });
 
 describe("webSiteSchema", () => {
