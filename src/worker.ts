@@ -767,6 +767,15 @@ const ROTAS_DE_APP: RegExp[] = [
   /^\/faq(\/[^/]+)?$/,
   // Idem: destino que ganha preço depois do build abre pelo cliente até o próximo deploy.
   /^\/estacionamento-mais-barato\/[^/]+$/,
+  /**
+   * Leitura de conversa compartilhada. Não existe HTML para ela: o token nasce depois do
+   * build e é sorteado por conversa, então nenhum `getStaticPaths` a alcançaria.
+   *
+   * O formato é conferido (64 hex, o mesmo da Edge) em vez de aceitar tudo sob
+   * `/conversa/`: sem isso, qualquer caminho ali viraria 200 com a casca do app, que é o
+   * soft 404 que o bloco do lote mapeado neste arquivo existe para evitar.
+   */
+  /^\/conversa\/[0-9a-f]{64}$/,
 ];
 
 export function ehRotaDeApp(pathname: string): boolean {
@@ -972,30 +981,6 @@ async function serve(request: Request, env: Env): Promise<Response> {
     const withoutSlash = new URL(url.pathname.replace(/\/+$/, ""), url);
     withoutSlash.search = url.search;
     return env.ASSETS.fetch(new Request(withoutSlash, request));
-  }
-
-  /**
-   * Leitura de conversa compartilhada responde 200, e não 404.
-   *
-   * A rota é dinâmica (`/conversa/<token>`) e não tem HTML pré-renderizado, então o
-   * `not_found_handling: "single-page-application"` devolve a casca do app com **status
-   * 404**. A página até abre, porque o roteamento acontece no navegador, mas o status
-   * errado é caro justamente aqui: este link existe para ser mandado a alguém, e um 404
-   * some da pré-visualização do WhatsApp e do Slack, e assusta quem recebe.
-   *
-   * A conferência de formato é a mesma da Edge (64 hex): sem ela, qualquer caminho sob
-   * `/conversa/` viraria 200 e criaria soft 404, que é o problema que o bloco do lote
-   * mapeado acima existe para evitar.
-   */
-  if (/^\/conversa\/[0-9a-f]{64}\/?$/.test(url.pathname)) {
-    const casca = await env.ASSETS.fetch(request);
-    if (casca.status === 404) {
-      return new Response(casca.body, {
-        status: 200,
-        headers: casca.headers,
-      });
-    }
-    return casca;
   }
 
   // Default: serve static assets normally

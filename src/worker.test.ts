@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import worker, { ROTAS_PRIVADAS, __resetCachesDoWorker, ehRotaPrivada } from "./worker";
+import worker, { ROTAS_PRIVADAS, __resetCachesDoWorker, ehRotaDeApp, ehRotaPrivada } from "./worker";
 import { SITEMAP_PRIVATE_PREFIXES } from "./lib/sitemapRoutes";
 
 const HTML = "<!DOCTYPE html><html><head></head><body>app</body></html>";
@@ -796,21 +796,21 @@ describe("leitura de conversa compartilhada", () => {
   */
   const TOKEN = "a".repeat(64);
 
-  it("responde 200 mesmo sem HTML pre-renderizado", async () => {
-    const env = {
-      ASSETS: { fetch: async () => new Response("<html>app</html>", { status: 404 }) },
-    } as never;
-    const res = await worker.fetch(new Request(`https://movepark.co/conversa/${TOKEN}`), env);
-    expect(res.status).toBe(200);
+  it("e' rota de app, senao o manifesto de caminhos a manda para o 404", () => {
+    /*
+      O 404 nao vinha do ASSETS: vem do manifesto. Todo caminho que nao esta no
+      paths-manifest.json e nao e' rota de app recebe a pagina de erro ANTES de chegar
+      aos assets. Foi por isso que a primeira tentativa, um bloco antes do
+      `ASSETS.fetch`, nao mudou nada em producao.
+    */
+    expect(ehRotaDeApp(`/conversa/${TOKEN}`)).toBe(true);
   });
 
-  it("caminho fora do formato do token continua 404", async () => {
-    // Sem isso, qualquer coisa sob /conversa/ viraria 200 e criaria soft 404.
-    const env = {
-      ASSETS: { fetch: async () => new Response("<html>app</html>", { status: 404 }) },
-    } as never;
-    const res = await worker.fetch(new Request("https://movepark.co/conversa/qualquer"), env);
-    expect(res.status).toBe(404);
+  it("caminho fora do formato do token nao e' rota de app", () => {
+    // Sem o formato, qualquer coisa sob /conversa/ abriria com a casca do app, que e'
+    // soft 404.
+    expect(ehRotaDeApp("/conversa/qualquer")).toBe(false);
+    expect(ehRotaDeApp("/conversa")).toBe(false);
   });
 
   it("continua com noindex, porque o token vive na URL", () => {
