@@ -170,7 +170,7 @@ mínima e a comparação com o estacionamento oficial.
 | `preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui` | 3.417 | ✅ verde, 0 bloqueio |
 | `como-estacionar-barato-no-aeroporto-de-guarulhos` | 1.020 | a expandir |
 | `estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes` | 956 | a expandir |
-| `quanto-custa-um-estacionamento-do-aeroporto-afonso-pena` | 977 | a expandir |
+| `quanto-custa-um-estacionamento-do-aeroporto-afonso-pena` | 3.120 | ✅ verde, 0 bloqueio |
 | `estacionamento-barato-aeroporto-curitiba` | 942 | a expandir |
 | `conheca-o-estacionamento-mais-proximo-do-aeroporto-afonso-pena-em-2024` | 925 | a expandir |
 
@@ -194,6 +194,29 @@ A primeira expansão fixou o formato que as outras cinco seguem:
    mínima e serviços declarados.
 8. Bloco de método, separando o que sai do motor do que foi coletado à mão.
 9. FAQ com pergunta própria do post, sem repetir o que já responde em `/faq/<slug>`.
+
+### O que a expansão de Curitiba mostrou, e que muda a leitura de mercado
+
+A comparação com o estacionamento oficial não dá o mesmo resultado nas duas praças, e isso tem
+consequência comercial, não só editorial.
+
+| Praça | Parceiro mais barato, 15 diárias | Área mais barata do oficial | Leitura |
+| --- | --- | --- | --- |
+| Guarulhos | R$ 223,50, ou R$ 14,90 por dia | R$ 504,00, ou R$ 33,60 por dia | parceiro 56% abaixo |
+| Afonso Pena | R$ 238,50, ou R$ 15,90 por dia | R$ 238,50, ou R$ 15,90 por dia | **empate** |
+
+Em Curitiba, a Área C do oficial (pátio com sombreador) cobrava exatamente a mesma diária que a
+vaga descoberta do Abbapark em 27/08/2026. A vantagem do parceiro em Curitiba só aparece contra a
+vaga coberta do oficial, onde chega a 52%.
+
+Três desdobramentos, que não são deste épico mas precisam de dono:
+
+1. **O argumento de preço não vende Curitiba sozinho.** O que sustenta a praça é vaga coberta,
+   traslado de cinco minutos e tabela publicada com data, contra tarifa que se ajusta por demanda.
+2. **O piso de três diárias fecha a faixa curta.** Viagem de uma ou duas noites paga três diárias,
+   então o oficial ganha essa faixa por definição. Vale medir quanto de busca cai aí.
+3. **Vale reavaliar a tabela dos parceiros de Curitiba** contra a Área C do oficial. É uma conversa
+   de precificação, e a skill `propor-preco-movepark` é o caminho.
 
 ### A regra de origem do número
 
