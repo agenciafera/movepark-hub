@@ -151,17 +151,62 @@ de fato, não de estilo:
 Todo valor em R$ nas donas agora carrega a data de referência (27/08/2026), vem do motor de
 reservas e aponta para o preço vivo em `/precos/<slug>` e `/destinos/<slug>`.
 
-## O que ficou fora, e por quê
+## A expansão das donas ao padrão de 3.000 palavras
 
-**As donas ainda não têm 3.000 palavras.** Depois da revisão elas estão entre 925 e 1.109
-palavras, e o analisador da skill `blogpost-seo-geo` bloqueia por contagem. Isso é de propósito:
-levar cada âncora ao padrão de 3.000 palavras é a atividade de escrita ("Criar blogpost"), não
-a de consolidação. O que esta entrega garante é que a base sobre a qual essa escrita vai
-acontecer é verdadeira: nenhum número inventado, nenhum lote inexistente, nenhuma promessa.
+Depois da revisão, as seis donas ficaram entre 925 e 1.109 palavras, e o analisador da skill
+`blogpost-seo-geo` bloqueia por contagem. A decisão foi **expandir as donas em vez de escrever
+post novo**, porque post novo na mesma intenção reabriria a canibalização que esta consolidação
+acabou de fechar, e as donas carregam o histórico de URL mais os 22 redirects.
 
-Rodando o analisador nas seis donas, o único bloqueio restante em cada uma é a contagem de
-palavras. Frase-chave no título, na primeira frase, no slug, na meta description, nos H2 e no
-alt já passam.
+A regra que guia a expansão: **3.000 palavras é proxy, não meta.** Cada parágrafo novo precisa
+responder uma pergunta que a página ainda não responde. O material vem de dado que já existe no
+Hub e nunca foi escrito, principalmente distância por terminal, amenidades declaradas, permanência
+mínima e a comparação com o estacionamento oficial.
+
+### Estado por âncora
+
+| Âncora | Palavras | Analisador |
+| --- | --- | --- |
+| `preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui` | 3.417 | ✅ verde, 0 bloqueio |
+| `como-estacionar-barato-no-aeroporto-de-guarulhos` | 1.020 | a expandir |
+| `estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes` | 956 | a expandir |
+| `quanto-custa-um-estacionamento-do-aeroporto-afonso-pena` | 977 | a expandir |
+| `estacionamento-barato-aeroporto-curitiba` | 942 | a expandir |
+| `conheca-o-estacionamento-mais-proximo-do-aeroporto-afonso-pena-em-2024` | 925 | a expandir |
+
+Ordem de prioridade pelas demandas de cluster do plano: GRU preço (70 termos), CWB preço (37),
+GRU proximidade (38), GRU barato (33), CWB barato (17), CWB proximidade (17).
+
+### O molde, definido pela âncora de preço de GRU
+
+A primeira expansão fixou o formato que as outras cinco seguem:
+
+1. Abertura autossuficiente com a frase-chave na primeira frase, até 90 palavras, seguida de uma
+   tabela de resposta rápida.
+2. Tabela completa por faixa de permanência, com a data da consulta.
+3. Valor por dia em cada faixa, que é a leitura que o total esconde.
+4. Balcão contra online, com a diferença em reais e em percentual.
+5. **Distância por terminal**, onde o dado existe. Em GRU os três terminais estão cadastrados e a
+   diferença entre eles é material num pátio (1,18 km) e irrelevante no outro (0,15 km).
+6. **Comparação com o estacionamento oficial**, com a economia em reais e em percentual, e com as
+   linhas em que o oficial ganha mantidas na tabela.
+7. Ficha por pátio: endereço, distância por terminal, horário, traslado, tolerância, permanência
+   mínima e serviços declarados.
+8. Bloco de método, separando o que sai do motor do que foi coletado à mão.
+9. FAQ com pergunta própria do post, sem repetir o que já responde em `/faq/<slug>`.
+
+### A regra de origem do número
+
+O bloco de método distingue duas fontes, e essa distinção é obrigatória:
+
+- **Preço de parceiro** sai do motor de reservas. É o mesmo número que fecha a reserva.
+- **Tarifa do estacionamento oficial** não passa pelo motor. É coleta manual na página do
+  operador, com a data ao lado, e tem que estar marcada como tal no texto.
+
+Chutar a tarifa do oficial é proibido, mesmo quando a comparação é desejável. O diferencial da
+Movepark é que o valor publicado é o valor cobrado, e um número inventado sobre terceiro destrói
+isso de uma vez. Quando a fonte primária não estiver disponível, a saída é publicar a comparação
+sem o número, e não com um número plausível.
 
 ## Como reverter
 
@@ -169,3 +214,17 @@ Republicar o post no banco (`is_published = true`) **e** tirar a entrada de
 `BLOG_CONSOLIDATED_SLUGS`. Só um dos dois não resolve: enquanto a entrada viver no mapa, o
 worker responde 301 antes de servir a página, e a URL fica inalcançável mesmo com o post
 publicado.
+
+
+## Pendências de cadastro encontradas na expansão
+
+Duas inconsistências apareceram ao escrever a âncora de preço de GRU. Nenhuma foi corrigida aqui,
+porque são dados de unidade e afetam mais superfícies que o blog.
+
+1. **Aerovalet, Guarulhos: traslado contraditório.** A ficha tem `has_shuttle = false`, sem
+   `shuttle_to_terminal_minutes` nem `shuttle_frequency_minutes`, mas a amenidade `shuttle_free`
+   ("Transfer gratuito") está marcada. As duas fontes discordam, e isso aparece na página da
+   unidade, na busca e no bloco de fato. O post trata dizendo que a ficha lista transfer entre os
+   serviços mas não declara o tempo, que é literalmente o que o banco diz.
+2. **Lisboa Park listada no destino de Guarulhos.** A unidade tem `is_listed = true` e
+   `destination_id` de GRU, mas não aparece no índice de preços. Parece erro de vínculo de destino.
