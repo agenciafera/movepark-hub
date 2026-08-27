@@ -1,6 +1,6 @@
 # Baseline do Search Console
 
-**Status:** implementado (coletor pronto, primeira coleta pendente de credencial)
+**Status:** implementado · primeira coleta congelada em 24/08/2026, em [`dados/gsc-baseline-2026-08-24/`](./dados/gsc-baseline-2026-08-24/RESUMO.md)
 **Atividade:** Conteúdo 03 do plano de conteúdo dos aeroportos ([86ak6h4xj](https://app.clickup.com/t/86ak6h4xj))
 **Código:** [`scripts/gsc-baseline.mjs`](../../scripts/gsc-baseline.mjs) · lógica pura em [`scripts/gsc-baseline.logic.mjs`](../../scripts/gsc-baseline.logic.mjs) · teste em [`src/lib/gscBaseline.test.ts`](../../src/lib/gscBaseline.test.ts)
 
@@ -45,6 +45,12 @@ SDK do Google, para o repositório não ganhar uma dependência inteira por caus
 ```bash
 bun run seo:gsc-baseline
 ```
+
+O `--env-file-if-exists` no script do `package.json` não é decoração. O bun carrega o
+`.env.local` para o processo dele, mas **não repassa** essas variáveis para o `node` que ele
+lança, então sem a flag o coletor morre em "Falta a credencial" mesmo com a credencial
+configurada certa. A variante `-if-exists` é de propósito: quem não tem `.env.local` cai na
+mensagem de erro do próprio script, que explica o que fazer, em vez de num crash do node.
 
 Aceita `--inicio`, `--fim` e `--property` para recortes fora do padrão. Sem argumento, a janela
 é de 16 meses terminando três dias atrás: o Search Console leva alguns dias para fechar o dado,
