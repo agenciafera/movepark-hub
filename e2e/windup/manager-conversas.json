@@ -1,0 +1,159 @@
+{
+  "scenario_id": "manager-conversas",
+  "start_url": "/manager/conversas",
+  "tags": [
+    "manager",
+    "autenticado"
+  ],
+  "task": "Passo 1: aguarde a pagina carregar. Passo 2: verifique que a pagina exibe o texto \"Conversas\". Passo 3: verifique que a pagina exibe o texto \"(41) 98814-9449\". Passo 4: clique no item da lista que mostra \"(41) 98814-9449\". Passo 5: verifique que a pagina exibe o texto \"Claro, para quais datas?\".",
+  "hints": [
+    "E' a caixa de entrada das conversas da Mia: lista a esquerda, conversa a direita.",
+    "O telefone aparece formatado, e nao como 5541988149449.",
+    "Antes de clicar, a coluna da direita convida a escolher uma conversa.",
+    "Sao passos numerados: execute cada um como uma acao propria do plano."
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x\",\"token_type\":\"bearer\",\"expires_in\":999999999,\"expires_at\":4102444800,\"refresh_token\":\"r\",\"user\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"qa@windup.local\"}}"
+    }
+  },
+  "network": [
+    {
+      "url": "**/functions/v1/mia-inbox*",
+      "json": {
+        "conversas": [
+          {
+            "id": "movepark-hub:whatsapp:whatsapp:456:5541988149449",
+            "telefone": "5541988149449",
+            "titulo": "whatsapp conversation",
+            "ultima_em": "2026-08-27T20:00:00.000Z",
+            "ultimo_papel": "signal",
+            "ultimo_texto": "quero reservar no Virapark",
+            "total": 4,
+            "lida_ate": null,
+            "assumida_por": null,
+            "assumida_em": null
+          },
+          {
+            "id": "movepark-hub:whatsapp:whatsapp:456:5511987727182",
+            "telefone": "5511987727182",
+            "titulo": "whatsapp conversation",
+            "ultima_em": "2026-08-27T19:00:00.000Z",
+            "ultimo_papel": "assistant",
+            "ultimo_texto": "voucher enviado",
+            "total": 2,
+            "lida_ate": "2026-08-27T19:30:00.000Z",
+            "assumida_por": null,
+            "assumida_em": null
+          }
+        ],
+        "threadId": "movepark-hub:whatsapp:whatsapp:456:5541988149449",
+        "telefone": "5541988149449",
+        "lidaAte": null,
+        "assumidaPor": null,
+        "falas": [
+          {
+            "papel": "cliente",
+            "texto": "quero reservar no Virapark",
+            "em": "2026-08-27T20:00:00.000Z"
+          },
+          {
+            "papel": "agente",
+            "texto": "Claro, para quais datas?",
+            "em": "2026-08-27T20:00:10.000Z"
+          }
+        ]
+      }
+    },
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.x",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "r",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles?*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "hub_admin"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company?*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/company_role_scope?*",
+      "json": [
+        {
+          "role": "owner",
+          "scope": "occupancy:read"
+        },
+        {
+          "role": "owner",
+          "scope": "addons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "pricing:write"
+        },
+        {
+          "role": "owner",
+          "scope": "coupons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "reviews:read"
+        },
+        {
+          "role": "owner",
+          "scope": "team:read"
+        },
+        {
+          "role": "owner",
+          "scope": "finance:read"
+        },
+        {
+          "role": "owner",
+          "scope": "api-keys:write"
+        },
+        {
+          "role": "owner",
+          "scope": "locations:write"
+        },
+        {
+          "role": "owner",
+          "scope": "bookings:read"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ]
+}

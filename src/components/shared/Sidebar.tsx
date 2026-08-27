@@ -6,6 +6,8 @@ import { ArrowSquareOut, Buildings, CaretRight, ShieldWarning } from "@phosphor-
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/context";
 import { usePendingPartnerCount } from "@/features/onboarding/managerApi";
+import { useConversas } from "@/features/inbox/api";
+import { contarNaoLidas } from "@/features/inbox/inbox.logic";
 import { filterSectionsByScopes } from "./Sidebar.logic";
 import { managerSections, operatorSections, type Item } from "./nav-items";
 import { secaoAtiva } from "./menuAtivo";
@@ -201,6 +203,15 @@ export function Sidebar({
   const pendingPartners = usePendingPartnerCount(variant === "manager");
   const newLeads = variant === "manager" ? (pendingPartners.data ?? 0) : 0;
 
+  /**
+   * Conversas do WhatsApp esperando resposta → badge em "Conversas".
+   *
+   * A query é a mesma da tela, então abrir a caixa de entrada não refaz a chamada: o
+   * TanStack Query serve as duas pela mesma chave.
+   */
+  const conversas = useConversas(variant === "manager");
+  const naoLidas = variant === "manager" ? contarNaoLidas(conversas.data) : 0;
+
   const impersonating = !!impersonatedCompanyId && session?.role === "hub_admin";
 
   return (
@@ -256,7 +267,13 @@ export function Sidebar({
                 <NavRow
                   key={item.to}
                   item={item}
-                  badge={item.to === "/manager/partners" ? newLeads : 0}
+                  badge={
+                    item.to === "/manager/partners"
+                      ? newLeads
+                      : item.to === "/manager/conversas"
+                        ? naoLidas
+                        : 0
+                  }
                 />
               ),
             )}
