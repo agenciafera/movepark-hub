@@ -139,7 +139,7 @@ describe("caixa de entrada", () => {
     expect(screen.getByText("Nenhuma conversa ainda")).toBeTruthy();
 
     lista.current = [linha()];
-    const { rerender: _r } = renderWithProviders(<ManagerConversas />);
+    renderWithProviders(<ManagerConversas />);
     fireEvent.change(screen.getAllByLabelText("Buscar conversa")[1], {
       target: { value: "zzz" },
     });
