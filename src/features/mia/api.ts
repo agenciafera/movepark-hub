@@ -123,3 +123,28 @@ export function useLimparConversaDaMia() {
     },
   });
 }
+
+/**
+ * A conversa que já existe daquele número, para a tela abrir onde parou.
+ *
+ * A memória vive no servidor e sobrevive ao F5; a lista da tela é estado do navegador e
+ * não sobrevive. Sem isto, recarregar mostrava conversa vazia enquanto a Mia continuava
+ * lembrando de tudo, e a bancada mentia sobre o próprio estado.
+ *
+ * Falha aqui **não** impede conversar: quem abriu quer testar o agente, e um histórico
+ * que não carregou é um incômodo, não um bloqueio. O erro aparece, a conversa segue.
+ */
+export function useHistoricoDaMia() {
+  return useMutation({
+    mutationFn: async (identidade: IdentidadeSimulada): Promise<MiaTurno[]> => {
+      const { data, error } = await supabase.functions.invoke("mia-chat", {
+        body: { acao: "historico", telefone: identidade.telefone },
+      });
+      if (error) {
+        const detalhe = await lerErro(error);
+        throw new Error(detalhe ?? "Não consegui carregar a conversa anterior.");
+      }
+      return ((data as { mensagens?: MiaTurno[] })?.mensagens ?? []).filter((m) => m.text);
+    },
+  });
+}

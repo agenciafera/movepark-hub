@@ -8,7 +8,7 @@ import { MiaTestWidget } from "./MiaTestWidget";
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock("@/lib/supabase", () => ({ supabase: { functions: { invoke } } }));
 
-import { useEnviarParaMia, useLimparConversaDaMia } from "./api";
+import { useEnviarParaMia, useHistoricoDaMia, useLimparConversaDaMia } from "./api";
 
 function wrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -41,6 +41,61 @@ describe("bolinha de teste da Mia", () => {
     comPapel("hub_admin");
     render(<MiaTestWidget />, { wrapper });
     expect(screen.getByLabelText("Testar a Mia")).toBeTruthy();
+  });
+});
+
+describe("o histórico daquele número", () => {
+  const ident = { telefone: "5541988149449", origem: "webchat-bot" } as const;
+
+  it("pede a conversa daquele telefone, e não escolhe a thread", async () => {
+    // A memória vive no servidor e sobrevive ao F5; a lista da tela não. Sem carregar,
+    // recarregar a página mostrava conversa vazia enquanto a Mia lembrava de tudo.
+    invoke.mockReset();
+    invoke.mockResolvedValue({ data: { mensagens: [] }, error: null });
+    const { result } = renderHook(() => useHistoricoDaMia(), { wrapper });
+    await result.current.mutateAsync(ident);
+
+    const [nome, opts] = invoke.mock.calls[0] as [string, { body: Record<string, unknown> }];
+    expect(nome).toBe("mia-chat");
+    expect(opts.body).toEqual({ acao: "historico", telefone: "5541988149449" });
+  });
+
+  it("devolve as falas na ordem, prontas para a tela", async () => {
+    invoke.mockReset();
+    invoke.mockResolvedValue({
+      data: {
+        mensagens: [
+          { role: "user", text: "oi" },
+          { role: "model", text: "Olá! Como posso ajudar?" },
+        ],
+      },
+      error: null,
+    });
+    const { result } = renderHook(() => useHistoricoDaMia(), { wrapper });
+    const falas = await result.current.mutateAsync(ident);
+    expect(falas.map((f) => f.role)).toEqual(["user", "model"]);
+    expect(falas[1].text).toBe("Olá! Como posso ajudar?");
+  });
+
+  it("descarta fala sem texto, que viraria balão vazio", async () => {
+    // Chamada de tool grava mensagem de assistente sem nada legível.
+    invoke.mockReset();
+    invoke.mockResolvedValue({
+      data: { mensagens: [{ role: "model", text: "" }, { role: "model", text: "pronto" }] },
+      error: null,
+    });
+    const { result } = renderHook(() => useHistoricoDaMia(), { wrapper });
+    expect(await result.current.mutateAsync(ident)).toEqual([{ role: "model", text: "pronto" }]);
+  });
+
+  it("erro vira mensagem, e nunca silêncio", async () => {
+    invoke.mockReset();
+    invoke.mockResolvedValue({
+      data: null,
+      error: { context: { json: async () => ({ error: "Acesso restrito." }) } },
+    });
+    const { result } = renderHook(() => useHistoricoDaMia(), { wrapper });
+    await expect(result.current.mutateAsync(ident)).rejects.toThrow(/Acesso restrito/);
   });
 });
 

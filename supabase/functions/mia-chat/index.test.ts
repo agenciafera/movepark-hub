@@ -1,6 +1,6 @@
 // Testes de branch da Edge mia-chat. Nenhum toca no banco nem revela o token.
 import { assertEquals } from "jsr:@std/assert";
-import { handler, identidadeDeTeste, origemValida, telefoneValido } from "./index.ts";
+import { falasDoHistorico, handler, identidadeDeTeste, origemValida, telefoneValido } from "./index.ts";
 
 const URL = "http://localhost/functions/v1/mia-chat";
 
@@ -112,4 +112,55 @@ Deno.test("respeita o prefixo do guarda de namespace do BeastBots", () => {
 
 Deno.test("sem nome, cai num rotulo que diz que e teste", () => {
   assertEquals(identidadeDeTeste("u1", null).requestContext["movepark.customerName"], "Backoffice (teste)");
+});
+
+
+// --- Historico: a tela precisa abrir onde a conversa parou ---
+// A memoria vive no servidor e sobrevive ao F5; a lista da tela nao. Sem carregar,
+// recarregar mostrava conversa vazia enquanto a Mia lembrava de tudo, e a bancada mentia
+// sobre o proprio estado.
+
+Deno.test("le o formato que o Mastra devolve hoje", () => {
+  const doMastra = {
+    messages: [
+      { role: "user", content: { format: 2, parts: [{ type: "text", text: "oi" }], content: "oi" } },
+      { role: "assistant", content: { format: 2, parts: [{ type: "text", text: "ola!" }], content: "ola!" } },
+    ],
+  };
+  assertEquals(falasDoHistorico(doMastra), [
+    { role: "user", text: "oi" },
+    { role: "model", text: "ola!" },
+  ]);
+});
+
+Deno.test("cai para as parts quando nao ha content pronto", () => {
+  // O formato do Mastra ja mudou antes; ler os dois caminhos evita a tela vazia silenciosa.
+  const so_parts = {
+    messages: [{ role: "user", content: { parts: [{ type: "text", text: "primeira" }, { type: "text", text: "segunda" }] } }],
+  };
+  assertEquals(falasDoHistorico(so_parts), [{ role: "user", text: "primeira\nsegunda" }]);
+});
+
+Deno.test("descarta mensagem sem texto, que viraria balao vazio", () => {
+  // Chamada de tool grava mensagem de assistente cujas partes sao `tool-invocation`.
+  const comTool = {
+    messages: [
+      { role: "assistant", content: { parts: [{ type: "tool-invocation", toolInvocation: {} }] } },
+      { role: "assistant", content: { parts: [{ type: "text", text: "  pronto  " }] } },
+    ],
+  };
+  assertEquals(falasDoHistorico(comTool), [{ role: "model", text: "pronto" }]);
+});
+
+Deno.test("papel desconhecido vira model, nunca user", () => {
+  // Desenhar fala do agente como se fosse do cliente inverteria a leitura do teste.
+  assertEquals(falasDoHistorico({ messages: [{ role: "system", content: "x" }] }), [
+    { role: "model", text: "x" },
+  ]);
+});
+
+Deno.test("corpo inesperado vira lista vazia, e nao excecao", () => {
+  assertEquals(falasDoHistorico(null), []);
+  assertEquals(falasDoHistorico({}), []);
+  assertEquals(falasDoHistorico({ messages: "nao e lista" }), []);
 });

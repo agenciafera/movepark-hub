@@ -7,6 +7,7 @@ import { appendMessage, canSend, type ChatMessage } from "@/features/assistant/c
 import {
   ORIGENS_DA_MIA,
   useEnviarParaMia,
+  useHistoricoDaMia,
   useLimparConversaDaMia,
   type IdentidadeSimulada,
   type OrigemDaMia,
@@ -60,6 +61,7 @@ export function MiaTestWidget() {
   // A memória é por usuário para dois testadores não dividirem a mesma conversa.
   const enviar = useEnviarParaMia();
   const limpar = useLimparConversaDaMia();
+  const historico = useHistoricoDaMia();
 
   React.useEffect(() => {
     fim.current?.scrollIntoView({ block: "end" });
@@ -162,8 +164,24 @@ export function MiaTestWidget() {
           onSubmit={(e) => {
             e.preventDefault();
             if (!telefoneAceito(telefoneDigitado)) return;
-            setIdentidade(identidadeDe(telefoneDigitado, origemEscolhida));
+            const escolhida = identidadeDe(telefoneDigitado, origemEscolhida);
+            setIdentidade(escolhida);
             setErro(null);
+            /*
+              Abre onde a conversa parou. O agente já lembra (a memória é do servidor);
+              sem isto, só a tela fingia que não.
+            */
+            historico.mutate(escolhida, {
+              onSuccess: (falas) =>
+                /*
+                  O `id` é da tela, e não do servidor: ele existe para o React ter chave
+                  estável, e uma conversa carregada nunca se mistura com outra porque
+                  trocar de número recarrega a lista inteira.
+                */
+                setMessages(falas.map((f, i) => ({ id: `historico-${i}`, ...f }))),
+              onError: (e) =>
+                setErro(e instanceof Error ? e.message : "Não consegui carregar a conversa anterior."),
+            });
           }}
           className="flex-1 space-y-4 overflow-y-auto px-4 py-4"
         >
@@ -231,6 +249,9 @@ export function MiaTestWidget() {
             ) : null}
           </React.Fragment>
         ))}
+        {historico.isPending ? (
+          <p className="text-body-sm text-muted">Carregando a conversa deste número…</p>
+        ) : null}
         {enviar.isPending ? <p className="text-body-sm text-muted">Mia está pensando…</p> : null}
         {limpar.isPending ? <p className="text-body-sm text-muted">Limpando…</p> : null}
         {erro ? (

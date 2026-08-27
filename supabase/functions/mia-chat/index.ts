@@ -121,6 +121,50 @@ export function identidadeDeTeste(
   };
 }
 
+/** Uma fala já gravada, do jeito que a tela desenha. */
+export type FalaGravada = { role: "user" | "model"; text: string };
+
+/**
+ * O histórico do Mastra, reduzido ao que a tela precisa.
+ *
+ * Exportada para ter teste, porque ela decide o que aparece na bancada e errar aqui
+ * mostraria conversa pela metade sem nenhum erro visível.
+ *
+ * **Mensagem sem texto sai.** Uma chamada de tool grava uma mensagem de assistente cujas
+ * partes são `tool-invocation`, sem nada legível: desenhá-la viraria um balão vazio no
+ * meio da conversa. Quais tools foram chamadas continua aparecendo, mas só na resposta
+ * do turno que está acontecendo, que é quando a informação serve para testar.
+ */
+export function falasDoHistorico(corpo: unknown): FalaGravada[] {
+  const lista = (corpo as { messages?: unknown })?.messages;
+  if (!Array.isArray(lista)) return [];
+
+  return lista.flatMap((m): FalaGravada[] => {
+    const bruto = m as { role?: unknown; content?: unknown };
+    const role = bruto.role === "user" ? "user" : "model";
+
+    const conteudo = bruto.content as
+      | { content?: unknown; parts?: Array<{ type?: string; text?: unknown }> }
+      | string
+      | undefined;
+
+    let texto = "";
+    if (typeof conteudo === "string") {
+      texto = conteudo;
+    } else if (typeof conteudo?.content === "string") {
+      texto = conteudo.content;
+    } else if (Array.isArray(conteudo?.parts)) {
+      texto = conteudo.parts
+        .filter((p) => p?.type === "text" && typeof p.text === "string")
+        .map((p) => p.text as string)
+        .join("\n");
+    }
+
+    texto = texto.trim();
+    return texto ? [{ role, text: texto }] : [];
+  });
+}
+
 export async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Método não permitido." }, 405);
@@ -218,6 +262,34 @@ export async function handler(req: Request): Promise<Response> {
     } catch (cause) {
       return json(
         { error: `Não consegui limpar: ${cause instanceof Error ? cause.message : String(cause)}` },
+        504,
+      );
+    }
+  }
+
+  /**
+   * Devolver a conversa que já existe, para a tela não parecer amnésica.
+   *
+   * A memória vive no servidor e sobrevive ao F5; a lista de mensagens da tela é estado
+   * do navegador e não sobrevive. Sem isto, recarregar a página mostrava conversa vazia
+   * enquanto a Mia continuava lembrando de tudo, e a bancada mentia sobre o próprio
+   * estado, que é o pior defeito que uma ferramenta de teste pode ter.
+   *
+   * 404 é lista vazia: significa que aquele número ainda não tem conversa.
+   */
+  if (corpo.acao === "historico") {
+    const alvo = `${base}/api/memory/threads/${encodeURIComponent(memory.thread)}/messages?agentId=movepark-hub`;
+    try {
+      const r = await fetch(alvo, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(30_000),
+      });
+      if (r.status === 404) return json({ mensagens: [] });
+      if (!r.ok) return json({ error: `Não consegui ler a conversa (${r.status}).` }, 502);
+      return json({ mensagens: falasDoHistorico(await r.json()) });
+    } catch (cause) {
+      return json(
+        { error: `Não consegui ler a conversa: ${cause instanceof Error ? cause.message : String(cause)}` },
         504,
       );
     }
