@@ -138,10 +138,15 @@ export async function handler(req: Request): Promise<Response> {
 
   let resposta: Response;
   try {
-    resposta = await fetch(`${base}/api/agents/movepark-hub/generate`, {
+    // `/chat` e nao `/api/agents/.../generate`: e' a porta que intercepta comando de
+    // canal (`/limpar`, `/comandos`) antes do agente. Chamando o `generate` direto, a
+    // barra chegava ao modelo como texto e a bolinha ficava sem comando nenhum. A lista
+    // de comandos mora no BeastBots, uma so' para todos os canais.
+    resposta = await fetch(`${base}/chat`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({
+        agentId: "movepark-hub",
         messages,
         ...identidadeDeTeste(uid, perfil?.full_name ?? null),
       }),
