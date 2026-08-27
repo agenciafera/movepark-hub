@@ -18,6 +18,7 @@ import {
 import { useAdminBlogPosts, useDeleteBlogPost } from "@/features/blog/api";
 import { BlogPostForm } from "@/features/blog/BlogPostForm";
 import { BlogTaxonomyDialog } from "@/features/blog/BlogTaxonomyDialog";
+import { SocialDraftsDialog } from "@/features/blog/SocialDraftsDialog";
 import { formatDate } from "@/lib/format";
 import type { BlogPostWithDestination } from "@/types/domain";
 
@@ -28,6 +29,7 @@ export default function ManagerBlog() {
   const [formOpen, setFormOpen] = React.useState(false);
   const [busca, setBusca] = React.useState("");
   const [taxonomiaOpen, setTaxonomiaOpen] = React.useState(false);
+  const [social, setSocial] = React.useState<BlogPostWithDestination | null>(null);
 
   const posts = React.useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -143,6 +145,9 @@ export default function ManagerBlog() {
                         <ArrowSquareOut className="h-4 w-4" />
                       </a>
                     </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setSocial(post)}>
+                      Redes
+                    </Button>
                     <Button variant="outline" size="sm" onClick={() => openEdit(post)}>
                       Editar
                     </Button>
@@ -161,6 +166,11 @@ export default function ManagerBlog() {
 
       <BlogPostForm open={formOpen} onOpenChange={setFormOpen} post={editing} />
       <BlogTaxonomyDialog open={taxonomiaOpen} onOpenChange={setTaxonomiaOpen} />
+      <SocialDraftsDialog
+        open={social !== null}
+        onOpenChange={(v) => !v && setSocial(null)}
+        post={social}
+      />
     </div>
   );
 }

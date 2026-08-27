@@ -368,7 +368,7 @@ export function plainText(md: string): string {
     .trim();
 }
 
-function inlineText(nodes: MdInline[]): string {
+export function inlineText(nodes: MdInline[]): string {
   return nodes.map((n) => (n.type === "text" ? n.value : inlineText(n.children))).join("");
 }
 
@@ -393,7 +393,7 @@ export function metaDescription(
   return truncateAtBoundary(bruto, limit);
 }
 
-function truncateAtBoundary(text: string, limit: number): string {
+export function truncateAtBoundary(text: string, limit: number): string {
   const clean = text.replace(/\s+/g, " ").trim();
   if (clean.length <= limit) return clean;
 
