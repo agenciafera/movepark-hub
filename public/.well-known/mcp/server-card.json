@@ -146,6 +146,21 @@
       }
     },
     {
+      "name": "get_location_info",
+      "description": "Ficha de uma unidade: contato, horário, tolerância na saída, como chegar, traslado e avisos.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location_id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
       "name": "get_parking_types",
       "description": "Tipos de vaga de uma unidade (coberto, descoberto, valet).",
       "inputSchema": {

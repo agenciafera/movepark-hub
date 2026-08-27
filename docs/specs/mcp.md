@@ -105,7 +105,8 @@ Edge `chat` consome. O MCP converte com `toMcpToolDef` e roteia por `callRead`; 
 | `get_faq(location_id?, query?, limit?)` | Edge `get-faq` |
 | `search_knowledge(query, location_id?, destination_id?, k?)` | Edge `knowledge-search` (RAG pgvector, ver `knowledge-base.md`) |
 | `list_companies(limit?)` | `company` (RLS `catalog_read_company`) |
-| `list_locations(limit?)` | `location` |
+| `list_locations(limit?)` | `location`. É **descoberta**: quais unidades existem e onde ficam. Sem contato nem horário, porque carregá-los em cinquenta linhas infla toda conversa para servir a pergunta de uma |
+| `get_location_info(location_id? \| slug?)` | `location`, uma unidade. A **ficha**: telefone, e-mail, horário (`is_24h`/`business_hours`), tolerância na saída, como chegar, traslado, aviso e política de reserva. Unidade inexistente devolve **erro**, e não lista vazia: o modelo lê `[]` como "a unidade não tem contato" e repete isso ao cliente. `notice` sai anulado quando `has_notice` é falso, senão a Mia anuncia aviso que a unidade já retirou |
 | `get_parking_types(location_id)` | `location_parking_type` (+ join) |
 | `list_destinations(limit?)` / `get_destination(slug)` | `destination` (+ `destination_point`) |
 | `current_datetime()` | data/hora no fuso `America/Sao_Paulo` (resolver datas relativas) |

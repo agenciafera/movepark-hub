@@ -269,3 +269,128 @@ Deno.test("simulate_price: sucesso passa intacto (não mexe no payload do motor)
   assertEquals((out as { price: number }).price, 95.7);
   assertEquals((out as { error?: string }).error, undefined);
 });
+
+// --- get_location_info: a ficha que a lista nao carrega ---
+// O buraco era visivel: a Nationpark tem telefone e e-mail no Manager, e a Mia
+// respondia "nao localizei canais de contato direto para esta unidade". Ela nao
+// inventava, dizia a verdade sobre o que o select devolvia.
+
+/** Como o stubSb, mas devolvendo linha, para exercer o caminho de sucesso. */
+function stubComLinha(linha: Record<string, unknown>) {
+  const calls: Record<string, unknown>[] = [];
+  const chain = (table: string) => {
+    const rec: Record<string, unknown> = { table };
+    calls.push(rec);
+    const self: Record<string, unknown> = {};
+    for (const m of ["select", "eq", "is", "order", "limit"]) {
+      self[m] = (...args: unknown[]) => {
+        rec[m] = args[0];
+        rec[`${m}_args`] = args;
+        return self;
+      };
+    }
+    self.then = (res: (v: unknown) => unknown) => res({ data: [linha], error: null });
+    return self;
+  };
+  return { calls, from: (t: string) => chain(t) };
+}
+
+Deno.test("callRead: get_location_info traz contato e dados operacionais", async () => {
+  const sb = stubSb();
+  await callRead(sb, "get_location_info", { location_id: "loc-1" });
+  const sel = String(sb.calls[0].select);
+  for (
+    const col of [
+      "phone",
+      "email",
+      "is_24h",
+      "business_hours",
+      "tolerance_minutes",
+      "directions_text",
+      "has_shuttle",
+      "reservation_policy",
+    ]
+  ) {
+    assertEquals(sel.includes(col), true, col);
+  }
+});
+
+Deno.test("callRead: get_location_info aceita slug, normalizado", async () => {
+  const sb = stubComLinha({ id: "l1", name: "Nationpark", has_notice: false, notice: "velho" });
+  await callRead(sb as never, "get_location_info", { slug: " NationPark " });
+  const args = sb.calls[0].eq_args as unknown[];
+  assertEquals(args[0], "slug");
+  assertEquals(args[1], "nationpark");
+});
+
+Deno.test("callRead: get_location_info sem id nem slug explica o que falta", async () => {
+  const sb = stubSb();
+  const r = await callRead(sb, "get_location_info", {}) as { error?: string };
+  assertEquals(typeof r.error, "string");
+  assertEquals(r.error!.includes("location_id"), true);
+  // Nao pode ter ido ao banco perguntar por nada.
+  assertEquals(sb.calls.length, 0);
+});
+
+Deno.test("callRead: unidade inexistente vira ERRO, e nao lista vazia", async () => {
+  // O modelo le "[]" como "a unidade nao tem contato" e repete isso ao cliente, que foi
+  // exatamente o que aconteceu antes desta tool existir.
+  const sb = stubSb();
+  const r = await callRead(sb, "get_location_info", { location_id: "nao-existe" }) as {
+    error?: string;
+  };
+  assertEquals(typeof r.error, "string");
+});
+
+Deno.test("callRead: aviso desligado nao vaza como texto", async () => {
+  // O `notice` fica no banco depois de desligado; manda-lo faria a Mia anunciar um aviso
+  // que a unidade retirou.
+  const sb = stubComLinha({ id: "l1", has_notice: false, notice: "Obra na entrada" });
+  const r = await callRead(sb as never, "get_location_info", { location_id: "l1" }) as {
+    notice: unknown;
+  };
+  assertEquals(r.notice, null);
+
+  const ligado = stubComLinha({ id: "l1", has_notice: true, notice: "Obra na entrada" });
+  const r2 = await callRead(ligado as never, "get_location_info", { location_id: "l1" }) as {
+    notice: unknown;
+  };
+  assertEquals(r2.notice, "Obra na entrada");
+});
+
+Deno.test("callRead: slug ambiguo e recusado, e nao resolvido no chute", async () => {
+  // `aeroporto-afonso-pena` pertence a DUAS unidades (Abbapark e Nationpark), porque
+  // location.name guarda o aeroporto e nao o estacionamento. Com limit(1) a Mia daria ao
+  // cliente o telefone do concorrente, sem erro nenhum.
+  const calls: Record<string, unknown>[] = [];
+  const duas = {
+    from: (table: string) => {
+      const rec: Record<string, unknown> = { table };
+      calls.push(rec);
+      const self: Record<string, unknown> = {};
+      for (const m of ["select", "eq", "is", "order", "limit"]) {
+        self[m] = (...args: unknown[]) => {
+          rec[m] = args[0];
+          return self;
+        };
+      }
+      self.then = (res: (v: unknown) => unknown) =>
+        res({
+          data: [
+            { id: "a", company: { name: "Abbapark" } },
+            { id: "b", company: { name: "Nationpark" } },
+          ],
+          error: null,
+        });
+      return self;
+    },
+  };
+  const r = await callRead(duas as never, "get_location_info", {
+    slug: "aeroporto-afonso-pena",
+  }) as { error?: string };
+  assertEquals(typeof r.error, "string");
+  assertEquals(r.error!.includes("Abbapark"), true);
+  assertEquals(r.error!.includes("Nationpark"), true);
+  // Busca por slug tem que pedir DUAS linhas, senao a ambiguidade some.
+  assertEquals(calls[0].limit, 2);
+});

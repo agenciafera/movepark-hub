@@ -124,6 +124,18 @@ export const READ_TOOLS: ReadToolDef[] = [
     }),
   },
   {
+    name: "get_location_info",
+    description:
+      "Ficha completa de UMA unidade: contato (telefone e e-mail), horário de funcionamento, " +
+      "tolerância na saída, como chegar, traslado (van), aviso operacional e política de reserva. " +
+      "Use sempre que o cliente pedir o contato da unidade, o horário, ou qualquer detalhe que a " +
+      "lista não traz. Passe `location_id` (de list_locations) ou `slug`.",
+    parameters: obj({
+      location_id: S("id da unidade, vindo de list_locations"),
+      slug: S("slug da unidade, alternativa ao id (ex.: nationpark)"),
+    }),
+  },
+  {
     name: "get_parking_types",
     description:
       "Tipos de vaga de uma unidade (coberto, descoberto, valet). Devolve os ids usados para reservar.",
@@ -358,6 +370,78 @@ export async function callRead(
         q = q.eq("company.slug", a.company.trim().toLowerCase());
       }
       return unwrap(await q);
+    }
+
+    /**
+     * A ficha da unidade, com o que a lista não carrega.
+     *
+     * Existe porque `list_locations` é DESCOBERTA: ela responde "quais unidades existem
+     * e onde ficam", e carregar contato, horário, traslado e avisos em cinquenta linhas
+     * inflaria toda conversa para servir a pergunta de uma. Aqui é uma unidade, e cabe
+     * tudo.
+     *
+     * O buraco que ela fecha era visível: a Nationpark tem telefone e e-mail cadastrados
+     * no Manager, e a Mia respondia "não localizei canais de contato direto para esta
+     * unidade". Ela não estava inventando, estava dizendo a verdade sobre o que o select
+     * devolvia.
+     */
+    case "get_location_info": {
+      const porId = typeof a.location_id === "string" && a.location_id.trim();
+      const porSlug = typeof a.slug === "string" && a.slug.trim();
+      if (!porId && !porSlug) {
+        return { error: "Passe location_id (de list_locations) ou slug da unidade." };
+      }
+
+      let q = sb
+        .from("location")
+        .select(
+          "id, name, slug, address, address_complement, latitude, longitude, google_maps_url, " +
+            "phone, email, is_24h, business_hours, tolerance_minutes, directions_text, " +
+            "has_shuttle, shuttle_frequency_minutes, shuttle_to_terminal_minutes, " +
+            "has_notice, notice, reservation_policy, review_avg, review_count, " +
+            "company:company_id!inner(name, slug), destination:destination_id(short_name, code, city)",
+        )
+        .is("deleted_at", null)
+        /**
+         * Dois, e não um, quando a busca é por slug.
+         *
+         * **O slug não é único.** Medido em 27/08: `aeroporto-afonso-pena` pertence a
+         * DUAS unidades (Abbapark e Nationpark), porque `location.name` guarda o nome do
+         * aeroporto e não o do estacionamento. Com `limit(1)` a consulta devolveria uma
+         * das duas, sempre sem erro, e a Mia daria ao cliente o telefone do concorrente.
+         * Trazendo duas dá para perceber a ambiguidade e recusar.
+         */
+        .limit(porId ? 1 : 2);
+
+      q = porId ? q.eq("id", a.location_id as string) : q.eq("slug", (a.slug as string).trim().toLowerCase());
+
+      const r = unwrap(await q) as unknown;
+      const linhas = Array.isArray(r) ? r : null;
+      if (!linhas) return r;
+      if (linhas.length > 1) {
+        const quais = linhas
+          .map((l) => {
+            const e = (l as { company?: { name?: string } }).company?.name;
+            return e ?? (l as { id?: string }).id;
+          })
+          .join(", ");
+        return {
+          error:
+            `O slug "${a.slug}" pertence a mais de uma unidade (${quais}). ` +
+            "Pergunte ao cliente de qual empresa é e chame de novo com o location_id de list_locations.",
+        };
+      }
+      if (linhas.length === 0) {
+        // Erro, e não lista vazia: o modelo lê "[]" como "a unidade não tem contato" e
+        // repete isso ao cliente, que foi exatamente o que aconteceu antes desta tool.
+        return { error: "Unidade não encontrada. Confira o id ou o slug em list_locations." };
+      }
+
+      const u = linhas[0] as Record<string, unknown>;
+      // Aviso desligado não vai como texto: ele fica no banco depois de desligado, e
+      // mandá-lo ao modelo faria a Mia anunciar um aviso que a unidade retirou.
+      if (!u.has_notice) u.notice = null;
+      return u;
     }
 
     case "get_parking_types":
