@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ConversaDaLista } from "./api";
-import { contarNaoLidas, filtrar, naoLida, quando, rotuloDoTelefone } from "./inbox.logic";
+import { contarNaoLidas, filtrar, naoLida, quando, previa, rotuloDoTelefone, textoDaFala } from "./inbox.logic";
 
 const linha = (over: Partial<ConversaDaLista> = {}): ConversaDaLista => ({
   id: "movepark-hub:whatsapp:whatsapp:456:5541988149449",
@@ -104,5 +104,44 @@ describe("busca e filtro", () => {
 
   it("lista ausente não quebra", () => {
     expect(filtrar(undefined, "todas", "x")).toEqual([]);
+  });
+});
+
+describe("texto da fala", () => {
+  it("anexo vira frase curta, e não marcador de integração", () => {
+    // Chegava cru na conversa: "\[Image]\n[Attached image/jpeg file]".
+    expect(textoDaFala("\\[Image]\n[Attached image/jpeg file]")).toBe("(imagem)");
+    expect(textoDaFala("[Audio]")).toBe("(áudio)");
+    expect(textoDaFala("[Sticker]")).toBe("(figurinha)");
+  });
+
+  it("legenda do anexo sobrevive", () => {
+    expect(textoDaFala("\\[Image] olha a placa")).toBe("(imagem) olha a placa");
+  });
+
+  it("texto normal passa intacto", () => {
+    expect(textoDaFala("quero reservar [amanhã]")).toBe("quero reservar [amanhã]");
+  });
+});
+
+describe("prévia da lista", () => {
+  it("tira a marcação, que numa linha só atrapalha", () => {
+    expect(previa("O endereço da unidade **Aeropark** em Guarulhos")).toBe(
+      "O endereço da unidade Aeropark em Guarulhos",
+    );
+    expect(previa("Sim, o *Virapark* tem _vaga coberta_")).toBe("Sim, o Virapark tem vaga coberta");
+    expect(previa("## Contato")).toBe("Contato");
+  });
+
+  it("colapsa quebra de linha, porque a lista mostra uma linha", () => {
+    expect(previa("linha um\n\nlinha dois")).toBe("linha um linha dois");
+  });
+
+  it("anexo continua legível na prévia", () => {
+    expect(previa("\\[Image]\n[Attached image/jpeg file]")).toBe("(imagem)");
+  });
+
+  it("vazio não vira 'null'", () => {
+    expect(previa(null)).toBe("");
   });
 });

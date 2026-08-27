@@ -1,5 +1,13 @@
 import * as React from "react";
-import { ChatCircleDots, MagnifyingGlass, Envelope, EnvelopeOpen } from "@phosphor-icons/react";
+import {
+  ChatCircleDots,
+  MagnifyingGlass,
+  Envelope,
+  EnvelopeOpen,
+  HandPalm,
+  Robot,
+  PaperPlaneTilt,
+} from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -8,16 +16,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Bubble } from "@/features/assistant/ChatBubble";
 import {
+  useAssumirConversa,
   useConversa,
   useConversas,
+  useDevolverConversa,
   useMarcarConversa,
+  useResponderConversa,
   type ConversaDaLista,
 } from "@/features/inbox/api";
 import {
   filtrar,
   naoLida,
   quando,
+  previa,
   rotuloDoTelefone,
+  textoDaFala,
   type FiltroDaCaixa,
 } from "@/features/inbox/inbox.logic";
 
@@ -39,6 +52,36 @@ export default function ManagerConversas() {
   const lista = useConversas();
   const conversa = useConversa(aberta);
   const marcar = useMarcarConversa();
+  const assumir = useAssumirConversa();
+  const devolver = useDevolverConversa();
+  const responder = useResponderConversa();
+  const [resposta, setResposta] = React.useState("");
+  const fim = React.useRef<HTMLDivElement>(null);
+
+  const assumida = !!conversa.data?.assumidaPor;
+
+  /**
+   * Rola para a última mensagem ao abrir e a cada fala nova.
+   *
+   * Sem isto a conversa abre no começo, e quem está atendendo precisa rolar até o fim
+   * para ver o que acabou de chegar. Vi isso na tela antes de qualquer teste pegar.
+   */
+  React.useEffect(() => {
+    fim.current?.scrollIntoView({ block: "end" });
+  }, [conversa.data?.falas, aberta]);
+
+  function enviar(e: React.FormEvent) {
+    e.preventDefault();
+    const texto = resposta.trim();
+    if (!texto || !aberta || responder.isPending) return;
+    responder.mutate(
+      { threadId: aberta, texto },
+      {
+        onSuccess: () => setResposta(""),
+        onError: (err) => toast.error(err instanceof Error ? err.message : "Não consegui enviar."),
+      },
+    );
+  }
 
   const visiveis = React.useMemo(
     () => filtrar(lista.data, filtro, busca),
@@ -150,7 +193,7 @@ export default function ManagerConversas() {
                         </span>
                       </div>
                       <p className="line-clamp-1 text-body-sm text-muted">
-                        {c.ultimo_texto || "sem mensagem"}
+                        {previa(c.ultimo_texto) || "sem mensagem"}
                       </p>
                       {c.assumida_por ? (
                         <span className="text-body-sm text-mp-indigo">Assumida pela equipe</span>
@@ -175,9 +218,9 @@ export default function ManagerConversas() {
             </div>
           ) : (
             <>
-              <header className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
-                <div>
-                  <p className="text-title-md text-ink">
+              <header className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-200 px-4 py-3">
+                <div className="min-w-0">
+                  <p className="whitespace-nowrap text-title-md text-ink">
                     {rotuloDoTelefone(conversa.data?.telefone ?? "")}
                   </p>
                   <p className="text-body-sm text-muted">
@@ -186,6 +229,32 @@ export default function ManagerConversas() {
                       : "A Mia está respondendo"}
                   </p>
                 </div>
+                <div className="flex shrink-0 items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={assumida ? "primary" : "secondary"}
+                  disabled={assumir.isPending || devolver.isPending}
+                  onClick={() => {
+                    const acao = assumida ? devolver : assumir;
+                    acao.mutate(
+                      { threadId: aberta },
+                      {
+                        onSuccess: () =>
+                          toast.success(
+                            assumida
+                              ? "Devolvida. A Mia volta a responder."
+                              : "Assumida. A Mia não responde mais nesta conversa.",
+                          ),
+                        onError: (e) =>
+                          toast.error(e instanceof Error ? e.message : "Não consegui mudar."),
+                      },
+                    );
+                  }}
+                >
+                  {assumida ? <Robot size={16} /> : <HandPalm size={16} />}
+                  {assumida ? "Devolver" : "Assumir"}
+                </Button>
                 <Button
                   type="button"
                   size="sm"
@@ -203,8 +272,9 @@ export default function ManagerConversas() {
                   }
                 >
                   {marcar.isPending ? <Envelope size={16} /> : <EnvelopeOpen size={16} />}
-                  Marcar não lida
+                  Não lida
                 </Button>
+                </div>
               </header>
 
               <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
@@ -214,10 +284,47 @@ export default function ManagerConversas() {
                   <EmptyState title="Conversa sem mensagens" />
                 ) : (
                   conversa.data?.falas.map((f, i) => (
-                    <Bubble key={i} role={f.papel === "cliente" ? "user" : "model"} text={f.texto} />
+                    <Bubble
+                      key={i}
+                      role={f.papel === "cliente" ? "user" : "model"}
+                      text={textoDaFala(f.texto)}
+                    />
                   ))
                 )}
+                <div ref={fim} />
               </div>
+
+              {/*
+                A caixa de resposta só aparece com a conversa assumida.
+                Responder sem assumir deixaria a Mia e a pessoa falando por cima uma da
+                outra, cada uma sem saber da outra.
+              */}
+              {assumida ? (
+                <form
+                  onSubmit={enviar}
+                  className="flex items-center gap-2 border-t border-neutral-200 p-3"
+                >
+                  <Input
+                    value={resposta}
+                    onChange={(e) => setResposta(e.target.value)}
+                    placeholder="Escreva para o cliente…"
+                    aria-label="Resposta para o cliente"
+                    disabled={responder.isPending}
+                  />
+                  <Button
+                    type="submit"
+                    size="icon"
+                    aria-label="Enviar"
+                    disabled={!resposta.trim() || responder.isPending}
+                  >
+                    <PaperPlaneTilt size={18} />
+                  </Button>
+                </form>
+              ) : (
+                <p className="border-t border-neutral-200 px-4 py-3 text-body-sm text-muted">
+                  Assuma a conversa para escrever ao cliente. Enquanto isso, a Mia responde.
+                </p>
+              )}
             </>
           )}
         </section>

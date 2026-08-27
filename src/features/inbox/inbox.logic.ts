@@ -72,3 +72,48 @@ export function filtrar(
     return noTelefone || noTexto;
   });
 }
+
+/**
+ * O texto de uma fala, pronto para a tela.
+ *
+ * O WhatsApp entrega anexo como um marcador de texto, e ele chegava cru na conversa:
+ * `\[Image]` seguido de `[Attached image/jpeg file]`. Isso vaza formato de integração
+ * para quem só quer ler a conversa. Vira uma frase curta dizendo o que era.
+ */
+export function textoDaFala(bruto: string): string {
+  const t = (bruto ?? "").trim();
+
+  const anexo = t.match(/^\\?\[(Image|Audio|Video|Document|Sticker)\]/i);
+  if (anexo) {
+    const tipo = anexo[1].toLowerCase();
+    const nome =
+      tipo === "image" ? "imagem"
+      : tipo === "audio" ? "áudio"
+      : tipo === "video" ? "vídeo"
+      : tipo === "sticker" ? "figurinha"
+      : "documento";
+    // O resto do marcador (`[Attached image/jpeg file]`) sai junto: é ruído de formato.
+    const sobra = t.replace(/^\\?\[[^\]]*\]/, "").replace(/\[Attached[^\]]*\]/gi, "").trim();
+    return sobra ? `(${nome}) ${sobra}` : `(${nome})`;
+  }
+
+  return t;
+}
+
+/**
+ * A prévia da lista, sem marcação.
+ *
+ * A conversa guarda markdown (`**Aeropark**`), e a bolha da conversa o interpreta. A
+ * lista não: ela mostra uma linha de texto, e os asteriscos apareciam crus. Tirar a
+ * marcação aqui é mais honesto que interpretá-la, porque numa linha só o negrito não
+ * acrescenta nada e o asterisco atrapalha a leitura.
+ */
+export function previa(bruto: string | null): string {
+  return textoDaFala(bruto ?? "")
+    .replace(/\*\*(.+?)\*\*/gs, "$1")
+    .replace(/(?<!\*)\*(?!\*)([^*\n]+?)\*(?!\*)/g, "$1")
+    .replace(/(?<!_)_(?!_)([^_\n]+?)_(?!_)/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
