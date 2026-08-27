@@ -1,69 +1,74 @@
 # Preço Estacionamento Aeroporto Guarulhos: Saiba Tudo Aqui!
 
-> Se você está planejando viajar a partir do Aeroporto Internacional de Guarulhos e busca informações atualizadas sobre preços de estacionamento nas proximidades, preparamos um guia detalhado para ajudá-lo a encontrar a opção mais adequada às suas necessidades. Estacionamentos Próximos ao Aeroporto de Guarulhos Existem diversas opções de estacionamento nas proximidades do Aeroporto Internacional de Guarulhos, [...]
+> Preço do estacionamento no Aeroporto de Guarulhos por faixa de permanência: 7, 15 e 30 diárias nos pátios parceiros, com a data da consulta.
 
 - Publicado em: 2025-01-15
 - URL: https://movepark.co/blog/preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui/
 - Estacionamentos deste aeroporto: https://movepark.co/destinos/aeroporto-internacional-de-sao-paulo-guarulhos
 
 ---
-Se você está planejando viajar a partir do Aeroporto Internacional de Guarulhos e busca informações atualizadas sobre preços de estacionamento nas proximidades, preparamos um guia detalhado para ajudá-lo a encontrar a opção mais adequada às suas necessidades.
+O preço do estacionamento no Aeroporto de Guarulhos varia por faixa de permanência e por tipo de vaga: em 27 de agosto de 2026, sete diárias iam de R$ 111,30 na vaga descoberta do Aerovalet a R$ 188,30 na coberta do Aeropark. Abaixo está a tabela dos dois pátios parceiros, com o valor por dia em cada faixa e a diferença entre a tabela de balcão e a online.
 
-## Estacionamentos Próximos ao Aeroporto de Guarulhos
+## Qual é o preço do estacionamento no Aeroporto de Guarulhos hoje
 
-Existem diversas opções de estacionamento nas proximidades do Aeroporto Internacional de Guarulhos, cada uma com características e preços variados. Abaixo, apresentamos uma tabela comparativa com informações relevantes para auxiliá-lo na escolha:
+O Aeroporto Internacional de São Paulo/Guarulhos, o GRU, fica em Guarulhos, na região metropolitana de São Paulo, e é o aeroporto mais movimentado do Brasil. Ele tem dois pátios parceiros da Movepark, e a tabela abaixo é o que os dois cobravam na consulta de 27 de agosto de 2026.
 
-| Nome do Estacionamento | Diária (R$) | 7 Dias (R$) | 30 Dias (R$) | Distância até o Aeroporto (min) |
-| --- | --- | --- | --- | --- |
-| AeroPark | 17,99 | 160,93 | 689,70 | 10 |
-| Urban Park | 20,90 | 146,30 | 627,00 | 3 |
-| Decolar Park | 16,90 | 118,30 | 270,40 | 10 |
-| Stop Park Guarulhos | 15,99 | 111,93 | 255,84 | 3 |
-| Central Park | 18,90 | 132,30 | 378,00 | 8 |
-| Estacionamento Oficial GRU | 70,00 | 490,00 | 2.100,00 | Dentro do Aeroporto |
-| Airport Park | 22,99 | 160,93 | 689,70 | 5 |
+| Pátio e tipo de vaga | Distância do terminal | 1 diária | 7 diárias | 15 diárias | 30 diárias |
+| --- | --- | --- | --- | --- | --- |
+| Aerovalet, descoberta | 4,5 km | R$ 18,90 | R$ 111,30 | R$ 223,50 | R$ 447,00 |
+| Aerovalet, coberta | 4,5 km | R$ 26,90 | R$ 160,30 | R$ 328,50 | R$ 657,00 |
+| Aerovalet, valet | 4,5 km | R$ 119,20 | R$ 475,20 | R$ 554,40 | R$ 633,60 |
+| Aeropark, descoberta | 2,7 km | mínimo de 2 diárias | R$ 132,30 | R$ 268,50 | R$ 537,00 |
+| Aeropark, coberta | 2,7 km | mínimo de 2 diárias | R$ 188,30 | R$ 388,50 | R$ 777,00 |
+| Aeropark, valet | 2,7 km | mínimo de 2 diárias | R$ 475,20 | R$ 554,40 | R$ 633,60 |
 
-**Observações:**
+O preço vivo, com a data da última atualização de cada tabela, fica no [índice de preços de Guarulhos](/precos/aeroporto-internacional-de-sao-paulo-guarulhos). É o mesmo número que o motor usa no fechamento.
 
--   Os valores apresentados são para vagas descobertas e podem variar conforme a forma de pagamento e promoções vigentes.
--   Alguns estacionamentos oferecem descontos para pagamentos via PIX ou reservas antecipadas.
--   As distâncias são estimativas do tempo de traslado até o aeroporto, podendo variar conforme o trânsito local.
+## Quanto sai o dia em cada faixa de permanência
 
-## Detalhes dos Estacionamentos
+O preço do estacionamento no Aeroporto de Guarulhos não é linear: a diária cai conforme a estadia estica, e a maior parte da queda acontece na primeira semana.
 
-### Urban Park
+| Pátio e tipo de vaga | 7 diárias | 15 diárias | 30 diárias |
+| --- | --- | --- | --- |
+| Aerovalet, descoberta | R$ 15,90 por dia | R$ 14,90 por dia | R$ 14,90 por dia |
+| Aerovalet, coberta | R$ 22,90 por dia | R$ 21,90 por dia | R$ 21,90 por dia |
+| Aeropark, descoberta | R$ 18,90 por dia | R$ 17,90 por dia | R$ 17,90 por dia |
+| Aeropark, coberta | R$ 26,90 por dia | R$ 25,90 por dia | R$ 25,90 por dia |
 
-Localizado a apenas 3 minutos do Aeroporto de Guarulhos, o Urban Park oferece mais de 3.000 vagas, entre cobertas e descobertas. O estacionamento conta com traslado 24 horas de cortesia, câmeras de segurança, sala VIP com Wi-Fi e permite que o cliente leve as chaves do veículo. A diária para vagas descobertas é de R$20,90, com descontos progressivos para períodos mais longos.
+Valores de 27 de agosto de 2026. Quem vai passar duas semanas fora já está na faixa mais barata por dia, e esticar para trinta dias não derruba mais o valor diário, só o total.
 
-### Decolar Park
+## Quanto a tabela de balcão custa a mais
 
-A cerca de 10 minutos do aeroporto, o Decolar Park disponibiliza 1.500 vagas, com opções cobertas e descobertas. Oferece traslado gratuito 24 horas, vigilância e monitoramento contínuos, além de sala VIP com Wi-Fi. A diária para vagas descobertas é de R$16,90, com pacotes promocionais para estadias mais longas.
+Os dois parceiros publicam duas tabelas: a de balcão, cobrada em quem chega sem reservar, e a online, mais baixa. A diferença apurada em 27 de agosto de 2026, em sete diárias:
 
-### Stop Park Guarulhos
+| Pátio e tipo de vaga | Balcão | Online | Diferença |
+| --- | --- | --- | --- |
+| Aerovalet, descoberta | R$ 133,56 | R$ 111,30 | R$ 22,26 |
+| Aerovalet, coberta | R$ 192,36 | R$ 160,30 | R$ 32,06 |
+| Aeropark, descoberta | R$ 158,76 | R$ 132,30 | R$ 26,46 |
+| Aeropark, coberta | R$ 225,96 | R$ 188,30 | R$ 37,66 |
 
-Situado a aproximadamente 3 minutos do aeroporto, o Stop Park Guarulhos oferece cerca de 1.000 vagas sombreadas e descobertas, todas seguradas pela Tokio Marine. Conta com traslado gratuito 24 horas, câmeras de segurança, sala com internet Wi-Fi e serviço de lava-rápido. A diária para vagas descobertas é de R$15,99, com opções de pagamento parcelado em até 3x no cartão para reservas online.
+Em trinta diárias na vaga descoberta do Aeropark, a mesma diferença de cerca de 17% vira R$ 107,40. Se o assunto é gastar o mínimo possível, vale ler também [como estacionar barato no Aeroporto de Guarulhos](/blog/como-estacionar-barato-no-aeroporto-de-guarulhos/).
 
-### Central Park
+## O preço do estacionamento no Aeroporto de Guarulhos, pátio por pátio
 
-Localizado a aproximadamente 8 minutos do aeroporto, o Central Park oferece vagas cobertas em galpões, proporcionando máxima proteção ao veículo. Dispõe de traslado gratuito 24 horas para estadias a partir de 2 diárias, Wi-Fi grátis e sistema “Sem Parar” para agilizar a entrada e saída. A diária para vagas descobertas é de R$18,90, com pacotes promocionais para períodos de 20 a 30 dias.
+### Aerovalet, a 4,5 km do terminal
 
-### Estacionamento Oficial GRU Airport
+O Aerovalet é o pátio com a menor diária avulsa da rede em Guarulhos: R$ 18,90 na vaga descoberta em 27 de agosto de 2026. Ele aceita estadia de um dia, o que é útil para bate e volta, e opera vaga descoberta, coberta e valet. A ficha da unidade não declara traslado, então confirme na chegada como é feito o deslocamento até o terminal.
 
-O estacionamento oficial do Aeroporto de Guarulhos oferece vagas cobertas e descobertas, com acesso direto aos terminais. As tarifas são mais elevadas, com diária a partir de R$70,00. Oferece segurança 24 horas e facilidade de acesso, sendo ideal para quem busca conveniência e proximidade.
+### Aeropark, a 2,7 km do terminal
 
-### Airport Park
+O Aeropark é o mais perto dos dois, a 2,7 km, e declara traslado de 10 minutos até o terminal. Em compensação trabalha com mínimo de 2 diárias, então não serve para quem vai deixar o carro por algumas horas. A vaga descoberta saía por R$ 132,30 na semana em 27 de agosto de 2026.
 
-Situado a cerca de 5 minutos do aeroporto, o Airport Park oferece vagas cobertas por sombreiro, sistema self-parking e valet parking. Conta com traslado gratuito 24 horas, segurança e possibilidade de reserva online com descontos. A diária para vagas descobertas é de R$22,99, com pacotes promocionais para estadias mais longas.
+### E o estacionamento oficial do GRU Airport
 
-### AeroPark
+O estacionamento dentro do aeroporto tem tabela própria, cobrada por hora e por diária, e é sempre a opção mais cara por dia em estadia longa. Ele compensa em permanência curta, de poucas horas, quando o traslado de um pátio externo custa mais tempo do que economiza em dinheiro. A tarifa oficial muda sem aviso e não passa pelo motor da Movepark, então confira no próprio aeroporto antes de comparar.
 
-O Aeropark Guarulhos está localizado a cerca de 10 minutos do Aeroporto de Guarulhos, oferecendo vagas descobertas com diária a partir de R$17,99 para pagamentos via PIX. O estacionamento conta com traslado gratuito 24 horas, segurança máxima com monitoramento por câmeras e parceria com Seguradora. Além disso, permite que o cliente leve as chaves do veículo, dependendo da disponibilidade. O Aeropark é bem avaliado pelos clientes, destacando-se pela qualidade no atendimento e proximidade ao aeroporto.
+## Como estes preços foram apurados
 
-## Dicas para Escolher o Estacionamento Ideal
+Todos os valores desta página saíram do motor de reservas da Movepark na consulta de 27 de agosto de 2026, e são os mesmos que aparecem na [página do Aeroporto de Guarulhos](/destinos/aeroporto-internacional-de-sao-paulo-guarulhos). Cada parceiro define a própria tabela e pode mudá-la a qualquer momento, então o retrato acima vale para a data indicada. Distância em linha de rota até o terminal, medida no banco de dados com PostGIS, e tempo de traslado conforme declarado por cada unidade.
 
--   **Reserva Antecipada:** Alguns estacionamentos oferecem descontos para reservas feitas com antecedência.
--   **Forma de Pagamento:** Verifique se há descontos para determinados meios de pagamento, como PIX.
--   **Serviços Adicionais:** Considere benefícios como traslado gratuito, segurança 24 horas e possibilidade de levar as chaves
+Quem quer entender o que separa um pátio do outro além do preço pode ler o [guia com as melhores opções de estacionamento no Aeroporto de Guarulhos](/blog/guia-atualizado-5-melhores-opcoes-de-estacionamento-no-aeroporto-guarulhos-em-2024/). Para conferir a movimentação do aeroporto e o volume de passageiros, os dados oficiais estão no [portal de estatísticas da ANAC](https://www.anac.gov.br/assuntos/dados-e-estatisticas).
 
 ## Perguntas frequentes
 

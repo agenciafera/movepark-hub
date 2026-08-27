@@ -138,8 +138,9 @@ describe("contrato de URL do blog", () => {
     // Vinha da tabela ko1_redirects: os posts moraram na raiz antes do prefixo /blog/.
     const casos: [string, string][] = [
       [
+        // Post consolidado depois: a URL legada já entrega o vencedor, sem cadeia.
         "/quanto-custa-para-estacionar-no-aeroporto-viracopos/",
-        "/blog/quanto-custa-para-estacionar-no-aeroporto-viracopos/",
+        "/blog/como-pagar-mais-barato-no-estacionamento-do-aeroporto-viracopos-em-2024/",
       ],
       [
         "/estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes/",
@@ -160,6 +161,35 @@ describe("contrato de URL do blog", () => {
       const res = await worker.fetch(req(from), env);
       expect(res.status, from).toBe(301);
       expect(res.headers.get("Location"), from).toBe(to);
+    }
+  });
+
+  it("URL legada que aponta para post consolidado resolve num salto só", async () => {
+    // Dois 301 em sequência funcionam no navegador e diluem sinal na busca. Quem
+    // já sabe o destino final entrega ele direto.
+    const casos: [string, string][] = [
+      [
+        "/estacionamento-aeroporto-guarulhos-veja-o-preco-dos-principais-estacionamentos/",
+        "/blog/preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui/",
+      ],
+      [
+        "/qual-e-o-melhor-estacionamento-aeroporto-guarulhos-2023/",
+        "/blog/guia-atualizado-5-melhores-opcoes-de-estacionamento-no-aeroporto-guarulhos-em-2024/",
+      ],
+      [
+        "/encontre-sua-vaga-de-estacionamento-no-aeroporto-de-guarulhos/",
+        "/blog/estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes/",
+      ],
+    ];
+
+    for (const [from, to] of casos) {
+      const { env } = makeEnv();
+      const res = await worker.fetch(req(from), env);
+      expect(res.status, from).toBe(301);
+      expect(res.headers.get("Location"), from).toBe(to);
+      // O destino não pode ser ele mesmo um consolidado: isso seria a cadeia de volta.
+      const { env: env2 } = makeEnv();
+      expect((await worker.fetch(req(to), env2)).status, to).toBe(200);
     }
   });
 

@@ -125,6 +125,24 @@ Três consequências que valem para todo post novo:
 Travado por `src/blog-urls.contract.test.ts`: o vencedor tem que ser um slug vivo do contrato
 (301 para outro 301 seria cadeia) e o perdedor tem que responder 301 nas duas formas de URL.
 
+### Segunda rodada: Guarulhos e Afonso Pena (27/08/2026)
+
+A regra de estrutura fechada na reunião de pauta de 26/08/2026 é **uma página canônica por termo
+e três páginas canônicas por aeroporto**. A primeira rodada tinha fundido dois clusters por
+aeroporto; esta fechou as duas praças do Diego inteiras: **mais 22 posts** passaram a responder
+301, 17 em Guarulhos e 5 em Afonso Pena. Guarulhos saiu de 26 posts publicados para 9, e Afonso
+Pena de 10 para 5.
+
+Nenhum vencedor de 15/08 foi rebaixado, porque aquela eleição foi feita por cliques e o baseline
+do Search Console ainda não foi coletado. O mapa completo, o critério de escolha e o que a
+revisão de conteúdo corrigiu nas donas estão em
+[canonicalizacao-gru-cwb.md](./canonicalizacao-gru-cwb.md).
+
+Junto veio uma correção no worker que vale para o acervo inteiro: **URL legada que aponta para
+post depois consolidado agora resolve num salto só**. Antes gastava dois 301, um para o post e
+outro para o vencedor, em oito casos. O `resolveConsolidado` em `src/worker.ts` faz a resolução
+antes de responder, e o contrato de URL trava isso com teste.
+
 ## Os redirects que a planilha não capturou
 
 O plugin `eps-301-redirects` mantém **40 redirects ativos numa tabela do banco**

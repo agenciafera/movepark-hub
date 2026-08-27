@@ -278,7 +278,7 @@ Ritmo proposto: **2 páginas por semana por pessoa** e **4 peças de Instagram p
 | Entrega | Por quê | Quem |
 |---|---|---|
 | **Cadastrar o Be Park no Hub** | Sem ele Confins não tem tarifa, distância nem reserva | Leonardo |
-| **Mapa de canonicalização** | Definir, por aeroporto, qual URL ganha cada termo de cabeça e o que é redirecionado para ela | os dois |
+| **Mapa de canonicalização** | Definir, por aeroporto, qual URL ganha cada termo de cabeça e o que é redirecionado para ela | os dois. ✅ GRU e CWB em 27/08/2026, em [canonicalizacao-gru-cwb.md](./canonicalizacao-gru-cwb.md) |
 | Baseline do Search Console | 16 meses por consulta e por página, congelados como marco zero | os dois |
 | **Placar de citação em IA** | 12 consultas por mês em ChatGPT, Gemini, Perplexity e visão geral do Google, com print | os dois |
 | Bing Webmaster Tools | A busca do ChatGPT se apoia no índice da Microsoft, e ninguém checou se estamos lá | Diego |
@@ -516,7 +516,7 @@ Nada é escrito duas vezes. O post é a fonte, o Instagram é a distribuição.
 | **Movepark acima de Bandeira Park e xpark** | não medido | empate | vantagem nas 12 |
 | Termos de cabeça em posição 1 a 3 | a medir na Fase 0 | 12 | 30 |
 | Páginas canônicas de cabeça no ar | 0 de 12 | 12 de 12 | 36 (com a Fase 5) |
-| Posts canibais absorvidos por redirect | 0 de cerca de 40 | 24 | 40 |
+| Posts canibais absorvidos por redirect | 22 de cerca de 40 (GRU e CWB, 27/08/2026) | 24 | 40 |
 | Cliques orgânicos do blog por mês | a medir | +40% | +120% |
 | Blocos de perguntas ocupados nos 4 aeroportos | 2 de 16 | 10 de 16 | 14 de 16 |
 | Posts do acervo emitindo `FAQPage` | ✅ 95 de 95 | manter | manter |

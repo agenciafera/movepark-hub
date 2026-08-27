@@ -261,6 +261,67 @@ export const BLOG_CONSOLIDATED_SLUGS: Record<string, string> = {
     "quanto-custa-o-estacionamento-no-aeroporto-lisboa",
   "como-pagar-mais-barato-no-estacionamento-do-aeroporto-de-lisboa":
     "quanto-custa-o-estacionamento-no-aeroporto-lisboa",
+
+  // ---------------------------------------------------------------------------
+  // Segunda rodada (27/08/2026): Guarulhos e Afonso Pena, um dono por termo.
+  // A rodada de 15/08 fundiu só "melhor" e "preço". Esta fecha as praças inteiras
+  // pelos clusters de cabeça do plano de conteúdo. Mapa e critério em
+  // docs/specs/canonicalizacao-gru-cwb.md.
+  // ---------------------------------------------------------------------------
+
+  // Guarulhos · preço, valor, diária
+  "qual-o-valor-da-diaria-do-estacionamento-no-aeroporto-guarulhos":
+    "preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui",
+  "qual-e-o-valor-da-diaria-estacionamento-aeroporto-guarulhos":
+    "preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui",
+  // Guarulhos · barato, economia, desconto
+  "as-melhores-estrategias-para-economizar-no-estacionamento-do-aeroporto-de-guarulhos":
+    "como-estacionar-barato-no-aeroporto-de-guarulhos",
+  "estacionamento-com-desconto-perto-aeroporto-guarulhos":
+    "como-estacionar-barato-no-aeroporto-de-guarulhos",
+  "estacionamento-aeroporto-guarulhos-gru-economia-recorde-seguranca-e-translado-gratuito-com-a-move-park":
+    "como-estacionar-barato-no-aeroporto-de-guarulhos",
+  // Guarulhos · proximidade, perto, onde deixar o carro
+  "conheca-o-estacionamento-mais-proximo-do-aeroporto-guarulhos-em-2024-2":
+    "estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes",
+  "estacionamento-perto-do-aeroporto-de-guarulhos-reserve-online":
+    "estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes",
+  "dicas-de-viagem-encontre-o-estacionamento-perfeito-perto-do-aeroporto-de-guarulhos-com-o-movepark":
+    "estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes",
+  "onde-deixar-meu-carro-em-aeroporto-guarulhos":
+    "estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes",
+  "onde-estacionar-o-carro-no-aeroporto-de-guarulhos":
+    "estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes",
+  "encontre-sua-vaga-de-estacionamento-no-aeroporto-de-guarulhos":
+    "estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes",
+  // Guarulhos · melhor e comparativo (o vencedor é o mesmo de 15/08)
+  "conheca-os-5-principais-estacionamentos-no-aeroporto-de-guarulhos-em-2023":
+    "guia-atualizado-5-melhores-opcoes-de-estacionamento-no-aeroporto-guarulhos-em-2024",
+  "vantagens-de-reservar-seu-estacionamento-proximo-ao-gru-airport-com-a-movepark":
+    "guia-atualizado-5-melhores-opcoes-de-estacionamento-no-aeroporto-guarulhos-em-2024",
+  // Guarulhos · segurança
+  "como-evitar-problemas-no-estacionamento-do-aeroporto-guarulhos":
+    "estacionamento-aeroporto-guarulhos-seguranca-do-seu-veiculo-e-prioridade",
+  // Guarulhos · guia do aeroporto (o que não é consulta de estacionamento)
+  "5-dicas-para-transformar-sua-escala-no-aeroporto-guarulhos-em-uma-aventura-inesquecivel":
+    "guia-completo-sobre-o-aeroporto-de-guarulhos",
+  "seu-guia-definitivo-para-uma-partida-descomplicada-dicas-valiosas-do-aeroporto-de-guarulhos":
+    "guia-completo-sobre-o-aeroporto-de-guarulhos",
+  "os-beneficios-de-ir-de-carro-para-o-aeroporto-de-guarulhos-em-2024":
+    "guia-completo-sobre-o-aeroporto-de-guarulhos",
+
+  // Afonso Pena · barato, economia, desconto
+  "estacionamento-aeroporto-curitiba-cwb-a-solucao-economica-e-segura-com-a-move-park":
+    "estacionamento-barato-aeroporto-curitiba",
+  "5-maneiras-inteligentes-de-economizar-no-aeroporto-afonso-pena":
+    "estacionamento-barato-aeroporto-curitiba",
+  "estacionamento-aeroporto-curitiba-alternativas-economicas-e-servicos-de-transporte":
+    "estacionamento-barato-aeroporto-curitiba",
+  // Afonso Pena · melhor e comparativo (o vencedor é o mesmo de 15/08)
+  "5-vantagens-de-estacionar-no-aeroporto-de-curitiba":
+    "aeroporto-afonso-pena-5-melhores-opcoes-de-estacionamento-em-2024",
+  "facilidade-e-conforto-estacionamento-aeroporto-curitiba-cwb":
+    "aeroporto-afonso-pena-5-melhores-opcoes-de-estacionamento-em-2024",
 };
 
 const redirect301 = (to: string) =>
@@ -440,11 +501,24 @@ export function wpLegacyRedirect(url: URL): Response | null {
  */
 const BLOG_LISTING_PREFIXES = new Set(["page", "categoria", "tag", "autor", "aeroporto"]);
 
+/**
+ * Resolve `/blog/<slug>/` até o dono da intenção, num salto só.
+ *
+ * Sem isto, uma URL legada que aponta para post depois consolidado gasta dois
+ * 301: um para o post, outro para o vencedor. A cadeia funciona no navegador e
+ * dilui o sinal na busca, então quem já sabe o destino final entrega ele direto.
+ */
+function resolveConsolidado(blogPath: string): string {
+  const slug = blogPath.replace(/^\/blog\//, "").replace(/\/+$/, "");
+  const vencedor = BLOG_CONSOLIDATED_SLUGS[slug];
+  return vencedor ? `/blog/${vencedor}/` : blogPath;
+}
+
 export function blogRedirect(url: URL): Response | null {
   const path = url.pathname.replace(/\/+$/, "") || "/";
 
   const legacy = BLOG_LEGACY_PATHS[path];
-  if (legacy) return redirect301(legacy + url.search);
+  if (legacy) return redirect301(resolveConsolidado(legacy) + url.search);
 
   if (path !== "/blog" && !path.startsWith("/blog/")) return null;
 

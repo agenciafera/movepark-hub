@@ -1,6 +1,6 @@
 # Case de Sucesso: AeroParking & Movepark
 
-> De R$ 77 mil para R$ 300 mil/mês em apenas 4 meses com reservas online e estratégia digital integrada Introdução O Aeroparking (https://www.aeroparking.com.br/) é um dos estacionamentos mais conhecidos próximos ao Aeroporto Internacional de Guarulhos (GRU). Apesar de contar com localização estratégica, bons serviços e estrutura de qualidade, a empresa enfrentava um desafio comum a [...]
+> De R$ 77 mil para R$ 300 mil por mês em quatro meses, com reservas online e estratégia digital integrada. O Aeroparking é um dos estacionamentos mais conhecidos próximos ao Aeroporto Internacional de Guarulhos (GRU). Apesar de contar com localização estratégica, bons serviços e estrutura de qualidade, a empresa enfrentava um desafio comum a [...]
 
 - Publicado em: 2025-09-03
 - URL: https://movepark.co/blog/case-de-sucesso-aeroparking-movepark/
@@ -11,7 +11,7 @@
 
 ## Introdução
 
-O Aeroparking ([https://www.aeroparking.com.br/](https://www.aeroparking.com.br/?utm_source=chatgpt.com)) é um dos estacionamentos mais conhecidos próximos ao Aeroporto Internacional de Guarulhos (GRU). Apesar de contar com localização estratégica, bons serviços e estrutura de qualidade, a empresa enfrentava um desafio comum a muitos negócios tradicionais: como crescer no digital e transformar reservas presenciais em vendas antecipadas?
+O Aeroparking é um dos estacionamentos mais conhecidos próximos ao Aeroporto Internacional de Guarulhos (GRU). Apesar de contar com localização estratégica, bons serviços e estrutura de qualidade, a empresa enfrentava um desafio comum a muitos negócios tradicionais: como crescer no digital e transformar reservas presenciais em vendas antecipadas?
 
 Foi nesse cenário que nasceu a parceria com a Movepark ([Movepark](/)), uma plataforma de reservas online especializada em estacionamentos de aeroportos. O objetivo era claro: aumentar o faturamento online e dar previsibilidade à operação.
 

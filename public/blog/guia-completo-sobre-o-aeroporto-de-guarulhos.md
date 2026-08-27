@@ -13,13 +13,13 @@ Se você está procurando informações detalhadas sobre o Aeroporto de Guarulho
 
 ## O que é o Aeroporto Guarulhos?
 
-O Aeroporto Internacional de São Paulo/Guarulhos – Governador André Franco Montoro, mais conhecido como Aeroporto de Guarulhos (GRU), é o maior e mais movimentado aeroporto do Brasil. Localizado na cidade de Guarulhos, na Grande São Paulo, o aeroporto é um dos principais hubs da América Latina, conectando voos nacionais e internacionais.
+O Aeroporto Internacional de São Paulo/Guarulhos Governador André Franco Montoro, mais conhecido como Aeroporto de Guarulhos (GRU), é o maior e mais movimentado aeroporto do Brasil. Localizado na cidade de Guarulhos, na Grande São Paulo, o aeroporto é um dos principais hubs da América Latina, conectando voos nacionais e internacionais.
 
 Site oficial do aeroporto: Clique aqui para ver o site oficial!
 
 ## Localização
 
-O Aeroporto de Guarulhos está situado a aproximadamente 25 km do centro da cidade de São Paulo. Seu endereço é Rodovia Hélio Smidt, s/n, Cumbica, Guarulhos – SP, 07190-100. A localização estratégica facilita o acesso para passageiros de toda a região metropolitana.
+O Aeroporto de Guarulhos está situado a aproximadamente 25 km do centro da cidade de São Paulo. Seu endereço é Rodovia Hélio Smidt, s/n, Cumbica, Guarulhos, SP, 07190-100. A localização estratégica facilita o acesso para passageiros de toda a região metropolitana.
 
 ## Como Chegar ao Aeroporto de Guarulhos
 
