@@ -169,7 +169,7 @@ mínima e a comparação com o estacionamento oficial.
 | --- | --- | --- |
 | `preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui` | 3.417 | ✅ verde, 0 bloqueio |
 | `como-estacionar-barato-no-aeroporto-de-guarulhos` | 1.020 | a expandir |
-| `estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes` | 956 | a expandir |
+| `estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes` | 3.040 | ✅ verde, 0 bloqueio |
 | `quanto-custa-um-estacionamento-do-aeroporto-afonso-pena` | 3.120 | ✅ verde, 0 bloqueio |
 | `estacionamento-barato-aeroporto-curitiba` | 942 | a expandir |
 | `conheca-o-estacionamento-mais-proximo-do-aeroporto-afonso-pena-em-2024` | 925 | a expandir |
@@ -217,6 +217,24 @@ Três desdobramentos, que não são deste épico mas precisam de dono:
    então o oficial ganha essa faixa por definição. Vale medir quanto de busca cai aí.
 3. **Vale reavaliar a tabela dos parceiros de Curitiba** contra a Área C do oficial. É uma conversa
    de precificação, e a skill `propor-preco-movepark` é o caminho.
+
+### O que a âncora de proximidade acrescentou ao molde
+
+A página de proximidade não é a de preço com outra capa. Ela precisa responder à pergunta que a de
+preço não responde: **quanto tempo isso me custa.** Três blocos entraram no molde por causa dela.
+
+1. **A conta de tempo porta a porta**, em tabela de melhor e pior caso. Para o Aeropark dá 15 a 50
+   minutos entre entrar no pátio e chegar ao balcão, somando espera pela van, traslado e caminhada.
+   É a informação que decide o horário de sair de casa, e nenhum concorrente publica.
+2. **Distância não é tempo.** A espera pela van pode custar três vezes o tempo do traslado, então
+   pátio mais perto com van rara perde para pátio mais longe com van frequente. É por isso que
+   `shuttle_frequency_minutes` vale tanto quanto a distância, e por isso a ausência dele numa ficha
+   é uma lacuna real, não um detalhe.
+3. **A conta contra o carro de aplicativo.** Publicamos o lado do estacionamento com número e
+   deixamos o leitor plugar o preço da corrida dele. Nenhuma corrida foi estimada.
+
+Quando um campo não está declarado na ficha, o texto diz que não está, em vez de preencher com
+estimativa. É o caso do traslado do Aerovalet, que trava a conta de tempo daquele pátio.
 
 ### A regra de origem do número
 
