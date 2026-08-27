@@ -171,7 +171,7 @@ mínima e a comparação com o estacionamento oficial.
 | `como-estacionar-barato-no-aeroporto-de-guarulhos` | 3.073 | ✅ verde, 0 bloqueio |
 | `estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes` | 3.040 | ✅ verde, 0 bloqueio |
 | `quanto-custa-um-estacionamento-do-aeroporto-afonso-pena` | 3.120 | ✅ verde, 0 bloqueio |
-| `estacionamento-barato-aeroporto-curitiba` | 942 | a expandir |
+| `estacionamento-barato-aeroporto-curitiba` | 3.114 | ✅ verde, 0 bloqueio |
 | `conheca-o-estacionamento-mais-proximo-do-aeroporto-afonso-pena-em-2024` | 925 | a expandir |
 
 Ordem de prioridade pelas demandas de cluster do plano: GRU preço (70 termos), CWB preço (37),
@@ -256,6 +256,30 @@ Dois blocos entraram no molde por causa dela e servem a qualquer praça:
 A regra de comparação justa que saiu daqui: **alavancas só podem ser ranqueadas dentro da mesma
 faixa de permanência.** Comparar uma economia medida em 7 diárias com outra medida em 30 infla a
 maior e some com a menor.
+
+### O ranking de alavancas muda por praça, e isso é o conteúdo
+
+A mesma análise de alavancas, aplicada às duas praças, deu ordens diferentes. Não é ruído: é o
+retrato de dois mercados distintos, e é o que dá valor à página.
+
+| Alavanca, 15 diárias | Guarulhos | Afonso Pena |
+| --- | --- | --- |
+| Sair do estacionamento oficial | R$ 280,50 | de R$ 408,75 a **zero**, conforme o setor |
+| Escolher vaga descoberta | R$ 105,00 | R$ 75,00 |
+| Escolher o pátio mais barato | R$ 45,00 | R$ 45,00 |
+| Reservar pela tabela online | R$ 44,70 | R$ 26,50 |
+| **Escada completa** | **56%** | **39%** |
+
+Três conclusões que valem para a estratégia, não só para o texto:
+
+1. **Em Guarulhos a alavanca 1 domina.** Sair do oficial devolve mais que as outras três somadas, e
+   mesmo o pior arranjo entre parceiros ainda fica abaixo do oficial.
+2. **Em Curitiba a alavanca 1 não é uma alavanca, é uma escolha de setor.** Contra o edifício
+   garagem devolve R$ 408,75; contra a Área C do oficial devolve zero, porque as duas cobravam
+   R$ 15,90 por dia em 27/08/2026.
+3. **Escolher o pátio mais barato custa serviço em Guarulhos e não custa em Curitiba.** Lá o mais
+   barato fica 3 km mais longe e não declara traslado; aqui os dois declaram a mesma lista de dez
+   serviços e o mesmo traslado de cinco minutos, então a troca custa só 1,2 km.
 
 ### A regra de origem do número
 
