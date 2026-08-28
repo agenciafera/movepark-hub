@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CarregandoConversa } from "@/features/inbox/CarregandoConversa";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Bubble } from "@/features/assistant/ChatBubble";
@@ -112,6 +113,20 @@ export default function ManagerConversas() {
    * assumidas), que é sobre o que já está na tela.
    */
   const carregadas = React.useMemo(() => juntarPaginas(lista.data?.pages), [lista.data]);
+
+  /**
+   * O telefone do cabeçalho sai da LISTA enquanto a conversa carrega.
+   *
+   * Lendo só a conversa aberta, o cabeçalho dizia "sem número" durante a espera, e um
+   * cabeçalho que se corrige sozinho depois de dois segundos faz duvidar de tudo o que
+   * está na tela. A lista já sabe o número: foi ela que ofereceu a conversa.
+   */
+  const linhaAberta = React.useMemo(
+    () => carregadas.find((c) => c.id === aberta) ?? null,
+    [carregadas, aberta],
+  );
+  const telefoneDaConversa = conversa.data?.telefone || linhaAberta?.telefone || "";
+
   const visiveis = React.useMemo(() => filtrar(carregadas, filtro, ""), [carregadas, filtro]);
   const totalNaoLidas = React.useMemo(() => carregadas.filter(naoLida).length, [carregadas]);
 
@@ -286,7 +301,7 @@ export default function ManagerConversas() {
               <header className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-200 px-4 py-3">
                 <div className="min-w-0">
                   <p className="whitespace-nowrap text-title-md text-ink">
-                    {rotuloDoTelefone(conversa.data?.telefone ?? "")}
+                    {rotuloDoTelefone(telefoneDaConversa)}
                   </p>
                   <p className="text-body-sm text-muted">
                     {conversa.data?.assumidaPor
@@ -396,7 +411,7 @@ export default function ManagerConversas() {
 
               <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
                 {conversa.isLoading ? (
-                  <Skeleton className="h-40 w-full" />
+                  <CarregandoConversa />
                 ) : (conversa.data?.falas ?? []).length === 0 ? (
                   <EmptyState title="Conversa sem mensagens" />
                 ) : (

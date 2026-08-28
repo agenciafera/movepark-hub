@@ -5,10 +5,11 @@ import type { ConversaAberta, ConversaDaLista } from "@/features/inbox/api";
 
 // `vi.hoisted` porque o `vi.mock` sobe acima de qualquer const. As refs precisam ser
 // estáveis: objeto novo a cada render dispara efeito de ressincronização em laço.
-const { lista, paginas, aberta, marcar, assumir, devolver, responder } = vi.hoisted(() => ({
+const { lista, paginas, aberta, carregando, marcar, assumir, devolver, responder } = vi.hoisted(() => ({
   lista: { current: [] as ConversaDaLista[] },
   paginas: { current: null as { conversas: ConversaDaLista[] }[] | null },
   aberta: { current: null as ConversaAberta | null },
+  carregando: { current: false },
   marcar: vi.fn(),
   assumir: vi.fn(),
   devolver: vi.fn(),
@@ -24,7 +25,10 @@ vi.mock("@/features/inbox/api", async (original) => ({
     isFetchingNextPage: false,
     fetchNextPage: vi.fn(),
   }),
-  useConversa: (id: string | null) => ({ data: id ? aberta.current : undefined, isLoading: false }),
+  useConversa: (id: string | null) => ({
+    data: id && !carregando.current ? aberta.current : undefined,
+    isLoading: !!id && carregando.current,
+  }),
   useMarcarConversa: () => ({ mutate: marcar, isPending: false }),
   useAssumirConversa: () => ({ mutate: assumir, isPending: false }),
   useDevolverConversa: () => ({ mutate: devolver, isPending: false }),
@@ -57,6 +61,7 @@ const linha = (over: Partial<ConversaDaLista> = {}): ConversaDaLista => ({
 
 afterEach(() => {
   paginas.current = null;
+  carregando.current = false;
   marcar.mockReset();
   assumir.mockReset();
   devolver.mockReset();
@@ -153,6 +158,21 @@ describe("caixa de entrada", () => {
     // E o roxo (a cor de quem escreve) fica com a Mia, nao com o cliente.
     expect(screen.getByText(/Posso ajudar\?/).closest(".bg-mp-primary")).toBeTruthy();
     expect(screen.getByText("ola").closest(".bg-mp-primary")).toBeNull();
+  });
+
+  it("a conversa carregando diz que está carregando", () => {
+    // Um retangulo cinza claro num painel claro se parece com painel vazio: quem
+    // clicou nao sabia se a conversa vinha ou se nao havia nada para ver.
+    lista.current = [linha({ id: "t-41" })];
+    carregando.current = true;
+    renderWithProviders(<ManagerConversas />);
+    fireEvent.click(screen.getAllByRole("button", { name: /Conversa com/ })[0]);
+    expect(screen.getByText("Carregando a conversa…")).toBeTruthy();
+    // E o cabecalho ja mostra o numero, que a lista sabe: dizer "sem numero" e' se
+    // corrigir dois segundos depois, e cabecalho que se corrige faz duvidar do resto.
+    expect(screen.getAllByText("(41) 98814-9449").length).toBeGreaterThan(1);
+    // E nao a frase de conversa sem mensagem, que diria o contrario do que acontece.
+    expect(screen.queryByText("Conversa sem mensagens")).toBeNull();
   });
 
   it("página sem lista não derruba a tela", () => {

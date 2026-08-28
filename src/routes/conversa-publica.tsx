@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet-async";
 import { ChatCircleDots } from "@phosphor-icons/react";
 import { Bubble } from "@/features/assistant/ChatBubble";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { Skeleton } from "@/components/ui/skeleton";
+import { CarregandoConversa } from "@/features/inbox/CarregandoConversa";
 import { Anexo } from "@/features/inbox/Anexo";
 import { useConversaPublica } from "@/features/inbox/api";
 import { textoDaFala } from "@/features/inbox/inbox.logic";
@@ -47,7 +47,7 @@ export default function ConversaPublica() {
 
       <main className="flex flex-col gap-3 rounded-lg border border-neutral-200 bg-white p-4">
         {conversa.isPending ? (
-          <Skeleton className="h-64 w-full" />
+          <CarregandoConversa />
         ) : conversa.isError ? (
           <EmptyState
             icon={<ChatCircleDots size={28} />}
