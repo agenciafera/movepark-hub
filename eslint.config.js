@@ -6,7 +6,11 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import globals from "globals";
 
 export default [
-  { ignores: ["dist", "node_modules", "src/types/database.ts"] },
+  // `beast-bots` e' outro projeto, com lint proprio, clonado aqui dentro e ja no
+  // `.gitignore`. O ESLint nao le `.gitignore`, entao sem esta linha ele entra no
+  // `.mastra/` (bundle gerado) e devolve 35 erros que ninguem pode corrigir: o
+  // portao local para de valer, enquanto o CI, que clona sem essa pasta, passa.
+  { ignores: ["dist", "node_modules", "src/types/database.ts", "beast-bots"] },
   {
     files: ["**/*.{ts,tsx}"],
     languageOptions: {

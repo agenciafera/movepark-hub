@@ -22,9 +22,16 @@ export function contarNaoLidas(cs: ConversaDaLista[] | undefined): number {
   return (cs ?? []).filter(naoLida).length;
 }
 
-/** Telefone legível, no formato que a pessoa reconhece. */
+/**
+ * Telefone legível, no formato que a pessoa reconhece.
+ *
+ * O sentinela `5500000000000` é o "sem cliente" da bolinha de teste do Manager.
+ * Formatá-lo daria "(00) 00000-0000", um telefone que ninguém tem e que na lista
+ * parece cliente de verdade.
+ */
 export function rotuloDoTelefone(bruto: string): string {
   const d = (bruto ?? "").replace(/\D/g, "");
+  if (/^550+$/.test(d)) return "Teste sem cliente";
   if (d.length < 12) return bruto || "sem número";
   const ddd = d.slice(2, 4);
   const numero = d.slice(4);

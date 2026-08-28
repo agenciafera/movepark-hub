@@ -5,6 +5,7 @@ import { contarNaoLidas, filtrar, naoLida, quando, paraExibicao, previa, rotuloD
 const linha = (over: Partial<ConversaDaLista> = {}): ConversaDaLista => ({
   id: "movepark-hub:whatsapp:whatsapp:456:5541988149449",
   telefone: "5541988149449",
+  origem: "whatsapp",
   titulo: "whatsapp conversation",
   ultima_em: "2026-08-27T20:00:00.000Z",
   ultimo_papel: "signal",
@@ -13,6 +14,7 @@ const linha = (over: Partial<ConversaDaLista> = {}): ConversaDaLista => ({
   lida_ate: null,
   assumida_por: null,
   assumida_em: null,
+  compartilhada: null,
   ...over,
 });
 
@@ -52,6 +54,9 @@ describe("telefone", () => {
 
   it("não inventa quando o número é curto", () => {
     expect(rotuloDoTelefone("123")).toBe("123");
+    // O sentinela da bolinha de teste: formatado daria "(00) 00000-0000", que na
+    // lista passa por cliente de verdade.
+    expect(rotuloDoTelefone("5500000000000")).toBe("Teste sem cliente");
     expect(rotuloDoTelefone("")).toBe("sem número");
   });
 });

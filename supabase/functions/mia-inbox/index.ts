@@ -76,6 +76,8 @@ export function corpoParaOBeastBots(
     threadId?: unknown;
     lidaAte?: unknown;
     limite?: unknown;
+    busca?: unknown;
+    cursor?: unknown;
     texto?: unknown;
     messageId?: unknown;
     parte?: unknown;
@@ -85,6 +87,12 @@ export function corpoParaOBeastBots(
 
   if (acao === "listar") {
     if (typeof entrada.limite === "number") base.limite = entrada.limite;
+    // Busca e cursor precisam ATRAVESSAR o portao. Este corpo e' montado campo a
+    // campo de proposito (nada do cliente passa direto), e o preco disso e' que um
+    // campo esquecido some em silencio: a lista continua respondendo 200, so' que
+    // sempre com a primeira pagina inteira, sem filtro.
+    if (typeof entrada.busca === "string") base.busca = entrada.busca.slice(0, 120);
+    if (typeof entrada.cursor === "string") base.cursor = entrada.cursor;
     return base;
   }
 

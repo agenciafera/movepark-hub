@@ -36,7 +36,9 @@ describe("o que o navegador manda para a Edge", () => {
     renderHook(() => useConversas(), { wrapper });
     await vi.waitFor(() => expect(invoke).toHaveBeenCalled());
     expect(invoke.mock.calls[0][0]).toBe("mia-inbox");
-    expect(corpoDaChamada()).toEqual({ acao: "listar" });
+    // A busca e a paginacao vao ao SERVIDOR: filtrar no navegador so' acha o que ja
+    // veio, e o que ja veio e' uma pagina.
+    expect(corpoDaChamada()).toEqual({ acao: "listar", limite: 30, busca: "", cursor: "" });
   });
 
   it("marcar como lida manda um instante; como não lida manda nulo", async () => {

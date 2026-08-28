@@ -210,7 +210,10 @@ export function Sidebar({
    * TanStack Query serve as duas pela mesma chave.
    */
   const conversas = useConversas(variant === "manager");
-  const naoLidas = variant === "manager" ? contarNaoLidas(conversas.data) : 0;
+  const naoLidas =
+    variant === "manager"
+      ? contarNaoLidas(conversas.data?.pages.flatMap((p) => p.conversas ?? []))
+      : 0;
 
   const impersonating = !!impersonatedCompanyId && session?.role === "hub_admin";
 

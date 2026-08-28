@@ -9,6 +9,8 @@ import {
   PaperPlaneTilt,
   ShareNetwork,
   LinkBreak,
+  WhatsappLogo,
+  Globe,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -50,10 +52,22 @@ import {
  */
 export default function ManagerConversas() {
   const [busca, setBusca] = React.useState("");
+
+  /**
+   * O termo só vai ao servidor quando a pessoa para de digitar.
+   *
+   * Sem isso, "voucher" dispara sete consultas, uma por letra, e as respostas voltam
+   * fora de ordem: a lista pisca com o resultado de "vouch" depois do de "voucher".
+   */
+  const [termo, setTermo] = React.useState("");
+  React.useEffect(() => {
+    const t = setTimeout(() => setTermo(busca.trim()), 350);
+    return () => clearTimeout(t);
+  }, [busca]);
   const [filtro, setFiltro] = React.useState<FiltroDaCaixa>("todas");
   const [aberta, setAberta] = React.useState<string | null>(null);
 
-  const lista = useConversas();
+  const lista = useConversas(true, termo);
   const conversa = useConversa(aberta);
   const marcar = useMarcarConversa();
   const assumir = useAssumirConversa();
@@ -92,15 +106,36 @@ export default function ManagerConversas() {
     );
   }
 
-  const visiveis = React.useMemo(
-    () => filtrar(lista.data, filtro, busca),
-    [lista.data, filtro, busca],
-  );
-
-  const totalNaoLidas = React.useMemo(
-    () => (lista.data ?? []).filter(naoLida).length,
+  /**
+   * A busca acontece no servidor; aqui sobra só o recorte por estado (não lidas,
+   * assumidas), que é sobre o que já está na tela.
+   */
+  const carregadas = React.useMemo(
+    // `?? []` por pagina, e nao so' no fim: uma pagina sem `conversas` (backend
+    // antigo no ar, resposta de erro) viraria `[undefined]` e derrubaria a tela
+    // inteira, que e' como a sidebar do Manager caiu em 27/08.
+    () => lista.data?.pages.flatMap((p) => p.conversas ?? []) ?? [],
     [lista.data],
   );
+  const visiveis = React.useMemo(() => filtrar(carregadas, filtro, ""), [carregadas, filtro]);
+  const totalNaoLidas = React.useMemo(() => carregadas.filter(naoLida).length, [carregadas]);
+
+  /**
+   * Rolagem infinita: uma âncora no fim da lista pede a próxima página ao aparecer.
+   *
+   * `IntersectionObserver` em vez de escutar `scroll`: ele não roda em toda rolagem e
+   * não precisa medir altura, que é onde esse tipo de código costuma errar.
+   */
+  const ancora = React.useRef<HTMLLIElement>(null);
+  React.useEffect(() => {
+    const alvo = ancora.current;
+    if (!alvo || !lista.hasNextPage) return;
+    const obs = new IntersectionObserver((entradas) => {
+      if (entradas[0]?.isIntersecting && !lista.isFetchingNextPage) lista.fetchNextPage();
+    });
+    obs.observe(alvo);
+    return () => obs.disconnect();
+  }, [lista.hasNextPage, lista.isFetchingNextPage, lista]);
 
   /**
    * Abrir uma conversa marca como lida.
@@ -138,7 +173,7 @@ export default function ManagerConversas() {
             <Input
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              placeholder="Buscar por telefone ou texto"
+              placeholder="Buscar por telefone ou por qualquer palavra"
               aria-label="Buscar conversa"
               className="pl-9"
             />
@@ -171,9 +206,9 @@ export default function ManagerConversas() {
             ) : visiveis.length === 0 ? (
               <EmptyState
                 icon={<ChatCircleDots size={28} />}
-                title={busca || filtro !== "todas" ? "Nada com esse recorte" : "Nenhuma conversa ainda"}
+                title={termo || filtro !== "todas" ? "Nada com esse recorte" : "Nenhuma conversa ainda"}
                 description={
-                  busca || filtro !== "todas"
+                  termo || filtro !== "todas"
                     ? "Tente outro termo ou limpe o filtro."
                     : "Quando alguém escrever para a Mia no WhatsApp, a conversa aparece aqui."
                 }
@@ -193,8 +228,22 @@ export default function ManagerConversas() {
                     >
                       <div className="flex items-baseline justify-between gap-2">
                         <span
-                          className={`text-body-md ${naoLida(c) ? "font-semibold text-ink" : "text-body"}`}
+                          className={`flex items-center gap-1.5 text-body-md ${naoLida(c) ? "font-semibold text-ink" : "text-body"}`}
                         >
+                          {/*
+                            De onde a conversa veio. A tabela não tem coluna de canal: a
+                            origem sai do formato do id, no servidor.
+                          */}
+                          {c.origem === "webchat" ? (
+                            <Globe size={14} className="shrink-0 text-muted" aria-label="Webchat" />
+                          ) : (
+                            <WhatsappLogo
+                              size={14}
+                              weight="fill"
+                              className="shrink-0 text-emerald-600"
+                              aria-label="WhatsApp"
+                            />
+                          )}
                           {rotuloDoTelefone(c.telefone)}
                         </span>
                         <span className="shrink-0 text-body-sm text-muted">
@@ -204,12 +253,24 @@ export default function ManagerConversas() {
                       <p className="line-clamp-1 text-body-sm text-muted">
                         {previa(c.ultimo_texto) || "sem mensagem"}
                       </p>
-                      {c.assumida_por ? (
-                        <span className="text-body-sm text-mp-indigo">Assumida pela equipe</span>
-                      ) : null}
+                      <span className="flex items-center gap-2 text-body-sm">
+                        <span className="text-muted">
+                          {c.origem === "webchat" ? "Webchat" : "WhatsApp"}
+                        </span>
+                        {c.assumida_por ? (
+                          <span className="text-mp-indigo">Assumida pela equipe</span>
+                        ) : null}
+                      </span>
                     </button>
                   </li>
                 ))}
+                <li ref={ancora} className="py-2 text-center text-body-sm text-muted">
+                  {lista.isFetchingNextPage
+                    ? "Carregando mais…"
+                    : lista.hasNextPage
+                      ? " "
+                      : "Fim da lista."}
+                </li>
               </ul>
             )}
           </div>

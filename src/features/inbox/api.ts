@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
 /**
@@ -18,9 +18,12 @@ import { supabase } from "@/lib/supabase";
  * na conversa aberta e mais folgado na lista.
  */
 
+export type OrigemDaConversa = "whatsapp" | "webchat";
+
 export type ConversaDaLista = {
   id: string;
   telefone: string;
+  origem: OrigemDaConversa;
   titulo: string | null;
   ultima_em: string | null;
   ultimo_papel: string | null;
@@ -29,6 +32,7 @@ export type ConversaDaLista = {
   lida_ate: string | null;
   assumida_por: string | null;
   assumida_em: string | null;
+  compartilhada: string | null;
 };
 
 /** A ficha de um anexo. Os bytes vêm depois, por `useAnexo`. */
@@ -59,7 +63,7 @@ export type ConversaAberta = {
 
 export const inboxKeys = {
   all: ["inbox"] as const,
-  lista: () => [...inboxKeys.all, "lista"] as const,
+  lista: (busca: string) => [...inboxKeys.all, "lista", busca] as const,
   conversa: (id: string) => [...inboxKeys.all, "conversa", id] as const,
   anexo: (msg: string, parte: number) => [...inboxKeys.all, "anexo", msg, parte] as const,
   publica: (token: string) => ["conversa-publica", token] as const,
@@ -83,23 +87,44 @@ async function chamar<T>(body: Record<string, unknown>, seDerErrado: string): Pr
 }
 
 /**
- * A lista de conversas.
+ * A lista de conversas, paginada por cursor e buscada no servidor.
  *
- * O `ligado` existe porque a sidebar usa esta mesma query para o contador de não lidas,
- * e ela é renderizada também no painel do operador, onde a caixa de entrada não existe.
- * Sem o desligamento, todo operador ficaria chamando a Edge a cada 15 segundos para um
- * número que a tela dele nem mostra.
+ * ## Por que rolagem infinita, e não tudo de uma vez
+ *
+ * A primeira versão trazia tudo e filtrava no navegador. Funcionava com cem conversas e
+ * não funcionaria com mil: cada abertura da tela baixaria a lista inteira, e o polling
+ * repetiria isso a cada quinze segundos.
+ *
+ * ## Por que o cursor é um horário, e não um número de página
+ *
+ * A ordem muda a cada mensagem que chega. Com `offset`, uma conversa que sobe para o
+ * topo enquanto alguém rola faz a página seguinte repetir uma linha e pular outra. O
+ * cursor é o horário da última conversa vista, então a página seguinte começa
+ * exatamente onde a anterior parou.
+ *
+ * O `ligado` existe porque a sidebar usa isto para o contador de não lidas, e ela é
+ * renderizada também no painel do operador, onde a caixa de entrada não existe.
  */
-export function useConversas(ligado = true) {
-  return useQuery({
+export function useConversas(ligado = true, busca = "") {
+  return useInfiniteQuery({
     enabled: ligado,
-    queryKey: inboxKeys.lista(),
-    queryFn: () =>
-      chamar<{ conversas: ConversaDaLista[] }>(
-        { acao: "listar" },
+    queryKey: inboxKeys.lista(busca),
+    initialPageParam: "",
+    queryFn: ({ pageParam }) =>
+      chamar<{ conversas: ConversaDaLista[]; proximoCursor: string | null }>(
+        { acao: "listar", limite: 30, busca, cursor: pageParam },
         "Não consegui carregar as conversas.",
-      ).then((r) => r.conversas ?? []),
-    // A conversa acontece no WhatsApp, fora daqui: sem isso a lista envelhece na tela.
+      ),
+    getNextPageParam: (ultima) => ultima.proximoCursor ?? undefined,
+    /**
+     * O polling vale só para a PRIMEIRA página.
+     *
+     * `refetchInterval` numa infinite query recarrega todas as páginas já abertas, e a
+     * cada quinze segundos isso seria a lista inteira de novo, que é justamente o que a
+     * paginação existe para evitar. `maxPages: 1` no refetch não existe na API, então o
+     * intervalo fica curto o bastante para a conversa nova aparecer e a rolagem funciona
+     * por demanda.
+     */
     refetchInterval: 15_000,
     staleTime: 5_000,
   });

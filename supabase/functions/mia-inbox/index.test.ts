@@ -98,3 +98,22 @@ Deno.test("compartilhar nao aceita token do navegador", () => {
   } as never);
   assertEquals("token" in corpo, false);
 });
+
+Deno.test("listar leva busca e cursor ao BeastBots", () => {
+  // Regressao de 27/08: o portao montava o corpo campo a campo e nao copiava
+  // `busca` nem `cursor`. A lista respondia 200 e devolvia sempre a primeira
+  // pagina, entao a busca "funcionava" sem filtrar e a rolagem infinita repetia
+  // as mesmas 30 conversas.
+  const corpo = corpoParaOBeastBots("listar", "uid", {
+    limite: 30,
+    busca: "voucher",
+    cursor: "2026-08-27T20:00:00.000Z",
+  });
+  assertEquals(corpo.busca, "voucher");
+  assertEquals(corpo.cursor, "2026-08-27T20:00:00.000Z");
+});
+
+Deno.test("busca gigante e' cortada antes de virar consulta", () => {
+  const corpo = corpoParaOBeastBots("listar", "uid", { busca: "a".repeat(500) });
+  assertEquals(String(corpo.busca).length, 120);
+});

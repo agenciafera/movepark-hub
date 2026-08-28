@@ -5,8 +5,9 @@ import type { ConversaAberta, ConversaDaLista } from "@/features/inbox/api";
 
 // `vi.hoisted` porque o `vi.mock` sobe acima de qualquer const. As refs precisam ser
 // estáveis: objeto novo a cada render dispara efeito de ressincronização em laço.
-const { lista, aberta, marcar, assumir, devolver, responder } = vi.hoisted(() => ({
+const { lista, paginas, aberta, marcar, assumir, devolver, responder } = vi.hoisted(() => ({
   lista: { current: [] as ConversaDaLista[] },
+  paginas: { current: null as { conversas: ConversaDaLista[] }[] | null },
   aberta: { current: null as ConversaAberta | null },
   marcar: vi.fn(),
   assumir: vi.fn(),
@@ -16,7 +17,13 @@ const { lista, aberta, marcar, assumir, devolver, responder } = vi.hoisted(() =>
 
 vi.mock("@/features/inbox/api", async (original) => ({
   ...(await original<Record<string, unknown>>()),
-  useConversas: () => ({ data: lista.current, isLoading: false }),
+  useConversas: () => ({
+    data: { pages: paginas.current ?? [{ conversas: lista.current, proximoCursor: null }] },
+    isLoading: false,
+    hasNextPage: false,
+    isFetchingNextPage: false,
+    fetchNextPage: vi.fn(),
+  }),
   useConversa: (id: string | null) => ({ data: id ? aberta.current : undefined, isLoading: false }),
   useMarcarConversa: () => ({ mutate: marcar, isPending: false }),
   useAssumirConversa: () => ({ mutate: assumir, isPending: false }),
@@ -35,6 +42,7 @@ import ManagerConversas from "./conversas";
 const linha = (over: Partial<ConversaDaLista> = {}): ConversaDaLista => ({
   id: "t-41",
   telefone: "5541988149449",
+  origem: "whatsapp",
   titulo: "whatsapp conversation",
   ultima_em: "2026-08-27T20:00:00.000Z",
   ultimo_papel: "signal",
@@ -43,10 +51,12 @@ const linha = (over: Partial<ConversaDaLista> = {}): ConversaDaLista => ({
   lida_ate: null,
   assumida_por: null,
   assumida_em: null,
+  compartilhada: null,
   ...over,
 });
 
 afterEach(() => {
+  paginas.current = null;
   marcar.mockReset();
   assumir.mockReset();
   devolver.mockReset();
@@ -80,15 +90,35 @@ describe("caixa de entrada", () => {
     expect(screen.getByText("(41) 98814-9449")).toBeTruthy();
   });
 
-  it("busca por telefone mesmo digitado com formatação", () => {
+  it("a busca é do servidor, então a tela não filtra sozinha", () => {
+    // Quem procura "voucher" espera achar em qualquer conversa, nao so' nas 30 que ja
+    // estao na tela. O termo vai ao servidor; aqui so' mostramos o que ele devolve.
     lista.current = [
       linha({ id: "a", telefone: "5541988149449" }),
       linha({ id: "b", telefone: "5511987727182" }),
     ];
     renderWithProviders(<ManagerConversas />);
-    fireEvent.change(screen.getByLabelText("Buscar conversa"), { target: { value: "(11) 98772" } });
+    fireEvent.change(screen.getByLabelText("Buscar conversa"), { target: { value: "zzz" } });
+    expect(screen.getByText("(41) 98814-9449")).toBeTruthy();
     expect(screen.getByText("(11) 98772-7182")).toBeTruthy();
-    expect(screen.queryByText("(41) 98814-9449")).toBeNull();
+  });
+
+  it("página sem lista não derruba a tela", () => {
+    // Regressao: um backend antigo no ar devolvia pagina sem `conversas`, o
+    // `flatMap` produzia `[undefined]` e a sidebar inteira do Manager caia.
+    paginas.current = [{ conversas: undefined as unknown as ConversaDaLista[] }];
+    renderWithProviders(<ManagerConversas />);
+    expect(screen.getByText("Nenhuma conversa ainda")).toBeTruthy();
+  });
+
+  it("mostra de onde veio cada conversa", () => {
+    lista.current = [
+      linha({ id: "a", origem: "whatsapp" }),
+      linha({ id: "b", telefone: "5511987727182", origem: "webchat" }),
+    ];
+    renderWithProviders(<ManagerConversas />);
+    expect(screen.getByText("Webchat")).toBeTruthy();
+    expect(screen.getAllByText("WhatsApp").length).toBeGreaterThan(0);
   });
 
   it("abrir uma conversa não lida marca como lida, sem passo manual", () => {
@@ -143,12 +173,11 @@ describe("caixa de entrada", () => {
     renderWithProviders(<ManagerConversas />);
     expect(screen.getByText("Nenhuma conversa ainda")).toBeTruthy();
 
-    lista.current = [linha()];
+    // Com filtro ativo e nada casando, a frase muda: "nada com esse recorte" convida a
+    // limpar o filtro; "nenhuma conversa ainda" convidaria a esperar.
     renderWithProviders(<ManagerConversas />);
-    fireEvent.change(screen.getAllByLabelText("Buscar conversa")[1], {
-      target: { value: "zzz" },
-    });
-    expect(screen.getByText("Nada com esse recorte")).toBeTruthy();
+    fireEvent.click(screen.getAllByRole("button", { name: "Não lidas" })[1]);
+    expect(screen.getAllByText("Nada com esse recorte").length).toBeGreaterThan(0);
   });
   it("não deixa escrever antes de assumir", async () => {
     // Responder sem assumir deixaria a Mia e a pessoa falando por cima uma da outra.
