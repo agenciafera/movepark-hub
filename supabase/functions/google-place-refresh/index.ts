@@ -7,8 +7,10 @@
 // Falha da Places API grava `fetch_error` e PRESERVA o snapshot bom: erro de rede não pode
 // apagar prova social.
 //
-// A chave do projeto (VITE_GOOGLE_MAPS_API_KEY) é restrita por referrer e recusa chamada de
-// servidor. Aqui usa-se GOOGLE_PLACES_SERVER_KEY, restrita por IP, que nunca vai para o bundle.
+// GOOGLE_PLACES_SERVER_KEY pode ser uma chave de servidor propria OU a chave do projeto
+// (VITE_GOOGLE_MAPS_API_KEY), que e restrita por referrer: por isso a chamada manda o header
+// Referer do dominio, que satisfaz a restricao tambem em chamada de servidor. Segredo fica
+// nos secrets da Edge, nunca no bundle nem no SQL.
 //
 // Ao mudar algum snapshot, dispara o rebuild do site: o HTML do SSG também é cache do
 // conteúdo do Google e precisa respeitar o mesmo limite de 30 dias.
@@ -101,7 +103,14 @@ Deno.serve(async (req: Request) => {
       const res = await fetch(
         `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}` +
           `?languageCode=pt-BR&regionCode=BR`,
-        { headers: { "X-Goog-Api-Key": googleKey, "X-Goog-FieldMask": FIELD_MASK } },
+        {
+          headers: {
+            "X-Goog-Api-Key": googleKey,
+            "X-Goog-FieldMask": FIELD_MASK,
+            // Satisfaz a restricao por referrer quando a chave usada e a do projeto.
+            Referer: "https://hub.movepark.co/",
+          },
+        },
       );
       if (!res.ok) throw new Error(`Places ${res.status}: ${await res.text()}`);
       const mapped = mapPlaceDetails(await res.json());
