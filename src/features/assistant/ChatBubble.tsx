@@ -15,10 +15,26 @@ function Inline({ spans }: { spans: InlineToken[] }) {
   );
 }
 
-export function Bubble({ role, text }: { role: "user" | "model"; text: string }) {
+/**
+ * `role` decide o LADO e a cor; `markdown` decide como o texto é lido.
+ *
+ * No widget as duas coisas andam juntas: quem escreve à direita é você, em texto puro,
+ * e quem responde à esquerda é o agente, em markdown. Na caixa de entrada elas se
+ * separam: quem fica à direita é a **Mia**, e a resposta dela vem em markdown. Sem
+ * separar, inverter os lados fazia a Mia aparecer com `**Virapark**` cru na tela.
+ */
+export function Bubble({
+  role,
+  text,
+  markdown,
+}: {
+  role: "user" | "model";
+  text: string;
+  markdown?: boolean;
+}) {
   const mine = role === "user";
-  // A resposta do assistente vem em markdown; renderiza negrito e listas. Do usuário é texto puro.
-  const blocks = mine ? null : parseChatMarkdown(text);
+  const comMarkdown = markdown ?? !mine;
+  const blocks = comMarkdown ? parseChatMarkdown(text) : null;
   return (
     <div className={mine ? "flex justify-end" : "flex justify-start"}>
       <div
@@ -26,10 +42,11 @@ export function Bubble({ role, text }: { role: "user" | "model"; text: string })
           // `break-words` porque a conversa carrega URL de voucher com 130 caracteres,
           // e sem isso ela estoura a bolha e passa por cima do que vem depois.
           "max-w-[80%] break-words rounded-2xl px-3 py-2 text-body-sm " +
-          (mine ? "whitespace-pre-wrap bg-mp-primary text-white" : "space-y-2 bg-neutral-100 text-neutral-900")
+          (comMarkdown ? "space-y-2 " : "whitespace-pre-wrap ") +
+          (mine ? "bg-mp-primary text-white" : "bg-neutral-100 text-neutral-900")
         }
       >
-        {mine
+        {!comMarkdown
           ? text
           : blocks!.map((b, i) =>
               b.type === "ul" ? (

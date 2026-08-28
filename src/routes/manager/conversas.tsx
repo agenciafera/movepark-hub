@@ -421,11 +421,27 @@ export default function ManagerConversas() {
                         assinatura, porque o nome dele ja esta' no topo da tela.
                       */}
                       {f.autor ? (
-                        <span className="text-[11px] text-muted">{f.autor}</span>
+                        // A assinatura acompanha o balao: a' esquerda ela ficaria orfa,
+                        // longe da fala que assina.
+                        <span className="self-end text-[11px] text-muted">{f.autor}</span>
                       ) : null}
                       {f.texto ? (
                         <Bubble
-                          role={f.papel === "cliente" ? "user" : "model"}
+                          /*
+                        O CLIENTE fica a' esquerda, em cinza; quem atende fica a'
+                        direita, em roxo. E' o arranjo do WhatsApp Web, e a caixa de
+                        entrada e' lida por quem atende: inverter isso faz a pessoa ler
+                        a propria equipe como se fosse o cliente.
+
+                        A `Bubble` chama de "user" o lado direito, porque nasceu na
+                        bolinha de teste, onde quem escreve e' voce. Aqui quem escreve
+                        e' a Mia ou a equipe, entao o papel do balao e' o oposto do
+                        papel na conversa.
+                      */
+                      role={f.papel === "cliente" ? "model" : "user"}
+                          // O markdown segue quem FALA, nao o lado: a Mia responde em
+                          // markdown mesmo estando a' direita.
+                          markdown={f.papel === "agente"}
                           text={textoDaFala(f.texto)}
                         />
                       ) : null}
@@ -437,7 +453,7 @@ export default function ManagerConversas() {
                       */}
                       {(f.anexos ?? []).length > 0 ? (
                         <div
-                          className={`flex flex-col gap-1 ${f.papel === "cliente" ? "items-end" : "items-start"}`}
+                          className={`flex flex-col gap-1 ${f.papel === "cliente" ? "items-start" : "items-end"}`}
                         >
                           {(f.anexos ?? []).map((a) => (
                             <Anexo key={a.parte} threadId={aberta} messageId={f.id} anexo={a} />

@@ -125,6 +125,36 @@ describe("caixa de entrada", () => {
     expect(screen.getByText("Kallef")).toBeTruthy();
   });
 
+  it("o cliente fica à esquerda e quem atende à direita", () => {
+    // O arranjo do WhatsApp Web. A caixa e' lida por quem atende, e inverter faz a
+    // pessoa ler a propria equipe como se fosse o cliente.
+    lista.current = [linha({ id: "t-41" })];
+    aberta.current = {
+      threadId: "t-41",
+      telefone: "5541988149449",
+      lidaAte: null,
+      assumidaPor: null,
+      compartilhada: null,
+      falas: [
+        { id: "m1", papel: "cliente", autor: "", texto: "ola", em: "2026-08-27T20:00:00.000Z", anexos: [] },
+        { id: "m2", papel: "agente", autor: "Mia", texto: "Posso ajudar? **Virapark**", em: "2026-08-27T20:01:00.000Z", anexos: [] },
+      ],
+    };
+    renderWithProviders(<ManagerConversas />);
+    fireEvent.click(screen.getAllByRole("button", { name: /Conversa com/ })[0]);
+
+    const doCliente = screen.getByText("ola").closest("div.flex");
+    const daMia = screen.getByText(/Posso ajudar\?/).closest("div.flex");
+    expect(doCliente?.className).toContain("justify-start");
+    expect(daMia?.className).toContain("justify-end");
+    // O markdown segue quem FALA, e nao o lado: a Mia continua em negrito mesmo
+    // depois de mudar de lado. Sem isso ela aparecia com `**Virapark**` cru.
+    expect(screen.getByText("Virapark").tagName).toBe("STRONG");
+    // E o roxo (a cor de quem escreve) fica com a Mia, nao com o cliente.
+    expect(screen.getByText(/Posso ajudar\?/).closest(".bg-mp-primary")).toBeTruthy();
+    expect(screen.getByText("ola").closest(".bg-mp-primary")).toBeNull();
+  });
+
   it("página sem lista não derruba a tela", () => {
     // Regressao: um backend antigo no ar devolvia pagina sem `conversas`, o
     // `flatMap` produzia `[undefined]` e a sidebar inteira do Manager caia.

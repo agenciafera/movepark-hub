@@ -60,11 +60,16 @@ export default function ConversaPublica() {
           conversa.data?.falas.map((f, i) => (
             <div key={f.id || i} className="flex flex-col gap-1">
               {f.texto ? (
-                <Bubble role={f.papel === "cliente" ? "user" : "model"} text={textoDaFala(f.texto)} />
+                // Mesmo arranjo do painel: cliente a' esquerda, quem atendeu a' direita.
+                <Bubble
+                  role={f.papel === "cliente" ? "model" : "user"}
+                  markdown={f.papel === "agente"}
+                  text={textoDaFala(f.texto)}
+                />
               ) : null}
               {(f.anexos ?? []).length > 0 ? (
                 <div
-                  className={`flex flex-col gap-1 ${f.papel === "cliente" ? "items-end" : "items-start"}`}
+                  className={`flex flex-col gap-1 ${f.papel === "cliente" ? "items-start" : "items-end"}`}
                 >
                   {(f.anexos ?? []).map((a) => (
                     <Anexo key={a.parte} threadId={null} messageId={f.id} anexo={a} token={token} />

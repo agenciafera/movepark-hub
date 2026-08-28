@@ -97,6 +97,18 @@ envio (`inbox_enviado_por_nome`) e vem do **perfil de quem tem o JWT**, nunca do
 senão um admin assinaria como outro. Mensagem enviada antes de existir esse campo só tem
 o uid, e para essas a tela diz "Equipe", que é o que dá para afirmar com honestidade.
 
+### De que lado fica cada um
+
+O **cliente à esquerda, em cinza**; quem atende (Mia ou equipe) **à direita, em roxo**.
+É o arranjo do WhatsApp Web, e a caixa é lida por quem atende: invertido, a pessoa lê a
+própria equipe como se fosse o cliente.
+
+A `Bubble` nasceu na bolinha de teste, onde "user" é você e o lado direito é seu. Aqui
+quem escreve à direita é a Mia, então o papel do balão é o **oposto** do papel na
+conversa. Ela também separa `role` (lado e cor) de `markdown` (como o texto é lido):
+enquanto as duas coisas eram a mesma, inverter os lados fazia a Mia aparecer com
+`**Virapark**` cru na tela.
+
 ## Origem
 
 A conversa diz de onde veio, derivado do formato do id da thread (`:manager:` é a bolinha
