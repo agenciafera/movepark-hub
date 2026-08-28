@@ -109,8 +109,9 @@ de VCP e CNF.
 
 ### Viracopos, 3 reapontes
 
-Os três estão em `BLOG_CONSOLIDATED_SLUGS` desde 15/08 apontando para a vencedora da época, que
-agora é a dona de barato. A intenção deles é preço, então o alvo muda para a dona de preço:
+Os três estavam em `BLOG_CONSOLIDATED_SLUGS` desde 15/08 apontando para a vencedora da época, que
+agora é a dona de barato. A intenção deles é preço, então o alvo mudou para a dona de preço
+(**executado em 28/08/2026**, junto com as inversões de CWB da revisão cruzada):
 
 `preco-estacionamento-aeroporto-viracopos-saiba-tudo-aqui` ·
 `quanto-custa-deixar-o-carro-no-aeroporto-viracopos-por-7-dias` ·

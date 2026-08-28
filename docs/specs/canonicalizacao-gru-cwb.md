@@ -51,7 +51,7 @@ A dona de cada cluster de cabeça, na ordem do plano de conteúdo.
 
 | Cluster de cabeça | Página dona | Complemento |
 | --- | --- | --- |
-| preço, valor, diária | `/blog/quanto-custa-um-estacionamento-do-aeroporto-afonso-pena/` | `/precos/aeroporto-afonso-pena` |
+| preço, valor, diária | `/blog/preco-estacionamento-aeroporto-afonso-pena-curitiba-saiba-tudo-aqui/` (invertida em 28/08/2026) | `/precos/aeroporto-afonso-pena` |
 | barato, economia, desconto | `/blog/estacionamento-barato-aeroporto-curitiba/` | `/estacionamento-mais-barato/aeroporto-afonso-pena` |
 | proximidade, perto, mais próximo | `/blog/conheca-o-estacionamento-mais-proximo-do-aeroporto-afonso-pena-em-2024/` | `/destinos/aeroporto-afonso-pena` |
 
@@ -69,7 +69,7 @@ Não são cabeça, mas cada uma é dona de um termo, e por isso sobreviveram.
 | Intenção | Página dona | Aeroporto |
 | --- | --- | --- |
 | melhor, comparativo | `guia-atualizado-5-melhores-opcoes-de-estacionamento-no-aeroporto-guarulhos-em-2024` | GRU |
-| melhor, comparativo | `aeroporto-afonso-pena-5-melhores-opcoes-de-estacionamento-em-2024` | CWB |
+| melhor, comparativo | `top-3-estacionamentos-do-aeroporto-de-curitiba` (invertida em 28/08/2026) | CWB |
 | marca do aeroporto, oficial, terminal | `estacionamento-gru-airport-guia-completo-para-parar-seu-carro-com-tranquilidade` | GRU |
 | guia do aeroporto, não é consulta de estacionamento | `guia-completo-sobre-o-aeroporto-de-guarulhos` | GRU |
 | guia do aeroporto | `aeroporto-afonso-pena-confira-o-guia-completo-para-sua-viagem` | CWB |
@@ -116,8 +116,8 @@ histórico.
 | `estacionamento-aeroporto-curitiba-cwb-a-solucao-economica-e-segura-com-a-move-park` | `estacionamento-barato-aeroporto-curitiba` | barato |
 | `5-maneiras-inteligentes-de-economizar-no-aeroporto-afonso-pena` | `estacionamento-barato-aeroporto-curitiba` | barato |
 | `estacionamento-aeroporto-curitiba-alternativas-economicas-e-servicos-de-transporte` | `estacionamento-barato-aeroporto-curitiba` | barato |
-| `5-vantagens-de-estacionar-no-aeroporto-de-curitiba` | `aeroporto-afonso-pena-5-melhores-opcoes-de-estacionamento-em-2024` | comparativo |
-| `facilidade-e-conforto-estacionamento-aeroporto-curitiba-cwb` | `aeroporto-afonso-pena-5-melhores-opcoes-de-estacionamento-em-2024` | comparativo |
+| `5-vantagens-de-estacionar-no-aeroporto-de-curitiba` | `top-3-estacionamentos-do-aeroporto-de-curitiba` | comparativo |
+| `facilidade-e-conforto-estacionamento-aeroporto-curitiba-cwb` | `top-3-estacionamentos-do-aeroporto-de-curitiba` | comparativo |
 
 ### O resultado em número
 
@@ -170,7 +170,7 @@ mínima e a comparação com o estacionamento oficial.
 | `preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui` | 3.417 | ✅ verde, 0 bloqueio |
 | `como-estacionar-barato-no-aeroporto-de-guarulhos` | 3.073 | ✅ verde, 0 bloqueio |
 | `estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes` | 3.040 | ✅ verde, 0 bloqueio |
-| `quanto-custa-um-estacionamento-do-aeroporto-afonso-pena` | 3.120 | ✅ verde, 0 bloqueio |
+| `preco-estacionamento-aeroporto-afonso-pena-curitiba-saiba-tudo-aqui` (conteúdo portado do slug anterior em 28/08) | 3.120 | ✅ verde, 0 bloqueio |
 | `estacionamento-barato-aeroporto-curitiba` | 3.114 | ✅ verde, 0 bloqueio |
 | `conheca-o-estacionamento-mais-proximo-do-aeroporto-afonso-pena-em-2024` | 3.025 | ✅ verde, 0 bloqueio |
 
@@ -339,3 +339,18 @@ aplicado (a eleição de 15/08 usou a planilha de migração, este baseline é m
 
 A decisão é da praça. Se a escolha atual ficar, vale registrar o motivo aqui, porque os números
 sozinhos apontam para o outro lado.
+
+### O que a revisão mudou, aplicado em 28/08/2026
+
+Os três pontos foram acatados e aplicados no mesmo dia, com o baseline como critério:
+
+1. **Preço de CWB invertido.** O slug de 891 cliques voltou a publicar, recebeu o conteúdo
+   expandido de 3.120 palavras (com o título e a frase-chave adaptados) e virou a dona. O
+   `quanto-custa-um-...` saiu de publicação e responde 301 nela.
+2. **Melhor de CWB invertido.** O `top-3-...-curitiba` voltou com o conteúdo revisado da dona
+   anterior, reescrito no formato answer-first, e os quatro perdedores do cluster apontam pra ele.
+   A expansão ao padrão de 3.000 palavras fica pra Fase 1 da praça, como já estava planejado.
+3. **`valor-de-diaria-...-guarulhos` reapontado** pra dona de preço de GRU.
+
+Os links internos das outras âncoras de CWB foram atualizados pras donas novas, no banco e nos
+gêmeos Markdown. Os 301 antigos trocaram de alvo no mesmo commit, então não há cadeia nova.

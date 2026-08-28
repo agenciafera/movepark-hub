@@ -67,7 +67,7 @@ Normalmente, escolher o pátio mais próximo é uma decisão sobre distância. N
 
 Para quem tem voo com folga, isso não muda quase nada. Já para quem chega em cima da hora, saber que a próxima van sai em no máximo quinze minutos é o que permite decidir se dá tempo.
 
-A comparação de preço entre os dois está detalhada em [quanto custa um estacionamento do Aeroporto Afonso Pena](/blog/quanto-custa-um-estacionamento-do-aeroporto-afonso-pena/).
+A comparação de preço entre os dois está detalhada em [preço do estacionamento no Aeroporto Afonso Pena](/blog/preco-estacionamento-aeroporto-afonso-pena-curitiba-saiba-tudo-aqui/).
 
 ## Por que a frequência da van vale mais que o quilômetro no Afonso Pena
 
@@ -164,7 +164,7 @@ Quem procura onde deixar o carro em Curitiba tem dois caminhos. Eles resolvem ne
 
 **Nos pátios do entorno.** É onde entram os dois parceiros deste texto. O carro fica fora do complexo e o acesso é de van, com cinco minutos declarados. Em compensação, a diária costuma ficar abaixo das áreas cobertas do oficial.
 
-A comparação com números, setor por setor do oficial, está no [post de preço da praça](/blog/quanto-custa-um-estacionamento-do-aeroporto-afonso-pena/).
+A comparação com números, setor por setor do oficial, está no [post de preço da praça](/blog/preco-estacionamento-aeroporto-afonso-pena-curitiba-saiba-tudo-aqui/).
 
 ## O que cada estacionamento perto do aeroporto de Curitiba declara
 
@@ -222,7 +222,7 @@ Já o tempo de traslado, a frequência da van, a tolerância, o horário de oper
 
 Os preços saíram do motor de reservas na consulta de **27 de agosto de 2026**, e são os mesmos que aparecem na [página do Aeroporto Afonso Pena](/destinos/aeroporto-afonso-pena). Cada parceiro define a própria tabela e pode mudá-la a qualquer momento, então o retrato vale para a data indicada.
 
-Para o comparativo entre as opções da praça, o [guia com as opções de estacionamento do Aeroporto Afonso Pena](/blog/aeroporto-afonso-pena-5-melhores-opcoes-de-estacionamento-em-2024/) coloca os dois pátios lado a lado. Os números de movimentação do aeroporto saem no [portal de estatísticas da ANAC](https://www.anac.gov.br/assuntos/dados-e-estatisticas).
+Para o comparativo entre as opções da praça, o [TOP 3 estacionamentos do Aeroporto de Curitiba](/blog/top-3-estacionamentos-do-aeroporto-de-curitiba/) coloca os dois pátios lado a lado. Os números de movimentação do aeroporto saem no [portal de estatísticas da ANAC](https://www.anac.gov.br/assuntos/dados-e-estatisticas).
 
 ## Perguntas frequentes
 

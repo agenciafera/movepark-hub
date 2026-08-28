@@ -31,7 +31,7 @@ O Aeroporto Internacional de Curitiba/Afonso Pena, código IATA CWB, fica em Sã
 
 Não há linha de uma diária nesta tabela. O motivo aparece adiante: os dois parceiros cobram no mínimo três diárias, o que limita o estacionamento barato no aeroporto de Curitiba em viagem curta.
 
-A tabela completa por pátio e por tipo de vaga está em [quanto custa um estacionamento do Aeroporto Afonso Pena](/blog/quanto-custa-um-estacionamento-do-aeroporto-afonso-pena/). O menor valor do momento fica na página do [estacionamento mais barato do aeroporto](/estacionamento-mais-barato/aeroporto-afonso-pena), e o preço vivo no [índice de preços do Afonso Pena](/precos/aeroporto-afonso-pena).
+A tabela completa por pátio e por tipo de vaga está em [preço do estacionamento no Aeroporto Afonso Pena](/blog/preco-estacionamento-aeroporto-afonso-pena-curitiba-saiba-tudo-aqui/). O menor valor do momento fica na página do [estacionamento mais barato do aeroporto](/estacionamento-mais-barato/aeroporto-afonso-pena), e o preço vivo no [índice de preços do Afonso Pena](/precos/aeroporto-afonso-pena).
 
 ## As três alavancas que funcionam para economizar no estacionamento de Curitiba
 
@@ -213,7 +213,7 @@ Também vale dizer que o ranking das alavancas é aritmética simples sobre esse
 
 As distâncias são calculadas no banco de dados com PostGIS, em linha de rota até o terminal. Já o tempo de traslado, a frequência da van, a tolerância e a lista de serviços são declarados por cada unidade na própria ficha, e aparecem aqui como declaração da unidade.
 
-Para o comparativo entre as opções da praça, o [guia com as opções de estacionamento do Aeroporto Afonso Pena](/blog/aeroporto-afonso-pena-5-melhores-opcoes-de-estacionamento-em-2024/) coloca os dois pátios lado a lado. Já a mesma análise de alavancas feita para outra praça está em [como estacionar barato no Aeroporto de Guarulhos](/blog/como-estacionar-barato-no-aeroporto-de-guarulhos/). Os números de movimentação do aeroporto saem no [portal de estatísticas da ANAC](https://www.anac.gov.br/assuntos/dados-e-estatisticas).
+Para o comparativo entre as opções da praça, o [TOP 3 estacionamentos do Aeroporto de Curitiba](/blog/top-3-estacionamentos-do-aeroporto-de-curitiba/) coloca os dois pátios lado a lado. Já a mesma análise de alavancas feita para outra praça está em [como estacionar barato no Aeroporto de Guarulhos](/blog/como-estacionar-barato-no-aeroporto-de-guarulhos/). Os números de movimentação do aeroporto saem no [portal de estatísticas da ANAC](https://www.anac.gov.br/assuntos/dados-e-estatisticas).
 
 ## Perguntas frequentes
 

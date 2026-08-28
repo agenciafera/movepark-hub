@@ -142,7 +142,7 @@ describe("contrato de URL do blog", () => {
       [
         // Post consolidado depois: a URL legada já entrega o vencedor, sem cadeia.
         "/quanto-custa-para-estacionar-no-aeroporto-viracopos/",
-        "/blog/como-pagar-mais-barato-no-estacionamento-do-aeroporto-viracopos-em-2024/",
+        "/blog/estacionamento-aeroporto-viracopos-vcp-guia-completo-com-precos-opcoes-e-a-melhor-escolha-economica/",
       ],
       [
         "/estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes/",

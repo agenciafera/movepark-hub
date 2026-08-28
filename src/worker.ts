@@ -231,18 +231,22 @@ export const BLOG_CONSOLIDATED_SLUGS: Record<string, string> = {
     "quais-os-melhores-estacionamentos-do-aeroporto-viracopos-em-2024",
   "top-3-estacionamentos-do-aeroporto-de-viracopos":
     "quais-os-melhores-estacionamentos-do-aeroporto-viracopos-em-2024",
-  // Viracopos · preço
+  // Viracopos · preço. Reapontado em 28/08/2026: a eleição de 15/08 mandava estes
+  // slugs pro how-to de barato; a dona de preço da praça é o guia, que já recebe
+  // as consultas de preço no Search Console. Ver canonicalizacao-vcp-cnf.md.
   "quanto-custa-deixar-o-carro-no-aeroporto-viracopos-por-7-dias":
-    "como-pagar-mais-barato-no-estacionamento-do-aeroporto-viracopos-em-2024",
+    "estacionamento-aeroporto-viracopos-vcp-guia-completo-com-precos-opcoes-e-a-melhor-escolha-economica",
   "preco-estacionamento-aeroporto-viracopos-saiba-tudo-aqui":
-    "como-pagar-mais-barato-no-estacionamento-do-aeroporto-viracopos-em-2024",
+    "estacionamento-aeroporto-viracopos-vcp-guia-completo-com-precos-opcoes-e-a-melhor-escolha-economica",
   "quanto-custa-para-estacionar-no-aeroporto-viracopos":
-    "como-pagar-mais-barato-no-estacionamento-do-aeroporto-viracopos-em-2024",
+    "estacionamento-aeroporto-viracopos-vcp-guia-completo-com-precos-opcoes-e-a-melhor-escolha-economica",
   // Guarulhos · melhor
   "melhor-estacionamento-aeroporto-guarulhos-guia-completo-para-escolher-com-seguranca-economia-e-conforto":
     "guia-atualizado-5-melhores-opcoes-de-estacionamento-no-aeroporto-guarulhos-em-2024",
+  // Slug de preço; apontava pra dona de melhor desde 15/08 (o título da época era
+  // um "TOP 3"). Reapontado pra dona de preço em 28/08/2026, na revisão cruzada.
   "valor-de-diaria-estacionamento-aeroporto-guarulhos":
-    "guia-atualizado-5-melhores-opcoes-de-estacionamento-no-aeroporto-guarulhos-em-2024",
+    "preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui",
   "melhores-opcoes-de-estacionamento-gru-airport":
     "guia-atualizado-5-melhores-opcoes-de-estacionamento-no-aeroporto-guarulhos-em-2024",
   "como-encontrar-o-melhor-estacionamento-no-aeroporto-de-guarulhos":
@@ -260,16 +264,19 @@ export const BLOG_CONSOLIDATED_SLUGS: Record<string, string> = {
     "preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui",
   "estacionamento-aeroporto-guarulhos-veja-o-preco-dos-principais-estacionamentos":
     "preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui",
-  // Afonso Pena · melhor
-  "top-3-estacionamentos-do-aeroporto-de-curitiba":
-    "aeroporto-afonso-pena-5-melhores-opcoes-de-estacionamento-em-2024",
+  // Afonso Pena · melhor. Invertido em 28/08/2026: o baseline do Search Console
+  // mostrou 359 cliques no top-3 contra 28 na dona de 15/08. O conteúdo revisado
+  // foi portado pro slug vencedor. Ver a revisão cruzada em canonicalizacao-gru-cwb.md.
+  "aeroporto-afonso-pena-5-melhores-opcoes-de-estacionamento-em-2024":
+    "top-3-estacionamentos-do-aeroporto-de-curitiba",
   "qual-o-melhor-estacionamento-no-aeroporto-afonso-pena-em-2024":
-    "aeroporto-afonso-pena-5-melhores-opcoes-de-estacionamento-em-2024",
+    "top-3-estacionamentos-do-aeroporto-de-curitiba",
   "estacionamento-no-aeroporto-de-afonso-pena-a-melhor-opcao-para-sua-viagem":
-    "aeroporto-afonso-pena-5-melhores-opcoes-de-estacionamento-em-2024",
-  // Afonso Pena · preço
-  "preco-estacionamento-aeroporto-afonso-pena-curitiba-saiba-tudo-aqui":
-    "quanto-custa-um-estacionamento-do-aeroporto-afonso-pena",
+    "top-3-estacionamentos-do-aeroporto-de-curitiba",
+  // Afonso Pena · preço. Invertido em 28/08/2026 pelo mesmo critério: o slug
+  // absorvido tinha 891 cliques e posição 9,2 contra 1 clique e posição 36 da dona.
+  "quanto-custa-um-estacionamento-do-aeroporto-afonso-pena":
+    "preco-estacionamento-aeroporto-afonso-pena-curitiba-saiba-tudo-aqui",
   // Lisboa · melhor
   "qual-o-melhor-estacionamento-no-aeroporto-lisboa-em-2024":
     "descubra-o-melhor-parque-low-cost-junto-ao-aeroporto-de-lisboa",
@@ -338,9 +345,9 @@ export const BLOG_CONSOLIDATED_SLUGS: Record<string, string> = {
     "estacionamento-barato-aeroporto-curitiba",
   // Afonso Pena · melhor e comparativo (o vencedor é o mesmo de 15/08)
   "5-vantagens-de-estacionar-no-aeroporto-de-curitiba":
-    "aeroporto-afonso-pena-5-melhores-opcoes-de-estacionamento-em-2024",
+    "top-3-estacionamentos-do-aeroporto-de-curitiba",
   "facilidade-e-conforto-estacionamento-aeroporto-curitiba-cwb":
-    "aeroporto-afonso-pena-5-melhores-opcoes-de-estacionamento-em-2024",
+    "top-3-estacionamentos-do-aeroporto-de-curitiba",
 };
 
 const redirect301 = (to: string) =>
