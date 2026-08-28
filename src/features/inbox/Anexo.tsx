@@ -1,5 +1,6 @@
 import * as React from "react";
-import { DownloadSimple, FileArrowDown, Sticker } from "@phosphor-icons/react";
+import { DownloadSimple, FileArrowDown, FilePdf } from "@phosphor-icons/react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useAnexo, useAnexoPublico, type AnexoDaFala } from "./api";
 
 /**
@@ -38,6 +39,7 @@ export function Anexo({
    */
   const automatico = anexo.tipo === "imagem" || anexo.tipo === "figurinha";
   const [pedido, setPedido] = React.useState(automatico);
+  const [aberto, setAberto] = React.useState(false);
 
   const interno = useAnexo(threadId, messageId, anexo.parte, pedido && !token);
   const publico = useAnexoPublico(token ?? "", messageId, anexo.parte, pedido && !!token);
@@ -85,20 +87,54 @@ export function Anexo({
   const nomeParaSalvar =
     anexo.nome || `${anexo.tipo}-${messageId.slice(0, 8)}.${anexo.mime.split("/")[1] ?? "bin"}`;
 
+  /**
+   * O preview abre por URL de blob, e não pelo `data:` direto.
+   *
+   * O Chrome recusa `data:` como origem de iframe, e o PDF simplesmente não apareceria.
+   * O blob é criado só quando o popup abre e é liberado ao fechar, para a conversa não
+   * acumular megabytes na memória da aba.
+   */
+  const daParaEspiar = anexo.tipo === "imagem" || anexo.tipo === "figurinha" || anexo.mime === "application/pdf";
+
   return (
     <div className="flex flex-col gap-1">
+      {aberto && uri ? (
+        <Previa
+          uri={uri}
+          mime={anexo.mime}
+          nome={nomeParaSalvar}
+          onFechar={() => setAberto(false)}
+        />
+      ) : null}
+
       {anexo.tipo === "figurinha" ? (
         // Figurinha é pequena por natureza: em tamanho de foto ela fica borrada.
-        <img src={uri} alt="Figurinha" className="h-32 w-32 object-contain" />
+        <button type="button" onClick={() => setAberto(true)} aria-label="Ver figurinha maior">
+          <img src={uri} alt="Figurinha" className="h-32 w-32 object-contain" />
+        </button>
       ) : anexo.tipo === "imagem" ? (
-        <img src={uri} alt="Imagem enviada na conversa" className="max-h-80 rounded-sm object-contain" />
+        <button type="button" onClick={() => setAberto(true)} aria-label="Ver imagem maior">
+          <img
+            src={uri}
+            alt="Imagem enviada na conversa"
+            className="max-h-80 rounded-sm object-contain"
+          />
+        </button>
       ) : anexo.tipo === "audio" ? (
         <audio controls src={uri} className="max-w-full" />
       ) : anexo.tipo === "video" ? (
         <video controls src={uri} className="max-h-80 rounded-sm" />
+      ) : daParaEspiar ? (
+        <button
+          type="button"
+          onClick={() => setAberto(true)}
+          className="flex items-center gap-2 rounded-sm border border-neutral-200 px-3 py-2 text-body-sm text-body hover:bg-neutral-50"
+        >
+          <FilePdf size={18} /> Ver {rotulo}
+        </button>
       ) : (
         <span className="flex items-center gap-2 text-body-sm text-body">
-          <Sticker size={18} /> {rotulo}
+          <FileArrowDown size={18} /> {rotulo}
         </span>
       )}
 
@@ -110,5 +146,75 @@ export function Anexo({
         <DownloadSimple size={14} /> Baixar · {tamanho}
       </a>
     </div>
+  );
+}
+
+/**
+ * O anexo em tamanho grande, sem sair da conversa.
+ *
+ * Existe porque baixar para conferir uma foto ou um voucher é caminho longo demais para
+ * quem está lendo a conversa. O botão de baixar continua aqui dentro: espiar não
+ * substitui salvar.
+ */
+function Previa({
+  uri,
+  mime,
+  nome,
+  onFechar,
+}: {
+  uri: string;
+  mime: string;
+  nome: string;
+  onFechar: () => void;
+}) {
+  /**
+   * `data:` vira blob, e o blob é liberado ao fechar.
+   *
+   * O Chrome recusa `data:` como origem de iframe, então o PDF não apareceria. E sem o
+   * `revokeObjectURL` a aba acumularia os megabytes de cada anexo já espiado.
+   */
+  const [blob, setBlob] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let url: string | undefined;
+    let vivo = true;
+    fetch(uri)
+      .then((r) => r.blob())
+      .then((b) => {
+        if (!vivo) return;
+        url = URL.createObjectURL(b);
+        setBlob(url);
+      })
+      .catch(() => undefined);
+    return () => {
+      vivo = false;
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [uri]);
+
+  const ehPdf = mime === "application/pdf";
+
+  return (
+    <Dialog open onOpenChange={(v) => (v ? undefined : onFechar())}>
+      <DialogContent className="max-w-[900px]">
+        <DialogTitle className="text-title-md text-ink">{nome}</DialogTitle>
+
+        {!blob ? (
+          <p className="text-body-sm text-muted">Abrindo…</p>
+        ) : ehPdf ? (
+          <iframe src={blob} title={nome} className="h-[70vh] w-full rounded-sm border border-neutral-200" />
+        ) : (
+          <img src={blob} alt={nome} className="max-h-[70vh] w-full object-contain" />
+        )}
+
+        <a
+          href={uri}
+          download={nome}
+          className="flex items-center gap-1 text-body-sm text-mp-indigo hover:underline"
+        >
+          <DownloadSimple size={14} /> Baixar {nome}
+        </a>
+      </DialogContent>
+    </Dialog>
   );
 }

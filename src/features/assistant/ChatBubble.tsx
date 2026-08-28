@@ -23,7 +23,9 @@ export function Bubble({ role, text }: { role: "user" | "model"; text: string })
     <div className={mine ? "flex justify-end" : "flex justify-start"}>
       <div
         className={
-          "max-w-[80%] rounded-2xl px-3 py-2 text-body-sm " +
+          // `break-words` porque a conversa carrega URL de voucher com 130 caracteres,
+          // e sem isso ela estoura a bolha e passa por cima do que vem depois.
+          "max-w-[80%] break-words rounded-2xl px-3 py-2 text-body-sm " +
           (mine ? "whitespace-pre-wrap bg-mp-primary text-white" : "space-y-2 bg-neutral-100 text-neutral-900")
         }
       >

@@ -81,9 +81,9 @@ export function filtrar(
  * para quem só quer ler a conversa. Vira uma frase curta dizendo o que era.
  */
 export function textoDaFala(bruto: string): string {
-  const t = (bruto ?? "").trim();
+  const t = paraExibicao((bruto ?? "").trim());
 
-  const anexo = t.match(/^\\?\[(Image|Audio|Video|Document|Sticker)\]/i);
+  const anexo = t.match(/^\\?\[(Image|Audio|Video|Document|Sticker)\b/i);
   if (anexo) {
     const tipo = anexo[1].toLowerCase();
     const nome =
@@ -93,6 +93,8 @@ export function textoDaFala(bruto: string): string {
       : tipo === "sticker" ? "figurinha"
       : "documento";
     // O resto do marcador (`[Attached image/jpeg file]`) sai junto: é ruído de formato.
+    // O `[^\]]*` cobre `[Document: voucher_359049.pdf]`, que traz o nome do arquivo
+    // dentro do próprio marcador e por isso escapava de um casamento exato.
     const sobra = t.replace(/^\\?\[[^\]]*\]/, "").replace(/\[Attached[^\]]*\]/gi, "").trim();
     return sobra ? `(${nome}) ${sobra}` : `(${nome})`;
   }
@@ -116,4 +118,23 @@ export function previa(bruto: string | null): string {
     .replace(/^#{1,6}\s+/gm, "")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+/**
+ * Do dialeto do WhatsApp para o markdown que a bolha entende.
+ *
+ * A resposta do agente é guardada como ela sai para o cliente, e desde 27/08 isso é
+ * dialeto do WhatsApp: negrito com **um** asterisco. A bolha do painel interpreta
+ * markdown padrão, com dois, então `*Virapark*` chegava na tela com os asteriscos à
+ * mostra.
+ *
+ * Converter na exibição, e não na gravação, é de propósito: o que está no banco tem que
+ * continuar sendo exatamente o que o cliente recebeu.
+ */
+export function paraExibicao(texto: string): string {
+  return texto
+    .replace(/(?<!\*)\*(?!\*)([^\n*]+?)(?<!\*)\*(?!\*)/g, "**$1**")
+    .replace(/(?<!~)~(?!~)([^\n~]+?)(?<!~)~(?!~)/g, "~~$1~~")
+    // O WhatsApp escapa colchete e sublinhado do nome de arquivo; na tela isso é ruído.
+    .replace(/\\([[\]_*~])/g, "$1");
 }

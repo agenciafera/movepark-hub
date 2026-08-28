@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ConversaDaLista } from "./api";
-import { contarNaoLidas, filtrar, naoLida, quando, previa, rotuloDoTelefone, textoDaFala } from "./inbox.logic";
+import { contarNaoLidas, filtrar, naoLida, quando, paraExibicao, previa, rotuloDoTelefone, textoDaFala } from "./inbox.logic";
 
 const linha = (over: Partial<ConversaDaLista> = {}): ConversaDaLista => ({
   id: "movepark-hub:whatsapp:whatsapp:456:5541988149449",
@@ -143,5 +143,34 @@ describe("prévia da lista", () => {
 
   it("vazio não vira 'null'", () => {
     expect(previa(null)).toBe("");
+  });
+});
+
+describe("dialeto do WhatsApp na tela", () => {
+  it("negrito de um asterisco vira negrito de verdade", () => {
+    // A resposta e' guardada como sai para o cliente, em dialeto do WhatsApp. A bolha
+    // interpreta markdown padrao, entao "*Virapark*" chegava com os asteriscos a mostra.
+    expect(paraExibicao("Localizei no *Virapark*!")).toBe("Localizei no **Virapark**!");
+    expect(paraExibicao("• *Reserva:* #260820")).toBe("• **Reserva:** #260820");
+  });
+
+  it("nao mexe em negrito que ja e markdown", () => {
+    expect(paraExibicao("o **Virapark**")).toBe("o **Virapark**");
+  });
+
+  it("tira o escape que o WhatsApp poe no nome de arquivo", () => {
+    expect(paraExibicao("voucher\\_359049.pdf")).toBe("voucher_359049.pdf");
+  });
+});
+
+describe("marcador de anexo com nome de arquivo", () => {
+  it("some da bolha, porque quem diz o que é é o anexo", () => {
+    // Escapava do casamento exato: o marcador traz o nome dentro dele.
+    expect(textoDaFala("\\[Document: voucher\\_359049.pdf]")).toBe("(documento)");
+    expect(textoDaFala("[Image: foto.jpg]")).toBe("(imagem)");
+  });
+
+  it("nao engole texto que so parece marcador", () => {
+    expect(textoDaFala("[não é anexo] e segue o texto")).toBe("[não é anexo] e segue o texto");
   });
 });

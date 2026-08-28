@@ -347,7 +347,14 @@ export default function ManagerConversas() {
                   conversa.data?.falas.map((f, i) => (
                     <div
                       key={f.id || i}
-                      className={`flex flex-col gap-1 ${f.papel === "cliente" ? "items-end" : "items-start"}`}
+                      /*
+                        `items-*` NAO entra aqui: a `Bubble` ja se alinha sozinha, com
+                        um `flex justify-end` de largura cheia por dentro. Encolhendo o
+                        pai, o `max-w-[80%]` dela passava a ser 80% de quase nada, e a
+                        bolha vazava para fora do container. Alinhamento fica so' nos
+                        anexos, que nao tem essa mecanica.
+                      */
+                      className="flex flex-col gap-1"
                     >
                       {f.texto ? (
                         <Bubble
@@ -361,9 +368,15 @@ export default function ManagerConversas() {
                         a fala veio sem `anexos`, e a pagina inteira virou "Algo deu
                         errado" em vez de mostrar a conversa que ela ja tinha.
                       */}
-                      {(f.anexos ?? []).map((a) => (
-                        <Anexo key={a.parte} threadId={aberta} messageId={f.id} anexo={a} />
-                      ))}
+                      {(f.anexos ?? []).length > 0 ? (
+                        <div
+                          className={`flex flex-col gap-1 ${f.papel === "cliente" ? "items-end" : "items-start"}`}
+                        >
+                          {(f.anexos ?? []).map((a) => (
+                            <Anexo key={a.parte} threadId={aberta} messageId={f.id} anexo={a} />
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                   ))
                 )}
