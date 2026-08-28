@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { useSavedListings, useSavedListingsDetail } from "@/features/search/useSavedListings";
+import { tituloDaUnidade } from "@/lib/parkingName";
 
 /** Skeleton espelhando o card de favorito (mesma forma e altura) — evita salto de layout. */
 function SavedCardSkeleton() {
@@ -99,10 +100,14 @@ export default function SavedPage() {
                 <Link to={url} className="flex flex-1 flex-col gap-3 p-5">
                   <div className="space-y-0.5">
                     <h3 className="line-clamp-1 text-[18px] font-bold leading-snug text-ink">
-                      {item.operator.name}
+                      {tituloDaUnidade(
+                        item.location.public_name,
+                        item.operator.name,
+                        item.location.name,
+                      )}
                     </h3>
                     <p className="line-clamp-1 text-body-sm text-muted">
-                      {item.location.name} · {item.parking_type.name}
+                      {item.parking_type.name}
                     </p>
                     {item.location.address && (
                       <p className="line-clamp-1 text-body-sm text-muted">

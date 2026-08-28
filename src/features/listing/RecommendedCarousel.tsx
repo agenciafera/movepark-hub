@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Car, CaretLeft, CaretRight, Star } from "@phosphor-icons/react";
 import { useSearchResults } from "@/features/search/useSearchResults";
 import { formatBRL } from "@/lib/format";
-import { parkingTitle } from "@/lib/parkingName";
+import { tituloDaUnidade } from "@/lib/parkingName";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -149,7 +149,7 @@ export function RecommendedCarousel({
                         "Empresa · Unidade" não cabe numa linha só, e cortar no meio
                         esconde justamente a parte que diferencia as unidades. */}
                     <p className="line-clamp-2 text-body-sm font-semibold text-ink">
-                      {parkingTitle(item.operator.name, item.location.name)}
+                      {tituloDaUnidade(item.location.public_name, item.operator.name, item.location.name)}
                     </p>
                     <p className="truncate text-caption text-muted">{item.parking_type.name}</p>
 

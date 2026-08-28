@@ -95,7 +95,7 @@ export async function fetchDestinationUnits(destination: {
       `
       id, capacity, is_active,
       location:location!inner(
-        id, slug, public_slug, name, address, latitude, longitude,
+        id, slug, public_slug, public_name, name, address, latitude, longitude,
         review_avg, review_count, google_place_id, photos, is_listed, deleted_at,
         company:company!inner(slug, name, status),
         amenities:location_amenity(amenity_code)

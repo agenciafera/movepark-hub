@@ -22,6 +22,7 @@ describe("SavedPage — /account/saved", () => {
             location: {
               slug: "unidade-aeroporto",
               public_slug: "ferapark",
+              public_name: "Ferapark - Estacionamento Aeroporto Guarulhos",
               destination: { public_slug: "aeroporto-guarulhos" },
               name: "Unidade Aeroporto",
               address: "Rua X, 100",
@@ -41,8 +42,11 @@ describe("SavedPage — /account/saved", () => {
     });
 
     // Mesma hierarquia do card da busca: operador no título, unidade e tipo abaixo.
-    expect(await screen.findByText("Ferapark")).toBeInTheDocument();
-    expect(screen.getByText(/Unidade Aeroporto · Vaga Descoberta/)).toBeInTheDocument();
+    // O card usa o nome canônico da ficha, o mesmo do H1 e da busca.
+    expect(
+      await screen.findByText("Ferapark - Estacionamento Aeroporto Guarulhos"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Vaga Descoberta")).toBeInTheDocument();
     // Capa vem da 1ª foto da galeria, como na busca.
     expect(screen.getByRole("img", { name: "Unidade Aeroporto" })).toHaveAttribute(
       "src",
@@ -70,6 +74,7 @@ describe("SavedPage — /account/saved", () => {
             location: {
               slug: "unidade-aeroporto",
               public_slug: "ferapark",
+              public_name: "Ferapark - Estacionamento Aeroporto Guarulhos",
               destination: { public_slug: "aeroporto-guarulhos" },
               name: "Unidade Aeroporto",
               address: null,
@@ -88,7 +93,7 @@ describe("SavedPage — /account/saved", () => {
       auth: mockAuth({ session: mockSession("customer", { userId: "u1" }) }),
     });
 
-    await screen.findByText("Ferapark");
+    await screen.findByText("Ferapark - Estacionamento Aeroporto Guarulhos");
     const grid = container.querySelector("div.grid");
     expect(grid?.className).toContain("tablet:grid-cols-2");
     expect(grid?.className).toContain("desktop:grid-cols-3");

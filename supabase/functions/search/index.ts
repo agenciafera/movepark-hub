@@ -194,7 +194,7 @@ Deno.serve(async (req: Request) => {
       `
       id, capacity, is_active,
       location:location!inner(
-        id, slug, public_slug, name, address, latitude, longitude, status, deleted_at, is_listed,
+        id, slug, public_slug, public_name, name, address, latitude, longitude, status, deleted_at, is_listed,
         review_avg, review_count, photos, google_place_id, go2park_enabled,
         company:company!inner(id, slug, name, status),
         destination:destination(code, name, type, public_slug),
@@ -466,6 +466,8 @@ Deno.serve(async (req: Request) => {
         r.location.destination?.public_slug && r.location.public_slug
           ? `/estacionamentos/${r.location.destination.public_slug}/${r.location.public_slug}`
           : null,
+      // O nome canônico da ficha, o mesmo do H1 e do card em toda superfície.
+      public_name: r.location.public_name ?? null,
       name: r.location.name,
       address: r.location.address,
       latitude: r.location.latitude != null ? Number(r.location.latitude) : null,

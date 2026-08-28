@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parkingTitle } from "./parkingName";
+import { parkingTitle, tituloDaUnidade } from "./parkingName";
 
 describe("parkingTitle", () => {
   it("empresa com várias unidades: o título diferencia cada uma", () => {
@@ -53,5 +53,24 @@ describe("parkingTitle", () => {
     expect(parkingTitle(null, "Aeroporto de Congonhas")).toBe("Aeroporto de Congonhas");
     expect(parkingTitle("   ", "Aeroporto de Congonhas")).toBe("Aeroporto de Congonhas");
     expect(parkingTitle(null, undefined)).toBe("");
+  });
+});
+
+describe("tituloDaUnidade", () => {
+  // O nome canônico é o que passou por revisão editorial e mora em `location.public_name`.
+  it("prefere o nome público do banco", () => {
+    expect(
+      tituloDaUnidade("Virapark - Estacionamento Aeroporto Viracopos", "Virapark", "Virapark"),
+    ).toBe("Virapark - Estacionamento Aeroporto Viracopos");
+  });
+
+  // Unidade ainda não nomeada, e as telas transacionais, seguem no formato antigo.
+  it("cai no formato Empresa · Unidade quando não há nome público", () => {
+    expect(tituloDaUnidade(null, "Aerovalet", "Aeroporto de Congonhas")).toBe(
+      "Aerovalet · Aeroporto de Congonhas",
+    );
+    expect(tituloDaUnidade("   ", "Aeropark", "Aeroporto de Guarulhos")).toBe(
+      "Aeropark · Aeroporto de Guarulhos",
+    );
   });
 });

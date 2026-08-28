@@ -38,6 +38,8 @@ export type SearchResultItem = {
     slug: string;
     /** Caminho da ficha (`/estacionamentos/<destino>/<lote>`), montado no servidor. */
     public_path: string | null;
+    /** Nome canônico da ficha. Nulo enquanto a Edge de busca não tiver sido publicada. */
+    public_name?: string | null;
     name: string;
     address: string | null;
     latitude: number | null;

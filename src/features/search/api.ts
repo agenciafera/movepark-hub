@@ -122,6 +122,8 @@ export type FeaturedOffer = {
     slug: string;
     /** Caminho da ficha, montado no banco pela mesma função que a busca usa. */
     public_path: string | null;
+    /** Nome canônico da ficha ("{marca} - Estacionamento {destino}"). */
+    public_name: string | null;
     review_avg: number | null;
     review_count: number;
     /** Posição definida na curadoria (`home_featured_offer.sort_order`). Menor aparece antes. */
@@ -184,7 +186,7 @@ export function useFeaturedOffers() {
         .from("location")
         .select(
           `
-          id, name, slug, review_avg, review_count,
+          id, name, slug, public_name, review_avg, review_count,
           company:company_id (id, name, slug, status),
           destination:destination_id (id, code, name, short_name, slug),
           amenities:location_amenity (amenity_code),
@@ -245,6 +247,7 @@ export function useFeaturedOffers() {
             name: loc.name,
             slug: loc.slug,
             public_path: caminhos.get(r.id) ?? null,
+            public_name: loc.public_name ?? null,
             review_avg: loc.review_avg ?? null,
             review_count: loc.review_count ?? 0,
             sort_order: ordem.get(r.id) ?? Number.MAX_SAFE_INTEGER,

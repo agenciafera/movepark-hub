@@ -160,6 +160,8 @@ export type SavedListingDetail = {
     cover_image: string | null;
     /** Caminho da ficha. Nulo quando a unidade ainda não tem slug público. */
     public_path: string | null;
+    /** Nome canônico da ficha ("{marca} - Estacionamento {destino}"). */
+    public_name: string | null;
   };
   parking_type: { code: string; name: string };
 };
@@ -185,6 +187,7 @@ export function useSavedListingsDetail(ids: string[]) {
           location:location!inner (
             slug,
             public_slug,
+            public_name,
             name,
             address,
             photos,
@@ -204,6 +207,7 @@ export function useSavedListingsDetail(ids: string[]) {
           location: {
             slug: string;
             public_slug: string | null;
+            public_name: string | null;
             name: string;
             address: string | null;
             photos: unknown;
@@ -230,6 +234,7 @@ export function useSavedListingsDetail(ids: string[]) {
             name: rec.location?.name ?? "",
             address: rec.location?.address ?? null,
             cover_image: cover,
+            public_name: rec.location?.public_name ?? null,
             public_path:
               rec.location?.destination?.public_slug && rec.location?.public_slug
                 ? caminhoFicha(rec.location.destination.public_slug, rec.location.public_slug)

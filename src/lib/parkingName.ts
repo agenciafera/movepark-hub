@@ -15,6 +15,23 @@
  * Virapark" seria ruído).
  */
 
+/**
+ * O título do card e do H1: o nome canônico da ficha quando existe.
+ *
+ * `location.public_name` é "{marca} - Estacionamento {destino}", escrito e revisado no banco
+ * (ver docs/specs/url-estacionamentos.md). O `parkingTitle` abaixo continua sendo o plano B,
+ * para unidade que ainda não foi nomeada, e é o que ainda vale nas telas transacionais, onde
+ * o nome vem do snapshot da reserva e não da ficha.
+ */
+export function tituloDaUnidade(
+  publicName: string | null | undefined,
+  companyName: string | null | undefined,
+  locationName: string | null | undefined,
+): string {
+  const publico = (publicName ?? "").trim();
+  return publico || parkingTitle(companyName, locationName);
+}
+
 /** Minúsculas, sem acento e com espaços colapsados, só para comparar. */
 function normalize(value: string): string {
   return value

@@ -31,6 +31,7 @@ export type UnitRow = {
     id: string;
     slug: string;
     public_slug: string | null;
+    public_name: string | null;
     name: string;
     address: string | null;
     latitude: number | string | null;
@@ -118,6 +119,7 @@ export function buildStaticUnits(
           destinoPublicSlug && loc.public_slug
             ? caminhoFicha(destinoPublicSlug, loc.public_slug)
             : null,
+        public_name: loc.public_name ?? null,
         name: loc.name,
         address: loc.address,
         latitude: num(loc.latitude),

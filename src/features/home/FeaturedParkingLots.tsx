@@ -12,7 +12,7 @@ import { Go2ParkCardCredit, Go2ParkLivePill } from "@/features/go2park/Go2ParkLi
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { parkingTitle } from "@/lib/parkingName";
+import { tituloDaUnidade } from "@/lib/parkingName";
 import { gsap } from "@/lib/gsap";
 import { rotuloDeDestino } from "./featured.logic";
 
@@ -90,7 +90,7 @@ function FeaturedOfferCard({
       href={url}
       coverImage={location.cover_image}
       coverAlt={location.name}
-      title={parkingTitle(location.company.name, location.name)}
+      title={tituloDaUnidade(location.public_name, location.company.name, location.name)}
       parkingTypeName={parking_type.name}
       parkingTypeCode={parking_type.code}
       metaIcon={location.destination ? Airplane : undefined}
