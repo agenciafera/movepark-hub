@@ -38,7 +38,7 @@ Deno.test("acao fora da lista e recusada", () => {
 
 // --- O corpo e montado campo a campo, nunca repassado ---
 Deno.test("quem assumiu sai do JWT, nunca do corpo", () => {
-  const corpo = corpoParaOBeastBots("assumir", "uid-do-jwt", {
+  const corpo = corpoParaOBeastBots("assumir", "uid-do-jwt", "Kallef", {
     threadId: "movepark-hub:whatsapp:x",
     // O navegador tentando dizer quem assumiu. Nao pode passar.
     assumidaPor: "outro-admin",
@@ -47,7 +47,7 @@ Deno.test("quem assumiu sai do JWT, nunca do corpo", () => {
 });
 
 Deno.test("campo desconhecido do navegador nao chega ao BeastBots", () => {
-  const corpo = corpoParaOBeastBots("marcar", "uid", {
+  const corpo = corpoParaOBeastBots("marcar", "uid", "Kallef", {
     threadId: "t",
     lidaAte: "2026-01-01",
     agentId: "go2park",
@@ -59,17 +59,17 @@ Deno.test("campo desconhecido do navegador nao chega ao BeastBots", () => {
 });
 
 Deno.test("marcar como nao lida preserva o nulo", () => {
-  assertEquals(corpoParaOBeastBots("marcar", "uid", { threadId: "t", lidaAte: null }).lidaAte, null);
+  assertEquals(corpoParaOBeastBots("marcar", "uid", "Kallef", { threadId: "t", lidaAte: null }).lidaAte, null);
 });
 
 Deno.test("listar nao carrega threadId", () => {
-  const corpo = corpoParaOBeastBots("listar", "uid", { threadId: "t", limite: 10 });
+  const corpo = corpoParaOBeastBots("listar", "uid", "Kallef", { threadId: "t", limite: 10 });
   assertEquals("threadId" in corpo, false);
   assertEquals(corpo.limite, 10);
 });
 
 Deno.test("responder leva o texto e quem escreveu", () => {
-  const corpo = corpoParaOBeastBots("responder", "uid", { threadId: "t", texto: "ola" });
+  const corpo = corpoParaOBeastBots("responder", "uid", "Kallef", { threadId: "t", texto: "ola" });
   assertEquals(corpo.texto, "ola");
   assertEquals(corpo.assumidaPor, "uid");
 });
@@ -83,7 +83,7 @@ Deno.test("as acoes de anexo e compartilhamento passam", () => {
 });
 
 Deno.test("anexo leva a mensagem e a parte, e nada mais", () => {
-  const corpo = corpoParaOBeastBots("anexo", "uid", {
+  const corpo = corpoParaOBeastBots("anexo", "uid", "Kallef", {
     threadId: "t", messageId: "m1", parte: 2, texto: "ignorado",
   } as never);
   assertEquals(Object.keys(corpo).sort().join(","), "acao,agentId,messageId,parte,threadId");
@@ -93,7 +93,7 @@ Deno.test("anexo leva a mensagem e a parte, e nada mais", () => {
 Deno.test("compartilhar nao aceita token do navegador", () => {
   // O token e' sorteado no servidor. Aceitar um do cliente deixaria alguem fixar um
   // link adivinhavel.
-  const corpo = corpoParaOBeastBots("compartilhar", "uid", {
+  const corpo = corpoParaOBeastBots("compartilhar", "uid", "Kallef", {
     threadId: "t", token: "aaaa",
   } as never);
   assertEquals("token" in corpo, false);
@@ -104,7 +104,7 @@ Deno.test("listar leva busca e cursor ao BeastBots", () => {
   // `busca` nem `cursor`. A lista respondia 200 e devolvia sempre a primeira
   // pagina, entao a busca "funcionava" sem filtrar e a rolagem infinita repetia
   // as mesmas 30 conversas.
-  const corpo = corpoParaOBeastBots("listar", "uid", {
+  const corpo = corpoParaOBeastBots("listar", "uid", "Kallef", {
     limite: 30,
     busca: "voucher",
     cursor: "2026-08-27T20:00:00.000Z",
@@ -114,6 +114,22 @@ Deno.test("listar leva busca e cursor ao BeastBots", () => {
 });
 
 Deno.test("busca gigante e' cortada antes de virar consulta", () => {
-  const corpo = corpoParaOBeastBots("listar", "uid", { busca: "a".repeat(500) });
+  const corpo = corpoParaOBeastBots("listar", "uid", "Kallef", { busca: "a".repeat(500) });
   assertEquals(String(corpo.busca).length, 120);
+});
+
+Deno.test("o nome de quem responde vem do perfil, nao do corpo", () => {
+  // A tela tem dois lados direitos, a Mia e a equipe. Sem nome eles se confundem.
+  // O nome sai do perfil de quem tem o JWT: aceitar do corpo deixaria um admin
+  // assinar como outro.
+  const corpo = corpoParaOBeastBots("responder", "uid", "Kallef Alexandre", {
+    threadId: "t",
+    texto: "ola",
+    assumidaPorNome: "Outro Admin",
+  } as any);
+  assertEquals(corpo.assumidaPorNome, "Kallef Alexandre");
+});
+
+Deno.test("so' responder carrega o nome", () => {
+  assertEquals("assumidaPorNome" in corpoParaOBeastBots("marcar", "uid", "Kallef", { threadId: "t" }), false);
 });

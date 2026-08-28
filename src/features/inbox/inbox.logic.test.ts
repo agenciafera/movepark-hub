@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ConversaDaLista } from "./api";
-import { contarNaoLidas, filtrar, naoLida, quando, paraExibicao, previa, rotuloDoTelefone, textoDaFala } from "./inbox.logic";
+import { contarNaoLidas, juntarPaginas, filtrar, naoLida, quando, paraExibicao, previa, rotuloDoTelefone, textoDaFala } from "./inbox.logic";
 
 const linha = (over: Partial<ConversaDaLista> = {}): ConversaDaLista => ({
   id: "movepark-hub:whatsapp:whatsapp:456:5541988149449",
@@ -177,5 +177,23 @@ describe("marcador de anexo com nome de arquivo", () => {
 
   it("nao engole texto que so parece marcador", () => {
     expect(textoDaFala("[não é anexo] e segue o texto")).toBe("[não é anexo] e segue o texto");
+  });
+});
+
+describe("juntarPaginas", () => {
+  it("a mesma conversa em duas páginas aparece uma vez", () => {
+    // A lista se reordena sozinha: quando o polling recarrega as paginas abertas, uma
+    // conversa da pagina 2 pode ter subido para a 1 e vir nas duas.
+    const a = linha({ id: "a" });
+    const b = linha({ id: "b" });
+    expect(juntarPaginas([{ conversas: [a, b] }, { conversas: [b] }]).map((c) => c.id)).toEqual([
+      "a",
+      "b",
+    ]);
+  });
+
+  it("página sem lista não vira buraco", () => {
+    expect(juntarPaginas([{ conversas: undefined }, { conversas: [linha({ id: "a" })] }]).length).toBe(1);
+    expect(juntarPaginas(undefined)).toEqual([]);
   });
 });

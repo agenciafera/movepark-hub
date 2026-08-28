@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/context";
 import { usePendingPartnerCount } from "@/features/onboarding/managerApi";
 import { useConversas } from "@/features/inbox/api";
-import { contarNaoLidas } from "@/features/inbox/inbox.logic";
+import { contarNaoLidas, juntarPaginas } from "@/features/inbox/inbox.logic";
 import { filterSectionsByScopes } from "./Sidebar.logic";
 import { managerSections, operatorSections, type Item } from "./nav-items";
 import { secaoAtiva } from "./menuAtivo";
@@ -212,7 +212,7 @@ export function Sidebar({
   const conversas = useConversas(variant === "manager");
   const naoLidas =
     variant === "manager"
-      ? contarNaoLidas(conversas.data?.pages.flatMap((p) => p.conversas ?? []))
+      ? contarNaoLidas(juntarPaginas(conversas.data?.pages))
       : 0;
 
   const impersonating = !!impersonatedCompanyId && session?.role === "hub_admin";

@@ -47,6 +47,8 @@ export type AnexoDaFala = {
 export type FalaDaConversa = {
   id: string;
   papel: "cliente" | "agente";
+  /** Quem escreveu: "Mia", o nome de quem assumiu, ou vazio na fala do cliente. */
+  autor: string;
   texto: string;
   em: string;
   anexos: AnexoDaFala[];
@@ -139,8 +141,12 @@ export function useConversa(threadId: string | null) {
         { acao: "abrir", threadId },
         "Não consegui abrir esta conversa.",
       ),
-    // Mais curto que a lista: aqui alguém está lendo agora.
-    refetchInterval: 8_000,
+    /**
+     * Mais curto que a lista: aqui alguém está lendo agora, e numa conversa assumida
+     * está esperando o cliente responder. Oito segundos era tempo demais para quem
+     * atende de verdade.
+     */
+    refetchInterval: 4_000,
   });
 }
 

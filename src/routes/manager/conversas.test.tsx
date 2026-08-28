@@ -103,6 +103,28 @@ describe("caixa de entrada", () => {
     expect(screen.getByText("(11) 98772-7182")).toBeTruthy();
   });
 
+  it("o balão diz se foi a Mia ou uma pessoa da equipe", () => {
+    // Os dois baloes da esquerda se confundiam: quem abre a conversa amanha nao
+    // sabia se aquela frase foi o robo ou um colega.
+    lista.current = [linha({ id: "t-41" })];
+    aberta.current = {
+      threadId: "t-41",
+      telefone: "5541988149449",
+      lidaAte: null,
+      assumidaPor: "uid",
+      compartilhada: null,
+      falas: [
+        { id: "m1", papel: "agente", autor: "Mia", texto: "Posso ajudar?", em: "2026-08-27T20:00:00.000Z", anexos: [] },
+        { id: "m2", papel: "agente", autor: "Kallef", texto: "Eu assumo daqui.", em: "2026-08-27T20:01:00.000Z", anexos: [] },
+        { id: "m3", papel: "cliente", autor: "", texto: "ola", em: "2026-08-27T20:02:00.000Z", anexos: [] },
+      ],
+    };
+    renderWithProviders(<ManagerConversas />);
+    fireEvent.click(screen.getAllByRole("button", { name: /Conversa com/ })[0]);
+    expect(screen.getByText("Mia")).toBeTruthy();
+    expect(screen.getByText("Kallef")).toBeTruthy();
+  });
+
   it("página sem lista não derruba a tela", () => {
     // Regressao: um backend antigo no ar devolvia pagina sem `conversas`, o
     // `flatMap` produzia `[undefined]` e a sidebar inteira do Manager caia.
@@ -146,8 +168,8 @@ describe("caixa de entrada", () => {
       assumidaPor: null,
       compartilhada: null,
       falas: [
-        { id: "m1", papel: "cliente", texto: "quero reservar", em: "2026-08-27T20:00:00.000Z", anexos: [] },
-        { id: "m2", papel: "agente", texto: "Para quais datas?", em: "2026-08-27T20:00:10.000Z", anexos: [] },
+        { id: "m1", papel: "cliente", autor: "", texto: "quero reservar", em: "2026-08-27T20:00:00.000Z", anexos: [] },
+        { id: "m2", papel: "agente", autor: "Mia", texto: "Para quais datas?", em: "2026-08-27T20:00:10.000Z", anexos: [] },
       ],
     };
     renderWithProviders(<ManagerConversas />);
@@ -232,7 +254,7 @@ describe("caixa de entrada", () => {
     aberta.current = {
       threadId: "t-41", telefone: "5541988149449", lidaAte: null, assumidaPor: null,
       compartilhada: null,
-      falas: [{ id: "m1", papel: "cliente", texto: "", em: "x", anexos: [
+      falas: [{ id: "m1", papel: "cliente", autor: "", texto: "", em: "x", anexos: [
         { parte: 2, mime: "image/jpeg", tipo: "imagem", nome: "", bytes: 1024 },
       ] }],
     };

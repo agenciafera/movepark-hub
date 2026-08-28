@@ -72,6 +72,7 @@ export function acaoValida(v: unknown): v is AcaoDaCaixa {
 export function corpoParaOBeastBots(
   acao: AcaoDaCaixa,
   uid: string,
+  nome: string,
   entrada: {
     threadId?: unknown;
     lidaAte?: unknown;
@@ -103,6 +104,14 @@ export function corpoParaOBeastBots(
   if (acao === "responder") {
     base.texto = typeof entrada.texto === "string" ? entrada.texto : "";
     base.assumidaPor = uid;
+    /*
+      O NOME de quem escreveu, e não só o uid.
+
+      A tela tem dois lados direitos: a Mia e a equipe. Sem nome eles se confundem, e
+      quem abre a conversa amanhã não sabe se aquela frase foi o robô ou um colega. O
+      nome vem do perfil, nunca do corpo: senão qualquer admin assina como outro.
+    */
+    base.assumidaPorNome = nome;
   }
   if (acao === "anexo") {
     base.messageId = typeof entrada.messageId === "string" ? entrada.messageId : "";
@@ -127,7 +136,7 @@ export async function handler(req: Request): Promise<Response> {
 
   const { data: perfil } = await admin
     .from("profiles")
-    .select("role")
+    .select("role, full_name, first_name")
     .eq("id", usuario.user.id)
     .maybeSingle();
 
@@ -152,7 +161,8 @@ export async function handler(req: Request): Promise<Response> {
     return json({ error: `Ação inválida. Vale ${ACOES.join(", ")}.` }, 400);
   }
 
-  const enviar = corpoParaOBeastBots(corpo.acao, usuario.user.id, corpo);
+  const nome = String(perfil?.full_name || perfil?.first_name || "").trim();
+  const enviar = corpoParaOBeastBots(corpo.acao, usuario.user.id, nome, corpo);
 
   if (corpo.acao !== "listar" && !enviar.threadId) {
     return json({ error: "Faltou a conversa." }, 400);

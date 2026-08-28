@@ -50,6 +50,16 @@ Escrita com `UPDATE ... SET metadata = metadata || $2::jsonb`, **nunca** com
 grava a fala do cliente e sai, sem chamar o agente. O agente **só volta quando alguém
 devolve**, nunca sozinho.
 
+> **A thread tem dois nomes, e a busca precisa aceitar os dois.** O canal conhece a
+> conversa pelo id externo (`whatsapp:<phoneNumberId>:<telefone>`), e a thread em geral
+> se chama `<tenant>:<plataforma>:<id externo>`. Em geral: depois da colisão da D67, 26
+> das 195 threads deste tenant ficaram com **id aleatório**, e só o
+> `channel_externalThreadId` da metadata as liga ao canal. Procurar só pelo id montado
+> não dava erro, dava **"ninguém assumiu"**, e a Mia respondia por cima de quem estava
+> atendendo. Medido em 28/08/2026 na conversa do (41) 8814-9449. Por isso
+> `SQL_QUEM_ASSUMIU` casa pelos dois e devolve o `id` e o `resourceId` reais: gravar a
+> fala do cliente no id montado criaria uma conversa fantasma que ninguém vê.
+
 > **O achado que molda isso:** a mensagem do cliente só é gravada **dentro** do
 > `defaultHandler`. Um `return` seco antes dele perderia a mensagem, e o humano não veria
 > o que o cliente mandou, que é justamente o ponto da funcionalidade. Por isso o caminho
@@ -70,9 +80,22 @@ página aberta. Ela alcança:
 - o **telefone**, comparado só por dígitos, para "(41) 98814" achar `5541988149449`;
 - o **texto de toda mensagem** da conversa, para "voucher" ou uma placa acharem.
 
+> **A fala do cliente não tem `content.content`.** Ela chega do canal com o texto só em
+> `parts[].text`, e o papel dela é `signal`, não `user`. Uma busca que olhe apenas a
+> primeira forma acha somente o que a Mia respondeu, que é o avesso do útil: quem procura
+> uma placa está procurando o que o cliente escreveu.
+
 `parametrosDaBusca` (em `inbox-sql.ts`) guarda o limite disso: menos de 4 dígitos não vira
 busca de telefone, senão "carro 2" viraria `%2%`, casaria com quase todo número do banco e
 devolveria a lista inteira parecendo resultado.
+
+## Quem escreveu
+
+Os dois balões da esquerda são a Mia e a equipe, e sem nome eles se confundem: quem abre
+a conversa amanhã não sabe se aquela frase foi o robô ou um colega. O nome é gravado no
+envio (`inbox_enviado_por_nome`) e vem do **perfil de quem tem o JWT**, nunca do corpo,
+senão um admin assinaria como outro. Mensagem enviada antes de existir esse campo só tem
+o uid, e para essas a tela diz "Equipe", que é o que dá para afirmar com honestidade.
 
 ## Origem
 
@@ -113,5 +136,9 @@ somente leitura**, servido pela Edge `conversa-publica` (`verify_jwt = false`).
 3. **Página sem lista derruba a tela.** `pages.flatMap((p) => p.conversas)` vira
    `[undefined]` quando o backend responde sem a lista, e isso derrubou a sidebar inteira
    do Manager. O `?? []` é por página, não só no fim.
-4. **Conversa assumida e esquecida** fica sem resposta para sempre, por decisão. A tela
+4. **A lista se reordena sozinha.** A paginação é por cursor e cada mensagem que chega
+   joga a conversa para o topo. Quando o polling recarrega as páginas abertas, uma
+   conversa da página 2 pode ter subido para a 1 e aparecer nas duas. `juntarPaginas`
+   deduplica por id na hora de montar a lista.
+5. **Conversa assumida e esquecida** fica sem resposta para sempre, por decisão. A tela
    mitiga com o filtro "Assumidas".

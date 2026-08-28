@@ -32,6 +32,7 @@ import {
 } from "@/features/inbox/api";
 import {
   filtrar,
+  juntarPaginas,
   naoLida,
   quando,
   previa,
@@ -110,13 +111,7 @@ export default function ManagerConversas() {
    * A busca acontece no servidor; aqui sobra só o recorte por estado (não lidas,
    * assumidas), que é sobre o que já está na tela.
    */
-  const carregadas = React.useMemo(
-    // `?? []` por pagina, e nao so' no fim: uma pagina sem `conversas` (backend
-    // antigo no ar, resposta de erro) viraria `[undefined]` e derrubaria a tela
-    // inteira, que e' como a sidebar do Manager caiu em 27/08.
-    () => lista.data?.pages.flatMap((p) => p.conversas ?? []) ?? [],
-    [lista.data],
-  );
+  const carregadas = React.useMemo(() => juntarPaginas(lista.data?.pages), [lista.data]);
   const visiveis = React.useMemo(() => filtrar(carregadas, filtro, ""), [carregadas, filtro]);
   const totalNaoLidas = React.useMemo(() => carregadas.filter(naoLida).length, [carregadas]);
 
@@ -417,6 +412,17 @@ export default function ManagerConversas() {
                       */
                       className="flex flex-col gap-1"
                     >
+                      {/*
+                        Quem escreveu, e nao so' de que lado veio.
+
+                        Os dois baloes da esquerda sao a Mia e a equipe, e sem nome eles
+                        se confundem: quem abre a conversa amanha nao sabe se aquela
+                        frase foi o robo ou um colega. A fala do cliente nao leva
+                        assinatura, porque o nome dele ja esta' no topo da tela.
+                      */}
+                      {f.autor ? (
+                        <span className="text-[11px] text-muted">{f.autor}</span>
+                      ) : null}
                       {f.texto ? (
                         <Bubble
                           role={f.papel === "cliente" ? "user" : "model"}

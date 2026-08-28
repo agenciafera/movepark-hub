@@ -18,6 +18,32 @@ export function naoLida(c: ConversaDaLista): boolean {
   return new Date(c.lida_ate).getTime() < new Date(c.ultima_em).getTime();
 }
 
+/**
+ * As páginas viram uma lista só, sem conversa repetida.
+ *
+ * A paginação é por cursor e a lista **se reordena sozinha**: a cada mensagem que chega,
+ * a conversa pula para o topo. Quando o polling recarrega as páginas já abertas, uma
+ * conversa que estava na página 2 pode ter subido para a 1 e aparecer nas duas. O React
+ * avisava disso com "two children with the same key", e a pessoa via a mesma conversa
+ * duas vezes na lista.
+ *
+ * Fica a primeira ocorrência, que é a mais recente: as páginas chegam em ordem.
+ */
+export function juntarPaginas(
+  paginas: { conversas?: ConversaDaLista[] }[] | undefined,
+): ConversaDaLista[] {
+  const vistos = new Set<string>();
+  const fora: ConversaDaLista[] = [];
+  for (const pagina of paginas ?? []) {
+    for (const c of pagina?.conversas ?? []) {
+      if (vistos.has(c.id)) continue;
+      vistos.add(c.id);
+      fora.push(c);
+    }
+  }
+  return fora;
+}
+
 export function contarNaoLidas(cs: ConversaDaLista[] | undefined): number {
   return (cs ?? []).filter(naoLida).length;
 }
