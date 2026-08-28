@@ -229,6 +229,12 @@ export default function BlogListingPage() {
         <title>{metaTitle}</title>
         <meta name="description" content={metaDesc} />
         <link rel="canonical" href={canonical} />
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title="Blog da Movepark"
+          href={`${SITE_URL}/blog/feed.xml`}
+        />
         {noindex && <meta name="robots" content="noindex, follow" />}
         {page > 1 && <link rel="prev" href={`${SITE_URL}${pageHref(page - 1, base)}`} />}
         {page < total && <link rel="next" href={`${SITE_URL}${pageHref(page + 1, base)}`} />}

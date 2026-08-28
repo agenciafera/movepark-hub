@@ -54,6 +54,24 @@ function redirecionaWww(url: URL): Response | null {
 }
 
 /**
+ * `/destinos/` e afins redirecionam 301 para a forma sem barra, que é a canônica.
+ * O blog fica de fora porque lá o contrato de URL é o inverso (hub e posts COM
+ * barra, herdado da migração), e URL que não é rota conhecida também: redirecionar
+ * lixo só adia o 404. A raiz não tem o que normalizar.
+ */
+export function normalizaBarraFinal(url: URL): Response | null {
+  if (url.pathname === "/" || !url.pathname.endsWith("/")) return null;
+  if (url.pathname === "/blog/" || url.pathname.startsWith("/blog/")) return null;
+
+  const semBarra = url.pathname.replace(/\/+$/, "") || "/";
+  if (!ehRotaDeApp(semBarra) && !ehRotaPrivada(semBarra)) return null;
+
+  const destino = new URL(url.toString());
+  destino.pathname = semBarra;
+  return Response.redirect(destino.toString(), 301);
+}
+
+/**
  * Prefixos de área privada. Ficam fora do índice em **qualquer host**, inclusive no canônico.
  *
  * Hoje `/manager` e `/operator` estão fora do Google por tabela: o host inteiro responde
@@ -562,6 +580,13 @@ export default {
     // Antes de tudo: no `www` não há o que servir, só para onde apontar.
     const www = redirecionaWww(url);
     if (www) return www;
+
+    // Barra final não é a forma canônica fora do blog (lá o contrato é COM barra).
+    // Sem isto, quem respondia era o auto-trailing-slash do ASSETS, com 307
+    // (temporário): o crawler não consolida sinal em redirect temporário. Passa
+    // pela política de índice porque rota privada segue noindex até no redirect.
+    const barra = normalizaBarraFinal(url);
+    if (barra) return applyIndexPolicy(barra, url);
 
     return applyIndexPolicy(await serve(request, env), url);
   },

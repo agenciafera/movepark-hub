@@ -142,6 +142,12 @@ export default function BlogPostPage() {
         <title>{title}</title>
         <meta name="description" content={description} />
         <link rel="canonical" href={canonical} />
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title="Blog da Movepark"
+          href={`${SITE_URL}/blog/feed.xml`}
+        />
         <meta property="og:type" content="article" />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />

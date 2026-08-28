@@ -117,7 +117,7 @@ const [faqs, destinations, posts, priceIndex] = await Promise.all([
       "&is_published=eq.true&order=sort_order.asc",
   ),
   rest(
-    "blog_post?select=slug,title,published_at" +
+    "blog_post?select=slug,title,published_at,ai_summary" +
       "&is_published=eq.true&deleted_at=is.null&order=published_at.desc",
   ),
   rpc("destination_price_index"),
@@ -860,19 +860,161 @@ function tabelaTopMarkdown(dest, limit = 5) {
 }
 
 // ---------------------------------------------------------------------------
-// llms.txt: refresh da data na cópia do dist
+// p/<company>/<location>/<type>.md — o gêmeo Markdown da página da unidade.
+// Sem ele, Accept: text/markdown numa unidade caía no llms.txt genérico.
+// ---------------------------------------------------------------------------
+/** So codigo IATA de verdade merece parenteses; slug de terminal nao e codigo. */
+const comCodigo = (dest, nome) => (/^[A-Z]{3}$/.test(dest.code ?? "") ? `${nome} (${dest.code})` : nome);
+
+let unidadesMd = 0;
+for (const dest of destinosComPreco) {
+  const nome = nomeCurto(dest).replace(/\s*\([^)]*\)\s*$/, "").trim();
+  for (const u of unidadesCarro(dest)) {
+    const tabela = [];
+    for (const d of diasIndice) {
+      const total = totalDe(u, d);
+      if (total == null) continue;
+      tabela.push(`| ${durLabel(d)} | ${brl(total)} | ${brl(total / d)}/dia |`);
+    }
+    if (tabela.length === 0) continue;
+
+    const urlPagina = `${SITE_URL}/p/${u.company_slug}/${u.location_slug}/${u.parking_type_code}`;
+    const distancia = u.distance_m != null ? ` a ${fmtDistancia(u.distance_m)} do terminal` : "";
+    const linhas = [
+      "---",
+      `title: "${u.company_name} (${u.parking_type_name}) perto de ${comCodigo(dest, nome)} | Movepark"`,
+      `canonical: ${urlPagina}`,
+      `updated: ${hoje}`,
+      "---",
+      "",
+      `# ${u.company_name}: ${u.parking_type_name} perto de ${nome}`,
+      "",
+      `O ${u.company_name} é um estacionamento perto de ${comCodigo(dest, nome)}${distancia}, com reserva online pela Movepark. Preços do motor de reservas, os mesmos do checkout:`,
+      "",
+      "| Período | Total | Por dia |",
+      "| --- | --- | --- |",
+      ...tabela,
+      "",
+      `Reservar ou ver a página completa (fotos, traslado, avaliações): ${urlPagina}`,
+      `Comparar com os outros estacionamentos da região: ${SITE_URL}/precos/${dest.slug}`,
+      `Todos os estacionamentos em ${nome}: ${SITE_URL}/destinos/${dest.slug}`,
+      "",
+    ];
+    const dir = path.join(DIST, "p", u.company_slug, u.location_slug);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, `${u.parking_type_code}.md`), linhas.join("\n"));
+    unidadesMd += 1;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// estacionamentos/<destino>/<lote>.md — gêmeo do lote mapeado (ADR-010: sem
+// preço por ausência de dado, e o texto diz isso com todas as letras).
+// ---------------------------------------------------------------------------
+let lotesMd = 0;
+for (const d of destinations) {
+  const cards = prospectsPorDestino.get(d.slug) ?? [];
+  if (cards.length === 0) continue;
+  const nome = (d.short_name ?? d.name).replace(/\s*\([^)]*\)\s*$/, "").trim();
+  for (const m of cards) {
+    const urlFicha = `${SITE_URL}/estacionamentos/${d.slug}/${m.slug}`;
+    const distancia = m.distance_km != null ? ` a ${m.distance_km.toFixed(1).replace(".", ",")} km` : "";
+    const linhas = [
+      "---",
+      `title: "${m.name} perto de ${nome} | Movepark"`,
+      `canonical: ${urlFicha}`,
+      `updated: ${hoje}`,
+      "---",
+      "",
+      `# ${m.name}`,
+      "",
+      `O ${m.name} é um estacionamento mapeado pela Movepark perto de ${nome}${distancia}. Ele ainda não vende reserva online por aqui, então o preço se confirma na cotação com o próprio estacionamento; a ficha traz endereço, mapa e a nota do Google.`,
+      "",
+      `Ficha completa: ${urlFicha}`,
+      `Estacionamentos com reserva online e preço na hora em ${nome}: ${SITE_URL}/destinos/${d.slug}`,
+      "",
+    ];
+    const dir = path.join(DIST, "estacionamentos", d.slug);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, `${m.slug}.md`), linhas.join("\n"));
+    lotesMd += 1;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// blog/feed.xml — RSS 2.0 dos posts publicados. Descoberta de conteúdo por
+// agregador e por agente, com o mesmo contrato de URL do blog (com barra).
+// ---------------------------------------------------------------------------
+{
+  const esc = (s) =>
+    String(s ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;");
+  const items = posts.slice(0, 50).map((p) => {
+    const link = `${SITE_URL}/blog/${p.slug}/`;
+    const descricao = p.ai_summary ? `\n      <description>${esc(p.ai_summary)}</description>` : "";
+    return `    <item>\n      <title>${esc(p.title)}</title>\n      <link>${link}</link>\n      <guid isPermaLink="true">${link}</guid>\n      <pubDate>${new Date(p.published_at).toUTCString()}</pubDate>${descricao}\n    </item>`;
+  });
+  const rss = [
+    `<?xml version="1.0" encoding="UTF-8"?>`,
+    `<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">`,
+    `  <channel>`,
+    `    <title>Blog da Movepark</title>`,
+    `    <link>${SITE_URL}/blog/</link>`,
+    `    <atom:link href="${SITE_URL}/blog/feed.xml" rel="self" type="application/rss+xml" />`,
+    `    <description>Guias de estacionamento de aeroporto: preços, comparativos e como reservar com antecedência.</description>`,
+    `    <language>pt-BR</language>`,
+    `    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>`,
+    ...items,
+    `  </channel>`,
+    `</rss>`,
+    ``,
+  ];
+  fs.mkdirSync(path.join(DIST, "blog"), { recursive: true });
+  fs.writeFileSync(path.join(DIST, "blog", "feed.xml"), rss.join("\n"));
+}
+
+// ---------------------------------------------------------------------------
+// llms.txt: refresh da data + menor diária por aeroporto inline (o agente
+// responde "quanto custa" sem abrir outra página)
 // ---------------------------------------------------------------------------
 {
   const alvo = path.join(DIST, "llms.txt");
   if (fs.existsSync(alvo)) {
-    const conteudo = fs
+    const menorPorDestino = destinosComPreco
+      .map((dest) => {
+        const nome = nomeCurto(dest).replace(/\s*\([^)]*\)\s*$/, "").trim();
+        const unidades = unidadesCarro(dest);
+        const menores = unidades
+          .map((u) => {
+            const dia1 = totalDe(u, 1);
+            return dia1 == null ? null : dia1;
+          })
+          .filter((v) => v != null);
+        if (menores.length === 0) return null;
+        return `- ${comCodigo(dest, nome)}: a partir de ${brl(Math.min(...menores))} a diária, ${unidades.length === 1 ? "1 opção" : `${unidades.length} opções`} com reserva online: ${SITE_URL}/precos/${dest.slug}`;
+      })
+      .filter(Boolean);
+    const bloco = [
+      `## Menor diária por aeroporto (em ${hojeBR})`,
+      "",
+      ...menorPorDestino,
+      "",
+    ].join("\n");
+    let conteudo = fs
       .readFileSync(alvo, "utf8")
       .replace(/^Última atualização:.*$/m, `Última atualização: ${hoje}`);
+    if (!conteudo.includes("## Menor diária por aeroporto")) {
+      conteudo = conteudo.replace(/^## Como funciona$/m, `${bloco}\n## Como funciona`);
+    }
     fs.writeFileSync(alvo, conteudo);
   }
 }
 
 console.log(
-  `geo-artifacts: ${paginas} páginas de FAQ e ${destinosComPreco.length} de preços em Markdown, ` +
-    `faq.md, precos.md, llms-full.txt e data do llms.txt atualizados`,
+  `geo-artifacts: ${paginas} páginas de FAQ, ${destinosComPreco.length} de preços, ` +
+    `${unidadesMd} de unidade e ${lotesMd} de lote mapeado em Markdown, ` +
+    `faq.md, precos.md, llms-full.txt, blog/feed.xml e llms.txt (data + menor diária) atualizados`,
 );

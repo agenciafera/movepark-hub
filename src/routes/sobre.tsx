@@ -6,6 +6,7 @@ import { CtaBanner } from "@/components/shared/CtaBanner";
 import { PartnerLogos } from "@/features/partners/PartnerLogos";
 import { HOW_IT_WORKS } from "@/features/how-it-works/copy";
 import { useGsapReveal } from "@/hooks/useGsapReveal";
+import { organizationSchema } from "@/lib/jsonld";
 import { siteUrl } from "@/lib/site";
 
 // Hero de marca em foto (blue hour). Metade esquerda cai na sombra pra segurar a
@@ -89,6 +90,17 @@ export default function SobrePage() {
     start: "top 85%",
   });
 
+  // AboutPage com a mesma entidade Organization da home como mainEntity (o Google
+  // cruza a página institucional com o nó da marca; sem @context aninhado).
+  const { "@context": _orgCtx, ...orgEntidade } = organizationSchema();
+  const aboutSchema = {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    name: "Sobre a Movepark",
+    url: siteUrl("/sobre"),
+    mainEntity: orgEntidade,
+  };
+
   return (
     <>
       <Helmet>
@@ -100,10 +112,12 @@ export default function SobrePage() {
         <meta property="og:title" content="Sobre nós | Movepark" />
         <meta
           property="og:description"
-          content="Nossa missão é simples: você chega no aeroporto com a vaga já reservada e o preço combinado."
+          content="Conheça a Movepark: o marketplace de reserva de vagas em estacionamentos de aeroportos, centros e terminais, com preço fixo e parceiro certificado."
         />
+        <meta property="og:type" content="website" />
         <meta property="og:url" content={siteUrl("/sobre")} />
         <link rel="canonical" href={siteUrl("/sobre")} />
+        <script type="application/ld+json">{JSON.stringify(aboutSchema)}</script>
       </Helmet>
 
       {/* Hero de marca em foto, sangrando de ponta a ponta. Overlay navy em degradê

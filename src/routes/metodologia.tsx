@@ -20,6 +20,11 @@ export default function MetodologiaPage() {
           content="Os preços do site saem do motor de reservas, os mesmos do checkout. Como ordenamos resultados, o que é parceiro e mapeado, e de onde vêm as avaliações."
         />
         <meta property="og:title" content="Metodologia: de onde vêm os preços da Movepark" />
+        <meta
+          property="og:description"
+          content="Como a Movepark coleta, calcula e atualiza os preços do índice: fonte, frequência e regra de arredondamento, com o mesmo motor do checkout."
+        />
+        <meta property="og:type" content="article" />
         <meta property="og:url" content={siteUrl("/metodologia")} />
         <link rel="canonical" href={siteUrl("/metodologia")} />
       </Helmet>

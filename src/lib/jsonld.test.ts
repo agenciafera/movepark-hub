@@ -487,6 +487,18 @@ describe("faqSchema", () => {
   });
 });
 
+describe("blogPostingSchema: autor", () => {
+  const base = { title: "t", slug: "s", publishedAt: "2026-01-01T00:00:00Z" };
+
+  it("nome próprio assina como Person; sem autor, assina a casa", () => {
+    expect(blogPostingSchema({ ...base, authorName: "Diego Guedes" }).author).toEqual({
+      "@type": "Person",
+      name: "Diego Guedes",
+    });
+    expect(blogPostingSchema(base).author).toEqual({ "@type": "Organization", name: "Movepark" });
+  });
+});
+
 describe("blogPostingSchema: imagem", () => {
   const base = { title: "t", slug: "s", publishedAt: "2026-01-01T00:00:00Z" };
 
@@ -687,6 +699,19 @@ describe("datasetSchema", () => {
       "https://movepark.co/llms-full.txt",
     );
   });
+
+  it("declara onde e quando o dado vale: spatialCoverage e temporalCoverage", () => {
+    const s = datasetSchema({
+      dateModified: "2026-08-28",
+      spatial: ["Aeroporto de Congonhas", "Aeroporto de Viracopos"],
+    });
+    expect(s.temporalCoverage).toBe("2026-08-28");
+    expect(s.spatialCoverage).toEqual([
+      { "@type": "Place", name: "Aeroporto de Congonhas" },
+      { "@type": "Place", name: "Aeroporto de Viracopos" },
+    ]);
+    expect(datasetSchema({ dateModified: "2026-08-28" }).spatialCoverage).toBeUndefined();
+  });
 });
 
 describe("webApplicationSchema", () => {
@@ -744,5 +769,88 @@ describe("taxID no LocalBusiness", () => {
       "Traces Estacionamentos e Participações Ltda",
     );
     expect(localBusinessSchema(makeListing()).legalName).toBeUndefined();
+  });
+});
+
+describe("perfil local da unidade no LocalBusiness", () => {
+  it("comodidades visíveis saem como amenityFeature", () => {
+    const listing = makeListing();
+    listing.amenities = [
+      { code: "shuttle", name: "Traslado até o terminal", icon: null, category: "servico" },
+      { code: "covered", name: "Vaga coberta", icon: null, category: "estrutura" },
+    ];
+    const s = localBusinessSchema(listing);
+    expect(s.amenityFeature).toEqual([
+      { "@type": "LocationFeatureSpecification", name: "Traslado até o terminal", value: true },
+      { "@type": "LocationFeatureSpecification", name: "Vaga coberta", value: true },
+    ]);
+    expect(localBusinessSchema(makeListing()).amenityFeature).toBeUndefined();
+  });
+
+  it("o perfil do Google vira hasMap quando o snapshot existe", () => {
+    const listing = makeListing();
+    listing.google = {
+      place_id: "abc",
+      rating: 4.6,
+      user_rating_count: 10,
+      maps_uri: "https://maps.google.com/?cid=123",
+      reviews: [],
+      fetched_at: "2026-08-28T00:00:00Z",
+    };
+    expect(localBusinessSchema(listing).hasMap).toBe("https://maps.google.com/?cid=123");
+    expect(localBusinessSchema(makeListing()).hasMap).toBeUndefined();
+  });
+
+  it("aeroporto do destino entra como containedInPlace com iataCode", () => {
+    const listing = makeListing();
+    listing.location.destination = {
+      seo_label: null,
+      short_name: "Guarulhos (GRU)",
+      name: "Aeroporto Internacional de Guarulhos",
+      type: "airport",
+      city: "Guarulhos",
+      code: "GRU",
+    };
+    expect(localBusinessSchema(listing).containedInPlace).toEqual({
+      "@type": "Airport",
+      name: "Aeroporto Internacional de Guarulhos",
+      iataCode: "GRU",
+    });
+  });
+
+  /** Horário só sai do dado curado; o default de catálogo (is_24h) não vira promessa. */
+  it("business_hours curado vira OpeningHoursSpecification; sem dado, sem horário", () => {
+    const listing = makeListing();
+    listing.location.business_hours = {
+      mon: { open: "07:00", close: "20:00" },
+      sun: null,
+    };
+    expect(localBusinessSchema(listing).openingHoursSpecification).toEqual([
+      { "@type": "OpeningHoursSpecification", dayOfWeek: "Monday", opens: "07:00", closes: "20:00" },
+    ]);
+    expect(localBusinessSchema(makeListing()).openingHoursSpecification).toBeUndefined();
+  });
+
+  it("a faixa de diárias visível vira priceRange", () => {
+    const s = localBusinessSchema(makeListing(), {
+      showcase: {
+        lowDaily: 24.99,
+        highDaily: 39.9,
+        offerCount: 2,
+        porDuracao: [{ days: 1, total: 39.9 }],
+      } as never,
+    });
+    expect(s.priceRange).toBe("R$ 24,99 - R$ 39,90 por diária");
+    expect(localBusinessSchema(makeListing()).priceRange).toBeUndefined();
+  });
+
+  /** Meio de pagamento é promessa de transação (ADR-009): só onde o checkout é do Hub. */
+  it("paymentAccepted só sai onde a reserva fecha no Hub", () => {
+    const hub = localBusinessSchema(makeListing({ checkout_mode: "hub" }));
+    expect(hub.paymentAccepted).toBe("PIX, Cartão de crédito");
+    expect(hub.currenciesAccepted).toBe("BRL");
+    const externa = localBusinessSchema(makeListing({ checkout_mode: "external" }));
+    expect(externa.paymentAccepted).toBeUndefined();
+    expect(externa.currenciesAccepted).toBeUndefined();
   });
 });

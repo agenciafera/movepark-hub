@@ -186,10 +186,13 @@ export default function ListingPage() {
   const pageUrl = listing
     ? `${SITE_URL}/p/${listing.company.slug}/${listing.location.slug}/${listing.parking_type.code}`
     : "";
-  const ogImage =
+  // og:image relativa é inválida (o scraper social não resolve o caminho relativo
+  // das fotos importadas do legado): absolutiza sobre o domínio canônico.
+  const ogImageRaw =
     listing && listing.location.photos[0]
       ? optimizedImageUrl(listing.location.photos[0], { width: 1200, height: 630, resize: "cover" })
       : undefined;
+  const ogImage = ogImageRaw?.startsWith("/") ? `${SITE_URL}${ogImageRaw}` : ogImageRaw;
 
   // Mesma regra para a FAQ: um único FAQPage por página, com as respostas idênticas às
   // visíveis (ADR-002). Na unidade externa a global não aparece, então não pode ir no schema.
@@ -302,7 +305,7 @@ export default function ListingPage() {
         {ogImage && <meta name="twitter:image" content={ogImage} />}
         <link rel="canonical" href={pageUrl} />
         <script type="application/ld+json">
-          {JSON.stringify(localBusinessSchema(listing, { description: tldr?.summary }))}
+          {JSON.stringify(localBusinessSchema(listing, { description: tldr?.summary, showcase: showcase ?? null }))}
         </script>
         {productSchemaData && (
           <script type="application/ld+json">{JSON.stringify(productSchemaData)}</script>

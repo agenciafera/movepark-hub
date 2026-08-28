@@ -1,7 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import worker, { ROTAS_PRIVADAS, __resetCachesDoWorker, ehRotaDeApp, ehRotaPrivada } from "./worker";
+import worker, {
+  ROTAS_PRIVADAS,
+  __resetCachesDoWorker,
+  ehRotaDeApp,
+  ehRotaPrivada,
+  normalizaBarraFinal,
+} from "./worker";
 import { SITEMAP_PRIVATE_PREFIXES } from "./lib/sitemapRoutes";
 
 const HTML = "<!DOCTYPE html><html><head></head><body>app</body></html>";
@@ -654,8 +660,12 @@ describe("404 real de página", () => {
   });
 
   it("barra final e query string não mudam o veredicto", async () => {
+    // Barra final deixou de servir cópia da página: 301 pra forma canônica, que é 200.
     const comBarra = await worker.fetch(req("/destinos/aeroporto-de-confins/"), envCom404());
-    expect(comBarra.status).toBe(200);
+    expect(comBarra.status).toBe(301);
+    expect(comBarra.headers.get("Location")).toMatch(/\/destinos\/aeroporto-de-confins$/);
+    const semBarra = await worker.fetch(req("/destinos/aeroporto-de-confins"), envCom404());
+    expect(semBarra.status).toBe(200);
     const comQuery = await worker.fetch(req("/pagina-que-nao-existe-xyz?utm_source=x"), envCom404());
     expect(comQuery.status).toBe(404);
   });
@@ -799,5 +809,21 @@ describe("conversa compartilhada, que deixou de existir", () => {
   it("nao e' mais rota de app", () => {
     expect(ehRotaDeApp(`/conversa/${TOKEN}`)).toBe(false);
     expect(ehRotaDeApp("/conversa")).toBe(false);
+  });
+});
+
+describe("barra final vira 301 pra forma canônica", () => {
+  it("rota de app com barra redireciona permanente, preservando a query", () => {
+    const r = normalizaBarraFinal(new URL("https://movepark.co/destinos/?foo=1"));
+    expect(r?.status).toBe(301);
+    expect(r?.headers.get("Location")).toBe("https://movepark.co/destinos?foo=1");
+  });
+
+  /** No blog o contrato de URL é o inverso: hub e posts vivem COM barra. */
+  it("blog fica fora da normalização, e a raiz não tem o que normalizar", () => {
+    expect(normalizaBarraFinal(new URL("https://movepark.co/blog/"))).toBeNull();
+    expect(normalizaBarraFinal(new URL("https://movepark.co/blog/um-post/"))).toBeNull();
+    expect(normalizaBarraFinal(new URL("https://movepark.co/"))).toBeNull();
+    expect(normalizaBarraFinal(new URL("https://movepark.co/precos"))).toBeNull();
   });
 });

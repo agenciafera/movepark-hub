@@ -444,7 +444,7 @@ export default function PrecosPage() {
         <meta property="og:url" content={canonical} />
         <script type="application/ld+json">{JSON.stringify(breadcrumb)}</script>
         <script type="application/ld+json">{JSON.stringify(lista)}</script>
-        <script type="application/ld+json">{JSON.stringify(datasetSchema({ dateModified: generatedAt }))}</script>
+        <script type="application/ld+json">{JSON.stringify(datasetSchema({ dateModified: generatedAt, spatial: aeroportos.map((a) => a.name) }))}</script>
       </Helmet>
       <OgImage area="precos" />
 

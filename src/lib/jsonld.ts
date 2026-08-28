@@ -64,7 +64,39 @@ function cnpjFormatado(taxId: string | null | undefined): string | undefined {
   return `${digitos.slice(0, 2)}.${digitos.slice(2, 5)}.${digitos.slice(5, 8)}/${digitos.slice(8, 12)}-${digitos.slice(12)}`;
 }
 
-export function localBusinessSchema(listing: ListingDetail, opts?: { description?: string }) {
+const DIA_SCHEMA: Record<string, string> = {
+  mon: "Monday",
+  tue: "Tuesday",
+  wed: "Wednesday",
+  thu: "Thursday",
+  fri: "Friday",
+  sat: "Saturday",
+  sun: "Sunday",
+};
+
+/** Horário curado vira OpeningHoursSpecification; default de catálogo não vira horário. */
+function horariosDaUnidade(bh: ListingDetail["location"]["business_hours"]) {
+  if (!bh) return undefined;
+  const specs = Object.entries(bh)
+    .filter(([dia, faixa]) => DIA_SCHEMA[dia] && faixa != null)
+    .map(([dia, faixa]) => ({
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: DIA_SCHEMA[dia],
+      opens: faixa!.open,
+      closes: faixa!.close,
+    }));
+  return specs.length ? specs : undefined;
+}
+
+const REAL = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
+
+export function localBusinessSchema(
+  listing: ListingDetail,
+  opts?: { description?: string; showcase?: PriceShowcase | null },
+) {
+  const caps = getLocationCapabilities(listing.location);
+  const dest = listing.location.destination;
+  const showcase = opts?.showcase ?? null;
   return {
     "@context": "https://schema.org",
     "@type": ["LocalBusiness", "ParkingFacility"],
@@ -82,6 +114,28 @@ export function localBusinessSchema(listing: ListingDetail, opts?: { description
     // lastro que liga a página à operação real.
     legalName: listing.location.legal_name ?? listing.company.legal_name ?? undefined,
     taxID: cnpjFormatado(listing.location.tax_id ?? listing.company.tax_id),
+    // Perfil no Google Maps (snapshot do Place): âncora local, mesma função do
+    // botão "como chegar" visível.
+    hasMap: listing.google?.maps_uri ?? undefined,
+    // Comodidades são fato da unidade (ADR-009) e já saem na tela; aqui é o espelho.
+    amenityFeature: listing.amenities?.length
+      ? listing.amenities.map((a) => ({
+          "@type": "LocationFeatureSpecification",
+          name: a.name,
+          value: true,
+        }))
+      : undefined,
+    // Liga a unidade à entidade do aeroporto (mesmo nó com iataCode da página de destino).
+    containedInPlace:
+      dest && dest.type === "airport" && dest.code
+        ? { "@type": "Airport", name: dest.name, iataCode: dest.code }
+        : undefined,
+    openingHoursSpecification: horariosDaUnidade(listing.location.business_hours),
+    // Espelho da tabela de diárias visível; sem preço na tela, sem faixa no schema.
+    priceRange: showcase ? `${REAL(showcase.lowDaily)} - ${REAL(showcase.highDaily)} por diária` : undefined,
+    // Meio de pagamento é promessa de transação: só onde a reserva fecha no Hub.
+    paymentAccepted: caps.hubCheckout ? "PIX, Cartão de crédito" : undefined,
+    currenciesAccepted: caps.hubCheckout ? "BRL" : undefined,
     address: listing.location.address
       ? {
           "@type": "PostalAddress",
@@ -341,7 +395,10 @@ export function blogPostingSchema(p: {
     dateModified: p.updatedAt ?? p.publishedAt,
     wordCount: p.wordCount,
     inLanguage: "pt-BR",
-    author: { "@type": "Organization", name: p.authorName || "Movepark" },
+    // Nome próprio assina como Person (E-E-A-T); sem autor, assina a casa.
+  author: p.authorName
+    ? { "@type": "Person", name: p.authorName }
+    : { "@type": "Organization", name: "Movepark" },
     publisher: {
       "@type": "Organization",
       name: "Movepark",
@@ -411,7 +468,7 @@ export function webSiteSchema() {
  * engenharia de citabilidade: imprensa e IA citam dataset licenciado com muito
  * menos atrito do que página solta.
  */
-export function datasetSchema(args: { dateModified: string }) {
+export function datasetSchema(args: { dateModified: string; spatial?: string[] }) {
   return {
     "@context": "https://schema.org",
     "@type": "Dataset",
@@ -423,6 +480,11 @@ export function datasetSchema(args: { dateModified: string }) {
     isAccessibleForFree: true,
     inLanguage: "pt-BR",
     dateModified: args.dateModified,
+    // O snapshot vale na data do build; a cobertura espacial são os aeroportos do índice.
+    temporalCoverage: args.dateModified,
+    spatialCoverage: args.spatial?.length
+      ? args.spatial.map((name) => ({ "@type": "Place", name }))
+      : undefined,
     creator: {
       "@type": "Organization",
       name: "Movepark",

@@ -4,6 +4,7 @@
 
 Última atualização: 2026-08-14
 Sitemap: https://movepark.co/sitemap.xml
+Feed do blog (RSS): https://movepark.co/blog/feed.xml
 Conteúdo completo para IA: https://movepark.co/llms-full.txt
 
 ## O que é o Movepark (desambiguação)

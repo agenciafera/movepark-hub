@@ -277,6 +277,11 @@ export default function ComoFuncionaPage() {
           content="Compare estacionamentos parceiros perto do seu aeroporto e siga direto para a reserva. Sem taxa da Movepark."
         />
         <meta property="og:title" content="Como funciona | Movepark" />
+        <meta
+          property="og:description"
+          content="Reservar estacionamento de aeroporto pela Movepark: busque o destino, compare preços, reserve online e chegue com a vaga garantida."
+        />
+        <meta property="og:type" content="website" />
         <meta property="og:url" content={siteUrl("/como-funciona")} />
         <link rel="canonical" href={siteUrl("/como-funciona")} />
         <script type="application/ld+json">{JSON.stringify(journeyHowToJsonLd())}</script>

@@ -40,6 +40,8 @@ export type ListingDetail = {
     legal_name: string | null;
     /** CNPJ da operação desta unidade. Nulo = herda company.tax_id. */
     tax_id: string | null;
+    /** Horário curado por dia da semana (null = ninguém preencheu; não se emite horário de default). */
+    business_hours: Record<string, { open: string; close: string } | null> | null;
     directions_text: string | null;
     shuttle_frequency_minutes: number | null;
     shuttle_to_terminal_minutes: number | null;
@@ -71,7 +73,15 @@ export type ListingDetail = {
      * cidade junto ("aeropark guarulhos", "garageinn viracopos"), e o título antigo não
      * trazia nem a marca nem o aeroporto. Nulo em unidade sem destino vinculado.
      */
-    destination: { seo_label: string | null; short_name: string | null; name: string; type: string | null; city: string | null } | null;
+    destination: {
+      seo_label: string | null;
+      short_name: string | null;
+      name: string;
+      type: string | null;
+      city: string | null;
+      /** Código IATA quando o destino é aeroporto. Vira `iataCode` no schema. */
+      code: string | null;
+    } | null;
   };
   parking_type: {
     code: string;
@@ -93,12 +103,12 @@ export type ListingDetail = {
 const baseSelect = `
   id, capacity, is_active, external_checkout_url,
   location:location!inner(
-    id, slug, name, address, phone, email, notice, has_notice, legal_name, tax_id,
+    id, slug, name, address, phone, email, notice, has_notice, legal_name, tax_id, business_hours,
     directions_text, shuttle_frequency_minutes, shuttle_to_terminal_minutes,
     reservation_policy, checkout_mode, go2park_enabled, go2park_whatsapp, timezone, latitude, longitude, google_place_id,
     has_pcd_config, has_passenger_quantity, review_avg, review_count, photos,
     company:company!inner(id, slug, name, legal_name, tax_id, created_at),
-    destination:destination(seo_label, short_name, name, type, city),
+    destination:destination(seo_label, short_name, name, type, city, code),
     amenities:location_amenity(
       amenity:amenity(code, name, icon, category, sort_order)
     )
@@ -195,6 +205,7 @@ export async function fetchListing(
       email: m.location.email,
       legal_name: m.location.legal_name ?? null,
       tax_id: m.location.tax_id ?? null,
+      business_hours: m.location.business_hours ?? null,
       notice: m.location.notice,
       has_notice: m.location.has_notice,
       directions_text: m.location.directions_text ?? null,
