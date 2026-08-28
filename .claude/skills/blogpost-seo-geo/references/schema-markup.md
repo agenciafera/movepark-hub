@@ -106,3 +106,21 @@ que é o mecanismo por trás do schema, não o contrário.
   transação, e post não declara capacidade (ADR-009). Oferta é da unidade.
 - **`AggregateRating` inventado.** Avaliação vem de `review` de verdade, e a
   página que a exibe é a da unidade.
+
+### `Product` e `Offer` no post não, nas páginas de preço sim
+
+A proibição acima vale para **o post**, e é fácil ler errado quando o plano de
+conteúdo pede `Product`/`Offer` nas páginas de preço. Não é contradição, são
+superfícies diferentes:
+
+| Superfície | Emite `Offer`? | Por quê |
+|---|---|---|
+| Post de blog | Não | Texto editorial. O preço citado é retrato datado, não oferta, e o post não sabe da capacidade da unidade |
+| `/precos` e `/precos/<slug>` | Sim | Lê o motor de reservas, o valor publicado é o cobrado no checkout, e a unidade por trás declara capacidade |
+| Single da unidade | Sim | É onde `getLocationCapabilities` manda e onde a reserva fecha |
+
+O critério é sempre o mesmo: **quem emite `Offer` precisa poder honrar a oferta.**
+O post não pode, então cita número com data e manda para quem pode.
+
+Isso vale inclusive para a tabela de aeroporto sem parceiro (portão 1.4 da skill):
+ela pode existir no texto, com fonte e data, e **não** vira `Offer` em schema.

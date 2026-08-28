@@ -34,7 +34,7 @@ cobre, e quando é bom o bastante para ser a resposta que o Google mostra e a IA
 Contexto técnico completo em [`docs/specs/blog.md`](../../../docs/specs/blog.md).
 Ler antes de mexer em slug, URL ou taxonomia.
 
-## Passo 1: antes de escrever, três portões
+## Passo 1: antes de escrever, quatro portões
 
 Não abra o editor sem passar por eles. É mais barato descobrir aqui que a pauta
 não vale do que depois de 3.000 palavras.
@@ -45,6 +45,33 @@ não vale do que depois de 3.000 palavras.
 variações reais ("estacionar em Confins", "estacionamento CNF", "deixar o carro
 no aeroporto de BH"), porque texto que repete a mesma frase 30 vezes soa robótico
 para o leitor e para o Google.
+
+**A demanda não é chute.** [`docs/specs/dados/cauda-longa-aeroportos.json`](../../../docs/specs/dados/cauda-longa-aeroportos.json)
+tem **1.282 termos únicos** colhidos do autocomplete do Google em 25/08/2026, de
+13 raízes cruzadas com 20 modificadores. Consulte antes de inventar a frase-chave:
+
+```bash
+F=docs/specs/dados/cauda-longa-aeroportos.json
+# tudo que menciona um aeroporto (as raízes não são separadas por praça)
+jq -r '[.por_raiz[][]] | unique | .[]' $F | grep -Ei 'confins|\bcnf\b'
+# só o que veio em forma de pergunta, já separado por praça
+jq -r '.perguntas_por_aeroporto.CNF[]' $F
+```
+
+Três clusters concentram a disputa, e é por eles que o plano manda começar, nesta
+ordem: **preço, valor e diária**; depois **proximidade**; depois **barato,
+economia e desconto**. Juntos passam de 300 termos, com Guarulhos respondendo por
+perto de 40% de cada um. Conte você mesmo antes de citar um número no post, porque
+o total muda com a lista de sinônimos que você usar:
+
+```bash
+jq -r '[.por_raiz[][]] | unique | .[]' $F | grep -Ei 'guarulhos|\bgru\b' \
+  | grep -Eci 'preço|preco|valor|diária|diaria|quanto custa'
+```
+
+Cauda só compensa depois que a cabeça tem dono. A estratégia inteira, com as fases
+e a divisão de praças, está em
+[`docs/specs/plano-conteudo-aeroportos.md`](../../../docs/specs/plano-conteudo-aeroportos.md).
 
 **1.2 Canibalização.** Rode a busca no acervo antes de escrever, separando post
 vivo de post morto:
@@ -91,6 +118,61 @@ não sustenta 3.000 palavras: escolha um recorte maior ou junte com uma pauta
 vizinha. Post longo e vazio é pior que post curto e útil, e o Google mede
 satisfação, não contagem.
 
+**1.4 De onde vêm os números.** Descubra, antes de escrever, se o aeroporto tem
+parceiro. Isso muda a origem de cada R$ do post e o trabalho de manutenção que
+ele cria. Em 27/08/2026 eram **26 destinos publicados, 8 com parceiro e 18 sem**,
+então a pauta sem parceiro é a maioria, não a exceção. Confirme na hora, porque
+esse retrato muda a cada contrato assinado:
+
+```sql
+-- o retrato do dia: quantos publicados, quantos com parceiro listado
+with pub as (select id, slug from destination where is_published = true)
+select (select count(*) from pub) as publicados,
+       (select count(*) from pub p where exists (
+          select 1 from location l
+          where l.destination_id = p.id and l.is_listed = true and l.deleted_at is null
+       )) as com_parceiro;
+
+-- do aeroporto da pauta: parceiro precificado (vazio = sem parceiro)
+select jsonb_pretty(public.destination_price_index(array[1,7,30], 'aeroporto-de-confins'));
+-- e os lotes mapeados, sem contrato
+select * from public.destination_prospect_cards('aeroporto-de-confins');
+```
+
+| Origem | Como o preço entra no post | Envelhece? |
+|---|---|---|
+| **Parceiro** | Do motor de reservas, pelo `destination_price_index`. É o mesmo valor cobrado no checkout | Não. O link para `/destinos/<slug>` leva ao preço vivo |
+| **Não-parceiro** | Conferido na fonte por você, um a um, com nome da fonte e data da consulta no próprio post | **Sim, e ninguém avisa.** Ver abaixo |
+
+**Tabela de aeroporto sem parceiro é permitida, e é o que ganha essas praças.**
+Sem ela o post perde para quem publica número. Mas ela vem com três obrigações
+que não são negociáveis:
+
+1. **Confira na fonte, uma por uma.** Site do próprio estacionamento, perfil do
+   Google Business, ou ligação com a data anotada. Nunca copie de agregador nem
+   de post concorrente: você herdaria o erro e a desatualização deles.
+2. **Cada linha carrega fonte e data.** "Site do Park Confins, consultado em
+   27/08/2026". Sem isso a tabela vira invenção com cara de dado.
+3. **Cite a fonte pelo nome, sem link.** A regra do Passo 2 vale aqui: link
+   externo nunca vai para quem vende vaga, e a ficha do lote mapeado também
+   proíbe apontar para o site dele ([`docs/specs/lote-mapeado-vitrine.md`](../../../docs/specs/lote-mapeado-vitrine.md)).
+   Nomear a fonte dá verificabilidade; linkar entrega o clique.
+
+**Não existe hoje nenhum mecanismo que monitore preço de não-parceiro.** O motor
+cobre só o parceiro. Preço de não-parceiro que entra no post é retrato manual, e
+sai da validade sem que nada quebre: nenhum teste falha, nenhum alerta dispara. É
+por isso que ele **entra na revisão mensal** junto com as páginas de cabeça, e é
+por isso que a data ao lado do número não é enfeite, é o que permite ao leitor e
+ao modelo saberem o quanto confiar.
+
+**O post é a única superfície onde esse preço aparece.** `/precos`,
+`/destinos/<slug>` e a ficha do lote seguem sem tarifa de não-parceiro, por
+ADR-010 e por [`docs/specs/indice-precos.md`](../../../docs/specs/indice-precos.md):
+lá o valor publicado é o valor cobrado, e essa é a vantagem estrutural sobre o
+índice do concorrente. No post o número é editorial, datado e sem botão de
+reserva, então não é promessa de transação e não conflita com ADR-009. Não leve
+essa tabela para o produto.
+
 ## Passo 2: as regras duras
 
 Estas não são preferências. Quebrar qualquer uma quebra o site, o contrato de URL
@@ -103,8 +185,8 @@ ou uma regra de arquitetura do projeto.
 | O `#` do título nunca vai no corpo | O H1 é o `title` do post, renderizado pela página |
 | Zero travessão `—` e traço `–` | Regra do `CLAUDE.md` para o projeto inteiro. Use ponto, vírgula, dois-pontos ou " - " |
 | Nenhuma promessa de transação | **ADR-009**: post não declara capacidade. Nada de "vaga garantida", "cancelamento grátis", "preço fixo". A promessa mora na unidade, onde `getLocationCapabilities` manda |
-| Todo valor em R$ carrega **data de referência** e link para `/destinos/<slug>` | Tarifa sem data vira promessa que o código não consegue retirar. Com data e link, é retrato datado mais o preço vivo a um clique |
-| Link externo **nunca** para quem vende vaga | Inclui agregador, comparador, site próprio de parceiro e a página de estacionamento do próprio aeroporto. Lista em [`scripts/fontes.json`](scripts/fontes.json), regra em [`references/links-e-fontes.md`](references/links-e-fontes.md) |
+| Todo valor em R$ carrega **data de referência**. De parceiro, mais o link para `/destinos/<slug>`; de não-parceiro, mais o **nome da fonte** | Tarifa sem data vira promessa que o código não consegue retirar. O do parceiro tem o preço vivo a um clique; o do não-parceiro não tem para onde apontar, então a fonte nomeada é o que o substitui (portão 1.4) |
+| Link externo **nunca** para quem vende vaga | Inclui agregador, comparador, site próprio de parceiro, site de lote mapeado e a página de estacionamento do próprio aeroporto. Vale **mesmo quando ele é a fonte do preço**: cite pelo nome, não linke. Lista em [`scripts/fontes.json`](scripts/fontes.json), regra em [`references/links-e-fontes.md`](references/links-e-fontes.md) |
 | Slug publicado **nunca** muda | Os 93 slugs herdados são o contrato de URL que guarda o tráfego, congelados em `legacy-slugs.json`. Renomear é apagar uma URL que o Google conhece |
 | Slug novo **nunca** pode estar em `BLOG_CONSOLIDATED_SLUGS` | O worker responde 301 antes de servir a página. O post existiria no banco e apareceria no Manager, mas a URL nunca abriria, e a falha é silenciosa |
 | Republicar post despublicado = republicar **e** tirar do mapa | Mexer só no `is_published` não basta: enquanto a entrada viver em `BLOG_CONSOLIDATED_SLUGS`, a URL segue em 301 e a página fica inalcançável |
@@ -151,7 +233,11 @@ slug fora deles é recusado na escrita. `destination` é o slug do aeroporto em
    resto do texto. Motor generativo extrai trecho, não página.
 3. **Tabela sempre que houver dado comparável.** Preço por diária, comparativo
    entre opções, distância e tempo de traslado. Tabela é o formato que o modelo
-   consegue ler inteiro e que o Google usa em rich result.
+   consegue ler inteiro e que o Google usa em rich result. Em aeroporto sem
+   parceiro a tabela também vai, montada com o preço que você conferiu na fonte,
+   e ganha uma coluna de **Fonte e data** (portão 1.4). Coluna vazia é pior que
+   coluna ausente: se não conseguiu o número de um lote, tire a linha e diga no
+   texto que aquele pátio não publica tarifa.
 4. **Números com unidade e fonte.** "12 minutos de traslado", "capacidade de 400
    vagas", "R$ 89,90 a diária em agosto de 2026". Adjetivo não é citável, número é.
 5. **FAQ no fim**, 5 a 8 perguntas reais, em `###` terminado em `?`, resposta de
@@ -269,7 +355,8 @@ Antes de dizer que o post está pronto:
 5. Pelo menos um link para `/destinos/<slug>`, dois ou três para outros posts, e
    um externo de fonte reconhecida com rótulo que diz o que é.
 6. 3.000 palavras ou mais, com tabela onde houver dado comparável.
-7. Todo R$ com data de referência e link para o preço vivo.
+7. Todo R$ com data de referência. De parceiro, com link para o preço vivo; de
+   não-parceiro, conferido na fonte com o nome dela no post e sem link para ela.
 8. FAQ escrita no formato que liga o `FAQPage` (pergunta em `###` terminada em
    `?`, resposta em parágrafo logo abaixo, no mínimo duas), com pergunta própria do
    post e não cópia de `/faq/<slug>`. Abertura autossuficiente, números com unidade.
@@ -291,3 +378,14 @@ Leia sob demanda, não tudo de uma vez:
   externo, quem é concorrente e quais fontes são seguras.
 - [`references/revisao-ortografica.md`](references/revisao-ortografica.md) - os
   erros de pt-BR que passam batido e os nomes próprios do projeto.
+
+Specs do projeto que mandam no conteúdo, quando a pauta encostar nelas:
+
+- [`docs/specs/plano-conteudo-aeroportos.md`](../../../docs/specs/plano-conteudo-aeroportos.md) -
+  a estratégia por fases, os clusters de cabeça e a divisão de praças.
+- [`docs/specs/indice-precos.md`](../../../docs/specs/indice-precos.md) - como o
+  preço de parceiro é publicado no produto, e por que ali não entra não-parceiro.
+- [`docs/specs/lote-mapeado-vitrine.md`](../../../docs/specs/lote-mapeado-vitrine.md) -
+  ADR-010, o que a ficha do lote sem contrato mostra e o que ela proíbe.
+- [`docs/specs/blog.md`](../../../docs/specs/blog.md) - slug, URL, taxonomia,
+  consolidação e o `FAQPage` do post.
