@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   graphql_public: {
     Tables: {
@@ -1516,6 +1516,7 @@ export type Database = {
           meta_description: string | null
           meta_title: string | null
           name: string
+          public_slug: string | null
           seo_label: string | null
           short_name: string | null
           slug: string
@@ -1540,6 +1541,7 @@ export type Database = {
           meta_description?: string | null
           meta_title?: string | null
           name: string
+          public_slug?: string | null
           seo_label?: string | null
           short_name?: string | null
           slug: string
@@ -1564,6 +1566,7 @@ export type Database = {
           meta_description?: string | null
           meta_title?: string | null
           name?: string
+          public_slug?: string | null
           seo_label?: string | null
           short_name?: string | null
           slug?: string
@@ -2324,11 +2327,14 @@ export type Database = {
           is_24h: boolean
           is_listed: boolean
           latitude: number | null
+          legal_name: string | null
           longitude: number | null
           name: string
           notice: string | null
           phone: string | null
           photos: Json
+          public_name: string | null
+          public_slug: string | null
           reservation_policy: string | null
           review_avg: number | null
           review_count: number
@@ -2336,6 +2342,7 @@ export type Database = {
           shuttle_to_terminal_minutes: number | null
           slug: string
           status: Database["public"]["Enums"]["entity_status"]
+          tax_id: string | null
           timezone: string
           tolerance_minutes: number
           updated_at: string
@@ -2367,11 +2374,14 @@ export type Database = {
           is_24h?: boolean
           is_listed?: boolean
           latitude?: number | null
+          legal_name?: string | null
           longitude?: number | null
           name: string
           notice?: string | null
           phone?: string | null
           photos?: Json
+          public_name?: string | null
+          public_slug?: string | null
           reservation_policy?: string | null
           review_avg?: number | null
           review_count?: number
@@ -2379,6 +2389,7 @@ export type Database = {
           shuttle_to_terminal_minutes?: number | null
           slug: string
           status?: Database["public"]["Enums"]["entity_status"]
+          tax_id?: string | null
           timezone?: string
           tolerance_minutes?: number
           updated_at?: string
@@ -2410,11 +2421,14 @@ export type Database = {
           is_24h?: boolean
           is_listed?: boolean
           latitude?: number | null
+          legal_name?: string | null
           longitude?: number | null
           name?: string
           notice?: string | null
           phone?: string | null
           photos?: Json
+          public_name?: string | null
+          public_slug?: string | null
           reservation_policy?: string | null
           review_avg?: number | null
           review_count?: number
@@ -2422,6 +2436,7 @@ export type Database = {
           shuttle_to_terminal_minutes?: number | null
           slug?: string
           status?: Database["public"]["Enums"]["entity_status"]
+          tax_id?: string | null
           timezone?: string
           tolerance_minutes?: number
           updated_at?: string
@@ -4424,6 +4439,8 @@ export type Database = {
           name: string
           notified_owner_at: string | null
           phone: string | null
+          public_name: string | null
+          public_slug: string | null
           slug: string
           updated_at: string
         }
@@ -4447,6 +4464,8 @@ export type Database = {
           name: string
           notified_owner_at?: string | null
           phone?: string | null
+          public_name?: string | null
+          public_slug?: string | null
           slug: string
           updated_at?: string
         }
@@ -4470,6 +4489,8 @@ export type Database = {
           name?: string
           notified_owner_at?: string | null
           phone?: string | null
+          public_name?: string | null
+          public_slug?: string | null
           slug?: string
           updated_at?: string
         }
@@ -6712,6 +6733,7 @@ export type Database = {
         Returns: undefined
       }
       review_request_expected_key: { Args: never; Returns: string }
+      seo_label_primary: { Args: { p_label: string }; Returns: string }
       set_booking_addons: {
         Args: { p_add_on_ids: string[]; p_code: string }
         Returns: Json
@@ -6803,6 +6825,10 @@ export type Database = {
           p_service: number
           p_value: number
         }
+        Returns: string
+      }
+      unit_public_name: {
+        Args: { p_brand: string; p_destination_id: string }
         Returns: string
       }
       validate_coupon: {
