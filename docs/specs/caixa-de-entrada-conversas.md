@@ -1,0 +1,117 @@
+# Caixa de entrada das conversas da Mia
+
+Tela `/manager/conversas`: lista à esquerda, conversa à direita, como no WhatsApp Web.
+Substitui o Studio do Mastra, que é ferramenta de desenvolvedor (lista thread por id
+cru, não tem busca, não distingue lida de não lida e não deixa ninguém responder).
+
+Vale só para a Mia (`movepark-hub`). O Go2Park continua no Studio.
+
+## Por que existe uma ponte, e não uma consulta
+
+As conversas **não moram no banco do Hub**. Elas vivem no Postgres do beast-bots
+(`ghotifumqvedlkmeqwli`), que é outro projeto Supabase. Então o front nunca fala com
+o banco das conversas:
+
+```
+Manager (front)  →  Edge `mia-inbox` (portão hub_admin)  →  beast-bots `/inbox`  →  Postgres
+```
+
+O portão existe porque o token do beast-bots (`MASTRA_ADMIN_TOKEN`) não pode chegar ao
+navegador. A Edge confere `profiles.role === 'hub_admin'` e monta o corpo **campo a
+campo**: nada que o cliente mandou passa direto.
+
+> **Armadilha desse desenho, já paga uma vez (27/08/2026):** campo novo que a tela
+> mande e o portão não copie **some em silêncio**. A resposta continua 200, e o
+> sintoma aparece longe: `busca` e `cursor` foram esquecidos, então a busca não
+> filtrava nada e a rolagem infinita devolvia a primeira página de novo. Ao acrescentar
+> parâmetro, acrescente também em `corpoParaOBeastBots` e no teste
+> `supabase/functions/mia-inbox/index.test.ts`.
+
+## Estado da caixa, na metadata da thread
+
+`mastra_threads.metadata` é `jsonb` e já carrega as chaves `channel_*` do canal. A caixa
+acrescenta três, com prefixo próprio:
+
+| Chave | O que guarda |
+|---|---|
+| `inbox_lida_ate` | ISO da última mensagem que a equipe viu |
+| `inbox_assumida_por` | uid de quem assumiu (nulo = agente ativo) |
+| `inbox_assumida_em` | ISO |
+
+Escrita com `UPDATE ... SET metadata = metadata || $2::jsonb`, **nunca** com
+`updateThread`: ele recebe o objeto inteiro e apagaria as chaves do canal numa corrida.
+
+**Não lida** é derivado, sem contador para dessincronizar: a última mensagem é do cliente
+**e** `inbox_lida_ate` está ausente ou é anterior a ela.
+
+## Assumir a conversa cala o agente
+
+`handler-canal.ts` lê a thread antes do `defaultHandler`. Se `inbox_assumida_por` existe:
+grava a fala do cliente e sai, sem chamar o agente. O agente **só volta quando alguém
+devolve**, nunca sozinho.
+
+> **O achado que molda isso:** a mensagem do cliente só é gravada **dentro** do
+> `defaultHandler`. Um `return` seco antes dele perderia a mensagem, e o humano não veria
+> o que o cliente mandou, que é justamente o ponto da funcionalidade. Por isso o caminho
+> pausado chama `saveMessages` por conta própria (`assumida.ts`).
+
+Em dúvida (erro ao ler a metadata), o agente responde: cliente sem resposta nenhuma é
+pior que resposta automática numa conversa que alguém atendia.
+
+## Busca e paginação são do servidor
+
+A lista vem de 30 em 30, cortada pelo **horário** da última conversa da página. `offset`
+seria instável aqui: a ordem muda a cada mensagem que chega, e quem rola veria conversa
+repetida e conversa pulada.
+
+A busca é consulta, não filtro de navegador. Filtrar no navegador só acha o que coube na
+página aberta. Ela alcança:
+
+- o **telefone**, comparado só por dígitos, para "(41) 98814" achar `5541988149449`;
+- o **texto de toda mensagem** da conversa, para "voucher" ou uma placa acharem.
+
+`parametrosDaBusca` (em `inbox-sql.ts`) guarda o limite disso: menos de 4 dígitos não vira
+busca de telefone, senão "carro 2" viraria `%2%`, casaria com quase todo número do banco e
+devolveria a lista inteira parecendo resultado.
+
+## Origem
+
+A conversa diz de onde veio, derivado do formato do id da thread (`:manager:` é a bolinha
+de teste do Manager, o resto é WhatsApp). A tela mostra o logo do WhatsApp ou um globo.
+
+O telefone `5500000000000` é o sentinela de "sem cliente" da bolinha de teste e aparece
+como **Teste sem cliente**: formatado, viraria "(00) 00000-0000" e passaria por cliente de
+verdade na lista.
+
+## Anexos e link de leitura
+
+Imagem, áudio, arquivo e figurinha chegam como data URI, gravados pelo adaptador no
+momento em que a mensagem entra. A tela pede cada um **por demanda** (`acao: "anexo"`),
+porque carregar tudo junto arrastaria a conversa inteira em base64.
+
+`compartilhar` gera um token de 64 hex e abre `/conversa/<token>`, que é **público e
+somente leitura**, servido pela Edge `conversa-publica` (`verify_jwt = false`).
+`descompartilhar` invalida. A rota está em `ROTAS_PRIVADAS` do worker (noindex) e em
+`ROTAS_DE_APP`, sem o que o manifesto de caminhos responderia 404 em produção.
+
+## Onde está cada coisa
+
+| Camada | Arquivo |
+|---|---|
+| Tela | `src/routes/manager/conversas.tsx`, `src/features/inbox/` |
+| Página pública | `src/routes/conversa-publica.tsx` |
+| Portão | `supabase/functions/mia-inbox/`, `supabase/functions/conversa-publica/` |
+| Rota e SQL | beast-bots: `platform/channels/inbox-route.ts`, `inbox-sql.ts` |
+| Pausa do agente | beast-bots: `platform/channels/handler-canal.ts`, `assumida.ts` |
+
+## Riscos que já morderam
+
+1. **Rota customizada do Mastra nasce pública.** `/inbox` precisa estar nominalmente em
+   `protected` no `platform/server/auth.ts`. Há teste de contrato para isso.
+2. **Quem tem o id da thread, lê.** A memória não separa por agente, então todo id que
+   chega do cliente passa por `memoriaPertenceAoTenant`.
+3. **Página sem lista derruba a tela.** `pages.flatMap((p) => p.conversas)` vira
+   `[undefined]` quando o backend responde sem a lista, e isso derrubou a sidebar inteira
+   do Manager. O `?? []` é por página, não só no fim.
+4. **Conversa assumida e esquecida** fica sem resposta para sempre, por decisão. A tela
+   mitiga com o filtro "Assumidas".
