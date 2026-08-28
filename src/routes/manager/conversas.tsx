@@ -1,6 +1,7 @@
 import * as React from "react";
 import {
   Copy,
+  ImageSquare,
   ChatCircleDots,
   MagnifyingGlass,
   Envelope,
@@ -16,6 +17,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CarregandoConversa } from "@/features/inbox/CarregandoConversa";
+import { conversaEmImagem } from "@/features/inbox/conversaEmImagem";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Bubble } from "@/features/assistant/ChatBubble";
@@ -40,6 +42,16 @@ import {
   textoDaFala,
   type FiltroDaCaixa,
 } from "@/features/inbox/inbox.logic";
+
+/** Salva o PNG quando o navegador não sabe copiar imagem. */
+function baixarImagem(png: Blob, telefone: string) {
+  const url = URL.createObjectURL(png);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `conversa-${telefone.replace(/\D/g, "") || "movepark"}.png`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 /**
  * Caixa de entrada das conversas da Mia.
@@ -75,6 +87,7 @@ export default function ManagerConversas() {
   const devolver = useDevolverConversa();
   const responder = useResponderConversa();
   const [resposta, setResposta] = React.useState("");
+  const [gerandoImagem, setGerandoImagem] = React.useState(false);
   const fim = React.useRef<HTMLDivElement>(null);
 
   const assumida = !!conversa.data?.assumidaPor;
@@ -347,6 +360,44 @@ export default function ManagerConversas() {
                 >
                   <Copy size={16} />
                   Copiar conversa
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  disabled={!conversa.data || gerandoImagem}
+                  onClick={async () => {
+                    setGerandoImagem(true);
+                    try {
+                      const png = await conversaEmImagem(
+                        conversa.data?.falas ?? [],
+                        telefoneDaConversa,
+                      );
+                      /*
+                        `ClipboardItem` e' o unico jeito de por' imagem na area de
+                        transferencia, e nem todo navegador tem. Sem ele a imagem ja'
+                        existe: vale mais baixar do que dizer "nao deu".
+                      */
+                      if (typeof ClipboardItem === "function" && navigator.clipboard?.write) {
+                        await navigator.clipboard.write([
+                          new ClipboardItem({ "image/png": png }),
+                        ]);
+                        toast.success("Imagem copiada. Já dá para colar.");
+                      } else {
+                        baixarImagem(png, telefoneDaConversa);
+                        toast.success("Imagem baixada: este navegador não copia imagem.");
+                      }
+                    } catch (e) {
+                      toast.error(
+                        e instanceof Error ? e.message : "Não consegui gerar a imagem.",
+                      );
+                    } finally {
+                      setGerandoImagem(false);
+                    }
+                  }}
+                >
+                  <ImageSquare size={16} />
+                  {gerandoImagem ? "Gerando…" : "Copiar imagem"}
                 </Button>
                 <Button
                   type="button"

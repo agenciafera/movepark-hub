@@ -140,6 +140,25 @@ colar num modelo leria pior do que o cliente leu no WhatsApp. Anexo vira `<image
 `<áudio>`, `<arquivo: nome>`: o arquivo não viaja no texto, e omitir esconderia que
 existiu um áudio ali.
 
+**Copiar imagem** faz o mesmo em PNG, com as bolhas da tela: cliente à esquerda em
+cinza, quem atende à direita em roxo, nome e horário. Serve para quem vai ler, e também
+para um modelo que lê imagem.
+
+O desenho é `canvas` puro, sem `html2canvas` nem parente: são cinco formas (bolha, texto,
+nome, hora, marca de anexo), e uma dependência que reimplementa meio CSS erraria em fonte
+e emoji por um resultado igual. O layout mora separado do desenho, em
+`conversaEmImagem.ts`: a conta de quebrar linha e empilhar bolha é pura e tem teste, e só
+o desenho toca no canvas. Três coisas que a medição corrigiu: a hora é desenhada **fora**
+da bolha, então usa cinza nos dois lados (um tom claro combinando com o roxo sumia no
+branco); o vão entre bolhas guarda essa hora, e com 12px ela encostava na bolha seguinte
+quando duas falas vinham do mesmo lado; e palavra maior que a linha (a URL do voucher)
+não é partida, porque quebrada ela deixa de ser clicável.
+
+Conversa muito longa não vira imagem: acima de 20000px o canvas falha e a imagem já seria
+ilegível. Nesse caso a tela avisa e manda copiar em texto, que não tem teto. Truncar em
+silêncio seria pior, porque a pessoa compartilharia meia conversa achando que
+compartilhou toda.
+
 > **Isto substituiu o link público de leitura** (29/08/2026), que gerava um token de 64
 > hex e abria `/conversa/<token>` numa Edge `verify_jwt = false`. Saíram junto a rota,
 > a página, a Edge (apagada do projeto, não só do repo), as entradas do worker e os

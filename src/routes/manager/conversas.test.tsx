@@ -38,6 +38,12 @@ vi.mock("@/features/inbox/api", async (original) => ({
   useAnexoPublico: () => ({ data: undefined, isPending: false, isError: false }),
 }));
 
+// O canvas nao existe no happy-dom, e o desenho ja' tem teste proprio em
+// conversaEmImagem.test.ts. Aqui o que importa e' o caminho ate' a area de transferencia.
+vi.mock("@/features/inbox/conversaEmImagem", () => ({
+  conversaEmImagem: () => Promise.resolve(new Blob(["png"], { type: "image/png" })),
+}));
+
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 import ManagerConversas from "./conversas";
@@ -200,6 +206,35 @@ describe("caixa de entrada", () => {
     expect(escrito[0]).toContain("Mia: Oi! Posso ajudar?");
     // Duas falas, duas linhas: nada de cabecalho inventado em volta.
     expect(escrito[0].split("\n").length).toBe(2);
+  });
+
+  it("copiar imagem põe um PNG na área de transferência", async () => {
+    const itens: unknown[] = [];
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { write: (i: unknown[]) => (itens.push(...i), Promise.resolve()) },
+    });
+    // `ClipboardItem` nao existe no happy-dom: sem ele o codigo cai no download.
+    (globalThis as { ClipboardItem?: unknown }).ClipboardItem = class {
+      constructor(public dados: Record<string, Blob>) {}
+    };
+
+    lista.current = [linha({ id: "t-41" })];
+    aberta.current = {
+      threadId: "t-41",
+      telefone: "5541988149449",
+      lidaAte: null,
+      assumidaPor: null,
+      falas: [
+        { id: "m1", papel: "cliente", autor: "", texto: "ola", em: "2026-08-28T23:00:00.000Z", anexos: [] },
+      ],
+    };
+    renderWithProviders(<ManagerConversas />);
+    fireEvent.click(screen.getAllByRole("button", { name: /Conversa com/ })[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Copiar imagem" }));
+
+    await waitFor(() => expect(itens.length).toBe(1));
+    expect((itens[0] as { dados: Record<string, Blob> }).dados["image/png"].type).toBe("image/png");
   });
 
   it("página sem lista não derruba a tela", () => {
