@@ -126,8 +126,11 @@ porque carregar tudo junto arrastaria a conversa inteira em base64.
 
 ## Levar a conversa embora: texto, não link
 
-**Copiar conversa** põe a conversa inteira na área de transferência no formato que o
-WhatsApp usa ao exportar:
+**Copiar conversa** é um botão só, com os dois formatos no menu: **Copiar em texto** e
+**Copiar em imagem**. A ação é uma (levar a conversa embora) e o formato é detalhe dela;
+dois botões lado a lado obrigavam a ler os dois para escolher.
+
+Em texto, a conversa sai no formato que o WhatsApp usa ao exportar:
 
 ```
 [28/08/2026 09:01] (19) 98826-1313: Bom dia, não consegui achar pelo Waze <imagem>

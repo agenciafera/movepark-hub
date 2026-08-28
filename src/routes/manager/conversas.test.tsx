@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/utils";
 import type { ConversaAberta, ConversaDaLista } from "@/features/inbox/api";
 
@@ -179,6 +180,9 @@ describe("caixa de entrada", () => {
 
   it("copiar leva a conversa inteira em texto, no formato do WhatsApp", async () => {
     const escrito: string[] = [];
+    // `userEvent.setup()` instala o PROPRIO stub de clipboard, entao ele vem primeiro:
+    // ao contrario, o stub daqui era substituido e a copia sumia sem erro nenhum.
+    const user = userEvent.setup();
     // `navigator.clipboard` so' tem getter no happy-dom; definir a propriedade e' o
     // unico jeito de espiar a copia.
     Object.defineProperty(navigator, "clipboard", {
@@ -199,7 +203,10 @@ describe("caixa de entrada", () => {
     };
     renderWithProviders(<ManagerConversas />);
     fireEvent.click(screen.getAllByRole("button", { name: /Conversa com/ })[0]);
-    fireEvent.click(screen.getByRole("button", { name: "Copiar conversa" }));
+    // O menu do Radix escuta `pointerdown`, e nao `click`: com `fireEvent` ele nao abre.
+    await user.click(screen.getByRole("button", { name: /Copiar conversa/ }));
+    // O item dispara `onSelect` no click; o `pointerdown` do userEvent so' abre o menu.
+    fireEvent.click(await screen.findByRole("menuitem", { name: /Copiar em texto/ }));
 
     await waitFor(() => expect(escrito.length).toBe(1));
     expect(escrito[0]).toContain("(41) 98814-9449: ola");
@@ -210,6 +217,7 @@ describe("caixa de entrada", () => {
 
   it("copiar imagem põe um PNG na área de transferência", async () => {
     const itens: unknown[] = [];
+    const user = userEvent.setup();
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
       value: { write: (i: unknown[]) => (itens.push(...i), Promise.resolve()) },
@@ -231,7 +239,8 @@ describe("caixa de entrada", () => {
     };
     renderWithProviders(<ManagerConversas />);
     fireEvent.click(screen.getAllByRole("button", { name: /Conversa com/ })[0]);
-    fireEvent.click(screen.getByRole("button", { name: "Copiar imagem" }));
+    await user.click(screen.getByRole("button", { name: /Copiar conversa/ }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: /Copiar em imagem/ }));
 
     await waitFor(() => expect(itens.length).toBe(1));
     expect((itens[0] as { dados: Record<string, Blob> }).dados["image/png"].type).toBe("image/png");

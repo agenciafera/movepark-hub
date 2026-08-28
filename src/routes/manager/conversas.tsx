@@ -2,6 +2,7 @@ import * as React from "react";
 import {
   Copy,
   ImageSquare,
+  CaretDown,
   ChatCircleDots,
   MagnifyingGlass,
   Envelope,
@@ -19,6 +20,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CarregandoConversa } from "@/features/inbox/CarregandoConversa";
 import { conversaEmImagem } from "@/features/inbox/conversaEmImagem";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Bubble } from "@/features/assistant/ChatBubble";
 import { Anexo } from "@/features/inbox/Anexo";
@@ -342,63 +349,73 @@ export default function ManagerConversas() {
                   {assumida ? <Robot size={16} /> : <HandPalm size={16} />}
                   {assumida ? "Devolver" : "Assumir"}
                 </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  disabled={!conversa.data}
-                  onClick={() => {
-                    const texto = conversaEmTexto(
-                      conversa.data?.falas ?? [],
-                      telefoneDaConversa,
-                    );
-                    navigator.clipboard
-                      ?.writeText(texto)
-                      .then(() => toast.success("Conversa copiada. Já dá para colar."))
-                      .catch(() => toast.error("Não consegui copiar. Tente de novo."));
-                  }}
-                >
-                  <Copy size={16} />
-                  Copiar conversa
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  disabled={!conversa.data || gerandoImagem}
-                  onClick={async () => {
-                    setGerandoImagem(true);
-                    try {
-                      const png = await conversaEmImagem(
-                        conversa.data?.falas ?? [],
-                        telefoneDaConversa,
-                      );
-                      /*
-                        `ClipboardItem` e' o unico jeito de por' imagem na area de
-                        transferencia, e nem todo navegador tem. Sem ele a imagem ja'
-                        existe: vale mais baixar do que dizer "nao deu".
-                      */
-                      if (typeof ClipboardItem === "function" && navigator.clipboard?.write) {
-                        await navigator.clipboard.write([
-                          new ClipboardItem({ "image/png": png }),
-                        ]);
-                        toast.success("Imagem copiada. Já dá para colar.");
-                      } else {
-                        baixarImagem(png, telefoneDaConversa);
-                        toast.success("Imagem baixada: este navegador não copia imagem.");
-                      }
-                    } catch (e) {
-                      toast.error(
-                        e instanceof Error ? e.message : "Não consegui gerar a imagem.",
-                      );
-                    } finally {
-                      setGerandoImagem(false);
-                    }
-                  }}
-                >
-                  <ImageSquare size={16} />
-                  {gerandoImagem ? "Gerando…" : "Copiar imagem"}
-                </Button>
+                {/*
+                  Um botao so', com os dois formatos dentro.
+
+                  Dois botoes lado a lado obrigavam a ler os dois para escolher, e a
+                  acao e' uma: levar a conversa embora. O formato e' detalhe da acao,
+                  entao ele mora no menu.
+                */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button type="button" size="sm" variant="secondary" disabled={!conversa.data}>
+                      <Copy size={16} />
+                      {gerandoImagem ? "Gerando…" : "Copiar conversa"}
+                      <CaretDown size={14} />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        const texto = conversaEmTexto(
+                          conversa.data?.falas ?? [],
+                          telefoneDaConversa,
+                        );
+                        navigator.clipboard
+                          ?.writeText(texto)
+                          .then(() => toast.success("Conversa copiada. Já dá para colar."))
+                          .catch(() => toast.error("Não consegui copiar. Tente de novo."));
+                      }}
+                    >
+                      <Copy size={16} />
+                      Copiar em texto
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={async () => {
+                        setGerandoImagem(true);
+                        try {
+                          const png = await conversaEmImagem(
+                            conversa.data?.falas ?? [],
+                            telefoneDaConversa,
+                          );
+                          /*
+                            `ClipboardItem` e' o unico jeito de por' imagem na area de
+                            transferencia, e nem todo navegador tem. Sem ele a imagem
+                            ja' existe: vale mais baixar do que dizer "nao deu".
+                          */
+                          if (typeof ClipboardItem === "function" && navigator.clipboard?.write) {
+                            await navigator.clipboard.write([
+                              new ClipboardItem({ "image/png": png }),
+                            ]);
+                            toast.success("Imagem copiada. Já dá para colar.");
+                          } else {
+                            baixarImagem(png, telefoneDaConversa);
+                            toast.success("Imagem baixada: este navegador não copia imagem.");
+                          }
+                        } catch (e) {
+                          toast.error(
+                            e instanceof Error ? e.message : "Não consegui gerar a imagem.",
+                          );
+                        } finally {
+                          setGerandoImagem(false);
+                        }
+                      }}
+                    >
+                      <ImageSquare size={16} />
+                      Copiar em imagem
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button
                   type="button"
                   size="sm"
