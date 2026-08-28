@@ -7,6 +7,8 @@ import worker, {
   ehRotaDeApp,
   ehRotaPrivada,
   normalizaBarraFinal,
+  wpLegacyRedirect,
+  blogRedirect,
 } from "./worker";
 import { SITEMAP_PRIVATE_PREFIXES } from "./lib/sitemapRoutes";
 
@@ -825,5 +827,31 @@ describe("barra final vira 301 pra forma canônica", () => {
     expect(normalizaBarraFinal(new URL("https://movepark.co/blog/um-post/"))).toBeNull();
     expect(normalizaBarraFinal(new URL("https://movepark.co/"))).toBeNull();
     expect(normalizaBarraFinal(new URL("https://movepark.co/precos"))).toBeNull();
+  });
+});
+
+describe("mapa do WordPress com entrada identidade", () => {
+  /** A ficha que manteve o slug do WP redirecionava para ela mesma (loop infinito). */
+  it("URL igual ao destino não redireciona: a página abre", () => {
+    const r = wpLegacyRedirect(
+      new URL("https://movepark.co/estacionamentos/aeroporto-de-viracopos/br-parking-viracopos"),
+    );
+    expect(r).toBeNull();
+  });
+
+  it("URL do WP diferente da do Hub segue em 301", () => {
+    const r = wpLegacyRedirect(
+      new URL("https://movepark.co/estacionamentos/aeroporto-viracopos/br-parking"),
+    );
+    expect(r?.status).toBe(301);
+    expect(r?.headers.get("Location")).toBe(
+      "/estacionamentos/aeroporto-de-viracopos/br-parking-viracopos",
+    );
+  });
+});
+
+describe("feed do blog não entra no contrato de barra", () => {
+  it("/blog/feed.xml passa direto pro asset, sem 301", () => {
+    expect(blogRedirect(new URL("https://movepark.co/blog/feed.xml"))).toBeNull();
   });
 });

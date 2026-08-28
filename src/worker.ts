@@ -501,7 +501,11 @@ export function wpLegacyRedirect(url: URL): Response | null {
   const path = url.pathname.replace(/\/+$/, "") || "/";
   const destino =
     WP_INSTITUTIONAL_REDIRECTS[path] ?? WP_AEROPORTO_REDIRECTS[path] ?? WP_ESTACIONAMENTO_REDIRECTS[path];
-  return destino ? redirect301(destino + url.search) : null;
+  // URL do WordPress idêntica à do Hub (a ficha manteve o slug): redirecionar
+  // seria um 301 para ela mesma, e o loop derruba a página inteira. Aconteceu
+  // com a br-parking-viracopos, que ficou inacessível até 28/08/2026.
+  if (!destino || destino === path) return null;
+  return redirect301(destino + url.search);
 }
 
 /**
@@ -542,6 +546,11 @@ export function blogRedirect(url: URL): Response | null {
 
   const segments = path.slice("/blog".length).split("/").filter(Boolean);
   if (!segments.length) return null;
+
+  // Arquivo servido de dentro do /blog (feed.xml): não é slug de post, não entra
+  // no contrato de barra final. Sem isto, /blog/feed.xml virava 301 pra forma com
+  // barra e o RSS nunca abria.
+  if (/\.[a-z0-9]+$/i.test(segments[segments.length - 1])) return null;
 
   const semBarra = !url.pathname.endsWith("/");
   const paraCanonica = () => redirect301(`${path}/${url.search}`);
