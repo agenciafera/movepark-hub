@@ -77,11 +77,11 @@ export function localBusinessSchema(listing: ListingDetail, opts?: { description
     url: `${SITE_URL}/p/${listing.company.slug}/${listing.location.slug}/${listing.parking_type.code}`,
     telephone: listing.location.phone ?? undefined,
     email: listing.location.email ?? undefined,
-    // Identidade legal do parceiro, do catálogo: razão social conferida no
-    // registro público e CNPJ conferido no site do próprio parceiro. É o lastro
-    // que liga a unidade à empresa real.
-    legalName: listing.company.legal_name ?? undefined,
-    taxID: cnpjFormatado(listing.company.tax_id),
+    // Identidade legal do catálogo, conferida no registro público: a da unidade
+    // quando existe (Aerovalet tem um CNPJ por praça), senão a da empresa. É o
+    // lastro que liga a página à operação real.
+    legalName: listing.location.legal_name ?? listing.company.legal_name ?? undefined,
+    taxID: cnpjFormatado(listing.location.tax_id ?? listing.company.tax_id),
     address: listing.location.address
       ? {
           "@type": "PostalAddress",

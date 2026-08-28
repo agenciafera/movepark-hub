@@ -725,6 +725,18 @@ describe("taxID no LocalBusiness", () => {
     expect(localBusinessSchema(fake).taxID).toBeUndefined();
   });
 
+  /** Aerovalet: um CNPJ por praça. A identidade da unidade vence a da empresa. */
+  it("identidade da unidade tem precedência sobre a da empresa", () => {
+    const listing = makeListing();
+    listing.company.tax_id = "17163995000104";
+    listing.company.legal_name = "Empresa Guarda-Chuva Ltda";
+    listing.location.tax_id = "10471072000766";
+    listing.location.legal_name = "B.M.L. Serviços de Estacionamento Ltda";
+    const s = localBusinessSchema(listing);
+    expect(s.taxID).toBe("10.471.072/0007-66");
+    expect(s.legalName).toBe("B.M.L. Serviços de Estacionamento Ltda");
+  });
+
   it("a razão social do catálogo sai como legalName, e sem ela o campo não existe", () => {
     const listing = makeListing();
     listing.company.legal_name = "Traces Estacionamentos e Participações Ltda";

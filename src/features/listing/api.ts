@@ -35,6 +35,11 @@ export type ListingDetail = {
     email: string | null;
     notice: string | null;
     has_notice: boolean;
+    /** Razão social da operação desta unidade quando difere da empresa (ex.: Aerovalet
+     *  tem um CNPJ por praça). Nula = herda company.legal_name. */
+    legal_name: string | null;
+    /** CNPJ da operação desta unidade. Nulo = herda company.tax_id. */
+    tax_id: string | null;
     directions_text: string | null;
     shuttle_frequency_minutes: number | null;
     shuttle_to_terminal_minutes: number | null;
@@ -88,7 +93,7 @@ export type ListingDetail = {
 const baseSelect = `
   id, capacity, is_active, external_checkout_url,
   location:location!inner(
-    id, slug, name, address, phone, email, notice, has_notice,
+    id, slug, name, address, phone, email, notice, has_notice, legal_name, tax_id,
     directions_text, shuttle_frequency_minutes, shuttle_to_terminal_minutes,
     reservation_policy, checkout_mode, go2park_enabled, go2park_whatsapp, timezone, latitude, longitude, google_place_id,
     has_pcd_config, has_passenger_quantity, review_avg, review_count, photos,
@@ -188,6 +193,8 @@ export async function fetchListing(
       address: m.location.address,
       phone: m.location.phone,
       email: m.location.email,
+      legal_name: m.location.legal_name ?? null,
+      tax_id: m.location.tax_id ?? null,
       notice: m.location.notice,
       has_notice: m.location.has_notice,
       directions_text: m.location.directions_text ?? null,
