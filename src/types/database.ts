@@ -5840,6 +5840,9 @@ export type Database = {
           latitude: number
           longitude: number
           name: string
+          public_name: string
+          public_path: string
+          public_slug: string
           reference_name: string
           slug: string
         }[]
@@ -5974,6 +5977,7 @@ export type Database = {
           location_slug: string
           operator_slug: string
           parking_type_code: string
+          public_path: string
           sort_order: number
         }[]
       }
@@ -6054,6 +6058,10 @@ export type Database = {
         Returns: Json
       }
       location_has_photo: { Args: { p_photos: Json }; Returns: boolean }
+      location_public_path: {
+        Args: { l: Database["public"]["Tables"]["location"]["Row"] }
+        Returns: string
+      }
       locations_high_demand_today: {
         Args: { p_location_ids: string[] }
         Returns: {
@@ -6695,6 +6703,10 @@ export type Database = {
         Returns: Json
       }
       pricing_rule_fingerprint: { Args: { p_rule_id: string }; Returns: Json }
+      prospect_public_path: {
+        Args: { p: Database["public"]["Tables"]["prospect_location"]["Row"] }
+        Returns: string
+      }
       prospect_redirect_target: {
         Args: { p_destination_slug: string; p_slug: string }
         Returns: {
@@ -6702,6 +6714,7 @@ export type Database = {
           target: string
         }[]
       }
+      public_slug_reservado: { Args: { p_slug: string }; Returns: boolean }
       publish_legal_document: {
         Args: { p_content: string; p_slug: string }
         Returns: Json
@@ -6830,6 +6843,14 @@ export type Database = {
       unit_public_name: {
         Args: { p_brand: string; p_destination_id: string }
         Returns: string
+      }
+      url_legacy_map: {
+        Args: never
+        Returns: {
+          legacy_path: string
+          permanent: boolean
+          target_path: string
+        }[]
       }
       validate_coupon: {
         Args: {

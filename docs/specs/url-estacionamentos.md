@@ -1,6 +1,6 @@
 # URL e nome do estacionamento
 
-**Status:** fase 1 no ar (27/08/2026) · **Migrations:** `20261102090000_url_publica_estacionamentos.sql` e `20261102091500_public_slug_so_hub_admin.sql` · **Teste:** `supabase/tests/url_publica_estacionamentos.test.sql`
+**Status:** fase 1 no ar (27/08/2026); fase 2 com a base pronta no banco, sem virada de URL ainda · **Migrations:** `20261102090000`, `20261102091500`, `20261103090000`, `20261103091500` · **Teste:** `supabase/tests/url_publica_estacionamentos.test.sql`
 **Relacionado:** [seo-indexacao.md](./seo-indexacao.md) (cutover do domínio), [lote-mapeado-vitrine.md](./lote-mapeado-vitrine.md) (ADR-010, conversão), [borda-cloudflare.md](./borda-cloudflare.md) (worker)
 
 A fase 1 grava nome e slug canônicos no banco, sem tocar em rota. A fase 2 é a virada das URLs, que é um evento único e ainda não aconteceu. Quem for implementar a fase 2 encontra o checklist inteiro no fim deste arquivo.
@@ -109,6 +109,16 @@ Migration `20261102090000_url_publica_estacionamentos.sql`:
 
 O desenho alternativo era uma tabela `public_slug_registry(destination_id, slug, ...)` com unique, alimentada por trigger nas duas pontas. Ela dá a garantia num constraint só, mas cria uma terceira cópia do dado que pode divergir, e o repo já resolve exatamente este problema com trigger em `prospect_location_guard_slug` (slug único também contra `location.slug`). Duas guardas simétricas seguem a casa e têm menos peça para envelhecer. O que se abre mão é a corrida entre dois inserts simultâneos nas duas tabelas, que aqui é escrita de admin, rara e revisada.
 
+## O que a fase 2 já tem pronto, sem mudar URL nenhuma
+
+`20261103090000` e `20261103091500`. Tudo aditivo: as URLs de hoje continuam iguais.
+
+- **`location_public_path(location)` e `prospect_public_path(prospect_location)`**, campos computados do PostgREST. `select=id,name,location_public_path` funciona em qualquer consulta, e o mesmo corpo serve dentro das RPCs. Existe porque quem monta link para a ficha são doze arquivos do front, cada um com uma fonte diferente (RPC de preço, RPC da vitrine, select direto, Edge de busca): sem isso a gramática da URL passaria a existir em doze lugares, e a primeira divergência só apareceria no Search Console.
+- **Segmentos reservados.** `precos` e `mais-barato` são páginas do destino e o roteador resolve estático antes de dinâmico, então um lote com esse slug não daria erro em lugar nenhum: ficaria inalcançável. As duas guardas recusam (`23514`).
+- **`url_legacy_map()`**, o mapa de 301 da virada: 139 linhas vistas pelo `anon` (17 URLs de unidade, 26 destinos mais o índice, 43 lotes mapeados, 26 de preços e 26 de mais barato). O worker busca a tabela inteira uma vez por isolate, em vez de consultar por requisição como o `prospect_redirect_target` faz hoje, que não escalaria para a rota principal do site. **Linha onde origem e destino coincidem fica de fora por construção**, e é o caso do `br-parking-viracopos`, que ficou em loop de 301 em produção.
+- **`security definer` no mapa, com os gates escritos por extenso.** A primeira versão era invoker, para a RLS decidir o que é público, e morria em `42501`: `prospect_location` teve o `select` revogado de `anon` e concedido por coluna (Q-021, o telefone que a página não mostra), e o mapa lê `converted_at`. Chamado pelo worker com a anon key, o mapa viria vazio e a virada responderia 404 em toda URL antiga.
+- **As RPCs de vitrine devolvem o caminho pronto:** `home_featured_offers`, `destination_prospect_cards` (que agora aceita o slug antigo e o novo) e `destination_price_index` ganharam `public_path`, mais `public_slug` no destino.
+
 ## Fase 2: a virada (ainda não feita)
 
 Nenhum item é opcional; cada um, esquecido, tira página do índice ou quebra link.
@@ -117,8 +127,8 @@ Nenhum item é opcional; cada um, esquecido, tira página do índice ou quebra l
 - [ ] **Rotas.** `/estacionamentos/:destino/:lote` resolve as duas famílias; `/destinos/:slug` vira `/estacionamentos/:slug`; `precos` e `mais-barato` viram segmento reservado dentro do destino.
 - [ ] **76 posts do blog** têm link para `/destinos/` no `body_md` (69 publicados). `UPDATE` no mesmo deploy, senão todo link interno do acervo vira salto de 301.
 - [ ] **308 ocorrências de `/destinos` no código** fora de teste: worker, [`sitemapRoutes.ts`](../../src/lib/sitemapRoutes.ts) e o teste que reprova rota fora do sitemap, [`jsonld.ts`](../../src/lib/jsonld.ts) (BreadcrumbList), `ogImage`, topbar e menu mobile, `ProspectCard`, `destinoPrices`, `useSearchResults`.
-- [ ] **Worker:** `ROTAS_DE_APP`, `BLOG_CATEGORY_TO_DESTINATION` (14 categorias legadas apontam para `/destinos/<slug>`) e o alvo do `prospectRedirect`.
-- [ ] **Banco:** a RPC `prospect_redirect_target` devolve `'/destinos/' || slug`. Com as duas famílias na mesma URL, a conversão deixa de precisar de 301 e a RPC vira só o caso de ficha sem oferta publicada.
+- [ ] **Worker:** ligar o `url_legacy_map()` (já pronto no banco) como 301 na borda, mais `ROTAS_DE_APP` e `BLOG_CATEGORY_TO_DESTINATION` (14 categorias legadas apontam para `/destinos/<slug>`). O `prospectRedirect` por requisição sai: ele consulta o banco a cada URL nova de isolate, e a partir da virada isso seria a rota principal do site.
+- [x] **Banco:** `prospect_redirect_target` já devolve a gramática nova. Com as duas famílias na mesma URL, a conversão deixa de precisar de 301 quando a unidade herda o `public_slug`, e a RPC fica só com o caso de ficha convertida sem oferta publicada (302 para o destino).
 - [ ] **Descoberta:** `public/llms.txt` e `.well-known/mcp/server-card.json` citam `/destinos`.
 - [ ] **Mapa de 301 do WordPress** reescrito para o alvo final, sem corrente de dois saltos.
 - [ ] **`public/Estacionamentos`** (com E maiúsculo, pasta de fotos) colide com a rota no macOS, que é case-insensitive, e não colide no Linux. Já documentado em [`src/worker.ts`](../../src/worker.ts). Renomear ou mover para `public/images/` antes de jogar mais páginas nesse prefixo.

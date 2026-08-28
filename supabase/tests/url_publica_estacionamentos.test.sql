@@ -17,7 +17,7 @@
 -- Roda em transação com rollback.
 
 begin;
-select plan(20);
+select plan(25);
 
 -- ── estrutura ────────────────────────────────────────────────────────────────
 select has_column('public', 'location', 'public_name', 'location guarda o nome público');
@@ -182,6 +182,45 @@ select is(
     where public_name is not null and public_name not like '% - Estacionamento %')::int,
   0,
   'todo nome público de lote mapeado segue o padrão'
+);
+
+-- ── o caminho público, que é a gramática da URL em um lugar só ───────────────
+select is(
+  (select public.location_public_path(l) from public.location l
+    where l.id = 'aaaaaaaa-0000-4000-8000-000000000003'),
+  '/estacionamentos/aeroporto-teste/marca-um',
+  'a unidade sabe montar o próprio caminho'
+);
+select is(
+  (select public.prospect_public_path(p) from public.prospect_location p
+    where p.id = 'aaaaaaaa-0000-4000-8000-000000000006'),
+  '/estacionamentos/aeroporto-teste/mapeado-dois',
+  'o lote mapeado monta o caminho na mesma gramática'
+);
+
+-- ── segmentos reservados ─────────────────────────────────────────────────────
+-- `precos` e `mais-barato` são páginas do destino, e o roteador resolve estático antes de
+-- dinâmico: um lote com esse slug não daria erro, ficaria inalcançável.
+select throws_ok(
+  $$ update public.location set public_slug = 'precos'
+     where id = 'aaaaaaaa-0000-4000-8000-000000000003' $$,
+  '23514', null,
+  'unidade não pode se chamar como um segmento reservado do destino'
+);
+select throws_ok(
+  $$ update public.prospect_location set public_slug = 'mais-barato'
+     where id = 'aaaaaaaa-0000-4000-8000-000000000006' $$,
+  '23514', null,
+  'lote mapeado não pode se chamar como um segmento reservado do destino'
+);
+
+-- ── mapa de 301 ──────────────────────────────────────────────────────────────
+-- A regressão que este caso protege tem nome: o `br-parking-viracopos` ficou em loop de
+-- 301 em produção, respondendo redirecionamento para ele mesmo.
+select is(
+  (select count(*)::int from public.url_legacy_map() where legacy_path = target_path),
+  0,
+  'o mapa nunca manda uma URL redirecionar para ela mesma'
 );
 
 select * from finish();
